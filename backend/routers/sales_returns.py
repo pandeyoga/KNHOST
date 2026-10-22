@@ -356,7 +356,48 @@ async def approve_return(
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_approved", "sales_return", return_id,
                 {"notes": payload.notes})
+    # 23 Okt (keputusan pemilik) — SPK QC retur LAHIR OTOMATIS saat ACC: satu baris per roll yang disetujui,
+    # belum ditugaskan (Kepala QC/gudang menugaskan dari layar retur atau papan SPK). Gagal terbit tidak
+    # menggagalkan ACC — layar retur menawarkan "Terbitkan SPK QC".
+    try:
+        doc = await ensure_return_spk(doc, user) or doc
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[approve_return] SPK QC otomatis gagal untuk %s: %s", doc.get("number"), exc)
     return doc
+
+
+async def ensure_return_spk(ret: Dict[str, Any], actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """SPK `return_customer` untuk retur yang sudah disetujui (idempotent: SPK terbuka yang ada dipakai)."""
+    from services import inspection_service as ins
+    if ret.get("status") not in ("approved", "inspecting"):
+        return None
+    if await ins.spk_for_ref(ins.KIND_RETURN_CUSTOMER, ret["id"], ins.OPEN_STATUSES):
+        return None
+    await ins.create({"kind": ins.KIND_RETURN_CUSTOMER, "ref_doc_id": ret["id"],
+                      "remark": f"Otomatis saat ACC retur {ret.get('number', '')}"}, actor, ret.get("entity_id", ""))
+    fresh = await db.sales_returns.find_one({"id": ret["id"]}, {"_id": 0})
+    return fresh
+
+
+@router.post("/sales-returns/{return_id}/spk")
+async def create_return_spk(return_id: str, request: Request) -> Dict[str, Any]:
+    """23 Okt — terbitkan SPK QC untuk retur disetujui yang belum punya SPK (retur lama / SPK otomatis gagal)."""
+    user = await require_any_permission(request, [("inspection", "create"), ("sales_return", "approve")])
+    ctx = await entity_ctx(request)
+    existing = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(existing, "sales_returns", ctx)
+    from services import inspection_service as ins
+    try:
+        out = await ensure_return_spk(existing, user)
+    except ins.InspectionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if out is None:
+        raise HTTPException(status_code=400, detail="Retur ini sudah punya SPK QC yang berjalan, atau belum disetujui.")
+    await audit(user.get("name", ""), "sales_return_spk_created", "sales_return", return_id,
+                {"inspection_number": out.get("inspection_number", "")})
+    return out
 
 
 # ─── INSPECT (WAJIB) : approved → inspecting → inspected ─────────────────────

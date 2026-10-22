@@ -57,7 +57,7 @@ const CSV_COLUMNS = [
 
 
 // ─── Main component ─────────────────────────────────────────────────────────
-export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClearFocus }) {
+export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, focusDoc, onClearFocus }) {
   const [filterStatus, setFilterStatus] = useState("all");
   const [returnType, setReturnType]   = useState("all");   // UI/UX 2026-06 — saring per tipe
   const [search, setSearch]         = useState("");
@@ -171,23 +171,6 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     });
   }
 
-  function handleStartInspect(ret) {
-    return runAction("inspect_start", "Gagal mulai inspeksi", async () => {
-      const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/start`, {});
-      setNotice(`Inspeksi ${ret.number} dimulai.`);
-      showFresh(res.data); load();
-    });
-  }
-
-  function handleCompleteInspect(ret, inspections, notes) {
-    return runAction("inspect_complete", "Gagal simpan inspeksi", async () => {
-      const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/complete`,
-        { inspections, notes: notes || "" });
-      setNotice(`Inspeksi ${ret.number} selesai. Pilih outcome untuk menyelesaikan.`);
-      showFresh(res.data); load();
-    });
-  }
-
   function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout) {
     return runAction("settle", "Gagal settle", async () => {
       const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
@@ -250,8 +233,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         onReject={handleReject}
         onSubmit={handleSubmit}
         onCancelDraft={handleCancelDraft}
-        onStartInspect={handleStartInspect}
-        onCompleteInspect={handleCompleteInspect}
+        onOpenDocument={onOpenDocument}
         onSettle={handleSettle}
         onReverse={handleReverse}
         onBack={() => { setSelected(null); setError(null); load(); }}

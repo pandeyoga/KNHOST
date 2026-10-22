@@ -269,7 +269,7 @@ export const ROLE_DESK_TARGET = {
   sales_return:       { view: "returns",               nav_id: "returns-hub",    focus_type: "sales_return" },
   md_sample:          { view: "rnd-samples",           nav_id: "rnd-hub",        focus_type: "md_sample" },
   purchase_requisition: { view: "purchase-requisitions", nav_id: "sourcing",     focus_type: "purchase_requisition" },
-  inspection:         { view: "inspections",           nav_id: "wms-operations", focus_type: "inspection" },
+  inspection:         { view: "inspections",           nav_id: "quality-hub",    focus_type: "inspection" },
   shipment:           { view: "logistics",             nav_id: "logistics",      focus_type: "shipment" },
   wms_task:           { view: "wms-outbound",          nav_id: "wms-operations", focus_type: "wms_task" },
   cycle_count:        { view: "operations",            nav_id: "wms-operations", focus_type: "cycle_count", tab: "cycle" },

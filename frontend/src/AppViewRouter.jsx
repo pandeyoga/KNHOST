@@ -369,7 +369,7 @@ export default function AppViewRouter(props) {
       {activeView === "sample-orders" && <SampleOrdersView user={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "returns" && (
         <SalesReturns currentUser={user}
-          onNavigate={(navId, view, tab) => onNavSelect(navId, view, tab)}
+          onNavigate={(navId, view, tab) => onNavSelect(navId, view, tab)} onOpenDocument={openDocument}
           focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />
       )}
       {activeView === "return-policies" && <ReturnPoliciesView currentUser={user} />}
@@ -467,8 +467,10 @@ export default function AppViewRouter(props) {
       {activeView === "purchase-requisitions" && <PurchaseRequisitions currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "reorder" && <ReorderSuggestions currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "operations" && <OperationsView data={data} movements={movements} tasks={tasks} entities={entities} selectedEntity={selectedEntity} onGenerateLabel={generateLabel} onCreateInboundTask={createInboundTask} onCreateOutboundTasks={createOutboundTasks} onScanTask={scanTask} onAdvanceTask={advanceTask} onShowDetail={setActiveDetail} onNavigate={(target) => onNavSelect(target, target)} token={token} user={user} defaultTab={wmsInitialTab} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
-      {activeView === "qc-inspection" && <QcHubView key="qc-queue" initial="queue" currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "inspections" && <QcHubView key="qc-docs" initial="docs" currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
+      {/* 23 Okt — menu Kualitas: dua tab hub (antrean & SPK) tanpa tab-dalam-tab; "Putuskan di SPK" membuka tab SPK. */}
+      {activeView === "qc-inspection" && <QcHubView key="qc-queue" bare initial="queue" currentUser={user} selectedEntity={selectedEntity}
+        onOpenSpk={(spk) => openDocument({ view: "inspections", nav_id: "quality-hub", focus_type: "inspection", focus_id: spk.id, number: spk.number || "" })} />}
+      {activeView === "inspections" && <QcHubView key="qc-docs" bare initial="docs" currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "hr-employees" && <EmployeesView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-org-units" && <OrgUnitsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-attendance" && <AttendanceView currentUser={user} selectedEntity={selectedEntity} />}

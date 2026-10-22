@@ -84,7 +84,7 @@ test.each([["warehouse", warehouse, true], ["qc", qc, false]])(
     }
     expect(q(host, "m-journey").dataset.canedit).toBe("false");            // keluhan/tonggak = sales_return.update
     expect(q(host, "m-timeline").dataset.canedit).toBe(String(canScan));     // form scan = wms.scan
-    expect(q(host, "start-inspect-btn")).not.toBeNull();                    // QC = qc.inspect
+    expect(q(host, "return-spk-panel")).not.toBeNull();                     // 23 Okt — QC retur lewat SPK (qc.inspect)
     expect(q(host, "upload-attachment-btn")).toBeNull();                    // unggah = sales_return.update
     // Keputusan owner 2026-10-21 — foto/video bukti keluhan boleh diunduh Gudang/QC; lampiran lain tidak.
     expect(q(host, "attachment-a1").querySelector("a").getAttribute("href")).toBe("/api/sales-returns/sret_1/attachments/a1/download");

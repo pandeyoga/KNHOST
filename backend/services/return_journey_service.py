@@ -143,6 +143,17 @@ def assert_ready_for_qc(ret: Dict[str, Any]) -> None:
                          "Tandai SJ Kirim Toko lalu Barang sampai sebelum QC.")
 
 
+def roll_not_ready_for_qc(ret: Dict[str, Any], rid: str) -> str:
+    """23 Okt — gerbang F-12 PER ROLL untuk SPK QC retur: roll boleh diperiksa begitu ROLL ITU sudah diterima/tiba
+    di gudang (tidak menunggu roll lain). Kosong = siap; selain itu kalimat penolakan."""
+    stage = ((ret.get("roll_locations") or {}).get(rid) or {}).get("stage")
+    if stage is None:
+        return "Scan terima roll ini dulu — QC retur baru bisa diisi sesudah barangnya diterima di gudang."
+    if stage == "in_transit":
+        return "Roll ini masih dalam perjalanan ke gudang lain — scan tiba di gudang tujuan dulu sebelum QC."
+    return ""
+
+
 def receipt_progress(ret: Dict[str, Any]) -> Dict[str, Any]:
     """Keputusan owner 2026-10-21 (antrean meja Gudang) — ringkasan penerimaan fisik satu retur, tanpa uang:
     berapa roll klaim sudah di gudang / masih dalam perjalanan, dan apakah QC sudah boleh dimulai

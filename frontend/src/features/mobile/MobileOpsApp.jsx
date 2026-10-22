@@ -101,7 +101,7 @@ export default function MobileOpsApp(props) {
   // L05 — petugas QC/MD Quality: Meja QC (SPK, random check dari scan) bisa dibuka dari HP.
   if (can(props.user?.permissions, 'qc', 'inspect') || can(props.user?.permissions, 'qc', 'random_check')) tabs.splice(Math.min(4, tabs.length), 0, {
     id: 'qc', label: 'QC', icon: ClipboardList,
-    render: () => <div className="space-y-3 p-5"><button data-testid="mobile-open-inspections" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('wms-operations', 'inspections')}>Meja QC · SPK inspeksi & random check scan</button></div>,
+    render: () => <div className="space-y-3 p-5"><button data-testid="mobile-open-inspections" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('quality-hub', 'inspections')}>Meja QC · SPK inspeksi & random check scan</button></div>,
   });
   return <MobileShell {...props} tabs={tabs} testId="mobile-ops-app" />;
 }

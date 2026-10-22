@@ -49,6 +49,7 @@ import {
   BellRing,
   FileSpreadsheet,
   RotateCcw,
+  ShieldCheck,
 } from "lucide-react";
 
 // HUB TABS (tab per hub) dipindah ke `hubTabs.js` — re-export agar impor lama tetap jalan.
@@ -190,6 +191,17 @@ export const NAV_STRUCTURE = [
     icon:  RotateCcw,
     roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance", "qc"],   // qc: F-11-layar
     hub:   "returns-hub",
+  },
+
+  // ── KUALITAS (23 Okt, IA) — QC & inspeksi = modul sendiri, bukan bagian operasi gudang: gudang menyimpan &
+  // memindah barang, kualitas memutus mutu (grade, cacat, tahan/lepas). Peran QC/MD Quality/MD masuk lewat ROLE_NAV.
+  {
+    type:  "standalone",
+    id:    "quality-hub",
+    label: "Kualitas",
+    icon:  ShieldCheck,
+    roles: ["admin", "manager", "warehouse", "warehouse_admin"],
+    hub:   "quality-hub",
   },
 
   // ── PEMBELIAN ────────────────────────────────────────────────────────────────

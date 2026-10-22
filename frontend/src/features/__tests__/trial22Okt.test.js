@@ -14,7 +14,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import GrnCountPanel from "../wms/grn/GrnCountPanel";
 import GrnReviewPanel from "../wms/grn/GrnReviewPanel";
-import ReturnInspectPanel from "../sales/ReturnInspectPanel";
+import InspectLineModal from "../inspections/InspectLineModal";
 import OrderReleaseSummary from "../orders/OrderReleaseSummary";
 import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
@@ -316,14 +316,17 @@ test("B3: form baris manual — ketik kode supplier → saran target → isian t
   global.__grnTargets = [];
 });
 
-test("F5: QC retur — grade dipilih petugas; tanpa grade tidak dikirim (sistem tidak mengisi otomatis)", async () => {
-  const sent = [];
-  const ret = { id: "r1", status: "inspecting", entity_id: "ent_ksc",
-    items: [{ product_id: "p1", product_name: "Batik", quantity_returned: 10, unit: "yard", condition: "ok" }] };
-  const root = await mount(<ReturnInspectPanel ret={ret} onStartInspect={() => {}} onCompleteInspect={(...a) => { sent.push(a); }} />);
-  expect(q("inspect-rec-0").textContent).toBe("—");               // belum ada grade → belum ada rekomendasi
-  await act(async () => { q("complete-inspect-btn").click(); });
-  expect(q("inspect-error").textContent).toMatch(/Pilih grade: Batik/);
-  expect(sent).toHaveLength(0);
+test("F5 + 23 Okt: QC retur lewat SPK per roll — klaim tampil, kondisi & qty aktual diisi, tanpa grade tidak dikirim", async () => {
+  const doc = { id: "ins1", kind: "return_customer" };
+  const line = { id: "l1", roll_id: "r1", roll_no: "RL-1", quantity: 20, unit: "yard",
+    claim: { reason: "noda", cut_by_customer: true } };
+  const root = await mount(<InspectLineModal open doc={doc} line={line} meta={{ grade_auto: false }} part="qc" onClose={() => {}} />);
+  expect(q("ins-return-claim").textContent).toMatch(/noda.*sudah dipotong pelanggan/);
+  expect(q("ins-return-actual").value).toBe("20");                // bawaan = qty klaim roll
+  expect(q("ins-return-condition")).not.toBeNull();
+  apiCalls.length = 0;
+  await act(async () => { q("ins-line-submit").click(); });
+  expect(document.body.textContent).toMatch(/Pilih grade roll/);
+  expect(apiCalls.filter(([m]) => m === "post")).toHaveLength(0);   // sistem tidak mengisi grade otomatis
   act(() => root.unmount());
 });

@@ -4,21 +4,10 @@
 // PAGE META (SSOT untuk TopBar kicker + title)
 export const PAGE_META = {
   // S#094 — nama menu 1–2 kata; istilah teknis/singkatan (POS, CRM, WMS, PO, AP, BOM, R&D) hidup di judul halaman.
-  "orders":               { kicker: "Penjualan",      title: "Pesanan Penjualan (SO) & Retur" },
-  "purchasing":           { kicker: "Pembelian",      title: "Pesanan Pembelian (PO)" },
-  "operations":           { kicker: "Gudang",         title: "Operasi Gudang (WMS) · Stok, Transfer, Opname & Kesehatan" },
-  "suppliers":            { kicker: "Pembelian",      title: "Pemasok (Supplier) · Master & Kinerja" },
-  "makloons":             { kicker: "Pembelian",      title: "Pengadaan (Sourcing) · Makloon & RFQ" },
-  "amendments":           { kicker: "Penjualan",      title: "Koreksi Pesanan (Amendment)" },
-  "costing":              { kicker: "Pembelian",      title: "Harga Pokok & Landed Cost" },
-  "reorder":              { kicker: "Gudang",         title: "Titik Pesan Ulang (Reorder Point)" },
-  "reports":              { kicker: "Keuangan",       title: "Laporan & Analitik Keuangan" },
-  "documents":            { kicker: "Alat",           title: "Pusat Cetak · Dokumen PDF & Label" },
-  "admin":                { kicker: "Pengaturan",     title: "Integrasi & Audit" },
+  // 23 Okt — 12 kunci ganda dihapus dari blok ini (ESLint no-dupe-keys): entri di bawah yang SELAMA INI berlaku.
   "customers-master":     { kicker: "Pelanggan",      title: "Impor/Ekspor & Status Pelanggan" },
   "permission-matrix":    { kicker: "Pengaturan",     title: "Badan Usaha & Akses \u00b7 Peran & Hak Akses" },
   "doc-templates-basic":  { kicker: "Pengaturan",     title: "Template Dokumen Dasar" },
-  "escalations":          { kicker: "Gudang",         title: "Eskalasi Gudang" },
   "home":                 { kicker: "Kerja Saya",     title: "Beranda" },
   admin:                  { kicker: "Pengaturan",     title: "Master Data & Audit" },
   "admin-home":           { kicker: "Eksekutif",      title: "Control Tower" },
@@ -58,7 +47,7 @@ export const PAGE_META = {
   "mkt-accounts":         { kicker: "Marketing",      title: "Akun Sosmed \u00b7 per Badan Usaha" },
   // FASE I — dokumen inspeksi & QC (SPK). Tanpa baris ini judul layar jatuh ke
   // cadangan "Kain Nusantara" dan CHECK 5 `check_nav_map` memerah.
-  "inspections":          { kicker: "Gudang & Operasi", title: "SPK Inspeksi & QC (INS)" },
+  "inspections":          { kicker: "Kualitas",       title: "SPK Inspeksi & QC (INS)" },
   "pricelist":            { kicker: "Produk & Harga", title: "Harga per Badan Usaha" },
   "color-library":        { kicker: "Produk & Harga", title: "Pustaka Warna" },
   "domain-registry":      { kicker: "Pengaturan",     title: "Registri Domain Tekstil (Tahap · Jenis Kain · Grade)" },
@@ -111,7 +100,8 @@ export const PAGE_META = {
   "input-tax":            { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Masukan · PPN Masukan & Rekap" },
   "rfq":                  { kicker: "Pembelian",      title: "RFQ / Penawaran · Tender & Banding Harga Supplier" },
   operations:             { kicker: "Operasi Gudang", title: "Stok, Transfer, Opname & Kesehatan" },
-  "qc-inspection":        { kicker: "Gudang",         title: "Inspeksi QC · Penerimaan" },
+  "qc-inspection":        { kicker: "Kualitas",       title: "Antrean QC Kedatangan" },
+  "quality-hub":          { kicker: "Kualitas",       title: "Kualitas · QC & Inspeksi" },
   "inventory-board":      { kicker: "Gudang",         title: "Status Stok & ATP" },
   "stock-buckets":        { kicker: "Gudang",         title: "Stok Multi-Kantong (WIP / Ditahan / Dalam Perjalanan)" },
   "interco-transfers":    { kicker: "Gudang",         title: "Transfer Antar-Entitas" },
@@ -220,8 +210,8 @@ export const ROLE_HOME_REGISTRY = {
   // REVISI SAMPEL — Admin Sample mendarat di mejanya.
   sample_admin:    { view: "sample-admin-desk", navId: "sample-admin-desk" },
   // P05 IMP-16 — peran mutu mendarat di SPK Inspeksi.
-  md_quality:      { view: "inspections", navId: "wms-operations" },
-  qc:              { view: "inspections", navId: "wms-operations" },
+  md_quality:      { view: "inspections", navId: "quality-hub" },
+  qc:              { view: "inspections", navId: "quality-hub" },
 };
 
 // Smart guidance CTA.

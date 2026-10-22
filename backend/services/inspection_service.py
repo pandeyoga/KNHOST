@@ -285,6 +285,49 @@ async def _lines_from_rolls(rolls: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     return out
 
 
+async def _lines_from_return_rolls(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """23 Okt (permintaan pemilik) — SPK retur PELANGGAN: SATU BARIS PER ROLL klaim, diperiksa dengan form 4-point
+    yang sama dengan QC penerimaan. Baris retur tanpa roll (data lama) tetap satu baris per barang.
+    Hasil per roll ditulis ke retur saat SPK ditutup (`return_service.complete_inspection_from_spk`)."""
+    rids = [r for it in ret.get("items") or [] for r in (it.get("roll_ids") or [])]
+    rolls = {r["id"]: r for r in await db.inventory_rolls.find(
+        {"id": {"$in": rids}}, {"_id": 0, "id": 1, "roll_no": 1, "lot": 1, "dye_lot": 1, "grade": 1}).to_list(len(rids) + 1)}
+    pids = list({it.get("product_id") for it in ret.get("items") or [] if it.get("product_id")})
+    prods = {p["id"]: p for p in await db.products.find(
+        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "gramasi": 1, "lebar": 1,
+                                "color_id": 1, "color_code": 1}).to_list(len(pids) + 1)}
+    out: List[Dict[str, Any]] = []
+    for idx, it in enumerate(ret.get("items") or []):
+        if not it.get("roll_ids"):
+            for ln in _lines_from_return_items({"items": [it]}):
+                ln["return_item_index"] = idx
+                out.append(ln)
+            continue
+        p = prods.get(it.get("product_id"), {})
+        det = it.get("roll_details") or {}
+        for rid in it["roll_ids"]:
+            r = rolls.get(rid, {})
+            d = det.get(rid) or {}
+            out.append({
+                "id": new_id("insl"), "roll_id": rid, "roll_no": r.get("roll_no", "") or rid,
+                "return_item_index": idx, "lot": r.get("lot", ""), "dye_lot": r.get("dye_lot", ""),
+                "product_id": it.get("product_id", ""), "sku": p.get("sku", "") or it.get("sku", ""),
+                "article": p.get("name", "") or it.get("product_name", ""),
+                "color_id": p.get("color_id", ""), "color_code": p.get("color_code", ""),
+                "gsm_standard": p.get("gramasi"), "width_standard": p.get("lebar"),
+                "qty_rolls": 1, "quantity": float((it.get("roll_qtys") or {}).get(rid) or 0),
+                "unit": it.get("unit", "meter"),
+                # Klaim pelanggan atas roll ini — konteks bagi petugas QC (bukan hasil QC).
+                "claim": {k: d.get(k) for k in ("reason", "condition", "hangtag_missing", "cut_by_customer") if k in d},
+                "points_snapshot": None, "grade_before": r.get("grade", ""), "grade_after": "",
+                "gsm_actual": None, "width_actual": None,
+                "color_result": "", "handfeel_result": "", "handfeel_score": None,
+                "delta_e": None, "decision": "", "remark": "", "hold": False, "hold_reason": "",
+                "inspected_by": "", "inspected_at": "",
+            })
+    return out
+
+
 def _lines_from_return_items(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Baris untuk retur — MENUNJUK barang retur, tidak menyalin hasil inspeksinya.
 
@@ -306,7 +349,8 @@ def _lines_from_return_items(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
             # memang tidak menyebut jumlah gulungan, dan "—" lebih jujur dari "0 roll".
             "qty_rolls": (None if it.get("qty_rolls") in (None, "")
                           else int(it.get("qty_rolls"))),
-            "quantity": float(it.get("quantity") or 0),
+            # 23 Okt — retur jual menyimpan `quantity_returned`; dulu hanya `quantity` dibaca → baris SPK retur 0.
+            "quantity": float(it.get("quantity") or it.get("quantity_returned") or 0),
             "unit": it.get("unit", "meter"),
             "points_snapshot": None,
             "grade_before": (it.get("inspection") or {}).get("grade", ""),
@@ -601,7 +645,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
                 "usaha pemilik returnya.")
         ref_type, ref_number = "sales_return", ret.get("number", "")
         customer = (ret.get("customer_id", ""), ret.get("customer_name", ""))
-        lines = _lines_from_return_items(ret)
+        lines = await _lines_from_return_rolls(ret) if kind == KIND_RETURN_CUSTOMER else _lines_from_return_items(ret)
         if kind == KIND_REPLACEMENT:
             # L05 LN-050-T02 — SPK pengganti memeriksa ROLL PENGGANTI (dipilih/scan), bukan barang returnya.
             rids = [str(x) for x in (payload.get("roll_ids") or []) if x]
@@ -885,7 +929,7 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
         patch.update({"qc_by": actor.get("name", ""), "qc_at": now_iso()})
     warnings: List[str] = []
 
-    if line.get("roll_id") and part == "md_quality":
+    if line.get("roll_id") and doc.get("kind") != KIND_RETURN_CUSTOMER and part == "md_quality":
         roll = await db.inventory_rolls.find_one({"id": line["roll_id"]}, {"_id": 0})
         if not roll:
             raise InspectionError("Roll pada baris ini sudah tidak ada di gudang.")
@@ -899,7 +943,7 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""))
         patch.update({"hold": bool(result["hold"].get("held")), "hold_reason": result["hold"].get("reason", "")})
         warnings = list(result.get("qc_warnings") or [])
-    elif line.get("roll_id"):
+    elif line.get("roll_id") and doc.get("kind") != KIND_RETURN_CUSTOMER:
         roll = await db.inventory_rolls.find_one({"id": line["roll_id"]}, {"_id": 0})
         if not roll:
             raise InspectionError("Roll pada baris ini sudah tidak ada di gudang.")
@@ -953,8 +997,11 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
                                       patch.get("width_actual") or line.get("width_standard"))
         warnings = list(result.get("qc_warnings") or [])
     else:
-        # Baris retur: tidak ada roll → tidak ada grade. Warna/handfeel tetap dicatat
-        # sebagai pekerjaan pemeriksaan; hasil per barang tetap milik `sales_returns`.
+        # Baris retur: hasil disimpan di BARIS SPK; hasil per barang/roll tetap milik `sales_returns`.
+        # 23 Okt — SPK retur pelanggan: baris per roll diisi form 4-point yang sama (grade, kondisi, qty aktual) TANPA
+        # mengubah roll (masih milik pelanggan sampai restock karantina); MD Quality hanya warna/handfeel.
+        if doc.get("kind") == KIND_RETURN_CUSTOMER and part != "md_quality":
+            patch.update(await _inspect_return_roll(doc, line, payload, actor, part))
         if patch["color_result"] not in ("", "sesuai") and pol["color"] == "tahan":
             patch["hold"] = True
             patch["hold_reason"] = ("Warna beda dari sample yang di-ACC — barang ditahan "
@@ -992,6 +1039,76 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
     out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
     out["warnings"] = warnings
     return out
+
+
+RETURN_CONDITIONS = ("ok", "minor", "damaged")
+
+
+async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payload: Dict[str, Any],
+                               actor: Dict[str, Any], part: str) -> Dict[str, Any]:
+    """23 Okt — isi satu baris SPK retur pelanggan dengan form 4-point yang sama (cacat per interval, poin, grade
+    DIISI PETUGAS, gramasi/lebar) + kondisi & qty aktual. Pagar: retur sudah disetujui & belum diselesaikan,
+    roll masih termasuk klaim, dan barangnya SUDAH diterima gudang (F-12, per roll)."""
+    from services import qc_inspection_service as qc
+    from services import return_journey_service as _journey
+    ret = await db.sales_returns.find_one({"id": doc.get("ref_doc_id")}, {"_id": 0})
+    if not ret:
+        raise InspectionError("Dokumen retur SPK ini tidak ditemukan.")
+    if ret.get("status") not in ("approved", "inspecting"):
+        raise InspectionError(f"Retur {ret.get('number', '')} berstatus '{ret.get('status')}' — QC retur hanya sesudah "
+                              "retur disetujui dan sebelum diinspeksi selesai.")
+    rid = line.get("roll_id") or ""
+    if rid:
+        if rid not in {r for it in ret.get("items") or [] for r in (it.get("roll_ids") or [])}:
+            raise InspectionError("Roll ini sudah tidak termasuk klaim retur (ditolak) — muat ulang SPK.")
+        why = _journey.roll_not_ready_for_qc(ret, rid)
+        if why:
+            raise InspectionError(why)
+    else:
+        try:
+            _journey.assert_ready_for_qc(ret)
+        except ValueError as exc:
+            raise InspectionError(str(exc)) from exc
+    try:
+        defects = qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"))
+    except qc.IntervalError as exc:
+        raise InspectionError(str(exc)) from exc
+    points = qc.compute_points(defects)
+    th = await qc.grade_thresholds(ret.get("entity_id"))
+    grade_in = str(payload.get("grade") or "").strip()
+    if grade_in:
+        from services import grade_service as _gs
+        try:
+            grade = _gs.normalize_or_raise(grade_in, "Grade QC retur")
+        except Exception as exc:  # noqa: BLE001
+            raise InspectionError(str(exc)) from exc
+    elif await qc.grade_auto(ret.get("entity_id")):
+        grade = qc.grade_from_points(points, th)
+    else:
+        raise InspectionError(f"Pilih grade {line.get('roll_no') or 'barang'} — grade ditentukan petugas QC dari total "
+                              f"poin ({points:g} poin); sistem tidak mengisi grade otomatis.")
+    cond = str(payload.get("condition") or (line.get("claim") or {}).get("condition") or "ok").strip().lower()
+    if cond not in RETURN_CONDITIONS:
+        raise InspectionError("Kondisi harus salah satu: Baik, Cacat ringan, Rusak.")
+    actual = payload.get("actual_qty")
+    actual = round(float(actual), 2) if actual not in (None, "") else float(line.get("quantity") or 0)
+    if actual < 0:
+        raise InspectionError("Qty aktual tidak boleh negatif.")
+    if ret.get("status") == "approved":
+        from services import return_service as _ret
+        await _ret.mark_inspecting(ret["id"], actor.get("name", ""))
+    num = lambda v: (float(v) if v not in (None, "") else None)  # noqa: E731
+    return {
+        "defects": defects, "points_snapshot": points, "grade_after": grade, "condition": cond, "actual_qty": actual,
+        "gsm_actual": num(payload.get("gsm_actual")), "width_actual": num(payload.get("width_actual")),
+        "inspect_form": {"inspect_length_yard": num(payload.get("inspect_length_yard")),
+                         "interval_yard": qc.INTERVAL_YARD, "intervals": qc.interval_count(payload.get("inspect_length_yard"))},
+        "grade_rule": {"version": qc.RULE_VERSION, "status": qc.RULE_STATUS,
+                       "grade_source": "user" if grade_in else "system_suggestion",
+                       "suggested_grade": qc.grade_from_points(points, th), "thresholds": th},
+        "stdrt": stdrt_points(points, payload.get("inspect_length_yard"),
+                              num(payload.get("width_actual")) or line.get("width_standard")),
+    }
 
 
 async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: Dict[str, Any],
@@ -1087,6 +1204,16 @@ async def finish(ins_id: str, decision: str, remark: str,
         raise InspectionError("Random check: periksa SEMUA roll dulu — roll yang belum dicek tetap ditahan.")
     if doc.get("kind") == KIND_QC_4POINT and any(not ln.get("qc_at") for ln in lines):
         raise InspectionError("SPK QC 4-point: periksa SEMUA roll dulu.")
+    ret_live = None
+    if doc.get("kind") == KIND_RETURN_CUSTOMER and doc.get("ref_doc_id"):
+        ret_live = await db.sales_returns.find_one({"id": doc["ref_doc_id"]}, {"_id": 0, "status": 1, "items": 1})
+        if ret_live and ret_live.get("status") in ("approved", "inspecting"):
+            claimed = {r for it in ret_live.get("items") or [] for r in (it.get("roll_ids") or [])}
+            todo = [ln.get("roll_no") or ln.get("sku") or "—" for ln in lines
+                    if (ln.get("roll_id") in claimed or not ln.get("roll_id")) and not ln.get("grade_after")]
+            if todo:
+                raise InspectionError(f"Periksa SEMUA roll retur dulu (grade belum diisi: {', '.join(todo[:6])}"
+                                      f"{' …' if len(todo) > 6 else ''}).")
     qres = None
     if doc.get("kind") == KIND_PO_RECEIPT and doc.get("task_id"):
         # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
@@ -1115,6 +1242,14 @@ async def finish(ins_id: str, decision: str, remark: str,
     # L05 LN-050-T02 — SPK PENGGANTI tidak boleh menandai barang retur sudah diinspeksi.
     if doc.get("ref_doc_type") == "sales_return" and doc.get("ref_doc_id") and doc.get("kind") == KIND_RETURN_CUSTOMER:
         from services import return_service as _ret
+        if ret_live and ret_live.get("status") in ("approved", "inspecting"):
+            # 23 Okt — hasil per roll dari SPK menjadi hasil inspeksi retur (status → Diinspeksi).
+            try:
+                await _ret.complete_inspection_from_spk(doc["ref_doc_id"], out.get("lines") or [],
+                                                        actor.get("name", ""), note)
+            except ValueError as exc:
+                logger.warning("[inspection.finish] hasil SPK %s belum bisa ditulis ke retur: %s", doc.get("number"), exc)
+                await db[COLL].update_one({"id": doc["id"]}, {"$set": {"return_writeback_error": str(exc)[:300]}})
         await _ret.mark_inspected_by_document(doc["ref_doc_id"],
                                               out.get("finished_at", ""))
     return out

@@ -32,16 +32,19 @@ const POINT_ROWS = [
 const KOSONG = { 1: "", 2: "", 3: "", 4: "" };
 
 const PART_TITLE = { md_quality: "MD Quality · warna & handfeel", qc: "QC · 4-point & ukur", "": "Hasil periksa" };
+// 23 Okt — SPK retur pelanggan: kondisi & qty aktual per roll ikut diisi (hasilnya menjadi hasil retur saat SPK ditutup).
+const RETURN_CONDITIONS = [{ value: "ok", label: "Baik" }, { value: "minor", label: "Cacat ringan" }, { value: "damaged", label: "Rusak" }];
 
 export default function InspectLineModal({ open, onClose, doc, line, meta, onSaved, part = "" }) {
   const showQuality = part !== "qc";
   const showQc = part !== "md_quality";
+  const isReturn = doc?.kind === "return_customer";
   const [counts, setCounts] = useState(KOSONG);
   const [ivRows, setIvRows] = useState([]);
   const [inspectLen, setInspectLen] = useState("");
   const [form, setForm] = useState({
     gsm_actual: "", width_actual: "", color_result: "", handfeel_result: "",
-    handfeel_score: "", delta_e: "", remark: "", grade: "",
+    handfeel_score: "", delta_e: "", remark: "", grade: "", condition: "ok", actual_qty: "",
   });
   const [grades, setGrades] = useState([]);
   useEffect(() => { axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([])); }, []);
@@ -69,7 +72,9 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
       delta_e: line.delta_e ?? "",
       // Trial 22 Okt (F4) — catatan MD Quality & QC terpisah (dulu satu kolom → saling menimpa).
       remark: (part === "md_quality" ? line.md_remark : part === "qc" ? line.qc_remark : line.remark) || line.remark || "",
-      grade: line.grade_rule?.grade_source === "user" ? (line.grade || "") : "",
+      grade: line.grade_rule?.grade_source === "user" ? (line.grade || line.grade_after || "") : "",
+      condition: line.condition || line.claim?.condition || "ok",
+      actual_qty: line.actual_qty ?? line.quantity ?? "",
     });
     setErr("");
   }, [open, line, part]);
@@ -99,7 +104,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   const gradeAuto = Boolean(meta?.grade_auto);
   async function simpan() {
     if (!line) return;
-    if (line.roll_id && showQc && !gradeAuto && !form.grade) { setErr("Pilih grade roll — grade ditentukan petugas QC dari total poin."); return; }
+    if ((line.roll_id || isReturn) && showQc && !gradeAuto && !form.grade) { setErr("Pilih grade roll — grade ditentukan petugas QC dari total poin."); return; }
     setBusy(true); setErr("");
     try {
       const defects = POINT_ROWS
@@ -118,6 +123,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
         delta_e: form.delta_e === "" ? null : Number(form.delta_e),
         grade: form.grade || "",
         remark: form.remark,
+        ...(isReturn && showQc ? { condition: form.condition, actual_qty: form.actual_qty === "" ? null : Number(form.actual_qty) } : {}),
       });
       onSaved?.(fresh);
     } catch (e) {
@@ -155,6 +161,15 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
           </p>
         </div>
 
+        {isReturn && line.claim && (
+          <div className="rounded-lg border border-[#F5C9A6] bg-[#FFF7EF] px-3 py-2 text-[11.5px] text-[#8C4A00]" data-testid="ins-return-claim">
+            <b>Klaim pelanggan:</b> {line.claim.reason || "—"}
+            {line.claim.condition === "damaged" ? " · dilaporkan rusak" : ""}
+            {line.claim.hangtag_missing ? " · hangtag hilang" : ""}
+            {line.claim.cut_by_customer ? " · sudah dipotong pelanggan" : ""}
+          </div>
+        )}
+
         {/* Cacat 4-point — hanya untuk baris yang menunjuk ROLL fisik */}
         {line.roll_id && showQc ? (
           <div>
@@ -183,11 +198,31 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
                 options={[...(gradeAuto ? [{ value: "", label: "— saran sistem —" }] : []), ...grades.map((g) => ({ value: g.code, label: g.name?.startsWith(g.code) ? g.name : `${g.code} · ${g.name}` }))]} /></div>
             </div>
           </div>
-        ) : !showQc ? null : (
+        ) : !showQc ? null : isReturn ? (
+          <div className="flex items-center gap-2 text-[12px]" data-testid="ins-line-no-roll">Grade barang retur
+            <div className="w-48"><KNSelect data-testid="ins-grade-input" className="field" value={form.grade} onValueChange={(v) => set({ grade: v })}
+              placeholder="Pilih grade…" options={grades.map((g) => ({ value: g.code, label: g.name?.startsWith(g.code) ? g.name : `${g.code} · ${g.name}` }))} /></div>
+          </div>
+        ) : (
           <p data-testid="ins-line-no-roll" className="text-[11px] text-[#6B6B73]">
             Baris retur tidak menunjuk roll gudang, jadi tidak ada perhitungan poin cacat
             di sini. Hasil per barang retur tetap tercatat di dokumen returnya.
           </p>
+        )}
+
+        {isReturn && showQc && (
+          <div className="grid gap-3 sm:grid-cols-2" data-testid="ins-return-fields">
+            <label className="block">
+              <span className="field-label">Kondisi hasil QC</span>
+              <KNSelect data-testid="ins-return-condition" className="field" value={form.condition} searchable={false}
+                onValueChange={(v) => set({ condition: v })} options={RETURN_CONDITIONS} />
+            </label>
+            <label className="block">
+              <span className="field-label">Qty aktual hasil ukur ({line.unit})</span>
+              <input data-testid="ins-return-actual" type="number" min="0" step="0.01" className="field text-right tabular-nums"
+                value={form.actual_qty} onChange={(e) => set({ actual_qty: e.target.value })} />
+            </label>
+          </div>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2">

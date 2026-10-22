@@ -283,8 +283,8 @@ export const ROLE_NAV = {
       "cs-price-list", "products-pricing", "sales-orders", "orders", "internal-prices",
       // pembelian bahan (PR/RFQ hanya-lihat PO)
       "pembelian", "sourcing", "purchase-requisitions", "rfq", "purchase-orders", "purchasing", "master-pembelian", "suppliers",
-      // pantau inspeksi (acuan sample)
-      "gudang", "wms-operations", "inspections",
+      // pantau inspeksi (acuan sample) — menu Kualitas (23 Okt)
+      "quality-hub", "inspections",
       // Persetujuan MD (desain/sample) diputus di Meja MD — Pusat Persetujuan lintas modul bukan haknya.
       "document-center", "doc-trace",
     ],
@@ -314,14 +314,15 @@ export const ROLE_NAV = {
     remove: ["orders", "amendments", "returns", "return-policies", "special-orders", "internal-requests"],
   },
   // P05 IMP-16 — MD Quality & QC: layar SPK Inspeksi (QC juga antrean karantina kedatangan).
+  // 23 Okt — keduanya bekerja di menu Kualitas (dulu lewat Gudang › Operasi Gudang).
   md_quality: {
     inherit: null,
-    add: ["home", "hr-my-profile", "gudang", "wms-operations", "inspections", "document-center", "doc-trace"],
+    add: ["home", "hr-my-profile", "quality-hub", "inspections", "document-center", "doc-trace"],
     remove: [],
   },
   qc: {
     inherit: null,
-    add: ["home", "hr-my-profile", "gudang", "wms-operations", "qc-inspection", "inspections", "document-center", "doc-trace"],
+    add: ["home", "hr-my-profile", "quality-hub", "qc-inspection", "inspections", "document-center", "doc-trace"],
     remove: [],
   },
 };

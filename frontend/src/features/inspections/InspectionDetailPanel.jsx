@@ -70,7 +70,9 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const [rejectedRolls, setRejectedRolls] = useState([]);
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
-  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt || isQc4) && Boolean(meta?.can_qc_release));
+  // 23 Okt — SPK retur pelanggan: petugas QC (`qc.release`) menutupnya = QC retur selesai; uang tetap diputus Manajer.
+  const isReturnCustomer = doc.kind === "return_customer";
+  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt || isQc4 || isReturnCustomer) && Boolean(meta?.can_qc_release));
   const canInspectAll = Boolean(meta?.can_inspect_all);   // Sisir lanjutan gerbang peran (2026-10-21) — hanya dari server (tanpa tebakan nama peran saat meta belum ada)
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;
@@ -343,7 +345,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                           {ln.grade_rule?.status === "candidate_unvalidated" && <span data-testid={`ins-line-grade-candidate-${ln.id}`} title="Hasil lama sebelum KLX-02 diputuskan" className="ml-1 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">kandidat</span>}
                           {ln.grade_rule?.grade_source && <span data-testid={`ins-line-grade-source-${ln.id}`} className="ml-1 rounded-full bg-[#EEF4FF] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#0058CC]">{ln.grade_rule.grade_source === "user" ? "diisi QC" : "saran sistem"}</span>}
                         </span>
-                      : (ln.grade_before || "—")}
+                      // 23 Okt — sebelum QC tampil jelas "belum QC" (dulu grade lama roll tampil seolah hasil periksa).
+                      : (ln.grade_before
+                        ? <span className="text-[#9A9BA3]" title="Grade roll saat ini — belum diperiksa QC" data-testid={`ins-line-grade-pending-${ln.id}`}>{ln.grade_before} · belum QC</span>
+                        : "—")}
                   </td>
                   <td className="px-2 py-1.5">
                     <span className={`status-pill ${resultPill(ln.color_result)}`}>

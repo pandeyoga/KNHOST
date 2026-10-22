@@ -43,7 +43,7 @@ const FULL = [
   { nav: "products-pricing", view: "md-uoms", label: "Satuan (UoM)", icon: Ruler },
   { nav: "sourcing", view: "rfq", label: "RFQ Supplier", icon: FileSearch },
   { nav: "master-pembelian", view: "suppliers", label: "Supplier", icon: Truck },
-  { nav: "gudang", view: "inspections", label: "Inspeksi (acuan sample)", icon: SearchCheck },
+  { nav: "quality-hub", view: "inspections", label: "Inspeksi (acuan sample)", icon: SearchCheck },
   { nav: "purchase-orders", view: "makloon-orders", label: "Order Makloon", icon: Layers, perm: ["makloon_order", "view"] },
   { nav: "document-center", view: "doc-trace", label: "Jejak Dokumen", icon: Route },
   { nav: "hr-my-profile", view: "hr-my-profile", label: "Profil & Kehadiran Saya", icon: UserCheck },

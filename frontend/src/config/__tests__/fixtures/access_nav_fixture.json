@@ -133,6 +133,7 @@
     "purchase-returns",
     "purchasing",
     "qc-inspection",
+    "quality-hub",
     "reorder",
     "reports",
     "return-policies",
@@ -307,6 +308,7 @@
     "purchase-returns",
     "purchasing",
     "qc-inspection",
+    "quality-hub",
     "reorder",
     "reports",
     "return-policies",
@@ -368,6 +370,7 @@
     "operations",
     "production",
     "qc-inspection",
+    "quality-hub",
     "returns",
     "returns-hub",
     "rfid-hub",
@@ -531,13 +534,12 @@
   "base_role": "",
   "nav": {
    "add": [
-    "gudang",
     "hr-my-profile",
     "inspections",
     "qc-inspection",
+    "quality-hub",
     "returns",
-    "returns-hub",
-    "wms-operations"
+    "returns-hub"
    ],
    "remove": [
     "accounts-payable",
@@ -596,6 +598,7 @@
     "gl-account-mappings",
     "goods-receipts",
     "grade-master",
+    "gudang",
     "hr-attendance",
     "hr-attendance-hub",
     "hr-attendance-setup",
@@ -695,6 +698,7 @@
     "vendor-bills",
     "wms-cutting",
     "wms-locations",
+    "wms-operations",
     "wms-outbound"
    ]
   }
@@ -816,6 +820,7 @@
     "purchase-returns",
     "purchasing",
     "qc-inspection",
+    "quality-hub",
     "reorder",
     "reports",
     "return-policies",

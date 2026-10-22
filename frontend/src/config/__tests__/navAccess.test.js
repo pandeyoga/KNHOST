@@ -34,14 +34,26 @@ test("Akuntansi penuh: Buku Besar, Laporan, Tutup Buku, Buka Periode, Posting Ga
   expect(m.akuntansi["tax-hub"]).toBeUndefined();
 });
 
-test("Operasi Gudang penuh: tab Barang Masuk/Keluar & hub RFID", () => {
+test("Operasi Gudang penuh: tab Barang Masuk/Keluar & hub RFID; antrean QC di menu Kualitas", () => {
   const m = menu("cr_warehouse_ops");
-  expect(m.gudang["wms-operations"]).toEqual(expect.arrayContaining(["operations", "goods-receipts", "wms-outbound", "qc-inspection"]));
+  expect(m.gudang["wms-operations"]).toEqual(expect.arrayContaining(["operations", "goods-receipts", "wms-outbound"]));
+  expect(m.gudang["wms-operations"]).not.toContain("qc-inspection");   // 23 Okt — pindah ke menu Kualitas
+  expect(m["quality-hub"]["quality-hub"]).toEqual(["qc-inspection"]);
   expect(m.gudang["rfid-hub"].length).toBeGreaterThan(0);
 });
 
-test("QC kustom: hanya tab QC & Inspeksi di Operasi Gudang", () => {
-  expect(menu("cr_qc").gudang["wms-operations"]).toEqual(["qc-inspection"]);
+test("QC kustom: menu Kualitas (antrean QC & SPK), tanpa Operasi Gudang", () => {
+  const m = menu("cr_qc");
+  expect(m["quality-hub"]["quality-hub"]).toEqual(["qc-inspection", "inspections"]);
+  expect(m.gudang).toBeUndefined();
+});
+
+test("23 Okt — peran mutu bawaan bekerja di menu Kualitas (antrean & SPK)", () => {
+  expect(menu("qc")["quality-hub"]["quality-hub"]).toEqual(["qc-inspection", "inspections"]);
+  expect(menu("md_quality")["quality-hub"]["quality-hub"]).toEqual(["inspections"]);
+  expect(menu("md")["quality-hub"]["quality-hub"]).toEqual(["inspections"]);
+  expect(menu("warehouse")["quality-hub"]["quality-hub"]).toEqual(["qc-inspection", "inspections"]);
+  expect(menu("sales")["quality-hub"]).toBeUndefined();
 });
 
 test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", () => {

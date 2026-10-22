@@ -75,7 +75,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Barang masuk/keluar, lokasi rak, data gudang, label, produksi in-house, RFID.",
      "resources": ["wms", "goods_receipt", "warehouse", "label", "production"],
      # FE-03 — tab Barang Masuk/Keluar & hub RFID ikut modul ini (dulu `rfid` = ID tak dikenal menu).
-     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "wms-cutting", "qc-inspection",
+     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "wms-cutting",
+             "quality-hub", "qc-inspection",
              "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
              # F-11-layar — retur pelanggan yang menunggu scan terima/kirim/tiba (tampilan tanpa uang)
@@ -85,19 +86,19 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["inventory", "transfer"],
      "nav": ["gudang", "stock-atp", "inventory-board", "stock-buckets", "inventory-lots",
              "wms-operations", "operations", "interco-transfers", "cs-stock-analytics"]},   # FE-03: tab tampak dari alias interco-transfers
-    {"id": "inspection", "group": "Gudang", "label": "Inspeksi & QC",
+    {"id": "inspection", "group": "Kualitas", "label": "Inspeksi & QC",
      "description": "SPK inspeksi, hasil pemeriksaan warna/handfeel, keputusan terima/tolak.",
      "resources": ["inspection"],
-     "nav": ["gudang", "wms-operations", "inspections", "qc-inspection"]},
-    {"id": "md_quality", "group": "Gudang", "label": "MD Quality",
+     "nav": ["quality-hub", "inspections", "qc-inspection"]},   # 23 Okt — menu Kualitas
+    {"id": "md_quality", "group": "Kualitas", "label": "MD Quality",
      "description": "Warna & handfeel vs sample ACC (penerimaan PO & hasil makloon), lepas/tolak tahanan.",
      "resources": ["md_quality"],
-     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections"]},   # FE-03: tab tampak dari alias inspections
-    {"id": "qc", "group": "Gudang", "label": "QC (4-point & random check)",
+     "nav": ["quality-hub", "qc-inspection", "inspections"]},   # 23 Okt — menu Kualitas
+    {"id": "qc", "group": "Kualitas", "label": "QC (4-point & random check)",
      "description": "Cacat 4-point & grade per roll, random check roll di stok.",
      "resources": ["qc"],
      # F-11-layar — retur pelanggan yang menunggu/menjalani QC (tampilan tanpa uang)
-     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections", "returns-hub", "returns"]},   # FE-03: tab tampak dari alias inspections
+     "nav": ["quality-hub", "qc-inspection", "inspections", "returns-hub", "returns"]},   # 23 Okt — menu Kualitas
     {"id": "logistics", "group": "Gudang", "label": "Pengiriman & Kendaraan",
      "description": "Pengiriman (ekspedisi/armada), foto muat & POD, log kendaraan.",
      "resources": ["logistics", "vehicle_log"],

@@ -147,7 +147,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
           <div className="flex items-center gap-2 min-w-0">
             <ClipboardCheck size={15} className="text-[#1F6FEB]" />
             <div className="min-w-0">
-              <span className="kicker">Gudang &amp; Operasi</span>
+              <span className="kicker">Kualitas</span>
               <h2 data-testid="panel-title" className="text-[13px] font-bold">SPK Inspeksi &amp; QC</h2>
             </div>
           </div>

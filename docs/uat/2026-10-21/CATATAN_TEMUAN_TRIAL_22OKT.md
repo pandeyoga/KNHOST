@@ -104,6 +104,23 @@ Uji layar (stack uji): PRET-00035 3 roll → tolak 1 → ACC: 2 roll keluar stok
 PRET-00036 RMA → supplier terima 1 dari 2 roll (DN-00002 Rp 744.480) → roll tolakan kembali, regrade A→B;
 KSC/ICR-00016 2 roll + foto → tolak 1 → kedua dokumen kembar 42,46 yd · Rp 593.845,56.
 
+**Fase 2 — QC retur lewat SPK per roll + menu Kualitas** (keputusan pemilik: SPK otomatis saat ACC; IA: Kualitas
+menu sendiri):
+| Bagian | Sekarang |
+|---|---|
+| SPK `return_customer` | Lahir otomatis saat retur di-ACC (belum ditugaskan); SATU BARIS PER ROLL yang disetujui (qty klaim per roll; dulu baris SPK retur selalu qty 0 karena membaca field yang salah). Retur lama: tombol "Terbitkan SPK QC" |
+| Layar retur | Kartu "QC retur · SPK inspeksi per roll": nomor & status SPK, petugas (+ Tugaskan/Ganti), progres roll diperiksa, roll diterima gudang, tabel hasil per roll, "Buka SPK". Panel input poin langsung di layar retur DIHAPUS |
+| Pemeriksaan | Menu **Kualitas › SPK Inspeksi** — form 4-point yang sama dengan QC penerimaan (cacat per interval, grade diisi petugas) + klaim pelanggan, kondisi (Baik/Cacat ringan/Rusak) & qty aktual. Roll pelanggan TIDAK diubah selama QC. Pagar: roll itu sudah discan terima (per roll), roll masih diklaim, retur disetujui/sedang diinspeksi; retur masuk "Sedang diinspeksi" saat roll pertama diperiksa |
+| Tutup SPK | Petugas QC (`qc.release`) boleh menutup; hasil per roll → hasil retur (grade terburuk per barang, `roll_results`, `roll_actuals`) → status "Diinspeksi". Keputusan uang tetap Manajer saat penyelesaian |
+| Restock karantina | Grade, cacat & kondisi PER ROLL dari SPK (dulu satu grade baris untuk semua roll) |
+| Menu Kualitas | Tab "Antrean QC Kedatangan" & "SPK Inspeksi" (tanpa tab-dalam-tab), keluar dari Operasi Gudang; peran QC/MD Quality/MD diarahkan ke sini; deep-link lama tetap jalan; katalog akses peran kustom ikut |
+Sampingan: 12 kunci ganda di `navMeta.js` (judul halaman) dibersihkan; kolom grade SPK sebelum QC kini "A · belum QC"
+(dulu tampil seolah hasil periksa); kicker layar SPK "Kualitas".
+Uji layar: SRET-00005 → Terbitkan SPK (KSC/INS-00008, 2 baris roll) → tugaskan Mulyadi (QC) → roll belum discan ditolak
+→ RL-31983 grade A 2 poin, qty aktual 60,5 → RL-31985-1 grade B 6 poin cacat ringan → QC menutup SPK → retur
+Diinspeksi (grade B, 8 poin) → penyelesaian store credit → roll karantina RL-31983-1 grade A & RL-31985-1-1 grade B.
+POC `test_core_inspeksi_poc.py` (I6) disesuaikan; tidak bisa dijalankan di salinan data UAT (butuh akun seed demo).
+
 Uji layar (stack uji terpisah, salinan data acuan): Sales mengajukan SRET-00005 dari SO-00016 dengan 3 roll (hangtag hilang /
 sudah dipotong + foto / qty sebagian 20 yd) → Admin Sales menolak RL-31984 "sudah dipotong" dan menerima RL-31983 → klaim
 138,45 → 81,03 yd, estimasi Rp 3.322.763 → Rp 1.944.699, sama dengan antrean Manajer → Manajer menyetujui → RL-31984 muncul lagi

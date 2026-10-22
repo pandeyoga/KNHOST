@@ -212,7 +212,7 @@ ROLES: Dict[str, Dict[str, Any]] = {
         "rank": 2,
         "cross_entity": False,
         "home_view": "inspections",
-        "home_nav_id": "inspections",
+        "home_nav_id": "quality-hub",
         "scope_hint": "1 badan usaha (bisa ditugaskan ke beberapa)",
         "description": ("Memeriksa warna & handfeel penerimaan PO dan hasil makloon terhadap sample "
                         "yang di-ACC, lalu melepas atau menolak barang yang ditahan."),
@@ -225,7 +225,7 @@ ROLES: Dict[str, Dict[str, Any]] = {
         "rank": 1,
         "cross_entity": False,
         "home_view": "inspections",
-        "home_nav_id": "inspections",
+        "home_nav_id": "quality-hub",
         "scope_hint": "1 badan usaha (bisa ditugaskan ke beberapa)",
         "description": ("Mengisi cacat 4-point & grade per roll, serta menjalankan random check "
                         "roll di stok (roll ditahan selama dicek)."),

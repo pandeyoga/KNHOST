@@ -519,9 +519,11 @@ def run_stories(db, adm, mgr, wh, whb, state: Dict[str, List[str]]) -> None:  # 
             ok(rdoc.get("kind") == "return_customer"
                and rdoc.get("ref_doc_number") == ret.get("number"),
                "dokumen menunjuk retur sumbernya", f"{rdoc.get('ref_doc_number')}")
-            ok(len(rdoc.get("lines") or []) == len(before_items),
-               "satu baris per barang retur (menunjuk, bukan menyalin hasilnya)",
-               f"{len(rdoc.get('lines') or [])} vs {len(before_items)} barang")
+            # 23 Okt — SPK retur pelanggan: SATU BARIS PER ROLL klaim (barang tanpa roll tetap satu baris).
+            want_lines = sum(max(1, len(it.get("roll_ids") or [])) for it in before_items)
+            ok(len(rdoc.get("lines") or []) == want_lines,
+               "satu baris per roll klaim (barang tanpa roll: per barang) — menunjuk, bukan menyalin hasilnya",
+               f"{len(rdoc.get('lines') or [])} vs {want_lines} baris")
             fresh_ret = db.sales_returns.find_one({"id": ret["id"]}, {"_id": 0}) or {}
             ok(fresh_ret.get("inspection_number") == rdoc.get("number"),
                "retur menyimpan NOMOR SPK yang memeriksanya (jejak dari sisi retur)",

@@ -800,6 +800,9 @@ async def complete_inspection(return_id: str, actor: str,
             # L08 LN-082 — qty aktual hasil ukur per roll (hanya roll yang diklaim item ini).
             "roll_actuals": {k: round(float(v), 2) for k, v in (insp.get("roll_actuals") or {}).items()
                              if k in (it.get("roll_ids") or []) and float(v or 0) >= 0},
+            # 23 Okt — hasil QC PER ROLL dari SPK (grade, poin, cacat, kondisi) — dipakai restock karantina.
+            "roll_results": {k: v for k, v in (insp.get("roll_results") or {}).items() if k in (it.get("roll_ids") or [])},
+            "source": insp.get("source", "form"), "inspection_number": insp.get("inspection_number", ""),
             "thresholds": th, "notes": insp.get("note", insp.get("notes", "")),
             "inspected_by": actor, "inspected_at": now_iso(),
         }
@@ -823,6 +826,80 @@ async def complete_inspection(return_id: str, actor: str,
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
     return ret
+
+
+_COND_RANK = {"ok": 0, "minor": 1, "damaged": 2}
+
+
+async def mark_inspecting(return_id: str, actor: str) -> None:
+    """23 Okt — SPK QC per roll: retur masuk `inspecting` saat roll PERTAMA diperiksa. Gerbang penerimaan dicek
+    PER ROLL di SPK (`return_journey_service.roll_not_ready_for_qc`); penutupan (`complete_inspection`) tetap
+    menuntut SEMUA roll sudah diterima (F-12)."""
+    st.assert_transition(st.APPROVED, st.INSPECTING)
+    now = now_iso()
+    await db.sales_returns.update_one(
+        {"id": return_id, "status": st.APPROVED},
+        {"$set": {"status": st.INSPECTING, "inspection_status": "in_progress",
+                  "inspection_started_by": actor, "inspection_started_at": now, "updated_at": now}})
+
+
+async def complete_inspection_from_spk(return_id: str, lines: List[Dict[str, Any]], actor: str,
+                                       notes: str = "") -> Dict[str, Any]:
+    """23 Okt (permintaan pemilik) — QC retur lewat SPK `return_customer`: baris SPK per roll → hasil retur.
+
+    Per barang: grade = grade TERBURUK roll-nya (urutan master grade), kondisi terburuk, cacat digabung, qty aktual per
+    roll (`roll_actuals`) & hasil lengkap per roll (`roll_results`, dipakai restock agar grade roll sesuai QC-nya).
+    Transisi lewat jalur resmi (`start_inspection` bila masih disetujui → `complete_inspection`)."""
+    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise ValueError(f"Return {return_id} tidak ditemukan")
+    if ret["status"] == st.APPROVED:
+        await mark_inspecting(return_id, actor)
+    rank = {g["value"]: i for i, g in enumerate(_dr.GRADES)}
+    by_roll = {ln["roll_id"]: ln for ln in lines if ln.get("roll_id")}
+    by_idx = {int(ln["return_item_index"]): ln for ln in lines
+              if not ln.get("roll_id") and ln.get("return_item_index") is not None}
+    inspections: List[Dict[str, Any]] = []
+    for i, it in enumerate(ret.get("items") or []):
+        rids = it.get("roll_ids") or []
+        if not rids:
+            ln = by_idx.get(i)
+            if not ln or not ln.get("grade_after"):
+                raise ValueError(f"Baris {it.get('product_name') or i + 1} belum diperiksa di SPK.")
+            inspections.append({"index": i, "grade": ln["grade_after"], "defects": ln.get("defects") or [],
+                                "condition": ln.get("condition") or it.get("condition", "ok"),
+                                "accepted_qty": ln.get("actual_qty", it.get("quantity_returned", 0)),
+                                "note": ln.get("qc_remark") or ln.get("remark") or "", "source": "spk"})
+            continue
+        missing = [r for r in rids if not (by_roll.get(r) or {}).get("grade_after")]
+        if missing:
+            raise ValueError(f"{len(missing)} roll {it.get('product_name') or ''} belum diperiksa di SPK.")
+        results = {}
+        for r in rids:
+            ln = by_roll[r]
+            results[r] = {"roll_no": ln.get("roll_no", ""), "grade": ln["grade_after"],
+                          "points": float(ln.get("points_snapshot") or 0), "defects": ln.get("defects") or [],
+                          "condition": ln.get("condition") or "ok",
+                          "actual_qty": round(float(ln.get("actual_qty") if ln.get("actual_qty") is not None
+                                                    else ln.get("quantity") or 0), 2),
+                          "gsm_actual": ln.get("gsm_actual"), "width_actual": ln.get("width_actual"),
+                          "note": ln.get("qc_remark") or ln.get("remark") or "",
+                          "inspected_by": ln.get("qc_by") or ln.get("inspected_by", ""),
+                          "inspected_at": ln.get("qc_at") or ln.get("inspected_at", "")}
+        worst = max((v["grade"] for v in results.values()), key=lambda g: rank.get(g, len(rank)))
+        cond = max((v["condition"] for v in results.values()), key=lambda c: _COND_RANK.get(c, 0))
+        inspections.append({
+            "index": i, "grade": worst, "condition": cond,
+            "defects": [d for v in results.values() for d in v["defects"]],
+            "accepted_qty": round(sum(v["actual_qty"] for v in results.values()), 2),
+            "roll_actuals": {r: v["actual_qty"] for r, v in results.items()},
+            "roll_results": results, "source": "spk",
+            "note": "; ".join(f"{v['roll_no']}: {v['note']}" for v in results.values() if v["note"])})
+    spk = await db.inspections.find_one({"kind": "return_customer", "ref_doc_id": return_id},
+                                        {"_id": 0, "number": 1}, sort=[("created_at", -1)])
+    for x in inspections:
+        x["inspection_number"] = (spk or {}).get("number", "")
+    return await complete_inspection(return_id, actor, inspections=inspections, notes=notes)
 
 
 # ─── R1 — SETTLE : inspected → refund/credit/nego settled ───────────────────

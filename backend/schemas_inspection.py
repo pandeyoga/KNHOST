@@ -61,6 +61,9 @@ class InspectionLineInspect(BaseModel):
     # Trial 22 Okt (F5) — kolom kertas "DATA HASIL INSPECT": pembagian yard per grade (A / A1 / B) & perbaikan.
     yard_split: Optional[Dict[str, float]] = None
     repair_note: str = ""
+    # 23 Okt — SPK retur pelanggan: kondisi hasil QC (ok | minor | damaged) & qty aktual hasil ukur per roll.
+    condition: str = ""
+    actual_qty: Optional[float] = None
 
 
 class QcFourPointCreate(BaseModel):

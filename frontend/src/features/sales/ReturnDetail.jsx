@@ -10,7 +10,7 @@ import {
 import { ReturnTypeBadge, ReturnStatusPill, OUTCOME_LABEL, fmtNum, fmtDate } from "./ReturnShared";
 import ReturnTimeline from "../../components/ReturnTimeline";
 import ReturnStepper from "./ReturnStepper";           // UI/UX 2026-06 — peta alur + langkah berikutnya
-import ReturnInspectPanel from "./ReturnInspectPanel";
+import ReturnSpkPanel from "./ReturnSpkPanel";       // 23 Okt — QC retur lewat SPK per roll (menu Kualitas)
 import ReturnSettleModal from "./ReturnSettleModal";
 import ReturnQuarantinePanel from "./ReturnQuarantinePanel";
 import ReturnChainPanel from "./ReturnChainPanel";
@@ -31,7 +31,7 @@ const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected"
 
 export default function ReturnDetail({
   ret, token, canApprove, currentUser,
-  onApprove, onReject, onSubmit, onCancelDraft, onStartInspect, onCompleteInspect, onSettle, onReverse, onBack,
+  onApprove, onReject, onSubmit, onCancelDraft, onSettle, onReverse, onBack, onOpenDocument,
   onAttachmentUploaded, notice, onClearNotice, onNavigate, onReturnChanged,
   error = null, onClearError, busyAction = "",
 }) {
@@ -265,8 +265,9 @@ export default function ReturnDetail({
 
       <EvidenceBanner ev={enriched?.evidence} hasFiles={attachments.length > 0} />
 
-      {/* R2 — Inspeksi 4-point (approved → inspecting → inspected) */}
-      {canSeeGrade(currentUser) && canInspect && <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />}
+      {/* R2 — QC retur (approved → inspecting → inspected) lewat SPK per roll: layar ini menugaskan & melihat;
+          pemeriksaan diisi di menu Kualitas › SPK Inspeksi (form 4-point yang sama dengan QC penerimaan). */}
+      {canSeeGrade(currentUser) && (canInspect || fullView) && <ReturnSpkPanel ret={ret} currentUser={currentUser} onOpenDocument={onOpenDocument} onChanged={refetchReturn} />}
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-2">

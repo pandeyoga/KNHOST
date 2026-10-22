@@ -99,12 +99,17 @@ async def restock_identity(ret: Dict[str, Any], item: Dict[str, Any], template: 
         if not orig:
             continue
         ship_no = await _shipment_no(ret.get("order_id", ""), rid)
-        hist = _history_entry(ret, orig, claims.get(rid, actual), actual, grade_after, ship_no, now)
+        # 23 Okt — grade & cacat PER ROLL dari SPK QC retur (dulu satu grade baris untuk semua roll).
+        rr = (insp.get("roll_results") or {}).get(rid) or {}
+        grade_roll = rr.get("grade") or grade_after
+        hist = _history_entry(ret, orig, claims.get(rid, actual), actual, grade_roll, ship_no, now)
         customers = sorted(set((orig.get("returned_from_customer_ids") or []) + [ret.get("customer_id", "")]) - {""})
         live = {k: template[k] for k in ("status", "qc_status", "warehouse_id", "owner_entity_id", "condition",
                                          "defects", "inspection", "unit_cost", "base_unit_cost", "origin_type",
                                          "origin_ref", "return_id", "journey") if k in template}
-        live.update({"grade": grade_after, "length": actual, "length_remaining": actual,
+        if rr:
+            live.update({"defects": rr.get("defects") or [], "inspection": {**(template.get("inspection") or {}), **rr}})
+        live.update({"grade": grade_roll, "length": actual, "length_remaining": actual,
                      "landed_cost_total": round(max(float(template.get("unit_cost") or 0)
                                                     - float(template.get("base_unit_cost") or 0), 0) * actual, 2),
                      "reserved_ref": None, "earmarked_for": None, "committed_to": None,

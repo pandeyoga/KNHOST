@@ -12,7 +12,7 @@ jest.mock("../../services/apiClient", () => {
 const axios = require("../../services/apiClient").default;
 // Panel informasi di detail tidak relevan untuk alur error aksi — dikosongkan agar tes fokus (mock data mereka berbeda-beda).
 jest.mock("../sales/ReturnStepper", () => () => null);
-jest.mock("../sales/ReturnInspectPanel", () => () => null);
+jest.mock("../sales/ReturnSpkPanel", () => () => null);
 jest.mock("../sales/ReturnQuarantinePanel", () => () => null);
 jest.mock("../sales/ReturnChainPanel", () => () => null);
 jest.mock("../sales/ReturnGradeLossPanel", () => () => null);
