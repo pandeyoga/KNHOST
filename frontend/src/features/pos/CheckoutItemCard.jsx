@@ -14,7 +14,7 @@ import { sampleLimit, canSample } from "../../utils/sampleOrder";
 export function CheckoutItemCard({
   item, sp, notice, allowItemDiscount = false, selectedCustomer,
   onRemove, onUpdateQty, onUpdateDiscount, onRequestSpecial,
-  allocationLine, allocationLoading = false, reqStatus, onRequestTransfer,
+  allocationLine, allocationLoading = false, reqStatus, onRequestTransfer, stockEntityName = "",
   onToggleSample, onUpdateSample, sampleBilling = "",
 }) {
   const pid = item.product.id;
@@ -23,6 +23,12 @@ export function CheckoutItemCard({
   const isSpecial = !isSample && !!(sp && sp.has_special);
   const baseUnit = item.product.base_unit || "meter";
   const rollCount = Number(item.product.roll_count || 0);
+  // Trial 22 Okt (B6) — stok PT PENJUAL (pratinjau alokasi), bukan jumlah roll grup ("465 roll tersedia" padahal PT ini 0).
+  const al = allocationLine;
+  const short = al ? Math.max(0, Number(al.requested_qty || 0) - Number(al.own_available || 0)) : 0;
+  const stockText = al
+    ? `Stok ${stockEntityName || "PT penjual"}: ${formatQty(al.own_available)} ${al.unit || baseUnit}${short > 0 ? ` · kurang ${formatQty(short)} ${al.unit || baseUnit} (diatur Admin Sales)` : ""}`
+    : `${rollCount} roll di grup`;
   // F1b — harga baris = harga EFEKTIF pelanggan (khusus → pelanggan → PT → umum).
   const unitPrice = sp && sp.price != null ? Number(sp.price) : Number(item.product.price || 0);
   const srcMeta = sp ? sourceMeta(sp.source) : null;
@@ -69,7 +75,7 @@ export function CheckoutItemCard({
       <div className="mt-2">
         <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSample ? `Panjang sample (${baseUnit}) · maks ${lim.max_qty}` : `Qty (${baseUnit})`}</label>
         <input data-testid={`cart-item-qty-input-${pid}`} className="field" type="number" min={isSample ? "0.1" : "1"} step={isSample ? "0.5" : "1"} max={isSample ? lim.max_qty : undefined} value={item.quantity} onChange={(e) => onUpdateQty(pid, e.target.value)} />
-        <p data-testid={`cart-item-rolls-${pid}`} className="mt-1 text-[10px] text-[#9A9BA3]">{rollCount} roll tersedia · {isSample ? `dipotong gudang dari roll (RFID) · kain ${lim.label} maks ${lim.max_qty} ${lim.unit}` : `dijual per ${baseUnit}`}</p>
+        <p data-testid={`cart-item-rolls-${pid}`} className={`mt-1 text-[10px] ${short > 0 ? "font-semibold text-[#8C4A00]" : "text-[#9A9BA3]"}`}>{stockText} · {isSample ? `dipotong gudang dari roll (RFID) · kain ${lim.label} maks ${lim.max_qty} ${lim.unit}` : `dijual per ${baseUnit}`}</p>
       </div>
       {isSample && <SampleLineFields item={item} onUpdateSample={onUpdateSample} billing={sampleBilling} onToggleSample={onToggleSample} />}
       {/* Shortcut Harga Khusus — ajukan tanpa pindah menu. Notice tetap tampil

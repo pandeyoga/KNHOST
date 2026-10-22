@@ -21,13 +21,21 @@ async def global_available(pid: str) -> float:
 
 
 async def apply_global(products: List[Dict[str, Any]], entity_id: str = "") -> None:
+    """`entity_id` = PT penjual (entitas aktif). Trial 22 Okt (B6): stok PT itu ikut dikirim terpisah
+    (`entity_available_qty`, `entity_roll_count`, `stock_entity_name`) supaya katalog HP tidak membuat sales
+    mengira stok grup = stok PT-nya sendiri."""
     ids = [p["id"] for p in products]
     if not ids:
         return
+    ent_name = ""
     if entity_id:
-        own = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}, "owner_entity_id": entity_id}, ["available_qty"])
+        own = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}, "owner_entity_id": entity_id},
+                                    ["available_qty", "roll_count"])
         for p in products:
             p.setdefault("available_qty", round(float((own.get(p["id"]) or {}).get("available_qty") or 0), 2))
+            p.setdefault("roll_count", int((own.get(p["id"]) or {}).get("roll_count") or 0))
+        ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "short_name": 1, "legal_name": 1, "name": 1}) or {}
+        ent_name = ent.get("short_name") or ent.get("name") or ent.get("legal_name") or ""
     bal = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}},
                                 ["available_qty", "reserved_qty", "on_hand_qty", "roll_count", "on_hand_roll_count"])
     mk = await _sum_by_product("material_reservations", {"status": "active", "product_id": {"$in": ids}}, ["qty"])
@@ -62,6 +70,9 @@ async def apply_global(products: List[Dict[str, Any]], entity_id: str = "") -> N
         b = bal.get(p["id"], {})
         if "available_qty" in p:
             p["entity_available_qty"] = p.get("available_qty")
+            p["entity_roll_count"] = int(p.get("roll_count") or 0)
+            if ent_name:
+                p["stock_entity_name"] = ent_name
         makloon = round(float((mk.get(p["id"]) or {}).get("qty") or 0), 2)
         p.update({
             "available_qty": round(max(float(b.get("available_qty") or 0) - makloon, 0.0), 2),

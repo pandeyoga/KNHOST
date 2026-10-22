@@ -7,6 +7,7 @@ import {
 import { isSampleCart, clampSampleQty, canSample } from "../../utils/sampleOrder";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { computeOrderPreview } from "../../utils/pricing";
 import { convFactor } from "../../utils/uom";
 import { MixedLotConfirmModal } from "../../components/MixedLotConfirmModal";
@@ -103,7 +104,7 @@ export default function CheckoutDrawer({
         if (cancelled) return;
         const map = {};
         (res.data.lines || []).forEach((l) => { map[l.product_id] = l; });
-        setAllocation({ map, loading: false, entityId: res.data.entity_id || entityFor });
+        setAllocation({ map, loading: false, entityId: res.data.entity_id || entityFor, entityName: res.data.entity_name || "" });
       } catch { if (!cancelled) setAllocation({ map: {}, loading: false, entityId: "" }); }
     }, 350);
     return () => { cancelled = true; clearTimeout(timer); };
@@ -174,7 +175,12 @@ export default function CheckoutDrawer({
 
   // Cek UI UAT v3 (S7) — kekurangan yang bisa dipenuhi PT lain (`inter_company`) juga butuh izin backorder di server
   // ("Stok milik entitas tidak mencukupi … Aktifkan backorder"); dulu kartu backorder tidak muncul → SO ditolak tanpa jalan.
-  const backorderQtyTotal = Object.values(allocation.map || {}).reduce((s, l) => s + (Number(l?.breakdown?.backorder) || 0) + (Number(l?.breakdown?.inter_company) || 0), 0);
+  // Trial 22 Okt (B6) — kekurangan dijumlah PER SATUAN (kg & yard tidak dicampur; dulu tertulis "unit").
+  const backorderByUnit = Object.values(allocation.map || {}).reduce((m, l) => {
+    const q = (Number(l?.breakdown?.backorder) || 0) + (Number(l?.breakdown?.inter_company) || 0);
+    return q > 0 ? { ...m, [l.unit || ""]: (m[l.unit || ""] || 0) + q } : m;
+  }, {});
+  const backorderQtyTotal = Object.values(backorderByUnit).reduce((s, q) => s + q, 0);
   const hasBackorderLine = backorderQtyTotal > 0;
   // Stok sales = global: kekurangan di entitas penjual otomatis diteruskan ke admin (transfer/PO).
   useEffect(() => { if (hasBackorderLine) setAllowBackorder(true); }, [hasBackorderLine]);
@@ -397,6 +403,7 @@ export default function CheckoutDrawer({
                   onUpdateDiscount={updateDiscount}
                   onRequestSpecial={() => setSpModalItem(item)}
                   allocationLine={allocation.map[item.product.id]}
+                  stockEntityName={allocation.entityName}
                   allocationLoading={allocation.loading}
                   reqStatus={transferRequests[item.product.id]}
                   onRequestTransfer={handleRequestTransfer}
@@ -441,7 +448,7 @@ export default function CheckoutDrawer({
                   <div className="flex items-start gap-2">
                     <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[#A8221A]" />
                     <div>
-                      <p className="text-[11.5px] font-semibold text-[#8C4A00]">{formatQty(backorderQtyTotal)} unit belum tersedia langsung — Admin Sales yang mengatur pemenuhannya.</p>
+                      <p className="text-[11.5px] font-semibold text-[#8C4A00]">{formatUnitTotals(backorderByUnit)} belum ada di stok {allocation.entityName || "PT penjual"} — Admin Sales yang mengatur pemenuhannya.</p>
                       <label className="mt-1.5 flex cursor-pointer items-center gap-2">
                         <input data-testid="allow-backorder-checkbox" type="checkbox" className="h-3.5 w-3.5 accent-[#0058CC]" checked={allowBackorder} onChange={(e) => setAllowBackorder(e.target.checked)} />
                         <span className="text-[11.5px] font-medium text-[#1C1C1E]">Teruskan ke Admin Sales untuk dipenuhi</span>

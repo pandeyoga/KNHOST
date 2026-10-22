@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Minus, ShoppingBag, Printer, Layers, Scissors } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
-import { variantLabel, mergedLineTotal } from "../utils/variants";
+import { variantLabel, mergedLineTotal, ownStockText } from "../utils/variants";
 import ProductColorTriad from "./ProductColorTriad";
 import VariantAxisPicker from "./VariantAxisPicker";
 import { ProductGallery } from "./ProductGallery";
@@ -68,6 +68,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const avail = Number(selected?.available_qty || 0);
   const reserved = Number(selected?.reserved_qty || 0);
   const rollCount = Number(selected?.roll_count || 0);
+  const ownName = selected?.stock_entity_name || "";
   // F3 — deskripsi ikut varian terpilih; fallback ke deskripsi grup (rep).
   const description = selected ? (selected.description || group.description || "").trim() : "";
   const availState = avail <= 0 ? "habis" : avail <= 40 ? "low" : "ready";
@@ -115,8 +116,8 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
               {selected && <span data-testid="quickview-stock-status" className={`status-pill ${availPill} absolute left-2 top-2`}>{availLabel}</span>}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 content-start">
-              <Stat label="Tersedia" value={selected ? `${formatQty(avail)} ${baseUnit}` : "—"} tone="#126E2C" testId="quickview-available" />
-              <Stat label="Roll" value={selected ? `${rollCount} roll` : "—"} tone="#1C1C1E" testId="quickview-roll-count" />
+              <Stat label={ownName ? "Tersedia grup" : "Tersedia"} value={selected ? `${formatQty(avail)} ${baseUnit}` : "—"} tone="#126E2C" testId="quickview-available" />
+              <Stat label={ownName ? "Roll grup" : "Roll"} value={selected ? `${rollCount} roll` : "—"} tone="#1C1C1E" testId="quickview-roll-count" />
               <Stat label="Dipesan" value={selected ? `${formatQty(reserved)} ${baseUnit}` : "—"} tone="#6B219A" testId="quickview-reserved" />
               {/* F1b — kotak harga menampilkan harga EFEKTIF pelanggan; kalau berbeda dari
                   harga umum, lencana di bawah menjelaskan asalnya. Dulu kotak ini selalu
@@ -127,6 +128,13 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                 small testId="quickview-base-price" />
             </div>
           </div>
+          {/* Trial 22 Okt (B6) — stok PT penjual vs grup: angka grup termasuk stok PT lain (dipenuhi lewat Admin Sales). */}
+          {ownName && (
+            <p data-testid="quickview-own-stock" className="text-[11px] text-[#6B6B73]">
+              Stok {ownName}: <b className={Number(selected.entity_available_qty || 0) > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(selected.entity_available_qty, selected.entity_roll_count, baseUnit)}</b>
+              {avail > Number(selected.entity_available_qty || 0) && " — selebihnya stok PT lain di grup; pemenuhannya diatur Admin Sales."}
+            </p>
+          )}
 
           {/* Pemilih varian — M0: dua sumbu terpisah (Warna + Grade) */}
           {axisMode ? (

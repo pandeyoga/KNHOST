@@ -117,7 +117,9 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     available_rolls = sum(int(d.get("roll_count") or 0) for d in per_prod.values())
     # 2026-10 — kartu produk (Kasir/katalog) memakai stok GLOBAL; KPI di atas tetap per entitas aktif.
     from services import sales_stock_service
-    await sales_stock_service.apply_global(products)
+    # Trial 22 Okt (B6) — stok di atas = milik SATU PT (bila cakupan satu entitas) → ikut diberi nama PT-nya.
+    _own = bal_scope.get("owner_entity_id")
+    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "")
     # MD-08 — kode versi supplier ikut ke Master Produk (pencarian dua sisi).
     from services.supplier_item_service import attach_supplier_codes
     await attach_supplier_codes(products)

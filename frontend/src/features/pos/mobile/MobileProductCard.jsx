@@ -2,6 +2,7 @@ import { Plus, Info, Layers } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../../utils/lifecycle";
 import { onImageError, productImage } from "../../../utils/productImage";
+import { ownStockText } from "../../../utils/variants";
 
 /** EPIC-VAR — Kartu produk MOBILE (group-aware, kompak). Klik membuka MobileQuickView. */
 export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforcement = "block" }) {
@@ -48,7 +49,11 @@ export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforceme
         <h3 data-testid={`mobile-product-name-${rep.id}`} className="mt-0.5 line-clamp-2 text-[12.5px] font-semibold leading-tight">{group.name}</h3>
         <p className="mt-0.5 line-clamp-1 text-[10.5px] text-[#6B6B73]">{group.isMulti ? `${group.variants.length} ${group.variants.some((v) => v.grade) ? "warna/grade" : "warna"}` : rep.color}</p>
         <p data-testid={`mobile-product-price-${rep.id}`} className="mt-1.5 text-[14px] font-bold tabular-nums text-[#1C1C1E]">{priceText}<span className="text-[9.5px] font-medium text-[#8E8E93]">/{rep.base_unit || "meter"}</span></p>
-        <p className="text-[10px] text-[#6B6B73]"><b data-testid={`mobile-product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`mobile-product-available-${rep.id}`} className="text-[#126E2C]">{formatQty(total)}</b> {rep.base_unit || "meter"}</p>
+        {/* Trial 22 Okt (B6) — stok PT penjual dulu, stok grup (semua PT) sesudahnya: sales tidak mengira stok PT lain miliknya. */}
+        {group.stockEntityName && (
+          <p data-testid={`mobile-product-own-${rep.id}`} className="text-[10px] text-[#6B6B73]">{group.stockEntityName}: <b className={group.totalOwn > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(group.totalOwn, group.totalOwnRolls, rep.base_unit || "meter")}</b></p>
+        )}
+        <p className="text-[10px] text-[#6B6B73]">{group.stockEntityName ? "Grup: " : ""}<b data-testid={`mobile-product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`mobile-product-available-${rep.id}`} className={group.stockEntityName ? "text-[#1C1C1E]" : "text-[#126E2C]"}>{formatQty(total)}</b> {rep.base_unit || "meter"}</p>
         {incRestock > 0 && <p data-testid={`mobile-product-incoming-restock-${rep.id}`} className="text-[10px] font-semibold text-[#0058CC]">Datang restock: {formatQty(incRestock)}</p>}
         {incSo > 0 && <p data-testid={`mobile-product-incoming-so-${rep.id}`} className="text-[10px] text-[#6B6B73]">Datang utk SO: {formatQty(incSo)}</p>}
         {makloonQty > 0 && (

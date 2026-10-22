@@ -3,7 +3,7 @@ import { X, Plus, Minus, ShoppingBag, Scissors } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { convFactor } from "../../../utils/uom";
 import { pickPrice } from "../../../hooks/useEffectivePrices";
-import { variantLabel, mergedLineTotal } from "../../../utils/variants";
+import { variantLabel, mergedLineTotal, ownStockText } from "../../../utils/variants";
 import VariantAxisPicker from "../../../components/VariantAxisPicker";
 import { ProductGallery } from "../../../components/ProductGallery";
 import RollPicker from "../../../components/RollPicker";
@@ -48,6 +48,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
   const baseUnitPrice = effBase;
   const avail = Number(selected?.available_qty || 0);
   const rollCount = Number(selected?.roll_count || 0);
+  const ownName = selected?.stock_entity_name || "";
   const lineTotal = special ? unitPrice * (Number(qty) || 0) : mergedLineTotal(selected, qty, unitPrice);
   const step = (d) => setQty((q) => (kind === "sample" && selected
     ? Math.max(0.5, Math.min(sampleLimit(selected, sampleKind).max_qty, Number(q || 0) + d * 0.5))
@@ -76,8 +77,17 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
           <ProductGallery product={selected} testId="mobile-quickview-gallery" compact />
           <div className="mt-2 flex items-end justify-between">
             <p data-testid="mobile-quickview-price" className="text-[20px] font-bold tabular-nums">{selected ? formatCurrency(unitPrice) : "—"}{selected && <span className="text-[11px] font-medium text-[#8E8E93]">/{unit}</span>}</p>
-            <p data-testid="mobile-quickview-stock" className="text-[12px] m-muted">Stok <b className="text-[#126E2C]">{selected ? formatQty(avail) : "—"}</b> {baseUnit}{selected ? ` · ${rollCount} roll` : ""}</p>
+            {/* Trial 22 Okt (B6) — stok PT penjual dulu; angka grup (semua PT) di bawahnya. */}
+            <div className="text-right">
+              {ownName && (
+                <p data-testid="mobile-quickview-own-stock" className="text-[12px] m-muted">{ownName}: <b className={Number(selected.entity_available_qty || 0) > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(selected.entity_available_qty, selected.entity_roll_count, baseUnit)}</b></p>
+              )}
+              <p data-testid="mobile-quickview-stock" className={ownName ? "text-[10.5px] m-muted" : "text-[12px] m-muted"}>{ownName ? "Grup " : "Stok "}<b className={ownName ? "" : "text-[#126E2C]"}>{selected ? formatQty(avail) : "—"}</b> {baseUnit}{selected ? ` · ${rollCount} roll` : ""}</p>
+            </div>
           </div>
+          {ownName && avail > Number(selected.entity_available_qty || 0) && (
+            <p data-testid="mobile-quickview-group-note" className="mt-1 text-[10.5px] leading-snug text-[#8C4A00]">Sebagian stok ada di PT lain di grup — tetap bisa dipesan, pemenuhannya diatur Admin Sales.</p>
+          )}
           {isSpecial && <p className="mt-1 inline-block rounded-full bg-[#F3E9FA] px-2 py-0.5 text-[10.5px] font-bold text-[#6B219A]">Harga khusus · normal {formatCurrency(special.normal_price)}</p>}
           {selected?.base_fabric_name && <p data-testid="mobile-quickview-base-fabric" className="mt-1 text-[11px] m-muted">Kain dasar: <b className="text-[#1C1C1E]">{selected.base_fabric_name}</b></p>}
 

@@ -2,6 +2,7 @@ import { Plus, Layers, Repeat, FlaskConical, Lock } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../utils/lifecycle";
 import { onImageError, productImage } from "../../utils/productImage";
+import { ownStockText } from "../../utils/variants";
 
 /**
  * EPIC-VAR — kartu produk POS (group-aware & ringkas).
@@ -98,7 +99,11 @@ export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnf
           </p>
           <span data-testid={`product-stock-badge-${rep.id}`} className={`status-pill ${availPill}`}>{availLabel}</span>
         </div>
-        <p className="mt-1 text-[10.5px] text-[#6B6B73]"><b data-testid={`product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`product-available-${rep.id}`} className="text-[#126E2C]">{formatQty(total)}</b> {rep.base_unit || "meter"} tersedia</p>
+        {/* Trial 22 Okt (B6) — stok PT penjual dipisah dari stok grup (semua PT). */}
+        {group.stockEntityName && (
+          <p data-testid={`product-own-${rep.id}`} className="mt-1 text-[10.5px] text-[#6B6B73]">{group.stockEntityName}: <b className={group.totalOwn > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(group.totalOwn, group.totalOwnRolls, rep.base_unit || "meter")}</b></p>
+        )}
+        <p className={`${group.stockEntityName ? "" : "mt-1 "}text-[10.5px] text-[#6B6B73]`}>{group.stockEntityName ? "Grup: " : ""}<b data-testid={`product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`product-available-${rep.id}`} className={group.stockEntityName ? "text-[#1C1C1E]" : "text-[#126E2C]"}>{formatQty(total)}</b> {rep.base_unit || "meter"} tersedia</p>
         {(incRestock > 0 || incSo > 0) && (
           <div className="mt-1 flex flex-wrap gap-1">
             {incRestock > 0 && <span data-testid={`product-incoming-restock-${rep.id}`} title="Barang datang untuk stok — boleh dijanjikan ke pelanggan" className="inline-flex rounded-full bg-[#E8F1FF] px-2 py-0.5 text-[10px] font-semibold text-[#0058CC]">Datang restock: {formatQty(incRestock)} {rep.base_unit || "meter"}</span>}

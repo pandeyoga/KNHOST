@@ -5,6 +5,7 @@
 // E5: rencana pemenuhan — pilih roll (qty = jumlah panjang roll terpilih), bukan ketik bebas.
 // E7: tabel meja — cari + filter status + urutan.
 // F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
+// B6: stok di katalog/checkout HP — stok PT penjual dipisah dari stok grup; kekurangan bersatuan (kg), bukan "unit".
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
 //     harga ditolak → tiga pilihan sales, dialog Admin Sales "Periksa & lepas ke gudang" (+ tahan dulu).
 import React, { act } from "react";
@@ -18,6 +19,9 @@ import CuttingOpsView from "../wms/CuttingOpsView";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import FulfillmentLineCard from "../sales_admin/FulfillmentLineCard";
 import InspectSheetGrid, { parseCell, stdrt } from "../inspections/InspectSheetGrid";
+import { MobileProductCard } from "../pos/mobile/MobileProductCard";
+import { CheckoutItemCard } from "../pos/CheckoutItemCard";
+import { groupByTemplate } from "../../utils/variants";
 
 const posted = [];
 jest.mock("../wms/grn/grnApi", () => ({
@@ -239,5 +243,26 @@ test("E5: pilih roll stok sendiri → qty otomatis = panjang roll terpilih (diba
   await act(async () => { q("fulfill-stock-pick-p1-roll-r1").click(); });
   expect(value.stockRolls).toEqual(["r2", "r1"]);
   expect(value.stock).toBe(60);                                          // dibatasi kekurangan 60
+  act(() => root.unmount());
+});
+
+
+test("B6: kartu katalog HP — stok PT penjual (kosong) dipisah dari stok grup", async () => {
+  const [group] = groupByTemplate([{ id: "p1", sku: "ALC-14", name: "ALICE KNIT", template_id: "t1", base_unit: "kg", price: 10,
+    available_qty: 9285.19, roll_count: 465, entity_available_qty: 0, entity_roll_count: 0, stock_entity_name: "Sukacita" }]);
+  const root = await mount(<MobileProductCard group={group} onOpen={() => {}} />);
+  expect(q("mobile-product-own-p1").textContent).toBe("Sukacita: kosong");
+  expect(q("mobile-product-available-p1").parentElement.textContent).toMatch(/^Grup: 465 roll \/ 9\.285,19 kg/);
+  act(() => root.unmount());
+});
+
+test("B6: checkout — baris stok memakai stok PT penjual + kurangnya; tanpa pratinjau = roll grup", async () => {
+  const item = { product: { id: "p1", sku: "ALC-14", name: "ALICE KNIT", base_unit: "kg", price: 10, roll_count: 465 }, quantity: 100 };
+  const line = { product_id: "p1", unit: "kg", requested_qty: 100, own_available: 0, breakdown: { backorder: 0, inter_company: 100 } };
+  const root = await mount(<CheckoutItemCard item={item} allocationLine={line} stockEntityName="Sukacita"
+    onRemove={() => {}} onUpdateQty={() => {}} onUpdateDiscount={() => {}} />);
+  expect(q("cart-item-rolls-p1").textContent).toMatch(/^Stok Sukacita: 0 kg · kurang 100 kg \(diatur Admin Sales\)/);
+  await act(async () => { root.render(<CheckoutItemCard item={item} onRemove={() => {}} onUpdateQty={() => {}} onUpdateDiscount={() => {}} />); });
+  expect(q("cart-item-rolls-p1").textContent).toMatch(/^465 roll di grup/);
   act(() => root.unmount());
 });

@@ -1,3 +1,5 @@
+import { formatQty } from "./formatters";
+
 /**
  * EPIC-VAR — Pengelompokan produk berdasarkan template_id untuk tampilan katalog.
  * PRINSIP: 1 varian = 1 SKU (product_id). Pengelompokan ini HANYA presentation
@@ -44,6 +46,10 @@ export function groupByTemplate(products = []) {
     const totalAvailable = variants.reduce((s, v) => s + Number(v.available_qty || 0), 0);
     // F2 (UoM SSOT) — total roll tersedia lintas varian (1 produk = 1 base_unit; roll beda panjang)
     const totalRolls = variants.reduce((s, v) => s + Number(v.roll_count || 0), 0);
+    // Trial 22 Okt (B6) — stok milik PT penjual (aktif) terpisah dari stok grup; null = tidak ada rincian per PT.
+    const stockEntityName = (variants.find((v) => v.stock_entity_name) || {}).stock_entity_name || "";
+    const totalOwn = stockEntityName ? variants.reduce((s, v) => s + Number(v.entity_available_qty || 0), 0) : null;
+    const totalOwnRolls = stockEntityName ? variants.reduce((s, v) => s + Number(v.entity_roll_count || 0), 0) : null;
     // Representatif: varian dengan stok tertinggi (fallback varian pertama).
     const rep =
       [...variants].sort((a, b) => Number(b.available_qty || 0) - Number(a.available_qty || 0))[0] ||
@@ -61,6 +67,9 @@ export function groupByTemplate(products = []) {
       priceMax: prices.length ? Math.max(...prices) : 0,
       totalAvailable,
       totalRolls,
+      stockEntityName,
+      totalOwn,
+      totalOwnRolls,
       anyAvailable: variants.some((v) => Number(v.available_qty || 0) > 0),
     };
   });
@@ -105,4 +114,11 @@ export function mergedLineTotal(product, qty, unitPrice) {
     left -= take;
   });
   return total;
+}
+
+/** Trial 22 Okt (B6) — teks stok PT penjual vs grup untuk kartu/quickview sales.
+ *  `own` null → tidak ada rincian per PT (cakupan gabungan) → hanya angka grup. */
+export function ownStockText(own, ownRolls, unit) {
+  if (own == null) return "";
+  return Number(own) > 0 ? `${formatQty(own)} ${unit} · ${ownRolls || 0} roll` : "kosong";
 }
