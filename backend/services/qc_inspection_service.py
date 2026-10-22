@@ -89,6 +89,19 @@ def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yar
     return out
 
 
+class GradeRequired(Exception):
+    """Trial 22 Okt (F5) — grade roll wajib diisi petugas QC selama `qc.grade_from_points` mati."""
+
+
+async def grade_auto(entity_id: Optional[str]) -> bool:
+    """`qc.grade_from_points` — hidup: grade kosong diisi sistem dari total poin; mati (bawaan): grade diisi petugas."""
+    from services.config_resolver import value_of
+    try:
+        return bool(await value_of("qc.grade_from_points", {"entity_id": entity_id or ""}))
+    except Exception:   # noqa: BLE001 — registry belum termuat: anggap mati (grade manual = tidak ada grade tebakan)
+        return False
+
+
 def grade_from_points(points: float, th: Dict[str, float]) -> str:
     """Poin defect → grade AKTIF dari master (L01 LN-012). Batas per grade = `max_points` di master,
     atau ambang Settings lama (`a_max`, `a1_max`, `a2_max`, `b_max`). Grade aktif terburuk = sisa."""
@@ -193,6 +206,11 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
     Pusat Pengaturan lewat pemanggilnya (`inspection_service`), sehingga tidak ada
     ambang yang tertanam di kode ini.
     """
+    # Trial 22 Okt (F5, keputusan pemilik) — grade ditentukan petugas QC dari total poin; sistem tidak mengisi
+    # otomatis (dicek SEBELUM apa pun ditulis).
+    if not (grade_input or "").strip() and not await grade_auto(roll.get("owner_entity_id")):
+        raise GradeRequired(f"Isi grade roll {roll.get('roll_no') or ''} — grade ditentukan petugas QC dari total poin "
+                            f"({compute_points(defects)} poin); sistem tidak mengisi grade otomatis.")
     from services import lot_service as lots
     lot_settings = await lots.get_settings()
     lot_doc: Dict[str, Any] = {}

@@ -414,6 +414,8 @@ class RollInspectionInput(BaseModel):
     supplier_lot: str = ""
     dye_lot: str = ""
     shade_ref: str = ""
+    # Trial 22 Okt (F5) — grade roll diisi petugas QC (wajib selama `qc.grade_from_points` mati).
+    grade: str = ""
 
 
 class PurchaseReturnItem(BaseModel):

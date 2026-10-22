@@ -52,7 +52,7 @@ def _finish(h, doc, decision):
     requests.post(f"{BASE}/inspections/{doc['id']}/start", json={}, headers=h, timeout=30)
     for ln in doc["lines"]:
         r = requests.post(f"{BASE}/inspections/{doc['id']}/lines/{ln['id']}/inspect",
-                          json={"part": "qc", "defects": [], "inspect_length_yard": 10}, headers=h, timeout=30)
+                          json={"part": "qc", "grade": "A", "defects": [], "inspect_length_yard": 10}, headers=h, timeout=30)
         assert r.status_code == 200, r.text[:200]
     return requests.post(f"{BASE}/inspections/{doc['id']}/finish", json={"decision": decision, "remark": "TEST T1 alasan keputusan"},
                          headers=h, timeout=30)

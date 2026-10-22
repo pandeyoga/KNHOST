@@ -40,7 +40,8 @@ def fx():
 
 
 def _inspect(h, iid, body):
-    return requests.post(f"{BASE}/inspections/{iid}/lines/ln1/inspect", json={"part": "qc", **body}, headers=h, timeout=30)
+    # Trial 22 Okt (F5) — grade roll diisi petugas QC (`qc.grade_from_points` bawaan mati) → uji mengisi grade.
+    return requests.post(f"{BASE}/inspections/{iid}/lines/ln1/inspect", json={"part": "qc", "grade": "A", **body}, headers=h, timeout=30)
 
 
 def test_t02_165_yard_multiple_defects_same_interval_kept(fx):
@@ -56,7 +57,7 @@ def test_t02_165_yard_multiple_defects_same_interval_kept(fx):
     assert d10["from_yard"] == 150 and d10["to_yard"] == 165 and d10["code"] == "OS"
     assert ln["inspect_form"]["intervals"] == 11 and ln["inspect_form"]["inspect_length_yard"] == 165
     assert ln["points_snapshot"] == 2 + 4 + 3
-    assert ln["grade_rule"]["status"] == "manual_user_input" and ln["grade_rule"]["grade_source"] == "system_suggestion"
+    assert ln["grade_rule"]["status"] == "manual_user_input" and ln["grade_rule"]["grade_source"] == "user"
     hdr = ln["inspect_form"]["header"]
     assert hdr["customer_name"] == "TEST Customer" and hdr["roll_no"] == roll.get("roll_no") and hdr["inspected_date"]
     # interval di luar panjang → ditolak jelas

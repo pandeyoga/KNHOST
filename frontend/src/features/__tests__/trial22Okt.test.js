@@ -4,7 +4,8 @@
 // A2/F1: tab Cutting — pesanan catalogue tampil SATU paket (bukan 9 tugas), "Potong semua" = satu panggilan batch.
 // E5: rencana pemenuhan — pilih roll (qty = jumlah panjang roll terpilih), bukan ketik bebas.
 // E7: tabel meja — cari + filter status + urutan.
-// F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
+// F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade);
+//     grade roll diisi petugas QC (keputusan pemilik — sistem tidak mengisi otomatis).
 // B6: stok di katalog/checkout HP — stok PT penjual dipisah dari stok grup; kekurangan bersatuan (kg), bukan "unit".
 // B3: Barang Masuk isi manual — pilih Target mengisi kode/deskripsi/satuan/PO yang kosong; saran target dari kode/nama.
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
@@ -48,6 +49,7 @@ jest.mock("../../services/apiClient", () => ({
       apiCalls.push(["get", url]);
       if (url.endsWith("/outbound/tasks")) return Promise.resolve({ data: global.__outboundTasks || [] });
       if (url.endsWith("/warehouses")) return Promise.resolve({ data: [{ id: "wh_j", name: "Jakarta · Sukacita" }] });
+      if (url.endsWith("/master/grades")) return Promise.resolve({ data: [{ code: "A", name: "A" }, { code: "B", name: "B" }] });
       if (url.includes("pending-cuts")) return Promise.resolve({ data: { items: [] } });
       return Promise.resolve({ data: { verifiable: true, ready: true, checks: [], blocking_gaps: [], warnings: [],
         order_preview: { customer_name: "Toko Uji", items: [], totals: {} } } });
@@ -201,10 +203,17 @@ test("F5: Lembar Inspect menyimpan baris via bagian QC (interval, lebar inci→c
   expect(q("ins-sheet-points-l1").textContent).toBe("6");
   expect(q("ins-sheet-stdrt-l1").textContent).toBe("3.72");
   await act(async () => { q("ins-sheet-reject-l1").click(); });
+  // F5 (keputusan pemilik) — grade roll diisi petugas; tanpa grade simpan ditolak di layar.
+  await act(async () => { q("ins-sheet-save").click(); });
+  expect(q("ins-sheet-error").textContent).toMatch(/Pilih grade roll: RL-1/);
+  expect(apiCalls.some(([m, url]) => m === "post" && url.includes("/lines/l1/inspect"))).toBe(false);
+  expect(q("ins-sheet-grade-rule").textContent).toMatch(/diisi petugas QC/);
+  const sel = q("ins-sheet-grade-l1");
+  await act(async () => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, "B"); sel.dispatchEvent(new Event("change", { bubbles: true })); });
   await act(async () => { q("ins-sheet-save").click(); });
   await tick();
   const call = apiCalls.find(([m, url]) => m === "post" && url === "/api/inspections/ins1/lines/l1/inspect");
-  expect(call[2]).toMatchObject({ part: "qc", inspect_length_yard: 100, width_actual: 147.3, decision: "tolak",
+  expect(call[2]).toMatchObject({ part: "qc", inspect_length_yard: 100, width_actual: 147.3, decision: "tolak", grade: "B",
     defects: [{ code: "CG", point_value: 2, interval: 0, count: 1, note: "" }, { code: "KO", point_value: 4, interval: 2, count: 1, note: "" }] });
   act(() => root.unmount());
 });

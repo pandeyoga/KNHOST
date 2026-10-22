@@ -11,7 +11,7 @@ from db import db
 from dependencies import require_permission, audit
 from core_utils import safe_doc
 from schemas import RollGradeOverrideIn, RollInspectionInput
-from services.qc_inspection_service import rolls_for_task, inspect_roll, grade_thresholds
+from services.qc_inspection_service import GradeRequired, grade_auto, grade_thresholds, inspect_roll, rolls_for_task
 from services.lot_service import LotError
 from services import grade_service
 from domain_registry import DomainValidationError
@@ -22,9 +22,9 @@ router = APIRouter(prefix="/api")
 
 @router.get("/qc/grade-thresholds")
 async def get_grade_thresholds(request: Request, entity_id: str = None) -> Dict[str, Any]:
-    """Ambang grade 4-point aktif (untuk preview di UI)."""
+    """Ambang grade 4-point aktif (untuk preview di UI) + `grade_auto` (Trial 22 Okt F5: mati = grade diisi petugas)."""
     await require_permission(request, "wms", "view")
-    return await grade_thresholds(entity_id)
+    return {**await grade_thresholds(entity_id), "grade_auto": await grade_auto(entity_id)}
 
 
 @router.get("/inbound/qc/tasks/{task_id}/rolls")
@@ -99,8 +99,8 @@ async def inspect(roll_id: str, payload: RollInspectionInput, request: Request) 
         result = await inspect_roll(roll, defects, payload.gsm_actual, payload.width_actual,
                                     payload.note or "", actor,
                                     supplier_lot=payload.supplier_lot, dye_lot=payload.dye_lot,
-                                    shade_ref=payload.shade_ref)
-    except LotError as exc:   # FASE C · D-27 mode `block` → pesan dapat ditindak
+                                    shade_ref=payload.shade_ref, grade_input=payload.grade)
+    except (LotError, GradeRequired) as exc:   # FASE C · D-27 mode `block` / F5 grade wajib → pesan dapat ditindak
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await audit(actor["name"], "roll_inspected", "inventory_roll", roll_id,
                 {"roll_no": roll.get("roll_no"), "points": result["points"],

@@ -189,13 +189,21 @@ def test_e9_spk_qc_4point_tersendiri_tolak_menahan_roll():
         "part": "qc", "inspect_length_yard": 100, "width_actual": 147.32,          # 58 inci
         "defects": [{"interval": 0, "code": "CG", "point_value": 2, "count": 1},
                     {"interval": 2, "code": "KO", "point_value": 4, "count": 1}],
-        "yard_split": {"A": 70, "A1": 0, "B": 30}, "repair_note": "potong 30-45", "remark": "noda KO", "decision": "tolak"})
+        "yard_split": {"A": 70, "A1": 0, "B": 30}, "repair_note": "potong 30-45", "remark": "noda KO", "decision": "tolak",
+        "grade": "B"})
     assert c == 200, b
     ln = next(x for x in b["lines"] if x["id"] == l1["id"])
     assert ln["stdrt"] == round(6 * 3600 / (100 * 58), 2) and ln["yard_split"] == {"A": 70, "A1": 0, "B": 30}
     assert ln["qc_remark"] == "noda KO" and ln["repair_note"] == "potong 30-45"
+    # F5 (keputusan pemilik) — grade roll diisi petugas; tanpa grade ditolak, roll tidak disentuh.
+    g0 = DB.inventory_rolls.find_one({"id": l2["roll_id"]}, {"_id": 0, "grade": 1, "inspection": 1})
     c, b = qc.call("POST", f"/inspections/{doc['id']}/lines/{l2['id']}/inspect", {"part": "qc", "inspect_length_yard": 50})
+    assert c == 400 and "Isi grade roll" in str(b), b
+    assert DB.inventory_rolls.find_one({"id": l2["roll_id"]}, {"_id": 0, "grade": 1, "inspection": 1}) == g0
+    c, b = qc.call("POST", f"/inspections/{doc['id']}/lines/{l2['id']}/inspect", {"part": "qc", "inspect_length_yard": 50, "grade": "A1"})
     assert c == 200, b
+    ln2 = next(x for x in b["lines"] if x["id"] == l2["id"])
+    assert ln2["grade_after"] == "A1" and ln2["grade_rule"]["grade_source"] == "user"
     c, b = qc.call("POST", f"/inspections/{doc['id']}/finish", {"decision": "terima", "remark": "lulus kecuali roll noda"})
     assert c == 200, b
     st = {r["id"]: r["status"] for r in DB.inventory_rolls.find({"id": {"$in": [l1["roll_id"], l2["roll_id"]]}}, {"_id": 0, "id": 1, "status": 1})}

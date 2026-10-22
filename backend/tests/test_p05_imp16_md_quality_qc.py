@@ -180,7 +180,7 @@ class TestRandomCheckLifecycle:
         r = requests.post(
             f"{BASE_URL}/api/inspections/{rc['id']}/lines/{line_id}/inspect",
             headers=_hdr(admin_tok, ENT_KSC),
-            json={"part": "qc", "defects": [], "decision": "terima"},
+            json={"part": "qc", "grade": "A", "defects": [], "decision": "terima"},
         )
         assert r.status_code == 200, f"inspect line1: {r.status_code} {r.text}"
         # try to finish
@@ -198,7 +198,7 @@ class TestRandomCheckLifecycle:
             f"{BASE_URL}/api/inspections/{rc['id']}/lines/{line2_id}/inspect",
             headers=_hdr(admin_tok, ENT_KSC),
             json={
-                "part": "qc",
+                "part": "qc", "grade": "B",
                 "defects": [{"point_value": 4, "count": 5, "note": "cacat"}],
                 "decision": "tolak",
                 "remark": "ada cacat parah pada roll",

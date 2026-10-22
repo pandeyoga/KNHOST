@@ -915,22 +915,25 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
                 _gs.normalize_or_raise(payload.get("grade"), "Grade QC")
             except Exception as exc:  # noqa: BLE001
                 raise InspectionError(str(exc)) from exc
-        result = await qc.inspect_roll(
-            safe_doc(roll), [d for d in (payload.get("defects") or [])],
-            payload.get("gsm_actual"), payload.get("width_actual"),
-            str(payload.get("remark") or ""), actor,
-            supplier_lot=str(payload.get("supplier_lot") or ""),
-            dye_lot=str(payload.get("dye_lot") or ""),
-            shade_ref=str(payload.get("shade_ref") or ""),
-            color_result=patch["color_result"], handfeel_result=patch["handfeel_result"],
-            handfeel_score=patch["handfeel_score"], delta_e=patch["delta_e"],
-            baseline_sample_id=doc.get("baseline_sample_id", ""),
-            baseline_sample_number=doc.get("baseline_sample_number", ""),
-            color_action=pol["color"], handfeel_action=pol["handfeel"],
-            inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""),
-            quality_from_roll=(part == "qc"),
-            inspect_length_yard=payload.get("inspect_length_yard"),
-            header=hdr, grade_input=str(payload.get("grade") or ""))
+        try:
+            result = await qc.inspect_roll(
+                safe_doc(roll), [d for d in (payload.get("defects") or [])],
+                payload.get("gsm_actual"), payload.get("width_actual"),
+                str(payload.get("remark") or ""), actor,
+                supplier_lot=str(payload.get("supplier_lot") or ""),
+                dye_lot=str(payload.get("dye_lot") or ""),
+                shade_ref=str(payload.get("shade_ref") or ""),
+                color_result=patch["color_result"], handfeel_result=patch["handfeel_result"],
+                handfeel_score=patch["handfeel_score"], delta_e=patch["delta_e"],
+                baseline_sample_id=doc.get("baseline_sample_id", ""),
+                baseline_sample_number=doc.get("baseline_sample_number", ""),
+                color_action=pol["color"], handfeel_action=pol["handfeel"],
+                inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""),
+                quality_from_roll=(part == "qc"),
+                inspect_length_yard=payload.get("inspect_length_yard"),
+                header=hdr, grade_input=str(payload.get("grade") or ""))
+        except qc.GradeRequired as exc:   # Trial 22 Okt (F5) — grade wajib diisi petugas QC
+            raise InspectionError(str(exc)) from exc
         # RINGKASAN, bukan sumber angka: disalin dari hasil pemanggilan di atas.
         patch.update({
             "points_snapshot": result.get("points"),
@@ -1445,8 +1448,11 @@ async def defect_codes(entity_id: str = "") -> List[Dict[str, str]]:
 async def meta(entity_id: str = "") -> Dict[str, Any]:
     """Kosakata + kebijakan yang BERLAKU — layar tidak boleh menebak keduanya."""
     pol = await _policy(entity_id)
+    from services import qc_inspection_service as _qc
     return {
         "defect_codes": await defect_codes(entity_id),
+        # Trial 22 Okt (F5) — mati (bawaan) = grade roll diisi petugas QC; layar mewajibkan kolom grade.
+        "grade_auto": await _qc.grade_auto(entity_id),
         "kinds": [{"value": k, "label": v} for k, v in KIND_LABEL.items() if k not in (KIND_RANDOM_CHECK, KIND_QC_4POINT)],
         "all_kinds": [{"value": k, "label": v} for k, v in KIND_LABEL.items()],
         "md_quality_kinds": list(MD_QUALITY_KINDS),

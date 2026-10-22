@@ -82,7 +82,7 @@ def ins():
 @pytest.mark.parametrize("length,expect", [(150, 10), (151, 11), (100, 10), (300, 20)])
 def test_interval_count(ins, length, expect):
     r = requests.post(f"{BASE}/inspections/{ins}/lines/ln1/inspect",
-                      json={"part": "qc", "inspect_length_yard": length, "defects": []}, headers=_h(), timeout=30)
+                      json={"part": "qc", "grade": "A", "inspect_length_yard": length, "defects": []}, headers=_h(), timeout=30)
     assert r.status_code == 200, r.text[:300]
     assert DB.inspections.find_one({"id": ins})["lines"][0]["inspect_form"]["intervals"] == expect
 
@@ -92,7 +92,7 @@ def test_interval_count(ins, length, expect):
                                  {"interval": 0, "point_value": 1, "count": -2}])
 def test_defect_validation(ins, bad):
     r = requests.post(f"{BASE}/inspections/{ins}/lines/ln1/inspect",
-                      json={"part": "qc", "inspect_length_yard": 100, "defects": [bad]}, headers=_h(), timeout=30)
+                      json={"part": "qc", "grade": "A", "inspect_length_yard": 100, "defects": [bad]}, headers=_h(), timeout=30)
     assert r.status_code in (400, 422), f"{bad} -> {r.status_code} {r.text[:200]}"
 
 

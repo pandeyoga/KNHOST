@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Printer, Save } from "lucide-react";
+import axios, { API } from "../../services/apiClient";
 import { apiText, inspectLine } from "./inspectionsApi";
 
 /**
  * Lembar Inspect — Trial 22 Okt 2026 (F5, permintaan pemilik): form QC 4-point MENYERUPAI kertas "DATA HASIL INSPECT".
  * Satu lembar banyak roll: baris = roll, kolom = interval 15 yard, sel = kode cacat + poin (mis. "CG2 KO1"); kanan:
- * Poin, STDRT (poin × 3600 ÷ (yard × lebar inci)), Grade A / A1 / B (yard), Perbaikan, Keterangan. Disimpan lewat
- * jalur yang SAMA dengan pop-up per roll (`inspectLine`, bagian QC) — tidak ada sumber angka kedua.
+ * Poin, STDRT (poin × 3600 ÷ (yard × lebar inci)), Grade roll, Grade A / A1 / B (yard), Perbaikan, Keterangan. Disimpan
+ * lewat jalur yang SAMA dengan pop-up per roll (`inspectLine`, bagian QC) — tidak ada sumber angka kedua.
+ * Keputusan pemilik (F5): grade roll DIISI PETUGAS dari total poin — sistem tidak mengisi otomatis (kecuali
+ * `qc.grade_from_points` dinyalakan); kode cacat bebas, artinya ditafsirkan pengguna; yard per grade = catatan.
  */
 const IV = 15;
 const MIN_COLS = 8;            // kertas: 0-15 … 105-120
@@ -39,6 +42,7 @@ function rowFromLine(ln) {
   return {
     cells, yards: n2(yd), widthInch: ln.width_actual ? n2(Math.round((ln.width_actual / 2.54) * 10) / 10) : "",
     A: n2(ln.yard_split?.A), A1: n2(ln.yard_split?.A1), B: n2(ln.yard_split?.B),
+    grade: ln.grade_rule?.grade_source === "user" ? (ln.grade_after || "") : "",
     repair: ln.repair_note || "", remark: ln.qc_remark || ln.remark || "", reject: ln.decision === "tolak", dirty: false,
   };
 }
@@ -48,7 +52,12 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
   const [rows, setRows] = useState({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [grades, setGrades] = useState([]);
+  const gradeAuto = Boolean(meta?.grade_auto);
   useEffect(() => { setRows(Object.fromEntries(lines.map((ln) => [ln.id, rowFromLine(ln)]))); }, [lines]);
+  useEffect(() => {
+    axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([]));
+  }, []);
 
   const cols = Math.max(MIN_COLS, ...lines.map((ln) => Math.ceil(Number(rows[ln.id]?.yards || 0) / IV - 1e-9)));
   const upd = (id, patch) => setRows((r) => ({ ...r, [id]: { ...r[id], ...patch, dirty: true } }));
@@ -59,6 +68,8 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
     const dirty = lines.filter((ln) => rows[ln.id]?.dirty);
     const invalid = dirty.flatMap((ln) => Object.entries(rows[ln.id].cells).flatMap(([iv, c]) => parseCell(c).bad.map((b) => `${ln.roll_no} ${iv * IV}-${(Number(iv) + 1) * IV}: "${b}"`)));
     if (invalid.length) { setErr(`Isian sel tidak dikenali (tulis KODE+POIN, mis. CG2): ${invalid.join("; ")}`); return; }
+    const noGrade = gradeAuto ? [] : dirty.filter((ln) => !rows[ln.id].grade).map((ln) => ln.roll_no);
+    if (noGrade.length) { setErr(`Pilih grade roll: ${noGrade.join(", ")} — grade ditentukan petugas QC dari total poin.`); return; }
     setBusy(true); setErr("");
     try {
       let fresh = null;
@@ -69,7 +80,7 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
           part: "qc", defects, inspect_length_yard: r.yards === "" ? null : Number(r.yards),
           width_actual: r.widthInch === "" ? null : Math.round(Number(r.widthInch) * 2.54 * 10) / 10,
           yard_split: { A: Number(r.A || 0), A1: Number(r.A1 || 0), B: Number(r.B || 0) },
-          repair_note: r.repair, remark: r.remark, decision: r.reject ? "tolak" : "",
+          repair_note: r.repair, remark: r.remark, decision: r.reject ? "tolak" : "", grade: r.grade || "",
         });
       }
       if (fresh) onSaved?.(fresh);
@@ -81,13 +92,13 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
     const head = Array.from({ length: cols }, (_, i) => `<th>${i * IV}-${(i + 1) * IV}</th>`).join("");
     const body = lines.map((ln) => {
       const r = rows[ln.id] || {}; const p = points(r);
-      return `<tr><td>${ln.roll_no || ""}</td><td>${r.yards || ""}</td><td>${r.widthInch ? `${r.widthInch}"` : ""}</td>${Array.from({ length: cols }, (_, i) => `<td>${r.cells?.[i] || ""}</td>`).join("")}<td>${p}</td><td>${stdrt(p, r.yards, r.widthInch) ?? ""}</td><td>${r.A || ""}</td><td>${r.A1 || ""}</td><td>${r.B || ""}</td><td>${r.repair || ""}</td><td>${r.remark || ""}</td></tr>`;
+      return `<tr><td>${ln.roll_no || ""}</td><td>${r.yards || ""}</td><td>${r.widthInch ? `${r.widthInch}"` : ""}</td>${Array.from({ length: cols }, (_, i) => `<td>${r.cells?.[i] || ""}</td>`).join("")}<td>${p}</td><td>${stdrt(p, r.yards, r.widthInch) ?? ""}</td><td>${r.grade || ""}</td><td>${r.A || ""}</td><td>${r.A1 || ""}</td><td>${r.B || ""}</td><td>${r.repair || ""}</td><td>${r.remark || ""}</td></tr>`;
     }).join("");
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Data Hasil Inspect ${doc.number}</title><style>body{font-family:Arial;font-size:10px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:2px 3px;text-align:center}</style></head><body>
 <h3>DATA HASIL INSPECT · ${doc.number}</h3><p>Periode: ${doc.spk_date || ""} · Supplier: ${doc.supplier_name || "-"} · Artikel: ${lines[0]?.article || "-"}</p>
-<table><thead><tr><th rowspan="2">No roll</th><th rowspan="2">Yds</th><th rowspan="2">Lebar</th><th colspan="${cols}">Posisi cacat (yard)</th><th rowspan="2">Poin</th><th rowspan="2">STDRT</th><th colspan="2">Grade A</th><th rowspan="2">B yds</th><th rowspan="2">Perbaikan</th><th rowspan="2">Ket.</th></tr><tr>${head}<th>A</th><th>A1</th></tr></thead><tbody>${body}</tbody></table>
+<table><thead><tr><th rowspan="2">No roll</th><th rowspan="2">Yds</th><th rowspan="2">Lebar</th><th colspan="${cols}">Posisi cacat (yard)</th><th rowspan="2">Poin</th><th rowspan="2">STDRT</th><th rowspan="2">Grade roll</th><th colspan="2">Grade A</th><th rowspan="2">B yds</th><th rowspan="2">Perbaikan</th><th rowspan="2">Ket.</th></tr><tr>${head}<th>A</th><th>A1</th></tr></thead><tbody>${body}</tbody></table>
 <p>Poin: 1 = s.d. 3" · 2 = 3-6" · 3 = 6-9" · 4 = &gt;9"/lubang · Kode: ${codes.join(", ")}</p><script>window.onload=function(){window.print();}</script></body></html>`);
     w.document.close();
   }
@@ -113,6 +124,7 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
               <th rowSpan={2} className={cell}>No roll</th><th rowSpan={2} className={cell}>Yds</th><th rowSpan={2} className={cell}>Lebar (inci)</th>
               <th colSpan={cols} className={cell}>Posisi cacat (yard) — isi KODE+POIN, mis. CG2 KO1</th>
               <th rowSpan={2} className={cell}>Poin</th><th rowSpan={2} className={cell}>STDRT</th>
+              <th rowSpan={2} className={cell}>Grade roll{gradeAuto ? "" : " *"}</th>
               <th colSpan={2} className={cell}>Grade A (yds)</th><th rowSpan={2} className={cell}>B yds</th>
               <th rowSpan={2} className={cell}>Perbaikan</th><th rowSpan={2} className={cell}>Ket.</th><th rowSpan={2} className={cell}>Tolak</th>
             </tr>
@@ -140,6 +152,13 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
                   ))}
                   <td className={`${cell} font-semibold tabular-nums`} data-testid={`ins-sheet-points-${ln.id}`}>{p}</td>
                   <td className={`${cell} tabular-nums`} data-testid={`ins-sheet-stdrt-${ln.id}`}>{st ?? "—"}</td>
+                  <td className={`${cell} ${!gradeAuto && r.dirty && !r.grade ? "bg-[#FFF6E0]" : ""}`}>
+                    <select className={`${inp} min-w-[52px]`} disabled={ro} value={r.grade || ""} data-testid={`ins-sheet-grade-${ln.id}`}
+                      onChange={(e) => upd(ln.id, { grade: e.target.value })}>
+                      <option value="">{gradeAuto ? "saran" : "—"}</option>
+                      {grades.map((g) => <option key={g.code} value={g.code}>{g.code}</option>)}
+                    </select>
+                  </td>
                   {["A", "A1", "B"].map((k) => (
                     <td key={k} className={cell}><input className={inp} readOnly={ro} value={r[k]} onChange={(e) => upd(ln.id, { [k]: e.target.value })} /></td>
                   ))}
@@ -156,7 +175,8 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
       <div data-testid="ins-sheet-legend" className="flex flex-wrap gap-x-5 gap-y-1 border-t border-[#EFF0F2] px-3 py-2 text-[10.5px] text-[#6B6B73]">
         <span>Poin: 1 = s.d. 3" · 2 = 3–6" · 3 = 6–9" · 4 = &gt;9" / lubang</span>
         <span>Kode cacat: {(meta?.defect_codes || []).map((c) => (c.label ? `${c.code} (${c.label})` : c.code)).join(" · ") || "—"}</span>
-        <span>STDRT = poin × 3600 ÷ (yds × lebar inci) · grade roll mengikuti aturan grade yang berlaku</span>
+        <span>STDRT = poin × 3600 ÷ (yds × lebar inci)</span>
+        <span data-testid="ins-sheet-grade-rule">{gradeAuto ? "Grade roll kosong = saran sistem dari total poin" : "Grade roll diisi petugas QC dari total poin — sistem tidak mengisi otomatis"} · Grade A/A1/B (yds) = catatan pembagian panjang</span>
       </div>
     </div>
   );

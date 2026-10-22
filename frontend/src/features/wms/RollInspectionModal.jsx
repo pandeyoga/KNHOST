@@ -36,6 +36,9 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
   const [lotSettings, setLotSettings] = useState(null);
   const [lotWarnings, setLotWarnings] = useState([]);
   const [busy, setBusy] = useState(false);
+  // Trial 22 Okt (F5) — grade roll diisi petugas QC (wajib selama `qc.grade_from_points` mati).
+  const [grade, setGrade] = useState("");
+  const [grades, setGrades] = useState([]);
 
   useEffect(() => { load(); }, [taskId]); // eslint-disable-line
 
@@ -43,12 +46,14 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
     setLoading(true);
     try {
       const params = (entityId && entityId !== "all") ? { entity_id: entityId } : {};
-      const [r, t, ls] = await Promise.all([
+      const [r, t, ls, gr] = await Promise.all([
         axios.get(`${API}/inbound/qc/tasks/${taskId}/rolls`),
         axios.get(`${API}/qc/grade-thresholds`, { params }).catch(() => ({ data: { a_max: 20, b_max: 40 } })),
         axios.get(`${API}/lots/settings`).catch(() => ({ data: { enforcement_mode: "warn",
           require_supplier_lot: true, require_dye_lot: true } })),
+        axios.get(`${API}/master/grades`).catch(() => ({ data: [] })),
       ]);
+      setGrades((gr.data || []).filter((g) => g.active !== false));
       setRolls(Array.isArray(r.data) ? r.data : []);
       setThresholds(t.data || { a_max: 20, b_max: 40 });
       setLotSettings(ls.data || null);
@@ -67,6 +72,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
     setGsm(insp.gsm_actual ?? "");
     setWidth(insp.width_actual ?? "");
     setNote(insp.note || "");
+    setGrade(insp.rule?.grade_source === "user" ? (roll.grade || "") : "");
     setLotWarnings([]);
     setLotDraft({
       supplier_lot: roll.supplier_lot || "",
@@ -84,6 +90,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
     : points <= thresholds.b_max ? "B" : "BS";
 
   async function save(rollId) {
+    if (!thresholds.grade_auto && !grade) { setError("Pilih grade roll — grade ditentukan petugas QC dari total poin."); return; }
     setBusy(true);
     try {
       const defects = POINT_LEVELS
@@ -97,6 +104,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
         supplier_lot: lotDraft.supplier_lot || "",
         dye_lot: lotDraft.dye_lot || "",
         shade_ref: lotDraft.shade_ref || "",
+        grade,
       });
       setLotWarnings(res.data?.lot_warnings || []);
       setOpenRoll(null);
@@ -225,7 +233,12 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                   </div>
                   <div className="flex items-center justify-between mt-2.5 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
                     <span className="text-[12px]">Total Poin: <b className="tabular-nums" data-testid={`roll-points-${roll.id}`}>{points}</b></span>
-                    <span className="text-[12px]">Grade: <span className={`status-pill ${gradeTone(predictedGrade)}`} data-testid={`roll-predicted-${roll.id}`}>{predictedGrade}</span></span>
+                    <label className="flex items-center gap-1.5 text-[12px]">Grade
+                      <select data-testid={`roll-grade-input-${roll.id}`} className="field !h-7 !w-auto !py-0 text-[12px]" value={grade} onChange={(e) => setGrade(e.target.value)}>
+                        <option value="">{thresholds.grade_auto ? `saran sistem: ${predictedGrade}` : "Pilih…"}</option>
+                        {grades.map((g) => <option key={g.code} value={g.code}>{g.code}</option>)}
+                      </select>
+                    </label>
                     <button data-testid={`roll-inspect-save-${roll.id}`} disabled={busy} onClick={() => save(roll.id)} className="primary-button text-[11px]">{busy ? "..." : "Simpan & Set Grade"}</button>
                   </div>
                 </div>

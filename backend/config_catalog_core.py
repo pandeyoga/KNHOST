@@ -728,6 +728,18 @@ E("qc.grade_thresholds.b_max", group="kualitas", type="decimal", default=40.0,
   example="b_max 40 · hasil 45 poin → Grade C",
   consumers=("services/qc_inspection_service.py", "services/grade_service.py"), risk="high")
 
+# Trial 22 Okt 2026 (F5, keputusan pemilik) — grade roll ditentukan PETUGAS QC dari total poin; untuk sekarang sistem
+# tidak mengisi grade otomatis. Nyalakan bila kelak grade mau dihitung sistem memakai ambang di atas.
+E("qc.grade_from_points", group="kualitas", type="bool", default=False,
+  scopes=("global", "entity"),
+  label="Grade roll diisi otomatis dari total poin",
+  help="Mati (bawaan): petugas QC mengisi kode cacat, poin, DAN grade roll sendiri — total poin & STDRT hanya acuan. "
+       "Hidup: grade yang dikosongkan petugas diisi sistem dari total poin memakai ambang grade di atas.",
+  impact="Bila mati, hasil 4-point yang disimpan tanpa grade ditolak dengan pesan 'isi grade roll'. "
+         "Bila hidup, grade kosong = saran sistem dari total poin.",
+  example="Mati → roll 18 poin, petugas memilih sendiri Grade A di Lembar Inspect",
+  consumers=("services/qc_inspection_service.py:inspect_roll",), risk="high")
+
 E("qc.color_mismatch_action", group="kualitas", type="enum", default="tahan",
   scopes=("global", "entity"),
   options=[{"value": "abaikan", "label": "Abaikan (hanya dicatat)"},
