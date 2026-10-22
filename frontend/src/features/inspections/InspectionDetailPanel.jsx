@@ -25,10 +25,11 @@ import { askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import InspectLineModal from "./InspectLineModal";
+import InspectSheetGrid from "./InspectSheetGrid";
 import {
   apiText, assignInspection, finishInspection, INS_COLOR_LABEL, INS_DECISION_LABEL,
   INS_HANDFEEL_LABEL, INS_KIND_LABEL, INS_STATUS_CLASS, INS_STATUS_LABEL, MD_QUALITY_KINDS,
-  rejectHold, releaseHold, reopenInspection, resultPill, startInspection,
+  createQc4point, rejectHold, releaseHold, reopenInspection, resultPill, startInspection,
 } from "./inspectionsApi";
 
 // Cek UI UAT v3 (S8) — waktu dulu dipotong dari ISO UTC ("2026-10-21 19:57" padahal WIB 22 Okt 02.57).
@@ -60,13 +61,16 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const [lineOpen, setLineOpen] = useState(null);
   const [linePart, setLinePart] = useState("");
   const isRandom = doc.kind === "random_check";
+  // Trial 22 Okt (E9) — SPK QC 4-point tersendiri; SPK penerimaan baru = MD Quality saja (`md_only`).
+  const isQc4 = doc.kind === "qc_4point";
+  const mdOnly = Boolean(doc.md_only);
   // F-14 (keputusan owner Q-03a) — SPK penerimaan PO: keputusan ini SEKALIGUS memutus karantina.
   const isPoReceipt = doc.kind === "po_receipt" && Boolean(doc.task_id);
   const [disposition, setDisposition] = useState("");
   const [rejectedRolls, setRejectedRolls] = useState([]);
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
-  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt) && Boolean(meta?.can_qc_release));
+  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt || isQc4) && Boolean(meta?.can_qc_release));
   const canInspectAll = Boolean(meta?.can_inspect_all);   // Sisir lanjutan gerbang peran (2026-10-21) — hanya dari server (tanpa tebakan nama peran saat meta belum ada)
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;
@@ -194,6 +198,23 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       </div>
 
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="ins-detail-error" />}
+
+      {mdOnly && (
+        <div data-testid="ins-md-only-note" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E5DDF3] bg-[#F7F2FF] px-3 py-2 text-[11.5px] text-[#4B2A7A]">
+          <span>SPK ini khusus <b>MD Quality</b> (warna & handfeel). <b>QC 4-point</b> dikerjakan di SPK tersendiri — boleh kapan
+            saja; roll yang ditolak QC ditahan.</span>
+          {canQc && (
+            <button data-testid="ins-create-qc4" className="secondary-button !h-8" disabled={busy}
+              onClick={() => run(() => createQc4point({ inspection_id: doc.id }), "SPK QC 4-point dibuat untuk roll kedatangan ini.")}>
+              Buat SPK QC 4-point
+            </button>
+          )}
+        </div>
+      )}
+      {(isQc4 || isRandom) && canQc && (
+        <InspectSheetGrid doc={doc} meta={meta} editable={["assigned", "in_progress"].includes(doc.status)}
+          onSaved={(fresh) => { notifySuccess("Berhasil", "Lembar inspect tersimpan."); onChanged?.(fresh); }} />
+      )}
 
       {/* Acuan penilaian — tanpa menyebut NAMA sample-nya, kolom “warna sesuai?”
           hanya berisi pendapat yang tidak bisa diperiksa ulang siapa pun. */}
@@ -345,13 +366,13 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                       )}
                       {/* Cek UI UAT v3 (S6) — SPK QC Pesanan / retur: peran QC (qc.inspect) dulu tidak punya tombol sama
                           sekali (hanya "Isi hasil" untuk inspection.inspect). Kini QC 4-point tampil bila "Isi hasil" tidak. */}
-                      {canQc && ln.roll_id && (isMdKind || isRandom || !canInspectAll) && ["assigned", "in_progress"].includes(doc.status) && (
+                      {canQc && ln.roll_id && !mdOnly && (isMdKind || isRandom || isQc4 || !canInspectAll) && ["assigned", "in_progress"].includes(doc.status) && (
                         <button data-testid={`ins-line-qc-${ln.id}`} className="link-button"
                           onClick={() => bukaBaris(ln, "qc")}>
                           {ln.qc_at ? "Ubah QC 4-point" : "QC 4-point"}
                         </button>
                       )}
-                      {canInspectAll && !isMdKind && !isRandom && open && doc.status !== "draft" && (
+                      {canInspectAll && !isMdKind && !isRandom && !isQc4 && open && doc.status !== "draft" && (
                         <button data-testid={`ins-line-inspect-${ln.id}`} className="link-button"
                           onClick={() => bukaBaris(ln, "")}>
                           {ln.inspected_at ? "Ubah hasil" : "Isi hasil"}

@@ -67,11 +67,12 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
       handfeel_result: line.handfeel_result || "",
       handfeel_score: line.handfeel_score ?? "",
       delta_e: line.delta_e ?? "",
-      remark: line.remark || "",
+      // Trial 22 Okt (F4) — catatan MD Quality & QC terpisah (dulu satu kolom → saling menimpa).
+      remark: (part === "md_quality" ? line.md_remark : part === "qc" ? line.qc_remark : line.remark) || line.remark || "",
       grade: line.grade_rule?.grade_source === "user" ? (line.grade || "") : "",
     });
     setErr("");
-  }, [open, line]);
+  }, [open, line, part]);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 

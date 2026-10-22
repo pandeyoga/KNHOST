@@ -6,7 +6,7 @@ dihitung `qc_inspection_service` dan diringkas `inspection_service`, karena begi
 satu angka turunan bisa dikirim klien, lahir sumber kebenaran kedua yang tidak
 pernah cocok dengan roll-nya (kelas cacat §3.4 rencana MD-ERP).
 """
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -58,6 +58,18 @@ class InspectionLineInspect(BaseModel):
     part: str = ""
     # L05 LN-052 KLX-02 — grade diisi user (form manual); kosong = saran sistem dari total poin.
     grade: str = ""
+    # Trial 22 Okt (F5) — kolom kertas "DATA HASIL INSPECT": pembagian yard per grade (A / A1 / B) & perbaikan.
+    yard_split: Optional[Dict[str, float]] = None
+    repair_note: str = ""
+
+
+class QcFourPointCreate(BaseModel):
+    """Trial 22 Okt (E9) — SPK QC 4-point tersendiri: dari SPK MD Quality, tugas penerimaan, atau daftar roll."""
+    inspection_id: str = ""
+    task_id: str = ""
+    roll_ids: List[str] = []
+    remark: str = ""
+    assigned_to: str = ""
 
 
 class RandomCheckCreate(BaseModel):

@@ -43,6 +43,7 @@ export const INS_KIND_LABEL = {
   replacement: "Inspeksi Barang Pengganti",
   random_check: "Random Check Stok (QC)",
   sales_order: "QC Permintaan Pesanan (SO)",
+  qc_4point: "SPK QC 4-point",
 };
 
 /** Nama pendek untuk chip penyaring — judul panjang membuat bilah filter melipat. */
@@ -54,6 +55,7 @@ export const INS_KIND_SHORT = {
   replacement: "Barang Pengganti",
   random_check: "Random Check",
   sales_order: "QC Pesanan",
+  qc_4point: "QC 4-point",
 };
 
 /** P05 IMP-16 — jenis yang warna & handfeel-nya milik MD Quality (cadangan bila meta belum termuat). */
@@ -127,6 +129,12 @@ export async function releaseHold(id, lineId, reason) {
 
 export async function rejectHold(id, lineId, reason) {
   const r = await axios.post(`${API}/inspections/${id}/lines/${lineId}/reject-hold`, { reason });
+  return r.data || null;
+}
+
+/** Trial 22 Okt (E9) — SPK QC 4-point tersendiri: { inspection_id } | { task_id } | { roll_ids }. */
+export async function createQc4point(payload) {
+  const r = await axios.post(`${API}/inspections/qc-4point`, payload);
   return r.data || null;
 }
 

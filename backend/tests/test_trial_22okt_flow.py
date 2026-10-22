@@ -170,3 +170,48 @@ def test_a2_kirim_semua_tugas_pesanan_satu_nomor_sj(g):
     assert c == 200, r
     nums = {s["shipment_no"] for s in DB.shipments.find({"batch_id": r["batch_id"]}, {"_id": 0, "shipment_no": 1})}
     assert nums == {r["shipment_no"]} and r["lines"] == len([t for t in ready if t["warehouse_id"] == wh])
+
+
+# ─── E9/F5 — SPK QC 4-point tersendiri: lembar inspect (interval + kode), STDRT, yard per grade, tolak = tahan ────
+def test_e9_spk_qc_4point_tersendiri_tolak_menahan_roll():
+    qc = base.Api("qc@kainnusantara.id")
+    rolls = list(DB.inventory_rolls.find({"owner_entity_id": base.ENT, "status": "available", "earmarked_for": {"$in": [None, ""]},
+                                          "length_remaining": {"$gt": 20}}, {"_id": 0, "id": 1}).limit(2))
+    if len(rolls) < 2:
+        pytest.skip("roll tersedia tidak cukup di salinan data")
+    c, doc = qc.call("POST", "/inspections/qc-4point", {"roll_ids": [r["id"] for r in rolls]})
+    assert c == 200 and doc["kind"] == "qc_4point" and len(doc["lines"]) == 2, doc
+    l1, l2 = doc["lines"]
+    c, b = qc.call("POST", f"/inspections/{doc['id']}/lines/{l1['id']}/inspect", {"part": "md_quality", "color_result": "sesuai"})
+    assert c in (400, 403), b                                              # SPK QC tidak menerima bagian MD
+    c, b = qc.call("POST", f"/inspections/{doc['id']}/lines/{l1['id']}/inspect", {
+        "part": "qc", "inspect_length_yard": 100, "width_actual": 147.32,          # 58 inci
+        "defects": [{"interval": 0, "code": "CG", "point_value": 2, "count": 1},
+                    {"interval": 2, "code": "KO", "point_value": 4, "count": 1}],
+        "yard_split": {"A": 70, "A1": 0, "B": 30}, "repair_note": "potong 30-45", "remark": "noda KO", "decision": "tolak"})
+    assert c == 200, b
+    ln = next(x for x in b["lines"] if x["id"] == l1["id"])
+    assert ln["stdrt"] == round(6 * 3600 / (100 * 58), 2) and ln["yard_split"] == {"A": 70, "A1": 0, "B": 30}
+    assert ln["qc_remark"] == "noda KO" and ln["repair_note"] == "potong 30-45"
+    c, b = qc.call("POST", f"/inspections/{doc['id']}/lines/{l2['id']}/inspect", {"part": "qc", "inspect_length_yard": 50})
+    assert c == 200, b
+    c, b = qc.call("POST", f"/inspections/{doc['id']}/finish", {"decision": "terima", "remark": "lulus kecuali roll noda"})
+    assert c == 200, b
+    st = {r["id"]: r["status"] for r in DB.inventory_rolls.find({"id": {"$in": [l1["roll_id"], l2["roll_id"]]}}, {"_id": 0, "id": 1, "status": 1})}
+    assert st[l2["roll_id"]] == "available" and st[l1["roll_id"]] != "available"      # gagal QC → ditahan
+
+
+def test_e9_spk_penerimaan_baru_md_quality_saja():
+    """SPK yang lahir otomatis saat kedatangan masuk karantina = MD Quality saja; bagian QC ditolak; rencana QC bawaan
+    'tidak wajib' → SPK MD bisa ditutup (lepas karantina) tanpa menunggu QC 4-point."""
+    import test_f14_spk_one_decision as f14
+    u = {k: base.Api(e) for k, e in (("mgr", "manager@kainnusantara.id"), ("wh", "warehouse@kainnusantara.id"),
+                                    ("whadm", "wh.admin@kainnusantara.id"), ("qc", "qc@kainnusantara.id"),
+                                    ("mdq", "mdquality@kainnusantara.id"), ("adm", "admin@kainnusantara.id"))}
+    _, task, spk = f14._po_in_quarantine(u, rolls=2)
+    assert spk["md_only"] is True
+    spk = f14._inspect_all(u, spk)
+    c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/lines/{spk['lines'][0]['id']}/inspect", {"part": "qc", "defects": []})
+    assert c == 400 and "SPK QC 4-point" in str(b), b
+    c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/finish", {"decision": "terima", "remark": "MD lulus"})
+    assert c == 200 and (b.get("quarantine_result") or {}).get("accepted_qty", 0) > 0, b

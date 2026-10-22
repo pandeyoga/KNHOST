@@ -205,7 +205,9 @@ async def _create_qc_return(task: Dict[str, Any], po: Optional[Dict[str, Any]], 
     return safe_doc(doc)
 
 
-QC_MODES = ("all", "sampling")
+# Trial 22 Okt (E9) — "none" = QC 4-point TIDAK wajib sebelum lepas karantina (dikerjakan kapan saja di SPK QC 4-point
+# tersendiri; roll yang ditolak ditahan). Bawaan untuk kedatangan ber-SPK MD Quality baru (`inspections.md_only`).
+QC_MODES = ("all", "sampling", "none")
 
 
 def plan_sample_size(n_rolls: int, pct: float, min_rolls: int) -> int:
@@ -222,13 +224,18 @@ def roll_inspected(r: Dict[str, Any]) -> bool:
 
 async def qc_coverage(task: Dict[str, Any]) -> Dict[str, Any]:
     """PG01 — rencana (Cek semua / Sampling) + cakupan inspeksi aktual per task QC."""
-    plan = task.get("qc_plan") or {"mode": "all"}
+    plan = task.get("qc_plan")
+    if not plan:
+        md_only = await db.inspections.find_one({"task_id": task["id"], "md_only": True}, {"_id": 0, "id": 1})
+        plan = {"mode": "none" if md_only else "all"}
     rolls = await db.inventory_rolls.find({"qc_task_id": task["id"]},
                                           {"_id": 0, "id": 1, "inspection": 1, "grade_source": 1}).to_list(None)
     n = len(rolls)
     inspected = sum(1 for r in rolls if roll_inspected(r))
     if plan.get("mode") == "sampling":
         required = plan_sample_size(n, plan.get("sample_pct", 10), plan.get("sample_min", 1))
+    elif plan.get("mode") == "none":
+        required = 0
     else:
         required = n
     return {"mode": plan.get("mode", "all"), "sample_pct": plan.get("sample_pct"), "sample_min": plan.get("sample_min"),
@@ -242,7 +249,7 @@ async def set_qc_plan(task: Dict[str, Any], mode: str, sample_pct: float, sample
     if task.get("status") != "qc_pending":
         raise ValueError("Rencana QC hanya dapat diubah selama task menunggu QC.")
     if mode not in QC_MODES:
-        raise ValueError("Mode QC harus 'all' (Cek semua) atau 'sampling'.")
+        raise ValueError("Mode QC harus 'all' (Cek semua), 'sampling', atau 'none' (tidak wajib — QC kapan saja).")
     plan: Dict[str, Any] = {"mode": mode, "planned_by": actor.get("name", ""), "planned_at": now_iso()}
     if mode == "sampling":
         if not (0 < float(sample_pct or 0) <= 100):

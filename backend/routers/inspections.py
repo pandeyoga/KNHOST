@@ -27,7 +27,7 @@ from db import db
 from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import assert_active_entity_access, entity_ctx, resolve_list_scope
 from schemas_inspection import (InspectionAssign, InspectionCreate, InspectionFinish,
-                                InspectionLineInspect, InspectionReason, RandomCheckCreate)
+                                InspectionLineInspect, InspectionReason, QcFourPointCreate, RandomCheckCreate)
 from services import inspection_service as svc
 from services import line_scope
 
@@ -77,6 +77,20 @@ async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
 
 _PART_PERM = {"md_quality": ("md_quality", "inspect"), "qc": ("qc", "inspect"),
               "": ("inspection", "inspect")}
+
+
+@router.post("/inspections/qc-4point")
+async def create_qc_4point(payload: QcFourPointCreate, request: Request) -> Dict[str, Any]:
+    """Trial 22 Okt (E9) — SPK QC 4-point tersendiri (kapan saja): dari SPK MD Quality / tugas penerimaan / roll."""
+    actor = await require_permission(request, "qc", "inspect")
+    ctx = await entity_ctx(request)
+    try:
+        doc = await svc.create_qc_4point(payload.model_dump(), actor, ctx.active_entity_id)
+    except svc.InspectionError as exc:
+        raise _fail(exc) from exc
+    await audit(actor["name"], "inspection_qc4_created", "inspection", doc["id"],
+                {"number": doc["number"], "rolls": len(doc.get("lines") or [])})
+    return doc
 
 
 @router.post("/inspections/random-check")
@@ -277,7 +291,7 @@ async def finish_inspection(ins_id: str, payload: InspectionFinish,
     user_doc = await svc.get_one(ins_id)
     # F-14 (keputusan owner Q-03a) — SPK penerimaan PO kini SEKALIGUS memutus karantina, jadi pemutus karantina
     # (`qc.release`, bawaan QC/MD/Admin Gudang) boleh menutupnya — sama seperti random check.
-    if user_doc and user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT):
+    if user_doc and user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT, svc.KIND_QC_4POINT):   # + SPK QC 4-point (Trial 22 Okt E9)
         actor = await require_any_permission(request, [("inspection", "decide"), ("qc", "release")])
     else:
         actor = await require_permission(request, "inspection", "decide")

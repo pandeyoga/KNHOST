@@ -41,7 +41,7 @@ export default function QcPlanPanel({ taskId, onCoverage, onOpenRolls }) {
   return (
     <div className="grid gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="qc-plan-panel">
       <span className="text-[11px] font-bold uppercase text-[#6B6B73]">Rencana inspeksi</span>
-      <div className="flex gap-2">{opt("all", "Cek semua", ListChecks)}{opt("sampling", "Sampling", Percent)}</div>
+      <div className="flex gap-2">{opt("all", "Cek semua", ListChecks)}{opt("sampling", "Sampling", Percent)}{opt("none", "Tidak wajib (QC kapan saja)", ListChecks)}</div>
       {mode === "sampling" && (
         <div className="grid grid-cols-2 gap-2">
           <label className="grid gap-1 text-[11px] text-[#6B6B73]">% roll per lot

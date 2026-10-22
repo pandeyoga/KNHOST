@@ -25,7 +25,7 @@ ENT = "ent_ksc"
 def u():
     return {k: base.Api(e) for k, e in (("mgr", "manager@kainnusantara.id"), ("wh", "warehouse@kainnusantara.id"),
                                        ("whadm", "wh.admin@kainnusantara.id"), ("qc", "qc@kainnusantara.id"),
-                                       ("adm", "admin@kainnusantara.id"))}
+                                       ("mdq", "mdquality@kainnusantara.id"), ("adm", "admin@kainnusantara.id"))}
 
 
 def _po_in_quarantine(u, rolls=3, per_roll=50.0):
@@ -63,14 +63,16 @@ def _po_in_quarantine(u, rolls=3, per_roll=50.0):
 
 
 def _inspect_all(u, spk):
+    # Trial 22 Okt (E9) — SPK penerimaan kini MD Quality saja (QC 4-point = SPK tersendiri): diperiksa MD Quality.
     qc_user = DB.users.find_one({"email": "qc@kainnusantara.id"}, {"_id": 0, "id": 1})
     c, b = u["whadm"].call("POST", f"/inspections/{spk['id']}/assign", {"assigned_to": qc_user["id"], "bagian": "QC"})
     assert c == 200, b
     c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/start", {})
     assert c == 200, b
     for ln in spk["lines"]:
-        c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/lines/{ln['id']}/inspect",
-                            {"part": "qc", "defects": [], "remark": "uji F-14 bersih"})
+        c, b = u["mdq"].call("POST", f"/inspections/{spk['id']}/lines/{ln['id']}/inspect",
+                             {"part": "md_quality", "color_result": "sesuai", "handfeel_result": "sesuai",
+                              "remark": "uji F-14 bersih"})
         assert c == 200, b
     return DB.inspections.find_one({"id": spk["id"]}, {"_id": 0})
 

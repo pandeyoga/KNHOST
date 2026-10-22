@@ -8,6 +8,7 @@ import { formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import useDomainEnums from "../../hooks/useDomainEnums";
 import RollInspectionModal from "./RollInspectionModal";
+import { apiText, createQc4point } from "../inspections/inspectionsApi";
 import QcPlanPanel from "./QcPlanPanel";
 import useListSearch from "@/hooks/useListSearch";
 
@@ -232,9 +233,10 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
                                 onClick={() => openInspect(t)}>
                           <ShieldCheck size={13} /> Inspeksi
                         </button>
+                        {/* Trial 22 Okt (F3) — QC 4-point satu pintu: SPK QC 4-point (Lembar Inspect), bukan form roll terpisah. */}
                         <button data-testid={`qc-4point-btn-${i}`} className="btn-secondary btn-sm"
-                                onClick={() => setRoll4pTask(t)}>
-                          <ShieldCheck size={12} /> 4-Point Roll
+                                onClick={() => createQc4point({ task_id: t.id }).then((d) => d && onOpenSpk?.(d)).catch((e) => setError(apiText(e, "Gagal membuat SPK QC 4-point.")))}>
+                          <ShieldCheck size={12} /> SPK QC 4-point
                         </button>
                       </>
                     )}

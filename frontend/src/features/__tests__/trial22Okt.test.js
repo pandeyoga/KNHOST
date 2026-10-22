@@ -2,6 +2,7 @@
 // D2: hitung fisik GRN — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; satuan yang dipilih
 //     ikut dikirim (server mengonversi ke satuan dasar). Dulu label "Panjang (meter)" tetapi angka disimpan sebagai yard.
 // A2/F1: tab Cutting — pesanan catalogue tampil SATU paket (bukan 9 tugas), "Potong semua" = satu panggilan batch.
+// F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
 //     harga ditolak → tiga pilihan sales, dialog Admin Sales "Periksa & lepas ke gudang" (+ tahan dulu).
 import React, { act } from "react";
@@ -12,6 +13,7 @@ import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage } from "../sales_admin/workDeskApi";
 import CuttingOpsView from "../wms/CuttingOpsView";
+import InspectSheetGrid, { parseCell, stdrt } from "../inspections/InspectSheetGrid";
 
 const posted = [];
 jest.mock("../wms/grn/grnApi", () => ({
@@ -161,5 +163,35 @@ test("A2/F1: tab Cutting — 9 baris catalogue jadi satu paket; Potong semua mem
   await act(async () => { q("cutting-pkg-cut-all-so5").click(); });
   await tick();
   expect(apiCalls.filter(([m, url]) => m === "post" && url === "/api/outbound/so/so5/cut-samples")).toHaveLength(1);
+  act(() => root.unmount());
+});
+
+
+test("F5: sel lembar inspect — KODE+POIN, beberapa per sel; isian salah ditandai; STDRT = poin×3600÷(yd×inci)", () => {
+  expect(parseCell("CG2 ko1, BL4")).toEqual({ defects: [{ code: "CG", point_value: 2 }, { code: "KO", point_value: 1 },
+    { code: "BL", point_value: 4 }], bad: [] });
+  expect(parseCell("CG5 x").bad).toEqual(["CG5", "x"]);
+  expect(stdrt(6, 100, 58)).toBe(3.72);
+  expect(stdrt(6, 0, 58)).toBeNull();
+});
+
+test("F5: Lembar Inspect menyimpan baris via bagian QC (interval, lebar inci→cm, yard per grade, tolak)", async () => {
+  apiCalls.length = 0;
+  const doc = { id: "ins1", number: "INS-1", status: "in_progress", spk_date: "2026-10-22", supplier_name: "PT Uji",
+    lines: [{ id: "l1", roll_id: "r1", roll_no: "RL-1", article: "Batik", quantity: 100, unit: "yard", defects: [] }] };
+  const root = await mount(<InspectSheetGrid doc={doc} meta={{ defect_codes: [{ code: "CG", label: "" }] }} editable onSaved={() => {}} />);
+  const typeIn = async (id, v) => { const el = q(id); await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new Event("input", { bubbles: true })); }); };
+  await typeIn("ins-sheet-width-l1", "58");
+  await typeIn("ins-sheet-cell-l1-0", "CG2");
+  await typeIn("ins-sheet-cell-l1-2", "KO4");
+  expect(q("ins-sheet-points-l1").textContent).toBe("6");
+  expect(q("ins-sheet-stdrt-l1").textContent).toBe("3.72");
+  await act(async () => { q("ins-sheet-reject-l1").click(); });
+  await act(async () => { q("ins-sheet-save").click(); });
+  await tick();
+  const call = apiCalls.find(([m, url]) => m === "post" && url === "/api/inspections/ins1/lines/l1/inspect");
+  expect(call[2]).toMatchObject({ part: "qc", inspect_length_yard: 100, width_actual: 147.3, decision: "tolak",
+    defects: [{ code: "CG", point_value: 2, interval: 0, count: 1, note: "" }, { code: "KO", point_value: 4, interval: 2, count: 1, note: "" }] });
   act(() => root.unmount());
 });

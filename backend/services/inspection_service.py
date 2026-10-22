@@ -55,6 +55,10 @@ KIND_REPLACEMENT = "replacement"
 KIND_RANDOM_CHECK = "random_check"
 # L05 LN-050-T01 — QC atas permintaan checkout SO (seluruh / sampling) atas roll alokasi TERBARU.
 KIND_SALES_ORDER = "sales_order"
+# Trial 22 Okt 2026 (E9, keputusan pemilik) — SPK QC 4-point BERDIRI SENDIRI (dulu bagian dari SPK penerimaan): bisa
+# dibuat kapan saja (dari kedatangan, dari SPK MD Quality, atau roll stok); baris DITOLAK menahan roll.
+KIND_QC_4POINT = "qc_4point"
+QC4_HOLD_PREFIX = "QC 4-point GAGAL"
 #: Jenis yang hasil warna & handfeel-nya milik MD Quality (DEC-06, pemilik 2026-10-12).
 MD_QUALITY_KINDS: Tuple[str, ...] = ("po_receipt", "makloon_output")
 
@@ -66,6 +70,7 @@ KIND_LABEL: Dict[str, str] = {
     KIND_REPLACEMENT: "Inspeksi Barang Pengganti",
     KIND_RANDOM_CHECK: "Random Check Stok (QC)",
     KIND_SALES_ORDER: "QC Permintaan Pesanan (SO)",
+    KIND_QC_4POINT: "SPK QC 4-point",
 }
 
 # ─── Mesin keadaan (sengaja pendek) ──────────────────────────────────────────
@@ -170,6 +175,18 @@ def _assert_status(doc: Dict[str, Any], allowed: Tuple[str, ...], what: str) -> 
         raise InspectionError(
             f"Inspeksi berstatus \u201c{STATUS_LABEL.get(doc.get('status'), doc.get('status'))}\u201d "
             f"tidak bisa {what}.")
+
+
+def stdrt_points(points: Any, length_yard: Any, width_cm: Any) -> Optional[float]:
+    """Trial 22 Okt (F5) — STDRT kertas inspect = poin per 100 yard persegi = poin × 3600 ÷ (yard diinspeksi × lebar
+    inci). None bila panjang/lebar belum ada (lebar disimpan cm → inci = cm ÷ 2,54)."""
+    try:
+        p, ln, w = float(points or 0), float(length_yard or 0), float(width_cm or 0) / 2.54
+    except (TypeError, ValueError):
+        return None
+    if ln <= 0 or w <= 0:
+        return None
+    return round(p * 3600.0 / (ln * w), 2)
 
 
 def summarize(doc: Dict[str, Any]) -> Dict[str, Any]:
@@ -459,6 +476,9 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
            "baseline_contract_id": "", "baseline_color": ""},
         **baseline,
         "lines": rows,
+        # Trial 22 Okt (E9) — SPK penerimaan PO/makloon BARU = SPK MD Quality saja (warna/handfeel); QC 4-point dibuat
+        # sebagai SPK tersendiri. Dokumen lama (tanpa penanda) tetap berisi dua bagian seperti sebelumnya.
+        "md_only": kind in MD_QUALITY_KINDS,
         "decision": "", "decision_label": "", "remark": (remark or "").strip(),
         "reject_reason": "", "reopen_reason": "",
         "created_by": actor.get("name", ""), "created_by_id": actor.get("id", ""),
@@ -802,8 +822,15 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
     part = str(payload.get("part") or "").strip().lower()
     if part not in ("", "md_quality", "qc"):
         raise InspectionError("Bagian pemeriksaan harus md_quality atau qc.")
-    if part == "md_quality" and doc.get("kind") == KIND_RANDOM_CHECK:
-        raise InspectionError("Random check hanya berisi pemeriksaan QC (4-point).")
+    if part == "md_quality" and doc.get("kind") in (KIND_RANDOM_CHECK, KIND_QC_4POINT):
+        raise InspectionError("SPK ini hanya berisi pemeriksaan QC (4-point).")
+    if doc.get("md_only"):
+        if part == "qc":
+            raise InspectionError("QC 4-point dikerjakan di SPK QC 4-point tersendiri — buat dari tombol "
+                                  "'Buat SPK QC 4-point' di SPK ini.")
+        part = "md_quality"
+    elif doc.get("kind") == KIND_QC_4POINT:
+        part = "qc"
     # F-13 (uji pra-UAT 2026-10-21, keputusan owner Q-06b) — MD Quality (seperti QC) baru boleh mengisi SESUDAH SPK
     # ditugaskan; dulu bagian md_quality boleh diisi saat SPK masih draft (hasil tanpa penanggung jawab).
     allowed = (STATUS_ASSIGNED, STATUS_IN_PROGRESS)
@@ -837,9 +864,21 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
         "delta_e": (float(payload["delta_e"]) if payload.get("delta_e") not in (None, "")
                     else line.get("delta_e")),
         "decision": decision or line.get("decision", ""),
-        "remark": str(payload.get("remark") or line.get("remark", "")),
         "inspected_by": actor.get("name", ""), "inspected_at": now_iso(),
     }
+    # Trial 22 Okt (F4) — catatan MD Quality & QC disimpan TERPISAH (dulu satu `remark` → catatan QC menimpa MD).
+    remark_key = {"md_quality": "md_remark", "qc": "qc_remark"}.get(part, "remark")
+    patch[remark_key] = str(payload.get("remark") or line.get(remark_key, "") or "")
+    if part == "":
+        patch["remark"] = patch[remark_key]
+    if part in ("", "qc"):
+        # Trial 22 Okt (F5) — kolom kertas inspect: yard per grade (A/A1/B) & perbaikan (dicatat; grade roll tetap
+        # dari aturan yang berlaku sampai pemilik memutuskan pecahan grade per yard).
+        ys = payload.get("yard_split") or {}
+        if ys:
+            patch["yard_split"] = {k: round(float(ys.get(k) or 0), 2) for k in ("A", "A1", "B")}
+        if payload.get("repair_note") is not None:
+            patch["repair_note"] = str(payload.get("repair_note") or "")[:300]
     if part in ("", "md_quality"):
         patch.update({"md_quality_by": actor.get("name", ""), "md_quality_at": now_iso()})
     if part in ("", "qc"):
@@ -907,6 +946,8 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             "hold": bool((result.get("hold") or {}).get("held")),
             "hold_reason": (result.get("hold") or {}).get("reason", ""),
         })
+        patch["stdrt"] = stdrt_points(result.get("points"), payload.get("inspect_length_yard"),
+                                      patch.get("width_actual") or line.get("width_standard"))
         warnings = list(result.get("qc_warnings") or [])
     else:
         # Baris retur: tidak ada roll → tidak ada grade. Warna/handfeel tetap dicatat
@@ -1003,6 +1044,15 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
             roll_order=accepted + [r for r in ids if r in rejected], roll_grades=grades)
     except ValueError as exc:
         raise InspectionError(str(exc)) from exc
+    # Trial 22 Okt (E9) — roll yang GAGAL di SPK QC 4-point saat masih karantina: lepas karantina → langsung DITAHAN.
+    from services import roll_hold_service as _rh
+    for r in await db.inventory_rolls.find({"id": {"$in": accepted}, "qc_hold_pending": {"$exists": True}},
+                                           {"_id": 0}).to_list(500):
+        try:
+            await _rh.hold_roll(r, (r.get("qc_hold_pending") or {}).get("reason") or QC4_HOLD_PREFIX, actor)
+            await db.inventory_rolls.update_one({"id": r["id"]}, {"$unset": {"qc_hold_pending": ""}})
+        except ValueError:
+            pass
     return {"task_id": task["id"], "accepted_qty": res.get("accepted_qty", 0.0), "rejected_qty": res.get("rejected_qty", 0.0),
             "reject_disposition": res.get("reject_disposition"), "purchase_return": res.get("purchase_return"),
             "task_status": res.get("task_status"), "rejected_roll_ids": sorted(rejected), "at": now_iso(),
@@ -1032,6 +1082,8 @@ async def finish(ins_id: str, decision: str, remark: str,
             "membuat tanggalnya jadi bukti palsu.")
     if doc.get("kind") == KIND_RANDOM_CHECK and any(not ln.get("qc_at") for ln in lines):
         raise InspectionError("Random check: periksa SEMUA roll dulu — roll yang belum dicek tetap ditahan.")
+    if doc.get("kind") == KIND_QC_4POINT and any(not ln.get("qc_at") for ln in lines):
+        raise InspectionError("SPK QC 4-point: periksa SEMUA roll dulu.")
     qres = None
     if doc.get("kind") == KIND_PO_RECEIPT and doc.get("task_id"):
         # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
@@ -1045,6 +1097,9 @@ async def finish(ins_id: str, decision: str, remark: str,
                       decided_by=actor.get("name", ""), decided_at=now_iso(), **extra)
     if doc.get("kind") == KIND_RANDOM_CHECK:
         await _close_random_check(out, dec, actor)
+        out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
+    if doc.get("kind") == KIND_QC_4POINT:
+        await _close_qc_4point(out, dec, actor)
         out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
     # FASE I.F — `sales_returns.inspect_done_at` DITURUNKAN dari sini, tidak pernah
     # diketik: dua tanggal "inspeksi selesai" yang bisa berbeda adalah kelas bug
@@ -1151,11 +1206,78 @@ async def _close_random_check(doc: Dict[str, Any], dec: str, actor: Dict[str, An
                 f"{sum(1 for x in lines if x['random_check_result'] == 'gagal')} gagal", actor, lines=lines)
 
 
+async def create_qc_4point(payload: Dict[str, Any], actor: Dict[str, Any], entity_id: str) -> Dict[str, Any]:
+    """Trial 22 Okt (E9) — SPK QC 4-point tersendiri, kapan saja: roll dari SPK MD Quality (`inspection_id`), dari tugas
+    penerimaan (`task_id`), atau daftar roll (`roll_ids`). Tidak menahan roll saat dibuat (QC tidak menghambat alur);
+    baris DITOLAK saat SPK ditutup → roll ditahan (`_close_qc_4point`)."""
+    src_ins = str(payload.get("inspection_id") or "").strip()
+    task_id = str(payload.get("task_id") or "").strip()
+    roll_ids = [str(r) for r in payload.get("roll_ids") or [] if r]
+    ref = ("", "", "")
+    if src_ins:
+        src = await _load(src_ins)
+        entity_id = src.get("entity_id") or entity_id
+        roll_ids = [ln["roll_id"] for ln in src.get("lines") or [] if ln.get("roll_id")]
+        ref = ("inspection", src["id"], src.get("number", ""))
+    elif task_id:
+        task = await db.wms_tasks.find_one({"id": task_id}, {"_id": 0, "id": 1, "po_number": 1, "entity_id": 1})
+        if not task:
+            raise InspectionError("Tugas penerimaan tidak ditemukan.")
+        roll_ids = [r["id"] async for r in db.inventory_rolls.find({"qc_task_id": task_id}, {"_id": 0, "id": 1})]
+        ref = ("", "", task.get("po_number", ""))
+    if not entity_id or entity_id == "all":
+        raise InspectionError("Pilih satu badan usaha dulu — SPK QC milik satu badan usaha.")
+    rolls = await db.inventory_rolls.find({"id": {"$in": roll_ids}, "owner_entity_id": entity_id},
+                                          {"_id": 0}).to_list(500)
+    if not rolls:
+        raise InspectionError("Tidak ada roll untuk diperiksa QC 4-point.")
+    assigned = await _resolve_assignee(str(payload.get("assigned_to") or actor.get("id") or ""), entity_id)
+    doc = await _new_doc(kind=KIND_QC_4POINT, entity_id=entity_id, actor=actor,
+                         ref_doc_type=ref[0], ref_doc_id=ref[1], ref_doc_number=ref[2],
+                         lines=await _lines_from_rolls(rolls), assigned=assigned,
+                         remark=str(payload.get("remark") or "") or (f"QC 4-point {len(rolls)} roll"
+                                + (f" dari {ref[2]}" if ref[2] else "") + " — baris ditolak menahan roll."))
+    await db[COLL].update_one({"id": doc["id"]}, {"$set": {"source_inspection_id": src_ins, "source_task_id": task_id}})
+    return safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
+
+
+async def _close_qc_4point(doc: Dict[str, Any], dec: str, actor: Dict[str, Any]) -> None:
+    """Roll GAGAL (baris `tolak` / keputusan `tolak`) DITAHAN: tersedia → ditahan sekarang; masih karantina → ditahan
+    saat SPK MD Quality melepas karantina; status lain (sudah terikat pesanan/terkirim) → ditandai gagal untuk
+    diputus manual. Roll lulus tidak disentuh (grade 4-point sudah ditulis saat baris diperiksa)."""
+    from services import roll_hold_service as rh
+    lines = []
+    for ln in doc.get("lines") or []:
+        failed = dec == "tolak" or str(ln.get("decision") or "") == "tolak"
+        result = "lulus"
+        if failed and ln.get("roll_id"):
+            note = ln.get("qc_remark") or ln.get("remark") or ""
+            reason = f"{QC4_HOLD_PREFIX} — SPK {doc.get('number', '')}" + (f": {note}" if note else "")
+            roll = await db.inventory_rolls.find_one({"id": ln["roll_id"]}, {"_id": 0}) or {}
+            if roll.get("status") == "available" and not roll.get("earmarked_for"):
+                try:
+                    await rh.hold_roll(roll, reason, actor)
+                    result = "ditahan"
+                except ValueError:
+                    result = "gagal — putuskan manual"
+            elif roll.get("status") == "quarantine":
+                await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {"qc_hold_pending": {
+                    "reason": reason, "spk": doc.get("number", ""), "at": now_iso()}}})
+                result = "ditahan saat lepas karantina"
+            else:
+                await db.inventory_rolls.update_one({"id": ln["roll_id"]}, {"$set": {"qc_failed": {
+                    "reason": reason, "spk": doc.get("number", ""), "at": now_iso()}}})
+                result = f"gagal — roll berstatus {roll.get('status') or '-'}, putuskan manual"
+        lines.append({**ln, "hold": failed, "qc4_result": result})
+    lulus = sum(1 for x in lines if x["qc4_result"] == "lulus")
+    await _save(doc, "qc4_closed", f"QC 4-point ditutup: {lulus} lulus, {len(lines) - lulus} gagal", actor, lines=lines)
+
+
 async def reopen(ins_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await _load(ins_id)
     _assert_status(doc, (STATUS_DONE,), "dibuka kembali")
-    if doc.get("kind") == KIND_RANDOM_CHECK:
-        raise InspectionError("Random check yang sudah ditutup tidak bisa dibuka — buat random check baru.")
+    if doc.get("kind") in (KIND_RANDOM_CHECK, KIND_QC_4POINT):
+        raise InspectionError("SPK QC yang sudah ditutup tidak bisa dibuka — buat SPK QC baru.")
     if doc.get("quarantine_result"):   # F-14 — stok sudah dilepas/diretur oleh keputusan SPK ini
         raise InspectionError(
             "Keputusan SPK ini sudah memutus karantina (stok diterima/ditolak) — tidak bisa dibuka kembali. "
@@ -1304,11 +1426,28 @@ async def stats(scope: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+# Trial 22 Okt (F5) — kode cacat di kertas "DATA HASIL INSPECT" pemilik. Arti tiap kode diisi pemilik di Pengaturan
+# (`qc.defect_codes` = [{code, label}]); sampai itu, kode tampil apa adanya sebagai legenda & saran isian.
+DEFAULT_DEFECT_CODES = [{"code": c, "label": ""} for c in ("CG", "KO", "BL", "M", "CR", "BT")]
+
+
+async def defect_codes(entity_id: str = "") -> List[Dict[str, str]]:
+    try:
+        from services.config_service import get_effective_settings
+        rows = ((await get_effective_settings(entity_id or None)).get("qc") or {}).get("defect_codes") or []
+        rows = [{"code": str(r.get("code") or "").strip().upper(), "label": str(r.get("label") or "")}
+                for r in rows if isinstance(r, dict) and r.get("code")]
+        return rows or DEFAULT_DEFECT_CODES
+    except Exception:  # noqa: BLE001 — legenda tidak boleh menggagalkan meta
+        return DEFAULT_DEFECT_CODES
+
+
 async def meta(entity_id: str = "") -> Dict[str, Any]:
     """Kosakata + kebijakan yang BERLAKU — layar tidak boleh menebak keduanya."""
     pol = await _policy(entity_id)
     return {
-        "kinds": [{"value": k, "label": v} for k, v in KIND_LABEL.items() if k != KIND_RANDOM_CHECK],
+        "defect_codes": await defect_codes(entity_id),
+        "kinds": [{"value": k, "label": v} for k, v in KIND_LABEL.items() if k not in (KIND_RANDOM_CHECK, KIND_QC_4POINT)],
         "all_kinds": [{"value": k, "label": v} for k, v in KIND_LABEL.items()],
         "md_quality_kinds": list(MD_QUALITY_KINDS),
         "statuses": [{"value": s, "label": STATUS_LABEL[s]} for s in BOARD_ORDER],
