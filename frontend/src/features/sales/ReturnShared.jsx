@@ -25,10 +25,8 @@ export const OUTCOME_LABEL = {
 export function fmtNum(n, d = 1) {
   return new Intl.NumberFormat("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
 }
-export function fmtDate(s) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-}
+// 23 Okt — tanggal retur memakai formatter baku berzona WIB (dulu zona perangkat → tenggat beda sehari antar-layar).
+export { formatDate as fmtDate, formatDateTime as fmtDateTime } from "../../utils/formatters";
 export function ReturnStatusPill({ status }) {
   const s = STATUS_STYLE[status] || { cls: "pill-muted", label: status };
   return <span className={`status-pill ${s.cls}`} data-testid={`return-status-pill-${status}`}>{s.label}</span>;

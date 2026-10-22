@@ -593,7 +593,8 @@ async def create_return(
 # yang keempat DITURUNKAN dari dokumen inspeksi (`attach_inspection`/`mark_inspected`)
 # supaya tidak ada dua tanggal "inspeksi selesai" yang bisa berbeda.
 RETURN_MILESTONES: Dict[str, Tuple[str, str]] = {
-    "shipped_to_store":    ("shipped_to_store_at",    "SJ Kirim Toko"),
+    # 23 Okt — label dibuat jelas (dulu "SJ Kirim Toko"): saat barang retur dikirim/dijemput dari pelanggan.
+    "shipped_to_store":    ("shipped_to_store_at",    "Barang dikirim/dijemput dari pelanggan"),
     "shipped_to_customer": ("shipped_to_customer_at", "Kirim ke pelanggan"),
     "goods_arrived":       ("goods_arrived_at",       "Barang sampai"),
 }
@@ -633,7 +634,7 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
     # pengiriman pengganti (jalur keluar) dan tidak bisa menjadi bukti barang retur sampai.
     if key == "goods_arrived" and not (ret.get("shipped_to_store_at") or ret.get("journey_events")):
         raise ValueError(
-            "Tandai SJ Kirim Toko atau scan terima barang dulu — barang retur tidak bisa "
+            "Catat barang dikirim/dijemput atau scan terima barang dulu — barang retur tidak bisa "
             "“sampai” sebelum pernah dikirim balik. Pengiriman pengganti ke pelanggan tidak dihitung.")
 
     # L09 LN-090-T01 — pengganti tidak boleh dikirim final sebelum barang retur selesai QC.
@@ -652,6 +653,51 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
          "$push": {"milestones": entry}})
     out = await db.sales_returns.find_one({"id": return_id})
     out.pop("_id", None)
+    return out
+
+
+# 23 Okt (permintaan pemilik) — tahap "PENGEMBALIAN BARANG" antara ACC dan QC: BAGAIMANA barang kembali (dijemput
+# armada KN / dikirim pelanggan via ekspedisi + resi / diantar pelanggan) dan KAPAN. Penerimaan per roll tetap lewat
+# scan gudang (`return_journey_service.scan`) — tanggal "Barang sampai" diisi oleh scan itu.
+RETURN_SHIPMENT_METHODS: Dict[str, str] = {
+    "pickup_fleet": "Dijemput armada KN",
+    "customer_courier": "Dikirim pelanggan via ekspedisi",
+    "customer_dropoff": "Diantar sendiri oleh pelanggan",
+}
+
+
+async def record_return_shipment(return_id: str, payload: Dict[str, Any], actor: str) -> Dict[str, Any]:
+    """Catat cara & waktu barang retur kembali. `shipped` = barang SUDAH dikirim/dijemput (menandai tonggak
+    "dikirim/dijemput"); tanpa itu = rencana (mis. jadwal jemput)."""
+    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise ValueError(f"Return {return_id} tidak ditemukan")
+    if ret.get("status") not in (st.APPROVED, st.INSPECTING):
+        raise ValueError("Pengembalian barang dicatat sesudah retur disetujui dan sebelum QC selesai.")
+    method = str(payload.get("method") or "").strip()
+    if method not in RETURN_SHIPMENT_METHODS:
+        raise ValueError("Pilih cara barang kembali: " + ", ".join(RETURN_SHIPMENT_METHODS.values()) + ".")
+    clean = lambda k, n=120: str(payload.get(k) or "").strip()[:n]  # noqa: E731
+    courier, tracking = clean("courier"), clean("tracking_no", 60)
+    if method == "customer_courier" and not (courier and tracking):
+        raise ValueError("Ekspedisi pelanggan: isi nama ekspedisi & nomor resi supaya gudang bisa melacak barangnya.")
+    shipped = bool(payload.get("shipped"))
+    when = clean("shipped_at", 40) or (now_iso() if shipped else "")
+    if shipped and when[:10] > now_iso()[:10]:
+        raise ValueError("Tanggal dikirim/dijemput tidak boleh di masa depan — isi jadwal jemput sebagai rencana.")
+    rec = {"method": method, "method_label": RETURN_SHIPMENT_METHODS[method], "courier": courier,
+           "tracking_no": tracking, "driver": clean("driver"), "vehicle": clean("vehicle", 40),
+           "scheduled_at": clean("scheduled_at", 40), "shipped": shipped, "shipped_at": when if shipped else "",
+           "note": clean("note", 300), "recorded_by": actor, "recorded_at": now_iso()}
+    await db.sales_returns.update_one(
+        {"id": return_id},
+        {"$set": {"return_shipment": rec, "updated_at": now_iso()},
+         "$push": {"return_shipment_history": rec}})
+    if shipped:
+        detail = " · ".join(x for x in (rec["method_label"], courier, tracking and f"resi {tracking}",
+                                         rec["driver"], rec["vehicle"]) if x)
+        return await mark_milestone(return_id, "shipped_to_store", actor, at=when, note=detail)
+    out = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     return out
 
 

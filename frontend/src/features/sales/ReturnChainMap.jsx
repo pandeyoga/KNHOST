@@ -4,6 +4,8 @@
  * Read-only: hanya menggambar `steps` & `rolls` dari GET /api/returns/chain/{id}.
  */
 import { ArrowDown, ArrowRight, Boxes, Building2, EyeOff, Factory, Truck, User, Warehouse } from "lucide-react";
+import { docStatusLabel } from "../../utils/docStatus";      // 23 Okt — tanpa kode status mentah
+import { formatDate } from "../../utils/formatters";
 
 const TONE = {
   sales_return: { ring: "border-[#F5C9A6]", head: "bg-[#FFE9D6] text-[#8C4A00]", Icon: Building2 },
@@ -49,8 +51,8 @@ function StageNode({ step, current }) {
         {step.entity_name && <span className="block truncate text-[#3C3C43]">{step.entity_name}</span>}
         {step.stage === "interco_return" && step.party && <span className="block truncate text-[#0F6B52]">→ {step.party}</span>}
         <span className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-[#6E6E73]">
-          <span className="truncate">{step.status || ""}</span>
-          <span className="shrink-0">{step.date ? String(step.date).slice(0, 10) : ""}</span>
+          <span className="truncate">{docStatusLabel(step.status)}</span>
+          <span className="shrink-0">{step.date ? formatDate(step.date) : ""}</span>
         </span>
       </div>
     </div>

@@ -1,14 +1,22 @@
-/** Sub-fase 1.11 — Return detail panel with approve/reject/upload. */
+/** Sub-fase 1.11 — Return detail panel with approve/reject/upload.
+ *  23 Okt (keluhan pemilik: halaman retur kacau, panel tumpang tindih) — isi dikelompokkan ke TAB: Ringkasan (roll,
+ *  langkah aktif: pengembalian barang & QC SPK, lampiran, keluhan, nota kredit) · Logistik & perjalanan · Kebijakan &
+ *  keputusan · Stok & rantai · Riwayat. Panel tab non-aktif disembunyikan (bukan dilepas) supaya isian/data tidak
+ *  hilang saat berpindah tab. Modal tolak/pembalikan memakai ConfirmModal standar. */
 import { can, canSeeGrade } from "../../config/roles";
 import { useState, useRef, useEffect } from "react";
 import { AskKnButton } from "../../components/AskKnButton";
 import axios, { API } from "../../services/apiClient";
 import {
   AlertCircle, Check, CheckCircle2, FileText, Loader2,
-  Package, Paperclip, Receipt, RotateCcw, Upload, X, XCircle,
+  Paperclip, Receipt, RotateCcw, Upload, X, XCircle,
 } from "lucide-react";
-import { ReturnTypeBadge, ReturnStatusPill, OUTCOME_LABEL, fmtNum, fmtDate } from "./ReturnShared";
+import { ReturnTypeBadge, ReturnStatusPill, OUTCOME_LABEL, fmtDate } from "./ReturnShared";
+import { formatCurrency } from "../../utils/formatters";
 import ReturnTimeline from "../../components/ReturnTimeline";
+import ConfirmModal from "../../components/ConfirmModal";
+import { StatusTabs } from "../../components/ListControls";
+import ReturnShipmentPanel from "./ReturnShipmentPanel"; // 23 Okt — tahap Pengembalian barang
 import ReturnStepper from "./ReturnStepper";           // UI/UX 2026-06 — peta alur + langkah berikutnya
 import ReturnSpkPanel from "./ReturnSpkPanel";       // 23 Okt — QC retur lewat SPK per roll (menu Kualitas)
 import ReturnSettleModal from "./ReturnSettleModal";
@@ -38,9 +46,8 @@ export default function ReturnDetail({
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [showReverseModal, setShowReverseModal] = useState(false);
-  const [reverseReason, setReverseReason]     = useState("");
-  const [reversing, setReversing]             = useState(false);
-  const [rejectReason, setRejectReason]       = useState("");
+  const [reverseErr, setReverseErr]           = useState("");
+  const [tab, setTab]                         = useState("ringkasan");
   const [uploading, setUploading]             = useState(false);
   const [localError, setLocalError]           = useState(null);
   const [rejectErr, setRejectErr]             = useState("");
@@ -126,20 +133,24 @@ export default function ReturnDetail({
     } catch (_) { /* best-effort */ }
   }
 
-  // R5.4 — reversal/koreksi retur yang sudah settled.
-  async function submitReverse() {
-    if (!reverseReason.trim()) return;
-    setReversing(true);
+  // R5.4 — reversal/koreksi retur yang sudah settled (galat tampil DI DALAM dialog; dialog tetap terbuka).
+  async function submitReverse(reason) {
+    setReverseErr("");
     try {
-      await onReverse(ret, reverseReason.trim());
+      await onReverse(ret, reason);
       setShowReverseModal(false);
-      setReverseReason("");
     } catch (e) {
-      setLocalError("Gagal reversal: " + (e.response?.data?.detail || e.message));
-    } finally {
-      setReversing(false);
+      setReverseErr("Gagal pembalikan: " + (e.response?.data?.detail || e.message));
     }
   }
+  const detailRet = enriched?.items?.length ? { ...ret, items: enriched.items } : ret;   // + nomor roll & SKU
+  const showShipment = ["approved", "inspecting"].includes(ret.status) || !!ret.return_shipment;
+  const TABS = [
+    { key: "ringkasan", label: "Ringkasan" },
+    { key: "logistik", label: "Logistik & perjalanan" },
+    ...(fullView ? [{ key: "keputusan", label: "Kebijakan & keputusan" }, { key: "stok", label: "Stok & rantai" }] : []),
+    { key: "riwayat", label: "Riwayat" },
+  ];
 
   return (
     <div data-testid="return-detail-view" className="view-container">
@@ -210,7 +221,7 @@ export default function ReturnDetail({
             </div>
           )}
           {isSettled && canApprove && (
-            <button data-testid="reverse-return-btn" className="danger-button" onClick={() => setShowReverseModal(true)}>
+            <button data-testid="reverse-return-btn" className="danger-button" onClick={() => { setReverseErr(""); setShowReverseModal(true); }}>
               <RotateCcw size={13} /> Batal / Pembalikan
             </button>
           )}
@@ -243,167 +254,156 @@ export default function ReturnDetail({
           className="mb-3 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
       )}
 
-      {/* UI/UX 2026-06 — SEDANG DI MANA dokumen ini & APA langkah berikutnya. */}
-      <ReturnStepper status={ret.status} draftDiscarded={ret.status === "cancelled" && !ret.reversed} />
-
-      {/* Kelayakan kebijakan retur — tampil sebelum keputusan diambil. */}
-      {fullView && <>
-        <ReturnEligibilityPanel ret={ret} />
-        <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
-        <ReturnCompensationPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
-        <ReturnReplacementPanel ret={ret} onChanged={refetchReturn} onNavigate={onNavigate} />
-        <ReturnLogisticsPanel key={`${ret.id}-${ret.status}`} ret={ret} onChanged={refetchReturn} />
-      </>}
-
-      {/* FASE I.F — sebab keluhan (master) + perjalanan retur (lembar pemilik).
-          Ditaruh SEBELUM panel inspeksi 4-point karena itulah urutan kerjanya:
-          keluhan dicatat → barang berjalan → baru diperiksa. */}
-      <ReturnJourneyPanel ret={ret} canEdit={canUpdate && ret.status !== "cancelled" && (!isTerminal || canApprove)}
-        onChanged={(fresh) => onReturnChanged?.(fresh)} />
-
-      <ReturnTimelinePanel ret={ret} canEdit={canScan && !isTerminal} onChanged={refetchReturn} />
-
+      {/* UI/UX 2026-06 — SEDANG DI MANA dokumen ini & APA langkah berikutnya (23 Okt: 5 langkah, dibaca dari data). */}
+      <ReturnStepper ret={detailRet} draftDiscarded={ret.status === "cancelled" && !ret.reversed} />
       <EvidenceBanner ev={enriched?.evidence} hasFiles={attachments.length > 0} />
 
-      {/* R2 — QC retur (approved → inspecting → inspected) lewat SPK per roll: layar ini menugaskan & melihat;
-          pemeriksaan diisi di menu Kualitas › SPK Inspeksi (form 4-point yang sama dengan QC penerimaan). */}
-      {canSeeGrade(currentUser) && (canInspect || fullView) && <ReturnSpkPanel ret={ret} currentUser={currentUser} onOpenDocument={onOpenDocument} onChanged={refetchReturn} />}
+      <StatusTabs tabs={TABS} value={tab} onChange={setTab} testIdPrefix="return-tab" />
 
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="space-y-2">
-          <ReturnRollsPanel ret={ret} items={(enriched?.items?.length ? enriched.items : ret.items) || []} fullView={fullView}
-            estimatedValue={enriched?.estimated_value}
-            canDecide={["draft", "pending_approval"].includes(ret.status) && can(perms, "sales_return", "decide_rolls")}
-            onChanged={refetchReturn} />
-          {ret.notes && <div className="section-notes"><strong>Catatan:</strong> {ret.notes}</div>}
+      {/* ── RINGKASAN: roll yang diretur + langkah yang sedang berjalan ── */}
+      <div hidden={tab !== "ringkasan"} className="mt-3 space-y-3" data-testid="return-tabpanel-ringkasan">
+        {showShipment && <ReturnShipmentPanel ret={detailRet} canEdit={canScan && !isTerminal} onChanged={refetchReturn} />}
+
+        {/* R2 — QC retur lewat SPK per roll: layar ini menugaskan & melihat; pemeriksaan diisi di menu Kualitas. */}
+        {canSeeGrade(currentUser) && (canInspect || fullView) && <ReturnSpkPanel ret={ret} currentUser={currentUser} onOpenDocument={onOpenDocument} onChanged={refetchReturn} />}
+
+        <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <ReturnRollsPanel ret={ret} items={detailRet.items || []} fullView={fullView}
+              estimatedValue={enriched?.estimated_value}
+              canDecide={["draft", "pending_approval"].includes(ret.status) && can(perms, "sales_return", "decide_rolls")}
+              onChanged={refetchReturn} />
+            {ret.notes && <div className="section-notes"><strong>Catatan:</strong> {ret.notes}</div>}
+          </div>
+
+          <Panel icon={Paperclip} title="Lampiran bukti" testId="return-attachments-panel"
+            right={canUpdate && !isTerminal && (
+              <button data-testid="upload-attachment-btn" className="link-button"
+                onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? <Loader2 size={12} className="spin" /> : <Upload size={12} />} Unggah
+              </button>
+            )}>
+            <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }}
+              data-testid="attachment-file-input"
+              onChange={e => { if (e.target.files[0]) uploadFile(e.target.files[0]); e.target.value = ""; }} />
+            {attachments.length === 0 ? (
+              <div className="empty-state small">
+                <Paperclip size={18} style={{ opacity: 0.3 }} />
+                <p>Belum ada lampiran.</p>
+                {canUpdate && !isTerminal && (
+                  <button className="link-button" onClick={() => fileRef.current?.click()}>+ Unggah foto / dokumen</button>
+                )}
+              </div>
+            ) : (
+              <div className="attachments-grid">
+                {attachments.map(att => (
+                  <div key={att.id} className="attachment-chip" data-testid={`attachment-${att.id}`}>
+                    <Paperclip size={11} />
+                    {/* Keputusan owner 2026-10-21 — Gudang/QC boleh mengunduh FOTO/VIDEO bukti keluhan (server: sama). */}
+                    {fullView || /^(image|video)\//.test(att.content_type || "") ? (
+                      <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
+                        target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
+                    ) : <span>{att.filename}</span>}
+                    {att.roll_id && <span className="text-[10.5px] text-[#6B6B73]">· roll {(detailRet.items || []).map((it) => (it.roll_nos || {})[att.roll_id]).find(Boolean) || ""}</span>}
+                    <span className="text-muted text-xs tabular-nums">{(att.size / 1024).toFixed(0)} KB</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
         </div>
 
-        <Panel icon={Paperclip} title="Lampiran bukti" testId="return-attachments-panel"
-          right={canUpdate && !isTerminal && (
-            <button data-testid="upload-attachment-btn" className="link-button"
-              onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? <Loader2 size={12} className="spin" /> : <Upload size={12} />} Unggah
-            </button>
-          )}>
-          <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }}
-            data-testid="attachment-file-input"
-            onChange={e => { if (e.target.files[0]) uploadFile(e.target.files[0]); e.target.value = ""; }} />
-          {attachments.length === 0 ? (
-            <div className="empty-state small">
-              <Paperclip size={18} style={{ opacity: 0.3 }} />
-              <p>Belum ada lampiran.</p>
-              {canUpdate && !isTerminal && (
-                <button className="link-button" onClick={() => fileRef.current?.click()}>+ Unggah foto / dokumen</button>
-              )}
+        {/* FASE I.F — sebab keluhan (master) + pengiriman pengganti (jalur keluar). */}
+        <ReturnJourneyPanel ret={ret} canEdit={canUpdate && ret.status !== "cancelled" && (!isTerminal || canApprove)}
+          onChanged={(fresh) => onReturnChanged?.(fresh)} />
+
+        {/* F3 — Nota Kredit (Credit Note) hasil retur yang sudah di-approve */}
+        {fullView && (creditNote || ret.credit_note_number) && (
+          <Panel icon={Receipt} title="Nota kredit" testId="return-credit-note-section">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <Cell label="Nomor CN"><span className="font-mono" data-testid="credit-note-number">{creditNote?.number || ret.credit_note_number}</span></Cell>
+              <Cell label="Nilai bruto" tone="#0058CC"><span className="tabular-nums" data-testid="credit-note-gross">{formatCurrency(creditNote?.gross_amount ?? ret.credit_note_amount)}</span></Cell>
+              <Cell label="DPP / PPN"><span className="tabular-nums">{formatCurrency(creditNote?.net_amount)} / {formatCurrency(creditNote?.ppn_amount)}</span></Cell>
+              <Cell label="Penyelesaian">
+                <span className={`feature-badge ${creditNote?.settlement === "cash" ? "badge-green" : "badge-blue"}`}>
+                  {{ cash: "Refund Tunai", ar: "Pengurang Piutang", store_credit: "Store Credit", nego: "Diskon Nego" }[creditNote?.settlement] || "Pengurang Piutang"}
+                </span>
+              </Cell>
             </div>
-          ) : (
-            <div className="attachments-grid">
-              {attachments.map(att => (
-                <div key={att.id} className="attachment-chip" data-testid={`attachment-${att.id}`}>
-                  <Paperclip size={11} />
-                  {/* Keputusan owner 2026-10-21 — Gudang/QC boleh mengunduh FOTO/VIDEO bukti keluhan (server: sama). */}
-                  {fullView || /^(image|video)\//.test(att.content_type || "") ? (
-                    <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
-                      target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
-                  ) : <span>{att.filename}</span>}
-                  <span className="text-muted text-xs">{(att.size / 1024).toFixed(0)} KB</span>
-                </div>
-              ))}
+            {creditNote?.cogs_amount > 0 && (
+              <div className="section-notes tabular-nums" data-testid="credit-note-cogs">
+                Pembalikan HPP (barang kembali ke stok): {formatCurrency(creditNote.cogs_amount)}
+              </div>
+            )}
+            <div className="section-notes text-muted">
+              Posting GL otomatis: Dr Pendapatan{creditNote?.ppn_amount > 0 ? " + Dr PPN Keluaran" : ""} / Cr {creditNote?.settlement === "cash" ? "Kas" : "Piutang"}
+              {creditNote?.cogs_amount > 0 ? " · Dr Persediaan / Cr HPP" : ""}.
             </div>
-          )}
-        </Panel>
+          </Panel>
+        )}
       </div>
 
-      {/* F3 — Nota Kredit (Credit Note) hasil retur yang sudah di-approve */}
-      {fullView && (creditNote || ret.credit_note_number) && (
-        <Panel icon={Receipt} title="Nota kredit" testId="return-credit-note-section">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <Cell label="Nomor CN"><span className="font-mono" data-testid="credit-note-number">{creditNote?.number || ret.credit_note_number}</span></Cell>
-            <Cell label="Nilai bruto" tone="#0058CC"><span data-testid="credit-note-gross">Rp {fmtNum(creditNote?.gross_amount ?? ret.credit_note_amount, 0)}</span></Cell>
-            <Cell label="DPP / PPN">Rp {fmtNum(creditNote?.net_amount, 0)} / Rp {fmtNum(creditNote?.ppn_amount, 0)}</Cell>
-            <Cell label="Penyelesaian">
-              <span className={`feature-badge ${creditNote?.settlement === "cash" ? "badge-green" : "badge-blue"}`}>
-                {{ cash: "Refund Tunai", ar: "Pengurang Piutang", store_credit: "Store Credit", nego: "Diskon Nego" }[creditNote?.settlement] || "Pengurang Piutang"}
-              </span>
-            </Cell>
-          </div>
-          {creditNote?.cogs_amount > 0 && (
-            <div className="section-notes" data-testid="credit-note-cogs">
-              Pembalikan HPP (barang kembali ke stok): Rp {fmtNum(creditNote.cogs_amount, 0)}
-            </div>
-          )}
-          <div className="section-notes text-muted">
-            Posting GL otomatis: Dr Pendapatan{creditNote?.ppn_amount > 0 ? " + Dr PPN Keluaran" : ""} / Cr {creditNote?.settlement === "cash" ? "Kas" : "Piutang"}
-            {creditNote?.cogs_amount > 0 ? " · Dr Persediaan / Cr HPP" : ""}.
-          </div>
-        </Panel>
+      {/* ── LOGISTIK & PERJALANAN: biaya kirim, scan per roll antar-gudang ── */}
+      <div hidden={tab !== "logistik"} className="mt-3 space-y-3" data-testid="return-tabpanel-logistik">
+        {fullView && <ReturnLogisticsPanel key={`${ret.id}-${ret.status}`} ret={ret} onChanged={refetchReturn} />}
+        <ReturnTimelinePanel ret={ret} canEdit={canScan && !isTerminal} onChanged={refetchReturn} />
+      </div>
+
+      {/* ── KEBIJAKAN & KEPUTUSAN: kelayakan, pengecualian, kompensasi, pengganti, disposisi ── */}
+      {fullView && (
+        <div hidden={tab !== "keputusan"} className="mt-3 space-y-3" data-testid="return-tabpanel-keputusan">
+          <ReturnEligibilityPanel ret={ret} />
+          <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+          <ReturnCompensationPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+          <ReturnReplacementPanel ret={ret} onChanged={refetchReturn} onNavigate={onNavigate} />
+          <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+        </div>
       )}
 
-      <ReturnTimeline ret={ret} variant="sales" />
+      {/* ── STOK & RANTAI: karantina, susut grade, rantai retur pelanggan → antar-PT → supplier ── */}
+      {fullView && (
+        <div hidden={tab !== "stok"} className="mt-3 space-y-3" data-testid="return-tabpanel-stok">
+          <ReturnQuarantinePanel ret={ret} canApprove={canApprove} onReleased={refetchReturn} onNavigate={onNavigate} />
+          {canSeeGrade(currentUser) && <ReturnGradeLossPanel ret={ret} />}
+          <ReturnChainPanel docId={ret.id} />
+        </div>
+      )}
 
-      {fullView && <>
-        {/* R2 — Karantina roll retur (release ke stok / scrap) */}
-        <ReturnQuarantinePanel ret={ret} canApprove={canApprove} onReleased={refetchReturn}
-          onNavigate={onNavigate} />
-
-        {/* FASE E-9 (E9.6 · US29) — rantai retur utuh: pelanggan → antar-PT → beli/simpan */}
-        <ReturnChainPanel docId={ret.id} />
-        {canSeeGrade(currentUser) && <ReturnGradeLossPanel ret={ret} />}
-        <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
-      </>}
+      {/* ── RIWAYAT ── */}
+      <div hidden={tab !== "riwayat"} className="mt-3" data-testid="return-tabpanel-riwayat">
+        <ReturnTimeline ret={ret} variant="sales" />
+      </div>
 
       <ReturnSettleModal ret={ret} open={showSettleModal}
         onClose={() => setShowSettleModal(false)} onSettle={onSettle} />
 
-      {showRejectModal && (
-        <div className="modal-overlay" data-testid="reject-modal">
-          <div className="modal-card small">
-            <h3 className="modal-title">Tolak Retur {ret.number}?</h3>
-            <p className="modal-subtitle">Berikan alasan penolakan</p>
-            <textarea data-testid="reject-reason-input" className="textarea" rows={3}
-              placeholder="Alasan penolakan..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
-            {rejectErr && <p className="mt-2 text-[12px] text-[#A8221A]" data-testid="reject-error">{rejectErr}</p>}
-            <div className="modal-actions">
-              <button className="secondary-button" onClick={() => setShowRejectModal(false)}>Batal</button>
-              <button data-testid="confirm-reject-btn" className="danger-button"
-                disabled={!rejectReason.trim() || !!busyAction}
-                onClick={async () => {
-                  const err = await onReject(ret, rejectReason);
-                  if (err) { setRejectErr(err); return; }   // FE-07 — gagal: modal & alasan tetap
-                  setShowRejectModal(false); setRejectReason("");
-                }}>
-                <X size={13} /> Tolak Retur
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={showRejectModal}
+        title={`Tolak retur ${ret.number}?`}
+        message="Retur ditolak seluruhnya. Untuk menolak sebagian, pakai Terima/Tolak per roll sebelum ACC."
+        confirmLabel="Tolak Retur" danger withReason reasonMinLength={5}
+        reasonLabel="Alasan penolakan" reasonPlaceholder="Alasan penolakan…"
+        error={rejectErr}
+        onConfirm={async (reason) => {
+          const err = await onReject(ret, reason);
+          if (err) { setRejectErr(err); return; }   // FE-07 — gagal: dialog & alasan tetap
+          setShowRejectModal(false);
+        }}
+        onCancel={() => setShowRejectModal(false)}
+        testId="reject-modal" />
 
-      {showReverseModal && (
-        <div className="modal-overlay" data-testid="reverse-modal">
-          <div className="modal-card small">
-            <h3 className="modal-title">Batal / Pembalikan Retur {ret.number}?</h3>
-            <p className="modal-subtitle">
-              Tindakan ini membalik jurnal (GL), menghapus roll retur yang masuk stok,
-              membatalkan refund kas & store credit, serta membatalkan Nota Kredit. Riwayat tetap tersimpan (audit).
-            </p>
-            <div className="rounded-md bg-[#FDF3E7] border border-[#F5E0C3] px-3 py-2 text-[12px] text-[#B45309] mb-2 flex items-start gap-1.5">
-              <AlertCircle size={14} className="mt-0.5 shrink-0" />
-              <span>Reversal ditolak jika roll retur sudah dilepas dari karantina, sudah dipesan/terpakai, atau saldo store credit sudah dipakai.</span>
-            </div>
-            <textarea data-testid="reverse-reason-input" className="textarea" rows={3}
-              placeholder="Alasan pembatalan / koreksi..." value={reverseReason} onChange={e => setReverseReason(e.target.value)} />
-            <div className="modal-actions">
-              <button className="secondary-button" onClick={() => { setShowReverseModal(false); setReverseReason(""); }} data-testid="reverse-cancel-btn">Batal</button>
-              <button data-testid="confirm-reverse-btn" className="danger-button"
-                disabled={!reverseReason.trim() || reversing}
-                onClick={submitReverse}>
-                {reversing ? <Loader2 size={13} className="spin" /> : <RotateCcw size={13} />} Lakukan Pembalikan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={showReverseModal}
+        title={`Batal / Pembalikan retur ${ret.number}?`}
+        message={"Membalik jurnal (GL), menghapus roll retur yang masuk stok, membatalkan refund kas & store credit, serta "
+          + "membatalkan Nota Kredit. Riwayat tetap tersimpan. Ditolak bila roll retur sudah dilepas dari karantina, sudah "
+          + "dipesan/terpakai, atau saldo store credit sudah dipakai."}
+        confirmLabel="Lakukan Pembalikan" danger withReason reasonMinLength={5}
+        reasonLabel="Alasan pembatalan / koreksi" reasonPlaceholder="Alasan pembatalan / koreksi…"
+        error={reverseErr}
+        onConfirm={submitReverse}
+        onCancel={() => { setShowReverseModal(false); setReverseErr(""); }}
+        testId="reverse-modal" />
     </div>
   );
 }

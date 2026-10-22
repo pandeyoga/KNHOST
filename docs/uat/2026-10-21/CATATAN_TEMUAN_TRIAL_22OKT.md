@@ -121,6 +121,23 @@ Uji layar: SRET-00005 → Terbitkan SPK (KSC/INS-00008, 2 baris roll) → tugask
 Diinspeksi (grade B, 8 poin) → penyelesaian store credit → roll karantina RL-31983-1 grade A & RL-31985-1-1 grade B.
 POC `test_core_inspeksi_poc.py` (I6) disesuaikan; tidak bisa dijalankan di salinan data UAT (butuh akun seed demo).
 
+**Fase 3 — tahap Pengembalian barang** & **fase 4 — layar retur dirapikan** (keputusan implementer, pemilik AFK):
+* Panel **Pengembalian barang**: cara kembali (Dijemput armada KN + sopir/kendaraan/jadwal · Dikirim pelanggan via
+  ekspedisi + nama ekspedisi & resi WAJIB · Diantar sendiri) → "Barang sudah dikirim/dijemput" (menandai tonggak, label
+  baru menggantikan "SJ Kirim Toko") → "Diterima gudang x/y roll" dari scan per roll; barang tanpa roll: "Tandai barang
+  sampai". `PUT /sales-returns/{id}/return-shipment` (Sales/Admin Sales atau Gudang), riwayat tersimpan.
+* **Stepper 5 langkah** dibaca dari data: Draf → Persetujuan → Pengembalian barang → QC per roll → Penyelesaian, dengan
+  "langkah berikutnya" yang spesifik (mis. "Barang dalam perjalanan — 0/1 diterima", "terbitkan SPK QC").
+* Detail retur dikelompokkan ke **tab** (Ringkasan · Logistik & perjalanan · Kebijakan & keputusan · Stok & rantai ·
+  Riwayat); dulu ±18 panel ditumpuk. Panel memakai satu gaya (`Panel`), tolak/pembalikan memakai `ConfirmModal`
+  (galat tampil di dalam dialog). Biaya logistik: setiap isian berlabel (dulu dropdown tanpa label membungkus 2 baris).
+* Format: rupiah baku `formatCurrency` (dulu "Rp 20.998,967" — 6 berkas helper `toLocaleString` tanpa batas desimal),
+  tanggal/jam berzona WIB (`formatDate`/`formatDateTime`; tenggat dulu dipotong UTC → beda sehari), status rantai
+  retur berbahasa Indonesia (dulu "approved"), petunjuk metrik daftar retur (dulu "status 2", "status 3 + 4 + 5"),
+  padanan yard↔meter di form & panel roll ("61,03 yard ≈ 55,8 m").
+* Bug yang ikut ketemu & diperbaiki: komponen di dalam render (isian kehilangan fokus tiap ketikan) di panel baru;
+  `<select>` bawaan di panel kompensasi → `KNSelect`; tes ln091 & trial_22okt kini tahan urutan modul (loop Motor).
+
 Uji layar (stack uji terpisah, salinan data acuan): Sales mengajukan SRET-00005 dari SO-00016 dengan 3 roll (hangtag hilang /
 sudah dipotong + foto / qty sebagian 20 yd) → Admin Sales menolak RL-31984 "sudah dipotong" dan menerima RL-31983 → klaim
 138,45 → 81,03 yd, estimasi Rp 3.322.763 → Rp 1.944.699, sama dengan antrean Manajer → Manajer menyetujui → RL-31984 muncul lagi

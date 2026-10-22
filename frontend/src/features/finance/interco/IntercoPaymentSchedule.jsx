@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { CalendarClock, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
+import { formatCurrency } from "../../../utils/formatters";
 
-const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
+// 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
+const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 const BASIS = [{ value: "", label: "Belum diatur" }, { value: "receipt", label: "Tanggal barang diterima" },
   { value: "invoice", label: "Tanggal invoice" }, { value: "document", label: "Tanggal dokumen" }];

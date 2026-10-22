@@ -124,13 +124,14 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
     : operator ? "Cakupan: retur yang menunggu terima barang atau sedang QC" : "Cakupan: semua retur yang boleh Anda lihat";
   const statusOptions = operator ? STATUS_OPTIONS.filter(([v]) => OPERATOR_STATUSES.includes(v)) : STATUS_OPTIONS;
   const statCards = operator ? [
-    { k: "total", label: "Retur untuk Gudang/QC", value: rTotal, icon: RotateCcw, hint: "status 3 + 4" },
-    { k: "receive", label: "Menunggu Terima / QC", value: cnt("approved"), icon: AlertCircle, hint: "status 3 · scan terima lalu mulai QC" },
-    { k: "process", label: "Sedang QC", value: cnt("inspecting"), icon: CheckCircle2, hint: "status 4 · kirim/tiba lalu selesaikan QC" },
+    // 23 Okt — petunjuk berbahasa kerja (dulu "status 3 + 4" — nomor urut internal yang tak dikenal pengguna).
+    { k: "total", label: "Retur untuk Gudang/QC", value: rTotal, icon: RotateCcw, hint: "disetujui + sedang QC" },
+    { k: "receive", label: "Menunggu Terima / QC", value: cnt("approved"), icon: AlertCircle, hint: "scan terima per roll, lalu QC di SPK" },
+    { k: "process", label: "Sedang QC", value: cnt("inspecting"), icon: CheckCircle2, hint: "QC per roll di SPK (menu Kualitas)" },
   ] : [
     { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
-    { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "status 2" },
-    { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "status 3 + 4 + 5" },
+    { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "putuskan per roll lalu setujui" },
+    { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "pengembalian barang · QC · menunggu penyelesaian" },
     { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
   ];
 

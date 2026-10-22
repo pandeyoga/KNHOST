@@ -24,9 +24,10 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
-  CheckCircle2, ClipboardCheck, Circle, MessageSquareWarning, PackageCheck, Truck,
+  CheckCircle2, Circle, MessageSquareWarning, Truck,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import { Panel } from "../../components/DetailParts";
 import KNSelect from "../../components/KNSelect";
 import { notifySuccess } from "../../utils/feedback";
 import { apiErrorText } from "../../utils/apiError";
@@ -42,12 +43,6 @@ function fmtStamp(iso) {
   } catch { return String(iso).slice(0, 10); }
 }
 
-const STEPS = [
-  { key: "shipped_to_store", field: "shipped_to_store_at", label: "SJ Kirim Toko",
-    icon: Truck, hint: "Surat jalan pengembalian ke toko diterbitkan" },
-  { key: "goods_arrived", field: "goods_arrived_at", label: "Barang sampai",
-    icon: PackageCheck, hint: "Barang retur diterima kembali & siap diperiksa" },
-];
 // L08 LN-081 — jalur KELUAR (barang pengganti) dipisah dari kedatangan retur.
 const OUT_STEPS = [
   { key: "shipped_to_customer", field: "shipped_to_customer_at", label: "Kirim pengganti ke pelanggan",
@@ -60,7 +55,6 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
   const [note, setNote] = useState(ret?.complaint_note || "");
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
-  const inspDone = ret?.inspect_done_at || ret?.inspected_at || "";
 
   useEffect(() => {
     setCode(ret?.complaint_code || "");
@@ -130,12 +124,8 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
             };
 
   return (
-    <div className="section-card" data-testid="return-journey-panel">
-      <div className="section-header">
-        <MessageSquareWarning size={14} /> Sebab Keluhan &amp; Perjalanan Retur
-      </div>
-
-      <div className="p-3 grid gap-3">
+    <Panel icon={MessageSquareWarning} title="Sebab keluhan & pengiriman pengganti" testId="return-journey-panel">
+      <div className="grid gap-3">
         {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="return-journey-error" />}
 
         {/* ── SEBAB KELUHAN ── */}
@@ -180,39 +170,8 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
           )}
         </div>
 
-        {/* ── GARIS WAKTU PERJALANAN ── */}
-        <div className="border-t border-[#EFF0F2] pt-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
-            Perjalanan barang
-          </p>
-          <div className="mt-1.5 grid gap-1.5">
-            {STEPS.map((s) => stepRow(s))}
-
-            {/* Tonggak QC: DITURUNKAN dari dokumen inspeksi — sengaja tanpa tombol. */}
-            {/* Cek UI UAT v3 (S14) — inspeksi 4-point di panel retur mengisi `inspected_at` (bukan SPK): dulu tetap
-                "belum ada SPK Inspeksi" walau QC sudah selesai. */}
-            <div data-testid="return-milestone-inspect" className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-[11.5px]">
-                <ClipboardCheck size={14}
-                  className={inspDone ? "text-[#15803D]" : "text-[#C7C7CC]"} />
-                <span className={inspDone ? "font-semibold text-[#1C1C1E]" : "text-[#6B6B73]"}>
-                  Inspeksi selesai
-                </span>
-                <span className="text-[10.5px] text-[#8E8E93]">
-                  {inspDone
-                    ? `${fmtStamp(inspDone)}${ret.inspection_number ? ` · ${ret.inspection_number}` : " · inspeksi 4-point di retur"}`
-                    : (ret.inspection_number
-                      ? `SPK ${ret.inspection_number} belum ditutup`
-                      : "belum ada SPK Inspeksi untuk retur ini")}
-                </span>
-              </span>
-              <span className="text-[10.5px] text-[#8E8E93]">
-                {ret.inspection_number || !inspDone ? "dari dokumen SPK Inspeksi" : "dari panel Inspeksi retur"}
-              </span>
-            </div>
-          </div>
-        </div>
-
+        {/* 23 Okt — "Perjalanan barang" MASUK (dikirim/dijemput, sampai) pindah ke panel Pengembalian barang dan
+            "Inspeksi selesai" ke kartu SPK QC: dulu tiga tempat menampilkan fakta yang sama. */}
         <div className="border-t border-[#EFF0F2] pt-2" data-testid="return-replacement-lane">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
             Pengiriman pengganti (jalur keluar)
@@ -220,6 +179,6 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
           <div className="mt-1.5 grid gap-1.5">{OUT_STEPS.map((s) => stepRow(s))}</div>
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }

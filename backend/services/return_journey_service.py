@@ -140,7 +140,7 @@ def assert_ready_for_qc(ret: Dict[str, Any]) -> None:
     rollless = any(not (it.get("roll_ids") or []) for it in ret.get("items") or [])
     if rollless and not ret.get("goods_arrived_at"):
         raise ValueError("Scan terima barang retur dulu — baris retur tanpa roll belum tercatat sampai di gudang. "
-                         "Tandai SJ Kirim Toko lalu Barang sampai sebelum QC.")
+                         "Catat barang dikirim/dijemput (panel Pengembalian barang) lalu Barang sampai sebelum QC.")
 
 
 def roll_not_ready_for_qc(ret: Dict[str, Any], rid: str) -> str:

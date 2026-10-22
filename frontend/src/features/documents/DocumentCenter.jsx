@@ -11,12 +11,13 @@ import {
   MessageCircle, Settings, Route,
 } from "lucide-react";
 import { openTrace } from "./trace/traceDeepLink";
+import PagedRows from "@/components/PagedRows";
+import { formatCurrency } from "../../utils/formatters";
 
 const ESIGN_ROLES = ["admin", "manager", "sales", "warehouse"];
 const WA_MANAGE_ROLES = ["admin", "manager"];
-const rp = (n) => "Rp " + (Number(n || 0)).toLocaleString("id-ID");
-
-import PagedRows from "@/components/PagedRows";
+// 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
+const rp = (v) => formatCurrency(v);
 
 export default function DocumentCenter({ currentUser, selectedEntity, entities = [] }) {
   const [docTypes, setDocTypes] = useState([]);

@@ -13,7 +13,17 @@ sys.path.insert(0, "/app/backend")
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
 T = uuid.uuid4().hex[:6]
-LOOP = asyncio.new_event_loop()
+_OWN_LOOP = asyncio.new_event_loop()
+
+
+def _loop():
+    """Klien Motor global terikat ke loop PERTAMA yang memakainya; modul tes lain dalam satu sesi pytest bisa sudah
+    mengikatnya — pakai loop itu (loop baru → "attached to a different loop")."""
+    from db import db as _db
+    lp = _db.client._io_loop
+    if lp is None or lp.is_closed():
+        lp = _db.client._io_loop = _OWN_LOOP
+    return lp
 
 
 def _CST():
@@ -69,7 +79,7 @@ def test_ln091_t01_bill_first_then_saldo_or_refund():
             je = DB.journal_entries.find_one({"source_type": "sales_return", "source_id": rid}, {"_id": 0, "lines": 1})
             out[stype] = (cn, je)
         return out
-    res = LOOP.run_until_complete(run())
+    res = _loop().run_until_complete(run())
     for stype, (cn, je) in res.items():
         assert cn["gross_amount"] == 30 and cn["ar_applied"] == 20 and cn["excess_amount"] == 10, (stype, cn)
         lines = je["lines"]
@@ -167,7 +177,7 @@ def test_ln024_payment_reminder_job():
         finally:
             ics.payment_schedule, ics.payment_settings = orig
         return a, b
-    a, b = LOOP.run_until_complete(run())
+    a, b = _loop().run_until_complete(run())
     assert a["created"] == 1 and b["created"] == 0   # tidak dobel
     n = DB.notifications.find_one({"type": "interco_payment_due", "ref": f"TEST_{T}:{pay}"})
     assert n and n["recipient_role"] == "finance" and n["entity_id"] == _CST()

@@ -449,6 +449,35 @@ async def complete_inspection(
 
 # ─── FASE I — MILESTONE PERJALANAN RETUR (lembar pemilik) ───────────────────
 
+class ReturnShipmentIn(BaseModel):
+    method: str                      # pickup_fleet | customer_courier | customer_dropoff
+    courier: str = ""
+    tracking_no: str = ""
+    driver: str = ""
+    vehicle: str = ""
+    scheduled_at: str = ""
+    shipped: bool = False            # True = barang SUDAH dikirim/dijemput (tonggak ditandai)
+    shipped_at: str = ""
+    note: str = ""
+
+
+@router.put("/sales-returns/{return_id}/return-shipment")
+async def put_return_shipment(return_id: str, payload: ReturnShipmentIn, request: Request) -> Dict[str, Any]:
+    """23 Okt — tahap Pengembalian barang: cara & waktu barang kembali (Sales/Admin Sales atau Gudang)."""
+    user = await require_any_permission(request, [("sales_return", "update"), ("wms", "scan")])
+    ctx = await entity_ctx(request)
+    existing = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(existing, "sales_returns", ctx)
+    try:
+        doc = await return_service.record_return_shipment(return_id, payload.dict(), user.get("name", user.get("email", "")))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_shipment", "sales_return", return_id, payload.dict())
+    return doc
+
+
 @router.post("/sales-returns/{return_id}/milestone")
 async def mark_return_milestone(
     return_id: str, request: Request, payload: ReturnMilestoneInput,

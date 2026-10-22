@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Truck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import LogisticsCostRow from "./LogisticsCostRow";
+import { Panel } from "../../components/DetailParts";
+import { formatCurrency } from "../../utils/formatters";
 
 const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
-const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
 
 // LN-091 KLR-11 + GL-01 — cara kirim, penanggung, akun pembayaran (Finance), PT pembeban; jurnal otomatis.
 export default function ReturnLogisticsPanel({ ret, onChanged }) {
@@ -23,7 +24,11 @@ export default function ReturnLogisticsPanel({ ret, onChanged }) {
         journal_entry_number: cur[t]?.journal_entry_number || "", filled: !!cur[t] }])));
     }).catch((e) => setMsg(e.response?.data?.detail || e.message));
   }, [ret.id, ret.status]);
-  if (!ctx) return <div className="mb-3 text-xs" data-testid="return-logistics-panel">{msg || "Memuat biaya logistik…"}</div>;
+  if (!ctx) return (
+    <Panel icon={Truck} title="Biaya logistik retur" testId="return-logistics-panel">
+      <p className={`text-[11.5px] ${msg ? "font-semibold text-[#A8221A]" : "text-[#6B6B73]"}`}>{msg || "Memuat biaya logistik…"}</p>
+    </Panel>
+  );
   const save = async () => {
     setMsg("");
     const costs = Object.entries(f).filter(([, v]) => v.filled || v.mode === "pickup" || v.amount !== "")
@@ -38,15 +43,18 @@ export default function ReturnLogisticsPanel({ ret, onChanged }) {
   };
   const lc = ctx.logistics_costs || {};
   return (
-    <div className="mb-3 rounded-lg border border-[#EDEEF1] bg-white px-3 py-2.5 space-y-2 text-xs" data-testid="return-logistics-panel">
-      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold"><Truck size={14} className="text-[#0058CC]" /> Biaya logistik retur
-        {lc.costs?.length > 0 && <span className="text-xs font-normal text-[#6B6B73]" data-testid="logistics-totals">customer {rp(lc.customer_total)} · perusahaan {rp(lc.company_total)}</span>}</div>
-      <p className="text-[11px] text-[#6B6B73]">Dicatat saat awal pengiriman. Ongkir ditanggung KN langsung dijurnal; akun pembayaran dipilih Finance. Ongkir armada KN yang dibayar customer ditagih terpisah.</p>
+    <Panel icon={Truck} title="Biaya logistik retur" testId="return-logistics-panel"
+      right={lc.costs?.length > 0 && <span className="text-[11px] tabular-nums text-[#6B6B73]" data-testid="logistics-totals">pelanggan {formatCurrency(lc.customer_total)} · perusahaan {formatCurrency(lc.company_total)}</span>}>
+      <div className="space-y-2 text-xs">
+      <p className="text-[11px] text-[#6B6B73]">Dicatat saat awal pengiriman. Ongkir ditanggung KN langsung dijurnal; akun pembayaran dipilih Finance. Ongkir armada KN yang dibayar pelanggan ditagih terpisah.</p>
       {Object.entries(ctx.types).map(([t, label]) => f[t] && (
         <LogisticsCostRow key={t} type={t} label={label} v={f[t]} ctx={ctx} locked={locked}
           onChange={(nv) => setF({ ...f, [t]: { ...nv, filled: true } })} />))}
-      {!locked && <button type="button" data-testid="logistics-save" onClick={save} className="secondary-button text-xs">Simpan biaya logistik</button>}
-      {msg && <span className="ml-2" data-testid="logistics-msg">{msg}</span>}
-    </div>
+      <div className="flex flex-wrap items-center gap-2 border-t border-[#F2F3F5] pt-2.5">
+        {!locked && <button type="button" data-testid="logistics-save" onClick={save} className="secondary-button text-xs">Simpan biaya logistik</button>}
+        {msg && <span className="text-[11.5px] text-[#3C3C43]" data-testid="logistics-msg">{msg}</span>}
+      </div>
+      </div>
+    </Panel>
   );
 }

@@ -1,3 +1,4 @@
+import { Panel } from "../../components/DetailParts";
 import { useState } from "react";
 import { ShieldAlert, Check, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -83,21 +84,18 @@ export default function ReturnExceptionsPanel({ ret, canApprove, onChanged }) {
   const flags = ret.condition_flags || {};
   const terminal = ["rejected", "cancelled", "refund_settled", "credit_settled", "nego_settled"].includes(ret.status);
   return (
-    <div className="mb-3 rounded-lg border border-[#EDEEF1] bg-white px-3 py-2.5" data-testid="return-exceptions-panel">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <ShieldAlert size={14} className="text-[#B45309]" /> Pengecualian retur
-        {(flags.hangtag_missing || flags.cut_by_customer) && (
-          <span className="text-xs font-normal text-[#8A4B08]" data-testid="return-condition-flags-view">
-            Kondisi: {[flags.hangtag_missing && "hangtag hilang", flags.cut_by_customer && "kain dipotong", flags.replacement_proof && "ada bukti pengganti"].filter(Boolean).join(", ")} · Finance memutus saat penyelesaian
-          </span>
-        )}
-        {!terminal && <button type="button" data-testid="return-exception-toggle" onClick={() => setOpen(!open)} className="ml-auto text-xs text-[#0058CC] font-semibold">{open ? "Tutup" : "Ajukan pengecualian"}</button>}
-      </div>
+    <Panel icon={ShieldAlert} title="Pengecualian retur" testId="return-exceptions-panel"
+      right={!terminal && <button type="button" data-testid="return-exception-toggle" onClick={() => setOpen(!open)} className="link-button text-xs font-semibold">{open ? "Tutup" : "Ajukan pengecualian"}</button>}>
+      {(flags.hangtag_missing || flags.cut_by_customer) && (
+        <p className="mb-1.5 text-xs text-[#8A4B08]" data-testid="return-condition-flags-view">
+          Kondisi: {[flags.hangtag_missing && "hangtag hilang", flags.cut_by_customer && "kain dipotong", flags.replacement_proof && "ada bukti pengganti"].filter(Boolean).join(", ")} · Finance memutus saat penyelesaian
+        </p>
+      )}
       {open && <RequestForm ret={ret} onPhoto={() => onChanged?.()} onDone={() => { setOpen(false); onChanged?.(); }} />}
       <div className="divide-y divide-[#F0F0F3]">
         {list.map((x) => <ExceptionRow key={x.id} ret={ret} x={x} canApprove={canApprove} onDone={() => onChanged?.()} />)}
       </div>
       {!list.length && !open && <p className="text-xs text-[#8E8E93]">Belum ada pengecualian. Wajib bila retur lewat batas atau diskon tanpa barang kembali.</p>}
-    </div>
+    </Panel>
   );
 }

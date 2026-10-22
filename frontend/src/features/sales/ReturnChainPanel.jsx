@@ -15,6 +15,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, ArrowRight, Boxes, Building2, EyeOff, Loader2, Route } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ReturnChainMap from "./ReturnChainMap";
+import { docStatusLabel } from "../../utils/docStatus";      // 23 Okt — tanpa kode status mentah
+import { formatDate } from "../../utils/formatters";
 
 const STAGE_TONE = {
   sales_return: "border-[#F5C9A6] bg-[#FFF7EF] text-[#8C4A00]",
@@ -125,7 +127,7 @@ export default function ReturnChainPanel({ docId }) {
                     <EyeOff size={9} /> ringkasan
                   </span>
                 )}
-                {s.status ? s.status : ""}{s.date ? ` · ${String(s.date).slice(0, 10)}` : ""}
+                {docStatusLabel(s.status)}{s.date ? ` · ${formatDate(s.date)}` : ""}
               </span>
             </div>
             <div className="mt-0.5 text-[11px] leading-snug">
@@ -143,7 +145,7 @@ export default function ReturnChainPanel({ docId }) {
               {s.counterpart_number ? ` · dokumen kembar ${s.counterpart_number}` : ""}
               {s.warehouse_transfer_code
                 ? ` · tugas gudang ${s.warehouse_transfer_code}`
-                  + (s.warehouse_transfer_status ? ` (${s.warehouse_transfer_status})` : "")
+                  + (s.warehouse_transfer_status ? ` (${docStatusLabel(s.warehouse_transfer_status)})` : "")
                 : ""}
             </div>
           </li>
@@ -182,7 +184,7 @@ export default function ReturnChainPanel({ docId }) {
                     <td className="px-2 py-1.5 text-right tabular-nums">
                       {fmtQty(r.qty)} {r.unit}
                     </td>
-                    <td className="px-2 py-1.5">{r.status}</td>
+                    <td className="px-2 py-1.5">{docStatusLabel(r.status)}</td>
                     <td className="px-2 py-1.5">{r.owner_entity_name || "—"}</td>
                     <td className="px-2 py-1.5 text-[10px] text-[#6E6E73]">
                       {r.supplier_name ? `${r.supplier_name}` : ""}

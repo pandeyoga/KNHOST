@@ -6,6 +6,7 @@
 import { Camera, Paperclip, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { formatQty } from "../../utils/formatters";
+import { lengthAlt } from "../../utils/uom";   // 23 Okt — padanan yard↔meter (pesanan sering bermeter)
 
 export const CONDITION_OPTIONS = [{ value: "ok", label: "Baik" }, { value: "damaged", label: "Rusak" }];
 
@@ -131,7 +132,8 @@ export default function ReturnRollClaims({ product, rolls, claims, onChange, tes
         </div>
         <p className="text-right text-[11.5px] text-[#6B6B73]" data-testid={`${testId}-total`}>
           Diklaim <b className="tabular-nums text-[#1C1C1E]">{formatQty(total)} {product.unit}</b>
-          <span className="block text-[10.5px]">sisa bisa diretur {formatQty(product.max)} {product.unit}</span>
+          {lengthAlt(total, product.unit) && <span className="tabular-nums"> {lengthAlt(total, product.unit)}</span>}
+          <span className="block text-[10.5px]">sisa bisa diretur {formatQty(product.max)} {product.unit} {lengthAlt(product.max, product.unit)}</span>
         </p>
       </div>
       <div className="divide-y divide-[#F2F3F5]">
@@ -143,7 +145,7 @@ export default function ReturnRollClaims({ product, rolls, claims, onChange, tes
               <label className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
                 <input type="checkbox" checked={!!c} onChange={() => toggle(r)} data-testid={`${rt}-check`} />
                 <span className="font-mono font-semibold text-[#1C1C1E]">{r.roll_no || r.roll_id}</span>
-                <span className="text-[11px] text-[#6B6B73]">{r.shipment_no} · sisa {formatQty(r.remaining)} {r.unit}</span>
+                <span className="text-[11px] text-[#6B6B73]">{r.shipment_no} · sisa {formatQty(r.remaining)} {r.unit} {lengthAlt(r.remaining, r.unit)}</span>
               </label>
               {c && <RollClaimFields claim={c} testId={rt} unit={r.unit} remaining={r.remaining}
                 onChange={(patch) => set(r.roll_id, patch)} />}

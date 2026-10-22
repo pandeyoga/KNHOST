@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Scissors } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { formatCurrency } from "../../utils/formatters";
 
-const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
+// 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
+const rp = (v) => formatCurrency(v);
 
 // LN-092 — hitung contoh cutloss (KLR-01/02) & diskon nominal (KLR-06/07). Tidak memposting.
 export default function CutlossSimulator() {

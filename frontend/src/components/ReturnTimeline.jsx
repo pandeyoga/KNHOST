@@ -12,21 +12,16 @@
  */
 import { CheckCircle2, Clock, XCircle, Circle, FileText, PackageCheck, SearchCheck, Receipt, RotateCcw } from "lucide-react";
 import { Panel } from "./DetailParts";
+import { formatDateTime } from "../utils/formatters";
 
 const SETTLED = ["refund_settled", "credit_settled", "nego_settled"];
 const POST_APPROVAL = ["approved", "inspecting", "inspected", ...SETTLED];
 
+// 23 Okt — jam berzona WIB baku (dulu zona perangkat; layar lain sudah WIB).
 function fmtDateTime(iso) {
   if (!iso) return null;
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return null;
-    return d.toLocaleString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  } catch {
-    return null;
-  }
+  const out = formatDateTime(iso);
+  return out === "—" ? null : out;
 }
 
 const TONE = {

@@ -11,3 +11,18 @@ export const formatStamp = (v) => {
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
+
+// 23 Okt — tanggal/jam tampilan BAKU berzona WIB (zona bisnis yang dipakai server: tenggat, "hari ini", jurnal).
+// Dulu tiap layar memformat sendiri dengan zona perangkat → tenggat jendela retur bisa beda sehari antar-layar.
+const WIB = "Asia/Jakarta";
+const _validDate = (v) => { if (!v) return null; const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d; };
+/** "23 Okt 2026" (WIB). Kosong/tak sah → "—". */
+export const formatDate = (v) => {
+  const d = _validDate(v);
+  return d ? d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: WIB }) : "—";
+};
+/** "23 Okt 2026 01.47 WIB". Kosong/tak sah → "—". */
+export const formatDateTime = (v) => {
+  const d = _validDate(v);
+  return d ? `${d.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: WIB })} WIB` : "—";
+};

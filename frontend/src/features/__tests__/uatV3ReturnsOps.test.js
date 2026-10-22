@@ -58,7 +58,7 @@ test("kompensasi: harga transaksi tampil & nominal diskon disarankan, berhenti m
   axios.get.mockResolvedValue({ data: { cutloss: [], compensation: {}, basis: "Harga transaksi awal × qty cacat" } });
   const ret = { id: "sret_2", status: "inspected", items: [{ product_id: "p1", product_name: "Ceruty", unit: "yard", unit_price_est: 20000 }] };
   const { host } = await mount(<ReturnCompensationPanel ret={ret} canApprove onChanged={() => {}} />);
-  expect(q(host, "discount-price-p1").textContent).toMatch(/Rp 20\.000\/yard/);
+  expect(q(host, "discount-price-p1").textContent).toMatch(/Rp\s20\.000\/yard/);   // formatCurrency memakai spasi tak-putus
   const setVal = async (el, v) => act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v);
     el.dispatchEvent(new Event("input", { bubbles: true }));

@@ -9,6 +9,7 @@ import axios, { API } from "../../services/apiClient";
 import { Panel } from "../../components/DetailParts";
 import QtyDual from "../../components/QtyDual";
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { lengthAlt } from "../../utils/uom";   // 23 Okt — padanan yard↔meter
 
 const Badge = ({ tone, children, testId }) => {
   const cls = { ok: "bg-[#E7F6EC] text-[#126E2C]", warn: "bg-[#FFF4E5] text-[#8C4A00]", bad: "bg-[#FDECEC] text-[#A8221A]",
@@ -81,7 +82,8 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
                   <p className="font-mono text-[10.5px] text-[#6B6B73]">{item.sku || "—"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] tabular-nums">
-                  <span>Diklaim <b><QtyDual rolls={item.qty_rolls} measure={item.quantity_returned} unit={item.unit} compact /></b></span>
+                  <span>Diklaim <b><QtyDual rolls={item.qty_rolls} measure={item.quantity_returned} unit={item.unit} compact /></b>
+                    {lengthAlt(item.quantity_returned, item.unit) && <span className="text-[#6B6B73]"> {lengthAlt(item.quantity_returned, item.unit)}</span>}</span>
                   {fullView && item.unit_price_est != null && (
                     <span className="text-[#6B6B73]" data-testid={`return-item-value-${i}`}>{formatCurrency(item.unit_price_est)}/{item.unit} · <b className="text-[#1C1C1E]">{formatCurrency(item.line_total_est)}</b></span>
                   )}

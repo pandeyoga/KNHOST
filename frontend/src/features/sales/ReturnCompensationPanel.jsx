@@ -4,8 +4,11 @@ import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import { canCurrent } from "../../config/roles";
 import CutlossSplitPanel from "./CutlossSplitPanel";
+import { formatCurrency } from "../../utils/formatters";
+import { Panel } from "../../components/DetailParts";
 
-const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
+// 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
+const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
 
@@ -112,9 +115,9 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
   };
   const revoke = async () => { setMsg(""); try { await axios.delete(`${API}/sales-returns/${ret.id}/compensation`); refresh(); } catch (e) { setMsg(errText(e)); } };
   return (
-    <div className="mb-3 rounded-lg border border-[#EDEEF1] bg-white px-3 py-2.5 space-y-2" data-testid="return-compensation-panel">
-      <div className="flex items-center gap-2 text-sm font-semibold"><Scissors size={14} className="text-[#8A4B08]" /> Cutloss & diskon
-        <span className="text-xs font-normal text-[#6B6B73]">{pv.basis}</span></div>
+    <Panel icon={Scissors} title="Cutloss & diskon" testId="return-compensation-panel">
+      <div className="space-y-2">
+      <p className="text-[11px] text-[#6B6B73]">{pv.basis}</p>
       {pv.cutloss.length > 0 && (
         <table className="min-w-full text-xs" data-testid="cutloss-table">
           <thead className="text-left text-[#6B6B73]"><tr>{["Produk", "Roll", "Cacat (yd)", "Qty kompensasi", "Harga neto", "Nilai", "Dicatat", "Potongan roll"].map((h) => <th key={h} className="py-1 pr-3">{h}</th>)}</tr></thead>
@@ -122,7 +125,7 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
             <tr key={c.id} data-testid={`cutloss-row-${c.id}`}>
               <td className="pr-3">{c.product_name}</td><td className="pr-3">{c.roll_id || "—"}</td><td className="pr-3">{c.defect_yard}</td>
               <td className="pr-3">{c.qty} {c.unit_base}{c.converted ? " (konversi otomatis)" : ""}</td>
-              <td className="pr-3">{rp(c.unit_price)}</td><td className="pr-3 font-semibold">{rp(c.amount)}</td><td>{c.recorded_by}</td>
+              <td className="pr-3 tabular-nums">{rp(c.unit_price)}</td><td className="pr-3 font-semibold tabular-nums">{rp(c.amount)}</td><td>{c.recorded_by}</td>
               <td className="pl-2"><CutlossSplitPanel ret={ret} c={c} onDone={refresh} /></td>
             </tr>))}</tbody>
         </table>
@@ -136,9 +139,8 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
           {!terminal && (
             <div className="flex flex-wrap gap-2">
               {photoOnly && canApprove && (
-                <select data-testid="compensation-payout" className="field text-xs" value={payout} onChange={(e) => setPayout(e.target.value)}>
-                  <option value="store_credit">Jadi saldo</option><option value="refund">Refund tunai</option><option value="">Kurangi piutang SO asal</option>
-                </select>)}
+                <div className="w-56"><KNSelect data-testid="compensation-payout" className="field text-xs" value={payout} onValueChange={setPayout} searchable={false}
+                  options={[{ value: "store_credit", label: "Jadi saldo" }, { value: "refund", label: "Refund tunai" }, { value: "", label: "Kurangi piutang SO asal" }]} /></div>)}
               {photoOnly && canApprove && <button type="button" data-testid="compensation-settle-photo" onClick={settle} className="primary-button text-xs">Selesaikan diskon (tanpa barang kembali)</button>}
               {canCurrent("sales_return", "decide_compensation") && <button type="button" data-testid="compensation-revoke" onClick={revoke} className="secondary-button text-xs"><Trash2 size={12} /> Batalkan keputusan</button>}
             </div>
@@ -147,6 +149,7 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
         </div>
       ) : (!terminal && canCurrent("sales_return", "decide_compensation") && <DecideForm ret={ret} pv={pv} onDone={refresh} />)}
       {msg && <p className="text-xs text-[#C62828]" data-testid="compensation-msg">{msg}</p>}
-    </div>
+      </div>
+    </Panel>
   );
 }

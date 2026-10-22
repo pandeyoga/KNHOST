@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 
-const rp = new Intl.NumberFormat("id-ID");
+const rp = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });   // 23 Okt — rupiah tanpa desimal liar
 
 import PagedRows from "@/components/PagedRows";
 

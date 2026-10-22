@@ -28,6 +28,7 @@ import { useEscapeClose } from "@/utils/escapeLayers";
  *  - inputType: "textarea" (baku) | "text" | "password"  ← FASE P5, menggantikan
  *    `window.prompt`. "password" menyamarkan karakter; `prompt()` tidak bisa.
  *  - onConfirm(reason) -> boleh async; busy state dikelola di sini
+ *  - error: pesan galat dari aksi terakhir — tampil DI DALAM dialog (dialog & alasan tetap) (23 Okt)
  *  - onCancel()
  *  - testId (prefix data-testid)
  *
@@ -61,6 +62,7 @@ export default function ConfirmModal({
   onChoose,
   onConfirm,
   onCancel,
+  error = "",
   testId = "confirm-modal",
 }) {
   const [reason, setReason] = useState("");
@@ -208,6 +210,10 @@ export default function ConfirmModal({
               </button>
             ))}
           </div>
+        )}
+        {error && (
+          <p className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] font-semibold text-[#A8221A]" role="alert"
+            data-testid={`${testId}-error`}>{error}</p>
         )}
         <div className="modal-actions">
           <button className="btn-secondary" onClick={onCancel} disabled={busy}

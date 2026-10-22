@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Repeat } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { canCurrent } from "../../config/roles";
+import { formatCurrency } from "../../utils/formatters";
 
-const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
+// 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
+const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 
 // LN-090 — pesanan pengganti nyata: qty dari QC (yard), harga transaksi asal, saldo retur → selisih.

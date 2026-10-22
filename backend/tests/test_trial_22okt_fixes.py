@@ -70,7 +70,12 @@ _LOOP = asyncio.new_event_loop()   # satu loop untuk semua tes layanan: klien Mo
 
 
 def _run(_mods, coro_fn):
-    return _LOOP.run_until_complete(coro_fn())
+    # Klien Motor global terikat ke loop PERTAMA yang memakainya — pakai loop itu bila modul lain sudah mengikatnya.
+    from db import db as _db
+    lp = _db.client._io_loop
+    if lp is None or lp.is_closed():
+        lp = _db.client._io_loop = _LOOP
+    return lp.run_until_complete(coro_fn())
 
 
 @pytest.fixture(scope="module")

@@ -116,3 +116,25 @@ def test_spk_retur_bisa_ditutup_petugas_qc_dan_lahir_saat_acc():
     from routers import sales_returns as r_sr
     assert "KIND_RETURN_CUSTOMER" in _inspect.getsource(r_ins.finish_inspection)
     assert "ensure_return_spk" in _inspect.getsource(r_sr.approve_return)
+
+
+def test_pengembalian_barang_cara_resi_dan_tonggak(ret):
+    """Fase 3 — cara barang kembali: ekspedisi wajib resi; "sudah dikirim" menandai tonggak dikirim/dijemput."""
+    from services import return_service as rs
+    doc, _tag = ret
+    with pytest.raises(ValueError, match="Pilih cara barang kembali"):
+        _run(lambda: rs.record_return_shipment(doc["id"], {"method": "kurir_ajaib"}, "Sales Uji"))
+    with pytest.raises(ValueError, match="nomor resi"):
+        _run(lambda: rs.record_return_shipment(doc["id"], {"method": "customer_courier", "courier": "JNE"}, "Sales Uji"))
+    out = _run(lambda: rs.record_return_shipment(
+        doc["id"], {"method": "pickup_fleet", "driver": "Pak Udin", "scheduled_at": "2099-01-01T09:00"}, "Sales Uji"))
+    assert out["return_shipment"]["method_label"] == "Dijemput armada KN" and not out.get("shipped_to_store_at")
+    out = _run(lambda: rs.record_return_shipment(
+        doc["id"], {"method": "customer_courier", "courier": "JNE", "tracking_no": "JN123", "shipped": True}, "Sales Uji"))
+    assert out["shipped_to_store_at"] and out["return_shipment"]["tracking_no"] == "JN123"
+    assert out["milestones"][-1]["label"] == "Barang dikirim/dijemput dari pelanggan"
+    assert "resi JN123" in out["milestones"][-1]["note"]
+    assert len(out["return_shipment_history"]) == 2
+    DB.sales_returns.update_one({"id": doc["id"]}, {"$set": {"status": "draft"}})
+    with pytest.raises(ValueError, match="sesudah retur disetujui"):
+        _run(lambda: rs.record_return_shipment(doc["id"], {"method": "customer_dropoff"}, "Sales Uji"))

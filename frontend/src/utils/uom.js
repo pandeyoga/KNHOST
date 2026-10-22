@@ -107,3 +107,15 @@ export function unitOptions(product) {
   });
   return Array.from(seen).filter(Boolean).map((u) => ({ value: u, label: uomLabelOf(u) }));
 }
+
+/** 23 Okt — padanan panjang yard↔meter untuk tampilan ("61,03 yd ≈ 55,8 m"): pesanan sering bersatuan meter
+ *  sementara stok/retur bersatuan dasar yard. Satuan lain (kg, pcs) tidak punya padanan tetap → "". */
+export function lengthAlt(qty, unit) {
+  const u = String(unit || "").toLowerCase();
+  const q = Number(qty);
+  if (!Number.isFinite(q) || q <= 0) return "";
+  const fmt = (n) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(n);
+  if (u === "yard" || u === "yd") return `≈ ${fmt(q * FIXED_LENGTH_FACTORS.yard)} m`;
+  if (u === "meter" || u === "m") return `≈ ${fmt(q / FIXED_LENGTH_FACTORS.yard)} yd`;
+  return "";
+}

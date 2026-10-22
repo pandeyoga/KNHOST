@@ -81,14 +81,15 @@ test("modal tolak: gagal → modal & alasan tetap, pesan tampil di modal", async
   axios.post.mockRejectedValue({ response: { status: 403, data: { detail: "Permission ditolak: sales_return.reject" } } });
   const { host, root } = await mount(<SalesReturns currentUser={manager} focusDoc={{ focus_type: "sales_return", focus_id: "sret_1" }} onClearFocus={() => {}} />);
   await act(async () => { q(host, "reject-return-btn").click(); });
-  const ta = q(host, "reject-reason-input");
+  // 23 Okt — modal tolak kini ConfirmModal standar (testid `reject-modal-*`); perilaku FE-07 sama.
+  const ta = q(host, "reject-modal-reason");
   const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
   await act(async () => { setter.call(ta, "Barang tidak sesuai"); ta.dispatchEvent(new Event("input", { bubbles: true })); });
-  await act(async () => { q(host, "confirm-reject-btn").click(); });
+  await act(async () => { q(host, "reject-modal-confirm").click(); });
   await flush();
   expect(q(host, "reject-modal")).not.toBeNull();
-  expect(q(host, "reject-reason-input").value).toBe("Barang tidak sesuai");
-  expect(q(host, "reject-error")?.textContent).toContain("sales_return.reject");
+  expect(q(host, "reject-modal-reason").value).toBe("Barang tidak sesuai");
+  expect(q(host, "reject-modal-error")?.textContent).toContain("sales_return.reject");
   await act(async () => { root.unmount(); });
 });
 

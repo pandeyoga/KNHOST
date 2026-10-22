@@ -10,7 +10,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { notifySuccess } from "../../utils/feedback";
 import { apiErrorText } from "../../utils/apiError";
-import { fmtNum } from "./ReturnShared";
+import { Panel } from "../../components/DetailParts";
+import { formatQty } from "../../utils/formatters";
 
 const LANE_COLOR = {
   approval: "#6B219A", inbound: "#0058CC", qc: "#A05000",
@@ -66,10 +67,10 @@ function ScanForm({ ret, warehouses, onDone }) {
             <KNSelect data-testid="journey-scan-to-warehouse" className="field" value={toWh} onValueChange={setToWh} options={opts.filter((o) => o.value !== wh)} placeholder="Pilih tujuan" /></label>
         )}
       </div>
-      <div className="grid gap-2 sm:grid-cols-[1fr_200px_auto] sm:items-end">
-        <label><span className="field-label">Scan nomor roll / tag (pisahkan dengan Enter atau koma)</span>
-          <textarea data-testid="journey-scan-codes" className="field" rows={2} value={codes}
-            onChange={(e) => setCodes(e.target.value)} placeholder="RL-10124&#10;RL-10125" /></label>
+      <label><span className="field-label">Scan nomor roll / tag (pisahkan dengan Enter atau koma)</span>
+        <textarea data-testid="journey-scan-codes" className="field" rows={2} value={codes}
+          onChange={(e) => setCodes(e.target.value)} placeholder="RL-10124&#10;RL-10125" /></label>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label><span className="field-label">Ekspedisi / sopir (opsional)</span>
           <input data-testid="journey-scan-carrier" className="field" value={carrier} onChange={(e) => setCarrier(e.target.value)} /></label>
         <button data-testid="journey-scan-submit" className="primary-button" disabled={busy || !wh || !codes.trim() || (stage === "dispatched" && !toWh)}>
@@ -112,12 +113,12 @@ function RollTable({ rolls }) {
           {rolls.map((r) => (
             <tr key={r.roll_id} data-testid={`timeline-roll-${r.roll_id}`}>
               <td className="font-mono">{r.roll_no}<div className="text-[10px] text-[#8E8E93]">{r.product_name}</div></td>
-              <td className="tabular-nums">{fmtNum(r.qty_claimed)} {r.unit}</td>
+              <td className="tabular-nums">{formatQty(r.qty_claimed)} {r.unit}</td>
               <td data-testid={`timeline-roll-location-${r.roll_id}`}>
                 <MapPin size={11} className="inline mr-1 text-[#0058CC]" />{r.location}
                 {r.location_doc && <div className="font-mono text-[10px] text-[#8E8E93]">{r.location_doc}</div>}
               </td>
-              <td className="tabular-nums">{r.qc_actual == null ? "—" : `${fmtNum(r.qc_actual)} ${r.unit}`}</td>
+              <td className="tabular-nums">{r.qc_actual == null ? "—" : `${formatQty(r.qc_actual)} ${r.unit}`}</td>
               <td>{r.qc_grade || "—"}</td>
               <td>{r.stock_roll_no ? `${r.stock_roll_no} · ${r.stock_status} · ${r.stock_warehouse}` : "belum masuk stok"}</td>
             </tr>
@@ -133,7 +134,7 @@ function UnitSummary({ summary }) {
     <div className="flex flex-wrap gap-2" data-testid="return-timeline-summary">
       {summary.per_unit.map((g) => (
         <div key={g.unit} className="rounded-lg border border-[#EFF0F2] bg-white px-2.5 py-1.5 text-[11px]" data-testid={`timeline-unit-${g.unit}`}>
-          <b className="uppercase">{g.unit}</b> · klaim {fmtNum(g.claimed)} · lolos QC {fmtNum(g.accepted)} · diselesaikan {fmtNum(g.settled)} · {g.rolls} roll
+          <b className="uppercase">{g.unit}</b> · klaim {formatQty(g.claimed)} · lolos QC {formatQty(g.accepted)} · diselesaikan {formatQty(g.settled)} · {g.rolls} roll
         </div>
       ))}
       <span className="self-center text-[10px] text-[#8E8E93]">{summary.value_basis}</span>
@@ -155,15 +156,15 @@ export default function ReturnTimelinePanel({ ret, canEdit = false, onChanged })
   }, []);
   const canScan = canEdit && OPEN.includes(ret.status) && (data?.rolls || []).length > 0;
   return (
-    <div className="section-card" data-testid="return-timeline-panel">
-      <div className="section-header"><Route size={14} /> Perjalanan Retur · satu timeline</div>
-      <div className="grid gap-3 p-3">
+    <Panel icon={Route} title="Perjalanan & scan per roll" testId="return-timeline-panel">
+      <div className="grid gap-3">
         {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="return-timeline-error" />}
+        {!data && !err && <p className="text-[11.5px] text-[#6B6B73]" data-testid="return-timeline-loading">Memuat perjalanan retur…</p>}
         {data && <UnitSummary summary={data.summary} />}
         {canScan && <ScanForm ret={ret} warehouses={warehouses} onDone={() => { load(); onChanged?.(); }} />}
         {data && <RollTable rolls={data.rolls} />}
         {data && <LaneTimeline lanes={data.lanes} events={data.events} />}
       </div>
-    </div>
+    </Panel>
   );
 }

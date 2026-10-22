@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, CalendarClock, Loader2, RotateCcw, ShieldCheck,
 import KNSelect from "../../components/KNSelect";
 import ReturnRollClaims, { CONDITION_OPTIONS, PhotoPicker, claimErrors, claimsToItem } from "./ReturnRollClaims";
 import { getStage, stageMeta } from "../../utils/soStatus";
+import { formatDate } from "../../utils/formatters";   // 23 Okt — tenggat berzona WIB (dulu potong UTC)
 
 
 export default function CreateReturnForm({ orders = [], token, onCreated, onCancel,
@@ -245,7 +246,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
                   <span className="flex items-center gap-1.5 tabular-nums" data-testid="eligibility-deadline">
                     <CalendarClock size={12} className="text-[#6B6B73]" />
                     {eligibility.deadline
-                      ? <>Deadline retur: <b>{String(eligibility.deadline).slice(0, 10)}</b>
+                      ? <>Deadline retur: <b>{formatDate(eligibility.deadline)}</b>
                           {eligibility.days_remaining != null && ` (${eligibility.days_remaining} hari lagi)`}</>
                       : `Window ${eligibility.window_days} hari (tgl kirim tidak diketahui)`}
                   </span>
