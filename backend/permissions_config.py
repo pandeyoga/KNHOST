@@ -643,6 +643,11 @@ for _role in ("admin", "finance", "manager"):
 for _role in ("admin", "manager", "md", "md_quality"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
     DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["split_cutloss"] if x not in _cur]
+# Permintaan pemilik 23 Okt — terima/tolak PER ROLL retur (mis. tolak roll yang sudah dipotong). Bawaan Manajer,
+# Admin & Admin Sales; dapat diberikan ke peran kustom lewat matriks akses.
+for _role in ("admin", "manager", "sales_admin"):
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
+    DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["decide_rolls"] if x not in _cur]
 EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
 # Keputusan owner 2026-10-21 — nota kredit otomatis dari batal item Pesanan Khusus pada SO terbit: ditinjau
 # (dikoreksi / diterbitkan / dibatalkan) pemegang izin ini; bawaan Finance, Manager, Admin — dapat diatur di matriks.

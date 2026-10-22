@@ -62,13 +62,15 @@ async def return_claim_values(returns: List[Dict[str, Any]]) -> Dict[str, float]
     """F-17 (uji pra-UAT 2026-10-21) — nilai retur pelanggan = Σ qty klaim × harga transaksi baris SO-nya.
     Dokumen retur tidak menyimpan nilai (dulu antrean memakai `total_refund`/`total_amount` yang tidak pernah
     diisi → Rp0). Harga = harga satuan baris SO untuk produk itu (sebelum PPN); `total_refund` tetap menang bila ada."""
+    # Audit pola Lurik (23 Okt, uji layar) — qty retur dalam SATUAN DASAR (yard/kg); dulu dikali harga baris SO
+    # per satuan pesanan (mis. per meter) → antrean Manajer/Finance/Admin Sales menulis nilai ±9% lebih besar.
+    from services.return_compensation_service import _net_unit_price
     oids = list({r.get("order_id") for r in returns if r.get("order_id")})
     prices: Dict[Any, float] = {}
-    for o in await db.sales_orders.find({"id": {"$in": oids}}, {"_id": 0, "id": 1, "items": 1}).to_list(len(oids) or 1):
-        for it in o.get("items") or []:
-            key = (o["id"], it.get("product_id"))
-            if key not in prices and float(it.get("price") or 0) > 0:
-                prices[key] = float(it.get("price") or 0)
+    for o in await db.sales_orders.find({"id": {"$in": oids}}, {"_id": 0, "id": 1, "items": 1,
+                                                               "order_discount_percent": 1}).to_list(len(oids) or 1):
+        for pid in {it.get("product_id") for it in o.get("items") or []}:
+            prices[(o["id"], pid)] = await _net_unit_price(o, pid)
     out: Dict[str, float] = {}
     for r in returns:
         if float(r.get("total_refund") or 0) > 0:

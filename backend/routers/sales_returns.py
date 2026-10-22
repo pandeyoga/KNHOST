@@ -3,15 +3,15 @@ Sub-fase 1.11 — Returns & Barang Sisa
 Router prefix: /api/sales-returns
 """
 import logging
-from fastapi import APIRouter, Request, File, UploadFile, HTTPException, Query
+from fastapi import APIRouter, Request, File, Form, UploadFile, HTTPException, Query
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from db import db
-from dependencies import require_permission, require_any_permission, audit
+from dependencies import require_permission, require_any_permission, audit, has_permission
 from core_utils import now_iso, new_id, strip_cost_fields
 from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
                           resolve_scope_ids)
-from schemas import (SalesReturnCreate, SalesReturnDecision,
+from schemas import (SalesReturnCreate, SalesReturnDecision, ReturnRollDecisionsIn,
                      ReturnInspectComplete, SalesReturnSettle, QuarantineReleaseInput,
                      RollOwnershipTransferInput, SalesToPurchaseReturnInput)
 # FASE I.F — bentuk masukan tonggak waktu & kode keluhan hidup satu tempat bersama
@@ -253,6 +253,13 @@ async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
             {"id": {"$in": _rids}}, {"_id": 0, "id": 1, "roll_no": 1})}
         for it in doc.get("items", []):
             it["roll_nos"] = {r: _nos.get(r, "") for r in (it.get("roll_ids") or [])}
+    _pids = list({it.get("product_id") for it in doc.get("items", []) if it.get("product_id") and not it.get("sku")})
+    if _pids:   # 23 Okt — baris retur tidak menyimpan SKU; layar detail menampilkannya di kepala produk
+        _skus = {p["id"]: p.get("sku", "") async for p in db.products.find(
+            {"id": {"$in": _pids}}, {"_id": 0, "id": 1, "sku": 1})}
+        for it in doc.get("items", []):
+            if not it.get("sku"):
+                it["sku"] = _skus.get(it.get("product_id"), "")
     if operator:   # F-11-layar — tanpa estimasi nilai & tanpa field uang tersimpan
         return opv.strip_money(doc)
     # UI/UX 2026-06 — NILAI per item untuk layar detail: harga diambil dari SO sumber.
@@ -327,6 +334,18 @@ async def approve_return(
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
     await _need_evidence(existing, "approve")
+    if payload.roll_decisions:   # terima/tolak per roll di langkah ACC yang sama
+        if not await has_permission(user, "sales_return", "decide_rolls"):
+            raise HTTPException(status_code=403, detail="Permission ditolak: sales_return.decide_rolls")
+        from services.return_rolls_service import decide_rolls
+        try:
+            existing = await decide_rolls(existing, [d.dict() for d in payload.roll_decisions], user)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        await audit(user.get("name", ""), "sales_return_roll_decisions", "sales_return", return_id,
+                    {"rolls": [d.dict() for d in payload.roll_decisions]})
+        if existing.get("status") == st.REJECTED:   # semua roll ditolak → tidak ada yang disetujui
+            return existing
     try:
         doc = await return_service.approve_return(
             return_id=return_id,
@@ -794,11 +813,30 @@ async def cancel_draft_return(return_id: str, request: Request) -> Dict[str, Any
 
 # ─── ATTACHMENTS ─────────────────────────────────────────────────────────────
 
+@router.post("/sales-returns/{return_id}/roll-decisions")
+async def roll_decisions(return_id: str, payload: ReturnRollDecisionsIn, request: Request) -> Dict[str, Any]:
+    """Terima / tolak roll klaim sebelum ACC (bawaan Manajer & Admin Sales; izin `sales_return.decide_rolls`)."""
+    user = await require_permission(request, "sales_return", "decide_rolls")
+    existing = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(existing, "sales_returns", await entity_ctx(request))
+    from services.return_rolls_service import decide_rolls
+    try:
+        doc = await decide_rolls(existing, [d.dict() for d in payload.decisions], user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_roll_decisions", "sales_return", return_id,
+                {"rolls": [d.dict() for d in payload.decisions]})
+    return doc
+
+
 @router.post("/sales-returns/{return_id}/attachments")
 async def upload_attachment(
     return_id: str,
     request: Request,
     file: UploadFile = File(...),
+    roll_id: str = Form(""),
 ) -> Dict[str, Any]:
     user = await require_permission(request, "sales_return", "update")
     doc = await db.sales_returns.find_one({"id": return_id})
@@ -807,6 +845,9 @@ async def upload_attachment(
     if doc["status"] in st.TERMINAL_STATES:
         raise HTTPException(status_code=400, detail="Return sudah selesai/ditolak, tidak bisa tambah lampiran")
 
+    roll_id = (roll_id or "").strip()
+    if roll_id and roll_id not in {r for it in doc.get("items") or [] for r in (it.get("roll_ids") or [])}:
+        raise HTTPException(status_code=400, detail="Foto per roll: roll ini bukan roll klaim retur.")
     data = await file.read()
     content_type = storage.validate_upload(file.filename, file.content_type, len(data), data[:16])
     path = f"sales_returns/{return_id}/{new_id('att')}-{file.filename}"
@@ -822,6 +863,7 @@ async def upload_attachment(
         "uploaded_by": user.get("name", ""),
         "uploaded_at": now_iso(),
         "is_deleted":  False,
+        "roll_id":     roll_id,     # foto bukti PER ROLL (kosong = bukti dokumen)
     }
     await db.sales_returns.update_one(
         {"id": return_id},

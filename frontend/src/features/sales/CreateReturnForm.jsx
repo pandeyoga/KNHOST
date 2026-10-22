@@ -1,8 +1,9 @@
 /** Sub-fase 1.11 — Create return form. */
 import { useState, useEffect, useRef } from "react";
 import axios, { API } from "../../services/apiClient";
-import { AlertCircle, ArrowLeft, Camera, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, Loader2, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import ReturnRollClaims, { CONDITION_OPTIONS, PhotoPicker, claimErrors, claimsToItem } from "./ReturnRollClaims";
 import { getStage, stageMeta } from "../../utils/soStatus";
 
 
@@ -22,7 +23,9 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
   const [shipped, setShipped]       = useState(null);
   const [notes, setNotes]           = useState("");
   const [submitNow, setSubmitNow]   = useState(true);
-  const [cond, setCond]             = useState({ hangtag_missing: false, cut_by_customer: false, replacement_proof: false });
+  // Permintaan pemilik 23 Okt — alasan, kondisi, checklist & foto PER ROLL: { product_id: { roll_id: klaim } }.
+  const [claims, setClaims]         = useState({});
+  const [replacementProof, setReplacementProof] = useState(false);
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState(null);
   const [eligibility, setEligibility] = useState(null);
@@ -71,7 +74,11 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
     axios.get(`${API}/sales-returns/meta/evidence-policy`).then((r) => setEvPolicy(r.data?.required || {})).catch(() => {});
     axios.get(`${API}/sales-returns/meta/complaint-reasons`).then((r) => setReasons(r.data?.items || [])).catch(() => {});
   }, []);
-  const needsPhotoToSubmit = !!evPolicy?.submit && submitNow && files.length === 0;
+  const rollFiles = Object.values(claims).flatMap((m) => Object.values(m).flatMap((c) => c.files || []));
+  const needsPhotoToSubmit = !!evPolicy?.submit && submitNow && files.length === 0 && rollFiles.length === 0;
+  const anyRoll = (k) => Object.values(claims).some((m) => Object.values(m).some((c) => c[k]));
+  const cond = { hangtag_missing: anyRoll("hangtag_missing"), cut_by_customer: anyRoll("cut_by_customer"), replacement_proof: replacementProof };
+  const condKey = JSON.stringify(cond);
 
   // R0 — cek kelayakan & deadline retur tiap kali order/tipe berubah.
   useEffect(() => {
@@ -91,12 +98,12 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
       }
     })();
     return () => { cancelled = true; };
-  }, [orderId, returnType, cond]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orderId, returnType, condKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleOrderChange(id) {
     activeOrderRef.current = id;
     // Pilihan roll/qty/bukti milik SO sebelumnya tidak boleh terbawa ke SO baru.
-    setOrderId(id); setShipped(null); setItems([]); setFiles([]); setError(null);
+    setOrderId(id); setShipped(null); setItems([]); setFiles([]); setClaims({}); setError(null);
     if (!id) return;
     axios.get(`${API}/sales-returns/returnable`, { params: { order_id: id } }).then((r) => {
       if (activeOrderRef.current !== id) return;   // respons SO lama datang terlambat — abaikan
@@ -109,14 +116,6 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
   }
 
   const rollsOf = (pid) => (shipped?.rolls || []).filter((r) => r.product_id === pid && r.remaining > 0);
-  function toggleRoll(i, roll) {
-    setItems((prev) => prev.map((it, idx) => {
-      if (idx !== i) return it;
-      const ids = it.roll_ids.includes(roll.roll_id) ? it.roll_ids.filter((x) => x !== roll.roll_id) : [...it.roll_ids, roll.roll_id];
-      const sum = rollsOf(it.product_id).filter((r) => ids.includes(r.roll_id)).reduce((a, r) => a + r.remaining, 0);
-      return { ...it, roll_ids: ids, quantity_returned: ids.length ? String(Math.round(sum * 100) / 100) : it.quantity_returned };
-    }));
-  }
 
   const updateItem = (i, f, v) => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [f]: v } : it));
   const removeItem = (i) => setItems(prev => prev.filter((_, idx) => idx !== i));
@@ -124,22 +123,30 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
   async function handleSubmit(e) {
     e.preventDefault();
     if (!orderId) return setError("Pilih pesanan terlebih dahulu");
-    const validItems = items.filter(it => it.product_id && parseFloat(it.quantity_returned) > 0);
-    if (!validItems.length) return setError("Minimal 1 item dengan kuantitas > 0");
+    // Produk ber-roll → baris dari klaim per roll; produk tanpa roll (data lama) → isian per baris.
+    const rollItems = items.filter((it) => rollsOf(it.product_id).length && Object.keys(claims[it.product_id] || {}).length);
+    const errs = rollItems.flatMap((it) => claimErrors(it, rollsOf(it.product_id), claims[it.product_id]));
+    if (errs.length) return setError(`Periksa klaim roll: ${errs.join("; ")}`);
+    const plainItems = items.filter((it) => !rollsOf(it.product_id).length && parseFloat(it.quantity_returned) > 0);
+    const validItems = [...rollItems.map((it) => claimsToItem(it, claims[it.product_id])),
+      ...plainItems.map(({ max, sku, color, roll_ids, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) }))];
+    if (!validItems.length) return setError("Centang minimal satu roll yang diretur (atau isi qty baris tanpa roll).");
     if (needsPhotoToSubmit) return setError("Kebijakan mewajibkan bukti foto sebelum retur diajukan. Lampirkan foto atau simpan sebagai draf.");
     setSaving(true); setError(null);
     try {
       // Dengan foto: simpan draf → unggah foto → ajukan (bukti sudah ada saat tahap 'ajukan').
+      const uploads = [...files.map((f) => [f, ""]),
+        ...Object.values(claims).flatMap((m) => Object.entries(m).flatMap(([rid, c]) => (c.files || []).map((f) => [f, rid])))];
       const res = await axios.post(`${API}/sales-returns`, {
-        order_id: orderId, return_type: returnType,
-        items: validItems.map(({ max, sku, color, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
-        notes, submit_now: submitNow && files.length === 0, ...cond,
+        order_id: orderId, return_type: returnType, items: validItems,
+        notes, submit_now: submitNow && uploads.length === 0, ...cond,
         ...(complaintCode ? { complaint_code: complaintCode } : {}),
       }, { headers: { Authorization: `Bearer ${token}` } });
       let doc = res.data;
-      if (files.length) {
-        for (const f of files) {
+      if (uploads.length) {
+        for (const [f, rid] of uploads) {   // foto per roll membawa roll_id; foto umum tanpa
           const fd = new FormData(); fd.append("file", f);
+          if (rid) fd.append("roll_id", rid);
           await axios.post(`${API}/sales-returns/${doc.id}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         }
         doc = submitNow ? (await axios.post(`${API}/sales-returns/${doc.id}/submit`, {})).data
@@ -266,11 +273,22 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
           {orderId && shipped && !items.length && (
             <p className="text-[11.5px] text-[#A05000]" data-testid="return-nothing-shipped">Belum ada barang terkirim (Surat Jalan) yang masih bisa diretur untuk pesanan ini.</p>
           )}
-          <div className="form-items-table">
+          {items.length > 0 && (
+            <p className="mb-1.5 text-[11.5px] text-[#6B6B73]">Centang roll yang dikembalikan, lalu isi qty, kondisi, alasan, checklist & foto <b>per roll</b>.</p>
+          )}
+          <div className="space-y-2">
+            {items.filter((it) => rollsOf(it.product_id).length).map((it) => (
+              <ReturnRollClaims key={it.product_id} product={it} rolls={rollsOf(it.product_id)}
+                claims={claims[it.product_id] || {}} testId={`return-item-${it.product_id}`}
+                onChange={(m) => setClaims((cur) => ({ ...cur, [it.product_id]: m }))} />
+            ))}
+          </div>
+          {items.some((it) => !rollsOf(it.product_id).length) && (
+          <div className="form-items-table mt-2">
             <div className="form-items-header">
-              <span>Produk (dari Surat Jalan)</span><span>Qty</span><span>Satuan</span><span>Kondisi</span><span>Alasan</span><span></span>
+              <span>Produk tanpa roll (data lama)</span><span>Qty</span><span>Satuan</span><span>Kondisi</span><span>Alasan</span><span></span>
             </div>
-            {items.map((it, i) => (
+            {items.map((it, i) => rollsOf(it.product_id).length ? null : (
               <div key={it.product_id} data-testid={`return-item-row-${i}`}>
               <div className="form-items-row">
                 <div className="text-[11.5px]" data-testid={`item-product-${i}`}>
@@ -281,12 +299,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
                   value={it.quantity_returned} onChange={e => updateItem(i, "quantity_returned", e.target.value)} />
                 <span className="text-[11.5px] self-center" data-testid={`item-unit-${i}`}>{it.unit}</span>
                 <KNSelect data-testid={`item-condition-${i}`} className="form-select" value={it.condition}
-                  onValueChange={v => updateItem(i, "condition", v)}
-                  options={[
-                    { value: "ok", label: "Baik" },
-                    { value: "damaged", label: "Rusak" },
-                  ]}
-                />
+                  onValueChange={v => updateItem(i, "condition", v)} options={CONDITION_OPTIONS} searchable={false} />
                 <input data-testid={`item-reason-${i}`} className="form-input" placeholder="Alasan..."
                   value={it.reason} onChange={e => updateItem(i, "reason", e.target.value)} />
                 <button type="button" className="icon-button danger" onClick={() => removeItem(i)}
@@ -294,16 +307,10 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
                   <Trash2 size={12} />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5 px-1 pb-2" data-testid={`item-rolls-${i}`}>
-                {rollsOf(it.product_id).map((r) => (
-                  <label key={r.roll_id} className={`text-[10.5px] rounded-full border px-2 py-0.5 cursor-pointer ${it.roll_ids.includes(r.roll_id) ? "border-[#0058CC] bg-[#EEF4FF]" : "border-[#E1E4EA]"}`} data-testid={`item-roll-${r.roll_id}`}>
-                    <input type="checkbox" className="mr-1 align-middle" checked={it.roll_ids.includes(r.roll_id)} onChange={() => toggleRoll(i, r)} />
-                    <span className="font-mono">{r.roll_no || r.roll_id}</span> · {r.shipment_no} · {r.remaining} {r.unit}</label>
-                ))}
-              </div>
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* Cek UI UAT v3 (S14) — sebab keluhan dari master; dulu hanya bisa diisi belakangan di detail retur. */}
@@ -323,25 +330,8 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         </div>
 
         <div className="form-group">
-          <label className="form-label">Bukti foto {evPolicy?.submit ? <span className="req">* (wajib sebelum diajukan)</span> : <span className="text-[10.5px] text-[#6B6B73]">(boleh dilengkapi kemudian)</span>}</label>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Kamera HP langsung (capture) — foto ditambahkan ke daftar, bukan menimpa. */}
-            <label data-testid="return-camera-capture" className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#0058CC] px-3 py-1.5 text-xs font-semibold text-[#0058CC]">
-              <Camera size={13} /> Ambil foto
-              <input data-testid="return-camera-input" type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) setFiles((cur) => [...cur, f]); e.target.value = ""; }} />
-            </label>
-            <input data-testid="return-photo-input" type="file" accept="image/*,.pdf" multiple className="form-input min-w-0 flex-1"
-              onChange={(e) => { const add = Array.from(e.target.files || []); setFiles((cur) => [...cur, ...add]); e.target.value = ""; }} />
-          </div>
-          {files.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1.5" data-testid="return-photo-list">
-              {files.map((f, i) => (
-                <span key={`${f.name}-${i}`} className="inline-flex items-center text-[10.5px] rounded-full border border-[#E1E4EA] px-2 py-0.5"><Paperclip size={10} className="inline mr-1" />{f.name || `foto-${i + 1}.jpg`}
-                  <button type="button" className="ml-1 text-[#C62828]" data-testid={`return-photo-remove-${i}`} onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))} aria-label="Hapus foto"><X size={10} /></button></span>
-              ))}
-            </div>
-          )}
+          <label className="form-label">Bukti foto umum {evPolicy?.submit ? <span className="req">* (wajib sebelum diajukan — boleh foto per roll)</span> : <span className="text-[10.5px] text-[#6B6B73]">(opsional — foto per roll diisi di tiap roll)</span>}</label>
+          <PhotoPicker files={files} onChange={setFiles} testId="return-photo" />
           {needsPhotoToSubmit && (
             <p className="text-[11px] text-[#A05000] mt-1" data-testid="return-photo-required-hint">Lampirkan minimal satu foto, atau hapus centang "Langsung kirim" untuk menyimpan draf.</p>
           )}
@@ -349,17 +339,14 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
 
         <div className="form-group" data-testid="return-condition-flags">
           <label className="form-label">Kondisi barang</label>
-          <div className="flex flex-wrap gap-4 text-sm">
-            {[["hangtag_missing", "Hangtag hilang"], ["cut_by_customer", "Kain sudah dipotong customer"], ["replacement_proof", "Ada bukti pengganti (foto/nota)"]].map(([k, l]) => (
-              <label key={k} className="form-check-label">
-                <input type="checkbox" data-testid={`return-cond-${k}`} checked={cond[k]}
-                       onChange={(e) => setCond((c) => ({ ...c, [k]: e.target.checked }))} /> {l}
-              </label>
-            ))}
-          </div>
+          <label className="form-check-label text-sm">
+            <input type="checkbox" data-testid="return-cond-replacement_proof" checked={replacementProof}
+                   onChange={(e) => setReplacementProof(e.target.checked)} /> Ada bukti pengganti (foto/nota)
+          </label>
           {(cond.hangtag_missing || cond.cut_by_customer) && (
             <p className="text-xs text-[#8A4B08] mt-1" data-testid="return-cond-note">
-              Perhatian: kondisi ini tidak memblokir retur. Finance memutus saat penyelesaian dan wajib menulis catatan keputusan.
+              Ada roll bertanda hangtag hilang / sudah dipotong. Kondisi ini tidak memblokir pengajuan; Manajer/Admin Sales bisa
+              menolak roll itu saat ACC, dan Finance wajib menulis catatan keputusan saat penyelesaian.
             </p>
           )}
         </div>

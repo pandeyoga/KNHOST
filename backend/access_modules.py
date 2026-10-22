@@ -270,6 +270,7 @@ ACTION_LABEL = {
     "send": "Kirim", "settle": "Lunasi", "ship": "Kirim barang", "sign": "Tandatangani", "submit": "Ajukan", "tax": "Pajak",
     "record_cutloss": "Catat qty cacat cutloss (QC)", "split_cutloss": "Proses pemecahan roll cutloss",
     "post_logistics": "Pilih akun & jurnal ongkir retur", "decide_compensation": "Putus nilai cutloss/diskon retur",
+    "decide_rolls": "Terima / tolak per roll retur",
     "review_credit_note": "Tinjau nota kredit batal item (koreksi/terbitkan/batalkan)",
     "release_unpaid": "Kirim tanpa lunas (pengecualian termin CBD/DP)",
     "record_loss": "Catat susut/hilang di mitra", "approve_loss": "Setujui susut di atas toleransi",

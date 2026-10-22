@@ -76,6 +76,7 @@ test.each([["warehouse", warehouse, true], ["qc", qc, false]])(
     const { host, root } = await mount(<ReturnDetail ret={RET} token="t" currentUser={user} canApprove={false} onBack={() => {}} />);
     expect(heads(host)).not.toContain("Harga");
     expect(heads(host)).not.toContain("Nilai");
+    expect(q(host, "return-item-value-0")).toBeNull();        // 23 Okt — harga/nilai baris kini di kepala produk
     expect(q(host, "return-estimated-value")).toBeNull();
     for (const id of ["m-askkn", "m-docbar", "m-eligibility", "m-exceptions", "m-compensation", "m-replacement",
                       "m-logistics", "m-quarantine", "m-chain", "m-gradeloss", "m-disposition"]) {
@@ -94,7 +95,8 @@ test.each([["warehouse", warehouse, true], ["qc", qc, false]])(
 
 test("detail Sales (sales_return.view): harga, nilai & panel tetap seperti sebelumnya", async () => {
   const { host, root } = await mount(<ReturnDetail ret={RET} token="t" currentUser={sales} canApprove={false} onBack={() => {}} />);
-  expect(heads(host)).toEqual(expect.arrayContaining(["Harga", "Nilai"]));
+  // 23 Okt — panel per roll: harga/satuan & nilai baris di kepala produk (bukan kolom tabel)
+  expect(q(host, "return-item-value-0").textContent).toMatch(/44\.000\/yard.*220\.000/);
   expect(q(host, "return-estimated-value")).not.toBeNull();
   for (const id of ["m-askkn", "m-docbar", "m-compensation", "m-quarantine", "m-chain", "m-disposition"]) {
     expect(q(host, id)).not.toBeNull();

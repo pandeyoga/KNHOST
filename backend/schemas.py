@@ -828,6 +828,15 @@ class TaxInvoiceCancel(BaseModel):
 
 # ─── Sales Returns / Retur & Barang Sisa (Sub-fase 1.11) ─────────────────────
 
+class SalesReturnRollDetail(BaseModel):
+    """Detail klaim PER ROLL (permintaan pemilik 23 Okt): alasan, kondisi & checklist dicatat per roll."""
+    reason:          str = ""
+    condition:       str = "ok"      # ok | damaged
+    hangtag_missing: bool = False
+    cut_by_customer: bool = False
+    note:            str = ""
+
+
 class SalesReturnItem(BaseModel):
     product_id:         str
     product_name:       str = ""
@@ -842,6 +851,7 @@ class SalesReturnItem(BaseModel):
     qty_rolls: Optional[int] = Field(None, ge=0)
     roll_ids: List[str] = []                        # L08 LN-080 — roll terkirim yang diklaim
     roll_qtys: Dict[str, float] = {}                # klaim per roll (kosong = seluruh panjang terkirim)
+    roll_details: Dict[str, SalesReturnRollDetail] = {}   # alasan/kondisi/checklist PER ROLL
 
 
 class SalesReturnCreate(BaseModel):
@@ -863,8 +873,20 @@ class SalesReturnCreate(BaseModel):
     replacement_proof: bool = False
 
 
+class ReturnRollDecisionIn(BaseModel):
+    roll_id: str
+    decision: str                       # accept | reject
+    reason: str = ""
+
+
 class SalesReturnDecision(BaseModel):
     notes: str = ""
+    # Keputusan per roll ikut ACC (butuh izin `sales_return.decide_rolls`) — roll ditolak keluar dari retur.
+    roll_decisions: List[ReturnRollDecisionIn] = []
+
+
+class ReturnRollDecisionsIn(BaseModel):
+    decisions: List[ReturnRollDecisionIn]
 
 
 # ─── R1 — Inspeksi & Settle (state machine + 4 outcome + partial) ────────────

@@ -73,6 +73,30 @@ roll: LOT KN `KSC/LOT-…` ≠ lot supplier `KJN-LOT-…` ✓.
 Tes lama yang gagal karena data acuan tidak punya pemetaan `CBN-MEGA-PREM` (test_grn_phase2/7, test_inbound_complete_characterization) dan
 produk uji lama (iter105) — gagal juga pada kode & data sebelum hari ini; bukan regresi.
 
+## I. Retur pelanggan PER ROLL (permintaan pemilik 23 Okt) — fase 1 dari 4
+Urutan kerja yang dipilih pemilik: **data per roll dulu, lalu UI**. Fase 1 = data & keputusan per roll; fase 2 = SPK QC
+`return_customer` otomatis saat ACC + QC retur lewat form inspeksi SPK + menu **Kualitas (QC & Inspeksi)** tersendiri;
+fase 3 = tahap **Pengembalian barang** (cara kembali / resi / jemput → dalam perjalanan → diterima gudang, scan per roll) +
+stepper; fase 4 = rapikan UI retur sesuai `design_guidelines.md` & `docs/KN_08_UI_UX_STANDARDS.md`.
+
+| # | Permintaan | Implementasi fase 1 |
+|---|---|---|
+| R1 | Alasan, foto & checklist (hangtag hilang, sudah dipotong) **per roll**, bukan per SKU | Form retur (desktop & HP, `CreateReturnForm` + `ReturnRollClaims`): roll dicentang → isian qty, kondisi, alasan wajib, checklist & foto (kamera/berkas) per roll. Disimpan di `items[].roll_details[roll_id]`; foto membawa `roll_id`. Checklist dokumen = gabungan checklist roll yang masih diklaim |
+| R2 | Terima sebagian roll (mis. tolak hanya yang sudah dipotong) | Panel **Item & roll yang diretur** (`ReturnRollsPanel`): Terima/Tolak per roll + alasan tolak (≥5 huruf), sebelum ACC. Roll ditolak keluar dari qty, nilai, scan & QC; tetap milik pelanggan dan bisa diklaim lagi; semua roll ditolak → retur ditolak. `POST /sales-returns/{id}/roll-decisions`, atau `roll_decisions` di ACC |
+| R3 | Pemutus bawaan Manajer & Admin Sales, bisa diberikan ke peran kustom | Izin baru `sales_return.decide_rolls` ("Terima / tolak per roll retur") — bawaan Admin, Manajer, Admin Sales; tampil di matriks akses. ACC retur tetap izin `approve` (Manajer). Menu Retur Admin Sales kini memuat tab **Retur Pelanggan** (dulu hanya Antar-PT) |
+| G8 | Nilai antrean "Retur menunggu ACC" ≠ estimasi di detail (Rp 229.659 vs 209.990) | diperbaiki — antrean memakai harga transaksi per satuan dasar yang sama dengan detail & Nota Kredit |
+
+Uji layar (stack uji terpisah, salinan data acuan): Sales mengajukan SRET-00005 dari SO-00016 dengan 3 roll (hangtag hilang /
+sudah dipotong + foto / qty sebagian 20 yd) → Admin Sales menolak RL-31984 "sudah dipotong" dan menerima RL-31983 → klaim
+138,45 → 81,03 yd, estimasi Rp 3.322.763 → Rp 1.944.699, sama dengan antrean Manajer → Manajer menyetujui → RL-31984 muncul lagi
+sebagai bisa diretur. Form di lebar HP 375 px tanpa gulir samping.
+
+Temuan UI selama uji (dijadwalkan fase 3–4, belum diubah): form retur hanya satuan dasar (yard) padahal SO dalam meter; tenggat
+jendela retur beda sehari antar-layar (zona waktu); label mentah "status 2", "status 3 + 4 + 5"; jejak retur menulis
+`pending_approval` & tanggal UTC; Rupiah berdesimal "Rp 20.998,967"; QC retur ganda (panel inspeksi retur vs SPK
+`return_customer`) → fase 2; panduan UAT S14/S15 masih menulis Admin Sales memutus disposisi & grade otomatis → diperbarui
+bersama fase 2.
+
 ## E. Hasil cek permintaan 22 Okt sore (belum diperbaiki)
 | # | Temuan | Bukti | Status |
 |---|---|---|---|

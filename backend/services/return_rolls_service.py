@@ -123,3 +123,109 @@ async def assert_shipped_items(order_id: str, items: List[Dict[str, Any]]) -> No
             p = prods[pid]
             raise ValueError(f"Retur melebihi batas untuk '{p['product_name']}': diminta {q:g}, sudah diretur "
                              f"{p['returned_qty']:g}, terkirim {p['shipped_qty']:g} {p['unit']}.")
+
+
+
+# ─── Detail & keputusan PER ROLL (permintaan pemilik 23 Okt) ───────────────────────────────────────────────
+# Alasan, kondisi, checklist (hangtag hilang / sudah dipotong pelanggan) & foto dicatat PER ROLL — satu SKU bisa
+# punya roll yang dipotong dan yang utuh. Pemegang izin `sales_return.decide_rolls` (bawaan Manajer & Admin Sales,
+# dapat diatur di matriks akses) boleh menolak roll tertentu (mis. yang sudah dipotong) dan menerima sisanya.
+ROLL_FLAGS = ("hangtag_missing", "cut_by_customer")
+
+
+def normalize_roll_details(item: Dict[str, Any]) -> None:
+    """Rapikan `roll_details` baris retur (hanya roll yang diklaim) + ringkasan baris (kondisi & alasan)."""
+    raw = item.get("roll_details") or {}
+    out: Dict[str, Dict[str, Any]] = {}
+    for rid in list(item.get("roll_ids") or []):
+        d = raw.get(rid) or {}
+        out[rid] = {"reason": str(d.get("reason") or "").strip()[:300],
+                    "condition": "damaged" if d.get("condition") == "damaged" else "ok",
+                    "hangtag_missing": bool(d.get("hangtag_missing")), "cut_by_customer": bool(d.get("cut_by_customer")),
+                    "note": str(d.get("note") or "").strip()[:300], "decision": "", "decision_reason": ""}
+    item["roll_details"] = out
+    if out and raw:
+        if any(v["condition"] == "damaged" for v in out.values()):
+            item["condition"] = "damaged"
+        if not str(item.get("reason") or "").strip():
+            item["reason"] = "; ".join(dict.fromkeys(v["reason"] for v in out.values() if v["reason"]))
+
+
+def condition_flags_of(items: List[Dict[str, Any]], base: Dict[str, Any]) -> Dict[str, bool]:
+    """Checklist kondisi tingkat dokumen = checklist kepala ATAU salah satu roll yang masih diklaim."""
+    out = {k: bool((base or {}).get(k)) for k in (*ROLL_FLAGS, "replacement_proof")}
+    for it in items:
+        for rid, d in (it.get("roll_details") or {}).items():
+            if rid in (it.get("roll_ids") or []):
+                for k in ROLL_FLAGS:
+                    out[k] = out[k] or bool(d.get(k))
+    return out
+
+
+async def decide_rolls(ret: Dict[str, Any], decisions: List[Dict[str, Any]], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Terima / tolak roll klaim. Roll DITOLAK keluar dari retur (tetap milik pelanggan): tidak discan, tidak di-QC,
+    tidak dihitung uang; klaim rollnya kembali bebas. Semua roll ditolak → retur ditolak."""
+    from services import return_state as st
+    if ret.get("status") not in ("draft", "pending_approval"):
+        raise ValueError("Keputusan per roll hanya sebelum retur disetujui (draf / menunggu persetujuan).")
+    want = {str(d.get("roll_id")): d for d in decisions or [] if d.get("roll_id")}
+    if not want:
+        raise ValueError("Tidak ada keputusan roll yang dikirim.")
+    items = [dict(it) for it in ret.get("items") or []]
+    known = {rid for it in items for rid in (it.get("roll_ids") or [])}
+    unknown = [rid for rid in want if rid not in known]
+    if unknown:
+        raise ValueError("Roll tidak termasuk klaim retur ini (atau sudah ditolak): " + ", ".join(unknown))
+    nos = {r["id"]: r.get("roll_no") or r["id"] async for r in db.inventory_rolls.find(
+        {"id": {"$in": list(want)}}, {"_id": 0, "id": 1, "roll_no": 1})}
+    now, who = now_iso(), actor.get("name", "")
+    log: List[Dict[str, Any]] = []
+    for it in items:
+        details = dict(it.get("roll_details") or {})
+        for rid in list(it.get("roll_ids") or []):
+            d = want.get(rid)
+            if not d:
+                continue
+            dec = str(d.get("decision") or "").strip().lower()
+            reason = str(d.get("reason") or "").strip()
+            info = dict(details.get(rid) or {})
+            if dec == "accept":
+                info.update(decision="accept", decision_reason=reason, decided_by=who, decided_at=now)
+            elif dec == "reject":
+                if len(reason) < 5:
+                    raise ValueError(f"Alasan tolak roll {nos.get(rid, rid)} wajib diisi (min. 5 huruf).")
+                qty = float((it.get("roll_qtys") or {}).get(rid) or 0)
+                it["roll_ids"] = [x for x in it["roll_ids"] if x != rid]
+                it["roll_qtys"] = {k: v for k, v in (it.get("roll_qtys") or {}).items() if k != rid}
+                it["quantity_returned"] = round(max(float(it.get("quantity_returned") or 0) - qty, 0.0), 2)
+                it.pop("quantity_returned_input", None)
+                it.pop("unit_input", None)
+                it["qty_rolls"] = len(it["roll_ids"]) or None
+                it.setdefault("rejected_rolls", []).append({"roll_id": rid, "roll_no": nos.get(rid, rid), "qty": qty,
+                                                           "unit": it.get("unit", ""), "reason": reason, "by": who,
+                                                           "at": now})
+                info.update(decision="reject", decision_reason=reason, decided_by=who, decided_at=now)
+                if not it["roll_ids"] and it["quantity_returned"] <= 0:
+                    it["settle_outcome"] = "reject"
+            else:
+                raise ValueError(f"Keputusan roll {nos.get(rid, rid)} harus 'accept' atau 'reject'.")
+            details[rid] = info
+            log.append({"roll_id": rid, "roll_no": nos.get(rid, rid), "decision": dec, "reason": reason})
+        it["roll_details"] = details
+        kept = [details[r] for r in it.get("roll_ids") or [] if r in details]
+        if kept and all(v.get("reason") for v in kept):   # ringkasan baris mengikuti roll yang masih diklaim
+            it["reason"] = "; ".join(dict.fromkeys(v["reason"] for v in kept))
+            it["condition"] = "damaged" if any(v.get("condition") == "damaged" for v in kept) else "ok"
+    base = {"replacement_proof": (ret.get("condition_flags") or {}).get("replacement_proof")}
+    upd: Dict[str, Any] = {"items": items, "updated_at": now, "condition_flags": condition_flags_of(items, base),
+                           "roll_decision_log": list(ret.get("roll_decision_log") or [])
+                           + [{"by": who, "role": actor.get("role", ""), "at": now, "rolls": log}]}
+    if not any(float(it.get("quantity_returned") or 0) > 0 for it in items):
+        st.assert_transition(ret["status"], st.REJECTED)
+        rejected = "; ".join(f"{x['roll_no']} — {x['reason']}" for x in log if x["decision"] == "reject")
+        upd.update({"status": st.REJECTED, "rejected_by": who, "rejected_at": now,
+                    "reject_reason": f"Semua roll klaim ditolak: {rejected}"})
+    res = await db.sales_returns.update_one({"id": ret["id"], "status": ret["status"]}, {"$set": upd})
+    if not res.matched_count:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi keputusan.")
+    return await db.sales_returns.find_one({"id": ret["id"]}, {"_id": 0})

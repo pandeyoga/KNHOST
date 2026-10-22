@@ -25,7 +25,7 @@ import ReturnReplacementPanel from "./ReturnReplacementPanel";   // LN-090 — p
 import ReturnLogisticsPanel from "./ReturnLogisticsPanel";       // LN-091 KLR-11 — penanggung ongkir
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
-import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
+import ReturnRollsPanel from "./ReturnRollsPanel";   // 23 Okt — detail & keputusan PER ROLL
 
 const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
 
@@ -76,7 +76,7 @@ export default function ReturnDetail({
     }
     loadEnriched();
     return () => { active = false; };
-  }, [ret?.id, ret?.status, token]);
+  }, [ret?.id, ret?.status, ret?.updated_at, token]);   // keputusan roll mengubah qty & estimasi
 
   useEffect(() => {
     let active = true;
@@ -269,56 +269,13 @@ export default function ReturnDetail({
       {canSeeGrade(currentUser) && canInspect && <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />}
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Panel icon={Package} title={`Item yang diretur · ${(ret.items || []).length}`} testId="return-items-panel">
-          <div className="overflow-x-auto">
-          <table className="data-table" style={{ minWidth: 720 }}>
-            <thead>
-              <tr><th>Produk</th><th>Qty</th><th>Sat.</th><th>Kondisi</th><th>Alasan</th>
-                {fullView && <><th className="text-right">Harga</th><th className="text-right">Nilai</th></>}</tr>
-            </thead>
-            <tbody>
-              {((enriched?.items?.length ? enriched.items : ret.items) || []).map((item, i) => (
-                <tr key={i}>
-                  <td>
-                    <div className="font-medium">{item.product_name || item.product_id}</div>
-                    <div className="text-xs text-muted font-mono">{item.sku || "—"}</div>
-                  </td>
-                  <td className="font-mono"><strong><QtyDual rolls={item.qty_rolls} measure={item.quantity_returned} unit={item.unit} compact /></strong></td>
-                  <td>{item.unit}</td>
-                  <td>
-                    <span className={`feature-badge ${item.condition === "ok" ? "badge-green" : "badge-orange"}`}>
-                      {item.condition === "ok" ? "Baik" : "Rusak"}
-                    </span>
-                  </td>
-                  <td className="text-muted text-sm">{item.reason || "-"}</td>
-                  {fullView && <>
-                    <td className="text-right tabular-nums whitespace-nowrap">
-                      {item.unit_price_est != null ? `Rp ${fmtNum(item.unit_price_est, 0)}` : "—"}
-                    </td>
-                    <td className="text-right tabular-nums font-semibold whitespace-nowrap">
-                      {item.line_total_est != null ? `Rp ${fmtNum(item.line_total_est, 0)}` : "—"}
-                    </td>
-                  </>}
-                </tr>
-              ))}
-            </tbody>
-            {fullView && enriched?.estimated_value != null && (
-              <tfoot>
-                <tr data-testid="return-estimated-value">
-                  <td colSpan={6} className="text-right text-sm font-semibold">Estimasi nilai retur</td>
-                  <td className="text-right tabular-nums font-bold">Rp {fmtNum(enriched.estimated_value, 0)}</td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-          </div>
-          {fullView && (
-            <div className="section-notes text-muted">
-              Harga diambil dari SO sumber — <b>estimasi</b>; angka resmi mengikuti Nota Kredit saat retur diselesaikan.
-            </div>
-          )}
+        <div className="space-y-2">
+          <ReturnRollsPanel ret={ret} items={(enriched?.items?.length ? enriched.items : ret.items) || []} fullView={fullView}
+            estimatedValue={enriched?.estimated_value}
+            canDecide={["draft", "pending_approval"].includes(ret.status) && can(perms, "sales_return", "decide_rolls")}
+            onChanged={refetchReturn} />
           {ret.notes && <div className="section-notes"><strong>Catatan:</strong> {ret.notes}</div>}
-        </Panel>
+        </div>
 
         <Panel icon={Paperclip} title="Lampiran bukti" testId="return-attachments-panel"
           right={canUpdate && !isTerminal && (

@@ -438,8 +438,14 @@ async def create_return(
     items = await _normalize_return_items_to_base(items)
 
     # L08 LN-080 — hanya barang/roll yang benar-benar terkirim lewat SJ; kumulatif ≤ terkirim.
-    from services.return_rolls_service import assert_shipped_items
+    from services.return_rolls_service import assert_shipped_items, condition_flags_of, normalize_roll_details
     await assert_shipped_items(order_id, items)
+    # Detail PER ROLL (alasan/kondisi/checklist) — checklist dokumen = kepala ATAU salah satu roll.
+    for it in items:
+        normalize_roll_details(it)
+    _flags = condition_flags_of(items, {"hangtag_missing": hangtag_missing, "cut_by_customer": cut_by_customer,
+                                        "replacement_proof": replacement_proof})
+    hangtag_missing, cut_by_customer = _flags["hangtag_missing"], _flags["cut_by_customer"]
 
     number = await next_return_number()
     now = now_iso()
