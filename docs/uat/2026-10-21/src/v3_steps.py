@@ -16,7 +16,7 @@ def pos_order(term="Kredit NET 30 Hari", qc="Tanpa QC", fulfil="kirim", product=
     """Sales membuat pesanan di aplikasi HP (tampil otomatis di layar HP). Checkout = layar yang sama dengan desktop."""
     ui = "HP" if ui else ""
     rows = [
-        ("Sales", "HP: tab **Katalog** → kolom *Cari produk, SKU, warna…* → kartu produk → [[Tambah]]",
+        ("Sales", "HP: tab **Katalog** → kolom *Cari produk, SKU, warna…* → kartu produk → [[Tambah]] (artikel bervarian: [[Pilih]])",
          f"Cari *{product}* (hasil tampil di bawah *Produk Terlaris*).",
          "Lembar produk: harga/yard, stok, pilihan **Warna**, *Order biasa / Order sample*, *Per yard / Per Roll*, QTY.", ui),
         ("Sales", "lembar produk → [[Tambah … yard · Rp …]]",

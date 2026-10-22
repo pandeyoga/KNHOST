@@ -87,7 +87,7 @@ def _s4():
 
 
 def _s5():
-    return ([(KANDA_SALES, "HP: tab **Katalog** → cari *LYFLEX ACTIVE BEIGE A* → [[Tambah]] → qty kg → [[Tambah …]] → tab **Keranjang** → [[Lanjut ke Checkout]]",
+    return ([(KANDA_SALES, "HP: tab **Katalog** → cari *LYFLEX ACTIVE BEIGE A* → [[Pilih]] (artikel bervarian) → varian *BEIGE · A* → qty kg → [[Tambah …]] → tab **Keranjang** → [[Lanjut ke Checkout]]",
               "Langkah 1: pelanggan *CV Garmen Soreang Jaya* (limit kredit **Rp25 jt**). Qty sampai nilai melewati limit "
               "(mis. ±700 kg × Rp41 rb ≈ Rp28,7 jt). Langkah 2: termin *Kredit NET 30 Hari*.",
               "Langkah 3 *Review*: kotak kredit **Terblokir kredit** + alasan, AR vs limit, proyeksi; [[Buat Sales Order]] terkunci.", "S5"),
@@ -124,7 +124,7 @@ def _s6():
 
 
 def _s7():
-    return ([("Sales", "HP: tab **Katalog** → cari *ALICE KNIT (94139-45) 14 A* → [[Tambah]] → qty **100 kg** → pilih **Pesan dengan backorder** → tab **Keranjang** → [[Lanjut ke Checkout]]",
+    return ([("Sales", "HP: tab **Katalog** → cari *ALICE KNIT (94139-45) 14 A* → [[Pilih]] (artikel bervarian) → varian *14 · A* → qty **100 kg** → pilih **Pesan dengan backorder** → tab **Keranjang** → [[Lanjut ke Checkout]]",
               "Langkah 1: pelanggan *Toko Kain Sejahtera*. Langkah 3: ringkasan menyebut qty backorder (termasuk dari PT lain) → [[Buat Sales Order]].",
               "SO **Menunggu stok**; *Sebagian via backorder*.", "S7")] +
             s.verify("=S1") +
@@ -230,7 +230,7 @@ def _s10():
 
 def _sample(paid):
     ui = "S12" if paid else "S11"
-    rows = [("Sales", "HP: tab **Katalog** → kartu produk → [[Tambah]] → **Order sample**",
+    rows = [("Sales", "HP: tab **Katalog** → kartu produk → [[Tambah]] (artikel bervarian: [[Pilih]]) → **Order sample**",
              "Pilih jenis **Standar** (woven ≤ 5 yd, knit ≤ 2 kg) / **Hanger** (≤ 0,5 yd) / **Catalogue**; qty → [[Tambah Sample (… yard)]]. "
              "Sample tidak bisa dicampur baris biasa.",
              "Keranjang **Sample**; melebihi batas → ditolak (*jual sebagai ECER berbayar*).", ui),
