@@ -14,8 +14,8 @@ ENT, CUST = "ent_ksc", "cust_toko_kain"
 SUP = DB.suppliers.find_one({"entity_id": "all"}, {"_id": 0, "id": 1}, sort=[("name", 1)])["id"]
 TPL = {m: DB.product_templates.find_one({"restock_source.mode": m}, {"_id": 0, "id": 1})["id"] for m in ("supplier", "makloon", "both")}
 TAG = uuid.uuid4().hex[:6]
-P_SUP = DB.products.find_one({"template_id": TPL["supplier"]}, {"_id": 0, "id": 1, "sku": 1})       # artikel default supplier
-P_MKL = DB.products.find_one({"template_id": TPL["makloon"]}, {"_id": 0, "id": 1, "sku": 1})       # artikel default makloon
+P_SUP = DB.products.find_one({"template_id": TPL["supplier"]}, {"_id": 0, "id": 1, "sku": 1, "base_unit": 1})       # artikel default supplier
+P_MKL = DB.products.find_one({"template_id": TPL["makloon"]}, {"_id": 0, "id": 1, "sku": 1, "base_unit": 1})       # artikel default makloon
 P_GREY = DB.products.find_one({"stage": "grey"}, {"_id": 0, "id": 1})
 MKL = DB.makloons.find_one({}, {"_id": 0, "id": 1, "name": 1})
 RECIPE = f"rcp_TEST_{TAG}"
@@ -61,7 +61,7 @@ def _recipe():
 
 def _od(H, products, lock=True):
     items = [{"source_type": "parent_product", "source_product_id": p["id"], "description": f"TEST LN033 {i} {TAG}",
-              "request_types": ["labdip"], "quantity": 10 + i, "unit": "kg"} for i, p in enumerate(products)]
+              "request_types": ["labdip"], "quantity": 10 + i, "unit": p.get("base_unit") or "kg"} for i, p in enumerate(products)]
     r = requests.post(f"{BASE}/special-orders", json={"customer_id": CUST, "title": f"TEST_LN033_{TAG}", "entity_id": ENT,
                                                      "expected_delivery": "2026-12-31", "items": items,
                                                      "submit_for_approval": True}, headers=H["admin"])
@@ -79,7 +79,7 @@ def _od(H, products, lock=True):
         DB.special_orders.update_one({"id": od_id}, {"$set": {
             "status": "confirmed", "customer_decision": "acc", "price_locked": True,
             "pricing": {"locked": True, "product_id": products[0]["id"], "supplier_id": SUP, "supplier_name": "PT Benang Sejahtera Abadi",
-                        "cost_price": 50000.0, "final_unit_price": 65000.0, "quantity": 10, "unit": "kg"}}})
+                        "cost_price": 50000.0, "final_unit_price": 65000.0, "quantity": 10, "unit": products[0].get("base_unit") or "kg"}}})
     return od_id, [i["id"] for i in od["items"]]
 
 

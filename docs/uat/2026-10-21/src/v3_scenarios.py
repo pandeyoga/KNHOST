@@ -334,7 +334,7 @@ def _s13():
         ("MD (atau Manajer)", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
          "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Pemenang boleh diputus **MD atau Manajer**. "
          "Bila Manajer yang memutus: biarkan centang *ACC spesifikasi* agar SKU langsung lahir. MD tidak melihat centang itu — "
-         "spesifikasi otomatis diajukan ke Manajer.",
+         "spesifikasi otomatis diajukan ke Manajer. Isi **Lead time (hari)** — dipakai menghitung perkiraan tiba PO.",
          "Kontrak harga **KSC/SCT-…** terbit; nama barang & warna versi supplier tersimpan. Diputus MD → panel Master data: "
          "*Menunggu ACC spesifikasi oleh Manajer / Admin*.", "S13"),
         ("Manajer", "`Beranda` → **Spesifikasi produk menunggu ACC (SKU lahir)** (atau `Pusat Persetujuan` → [[Buka layarnya]]) → KSC/SPEC-… → [[Setujui & buat produk]]",
@@ -352,7 +352,8 @@ def _s13():
          "Jalur bawaan mengikuti sumber restock artikel (sudah terisi bila master diatur) — simpan hanya bila menyimpang (alasan wajib).", "Item *Siap direalisasi*.", "S13"),
         ("Manajer", "detail OD → panel **Pemenuhan produksi per item** → [[Rilis SKU & realisasi pengadaan]] (tiap item)",
          "SKU baru dirilis ke produksi saat realisasi — wewenang Manajer (peran lain melihat *realisasi oleh Manajer*, tanpa tombol).",
-         "Per item **PR-xxxxx → PO KSC/PO-xxxxx** ke supplier pemenang (*Belum diterima*); OD *Dalam Produksi*.", "S13"),
+         "Per item **PR-xxxxx → PO KSC/PO-xxxxx** ke supplier pemenang (*Belum diterima*), tiba = hari ini + lead time "
+         "(melewati tenggat kirim → peringatan); OD *Dalam Produksi*.", "S13"),
         ("Admin Sales", "detail OD → [[Ubah ke Pesanan Penjualan]] → [[Konversi ke SO]]",
          "Konversi item A & B (SKU, unit, harga terkunci); boleh sebelum barang datang.",
          "**KSC/SO-xxxxx** *Menunggu stok* (backorder per item) tertaut OD; ulang tidak membuat SO kedua.", "S13"),

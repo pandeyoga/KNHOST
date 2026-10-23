@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2, Truck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
+import { formatQty } from "../../utils/formatters";
 
 const TASK_LABEL = { created: "Menunggu picking", scheduled: "Terjadwal", picking: "Picking", packing: "Packing", staging: "Staging", partially_shipped: "Terkirim sebagian", dispatched: "Surat Jalan terbit", escalated: "Eskalasi", cancelled: "Batal" };
 
@@ -35,7 +36,10 @@ export default function SpecialOrderShippingPanel({ order, currentUser, onUpdate
         <div className="rounded-lg border border-[#EFF0F2] p-2 text-[11px]" data-testid="od-outbound-tasks">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tugas Surat Jalan · {tasks.length}</p>
           {tasks.length === 0 ? <p className="text-[#9A9BA3]">{order.status === "ready" ? "belum lahir — tekan Siapkan pengiriman" : "lahir otomatis saat hasil PO/MKO diterima gudang"}</p>
-            : tasks.map((t) => <p key={t.id} data-testid={`od-task-${t.id}`}>{t.warehouse_name || "Gudang"} · {t.quantity} ({t.shipped_qty || 0} terkirim) · <b>{TASK_LABEL[t.status] || t.status}</b></p>)}
+            : tasks.map((t) => <p key={t.id} data-testid={`od-task-${t.id}`}>
+              {/* 23 Okt — OD multi-item: sebut item & satuan (dulu "100 (0 terkirim)" tanpa nama barang) */}
+              {(t.product_sku || t.sku) && <b className="font-mono">{t.product_sku || t.sku}</b>}{(t.product_sku || t.sku) ? " · " : ""}
+              {t.warehouse_name || "Gudang"} · {formatQty(t.quantity)}{t.unit ? ` ${t.unit}` : ""} ({formatQty(t.shipped_qty || 0)} terkirim) · <b>{TASK_LABEL[t.status] || t.status}</b></p>)}
         </div>
         <div className="rounded-lg border border-[#EFF0F2] p-2 text-[11px]" data-testid="od-shipments">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Surat Jalan terbit · {ships.length}</p>

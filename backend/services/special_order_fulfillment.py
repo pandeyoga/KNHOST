@@ -98,6 +98,7 @@ async def needs(od: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "spec_id": (prod or {}).get("spec_id", ""),
                     "supplier_id": dec.get("supplier_id", ""), "supplier_name": dec.get("supplier_name", ""),
                     "cost_price": float(dec.get("price") or 0), "contract_number": dec.get("contract_number", ""),
+                    "contract_id": dec.get("contract_id", ""),
                     "sample_number": dec.get("sample_number", ""), **dflt,
                     "route": route, "effective_route": route or dflt["default_route"], "state": st})
     return out
@@ -161,6 +162,8 @@ async def progress(od: Dict[str, Any]) -> Dict[str, Any]:
 def _warnings(n: Dict[str, Any]) -> List[str]:
     """Forecast makloon < kebutuhan → sisa kebutuhan terlihat (tindak lanjut lewat amandemen/permintaan tambahan)."""
     out = []
+    if (n.get("state") or {}).get("eta_warning") and n.get("active_docs"):
+        out.append(n["state"]["eta_warning"])
     rv = n.get("revalidation") or {}
     if (rv.get("state") or "").startswith("fail"):
         out.append(f"Uji ulang terbaru {n['product_sku']} × {n['supplier_name']} ({rv.get('number')}): {rv.get('state_label')} — "
@@ -451,6 +454,29 @@ async def realize(od: Dict[str, Any], key: str, actor: Dict[str, Any], warehouse
         await _release(od["id"], key, token)
 
 
+async def _po_eta(od: Dict[str, Any], n: Dict[str, Any]) -> tuple:
+    """Perkiraan tiba PO OD = hari ini (WIB) + lead time kontrak pemenang (atau lead time supplier).
+
+    23 Okt — dulu SELALU = tenggat kirim ke pelanggan (barang dijadwalkan tiba di hari yang sama dengan harus dikirim).
+    Tanpa lead time tercatat → tetap tenggat kirim. Melewati tenggat → peringatan di panel pemenuhan."""
+    from datetime import date
+    from services.logistics_service import today_wib
+    deadline = str(od.get("expected_delivery") or "")[:10]
+    lead = 0
+    if n.get("contract_id"):
+        c = await db.supplier_contracts.find_one({"id": n["contract_id"]}, {"_id": 0, "lead_time_days": 1})
+        lead = int((c or {}).get("lead_time_days") or 0)
+    if not lead and n.get("supplier_id"):
+        s = await db.suppliers.find_one({"id": n["supplier_id"]}, {"_id": 0, "lead_time_days": 1})
+        lead = int((s or {}).get("lead_time_days") or 0)
+    if lead <= 0:
+        return deadline, ""
+    eta = (date.fromisoformat(today_wib()) + timedelta(days=lead)).isoformat()
+    warn = (f"Perkiraan tiba PO {eta} (lead time {lead} hari) melewati tenggat kirim pelanggan {deadline} — "
+            "majukan pengadaan atau rundingkan tenggat.") if deadline and eta > deadline else ""
+    return eta, warn
+
+
 async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
     existing = await db.purchase_orders.find_one({"special_order_id": od["id"], "special_order_item_key": n["key"],
                                                   "status": {"$nin": list(PO_DEAD)}}, {"_id": 0, "id": 1, "po_number": 1})
@@ -464,9 +490,11 @@ async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
         po = existing
     else:
         from services import purchase_requisition_service as pr_svc
+        eta, eta_warn = await _po_eta(od, n)
+        await _save(od["id"], n["key"], {"eta_warning": eta_warn})
         try:
             res = await pr_svc.convert_to_po(pr_id, n["supplier_id"], actor, warehouse_id=wh,
-                                             expected_delivery_date=od.get("expected_delivery", ""),
+                                             expected_delivery_date=eta,
                                              notes=f"Otomatis dari {_label(od)} · kontrak {n['contract_number'] or '-'}")
         except ValueError as exc:
             raise FulfillmentError(str(exc)) from exc

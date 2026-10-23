@@ -682,10 +682,15 @@ async def on_goods_received(od_id: str) -> Dict[str, Any]:
                                                          "$push": {"timeline": {"id": new_id("tl"), "event": "confirmed", "label": "Dikonfirmasi otomatis — barang pesanan khusus diterima gudang",
                                                                                 "by": "Sistem (OD)", "at": now_iso()}}})
     await recompute_so_status(so_id)
-    await db.special_orders.update_one({"id": od_id}, {"$set": {"shipping_error": "", "updated_at": now_iso()},
-                                                       "$addToSet": {"outbound_task_ids": {"$each": [t["id"] for t in tasks]}},
-                                                       "$push": {"status_history": {"status": od.get("status"), "timestamp": now_iso(), "user": "Sistem (OD)",
-                                                                                    "note": f"Barang diterima → {len(tasks)} tugas Surat Jalan lahir otomatis untuk SO {so.get('number')}"}}})
+    # 23 Okt — tugas ambil bisa lahir lewat jalur lain (pemenuhan backorder SO); dulu OD hanya mencatat tugas dari
+    # panggilan ini (tugas item ke-2 hilang dari OD) dan riwayat menulis "0 tugas Surat Jalan lahir" berulang.
+    all_ids = [t["id"] async for t in db.wms_tasks.find({"order_id": so_id, "flow_type": "outbound"}, {"_id": 0, "id": 1})]
+    upd: Dict[str, Any] = {"$set": {"shipping_error": "", "updated_at": now_iso()},
+                           "$addToSet": {"outbound_task_ids": {"$each": all_ids}}}
+    if tasks:
+        upd["$push"] = {"status_history": {"status": od.get("status"), "timestamp": now_iso(), "user": "Sistem (OD)",
+                                           "note": f"Barang diterima → {len(tasks)} tugas Surat Jalan lahir otomatis untuk SO {so.get('number')}"}}
+    await db.special_orders.update_one({"id": od_id}, upd)
     return {"tasks": len(tasks), "so_number": so.get("number")}
 
 

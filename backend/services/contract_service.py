@@ -363,6 +363,11 @@ async def resolve_active(*, partner_id: str, contract_type: str = "makloon",
             continue
         if product_id and r.get("product_id") and r["product_id"] != product_id:
             continue
+        # 23 Okt — kontrak hasil keputusan SAMPLE yang SKU-nya belum lahir (produk kosong) bukan kontrak umum supplier:
+        # dulu ikut terpakai untuk produk lain supplier yang sama (harga & satuan salah, mis. Rp 39.000/meter untuk
+        # kain ber-kg → konversi gagal). Ia berlaku setelah terikat ke produknya (`_bind_product`).
+        if r.get("sample_ref") and not r.get("product_id"):
+            continue
         if input_product_id and r.get("input_product_id") and r["input_product_id"] != input_product_id:
             continue
         score = 0

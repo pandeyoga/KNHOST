@@ -72,7 +72,7 @@ def _cleanup():
     spec_ids = [s.get("spec_id") for s in smp if s.get("spec_id")]
     for o in DB.special_orders.find({"id": {"$in": ods}}, {"items.spec_id": 1, "spec_id": 1}):
         spec_ids += [i.get("spec_id") for i in o.get("items") or [] if i.get("spec_id")] + [o.get("spec_id")]
-    DB.supplier_contracts.delete_many({"source_sample_id": {"$in": [s["id"] for s in smp]}})
+    DB.supplier_contracts.delete_many({"refs.doc_id": {"$in": [s["id"] for s in smp]}})
     DB.md_samples.delete_many({"special_order_id": {"$in": ods}})
     DB.md_specs.delete_many({"id": {"$in": [x for x in spec_ids if x]}})
     DB.design_requests.delete_many({"special_order_id": {"$in": ods}})
@@ -251,3 +251,48 @@ def test_pengadaan_otomatis_menunggu_manajer_untuk_sku_baru(monkeypatch):
     # Manajer (berwenang merilis) → item diproses
     out = _run(ful.realize_all(DB.special_orders.find_one({"id": od_id}, {"_id": 0}), {"role": "manager", "name": "m"}))
     assert called and not out["pending"]
+
+
+def test_tenggat_desain_dan_perkiraan_tiba_po():
+    """Tenggat DSR = hari ini + SLA ronde (≤ tenggat kirim); tiba PO = hari ini + lead time kontrak (+ peringatan)."""
+    from datetime import date, timedelta
+    sys.path.insert(0, "/app/backend")
+    from services import special_order_routing as routing  # noqa: E402
+    from services import special_order_fulfillment as ful  # noqa: E402
+    from services.logistics_service import today_wib  # noqa: E402
+    today = date.fromisoformat(today_wib())
+    far = (today + timedelta(days=60)).isoformat()
+    near = (today + timedelta(days=3)).isoformat()
+    due = _run(routing._design_due({"expected_delivery": far}, ENT))   # noqa: SLF001
+    assert today < date.fromisoformat(due) < date.fromisoformat(far)
+    assert _run(routing._design_due({"expected_delivery": near}, ENT)) == near   # noqa: SLF001 — tidak melewati tenggat
+    cid = f"sct_TEST_od23_{TAG}"
+    DB.supplier_contracts.insert_one({"id": cid, "lead_time_days": 10, "entity_id": ENT})
+    try:
+        eta, warn = _run(ful._po_eta({"expected_delivery": far}, {"contract_id": cid, "supplier_id": ""}))   # noqa: SLF001
+        assert eta == (today + timedelta(days=10)).isoformat() and warn == ""
+        eta, warn = _run(ful._po_eta({"expected_delivery": near}, {"contract_id": cid, "supplier_id": ""}))   # noqa: SLF001
+        assert eta > near and "melewati tenggat" in warn
+        eta, warn = _run(ful._po_eta({"expected_delivery": far}, {"contract_id": "", "supplier_id": ""}))   # noqa: SLF001
+        assert eta == far and warn == ""   # tanpa lead time → tenggat kirim (perilaku lama)
+    finally:
+        DB.supplier_contracts.delete_one({"id": cid})
+
+
+def test_kontrak_sample_tanpa_produk_tidak_berlaku_umum():
+    """Kontrak dari keputusan sample yang SKU-nya belum lahir tidak dipakai untuk produk lain supplier yang sama."""
+    sys.path.insert(0, "/app/backend")
+    from services import contract_service as cs  # noqa: E402
+    sup = f"sup_TEST_od23_{TAG}"
+    DB.supplier_contracts.insert_many([
+        {"id": f"sct_TEST_od23_s_{TAG}", "contract_type": "purchase", "partner_id": sup, "status": "active", "entity_id": ENT,
+         "product_id": "", "sample_ref": "KSC/SMP-TEST", "tariff_rate": 39000, "tariff_basis": "meter"},
+        {"id": f"sct_TEST_od23_g_{TAG}", "contract_type": "purchase", "partner_id": sup, "status": "active", "entity_id": ENT,
+         "product_id": "", "tariff_rate": 50000, "tariff_basis": "kg"}])
+    try:
+        got = _run(cs.resolve_active(partner_id=sup, contract_type="purchase", product_id="prod_lain", entity_id=ENT))
+        assert got and got["id"] == f"sct_TEST_od23_g_{TAG}", got   # kontrak umum (non-sample) tetap berlaku
+        DB.supplier_contracts.delete_one({"id": f"sct_TEST_od23_g_{TAG}"})
+        assert _run(cs.resolve_active(partner_id=sup, contract_type="purchase", product_id="prod_lain", entity_id=ENT)) is None
+    finally:
+        DB.supplier_contracts.delete_many({"partner_id": sup})

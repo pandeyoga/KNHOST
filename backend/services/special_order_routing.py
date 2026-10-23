@@ -125,7 +125,7 @@ async def _route_item(od: Dict[str, Any], item: Dict[str, Any], actor: Dict[str,
         try:
             req = await dreq.create({"source": "customer", "customer_id": od.get("customer_id", ""),
                                      "category_code": cat, "design_category_code": dcat, "brief": brief,
-                                     "due_date": od.get("expected_delivery", ""), "submit_now": True,
+                                     "due_date": await _design_due(od, entity_id), "submit_now": True,
                                      "color_targets": [{"color_id": item["color_id"]}] if item.get("color_id") else []},
                                     actor, entity_id)
             await db.design_requests.update_one({"id": req["id"]}, {"$set": {
@@ -178,6 +178,22 @@ async def _route_item(od: Dict[str, Any], item: Dict[str, Any], actor: Dict[str,
             links.setdefault("routing_errors", []).append(f"Permintaan sample {tag}: {exc}")
 
 
+async def _design_due(od: Dict[str, Any], entity_id: str) -> str:
+    """Tenggat bawaan permintaan desain OD = hari ini (WIB) + SLA satu ronde R&D (`rnd.round_sla_days`), tidak
+    melewati tenggat kirim OD. 23 Okt — dulu SAMA dengan tenggat kirim ke pelanggan, padahal sesudah desain masih
+    ada proofing, ACC pelanggan, pengadaan & penerimaan."""
+    from datetime import date, timedelta
+    from services import rnd_gate
+    from services.logistics_service import today_wib
+    deadline = str(od.get("expected_delivery") or "")[:10]
+    try:
+        sla = int((await rnd_gate.policy(entity_id)).get("round_sla_days") or 7)
+    except (TypeError, ValueError):
+        sla = 7
+    due = (date.fromisoformat(today_wib()) + timedelta(days=max(1, sla))).isoformat()
+    return min(due, deadline) if deadline else due
+
+
 async def _requester(od: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
     """Peminta dokumen turunan = pembuat OD (Sales), bukan penyetuju.
 
@@ -221,7 +237,7 @@ async def route_on_approve(od: Dict[str, Any], actor: Dict[str, Any], entity_id:
         payload = {"source": "customer", "customer_id": od.get("customer_id", ""),
                    "category_code": cat, "design_category_code": dcat,
                    "brief": f"{_label(od)}\n{od.get('reference_notes') or ''}\n{(od.get('custom_item') or {}).get('description', '')}".strip(),
-                   "due_date": od.get("expected_delivery", ""), "submit_now": True,
+                   "due_date": await _design_due(od, entity_id), "submit_now": True,
                    "color_targets": [{"color_id": sp["color_id"]}] if sp.get("color_id") else [],
                    "special_order_id": od["id"], "special_order_number": od.get("number", "")}
         try:
@@ -329,7 +345,8 @@ async def chain_of(od: Dict[str, Any]) -> Dict[str, Any]:
                              and any(s.get("status") not in ("cancelled", "decided") for s in out["samples"]) else [])
     if od.get("linked_sales_order_id"):
         out["outbound_tasks"] = await db.wms_tasks.find({"order_id": od["linked_sales_order_id"], "flow_type": "outbound"},
-                                                        {"_id": 0, "id": 1, "status": 1, "quantity": 1, "shipped_qty": 1, "warehouse_name": 1}).to_list(20)
+                                                        {"_id": 0, "id": 1, "status": 1, "quantity": 1, "shipped_qty": 1, "warehouse_name": 1,
+                                                         "product_name": 1, "product_sku": 1, "sku": 1, "unit": 1}).to_list(20)
         out["shipments"] = await db.shipments.find({"order_id": od["linked_sales_order_id"]}, {"_id": 0, "id": 1, "shipment_no": 1, "status": 1, "logistics_status": 1, "created_at": 1}).to_list(20)
     if od.get("items"):
         from services import special_order_items as soi

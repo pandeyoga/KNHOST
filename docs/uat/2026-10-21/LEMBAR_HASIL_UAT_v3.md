@@ -349,7 +349,7 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | S13-11 | Sales | Keputusan pelanggan tersimpan; riwayat ACC + bukti; OD masuk antrean kunci harga. | ✓ S13 |  |  |  |
 | S13-12 | Admin Sales | Notifikasi Harga dikunci; total OD = jumlah per item (contoh Rp 19.500.000 + PPN). SKU baru → panel pengadaan: menunggu Manajer: rilis SKU baru ke pro… | ✓ S13 |  |  |  |
 | S13-13 | MD | Item Siap direalisasi. | ✓ S13 |  |  |  |
-| S13-14 | Manajer | Per item PR-xxxxx → PO KSC/PO-xxxxx ke supplier pemenang (Belum diterima); OD Dalam Produksi. | ✓ S13 |  |  |  |
+| S13-14 | Manajer | Per item PR-xxxxx → PO KSC/PO-xxxxx ke supplier pemenang (Belum diterima), tiba = hari ini + lead time (melewati tenggat kirim → peringatan); OD Dalam… | ✓ S13 |  |  |  |
 | S13-15 | Admin Sales | KSC/SO-xxxxx Menunggu stok (backorder per item) tertaut OD; ulang tidak membuat SO kedua. | ✓ S13 |  |  |  |
 | S13-16 | Admin Gudang · Gudang · MD Quality | Roll item OD berkomitmen ke SO OD; SO Terkonfirmasi otomatis (barang pesanan khusus diterima gudang); OD Siap baru setelah semua PO item diterima; tug… | ○ |  |  |  |
 | S13-17 | Gudang | Pindah ke Operasi Gudang › Barang Keluar dengan tugas terpilih (Jakarta · Gudang Sukacita); panel AMBIL & KIRIM memuat ROLL YANG HARUS DIAMBIL (roll, … | ✓ =S1 |  |  |  |
