@@ -571,6 +571,13 @@ async def _realize_mko(od, n, pr_id, actor) -> Optional[Dict[str, Any]]:
             "quantity": n["quantity"], "unit": n["unit"], "created_at": now_iso()}
 
 
+async def _has_active_doc(n: Dict[str, Any]) -> bool:
+    for d in (n.get("state") or {}).get("docs") or []:
+        if (await _doc_status(d)).get("active"):
+            return True
+    return False
+
+
 async def realize_all(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: str = "") -> Dict[str, Any]:
     """Dipakai auto-procure (kunci harga / retry): realisasikan setiap item yang jalurnya sudah jelas."""
     out: Dict[str, Any] = {"items": [], "errors": [], "pending": []}
@@ -579,7 +586,9 @@ async def realize_all(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: s
         # 23 Okt — SKU baru yang belum dirilis & pelaku tidak berwenang merilis (mis. Admin Sales saat kunci harga):
         # bukan GALAT — memang menunggu Manajer (rilis = wewenang Manajer saat realisasi). Dulu dicoba lalu dicatat
         # "Gagal — bisa diulang" + pesan peran mentah di tiap item.
-        if needs_release(n) and not may_release and not n["active_docs"]:
+        # UAT 23 Okt — `needs()` tidak mengisi `active_docs` (hanya `progress()`): dulu KeyError 'active_docs' tersimpan
+        # sebagai galat pengadaan & tampil mentah di panel harga, dan catatan "Menunggu Manajer" tidak pernah muncul.
+        if needs_release(n) and not may_release and not await _has_active_doc(n):
             out["pending"].append(f"Item {n['line_no']}: SKU baru {n['product_sku']}")
             continue
         fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})

@@ -702,7 +702,8 @@ async def on_shipment_dispatched(so_id: str) -> None:
     if open_tasks:
         return
     from services.special_order_service import transition_special_order_status
-    for st in ("ready", "shipped"):
+    # UAT 23 Okt — OD yang sudah "ready" langsung ke "shipped" (dulu ready→ready dicoba → galat palsu di log).
+    for st in (("ready", "shipped") if od.get("status") == "in_production" else ("shipped",)):
         try:
             await transition_special_order_status(od["id"], st, "Sistem (Surat Jalan)")
         except ValueError as exc:
@@ -727,7 +728,10 @@ async def on_delivered(so_id: str) -> None:
     od = await _od_of_so(so_id)
     if not od or od.get("status") != "shipped":
         return
-    if not await fulfillment_complete(so_id):
+    # UAT 23 Okt — SO yang sudah Selesai (mis. "Tandai Diterima (Selesai)" atas konfirmasi pelanggan, tanpa bukti terima
+    # di Logistik) juga menyelesaikan OD; dulu OD tertinggal "Dikirim" selamanya sementara SO-nya Selesai.
+    so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0, "status": 1}) or {}
+    if so.get("status") != "done" and not await fulfillment_complete(so_id):
         return
     from services.special_order_service import transition_special_order_status
     try:

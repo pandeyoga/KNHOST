@@ -18,7 +18,12 @@ export function SpecialOrderInfoPanels({ order }) {
     <div className="grid items-start gap-3 md:grid-cols-2" data-testid="special-order-info-panels">
       <Panel testId="od-item-panel" icon={Package} title={multi ? `Ringkasan pesanan · ${items.length} item` : "Rincian item custom"}>
         <div className="grid gap-2.5 text-[12px]">
-          <div><K>Deskripsi</K><p className="font-semibold" data-testid="od-item-description">{ci.description || order.title || "—"}</p></div>
+          {/* UAT 23 Okt — `custom_item.description` = JUDUL OD; dulu berlabel "Deskripsi" sehingga tampak bertentangan
+              dengan nama item (mis. judul "kain athena warna khusus", item "test"). */}
+          <div><K>Judul pesanan</K><p className="font-semibold" data-testid="od-item-description">{order.title || ci.description || "—"}</p></div>
+          {!multi && items[0]?.description && items[0].description !== (order.title || ci.description) && (
+            <div><K>Item</K><p data-testid="od-item-line-desc">{items[0].description}</p></div>
+          )}
           {specs.length > 0 ? (
             <div><K>Spesifikasi custom</K>
               <dl className="mt-0.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11.5px]">

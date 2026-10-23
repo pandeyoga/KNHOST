@@ -224,6 +224,28 @@ def test_od_siap_hanya_setelah_semua_po_diterima():
         DB.purchase_orders.delete_many({"id": {"$in": [po_a, po_b]}})
 
 
+def test_od_selesai_saat_so_ditandai_diterima_tanpa_logistik():
+    """UAT 23 Okt — SO hasil OD ditutup lewat "Tandai Diterima (Selesai)" (tanpa bukti terima Logistik) → OD ikut Selesai;
+    dulu OD tertinggal "Dikirim" selamanya. Surat jalan saat OD sudah Siap → langsung Dikirim (tanpa ready→ready)."""
+    sys.path.insert(0, "/app/backend")
+    from services import special_order_phase2 as p2  # noqa: E402
+    od_id, so_id = f"sord_TEST_od23_done_{TAG}", f"so_TEST_od23_done_{TAG}"
+    CREATED.append(od_id)
+    DB.special_orders.insert_one({"id": od_id, "number": f"TESTD-{TAG}", "status": "ready", "entity_id": ENT,
+                                  "status_history": [], "title": f"TEST_OD23_{TAG}", "linked_sales_order_id": so_id})
+    DB.sales_orders.insert_one({"id": so_id, "number": f"TEST_SO-{so_id}", "status": "shipped", "entity_id": ENT})
+    try:
+        _run(p2.on_shipment_dispatched(so_id))
+        assert DB.special_orders.find_one({"id": od_id})["status"] == "shipped"
+        _run(p2.on_delivered(so_id))                       # SO belum Selesai, belum ada bukti terima → tetap Dikirim
+        assert DB.special_orders.find_one({"id": od_id})["status"] == "shipped"
+        DB.sales_orders.update_one({"id": so_id}, {"$set": {"status": "done"}})
+        _run(p2.on_delivered(so_id))
+        assert DB.special_orders.find_one({"id": od_id})["status"] == "done"
+    finally:
+        DB.sales_orders.delete_one({"id": so_id})
+
+
 def test_pengadaan_otomatis_menunggu_manajer_untuk_sku_baru(monkeypatch):
     """Kunci harga oleh peran yang tidak berwenang merilis SKU baru → item 'menunggu Manajer', bukan galat."""
     sys.path.insert(0, "/app/backend")
@@ -232,7 +254,9 @@ def test_pengadaan_otomatis_menunggu_manajer_untuk_sku_baru(monkeypatch):
     CREATED.append(od_id)
     DB.special_orders.insert_one({"id": od_id, "number": f"TESTP-{TAG}", "status": "confirmed", "entity_id": ENT,
                                   "title": f"TEST_OD23_{TAG}", "pricing": {"locked": True}})
-    item = {"key": "soi_x", "line_no": 1, "product_sku": "RND-TEST", "product_lifecycle": "disetujui", "active_docs": []}
+    # Bentuk baris = `needs()` ASLI (tanpa `active_docs` — itu hanya diisi `progress()`); dulu tiruan memuat
+    # `active_docs` sehingga KeyError di jalur nyata (UAT 23 Okt, SORD-261023-0003) tidak tertangkap.
+    item = {"key": "soi_x", "line_no": 1, "product_sku": "RND-TEST", "product_lifecycle": "disetujui", "state": {"docs": []}}
     called = []
 
     async def fake_needs(od):
