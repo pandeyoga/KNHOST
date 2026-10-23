@@ -11,7 +11,7 @@
   padding: 8px 14px; border-radius: var(--r-md);
   background: var(--ios-blue); color: #fff; font-weight: 700; font-size: 13px;
   border: 0; cursor: pointer; box-shadow: 0 6px 16px rgba(0, 122, 255, 0.22);
-  transition: background 140ms ease, opacity 140ms ease;
+  transition: background 140ms ease, opacity 140ms ease, transform 160ms cubic-bezier(.2,.8,.2,1);
 }
 .btn-primary:hover { background: var(--ios-blue-strong); }
 .btn-primary:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
@@ -20,7 +20,7 @@
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 7px 12px; border-radius: var(--r-md);
   background: #fff; color: #1F1F25; border: 1px solid var(--solid-line);
-  font-weight: 600; font-size: 13px; cursor: pointer; transition: background 140ms ease;
+  font-weight: 600; font-size: 13px; cursor: pointer; transition: background 140ms ease, transform 160ms cubic-bezier(.2,.8,.2,1);
 }
 .btn-secondary:hover { background: #F7F8FA; }
 .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
@@ -29,7 +29,7 @@
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 7px 12px; border-radius: var(--r-md);
   background: var(--ios-red); color: #fff; border: 0;
-  font-weight: 700; font-size: 13px; cursor: pointer; transition: background 140ms ease;
+  font-weight: 700; font-size: 13px; cursor: pointer; transition: background 140ms ease, transform 160ms cubic-bezier(.2,.8,.2,1);
 }
 .btn-danger:hover { background: #E73229; }
 .btn-danger:disabled { opacity: .5; cursor: not-allowed; }

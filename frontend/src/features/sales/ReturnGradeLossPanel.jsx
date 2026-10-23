@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { TrendingDown } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { formatCurrency } from "../../utils/formatters";
 
-const rp = (n) => `Rp ${Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
+const rp = (n) => formatCurrency(n);
 
 // LN-091-T02 — kerugian turun grade, terpisah dari kredit pelanggan (invoice lama tidak berubah).
 export default function ReturnGradeLossPanel({ ret }) {

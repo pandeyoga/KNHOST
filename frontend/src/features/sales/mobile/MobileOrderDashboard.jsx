@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, ChevronRight, RefreshCw, Users } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
+import LoadingLine from "../../../components/LoadingLine";
 
 const TONE = { waiting: "#B45309", processing: "#0058CC", shipped: "#7A3FA0", done: "#1B7F4B" };
 const KIND_TONE = { rejected: "#C62828", waiting: "#B45309", draft: "#6B6B73", unpaid: "#A05000" };
@@ -19,7 +20,7 @@ export default function MobileOrderDashboard({ selectedEntity, onOpenOrder }) {
   };
   useEffect(load, [selectedEntity]); // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="notice-bar danger m-3 text-xs" data-testid="m-odash-error">{err}</div>;
-  if (!d) return <p className="p-6 text-center text-sm m-muted">Memuat…</p>;
+  if (!d) return <LoadingLine className="justify-center p-6" />;
   const maxW = Math.max(1, ...d.weekly.map((w) => w.amount));
   const up = (d.growth_pct ?? 0) >= 0;
   return (

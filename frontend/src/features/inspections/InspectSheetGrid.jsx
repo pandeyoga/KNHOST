@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Printer, Save } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiText, inspectLine } from "./inspectionsApi";
+import KNSelect from "../../components/KNSelect";
 
 /**
  * Lembar Inspect — Trial 22 Okt 2026 (F5, permintaan pemilik): form QC 4-point MENYERUPAI kertas "DATA HASIL INSPECT".
@@ -153,11 +154,9 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
                   <td className={`${cell} font-semibold tabular-nums`} data-testid={`ins-sheet-points-${ln.id}`}>{p}</td>
                   <td className={`${cell} tabular-nums`} data-testid={`ins-sheet-stdrt-${ln.id}`}>{st ?? "—"}</td>
                   <td className={`${cell} ${!gradeAuto && r.dirty && !r.grade ? "bg-[#FFF6E0]" : ""}`}>
-                    <select className={`${inp} min-w-[52px]`} disabled={ro} value={r.grade || ""} data-testid={`ins-sheet-grade-${ln.id}`}
-                      onChange={(e) => upd(ln.id, { grade: e.target.value })}>
-                      <option value="">{gradeAuto ? "saran" : "—"}</option>
-                      {grades.map((g) => <option key={g.code} value={g.code}>{g.code}</option>)}
-                    </select>
+                    <KNSelect className={`${inp} min-w-[52px] !h-auto`} disabled={ro} value={r.grade || ""} data-testid={`ins-sheet-grade-${ln.id}`}
+                      onValueChange={(v) => upd(ln.id, { grade: v })} aria-label={`Grade ${ln.roll_no || ""}`}
+                      options={[{ value: "", label: gradeAuto ? "saran" : "—" }, ...grades.map((g) => ({ value: g.code, label: g.code }))]} />
                   </td>
                   {["A", "A1", "B"].map((k) => (
                     <td key={k} className={cell}><input className={inp} readOnly={ro} value={r[k]} onChange={(e) => upd(ln.id, { [k]: e.target.value })} /></td>

@@ -91,7 +91,9 @@ export default function ReallocateRollsModal({ order, item, onClose, onDone }) {
     }
   };
 
-  const Row = ({ r }) => {
+  // 23 Okt — fungsi render, bukan komponen di dalam render (dulu tombol baris dibuat ulang tiap render → fokus
+  // keyboard hilang setelah memilih roll).
+  const renderRow = (r) => {
     const on = sel.includes(r.id);
     const take = r.current ? r.length : (plan.takes[r.id] || 0);
     const unused = on && !r.current && take <= 0;
@@ -151,7 +153,7 @@ export default function ReallocateRollsModal({ order, item, onClose, onDone }) {
           {currentRolls.length > 0 && (
             <>
               <p className="bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">Roll saat ini (hilangkan centang untuk melepas)</p>
-              <ul className="divide-y divide-[#F2F3F5]">{currentRolls.map((r) => <Row key={r.id} r={r} />)}</ul>
+              <ul className="divide-y divide-[#F2F3F5]">{currentRolls.map((r) => renderRow(r))}</ul>
             </>
           )}
           <p className="flex items-center gap-1.5 border-t border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
@@ -163,7 +165,7 @@ export default function ReallocateRollsModal({ order, item, onClose, onDone }) {
             <p className="px-3 py-5 text-center text-[12px] text-[#8E8E93]">Tidak ada roll tersedia lain untuk produk ini.</p>
           ) : (
             <ul className="divide-y divide-[#F2F3F5]">
-              {avail.filter((r) => !currentRolls.some((c) => c.id === r.id)).map((r) => <Row key={r.id} r={byId[r.id]} />)}
+              {avail.filter((r) => !currentRolls.some((c) => c.id === r.id)).map((r) => renderRow(byId[r.id]))}
             </ul>
           )}
           {blocked.length > 0 && (

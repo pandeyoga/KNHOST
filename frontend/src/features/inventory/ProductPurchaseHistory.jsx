@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { PackageSearch, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatQty } from "../../utils/formatters";
+import { formatQty, formatCurrency } from "../../utils/formatters";
 
 function fmtDate(s) {
   if (!s) return "—";
@@ -19,7 +19,7 @@ function fmtDate(s) {
 }
 function rp(v) {
   const n = Number(v || 0);
-  return n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+  return n ? formatCurrency(n) : "—";   // 23 Okt — dulu tanpa batas desimal
 }
 
 export default function ProductPurchaseHistory({ productId, ownerEntityId }) {

@@ -6,13 +6,13 @@
 import { useEffect } from "react";
 import { CheckCircle2, Clock, FileText, Paperclip, Plus, RotateCcw, Send, Upload, XCircle } from "lucide-react";
 import { RoundBoxes, revisionLabel, sampleRoundResult } from "../../components/RevisionProgress";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import ProofImage from "./ProofImage";
 import { roundProofUrl } from "./rndApi";
 import { ROUND_RESULT_META } from "./rndMeta";
 import { measurementMeta, roundTypeOf, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—");
+const fmtAt = formatDateTime;   // 23 Okt — baku WIB ("—" bila kosong)
 const fmtD = (iso) => (iso ? new Date(String(iso).length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString("id-ID", { dateStyle: "medium" }) : "—");
 
 export default function SampleRoundList({ sample, types, measurements, canSubmit,

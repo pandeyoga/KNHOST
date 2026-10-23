@@ -1,5 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import useDomainEnums from "../../hooks/useDomainEnums";
+import KNSelect from "../../components/KNSelect";
 
 const EMPTY = { stage: "", fabric_type: "", line_code: "", color: "", supplier_id: "", lifecycle: "" };
 export const emptyCatalogFilters = () => ({ ...EMPTY });
@@ -10,11 +11,9 @@ export function CatalogFilters({ value, onChange, suppliers = [] }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   const active = Object.values(value).some(Boolean);
   const sel = (key, label, opts) => (
-    <select data-testid={`catalog-filter-${key}`} className="field !w-auto !py-1.5 text-xs" value={value[key]}
-            onChange={(e) => set(key, e.target.value)} aria-label={label}>
-      <option value="">{label}: semua</option>
-      {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
+    <KNSelect data-testid={`catalog-filter-${key}`} className="field !w-auto !py-1.5 text-xs" value={value[key]}
+      onValueChange={(v) => set(key, v)} aria-label={label}
+      options={[{ value: "", label: `${label}: semua` }, ...opts.map((o) => ({ value: o.value, label: o.label }))]} />
   );
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="catalog-filters">

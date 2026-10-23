@@ -1,4 +1,5 @@
 import { Scale } from "lucide-react";
+import { formatDate } from "../../../utils/formatters";
 
 const fmt = (n) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(Number(n || 0));
 
@@ -39,7 +40,7 @@ export default function POReceiptVariancePanel({ variances, testId = "po-receipt
                 {v.expected_rolls != null ? ` · roll ${v.received_rolls}/${v.expected_rolls}` : ""}
                 {(v.label_variance_rolls || []).length ? ` · flag QC: ${v.label_variance_rolls.join(", ")}` : ""}
                 {v.recorded_by ? ` · ${v.recorded_by}` : ""}
-                {v.recorded_at ? ` · ${String(v.recorded_at).slice(0, 10)}` : ""}
+                {v.recorded_at ? ` · ${formatDate(v.recorded_at)}` : ""}
               </p>
             )}
           </div>

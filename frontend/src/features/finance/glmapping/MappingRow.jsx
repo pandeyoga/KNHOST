@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, History, Pencil } from "lucide-react";
+import { formatDateTime } from "../../../utils/formatters";
 
 const SOURCE = { default: ["Bawaan", "bg-[#F4F4F6] text-[#5A5A63]"], global: ["Global", "bg-[#EAF2FF] text-[#0058CC]"], entity: ["Khusus PT", "bg-[#FFF4E5] text-[#B25E00]"] };
 const STATUS = { ok: ["Lengkap", "text-[#1A7F37]"], unset: ["Belum diatur", "text-[#B42318]"], inactive: ["Akun nonaktif", "text-[#B42318]"] };
@@ -45,7 +46,7 @@ function RowDetail({ row }) {
         <p><span className="text-[#6B6B73]">Jenis akun diizinkan:</span> {row.allowed_type_labels.join(", ")}</p>
         <p><span className="text-[#6B6B73]">Akun bawaan:</span> {row.default}{row.source === "entity" ? ` · Global: ${row.global_code}` : ""}</p>
         <p className="text-[10.5px] text-[#9A9BA3]">Kode kebutuhan: {row.key}</p>
-        {row.updated_by && <p className="text-[10.5px] text-[#9A9BA3]">Terakhir diubah {row.updated_by} · {String(row.updated_at).slice(0, 16).replace("T", " ")}</p>}
+        {row.updated_by && <p className="text-[10.5px] text-[#9A9BA3]">Terakhir diubah {row.updated_by} · {formatDateTime(row.updated_at)}</p>}
       </div>
     </div>
   );

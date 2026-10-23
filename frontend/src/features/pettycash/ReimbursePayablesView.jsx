@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { HandCoins, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 
 /** Laporan Hutang Reimburse Karyawan (2-1650): saldo terbuka per karyawan + umur sejak LPJ disetujui. */
@@ -82,7 +82,7 @@ export default function ReimbursePayablesView({ selectedEntity = "all", entities
                 <span className="truncate">{r.employee}</span>
                 <span className="truncate">{r.cash_advance_number || "—"}</span>
                 <span className="truncate">{entityName(r.entity_id)}</span>
-                <span>{(r.approved_at || "").slice(0, 10) || "—"}</span>
+                <span>{formatDate(r.approved_at) || "—"}</span>
                 <span className="font-semibold" style={{ color: BUCKET_TONE[r.bucket] }}>{r.days} hr</span>
                 <span className="tabular-nums text-right font-semibold">{formatCurrency(r.amount)}</span>
               </div>

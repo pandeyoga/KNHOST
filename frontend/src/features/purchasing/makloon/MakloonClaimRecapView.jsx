@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Download, Loader2, RefreshCw, Scale } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
+import KNSelect from "../../../components/KNSelect";
 
 const SETTLE = { potong_bon: "Potong tagihan jasa", tagih_ganti: "Tagih ganti rugi", terima_catatan: "Diterima (catatan)" };
 const STATUS = { posted: "Dibukukan", pending_approval: "Menunggu persetujuan", rejected: "Ditolak", approved: "Disetujui" };
@@ -64,10 +65,8 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
         <h2 className="mr-auto flex items-center gap-2 text-[15px] font-bold"><Scale size={16} /> Rekap Susut & Klaim Mitra</h2>
         <label className="text-[11px]">Dari<input type="date" className="field ml-1 !py-1" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }} data-testid="recap-from" /></label>
         <label className="text-[11px]">Sampai<input type="date" className="field ml-1 !py-1" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }} data-testid="recap-to" /></label>
-        <select className="field !w-auto !py-1 text-[12px]" value={partner} onChange={(e) => { setPartner(e.target.value); setOffset(0); }} data-testid="recap-partner">
-          <option value="">Semua mitra</option>
-          {partnerOpts.map((p) => <option key={p.makloon_id} value={p.makloon_id}>{p.makloon_name}</option>)}
-        </select>
+        <KNSelect className="field !w-auto !py-1 text-[12px]" value={partner} onValueChange={(v) => { setPartner(v); setOffset(0); }} data-testid="recap-partner"
+          aria-label="Mitra makloon" options={[{ value: "", label: "Semua mitra" }, ...partnerOpts.map((p) => ({ value: p.makloon_id, label: p.makloon_name }))]} />
         <button className="secondary-button !py-1.5 text-[12px]" onClick={download} disabled={busy} data-testid="recap-download-xlsx">
           <Download size={13} /> Unduh Excel
         </button>

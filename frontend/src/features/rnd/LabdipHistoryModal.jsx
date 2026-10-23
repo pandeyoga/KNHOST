@@ -9,6 +9,7 @@ import { labdipHistory } from "./rndApi";
 import { errMsg, ROUND_RESULT_META } from "./rndMeta";
 import { openRnd } from "./rndDeepLink";
 import { overlayDismiss } from "../../utils/overlayDismiss";
+import { formatDate } from "../../utils/formatters";
 
 export default function LabdipHistoryModal({ colorId = "", productId = "", label = "", entityId, onClose }) {
   const [data, setData] = useState(null);
@@ -73,7 +74,7 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
                   <CalendarClock size={11} className={r.overdue ? "text-[#C0392B]" : "text-[#8E8E93]"} />
                   {r.due_date || "—"}
                 </span>
-                <span className="tabular-nums text-[#6B6B73]">{(r.received_at || "").slice(0, 10) || "—"}</span>
+                <span className="tabular-nums text-[#6B6B73]">{formatDate(r.received_at) || "—"}</span>
                 <span className="text-right font-bold" style={{ color: rm.tone }}>{rm.label}{r.score != null ? ` · ${r.score}` : ""}</span>
               </button>
             );

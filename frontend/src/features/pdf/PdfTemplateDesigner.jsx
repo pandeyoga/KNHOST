@@ -10,6 +10,7 @@ import { askConfirm } from "../../services/confirmService";
 import {
   FileText, Download, Save, RotateCcw, Loader2, RefreshCw, FileWarning, Layers,
 } from "lucide-react";
+import { formatDateTime } from "../../utils/formatters";
 
 export default function PdfTemplateDesigner({ currentUser, selectedEntity, entities = [] }) {
   const [docTypes, setDocTypes] = useState([]);       // dari /pdf/templates (berlapis: __default__ + jenis)
@@ -256,7 +257,7 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
           ) : (
             <span className="text-[#3C3C43]">Hanya <b>perbedaan</b> dari bawaan yang disimpan untuk jenis ini{meta?.override_keys?.length ? <>: <span className="font-mono text-[10.5px]">{meta.override_keys.join(", ")}</span></> : " — saat ini mengikuti bawaan sepenuhnya"}.</span>
           )}
-          {meta?.customized && <span className="ml-auto rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="pdf-meta-version">v{meta.version} · {String(meta.updated_at || "").slice(0, 16).replace("T", " ")} · {meta.updated_by}</span>}
+          {meta?.customized && <span className="ml-auto rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="pdf-meta-version">v{meta.version} · {formatDateTime(meta.updated_at)} · {meta.updated_by}</span>}
         </div>
         {(msg || err) && (
           <div className="px-4 pb-3">

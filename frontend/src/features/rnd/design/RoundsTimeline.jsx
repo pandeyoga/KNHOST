@@ -6,8 +6,9 @@ import { errMsg, fmtScore, roundLabel } from "../rndMeta";
 import { ScoreBadge } from "./ScoreInput";
 import { Trash2 } from "lucide-react";
 import RoundPaperCheck from "./RoundPaperCheck";
+import { formatDateTime } from "../../../utils/formatters";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—");
+const fmtAt = formatDateTime;   // 23 Okt — baku WIB ("—" bila kosong)
 
 export default function RoundsTimeline({ design, canEdit, canPaper, onDone, onError }) {
   const versions = [...(design.versions || [])].sort((a, b) => a.version - b.version);

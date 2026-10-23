@@ -3,6 +3,7 @@ import { Download, FileUp, Loader2, RotateCcw, CheckCircle2 } from "lucide-react
 import axios, { API } from "../../../services/apiClient";
 import AddFabricTypeInline from "./AddFabricTypeInline";
 import { invalidateDomainEnums } from "../../../hooks/useDomainEnums";
+import { formatDateTime } from "../../../utils/formatters";
 
 const ST = { ok: "Akan diubah", same: "Sudah sama", error: "Ditolak" };
 const ST_DONE = { ok: "Diubah", same: "Sudah sama", error: "Ditolak" };
@@ -128,7 +129,7 @@ export default function ClientDatasetImportView() {
           <tbody>
             {batches.map((b) => (
               <tr key={b.id} className="border-t border-[#F0F0F3]" data-testid={`cds-batch-${b.id}`}>
-                <td className="px-2 py-1.5">{(b.created_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td className="px-2 py-1.5">{formatDateTime(b.created_at)}</td>
                 <td className="px-2 py-1.5">{b.filename}</td>
                 <td className="px-2 py-1.5">{BST[b.status] || b.status}</td>
                 <td className="px-2 py-1.5">{b.summary?.ok ?? 0} diubah · {b.summary?.error ?? 0} ditolak</td>

@@ -29,3 +29,9 @@ export const formatDateTime = (v) => {
   const d = _validDate(v);
   return d ? `${d.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: WIB })} WIB` : "—";
 };
+/** "YYYY-MM-DD" menurut WIB dari stempel waktu ISO — untuk pengelompokan/ekspor. 23 Okt: `.slice(0, 10)` pada
+ *  stempel UTC menghasilkan tanggal KEMARIN untuk aksi sebelum 07.00 WIB. Kosong/tak sah → "". */
+export const wibDate = (v) => {
+  const d = _validDate(v);
+  return d ? d.toLocaleDateString("sv-SE", { timeZone: WIB }) : "";
+};

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
+import LoadingLine from "../../../components/LoadingLine";
 
 export function MappingHistory({ mkey, entityId, onClose }) {
   const [rows, setRows] = useState(null);
@@ -10,7 +11,7 @@ export function MappingHistory({ mkey, entityId, onClose }) {
   }, [mkey, entityId]);
   return (
     <FormModal open onClose={onClose} title="Riwayat perubahan akun" testId="glmap-history-modal">
-      {rows === null ? <p className="text-[12px]">Memuat…</p>
+      {rows === null ? <LoadingLine />
         : rows.length === 0 ? <p className="text-[12px] text-[#6B6B73]" data-testid="glmap-history-empty">Belum ada perubahan.</p>
         : <div className="divide-y divide-[#EFF0F2] text-[12px]">{rows.map((h) => (
           <div key={h.id} className="py-2" data-testid={`glmap-history-row-${h.id}`}>

@@ -1,8 +1,9 @@
 /** HistoryPanel — riwayat lengkap desain: saring per kelompok peristiwa, tampilkan aktor · waktu · detail (sebelum → sesudah). */
 import { useMemo, useState } from "react";
 import { DESIGN_EVENT_LABEL, DESIGN_HISTORY_GROUPS, DESIGN_STATUS_META, fmtScore } from "../rndMeta";
+import { formatDateTime } from "../../../utils/formatters";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "");
+const fmtAt = (iso) => (iso ? formatDateTime(iso) : "");   // 23 Okt — baku WIB
 const TONE = {
   approve: "#1A7A3A", activate: "#0F6E4A", request_revision: "#C62828", archive: "#6B6B73",
   scored: "#B26A00", feedback: "#0058CC", new_version: "#6B219A", submit: "#0058CC",

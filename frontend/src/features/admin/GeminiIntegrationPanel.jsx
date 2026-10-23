@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Wand2, KeyRound, CheckCircle2, FlaskConical, PlugZap, AlertTriangle } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import { formatDateTime } from "../../utils/formatters";
 
 // FB-01 — Panel Integrasi Gemini "Nano Banana Pro" (ilustrasi AI galeri desain). Admin only.
 export default function GeminiIntegrationPanel() {
@@ -59,7 +60,7 @@ export default function GeminiIntegrationPanel() {
           <div className="grid gap-3 max-w-[560px]">
             <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${!enabled ? "bg-[#EDEEF1] text-[#6B6B73]" : !demo && verified ? "bg-[#E7F5EC] text-[#1F7A45]" : "bg-[#FBF3E2] text-[#B7791F]"}`} data-testid="gemini-status">
               {!enabled ? <FlaskConical size={15} /> : !demo && verified ? <CheckCircle2 size={15} /> : !demo ? <AlertTriangle size={15} /> : <FlaskConical size={15} />}
-              {!enabled ? "NONAKTIF — ilustrasi AI dimatikan admin." : demo ? "BELUM DIKONFIGURASI — pembuatan gambar dinonaktifkan sampai key Gemini tersedia." : verified ? `KEY TERUJI — ${String(cfg.verified_at).slice(0, 16).replace("T", " ")}; hasil gambar tetap bergantung respons Gemini.` : "KEY TERSIMPAN, BELUM DIUJI — klik \"Uji koneksi\" untuk memastikan key valid sebelum dipakai."}
+              {!enabled ? "NONAKTIF — ilustrasi AI dimatikan admin." : demo ? "BELUM DIKONFIGURASI — pembuatan gambar dinonaktifkan sampai key Gemini tersedia." : verified ? `KEY TERUJI — ${formatDateTime(cfg.verified_at)}; hasil gambar tetap bergantung respons Gemini.` : "KEY TERSIMPAN, BELUM DIUJI — klik \"Uji koneksi\" untuk memastikan key valid sebelum dipakai."}
             </div>
             {err && <div className="notice-bar danger !py-1.5" data-testid="gemini-error"><span className="text-[11.5px]">{err}</span></div>}
             {msg && <div className="notice-bar success !py-1.5" data-testid="gemini-msg"><span className="text-[11.5px]">{msg}</span></div>}

@@ -41,6 +41,16 @@ jest.mock("../wms/grn/grnApi", () => ({
   errText: () => "gagal",
 }));   // bukan jest.fn: resetMocks CRA
 jest.mock("../../hooks/useDomainEnums", () => () => ({ options: () => [{ value: "A", label: "A" }] }));
+// 23 Okt — select grade QC & urutan antrean kini KNSelect (ux_audit E4); di jsdom diganti <select> setara (pola f14).
+jest.mock("../../components/KNSelect", () => {
+  const M = ({ value, onValueChange, options = [], "data-testid": tid, disabled }) => (
+    <select data-testid={tid} value={value ?? ""} disabled={disabled} onChange={(e) => onValueChange(e.target.value)}>
+      {!options.some((o) => o.value === "") && <option value="" />}
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return { __esModule: true, default: M, KNSelect: M };
+});
 const apiCalls = [];
 jest.mock("../../services/apiClient", () => ({
   __esModule: true, API: "/api",

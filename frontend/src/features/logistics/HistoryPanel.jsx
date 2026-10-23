@@ -3,7 +3,7 @@ import { History, Search, Download } from "lucide-react";
 import KNDatePicker, { formatDateId } from "../../components/KNDatePicker";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, wibDate } from "../../utils/formatters";
 import { logisticsHistory, MODE_LABEL, MODE_PILL, STATUS_PILL, carrierText } from "./logisticsApi";
 
 // Riwayat pengiriman (terkirim / selesai / gagal): saring tanggal, moda, status, kata kunci.
@@ -27,7 +27,7 @@ export default function HistoryPanel({ params, onOpen, refreshKey }) {
   const rows = data?.rows || [];
   const st = data?.stats || {};
   const pages = Math.max(1, Math.ceil((data?.total || 0) / SIZE));
-  const when = (r) => String(r.completed_at || r.delivered_at || r.created_at || "").slice(0, 10);
+  const when = (r) => wibDate(r.completed_at || r.delivered_at || r.created_at);   // tanggal WIB (dulu potongan UTC)
 
   function exportCsv() {
     const head = ["Nomor", "Tanggal", "Pesanan", "Pelanggan", "Moda", "Pengangkut", "Surat Jalan", "Biaya kirim", "Status", "Penerima"];

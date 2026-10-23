@@ -10,6 +10,8 @@ import InboundScanInterface from "../InboundScanInterface";
 import useReceivingMode from "../../../hooks/useReceivingMode";
 import { SearchBox } from "../../../components/ListControls";
 import { STATUS, errText, grnApi } from "./grnApi";
+import { formatDateTime } from "../../../utils/formatters";
+import LoadingLine from "../../../components/LoadingLine";
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
 const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
@@ -22,7 +24,7 @@ const mkoPreset = () => {
 /** Operasi Gudang → Barang Masuk: Kedatangan (SJ & OCR) · Selisih Supplier · Scan Terima PO (mode lama). */
 export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDoc, onClearFocus, onOpenPO }) {
   const [tab, setTab] = useState("list");
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(null);   // 23 Okt — null = sedang dimuat (dulu [] → "Belum ada kedatangan" saat memuat)
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("grn") || "");
@@ -33,7 +35,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const grnOnly = selectedEntity && selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
   const showLegacy = LEGACY_ROLES.includes(currentUser?.role) && !grnOnly;
   const canCreateGrn = can(currentUser?.permissions, "goods_receipt", "create");   // FE-04 — POST /goods-receipts
-  const load = useCallback(() => grnApi.list({ status, q }).then(setRows).catch((e) => setErr(errText(e))), [status, q]);
+  const load = useCallback(() => grnApi.list({ status, q }).then(setRows).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
   useEffect(() => { if (!openId) load(); }, [load, openId, selectedEntity]);
   useEffect(() => {
     if (!focusDoc?.focus_id) return;
@@ -90,11 +92,12 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
           {FILTERS.map(([v, l]) => (
             <button key={l} data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)}
               className={`tab-button ${status === v ? "active" : ""}`}>{l}
-              {status === v && <span className="tab-badge">{rows.length}</span>}</button>
+              {status === v && rows && <span className="tab-badge">{rows.length}</span>}</button>
           ))}
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">
-          {rows.map((r) => (
+          {rows === null && <LoadingLine className="col-span-full" text="Memuat kedatangan…" testId="grn-list-loading" />}
+          {(rows || []).map((r) => (
             <button key={r.id} data-testid={`grn-card-${r.id}`} onClick={() => setOpenId(r.id)}
               className="rounded-xl border border-[#EFF0F2] bg-white p-3 text-left transition-shadow hover:shadow-md">
               <div className="flex items-center justify-between">
@@ -104,10 +107,10 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
               <p className="mt-1 text-[12px] font-semibold">{r.partner_name}</p>
               <p className="text-[10.5px] text-[#6B6B73]">SJ <span className="font-mono">{r.dn_number || "-"}</span> · {r.lines} baris · {r.pages} halaman</p>
               {r.open_blockers > 0 && <p className="mt-1 text-[10.5px] font-semibold text-[#B4231F]">{r.open_blockers} selisih pemblokir</p>}
-              <p className="mt-1 text-[10px] text-[#8E8E93]">{(r.created_at || "").slice(0, 16).replace("T", " ")} · {r.created_by}</p>
+              <p className="mt-1 text-[10px] text-[#8E8E93]">{formatDateTime(r.created_at)} · {r.created_by}</p>
             </button>
           ))}
-          {!rows.length && (
+          {rows && !rows.length && (
             <div className="empty-state col-span-full w-full" data-testid="grn-list-empty">
               <p className="font-semibold">Belum ada kedatangan{status ? ` berstatus ${STATUS[status.split(",")[0]]?.label || status}` : ""}.</p>
               <p className="text-sm text-muted" style={{ maxWidth: 480 }}>Catat barang yang tiba: foto Surat Jalan dibaca otomatis (OCR), lalu hitung fisik & rekonsiliasi dengan PO.</p>

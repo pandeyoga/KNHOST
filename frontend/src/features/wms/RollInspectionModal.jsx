@@ -5,6 +5,7 @@ import { formatQty } from "../../utils/formatters";
 import DecimalInput from "../../components/DecimalInput";
 import RollGradePanel from "./RollGradePanel";
 import RollHoldControl from "./inventory/RollHoldControl";
+import KNSelect from "../../components/KNSelect";
 
 /**
  * RollInspectionModal (Fase 6.2 — P1) — Inspeksi 4-Point per roll.
@@ -234,10 +235,8 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                   <div className="flex items-center justify-between mt-2.5 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
                     <span className="text-[12px]">Total Poin: <b className="tabular-nums" data-testid={`roll-points-${roll.id}`}>{points}</b></span>
                     <label className="flex items-center gap-1.5 text-[12px]">Grade
-                      <select data-testid={`roll-grade-input-${roll.id}`} className="field !h-7 !w-auto !py-0 text-[12px]" value={grade} onChange={(e) => setGrade(e.target.value)}>
-                        <option value="">{thresholds.grade_auto ? `saran sistem: ${predictedGrade}` : "Pilih…"}</option>
-                        {grades.map((g) => <option key={g.code} value={g.code}>{g.code}</option>)}
-                      </select>
+                      <KNSelect data-testid={`roll-grade-input-${roll.id}`} className="field !h-7 !w-auto !py-0 text-[12px]" value={grade} onValueChange={setGrade} aria-label="Grade"
+                        options={[{ value: "", label: thresholds.grade_auto ? `saran sistem: ${predictedGrade}` : "Pilih…" }, ...grades.map((g) => ({ value: g.code, label: g.code }))]} />
                     </label>
                     <button data-testid={`roll-inspect-save-${roll.id}`} disabled={busy} onClick={() => save(roll.id)} className="primary-button text-[11px]">{busy ? "..." : "Simpan & Set Grade"}</button>
                   </div>

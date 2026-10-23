@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { CalendarClock, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
 
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
@@ -98,8 +98,8 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
                 <td className="px-3 py-2 font-mono">{r.number}</td>
                 <td className="px-3 py-2">{r.payer_entity_name} → {r.payee_entity_name}</td>
                 <td className="px-3 py-2">{r.status}</td>
-                <td className="px-3 py-2">{(r.received_at || "").slice(0, 10) || "—"}</td>
-                <td className="px-3 py-2">{(r.invoiced_at || "").slice(0, 10) || "—"}</td>
+                <td className="px-3 py-2">{formatDate(r.received_at) || "—"}</td>
+                <td className="px-3 py-2">{formatDate(r.invoiced_at) || "—"}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{rp(r.remaining)}</td>
                 <td className="px-3 py-2 tabular-nums">{r.age_days ?? "—"} hari</td>
                 <td className="px-3 py-2" data-testid={`interco-schedule-period-${r.interco_id}`}>

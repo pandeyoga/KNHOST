@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, sampleApi } from "./grnApi";
+import KNSelect from "../../../components/KNSelect";
 
 const UNITS = ["yard", "meter", "kg", "pcs"];
 const blank = () => ({ description: "", qty: "", unit: "yard", rolls: "", po_ref: "", is_non_stock: false });
@@ -39,7 +40,8 @@ export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
               <div key={i} data-testid={`ocr-sample-line-${i}`} className="grid grid-cols-3 gap-1 rounded-lg border border-[#EFF0F2] p-2 sm:grid-cols-[1fr_90px_90px_60px_130px_50px_24px] sm:items-center sm:border-0 sm:p-0">
                 <input className={`${inputCls} col-span-3 sm:col-span-1`} placeholder="Barang" value={l.description} onChange={(e) => set(i, "description", e.target.value)} />
                 <input data-testid={`ocr-sample-line-qty-${i}`} type="number" inputMode="decimal" placeholder="Qty" className={`${inputCls} font-mono`} value={l.qty} onChange={(e) => set(i, "qty", e.target.value)} />
-                <select data-testid={`ocr-sample-line-unit-${i}`} className={inputCls} value={l.unit} onChange={(e) => set(i, "unit", e.target.value)}>{UNITS.map((u) => <option key={u}>{u}</option>)}</select>
+                <KNSelect data-testid={`ocr-sample-line-unit-${i}`} className={inputCls} value={l.unit} onValueChange={(v) => set(i, "unit", v)} aria-label="Satuan"
+                  options={UNITS.map((u) => ({ value: u, label: u }))} />
                 <input type="number" inputMode="numeric" placeholder="Roll" className={`${inputCls} font-mono`} value={l.rolls} onChange={(e) => set(i, "rolls", e.target.value)} />
                 <input className={`${inputCls} col-span-2 font-mono sm:col-span-1`} value={l.po_ref} placeholder="No. PO, mis. 7460/CST/0726" onChange={(e) => set(i, "po_ref", e.target.value)} />
                 <label className="flex items-center justify-center gap-1 text-[10.5px]"><input type="checkbox" checked={l.is_non_stock} onChange={(e) => set(i, "is_non_stock", e.target.checked)} /><span className="sm:hidden">Non-stok</span></label>

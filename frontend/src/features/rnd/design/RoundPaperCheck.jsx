@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Printer } from "lucide-react";
 import { setRoundPaper } from "../rndApi";
 import { errMsg } from "../rndMeta";
+import { formatDateTime } from "../../../utils/formatters";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "");
+const fmtAt = (iso) => (iso ? formatDateTime(iso) : "");   // 23 Okt — baku WIB
 
 export default function RoundPaperCheck({ design, version, canPaper, onDone, onError }) {
   const rnd = (design.rounds || []).find((x) => x.version === version.version) || {};

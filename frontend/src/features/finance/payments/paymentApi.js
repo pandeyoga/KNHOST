@@ -5,6 +5,7 @@
  * mengimpornya tanpa menarik bundel layar keuangan.
  */
 import axios, { API } from "../../../services/apiClient";
+import { formatCurrency } from "../../../utils/formatters";
 
 export const PENALTY_STATUS_META = {
   draft: { label: "Usulan (belum berjurnal)", fg: "#8A6D00", bg: "#FFF3CD" },
@@ -33,7 +34,7 @@ export function errText(e, fallback = "Terjadi kesalahan.") {
 }
 
 export function money(n) {
-  return "Rp " + Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 0 });
+  return formatCurrency(n);   // 23 Okt — format rupiah baku
 }
 
 export async function fetchMeta(entityId = "", customerId = "") {

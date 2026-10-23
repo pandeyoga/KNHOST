@@ -94,7 +94,7 @@ _PENDING = r"(?:loading|busy|submitting|saving|posting|pending|importing|exporti
 LOADING_CLASS = re.compile(r"animate-pulse|animate-spin")
 #: Penanda berbentuk KODE — dicari pada sumber tanpa komentar & string.
 LOADING_CODE = re.compile(
-    r"<Skeleton|<Spinner|\bSkeleton\b|\bSpinner\b|\bLoader2?\b"
+    r"<Skeleton|<Spinner|\bSkeleton\b|\bSpinner\b|\bLoader2?\b|\bLoadingLine\b"   # 23 Okt — + komponen memuat baku
     r"|set\w*" + _PENDING + r"\w*\s*\("
     r"|\b\w*" + _PENDING + r"\w*\s*(?:\?|&&|\|\||\)|,|\}|===|!==|=[^=])",
     re.I)

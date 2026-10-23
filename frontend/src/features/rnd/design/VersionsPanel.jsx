@@ -2,8 +2,9 @@
 import { designFileUrl } from "../rndApi";
 import { roundLabel } from "../rndMeta";
 import { ScoreBadge } from "./ScoreInput";
+import { formatDateTime } from "../../../utils/formatters";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "");
+const fmtAt = (iso) => (iso ? formatDateTime(iso) : "");   // 23 Okt — baku WIB
 
 export default function VersionsPanel({ design }) {
   const versions = [...(design.versions || [])].sort((a, b) => b.version - a.version);

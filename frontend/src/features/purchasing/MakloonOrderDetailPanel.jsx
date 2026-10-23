@@ -86,7 +86,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
       if (docUom && parseFloat(docQty) > 0) { body.doc_uom = docUom; body.doc_qty = parseFloat(docQty); }
       await axios.post(`${API}/makloon-orders/${mkoId}/issue`, body);
       setIssueStep(null); await load();
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal issue ke makloon."); }
+    } catch (e) { throw new Error(e.response?.data?.detail || "Gagal issue ke makloon."); }   // 23 Okt — tampil di modal
     finally { setBusy(false); }
   }
   async function doReceive(step, body) {
@@ -94,7 +94,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
     try {
       await axios.post(`${API}/makloon-orders/${mkoId}/receive`, { step_seq: step.seq, ...body });
       setReceiveStep(null); await load();
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal terima hasil makloon."); throw e; }
+    } catch (e) { throw new Error(e.response?.data?.detail || "Gagal terima hasil makloon."); }   // 23 Okt — tampil di modal
     finally { setBusy(false); }
   }
   /**
@@ -109,7 +109,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
     try {
       await recordService(mkoId, { step_seq: step.seq, ...body });
       setServiceStep(null); await load();
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal mencatat jasa langkah ini."); throw e; }
+    }   // galat diteruskan ke modal jasa (ditampilkan di dalamnya)
     finally { setBusy(false); }
   }
   async function doCancel() {
@@ -389,6 +389,7 @@ function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm }) {
   const hasStock = (id) => (stockByWh[id] || 0) + 0.01 >= need;
   const firstOk = (step.source_stock || []).find((r) => r.available_qty + 0.01 >= need)?.warehouse_id;
   const [wh, setWh] = useState((defaultWh && hasStock(defaultWh) ? defaultWh : firstOk) || defaultWh || (warehouses[0]?.id || ""));
+  const [err, setErr] = useState("");
   const [docUom, setDocUom] = useState("");
   const [docQty, setDocQty] = useState("");
   // Memuat katalog satuan (dan membagikannya ke penyimpan modul). Dipanggil DI SINI,
@@ -439,9 +440,11 @@ function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm }) {
             </div>
           </div>
         </div>
+        {err && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="mko-issue-error">{err}</p>}
         <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="mko-issue-confirm" className="primary-button" disabled={busy || !wh || insufficient} onClick={() => onConfirm(wh, docUom, docQty)}><Send size={13} /> {busy ? "Memproses…" : "Issue Sekarang"}</button>
+          <button data-testid="mko-issue-confirm" className="primary-button" disabled={busy || !wh || insufficient}
+            onClick={async () => { setErr(""); try { await onConfirm(wh, docUom, docQty); } catch (e) { setErr(e.message); } }}><Send size={13} /> {busy ? "Memproses…" : "Issue Sekarang"}</button>
         </div>
       </div>
     </div>
@@ -455,6 +458,7 @@ function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onClose, o
   const [aux, setAux] = useState(String(step.aux_cost || 0));
   const [ppn, setPpn] = useState("0");
   const [wh, setWh] = useState(defaultWh || (warehouses[0]?.id || ""));
+  const [err, setErr] = useState("");
   const [invNo, setInvNo] = useState("");
   const [docUom, setDocUom] = useState("");
   const [docQty, setDocQty] = useState("");
@@ -462,7 +466,6 @@ function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onClose, o
   const [repeats, setRepeats] = useState(String(step.repeats || ""));
   const { options: gradeOptions } = useDomainEnums();   // GRN Fase 0.4 — grade dari SSOT
   const [rolls, setRolls] = useState([{ lot: `${step.output_sku || "OUT"}-${mkoNumber}-1`, length: String(step.expected_output_qty || ""), grade: "A", dye_lot: "" }]);
-  const [err, setErr] = useState("");
   const whOpts = warehouses.map((w) => ({ value: w.id, label: `${w.name} (${w.code})` }));
   // FASE U — satuan dari MASTER (lihat alasan di `IssueModal`).
   useUomConversions();
@@ -492,8 +495,8 @@ function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onClose, o
         rolls: rolls.map((r) => ({ lot: r.lot.trim(), length: parseFloat(r.length) || 0, grade: r.grade || "A", dye_lot: (r.dye_lot || "").trim() })),
       };
       if (usingDoc) { body.output_uom = docUom; body.output_doc_qty = parseFloat(docQty); }
-      await onConfirm(body);
-    } catch (e) { /* error already surfaced */ }
+      setErr(""); await onConfirm(body);
+    } catch (e) { setErr(e.message || "Gagal terima hasil makloon."); }   // 23 Okt — dulu "sudah tampil" di BELAKANG modal
   };
 
   return (

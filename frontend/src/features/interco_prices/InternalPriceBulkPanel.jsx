@@ -6,6 +6,7 @@ import usePagedRows from "../../hooks/usePagedRows";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk, internalPriceMissing } from "./internalPriceApi";
+import KNSelect from "../../components/KNSelect";
 
 const num = (v) => Number(String(v ?? "").replace(",", ".")) || 0;
 
@@ -60,9 +61,8 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
   }
 
   const pick = (val, set, testId) => (
-    <select data-testid={testId} className="field !h-9 text-[12px]" value={val} onChange={(e) => set(e.target.value)}>
-      {entities.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-    </select>
+    <KNSelect data-testid={testId} className="field !h-9 text-[12px]" value={val} onValueChange={set}
+      options={entities.map((e) => ({ value: e.id, label: e.name }))} />
   );
 
   return (

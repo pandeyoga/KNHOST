@@ -124,7 +124,8 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
   };
   const favItems = favs.map(id => itemIndex[id]).filter(Boolean);
 
-  const FavStar = ({ id }) => (
+  // 23 Okt — fungsi render (bukan komponen di dalam render) supaya tombol bintang tidak dibuat ulang tiap render.
+  const favStar = (id) => (
     <span
       role="button"
       tabIndex={-1}
@@ -186,7 +187,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                     >
                       <ItemIcon size={14} />
                       <span className="label">{item.label}</span>
-                      <FavStar id={item.id} />
+                      {favStar(item.id)}
                     </button>
                   );
                 })}
@@ -217,7 +218,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                 >
                   <Icon size={16} />
                   <span className="label">{entry.label}</span>
-                  <FavStar id={entry.id} />
+                  {favStar(entry.id)}
                 </button>
               );
             }
@@ -268,7 +269,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                                 <Clock size={9} />
                               </span>
                             ) : (
-                              <FavStar id={item.id} />
+                              favStar(item.id)
                             )}
                           </button>
                         );

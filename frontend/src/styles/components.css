@@ -21,8 +21,12 @@
   font-family: inherit;
 }
 
-.nav-button:hover, .primary-button:hover, .secondary-button:hover, .danger-button:hover, .icon-button:hover { transform: translateY(-1px); }
-.nav-button:active, .primary-button:active, .secondary-button:active, .danger-button:active, .icon-button:active { transform: scale(0.97); }
+/* 23 Okt — tombol lama `.btn-*` (modul pembelian/QC, ±260 pemakaian) kini berperilaku sama: angkat saat hover,
+   tekan saat aktif, dan CINCIN FOKUS keyboard (dulu tidak ada sama sekali). */
+.nav-button:hover, .primary-button:hover, .secondary-button:hover, .danger-button:hover, .icon-button:hover,
+.btn-primary:hover:not(:disabled), .btn-secondary:hover:not(:disabled), .btn-danger:hover:not(:disabled) { transform: translateY(-1px); }
+.nav-button:active, .primary-button:active, .secondary-button:active, .danger-button:active, .icon-button:active,
+.btn-primary:active:not(:disabled), .btn-secondary:active:not(:disabled), .btn-danger:active:not(:disabled) { transform: scale(0.97); }
 .primary-button:disabled, .secondary-button:disabled, .danger-button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -35,6 +39,9 @@
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .danger-button:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-danger:focus-visible,
 .icon-button:focus-visible,
 .sidebar-item:focus-visible,
 .field:focus-visible,

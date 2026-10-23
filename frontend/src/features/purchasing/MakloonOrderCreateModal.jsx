@@ -40,6 +40,7 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
   const [suppliers, setSuppliers] = useState([]);
   const [stages, setStages] = useState([]);            // FASE T — dari master
   const [saving, setSaving] = useState(false);
+  const [modalErr, setModalErr] = useState("");   // galat tampil di modal ini
   const [preview, setPreview] = useState(null);
 
   const [f, setF] = useState({
@@ -84,7 +85,7 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
               ? (hit.material_flow_default || "moves") : "",
           };
         });
-      } catch (e) { onError?.(e.response?.data?.detail || "Gagal memuat data pendukung."); }
+      } catch (e) { setModalErr(e.response?.data?.detail || "Gagal memuat data pendukung."); }
     })();
   }, []); // eslint-disable-line
 
@@ -143,7 +144,7 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
         waste_pct: parseFloat(f.waste_pct) || 0, byproduct_pct: parseFloat(f.byproduct_pct) || 0,
       });
       setPreview(res.data);
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menghitung forecast."); }
+    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menghitung forecast."); }
   }, [f.material_qty, f.yield_factor, f.waste_pct, f.byproduct_pct]); // eslint-disable-line
 
   const whOpts = useMemo(() => warehouses.map((w) => ({ value: w.id, label: `${w.name} (${w.code})` })), [warehouses]);
@@ -151,14 +152,14 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
   const recipeOpts = useMemo(() => [{ value: "", label: "— Pilih resep (opsional) —" }, ...recipes.map((r) => ({ value: r.id, label: r.name }))], [recipes]);
 
   const save = async () => {
-    if (!f.material_product_id) { onError?.("Produk bahan wajib dipilih."); return; }
-    if (!(parseFloat(f.material_qty) > 0)) { onError?.("Qty bahan harus > 0."); return; }
+    if (!f.material_product_id) { setModalErr("Produk bahan wajib dipilih."); return; }
+    if (!(parseFloat(f.material_qty) > 0)) { setModalErr("Qty bahan harus > 0."); return; }
     // Tahap tanpa transformasi: produk hasil = kain yang sama (diisi backend).
-    if (!noTransform && !f.output_product_id) { onError?.("Produk output wajib dipilih."); return; }
-    if (!f.from_warehouse_id) { onError?.("Gudang sumber bahan wajib dipilih."); return; }
-    if (f.mode === "buy_process" && !f.supplier_id) { onError?.("Supplier bahan wajib dipilih untuk mode Beli + Proses."); return; }
+    if (!noTransform && !f.output_product_id) { setModalErr("Produk output wajib dipilih."); return; }
+    if (!f.from_warehouse_id) { setModalErr("Gudang sumber bahan wajib dipilih."); return; }
+    if (f.mode === "buy_process" && !f.supplier_id) { setModalErr("Supplier bahan wajib dipilih untuk mode Beli + Proses."); return; }
     if (parseFloat(f.yield_factor) > 0 && !f.yield_override_reason.trim()) {
-      onError?.("Yield yang diisi manual adalah override atas rumus GSM — alasannya wajib "
+      setModalErr("Yield yang diisi manual adalah override atas rumus GSM — alasannya wajib "
         + "diisi agar bisa diaudit (PS-03).");
       return;
     }
@@ -190,7 +191,7 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
     try {
       const res = await axios.post(`${API}/makloon-orders`, payload);
       onSaved?.(res.data);
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal membuat order makloon."); setSaving(false); }
+    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal membuat order makloon."); setSaving(false); }
   };
 
   return (
@@ -329,6 +330,7 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
 
           <Field label="Catatan"><textarea data-testid="mko-notes" className="field" rows="2" value={f.notes} onChange={set("notes")} placeholder="Instruksi khusus…" /></Field>
         </div>
+        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="mko-form-error">{modalErr}</p>}
         <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <p className="flex items-center gap-1.5 text-[11px] text-[#6B6B73]"><GitBranch size={12} /> Pesanan tersimpan sebagai <b>Draf</b> — lalu {noTransform ? "Catat Jasa" : "Issue & Terima"} di detail.</p>
           <div className="flex gap-2">

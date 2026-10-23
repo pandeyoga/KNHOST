@@ -38,10 +38,11 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
   const upstream = rows.filter((r) => relTone(r.rel) !== "downstream");
   const downstream = rows.filter((r) => relTone(r.rel) === "downstream");
 
-  const Row = ({ r }) => {
+  // 23 Okt — fungsi render (bukan komponen di dalam render): tombol "Buka dokumen" tidak dibuat ulang tiap render.
+  const renderRow = (r) => {
     const tone = relTone(r.rel);
     return (
-      <div data-testid={`docrefs-row-${r.doc_id}`}
+      <div key={`${r.rel}-${r.doc_id}`} data-testid={`docrefs-row-${r.doc_id}`}
         className="flex items-center justify-between gap-2 rounded-md border border-[#EFF0F2] bg-white px-2 py-1.5">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -115,7 +116,7 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
               {!compact && (
                 <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Berasal dari</p>
               )}
-              {upstream.map((r) => <Row key={`${r.rel}-${r.doc_id}`} r={r} />)}
+              {upstream.map((r) => renderRow(r))}
             </div>
           )}
           {downstream.length > 0 && (
@@ -123,7 +124,7 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
               {!compact && (
                 <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Menurunkan</p>
               )}
-              {downstream.map((r) => <Row key={`${r.rel}-${r.doc_id}`} r={r} />)}
+              {downstream.map((r) => renderRow(r))}
             </div>
           )}
         </div>

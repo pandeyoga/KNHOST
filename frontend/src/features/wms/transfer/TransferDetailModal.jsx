@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { can } from "../../../config/roles";
 import { CheckCircle, XCircle, BookOpen, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatQty } from "../../../utils/formatters";
+import { formatQty, formatCurrency } from "../../../utils/formatters";
 import { StatusBadge } from "./transferConstants";
 import TransferReceiptPanel from "./TransferReceiptPanel";
 import DocumentActionsBar from "../../documents/DocumentActionsBar";
@@ -11,7 +11,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import QtyDual from "../../../components/QtyDual";      // FASE U — dua satuan
 import { entityShortFromCtx } from "../../../utils/entityLabel";
 
-const fmtIDR = (n) => `Rp ${Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
+const fmtIDR = (n) => formatCurrency(n);
 
 export default function TransferDetailModal({ transfer, user, onClose, onApprove, onReject, onUpdateStatus, onCancel,
   actionError = "", onDismissActionError, onReceiptChanged }) {

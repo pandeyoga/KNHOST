@@ -4,6 +4,7 @@ import { canActOn, typeLabel, SEV_CHIPS, timeAgo } from "../../../components/Not
 import { roleLabel } from "../../../config/roles";
 import { isSirenMuted, setSirenMuted, playSiren } from "../../../utils/sirenAlarm";
 import { MobilePushBanner } from "./MobilePwa";
+import KNSelect from "../../../components/KNSelect";
 
 const SEV_STYLE = {
   critical: { bg: "bg-[#FFECEB]", fg: "text-[#C0261B]", Icon: AlertTriangle },
@@ -107,11 +108,9 @@ export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll
             <span className="w-4 shrink-0" />
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <select data-testid="mobile-notif-filter-type" value={type} onChange={(e) => setType(e.target.value)} aria-label="Filter jenis notifikasi"
-              className="min-w-0 flex-1 rounded-lg border border-[#E5E5EA] bg-white px-2 py-1.5 text-[12px]">
-              <option value="">Semua jenis</option>
-              {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            <KNSelect data-testid="mobile-notif-filter-type" value={type} onValueChange={setType} aria-label="Filter jenis notifikasi"
+              className="min-w-0 flex-1 rounded-lg border border-[#E5E5EA] bg-white !px-2 !py-1.5 text-[12px]"
+              options={[{ value: "", label: "Semua jenis" }, ...types.map((t) => ({ value: t.value, label: t.label }))]} />
             {hasFilter && <button type="button" data-testid="mobile-notif-filter-reset" onClick={() => { setSev(""); setType(""); setUnreadOnly(false); }} className="shrink-0 text-[11.5px] font-bold text-[#0058CC]">Reset</button>}
           </div>
           <p className="mt-1.5 text-[10.5px] text-[#8E8E93]" data-testid="mobile-notif-filter-count">Menampilkan {filtered.length} dari {notifications.length} notifikasi</p>

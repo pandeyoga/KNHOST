@@ -17,6 +17,7 @@ import { formatQty } from "../../utils/formatters";
 import { Badge, MiniBar } from "./OutboundScanBadges";
 import LoadingCheckPanel from "./LoadingCheckPanel";
 import SampleCutPanel from "./SampleCutPanel";
+import KNSelect from "../../components/KNSelect";
 
 export default function OutboundScanInterface({ user, focusTaskId = "", onFocusConsumed }) {
   const [tasks, setTasks] = useState([]);
@@ -297,10 +298,9 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
               className={`rounded-full px-3 py-1 text-xs font-medium ${kind === k ? "bg-[#0058CC] text-white" : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>{l}</button>
           ))}
         </div>
-        <select data-testid="outbound-wh" value={whFilter} onChange={(e) => setWhFilter(e.target.value)} className="rounded-lg border border-[#E5E5EA] bg-white px-2 py-1.5 text-[12px]">
-          <option value="">Semua gudang</option>
-          {warehousesInList.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
-        </select>
+        <KNSelect data-testid="outbound-wh" value={whFilter} onValueChange={setWhFilter} aria-label="Gudang"
+          className="!h-auto !w-auto rounded-lg border border-[#E5E5EA] bg-white !px-2 !py-1.5 text-[12px]"
+          options={[{ value: "", label: "Semua gudang" }, ...warehousesInList.map((w) => ({ value: w.value, label: w.label }))]} />
       </div>
       <p className="text-[10.5px] text-[#8E8E93]">Potong sample/catalogue & potong roll ada di tab <b>Cutting</b>; paket sample muncul di sini setelah diterima Admin Cutting.</p>
 

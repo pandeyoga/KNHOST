@@ -3,8 +3,9 @@ import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { addDesignFeedback } from "../rndApi";
 import { errMsg } from "../rndMeta";
+import { formatDateTime } from "../../../utils/formatters";
 
-const fmtAt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "");
+const fmtAt = (iso) => (iso ? formatDateTime(iso) : "");   // 23 Okt — baku WIB
 
 export default function FeedbackThread({ design, currentUser, canWrite, onDone, onError }) {
   const [text, setText] = useState("");

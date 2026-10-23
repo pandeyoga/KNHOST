@@ -1,5 +1,6 @@
 /** L05 LN-051 — form cacat per interval 15 yard (0–150, berlanjut bila roll lebih panjang). Satu baris = satu kejadian. */
 import { Plus, Trash2 } from "lucide-react";
+import KNSelect from "../../components/KNSelect";
 
 const IV = 15;
 export const intervalCount = (len) => Math.max(10, Math.ceil((Number(len) || 0) / IV - 1e-9));
@@ -35,14 +36,12 @@ export default function IntervalDefectGrid({ length, setLength, rows, setRows, s
       </div>
       {rows.map((r, i) => (
         <div key={`d${i}`} className="grid grid-cols-[1.3fr_1fr_0.8fr_0.7fr_1.4fr_auto] gap-1.5 max-sm:grid-cols-3" data-testid={`ins-defect-row-${i}`}>
-          <select className="field !py-1 text-[11.5px]" value={r.interval} onChange={(e) => upd(i, { interval: e.target.value === "" ? "" : Number(e.target.value) })} data-testid={`ins-defect-interval-${i}`}>
-            <option value="">Interval…</option>
-            {Array.from({ length: n }, (_, k) => <option key={k} value={k}>{ivLabel(k)} yd</option>)}
-          </select>
+          <KNSelect className="field !py-1 text-[11.5px]" value={r.interval === "" || r.interval == null ? "" : String(r.interval)}
+            onValueChange={(v) => upd(i, { interval: v === "" ? "" : Number(v) })} data-testid={`ins-defect-interval-${i}`} aria-label="Interval"
+            options={[{ value: "", label: "Interval…" }, ...Array.from({ length: n }, (_, k) => ({ value: String(k), label: `${ivLabel(k)} yd` }))]} />
           <input className="field !py-1 text-[11.5px]" placeholder="Kode" value={r.code} onChange={(e) => upd(i, { code: e.target.value })} data-testid={`ins-defect-code-${i}`} />
-          <select className="field !py-1 text-[11.5px]" value={r.point_value} onChange={(e) => upd(i, { point_value: Number(e.target.value) })} data-testid={`ins-defect-point-${i}`}>
-            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{p} poin</option>)}
-          </select>
+          <KNSelect className="field !py-1 text-[11.5px]" value={String(r.point_value ?? "")} onValueChange={(v) => upd(i, { point_value: Number(v) })}
+            data-testid={`ins-defect-point-${i}`} aria-label="Poin cacat" options={[1, 2, 3, 4].map((p) => ({ value: String(p), label: `${p} poin` }))} />
           <input type="number" min="1" className="field !py-1 text-[11.5px]" value={r.count} onChange={(e) => upd(i, { count: e.target.value })} data-testid={`ins-defect-count-${i}`} />
           <input className="field !py-1 text-[11.5px]" placeholder="Perbaikan / keterangan" value={r.note} onChange={(e) => upd(i, { note: e.target.value })} data-testid={`ins-defect-note-${i}`} />
           <button type="button" className="secondary-button !px-1.5 !py-0.5" onClick={() => setRows(rows.filter((_, k) => k !== i))} data-testid={`ins-defect-remove-${i}`} aria-label="Hapus"><Trash2 size={12} /></button>

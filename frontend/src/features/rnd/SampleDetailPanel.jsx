@@ -11,7 +11,7 @@ import { Ban, CalendarClock, CheckCircle2, GitBranch, History, PackageMinus, Sen
 import ErrorNotice from "../../components/ErrorNotice";
 import { RevisionBadge, sampleRevisionCount } from "../../components/RevisionProgress";
 import { formatDateId } from "../../components/KNDatePicker";
-import { formatCurrency, formatQty, formatStamp } from "../../utils/formatters";
+import { formatCurrency, formatQty, wibDate, formatDateTime } from "../../utils/formatters";
 import { askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
 import { openTrace } from "../documents/trace/traceDeepLink";
@@ -278,7 +278,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 <div key={`${t.at}-${i}`} className="flex items-start gap-2 text-[11px]">
                   <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
                   <span className="text-[#3C3C43]">
-                    <strong>{t.label}</strong>{t.actor ? ` · ${t.actor}` : ""} · {formatStamp(t.at)}
+                    <strong>{t.label}</strong>{t.actor ? ` · ${t.actor}` : ""} · {formatDateTime(t.at)}
                     {t.note ? <span className="text-[#6B6B73]"> — {t.note}</span> : null}
                   </span>
                 </div>
@@ -296,11 +296,11 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             <Row label="Ronde" testId="sample-detail-rounds">{(sample.rounds || []).length} · {(sample.rounds || []).filter((r) => r.result === "acc").length} ACC</Row>
             <Row label="Biaya sample" testId="sample-detail-cost">{formatCurrency(sample.cost_total || 0)}</Row>
             <Row label="Sample jadi" testId="sample-detail-finished">
-              <span className={sample.finished_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>{sample.finished_at ? formatDateId(String(sample.finished_at).slice(0, 10)) : "Belum"}</span>
+              <span className={sample.finished_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>{sample.finished_at ? formatDateId(wibDate(sample.finished_at)) : "Belum"}</span>
             </Row>
             <Row label="Dikirim" testId="sample-detail-delivered">
               <span className={sample.delivered_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>
-                {sample.delivered_at ? `${formatDateId(String(sample.delivered_at).slice(0, 10))} → ${deliverLabel(sample.delivered_to, deliverTargets)}${sample.delivered_to_name ? ` (${sample.delivered_to_name})` : ""}` : "Belum"}
+                {sample.delivered_at ? `${formatDateId(wibDate(sample.delivered_at))} → ${deliverLabel(sample.delivered_to, deliverTargets)}${sample.delivered_to_name ? ` (${sample.delivered_to_name})` : ""}` : "Belum"}
               </span>
             </Row>
           </div>

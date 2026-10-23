@@ -2,6 +2,7 @@ import { useState } from "react";
 import { KeyRound, ShieldCheck, Copy, MessageCircle, EyeOff } from "lucide-react";
 import { askConfirm } from "../../services/confirmService";
 import { pickupHandover, waUrl } from "./logisticsApi";
+import { formatDateTime } from "../../utils/formatters";
 
 // Serah terima barang ke pelanggan yang AMBIL SENDIRI: petugas memasukkan kode pickup yang
 // disebut pengambil + nama & no. identitas. Kode salah → barang TIDAK boleh diserahkan.
@@ -56,7 +57,7 @@ export default function PickupHandoverPanel({ d, canUpdate, canManage, onDone })
       )}
       {d.pod && (
         <div className="mt-2 text-[11.5px] text-[#1F7A45]" data-testid="pickup-pod-info">
-          <b>Diserahkan ke {d.pod.receiver_name}</b>{d.pod.id_no ? ` · ID ${d.pod.id_no}` : ""} · {String(d.pod.received_at).slice(0, 16).replace("T", " ")} · oleh {d.pod.by}{d.pod.verified_by_code ? " · kode pickup tervalidasi ✓" : ""}
+          <b>Diserahkan ke {d.pod.receiver_name}</b>{d.pod.id_no ? ` · ID ${d.pod.id_no}` : ""} · {formatDateTime(d.pod.received_at)} · oleh {d.pod.by}{d.pod.verified_by_code ? " · kode pickup tervalidasi ✓" : ""}
         </div>
       )}
     </div>

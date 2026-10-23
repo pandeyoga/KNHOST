@@ -3,6 +3,7 @@ import { Award, Check, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import useDomainEnums from "../../hooks/useDomainEnums";
+import KNSelect from "../../components/KNSelect";
 
 /** P04 IMP-11 / DEC-04 — form aturan grade per pelanggan (belum ada data; diisi Admin Sales). */
 export default function CustomerGradeRulesCard({ selectedEntity = "all" }) {
@@ -61,18 +62,14 @@ export default function CustomerGradeRulesCard({ selectedEntity = "all" }) {
     <section className="section-card" data-testid="grade-rules-card">
       <div className="section-head"><div className="flex items-center gap-2"><Award size={15} className="text-[#0058CC]" /><h2>Aturan Grade Pelanggan</h2></div></div>
       <div className="grid gap-2.5 p-3 text-[11.5px]">
-        <select data-testid="grade-rule-customer" className="input" value={cid} onChange={(e) => setCid(e.target.value)}>
-          <option value="">Pilih pelanggan…</option>
-          {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <KNSelect data-testid="grade-rule-customer" className="input" value={cid} onValueChange={setCid} placeholder="Pilih pelanggan…" aria-label="Pelanggan"
+          options={customers.map((c) => ({ value: c.id, label: c.name }))} />
         {cid && (
           <>
             <div><p className="mb-1 font-semibold">Minimum grade <span className="font-normal text-[#8E8E93]">(grade lebih tinggi boleh; lebih rendah ditolak · kosong = semua non-BS)</span></p>
-              <select data-testid="grade-rule-min" className="input" value={rule.min_grade}
-                onChange={(e) => { const v = e.target.value; setRule((r) => ({ ...r, min_grade: v, preferred_grades: r.preferred_grades.filter((g) => !v || (gradeRank(g) ?? 99) <= (gradeRank(v) ?? 99)) })); }}>
-                <option value="">— tanpa minimum —</option>
-                {GRADES.map((g) => <option key={g} value={g}>{g} ke atas</option>)}
-              </select></div>
+              <KNSelect data-testid="grade-rule-min" className="input" value={rule.min_grade} aria-label="Grade minimum"
+                onValueChange={(v) => { setRule((r) => ({ ...r, min_grade: v, preferred_grades: r.preferred_grades.filter((g) => !v || (gradeRank(g) ?? 99) <= (gradeRank(v) ?? 99)) })); }}
+                options={[{ value: "", label: "— tanpa minimum —" }, ...GRADES.map((g) => ({ value: g, label: `${g} ke atas` }))]} /></div>
             <div><p className="mb-1 font-semibold">Prioritas rekomendasi</p>
               <div className="flex flex-wrap gap-1.5">{GRADES.filter(meetsMin).map((g) => chip("preferred_grades", g))}</div></div>
             <label className="flex items-center gap-2"><input type="checkbox" data-testid="grade-rule-accept-bs" checked={rule.accept_bs} onChange={(e) => setRule((r) => ({ ...r, accept_bs: e.target.checked }))} /> Pelanggan menerima BS</label>

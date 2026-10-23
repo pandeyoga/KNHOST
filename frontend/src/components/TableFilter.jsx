@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import KNSelect from "./KNSelect";
 
 /**
  * Trial 22 Okt 2026 (E7, permintaan pemilik) — cari + filter status + urutan yang SERAGAM untuk tabel di semua meja
@@ -54,10 +55,9 @@ export default function TableFilterBar({ f, testId, placeholder = "Cari…", onC
         </div>
       )}
       {f.sorts && Object.keys(f.sorts).length > 1 && (
-        <select data-testid={`${testId}-sort`} value={f.sort} onChange={(e) => set(f.setSort)(e.target.value)}
-          className="rounded-lg border border-[#E5E5EA] bg-white px-1.5 py-1 text-[10.5px]">
-          {Object.entries(f.sorts).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+        <KNSelect data-testid={`${testId}-sort`} value={f.sort} onValueChange={(v) => set(f.setSort)(v)} aria-label="Urutan"
+          className="!h-auto !w-auto rounded-lg border border-[#E5E5EA] bg-white !px-1.5 !py-1 text-[10.5px]"
+          options={Object.entries(f.sorts).map(([k, v]) => ({ value: k, label: v.label }))} />
       )}
     </div>
   );

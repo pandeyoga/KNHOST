@@ -9,6 +9,7 @@ import KNSelect from "../../../components/KNSelect";
 import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./MobileSalesFlows";
 import { odPhaseOf } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
+import LoadingLine from "../../../components/LoadingLine";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
 
@@ -55,7 +56,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   return (
     <div className="space-y-2 p-3" data-testid="m-returns">
       <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => setCreate(true)} data-testid="m-return-new"><Plus size={16} /> Buat retur jual</button>
-      {rows === null && <p className="text-xs m-muted">Memuat retur…</p>}
+      {rows === null && <LoadingLine text="Memuat retur…" />}
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-returns-empty">Belum ada retur.</p>}
       {(rows || []).map((r) => (
         <button key={r.id} className="m-card m-press w-full p-3 text-left" onClick={() => setSel(r)} data-testid={`m-return-${r.id}`}>
@@ -92,7 +93,7 @@ export function MobileSpecialOrders({ focusId = null }) {
   return (
     <div className="space-y-2 p-3" data-testid="m-special-orders">
       <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => setCreate(true)} data-testid="m-special-new"><Plus size={16} /> Ajukan pesanan khusus</button>
-      {rows === null && <p className="text-xs m-muted">Memuat…</p>}
+      {rows === null && <LoadingLine />}
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-special-empty">Belum ada pesanan khusus.</p>}
       {(rows || []).map((s) => (
         <button key={s.id} className="m-card m-press w-full p-3 text-left" onClick={() => setOpenId(s.id)} data-testid={`m-special-${s.id}`}>

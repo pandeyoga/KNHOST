@@ -4,6 +4,7 @@ import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
 import { askReason } from "../../../services/confirmService";
 import ErrorNotice from "../../../components/ErrorNotice";
+import KNSelect from "../../../components/KNSelect";
 
 const KIND = { missing: "Hilang / tidak tiba", wrong_roll: "Roll salah", damaged: "Rusak", rule_violation: "Aturan gudang", other: "Lainnya" };
 
@@ -55,10 +56,9 @@ export default function ReceiptExceptions({ transfer, data, open, isSup, rolls =
       ))}
       {open && transit.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          <select data-testid="exc-missing-roll" value={rollId} onChange={(e) => setRollId(e.target.value)} className="rounded border border-gray-200 text-[11px]">
-            <option value="">Roll tidak tiba…</option>
-            {transit.map((r) => <option key={r.roll_id} value={r.roll_id}>{r.roll_no}</option>)}
-          </select>
+          <KNSelect data-testid="exc-missing-roll" value={rollId} onValueChange={setRollId} aria-label="Roll tidak tiba"
+            className="!h-auto !w-auto rounded border border-gray-200 text-[11px]"
+            options={[{ value: "", label: "Roll tidak tiba…" }, ...transit.map((r) => ({ value: r.roll_id, label: r.roll_no }))]} />
           <input data-testid="exc-missing-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Keterangan / bukti (wajib)"
             className="flex-1 rounded border border-gray-200 px-1 text-[11px]" />
           <button data-testid="exc-missing-submit" disabled={!rollId} onClick={reportMissing} className="rounded bg-[#FF9500] px-2 text-[11px] text-white disabled:opacity-40">Laporkan hilang</button>

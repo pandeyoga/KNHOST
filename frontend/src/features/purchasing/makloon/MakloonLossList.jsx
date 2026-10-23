@@ -3,6 +3,7 @@ import { Check, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { can } from "../../../config/roles";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
+import KNSelect from "../../../components/KNSelect";
 
 const STATUS = { pending_approval: "Menunggu persetujuan", posted: "Dibukukan", rejected: "Ditolak", auto: "Diproses" };
 
@@ -45,17 +46,15 @@ export default function MakloonLossList({ mkoId, step, currentUser, onDone, onEr
           )}
           {l.status === "pending_approval" && canApprove && l.recorded_by_id !== currentUser?.id && (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <select className="field !py-1 text-[11px]" data-testid={`mko-loss-settle-${l.id}`}
+              <KNSelect className="field !py-1 text-[11px]" data-testid={`mko-loss-settle-${l.id}`}
                 value={(settle[l.id] || {}).mode || "tagih_ganti"}
-                onChange={(e) => setSettle({ ...settle, [l.id]: { mode: e.target.value, bill: bills[0]?.id || "" } })}>
-                <option value="tagih_ganti">Tagih ganti rugi (piutang klaim mitra)</option>
-                <option value="potong_bon" disabled={!bills.length}>Potong tagihan jasa mitra{bills.length ? "" : " — tidak ada tagihan terbuka"}</option>
-              </select>
+                onValueChange={(v) => setSettle({ ...settle, [l.id]: { mode: v, bill: bills[0]?.id || "" } })}
+                options={[{ value: "tagih_ganti", label: "Tagih ganti rugi (piutang klaim mitra)" },
+                  { value: "potong_bon", label: `Potong tagihan jasa mitra${bills.length ? "" : " — tidak ada tagihan terbuka"}`, disabled: !bills.length }]} />
               {(settle[l.id] || {}).mode === "potong_bon" && (
-                <select className="field !py-1 text-[11px]" data-testid={`mko-loss-bill-${l.id}`} value={settle[l.id].bill}
-                  onChange={(e) => setSettle({ ...settle, [l.id]: { ...settle[l.id], bill: e.target.value } })}>
-                  {bills.map((b) => <option key={b.id} value={b.id}>{b.bill_number || b.id} · sisa {formatCurrency(b.remaining)}</option>)}
-                </select>
+                <KNSelect className="field !py-1 text-[11px]" data-testid={`mko-loss-bill-${l.id}`} value={settle[l.id].bill}
+                  onValueChange={(v) => setSettle({ ...settle, [l.id]: { ...settle[l.id], bill: v } })}
+                  options={bills.map((b) => ({ value: b.id, label: `${b.bill_number || b.id} · sisa ${formatCurrency(b.remaining)}` }))} />
               )}
               <input className="field !py-1 text-[11px] min-w-[200px] flex-1" placeholder="Catatan keputusan (wajib bila menolak)"
                 data-testid={`mko-loss-note-${l.id}`} value={note[l.id] || ""} onChange={(e) => setNote({ ...note, [l.id]: e.target.value })} />

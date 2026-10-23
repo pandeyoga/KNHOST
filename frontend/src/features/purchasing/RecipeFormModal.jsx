@@ -35,6 +35,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
     entity_id: editTarget?.entity_id || (selectedEntity && selectedEntity !== "all" ? selectedEntity : ""),
   }));
   const [saving, setSaving] = useState(false);
+  const [modalErr, setModalErr] = useState("");   // galat tampil di modal ini
   const [testQty, setTestQty] = useState("100");
   const [preview, setPreview] = useState(null);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
@@ -46,12 +47,12 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
         waste_pct: parseFloat(f.waste_pct) || 0, byproduct_pct: parseFloat(f.byproduct_pct) || 0, formula: f.formula,
       });
       setPreview(res.data);
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menghitung forecast."); }
+    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menghitung forecast."); }
   };
 
   const save = async () => {
-    if (!f.name.trim()) { onError?.("Nama resep wajib diisi."); return; }
-    if (!f.input_product_id || !f.output_product_id) { onError?.("Produk input & output wajib dipilih."); return; }
+    if (!f.name.trim()) { setModalErr("Nama resep wajib diisi."); return; }
+    if (!f.input_product_id || !f.output_product_id) { setModalErr("Produk input & output wajib dipilih."); return; }
     setSaving(true);
     const payload = {
       name: f.name, process_type: f.process_type,
@@ -67,7 +68,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
       if (isEdit) await axios.patch(`${API}/process-recipes/${editTarget.id}`, { data: payload });
       else await axios.post(`${API}/process-recipes`, payload);
       onSaved?.();
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menyimpan resep."); setSaving(false); }
+    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menyimpan resep."); setSaving(false); }
   };
 
   return (
@@ -143,6 +144,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
 
           <Field label="Catatan"><textarea data-testid="recipe-notes" className="field" rows="2" value={f.notes} onChange={set("notes")} /></Field>
         </div>
+        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="recipe-form-error">{modalErr}</p>}
         <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="recipe-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan"}</button>

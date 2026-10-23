@@ -25,7 +25,7 @@ import {
   submitDesignRequest, updateDesignRequest, uploadReference,
 } from "./designRequestsApi";
 import { roleIs } from "../../config/roles";
-import { formatStamp } from "../../utils/formatters";
+import { formatDateTime } from "../../utils/formatters";
 
 function Row({ label, children, testId }) {
   return (
@@ -175,7 +175,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
                 <div key={`${h.at}-${i}`} className="flex items-start gap-2 text-[11px]">
                   <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
                   <span className="text-[#3C3C43]">
-                    <strong>{h.label}</strong> · {h.actor} · {formatStamp(h.at)}
+                    <strong>{h.label}</strong> · {h.actor} · {formatDateTime(h.at)}
                     {h.note ? <span className="text-[#6B6B73]"> — {h.note}</span> : null}
                   </span>
                 </div>

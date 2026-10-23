@@ -21,6 +21,7 @@ import DateQuickNav, { inDateRange } from "./design/DateQuickNav";
 import { designFileUrl, listDesigns, studioCategories } from "./rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, errMsg } from "./rndMeta";
 import { roleIs, can } from "../../config/roles";
+import { formatDate } from "../../utils/formatters";
 
 const STATUS_OPTS = [
   { value: "", label: "Semua status" },
@@ -285,7 +286,7 @@ function DesignCard({ d, onOpen }) {
           <p className="truncate text-[9.5px] text-[#0058CC]">untuk: {d.recommended_products.map((p) => p.sku).join(", ")}</p>
         )}
         <p className="text-[9px] text-[#9A9BA3]" data-testid={`design-dates-${d.id}`}>
-          {d.approved_at ? `ACC ${String(d.approved_at).slice(0, 10)} · ` : ""}update {String(d.updated_at || "").slice(0, 10)}
+          {d.approved_at ? `ACC ${formatDate(d.approved_at)} · ` : ""}update {formatDate(d.updated_at)}
         </p>
       </div>
     </button>

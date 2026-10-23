@@ -3,6 +3,7 @@
  * Draft form disimpan ke sessionStorage sebelum ganti entitas, lalu dipulihkan setelah layar dimuat ulang.
  */
 import { Building2 } from "lucide-react";
+import KNSelect from "../../../components/KNSelect";
 
 export const PO_DRAFT_KEY = "kn_po_draft";
 
@@ -28,11 +29,9 @@ export const POBuyerEntitySwitch = ({ selectedEntity, entities = [], formData, o
       <span className="text-[#6B6B73]">Entitas pembeli:</span>
       <b data-testid="po-buyer-entity-name">{current ? (current.short_name || current.legal_name || current.name) : "Pilih badan usaha dulu"}</b>
       {onSwitch && options.length > 1 && (
-        <select data-testid="po-buyer-entity-switch" value={current ? selectedEntity : ""} onChange={(e) => change(e.target.value)}
-          className="ml-auto rounded border border-[#DCE7F7] bg-white px-2 py-1 text-[11px]">
-          {!current && <option value="">— pilih —</option>}
-          {options.map((e) => <option key={e.id} value={e.id}>{e.short_name || e.legal_name || e.name}</option>)}
-        </select>
+        <KNSelect data-testid="po-buyer-entity-switch" value={current ? selectedEntity : ""} onValueChange={change} placeholder="— pilih —"
+          className="ml-auto !h-auto !w-auto rounded border border-[#DCE7F7] bg-white !px-2 !py-1 text-[11px]"
+          options={options.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name }))} />
       )}
     </div>
   );

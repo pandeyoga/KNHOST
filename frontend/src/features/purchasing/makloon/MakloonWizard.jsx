@@ -74,7 +74,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
         // Cek UI UAT v3 (S9) — dulu menimpa gudang dari prefill PR (Jakarta) dengan gudang pertama di daftar.
         if (whs[0]) setHead((p) => ({ ...p, from_warehouse_id: p.from_warehouse_id || whs[0].id,
                                        target_warehouse_id: p.target_warehouse_id || whs[0].id }));
-      } catch (e) { onError?.("Gagal memuat data pendukung wizard."); }
+      } catch (e) { setErr("Gagal memuat data pendukung wizard — tutup lalu buka lagi."); }   // 23 Okt — di dalam wizard
     })();
   }, []); // eslint-disable-line
 

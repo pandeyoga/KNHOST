@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, Factory, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
+import KNSelect from "../../components/KNSelect";
 
 const MODES = [
   { value: "supplier", label: "Supplier" },
@@ -29,10 +30,8 @@ function SourceRow({ t, canEdit, onSaved }) {
         <p className="text-[10.5px] text-[#8E8E93]">{t.sku_prefix || "—"} · {t.line_code || "—"}</p>
       </div>
       {!cur && <span className="rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[10px] font-bold text-[#9A5B00]" data-testid={`restock-unmapped-${t.id}`}>belum diatur</span>}
-      <select data-testid={`restock-mode-${t.id}`} disabled={!canEdit} className="input !w-auto text-[12px]" value={mode} onChange={(e) => setMode(e.target.value)}>
-        <option value="">— pilih —</option>
-        {MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-      </select>
+      <KNSelect data-testid={`restock-mode-${t.id}`} disabled={!canEdit} className="input !w-auto text-[12px]" value={mode} onValueChange={setMode}
+        placeholder="— pilih —" options={MODES.map((m) => ({ value: m.value, label: m.label }))} />
       {canEdit && <input data-testid={`restock-note-${t.id}`} className="input !w-44 text-[12px]" placeholder="Catatan (opsional)" value={note} onChange={(e) => setNote(e.target.value)} />}
       {canEdit && (
         <button type="button" data-testid={`restock-save-${t.id}`} disabled={!mode || busy} onClick={save} className="primary-button px-2.5 py-1 text-[11.5px] disabled:opacity-40">

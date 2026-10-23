@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ErrorBox } from "./GrnBits";
 import { KIND_LABEL, errText, grnApi } from "./grnApi";
+import { formatDate } from "../../../utils/formatters";
 
 const RANGES = [["90", "3 bulan"], ["180", "6 bulan"], ["365", "12 bulan"], ["", "Semua"]];
 const sinceOf = (days) => (days ? new Date(Date.now() - Number(days) * 864e5).toISOString() : "");
@@ -49,7 +50,7 @@ export default function SupplierVariancePanel({ onOpenGrn }) {
                 <td className="px-2 tabular-nums">{r.not_arrived}</td>
                 <td className="px-2 tabular-nums">{r.over_remaining}</td>
                 <td className="px-2 tabular-nums">{r.claims}</td>
-                <td className="px-2 text-[10px]">{(r.last_closed_at || "").slice(0, 10)}</td>
+                <td className="px-2 text-[10px]">{formatDate(r.last_closed_at)}</td>
               </tr>
             ))}
           </tbody>

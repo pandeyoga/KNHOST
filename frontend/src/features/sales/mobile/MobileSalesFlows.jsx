@@ -14,6 +14,7 @@ import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters
 import { useProofBlob } from "../../rnd/ProofImage";
 import { odPhaseOf, PHASE_LABEL } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
+import KNSelect from "../../../components/KNSelect";
 
 export const errText = (e, fb) => {
   const d = e?.response?.data?.detail;
@@ -159,10 +160,8 @@ export function CustomerFollowupSheet({ customer, orders = [], onClose, onSaved 
         </div>
         {orders.length > 0 && (
           <Field label="Untuk pesanan (opsional)">
-            <select className="field" value={f.order_id} onChange={(e) => setF({ ...f, order_id: e.target.value })} data-testid="m-followup-order">
-              <option value="">— Umum —</option>
-              {orders.map((o) => <option key={o.id} value={o.id}>{o.number} · sisa {formatCurrency(Number(o.grand_total || 0) - Number(o.paid || 0))}</option>)}
-            </select>
+            <KNSelect className="field" value={f.order_id} onValueChange={(v) => setF({ ...f, order_id: v })} data-testid="m-followup-order" aria-label="Pesanan"
+              options={[{ value: "", label: "— Umum —" }, ...orders.map((o) => ({ value: o.id, label: `${o.number} · sisa ${formatCurrency(Number(o.grand_total || 0) - Number(o.paid || 0))}` }))]} />
           </Field>
         )}
         <Field label="Catatan" req><textarea className="field" rows={3} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="Hasil pembicaraan, janji bayar, dll." data-testid="m-followup-note" /></Field>

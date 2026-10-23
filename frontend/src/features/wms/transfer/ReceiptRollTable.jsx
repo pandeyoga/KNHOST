@@ -1,5 +1,6 @@
 /** P03 — tabel roll transfer (status aktual per roll) + hasil penerimaan terakhir. */
 import { STATE_TXT } from "./transferConstants";
+import KNSelect from "../../../components/KNSelect";
 
 const TONE = {
   in_transit: "bg-orange-100 text-orange-700", received: "bg-green-100 text-green-700",
@@ -34,10 +35,9 @@ export function ReceiptRollTable({ rows = [], picked, setPicked, editable }) {
                 <td className="pr-1">
                   {can && p.on && (
                     <div className="flex items-center gap-1">
-                      <select data-testid={`receipt-outcome-${r.roll_no}`} value={p.outcome || "received"}
-                        onChange={(e) => set(r.roll_id, { outcome: e.target.value })} className="rounded border border-gray-200 text-[10.5px]">
-                        <option value="received">Baik</option><option value="damaged">Rusak</option>
-                      </select>
+                      <KNSelect data-testid={`receipt-outcome-${r.roll_no}`} value={p.outcome || "received"} aria-label="Hasil terima"
+                        onValueChange={(v) => set(r.roll_id, { outcome: v })} className="!h-auto !w-auto rounded border border-gray-200 text-[10.5px]"
+                        options={[{ value: "received", label: "Baik" }, { value: "damaged", label: "Rusak" }]} />
                       {p.outcome === "damaged" && <input data-testid={`receipt-note-${r.roll_no}`} value={p.note || ""} placeholder="Keterangan rusak"
                         onChange={(e) => set(r.roll_id, { note: e.target.value })} className="w-28 rounded border border-gray-200 px-1 text-[10.5px]" />}
                     </div>

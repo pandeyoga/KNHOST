@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ShieldCheck, ShieldX, Loader2, FileText, Building2, CalendarClock, Fingerprint } from "lucide-react";
+import { formatDate } from "../../utils/formatters";
 
 export default function PublicVerify({ code }) {
   const [state, setState] = useState({ loading: true, data: null, error: "" });
@@ -65,7 +66,7 @@ export default function PublicVerify({ code }) {
                     {(data.signers || []).map((s, i) => (
                       <div key={i} className="flex items-center justify-between rounded-lg border border-[#EDEEF1] px-3 py-1.5" data-testid={`pv-signer-${i}`}>
                         <span className="text-[12.5px] font-semibold">{s.name}{s.role ? ` · ${s.role}` : ""}</span>
-                        <span className="text-[11px] text-[#9A9BA3]">{String(s.signed_at || "").slice(0, 10)}</span>
+                        <span className="text-[11px] text-[#9A9BA3]">{formatDate(s.signed_at)}</span>
                       </div>
                     ))}
                   </div>

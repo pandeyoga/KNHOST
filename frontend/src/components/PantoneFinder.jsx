@@ -185,7 +185,7 @@ function PantonePickerModal({ selectedCode, allowCreate, onClose, onPick }) {
         </div>
 
         {showCreate && (
-          <CreateColorInline onCancel={() => setShowCreate(false)} onCreated={(c) => { setShowCreate(false); setColors((prev) => [c, ...prev]); onPick(c); }} onError={setError} />
+          <CreateColorInline onCancel={() => setShowCreate(false)} onCreated={(c) => { setShowCreate(false); setColors((prev) => [c, ...prev]); onPick(c); }} />
         )}
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -228,17 +228,18 @@ function PantonePickerModal({ selectedCode, allowCreate, onClose, onPick }) {
   );
 }
 
-function CreateColorInline({ onCancel, onCreated, onError }) {
+function CreateColorInline({ onCancel, onCreated }) {
   const [form, setForm] = useState({ code: "", name: "", hex: "#", system: "KN", family: "" });
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");   // 23 Okt — dulu galat (mis. kode kembar) tak terlihat bila daftar warna terisi
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const submit = async () => {
-    setSaving(true);
+    setSaving(true); setErr("");
     try {
       const res = await axios.post(`${API}/color-library`, form);
       onCreated(res.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat warna.");
+      setErr(e.response?.data?.detail || "Gagal membuat warna.");
       setSaving(false);
     }
   };
@@ -258,6 +259,7 @@ function CreateColorInline({ onCancel, onCreated, onError }) {
           <button data-testid="pantone-finder-create-cancel" className="secondary-button" onClick={onCancel}>Batal</button>
         </div>
       </div>
+      {err && <p className="mt-1.5 text-[11px] text-[#C0392B]" role="alert" data-testid="pantone-finder-create-error">{err}</p>}
     </div>
   );
 }

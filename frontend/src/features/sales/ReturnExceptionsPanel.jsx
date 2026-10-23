@@ -4,6 +4,7 @@ import { ShieldAlert, Check, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ReturnCameraButton from "./ReturnCameraButton";
+import { formatDateTime } from "../../utils/formatters";
 
 const KINDS = [
   { value: "window", label: "Di luar batas waktu retur" },
@@ -62,7 +63,7 @@ function ExceptionRow({ ret, x, canApprove, onDone }) {
       <div className="flex flex-wrap items-center gap-2">
         <b>{x.label}</b>
         <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: `${color}18`, color }} data-testid={`return-exception-status-${x.id}`}>{label}</span>
-        <span className="text-[#6B6B73]">oleh {x.requested_by} · {String(x.requested_at).slice(0, 16).replace("T", " ")} · {x.attachment_ids.length} foto</span>
+        <span className="text-[#6B6B73]">oleh {x.requested_by} · {formatDateTime(x.requested_at)} · {x.attachment_ids.length} foto</span>
       </div>
       <p>{x.reason}</p>
       {x.decided_by && <p className="text-[#6B6B73]">Diputuskan {x.decided_by}{x.decision_note ? `: ${x.decision_note}` : ""}</p>}

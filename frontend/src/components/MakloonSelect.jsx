@@ -87,7 +87,7 @@ function MakloonPickerModal({ processType, selectedId, allowCreate, onClose, onP
             <input data-testid="makloon-select-search" autoFocus className="field w-full pl-8" placeholder="Cari nama / kode / kota…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
-        {showCreate && <QuickCreateMakloon onCancel={() => setShowCreate(false)} onError={setError}
+        {showCreate && <QuickCreateMakloon onCancel={() => setShowCreate(false)}
           onCreated={(m) => { setShowCreate(false); setRows((p) => [m, ...p]); onPick(m); }} />}
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
@@ -113,16 +113,17 @@ function MakloonPickerModal({ processType, selectedId, allowCreate, onClose, onP
   );
 }
 
-function QuickCreateMakloon({ onCancel, onCreated, onError }) {
+function QuickCreateMakloon({ onCancel, onCreated }) {
   const [form, setForm] = useState({ name: "", city: "", pic_name: "", phone: "", process_types: [] });
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");   // 23 Okt — dulu galat MENGGANTI daftar makloon di belakang form
   const { options: processOptions } = useProcessTypes();
   const toggle = (p) => setForm((f) => ({ ...f, process_types: f.process_types.includes(p) ? f.process_types.filter((x) => x !== p) : [...f.process_types, p] }));
   const submit = async () => {
-    if (!form.name.trim()) { onError?.("Nama makloon wajib diisi."); return; }
-    setSaving(true);
+    if (!form.name.trim()) { setErr("Nama makloon wajib diisi."); return; }
+    setSaving(true); setErr("");
     try { const res = await axios.post(`${API}/makloons`, form); onCreated(res.data); }
-    catch (e) { onError?.(e.response?.data?.detail || "Gagal membuat makloon."); setSaving(false); }
+    catch (e) { setErr(e.response?.data?.detail || "Gagal membuat makloon."); setSaving(false); }
   };
   return (
     <div data-testid="makloon-quick-create" className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-3 space-y-2">
@@ -138,6 +139,7 @@ function QuickCreateMakloon({ onCancel, onCreated, onError }) {
             className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${form.process_types.includes(k) ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}>{lbl}</button>
         ))}
       </div>
+      {err && <p className="text-[11px] text-[#C0392B]" role="alert" data-testid="makloon-qc-error">{err}</p>}
       <div className="flex justify-end gap-2">
         <button className="secondary-button" onClick={onCancel}>Batal</button>
         <button data-testid="makloon-qc-submit" className="primary-button" disabled={saving} onClick={submit}>{saving ? "…" : "Simpan"}</button>

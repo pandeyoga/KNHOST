@@ -6,6 +6,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import RollReconcileTable from "./RollReconcileTable";
 import UnknownRollForm from "./UnknownRollForm";
+import { formatDateTime } from "../../utils/formatters";
 
 function nodeOptions(zones = []) {
   const out = [{ value: "", label: "Seluruh gudang" }];
@@ -69,7 +70,7 @@ export default function RollCountPanel({ session, canApprove, products = [], onC
       <div className="flex items-center gap-2">
         <ScanLine size={15} className="text-[#0058CC]" />
         <h3 className="text-[13px] font-bold">Opname per Roll (scan)</h3>
-        {rec?.enabled && <span className="text-[11px] text-[#6B6B73]" data-testid="roll-count-scope">· {rec.node_label} · snapshot {String(rec.snapshot_at).slice(0, 16).replace("T", " ")}</span>}
+        {rec?.enabled && <span className="text-[11px] text-[#6B6B73]" data-testid="roll-count-scope">· {rec.node_label} · snapshot {formatDateTime(rec.snapshot_at)}</span>}
       </div>
       {err && <p className="text-[12px] text-[#C0392B]" data-testid="roll-count-error">{err}</p>}
       {msg && <p className="text-[12px] font-semibold text-[#1B7E3B]" data-testid="roll-count-msg">{msg}</p>}

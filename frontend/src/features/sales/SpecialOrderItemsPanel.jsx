@@ -5,6 +5,7 @@ import { Ban, GitBranch, Layers } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
 import { docStatus } from "./SpecialOrderShared";
+import { formatDate } from "../../utils/formatters";
 
 const ITEM_CANCEL_BLOCKED = ["cancelled", "shipped", "done"];
 
@@ -102,7 +103,7 @@ function ItemLine({ it, canEdit, onRedesign, canCancel, onCancel }) {
         <p className={`font-semibold ${off ? "text-[#8E8E93] line-through" : ""}`}>{it.line_no}. {it.description} · {it.quantity} {it.unit}</p>
         {off && (
           <p className="text-[10.5px] font-semibold text-[#A8221A]" data-testid={`special-order-item-cancelled-${it.line_no}`}>
-            Dibatalkan{it.cancelled_by ? ` oleh ${it.cancelled_by}` : ""}{it.cancelled_at ? ` · ${String(it.cancelled_at).slice(0, 10)}` : ""} — {it.cancel_reason}
+            Dibatalkan{it.cancelled_by ? ` oleh ${it.cancelled_by}` : ""}{it.cancelled_at ? ` · ${formatDate(it.cancelled_at)}` : ""} — {it.cancel_reason}
           </p>
         )}
         <p className="text-[10.5px] text-[#6B6B73]" data-testid={`special-order-item-source-${it.line_no}`}>

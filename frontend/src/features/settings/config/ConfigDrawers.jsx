@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { X, Layers, FlaskConical, History, Play, Check, AlertTriangle, Ban, Clock } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { configApi, errMsg, formatValue, idNum, shortVal, LAYER_TONE, VERDICT_TONE } from "./configApi";
+import { formatDateTime } from "../../../utils/formatters";
 
 function Shell({ title, subtitle, icon, onClose, children, testId }) {
   return (
@@ -311,7 +312,7 @@ export function ChangeHistoryDrawer({ entry, onClose }) {
             {rows.map((r) => (
               <tr key={r.id} data-testid={`cfg-history-row-${r.id}`}>
                 <td className="cfg-nowrap">
-                  {String(r.changed_at || "").slice(0, 16).replace("T", " ")}
+                  {formatDateTime(r.changed_at)}
                   {r.scheduled ? (
                     <span className="badge-orange cfg-ml">terjadwal</span>
                   ) : null}
@@ -377,7 +378,7 @@ export function ChangeHistoryInline() {
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="cfg-nowrap">
-                  {String(r.changed_at || "").slice(0, 16).replace("T", " ")}
+                  {formatDateTime(r.changed_at)}
                 </td>
                 <td>{r.label}</td>
                 <td>

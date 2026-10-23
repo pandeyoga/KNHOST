@@ -201,10 +201,8 @@ export function EnumCard({ name, meta }) {
         <span className={`status-pill ${meta.in_use ? "pill-success" : "pill-muted"}`}>
           {meta.in_use ? "dipakai" : "disiapkan"}
         </span>
-        {false && meta.ps && <span className="status-pill pill-muted">{meta.ps}</span>}
-        {false && meta.decision && meta.decision !== "—" && (
-          <span className="status-pill pill-muted">{meta.decision}</span>
-        )}
+        {/* Kode internal (meta.ps / meta.decision) sengaja tidak ditampilkan ke pengguna. 23 Okt — dulu ditulis
+            `{false && …}` sehingga lint seluruh proyek merah (no-constant-binary-expression). */}
       </div>
       {meta.note && <p className="mt-1 text-[10.5px] text-[#6B6B73]">{stripInternalCodes(meta.note)}</p>}
       <div className="mt-1.5 flex flex-wrap gap-1.5">

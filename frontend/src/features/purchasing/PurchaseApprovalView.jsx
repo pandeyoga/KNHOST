@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { BadgePercent, CheckCircle, XCircle, RefreshCw, ClipboardList, ChevronRight, ChevronDown, AlertCircle, Clock, Lock, Layers } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import POTimeline from "../admin/po/POTimeline";
 import PODeviationBanner from "../admin/po/PODeviationBanner";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -334,7 +334,7 @@ function ApprovalChainSteps({ po, chain, pending, totalLevels }) {
                 <div className="mt-0.5 text-[10px] font-semibold">{stateText}{isCurrent ? " (sekarang)" : ""}</div>
                 {isApproved && (
                   <div className="text-[9.5px] opacity-80 truncate">
-                    {lv.approved_by || "—"}{lv.approved_at ? ` · ${String(lv.approved_at).slice(0, 10)}` : ""}
+                    {lv.approved_by || "—"}{lv.approved_at ? ` · ${formatDate(lv.approved_at)}` : ""}
                   </div>
                 )}
               </div>

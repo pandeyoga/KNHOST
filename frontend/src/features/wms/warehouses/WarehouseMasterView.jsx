@@ -40,6 +40,7 @@ import {
 } from "./warehouseApi";
 import WarehouseModeDrawer from "./WarehouseModeDrawer";
 import WarehouseProfileDrawer from "./WarehouseProfileDrawer";
+import KNSelect from "../../../components/KNSelect";
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 
@@ -403,16 +404,13 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                           <WarehouseModeBadge warehouse={w} testId={`wh-mode-badge-${w.id}`} />
                           <label className="mt-1 flex items-center gap-1 text-[10px] text-[#6B6B73]">
                             Loading check
-                            <select data-testid={`wh-lc-policy-${w.id}`} value={w.loading_check_policy || "optional"}
-                              disabled={!canWrite}
-                              onChange={async (e) => {
-                                try { await patchWarehouse(w.id, { loading_check_policy: e.target.value }); load(); }
+                            <KNSelect data-testid={`wh-lc-policy-${w.id}`} value={w.loading_check_policy || "optional"} disabled={!canWrite} aria-label="Kebijakan loading check"
+                              onValueChange={async (v) => {
+                                try { await patchWarehouse(w.id, { loading_check_policy: v }); load(); }
                                 catch (ex) { setError(errText(ex, "Gagal mengubah kebijakan loading check.")); }
                               }}
-                              className="rounded border border-[#E5E5EA] bg-white px-1 py-0.5 text-[10px] font-semibold">
-                              <option value="optional">opsional</option>
-                              <option value="required">wajib sebelum kirim</option>
-                            </select>
+                              className="!h-auto !w-auto rounded border border-[#E5E5EA] bg-white !px-1 !py-0.5 text-[10px] font-semibold"
+                              options={[{ value: "optional", label: "opsional" }, { value: "required", label: "wajib sebelum kirim" }]} />
                           </label>
                           {w.usable_by_active === false && (
                             <span data-testid={`wh-not-usable-${w.id}`}

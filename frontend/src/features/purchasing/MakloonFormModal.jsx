@@ -48,14 +48,15 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
     notes: editTarget?.notes || "",
   }));
   const [saving, setSaving] = useState(false);
+  const [modalErr, setModalErr] = useState("");   // galat tampil di modal ini
   if (!open) return null;
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const toggleProc = (p) => setForm((f) => ({ ...f, process_types: f.process_types.includes(p) ? f.process_types.filter((x) => x !== p) : [...f.process_types, p] }));
 
   const save = async () => {
-    if (!form.name.trim()) { onError?.("Nama makloon wajib diisi."); return; }
+    if (!form.name.trim()) { setModalErr("Nama makloon wajib diisi."); return; }
     const locErr = locationIncomplete(pickLoc(form));
-    if (locErr) { onError?.(`Alamat: ${locErr}`); return; }
+    if (locErr) { setModalErr(`Alamat: ${locErr}`); return; }
     setSaving(true);
     const payload = {
       ...form,
@@ -67,7 +68,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
       if (isEdit) await axios.patch(`${API}/makloons/${editTarget.id}`, { data: payload });
       else await axios.post(`${API}/makloons`, payload);
       onSaved?.();
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menyimpan makloon."); setSaving(false); }
+    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menyimpan makloon."); setSaving(false); }
   };
 
   return (
@@ -117,6 +118,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
           </div>
           <Field label="Catatan / Kapasitas"><textarea data-testid="makloon-notes-input" className="field" rows="2" value={form.notes} onChange={set("notes")} placeholder="Catatan kapasitas / spesialisasi…" /></Field>
         </div>
+        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="makloon-form-error">{modalErr}</p>}
         <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="makloon-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan"}</button>

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
 import { CheckCircle2, FlaskConical, Rocket, Send, X, XCircle } from "lucide-react";
 import { overlayDismiss } from "@/utils/overlayDismiss";
-import { formatCurrency, formatQty, formatStamp } from "../../utils/formatters";
+import { formatCurrency, formatQty, formatDateTime } from "../../utils/formatters";
 import { approveSpec, getSpec, rejectSpec, releaseProduct, submitSpec } from "./rndApi";
 import { specOverride } from "./requiredTests";
 import { errMsg, fabricLabel, lifecycleMeta, SAMPLE_STATUS_META, SPEC_STATUS_META } from "./rndMeta";
@@ -184,7 +184,7 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
                     <b>{t.label}</b>
                     {t.actor ? ` · ${t.actor}` : ""}
                     {t.note ? ` — ${t.note}` : ""}
-                    <span className="text-[#9A9BA3]"> · {formatStamp(t.at)}</span>
+                    <span className="text-[#9A9BA3]"> · {formatDateTime(t.at)}</span>
                   </li>
                 ))}
               </ul>

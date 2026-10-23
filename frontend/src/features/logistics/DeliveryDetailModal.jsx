@@ -10,7 +10,7 @@ import { addPosition, deletePhoto, deletePosition, getDelivery, photoUrl, transi
 import PickupHandoverPanel from "./PickupHandoverPanel";
 import ManifestPanel from "./ManifestPanel";
 import MoneyInput from "../../components/MoneyInput";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../utils/formatters";
 
 // FB-02 — detail pengiriman: tahapan, foto muat/POD (wajib), posisi, data ekspedisi/armada,
 // serah terima pickup (kode + identitas) untuk pesanan yang diambil sendiri.
@@ -156,7 +156,7 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
           {!isPickup && <PhotoBlock title="Foto muat" hint="Barang naik kendaraan" kind="load" list={loadP} d={d} canUpdate={canUpdate && d.status !== "completed"} onPick={onPick("load")} onDel={(pid) => run("del", () => deletePhoto(id, pid), "Foto dihapus.")} busy={busy} />}
           <PhotoBlock title={isPickup ? "Foto bukti serah terima" : "Bukti terima (POD)"} hint={isPickup ? "Pengambil bersama barang" : "Di tujuan, bersama penerima"} kind="pod" list={podP} d={d} canUpdate={canUpdate && d.status !== "completed"} onPick={onPick("pod")} onDel={(pid) => run("del", () => deletePhoto(id, pid), "Foto dihapus.")} busy={busy} />
         </div>
-        {d.pod && !isPickup && <p className="text-[11px] text-[#1F7A45] mt-1.5" data-testid="logistics-pod-info"><b>Diterima oleh {d.pod.receiver_name}</b> · {String(d.pod.received_at).slice(0, 16).replace("T", " ")}</p>}
+        {d.pod && !isPickup && <p className="text-[11px] text-[#1F7A45] mt-1.5" data-testid="logistics-pod-info"><b>Diterima oleh {d.pod.receiver_name}</b> · {formatDateTime(d.pod.received_at)}</p>}
 
         {/* Posisi */}
         {!isPickup && <div className="mt-3 rounded-lg border border-[#E1E4EA] p-2.5" data-testid="logistics-positions">
