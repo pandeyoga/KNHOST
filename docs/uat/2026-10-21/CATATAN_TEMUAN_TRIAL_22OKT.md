@@ -149,6 +149,37 @@ jendela retur beda sehari antar-layar (zona waktu); label mentah "status 2", "st
 `return_customer`) → fase 2; panduan UAT S14/S15 masih menulis Admin Sales memutus disposisi & grade otomatis → diperbarui
 bersama fase 2.
 
+## J. Pesanan khusus (OD) end-to-end + sapuan pola UI (23 Okt pagi)
+Ditelusuri dengan **klik nyata** di stack uji (salinan data acuan, `kn_test_trial`): OD dua item (printing + labdip) dari
+Sales → Manajer → MD → Desainer → Manajer → R&D (MD) → Sales HP (ACC pelanggan) → Admin Sales (kunci harga) → MD → Manajer
+(realisasi) → Admin Sales (SO). Commit `460e323` (OD → desain → R&D), `f0ea6de` (ACC pelanggan → SO), `d8b58d4` (pola lintas layar).
+
+| # | Temuan | Bukti | Status |
+|---|---|---|---|
+| J1 | **MD ditolak saat memutus pemenang sample** walau keputusan pemilik UAT v3 (`a637fcd`) membolehkan: matriks *ACC Sample* sudah memuat MD, tetapi kebijakan lapis kedua `rnd.sample_decision_roles` masih bawaan `manager, admin`. Galatnya pun tampil **di belakang modal** | `config_catalog_rnd`, `SampleDetailPanel.act` | diperbaiki — bawaan memuat MD; tombol mengikuti kebijakan server; galat 10 aksi modal sample tampil di modalnya |
+| J2 | **Spesifikasi tak pernah sampai ke Manajer**: pemenang diputus MD (tanpa wewenang ACC spesifikasi) → spesifikasi tetap Draf, tidak ada antrean, SKU tak lahir; modal menawarkan centang *ACC spesifikasi* ke MD → "SKU gagal lahir" merah | `decide_sample`, `DecideModal` | diperbaiki — spesifikasi otomatis diajukan ke antrean ACC Manajer; centang/tombol ACC & Rilis hanya untuk peran berwenang; panel menulis *Menunggu ACC spesifikasi oleh Manajer* |
+| J3 | **Antrean "Spesifikasi menunggu ACC" & Jejak Dokumen spesifikasi melempar ke Beranda** (tab Spesifikasi dilebur ke rincian sample sejak 2026-09) | `hubTabs` rnd-hub | diperbaiki — `rnd-specs` hidup sebagai tab tersembunyi; label antrean *Spesifikasi produk menunggu ACC (SKU lahir)*; seluruh baris daftar spesifikasi bisa diklik |
+| J4 | **Proofing otomatis atas nama Manajer** (desain ACC → sample + spesifikasi proofing dibuat atas nama penyetuju) → pemisahan tugas melarang Manajer meng-ACC spesifikasi proofing — hanya Admin tersisa | `on_design_approved` | diperbaiki — atas nama Sales pembuat OD (sama dengan routing saat OD disetujui) |
+| J5 | **"Nama barang versi supplier" di modal Pilih pemenang dibuang diam-diam** — skema `SampleDecideBody` tidak punya `supplier_item_name` (sisa fitur dual name) | `schemas_rnd` | diperbaiki + tes |
+| J6 | **Pengadaan otomatis "Gagal — bisa diulang"** dengan pesan peran mentah tiap kali Admin Sales mengunci harga OD ber-SKU baru (rilis SKU = wewenang Manajer) | `realize_all` | diperbaiki — item *menunggu Manajer* (bukan galat); SO otomatis menunggu pengadaan lengkap; tombol *Rilis SKU & realisasi pengadaan* hanya untuk yang berwenang |
+| J7 | **OD multi-item "Siap" saat PO item PERTAMA diterima** walau PO item kedua belum datang | `recompute_po_status` | diperbaiki — Siap hanya bila semua PO/MKO OD diterima (jalur MKO juga) + tes |
+| J8 | Lencana kepala & daftar OD "Terkonfirmasi" selama desain/sample berjalan; lini masa mencentang *Desain berjalan* selesai padahal desain belum dikerjakan (labdip paralel) | `_phase`, `StatusPill` | diperbaiki — lencana fase (*Desain & sample*, *Sampling berjalan*, *Harga final*); fase = tahap paling awal yang belum selesai, tahap paralel ditandai; tab daftar *Disetujui* |
+| J9 | Riwayat OD: persetujuan tidak tercatat; entri peristiwa berjudul "Terkonfirmasi" berulang; email mentah sebagai nama | `approve_special_order`, `InfoPanels` | diperbaiki (desktop & HP) |
+| J10 | Rincian OD multi-item: "Jumlah/Harga target" item 1 dibanding "Nilai pesanan" semua item; rantai/chip PR-PO-SKU hanya item pertama; dasar ACC pelanggan hanya satu sample; tombol manual *Tandai Siap* muncul sebelum barang datang | panel OD | diperbaiki — ringkasan multi-item, PR/PO tiap item, semua sample sebagai dasar, transisi manual disembunyikan untuk OD terstruktur |
+| J11 | **Tanggal bawaan "hari ini" = tanggal UTC** (kemarin sebelum 07.00 WIB) di 18 form, termasuk tanggal keputusan pelanggan OD | `new Date().toISOString().slice(0,10)` | diperbaiki — `todayWib()` |
+| J12 | **Galat modal di belakang overlay** (pola sama dengan form retur): aksi desain (catatan/nilai wajib), form master & order Makloon, Resep, wizard, issue/terima hasil makloon, buat cepat makloon, buat warna Pantone | modal kustom `fixed inset-0` | diperbaiki — galat di dalam modal |
+| J13 | HP: **dua tombol kembali bertumpuk** di subhalaman (OD, retur, pelanggan, prospek, permintaan internal) | `MobileMore` + rincian | diperbaiki — satu tombol Kembali (rincian → daftar → menu) |
+| J14 | Meja: umur "hari ini" untuk dokumen kemarin (umur = selisih 24 jam); kartu antrean 1 baris berisi ruang kosong ±250 px; SPK QC retur masuk antrean MD *tanpa acuan sample* (14 baris palsu) | `ageTone`, `DeskQueueCard`, `md_desk` | diperbaiki — "< 1 hari" di semua meja/beranda; tinggi minimum hanya saat berhalaman; SPK retur dikeluarkan |
+| J15 | Konsistensi: 22 `<select>` bawaan; tanggal tampilan potongan UTC di 20 layar & tiga format riwayat; rupiah racikan sendiri; kode mentah (*delta_e*, *woven*, *color: Natural*); istilah *rnd/round/ronde*; notifikasi sukses buatan sendiri; tombol `.btn-*` tanpa cincin fokus; daftar kedatangan GRN menulis "Belum ada kedatangan" selagi memuat | ux_audit, grep | diperbaiki — KNSelect, `formatDate/formatDateTime/wibDate`, `formatCurrency`, label manusiawi, "ronde", `OkNotice`, `LoadingLine`; ux_audit 32 → 9 galat |
+
+**Belum diubah (perlu keputusan / di luar cakupan):**
+- Tenggat permintaan desain & tanggal tiba PO OD **sama dengan tenggat kirim ke pelanggan** (20 Nov) — perencanaan mundur dari tenggat belum ada.
+- Kategori DSR otomatis *Abstrak · Allover* untuk motif pelanggan (bawaan routing; MD bisa ubah).
+- Papan Permintaan Desain 7 kolom pada layar 1440 px bergulir ke samping (kolom terakhir terpotong).
+- Penerimaan barang OD (kedatangan → hitung → SPK) tidak diklik ulang sesi ini (alur S8 sama); aturan *Siap setelah semua PO* diuji lewat tes backend.
+- Sisa 9 galat ux_audit = heuristik pada komponen generik (`PagedRows`, `ListPageParts`) & panel yang sengaja tersembunyi sampai datanya ada.
+- Suite LN-033 (pemenuhan OD) gagal di salinan data acuan karena **prasyarat data**: produk KNKNT0005 (satuan kg) tanpa aturan konversi kg → meter. Tidak terkait perubahan ini; di DB tes bersih lulus.
+
 ## E. Hasil cek permintaan 22 Okt sore (belum diperbaiki)
 | # | Temuan | Bukti | Status |
 |---|---|---|---|

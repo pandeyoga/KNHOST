@@ -316,8 +316,8 @@ def _s13():
          "**SORD-yymmdd-xxxx** (tanggal WIB) *Menunggu persetujuan*.", "S13"),
         ("Manajer", "`Penjualan › Pesanan Khusus` → baris OD → [[Detail →]] → [[Setujui]] (Inbox Persetujuan: [[Buka layarnya]])",
          "Rantai persetujuan berjenjang.",
-         "OD disetujui → otomatis **Permintaan Desain (DSR)** untuk printing & **Sample R&D (SMP)** per item, tercatat atas nama "
-         "Sales pembuat OD; tampil di **Rantai dokumen** detail OD.", "S13"),
+         "Pesan hijau *Pesanan disetujui. Diteruskan otomatis: KSC/DSR-…, KSC/SMP-…*; DSR (printing) & SMP per item tercatat atas nama "
+         "Sales pembuat OD; lencana kepala OD mengikuti fase (*Desain berjalan* → *Sampling berjalan* …), riwayat status mencatat *Disetujui*.", "S13"),
         ("MD", "`Meja MD` → **Permintaan desain** (*belum ditugaskan*) → [[Buka]] → [[Tugaskan]]",
          "Pilih desainer (*Intan*) & tenggat.", "DSR *Ditugaskan*; hilang dari antrean MD sampai desain diserahkan.", "S13"),
         ("Desainer", "`Meja Saya` → DSR → [[Buat Desain Baru]] → unggah artwork → centang **Print paper** → [[Ajukan untuk review]]",
@@ -331,22 +331,27 @@ def _s13():
          "Spesifikasi *Draf* dengan gramasi & lebar terisi.", "S13"),
         ("R&D (MD)", "SMP → [[Kirim ke supplier]] (pilih supplier peserta) → per supplier unggah bukti → [[Setor hasil]] → [[Nilai hasil]] (ACC/revisi/tolak)",
          "Hasil ukur per jenis uji (ΔE, tahan cuci/gosok; proofing), skor.", "Supplier yang lolos tertanda *ACC*.", "S13"),
-        ("Manajer / MD", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
-         "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Pemenang boleh diputus **Manajer atau MD** (matriks *ACC Sample*); "
-         "biarkan centang *ACC spesifikasi* agar SKU langsung lahir.",
-         "Kontrak harga **KSC/SCT-…** + **SKU eksklusif pelanggan** lahir; artikel baru bersumber restock *Supplier*. "
-         "Spesifikasi belum lengkap → peringatan merah; MD lengkapi lalu Manajer [[ACC spesifikasi → lahirkan SKU produk]].", "S13"),
+        ("MD (atau Manajer)", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
+         "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Pemenang boleh diputus **MD atau Manajer**. "
+         "Bila Manajer yang memutus: biarkan centang *ACC spesifikasi* agar SKU langsung lahir. MD tidak melihat centang itu — "
+         "spesifikasi otomatis diajukan ke Manajer.",
+         "Kontrak harga **KSC/SCT-…** terbit; nama barang & warna versi supplier tersimpan. Diputus MD → panel Master data: "
+         "*Menunggu ACC spesifikasi oleh Manajer / Admin*.", "S13"),
+        ("Manajer", "`Beranda` → **Spesifikasi produk menunggu ACC (SKU lahir)** (atau `Pusat Persetujuan` → [[Buka layarnya]]) → KSC/SPEC-… → [[Setujui & buat produk]]",
+         "Hanya bila pemenang diputus MD. Pembuat spesifikasi = Sales pembuat OD, jadi Manajer tidak terblokir pemisahan tugas.",
+         "**SKU eksklusif pelanggan** lahir (*Disetujui · belum rilis*); artikel bersumber restock *Supplier*.", "S13"),
         ("Sales", "HP: **Lainnya** › **Pesanan Khusus (OD)** → ketuk OD → **Persetujuan pelanggan atas sample** → [[ACC]] → kontak, catatan, foto bukti → [[Simpan keputusan]]",
          "Tanggal keputusan bawaan = hari ini (WIB). Alternatif desktop: `Meja Admin Sales` → *Pesanan khusus — menunggu ACC pelanggan* → [[Catat ACC]].",
          "*Keputusan pelanggan tersimpan*; riwayat ACC + bukti; OD masuk antrean kunci harga.", "S13"),
         ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — perlu kunci harga** → [[Kunci harga]] → panel **Harga final & confirmed** → gudang tujuan *WH-JKT · Jakarta · Gudang Sukacita* → [[Kunci harga & Confirm OD]]",
          "Per item: SKU hasil · harga kontrak supplier pemenang · margin (bawaan 30%) · harga final. Item belum siap menyebut sebabnya (mis. *produk hasil sample … belum lahir*). "
          "Daftar gudang hanya yang aktif, gudang milik PT di atas; pilihan disimpan untuk realisasi.",
-         "*Dikunci …*; total OD = jumlah per item (contoh Rp 19.500.000 + PPN).", "S13"),
+         "Notifikasi *Harga dikunci*; total OD = jumlah per item (contoh Rp 19.500.000 + PPN). SKU baru → panel pengadaan: "
+         "*menunggu Manajer: rilis SKU baru ke produksi & realisasi pengadaan* (bukan galat).", "S13"),
         ("MD", "`Meja MD` → **Pesanan khusus — pilih jalur & realisasi pengadaan** → [[Buka]] → panel **Pemenuhan produksi per item** → jalur *Supplier (PR → PO)* → [[Simpan jalur]] (tiap item)",
-         "Jalur bawaan mengikuti sumber restock artikel; menyimpang dari bawaan wajib alasan.", "Item *Siap direalisasi*.", "S13"),
-        ("Manajer", "detail OD → panel **Pemenuhan produksi per item** → [[Realisasi pengadaan]] (tiap item)",
-         "SKU baru dirilis ke produksi saat realisasi — wewenang Manajer (MD mendapat pesan penolakan yang jelas).",
+         "Jalur bawaan mengikuti sumber restock artikel (sudah terisi bila master diatur) — simpan hanya bila menyimpang (alasan wajib).", "Item *Siap direalisasi*.", "S13"),
+        ("Manajer", "detail OD → panel **Pemenuhan produksi per item** → [[Rilis SKU & realisasi pengadaan]] (tiap item)",
+         "SKU baru dirilis ke produksi saat realisasi — wewenang Manajer (peran lain melihat *realisasi oleh Manajer*, tanpa tombol).",
          "Per item **PR-xxxxx → PO KSC/PO-xxxxx** ke supplier pemenang (*Belum diterima*); OD *Dalam Produksi*.", "S13"),
         ("Admin Sales", "detail OD → [[Ubah ke Pesanan Penjualan]] → [[Konversi ke SO]]",
          "Konversi item A & B (SKU, unit, harga terkunci); boleh sebelum barang datang.",
@@ -354,7 +359,8 @@ def _s13():
         ("Admin Gudang · Gudang · MD Quality", "tiap PO → `Barang Masuk` kedatangan (Jakarta) → hitung → tutup → SPK MD → MDQ → [[Tutup SPK]] *Diterima seluruhnya*",
          "Sama dengan S8 bagian kedatangan & SPK (SPK MD Quality saja; QC 4-point opsional lewat SPK QC 4-point); PO item A dan B "
          "boleh tiba di hari berbeda.",
-         "Roll item OD **berkomitmen** ke SO OD; SO **Terkonfirmasi otomatis** (*barang pesanan khusus diterima gudang*); OD *Siap*; "
+         "Roll item OD **berkomitmen** ke SO OD; SO **Terkonfirmasi otomatis** (*barang pesanan khusus diterima gudang*); OD *Siap* "
+         "baru setelah **semua** PO item diterima; "
          "tugas ambil lahir **per item** di `Barang Keluar` (*Siap diambil*) — tanpa langkah Periksa & lepas Admin Sales.", ""),
     ] + s.pick("=S1") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") +         s.pay("=S1") + s.journey("=S1", "OD ikut *Dikirim* lalu *Selesai* (sinkron dari SO).")
 
@@ -362,21 +368,29 @@ def _s13():
 def _retur_front(ui="S14"):
     return [
         ("Sales", "HP: tab **Pesanan** → ketuk SO yang sudah Selesai (mis. dari S1) → [[Ajukan retur]] (atau **Lainnya** › **Retur Penjualan** → [[Buat retur jual]])",
-         "SO terisi otomatis; roll yang benar-benar terkirim tampil. Pilih **Tipe Return**, centang roll (qty terisi), alasan per item, "
-         "**Sebab keluhan**, catatan, foto (bila kebijakan wajib) → [[Buat Return]].",
+         "SO terisi otomatis; roll yang benar-benar terkirim tampil. Pilih **Tipe Return**, centang roll (qty terisi) → **per roll**: alasan, "
+         "kondisi, *hangtag hilang* / *sudah dipotong pelanggan*, foto per roll; **Sebab keluhan**, catatan → [[Buat Return]].",
          "**SRET-xxxxx** *Menunggu persetujuan*. Klaim > 21 hari dari SJ → ditolak / [[Ajukan pengecualian]].", ui),
+        ("Manajer / Admin Sales", "`Retur` → baris retur [[Detail →]] → tab **Ringkasan** → tabel roll → per roll [[Terima]] / [[Tolak]] (+ alasan) → [[Simpan keputusan roll]]",
+         "Penerimaan sebagian: roll yang tidak layak (mis. sudah dipotong) ditolak per roll. Pemutus bawaan Manajer & Admin Sales (bisa diatur di Hak Akses).",
+         "Roll ditolak keluar dari klaim; qty & nilai retur menyesuaikan.", ui),
         ("Manajer", "`Meja Saya` → **Retur menunggu ACC** → [[Putuskan]] (membuka Inbox Persetujuan) → kartu retur [[Tinjau & Putuskan]] → [[Setujui]]",
-         "Estimasi nilai dari harga SO; setujui barang kembali untuk diperiksa (bukan keputusan refund/tukar).", "Retur *Disetujui*.", ui),
-        ("Gudang", "`Retur` → baris retur [[Detail →]] → **Perjalanan Retur** → tahap *Terima di gudang* → gudang *Jakarta* → ketik nomor roll → [[Catat scan]]",
+         "Estimasi nilai dari harga SO; setujui barang kembali untuk diperiksa (bukan keputusan refund/tukar).",
+         "Retur *Disetujui*; **SPK QC retur KSC/INS-…** (satu baris per roll) terbit otomatis — panel *QC retur · SPK inspeksi per roll*.", ui),
+        ("Sales / Admin Sales", "detail retur → tab **Logistik & perjalanan** → panel **Pengembalian barang** → cara kembali (*Dijemput armada KN* / "
+         "*Dikirim pelanggan via ekspedisi* + ekspedisi & resi / *Diantar sendiri*) → [[Barang sudah dikirim/dijemput]]",
+         "Bisa [[Simpan rencana]] dulu (jadwal jemput) lalu ditandai saat barang berangkat.",
+         "Stepper tahap 3 *Pengembalian barang*; tonggak *Barang dikirim/dijemput dari pelanggan*.", ui),
+        ("Gudang", "`Retur` → baris retur [[Detail →]] → tab **Logistik & perjalanan** → **Perjalanan Retur** → tahap *Terima di gudang* → gudang *Jakarta* → ketik nomor roll → [[Catat scan]]",
          "Terima roll retur di Jakarta (scan barcode atau ketik nomor roll — tanpa RFID).",
          "Lokasi fisik roll: *Jakarta · Gudang Sukacita · SRET-…/TRM-1*; belum jadi stok jual.", ui),
         ("Gudang", "Perjalanan Retur → tahap **Kirim ke gudang lain (dalam perjalanan)** → tujuan *Rancamalang · Gudang Transit* → roll → ekspedisi/sopir → [[Catat scan]]",
          "Gudang asal tidak ada di daftar tujuan.", "Status *Dalam perjalanan Jakarta → Rancamalang · Gudang Transit*.", ui),
         (WH_RCM, "detail retur → Perjalanan Retur (tahap *Tiba di gudang tujuan* & gudang Transit terisi otomatis) → ketik roll → [[Catat scan]]",
          "Cocokkan roll.", "Roll di *Rancamalang · Gudang Transit* menunggu QC.", ui),
-        ("QC", "detail retur → panel **Inspeksi** → [[Mulai Inspeksi]] → cacat per poin, qty aktual per roll (nomor roll tampil) → [[Selesaikan Inspeksi]]",
-         "Per roll: qty aktual, cacat 4-point, kondisi.",
-         "Retur *Selesai Inspeksi*; tonggak *Inspeksi selesai · inspeksi 4-point di retur*. QC sebelum barang diterima → ditolak (F-12).", ui),
+        ("QC", "`Kualitas` › **SPK Inspeksi** → SPK retur KSC/INS-… (atau detail retur → [[Buka SPK]]) → per roll [[Isi hasil]] → kondisi, **qty aktual**, cacat 4-point, **grade** → simpan → [[Tutup SPK]]",
+         "Klaim pelanggan per roll tampil di atas form (alasan, kondisi, foto). Roll yang belum diterima gudang belum bisa diperiksa.",
+         "Retur *Selesai Inspeksi*; hasil per roll (grade, cacat, qty aktual) tersalin ke retur. QC sebelum barang diterima → ditolak (F-12).", ui),
     ]
 
 
