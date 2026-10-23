@@ -49,6 +49,7 @@ TURN_MAP: Dict[str, Dict[str, Dict[str, Any]]] = {
         "refund_settled":   {"owner": True, "title": "Retur selesai — pengembalian dana", "link": "returns"},
         "credit_settled":   {"owner": True, "title": "Retur selesai — store credit", "link": "returns"},
         "nego_settled":     {"owner": True, "title": "Retur selesai — nego", "link": "returns"},
+        "settled":          {"owner": True, "title": "Retur selesai — per roll (campuran)", "link": "returns"},
         "rejected":         {"owner": True, "title": "Retur ditolak", "link": "returns", "severity": "warning"},
     },
     "purchase_returns": {

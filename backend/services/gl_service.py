@@ -2559,6 +2559,44 @@ def sales_return_lines(*, return_net: float, return_ppn: float, return_cogs: flo
     return lines
 
 
+def sales_return_settlement_lines(*, net: float, ppn: float, cogs: float, credits: List[Any],
+                                  label: str = "") -> List[Dict[str, Any]]:
+    """UAT 23 Okt — Nota Kredit penyelesaian retur PER ROLL: Dr Pendapatan (DPP) + Dr PPN Keluaran / beberapa sisi
+    kredit sekaligus (potong tagihan SO asal 1-1200 · refund kas · saldo pelanggan 2-1450) + Dr Persediaan / Cr HPP
+    untuk roll yang kembali ke stok. `credits` = [(kode akun, nominal, keterangan)]."""
+    net, ppn, cogs = round(float(net or 0), 2), round(float(ppn or 0), 2), round(float(cogs or 0), 2)
+    lines: List[Dict[str, Any]] = []
+    if net > EPS:
+        lines.append({"account_code": ACC_PENDAPATAN, "debit": net, "credit": 0.0, "description": f"Retur penjualan {label}"})
+    if ppn > EPS:
+        lines.append({"account_code": ACC_PPN_OUT, "debit": ppn, "credit": 0.0, "description": f"Reversal PPN Keluaran {label}"})
+    for acc, amount, desc in credits:
+        amount = round(float(amount or 0), 2)
+        if amount > EPS:
+            lines.append({"account_code": acc, "debit": 0.0, "credit": amount, "description": f"{desc} {label}"})
+    if cogs > EPS:
+        lines += _balanced_pair(ACC_PERSEDIAAN, ACC_HPP, cogs, f"Barang retur masuk stok {label}")
+    return lines
+
+
+async def post_sales_return_settlement(ret: Dict[str, Any], settlement_id: str, *, net: float, ppn: float, cogs: float,
+                                       credits: List[Any], label: str) -> Optional[Dict[str, Any]]:
+    """Jurnal satu penyelesaian per roll. Idempoten per (sales_return, `<retur>:<penyelesaian>`) — bisa dibalik per
+    penyelesaian lewat `reverse_document("sales_return", "<retur>:<penyelesaian>")`."""
+    sid = f"{ret['id']}:{settlement_id}"
+    if await _already_posted("sales_return", sid):
+        return await db.journal_entries.find_one({"source_type": "sales_return", "source_id": sid, "status": {"$ne": "void"}},
+                                                 {"_id": 0})
+    lines = sales_return_settlement_lines(net=net, ppn=ppn, cogs=cogs, credits=credits, label=label)
+    if not lines:
+        return None
+    return await _insert_entry(
+        lines=lines, description=f"Credit Note / Retur penjualan {label}", date=now_iso(),
+        source_type="sales_return", source_id=sid, entity_id=ret.get("entity_id", ""),
+        created_by="system", source_label=label,
+        ref={"return_id": ret["id"], "return_number": ret.get("number", ""), "settlement_id": settlement_id})
+
+
 async def post_amendment_credit_note(note: Dict[str, Any], *, ar_part: float,
                                      store_credit_part: float) -> Optional[Dict[str, Any]]:
     """L02 LN-022-T03 — Nota Kredit amandemen (harga/qty turun setelah terbit).

@@ -46,7 +46,7 @@ VALID_RETURN_TYPES = {"retur", "bs", "penggantian", "komplain", "garansi"}
 #   keluar dari sisi customer / dalam proses). rejected & cancelled TIDAK dihitung.
 RETURN_ACTIVE_STATUSES = {
     "draft", "pending_approval", "approved", "inspecting", "inspected",
-    "refund_settled", "credit_settled", "nego_settled",
+    "refund_settled", "credit_settled", "nego_settled", "settled",
 }
 _RET_EPS = 0.01
 
@@ -662,7 +662,7 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
 
     # L09 LN-090-T01 — pengganti tidak boleh dikirim final sebelum barang retur selesai QC.
     if key == "shipped_to_customer" and ret.get("status") not in (
-            "inspected", "refund_settled", "credit_settled", "nego_settled"):
+            "inspected", "refund_settled", "credit_settled", "nego_settled", "settled"):
         raise ValueError(
             "Pengganti belum boleh dikirim ke pelanggan — barang retur harus diterima dan "
             "selesai QC lebih dulu (retur ditolak/batal tidak punya pengganti).")
@@ -1609,6 +1609,8 @@ async def settle_return(return_id: str, actor: str, outcome: str,
             f"Outcome settle tidak valid: '{outcome}'. Pilihan: {', '.join(sorted(st.SETTLE_OUTCOMES))} "
             "(gunakan endpoint reject untuk menolak).")
 
+    if ret.get("roll_outcomes"):
+        raise ValueError("Retur ini sudah diselesaikan per roll — lanjutkan lewat penyelesaian per roll.")
     target = st.state_for_outcome(outcome)
     # Idempotency: sudah di state target dengan outcome sama.
     if ret["status"] == target and ret.get("outcome") == outcome:
@@ -1751,6 +1753,9 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
     # Idempotent: sudah dibatalkan/di-reversal.
     if ret.get("reversed") or status == st.CANCELLED:
         return ret
+    if any(e.get("status") == "done" for e in ret.get("settlements") or []):   # UAT 23 Okt — penyelesaian per roll
+        from services import return_roll_settlement_service as _rrs
+        return await _rrs.reverse_all(ret, actor, reason)
     if status not in st.SETTLED_STATES:
         raise ValueError(
             f"Hanya retur yang sudah diselesaikan (settled) yang bisa di-reversal. Status saat ini: '{status}'.")

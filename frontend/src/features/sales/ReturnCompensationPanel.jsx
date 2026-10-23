@@ -10,7 +10,7 @@ import { Panel } from "../../components/DetailParts";
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
-const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
+const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"];
 
 // UAT 23 Okt — roll dipilih dari roll klaim retur (dulu teks bebas: nomor roll yang diketik terkirim sebagai id roll,
 // sehingga "Pecah roll" selalu gagal "Roll tidak ada di gudang").

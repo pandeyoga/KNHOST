@@ -5,7 +5,7 @@ import LogisticsCostRow from "./LogisticsCostRow";
 import { Panel } from "../../components/DetailParts";
 import { formatCurrency } from "../../utils/formatters";
 
-const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
+const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"];
 
 // LN-091 KLR-11 + GL-01 — cara kirim, penanggung, akun pembayaran (Finance), PT pembeban; jurnal otomatis.
 export default function ReturnLogisticsPanel({ ret, onChanged }) {

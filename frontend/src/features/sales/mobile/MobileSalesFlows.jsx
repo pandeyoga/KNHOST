@@ -412,7 +412,7 @@ export function MobileReturnActions({ ret, onChanged }) {
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
-  const terminal = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"].includes(ret.status);   // = return_state.TERMINAL_STATES
+  const terminal = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"].includes(ret.status);   // = return_state.TERMINAL_STATES
   const submit = async () => {
     setBusy(true); setMsg(null);
     try { await axios.post(`${API}/sales-returns/${ret.id}/submit`); setMsg({ ok: true, text: `${ret.number} diajukan — menunggu diproses gudang/manajer.` }); onChanged?.(); }

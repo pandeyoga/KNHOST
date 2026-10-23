@@ -45,6 +45,12 @@ Dr 4-1000 Pendapatan (DPP) + Dr 2-1200 PPN Keluaran (rasio PPN SO asal) / Cr **k
 **Barang kembali ke stok** (Pengembalian Dana / Store Credit / Tukar Barang): Dr 1-1300 Persediaan / Cr 5-1000 HPP
 (qty × WAC). **Nego** (cutloss/diskon) tidak menggerakkan stok lewat CN.
 
+**Penyelesaian PER ROLL (23 Okt, permintaan pemilik):** retur yang menunjuk roll diselesaikan per roll — tiap roll
+boleh outcome berbeda (mis. roll A Cutloss, roll B Pengembalian Dana) dan boleh **bertahap** (roll yang belum siap
+dibiarkan *Belum diputus* → [Selesaikan roll berikutnya]). Tiap penyelesaian (P1, P2, …) = satu Nota Kredit + satu jurnal;
+retur *Selesai (campuran)* bila outcome-nya campur. Riwayatnya di tab **Kebijakan & keputusan** › panel
+**Penyelesaian per roll**.
+
 Modal **Selesaikan Retur** kini menampilkan semua ini **sebelum disimpan**: nilai Nota Kredit per baris, DPP, PPN,
 "Ke mana nilainya", barang ke stok, dan tombol **Lihat jurnal yang akan terbentuk**.
 
@@ -58,7 +64,7 @@ Modal **Selesaikan Retur** kini menampilkan semua ini **sebelum disimpan**: nila
 | 2 | MD Quality / MD | baris cutloss › [Pratinjau potongan] → [Proses potongan] | konfirmasi | Bar potongan **20 yd baik · 5 yd BS · 97,61 yd baik**; roll anak **RL-36309-1** (5 yd, grade BS, tersedia); RL-36309 & RL-36309-2 ditahan untuk dikirim balik | Roll masuk gudang: **Dr 1-1300 2.206.980 / Cr 5-1000 2.206.980** (122,61 × 18.000) |
 | 3 | MD Quality / MD | baris cutloss › [Buat SJ potongan baik] | — | **KSC/SJ-xxxxx** 117,61 yd ke Toko Kain Sejahtera, merujuk SJ & SO asal | **Dr 5-1000 2.116.980 / Cr 1-1300 2.116.980** (117,61 × 18.000) |
 | 4 | Finance (`finance@`) | **Meja Finance** › antrean *Retur selesai QC — putuskan nilai* › SRET-00005 [Putuskan] › panel Cutloss & diskon | baris cutloss terisi otomatis **5 yd × Rp 25.000 = Rp 125.000**; *Catatan keputusan Finance* (wajib) → [Putuskan nilai] | *Diputus Finance: Rp 125.000 · nama* | — |
-| 5 | Manajer (`manager@`) | detail retur › [Selesaikan (Pilih Outcome)] › **Nego (Diskon)** | kompensasi bebas (SO-00005 belum lunas → semua pilihan memotong tagihan dulu); bukti keputusan → [Selesaikan (Nego (Diskon))] | Panel nilai: **Nota Kredit Rp 138.750** = DPP 125.000 + PPN 13.750; *Potong sisa tagihan KSC/SO-00005 Rp 138.750*. Sesudah simpan: retur *Nego*, **CN-xxxxx**; sisa tagihan **SO-00005 = Rp 6.758.790** | **Dr 4-1000 125.000 · Dr 2-1200 13.750 / Cr 1-1200 138.750** |
+| 5 | Manajer (`manager@`) | detail retur › [Selesaikan (Pilih Outcome)] › modal **per roll**: RL-36309 → **Cutloss** → [Simpan penyelesaian] | kompensasi bebas (SO-00005 belum lunas → semua pilihan memotong tagihan dulu); bukti keputusan → [Selesaikan (Nego (Diskon))] | Panel nilai: **Nota Kredit Rp 138.750** = DPP 125.000 + PPN 13.750; *Potong sisa tagihan KSC/SO-00005 Rp 138.750*. Sesudah simpan: retur *Nego*, **CN-xxxxx**; sisa tagihan **SO-00005 = Rp 6.758.790** | **Dr 4-1000 125.000 · Dr 2-1200 13.750 / Cr 1-1200 138.750** |
 
 **Netto K1:** Pendapatan −125.000 · PPN Keluaran −13.750 · Piutang −138.750 · Persediaan **+90.000** (5 yd BS) ·
 HPP −90.000 (biaya qty cacat dibalik karena pendapatannya ikut dibalik).
@@ -83,7 +89,7 @@ Saldo dipakai kelak untuk SO lain: Dr 2-1450 / Cr 1-1200.
 
 | # | Peran (akun) | Navigasi | Input / keputusan | Hasil yang harus terlihat | Jurnal |
 |---|---|---|---|---|---|
-| 1 | Manajer (`manager@`) | Retur › SRET-00007 › [Selesaikan (Pilih Outcome)] › **Tukar Barang** | bukti keputusan → [Selesaikan (Tukar Barang)] | Panel: **CN Rp 3.359.692,50** (121,07 × 25.000 = 3.026.750 + PPN 332.942,50) → *Jadi saldo*; *Tipe retur berubah dari Retur menjadi Penggantian*; roll RL-36313 masuk karantina (grade B) | **Dr 4-1000 3.026.750 · Dr 2-1200 332.942,50 / Cr 2-1450 3.359.692,50**; **Dr 1-1300 2.179.260 / Cr 5-1000 2.179.260** (121,07 × 18.000) |
+| 1 | Manajer (`manager@`) | Retur › SRET-00007 › [Selesaikan (Pilih Outcome)] › modal **per roll**: RL-36313 → **Tukar Barang** | bukti keputusan → [Simpan penyelesaian] | Panel: **CN Rp 3.359.692,50** (121,07 × 25.000 = 3.026.750 + PPN 332.942,50) → *Jadi saldo*; *Tipe retur berubah dari Retur menjadi Penggantian*; roll RL-36313 masuk karantina (grade B) | **Dr 4-1000 3.026.750 · Dr 2-1200 332.942,50 / Cr 2-1450 3.359.692,50**; **Dr 1-1300 2.179.260 / Cr 5-1000 2.179.260** (121,07 × 18.000) |
 | 2 | Admin Sales (`salesadmin@`) | **Meja Admin Sales** › *Retur tukar — buat pesanan pengganti* › [Buat pengganti] › panel **Pesanan pengganti** | kewajiban 121,07 yd; isi pengganti **150** yd → [Buat pesanan pengganti] | **SO pengganti KSC/SO-xxxxx**: 150 × 25.000 = 3.750.000 + PPN 412.500 = **4.162.500**; *saldo retur dipakai Rp 3.359.692,50 · ditagih Rp 802.807,50*; grade **A** (= grade saat dijual) | **Dr 2-1450 3.359.692,50 / Cr 1-1200 3.359.692,50** |
 | 3 | Admin Sales → Gudang → Admin Gudang | alur kirim biasa: Periksa & lepas → Barang Keluar (150 yd = **potong roll**: konfirmasi potong + tag roll anak) → muat → Surat Jalan → kirim | — | SO pengganti *Terkirim* | saat SJ: **Dr 1-1200 4.162.500 / Cr 4-1000 3.750.000 · Cr 2-1200 412.500**; **Dr 5-1000 / Cr 1-1300** (150 × WAC ≈ 2.700.000) |
 | 4 | Finance (`finance@`) | Meja Finance › catat kwitansi pelanggan **Rp 802.807,50** | — | SO pengganti lunas | dibayar **sebelum** SJ: **Dr 1-1100 / Cr 2-1400 Uang Muka Pelanggan**, direklas otomatis Dr 2-1400 / Cr 1-1200 saat SJ; dibayar **sesudah** SJ: Dr 1-1100 / Cr 1-1200 |
@@ -115,6 +121,8 @@ Netto ke pelanggan: kredit 3.359.692,50 + bayar 802.807,50 = harga 150 yd (4.162
 | J26 | Pengganti mencari stok grade hasil QC (B) → "Stok tidak mencukupi" padahal pelanggan membeli A | Grade pengganti = grade saat dijual |
 | J27 | Kerugian turun grade A→B tidak pernah tercatat (dibanding B→B) | Dibanding grade saat dijual |
 | J28 | MD / MD Quality tidak punya menu Retur → panel cutloss tak terjangkau; kolom roll teks bebas → pecah roll gagal | Menu Retur untuk MD & MD Quality; roll dipilih dari roll klaim |
+| J32 | Penyelesaian per barang: satu outcome untuk semua roll; "qty diselesaikan" sebagian (mis. 50 dari 76,7 kg) membuat Nota Kredit 50 kg tetapi SEMUA roll masuk stok | Penyelesaian **per roll**, campuran & bertahap (lihat di atas) |
+| J33 | Cutloss kain kg (mis. MICROFLEX HITAM) ditolak "Konversi yard → kg tidak tersedia": produk tanpa gramasi/lebar | Data master: lengkapi gramasi & lebar produk kg sebelum uji cutloss kain rajut |
 
 ## 7. Batasan pengecekan
 

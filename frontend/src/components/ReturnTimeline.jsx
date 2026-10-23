@@ -14,7 +14,7 @@ import { CheckCircle2, Clock, XCircle, Circle, FileText, PackageCheck, SearchChe
 import { Panel } from "./DetailParts";
 import { formatDateTime } from "../utils/formatters";
 
-const SETTLED = ["refund_settled", "credit_settled", "nego_settled"];
+const SETTLED = ["refund_settled", "credit_settled", "nego_settled", "settled"];
 const POST_APPROVAL = ["approved", "inspecting", "inspected", ...SETTLED];
 
 // 23 Okt — jam berzona WIB baku (dulu zona perangkat; layar lain sudah WIB).

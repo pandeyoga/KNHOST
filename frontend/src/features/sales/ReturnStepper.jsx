@@ -25,7 +25,7 @@ export function returnStage(ret) {
   if (status === "pending_approval") return 1;
   if (status === "approved" || status === "inspecting") return receiptOf(ret).complete ? 3 : 2;
   if (status === "inspected") return 4;
-  if (["refund_settled", "credit_settled", "nego_settled"].includes(status)) return 5;
+  if (["refund_settled", "credit_settled", "nego_settled", "settled"].includes(status)) return 5;
   return 0;
 }
 

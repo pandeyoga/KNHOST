@@ -20,6 +20,8 @@ import ReturnShipmentPanel from "./ReturnShipmentPanel"; // 23 Okt — tahap Pen
 import ReturnStepper from "./ReturnStepper";           // UI/UX 2026-06 — peta alur + langkah berikutnya
 import ReturnSpkPanel from "./ReturnSpkPanel";       // 23 Okt — QC retur lewat SPK per roll (menu Kualitas)
 import ReturnSettleModal from "./ReturnSettleModal";
+import ReturnRollSettleModal from "./ReturnRollSettleModal";          // UAT 23 Okt — penyelesaian per roll
+import ReturnRollSettlementsPanel from "./ReturnRollSettlementsPanel";
 import ReturnQuarantinePanel from "./ReturnQuarantinePanel";
 import ReturnChainPanel from "./ReturnChainPanel";
 import ReturnGradeLossPanel from "./ReturnGradeLossPanel";
@@ -35,7 +37,7 @@ import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
 import ReturnRollsPanel from "./ReturnRollsPanel";   // 23 Okt — detail & keputusan PER ROLL
 
-const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
+const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"];
 
 export default function ReturnDetail({
   ret, token, canApprove, currentUser,
@@ -60,7 +62,11 @@ export default function ReturnDetail({
   // FE-04 — dulu hanya status (semua pengguna melihat Tolak); POST /reject → sales_return.reject.
   const canReject = ["pending_approval", "approved", "inspecting", "inspected"].includes(ret.status)
     && can(currentUser?.permissions, "sales_return", "reject");
-  const isSettled = ["refund_settled", "credit_settled", "nego_settled"].includes(ret.status);
+  const isSettled = ["refund_settled", "credit_settled", "nego_settled", "settled"].includes(ret.status);
+  // UAT 23 Okt — penyelesaian PER ROLL bila semua baris menunjuk roll klaim (retur lama tanpa roll = per barang).
+  const rollMode = (ret.items || []).length > 0 && (ret.items || []).every((it) => (it.roll_ids || []).length > 0);
+  const claimRolls = (ret.items || []).reduce((a, it) => a + (it.roll_ids || []).length, 0);
+  const settledRolls = Object.keys(ret.roll_outcomes || {}).length;
   // F-11-layar (keputusan pemilik 2026-10-21) — Gudang/QC membuka retur lewat `wms.scan`/`qc.inspect`
   // tanpa `sales_return.view`: server membuang field uang; layar menyembunyikan panel uang/keputusan
   // dan tiap tombol mengikuti izin endpoint-nya (FE-04).
@@ -201,7 +207,7 @@ export default function ReturnDetail({
           )}
           {ret.status === "inspected" && canApprove && (
             <button data-testid="open-settle-btn" className="primary-button" disabled={!!busyAction} onClick={() => setShowSettleModal(true)}>
-              <Receipt size={13} /> Selesaikan (Pilih Outcome)
+              <Receipt size={13} /> {rollMode && settledRolls ? `Selesaikan roll berikutnya (${settledRolls}/${claimRolls} sudah)` : "Selesaikan (Pilih Outcome)"}
             </button>
           )}
           {canReject && (
@@ -214,7 +220,7 @@ export default function ReturnDetail({
               <CheckCircle2 size={13} /> Disetujui oleh {ret.approved_by} · {fmtDate(ret.approved_at)}
             </div>
           )}
-          {["refund_settled", "credit_settled", "nego_settled"].includes(ret.status) && (
+          {["refund_settled", "credit_settled", "nego_settled", "settled"].includes(ret.status) && (
             <div className="info-chip success" data-testid="return-outcome-chip">
               <CheckCircle2 size={13} /> Selesai{ret.outcome ? `: ${OUTCOME_LABEL[ret.outcome] || ret.outcome}` : ""}
               {ret.settled_by ? ` · oleh ${ret.settled_by}` : ""}
@@ -354,6 +360,7 @@ export default function ReturnDetail({
         <div hidden={tab !== "keputusan"} className="mt-3 space-y-3" data-testid="return-tabpanel-keputusan">
           <ReturnEligibilityPanel ret={ret} />
           <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+          <ReturnRollSettlementsPanel ret={ret} canApprove={canApprove} canShip={canApprove || canScan} onChanged={refetchReturn} />
           <ReturnCompensationPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
           <ReturnReplacementPanel ret={ret} onChanged={refetchReturn} onNavigate={onNavigate} />
           <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
@@ -374,8 +381,12 @@ export default function ReturnDetail({
         <ReturnTimeline ret={ret} variant="sales" />
       </div>
 
-      <ReturnSettleModal ret={ret} open={showSettleModal}
-        onClose={() => setShowSettleModal(false)} onSettle={onSettle} />
+      {rollMode ? (
+        <ReturnRollSettleModal ret={ret} open={showSettleModal} onClose={() => setShowSettleModal(false)} onDone={refetchReturn} />
+      ) : (
+        <ReturnSettleModal ret={ret} open={showSettleModal}
+          onClose={() => setShowSettleModal(false)} onSettle={onSettle} />
+      )}
 
       <ConfirmModal
         open={showRejectModal}

@@ -15,12 +15,13 @@ const STATUS_STYLE = {
   refund_settled:   { cls: "pill-success", label: "Pengembalian Dana" },
   credit_settled:   { cls: "pill-success", label: "Store Credit" },
   nego_settled:     { cls: "pill-success", label: "Nego" },
+  settled:          { cls: "pill-success", label: "Selesai (campuran)" },   // UAT 23 Okt — penyelesaian per roll
   rejected:         { cls: "pill-danger",  label: "Ditolak" },
   cancelled:        { cls: "pill-muted",   label: "Dibatalkan" },
 };
 export const OUTCOME_LABEL = {
   refund: "Refund", store_credit: "Store Credit (potong bon)",
-  nego: "Nego (diskon)", reject: "Tolak",
+  nego: "Nego (diskon)", reject: "Tolak", mixed: "per roll (campuran)",
 };
 export function fmtNum(n, d = 1) {
   return new Intl.NumberFormat("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);

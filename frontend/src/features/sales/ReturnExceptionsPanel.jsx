@@ -83,7 +83,7 @@ export default function ReturnExceptionsPanel({ ret, canApprove, onChanged }) {
   const [open, setOpen] = useState(false);
   const list = ret.exceptions || [];
   const flags = ret.condition_flags || {};
-  const terminal = ["rejected", "cancelled", "refund_settled", "credit_settled", "nego_settled"].includes(ret.status);
+  const terminal = ["rejected", "cancelled", "refund_settled", "credit_settled", "nego_settled", "settled"].includes(ret.status);
   return (
     <Panel icon={ShieldAlert} title="Pengecualian retur" testId="return-exceptions-panel"
       right={!terminal && <button type="button" data-testid="return-exception-toggle" onClick={() => setOpen(!open)} className="link-button text-xs font-semibold">{open ? "Tutup" : "Ajukan pengecualian"}</button>}>

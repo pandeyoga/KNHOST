@@ -135,7 +135,7 @@ async def set_logistics(return_id: str, payload: LogisticsIn, request: Request) 
     from dependencies import require_any_permission
     user = await require_any_permission(request, [("sales_return", "update"), ("sales_return", "post_logistics")])
     ret = await _ret(return_id, request)
-    if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"):
+    if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"):
         raise HTTPException(status_code=400, detail="Retur sudah selesai — biaya logistik tidak bisa diubah")
     from dependencies import has_permission
     from services import return_logistics_service as rl

@@ -24,7 +24,7 @@ const TYPE_LABEL = { retur: "Retur", bs: "BS", komplain: "Komplain", garansi: "G
 
 /** UAT 23 Okt — nilai keputusan SEBELUM diselesaikan (dulu modal tanpa rupiah sama sekali): Nota Kredit, pembagiannya,
  *  barang ke stok, dan jurnal — dihitung server dengan fungsi yang sama dengan penyelesaian (`/settle-preview`). */
-function SettleValuePanel({ pv, err, busy }) {
+export function SettleValuePanel({ pv, err, busy }) {
   if (err) return <p className="mt-3 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-preview-error">{err}</p>;
   if (!pv) return busy ? <p className="mt-3 text-[11.5px] text-[#6B6B73]" data-testid="settle-preview-loading">Menghitung nilai keputusan…</p> : null;
   if (pv.blocked) return <p className="notice-bar mt-3 text-[11.5px]" data-testid="settle-preview-blocked">{pv.blocked}</p>;
@@ -38,7 +38,7 @@ function SettleValuePanel({ pv, err, busy }) {
       <ul className="mt-1.5 space-y-0.5 text-[11.5px] text-[#3F4652]">
         {pv.lines.map((l, i) => (
           <li key={i} className="flex justify-between gap-3" data-testid={`settle-preview-line-${i}`}>
-            <span>{l.product_name} · {formatQty(l.quantity)} {l.unit} × {formatCurrency(l.unit_price)}</span>
+            <span>{l.roll_no ? <b>{l.roll_no} · {l.outcome_label} · </b> : null}{l.product_name} · {formatQty(l.quantity)} {l.unit} × {formatCurrency(l.unit_price)}</span>
             <span className="tabular-nums">{formatCurrency(l.line_total)}</span>
           </li>))}
         <li className="flex justify-between border-t border-[#E4ECF7] pt-1"><span>DPP</span><span className="tabular-nums">{formatCurrency(pv.net_amount)}</span></li>

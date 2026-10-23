@@ -10,7 +10,7 @@ from core_utils import now_iso
 
 EPS = 0.01
 ACTIVE = ["draft", "pending_approval", "approved", "inspecting", "inspected",
-          "refund_settled", "credit_settled", "nego_settled"]
+          "refund_settled", "credit_settled", "nego_settled", "settled"]
 LOCK_TTL_S = 60
 
 

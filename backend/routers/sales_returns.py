@@ -664,6 +664,136 @@ async def settle_return(
     return doc
 
 
+# ─── UAT 23 Okt — PENYELESAIAN PER ROLL (outcome campuran, boleh bertahap) ────────
+
+class RollDecisionIn(BaseModel):
+    roll_id: str
+    outcome: str = ""          # refund | store_credit | exchange | cutloss | discount | reject | "" (belum diputus)
+
+
+class RollSettleIn(BaseModel):
+    rolls: List[RollDecisionIn] = []
+    payout: str = ""           # kompensasi cutloss/diskon: store_credit | refund | "" (kurangi piutang SO asal)
+    refund_account_code: str = ""
+    decision_note: str = ""
+    notes: str = ""
+    decision_attachment_ids: List[str] = []
+
+
+class RollBackShipmentIn(BaseModel):
+    roll_ids: List[str] = []
+
+
+def _hide_cost(out: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
+    if role_in(user.get("role"), COST_SAFE_ROLES):   # S-10 — HPP hanya untuk admin/manajer
+        return out
+    out = dict(out)
+    out["journal"] = [ln for ln in out.get("journal") or [] if not ln.get("cost")]
+    out.pop("cogs_amount", None)
+    for key in ("rolls", "lines"):
+        out[key] = [{k: v for k, v in r.items() if k != "cogs"} for r in out.get(key) or []]
+    out["cost_hidden"] = True
+    return out
+
+
+async def _roll_ret(return_id: str, request: Request) -> Dict[str, Any]:
+    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(ret, "sales_returns", await entity_ctx(request))
+    return ret
+
+
+@router.get("/sales-returns/{return_id}/roll-settlement")
+async def roll_settlement_state(return_id: str, request: Request) -> Dict[str, Any]:
+    """Roll klaim + outcome yang sah saat ini + riwayat penyelesaian per roll."""
+    await require_permission(request, "sales_return", "view")
+    from services import return_roll_settlement_service as rrs
+    ret = await _roll_ret(return_id, request)
+    events = [{k: e.get(k) for k in ("id", "seq", "status", "at", "by", "decision_note", "payout",
+                                     "credit_note_id", "credit_note_number")}
+              | {"rolls": (e.get("plan") or {}).get("rolls", []), "gross_amount": (e.get("plan") or {}).get("gross_amount", 0),
+                 "split": (e.get("plan") or {}).get("split", [])}
+              for e in ret.get("settlements") or []]
+    return {"mode": rrs.is_roll_mode(ret), "status": ret.get("status"), "rows": await rrs.roll_rows(ret),
+            "settlements": events, "exchange_pending": bool(ret.get("exchange_pending")),
+            "outcomes": [{"value": k, "label": v["label"]} for k, v in rrs.OUTCOMES.items()]}
+
+
+@router.post("/sales-returns/{return_id}/roll-settlement/preview")
+async def roll_settlement_preview(return_id: str, payload: RollSettleIn, request: Request) -> Dict[str, Any]:
+    user = await require_permission(request, "sales_return", "approve")
+    from services import return_roll_settlement_service as rrs
+    ret = await _roll_ret(return_id, request)
+    try:
+        out = await rrs.plan_event(ret, [d.dict() for d in payload.rolls], (payload.payout or "").strip(),
+                                   payload.refund_account_code)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    from services import return_exception_service as rex
+    try:
+        await rex.assert_settle_allowed(ret, st.OUTCOME_REFUND)   # batas waktu klaim
+        out["blocked"] = out.get("problem", "")
+    except ValueError as e:
+        out["blocked"] = str(e)
+    return _hide_cost(out, user)
+
+
+@router.post("/sales-returns/{return_id}/roll-settlement")
+async def roll_settlement_execute(return_id: str, payload: RollSettleIn, request: Request) -> Dict[str, Any]:
+    user = await require_permission(request, "sales_return", "approve")
+    from services import return_roll_settlement_service as rrs
+    from services import return_exception_service as rex
+    ret = await _roll_ret(return_id, request)
+    await _need_evidence(ret, "settle")
+    try:
+        await rex.assert_settle_allowed(ret, st.OUTCOME_REFUND)
+        cond = rex.condition_decision(ret, payload.decision_note, user)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    try:
+        doc = await rrs.execute(return_id, [d.dict() for d in payload.rolls], user, payout=(payload.payout or "").strip(),
+                                refund_account_code=payload.refund_account_code, decision_note=payload.decision_note,
+                                notes=payload.notes, attachment_ids=payload.decision_attachment_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if cond:
+        await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision.condition_decision": cond}})
+    ev = (doc.get("settlements") or [{}])[-1]
+    await audit(user.get("name", ""), "sales_return_roll_settled", "sales_return", return_id,
+                {"seq": ev.get("seq"), "credit_note": ev.get("credit_note_number"), "decision_note": payload.decision_note,
+                 "rolls": [{"roll_id": d.roll_id, "outcome": d.outcome} for d in payload.rolls if d.outcome]})
+    return doc
+
+
+@router.post("/sales-returns/{return_id}/roll-settlement/{settlement_id}/complete")
+async def roll_settlement_complete(return_id: str, settlement_id: str, request: Request) -> Dict[str, Any]:
+    user = await require_permission(request, "sales_return", "approve")
+    from services import return_roll_settlement_service as rrs
+    await _roll_ret(return_id, request)
+    try:
+        doc = await rrs.complete(return_id, settlement_id, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_roll_settle_completed", "sales_return", return_id, {"settlement_id": settlement_id})
+    return doc
+
+
+@router.post("/sales-returns/{return_id}/roll-settlement/back-shipment")
+async def roll_settlement_back_shipment(return_id: str, payload: RollBackShipmentIn, request: Request) -> Dict[str, Any]:
+    """Surat jalan pengembalian roll Diskon / Tolak klaim yang sempat diterima gudang ke pelanggan."""
+    user = await require_any_permission(request, [("sales_return", "update"), ("wms", "scan")])
+    from services import return_roll_settlement_service as rrs
+    ret = await _roll_ret(return_id, request)
+    try:
+        out = await rrs.back_shipment(ret, payload.roll_ids, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_back_shipment", "sales_return", return_id,
+                {"shipment_no": out.get("shipment_no"), "rolls": [r["roll_no"] for r in out.get("rolls") or []]})
+    return out
+
+
 def _exchange_allowed(ret: Dict[str, Any]) -> None:
     """Tukar barang = retur tipe penggantian: hanya bila kebijakan retur dokumen ini mengizinkannya."""
     allowed = (ret.get("policy_snapshot") or {}).get("allowed_return_types")

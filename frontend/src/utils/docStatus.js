@@ -14,6 +14,7 @@ export const DOC_STATUS_LABEL = {
   refund_settled: "Selesai · refund",
   credit_settled: "Selesai · store credit",
   nego_settled: "Selesai · nego",
+  settled: "Selesai · per roll (campuran)",
   completed: "Selesai",
   done: "Selesai",
   closed: "Ditutup",

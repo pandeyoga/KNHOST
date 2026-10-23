@@ -41,10 +41,43 @@ async def _sold_grade(it: Dict[str, Any], return_id: str = "") -> str:
     return it.get("grade") or ""
 
 
+def _exchange_rolls(ret: Dict[str, Any]) -> Dict[str, float]:
+    """UAT 23 Okt — penyelesaian per roll: roll Tukar Barang yang BELUM dibuatkan pengganti → qty aktual QC."""
+    done = set(ret.get("replaced_roll_ids") or [])
+    out: Dict[str, float] = {}
+    for it in ret.get("items", []):
+        res = (it.get("inspection") or {}).get("roll_results") or {}
+        for rid in it.get("roll_ids") or []:
+            o = (ret.get("roll_outcomes") or {}).get(rid) or {}
+            if o.get("outcome") == "exchange" and rid not in done:
+                out[rid] = float(o.get("qty_stock") or (res.get(rid) or {}).get("actual_qty") or 0)
+    return out
+
+
 async def obligation(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
     order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
     rows = []
+    ex = _exchange_rolls(ret) if ret.get("roll_outcomes") else None
     for it in ret.get("items", []):
+        if ex is not None:   # per roll: hanya roll Tukar Barang (qty aktual QC) yang menjadi kewajiban pengganti
+            rids = [r for r in it.get("roll_ids") or [] if r in ex]
+            if not rids:
+                continue
+            pid = it.get("product_id")
+            prod = await db.products.find_one({"id": pid}, {"_id": 0}) or {}
+            base_qty = round(sum(ex[r] for r in rids), 4)
+            try:
+                f, conv_err = await _yard_factor(prod), ""
+            except Exception as e:  # noqa: BLE001
+                f, conv_err = 0.0, str(getattr(e, "detail", e))
+            price = await _net_unit_price(order, pid)
+            res = (it.get("inspection") or {}).get("roll_results") or {}
+            rows.append({"product_id": pid, "product_name": it.get("product_name", ""), "unit_base": prod.get("base_unit", ""),
+                         "qty_base": base_qty, "qty_yard": round(base_qty / f, 2) if f else None, "conversion_error": conv_err,
+                         "grade": "/".join(sorted({(res.get(r) or {}).get("grade", "") for r in rids} - {""})),
+                         "sold_grade": await _sold_grade({**it, "roll_ids": rids}, ret.get("id", "")), "roll_ids": rids,
+                         "unit_price_base": price, "value": round(base_qty * price, 2)})
+            continue
         pid = it.get("product_id")
         if it.get("settle_outcome") == "reject":
             continue
@@ -65,12 +98,17 @@ async def obligation(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
 async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, actor: Dict[str, Any]) -> Dict[str, Any]:
     from routers.sales_orders import create_order
     from schemas import SalesOrderCreate
-    if ret.get("return_type") != "penggantian":
-        raise ValueError("Pesanan pengganti hanya untuk retur jenis 'penggantian' (tukar barang).")
-    if ret.get("status") != "credit_settled":
-        raise ValueError("Selesaikan retur sebagai Store Credit dulu (QC selesai) — nilainya menjadi saldo pengganti.")
-    if ret.get("replacement_order_id"):
-        raise ValueError(f"Pesanan pengganti sudah dibuat: {ret.get('replacement_order_number')}")
+    per_roll = bool(ret.get("roll_outcomes"))
+    if per_roll:   # UAT 23 Okt — penyelesaian per roll: roll Tukar Barang yang belum dibuatkan pengganti
+        if not ret.get("exchange_pending") or not _exchange_rolls(ret):
+            raise ValueError("Tidak ada roll Tukar Barang yang menunggu pesanan pengganti.")
+    else:
+        if ret.get("return_type") != "penggantian":
+            raise ValueError("Pesanan pengganti hanya untuk retur jenis 'penggantian' (tukar barang).")
+        if ret.get("status") != "credit_settled":
+            raise ValueError("Selesaikan retur sebagai Store Credit dulu (QC selesai) — nilainya menjadi saldo pengganti.")
+        if ret.get("replacement_order_id"):
+            raise ValueError(f"Pesanan pengganti sudah dibuat: {ret.get('replacement_order_number')}")
     order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
     customer = await db.customers.find_one({"id": ret.get("customer_id")}, {"_id": 0}) or {}
     obl = {r["product_id"]: r for r in await obligation(ret)}
@@ -122,9 +160,16 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
     so_doc = await db.sales_orders.find_one({"id": so_id}, {"_id": 0}) or so
     applied = await _apply_credit(ret, so_doc, actor)
     summary = _summary(list(obl.values()), so_doc, applied)
-    await db.sales_returns.update_one({"id": ret["id"]}, {"$set": {
-        "replacement_order_id": so_id, "replacement_order_number": so_doc.get("number", ""),
-        "replacement_summary": summary, "updated_at": now_iso()}})
+    upd: Dict[str, Any] = {"replacement_order_id": so_id, "replacement_order_number": so_doc.get("number", ""),
+                           "replacement_summary": summary, "updated_at": now_iso()}
+    push: Dict[str, Any] = {}
+    if per_roll:
+        upd.update({"exchange_pending": False,
+                    "exchange_credit_open": round(max(float(ret.get("exchange_credit_open") or 0) - float(applied.get("applied") or 0), 0.0), 2)})
+        push = {"$addToSet": {"replaced_roll_ids": {"$each": [r for x in obl.values() for r in x.get("roll_ids") or []]}},
+                "$push": {"replacement_orders": {"order_id": so_id, "order_number": so_doc.get("number", ""), "at": now_iso(),
+                                                 "credit_applied": applied.get("applied", 0.0)}}}
+    await db.sales_returns.update_one({"id": ret["id"]}, {"$set": upd, **push})
     from services import doc_refs_service as refs
     await refs.safe_link(("sales_order", so_id), ("sales_return", ret["id"]), "parent", note="pesanan pengganti retur")
     return {"order": {"id": so_id, "number": so_doc.get("number", "")}, "summary": summary}
@@ -132,19 +177,28 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
 
 async def _apply_credit(ret: Dict[str, Any], so: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     from services import store_credit_service as sc
-    info = await sc.issued_from_return(ret["id"])
+    if ret.get("roll_outcomes"):   # per roll: saldo yang terbit dari roll Tukar Barang (bukan saldo cutloss/diskon)
+        open_credit = float(ret.get("exchange_credit_open") or 0)
+        bal = await sc.balance(ret["customer_id"], ret.get("entity_id", ""))
+        info = {"issued": open_credit, "balance": bal, "basis": "per_roll"}
+    else:
+        info = await sc.issued_from_return(ret["id"])
     avail = min(float(info.get("issued") or 0), float(info.get("balance") or 0))
     amount = round(min(avail, float(so.get("grand_total") or 0)), 2)
     if amount <= 0:
-        return {"applied": 0.0, "issued": float(info.get("issued") or 0), "error": "Saldo retur tidak tersedia"}
+        return {"applied": 0.0, "issued": float(info.get("issued") or 0), "basis": info.get("basis", ""),
+                "error": "Saldo retur tidak tersedia" + (" — nilai tukar sudah memotong tagihan SO asal yang belum lunas"
+                                                         if info.get("basis") == "per_roll" else "")}
     try:
         r = await sc.redeem(customer_id=ret["customer_id"], entity_id=ret.get("entity_id"), amount=amount,
                             allocations=[{"order_id": so["id"], "amount": amount}], actor=actor,
                             note=f"Saldo retur {ret.get('number', '')} untuk pesanan pengganti",
                             ref_type="sales_return_replacement", ref_id=ret["id"], ref_number=ret.get("number", ""))
-        return {"applied": amount, "issued": float(info.get("issued") or 0), "redemption_number": r.get("number", "")}
+        return {"applied": amount, "issued": float(info.get("issued") or 0), "redemption_number": r.get("number", ""),
+                "basis": info.get("basis", "")}
     except Exception as e:  # noqa: BLE001 — SO tetap sah; saldo dapat dipakai manual
-        return {"applied": 0.0, "issued": float(info.get("issued") or 0), "error": str(getattr(e, "detail", None) or e)}
+        return {"applied": 0.0, "issued": float(info.get("issued") or 0), "basis": info.get("basis", ""),
+                "error": str(getattr(e, "detail", None) or e)}
 
 
 async def on_replacement_cancelled(so: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -155,15 +209,27 @@ async def on_replacement_cancelled(so: Dict[str, Any], actor: Dict[str, Any]) ->
                                                       {"_id": 0, "id": 1}):
         await sc.reverse_redemption(red["id"], reason=f"SO pengganti {so.get('number', '')} dibatalkan", actor=actor)
     if rid:
+        ret = await db.sales_returns.find_one({"id": rid}, {"_id": 0, "roll_outcomes": 1, "replacement_orders": 1,
+                                                            "replaced_roll_ids": 1, "exchange_credit_open": 1}) or {}
+        per_roll: Dict[str, Any] = {}
+        if ret.get("roll_outcomes"):   # UAT 23 Okt — roll Tukar Barang kembali menunggu pengganti, saldo tukar pulih
+            rep = next((x for x in ret.get("replacement_orders") or [] if x.get("order_id") == so["id"]), {})
+            obl_rolls = [r for r in (so.get("replacement_for_return") or {}).get("roll_ids") or []] or \
+                [r for x in (so.get("replacement_for_return") or {}).get("obligation") or [] for r in x.get("roll_ids") or []]
+            per_roll = {"exchange_pending": True,
+                        "exchange_credit_open": round(float(ret.get("exchange_credit_open") or 0) + float(rep.get("credit_applied") or 0), 2),
+                        "replaced_roll_ids": [r for r in ret.get("replaced_roll_ids") or [] if r not in set(obl_rolls)]}
         await db.sales_returns.update_one({"id": rid, "replacement_order_id": so["id"]}, {
-            "$set": {"replacement_order_id": "", "replacement_order_number": "", "updated_at": now_iso()},
+            "$set": {"replacement_order_id": "", "replacement_order_number": "", "updated_at": now_iso(), **per_roll},
             "$unset": {"replacement_summary": ""},
             "$push": {"replacement_history": {"order_id": so["id"], "order_number": so.get("number", ""),
                                               "cancelled_at": now_iso(), "by": actor.get("name", "")}}})
 
 
 def _summary(obl: List[Dict[str, Any]], so: Dict[str, Any], applied: Dict[str, Any]) -> Dict[str, Any]:
-    credit = round(float(applied.get("issued") or 0) or sum(r["value"] for r in obl), 2)
+    issued = float(applied.get("issued") or 0)
+    # Per roll: saldo tukar bisa memang 0 (nilai tukar memotong tagihan SO asal) — jangan jatuh ke nilai kewajiban.
+    credit = round(issued if applied.get("basis") == "per_roll" else (issued or sum(r["value"] for r in obl)), 2)
     total = round(float(so.get("grand_total") or 0), 2)
     diff = round(total - float(applied.get("applied") or 0), 2)
     return {"obligation_yard": round(sum(r["qty_yard"] or 0 for r in obl), 2), "obligation_value": credit,

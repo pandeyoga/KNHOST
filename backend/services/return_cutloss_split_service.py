@@ -15,7 +15,7 @@ from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-
 ROLES_KEY = "returns.cutloss_treatment_roles"
 TREATMENTS = {"bs": "Masuk stok BS", "dispose": "Dibuang"}
 # UAT 23 Okt — pecah roll juga sesudah retur diselesaikan Nego: kerja fisik MD boleh menyusul keputusan uang.
-SPLIT_STATUSES = ("inspected", "nego_settled")
+SPLIT_STATUSES = ("inspected", "nego_settled", "settled")
 EPS = 0.001
 
 

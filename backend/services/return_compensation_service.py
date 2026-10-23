@@ -91,7 +91,7 @@ async def preview(ret: Dict[str, Any]) -> Dict[str, Any]:
 
 async def decide(ret: Dict[str, Any], lines: List[Dict[str, Any]], note: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     """Finance memutus nilai. kind=cutloss → nilai dihitung sistem; kind=discount → nominal rupiah input Finance."""
-    if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"):
+    if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"):
         raise ValueError("Retur sudah selesai")
     if len((note or "").strip()) < 5:
         raise ValueError("Catatan keputusan Finance wajib (min. 5 karakter)")
@@ -125,7 +125,7 @@ async def decide(ret: Dict[str, Any], lines: List[Dict[str, Any]], note: str, ac
 
 
 async def revoke(ret: Dict[str, Any], actor: Dict[str, Any]) -> None:
-    if ret.get("status") == "nego_settled":
+    if ret.get("status") in ("nego_settled", "settled") or any(x.get("used_by") for x in (ret.get("compensation") or {}).get("lines") or [])             or any((o or {}).get("outcome") in ("cutloss", "discount") for o in (ret.get("roll_outcomes") or {}).values()):
         raise ValueError("Retur sudah diselesaikan — gunakan koreksi (reverse) penyelesaian")
     await db.sales_returns.update_one({"id": ret["id"]}, {"$set": {
         "compensation.status": "revoked", "compensation.revoked_by": actor.get("name", ""),

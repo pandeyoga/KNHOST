@@ -21,15 +21,17 @@ INSPECTED = "inspected"
 REFUND_SETTLED = "refund_settled"
 CREDIT_SETTLED = "credit_settled"
 NEGO_SETTLED = "nego_settled"
+# UAT 23 Okt — penyelesaian PER ROLL dengan outcome campuran (mis. roll A cutloss, roll B pengembalian dana).
+SETTLED_MIXED = "settled"
 REJECTED = "rejected"
 CANCELLED = "cancelled"
 
 SALES_RETURN_STATES = [
     DRAFT, PENDING_APPROVAL, APPROVED, INSPECTING, INSPECTED,
-    REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, REJECTED, CANCELLED,
+    REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, SETTLED_MIXED, REJECTED, CANCELLED,
 ]
 
-SETTLED_STATES: Set[str] = {REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED}
+SETTLED_STATES: Set[str] = {REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, SETTLED_MIXED}
 TERMINAL_STATES: Set[str] = SETTLED_STATES | {REJECTED, CANCELLED}
 
 # ── Outcomes ─────────────────────────────────────────────────────────────
@@ -61,11 +63,12 @@ TRANSITIONS: Dict[str, Set[str]] = {
     PENDING_APPROVAL: {APPROVED, REJECTED, DRAFT, CANCELLED},
     APPROVED:         {INSPECTING, REJECTED, CANCELLED, NEGO_SETTLED},   # KLR-06 — diskon dari foto/video
     INSPECTING:       {INSPECTED, REJECTED},
-    INSPECTED:        {REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, REJECTED},
+    INSPECTED:        {REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, SETTLED_MIXED, REJECTED},
     # R5.4 — reversal/koreksi: state settled boleh dibatalkan (→ cancelled) via reverse_settlement.
     REFUND_SETTLED:   {CANCELLED},
     CREDIT_SETTLED:   {CANCELLED},
     NEGO_SETTLED:     {CANCELLED},
+    SETTLED_MIXED:    {CANCELLED},
     REJECTED:         set(),
     CANCELLED:        set(),
 }

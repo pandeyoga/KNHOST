@@ -285,8 +285,9 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
 
     # Cek UI UAT v3 (S15) — retur tukar barang sudah Store Credit tapi pesanan pengganti belum dibuat (dulu tak ada antrean).
     tukar = await db.sales_returns.find(
-        _q(scope, {"return_type": "penggantian", "status": "credit_settled",
-                   "replacement_order_id": {"$in": [None, ""]}}),
+        {"$and": [dict(scope or {}), {"$or": [   # UAT 23 Okt — + roll Tukar Barang (penyelesaian per roll)
+            {"return_type": "penggantian", "status": "credit_settled", "replacement_order_id": {"$in": [None, ""]}},
+            {"exchange_pending": True}]}]},
         {"_id": 0}).sort("updated_at", 1).to_list(200)
     tukar_val = await return_claim_values(tukar) if tukar else {}
     queues.append(_queue(

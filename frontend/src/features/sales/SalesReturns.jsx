@@ -30,7 +30,7 @@ import KNSelect from "../../components/KNSelect";
 const STATUS_OPTIONS = [
   ["all", "Semua status"], ["draft", "1 · Draf"], ["pending_approval", "2 · Menunggu ACC"],
   ["approved", "3 · Disetujui"], ["inspecting", "4 · Inspeksi"], ["inspected", "5 · Siap Diselesaikan"],
-  ["refund_settled", "Hasil · Refund"], ["credit_settled", "Hasil · Store Credit"], ["nego_settled", "Hasil · Nego"],
+  ["refund_settled", "Hasil · Refund"], ["credit_settled", "Hasil · Store Credit"], ["nego_settled", "Hasil · Nego"], ["settled", "Hasil · Per roll (campuran)"],
   ["rejected", "Hasil · Ditolak"], ["cancelled", "Hasil · Dibatalkan"],
 ];
 const OPERATOR_STATUSES = ["all", "approved", "inspecting"];   // F-11-layar — tahap kerja Gudang/QC
@@ -132,7 +132,7 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
     { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
     { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "putuskan per roll lalu setujui" },
     { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "pengembalian barang · QC · menunggu penyelesaian" },
-    { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
+    { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled") + cnt("settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
   ];
 
   // ─── lifecycle actions (R1 state machine) ─────────────────────────────────
@@ -473,7 +473,7 @@ function MapLink({ view, label, role, onNavigate }) {
   );
 }
 
-const TERMINAL_ST = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
+const TERMINAL_ST = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"];
 
 /** Umur dokumen retur yang masih berjalan — retur menua = uang pelanggan menggantung. */
 function AgeCell({ r }) {
