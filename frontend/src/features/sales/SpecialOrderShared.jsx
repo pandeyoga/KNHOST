@@ -45,7 +45,16 @@ const PHASE_STYLE = {
   customer_review: { cls: "pill-warning", label: "Menunggu ACC pelanggan", icon: Clock },
   pricing: { cls: "pill-warning", label: "Harga final", icon: Clock },
   approved: { cls: "pill-info", label: "Disetujui", icon: CheckCircle2 },
+  development: { cls: "pill-info", label: "Desain & sample", icon: Clock },
 };
+
+/** Fase tampilan OD: dari `chain.phase` (rincian) atau diturunkan ringan dari field daftar (tanpa chain). */
+export function odPhaseOf(o) {
+  if (o?.chain?.phase) return o.chain.phase;
+  if (o?.status !== "confirmed" || !(o?.request_types || []).length || (o?.pricing || {}).locked) return "";
+  return o.customer_decision === "acc" ? "pricing" : "development";
+}
+export const PHASE_LABEL = Object.fromEntries(Object.entries(PHASE_STYLE).map(([k, v]) => [k, v.label]));
 
 export function StatusPill({ status, phase }) {
   const s = (status === "confirmed" && PHASE_STYLE[phase]) || STATUS_STYLE[status] || { cls: "pill-muted", label: status, icon: Clock };

@@ -14,6 +14,7 @@ import {
   PIN_STATUS_CLASS, PIN_STATUS_LABEL, cancelInternalRequest, convertInternalRequest, createInternalRequest,
   internalRequestSources, listInternalRequests, pinMeta, productAvailability, rejectInternalRequest,
 } from "../../internal_requests/internalRequestsApi";
+import { useSubpageBack } from "./subpageBack";
 
 const errText = (e, fb) => { const d = e?.response?.data?.detail; return (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || fb; };
 const FILTERS = [["", "Semua"], ["submitted", "Antrean"], ["converted", "Jadi antar-PT"], ["rejected", "Ditolak"], ["cancelled", "Batal"]];
@@ -112,6 +113,7 @@ function PinCard({ req, meta, user, open, onToggle, onChanged }) {
 }
 
 function PinCreate({ onBack, onDone }) {
+  const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [lines, setLines] = useState([{ product_id: "", quantity: "", notes: "" }]);
@@ -139,7 +141,7 @@ function PinCreate({ onBack, onDone }) {
   const productOpts = useMemo(() => products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` })), [products]);
   return (
     <div className="space-y-2" data-testid="m-pin-create">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-pin-create-back"><ArrowLeft size={17} /> Permintaan internal</button>
+      {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-pin-create-back"><ArrowLeft size={17} /> Permintaan internal</button>}
       <div className="m-card space-y-2 p-3">
         <p className="text-[11.5px] m-muted">Minta barang dari badan usaha lain dalam grup saat stok sendiri kurang. PT sumber dipilih oleh yang menindak.</p>
         {lines.map((l, i) => {

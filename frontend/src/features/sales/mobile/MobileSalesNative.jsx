@@ -7,6 +7,8 @@ import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
 import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./MobileSalesFlows";
+import { odPhaseOf } from "../SpecialOrderShared";
+import { useSubpageBack } from "./subpageBack";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
 
@@ -33,12 +35,13 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
     setSel((cur) => (cur ? list.find((x) => x.id === cur.id) || cur : cur));
   }).catch(() => setRows([]));
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const headerBack = useSubpageBack(() => setSel(null), !!sel && !create);   // satu tombol kembali
   if (create) {
     return <MobileReturnCreate initialOrder={initialOrder} onBack={() => setCreate(false)} onDone={() => { setCreate(false); load(); }} />;
   }
   if (sel) return (
     <div className="space-y-2 p-3" data-testid="m-return-detail">
-      <button className="m-subpage-back" onClick={() => setSel(null)} data-testid="m-return-back"><ArrowLeft size={17} /> Retur</button>
+      {!headerBack && <button className="m-subpage-back" onClick={() => setSel(null)} data-testid="m-return-back"><ArrowLeft size={17} /> Retur</button>}
       <div className="m-card p-4 space-y-1 text-[12.5px]">
         <p className="text-[15px] font-bold">{sel.number}</p>
         <p className="m-muted">{sel.customer_name} · {fmtDate(sel.created_at)} · <ReturnStatusPill status={sel.status} /></p>
@@ -93,7 +96,7 @@ export function MobileSpecialOrders({ focusId = null }) {
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-special-empty">Belum ada pesanan khusus.</p>}
       {(rows || []).map((s) => (
         <button key={s.id} className="m-card m-press w-full p-3 text-left" onClick={() => setOpenId(s.id)} data-testid={`m-special-${s.id}`}>
-          <div className="flex items-center justify-between gap-2 text-[13px]"><b>{s.number || s.id}</b><OdStatus status={s.status} /></div>
+          <div className="flex items-center justify-between gap-2 text-[13px]"><b>{s.number || s.id}</b><OdStatus status={s.status} phase={odPhaseOf(s)} /></div>
           <p className="text-[11px] m-muted truncate">{s.customer_name} · {s.title || s.items?.[0]?.description || s.custom_item?.description || s.custom_item?.name || "-"}{(s.items || []).length > 1 ? ` (+${s.items.length - 1} baris)` : ""} · kirim {fmtDate(s.expected_delivery)}</p>
           {s.quoted_price != null && <p className="text-[11px] tabular-nums">Penawaran {formatCurrency(s.quoted_price)}</p>}
         </button>

@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { Lock, Unlock, Loader2, Percent } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { askReason } from "@/services/confirmService";
-import { fmtNum, fmtDate, docStatus } from "./SpecialOrderShared";
+import { fmtNum, fmtDate, fmtDay, docStatus } from "./SpecialOrderShared";
 import KNSelect from "../../components/KNSelect";
 import { can, roleIs } from "../../config/roles";
+import { notifySuccess } from "../../utils/feedback";
+import { formatCurrency } from "../../utils/formatters";
 
 const LOCK_ROLES = ["sales", "sales_admin", "manager", "admin"];   // = special_orders.lock_price
 
@@ -63,6 +65,10 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
       const r = await axios.post(`${API}/special-orders/${order.id}/lock-price`,
         { margin_pct: Number(margin), item_margins: itemMarginNums(), note, warehouse_id: warehouseId, auto_po: autoPo });
       onUpdated?.(r.data.special_order);
+      // 23 Okt — dulu tanpa umpan balik apa pun setelah kunci harga.
+      const od = r.data.special_order || {};
+      notifySuccess("Harga dikunci", `${order.number} terkonfirmasi · total ${formatCurrency(r.data.pricing?.total || od.total_amount)}.`
+        + (od.procurement_note ? ` ${od.procurement_note}` : od.linked_po_number ? ` PO ${od.linked_po_number} terbit.` : ""));
     }
     catch (e) { setErr(e.response?.data?.detail || "Gagal mengunci harga."); } finally { setBusy(false); }
   };
@@ -128,10 +134,12 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
       </div>
       {locked && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]" data-testid="od-procurement">
-          {po && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-po-chip">PO <span className="font-mono">{po.po_number}</span> · {po.supplier_name} · {docStatus(po.status)}{po.expected_delivery_date ? ` · tiba ${po.expected_delivery_date}` : ""}</span>}
+          {/* 23 Okt — OD multi-item: PO lahir per item; chip tunggal dulu hanya menyebut PO item pertama. */}
+          {po && multi && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-po-chip">Pengadaan per item — PO tiap item di panel Pemenuhan produksi</span>}
+          {po && !multi && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-po-chip">PO <span className="font-mono">{po.po_number}</span> · {po.supplier_name} · {docStatus(po.status)}{po.expected_delivery_date ? ` · tiba ${fmtDay(po.expected_delivery_date)}` : ""}</span>}
           {order.linked_mko_id && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-mko-chip">MKO <span className="font-mono">{order.linked_mko_number}</span> · makloon</span>}
-          {!po && !order.linked_mko_id && <span className="text-[#B45309]" data-testid="od-po-missing">Harga terkunci, pengadaan belum terealisasi{order.procurement_error ? ` — ${order.procurement_error}` : ""}</span>}
-          {!po && !order.linked_mko_id && canProcure && (
+          {!po && !order.linked_mko_id && <span className="text-[#B45309]" data-testid="od-po-missing">Harga terkunci, pengadaan belum terealisasi{order.procurement_note ? ` — ${order.procurement_note}` : order.procurement_error ? ` — ${order.procurement_error}` : ""}</span>}
+          {!po && !order.linked_mko_id && canProcure && (!order.procurement_note || roleIs(role, ["manager", "admin"])) && (
             <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy} onClick={procure} data-testid="od-procure-button">{busy ? <Loader2 size={12} className="spin" /> : null} Realisasi pengadaan sekarang</button>
           )}
         </div>

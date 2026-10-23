@@ -13,12 +13,12 @@ import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import { AlertTriangle, Save, ShieldAlert, Tag, TrendingUp, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { formatCurrency, formatQty, todayWib } from "../../../utils/formatters";
 
 export default function SetCustomerPriceModal({
   row, customer, entityId, onClose, onSaved, onError,
 }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
   const [price, setPrice] = useState(row.customer_price != null ? String(row.customer_price) : "");
   const [validFrom, setValidFrom] = useState(today);
   const [validUntil, setValidUntil] = useState("");

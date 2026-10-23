@@ -13,6 +13,7 @@ import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { apiErrorText } from "../../../utils/apiError";
+import { todayWib } from "../../../utils/formatters";
 
 export default function InternalContractWizardModal({
   entities = [], sellerEntityId = "", buyerEntityId = "",
@@ -23,7 +24,7 @@ export default function InternalContractWizardModal({
   const [products, setProducts] = useState([]);
   const [productId, setProductId] = useState("");
   const [rate, setRate] = useState("");
-  const [validFrom, setValidFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [validFrom, setValidFrom] = useState(todayWib());
   const [validTo, setValidTo] = useState("");
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");

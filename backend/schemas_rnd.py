@@ -196,6 +196,9 @@ class SampleDecideBody(BaseModel):
     note: str = ""
     price: MoneyDecimal = 0
     supplier_sku: str = ""
+    # 23 Okt — nama barang versi supplier (dual name KN-supplier). Dulu TIDAK ada di skema → isian modal
+    # "Nama barang versi supplier" dibuang diam-diam dan roll tidak membawa nama versi supplier.
+    supplier_item_name: str = ""
     supplier_uom: str = ""
     moq: QtyDecimal = 0
     lead_time_days: int = 0

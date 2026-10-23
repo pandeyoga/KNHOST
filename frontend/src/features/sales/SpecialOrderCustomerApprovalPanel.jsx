@@ -4,6 +4,7 @@ import { Check, FileText, Image as ImageIcon, Loader2, RotateCcw, Upload, UserCh
 import axios, { API } from "../../services/apiClient";
 import { useProofBlob } from "../rnd/ProofImage";
 import { fmtDate } from "./SpecialOrderShared";
+import { formatDate, todayWib } from "../../utils/formatters";
 
 const DEC = {
   acc: { label: "ACC", cls: "bg-[#E9F7EF] text-[#1B7F4B] border-[#CDE9D6]", icon: Check },
@@ -20,7 +21,7 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
   const canDecide = canEdit && review.ready && !locked && !cancelled && order.customer_decision !== "acc";
   const [mode, setMode] = useState("");
   const [note, setNote] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayWib());
   const [contact, setContact] = useState("");
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -51,13 +52,15 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
   };
 
   if (!order.chain) return null;
-  const basis = review.sample ? `sample ${review.sample.number}${review.sample.decision?.supplier_name ? ` · pemenang ${review.sample.decision.supplier_name}` : ""}` : review.design ? `desain ${review.design.code} (ACC)` : "";
+  const basis = (review.samples || []).length > 1
+    ? review.samples.map((s) => `${s.number} (${(s.sample_types || []).join("+")}${s.supplier_name ? ` · ${s.supplier_name}` : ""})`).join(", ")
+    : review.sample ? `sample ${review.sample.number}${review.sample.decision?.supplier_name ? ` · pemenang ${review.sample.decision.supplier_name}` : ""}` : review.design ? `desain ${review.design.code} (ACC)` : "";
 
   return (
     <section className="section-card !p-3" data-testid="od-customer-approval">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]"><UserCheck size={12} /> Keputusan pelanggan (dicatat Sales){review.object_label ? ` · objek: ${review.object_label}` : ""}</p>
-        {order.customer_decision === "acc" && <span className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${DEC.acc.cls}`} data-testid="od-customer-status-acc">Pelanggan ACC · {order.customer_decision_at}</span>}
+        {order.customer_decision === "acc" && <span className={`rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${DEC.acc.cls}`} data-testid="od-customer-status-acc">Pelanggan ACC · {formatDate(order.customer_decision_at)}</span>}
       </div>
       {!review.ready ? (
         <p className="rounded-lg border border-dashed border-[#D9D9DE] px-3 py-3 text-[11px] text-[#9A9BA3]" data-testid="od-customer-not-ready">
@@ -126,7 +129,7 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className={`rounded-full border px-2 py-px text-[10px] font-bold ${m.cls}`}>{m.label}</span>
                   {d.object_label && <span className="rounded-full bg-[#EEF4FF] px-2 py-px text-[10px] font-semibold text-[#0058CC]" data-testid={`od-customer-decision-object-${d.id}`}>{d.object_label}</span>}
-                  <b>{d.decided_at}</b>
+                  <b>{formatDate(d.decided_at)}</b>
                   {d.contact_name && <span className="text-[#6B6B73]">· {d.contact_name}</span>}
                   <span className="text-[#9A9BA3]">· dicatat {d.recorded_by} {fmtDate(d.recorded_at)}</span>
                   {d.sample_number && <span className="font-mono text-[#6B6B73]">· {d.sample_number}</span>}

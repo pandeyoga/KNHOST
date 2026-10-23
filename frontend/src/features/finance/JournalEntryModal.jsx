@@ -7,12 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Trash2, Scale, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 
 const emptyLine = () => ({ account_code: "", debit: "", credit: "", description: "" });
 
 export default function JournalEntryModal({ accounts, onClose, onSaved }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
   const [date, setDate] = useState(today);
   const [description, setDescription] = useState("");
   const [lines, setLines] = useState([emptyLine(), emptyLine()]);

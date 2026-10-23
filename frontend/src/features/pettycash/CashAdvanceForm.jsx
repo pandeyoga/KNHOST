@@ -3,7 +3,7 @@ import KNDatePicker from "@/components/KNDatePicker";
 import { useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { SATUAN_OPTIONS } from "./pettyCashShared";
 
@@ -20,7 +20,7 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
   );
   const [divisi, setDivisi] = useState(record?.divisi || "");
   const [kegiatan, setKegiatan] = useState(record?.kegiatan || "");
-  const [tanggal, setTanggal] = useState((record?.tanggal_pengajuan || "").slice(0, 10) || new Date().toISOString().slice(0, 10));
+  const [tanggal, setTanggal] = useState((record?.tanggal_pengajuan || "").slice(0, 10) || todayWib());
   const [periodFrom, setPeriodFrom] = useState((record?.period_from || "").slice(0, 10));
   const [periodTo, setPeriodTo] = useState((record?.period_to || "").slice(0, 10));
   const [accountLabel, setAccountLabel] = useState(record?.account_label || "");

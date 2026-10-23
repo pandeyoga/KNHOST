@@ -5,7 +5,7 @@ import axios, { API } from "../../services/apiClient";
 import {
   Car, Plus, RefreshCw, Trash2, Pencil, Route, Fuel, X,
 } from "lucide-react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatQty, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -21,7 +21,7 @@ const JENIS = [
   { value: "truk", label: "Truk" }, { value: "lainnya", label: "Lainnya" },
 ];
 const emptyLog = () => ({
-  vehicle_id: "", no_polisi: "", tanggal: new Date().toISOString().slice(0, 10),
+  vehicle_id: "", no_polisi: "", tanggal: todayWib(),
   km_awal: "", km_akhir: "", bbm: "", tol: "", parkir: "", lain_lain: "",
   tujuan: "", driver: "", pemakai: "", mengetahui: "",
 });

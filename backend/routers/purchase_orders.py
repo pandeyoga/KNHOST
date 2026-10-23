@@ -112,8 +112,8 @@ async def recompute_po_status(po_id: str) -> None:
         if new_status == "completed" and po.get("special_order_id"):
             # Fase 3/4 OD — barang pesanan khusus diterima gudang → OD Siap → SO OD dipenuhi & Surat Jalan (tugas outbound) lahir otomatis.
             try:
-                from services.special_order_service import transition_special_order_status
-                await transition_special_order_status(po["special_order_id"], "ready", "Sistem (PO diterima)")
+                from services import special_order_phase2 as _p2r
+                await _p2r.mark_ready_if_all_received(po["special_order_id"])   # 23 Okt — semua PO/MKO OD, bukan PO ini saja
             except Exception as exc:  # noqa: BLE001
                 logger.warning("[recompute_po_status] efek samping gagal diabaikan: %s", exc)  # KN-C10
             try:

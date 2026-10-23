@@ -15,7 +15,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { AlertCircle, CheckCircle2, Clock, Loader2, Package, Plus, Sparkles, X } from "lucide-react";
 import CreateSpecialOrderForm from "./CreateSpecialOrderForm";
 import SpecialOrderDetail from "./SpecialOrderDetail";
-import { StatusPill, fmtDay } from "./SpecialOrderShared";
+import { StatusPill, fmtDay, odPhaseOf } from "./SpecialOrderShared";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import PagedRows from "../../components/PagedRows";
 import KNSelect from "../../components/KNSelect";
@@ -107,7 +107,9 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
     { key: "", label: "Semua" },
     { key: "draft", label: "Draf" },
     { key: "pending_approval", label: "Menunggu Persetujuan" },
-    { key: "confirmed", label: "Terkonfirmasi" },
+    // 23 Okt — status "confirmed" berlaku sejak OD disetujui (desain/sample/harga masih berjalan; lencana baris
+    // menyebut fasenya) → tab berlabel "Disetujui", bukan "Terkonfirmasi" yang terbaca seolah harga sudah final.
+    { key: "confirmed", label: "Disetujui" },
     { key: "in_production", label: "Produksi" },
     { key: "ready", label: "Siap" },
     { key: "shipped", label: "Dikirim" },
@@ -301,7 +303,7 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
                     {formatCurrency(order.total_amount)}
                   </td>
                   <td>
-                    <StatusPill status={order.status} />
+                    <StatusPill status={order.status} phase={odPhaseOf(order)} />
                   </td>
                   <td className="whitespace-nowrap text-muted">
                     {order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "—"}

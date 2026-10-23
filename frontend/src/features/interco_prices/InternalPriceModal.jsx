@@ -1,10 +1,10 @@
 import { useState } from "react";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk } from "./internalPriceApi";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayWib();
 
 /** Form kecil: tetapkan harga internal SATU barang untuk satu pasangan PT penjual → pembeli. */
 export default function InternalPriceModal({ target, onClose, onSaved }) {

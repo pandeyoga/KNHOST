@@ -8,9 +8,10 @@ import KNDatePicker from "../../components/KNDatePicker";
 import { mktApi, fmtN } from "./marketingShared";
 import useIntentKey from "../../hooks/useIntentKey";
 import CampaignBillsSection, { BillForm, RejectModal } from "./CampaignBillsSection";
+import { todayWib } from "../../utils/formatters";
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayWib();
 
 export default function CampaignCostsModal({ campaign, canPost, canVoid = canPost, canCreateBill, canApproveBill, currentUserId, onClose, onChanged }) {
   const [data, setData] = useState(null);

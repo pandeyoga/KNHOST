@@ -15,7 +15,7 @@ import {
   AlertCircle, ArrowLeft, Check, CheckCircle2, ClipboardList, Clock, Loader2,
   ShoppingCart, Sparkles, Tag, X, XCircle
 } from "lucide-react";
-import { StatusPill, STATUS_STYLE, fmtDate, docStatus } from "./SpecialOrderShared";
+import { StatusPill, STATUS_STYLE, fmtDate, docStatus, odPhaseOf } from "./SpecialOrderShared";
 import { SpecialOrderInfoPanels } from "./SpecialOrderInfoPanels";
 import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -219,7 +219,10 @@ export default function SpecialOrderDetail({
   };
 
   // Cek UI UAT v3 (S13) — OD terstruktur: [Mulai Produksi] baru masuk akal setelah harga dikunci (server juga menolak).
-  const action = order.status === "confirmed" && (structured || (order.items || []).length > 1) && !priceLocked ? null : statusActions[order.status];
+  // 23 Okt — OD terstruktur: Produksi/Siap/Dikirim/Selesai digerakkan OTOMATIS (realisasi pengadaan, semua PO/MKO
+  // diterima, Surat Jalan berangkat/terkirim). Tombol manual "Tandai Siap" dulu muncul padahal barang belum datang.
+  const action = structured ? null
+    : order.status === "confirmed" && (order.items || []).length > 1 && !priceLocked ? null : statusActions[order.status];
 
   return (
     <div data-testid="special-order-detail-view" className="view-container">
@@ -259,7 +262,7 @@ export default function SpecialOrderDetail({
             <h2 className="detail-title flex items-center gap-2" data-testid="special-order-number">
               <Sparkles size={18} className="text-purple-500" /> {order.number}
             </h2>
-            <StatusPill status={order.status} phase={order.chain?.phase} />
+            <StatusPill status={order.status} phase={odPhaseOf(order)} />
             {order.origin === "redesign" && (
               <span className="feature-badge badge-orange" data-testid="special-order-origin-badge">Redesign</span>
             )}
@@ -324,7 +327,7 @@ export default function SpecialOrderDetail({
             </button>
           )}
 
-          {order.linked_pr_number && (
+          {order.linked_pr_number && (order.chain?.prs || []).length <= 1 && (
             <div className="info-chip success" data-testid="special-order-linked-pr">
               <ClipboardList size={13} />
               PR: {order.linked_pr_number}
@@ -359,8 +362,9 @@ export default function SpecialOrderDetail({
             </button>
           )}
 
-          {/* F3 MTO — chip SKU tertaut */}
-          {order.linked_product_id && (
+          {/* F3 MTO — chip SKU tertaut. 23 Okt — OD multi-item: SKU per item ada di Rantai dokumen; chip tunggal
+              dulu menyebut satu SKU saja (item terakhir) seolah SKU pesanan. */}
+          {order.linked_product_id && (order.items || []).filter((i) => i.status !== "cancelled").length <= 1 && (
             <div className="info-chip success" data-testid="special-order-linked-sku">
               <Tag size={13} />
               SKU: {order.linked_product_sku || order.linked_product_id}

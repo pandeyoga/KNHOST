@@ -8,6 +8,7 @@ import PostDetailModal from "./PostDetailModal";
 import { mktApi, monthKey, monthLabel, PlatformChip, StatusPill, STATUS_STYLE, PLATFORM_STYLE, fmtWhen, weekStart, weekDays, weekLabel, shiftDays } from "./marketingShared";
 import WeekGrid from "./WeekGrid";
 import { can } from "../../config/roles";
+import { todayWib } from "../../utils/formatters";
 
 const DOW = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -51,7 +52,7 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
     const [y, m] = month.split("-").map(Number); const first = new Date(y, m - 1, 1); const lead = (first.getDay() + 6) % 7; const days = new Date(y, m, 0).getDate();
     const out = []; for (let i = 0; i < lead; i++) out.push(null); for (let d = 1; d <= days; d++) out.push(`${month}-${String(d).padStart(2, "0")}`); while (out.length % 7) out.push(null); return out;
   }, [month]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
   const unscheduled = byDay.__unscheduled || [];
   const canCreate = can(currentUser?.permissions, "marketing", "create");   // Sisir gerbang peran (2026-10-20) — POST /marketing/posts
   const movePost = async (post, day) => {

@@ -2,6 +2,7 @@
  * poUtils.jsx — shared helpers untuk PurchaseOrderManagement sub-komponen.
  */
 
+import { todayWib } from "../../../utils/formatters";
 export function getStatusBadge(status) {
   const statusMap = {
     waiting_approval: { label: "Menunggu Persetujuan", cls: "bg-amber-100 text-amber-700" },
@@ -42,7 +43,7 @@ export function lateState(po) {
   if (!["pending", "receiving", "partial"].includes(po?.status)) return null;
   const eta = String(po.expected_delivery_date || "").slice(0, 10);
   if (!eta) return null;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
   if (eta >= today) return null;
   const days = Math.max(1, Math.round((Date.parse(today) - Date.parse(eta)) / 86400000));
   return { eta, days, label: `Telat ${days} hari`, cls: "bg-red-50 text-red-600 border border-red-200" };

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { MessageSquareWarning, Plus, UserCheck, CalendarClock } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import FeedbackFormModal from "./FeedbackFormModal";
+import { todayWib } from "../../utils/formatters";
 
 const STATUS_TONE = {
   open: "bg-[#FFF3D6] text-[#8C4A00] border-[#F5C26B]",
@@ -20,7 +21,7 @@ export default function OrderFeedbackPanel({ order, canEdit = true }) {
   const [meta, setMeta] = useState(null);
   const [modal, setModal] = useState(null); // {mode:"create"} | {mode:"update", row}
   const [err, setErr] = useState("");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
 
   const load = useCallback(async () => {
     try {

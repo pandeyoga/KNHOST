@@ -89,7 +89,8 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
             ))}
           </Node>
           <Node title="PR / PO → SO" on={!!ch.pr || !!ch.so || (ch.po || []).length > 0} testId="od-node-purchasing">
-            {ch.pr ? <span className="block">PR <b className="font-mono">{ch.pr.number}</b> · {docStatus(ch.pr.status)}</span> : <span className="block">PR belum dibuat</span>}
+            {(ch.prs || []).length > 1 ? ch.prs.map((p) => <span key={p.id} className="block" data-testid={`od-pr-${p.id}`}>PR <b className="font-mono">{p.number}</b> · {docStatus(p.status)}</span>)
+              : ch.pr ? <span className="block">PR <b className="font-mono">{ch.pr.number}</b> · {docStatus(ch.pr.status)}</span> : <span className="block">PR belum dibuat</span>}
             {(ch.po || []).map((p) => <span key={p.id} className="block" data-testid={`od-po-${p.id}`}>PO <b className="font-mono">{p.po_number}</b> · {p.supplier_name} · {docStatus(p.status)}</span>)}
             {ch.so ? <span className="block">SO <b className="font-mono">{ch.so.order_number || ch.so.number}</b> · {docStatus(ch.so.status)}</span> : <span className="block">SO belum dikonversi</span>}
           </Node>

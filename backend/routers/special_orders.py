@@ -631,7 +631,8 @@ async def lock_price(order_id: str, payload: LockPriceBody, request: Request) ->
                 {"number": od.get("number"), "final_unit_price": pricing["final_unit_price"], "margin_pct": pricing["margin_pct"],
                  "total": pricing.get("total"), "items": pricing.get("item_count")})
     # Fase 4 — SO hasil OD lahir otomatis (harga final) agar barang PO nanti langsung direservasi & Surat Jalan lahir.
-    if payload.auto_po and pricing.get("procurement") and not pricing.get("procurement_error"):
+    # 23 Okt — item yang menunggu Manajer (SKU baru) = pengadaan belum lengkap → SO otomatis menunggu juga.
+    if payload.auto_po and pricing.get("procurement") and not pricing.get("procurement_error")             and not (pricing.get("procurement") or {}).get("pending"):
         try:
             await convert_special_order_to_so(order_id, request)
         except HTTPException as exc:
@@ -681,6 +682,7 @@ async def fulfillment_view(order_id: str, request: Request) -> Dict[str, Any]:
     from services import special_order_fulfillment as ful
     out = await ful.progress(od)
     out["can"] = {a: await ful._can(user, a) for a in ("choose_route", "override_default", "realize", "cancel")}  # noqa: SLF001
+    out["can"]["release"] = await ful.can_release(user, od.get("entity_id", ""))
     return out
 
 

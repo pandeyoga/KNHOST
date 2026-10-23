@@ -34,7 +34,7 @@ import usePagedRows from "@/hooks/usePagedRows";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import { entityShort, entityShortById } from "../../utils/entityLabel";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import { can } from "../../config/roles";
 
 const STATUS_META = {
@@ -133,7 +133,7 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `harga-${entityName}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `harga-${entityName}-${todayWib()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -372,7 +372,7 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
 
 // ─── Set Harga Modal ─────────────────────────────────────────────────────────
 function SetPriceModal({ row, entityId, entityName, onClose, onSaved, onError }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
   const [price, setPrice] = useState(row.entity_price != null ? String(row.entity_price) : "");
   const [validFrom, setValidFrom] = useState(today);
   const [validUntil, setValidUntil] = useState("");

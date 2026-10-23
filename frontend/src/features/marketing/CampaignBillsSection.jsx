@@ -7,9 +7,10 @@ import KNDatePicker from "../../components/KNDatePicker";
 import { Field } from "../rnd/RndField";
 import { mktApi, fmtN } from "./marketingShared";
 import useIntentKey from "../../hooks/useIntentKey";
+import { todayWib } from "../../utils/formatters";
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayWib();
 const STATUS = { pending_approval: ["Menunggu persetujuan", "bg-[#FFF6E5] text-[#B26A00]"], posted: ["Disetujui · belum dibayar", "bg-[#EEF4FF] text-[#0058CC]"], paid: ["Lunas", "bg-[#E7F6F3] text-[#0F766E]"], cancelled: ["Ditolak/batal", "bg-[#F2F2F7] text-[#6B6B73]"] };
 
 export default function CampaignBillsSection({ campaign, bills, canCreate, canApprove, currentUserId, onChanged, onAdd, onReject }) {

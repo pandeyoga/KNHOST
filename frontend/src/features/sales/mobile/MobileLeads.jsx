@@ -5,6 +5,7 @@ import { formatCurrency } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
 import { offlinePost } from "../../../utils/offlineQueue";
 import { askConfirm } from "../../../services/confirmService";
+import { useSubpageBack } from "./subpageBack";
 
 const STAGES = [["new", "Baru"], ["contacted", "Dihubungi"], ["qualified", "Potensial"], ["proposal", "Penawaran"], ["negotiation", "Negosiasi"]];
 const SOURCES = [["walk_in", "Datang langsung"], ["referral", "Referensi"], ["whatsapp", "WhatsApp"], ["instagram", "Instagram"], ["exhibition", "Pameran"], ["other", "Lainnya"]];
@@ -52,6 +53,7 @@ export default function MobileLeads() {
 }
 
 function MobileLeadCreate({ onBack, onDone }) {
+  const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
   const [f, setF] = useState({ name: "", company: "", phone: "", source: "walk_in", est_value: "", notes: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -66,7 +68,7 @@ function MobileLeadCreate({ onBack, onDone }) {
   };
   return (
     <div className="space-y-2 p-3" data-testid="m-lead-create">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-lead-back"><ArrowLeft size={17} /> Prospek</button>
+      {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-lead-back"><ArrowLeft size={17} /> Prospek</button>}
       <div className="m-card p-3 space-y-2">
         <input className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Nama kontak *" value={f.name} onChange={set("name")} data-testid="m-lead-name" />
         <input className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Toko / perusahaan" value={f.company} onChange={set("company")} data-testid="m-lead-company" />

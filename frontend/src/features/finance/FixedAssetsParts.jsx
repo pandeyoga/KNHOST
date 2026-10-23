@@ -8,7 +8,7 @@ import { useState } from "react";
 import {
   X, Plus, RefreshCw, PackageMinus, CalendarClock, TrendingUp, TrendingDown,
 } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 
 export const fmtDate = (s) => {
@@ -64,7 +64,7 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
     ? selectedEntity : (entities[0]?.id || "");
 
   const [form, setForm] = useState({
-    name: "", category: cats[0], acquisition_cost: "", acquisition_date: new Date().toISOString().slice(0, 10),
+    name: "", category: cats[0], acquisition_cost: "", acquisition_date: todayWib(),
     useful_life_months: 60, salvage_value: "", entity_id: defaultEntity,
     gl_account_asset: catAcc[cats[0]] || "", notes: "",
   });
@@ -279,7 +279,7 @@ export function ScheduleDialog({ asset, loading, onClose }) {
 /* ── Disposal ────────────────────────────────────────────────────────────── */
 export function DisposeDialog({ asset, busy, onCancel, onSubmit }) {
   const [proceeds, setProceeds] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayWib());
   const [note, setNote] = useState("");
 
   const bookValue = Math.round((asset?.book_value || 0) * 100) / 100;

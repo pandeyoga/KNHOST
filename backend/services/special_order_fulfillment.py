@@ -314,6 +314,20 @@ async def _save(od_id: str, key: str, fields: Dict[str, Any]) -> None:
 
 
 # ─── Rilis master (tanpa fallback lifecycle) ─────────────────────────────────
+def needs_release(n: Dict[str, Any]) -> bool:
+    return n.get("product_lifecycle") not in ("", None, "produksi")
+
+
+async def can_release(actor: Dict[str, Any], entity_id: str) -> bool:
+    """Peran pelaku boleh merilis SKU baru ke produksi (kebijakan `rnd.spec_approval_roles`, sama dengan
+    `rnd_spec_service.release_product`)."""
+    from services import rnd_gate
+    allowed = (await rnd_gate.policy(entity_id)).get("spec_approval_roles") or []
+    if isinstance(allowed, str):
+        allowed = [x.strip() for x in allowed.split(",") if x.strip()]
+    return not allowed or (actor or {}).get("role", "") in allowed
+
+
 async def ensure_released(n: Dict[str, Any], actor: Dict[str, Any], od: Dict[str, Any]) -> None:
     if n["product_lifecycle"] in ("", None, "produksi"):
         return
@@ -417,7 +431,7 @@ async def realize(od: Dict[str, Any], key: str, actor: Dict[str, Any], warehouse
         doc["revalidation_ref"] = await _rv.latest_for(n["product_id"], n["supplier_id"])
         await db.special_orders.update_one({"id": od["id"]}, {
             "$set": {f"fulfillment.{key}.status": "realized", f"fulfillment.{key}.error": "",
-                     "procurement_warehouse_id": wh, "procurement_error": "", "updated_at": now_iso(),
+                     "procurement_warehouse_id": wh, "procurement_error": "", "procurement_note": "", "updated_at": now_iso(),
                      **({"linked_po_id": doc["id"], "linked_po_number": doc["number"]} if doc["type"] == "po" and not od.get("linked_po_id") else {}),
                      **({"linked_mko_id": doc["id"], "linked_mko_number": doc["number"]} if doc["type"] == "mko" and not od.get("linked_mko_id") else {})},
             "$push": {f"fulfillment.{key}.docs": doc,
@@ -531,8 +545,15 @@ async def _realize_mko(od, n, pr_id, actor) -> Optional[Dict[str, Any]]:
 
 async def realize_all(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: str = "") -> Dict[str, Any]:
     """Dipakai auto-procure (kunci harga / retry): realisasikan setiap item yang jalurnya sudah jelas."""
-    out: Dict[str, Any] = {"items": [], "errors": []}
+    out: Dict[str, Any] = {"items": [], "errors": [], "pending": []}
+    may_release = await can_release(actor, od.get("entity_id", ""))
     for n in await needs(od):
+        # 23 Okt — SKU baru yang belum dirilis & pelaku tidak berwenang merilis (mis. Admin Sales saat kunci harga):
+        # bukan GALAT — memang menunggu Manajer (rilis = wewenang Manajer saat realisasi). Dulu dicoba lalu dicatat
+        # "Gagal — bisa diulang" + pesan peran mentah di tiap item.
+        if needs_release(n) and not may_release and not n["active_docs"]:
+            out["pending"].append(f"Item {n['line_no']}: SKU baru {n['product_sku']}")
+            continue
         fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
         try:
             r = await realize(fresh, n["key"], actor, warehouse_id, check_perm=False)
@@ -543,6 +564,9 @@ async def realize_all(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: s
     po = next((d for d in docs if d.get("type") == "po"), {})
     out.update({"pr_number": next((i.get("pr_number") for i in out["items"] if i.get("pr_number")), ""),
                 "po_id": po.get("id", ""), "po_number": po.get("number", "")})
+    note = (f"Menunggu Manajer: rilis SKU baru ke produksi & realisasi pengadaan ({'; '.join(out['pending'])})."
+            if out["pending"] else "")
+    await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_note": note}})
     if out["errors"]:
         await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_error": " · ".join(out["errors"])}})
         if not out["items"]:

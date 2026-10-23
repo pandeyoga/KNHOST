@@ -3,7 +3,7 @@ import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { fmtDate } from "./pettyCashShared";
 
@@ -12,7 +12,7 @@ import { fmtDate } from "./pettyCashShared";
  * Baris pengeluaran (tanggal/uraian/kategori/nominal) → ringkasan per kategori +
  * sisa/kurang dana (BE hitung ulang & posting GL saat disetujui).
  */
-const emptyLine = () => ({ date: new Date().toISOString().slice(0, 10), description: "", category: "petty_cash_lain", amount: "" });
+const emptyLine = () => ({ date: todayWib(), description: "", category: "petty_cash_lain", amount: "" });
 
 export default function SettlementForm({ categories, preselectPd, selectedEntity, onCancel, onSaved }) {
   const [advances, setAdvances] = useState([]);

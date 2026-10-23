@@ -304,6 +304,19 @@ async def chain_of(od: Dict[str, Any]) -> Dict[str, Any]:
     if od.get("linked_po_id"):
         out["po"] = await db.purchase_orders.find(
             {"id": od["linked_po_id"]}, {"_id": 0, "id": 1, "po_number": 1, "status": 1, "supplier_name": 1, "expected_delivery_date": 1, "grand_total": 1}).to_list(1)
+    # 23 Okt — OD multi-item: PR/PO lahir PER ITEM (fulfillment.<item>.docs); dulu rantai hanya menyebut PR/PO item
+    # pertama (linked_pr_id/linked_po_id) sehingga PO item kedua tak terlihat di rincian OD.
+    ful = od.get("fulfillment") or {}
+    po_ids = [d.get("id") for st in ful.values() if isinstance(st, dict)
+              for d in st.get("docs") or [] if d.get("type") == "po" and d.get("id")]
+    pr_ids = [st.get("pr_id") for st in ful.values() if isinstance(st, dict) and st.get("pr_id")]
+    if po_ids:
+        out["po"] = await db.purchase_orders.find(
+            {"id": {"$in": po_ids}}, {"_id": 0, "id": 1, "po_number": 1, "status": 1, "supplier_name": 1,
+                                       "expected_delivery_date": 1, "grand_total": 1}).to_list(20)
+    if pr_ids:
+        out["prs"] = await db.purchase_requisitions.find({"id": {"$in": pr_ids}}, {"_id": 0, "id": 1, "number": 1, "status": 1}).to_list(20)
+        out["pr"] = out["pr"] or (out["prs"][0] if out["prs"] else None)
     if od.get("linked_product_id") and not out["products"]:
         p = await db.products.find_one({"id": od["linked_product_id"]}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "lifecycle": 1, "color_ref": 1, "supplier_colors": 1, "rnd_supplier": 1, "exclusive_customer_name": 1})
         out["products"] = [p] if p else []

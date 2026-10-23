@@ -124,7 +124,12 @@ async def review_ready(od: Dict[str, Any]) -> Dict[str, Any]:
         decided = proofs
     latest = decided[-1] if decided else None
     out = {"ready": bool(decided) or design_ok, "sample": latest, "design": design if design_ok else None,
-           "samples_decided": len(decided), "proofing_rounds": rounds}
+           "samples_decided": len(decided), "proofing_rounds": rounds,
+           # 23 Okt — OD multi-item: SEMUA sample yang diputus jadi dasar keputusan pelanggan (dulu layar hanya
+           # menyebut sample terakhir, mis. proofing item 1, sementara labdip item 2 tak tersebut).
+           "samples": [{"number": s.get("number", ""), "sample_types": s.get("sample_types") or [],
+                        "supplier_name": (s.get("decision") or {}).get("supplier_name", ""),
+                        "item_id": s.get("special_order_item_id", "")} for s in decided]}
     out["object"] = decision_object(out) if out["ready"] else ""
     out["object_label"] = DECISION_OBJECT_LABEL.get(out["object"], "")
     return out
@@ -614,6 +619,29 @@ async def unlock_price(od: Dict[str, Any], actor: Dict[str, Any], reason: str) -
 # ─── Fase 4 — Pengiriman OD otomatis ─────────────────────────────────────────
 async def _od_of_so(so_id: str) -> Optional[Dict[str, Any]]:
     return await db.special_orders.find_one({"$or": [{"linked_sales_order_id": so_id}, {"so_id": so_id}]}, {"_id": 0})
+
+
+async def mark_ready_if_all_received(od_id: str, actor: str = "Sistem (PO diterima)") -> bool:
+    """OD → Siap HANYA bila SEMUA dokumen pengadaannya (PO/MKO aktif) sudah diterima.
+
+    23 Okt — OD multi-item: dulu PO item PERTAMA yang selesai langsung menandai OD "Siap" walau PO item kedua
+    belum tiba (Admin Sales/Gudang mengira pesanan lengkap)."""
+    od = await db.special_orders.find_one({"id": od_id}, {"_id": 0, "status": 1})
+    if not od or od.get("status") != "in_production":
+        return False
+    open_po = await db.purchase_orders.count_documents(
+        {"special_order_id": od_id, "status": {"$nin": ["completed", "closed", "cancelled", "rejected"]}})
+    open_mko = await db.makloon_orders.count_documents(
+        {"special_order_id": od_id, "status": {"$nin": ["completed", "done", "received", "closed", "cancelled"]}})
+    if open_po or open_mko:
+        return False
+    from services.special_order_service import transition_special_order_status
+    try:
+        await transition_special_order_status(od_id, "ready", actor)
+    except ValueError as exc:
+        logger.warning("[mark_ready_if_all_received] transisi diabaikan: %s", exc)
+        return False
+    return True
 
 
 async def on_goods_received(od_id: str) -> Dict[str, Any]:

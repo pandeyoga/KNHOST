@@ -4,7 +4,7 @@ import { Minus, Plus, Trash2, X, ArrowLeft, ShoppingCart, Loader2, CheckCircle2 
 import KNSelect from "../../../components/KNSelect";
 import { PosFBT } from "../PosFBT";
 import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "../SalesTeamEditor";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { onImageError, productImage } from "../../../utils/productImage";
 
 const lineTotal = (it) => Number(it.product?.price || 0) * Number(it.quantity || 0);
@@ -21,7 +21,7 @@ export function MobileCartSheet({
   const [submitting, setSubmitting] = useState(false);
   const [salesTeam, setSalesTeam] = useState([]);   // F-4c REVISI — tim sales per order
   const [deliveryDate, setDeliveryDate] = useState("");  // F-SHIP — request tgl kirim (opsional)
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWib();
 
   // Prefill tim sales dari default customer (boleh di-override per order).
   useEffect(() => { setSalesTeam(customerDefaultTeam(selectedCustomer)); }, [selectedCustomer?.id]); // eslint-disable-line

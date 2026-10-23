@@ -15,6 +15,9 @@ export const formatStamp = (v) => {
 // 23 Okt — tanggal/jam tampilan BAKU berzona WIB (zona bisnis yang dipakai server: tenggat, "hari ini", jurnal).
 // Dulu tiap layar memformat sendiri dengan zona perangkat → tenggat jendela retur bisa beda sehari antar-layar.
 const WIB = "Asia/Jakarta";
+/** "YYYY-MM-DD" hari ini menurut WIB — nilai bawaan isian tanggal. 23 Okt: banyak form memakai
+ *  `new Date().toISOString().slice(0, 10)` (= tanggal UTC) → sebelum 07.00 WIB terisi tanggal KEMARIN. */
+export const todayWib = () => new Date().toLocaleDateString("sv-SE", { timeZone: WIB });
 const _validDate = (v) => { if (!v) return null; const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d; };
 /** "23 Okt 2026" (WIB). Kosong/tak sah → "—". */
 export const formatDate = (v) => {

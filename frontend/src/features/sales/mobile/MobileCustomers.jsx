@@ -5,6 +5,7 @@ import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import MobileArReceipt from "./MobileArReceipt";
 import MobileCustomerForm from "./MobileCustomerForm";
+import { useSubpageBack } from "./subpageBack";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
 const STATUS_ID = { unpaid: "Belum bayar", partial: "Sebagian", paid: "Lunas", overdue: "Jatuh tempo" };
@@ -52,6 +53,7 @@ export default function MobileCustomers({ selectedEntity, user, onRefresh, onSta
 }
 
 export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStartOrder }) {
+  const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
   const [d, setD] = useState(null);
   const [tab, setTab] = useState("ar");
   const [pay, setPay] = useState(false);
@@ -67,7 +69,7 @@ export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStar
   const overdue = open.filter((o) => o.payment_status === "overdue" || (o.due_date && new Date(o.due_date) < new Date()));
   return (
     <div className="space-y-2 p-3" data-testid="m-customer-detail">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-customer-back"><ArrowLeft size={17} /> Pelanggan</button>
+      {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-customer-back"><ArrowLeft size={17} /> Pelanggan</button>}
       <div className="m-card p-4">
         <div className="flex items-start justify-between gap-2">
           <p className="text-[15px] font-bold" data-testid="m-customer-name">{customer.name}</p>

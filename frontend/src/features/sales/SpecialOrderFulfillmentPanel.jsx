@@ -71,6 +71,7 @@ function CancelDocs({ n, can, busy, onCancel }) {
 }
 
 function NeedCard({ n, can, busy, onSave, onRealize, onCancel }) {
+  const newSku = !!n.product_id && !["", null, undefined, "produksi"].includes(n.product_lifecycle);
   return (
     <div className="rounded-lg border border-[#EFF0F2] p-2.5" data-testid={`od-ful-item-${n.key}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -84,16 +85,23 @@ function NeedCard({ n, can, busy, onSave, onRealize, onCancel }) {
         {n.supplier_name && ` · supplier pemenang uji ${n.supplier_name}`}
       </p>
       {n.blockers.length > 0 && n.status !== "realized" && <ul className="mt-1 list-disc pl-4 text-[11px] text-[#8A5A00]" data-testid={`od-ful-blockers-${n.key}`}>{n.blockers.map((b) => <li key={b}>{b}</li>)}</ul>}
-      {n.error && n.status !== "realized" && <p className="mt-1 text-[11px] text-[#C0392B]" data-testid={`od-ful-error-${n.key}`}>{n.error}</p>}
+      {n.error && n.status !== "realized" && !(newSku && /tidak berwenang merilis/i.test(n.error)) && <p className="mt-1 text-[11px] text-[#C0392B]" data-testid={`od-ful-error-${n.key}`}>{n.error}</p>}
       {(n.warnings || []).map((w) => <p key={w} className="mt-1 text-[11px] text-[#B45309]" data-testid={`od-ful-warning-${n.key}`}>{w}</p>)}
       {n.pr && <p className="mt-1 text-[11px]" data-testid={`od-ful-pr-${n.key}`}>PR <b className="font-mono">{n.pr.number}</b> · {docStatus(n.pr.status)}</p>}
       {n.docs.map((d) => <DocRow key={d.id} d={d} />)}
       {n.history_docs.length > 0 && <p className="mt-1 text-[10.5px] text-[#9A9BA3]" data-testid={`od-ful-history-${n.key}`}>Riwayat: {n.history_docs.map((d) => `${d.type.toUpperCase()} ${d.number || d.id} (${docStatus(d.status || "cancelled")})`).join(", ")}</p>}
       <RouteEditor n={n} can={can} busy={busy} onSave={onSave} />
       <CancelDocs n={n} can={can} busy={busy} onCancel={onCancel} />
-      {can.realize && ["ready", "error", "needs_data"].includes(n.status) && (
+      {/* 23 Okt — SKU baru (belum rilis): realisasi sekaligus merilis ke produksi = wewenang Manajer. Peran lain dulu
+          melihat tombol aktif lalu ditolak dengan pesan peran mentah. */}
+      {newSku && ["ready", "error", "needs_data"].includes(n.status) && !can.release && (
+        <p className="mt-1.5 text-[11px] text-[#8C4A00]" data-testid={`od-ful-wait-release-${n.key}`}>
+          SKU baru <b className="font-mono">{n.product_sku}</b> — realisasi oleh Manajer (sekaligus merilis SKU ke produksi).
+        </p>
+      )}
+      {can.realize && (!newSku || can.release) && ["ready", "error", "needs_data"].includes(n.status) && (
         <button type="button" className="primary-button mt-1.5 !py-1 text-[11px]" disabled={busy} onClick={() => onRealize(n.key)} data-testid={`od-ful-realize-${n.key}`}>
-          {busy ? <Loader2 size={12} className="spin" /> : <PackageCheck size={12} />} {n.status === "ready" ? "Realisasi pengadaan" : "Ulangi realisasi"}
+          {busy ? <Loader2 size={12} className="spin" /> : <PackageCheck size={12} />} {n.status === "ready" ? (newSku ? "Rilis SKU & realisasi pengadaan" : "Realisasi pengadaan") : "Ulangi realisasi"}
         </button>
       )}
     </div>

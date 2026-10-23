@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import { createPlan, errText, money, previewPlan, updatePlan } from "./paymentApi";
+import { todayWib } from "../../../utils/formatters";
 
 const KIND_OPTS = [
   { value: "dp", label: "Uang Muka (DP)" },
@@ -65,7 +66,7 @@ export default function PaymentPlanBuilder({
   const addLine = () => setLines((ls) => [...ls, {
     seq: ls.length + 1, kind: "installment", label: `Pembayaran ${ls.length + 1}`,
     basis: "amount", amount: Math.max(0, diff), due_rule: "fixed_date",
-    due_date: new Date().toISOString().slice(0, 10), status: "open", paid_amount: 0,
+    due_date: todayWib(), status: "open", paid_amount: 0,
   }]);
   const removeLine = (i) => setLines((ls) => ls.filter((_, idx) => idx !== i));
   const fillRest = (i) => setLines((ls) => ls.map((l, idx) => (

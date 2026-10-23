@@ -3,7 +3,8 @@ import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileT
 import { roleLabel, roleIs } from "../../../config/roles";
 import TanyaKnView from "../../tanya/TanyaKnView";
 import MobileAmendments from "./MobileAmendments";
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { SubpageBackContext } from "./subpageBack";
 import MoreSection from "./MoreSection";
 import { buildNavigation, hubTabsForRole } from "../../../config/navigationConfig";
 import { HUB_TABS } from "../../../config/hubTabs";
@@ -127,6 +128,13 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
     el?.addEventListener("scroll", save, { passive: true });
     return () => el?.removeEventListener("scroll", save);
   }, [sub]);
+  // Rincian di dalam subhalaman mendaftarkan aksi kembalinya (lihat subpageBack.js) — satu tombol "Kembali".
+  const backStack = useRef([]);
+  const backCtx = useMemo(() => ({
+    push: (fn) => { backStack.current = [...backStack.current, fn]; },
+    pop: (fn) => { backStack.current = backStack.current.filter((x) => x !== fn); },
+  }), []);
+  const goBack = () => { const top = backStack.current[backStack.current.length - 1]; if (top) top(); else setSub(null); };
   const role = user?.role;
   const switchable = (entities || []).filter((e) => (user?.allowed_entity_ids || []).includes(e.id));
   const shownIds = new Set();
@@ -134,9 +142,10 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
     return (
       <div data-testid={`mobile-sub-${sub}`} className="-mx-3.5 -mt-3.5">
         <div className="m-subpage-head">
-          <button className="m-subpage-back" data-testid="mobile-sub-back" onClick={() => setSub(null)}><ArrowLeft size={17} /> Kembali</button>
+          <button className="m-subpage-back" data-testid="mobile-sub-back" onClick={goBack}><ArrowLeft size={17} /> Kembali</button>
           <span className="m-subpage-title">{TITLES[sub]}</span>
         </div>
+        <SubpageBackContext.Provider value={backCtx}>
         <div className="m-subpage-body">
           {sub === "tanya" && <TanyaKnView selectedEntity={selectedEntity} entities={entities} />}
           {sub === "amendments" && <MobileAmendments orders={orders} onRefresh={onRefresh} />}
@@ -155,6 +164,7 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
           {sub === "special" && <MobileSpecialOrders focusId={subParam?.id || null} />}
           {sub === "pricelist" && <MobilePricelist selectedEntity={selectedEntity} />}
         </div>
+        </SubpageBackContext.Provider>
       </div>
     );
   }

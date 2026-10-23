@@ -10,8 +10,10 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, Check, MessageCircle, Phone, Plus, RotateCcw, Send, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
-import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
 import { useProofBlob } from "../../rnd/ProofImage";
+import { odPhaseOf, PHASE_LABEL } from "../SpecialOrderShared";
+import { useSubpageBack } from "./subpageBack";
 
 export const errText = (e, fb) => {
   const d = e?.response?.data?.detail;
@@ -20,7 +22,7 @@ export const errText = (e, fb) => {
   if (Array.isArray(d)) return d.map((x) => x?.msg || "").join("; ") || fb;
   return d.message || fb;
 };
-const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-");
+const fmtDate = formatDate;   // 23 Okt — tanggal baku WIB (formatters)
 const waNumber = (p) => String(p || "").replace(/\D/g, "").replace(/^0/, "62");
 
 function Sheet({ title, onClose, children, footer, testId }) {
@@ -178,8 +180,10 @@ export const OD_STATUS = {
   confirmed: ["Terkonfirmasi", "#0058CC", "#EAF2FF"], in_production: ["Dalam produksi", "#6B219A", "#F3E8FA"], ready: ["Siap", "#1B7F4B", "#E6F6EC"],
   shipped: ["Dikirim", "#0058CC", "#EAF2FF"], done: ["Selesai", "#1B7F4B", "#E6F6EC"], cancelled: ["Dibatalkan", "#C0392B", "#FDEDE7"], rejected: ["Ditolak", "#C0392B", "#FDEDE7"],
 };
-export const OdStatus = ({ status, testId }) => {
-  const [l, fg, bg] = OD_STATUS[status] || [status, "#6B6B73", "#F2F3F5"];
+// 23 Okt — `phase` (fase OD terstruktur) mengganti "Terkonfirmasi" selama desain/sample/harga berjalan.
+export const OdStatus = ({ status, phase, testId }) => {
+  const [l0, fg, bg] = OD_STATUS[status] || [status, "#6B6B73", "#F2F3F5"];
+  const l = (status === "confirmed" && PHASE_LABEL[phase]) || l0;
   return <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ color: fg, background: bg }} data-testid={testId}>{l}</span>;
 };
 const DECISIONS = [["acc", "ACC", Check], ["revisi", "Minta revisi", RotateCcw], ["tolak", "Tolak", X]];
@@ -236,9 +240,11 @@ function OdCustomerDecision({ od, onChanged }) {
   return (
     <div className="m-card p-3" data-testid="m-od-customer-decision">
       <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Persetujuan pelanggan atas sample</p>
-      {od.customer_decision === "acc" && <p className="mt-1 text-[12px] font-semibold text-[#1B7F4B]" data-testid="m-od-customer-acc">Pelanggan sudah ACC · {od.customer_decision_at || ""}</p>}
+      {od.customer_decision === "acc" && <p className="mt-1 text-[12px] font-semibold text-[#1B7F4B]" data-testid="m-od-customer-acc">Pelanggan sudah ACC · {formatDate(od.customer_decision_at)}</p>}
       {!review.ready && <p className="mt-1 text-[11.5px] m-muted" data-testid="m-od-customer-not-ready">Aktif setelah R&D menutup sampling (pemenang sample / desain ACC).</p>}
-      {review.ready && review.sample && <p className="mt-1 text-[11.5px]">Dasar: sample <b>{review.sample.number}</b></p>}
+      {review.ready && (review.samples || []).length > 1
+        ? <p className="mt-1 text-[11.5px]" data-testid="m-od-customer-basis">Dasar: {review.samples.map((s) => <b key={s.number} className="mr-1">{s.number} ({(s.sample_types || []).join("+")})</b>)}</p>
+        : review.ready && review.sample && <p className="mt-1 text-[11.5px]" data-testid="m-od-customer-basis">Dasar: sample <b>{review.sample.number}</b></p>}
       {canDecide && (
         <>
           <div className="mt-2 grid grid-cols-3 gap-1.5">
@@ -262,7 +268,7 @@ function OdCustomerDecision({ od, onChanged }) {
       {history.length > 0 && (
         <div className="mt-2 border-t border-[#EFF0F2] pt-2">
           {history.slice().reverse().map((h) => (
-            <p key={h.id} className="text-[11px]"><b>{(DECISIONS.find(([k]) => k === h.decision) || [h.decision, h.decision])[1]}</b> · {h.decided_at || fmtDate(h.created_at)}{h.contact_name ? ` · ${h.contact_name}` : ""}{h.note ? ` — ${h.note}` : ""}{(h.evidence || []).length ? ` · ${(h.evidence || []).length} bukti` : ""}</p>
+            <p key={h.id} className="text-[11px]"><b>{(DECISIONS.find(([k]) => k === h.decision) || [h.decision, h.decision])[1]}</b> · {fmtDate(h.decided_at || h.created_at)}{h.contact_name ? ` · ${h.contact_name}` : ""}{h.note ? ` — ${h.note}` : ""}{(h.evidence || []).length ? ` · ${(h.evidence || []).length} bukti` : ""}</p>
           ))}
         </div>
       )}
@@ -271,6 +277,7 @@ function OdCustomerDecision({ od, onChanged }) {
 }
 
 export function MobileSpecialOrderDetail({ id, onBack }) {
+  const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
   const [od, setOd] = useState(null);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
@@ -289,9 +296,9 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
   const phaseIdx = phases.findIndex(([k]) => k === (od.chain?.phase || od.status));
   return (
     <div className="space-y-2 p-3" data-testid="m-od-detail">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-od-back"><ArrowLeft size={17} /> Pesanan khusus</button>
+      {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-od-back"><ArrowLeft size={17} /> Pesanan khusus</button>}
       <div className="m-card p-4">
-        <div className="flex items-start justify-between gap-2"><p className="text-[15px] font-bold">{od.number}</p><OdStatus status={od.status} testId="m-od-status" /></div>
+        <div className="flex items-start justify-between gap-2"><p className="text-[15px] font-bold">{od.number}</p><OdStatus status={od.status} phase={odPhaseOf(od)} testId="m-od-status" /></div>
         <p className="text-[12px] text-[#3C3C43]">{od.customer_name}</p>
         {od.title && <p className="mt-1 text-[13px] font-semibold" data-testid="m-od-title">{od.title}</p>}
         {(od.items || []).length > 0 ? (
@@ -332,7 +339,9 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
       {phases.length > 0 && (
         <div className="m-card p-3" data-testid="m-od-phases">
           <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tahapan</p>
-          <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+          {/* 23 Okt — geser (hanya horizontal) ke tahap aktif; dulu tahap berjalan terpotong di luar layar. */}
+          <div className="no-scrollbar flex gap-1.5 overflow-x-auto" data-testid="m-od-phase-strip"
+            ref={(el) => { const a = el?.children[phaseIdx]; if (a) el.scrollLeft += a.getBoundingClientRect().left - el.getBoundingClientRect().left - el.clientWidth / 2 + a.clientWidth / 2; }}>
             {phases.map(([k, l], i) => (
               <span key={k} className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${i < phaseIdx ? "bg-[#E6F6EC] text-[#1B7F4B]" : i === phaseIdx ? "bg-[#0058CC] text-white" : "bg-[#F2F3F5] text-[#8E8E93]"}`}>{l}</span>
             ))}
@@ -344,9 +353,14 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
       {(od.status_history || []).length > 0 && (
         <div className="m-card p-3" data-testid="m-od-history">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Riwayat</p>
-          {od.status_history.slice().reverse().map((h, i) => (
-            <p key={i} className="text-[11px]"><b>{(OD_STATUS[h.status] || [h.status])[0]}</b> · {fmtDate(h.timestamp)} · {h.user}{h.note ? ` — ${h.note}` : ""}</p>
-          ))}
+          {/* 23 Okt — sama dengan desktop: entri PERISTIWA (status tak berubah) berjudul peristiwanya, bukan
+              "Terkonfirmasi" berulang; persetujuan (menunggu → confirmed) berjudul "Disetujui". */}
+          {od.status_history.map((h, i, all) => {
+            const prev = i > 0 ? all[i - 1].status : null;
+            const event = prev === h.status && !!h.note;
+            const title = event ? h.note : (h.status === "confirmed" && prev === "pending_approval" ? "Disetujui" : (OD_STATUS[h.status] || [h.status])[0]);
+            return <p key={i} className="text-[11px]"><b>{title}</b> · {fmtDate(h.timestamp)} · {h.user_name || h.user}{!event && h.note ? ` — ${h.note}` : ""}</p>;
+          }).reverse()}
         </div>
       )}
     </div>

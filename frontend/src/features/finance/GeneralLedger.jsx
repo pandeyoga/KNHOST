@@ -11,7 +11,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint";
 import JournalEntryModal from "./JournalEntryModal";
 import InventoryReconTab from "./InventoryReconTab";
@@ -284,7 +284,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
 
 function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid, onReverse }) {
   const [revOpen, setRevOpen] = useState(false);
-  const [revDate, setRevDate] = useState(new Date().toISOString().slice(0, 10));
+  const [revDate, setRevDate] = useState(todayWib());
   const [revReason, setRevReason] = useState("");
   const [revBusy, setRevBusy] = useState(false);
   const [revErr, setRevErr] = useState("");

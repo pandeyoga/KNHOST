@@ -27,6 +27,17 @@ ENT = "ent_ksc"
 CUST = "cust_toko_kain"
 TAG = uuid.uuid4().hex[:6]
 CREATED = []
+_LOOP = asyncio.new_event_loop()
+
+
+def _run(coro):
+    """Klien Motor global terikat ke loop pertama yang memakainya (lihat test_return_per_roll._run)."""
+    sys.path.insert(0, "/app/backend")
+    from db import db as _db
+    loop = _db.client._io_loop
+    if loop is None or loop.is_closed():
+        loop = _db.client._io_loop = _LOOP
+    return loop.run_until_complete(coro)
 
 
 def _png():
@@ -68,6 +79,10 @@ def _cleanup():
     DB.design_gallery.delete_many({"id": {"$regex": f"^dsgn_TEST_od23_{TAG}"}})
     DB.special_orders.delete_many({"id": {"$in": ods}})
     DB.inspections.delete_many({"id": f"ins_TEST_od23_{TAG}"})
+    # lepaskan ikatan klien Motor ke loop modul ini — modul tes berikutnya (mis. iter219, asyncio.run) mengikat ulang
+    from db import db as _db
+    if _db.client._io_loop is _LOOP:
+        _db.client._io_loop = None
 
 
 def _create_od(H, items):
@@ -126,7 +141,7 @@ def test_proofing_otomatis_atas_nama_pembuat_od(H, od_two_types):
     sys.path.insert(0, "/app/backend")
     from services import special_order_phase2 as p2  # noqa: E402
     mgr = _user("manager@kainnusantara.id")
-    sample = asyncio.run(p2.on_design_approved(dict(design), {**mgr, "role": "manager"}))
+    sample = _run(p2.on_design_approved(dict(design), {**mgr, "role": "manager"}))
     assert sample
     sales = _user("sales@kainnusantara.id")
     smp = DB.md_samples.find_one({"id": sample["id"]}, {"_id": 0, "created_by": 1, "spec_id": 1})
@@ -162,11 +177,13 @@ def test_md_putus_pemenang_spesifikasi_diajukan_otomatis(H):
     assert r.status_code == 200, r.text
     r = requests.post(f"{BASE}/rnd/samples/{sid}/decide", headers=md_h, timeout=60, json={
         "supplier_id": sup["id"], "reason_code": "warna_paling_dekat", "price": 39000,
-        "supplier_color_name": "Navy 07", "supplier_color_code": "NV-07", "approve_spec": False})
+        "supplier_color_name": "Navy 07", "supplier_color_code": "NV-07", "approve_spec": False,
+        "supplier_item_name": "Twill Katun 30s"})
     assert r.status_code == 200, r.text            # dulu 400: "Peran 'md' tidak berwenang memutus pemenang"
     dec = r.json()["decision"]
     assert not dec.get("master_error"), dec.get("master_error")
     assert dec.get("spec_submitted") is True
+    assert dec.get("supplier_item_name") == "Twill Katun 30s"   # dulu dibuang skema (field tak dikenal)
     spec_id = DB.md_samples.find_one({"id": sid}, {"_id": 0, "spec_id": 1})["spec_id"]
     assert DB.md_specs.find_one({"id": spec_id}, {"_id": 0, "status": 1})["status"] == "review"
     # muncul di antrean ACC Manajer (Pusat Persetujuan · design_acc)
@@ -184,3 +201,53 @@ def test_antrean_acuan_md_tanpa_spk_retur(H):
     d = requests.get(f"{BASE}/md/desk", headers=H["md"], timeout=30).json()
     acuan = next(q for q in d["queues"] if q["id"] == "acuan")
     assert f"ins_TEST_od23_{TAG}" not in {r.get("ref_id") for r in acuan.get("rows") or []}
+
+
+def test_od_siap_hanya_setelah_semua_po_diterima():
+    """OD multi-item: PO item pertama selesai TIDAK menandai OD Siap selama PO item kedua belum diterima."""
+    sys.path.insert(0, "/app/backend")
+    from services import special_order_phase2 as p2  # noqa: E402
+    od_id = f"sord_TEST_od23_ready_{TAG}"
+    CREATED.append(od_id)
+    DB.special_orders.insert_one({"id": od_id, "number": f"TEST-{TAG}", "status": "in_production", "entity_id": ENT,
+                                  "status_history": [], "title": f"TEST_OD23_{TAG}"})
+    po_a, po_b = f"po_TEST_od23_a_{TAG}", f"po_TEST_od23_b_{TAG}"
+    DB.purchase_orders.insert_many([{"id": po_a, "special_order_id": od_id, "status": "completed", "entity_id": ENT},
+                                    {"id": po_b, "special_order_id": od_id, "status": "pending", "entity_id": ENT}])
+    try:
+        assert _run(p2.mark_ready_if_all_received(od_id)) is False
+        assert DB.special_orders.find_one({"id": od_id})["status"] == "in_production"
+        DB.purchase_orders.update_one({"id": po_b}, {"$set": {"status": "completed"}})
+        assert _run(p2.mark_ready_if_all_received(od_id)) is True
+        assert DB.special_orders.find_one({"id": od_id})["status"] == "ready"
+    finally:
+        DB.purchase_orders.delete_many({"id": {"$in": [po_a, po_b]}})
+
+
+def test_pengadaan_otomatis_menunggu_manajer_untuk_sku_baru(monkeypatch):
+    """Kunci harga oleh peran yang tidak berwenang merilis SKU baru → item 'menunggu Manajer', bukan galat."""
+    sys.path.insert(0, "/app/backend")
+    from services import special_order_fulfillment as ful  # noqa: E402
+    od_id = f"sord_TEST_od23_pend_{TAG}"
+    CREATED.append(od_id)
+    DB.special_orders.insert_one({"id": od_id, "number": f"TESTP-{TAG}", "status": "confirmed", "entity_id": ENT,
+                                  "title": f"TEST_OD23_{TAG}", "pricing": {"locked": True}})
+    item = {"key": "soi_x", "line_no": 1, "product_sku": "RND-TEST", "product_lifecycle": "disetujui", "active_docs": []}
+    called = []
+
+    async def fake_needs(od):
+        return [item]
+
+    async def fake_realize(*a, **k):
+        called.append(a)
+        return {}
+    monkeypatch.setattr(ful, "needs", fake_needs)
+    monkeypatch.setattr(ful, "realize", fake_realize)
+    out = _run(ful.realize_all(DB.special_orders.find_one({"id": od_id}, {"_id": 0}), {"role": "sales_admin", "name": "t"}))
+    assert not called and not out["errors"]
+    assert out["pending"] == ["Item 1: SKU baru RND-TEST"]
+    doc = DB.special_orders.find_one({"id": od_id})
+    assert "Menunggu Manajer" in doc.get("procurement_note", "") and not doc.get("procurement_error")
+    # Manajer (berwenang merilis) → item diproses
+    out = _run(ful.realize_all(DB.special_orders.find_one({"id": od_id}, {"_id": 0}), {"role": "manager", "name": "m"}))
+    assert called and not out["pending"]

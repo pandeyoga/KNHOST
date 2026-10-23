@@ -1273,6 +1273,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     if order.get("special_order_id") and order.get("status") in ("completed", "done", "received"):
         try:
             from services import special_order_phase2 as _p2
+            await _p2.mark_ready_if_all_received(order["special_order_id"], "Sistem (MKO diterima)")
             await _p2.on_goods_received(order["special_order_id"])
         except Exception as exc:  # noqa: BLE001 — stok tetap diterima; error terlihat di OD
             await db.special_orders.update_one({"id": order["special_order_id"]}, {"$set": {"shipping_error": str(exc)}})
