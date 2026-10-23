@@ -1,6 +1,8 @@
 # Analisis Temuan & Rencana Perbaikan — Permintaan Pemilik 23 Okt 2026
 
 > Status dokumen: **ANALISIS SAJA — belum ada kode yang diubah untuk temuan di sini.**
+> Revisi 23 Okt malam: ditambah §5 **Verifikasi alur nyata** (23 uji di DB simulasi salinan UAT) beserta temuan baru
+> P10.5–P10.7, P11.5–P11.6, P14.5, P16.1b, P9.3b–P9.4b.
 > * Basis kode: `main` @ `f6d5aaa`.
 > * Data acuan: DB UAT `kn_uat_23okt` (port 8062/3062).
 > * Setiap klaim memakai bukti `berkas:baris`, fungsi, atau data UAT yang dicek langsung, bukan ingatan. Klaim penting
@@ -35,13 +37,13 @@
 | P7 | Menu Perbaikan (repair & celup ulang) | Tidak ada. Hanya "Rework Lot" tanpa biaya/dokumen kirim | Belum pernah dibangun | Sedang |
 | P8 | POS sadar lokasi + pelanggan wajib | Pilih pelanggan **opsional**, daftar dari dasbor (batas 100, tidak sesuai sales). Tidak ada pilihan lokasi; stok = total global | "Pilih pelanggan" dibuat opsional, bukan gerbang; lokasi tidak disambung ke penjualan | Tinggi |
 | P9 | Model lokasi (site → gudang ber-peran), PO ke lokasi | PO ke gudang (termasuk nonaktif). Peran transit tidak dipakai logika mana pun. Gudang GRN diabaikan. Putaway manual & lintas lokasi. Alokasi berdasar kota pelanggan. "FEFO" = FIFO. Bug gudang bawaan reorder | Model lokasi sudah jadi data, tetapi tidak disambung ke alur | Tinggi |
-| P10 | Transfer antar-PT sadar gudang bersama | Gudang bersama sudah "ganti pemilik" (tanpa kirim). Gudang dedicated tidak punya jalur kirim fisik. Roll pilihan hilang (`preferred_roll_ids`). Sumber = tujuan | Keputusan "ganti pemilik vs kirim" tidak dibuat per roll | Sedang |
-| P11 | Penanda roll MDQ / 4-point + sampling | Tidak ada flag datar di roll. SPK 4-point **wajib semua roll**. SPK MD boleh sebagian, tetapi roll yang tidak dicek lolos tanpa tanda | Status pemeriksaan tersebar; sampling tidak dimodelkan | Tinggi |
+| P10 | Transfer antar-PT sadar gudang bersama | Gudang bersama sudah "ganti pemilik" (tanpa kirim). **Uji nyata**: roll pilihan diabaikan (FIFO + roll dipotong); barang jatuh ke **SO lain yang lebih lama**, SO peminta tetap menunggu. Gudang dedicated: interco terkonfirmasi lalu **buntu 409** | Keputusan "ganti pemilik vs kirim" tidak per roll; barang interco tidak terikat ke SO peminta | **Tinggi** |
+| P11 | Penanda roll MDQ / 4-point + sampling | Tidak ada flag datar di roll. SPK 4-point **wajib semua roll**. **Uji nyata**: simpan 4-point **menghapus jejak MD** di roll; MD Quality tidak bisa menutup SPK-nya sendiri; penanda "sampling" 4-point dipakai untuk sampling MD | Status pemeriksaan tersebar & saling timpa; sampling tidak dimodelkan | Tinggi |
 | P12 | Sorotan POS bisa dinyalakan/dimatikan | Terlaris dari seluruh riwayat, tanpa saring visibilitas. Tidak ada produk unggulan/push. Tidak ada pengaturan | Belum dibangun | Rendah |
 | P13 | Keep & Pending untuk sales (SO miliknya) | **Sudah ada** di Beranda Sales desktop & HP, dibatasi SO milik sales | Perlu bukti UI & komunikasi, bukan kode baru | Rendah |
 | P14 | Sales hanya melihat pelanggannya | Pemilih pelanggan untuk pesanan (`for_order`) mengembalikan **semua** pelanggan PT | Pengecualian `b9135ff` menambal data pelanggan tanpa sales | Tinggi |
 | P15 | Gabung beberapa PR → 1 PO + rekomendasi | 1 PR → 1 PO saja. OD multi-item → N PO. Bug `kind`/`type` | Tautan PO↔PR skalar; fitur belum ada | Sedang |
-| P16 | UI GRN, Pusat/Jejak Dokumen, Pengaturan | GRN tanpa kartu & grid HP rusak. Jejak tanpa unduh per dokumen. **Bug PDF GRN baca koleksi PO**. Pengaturan 20 tab, 4 lapis, konsep dobel, label seksi dobel | Layar tanpa wadah design-system; registry PDF tertinggal | Sedang |
+| P16 | UI GRN, Pusat/Jejak Dokumen, Pengaturan | GRN tanpa kartu & isian HP berjejal. **Rekonsiliasi menulis "Tidak ada selisih" sebelum hitung selesai** (SJ 1.000 vs 50 yd). Jejak tanpa unduh per dokumen. **PDF GRN baru 404** (resolver baca koleksi PO). Pengaturan 20 tab, 4 lapis, konsep dobel, label seksi dobel | Layar tanpa wadah design-system; registry PDF tertinggal | Sedang |
 | P17 | Pratinjau foto tanpa unduh | Tidak ada komponen bersama. Lampiran retur `attachment` (selalu unduh). 10 titik tanpa pratinjau. Token di URL `?auth=` | Header entitas + `Content-Disposition` | Sedang |
 
 ---
@@ -74,9 +76,9 @@ Penelusuran riwayat (memo 7 Okt, Daftar Perbaikan 11 Okt IMP-xx, register 126 pe
 
 | Fase | Isi | Kenapa urutan ini | Bergantung pada |
 |---|---|---|---|
-| **F0 — cepat & pasti** | P4.8 bug kain dasar · P14 (hapus `for_order` + antrean pelanggan tanpa sales + data UAT) · P13 bukti UI · P15 bug `kind/type` · `restock_service._default_warehouse` · gudang nonaktif tidak bisa dipilih | Bug nyata & aturan pemilik yang bocor; risiko kecil | [KEPUTUSAN] P14-K1/K2 |
+| **F0 — cepat & pasti** | P4.8 bug kain dasar · P11.5 penimpaan jejak MD · P16.1b pesan rekonsiliasi · P16.2 PDF GRN baru · P14 (hapus `for_order`, satu sumber daftar pelanggan, antrean pelanggan tanpa sales, data UAT) · P13 bukti UI · P15 bug `kind/type` · `restock_service._default_warehouse` · gudang nonaktif tidak bisa dipilih/dipakai PO · label seksi dobel Pengaturan | Bug nyata (terbukti di uji alur) & aturan pemilik yang bocor; risiko kecil | [KEPUTUSAN] P14-K1/K2 |
 | **F1 — lokasi** | P9.1–P9.3 (data lokasi/peran, PO ke lokasi, GRN) · P8 (pilih lokasi + pelanggan wajib di POS) · P9.5 lingkup lokasi | Fondasi untuk P8/P9.4/P10/P15 | P9-K1..K4, P8-K* |
-| **F2 — alur barang** | P9.4 routing otomatis cross-dock/putaway · P9.6 alokasi lokasi+FIFO · P10 transfer antar-PT · P11 penanda roll & sampling | Memakai lokasi F1 | F1 |
+| **F2 — alur barang** | P9.3b jalur label QR · P9.4 routing otomatis cross-dock/putaway · P9.6 alokasi lokasi+FIFO · P10 transfer antar-PT (termasuk P10.5 barang ke SO peminta, P10.6 cek gudang sebelum konfirmasi) · P11 penanda roll & sampling | Memakai lokasi F1 | F1; P10-K*, P11-K1 |
 | **F3 — R&D & desain** | P4 (dua pintu, rantai tahap, labdip multi-warna, Pustaka = keluaran) · P5 · P3 (surat perintah, PNG, Pantone) · P1 (kepemilikan desain, klaim) · P6 (desain di produk, POS, export) | Satu rantai data desain → warna → SKU | P1-K*, P4-K*; P6 bergantung P1.2 |
 | **F4 — komersial** | P2 (SO-12 + nego + pisah kunci/pengadaan) · P15 gabung PR→PO | P15 memakai lokasi tujuan F1; P2 memakai rantai OD | P2-K*, F1 |
 | **F5 — layar** | P16 (GRN CSS, unduh dokumen, Pengaturan) · P17 pratinjau foto · P12 sorotan POS · P7 menu Perbaikan | Bisa paralel sesudah F0; P7 memakai lokasi F1 & roll flag F2 | P7-K*, P12-K* |
@@ -110,13 +112,62 @@ Setiap fase:
 | P8-K1 | Wajib pelanggan + lokasi untuk semua peran POS atau hanya sales | Semua peran yang membuat pesanan |
 | P8-K2 | Satuan lokasi = site (bukan gudang) | Site |
 | P12-K1 | Arti "rekomendasi" | (b) per pelanggan dari desain/kategori yang pernah dibeli |
+| P10-K1 | Barang interco untuk SO X wajib ke SO X (bukan SO lain yang lebih lama)? | Ya |
+| P10-K2 | Roll pilihan lebih panjang dari kebutuhan: kirim utuh (lebih kirim) atau dipotong? | Kirim utuh, selisih tercatat |
+| P11-K1 | MD Quality boleh menutup SPK MD-nya sendiri, atau tetap QC/Admin Gudang? | MD Quality boleh |
 | P14-K1 | 3 pelanggan KSC tanpa sales ditetapkan ke siapa | (pemilik) |
 | P14-K2 | Pelanggan "Umum/Walk-in" untuk semua sales? | Ya, satu per PT |
 | P16-K1 | Setujui susunan baru menu Pengaturan (7 kelompok) | Disajikan dulu sebagai mock |
 
 ---
 
-## 5. Rincian per temuan
+## 5. Verifikasi alur nyata (23 Okt malam, DB simulasi `kn_uat_sim`)
+
+Untuk memastikan analisis bukan tebakan, alur dijalankan sungguhan lewat endpoint resmi (klien API dalam-proses, akun peran
+asli).
+* DB simulasi = salinan persis `kn_uat_23okt` (105 koleksi, 46.575 roll, 8 SO — dicek sama). **Data UAT tidak disentuh.**
+* Layar dicek lewat browser (CDP) di stack simulasi (3064/8064) dan UAT (3062, baca saja).
+* Skrip uji: `deep1.py`–`deep7.py` (scratchpad sesi), `flow_grn_ui*.py`.
+
+| # | Temuan | Yang dijalankan | Hasil nyata | Status |
+|---|---|---|---|---|
+| V1 | P14 | `GET /customers?for_order=true` sebagai `sales2@` dan `sales@` | Keduanya menerima **4 pelanggan KSC** (semua). Daftar CRM: `sales2` 1 (Konveksi), `sales@` 0. Beranda Sales "Pelanggan Saya" memakai `assigned_sales_id` (benar, `home_service.py:59`) → **Beranda dan POS tidak konsisten** | Terbukti + baru |
+| V2 | P8 | `GET /dashboard` sebagai `sales2@` | `customers` = 4 (semua pelanggan PT); stok produk `stock_scope: "global"` tanpa rincian gudang/lokasi | Terbukti |
+| V3 | P1/P12 | Katalog & Terlaris `sales2@`; SO SKU `TEST` untuk Konveksi | `TEST` (eksklusif Butik Bali Indah) **tampil** di katalog dan di **Terlaris**. SO ditolak 400 baru saat disimpan ("EKSKLUSIF untuk pelanggan Butik Bali Indah …") | Terbukti |
+| V4 | P2 | `GET /special-orders/{SORD-261023-0003}/pricing` sebagai `sales2@`; layar `SpecialOrderPricingPanel` | Respons memuat `cost_price`, `margin_pct`, `supplier_name`, `contract_number`. Di layar `LOCK_ROLES` termasuk `sales`; "PO otomatis" bawaan **aktif** (`autoPo=true`) | Terbukti |
+| V5 | P3 | `pdf_resolvers.DOC_REGISTRY` | Tidak ada entri sampel/R&D | Terbukti |
+| V6 | P4 | Data Pustaka Warna & kontrak | 109 warna: 103 `KN`, 5 `TCX`, 1 `TPX` → hanya **6 ber-Pantone**. 0 produk ber-`color_code` KN. LINEN OAT warna 3: **0 kontrak** supplier/makloon & **0 PO** → bila supplier uji ulang disaring kontrak, daftar **kosong** (keputusan P4-K1 wajib) | Terbukti + konteks |
+| V7 | P4.8 | Uji Jest sementara (komponen asli) | Memilih kain dasar → galat render React; state = objek | Terbukti |
+| V8 | P9 | Daftar gudang form PO (CST) + PO ke gudang nonaktif | Daftar memuat **GU-CST, WH-BDG, WH-SBY (nonaktif)**. PO ke **WH-BDG nonaktif DITERIMA** (`CST/PO-00001` di simulasi) | Terbukti |
+| V9 | P9 | PO → RCM-TRANSIT, GRN dibuat dengan gudang **RCM-WOVEN**, 6 roll | Ke-6 roll tetap di **RCM-TRANSIT** (`grn.warehouse_id` diabaikan), status karantina, `journey.stage=received_transit`, routing `store` | Terbukti |
+| V10 | P9 | Saran putaway & buat Putaway Order 2 roll berlabel QR | Saran: `ready_count 0`. PA ditolak: *"Roll RL-46576 belum terverifikasi (stage: received_transit)"* → **tanpa RFID tidak ada jalan dari transit ke gudang simpan** | Terbukti |
+| V11 | P9 | SO backorder (CST, ALICE KNIT, stok 0) lalu barang diterima & SPK ditutup | Roll baru **otomatis dicadangkan** ke SO yang menunggu (CST/SO-00002 & 00003) — bagus. Tetapi routing tetap `store` dan stage tetap transit (tidak ditandai langsung ke SO / cross-dock) | Terbukti (sebagian sudah jalan) |
+| V12 | P11 | SPK MD Quality 6 roll, MD mengecek 2, MD menutup | **Peran MD Quality tidak boleh menutup SPK-nya sendiri** (403 "butuh inspection.decide / qc.release") — harus QC/Admin Gudang | **Baru** |
+| V13 | P11 | QC menutup SPK MD (2/6 dicek) | Diterima; ke-6 roll lepas karantina. 4 roll tak dicek diberi `qc_via_sampling {inspected_rolls: 2}` — penanda **4-point** dipakai untuk sampling **MD** (arti tercampur). Semua roll dapat `qc_passed_at` | Terbukti |
+| V14 | P11 | SPK 4-point dibuat dari SPK MD lalu ditutup 2/6 | 6 baris (semua roll); tutup ditolak **"SPK QC 4-point: periksa SEMUA roll dulu."**. Dibuat dengan `roll_ids` 2 roll lewat API → 2 baris (server mendukung, **layar tidak**) | Terbukti |
+| V15 | P11 | Data roll sesudah MD lalu 4-point | **BUG BARU**: MD menulis per field (`inspection.md_quality_at/by`, `qc_inspection_service.py:163`), 4-point **menimpa seluruh objek `inspection`** (`qc_inspection_service.py:311`) → jejak "dicek MD oleh siapa/kapan" **hilang** dari roll | **Baru** |
+| V16 | P10 | SO KSC kurang 60 kg → "ambil dari PT lain" CST (gudang bersama RCM) dengan **4 roll dipilih** (RL-00951..954) | Permintaan internal menyimpan roll pilihan; transaksi interco **tanpa** roll. Tugas gudang memindah **RL-00895, RL-00896, RL-00897-1** (FIFO, **satu roll dipotong**), asal = tujuan = RCM-KNITTING, tanpa pengiriman | Terbukti |
+| V17 | P10 | Sesudah transfer di-ACC | Roll pindahan dicadangkan ke **KSC/SO-00009 (SO lain yang lebih lama)**, sedangkan **KSC/SO-00012 yang memutus "Penuh — 60 transfer" tetap "Menunggu stok"** → barang interco **tidak terikat ke SO pemintanya** | **Baru** |
+| V18 | P10 | Sumber Kanda (SRG-01 dedicated) | Interco **sudah "confirmed"** (dokumen jual-beli internal lahir), tetapi ACC transfer ditolak 409 `INTERCO_DEST_RULES` (gudang khusus Kanda). Roll yang dicoba RL-10111.. (bukan pilihan RL-10168..170). SO macet — **jalan buntu**: dokumen interco ada, barang tidak bisa pindah | **Baru** |
+| V19 | P16.1 | Layar GRN tahap Hitung (desktop & HP, simulasi) | HP: isian Panjang/Kg/Lot/Grade/Roll manual berjejal ("Panja…", grade terpotong — audit `clipped`). Lihat `bukti_analisis_23okt/grn_hitung_hp.png` | Terbukti |
+| V20 | P16.1 | Tab Rekonsiliasi saat masih menghitung (SJ 1.000 yd·4 roll, dihitung 50 yd·2 roll) | Tertulis **"Tidak ada selisih — surat jalan cocok dengan hitungan fisik."** (`GrnReconPanel.jsx:71–73`: selisih baru dihitung sesudah *Selesai hitung*, tetapi pesan "cocok" tampil sebelumnya). Lihat `bukti_analisis_23okt/grn_rekon_belum_hitung.png` | **Baru** |
+| V21 | P16.2 | `GET /pdf/render/goods_receipt/{id}` | Dengan id GRN baru → **404** "Dokumen sumber tidak ditemukan"; dengan id PO → 200 (bukti terima lama) | Terbukti |
+| V22 | P17 | Unduh lampiran retur SRET-00004 | `Content-Disposition: attachment` → browser selalu mengunduh | Terbukti |
+| V23 | P13 | `GET /sales/keep-pending` (lihat §P13) | Admin Sales 1 SO, `sales2` 0 — SO dibuat admin tanpa sales | Terbukti |
+
+**Tambahan ke rencana dari verifikasi ini** (sudah dimasukkan ke bagian masing-masing):
+* **P9.3b** jalur label QR setara RFID;
+* **P9.4b** tandai cross-dock saat roll baru dicadangkan;
+* **P10.5** barang interco terikat ke SO peminta;
+* **P10.6** cek gudang tujuan **sebelum** interco dikonfirmasi;
+* **P11.5** perbaiki penimpaan `inspection`;
+* **P11.6** siapa yang menutup SPK MD;
+* **P14.5** satu sumber daftar pelanggan (Beranda = POS);
+* **P16.1b** pesan rekonsiliasi.
+
+---
+
+## 6. Rincian per temuan
 
 ## P1 — Produk eksklusif & galeri desain
 
@@ -787,7 +838,13 @@ kacau: transit tanpa arti, gudang GRN diabaikan, gudang nonaktif tetap bisa dipi
   * Gudang GRN diturunkan dari PO (tidak bisa diganti ke lokasi lain).
   * `journey.stage` diisi sesuai peran gudang.
   * Label QR diterima setara RFID untuk syarat putaway (`label_verified`).
-* **P9.4 Keputusan routing otomatis** setelah label/hitung (`putaway_order_service.decide_routing`):
+* **P9.3b Jalur label QR** (V10): roll berlabel QR yang sudah dipindai/diverifikasi berstatus `label_verified` dan boleh
+  masuk Putaway Order, setara `tag_verified` RFID. Tanpa ini lokasi tanpa RFID tidak punya jalan resmi dari transit ke
+  gudang simpan.
+* **P9.4 Keputusan routing otomatis** setelah label/hitung (`putaway_order_service.decide_routing`).
+  **Catatan V11**: pencadangan otomatis roll baru ke backorder SO **sudah berjalan** (`auto_fulfill_backorders`). Yang
+  kurang (**P9.4b**): roll itu tidak ditandai `cross_dock` dan tetap ber-stage transit, sehingga layar gudang tidak tahu
+  roll itu langsung ke tugas ambil, bukan ke rak.
   * ada backorder SO/OD entitas itu untuk produk tersebut → **reservasi roll yang baru datang** (`roll_ids`) dan routing
     `cross_dock` → tugas ambil;
   * selain itu → **draf Putaway Order otomatis** ke gudang storage **di lokasi yang sama** (filter lokasi wajib di
@@ -867,10 +924,20 @@ interco dipaksa ke satu jalur (ganti pemilik di tempat).
   "perlu kirim dari <lokasi>".
 * **P10.4** Transfer `inter_entity` lama dari POS (`routers/transfers.py:303–430`, `CheckoutDrawer.jsx:228`) memakai
   aturan yang sama.
+* **P10.5 Barang interco terikat ke SO peminta** (V17): roll yang berpindah karena keputusan pemenuhan SO X dicadangkan
+  **langsung ke SO X** (`reserved_ref` diisi saat ganti pemilik/terima), bukan dilepas ke antrean backorder umum, yang
+  mendahulukan SO lain yang lebih lama.
+* **P10.6 Cek gudang tujuan sebelum interco dikonfirmasi** (V18): bila roll penjual ada di gudang **dedicated** PT lain,
+  keputusan pemenuhan langsung menawarkan mode **kirim fisik** (P10.1), bukan membuat dokumen interco yang lalu buntu di
+  409. Dokumen interco yang sudah terlanjur buntu perlu jalur batal/ubah ke kirim fisik.
+* **P10.7 Tidak memotong roll diam-diam** (V16): bila roll dipilih, yang berpindah adalah roll itu utuh. Selisih qty
+  dicatat sebagai lebih/kurang kirim ([KEPUTUSAN] P10-K2), bukan dengan memotong roll lain.
 
 ### Kriteria terima
-1. SO KSC dipenuhi dari stok CST di RCM-WOVEN (bersama) → pemilik roll berganti otomatis, **tanpa** SJ/dispatch. Roll
-   yang dipilih di dialog adalah roll yang berpindah.
+1. SO KSC dipenuhi dari stok CST di RCM-WOVEN (bersama):
+   * pemilik roll berganti otomatis, **tanpa** SJ/dispatch;
+   * roll yang dipilih di dialog adalah roll yang berpindah, utuh (tanpa potong);
+   * roll **langsung dicadangkan ke SO itu** walau ada SO lain yang lebih lama dengan produk sama (V17).
 2. SO KSC dipenuhi dari stok Kanda di SRG-01 (dedicated) → transfer fisik SRG-01 → transit lokasi SO, dengan SJ dan
    penerimaan. Pemilik berganti saat diterima.
 3. Ketersediaan PT lain menampilkan lokasi dan mode.
@@ -933,6 +1000,11 @@ MD Quality boleh mengecek **sebagian** roll (sampling); sekarang sistem memaksa 
   * chip **MDQ ✓ / MDQ sampling / belum** dan **4-pt ✓ / belum** di daftar roll, detail roll, baris SPK, pilih roll SO,
     dan Lokasi Rak;
   * filter stok "belum MDQ" / "belum 4-point".
+* **P11.5 Perbaiki penimpaan `inspection`** (V15): `qc_inspection_service.inspect_roll` menulis per field
+  (`inspection.points`, `inspection.grade`, …) seperti `record_quality`, sehingga jejak MD (`md_quality_at/by`) tidak
+  hilang saat 4-point disimpan. Ditambah uji regresi: MD → 4-point → kedua jejak ada.
+* **P11.6 Siapa menutup SPK MD** (V12): sekarang MD Quality **tidak bisa** menutup SPK-nya sendiri (butuh
+  `inspection.decide`/`qc.release`, dipegang QC/Admin Gudang). [KEPUTUSAN] P11-K1.
 
 ### Kriteria terima
 1. SPK MD dengan 10 roll, 2 dicek → bisa ditutup. 2 roll = `md_quality_checked`, 8 roll = `md_quality_via_sampling`.
@@ -940,6 +1012,7 @@ MD Quality boleh mengecek **sebagian** roll (sampling); sekarang sistem memaksa 
 2. SPK 4-point untuk 3 dari 10 roll → bisa dibuat dan ditutup setelah 3 roll dicek.
 3. Setiap roll menampilkan dua status yang benar. Filter stok berfungsi (uji API + UI).
 4. Regresi: uji inspeksi backend & `f14SpkOneDecision` tetap hijau.
+5. MD dicek lalu 4-point disimpan → roll tetap menyimpan `md_quality_at/by` **dan** hasil 4-point (V15).
 
 ---
 
@@ -1060,6 +1133,9 @@ yang menambal gejala (data) dengan melonggarkan aturan.
   katalog (P8).
 * **P14.4** Pelanggan walk-in/umum: [KEPUTUSAN] P14-K2 — apakah ada pelanggan "Umum/Walk-in" yang boleh dipakai semua
   sales?
+* **P14.5 Satu sumber daftar pelanggan** (V1): Beranda Sales "Pelanggan Saya" sudah benar (`home_service.py:59`
+  `assigned_sales_id`), tetapi POS desktop/HP mengambil `customers` dari `/dashboard` (semua pelanggan PT, batas 100),
+  dan OD/harga khusus/sampel dari `for_order`. Ketiganya disatukan ke satu endpoint bercakupan `scope_query`.
 
 ### Kriteria terima
 1. `sales2@` di semua pemilih pelanggan (POS desktop/HP, OD, harga khusus, sampel) hanya melihat pelanggan miliknya
@@ -1147,8 +1223,19 @@ catatan trial). Bila pernah disampaikan, hilangnya terjadi saat pencatatan.
 * **Responsif rusak di langkah Hitung**: `GrnCountPanel.jsx:57` `grid-cols-4/5/6` tanpa breakpoint, dan input tanpa
   label (hanya placeholder). Di HP kolom ±50px.
 
-**Rencana**: kartu `section-card` + `section-head` ("Langkah 1/2/3" + judul), `tab-bar` standar, `data-table`, `.field`
-berlabel, grid `grid-cols-2 sm:grid-cols-n`.
+**Dibuktikan di layar (V19, V20)** — `bukti_analisis_23okt/`:
+* **HP, langkah Hitung**: kolom Panjang/Kg/Lot/Grade/Roll manual berjejal (placeholder terpotong "Panja…", grade
+  terpotong).
+* **BUG pesan rekonsiliasi**: tab Rekonsiliasi bisa dibuka saat masih menghitung. Dengan SJ 1.000 yd · 4 roll dan
+  terhitung 50 yd · 2 roll, layar menulis *"Tidak ada selisih — surat jalan cocok dengan hitungan fisik."*
+  (`GrnReconPanel.jsx:71–73`). Selisih baru dihitung sesudah *Selesai hitung*, tetapi pesan "cocok" tampil sebelumnya
+  dan menyesatkan.
+
+**Rencana**:
+* kartu `section-card` + `section-head` ("Langkah 1/2/3" + judul), `tab-bar` standar, `data-table`, `.field` berlabel,
+  grid `grid-cols-2 sm:grid-cols-n`;
+* **P16.1b**: sebelum hitung selesai, tab Rekonsiliasi menampilkan "Rekonsiliasi dihitung sesudah *Selesai hitung*"
+  plus pratinjau selisih sementara (SJ − terhitung), bukan "cocok".
 **Terima**: tiga langkah tampil dalam kartu putih dengan tab standar. Lebar 375px → maks 2 kolom berlabel. Audit
 tata letak CDP (tanpa gulir samping/tumpang tindih) lulus di desktop & HP.
 
