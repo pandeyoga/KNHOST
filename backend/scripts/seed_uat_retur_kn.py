@@ -64,7 +64,8 @@ async def pay_exact(c: Ctx, so_id: str) -> None:
     """Lunasi SISA tagihan persis (pembulatan ke atas dulu ditolak "melebihi outstanding")."""
     so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0})
     total = float(so.get("grand_total") or so.get("total") or 0)
-    paid = float(so.get("paid_amount") or so.get("amount_paid") or 0)
+    paid = max(float(so.get("paid_amount") or so.get("amount_paid") or 0),
+               sum(float(x.get("amount") or 0) for x in so.get("payments") or []))   # + saldo/nota kredit yang sudah dipakai
     rest = round(total - paid, 2)
     if so.get("payment_status") == "paid" or rest <= 0:
         return

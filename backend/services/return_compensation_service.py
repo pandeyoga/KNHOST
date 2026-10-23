@@ -55,6 +55,13 @@ async def record_cutloss(ret: Dict[str, Any], product_id: str, defect_yard: floa
             raise ValueError("Perlakuan potongan cacat: bs | dispose")
         await split.assert_can_choose(actor, ret.get("entity_id", ""))
     it = _item(ret, product_id)
+    roll_id = (roll_id or "").strip()
+    claimed = list(it.get("roll_ids") or [])
+    if roll_id and claimed and roll_id not in claimed:   # UAT 23 Okt — boleh nomor roll (RL-…), asal roll klaim retur ini
+        r = await db.inventory_rolls.find_one({"id": {"$in": claimed}, "roll_no": roll_id}, {"_id": 0, "id": 1})
+        if not r:
+            raise ValueError(f"Roll {roll_id} bukan roll klaim retur ini untuk produk tersebut.")
+        roll_id = r["id"]
     prod = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
     base = (prod.get("base_unit") or it.get("unit") or "yard").lower()
     qty_base = defect_yard if base == QC_UNIT else round(await to_base_qty(prod, defect_yard, QC_UNIT), 4)

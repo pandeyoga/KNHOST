@@ -613,6 +613,13 @@ async def settle_return(
                                    existing.get("entity_id") or ctx.active_entity_id,
                                    action="menerima barang retur di sini",
                                    field_label="Gudang retur")
+    if payload.outcome == st.OUTCOME_NEGO and not (payload.payout or "").strip():
+        try:   # UAT 23 Okt — "kurangi piutang SO asal" tidak boleh melebihi sisa tagihan SO asal
+            chk = await return_service.preview_settlement(return_id, payload.outcome, [d.dict() for d in payload.item_decisions])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        if chk.get("problem"):
+            raise HTTPException(status_code=409, detail=chk["problem"])
     if payload.exchange:
         if payload.outcome != st.OUTCOME_STORE_CREDIT:
             raise HTTPException(status_code=400, detail="Tukar barang diselesaikan sebagai Store Credit (saldo untuk pesanan pengganti).")
@@ -647,6 +654,10 @@ async def settle_return(
         decision["logistics_costs"] = existing["logistics_costs"]   # KLR-11 — snapshot penanggung ongkir
     await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision": decision}})
     doc["decision"] = decision
+    if photo_discount:   # UAT 23 Okt — SPK QC retur yang lahir saat ACC tidak lagi menggantung di papan QC
+        from services import inspection_service as ins
+        await ins.close_unneeded_return_spk(return_id, user, "Diselesaikan diskon dari foto/video — barang tidak kembali, "
+                                                             "QC fisik tidak diperlukan")
     await audit(user.get("name", ""), "sales_return_settled", "sales_return", return_id,
                 {"outcome": payload.outcome, "decision_note": decision["note"],
                  "return_warehouse_id": payload.return_warehouse_id})
@@ -682,6 +693,8 @@ async def settle_preview(return_id: str, request: Request, payload: SalesReturnS
         out["blocked"] = ""
     except ValueError as e:
         out["blocked"] = str(e)
+    if not out["blocked"] and out.get("problem"):
+        out["blocked"] = out["problem"]
     if payload.exchange:
         try:
             _exchange_allowed(existing)

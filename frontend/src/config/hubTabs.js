@@ -79,7 +79,8 @@ export const HUB_TABS = {
     // F-11-layar (keputusan pemilik 2026-10-21) — Gudang menscan terima/kirim/tiba & QC memeriksa:
     // server memberi mereka daftar approved/inspecting tanpa field uang (bukan `sales_return.view`).
     // 23 Okt — Admin Sales = pemutus bawaan terima/tolak per roll (`sales_return.decide_rolls`).
-    { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "sales_admin", "manager", "warehouse", "qc"] },
+    // UAT 23 Okt — + MD & MD Quality: cutloss (catat qty cacat, pecah roll) dikerjakan di detail retur.
+    { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "sales_admin", "manager", "warehouse", "qc", "md", "md_quality"] },
     { view: "interco-returns",   label: "Retur Antar-PT",        roles: ["admin", "manager", "warehouse", "finance", "sales_admin"] },
     { view: "purchase-returns",  label: "Retur ke Supplier (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
     { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },

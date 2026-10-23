@@ -133,7 +133,8 @@ def test_ln092_cutloss_recorded_by_md_valued_by_finance_and_settled_as_nego():
     d = requests.post(f"{BASE}/sales-returns/{rid}/compensation", headers=FIN,
                       json={"lines": [{"kind": "cutloss", "product_id": "pX"}], "note": "cacat 15 yd sesuai QC"})
     assert d.status_code == 200 and d.json()["total"] == 13500, d.text
-    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
+    # UAT 23 Okt — SO asal fixture hampir lunas: "kurangi piutang SO asal" ditolak; pilihan layar bawaan = jadi saldo.
+    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego", "payout": "store_credit"})
     assert st.status_code == 200, st.text
     cn = DB.credit_notes.find_one({"return_id": rid})
     assert cn["net_amount"] == 13500 and cn["lines"][0]["quantity"] == 15 and cn["cogs_amount"] == 0
@@ -150,7 +151,7 @@ def test_ln092_discount_from_photo_without_goods():
                       json={"lines": [{"kind": "discount", "product_id": "pX", "qty": 5, "amount": 7500,
                                        "evidence_ids": [f"att_{rid}"]}], "note": "foto noda 5 yd"})
     assert d.status_code == 200, d.text
-    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
+    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego", "payout": "store_credit"})
     assert st.status_code == 200, st.text
     doc = DB.sales_returns.find_one({"id": rid})
     assert doc["status"] == "nego_settled" and DB.credit_notes.find_one({"return_id": rid})["net_amount"] == 7500

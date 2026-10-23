@@ -12,9 +12,19 @@ const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];
 
+// UAT 23 Okt — roll dipilih dari roll klaim retur (dulu teks bebas: nomor roll yang diketik terkirim sebagai id roll,
+// sehingga "Pecah roll" selalu gagal "Roll tidak ada di gudang").
+const rollOpts = (ret, pid) => {
+  const it = (ret.items || []).find((x) => x.product_id === pid) || {};
+  return (it.roll_ids || []).map((id) => ({ value: id, label: (it.roll_nos || {})[id] || id }));
+};
+const onlyRoll = (ret, pid) => { const r = rollOpts(ret, pid); return r.length === 1 ? r[0].value : ""; };
+
 function CutlossForm({ ret, onDone }) {
   const opts = (ret.items || []).map((it) => ({ value: it.product_id, label: it.product_name || it.product_id }));
-  const [f, setF] = useState({ product_id: opts[0]?.value || "", defect_yard: "", roll_id: "", note: "", defect_from: "", defect_to: "", treatment: "" });
+  const [f, setF] = useState({ product_id: opts[0]?.value || "", defect_yard: "", roll_id: onlyRoll(ret, opts[0]?.value), note: "",
+    defect_from: "", defect_to: "", treatment: "" });
+  const rolls = rollOpts(ret, f.product_id);
   const [err, setErr] = useState("");
   const submit = async () => {
     setErr("");
@@ -24,7 +34,8 @@ function CutlossForm({ ret, onDone }) {
   };
   return (
     <div className="flex flex-wrap items-end gap-2 text-xs" data-testid="cutloss-record-form">
-      <div className="w-56"><KNSelect data-testid="cutloss-product" value={f.product_id} options={opts} searchable={false} onValueChange={(v) => setF({ ...f, product_id: v })} /></div>
+      <div className="w-56"><KNSelect data-testid="cutloss-product" value={f.product_id} options={opts} searchable={false}
+        onValueChange={(v) => setF({ ...f, product_id: v, roll_id: onlyRoll(ret, v) })} /></div>
       <label className="flex flex-col gap-1">Qty cacat (yard)
         <input data-testid="cutloss-defect-yard" type="number" min={0} step="0.01" className="field w-28" value={f.defect_yard} onChange={(e) => setF({ ...f, defect_yard: e.target.value })} /></label>
       <label className="flex flex-col gap-1">Posisi cacat yard awal–akhir (opsional)
@@ -33,8 +44,9 @@ function CutlossForm({ ret, onDone }) {
       <fieldset className="flex flex-col gap-1" data-testid="cutloss-treatment">Potongan cacat
         <span className="flex gap-2">{[["bs", "Masuk stok BS"], ["dispose", "Dibuang"]].map(([v, l]) => (
           <label key={v} className="flex items-center gap-1"><input type="radio" name="cutloss-treatment" data-testid={`cutloss-treatment-${v}`} checked={f.treatment === v} onChange={() => setF({ ...f, treatment: v })} />{l}</label>))}</span></fieldset>
-      <label className="flex flex-col gap-1">No. roll (opsional)
-        <input data-testid="cutloss-roll" className="field w-32" value={f.roll_id} onChange={(e) => setF({ ...f, roll_id: e.target.value })} /></label>
+      <label className="flex flex-col gap-1">Roll (wajib bila roll dipecah)
+        <span className="w-48"><KNSelect data-testid="cutloss-roll" value={f.roll_id} searchable={false} onValueChange={(v) => setF({ ...f, roll_id: v })}
+          options={[{ value: "", label: "— kain tetap di pelanggan —" }, ...rolls]} /></span></label>
       <input data-testid="cutloss-note" className="field w-48" placeholder="Catatan QC" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
       <button type="button" data-testid="cutloss-record-submit" onClick={submit} className="primary-button text-xs">Catat qty cacat</button>
       {err && <p className="w-full text-[#C62828]" data-testid="cutloss-record-error">{err}</p>}

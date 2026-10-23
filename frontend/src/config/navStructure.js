@@ -189,7 +189,8 @@ export const NAV_STRUCTURE = [
     id:    "returns-hub",
     label: "Retur",
     icon:  RotateCcw,
-    roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance", "qc"],   // qc: F-11-layar
+    // qc: F-11-layar · md & md_quality (UAT 23 Okt): cutloss retur — catat qty cacat, pecah roll, SJ potongan baik
+    roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance", "qc", "md", "md_quality"],
     hub:   "returns-hub",
   },
 

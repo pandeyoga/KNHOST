@@ -1044,6 +1044,18 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
 RETURN_CONDITIONS = ("ok", "minor", "damaged")
 
 
+async def close_unneeded_return_spk(return_id: str, actor: Dict[str, Any], reason: str) -> Optional[Dict[str, Any]]:
+    """UAT 23 Okt — SPK QC retur yang lahir otomatis saat ACC tetapi tidak lagi diperlukan (retur diselesaikan diskon
+    dari foto, barang tidak kembali) DITUTUP dengan alasan — dulu menggantung sebagai Draf di papan QC.
+    Hanya SPK yang belum ada satu baris pun diperiksa."""
+    ref = await spk_for_ref(KIND_RETURN_CUSTOMER, return_id, OPEN_STATUSES)
+    doc = await db[COLL].find_one({"id": ref["id"]}, {"_id": 0}) if ref else None
+    if not doc or any(ln.get("inspected_at") for ln in doc.get("lines") or []):
+        return None
+    return await _save(doc, "closed", "Ditutup — QC tidak diperlukan", actor, reason,
+                       status=STATUS_CLOSED, closed_reason=reason, closed_at=now_iso())
+
+
 async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payload: Dict[str, Any],
                                actor: Dict[str, Any], part: str) -> Dict[str, Any]:
     """23 Okt — isi satu baris SPK retur pelanggan dengan form 4-point yang sama (cacat per interval, poin, grade

@@ -273,12 +273,14 @@ def _default_settlement(order: Dict[str, Any]) -> str:
 
 async def _source_bill_split(ret: Dict[str, Any], order: Dict[str, Any], settlement: str, gross: float) -> Tuple[bool, float]:
     """LN-091 / KLR-10 — (berlaku?, nominal) bagian Nota Kredit yang memotong sisa tagihan SO ASAL lebih dulu.
-    Hanya SO asal; utang SO lain tidak ikut dipotong — kelebihannya refund/saldo sesuai pilihan customer."""
+    Hanya SO asal; utang SO lain tidak ikut dipotong — kelebihannya refund/saldo sesuai pilihan customer.
+    UAT 23 Okt — Nego "kurangi piutang SO asal" (settlement `nego`) dulu hanya mengkredit GL 1-1200: sisa tagihan SO
+    tidak turun, pelanggan tetap ditagih penuh. Kini ikut dipotong seperti `ar`."""
     bill_first = False
     if settlement in ("cash", "store_credit") and gross > 0 and order:
         from services.return_policy_service import return_assumptions
         bill_first = bool((await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True))
-    if (settlement == "ar" or bill_first) and gross > 0 and order:
+    if (settlement in ("ar", "nego") or bill_first) and gross > 0 and order:
         open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
         return True, round(min(gross, max(open_amt, 0.0)), 2)
     return False, 0.0
@@ -1275,10 +1277,15 @@ async def release_quarantine(return_id: str, actor: str,
         if grade_hist_entry:
             _roll_update["$push"] = {"grade_history": grade_hist_entry}
         await db.inventory_rolls.update_one({"id": r["id"]}, _roll_update)
-        if action != "scrap" and grade != old_grade:
+        # UAT 23 Okt — kerugian turun grade dibanding grade SAAT DIJUAL: penyelesaian retur sudah menurunkan roll ke grade
+        # QC (mis. A→B) sebelum release, sehingga dulu release B→B tidak pernah mencatat kerugian dan persediaan grade B
+        # tetap bernilai seperti grade A.
+        sold_grade = next((h.get("grade_before") for h in reversed(r.get("return_history") or [])
+                           if h.get("return_id") == return_id and h.get("grade_before")), "") or old_grade
+        if action != "scrap" and grade != sold_grade:
             from services import return_grade_impairment as _rgi
             imp = await _rgi.record({"id": return_id, "number": ret_number, "entity_id": _ret_doc.get("entity_id", "")},
-                                    r, old_grade, grade, actor)
+                                    r, sold_grade, grade, actor)
             if imp:
                 impairment_total = round(impairment_total + imp["amount"], 2)
         await db.inventory_movements.insert_one({
@@ -1552,6 +1559,10 @@ async def preview_settlement(return_id: str, outcome: str, item_decisions: List[
                       "amount": ar_amt})
     if rest > 0:
         split.append({"kind": settlement, "label": SETTLE_SPLIT_LABEL.get(settlement, "Pengurang piutang"), "amount": rest})
+    problem = ""
+    if settlement == "nego" and rest > 0 and fig["order"]:
+        problem = (f"Sisa tagihan {ret.get('order_number') or 'SO asal'} hanya {rupiah(ar_amt)}, Nota Kredit {rupiah(fig['gross'])}. "
+                   "Pilih 'Jadi saldo' atau 'Refund tunai' untuk kelebihannya — utang SO lain tidak ikut dipotong.")
     cash_acc = (refund_account_code or "1-1100") if settlement == "cash" else ""
     raw = gl_service.sales_return_lines(return_net=fig["net"], return_ppn=fig["ppn"], return_cogs=fig["cogs"],
                                         is_cash=settlement == "cash", settlement=settlement, cash_account_code=cash_acc,
@@ -1568,7 +1579,7 @@ async def preview_settlement(return_id: str, outcome: str, item_decisions: List[
     return {"outcome": outcome, "settlement": settlement, "post_stock": post_stock,
             "lines": fig["lines"], "net_amount": fig["net"], "ppn_amount": fig["ppn"], "gross_amount": fig["gross"],
             "cogs_amount": fig["cogs"], "split": split, "journal": journal,
-            "source_bill_checked": applies, "order_number": ret.get("order_number", ""),
+            "source_bill_checked": applies, "order_number": ret.get("order_number", ""), "problem": problem,
             "basis": ("Nilai diputus Finance (cutloss/diskon)" if outcome == st.OUTCOME_NEGO
                       else "Harga transaksi neto SO asal × qty diselesaikan; PPN mengikuti rasio PPN SO asal")}
 

@@ -285,6 +285,8 @@ export const ROLE_NAV = {
       "pembelian", "sourcing", "purchase-requisitions", "rfq", "purchase-orders", "purchasing", "master-pembelian", "suppliers",
       // pantau inspeksi (acuan sample) — menu Kualitas (23 Okt)
       "quality-hub", "inspections",
+      // UAT 23 Okt — cutloss retur: catat qty cacat & pecah roll di detail retur (izin server sudah ada, layar belum)
+      "returns",
       // Persetujuan MD (desain/sample) diputus di Meja MD — Pusat Persetujuan lintas modul bukan haknya.
       "document-center", "doc-trace",
     ],
@@ -317,7 +319,8 @@ export const ROLE_NAV = {
   // 23 Okt — keduanya bekerja di menu Kualitas (dulu lewat Gudang › Operasi Gudang).
   md_quality: {
     inherit: null,
-    add: ["home", "hr-my-profile", "quality-hub", "inspections", "document-center", "doc-trace"],
+    // UAT 23 Okt — + Retur Pelanggan: panel Cutloss & diskon (catat qty cacat, pecah roll, SJ potongan baik).
+    add: ["home", "hr-my-profile", "quality-hub", "inspections", "returns", "document-center", "doc-trace"],
     remove: [],
   },
   qc: {

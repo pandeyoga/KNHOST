@@ -75,6 +75,8 @@ def test_preview_sama_dengan_nota_kredit_dan_jurnal_tukar_barang():
                        json={"items": [{"product_id": PID, "qty_yard": 12}]})
     assert rp.status_code == 200, rp.text
     assert rp.json()["summary"]["to_bill"] > 0     # pengganti lebih banyak → selisih ditagih
+    # Stok uji tidak boleh habis oleh putaran tes berulang (tes LN-090 memakai produk yang sama).
+    requests.post(f"{BASE}/sales-orders/{rp.json()['order']['id']}/cancel", headers=ADMIN, json={"reason": "TEST bersihkan pengganti"})
 
 
 def test_preview_so_belum_lunas_potong_tagihan_dulu():

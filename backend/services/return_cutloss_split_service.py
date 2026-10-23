@@ -14,7 +14,8 @@ from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-
 
 ROLES_KEY = "returns.cutloss_treatment_roles"
 TREATMENTS = {"bs": "Masuk stok BS", "dispose": "Dibuang"}
-SPLIT_STATUSES = ("inspected",)
+# UAT 23 Okt — pecah roll juga sesudah retur diselesaikan Nego: kerja fisik MD boleh menyusul keputusan uang.
+SPLIT_STATUSES = ("inspected", "nego_settled")
 EPS = 0.001
 
 
@@ -48,7 +49,9 @@ async def _plan(ret: Dict[str, Any], e: Dict[str, Any]) -> Dict[str, Any]:
     if e.get("treatment") not in TREATMENTS:
         raise ValueError("Pilih perlakuan potongan cacat dulu: Masuk stok BS atau Dibuang.")
     roll = await db.inventory_rolls.find_one({"id": e["roll_id"]}, {"_id": 0})
-    if not roll or roll.get("status") not in PHYSICAL_ROLL_STATUSES:
+    if roll and roll.get("status") == "delivered" and not _received_at(ret, roll["id"]):
+        raise ValueError("Roll belum diterima gudang — scan Terima/Tiba di panel Perjalanan Retur dulu.")
+    if not roll or (roll.get("status") not in PHYSICAL_ROLL_STATUSES and not _received_at(ret, roll["id"])):
         raise ValueError("Roll tidak ada di gudang — tidak bisa dipecah.")
     prod = await db.products.find_one({"id": roll["product_id"]}, {"_id": 0}) or {}
     length = float(roll.get("length_remaining") or 0)
@@ -71,6 +74,42 @@ async def _plan(ret: Dict[str, Any], e: Dict[str, Any]) -> Dict[str, Any]:
                            "label": "Baik — kirim balik ke customer" if kind == "good" else TREATMENTS[e["treatment"]]})
     summary = " · ".join(f"{p['qty']:g} {p['unit']} {'baik' if p['kind'] == 'good' else TREATMENTS[p['treatment']].lower()}" for p in pieces)
     return {"roll": roll, "pieces": pieces, "summary": summary, "unit_cost": cost}
+
+
+def _received_at(ret: Dict[str, Any], roll_id: str) -> str:
+    """Gudang tempat roll retur discan Terima/Tiba (Perjalanan Retur); kosong = belum di gudang."""
+    from services.return_journey_service import physical_warehouse
+    return physical_warehouse(ret, roll_id)
+
+
+async def _intake(ret: Dict[str, Any], e: Dict[str, Any], roll: Dict[str, Any]) -> None:
+    """UAT 23 Okt — roll cutloss yang SUDAH diterima gudang lewat Perjalanan Retur masih berstatus `delivered`
+    (milik pelanggan: penyelesaian Nego tidak me-restock), sehingga dulu tidak pernah bisa dipecah. Sebelum dipecah,
+    roll masuk gudang di lokasi fisik hasil scan (status hold) dan nilainya kembali ke persediaan:
+    Dr Persediaan / Cr HPP (qty × biaya roll). Jurnal pecah yang sudah ada lalu tepat: potongan baik dikirim balik
+    (Dr HPP / Cr Persediaan → netto nol), potongan BS tetap di persediaan (HPP qty cacat dibalik), potongan dibuang
+    (netto Dr Beban cutloss dibuang / Cr HPP)."""
+    wh = _received_at(ret, roll["id"])
+    entity = roll.get("owner_entity_id") or ret.get("entity_id", "")
+    qty = float(roll.get("length_remaining") or 0)
+    cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
+    value = round(qty * cost, 2)
+    claim = await db.inventory_rolls.find_one_and_update(
+        {"id": roll["id"], "status": "delivered"},
+        {"$set": {"status": "hold", "warehouse_id": wh, "updated_at": now_iso(),
+                  "cutloss_intake": {"return_id": ret["id"], "ctl_id": e["id"], "warehouse_id": wh, "qty": qty,
+                                     "value": value, "at": now_iso()}}})
+    if not claim:
+        raise ValueError("Roll sedang diubah proses lain — muat ulang.")
+    await db.inventory_movements.insert_one({
+        "id": new_id("mov"), "product_id": roll["product_id"], "warehouse_id": wh, "owner_entity_id": entity,
+        "type": "return_cutloss_intake", "movement_type": "return_cutloss_intake", "direction": "in",
+        "quantity": qty, "unit": roll.get("unit", ""), "roll_id": roll["id"], "qty_rolls": 1, "ref_type": "sales_return",
+        "ref_id": ret["id"], "source_document": ret["id"], "timestamp": now_iso(),
+        "notes": f"Roll cutloss masuk gudang untuk dipecah (retur {ret.get('number', '')})"})
+    if value > 0:
+        await _post(("persediaan.persediaan", "persediaan.hpp"), value, f"{e['id']}:{roll['id']}:intake", entity,
+                    f"Roll cutloss masuk gudang · retur {ret.get('number', '')} · {roll.get('roll_no', '')}")
 
 
 async def preview(ret: Dict[str, Any], ctl_id: str) -> Dict[str, Any]:
@@ -104,6 +143,9 @@ async def execute(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, Any]) -> Di
         raise ValueError("Roll cutloss ini sudah dipecah.")
     await assert_can_choose(actor, ret.get("entity_id", ""))
     plan = await _plan(ret, e)
+    if plan["roll"].get("status") == "delivered":
+        await _intake(ret, e, plan["roll"])
+        plan = await _plan(ret, e)
     parent, pieces = plan["roll"], plan["pieces"]
     claim = await db.inventory_rolls.find_one_and_update(
         {"id": parent["id"], "length_remaining": parent.get("length_remaining"), "cutloss_split_lock": {"$exists": False}},
