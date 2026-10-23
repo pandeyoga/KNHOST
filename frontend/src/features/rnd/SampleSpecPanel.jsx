@@ -9,9 +9,10 @@ import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
 import axios, { API } from "../../services/apiClient";
 import { listColors, listDesigns, patchSpec, sampleTypes as fetchTypes } from "./rndApi";
-import { errMsg, SPEC_STATUS_META } from "./rndMeta";
+import { errMsg, fabricLabel, SPEC_STATUS_META, variantText } from "./rndMeta";
 import { Field, Footer } from "./RndField";
 import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems } from "./SampleSpecFields";
+
 
 export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
   const spec = sample.spec || null;
@@ -41,8 +42,8 @@ export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
       ) : (
         <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-[11.5px] sm:grid-cols-2 lg:grid-cols-3" data-testid="sample-spec-summary">
           <Row k="Induk produk">{md.template?.name || (spec.template_id ? spec.template_id : "— produk konsep mandiri")}</Row>
-          <Row k="Kombinasi varian">{Object.keys(spec.variant_attrs || {}).length ? Object.entries(spec.variant_attrs).map(([a, v]) => `${a}: ${v}`).join(", ") : "—"}</Row>
-          <Row k="Jenis kain">{t.fabric_type || "—"}</Row>
+          <Row k="Kombinasi varian">{variantText(spec.variant_attrs) || "—"}</Row>
+          <Row k="Jenis kain">{fabricLabel(t.fabric_type) || "—"}</Row>
           <Row k="Gramasi">{t.gramasi ? `${t.gramasi} gsm` : "—"}</Row>
           <Row k="Lebar">{t.lebar ? `${t.lebar} cm` : "—"}</Row>
           <Row k="Satuan">{spec.base_unit || sample.unit || "—"}</Row>
@@ -58,6 +59,12 @@ export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
           <Row k="Produk lahir">{spec.product_sku ? <b className="font-mono">{spec.product_sku}</b> : "belum (saat ACC pemenang)"}</Row>
           {spec.notes && <Row k="Catatan" wide>{spec.notes}</Row>}
         </dl>
+      )}
+      {/* 23 Okt — OD dari HP tidak membawa gramasi/lebar; dulu baru ketahuan SETELAH pemenang dipilih (SKU tak lahir). */}
+      {spec && !spec.product_sku && (!t.gramasi || !t.lebar) && (
+        <p className="mt-2 flex items-center gap-1.5 rounded-lg border border-[#F5C26B] bg-[#FFF8EE] px-3 py-1.5 text-[11px] text-[#8C4A00]" data-testid="sample-spec-incomplete">
+          <AlertTriangle size={12} /> Lengkapi <b>{[!t.gramasi && "gramasi", !t.lebar && "lebar"].filter(Boolean).join(" & ")}</b> sebelum memilih pemenang — tanpa itu SKU produk tidak lahir otomatis saat ACC.
+        </p>
       )}
 
       {modal === "complete" && <CompleteSpecModal sample={sample} onClose={() => setModal("")} onDone={() => { setModal(""); onChanged?.(); }} />}

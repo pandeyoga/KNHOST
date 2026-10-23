@@ -765,8 +765,11 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         action_label="Buka", owner="md"))
 
     # 4 — SPK inspeksi dengan tahanan warna/handfeel (butuh acuan MD)
+    # 23 Okt — SPK QC retur pelanggan memeriksa barang KEMBALIAN terhadap klaim per roll, bukan terhadap sample
+    # acuan; dulu semuanya ikut antrean ini (14 baris palsu di Meja MD setelah QC retur pindah ke SPK).
     ins = await db.inspections.find(
-        {**eq, "status": {"$in": ["draft", "in_progress"]}, "baseline_sample_id": {"$in": [None, ""]}},
+        {**eq, "status": {"$in": ["draft", "in_progress"]}, "baseline_sample_id": {"$in": [None, ""]},
+         "kind": {"$ne": "return_customer"}},
         {"_id": 0}).to_list(100)
     queues.append(_queue(
         "acuan", "SPK inspeksi tanpa acuan sample",

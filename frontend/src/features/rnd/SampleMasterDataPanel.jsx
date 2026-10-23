@@ -8,10 +8,10 @@ import { formatCurrency } from "../../utils/formatters";
 import { askReason } from "../../services/confirmService";
 import { approveSpec, releaseProduct } from "./rndApi";
 import { specOverride } from "./requiredTests";
-import { errMsg, lifecycleMeta, SPEC_STATUS_META } from "./rndMeta";
+import { errMsg, fabricLabel, lifecycleMeta, SPEC_STATUS_META, variantText } from "./rndMeta";
 import ProductColorChip from "../../components/ProductColorChip";
 
-export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }) {
+export default function SampleMasterDataPanel({ sample, canDecide, canApproveSpec = true, specApprovers = "", busy, onAct }) {
   const md = sample.master_data || {};
   const dec = sample.decision || {};
   const spec = md.spec;
@@ -40,7 +40,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }
       body: spec ? <>{spec.number} · <span className={`status-pill ${(SPEC_STATUS_META[spec.status] || {}).cls || ""}`}>{(SPEC_STATUS_META[spec.status] || {}).label || spec.status}</span>
         {md.template ? <span className="block text-[10.5px] text-[#6B6B73]">Induk: <b>{md.template.name}</b> → SKU lahir sebagai <b>varian</b></span>
           : <span className="block text-[10.5px] text-[#6B6B73]">Tanpa induk → SKU lahir sebagai produk mandiri</span>}
-        {spec.target?.fabric_type && <span className="block text-[10.5px] text-[#6B6B73]">{spec.target.fabric_type}{spec.target.gramasi ? ` · ${spec.target.gramasi} gsm` : ""}{spec.target.lebar ? ` · lebar ${spec.target.lebar} cm` : ""}</span>}</>
+        {spec.target?.fabric_type && <span className="block text-[10.5px] text-[#6B6B73]">{fabricLabel(spec.target.fabric_type)}{spec.target.gramasi ? ` · ${spec.target.gramasi} gsm` : ""}{spec.target.lebar ? ` · lebar ${spec.target.lebar} cm` : ""}</span>}</>
         : <span className="text-[#9A9BA3]">tidak ada — isi bagian “Spesifikasi produk” saat membuat permintaan</span> },
     { key: "acc", icon: FileSignature, title: "ACC sampling → kontrak & barang supplier", done: decided,
       body: decided ? <>Pemenang <b>{dec.supplier_name}</b> · {formatCurrency(dec.price || 0)}
@@ -54,8 +54,11 @@ export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }
     { key: "product", icon: Package, title: "SKU produk di master", done: !!prod,
       body: prod ? <><b className="font-mono">{prod.sku}</b> {prod.name}
         <ProductColorChip product={prod} className="mt-0.5" />
-        <span className="block text-[10.5px] text-[#6B6B73]">{md.template ? `Varian dari induk ${md.template.name}` : "Produk mandiri"}{Object.keys(prod.variant_attrs || {}).length ? ` · ${Object.entries(prod.variant_attrs).map(([k, v]) => `${k}: ${v}`).join(", ")}` : ""} · lifecycle <b style={{ color: lifecycleMeta(prod.lifecycle).tone }}>{lifecycleMeta(prod.lifecycle).label}</b></span></>
-        : spec ? (dec.master_error ? <span className="text-[#C62828]">Belum lahir — gagal saat ACC pemenang: {dec.master_error} <b>Lengkapi spesifikasi (Ubah), lalu Manajer klik “ACC spesifikasi → lahirkan SKU”.</b></span> : <span className="text-[#9A9BA3]">lahir saat spesifikasi di-ACC</span>)
+        <span className="block text-[10.5px] text-[#6B6B73]">{md.template ? `Varian dari induk ${md.template.name}` : "Produk mandiri"}{Object.keys(prod.variant_attrs || {}).length ? ` · ${variantText(prod.variant_attrs)}` : ""} · lifecycle <b style={{ color: lifecycleMeta(prod.lifecycle).tone }}>{lifecycleMeta(prod.lifecycle).label}</b></span></>
+        : spec ? (dec.master_error && !/tidak berwenang/i.test(dec.master_error)
+          ? <span className="text-[#C62828]">Belum lahir — gagal saat ACC pemenang: {dec.master_error} <b>Lengkapi spesifikasi (Ubah), lalu Manajer klik “ACC spesifikasi → lahirkan SKU”.</b></span>
+          : decided && specOpen ? <span className="text-[#8C4A00]" data-testid="sample-master-wait-spec">Menunggu ACC spesifikasi oleh {specApprovers || "Manajer"} — SKU lahir setelah itu.</span>
+            : <span className="text-[#9A9BA3]">lahir saat spesifikasi di-ACC</span>)
           : <span className="text-[#9A9BA3]">butuh spesifikasi</span> },
     { key: "release", icon: Rocket, title: "Rilis ke produksi (boleh dijual)", done: prod?.lifecycle === "produksi",
       body: prod?.lifecycle === "produksi" ? "Produk aktif di katalog & boleh dipesan" : <span className="text-[#9A9BA3]">setelah SKU lahir</span> },
@@ -75,7 +78,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }
           </li>
         ))}
       </ol>
-      {canDecide && decided && specOpen && (
+      {canDecide && canApproveSpec && decided && specOpen && (
         <div className="mt-2 rounded-lg border border-[#BFD7FF] bg-[#F6F9FF] p-2.5" data-testid="sample-master-acc-spec">
           {!showAcc ? (
             <button className="primary-button !py-1.5 text-[11px]" disabled={busy} data-testid="sample-master-acc-spec-button" onClick={() => setShowAcc(true)}>
@@ -93,7 +96,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }
           )}
         </div>
       )}
-      {canDecide && prod && prod.lifecycle !== "produksi" && spec && (
+      {canDecide && canApproveSpec && prod && prod.lifecycle !== "produksi" && spec && (
         <button className="secondary-button mt-2 !py-1.5 text-[11px]" disabled={busy} data-testid="sample-master-release-button" onClick={doRelease}>
           <Rocket size={12} /> Rilis {prod.sku} ke produksi
         </button>

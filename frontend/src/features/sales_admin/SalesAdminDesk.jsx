@@ -116,7 +116,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           <Metric icon={Layers} label="Nilai Antrean" value={formatCurrency(totalMoney)}
                   tone="rgba(0,122,255,.12)" testId="desk-metric-value" />
           <Metric icon={ShieldAlert} label="Umur Tertua"
-                  value={oldest > 0 ? `${oldest} hari` : "hari ini"}
+                  value={oldest > 0 ? `${oldest} hari` : "< 1 hari"}
                   tone="rgba(255,59,48,.14)" testId="desk-metric-oldest" />
         </section>
 

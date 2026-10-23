@@ -150,7 +150,9 @@ export default function DeskQueueCard({
                 )}
               </div>
             )}
-            <div className="divide-y divide-[#F4F5F7] border-t border-[#EFF0F2] min-h-[290px]">
+            {/* 23 Okt — tinggi minimum hanya saat berhalaman (penahan lompatan pager); dulu kartu 1 baris
+                menyisakan ruang kosong ±250 px di Meja MD/Admin Gudang. */}
+            <div className={`divide-y divide-[#F4F5F7] border-t border-[#EFF0F2] ${shownRows.length > PAGE_ROWS ? "min-h-[290px]" : ""}`}>
               {visible.map((row, i) => (
                 <QueueRow key={`${row.ref_type}-${row.ref_id}-${row.number || i}`}
                           row={row} queue={queue}

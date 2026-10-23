@@ -10,7 +10,7 @@ import { overlayDismiss } from "@/utils/overlayDismiss";
 import { formatCurrency, formatQty, formatStamp } from "../../utils/formatters";
 import { approveSpec, getSpec, rejectSpec, releaseProduct, submitSpec } from "./rndApi";
 import { specOverride } from "./requiredTests";
-import { errMsg, lifecycleMeta, SAMPLE_STATUS_META, SPEC_STATUS_META } from "./rndMeta";
+import { errMsg, fabricLabel, lifecycleMeta, SAMPLE_STATUS_META, SPEC_STATUS_META } from "./rndMeta";
 import { sampleTypesOf, typeLabel } from "./sampleTypeMeta";
 import { useEntityScope } from "../../context/EntityScopeContext";
 
@@ -86,7 +86,7 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
             <Box label="Tahap produk" value={life.label} tone={life.tone}
               testId="spec-detail-lifecycle" />
             <Box label="Jenis kain / tahap bahan"
-              value={`${spec?.target?.fabric_type || "—"} · ${spec?.target?.stage || "—"}`} />
+              value={`${fabricLabel(spec?.target?.fabric_type) || "—"} · ${spec?.target?.stage || "—"}`} />
             <Box label="Gramasi / lebar"
               value={`${formatQty(spec?.target?.gramasi || 0)} gsm · ${formatQty(spec?.target?.lebar || 0)} cm`} />
             <Box label="Target harga" value={formatCurrency(spec?.target_price || 0)} />

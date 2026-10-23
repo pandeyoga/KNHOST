@@ -328,7 +328,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                           <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
                             it.days_waiting >= 3 ? "bg-[#FDECEA] text-[#C0392B]"
                               : "bg-[#EEF1F5] text-[#4A4B52]"}`}>
-                            {it.days_waiting} hari
+                            {it.days_waiting > 0 ? `${it.days_waiting} hari` : "< 1 hari"}
                           </span>
                         </td>
                         <td className="py-2 pr-3">

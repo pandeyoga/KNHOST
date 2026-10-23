@@ -275,7 +275,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-[11px] font-semibold tabular-nums text-[#B45309]">
-            {o.days_waiting === 0 ? "hari ini" : `menunggu ${o.days_waiting} hari`}
+            {o.days_waiting === 0 ? "menunggu < 1 hari" : `menunggu ${o.days_waiting} hari`}
           </p>
           <button data-testid={`${base}-open-${o.id}`}
             disabled={!target}

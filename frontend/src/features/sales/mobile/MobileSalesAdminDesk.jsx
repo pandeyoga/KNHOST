@@ -159,7 +159,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
         {[
           { icon: Inbox, label: "Perlu ditindak", value: openItems, bg: "rgba(255,149,0,.16)", id: "open" },
           { icon: Layers, label: "Nilai antrean", value: formatCurrency(totalMoney), bg: "rgba(0,122,255,.12)", id: "value" },
-          { icon: ShieldAlert, label: "Umur tertua", value: oldest > 0 ? `${oldest} hari` : "hari ini", bg: "rgba(255,59,48,.14)", id: "oldest" },
+          { icon: ShieldAlert, label: "Umur tertua", value: oldest > 0 ? `${oldest} hari` : "< 1 hari", bg: "rgba(255,59,48,.14)", id: "oldest" },
         ].map((m) => (
           <div key={m.id} className="m-card p-2.5" data-testid={`m-desk-metric-${m.id}`}>
             <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: m.bg }}><m.icon size={14} /></span>

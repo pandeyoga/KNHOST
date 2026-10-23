@@ -8,7 +8,7 @@ import { listRolls } from "./rndApi";
 import { errMsg } from "./rndMeta";
 import { Field, Footer, Hint } from "./RndField";
 
-export default function IssueMaterialModal({ onClose, onConfirm, busy }) {
+export default function IssueMaterialModal({ onClose, onConfirm, busy, error = "" }) {
   const [rolls, setRolls] = useState([]);
   const [rollId, setRollId] = useState("");
   const [qty, setQty] = useState("");
@@ -22,7 +22,7 @@ export default function IssueMaterialModal({ onClose, onConfirm, busy }) {
   const roll = rolls.find((r) => r.id === rollId);
 
   return (
-    <FormModal open onClose={onClose} size="md" testId="issue-material-modal" icon={PackageMinus} error={err}
+    <FormModal open onClose={onClose} size="md" testId="issue-material-modal" icon={PackageMinus} error={err || error}
       title="Ambil Bahan untuk Sample" subtitle="Dari roll gudang — stok gudang & stok sample selalu satu angka"
       footer={<Footer onClose={onClose} busy={busy} disabled={!rollId || !qty} icon={PackageMinus} testId="issue-confirm" confirmLabel="Ambil bahan"
         onConfirm={() => onConfirm({ roll_id: rollId, qty, note })} />}>

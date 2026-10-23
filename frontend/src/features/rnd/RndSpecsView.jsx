@@ -14,7 +14,7 @@ import { openConfig } from "../settings/config/configDeepLink";
 import SpecFormModal from "./SpecFormModal";
 import SpecDetailPanel from "./SpecDetailPanel";
 import { listSpecs, rndMeta } from "./rndApi";
-import { errMsg, lifecycleMeta, SPEC_STATUS_META } from "./rndMeta";
+import { errMsg, fabricLabel, lifecycleMeta, SPEC_STATUS_META } from "./rndMeta";
 import { typeLabel } from "./sampleTypeMeta";
 import DetailModal from "../../components/DetailModal";
 import { useEntityScope } from "../../context/EntityScopeContext";
@@ -183,17 +183,18 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
               const meta = SPEC_STATUS_META[s.status] || SPEC_STATUS_META.draft;
               const life = lifecycleMeta(s.lifecycle);
               return (
-                <div key={s.id} data-testid={`rnd-spec-row-${s.id}`}
-                  className="min-w-[850px] grid grid-cols-[130px_1.5fr_1fr_130px_150px_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                // 23 Okt — seluruh baris membuka rincian (dulu hanya nomor; baris ber-hover tapi klik judul diam).
+                <div key={s.id} data-testid={`rnd-spec-row-${s.id}`} onClick={() => setOpenId(s.id)}
+                  className="min-w-[850px] grid cursor-pointer grid-cols-[130px_1.5fr_1fr_130px_150px_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <button className="text-left text-[11.5px] font-bold text-[#0058CC]"
-                    data-testid={`rnd-spec-open-${s.id}`} onClick={() => setOpenId(s.id)}>
+                    data-testid={`rnd-spec-open-${s.id}`} onClick={(e) => { e.stopPropagation(); setOpenId(s.id); }}>
                     {s.number}
                   </button>
                   <div className="min-w-0">
                     <p className="truncate text-[12px] font-semibold">{s.title}</p>
                     <p className="truncate text-[10.5px] text-[#6B6B73] flex items-center gap-1">
                       <EntityBadge entityId={s.entity_id} />
-                      {(s.target?.fabric_type || "—")}
+                      {fabricLabel(s.target?.fabric_type) || "—"}
                       {s.target?.gramasi ? ` · ${s.target.gramasi} gsm` : ""}
                       {s.target?.lebar ? ` · ${s.target.lebar} cm` : ""}
                     </p>

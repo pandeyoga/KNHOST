@@ -1298,6 +1298,17 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
         elif spec_doc:
             decision["product_id"] = spec_doc.get("product_id", "")
             decision["product_sku"] = spec_doc.get("product_sku", "")
+    # 23 Okt — pemenang diputus TANPA ACC spesifikasi (pemutus mis. MD ≠ penyetuju spesifikasi Manajer/Admin) →
+    # spesifikasi diajukan otomatis ke antrean ACC Manajer (Pusat Persetujuan). Dulu tetap Draf: tak ada yang
+    # diberi tahu dan SKU pesanan khusus tidak pernah lahir.
+    if cur.get("spec_id") and not revalidation and not decision.get("product_id"):
+        sd = await db.md_specs.find_one({"id": cur["spec_id"]}, {"_id": 0, "status": 1})
+        if sd and sd.get("status") == "draft":
+            try:
+                await specs.submit_spec(cur["spec_id"], name)
+                decision["spec_submitted"] = True
+            except RndError as exc:  # noqa: PERF203 — pengajuan best-effort; keputusan pemenang tetap sah
+                logger.warning("[decide_sample] spesifikasi %s gagal diajukan: %s", cur["spec_id"], exc)
     # Dua warna + supplier pemenang → tersalin ke master produk (dibaca MD, Pembelian, pemilih produk, katalog).
     if cur.get("spec_id") or revalidation:
         spec_now = await db.md_specs.find_one({"id": cur.get("spec_id") or ""}, {"_id": 0, "product_id": 1})

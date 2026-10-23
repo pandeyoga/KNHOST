@@ -52,7 +52,7 @@ export default function SampleBoardCard({ s, types, onOpen }) {
       )}
       <p className="mt-1.5 flex items-center gap-1.5 rounded-md bg-[#FAFBFC] px-1.5 py-1 text-[10px]" data-testid={`rnd-sample-card-progress-${s.id}`}>
         <span className="truncate font-semibold text-[#1C1C1E]">{suppliers.length ? suppliers.join(", ") : "belum ke supplier"}</span>
-        <span className="ml-auto shrink-0 tabular-nums text-[#6B6B73]">{(s.rounds || []).length} rnd{accCount ? ` · ${accCount} ACC` : ""}</span>
+        <span className="ml-auto shrink-0 tabular-nums text-[#6B6B73]">{(s.rounds || []).length} ronde{accCount ? ` · ${accCount} ACC` : ""}</span>
       </p>
       <p className="mt-1.5 flex items-center justify-between gap-1 text-[10px] text-[#8E8E93]">
         <span className="flex items-center gap-1 truncate">

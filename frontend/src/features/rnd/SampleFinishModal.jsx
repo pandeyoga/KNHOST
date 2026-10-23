@@ -10,7 +10,7 @@ import KNSelect from "../../components/KNSelect";
 import { Field, Footer, Hint } from "./RndField";
 import { DELIVER_LABEL } from "./sampleTypeMeta";
 
-export default function SampleFinishModal({ mode = "finish", sample, targets, busy, onClose, onConfirm }) {
+export default function SampleFinishModal({ mode = "finish", sample, targets, busy, onClose, onConfirm, error = "" }) {
   const isFinish = mode === "finish";
   // Cek UI UAT v3 (S13) — tanggal kosong dulu jadi "hari ini" versi server (UTC): sample jadi 22 Okt WIB tercatat 21 Okt.
   const [date, setDate] = useState(() => {
@@ -24,7 +24,7 @@ export default function SampleFinishModal({ mode = "finish", sample, targets, bu
   const options = [{ value: "", label: "— pilih tujuan pengiriman —" }, ...opts];
 
   return (
-    <FormModal open onClose={onClose} size="md" testId={isFinish ? "sample-finish-modal" : "sample-deliver-modal"} icon={isFinish ? CheckCircle2 : Send}
+    <FormModal open onClose={onClose} size="md" testId={isFinish ? "sample-finish-modal" : "sample-deliver-modal"} icon={isFinish ? CheckCircle2 : Send} error={error}
       title={isFinish ? "Tandai Sample Jadi" : "Catat Pengiriman Sample"} subtitle={sample?.number}
       footer={<Footer onClose={onClose} busy={busy} disabled={!isFinish && !to} icon={isFinish ? CheckCircle2 : Send}
         testId={isFinish ? "sample-finish-confirm" : "sample-deliver-confirm"} confirmLabel={isFinish ? "Tandai Jadi" : "Catat Pengiriman"}

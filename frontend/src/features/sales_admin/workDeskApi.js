@@ -195,7 +195,8 @@ export function ageTone(days) {
   if (d >= 7) return { cls: BADGE_TONE.danger, label: `${d} hari` };
   if (d >= 3) return { cls: BADGE_TONE.warn, label: `${d} hari` };
   if (d >= 1) return { cls: BADGE_TONE.info, label: `${d} hari` };
-  return { cls: BADGE_TONE.mute, label: "hari ini" };
+  // 23 Okt — umur = selisih 24 jam, bukan tanggal kalender: dokumen kemarin 13.45 berumur 0 → "hari ini" menyesatkan.
+  return { cls: BADGE_TONE.mute, label: "< 1 hari" };
 }
 
 /** Tanggal + jam WIB ringkas, mis. "06 Okt 14.05". */

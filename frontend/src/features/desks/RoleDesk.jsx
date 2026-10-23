@@ -107,7 +107,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
         <section data-testid={`${p}-metrics`} className="grid gap-3 p-3 sm:grid-cols-3">
           <Metric icon={Inbox} label="Perlu Ditindak" value={openItems} tone="rgba(255,149,0,.16)" testId={`${p}-metric-open`} />
           <Metric icon={Layers} label="Antrean" value={queues.filter((q) => q.count > 0).length} tone="rgba(0,88,204,.14)" testId={`${p}-metric-queues`} />
-          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "hari ini"} tone="rgba(255,59,48,.14)" testId={`${p}-metric-oldest`} />
+          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "< 1 hari"} tone="rgba(255,59,48,.14)" testId={`${p}-metric-oldest`} />
         </section>
         {oldestQ && (
           <div data-testid={`${p}-oldest-card`} className="mx-3 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#FFD9D6] bg-[#FFF6F5] px-3 py-2.5">
@@ -115,7 +115,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
             <div className="min-w-0 flex-1">
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#D93025]">Paling lama menunggu</p>
               <p className="text-[12.5px] font-semibold text-[#1C1C1E]" data-testid={`${p}-oldest-label`}>
-                {oldestQ.title || oldestQ.label || queueMeta(oldestQ.id).label} · {oldestQ.count} dokumen · {(oldestQ.oldest_age_days || 0) > 0 ? `${oldestQ.oldest_age_days} hari` : "hari ini"}
+                {oldestQ.title || oldestQ.label || queueMeta(oldestQ.id).label} · {oldestQ.count} dokumen · {(oldestQ.oldest_age_days || 0) > 0 ? `${oldestQ.oldest_age_days} hari` : "< 1 hari"}
               </p>
               {oldestRow && <p className="truncate text-[11px] text-[#6B6B73]" data-testid={`${p}-oldest-doc`}>Tertua: {oldestRow.number || oldestRow.title} {oldestRow.title && oldestRow.number ? `— ${oldestRow.title}` : ""}</p>}
             </div>

@@ -281,7 +281,8 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
       ) : tab === "board" ? (
         <>
           <div data-testid="dsr-board" className="grid grid-flow-col auto-cols-[minmax(215px,1fr)] gap-2 overflow-x-auto pb-1">
-            {DSR_BOARD_ACTIVE.map((s) => (
+            {/* 23 Okt — sama dengan papan sample: saringan "Disetujui (ACC)" dulu menampilkan papan kosong. */}
+            {(statusFilter && !DSR_BOARD_ACTIVE.includes(statusFilter) ? [...DSR_BOARD_ACTIVE, statusFilter] : DSR_BOARD_ACTIVE).map((s) => (
               <div key={s} data-testid={`dsr-col-${s}`} className="rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] p-2">
                 <p className="mb-1.5 flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">
                   <span className="flex items-center gap-1.5">

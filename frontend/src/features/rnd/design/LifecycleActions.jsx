@@ -23,6 +23,15 @@ const ACTIONS = {
   release_hold: { label: "Lepas penahanan", icon: PlayCircle, side: "holder", cls: "primary-button !bg-[#B24A00]" },
 };
 
+// 23 Okt — kalimat hasil yang manusiawi (dulu "<label tombol> berhasil." → "Ajukan untuk review berhasil.").
+const DONE_MSG = {
+  submit: "Desain diajukan untuk review — menunggu penilai.", start_review: "Review dimulai.",
+  approve: "Desain disetujui (ACC).", request_revision: "Revisi diminta — desain kembali ke desainer.",
+  submit_final: "Berkas final diserahkan.", return_final: "Berkas final dikembalikan ke desainer.",
+  activate: "Desain aktif untuk produksi.", archive: "Desain diarsipkan.", reopen: "Desain dibuka kembali.",
+  new_version: "Versi baru dibuat.", hold: "Desain ditahan.", release_hold: "Penahanan desain dilepas.",
+};
+
 const BY_STATUS = {
   draft: ["submit", "archive"],
   revision: ["submit", "archive"],
@@ -40,6 +49,9 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
   const [score, setScore] = useState(null);
   const [products, setProducts] = useState([]);
   const [busy, setBusy] = useState(false);
+  // 23 Okt — galat dialog tampil DI DALAM dialog. Dulu dikirim ke bilah galat halaman yang tertutup lapisan gelap
+  // dialog: "Catatan wajib diisi" / "Beri nilai akhir" tak terlihat → tombol terasa mati.
+  const [dlgErr, setDlgErr] = useState("");
   const status = design.status || "draft";
   const fin = design.final || {};
 
@@ -52,16 +64,16 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
   });
 
   const open = (a) => {
-    setDlg({ action: a }); setNote(""); setScore(null);
+    setDlg({ action: a }); setNote(""); setScore(null); setDlgErr("");
     setProducts(design.recommended_products || []);
   };
 
   const run = async () => {
     const a = dlg.action;
     const m = ACTIONS[a];
-    if (m.needNote && !note.trim()) { onError?.("Catatan wajib diisi."); return; }
-    if (m.needScore && score === null) { onError?.("Beri nilai akhir (0–2) — nilai hanya diberikan saat ACC."); return; }
-    setBusy(true);
+    if (m.needNote && !note.trim()) { setDlgErr("Catatan wajib diisi."); return; }
+    if (m.needScore && score === null) { setDlgErr("Beri nilai akhir (0–2) — nilai hanya diberikan saat ACC."); return; }
+    setBusy(true); setDlgErr("");
     try {
       if (a === "new_version") await designNewVersion(design.id, { note });
       else if (a === "hold") await holdDesign(design.id, note);
@@ -72,8 +84,8 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
         await designLifecycle(design.id, a.replace(/_/g, "-"), body);
       }
       setDlg(null);
-      onDone?.(`${m.label} berhasil.`);
-    } catch (e) { onError?.(errMsg(e, "Aksi gagal.")); } finally { setBusy(false); }
+      onDone?.(DONE_MSG[a] || `${m.label} selesai.`);
+    } catch (e) { setDlgErr(errMsg(e, "Aksi gagal.")); } finally { setBusy(false); }
   };
 
   if (!visible.length) return null;
@@ -117,6 +129,7 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
                 placeholder={dlg.action === "request_revision" ? "mis. warna latar terlalu gelap, repeat belum rapi"
                   : dlg.action === "hold" ? "mis. menunggu keputusan MD / bahan belum tersedia" : ""} />
             </div>
+            {dlgErr && <p className="notice-bar danger !mb-0" role="alert" data-testid="design-action-error">{dlgErr}</p>}
             <div className="flex justify-end gap-2">
               <button className="secondary-button" onClick={() => setDlg(null)}>Batal</button>
               <button className="primary-button" onClick={run} disabled={busy} data-testid="design-action-confirm">

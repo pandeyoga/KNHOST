@@ -369,7 +369,7 @@ async def get_special_order(order_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Special order tidak ditemukan")
     assert_entity_access(special_order, "special_orders", ctx)
     special_order["chain"] = await routing.chain_of(special_order)
-    return special_order
+    return await _with_names(special_order)
 
 
 @router.post("/special-orders/{order_id}/references")
@@ -443,10 +443,28 @@ async def _od_or_404(order_id: str, request: Request) -> Dict[str, Any]:
     return od
 
 
+async def _with_names(od: Dict[str, Any]) -> Dict[str, Any]:
+    """23 Okt — layar menyebut NAMA orang, bukan email mentah ("Dibuat oleh sales@…", riwayat status,
+    "Disetujui oleh manager@…"). Field asli tetap; nama ditambahkan sebagai *_name / user_name."""
+    hist = od.get("status_history") or []
+    emails = [e for e in {od.get("created_by") or "", od.get("approved_by") or ""} | {h.get("user") or "" for h in hist} if "@" in e]
+    if not emails:
+        return od
+    names = {u["email"]: u.get("name") or u["email"] async for u in db.users.find(
+        {"email": {"$in": emails}}, {"_id": 0, "email": 1, "name": 1})}
+    for key in ("created_by", "approved_by"):
+        if od.get(key):
+            od[f"{key}_name"] = names.get(od[key], od[key])
+    for h in hist:
+        if h.get("user") in names:
+            h["user_name"] = names[h["user"]]
+    return od
+
+
 async def _fresh(order_id: str) -> Dict[str, Any]:
     od = safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0}))
     od["chain"] = await routing.chain_of(od)
-    return od
+    return await _with_names(od)
 
 
 @router.post("/special-orders/{order_id}/submit")
@@ -1038,7 +1056,7 @@ async def reject_special_order_endpoint(
                      note=payload.reason or "", enforced=ev.get("enforced", True))
     await audit(user.get("name", ""), "special_order_rejected", "special_order", order_id,
                 {"number": special_order.get("number")}, reason=payload.reason or "")
-    return updated
+    return await _fresh(order_id) if updated else updated
 
 
 @router.post("/special-orders/{order_id}/status")

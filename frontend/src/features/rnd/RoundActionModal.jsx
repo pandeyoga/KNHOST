@@ -17,7 +17,7 @@ const RESULT_OPTS = [
   { value: "tolak", label: "Tolak — supplier tidak dilanjutkan" },
 ];
 
-export default function RoundActionModal({ mode, sampleId, round, types, measurements, onClose, onConfirm, busy }) {
+export default function RoundActionModal({ mode, sampleId, round, types, measurements, onClose, onConfirm, busy, error = "" }) {
   const isSubmit = mode === "submit";
   const [performers, setPerformers] = useState([]);
   const [performer, setPerformer] = useState("");
@@ -44,8 +44,8 @@ export default function RoundActionModal({ mode, sampleId, round, types, measure
   };
 
   return (
-    <FormModal open onClose={onClose} size="md" testId="round-action-modal" icon={isSubmit ? Save : CheckCircle2}
-      title={isSubmit ? `Setor hasil rnd ${round?.round_no}` : `Nilai hasil rnd ${round?.round_no}`}
+    <FormModal open onClose={onClose} size="md" testId="round-action-modal" icon={isSubmit ? Save : CheckCircle2} error={error}
+      title={isSubmit ? `Setor hasil ronde ${round?.round_no}` : `Nilai hasil ronde ${round?.round_no}`}
       subtitle={`${typeLabel(typeCode, types)} · ${round?.supplier_name || ""}`}
       footer={<Footer onClose={onClose} onConfirm={confirm} busy={busy} icon={Save} testId="round-modal-confirm"
         confirmLabel={isSubmit ? "Setor hasil" : "Simpan penilaian"} disabled={isSubmit && (!note.trim() || !performer)} />}>
@@ -55,7 +55,7 @@ export default function RoundActionModal({ mode, sampleId, round, types, measure
           <>
             <Hint tone={nAttach ? "ok" : "warn"} testId="round-attach-hint">
               {nAttach ? `${nAttach} bukti sudah terunggah — hasil boleh disetor.`
-                : "Belum ada bukti terunggah. Unggah minimal 1 berkas (foto hasil / artwork / hasil ukur) di baris round sebelum menyetor — server akan menolaknya."}
+                : "Belum ada bukti terunggah. Unggah minimal 1 berkas (foto hasil / artwork / hasil ukur) di baris ronde sebelum menyetor — server akan menolaknya."}
             </Hint>
             <Field label="Dikerjakan oleh *">
               <KNSelect data-testid="round-performer-select" className="field" value={performer} placeholder="Pilih pelaksana fisik sample"

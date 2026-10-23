@@ -10,7 +10,7 @@ const ACTIONS = [
   ["override", "Override", "Lanjut walau gagal — hasil tetap tercatat GAGAL. Butuh izin khusus."],
 ];
 
-export default function PicDecisionModal({ sample, canOverride, onClose, onConfirm, busy }) {
+export default function PicDecisionModal({ sample, canOverride, onClose, onConfirm, busy, error = "" }) {
   const rv = sample.revalidation || {};
   const [action, setAction] = useState("retest");
   const [reason, setReason] = useState("");
@@ -19,7 +19,7 @@ export default function PicDecisionModal({ sample, canOverride, onClose, onConfi
   const scope = action === "retest" ? {} : { documents: docs.split(",").map((d) => d.trim()).filter(Boolean), note: scopeNote };
   const body = { action, reason, scope };
   return (
-    <FormModal open onClose={onClose} size="md" testId="pic-decision-modal" icon={Gavel}
+    <FormModal open onClose={onClose} size="md" testId="pic-decision-modal" icon={Gavel} error={error}
       title="Keputusan PIC · Uji Ulang Gagal" subtitle={`${sample.number} · ${rv.supplier_name || ""} · ${sample.product_sku || ""}`}
       footer={<Footer onClose={onClose} onConfirm={() => onConfirm(body)} busy={busy} icon={Gavel} testId="pic-decision-confirm"
         confirmLabel="Simpan keputusan" disabled={reason.trim().length < 5} title={reason.trim().length < 5 ? "Alasan min. 5 karakter" : ""} />}>

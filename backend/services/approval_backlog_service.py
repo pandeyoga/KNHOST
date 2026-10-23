@@ -64,7 +64,7 @@ QUEUES: List[tuple] = [
      "interco_transactions", {"status": "waiting_approval"}),
     ("cycle_count", "Stock opname menunggu ACC", "operations", "cycle_count_sessions",
      {"status": "submitted"}),
-    ("rnd_spec", "Spesifikasi desain menunggu ACC", "rnd-specs", "md_specs",
+    ("rnd_spec", "Spesifikasi produk menunggu ACC (SKU lahir)", "rnd-specs", "md_specs",
      {"status": "review"}),
     ("rnd_sample", "Sample menunggu keputusan", "rnd-samples", "md_samples",
      {"status": {"$in": ["in_progress", "assessed"]},

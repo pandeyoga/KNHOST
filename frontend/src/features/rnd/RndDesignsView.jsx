@@ -7,6 +7,7 @@ import DesignImage from "./design/DesignImage";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Filter, Layers, Plus, RefreshCw, Search, Tags, X } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import OkNotice from "../../components/OkNotice";
 import LineFilter from "../../components/LineFilter";
 import KNSelect from "../../components/KNSelect";
 import { OptionTabs } from "../../components/ListControls";
@@ -165,7 +166,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
             <Kpi label="Proofing berjalan" value={stats.proofing} tone="#6B219A" testId="rnd-designs-kpi-proofing" onClick={() => set("proofing", f.proofing === "in_progress" ? "" : "in_progress")} active={f.proofing === "in_progress"} />
             <Kpi label="Jadi master produk" value={stats.master} tone="#0058CC" testId="rnd-designs-kpi-master" onClick={() => set("proofing", f.proofing === "master" ? "" : "master")} active={f.proofing === "master"} />
           </div>
-          {okMsg && <div className="rounded-lg bg-[#EAF7EF] px-3 py-2 text-[11.5px] text-[#1A7A3A]" data-testid="rnd-designs-ok">{okMsg}</div>}
+          <OkNotice message={okMsg} onDismiss={() => setOkMsg("")} testId="rnd-designs-ok" />
           <DateQuickNav value={date} onChange={setDate} testId="design-date-nav" />
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative max-w-sm flex-1">

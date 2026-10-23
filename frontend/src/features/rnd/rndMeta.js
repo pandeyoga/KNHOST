@@ -156,6 +156,13 @@ export const DESIGN_DATE_FIELDS = [
 ];
 
 export const SCORE_STEPS = Array.from({ length: 9 }, (_, i) => i * 0.25);
+// 23 Okt — jenis kain tampil berlabel (dulu kode mentah "woven").
+export const FABRIC_LABEL = { woven: "Woven (tenun)", knit: "Knit (rajut)" };
+export const fabricLabel = (v) => FABRIC_LABEL[v] || v || "";
+// Atribut varian produk berlabel Indonesia (dulu kunci mentah "color: Natural, grade: A").
+const ATTR_LABEL = { color: "Warna", grade: "Grade", lebar: "Lebar", width: "Lebar", gramasi: "Gramasi", motif: "Motif", size: "Ukuran" };
+export const variantText = (attrs) => Object.entries(attrs || {}).map(([k, v]) => `${ATTR_LABEL[k] || k}: ${v}`).join(", ");
+
 export const fmtScore = (v) => (v === null || v === undefined || v === "" ? "—"
   : Number(v).toFixed(2).replace(".", ",").replace(/,?0+$/, "").replace(/,$/, "") || "0");
 

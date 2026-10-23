@@ -25,7 +25,7 @@ function ContractField({ sampleId, value, onChange }) {
   );
 }
 
-export default function RevalDecideModal({ sample, onClose, onConfirm, busy }) {
+export default function RevalDecideModal({ sample, onClose, onConfirm, busy, error = "" }) {
   const rv = sample.revalidation || {};
   const rounds = (sample.rounds || []).filter((r) => r.supplier_id === rv.supplier_id && r.result);
   const hasAcc = rounds.some((r) => r.result === "acc");
@@ -35,11 +35,11 @@ export default function RevalDecideModal({ sample, onClose, onConfirm, busy }) {
   const noteOk = result === "pass" || note.trim().length >= 5;
   const passBlocked = result === "pass" && !hasAcc;
   return (
-    <FormModal open onClose={onClose} size="md" testId="reval-decide-modal" icon={ClipboardCheck}
+    <FormModal open onClose={onClose} size="md" testId="reval-decide-modal" icon={ClipboardCheck} error={error}
       title="Hasil Uji Ulang" subtitle={`${sample.number} · ${rv.supplier_name || ""} · siklus ${rv.cycle_no || 1}`}
       footer={<Footer onClose={onClose} onConfirm={() => onConfirm({ result, note, contract_id: contractId })} busy={busy} icon={ClipboardCheck}
         testId="reval-decide-confirm" confirmLabel={result === "pass" ? "Simpan: Lulus" : "Simpan: Gagal"}
-        disabled={!noteOk || passBlocked} title={passBlocked ? "Belum ada round ACC dari supplier ini" : !noteOk ? "Tulis temuan kegagalan" : ""} />}>
+        disabled={!noteOk || passBlocked} title={passBlocked ? "Belum ada ronde ACC dari supplier ini" : !noteOk ? "Tulis temuan kegagalan" : ""} />}>
       <div className="grid gap-3">
         <Hint testId="reval-decide-info">Keputusan teknis untuk <b>{rv.supplier_name}</b> saja. Tidak ada harga baru, kontrak tidak dibuat atau diubah, dan SKU {sample.product_sku} tetap.</Hint>
         <div className="flex gap-1.5" data-testid="reval-result-picker">
@@ -49,7 +49,7 @@ export default function RevalDecideModal({ sample, onClose, onConfirm, busy }) {
                 ? (v === "pass" ? "bg-[#1A7A3A] text-white" : "bg-[#C0392B] text-white") : "bg-[#F2F3F5] text-[#3C3C43]"}`}>{l}</button>
           ))}
         </div>
-        {passBlocked && <Hint tone="warn" testId="reval-no-acc">Belum ada round ACC dari supplier ini — hanya bisa dinyatakan gagal.</Hint>}
+        {passBlocked && <Hint tone="warn" testId="reval-no-acc">Belum ada ronde ACC dari supplier ini — hanya bisa dinyatakan gagal.</Hint>}
         {result === "fail" && <Hint tone="danger" testId="reval-fail-info">Hasil gagal masuk <b>Menunggu keputusan PIC</b>. Produksi, stok, dan kontrak yang berjalan tidak dihentikan otomatis.</Hint>}
         <Field label={result === "fail" ? "Temuan kegagalan * (min. 5 karakter)" : "Catatan"}>
           <textarea className="field" rows={3} data-testid="reval-decide-note" value={note} onChange={(e) => setNote(e.target.value)}

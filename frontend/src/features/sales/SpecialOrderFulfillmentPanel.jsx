@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Factory, Loader2, PackageCheck, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
-import { fmtNum, docStatus } from "./SpecialOrderShared";
+import { docStatus } from "./SpecialOrderShared";
+import { formatQty } from "../../utils/formatters";
 
 const STATUS = {
   ready: ["Siap direalisasi", "#0058CC", "#EAF2FF"], blocked: ["Belum bisa", "#8A5A00", "#FFF6E0"],
@@ -21,11 +22,11 @@ function DocRow({ d }) {
   return (
     <p className="text-[11px]" data-testid={`od-ful-doc-${d.id}`}>
       <b className="font-mono">{d.type === "po" ? "PO" : "MKO"} {d.number}</b> · {d.partner_name || "-"} · {docStatus(d.status)}
-      {" · "}rencana {fmtNum(d.quantity)} {d.unit}
-      {d.type === "mko" && d.expected_output_qty ? ` · estimasi hasil ${fmtNum(d.expected_output_qty)}` : ""}
-      {` · diterima ${fmtNum(d.received_qty || 0)}`}
-      {d.type === "mko" && d.material_required ? ` · bahan dicadangkan ${fmtNum(d.material_reserved)}/${fmtNum(d.material_required)}` : ""}
-      {d.material_shortage > 0 && <b className="text-[#B45309]"> · kurang bahan {fmtNum(d.material_shortage)}</b>}
+      {" · "}rencana {formatQty(d.quantity)} {d.unit}
+      {d.type === "mko" && d.expected_output_qty ? ` · estimasi hasil ${formatQty(d.expected_output_qty)}` : ""}
+      {` · diterima ${formatQty(d.received_qty || 0)}`}
+      {d.type === "mko" && d.material_required ? ` · bahan dicadangkan ${formatQty(d.material_reserved)}/${formatQty(d.material_required)}` : ""}
+      {d.material_shortage > 0 && <b className="text-[#B45309]"> · kurang bahan {formatQty(d.material_shortage)}</b>}
     </p>
   );
 }
@@ -77,7 +78,7 @@ function NeedCard({ n, can, busy, onSave, onRealize, onCancel }) {
         <Pill status={n.status} testId={`od-ful-status-${n.key}`} />
       </div>
       <p className="mt-0.5 text-[11px] text-[#6B6B73]" data-testid={`od-ful-route-info-${n.key}`}>
-        {fmtNum(n.quantity)} {n.unit} · sumber master <b>{MODE[n.source_mode] || n.source_mode}</b>
+        {formatQty(n.quantity)} {n.unit} · sumber master <b>{MODE[n.source_mode] || n.source_mode}</b>
         {" · "}jalur <b>{n.route ? (n.route === "purchase" ? "Supplier" : "Makloon") : n.default_route ? `${n.default_route === "purchase" ? "Supplier" : "Makloon"} (default)` : "belum dipilih"}</b>
         {n.state?.deviation && <span className="text-[#B45309]"> · menyimpang dari default: {n.state.reason}</span>}
         {n.supplier_name && ` · supplier pemenang uji ${n.supplier_name}`}
@@ -104,6 +105,10 @@ export default function SpecialOrderFulfillmentPanel({ order, onUpdated }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const show = !["draft", "pending_approval", "cancelled"].includes(order.status);
+  // 23 Okt — sebelum harga final dikunci panel ini ringkas (dulu: kartu per item + dropdown/tombol "Simpan jalur"
+  // tampil sejak OD disetujui, menumpuk di tengah tahap desain). MD tetap bisa mengatur jalur lebih awal.
+  const early = !(order.pricing || {}).locked && !["in_production", "ready", "shipped", "done"].includes(order.status);
+  const [expanded, setExpanded] = useState(false);
   const load = useCallback(() => {
     axios.get(`${API}/special-orders/${order.id}/fulfillment`).then((r) => setData(r.data)).catch((e) => setErr(e.response?.data?.detail || "Gagal memuat pemenuhan."));
   }, [order.id]);
@@ -124,9 +129,21 @@ export default function SpecialOrderFulfillmentPanel({ order, onUpdated }) {
         <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]"><Factory size={12} /> Pemenuhan produksi per item</p>
         <button type="button" className="secondary-button !py-0.5 text-[11px]" onClick={load} data-testid="od-ful-refresh"><RefreshCw size={11} /> Muat ulang</button>
       </div>
-      <p className="mb-2 text-[11px] text-[#6B6B73]">Rilis master ≠ pengadaan. Harga terkunci tidak berarti PO/MKO sudah lahir — status di bawah per item.</p>
       {err && <p className="mb-2 text-[11px] text-[#C0392B]" data-testid="od-ful-error">{err}</p>}
-      <div className="grid gap-2">{data.items.map((n) => <NeedCard key={n.key} n={n} can={data.can || {}} busy={busy} onSave={onSave} onRealize={onRealize} onCancel={onCancel} />)}</div>
+      {early && !expanded ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-[#E5E5EA] px-2.5 py-2 text-[11px] text-[#6B6B73]" data-testid="od-ful-early">
+          <span>Pengadaan (PR → PO/MKO) dibuka setelah harga final dikunci · {data.items.length} item.
+            {data.items.some((n) => n.route) ? ` Jalur sudah diatur: ${data.items.filter((n) => n.route).length} item.` : ""}</span>
+          {(data.can || {}).choose_route && (
+            <button type="button" className="secondary-button !py-0.5 text-[11px]" onClick={() => setExpanded(true)} data-testid="od-ful-expand">Atur jalur lebih awal</button>
+          )}
+        </div>
+      ) : (
+        <>
+          <p className="mb-2 text-[11px] text-[#6B6B73]">Status pengadaan per item. Harga yang sudah dikunci belum berarti PO/MKO sudah dibuat.</p>
+          <div className="grid gap-2">{data.items.map((n) => <NeedCard key={n.key} n={n} can={data.can || {}} busy={busy} onSave={onSave} onRealize={onRealize} onCancel={onCancel} />)}</div>
+        </>
+      )}
     </section>
   );
 }

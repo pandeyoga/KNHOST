@@ -147,7 +147,7 @@ function CustomerRows({ c, open, onToggle, onOpenDocument }) {
         <td className="px-3 py-2 text-right font-semibold text-[#B45309]">{formatCurrency(c.advance_orders)}</td>
         <td className="px-3 py-2 text-right text-[#1B7F4B]">{formatCurrency(c.deposit_balance)}</td>
         <td className="px-3 py-2 text-right font-bold" data-testid={`advance-customer-total-${c.customer_id}`}>{formatCurrency(c.total)}</td>
-        <td className="px-3 py-2 text-right text-[#6B6B73]">{c.oldest_days > 0 ? `${c.oldest_days} hari` : (hasOrders ? "hari ini" : "—")}</td>
+        <td className="px-3 py-2 text-right text-[#6B6B73]">{c.oldest_days > 0 ? `${c.oldest_days} hari` : (hasOrders ? "< 1 hari" : "—")}</td>
       </tr>
       {open && c.orders.map((o) => {
         const b = BUCKETS.find((x) => x.key === o.bucket) || BUCKETS[0];

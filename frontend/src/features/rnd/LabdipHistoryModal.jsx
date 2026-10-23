@@ -68,7 +68,7 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
                   <span className="block truncate">{r.supplier_name || "—"}</span>
                   {r.performed_by && <span className="block truncate text-[10px] text-[#6B6B73]" data-testid={`labdip-history-performer-${r.round_id}`}>oleh {r.performed_by}{r.recorded_by && r.recorded_by !== r.performed_by ? ` · dicatat ${r.recorded_by}` : ""}</span>}
                 </span>
-                <span className="tabular-nums">rnd {r.round_no}</span>
+                <span className="tabular-nums">ronde {r.round_no}</span>
                 <span className="flex items-center gap-1 tabular-nums" data-testid={`labdip-history-due-${r.round_id}`}>
                   <CalendarClock size={11} className={r.overdue ? "text-[#C0392B]" : "text-[#8E8E93]"} />
                   {r.due_date || "—"}

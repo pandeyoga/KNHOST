@@ -112,7 +112,7 @@ export default function RndReportsView({ currentUser, selectedEntity }) {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-5" data-testid="rnd-reports-kpi">
             <Kpi label="Total permintaan" value={String(stats.total ?? 0)} />
             <Kpi label="Round berjalan" value={String(stats.open_rounds ?? 0)} tone="#0058CC" />
-            <Kpi label="Round terlambat" value={String(stats.overdue_rounds ?? 0)} tone="#C0392B" />
+            <Kpi label="Ronde terlambat" value={String(stats.overdue_rounds ?? 0)} tone="#C0392B" />
             <Kpi label="Sudah diputus" value={String(stats.decided ?? 0)} tone="#1B7F4B" />
             <Kpi label="Total biaya sample" value={formatCurrency(stats.cost_total || 0)} />
           </div>
@@ -237,7 +237,7 @@ export default function RndReportsView({ currentUser, selectedEntity }) {
         <div className="section-head"><h2>Papan SLA Round (yang masih berjalan)</h2></div>
         <div className="section-body">
           <div className="grid grid-cols-[130px_1.3fr_1fr_70px_110px_1fr] px-1 pb-1 text-[9.5px] font-bold uppercase text-[#8E8E93]">
-            <span>No. Permintaan</span><span>Judul</span><span>Supplier</span><span>Round</span>
+            <span>No. Permintaan</span><span>Judul</span><span>Supplier</span><span>Ronde</span>
             <span>Tenggat</span><span>Keadaan</span>
           </div>
           {slaRows.length === 0 ? (
@@ -257,7 +257,7 @@ export default function RndReportsView({ currentUser, selectedEntity }) {
                     </span>
                   </span>
                   <span className="truncate">{r.supplier}</span>
-                  <span className="tabular-nums">rnd {r.round_no}</span>
+                  <span className="tabular-nums">ronde {r.round_no}</span>
                   <span className={`tabular-nums ${r.overdue ? "font-bold text-[#C0392B]" : ""}`}>
                     {r.due}
                   </span>

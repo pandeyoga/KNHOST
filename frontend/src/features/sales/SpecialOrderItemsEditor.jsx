@@ -83,11 +83,13 @@ function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOption
         <Field label="Satuan"><KNSelect data-testid={`od-item-unit-${n}`} className="field" value={it.unit} options={unitOptions} onValueChange={(v) => upd(idx, "unit", v)} /></Field>
         <Field label="Target harga / satuan (Rp)"><input className="field" type="number" min="0" data-testid={`od-item-price-${n}`} value={it.target_price} onChange={(e) => upd(idx, "target_price", e.target.value)} /></Field>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5" data-testid={`od-item-types-${n}`}>
+      {/* 23 Okt — chip jenis uji diberi label (dulu tiga chip tanpa keterangan apa yang dipilih). */}
+      <p className="field-label mt-2">Jenis uji / pekerjaan * <span className="font-normal normal-case text-[#9A9BA3]">(boleh lebih dari satu)</span></p>
+      <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Jenis uji" data-testid={`od-item-types-${n}`}>
         {TYPES.map((t) => {
           const on = it.request_types.includes(t.value);
           return (
-            <button key={t.value} type="button" data-testid={`od-item-type-${n}-${t.value}`} onClick={() => toggle(idx, t.value)}
+            <button key={t.value} type="button" data-testid={`od-item-type-${n}-${t.value}`} onClick={() => toggle(idx, t.value)} aria-pressed={on}
               className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${on ? "border-[#0058CC] bg-[#EFF4FF] text-[#0058CC]" : "border-[#E5E5EA] text-[#6B6B73]"}`}>
               {t.label}
             </button>

@@ -50,7 +50,7 @@ export default function ProofingPanel({ design }) {
                 <span className="min-w-0">
                   <span className="font-mono text-[11.5px] font-bold">{s.number}</span>
                   <span className="ml-1 truncate text-[11px] text-[#3C3C43]">{s.title}</span>
-                  <p className="text-[10px] text-[#8E8E93]">{s.rounds} round · {s.acc_rounds} ACC{s.winner ? ` · pemenang ${s.winner}` : ""}</p>
+                  <p className="text-[10px] text-[#8E8E93]">{s.rounds} ronde · {s.acc_rounds} ACC{s.winner ? ` · pemenang ${s.winner}` : ""}</p>
                 </span>
                 <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${s.finished ? "bg-[#EAF7EF] text-[#1A7A3A]" : "bg-[#F1E9F7] text-[#6B219A]"}`}
                   data-testid={`design-proofing-sample-status-${s.id}`}>

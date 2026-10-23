@@ -481,7 +481,7 @@ function AgeCell({ r }) {
     : days >= 3 ? "bg-[#FFF1DB] text-[#B26A00]" : "bg-[#EFF3FB] text-[#33538B]";
   return (
     <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${cls}`}>
-      {days === 0 ? "hari ini" : `${days} hari`}
+      {days === 0 ? "< 1 hari" : `${days} hari`}
     </span>
   );
 }

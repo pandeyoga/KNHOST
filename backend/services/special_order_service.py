@@ -190,7 +190,10 @@ async def approve_special_order(special_order_id: str, approved_by: str) -> Dict
                 "approved_by": approved_by,
                 "approved_at": now_iso(),
                 "updated_at": now_iso()
-            }
+            },
+            # 23 Okt — dulu persetujuan tidak masuk riwayat status (riwayat berhenti di "Menunggu Persetujuan").
+            "$push": {"status_history": {"status": STATUS_CONFIRMED, "timestamp": now_iso(),
+                                         "user": approved_by, "note": "Disetujui"}},
         },
         return_document=True
     )
@@ -231,7 +234,9 @@ async def reject_special_order(special_order_id: str, rejected_by: str, reason: 
                 "rejected_at": now_iso(),
                 "reject_reason": reason,
                 "updated_at": now_iso()
-            }
+            },
+            "$push": {"status_history": {"status": STATUS_CANCELLED, "timestamp": now_iso(),
+                                         "user": rejected_by, "note": f"Ditolak: {reason}"}},
         },
         return_document=True
     )

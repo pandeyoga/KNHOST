@@ -64,9 +64,11 @@ export function RevisionFilter({ value = "", onChange, testId = "revision-filter
       {REVISION_FILTER_OPTIONS.map((o) => (
         <button key={o.value || "all"} type="button" data-testid={`${testId}-${o.value || "all"}`}
           onClick={() => onChange(o.value)}
+          // 23 Okt — "Semua ronde" (tanpa saringan) aktif dulu tampil MERAH seperti peringatan; merah kini hanya
+          // untuk saringan revisi yang sedang dipakai, "Semua" memakai warna aktif biasa (biru).
           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${value === o.value
-            ? "border-[#C62828] bg-[#FDF3F2] text-[#C62828]"
-            : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#C62828]"}`}>
+            ? (o.value ? "border-[#C62828] bg-[#FDF3F2] text-[#C62828]" : "border-[#0058CC] bg-[#EEF4FF] text-[#0058CC]")
+            : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#8E8E93]"}`}>
           {o.value && <RotateCcw size={9} />}{o.label}
         </button>
       ))}

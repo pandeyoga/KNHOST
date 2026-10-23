@@ -15,7 +15,7 @@ import { createSample, listColors, listDesigns, sampleTypes } from "./rndApi";
 import { errMsg, typeTone } from "./rndMeta";
 import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems } from "./SampleSpecFields";
 import ExistingSkuSection from "./ExistingSkuSection";
-import { typeLabel, typeMeta } from "./sampleTypeMeta";
+import { measurementMeta, typeLabel, typeMeta } from "./sampleTypeMeta";
 
 const listOrders = (params) => axios.get(`${API}/sales-orders`, { params }).then((r) => r.data);
 
@@ -168,7 +168,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
             </div>
             {typesOk && (
               <p className="mt-1 text-[10.5px] text-[#6B6B73]" data-testid="sample-type-summary">
-                Hasil ukur: {f.sample_types.map((c) => `${typeLabel(c, types).split(" (")[0]} → ${(typeMeta(c, types).measurement_fields || []).join(", ") || "foto + catatan"}`).join(" · ")}
+                Hasil ukur: {f.sample_types.map((c) => `${typeLabel(c, types).split(" (")[0]} → ${(typeMeta(c, types).measurement_fields || []).map((x) => measurementMeta(x).label).join(", ") || "foto + catatan"}`).join(" · ")}
               </p>
             )}
           </div>

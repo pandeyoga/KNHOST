@@ -114,7 +114,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           <Metric icon={Coins} label="Nilai Antrean" value={formatCurrency(totalMoney)}
                   tone="rgba(52,199,89,.16)" testId="fin-desk-metric-value" />
           <Metric icon={ShieldAlert} label="Umur Tertua"
-                  value={oldest > 0 ? `${oldest} hari` : "hari ini"}
+                  value={oldest > 0 ? `${oldest} hari` : "< 1 hari"}
                   tone="rgba(255,59,48,.14)" testId="fin-desk-metric-oldest" />
           <Metric icon={Coins} label="Uang Muka (Kewajiban)"
                   value={formatCurrency(desk?.totals?.advance_liability || 0)}

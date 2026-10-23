@@ -750,12 +750,16 @@ async def on_design_approved(design: Dict[str, Any], actor: Dict[str, Any]) -> O
     od_item = next((i for i in od.get("items") or [] if i.get("id") == (req or {}).get("special_order_item_id")), None)
     if (od_item or {}).get("status") == "cancelled":   # FE-01 lanjutan — item batal tidak memicu proofing
         return None
+    # 23 Okt — spesifikasi & sample proofing atas nama PEMBUAT OD (Sales), bukan Manajer yang meng-ACC desain:
+    # dulu Manajer tercatat pembuat → pemisahan tugas melarangnya meng-ACC spesifikasi/pemenang proofing itu
+    # (hanya Admin tersisa). Sama dengan perbaikan routing saat OD disetujui (`routing._requester`).
+    owner = await routing._requester(od, actor)  # noqa: SLF001
     # L03 LN-030 — OD multi-item: proofing memakai spesifikasi item-nya sendiri, bukan spec OD.
     spec_id = (od_item or {}).get("spec_id") or "" if od_item else od.get("spec_id") or ""
     if not spec_id:
         body = (routing._spec_from_item(od, od_item, ["proofing"]) if od_item  # noqa: SLF001
                 else routing._spec_from_od(od, ["proofing"]))  # noqa: SLF001
-        spec_doc = await spec_svc.create_spec(body, entity_id=entity_id, actor=actor.get("name", ""))
+        spec_doc = await spec_svc.create_spec(body, entity_id=entity_id, actor=owner.get("name", ""))
         spec_id = spec_doc["id"]
         if od_item:
             await db.special_orders.update_one({"id": od_id, "items.id": od_item["id"]}, {"$set": {"items.$.spec_id": spec_id}})
@@ -766,7 +770,7 @@ async def on_design_approved(design: Dict[str, Any], actor: Dict[str, Any]) -> O
         "brief": f"Otomatis: desain {design.get('code')} di-ACC. {_label(od)}. {od.get('reference_notes') or ''}".strip(),
         "customer_id": od.get("customer_id", ""), "target_date": od.get("expected_delivery", ""),
         "qty_requested": 3, "unit": item.get("unit") or "meter",
-    }, entity_id=entity_id, actor=actor.get("name", ""))
+    }, entity_id=entity_id, actor=owner.get("name", ""))
     await db.md_samples.update_one({"id": sample["id"]}, {"$set": {
         "special_order_id": od_id, "special_order_number": od.get("number", ""),
         "customer_name": od.get("customer_name", ""), "exclusive_customer_id": od.get("customer_id", ""),

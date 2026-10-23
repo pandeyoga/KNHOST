@@ -35,7 +35,7 @@ import {
 } from "./rndApi";
 import { errMsg, SAMPLE_STEPS, sampleStatusMeta } from "./rndMeta";
 import { deliverLabel, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
-import { roleIs } from "../../config/roles";
+import { roleIs, roleLabel } from "../../config/roles";
 
 function Row({ label, children, testId }) {
   return (
@@ -74,6 +74,9 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const [measurements, setMeasurements] = useState([]);
   const [deliverTargets, setDeliverTargets] = useState([]);
   const [err, setErr] = useState("");
+  // 23 Okt — galat aksi yang dipicu dari MODAL tampil di modal itu. Dulu semua ke bilah panel di BELAKANG modal
+  // (tertutup lapisan gelap): mis. "Peran 'md' tidak berwenang memutus pemenang" tak terlihat, modal tetap terbuka.
+  const [modalErr, setModalErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -102,14 +105,15 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   }, []);
 
   const act = async (fn, done) => {
-    setBusy(true); setErr("");
+    setBusy(true); setErr(""); setModalErr("");
     try {
       await fn(); await load(); onChanged?.(); setModal(null);
       if (done) notifySuccess("Berhasil", done);
-    } catch (e) { setErr(errMsg(e, "Aksi gagal dijalankan.")); }
+    } catch (e) { const m = errMsg(e, "Aksi gagal dijalankan."); if (modal) setModalErr(m); else setErr(m); }
     finally { setBusy(false); }
   };
-  const uploadProof = (round, file) => act(() => uploadRoundProof(sample.id, round.id, file), `Bukti "${file.name}" terunggah pada rnd ${round.round_no}.`);
+  useEffect(() => { setModalErr(""); }, [modal]);
+  const uploadProof = (round, file) => act(() => uploadRoundProof(sample.id, round.id, file), `Bukti "${file.name}" terunggah pada ronde ${round.round_no}.`);
   const batalkan = async () => {
     const alasan = await askReason({ title: "Batalkan permintaan sample", message: `Sebutkan alasan pembatalan ${sample.number}.`, confirmLabel: "Batalkan permintaan" });
     if (!alasan) return;
@@ -127,6 +131,16 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const hasAcc = (sample?.rounds || []).some((r) => r.result === "acc");
   const hasResult = (sample?.rounds || []).some((r) => r.result);
   const canDecideNow = isReval ? hasResult : hasAcc;
+  // 23 Okt — pemutus pemenang mengikuti kebijakan server (Pusat Pengaturan → R&D & Desain), bukan daftar peran tetap:
+  // dulu MD (di luar kebijakan) bisa membuka & mengisi seluruh formulir lalu baru ditolak server.
+  const decideRoles = (Array.isArray(policy.sample_decision_roles) ? policy.sample_decision_roles
+    : String(policy.sample_decision_roles || "").split(",")).map((x) => String(x).trim()).filter(Boolean);
+  const mayPickWinner = isReval || !decideRoles.length || decideRoles.includes(role);
+  // ACC spesifikasi (lahirkan SKU) & rilis produk: kebijakan `spec_approval_roles` (bawaan Manajer/Admin).
+  const specRoles = (Array.isArray(policy.spec_approval_roles) ? policy.spec_approval_roles
+    : String(policy.spec_approval_roles || "").split(",")).map((x) => String(x).trim()).filter(Boolean);
+  const mayApproveSpec = !specRoles.length || specRoles.includes(role);
+  const specApprovers = specRoles.map((r) => roleLabel(r)).join(" / ");
   const issues = sample?.material_issues || [];
   const codes = useMemo(() => sampleTypesOf(sample), [sample]);
 
@@ -230,7 +244,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             </div>
           )}
 
-          {!isReval && <SampleMasterDataPanel sample={sample} canDecide={canDecide} busy={busy} onAct={(fn, msg) => act(fn, msg)} />}
+          {!isReval && <SampleMasterDataPanel sample={sample} canDecide={canDecide} canApproveSpec={mayApproveSpec} specApprovers={specApprovers} busy={busy} onAct={(fn, msg) => act(fn, msg)} />}
 
           <div className="section-card section-pad">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -279,7 +293,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             <Row label="Dibuat oleh" testId="sample-detail-creator">{sample.created_by || "—"}</Row>
             <Row label="Target selesai" testId="sample-detail-target">{sample.target_date ? formatDateId(sample.target_date) : "—"}</Row>
             <Row label="Supplier" testId="sample-detail-suppliers">{(sample.participants || []).length || 0}</Row>
-            <Row label="Round" testId="sample-detail-rounds">{(sample.rounds || []).length} · {(sample.rounds || []).filter((r) => r.result === "acc").length} ACC</Row>
+            <Row label="Ronde" testId="sample-detail-rounds">{(sample.rounds || []).length} · {(sample.rounds || []).filter((r) => r.result === "acc").length} ACC</Row>
             <Row label="Biaya sample" testId="sample-detail-cost">{formatCurrency(sample.cost_total || 0)}</Row>
             <Row label="Sample jadi" testId="sample-detail-finished">
               <span className={sample.finished_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>{sample.finished_at ? formatDateId(String(sample.finished_at).slice(0, 10)) : "Belum"}</span>
@@ -296,8 +310,8 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             {active && !hasAcc && (
               <p className="rounded-lg bg-[#F2F7FF] p-2.5 text-[11px] text-[#004099]" data-testid="sample-next-hint">
                 {(sample.participants || []).length === 0
-                  ? <>Langkah berikutnya: <b>kirim ke supplier</b> — round 1 dibuka untuk tiap supplier × jenis.</>
-                  : <>Menunggu hasil round. Unggah bukti & <b>setor hasil</b> di tab jenisnya, lalu <b>nilai</b> (ACC / revisi / tolak).</>}
+                  ? <>Langkah berikutnya: <b>kirim ke supplier</b> — ronde 1 dibuka untuk tiap supplier × jenis.</>
+                  : <>Menunggu hasil ronde. Unggah bukti & <b>setor hasil</b> di tab jenisnya, lalu <b>nilai</b> (ACC / revisi / tolak).</>}
               </p>
             )}
             <div className="grid gap-1.5">
@@ -307,15 +321,21 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 </button>
               )}
               {active && canDecide && (
-                <button className="primary-button" disabled={busy || !canDecideNow} data-testid="sample-decide-button"
-                  title={canDecideNow ? (isReval ? "Catat hasil lulus/gagal" : "Pilih supplier pemenang") : "Belum ada round yang dinilai — nilai dulu hasil sample-nya"}
+                <button className="primary-button" disabled={busy || !canDecideNow || !mayPickWinner} data-testid="sample-decide-button"
+                  title={!mayPickWinner ? `Pemenang diputus oleh: ${decideRoles.map((r) => roleLabel(r)).join(", ")}`
+                    : canDecideNow ? (isReval ? "Catat hasil lulus/gagal" : "Pilih supplier pemenang") : "Belum ada ronde yang dinilai — nilai dulu hasil sample-nya"}
                   onClick={() => setModal({ kind: isReval ? "reval" : "decide" })}>
                   <Trophy size={13} /> {isReval ? "Catat hasil uji ulang" : "Pilih pemenang"}
                 </button>
               )}
+              {active && canDecide && canDecideNow && !mayPickWinner && (
+                <p className="text-[10.5px] text-[#8C4A00]" data-testid="sample-decide-not-allowed">
+                  Pemenang diputus oleh <b>{decideRoles.map((r) => roleLabel(r)).join(" / ")}</b> — minta mereka memutus dari layar ini.
+                </p>
+              )}
               {!cancelled && !pendingPic && canSubmit && !sample.finished_at && (
                 <button className="secondary-button" disabled={busy || !hasAcc} data-testid="sample-finish-button"
-                  title={hasAcc ? "Tandai sample sudah jadi" : "Belum ada round yang ACC"} onClick={() => setModal({ kind: "finish" })}>
+                  title={hasAcc ? "Tandai sample sudah jadi" : "Belum ada ronde yang ACC"} onClick={() => setModal({ kind: "finish" })}>
                   <CheckCircle2 size={13} /> Sample jadi
                 </button>
               )}
@@ -338,8 +358,8 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
       </div>
 
       {modal?.kind === "send" && (
-        <SampleSendModal mode="send" sample={sample} policy={policy} types={types} busy={busy} onClose={() => setModal(null)}
-          onConfirm={(body) => act(() => sendSample(sample.id, body), "Permintaan terkirim — round 1 dibuka untuk tiap supplier × jenis.")} />
+        <SampleSendModal mode="send" sample={sample} policy={policy} types={types} busy={busy} error={modalErr} onClose={() => setModal(null)}
+          onConfirm={(body) => act(() => sendSample(sample.id, body), "Permintaan terkirim — ronde 1 dibuka untuk tiap supplier × jenis.")} />
       )}
       {historyOpen && (
         <LabdipHistoryModal colorId={sample.color_target?.color_id}
@@ -348,19 +368,19 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
       )}
       {modal?.kind === "round" && (
         <SampleSendModal mode="round" sample={sample} participant={modal.participant} typeCode={modal.typeCode} types={types}
-          policy={policy} busy={busy} onClose={() => setModal(null)}
-          onConfirm={(body) => act(() => openRound(sample.id, body), "Round berikutnya dibuka.")} />
+          policy={policy} busy={busy} error={modalErr} onClose={() => setModal(null)}
+          onConfirm={(body) => act(() => openRound(sample.id, body), "Ronde berikutnya dibuka.")} />
       )}
       {modal?.kind === "submit" && (
-        <RoundActionModal mode="submit" sampleId={sample.id} round={modal.round} types={types} measurements={measurements} busy={busy} onClose={() => setModal(null)}
-          onConfirm={(body) => act(() => submitRound(sample.id, modal.round.id, body), "Hasil round tersimpan — menunggu penilaian.")} />
+        <RoundActionModal mode="submit" sampleId={sample.id} round={modal.round} types={types} measurements={measurements} busy={busy} error={modalErr} onClose={() => setModal(null)}
+          onConfirm={(body) => act(() => submitRound(sample.id, modal.round.id, body), "Hasil ronde tersimpan — menunggu penilaian.")} />
       )}
       {modal?.kind === "assess" && (
-        <RoundActionModal mode="assess" round={modal.round} types={types} measurements={measurements} busy={busy} onClose={() => setModal(null)}
+        <RoundActionModal mode="assess" round={modal.round} types={types} measurements={measurements} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => assessRound(sample.id, modal.round.id, body), "Penilaian tersimpan — jejak QC sample tercatat.")} />
       )}
       {modal?.kind === "decide" && (
-        <DecideModal sample={sample} reasons={reasons} busy={busy} onClose={() => setModal(null)}
+        <DecideModal sample={sample} reasons={reasons} canApproveSpec={mayApproveSpec} specApprovers={specApprovers} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(async () => {
             const r = await decideSample(sample.id, body);
             // Cek UI UAT v3 (S13) — SKU gagal lahir (spesifikasi belum lengkap) dulu hanya teks kecil di panel master data.
@@ -369,23 +389,23 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
           }, "Pemenang diputuskan — kontrak harga & barang supplier terbentuk.")} />
       )}
       {modal?.kind === "reval" && (
-        <RevalDecideModal sample={sample} busy={busy} onClose={() => setModal(null)}
+        <RevalDecideModal sample={sample} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => decideSample(sample.id, body), body.result === "pass" ? "Uji ulang LULUS tercatat untuk supplier ini." : "Uji ulang GAGAL — masuk antrean keputusan PIC.")} />
       )}
       {modal?.kind === "pic" && (
-        <PicDecisionModal sample={sample} canOverride={canOverride} busy={busy} onClose={() => setModal(null)}
+        <PicDecisionModal sample={sample} canOverride={canOverride} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => picDecision(sample.id, body), "Keputusan PIC tercatat — hasil tetap GAGAL.")} />
       )}
       {modal?.kind === "issue" && (
-        <IssueMaterialModal busy={busy} onClose={() => setModal(null)}
+        <IssueMaterialModal busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => issueMaterial(sample.id, body), "Bahan diambil — stok gudang berkurang & biaya sample bertambah.")} />
       )}
       {modal?.kind === "finish" && (
-        <SampleFinishModal mode="finish" sample={sample} busy={busy} onClose={() => setModal(null)}
+        <SampleFinishModal mode="finish" sample={sample} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => finishSample(sample.id, body), "Sample ditandai JADI — tanggalnya tercatat.")} />
       )}
       {modal?.kind === "deliver" && (
-        <SampleFinishModal mode="deliver" sample={sample} targets={deliverTargets} busy={busy} onClose={() => setModal(null)}
+        <SampleFinishModal mode="deliver" sample={sample} targets={deliverTargets} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => deliverSample(sample.id, body), "Pengiriman sample tercatat beserta tujuannya.")} />
       )}
     </div>

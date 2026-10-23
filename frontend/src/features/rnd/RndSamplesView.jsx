@@ -162,7 +162,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             ["Dikerjakan", stats.in_progress ?? 0, "rnd-samples-kpi-in-progress"],
             ["Ada ACC", stats.assessed ?? 0, "rnd-samples-kpi-assessed"],
             ["Pemenang dipilih", stats.decided ?? 0, "rnd-samples-kpi-decided"],
-            ["Round terlambat", stats.overdue_rounds ?? 0, "rnd-samples-kpi-overdue"],
+            ["Ronde terlambat", stats.overdue_rounds ?? 0, "rnd-samples-kpi-overdue"],
           ].map(([label, value, tid]) => (
             <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
@@ -219,7 +219,9 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
         </div>
       ) : tab === "board" ? (
         <div data-testid="rnd-samples-board" className="grid grid-flow-col auto-cols-[minmax(215px,1fr)] gap-2 overflow-x-auto pb-1">
-          {SAMPLE_BOARD_ACTIVE.map((s) => {
+          {/* 23 Okt — saringan status di luar kolom aktif (mis. "Pemenang dipilih") dulu membuat papan kosong
+              semua padahal hitungannya 2; kolom status itu kini ikut tampil saat disaring. */}
+          {(statusFilter && !SAMPLE_BOARD_ACTIVE.includes(statusFilter) ? [...SAMPLE_BOARD_ACTIVE, statusFilter] : SAMPLE_BOARD_ACTIVE).map((s) => {
             const meta = SAMPLE_STATUS_META[s];
             return (
               <div key={s} data-testid={`rnd-samples-col-${s}`} className="rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] p-2">

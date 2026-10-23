@@ -127,6 +127,13 @@ export default function SpecialOrderDetail({
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onUpdate(res.data);
+      // 23 Okt — dulu tanpa umpan balik; Manajer tidak tahu dokumen apa yang lahir otomatis.
+      const ch = res.data.chain || {};
+      const made = [ch.design_request?.number, ...(ch.samples || []).map((s) => s.number)].filter(Boolean);
+      setError(null);
+      setOkMsg(res.data.status === "pending_approval"
+        ? "Disetujui di tingkat Anda — menunggu tingkat persetujuan berikutnya."
+        : `Pesanan disetujui.${made.length ? ` Diteruskan otomatis: ${made.join(", ")}.` : ""}`);
     } catch (e) {
       setError("Gagal menyetujui: " + (e.response?.data?.detail || e.message));
     } finally {
@@ -252,17 +259,14 @@ export default function SpecialOrderDetail({
             <h2 className="detail-title flex items-center gap-2" data-testid="special-order-number">
               <Sparkles size={18} className="text-purple-500" /> {order.number}
             </h2>
-            <StatusPill status={order.status} />
+            <StatusPill status={order.status} phase={order.chain?.phase} />
             {order.origin === "redesign" && (
               <span className="feature-badge badge-orange" data-testid="special-order-origin-badge">Redesign</span>
-            )}
-            {order.requires_approval && order.status === "pending_approval" && (
-              <span className="feature-badge badge-orange">Butuh Persetujuan</span>
             )}
           </div>
           <p className="detail-subtitle">
             Pelanggan: <strong>{order.customer_name}</strong>
-            {" "}• Dibuat: {fmtDate(order.created_at)} oleh {order.created_by}
+            {" "}• Dibuat: {fmtDate(order.created_at)} oleh {order.created_by_name || order.created_by}
           </p>
         </div>
 
@@ -374,7 +378,7 @@ export default function SpecialOrderDetail({
           {order.status === "approved" && (
             <div className="info-chip success">
               <CheckCircle2 size={13} />
-              Disetujui oleh {order.approved_by} pada {fmtDate(order.approved_at)}
+              Disetujui oleh {order.approved_by_name || order.approved_by} pada {fmtDate(order.approved_at)}
             </div>
           )}
 

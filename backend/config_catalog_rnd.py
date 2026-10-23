@@ -90,13 +90,15 @@ E("rnd.spec_approval_roles", group="rnd", type="list", default=["manager", "admi
   consumers=("services/rnd_spec_service.py:_assert_role", "routers/rnd.py"),
   risk="high", roles=_MANAGER_TOO, permission=_RND_PERM)
 
-E("rnd.sample_decision_roles", group="rnd", type="list", default=["manager", "admin"],
+# 23 Okt — selaras keputusan pemilik UAT v3 (22 Okt): pemenang boleh diputus Manajer ATAU MD. Matriks `sample_acc`
+# (config_divisions) sudah memuat md, tetapi lapis kebijakan ini masih bawaan lama → MD tetap ditolak di server.
+E("rnd.sample_decision_roles", group="rnd", type="list", default=["manager", "md", "admin"],
   scopes=G,
   label="Peran yang boleh memilih supplier pemenang sample",
   help="Keputusan pemenang membentuk KONTRAK HARGA yang dipakai PO, karena itu "
        "wewenangnya dibatasi.",
   impact="Peran di luar daftar tidak bisa memutus, sehingga tidak bisa membentuk kontrak harga.",
-  example="['manager','admin'] → staf R&D menilai, manager memutus",
+  example="['manager','md','admin'] → MD/manager memutus; ['manager','admin'] → staf R&D menilai, manager memutus",
   consumers=("services/rnd_sample_service.py:decide_sample", "routers/rnd.py"),
   risk="high", roles=_MANAGER_TOO, permission=_RND_PERM)
 

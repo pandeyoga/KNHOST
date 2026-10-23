@@ -73,7 +73,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
         <section data-testid="sample-desk-metrics" className="grid gap-3 p-3 sm:grid-cols-3">
           <Metric icon={Inbox} label="Perlu Tindakan Saya" value={openItems} tone="rgba(255,149,0,.16)" testId="sample-desk-metric-open" />
           <Metric icon={Layers} label="Antrean Aktif" value={queues.filter((q) => q.count > 0).length} tone="rgba(154,91,0,.14)" testId="sample-desk-metric-queues" />
-          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "hari ini"} tone="rgba(255,59,48,.14)" testId="sample-desk-metric-oldest" />
+          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "< 1 hari"} tone="rgba(255,59,48,.14)" testId="sample-desk-metric-oldest" />
         </section>
         {(data?.not_my_desk || []).length > 0 && (
           <div data-testid="sample-desk-not-mine" className="mx-3 mb-3 rounded-lg border border-[#F3D9A4] bg-[#FFF9EC] px-3 py-2">

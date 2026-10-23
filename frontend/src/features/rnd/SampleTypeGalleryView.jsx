@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Filter, FlaskConical, Plus, RefreshCw, Search, X } from "lucide-react";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
+import OkNotice from "../../components/OkNotice";
 import KNSelect from "../../components/KNSelect";
 import { OptionTabs } from "../../components/ListControls";
 import LineFilter from "../../components/LineFilter";
@@ -144,7 +145,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
             <Kpi label="Pemenang dipilih" value={stats.decided} tone="#1B7F4B" testId={`sample-gallery-kpi-decided-${code}`} />
             <Kpi label="Round terlambat" value={stats.overdue} tone="#C62828" testId={`sample-gallery-kpi-overdue-${code}`} />
           </div>
-          {okMsg && <div className="rounded-lg bg-[#EAF7EF] px-3 py-2 text-[11.5px] text-[#1A7A3A]" data-testid={`sample-gallery-ok-${code}`}>{okMsg}</div>}
+          <OkNotice message={okMsg} onDismiss={() => setOkMsg("")} testId={`sample-gallery-ok-${code}`} />
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative max-w-sm flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />

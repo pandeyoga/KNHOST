@@ -62,7 +62,7 @@ export function MobileMdDesk({ selectedEntity, onOpenRow }) {
       {err && <div className="notice-bar danger text-xs" data-testid="m-md-desk-error">{err}</div>}
       <div className="grid grid-cols-2 gap-2">
         <div className="m-card p-3" data-testid="m-md-metric-open"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">Perlu ditindak</p><p className="text-[20px] font-bold tabular-nums">{total}</p></div>
-        <div className="m-card p-3" data-testid="m-md-metric-oldest"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">Umur tertua</p><p className="text-[20px] font-bold">{oldest ? `${oldest} hari` : "hari ini"}</p></div>
+        <div className="m-card p-3" data-testid="m-md-metric-oldest"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">Umur tertua</p><p className="text-[20px] font-bold">{oldest ? `${oldest} hari` : "< 1 hari"}</p></div>
       </div>
       <p className="px-0.5 text-[11px] m-muted">Desain → sample/labdip → spesifikasi & produk → PR bahan. Baris dibuka langsung di layar HP-nya.</p>
       {loading && !desk && <div className="h-16 animate-pulse rounded-xl bg-[#ECEDF0]" />}

@@ -197,7 +197,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
                       </span>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
                         o.days_waiting >= 7 ? "bg-[#FFE5E5] text-[#C62828]" : "bg-[#FFF1DB] text-[#B26A00]"}`}>
-                        {o.days_waiting} hari
+                        {o.days_waiting > 0 ? `${o.days_waiting} hari` : "< 1 hari"}
                       </span>
                     </button>
                   ))}

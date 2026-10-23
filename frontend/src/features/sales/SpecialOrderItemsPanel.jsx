@@ -44,9 +44,10 @@ export default function SpecialOrderItemsPanel({ order, canEdit, onCreated, canC
 
   if (!items.length && !legacyRedesign && !ref.number && !(order.redesigns || []).length) return null;
   return (
-    <section className="mb-3 rounded-lg border border-[#EDEEF1] bg-white p-3" data-testid="special-order-items-panel">
-      <p className="mb-2 flex items-center gap-1.5 text-[12px] font-bold"><Layers size={14} /> Item & sumber desain ({items.length ? activeCount : 1}
-        {items.length > activeCount ? ` aktif · ${items.length - activeCount} batal` : ""})</p>
+    // 23 Okt — judul panel seragam dengan panel lain di halaman ini (kapital kecil abu, `section-card`).
+    <section className="section-card mb-3 !p-3" data-testid="special-order-items-panel">
+      <p className="mb-2 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]"><Layers size={12} /> Item & sumber desain · {items.length ? activeCount : 1}
+        {items.length > activeCount ? ` aktif · ${items.length - activeCount} batal` : ""}</p>
       {ref.number && (
         <p className="mb-2 rounded bg-[#FDECEC] px-2 py-1 text-[11px] text-[#A8221A]" data-testid="special-order-redesign-of">
           Redesign dari <b>{ref.number}</b> · artwork asal <b>{ref.design_code || ref.design_id}</b> — {ref.reason}

@@ -15,7 +15,7 @@ import { roundTypeOf, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
 // Daftar supplier hidup DI SINI (bukan rndApi.js) — modul bersama itu dipakai layar desainer tanpa izin supplier.view.
 const listSuppliers = (params) => axios.get(`${API}/suppliers`, { params }).then((r) => r.data);
 
-export default function SampleSendModal({ mode = "send", sample, participant, typeCode, types, policy, onClose, onConfirm, busy }) {
+export default function SampleSendModal({ mode = "send", sample, participant, typeCode, types, policy, onClose, onConfirm, busy, error = "" }) {
   const [suppliers, setSuppliers] = useState([]);
   const [picked, setPicked] = useState([]);
   const [q, setQ] = useState("");
@@ -57,7 +57,7 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
     : onConfirm({ supplier_id: participant?.supplier_id, type_code: typeCode, due_date: due, note, reason }));
 
   return (
-    <FormModal open onClose={onClose} size="md" testId="sample-send-modal" icon={isSend ? Send : Plus} error={err}
+    <FormModal open onClose={onClose} size="md" testId="sample-send-modal" icon={isSend ? Send : Plus} error={err || error}
       title={isSend ? "Kirim Permintaan ke Supplier" : `Buka round ${nextNo} · ${typeLabel(typeCode, types)}`}
       subtitle={isSend ? `${sample?.number} · round 1 dibuka untuk tiap supplier × jenis` : `${participant?.supplier_name || ""} · ${sample?.number}`}
       footer={<Footer onClose={onClose} onConfirm={confirm} busy={busy} disabled={disabled} icon={isSend ? Send : Plus} testId="sample-send-confirm"

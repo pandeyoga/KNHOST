@@ -14,6 +14,7 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
   const ch = order.chain || {};
   const phases = ch.phases || [];
   const idx = Math.max(0, phases.findIndex(([k]) => k === ch.phase));
+  const parallel = ch.phase_parallel || [];
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const routed = !!(order.design_request_id || (order.sample_ids || []).length);
@@ -38,8 +39,8 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
         <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Lini masa pesanan khusus</p>
         <ol className="flex flex-wrap items-center gap-1" data-testid="od-phases">
           {phases.map(([k, label], i) => (
-            <li key={k} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] ${i < idx ? "border-[#CDE9D6] bg-[#EAF7EF] text-[#1A7A3A]" : i === idx ? "border-[#0058CC] bg-[#0058CC] font-bold text-white" : "border-[#EFF0F2] text-[#9A9BA3]"}`}
-              data-testid={`od-phase-${k}`}>
+            <li key={k} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] ${i < idx ? "border-[#CDE9D6] bg-[#EAF7EF] text-[#1A7A3A]" : i === idx ? "border-[#0058CC] bg-[#0058CC] font-bold text-white" : parallel.includes(k) ? "border-[#0058CC] bg-[#EEF4FF] font-semibold text-[#0058CC]" : "border-[#EFF0F2] text-[#9A9BA3]"}`}
+              data-testid={`od-phase-${k}`} title={parallel.includes(k) ? "Berjalan bersamaan" : undefined}>
               {i < idx ? <CheckCircle2 size={10} /> : <Circle size={10} />} {label}
             </li>
           ))}
@@ -70,7 +71,7 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           <Node title="Permintaan desain" on={!!ch.design_request} testId="od-node-design">
             {ch.design_request ? <>
-              <b className="font-mono">{ch.design_request.number}</b> · {docStatus(ch.design_request.status)}{ch.design_request.assigned_to_name ? ` · ${ch.design_request.assigned_to_name}` : ""}
+              <b className="font-mono">{ch.design_request.number}</b> · {ch.design_request.status_label || docStatus(ch.design_request.status)}{ch.design_request.assigned_to_name ? ` · ${ch.design_request.assigned_to_name}` : ""}
               {ch.design && <span className="block">Desain <b className="font-mono">{ch.design.code}</b> · {docStatus(ch.design.status)}</span>}
             </> : (order.request_types || []).includes("printing") ? "lahir saat OD disetujui" : "tidak perlu (bukan printing)"}
           </Node>

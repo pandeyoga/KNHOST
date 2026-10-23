@@ -1,22 +1,16 @@
 /** Shared helpers & components for the Special Order feature. */
 import { CheckCircle2, Clock, Package, XCircle } from "lucide-react";
+import { formatDate, formatDateTime } from "../../utils/formatters";
 
 export function fmtNum(n, d = 0) {
   return new Intl.NumberFormat("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
 }
 
-export function fmtDate(s) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("id-ID", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
-}
+// 23 Okt — tanggal/jam baku WIB (dulu zona perangkat, tanpa keterangan zona).
+export const fmtDate = formatDateTime;
 
 // Tanggal saja (tanpa jam) — untuk tenggat/perkiraan kirim.
-export function fmtDay(s) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-}
+export const fmtDay = formatDate;
 
 // Label status dokumen tertaut (PR/PO/SO/permintaan desain) — jangan tampilkan kode mentah.
 const DOC_STATUS = {
@@ -41,8 +35,20 @@ export const STATUS_STYLE = {
   cancelled:         { cls: "pill-danger",  label: "Dibatalkan", icon: XCircle },
 };
 
-export function StatusPill({ status }) {
-  const s = STATUS_STYLE[status] || { cls: "pill-muted", label: status, icon: Clock };
+// 23 Okt — fase OD terstruktur (lini masa). Status teknis "confirmed" berlaku sejak OD disetujui, padahal
+// pesanan masih di tahap desain/sample → kepala halaman menulis "Terkonfirmasi" sementara lini masa menulis
+// "Desain berjalan". Lencana kini mengikuti fase bila fase lebih rinci daripada status.
+const PHASE_STYLE = {
+  design: { cls: "pill-info", label: "Desain berjalan", icon: Clock },
+  sampling: { cls: "pill-info", label: "Sampling berjalan", icon: Clock },
+  sample_ready: { cls: "pill-info", label: "Sample siap", icon: CheckCircle2 },
+  customer_review: { cls: "pill-warning", label: "Menunggu ACC pelanggan", icon: Clock },
+  pricing: { cls: "pill-warning", label: "Harga final", icon: Clock },
+  approved: { cls: "pill-info", label: "Disetujui", icon: CheckCircle2 },
+};
+
+export function StatusPill({ status, phase }) {
+  const s = (status === "confirmed" && PHASE_STYLE[phase]) || STATUS_STYLE[status] || { cls: "pill-muted", label: status, icon: Clock };
   const Icon = s.icon;
   return (
     <span className={`status-pill ${s.cls}`} data-testid={`so-status-pill-${status}`}>

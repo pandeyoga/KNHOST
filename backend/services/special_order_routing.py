@@ -273,6 +273,10 @@ async def chain_of(od: Dict[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {"design_request": None, "design": None, "samples": [], "products": [], "pr": None, "po": [], "so": None}
     if od.get("design_request_id"):
         req = await db.design_requests.find_one({"id": od["design_request_id"]}, {"_id": 0, "id": 1, "number": 1, "status": 1, "design_id": 1, "assigned_to_name": 1})
+        if req:
+            # 23 Okt — label status SAMA dengan modul Desainer ("Menunggu penugasan", bukan "Diajukan").
+            from services.design_request_service import STATUS_LABEL as _DR_LABEL
+            req["status_label"] = _DR_LABEL.get(req.get("status"), req.get("status"))
         out["design_request"] = req
         if req and req.get("design_id"):
             out["design"] = await db.design_gallery.find_one({"id": req["design_id"]}, {"_id": 0, "id": 1, "code": 1, "title": 1, "status": 1, "version": 1})
@@ -307,6 +311,9 @@ async def chain_of(od: Dict[str, Any]) -> Dict[str, Any]:
     out["review"] = await p2.review_ready(od)
     out["pricing"] = await p2.pricing_preview(od)
     out["phase"] = _phase(od, out)
+    # Tahap yang IKUT berjalan bersamaan dengan fase utama (mis. sample labdip selagi desain printing dikerjakan).
+    out["phase_parallel"] = (["sampling"] if out["phase"] == "design"
+                             and any(s.get("status") not in ("cancelled", "decided") for s in out["samples"]) else [])
     if od.get("linked_sales_order_id"):
         out["outbound_tasks"] = await db.wms_tasks.find({"order_id": od["linked_sales_order_id"], "flow_type": "outbound"},
                                                         {"_id": 0, "id": 1, "status": 1, "quantity": 1, "shipped_qty": 1, "warehouse_name": 1}).to_list(20)
@@ -331,13 +338,16 @@ def _phase(od: Dict[str, Any], chain: Dict[str, Any]) -> str:
         return "pricing"
     samples = chain.get("samples") or []
     live = [s for s in samples if s.get("status") != "cancelled"]
+    # 23 Okt — OD printing+labdip: desain & sample labdip berjalan PARALEL. Dulu sample labdip yang hidup langsung
+    # menjadikan fase "Sampling" sehingga lini masa mencentang "Desain berjalan" SELESAI padahal desain belum
+    # dikerjakan. Fase kini = tahap paling awal yang belum selesai (desain belum ACC → "design").
+    dr = chain.get("design_request")
+    if dr and dr.get("status") not in ("approved", "done", "closed", "cancelled"):
+        return "design"
     if live and all(s.get("status") == "decided" for s in live):
         return "customer_review" if any(s.get("delivered_at") for s in live) else "sample_ready"
     if live:
         return "sampling"
-    dr = chain.get("design_request")
-    if dr and dr.get("status") not in ("approved", "done", "delivered", "closed"):
-        return "design"
     if chain.get("design") and chain["design"].get("status") in ("approved", "final_submitted", "active"):
         return "customer_review"
     return "approved" if st in ("approved", "confirmed") else st

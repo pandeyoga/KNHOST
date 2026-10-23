@@ -240,7 +240,7 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
                       </span>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
                         o.days_waiting >= 7 ? "bg-[#FDE7E7] text-[#C0392B]" : "bg-[#FFF4E0] text-[#B26A00]"}`}>
-                        {o.days_waiting} hari
+                        {o.days_waiting > 0 ? `${o.days_waiting} hari` : "< 1 hari"}
                       </span>
                     </button>
                   ))}

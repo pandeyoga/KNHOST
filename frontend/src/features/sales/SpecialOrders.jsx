@@ -19,11 +19,9 @@ import { StatusPill, fmtDay } from "./SpecialOrderShared";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import PagedRows from "../../components/PagedRows";
 import KNSelect from "../../components/KNSelect";
+import { formatCurrency, formatQty } from "../../utils/formatters";
 
 
-function fmtNum(n, d = 0) {
-  return new Intl.NumberFormat("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
-}
 
 // Main component
 export default function SpecialOrders({ currentUser, focusDoc = null, onClearFocus }) {
@@ -198,7 +196,7 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
             <div className="metric-icon"><Icon size={16} /></div>
             <div className="metric-body">
               <div className="metric-label">{label}</div>
-              <div className="metric-value tabular-nums">{fmtNum(value)}</div>
+              <div className="metric-value tabular-nums">{formatQty(value)}</div>
               {hint && <div className="metric-hint">{hint}</div>}
             </div>
           </div>
@@ -242,24 +240,29 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
               <tr>
                 <th>Nomor</th>
                 <th>Pelanggan</th>
-                <th>Deskripsi Item</th>
-                <th className="text-right">Qty</th>
-                <th className="text-right">Harga Target</th>
+                <th>Deskripsi item</th>
+                <th className="text-right">Qty · harga target</th>
                 <th className="text-right">Total</th>
                 <th>Status</th>
-                <th>Perkiraan kirim</th>
-                <th></th>
+                <th>Tenggat kirim</th>
               </tr>
             </thead>
             <tbody>
               <PagedRows rows={filteredOrders} pageSize={20} testId="special-orders-pager">{(order) => (
-                <tr key={order.id} data-testid={`special-order-row-${order.id}`}>
-                  <td>
+                // 23 Okt — seluruh baris membuka detail; tautan "Detail" pindah ke sel nomor (dulu kolom aksi paling kanan
+                // terdorong keluar layar 1440 px dan nomor OD pecah tiga baris).
+                <tr key={order.id} data-testid={`special-order-row-${order.id}`} className="cursor-pointer"
+                  onClick={() => { setSelectedOrder(order); setView("detail"); }}>
+                  <td className="whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Sparkles size={12} className="text-purple-500" />
                       <span className="font-mono font-semibold">{order.number}</span>
                       {order.origin === "redesign" && <span className="feature-badge badge-orange" data-testid={`special-order-redesign-badge-${order.id}`}>Redesign</span>}
-                      {(order.items || []).length > 1 && <span className="text-[10px] text-muted" data-testid={`special-order-items-count-${order.id}`}>{order.items.length} item</span>}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 pl-5 text-[10.5px]">
+                      {(order.items || []).length > 1 && <span className="text-muted" data-testid={`special-order-items-count-${order.id}`}>{order.items.length} item</span>}
+                      <button type="button" data-testid={`view-special-order-${order.id}`} className="link-button"
+                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setView("detail"); }}>Detail →</button>
                     </div>
                   </td>
                   <td>
@@ -284,34 +287,24 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
                     const units = [...new Set(items.map((i) => i.unit || "meter"))];
                     const multi = items.length > 1;
                     return (<>
-                      <td className="text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
+                      <td className="whitespace-nowrap text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
                         {multi && units.length === 1
-                          ? <><strong>{fmtNum(items.reduce((a, i) => a + Number(i.quantity || 0), 0), 2)}</strong> {units[0]}</>
-                          : <><strong>{fmtNum(order.custom_item?.quantity, 2)}</strong> {order.custom_item?.unit}</>}
-                      </td>
-                      <td className="text-right tabular-nums">
-                        {multi ? <span className="text-muted">per item</span> : <>Rp {fmtNum(order.custom_item?.target_price, 0)}</>}
+                          ? <><strong>{formatQty(items.reduce((a, i) => a + Number(i.quantity || 0), 0))}</strong> {units[0]}</>
+                          : <><strong>{formatQty(order.custom_item?.quantity)}</strong> {order.custom_item?.unit}</>}
+                        <div className="text-[10.5px] text-muted">
+                          {multi ? "harga per item" : `@ ${formatCurrency(order.custom_item?.target_price)}`}
+                        </div>
                       </td>
                     </>);
                   })()}
-                  <td className="text-right font-semibold tabular-nums">
-                    Rp {fmtNum(order.total_amount, 0)}
+                  <td className="whitespace-nowrap text-right font-semibold tabular-nums">
+                    {formatCurrency(order.total_amount)}
                   </td>
                   <td>
                     <StatusPill status={order.status} />
                   </td>
-                  <td className="text-muted">
-                    <Clock size={11} className="inline mr-1" />
-                    {fmtDay(order.expected_delivery)}
-                  </td>
-                  <td>
-                    <button
-                      data-testid={`view-special-order-${order.id}`}
-                      className="link-button"
-                      onClick={() => { setSelectedOrder(order); setView("detail"); }}
-                    >
-                      Detail →
-                    </button>
+                  <td className="whitespace-nowrap text-muted">
+                    {order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "—"}
                   </td>
                 </tr>
               )}</PagedRows>

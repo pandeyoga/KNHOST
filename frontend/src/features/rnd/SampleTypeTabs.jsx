@@ -9,7 +9,7 @@ import { formatCurrency } from "../../utils/formatters";
 import SampleRoundList from "./SampleRoundList";
 import SampleProofGallery from "./SampleProofGallery";
 import { ROUND_RESULT_META, typeTone } from "./rndMeta";
-import { FALLBACK_TYPE_CODES, roundTypeOf, sampleTypesOf, typeLabel, typeMeta } from "./sampleTypeMeta";
+import { FALLBACK_TYPE_CODES, measurementMeta, roundTypeOf, sampleTypesOf, typeLabel, typeMeta } from "./sampleTypeMeta";
 
 function TypeCompare({ sample, code }) {
   const rows = (sample.participants || []).map((p) => {
@@ -84,7 +84,7 @@ export default function SampleTypeTabs({ sample, types, measurements, busy, load
               {typeLabel(code, types).split(" (")[0]}
               {has && (
                 <span className="rounded-full bg-[#F2F2F5] px-1.5 text-[9.5px] tabular-nums text-[#6B6B73]" data-testid={`sample-tab-count-${code}`}>
-                  {countOf(code)} rnd{accOf(code) ? " · ACC" : ""}
+                  {countOf(code)} ronde{accOf(code) ? " · ACC" : ""}
                 </span>
               )}
               {!has && <span className="text-[9.5px] font-normal text-[#9A9BA3]">tidak diminta</span>}
@@ -97,7 +97,7 @@ export default function SampleTypeTabs({ sample, types, measurements, busy, load
         {meta.notes && (
           <p className="rounded-lg px-3 py-2 text-[11px]" style={{ background: tone.bg, color: tone.fg }} data-testid="sample-tab-notes">
             {meta.notes}
-            {(meta.measurement_fields || []).length > 0 && <> Hasil ukur: <b>{meta.measurement_fields.join(", ")}</b>.</>}
+            {(meta.measurement_fields || []).length > 0 && <> Hasil ukur: <b>{meta.measurement_fields.map((f) => measurementMeta(f, measurements).label).join(", ")}</b>.</>}
           </p>
         )}
         {!requested ? (

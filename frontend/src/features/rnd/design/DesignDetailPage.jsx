@@ -6,6 +6,7 @@ import DesignImage from "./DesignImage";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Pencil, RefreshCw } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import OkNotice from "../../../components/OkNotice";
 import { getDesign, patchDesign, studioMeta } from "../rndApi";
 import { DESIGN_LIFECYCLE_STEPS, DESIGN_STATUS_META, errMsg, fmtScore } from "../rndMeta";
 import DesignFormModal from "../DesignFormModal";
@@ -70,7 +71,7 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
   return (
     <div data-testid="design-detail-page" className="space-y-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="design-detail-error" />
-      {ok && <div className="rounded-lg bg-[#EAF7EF] px-3 py-2 text-[11.5px] text-[#1A7A3A]" data-testid="design-detail-ok">{ok}</div>}
+      <OkNotice message={ok} onDismiss={() => setOk("")} testId="design-detail-ok" />
 
       <div className="section-card">
         <div className="section-body">

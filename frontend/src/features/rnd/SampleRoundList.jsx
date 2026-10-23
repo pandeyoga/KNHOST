@@ -43,7 +43,7 @@ export default function SampleRoundList({ sample, types, measurements, canSubmit
             <div>
               <p className="text-[12.5px] font-bold text-[#1C1C1E]">{p.supplier_name}</p>
               <p className="text-[10.5px] text-[#6B6B73]">
-                {p.rounds || 0} round pada {Object.keys(p.types || {}).length || kinds.length} jenis{p.overdue ? " · pernah terlambat" : ""}
+                {p.rounds || 0} ronde pada {Object.keys(p.types || {}).length || kinds.length} jenis{p.overdue ? " · pernah terlambat" : ""}
               </p>
             </div>
             <span className={`status-pill ${p.status === "acc" ? "pill-success" : p.status === "rejected" ? "pill-danger" : "pill-muted"}`}
@@ -65,7 +65,7 @@ export default function SampleRoundList({ sample, types, measurements, canSubmit
                   <p className="text-[11px] font-bold text-[#0058CC]">
                     {typeLabel(tc, types)}
                     <span className="ml-2 font-normal text-[#6B6B73]">
-                      {rounds.length} round{rounds.length > 1 ? ` · ${revisionLabel(rounds.length).toLowerCase()}` : ""}{prog.best_score != null ? ` · skor terbaik ${prog.best_score}` : ""}
+                      {rounds.length} ronde{rounds.length > 1 ? ` · ${revisionLabel(rounds.length).toLowerCase()}` : ""}{prog.best_score != null ? ` · skor terbaik ${prog.best_score}` : ""}
                     </span>
                   </p>
                   {canOpenNext && canSubmit && (
@@ -78,7 +78,7 @@ export default function SampleRoundList({ sample, types, measurements, canSubmit
                   <div className="mt-2">
                     <RoundBoxes testId={`sample-rounds-progress-${p.supplier_id}-${tc}`} testPrefix={`sample-round-box-${p.supplier_id}-${tc}`}
                       items={rounds.map((r) => ({
-                        key: r.round_no, title: `rnd ${r.round_no} · ${revisionLabel(r.round_no)}`,
+                        key: r.round_no, title: `ronde ${r.round_no} · ${revisionLabel(r.round_no)}`,
                         sub: `${(r.attachments || []).length} bukti${r.score != null ? ` · skor ${r.score}` : ""}`,
                         result: sampleRoundResult(r),
                       }))} />
@@ -124,7 +124,7 @@ function RoundBlock({ r, sample, measurements, decided, highlight, canSubmit, ca
       <span className={`absolute -left-[27px] top-1 h-3.5 w-3.5 rounded-full ring-4 ring-white ${dot}`} style={highlight ? { left: "-35px" } : undefined} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-[12.5px] font-bold text-[#1C1C1E]">
-          rnd {r.round_no}
+          ronde {r.round_no}
           <span className="ml-1.5 rounded bg-[#F5F5F7] px-1.5 py-px text-[9.5px] font-bold text-[#6B6B73]" data-testid={`round-revision-${r.id}`}>{revisionLabel(r.round_no)}</span>
           {r.overdue && <span className="ml-1.5 rounded bg-[#FDECEC] px-1.5 py-px text-[9.5px] font-bold text-[#C0392B]">TERLAMBAT</span>}
         </h4>

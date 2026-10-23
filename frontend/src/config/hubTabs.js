@@ -92,6 +92,10 @@ export const HUB_TABS = {
     // "Spesifikasi Produk" DIKONSOLIDASIKAN ke form Permintaan Sample (bagian 3) & panel
     // "Master data" di rincian sample — tab terpisah dihapus (permintaan pemilik 2026-09).
     { view: "rnd-samples", label: "Permintaan Sample",  roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },
+    // 23 Okt — tab tetap TIDAK tampil (keputusan pemilik di atas), tetapi alamatnya hidup kembali sebagai alias
+    // tersembunyi: antrean "Spesifikasi produk menunggu ACC" (dasbor/Pusat Persetujuan Manajer) & Jejak Dokumen
+    // menautkan ke `rnd-specs` — dulu tautan itu melempar pengguna ke Beranda.
+    { view: "rnd-specs", label: "Spesifikasi Produk", roles: ["admin", "manager", "sales", "md", "sales_admin"], hidden: true, aliasOf: "rnd-samples" },
     // Galeri per JENIS — cermin "Desain & Pattern (Master)" di hub Desainer (permintaan user).
     { view: "rnd-labdip",   label: "Labdip",   roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },
     { view: "rnd-handfeel", label: "Handfeel", roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },

@@ -14,7 +14,7 @@ import { Field, Footer, Hint } from "./RndField";
 import { sampleTypesOf } from "./sampleTypeMeta";
 import { sampleRequiredTests } from "./rndApi";
 
-export default function DecideModal({ sample, reasons, onClose, onConfirm, busy }) {
+export default function DecideModal({ sample, reasons, onClose, onConfirm, busy, error = "", canApproveSpec = true, specApprovers = "" }) {
   const accBySupplier = {};
   (sample.rounds || []).forEach((r) => { if (r.result === "acc") accBySupplier[r.supplier_id] = r; });
   const candidates = (sample.participants || []).filter((p) => accBySupplier[p.supplier_id]);
@@ -35,7 +35,9 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy 
   const [colorName, setColorName] = useState("");
   const [supplierItemName, setSupplierItemName] = useState("");
   const [colorCode, setColorCode] = useState("");
-  const [approveSpec, setApproveSpec] = useState(specOpen);
+  // 23 Okt — peran di luar kebijakan ACC spesifikasi (mis. MD) tidak ditawari centang ini: dulu tercentang bawaan →
+  // server menolak sebagian → "SKU gagal lahir" merah padahal itu memang menunggu Manajer.
+  const [approveSpec, setApproveSpec] = useState(specOpen && canApproveSpec);
   const [productSku, setProductSku] = useState(spec?.sku_hint || "");
   const [productName, setProductName] = useState(spec?.title || "");
 
@@ -62,7 +64,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy 
     override_reason: missingTests.length ? override : "",
   };
   return (
-    <FormModal open onClose={onClose} size="lg" testId="decide-modal" icon={Trophy}
+    <FormModal open onClose={onClose} size="lg" testId="decide-modal" icon={Trophy} error={error}
       title="ACC Sampling · Pilih Supplier Pemenang" subtitle={`${sample.number} · ${sample.title}`}
       footer={<div className="flex flex-wrap items-center justify-end gap-2">
         {/* Cek UI UAT v3 (S13) — tombol nonaktif dulu tanpa keterangan apa yang kurang (mis. alasan keputusan). */}
@@ -134,7 +136,11 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy 
 
                 {spec && (
                   <Block step={3} title="Master produk">
-                    {specOpen ? (
+                    {specOpen && !canApproveSpec ? (
+                      <p className="text-[11.5px] text-[#3C3C43]" data-testid="decide-spec-by-other">
+                        SKU produk lahir setelah <b>{specApprovers || "Manajer"}</b> meng-ACC spesifikasi {spec.number} (tombol <i>ACC spesifikasi → lahirkan SKU</i> di panel Master data). Keputusan pemenang & kontrak harga tetap tersimpan sekarang.
+                      </p>
+                    ) : specOpen ? (
                       <>
                         <label className="flex items-start gap-2 text-[11.5px]">
                           <input type="checkbox" className="mt-0.5" checked={approveSpec} onChange={(e) => setApproveSpec(e.target.checked)} data-testid="decide-approve-spec" />

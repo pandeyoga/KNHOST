@@ -62,7 +62,7 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
       {!review.ready ? (
         <p className="rounded-lg border border-dashed border-[#D9D9DE] px-3 py-3 text-[11px] text-[#9A9BA3]" data-testid="od-customer-not-ready">
           {review.waiting_for?.length
-            ? `Menunggu ${review.object === "proofing" ? "proofing kain" : "sample"} selesai diputus R&D: ${review.waiting_for.join(", ")}. ACC desain PIC belum menjadi dasar keputusan pelanggan.`
+            ? `Menunggu ${review.object === "proofing" ? "proofing kain" : "sample"} selesai diputus R&D: ${review.waiting_for.join(", ")}. ACC desain oleh PIC internal bukan keputusan pelanggan — pelanggan memutuskan dari hasil ${review.object === "proofing" ? "proofing kain" : "sample"}.`
             : "Belum ada sample yang diputus pemenang (atau desain ACC). Blok ini aktif setelah R&D menutup sampling."}
         </p>
       ) : (
