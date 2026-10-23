@@ -16,6 +16,10 @@
 | `LEMBAR_HASIL_UAT_v3.md` | Lembar hasil yang bisa diedit (305 langkah + penutupan) |
 | `src/v3_steps.py`, `src/v3_scenarios.py`, `src/v3_build.py` | Sumber v3 — `python docs/uat/2026-10-21/src/v3_build.py` |
 
+> **23 Okt 2026** — permintaan pemilik P1–P17 (desain eksklusif, harga OD, R&D, lokasi gudang, POS, roll MDQ, PR→PO, UI,
+> foto) dianalisis dengan bukti kode & data UAT, akar masalah, rencana bertahap, kriteria terima, dan daftar keputusan
+> pemilik: `ANALISIS_TEMUAN_UAT_23OKT.md` (belum ada perubahan kode).
+
 Status cek layar: S1 & S2 seluruh langkah sudah dijalankan di layar dengan akun peran (21–22 Okt 2026);
 S3, S4, S6 sebagian (langkah bersama S1); alur lain belum dijalankan di layar — langkahnya ditandai ○ di dokumen.
 
