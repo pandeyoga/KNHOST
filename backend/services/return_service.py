@@ -195,28 +195,9 @@ async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any]) -> Dict[str, Any]
     return cn
 
 
-async def _create_credit_note_and_post_gl(
-    ret: Dict[str, Any],
-    items: List[Dict] = None,
-    post_stock: bool = True,
-    settlement_type: str = None,
-    refund_account_code: str = "",
-) -> Dict[str, Any]:
-    """F3/R1 — buat Credit Note dari sales_return + posting GL reversal (idempotent).
-
-    Parameter (R1):
-      items          : subset item yang diselesaikan (partial/reject) — default semua item.
-      post_stock     : True → barang kembali ke stok (COGS reversal + roll masuk); False → nego (tanpa gerak stok).
-      settlement_type: "cash" (refund tunai) | "ar" (pengurang piutang) | "store_credit" | "nego".
-                       None → deteksi dari metode bayar order.
-
-    Nilai retur dari harga item SO asli; HPP dari avg unit_cost roll.
-    Bila return sudah punya credit_note_id → kembalikan yang ada (idempotent)."""
-    if ret.get("credit_note_id"):
-        existing = await db.credit_notes.find_one({"id": ret["credit_note_id"]}, {"_id": 0})
-        if existing:
-            return existing
-
+async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock: bool = True) -> Dict[str, Any]:
+    """Angka Nota Kredit retur — baris (harga transaksi neto SO asal / nilai diputus Finance), DPP, PPN (rasio efektif
+    SO asal), HPP balik ke stok. SATU hitungan untuk penerbitan dan pratinjau keputusan (23 Okt)."""
     order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
     price_by_pid: Dict[str, float] = {}
     lines_by_pid: Dict[str, List[List[float]]] = {}  # CX-11 — [qty_dasar, harga neto] per BARIS SO
@@ -282,11 +263,56 @@ async def _create_credit_note_and_post_gl(
     ppn = round(net * eff_frac, 2) if has_ppn else 0.0
     gross = round(net + ppn, 2)
 
+    return {"order": order, "lines": lines, "net": net, "cogs": cogs, "ppn_rate": ppn_rate, "ppn": ppn, "gross": gross}
+
+
+def _default_settlement(order: Dict[str, Any]) -> str:
+    """Penyelesaian bawaan Nota Kredit: SO tunai → refund kas, SO kredit → pengurang piutang."""
+    return "cash" if order_payment_method(order) in NON_AR_METHODS else "ar"
+
+
+async def _source_bill_split(ret: Dict[str, Any], order: Dict[str, Any], settlement: str, gross: float) -> Tuple[bool, float]:
+    """LN-091 / KLR-10 — (berlaku?, nominal) bagian Nota Kredit yang memotong sisa tagihan SO ASAL lebih dulu.
+    Hanya SO asal; utang SO lain tidak ikut dipotong — kelebihannya refund/saldo sesuai pilihan customer."""
+    bill_first = False
+    if settlement in ("cash", "store_credit") and gross > 0 and order:
+        from services.return_policy_service import return_assumptions
+        bill_first = bool((await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True))
+    if (settlement == "ar" or bill_first) and gross > 0 and order:
+        open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
+        return True, round(min(gross, max(open_amt, 0.0)), 2)
+    return False, 0.0
+
+
+async def _create_credit_note_and_post_gl(
+    ret: Dict[str, Any],
+    items: List[Dict] = None,
+    post_stock: bool = True,
+    settlement_type: str = None,
+    refund_account_code: str = "",
+) -> Dict[str, Any]:
+    """F3/R1 — buat Credit Note dari sales_return + posting GL reversal (idempotent).
+
+    Parameter (R1):
+      items          : subset item yang diselesaikan (partial/reject) — default semua item.
+      post_stock     : True → barang kembali ke stok (COGS reversal + roll masuk); False → nego (tanpa gerak stok).
+      settlement_type: "cash" (refund tunai) | "ar" (pengurang piutang) | "store_credit" | "nego".
+                       None → deteksi dari metode bayar order.
+
+    Nilai retur dari harga item SO asli; HPP dari avg unit_cost roll.
+    Bila return sudah punya credit_note_id → kembalikan yang ada (idempotent)."""
+    if ret.get("credit_note_id"):
+        existing = await db.credit_notes.find_one({"id": ret["credit_note_id"]}, {"_id": 0})
+        if existing:
+            return existing
+
+    fig = await _cn_figures(ret, items, post_stock)
+    order, lines, net, cogs = fig["order"], fig["lines"], fig["net"], fig["cogs"]
+    ppn_rate, ppn, gross = fig["ppn_rate"], fig["ppn"], fig["gross"]
+    eid = ret.get("entity_id", "")
+
     # Tentukan penyelesaian & flag kas.
-    if settlement_type:
-        settlement = settlement_type
-    else:
-        settlement = "cash" if order_payment_method(order) in NON_AR_METHODS else "ar"
+    settlement = settlement_type or _default_settlement(order)
     is_cash = settlement == "cash"
 
     cn_number = await next_credit_note_number()
@@ -313,13 +339,8 @@ async def _create_credit_note_and_post_gl(
     # P20 SALE-05 — nota kredit pengurang piutang juga mengurangi sisa tagihan SO (subledger = GL 1-1200).
     # LN-091 — refund/saldo: tagihan SO asal dipotong DULU (disepakati); kelebihan saja yang direfund/jadi saldo.
     # KLR-10 (owner 2026-10-19): hanya SO asal; utang SO lain TIDAK dipotong — kelebihan = pilihan customer refund/saldo.
-    bill_first = False
-    if settlement in ("cash", "store_credit") and gross > 0 and order:
-        from services.return_policy_service import return_assumptions
-        bill_first = bool((await return_assumptions(eid)).get("bill_first", True))
-    if (settlement == "ar" or bill_first) and gross > 0 and order:
-        open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
-        ar_amt = round(min(gross, max(open_amt, 0.0)), 2)
+    applies, ar_amt = await _source_bill_split(ret, order, settlement, gross)
+    if applies:
         cn["excess_amount"] = round(gross - ar_amt, 2)
         cn["bill_scope"] = "source_order"
         await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"excess_amount": cn["excess_amount"],
@@ -1455,6 +1476,103 @@ async def _finish_return_transfer(transfer: Dict[str, Any], return_id: str, roll
             "to_entity": dest_entity_id, "qty": qty, "moved": moved, "je": je, "roll": updated_roll}
 
 
+def _settle_lines(ret: Dict[str, Any], outcome: str, item_decisions: List[Dict] = None) -> Tuple[List[Dict], List[Dict]]:
+    """Keputusan per item (kecualikan / sebagian qty) → (items retur bertanda settle_outcome/settled_qty, baris yang
+    diselesaikan). Nego memakai baris kompensasi yang diputus Finance (cutloss/diskon)."""
+    d_by_idx: Dict[int, Dict] = {}
+    d_by_pid: Dict[str, Dict] = {}
+    for d in item_decisions or []:
+        if d.get("index", -1) is not None and int(d.get("index", -1)) >= 0:
+            d_by_idx[int(d["index"])] = d
+        if d.get("product_id"):
+            d_by_pid[d["product_id"]] = d
+    items = ret.get("items", [])
+    effective: List[Dict] = []
+    for i, it in enumerate(items):
+        d = d_by_idx.get(i) or d_by_pid.get(it.get("product_id")) or {}
+        item_outcome = d.get("outcome") or outcome
+        full_qty = float(it.get("quantity_returned", 0) or 0)
+        sq = d.get("settle_qty", -1)
+        try:
+            sq = float(sq)
+        except (ValueError, TypeError):
+            sq = -1
+        qty = full_qty if sq < 0 else max(0.0, min(sq, full_qty))
+        it["settle_outcome"] = item_outcome
+        it["settled_qty"] = round(qty, 2)
+        if item_outcome == st.OUTCOME_REJECT or qty <= 0:
+            continue
+        effective.append({**it, "quantity_returned": qty})
+    if outcome == st.OUTCOME_NEGO:
+        from services import return_compensation_service as _comp
+        effective = _comp.settle_items(ret) or effective
+    return items, effective
+
+
+async def _settlement_type(ret: Dict[str, Any], outcome: str, nego_payout: str = "") -> Any:
+    """Jenis penyelesaian Nota Kredit untuk outcome ini (None = bawaan metode bayar SO asal)."""
+    settlement_type = None if outcome == st.OUTCOME_REFUND else \
+        ("store_credit" if outcome == st.OUTCOME_STORE_CREDIT else "nego")
+    if outcome == st.OUTCOME_NEGO and nego_payout in ("refund", "store_credit"):
+        settlement_type = "cash" if nego_payout == "refund" else "store_credit"   # KLR-10 — pilihan customer
+    if outcome == st.OUTCOME_REFUND:
+        # LN-091 — refund = potong tagihan SO asal dulu, kelebihan dibayar tunai (bukan menggantung di piutang).
+        from services.return_policy_service import return_assumptions
+        if (await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True):
+            settlement_type = "cash"
+    return settlement_type
+
+
+SETTLE_SPLIT_LABEL = {"cash": "Refund tunai ke pelanggan", "store_credit": "Jadi saldo pelanggan (store credit)",
+                      "ar": "Pengurang piutang", "nego": "Pengurang piutang"}
+
+
+async def preview_settlement(return_id: str, outcome: str, item_decisions: List[Dict] = None,
+                             nego_payout: str = "", refund_account_code: str = "") -> Dict[str, Any]:
+    """23 Okt — pratinjau keputusan retur SEBELUM diselesaikan: nilai Nota Kredit (DPP + PPN), pembagiannya (potong
+    tagihan SO asal / refund / saldo / pengurang piutang), HPP yang balik ke stok, dan baris jurnalnya. Memakai fungsi
+    hitung yang SAMA dengan penyelesaian (`_settle_lines` → `_cn_figures` → `_source_bill_split` →
+    `gl_service.sales_return_lines`) dan tidak menulis apa pun."""
+    import copy
+    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise ValueError(f"Return {return_id} tidak ditemukan")
+    if outcome not in st.SETTLE_OUTCOMES:
+        raise ValueError(f"Outcome tidak valid: '{outcome}'.")
+    ret = copy.deepcopy(ret)
+    _, effective = _settle_lines(ret, outcome, item_decisions)
+    post_stock = outcome in (st.OUTCOME_REFUND, st.OUTCOME_STORE_CREDIT)
+    fig = await _cn_figures(ret, effective, post_stock)
+    settlement = await _settlement_type(ret, outcome, nego_payout) or _default_settlement(fig["order"])
+    applies, ar_amt = await _source_bill_split(ret, fig["order"], settlement, fig["gross"])
+    rest = round(fig["gross"] - ar_amt, 2)
+    split = []
+    if ar_amt > 0:
+        split.append({"kind": "source_bill", "label": f"Potong sisa tagihan {ret.get('order_number') or 'SO asal'}",
+                      "amount": ar_amt})
+    if rest > 0:
+        split.append({"kind": settlement, "label": SETTLE_SPLIT_LABEL.get(settlement, "Pengurang piutang"), "amount": rest})
+    cash_acc = (refund_account_code or "1-1100") if settlement == "cash" else ""
+    raw = gl_service.sales_return_lines(return_net=fig["net"], return_ppn=fig["ppn"], return_cogs=fig["cogs"],
+                                        is_cash=settlement == "cash", settlement=settlement, cash_account_code=cash_acc,
+                                        ar_part=ar_amt if settlement in ("cash", "store_credit") else 0.0,
+                                        label="(nomor Nota Kredit saat terbit)")
+    from services import gl_mapping_service as _glm
+    eid = ret.get("entity_id", "")
+    journal = await _glm.remap_lines(raw, eid, "sales_return")
+    names = await gl_service._account_names([ln["account_code"] for ln in journal])
+    cost_codes = {await gl_service.account_for("persediaan.persediaan", eid), await gl_service.account_for("persediaan.hpp", eid)}
+    for ln in journal:
+        ln["account_name"] = names.get(ln["account_code"], "")
+        ln["cost"] = ln["account_code"] in cost_codes
+    return {"outcome": outcome, "settlement": settlement, "post_stock": post_stock,
+            "lines": fig["lines"], "net_amount": fig["net"], "ppn_amount": fig["ppn"], "gross_amount": fig["gross"],
+            "cogs_amount": fig["cogs"], "split": split, "journal": journal,
+            "source_bill_checked": applies, "order_number": ret.get("order_number", ""),
+            "basis": ("Nilai diputus Finance (cutloss/diskon)" if outcome == st.OUTCOME_NEGO
+                      else "Harga transaksi neto SO asal × qty diselesaikan; PPN mengikuti rasio PPN SO asal")}
+
+
 async def settle_return(return_id: str, actor: str, outcome: str,
                         item_decisions: List[Dict] = None, notes: str = "",
                         return_warehouse_id: str = "", refund_account_code: str = "",
@@ -1497,36 +1615,7 @@ async def settle_return(return_id: str, actor: str, outcome: str,
     await _saga.claim("sales_returns", return_id, "sales_return_settle",
                       precondition={"status": ret["status"]}, actor=actor)
 
-    # Bangun keputusan per item (partial/reject).
-    decisions = item_decisions or []
-    d_by_idx: Dict[int, Dict] = {}
-    d_by_pid: Dict[str, Dict] = {}
-    for d in decisions:
-        if d.get("index", -1) is not None and int(d.get("index", -1)) >= 0:
-            d_by_idx[int(d["index"])] = d
-        if d.get("product_id"):
-            d_by_pid[d["product_id"]] = d
-
-    items = ret.get("items", [])
-    effective: List[Dict] = []
-    for i, it in enumerate(items):
-        d = d_by_idx.get(i) or d_by_pid.get(it.get("product_id")) or {}
-        item_outcome = d.get("outcome") or outcome
-        full_qty = float(it.get("quantity_returned", 0) or 0)
-        sq = d.get("settle_qty", -1)
-        try:
-            sq = float(sq)
-        except (ValueError, TypeError):
-            sq = -1
-        qty = full_qty if sq < 0 else max(0.0, min(sq, full_qty))
-        it["settle_outcome"] = item_outcome
-        it["settled_qty"] = round(qty, 2)
-        if item_outcome == st.OUTCOME_REJECT or qty <= 0:
-            continue
-        effective.append({**it, "quantity_returned": qty})
-    if outcome == st.OUTCOME_NEGO:
-        from services import return_compensation_service as _comp
-        effective = _comp.settle_items(ret) or effective
+    items, effective = _settle_lines(ret, outcome, item_decisions)
 
     now = now_iso()
     settlement: Dict[str, Any] = {"outcome": outcome, "settled_at": now, "settled_by": actor}
@@ -1535,15 +1624,7 @@ async def settle_return(return_id: str, actor: str, outcome: str,
 
     if effective:
         post_stock = outcome in (st.OUTCOME_REFUND, st.OUTCOME_STORE_CREDIT)
-        settlement_type = None if outcome == st.OUTCOME_REFUND else \
-            ("store_credit" if outcome == st.OUTCOME_STORE_CREDIT else "nego")
-        if outcome == st.OUTCOME_NEGO and nego_payout in ("refund", "store_credit"):
-            settlement_type = "cash" if nego_payout == "refund" else "store_credit"   # KLR-10 — pilihan customer
-        if outcome == st.OUTCOME_REFUND:
-            # LN-091 — refund = potong tagihan SO asal dulu, kelebihan dibayar tunai (bukan menggantung di piutang).
-            from services.return_policy_service import return_assumptions
-            if (await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True):
-                settlement_type = "cash"
+        settlement_type = await _settlement_type(ret, outcome, nego_payout)
         # R3 — tujuan penerimaan: LOKASI dipilih user; OWNER tetap = entity SO (GL-safe).
         dest_warehouse = return_warehouse_id or await _resolve_return_warehouse(ret["order_id"])
         dest_owner = ret.get("entity_id", "")

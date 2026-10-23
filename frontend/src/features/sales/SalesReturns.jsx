@@ -172,15 +172,17 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
     });
   }
 
-  function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout) {
+  function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout, exchange) {
     return runAction("settle", "Gagal settle", async () => {
       const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
+      if (exchange) body.exchange = true;
       const res = await axios.post(`${API}/sales-returns/${ret.id}/settle`, body);
       const st = res.data?.settlement || {};
       const cashMsg = st.cash_txn_number ? ` · refund tunai ${st.cash_txn_number}` : "";
-      const outLabel = { refund: "pengembalian dana", store_credit: "store credit", nego: "nego/diskon" }[outcome] || outcome;
+      const outLabel = exchange ? "tukar barang — saldo untuk pesanan pengganti"
+        : ({ refund: "pengembalian dana", store_credit: "store credit", nego: "nego/diskon" }[outcome] || outcome);
       setNotice(`${ret.number} diselesaikan (${outLabel})${cashMsg}.`);
       showFresh(res.data); load();
     });

@@ -8,7 +8,8 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from db import db
 from dependencies import require_permission, require_any_permission, audit, has_permission
-from core_utils import now_iso, new_id, strip_cost_fields
+from core_utils import now_iso, new_id, strip_cost_fields, COST_SAFE_ROLES
+from role_registry import role_in
 from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
                           resolve_scope_ids)
 from schemas import (SalesReturnCreate, SalesReturnDecision, ReturnRollDecisionsIn,
@@ -612,6 +613,10 @@ async def settle_return(
                                    existing.get("entity_id") or ctx.active_entity_id,
                                    action="menerima barang retur di sini",
                                    field_label="Gudang retur")
+    if payload.exchange:
+        if payload.outcome != st.OUTCOME_STORE_CREDIT:
+            raise HTTPException(status_code=400, detail="Tukar barang diselesaikan sebagai Store Credit (saldo untuk pesanan pengganti).")
+        _exchange_allowed(existing)
     try:
         doc = await return_service.settle_return(
             return_id, user.get("name", user.get("email", "")),
@@ -629,6 +634,15 @@ async def settle_return(
                 "attachment_ids": list(payload.decision_attachment_ids or [])}
     if cond_decision:
         decision["condition_decision"] = cond_decision
+    if payload.exchange and existing.get("return_type") != "penggantian":
+        change = {"from": existing.get("return_type", ""), "to": "penggantian", "by": user.get("name", ""),
+                  "at": now_iso(), "reason": "Keputusan tukar barang saat penyelesaian"}
+        await db.sales_returns.update_one({"id": return_id}, {"$set": {"return_type": "penggantian"},
+                                                             "$push": {"return_type_history": change}})
+        if doc.get("credit_note_id"):
+            await db.credit_notes.update_one({"id": doc["credit_note_id"]}, {"$set": {"return_type": "penggantian"}})
+        doc["return_type"] = "penggantian"
+        decision["exchange"] = change
     if existing.get("logistics_costs"):
         decision["logistics_costs"] = existing["logistics_costs"]   # KLR-11 — snapshot penanggung ongkir
     await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision": decision}})
@@ -637,6 +651,47 @@ async def settle_return(
                 {"outcome": payload.outcome, "decision_note": decision["note"],
                  "return_warehouse_id": payload.return_warehouse_id})
     return doc
+
+
+def _exchange_allowed(ret: Dict[str, Any]) -> None:
+    """Tukar barang = retur tipe penggantian: hanya bila kebijakan retur dokumen ini mengizinkannya."""
+    allowed = (ret.get("policy_snapshot") or {}).get("allowed_return_types")
+    if allowed and "penggantian" not in allowed:
+        raise HTTPException(status_code=409, detail="Kebijakan retur pelanggan ini tidak mengizinkan tukar barang (penggantian).")
+
+
+@router.post("/sales-returns/{return_id}/settle-preview")
+async def settle_preview(return_id: str, request: Request, payload: SalesReturnSettle) -> Dict[str, Any]:
+    """23 Okt — angka keputusan SEBELUM diselesaikan (Nota Kredit, pembagian, jurnal); tidak menulis apa pun."""
+    user = await require_permission(request, "sales_return", "approve")
+    existing = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(existing, "sales_returns", await entity_ctx(request))
+    if existing.get("status") in st.TERMINAL_STATES:
+        raise HTTPException(status_code=400, detail="Retur sudah selesai — angka resminya ada di Nota Kredit.")
+    try:
+        out = await return_service.preview_settlement(
+            return_id, payload.outcome, [d.dict() for d in payload.item_decisions],
+            nego_payout=(payload.payout or "").strip(), refund_account_code=payload.refund_account_code)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    from services import return_exception_service as rex
+    try:
+        await rex.assert_settle_allowed(existing, payload.outcome)
+        out["blocked"] = ""
+    except ValueError as e:
+        out["blocked"] = str(e)
+    if payload.exchange:
+        try:
+            _exchange_allowed(existing)
+        except HTTPException as e:
+            out["blocked"] = e.detail
+    if not role_in(user.get("role"), COST_SAFE_ROLES):   # S-10 — HPP hanya untuk admin/manajer
+        out["journal"] = [ln for ln in out["journal"] if not ln.get("cost")]
+        out.pop("cogs_amount", None)
+        out["cost_hidden"] = True
+    return out
 
 
 # ─── R5.4 — REVERSAL / KOREKSI settle (settled → cancelled, GL-safe) ─────────

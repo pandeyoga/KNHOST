@@ -6,21 +6,81 @@
  *  kepemilikan lintas-PT dilakukan via aksi "Transfer Kepemilikan" di panel karantina. */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
-import { CheckCircle2, Loader2, X, Wallet, Coins, Percent, Warehouse, Info } from "lucide-react";
+import { CheckCircle2, Loader2, X, Wallet, Coins, Percent, Warehouse, Info, Repeat, Receipt } from "lucide-react";
 import { fmtNum } from "./ReturnShared";
 import KNSelect from "../../components/KNSelect";
+import { formatCurrency, formatQty } from "../../utils/formatters";
+import { apiErrorText } from "../../utils/apiError";
 
+// UAT 23 Okt — "Tukar Barang" jadi pilihan keputusan sendiri (dulu hanya lewat tipe pengajuan "Penggantian"):
+// di server = Store Credit + retur menjadi tipe penggantian → Admin Sales membuat pesanan pengganti.
 const OUTCOMES = [
   { value: "refund", label: "Pengembalian Dana", desc: "Kembalikan dana (tunai/piutang) + barang masuk stok", icon: Wallet },
   { value: "store_credit", label: "Store Credit", desc: "Tambah saldo pelanggan (potong bon) + barang masuk stok", icon: Coins },
-  { value: "nego", label: "Nego (Diskon)", desc: "Nota Kredit diskon tanpa gerak stok", icon: Percent },
+  { value: "exchange", label: "Tukar Barang", desc: "Nilai jadi saldo untuk pesanan pengganti (barang sama) + barang masuk stok", icon: Repeat },
+  { value: "nego", label: "Nego (Diskon)", desc: "Nota Kredit cutloss/diskon tanpa gerak stok", icon: Percent },
 ];
+const TYPE_LABEL = { retur: "Retur", bs: "BS", komplain: "Komplain", garansi: "Garansi", penggantian: "Penggantian" };
+
+/** UAT 23 Okt — nilai keputusan SEBELUM diselesaikan (dulu modal tanpa rupiah sama sekali): Nota Kredit, pembagiannya,
+ *  barang ke stok, dan jurnal — dihitung server dengan fungsi yang sama dengan penyelesaian (`/settle-preview`). */
+function SettleValuePanel({ pv, err, busy }) {
+  if (err) return <p className="mt-3 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-preview-error">{err}</p>;
+  if (!pv) return busy ? <p className="mt-3 text-[11.5px] text-[#6B6B73]" data-testid="settle-preview-loading">Menghitung nilai keputusan…</p> : null;
+  if (pv.blocked) return <p className="notice-bar mt-3 text-[11.5px]" data-testid="settle-preview-blocked">{pv.blocked}</p>;
+  const billed = pv.split.some((x) => x.kind === "source_bill");
+  return (
+    <div className={`mt-3 rounded-lg border border-[#DCE6F5] bg-[#F8FBFF] p-3 text-[12px] ${busy ? "opacity-60" : ""}`} data-testid="settle-preview">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="font-semibold text-[#1B4F9C]"><Receipt size={13} className="mr-1 inline" />Nilai Nota Kredit</span>
+        <span className="text-[15px] font-bold tabular-nums" data-testid="settle-preview-gross">{formatCurrency(pv.gross_amount)}</span>
+      </div>
+      <ul className="mt-1.5 space-y-0.5 text-[11.5px] text-[#3F4652]">
+        {pv.lines.map((l, i) => (
+          <li key={i} className="flex justify-between gap-3" data-testid={`settle-preview-line-${i}`}>
+            <span>{l.product_name} · {formatQty(l.quantity)} {l.unit} × {formatCurrency(l.unit_price)}</span>
+            <span className="tabular-nums">{formatCurrency(l.line_total)}</span>
+          </li>))}
+        <li className="flex justify-between border-t border-[#E4ECF7] pt-1"><span>DPP</span><span className="tabular-nums">{formatCurrency(pv.net_amount)}</span></li>
+        <li className="flex justify-between"><span>PPN (rasio PPN SO asal)</span><span className="tabular-nums">{formatCurrency(pv.ppn_amount)}</span></li>
+      </ul>
+      <p className="mt-2 font-semibold">Ke mana nilainya</p>
+      <ul className="space-y-0.5 text-[11.5px]" data-testid="settle-preview-split">
+        {pv.split.map((x) => (
+          <li key={x.kind} className="flex justify-between gap-3"><span>{x.label}</span><span className="font-semibold tabular-nums">{formatCurrency(x.amount)}</span></li>))}
+        {pv.source_bill_checked && !billed && <li className="text-[#6B6B73]">{pv.order_number || "SO asal"} sudah lunas — tidak ada tagihan yang dipotong.</li>}
+      </ul>
+      <p className="mt-2 text-[11.5px] text-[#3F4652]" data-testid="settle-preview-stock">
+        {pv.post_stock
+          ? <>Barang masuk stok (karantina){pv.cogs_amount != null && <> — nilai persediaan kembali {formatCurrency(pv.cogs_amount)} (WAC)</>}.</>
+          : "Tanpa gerak stok — barang tidak masuk stok."}
+      </p>
+      <details className="mt-2" data-testid="settle-preview-journal">
+        <summary className="cursor-pointer text-[11.5px] font-semibold text-[#0058CC]">Lihat jurnal yang akan terbentuk</summary>
+        <table className="mt-1.5 w-full text-[11px]">
+          <thead><tr className="text-left text-[#6B6B73]"><th className="font-semibold">Akun</th><th className="text-right font-semibold">Debit</th><th className="text-right font-semibold">Kredit</th></tr></thead>
+          <tbody>
+            {pv.journal.map((j, i) => (
+              <tr key={i}>
+                <td className="py-0.5">{j.account_code} {j.account_name}</td>
+                <td className="text-right tabular-nums">{j.debit ? formatCurrency(j.debit) : ""}</td>
+                <td className="text-right tabular-nums">{j.credit ? formatCurrency(j.credit) : ""}</td>
+              </tr>))}
+          </tbody>
+        </table>
+        {pv.cost_hidden && <p className="mt-1 text-[10.5px] text-[#6B6B73]">Baris persediaan/HPP hanya terlihat oleh Manajer/Admin.</p>}
+      </details>
+      <p className="mt-1.5 text-[10.5px] text-[#6B6B73]">{pv.basis}. Angka resmi = Nota Kredit saat diselesaikan.</p>
+    </div>
+  );
+}
 
 export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   // Cek UI UAT v3 (S15) — retur Penggantian (tukar barang) = Store Credit: nilainya jadi saldo yang dipakai pesanan
   // pengganti (panel "Pesanan pengganti"). Dulu default Pengembalian Dana tanpa petunjuk → pengguna mencari outcome "Tukar".
   const isSwap = ret.return_type === "penggantian";
-  const [outcome, setOutcome] = useState(isSwap ? "store_credit" : "refund");
+  const [outcome, setOutcome] = useState(isSwap ? "exchange" : "refund");
+  const apiOutcome = outcome === "exchange" ? "store_credit" : outcome;
   const [notes, setNotes] = useState("");
   const [decisionNote, setDecisionNote] = useState("");   // L08 LN-081 — bukti keputusan di luar sistem
   const [payout, setPayout] = useState("store_credit");   // KLR-10 — nego: customer pilih refund / saldo
@@ -53,21 +113,44 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
     return () => { active = false; };
   }, [open]);
 
+  const itemDecisions = () => decisions.map((d, i) => ({
+    index: i,
+    outcome: d.include ? "" : "reject",
+    settle_qty: d.include ? (parseFloat(d.settle_qty) || 0) : -1,
+  }));
+  const refundAcc = outcome === "refund" || (outcome === "nego" && payout === "refund") ? refundAccount : "";
+
+  // Nilai keputusan dihitung ulang tiap pilihan berubah (jeda singkat supaya tidak memanggil server per ketikan).
+  const [pv, setPv] = useState(null);
+  const [pvErr, setPvErr] = useState("");
+  const [pvBusy, setPvBusy] = useState(false);
+  const pvKey = JSON.stringify([apiOutcome, outcome === "exchange", itemDecisions(), outcome === "nego" ? payout : "", refundAcc]);
+  useEffect(() => {
+    if (!open) return undefined;
+    let alive = true;
+    setPvBusy(true);
+    const t = setTimeout(async () => {
+      const [o, exchange, item_decisions, po, acc] = JSON.parse(pvKey);
+      try {
+        const r = await axios.post(`${API}/sales-returns/${ret.id}/settle-preview`,
+          { outcome: o, exchange, item_decisions, payout: po, refund_account_code: acc });
+        if (alive) { setPv(r.data); setPvErr(""); }
+      } catch (e) {
+        if (alive) { setPv(null); setPvErr(apiErrorText(e, "Nilai keputusan belum bisa dihitung.")); }
+      } finally { if (alive) setPvBusy(false); }
+    }, 300);
+    return () => { alive = false; clearTimeout(t); };
+  }, [open, ret.id, pvKey]);
+
   if (!open) return null;
   const upd = (i, patch) => setDecisions((d) => d.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
-  const movesStock = outcome === "refund" || outcome === "store_credit";
+  const movesStock = apiOutcome === "refund" || apiOutcome === "store_credit";
 
   async function confirm() {
     setBusy(true); setErr("");
     try {
-      const item_decisions = decisions.map((d, i) => ({
-        index: i,
-        outcome: d.include ? "" : "reject",
-        settle_qty: d.include ? (parseFloat(d.settle_qty) || 0) : -1,
-      }));
-      const failed = await onSettle(ret, outcome, item_decisions, notes, movesStock && !physLocs.length ? returnWarehouseId : "",
-                     outcome === "refund" || (outcome === "nego" && payout === "refund") ? refundAccount : "", decisionNote,
-                     outcome === "nego" ? payout : "");
+      const failed = await onSettle(ret, apiOutcome, itemDecisions(), notes, movesStock && !physLocs.length ? returnWarehouseId : "",
+                     refundAcc, decisionNote, outcome === "nego" ? payout : "", outcome === "exchange");
       if (failed) { setErr(failed); return; }
       onClose();
     } finally { setBusy(false); }
@@ -78,7 +161,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
 
   return (
     <div className="modal-overlay" data-testid="settle-modal">
-      <div className="modal-card" style={{ maxWidth: 640 }}>
+      <div className="modal-card" style={{ maxWidth: 760 }}>
         <div className="flex items-center justify-between mb-1">
           <h3 className="modal-title">Selesaikan Retur {ret.number}</h3>
           <button className="icon-button" onClick={onClose}><X size={15} /></button>
@@ -86,7 +169,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
         <p className="modal-subtitle">Pilih outcome & item yang diselesaikan (bisa sebagian / kecualikan item).</p>
 
         {/* Outcome selector */}
-        <div className="grid grid-cols-3 gap-2 my-3">
+        <div className="grid grid-cols-2 gap-2 my-3 sm:grid-cols-4">
           {OUTCOMES.map((o) => {
             const Icon = o.icon; const active = outcome === o.value;
             return (
@@ -103,12 +186,22 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           })}
         </div>
 
-        {isSwap && (
-          <p className="notice-bar mb-3 text-[11.5px]" data-testid="settle-swap-hint">
-            Retur <b>Penggantian</b> (tukar barang): pilih <b>Store Credit</b> — nilainya menjadi saldo untuk
-            <b> pesanan pengganti</b> yang dibuat Admin Sales di panel "Pesanan pengganti" setelah retur ini selesai.
-            {outcome !== "store_credit" && <span className="text-[#A8221A]"> Outcome lain tidak bisa dibuatkan pesanan pengganti.</span>}
-          </p>
+        {outcome === "exchange" && (
+          <div className="notice-bar mb-3 text-[11.5px]" data-testid="settle-swap-hint">
+            {/* notice-bar = flex: isi dibungkus satu blok supaya teks tebal tidak pecah jadi kolom */}
+            <div>
+              <b>Tukar barang</b>: nilai retur menjadi saldo pelanggan, lalu Admin Sales membuat <b>pesanan pengganti</b>
+              {" "}(artikel/warna sama, harga transaksi asal) di panel "Pesanan pengganti". Pengganti <b>lebih banyak</b> → selisihnya
+              ditagih; <b>lebih sedikit</b> → sisa saldo tetap milik pelanggan.
+              {!isSwap && <span className="mt-1 block text-[#8C4A00]" data-testid="settle-swap-type-change">
+                Tipe retur ini berubah dari <b>{TYPE_LABEL[ret.return_type] || ret.return_type}</b> menjadi <b>Penggantian</b> (tercatat di riwayat).</span>}
+            </div>
+          </div>
+        )}
+        {isSwap && (outcome === "refund" || outcome === "nego") && (
+          <div className="notice-bar mb-3 text-[11.5px] text-[#A8221A]" data-testid="settle-swap-warning">
+            <div>Retur ini diajukan sebagai <b>Penggantian</b> (tukar barang). Outcome ini tidak membuat pesanan pengganti.</div>
+          </div>
         )}
 
         {/* R3 — Lokasi gudang penerimaan (owner tetap = entitas SO) */}
@@ -189,6 +282,8 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
             </tbody>
           </table>
         </div>
+
+        <SettleValuePanel pv={pv} err={pvErr} busy={pvBusy} />
 
         {outcome === "nego" && (
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs" data-testid="settle-nego-payout">

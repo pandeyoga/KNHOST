@@ -2510,13 +2510,29 @@ async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_pp
     rid = ret.get("id")
     if not rid or await _already_posted("sales_return", rid):
         return None
+    lines = sales_return_lines(return_net=return_net, return_ppn=return_ppn, return_cogs=return_cogs, is_cash=is_cash,
+                               settlement=settlement, cash_account_code=cash_account_code, ar_part=ar_part,
+                               label=credit_note_number or ret.get("number", rid))
+    if not lines:
+        return None
+    label = credit_note_number or ret.get("number", rid)
+    return await _insert_entry(
+        lines=lines, description=f"Credit Note / Retur penjualan {label}",
+        date=ret.get("approved_at") or now_iso(),
+        source_type="sales_return", source_id=rid, entity_id=ret.get("entity_id", ""),
+        created_by="system", source_label=label)
+
+
+def sales_return_lines(*, return_net: float, return_ppn: float, return_cogs: float, is_cash: bool = False,
+                       settlement: str = "", cash_account_code: str = "", ar_part: float = 0.0,
+                       label: str = "") -> List[Dict[str, Any]]:
+    """Baris jurnal Nota Kredit retur (belum dipetakan per PT) — dipakai posting & pratinjau keputusan (23 Okt)."""
     return_net = round(float(return_net or 0), 2)
     return_ppn = round(float(return_ppn or 0), 2)
     return_cogs = round(float(return_cogs or 0), 2)
     gross = round(return_net + return_ppn, 2)
     if gross <= EPS and return_cogs <= EPS:
-        return None
-    label = credit_note_number or ret.get("number", rid)
+        return []
     stype = (settlement or "").lower()
     lines: List[Dict[str, Any]] = []
     if gross > EPS:
@@ -2540,11 +2556,7 @@ async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_pp
                           "description": f"{credit_desc} {label}"})
     if return_cogs > EPS:
         lines += _balanced_pair(ACC_PERSEDIAAN, ACC_HPP, return_cogs, f"Barang retur masuk stok {label}")
-    return await _insert_entry(
-        lines=lines, description=f"Credit Note / Retur penjualan {label}",
-        date=ret.get("approved_at") or now_iso(),
-        source_type="sales_return", source_id=rid, entity_id=ret.get("entity_id", ""),
-        created_by="system", source_label=label)
+    return lines
 
 
 async def post_amendment_credit_note(note: Dict[str, Any], *, ar_part: float,

@@ -931,6 +931,9 @@ class SalesReturnSettle(BaseModel):
     decision_attachment_ids: List[str] = []
     # LN-091 KLR-10 — nego (cutloss/diskon): customer memilih refund atau saldo; "" = pengurang piutang SO asal.
     payout: str = ""
+    # 23 Okt — keputusan TUKAR BARANG di penyelesaian (dulu hanya dari tipe pengajuan "Penggantian"): Store Credit +
+    # retur menjadi tipe penggantian sehingga Admin Sales membuat pesanan pengganti (selisih lebih ditagih).
+    exchange: bool = False
 
 
 class RollOwnershipTransferInput(BaseModel):

@@ -45,13 +45,41 @@ test("roll kg ditampilkan dalam kg, bukan meter ≈ yard", () => {
   expect(dualLen(100, "yard")).toMatch(/m ≈ 100 yd$/);
 });
 
-test("retur Penggantian: default Store Credit + petunjuk pesanan pengganti, label bahasa Indonesia", async () => {
+const PREVIEW = { outcome: "store_credit", settlement: "store_credit", post_stock: true, blocked: "", source_bill_checked: true,
+  order_number: "KSC/SO-00002", lines: [{ product_name: "MICROFLEX HITAM", quantity: 76.7, unit: "kg", unit_price: 44000, line_total: 3374800 }],
+  net_amount: 3374800, ppn_amount: 371228, gross_amount: 3746028, cogs_amount: 2429856, basis: "Harga transaksi neto SO asal",
+  split: [{ kind: "store_credit", label: "Jadi saldo pelanggan (store credit)", amount: 3746028 }],
+  journal: [{ account_code: "4-1000", account_name: "Pendapatan Penjualan", debit: 3374800, credit: 0 },
+            { account_code: "2-1450", account_name: "Saldo Kredit Pelanggan", debit: 0, credit: 3746028 }] };
+
+test("retur Penggantian: default Tukar Barang + petunjuk pesanan pengganti, label bahasa Indonesia", async () => {
+  axios.post.mockResolvedValue({ data: PREVIEW });
   const ret = { id: "sret_1", number: "SRET-1", return_type: "penggantian", items: [{ quantity_returned: 42.2 }], roll_locations: {} };
   const { host } = await mount(<ReturnSettleModal ret={ret} open onClose={() => {}} onSettle={async () => null} />);
-  expect(q(host, "settle-swap-hint").textContent).toMatch(/Store Credit/);
-  expect(q(host, "confirm-settle-btn").textContent).toMatch(/Selesaikan \(Store Credit\)/);   // dulu "(store_credit)"
+  expect(q(host, "settle-swap-hint").textContent).toMatch(/pesanan pengganti/);
+  expect(q(host, "settle-swap-type-change")).toBeNull();                                      // sudah tipe penggantian
+  expect(q(host, "confirm-settle-btn").textContent).toMatch(/Selesaikan \(Tukar Barang\)/);
   await act(async () => { q(host, "settle-outcome-refund").click(); });
-  expect(q(host, "settle-swap-hint").textContent).toMatch(/tidak bisa dibuatkan pesanan pengganti/);
+  expect(q(host, "settle-swap-warning").textContent).toMatch(/tidak membuat pesanan pengganti/);
+});
+
+test("UAT 23 Okt: modal menampilkan nilai Nota Kredit, pembagian & jurnal; Tukar Barang dikirim sebagai Store Credit + exchange", async () => {
+  axios.post.mockResolvedValue({ data: PREVIEW });
+  const settle = jest.fn(async () => null);
+  const ret = { id: "sret_4", number: "SRET-00004", return_type: "retur", items: [{ quantity_returned: 76.7, unit: "kg" }], roll_locations: {} };
+  const { host } = await mount(<ReturnSettleModal ret={ret} open onClose={() => {}} onSettle={settle} />);
+  await act(async () => { q(host, "settle-outcome-exchange").click(); });
+  await act(async () => { await new Promise((r) => setTimeout(r, 450)); });   // jeda pratinjau 300 ms
+  const [url, body] = axios.post.mock.calls.at(-1);
+  expect(url).toBe("/api/sales-returns/sret_4/settle-preview");
+  expect(body).toMatchObject({ outcome: "store_credit", exchange: true });
+  expect(q(host, "settle-preview-gross").textContent).toMatch(/3\.746\.028/);
+  expect(q(host, "settle-preview-split").textContent).toMatch(/SO-00002 sudah lunas/);
+  expect(q(host, "settle-preview-journal").textContent).toMatch(/2-1450 Saldo Kredit Pelanggan/);
+  expect(q(host, "settle-swap-type-change").textContent).toMatch(/Retur menjadi Penggantian/);
+  await act(async () => { q(host, "confirm-settle-btn").click(); });
+  expect(settle.mock.calls[0][1]).toBe("store_credit");
+  expect(settle.mock.calls[0][8]).toBe(true);                                                  // exchange
 });
 
 test("kompensasi: harga transaksi tampil & nominal diskon disarankan, berhenti mengikuti setelah diketik", async () => {
