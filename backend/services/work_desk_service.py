@@ -265,6 +265,22 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               action="Follow-up", action_kind="open") for r in tagih],
         action_label="Follow-up"))
 
+    # UAT 24 Okt (P14) — pelanggan tanpa sales penanggung jawab. Sejak sales hanya melihat pelanggannya sendiri,
+    # pelanggan seperti ini tidak bisa dipilih sales mana pun (kecuali walk-in PT) → Admin Sales wajib menetapkan.
+    tanpa = await db.customers.find(
+        {"$and": [{k: v for k, v in dict(scope or {}).items() if k in ("entity_id", "$or")},
+                  {"assigned_sales_id": {"$in": [None, ""]}}, {"shared_walk_in": {"$ne": True}},
+                  {"$or": [{"sales_team": {"$exists": False}}, {"sales_team": {"$size": 0}}]},
+                  {"status": {"$nin": ["inactive", "nonaktif"]}}]},
+        {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "created_at": 1}).sort("created_at", 1).to_list(200)
+    queues.append(_queue(
+        "pelanggan_tanpa_sales", "Pelanggan tanpa sales",
+        "Sales hanya melihat pelanggannya sendiri. Tetapkan sales penanggung jawab di data pelanggan supaya bisa dipesan.",
+        [_row(ref_type="customer", ref_id=c["id"], number=c.get("code") or "—", title=c.get("name", "—"),
+              subtitle=c.get("city") or "—", value=1, age_days=_age_days(c.get("created_at")),
+              badge="tanpa sales", action="Tetapkan sales", action_kind="open") for c in tanpa],
+        action_label="Tetapkan sales", value_kind="qty", value_label="Pelanggan"))
+
     # 7 — retur menunggu proses dokumen (diajukan sales, diproses Admin Sales)
     ret = await db.sales_returns.find(
         _q(scope, {"status": {"$in": list(RETUR_ANTREAN)}}),

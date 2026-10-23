@@ -17,11 +17,15 @@ const TabButton = ({ t, active, onSelect }) => (
 
 export const HubTabs = ({ hubId, tabs, activeView, onSelect }) => {
   if (!tabs || tabs.length < 2) return null;
+  // UAT 24 Okt (P16.3) — kelompokkan per NAMA seksi (urutan kemunculan pertama), bukan hanya tab yang
+  // berurutan: tab "Divisi & Persetujuan R&D" di ujung daftar dulu memunculkan label "Organisasi & Akses"
+  // dua kali (dan key React ganda).
   const sections = [];
+  const byName = {};
   tabs.forEach((t) => {
-    const last = sections[sections.length - 1];
-    if (last && last.name === (t.section || "")) last.tabs.push(t);
-    else sections.push({ name: t.section || "", tabs: [t] });
+    const name = t.section || "";
+    if (!byName[name]) { byName[name] = { name, tabs: [] }; sections.push(byName[name]); }
+    byName[name].tabs.push(t);
   });
   return (
     <div data-testid={`hub-tabs-${hubId}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3 no-print">

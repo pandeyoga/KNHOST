@@ -69,6 +69,17 @@ async def del_site(site_id: str, request: Request) -> Dict[str, Any]:
     return res
 
 
+@router.get("/warehouse-sites/{site_id}/receiving")
+async def get_site_receiving(site_id: str, request: Request, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """UAT 24 Okt (P9) — gudang penerimaan sebuah lokasi untuk PT aktif (info di pemilih "Lokasi kirim")."""
+    await require_permission(request, "warehouse", "view")
+    from entity_scope import entity_ctx
+    from services import site_receiving_service as srs
+    ent = entity_id or (await entity_ctx(request)).active_entity_id
+    wh = await srs.receiving_warehouse(site_id, ent)
+    return {"site_id": site_id, "warehouse": {k: wh.get(k) for k in ("id", "code", "name", "roles", "sharing_mode")}}
+
+
 @router.post("/warehouse-sites/seed-blueprint")
 async def post_seed_blueprint(request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "warehouse", "create")

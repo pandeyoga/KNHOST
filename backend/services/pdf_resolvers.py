@@ -751,6 +751,53 @@ async def resolve_goods_receipt(doc, db):
     }
 
 
+# ── Kedatangan Barang (GRN baru) — dari goods_receipts ───────────────────────
+# UAT 24 Okt (P16.2): dulu doc_type `goods_receipt` membaca `purchase_orders` (bukti terima per PO), sehingga
+# GRN baru (koleksi `goods_receipts`, jenis jejak `goods_receipt`) tidak bisa dicetak (404) dan tautan jejak
+# dari Pusat Dokumen membawa id PO ke jejak GRN. Bukti terima per PO kini doc_type `po_receipt`.
+async def resolve_grn(doc, db):
+    wh = await db.warehouses.find_one({"id": doc.get("warehouse_id")}, {"_id": 0, "name": 1}) if doc.get("warehouse_id") else None
+    dn = doc.get("dn") or {}
+    items = []
+    lines = [ln for ln in doc.get("lines") or [] if not ln.get("is_non_stock")]
+    for ln in lines:
+        tgt, dec, cnt, rc = ln.get("target") or {}, ln.get("declared") or {}, ln.get("counted") or {}, ln.get("recon") or {}
+        unit = tgt.get("unit") or dec.get("unit") or ""
+        items.append({"no": ln.get("line_no"), "sku": tgt.get("sku") or (ln.get("read") or {}).get("item_code", ""),
+                      "desc": tgt.get("product_name") or (ln.get("read") or {}).get("description", ""),
+                      "ref": tgt.get("po_number") or (ln.get("read") or {}).get("po_ref", ""),
+                      "rolls_dn": _rolls_cell(dec.get("rolls")), "qty_dn": f"{float(dec.get('qty') or 0):g}",
+                      "rolls_cnt": _rolls_cell(cnt.get("rolls")), "qty_cnt": f"{float(cnt.get('qty') or 0):g}",
+                      "diff": f"{float(rc.get('diff_qty') or 0):g}" if rc else "-", "unit": unit})
+    discs = [d for d in doc.get("discrepancies") or [] if not d.get("superseded")]
+    note = "; ".join(f"Baris {d.get('line_no')}: {d.get('detail', '')}"
+                     + (f" — {(d.get('resolution') or {}).get('action')}" if d.get("resolution") else "") for d in discs)
+    return {
+        "title": "Bukti Kedatangan Barang (GRN)", "number": doc.get("number"),
+        "date": fmt_date(doc.get("closed_at") or doc.get("created_at")), "status": doc.get("status"),
+        "party_to": {"title": "Dari", "name": doc.get("partner_name", "")},
+        "meta": [{"label": "No. Surat Jalan", "value": dn.get("number") or "-"},
+                 {"label": "Rujukan", "value": ", ".join(dn.get("po_refs") or []) or "-"},
+                 {"label": "Gudang Penerima", "value": (wh or {}).get("name", "-")},
+                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+        "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"), _col("ref", "PO / SPK"),
+                    _col("rolls_dn", "Roll SJ", "num"), _col("qty_dn", "Qty SJ", "num"),
+                    _col("rolls_cnt", "Roll Dihitung", "num"), _col("qty_cnt", "Qty Dihitung", "num"),
+                    _col("diff", "Selisih", "num"), _col("unit", "Satuan", "ctr")],
+        "items": items,
+        "totals": [{"label": "Total SJ", "value": _sum_by_unit([(float((ln.get("declared") or {}).get("qty") or 0),
+                                                                   (ln.get("target") or {}).get("unit", "")) for ln in lines])},
+                   {"label": "Total Dihitung", "strong": True,
+                    "value": _sum_by_unit([(float((ln.get("counted") or {}).get("qty") or 0),
+                                            (ln.get("target") or {}).get("unit", "")) for ln in lines])}],
+        "notes": note or "Barang diterima sesuai hitungan fisik di atas.",
+        "signatures": [{"label": "Diterima", "role": "Gudang", "name": doc.get("counted_by", "") or ""},
+                       {"label": "Diperiksa", "role": "Admin Gudang", "name": doc.get("closed_by", "") or ""},
+                       {"label": "Pengirim", "role": "Supplier/Ekspedisi", "name": ""}],
+        "_amount": 0,
+    }
+
+
 # ── Purchase Requisition (PR) — dari purchase_requisitions ───────────────────
 async def resolve_purchase_requisition(doc, db):
     items = []
@@ -1072,7 +1119,8 @@ DOC_REGISTRY = {
     "packing_list":    {"label": "Daftar Kemasan",       "collection": "sales_orders",    "module": "wms",            "esignable": False, "resolver": resolve_packing_list},
     "delivery_note":   {"label": "Surat Jalan Pengiriman","collection": "sales_orders",  "module": "wms",            "esignable": True,  "resolver": resolve_delivery_note},
     "put_away":        {"label": "Daftar Put-Away",     "collection": "purchase_orders", "module": "wms",            "esignable": False, "resolver": resolve_put_away},
-    "goods_receipt":   {"label": "Bukti Terima Barang (GRN)","collection": "purchase_orders","module": "wms",        "esignable": True,  "resolver": resolve_goods_receipt},
+    "po_receipt":      {"label": "Bukti Terima per PO","collection": "purchase_orders","module": "wms",              "esignable": True,  "resolver": resolve_goods_receipt},
+    "goods_receipt":   {"label": "Bukti Kedatangan Barang (GRN)","collection": "goods_receipts","module": "wms",     "esignable": True,  "resolver": resolve_grn},
     "purchase_requisition": {"label": "Permintaan Pembelian","collection": "purchase_requisitions","module": "purchase_order","esignable": True, "resolver": resolve_purchase_requisition},
     "invoice":         {"label": "Faktur Komersial",   "collection": "sales_orders",    "module": "order",          "esignable": True,  "resolver": resolve_invoice},
     "tax_invoice":     {"label": "Faktur Pajak",        "collection": "tax_invoices",    "module": "tax_invoice",    "esignable": True,  "resolver": resolve_tax_invoice},

@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import { Boxes, RefreshCw, ShoppingCart, TriangleAlert } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import SiteSelect from "../../components/SiteSelect";
 import { formatQty } from "../../utils/formatters";
 import MakloonWizard from "./makloon/MakloonWizard";
 import {
@@ -27,7 +28,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
   const [picked, setPicked] = useState([]);            // line_no baris purchase terpilih
   const [showPo, setShowPo] = useState(false);
   const [supplierId, setSupplierId] = useState(pr.preferred_supplier_id || "");
-  const [warehouseId, setWarehouseId] = useState(pr.warehouse_id || "");
+  const [siteId, setSiteId] = useState(pr.ship_to_site_id || "");
   const [expDate, setExpDate] = useState("");
   const [wizard, setWizard] = useState(null);         // { lineNo, prefill }
 
@@ -61,7 +62,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
     setBusy(true); setErr("");
     try {
       const res = await realizePo(pr.id, {
-        supplier_id: supplierId, warehouse_id: warehouseId,
+        supplier_id: supplierId, ship_to_site_id: siteId, warehouse_id: siteId ? "" : (pr.warehouse_id || ""),
         line_nos: picked, expected_delivery_date: expDate,
       });
       onChanged?.(`Direalisasikan ke ${res.po.po_number}.`);
@@ -234,10 +235,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
                 )}
               </div>
               <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Gudang</label>
-                <KNSelect data-testid="pr-realize-warehouse" className="form-input" value={warehouseId}
-                  onValueChange={setWarehouseId} placeholder="— Pilih gudang —"
-                  options={warehouses.map((w) => ({ value: w.id, label: w.name }))} />
+                <SiteSelect testId="pr-realize-site" value={siteId} onChange={setSiteId} entityId={pr.entity_id || ""} />
               </div>
               <div className="grid gap-1.5">
                 <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>

@@ -35,7 +35,7 @@ async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 200
     rolls = await db.inventory_rolls.find({
         "warehouse_id": warehouse_id, "owner_entity_id": {"$in": scope_ids},
         "length_remaining": {"$gt": 0},
-        "journey.stage": "tag_verified",
+        "journey.stage": {"$in": ["tag_verified", "label_verified"]},   # P9.3b — RFID atau label QR
         "journey.routing": {"$ne": "cross_dock"},
         "status": "available", "active_movement": None,  # AX-08/WM-05
         "length_reserved": {"$not": {"$gt": 0}},
@@ -58,9 +58,11 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
     if not src:
         raise HTTPException(status_code=404, detail="Gudang asal tidak ditemukan")
     rolls = await _rolls_ready(warehouse_from, scope_ids)
-    storages = await db.warehouses.find(
-        {"active": {"$ne": False}, "roles": "storage", "id": {"$ne": warehouse_from}},
-        {"_id": 0}).to_list(200)
+    # P9.4 — kandidat tujuan hanya gudang simpan di LOKASI yang sama (dulu semua lokasi, hanya diurutkan).
+    st_q: Dict[str, Any] = {"active": {"$ne": False}, "roles": "storage", "id": {"$ne": warehouse_from}}
+    if src.get("site_id"):
+        st_q["site_id"] = src["site_id"]
+    storages = await db.warehouses.find(st_q, {"_id": 0}).to_list(200)
     groups: Dict[str, Dict[str, Any]] = {}
     for r in rolls:
         unit = r.get("unit", "meter")
@@ -99,8 +101,14 @@ async def identity_issue(r: Dict[str, Any]):
     """G3 D4-TAG-01 — kesiapan identitas terikat ke tag AKTIF saat ini + bukti verifikasi tag itu.
     Tag lama yang di-retire / tag baru yang belum dicetak-diverifikasi tidak lolos."""
     tid = r.get("rfid_tag_id")
+    j0 = r.get("journey") or {}
+    if j0.get("verified_via") == "label_scan" or (not tid and j0.get("stage") == "label_verified"):
+        # UAT 24 Okt (P9.3b) — label QR SETARA RFID: identitas = nomor roll yang sudah dipindai di transit. GRN selalu
+        # menyiapkan data tag (EPC) walau lokasinya tidak memakai RFID, jadi `rfid_tag_id` saja bukan bukti ada tag fisik.
+        # Kode yang sama dipindai saat tiba di gudang simpan (konfirmasi tiba membandingkan kode, bukan EPC hex).
+        return None, {"epc": str(r.get("roll_no") or "").upper(), "kind": "qr_label"}
     if not tid:
-        return "tidak punya tag RFID (tag dihapus/diganti) — cetak & verifikasi tag baru", None
+        return "label QR roll belum dipindai di transit (atau tag RFID belum ada) — pindai label roll dulu", None
     tag = await db.rfid_tags.find_one({"id": tid}, {"_id": 0})
     if not tag or tag.get("status") != "active":
         return f"tag RFID berstatus {(tag or {}).get('status') or 'hilang'} — belum aktif/terverifikasi", None
@@ -139,6 +147,10 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     wh_from = await db.warehouses.find_one({"id": warehouse_from}, {"_id": 0})
     if not wh_to or not wh_from:
         raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
+    if wh_from.get("site_id") and wh_to.get("site_id") and wh_from["site_id"] != wh_to["site_id"]:
+        # UAT 24 Okt (P9.4) — putaway = transit → gudang simpan DI LOKASI YANG SAMA; antar lokasi = transfer.
+        raise HTTPException(status_code=400, detail=(
+            "Putaway hanya ke gudang simpan di lokasi yang sama. Pindah antar lokasi memakai Transfer Gudang."))
     rolls = await db.inventory_rolls.find(
         {"id": {"$in": roll_ids}, "warehouse_id": warehouse_from,
          "owner_entity_id": {"$in": scope_ids}}, {"_id": 0}).to_list(len(roll_ids) + 5)
@@ -154,7 +166,7 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     items, violations = [], []
     for r in rolls:
         stage = (r.get("journey") or {}).get("stage")
-        if stage not in ("tag_verified",):
+        if stage not in ("tag_verified", "label_verified"):
             violations.append(f"Roll {r.get('roll_no')} belum terverifikasi (stage: {stage or '—'})")
             continue
         # AX-08 — tag terverifikasi BUKAN izin gerak: status kualitas/reservasi roll juga wajib bebas.
@@ -199,7 +211,8 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     for it in items:
         res = await db.inventory_rolls.update_one(
             {"id": it["roll_id"], "warehouse_id": warehouse_from, "status": PA_ELIGIBLE_STATUS,
-             "journey.stage": "tag_verified", "length_remaining": {"$gt": 0}, "active_movement": None,
+             "journey.stage": {"$in": ["tag_verified", "label_verified"]},   # P9.3b — RFID atau label QR
+             "length_remaining": {"$gt": 0}, "active_movement": None,
              "length_reserved": {"$not": {"$gt": 0}}},
             {"$set": {"active_movement": {"type": "putaway", "id": order_id, "number": pa_number,
                                           "claimed_at": now_iso()}}})
@@ -449,7 +462,10 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
                 item["status"] = "returned_transit"
                 item["resolved_by"], item["resolved_at"] = actor_name, now
                 segs.add((item["product_id"], order["from_warehouse_id"]))
-                await set_journey([item["roll_id"]], "tag_verified", {"exception_resolved_by": actor_name})
+                _vr = await db.inventory_rolls.find_one({"id": item["roll_id"]}, {"_id": 0, "journey.verified_via": 1})
+                await set_journey([item["roll_id"]],   # P9.3b — kembali ke tahap verifikasi asalnya (RFID / label QR)
+                                  "label_verified" if ((_vr or {}).get("journey") or {}).get("verified_via") == "label_scan"
+                                  else "tag_verified", {"exception_resolved_by": actor_name})
         for pid, wid in segs:
             await rebuild_balance(pid, wid, order["owner_entity_id"])
     still_exc = [i for i in order["items"] if i["status"] == "exception"]
@@ -462,3 +478,28 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
         upd["btg_number"] = await next_doc_number("putaway_orders", "btg_number", "BTG")
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
     return await _get(order_id, scope_ids)
+
+
+async def verify_labels(warehouse_id: str, codes: List[str], scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
+    """UAT 24 Okt (P9.3b) — pindai LABEL QR roll di gudang transit (lokasi tanpa RFID): roll yang kodenya cocok
+    (nomor roll) & masih di tahap penerimaan → `label_verified`, sehingga bisa masuk Putaway Order ke gudang simpan.
+    Setara verifikasi tag RFID: roll yang tag-nya SUDAH terverifikasi (`tag_verified`) tidak disentuh."""
+    wanted = {str(c or "").strip().upper() for c in codes or [] if str(c or "").strip()}
+    if not wanted:
+        raise HTTPException(status_code=400, detail="Pindai minimal satu label roll")
+    rows = await db.inventory_rolls.find(
+        {"warehouse_id": warehouse_id, "owner_entity_id": {"$in": scope_ids}, "roll_no": {"$in": list(wanted)}},
+        {"_id": 0, "id": 1, "roll_no": 1, "rfid_tag_id": 1, "journey": 1, "status": 1}).to_list(2000)
+    ok, skipped = [], []
+    now = now_iso()
+    for r in rows:
+        stage = (r.get("journey") or {}).get("stage") or ""
+        if stage not in ("received_transit", "tag_printed", "label_verified", "gate_exception"):
+            skipped.append({"roll_no": r["roll_no"], "why": f"tahap {stage or '—'} bukan tahap penerimaan"})
+            continue
+        await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
+            "journey.stage": "label_verified", "journey.verified_via": "label_scan", "journey.verified_by": actor_name,
+            "journey.updated_at": now, "updated_at": now}, "$unset": {"journey.exception_reason": ""}})
+        ok.append(r["roll_no"])
+    found = {r["roll_no"].upper() for r in rows}
+    return {"verified": ok, "skipped": skipped, "not_found": sorted(wanted - found)}

@@ -139,8 +139,17 @@ async def create_requisition(payload, created_by: str, created_by_id: str = "") 
     """Buat PR (draft/pending). Approval dievaluasi dari total_est (matriks)."""
     entity_id = payload.entity_id or DEFAULT_ENTITY_ID
     warehouse_id = payload.warehouse_id or ""
-    if warehouse_id and not await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0}):
-        raise ValueError("Gudang tidak ditemukan")
+    site_id = getattr(payload, "ship_to_site_id", "") or ""
+    site_name = ""
+    if site_id or warehouse_id:
+        # UAT 24 Okt (P9) — PR ke LOKASI: gudang penerimaan aktif lokasi itu (atau lokasi gudang lama yang dikirim).
+        from fastapi import HTTPException
+        from services import site_receiving_service as srs
+        try:
+            dest = await srs.resolve_destination(entity_id, site_id, warehouse_id)
+        except HTTPException as exc:
+            raise ValueError(exc.detail)
+        warehouse_id, site_id, site_name = dest["warehouse"]["id"], dest["site_id"], dest["site_name"]
 
     items, total = await _enrich_items(payload.items)
     if not items:
@@ -186,6 +195,7 @@ async def create_requisition(payload, created_by: str, created_by_id: str = "") 
         "id": new_id("pr"), "number": await next_pr_number(),
         "entity_id": entity_id,
         "warehouse_id": warehouse_id, "warehouse_name": await _wh_name(warehouse_id),
+        "ship_to_site_id": site_id, "ship_to_site_name": site_name,
         "items": items, "total_est_amount": total,
         # FASE L — turunan baris; dipakai chip penyaring lini di layar PR & papan PO.
         "line_codes": _lines.codes_from_items(items),

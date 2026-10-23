@@ -19,12 +19,13 @@ from services.epc import canonical_epc, display_epc, normalize_reads
 from services.zpl_text import zpl_field
 
 JOURNEY_STAGES = [
-    "received_transit", "tag_printed", "tag_verified", "cross_dock_ready",
+    "received_transit", "tag_printed", "tag_verified", "label_verified", "cross_dock_ready",
     "putaway_assigned", "putaway_in_transit", "stored", "gate_exception",
 ]
 STAGE_LABEL = {
     "received_transit": "Diterima di Transit", "tag_printed": "Tag Dicetak",
-    "tag_verified": "Tag Terverifikasi", "cross_dock_ready": "Cross-Dock (Langsung Kirim)",
+    "tag_verified": "Tag Terverifikasi", "label_verified": "Label QR Terverifikasi",
+    "cross_dock_ready": "Cross-Dock (Langsung Kirim)",
     "putaway_assigned": "Masuk Putaway Order", "putaway_in_transit": "Menuju Gudang Simpan",
     "stored": "Tersimpan", "gate_exception": "Exception Gate",
 }
@@ -424,10 +425,10 @@ async def set_routing(roll_ids: List[str], routing: str, scope_ids: List[str],
     now = now_iso()
     for r in rolls:
         stage = (r.get("journey") or {}).get("stage") or "received_transit"
-        if routing == "cross_dock" and stage in ("tag_verified", "cross_dock_ready"):
+        if routing == "cross_dock" and stage in ("tag_verified", "label_verified", "cross_dock_ready"):
             stage = "cross_dock_ready"
         elif routing == "store" and stage == "cross_dock_ready":
-            stage = "tag_verified"
+            stage = "label_verified" if (r.get("journey") or {}).get("verified_via") == "label_scan" else "tag_verified"
         await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
             "journey.routing": routing, "journey.stage": stage,
             "journey.routing_by": actor_name, "journey.updated_at": now, "updated_at": now}})

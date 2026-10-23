@@ -107,7 +107,7 @@ DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
         "makloon_reserve_mode": "block",   # W2-REQ-07 — block | approve (stok cadangan makloon)
         "priority_order": ["owner", "lot", "location", "roll_efficiency"],  # owner selalu HARD #1
         "lot_mode": "prefer_single",                               # prefer_single | strict_single | allow_mixed
-        "lot_selection": "fefo",                                   # fefo | fifo | smallest_fit | largest_fit
+        "lot_selection": "fifo",                                   # fifo (fefo = alias lama) | smallest_fit | largest_fit
         "location_pref": "single_warehouse",                       # single_warehouse | nearest_customer | fewest_splits
         "allow_intercompany": True,
         "allow_partial": True,

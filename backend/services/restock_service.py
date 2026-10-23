@@ -269,9 +269,20 @@ async def _default_warehouse(order: Dict[str, Any]) -> str:
     for a in order.get("allocations") or []:
         if a.get("warehouse_id"):
             return a["warehouse_id"]
-    q: Dict[str, Any] = {}
-    if order.get("entity_id"):
-        q["entity_id"] = order["entity_id"]
-    wh = await db.warehouses.find_one(q, {"_id": 0, "id": 1}) or \
-        await db.warehouses.find_one({}, {"_id": 0, "id": 1})
-    return (wh or {}).get("id", "")
+    # UAT 24 Okt (P9) — dulu mencari `warehouses.entity_id` (field yang tidak ada) lalu jatuh ke gudang PERTAMA
+    # (bisa nonaktif, mis. WH-BDG). Kini: gudang penerimaan LOKASI pesanan (atau lokasi bawaan PT); fallback gudang
+    # aktif yang boleh dipakai PT itu, utamakan gudang penerimaan.
+    from fastapi import HTTPException
+    from services import site_receiving_service as srs
+    sid = order.get("fulfillment_site_id") or await srs.default_site_for_entity(order.get("entity_id"))
+    if sid:
+        try:
+            return (await srs.receiving_warehouse(sid, order.get("entity_id")))["id"]
+        except HTTPException:
+            pass
+    from services import warehouse_scope_service as whscope
+    q: Dict[str, Any] = {"$and": [whscope.usable_query(order.get("entity_id")), {"active": {"$ne": False}}]}
+    rows = await db.warehouses.find(q, {"_id": 0, "id": 1, "roles": 1, "sharing_mode": 1}).sort("code", 1).to_list(100)
+    rows.sort(key=lambda w: (0 if {"central_inbound", "transit"} & set(w.get("roles") or []) else 1,
+                             0 if w.get("sharing_mode") == "dedicated" else 1))
+    return rows[0]["id"] if rows else ""

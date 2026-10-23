@@ -347,6 +347,12 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         # yang menabrak nomor lama begitu ada roll di-consume/dihapus atau ber-prefix lain).
         from services.roll_service import next_roll_no as _next_roll_no
         is_multi = len(roll_specs) > 1
+        # UAT 24 Okt (P9.3) — tahap awal mengikuti PERAN gudang penerima: gudang penerimaan (transit/penerimaan
+        # pusat) → "received_transit"; gudang simpan murni → langsung "stored". Dulu selalu "received_transit"
+        # sehingga roll di gudang simpan (WH-JKT) tercatat "di transit" selamanya.
+        _wh_roles = set(((await db.warehouses.find_one({"id": task["warehouse_id"]}, {"_id": 0, "roles": 1})) or {})
+                        .get("roles") or [])
+        _stage0 = "received_transit" if (not _wh_roles or _wh_roles & {"transit", "central_inbound", "staging"}) else "stored"
         for spec in roll_specs:
             spec_len = spec["length_base"]
             _lot_doc = _lot_by_dye.get(spec["dye_lot"]) or {}
@@ -405,7 +411,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "rfid_tag_id": (task.get("roll_id") or None) if not is_multi else None,
                 "is_remnant": False,
                 # FASE R0 — journey (jejak fisik, terpisah dari status bucket stok)
-                "journey": {"stage": "received_transit", "routing": "store",
+                "journey": {"stage": _stage0, "routing": "store",
                             "updated_at": now_iso()},
                 "created_at": now_iso(), "updated_at": now_iso(),
                 "created_by": actor.get("id") or "system", "created_by_name": actor["name"],
@@ -416,7 +422,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 _keep = {"id", "roll_no", "created_at", "created_by", "created_by_name", "rfid_tag_id",
                          "tracking_mode", "received_date", "acquired"}
                 _final = {k: v for k, v in roll_doc.items() if k not in _keep}
-                _final["journey"] = {"stage": "received_transit", "routing": "store", "updated_at": now_iso()}
+                _final["journey"] = {"stage": _stage0, "routing": "store", "updated_at": now_iso()}
                 await db.inventory_rolls.update_one({"id": _ex["id"]}, {"$set": _final})
                 roll_doc = {**_ex, **_final}
             else:

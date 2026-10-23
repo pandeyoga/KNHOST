@@ -576,9 +576,18 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
     return pricing
 
 
-async def default_warehouse_id(entity_id: str) -> str:
-    """Gudang bawaan penerimaan OD: gudang khusus PT itu dulu, baru gudang bersama. Cek UI UAT v3 (S13) — dulu urut
-    kode saja sehingga gudang bersama PT lain (RCM-KNITTING) terpilih sebelum gudang Jakarta milik Sukacita."""
+async def default_warehouse_id(entity_id: str, site_id: str = "") -> str:
+    """Gudang bawaan penerimaan OD = gudang PENERIMAAN lokasi (UAT 24 Okt P9): lokasi yang diminta, else lokasi
+    bawaan PT. Fallback lama (gudang khusus PT dulu, baru gudang bersama — Cek UI UAT v3 S13) hanya bila PT belum
+    punya lokasi yang sah."""
+    from fastapi import HTTPException
+    from services import site_receiving_service as srs
+    sid = site_id or await srs.default_site_for_entity(entity_id)
+    if sid:
+        try:
+            return (await srs.receiving_warehouse(sid, entity_id))["id"]
+        except HTTPException:
+            pass
     from services import warehouse_scope_service as whs
     rows = await whs.list_for_entity(entity_id, only_active=True)
     rows = sorted(rows, key=lambda w: entity_id not in (w.get("entity_ids") or []))   # sort stabil: urutan kode tetap

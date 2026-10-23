@@ -26,6 +26,7 @@ import ProductHistoryPanel from "./inventory/ProductHistoryPanel";
 import WarehouseStructure from "./inventory/WarehouseStructure";
 import { PeggingModal } from "../../components/PeggingModal";
 import KNSelect from "../../components/KNSelect";
+import { ROLL_CHECK_FILTERS } from "../../components/RollCheckChips";
 import ErrorNotice from "../../components/ErrorNotice";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -87,6 +88,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   const [pegRoll, setPegRoll]         = useState(null);   // roll yang sedang dibuka di modal
   const [pegBusyId, setPegBusyId]     = useState(null);   // roll yang sedang di-unpeg
   const [pegOnly, setPegOnly]         = useState(false);  // filter: hanya tampil roll yang di-peg
+  const [checkFilter, setCheckFilter] = useState("");     // UAT 24 Okt (P11.4) — status cek MDQ / 4-point
 
   const ownerParams = selectedEntity && selectedEntity !== "all" ? { owner_entity_id: selectedEntity } : {};
   // FASE E-8 (E8.2) — pegging = KEPUTUSAN PEMENUHAN: dicabut dari `sales`, diberikan
@@ -101,8 +103,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
     if (selectedEntity && selectedEntity !== "all") p.owner_entity_id = selectedEntity;
     if (warehouseFilter !== "all") p.warehouse_id = warehouseFilter;
     if (lineFilter) p.line = lineFilter;              // FASE L — disaring di server
+    if (checkFilter) p.check = checkFilter;           // UAT 24 Okt (P11.4) — belum MDQ / belum 4-point
     return p;
-  }, [selectedEntity, warehouseFilter, lineFilter]);
+  }, [selectedEntity, warehouseFilter, lineFilter, checkFilter]);
 
   const rollsPaged = usePagedList("/inventory/rolls", {
     pageSize: 100, params: rollParams, search: searchQuery,
@@ -367,6 +370,18 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             className={`rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap transition-all ${pegOnly ? "bg-[#6B219A] text-white" : "bg-white border border-[#D6CCF0] text-[#6B219A] hover:bg-[#F6EDFF]"}`}>
             {pegOnly ? "Tampilkan Semua Roll" : "Hanya yang Di-peg"}
           </button>
+        </div>
+      )}
+
+      {tab === "rolls" && !pegOnly && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-1.5"
+          data-testid="roll-check-filter-bar">
+          <span className="text-[11px] font-semibold text-[#6B6B73]">Status cek</span>
+          <div className="w-[230px]">
+            <KNSelect data-testid="roll-check-filter" className="field !h-8 !text-[11.5px]"
+              value={checkFilter} onValueChange={setCheckFilter} options={ROLL_CHECK_FILTERS} placeholder="Semua status cek" />
+          </div>
+          <span className="ml-auto text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.total || 0} roll</span>
         </div>
       )}
 

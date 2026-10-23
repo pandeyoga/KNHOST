@@ -51,6 +51,22 @@ async def shortages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [b for b in board if b.get("order_id") == order["id"]]
 
 
+async def _usable_stock_by_entity(product_ids: List[str], buyer_entity_id: str) -> Dict[Any, float]:
+    """{(pemilik, produk): panjang tersedia} — hanya roll di gudang yang boleh dipakai PT pembeli."""
+    from services import warehouse_scope_service as _whs
+    if not product_ids or not buyer_entity_id:
+        return {}
+    ok_wh = [w["id"] async for w in db.warehouses.find(_whs.usable_query(buyer_entity_id), {"_id": 0, "id": 1})]
+    out: Dict[Any, float] = {}
+    async for g in db.inventory_rolls.aggregate([
+            {"$match": {"product_id": {"$in": list(product_ids)}, "status": "available",
+                        "warehouse_id": {"$in": ok_wh}}},
+            {"$group": {"_id": {"o": "$owner_entity_id", "p": "$product_id"},
+                        "q": {"$sum": "$length_remaining"}}}]):
+        out[(g["_id"].get("o") or "", g["_id"].get("p") or "")] = round(float(g.get("q") or 0), 4)
+    return out
+
+
 async def options(order: Dict[str, Any]) -> Dict[str, Any]:
     """Tiga pilihan + kelayakannya masing-masing (supaya tombol tidak mati tanpa alasan)."""
     from services.internal_request_service import availability
@@ -63,6 +79,7 @@ async def options(order: Dict[str, Any]) -> Dict[str, Any]:
     ent_rows = await db.business_entities.find(
         {"status": "active"}, {"_id": 0, "id": 1, "short_name": 1, "legal_name": 1}).to_list(200)
     kandidat: List[Dict[str, Any]] = []
+    usable = await _usable_stock_by_entity([b["product_id"] for b in kurang], buyer)
     for ent in ent_rows:
         if ent["id"] == buyer:
             continue
@@ -70,10 +87,14 @@ async def options(order: Dict[str, Any]) -> Dict[str, Any]:
         for b in kurang:
             av = await availability(b["product_id"], buyer)
             punya = round(float((av.get("by_entity") or {}).get(ent["id"], 0.0)), 4)
-            cukup = punya + 0.0001 >= float(b["backorder_qty"])
+            # UAT 24 Okt (P10.6) — yang bisa langsung berganti pemilik hanya stok di gudang yang BOLEH dipakai PT
+            # pembeli (gudang bersama). Sisanya ada di gudang khusus penjual → pindahkan dulu (Transfer Gudang).
+            pakai = round(min(punya, usable.get((ent["id"], b["product_id"]), 0.0)), 4)
+            cukup = pakai + 0.0001 >= float(b["backorder_qty"])
             cukup_semua = cukup_semua and cukup
             lines.append({"product_id": b["product_id"], "product_name": b["product_name"],
-                          "needed": b["backorder_qty"], "available": punya, "enough": cukup})
+                          "needed": b["backorder_qty"], "available": punya, "usable_available": pakai,
+                          "needs_move": round(max(punya - pakai, 0.0), 4), "enough": cukup})
         kandidat.append({
             "entity_id": ent["id"],
             "entity_name": ent.get("short_name") or ent.get("legal_name") or ent["id"],
@@ -109,7 +130,10 @@ async def options(order: Dict[str, Any]) -> Dict[str, Any]:
                 "available": any(c["enough"] for c in kandidat),
                 "candidates": kandidat,
                 "reason": ("" if any(c["enough"] for c in kandidat) else
-                           "Belum ada badan usaha grup yang stoknya cukup untuk semua baris."),
+                           ("Stok PT lain ada, tetapi di gudang khusus PT itu — pindahkan dulu ke gudang bersama "
+                            "lewat Transfer Gudang, baru ambil dari PT lain."
+                            if any(ln["needs_move"] > 0 for c in kandidat for ln in c["lines"]) else
+                            "Belum ada badan usaha grup yang stoknya cukup untuk semua baris.")),
             },
             "reorder": {
                 "available": bool(kurang),
@@ -222,8 +246,17 @@ async def _take_from_other_entity(order, kurang, actor, source_entity_id, note):
         raise FulfillmentError(
             "Pilih badan usaha sumber dulu — daftar kandidat beserta stok & kesiapan "
             "harga internalnya ada di panel pemenuhan.")
+    # UAT 24 Okt (P10-K2) — roll pilihan dikirim UTUH (tidak dipotong di gudang penjual): qty transaksi antar-PT =
+    # total panjang roll pilihan, supaya tagihan = barang yang benar-benar pindah. Kelebihannya jadi stok PT pembeli.
+    lens: Dict[str, float] = {}
+    _ids = [r for b in kurang for r in (b.get("roll_ids") or [])]
+    if _ids:
+        async for r in db.inventory_rolls.find({"id": {"$in": _ids}}, {"_id": 0, "id": 1, "length_remaining": 1}):
+            lens[r["id"]] = float(r.get("length_remaining") or 0)
     payload = {
-        "items": [{"product_id": b["product_id"], "quantity": b["backorder_qty"],
+        "items": [{"product_id": b["product_id"],
+                   "quantity": round(max(float(b["backorder_qty"]),
+                                         sum(lens.get(r, 0.0) for r in (b.get("roll_ids") or []))), 2),
                    # Trial 22 Okt (E5) — roll yang dipilih Admin Sales di PT sumber (dipakai gudang penjual).
                    "preferred_roll_ids": b.get("roll_ids") or [],
                    "notes": f"kekurangan {order.get('number')}" + (await _roll_note(b.get("roll_ids")))} for b in kurang],

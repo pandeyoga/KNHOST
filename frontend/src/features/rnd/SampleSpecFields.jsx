@@ -105,7 +105,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
             </L>
             <L label="Kain dasar (dari master data)" span>
               <BaseFabricPicker testId={`${testPrefix}-base-fabric`} value={sp.base_fabric_template_id} valueName={sp.base_fabric_name}
-                onChange={(id, name) => setSp((p) => ({ ...p, base_fabric_template_id: id || "", base_fabric_name: name || "" }))} />
+                onChange={(tpl) => setSp((p) => ({ ...p, base_fabric_template_id: tpl?.id || "", base_fabric_name: tpl?.name || "" }))} />
             </L>
           </div>
         </div>

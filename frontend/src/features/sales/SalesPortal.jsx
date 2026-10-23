@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, ShoppingCart, Users, Scissors, ShoppingBag } from "lucide-react";
+import { Search, ShoppingCart, Users, Scissors, ShoppingBag, MapPin } from "lucide-react";
+import axios, { API } from "../../services/apiClient";
 import { isSampleCart } from "../../utils/sampleOrder";
 import { convFactor } from "../../utils/uom";
 import { formatCurrency } from "../../utils/formatters";
@@ -11,6 +12,9 @@ import { PosProductCard } from "../pos/PosProductCard";
 import { ReorderStrip } from "../pos/ReorderStrip";
 import { PosBestSellers } from "../pos/PosBestSellers";
 import CheckoutDrawer from "../pos/CheckoutDrawer";
+import CreateCustomerModal from "../pos/CreateCustomerModal";
+import PosStartGate, { loadPosCtx, savePosCtx } from "../pos/PosStartGate";
+import { useSites } from "../../components/SiteSelect";
 import ProductQuickView from "../../components/ProductQuickView";
 import { useEffectivePrices, pickPrice } from "../../hooks/useEffectivePrices";
 
@@ -22,6 +26,14 @@ export function SalesPortal({
 }) {
   const [facets, setFacets] = useState(DEFAULT_FACETS);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  // UAT 24 Okt (P8, keputusan pemilik) — "Mulai jualan": LOKASI gudang + PELANGGAN wajib dipilih sebelum katalog.
+  const [siteId, setSiteId] = useState(() => loadPosCtx().site_id || "");
+  const [gateForce, setGateForce] = useState(false);
+  const [newCustOpen, setNewCustOpen] = useState(false);
+  const [siteStock, setSiteStock] = useState(null);
+  const [onlySite, setOnlySite] = useState(false);
+  const sites = useSites();
+  const siteName = (sites.find((x) => x.id === siteId) || {}).name || "";
   const [quickView, setQuickView] = useState({ open: false, group: null, expand: false });
   const PAGE_SIZE = 12;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -58,6 +70,7 @@ export function SalesPortal({
     if (facets.colors.length) list = list.filter((p) => facets.colors.includes(p.color));
     if (facets.priceMin) list = list.filter((p) => Number(p.price || 0) >= Number(facets.priceMin));
     if (facets.priceMax) list = list.filter((p) => Number(p.price || 0) <= Number(facets.priceMax));
+    if (onlySite && siteStock) list = list.filter((p) => Number(siteStock[p.id]?.own_qty || 0) > 0);
     if (facets.availability === "available") list = list.filter((p) => Number(p.available_qty || 0) > 0);
     if (facets.availability === "low") list = list.filter((p) => Number(p.available_qty || 0) > 0 && Number(p.available_qty || 0) <= 40);
     const sorters = {
@@ -68,7 +81,7 @@ export function SalesPortal({
     };
     if (sorters[facets.sort]) list = [...list].sort(sorters[facets.sort]);
     return list;
-  }, [allProducts, search, facets]);
+  }, [allProducts, search, facets, onlySite, siteStock]);
 
   // Grup SKU → kartu (per template_id). Produk tanpa template = grup tunggal.
   const groups = useMemo(() => groupByTemplate(products), [products]);
@@ -111,10 +124,46 @@ export function SalesPortal({
     }
   };
 
+  useEffect(() => {
+    const ctx = loadPosCtx();
+    if (!selectedCustomer && ctx.customer_id) {
+      const c = (data.customers || []).find((x) => x.id === ctx.customer_id);
+      if (c) pickCustomer(c.id);
+    }
+  }, [data.customers]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!siteId) { setSiteStock(null); return undefined; }
+    let live = true;
+    axios.get(`${API}/pos/site-stock`, { params: { site_id: siteId, ...(catalogEntityId ? { entity_id: catalogEntityId } : {}) } })
+      .then((r) => { if (live) setSiteStock(r.data?.stock || {}); }).catch(() => { if (live) setSiteStock({}); });
+    return () => { live = false; };
+  }, [siteId, catalogEntityId]);
+  const gateOpen = gateForce || !siteId || !selectedCustomer;
+  const startSelling = ({ siteId: sid, customer }) => {
+    setSiteId(sid);
+    pickCustomer(customer.id);
+    savePosCtx({ site_id: sid, customer_id: customer.id });
+    setGateForce(false);
+  };
+  // SO membawa lokasi pemenuhan (alokasi roll: lokasi dulu, lalu FIFO).
+  const submitWithSite = (extra = {}) => onSubmitOrder({ ...extra, fulfillment_site_id: siteId });
+
   const customerPriceCount = Object.values(specialMap)
     .filter((v) => v?.source === "customer").length;
   const specialPriceCount = Object.values(specialMap)
     .filter((v) => v?.source === "special_approval").length;
+
+  if (gateOpen) {
+    return (
+      <div data-testid="sales-portal-view">
+        <PosStartGate user={user} customers={data.customers || []} initialSiteId={siteId}
+          initialCustomerId={selectedCustomer?.id || loadPosCtx().customer_id || ""}
+          onStart={startSelling} onCreateCustomer={onCreateCustomer ? () => setNewCustOpen(true) : null} />
+        <CreateCustomerModal open={newCustOpen} onClose={() => setNewCustOpen(false)} user={user}
+          onCreateCustomer={async (form) => { await onCreateCustomer(form); setNewCustOpen(false); }} />
+      </div>
+    );
+  }
 
   return (
     <div data-testid="sales-portal-view">
@@ -132,10 +181,18 @@ export function SalesPortal({
           </div>
           <div className="w-[280px]">
             <KNSelect data-testid="pos-customer-select" className="field py-1.5 text-[12px]"
-              value={selectedCustomer?.id || ""} onValueChange={pickCustomer}
+              value={selectedCustomer?.id || ""}
+              onValueChange={(id) => { pickCustomer(id); savePosCtx({ site_id: siteId, customer_id: id }); }}
               placeholder="Pilih pelanggan (harga langganan otomatis)"
               options={customerOptions} searchable />
           </div>
+          <span data-testid="pos-site-chip" className="inline-flex items-center gap-1 rounded-full bg-[#EEF4FF] px-2.5 py-1 text-[11.5px] font-semibold text-[#0058CC]">
+            <MapPin size={12} /> {siteName || "Lokasi"}
+          </span>
+          <button type="button" className="secondary-button !py-1 text-[11.5px]" data-testid="pos-context-change" onClick={() => setGateForce(true)}>Ganti lokasi / pelanggan</button>
+          <label className="inline-flex items-center gap-1 text-[11.5px]" data-testid="pos-only-site-label">
+            <input type="checkbox" checked={onlySite} onChange={(e) => setOnlySite(e.target.checked)} data-testid="pos-only-site" /> Hanya yang ada di {siteName || "lokasi ini"}
+          </label>
           <p data-testid="pos-customer-hint" className="text-[11.5px]">
             {selectedCustomer ? (
               customerPriceCount > 0 ? (
@@ -184,7 +241,7 @@ export function SalesPortal({
               </div>
             </div>
             <p data-testid="sales-portal-subtitle" className="px-4 py-2 text-[12px] text-[#6B6B73]">
-              {groups.length} produk · {groups.reduce((t, g) => t + g.variants.length, 0)} varian · stok global semua entitas (pemenuhan diatur admin). Klik produk untuk pilih varian, qty & satuan.
+              {groups.length} produk · {groups.reduce((t, g) => t + g.variants.length, 0)} varian · stok di {siteName || "lokasi pilihan"} ditonjolkan; lokasi lain perlu transfer. Klik produk untuk pilih varian, qty & satuan.
             </p>
           </div>
 
@@ -197,7 +254,7 @@ export function SalesPortal({
             {!loading && groups.length === 0 && <div data-testid="products-empty" className="col-span-full py-10 text-center text-[13px] text-[#6B6B73]">Tidak ada produk yang cocok dengan filter/pencarian.</div>}
             {!loading && groups.slice(0, visibleCount).map((group) => (
               <PosProductCard key={group.key} group={group} specialMap={specialMap} onOpen={openQuickView}
-                rndEnforcement={rndEnforcement} />
+                rndEnforcement={rndEnforcement} siteStock={siteStock} siteName={siteName} />
             ))}
           </div>
 
@@ -250,7 +307,7 @@ export function SalesPortal({
         cart={cart} setCart={setCart} customers={data.customers || []}
         selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
         selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress}
-        onCreateCustomer={onCreateCustomer} onSubmitOrder={onSubmitOrder}
+        onCreateCustomer={onCreateCustomer} onSubmitOrder={submitWithSite}
         settings={settings} paymentTerms={paymentTerms} selectedEntity={selectedEntity} onShowDetail={onShowDetail} user={user}
       />
     </div>

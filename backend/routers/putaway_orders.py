@@ -35,6 +35,23 @@ async def _scope(request: Request) -> List[str]:
     return resolve_scope_ids(ctx)
 
 
+class PAVerifyLabelsPayload(BaseModel):
+    warehouse_id: str
+    codes: List[str]
+
+
+@router.post("/putaway-orders/verify-labels")
+async def post_verify_labels(payload: PAVerifyLabelsPayload, request: Request) -> Dict[str, Any]:
+    """UAT 24 Okt (P9.3b) — pindai label QR roll di transit (tanpa RFID) → siap Putaway Order."""
+    actor = await require_permission(request, "wms", "update")
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, payload.warehouse_id, "memindai label roll di gudang ini")
+    res = await pa.verify_labels(payload.warehouse_id, payload.codes, await _scope(request), actor["name"])
+    await audit(actor["name"], "putaway_labels_verified", "warehouse", payload.warehouse_id,
+                {"verified": len(res["verified"]), "skipped": len(res["skipped"]), "not_found": len(res["not_found"])})
+    return res
+
+
 @router.get("/putaway-orders/suggest")
 async def get_suggest(request: Request, from_warehouse_id: str) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
@@ -44,8 +61,11 @@ async def get_suggest(request: Request, from_warehouse_id: str) -> Dict[str, Any
 @router.get("/putaway-orders")
 async def get_orders(request: Request, warehouse_id: Optional[str] = None,
                      status: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
-    await require_permission(request, "wms", "view")
-    return {"orders": await pa.list_orders(await _scope(request), warehouse_id, status, limit)}
+    actor = await require_permission(request, "wms", "view")
+    from services import location_scope   # P9.5 — hanya PA di lokasi tugas petugas gudang
+    ids = await location_scope.warehouse_ids_for(actor)
+    rows = await pa.list_orders(await _scope(request), warehouse_id, status, limit)
+    return {"orders": [o for o in rows if location_scope.doc_in_scope("putaway_orders", o, ids)]}
 
 
 @router.post("/putaway-orders")
@@ -55,6 +75,10 @@ async def post_order(payload: PACreatePayload, request: Request) -> Dict[str, An
     # E4.1 — gudang asal & tujuan harus boleh dipakai badan usaha aktif.
     await whscope.assert_many_usable([payload.from_warehouse_id, payload.to_warehouse_id],
                                      ctx.active_entity_id, action="memindahkan roll ke rak di sini")
+    # UAT 24 Okt (P9.5) — petugas gudang hanya membuat PA di lokasi tugasnya.
+    from services import location_scope
+    for _wid in (payload.from_warehouse_id, payload.to_warehouse_id):
+        await location_scope.assert_warehouse(actor, _wid, "membuat Putaway Order di gudang ini")
     order = await pa.create_order(payload.from_warehouse_id, payload.to_warehouse_id,
                                   payload.roll_ids, resolve_scope_ids(ctx), actor["name"])
     await audit(actor["name"], "putaway_order_created", "putaway_order", order["id"],

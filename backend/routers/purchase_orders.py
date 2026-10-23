@@ -348,10 +348,12 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         raise HTTPException(status_code=400, detail=_dup_msg)
     # Validate warehouse
     # E4.1 — gudang penerimaan PO harus boleh dipakai badan usaha pembeli.
-    from services import warehouse_scope_service as whscope
-    warehouse = await whscope.assert_usable(payload.warehouse_id, active_entity_id,
-                                           action="menerima barang di sini",
-                                           field_label="Gudang penerimaan")
+    # UAT 24 Okt (P9) — PO dikirim ke LOKASI: gudang penerimaan diturunkan dari lokasi (atau dari lokasi gudang
+    # lama yang dikirim klien), selalu gudang aktif ber-peran Transit/Penerimaan Pusat yang boleh dipakai PT.
+    from services import site_receiving_service as srs
+    _dest = await srs.resolve_destination(active_entity_id, payload.ship_to_site_id, payload.warehouse_id)
+    warehouse = _dest["warehouse"]
+    payload.warehouse_id = warehouse["id"]
 
     # Fase 3 — resolve supplier master (FK) → snapshot. Fallback ke supplier_name manual.
     supplier_id = ""
@@ -648,6 +650,7 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         "warehouse_id": payload.warehouse_id,
         "warehouse_name": warehouse["name"],
         "warehouse_city": warehouse.get("city", ""),
+        "ship_to_site_id": _dest["site_id"], "ship_to_site_name": _dest["site_name"],
         "items": items,
         # FASE L — turunan baris untuk chip penyaring & papan PO per lini (FASE P).
         "line_codes": sorted({str(it.get("line_code") or "").strip().lower()

@@ -62,7 +62,10 @@ class PurchaseOrderCreate(BaseModel):
     supplier_id: str = ""             # Fase 3 — FK ke suppliers (opsional; fallback manual)
     supplier_name: str = ""           # snapshot/manual (backward compat bila tanpa supplier_id)
     supplier_contact: str = ""
-    warehouse_id: str
+    # UAT 24 Okt (P9) — PO dikirim ke LOKASI: `ship_to_site_id` (baru). `warehouse_id` lama tetap diterima (klien
+    # lama/skrip); server menurunkan gudang PENERIMAAN lokasi (Transit / Penerimaan Pusat) dari salah satunya.
+    ship_to_site_id: str = ""
+    warehouse_id: str = ""
     items: List[POItemCreate]
     expected_delivery_date: str = ""
     notes: str = ""
@@ -100,6 +103,7 @@ class PurchaseOrderAmend(BaseModel):
     supplier_id: Optional[str] = None
     supplier_name: Optional[str] = None
     supplier_contact: Optional[str] = None
+    ship_to_site_id: Optional[str] = None       # P9 — ganti lokasi kirim (gudang penerimaan diturunkan ulang)
     warehouse_id: Optional[str] = None
     expected_delivery_date: Optional[str] = None
     notes: Optional[str] = None
@@ -588,6 +592,7 @@ class PRRealizePoIn(BaseModel):
     `line_nos` kosong = semua baris `purchase` yang masih terbuka (perilaku
     kompatibel dengan `convert-to-po` lama)."""
     supplier_id: str = ""             # wajib (atau pakai preferred_supplier_id PR)
+    ship_to_site_id: str = ""         # UAT 24 Okt (P9) — lokasi kirim; default = lokasi PR
     warehouse_id: str = ""            # default = warehouse PR
     line_nos: List[int] = Field(default_factory=list)
     expected_delivery_date: str = ""

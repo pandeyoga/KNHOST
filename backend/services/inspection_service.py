@@ -151,6 +151,41 @@ async def _policy(entity_id: str) -> Dict[str, str]:
     return {"color": color, "handfeel": hand}
 
 
+def required_checks(total: int, pct: int, minimum: int) -> int:
+    """UAT 24 Okt (P11.2/P11.3) — jumlah roll minimal yang wajib dicek dari `total` (persen dibulatkan ke atas, tidak
+    kurang dari `minimum`, tidak lebih dari `total`, minimal 1). pct ≥ 100 → semua."""
+    import math
+    if total <= 0:
+        return 0
+    if pct >= 100:
+        return total
+    need = max(math.ceil(total * max(pct, 0) / 100.0), int(minimum or 1), 1)
+    return min(need, total)
+
+
+async def sampling_rule(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Rencana sampling yang BERLAKU untuk satu SPK: MD Quality (`md_only`) atau QC 4-point. Lainnya: semua roll."""
+    from services.config_resolver import value_of
+    ctx = {"entity_id": doc.get("entity_id") or ""}
+    lines = [ln for ln in doc.get("lines") or [] if ln.get("roll_id")]
+    total = len(lines)
+    if doc.get("md_only"):
+        pct = int(await value_of("qc.md_sampling_pct", ctx) or 0)
+        mn = int(await value_of("qc.md_sampling_min", ctx) or 1)
+        checked = sum(1 for ln in lines if ln.get("md_quality_at"))
+        part = "md_quality"
+    elif doc.get("kind") == KIND_QC_4POINT:
+        raw = await value_of("qc.sampling_pct", ctx)
+        pct = 100 if raw in (None, "") else int(raw)
+        mn = int(await value_of("qc.sampling_min", ctx) or 1)
+        checked = sum(1 for ln in lines if ln.get("qc_at"))
+        part = "qc"
+    else:
+        return {"part": "", "total": total, "required": total, "checked": 0, "pct": 100, "min": total}
+    return {"part": part, "total": total, "required": required_checks(total, pct, mn), "checked": checked,
+            "pct": pct, "min": mn}
+
+
 async def get_one(ins_id: str) -> Optional[Dict[str, Any]]:
     doc = await db[COLL].find_one({"id": ins_id}, {"_id": 0})
     return safe_doc(doc) if doc else None
@@ -225,6 +260,9 @@ def summarize(doc: Dict[str, Any]) -> Dict[str, Any]:
                                   for ln in lines), 2),
         "grade_after_counts": grades,
         "inspected": sum(1 for ln in lines if ln.get("inspected_at")),
+        # UAT 24 Okt (P11) — `inspected` mencampur MD & QC; dua hitungan terpisah untuk indikator sampling.
+        "md_checked": sum(1 for ln in lines if ln.get("md_quality_at")),
+        "qc_checked": sum(1 for ln in lines if ln.get("qc_at")),
         "color_mismatch": sum(1 for ln in lines
                               if str(ln.get("color_result") or "") not in ("", "sesuai")),
         "handfeel_mismatch": sum(1 for ln in lines
@@ -1176,6 +1214,17 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
             roll_order=accepted + [r for r in ids if r in rejected], roll_grades=grades)
     except ValueError as exc:
         raise InspectionError(str(exc)) from exc
+    # UAT 24 Okt (P11.3) — roll yang diterima TANPA dicek MD Quality ditandai "lolos lewat sampling" (dulu tidak bisa
+    # dibedakan dari roll yang memang dicek & lolos).
+    if doc.get("md_only"):
+        checked_ids = {rid for rid, ln in lines.items() if ln.get("md_quality_at")}
+        lewat = [rid for rid in accepted if rid not in checked_ids]
+        if lewat:
+            await db.inventory_rolls.update_many(
+                {"id": {"$in": lewat}, "md_quality_checked": {"$ne": True}},
+                {"$set": {"md_quality_via_sampling": {"spk": doc.get("number", ""), "spk_id": doc.get("id", ""),
+                                                      "checked": len(checked_ids), "total": len(ids),
+                                                      "at": now_iso()}}})
     # Trial 22 Okt (E9) — roll yang GAGAL di SPK QC 4-point saat masih karantina: lepas karantina → langsung DITAHAN.
     from services import roll_hold_service as _rh
     for r in await db.inventory_rolls.find({"id": {"$in": accepted}, "qc_hold_pending": {"$exists": True}},
@@ -1214,8 +1263,23 @@ async def finish(ins_id: str, decision: str, remark: str,
             "membuat tanggalnya jadi bukti palsu.")
     if doc.get("kind") == KIND_RANDOM_CHECK and any(not ln.get("qc_at") for ln in lines):
         raise InspectionError("Random check: periksa SEMUA roll dulu — roll yang belum dicek tetap ditahan.")
-    if doc.get("kind") == KIND_QC_4POINT and any(not ln.get("qc_at") for ln in lines):
-        raise InspectionError("SPK QC 4-point: periksa SEMUA roll dulu.")
+    # UAT 24 Okt (P11.2/P11.3) — sampling: MD Quality & QC 4-point cukup memeriksa sebagian roll sesuai pengaturan
+    # (`qc.md_sampling_*` / `qc.sampling_*`). Dulu QC 4-point dipaksa SEMUA roll.
+    rule = await sampling_rule(doc)
+    if rule["part"] and rule["checked"] < rule["required"]:
+        apa = "dicek MD Quality" if rule["part"] == "md_quality" else "diperiksa QC 4-point"
+        raise InspectionError(
+            f"Baru {rule['checked']} dari {rule['total']} roll {apa} — wajib minimal {rule['required']} roll "
+            f"(sampling {rule['pct']}%, minimal {rule['min']} roll) sebelum SPK ditutup.")
+    if doc.get("kind") == KIND_QC_4POINT and rule["checked"] < rule["total"]:
+        # Roll yang TIDAK diperiksa dikeluarkan dari SPK (tetap "belum 4-point"), bukan diluluskan.
+        keep = [ln for ln in lines if ln.get("qc_at") or not ln.get("roll_id")]
+        out_lines = [ln for ln in lines if ln.get("roll_id") and not ln.get("qc_at")]
+        await db[COLL].update_one({"id": doc["id"]}, {"$set": {
+            "lines": keep, "excluded_lines": (doc.get("excluded_lines") or []) + [
+                {**ln, "excluded_at": now_iso(), "excluded_reason": "tidak diperiksa (sampling)"} for ln in out_lines]}})
+        doc = {**doc, "lines": keep}
+        lines = keep
     ret_live = None
     if doc.get("kind") == KIND_RETURN_CUSTOMER and doc.get("ref_doc_id"):
         ret_live = await db.sales_returns.find_one({"id": doc["ref_doc_id"]}, {"_id": 0, "status": 1, "items": 1})
@@ -1364,6 +1428,7 @@ async def create_qc_4point(payload: Dict[str, Any], actor: Dict[str, Any], entit
     task_id = str(payload.get("task_id") or "").strip()
     roll_ids = [str(r) for r in payload.get("roll_ids") or [] if r]
     ref = ("", "", "")
+    picked = set(roll_ids)
     if src_ins:
         src = await _load(src_ins)
         entity_id = src.get("entity_id") or entity_id
@@ -1375,6 +1440,12 @@ async def create_qc_4point(payload: Dict[str, Any], actor: Dict[str, Any], entit
             raise InspectionError("Tugas penerimaan tidak ditemukan.")
         roll_ids = [r["id"] async for r in db.inventory_rolls.find({"qc_task_id": task_id}, {"_id": 0, "id": 1})]
         ref = ("", "", task.get("po_number", ""))
+    if picked and (src_ins or task_id):
+        # UAT 24 Okt (P11.2) — SPK 4-point boleh untuk SEBAGIAN roll kedatangan (dulu selalu semua).
+        asing = picked - set(roll_ids)
+        if asing:
+            raise InspectionError("Ada roll pilihan yang bukan bagian dari SPK/kedatangan sumber — muat ulang.")
+        roll_ids = [r for r in roll_ids if r in picked]
     if not entity_id or entity_id == "all":
         raise InspectionError("Pilih satu badan usaha dulu — SPK QC milik satu badan usaha.")
     rolls = await db.inventory_rolls.find({"id": {"$in": roll_ids}, "owner_entity_id": entity_id},

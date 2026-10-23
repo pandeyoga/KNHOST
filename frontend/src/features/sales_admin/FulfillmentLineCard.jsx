@@ -32,14 +32,20 @@ function RollPick({ rolls = [], picked = [], onChange, testId, unit }) {
         className="text-[10.5px] font-bold text-[#0058CC]">{open ? "Sembunyikan roll" : `Pilih roll (${rolls.length} tersedia)`}{picked.length ? ` · ${picked.length} dipilih` : ""}</button>
       {open && (
         <div data-testid={`${testId}-list`} className="mt-1 max-h-[180px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
-          {rolls.map((r) => (
-            <label key={r.id} className="flex cursor-pointer items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11px] last:border-0">
-              <input type="checkbox" data-testid={`${testId}-roll-${r.id}`} checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
-              <span className="font-mono font-semibold">{r.roll_no}</span>
-              <span className="tabular-nums">{formatQty(r.length_remaining)} {r.unit || unit}</span>
-              <span className="text-[#8E8E93]">lot {r.lot || "—"}{r.grade ? ` · grade ${r.grade}` : ""} · {r.warehouse_name}</span>
-            </label>
-          ))}
+          {rolls.map((r) => {
+            // UAT 24 Okt (P10.6) — roll di gudang khusus PT penjual tidak bisa langsung berganti pemilik.
+            const blocked = r.usable === false;
+            return (
+              <label key={r.id} className={`flex items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11px] last:border-0 ${blocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+                <input type="checkbox" data-testid={`${testId}-roll-${r.id}`} disabled={blocked && !picked.includes(r.id)}
+                  checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
+                <span className="font-mono font-semibold">{r.roll_no}</span>
+                <span className="tabular-nums">{formatQty(r.length_remaining)} {r.unit || unit}</span>
+                <span className="text-[#8E8E93]">lot {r.lot || "—"}{r.grade ? ` · grade ${r.grade}` : ""} · {r.site_name && !String(r.warehouse_name || "").startsWith(r.site_name) ? `${r.site_name} · ` : ""}{r.warehouse_name}</span>
+                {blocked && <span data-testid={`${testId}-roll-${r.id}-blocked`} className="ml-auto rounded-full bg-[#FFF4E0] px-1.5 text-[10px] font-bold text-[#8A5300]">gudang khusus PT ini — pindahkan dulu</span>}
+              </label>
+            );
+          })}
         </div>
       )}
     </div>
@@ -89,8 +95,8 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
       {line.other_entities.map((o) => (
         <div key={o.entity_id}>
           <QtyRow label={`Transfer dari ${o.entity_name}`} testId={`fulfill-ic-${pid}-${o.entity_id}`}
-            value={v.ic[o.entity_id]} max={o.price_ready === false ? 0 : Math.min(o.available, room(v.ic[o.entity_id] || 0))}
-            hint={`Stok tersedia ${formatQty(o.available)}${proposed.has(o.entity_id) ? " · diusulkan sales (roll pilihan)" : ""}`}
+            value={v.ic[o.entity_id]} max={o.price_ready === false ? 0 : Math.min(o.usable_available ?? o.available, room(v.ic[o.entity_id] || 0))}
+            hint={`Bisa diambil ${formatQty(o.usable_available ?? o.available)} (gudang bersama)${o.needs_move > 0 ? ` · ${formatQty(o.needs_move)} di gudang khusus ${o.entity_name} — pindahkan dulu lewat Transfer Gudang` : ""}${proposed.has(o.entity_id) ? " · diusulkan sales (roll pilihan)" : ""}${((v.icRolls || {})[o.entity_id] || []).length ? " · roll pilihan dikirim utuh, kelebihannya jadi stok PT ini" : ""}`}
             onChange={(q) => onChange({ ...v, ic: { ...v.ic, [o.entity_id]: q } })} />
           <PriceState line={line} o={o} canSet={canSetPrice} onPrice={(kind, ent) => onPrice?.(kind, line, ent)}
             requested={!!requested[`${pid}-${o.entity_id}`]} />

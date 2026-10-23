@@ -85,6 +85,14 @@ async def _validate_min_cut(items: List[Dict[str, Any]], entity_id: str) -> None
                         f"Naikkan qty atau ubah 'Minimum panjang potong kain' di Pengaturan."))
 
 
+async def _fulfillment_site(payload, actor: Dict[str, Any], entity_id: str) -> str:
+    from services import site_receiving_service as srs
+    sid = (getattr(payload, "fulfillment_site_id", "") or "").strip()
+    if sid and await db.warehouse_sites.find_one({"id": sid}, {"_id": 1}):
+        return sid
+    return srs.default_site_for_user(actor) or await srs.default_site_for_entity(entity_id)
+
+
 @router.post("/sales-orders")
 async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str, Any]:
     # L06 — Pesanan Sample cukup izin sample_order.create (Admin Sample tidak membuat SO roll biasa).
@@ -366,6 +374,9 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     order_id = new_id("so")
     # Sub-fase 1.7 — resolve allocation policy (system→customer→order override)
     alloc_policy = await get_allocation_policy(entity_id, customer)
+    # UAT 24 Okt (P9.6) — alokasi roll: LOKASI pesanan dulu (pilihan POS / lokasi akun / PT), lalu FIFO.
+    _site = await _fulfillment_site(payload, actor, entity_id)
+    alloc_policy = {**(alloc_policy or {}), "_site_id": _site}
     # SALES REVAMP V2 — peta item mode "Beli per Roll" (pilihan roll eksplisit) per produk.
     roll_mode_map: Dict[str, List[Dict[str, Any]]] = {}
     rounding_map: Dict[str, Dict[str, Any]] = {}
@@ -625,6 +636,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                        if _qc_mode != "none" else {"mode": "none", "status": "not_required"}),
         # Order Pengambilan (pickup) — metode pemenuhan + tanggal ambil (hold picking s/d tgl).
         "fulfillment_method": (getattr(payload, "fulfillment_method", "kirim") or "kirim").strip().lower(),
+        # UAT 24 Okt (P8/P9) — lokasi pemenuhan: pilihan POS → lokasi akun → lokasi bawaan PT.
+        "fulfillment_site_id": _site,
         "pickup_date": (getattr(payload, "pickup_date", "") or "").strip(),
         # F-SHIP — request tanggal pengiriman (opsional; hanya relevan utk metode 'kirim').
         "delivery_date": delivery_date if fulfillment_method == "kirim" else "",

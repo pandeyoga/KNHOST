@@ -359,7 +359,10 @@ async def process_qc_decision(
             {"id": {"$in": result["roll_ids"]}, "inspection.inspected_at": {"$exists": False}},
             {"$set": {"qc_via_sampling": {"task_id": task_id, "at": now_iso(),
                                           "inspected_rolls": coverage["inspected_rolls"],
-                                          "total_rolls": coverage["total_rolls"]}}})
+                                          "total_rolls": coverage["total_rolls"]},
+                      # UAT 24 Okt (P11.3) — makna yang jelas: roll ini BELUM diinspeksi 4-point (keputusan lewat
+                      # sampel). `qc_via_sampling` dipertahankan untuk pembaca lama.
+                      "four_point_pending": True}})
     # 5) Update task — status + jejak QC + cabut kunci (tulisan akhir saga)
     await db.wms_tasks.update_one({"id": task_id}, _saga.finish_set(set_fields))
     return result

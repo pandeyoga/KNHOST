@@ -482,7 +482,10 @@ async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
                                                   "status": {"$nin": list(PO_DEAD)}}, {"_id": 0, "id": 1, "po_number": 1})
     if not existing:
         pr = await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0, "items": 1})
-        rz = [r for it in (pr or {}).get("items") or [] for r in it.get("realizations") or [] if r.get("kind") in ("po", "purchase_order")]
+        # UAT 24 Okt (P15) — `_record` menulis kunci "type" (bukan "kind"): dulu PO lama hasil realisasi PR tak pernah ketemu
+        # sehingga pengulangan bisa melahirkan PO ganda.
+        rz = [r for it in (pr or {}).get("items") or [] for r in it.get("realizations") or []
+              if (r.get("type") or r.get("kind")) in ("po", "purchase_order")]
         if rz:
             existing = await db.purchase_orders.find_one({"id": rz[-1].get("ref_id"), "status": {"$nin": list(PO_DEAD)}},
                                                          {"_id": 0, "id": 1, "po_number": 1})

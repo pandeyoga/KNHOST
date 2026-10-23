@@ -15,6 +15,22 @@ async def _scope(request: Request, entity_id: Optional[str]) -> List[str]:
     return resolve_scope_ids(await entity_ctx(request), entity_id)
 
 
+@router.get("/pos/site-stock")
+async def get_site_stock(
+    request: Request,
+    site_id: str = Query(...),
+    entity_id: Optional[str] = Query(None),
+    product_ids: str = Query("", description="koma; kosong = semua produk ber-stok di lokasi itu"),
+) -> Dict[str, Any]:
+    """UAT 24 Okt (P8) — stok per LOKASI untuk katalog POS/HP: milik PT penjual vs PT lain grup, satuan per produk."""
+    await require_permission(request, "order", "view")
+    from entity_scope import entity_ctx
+    from services import site_stock_service as sss
+    ent = entity_id or (await entity_ctx(request)).active_entity_id
+    ids = [x for x in (product_ids or "").split(",") if x.strip()]
+    return {"site_id": site_id, "entity_id": ent, "stock": await sss.site_stock(site_id, ent, ids or None)}
+
+
 @router.get("/pos/best-sellers")
 async def get_best_sellers(
     request: Request,

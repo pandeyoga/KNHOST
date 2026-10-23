@@ -147,7 +147,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
           <RelatedDocsPanel
             title="Dokumen Penerimaan Gudang"
             docs={[
-              { docType: "goods_receipt", label: "Bukti Terima Barang (GRN)" },
+              { docType: "po_receipt", label: "Bukti Terima per PO" },
               { docType: "put_away", label: "Daftar Put-Away" },
             ]}
             sourceId={po.id}

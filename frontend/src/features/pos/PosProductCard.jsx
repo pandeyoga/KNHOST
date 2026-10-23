@@ -13,7 +13,7 @@ import { ownStockText } from "../../utils/variants";
  * FASE F — varian yang masih di alur R&D (lifecycle ≠ produksi) ditandai jelas
  * "Belum boleh dijual" supaya sales tidak menabrak penolakan di ujung checkout.
  */
-export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnforcement = "block" }) {
+export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnforcement = "block", siteStock = null, siteName = "" }) {
   const rep = group.base;
   const total = group.totalAvailable;
   const makloonQty = group.variants.reduce((s, v) => s + Number(v.makloon_reserved_qty || 0), 0);
@@ -99,6 +99,19 @@ export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnf
           </p>
           <span data-testid={`product-stock-badge-${rep.id}`} className={`status-pill ${availPill}`}>{availLabel}</span>
         </div>
+        {/* UAT 24 Okt (P8) — stok DI LOKASI pilihan (gudang lokasi itu) ditonjolkan; lokasi lain = perlu transfer. */}
+        {siteStock && (() => {
+          const own = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.own_qty || 0), 0);
+          const grp = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.group_qty || 0), 0);
+          const rolls = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.rolls || 0), 0);
+          const unit = rep.base_unit || "meter";
+          return (
+            <p data-testid={`product-site-stock-${rep.id}`} className={`mt-1 rounded-md px-2 py-1 text-[11px] font-semibold ${own > 0 ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF4E5] text-[#8C4A00]"}`}>
+              Di {siteName || "lokasi ini"}: {own > 0 ? `${formatQty(own)} ${unit} · ${rolls} roll` : "kosong"}
+              {grp > 0 && <span className="font-normal"> · PT lain di lokasi ini {formatQty(grp)} {unit}</span>}
+            </p>
+          );
+        })()}
         {/* Trial 22 Okt (B6) — stok PT penjual dipisah dari stok grup (semua PT). */}
         {group.stockEntityName && (
           <p data-testid={`product-own-${rep.id}`} className="mt-1 text-[10.5px] text-[#6B6B73]">{group.stockEntityName}: <b className={group.totalOwn > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(group.totalOwn, group.totalOwnRolls, rep.base_unit || "meter")}</b></p>

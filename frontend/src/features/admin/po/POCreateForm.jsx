@@ -5,6 +5,7 @@ import { formatCurrency } from "../../../utils/formatters";
 import axios, { API } from "../../../services/apiClient";
 import { computeOrderPreview } from "../../../utils/pricing";
 import KNSelect from "../../../components/KNSelect";
+import SiteSelect from "../../../components/SiteSelect";
 import { productOption, supplierCodesLabel } from "../../../utils/productSearch";   // MD-08
 import DecimalInput from "../../../components/DecimalInput";
 import QtyDual from "../../../components/QtyDual";
@@ -233,15 +234,9 @@ export default function POCreateForm({
               className="field" placeholder="081234567890" />
           </div>
           <div>
-            <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Gudang *</label>
-            <KNSelect data-testid="warehouse-select" value={formData.warehouse_id}
-              onValueChange={v => setFormData({ ...formData, warehouse_id: v })}
-              className="field" placeholder="Pilih Gudang"
-              options={[
-                { value: "", label: "Pilih Gudang" },
-                ...warehouses.map(wh => ({ value: wh.id, label: `${wh.name} (${wh.code})` })),
-              ]}
-            />
+            {/* UAT 24 Okt (P9) — PO dikirim ke LOKASI; barang masuk lewat gudang penerimaan lokasi itu. */}
+            <SiteSelect testId="po-ship-to-site" value={formData.ship_to_site_id}
+              onChange={(v) => setFormData({ ...formData, ship_to_site_id: v, warehouse_id: "" })} />
           </div>
           <div>
             <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Perkiraan Pengiriman</label>

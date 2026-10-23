@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import SiteSelect from "../../components/SiteSelect";
 import { supplierKeywords } from "../../utils/productSearch";   // MD-08
 import { DualName } from "../../components/DualName";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -203,7 +204,7 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
 // ─── Create Form ─────────────────────────────────────────────────────────────
 function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel, onCreated }) {
   const [lines, setLines] = useState([]);
-  const [warehouseId, setWarehouseId] = useState("");
+  const [siteId, setSiteId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [reason, setReason] = useState("");
   const [routeReason, setRouteReason] = useState("");
@@ -260,7 +261,7 @@ function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel,
 
   async function submit() {
     if (lines.length === 0) { setErr("Tambahkan minimal satu item."); return; }
-    if (!warehouseId) { setErr("Pilih gudang tujuan."); return; }
+    if (!siteId) { setErr("Pilih lokasi kirim."); return; }
     setBusy(true); setErr("");
     try {
       const payload = {
@@ -272,7 +273,7 @@ function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel,
           qty_rolls: (l.qty_rolls === "" || l.qty_rolls === null || l.qty_rolls === undefined)
             ? null : Math.max(0, parseInt(l.qty_rolls, 10) || 0),
         })),
-        warehouse_id: warehouseId,
+        ship_to_site_id: siteId,   // UAT 24 Okt (P9) — gudang penerimaan diturunkan server
         entity_id: selectedEntity && selectedEntity !== "all" ? selectedEntity : "",
         preferred_supplier_id: supplierId,
         reason, route_reason: routeReason, needed_by_date: neededBy, source: "manual", submit_now: submitNow,
@@ -363,15 +364,7 @@ function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel,
           {/* Fields */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Gudang Tujuan *</label>
-              <KNSelect
-                data-testid="pr-warehouse"
-                className="form-input"
-                value={warehouseId}
-                onValueChange={setWarehouseId}
-                placeholder="— Pilih gudang —"
-                options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
-              />
+              <SiteSelect testId="pr-site" value={siteId} onChange={setSiteId} entityId={selectedEntity !== "all" ? selectedEntity : ""} />
             </div>
             <div className="grid gap-1.5">
               <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier Preferensi</label>

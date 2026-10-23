@@ -47,6 +47,20 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
   useEffect(() => { load(); setConfirmFor(null); }, [whId, selectedEntity]); // eslint-disable-line
 
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(""), 3500); };
+  // UAT 24 Okt (P9.3b) — gudang tanpa RFID: pindai label QR roll di transit → roll siap masuk Putaway Order.
+  const [labelInput, setLabelInput] = useState("");
+  const [labelRes, setLabelRes] = useState(null);
+  const verifyLabels = async () => {
+    const codes = labelInput.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+    if (!codes.length || !whId) return;
+    setBusy(true); setError("");
+    try {
+      const r = await axios.post(`${API}/putaway-orders/verify-labels`, { warehouse_id: whId, codes });
+      setLabelRes(r.data); setLabelInput("");
+      flash(`${r.data.verified.length} roll terverifikasi lewat label QR.`);
+      await load();
+    } catch (e) { fail(e, "Gagal memverifikasi label."); } finally { setBusy(false); }
+  };
   const fail = (e, f) => setError(e.response?.data?.detail || f);
 
   const createPA = async (gi, group) => {
@@ -96,6 +110,29 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
       {error && <div data-testid="pa-error" className="rounded-lg bg-[#FBE9E7] px-3 py-2 text-[12px] font-semibold text-[#C0341D]">{error}</div>}
       {msg && <div data-testid="pa-msg" className="rounded-lg bg-[#E7F7EC] px-3 py-2 text-[12px] font-semibold text-[#1B7E3B]">{msg}</div>}
 
+      {/* P9.3b — verifikasi label QR (tanpa RFID) */}
+      {whId && (
+        <section className="section-card" data-testid="pa-label-verify">
+          <div className="section-head"><h2 className="text-[13px] font-bold">Pindai label QR roll (gudang tanpa RFID)</h2></div>
+          <div className="section-body">
+            <p className="mb-2 text-[11.5px] text-[#6B6B73]">Pindai label roll yang baru dihitung di transit (nomor roll). Roll yang cocok menjadi <b>siap disimpan ke rak</b> dan muncul di saran di bawah.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input data-testid="pa-label-input" className="field min-w-[260px] flex-1" value={labelInput}
+                onChange={(e) => setLabelInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") verifyLabels(); }}
+                placeholder="Pindai / ketik nomor roll (pisahkan spasi)" aria-label="Nomor roll dari label QR" />
+              <button type="button" className="primary-button" data-testid="pa-label-verify-btn" disabled={busy || !labelInput.trim()} onClick={verifyLabels}>Verifikasi label</button>
+            </div>
+            {labelRes && (
+              <p data-testid="pa-label-result" className="mt-2 text-[11.5px] text-[#4A4A52]">
+                Terverifikasi {labelRes.verified.length}
+                {labelRes.skipped.length > 0 && <> · dilewati {labelRes.skipped.map((x) => `${x.roll_no} (${x.why})`).join(", ")}</>}
+                {labelRes.not_found.length > 0 && <> · tidak ada di gudang ini: {labelRes.not_found.join(", ")}</>}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Saran putaway */}
       <section className="section-card">
         <div className="section-head"><h2 className="text-[13px] font-bold flex items-center gap-1.5">
@@ -103,7 +140,7 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
         <div className="section-body">
           {!suggest || suggest.groups.length === 0 ? (
             <p className="py-6 text-center text-[12px] text-[#8E8E93]" data-testid="pa-suggest-empty">
-              Tidak ada roll siap disimpan ke rak (perlu tag terverifikasi + routing SIMPAN).
+              Tidak ada roll siap disimpan ke rak (perlu tag RFID terverifikasi atau label QR terpindai, routing SIMPAN).
             </p>
           ) : suggest.groups.map((g, gi) => (
             <div key={gi} data-testid={`pa-group-${gi}`} className="mb-2 rounded-lg border border-[#EFF0F2] p-2.5">

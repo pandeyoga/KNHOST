@@ -13,7 +13,8 @@ from core_utils import safe_doc
 
 STAGE_LABEL = {
     "received_transit": "Diterima di Transit", "tag_printed": "Tag RFID Dicetak",
-    "tag_verified": "Tag Terverifikasi", "cross_dock_ready": "Cross-Dock — Langsung Kirim",
+    "tag_verified": "Tag Terverifikasi", "label_verified": "Label QR Terverifikasi",
+    "cross_dock_ready": "Cross-Dock — Langsung Kirim",
     "putaway_assigned": "Masuk Putaway Order", "putaway_in_transit": "Menuju Gudang Simpan",
     "stored": "Tersimpan di Gudang", "gate_exception": "Exception di Gate",
 }

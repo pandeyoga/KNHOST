@@ -33,6 +33,19 @@ router = APIRouter(prefix="/api")
 
 # ─── LIST ────────────────────────────────────────────────────────────────────
 
+async def _own_returns(q: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
+    """UAT 24 Okt (P14) — peran sales hanya melihat retur atas SO miliknya (atau yang ia buat sendiri).
+
+    Dulu daftar & lencana retur hanya berpagar badan usaha, sehingga sales melihat retur pelanggan rekannya
+    (temuan sapuan HP: Bima melihat retur Moda Surabaya & Butik Bali). Kepemilikan dibaca dari SO yang sama
+    dengan aturan "Pesanan Saya" (`sales_ownership`)."""
+    from services import sales_ownership
+    if not sales_ownership.is_owner_locked(user):
+        return q
+    ids = [o["id"] async for o in db.sales_orders.find(sales_ownership.owner_clause(user), {"_id": 0, "id": 1})]
+    return merge_query(q, {"$or": [{"order_id": {"$in": ids}}, {"created_by_id": user.get("id") or "__none__"}]})
+
+
 @router.get("/sales-returns")
 async def list_returns(
     request: Request,
@@ -51,6 +64,7 @@ async def list_returns(
     if return_type: q["return_type"] = return_type
     q = resolve_list_scope("sales_returns", q, ctx, entity_id)
     q = line_scope.narrow(q, user, line, field=line_scope.LINES_FIELD)   # FASE L
+    q = await _own_returns(q, user)
 
     def _clean(docs):
         for d in docs:
@@ -90,6 +104,7 @@ async def sales_return_status_counts(request: Request,
         base["status"] = opv.list_status("")   # F-11-layar — sama dengan daftar operator
     base = resolve_list_scope("sales_returns", base, ctx, entity_id)
     base = line_scope.narrow(base, user, line, field=line_scope.LINES_FIELD)
+    base = await _own_returns(base, user)
     if q:
         base = merge_query(base, build_search(q, ["number", "customer_name", "order_number"]))
     pipeline = [{"$match": base}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]
@@ -183,6 +198,9 @@ async def create_return(
     except ValueError as e:
         # R1-06 — retur melebihi batas / jenis tak valid → 400 dgn pesan jelas (bukan 500).
         raise HTTPException(status_code=400, detail=str(e))
+    # P14 — `created_by` berisi nama (tidak unik); id pembuat dipakai pagar kepemilikan retur.
+    await db.sales_returns.update_one({"id": doc["id"]}, {"$set": {"created_by_id": user.get("id", "")}})
+    doc["created_by_id"] = user.get("id", "")
     await audit(user.get("name", ""), "sales_return_created", "sales_return", doc["id"],
                 {"number": doc["number"], "order_id": payload.order_id, "type": payload.return_type})
     return doc
@@ -246,6 +264,8 @@ async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
     assert_entity_access(doc, "sales_returns", ctx)
     if operator:
         opv.assert_open_for_operator(doc)
+    if not await db.sales_returns.count_documents(await _own_returns({"id": return_id}, user)):
+        raise HTTPException(status_code=403, detail=f"Retur {doc.get('number') or ''} bukan atas pesanan Anda.")
     doc["attachments"] = [a for a in (doc.get("attachments") or []) if not a.get("is_deleted")]
     doc["evidence"] = await evidence.describe(doc)   # L08 LN-080-T03
     _rids = [r for it in doc.get("items", []) for r in (it.get("roll_ids") or [])]

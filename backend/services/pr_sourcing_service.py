@@ -390,12 +390,18 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     from services import group_partner_service as _grp
     await _grp.assert_supplier_not_group_entity(
         supplier, doc_label="Pesanan Pembelian (PO) hasil realisasi PR")
-    warehouse_id = warehouse_id or pr.get("warehouse_id", "")
-    warehouse = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0}) if warehouse_id else None
-    if not warehouse:
-        raise SourcingError("Gudang wajib dipilih untuk realisasi ke PO.")
-
     entity_id = pr.get("entity_id") or DEFAULT_ENTITY_ID
+    # UAT 24 Okt (P9) — tujuan PO = lokasi PR (atau lokasi gudang pilihan) → gudang penerimaan aktif lokasi itu.
+    from fastapi import HTTPException as _HE
+    from services import site_receiving_service as srs
+    try:
+        _dest = await srs.resolve_destination(entity_id, "" if warehouse_id else pr.get("ship_to_site_id", ""),
+                                              warehouse_id or pr.get("warehouse_id", ""))
+    except _HE as exc:
+        raise SourcingError(str(exc.detail) if exc.status_code != 400 or "wajib" not in str(exc.detail)
+                            else "Lokasi kirim wajib dipilih untuk realisasi ke PO.")
+    warehouse = _dest["warehouse"]
+    warehouse_id = warehouse["id"]
     raw_items: List[Dict[str, Any]] = []
     used_contracts: set = set()
     used_items: List[tuple] = []
@@ -475,6 +481,7 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         "supplier_contact": sup_contact, "supplier_npwp": supplier.get("npwp", ""),
         "warehouse_id": warehouse_id, "warehouse_name": warehouse["name"],
         "warehouse_city": warehouse.get("city", ""),
+        "ship_to_site_id": _dest["site_id"], "ship_to_site_name": _dest["site_name"],
         "items": items, "total_amount": total_amount, "entity_id": entity_id,
         "items_discount_total": pricing["items_discount_total"],
         "order_discount_percent": pricing["order_discount_percent"],

@@ -412,7 +412,9 @@ async def convert(req_id: str, actor: Dict[str, Any], *, source_entity_id: str =
     payload = {
         "seller_entity_id": seller,
         "buyer_entity_id": req["entity_id"],
+        # UAT 24 Okt (P10.2) — roll pilihan Admin Sales (E5) ikut ke transaksi antar-PT → dipakai tugas gudang penjual.
         "items": [{"product_id": it["product_id"], "quantity": it["quantity"],
+                   "preferred_roll_ids": it.get("preferred_roll_ids") or [],
                    "notes": it.get("notes", "")} for it in req["items"]],
         "pricing_mode": pricing_mode or "",
         "ppn_mode": ppn_mode or "",

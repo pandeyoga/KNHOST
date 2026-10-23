@@ -3,6 +3,7 @@ import axios, { API } from "../services/apiClient";
 import { Layers, ChevronLeft, ChevronRight, Check, Loader2, Building2, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
 import { canSeeSourcing } from "../utils/sourcingVisibility";
+import RollCheckChips from "./RollCheckChips";
 
 /** K-7 — umur roll (hari) sejak diterima; null bila tanggal tidak ada. */
 const rollAgeDays = (iso) => { if (!iso) return null; const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return Number.isFinite(d) && d >= 0 ? d : null; };
@@ -132,6 +133,7 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1">
                         <span className="text-[10.5px] text-[#6B6B73]">{r.warehouse_name}</span>
+                        <RollCheckChips roll={r} testId={`roll-check-${r.id}`} />
                         {!ownerVisible ? null : r.is_cross_entity ? (
                           <span data-testid={`roll-badge-cross-${r.id}`} className="inline-flex items-center gap-0.5 rounded-full bg-[#FFF3E0] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">
                             <AlertTriangle size={9} /> {r.owner_entity_name} · transfer

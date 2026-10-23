@@ -5,6 +5,30 @@ import { ErrorBox } from "./GrnBits";
 import { ACTION_LABEL, KIND_LABEL, allowedActions, errText, grnApi } from "./grnApi";
 
 const BLOCK_TONE = "border-[#F5C2C0] bg-[#FDECEC] text-[#B4231F]";
+// UAT 24 Okt (P16.1b) — selisih resmi baru dihitung sesudah "Selesai hitung". Sebelum itu layar dulu menulis
+// "Tidak ada selisih — cocok" walau SJ 1.000 yd baru terhitung 50 yd. Kini: pratinjau selisih sementara.
+const PRE_RECON = ["draft", "reading", "review", "counting"];
+
+function PendingRecon({ lines }) {
+  const rows = lines.map((ln) => {
+    const u = ln.target?.unit || "";
+    const sj = Number(ln.converted?.qty || 0), cnt = Number(ln.counted?.qty || 0);
+    const sjR = Number(ln.declared?.rolls || 0), cntR = Number(ln.counted?.rolls || 0);
+    return { no: ln.line_no, u, gap: Math.round((sj - cnt) * 100) / 100, gapR: sjR - cntR, sj };
+  }).filter((r) => r.sj > 0 && (Math.abs(r.gap) > 0.009 || r.gapR !== 0));
+  return (
+    <div data-testid="grn-recon-pending" className="rounded-lg border border-[#FFE3B3] bg-[#FFF9EE] px-3 py-2 text-[11.5px] text-[#8C4A00]">
+      <p className="font-semibold">Rekonsiliasi dihitung sesudah <b>Selesai hitung</b>.</p>
+      {rows.length ? (
+        <ul className="mt-1 list-disc pl-4" data-testid="grn-recon-pending-rows">
+          {rows.map((r) => (
+            <li key={r.no}>Baris {r.no}: belum terhitung {r.gap.toLocaleString("id-ID")} {r.u}{r.gapR ? ` · ${r.gapR} roll` : ""} dibanding surat jalan.</li>
+          ))}
+        </ul>
+      ) : <p className="mt-0.5">Sementara jumlah terhitung sama dengan surat jalan.</p>}
+    </div>
+  );
+}
 
 function Discrepancy({ grn, d, run, canReview }) {
   const resolve = async (action) => {
@@ -70,6 +94,7 @@ export default function GrnReconPanel({ grn, onChange, canReview, canClose }) {
       </div>
       <div className="space-y-1.5" data-testid="grn-disc-list">
         {discs.length ? discs.map((d) => <Discrepancy key={d.key} grn={grn} d={d} run={run} canReview={canReview} />)
+          : PRE_RECON.includes(grn.status) ? <PendingRecon lines={lines} />
           : <p className="flex items-center gap-1 text-[11px] text-[#0F766E]"><CheckCircle2 size={13} /> Tidak ada selisih — surat jalan cocok dengan hitungan fisik.</p>}
       </div>
       {results && (

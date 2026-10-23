@@ -205,9 +205,16 @@ export function useAppActions(state) {
         setAuditLogs(auditResp.data || []);
       }
 
-      if (!selectedCustomerRef.current && dash.data.customers?.[0]) {
-        setSelectedCustomer(dash.data.customers[0]);
-        setSelectedAddress(dash.data.customers[0].addresses?.[0]?.id || "");
+      // UAT 24 Okt (P8) — pelanggan TIDAK lagi dipilih otomatis (dulu pelanggan pertama daftar): pemilik meminta
+      // pelanggan dipilih sengaja di gerbang "Mulai jualan". Yang dipulihkan hanya pilihan sesi ini.
+      if (!selectedCustomerRef.current) {
+        let ctxId = "";
+        try { ctxId = JSON.parse(sessionStorage.getItem("kn_pos_ctx") || "{}").customer_id || ""; } catch { ctxId = ""; }
+        const c = ctxId && (dash.data.customers || []).find((x) => x.id === ctxId);
+        if (c) {
+          setSelectedCustomer(c);
+          setSelectedAddress(c.addresses?.[0]?.id || "");
+        }
       }
     } catch (error) {
       setNotice(error.response?.data?.detail || "Gagal mengambil data sistem.");
@@ -343,6 +350,7 @@ export function useAppActions(state) {
         entity_id: entityValue,
         order_discount_percent: 0,
         fulfillment_method: extra.fulfillment_method || "kirim",
+        fulfillment_site_id: extra.fulfillment_site_id || "",   // UAT 24 Okt (P8) — lokasi gudang penjualan (POS)
         pickup_date: extra.pickup_date || "",
         delivery_date: extra.delivery_date || "",
         sales_team: Array.isArray(extra.sales_team) ? extra.sales_team : [],

@@ -426,12 +426,21 @@ class LockPriceBody(BaseModel):
     margin_pct: Optional[float] = None
     item_margins: Dict[str, float] = Field(default_factory=dict)   # FE-01 — margin per item OD multi-item
     note: str = ""
+    site_id: str = ""             # UAT 24 Okt (P9) — lokasi kirim pengadaan; gudang penerimaan diturunkan server
     warehouse_id: str = ""
     auto_po: bool = True
 
 
 class ProcureBody(BaseModel):
+    site_id: str = ""
     warehouse_id: str = ""
+
+
+async def _site_to_warehouse(payload, od: Dict[str, Any]) -> None:
+    """P9 — lokasi kirim → gudang penerimaan lokasi itu (ditulis ke `payload.warehouse_id`)."""
+    if getattr(payload, "site_id", ""):
+        from services import site_receiving_service as srs
+        payload.warehouse_id = (await srs.receiving_warehouse(payload.site_id, od.get("entity_id")))["id"]
 
 
 async def _od_or_404(order_id: str, request: Request) -> Dict[str, Any]:
@@ -623,6 +632,7 @@ async def lock_price(order_id: str, payload: LockPriceBody, request: Request) ->
     if not role_in(user.get("role"), ("sales", "sales_admin", "manager", "admin")):
         raise HTTPException(status_code=403, detail="Hanya Sales / manager / admin yang boleh mengunci harga final.")
     od = await _od_or_404(order_id, request)
+    await _site_to_warehouse(payload, od)
     try:
         pricing = await p2.lock_price(od, payload.model_dump(), user)
     except p2.ODError as exc:
@@ -646,6 +656,7 @@ async def procure_now(order_id: str, payload: ProcureBody, request: Request) -> 
     user = await require_permission(request, "purchase_requisition", "create")
     await require_permission(request, "od_fulfillment", "realize")   # L03 LN-033
     od = await _od_or_404(order_id, request)
+    await _site_to_warehouse(payload, od)
     if payload.warehouse_id:   # E4.1 — gudang tujuan wajib boleh dipakai badan usaha OD
         from services import warehouse_scope_service as whscope
         await whscope.assert_usable(payload.warehouse_id, od.get("entity_id"), action="menerima PO special order")

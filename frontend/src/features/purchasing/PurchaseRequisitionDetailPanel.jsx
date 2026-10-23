@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import SiteSelect from "../../components/SiteSelect";
 import { printPurchaseRequisition } from "../../utils/docPrint";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { SOURCE_LABEL, StatusPill, Field } from "./prConstants";
@@ -24,7 +25,7 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
   const [err, setErr] = useState("");
   const [showConvert, setShowConvert] = useState(false);
   const [convSupplier, setConvSupplier] = useState(pr.preferred_supplier_id || "");
-  const [convWarehouse, setConvWarehouse] = useState(pr.warehouse_id || "");
+  const [convSite, setConvSite] = useState(pr.ship_to_site_id || "");
   const [convDate, setConvDate] = useState("");
   const [showReject, setShowReject] = useState(false);   // H3 — tangkap alasan tolak
   const [rejectReason, setRejectReason] = useState("");
@@ -61,7 +62,8 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
     setBusy(true); setErr("");
     try {
       const res = await axios.post(`${API}/purchase-requisitions/${pr.id}/convert-to-po`, {
-        supplier_id: convSupplier, warehouse_id: convWarehouse, expected_delivery_date: convDate,
+        supplier_id: convSupplier, ship_to_site_id: convSite, warehouse_id: convSite ? "" : (pr.warehouse_id || ""),
+        expected_delivery_date: convDate,
       });
       onChanged(`Dikonversi ke ${res.data.po.po_number}.`);
       setShowConvert(false);
@@ -89,7 +91,7 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
           {err && <div className="notice-bar danger" data-testid="pr-detail-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
 
           <div className="grid gap-2 sm:grid-cols-3 text-[12px]">
-            <Field label="Gudang" value={pr.warehouse_name || "—"} />
+            <Field label="Lokasi kirim" value={pr.ship_to_site_name ? `${pr.ship_to_site_name} · ${pr.warehouse_name || ""}` : (pr.warehouse_name || "—")} />
             <Field label="Supplier Preferensi" value={pr.preferred_supplier_name || "—"} />
             <Field label="Dibutuhkan" value={pr.needed_by_date || "—"} />
             <Field label="Dibuat oleh" value={pr.created_by} />
@@ -199,15 +201,7 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Gudang</label>
-                <KNSelect
-                  data-testid="pr-convert-warehouse"
-                  className="form-input"
-                  value={convWarehouse}
-                  onValueChange={setConvWarehouse}
-                  placeholder="— Pilih gudang —"
-                  options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
-                />
+                <SiteSelect testId="pr-convert-site" value={convSite} onChange={setConvSite} entityId={pr.entity_id || ""} />
               </div>
               <div className="grid gap-1.5">
                 <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>

@@ -186,7 +186,9 @@ async def export_inspections(request: Request, entity_id: Optional[str] = Query(
 @router.get("/inspections/{ins_id}")
 async def get_inspection(ins_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "inspection", "view")
-    return await _guarded(ins_id, request, actor)
+    doc = await _guarded(ins_id, request, actor)
+    # UAT 24 Okt (P11.3) — indikator "x/y roll dicek (wajib n)" di layar SPK.
+    return {**doc, "sampling": await svc.sampling_rule(doc)}
 
 
 @router.post("/inspections")
@@ -294,7 +296,11 @@ async def finish_inspection(ins_id: str, payload: InspectionFinish,
     # 23 Okt — + SPK retur pelanggan: menutupnya = "QC retur selesai" (keputusan uang tetap Manajer saat settle).
     if user_doc and user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT, svc.KIND_QC_4POINT,
                                              svc.KIND_RETURN_CUSTOMER):   # + SPK QC 4-point (Trial 22 Okt E9)
-        actor = await require_any_permission(request, [("inspection", "decide"), ("qc", "release")])
+        perms = [("inspection", "decide"), ("qc", "release")]
+        if user_doc.get("md_only"):
+            # UAT 24 Okt (P11.6, keputusan pemilik P11-K1) — MD Quality boleh menutup SPK MD-nya sendiri.
+            perms.append(("md_quality", "decide"))
+        actor = await require_any_permission(request, perms)
     else:
         actor = await require_permission(request, "inspection", "decide")
     doc = await _guarded(ins_id, request, actor)

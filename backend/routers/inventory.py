@@ -227,8 +227,10 @@ async def list_rolls(
     q: str = "",
     limit: int = 5000,
     skip: int = 0,
+    check: str = "",
 ) -> Any:
     """Daftar roll fisik (SSOT) dengan filter owner/lot/status/warehouse.
+    UAT 24 Okt (P11.4) — `check`: no_mdq (belum dicek MD Quality) · mdq_sampling · no_4point (belum 4-point).
 
     OPT-IN paginasi: bila ?page/?page_size hadir → envelope {items,total,...};
     kalau tidak → array telanjang (kompatibel mundur)."""
@@ -243,6 +245,12 @@ async def list_rolls(
         query["status"] = status
     if lot:
         query["lot"] = lot
+    if check == "no_mdq":
+        query["md_quality_checked"] = {"$ne": True}
+    elif check == "mdq_sampling":
+        query["md_quality_via_sampling"] = {"$exists": True}
+    elif check == "no_4point":
+        query["inspected_4point"] = {"$ne": True}
     query = resolve_list_scope("inventory_rolls", query, ctx, owner_entity_id)
     # FASE L — pagar lini di Daftar Roll. Roll lama tanpa lini TETAP terlihat, kalau
     # tidak layar gudang mendadak kosong bagi staf ber-lini (user story L.G #4).

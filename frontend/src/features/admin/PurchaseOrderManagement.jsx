@@ -107,7 +107,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   const tabCount = (t) => (t.statuses ? t.statuses.split(",").reduce((a, k) => a + (counts[k] || 0), 0) : 0);
 
   const emptyForm = {
-    supplier_id: "", supplier_name: "", supplier_contact: "", warehouse_id: "",
+    supplier_id: "", supplier_name: "", supplier_contact: "", warehouse_id: "", ship_to_site_id: "",
     items: [], expected_delivery_date: "", notes: "",
     order_discount_percent: 0, tax_mode: "",   // P0-1 — diskon order + mode PPN Masukan
     budget_dimension: "account", budget_key: "",  // R6.3 — tag anggaran (opsional)
@@ -118,9 +118,9 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   useEffect(() => {
     const d = takePODraft();
     if (d?.formData && d.to === selectedEntity) {
-      setFormData({ ...emptyForm, ...d.formData, warehouse_id: "" });
+      setFormData({ ...emptyForm, ...d.formData, warehouse_id: "", ship_to_site_id: "" });
       setShowCreateForm(true);
-      setNotice("Draft PO dipindah ke entitas pembeli baru — periksa gudang tujuan & pemasok.");
+      setNotice("Draft PO dipindah ke entitas pembeli baru — periksa lokasi kirim & pemasok.");
     }
   }, []); // eslint-disable-line
   // Fase A · PS-09/D-19 — `expected_grade` WAJIB dipilih user (tidak ada default).
@@ -178,8 +178,9 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   };
 
   const handleCreatePO = async () => {
-    if (!formData.supplier_name || !formData.warehouse_id) {
-      setError("Nama supplier dan gudang wajib diisi."); return;
+    // UAT 24 Okt (P9) — PO dikirim ke LOKASI; gudang penerimaan diturunkan server.
+    if (!formData.supplier_name || !formData.ship_to_site_id) {
+      setError("Nama supplier dan lokasi kirim wajib diisi."); return;
     }
     if (formData.items.length === 0) {
       setError("Tambahkan minimal 1 item."); return;

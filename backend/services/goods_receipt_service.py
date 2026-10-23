@@ -152,8 +152,6 @@ async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Di
     ent = ctx.active_entity_id
     if ctx.view_all or not ent or ent == "all":
         raise HTTPException(status_code=400, detail="Pilih satu badan usaha aktif sebelum mencatat kedatangan barang.")
-    if not await db.warehouses.find_one({"id": body.warehouse_id}, {"_id": 1}):
-        raise HTTPException(status_code=400, detail="Gudang tidak ditemukan.")
     coll = "suppliers" if body.partner_type == "supplier" else "makloons"
     partner = await db[coll].find_one({"id": body.partner_id}, {"_id": 0, "id": 1, "name": 1})
     if not partner:
@@ -169,6 +167,22 @@ async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Di
     bad = [x for x in req if x not in open_ids]
     if bad:
         raise HTTPException(status_code=400, detail=f"{label} {', '.join(bad)} bukan {label} terbuka milik mitra ini.")
+    if body.partner_type == "supplier" and body.po_ids:
+        # UAT 24 Okt (P9.3) — barang PO selalu diterima di gudang penerimaan PO itu (posting memakai gudang tugas PO).
+        # Dulu gudang pilihan di layar disimpan ke GRN tetapi diabaikan saat posting → GRN menunjuk gudang yang salah.
+        whs = {p.get("warehouse_id") async for p in db.purchase_orders.find({"id": {"$in": list(body.po_ids)}},
+                                                                             {"_id": 0, "warehouse_id": 1})}
+        whs.discard(None)
+        whs.discard("")
+        if len(whs) > 1:
+            raise HTTPException(status_code=400, detail=(
+                "PO yang dipilih dikirim ke gudang penerimaan berbeda — catat kedatangan terpisah per lokasi."))
+        if whs:
+            body.warehouse_id = next(iter(whs))
+    if not (body.warehouse_id or "").strip():
+        raise HTTPException(status_code=400, detail="Pilih gudang penerimaan (atau pilih PO — gudangnya mengikuti PO).")
+    from services import warehouse_scope_service as whscope
+    await whscope.assert_usable(body.warehouse_id, ent, action="menerima barang di sini", field_label="Gudang penerimaan")
     gid = new_id("grn")
     doc = {
         "id": gid, "entity_id": ent,

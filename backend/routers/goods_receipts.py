@@ -47,9 +47,12 @@ async def photo_check(request: Request, file: UploadFile = File(...)) -> Dict[st
 @router.get("/goods-receipts")
 async def list_grn(request: Request, status: str = "", partner_id: str = "", q: str = "",
                    limit: int = 100) -> List[Dict[str, Any]]:
-    await require_permission(request, M, "view")
+    actor = await require_permission(request, M, "view")
     ctx = await entity_ctx(request)
     flt: Dict[str, Any] = {"entity_id": {"$in": ctx.allowed_entity_ids} if ctx.view_all else ctx.active_entity_id}
+    # UAT 24 Okt (P9.5) — daftar GRN dulu membangun saringan sendiri tanpa lingkup lokasi petugas gudang.
+    from services import location_scope
+    flt = location_scope.narrow("goods_receipts", flt, await location_scope.warehouse_ids_for(actor))
     if status:
         flt["status"] = {"$in": status.split(",")}
     if partner_id:

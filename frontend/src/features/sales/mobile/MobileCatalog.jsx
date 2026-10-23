@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Search, ShoppingCart, PackageX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, ShoppingCart, PackageX, MapPin } from "lucide-react";
+import axios, { API } from "../../../services/apiClient";
 import { MobileProductCard } from "../../pos/mobile/MobileProductCard";
 import { PosBestSellers } from "../../pos/PosBestSellers";
 import { groupByTemplate } from "../../../utils/variants";
@@ -9,8 +10,17 @@ import { useEffectivePrices, pickPrice } from "../../../hooks/useEffectivePrices
 import MobileCustomerBar from "./MobileCustomerBar";
 
 export default function MobileCatalog({ data, loading, onAdd, onInspect, entityId, cart, onOpenCart,
-  selectedCustomer = null, allowRollPick = true, onSelectCustomer }) {
+  selectedCustomer = null, allowRollPick = true, onSelectCustomer, siteId = "", siteName = "", onChangeContext }) {
   const [search, setSearch] = useState("");
+  // UAT 24 Okt (P8) — stok per lokasi pilihan (gerbang "Mulai jualan").
+  const [siteStock, setSiteStock] = useState(null);
+  useEffect(() => {
+    if (!siteId) { setSiteStock(null); return undefined; }
+    let live = true;
+    axios.get(`${API}/pos/site-stock`, { params: { site_id: siteId, ...(entityId && entityId !== "all" ? { entity_id: entityId } : {}) } })
+      .then((r) => { if (live) setSiteStock(r.data?.stock || {}); }).catch(() => { if (live) setSiteStock({}); });
+    return () => { live = false; };
+  }, [siteId, entityId]);
   const [cat, setCat] = useState("all");
   const [activeGroup, setActiveGroup] = useState(null);
 
@@ -55,6 +65,12 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
             placeholder="Cari produk, SKU, warna…"
             className="w-full bg-transparent text-[13px] text-[#1C1C1E] outline-none placeholder:text-[#8E8E93]" />
         </div>
+        {siteId && (
+          <div className="mt-2 flex items-center justify-between gap-2 text-[11.5px]" data-testid="mobile-site-bar">
+            <span className="inline-flex items-center gap-1 font-semibold text-[#0058CC]"><MapPin size={12} /> {siteName || "Lokasi"}</span>
+            {onChangeContext && <button type="button" className="font-semibold text-[#0058CC] underline" data-testid="mobile-context-change" onClick={onChangeContext}>Ganti lokasi / pelanggan</button>}
+          </div>
+        )}
         {onSelectCustomer && (
           <MobileCustomerBar customers={data?.customers || []} selectedCustomer={selectedCustomer}
             onSelect={onSelectCustomer} amount={cartSubtotal} />
@@ -85,7 +101,7 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
           <div className="grid grid-cols-2 gap-2.5">
             {groups.map((g) => (
               <MobileProductCard specialMap={priceMap} key={g.key} group={g} onOpen={handleOpen}
-                rndEnforcement={data?.rnd_policy?.lifecycle_enforcement || "block"} />
+                rndEnforcement={data?.rnd_policy?.lifecycle_enforcement || "block"} siteStock={siteStock} siteName={siteName} />
             ))}
           </div>
         )}

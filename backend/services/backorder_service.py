@@ -157,7 +157,23 @@ async def auto_fulfill_backorders(product_id: str, owner_entity_id: str) -> Dict
         if r["exhausted"]:
             break
     result["qty_fulfilled"] = round(result["qty_fulfilled"], 2)
+    if result["orders_touched"]:
+        result["cross_dock_rolls"] = await mark_cross_dock(product_id, owner_entity_id)
     return result
+
+
+async def mark_cross_dock(product_id: str, owner_entity_id: str) -> int:
+    """UAT 24 Okt (P9.4b) — roll yang baru tiba (masih di tahap penerimaan/label) lalu langsung dicadangkan ke SO
+    yang menunggu ditandai CROSS-DOCK: tidak masuk rak/putaway, langsung ke tugas ambil. Dulu routing tetap
+    "store" & tahap tetap transit sehingga layar gudang menganggapnya barang untuk disimpan."""
+    from core_utils import now_iso
+    res = await db.inventory_rolls.update_many(
+        {"product_id": product_id, "owner_entity_id": owner_entity_id, "status": "reserved",
+         "journey.stage": {"$in": ["received_transit", "tag_printed", "tag_verified", "label_verified"]},
+         "journey.routing": {"$ne": "cross_dock"}},
+        {"$set": {"journey.routing": "cross_dock", "journey.stage": "cross_dock_ready",
+                  "journey.updated_at": now_iso(), "updated_at": now_iso()}})
+    return res.modified_count
 
 
 async def _reserve_picked(order_id: str, product_id: str, owner_entity_id: str, roll_ids: List[str],

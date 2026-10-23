@@ -153,7 +153,7 @@ async def put_warehouse_structure(warehouse_id: str, payload: StructurePayload, 
 
 @router.get("/warehouses")
 async def list_warehouses(request: Request, scope: str = Query("usable"),
-                          include_inactive: bool = Query(True)) -> List[Dict[str, Any]]:
+                          include_inactive: Optional[bool] = Query(None)) -> List[Dict[str, Any]]:
     """Gudang yang BOLEH dipakai badan usaha aktif (bawaan).
 
     INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): gudang+alamat WAJIB login.
@@ -171,7 +171,9 @@ async def list_warehouses(request: Request, scope: str = Query("usable"),
     return await whscope.list_for_entity(
         ctx.active_entity_id,
         include_unusable=want_all,
-        only_active=not include_inactive)
+        # UAT 24 Okt (P9) — pemilih gudang (PO/PR/GRN/transfer…) dulu ikut menawarkan gudang NONAKTIF (WH-BDG dkk.).
+        # Bawaan kini: daftar "usable" hanya gudang aktif; layar master (`scope=all`) tetap melihat semuanya.
+        only_active=not (include_inactive if include_inactive is not None else want_all))
 
 
 @router.post("/warehouses")

@@ -603,11 +603,11 @@ E("allocation.roll_pick_sales", group="stok-satuan", type="bool", default=True,
   scopes=("global", "entity"),
   label="Sales boleh pilih roll saat checkout",
   help="Bila dimatikan, role SALES hanya memasukkan jumlah (yard + perkiraan roll) — "
-       "roll dipilihkan otomatis (FEFO), lalu Admin Sales dapat MENGGANTI roll pilihan "
+       "roll dipilihkan otomatis (lokasi pesanan dulu, lalu FIFO), lalu Admin Sales dapat MENGGANTI roll pilihan "
        "sistem lewat tombol 'Ganti Roll' di detail pesanan. Admin Sales/manajer/admin "
        "tetap boleh memilih roll saat checkout.",
   impact="Menggeser keputusan pemilihan roll dari sales lapangan ke Admin Sales (alokasi manual).",
-  example="OFF → sales pesan 200 yard; sistem reserve FEFO; Admin Sales tukar ke roll lot A-113",
+  example="OFF → sales pesan 200 yard; sistem reserve FIFO di lokasi pesanan; Admin Sales tukar ke roll lot A-113",
   consumers=("routers/sales_orders.py", "routers/sales_orders_extra.py:reallocate_line_rolls"),
   risk="medium")
 
@@ -646,9 +646,11 @@ E("allocation.lot_mode", group="stok-satuan", type="enum", default="prefer_singl
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="high")
 
-E("allocation.lot_selection", group="stok-satuan", type="enum", default="fefo",
-  options=({"value": "fefo", "label": "FEFO — kedaluwarsa terdekat dulu"},
-           {"value": "fifo", "label": "FIFO — masuk pertama keluar pertama"},
+E("allocation.lot_selection", group="stok-satuan", type="enum", default="fifo",
+  # UAT 24 Okt (P9.6, keputusan pemilik) — kain tidak berkedaluwarsa: FIFO (tanggal masuk) setelah LOKASI pesanan.
+  # Nilai lama "fefo" tetap sah (diperlakukan sama dengan FIFO) supaya pengaturan tersimpan tidak rusak.
+  options=({"value": "fifo", "label": "FIFO — masuk pertama keluar pertama (tanggal terima)"},
+           {"value": "fefo", "label": "FEFO (lama) — sama dengan FIFO, kain tidak berkedaluwarsa"},
            {"value": "smallest_fit", "label": "Sisa terkecil yang cukup"},
            {"value": "largest_fit", "label": "Sisa terbesar"}),
   scopes=("global", "entity"),
@@ -772,6 +774,42 @@ E("qc.handfeel_mismatch_action", group="kualitas", type="enum", default="peringa
   consumers=("services/inspection_service.py:_policy",
              "services/qc_inspection_service.py:inspect_roll"),
   related=("qc.color_mismatch_action",), risk="medium")
+
+# UAT 24 Okt 2026 (P11.2/P11.3, permintaan pemilik) — MD Quality & QC 4-point boleh memeriksa SEBAGIAN roll (sampling).
+E("qc.md_sampling_pct", group="kualitas", type="int", default=0,
+  min=0, max=100, step=5, unit="%", scopes=("global", "entity"),
+  label="Sampling MD Quality — persen roll minimal yang dicek",
+  help="SPK MD Quality kedatangan boleh ditutup setelah sekian persen roll dicek (dibulatkan ke atas, minimal sesuai "
+       "angka 'jumlah minimal' di bawah). 0 = bebas (cukup satu roll).",
+  impact="Roll yang tidak dicek tetap lepas karantina, tetapi ditandai 'MDQ sampling' (bukan 'MDQ ✓') — "
+         "terlihat di daftar roll dan bisa disaring di stok.",
+  example="20% · kedatangan 10 roll → minimal 2 roll dicek; 8 roll lain bertanda MDQ sampling",
+  consumers=("services/inspection_service.py:finish",), related=("qc.md_sampling_min",), risk="medium")
+
+E("qc.md_sampling_min", group="kualitas", type="int", default=1,
+  min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
+  label="Sampling MD Quality — jumlah roll minimal",
+  help="Batas bawah jumlah roll yang dicek MD Quality per SPK (dipakai bersama persen di atas).",
+  impact="SPK MD tidak bisa ditutup sebelum jumlah ini tercapai (atau semua roll bila kedatangannya lebih sedikit).",
+  example="min 1 → kedatangan 3 roll dengan sampling 0% cukup 1 roll dicek",
+  consumers=("services/inspection_service.py:finish",), related=("qc.md_sampling_pct",), risk="low")
+
+E("qc.sampling_pct", group="kualitas", type="int", default=100,
+  min=0, max=100, step=5, unit="%", scopes=("global", "entity"),
+  label="Sampling QC 4-point — persen roll SPK yang wajib dicek",
+  help="100 (bawaan) = semua roll di SPK QC 4-point wajib dicek. Di bawah 100, SPK boleh ditutup setelah sekian persen "
+       "dicek; roll yang tidak dicek DIKELUARKAN dari SPK (tetap bertanda 'belum 4-point'), tidak diluluskan.",
+  impact="Menentukan kapan SPK QC 4-point boleh ditutup. Pilih roll yang mau diperiksa saat membuat SPK.",
+  example="30% · SPK 10 roll → cukup 3 roll dicek; 7 roll lain keluar dari SPK dan tetap 'belum 4-point'",
+  consumers=("services/inspection_service.py:finish",), related=("qc.sampling_min",), risk="medium")
+
+E("qc.sampling_min", group="kualitas", type="int", default=1,
+  min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
+  label="Sampling QC 4-point — jumlah roll minimal",
+  help="Batas bawah jumlah roll yang dicek per SPK QC 4-point bila sampling di bawah 100%.",
+  impact="SPK QC 4-point tidak bisa ditutup sebelum jumlah ini tercapai.",
+  example="min 2 · SPK 3 roll dengan sampling 30% → wajib 2 roll dicek",
+  consumers=("services/inspection_service.py:finish",), related=("qc.sampling_pct",), risk="low")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TAMPILAN & NAVIGASI

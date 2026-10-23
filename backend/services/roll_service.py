@@ -885,7 +885,7 @@ DEFAULT_ALLOCATION_POLICY: Dict[str, Any] = {
     "mode": "auto",
     "priority_order": ["owner", "lot", "location", "roll_efficiency"],
     "lot_mode": "prefer_single",
-    "lot_selection": "fefo",
+    "lot_selection": "fifo",   # P9.6 — kain tanpa kedaluwarsa; "fefo" lama = alias FIFO
     "location_pref": "single_warehouse",
     "allow_intercompany": True,
     "allow_partial": True,
@@ -923,17 +923,35 @@ async def _available_rolls_for_order(product_id: str, owner_entity_id: str, orde
     return out
 
 
-def _wh_rank_factory(warehouses: Dict[str, Any], city: str):
+async def _order_site(order_id: str) -> str:
+    """Lokasi pemenuhan SO (diisi POS/akun, P8) — dipakai peringkat gudang alokasi."""
+    if not order_id:
+        return ""
+    o = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "fulfillment_site_id": 1})
+    return (o or {}).get("fulfillment_site_id") or ""
+
+
+def _wh_rank_factory(warehouses: Dict[str, Any], city: str, site_id: str = ""):
+    """Peringkat gudang untuk alokasi. UAT 24 Okt (P9.6, keputusan pemilik): LOKASI pesanan dulu
+    (`fulfillment_site_id`), baru urutan kota pelanggan (perilaku lama) untuk gudang di luar lokasi itu."""
     priority = WAREHOUSE_PRIORITY.get(city, [city, "Jakarta", "Bandung", "Surabaya"])
 
     def rank(wid: str) -> int:
-        c = warehouses.get(wid, {}).get("city", "")
-        return priority.index(c) if c in priority else 99
+        w = warehouses.get(wid, {})
+        if site_id and w.get("site_id") == site_id:
+            return 0
+        c = w.get("city", "")
+        return (priority.index(c) + 1) if c in priority else 99
     return rank
 
 
+def _fifo_key(r: Dict[str, Any]) -> str:
+    """P9.6 — FIFO kain = tanggal MASUK (`received_date`), bukan `created_at` (roll potongan/retur lahir ulang)."""
+    return r.get("received_date") or r.get("created_at", "")
+
+
 def _lot_age(rolls_in_lot: List[Dict[str, Any]]) -> str:
-    return min((r.get("created_at", "") for r in rolls_in_lot), default="")
+    return min((_fifo_key(r) for r in rolls_in_lot), default="")
 
 
 def _order_rolls_in_lot(rolls: List[Dict[str, Any]], wh_rank, location_pref: str) -> List[Dict[str, Any]]:
@@ -942,9 +960,9 @@ def _order_rolls_in_lot(rolls: List[Dict[str, Any]], wh_rank, location_pref: str
     def key(r):
         earmarked_here = 0 if r.get("earmarked_for") else 1
         if location_pref == "fewest_splits":
-            return (earmarked_here, -float(r["length_remaining"]), wh_rank(r["warehouse_id"]), r.get("created_at", ""))
-        # single_warehouse & nearest_customer → cluster gudang prioritas dulu, FEFO, roll besar dulu
-        return (earmarked_here, wh_rank(r["warehouse_id"]), r.get("created_at", ""), -float(r["length_remaining"]))
+            return (earmarked_here, -float(r["length_remaining"]), wh_rank(r["warehouse_id"]), _fifo_key(r))
+        # single_warehouse & nearest_customer → lokasi pesanan / gudang prioritas dulu, FIFO, roll besar dulu
+        return (earmarked_here, wh_rank(r["warehouse_id"]), _fifo_key(r), -float(r["length_remaining"]))
     return sorted(rolls, key=key)
 
 
@@ -984,7 +1002,7 @@ def _build_allocation_plan(rolls: List[Dict[str, Any]], quantity: float, city: s
     lot_selection = policy.get("lot_selection", "fefo")
     location_pref = policy.get("location_pref", "single_warehouse")
     dye_strict = bool(policy.get("dye_lot_strict", False))
-    wh_rank = _wh_rank_factory(warehouses, city)
+    wh_rank = _wh_rank_factory(warehouses, city, policy.get("_site_id", ""))
 
     # P0-4 — bila dye_lot_strict: kelompokkan per DYE LOT aktual (tekstil) & paksa
     # lot tunggal (strict_single). Default: kelompokkan per `lot` generik (perilaku lama).
@@ -1076,9 +1094,9 @@ async def preview_line_allocation(product_id: str, quantity: float, city: str,
                                   owner_entity_id: str, policy: Dict[str, Any],
                                   order_id: str = "", customer_id: str = "") -> Dict[str, Any]:
     """READ-ONLY: rencana alokasi 1 baris (tanpa reservasi) — untuk preview & konfirmasi mixed-lot."""
-    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
+    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     rolls = await _available_rolls_for_order(product_id, owner_entity_id, order_id, customer_id)
-    pol = {**DEFAULT_ALLOCATION_POLICY, **(policy or {})}
+    pol = {**DEFAULT_ALLOCATION_POLICY, **(policy or {}), "_site_id": (policy or {}).get("_site_id") or await _order_site(order_id)}
     plan = _build_allocation_plan(rolls, quantity, city, warehouses, pol, order_id)
     return {
         "product_id": product_id,
@@ -1147,8 +1165,8 @@ async def allocate_and_reserve_rolls(
       - `allow_partial=False` (default): bila stok < quantity → 409.
       - `allow_partial=True`: reservasi hanya sebesar stok TERSEDIA; sisa = backorder.
     """
-    pol = {**DEFAULT_ALLOCATION_POLICY, **(policy or {})}
-    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
+    pol = {**DEFAULT_ALLOCATION_POLICY, **(policy or {}), "_site_id": (policy or {}).get("_site_id") or await _order_site(order_id)}
+    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
 
     rolls = await _available_rolls_for_order(product_id, owner_entity_id, order_id, customer_id)
     if required_grade:  # LN-090 — pengganti retur: hanya roll grade yang sama dengan yang dijual
@@ -1534,6 +1552,7 @@ def _split_roll_for_ref(roll: Dict[str, Any], take: float, ref: Dict[str, Any]) 
 async def reserve_rolls_for_transfer(
     product_id: str, source_entity_id: str, quantity: float, transfer_id: str,
     roll_ids: Optional[List[str]] = None, prefer_origin_type: str = "",
+    usable_for_entity: str = "", whole_rolls: bool = False,
 ) -> List[Dict[str, Any]]:
     """Reservasi roll milik entitas SUMBER (B) untuk inter-company transfer (FEFO, split).
     Set status=reserved, reserved_ref={type:'transfer', id:transfer_id} agar B tak dobel-jual.
@@ -1555,6 +1574,12 @@ async def reserve_rolls_for_transfer(
     wanted = [rid for rid in (roll_ids or []) if rid]
     if wanted:
         q["id"] = {"$in": wanted}
+    if usable_for_entity:
+        # UAT 24 Okt (P10.6) — jual-beli antar-PT = GANTI PEMILIK DI TEMPAT: hanya roll yang berada di gudang yang
+        # boleh dipakai PT pembeli. Roll di gudang khusus penjual dulu lolos lalu buntu 409 saat ACC gudang.
+        from services import warehouse_scope_service as _whs
+        ok_wh = [w["id"] async for w in db.warehouses.find(_whs.usable_query(usable_for_entity), {"_id": 0, "id": 1})]
+        q["warehouse_id"] = {"$in": ok_wh}
     rolls = await db.inventory_rolls.find(q, {"_id": 0}).to_list(10000)
     if wanted:
         # Urutan mengikuti daftar yang diminta (keputusan manusia, bukan FEFO).
@@ -1565,8 +1590,13 @@ async def reserve_rolls_for_transfer(
             raise HTTPException(
                 status_code=409,
                 detail=(f"{len(missing)} roll yang dipilih tidak bisa dipakai: pastikan roll "
-                        f"masih 'tersedia' dan milik badan usaha pengirim "
-                        f"(id: {', '.join(missing[:3])})."))
+                        f"masih 'tersedia', milik badan usaha pengirim"
+                        + (", dan berada di gudang yang boleh dipakai pembeli (gudang bersama) — roll di gudang "
+                           "khusus penjual dipindah dulu lewat Transfer Gudang" if usable_for_entity else "")
+                        + f" (id: {', '.join(missing[:3])})."))
+        if whole_rolls:
+            # P10-K2 — roll pilihan dikirim UTUH (tidak dipotong): kuantitas = total panjang roll pilihan.
+            quantity = max(quantity, sum(float(r["length_remaining"]) for r in rolls))
     elif prefer_origin_type:
         rolls.sort(key=lambda r: (0 if r.get("origin_type") == prefer_origin_type else 1,
                                   r.get("created_at", ""),
@@ -1581,7 +1611,10 @@ async def reserve_rolls_for_transfer(
             status_code=409,
             detail=(f"Roll yang dipilih tidak cukup untuk transfer (tersedia {round(total,2)} "
                     f"dari {quantity})." if wanted else
-                    f"Stok entitas sumber tidak cukup untuk transfer (tersedia {round(total,2)} dari {quantity})."),
+                    f"Stok entitas sumber {'di gudang yang boleh dipakai pembeli ' if usable_for_entity else ''}"
+                    f"tidak cukup untuk transfer (tersedia {round(total,2)} dari {quantity})."
+                    + (" Stok di gudang khusus penjual dipindah dulu ke gudang bersama lewat Transfer Gudang."
+                       if usable_for_entity else "")),
         )
 
     remaining = quantity
@@ -2217,6 +2250,11 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
             "owner_entity_code": e.get("code", ""),
             "created_at": r.get("created_at", ""),
             "supplier_roll_no": r.get("supplier_roll_no", ""),
+            # UAT 24 Okt (P11.4) — status cek MD Quality / 4-point tampil di pemilih roll pesanan.
+            "md_quality_checked": bool(r.get("md_quality_checked")),
+            "md_quality_via_sampling": r.get("md_quality_via_sampling") or None,
+            "inspected_4point": bool(r.get("inspected_4point")),
+            "md_quality_spk": r.get("md_quality_spk", ""), "inspected_4point_spk": r.get("inspected_4point_spk", ""),
         })
     prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "unit": 1, "name": 1, "sku": 1})
     return {"items": items, "total": total,

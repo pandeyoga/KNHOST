@@ -184,7 +184,7 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
     await whscope.assert_usable(payload.source_warehouse_id,
                                prefer_owner or ctx.active_entity_id,
                                action="mengambil barang dari sini",
-                               field_label="Gudang asal")
+                               field_label="Gudang asal", allow_inactive=True)
     await whscope.assert_usable(payload.dest_warehouse_id,
                                prefer_owner or ctx.active_entity_id,
                                action="mengirim barang ke sini",

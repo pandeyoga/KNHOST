@@ -337,6 +337,7 @@ async def create(payload: Dict[str, Any], actor: str = "",
             "contract_id": pr["contract_id"],
             "line_subtotal": round(qty * pr["unit_price"], 2),
             "notes": (it.get("notes") or "").strip(),
+            "preferred_roll_ids": [str(x) for x in (it.get("preferred_roll_ids") or []) if x],   # P10.2
             # FASE U — dua satuan pada jual-beli antar-PT (roll + ukuran).
             **(await _dual.stamp({"unit": snap["base_unit"], **it})),
         })
@@ -1577,9 +1578,13 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
     wh_ids: List[str] = []
     try:
         for it in seller.get("items", []):
+            # UAT 24 Okt — P10.2 roll PILIHAN dipakai utuh (P10-K2: kirim utuh, tanpa dipotong); P10.6 hanya roll di
+            # gudang yang BOLEH dipakai PT pembeli (gudang bersama / khusus pembeli) — ganti pemilik di tempat tanpa kirim.
             reserved = await reserve_rolls_for_transfer(
                 it["product_id"], seller["seller_entity_id"],
-                float(it["quantity"]), transfer_id)
+                float(it["quantity"]), transfer_id,
+                roll_ids=it.get("preferred_roll_ids") or None,
+                usable_for_entity=seller.get("buyer_entity_id") or "", whole_rolls=bool(it.get("preferred_roll_ids")))
             roll_refs = [{
                 "roll_id": r["id"], "roll_no": r.get("roll_no"), "lot": r.get("lot"),
                 "warehouse_id": r.get("warehouse_id"),
@@ -1616,7 +1621,8 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
         "status": "waiting_approval",
         "items": items_out,
         "transfer_price": float(seller.get("subtotal") or 0),
-        "linked_order_id": None,
+        # P10.5 — SO peminta (dari permintaan internal): barang pindahan dicadangkan ke SO INI, bukan SO lain yang lebih lama.
+        "linked_order_id": (buyer or {}).get("source_order_id") or seller.get("source_order_id") or None,
         # ── Jembatan G-6 (kunci anti dobel-posting) ──────────────────────────
         "interco_pair_id": pair_id,
         "interco_id": seller["id"],
@@ -1738,14 +1744,35 @@ async def _auto_fulfill_after_interco_receipt(
     if not buyer_entity:
         return out
     try:
-        from services.backorder_service import auto_fulfill_backorders
+        from services.backorder_service import _fill_order, auto_fulfill_backorders
     except Exception as exc:  # noqa: BLE001
         print(f"[interco] mesin pemenuhan backorder tak tersedia: {exc}")
         return out
+    # UAT 24 Okt (P10.5) — roll yang dipindah UNTUK SO peminta dicadangkan ke SO itu DULU. Dulu semua masuk antrean
+    # FIFO umum, sehingga SO lain yang lebih lama bisa "menyerobot" roll yang sengaja dipilih untuk pesanan ini.
+    linked = transfer.get("linked_order_id") or seller.get("source_order_id") or ""
+    linked_so = (await db.sales_orders.find_one({"id": linked, "entity_id": buyer_entity}, {"_id": 0})
+                 if linked else None)
     for it in seller.get("items", []):
         pid = it.get("product_id")
         if not pid:
             continue
+        if linked_so:
+            moved = [r["id"] async for r in db.inventory_rolls.find(
+                {"acquired.ref_id": transfer.get("id"), "owner_entity_id": buyer_entity, "product_id": pid,
+                 "status": "available"}, {"_id": 0, "id": 1})]
+            if moved:
+                try:
+                    r1 = await _fill_order(linked_so, pid, buyer_entity, actor_name=actor or "system",
+                                           reason="Barang antar-PT tiba untuk SO peminta", roll_ids=moved)
+                    if r1.get("got", 0) > 0:
+                        out["orders_touched"] += 1
+                        out["orders_completed"] += 1 if r1.get("completed") else 0
+                        out["qty_fulfilled"] = round(out["qty_fulfilled"] + float(r1["got"]), 2)
+                        out["linked_order_id"] = linked
+                    linked_so = await db.sales_orders.find_one({"id": linked}, {"_id": 0})
+                except Exception as exc:  # noqa: BLE001 — barang sudah pindah; sisanya lewat antrean umum
+                    print(f"[interco] cadangan ke SO peminta {linked} gagal: {exc}")
         try:
             res = await auto_fulfill_backorders(pid, buyer_entity)
         except Exception as exc:  # noqa: BLE001 — barang sudah pindah; jangan dibatalkan

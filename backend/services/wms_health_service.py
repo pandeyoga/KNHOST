@@ -47,7 +47,8 @@ async def health_dashboard(scope_ids: List[str]) -> Dict[str, Any]:
     from services.putaway_order_service import putaway_block_reason
     async for r in db.inventory_rolls.find(
             {"owner_entity_id": {"$in": scope_ids}, "length_remaining": {"$gt": 0},
-             "journey.stage": "tag_verified", "journey.routing": {"$ne": "cross_dock"}}, {"_id": 0}):
+             "journey.stage": {"$in": ["tag_verified", "label_verified"]},   # P9.3b — RFID atau label QR
+             "journey.routing": {"$ne": "cross_dock"}}, {"_id": 0}):
         row = rows.get(r.get("warehouse_id"))
         if not row:
             continue

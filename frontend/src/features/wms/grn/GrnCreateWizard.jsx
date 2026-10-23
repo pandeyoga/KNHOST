@@ -29,6 +29,11 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
   useEffect(() => {
     if (partner && !whId && partner.open_docs[0]?.warehouse_id) setWhId(partner.open_docs[0].warehouse_id);
   }, [partner, whId]);
+  // UAT 24 Okt (P9.3) — barang PO selalu diterima di gudang penerimaan PO-nya (server juga memaksa ini). Dulu
+  // gudang bisa diganti di sini tetapi diabaikan saat posting → GRN menunjuk gudang yang salah.
+  const docWh = [...new Set((partner?.open_docs || []).filter((d) => docIds.includes(d.id)).map((d) => d.warehouse_id).filter(Boolean))];
+  const lockedWh = ptype === "supplier" && docWh.length === 1 ? docWh[0] : "";
+  useEffect(() => { if (lockedWh && lockedWh !== whId) setWhId(lockedWh); }, [lockedWh, whId]);
 
   const prepare = async (f) => {
     const s = await shrinkImage(f);
@@ -110,8 +115,17 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
               </div>
             )}
             <Field label="Gudang penerima">
-              <KNSelect data-testid="grn-wizard-warehouse" value={whId} onValueChange={setWhId}
-                options={warehouses.map((w) => ({ value: w.id, label: w.name }))} placeholder="Pilih gudang…" />
+              {lockedWh ? (
+                <p data-testid="grn-wizard-warehouse-locked" className="rounded-lg bg-[#F2F7FF] px-3 py-2 text-[12px] text-[#004099]">
+                  {(warehouses.find((w) => w.id === lockedWh) || {}).name || "Gudang penerimaan PO"} — mengikuti lokasi kirim PO
+                </p>
+              ) : (
+                <KNSelect data-testid="grn-wizard-warehouse" value={whId} onValueChange={setWhId}
+                  options={warehouses.map((w) => ({ value: w.id, label: w.name }))} placeholder="Pilih gudang…" />
+              )}
+              {ptype === "supplier" && docWh.length > 1 && (
+                <p className="mt-1 text-[11px] text-[#A8221A]" data-testid="grn-wizard-warehouse-mixed">PO terpilih dikirim ke gudang berbeda — catat kedatangan terpisah per lokasi.</p>
+              )}
             </Field>
           </>) : (<>
             <GrnPhotoTips />

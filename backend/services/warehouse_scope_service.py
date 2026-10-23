@@ -154,14 +154,21 @@ def _deny_message(warehouse: Dict[str, Any], entity_name: str,
 
 async def assert_usable(warehouse_id: str, entity_id: Optional[str], *,
                         action: str = "memakainya",
-                        field_label: str = "Gudang") -> Dict[str, Any]:
-    """Pastikan badan usaha aktif berhak memakai gudang ini. 404 / 403 yang jelas."""
+                        field_label: str = "Gudang", allow_inactive: bool = False) -> Dict[str, Any]:
+    """Pastikan badan usaha aktif berhak memakai gudang ini. 404 / 403 yang jelas.
+
+    UAT 24 Okt (P9) — gudang NONAKTIF ditolak (dulu PO ke WH-BDG nonaktif diterima). `allow_inactive=True`
+    hanya untuk mengosongkan gudang lama (mis. gudang ASAL transfer)."""
     wid = str(warehouse_id or "").strip()
     if not wid:
         raise HTTPException(status_code=400, detail=f"{field_label} wajib dipilih")
     wh = await db.warehouses.find_one({"id": wid}, {"_id": 0})
     if not wh:
         raise HTTPException(status_code=404, detail=f"{field_label} tidak ditemukan")
+    if wh.get("active") is False and not allow_inactive:
+        raise HTTPException(status_code=400, detail=(
+            f"{field_label} {wh.get('name') or wh.get('code') or wid} sudah NONAKTIF — tidak bisa {action}. "
+            "Pilih gudang aktif (atau aktifkan lagi di Data Gudang)."))
     if is_usable(wh, entity_id):
         return safe_doc(wh)
     names = await entity_name_map()

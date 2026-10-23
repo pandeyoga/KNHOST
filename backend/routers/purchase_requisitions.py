@@ -21,6 +21,14 @@ from services import line_scope                      # FASE L — pagar & penyar
 router = APIRouter(prefix="/api")
 
 
+async def _site_dest(payload, pr_id: str) -> None:
+    """UAT 24 Okt (P9) — `ship_to_site_id` → gudang penerimaan lokasi itu untuk PT PR (ditulis ke payload)."""
+    if getattr(payload, "ship_to_site_id", ""):
+        from services import site_receiving_service as srs
+        pr = await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0, "entity_id": 1}) or {}
+        payload.warehouse_id = (await srs.receiving_warehouse(payload.ship_to_site_id, pr.get("entity_id")))["id"]
+
+
 @router.get("/purchase-requisitions")
 async def list_requisitions(
     request: Request,
@@ -195,6 +203,7 @@ async def cancel_requisition(pr_id: str, request: Request) -> Dict[str, Any]:
 async def convert_to_po(pr_id: str, payload: PurchaseRequisitionConvert, request: Request) -> Dict[str, Any]:
     await require_permission(request, "purchase_order", "create")
     actor = await current_user(request)
+    await _site_dest(payload, pr_id)
     if payload.warehouse_id:   # E4.1 — gudang penerimaan PO hasil konversi PR
         from services import warehouse_scope_service as whscope
         await whscope.assert_usable(payload.warehouse_id,
@@ -236,6 +245,7 @@ async def realize_po(pr_id: str, payload: PRRealizePoIn, request: Request) -> Di
     """Realisasi baris ber-mode `purchase` (boleh sebagian) menjadi satu PO."""
     await require_permission(request, "purchase_order", "create")
     actor = await current_user(request)
+    await _site_dest(payload, pr_id)
     if payload.warehouse_id:   # E4.1 — gudang penerimaan PO hasil realisasi PR
         from services import warehouse_scope_service as whscope
         await whscope.assert_usable(payload.warehouse_id,

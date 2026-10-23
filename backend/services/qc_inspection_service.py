@@ -165,10 +165,29 @@ async def record_quality(roll: Dict[str, Any], *, color_result: str, handfeel_re
         "handfeel_score": handfeel_score, "delta_e": delta_e,
         "baseline_sample_id": baseline_sample_id, "baseline_sample_number": baseline_sample_number,
         "inspection_doc_id": inspection_id, "inspection_doc_number": inspection_number,
-        "hold": hold, "md_quality_by": actor.get("name", ""), "md_quality_at": now_iso()}.items()}
+        "hold": hold, "md_quality_by": actor.get("name", ""), "md_quality_at": now_iso(),
+        # P11.5 — acuan SPK MD sendiri (inspection_doc_* ikut berganti saat 4-point disimpan).
+        "md_quality_doc_id": inspection_id, "md_quality_doc_number": inspection_number}.items()}
+    if not isinstance(roll.get("inspection"), dict):
+        sets = {"inspection": {k.split(".", 1)[1]: v for k, v in sets.items()}}
     sets["updated_at"] = now_iso()
-    await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": sets})
+    sets.update(md_flag_fields(actor, inspection_number))
+    await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": sets,
+                                                             "$unset": {"md_quality_via_sampling": ""}})
     return {"hold": hold, "qc_warnings": warnings}
+
+
+def md_flag_fields(actor: Dict[str, Any], spk_number: str = "") -> Dict[str, Any]:
+    """UAT 24 Okt (P11.1) — penanda DATAR "sudah dicek MD Quality" (dulu hanya bisa diturunkan dari `inspection.*`
+    bersarang, sehingga daftar/filter stok tidak bisa menjawab "roll mana yang belum dicek")."""
+    return {"md_quality_checked": True, "md_quality_checked_at": now_iso(),
+            "md_quality_checked_by": actor.get("name", ""), "md_quality_spk": spk_number or ""}
+
+
+def four_point_flag_fields(actor: Dict[str, Any], spk_number: str = "") -> Dict[str, Any]:
+    """P11.1 — penanda DATAR "sudah diinspeksi 4-point"."""
+    return {"inspected_4point": True, "inspected_4point_at": now_iso(),
+            "inspected_4point_by": actor.get("name", ""), "inspected_4point_spk": spk_number or ""}
 
 
 async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
@@ -306,10 +325,19 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
         reason=(f"Inspeksi 4-point: {points} poin · grade diisi QC" if (grade_input or "").strip() else
                 f"Inspeksi 4-point: {points} poin (saran sistem, ambang A≤{th['a_max']}, B≤{th['b_max']})"),
         actor=actor, extra={"points": points, "inspection_note": note or ""})
+    # UAT 24 Okt (P11.5) — tulis PER FIELD: menimpa seluruh objek `inspection` menghapus jejak MD Quality
+    # (`md_quality_at/by/doc`) yang ditulis `record_quality`. Objek kosong/null → boleh ditulis utuh.
+    sets = ({f"inspection.{k}": v for k, v in inspection.items()} if isinstance(roll.get("inspection"), dict)
+            else {"inspection": inspection})
+    # P11.1 — penanda datar 4-point (+ MD Quality bila hasil warna/handfeel ikut diisi di form gabungan).
+    sets.update(four_point_flag_fields(actor, inspection_number))
+    unset: Dict[str, Any] = {"four_point_pending": ""}
+    if (color_res or hand_res) and not quality_from_roll:
+        sets.update(md_flag_fields(actor, inspection_number))
+        unset["md_quality_via_sampling"] = ""
     updated = await db.inventory_rolls.find_one_and_update(
         {"id": roll["id"]},
-        {"$set": {"defects": norm_defects, "inspection": inspection,
-                  "updated_at": now_iso()}},
+        {"$set": {"defects": norm_defects, **sets, "updated_at": now_iso()}, "$unset": unset},
         projection={"_id": 0}, return_document=True)
     return {"roll": safe_doc(updated), "points": points, "grade": grade, "thresholds": th,
             "grade_before": grade_result["grade_before"],

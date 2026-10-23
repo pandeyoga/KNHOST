@@ -541,6 +541,7 @@ class SalesOrderCreate(BaseModel):
     needs_tax_invoice: bool = False        # F6 — minta Faktur Pajak untuk order ini
     tax_override: str = ""                 # F6 — paksa mode pajak: "" (ikut entitas) | "non_ppn"
     fulfillment_method: str = "kirim"      # "kirim" (dikirim) | "ambil" (Order Pengambilan di gudang)
+    fulfillment_site_id: str = ""          # UAT 24 Okt (P8/P9) — lokasi gudang penjualan (POS); kosong = lokasi akun/PT
     pickup_date: str = ""                  # ISO date; wajib bila fulfillment_method=="ambil" (hold picking s/d tgl ini)
     delivery_date: str = ""                # ISO date OPSIONAL; request tgl pengiriman bila fulfillment_method=="kirim" (tak boleh di masa lalu)
     # REVISI SAMPEL — jenis pesanan dipilih SEBELUM checkout: "regular" (PO biasa) | "sample".
@@ -1000,6 +1001,7 @@ class PurchaseRequisitionItem(BaseModel):
 
 class PurchaseRequisitionCreate(BaseModel):
     items: List[PurchaseRequisitionItem]
+    ship_to_site_id: str = ""        # UAT 24 Okt (P9) — lokasi kirim; gudang penerimaan diturunkan server
     warehouse_id: str = ""
     entity_id: str = ""
     reason: str = ""                  # justifikasi kebutuhan
@@ -1038,6 +1040,7 @@ class RepeatRestockIn(BaseModel):
 
 class PurchaseRequisitionConvert(BaseModel):
     supplier_id: str = ""             # wajib (atau pakai preferred_supplier_id PR)
+    ship_to_site_id: str = ""         # UAT 24 Okt (P9) — lokasi kirim; default = lokasi PR
     warehouse_id: str = ""            # default = warehouse PR
     expected_delivery_date: str = ""
     notes: str = ""

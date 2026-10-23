@@ -11,6 +11,9 @@ import MobileOrders from "./MobileOrders";
 import MobileMore from "./MobileMore";
 import { entityShortById } from "../../../utils/entityLabel";
 import { roleIs } from "../../../config/roles";
+import PosStartGate, { loadPosCtx, savePosCtx } from "../../pos/PosStartGate";
+import CreateCustomerModal from "../../pos/CreateCustomerModal";
+import { useSites } from "../../../components/SiteSelect";
 
 // Admin Sales mewarisi menu sales (ROLE_NAV) — beda satu: beranda = Meja Admin Sales.
 // link notifikasi (id view desktop) → layar HP.
@@ -48,6 +51,12 @@ export default function MobileSalesApp(props) {
   const [tab, setTab] = useState(initialSub ? "more" : urlTab || "home");
   const [moreSub, setMoreSub] = useState(initialSub);
   const [notifOpen, setNotifOpen] = useState(!!urlParams.get("notif"));
+  // UAT 24 Okt (P8) — konteks jualan (lokasi + pelanggan) bersama dengan POS desktop (sessionStorage).
+  const [siteId, setSiteId] = useState(() => loadPosCtx().site_id || "");
+  const [gateForce, setGateForce] = useState(false);
+  const [newCustOpen, setNewCustOpen] = useState(false);
+  const sites = useSites();
+  const siteName = (sites.find((x) => x.id === siteId) || {}).name || "";
 
   // Lonceng HP: muat ulang tiap 60 dtk saat layar terlihat, saat kembali ke aplikasi,
   // dan seketika saat push masuk (pesan dari service worker).
@@ -110,18 +119,32 @@ export default function MobileSalesApp(props) {
           <MobileSalesAdminDesk selectedEntity={selectedEntity} onOpenOrder={openOrder}
             onOpenSub={(s, id) => openSubWith(s, { id })} onOpenFull={onOpenFull} />
         )}
-        {tab === "catalog" && (
+        {tab === "catalog" && (gateForce || !siteId || !selectedCustomer) && (
+          <div className="p-3">
+            {/* UAT 24 Okt (P8) — "Mulai jualan": lokasi + pelanggan dulu, baru katalog. */}
+            <PosStartGate user={user} customers={data?.customers || []} initialSiteId={siteId}
+              initialCustomerId={selectedCustomer?.id || loadPosCtx().customer_id || ""} testPrefix="m-pos-gate"
+              onCreateCustomer={onCreateCustomer ? () => setNewCustOpen(true) : null}
+              onStart={({ siteId: sid, customer }) => {
+                setSiteId(sid); setSelectedCustomer?.(customer); setSelectedAddress?.(customer?.addresses?.[0]?.id || "");
+                savePosCtx({ site_id: sid, customer_id: customer.id }); setGateForce(false);
+              }} />
+            <CreateCustomerModal open={newCustOpen} onClose={() => setNewCustOpen(false)} user={user}
+              onCreateCustomer={async (form) => { await onCreateCustomer(form); setNewCustOpen(false); }} />
+          </div>
+        )}
+        {tab === "catalog" && !(gateForce || !siteId || !selectedCustomer) && (
           <MobileCatalog data={data} loading={loading} onAdd={onAdd} onInspect={onInspect}
             entityId={selectedEntity} cart={cart} onOpenCart={() => setTab("cart")}
             allowRollPick={allowRollPick}
-            selectedCustomer={selectedCustomer}
-            onSelectCustomer={(c) => { setSelectedCustomer?.(c); setSelectedAddress?.(c?.addresses?.[0]?.id || ""); }} />
+            selectedCustomer={selectedCustomer} siteId={siteId} siteName={siteName} onChangeContext={() => setGateForce(true)}
+            onSelectCustomer={(c) => { setSelectedCustomer?.(c); setSelectedAddress?.(c?.addresses?.[0]?.id || ""); savePosCtx({ site_id: siteId, customer_id: c?.id || "" }); }} />
         )}
         {tab === "cart" && (
           <MobileCart cart={cart} setCart={setCart} data={data}
             selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
             selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress}
-            paymentTerms={paymentTerms} onSubmitOrder={onSubmitOrder} onAdd={onAdd} user={user} onRefresh={onRefresh}
+            paymentTerms={paymentTerms} onSubmitOrder={(extra = {}) => onSubmitOrder({ ...extra, fulfillment_site_id: siteId })} onAdd={onAdd} user={user} onRefresh={onRefresh}
             settings={settings} onCreateCustomer={onCreateCustomer}
             entityId={selectedEntity} onBrowse={goCatalog} onDone={() => setTab("orders")} />
         )}

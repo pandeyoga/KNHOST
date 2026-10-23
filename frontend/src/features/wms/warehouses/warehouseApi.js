@@ -11,9 +11,10 @@ import axios, { API } from "../../../services/apiClient";
 export const listAllWarehouses = () =>
   axios.get(`${API}/warehouses`, { params: { scope: "all" } }).then((r) => r.data || []);
 
-/** Hanya gudang yang boleh dipakai badan usaha aktif (dipakai pemilih gudang). */
+/** Gudang yang boleh dipakai badan usaha aktif, TERMASUK yang nonaktif (layar Data Gudang non-master perlu
+ *  melihat & mengaktifkannya lagi). Pemilih gudang lain memakai `GET /warehouses` polos = hanya yang aktif. */
 export const listUsableWarehouses = () =>
-  axios.get(`${API}/warehouses`).then((r) => r.data || []);
+  axios.get(`${API}/warehouses`, { params: { include_inactive: true } }).then((r) => r.data || []);
 
 export const createWarehouse = (payload) =>
   axios.post(`${API}/warehouses`, payload).then((r) => r.data);

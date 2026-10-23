@@ -8,6 +8,7 @@ import KNSelect from "../../components/KNSelect";
 import { can, roleIs } from "../../config/roles";
 import { notifySuccess } from "../../utils/feedback";
 import { formatCurrency } from "../../utils/formatters";
+import SiteSelect from "../../components/SiteSelect";
 
 const LOCK_ROLES = ["sales", "sales_admin", "manager", "admin"];   // = special_orders.lock_price
 
@@ -25,19 +26,9 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
   const [pv, setPv] = useState(saved);
   const multi = pv.mode === "items" && Array.isArray(pv.items);
   const [note, setNote] = useState("");
-  const [warehouses, setWarehouses] = useState([]);
-  const [warehouseId, setWarehouseId] = useState("");
+  // UAT 24 Okt (P9) — pengadaan dikirim ke LOKASI; kosong = lokasi bawaan PT (gudang penerimaan diturunkan server).
+  const [siteId, setSiteId] = useState("");
   const [autoPo, setAutoPo] = useState(true);
-  useEffect(() => {
-    if (locked || !accd) return;
-    // Cek UI UAT v3 (S13) — dulu gudang nonaktif (GU-KSC) jadi bawaan; kini hanya gudang aktif, gudang khusus PT ini dulu.
-    axios.get(`${API}/warehouses`).then((r) => {
-      const all = Array.isArray(r.data) ? r.data : r.data?.items || [];
-      const own = (w) => (w.entity_ids || []).includes(order.entity_id);
-      const rows = all.filter((w) => w.active !== false).sort((a, b) => Number(own(b)) - Number(own(a)));
-      setWarehouses(rows); if (!warehouseId && rows[0]) setWarehouseId(order.procurement_warehouse_id || rows[0].id);
-    }).catch(() => {});
-  }, [locked, accd]); // eslint-disable-line
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => { setPv(saved); if (saved.margin_pct != null) setMargin(saved.margin_pct); }, [saved.locked, saved.margin_pct, saved.cost_price]); // eslint-disable-line
@@ -63,7 +54,7 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
     setBusy(true); setErr("");
     try {
       const r = await axios.post(`${API}/special-orders/${order.id}/lock-price`,
-        { margin_pct: Number(margin), item_margins: itemMarginNums(), note, warehouse_id: warehouseId, auto_po: autoPo });
+        { margin_pct: Number(margin), item_margins: itemMarginNums(), note, site_id: siteId, auto_po: autoPo });
       onUpdated?.(r.data.special_order);
       // 23 Okt — dulu tanpa umpan balik apa pun setelah kunci harga.
       const od = r.data.special_order || {};
@@ -127,8 +118,8 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
       {err && <p className="mt-1 text-[11px] text-[#C0392B]" data-testid="od-price-error">{err}</p>}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {canLock && (<>
-          <KNSelect className="field !w-56 !py-1 text-[11px]" value={warehouseId} onValueChange={setWarehouseId} data-testid="od-price-warehouse" placeholder="Gudang tujuan PO"
-            options={warehouses.length === 0 ? [{ value: "", label: "gudang utama (bawaan)" }] : warehouses.map((w) => ({ value: w.id, label: `${w.code ? `${w.code} · ` : ""}${w.name}` }))} />
+          <div className="w-64"><SiteSelect testId="od-price-site" value={siteId} onChange={setSiteId} required={false}
+            entityId={order.entity_id || ""} label="Lokasi kirim pengadaan (kosong = lokasi bawaan PT)" /></div>
           <label className="inline-flex items-center gap-1 text-[11px]" data-testid="od-price-autopo-label"><input type="checkbox" checked={autoPo} onChange={(e) => setAutoPo(e.target.checked)} data-testid="od-price-autopo" /> Pengadaan otomatis sesuai jalur tiap item (supplier/makloon)</label>
         </>)}
       </div>

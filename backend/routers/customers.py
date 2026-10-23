@@ -32,13 +32,16 @@ async def list_customers(request: Request, entity_id: str = None,
     if assigned_sales_id:
         base["assigned_sales_id"] = assigned_sales_id
     base = resolve_list_scope("customers", base, ctx, entity_id)  # entity isolation
-    if for_order and role_in(actor.get("role"), ("sales",)):
-        # Pemilih pelanggan untuk membuat pesanan (POS / Pesanan Khusus): sama dengan daftar POS —
-        # semua pelanggan entitas, field ringkas saja, tanpa data kredit/AR pelanggan sales lain.
-        rows = await db.customers.find(base, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "phone": 1, "entity_id": 1,
-                                              "assigned_sales_id": 1, "segment": 1, "addresses": 1, "default_payment_term": 1}).sort("name", 1).to_list(3000)
+    query = scope_query(actor, base)  # row-level: sales -> own customers (+ walk-in PT)
+    if for_order:
+        # Pemilih pelanggan untuk membuat pesanan (POS / OD / harga khusus / sampel): field ringkas, tanpa kredit.
+        # UAT 24 Okt (P14) — dulu sales mendapat SEMUA pelanggan PT di sini (commit b9135ff, menambal data
+        # pelanggan tanpa sales) sehingga aturan pemilik E8.10 "sales hanya pelanggannya" bocor. Kini ikut
+        # cakupan baris yang sama dengan daftar CRM; pelanggan tanpa sales masuk antrean Admin Sales.
+        rows = await db.customers.find(query, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "phone": 1, "entity_id": 1,
+                                               "assigned_sales_id": 1, "sales_team": 1, "segment": 1, "addresses": 1,
+                                               "default_payment_term": 1, "shared_walk_in": 1}).sort("name", 1).to_list(3000)
         return rows
-    query = scope_query(actor, base)  # row-level: sales -> own customers
 
     if is_paged(request):
         page, page_size, q, _sort = get_page_params(request)

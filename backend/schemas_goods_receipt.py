@@ -9,7 +9,8 @@ from schemas_scan_label import ManualLabelIn
 class GRNCreateIn(BaseModel):
     partner_type: Literal["supplier", "makloon"]
     partner_id: str = Field(..., min_length=1)
-    warehouse_id: str = Field(..., min_length=1)
+    # UAT 24 Okt (P9.3) — boleh kosong untuk kedatangan PO: gudangnya selalu gudang penerimaan PO (diisi server).
+    warehouse_id: str = ""
     po_ids: List[str] = []
     mko_ids: List[str] = []
 

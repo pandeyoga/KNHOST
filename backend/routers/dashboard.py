@@ -50,7 +50,10 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     from services import warehouse_scope_service as whscope
     wh_filter = whscope.usable_query(ctx.active_entity_id)
     warehouses_raw = await db.warehouses.find(wh_filter, {"_id": 0}).to_list(100)
-    customers_raw = await db.customers.find(scope, {"_id": 0}).to_list(100)
+    # UAT 24 Okt (P14/P8) — pemilih pelanggan POS & HP: sales hanya pelanggannya (+ walk-in PT), sama dengan
+    # CRM; dulu semua pelanggan PT dan terpotong di 100.
+    from services.customer_service import scope_query as _cust_scope
+    customers_raw = await db.customers.find(_cust_scope(actor, scope), {"_id": 0}).sort("name", 1).to_list(1000)
     from core_utils import strip_cost_fields as _strip_cost
     products = _strip_cost([safe_doc(p) for p in products_raw if p], actor.get("role"))
     orders = [safe_doc(o) for o in orders_raw if o]

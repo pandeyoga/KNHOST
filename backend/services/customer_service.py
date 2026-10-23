@@ -375,11 +375,20 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
     }
 
 
+def own_customer_clause(user: Dict[str, Any]) -> Dict[str, Any]:
+    """Pelanggan "milik" sales: PIC (`assigned_sales_id`), anggota tim sales, atau pelanggan umum/walk-in PT
+    (`shared_walk_in`, keputusan pemilik P14-K2 24 Okt: satu per PT, boleh dipakai semua sales)."""
+    uid = (user or {}).get("id") or "__tanpa_pemilik__"
+    return {"$or": [{"assigned_sales_id": uid}, {"sales_team.sales_id": uid}, {"shared_walk_in": True}]}
+
+
 def scope_query(user: Dict[str, Any], base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Row-level scoping (KN_17 §4): role=sales hanya customer miliknya."""
+    """Row-level scoping (KN_17 §4, E8.10): role=sales hanya customer miliknya (+ walk-in PT)."""
     q = dict(base or {})
     if user and role_in(user.get("role"), ("sales",)):
-        q["assigned_sales_id"] = user.get("id")
+        ands = list(q.pop("$and", []) or [])
+        ands.append(own_customer_clause(user))
+        q["$and"] = ands
     return q
 
 
@@ -396,7 +405,9 @@ async def can_access_customer(user: Dict[str, Any], customer: Dict[str, Any]) ->
     if not _entity_allowed(user, customer):
         return False
     if role_in(role, ("sales",)):
-        return customer.get("assigned_sales_id") == user.get("id")
+        uid = user.get("id")
+        return (customer.get("assigned_sales_id") == uid or bool(customer.get("shared_walk_in"))
+                or any(m.get("sales_id") == uid for m in customer.get("sales_team") or []))
     return True
 
 

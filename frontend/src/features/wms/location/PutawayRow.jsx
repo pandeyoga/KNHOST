@@ -4,6 +4,7 @@ import KNSelect from "../../../components/KNSelect";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
 import { q } from "./locUtils";
+import RollCheckChips from "../../../components/RollCheckChips";
 
 // Satu roll di antrean: saran bin valid → cek kelayakan → tempatkan (server revalidasi) → pengecualian kapasitas.
 export default function PutawayRow({ roll, binOptions, canOverride, onDone }) {
@@ -42,6 +43,7 @@ export default function PutawayRow({ roll, binOptions, canOverride, onDone }) {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-[200px]">
           <p className="text-[12px] font-semibold">{roll.roll_no} · {roll.sku}</p>
+          <RollCheckChips roll={roll} testId={`putaway-check-${roll.id}`} />
           <p className="text-[11px] text-[#6B6B73]">{roll.product_name} — {q(roll.length_remaining)} {roll.unit} · Lot {roll.lot || "-"} · Grade {roll.grade || "A"}</p>
           {roll.blocked_reason && (
             <p data-testid={`lp-queue-blocked-${roll.id}`} className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 text-[10.5px] font-semibold ${roll.ready ? "bg-[#EEF4FF] text-[#0058CC]" : "bg-[#FFF4E5] text-[#B45309]"}`}>

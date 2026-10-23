@@ -83,14 +83,19 @@ async def _resolve_supplier(po: Dict[str, Any], payload) -> Dict[str, Any]:
 
 async def _resolve_warehouse(po: Dict[str, Any], payload, has_receipt: bool) -> Dict[str, Any]:
     """Resolve gudang baru. Dilarang ganti gudang bila sudah ada penerimaan (3.b)."""
-    wh = {"id": po.get("warehouse_id"), "name": po.get("warehouse_name", ""), "city": po.get("warehouse_city", "")}
-    if payload.warehouse_id and payload.warehouse_id != po.get("warehouse_id"):
+    wh = {"id": po.get("warehouse_id"), "name": po.get("warehouse_name", ""), "city": po.get("warehouse_city", ""),
+          "site_id": po.get("ship_to_site_id", ""), "site_name": po.get("ship_to_site_name", "")}
+    want_site = (getattr(payload, "ship_to_site_id", None) or "").strip()
+    want_wh = (payload.warehouse_id or "").strip()
+    if (want_site and want_site != po.get("ship_to_site_id")) or (want_wh and want_wh != po.get("warehouse_id")):
         if has_receipt:
-            raise HTTPException(status_code=400, detail="Tidak bisa ganti gudang: sudah ada barang diterima.")
-        whx = safe_doc(await db.warehouses.find_one({"id": payload.warehouse_id}, {"_id": 0}))
-        if not whx:
-            raise HTTPException(status_code=404, detail="Warehouse tidak ditemukan")
-        wh = {"id": whx["id"], "name": whx.get("name", ""), "city": whx.get("city", "")}
+            raise HTTPException(status_code=400, detail="Tidak bisa ganti lokasi/gudang: sudah ada barang diterima.")
+        # UAT 24 Okt (P9) — sama dengan pembuatan PO: lokasi → gudang penerimaan aktif yang boleh dipakai PT.
+        from services import site_receiving_service as srs
+        dest = await srs.resolve_destination(po.get("entity_id"), want_site, want_wh)
+        whx = dest["warehouse"]
+        wh = {"id": whx["id"], "name": whx.get("name", ""), "city": whx.get("city", ""),
+              "site_id": dest["site_id"], "site_name": dest["site_name"]}
     return wh
 
 
@@ -327,6 +332,7 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
         "supplier_id": sup["supplier_id"], "supplier_name": sup["supplier_name"],
         "supplier_contact": sup["supplier_contact"], "supplier_npwp": sup["supplier_npwp"],
         "warehouse_id": wh.get("id"), "warehouse_name": wh.get("name", ""), "warehouse_city": wh.get("city", ""),
+        "ship_to_site_id": wh.get("site_id", ""), "ship_to_site_name": wh.get("site_name", ""),
         "items": items, "total_amount": total_amount,
         "items_discount_total": pricing["items_discount_total"], "order_discount_percent": pricing["order_discount_percent"],
         "order_discount_amount": pricing["order_discount_amount"], "discount_total": pricing["discount_total"],

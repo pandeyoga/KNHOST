@@ -72,7 +72,12 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
   // 23 Okt — SPK retur pelanggan: petugas QC (`qc.release`) menutupnya = QC retur selesai; uang tetap diputus Manajer.
   const isReturnCustomer = doc.kind === "return_customer";
-  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt || isQc4 || isReturnCustomer) && Boolean(meta?.can_qc_release));
+  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt || isQc4 || isReturnCustomer) && Boolean(meta?.can_qc_release))
+    // UAT 24 Okt (P11.6, keputusan pemilik) — MD Quality boleh menutup SPK MD-nya sendiri.
+    || (mdOnly && Boolean(meta?.can_md_quality_decide));
+  // P11.2 — SPK QC 4-point untuk SEBAGIAN roll kedatangan (null = pemilih tertutup).
+  const [qc4Pick, setQc4Pick] = useState(null);
+  const sampling = doc.sampling || {};
   const canInspectAll = Boolean(meta?.can_inspect_all);   // Sisir lanjutan gerbang peran (2026-10-21) — hanya dari server (tanpa tebakan nama peran saat meta belum ada)
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;
@@ -205,12 +210,44 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
         <div data-testid="ins-md-only-note" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E5DDF3] bg-[#F7F2FF] px-3 py-2 text-[11.5px] text-[#4B2A7A]">
           <span>SPK ini khusus <b>MD Quality</b> (warna & handfeel). <b>QC 4-point</b> dikerjakan di SPK tersendiri — boleh kapan
             saja; roll yang ditolak QC ditahan.</span>
-          {canQc && (
+          {canQc && qc4Pick === null && (
             <button data-testid="ins-create-qc4" className="secondary-button !h-8" disabled={busy}
-              onClick={() => run(() => createQc4point({ inspection_id: doc.id }), "SPK QC 4-point dibuat untuk roll kedatangan ini.")}>
+              onClick={() => setQc4Pick(lines.filter((ln) => ln.roll_id).map((ln) => ln.roll_id))}>
               Buat SPK QC 4-point
             </button>
           )}
+        </div>
+      )}
+      {mdOnly && canQc && qc4Pick !== null && (
+        <div data-testid="ins-qc4-picker" className="section-card grid gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] font-bold text-[#1C1C1E]">Pilih roll untuk SPK QC 4-point
+              <span className="ml-1 font-normal text-[#6B6B73]">({qc4Pick.length} dari {lines.filter((ln) => ln.roll_id).length} roll)</span></p>
+            <div className="flex gap-2 text-[11px] font-bold text-[#0058CC]">
+              <button type="button" data-testid="ins-qc4-all" onClick={() => setQc4Pick(lines.filter((ln) => ln.roll_id).map((ln) => ln.roll_id))}>Semua</button>
+              <button type="button" data-testid="ins-qc4-none" onClick={() => setQc4Pick([])}>Kosongkan</button>
+            </div>
+          </div>
+          <div className="max-h-[220px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
+            {lines.filter((ln) => ln.roll_id).map((ln) => (
+              <label key={ln.id} className="flex cursor-pointer items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11.5px] last:border-0">
+                <input type="checkbox" data-testid={`ins-qc4-roll-${ln.roll_id}`} checked={qc4Pick.includes(ln.roll_id)}
+                  onChange={() => setQc4Pick((cur) => (cur.includes(ln.roll_id) ? cur.filter((x) => x !== ln.roll_id) : [...cur, ln.roll_id]))} />
+                <span className="font-mono font-semibold">{ln.roll_no || ln.sku}</span>
+                <span className="text-[#6B6B73]">{ln.quantity} {ln.unit}{ln.lot ? ` · lot ${ln.lot}` : ""}</span>
+                {ln.md_quality_at && <span className="ml-auto rounded-full bg-[#E8F6EE] px-1.5 text-[10px] font-bold text-[#1B7F4B]">MDQ ✓</span>}
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="secondary-button !h-8" onClick={() => setQc4Pick(null)}>Batal</button>
+            <button type="button" data-testid="ins-qc4-submit" className="primary-button !h-8" disabled={busy || qc4Pick.length === 0}
+              onClick={async () => {
+                const fresh = await run(() => createQc4point({ inspection_id: doc.id, roll_ids: qc4Pick }),
+                  `SPK QC 4-point dibuat untuk ${qc4Pick.length} roll.`);
+                if (fresh) setQc4Pick(null);
+              }}>Buat SPK untuk {qc4Pick.length} roll</button>
+          </div>
         </div>
       )}
       {(isQc4 || isRandom) && canQc && (
@@ -258,6 +295,19 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           <Row label="Baris sudah diperiksa" testId="ins-detail-inspected">
             {summary.inspected || 0} dari {summary.lines || 0}
           </Row>
+          {sampling.part && (
+            <Row label={sampling.part === "md_quality" ? "Dicek MD Quality" : "Diperiksa QC 4-point"} testId="ins-detail-sampling">
+              <span className={sampling.checked >= sampling.required ? "text-[#1B7F4B]" : "text-[#8A5300]"}>
+                {sampling.checked}/{sampling.total} roll dicek (wajib {sampling.required})
+              </span>
+              {sampling.part === "md_quality" && sampling.total > sampling.checked && (
+                <span className="block text-[10.5px] font-normal text-[#6B6B73]">roll yang tidak dicek lolos bertanda “MDQ sampling”</span>
+              )}
+              {sampling.part === "qc" && sampling.total > sampling.checked && (
+                <span className="block text-[10.5px] font-normal text-[#6B6B73]">roll yang tidak dicek dikeluarkan dari SPK saat ditutup</span>
+              )}
+            </Row>
+          )}
           <Row label="Total poin cacat" testId="ins-detail-points">
             {summary.points_total ? summary.points_total : "—"}
           </Row>

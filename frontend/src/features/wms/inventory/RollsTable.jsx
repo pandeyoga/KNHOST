@@ -4,6 +4,7 @@ import { Layers, Anchor, Route } from "lucide-react";
 import { formatQty, RollStatusBadge } from "./inventoryConstants";
 import RollJourneyPopup from "../RollJourneyPopup";
 import RollHoldControl from "./RollHoldControl";
+import RollCheckChips from "../../../components/RollCheckChips";
 
 import PagedRows from "@/components/PagedRows";
 
@@ -123,7 +124,11 @@ export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg,
                       );
                     })()}
                   </td>
-                  <td className="px-3 py-2"><RollStatusBadge status={r.status} /></td>
+                  <td className="px-3 py-2">
+                    <RollStatusBadge status={r.status} />
+                    {/* UAT 24 Okt (P11.4) — status cek MD Quality & 4-point per roll */}
+                    <RollCheckChips roll={r} testId={`roll-check-${r.id}`} className="mt-1" />
+                  </td>
                   <td className="px-3 py-2">
                     {ear ? (
                       <span

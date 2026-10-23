@@ -4,6 +4,7 @@ import MoneyInput from "@/components/MoneyInput";
 import { XCircle, Plus, AlertTriangle, FileEdit, Trash2, Lock } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { computeOrderPreview } from "../../../utils/pricing";
+import SiteSelect from "../../../components/SiteSelect";
 import KNSelect from "../../../components/KNSelect";
 import { productOption, supplierCodesLabel } from "../../../utils/productSearch";   // MD-08
 import { unitOptions } from "../../../utils/uom";
@@ -48,7 +49,7 @@ export default function POAmendModal({
   const [supplierId, setSupplierId] = useState(po.supplier_id || "");
   const [supplierName, setSupplierName] = useState(po.supplier_name || "");
   const [supplierContact, setSupplierContact] = useState(po.supplier_contact || "");
-  const [warehouseId, setWarehouseId] = useState(po.warehouse_id || "");
+  const [siteId, setSiteId] = useState(po.ship_to_site_id || "");
   const [eta, setEta] = useState(String(po.expected_delivery_date || "").slice(0, 10));
   const [notes, setNotes] = useState(po.notes || "");
   const [orderDisc, setOrderDisc] = useState(Number(po.order_discount_percent || 0));
@@ -140,7 +141,8 @@ export default function POAmendModal({
       supplier_id: supplierId || "",
       supplier_name: supplierId ? null : supplierName,
       supplier_contact: supplierContact,
-      warehouse_id: warehouseId,
+      // P9 — ganti lokasi kirim (gudang penerimaan diturunkan server); kosong = tidak berubah.
+      ship_to_site_id: siteId && siteId !== po.ship_to_site_id ? siteId : null,
       expected_delivery_date: eta,
       notes,
       order_discount_percent: clampPct(orderDisc),
@@ -206,10 +208,9 @@ export default function POAmendModal({
                 onChange={(e) => setSupplierContact(e.target.value)} className="field" placeholder="081234567890" />
             </div>
             <div>
-              <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Gudang {hasReceipt && <Lock size={10} className="inline -mt-0.5 text-[#6B6B73]" />}</label>
-              <KNSelect data-testid="po-amend-warehouse-select" value={warehouseId} disabled={hasReceipt}
-                onValueChange={(v) => setWarehouseId(v)} className="field" placeholder="Pilih Gudang"
-                options={warehouses.map((wh) => ({ value: wh.id, label: `${wh.name} (${wh.code})` }))} />
+              <SiteSelect testId="po-amend-site" value={siteId} onChange={setSiteId} disabled={hasReceipt} required={false}
+                label={hasReceipt ? "Lokasi kirim (terkunci — barang sudah diterima)" : "Lokasi kirim"} />
+              {!po.ship_to_site_id && po.warehouse_name && <p className="mt-0.5 text-[10.5px] text-[#6B6B73]">Saat ini: {po.warehouse_name}</p>}
             </div>
             <div>
               <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Perkiraan Pengiriman</label>

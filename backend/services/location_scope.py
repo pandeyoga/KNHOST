@@ -22,6 +22,9 @@ WAREHOUSE_FIELDS: Dict[str, tuple] = {
     "inventory_rolls": ("warehouse_id",), "inventory_movements": ("warehouse_id",),
     "inventory_balances": ("warehouse_id",), "goods_receipts": ("warehouse_id",),
     "warehouse_transfers": ("source_warehouse_id", "dest_warehouse_id"),
+    # UAT 24 Okt (P9.5) — Putaway Order dulu di luar lingkup lokasi (petugas Soreang bisa melihat/membuat PA
+    # Rancamalang).
+    "putaway_orders": ("from_warehouse_id", "to_warehouse_id"),
 }
 _CACHE: Dict[str, Any] = {"at": 0.0, "on": False}
 
