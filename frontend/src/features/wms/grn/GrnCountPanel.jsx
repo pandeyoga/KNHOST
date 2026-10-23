@@ -13,8 +13,9 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const [seq, setSeq] = useState(null);
   const t = ln.target || {};
   // Trial 22 Okt (D2) — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; server mengonversi.
-  const unitChoices = [...new Set([t.unit, t.base_unit].filter(Boolean))];
-  const [lenUnit, setLenUnit] = useState(t.unit || t.base_unit || "");
+  // 23 Okt — kg bukan satuan panjang: berat selalu lewat kolom Kg. Kain rajut (kg saja) → kolom panjang disembunyikan.
+  const unitChoices = [...new Set([t.unit, t.base_unit].filter((u) => u && u.toLowerCase() !== "kg"))];
+  const [lenUnit, setLenUnit] = useState(unitChoices[0] || "");
   const intent = useIntentKey(`grn-${grn.id}-${ln.line_no}`);
   const scan = async () => {
     const body = { raw: raw.trim() };
@@ -27,6 +28,8 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   };
   const editable = canCount && grn.status === "counting";
   const sisa = ln.role === "byproduct";
+  const showLen = sisa || unitChoices.length > 0;
+  const cols = 4 + (showLen ? 1 : 0) + (!sisa && unitChoices.length > 1 ? 1 : 0);
   return (
     <div data-testid={`grn-count-line-${ln.line_no}`} className="space-y-2 rounded-xl border border-[#EFF0F2] p-3">
       <div className="flex items-start justify-between">
@@ -51,8 +54,8 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
             <button data-testid={`grn-count-scan-btn-${ln.line_no}`} className="primary-button" onClick={scan}><ScanLine size={13} /></button>
           </div>
         )}
-        <div className={`grid gap-2 ${!sisa && unitChoices.length > 1 ? "grid-cols-6" : "grid-cols-5"}`}>
-          <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${lenUnit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} />
+        <div className={`grid gap-2 ${{ 4: "grid-cols-4", 5: "grid-cols-5", 6: "grid-cols-6" }[cols]}`}>
+          {showLen && <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${lenUnit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} />}
           {!sisa && unitChoices.length > 1 && (
             <KNSelect data-testid={`grn-count-unit-${ln.line_no}`} value={lenUnit} onValueChange={setLenUnit} searchable={false}
               options={unitChoices.map((u) => ({ value: u, label: u === t.unit ? `${u} (SJ/PO)` : `${u} (stok)` }))} />

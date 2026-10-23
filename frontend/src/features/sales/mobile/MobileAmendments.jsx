@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, FileEdit, Search } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { listAmendments, statusMeta } from "../../finance/amendments/amendmentApi";
 import MobileAmendSheet from "./MobileAmendSheet";
+import ErrorNotice from "../../../components/ErrorNotice";
 
 const CLOSED = ["cancelled", "expired"];
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
@@ -45,7 +46,8 @@ export default function MobileAmendments({ orders = [], onRefresh }) {
   const [rows, setRows] = useState(null);
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(null);
-  const load = () => listAmendments({ doc_type: "sales_order", limit: 100 }).then(setRows).catch(() => setRows([]));
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => { setLoadErr(null); listAmendments({ doc_type: "sales_order", limit: 100 }).then(setRows).catch((e) => { setRows([]); setLoadErr(e); }); };
   useEffect(() => { load(); }, []);
   const eligible = useMemo(() => orders.filter((o) => !CLOSED.includes(o.status) && (o.items || []).length
     && (!q || `${o.number} ${o.customer_name}`.toLowerCase().includes(q.toLowerCase()))), [orders, q]);
@@ -54,6 +56,7 @@ export default function MobileAmendments({ orders = [], onRefresh }) {
 
   return (
     <div className="space-y-3" data-testid="m-amendments">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={load} testId="m-amendments-load-error" />}
       <div className="grid grid-cols-3 gap-2">
         {[["pending", "Menunggu", ["pending_approval"]], ["applied", "Diterapkan", ["applied", "auto_applied", "approved"]], ["rejected", "Ditolak", ["rejected"]]].map(([k, label, s]) => (
           <div key={k} className="m-card p-2.5 text-center" data-testid={`m-amd-stat-${k}`}>

@@ -17,6 +17,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { askReason } from "../../../services/confirmService";
 import { ageTone, badgeClass, badgeLabel, mdDesk, rowLink } from "../../sales_admin/workDeskApi";
 import { errText } from "./MobileSalesFlows";
+import ErrorNotice from "../../../components/ErrorNotice";
 
 const list = (d) => (Array.isArray(d) ? d : d?.items || []);
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-");
@@ -347,13 +348,15 @@ export function MobileRndSamples({ focusId }) {
   const [status, setStatus] = useState("");
   const [sel, setSel] = useState(focusId || null);
   const [q, setQ] = useState("");
-  const load = () => axios.get(`${API}/rnd/samples`).then((r) => setRows(list(r.data))).catch(() => setRows([]));
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => axios.get(`${API}/rnd/samples`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
   useEffect(() => { axios.get(`${API}/rnd/meta`).then((r) => setMeta(r.data)).catch(() => {}); load(); }, []);
   useEffect(() => { if (focusId) setSel(focusId); }, [focusId]);
   if (sel) return <SampleDetail id={sel} reasons={meta?.reasons} onBack={() => { setSel(null); load(); }} />;
   const shown = (rows || []).filter((r) => (!status || r.status === status) && (!q || `${r.number} ${r.title}`.toLowerCase().includes(q.toLowerCase())));
   return (
     <div className="space-y-2" data-testid="m-rnd-samples">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-smp-load-error" />}
       <div className="m-card flex items-center gap-2 px-3 py-2"><Search size={15} className="m-muted" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Cari nomor / judul sample" value={q} onChange={(e) => setQ(e.target.value)} data-testid="m-smp-search" /></div>
       <Chips items={[["", "Semua"], ["assessed", "Siap diputus"], ["sent", "Dikirim"], ["in_progress", "Berjalan"], ["decided", "Diputus"], ["cancelled", "Batal"]]} value={status} onChange={setStatus} prefix="m-smp-filter" />
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
@@ -423,12 +426,15 @@ export function MobileMdProducts({ canEdit }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
   const [sel, setSel] = useState(null);
-  useEffect(() => { axios.get(`${API}/products`).then((r) => setRows(list(r.data))).catch(() => setRows([])); }, []);
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => axios.get(`${API}/products`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
+  useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   const cats = useMemo(() => [...new Set((rows || []).map((p) => p.category).filter(Boolean))], [rows]);
   if (sel) return <ProductDetail product={sel} canEdit={canEdit} onBack={() => setSel(null)} onSaved={(p) => { setSel((c) => ({ ...c, ...p })); setRows((r) => r.map((x) => (x.id === p.id ? { ...x, ...p } : x))); }} />;
   const shown = (rows || []).filter((p) => (!cat || p.category === cat) && (!q || `${p.name} ${p.sku}`.toLowerCase().includes(q.toLowerCase())));
   return (
     <div className="space-y-2" data-testid="m-md-products">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-md-products-load-error" />}
       <div className="m-card flex items-center gap-2 px-3 py-2"><Search size={15} className="m-muted" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Cari produk / SKU" value={q} onChange={(e) => setQ(e.target.value)} data-testid="m-md-products-search" /></div>
       <Chips items={[["", "Semua"], ...cats.map((c) => [c, c])]} value={cat} onChange={setCat} prefix="m-md-products-cat" />
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
@@ -494,7 +500,8 @@ export function MobilePurchaseRequisitions({ focusId }) {
   const [open, setOpen] = useState(focusId || null);
   const [create, setCreate] = useState(false);
   const [msg, setMsg] = useState(null);
-  const load = () => axios.get(`${API}/purchase-requisitions`).then((r) => setRows(list(r.data))).catch(() => setRows([]));
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => axios.get(`${API}/purchase-requisitions`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
   useEffect(() => { load(); }, []);
   const submitDraft = async (pr) => {
     try { await axios.post(`${API}/purchase-requisitions/${pr.id}/submit`); setMsg({ ok: true, text: `${pr.number} diajukan.` }); load(); }
@@ -504,6 +511,7 @@ export function MobilePurchaseRequisitions({ focusId }) {
   const shown = (rows || []).filter((r) => !status || r.status === status);
   return (
     <div className="space-y-2" data-testid="m-purchase-requisitions">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-pr-load-error" />}
       <button className="primary-button flex w-full items-center justify-center gap-2 py-3" onClick={() => setCreate(true)} data-testid="m-pr-new"><Plus size={16} /> Buat PR bahan</button>
       <Chips items={[["", "Semua"], ["draft", "Draf"], ["pending_approval", "Menunggu"], ["approved", "Disetujui"], ["converted", "Jadi PO"], ["rejected", "Ditolak"]]} value={status} onChange={setStatus} prefix="m-pr-filter" />
       <Notice msg={msg} testId="m-pr-msg" />
@@ -534,9 +542,12 @@ export function MobilePurchaseRequisitions({ focusId }) {
 
 export function MobilePoWatch() {
   const [rows, setRows] = useState(null);
-  useEffect(() => { axios.get(`${API}/purchase-orders`).then((r) => setRows(list(r.data))).catch(() => setRows([])); }, []);
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => axios.get(`${API}/purchase-orders`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
+  useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="space-y-2" data-testid="m-po-watch">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-po-load-error" />}
       <p className="rounded-xl border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2 text-[11px] text-[#31465F]">Hanya-lihat: pantau PO bahan dari PR Anda. Pembuatan & persetujuan PO di tim Pembelian.</p>
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
       {rows && rows.length === 0 && <p className="py-8 text-center text-xs m-muted">Belum ada PO.</p>}

@@ -4,6 +4,7 @@ import axios, { API } from "../../../services/apiClient";
 import { offlinePost } from "../../../utils/offlineQueue";
 import KNSelect from "../../../components/KNSelect";
 import SpecialPriceRequestForm from "../../pricing/SpecialPriceRequestForm";
+import ErrorNotice from "../../../components/ErrorNotice";
 
 /** §3-A Tahap 1 — tiga layar lapangan: Minta Harga Khusus · Kunjungan · Status Stok. */
 export function MobileSpecialPrice({ selectedEntity }) {
@@ -61,8 +62,10 @@ export function MobileVisits() {
 }
 
 export function MobileStock() {
-  const [rows, setRows] = useState(null); const [q, setQ] = useState("");
-  useEffect(() => { axios.get(`${API}/inventory/balances`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => setRows([])); }, []);
+  const [rows, setRows] = useState(null); const [q, setQ] = useState(""); const [err, setErr] = useState(null);
+  const load = () => { setErr(null); axios.get(`${API}/inventory/balances`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.items || [])).catch((e) => { setErr(e); setRows([]); }); };
+  useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  if (err) return <div className="p-3"><ErrorNotice message={err} onRetry={load} testId="m-stock-error" /></div>;   // dulu "Tidak ada stok yang cocok"
   if (rows === null) return <div className="p-6 text-center text-sm">Memuat…</div>;
   const f = rows.filter((r) => !q || `${r.product_name || ""} ${r.sku || ""}`.toLowerCase().includes(q.toLowerCase()));
   return (

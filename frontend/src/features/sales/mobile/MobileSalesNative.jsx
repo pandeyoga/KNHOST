@@ -10,6 +10,7 @@ import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./Mobil
 import { odPhaseOf } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
 import LoadingLine from "../../../components/LoadingLine";
+import ErrorNotice from "../../../components/ErrorNotice";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
 
@@ -29,12 +30,13 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   const [rows, setRows] = useState(null);
   const [create, setCreate] = useState(!!initialOrder);
   const [sel, setSel] = useState(null);
+  const [loadErr, setLoadErr] = useState(null);
   const load = () => axios.get(`${API}/sales-returns`).then((r) => {
     const list = Array.isArray(r.data) ? r.data : r.data.items || [];
     setRows(list);
     if (focusId) setSel((cur) => cur || list.find((x) => x.id === focusId) || null);
     setSel((cur) => (cur ? list.find((x) => x.id === cur.id) || cur : cur));
-  }).catch(() => setRows([]));
+  }).catch((e) => { setRows([]); setLoadErr(e); });
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const headerBack = useSubpageBack(() => setSel(null), !!sel && !create);   // satu tombol kembali
   if (create) {
@@ -55,6 +57,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
     </div>);
   return (
     <div className="space-y-2 p-3" data-testid="m-returns">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-returns-load-error" />}
       <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => setCreate(true)} data-testid="m-return-new"><Plus size={16} /> Buat retur jual</button>
       {rows === null && <LoadingLine text="Memuat retur…" />}
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-returns-empty">Belum ada retur.</p>}
@@ -84,7 +87,8 @@ export function MobileSpecialOrders({ focusId = null }) {
   const [rows, setRows] = useState(null);
   const [create, setCreate] = useState(false);
   const [openId, setOpenId] = useState(focusId);
-  const load = () => axios.get(`${API}/special-orders`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => setRows([]));
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => axios.get(`${API}/special-orders`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.items || [])).catch((e) => { setRows([]); setLoadErr(e); });
   useEffect(() => { load(); }, []);
   if (openId) return <MobileSpecialOrderDetail id={openId} onBack={() => { setOpenId(null); load(); }} />;
   if (create) {
@@ -92,6 +96,7 @@ export function MobileSpecialOrders({ focusId = null }) {
   }
   return (
     <div className="space-y-2 p-3" data-testid="m-special-orders">
+      {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-special-load-error" />}
       <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => setCreate(true)} data-testid="m-special-new"><Plus size={16} /> Ajukan pesanan khusus</button>
       {rows === null && <LoadingLine />}
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-special-empty">Belum ada pesanan khusus.</p>}

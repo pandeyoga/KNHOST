@@ -3,6 +3,8 @@ import { Inbox, Check, Truck } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import { DispositionRow, DispositionActionBar } from "../../sales/ReturnDispositionPanel";
+import LoadingLine from "../../../components/LoadingLine";
+import ErrorNotice from "../../../components/ErrorNotice";
 
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 const ST = { draft: "Menunggu diterima", approved: "Diterima · tunggu barang" };
@@ -69,14 +71,19 @@ function CaseCard({ c, canAct, onDone }) {
 // LN-093 — meja PT pemasok (CST): terima retur internal wajib + putuskan nasib roll tanpa akses ke PT pengembali.
 export default function IntercoReturnInbox({ entityId, canAct }) {
   const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  // 23 Okt — dulu kosong total selama memuat, dan galat muat DITELAN jadi daftar kosong ("tidak ada retur")
+  // sehingga PT pemasok mengira tak ada yang perlu diputus.
   const load = useCallback(() => {
+    setErr("");
     axios.get(`${API}/return-dispositions/inbox`, { params: entityId ? { entity_id: entityId } : {} })
-      .then((r) => setData(r.data)).catch(() => setData({ incoming: [], cases: [], counts: {} }));
+      .then((r) => setData(r.data)).catch((e) => { setErr(e); setData((d) => d || { incoming: [], cases: [], counts: {} }); });
   }, [entityId]);
   useEffect(() => { load(); }, [load]);
-  if (!data) return null;
+  if (!data) return <LoadingLine text="Memuat retur internal…" testId="ic-inbox-loading" />;
   return (
     <div className="space-y-4" data-testid="ic-return-inbox">
+      {err && <ErrorNotice message={err} onRetry={load} testId="ic-inbox-error" />}
       <div>
         <h3 className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold"><Inbox size={15} /> Retur internal masuk ({data.counts.incoming || 0})</h3>
         <IncomingList rows={data.incoming} canAct={canAct} onDone={load} />

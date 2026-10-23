@@ -9,15 +9,22 @@ import { CheckCircle2, Scissors } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { formatQty } from "../../utils/formatters";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
+import ErrorNotice from "../../components/ErrorNotice";
 
 export default function PickListPanel({ task, onPick }) {
   const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [nonce, setNonce] = useState(0);
   useEffect(() => {
     if (!task?.id) return undefined;
     let live = true;
-    axios.get(`${API}/outbound/tasks/${task.id}/pick-list`).then((r) => { if (live) setData(r.data); }).catch(() => setData(null));
+    setErr(null);
+    axios.get(`${API}/outbound/tasks/${task.id}/pick-list`).then((r) => { if (live) setData(r.data); })
+      .catch((e) => { if (live) { setData(null); setErr(e); } });
     return () => { live = false; };
-  }, [task?.id, task?.picked_qty]);
+  }, [task?.id, task?.picked_qty, nonce]);
+  // 23 Okt — dulu galat muat membuat panel "Roll yang harus diambil" hilang tanpa jejak di tangan petugas pick.
+  if (err) return <ErrorNotice message={err} onRetry={() => setNonce((n) => n + 1)} testId="outbound-pick-list-error" />;
   if (!data) return null;
   const rolls = data.rolls || [];
   const cuts = data.pending_cuts || [];

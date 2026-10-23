@@ -288,7 +288,9 @@ async def create_counted_roll(*, task: Dict[str, Any], product: Dict[str, Any], 
     task_unit = task.get("unit") or base_unit
     kgpb = kg_per_base_unit(product, await load_fixed_factors())
     lu = (length_unit or "").strip() or base_unit
-    if lu.lower() == "kg":
+    # 23 Okt — hanya angka PANJANG berisi yang ditolak bila satuannya kg. Kain rajut (satuan dasar kg) dihitung
+    # lewat kolom Kg saja; dulu satuan kosong/“kg” ikut ditolak walau panjang 0 → kain kg tak bisa dihitung sama sekali.
+    if length and lu.lower() == "kg":
         raise HTTPException(status_code=400, detail="Berat diisi di kolom Kg, bukan di kolom panjang.")
     length_base = round(conv_qty(product, float(length or 0), lu, base_unit, await uom_engine()), 2) if length else 0.0
     if length_base <= 0 and weight_kg > 0 and kgpb > 0:

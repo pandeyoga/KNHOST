@@ -141,6 +141,40 @@ def test_d2_hitung_grn_panjang_satuan_sj_dikonversi_ke_satuan_dasar(yard_product
     assert as_yard["task_qty"] == pytest.approx(100 * M_PER_YD, abs=0.01)
 
 
+def test_d2_hitung_grn_kain_kg_lewat_kolom_kg_diterima(monkeypatch):
+    """23 Okt — kain rajut (satuan dasar kg): berat saja (satuan panjang kosong / "kg" dari layar) DITERIMA;
+    hanya angka panjang berisi bersatuan kg yang ditolak. Dulu seluruh hitung kain kg ditolak."""
+    from fastapi import HTTPException
+    from services import receiving_roll_service as rrs
+    got = {}
+
+    async def fake_build(task, product, owner, actor, **kw):
+        got["weight_kg"] = kw["weight_kg"]
+        return {"id": "roll_uji"}
+
+    async def fake_attach(task, roll_doc, task_qty, **kw):
+        got["task_qty"] = task_qty
+        return task
+    monkeypatch.setattr(rrs, "build_receiving_roll", fake_build)
+    monkeypatch.setattr(rrs, "attach_roll_to_task", fake_attach)
+    prod = {"id": "prod_uji_kg", "base_unit": "kg", "name": "Rajut uji"}
+    task = {"id": "wms_uji", "unit": "kg", "product_id": prod["id"]}
+
+    async def go():
+        out = []
+        for lu in ("", "kg"):
+            await rrs.create_counted_roll(task=task, product=prod, owner_entity_id=base.ENT, actor={"name": "Uji"},
+                                          weight_kg=25, length_unit=lu, lot="L1")
+            out.append(dict(got))
+        with pytest.raises(HTTPException) as e:
+            await rrs.create_counted_roll(task=task, product=prod, owner_entity_id=base.ENT, actor={"name": "Uji"},
+                                          length=25, length_unit="kg", lot="L1")
+        return out, e.value
+    out, err = _run(["services.receiving_roll_service"], go)
+    assert all(o["weight_kg"] == pytest.approx(25) and o["task_qty"] == pytest.approx(25) for o in out)
+    assert err.status_code == 400 and "kolom Kg" in err.detail
+
+
 def test_d6_tugas_ambil_berlabel_satuan_dasar(yard_product):
     from services import fulfillment_status as fs
     tag = uuid.uuid4().hex[:6]

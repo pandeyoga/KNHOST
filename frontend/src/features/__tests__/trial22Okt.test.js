@@ -116,6 +116,22 @@ test("D2: satuan SJ = satuan stok → tanpa pemilih satuan", async () => {
   act(() => root.unmount());
 });
 
+test("D2 (23 Okt): kain rajut kg → hanya kolom Kg, berat terkirim tanpa satuan panjang kg", async () => {
+  posted.length = 0;
+  const root = await mount(<GrnCountPanel grn={grn({ unit: "kg", base_unit: "kg" })} onChange={() => {}} canCount />);
+  expect(q("grn-count-length-1")).toBeNull();
+  expect(q("grn-count-unit-1")).toBeNull();
+  const input = q("grn-count-kg-1");
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, "25");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => { q("grn-count-add-1").click(); });
+  await tick();
+  expect(posted[0][2]).toMatchObject({ length: 0, length_unit: "", weight_kg: 25 });
+  act(() => root.unmount());
+});
+
 
 const spOrder = (status) => ({
   id: "so1", number: "SO-UJI", status: "waiting_approval", order_type: "regular", customer_id: "c1", customer_name: "Toko Uji",

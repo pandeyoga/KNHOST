@@ -7,6 +7,7 @@ import { isNetworkError, queueScan } from "../../utils/offlineQueue";
 import PrinterStatusWidget from "../../components/PrinterStatusWidget";
 import OfflineBanner from "./OfflineBanner";
 import { InboundActions, OutboundActions, SampleCutActions } from "./MobileTaskActions";
+import ErrorNotice from "../../components/ErrorNotice";
 
 const STATUS_ID = { pending: "Menunggu", receiving: "Menerima", qc_check: "Cek QC", put_away: "Simpan", picking: "Ambil", packing: "Kemas", escalated: "Eskalasi", completed: "Selesai", shipped: "Terkirim" };
 
@@ -151,7 +152,10 @@ function ScanPanel({ onOpenTask }) {
 
 function UntaggedPanel() {
   const [rows, setRows] = useState(null);
-  useEffect(() => { axios.get(`${API}/rfid/untagged-rolls`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.rolls || r.data.items || [])).catch(() => setRows([])); }, []);
+  const [err, setErr] = useState(null);
+  const load = () => { setErr(null); axios.get(`${API}/rfid/untagged-rolls`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.rolls || r.data.items || [])).catch((e) => { setErr(e); setRows([]); }); };
+  useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  if (err) return <div className="p-3"><ErrorNotice message={err} onRetry={load} testId="mw-untagged-error" /></div>;   // dulu "Semua roll sudah bertag"
   if (rows === null) return <div className="p-6 text-center text-sm">Memuat…</div>;
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-empty">Semua roll sudah bertag.</div>;
   return (
