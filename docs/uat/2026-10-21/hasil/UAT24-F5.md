@@ -1,6 +1,6 @@
 # UAT 24 Okt — F5 (layar & fitur: P7 Perbaikan · P12 sorotan POS · P13 · P16 · P17 · sapuan UI)
 
-- Commit: `2d4d108` (inti F5) · __COMMIT_UI__ (sapuan UI) · branch `main`.
+- Commit: `2d4d108` (inti F5) · `ce7cce4` (sapuan UI) · branch `main`.
 - Sumber: [`ANALISIS_TEMUAN_UAT_23OKT.md`](../ANALISIS_TEMUAN_UAT_23OKT.md) P7, P12, P13, P16, P17; keputusan pemilik = usulan
   bawaan §4 (P7-K1 biaya **dikapitalisasi**; P7-K2 celup ulang **boleh ganti SKU** → roll anak; P12-K1 rekomendasi **(b)**
   per pelanggan dari desain/kategori yang pernah dibeli; P16-K1 susunan Pengaturan **disajikan dulu sebagai mock**).
