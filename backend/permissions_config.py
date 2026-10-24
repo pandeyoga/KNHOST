@@ -624,6 +624,13 @@ for _role in ("sales", "sales_admin", "finance"):
     DEFAULT_PERMISSIONS[_role]["od_fulfillment"] = ["view"]
 # UAT 24 Okt (P2-K1/P2.5) — harga Pesanan Khusus: kunci & harga PIC (Admin Sales/Manajer/Admin), biaya kontrak terlihat
 # hanya oleh pemegang view_cost (tambah MD). Sales melihat harga final saja dan mengajukan nego lewat harga khusus SO.
+# UAT 24 Okt (P7) — menu Perbaikan.
+for _role, _acts in {"admin": ["view", "create", "send", "receive", "cancel"], "manager": ["view", "create", "send", "receive", "cancel"],
+                     "warehouse_admin": ["view", "create", "send", "receive", "cancel"], "md": ["view", "create", "send", "receive", "cancel"],
+                     "warehouse": ["view", "send", "receive"], "finance": ["view"], "qc": ["view", "create"],
+                     "md_quality": ["view", "create"]}.items():
+    if _role in DEFAULT_PERMISSIONS:
+        DEFAULT_PERMISSIONS[_role]["repair_order"] = list(_acts)
 for _role, _acts in {"sales_admin": ["view_cost", "set_price", "lock"], "manager": ["view_cost", "set_price", "lock"],
                      "admin": ["view_cost", "set_price", "lock"], "md": ["view_cost"]}.items():
     if _role in DEFAULT_PERMISSIONS:

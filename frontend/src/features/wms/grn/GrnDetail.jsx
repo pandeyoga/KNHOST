@@ -10,6 +10,8 @@ import GrnReviewPanel from "./GrnReviewPanel";
 import GrnOcrDraft from "./GrnOcrDraft";
 import { errText, grnApi, sampleApi } from "./grnApi";
 
+const STEP_NO = { review: 1, count: 2, recon: 3 };
+const STEP_TITLE = { review: "Periksa surat jalan", count: "Hitung roll fisik", recon: "Rekonsiliasi & tutup" };
 const TAB_FOR = { draft: "review", reading: "review", review: "review", counting: "count", reconcile: "recon", closing: "recon", closed: "recon", rejected: "review", cancelled: "review" };
 
 export default function GrnDetail({ grnId, user, onBack }) {
@@ -63,16 +65,23 @@ export default function GrnDetail({ grnId, user, onBack }) {
         )}
       </div>
       {(grn.reject_reason || grn.cancel_reason) && <p className="rounded-lg bg-[#F2F2F7] px-3 py-2 text-[11px]">Alasan: {grn.reject_reason || grn.cancel_reason}</p>}
-      <div className="flex gap-1 rounded-lg bg-[#F2F2F7] p-0.5 text-[11px] font-semibold">
+      {/* UAT 24 Okt (P16.1) — tab langkah standar (`tab-bar`) + isi langkah dalam kartu putih ber-judul. */}
+      <div className="tab-bar !mb-0" role="tablist">
         {tabs.map(([k, label]) => (
-          <button key={k} data-testid={`grn-tab-${k}`} onClick={() => setTab(k)} className={`flex-1 rounded-md py-1.5 ${tab === k ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>{label}</button>
+          <button key={k} role="tab" aria-selected={tab === k} data-testid={`grn-tab-${k}`} onClick={() => setTab(k)}
+            className={`tab-button ${tab === k ? "active" : ""}`}><span className="text-[10.5px] font-bold text-[#8E8E93]">{STEP_NO[k]}</span> {label}</button>
         ))}
       </div>
       <ErrorBox text={err} />
       {(!canReview || tab !== "review") && <GrnOcrDraft grn={grn} />}
-      {tab === "review" && canReview && <GrnReviewPanel grn={grn} onChange={onChange} canReview={canReview} />}
-      {tab === "count" && <GrnCountPanel grn={grn} onChange={onChange} canCount={canCount} />}
-      {tab === "recon" && <GrnReconPanel grn={grn} onChange={onChange} canReview={canReview} canClose={canClose} />}
+      <section className="section-card" data-testid={`grn-step-${tab}`}>
+        <div className="section-head"><h2><span className="kicker">Langkah {STEP_NO[tab]}</span>{STEP_TITLE[tab]}</h2></div>
+        <div className="section-body">
+          {tab === "review" && canReview && <GrnReviewPanel grn={grn} onChange={onChange} canReview={canReview} />}
+          {tab === "count" && <GrnCountPanel grn={grn} onChange={onChange} canCount={canCount} />}
+          {tab === "recon" && <GrnReconPanel grn={grn} onChange={onChange} canReview={canReview} canClose={canClose} />}
+        </div>
+      </section>
     </div>
   );
 }

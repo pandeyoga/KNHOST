@@ -491,6 +491,13 @@ async def sync_permission_revocations() -> None:
     for _r in ("sales_admin", "manager", "admin"):
         GRANT.setdefault(_r, {})["od_pricing"] = ["view_cost", "set_price", "lock"]
     GRANT.setdefault("md", {})["od_pricing"] = ["view_cost"]
+    # UAT 24 Okt (P7) — menu Perbaikan (repair / celup ulang / finishing ulang) di Gudang & MD.
+    _rpr = ["view", "create", "send", "receive", "cancel"]
+    for _r in ("admin", "manager", "warehouse_admin", "md"):
+        GRANT.setdefault(_r, {})["repair_order"] = list(_rpr)
+    GRANT.setdefault("warehouse", {})["repair_order"] = ["view", "send", "receive"]
+    for _r in ("finance", "qc", "md_quality"):
+        GRANT.setdefault(_r, {})["repair_order"] = ["view"] if _r == "finance" else ["view", "create"]
     for role, mp in GRANT.items():
         rm = matrix.setdefault(role, {})
         for m, actions in mp.items():

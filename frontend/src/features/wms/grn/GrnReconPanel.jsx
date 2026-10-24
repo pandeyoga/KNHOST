@@ -66,8 +66,8 @@ export default function GrnReconPanel({ grn, onChange, canReview, canClose }) {
   const lines = (grn.lines || []).filter((ln) => !ln.is_non_stock);
   return (
     <div className="space-y-3" data-testid="grn-recon-panel">
-      <div className="overflow-x-auto rounded-xl border border-[#EFF0F2]">
-        <table className="w-full text-left text-[11px]" data-testid="grn-recon-table">
+      <div className="table-container overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white">
+        <table className="data-table text-left !text-[11.5px]" data-testid="grn-recon-table">
           <thead className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
             <tr>{["No", "Barang", "Surat jalan", "Dihitung", "Sisa PO setelah ini", "Selisih", "Kelas", "Posting"].map((h) => <th key={h} className="px-2 py-1.5">{h}</th>)}</tr>
           </thead>

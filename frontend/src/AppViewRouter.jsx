@@ -129,6 +129,8 @@ const IntercoView = lazy(() => import("./features/finance/interco/IntercoView"))
 // FASE E-7 (E7d) — Permintaan Internal: sales minta barang dari badan usaha lain,
 // admin/manajer menjadikannya transaksi antar-PT.
 const InternalRequestsView = lazy(() => import("./features/internal_requests/InternalRequestsView"));
+const KeepPendingPanel = lazy(() => import("./features/sales_admin/KeepPendingPanel"));   // UAT 24 Okt (P13.3)
+const RepairOrdersView = lazy(() => import("./features/wms/repair/RepairOrdersView"));     // UAT 24 Okt (P7)
 // FASE D — Permintaan Desain (papan kanban · penugasan · rapor desainer)
 const DesignRequestsView = lazy(() => import("./features/design/DesignRequestsView"));
 const LogisticsView = lazy(() => import("./features/logistics/LogisticsView"));   // FB-02
@@ -463,6 +465,8 @@ export default function AppViewRouter(props) {
       {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} />}
+      {activeView === "repair-orders" && <RepairOrdersView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
+      {activeView === "keep-pending" && <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={openDocument} testPrefix="kp-page" />}
       {activeView === "internal-requests" && <InternalRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "design-requests" && <DesignRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "logistics" && <LogisticsView currentUser={user} selectedEntity={selectedEntity} focusDelivery={logisticsFocus} onFocusConsumed={onLogisticsFocusConsumed} />}

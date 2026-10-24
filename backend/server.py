@@ -213,6 +213,8 @@ from routers import saga_locks  # noqa: E402  — T-01 Opsi B: kunci saga mengga
 app.include_router(saga_locks.router)
 from routers import wilayah  # noqa: E402  — wilayah & kode pos tervalidasi (2026-09)
 app.include_router(wilayah.router)
+from routers import repair_orders as _repair_orders  # noqa: E402  — UAT 24 Okt (P7) menu Perbaikan
+app.include_router(_repair_orders.router)
 from routers import ai_analytics  # noqa: E402  — Tanya KN F1: lapisan semantik & fakta penjualan
 app.include_router(ai_analytics.router)
 from routers import ai_assist  # noqa: E402  — Tanya KN: draf tindakan & peringatan anomali

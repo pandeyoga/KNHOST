@@ -1,4 +1,7 @@
 /** FilesPanel — berkas berjenis: artwork (per ronde), foto referensi, mockup, file desain asli (source). */
+import { useState } from "react";
+import MediaLightbox from "../../../components/MediaLightbox";   // UAT 24 Okt (P17) — pratinjau di halaman
+import { downloadFile } from "../../../hooks/useBlobUrl";
 import DesignImage from "./DesignImage";
 import { Download, FileArchive, Image as ImageIcon, Trash2, Upload } from "lucide-react";
 import { deleteDesignFile, designFileUrl, uploadDesignKindFile } from "../rndApi";
@@ -19,6 +22,8 @@ const fmtBytes = (n) => { const b = Number(n) || 0; return b < 1024 * 1024 ? `${
 export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
   const meta = KIND_META[kind];
   const files = (design.files || []).filter((f) => (f.kind || "artwork") === kind);
+  const [view, setView] = useState(-1);
+  const items = files.map((f) => ({ url: designFileUrl(design.id, f.id), filename: f.filename, content_type: f.content_type }));
 
   const uploadAll = async (list) => {
     let ok = 0;
@@ -33,6 +38,7 @@ export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
 
   return (
     <div data-testid={`design-files-${kind}`}>
+      {view >= 0 && <MediaLightbox items={items} index={view} onClose={() => setView(-1)} testId={`design-files-lightbox-${kind}`} />}
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[10.5px] text-[#6B6B73]"><b>{meta.label}</b> · {meta.hint} · {files.length} berkas</p>
         {canEdit && (
@@ -59,9 +65,9 @@ export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
                 </span>
               </span>
               <span className="flex items-center gap-1.5">
-                <a className="secondary-button !py-1 text-[10.5px]" href={`${designFileUrl(design.id, f.id)}?download=1`} download={f.filename} data-testid={`design-file-download-${f.id}`}>
+                <button type="button" className="secondary-button !py-1 text-[10.5px]" onClick={() => downloadFile(`${designFileUrl(design.id, f.id)}?download=1`, f.filename)} data-testid={`design-file-download-${f.id}`}>
                   <Download size={12} /> Unduh
-                </a>
+                </button>
                 {canEdit && <button className="icon-button text-red-500" title="Hapus" data-testid={`design-file-delete-${f.id}`} onClick={() => del(f)}><Trash2 size={13} /></button>}
               </span>
             </li>
@@ -71,11 +77,11 @@ export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {files.map((f) => (
             <div key={f.id} className="group relative overflow-hidden rounded-lg border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`design-file-${f.id}`}>
-              <a href={designFileUrl(design.id, f.id)} target="_blank" rel="noreferrer" className="block aspect-square">
+              <button type="button" onClick={() => setView(files.indexOf(f))} className="block aspect-square w-full" data-testid={`design-file-open-${f.id}`}>
                 {f.content_type?.startsWith("image/")
                   ? <DesignImage src={designFileUrl(design.id, f.id)} alt={f.filename} className="h-full w-full object-cover" loading="lazy" />
                   : <span className="flex h-full items-center justify-center text-[10px] font-bold">PDF</span>}
-              </a>
+              </button>
               {kind === "artwork" && (
                 <span className="absolute left-1 top-1 rounded bg-white/90 px-1 py-0.5 text-[8.5px] font-bold text-[#6B219A]">{roundLabel(f.version || 1)}</span>
               )}

@@ -15,7 +15,7 @@ Kontrak respons: list = ARRAY langsung; detail = objek langsung (tanpa envelope)
 """
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Query, Header
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import Response
 from pymongo import ReturnDocument
 
@@ -406,18 +406,12 @@ async def upload_evidence(order_id: str, approval_id: str, request: Request, fil
     return att
 
 
-# ─── Unduh bukti (inline; dukung query-param auth utk <img>/<a>) ─────────────
+# ─── Unduh bukti (inline) ─────────────────────────────────────────────────────
+# UAT 24 Okt (P17.2) — token lewat query `?auth=` DIHAPUS (terekam di riwayat peramban & log server); layar memuat
+# bukti sebagai blob lewat axios (header sesi + badan usaha).
 
 @router.get("/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download")
-async def download_evidence(
-    order_id: str, approval_id: str, att_id: str, request: Request,
-    auth: str = Query(None), authorization: str = Header(None),
-):
-    # <img>/<a> tak bisa kirim header → terima token via query-param `auth`.
-    if not authorization and auth:
-        request.scope["headers"] = list(request.scope.get("headers", [])) + [
-            (b"authorization", f"Bearer {auth}".encode())
-        ]
+async def download_evidence(order_id: str, approval_id: str, att_id: str, request: Request):
     await require_permission(request, "order", "view")
     ctx = await entity_ctx(request)
     order = await _load_so(order_id, ctx)

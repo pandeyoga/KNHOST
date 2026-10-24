@@ -1,4 +1,6 @@
 /** RoundsTimeline — Ringkasan vertikal per ronde: judul ronde → berkas yang dikirim → komentar revisi / ACC + nilai di akhir. */
+import { useState } from "react";
+import MediaLightbox from "../../../components/MediaLightbox";   // UAT 24 Okt (P17) — pratinjau di halaman
 import DesignImage from "./DesignImage";
 import { CheckCircle2, Clock, Download, MessageSquareText, RotateCcw, Upload } from "lucide-react";
 import { designFileUrl, uploadDesignKindFile, deleteDesignFile } from "../rndApi";
@@ -14,6 +16,7 @@ export default function RoundsTimeline({ design, canEdit, canPaper, onDone, onEr
   const versions = [...(design.versions || [])].sort((a, b) => a.version - b.version);
   const filesOf = (v) => (design.files || []).filter((f) => (f.kind || "artwork") === "artwork" && (f.version || 1) === v);
   const cur = design.version;
+  const [view, setView] = useState(null);   // { items, index }
   const inReview = ["pending_approval", "in_review"].includes(design.status);
 
   const uploadAll = async (list) => {
@@ -27,6 +30,7 @@ export default function RoundsTimeline({ design, canEdit, canPaper, onDone, onEr
 
   return (
     <ol className="relative space-y-4 border-l-2 border-[#EFF0F2] pl-5" data-testid="design-rounds-timeline">
+      {view && <MediaLightbox items={view.items} index={view.index} onClose={() => setView(null)} testId="design-rounds-lightbox" />}
       {versions.map((v) => {
         const files = filesOf(v.version);
         const isCur = v.version === cur;
@@ -63,11 +67,12 @@ export default function RoundsTimeline({ design, canEdit, canPaper, onDone, onEr
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
                   {files.map((f) => (
                     <div key={f.id} className="group relative overflow-hidden rounded-lg border border-[#E5E5EA] bg-white" data-testid={`design-file-${f.id}`}>
-                      <a href={designFileUrl(design.id, f.id)} target="_blank" rel="noreferrer" className="block aspect-square bg-[#F5F5F7]">
+                      <button type="button" className="block aspect-square w-full bg-[#F5F5F7]" data-testid={`design-round-file-open-${f.id}`}
+                        onClick={() => setView({ index: files.indexOf(f), items: files.map((x) => ({ url: designFileUrl(design.id, x.id), filename: x.filename, content_type: x.content_type })) })}>
                         {f.content_type?.startsWith("image/")
                           ? <DesignImage src={designFileUrl(design.id, f.id)} alt={f.filename} className="h-full w-full object-cover" loading="lazy" />
                           : <span className="flex h-full items-center justify-center text-[10px] font-bold text-[#6B6B73]">PDF</span>}
-                      </a>
+                      </button>
                       <div className="px-1.5 py-1 text-[9.5px] leading-tight">
                         <p className="truncate font-semibold" title={f.filename}>{f.filename}</p>
                         <p className="text-[#8E8E93]">{f.uploaded_by || ""}</p>

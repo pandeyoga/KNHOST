@@ -1,8 +1,8 @@
 /** Fase 2 OD — blok "Persetujuan Pelanggan" atas sample: ACC / minta revisi / tolak + catatan, tanggal, bukti, riwayat. */
 import { useState } from "react";
-import { Check, FileText, Image as ImageIcon, Loader2, RotateCcw, Upload, UserCheck, X } from "lucide-react";
+import { Check, Loader2, RotateCcw, Upload, UserCheck, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { useProofBlob } from "../rnd/ProofImage";
+import AttachmentGallery from "../../components/AttachmentThumb";   // UAT 24 Okt (P17)
 import { fmtDate } from "./SpecialOrderShared";
 import { formatDate, todayWib } from "../../utils/formatters";
 
@@ -138,7 +138,9 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
                 </div>
                 {d.note && <p className="mt-1 text-[#3C3C43]">{d.note}</p>}
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  {(d.evidence || []).map((f) => <Evidence key={f.id} url={`${API}/special-orders/${order.id}/customer-decision/evidence/${f.id}`} meta={f} />)}
+                  <AttachmentGallery size={48} testId={`od-customer-evidence-${d.id}`}
+                    items={(d.evidence || []).map((f) => ({ url: `${API}/special-orders/${order.id}/customer-decision/evidence/${f.id}`,
+                      filename: f.filename, content_type: f.content_type, caption: f.caption }))} />
                   {canEdit && !locked && (
                     <label className="cursor-pointer rounded-md border border-dashed border-[#D9D9DE] px-2 py-1 text-[10px] text-[#6B6B73] hover:border-[#0058CC]" data-testid={`od-customer-evidence-add-${d.id}`}>
                       <Upload size={10} className="inline" /> tambah bukti
@@ -152,15 +154,5 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
         )}
       </div>
     </section>
-  );
-}
-
-function Evidence({ url, meta }) {
-  const isImg = meta.content_type?.startsWith("image/");
-  const { src, status } = useProofBlob(url, isImg);
-  return (
-    <a href={url} target="_blank" rel="noreferrer" title={meta.caption || meta.filename} className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`od-customer-evidence-${meta.id}`}>
-      {isImg ? (status === "ok" && src ? <img src={src} alt={meta.filename} className="h-full w-full object-cover" /> : <ImageIcon size={14} className="text-[#B5B5BC]" />) : <FileText size={14} className="text-[#6B6B73]" />}
-    </a>
   );
 }

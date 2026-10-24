@@ -1163,7 +1163,7 @@ async def upload_attachment(
 
 
 @router.get("/sales-returns/{return_id}/attachments/{att_id}/download")
-async def download_attachment(return_id: str, att_id: str, request: Request):
+async def download_attachment(return_id: str, att_id: str, request: Request, download: bool = False):
     # Keputusan owner 2026-10-21 — Gudang/QC (operator F-11-layar) boleh mengunduh FOTO/VIDEO bukti keluhan
     # selama retur di tahap kerja mereka; pagar badan usaha sama dengan detail retur.
     _user, operator = await opv.reader(request)
@@ -1181,11 +1181,15 @@ async def download_attachment(return_id: str, att_id: str, request: Request):
     if operator:
         opv.assert_operator_download(att)
     from fastapi.responses import Response
-    data, _ = await storage.get_object(att["path"])
+    try:
+        data, _ = await storage.get_object(att["path"])
+    except FileNotFoundError as exc:   # UAT 24 Okt (P17) — berkas hilang dari penyimpanan: 404 jelas, bukan 500
+        raise HTTPException(status_code=404, detail="Berkas lampiran tidak ditemukan di penyimpanan.") from exc
+    from services.return_attachment_service import disposition
     return Response(
         content=data,
         media_type=att.get("content_type", "application/octet-stream"),
-        headers={"Content-Disposition": f'attachment; filename="{att["filename"]}"'}
+        headers={"Content-Disposition": disposition(att, download)}   # UAT 24 Okt (P17.2) — foto/video inline
     )
 
 

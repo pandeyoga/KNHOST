@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import AttachmentGallery from "../../components/AttachmentThumb";
 import {
   ShieldCheck, CreditCard, Tag, CheckCircle2, XCircle, Paperclip,
   Plus, Send, AlertTriangle, Loader2, FileCheck2,
@@ -43,7 +44,6 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
 
   const pa = order.pending_approvals || [];
   const items = order.items || [];
-  const authToken = () => (axios.defaults.headers.common.Authorization || "").replace("Bearer ", "");
   const canRequest = OPEN_STATES.includes(order.status);
   const hasPendingCredit = pa.some((p) => p.type === "kredit" && p.status === "pending");
   const showCreditCta = canRequest && (order.credit_hold || order.credit_warning) && !hasPendingCredit;
@@ -158,15 +158,12 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
                 </p>
               )}
               {ev.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {ev.map((a) => (
-                    <a key={a.id} data-testid={`so-appr-evidence-link-${a.id}`}
-                      href={`${API}/sales-orders/${order.id}/approvals/${entry.id}/evidence/${a.id}/download?auth=${authToken()}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded bg-[#EEF2FF] px-1.5 py-0.5 text-[9.5px] text-[#3730A3] hover:underline">
-                      <Paperclip size={9} />{a.original_filename}
-                    </a>
-                  ))}
+                <div className="mt-1">
+                  {/* UAT 24 Okt (P17) — bukti dimuat lewat axios (header sesi & badan usaha) dan dibuka di lightbox;
+                      dulu tautan membawa token di URL (`?auth=`) yang terekam di riwayat/log. */}
+                  <AttachmentGallery size={40} showName testId={`so-appr-evidence-${entry.id}`}
+                    items={ev.map((a) => ({ url: `${API}/sales-orders/${order.id}/approvals/${entry.id}/evidence/${a.id}/download`,
+                      filename: a.original_filename, content_type: a.content_type }))} />
                 </div>
               )}
 

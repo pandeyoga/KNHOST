@@ -11,6 +11,7 @@ import { FacetRail, DEFAULT_FACETS } from "../pos/FacetRail";
 import { PosProductCard } from "../pos/PosProductCard";
 import { ReorderStrip } from "../pos/ReorderStrip";
 import { PosBestSellers } from "../pos/PosBestSellers";
+import { PosFeatured, PosRecommended } from "../pos/PosHighlightStrips";   // UAT 24 Okt (P12)
 import CheckoutDrawer from "../pos/CheckoutDrawer";
 import CreateCustomerModal from "../pos/CreateCustomerModal";
 import PosStartGate, { loadPosCtx, savePosCtx } from "../pos/PosStartGate";
@@ -248,9 +249,13 @@ export function SalesPortal({
             </p>
           </div>
 
-          <ReorderStrip customer={selectedCustomer} products={allProducts} onAdd={onAdd} priceMap={specialMap} />
+          <ReorderStrip customer={selectedCustomer} products={allProducts} onAdd={onAdd} priceMap={specialMap} entityId={selectedEntity} />
 
-          <PosBestSellers entityId={selectedEntity} onAdd={onAdd} priceMap={specialMap} />
+          <PosRecommended entityId={selectedEntity} customer={selectedCustomer} onAdd={onAdd} priceMap={specialMap} />
+
+          <PosFeatured entityId={selectedEntity} customerId={selectedCustomer?.id || ""} onAdd={onAdd} priceMap={specialMap} />
+
+          <PosBestSellers entityId={selectedEntity} onAdd={onAdd} priceMap={specialMap} customerId={selectedCustomer?.id || ""} />
 
           <div data-testid="product-grid" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {loading && <div className="col-span-full animate-pulse py-10 text-center text-[13px] text-[#6B6B73]">Memuat katalog produk…</div>}

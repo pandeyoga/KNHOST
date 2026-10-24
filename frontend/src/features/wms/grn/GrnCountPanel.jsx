@@ -31,7 +31,7 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const showLen = sisa || unitChoices.length > 0;
   const cols = 4 + (showLen ? 1 : 0) + (!sisa && unitChoices.length > 1 ? 1 : 0);
   return (
-    <div data-testid={`grn-count-line-${ln.line_no}`} className="space-y-2 rounded-xl border border-[#EFF0F2] p-3">
+    <div data-testid={`grn-count-line-${ln.line_no}`} className="space-y-2 rounded-xl border border-[#EFF0F2] bg-white p-3">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[12px] font-bold">{ln.line_no}. {t.product_name || ln.read?.description}{sisa && <span data-testid={`grn-count-byproduct-${ln.line_no}`} className="ml-1.5 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">Barang sisa</span>}</p>
@@ -54,16 +54,23 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
             <button data-testid={`grn-count-scan-btn-${ln.line_no}`} className="primary-button" onClick={scan}><ScanLine size={13} /></button>
           </div>
         )}
-        <div className={`grid gap-2 ${{ 4: "grid-cols-4", 5: "grid-cols-5", 6: "grid-cols-6" }[cols]}`}>
-          {showLen && <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${lenUnit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} />}
+        {/* UAT 24 Okt (P16.1) — isian berlabel; HP 2 kolom, tablet 3, desktop sesuai jumlah isian (dulu 4–6 kolom
+            tanpa breakpoint → ±50px per kolom di HP, placeholder terpotong). */}
+        <div className={`grid grid-cols-2 items-end gap-2 sm:grid-cols-3 ${{ 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[cols]}`}>
+          {showLen && <label><span className="field-label">{sisa ? "Qty sisa" : `Panjang (${lenUnit})`}</span>
+            <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "mis. kg" : "0"} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} /></label>}
           {!sisa && unitChoices.length > 1 && (
-            <KNSelect data-testid={`grn-count-unit-${ln.line_no}`} value={lenUnit} onValueChange={setLenUnit} searchable={false}
-              options={unitChoices.map((u) => ({ value: u, label: u === t.unit ? `${u} (SJ/PO)` : `${u} (stok)` }))} />
+            <label><span className="field-label">Satuan panjang</span>
+              <KNSelect data-testid={`grn-count-unit-${ln.line_no}`} value={lenUnit} onValueChange={setLenUnit} searchable={false}
+                options={unitChoices.map((u) => ({ value: u, label: u === t.unit ? `${u} (SJ/PO)` : `${u} (stok)` }))} /></label>
           )}
-          <input data-testid={`grn-count-kg-${ln.line_no}`} type="number" className={inputCls} placeholder="Kg" value={m.weight_kg} onChange={(e) => setM({ ...m, weight_kg: e.target.value })} />
-          <input data-testid={`grn-count-lot-${ln.line_no}`} className={inputCls} placeholder={sisa ? "Lot (opsional)" : "Lot"} value={m.lot} onChange={(e) => setM({ ...m, lot: e.target.value })} />
-          <KNSelect data-testid={`grn-count-grade-${ln.line_no}`} value={m.grade} onValueChange={(v) => setM({ ...m, grade: v })} options={gradeOptions} searchable={false} />
-          <button data-testid={`grn-count-add-${ln.line_no}`} className="secondary-button justify-center" onClick={add}><Plus size={13} /> {seq ? `Ukur roll #${seq}` : "Roll manual"}</button>
+          <label><span className="field-label">Berat (kg)</span>
+            <input data-testid={`grn-count-kg-${ln.line_no}`} type="number" className={inputCls} placeholder="0" value={m.weight_kg} onChange={(e) => setM({ ...m, weight_kg: e.target.value })} /></label>
+          <label><span className="field-label">{sisa ? "Lot (opsional)" : "Lot"}</span>
+            <input data-testid={`grn-count-lot-${ln.line_no}`} className={inputCls} value={m.lot} onChange={(e) => setM({ ...m, lot: e.target.value })} /></label>
+          <label><span className="field-label">Grade</span>
+            <KNSelect data-testid={`grn-count-grade-${ln.line_no}`} value={m.grade} onValueChange={(v) => setM({ ...m, grade: v })} options={gradeOptions} searchable={false} /></label>
+          <button data-testid={`grn-count-add-${ln.line_no}`} className="secondary-button col-span-2 justify-center sm:col-span-1" onClick={add}><Plus size={13} /> {seq ? `Ukur roll #${seq}` : "Roll manual"}</button>
         </div>
       </>)}
       <ul className="divide-y divide-[#EFF0F2] text-[11px]">

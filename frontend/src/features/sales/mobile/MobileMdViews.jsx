@@ -8,6 +8,7 @@
  *  - MobilePoWatch           : pantau PO (hanya-lihat).
  * Endpoint & wewenang sama dengan layar desktop (RoleDesk, DesignRequests, RnD, Katalog, PR).
  */
+import AttachmentGallery from "../../../components/AttachmentThumb";
 import ProductColorTriad from "../../../components/ProductColorTriad";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Plus, RefreshCw, Search, Trash2, Palette, FlaskConical, FileStack } from "lucide-react";
@@ -331,7 +332,9 @@ function SampleDetail({ id, reasons, onBack }) {
             <p className="text-[10.5px] m-muted">Kirim {fmtDate(r.sent_at)}{r.received_at ? ` · diterima ${fmtDate(r.received_at)}` : ""}{r.due_date ? ` · tenggat ${fmtDate(r.due_date)}` : ""}{r.score != null ? ` · skor ${r.score}` : ""}{r.cost ? ` · ${formatCurrency(r.cost)}` : ""}</p>
             {r.measurements && Object.keys(r.measurements).length > 0 && <p className="text-[10.5px]">{Object.entries(r.measurements).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`).join(" · ")}</p>}
             {r.note && <p className="text-[11px]">{r.note}</p>}
-            {(r.attachments || []).length > 0 && <p className="text-[10.5px] m-muted">{r.attachments.length} lampiran foto</p>}
+            {/* UAT 24 Okt (P17) — foto bukti putaran tampil & bisa dibuka di HP (dulu hanya "N lampiran foto"). */}
+            {(r.attachments || []).length > 0 && <div className="mt-1"><AttachmentGallery size={44} testId={`m-smp-proof-${r.id}`}
+              items={r.attachments.map((a) => ({ url: `${API}/rnd/samples/${s.id}/rounds/${r.id}/attachments/${a.id}`, filename: a.filename, content_type: a.content_type }))} /></div>}
             {canAssess && (assess === r.id ? <RoundAssess sample={s} round={r} onDone={done} /> :
               <button className="secondary-button mt-2 w-full py-2 text-[12px]" onClick={() => setAssess(r.id)} data-testid={`m-smp-assess-open-${r.id}`}>Nilai putaran ini</button>)}
           </div>

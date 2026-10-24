@@ -122,8 +122,8 @@ export default function GrnReviewPanel({ grn, onChange, canReview }) {
           <div className="space-y-2 md:hidden" data-testid="grn-lines-cards">
             {(grn.lines || []).map((ln) => <GrnLineCard key={ln.line_no} grn={grn} ln={ln} targets={targets} gradeOptions={gradeOptions} run={run} />)}
           </div>
-          <div className="hidden overflow-x-auto rounded-xl border border-[#EFF0F2] md:block">
-            <table className="w-full text-left" data-testid="grn-lines-table">
+          <div className="table-container hidden overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white md:block">
+            <table className="data-table text-left !text-[11.5px]" data-testid="grn-lines-table">
               <thead className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
                 <tr>{["No", "Kode", "Deskripsi", "PO", "Tertulis", "Qty", "Satuan", "Roll", "Kg", "Grade", "Lot", "Target", "Status", ""].map((h) => <th key={h} className="px-2 py-1.5">{h}</th>)}</tr>
               </thead>

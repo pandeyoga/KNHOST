@@ -38,6 +38,8 @@ export const PAGE_META = {
   // FASE E-7 (E7d) — permintaan barang antar badan usaha. Tanpa baris ini judul layar
   // jatuh ke cadangan "Kain Nusantara" / kicker "Workspace" (pengguna kehilangan konteks).
   "internal-requests":    { kicker: "Antar Entitas",  title: "Permintaan Internal (PIN)" },
+  "keep-pending":         { kicker: "Penjualan",      title: "Keep & Pending · pesanan menunggu" },
+  "repair-orders":        { kicker: "Gudang",         title: "Perbaikan · repair, celup ulang, finishing ulang" },
   // FASE D — papan pekerjaan desain (CHECK 5 `check_nav_map`: setiap layar wajib berjudul).
   "design-requests":      { kicker: "Desain",         title: "Permintaan Desain (DSR)" },
   "marketing-hub":        { kicker: "Marketing",      title: "Marketing & Sosial Media" },

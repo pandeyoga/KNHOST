@@ -219,6 +219,7 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     # makloon / retur). `needs_parent=True` + `source_fk=["ref_doc_id"]` supaya
     # INV-REF-01 menuntut tautannya, tetapi hanya untuk dokumen yang memang punya
     # sumber (inspeksi berdiri sendiri tidak dituduh yatim).
+    _T("repair_order", "repair_orders", "number", "Perbaikan / Celup Ulang", "repair-orders", order=27),   # UAT 24 Okt (P7)
     _T("inspection", "inspections", "number", "Inspeksi & QC", "inspections",
        order=26, needs_parent=True, source_fk=["ref_doc_id"]),
     # Ujung rantai akuntansi — jurnal otomatis tiap dokumen (tautan diturunkan dari source_id).
@@ -335,6 +336,17 @@ def _date_of(doc: Dict[str, Any]) -> str:
     return ""
 
 
+# UAT 24 Okt (P16.2) — jenis jejak → jenis PDF di `pdf_resolvers.DOC_REGISTRY` (nama sama kecuali di sini).
+# Kosong = jenis ini belum bisa dicetak; kartu jejak menulis "belum bisa dicetak".
+_PDF_OF = {"makloon_order": "makloon_spk", "warehouse_transfer": "transfer", "inspection": "inspection_spk"}
+
+
+def pdf_type_of(doc_type: str) -> str:
+    from services.pdf_resolvers import DOC_REGISTRY
+    t = _PDF_OF.get(doc_type, doc_type)
+    return t if t in DOC_REGISTRY else ""
+
+
 def node_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
     meta = DOC_TYPES.get(doc_type, {})
     return {
@@ -350,6 +362,7 @@ def node_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
         "link": {"view": meta.get("view", ""), "focus_type": meta.get("focus_type", doc_type),
                  "focus_id": doc.get("id")},
         "order": meta.get("order", 50),
+        "pdf_doc_type": pdf_type_of(doc_type),
     }
 
 

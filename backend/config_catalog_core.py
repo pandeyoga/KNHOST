@@ -830,6 +830,28 @@ E("ui.coming_soon_collapsed", group="tampilan", type="bool", default=True,
   example="Aktif → grup tampil terlipat, hemat ruang layar",
   consumers=("config/navigationConfig.js:buildNavGroups",), risk="low")
 
+# UAT 24 Okt (P12) — sorotan POS / katalog HP bisa dinyalakan & dimatikan per PT.
+for _k, _label, _help in (
+    ("best_sellers", "Strip 'Produk Terlaris'", "Produk paling sering dipesan dalam jendela waktu di bawah."),
+    ("reorder", "Strip 'Sering dibeli pelanggan ini'", "Muncul saat pelanggan dipilih: barang yang pernah ia beli."),
+    ("fbt", "Saran 'Sering dibeli bersama'", "Di keranjang: barang yang sering muncul di pesanan yang sama."),
+    ("featured", "Strip 'Produk Unggulan'", "Produk yang ditandai MD/Manajer (push) sampai tanggal akhirnya."),
+    ("recommendation", "Strip 'Rekomendasi untuk pelanggan'",
+     "Muncul saat pelanggan dipilih: produk berstok dengan desain/pattern/kategori yang sama dengan pembeliannya."),
+):
+    E(f"pos.{_k}.enabled", group="tampilan", type="bool", default=True, scopes=("global", "entity"),
+      label=f"POS: {_label}", help=_help,
+      impact="Bila mati, strip/saran ini hilang di POS desktop & katalog HP tanpa deploy.",
+      example="Mati → kasir hanya melihat katalog biasa",
+      consumers=("routers/pos.py", "services/pos_recommendation_service.py:highlights_config"), risk="low")
+E("pos.best_sellers.window_days", group="tampilan", type="int", default=90, min=7, max=730, step=1, unit="hari",
+  scopes=("global", "entity"),
+  label="POS: jendela waktu 'Produk Terlaris'",
+  help="Hanya pesanan dalam N hari terakhir yang dihitung (dulu seluruh riwayat).",
+  impact="Mengubah urutan strip Produk Terlaris.",
+  example="30 → terlaris bulan ini",
+  consumers=("services/pos_recommendation_service.py:best_sellers",), risk="low")
+
 for _role, _default_view, _label in (
     ("admin", "admin", "Admin"),
     ("manager", "reports", "Manager"),

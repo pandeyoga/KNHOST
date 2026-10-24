@@ -3,6 +3,7 @@ import { Search, ShoppingCart, PackageX, MapPin } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { MobileProductCard } from "../../pos/mobile/MobileProductCard";
 import { PosBestSellers } from "../../pos/PosBestSellers";
+import { PosFeatured, PosRecommended } from "../../pos/PosHighlightStrips";   // UAT 24 Okt (P12)
 import { designSearchText, groupByTemplate, visibleToCustomer } from "../../../utils/variants";
 import MobileQuickView from "./MobileQuickView";
 import { formatCurrency } from "../../../utils/formatters";
@@ -87,7 +88,9 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
       </div>
 
       <div className="px-3 pt-3" style={{ paddingBottom: cartCount > 0 ? "104px" : "16px" }}>
-        {!loading && <PosBestSellers entityId={entityId} onAdd={onAdd} />}
+        {!loading && <PosRecommended entityId={entityId} customer={selectedCustomer} onAdd={onAdd} priceMap={priceMap} />}
+        {!loading && <PosFeatured entityId={entityId} customerId={selectedCustomer?.id || ""} onAdd={onAdd} priceMap={priceMap} />}
+        {!loading && <PosBestSellers entityId={entityId} onAdd={onAdd} customerId={selectedCustomer?.id || ""} />}
         {loading ? (
           <div className="grid grid-cols-2 gap-2.5">
             {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-xl bg-[#ECEDF0]" />)}

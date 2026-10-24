@@ -3,7 +3,8 @@
  * kotak progres ronde + linimasa vertikal: judul ronde → tanggal (dikirim · tenggat · diterima)
  * → bukti (foto) → catatan hasil supplier → keputusan penilai (ACC / revisi / tolak + skor + catatan + tanggal).
  */
-import { useEffect } from "react";
+import MediaLightbox from "../../components/MediaLightbox";   // UAT 24 Okt (P17) — pratinjau di halaman
+import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, FileText, Paperclip, Plus, RotateCcw, Send, Upload, XCircle } from "lucide-react";
 import { RoundBoxes, revisionLabel, sampleRoundResult } from "../../components/RevisionProgress";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
@@ -119,6 +120,7 @@ function RoundBlock({ r, sample, measurements, decided, highlight, canSubmit, ca
   const dot = { acc: "bg-[#1A7A3A]", revision: "bg-[#C62828]", rejected: "bg-[#8E1B1B]", review: "bg-[#0058CC]", draft: "bg-[#8E8E93]" }[state];
   const meas = Object.entries(r.measurements || {}).filter(([, v]) => v !== null && v !== undefined && v !== "");
   const atts = r.attachments || [];
+  const [view, setView] = useState(-1);
   return (
     <li className={`relative ${highlight ? "rounded-lg bg-[#FFF8EE] p-2 ring-1 ring-inset ring-[#F5C26B]" : ""}`} data-testid={`round-row-${r.id}`} data-highlight={highlight ? "true" : undefined}>
       <span className={`absolute -left-[27px] top-1 h-3.5 w-3.5 rounded-full ring-4 ring-white ${dot}`} style={highlight ? { left: "-35px" } : undefined} />
@@ -144,15 +146,17 @@ function RoundBlock({ r, sample, measurements, decided, highlight, canSubmit, ca
           </p>
         ) : (
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {atts.map((a) => (
-              <a key={a.id} href={roundProofUrl(sample.id, r.id, a.id)} target="_blank" rel="noreferrer" title={a.filename} data-testid={`round-file-${a.id}`}
-                className="block overflow-hidden rounded-lg border border-[#E5E5EA] bg-white">
+            {atts.map((a, i) => (
+              <button type="button" key={a.id} onClick={() => setView(i)} title={a.filename} data-testid={`round-file-${a.id}`}
+                className="block overflow-hidden rounded-lg border border-[#E5E5EA] bg-white text-left hover:border-[#0058CC]">
                 <ProofImage url={roundProofUrl(sample.id, r.id, a.id)} attachment={a} alt={a.filename} className="aspect-square w-full" />
                 <p className="truncate px-1.5 py-1 text-[9.5px] font-semibold">{a.filename}</p>
-              </a>
+              </button>
             ))}
           </div>
         )}
+        {view >= 0 && <MediaLightbox items={atts.map((a) => ({ url: roundProofUrl(sample.id, r.id, a.id), filename: a.filename, content_type: a.content_type }))}
+          index={view} onClose={() => setView(-1)} testId={`round-lightbox-${r.id}`} />}
         {(r.note || meas.length > 0 || Number(r.cost) > 0) && (
           <div className="mt-2 border-t border-[#EFF0F2] pt-2 text-[11px] text-[#3C3C43]" data-testid={`round-meas-${r.id}`}>
             {r.note && <p className="flex gap-1.5"><FileText size={12} className="mt-0.5 shrink-0 text-[#6B6B73]" /><span><b>Catatan hasil:</b> “{r.note}”{r.performed_by ? ` — dikerjakan ${r.performed_by}` : ""}{r.recorded_by && r.recorded_by !== r.performed_by ? ` · dicatat ${r.recorded_by}` : ""}</span></p>}

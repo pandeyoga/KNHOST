@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import MediaLightbox from "../../components/MediaLightbox";
 import axios, { API } from "../../services/apiClient";
 import { BadgePercent, RefreshCw, Search, Plus } from "lucide-react";
 import { PriceApprovalForm } from "./priceApprovals/PriceApprovalForm";
@@ -214,15 +215,14 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
     }
   };
 
-  const viewAttachment = async (id, att) => {
-    try {
-      const res = await axios.get(`${API}/price-approvals/${id}/attachments/${att.id}/download`, { responseType: "blob" });
-      const url = URL.createObjectURL(res.data);
-      window.open(url, "_blank", "noopener");
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (e) {
-      setError("Gagal membuka lampiran.");
-    }
+  // UAT 24 Okt (P17) — lampiran dibuka di lightbox halaman yang sama (dulu blob di tab baru, tanpa thumbnail).
+  const [viewer, setViewer] = useState(null);
+  const viewAttachment = (id, att) => {
+    const rec = rows.find((x) => x.id === id) || {};
+    const list = (rec.attachments || []).filter((a) => !a.is_deleted);
+    setViewer({ index: Math.max(0, list.findIndex((a) => a.id === att.id)),
+      items: list.map((a) => ({ url: `${API}/price-approvals/${id}/attachments/${a.id}/download`, filename: a.original_filename,
+        content_type: a.content_type })) });
   };
 
   const deleteAttachment = async (id, attId) => {
@@ -386,6 +386,7 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
           />
         ))}
       </section>
+      {viewer && <MediaLightbox items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} testId="price-approvals-lightbox" />}
     </div>
   );
 }

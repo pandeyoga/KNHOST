@@ -2,6 +2,7 @@ import {
   Paperclip, Trash2, Eye, Clock3, Check, X, Send, Pencil, Loader2, CheckCircle2, XCircle,
   Repeat, ShieldAlert, Tag, Ban,
 } from "lucide-react";
+import { AttachmentThumb } from "../../../components/AttachmentThumb";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 
 const STATUS_META = {
@@ -109,7 +110,9 @@ export function PriceApprovalCard({
             <div className="mt-1 flex flex-wrap gap-2">
               {attachments.map((att) => (
                 <span key={att.id} data-testid={`price-approvals-att-${att.id}`} className="flex items-center gap-1 rounded-md border border-[#E5E5EA] bg-white px-2 py-1 text-[10.5px] text-[#3C3C43]">
-                  <Paperclip size={11} className="text-[#6B219A]" />
+                  <AttachmentThumb size={28} item={{ url: `${API}/price-approvals/${r.id}/attachments/${att.id}/download`,
+                    filename: att.original_filename, content_type: att.content_type }} onOpen={() => onViewAttachment(r.id, att)}
+                    testId={`price-approvals-att-thumb-${att.id}`} />
                   <button className="max-w-[140px] truncate hover:underline" onClick={() => onViewAttachment(r.id, att)} data-testid={`price-approvals-att-view-${att.id}`}>
                     {att.original_filename}
                   </button>

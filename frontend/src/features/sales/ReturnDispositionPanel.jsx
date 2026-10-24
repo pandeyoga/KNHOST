@@ -1,3 +1,5 @@
+import { AttachmentThumb } from "../../components/AttachmentThumb";
+import MediaLightbox from "../../components/MediaLightbox";
 import { useCallback, useEffect, useState } from "react";
 import { GitBranch, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -46,6 +48,7 @@ export function DispositionRow({ r, checked, onToggle }) {
 export function DispositionActionBar({ returnId, imgs, stage, sel, rows, onDone, onPhoto }) {
   const [reason, setReason] = useState("");
   const [photos, setPhotos] = useState([]);
+  const [view, setView] = useState(-1);   // UAT 24 Okt (P17) — pratinjau foto sebelum dipilih
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const expired = rows.some((r) => sel.includes(r.roll_id) && r.supplier_window_expired);
@@ -96,8 +99,10 @@ export function DispositionActionBar({ returnId, imgs, stage, sel, rows, onDone,
           <ReturnCameraButton returnId={returnId} uploadUrl={`${API}/sales-returns/${returnId}/disposition/photos`} testId="disposition-camera"
             onUploaded={(att) => { setPhotos((p) => [...p, att.id]); onPhoto?.(); }} />
           {!imgs.length && <span className="text-[#8E8E93]">belum ada foto di lampiran</span>}
-          {imgs.map((a) => <label key={a.id} className="inline-flex items-center gap-1"><input type="checkbox" data-testid={`disposition-photo-${a.id}`}
-            checked={photos.includes(a.id)} onChange={() => setPhotos((p) => (p.includes(a.id) ? p.filter((x) => x !== a.id) : [...p, a.id]))} />{a.filename}</label>)}
+          {imgs.map((a, i) => <label key={a.id} className="inline-flex items-center gap-1"><input type="checkbox" data-testid={`disposition-photo-${a.id}`}
+            checked={photos.includes(a.id)} onChange={() => setPhotos((p) => (p.includes(a.id) ? p.filter((x) => x !== a.id) : [...p, a.id]))} />
+            {a.url && <AttachmentThumb item={a} size={30} onOpen={(e) => { e.preventDefault(); setView(i); }} testId={`disposition-thumb-${a.id}`} />}{a.filename}</label>)}
+          {view >= 0 && <MediaLightbox items={imgs} index={view} onClose={() => setView(-1)} testId="disposition-lightbox" />}
         </div>
       )}
       {expired && <p className="text-[11px] text-[#C62828]" data-testid="disposition-expired-note">Masa retur supplier sudah lewat — hanya bisa disimpan sebagai stok.</p>}
@@ -117,7 +122,8 @@ export default function ReturnDispositionPanel({ ret, canApprove, onChanged }) {
   const rows = data?.rows || [];
   if (!rows.some((r) => r.stage !== "no_internal_origin")) return null;
   const selStage = rows.find((r) => r.roll_id === sel[0])?.stage;
-  const imgs = [...(ret.attachments || []), ...(ret.disposition_photos || [])]
+  const imgs = [...(ret.attachments || []).map((a) => ({ ...a, url: `${API}/sales-returns/${ret.id}/attachments/${a.id}/download` })),
+    ...(ret.disposition_photos || []).map((a) => ({ ...a, url: `${API}/sales-returns/${ret.id}/disposition/photos/${a.id}` }))]
     .filter((a) => !a.is_deleted && (a.content_type || "").startsWith("image/"));
   const toggle = (r) => setSel((s) => (s.includes(r.roll_id) ? s.filter((x) => x !== r.roll_id)
     : (selStage && selStage !== r.stage ? [r.roll_id] : [...s, r.roll_id])));

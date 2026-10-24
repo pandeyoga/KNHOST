@@ -1,9 +1,10 @@
 /** PostDetailModal — rincian konten: status & aksi alur, lampiran, performa, riwayat. */
 import { useEffect, useState } from "react";
-import { Copy, FileText, Image as ImageIcon, LayoutTemplate, Loader2, Megaphone, Pencil, Trash2, Upload, X } from "lucide-react";
+import { Copy, LayoutTemplate, Loader2, Megaphone, Pencil, Trash2, Upload, X } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import { askReason, askConfirm, askText } from "@/services/confirmService";
-import { useProofBlob } from "../rnd/ProofImage";
+import { AttachmentThumb } from "../../components/AttachmentThumb";   // UAT 24 Okt (P17)
+import MediaLightbox from "../../components/MediaLightbox";
 import PostFormModal from "./PostFormModal";
 import DuplicatePostModal from "./DuplicatePostModal";
 import { mktApi, NEXT_ACTIONS, PlatformChip, StatusPill, METRIC_LABEL, fmtN, fmtWhen } from "./marketingShared";
@@ -18,6 +19,7 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
   const [err, setErr] = useState("");
   const [url, setUrl] = useState("");
   const [metrics, setMetrics] = useState({});
+  const [attView, setAttView] = useState(-1);
   const role = currentUser?.role;
   // Sisir lanjutan gerbang peran (2026-10-21): ubah/transisi/lampiran/metrik = marketing.update; hapus = marketing.delete;
   // menyetujui = marketing.update + peran penyetuju server (APPROVE_ROLES, peran acuan dikenali).
@@ -107,7 +109,9 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
               {canEdit && <label className="secondary-button cursor-pointer !py-0.5 text-[10.5px]" data-testid="mkt-upload-label"><Upload size={11} /> Unggah gambar/video<input type="file" multiple accept="image/*,video/*,.pdf" className="hidden" data-testid="mkt-upload" onChange={(e) => { const fs = Array.from(e.target.files || []); if (fs.length) upload(fs); e.target.value = ""; }} /></label>}
             </div>
             <div className="flex flex-wrap gap-1.5" data-testid="mkt-attachments">
-              {(post.attachments || []).map((f) => <Thumb key={f.id} meta={f} url={mktApi.attachmentUrl(post.id, f.id)} onRemove={canEdit && post.status !== "published" ? async () => setPost(await mktApi.removeAttachment(post.id, f.id)) : null} />)}
+              {(post.attachments || []).map((f, i) => <Thumb key={f.id} meta={f} url={mktApi.attachmentUrl(post.id, f.id)} onOpen={() => setAttView(i)} onRemove={canEdit && post.status !== "published" ? async () => setPost(await mktApi.removeAttachment(post.id, f.id)) : null} />)}
+              {attView >= 0 && <MediaLightbox items={(post.attachments || []).map((f) => ({ url: mktApi.attachmentUrl(post.id, f.id), filename: f.filename, content_type: f.content_type }))}
+                index={attView} onClose={() => setAttView(-1)} testId="mkt-attachment-lightbox" />}
               {!post.attachments?.length && <p className="text-[11px] text-[#9A9BA3]">belum ada materi</p>}
             </div>
           </section>
@@ -141,14 +145,11 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
   );
 }
 
-function Thumb({ meta, url, onRemove }) {
-  const isImg = meta.content_type?.startsWith("image/");
-  const { src, status } = useProofBlob(url, isImg);
+function Thumb({ meta, url, onRemove, onOpen }) {
   return (
-    <div className="relative h-20 w-20 overflow-hidden rounded-md border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`mkt-attachment-${meta.id}`} title={meta.filename}>
-      <a href={url} target="_blank" rel="noreferrer" className="flex h-full w-full items-center justify-center">
-        {isImg ? (status === "ok" && src ? <img src={src} alt={meta.filename} className="h-full w-full object-cover" /> : <ImageIcon size={16} className="text-[#B5B5BC]" />) : <FileText size={16} className="text-[#6B6B73]" />}
-      </a>
+    <div className="relative h-20 w-20" data-testid={`mkt-attachment-${meta.id}`} title={meta.filename}>
+      {/* UAT 24 Okt (P17) — klik membuka lightbox di halaman ini (dulu URL mentah di tab baru). */}
+      <AttachmentThumb item={{ url, filename: meta.filename, content_type: meta.content_type }} size={80} onOpen={onOpen} />
       {onRemove && <button type="button" onClick={onRemove} className="absolute right-0.5 top-0.5 rounded-full bg-white/90 p-0.5 shadow" data-testid={`mkt-attachment-remove-${meta.id}`}><X size={10} /></button>}
     </div>
   );

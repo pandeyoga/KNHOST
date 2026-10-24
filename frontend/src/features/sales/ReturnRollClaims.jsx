@@ -3,6 +3,7 @@
  *  dipotong dan yang masih utuh, sehingga pemutus bisa menolak roll tertentu saja.
  *  Dipakai form retur pelanggan desktop & HP (CreateReturnForm), retur ke supplier (PurchaseReturns) dan
  *  retur antar-PT (IntercoReturnModal) — satu bentuk isian untuk ketiga jenis retur. */
+import { useEffect, useState } from "react";
 import { Camera, Paperclip, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { formatQty } from "../../utils/formatters";
@@ -12,6 +13,18 @@ export const CONDITION_OPTIONS = [{ value: "ok", label: "Baik" }, { value: "dama
 
 export const emptyClaim = (roll) => ({ qty: String(roll.remaining), condition: "ok", reason: "", hangtag_missing: false,
   cut_by_customer: false, files: [] });
+
+/** UAT 24 Okt (P17) — pratinjau kecil berkas lokal sebelum diunggah (foto: gambar; lainnya ikon). */
+function LocalThumb({ file }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    if (!file || !String(file.type || "").startsWith("image/")) return undefined;
+    const u = URL.createObjectURL(file);
+    setSrc(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  return src ? <img src={src} alt={file.name || "foto"} className="h-5 w-5 rounded object-cover" /> : <Paperclip size={10} />;
+}
 
 /** Pemilih foto: kamera HP langsung (capture) + pilih berkas; foto ditambahkan ke daftar, bukan menimpa. */
 export function PhotoPicker({ files = [], onChange, testId, compact = false }) {
@@ -30,7 +43,7 @@ export function PhotoPicker({ files = [], onChange, testId, compact = false }) {
       </label>
       {files.map((f, i) => (
         <span key={`${f.name}-${i}`} className="inline-flex items-center gap-1 rounded-full border border-[#E1E4EA] bg-white px-2 py-0.5 text-[10.5px]">
-          <Paperclip size={10} />{f.name || `foto-${i + 1}.jpg`}
+          <LocalThumb file={f} />{f.name || `foto-${i + 1}.jpg`}
           <button type="button" aria-label="Hapus foto" data-testid={`${testId}-remove-${i}`} className="text-[#A8221A]"
             onClick={() => onChange(files.filter((_, j) => j !== i))}><X size={10} /></button>
         </span>

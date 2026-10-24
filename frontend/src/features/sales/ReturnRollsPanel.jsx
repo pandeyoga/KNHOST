@@ -3,6 +3,7 @@
  *  modul retur itu (dapat diatur di matriks akses). Roll ditolak keluar dari retur (scan, QC, nilai uang).
  *  Satu panel untuk retur pelanggan, retur ke supplier & retur antar-PT: pemanggil memetakan barisnya ke bentuk
  *  retur pelanggan (`quantity_returned`, `unit_price_est`, `line_total_est`, `roll_nos`) dan memberi URL-nya. */
+import AttachmentGallery from "../../components/AttachmentThumb";
 import { useMemo, useState } from "react";
 import { Check, Loader2, Package, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -29,11 +30,9 @@ function RollInfoCells({ d, cond, reason, photos, href }) {
         {!d.hangtag_missing && !d.cut_by_customer && <span className="text-[11px] text-[#9A9BA3]">—</span>}
       </td>
       <td className="text-[11px]">
-        {photos.length
-          ? photos.map((a, k) => (
-            <a key={a.id} href={href(a)} target="_blank" rel="noreferrer"
-              className="mr-1 font-semibold text-[#0058CC] underline">Foto {k + 1}</a>))
-          : <span className="text-[#9A9BA3]">—</span>}
+        {/* UAT 24 Okt (P17) — thumbnail + lightbox di halaman yang sama (dulu tautan "Foto 1" → unduhan). */}
+        <AttachmentGallery items={photos.map((a) => ({ url: href(a), filename: a.filename, content_type: a.content_type }))}
+          size={32} testId={`roll-photo-${d.roll_id || "x"}`} emptyText="—" />
       </td>
     </>
   );

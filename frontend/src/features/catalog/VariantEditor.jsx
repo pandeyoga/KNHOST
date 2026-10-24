@@ -5,9 +5,13 @@ import KNSelect from "../../components/KNSelect";
 import DecimalInput from "../../components/DecimalInput";
 import { CatalogDialog } from "./CatalogDialog";
 import { catalogApi, catalogError } from "./catalogApi";
+import axios, { API } from "../../services/apiClient";
 export const VariantEditor = ({ product, template, onClose, onSaved }) => {
   const [f, setF] = useState({ name: product?.name || template.name, sku: product?.sku || "", price: product?.price ?? template.base_price ?? 0, description: product?.description || template.description || "", status: product?.status || "active", source_name: product?.source_name || "", source_color: product?.source_color || "" });
   const [options, setOptions] = useState(product?.variant_options || {});
+  // UAT 24 Okt (P12.3) — produk unggulan (push) di POS & katalog HP, diatur MD/Manajer per SKU.
+  const feat0 = { on: !!product?.is_featured, rank: product?.featured_rank ?? "", until: product?.featured_until || "", note: product?.featured_note || "" };
+  const [feat, setFeat] = useState(feat0);
   const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const save = async e => {
@@ -15,7 +19,11 @@ export const VariantEditor = ({ product, template, onClose, onSaved }) => {
     try {
       let body = { ...f };
       if (!product?.id) body = { ...body, template_id: template.id, variant_options: options, variant_attrs: {}, fabric_type: template.fabric_type, stage: template.stage, base_unit: template.base_unit, gramasi: template.gramasi, lebar: template.lebar, category: template.category, yarn_count: template.yarn_count || "", yarn_count_system: template.yarn_count_system || "", line_code: template.line_code || "", exclusivity: template.exclusivity || "umum", owner_sales_ids: template.owner_sales_ids || [] };
-      await catalogApi.product(product?.id, body); onSaved();
+      await catalogApi.product(product?.id, body);
+      if (product?.id && JSON.stringify(feat) !== JSON.stringify(feat0)) {
+        await axios.post(`${API}/pos/featured/${product.id}`, { is_featured: feat.on, rank: feat.rank === "" ? null : Number(feat.rank), until: feat.until, note: feat.note });
+      }
+      onSaved();
     } catch (e) { setError(catalogError(e)); } finally { setBusy(false); }
   };
   return <CatalogDialog title={product ? `Ubah SKU · ${product.sku}` : `SKU baru · ${template.name}`} onClose={onClose} busy={busy} testId="variant-editor-dialog"><form onSubmit={save} className="space-y-4">
@@ -30,6 +38,16 @@ export const VariantEditor = ({ product, template, onClose, onSaved }) => {
     {!product && (template.axes || []).map(a => <label className="block text-xs font-semibold" key={a.key}>{a.label}<KNSelect data-testid={`variant-option-${a.key}`} className="field mt-1" value={options[a.key] || ""} options={a.options.map(o => ({ value: o.code, label: o.label }))} onValueChange={v => setOptions(p => ({ ...p, [a.key]: v }))} /></label>)}
     {product && <p data-testid="variant-identity" className="border-l-2 border-blue-200 pl-3 text-sm">{variantLabel(product)}<span className="block text-xs text-gray-500">{product.spec_id ? "Identitas terkait spesifikasi R&D" : "Identitas kombinasi tetap; SKU lain dibuat sebagai kombinasi baru"}</span></p>}
     <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold">Harga jual dasar<DecimalInput data-testid="variant-price" className="field mt-1" value={f.price} min={0} onChange={v => set("price", v)} /></label><label className="text-xs font-semibold">Status<KNSelect data-testid="variant-status" className="field mt-1" value={f.status} options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} onValueChange={v => set("status", v)} /></label></div>
+    {product?.id && (
+      <div className="grid gap-3 rounded-lg border border-[#FDE7C7] bg-[#FFFBF3] p-3 sm:grid-cols-4" data-testid="variant-featured">
+        <label className="flex items-center gap-2 text-xs font-semibold sm:col-span-4"><input type="checkbox" checked={feat.on} onChange={e => setFeat(x => ({ ...x, on: e.target.checked }))} data-testid="variant-featured-on" /> Produk Unggulan di POS &amp; katalog HP (push)</label>
+        {feat.on && (<>
+          <label className="text-xs font-semibold">Urutan<input type="number" min="0" className="field mt-1" value={feat.rank} onChange={e => setFeat(x => ({ ...x, rank: e.target.value }))} data-testid="variant-featured-rank" /></label>
+          <label className="text-xs font-semibold">Tampil sampai<input type="date" className="field mt-1" value={feat.until} onChange={e => setFeat(x => ({ ...x, until: e.target.value }))} data-testid="variant-featured-until" /></label>
+          <label className="text-xs font-semibold sm:col-span-2">Label singkat<input className="field mt-1" maxLength={40} value={feat.note} placeholder="mis. Promo Lebaran" onChange={e => setFeat(x => ({ ...x, note: e.target.value }))} data-testid="variant-featured-note" /></label>
+        </>)}
+      </div>
+    )}
     <label className="block text-xs font-semibold">Deskripsi<textarea data-testid="variant-description" className="field mt-1 min-h-24" value={f.description} onChange={e => set("description", e.target.value)} /></label>
     <footer className="flex justify-end gap-2"><button type="button" data-testid="variant-cancel" className="secondary-button" disabled={busy} onClick={onClose}>Batal</button><button data-testid="variant-save" type="submit" className="primary-button" disabled={busy}><Save size={14} />{busy ? "Menyimpan…" : "Simpan SKU"}</button></footer>
   </form></CatalogDialog>;

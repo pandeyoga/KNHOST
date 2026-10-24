@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Repeat, Plus } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { usePosHighlights } from "./posApi";
 import { formatCurrency } from "../../utils/formatters";
 import { onImageError, productImage } from "../../utils/productImage";
 
 /** EPIC5 — "Sering dibeli customer ini" (reorder cepat). */
-export function ReorderStrip({ customer, products = [], onAdd, priceMap = {} }) {
+export function ReorderStrip({ customer, products = [], onAdd, priceMap = {}, entityId = "" }) {
+  const hl = usePosHighlights(entityId);   // UAT 24 Okt (P12.1) — bisa dimatikan per PT
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +22,7 @@ export function ReorderStrip({ customer, products = [], onAdd, priceMap = {} }) 
     return () => { cancelled = true; };
   }, [customer]);
 
-  if (!customer?.id || (!loading && items.length === 0)) return null;
+  if (!hl.reorder?.enabled || !customer?.id || (!loading && items.length === 0)) return null;
 
   // Gabung dgn data.products untuk ketersediaan terkini.
   const byId = Object.fromEntries(products.map((p) => [p.id, p]));

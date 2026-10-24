@@ -281,6 +281,8 @@ export const ROLE_NAV = {
       // produk & harga
       "penjualan", "products-pricing", "md-products", "product-templates", "md-categories", "color-library", "md-uoms",
       "cs-price-list", "products-pricing", "sales-orders", "orders", "internal-prices",
+      // UAT 24 Okt (P7) — Perbaikan roll (repair / celup ulang) — satu-satunya tab Operasi Gudang untuk MD
+      "wms-operations", "repair-orders",
       // pembelian bahan (PR/RFQ hanya-lihat PO)
       "pembelian", "sourcing", "purchase-requisitions", "rfq", "purchase-orders", "purchasing", "master-pembelian", "suppliers",
       // pantau inspeksi (acuan sample) — menu Kualitas (23 Okt)
@@ -313,7 +315,7 @@ export const ROLE_NAV = {
       "gudang", "wms-operations", "logistics",
       "document-center", "doc-trace",
     ],
-    remove: ["orders", "amendments", "returns", "return-policies", "special-orders", "internal-requests"],
+    remove: ["orders", "amendments", "returns", "return-policies", "special-orders", "internal-requests", "keep-pending"],
   },
   // P05 IMP-16 — MD Quality & QC: layar SPK Inspeksi (QC juga antrean karantina kedatangan).
   // 23 Okt — keduanya bekerja di menu Kualitas (dulu lewat Gudang › Operasi Gudang).

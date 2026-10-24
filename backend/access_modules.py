@@ -18,7 +18,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Pesanan (SO), koreksi, retur, pesanan khusus, dan permintaan internal antar badan usaha.",
      "resources": ["order", "sales_return", "internal_request", "od_fulfillment", "od_pricing"],
      "nav": ["penjualan", "sales", "sales-orders", "orders", "amendments", "returns", "returns-hub",
-             "return-policies", "special-orders", "internal-requests"]},
+             "return-policies", "special-orders", "internal-requests", "keep-pending"]},
     {"id": "sample_order", "group": "Penjualan", "label": "Pesanan Sample",
      "description": "Pesanan sample (SOS) yang terpisah dari pesanan roll biasa.",
      "resources": ["sample_order"], "nav": ["penjualan", "sample-orders"]},
@@ -73,9 +73,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["marketing-hub", "mkt-calendar", "mkt-campaigns", "mkt-analytics", "mkt-accounts"]},
     {"id": "warehouse_ops", "group": "Gudang", "label": "Operasi Gudang (WMS)",
      "description": "Barang masuk/keluar, lokasi rak, data gudang, label, produksi in-house, RFID.",
-     "resources": ["wms", "goods_receipt", "warehouse", "label", "production"],
+     "resources": ["wms", "goods_receipt", "warehouse", "label", "production", "repair_order"],
      # FE-03 — tab Barang Masuk/Keluar & hub RFID ikut modul ini (dulu `rfid` = ID tak dikenal menu).
-     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "wms-cutting",
+     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "wms-cutting", "repair-orders",
              "quality-hub", "qc-inspection",
              "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
@@ -253,6 +253,7 @@ RESOURCE_LABEL = {
     "grade_master": "Master Grade Mutu",
     "od_fulfillment": "Pemenuhan Pesanan Khusus (supplier/makloon)",
     "od_pricing": "Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak)",
+    "repair_order": "Perbaikan / Celup Ulang Roll",
     "data_export": "Pusat Export Data",
 }
 

@@ -5,19 +5,19 @@ import { formatCurrency } from "../../utils/formatters";
 import { onImageError, productImage } from "../../utils/productImage";
 
 /** F-4b — Strip produk terlaris (kurasi otomatis dari histori order). */
-export function PosBestSellers({ entityId, onAdd, priceMap = {} }) {
+export function PosBestSellers({ entityId, onAdd, priceMap = {}, customerId = "" }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let on = true;
     setLoading(true);
-    fetchBestSellers(entityId, 10)
+    fetchBestSellers(entityId, 10, customerId)
       .then((d) => { if (on) setItems(d); })
       .catch(() => { if (on) setItems([]); })
       .finally(() => { if (on) setLoading(false); });
     return () => { on = false; };
-  }, [entityId]);
+  }, [entityId, customerId]);
 
   if (!loading && items.length === 0) return null;
 
@@ -26,7 +26,7 @@ export function PosBestSellers({ entityId, onAdd, priceMap = {} }) {
       <header className="mb-2 flex items-center gap-1.5 px-1">
         <Flame size={15} className="text-[#FF6B35]" />
         <h2 className="text-[13px] font-bold text-[#1C1C1E]">Produk Terlaris</h2>
-        <span className="text-[11px] text-[#8E8E93]">kurasi otomatis</span>
+        <span className="text-[11px] text-[#8E8E93]">kurasi otomatis{items[0]?.window_days ? ` · ${items[0].window_days} hari terakhir` : ""}</span>
       </header>
       <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-1">
         {loading

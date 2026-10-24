@@ -77,6 +77,8 @@ test("Pratinjau editor peran = menu akun nyata", () => {
 test("Peran bawaan tidak mendapat grup baru dari aturan anak; pintu hub tanpa tab hilang", () => {
   expect(menu("sales").keuangan).toBeUndefined();
   expect(menu("sales_admin")["meja-peran"]).toBeUndefined();
-  ["md", "md_quality", "sample_admin"].forEach((r) => expect((menu(r).gudang || {})["wms-operations"]).toBeUndefined());
+  ["md_quality", "sample_admin"].forEach((r) => expect((menu(r).gudang || {})["wms-operations"]).toBeUndefined());
+  // UAT 24 Okt (P7) — MD hanya mendapat tab Perbaikan di Operasi Gudang (repair / celup ulang roll).
+  expect(menu("md").gudang["wms-operations"]).toEqual(["repair-orders"]);
   expect(menu("admin").akuntansi["interco-transactions"]).toBeDefined();
 });

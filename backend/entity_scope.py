@@ -176,6 +176,7 @@ SCOPED_COLLECTIONS = {
     "sales_targets", "sales_incentives",   # L5/L6 — target & insentif sales
     "warehouse_transfers",            # L13/L14 — transfer gudang (antar-entitas: lihat E0.8b)
     "purchase_returns",               # retur beli = dokumen entitas
+    "repair_orders",                  # UAT 24 Okt (P7) — perbaikan / celup ulang roll milik entitas
     "credit_notes",                   # nota kredit = dokumen keuangan entitas
     "budgets", "fin_budget_rules",    # anggaran & aturannya per entitas
     "approval_rules",                 # aturan persetujuan (warisan global→entitas di E-4)

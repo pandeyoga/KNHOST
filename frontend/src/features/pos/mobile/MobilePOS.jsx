@@ -3,6 +3,7 @@ import { Search, ShoppingCart, Smartphone, PackageX } from "lucide-react";
 import { MobileProductCard } from "./MobileProductCard";
 import { MobileCartSheet } from "./MobileCartSheet";
 import { PosBestSellers } from "../PosBestSellers";
+import { PosFeatured } from "../PosHighlightStrips";   // UAT 24 Okt (P12)
 import { PosSubstitutesSheet } from "../PosSubstitutesSheet";
 import { formatCurrency } from "../../../utils/formatters";
 
@@ -80,6 +81,7 @@ export function MobilePOS({
 
         {/* Catalog grid */}
         <div className="px-4 pb-28">
+          {!loading && <PosFeatured entityId={entityId} onAdd={onAdd} />}
           {!loading && <PosBestSellers entityId={entityId} onAdd={onAdd} />}
           {loading ? (
             <div className="grid grid-cols-2 gap-2.5">

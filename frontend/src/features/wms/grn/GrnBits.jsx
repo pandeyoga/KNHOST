@@ -45,4 +45,5 @@ export function ErrorBox({ text, testId = "grn-error" }) {
   return <p data-testid={testId} className="rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11px] text-[#B4231F]">{text}</p>;
 }
 
-export const inputCls = "w-full rounded-lg border border-[#E5E5EA] bg-white px-2.5 py-1.5 text-[12px] focus:border-[#0058CC] focus:outline-none";
+// UAT 24 Okt (P16.1) — isian GRN = `.field` design-system (dulu kelas 12px buatan sendiri).
+export const inputCls = "field";

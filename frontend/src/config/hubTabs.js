@@ -19,6 +19,8 @@ export const HUB_TABS = {
   ],
   "sales-orders": [
     { view: "orders",            label: "Pesanan (SO)",          roles: ["admin", "sales", "manager"] },
+    // UAT 24 Okt (P13.3) — Keep & Pending dulu hanya kartu di Beranda; sales melihat SO MILIKNYA saja (server).
+    { view: "keep-pending",      label: "Keep & Pending",        roles: ["admin", "sales", "manager"] },
     { view: "amendments",        label: "Koreksi & Amandemen",   roles: ["admin", "sales", "manager"] },
     // L08 — "Retur & Barang Sisa" PINDAH ke menu tunggal "Retur" (hub returns-hub).
     // FASE E-7 (E7d) — jalur yang dulu buntu: papan stok bilang "tersedia di badan
@@ -128,6 +130,8 @@ export const HUB_TABS = {
     { view: "wms-outbound",      label: "Barang Keluar",         roles: ["admin", "warehouse", "manager", "sales"] },
     // Trial 22 Okt (F1) — operasi potong (sample/catalogue + potong roll SO) DIPISAH dari Barang Keluar (order biasa).
     { view: "wms-cutting",       label: "Cutting",               roles: ["admin", "warehouse", "manager", "warehouse_admin"] },
+    // UAT 24 Okt (P7) — roll cacat / warna meleset diperbaiki, dicelup ulang, atau di-finishing ulang lalu kembali ke stok.
+    { view: "repair-orders",     label: "Perbaikan",             roles: ["admin", "warehouse", "manager", "warehouse_admin", "md"] },
     // 2026-10 (T5.2) — Transfer Antar-Entitas kini sub-tab di "Stok, Transfer & Opname" › Transfer.
     { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "operations" },
   ],

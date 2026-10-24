@@ -10,7 +10,7 @@ Kontrak respons: list = ARRAY langsung, detail = objek langsung (tanpa envelope)
 """
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Query, Header
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import Response
 from pymongo import ReturnDocument
 
@@ -596,16 +596,8 @@ async def upload_attachment(approval_id: str, request: Request, file: UploadFile
 
 
 @router.get("/price-approvals/{approval_id}/attachments/{att_id}/download")
-async def download_attachment(
-    approval_id: str, att_id: str, request: Request, auth: str = Query(None),
-    authorization: str = Header(None),
-):
-    # Dukung query-param auth untuk <img>/<a> yang tidak bisa kirim header.
-    if not authorization and auth:
-        # suntik header agar dependency current_user dapat membacanya
-        request.scope["headers"] = list(request.scope.get("headers", [])) + [
-            (b"authorization", f"Bearer {auth}".encode())
-        ]
+async def download_attachment(approval_id: str, att_id: str, request: Request):
+    # UAT 24 Okt (P17.2) — token lewat query `?auth=` DIHAPUS; layar memuat lampiran sebagai blob (header sesi).
     user = await require_permission(request, "price_approval", "view")
     doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)

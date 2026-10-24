@@ -8,12 +8,23 @@
  *
  * Klik satu dokumen = jadikan jangkar baru (menelusuri dari sisi itu).
  */
-import { ArrowRight, ExternalLink, Link2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Download, ExternalLink, Eye, Link2, Loader2 } from "lucide-react";
 import EntityBadge from "../../../components/EntityBadge";
+import MediaLightbox from "../../../components/MediaLightbox";
+import { downloadFile } from "../../../hooks/useBlobUrl";
+import { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import { relTone, shortDate } from "./traceApi";
 
+/** UAT 24 Okt (P16.2) — PDF dokumen node (pratinjau di halaman / unduh) tanpa pindah layar. */
+const pdfUrl = (node) => `${API}/pdf/render/${node.pdf_doc_type}/${node.doc_id}?format=pdf${node.entity_id ? `&entity_id=${node.entity_id}` : ""}`;
+
 function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
+  const [view, setView] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const fname = `${node.pdf_doc_type}-${node.number || node.doc_id}.pdf`.replace(/[\/]/g, "-");
+  const download = async () => { setBusy(true); try { await downloadFile(`${pdfUrl(node)}&download=true`, fname); } catch { /* galat diunduh tampil di toast global */ } finally { setBusy(false); } };
   return (
     <div data-testid={`trace-node-${node.doc_id}`}
       className={`rounded-lg border p-2 transition-colors ${isAnchor
@@ -55,6 +66,16 @@ function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
           {formatCurrency(node.amount)}
         </p>
       )}
+      {node.pdf_doc_type ? (
+        <div className="mt-1 flex gap-1">
+          <button type="button" data-testid={`trace-pdf-view-${node.doc_id}`} onClick={() => setView(true)}
+            className="inline-flex items-center gap-1 rounded-md border border-[#EDEEF1] px-1.5 py-0.5 text-[10px] font-semibold text-[#0058CC] hover:bg-[#F2F3F5]"><Eye size={11} /> Pratinjau</button>
+          <button type="button" data-testid={`trace-pdf-download-${node.doc_id}`} onClick={download} disabled={busy}
+            className="inline-flex items-center gap-1 rounded-md border border-[#EDEEF1] px-1.5 py-0.5 text-[10px] font-semibold text-[#4A4B52] hover:bg-[#F2F3F5]">{busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} PDF</button>
+        </div>
+      ) : <p className="mt-1 text-[9.5px] text-[#9A9BA3]" data-testid={`trace-pdf-none-${node.doc_id}`}>belum bisa dicetak</p>}
+      {view && <MediaLightbox items={[{ url: pdfUrl(node), downloadUrl: `${pdfUrl(node)}&download=true`, filename: fname,
+        content_type: "application/pdf", caption: `${node.label || ""} ${node.number || ""}`.trim() }]} onClose={() => setView(false)} testId="trace-pdf-lightbox" />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { askConfirm, askReason } from "../../services/confirmService";
 import KNDatePicker, { formatDateId } from "../../components/KNDatePicker";
 import { useEscapeClose } from "../../utils/escapeLayers";
 import DeliveryPhoto from "./DeliveryPhoto";
+import MediaLightbox from "../../components/MediaLightbox";
 import PositionMap from "./PositionMap";
 import { openOrderJourney } from "./logisticsDeepLink";
 import { addPosition, deletePhoto, deletePosition, getDelivery, photoUrl, transitionDelivery, updateDelivery, uploadPhoto, STATUS_LABEL, STATUS_PILL, STEPS, PICKUP_STEPS, PICKUP_STATUS_LABEL, MODE_PILL, mapsUrl, telUrl, waUrl } from "./logisticsApi";
@@ -225,13 +226,15 @@ function Field({ label, k, type = "text", edit, setEdit, editable, d }) {
 
 function PhotoBlock({ title, hint, kind, list, d, canUpdate, onPick, onDel, busy }) {
   const locked = ["delivered", "completed"].includes(d.status);
+  const [view, setView] = useState(-1);   // UAT 24 Okt (P17) — foto bisa diperbesar
   return (
     <div className="rounded-lg border border-[#E1E4EA] p-2.5" data-testid={`logistics-photos-${kind}`}>
       <div className="flex items-center justify-between"><span className="flex items-center gap-1.5 text-[12px] font-semibold"><Camera size={14} /> {title} ({list.length})</span><span className="text-[10px] text-[#9A9BA3]">{hint}</span></div>
       <div className="flex flex-wrap gap-2 mt-2">
         {list.map((p) => (
           <div key={p.id} className="relative w-[88px]" data-testid={`logistics-photo-${p.id}`}>
-            <div className="aspect-square rounded-md overflow-hidden bg-[#F2F3F5] border border-[#EFF0F2]"><DeliveryPhoto url={photoUrl(d.id, p.id)} alt={title} /></div>
+            <button type="button" className="block aspect-square w-full overflow-hidden rounded-md border border-[#EFF0F2] bg-[#F2F3F5] hover:border-[#0058CC]"
+              onClick={() => setView(list.indexOf(p))} data-testid={`logistics-photo-open-${p.id}`} aria-label={`Perbesar ${title}`}><DeliveryPhoto url={photoUrl(d.id, p.id)} alt={title} /></button>
             <span className="block text-[9px] text-[#9A9BA3] truncate mt-0.5" title={`${String(p.at).slice(0, 16).replace("T", " ")} · ${p.by}${p.note ? ` · ${p.note}` : ""}`}>{String(p.at).slice(5, 16).replace("T", " ")} · {p.by}</span>
             {canUpdate && !locked && <button data-testid={`logistics-photo-del-${p.id}`} className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow p-0.5 text-[#C0341D]" onClick={() => onDel(p.id)}><X size={12} /></button>}
           </div>
@@ -243,6 +246,8 @@ function PhotoBlock({ title, hint, kind, list, d, canUpdate, onPick, onDel, busy
           </label>
         )}
       </div>
+      {view >= 0 && <MediaLightbox items={list.map((p) => ({ url: photoUrl(d.id, p.id), filename: `${title} ${String(p.at).slice(0, 16).replace("T", " ")}.jpg`,
+        content_type: "image/jpeg", caption: `${title} · ${p.by || ""}` }))} index={view} onClose={() => setView(-1)} testId={`logistics-photo-lightbox-${kind}`} />}
     </div>
   );
 }

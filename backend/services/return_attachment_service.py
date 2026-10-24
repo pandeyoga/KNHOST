@@ -38,10 +38,20 @@ async def store(coll: str, doc: Dict[str, Any], file: UploadFile, roll_id: str, 
     return att
 
 
-async def download(doc: Dict[str, Any], att_id: str) -> Response:
+def disposition(att: Dict[str, Any], download: bool = False) -> str:
+    """UAT 24 Okt (P17.2) — foto/video bukti tampil di halaman (inline); unduhan hanya bila diminta eksplisit."""
+    ct = str(att.get("content_type") or "")
+    mode = "attachment" if download or not ct.startswith(("image/", "video/")) else "inline"
+    return f'{mode}; filename="{att.get("filename") or "lampiran"}"'
+
+
+async def download(doc: Dict[str, Any], att_id: str, download: bool = False) -> Response:
     att = next((a for a in (doc.get("attachments") or []) if a.get("id") == att_id and not a.get("is_deleted")), None)
     if not att:
         raise LookupError("Lampiran tidak ditemukan")
-    data, _ = await storage.get_object(att["path"])
+    try:
+        data, _ = await storage.get_object(att["path"])
+    except FileNotFoundError as exc:
+        raise LookupError("Berkas lampiran tidak ditemukan di penyimpanan.") from exc
     return Response(content=data, media_type=att.get("content_type", "application/octet-stream"),
-                    headers={"Content-Disposition": f'attachment; filename="{att["filename"]}"'})
+                    headers={"Content-Disposition": disposition(att, download)})

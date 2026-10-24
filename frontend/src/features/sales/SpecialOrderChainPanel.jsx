@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CheckCircle2, Circle, ExternalLink, Image as ImageIcon, Send, Upload } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ProductColorChip from "../../components/ProductColorChip";
-import { useProofBlob } from "../rnd/ProofImage";
+import AttachmentGallery from "../../components/AttachmentThumb";   // UAT 24 Okt (P17)
 import { openRnd } from "../rnd/rndDeepLink";
 import { SAMPLE_STATUS_META } from "../rnd/rndMeta";
 import { docStatus } from "./SpecialOrderShared";
@@ -111,9 +111,10 @@ export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canE
         {(order.references || []).length === 0 ? (
           <p className="flex items-center justify-center gap-1 rounded-lg border border-dashed border-[#D9D9DE] py-5 text-[11px] text-[#9A9BA3]"><ImageIcon size={14} /> belum ada referensi — unggah foto swatch / pattern dari pelanggan</p>
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">
-            {order.references.map((r) => <RefThumb key={r.id} url={`${API}/special-orders/${order.id}/references/${r.id}`} meta={r} />)}
-          </div>
+          /* UAT 24 Okt (P17) — referensi dibuka di lightbox halaman ini (dulu URL mentah di tab baru → 403 di PT lain). */
+          <AttachmentGallery size={88} showName testId="od-reference"
+            items={order.references.map((r) => ({ url: `${API}/special-orders/${order.id}/references/${r.id}`, filename: r.filename,
+              content_type: r.content_type, caption: r.caption }))} />
         )}
       </section>
     </div>
@@ -126,15 +127,5 @@ function Node({ title, on, children, testId }) {
       <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">{on ? <CheckCircle2 size={11} className="text-[#1A7A3A]" /> : <Circle size={11} className="text-[#C7C9CF]" />} {title}</p>
       <div className={on ? "text-[#1C1C1E]" : "text-[#9A9BA3]"}>{children}</div>
     </div>
-  );
-}
-
-function RefThumb({ url, meta }) {
-  const { src, status } = useProofBlob(url, meta.content_type?.startsWith("image/"));
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-[#E5E5EA] bg-[#F5F5F7]" title={meta.caption || meta.filename} data-testid={`od-reference-${meta.id}`}>
-      <div className="flex aspect-square items-center justify-center">{status === "ok" && src ? <img src={src} alt={meta.filename} className="h-full w-full object-cover" /> : <ImageIcon size={16} className="text-[#B5B5BC]" />}</div>
-      <p className="truncate px-1.5 py-1 text-[9.5px] font-semibold">{meta.caption || meta.filename}</p>
-    </a>
   );
 }

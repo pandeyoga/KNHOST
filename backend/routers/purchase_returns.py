@@ -242,12 +242,12 @@ async def purchase_return_attachment(return_id: str, request: Request, file: Upl
 
 
 @router.get("/purchase-returns/{return_id}/attachments/{att_id}/download")
-async def purchase_return_attachment_download(return_id: str, att_id: str, request: Request):
+async def purchase_return_attachment_download(return_id: str, att_id: str, request: Request, download: bool = False):
     await require_permission(request, "purchase_return", "view")
     doc = await _guard(return_id, request)
     from services import return_attachment_service as ras
     try:
-        return await ras.download(doc, att_id)
+        return await ras.download(doc, att_id, download)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

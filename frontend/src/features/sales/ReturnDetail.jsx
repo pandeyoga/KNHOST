@@ -35,7 +35,9 @@ import ReturnReplacementPanel from "./ReturnReplacementPanel";   // LN-090 — p
 import ReturnLogisticsPanel from "./ReturnLogisticsPanel";       // LN-091 KLR-11 — penanggung ongkir
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
-import ReturnRollsPanel from "./ReturnRollsPanel";   // 23 Okt — detail & keputusan PER ROLL
+import ReturnRollsPanel from "./ReturnRollsPanel";
+import { AttachmentThumb } from "../../components/AttachmentThumb";   // UAT 24 Okt (P17) — pratinjau tanpa unduh
+import MediaLightbox from "../../components/MediaLightbox";   // 23 Okt — detail & keputusan PER ROLL
 
 const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "settled", "rejected", "cancelled"];
 
@@ -128,6 +130,11 @@ export default function ReturnDetail({
   }
 
   const attachments = (ret.attachments || []).filter(a => !a.is_deleted);
+  // Keputusan owner 2026-10-21 — Gudang/QC boleh membuka FOTO/VIDEO bukti keluhan (server: sama).
+  const viewable = attachments.filter((a) => fullView || /^(image|video)\//.test(a.content_type || ""));
+  const viewItems = viewable.map((a) => ({ url: `${API}/sales-returns/${ret.id}/attachments/${a.id}/download`,
+    filename: a.filename, content_type: a.content_type }));
+  const [attOpen, setAttOpen] = useState(-1);
 
   // R2 — refresh dokumen retur (dipakai setelah release/scrap roll karantina).
   async function refetchReturn() {
@@ -304,18 +311,18 @@ export default function ReturnDetail({
               <div className="attachments-grid">
                 {attachments.map(att => (
                   <div key={att.id} className="attachment-chip" data-testid={`attachment-${att.id}`}>
-                    <Paperclip size={11} />
-                    {/* Keputusan owner 2026-10-21 — Gudang/QC boleh mengunduh FOTO/VIDEO bukti keluhan (server: sama). */}
-                    {fullView || /^(image|video)\//.test(att.content_type || "") ? (
-                      <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
-                        target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
-                    ) : <span>{att.filename}</span>}
+                    {viewable.includes(att) ? (<>
+                      <AttachmentThumb item={viewItems[viewable.indexOf(att)]} size={36} onOpen={() => setAttOpen(viewable.indexOf(att))}
+                        testId={`attachment-thumb-${att.id}`} />
+                      <button type="button" className="link-button" onClick={() => setAttOpen(viewable.indexOf(att))}>{att.filename}</button>
+                    </>) : <><Paperclip size={11} /><span>{att.filename}</span></>}
                     {att.roll_id && <span className="text-[10.5px] text-[#6B6B73]">· roll {(detailRet.items || []).map((it) => (it.roll_nos || {})[att.roll_id]).find(Boolean) || ""}</span>}
                     <span className="text-muted text-xs tabular-nums">{(att.size / 1024).toFixed(0)} KB</span>
                   </div>
                 ))}
               </div>
             )}
+            {attOpen >= 0 && <MediaLightbox items={viewItems} index={attOpen} onClose={() => setAttOpen(-1)} testId="return-attachment-lightbox" />}
           </Panel>
         </div>
 

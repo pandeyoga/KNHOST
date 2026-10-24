@@ -6,12 +6,12 @@
  *  - Aksi retur: ajukan draf + unggah foto bukti.
  * Endpoint & wewenang sama dengan layar desktop (Customer360Panel, SpecialOrderDetail, SalesReturns).
  */
+import AttachmentGallery from "../../../components/AttachmentThumb";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, Check, MessageCircle, Phone, Plus, RotateCcw, Send, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
 import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
-import { useProofBlob } from "../../rnd/ProofImage";
 import { odPhaseOf, PHASE_LABEL } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
 import KNSelect from "../../../components/KNSelect";
@@ -389,24 +389,25 @@ function OdReferences({ od, onChanged }) {
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={busy} data-testid="m-od-ref-input" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
         </label>
       </div>
-      {refs.length === 0 ? <p className="text-[11px] m-muted">Belum ada foto swatch / pattern dari pelanggan.</p> : (
-        <div className="grid grid-cols-4 gap-1.5">{refs.map((r) => <RefThumb key={r.id} url={`${API}/special-orders/${od.id}/references/${r.id}`} meta={r} />)}</div>
-      )}
+      {/* UAT 24 Okt (P17) — referensi OD bisa diketuk untuk dilihat besar (dulu thumbnail mati). */}
+      {refs.length === 0 ? <p className="text-[11px] m-muted">Belum ada foto swatch / pattern dari pelanggan.</p>
+        : <AttachmentGallery size={68} testId="m-od-ref"
+          items={refs.map((r) => ({ url: `${API}/special-orders/${od.id}/references/${r.id}`, filename: r.filename, content_type: r.content_type }))} />}
       {err && <p className="mt-1 text-[11px] text-[#C62828]" data-testid="m-od-ref-error">{err}</p>}
     </div>
   );
 }
 
-function RefThumb({ url, meta }) {
-  const { src, status } = useProofBlob(url, meta.content_type?.startsWith("image/"));
-  return (
-    <div className="overflow-hidden rounded-lg border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`m-od-ref-${meta.id}`}>
-      <div className="flex aspect-square items-center justify-center">{status === "ok" && src ? <img src={src} alt={meta.filename} className="h-full w-full object-cover" /> : <Camera size={14} className="text-[#B5B5BC]" />}</div>
-    </div>
-  );
-}
 
 /* ───────────────────────── Retur ───────────────────────── */
+
+/** UAT 24 Okt (P17) — bukti retur sebagai thumbnail yang bisa dibuka (dulu hanya angka "N lampiran"). */
+function ReturnEvidence({ ret }) {
+  const atts = (ret.attachments || []).filter((a) => !a.is_deleted);
+  if (!atts.length) return null;
+  return <AttachmentGallery size={52} testId="m-return-evidence"
+    items={atts.map((a) => ({ url: `${API}/sales-returns/${ret.id}/attachments/${a.id}/download`, filename: a.filename, content_type: a.content_type }))} />;
+}
 
 export function MobileReturnActions({ ret, onChanged }) {
   const [files, setFiles] = useState([]);
@@ -431,11 +432,13 @@ export function MobileReturnActions({ ret, onChanged }) {
       {!terminal && (
         <>
           <p className="text-[11px] m-muted">Foto kain cacat / surat jalan mempercepat pemeriksaan. {(ret.attachments || []).length ? `${ret.attachments.length} bukti sudah terlampir.` : ""}</p>
+          <ReturnEvidence ret={ret} />
           <PhotoPicker files={files} setFiles={setFiles} testId="m-return-photo" />
           {files.length > 0 && <button className="secondary-button flex w-full items-center justify-center gap-1.5 py-2.5 text-[12px]" disabled={busy} onClick={upload} data-testid="m-return-upload"><Plus size={14} /> Unggah {files.length} bukti</button>}
         </>
       )}
       {terminal && <p className="text-[11px] m-muted" data-testid="m-return-evidence-closed">Bukti foto: {(ret.attachments || []).length} · retur sudah selesai/ditolak, bukti tidak bisa ditambah lagi.</p>}
+      {terminal && <ReturnEvidence ret={ret} />}
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid="m-return-action-msg">{msg.text}</div>}
     </div>
   );

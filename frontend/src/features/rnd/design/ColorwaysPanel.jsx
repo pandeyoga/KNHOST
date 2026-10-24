@@ -1,4 +1,5 @@
 /** ColorwaysPanel — alternatif kombinasi warna (colorway); warna WAJIB dari master. */
+import AttachmentGallery from "../../../components/AttachmentThumb";
 import { useState } from "react";
 import { Plus, Star, Trash2, Upload } from "lucide-react";
 import { addColorway, deleteColorway, designFileUrl, updateColorway, uploadDesignKindFile } from "../rndApi";
@@ -56,11 +57,10 @@ export default function ColorwaysPanel({ design, canEdit, onDone, onError }) {
           <div className="mt-2"><Swatches colors={cw.colors || []} /></div>
           {(cw.file_ids || []).length > 0 && (
             <div className="mt-2 flex gap-1.5">
-              {cw.file_ids.map((fid) => fileById[fid] && (
-                <a key={fid} href={designFileUrl(design.id, fid)} target="_blank" rel="noreferrer" className="h-14 w-14 overflow-hidden rounded border">
-                  <img src={designFileUrl(design.id, fid)} alt="mockup" className="h-full w-full object-cover" />
-                </a>
-              ))}
+              {/* UAT 24 Okt (P17) — mockup dimuat lewat axios + lightbox (dulu <img src> polos & tab baru). */}
+              <AttachmentGallery size={56} testId={`design-colorway-files-${cw.id}`}
+                items={cw.file_ids.filter((fid) => fileById[fid]).map((fid) => ({ url: designFileUrl(design.id, fid),
+                  filename: fileById[fid].filename, content_type: fileById[fid].content_type || "image/*" }))} />
             </div>
           )}
         </div>
