@@ -175,6 +175,14 @@ async def list_customer_colors(visible_customer_ids: Optional[set] = None, custo
     return sorted(out, key=lambda g: g["customer_name"].lower())
 
 
+async def _pantone(raw: Any) -> str:
+    from services import rnd_flow_service as _flow
+    try:
+        return _flow.normalize_pantone(raw or "")
+    except _flow.FlowError as exc:
+        raise ValueError(str(exc)) from exc
+
+
 async def create_color(data: Dict[str, Any], actor_name: str = "") -> Dict[str, Any]:
     code = (data.get("code") or "").strip().upper()
     name = (data.get("name") or "").strip()
@@ -198,6 +206,8 @@ async def create_color(data: Dict[str, Any], actor_name: str = "") -> Dict[str, 
         "hex": f"#{hex_norm}",
         "system": system,
         "family": (data.get("family") or "").strip() or "Lainnya",
+        # UAT 24 Okt (P3.5) — kode Pantone eksplisit (wajib untuk labdip ke supplier).
+        "pantone_code": await _pantone(data.get("pantone_code")),
         **(await _customer_owner(data.get("exclusive_customer_id") or "")),
         "exclusive_source": {"kind": "manual", "at": now_iso()} if data.get("exclusive_customer_id") else {},
         "status": "active",
@@ -224,6 +234,8 @@ async def update_color(color_id: str, patch: Dict[str, Any]) -> Optional[Dict[st
         upd["hex"] = f"#{hex_norm}"
     if patch.get("family") is not None:
         upd["family"] = str(patch["family"]).strip() or "Lainnya"
+    if patch.get("pantone_code") is not None:
+        upd["pantone_code"] = await _pantone(patch["pantone_code"])
     if patch.get("system") is not None:
         sysv = str(patch["system"]).strip().upper()
         upd["system"] = sysv if sysv in VALID_SYSTEMS else "KN"
@@ -275,7 +287,7 @@ async def nearest(hex_value: str, limit: int = 8) -> Dict[str, Any]:
 # ── Keterkaitan warna internal ↔ versi supplier ↔ master produk ↔ sample R&D ────────────────
 _COLOR_PROJ = {"_id": 0, "id": 1, "code": 1, "name": 1, "hex": 1, "family": 1, "system": 1, "status": 1,
                "factory_name": 1, "supplier_variants": 1, "exclusive_customer_id": 1, "exclusive_customer_name": 1,
-               "exclusive_source": 1, "use_requests": 1}
+               "exclusive_source": 1, "use_requests": 1, "pantone_code": 1, "source": 1}
 
 
 async def _products_of_color(color_id: str) -> List[Dict[str, Any]]:

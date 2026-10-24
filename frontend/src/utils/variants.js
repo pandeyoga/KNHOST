@@ -33,6 +33,18 @@ export function mergeHiddenTwins(products = []) {
   });
 }
 
+/** UAT 24 Okt (P1.3) — SKU eksklusif pelanggan LAIN tidak tampil di katalog saat pelanggan aktif sudah dipilih.
+ *  Pembeli lama desain yang kini customer label (`exclusive_allow_customer_ids`) tetap melihatnya. */
+export function visibleToCustomer(p, customerId) {
+  const owner = p?.exclusive_customer_id;
+  if (!owner || !customerId) return true;
+  return owner === customerId || (p.exclusive_allow_customer_ids || []).includes(customerId);
+}
+
+/** P6.3 — teks pencarian katalog ikut kode/nama desain & kategorinya. */
+export const designSearchText = (p) => [p?.design_code, p?.design_title, p?.pattern_category_name, p?.design_category_name,
+  ...(p?.design_tags || [])].filter(Boolean).join(" ");
+
 export function groupByTemplate(products = []) {
   products = mergeHiddenTwins(products);
   const map = new Map();

@@ -106,6 +106,8 @@ async def prepare(product, actor="System", *, allow_orphan_repair=False):
             raise HTTPException(400, str(exc)) from exc
     else:
         base_fabric.inherit(product, parent)
+    if parent.get("design_id") and not product.get("design_id"):
+        product["design_id"] = parent["design_id"]   # UAT 24 Okt (P1.2/P6.1) — desain induk diwarisi varian
     if not parent.get("axes"):
         product["variant_attrs"] = variant_attrs(product)
         product["variant_options"] = {}
@@ -181,6 +183,10 @@ async def save_product(product, *, actor="System", existing=None, entity_id="", 
                 await db.products.insert_one(dict(doc))
         except DuplicateKeyError as exc:
             raise HTTPException(409, "SKU atau kombinasi varian sudah digunakan.") from exc
+    if doc.get("design_id"):
+        # UAT 24 Okt (P1.2/P6.1) — SKU ber-desain: kode/kategori/tag & kepemilikan desain tersalin saat lahir.
+        from services import design_ownership_service as _own
+        await _own.sync_products(doc["design_id"])
     return safe_doc(await db.products.find_one({"id": doc["id"]}, {"_id": 0}))
 
 

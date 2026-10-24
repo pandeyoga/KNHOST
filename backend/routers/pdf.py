@@ -78,7 +78,8 @@ async def list_doc_types(request: Request) -> List[Dict[str, Any]]:
 @router.get("/render/{doc_type}/{source_id}")
 async def render_document(doc_type: str, source_id: str, request: Request,
                           format: str = Query("pdf"), entity_id: str = Query(None),
-                          download: bool = Query(True)):
+                          download: bool = Query(True),
+                          supplier_id: str = Query("", description="UAT 24 Okt P3.1 — surat perintah per supplier")):
     user = await require_permission(request, "document", "print")
     ctx = await entity_ctx(request)
     reg = DOC_REGISTRY.get(doc_type)
@@ -90,6 +91,8 @@ async def render_document(doc_type: str, source_id: str, request: Request,
     if not source:
         raise HTTPException(status_code=404, detail="Dokumen sumber tidak ditemukan")
     assert_entity_access(source, reg["collection"], ctx)
+    from services.pdf_resolvers import WO_SUPPLIER
+    WO_SUPPLIER.set(supplier_id or "")
     try:
         content, media, built = await svc.render_document(
             doc_type, source_id, entity_id or source.get("entity_id"),

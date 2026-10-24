@@ -145,6 +145,25 @@ E("rnd.require_design_for_proofing", group="rnd", type="bool", default=True, sco
   consumers=("services/rnd_sample_service.py:create_sample",), risk="medium",
   roles=_MANAGER_TOO, permission=_RND_PERM)
 
+# UAT 24 Okt (P4.2, P4.3) — urutan produk baru & labdip multi-warna.
+E("rnd.require_stage_chain", group="rnd", type="bool", default=True, scopes=G,
+  label="Produk baru wajib berurutan: handfeel → labdip → produk",
+  help="Labdip produk baru wajib merujuk sampel handfeel yang sudah ACC; proofing/printing wajib memakai kain dasar "
+       "yang sudah lolos (punya SKU berjalan atau handfeel/labdip ACC). Uji ulang SKU & sampel pesanan khusus tidak "
+       "terkena aturan ini.",
+  impact="Mati → labdip/proofing boleh dibuat tanpa tahap sebelumnya (perilaku lama).",
+  example="Aktif → labdip tanpa handfeel ACC ditolak dengan petunjuk memilih handfeel induk",
+  consumers=("services/rnd_flow_service.py:assert_stage_chain",), risk="medium",
+  roles=_MANAGER_TOO, permission=_RND_PERM)
+
+E("rnd.labdip_max_colors", group="rnd", type="int", default=10, min=1, max=30, step=1, unit="warna", scopes=G,
+  label="Batas warna per permintaan labdip",
+  help="Satu permintaan labdip boleh menguji banyak warna sekaligus; tiap warna jadi satu sampel (ronde, ACC, "
+       "pemenang & spesifikasi sendiri) dalam satu kelompok.",
+  impact="Menentukan jumlah warna maksimum yang bisa diisi di form labdip.",
+  example="10 → labdip 5 warna dibuat sebagai 5 sampel berkelompok",
+  consumers=("routers/rnd.py:create_sample",), risk="low", roles=_MANAGER_TOO, permission=_RND_PERM)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # DESIGN STUDIO — KODE OTOMATIS & AMBANG NILAI
 # ═══════════════════════════════════════════════════════════════════════════

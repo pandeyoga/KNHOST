@@ -40,6 +40,8 @@ POLICY_KEYS = (
     "rnd.round_sla_days",
     "rnd.require_attachment_on_round",
     "rnd.require_design_for_proofing",
+    "rnd.require_stage_chain",          # UAT 24 Okt (P4.2) — handfeel → labdip → produk baru
+    "rnd.labdip_max_colors",            # UAT 24 Okt (P4.3/P4-K2) — batas warna per labdip
     "rnd.auto_contract_on_decide",
     "rnd.sample_material_from_stock",
     # PS-18 — eskalasi SLA otomatis + bobot nilai (grade) desainer.

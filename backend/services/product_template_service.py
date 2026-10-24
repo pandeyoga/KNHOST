@@ -359,6 +359,9 @@ async def generate_variants(template_id: str, data: Dict[str, Any], *, actor, en
                 await _clock.assert_can_use(code=p["color_code"],
                                             target_customer_id=tpl.get("exclusive_customer_id") or "",
                                             context=f"generate varian {p.get('sku', '')}")
+        if tpl.get("design_id"):   # UAT 24 Okt (P1.2/P6.1) — desain induk diwarisi varian hasil generate
+            for p in created:
+                p.setdefault("design_id", tpl["design_id"])
         try:
             if created:
                 await db.products.insert_many([dict(p) for p in created], ordered=True)
@@ -372,6 +375,9 @@ async def generate_variants(template_id: str, data: Dict[str, Any], *, actor, en
             if isinstance(exc, DuplicateKeyError):
                 raise HTTPException(409, 'SKU/kombinasi sudah dibuat oleh proses lain. Muat ulang.') from exc
             raise
+    if created and tpl.get("design_id"):
+        from services import design_ownership_service as _own
+        await _own.sync_products(tpl["design_id"])
     return {"created": len(created), "skipped": len(skipped),
             "skipped_skus": skipped, "variants": created,
             "total_combinations": len(combos)}

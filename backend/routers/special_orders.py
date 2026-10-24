@@ -216,7 +216,7 @@ async def create_special_order(payload: SpecialOrderCreate, request: Request) ->
     items = []
     if payload.items:
         try:
-            items = await so_items.build_items([i.model_dump() for i in payload.items], entity_id)
+            items = await so_items.build_items([i.model_dump() for i in payload.items], entity_id, customer["id"])
         except so_items.ItemError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         first = items[0]

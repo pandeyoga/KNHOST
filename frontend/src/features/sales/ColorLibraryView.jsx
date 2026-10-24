@@ -168,6 +168,11 @@ export default function ColorLibraryView({ currentUser }) {
                       <span className="shrink-0 rounded bg-[#F5F5F7] px-1 text-[9px] font-bold text-[#6B6B73]">{c.system}</span>
                     </div>
                     <p className="truncate text-[10.5px] text-[#6B6B73]">{c.name}</p>
+                    {(c.pantone_code || (c.source || {}).kind === "labdip") && (
+                      <p className="truncate text-[10.5px] text-[#6B6B73]" data-testid={`color-pantone-${c.id}`}>
+                        {c.pantone_code ? `Pantone ${c.pantone_code}` : ""}{(c.source || {}).kind === "labdip" ? `${c.pantone_code ? " · " : ""}lahir dari labdip ${c.source.sample_number || ""}` : ""}
+                      </p>
+                    )}
                     {c.factory_name && (
                       <p className="truncate text-[10.5px] text-[#6B6B73]" data-testid={`color-factory-name-${c.id}`} title="Nama versi pabrik/supplier">pabrik: {c.factory_name}</p>
                     )}
@@ -243,6 +248,7 @@ function ColorModal({ mode, color, onClose, onSaved, onError }) {
   const [form, setForm] = useState({
     code: color?.code || "", name: color?.name || "", factory_name: color?.factory_name || "", hex: color?.hex || "#",
     system: color?.system || "KN", family: color?.family || "", status: color?.status || "active",
+    pantone_code: color?.pantone_code || "",
     exclusive_customer_id: color?.exclusive_customer_id || "",
   });
   const [customers, setCustomers] = useState([]);
@@ -261,7 +267,7 @@ function ColorModal({ mode, color, onClose, onSaved, onError }) {
       if (mode === "edit") {
         await axios.patch(`${API}/color-library/${color.id}`, {
           name: form.name, factory_name: form.factory_name, hex: form.hex, system: form.system, family: form.family, status: form.status,
-          exclusive_customer_id: form.exclusive_customer_id,
+          exclusive_customer_id: form.exclusive_customer_id, pantone_code: form.pantone_code,
         });
       } else {
         await axios.post(`${API}/color-library`, form);
@@ -307,6 +313,11 @@ function ColorModal({ mode, color, onClose, onSaved, onError }) {
             </Field>
             <Field label="Family">
               <input data-testid="color-form-family" className="field" placeholder="Biru / Merah / …" value={form.family} onChange={set("family")} />
+            </Field>
+            {/* UAT 24 Okt (P3.5) — kode Pantone eksplisit, wajib jelas untuk labdip ke supplier. */}
+            <Field label="Kode Pantone">
+              <input data-testid="color-form-pantone" className="field font-mono" placeholder="19-4052 TCX / 186 C" value={form.pantone_code}
+                onChange={(e) => setForm({ ...form, pantone_code: e.target.value.toUpperCase() })} />
             </Field>
             <Field label="Milik pelanggan (eksklusif)">
               <KNSelect data-testid="color-form-customer" className="field" value={form.exclusive_customer_id} searchable

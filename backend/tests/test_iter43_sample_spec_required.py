@@ -118,7 +118,8 @@ class TestCreateWithSpec:
     def test_labdip_valid(self, admin_headers):
         sku = _uniq("TST-LB")
         r = requests.post(f"{BASE}/api/rnd/samples", headers=admin_headers, json={
-            "sample_types": ["labdip"], "title": "Labdip valid", "unit": "meter",
+            # UAT 24 Okt (P4.2) — labdip produk baru wajib merujuk handfeel ACC ATAU menempuh handfeel di permintaan yang sama.
+            "sample_types": ["handfeel", "labdip"], "title": "Labdip valid", "unit": "meter",
             "qty_requested": 2,
             "spec": {"target": {"fabric_type": "woven", "gramasi": 200},
                      "color_target": {"color_id": "col_kn_blu_01"},

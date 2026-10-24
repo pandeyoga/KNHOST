@@ -35,6 +35,111 @@ def _ship_recipient(val):
     return "", ""
 
 
+# UAT 24 Okt (P3.1) — surat perintah kerja sampel: SATU surat per supplier (dipilih lewat ?supplier_id= di rute).
+import contextvars as _cv
+WO_SUPPLIER: "_cv.ContextVar[str]" = _cv.ContextVar("wo_supplier", default="")
+
+
+async def _design_print_image(db, design_id: str):
+    """PNG cetak desain (atau artwork versi ACC) → data URI untuk ditanam di surat."""
+    import base64
+    d = await db.design_gallery.find_one({"id": design_id}, {"_id": 0}) if design_id else None
+    if not d:
+        return None, None
+    files = d.get("files") or []
+    pick = next((f for f in files if f.get("kind") == "print_png"), None) or next(
+        (f for f in files if (f.get("kind") or "artwork") == "artwork" and str(f.get("content_type", "")).startswith("image/")
+         and int(f.get("version") or 1) == int(d.get("approved_version") or d.get("version") or 1)), None)
+    if not pick:
+        return d, None
+    try:
+        from services import design_gallery_service as _g
+        data, ctype = await _g.get_file_bytes(d["id"], pick["id"])
+        return d, {"src": f"data:{ctype or 'image/png'};base64,{base64.b64encode(data).decode()}",
+                   "caption": f"{d.get('code', '')} · {pick.get('filename', '')}"
+                              + (" · PNG cetak" if pick.get("kind") == "print_png" else " · artwork ACC (PNG cetak belum ada)")}
+    except Exception:  # noqa: BLE001 — surat tetap terbit, gambarnya ditandai tidak tersedia
+        return d, None
+
+
+async def resolve_md_sample_work_order(doc, db) -> dict:
+    from services.design_studio_service import SAMPLE_STATUS_LABEL
+    sid = WO_SUPPLIER.get() or ""
+    parts = doc.get("participants") or []
+    part = next((p for p in parts if p.get("supplier_id") == sid), None) or (parts[0] if parts else {})
+    sid = part.get("supplier_id") or sid
+    sup = await db.suppliers.find_one({"id": sid}, {"_id": 0}) if sid else None
+    rounds = [r for r in doc.get("rounds") or [] if r.get("supplier_id") == sid]
+    types = list(doc.get("sample_types") or ([doc["sample_type"]] if doc.get("sample_type") else []))
+    spec = await db.md_specs.find_one({"id": doc.get("spec_id")}, {"_id": 0}) if doc.get("spec_id") else {}
+    spec = spec or {}
+    tgt = spec.get("target") or {}
+    due = max((r.get("due_date") or "" for r in rounds), default="") or doc.get("target_date") or ""
+    idx = next((i for i, p in enumerate(parts, start=1) if p.get("supplier_id") == sid), 1)
+    meta = [{"label": "No. sampel", "value": doc.get("number", "")},
+            {"label": "Jenis", "value": " + ".join(t.capitalize() for t in types) or "—"},
+            {"label": "Target selesai", "value": fmt_date(due) or "—"},
+            {"label": "PIC MD", "value": doc.get("created_by", "") or "—"},
+            {"label": "Spesifikasi", "value": spec.get("number", "") or "—"},
+            {"label": "Kain dasar", "value": spec.get("base_fabric_name", "") or "—"}]
+    if doc.get("special_order_number") or doc.get("so_number"):
+        meta.append({"label": "Untuk pesanan", "value": doc.get("special_order_number") or doc.get("so_number")})
+    if doc.get("color_batch_id"):
+        meta.append({"label": "Kelompok labdip", "value": f"warna {doc.get('color_batch_index')} dari {doc.get('color_batch_size')}"})
+    extra, swatches, images = [], [], []
+    if "labdip" in types:
+        ct = doc.get("color_target") or {}
+        pantone = ct.get("pantone_code") or ""
+        if not pantone and ct.get("color_id"):
+            col = await db.color_library.find_one({"id": ct["color_id"]}, {"_id": 0}) or {}
+            pantone = col.get("pantone_code") or (col.get("code") if (col.get("system") or "") in ("TCX", "TPX", "C", "U") else "")
+        extra.append({"title": "LABDIP — warna target", "columns": [_col("code", "Kode KN"), _col("name", "Nama warna"),
+                                                                      _col("pantone", "Pantone"), _col("hex", "Hex")],
+                      "items": [{"code": ct.get("code") or "(baru — dibuat saat ACC)", "name": ct.get("name", ""),
+                                 "pantone": pantone or "BELUM ADA — wajib diisi", "hex": ct.get("hex", "")}],
+                      "note": "Cocokkan warna dengan kode Pantone di atas; kotak warna hanya acuan layar/cetak."})
+        swatches.append({"hex": ct.get("hex") or "#ffffff", "label": ct.get("name") or "Warna target",
+                         "sub": f"Pantone {pantone}" if pantone else "Pantone —"})
+    if "handfeel" in types or "labdip" in types:
+        keys = [("fabric_type", "Jenis kain"), ("construction", "Konstruksi"), ("gramasi", "Gramasi (gsm)"),
+                ("lebar", "Lebar (cm)"), ("epi", "EPI"), ("ppi", "PPI"), ("yarn_warp", "Benang lusi"),
+                ("yarn_weft", "Benang pakan"), ("yarn", "Benang"), ("composition", "Komposisi"), ("finishing", "Finishing")]
+        rows = [{"k": lbl, "v": str(tgt.get(k))} for k, lbl in keys if tgt.get(k) not in (None, "", [], {})]
+        if rows:
+            extra.append({"title": ("HANDFEEL — konstruksi" if "handfeel" in types else "Konstruksi kain dasar"),
+                          "columns": [_col("k", "Parameter"), _col("v", "Target")], "items": rows})
+    if "proofing" in types:
+        d, img = await _design_print_image(db, doc.get("design_id") or "")
+        d = d or {}
+        extra.append({"title": "PROOFING — desain", "columns": [_col("k", "Parameter"), _col("v", "Nilai")], "items": [
+            {"k": "Kode desain", "v": doc.get("design_code") or d.get("code", "—")},
+            {"k": "Judul", "v": doc.get("design_title") or d.get("title", "")},
+            {"k": "Versi ACC", "v": str(d.get("approved_version") or doc.get("design_version") or "—")},
+            {"k": "Repeat (cm)", "v": str(d.get("repeat_cm") or "—")},
+            {"k": "Jumlah warna / screen", "v": f"{d.get('color_count') or '—'} / {d.get('screen_count') or '—'}"},
+            {"k": "Kain dasar", "v": spec.get("base_fabric_name", "") or "—"}]})
+        if img:
+            images.append(img)
+        else:
+            extra.append({"title": "Gambar pattern", "columns": [_col("v", "Keterangan")],
+                          "items": [{"v": "PNG cetak desain belum tersedia — minta desainer mengunggah berkas PNG cetak."}]})
+    note = " · ".join(x for x in [doc.get("brief") or "", (rounds[-1].get("note") if rounds else "") or ""] if x)
+    return {
+        "title": "SURAT PERINTAH KERJA SAMPEL R&D",
+        "number": f"{doc.get('number', '')}/{idx:02d}",
+        "date": fmt_date(part.get("invited_at") or doc.get("sent_at") or doc.get("created_at")),
+        "status": SAMPLE_STATUS_LABEL.get(doc.get("status", ""), doc.get("status", "")),
+        "party_to": {"title": "Kepada (Supplier)", "name": part.get("supplier_name") or (sup or {}).get("name", "—"),
+                     "address": fmt_address((sup or {}).get("address")), "phone": (sup or {}).get("phone", "")},
+        "intro_text": (f"Mohon dikerjakan sampel {' + '.join(types)} untuk “{doc.get('title', '')}” sesuai rincian di bawah "
+                       f"dan diserahkan paling lambat {fmt_date(due) or 'tanggal target'}."),
+        "meta": meta, "extra_tables": extra, "swatches": swatches, "images": images,
+        "notes": note,
+        "signatures": [{"label": "Dibuat oleh (MD)", "name": doc.get("created_by", "")},
+                       {"label": "Diterima (Supplier)", "name": ""}],
+    }
+
+
 def _col(key, label, align=""):
     return {"key": key, "label": label, "align": align}
 
@@ -1119,6 +1224,8 @@ DOC_REGISTRY = {
     "packing_list":    {"label": "Daftar Kemasan",       "collection": "sales_orders",    "module": "wms",            "esignable": False, "resolver": resolve_packing_list},
     "delivery_note":   {"label": "Surat Jalan Pengiriman","collection": "sales_orders",  "module": "wms",            "esignable": True,  "resolver": resolve_delivery_note},
     "put_away":        {"label": "Daftar Put-Away",     "collection": "purchase_orders", "module": "wms",            "esignable": False, "resolver": resolve_put_away},
+    "md_sample_work_order": {"label": "Surat Perintah Kerja Sampel R&D", "collection": "md_samples", "module": "rnd",
+                             "esignable": False, "resolver": resolve_md_sample_work_order},   # UAT 24 Okt (P3.1)
     "po_receipt":      {"label": "Bukti Terima per PO","collection": "purchase_orders","module": "wms",              "esignable": True,  "resolver": resolve_goods_receipt},
     "goods_receipt":   {"label": "Bukti Kedatangan Barang (GRN)","collection": "goods_receipts","module": "wms",     "esignable": True,  "resolver": resolve_grn},
     "purchase_requisition": {"label": "Permintaan Pembelian","collection": "purchase_requisitions","module": "purchase_order","esignable": True, "resolver": resolve_purchase_requisition},

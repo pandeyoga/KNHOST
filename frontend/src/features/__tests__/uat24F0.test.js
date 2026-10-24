@@ -18,7 +18,8 @@ function Harness() {
   const [sp, setSp] = useState({ ...EMPTY_SPEC });
   lastSp = sp;
   return <SampleSpecFields sp={sp} setSp={setSp} catalog={{}} setCatalog={() => {}} f={{}} set={() => {}}
-    sampleTypes={["labdip"]} types={[]} colors={[]} designs={[]} />;
+    sampleTypes={["proofing"]} types={[{ value: "proofing", requires_design: true }]} colors={[]} designs={[]} />;
+  // UAT 24 Okt (P4.5) — kain dasar kini hanya untuk proofing/printing (labdip saja → tanpa desain & kain dasar).
 }
 
 test("P4.8 — memilih kain dasar di form sampel menyimpan id + nama (bukan objek) dan tidak membuat layar galat", async () => {

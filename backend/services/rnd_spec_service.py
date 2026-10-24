@@ -39,15 +39,32 @@ async def _color_snapshot(color: Dict[str, Any]) -> Dict[str, str]:
     cid = (color or {}).get("color_id") or ""
     code = ((color or {}).get("code") or "").strip().upper()
     if not cid and not code:
-        return {"color_id": "", "code": "", "name": "", "hex": ""}
+        # UAT 24 Okt (P4.4) — warna BARU labdip produk baru (belum ada di Pustaka): nama + hex + Pantone.
+        # Pustaka lahir dari labdip yang di-ACC (`rnd_flow_service.color_from_labdip`).
+        name = ((color or {}).get("name") or "").strip()
+        hex_ = ((color or {}).get("hex") or "").strip()
+        if not name and not hex_:
+            return {"color_id": "", "code": "", "name": "", "hex": ""}
+        from services import rnd_flow_service as _flow
+        from services.color_service import normalize_hex
+        h = normalize_hex(hex_) if hex_ else ""
+        if hex_ and not h:
+            raise RndError("Hex warna target tidak sah (6 digit, mis. #1A2B3C).")
+        try:
+            pantone = _flow.normalize_pantone((color or {}).get("pantone_code") or "")
+        except _flow.FlowError as exc:
+            raise RndError(str(exc)) from exc
+        return {"color_id": "", "code": "", "name": name or pantone, "hex": f"#{h}" if h else "",
+                "pantone_code": pantone, "family": ((color or {}).get("family") or "").strip(), "new_color": True}
     q = {"id": cid} if cid else {"code": code}
     row = await db.color_library.find_one(q, {"_id": 0})
     if not row:
         raise RndError(
             "Warna target tidak ada di Pustaka Warna. Pilih dari pustaka "
             "(Produk & Harga → Pustaka Warna) — warna tidak boleh diketik bebas.")
+    from services import rnd_flow_service as _flow
     return {"color_id": row["id"], "code": row.get("code", ""),
-            "name": row.get("name", ""), "hex": row.get("hex", "")}
+            "name": row.get("name", ""), "hex": row.get("hex", ""), "pantone_code": _flow.pantone_of(row)}
 
 
 async def _design_snapshot(design_id: str, version: int = 0) -> Dict[str, Any]:
@@ -141,6 +158,38 @@ async def _assert_color_lock(color: Dict[str, Any], exclusive_customer_id: str, 
 
 
 # ─── CRUD ──────────────────────────────────────────────────────
+async def add_axis_values(template_id: str, values: Dict[str, Dict[str, Any]], actor: str = "") -> List[str]:
+    """UAT 24 Okt (P5.3) — tambahkan NILAI sumbu baru ke induk (mis. warna baru dari labdip ACC). Sumbu harus sudah
+    ada di induk; kode divalidasi unik. Opsi lama tidak pernah diubah (aturan katalog: hanya boleh menambah)."""
+    import re as _re
+    tpl = await db.product_templates.find_one({"id": template_id}, {"_id": 0, "id": 1, "axes": 1, "name": 1})
+    if not tpl:
+        raise RndError("Induk produk tidak ditemukan.")
+    added: List[str] = []
+    for key, opt in (values or {}).items():
+        axis = next((a for a in tpl.get("axes") or [] if a.get("key") == key), None)
+        if not axis:
+            raise RndError(f"Induk {tpl.get('name', '')} tidak punya sumbu '{key}' — nilai baru hanya bisa ditambahkan "
+                           "ke sumbu yang sudah ada.")
+        code = str((opt or {}).get("code") or "").strip().upper()
+        label = str((opt or {}).get("label") or "").strip()
+        if not _re.match(r"^[A-Z0-9][A-Z0-9_.-]{0,39}$", code) or not label:
+            raise RndError(f"Nilai baru sumbu '{axis.get('label') or key}': kode (huruf besar/angka) dan label wajib diisi.")
+        same = next((o for o in axis.get("options") or [] if o.get("code") == code), None)
+        if same:
+            if (same.get("label") or "").strip().lower() != label.lower():
+                raise RndError(f"Kode '{code}' sudah dipakai '{same.get('label')}' di sumbu {axis.get('label') or key}.")
+            continue
+        new_opt = {"code": code, "label": label, "value": str((opt or {}).get("value") or code)}
+        if (opt or {}).get("hex"):
+            new_opt["hex"] = str(opt["hex"]).upper()
+        await db.product_templates.update_one(
+            {"id": template_id, "axes": {"$elemMatch": {"key": key, "options.code": {"$ne": code}}}},
+            {"$push": {"axes.$.options": new_opt}, "$set": {"updated_at": now_iso()}})
+        added.append(f"{key}:{code}")
+    return added
+
+
 async def create_spec(payload: Dict[str, Any], *, entity_id: str, actor: str = "") -> Dict[str, Any]:
     title = (payload.get("title") or "").strip()
     if not title:
@@ -194,6 +243,7 @@ async def create_spec(payload: Dict[str, Any], *, entity_id: str, actor: str = "
         "target_product_id": payload.get("target_product_id") or "",
         "variant_attrs": payload.get("variant_attrs") or {},
         "variant_options": payload.get("variant_options") or {},
+        "new_axis_values": payload.get("new_axis_values") or {},   # UAT 24 Okt (P5.3)
         "attachments": [],
         "refs": [],
         "timeline": [timeline_entry("created", "Spesifikasi dibuat (draft)", actor)],
@@ -325,6 +375,8 @@ async def approve_spec(spec_id: str, payload: Dict[str, Any], actor: Dict[str, A
         sku = target_product['sku']
     if not target_product and await db.products.find_one({"sku": sku}, {"_id": 0, "id": 1}):
         raise RndError(f"SKU '{sku}' sudah dipakai produk lain. Isi kode SKU yang berbeda.")
+    if cur.get("new_axis_values") and cur.get("template_id"):
+        await add_axis_values(cur["template_id"], cur["new_axis_values"], actor_name)   # UAT 24 Okt (P5.3)
     prod = _product_draft(cur, sku, name, payload.get("price") or cur.get("target_price") or 0)
     if target_product:
         prod = {**target_product, **prod, 'id': target_product['id'], 'media': target_product.get('media', []), 'image': target_product.get('image', '')}

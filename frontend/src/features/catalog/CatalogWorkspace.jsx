@@ -15,6 +15,7 @@ import { VariantMedia } from "./VariantMedia";
 import { ProductRelations } from "./ProductRelations";
 import { LinkExistingVariant } from "./LinkExistingVariant";
 import { FamilyHero } from "./FamilyHero";
+import FamilyDesignBar from "./FamilyDesignBar";
 import { VariantCard } from "./VariantCard";
 import { FamilyInfoTab } from "./FamilyInfoTab";
 import ProductColorChip from "../../components/ProductColorChip";
@@ -73,6 +74,7 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
       <footer className="catalog-pagination"><button data-testid="catalog-prev" className="secondary-button" disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft size={14} />Sebelumnya</button><span data-testid="catalog-page">{page + 1} / {Math.max(1, Math.ceil(total / 24))}</span><button data-testid="catalog-next" className="secondary-button" disabled={(page + 1) * 24 >= total} onClick={() => setPage(page + 1)}>Berikutnya<ChevronRight size={14} /></button></footer>
     </> : <>
       <FamilyHero family={family} summary={summary} />
+      <FamilyDesignBar family={family} canEdit={!!caps.update} onChanged={refresh} />
       <div className="catalog-tabs" role="tablist">{[["variants", "Varian & galeri", family.variant_count], ["info", "Informasi produk", null], ...(caps.rnd_view ? [["rnd", "R&D & asal desain", null]] : []), ...(canAudit ? [["history", "Riwayat Perubahan", null]] : [])].map(([k, l, n]) => <button key={k} data-testid={`catalog-tab-${k}`} role="tab" aria-selected={tab === k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>{l}{n ? <span className="tab-count">{n}</span> : null}</button>)}</div>
       {tab === "info" ? <FamilyInfoTab family={family} caps={caps} onPolicy={() => openConfig({ group: "rnd", key: "rnd.new_product_default_lifecycle" })} onArchive={async () => { if (!await askConfirm({ title: "Arsipkan induk ini?", message: family.name, confirmLabel: "Arsipkan", danger: true })) return; try { await catalogApi.archive(family.id); setFamily(null); load(); } catch (e) { setError(catalogError(e)); } }} /> : <div className="catalog-detail-grid">
         <aside className="catalog-variant-list"><div className="variant-list-head"><h2 data-testid="catalog-variant-list-title">Kombinasi varian</h2><span>{family.variants.length} SKU</span></div>{family.variants.map(v => <VariantCard key={v.id} variant={v} active={selected?.id === v.id} stock={summary?.variants.find(s => s.id === v.id)} onSelect={() => setSelectedId(v.id)} />)}{!family.variants.length && <p data-testid="catalog-no-variants" className="text-sm text-gray-500">Belum ada SKU.</p>}{caps.create && !!family.axes?.length && <button data-testid="catalog-add-single" className="secondary-button mt-1 w-full justify-center" onClick={() => setModal("new-variant")}><Plus size={13} />Satu kombinasi</button>}</aside>

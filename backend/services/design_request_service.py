@@ -410,6 +410,8 @@ async def deliver(req_id: str, actor: Dict[str, Any], gallery_id: str,
     await db.design_gallery.update_one(
         {"id": gid}, {"$set": {"request_id": doc["id"], "request_number": doc["number"],
                                **_origin_fields(doc), "updated_at": now_iso()}})
+    from services import design_ownership_service as _own   # UAT 24 Okt (P1.1) — desain OD = customer label
+    await _own.on_special_order_design(gid, doc.get("special_order_id", ""), actor)
     label = art.get("code") or art.get("title") or gid
     return await _save(doc, "delivered", f"Hasil diserahkan ({label})", actor,
                        note=note, status=STATUS_DELIVERED, delivered_at=now_iso(),
@@ -501,6 +503,9 @@ async def create_design_from_request(req_id: str, actor: Dict[str, Any], entity_
     await db.design_gallery.update_one(
         {"id": design["id"]},
         {"$set": {"request_id": doc["id"], "request_number": doc["number"], **_origin_fields(doc), "updated_at": now_iso()}})
+    # UAT 24 Okt (P1.1, P1-K3) — desain pesanan khusus = customer label milik pemesan sejak OD disetujui.
+    from services import design_ownership_service as _own
+    await _own.on_special_order_design(design["id"], doc.get("special_order_id", ""), actor)
     ids = list(doc.get("gallery_ids") or []) + [design["id"]]
     fields: Dict[str, Any] = {"gallery_ids": ids, "status": STATUS_IN_PROGRESS}
     if not doc.get("started_at"):
@@ -532,6 +537,8 @@ async def link_design(req_id: str, actor: Dict[str, Any], gallery_id: str) -> Di
     await db.design_gallery.update_one(
         {"id": gid}, {"$set": {"request_id": doc["id"], "request_number": doc["number"],
                                **_origin_fields(doc), "updated_at": now_iso()}})
+    from services import design_ownership_service as _own   # UAT 24 Okt (P1.1) — desain OD = customer label
+    await _own.on_special_order_design(gid, doc.get("special_order_id", ""), actor)
     ids = list(doc.get("gallery_ids") or [])
     if gid not in ids:
         ids.append(gid)

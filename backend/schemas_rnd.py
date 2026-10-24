@@ -34,11 +34,14 @@ class SpecTarget(BaseModel):
 
 
 class ColorTarget(BaseModel):
-    """Warna target — WAJIB dari pustaka warna (PS-13: tidak boleh teks bebas)."""
+    """Warna target. Dari Pustaka (`color_id`/`code`) ATAU — UAT 24 Okt (P4.4) — warna BARU labdip produk baru:
+    nama + hex + Pantone (wajib saat dikirim ke supplier). Pustaka lahir dari labdip yang di-ACC."""
     color_id: str = ""
     code: str = ""
     name: str = ""
     hex: str = ""
+    pantone_code: str = ""
+    family: str = ""
 
 
 class SpecInput(BaseModel):
@@ -46,6 +49,9 @@ class SpecInput(BaseModel):
     target_product_id: str = ""
     variant_attrs: Dict[str, str] = Field(default_factory=dict)
     variant_options: Dict[str, str] = Field(default_factory=dict)
+    # UAT 24 Okt (P5.3) — nilai sumbu BARU (mis. warna hasil labdip ACC): {sumbu: {code, label, value, hex}};
+    # ditambahkan ke induk saat spesifikasi di-ACC, bersamaan dengan kelahiran SKU.
+    new_axis_values: Dict[str, Dict[str, str]] = Field(default_factory=dict)
     title: str = ""
     category: str = ""
     base_unit: str = ""
@@ -129,6 +135,11 @@ class SampleInput(BaseModel):
     product_id: str = ""               # P05 IMP-17 — uji tambahan untuk SKU aktif (tanpa spesifikasi/SKU baru)
     revalidation_supplier_id: str = ""  # L03 LN-034 — supplier/mitra yang diuji ulang (hasil per supplier)
     revalidation_reason: str = ""       # L03 LN-034 — alasan siklus
+    # UAT 24 Okt (P4.2) — rantai produk baru: labdip merujuk handfeel ACC (induk).
+    parent_sample_id: str = ""
+    # UAT 24 Okt (P4.3) — labdip MULTI-WARNA: ≥2 warna → satu sampel per warna dalam satu kelompok.
+    color_targets: List[ColorTarget] = Field(default_factory=list)
+    special_order_id: str = ""          # diisi jalur pesanan khusus (bebas aturan rantai produk baru)
 
 
 class SamplePatch(BaseModel):

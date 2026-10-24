@@ -23,11 +23,17 @@ export default function FinalPanel({ design, canEdit, onDone, onError }) {
             text={`Mockup hasil desain yang di-ACC: ${fin.mockup_files ?? 0} / 1 file (wajib)`} />
           <Row ok={(fin.source_files ?? 0) >= 1} testId="design-final-check-source"
             text={`File desain asli (AI / PSD / EPS / PDF / ZIP): ${fin.source_files ?? 0} / 1 file (wajib, bisa diunduh kembali)`} />
+          <Row ok={(fin.print_png_files ?? 0) >= 1} testId="design-final-check-print-png"
+            text={`PNG cetak (gambar pattern untuk surat perintah proofing): ${fin.print_png_files ?? 0} / 1 file (wajib)`} />
         </ul>
+        {design.print_png_missing && (
+          <p className="mt-2 text-[10.5px] font-semibold text-[#A05000]" data-testid="design-final-png-missing">PNG cetak belum ada — proofing desain ini belum bisa dikirim ke supplier sampai PNG cetak diunggah.</p>
+        )}
         {locked && <p className="mt-2 text-[10.5px] text-[#A05000]" data-testid="design-final-locked">Tahap ini terbuka setelah desain di-ACC penilai.</p>}
       </div>
       <FilesPanel design={design} kind="mockup" canEdit={editable} onDone={onDone} onError={onError} />
       <FilesPanel design={design} kind="source" canEdit={editable} onDone={onDone} onError={onError} />
+      <FilesPanel design={design} kind="print_png" canEdit={canEdit && !locked} onDone={onDone} onError={onError} />
     </div>
   );
 }

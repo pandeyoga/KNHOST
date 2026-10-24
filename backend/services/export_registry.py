@@ -24,9 +24,13 @@ ENTITY_JOIN = lambda local="entity_id": J("entity", "Badan usaha", "business_ent
 CUSTOMER_JOIN = J("customer", "Pelanggan", "customers", "customer_id",
                   [C("code", "Kode pelanggan"), C("type", "Tipe pelanggan"), C("city", "Kota pelanggan"),
                    C("segment", "Segmen")], perm=("customer", "view"))
+# UAT 24 Okt (P6.4) — tag desain produk (kode desain, kategori pattern/design) ikut ke semua join produk.
+DESIGN_COLS = [C("design_code", "Kode desain"), C("pattern_category_name", "Kategori pattern"),
+               C("design_category_name", "Kategori design")]
 PRODUCT_JOIN = J("product", "Produk", "products", "product_id",
                  [C("sku", "SKU"), C("name", "Nama produk"), C("category", "Kategori"), C("color", "Warna"),
-                  C("grade", "Grade", vis="grade"), C("stage", "Tahap barang"), C("fabric_type", "Jenis kain")],
+                  C("grade", "Grade", vis="grade"), C("stage", "Tahap barang"), C("fabric_type", "Jenis kain"),
+                  *DESIGN_COLS],
                  perm=("product", "view"))
 WAREHOUSE_JOIN = J("warehouse", "Gudang", "warehouses", "warehouse_id",
                    [C("code", "Kode gudang"), C("name", "Nama gudang"), C("city", "Kota gudang")])
@@ -65,7 +69,7 @@ DATASETS: List[Dict[str, Any]] = [
                  C("unit_cost", "HPP satuan", "money", path="items.unit_cost", cost=True),
                  C("created_at", "Dibuat", "datetime"), C("entity_id", "ID badan usaha")],
      "joins": [J("product", "Produk", "products", "items.product_id",
-                 [C("color", "Warna"), C("grade", "Grade", vis="grade"), C("fabric_type", "Jenis kain")],
+                 [C("color", "Warna"), C("grade", "Grade", vis="grade"), C("fabric_type", "Jenis kain"), *DESIGN_COLS],
                  perm=("product", "view")), CUSTOMER_JOIN, ENTITY_JOIN()]},
     {"id": "customers", "label": "Pelanggan", "group": "Penjualan", "collection": "customers",
      "grain": "1 baris = 1 pelanggan", "key": "id", "perm": ("customer", "view"), "owner_scope": "customer",
@@ -139,7 +143,8 @@ DATASETS: List[Dict[str, Any]] = [
      "columns": [C("sku", "SKU"), C("name", "Nama"), C("category", "Kategori"), C("color", "Warna"),
                  C("grade", "Grade", vis="grade"), C("stage", "Tahap"), C("fabric_type", "Jenis kain"),
                  C("base_unit", "Satuan dasar"), C("price", "Harga master", "money"), C("status", "Status"),
-                 C("lifecycle", "Siklus"), C("created_at", "Dibuat", "datetime")], "joins": []},
+                 C("lifecycle", "Siklus"), *DESIGN_COLS, C("exclusive_customer_name", "Eksklusif untuk"),
+                 C("created_at", "Dibuat", "datetime")], "joins": []},
     {"id": "suppliers", "label": "Pemasok", "group": "Pembelian", "collection": "suppliers",
      "grain": "1 baris = 1 pemasok", "key": "id", "perm": ("supplier", "view"),
      "date_fields": [C("created_at", "Tanggal dibuat", "datetime")],

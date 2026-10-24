@@ -4,7 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { isSampleCart } from "../../utils/sampleOrder";
 import { convFactor } from "../../utils/uom";
 import { formatCurrency } from "../../utils/formatters";
-import { groupByTemplate } from "../../utils/variants";
+import { designSearchText, groupByTemplate, visibleToCustomer } from "../../utils/variants";
 import { entityFullById } from "../../utils/entityLabel";
 import KNSelect from "../../components/KNSelect";
 import { FacetRail, DEFAULT_FACETS } from "../pos/FacetRail";
@@ -63,11 +63,14 @@ export function SalesPortal({
 
   const products = useMemo(() => {
     const q = search.toLowerCase();
-    let list = allProducts.filter((p) =>
-      `${p.name} ${p.sku} ${p.category} ${p.color} ${p.motif}`.toLowerCase().includes(q));
+    let list = allProducts.filter((p) => visibleToCustomer(p, selectedCustomer?.id)
+      && `${p.name} ${p.sku} ${p.category} ${p.color} ${p.motif} ${designSearchText(p)}`.toLowerCase().includes(q));
     if (facets.categories.length) list = list.filter((p) => facets.categories.includes(p.category));
     if (facets.grades.length) list = list.filter((p) => facets.grades.includes(p.grade));
     if (facets.colors.length) list = list.filter((p) => facets.colors.includes(p.color));
+    if ((facets.designCodes || []).length) list = list.filter((p) => facets.designCodes.includes(p.design_code));
+    if ((facets.patternCats || []).length) list = list.filter((p) => facets.patternCats.includes(p.pattern_category_name));
+    if ((facets.designCats || []).length) list = list.filter((p) => facets.designCats.includes(p.design_category_name));
     if (facets.priceMin) list = list.filter((p) => Number(p.price || 0) >= Number(facets.priceMin));
     if (facets.priceMax) list = list.filter((p) => Number(p.price || 0) <= Number(facets.priceMax));
     if (onlySite && siteStock) list = list.filter((p) => Number(siteStock[p.id]?.own_qty || 0) > 0);
@@ -81,7 +84,7 @@ export function SalesPortal({
     };
     if (sorters[facets.sort]) list = [...list].sort(sorters[facets.sort]);
     return list;
-  }, [allProducts, search, facets, onlySite, siteStock]);
+  }, [allProducts, search, facets, onlySite, siteStock, selectedCustomer?.id]);
 
   // Grup SKU → kartu (per template_id). Produk tanpa template = grup tunggal.
   const groups = useMemo(() => groupByTemplate(products), [products]);

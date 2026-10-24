@@ -15,7 +15,7 @@ from pymongo import MongoClient
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _shared_loop import LOOP  # noqa: E402 — satu loop lintas modul (klien Motor terikat loop pertama)
+from _shared_loop import run as run_sync  # noqa: E402 — loop tempat klien Motor terikat
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 T = uuid.uuid4().hex[:6]
@@ -54,7 +54,7 @@ def test_p11_5_simpan_4point_tidak_menghapus_jejak_md():
         roll = DB.inventory_rolls.find_one({"id": rid}, {"_id": 0})
         return await qis.inspect_roll(roll, [], None, None, "bersih", {"name": "QC Uji", "id": "u_qc"},
                                       quality_from_roll=True, grade_input="A")
-    LOOP.run_until_complete(run())
+    run_sync(run())
     insp = DB.inventory_rolls.find_one({"id": rid}, {"_id": 0, "inspection": 1})["inspection"]
     assert insp["md_quality_at"] == "2026-10-24T01:00:00+00:00" and insp["md_quality_by"] == "MDQ Uji"
     assert insp["md_quality_doc_number"] == "TEST/INS-1"
@@ -142,7 +142,7 @@ def test_p9_gudang_bawaan_reorder_aktif_dan_boleh_dipakai():
 
     async def run():
         return await restock_service._default_warehouse({"entity_id": "ent_ksc", "allocations": []})
-    wid = LOOP.run_until_complete(run())
+    wid = run_sync(run())
     wh = DB.warehouses.find_one({"id": wid}, {"_id": 0})
     assert wh and wh.get("active") is not False
     assert wh.get("sharing_mode") != "dedicated" or "ent_ksc" in (wh.get("entity_ids") or [])

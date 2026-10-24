@@ -108,7 +108,8 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
         </Step>
 
         <Step n={2} title="Item & sumber desain">
-          <SpecialOrderItemsEditor items={items} onChange={setItems} templates={templates} artworks={artworks} colors={colors} unitOptions={uomAllOptions} />
+          <SpecialOrderItemsEditor items={items} onChange={setItems} templates={templates} colors={colors} unitOptions={uomAllOptions}
+            artworks={artworks.filter((d) => d.ownership !== "customer" || d.owner_customer_id === f.customer_id)} />
           <Hint>Printing → Desainer (atau langsung proofing bila artwork ACC dipilih) · Labdip/Handfeel → R&amp;D. Setiap dokumen turunan tertaut ke item-nya.</Hint>
         </Step>
 

@@ -19,7 +19,7 @@ class ItemError(ValueError):
     pass
 
 
-async def assert_artwork_usable(design_id: str, entity_id: str) -> Dict[str, Any]:
+async def assert_artwork_usable(design_id: str, entity_id: str, customer_id: str = "") -> Dict[str, Any]:
     d = await db.design_gallery.find_one({"id": design_id}, {"_id": 0})
     if not d:
         raise ItemError("Artwork tidak ditemukan di Design Studio.")
@@ -32,6 +32,10 @@ async def assert_artwork_usable(design_id: str, entity_id: str) -> Dict[str, Any
         raise ItemError(f"Artwork {d.get('code') or design_id} sedang HOLD"
                         + (f" ({h.get('reason')})" if h.get("reason") else "")
                         + " — hanya PIC Designer berwenang yang dapat melepasnya.")
+    # UAT 24 Okt (P1.6) — desain customer label milik pelanggan LAIN tidak boleh dipakai pesanan khusus.
+    if d.get("ownership") == "customer" and d.get("owner_customer_id") and customer_id             and d["owner_customer_id"] != customer_id:
+        raise ItemError(f"Artwork {d.get('code') or design_id} adalah customer label milik "
+                        f"{d.get('owner_customer_name') or 'pelanggan lain'} — tidak bisa dipakai pelanggan lain.")
     return d
 
 
@@ -54,7 +58,7 @@ async def _parent_of(item: Dict[str, Any]) -> Dict[str, str]:
 CLIENT_SOURCES = ("parent_product", "approved_artwork", "customer_reference")
 
 
-async def build_items(raw: List[Dict[str, Any]], entity_id: str) -> List[Dict[str, Any]]:
+async def build_items(raw: List[Dict[str, Any]], entity_id: str, customer_id: str = "") -> List[Dict[str, Any]]:
     """Validasi & normalisasi item. Tidak membuat produk apa pun (artwork ACC dipakai apa adanya).
     Sumber `redesign` hanya lahir dari POST /special-orders/{id}/redesign."""
     out: List[Dict[str, Any]] = []
@@ -84,7 +88,7 @@ async def build_items(raw: List[Dict[str, Any]], entity_id: str) -> List[Dict[st
             did = (r.get("source_design_id") or "").strip()
             if not did:
                 raise ItemError(f"Item {i}: pilih artwork sumber.")
-            d = await assert_artwork_usable(did, entity_id)
+            d = await assert_artwork_usable(did, entity_id, customer_id)
             item.update({"source_design_id": d["id"], "source_design_code": d.get("code", ""),
                          "source_label": f"{d.get('code') or ''} {d.get('title') or ''}".strip()})
         item["subtotal"] = round(qty * item["target_price"], 2)

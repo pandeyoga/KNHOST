@@ -42,7 +42,7 @@ TRANSITIONS = {
     "reopen": ({"archived", "retired"}, "draft"),
 }
 
-FILE_KINDS = ("artwork", "reference", "mockup", "colorway", "source", "ai_illustration")
+FILE_KINDS = ("artwork", "reference", "mockup", "colorway", "source", "ai_illustration", "print_png")
 DEFAULT_FINAL_COLOR_COUNT = 4
 # HOLD — hanya desain yang sudah ACC; saat hold desain tidak bisa dipakai proofing R&D.
 HOLDABLE = {"approved", "final_submitted", "active"}
@@ -289,12 +289,16 @@ def _files_of_kind(doc: Dict[str, Any], kind: str) -> List[Dict[str, Any]]:
 
 
 def final_requirement(doc: Dict[str, Any]) -> Dict[str, Any]:
-    """Berkas final wajib sesudah ACC: minimal 1 mockup + 1 file desain asli (source) yang bisa diunduh kembali."""
+    """Berkas final wajib sesudah ACC: minimal 1 mockup + 1 file desain asli (source) yang bisa diunduh kembali.
+    UAT 24 Okt (P3.3) — + minimal 1 **PNG cetak** (`print_png`): gambar pattern yang dibawa surat perintah proofing ke
+    supplier (file asli PSD/AI/CDR tidak bisa dicetak di surat / dibuka supplier)."""
     mk = len(_files_of_kind(doc, "mockup"))
     src = len(_files_of_kind(doc, "source"))
+    png = len(_files_of_kind(doc, "print_png"))
     return {"colorway_required": 0, "colorway_files": len(_files_of_kind(doc, "colorway")),
             "mockup_required": 1, "mockup_files": mk, "source_required": 1, "source_files": src,
-            "complete": mk >= 1 and src >= 1}
+            "print_png_required": 1, "print_png_files": png,
+            "complete": mk >= 1 and src >= 1 and png >= 1}
 
 
 def rounds_of(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -331,8 +335,13 @@ def enrich(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     out["on_hold"] = bool(out.get("on_hold"))
     out["hold"] = out.get("hold") or {}
     out["hold_history"] = out.get("hold_history") or []
+    # UAT 24 Okt (P3.3) — desain final lama tanpa PNG cetak diberi peringatan (status tidak dimundurkan).
+    out["print_png_missing"] = (out.get("status") in ("final_submitted", "active")
+                                and not _files_of_kind(out, "print_png"))
     out["origin"] = out.get("origin") if out.get("origin") in ORIGIN_LABEL else "internal"
     out["origin_label"] = ORIGIN_LABEL[out["origin"]]
+    from services import design_ownership_service as _own   # UAT 24 Okt (P1) — white / customer label
+    out.update(_own.view(out))
     out["current_score"] = cur.get("score")
     out["final_score"] = out.get("final_score")
     files = out.get("files") or []

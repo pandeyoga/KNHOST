@@ -78,7 +78,8 @@ export const PAGE_META = {
   "md-products":          { kicker: "Produk & Harga", title: "Produk & Varian" },
   // FASE F — R&D (hulu rantai: spesifikasi → labdip/proofing → kontrak).
   "rnd-specs":            { kicker: "R&D",             title: "Spesifikasi Produk (R&D) \u00b7 Target Kain, Warna & Desain" },
-  "rnd-samples":          { kicker: "R&D",             title: "Permintaan Sample \u00b7 Labdip / Handfeel / Proofing" },
+  "rnd-samples":          { kicker: "R&D",             title: "R&D Produk Baru \u00b7 Handfeel \u2192 Labdip \u2192 Produk" },
+  "rnd-revalidation":     { kicker: "R&D",             title: "Uji Ulang SKU \u00b7 supplier berkontrak" },
   "rnd-labdip":           { kicker: "R&D",             title: "Labdip (Master) \u00b7 Sample Warna per Supplier" },
   "rnd-handfeel":         { kicker: "R&D",             title: "Handfeel (Master) \u00b7 Sample Pegangan & Konstruksi Kain" },
   "rnd-proofing":         { kicker: "R&D",             title: "Proofing (Master) \u00b7 Sample Cetak Desain" },

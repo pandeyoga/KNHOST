@@ -10,6 +10,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request, Query, UploadFile, File
 from fastapi.responses import Response
+from pydantic import BaseModel
 
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
@@ -91,6 +92,9 @@ async def list_gallery(request: Request, entity_id: Optional[str] = Query(None),
                        product_id: str = Query(""), color_id: str = Query(""),
                        on_hold: str = Query("", description="yes|no — saring desain HOLD"),
                        origin: str = Query("", description="internal|special_order|redesign"),
+                       ownership: str = Query("", description="UAT 24 Okt P1.5 — white|customer|claim_pending"),
+                       owner_customer_id: str = Query(""),
+                       produced: str = Query("", description="yes|no — sudah ada SKU ber-desain ini"),
                        line: str = Query("", description="FASE L — penyaring lini")) -> List[Dict[str, Any]]:
     viewer = await _perm_view(request)
     ctx = await entity_ctx(request)
@@ -102,7 +106,8 @@ async def list_gallery(request: Request, entity_id: Optional[str] = Query(None),
                                       filters={"status": status, "design_type": design_type,
                                                "category_code": category_code, "created_by": created_by,
                                                "product_id": product_id, "color_id": color_id,
-                                               "on_hold": on_hold, "origin": origin})
+                                               "on_hold": on_hold, "origin": origin, "ownership": ownership,
+                                               "owner_customer_id": owner_customer_id, "produced": produced})
 
 
 @router.post("/design-gallery")
@@ -137,8 +142,138 @@ async def update_gallery(gallery_id: str, payload: GalleryUpdate, request: Reque
         doc = await gallery.update_gallery(gallery_id, patch, actor=actor)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # UAT 24 Okt (P6.1) — kode/kategori/tag desain ikut berubah di SKU yang memakainya.
+    from services import design_ownership_service as _own
+    await _own.sync_products(gallery_id)
     await audit(actor["name"], "design_gallery_update", "design_gallery", gallery_id, patch)
     return doc
+
+
+# ─── UAT 24 Okt (P1) — kepemilikan desain: white / customer label, klaim, pemakaian ─────────────────
+class DesignClaimIn(BaseModel):
+    customer_id: str
+    reason: str = ""
+
+
+class DesignClaimDecideIn(BaseModel):
+    approve: bool
+    reason: str = ""
+
+
+class DesignOwnerIn(BaseModel):
+    reason: str = ""
+    customer_id: str = ""
+
+
+class DesignLinkProductsIn(BaseModel):
+    product_ids: List[str] = []
+    template_id: str = ""
+
+
+def _own_fail(exc: Exception) -> HTTPException:
+    return HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/design-gallery/{gallery_id}/usage")
+async def design_usage(gallery_id: str, request: Request) -> Dict[str, Any]:
+    """P1.4 — pembeli SKU ber-desain ini (jumlah SO, qty per satuan, nilai, repeat) untuk keputusan klaim."""
+    from services import design_ownership_service as own
+    await require_permission(request, "design_ownership", "view")
+    await _guard(gallery_id, await entity_ctx(request))
+    return await own.usage(gallery_id)
+
+
+@router.post("/design-gallery/{gallery_id}/claims")
+async def design_claim(gallery_id: str, payload: DesignClaimIn, request: Request) -> Dict[str, Any]:
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "design_ownership", "claim")
+    await _guard(gallery_id, await entity_ctx(request))
+    try:
+        await own.claim(gallery_id, payload.customer_id, actor, payload.reason)
+    except own.OwnershipError as exc:
+        raise _own_fail(exc) from exc
+    await audit(actor["name"], "design_claim_requested", "design_gallery", gallery_id,
+                {"customer_id": payload.customer_id, "reason": payload.reason})
+    return await gallery.get_gallery(gallery_id, viewer_id=actor.get("id"))
+
+
+@router.post("/design-gallery/{gallery_id}/claims/{claim_id}/decide")
+async def design_claim_decide(gallery_id: str, claim_id: str, payload: DesignClaimDecideIn,
+                              request: Request) -> Dict[str, Any]:
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "design_ownership", "decide")
+    await _guard(gallery_id, await entity_ctx(request))
+    try:
+        await own.decide_claim(gallery_id, claim_id, payload.approve, actor, payload.reason)
+    except own.OwnershipError as exc:
+        raise _own_fail(exc) from exc
+    await audit(actor["name"], "design_claim_decided", "design_gallery", gallery_id,
+                {"claim_id": claim_id, "approve": payload.approve, "reason": payload.reason})
+    return await gallery.get_gallery(gallery_id, viewer_id=actor.get("id"))
+
+
+@router.post("/design-gallery/{gallery_id}/ownership/white")
+async def design_release_white(gallery_id: str, payload: DesignOwnerIn, request: Request) -> Dict[str, Any]:
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "design_ownership", "decide")
+    await _guard(gallery_id, await entity_ctx(request))
+    try:
+        await own.release_to_white(gallery_id, actor, payload.reason)
+    except own.OwnershipError as exc:
+        raise _own_fail(exc) from exc
+    await audit(actor["name"], "design_released_white", "design_gallery", gallery_id, {"reason": payload.reason})
+    return await gallery.get_gallery(gallery_id, viewer_id=actor.get("id"))
+
+
+@router.post("/design-gallery/{gallery_id}/ownership/customer")
+async def design_set_customer(gallery_id: str, payload: DesignOwnerIn, request: Request) -> Dict[str, Any]:
+    """Penetapan langsung oleh Manajer (tanpa klaim) — mis. kesepakatan tertulis dengan pelanggan."""
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "design_ownership", "decide")
+    await _guard(gallery_id, await entity_ctx(request))
+    if len((payload.reason or "").strip()) < 5:
+        raise HTTPException(status_code=400, detail="Alasan wajib diisi (minimal 5 huruf).")
+    try:
+        await own.set_customer_owner(gallery_id, payload.customer_id, "manual", actor, payload.reason.strip())
+    except own.OwnershipError as exc:
+        raise _own_fail(exc) from exc
+    await audit(actor["name"], "design_set_customer", "design_gallery", gallery_id,
+                {"customer_id": payload.customer_id, "reason": payload.reason})
+    return await gallery.get_gallery(gallery_id, viewer_id=actor.get("id"))
+
+
+@router.post("/design-gallery/{gallery_id}/products")
+async def design_link_products(gallery_id: str, payload: DesignLinkProductsIn, request: Request) -> Dict[str, Any]:
+    """P6.1 — tautkan SKU (atau semua varian satu induk) ke desain; kode/kategori/tag & kepemilikan ikut tersalin."""
+    from db import db as _db
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "product", "update")
+    await _guard(gallery_id, await entity_ctx(request))
+    ids = list(payload.product_ids or [])
+    if payload.template_id:
+        await _db.product_templates.update_one({"id": payload.template_id}, {"$set": {"design_id": gallery_id}})
+        ids += [p["id"] async for p in _db.products.find({"template_id": payload.template_id}, {"_id": 0, "id": 1})]
+    try:
+        n = await own.link_products(gallery_id, ids)
+    except own.OwnershipError as exc:
+        raise _own_fail(exc) from exc
+    await audit(actor["name"], "design_products_linked", "design_gallery", gallery_id,
+                {"products": len(ids), "template_id": payload.template_id})
+    return {"linked": n, "usage": await own.usage(gallery_id)}
+
+
+@router.post("/design-gallery-products/unlink")
+async def design_unlink_products(payload: DesignLinkProductsIn, request: Request) -> Dict[str, Any]:
+    from db import db as _db
+    from services import design_ownership_service as own
+    actor = await require_permission(request, "product", "update")
+    ids = list(payload.product_ids or [])
+    if payload.template_id:
+        await _db.product_templates.update_one({"id": payload.template_id}, {"$unset": {"design_id": ""}})
+        ids += [p["id"] async for p in _db.products.find({"template_id": payload.template_id}, {"_id": 0, "id": 1})]
+    n = await own.unlink_products(ids)
+    await audit(actor["name"], "design_products_unlinked", "products", ",".join(ids[:20]), {"products": len(ids)})
+    return {"unlinked": n}
 
 
 @router.delete("/design-gallery/{gallery_id}")

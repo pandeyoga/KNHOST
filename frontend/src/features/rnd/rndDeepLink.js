@@ -23,7 +23,7 @@ export const RND_EVENT = "kn-open-rnd";
  * mekanisme navigasinya sama (event global → `onNavigate(view)` → App resolve hub
  * dari `VIEW_NAV_INDEX`), jadi tidak perlu kanal event kedua yang tugasnya identik.
  */
-export const RND_VIEWS = ["rnd-specs", "rnd-samples", "rnd-designs", "rnd-reports",
+export const RND_VIEWS = ["rnd-specs", "rnd-samples", "rnd-revalidation", "rnd-designs", "rnd-reports",
   "designer-kpi"];
 
 /**

@@ -8,6 +8,7 @@ import BaseFabricPicker from "../../components/BaseFabricPicker";
 import KNSelect from "../../components/KNSelect";
 import { SpecVariantFields } from "../catalog/SpecVariantFields";
 import { typeMeta } from "./sampleTypeMeta";
+import ColorTargetsEditor, { colorProblem } from "./ColorTargetsEditor";
 
 export const EMPTY_SPEC = {
   fabric_type: "woven", gramasi: "", lebar: "", sku_hint: "", target_price: "", notes: "",
@@ -16,7 +17,7 @@ export const EMPTY_SPEC = {
 };
 
 /** Bentuk payload SpecInput dari state form. */
-export function buildSpecPayload({ sp, catalog, f, sampleTypes }) {
+export function buildSpecPayload({ sp, catalog, f, sampleTypes, colorTargets }) {
   const num = (v) => (v === "" || v == null ? null : v);
   const handfeelNotes = [sp.composition && `Komposisi: ${sp.composition}`, sp.finishing && `Finishing: ${sp.finishing}`,
     sp.handfeel_target && `Target pegangan: ${sp.handfeel_target}`, sp.notes].filter(Boolean).join(" · ");
@@ -24,21 +25,32 @@ export function buildSpecPayload({ sp, catalog, f, sampleTypes }) {
     title: f.title, base_unit: f.unit, line_code: f.line_code,
     template_id: catalog.template_id || "", target_product_id: catalog.target_product_id || "",
     variant_attrs: catalog.variant_attrs || {}, variant_options: catalog.variant_options || {},
+    new_axis_values: catalog.new_axis_values || {},   // UAT 24 Okt (P5.3) — nilai sumbu baru lahir saat ACC
     base_fabric_template_id: sp.base_fabric_template_id || "",
     sku_hint: sp.sku_hint, sample_type_hint: sampleTypes[0] || "labdip",
     target: { fabric_type: sp.fabric_type, gramasi: num(sp.gramasi), lebar: num(sp.lebar),
       yarn_count: sp.yarn_count, yarn_count_system: sp.yarn_count_system, epi: num(sp.epi), ppi: num(sp.ppi) },
-    color_target: catalog.color_target || (f.color_id ? { color_id: f.color_id } : {}),
+    color_target: catalog.color_target || ((colorTargets || [])[0] ? toTarget(colorTargets[0]) : (f.color_id ? { color_id: f.color_id } : {})),
     design_id: f.design_id, so_id: f.so_id, target_price: sp.target_price || 0, notes: handfeelNotes,
   };
 }
 
+/** UAT 24 Okt (P4.4) — baris editor warna → ColorTarget API (warna Pustaka cukup id-nya). */
+export const toTarget = (c) => (c.color_id ? { color_id: c.color_id, pantone_code: c.pantone_code || "" }
+  : { name: c.name.trim(), hex: c.hex.startsWith("#") ? c.hex : `#${c.hex}`, pantone_code: (c.pantone_code || "").trim() });
+
 /** Syarat minimal per jenis — dipakai untuk menonaktifkan tombol simpan + pesan. */
-export function specProblems({ sp, catalog, f, sampleTypes, types }) {
+export function specProblems({ sp, catalog, f, sampleTypes, types, colorTargets }) {
   const out = [];
   if (!sp.fabric_type) out.push("jenis kain");
   if (catalog.invalid) out.push("kombinasi varian tidak valid");
-  if (sampleTypes.includes("labdip") && !f.color_id) out.push("warna target (labdip)");
+  if (sampleTypes.includes("labdip")) {
+    if (colorTargets) {
+      const bad = colorTargets.map(colorProblem).find(Boolean);
+      if (!colorTargets.length || bad) out.push(`warna target labdip (${bad || "isi minimal satu"})`);
+    } else if (!f.color_id) out.push("warna target (labdip)");
+  }
+  if (sampleTypes.some((c) => typeMeta(c, types).requires_design) && !sp.base_fabric_template_id && colorTargets) out.push("kain dasar yang sudah lolos (proofing)");
   if (sampleTypes.some((c) => typeMeta(c, types).requires_design) && !f.design_id) out.push("desain/pattern (proofing)");
   return out;
 }
@@ -52,7 +64,8 @@ function L({ label, children, span }) {
   );
 }
 
-export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, set, sampleTypes, types, colors, designs, locked = false, testPrefix = "sample-spec" }) {
+export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, set, sampleTypes, types, colors, designs, locked = false, testPrefix = "sample-spec",
+  colorTargets = null, setColorTargets = null, maxColors = 10, passedFabrics = null, catalogExtras = null }) {
   const setSpec = (k, v) => setSp((p) => ({ ...p, [k]: v }));
   const isLabdip = sampleTypes.includes("labdip");
   const isHandfeel = sampleTypes.includes("handfeel");
@@ -62,7 +75,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
     <div className={`grid gap-3 ${locked ? "pointer-events-none opacity-60" : ""}`} data-testid={`${testPrefix}-fields`}>
       <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5">
         <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Induk produk &amp; kombinasi varian</p>
-        <SpecVariantFields onChange={setCatalog} onInherit={(patch) => setSp((p) => ({ ...p, ...patch }))} />
+        <SpecVariantFields onChange={setCatalog} onInherit={(patch) => setSp((p) => ({ ...p, ...patch }))} {...(catalogExtras || {})} />
         {catalog.invalid && <p className="mt-1 text-[11px] text-[#A8221A]" data-testid={`${testPrefix}-combination-error`}>{catalog.invalid}</p>}
         <p className="mt-1 text-[10px] text-[#8E8E93]">Pilih induk → SKU lahir sebagai <b>varian</b> induk itu saat ACC. Tanpa induk → produk konsep mandiri.</p>
       </div>
@@ -77,45 +90,39 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
         <L label="Usulan kode SKU"><input className="field" data-testid={`${testPrefix}-sku`} value={sp.sku_hint} onChange={(e) => setSpec("sku_hint", e.target.value.toUpperCase())} placeholder="KTN-150-NAVY" /></L>
       </div>
 
-      {(isLabdip || needDesign) && (
-        <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5">
-          <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
-            {isLabdip && needDesign ? "Warna target & desain" : isLabdip ? "Warna target (labdip)" : "Desain / pattern (proofing)"}
-          </p>
+      {isLabdip && (
+        <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5" data-testid={`${testPrefix}-labdip`}>
+          <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Warna target labdip</p>
+          {setColorTargets ? (
+            <ColorTargetsEditor value={colorTargets || []} onChange={setColorTargets} colors={colors} max={maxColors} />
+          ) : (
+            <L label="Warna target dari Pustaka Warna *">
+              <KNSelect data-testid="sample-color" className="field" value={f.color_id} searchable
+                options={[{ value: "", label: "— pilih warna —" }, ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }))]}
+                onValueChange={(v) => set("color_id", v)} />
+            </L>
+          )}
+        </div>
+      )}
+      {/* UAT 24 Okt (P4.5) — desain & kain dasar hanya untuk proofing/printing (labdip saja → tanpa desain). */}
+      {needDesign && (
+        <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5" data-testid={`${testPrefix}-proofing`}>
+          <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Desain / pattern &amp; kain dasar (proofing)</p>
           <div className="grid gap-2.5 sm:grid-cols-2">
-            {isLabdip && (
-              <L label="Warna target dari Pustaka Warna *">
-                <KNSelect data-testid="sample-color" className="field" value={f.color_id} searchable
-                  options={[{ value: "", label: "— pilih warna —" }, ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }))]}
-                  onValueChange={(v) => set("color_id", v)} />
-              </L>
-            )}
-            {!isLabdip && (
-              <L label="Warna target (opsional)">
-                <KNSelect data-testid="sample-color" className="field" value={f.color_id} searchable
-                  options={[{ value: "", label: "— tanpa warna —" }, ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }))]}
-                  onValueChange={(v) => set("color_id", v)} />
-              </L>
-            )}
-            <L label={`Desain / pattern${needDesign ? " * (ACC)" : " (opsional)"}`}>
+            <L label="Desain / pattern * (ACC)">
               <KNSelect data-testid="sample-design" className="field" value={f.design_id} searchable
-                options={[{ value: "", label: needDesign ? "— pilih desain ACC —" : "— tanpa desain —" },
-                  ...designs.map((d) => ({ value: d.id, label: `${d.code || "tanpa kode"} · ${d.title} (v${d.version || 1})${d.on_hold ? " — ⛔ HOLD" : ""}` }))]}
+                options={[{ value: "", label: "— pilih desain ACC —" },
+                  ...designs.filter((d) => ["approved", "final_submitted", "active"].includes(d.status) || d.id === f.design_id)
+                    .map((d) => ({ value: d.id, label: `${d.code || "tanpa kode"} · ${d.title} (v${d.version || 1})${d.on_hold ? " — ⛔ HOLD" : ""}${d.print_png_missing ? " — PNG cetak belum ada" : ""}` }))]}
                 onValueChange={(v) => set("design_id", v)} />
             </L>
-            <L label="Kain dasar (dari master data)" span>
+            <L label={`Kain dasar${passedFabrics ? " * (sudah lolos)" : " (dari master data)"}`}>
               <BaseFabricPicker testId={`${testPrefix}-base-fabric`} value={sp.base_fabric_template_id} valueName={sp.base_fabric_name}
+                allowedIds={passedFabrics}
                 onChange={(tpl) => setSp((p) => ({ ...p, base_fabric_template_id: tpl?.id || "", base_fabric_name: tpl?.name || "" }))} />
             </L>
           </div>
         </div>
-      )}
-      {!isLabdip && !needDesign && (
-        <L label="Desain / pattern (opsional)">
-          <KNSelect data-testid="sample-design" className="field" value={f.design_id} searchable
-            options={[{ value: "", label: "— tanpa desain —" }, ...designs.map((d) => ({ value: d.id, label: `${d.code || "tanpa kode"} · ${d.title} (v${d.version || 1})` }))]}
-            onValueChange={(v) => set("design_id", v)} />
-        </L>
       )}
 
       {isHandfeel && (

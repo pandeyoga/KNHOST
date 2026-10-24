@@ -24,19 +24,24 @@ function HistoryList({ data }) {
   );
 }
 
-function PartnerFields({ supplierId, reason, onChange }) {
+function PartnerFields({ productId, supplierId, reason, onChange }) {
   const [partners, setPartners] = useState([]);
+  // UAT 24 Okt (P4.6/P4-K1) — hanya supplier BERKONTRAK untuk SKU/induknya, lalu yang "pernah PO" (berlabel).
   useEffect(() => {
-    revalPartners().then((r) => setPartners(r?.items || [])).catch(() => setPartners([]));
-  }, []);
+    if (!productId) { setPartners([]); return; }
+    revalPartners({ product_id: productId }).then((r) => setPartners(r?.items || [])).catch(() => setPartners([]));
+  }, [productId]);
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Supplier / mitra yang diuji ulang *</span>
         <KNSelect data-testid="existing-sku-supplier" className="field" value={supplierId} searchable
-          options={[{ value: "", label: "— pilih supplier / makloon —" },
-            ...partners.map((p) => ({ value: p.id, label: `${p.name}${p.code ? ` · ${p.code}` : ""} (${p.partner_kind})` }))]}
+          options={[{ value: "", label: !productId ? "— pilih SKU dulu —" : partners.length ? "— pilih supplier / makloon —" : "— belum ada supplier berkontrak / pernah PO —" },
+            ...partners.map((p) => ({ value: p.id, label: `${p.name}${p.code ? ` · ${p.code}` : ""} — ${p.basis_label || p.partner_kind}` }))]}
           onValueChange={(v) => onChange({ supplierId: v })} />
+        {productId && partners.some((p) => p.basis === "po_history") && (
+          <span className="mt-1 block text-[10.5px] text-[#8A5300]" data-testid="existing-sku-po-history-note">Supplier berlabel “Pernah PO” belum punya kontrak untuk SKU ini — kontrak dibuat saat hasil uji lulus.</span>
+        )}
       </label>
       <label className="block">
         <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Alasan siklus uji ulang *</span>
@@ -58,7 +63,7 @@ export default function ExistingSkuSection({ product, onPick, supplierId = "", r
     <div className="grid gap-2" data-testid="existing-sku-section">
       <ProductSelect value={product?.id || ""} valueName={product ? `${product.sku} — ${product.name}` : ""}
         stage="finished" label="Pilih SKU aktif…" triggerTestId="existing-sku-select" onSelect={onPick} />
-      <PartnerFields supplierId={supplierId} reason={reason} onChange={onRevalChange} />
+      <PartnerFields productId={product?.id || ""} supplierId={supplierId} reason={reason} onChange={onRevalChange} />
       <p className="text-[10.5px] text-[#6B6B73]">SKU, spesifikasi, dan master tidak diubah. Hasil uji dicatat per supplier — lulus di supplier A tidak berarti lulus di supplier B. Proofing memakai artwork existing yang sudah ACC.</p>
       {product && <SupplierEligibilityPanel productId={product.id} />}
       {product && <HistoryList data={hist} />}

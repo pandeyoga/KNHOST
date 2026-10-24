@@ -7,11 +7,12 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { designFileUrl, getDesign } from "../rnd/rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, errMsg, fmtScore, roundLabel } from "../rnd/rndMeta";
 import { openRnd } from "../rnd/rndDeepLink";
+import DesignOwnershipPanel from "./DesignOwnershipPanel";
 
 const fmtD = (iso) => (iso ? new Date(iso).toLocaleDateString("id-ID", { dateStyle: "medium" }) : "—");
 const fmtBytes = (n) => { const b = Number(n) || 0; return b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`; };
 
-export default function DesignShowcaseModal({ designId, onClose }) {
+export default function DesignShowcaseModal({ designId, onClose, currentUser, onChanged }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [hero, setHero] = useState(null);
@@ -26,12 +27,13 @@ export default function DesignShowcaseModal({ designId, onClose }) {
   return (
     <DetailModal open onClose={onClose} size="xl" label="Rincian desain" testId="gallery-showcase-modal" framed>
       {err && <ErrorNotice message={err} testId="gallery-showcase-error" />}
-      {!d ? <div className="h-40 animate-pulse rounded-lg bg-[#F5F5F7]" /> : <Body d={d} hero={hero} setHero={setHero} onClose={onClose} />}
+      {!d ? <div className="h-40 animate-pulse rounded-lg bg-[#F5F5F7]" /> : <Body d={d} hero={hero} setHero={setHero} onClose={onClose}
+        currentUser={currentUser} onChanged={(fresh) => { setD(fresh); onChanged?.(fresh); }} />}
     </DetailModal>
   );
 }
 
-function Body({ d, hero, setHero, onClose }) {
+function Body({ d, hero, setHero, onClose, currentUser, onChanged }) {
   const files = d.files || [];
   const artwork = files.filter((f) => (f.kind || "artwork") === "artwork");
   const mockups = files.filter((f) => f.kind === "mockup");
@@ -101,6 +103,11 @@ function Body({ d, hero, setHero, onClose }) {
         </div>
 
         <div className="grid content-start gap-3">
+          {/* UAT 24 Okt (P1) — white / customer label, klaim, pemakaian; P6 — tautan desain → induk produk */}
+          <div className="section-card !p-3">
+            <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Kepemilikan &amp; pemakaian</p>
+            <DesignOwnershipPanel d={d} currentUser={currentUser} onChanged={onChanged} />
+          </div>
           <div className="section-card !p-3">
             <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Info desain &amp; pattern</p>
             <Row label="Kategori pattern">{d.category_name || d.category_code || "—"}</Row>
@@ -122,10 +129,10 @@ function Body({ d, hero, setHero, onClose }) {
           </div>
 
           <div className="section-card !p-3">
-            <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Produk yang memakai desain ini</p>
+            <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Peruntukan produk (rekomendasi)</p>
             <div data-testid="gallery-showcase-products">
               {(d.recommended_products || []).length === 0
-                ? <Empty>belum ada produk ditetapkan</Empty>
+                ? <Empty>belum ada rekomendasi — SKU yang benar-benar memakai desain ada di “Pemakaian” di atas</Empty>
                 : (
                   <ul className="grid gap-1">
                     {d.recommended_products.map((pr) => (

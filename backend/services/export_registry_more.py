@@ -251,7 +251,45 @@ EXCLUDED_MORE = {
 
 # LN-140 (2026-10-18) — koleksi baru sejak registry L11 dipetakan / dikecualikan beralasan.
 _RET = ("sales_return", "view")
+# UAT 24 Okt (P6.4) — "Penjualan per desain": satu baris per desain → SKU, pelanggan, SO, qty, nilai, REPEAT.
+# Sumber sama dengan panel Pemakaian desain (P1.4): SO hidup yang memuat SKU ber-`design_id` desain itu.
+_LIVE_SO = {"status": {"$nin": ["cancelled", "draft", "rejected"]}}
+DESIGN_SALES_STAGES = [
+    {"$lookup": {"from": "products", "localField": "id", "foreignField": "design_id", "as": "_p"}},
+    {"$lookup": {"from": "sales_orders", "let": {"pids": "$_p.id"}, "as": "_so", "pipeline": [
+        {"$match": _LIVE_SO}, {"$unwind": "$items"},
+        {"$match": {"$expr": {"$in": ["$items.product_id", "$$pids"]}}},
+        {"$group": {"_id": "$id", "customer_id": {"$first": "$customer_id"}, "created_at": {"$first": "$created_at"},
+                    "qty": {"$sum": {"$ifNull": ["$items.quantity", 0]}},
+                    "value": {"$sum": {"$ifNull": ["$items.line_total", {"$ifNull": ["$items.subtotal", 0]}]}},
+                    "units": {"$addToSet": "$items.unit"}}}]}},
+    {"$addFields": {
+        "sku_count": {"$size": "$_p"}, "so_count": {"$size": "$_so"},
+        "customer_count": {"$size": {"$setUnion": ["$_so.customer_id", []]}},
+        "repeat_customers": {"$size": {"$filter": {
+            "input": {"$setUnion": ["$_so.customer_id", []]}, "as": "c",
+            "cond": {"$gte": [{"$size": {"$filter": {"input": "$_so", "as": "s",
+                                                     "cond": {"$eq": ["$$s.customer_id", "$$c"]}}}}, 2]}}}},
+        "qty_total": {"$round": [{"$sum": "$_so.qty"}, 2]}, "value_total": {"$round": [{"$sum": "$_so.value"}, 2]},
+        "units": {"$reduce": {"input": {"$setUnion": [{"$reduce": {"input": "$_so.units", "initialValue": [],
+                                                                    "in": {"$concatArrays": ["$$value", "$$this"]}}}, []]},
+                              "initialValue": "", "in": {"$concat": [
+                                  "$$value", {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]}, {"$ifNull": ["$$this", "-"]}]}}},
+        "first_order_at": {"$min": "$_so.created_at"}, "last_order_at": {"$max": "$_so.created_at"},
+        "ownership_label": {"$cond": [{"$eq": ["$ownership", "customer"]},
+                                      {"$concat": ["Customer label · ", {"$ifNull": ["$owner_customer_name", ""]}]},
+                                      "White label"]}}},
+    {"$project": {"_p": 0, "_so": 0}},
+]
 MORE += [
+    S("design_sales", "Penjualan per Desain", "Penjualan", "design_gallery", ("order", "view"),
+      "code:Kode desain|title:Judul|category_name:Kategori pattern|design_category_name:Kategori design"
+      "|ownership_label:Kepemilikan|sku_count:Jumlah SKU:n|customer_count:Jumlah pelanggan:n|so_count:Jumlah SO:n"
+      "|repeat_customers:Pelanggan repeat (≥2 SO):n|qty_total:Qty terjual:n|units:Satuan|value_total:Nilai terjual:m"
+      "|first_order_at:SO pertama:t|last_order_at:SO terakhir:t|entity_id:ID badan usaha",
+      stages=DESIGN_SALES_STAGES,
+      grain="1 baris = 1 desain (SO hidup yang memuat SKU ber-desain itu; qty dijumlah apa adanya — lihat kolom Satuan)"),
+
     S("return_grade_impairments", "Kerugian Turun Grade Retur", "Penjualan", "return_grade_impairments", _RET,
       "return_number:No. retur|roll_no:Roll|grade_before:Grade lama|grade_after:Grade baru|qty:Qty:n|unit:Satuan"
       "|list_price:Harga daftar:m|unit_loss:Rugi/satuan:m|amount:Kerugian:m|je_number:Jurnal|entity_id:ID badan usaha",

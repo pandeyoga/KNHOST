@@ -99,6 +99,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
         title: f.title, category: f.category, base_unit: f.base_unit,
         template_id: catalog.template_id || "", target_product_id: catalog.target_product_id || "",
         variant_attrs: catalog.variant_attrs || {}, variant_options: catalog.variant_options || {},
+        new_axis_values: catalog.new_axis_values || {},   // UAT 24 Okt (P5.3)
         line_code: f.line_code || "",
         base_fabric_template_id: f.base_fabric_template_id || "",
         sku_hint: f.sku_hint, sample_type_hint: f.sample_type_hint,

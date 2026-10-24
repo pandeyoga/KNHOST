@@ -6,7 +6,8 @@ import { catalogApi, catalogError } from "../features/catalog/catalogApi";
 const TYPES = [["", "Semua"], ["woven", "Woven"], ["knit", "Knit"]];
 
 /** Pemilih "kain dasar" dari master data induk produk — klik → popup cari/filter. */
-export default function BaseFabricPicker({ value, valueName, onChange, excludeId = "", disabled = false, testId = "base-fabric" }) {
+export default function BaseFabricPicker({ value, valueName, onChange, excludeId = "", disabled = false, testId = "base-fabric",
+  allowedIds = null }) {
   const [open, setOpen] = useState(false);
   return <>
     <button type="button" data-testid={`${testId}-trigger`} disabled={disabled}
@@ -17,12 +18,13 @@ export default function BaseFabricPicker({ value, valueName, onChange, excludeId
       </span>
       <Layers3 size={14} className="shrink-0 text-[#6B6B73]" />
     </button>
-    {open && <BaseFabricDialog value={value} excludeId={excludeId} testId={testId} onClose={() => setOpen(false)}
+    {open && <BaseFabricDialog value={value} excludeId={excludeId} testId={testId} allowedIds={allowedIds} onClose={() => setOpen(false)}
       onPick={(tpl) => { onChange(tpl); setOpen(false); }} />}
   </>;
 }
 
-function BaseFabricDialog({ value, excludeId, testId, onClose, onPick }) {
+/** `allowedIds` (UAT 24 Okt P4.8) — bila diisi, hanya induk yang LOLOS (SKU berjalan / handfeel-labdip ACC) bisa dipilih. */
+function BaseFabricDialog({ value, excludeId, testId, onClose, onPick, allowedIds = null }) {
   const [q, setQ] = useState(""); const [type, setType] = useState("");
   const [rows, setRows] = useState(null); const [error, setError] = useState("");
   useEffect(() => {
@@ -61,15 +63,18 @@ function BaseFabricDialog({ value, excludeId, testId, onClose, onPick }) {
           </button>
           {rows === null && !error && <p className="p-3 text-xs text-[#8E8E93]" data-testid={`${testId}-loading`}>Memuat master data…</p>}
           {rows !== null && !list.length && <p className="p-3 text-xs text-[#8E8E93]" data-testid={`${testId}-empty`}>Tidak ada induk master data yang cocok.</p>}
-          {list.map((t) => <button type="button" key={t.id} data-testid={`${testId}-option-${t.id}`} onClick={() => onPick(t)}
-            className={`mb-1 flex w-full items-start justify-between gap-3 rounded-lg border px-3 py-2 text-left ${value === t.id ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#EFF0F2] hover:bg-[#FAFBFC]"}`}>
+          {list.map((t) => {
+            const blocked = allowedIds && !allowedIds.has(t.id);
+            return <button type="button" key={t.id} data-testid={`${testId}-option-${t.id}`} disabled={blocked} onClick={() => onPick(t)}
+            className={`mb-1 flex w-full items-start justify-between gap-3 rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${value === t.id ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#EFF0F2] hover:bg-[#FAFBFC]"}`}>
             <span className="min-w-0">
-              <span className="block truncate text-[12.5px] font-semibold">{t.name}</span>
+              <span className="block truncate text-[12.5px] font-semibold">{t.name}{blocked && <span className="ml-1 text-[10px] font-bold text-[#8A5300]">· belum lolos handfeel/labdip</span>}</span>
               <span className="block text-[11px] text-[#6B6B73]">{t.category} · {t.fabric_type || "—"} · {t.motif || "—"} · {t.stage || "—"}</span>
               <span className="block text-[10.5px] text-[#8E8E93]">{t.gramasi ? `${t.gramasi} gsm` : "— gsm"} · {t.lebar ? `lebar ${t.lebar} m` : "lebar —"} · {t.variant_count || 0} SKU</span>
             </span>
             <span className="flex shrink-0 items-center gap-1 font-mono text-[10.5px] text-[#6B6B73]">{t.sku_prefix}{value === t.id && <Check size={13} className="text-[#0058CC]" />}</span>
-          </button>)}
+          </button>;
+          })}
         </div>
       </DialogContent>
     </Dialog>

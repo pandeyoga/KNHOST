@@ -52,7 +52,10 @@ def _site():
 
 def _po_payload(**dest):
     sup = DB.suppliers.find_one({"group_entity_id": {"$in": [None, ""]}}, {"_id": 0, "id": 1, "name": 1})
-    prod = DB.products.find_one({"status": "active", "lifecycle": "produksi"}, {"_id": 0, "id": 1, "base_unit": 1})
+    # Artikel dengan sumber restock "supplier" — PO/PR selalu sah walau kebijakan artikel-tanpa-sumber = blokir.
+    tpls = [t["id"] for t in DB.product_templates.find({"restock_source.mode": "supplier"}, {"id": 1})]
+    prod = (DB.products.find_one({"status": "active", "template_id": {"$in": tpls}}, {"_id": 0, "id": 1, "base_unit": 1})
+            or DB.products.find_one({"status": "active", "lifecycle": "produksi"}, {"_id": 0, "id": 1, "base_unit": 1}))
     return {"supplier_id": sup["id"], "supplier_name": sup["name"], "entity_id": "ent_ksc", "tax_mode": "ppn",
             "items": [{"product_id": prod["id"], "quantity": 10, "unit": prod.get("base_unit") or "yard", "price": 1000,
                        "expected_grade": "A"}],
@@ -80,7 +83,10 @@ def test_po_klien_lama_ke_gudang_simpan_dialihkan_ke_transit_lokasinya():
 
 
 def test_pr_ke_lokasi_menyimpan_lokasi_dan_gudang_penerimaan():
-    prod = DB.products.find_one({"status": "active", "lifecycle": "produksi"}, {"_id": 0, "id": 1, "base_unit": 1})
+    # Artikel dengan sumber restock "supplier" — PO/PR selalu sah walau kebijakan artikel-tanpa-sumber = blokir.
+    tpls = [t["id"] for t in DB.product_templates.find({"restock_source.mode": "supplier"}, {"id": 1})]
+    prod = (DB.products.find_one({"status": "active", "template_id": {"$in": tpls}}, {"_id": 0, "id": 1, "base_unit": 1})
+            or DB.products.find_one({"status": "active", "lifecycle": "produksi"}, {"_id": 0, "id": 1, "base_unit": 1}))
     r = requests.post(f"{BASE}/purchase-requisitions", headers=ADMIN, json={
         "items": [{"product_id": prod["id"], "quantity": 5, "unit": prod.get("base_unit") or "yard", "est_price": 1000}],
         "ship_to_site_id": SITE, "entity_id": "ent_ksc", "reason": f"TEST F1 {T}"})

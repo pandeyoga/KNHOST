@@ -765,16 +765,22 @@ async def desk_rows(scope: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         elif od.get("status") == "ready" and not od.get("outbound_task_ids"):
             out["siap_kirim"].append({**od, "phase": ph})
     return out
-def assert_customer_allowed(product: Dict[str, Any], customer_id: str, where: str = "Pesanan") -> None:
+def assert_customer_allowed(product: Dict[str, Any], customer_id: str, where: str = "Pesanan") -> str:
+    """'' = bebas / pemilik; 'grandfathered' = pembeli LAMA desain yang kini customer label (UAT 24 Okt P1-K1):
+    boleh repeat, tetapi HANYA dari stok yang ada (pemanggil menolak backorder)."""
     owner = (product or {}).get("exclusive_customer_id") or ""
-    if not owner:
-        return
-    if owner != (customer_id or ""):
-        name = product.get("name") or product.get("sku") or "produk ini"
-        raise HTTPException(status_code=400, detail=(
-            f"{where}: produk '{name}' ({product.get('sku', '')}) EKSKLUSIF untuk pelanggan "
-            f"{product.get('exclusive_customer_name') or owner} (hasil pesanan khusus {product.get('special_order_number') or ''}). "
-            "Tidak boleh dijual ke pelanggan lain / walk-in — pilih pelanggan pemiliknya."))
+    if not owner or owner == (customer_id or ""):
+        return ""
+    if customer_id and customer_id in (product.get("exclusive_allow_customer_ids") or []):
+        return "grandfathered"
+    name = product.get("name") or product.get("sku") or "produk ini"
+    asal = (f"desain {product.get('exclusive_design_code') or product.get('design_code') or ''} berlabel customer label"
+            if product.get("exclusive_source") == "design" else
+            f"hasil pesanan khusus {product.get('special_order_number') or ''}")
+    raise HTTPException(status_code=400, detail=(
+        f"{where}: produk '{name}' ({product.get('sku', '')}) EKSKLUSIF untuk pelanggan "
+        f"{product.get('exclusive_customer_name') or owner} ({asal}). "
+        "Tidak boleh dijual ke pelanggan lain / walk-in — pilih pelanggan pemiliknya."))
 
 
 # ─── Proofing otomatis saat desain OD di-ACC ─────────────────────────────────

@@ -1099,6 +1099,7 @@ class ColorCreate(BaseModel):
     family: str = ""                      # kelompok warna (Merah/Biru/...)
     factory_name: str = ""                # MD-07 — nama versi pabrik/supplier untuk warna yang sama
     exclusive_customer_id: str = ""       # warna milik pelanggan (tab "Warna Pelanggan")
+    pantone_code: str = ""                # UAT 24 Okt (P3.5) — kode Pantone eksplisit (wajib untuk labdip)
 
 
 class ColorPatch(BaseModel):
@@ -1109,3 +1110,4 @@ class ColorPatch(BaseModel):
     family: Optional[str] = None
     status: Optional[str] = None
     exclusive_customer_id: Optional[str] = None  # "" = lepas kepemilikan pelanggan
+    pantone_code: Optional[str] = None           # UAT 24 Okt (P3.5)

@@ -200,6 +200,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         entity_id, customer["id"], [it.product_id for it in payload.items], products)
     raw_items = []
     special_count = 0
+    stock_only_pids: set = set()
     for item_in in payload.items:
         product = products.get(item_in.product_id)
         if not product:
@@ -208,7 +209,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         pexcl.assert_can_order(actor, product)
         # Fase 2 OD — SKU hasil pesanan khusus hanya boleh dijual ke pelanggan pemiliknya.
         from services import special_order_phase2 as _p2
-        _p2.assert_customer_allowed(product, customer["id"], where="Pesanan Penjualan")
+        if _p2.assert_customer_allowed(product, customer["id"], where="Pesanan Penjualan") == "grandfathered":
+            stock_only_pids.add(product["id"])   # UAT 24 Okt (P1-K1) — pembeli lama: repeat dari stok saja
         # FASE L — pagar lini: staf printing tidak boleh menjual kain woven. Ditolak 403
         # ber-kalimat Indonesia (bukan 500, bukan daftar kosong tanpa sebab — user story L.G #3).
         line_scope.assert_can_order(actor, product)
@@ -486,7 +488,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
             # ── Mode "qty" (per yard, FEFO auto) — perilaku lama ──
             allocs = await allocate_and_reserve_rolls(
                 item["product_id"], item["base_quantity"], customer_city, entity_id, order_id,
-                allow_partial=payload.allow_backorder, policy=alloc_policy, customer_id=payload.customer_id,
+                allow_partial=payload.allow_backorder and item["product_id"] not in stock_only_pids,
+                policy=alloc_policy, customer_id=payload.customer_id,
                 makloon_override=payload.confirm_makloon_override, makloon_prompt=True,
                 required_grade=item.get("required_grade", ""),
             )

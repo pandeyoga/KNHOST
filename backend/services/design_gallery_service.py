@@ -202,6 +202,16 @@ async def list_gallery(scope: Dict[str, Any], tag: Optional[str] = None,
         query["origin"] = {"$nin": ["special_order", "redesign"]}
     elif (filters or {}).get("origin") in ("special_order", "redesign"):
         query["origin"] = filters["origin"]
+    # UAT 24 Okt (P1.5) — kepemilikan (white / customer label / klaim menunggu) & pemilik.
+    own = (filters or {}).get("ownership")
+    if own == "customer":
+        query["ownership"] = "customer"
+    elif own == "white":
+        query["ownership"] = {"$ne": "customer"}
+    elif own == "claim_pending":
+        query["claims.status"] = "pending"
+    if (filters or {}).get("owner_customer_id"):
+        query["owner_customer_id"] = filters["owner_customer_id"]
     rows = await db.design_gallery.find(query, {"_id": 0}).sort("created_at", -1).to_list(2000)
     rows = [studio.enrich(_rating_fields(safe_doc(r), viewer_id)) for r in rows]
     if q:
@@ -210,7 +220,28 @@ async def list_gallery(scope: Dict[str, Any], tag: Optional[str] = None,
                 or s in (r.get("code", "") or "").lower()
                 or s in (r.get("story", "") or "").lower()
                 or any(s in (t or "").lower() for t in (r.get("tags") or []))]
-    return await studio.attach_proofing(rows)
+    rows = await attach_produced(await studio.attach_proofing(rows))
+    if (filters or {}).get("produced") in ("yes", "no"):
+        want = filters["produced"] == "yes"
+        rows = [r for r in rows if r["produced"] == want]
+    return rows
+
+
+async def attach_produced(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """UAT 24 Okt (P1.5) — "Diproduksi / Belum": ada SKU ber-`design_id` ini (atau master produk dari proofing)."""
+    ids = [r["id"] for r in rows if r and r.get("id")]
+    counts: Dict[str, int] = {}
+    if ids:
+        async for g in db.products.aggregate([{"$match": {"design_id": {"$in": ids}}},
+                                              {"$group": {"_id": "$design_id", "n": {"$sum": 1}}}]):
+            counts[g["_id"]] = g["n"]
+    for r in rows:
+        if not r:
+            continue
+        r["product_count"] = counts.get(r.get("id"), 0)
+        r["produced"] = bool(r["product_count"]) or ((r.get("proofing") or {}).get("state") == "master")
+        r["produced_label"] = "Sudah diproduksi" if r["produced"] else "Belum diproduksi"
+    return rows
 
 
 async def get_gallery(gallery_id: str,
@@ -221,6 +252,7 @@ async def get_gallery(gallery_id: str,
         viewer_id))
     if doc:
         await studio.attach_proofing([doc])
+        await attach_produced([doc])
     return doc
 
 

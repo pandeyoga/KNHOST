@@ -7,6 +7,8 @@ import { useEscapeClose } from "@/utils/escapeLayers";
 
 export const DEFAULT_FACETS = {
   categories: [], grades: [], colors: [],
+  // UAT 24 Okt (P6.3) — tag desain dari master produk (kode desain · kategori pattern · kategori design).
+  designCodes: [], patternCats: [], designCats: [],
   priceMin: "", priceMax: "", availability: "all", sort: "relevance",
 };
 
@@ -39,6 +41,9 @@ export function FacetRail({ products = [], facets, setFacets, selectedEntity = "
     grades: uniq(products.map((p) => p.grade)),
     colors: uniq(products.map((p) => p.color)),
     colorHex: products.reduce((m, p) => { if (p.color && p.color_hex && !m[p.color]) m[p.color] = p.color_hex; return m; }, {}),
+    designCodes: uniq(products.map((p) => p.design_code)),
+    patternCats: uniq(products.map((p) => p.pattern_category_name)),
+    designCats: uniq(products.map((p) => p.design_category_name)),
   }), [products]);
 
   const toggle = (key, val) => setFacets((f) => {
@@ -48,6 +53,7 @@ export function FacetRail({ products = [], facets, setFacets, selectedEntity = "
   });
 
   const activeCount = facets.categories.length + facets.grades.length + facets.colors.length
+    + (facets.designCodes || []).length + (facets.patternCats || []).length + (facets.designCats || []).length
     + (facets.priceMin ? 1 : 0) + (facets.priceMax ? 1 : 0) + (facets.availability !== "all" ? 1 : 0);
 
   const moreCount = Math.max(0, opts.categories.length - CHIP_PREVIEW)
@@ -70,6 +76,7 @@ export function FacetRail({ products = [], facets, setFacets, selectedEntity = "
         <Chips options={opts.colors} selected={facets.colors} onToggle={(v) => toggle("colors", v)}
           group="color" hexMap={opts.colorHex} limit={limit} onMore={() => setShowAll(true)} />
       </FacetGroup>
+      <DesignFacets opts={opts} facets={facets} toggle={toggle} limit={limit} onMore={() => setShowAll(true)} />
     </>
   );
 
@@ -135,6 +142,21 @@ export function FacetRail({ products = [], facets, setFacets, selectedEntity = "
  *  Di-portal ke <body> dengan z-[120] (tangga z-index POS: drawer 110-130) — kartu
  *  produk memakai transform sehingga membuat stacking context yang menutup overlay
  *  biasa. */
+/** P6.3 — facet desain hanya tampil bila ada produk bertag desain. */
+function DesignFacets({ opts, facets, toggle, limit, onMore, prefix = "" }) {
+  const rows = [
+    ["designCodes", "Kode desain", "facet-design-codes", "design-code"],
+    ["patternCats", "Kategori pattern", "facet-pattern-cats", "pattern-cat"],
+    ["designCats", "Kategori design", "facet-design-cats", "design-cat"],
+  ];
+  return rows.filter(([k]) => (opts[k] || []).length > 0).map(([k, label, testid, group]) => (
+    <FacetGroup key={k} label={label} testid={`${prefix}${testid}`}>
+      <Chips options={opts[k]} selected={facets[k] || []} onToggle={(v) => toggle(k, v)} group={`${prefix}${group}`}
+        limit={limit} onMore={onMore} />
+    </FacetGroup>
+  ));
+}
+
 function AllFiltersModal({ onClose, facets, setFacets, opts, toggle, activeCount }) {
   useEscapeClose(true, onClose);
   return createPortal(
@@ -167,6 +189,7 @@ function AllFiltersModal({ onClose, facets, setFacets, opts, toggle, activeCount
           <FacetGroup label={`Warna (${opts.colors.length})`} testid="facet-modal-colors">
             <Chips options={opts.colors} selected={facets.colors} onToggle={(v) => toggle("colors", v)} group="m-color" hexMap={opts.colorHex} />
           </FacetGroup>
+          <DesignFacets opts={opts} facets={facets} toggle={toggle} prefix="m-" />
           <div>
             <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Rentang Harga (Rp)</label>
             <div className="grid grid-cols-2 gap-2">

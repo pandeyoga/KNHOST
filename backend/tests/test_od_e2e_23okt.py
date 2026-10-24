@@ -162,6 +162,13 @@ def test_md_putus_pemenang_spesifikasi_diajukan_otomatis(H):
     sup = DB.suppliers.find_one({"name": {"$regex": "Grey Mandiri"}}, {"_id": 0, "id": 1}) or \
         DB.suppliers.find_one({"status": {"$ne": "inactive"}}, {"_id": 0, "id": 1})
     md_h = H["md"]
+    # UAT 24 Okt (P3.5) — labdip wajib ber-Pantone saat dikirim ke supplier (warna OD dari Pustaka → lengkapi Pantone).
+    ct = (DB.md_samples.find_one({"id": sid}, {"_id": 0, "color_target": 1}) or {}).get("color_target") or {}
+    if ct.get("color_id"):
+        DB.color_library.update_one({"id": ct["color_id"], "pantone_code": {"$in": [None, ""]}},
+                                    {"$set": {"pantone_code": "19-4052 TCX"}})
+    else:
+        DB.md_samples.update_one({"id": sid}, {"$set": {"color_target.pantone_code": "19-4052 TCX"}})
     r = requests.post(f"{BASE}/rnd/samples/{sid}/send", headers=md_h,
                       json={"supplier_ids": [sup["id"]], "type_codes": ["labdip"]}, timeout=30)
     assert r.status_code == 200, r.text

@@ -76,8 +76,9 @@ def _spec_body_from_sample(spec_body: Dict[str, Any], sample_body: Dict[str, Any
     for k in ("design_id", "so_id", "customer_id", "line_code"):
         if not spec_body.get(k) and sample_body.get(k):
             spec_body[k] = sample_body[k]
-    if not (spec_body.get("color_target") or {}).get("color_id") and (sample_body.get("color_target") or {}).get("color_id"):
-        spec_body["color_target"] = sample_body["color_target"]
+    _sc = sample_body.get("color_target") or {}
+    if not (spec_body.get("color_target") or {}).get("color_id") and (_sc.get("color_id") or _sc.get("name") or _sc.get("hex")):
+        spec_body["color_target"] = _sc   # UAT 24 Okt (P4.4) — termasuk warna BARU labdip (nama + hex + Pantone)
     if not spec_body.get("base_unit") and sample_body.get("unit"):
         spec_body["base_unit"] = sample_body["unit"]
     types = sample_body.get("sample_types") or []
@@ -92,8 +93,10 @@ def _validate_spec_for_types(spec_body: Dict[str, Any], sample_types: List[str])
     target = spec_body.get("target") or {}
     if not (target.get("fabric_type") or "").strip():
         raise RndError("Spesifikasi: jenis kain (woven/knit) wajib diisi.")
-    if "labdip" in types and not (spec_body.get("color_target") or {}).get("color_id"):
-        raise RndError("Spesifikasi labdip: warna target dari Pustaka Warna wajib dipilih.")
+    ct = spec_body.get("color_target") or {}
+    if "labdip" in types and not (ct.get("color_id") or (ct.get("name") and ct.get("hex"))):
+        raise RndError("Spesifikasi labdip: warna target wajib diisi — warna baru (nama, hex, Pantone) "
+                       "atau warna Pustaka yang sudah ada.")
     if "proofing" in types and not spec_body.get("design_id"):
         raise RndError("Spesifikasi proofing: desain/pattern wajib dipilih.")
 
@@ -360,11 +363,19 @@ async def list_samples(request: Request, entity_id: Optional[str] = Query(None),
                        spec_id: str = Query(""),
                        so_id: str = Query("", description="FASE S — sample milik pesanan"),
                        line: str = Query("", description="FASE L — penyaring lini"),
+                       purpose: str = Query("", description="UAT 24 Okt P4.1 — new_development | revalidation"),
+                       color_batch_id: str = Query("", description="UAT 24 Okt P4.3 — anggota kelompok labdip"),
                        limit: int = Query(200, ge=1, le=500)) -> Dict[str, Any]:
     actor = await require_permission(request, "rnd", "view")
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     scope = _lines.narrow(scope, actor, line)   # FASE L
+    if purpose == "revalidation":
+        scope = {**scope, "purpose": "revalidation"}
+    elif purpose == "new_development":
+        scope = {**scope, "purpose": {"$ne": "revalidation"}}
+    if color_batch_id:
+        scope = {**scope, "color_batch_id": color_batch_id}
     rows = await smp.list_samples(scope, q=q, status=status, sample_type=sample_type,
                                   spec_id=spec_id, so_id=so_id, limit=limit)
     await smp.attach_spec_summaries(rows)
@@ -405,6 +416,93 @@ async def labdip_history(request: Request, entity_id: Optional[str] = Query(None
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+async def _inherit_parent_construction(spec_body: Dict[str, Any], parent_sample_id: str) -> None:
+    """P4.2 — labdip mewarisi KONSTRUKSI handfeel induk yang ACC (jenis kain, gramasi, lebar, benang, …)."""
+    if not parent_sample_id:
+        return
+    from db import db as _db
+    parent = await _db.md_samples.find_one({"id": parent_sample_id}, {"_id": 0, "spec_id": 1})
+    pspec = await _db.md_specs.find_one({"id": (parent or {}).get("spec_id") or ""}, {"_id": 0}) if parent else None
+    if not pspec:
+        return
+    tgt = dict(spec_body.get("target") or {})
+    for k, v in (pspec.get("target") or {}).items():
+        if v not in (None, "", [], {}) and tgt.get(k) in (None, "", [], {}):
+            tgt[k] = v
+    spec_body["target"] = tgt
+    for k in ("template_id", "base_fabric_template_id", "base_unit", "line_code"):
+        if not spec_body.get(k) and pspec.get(k):
+            spec_body[k] = pspec[k]
+
+
+async def _create_color_batch(payload: SampleInput, body: Dict[str, Any], colors: List[Dict[str, Any]], ctx,
+                              actor: Dict[str, Any]) -> Dict[str, Any]:
+    from core_utils import new_id
+    pol = await rnd_gate.policy(ctx.active_entity_id or "")
+    limit = int(pol.get("labdip_max_colors") or 10)
+    if "labdip" not in [str(t).lower() for t in payload.sample_types]:
+        raise _err(RndError("Banyak warna sekaligus hanya untuk permintaan LABDIP."))
+    if len(colors) > limit:
+        raise _err(RndError(f"Maksimal {limit} warna per permintaan labdip (pengaturan R&D)."))
+    if payload.spec_id or not payload.spec:
+        raise _err(RndError("Labdip multi-warna lahir bersama spesifikasi target (satu spesifikasi per warna)."))
+    batch = new_id("lbb")
+    docs = []
+    try:
+        for i, color in enumerate(colors, start=1):
+            one = {**body, "color_target": color, "color_batch_id": batch, "color_batch_index": i,
+                   "color_batch_size": len(colors),
+                   "title": f"{body.get('title') or ''} — {color.get('name') or color.get('code') or f'Warna {i}'}".strip(" —")}
+            spec_body = _spec_body_from_sample(payload.spec.model_dump(), one)
+            spec_body["color_target"] = color
+            spec_body["title"] = one["title"]
+            await _inherit_parent_construction(spec_body, one.get("parent_sample_id") or "")
+            _validate_spec_for_types(spec_body, payload.sample_types)
+            spec_doc = await spec_svc.create_spec(spec_body, entity_id=ctx.active_entity_id, actor=actor.get("name", ""))
+            one["spec_id"] = spec_doc["id"]
+            one.pop("spec", None)
+            docs.append(await smp.create_sample(one, entity_id=ctx.active_entity_id, actor=actor.get("name", "")))
+    except RndError as exc:
+        raise _err(exc) from exc
+    await audit(actor.get("name", ""), "rnd_labdip_batch_created", "md_samples", docs[0]["id"],
+                {"batch": batch, "numbers": [d["number"] for d in docs]})
+    return {**docs[0], "color_batch": {"id": batch, "samples": [{"id": d["id"], "number": d["number"],
+                                                                "color": d.get("color_target")} for d in docs]}}
+
+
+@router.post("/rnd/samples/{sample_id}/send-batch")
+async def send_color_batch(sample_id: str, payload: SampleSendBody, request: Request) -> Dict[str, Any]:
+    """P4.3 — kirim SEMUA warna satu kelompok labdip ke supplier yang sama sekaligus (ronde per supplier × warna)."""
+    from db import db as _db
+    actor = await require_permission(request, "rnd", "submit")
+    ctx = await entity_ctx(request)
+    doc = await _sample_guard(sample_id, ctx)
+    if not doc.get("color_batch_id"):
+        raise HTTPException(status_code=400, detail="Sampel ini bukan bagian kelompok labdip multi-warna.")
+    sent, errors = [], []
+    async for s in _db.md_samples.find({"color_batch_id": doc["color_batch_id"], "status": {"$in": ["draft", "sent", "in_progress"]}},
+                                       {"_id": 0, "id": 1, "number": 1}).sort("color_batch_index", 1):
+        try:
+            await smp.send_sample(s["id"], payload.supplier_ids, due_date=payload.due_date, note=payload.note,
+                                  type_codes=payload.type_codes, actor=actor.get("name", ""))
+            sent.append(s["number"])
+        except RndError as exc:
+            errors.append(f"{s['number']}: {exc}")
+    if not sent and errors:
+        raise HTTPException(status_code=400, detail=" · ".join(errors[:4]))
+    await audit(actor.get("name", ""), "rnd_labdip_batch_sent", "md_samples", sample_id,
+                {"sent": sent, "errors": errors, "suppliers": payload.supplier_ids})
+    return {"sent": sent, "errors": errors, "sample": await smp.get_sample(sample_id)}
+
+
+@router.get("/rnd/base-fabrics")
+async def rnd_base_fabrics(request: Request) -> Dict[str, Any]:
+    """P4.8 — induk kain dasar yang LOLOS (SKU berjalan / handfeel-labdip ACC) untuk proofing/printing."""
+    await require_permission(request, "rnd", "view")
+    from services import rnd_flow_service as _flow
+    return {"items": await _flow.passed_base_fabrics()}
+
+
 @router.post("/rnd/samples")
 async def create_sample(payload: SampleInput, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "rnd", "create")
@@ -418,8 +516,15 @@ async def create_sample(payload: SampleInput, request: Request) -> Dict[str, Any
         elif not payload.spec_id and not payload.spec:
             raise RndError("Spesifikasi produk WAJIB — setiap permintaan sample (labdip/handfeel/proofing) "
                            "lahir bersama spesifikasi target-nya. Isi bagian Spesifikasi atau pilih spesifikasi acuan.")
+        colors = [c for c in (body.pop("color_targets", None) or []) if (c or {}).get("color_id") or (c or {}).get("name")]
+        if len(colors) > 1:
+            # UAT 24 Okt (P4.3) — labdip MULTI-WARNA: satu sampel (+ spesifikasi) per warna, satu kelompok.
+            return await _create_color_batch(payload, body, colors, ctx, actor)
+        if colors:
+            body["color_target"] = colors[0]
         if payload.spec and not payload.spec_id:
             spec_body = _spec_body_from_sample(payload.spec.model_dump(), body)
+            await _inherit_parent_construction(spec_body, body.get("parent_sample_id") or "")
             _validate_spec_for_types(spec_body, payload.sample_types)
             spec_doc = await spec_svc.create_spec(spec_body, entity_id=ctx.active_entity_id, actor=actor.get("name", ""))
             body["spec_id"] = spec_doc["id"]
@@ -670,9 +775,13 @@ async def revalidation_pic_queue(request: Request) -> Dict[str, Any]:
 
 
 @router.get("/rnd/revalidation/partners")
-async def revalidation_partners(request: Request, q: str = Query("")) -> Dict[str, Any]:
-    """L03 LN-034 — pilihan supplier/mitra makloon untuk form uji ulang SKU existing."""
+async def revalidation_partners(request: Request, q: str = Query(""), product_id: str = Query("")) -> Dict[str, Any]:
+    """L03 LN-034 — pilihan supplier/mitra makloon untuk form uji ulang SKU existing.
+    UAT 24 Okt (P4.6/P4-K1) — dengan `product_id`: hanya yang BERKONTRAK untuk produk/induknya, lalu "pernah PO"."""
     await require_permission(request, "rnd", "create")
+    if product_id:
+        from services import rnd_flow_service as _flow
+        return {"items": await _flow.contract_partners(product_id, q.strip()), "basis": "contract"}
     from services import rnd_revalidation_service as rv
     return {"items": await rv.lookup_partners(q.strip())}
 

@@ -67,7 +67,10 @@ function ItemRow({ it, idx, upd, toggle, templates, artworks, colors, unitOption
           <Field label="Artwork ACC (HOLD tidak tampil) *">
             <KNSelect data-testid={`od-item-artwork-${n}`} className="field" value={it.source_design_id} searchable
               options={[{ value: "", label: artworks.length ? "— pilih artwork —" : "— belum ada artwork ACC —" },
-                ...artworks.map((d) => ({ value: d.id, label: `${d.code || "tanpa kode"} · ${d.title}` }))]}
+                // UAT 24 Okt (P1.6) — desain KN siap tawar (white label) ditandai belum/sudah diproduksi; desain
+              // customer label milik pelanggan lain sudah disaring form induknya.
+              ...artworks.map((d) => ({ value: d.id, label: `${d.code || "tanpa kode"} · ${d.title}`
+                + (d.ownership === "customer" ? " · milik pelanggan ini" : d.produced ? " · sudah diproduksi" : " · belum diproduksi") }))]}
               onValueChange={(v) => upd(idx, "source_design_id", v)} />
           </Field>
         )}

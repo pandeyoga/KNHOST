@@ -317,9 +317,19 @@ async def upload_kind_file(gallery_id: str, kind: str, request: Request,
     actor = await _perm_manage(request)
     ctx = await entity_ctx(request)
     await assert_design_writer(await _guard(gallery_id, ctx), actor)
-    if kind not in ("artwork", "reference", "mockup", "colorway", "source"):
-        raise HTTPException(status_code=400, detail="Jenis berkas harus artwork, reference, mockup, colorway, atau source.")
+    if kind not in ("artwork", "reference", "mockup", "colorway", "source", "print_png"):
+        raise HTTPException(status_code=400, detail="Jenis berkas harus artwork, reference, mockup, colorway, source, "
+                                                    "atau print_png.")
     data = await file.read()
+    if kind == "print_png":
+        # UAT 24 Okt (P3.3) — PNG cetak: benar-benar PNG (tanda tangan berkas), bukan sekadar nama .png.
+        if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise HTTPException(status_code=400, detail="PNG cetak harus berkas PNG (bukan JPG/PSD/PDF).")
+        import struct
+        w, h = struct.unpack(">II", data[16:24]) if len(data) >= 24 else (0, 0)
+        if min(w, h) < 600:
+            raise HTTPException(status_code=400, detail=f"Resolusi PNG cetak terlalu kecil ({w}×{h}) — minimal 600 px "
+                                                        "di sisi terpendek supaya pattern terbaca saat dicetak.")
     try:
         fmeta = await gallery.add_file(gallery_id, file.filename or kind, file.content_type or "", data,
                                        kind=kind, caption=caption, uploaded_by=actor.get("name", ""),

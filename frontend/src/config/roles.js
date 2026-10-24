@@ -276,7 +276,7 @@ export const ROLE_NAV = {
     add: [
       "md-desk", "home", "hr-my-profile",
       // R&D & desain
-      "rnd-hub", "rnd-specs", "rnd-samples", "rnd-labdip", "rnd-handfeel", "rnd-proofing", "rnd-reports",
+      "rnd-hub", "rnd-specs", "rnd-samples", "rnd-revalidation", "rnd-labdip", "rnd-handfeel", "rnd-proofing", "rnd-reports",
       "designer-hub", "design-requests", "rnd-designs", "cs-design-gallery",
       // produk & harga
       "penjualan", "products-pricing", "md-products", "product-templates", "md-categories", "color-library", "md-uoms",

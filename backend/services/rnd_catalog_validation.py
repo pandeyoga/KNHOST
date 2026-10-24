@@ -28,6 +28,16 @@ async def validate_spec_catalog(data, actor, ctx):
     parent = await catalog_access.template_for(actor, data['template_id'], manage=True)
     if parent.get('status') != 'active':
         raise HTTPException(409, 'Induk produk sudah diarsipkan.')
+    # UAT 24 Okt (P5.3) — nilai sumbu BARU (mis. warna labdip ACC) ikut divalidasi seolah sudah ada di induk;
+    # ditambahkan sungguhan saat spesifikasi di-ACC.
+    nav = data.get('new_axis_values') or {}
+    if nav:
+        parent = {**parent, 'axes': [{**a, 'options': list(a.get('options') or []) + (
+            [{'code': str(nav[a['key']].get('code') or '').upper(), 'label': nav[a['key']].get('label') or '',
+              'value': nav[a['key']].get('value') or nav[a['key']].get('code') or '', 'hex': nav[a['key']].get('hex') or ''}]
+            if a.get('key') in nav and not any(o.get('code') == str(nav[a['key']].get('code') or '').upper()
+                                               for o in a.get('options') or []) else [])}
+            for a in parent.get('axes') or []]}
     probe = {**(data.get('target') or {}), 'variant_attrs': data.get('variant_attrs') or {}, 'variant_options': data.get('variant_options') or {}}
     try:
         catalog_rules.combination(parent, probe)

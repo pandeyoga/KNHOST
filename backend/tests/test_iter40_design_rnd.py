@@ -129,7 +129,8 @@ class TestRndSampleFlow:
     def test_create_sample_with_spec(self, admin_token):
         sku_hint = f"TST-XYZ-{uuid.uuid4().hex[:6].upper()}"
         body = {
-            "sample_types": ["labdip"],
+            # UAT 24 Okt (P4.2) — labdip produk baru tanpa handfeel induk wajib menempuh handfeel di permintaan yang sama.
+            "sample_types": ["handfeel", "labdip"],
             "title": f"TEST_iter40_labdip {uuid.uuid4().hex[:6]}",
             "color_target": {"color_id": COLOR_ID},
             "qty_requested": 3,

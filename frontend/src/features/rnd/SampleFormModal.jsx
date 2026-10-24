@@ -11,13 +11,15 @@ import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import useCatalogMasters from "../../hooks/useCatalogMasters";
 import axios, { API } from "../../services/apiClient";
-import { createSample, listColors, listDesigns, sampleTypes } from "./rndApi";
+import { createSample, listColors, listDesigns, listSamples, rndMeta, sampleTypes } from "./rndApi";
 import { errMsg, typeTone } from "./rndMeta";
-import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems } from "./SampleSpecFields";
+import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems, toTarget } from "./SampleSpecFields";
+import { emptyColor } from "./ColorTargetsEditor";
 import ExistingSkuSection from "./ExistingSkuSection";
 import { measurementMeta, typeLabel, typeMeta } from "./sampleTypeMeta";
 
-const listOrders = (params) => axios.get(`${API}/sales-orders`, { params }).then((r) => r.data);
+const listBaseFabrics = () => axios.get(`${API}/rnd/base-fabrics`).then((r) => r.data?.items || []);
+const hasAcc = (s, code) => s.status === "decided" || (s.rounds || []).some((r) => r.result === "acc" && (!r.type_code || r.type_code === code));
 
 function Section({ step, icon: Icon, title, hint, children, testId, required }) {
   return (
@@ -37,10 +39,15 @@ function Section({ step, icon: Icon, title, hint, children, testId, required }) 
   );
 }
 
-export default function SampleFormModal({ selectedEntity, prefill, lockType = "", onClose, onSaved }) {
+export default function SampleFormModal({ selectedEntity, prefill, lockType = "", purpose = "", onClose, onSaved }) {
   const [colors, setColors] = useState([]);
   const [designs, setDesigns] = useState([]);
-  const [orders, setOrders] = useState([]);
+  // UAT 24 Okt (P4.2/P4.3/P4.8) — handfeel induk (labdip produk baru), warna labdip berkelompok, kain dasar lolos.
+  const [handfeels, setHandfeels] = useState([]);
+  const [parentId, setParentId] = useState(prefill?.parent_sample_id || "");
+  const [colorTargets, setColorTargets] = useState(prefill?.color_id ? [{ ...emptyColor(), color_id: prefill.color_id }] : [emptyColor()]);
+  const [passed, setPassed] = useState(null);
+  const [policy, setPolicy] = useState({});
   const [types, setTypes] = useState([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -55,16 +62,23 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   const masters = useCatalogMasters({ current: { base_unit: f.unit } });
   const [catalog, setCatalog] = useState({});
   const [sp, setSp] = useState(EMPTY_SPEC);
-  const [mode, setMode] = useState("new");
+  const [mode, setMode] = useState(purpose === "revalidation" ? "existing" : "new");
   const [existing, setExisting] = useState(null);
   const [reval, setReval] = useState({ supplierId: "", reason: "" });
   const isExisting = mode === "existing";
+  useEffect(() => {   // UAT 24 Okt (P5.2) — SKU yang diuji ulang terisi dari tautan "Uji ulang SKU ini"
+    if (!prefill?.product?.id) return;
+    setMode("existing");
+    setExisting(prefill.product);
+  }, [prefill?.product]);
 
   useEffect(() => {
     const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
     listColors().then((c) => setColors(Array.isArray(c) ? c : c?.items || [])).catch(() => {});
     listDesigns().then((d) => setDesigns(Array.isArray(d) ? d : d?.items || [])).catch(() => {});
-    listOrders({ ...params, limit: 200 }).then((r) => setOrders(Array.isArray(r) ? r : r?.items || [])).catch(() => {});
+    rndMeta(params).then((m) => setPolicy(m?.policy || {})).catch(() => {});
+    listSamples({ ...params, sample_type: "handfeel", purpose: "new_development", limit: 200 })
+      .then((r) => setHandfeels((r?.items || []).filter((s) => hasAcc(s, "handfeel")))).catch(() => {});
   }, [selectedEntity]);
 
   useEffect(() => {
@@ -88,7 +102,15 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   }));
 
   const needDesign = f.sample_types.some((c) => typeMeta(c, types).requires_design);
-  const problems = specProblems({ sp, catalog, f, sampleTypes: f.sample_types, types });
+  const isLabdip = f.sample_types.includes("labdip");
+  const needParent = isLabdip && !f.sample_types.includes("handfeel") && policy.require_stage_chain !== false && !prefill?.special_order_id;
+  useEffect(() => {
+    if (needDesign && passed === null && policy.require_stage_chain !== false) {
+      listBaseFabrics().then((rows) => setPassed(new Set(rows.map((t) => t.id)))).catch(() => setPassed(new Set()));
+    }
+  }, [needDesign, passed, policy.require_stage_chain]);
+  const problems = [...specProblems({ sp, catalog, f, sampleTypes: f.sample_types, types, colorTargets: isLabdip ? colorTargets : null }),
+    ...(needParent && !parentId ? ["sampel handfeel induk yang ACC (labdip produk baru)"] : [])];
   const titleOk = f.title.trim().length > 0;
   const typesOk = f.sample_types.length > 0;
   const existingOk = !!existing && typesOk && !!reval.supplierId && reval.reason.trim().length >= 3;
@@ -101,13 +123,15 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
         sample_types: f.sample_types, title: f.title, brief: f.brief, so_id: f.so_id,
         target_date: f.target_date, qty_requested: f.qty_requested || 0, unit: f.unit,
       };
+      const targets = isLabdip ? colorTargets.map(toTarget) : [];
       const created = await createSample(isExisting ? {
         ...base, product_id: existing.id, unit: existing.base_unit || f.unit,
         revalidation_supplier_id: reval.supplierId, revalidation_reason: reval.reason,
       } : {
-        ...base, color_target: f.color_id ? { color_id: f.color_id } : {},
-        design_id: f.design_id, line_code: f.line_code,
-        spec: buildSpecPayload({ sp, catalog, f, sampleTypes: f.sample_types }),
+        ...base, color_target: targets[0] || (f.color_id ? { color_id: f.color_id } : {}), color_targets: targets,
+        design_id: needDesign ? f.design_id : "", line_code: f.line_code, parent_sample_id: needParent || parentId ? parentId : "",
+        special_order_id: prefill?.special_order_id || "",
+        spec: buildSpecPayload({ sp, catalog, f, sampleTypes: f.sample_types, colorTargets: isLabdip ? colorTargets : null }),
       });
       onSaved?.(created);
     } catch (e) {
@@ -120,12 +144,12 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   const autoTitle = () => {
     if (f.title.trim()) return;
     const parts = [f.sample_types.map((c) => typeLabel(c, types).split(" (")[0]).join("+"), catalog.template_name || sp.base_fabric_name,
-      sp.gramasi && `${sp.gramasi} gsm`, colors.find((c) => c.id === f.color_id)?.name].filter(Boolean);
+      sp.gramasi && `${sp.gramasi} gsm`, colorTargets.length > 1 ? `${colorTargets.length} warna` : (colorTargets[0]?.name || colors.find((c) => c.id === (colorTargets[0]?.color_id || f.color_id))?.name)].filter(Boolean);
     if (parts.length > 1) set("title", parts.join(" — "));
   };
 
   return (
-    <FormModal open onClose={onClose} title={lockType ? `Sample ${lockLabel} Baru` : "Permintaan Sample Baru"}
+    <FormModal open onClose={onClose} title={purpose === "revalidation" ? "Uji Ulang SKU" : lockType ? `Sample ${lockLabel} Baru` : "R&D Produk Baru"}
       subtitle="Setiap permintaan lahir bersama SPESIFIKASI produk target-nya — saat ACC, spesifikasi ikut ACC dan SKU lahir di master."
       icon={Beaker} size="lg" testId="sample-form-modal"
       onSubmit={submit} submitLabel={isExisting ? "Simpan Uji Tambahan" : "Simpan Permintaan + Spesifikasi"} busy={saving} error={err}
@@ -137,7 +161,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
           </div>
         )}
 
-        {!lockType || lockType !== "proofing" ? (
+        {!purpose && (!lockType || lockType !== "proofing") ? (
           <div className="flex gap-1.5" data-testid="sample-mode-picker">
             {[["new", "Pengembangan baru (spesifikasi baru)"], ["existing", "Uji tambahan SKU existing"]].map(([v, l]) => (
               <button key={v} type="button" data-testid={`sample-mode-${v}`} onClick={() => setMode(v)}
@@ -175,8 +199,22 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
 
           {isExisting ? <ExistingSkuSection product={existing} onPick={setExisting} supplierId={reval.supplierId} reason={reval.reason}
             onRevalChange={(patch) => setReval((p) => ({ ...p, ...patch }))} /> : (
-            <SampleSpecFields sp={sp} setSp={setSp} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
-              sampleTypes={f.sample_types} types={types} colors={colors} designs={designs} />
+            <>
+              {needParent && (
+                <label className="mb-2.5 block" data-testid="sample-parent-wrap">
+                  <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Sampel handfeel induk (ACC) * — urutan produk baru: handfeel → labdip → produk</span>
+                  <KNSelect data-testid="sample-parent" className="field" value={parentId} searchable
+                    options={[{ value: "", label: handfeels.length ? "— pilih handfeel yang sudah ACC —" : "— belum ada handfeel ACC (buat handfeel dulu) —" },
+                      ...handfeels.map((s) => ({ value: s.id, label: `${s.number} · ${s.title}${s.status === "decided" ? " · pemenang dipilih" : " · ada ronde ACC"}` }))]}
+                    onValueChange={setParentId} />
+                  {parentId && <span className="mt-1 block text-[10.5px] text-[#1B7F4B]">Konstruksi kain (jenis, gramasi, lebar, benang) diwarisi dari handfeel induk saat disimpan.</span>}
+                </label>
+              )}
+              <SampleSpecFields sp={sp} setSp={setSp} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
+                sampleTypes={f.sample_types} types={types} colors={colors} designs={designs}
+                colorTargets={colorTargets} setColorTargets={setColorTargets} maxColors={Number(policy.labdip_max_colors) || 10}
+                passedFabrics={policy.require_stage_chain === false ? null : passed} />
+            </>
           )}
           {!isExisting && problems.length > 0 && typesOk && (
             <p className="mt-2 text-[11px] text-[#A8221A]" data-testid="sample-spec-problems">Belum lengkap: <b>{problems.join(", ")}</b>.</p>
@@ -200,13 +238,10 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Satuan</span>
               <KNSelect data-testid="sample-unit-input" className="field" value={f.unit} options={masters.unitOptions} onValueChange={(v) => set("unit", v)} />
             </label>
-            <label className="block sm:col-span-2">
-              <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Untuk pesanan pelanggan (opsional)</span>
-              <KNSelect data-testid="sample-so" className="field" value={f.so_id} searchable
-                options={[{ value: "", label: "— bukan dari pesanan tertentu —" },
-                  ...orders.map((o) => ({ value: o.id, label: `${o.order_number || o.number || o.id}${o.customer_name ? ` · ${o.customer_name}` : ""}` }))]}
-                onValueChange={(v) => set("so_id", v)} />
-            </label>
+            {/* UAT 24 Okt (P4.5) — tautan pesanan pelanggan hanya bila sampel lahir dari pesanan (terisi otomatis). */}
+            {f.so_id && (
+              <p className="sm:col-span-2 text-[11px] text-[#004099]" data-testid="sample-so">Untuk pesanan pelanggan: <b>{prefill?.so_number || prefill?.source_label || f.so_id}</b> (terisi otomatis)</p>
+            )}
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Brief untuk supplier</span>
               <textarea className="field" rows={3} data-testid="sample-brief-input" value={f.brief} onChange={(e) => set("brief", e.target.value)}

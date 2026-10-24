@@ -10,6 +10,8 @@ const KIND_META = {
   colorway: { label: "Varian warna final", hint: "satu file per warna dari desain yang di-ACC", accept: "image/*" },
   mockup: { label: "Mockup", hint: "visual penerapan desain ACC di produk — WAJIB sebelum aktif", accept: "image/*" },
   source: { label: "File desain asli", hint: "AI / PSD / EPS / PDF / ZIP — WAJIB, bisa diunduh kembali", accept: "*/*" },
+  // UAT 24 Okt (P3.3) — gambar pattern yang dicetak di surat perintah proofing ke supplier.
+  print_png: { label: "PNG cetak", hint: "PNG desain ACC (min. 600 px sisi terpendek) — WAJIB, dicetak di surat perintah proofing", accept: "image/png" },
 };
 
 const fmtBytes = (n) => { const b = Number(n) || 0; return b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`; };

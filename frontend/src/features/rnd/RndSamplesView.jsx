@@ -27,7 +27,7 @@ import { roleIs } from "../../config/roles";
 
 const DOT = { "pill-muted": "bg-[#B4B4BB]", "pill-info": "bg-[#0058CC]", "pill-warning": "bg-[#E08A00]", "pill-success": "bg-[#1A7A3A]", "pill-danger": "bg-[#C62828]" };
 
-export default function RndSamplesView({ currentUser, selectedEntity, focus, onFocusConsumed }) {
+export default function RndSamplesView({ currentUser, selectedEntity, focus, onFocusConsumed, purpose = "" }) {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({});
   const [types, setTypes] = useState([]);
@@ -57,6 +57,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       if (type) params.sample_type = type;
       if (lineFilter) params.line = lineFilter;
+      if (purpose) params.purpose = purpose;   // UAT 24 Okt (P4.1) — dua pintu: produk baru / uji ulang
       const res = await listSamples(params);
       setRows(res?.items || []);
       setStats(res?.stats || {});
@@ -65,7 +66,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
     } catch (e) {
       setError(errMsg(e, "Gagal memuat permintaan sample."));
     } finally { setLoading(false); }
-  }, [selectedEntity, type, lineFilter]);
+  }, [selectedEntity, type, lineFilter, purpose]);
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
@@ -80,6 +81,10 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
     if (!focus?.nonce) return;
     if (focus.sampleId) { setOpenId(focus.sampleId); setFocusRoundId(focus.roundId || ""); }
     else if (focus.sampleNumber) setPendingNumber(focus.sampleNumber);
+    if (focus.productId) {   // UAT 24 Okt (P5.2) — "Uji ulang SKU ini" dari spesifikasi yang kombinasinya sudah ada
+      setPrefill({ product: focus.product || { id: focus.productId }, source_label: focus.productLabel || "" });
+      setShowForm(true);
+    }
     if (focus.colorId || focus.designId) {
       setPrefill({
         color_id: focus.colorId || "", design_id: focus.designId || "",
@@ -132,7 +137,9 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             <Beaker size={15} className="text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">R&amp;D</span>
-              <h2 data-testid="rnd-samples-title" className="text-[13px] font-bold">Permintaan Sample</h2>
+              <h2 data-testid="rnd-samples-title" className="text-[13px] font-bold">{purpose === "revalidation" ? "Uji Ulang SKU" : purpose === "new_development" ? "R&D Produk Baru" : "Permintaan Sample"}</h2>
+              {purpose === "new_development" && <p className="text-[10.5px] text-[#6B6B73]">Urutan: handfeel → labdip (dari handfeel ACC, banyak warna sekaligus) → spesifikasi/SKU · proofing di atas kain dasar yang sudah lolos.</p>}
+              {purpose === "revalidation" && <p className="text-[10.5px] text-[#6B6B73]">Uji ulang SKU aktif ke supplier yang berkontrak (atau pernah PO) — tidak melahirkan SKU baru.</p>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -145,7 +152,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             </button>
             {canCreate && (
               <button className="primary-button" data-testid="rnd-sample-create-button" onClick={() => setShowForm(true)}>
-                <Plus size={13} /> Buat Permintaan
+                <Plus size={13} /> {purpose === "revalidation" ? "Buat Uji Ulang" : "Buat Permintaan"}
               </button>
             )}
           </div>
@@ -285,14 +292,14 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
       )}
 
       {showForm && (
-        <SampleFormModal selectedEntity={selectedEntity} prefill={prefill}
+        <SampleFormModal selectedEntity={selectedEntity} prefill={prefill} purpose={purpose}
           onClose={() => { setShowForm(false); setPrefill(null); }}
           onSaved={(created) => { setShowForm(false); setPrefill(null); load(); setOpenId(created?.id || ""); }} />
       )}
       {openId && (
         <DetailModal framed onClose={closeDetail} label="Rincian sample" testId="sample-detail-modal">
-          <SampleDetailPanel sampleId={openId} currentUser={currentUser} types={types}
-            focusRoundId={focusRoundId} onClose={closeDetail} onChanged={load} />
+          <SampleDetailPanel key={openId} sampleId={openId} currentUser={currentUser} types={types}
+            focusRoundId={focusRoundId} onClose={closeDetail} onChanged={load} onOpenSample={setOpenId} />
         </DetailModal>
       )}
     </div>

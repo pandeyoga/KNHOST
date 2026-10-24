@@ -589,6 +589,12 @@ _QUALITY_BASE = {"inspection": ["view"], "product": ["view"], "color": ["view"],
                  "inventory": ["view"], "warehouse": ["view"], "supplier": ["view"],
                  "document": ["view", "print"]}
 DEFAULT_PERMISSIONS["md_quality"] = {**_QUALITY_BASE, "md_quality": list(_MDQ_ACTIONS)}
+# UAT 24 Okt (P1-K1) — kepemilikan desain: klaim diajukan sales/Admin Sales/MD, diputus Manajer.
+for _role, _acts in {"sales": ["view", "claim"], "sales_admin": ["view", "claim"], "md": ["view", "claim"],
+                     "designer": ["view", "claim"], "finance": ["view"],
+                     "manager": ["view", "claim", "decide"], "admin": ["view", "claim", "decide"]}.items():
+    if _role in DEFAULT_PERMISSIONS:
+        DEFAULT_PERMISSIONS[_role]["design_ownership"] = list(_acts)
 DEFAULT_PERMISSIONS["qc"] = {**_QUALITY_BASE, "qc": list(_QC_ACTIONS)}
 for _role in ("md_quality", "qc"):
     DEFAULT_PERMISSIONS[_role]["field_visibility"] = ["grade", "lot", "origin"]

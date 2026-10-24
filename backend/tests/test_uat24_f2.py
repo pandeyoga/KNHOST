@@ -15,7 +15,7 @@ from pymongo import MongoClient
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _shared_loop import LOOP  # noqa: E402 — satu loop lintas modul (klien Motor terikat loop pertama)
+from _shared_loop import run  # noqa: E402 — loop tempat klien Motor terikat
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 T = uuid.uuid4().hex[:6]
@@ -32,10 +32,6 @@ def _login(email, entity="ent_ksc"):
 
 
 ADMIN, _ = _login("admin@kainnusantara.id")
-
-
-def run(coro):
-    return LOOP.run_until_complete(coro)
 
 
 PROD = f"prod_TEST_F2_{T}"
@@ -60,7 +56,8 @@ def _roll(suffix, **kw):
 @pytest.fixture(scope="module", autouse=True)
 def _setup():
     src = DB.products.find_one({"status": "active", "lifecycle": "produksi"}, {"_id": 0})
-    DB.products.insert_one({**src, "id": PROD, "sku": f"TST-F2-{T}", "name": f"Produk Uji F2 {T}"})
+    clone = {k: v for k, v in src.items() if k not in ("variant_key", "template_id", "variant_options", "variant_attrs")}
+    DB.products.insert_one({**clone, "id": PROD, "sku": f"TST-F2-{T}", "name": f"Produk Uji F2 {T}"})
     DB.warehouses.insert_many([
         {"id": WH_SHARED, "code": f"UJ-B-{T}", "name": f"Uji Bersama {T}", "roles": ["storage"], "site_id": "",
          "sharing_mode": "shared", "entity_ids": [], "active": True, "city": "Bandung"},

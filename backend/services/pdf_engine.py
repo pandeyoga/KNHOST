@@ -211,6 +211,16 @@ MASTER_TEMPLATE = r"""
     <div style="clear:both"></div>
     {% endif %}
 
+    {% if doc.swatches %}
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+      {% for sw in doc.swatches %}<div style="width:120px;font-size:9px"><div style="height:44px;border:1px solid #999;background:{{ sw.hex or '#ffffff' }}"></div><div style="font-weight:700;margin-top:2px">{{ sw.label }}</div><div>{{ sw.sub }}</div></div>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% for im in doc.images or [] %}
+    <div style="margin-top:10px;text-align:center;page-break-inside:avoid"><img src="{{ im.src }}" style="max-width:100%;max-height:150mm;border:1px solid #ddd"/><div style="font-size:9px;color:#555;margin-top:2px">{{ im.caption }}</div></div>
+    {% endfor %}
+
     {% for xt in doc.extra_tables or [] %}
     <div class="xt-title" style="margin-top:10px;font-weight:700;font-size:11px">{{ xt.title }}</div>
     <table class="items">

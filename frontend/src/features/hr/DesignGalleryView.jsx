@@ -12,6 +12,7 @@ import { OptionTabs } from "../../components/ListControls";
 import { listDesigns, designFileUrl } from "../rnd/rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, fmtScore } from "../rnd/rndMeta";
 import DesignShowcaseModal from "./DesignShowcaseModal";
+import { OwnershipBadge } from "./DesignOwnershipPanel";
 
 const ACC_STATUSES = ["approved", "final_submitted", "active"];
 const coverOf = (g) => (g.files || []).find((f) => (f.kind || "artwork") === "artwork" && (f.version || 1) === (g.approved_version || g.version))
@@ -19,12 +20,18 @@ const coverOf = (g) => (g.files || []).find((f) => (f.kind || "artwork") === "ar
 const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort();
 const opts = (vals, all) => [{ value: "", label: all }, ...vals.map((v) => ({ value: v, label: v }))];
 
-export default function DesignGalleryView({ selectedEntity }) {
+const EMPTY_F = { status: "", cat: "", dcat: "", tag: "", designer: "", rnd: "", line: "", own: "", produced: "" };
+// UAT 24 Okt (P1.5) — kepemilikan & status produksi desain.
+const OWN_OPTS = [{ value: "", label: "Semua kepemilikan" }, { value: "white", label: "White label" },
+  { value: "customer", label: "Customer label" }, { value: "claim_pending", label: "Klaim menunggu" }];
+const PROD_OPTS = [{ value: "", label: "Diproduksi & belum" }, { value: "yes", label: "Sudah diproduksi" }, { value: "no", label: "Belum diproduksi" }];
+
+export default function DesignGalleryView({ selectedEntity, currentUser }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
-  const [f, setF] = useState({ status: "", cat: "", dcat: "", tag: "", designer: "", rnd: "", line: "" });
+  const [f, setF] = useState(EMPTY_F);
   const [openId, setOpenId] = useState(null);
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
 
@@ -58,6 +65,8 @@ export default function DesignGalleryView({ selectedEntity }) {
       && (!f.designer || g.created_by === f.designer)
       && (!f.rnd || (g.proofing?.state || "none") === f.rnd)
       && (!f.line || g.line_code === f.line)
+      && (!f.own || (f.own === "claim_pending" ? g.claim_pending : (g.ownership || "white") === f.own))
+      && (!f.produced || (f.produced === "yes") === Boolean(g.produced))
       && (!s || [g.title, g.code, g.story, ...(g.tags || []), ...(g.recommended_products || []).map((p) => `${p.sku} ${p.name}`)]
         .some((t) => String(t || "").toLowerCase().includes(s)))
     ));
@@ -78,7 +87,7 @@ export default function DesignGalleryView({ selectedEntity }) {
             <input data-testid="gallery-search" className="field !pl-8" placeholder="Cari kode, judul, tag, produk…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
-        <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7" data-testid="gallery-filters">
+        <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8" data-testid="gallery-filters">
           <div className="col-span-full"><OptionTabs testId="gallery-filter-status" value={f.status} onChange={set("status")}
             countOf={(v) => items.filter((g) => !v || g.status === v).length}
             options={[{ value: "", label: "Semua status ACC" }, ...ACC_STATUSES.map((s) => ({ value: s, label: DESIGN_STATUS_META[s].label }))]} /></div>
@@ -89,12 +98,14 @@ export default function DesignGalleryView({ selectedEntity }) {
           <KNSelect data-testid="gallery-filter-rnd" className="field" value={f.rnd} onValueChange={set("rnd")}
             options={[{ value: "", label: "Semua status R&D" }, ...Object.entries(PROOFING_STATE_META).map(([k, m]) => ({ value: k, label: m.label }))]} />
           <KNSelect data-testid="gallery-filter-line" className="field" value={f.line} onValueChange={set("line")} options={opts(options.line, "Semua lini")} />
+          <KNSelect data-testid="gallery-filter-ownership" className="field" value={f.own} onValueChange={set("own")} options={OWN_OPTS} />
+          <KNSelect data-testid="gallery-filter-produced" className="field" value={f.produced} onValueChange={set("produced")} options={PROD_OPTS} />
         </div>
         <div className="mt-2 flex items-center justify-between text-[11px] text-[#6B6B73]">
           <span data-testid="gallery-count"><b>{visible.length}</b> dari {items.length} desain ACC</span>
           {activeFilters > 0 && (
             <button className="inline-flex items-center gap-1 text-[#0058CC]" data-testid="gallery-filter-reset"
-              onClick={() => { setQ(""); setF({ status: "", cat: "", dcat: "", tag: "", designer: "", rnd: "", line: "" }); }}>
+              onClick={() => { setQ(""); setF(EMPTY_F); }}>
               <X size={11} /> Hapus {activeFilters} filter
             </button>
           )}
@@ -122,7 +133,8 @@ export default function DesignGalleryView({ selectedEntity }) {
         </div>
       )}
 
-      {openId && <DesignShowcaseModal designId={openId} onClose={() => setOpenId(null)} />}
+      {openId && <DesignShowcaseModal designId={openId} onClose={() => setOpenId(null)} currentUser={currentUser}
+        onChanged={(fresh) => setItems((rows) => rows.map((g) => (g.id === fresh.id ? { ...g, ...fresh } : g)))} />}
     </div>
   );
 }
@@ -147,6 +159,13 @@ function ShowcaseCard({ g, onOpen }) {
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <p className="font-mono text-[10.5px] text-[#6B6B73]">{g.code}</p>
+        <div className="flex flex-wrap gap-1">
+          <OwnershipBadge d={g} testId={`gallery-card-ownership-${g.id}`} />
+          <span data-testid={`gallery-card-produced-${g.id}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${g.produced ? "bg-[#E8F6EE] text-[#1B7F4B]" : "bg-[#F2F2F5] text-[#6B6B73]"}`}>
+            {g.produced ? "Sudah diproduksi" : "Belum diproduksi"}
+          </span>
+        </div>
         <h3 className="truncate text-[13px] font-bold leading-tight">{g.title}</h3>
         <p className="text-[10.5px] text-[#6B6B73]">
           {g.category_name || g.category_code || "—"} · {g.design_category_name || g.design_category_code || "—"} · {g.created_by}

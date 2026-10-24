@@ -3,7 +3,7 @@ import { Search, ShoppingCart, PackageX, MapPin } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { MobileProductCard } from "../../pos/mobile/MobileProductCard";
 import { PosBestSellers } from "../../pos/PosBestSellers";
-import { groupByTemplate } from "../../../utils/variants";
+import { designSearchText, groupByTemplate, visibleToCustomer } from "../../../utils/variants";
 import MobileQuickView from "./MobileQuickView";
 import { formatCurrency } from "../../../utils/formatters";
 import { useEffectivePrices, pickPrice } from "../../../hooks/useEffectivePrices";
@@ -32,10 +32,11 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
 
   const q = (search || "").toLowerCase().trim();
   const filtered = useMemo(() => products.filter((p) => {
+    if (!visibleToCustomer(p, selectedCustomer?.id)) return false;   // UAT 24 Okt (P1.3)
     if (cat !== "all" && p.category !== cat) return false;
     if (!q) return true;
-    return [p.name, p.sku, p.color, p.motif, p.category].filter(Boolean).join(" ").toLowerCase().includes(q);
-  }), [products, cat, q]);
+    return [p.name, p.sku, p.color, p.motif, p.category, designSearchText(p)].filter(Boolean).join(" ").toLowerCase().includes(q);
+  }), [products, cat, q, selectedCustomer?.id]);
   const groups = useMemo(() => groupByTemplate(filtered), [filtered]);
 
   // F1b — harga efektif pelanggan (harga khusus → pelanggan → PT → umum) dalam SATU panggilan.

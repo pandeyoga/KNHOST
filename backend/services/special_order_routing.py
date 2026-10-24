@@ -210,6 +210,11 @@ async def _requester(od: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, 
 async def route_on_approve(od: Dict[str, Any], actor: Dict[str, Any], entity_id: str) -> Dict[str, Any]:
     """Dipanggil sekali saat OD disetujui penuh. Idempoten (tidak menggandakan dokumen turunan)."""
     actor = await _requester(od, actor)
+    # UAT 24 Okt (P1.6, P1-K3) — artwork KN yang dipakai OD menjadi customer label pemesan sejak OD disetujui.
+    from services import design_ownership_service as _own
+    for it in od.get("items") or []:
+        if it.get("source_design_id") and it.get("status") != "cancelled":
+            await _own.on_special_order_design(it["source_design_id"], od["id"], actor)
     if od.get("items"):
         links: Dict[str, Any] = {}
         for item in od["items"]:

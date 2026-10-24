@@ -452,6 +452,14 @@ async def create_sample(payload: Dict[str, Any], *, entity_id: str,
                     "jenis itu dari permintaan ini.")
     design = await specs._design_snapshot(design_id, design_version)  # noqa: SLF001
     await _assert_design_not_held(design_id, stypes)
+    # UAT 24 Okt (P4.2/P3.4) — urutan produk baru & proofing hanya dari desain ACC.
+    from services import rnd_flow_service as _flow
+    try:
+        chain = await _flow.assert_stage_chain(payload, stypes, spec, entity_id)
+        if "proofing" in stypes and design_id and not _flow.exempt(payload):
+            await _flow.assert_design_usable(design_id, for_send=False)
+    except _flow.FlowError as exc:
+        raise RndError(str(exc)) from exc
     doc: Dict[str, Any] = {
         "id": new_id(PREFIX),
         "number": await next_doc_number(COLL, "number", "SMP-", entity_id=entity_id),
@@ -480,6 +488,10 @@ async def create_sample(payload: Dict[str, Any], *, entity_id: str,
         "unit": (payload.get("unit") or (spec or {}).get("base_unit") or "meter").strip(),
         "participants": [], "rounds": [], "material_issues": [],
         "cost_total": 0.0, "decision": {},
+        **chain,
+        # P4.3 — labdip multi-warna: anggota kelompok (satu sampel per warna).
+        **({"color_batch_id": payload["color_batch_id"], "color_batch_index": int(payload.get("color_batch_index") or 1),
+            "color_batch_size": int(payload.get("color_batch_size") or 1)} if payload.get("color_batch_id") else {}),
         # FASE S — penanda pelaksanaan (user story S.F-4). Ditulis sejak lahir supaya
         # kolom "Sample jadi / dikirim" tidak pernah "tidak ada field"-nya; bedakan
         # dari `null` yang berarti BELUM.
@@ -774,6 +786,15 @@ async def send_sample(sample_id: str, supplier_ids: List[str], *, due_date: str 
     if not kinds:
         raise RndError("Permintaan ini belum punya jenis sampling — tidak ada yang "
                        "bisa dikirim. Ubah permintaannya lebih dulu.")
+    # UAT 24 Okt (P3.5/P3.4) — surat perintah ke supplier: labdip wajib Pantone; proofing wajib desain ACC + PNG cetak.
+    from services import rnd_flow_service as _flow
+    try:
+        if "labdip" in kinds:
+            await _flow.assert_labdip_pantone(cur)
+        if "proofing" in kinds and cur.get("design_id") and not _flow.exempt(cur):
+            await _flow.assert_design_usable(cur["design_id"], for_send=True)
+    except _flow.FlowError as exc:
+        raise RndError(str(exc)) from exc
     pol = await rnd_gate.policy(cur.get("entity_id", ""))
     sla = int(pol.get("round_sla_days") or 7)
     due = (due_date or "")[:10] or _plus_days("", sla)
@@ -1046,6 +1067,9 @@ async def finish_sample(sample_id: str, payload: Dict[str, Any],
     if not any(r.get("result") == "acc" for r in (cur.get("rounds") or [])):
         raise RndError("Belum ada round yang ACC — nilai dulu hasil sample-nya. "
                        "Menandai 'jadi' tanpa ACC membuat tanggalnya jadi bukti palsu.")
+    # UAT 24 Okt (P4.7) — "Terima sampel fisik" baru setelah PEMENANG dipilih (sampel fisik = milik pemenang).
+    if cur.get("status") not in ("decided",):
+        raise RndError("Pilih pemenang dulu — sampel fisik yang diterima adalah sampel dari supplier pemenang.")
     at = (str(payload.get("date") or "")[:10] or now_iso())
     note = (payload.get("note") or "").strip()
     await db[COLL].update_one({"id": sample_id}, {
@@ -1080,6 +1104,9 @@ async def deliver_sample(sample_id: str, payload: Dict[str, Any],
                        f"{str(cur['delivered_at'])[:10]} "
                        f"({cur.get('delivered_to') or '—'}).")
     to = str(payload.get("to") or payload.get("delivered_to") or "").strip().lower()
+    # UAT 24 Okt (P4.7) — "Kirim ke pelanggan" hanya untuk sampel pesanan pelanggan (OD/SO); selain itu diarsipkan.
+    if to == "customer" and not (cur.get("special_order_id") or cur.get("so_id") or cur.get("customer_id")):
+        raise RndError("Sampel ini bukan untuk pesanan pelanggan — arsipkan (Arsip internal / QC) atau kirim ke sales.")
     if to not in DELIVER_TARGETS:
         raise RndError(
             "Tujuan pengiriman WAJIB dipilih. Pilihan: "
@@ -1265,6 +1292,14 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
     }
     if tests_override:
         await db[COLL].update_one({"id": sample_id}, {"$push": {"timeline": {"$each": rtests.timeline_of(tests_override)}}})
+    # UAT 24 Okt (P4.4) — warna BARU labdip yang di-ACC lahir di Pustaka Warna (atau tertaut ke Pantone yang sama).
+    if "labdip" in types_of(cur) and cur.get("purpose") != "revalidation":
+        from services import rnd_flow_service as _flow
+        born = await _flow.color_from_labdip(cur, name)
+        if born:
+            cur["color_target"] = {k: v for k, v in born.items() if k != "linked_existing"}
+            decision["color_library_id"], decision["color_library_code"] = born["color_id"], born["code"]
+            decision["color_linked_existing"] = born["linked_existing"]
     # Warna versi supplier → disinkronkan ke pustaka warna (satu warna, banyak versi supplier).
     color_id = (cur.get("color_target") or {}).get("color_id") or ""
     if color_id and (decision["supplier_color_name"] or decision["supplier_color_code"]):

@@ -28,6 +28,8 @@ import SampleMasterDataPanel from "./SampleMasterDataPanel";
 import SampleSpecPanel from "./SampleSpecPanel";
 import SampleSendModal from "./SampleSendModal";
 import SampleTypeTabs from "./SampleTypeTabs";
+import SampleWorkOrderBox from "./SampleWorkOrderBox";
+import axios, { API } from "../../services/apiClient";
 import { TypeBadge } from "./SampleBoardCard";
 import {
   assessRound, cancelSample, decideSample, deliverSample, finishSample, getSample,
@@ -65,7 +67,7 @@ function Stepper({ status }) {
   );
 }
 
-export default function SampleDetailPanel({ sampleId, currentUser, types: typesProp, onClose, onChanged, focusRoundId = "", initialType = "" }) {
+export default function SampleDetailPanel({ sampleId, currentUser, types: typesProp, onClose, onChanged, focusRoundId = "", initialType = "", onOpenSample }) {
   const [sample, setSample] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [policy, setPolicy] = useState({});
@@ -127,7 +129,9 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const isReval = sample?.purpose === "revalidation" && !!sample?.revalidation?.supplier_id;
   const active = !!sample && !decided && !cancelled && !pendingPic;
   const canCancel = canDecide && !pendingPic;
-  const canSend = !!sample && ["draft", "sent", "in_progress", "assessed"].includes(sample.status);
+  const canSend = !!sample && ["draft", "sent", "in_progress"].includes(sample.status);
+  // UAT 24 Okt (P4.7) — "Kirim ke pelanggan" hanya untuk sampel pesanan pelanggan; selain itu diarsipkan.
+  const forCustomer = !!(sample?.special_order_id || sample?.so_id || sample?.customer_id);
   const hasAcc = (sample?.rounds || []).some((r) => r.result === "acc");
   const hasResult = (sample?.rounds || []).some((r) => r.result);
   const canDecideNow = isReval ? hasResult : hasAcc;
@@ -334,17 +338,24 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 </p>
               )}
               {!cancelled && !pendingPic && canSubmit && !sample.finished_at && (
-                <button className="secondary-button" disabled={busy || !hasAcc} data-testid="sample-finish-button"
-                  title={hasAcc ? "Tandai sample sudah jadi" : "Belum ada ronde yang ACC"} onClick={() => setModal({ kind: "finish" })}>
-                  <CheckCircle2 size={13} /> Sample jadi
+                <button className="secondary-button" disabled={busy || !decided} data-testid="sample-finish-button"
+                  title={decided ? "Catat sampel fisik dari supplier pemenang sudah diterima" : "Pilih pemenang dulu — sampel fisik yang diterima milik pemenang"}
+                  onClick={() => setModal({ kind: "finish" })}>
+                  <CheckCircle2 size={13} /> Terima sampel fisik
                 </button>
+              )}
+              {!cancelled && !pendingPic && canSubmit && !sample.finished_at && !decided && (
+                <p className="text-[10.5px] text-[#6B6B73]" data-testid="sample-finish-hint">Urutan: kirim ke supplier → setor &amp; nilai ronde → pilih pemenang → terima sampel fisik → {forCustomer ? "kirim ke pelanggan" : "arsipkan"}.</p>
               )}
               {!cancelled && canSubmit && sample.finished_at && !sample.delivered_at && (
                 <button className="secondary-button" disabled={busy} data-testid="sample-deliver-button" onClick={() => setModal({ kind: "deliver" })}>
-                  <Send size={13} /> Kirim sample
+                  <Send size={13} /> {forCustomer ? "Kirim ke pelanggan" : "Arsipkan / serahkan"}
                 </button>
               )}
             </div>
+            <SampleWorkOrderBox sample={sample} canSubmit={canSubmit} onError={setErr}
+              onOpenSample={(id) => onOpenSample?.(id)}
+              onSendBatch={() => setModal({ kind: "send-batch" })} />
             <div className="flex flex-wrap gap-1.5">
               {canCancel && active && (
                 <button className="secondary-button" disabled={busy} data-testid="sample-cancel-button" onClick={batalkan}>
@@ -357,6 +368,11 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
         </div>
       </div>
 
+      {modal?.kind === "send-batch" && (
+        <SampleSendModal mode="send" sample={sample} policy={policy} types={types} busy={busy} error={modalErr} onClose={() => setModal(null)}
+          onConfirm={(body) => act(() => axios.post(`${API}/rnd/samples/${sample.id}/send-batch`, body).then((r) => r.data),
+            "Semua warna kelompok labdip terkirim — ronde dibuka per supplier × warna.")} />
+      )}
       {modal?.kind === "send" && (
         <SampleSendModal mode="send" sample={sample} policy={policy} types={types} busy={busy} error={modalErr} onClose={() => setModal(null)}
           onConfirm={(body) => act(() => sendSample(sample.id, body), "Permintaan terkirim — ronde 1 dibuka untuk tiap supplier × jenis.")} />
@@ -405,7 +421,8 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
           onConfirm={(body) => act(() => finishSample(sample.id, body), "Sample ditandai JADI — tanggalnya tercatat.")} />
       )}
       {modal?.kind === "deliver" && (
-        <SampleFinishModal mode="deliver" sample={sample} targets={deliverTargets} busy={busy} error={modalErr} onClose={() => setModal(null)}
+        <SampleFinishModal mode="deliver" sample={sample} busy={busy} error={modalErr} onClose={() => setModal(null)}
+          targets={forCustomer ? deliverTargets : (deliverTargets || []).filter((t) => t.value !== "customer")}
           onConfirm={(body) => act(() => deliverSample(sample.id, body), "Pengiriman sample tercatat beserta tujuannya.")} />
       )}
     </div>

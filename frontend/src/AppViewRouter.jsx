@@ -85,6 +85,7 @@ const FinanceDesk = lazy(() => import("./features/finance/FinanceDesk"));
 const APPROVAL_HUB_OF = {
   "rnd-specs": "rnd-hub",
   "rnd-samples": "rnd-hub",
+  "rnd-revalidation": "rnd-hub",
   "purchase-requisitions": "sourcing",
 };
 // FASE G-1 — Pusat Amandemen (koreksi ber-alasan, ber-dampak, ber-penyetuju).
@@ -427,8 +428,12 @@ export default function AppViewRouter(props) {
           focus={rndFocus?.view === "rnd-specs" ? rndFocus : null}
           onFocusConsumed={onRndFocusConsumed} />
       )}
+      {activeView === "rnd-revalidation" && (
+        <RndSamplesView key="reval" purpose="revalidation" currentUser={user} selectedEntity={selectedEntity}
+          focus={rndFocus?.view === "rnd-revalidation" ? rndFocus : null} onFocusConsumed={onRndFocusConsumed} />
+      )}
       {activeView === "rnd-samples" && (
-        <RndSamplesView currentUser={user} selectedEntity={selectedEntity}
+        <RndSamplesView key="new" purpose="new_development" currentUser={user} selectedEntity={selectedEntity}
           focus={rndFocus?.view === "rnd-samples" ? rndFocus
             : (focusDoc?.focus_type === "md_sample" && focusDoc.focus_id
               ? { nonce: `desk:${focusDoc.focus_id}`, sampleId: focusDoc.focus_id } : null)}

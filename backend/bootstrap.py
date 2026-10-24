@@ -480,6 +480,12 @@ async def sync_permission_revocations() -> None:
     GRANT["admin"]["rnd"] = ["pic_decide", "override_fail"]
     GRANT["manager"]["rnd"] = ["pic_decide", "override_fail"]
     GRANT["md"]["rnd"] = ["pic_decide"]
+    # UAT 24 Okt (P1, keputusan pemilik P1-K1) — klaim desain milik pelanggan diajukan sales/Admin Sales/MD,
+    # DIPUTUS Manajer (admin sebagai cadangan).
+    for _r in ("sales", "sales_admin", "md", "designer", "finance"):
+        GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim"] if _r != "finance" else ["view"]
+    for _r in ("manager", "admin"):
+        GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim", "decide"]
     for role, mp in GRANT.items():
         rm = matrix.setdefault(role, {})
         for m, actions in mp.items():
