@@ -232,14 +232,16 @@ def test_pengajuan_harga_khusus_tanpa_so_jadi_harga_langganan():
         DB.price_approvals.delete_one({"id": (d or {}).get("id")})
 
 
-def test_daftar_pelanggan_untuk_harga_khusus_hp_memuat_pelanggan_tanpa_sales():
+def test_daftar_pelanggan_untuk_harga_khusus_hp_hanya_milik_sales_plus_walk_in():
+    """UAT 24 Okt (P14, keputusan pemilik) — membalik aturan UAT v3: pemilih pelanggan sales (termasuk harga khusus HP)
+    HANYA pelanggan miliknya + pelanggan umum walk-in. Pelanggan tanpa sales masuk antrean Admin Sales untuk ditetapkan."""
     sales = base.Api("sales@kainnusantara.id")
     c, rows = sales.call("GET", "/customers?for_order=true&with_credit=false")
     assert c == 200, rows
-    unassigned = DB.customers.count_documents({"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]}})
-    if unassigned:
-        names = {r["name"] for r in rows}
-        assert any(n in names for n in DB.customers.distinct("name", {"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]}}))
+    names = {r["name"] for r in rows}
+    unassigned = set(DB.customers.distinct("name", {"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]},
+                                                    "shared_walk_in": {"$ne": True}, "sales_team.sales_id": {"$exists": False}}))
+    assert not (names & unassigned), names & unassigned
 
 
 def test_keep_tidak_memuat_sample_dan_so_od_terkonfirmasi_otomatis():

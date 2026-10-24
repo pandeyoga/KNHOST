@@ -10,6 +10,8 @@ BE-3 Regresi confirm-arrival (kini bulk_write): PA kecil → dispatch → confir
 import os
 
 import pytest
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import requests
 from dotenv import dotenv_values
 from pymongo import MongoClient
@@ -55,7 +57,11 @@ def warehouses(admin):
 
 
 def _find_ready(admin, warehouses):
+    # UAT 24 Okt (P9.4) — putaway hanya ke gudang simpan di LOKASI yang sama: cari gudang asal di lokasi Gedung Retur.
+    retur_site = next((w.get("site_id") for w in warehouses if w.get("code") == "RCM-RETUR"), "")
     for w in warehouses:
+        if retur_site and w.get("site_id") != retur_site:
+            continue
         r = admin.get(f"{BASE}/api/putaway-orders/suggest",
                       params={"from_warehouse_id": w["id"]}, timeout=90)
         if r.status_code == 200 and r.json().get("ready_count", 0) > 0:
@@ -103,15 +109,21 @@ def _seed_ready_rolls(admin):
 
 @pytest.fixture(scope="session")
 def transit_wh(admin, warehouses):
-    """Gudang asal yang punya roll siap-putaway (ready_count > 0); self-seeding."""
+    """Gudang asal yang punya roll siap-putaway (ready_count > 0) di lokasi Gedung Retur; self-seeding.
+    UAT 24 Okt (P9.4) — putaway hanya se-lokasi: bekal roll ber-tag terverifikasi di RCM-TRANSIT (lihat `_pa_seed`)."""
+    import _pa_seed
     w = _find_ready(admin, warehouses)
     if w:
-        return w
-    seeded = _seed_ready_rolls(admin)
+        yield w
+        _pa_seed.cleanup()
+        return
+    seeded, _ids = _pa_seed.seed(BASE, dict(admin.headers))
     w = _find_ready(admin, warehouses)
-    if w:
-        return w
-    pytest.fail(f"gagal menyiapkan roll siap-putaway (seed wh={seeded})")
+    if not w:
+        _pa_seed.cleanup()
+        pytest.fail(f"gagal menyiapkan roll siap-putaway (seed wh={seeded})")
+    yield w
+    _pa_seed.cleanup()
 
 
 # ───────────────────── BE-1: suggest grade-aware ─────────────────────

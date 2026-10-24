@@ -8,6 +8,8 @@ Regresi: inventory balances / putaway queue / rfid summary & tags
 import os
 
 import pytest
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import requests
 from dotenv import dotenv_values
 
@@ -144,6 +146,15 @@ class TestR0WarehouseProfile:
 
 # ────────────────── R1: PRINT JOB + VERIFIKASI ──────────────────
 STATE = {}
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _pa_seed_cleanup():
+    """UAT 24 Okt (P9.4) — bekal roll RCM-TRANSIT dibersihkan setelah modul selesai."""
+    yield
+    if STATE.get("seeded"):
+        import _pa_seed
+        _pa_seed.cleanup()
 
 
 class TestR1PrintVerify:
@@ -317,7 +328,9 @@ class TestR2PutawayOrder:
         retur = warehouses.get("RCM-RETUR")
         assert retur, "RCM-RETUR belum ada"
         # cari gudang asal yang punya roll siap putaway
-        candidates = [STATE.get("wh_from")] + [w["id"] for w in warehouses.values()]
+        # UAT 24 Okt (P9.4) — putaway hanya ke gudang simpan di LOKASI yang sama: gudang asal dicari di lokasi Gedung Retur.
+        same_site = [w["id"] for w in warehouses.values() if w.get("site_id") and w.get("site_id") == retur.get("site_id")]
+        candidates = ([STATE["wh_from"]] if STATE.get("wh_from") in same_site else []) + same_site
         sug = None
         for whid in [c for c in candidates if c]:
             d = admin.get(f"{BASE}/api/putaway-orders/suggest",
@@ -325,6 +338,14 @@ class TestR2PutawayOrder:
             if d.status_code == 200 and d.json()["ready_count"] > 0:
                 sug, STATE["wh_from"] = d.json(), whid
                 break
+        if not sug:
+            # UAT 24 Okt (P9.4) — bekal roll ber-tag terverifikasi di RCM-TRANSIT (dibersihkan di akhir sesi modul).
+            import _pa_seed
+            whid, _ids = _pa_seed.seed(BASE, dict(admin.headers))
+            STATE["seeded"] = True
+            d = admin.get(f"{BASE}/api/putaway-orders/suggest", params={"from_warehouse_id": whid}, timeout=90) if whid else None
+            if d is not None and d.status_code == 200 and d.json()["ready_count"] > 0:
+                sug, STATE["wh_from"] = d.json(), whid
         if not sug:
             pytest.skip("tidak ada roll siap putaway di gudang mana pun")
         assert sug["groups"], "ready_count > 0 tapi groups kosong"

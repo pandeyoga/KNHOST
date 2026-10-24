@@ -582,7 +582,8 @@ async def default_warehouse_id(entity_id: str, site_id: str = "") -> str:
     punya lokasi yang sah."""
     from fastapi import HTTPException
     from services import site_receiving_service as srs
-    sid = site_id or await srs.default_site_for_entity(entity_id)
+    ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "default_site_id": 1}) or {}
+    sid = site_id or ent.get("default_site_id") or ""   # PT tanpa lokasi bawaan → aturan lama (gudang khusus PT dulu)
     if sid:
         try:
             return (await srs.receiving_warehouse(sid, entity_id))["id"]
