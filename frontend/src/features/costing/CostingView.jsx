@@ -72,14 +72,14 @@ export default function CostingView({ selectedEntity }) {
       </div>
 
       <div className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2"><TrendingUp size={16} className="text-[#6B219A]" /><h2 data-testid="costing-title">Margin & HPP (WAC)</h2><a href="?view=profitability" data-testid="costing-link-profitability" className="ml-2 text-[11px] font-semibold text-[#0058CC] hover:underline">Profitabilitas per pelanggan/sales →</a></div>
+        <div className="section-head flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2"><TrendingUp size={16} className="text-[#6B219A]" /><h2 data-testid="costing-title">Margin Katalog & HPP (WAC)</h2><a href="?view=profitability" data-testid="costing-link-profitability" className="ml-2 text-[11px] font-semibold text-[#0058CC] hover:underline">Profitabilitas per pelanggan/sales →</a></div>
           <div className="flex items-center gap-2 ml-auto">
             <div className="relative">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="costing-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari produk..." value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <button data-testid="costing-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="costing-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
         <div className="section-body">
@@ -90,9 +90,9 @@ export default function CostingView({ selectedEntity }) {
             <div data-testid="costing-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">Tidak ada produk.</div>
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]" data-testid="costing-table">
+              <table className="w-full min-w-[820px] text-[12px]" data-testid="costing-table">
                 <thead>
-                  <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
+                  <tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                     <th className="px-3 py-2">Produk</th>
                     <th className="px-3 py-2">Kategori</th>
                     <th className="px-3 py-2 text-right">Stok</th>
@@ -103,7 +103,6 @@ export default function CostingView({ selectedEntity }) {
                     <th className="px-3 py-2">Sumber</th>
                   </tr>
                 </thead>
-                <caption className="caption-bottom px-3 py-2">{view.length > 25 && pgView.pager}</caption>
                 <tbody>
                   {pgView.pageRows.map((r) => {
                     const b = marginBadge(r.margin_pct);
@@ -127,6 +126,9 @@ export default function CostingView({ selectedEntity }) {
               </table>
             </div>
           )}
+          {/* Audit UI 24 Okt (086 HP): pager dulu <caption> di dalam tabel yang digulir → tombol
+              Sebelumnya/Berikutnya di luar layar. Kini di bawah kotak gulir. */}
+          {!loading && view.length > 25 && <div className="mt-2">{pgView.pager}</div>}
           <p className="text-[10.5px] text-[#9A9BA3] mt-2">WAC = rata-rata tertimbang biaya roll (termasuk landed cost) per unit, bobot panjang sisa. <b>Margin Katalog</b> = Harga Jual katalog − WAC (belum memperhitungkan diskon/transaksi nyata); margin realisasi per order bisa lebih rendah setelah diskon.</p>
         </div>
       </div>

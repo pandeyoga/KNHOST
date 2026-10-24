@@ -205,7 +205,7 @@ export default function IntercoDetailPanel({ intercoId, currentUser, onClose }) 
                       <JournalTable lines={e.lines || []} />
                       <div className="px-3 py-2 text-[11px] text-[#6E6E73] bg-white border-t border-[#F2F2F5]">
                         Laba antar-PT tidak boleh menggelembungkan laba grup selama barangnya
-                        belum terjual ke pihak luar (INV-IC-03).
+                        belum terjual ke pihak luar.
                       </div>
                     </div>
                   ))
@@ -288,7 +288,7 @@ export default function IntercoDetailPanel({ intercoId, currentUser, onClose }) 
                     ))}
                   </div>
                   <p className="mt-2 text-[11px] text-[#6E6E73]">
-                    INV-IC-07: PPN keluaran penjual selalu sama besar dengan PPN masukan
+                    PPN keluaran penjual selalu sama besar dengan PPN masukan
                     pembeli. Angka faktur yang sudah terbit tidak diedit — kalau nilainya
                     berubah (mis. ada retur), yang dipakai adalah Faktur Pengganti.
                   </p>
@@ -349,7 +349,7 @@ export default function IntercoDetailPanel({ intercoId, currentUser, onClose }) 
                     </div>
                   ))}
                   <p className="text-[11px] text-[#6E6E73]">
-                    INV-IC-08: retur menerbitkan jurnal berpasangan di dua buku, dan roll
+                    Retur menerbitkan jurnal berpasangan di dua buku, dan roll
                     yang kembali dinilai ulang ke harga perolehan ASLI penjual supaya GL
                     persediaan tetap sejalan dengan subledger.
                   </p>

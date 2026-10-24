@@ -16,7 +16,8 @@ import axios, { API } from "../../services/apiClient";
 import { ArrowRight, Check, Clock, ExternalLink, Loader2, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
+import { actorLabel } from "../../utils/actorLabel";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { useEscapeClose } from "@/utils/escapeLayers";
 
@@ -339,7 +340,7 @@ export default function ApprovalDecisionModal({ item, currentUser, onClose, onOp
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[#6B6B73]">
                 <span className="truncate">{item.subtitle}</span>
                 <span className="inline-flex items-center gap-1"><Clock size={10} />
-                  diajukan {item.requester || "—"} · butuh <b className="uppercase">{item.role || "manager"}</b></span>
+                  diajukan {actorLabel(item.requester)} · butuh <b>{roleLabel(item.role || "manager")}</b></span>
               </p>
             </div>
           </div>
@@ -415,7 +416,7 @@ export default function ApprovalDecisionModal({ item, currentUser, onClose, onOp
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11.5px] text-[#6B6B73]" data-testid="decision-modal-readonly">
                 Peran Anda hanya bisa <b>meninjau</b> — keputusan butuh peran{" "}
-                <b className="uppercase">{item.role || "manager"}</b>.
+                <b>{roleLabel(item.role || "manager")}</b>.
               </p>
               <button type="button" data-testid="decision-modal-open-full"
                 onClick={onOpenFull}

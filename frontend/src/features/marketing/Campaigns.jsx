@@ -57,7 +57,7 @@ export default function Campaigns({ currentUser }) {
             <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
               <Stat label="Konten" value={c.posts_total} sub={Object.entries(c.post_counts || {}).map(([k, v]) => `${STATUS_STYLE[k]?.label || k} ${v}`).join(" · ")} />
               <Stat label="Jangkauan" value={fmtN(c.reach_total)} />
-              <Stat label="Engagement" value={fmtN(c.engagement_total)} />
+              <Stat label="Interaksi" value={fmtN(c.engagement_total)} />
               <Stat label="Realisasi biaya" value={`Rp ${fmtN(c.cost_realized)}`} sub={c.budget ? `dari anggaran Rp ${fmtN(c.budget)}` : "tanpa anggaran"} testId={`mkt-campaign-realized-${c.id}`} warn={c.budget > 0 && c.cost_realized > c.budget} />
             </div>
           </div>

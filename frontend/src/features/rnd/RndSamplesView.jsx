@@ -126,26 +126,30 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
   const typeChips = [{ value: "", label: "Semua jenis" }, ...types.map((t) => ({ value: t.value, label: t.label.split(" (")[0] }))];
   const statusChips = [{ key: "", label: "Semua" }, ...SAMPLE_BOARD_ORDER.map((s) => ({ key: s, label: SAMPLE_STATUS_META[s].label }))];
   const closeDetail = () => { setOpenId(""); setFocusRoundId(""); };
+  const offBoard = filtered.filter((r) => !SAMPLE_BOARD_ACTIVE.includes(r.status) && r.status !== statusFilter);
+  const offBoardText = Object.entries(offBoard.reduce((a, r) => ({ ...a, [r.status]: (a[r.status] || 0) + 1 }), {}))
+    .map(([st, n]) => `${(SAMPLE_STATUS_META[st] || { label: st }).label}: ${n}`).join(", ");
 
   return (
     <div data-testid="rnd-samples-view" className="grid gap-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="rnd-samples-error" />
 
       <div className="section-card">
-        <div className="section-head">
-          <div className="flex min-w-0 items-center gap-2">
+        {/* Audit UI 24 Okt (038) — kepala boleh turun baris: di HP judul dulu terjepit ("Permin/Sample") oleh filter & tombol. */}
+        <div className="section-head flex-wrap">
+          <div className="flex min-w-[200px] flex-1 items-center gap-2">
             <Beaker size={15} className="text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">R&amp;D</span>
               <h2 data-testid="rnd-samples-title" className="text-[13px] font-bold">{purpose === "revalidation" ? "Uji Ulang SKU" : purpose === "new_development" ? "R&D Produk Baru" : "Permintaan Sample"}</h2>
-              {purpose === "new_development" && <p className="text-[10.5px] text-[#6B6B73]">Urutan: handfeel → labdip (dari handfeel ACC, banyak warna sekaligus) → spesifikasi/SKU · proofing di atas kain dasar yang sudah lolos.</p>}
-              {purpose === "revalidation" && <p className="text-[10.5px] text-[#6B6B73]">Uji ulang SKU aktif ke supplier yang berkontrak (atau pernah PO) — tidak melahirkan SKU baru.</p>}
+              {purpose === "new_development" && <p className="text-[11px] text-[#6B6B73]">Urutan: handfeel → labdip (dari handfeel ACC, banyak warna sekaligus) → spesifikasi/SKU · proofing di atas kain dasar yang sudah lolos.</p>}
+              {purpose === "revalidation" && <p className="text-[11px] text-[#6B6B73]">Uji ulang SKU aktif ke supplier yang berkontrak (atau pernah PO) — tidak melahirkan SKU baru.</p>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="rnd-samples"
               allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="rnd-samples-line-filter" />
-            <input data-testid="rnd-samples-search" className="field w-56 !py-1.5 !text-[11.5px]" value={q}
+            <input data-testid="rnd-samples-search" className="field w-full sm:w-56 !py-1.5 !text-[11.5px]" value={q}
               onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor / judul / supplier / warna…" />
             <button className="secondary-button !py-1.5" onClick={load} data-testid="rnd-samples-refresh">
               <RefreshCw size={12} /> Muat ulang
@@ -162,7 +166,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             Mencari permintaan <b>{pendingNumber}</b>… Bila tidak ditemukan, permintaan itu mungkin milik entitas (PT) lain.
           </div>
         )}
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6" data-testid="rnd-samples-stats">
+        <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-6" data-testid="rnd-samples-stats">
           {[
             ["Total", stats.total ?? 0, "rnd-samples-kpi-total"],
             ["Terkirim", stats.sent ?? 0, "rnd-samples-kpi-sent"],
@@ -172,7 +176,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             ["Ronde terlambat", stats.overdue_rounds ?? 0, "rnd-samples-kpi-overdue"],
           ].map(([label, value, tid]) => (
             <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
               <p data-testid={tid} className={`text-[15px] font-bold tabular-nums ${tid.endsWith("overdue") && value ? "text-[#C62828]" : "text-[#1C1C1E]"}`}>{value}</p>
             </div>
           ))}
@@ -225,6 +229,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
                 : "Permintaan sample badan usaha ini akan muncul di sini."} />
         </div>
       ) : tab === "board" ? (
+        <>
         <div data-testid="rnd-samples-board" className="grid grid-flow-col auto-cols-[minmax(215px,1fr)] gap-2 overflow-x-auto pb-1">
           {/* 23 Okt — saringan status di luar kolom aktif (mis. "Pemenang dipilih") dulu membuat papan kosong
               semua padahal hitungannya 2; kolom status itu kini ikut tampil saat disaring. */}
@@ -247,10 +252,18 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             );
           })}
         </div>
+        {/* Audit UI 24 Okt — papan hanya memuat kolom yang masih berjalan; sample selesai dulu "hilang" tanpa keterangan. */}
+        {offBoard.length > 0 && (
+          <p data-testid="rnd-samples-offboard-note" className="text-[11px] text-[#6B6B73]">
+            {offBoard.length} permintaan sudah selesai ({offBoardText}) dan tidak tampil di papan.{" "}
+            <button type="button" className="link-button" data-testid="rnd-samples-offboard-open" onClick={() => setTab("list")}>Lihat di tab Daftar</button>
+          </p>
+        )}
+        </>
       ) : (
         <div className="section-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-[11.5px]">
+            <table className="w-full text-[11.5px]" style={{ minWidth: 760 }}>
               <thead>
                 <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
                   <th className="px-2 py-1.5 text-left">Nomor</th>

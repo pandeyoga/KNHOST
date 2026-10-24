@@ -40,6 +40,17 @@ function compactIDR(v) {
   return `${n}`;
 }
 
+// Audit UI 24 Okt (092/093): rasio dulu "2722.02x" (desimal titik, tanpa batas). Desimal koma;
+// di atas 50x angka tidak bermakna (kewajiban lancar hampir nol) → "> 50x", angka persis di tooltip.
+const RATIO_CAP = 50;
+const fmtRatio = (v) => {
+  if (v == null || Number.isNaN(Number(v))) return "—";
+  const n = Number(v);
+  if (n > RATIO_CAP) return `> ${RATIO_CAP}x`;
+  return `${n.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x`;
+};
+const fmtPctId = (v, d = 1) => (v == null ? "—" : `${Number(v).toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d })}%`);
+
 const entityParam = (selectedEntity) =>
   selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
 
@@ -147,13 +158,13 @@ export default function BiFinanceView({ selectedEntity }) {
               {/* Rasio */}
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-2">Rasio Keuangan</p>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                <RatioCard testId="bi-ratio-gross" label="Marjin Kotor" value={`${Number(ratios.gross_margin ?? 0).toFixed(1)}%`} icon={Percent} />
-                <RatioCard testId="bi-ratio-net" label="Marjin Bersih" value={`${Number(ratios.net_margin ?? 0).toFixed(1)}%`} icon={Percent} />
-                <RatioCard testId="bi-ratio-current" label="Rasio Lancar (Current)"
-                  value={ratios.current_ratio == null ? "—" : `${Number(ratios.current_ratio).toFixed(2)}x`} icon={Scale}
+                <RatioCard testId="bi-ratio-gross" label="Marjin Kotor" value={fmtPctId(ratios.gross_margin ?? 0)} icon={Percent} />
+                <RatioCard testId="bi-ratio-net" label="Marjin Bersih" value={fmtPctId(ratios.net_margin ?? 0)} icon={Percent} />
+                <RatioCard testId="bi-ratio-current" label="Rasio Lancar"
+                  value={fmtRatio(ratios.current_ratio)} icon={Scale}
                   hint={`Aset Lancar ${formatCurrency(ratios.current_assets)} / Kwj. Lancar ${formatCurrency(ratios.current_liabilities)}`} />
-                <RatioCard testId="bi-ratio-dte" label="Debt-to-Equity"
-                  value={ratios.debt_to_equity == null ? "—" : `${Number(ratios.debt_to_equity).toFixed(2)}x`} icon={Landmark}
+                <RatioCard testId="bi-ratio-dte" label="Utang thd Ekuitas"
+                  value={fmtRatio(ratios.debt_to_equity)} icon={Landmark}
                   hint={`Kewajiban ${formatCurrency(ratios.liabilities_total)} / Ekuitas ${formatCurrency(ratios.equity_total)}`} />
               </div>
 
@@ -170,6 +181,14 @@ export default function BiFinanceView({ selectedEntity }) {
               ) : (
                 <>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-2">Perbandingan Antar Entitas (PT)</p>
+                  {/* Audit UI 24 Okt (093): saat satu badan usaha dipilih, daftar hanya berisi PT itu —
+                      dulu tanpa keterangan sehingga terbaca "grup cuma punya 1 PT". */}
+                  {comparison.length <= 1 && (
+                    <p className="mb-2 text-[11px] text-[#6B6B73]" data-testid="bi-entity-scope-note">
+                      Hanya badan usaha yang sedang dipilih yang ditampilkan. Pilih “Semua badan usaha” di
+                      pemilih atas untuk membandingkan seluruh PT (lihat juga Konsolidasi Grup).
+                    </p>
+                  )}
                   <div className="grid lg:grid-cols-2 gap-4">
                     <div className="rounded-lg border border-[#EFF0F2] p-3" data-testid="bi-entity-chart">
                       <ResponsiveContainer width="100%" height={Math.max(180, comparison.length * 56)}>
@@ -181,7 +200,7 @@ export default function BiFinanceView({ selectedEntity }) {
                             contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #EFF0F2" }} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
                           <Bar dataKey="revenue" name="Pendapatan" fill={COLOR.revenue} radius={[0, 4, 4, 0]} maxBarSize={18} />
-                          <Bar dataKey="net_income" name="Laba Bersih" radius={[0, 4, 4, 0]} maxBarSize={18}>
+                          <Bar dataKey="net_income" name="Laba Bersih" fill={COLOR.net} radius={[0, 4, 4, 0]} maxBarSize={18}>
                             {comparison.map((r, i) => (
                               <Cell key={i} fill={r.net_income >= 0 ? COLOR.net : COLOR.expense} />
                             ))}
@@ -235,10 +254,11 @@ function Kpi({ label, value, icon: Icon, tone = "", testId }) {
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
+        {/* Audit UI 24 Okt (HP): nilai tidak lagi `truncate` ("Rp 23.321.…"); ikon disembunyikan di HP. */}
+        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#F3EAFB] items-center justify-center sm:flex"><Icon size={17} className="text-[#6B219A]" /></div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
         </div>
       </div>
     </div>

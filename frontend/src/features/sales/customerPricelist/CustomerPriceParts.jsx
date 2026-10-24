@@ -72,10 +72,10 @@ export function PriceRow({ row, canManage, onSetPrice, onHistory, onOpenApproval
   return (
     <tr data-testid={`cpl-row-${pid}`}
       className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#F7FAFF]">
-      <td className="px-3 py-2 font-mono text-[11px] text-[#6B6B73]">{row.sku}</td>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px] text-[#6B6B73]">{row.sku}</td>
+      <td className="min-w-[200px] px-3 py-2">
         <span className="font-medium text-[#1C1C1E]">{row.product_name}</span>
-        <span className="block text-[10px] text-[#9A9BA3]">{row.category} · /{row.base_unit}</span>
+        <span className="block text-[11px] text-[#8E8E93]">{row.category} · /{row.base_unit}</span>
       </td>
       <td className="px-3 py-2 text-right tabular-nums text-[#8E8E93]">
         {formatCurrency(row.global_price)}

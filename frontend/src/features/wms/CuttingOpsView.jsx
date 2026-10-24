@@ -45,7 +45,6 @@ export default function CuttingOpsView() {
       setTasks(rows.filter((x) => x.task_subtype === "sample_cut" && !["dispatched", "cancelled"].includes(x.status)));
       const ws = Array.isArray(w.data) ? w.data : w.data?.items || [];
       setWarehouses(ws);
-      setCutWh((cur) => cur || ws[0]?.id || "");
       setError("");
     } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong.")); }
   }, []);
@@ -163,9 +162,11 @@ export default function CuttingOpsView() {
         <div className="mt-2 border-t border-[#EFF0F2] pt-3" data-testid="cutting-ops-so-cuts">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Potong roll untuk pesanan (SO) — reservasi panjang yang belum dipotong</p>
-            <div className="w-[220px]"><KNSelect data-testid="cutting-ops-cut-wh" value={cutWh} onValueChange={setCutWh} options={warehouses.map((w) => ({ value: w.id, label: w.name }))} searchable={false} /></div>
+            {/* Audit UI 054 — dulu dua filter gudang di satu layar punya nilai awal berbeda ("Semua gudang" vs gudang
+                pertama). Kini sama-sama mulai dari "Semua gudang". */}
+            <div className="w-[220px]"><KNSelect data-testid="cutting-ops-cut-wh" aria-label="Gudang potong SO" value={cutWh} onValueChange={setCutWh} options={whOptions} searchable={false} /></div>
           </div>
-          {cutWh && <PendingCutsPanel whId={cutWh} />}
+          <PendingCutsPanel whId={cutWh} />
         </div>
       </div>
     </div>

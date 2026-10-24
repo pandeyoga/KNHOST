@@ -19,7 +19,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import KNSelect from "../../../components/KNSelect";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import {
-  EnumCard, FieldRuleTable, Kpi, StageChain, TransitionMatrix,
+  EnumCard, FieldRuleTable, Kpi, StageChain, TransitionMatrix, cleanDevText,
 } from "./DomainRegistryParts";
 
 export default function DomainRegistryView() {
@@ -120,7 +120,7 @@ export default function DomainRegistryView() {
         <div className="section-head">
           <div className="min-w-0">
             <span className="kicker">Uji Aturan</span>
-            <h2>Simulator Transisi Stage</h2>
+            <h2>Simulasi Perpindahan Tahap</h2>
           </div>
         </div>
         <div className="section-body grid gap-2">
@@ -162,13 +162,13 @@ export default function DomainRegistryView() {
               <p data-testid="sim-result-ok"
                 className="flex items-start gap-1.5 rounded-md border border-[#BBE9C8] bg-[#F0FCF3] p-2 text-[11.5px] font-semibold text-[#1E7B34]">
                 <CheckCircle2 size={13} className="mt-0.5 shrink-0" />
-                {simResult.message} — stage tujuan: <b className="font-mono">{simResult.to_stage}</b>
+                {cleanDevText(simResult.message)} — tahap tujuan: <b>{stages.find((x) => x.value === simResult.to_stage)?.label || simResult.to_stage}</b>
               </p>
             ) : (
               <p data-testid="sim-result-error"
                 className="flex items-start gap-1.5 rounded-md border border-[#F5C2C0] bg-[#FEF3F2] p-2 text-[11.5px] font-semibold text-[#B3261E]">
                 <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                {simResult.message}
+                {cleanDevText(simResult.message)}
               </p>
             )
           )}
@@ -195,8 +195,8 @@ export default function DomainRegistryView() {
       <section className="section-card">
         <div className="section-head">
           <div className="min-w-0">
-            <span className="kicker">R7 · satu registry</span>
-            <h2>Daftar Enum Domain</h2>
+            <span className="kicker">Kamus data</span>
+            <h2>Daftar Pilihan Baku (Kamus Domain)</h2>
           </div>
         </div>
         <div className="section-body grid gap-2">
@@ -214,7 +214,7 @@ export default function DomainRegistryView() {
         <div className="section-body grid gap-1.5">
           {Object.entries(decisions).map(([id, text], i) => (
             <p key={id} data-testid={`decision-${id}`} className="text-[11.5px]">
-              <b className="text-[#0058CC]">{i + 1}.</b> {stripInternalCodes(text)}
+              <b className="text-[#0058CC]">{i + 1}.</b> {cleanDevText(text)}
             </p>
           ))}
         </div>

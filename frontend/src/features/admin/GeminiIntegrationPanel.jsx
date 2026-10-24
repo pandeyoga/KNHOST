@@ -54,7 +54,7 @@ export default function GeminiIntegrationPanel() {
 
   return (
     <section className="section-card" data-testid="gemini-integration-panel">
-      <div className="section-head flex items-center gap-2"><Wand2 size={15} className="text-[#5B2EA6]" /><h2 className="text-[13px] font-bold">Integrasi AI — Gemini Nano Banana Pro (Ilustrasi Galeri Desain)</h2></div>
+      <div className="section-head flex items-center !justify-start gap-2"><Wand2 size={15} className="text-[#5B2EA6]" /><h2 className="text-[13px] font-bold">Integrasi AI — Gemini Nano Banana Pro (Ilustrasi Galeri Desain)</h2></div>
       <div className="section-body">
         {!cfg && !err ? <p className="text-[12px] text-[#6B6B73] py-4">Memuat…</p> : (
           <div className="grid gap-3 max-w-[560px]">
@@ -68,7 +68,7 @@ export default function GeminiIntegrationPanel() {
               <label className="text-[11px] font-bold uppercase text-[#6B6B73] flex items-center gap-1"><KeyRound size={12} /> Gemini API Key</label>
               <input data-testid="gemini-apikey" type="password" className="form-input" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
                 placeholder={!demo ? "•••• tersimpan — isi untuk mengganti" : "Masukkan Gemini API key (AIza…) dari aistudio.google.com"} />
-              <p className="text-[10.5px] text-[#9A9BA3]">Key disimpan aman di server (atau lewat env <code>GEMINI_API_KEY</code>) & tidak pernah ditampilkan kembali.</p>
+              <p className="text-[10.5px] text-[#9A9BA3]">Key disimpan aman di server (atau di pengaturan server) & tidak pernah ditampilkan kembali.</p>
             </div>
             <div className="grid gap-1">
               <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Model</label>

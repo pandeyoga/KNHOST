@@ -2,23 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
-import { X, Ship, Plus, Trash2, Layers } from "lucide-react";
+import { Ship, Plus, Trash2, Layers, Loader2 } from "lucide-react";
+import FormModal from "@/components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 
 /**
  * LandedCostCreateModal (Fase 5.4) — buat voucher landed cost dari 1+ PO.
  * Preview alokasi dihitung client-side (panduan); kebenaran final = server saat approve.
+ *
+ * Audit UI 24 Okt (033): kaki modal distandarkan lewat FormModal (Batal · Simpan Draf ·
+ * Kirim di kanan), galat tampil di dalam modal, istilah Inggris diganti.
  */
 const BASIS_OPTIONS = [
   { value: "value", label: "Proporsional Nilai (biaya × panjang)" },
   { value: "quantity", label: "Proporsional Kuantitas (panjang)" },
 ];
 const CATEGORY_OPTIONS = [
-  { value: "freight", label: "Freight / Angkut" },
+  { value: "freight", label: "Ongkos Angkut" },
   { value: "duty", label: "Bea Masuk" },
   { value: "insurance", label: "Asuransi" },
-  { value: "handling", label: "Handling" },
+  { value: "handling", label: "Bongkar Muat" },
   { value: "other", label: "Lainnya" },
 ];
 
@@ -58,6 +62,8 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState([{ category: "freight", description: "", amount: "" }]);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const fail = (m) => { setErr(m); onError?.(m); };
 
   useEffect(() => { if (!open) reset(); }, [open]);
 
@@ -65,6 +71,7 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
     setSelectedPoIds([]); setRolls([]); setProvider(""); setInvNo("");
     setBasis("value"); setVoucherDate(""); setDueDate(""); setNotes("");
     setLines([{ category: "freight", description: "", amount: "" }]);
+    setErr("");
   }
 
   async function togglePo(id) {
@@ -87,7 +94,7 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
       }
       setRolls(merged);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal memuat roll PO.");
+      fail(e.response?.data?.detail || "Gagal memuat roll PO.");
     } finally { setLoadingCtx(false); }
   }
 
@@ -100,11 +107,12 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
   function removeLine(i) { setLines((arr) => (arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr)); }
 
   async function submit(now) {
-    if (!selectedPoIds.length) { onError?.("Pilih minimal 1 PO."); return; }
+    if (!selectedPoIds.length) { fail("Pilih minimal 1 PO."); return; }
     const costLines = lines.filter((l) => Number(l.amount) > 0)
       .map((l) => ({ category: l.category, description: l.description, amount: Number(l.amount) }));
-    if (!costLines.length) { onError?.("Minimal 1 baris biaya dengan nominal > 0."); return; }
-    if (!rolls.length) { onError?.("PO terpilih belum punya roll diterima (GR). Selesaikan penerimaan dulu."); return; }
+    if (!costLines.length) { fail("Minimal 1 baris biaya dengan nominal > 0."); return; }
+    if (!rolls.length) { fail("PO terpilih belum punya roll diterima (GR). Selesaikan penerimaan dulu."); return; }
+    setErr("");
     setBusy(true);
     try {
       const body = {
@@ -117,25 +125,29 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
       onCreated?.(r.data);
       reset();
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat Landed Cost Voucher.");
+      fail(e.response?.data?.detail || "Gagal membuat dokumen biaya masuk.");
     } finally { setBusy(false); }
   }
 
   if (!open) return null;
 
-  return (
-    <div className="modal-overlay" data-testid="landed-cost-create-modal"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 940, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <Ship size={16} className="text-[#0058CC]" />
-            <h2 className="text-[14px] font-bold">Buat Landed Cost (Alokasi HPP Roll)</h2>
-          </div>
-          <button data-testid="lc-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
-        </div>
+  const footer = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <button type="button" data-testid="lc-create-close" onClick={onClose} disabled={busy} className="secondary-button">Batal</button>
+      <button type="button" data-testid="lc-save-draft" onClick={() => submit(false)} disabled={busy} className="secondary-button">Simpan Draf</button>
+      <button type="button" data-testid="lc-submit-now" onClick={() => submit(true)} disabled={busy} className="primary-button">
+        {busy && <Loader2 size={13} className="animate-spin" />} Kirim ke Manajer
+      </button>
+    </div>
+  );
 
-        <div className="p-4 space-y-3">
+  return (
+    <FormModal open={open} onClose={onClose} size="lg" icon={Ship} busy={busy}
+      testId="landed-cost-create-modal"
+      title="Buat Biaya Masuk (Landed Cost)"
+      subtitle="Ongkos angkut, bea, asuransi & bongkar muat dibebankan ke HPP roll setelah disetujui manajer."
+      error={err} footer={footer}>
+        <div className="space-y-3">
           {/* PO selection */}
           <Field label="Pesanan Pembelian (bisa lebih dari satu)" req>
             <div className="rounded-md border border-[#EFF0F2] max-h-[140px] overflow-y-auto p-1" data-testid="lc-po-list">
@@ -151,21 +163,21 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
             </div>
           </Field>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Penyedia Jasa">
               <input data-testid="lc-provider-input" value={provider} onChange={(e) => setProvider(e.target.value)}
                 className="field" placeholder="mis. Forwarder / Bea Cukai" />
             </Field>
             <Field label="No. Faktur Penyedia">
               <input data-testid="lc-invoice-input" value={invNo} onChange={(e) => setInvNo(e.target.value)}
-                className="field" placeholder="opsional (dedupe)" />
+                className="field" placeholder="opsional — mencegah faktur tercatat dua kali" />
             </Field>
             <Field label="Basis Alokasi">
               <KNSelect data-testid="lc-basis-select" value={basis} onValueChange={setBasis} className="field" options={BASIS_OPTIONS} />
             </Field>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Tanggal Voucher">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field label="Tanggal Dokumen">
               <KNDatePicker data-testid="lc-voucher-date" value={voucherDate} onChange={setVoucherDate} />
             </Field>
             <Field label="Jatuh Tempo">
@@ -179,26 +191,28 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
           {/* Cost lines */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[10.5px] font-semibold text-[#6B6B73]">Baris Biaya Tambahan</label>
-              <button data-testid="lc-add-line" onClick={addLine} className="secondary-button !px-2 !py-1 text-[11px]"><Plus size={11} /> Tambah</button>
+              <label className="field-label !mb-0">Baris Biaya Tambahan <span className="req">*</span></label>
+              <button type="button" data-testid="lc-add-line" onClick={addLine} className="secondary-button !px-2 !py-1 text-[11px]"><Plus size={11} /> Tambah</button>
             </div>
-            <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-              <div className="grid grid-cols-[150px_1fr_140px_36px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+            <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+             <div className="min-w-[520px]">
+              <div className="grid grid-cols-[150px_1fr_140px_36px] whitespace-nowrap px-2.5 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
                 <span>Kategori</span><span>Deskripsi</span><span className="text-right">Nominal (Rp)</span><span></span>
               </div>
               {lines.map((l, i) => (
                 <div key={i} data-testid={`lc-line-${i}`} className="grid grid-cols-[150px_1fr_140px_36px] gap-1 items-center px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0">
-                  <KNSelect data-testid={`lc-line-category-${i}`} value={l.category} onValueChange={(v) => updateLine(i, { category: v })} className="field !py-1" options={CATEGORY_OPTIONS} />
-                  <input data-testid={`lc-line-desc-${i}`} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} className="field !py-1" placeholder="keterangan" />
-                  <MoneyInput testId={`lc-line-amount-${i}`} value={l.amount} onChange={(v) => updateLine(i, { amount: v })} className="field !py-1 text-right" placeholder="0" />
-                  <button data-testid={`lc-line-remove-${i}`} onClick={() => removeLine(i)} className="icon-button !w-7 !h-7" title="Hapus"><Trash2 size={13} className="text-red-500" /></button>
+                  <KNSelect data-testid={`lc-line-category-${i}`} value={l.category} onValueChange={(v) => updateLine(i, { category: v })} className="field" options={CATEGORY_OPTIONS} />
+                  <input data-testid={`lc-line-desc-${i}`} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} className="field" placeholder="keterangan" />
+                  <MoneyInput testId={`lc-line-amount-${i}`} value={l.amount} onChange={(v) => updateLine(i, { amount: v })} className="field text-right" placeholder="0" />
+                  <button type="button" data-testid={`lc-line-remove-${i}`} onClick={() => removeLine(i)} className="icon-button !w-7 !h-7" title="Hapus"><Trash2 size={13} className="text-red-500" /></button>
                 </div>
               ))}
               <div className="grid grid-cols-[150px_1fr_140px_36px] px-2.5 py-1.5 bg-[#FAFBFC] border-t border-[#EFF0F2]">
-                <span className="text-[10.5px] font-bold uppercase text-[#6B6B73] col-span-2 text-right pr-2">Total Biaya</span>
+                <span className="text-[11px] font-bold uppercase text-[#6B6B73] col-span-2 text-right pr-2">Total Biaya</span>
                 <span className="text-[12px] font-bold tabular-nums text-right" data-testid="lc-total-cost">{formatCurrency(totalCost)}</span>
                 <span></span>
               </div>
+             </div>
             </div>
           </div>
 
@@ -209,19 +223,20 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
               <div className="flex items-center justify-between px-3 py-2 bg-[#FAFBFC] border-b border-[#EFF0F2]">
                 <div className="flex items-center gap-1.5">
                   <Layers size={13} className="text-[#0058CC]" />
-                  <span className="text-[11px] font-bold text-[#3C3C43]">Preview Alokasi — {rolls.length} roll · basis {preview.basis}</span>
+                  <span className="text-[11px] font-bold text-[#3C3C43]">Pratinjau Alokasi — {rolls.length} roll · basis {preview.basis === "quantity" ? "kuantitas" : "nilai"}</span>
                 </div>
-                <span className="text-[10.5px] text-[#6B6B73]">Nilai dasar: {formatCurrency(totalBaseValue)}</span>
+                <span className="text-[11px] text-[#6B6B73]">Nilai dasar: {formatCurrency(totalBaseValue)}</span>
               </div>
               {rolls.length === 0 ? (
                 <div className="py-4 text-center text-[11.5px] text-amber-600">PO terpilih belum punya roll diterima (GR).</div>
               ) : (
-                <div className="max-h-[200px] overflow-y-auto">
-                  <div className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] px-2.5 py-1 bg-white text-[9.5px] font-bold uppercase text-[#9A9BA3] border-b border-[#EFF0F2] sticky top-0">
-                    <span>Roll</span><span>Produk</span><span className="text-right">Panjang</span><span className="text-right">HPP Skrg</span><span className="text-right">+ Landed/unit</span><span className="text-right">HPP Baru</span>
+                <div className="max-h-[200px] overflow-auto">
+                 <div className="min-w-[600px]">
+                  <div className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] whitespace-nowrap px-2.5 py-1 bg-white text-[11px] font-bold uppercase text-[#9A9BA3] border-b border-[#EFF0F2] sticky top-0">
+                    <span>Roll</span><span>Produk</span><span className="text-right">Panjang</span><span className="text-right">HPP Kini</span><span className="text-right">+ Biaya/unit</span><span className="text-right">HPP Baru</span>
                   </div>
                   {preview.allocations.map((a, i) => (
-                    <div key={a.roll_id} data-testid={`lc-alloc-row-${i}`} className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] items-center px-2.5 py-1 border-b border-[#F2F3F5] last:border-0 text-[10.5px]">
+                    <div key={a.roll_id} data-testid={`lc-alloc-row-${i}`} className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] items-center px-2.5 py-1 border-b border-[#F2F3F5] last:border-0 text-[11px]">
                       <span className="font-mono">{a.roll_no}</span>
                       <span className="truncate">{a.product_name}</span>
                       <span className="tabular-nums text-right">{formatQty(a.length)}</span>
@@ -230,27 +245,20 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
                       <span className="tabular-nums text-right font-semibold">{formatCurrency(a.new_unit_cost)}</span>
                     </div>
                   ))}
+                 </div>
                 </div>
               )}
             </div>
           )}
-
-          <div className="flex gap-2 pt-1">
-            <button data-testid="lc-save-draft" onClick={() => submit(false)} disabled={busy} className="secondary-button">Simpan Draf</button>
-            <button data-testid="lc-submit-now" onClick={() => submit(true)} disabled={busy} className="flex-1 primary-button justify-center">
-              Kirim (minta persetujuan manajer)
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
 function Field({ label, req, children }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">{label} {req && <span className="req">*</span>}</label>
+      <label className="field-label">{label} {req && <span className="req">*</span>}</label>
       {children}
     </div>
   );

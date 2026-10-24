@@ -194,7 +194,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
           </h2>
           <p className="text-[12px] text-[#6B6B73]">
             Antrean uang yang nyangkut — salah transfer, bayar dobel, giro ditolak, dana tak
-            dikenal — diselesaikan lewat playbook yang selalu melahirkan dokumen, bukan
+            dikenal — diselesaikan lewat langkah baku yang selalu melahirkan dokumen, bukan
             perubahan senyap.
           </p>
         </div>
@@ -235,35 +235,37 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
           <div className="stat-card">
             <p className="stat-label">Kasus terbuka</p>
             <p className="stat-value" data-testid="case-stat-open">{stats.open}</p>
-            <p className="text-[10px] text-[#8E8E93]">{stats.in_progress} sedang ditangani</p>
+            <p className="text-[11px] text-[#8E8E93]">{stats.in_progress} sedang ditangani</p>
           </div>
           <div className={`stat-card ${stats.overdue ? "ring-1 ring-[#F3C9C7]" : ""}`}>
             <p className="stat-label">Lewat batas waktu</p>
             <p className={`stat-value ${stats.overdue ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}
               data-testid="case-stat-overdue">{stats.overdue}</p>
-            <p className="text-[10px] text-[#8E8E93]">
-              {stats.overdue ? "perlu tindakan hari ini" : "semua di dalam SLA"}
+            <p className="text-[11px] text-[#8E8E93]">
+              {stats.overdue ? "perlu tindakan hari ini" : "semua masih dalam batas waktu"}
             </p>
           </div>
           <div className="stat-card">
-            <p className="stat-label">Uang dipertaruhkan</p>
+            <p className="stat-label">Nilai uang terdampak</p>
             <p className="stat-value text-[#0058CC]" data-testid="case-stat-money">
               {formatCurrency(stats.money_at_stake)}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">pada kasus yang belum selesai</p>
+            <p className="text-[11px] text-[#8E8E93]">pada kasus yang belum selesai</p>
           </div>
           <div className="stat-card">
             <p className="stat-label">Kasus tertua</p>
-            <p className="stat-value flex items-center gap-1 text-[#B26A00]">
-              <Clock size={14} /> {humanAge(stats.oldest_age_hours)}
+            {/* Audit UI 24 Okt (131): dulu "baru saja" walau tidak ada kasus terbuka. */}
+            <p className={`stat-value flex items-center gap-1 ${(stats.open || 0) + (stats.in_progress || 0) > 0 ? "text-[#B26A00]" : "text-[#8E8E93]"}`}>
+              <Clock size={14} /> {(stats.open || 0) + (stats.in_progress || 0) > 0 ? humanAge(stats.oldest_age_hours) : "—"}
             </p>
+            {(stats.open || 0) + (stats.in_progress || 0) === 0 && <p className="text-[11px] text-[#8E8E93]">tidak ada kasus terbuka</p>}
           </div>
           <div className="stat-card">
             <p className="stat-label">Sudah selesai</p>
             <p className="stat-value text-[#1B7F4B]" data-testid="case-stat-resolved">
               {stats.resolved}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">{stats.rejected} ditutup tanpa tindakan</p>
+            <p className="text-[11px] text-[#8E8E93]">{stats.rejected} ditutup tanpa tindakan</p>
           </div>
         </div>
       )}

@@ -27,6 +27,12 @@ const CATEGORIES = [
   { value: "modal", label: "Setoran Modal" },
   { value: "lain", label: "Lain-lain" },
 ];
+const CATEGORY_LABEL = { ...Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])), penagihan: "Penagihan" };
+const categoryLabel = (c) => {
+  if (!c) return "—";
+  const s = String(c);
+  return CATEGORY_LABEL[s] || (s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ");
+};
 
 export default function CashManagementView({ currentUser, selectedEntity }) {
   const [txns, setTxns] = useState([]);
@@ -138,7 +144,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         <SummaryCard testId="cash-kecil-card" title="Kas Kecil" sub={selectedEntity && selectedEntity !== "all" ? entityName(selectedEntity) : "Semua entitas"} balance={summary.kas_kecil?.balance} inAmt={summary.kas_kecil?.in} outAmt={summary.kas_kecil?.out} tone="rgba(107,33,154,.10)" />
         <div data-testid="cash-per-entity-card" className="section-card">
           <div className="section-body">
-            <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1.5">Kas Kecil per Entitas</p>
+            <p className="text-[11px] font-bold uppercase text-[#6B6B73] mb-1.5">Kas Kecil per Entitas</p>
             {Object.keys(summary.kas_kecil_per_entity || {}).length === 0 ? (
               <p className="text-[11.5px] text-[#9A9BA3]">Belum ada data.</p>
             ) : (
@@ -209,7 +215,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
                 <MoneyInput testId="cash-amount-input" value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className="field" placeholder="0" />
               </Field>
               <Field label="Kategori">
-                <KNSelect data-testid="cash-category-select" value={form.category} onValueChange={(v) => setForm({ ...form, category: v })} className="field" options={CATEGORIES} />
+                <KNSelect data-testid="cash-category-select" value={form.category} onValueChange={(v) => setForm({ ...form, category: v })} className="field" options={CATEGORIES} searchable={false} />
               </Field>
               {form.cash_type === "kas_kecil" && (
                 <Field label="Entitas">
@@ -226,11 +232,14 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
 
       {/* Transactions table */}
       <div className="section-card">
-        <div className="overflow-hidden">
-          <div className="grid grid-cols-[90px_90px_1.4fr_110px_120px_60px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+        {/* Audit UI 24 Okt (061): kotak cari dipindah ke atas tabel (dulu di dalam baris
+            judul kolom); HP: grid digulir di dalam kartu sehingga tombol anulir terjangkau. */}
+        <div className="px-3 pt-3">{srch.toolbar}</div>
+        <div className="overflow-x-auto">
+         <div className="min-w-[720px]">
+          <div className="grid grid-cols-[130px_96px_1.4fr_120px_130px_48px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Nomor</span><span>Tanggal</span><span>Deskripsi / Kategori</span><span>Jenis / Entitas</span><span className="text-right">Nominal</span><span></span>
           </div>
-          {srch.toolbar}
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat transaksi kas...</div>
           ) : srch.shown.length === 0 ? (
@@ -241,16 +250,16 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[520px] overflow-y-auto">
               {srch.pageRows.map((t) => (
-                <div key={t.id} data-testid={`cash-row-${t.id}`} className="grid grid-cols-[90px_90px_1.4fr_110px_120px_60px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                  <span className="text-[11px] font-bold text-[#0058CC]">{t.number}</span>
-                  <span className="text-[10.5px] text-[#6B6B73]">{fmtDate(t.txn_date)}</span>
+                <div key={t.id} data-testid={`cash-row-${t.id}`} className="grid grid-cols-[130px_96px_1.4fr_120px_130px_48px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                  <span className="whitespace-nowrap text-[11px] font-bold text-[#0058CC]">{t.number}</span>
+                  <span className="text-[11px] text-[#6B6B73]">{fmtDate(t.txn_date)}</span>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold truncate">{t.description || "—"}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] capitalize">{t.category || "—"}</p>
+                    <p className="text-[11px] text-[#6B6B73]">{categoryLabel(t.category)}</p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] truncate">{t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate">{entityName(t.entity_id)}</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate">{entityName(t.entity_id)}</p>
                   </div>
                   <div className="flex items-center justify-end gap-1">
                     {t.direction === "in"
@@ -269,6 +278,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
               ))}
             </div>
           )}
+         </div>
         </div>
       </div>
 
@@ -291,11 +301,11 @@ function SummaryCard({ testId, title, sub, balance, inAmt, outAmt, tone }) {
     <div data-testid={testId} className="section-card">
       <div className="section-body">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-bold uppercase text-[#6B6B73]">{title}</p>
-          <span className="text-[9.5px] text-[#9A9BA3]">{sub}</span>
+          <p className="text-[11px] font-bold uppercase text-[#6B6B73]">{title}</p>
+          <span className="text-[11px] text-[#9A9BA3]">{sub}</span>
         </div>
-        <p className="text-[20px] font-bold tabular-nums" style={{ color: "#0F1115" }}>{formatCurrency(balance)}</p>
-        <div className="mt-1.5 flex items-center gap-3 text-[10.5px]">
+        <p className="text-[18px] sm:text-[20px] font-bold tabular-nums break-words" style={{ color: "#0F1115" }}>{formatCurrency(balance)}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
           <span className="text-green-700 tabular-nums">Masuk {formatCurrency(inAmt)}</span>
           <span className="text-red-600 tabular-nums">Keluar {formatCurrency(outAmt)}</span>
         </div>
@@ -308,7 +318,7 @@ function SummaryCard({ testId, title, sub, balance, inAmt, outAmt, tone }) {
 function Field({ label, req, children }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">
+      <label className="field-label">
         {label} {req && <span className="req">*</span>}
       </label>
       {children}

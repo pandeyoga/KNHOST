@@ -180,20 +180,22 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
       </div>
 
       <div className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2 flex-wrap">
-            <ShieldCheck size={15} className="text-[#6B219A]" />
-            <h3 className="text-[13px] font-bold text-[#1C1C1E]">Buka Periode (Unlock) — Kontrol Ganda</h3>
+        {/* Audit UI 24 Okt (134 HP): kepala kartu dulu satu baris kaku → judul pecah satu kata
+            per baris & pemilih entitas terpotong. Sekarang boleh membungkus. */}
+        <div className="section-head flex-wrap gap-2">
+          <div className="flex min-w-[200px] flex-1 items-center gap-2">
+            <ShieldCheck size={15} className="flex-shrink-0 text-[#6B219A]" />
+            <h3 className="text-[13px] font-bold text-[#1C1C1E]">Buka Periode — Kontrol Ganda</h3>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
             <button data-testid="plu-reclose-expired" className="btn-secondary text-[11px] py-1 px-2 inline-flex items-center gap-1" onClick={doReclose} disabled={busy || !canManage} title="Tutup jendela yang sudah lewat batas">
               <Timer size={12} /> Tutup yang kedaluwarsa
             </button>
-            <div className="w-[200px]">
+            <div className="w-full sm:w-[200px]">
               <KNSelect data-testid="plu-entity-select" className="field py-1.5 text-[12px]" value={entityId}
                 onValueChange={setEntityId} placeholder="Pilih Entitas (PT)" options={entityOptions} />
             </div>
-            <button data-testid="plu-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="plu-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
 
@@ -320,7 +322,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
                   </table>
                 </div>
               )}
-              <p className="mt-2 text-[11px] text-[#9A9BA3]">Jurnal mundur yang diposting selama jendela terbuka membuat penutupan periode menjadi <b>Basi</b> — tutup ulang di menu Tutup Buku agar laporan sinkron kembali.</p>
+              <p className="mt-2 text-[11px] text-[#9A9BA3]">Jurnal mundur yang diposting selama jendela terbuka membuat penutupan periode <b>kedaluwarsa (perlu ditutup ulang)</b> — tutup ulang di menu Tutup Buku agar laporan sinkron kembali.</p>
             </>
           )}
         </div>

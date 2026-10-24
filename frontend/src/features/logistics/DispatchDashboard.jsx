@@ -4,6 +4,7 @@ import { PackagePlus, PackageCheck, Truck, AlertTriangle, Clock, CheckCircle2, C
 import ErrorNotice from "../../components/ErrorNotice";
 import { QcStatusBadge } from "../../components/QcStatusBadge";
 import { formatDateId } from "../../components/KNDatePicker";
+import { formatQty } from "../../utils/formatters";
 import { logisticsDashboard, MODE_LABEL, MODE_PILL, STATUS_PILL, carrierText } from "./logisticsApi";
 
 // Dasbor Pengiriman — aksi cepat (SJ menunggu, serah terima pickup), visual status & moda,
@@ -50,7 +51,7 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
       <div className="grid gap-3 lg:grid-cols-3">
         {/* Aksi cepat: SJ menunggu pengiriman */}
         <section className="section-card !p-3 lg:col-span-2" data-testid="dispatch-quick-actions">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-bold flex items-center gap-1.5"><PackagePlus size={14} className="text-[#0058CC]" /> Aksi cepat — Surat Jalan menunggu pengiriman <span className="tabular-nums text-[#6B6B73] font-semibold">({k.unassigned_sj})</span></p>
             {canManage && k.unassigned_sj > 0 && <button data-testid="dispatch-create-any" className="secondary-button !py-1 !px-2 !text-[11px]" onClick={() => onCreate("")}>Buat pengiriman…</button>}
           </div>
@@ -59,10 +60,12 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
           ) : (
             <div className="mt-2 divide-y divide-[#F0F1F3] max-h-[300px] overflow-auto">
               {d.unassigned.map((s) => (
-                <div key={s.id} className="flex items-center gap-2 py-1.5 text-[11.5px]" data-testid={`dispatch-sj-${s.id}`}>
+                // Audit UI 126 (HP) — rincian (SO · pelanggan · barang · qty) turun ke baris sendiri di layar sempit;
+                // dulu terpotong jadi "KSC/SO-…" sehingga pelanggan/barang/qty hilang.
+                <div key={s.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-[11.5px]" data-testid={`dispatch-sj-${s.id}`}>
                   <span className="font-mono font-bold text-[#0058CC] shrink-0">{s.shipment_no}</span>
                   <span className={`status-pill ${s.fulfillment_method === "ambil" ? "pill-purple" : "pill-info"} shrink-0`}>{s.fulfillment_method === "ambil" ? "Ambil sendiri" : "Kirim"}</span>
-                  <span className="min-w-0 truncate"><b>{s.order_number}</b> · {s.customer_name} · {s.product_name} · <span className="tabular-nums">{s.qty} {s.unit}</span>{s.pickup_date ? ` · ambil ${s.pickup_date}` : ""}</span>
+                  <span className="order-last w-full min-w-0 text-[#3A3B42] sm:order-none sm:w-auto sm:flex-1 sm:truncate"><b>{s.order_number}</b> · {s.customer_name} · {s.product_name} · <span className="tabular-nums">{formatQty(s.qty)} {s.unit}</span>{s.pickup_date ? ` · ambil ${formatDateId(s.pickup_date, "dd MMM yyyy")}` : ""}</span>
                   {canManage && <button data-testid={`dispatch-create-${s.id}`} className="primary-button !py-1 !px-2.5 !text-[11px] ml-auto shrink-0" onClick={() => onCreate(s.id)}>{s.fulfillment_method === "ambil" ? "Siapkan pickup" : "Buat pengiriman"} <ChevronRight size={11} /></button>}
                 </div>
               ))}

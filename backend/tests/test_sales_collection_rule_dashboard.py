@@ -3,6 +3,8 @@ import os
 
 import pytest
 import requests
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pymongo import MongoClient
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
@@ -84,8 +86,12 @@ def test_order_dashboard_shape_and_scope(ayu):
     assert len(d["weekly"]) == 8 and [s["key"] for s in d["status_counts"]] == ["waiting", "processing", "shipped", "done"]
     u = DB.users.find_one({"email": "sales@kainnusantara.id"})
     total = sum(s["count"] for s in d["status_counts"])
-    live = DB.sales_orders.count_documents({"sales_id": u["id"], "status": {"$in": ["waiting_approval", "pending_approval", "approved", "confirmed", "reserved",
-                                                                                    "partially_picked", "picked", "ready", "partially_shipped", "shipped", "delivered", "done", "completed"]}})
+    # UAT 24 Okt (audit UI HP) — kepemilikan = aturan "Pesanan Saya" (pembuat / sales_id / anggota tim) dan semua status
+    # hidup ikut terhitung (menunggu stok, dikemas, dalam perjalanan dulu hilang dari kartu status).
+    from services.sales_order_dashboard import BUCKETS
+    live_status = sorted(set().union(*BUCKETS.values()))
+    live = DB.sales_orders.count_documents({"$or": [{"created_by": u["id"]}, {"sales_id": u["id"]}, {"sales_team.sales_id": u["id"]}],
+                                            "status": {"$in": live_status}})
     assert total == live
     assert len(d["top_customers"]) <= 5
 

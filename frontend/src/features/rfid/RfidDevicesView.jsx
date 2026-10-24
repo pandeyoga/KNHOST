@@ -6,10 +6,10 @@ import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
 import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses } from "./rfidShared";
 
-const TYPE_LABEL = { gate: "Gate", fixed_reader: "Fixed Reader", handheld: "Handheld", printer: "Printer RFID" };
+const TYPE_LABEL = { gate: "Gerbang", fixed_reader: "Pembaca tetap", handheld: "Pembaca genggam", printer: "Printer RFID" };
 const TYPE_OPTS = [
   { value: "gate", label: "Gate (pintu masuk/keluar)" },
-  { value: "fixed_reader", label: "Fixed Reader (zona)" },
+  { value: "fixed_reader", label: "Pembaca tetap (zona)" },
   { value: "handheld", label: "Handheld" },
   { value: "printer", label: "Printer RFID (cetak tag)" },
 ];
@@ -80,7 +80,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
   const toggleEnabled = async (d) => {
     if (d.enabled && !(await askConfirm({
       title: `Nonaktifkan ${d.code}?`, danger: true,
-      message: "Device ditolak saat heartbeat, ingest dan tarik/ack job printer sampai diaktifkan lagi.",
+      message: "Perangkat nonaktif ditolak sistem (sinyal, kiriman bacaan, dan tugas cetak) sampai diaktifkan lagi.",
     }))) return;
     setBusy(true); setError(null);
     try { await axios.patch(`${API}/rfid/devices/${d.id}`, { enabled: !d.enabled }); await load(); }
@@ -88,7 +88,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
   };
   const remove = async (id) => {
     setBusy(true); setError(null);
-    try { await axios.delete(`${API}/rfid/devices/${id}`); flash("Device dihapus."); await load(); }
+    try { await axios.delete(`${API}/rfid/devices/${id}`); flash("Perangkat dihapus."); await load(); }
     catch (e) { setError(e.response?.data?.detail || "Gagal hapus device"); } finally { setBusy(false); }
   };
   const submit = async () => {
@@ -96,7 +96,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
     setBusy(true); setError(null);
     try {
       await axios.post(`${API}/rfid/devices`, { ...form, direction: form.type === "gate" ? form.direction : undefined });
-      flash("Device dibuat."); setShowForm(false);
+      flash("Perangkat dibuat."); setShowForm(false);
       setForm({ code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" });
       await load();
     } catch (e) { setError(e.response?.data?.detail || "Gagal buat device"); } finally { setBusy(false); }
@@ -109,12 +109,12 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
 
   return (
     <div data-testid="rfid-devices-view" className="space-y-4">
-      <RfidHeader icon={Wifi} title="Devices (Reader / Gate)" subtitle="Infrastruktur RFID per gudang. Nyalakan/matikan, tambah gate & reader.">
+      <RfidHeader icon={Wifi} title="Perangkat (Pembaca / Gerbang)" subtitle="Perangkat RFID per gudang. Nyalakan/matikan, tambah gerbang & pembaca.">
         <KNSelect data-testid="rfid-dev-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-dev-refresh" onClick={load}
           className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
 
@@ -123,8 +123,8 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
       {!isAdmin && <div className="rounded-lg bg-[#FFF6E5] text-[#8A5A00] text-[11px] px-3 py-2">Mode baca-saja. Perubahan device memerlukan role admin.</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={Cpu} label="Total Device" value={devices.length} color="#0058CC" loading={loading} />
-        <Stat icon={Power} label="Online" value={online} color="#34C759" loading={loading} testId="rfid-dev-online" />
+        <Stat icon={Cpu} label="Total Perangkat" value={devices.length} color="#0058CC" loading={loading} />
+        <Stat icon={Power} label="Menyala" value={online} color="#34C759" loading={loading} testId="rfid-dev-online" />
         <Stat icon={RadioTower} label="Gate" value={gates} color="#5856D6" loading={loading} />
         <Stat icon={Router} label="Reader" value={readers} color="#FF9500" loading={loading} />
       </div>
@@ -133,17 +133,17 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
         <div className="flex flex-wrap gap-2">
           <button data-testid="rfid-seed-devices" disabled={busy} onClick={seedDefaults}
             className="flex items-center gap-1 rounded-lg border border-[#0058CC] text-[#0058CC] px-3 py-1.5 text-[12px] font-semibold hover:bg-[#EAF2FF] disabled:opacity-40">
-            <RadioTower size={14} /> Buat Device Default (per gudang)
+            <RadioTower size={14} /> Buat Perangkat Bawaan (per gudang)
           </button>
           <button data-testid="rfid-add-device" onClick={() => setShowForm((v) => !v)}
             className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold">
-            <Plus size={14} /> Tambah Device
+            <Plus size={14} /> Tambah Perangkat
           </button>
         </div>
       )}
 
       {showForm && isAdmin && (
-        <SectionCard title="Device Baru">
+        <SectionCard title="Perangkat Baru">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div><label className="text-[11px] text-[#6B6B73]">Kode (opsional)</label>
               <input data-testid="rfid-form-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
@@ -172,9 +172,9 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
         </SectionCard>
       )}
 
-      <SectionCard title="Daftar Device">
+      <SectionCard title="Daftar Perangkat">
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-          : devices.length === 0 ? <EmptyBox icon={Wifi} text="Belum ada device. Klik 'Buat Device Default' untuk mulai." />
+          : devices.length === 0 ? <EmptyBox icon={Wifi} text="Belum ada perangkat. Klik 'Buat Perangkat Bawaan' untuk mulai." />
             : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {devices.map((d) => (
@@ -183,35 +183,37 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
                       <span className="text-[12px] font-mono font-semibold">{d.code}</span>
                       <span className="flex items-center gap-1">
                         {!d.enabled && <Pill color="red" testId={`rfid-device-disabled-${d.id}`}>nonaktif</Pill>}
-                        <Pill color={d.status === "online" ? "green" : "gray"} testId={`rfid-device-status-${d.id}`}>{d.status}</Pill>
+                        <Pill color={d.status === "online" ? "green" : "gray"} testId={`rfid-device-status-${d.id}`}>{d.status === "online" ? "menyala" : d.status === "offline" ? "mati" : d.status}</Pill>
                       </span>
                     </div>
                     <p className="text-[12px] font-semibold mt-1">{d.name}</p>
                     <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction}` : ""} · {d.warehouse_name || d.warehouse_id}</p>
-                    <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · heartbeat {fmtTime(d.last_heartbeat)}</p>
+                    <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · sinyal terakhir {fmtTime(d.last_heartbeat)}</p>
                     {isAdmin && (
                       <div className="flex gap-2 mt-2">
                         <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}
+                          title="Matikan/nyalakan sementara (mis. perawatan). Perangkat tetap terdaftar dan boleh dinyalakan lagi kapan saja."
                           className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold hover:bg-[#F5F5F7] disabled:opacity-40">
                           <Power size={12} /> {d.status === "online" ? "Matikan" : "Nyalakan"}
                         </button>
                         <button data-testid={`rfid-apikey-${d.id}`} disabled={busy} onClick={() => issueKey(d)}
-                          title="API key untuk middleware (header X-Device-Key)"
+                          title="Kunci akses untuk aplikasi penghubung pembaca RFID"
                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA] disabled:opacity-40">
-                          {d.has_api_key ? "Rotasi Key" : "Key"}
+                          {d.has_api_key ? "Ganti Kunci" : "Buat Kunci"}
                         </button>
                         <button data-testid={`rfid-enable-toggle-${d.id}`} disabled={busy} onClick={() => toggleEnabled(d)}
+                          title={d.enabled ? "Blokir perangkat: semua kiriman bacaan & tugas cetaknya ditolak sampai diaktifkan lagi." : "Cabut blokir perangkat."}
                           className={`rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold disabled:opacity-40 ${d.enabled ? "text-[#C0341D] hover:bg-[#FBE9E7]" : "text-[#1B7E3B] hover:bg-[#E7F7EC]"}`}>
                           {d.enabled ? "Nonaktifkan" : "Aktifkan"}
                         </button>
-                        <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d.id)}
+                        <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d.id)} title="Hapus perangkat" aria-label="Hapus perangkat"
                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[#C0341D] hover:bg-[#FBE9E7] disabled:opacity-40"><Trash2 size={12} /></button>
                       </div>
                     )}
                     {d.has_api_key && (
                       <p data-testid={`rfid-apikey-hint-${d.id}`} className="mt-1 text-[10px] text-[#6B6B73]">
-                        Key aktif ••••{d.api_key_hint || "????"}
-                        {d.key_rotation_required && <span data-testid={`rfid-apikey-rotate-warn-${d.id}`} className="ml-1 font-semibold text-[#C0341D]">· wajib rotasi (key lama pernah terbuka)</span>}
+                        Kunci aktif ••••{d.api_key_hint || "????"}
+                        {d.key_rotation_required && <span data-testid={`rfid-apikey-rotate-warn-${d.id}`} className="ml-1 font-semibold text-[#C0341D]">· wajib diganti (kunci lama pernah terlihat)</span>}
                       </p>
                     )}
                     {revealed?.id === d.id && isAdmin && (

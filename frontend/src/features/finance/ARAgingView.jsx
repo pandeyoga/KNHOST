@@ -170,7 +170,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
         <Kpi testId="ar-kpi-denda" label={`Est. Denda (${dendaRate}%/bln)`} value={formatCurrency(totals.denda)} icon={TrendingDown} tone={totals.denda > 0 ? "text-[#B45309]" : ""} />
         <Kpi testId="ar-kpi-denda-doc" label={`Nota Denda (${totals.penalty_docs || 0} dok)`} value={formatCurrency(totals.penalty_actual)} icon={BadgeDollarSign} tone={totals.penalty_actual > 0 ? "text-[#0058CC]" : ""} />
       </div>
-      <LedgerExposureStrip totals={totals} definitions={data?.definitions} />
+      <LedgerExposureStrip totals={totals} />
 
       {/* Aging bucket strip */}
       <div className="section-card mb-3">
@@ -186,21 +186,21 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
 
       {/* Master table */}
       <div className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2"><Wallet size={16} className="text-[#6B219A]" /><h2 data-testid="ar-aging-title">Piutang per Pelanggan</h2></div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
             <button
               data-testid="ar-aging-overdue-toggle"
               className={`text-[11px] font-semibold rounded-md px-2.5 py-1.5 border transition-colors ${onlyOverdue ? "bg-[#FCEBEA] border-[#F0B5AE] text-[#C0392B]" : "bg-white border-[#EFF0F2] text-[#6B6B73] hover:border-[#C9DBF7]"}`}
               onClick={() => setOnlyOverdue((v) => !v)}
             >
-              {onlyOverdue ? "Hanya Overdue ✓" : "Hanya Overdue"}
+              {onlyOverdue ? "Hanya Lewat Jatuh Tempo ✓" : "Hanya Lewat Jatuh Tempo"}
             </button>
             <div className="relative">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="ar-aging-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari pelanggan / sales..." value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <button data-testid="ar-aging-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="ar-aging-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
         <div className="section-body">
@@ -219,8 +219,8 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             </div>
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]" data-testid="ar-aging-table">
-                <thead>
+              <table className="w-full min-w-[860px] text-[12px]" data-testid="ar-aging-table">
+                <thead className="whitespace-nowrap">
                   <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                     <th className="px-3 py-2">Pelanggan</th>
                     <th className="px-3 py-2 text-right">Lancar</th>
@@ -497,20 +497,27 @@ function CustomerDetail({ detail, customerId, loading, currentUser, accruing, on
   );
 }
 
-function LedgerExposureStrip({ totals, definitions }) {
-  const d = definitions || {};
+// Audit UI 24 Okt (128): definisi dari server memuat kode akun mentah ("saldo 1-1200") —
+// layar memakai kalimat sendiri tanpa kode akun.
+const AR_DEFS_UI = {
+  ar_ledger: "Pendapatan yang sudah diakui (surat jalan/jurnal penjualan) dikurangi pembayaran — sama dengan saldo akun Piutang Usaha.",
+  exposure: "Nilai pesanan yang belum dikirim/diakui; belum masuk buku besar piutang.",
+};
+
+function LedgerExposureStrip({ totals }) {
+  const d = AR_DEFS_UI;
   return (
     <div className="section-card mb-3" data-testid="ar-ledger-exposure">
       <div className="section-body py-2.5 grid gap-2 sm:grid-cols-2 text-[11.5px]">
         <div title={d.ar_ledger}>
-          <span className="font-bold text-[#0058CC]">Piutang ledger: </span>
+          <span className="font-bold text-[#0058CC]">Piutang tercatat (buku besar): </span>
           <span className="tabular-nums font-bold" data-testid="ar-ledger-total">{formatCurrency(totals.ar_ledger || 0)}</span>
-          <p className="text-[10.5px] text-[#8E8E93]">{d.ar_ledger}</p>
+          <p className="text-[11px] text-[#8E8E93]">{d.ar_ledger}</p>
         </div>
         <div title={d.exposure}>
-          <span className="font-bold text-[#6B6B73]">Eksposur (belum dikirim): </span>
+          <span className="font-bold text-[#6B6B73]">Pesanan belum dikirim (eksposur): </span>
           <span className="tabular-nums font-bold" data-testid="ar-exposure-total">{formatCurrency(totals.exposure || 0)}</span>
-          <p className="text-[10.5px] text-[#8E8E93]">{d.exposure}</p>
+          <p className="text-[11px] text-[#8E8E93]">{d.exposure}</p>
         </div>
       </div>
     </div>
@@ -518,13 +525,15 @@ function LedgerExposureStrip({ totals, definitions }) {
 }
 
 function Kpi({ label, value, icon: Icon, tone = "", testId }) {
+  // Audit UI 24 Okt (128 HP): nilai dulu `truncate` → "Rp 67.364.…". Di HP ikon disembunyikan
+  // dan angka boleh turun baris — tidak pernah dipotong.
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
+        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#F3EAFB] items-center justify-center sm:flex"><Icon size={17} className="text-[#6B219A]" /></div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
         </div>
       </div>
     </div>

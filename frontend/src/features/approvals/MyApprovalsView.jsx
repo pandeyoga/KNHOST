@@ -19,6 +19,8 @@ import {
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency } from "../../utils/formatters";
+import { actorLabel } from "../../utils/actorLabel";
+import { roleLabel } from "../../config/roles";
 import {
   apiErr, approvalMatrixLog, approveMakloonClaim, approvePr, approveSpec, approveSpecialOrder,
   myApprovalQueue, rejectMakloonClaim, rejectPr, rejectSpec, rejectSpecialOrder,
@@ -31,6 +33,19 @@ const STAGE_META = {
   purchase_request: { label: "Permintaan Pembelian", icon: ClipboardCheck, fg: "#1B7F4B", bg: "#E9F7EF" },
   makloon_claim: { label: "Klaim Selisih Makloon", icon: Factory, fg: "#A8221A", bg: "#FDECEA" },
 };
+
+// Audit UI 24 Okt (001) — catatan jejak keputusan sample kadang berisi KODE alasan (backend menulis
+// `reason_code` sebagai catatan bila catatan kosong — routers/rnd.py `amx.record(... note=payload.note or
+// payload.reason_code)`). Label sama dengan `DECISION_REASONS` di services/rnd_sample_service.py.
+const DECISION_REASON_LABEL = {
+  warna_paling_dekat: "Warna paling dekat dengan target",
+  mutu_terbaik: "Mutu/handfeel terbaik",
+  harga_terbaik: "Harga terbaik pada mutu setara",
+  lead_time: "Lead time paling cepat",
+  kapasitas: "Kapasitas produksi memadai",
+  permintaan_pelanggan: "Diminta pelanggan",
+};
+const noteLabel = (n) => DECISION_REASON_LABEL[String(n || "").trim()] || n;
 
 const MODE_TONE = {
   enforce: "bg-[#E9F7EF] text-[#1B7F4B]",
@@ -205,14 +220,15 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
             <ShieldCheck size={16} className="text-[#1B7F4B]" />
             <h2 data-testid="my-approvals-title">Persetujuan Saya</h2>
           </div>
-          <button className="secondary-button" onClick={load} data-testid="my-approvals-refresh">
+          <button className="secondary-button shrink-0 whitespace-nowrap" onClick={load} data-testid="my-approvals-refresh">
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
           </button>
         </div>
         <div className="section-body">
           <p className="text-[11.5px] text-[#6B6B73]">
-            Semua dokumen R&amp;D yang menunggu keputusan Anda menurut <strong>matriks
-            persetujuan divisi</strong>. Keputusan tercatat di jejak persetujuan.
+            Dokumen yang menunggu keputusan Anda menurut <strong>matriks persetujuan
+            divisi</strong> — ACC desain, ACC sample, PO custom, permintaan pembelian, dan klaim
+            selisih makloon. Keputusan tercatat di jejak persetujuan.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5"
             data-testid="my-approvals-enforcement">
@@ -283,7 +299,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-left text-[12px]"
+              <table className="w-full min-w-[640px] text-left text-[12px] sm:min-w-[980px]"
                 data-testid="my-approvals-list">
                 <thead>
                   <tr className="text-[10px] uppercase text-[#8E8E93]">
@@ -293,7 +309,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                     <th className="py-1.5 pr-3 text-right font-bold">Nilai</th>
                     <th className="py-1.5 pr-3 font-bold">Menunggu</th>
                     <th className="py-1.5 pr-3 font-bold">Tingkat</th>
-                    <th className="py-1.5 font-bold">Aksi</th>
+                    <th className="hidden py-1.5 font-bold sm:table-cell">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F4F5F7]">
@@ -301,6 +317,48 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                     const meta = STAGE_META[it.stage] || {};
                     const Icon = meta.icon || ShieldCheck;
                     const isSample = it.stage === "sample_acc";
+                    // Audit UI 24 Okt (001, HP) — Setujui/Tolak/Buka dulu di luar layar (tabel 980px digeser dulu).
+                    // Di HP aksi tampil di bawah dokumen; kolom Aksi hanya untuk layar >= sm.
+                    const renderActions = (sfx = "") => (
+                      <>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {!isSample && (
+                            <>
+                              <button className="primary-button !h-7 !px-2 !text-[11px]"
+                                disabled={!it.can_decide}
+                                data-testid={`my-approvals-approve-${sfx}${it.id}`}
+                                onClick={() => openModal(it, "approve")}>
+                                <Check size={12} /> Setujui
+                              </button>
+                              <button className="danger-button !h-7 !px-2 !text-[11px]"
+                                disabled={!it.can_decide}
+                                data-testid={`my-approvals-reject-${sfx}${it.id}`}
+                                onClick={() => openModal(it, "reject")}>
+                                <X size={12} /> Tolak
+                              </button>
+                            </>
+                          )}
+                          <button className="secondary-button !h-7 !px-2 !text-[11px]"
+                            data-testid={`my-approvals-open-${sfx}${it.id}`}
+                            onClick={() => onNavigate && onNavigate(it.view)}>
+                            Buka <ArrowRight size={12} />
+                          </button>
+                        </div>
+                        {isSample && (
+                          <p className="mt-1 max-w-[240px] text-[11px] text-[#8E8E93]">
+                            Keputusan sample memilih pemenang + harga — dilakukan di layar
+                            Permintaan Sample.
+                          </p>
+                        )}
+                        {!it.can_decide && (it.block_reasons || []).length > 0 && (
+                          <p className="mt-1 max-w-[260px] text-[11px] font-medium text-[#C0392B]"
+                            data-testid={`my-approvals-blocked-${sfx}${it.id}`}>
+                            <AlertTriangle size={10} className="mr-1 inline" />
+                            {it.block_reasons[0]}
+                          </p>
+                        )}
+                      </>
+                    );
                     return (
                       <tr key={`${it.stage}-${it.id}-${it.step_seq || 0}`} data-testid={`my-approvals-row-${it.id}`}
                         className="align-top">
@@ -314,12 +372,13 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                           <div className="font-semibold text-[#1C1C1E]">{it.number}{it.step_seq ? <span className="ml-1 text-[10px] font-normal text-[#8E8E93]">langkah {it.step_seq}</span> : null}</div>
                           <div className="text-[11px] text-[#6B6B73]">{it.title}</div>
                           {it.customer_name && (
-                            <div className="text-[10.5px] text-[#8E8E93]">{it.customer_name}</div>
+                            <div className="text-[11px] text-[#8E8E93]">{it.customer_name}</div>
                           )}
+                          <div className="mt-1.5 sm:hidden" data-testid={`my-approvals-actions-m-${it.id}`}>{renderActions("m-")}</div>
                         </td>
                         <td className="py-2 pr-3 text-[11.5px] text-[#4A4B52]">
-                          {it.requester || "—"}
-                          <div className="text-[10.5px] text-[#9A9BA3]">{fmtDate(it.created_at)}</div>
+                          {actorLabel(it.requester)}
+                          <div className="text-[11px] text-[#9A9BA3]">{fmtDate(it.created_at)}</div>
                         </td>
                         <td className="py-2 pr-3 text-right font-semibold text-[#1C1C1E]">
                           {it.amount ? formatCurrency(it.amount) : "—"}
@@ -338,44 +397,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                             perlu: {it.required_roles_label}
                           </div>
                         </td>
-                        <td className="py-2">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {!isSample && (
-                              <>
-                                <button className="primary-button !h-7 !px-2 !text-[11px]"
-                                  disabled={!it.can_decide}
-                                  data-testid={`my-approvals-approve-${it.id}`}
-                                  onClick={() => openModal(it, "approve")}>
-                                  <Check size={12} /> Setujui
-                                </button>
-                                <button className="danger-button !h-7 !px-2 !text-[11px]"
-                                  disabled={!it.can_decide}
-                                  data-testid={`my-approvals-reject-${it.id}`}
-                                  onClick={() => openModal(it, "reject")}>
-                                  <X size={12} /> Tolak
-                                </button>
-                              </>
-                            )}
-                            <button className="secondary-button !h-7 !px-2 !text-[11px]"
-                              data-testid={`my-approvals-open-${it.id}`}
-                              onClick={() => onNavigate && onNavigate(it.view)}>
-                              Buka <ArrowRight size={12} />
-                            </button>
-                          </div>
-                          {isSample && (
-                            <p className="mt-1 max-w-[240px] text-[10px] text-[#8E8E93]">
-                              Keputusan sample memilih pemenang + harga — dilakukan di layar
-                              Permintaan Sample.
-                            </p>
-                          )}
-                          {!it.can_decide && (it.block_reasons || []).length > 0 && (
-                            <p className="mt-1 max-w-[260px] text-[10px] font-medium text-[#C0392B]"
-                              data-testid={`my-approvals-blocked-${it.id}`}>
-                              <AlertTriangle size={10} className="mr-1 inline" />
-                              {it.block_reasons[0]}
-                            </p>
-                          )}
-                        </td>
+                        <td className="hidden py-2 sm:table-cell">{renderActions()}</td>
                       </tr>
                     );
                   })}
@@ -388,7 +410,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
 
       {/* ── Jejak persetujuan ──────────────────────────────────── */}
       <section className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-y-1.5">
           <div className="flex items-center gap-2">
             <ScrollText size={15} className="text-[#6B219A]" />
             <h2>Jejak Persetujuan</h2>
@@ -429,8 +451,8 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                       </td>
                       <td className="py-2 pr-3 text-[11.5px]">{r.doc_number || "—"}</td>
                       <td className="py-2 pr-3 text-[11.5px]">
-                        {r.actor_name}
-                        <span className="ml-1 text-[10px] text-[#8E8E93]">({r.actor_role})</span>
+                        {actorLabel(r.actor_name)}
+                        {r.actor_role && <span className="ml-1 text-[11px] text-[#8E8E93]">({roleLabel(r.actor_role)})</span>}
                       </td>
                       <td className="py-2 text-[11.5px]">
                         <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
@@ -438,7 +460,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                           {r.outcome || r.action}
                         </span>
                         {r.note && (
-                          <div className="mt-0.5 max-w-[360px] text-[10px] text-[#8E8E93]">{r.note}</div>
+                          <div className="mt-0.5 max-w-[360px] text-[11px] text-[#8E8E93]">{noteLabel(r.note)}</div>
                         )}
                       </td>
                     </tr>
@@ -464,7 +486,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                 <p className="modal-subtitle">
                   {modalItem.title}
                   {modalItem.amount ? ` · ${formatCurrency(modalItem.amount)}` : ""}
-                  {" · diajukan "}{modalItem.requester || "—"}
+                  {" · diajukan "}{actorLabel(modalItem.requester)}
                 </p>
               </div>
               <button className="secondary-button !h-7 !px-2" onClick={() => setModal(null)}

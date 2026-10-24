@@ -254,9 +254,15 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   const rollsLoading = pegOnly ? loading : rollsPaged.loading;
 
   // Summary cards
-  const totalOnHand   = filteredBalances.reduce((s, b) => s + (b.on_hand_qty || 0), 0);
-  const totalAvail    = filteredBalances.reduce((s, b) => s + (b.available_qty || 0), 0);
-  const totalReserved = filteredBalances.reduce((s, b) => s + (b.reserved_qty || 0), 0);
+  // UAT 24 Okt (audit UI 051) — total PER SATUAN: kg dan yard tidak pernah dijumlahkan jadi satu angka.
+  const sumByUnit = (field) => filteredBalances.reduce((m, b) => {
+    const u = b.base_unit || "meter";
+    m[u] = (m[u] || 0) + (b[field] || 0);
+    return m;
+  }, {});
+  const onHandByUnit   = sumByUnit("on_hand_qty");
+  const availByUnit    = sumByUnit("available_qty");
+  const reservedByUnit = sumByUnit("reserved_qty");
   const lowCount      = filteredBalances.filter(b => stockStatus(b) === "low").length;
 
   const entityLabel = selectedEntity === "all"
@@ -276,9 +282,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         </div>
       )}
       <InventorySummaryCards
-        totalOnHand={totalOnHand}
-        totalAvail={totalAvail}
-        totalReserved={totalReserved}
+        onHandByUnit={onHandByUnit}
+        availByUnit={availByUnit}
+        reservedByUnit={reservedByUnit}
         lowCount={lowCount}
       />
 
@@ -287,7 +293,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         <Building2 size={13} className="text-[#4338CA]" />
         <span className="text-[11.5px] text-[#4338CA]">
           Konteks kepemilikan: <strong>{entityLabel}</strong>
-          <span className="text-[#6B6B73] ml-1">— stok = proyeksi dari roll (SSOT). Reservasi terjadi di level roll.</span>
+          <span className="text-[#6B6B73] ml-1">— angka stok dihitung dari roll fisik. Pemesanan mengunci roll, bukan angka total.</span>
         </span>
       </div>
 
@@ -319,7 +325,8 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
           {warehouses.map(wh => (
             <button key={wh.id} onClick={() => setWarehouseFilter(wh.id)}
               className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all ${warehouseFilter === wh.id ? "bg-[#007AFF] text-white" : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#007AFF]"}`}>
-              <MapPin size={9} className="inline mr-1" />{wh.city}
+              {/* Audit UI 051 — beberapa gudang satu kota ("Bandung" ×7) → tampilkan nama gudang. */}
+              <MapPin size={9} className="inline mr-1" />{wh.name || wh.city}
             </button>
           ))}
         </div>
@@ -343,7 +350,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         </button>
         {can(user?.permissions || {}, "inventory", "create") && (
           <button onClick={openStockForm} data-testid="add-stock-button"
-            className="flex items-center gap-1.5 rounded-lg bg-[#34C759] hover:bg-[#28A745] text-white px-3 py-1.5 text-[12px] font-semibold">
+            className="primary-button flex items-center gap-1.5 !px-3 !py-1.5 !text-[12px]">
             <Plus size={12} /> Tambah Stok
           </button>
         )}

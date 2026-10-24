@@ -55,16 +55,22 @@ export default function ClientDatasetImportView() {
   return (
     <section className="space-y-3" data-testid="client-dataset-import">
       <div className="rounded-xl border border-[#E5E5EA] bg-white p-4">
-        <h2 className="text-[15px] font-bold">Impor Dataset Client — artikel, tahap, jenis kain, supplier/warna</h2>
+        <h2 className="text-[15px] font-bold">Impor Dataset Klien — artikel, tahap, jenis kain, supplier/warna</h2>
         <p className="mt-1 text-[12px] text-[#6B6B73]">
           Hanya memperbarui master yang sudah ada (artikel lewat kode/nama, SKU lewat kode SKU atau artikel + warna internal) dan peta warna supplier.
-          Artikel, SKU, supplier, tahap, atau jenis kain yang belum ada <b>tidak dibuat otomatis</b>; semuanya dilaporkan untuk diputuskan. Selalu dicek dulu (dry-run) dan bisa dibatalkan.
+          Artikel, SKU, supplier, tahap, atau jenis kain yang belum ada <b>tidak dibuat otomatis</b>; semuanya dilaporkan untuk diputuskan. File selalu dicek dulu (uji coba, belum mengubah data) dan hasil impor bisa dibatalkan.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button className="secondary-button !py-1.5 text-[12px]" onClick={download} data-testid="cds-template"><Download size={13} /> Unduh template CSV</button>
-          <input type="file" accept=".csv,.xlsx" onChange={(e) => setFile(e.target.files?.[0] || null)} data-testid="cds-file" className="text-[12px]" />
+          {/* Audit UI 103 — tombol file bawaan peramban berbahasa Inggris ("Choose File / No file chosen") disembunyikan;
+              label berbahasa Indonesia memicu pemilih file yang sama. */}
+          <label className="secondary-button !py-1.5 text-[12px] cursor-pointer" data-testid="cds-file-label">
+            <FileUp size={13} /> {file ? "Ganti file" : "Pilih file (.csv / .xlsx)"}
+            <input type="file" accept=".csv,.xlsx" onChange={(e) => setFile(e.target.files?.[0] || null)} data-testid="cds-file" className="sr-only" />
+          </label>
+          <span className="max-w-[260px] truncate text-[12px] text-[#6B6B73]" data-testid="cds-file-name">{file ? file.name : "Belum ada file dipilih"}</span>
           <button className="primary-button !py-1.5 text-[12px]" disabled={!file || busy} onClick={upload} data-testid="cds-upload">
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />} Cek file (dry-run)
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />} Cek file (uji coba)
           </button>
         </div>
         {err && <p className="mt-2 text-[12px] text-[#C0392B]" data-testid="cds-error">{err}</p>}

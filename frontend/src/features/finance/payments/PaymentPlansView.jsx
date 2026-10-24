@@ -85,25 +85,27 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="pp-error" />
 
       <div className="section-card mb-3">
-        <div className="section-head">
-          <div className="flex min-w-0 items-center gap-2">
+        {/* Audit UI 24 Okt (130 HP): kepala kartu boleh membungkus (dulu deskripsi terjepit),
+            tab utama satu baris yang bisa digeser (dulu tersusun vertikal satu per baris). */}
+        <div className="section-head flex-wrap gap-2">
+          <div className="flex min-w-[220px] flex-1 items-center gap-2">
             <CalendarClock size={16} className="text-[#0058CC]" />
             <div className="min-w-0">
               <h2 data-testid="pp-title">Rencana Pembayaran & Denda</h2>
               <p className="text-[11px] text-[#6B6B73]">
-                Jadwal bayar pelanggan (DP · cicilan · milestone) dan antrean denda keterlambatan.
+                Jadwal bayar pelanggan (uang muka · cicilan · per tahap) dan antrean denda keterlambatan.
                 Denda lahir sebagai <b>usulan</b> — bisa dinegosiasikan sebelum masuk pembukuan.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {canOpenConfig && (
-              <button className="secondary-button" data-testid="pp-open-config"
+              <button className="secondary-button whitespace-nowrap" data-testid="pp-open-config"
                 onClick={() => openConfig({ group: "uang-masuk" })}>
                 <Settings2 size={13} /> Aturan Bayar & Denda
               </button>
             )}
-            <button className="secondary-button" onClick={load} data-testid="pp-refresh">
+            <button className="secondary-button whitespace-nowrap" onClick={load} data-testid="pp-refresh">
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
             </button>
           </div>
@@ -116,7 +118,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
             <Kpi testId="pp-kpi-issued" label="Denda terbit (belum dibayar)" value={money(stats.issued_outstanding)} tone="#0058CC" />
             <Kpi testId="pp-kpi-waived" label="Denda dibebaskan" value={money(stats.waived_amount)} tone="#6B6B73" />
           </div>
-          <div className="tab-bar">
+          <div className="tab-bar !flex-nowrap overflow-x-auto">
             <button data-testid="pp-tab-denda" className={`tab-button ${tab === "denda" ? "active" : ""}`}
               onClick={() => setTab("denda")}>
               <BadgeDollarSign size={12} className="mr-1 inline" /> Antrean Denda
@@ -171,7 +173,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
                 <BadgeDollarSign size={26} className="mx-auto mb-2 text-[#C4C5CC]" />
                 <p className="text-[12.5px] font-semibold text-[#3C3C43]">Tidak ada nota denda pada filter ini.</p>
                 <p className="text-[11.5px] text-[#6B6B73]">
-                  Usulan denda muncul otomatis dari job harian bila ada baris jadwal yang telat.
+                  Usulan denda muncul otomatis dari pemeriksaan harian sistem bila ada baris jadwal yang telat.
                 </p>
               </div>
             )}

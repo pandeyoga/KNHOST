@@ -128,31 +128,31 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
             <X size={22} />
           </button>
           <GateLiveVerdict gate={gate} status={gateStatus} big />
-          <p className="absolute bottom-5 w-full text-center text-[13px] text-white opacity-60">Tekan Esc atau ✕ untuk keluar · sirine {sirenMuted ? "OFF" : "ON"}</p>
+          <p className="absolute bottom-5 w-full text-center text-[13px] text-white opacity-60">Tekan Esc atau ✕ untuk keluar · sirene {sirenMuted ? "mati" : "nyala"}</p>
         </div>
       )}
-      <RfidHeader icon={Cpu} title="Gate Monitor" subtitle="Simulasikan pembacaan tag di gate. Sistem memvalidasi HIJAU (sah) / MERAH (tak sah).">
+      <RfidHeader icon={Cpu} title="Monitor Gerbang" subtitle="Simulasikan pembacaan tag di gerbang. Sistem memvalidasi HIJAU (sah) / MERAH (tak sah).">
         <KNSelect data-testid="rfid-gate-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-siren-toggle" onClick={toggleSiren}
-          title={sirenMuted ? "Sirine dimatikan — klik untuk menyalakan" : "Sirine menyala saat gate MERAH — klik untuk mematikan"}
+          title={sirenMuted ? "Sirene dimatikan — klik untuk menyalakan" : "Sirene berbunyi saat gerbang MERAH — klik untuk mematikan"}
           className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
-            sirenMuted ? "border border-[#EFF0F2] bg-white text-[#6B6B73] hover:bg-[#F5F5F7]" : "bg-[#1B7F4B] text-white"}`}>
-          {sirenMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} Sirine {sirenMuted ? "OFF" : "ON"}
+            sirenMuted ? "border border-[#EFF0F2] bg-white text-[#6B6B73] hover:bg-[#F5F5F7]" : "border border-[#BDE5CC] bg-[#E6F6EC] text-[#1B7F4B]"}`}>
+          {sirenMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} Sirene {sirenMuted ? "mati" : "nyala"}
         </button>
         <button data-testid="rfid-gate-live" onClick={() => setLive((v) => !v)}
           className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
             live ? "bg-[#C0341D] text-white" : "border border-[#EFF0F2] bg-white hover:bg-[#F5F5F7]"}`}>
-          <Radio size={14} className={live ? "animate-pulse" : ""} /> {live ? "LIVE ●" : "Mode Live"}
+          <Radio size={14} className={live ? "animate-pulse" : ""} /> {live ? "LANGSUNG ●" : "Pantau langsung"}
         </button>
         <button data-testid="rfid-gate-kiosk-btn" onClick={openKiosk}
-          title="Layar penuh untuk dipasang dekat gate — MERAH berkedip bersama sirine"
+          title="Layar penuh untuk dipasang dekat gerbang — MERAH berkedip bersama sirene"
           className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-          <Maximize2 size={14} /> Kiosk
+          <Maximize2 size={14} /> Layar penuh
         </button>
         <button data-testid="rfid-gate-refresh" onClick={load}
           className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
 
@@ -171,7 +171,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
         : <p className="rounded-2xl bg-[#F5F5F7] p-6 text-center text-[14px] font-semibold text-[#6B6B73]">Pilih gate untuk melihat verdict live.</p>)}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={ArrowLeftRight} label="Gate Aktif" value={devices.filter((d) => d.status === "online").length} color="#0058CC" loading={loading} />
+        <Stat icon={ArrowLeftRight} label="Gerbang Aktif" value={devices.filter((d) => d.status === "online").length} color="#0058CC" loading={loading} />
         <Stat icon={ScanLine} label="Baca Hari Ini" value={summary?.reads_today ?? 0} color="#5856D6" loading={loading} />
         <Stat icon={ShieldAlert} label="Alert (Merah) Hari Ini" value={summary?.alerts_today ?? 0} color="#C0341D" loading={loading} testId="rfid-gate-alerts" />
         <Stat icon={ShieldCheck} label="Tag Aktif" value={summary?.tags_active ?? 0} color="#34C759" loading={loading} />
@@ -179,7 +179,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
 
       <SectionCard title="Simulasi Pembacaan Gate">
         {devices.length === 0 ? (
-          <EmptyBox icon={Cpu} text="Belum ada gate di gudang ini. Buat gate di menu Devices dulu." />
+          <EmptyBox icon={Cpu} text="Belum ada gerbang di gudang ini. Buat dulu di Pengaturan › Perangkat RFID." />
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -188,7 +188,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
               <div><label className="text-[11px] text-[#6B6B73]">Roll (tag) yang lewat</label>
                 <KNSelect data-testid="rfid-gate-roll" value={rollId} onValueChange={setRollId} options={rollOpts} className="field mt-1 text-[12px]" placeholder="Pilih roll ber-tag" searchable /></div>
             </div>
-            {gate && gate.status !== "online" && <p className="text-[11px] text-[#C0341D]">Gate ini OFFLINE — nyalakan di menu Devices.</p>}
+            {gate && gate.status !== "online" && <p className="text-[11px] text-[#C0341D]">Gerbang ini MATI — nyalakan di Pengaturan › Perangkat RFID.</p>}
             <button data-testid="rfid-gate-simulate" disabled={busy || !gateId || !rollId} onClick={simulate}
               className="flex items-center gap-2 rounded-lg bg-[#0058CC] text-white px-4 py-2 text-[13px] font-semibold disabled:opacity-40">
               <ScanLine size={16} /> Baca di Gate

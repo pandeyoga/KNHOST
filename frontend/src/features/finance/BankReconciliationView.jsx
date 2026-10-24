@@ -130,6 +130,10 @@ export default function BankReconciliationView() {
     () => accounts.map((a) => ({ value: a.id, label: a.name || a.bank_name || a.id })),
     [accounts]);
   const filterOn = !!(fStatus || fStart || fEnd);
+  // Audit UI 24 Okt (062): sebelum ada mutasi diimpor, "Selisih rekening vs buku" dulu
+  // menampilkan −(seluruh saldo buku) berwarna merah — menyesatkan. Tanpa mutasi rekening,
+  // selisih belum bisa dihitung → tampil "—" netral dengan petunjuk impor.
+  const noStatement = !!summary && !Number(summary.statement?.lines || 0);
 
   return (
     <div className="p-5" data-testid="bank-reconciliation-view">
@@ -166,13 +170,13 @@ export default function BankReconciliationView() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4" data-testid="recon-summary">
           <div className="stat-card">
             <p className="stat-label">Rekening (bersih)</p>
-            <p className="stat-value tabular-nums">{formatCurrency(summary.statement.net)}</p>
-            <p className="text-[10px] text-[#8E8E93]">{summary.statement.lines} baris mutasi</p>
+            <p className="stat-value tabular-nums whitespace-nowrap">{noStatement ? "—" : formatCurrency(summary.statement.net)}</p>
+            <p className="text-[11px] text-[#8E8E93]">{noStatement ? "belum ada mutasi diimpor" : `${summary.statement.lines} baris mutasi`}</p>
           </div>
           <div className="stat-card">
             <p className="stat-label">Buku (bersih)</p>
-            <p className="stat-value tabular-nums">{formatCurrency(summary.book.net)}</p>
-            <p className="text-[10px] text-[#8E8E93]">
+            <p className="stat-value tabular-nums whitespace-nowrap">{formatCurrency(summary.book.net)}</p>
+            <p className="text-[11px] text-[#8E8E93]">
               {summary.unmatched_book_txns} transaksi belum tertaut
             </p>
           </div>
@@ -185,24 +189,26 @@ export default function BankReconciliationView() {
             <p className="stat-value text-[#B26A00]" data-testid="recon-unmatched">
               {summary.unmatched_lines}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">{summary.suggested} punya usulan</p>
+            <p className="text-[11px] text-[#8E8E93]">{summary.suggested} punya usulan</p>
           </div>
           <div className="stat-card">
             <p className="stat-label">Dana titipan</p>
-            <p className="stat-value text-[#0058CC]" data-testid="recon-holding-balance">
+            <p className="stat-value text-[#0058CC] whitespace-nowrap" data-testid="recon-holding-balance">
               {formatCurrency(summary.holding?.balance || 0)}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">
+            <p className="text-[11px] text-[#8E8E93]">
               {summary.holding?.count || 0} baris
               {summary.holding?.needs_action ? ` · ${summary.holding.needs_action} perlu tindakan` : ""}
             </p>
           </div>
-          <div className={`stat-card ${Math.abs(summary.difference) < 0.5 ? "" : "ring-1 ring-[#F3C9C7]"}`}>
+          <div className={`stat-card ${noStatement || Math.abs(summary.difference) < 0.5 ? "" : "ring-1 ring-[#F3C9C7]"}`}>
             <p className="stat-label">Selisih rekening vs buku</p>
-            <p className={`stat-value ${Math.abs(summary.difference) < 0.5 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}
-              data-testid="recon-difference">{formatCurrency(summary.difference)}</p>
-            {summary.fully_reconciled && (
-              <p className="text-[10px] text-[#1B7F4B] font-semibold">Terekonsiliasi penuh ✓</p>
+            <p className={`stat-value whitespace-nowrap tabular-nums ${noStatement ? "text-[#8E8E93]" : Math.abs(summary.difference) < 0.5 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}
+              data-testid="recon-difference">{noStatement ? "—" : formatCurrency(summary.difference)}</p>
+            {noStatement ? (
+              <p className="text-[11px] text-[#8E8E93]" data-testid="recon-difference-hint">dihitung setelah mutasi rekening diimpor</p>
+            ) : summary.fully_reconciled && (
+              <p className="text-[11px] text-[#1B7F4B] font-semibold">Terekonsiliasi penuh ✓</p>
             )}
           </div>
         </div>

@@ -9,13 +9,14 @@ import ConfirmModal from "../../components/ConfirmModal";
 import { formatCurrency } from "../../utils/formatters";
 import { EmployeeFormDrawer } from "./EmployeeFormDrawer";
 import Employee360Panel from "./Employee360Panel";
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
 
 const STATUS_PILL = {
   active: { cls: "pill-success", label: "Aktif" },
   inactive: { cls: "pill-muted", label: "Nonaktif" },
-  resigned: { cls: "pill-danger", label: "Resigned" },
+  resigned: { cls: "pill-danger", label: "Keluar (resign)" },
 };
+const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
 
 function Stat({ icon: Icon, label, value, testId }) {
   return (
@@ -149,22 +150,27 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
             </button>
           )}
         </div>
-        <div className="section-body grid gap-2 md:grid-cols-[1fr_180px_160px]">
+        <div className="section-body grid gap-2 md:grid-cols-[1fr_220px]">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
             <input data-testid="employee-search" value={search} onChange={(e) => setSearch(e.target.value)} className="field !pl-8" placeholder="Cari nama / kode / NIK / jabatan..." />
           </div>
           <KNSelect data-testid="employee-filter-dept" value={filterDept} onValueChange={setFilterDept} className="field" placeholder="Semua Departemen"
             options={[{ value: "", label: "Semua Departemen" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
-          <OptionTabs testId="employee-filter-status" value={filterStatus} onChange={setFilterStatus}
-            countOf={(v) => employees.filter((e) => !v || e.status === v).length}
-            options={[{ value: "", label: "Semua Status" }, { value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Resigned" }]} />
+          <div className="md:col-span-2">
+            <OptionTabs testId="employee-filter-status" value={filterStatus} onChange={setFilterStatus}
+              countOf={(v) => employees.filter((e) => !v || e.status === v).length}
+              options={[{ value: "", label: "Semua Status" }, { value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Keluar (resign)" }]} />
+          </div>
         </div>
       </div>
 
       {/* Table */}
+      {/* Audit UI 24 Okt (076 HP): grid 7 kolom dulu dipaksa 390px → judul kolom bertumpuk &
+          nama hilang. Sekarang lebar minimum + gulir samping di dalam kartu. */}
       <div className="section-card">
-        <div className="grid grid-cols-[90px_1.5fr_1.1fr_120px_110px_90px_96px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+       <div className="overflow-x-auto"><div className="min-w-[860px]">
+        <div className="grid grid-cols-[90px_1.5fr_1.1fr_120px_110px_110px_96px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
           <span>Kode</span><span>Nama / Jabatan</span><span>Departemen / Akun</span><span>Tipe</span><span className="text-right">Gaji Pokok</span><span>Status</span><span className="text-right">Aksi</span>
         </div>
         {loading ? (
@@ -179,17 +185,17 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
             {filtered.map((e) => {
               const pill = STATUS_PILL[e.status] || STATUS_PILL.inactive;
               return (
-                <div key={e.id} data-testid={`employee-row-${e.id}`} className="grid grid-cols-[90px_1.5fr_1.1fr_120px_110px_90px_96px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                <div key={e.id} data-testid={`employee-row-${e.id}`} className="grid grid-cols-[90px_1.5fr_1.1fr_120px_110px_110px_96px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <span className="text-[11.5px] font-bold text-[#0058CC]">{e.code}</span>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold truncate">{e.name}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate">{e.position_name || "—"}</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate">{e.position_name || "—"}</p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] truncate flex items-center gap-1"><EntityBadge entityId={e.entity_id} /><span className="truncate">{e.department_name || "—"}</span></p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate">{e.has_account ? `🔗 ${e.user_role}` : "tanpa akun"}</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate">{e.has_account ? `🔗 Akun ${roleLabel(e.user_role)}` : "tanpa akun"}</p>
                   </div>
-                  <span className="text-[11px] capitalize">{e.employment_type}</span>
+                  <span className="text-[11px]">{EMP_TYPE_LABEL[e.employment_type] || e.employment_type || "—"}</span>
                   <span className="text-[11.5px] tabular-nums text-right">{e.pii_redacted ? "•••" : formatCurrency(e.base_salary)}</span>
                   <span><span data-testid={`employee-status-${e.id}`} className={`status-pill ${pill.cls}`}>{pill.label}</span></span>
                   <div className="flex items-center justify-end gap-1">
@@ -208,6 +214,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
             })}
           </div>
         )}
+       </div></div>
       </div>
 
       <EmployeeFormDrawer

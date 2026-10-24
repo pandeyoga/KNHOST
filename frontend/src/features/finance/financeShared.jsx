@@ -53,15 +53,17 @@ export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A
     <div className="relative overflow-hidden rounded-xl border border-[#EFF0F2] bg-white p-3.5" data-testid={testId}>
       <span className="absolute left-0 top-0 h-full w-1" style={{ background: accent }} />
       <div className="flex items-start gap-3 pl-1.5">
+        {/* Audit UI 24 Okt (071–074/092 HP): nilai rupiah dulu `truncate` → "Rp 45.71…".
+            Di HP ikon disembunyikan & angka boleh turun baris — tidak pernah dipotong. */}
         {Icon && (
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          <div className="hidden w-9 h-9 rounded-lg items-center justify-center shrink-0 sm:flex"
                style={{ background: `${accent}14` }}>
             <Icon size={17} style={{ color: accent }} />
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`}
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`}
              data-testid={testId ? `${testId}-value` : undefined}>{value}</p>
           {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 truncate" title={sub}>{sub}</p>}
         </div>

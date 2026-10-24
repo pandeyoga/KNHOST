@@ -122,8 +122,8 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
                 className="field !pl-8" placeholder="Cari nama / kode / kota..." />
             </div>
             <KNSelect value={segment} onValueChange={setSegment} className="field w-[150px]"
-              data-testid="customer-filter-segment" placeholder="Segment"
-              options={[{ value: "", label: "Semua Segment" }, { value: "Retail", label: "Retail" },
+              data-testid="customer-filter-segment" placeholder="Segmen"
+              options={[{ value: "", label: "Semua Segmen" }, { value: "Retail", label: "Retail" },
                 { value: "Wholesale", label: "Wholesale" }, { value: "Distributor", label: "Distributor" },
                 { value: "VIP", label: "VIP" }]} />
             <KNSelect value={creditStatus} onValueChange={setCreditStatus} className="field w-[150px]"
@@ -136,10 +136,12 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
             )}
           </div>
 
-          {/* Table */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1.4fr_110px_1fr_130px_110px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-              <span>Pelanggan</span><span>Segment</span><span>Sales</span><span>AR / Limit</span><span>Kredit</span>
+          {/* Table — Audit UI 24 Okt (007, HP): lebar minimum + gulir samping di dalam wadah supaya kepala
+              kolom tidak bertumpuk dan nama pelanggan tidak hilang di 390px. */}
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+           <div className="min-w-[640px]">
+            <div className="grid grid-cols-[1.4fr_110px_1fr_130px_110px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[10.5px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+              <span>Pelanggan</span><span>Segmen</span><span>Sales</span><span>Piutang / Limit</span><span>Kredit</span>
             </div>
             {loading ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="customer-loading">Memuat...</div>
@@ -160,7 +162,7 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
                       className="w-full text-left grid grid-cols-[1.4fr_110px_1fr_130px_110px] items-center px-3 py-2.5 hover:bg-[#FAFBFC] transition-colors">
                       <div className="min-w-0">
                         <p className="text-[12.5px] font-semibold truncate">{c.name}</p>
-                        <p className="text-[10.5px] text-[#6B6B73] truncate">{c.code} · {c.city}</p>
+                        <p className="text-[11px] text-[#6B6B73] truncate">{c.code} · {c.city}</p>
                       </div>
                       <SegmentBadge segment={c.segment} />
                       <span className="text-[11.5px] truncate text-[#3C3C43]">{c.assigned_sales_name || "—"}</span>
@@ -177,6 +179,7 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
                 })}
               </div>
             )}
+           </div>
           </div>
           <div className="mt-2">
             <PaginationBar

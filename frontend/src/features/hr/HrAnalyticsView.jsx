@@ -48,6 +48,11 @@ function Panel({ title, right, children }) {
   );
 }
 
+// Audit UI 24 Okt (087): kode mentah di legenda/sumbu ("harian", "kontrak", "tetap", "hadir").
+const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
+const ATT_LABEL = { hadir: "Hadir", telat: "Telat", flagged: "Perlu review", izin: "Izin", cuti: "Cuti", alpha: "Alpa", libur: "Libur" };
+const cap = (s) => { const t = String(s || "").replace(/_/g, " "); return t ? t.charAt(0).toUpperCase() + t.slice(1) : "—"; };
+
 export default function HrAnalyticsView({ currentUser, selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,11 +81,18 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
   const stat = data?.statutory || {};
   const payTrend = data?.payroll_trend || [];
   const otTrend = data?.overtime_trend || [];
-  const byType = hc.by_type || [];
+  const byType = (hc.by_type || []).map((t) => ({ ...t, type: EMP_TYPE_LABEL[t.type] || cap(t.type) }));
   const byDept = hc.by_department || [];
-  const attStatus = (att.by_status || []).filter((s) => s.count > 0);
+  const attStatus = (att.by_status || []).filter((s) => s.count > 0)
+    .map((s) => ({ ...s, status: ATT_LABEL[s.status] || cap(s.status) }));
   const periodOpts = (data?.periods || []).map((p) => ({ value: p, label: p }));
   const hasPayroll = pay.has_run;
+  // Audit UI 24 Okt (087↔082): analitik hanya menghitung run TERPOSTING/dibayar. Run yang
+  // masih menunggu pengesahan/disetujui dulu tetap tertulis "Belum ada run" — menyesatkan.
+  const unposted = Number(pay.unposted_runs || 0);
+  const noPayText = unposted > 0
+    ? `${unposted} run belum diposting — belum dihitung`
+    : "Belum ada run terposting";
   const hasOt = otTrend.some((o) => o.minutes > 0);
 
   return (
@@ -100,17 +112,17 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3" data-testid="hr-analytics-kpis">
-          <KPICard testId="kpi-headcount" icon={Users} label="Headcount" value={loading ? "" : (hc.total ?? "—")} sub={`${tn.new_hires ?? 0} hire periode ini`} color="#0058CC" loading={loading} />
-          <KPICard testId="kpi-attendance-rate" icon={CalendarCheck} label="Kehadiran" value={loading ? "" : `${att.attendance_rate ?? 0}%`} sub={`${att.present ?? 0} hadir · ${att.late ?? 0} telat`} color="#34C759" loading={loading} />
+          <KPICard testId="kpi-headcount" icon={Users} label="Jumlah Karyawan" value={loading ? "" : (hc.total ?? "—")} sub={`${tn.new_hires ?? 0} masuk · turnover ${tn.turnover_rate ?? 0}%`} color="#0058CC" loading={loading} />
+          <KPICard testId="kpi-attendance-rate" icon={CalendarCheck} label="Kehadiran" value={loading ? "" : `${att.attendance_rate ?? 0}%`} sub={`${att.present ?? 0} hari hadir (${att.late ?? 0} di antaranya telat)`} color="#34C759" loading={loading} />
           <KPICard testId="kpi-punctuality" icon={Clock} label="Ketepatan" value={loading ? "" : `${att.punctuality_rate ?? 0}%`} sub={`Rata telat ${att.avg_late_min ?? 0} mnt`} color="#FF9500" loading={loading} />
-          <KPICard testId="kpi-payroll-net" icon={Wallet} label="Biaya Gaji (Net)" value={loading ? "" : (hasPayroll ? fmtShort(pay.net) : "—")} sub={hasPayroll ? `Gross ${fmtShort(pay.gross)}` : "Belum ada run"} color="#5856D6" loading={loading} />
-          <KPICard testId="kpi-bpjs" icon={ShieldCheck} label="BPJS Payable" value={loading ? "" : (hasPayroll ? fmtShort(stat.bpjs_total) : "—")} sub={hasPayroll ? `Emp ${fmtShort(stat.bpjs_emp)} · ER ${fmtShort(stat.bpjs_er)}` : "—"} color="#1F7A45" loading={loading} />
-          <KPICard testId="kpi-pph21" icon={Receipt} label="PPh21 Payable" value={loading ? "" : (hasPayroll ? fmtShort(stat.pph21) : "—")} sub={`Turnover ${tn.turnover_rate ?? 0}%`} color="#C0341D" loading={loading} />
+          <KPICard testId="kpi-payroll-net" icon={Wallet} label="Biaya Gaji (Net)" value={loading ? "" : (hasPayroll ? fmtShort(pay.net) : "—")} sub={hasPayroll ? `Bruto ${fmtShort(pay.gross)}` : noPayText} color="#5856D6" loading={loading} />
+          <KPICard testId="kpi-bpjs" icon={ShieldCheck} label="Utang BPJS" value={loading ? "" : (hasPayroll ? fmtShort(stat.bpjs_total) : "—")} sub={hasPayroll ? `Karyawan ${fmtShort(stat.bpjs_emp)} · Perusahaan ${fmtShort(stat.bpjs_er)}` : "—"} color="#1F7A45" loading={loading} />
+          <KPICard testId="kpi-pph21" icon={Receipt} label="Utang PPh 21" value={loading ? "" : (hasPayroll ? fmtShort(stat.pph21) : "—")} sub={`periode ${data?.period || "—"}`} color="#C0341D" loading={loading} />
         </div>
 
         {/* Row: Headcount by dept + by type */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Panel title="Headcount per Departemen" right={<span className="text-[12px] text-[#6B6B73] flex items-center gap-1"><Building2 size={13} /> {hc.total ?? 0} karyawan</span>}>
+          <Panel title="Karyawan per Departemen" right={<span className="text-[12px] text-[#6B6B73] flex items-center gap-1"><Building2 size={13} /> {hc.total ?? 0} karyawan</span>}>
             {loading ? <div className="h-44 bg-[#F5F5F7] rounded animate-pulse" />
               : byDept.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
@@ -145,7 +157,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
 
         {/* Row: Attendance breakdown + Payroll trend */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Panel title="Distribusi Kehadiran" right={<span className="text-[12px] text-[#6B6B73]">{att.total ?? 0} record</span>}>
+          <Panel title="Distribusi Kehadiran" right={<span className="text-[12px] text-[#6B6B73]">{att.total ?? 0} catatan</span>}>
             {loading ? <div className="h-44 bg-[#F5F5F7] rounded animate-pulse" />
               : attStatus.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
@@ -170,13 +182,13 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
                     <XAxis dataKey="period" tick={{ fontSize: 10 }} tickFormatter={(v) => v.slice(2)} />
                     <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}jt` : v)} width={38} />
-                    <Tooltip formatter={(v, n) => [fmtCur(v), n === "gross" ? "Gross" : n === "net" ? "Net" : n]} />
+                    <Tooltip formatter={(v, n) => [fmtCur(v), n === "gross" ? "Bruto" : n === "net" ? "Bersih" : n]} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="gross" stroke="#0058CC" strokeWidth={2} dot={{ r: 2 }} name="gross" />
-                    <Line type="monotone" dataKey="net" stroke="#34C759" strokeWidth={2} dot={{ r: 2 }} name="net" />
+                    <Line type="monotone" dataKey="gross" stroke="#0058CC" strokeWidth={2} dot={{ r: 2 }} name="Bruto" />
+                    <Line type="monotone" dataKey="net" stroke="#34C759" strokeWidth={2} dot={{ r: 2 }} name="Bersih" />
                   </LineChart>
                 </ResponsiveContainer>
-              ) : <EmptyBox text="Belum ada run payroll" />}
+              ) : <EmptyBox text={unposted > 0 ? `Belum ada run terposting — ${unposted} run periode ini masih menunggu pengesahan/posting` : "Belum ada run payroll terposting"} />}
           </Panel>
         </div>
 
@@ -197,7 +209,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
               ) : <EmptyBox text="Belum ada lembur disetujui dalam 6 bulan" />}
           </Panel>
 
-          <Panel title="Statutory & Turnover">
+          <Panel title="Kewajiban Statutori & Perputaran">
             {loading ? <div className="h-40 bg-[#F5F5F7] rounded animate-pulse" /> : (
               <div className="grid gap-2" data-testid="hr-analytics-statutory">
                 <StatRow label="BPJS Karyawan" value={fmtCur(stat.bpjs_emp)} />
@@ -205,12 +217,12 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
                 <StatRow label="BPJS Total" value={fmtCur(stat.bpjs_total)} bold />
                 <StatRow label="PPh21" value={fmtCur(stat.pph21)} />
                 <div className="h-px bg-[#EFF0F2] my-1" />
-                <StatRow label="Headcount Aktif" value={String(tn.headcount ?? 0)} icon={Users} />
-                <StatRow label="New Hire (periode)" value={String(tn.new_hires ?? 0)} icon={UserPlus} />
-                <StatRow label="Separations" value={String(tn.separations ?? 0)} />
-                <StatRow label="Turnover Rate" value={`${tn.turnover_rate ?? 0}%`} icon={TrendingUp} bold />
-                {tn.missing_separation_date > 0 && <p className="text-[10.5px] text-[#B7791F] mt-1" data-testid="hr-turnover-missing-sep">{tn.missing_separation_date} karyawan nonaktif belum diisi tanggal keluar — tidak dihitung dalam turnover.</p>}
-                {!hasPayroll && <p className="text-[10.5px] text-[#B7791F] mt-1">Statutory Rp0 karena belum ada run payroll periode {data?.period}.</p>}
+                <StatRow label="Karyawan Aktif" value={String(tn.headcount ?? 0)} icon={Users} />
+                <StatRow label="Karyawan Baru (periode)" value={String(tn.new_hires ?? 0)} icon={UserPlus} />
+                <StatRow label="Keluar (periode)" value={String(tn.separations ?? 0)} />
+                <StatRow label="Tingkat Perputaran" value={`${tn.turnover_rate ?? 0}%`} icon={TrendingUp} bold />
+                {tn.missing_separation_date > 0 && <p className="text-[11px] text-[#B7791F] mt-1" data-testid="hr-turnover-missing-sep">{tn.missing_separation_date} karyawan nonaktif belum diisi tanggal keluar — tidak dihitung dalam perputaran.</p>}
+                {!hasPayroll && <p className="text-[11px] text-[#B7791F] mt-1">Kewajiban statutori Rp0 karena belum ada run payroll terposting periode {data?.period}{unposted > 0 ? ` (${unposted} run masih menunggu)` : ""}.</p>}
               </div>
             )}
           </Panel>

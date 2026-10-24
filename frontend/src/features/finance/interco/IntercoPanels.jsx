@@ -38,8 +38,8 @@ export function TransactionsPanel({
 
       <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" data-testid="interco-transactions-table">
-            <thead className="bg-[#F7F7F9] text-[#3C3C43]">
+          <table className="w-full min-w-[960px] text-sm" data-testid="interco-transactions-table">
+            <thead className="whitespace-nowrap bg-[#F7F7F9] text-[#3C3C43]">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Nomor</th>
                 <th className="text-left px-4 py-3 font-medium">Peran</th>
@@ -195,7 +195,7 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite }) {
     <div className="space-y-3">
       <div className="text-sm text-[#6E6E73]">
         Saldo per <b>arah dagang</b> — piutang di PT penjual, utang di PT pembeli.
-        INV-IC-02: kedua sisi harus sama besar. Dua PT yang berdagang <b>dua arah</b>
+        Kedua sisi harus sama besar. Dua PT yang berdagang <b>dua arah</b>
         (mis. lewat Permintaan Internal) punya saldo <b>terpisah</b> untuk tiap arah,
         jadi utang satu arah tidak pernah terhapus oleh arah sebaliknya. <b>Umur</b>
         dihitung dari aktivitas nyata terakhir (dokumen &amp; settlement), bukan dari

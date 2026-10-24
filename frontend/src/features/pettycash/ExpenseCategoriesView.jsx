@@ -65,7 +65,7 @@ export default function ExpenseCategoriesView({ currentUser }) {
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0">
             <FolderTree size={15} className="text-[#0058CC]" />
-            <span className="kicker">Kas & Petty Cash</span>
+            <span className="kicker">Keuangan</span>
             <h2 data-testid="excat-title">Kategori Beban → Akun COA</h2>
           </div>
           <button data-testid="excat-refresh" className="icon-button" onClick={loadAll} aria-label="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
@@ -77,19 +77,19 @@ export default function ExpenseCategoriesView({ currentUser }) {
           </div>
 
           {srch.toolbar}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1.6fr_1.6fr_100px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+          {/* Audit UI 113 (HP) — tabel digeser horizontal, bukan diperas (dulu akun terpotong "6-410…"). */}
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+            <div className="min-w-[560px] grid grid-cols-[1.6fr_1.6fr_100px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
               <span>Kategori</span><span>Akun Beban (COA)</span><span className="text-right">Status</span>
             </div>
             {loading ? <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
               : srch.shown.length === 0 ? <div data-testid="excat-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">Belum ada kategori.</div>
               : (
-                <div className="divide-y divide-[#EFF0F2]">
+                <div className="min-w-[560px] divide-y divide-[#EFF0F2]">
                   {srch.pageRows.map((c) => (
                     <div key={c.code} data-testid={`excat-row-${c.code}`} className="grid grid-cols-[1.6fr_1.6fr_100px] items-center gap-2 px-3 py-2.5">
-                      <div className="min-w-0">
+                      <div className="min-w-0" title={c.code}>
                         <p className="text-[12px] font-semibold truncate">{c.label}</p>
-                        <p className="text-[10.5px] text-[#9A9BA3]">{c.code}</p>
                       </div>
                       <div className="min-w-0">
                         {canManage ? (

@@ -3,7 +3,7 @@ import LocationFields, { locationIncomplete } from "../../components/LocationFie
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import axios, { API } from "../../services/apiClient";
-import { Truck, Plus, Search, Pencil, Power, X, BarChart3, Clock, Globe } from "lucide-react";
+import { Truck, Plus, Search, Pencil, Power, X, BarChart3, Clock, Globe, Lock } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import GroupEntityBadge, { isGroupEntityPartner } from "../../components/GroupEntityBadge";
@@ -160,6 +160,31 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
 
   const filtered = suppliers;
 
+  // Tombol aksi per baris — dipakai tabel desktop & kartu HP supaya aturannya satu.
+  const rowActions = (s, withTestIds = true) => (
+    <div className="flex shrink-0 items-center justify-end gap-1">
+      <button data-testid={withTestIds ? `detail-supplier-${s.id}` : undefined} onClick={() => setDetailId(s.id)}
+        className="icon-button text-[#0058CC]" title="Supplier 360°" aria-label={`Detail ${s.name}`}><BarChart3 size={13} /></button>
+      {(canUpdate || canDeactivate) && !isGroupEntityPartner(s) && (
+        <>
+          {canUpdate && <button data-testid={withTestIds ? `edit-supplier-${s.id}` : undefined} onClick={() => openEdit(s)} className="icon-button" title="Ubah" aria-label={`Ubah ${s.name}`}><Pencil size={13} /></button>}
+          {canDeactivate && s.status === "active" && (
+            <button data-testid={withTestIds ? `deactivate-supplier-${s.id}` : undefined} onClick={() => handleDeactivate(s)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan" aria-label={`Nonaktifkan ${s.name}`}><Power size={13} /></button>
+          )}
+        </>
+      )}
+      {(canUpdate || canDeactivate) && isGroupEntityPartner(s) && (
+        // Baris ini CERMIN `business_entities`: identitas & statusnya diubah
+        // dari layar Badan Usaha & Akses, bukan dari sini — kalau tidak,
+        // cermin dan aslinya bisa berbeda dan pagar PO ikut salah menilai.
+        <span data-testid={withTestIds ? `group-entity-locked-${s.id}` : undefined}
+          title="Diubah dari menu Badan Usaha & Akses (baris ini cerminnya)"
+          aria-label="Diubah dari menu Badan Usaha & Akses"
+          className="icon-button cursor-help text-[#8E8E93]"><Lock size={13} /></span>
+      )}
+    </div>
+  );
+
   if (detailId) {
     return <Supplier360Panel supplierId={detailId} currentUser={currentUser} onError={setError}
       onBack={() => { setDetailId(null); loadAll(); }}
@@ -192,7 +217,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
           <div className="relative max-w-sm">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
             <input data-testid="supplier-search" value={search} onChange={(e) => setSearch(e.target.value)}
-              className="field !pl-8" placeholder="Cari nama / kode / NPWP / kota..." />
+              className="field !pl-8" placeholder="Cari nama / kode / NPWP / kota…" />
           </div>
         </div>
       </div>
@@ -293,10 +318,32 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
         </div>
       </FormModal>
 
-      {/* Table */}
+      {/* Table — desktop: tabel grid; HP (< md): kartu ringkas supaya nama & tombol tidak hilang. */}
       <div className="section-card">
-        <div className="overflow-hidden">
-          <div className="grid grid-cols-[90px_1.4fr_1fr_120px_90px_120px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+        {!loading && filtered.length > 0 && (
+          <div className="divide-y divide-[#EFF0F2] md:hidden" data-testid="supplier-cards">
+            {filtered.map((s) => (
+              <div key={s.id} className="flex items-start gap-2 px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5">
+                    <span className="truncate text-[13px] font-semibold text-[#1C1C1E]">{s.name}</span>
+                    <StatusPill status={s.status} />
+                  </p>
+                  <p className="truncate text-[11px] text-[#6B6B73]">
+                    <span className="font-bold text-[#0058CC]">{s.code}</span> · {s.goods_type || "—"}
+                  </p>
+                  <p className="truncate text-[11px] text-[#6B6B73]">
+                    {s.city || "—"} · lead time {s.lead_time_days || 0} hari{s.origin_type === "import" ? ` · Impor${s.country ? ` (${s.country})` : ""}` : ""}
+                  </p>
+                </div>
+                {rowActions(s, false)}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={`overflow-x-auto ${!loading && filtered.length > 0 ? "hidden md:block" : ""}`}>
+          <div className="min-w-[860px]">
+          <div className="grid grid-cols-[90px_1.4fr_1fr_120px_90px_120px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Kode</span><span>Nama / Jenis</span><span>NPWP / Kontak</span><span>Kota / Lead</span><span>Status</span><span className="text-right">Aksi</span>
           </div>
           {loading ? (
@@ -314,7 +361,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
                   <span className="text-[11.5px] font-bold text-[#0058CC]">{s.code}</span>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold truncate">{s.name}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate flex items-center gap-1">
+                    <p className="text-[11px] text-[#6B6B73] truncate flex items-center gap-1">
                       <EntityBadge entityId={s.entity_id} />
                       {/* E7.2/E7.7 — badan usaha grup memang MUNCUL di daftar pemasok
                           (keputusan pemilik), jadi harus jelas bedanya dari pemasok luar. */}
@@ -329,39 +376,22 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] tabular-nums truncate">{s.npwp || "—"}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate">{s.pic_name} {s.phone ? `· ${s.phone}` : ""}</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate">{s.pic_name} {s.phone ? `· ${s.phone}` : ""}</p>
                     {bankSummary(s.bank) && (
-                      <p className="text-[10px] text-[#0058CC] truncate" data-testid={`supplier-bank-${s.id}`} title={bankSummary(s.bank)}>{bankSummary(s.bank)}</p>
+                      <p className="text-[11px] text-[#0058CC] truncate" data-testid={`supplier-bank-${s.id}`} title={bankSummary(s.bank)}>{bankSummary(s.bank)}</p>
                     )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] truncate">{s.city || "—"}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate flex items-center gap-1"><Clock size={10} />{s.lead_time_days || 0} hari</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate flex items-center gap-1"><Clock size={10} />{s.lead_time_days || 0} hari</p>
                   </div>
                   <StatusPill status={s.status} />
-                  <div className="flex items-center justify-end gap-1">
-                    <button data-testid={`detail-supplier-${s.id}`} onClick={() => setDetailId(s.id)} className="icon-button text-[#0058CC]" title="Supplier 360°"><BarChart3 size={13} /></button>
-                    {(canUpdate || canDeactivate) && !isGroupEntityPartner(s) && (
-                      <>
-                        {canUpdate && <button data-testid={`edit-supplier-${s.id}`} onClick={() => openEdit(s)} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
-                        {canDeactivate && s.status === "active" && (
-                          <button data-testid={`deactivate-supplier-${s.id}`} onClick={() => handleDeactivate(s)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>
-                        )}
-                      </>
-                    )}
-                    {(canUpdate || canDeactivate) && isGroupEntityPartner(s) && (
-                      // Baris ini CERMIN `business_entities`: identitas & statusnya diubah
-                      // dari layar Badan Usaha & Akses, bukan dari sini — kalau tidak,
-                      // cermin dan aslinya bisa berbeda dan pagar PO ikut salah menilai.
-                      <span data-testid={`group-entity-locked-${s.id}`}
-                        title="Diubah dari menu Badan Usaha & Akses (baris ini cerminnya)"
-                        className="text-[9.5px] text-[#8E8E93] italic">dari Badan Usaha</span>
-                    )}
-                  </div>
+                  {rowActions(s)}
                 </div>
               ))}
             </div>
           )}
+          </div>
         </div>
         <div className="px-3 py-2 border-t border-[#EFF0F2]">
           <PaginationBar
@@ -392,7 +422,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
 function Field({ label, req, children }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">
+      <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
         {label} {req && <span className="req">*</span>}
       </label>
       {children}

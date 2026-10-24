@@ -5,10 +5,13 @@ from typing import Any, Dict, List, Optional
 from db import db
 
 DEAD = {"cancelled", "draft", "expired", "rejected"}
+# UAT 24 Okt (audit UI HP) — status yang dulu tak masuk bucket mana pun (menunggu stok, dikemas, dalam perjalanan)
+# membuat kartu status berjumlah 3 padahal sales punya 7 SO.
 BUCKETS = {
     "waiting": {"waiting_approval", "pending_approval"},
-    "processing": {"approved", "confirmed", "reserved", "partially_picked", "picked", "ready"},
-    "shipped": {"partially_shipped", "shipped", "delivered"},
+    "processing": {"approved", "confirmed", "reserved", "committed", "waiting_stock", "partially_reserved",
+                   "partially_picked", "picked", "packed", "ready"},
+    "shipped": {"partially_shipped", "shipped", "dispatched", "in_transit", "delivered"},
     "done": {"done", "completed"},
 }
 BUCKET_LABEL = {"waiting": "Menunggu persetujuan", "processing": "Diproses", "shipped": "Dikirim", "done": "Selesai"}
@@ -31,7 +34,10 @@ def _month_start(d: datetime) -> datetime:
 
 
 async def order_dashboard(sales_id: str, entity_id: Optional[str] = None) -> Dict[str, Any]:
-    q: Dict[str, Any] = {"sales_id": sales_id}
+    # Kepemilikan sama dengan "Pesanan Saya": pembuat, sales_id, atau anggota tim (SO yang dibuat Admin Sales atas nama
+    # pelanggan milik sales dulu tidak terhitung).
+    from services import sales_ownership
+    q: Dict[str, Any] = dict(sales_ownership.owner_clause({"id": sales_id}))
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     orders = await db.sales_orders.find(q, {"_id": 0, "id": 1, "number": 1, "status": 1, "payment_status": 1,

@@ -53,9 +53,11 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
-        <div className="section-card">
+        <div className="section-card min-w-0">
           {srch.toolbar}
-          <div className="grid grid-cols-[1.6fr_72px_1fr_1fr_1fr] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
+          <div className="overflow-x-auto"><div className="min-w-[600px]">
+          <div className="grid grid-cols-[1.6fr_72px_1fr_1fr_1fr] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Karyawan</span><span>Periode</span><span className="text-right">Bruto</span><span className="text-right">Potongan</span><span className="text-right">Net</span>
           </div>
           {loading ? (
@@ -76,6 +78,7 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
               ))}
             </div>
           )}
+          </div></div>
         </div>
 
         {/* Detail slip */}
@@ -86,7 +89,7 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
             <div data-testid="payslip-detail">
               <div className="px-3 py-3 border-b border-[#EFF0F2]">
                 <p className="text-[13px] font-bold flex items-center gap-1"><Building2 size={14} className="text-[#6B6B73]" /> {sel.employee_name}</p>
-                <p className="text-[11px] text-[#6B6B73]">{sel.number} · {sel.period} · PTKP {sel.ptkp_status} · TER-{sel.ter_category}</p>
+                <p className="text-[11px] text-[#6B6B73]">{sel.number} · {sel.period} · PTKP {sel.ptkp_status} · Kategori TER {sel.ter_category}</p>
               </div>
               <div className="px-3 py-2">
                 <p className="text-[10px] uppercase font-bold text-[#0058CC] mt-1">Penerimaan</p>
@@ -102,7 +105,7 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
                 <DRow label={`PPh 21 (${pct(sel.pph21_rate)})`} value={sel.pph21} />
                 <DRow label="Total Potongan" value={(sel.bpjs_emp_total || 0) + (sel.pph21 || 0)} strong color="#C0392B" />
                 <div className="mt-2 rounded-lg px-3 py-2 flex items-center justify-between" style={{ background: "#0058CC" }}>
-                  <span className="text-[12px] font-bold text-white">Take-home (Net)</span>
+                  <span className="text-[12px] font-bold text-white">Gaji Bersih Diterima</span>
                   <span className="text-[14px] font-bold text-white tabular-nums" data-testid="payslip-detail-net">{rp(sel.net)}</span>
                 </div>
                 <p className="text-[10px] uppercase font-bold text-[#6B6B73] mt-2">Kontribusi Perusahaan</p>

@@ -35,6 +35,10 @@ const SCORE_OPTS = [
   { value: "70", label: "≥ 70" }, { value: "80", label: "≥ 80" }, { value: "90", label: "≥ 90" },
 ];
 const EMPTY = { q: "", status: "", supplier: "", result: "", proof: "", score: "", revision: "", line: "" };
+// Audit UI 24 Okt (041) — catatan jenis dari master memuat kode keputusan internal ("MD-05"); jangan tampil ke pengguna.
+const stripCodes = (t) => String(t || "").replace(/,?\s*\b(?:MD|KLR|LN|PB|AS)-\d{2,3}\b/g, "").replace(/\(\s*\)/g, "").trim();
+// Di HP saringan lanjutan (±600px) dilipat dulu; di layar lebar tetap terbuka seperti sebelumnya.
+const wideScreen = () => (typeof window === "undefined" || !window.matchMedia ? true : window.matchMedia("(min-width: 768px)").matches);
 
 export default function SampleTypeGalleryView({ code, currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
@@ -43,7 +47,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
   const [error, setError] = useState("");
   const [okMsg, setOkMsg] = useState("");
   const [f, setF] = useState(EMPTY);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(wideScreen);
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState(null);
 
@@ -120,13 +124,14 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId={`sample-gallery-error-${code}`} />
 
       <div className="section-card mb-3">
-        <div className="section-head">
-          <div className="flex items-center gap-2">
+        {/* Audit UI 24 Okt (039–041) — kepala boleh turun baris: di HP tombol "Sample … Baru" dulu keluar layar. */}
+        <div className="section-head flex-wrap">
+          <div className="flex min-w-[180px] flex-1 flex-wrap items-center gap-2">
             <FlaskConical size={16} style={{ color: tone.fg }} />
             <h2 data-testid={`sample-gallery-title-${code}`}>{label} (Master)</h2>
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tone.bg, color: tone.fg }}>{typeLabel(code, types)}</span>
+            <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ background: tone.bg, color: tone.fg }}>{typeLabel(code, types)}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button className="secondary-button" onClick={load} data-testid={`sample-gallery-refresh-${code}`}><RefreshCw size={13} /> Muat ulang</button>
             {canCreate && (
               <button className="primary-button" data-testid={`sample-gallery-create-${code}`} onClick={() => setCreating(true)}>
@@ -136,18 +141,18 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           </div>
         </div>
         <div className="section-body space-y-2.5">
-          {meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid={`sample-gallery-notes-${code}`}>{meta.notes}</p>}
+          {meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid={`sample-gallery-notes-${code}`}>{stripCodes(meta.notes)}</p>}
           <div className="grid grid-cols-2 gap-2 md:grid-cols-6" data-testid={`sample-gallery-stats-${code}`}>
             <Kpi label={`Total ${label.toLowerCase()}`} value={stats.total} testId={`sample-gallery-kpi-total-${code}`} />
             <Kpi label="Terkirim" value={stats.sent} tone="#0058CC" testId={`sample-gallery-kpi-sent-${code}`} />
             <Kpi label="Dikerjakan" value={stats.progress} tone="#A05000" testId={`sample-gallery-kpi-progress-${code}`} />
             <Kpi label="Ada ACC" value={stats.acc} tone="#1B7F4B" testId={`sample-gallery-kpi-acc-${code}`} />
             <Kpi label="Pemenang dipilih" value={stats.decided} tone="#1B7F4B" testId={`sample-gallery-kpi-decided-${code}`} />
-            <Kpi label="Round terlambat" value={stats.overdue} tone="#C62828" testId={`sample-gallery-kpi-overdue-${code}`} />
+            <Kpi label="Ronde terlambat" value={stats.overdue} tone="#C62828" testId={`sample-gallery-kpi-overdue-${code}`} />
           </div>
           <OkNotice message={okMsg} onDismiss={() => setOkMsg("")} testId={`sample-gallery-ok-${code}`} />
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative max-w-sm flex-1">
+            <div className="relative min-w-[200px] max-w-sm flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid={`sample-gallery-search-${code}`} value={f.q} onChange={(e) => set("q", e.target.value)} className="field !pl-8"
                 placeholder="Cari nomor / judul / warna / supplier…" />
@@ -216,7 +221,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
 function Kpi({ label, value, tone = "#1C1C1E", testId }) {
   return (
     <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2" data-testid={testId}>
-      <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
+      <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
       <p className="text-[14px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value}</p>
     </div>
   );

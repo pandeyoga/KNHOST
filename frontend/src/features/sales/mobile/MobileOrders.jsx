@@ -68,7 +68,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
       <MobilePendingQueue />
       <div className="mb-2 flex items-center gap-2">
         <ClipboardList size={16} className="text-[#0058CC]" />
-        <h2 className="m-section-title">Pesanan Saya</h2>
+        <h2 className="m-section-title">{isAdmin ? "Pesanan PT" : "Pesanan Saya"}</h2>{/* Audit UI 24 Okt — Admin Sales melihat semua SO PT */}
         {onDashboard && <button className="ml-auto rounded-full border border-[#0058CC] px-3 py-1 text-[11.5px] font-semibold text-[#0058CC]" onClick={onDashboard} data-testid="mobile-orders-dashboard-btn">Dasbor</button>}
       </div>
 

@@ -32,11 +32,11 @@ function IncomingList({ rows, canAct, onDone }) {
           <p className="text-[#6E6E73]">Alasan: {r.reason}{r.source_sales_return_number ? ` · kasus ${r.source_sales_return_number}` : ""}
             {r.warehouse_transfer_code ? ` · tugas gudang ${r.warehouse_transfer_code} (${r.warehouse_transfer_status})` : ""}</p>
           {canAct && (
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               {r.status === "draft" && <button type="button" data-testid={`ic-inbox-accept-${r.id}`} onClick={() => act(r, "approve")}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#1B7F4B] px-3 py-1 font-semibold text-white"><Check size={12} /> Terima retur</button>}
+                className="primary-button !px-3 !py-1 text-xs"><Check size={12} /> Terima retur</button>}
               {r.status === "approved" && !r.warehouse_transfer_code && <button type="button" data-testid={`ic-inbox-task-${r.id}`} onClick={() => act(r, "warehouse-task")}
-                className="inline-flex items-center gap-1 rounded-lg border border-[#0058CC] px-3 py-1 font-semibold text-[#0058CC]"><Truck size={12} /> Terbitkan tugas gudang</button>}
+                className="secondary-button !px-3 !py-1 text-xs"><Truck size={12} /> Terbitkan tugas gudang</button>}
             </div>
           )}
         </div>

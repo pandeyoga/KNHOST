@@ -46,7 +46,7 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
   return (
     <section className="section-card self-start" data-testid={p}>
       <div className="section-head">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <ClipboardList size={15} className="text-[#0058CC]" />
           <h2>Pelacak SO aktif</h2>
           <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-bold text-[#0058CC]" data-testid={`${p}-count`}>{data?.count ?? 0}</span>
@@ -56,12 +56,12 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
-      <p className="px-3 pt-1.5 text-[10.5px] text-[#6B6B73]">SO baru muncul otomatis dan hilang setelah selesai/batal. Tombol aksi hanya muncul bila tahap berikutnya wewenang meja ini.</p>
+      <p className="px-3 pt-1.5 text-[11px] text-[#6B6B73]">SO baru muncul otomatis dan hilang setelah selesai/batal. Tombol aksi hanya muncul bila tahap berikutnya wewenang meja ini.</p>
       {error && <p className="px-3 py-2 text-[11.5px] text-[#C0392B]" data-testid={`${p}-error`}>{error}</p>}
       {all.length > 1 && <TableFilterBar f={f} testId={p} onChange={() => pg.setPage?.(1)} placeholder="Cari no. SO, pelanggan, sales, tahap…" />}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-[11.5px]">
-          <thead><tr className="border-b border-[#EFF0F2] text-left text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
+          <thead><tr className="whitespace-nowrap border-b border-[#EFF0F2] text-left text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
             <th className="px-3 py-2">SO</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Tahap berikutnya</th>
             <th className="px-2 py-2">Waktu</th><th className="px-2 py-2 text-right">Nilai</th><th className="px-3 py-2 text-right">Tindak lanjut</th>
           </tr></thead>
@@ -83,9 +83,17 @@ function TrackerRow({ r, p, onOpen }) {
     <tr data-testid={`${p}-row-${r.id}`} className="h-[52px] hover:bg-[#FAFBFC]">
       <td className="px-3 py-1.5">
         <p className="font-bold text-[#0058CC]">{r.number}</p>
-        <p className="max-w-[200px] truncate text-[10.5px] text-[#6B6B73]">{r.customer_name}{r.sales_name ? ` · ${r.sales_name}` : ""}</p>
+        <p className="max-w-[200px] truncate text-[11px] text-[#6B6B73]">{r.customer_name}{r.sales_name ? ` · ${r.sales_name}` : ""}</p>
+        {/* Audit UI 24 Okt (118/144, HP) — kolom Tahap/Nilai/Tindak lanjut ada di luar layar 390px;
+            ringkasannya + tombol aksi ditampilkan di bawah nomor SO khusus layar sempit. */}
+        <div className="mt-1 grid gap-1 sm:hidden" data-testid={`${p}-m-${r.id}`}>
+          <p className="text-[11px] text-[#31465F]">Berikutnya: <b>{r.next_step}</b> · {formatCurrency(r.grand_total)}</p>
+          {r.can_act
+            ? <button type="button" className="btn-secondary btn-xs w-fit" data-testid={`${p}-action-m-${r.id}`} onClick={() => onOpen?.(r)}>{r.action}</button>
+            : <span className="text-[11px] text-[#6B6B73]">Menunggu {r.owner_label}</span>}
+        </div>
       </td>
-      <td className="px-2 py-1.5"><span className="rounded-full border border-[#DCE3EC] bg-[#F7F9FC] px-2 py-0.5 text-[10px] font-bold text-[#31465F]" data-testid={`${p}-status-${r.id}`}>{r.status_label}</span></td>
+      <td className="px-2 py-1.5"><span className="whitespace-nowrap rounded-full border border-[#DCE3EC] bg-[#F7F9FC] px-2 py-0.5 text-[10.5px] font-bold text-[#31465F]" data-testid={`${p}-status-${r.id}`}>{r.status_label}</span></td>
       <td className="px-2 py-1.5"><p className="font-semibold text-[#1C1C1E]">{r.next_step}</p><p className="text-[10px] text-[#8E8E93]">oleh {r.owner_label}</p></td>
       <td className="px-2 py-1.5 text-[10.5px] text-[#31465F]" data-testid={`${p}-time-${r.id}`}>
         <p>Dibuat {fmtWhen(r.created_at)}</p>

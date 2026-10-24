@@ -20,6 +20,8 @@ const FILTERS = [
   { id: "batal", label: "Batal" },
 ];
 
+const STATUS_LABEL = { normal: "Normal", pengganti: "Pengganti", batal: "Batal" };
+
 const STATUS_STYLE = {
   normal: "bg-[#E5F6EC] text-[#1B7A43]",
   pengganti: "bg-[#FFF3CD] text-[#8A6D00]",
@@ -124,8 +126,8 @@ export default function TaxInvoices({ currentUser = {} }) {
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-[#0058CC]" />
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">Sub-fase 1.9</p>
-              <h2 className="text-[15px] font-bold">Faktur Pajak Jual</h2>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">Pajak · PPN Keluaran</p>
+              <h2 className="text-[15px] font-bold">Faktur Pajak Keluaran</h2>
             </div>
           </div>
           <button data-testid="fkt-refresh" className="btn-secondary" onClick={load} disabled={loading}>
@@ -138,48 +140,46 @@ export default function TaxInvoices({ currentUser = {} }) {
             Faktur Pajak diterbitkan dari <b>detail Pesanan</b> (opsional — pajak tidak wajib, hanya untuk entitas PKP & transaksi ber-PPN).
             Di sini Anda mengisi NSFP resmi, menerbitkan faktur pengganti, atau membatalkan.
           </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1">
+          {/* Audit UI 24 Okt (066): filter status memakai tab standar (dulu pil abu kecil). */}
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="tab-bar !mb-0">
               {FILTERS.map((f) => (
                 <button
                   key={f.id}
                   data-testid={`fkt-filter-${f.id}`}
                   onClick={() => setFilter(f.id)}
-                  className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
-                    filter === f.id ? "bg-[#0058CC] text-white" : "bg-[#EEF2F7] text-[#3C3C43]"
-                  }`}
+                  className={`tab-button ${filter === f.id ? "active" : ""}`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
-            <div className="relative ml-auto">
+            <div className="relative ml-auto w-full sm:w-[300px]">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8E8E93]" />
               <input
                 data-testid="fkt-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nomor / pesanan / pelanggan / NSFP"
-                className="rounded-md border border-[#E5E5EA] bg-white py-1 pl-7 pr-2 text-[12px] w-[260px]"
+                placeholder="Cari nomor, pesanan, pelanggan, NSFP"
+                title="Cari nomor faktur, nomor pesanan, nama pelanggan, atau NSFP"
+                className="w-full rounded-md border border-[#E5E5EA] bg-white py-1.5 pl-7 pr-2 text-[12px]"
               />
             </div>
           </div>
 
-          {error && <p className="text-[12px] text-[#B23B14]">{error}</p>}
-
           <div className="overflow-x-auto rounded-md border border-[#EFF0F2]">
-            <table className="w-full text-[11.5px]">
+            <table className="w-full min-w-[900px] text-[11.5px]">
               <thead className="bg-[#FAFBFC] text-[#6B6B73]">
-                <tr>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[10px]">No. Faktur</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[10px]">NSFP</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[10px]">Pesanan</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[10px]">Pembeli</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[10px]">DPP</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[10px]">PPN</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[10px]">Total</th>
-                  <th className="px-2.5 py-2 text-center font-bold uppercase tracking-wide text-[10px]">Status</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[10px]">Aksi</th>
+                <tr className="whitespace-nowrap">
+                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">No. Faktur</th>
+                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">NSFP</th>
+                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">Pesanan</th>
+                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">Pembeli</th>
+                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">DPP</th>
+                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">PPN</th>
+                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">Total</th>
+                  <th className="px-2.5 py-2 text-center font-bold uppercase tracking-wide text-[11px]">Status</th>
+                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,14 +205,14 @@ export default function TaxInvoices({ currentUser = {} }) {
                         <td className="px-2.5 py-2">{f.order_number}</td>
                         <td className="px-2.5 py-2">
                           <span className="block truncate max-w-[160px]">{f.customer_name}</span>
-                          <span className="text-[10px] text-[#8E8E93]">{f.customer_npwp || "tanpa NPWP"}</span>
+                          <span className="text-[11px] text-[#8E8E93]">{f.customer_npwp || "tanpa NPWP"}</span>
                         </td>
                         <td className="px-2.5 py-2 text-right tabular-nums">{formatCurrency(f.dpp)}</td>
                         <td className="px-2.5 py-2 text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
                         <td className="px-2.5 py-2 text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
                         <td className="px-2.5 py-2 text-center">
-                          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${STATUS_STYLE[f.status] || ""}`}>
-                            {f.status}
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[f.status] || ""}`}>
+                            {STATUS_LABEL[f.status] || f.status}
                           </span>
                         </td>
                         <td className="px-2.5 py-2">

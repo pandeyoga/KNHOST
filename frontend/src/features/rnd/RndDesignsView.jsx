@@ -22,6 +22,7 @@ import { designFileUrl, listDesigns, studioCategories } from "./rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, errMsg } from "./rndMeta";
 import { roleIs, can } from "../../config/roles";
 import { formatDate } from "../../utils/formatters";
+import { actorLabel } from "../../utils/actorLabel";
 
 const STATUS_OPTS = [
   { value: "", label: "Semua status" },
@@ -42,6 +43,8 @@ const PROOFING_OPTS = [{ value: "", label: "Proofing: semua" },
 const ORIGIN_OPTS = [{ value: "", label: "Asal: semua" }, { value: "internal", label: "Desain internal" }, { value: "special_order", label: "Pesanan Khusus" }, { value: "redesign", label: "Redesign" }];
 const EMPTY = { q: "", status: "", cat: "", dcat: "", designer: "", tag: "", product: "", revision: "", score: "", artwork: "", line: "", hold: "", proofing: "", origin: "" };
 const EMPTY_DATE = { field: "approved_at", from: "", to: "", preset: "" };
+// Audit UI 24 Okt (049) — di HP 11 dropdown saringan (±1.300px) dilipat dulu; layar lebar tetap terbuka.
+const wideScreen = () => (typeof window === "undefined" || !window.matchMedia ? true : window.matchMedia("(min-width: 768px)").matches);
 
 export default function RndDesignsView({ currentUser, selectedEntity, focus, onFocusConsumed }) {
   const [rows, setRows] = useState([]);
@@ -51,7 +54,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
   const [okMsg, setOkMsg] = useState("");
   const [f, setF] = useState(EMPTY);
   const [date, setDate] = useState(EMPTY_DATE);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(wideScreen);
   const [modal, setModal] = useState(null);
   const [openId, setOpenId] = useState(focus?.designId || null);
   const [catModal, setCatModal] = useState(false);
@@ -87,7 +90,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
   }, [rows]);
   const catOpts = useMemo(() => [{ value: "", label: "Semua kategori pattern" },
     ...cats.filter((c) => c.design_type === "pattern").map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))], [cats]);
-  const dcatOpts = useMemo(() => [{ value: "", label: "Semua kategori design" },
+  const dcatOpts = useMemo(() => [{ value: "", label: "Semua kategori desain" },
     ...cats.filter((c) => c.design_type === "design").map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }))], [cats]);
 
   const filtered = useMemo(() => {
@@ -139,12 +142,13 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="rnd-designs-error" />
 
       <div className="section-card mb-3">
-        <div className="section-head">
+        {/* Audit UI 24 Okt (049) — kepala boleh turun baris: "Desain Baru" dulu keluar layar di HP. */}
+        <div className="section-head flex-wrap">
           <div className="flex items-center gap-2">
             <Layers size={16} className="text-[#6B219A]" />
             <h2 data-testid="rnd-designs-title">Desain & Pattern (Master)</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {canAssess && (
               <button className="secondary-button" onClick={() => setCatModal(true)} data-testid="rnd-designs-categories"><Tags size={13} /> Kategori</button>
             )}
@@ -170,7 +174,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
           <OkNotice message={okMsg} onDismiss={() => setOkMsg("")} testId="rnd-designs-ok" />
           <DateQuickNav value={date} onChange={setDate} testId="design-date-nav" />
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative max-w-sm flex-1">
+            <div className="relative min-w-[200px] max-w-sm flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="rnd-designs-search" value={f.q} onChange={(e) => set("q", e.target.value)} className="field !pl-8"
                 placeholder="Cari kode / judul / tag / desainer / SKU master…" />
@@ -197,7 +201,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
               <KNSelect data-testid="rnd-filter-category" className="field" value={f.cat} options={catOpts} onValueChange={(v) => set("cat", v)} searchable />
               <KNSelect data-testid="rnd-filter-dcategory" className="field" value={f.dcat} options={dcatOpts} onValueChange={(v) => set("dcat", v)} />
               <KNSelect data-testid="rnd-filter-designer" className="field" value={f.designer} searchable
-                options={[{ value: "", label: "Semua desainer" }, ...designers.map((n) => ({ value: n, label: n }))]} onValueChange={(v) => set("designer", v)} />
+                options={[{ value: "", label: "Semua desainer" }, ...designers.map((n) => ({ value: n, label: actorLabel(n) }))]} onValueChange={(v) => set("designer", v)} />
               <KNSelect data-testid="rnd-filter-tag" className="field" value={f.tag} searchable
                 options={[{ value: "", label: "Semua tag" }, ...tags.map((t) => ({ value: t, label: t }))]} onValueChange={(v) => set("tag", v)} />
               <KNSelect data-testid="rnd-filter-product" className="field" value={f.product} searchable
@@ -251,25 +255,28 @@ function DesignCard({ d, onOpen }) {
       <div className="relative flex h-28 items-center justify-center bg-[#F5F5F7]">
         {cover ? <DesignImage src={designFileUrl(d.id, cover.id)} alt={d.title} data-testid={`design-cover-${d.id}`} className={`h-full w-full object-cover ${d.on_hold ? "opacity-70" : ""}`} loading="lazy" />
           : <span className="text-[10.5px] text-[#9A9BA3]">belum ada berkas</span>}
-        <span className="absolute left-1.5 top-1.5 flex gap-1"><RoundBadge design={d} testId={`design-round-${d.id}`} /><HoldBadge design={d} testId={`design-hold-${d.id}`} />{d.origin && d.origin !== "internal" && <OriginBadge design={d} testId={`design-origin-${d.id}`} />}</span>
-        {acc && (
-          <span className="absolute right-1.5 top-1.5 rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-[#6B219A]">
-            final {fin.mockup_files ?? 0}/1 mockup · {fin.source_files ?? 0}/1 file asli
-          </span>
-        )}
+        <span className="absolute inset-x-1.5 top-1.5 flex flex-wrap items-start justify-between gap-1">
+          <span className="flex flex-wrap gap-1"><RoundBadge design={d} testId={`design-round-${d.id}`} /><HoldBadge design={d} testId={`design-hold-${d.id}`} />{d.origin && d.origin !== "internal" && <OriginBadge design={d} testId={`design-origin-${d.id}`} />}</span>
+          {acc && (
+            <span className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-[#6B219A]" data-testid={`design-final-${d.id}`}>
+              final {fin.mockup_files ?? 0}/1 mockup · {fin.source_files ?? 0}/1 file asli
+            </span>
+          )}
+        </span>
       </div>
       <div className="space-y-1 p-2">
-        <div className="flex items-center justify-between gap-1">
-          <span className="truncate font-mono text-[11.5px] font-bold" data-testid={`design-code-${d.id}`}>{d.code || "tanpa kode"}</span>
+        <div className="flex flex-wrap items-center justify-between gap-1">
+          <span className="min-w-0 break-all font-mono text-[11.5px] font-bold" data-testid={`design-code-${d.id}`}>{d.code || "tanpa kode"}</span>
           <ScoreBadge value={acc ? d.final_score : null} acc={acc} testId={`design-score-${d.id}`} />
         </div>
         <p className="truncate text-[11px] text-[#1C1C1E]">{d.title}</p>
-        <p className="truncate text-[9.5px] text-[#9A9BA3]">
-          {d.category_name || d.category_code || "—"} · {d.design_category_name || d.design_category_code || "—"} · {d.created_by}
+        <p className="truncate text-[10.5px] text-[#8E8E93]" data-testid={`design-meta-${d.id}`}>
+          {[d.category_name || d.category_code, d.design_category_name || d.design_category_code, d.created_by && actorLabel(d.created_by)]
+            .filter(Boolean).join(" · ") || "—"}
         </p>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-1">
           <span className={`status-pill ${meta.cls}`} data-testid={`design-status-${d.id}`}>{meta.label}</span>
-          <span className="text-[9.5px] text-[#8E8E93]">{d.artwork_count || 0} berkas</span>
+          <span className="text-[10.5px] text-[#8E8E93]">{d.artwork_count || 0} berkas</span>
         </div>
         {d.rounds_total > 0 && (
           <p className={`text-[11px] font-semibold ${d.paper_rounds_done >= d.rounds_total ? "text-[#1A5C2E]" : "text-[#6B6B73]"}`} data-testid={`design-paper-count-${d.id}`}>
@@ -278,14 +285,14 @@ function DesignCard({ d, onOpen }) {
         )}
         <ProofingBadge design={d} testId={`design-proofing-${d.id}`} showDetail />
         {d.proofing?.master_product && (
-          <p className="truncate text-[9.5px] font-semibold text-[#0058CC]" data-testid={`design-master-${d.id}`}>
+          <p className="truncate text-[10.5px] font-semibold text-[#0058CC]" data-testid={`design-master-${d.id}`}>
             master: <span className="font-mono">{d.proofing.master_product.sku}</span>{d.proofing.master_product.name ? ` — ${d.proofing.master_product.name}` : ""}
           </p>
         )}
         {(d.recommended_products || []).length > 0 && (
-          <p className="truncate text-[9.5px] text-[#0058CC]">untuk: {d.recommended_products.map((p) => p.sku).join(", ")}</p>
+          <p className="truncate text-[10.5px] text-[#0058CC]">untuk: {d.recommended_products.map((p) => p.sku).join(", ")}</p>
         )}
-        <p className="text-[9px] text-[#9A9BA3]" data-testid={`design-dates-${d.id}`}>
+        <p className="text-[10.5px] text-[#8E8E93]" data-testid={`design-dates-${d.id}`}>
           {d.approved_at ? `ACC ${formatDate(d.approved_at)} · ` : ""}update {formatDate(d.updated_at)}
         </p>
       </div>
@@ -298,7 +305,7 @@ function Kpi({ label, value, tone = "#1C1C1E", testId, onClick, active = false }
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick} data-testid={testId}
       className={`rounded-lg border p-2 text-left ${active ? "border-[#6B219A] bg-[#F1E9F7]" : "border-[#EFF0F2] bg-[#FAFBFC]"} ${onClick ? "hover:border-[#6B219A]" : ""}`}>
-      <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
+      <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
       <p className="text-[14px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value}</p>
     </Tag>
   );

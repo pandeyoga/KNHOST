@@ -195,9 +195,19 @@ async def stock_owners(warehouse_id: str) -> Dict[str, Dict[str, Any]]:
     ]).to_list(200)
     for r in roll_rows:
         eid = r.get("_id") or ""
-        out.setdefault(eid, {"entity_id": eid, "rolls": 0, "qty": 0.0, "balances": 0})
+        out.setdefault(eid, {"entity_id": eid, "rolls": 0, "qty": 0.0, "balances": 0, "qty_by_unit": {}})
         out[eid]["rolls"] = int(r.get("rolls") or 0)
-        out[eid]["qty"] = round(float(r.get("qty") or 0), 2)
+        out[eid]["qty"] = round(float(r.get("qty") or 0), 2)   # penanda "ada barang" saja — satuan bisa campur
+    # UAT 24 Okt (audit UI 125) — jumlah per SATUAN (meter/yard/kg tidak boleh dijumlah jadi satu angka).
+    unit_rows = await db.inventory_rolls.aggregate([
+        {"$match": {"warehouse_id": warehouse_id, "status": {"$in": list(OCCUPYING_ROLL_STATUSES)}}},
+        {"$group": {"_id": {"o": "$owner_entity_id", "u": "$unit"}, "qty": {"$sum": "$length_remaining"}}},
+    ]).to_list(500)
+    for r in unit_rows:
+        eid = (r.get("_id") or {}).get("o") or ""
+        unit = (r.get("_id") or {}).get("u") or "meter"
+        out.setdefault(eid, {"entity_id": eid, "rolls": 0, "qty": 0.0, "balances": 0, "qty_by_unit": {}})
+        out[eid].setdefault("qty_by_unit", {})[unit] = round(float(r.get("qty") or 0), 2)
     bal_rows = await db.inventory_balances.aggregate([
         {"$match": {"warehouse_id": warehouse_id, "on_hand_qty": {"$gt": 0}}},
         {"$group": {"_id": "$owner_entity_id", "n": {"$sum": 1},
@@ -205,7 +215,7 @@ async def stock_owners(warehouse_id: str) -> Dict[str, Dict[str, Any]]:
     ]).to_list(200)
     for r in bal_rows:
         eid = r.get("_id") or ""
-        out.setdefault(eid, {"entity_id": eid, "rolls": 0, "qty": 0.0, "balances": 0})
+        out.setdefault(eid, {"entity_id": eid, "rolls": 0, "qty": 0.0, "balances": 0, "qty_by_unit": {}})
         out[eid]["balances"] = int(r.get("n") or 0)
         if not out[eid]["qty"]:
             out[eid]["qty"] = round(float(r.get("qty") or 0), 2)

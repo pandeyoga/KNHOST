@@ -7,6 +7,7 @@ import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
 import { PriceApprovalCard } from "./priceApprovals/PriceApprovalCard";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
+import KNSelect from "../../components/KNSelect";
 import { can } from "../../config/roles";
 
 const FILTERS = [
@@ -130,7 +131,7 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
   const submitForm = async (submitNow) => {
     setFormErr("");
     const price = parseFloat(form.requested_price);
-    if (!form.customer_id || !form.product_id) { setFormErr("Pilih customer dan produk."); return; }
+    if (!form.customer_id || !form.product_id) { setFormErr("Pilih pelanggan dan produk."); return; }
     if (!price || price <= 0) { setFormErr("Harga khusus harus lebih dari 0."); return; }
     setBusyId("form");
     try {
@@ -251,15 +252,16 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
   return (
     <div data-testid="price-approvals-view" className="grid gap-4">
       <section className="section-card">
-        <div className="section-head">
+        {/* Audit UI 24 Okt (002) — kepala kartu membungkus di HP (dulu judul 3 baris tertimpa kotak cari);
+            kicker Inggris "Sales" dilepas; tombol utama biru standar (dulu ungu #6B219A). */}
+        <div className="section-head flex-wrap gap-y-2">
           <div className="flex items-center gap-2 min-w-0">
-            <BadgePercent size={15} className="text-[#6B219A]" />
-            <span className="kicker">Sales</span>
+            <BadgePercent size={15} className="shrink-0 text-[#0058CC]" />
             <h2 data-testid="price-approvals-title">Persetujuan Harga Khusus</h2>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 min-w-[180px]">
-              <Search size={14} className="text-[#6B6B73]" />
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 sm:min-w-[180px]">
+              <Search size={14} className="shrink-0 text-[#6B6B73]" />
               <input
                 data-testid="price-approvals-search"
                 className="w-full bg-transparent text-[13px] outline-none"
@@ -270,7 +272,7 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
             </div>
             <button
               data-testid="price-approvals-new"
-              className="flex items-center gap-1.5 rounded-md bg-[#6B219A] px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-[#581580]"
+              className="primary-button shrink-0 !py-1.5 text-[12px]"
               onClick={openCreate}
             >
               <Plus size={14} /> Ajukan
@@ -314,12 +316,32 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
         size="lg"
         testId="price-approval-modal"
       >
-        {!editId && form.customer_id && form.product_id ? (
-          <SpecialPriceRequestForm
-            product={products.find((p) => p.id === form.product_id)}
-            customer={customers.find((c) => c.id === form.customer_id)}
-            defaultQty={parseFloat(form.min_quantity) || 0}
-            onSubmitted={() => { resetForm(); load(); }} onCancel={resetForm} />
+        {/* Audit UI 24 Okt (002) — SATU alur pengajuan baru: pemilih pelanggan & produk tetap di atas, form
+            harga + bukti (SpecialPriceRequestForm) terpasang sejak awal. Dulu isi modal DIGANTI begitu pelanggan &
+            produk terpilih → harga/berlaku/alasan yang sudah diketik hilang & "Simpan sebagai Draft" tak tercapai. */}
+        {!editId ? (
+          <div className="grid gap-3" data-testid="price-approvals-create">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1">
+                <span className="field-label">Pelanggan *</span>
+                <KNSelect data-testid="price-approvals-customer" className="field" searchable aria-label="Pelanggan"
+                  value={form.customer_id} onValueChange={(v) => setForm((f) => ({ ...f, customer_id: v }))}
+                  placeholder="— Pilih Pelanggan —"
+                  options={customers.map((c) => ({ value: c.id, label: c.name }))} />
+              </label>
+              <label className="grid gap-1">
+                <span className="field-label">Produk *</span>
+                <KNSelect data-testid="price-approvals-product" className="field" searchable aria-label="Produk"
+                  value={form.product_id} onValueChange={(v) => setForm((f) => ({ ...f, product_id: v }))}
+                  placeholder="— Pilih Produk —"
+                  options={products.map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` }))} />
+              </label>
+            </div>
+            <SpecialPriceRequestForm allowDraft
+              product={products.find((p) => p.id === form.product_id)}
+              customer={customers.find((c) => c.id === form.customer_id)}
+              onSubmitted={() => { resetForm(); load(); }} onCancel={resetForm} />
+          </div>
         ) : (
         <PriceApprovalForm
           variant="modal"

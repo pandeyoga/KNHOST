@@ -360,7 +360,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           <div className="px-3 py-2 border-b border-[#EFF0F2] bg-[#FAFBFC] flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tugas Barang Masuk</span>
             <button onClick={fetchTasks} data-testid="inbound-refresh"
-              className="text-[#007AFF] text-[11px] font-medium">Refresh</button>
+              className="text-[#007AFF] text-[11px] font-medium">Muat ulang</button>
           </div>
           {loading ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>

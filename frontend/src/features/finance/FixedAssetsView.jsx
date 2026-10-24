@@ -184,7 +184,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
         <FaKpi testId="summary-gross-cost" label="Nilai Perolehan" icon={Building2}
           value={formatCurrency(s.gross_cost)} hint="aset yang MASIH dimiliki (gross)" />
         <FaKpi testId="summary-accumulated" label="Akumulasi Penyusutan" icon={TrendingDown}
-          value={formatCurrency(s.accumulated_depreciation)} tone="text-[#B45309]" hint="akun 1-2900" />
+          value={formatCurrency(s.accumulated_depreciation)} tone="text-[#B45309]" hint="akun Akumulasi Penyusutan" />
         <FaKpi testId="summary-net-book-value" label="Nilai Buku (Net)" icon={Wallet}
           value={formatCurrency(s.net_book_value)} tone="text-[#1B7F4B]" hint="perolehan − akumulasi" />
         {(s.transferred || 0) > 0 ? (
@@ -209,7 +209,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
             </div>
             <div>
               <p className="text-[12px] font-bold text-[#1C1C1E]">Jalankan Penyusutan Bulanan</p>
-              <p className="text-[10.5px] text-[#8E8E93]">Straight-line, idempotent per aset & periode. Posting Dr 6-6000 / Cr 1-2900.</p>
+              <p className="text-[11px] text-[#8E8E93]">Metode garis lurus; aman dijalankan ulang (satu kali per aset per periode). Dicatat ke Beban Penyusutan / Akumulasi Penyusutan.</p>
             </div>
           </div>
           <label className="grid gap-1">
@@ -229,10 +229,10 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
         <div className="section-head">
           <div className="flex items-center gap-2">
             <Building2 size={16} className="text-[#0058CC]" />
-            <h2 data-testid="fixed-assets-title">Daftar Aset Tetap</h2>
-            <span className="text-[10.5px] text-[#9A9BA3]">{rows.length} aset</span>
+            <h2 data-testid="fixed-assets-title" className="whitespace-nowrap">Daftar Aset Tetap</h2>
+            <span className="whitespace-nowrap text-[11px] text-[#9A9BA3]">{rows.length} aset</span>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
             <div className="relative">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="fa-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari nomor / nama..."
@@ -341,9 +341,9 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
               </table>
             </div>
           )}
-          <p className="text-[10.5px] text-[#9A9BA3] mt-2">
-            Metode <b>garis lurus (straight-line)</b>: penyusutan bulanan = (perolehan − nilai residu) / masa manfaat.
-            Perolehan diposting Dr akun aset / Cr Kas-Bank. Aset yang dilepas tidak dihapus — statusnya menjadi <i>disposed</i> (append-only).
+          <p className="text-[11px] text-[#9A9BA3] mt-2">
+            Metode <b>garis lurus</b>: penyusutan bulanan = (perolehan − nilai residu) / masa manfaat.
+            Perolehan dicatat ke akun aset dengan lawan Kas/Bank. Aset yang dilepas tidak dihapus — statusnya menjadi <i>dilepas</i> dan riwayatnya tetap tersimpan.
           </p>
         </div>
       </div>

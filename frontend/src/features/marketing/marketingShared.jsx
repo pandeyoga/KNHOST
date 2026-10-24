@@ -12,7 +12,7 @@ export const PLATFORM_STYLE = {
 export const STATUS_STYLE = {
   idea: { label: "Ide", cls: "bg-[#F2F2F7] text-[#6B6B73] border-[#E5E5EA]" },
   draft: { label: "Draf", cls: "bg-[#EEF2FF] text-[#3730A3] border-[#C7D2FE]" },
-  review: { label: "Review", cls: "bg-[#FFF4E5] text-[#B45309] border-[#FCE1B6]" },
+  review: { label: "Ditinjau", cls: "bg-[#FFF4E5] text-[#B45309] border-[#FCE1B6]" },
   approved: { label: "Disetujui", cls: "bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]" },
   scheduled: { label: "Terjadwal", cls: "bg-[#EDE9FE] text-[#6D28D9] border-[#DDD6FE]" },
   published: { label: "Tayang", cls: "bg-[#E9F7EF] text-[#1B7F4B] border-[#CDE9D6]" },

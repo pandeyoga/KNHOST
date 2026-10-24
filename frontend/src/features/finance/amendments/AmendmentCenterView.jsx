@@ -116,7 +116,9 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-5" data-testid="amd-center-stats">
             <Kpi testId="amd-kpi-total" label="Total amandemen" value={String(stats.total ?? 0)} />
             <Kpi testId="amd-kpi-pending" label="Menunggu persetujuan" value={String(stats.pending_approval ?? 0)} tone="#B26A00" />
-            <Kpi testId="amd-kpi-applied" label="Sudah diterapkan" value={String(applied)} tone="#1B7F4B" />
+            {/* Audit UI 24 Okt (005) — KPI ini menjumlah "Diterapkan" + "Diterapkan otomatis"; labelnya menyebut itu
+                supaya tidak tampak bertentangan dengan tab "Diterapkan 0". */}
+            <Kpi testId="amd-kpi-applied" label="Sudah diterapkan (termasuk otomatis)" value={String(applied)} tone="#1B7F4B" />
             <Kpi testId="amd-kpi-rejected" label="Ditolak" value={String(stats.rejected ?? 0)} tone="#9B1C1C" />
             <Kpi testId="amd-kpi-impact" label="Total dampak diterapkan" value={formatCurrency(stats.impact_total || 0)} tone="#0058CC" />
           </div>

@@ -324,27 +324,27 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
             <button data-testid="create-po-button"
               onClick={() => setMenuOpen((o) => !o)}
               className="primary-button">
-              <Plus size={13} /> Buat <ChevronDown size={13} />
+              <Plus size={13} /> Buat PO <ChevronDown size={13} />
             </button>
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
                 <div data-testid="procure-mode-menu" className="absolute right-0 z-30 mt-1 w-72 overflow-hidden rounded-xl border border-[#EFF0F2] bg-white py-1 shadow-2xl">
-                  <p className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wide text-[#9A9BA3]">Mode Pengadaan</p>
+                  <p className="px-3 pb-1 pt-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">Cara pengadaan</p>
                   <button data-testid="mode-finished-goods" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
                     onClick={() => { setMenuOpen(false); setMakloonMode(null); setShowCreateForm(true); }}>
                     <ShoppingBag size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Beli Finished Goods</span><span className="block text-[10.5px] text-[#6B6B73]">Beli putus barang jadi dari supplier (PO standar).</span></span>
+                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Beli Barang Jadi</span><span className="block text-[11px] text-[#6B6B73]">Beli putus barang jadi dari supplier (PO standar).</span></span>
                   </button>
                   <button data-testid="mode-raw-process" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
                     onClick={() => { setMenuOpen(false); setShowCreateForm(false); setMakloonMode("buy_process"); }}>
                     <Boxes size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Raw Material & Proses</span><span className="block text-[10.5px] text-[#6B6B73]">Beli bahan lalu kirim ke makloon (WIP-at-vendor).</span></span>
+                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Beli Bahan + Proses Makloon</span><span className="block text-[11px] text-[#6B6B73]">Beli bahan baku lalu kirim langsung ke makloon (barang setengah jadi di mitra).</span></span>
                   </button>
                   <button data-testid="mode-process-only" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
                     onClick={() => { setMenuOpen(false); setShowCreateForm(false); setMakloonMode("process_only"); }}>
                     <GitBranch size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Proses Saja</span><span className="block text-[10.5px] text-[#6B6B73]">Bahan dari stok sendiri, kirim ke makloon.</span></span>
+                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Proses Makloon Saja</span><span className="block text-[11px] text-[#6B6B73]">Bahan dari stok sendiri, kirim ke makloon (sama dengan menu Order Makloon).</span></span>
                   </button>
                 </div>
               </>

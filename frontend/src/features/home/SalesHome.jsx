@@ -185,7 +185,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
           <h3 className="text-[14px] font-bold mb-3">Tren Komisi (6 bulan)</h3>
           {loading ? (
             <div className="h-36 bg-[#F5F5F7] rounded animate-pulse" />
-          ) : history.length > 0 ? (
+          ) : history.some((h) => Number(h.incentive) > 0) ? (   /* Audit UI 24 Okt — semua 0 → pesan, bukan grafik datar "0k" */
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={history} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
@@ -196,7 +196,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-36 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada riwayat komisi</div>
+            <div className="h-36 flex items-center justify-center text-center text-[13px] text-[#8E8E93]">Belum ada komisi dalam 6 bulan terakhir — komisi terbentuk saat pembayaran pelanggan masuk.</div>
           )}
         </div>
 

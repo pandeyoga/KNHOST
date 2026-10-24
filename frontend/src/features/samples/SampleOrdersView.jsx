@@ -84,12 +84,13 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
 
   const bs = stats?.by_status || {};
   const tabBar = (
-    <div className="flex flex-wrap items-center gap-2" role="tablist">
+    // Audit UI 24 Okt (121) — sub-tab memakai tab-bar standar (dulu pil cokelat unik); tombol buat berbahasa Indonesia.
+    <div className="tab-bar !mb-0 items-end" role="tablist">
       {TABS.map(([k, l]) => (
         <button key={k} role="tab" aria-selected={tab === k} data-testid={`sample-tab-${k}`} onClick={() => setTab(k)}
-          className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${tab === k ? "bg-[#9A5B00] text-white" : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#FFF3D6]"}`}>{l}</button>
+          className={`tab-button ${tab === k ? "active" : ""}`}>{l}</button>
       ))}
-      {canCreateCat && <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sample Catalogue</button>}
+      {canCreateCat && <button data-testid="sample-catalogue-create" className="primary-button ml-auto mb-1.5" onClick={() => setShowCat(true)}>+ Buat Sample Katalog</button>}
       <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
         onCreated={(so) => { flash(`${so.number} (catalogue) dibuat.`); setTab("orders"); load(); }} />
     </div>

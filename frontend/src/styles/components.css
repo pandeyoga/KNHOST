@@ -756,6 +756,43 @@
 .data-table tbody tr:hover { background: #FAFBFC; }
 .data-table td.text-right, .data-table th.text-right { text-align: right; }
 
+/* UAT 24 Okt (audit UI, HP 390px) — tabel di layar sempit: GESER HORIZONTAL, bukan diperas.
+   Dulu kolom diperas sampai kepala tabel pecah per kata dan nama/isi hilang (≥10 layar).
+   (1) <table> di wadah gulir (.table-container/.table-wrap/.overflow-x-auto): kepala satu baris,
+       sel punya lebar minimum → kata tidak dipecah satu per baris.
+   (2) "Tabel grid" (kepala `grid grid-cols-[…] … uppercase` + baris grid yang sama, ≥5 kolom):
+       tiap baris grid menghitung kolom fr sendiri → kepala & isi tidak sejajar, kolom nama jadi 0px.
+       Di HP semua baris diberi lebar minimum yang SAMA dan wadahnya digeser horizontal.
+   Hanya berlaku ≤640px; tata letak desktop tidak berubah. Grid yang sudah punya `min-w-[…]` dibiarkan. */
+@media (max-width: 640px) {
+  :is(.table-container, .table-wrap, .overflow-x-auto) { -webkit-overflow-scrolling: touch; }
+  :is(.table-container, .table-wrap, .overflow-x-auto) > table th { white-space: nowrap; }
+  :is(.table-container, .table-wrap, .overflow-x-auto) > table td { min-width: 88px; }
+  :is(.table-container, .table-wrap, .overflow-x-auto) > table td:empty { min-width: 0; }
+
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(5)) {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(5)) > :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["]),
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(5)) > * > :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["]),
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(5)) > :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["])) { min-width: 760px; }
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(7)) > :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["]),
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(7)) > * > :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["]),
+  :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]) > :nth-child(7)) > :has(> :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["]):not([class*="min-w-["])) { min-width: 900px; }
+  :is([class^="grid grid-cols-["], [class*=" grid grid-cols-["])[class*="uppercase"]:not([class*="min-w-["]):has(> :nth-child(5)) > * {
+    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Audit UI 051 (HP) — papan antrean "menunggu ACC" (WaitingBoardsStrip, grid satu kolom) dulu melebar
+     mengikuti isi terpanjang (±520px) sehingga SELURUH halaman Operasi Gudang bergulir ke samping.
+     Sama dengan aturan papan di beranda HP (mobile.css `m-home-boards`), kini untuk semua layar. */
+  .grid[data-testid$="-boards"] { grid-template-columns: minmax(0, 1fr); }
+  .grid[data-testid$="-boards"] > div { min-width: 0; }
+  .grid[data-testid$="-boards"] > div > div:first-child { flex-wrap: wrap; row-gap: 2px; }
+  .grid[data-testid$="-boards"] [data-testid$="-list"] { grid-template-columns: minmax(0, 1fr); }
+  .grid[data-testid$="-boards"] [data-testid$="-list"] > div { min-width: 0; flex-wrap: wrap; row-gap: 4px; }
+}
+
 .text-muted { color: #8E8E93; }
 
 .empty-state, .loading-state {

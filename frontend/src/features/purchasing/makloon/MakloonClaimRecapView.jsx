@@ -3,6 +3,7 @@ import { Download, Loader2, RefreshCw, Scale } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
+import KNDatePicker from "@/components/KNDatePicker";
 
 const SETTLE = { potong_bon: "Potong tagihan jasa", tagih_ganti: "Tagih ganti rugi", terima_catatan: "Diterima (catatan)" };
 const STATUS = { posted: "Dibukukan", pending_approval: "Menunggu persetujuan", rejected: "Ditolak", approved: "Disetujui" };
@@ -11,7 +12,7 @@ const PAGE = 200;   // AUD-MKL-02 — rincian per halaman; ringkasan & Excel tet
 function Kpi({ label, value, testId, tone = "" }) {
   return (
     <div className="rounded-xl border border-[#E5E5EA] bg-white px-3 py-2" data-testid={testId}>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]">{label}</p>
       <p className={`text-[15px] font-bold tabular-nums ${tone}`}>{value}</p>
     </div>
   );
@@ -63,8 +64,12 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
     <section className="space-y-3" data-testid="makloon-claim-recap">
       <div className="flex flex-wrap items-end gap-2">
         <h2 className="mr-auto flex items-center gap-2 text-[15px] font-bold"><Scale size={16} /> Rekap Susut & Klaim Mitra</h2>
-        <label className="text-[11px]">Dari<input type="date" className="field ml-1 !py-1" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }} data-testid="recap-from" /></label>
-        <label className="text-[11px]">Sampai<input type="date" className="field ml-1 !py-1" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }} data-testid="recap-to" /></label>
+        <label className="grid gap-0.5 text-[11px] font-semibold text-[#6B6B73]">Dari tanggal
+          <KNDatePicker data-testid="recap-from" placeholder="Awal" value={from} onChange={(v) => { setFrom(v || ""); setOffset(0); }} />
+        </label>
+        <label className="grid gap-0.5 text-[11px] font-semibold text-[#6B6B73]">Sampai tanggal
+          <KNDatePicker data-testid="recap-to" placeholder="Sekarang" min={from} value={to} onChange={(v) => { setTo(v || ""); setOffset(0); }} />
+        </label>
         <KNSelect className="field !w-auto !py-1 text-[12px]" value={partner} onValueChange={(v) => { setPartner(v); setOffset(0); }} data-testid="recap-partner"
           aria-label="Mitra makloon" options={[{ value: "", label: "Semua mitra" }, ...partnerOpts.map((p) => ({ value: p.makloon_id, label: p.makloon_name }))]} />
         <button className="secondary-button !py-1.5 text-[12px]" onClick={download} disabled={busy} data-testid="recap-download-xlsx">
@@ -84,7 +89,7 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
       </div>
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="w-full text-[12px]" data-testid="recap-partner-table">
-          <thead className="bg-[#F7F7F9] text-left text-[10.5px] uppercase text-[#8E8E93]">
+          <thead className="whitespace-nowrap bg-[#F7F7F9] text-left text-[11px] uppercase text-[#8E8E93]">
             <tr><th className="px-3 py-2">Mitra</th><th className="px-3 py-2 text-right">Kejadian susut</th><th className="px-3 py-2 text-right">Qty susut</th>
               <th className="px-3 py-2 text-right">Beban wajar</th><th className="px-3 py-2 text-right">Piutang klaim</th><th className="px-3 py-2 text-right">Dipotong tagihan</th>
               <th className="px-3 py-2 text-right">Klaim selisih</th><th className="px-3 py-2 text-right">Menunggu</th></tr>
@@ -120,17 +125,17 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
       )}
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="w-full text-[11.5px]" data-testid="recap-rows-table">
-          <thead className="bg-[#F7F7F9] text-left text-[10.5px] uppercase text-[#8E8E93]">
-            <tr><th className="px-3 py-2">Tanggal</th><th className="px-3 py-2">Jenis</th><th className="px-3 py-2">MKO</th><th className="px-3 py-2">Mitra</th>
+          <thead className="whitespace-nowrap bg-[#F7F7F9] text-left text-[11px] uppercase text-[#8E8E93]">
+            <tr><th className="px-3 py-2">Tanggal</th><th className="px-3 py-2">Jenis</th><th className="px-3 py-2">No. Order Makloon</th><th className="px-3 py-2">Mitra</th>
               <th className="px-3 py-2 text-right">Qty</th><th className="px-3 py-2 text-right">Beban</th><th className="px-3 py-2 text-right">Klaim</th>
               <th className="px-3 py-2">Penyelesaian</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Alasan</th></tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={`${r.mko_id}-${r.step_seq}-${i}`} className="border-t border-[#F0F0F3]" data-testid={`recap-row-${i}`}>
-                <td className="px-3 py-1.5">{(r.at || "").slice(0, 10)}</td>
+                <td className="whitespace-nowrap px-3 py-1.5">{r.at ? new Date(r.at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</td>
                 <td className="px-3 py-1.5">{r.kind === "susut" ? "Susut/hilang" : "Selisih hasil"}</td>
-                <td className="px-3 py-1.5 font-semibold">{r.mko_number} · L{r.step_seq}</td>
+                <td className="whitespace-nowrap px-3 py-1.5 font-semibold" title={`Langkah ${r.step_seq}`}>{r.mko_number} · langkah {r.step_seq}</td>
                 <td className="px-3 py-1.5">{r.makloon_name}</td>
                 <td className="px-3 py-1.5 text-right tabular-nums">{r.qty != null ? `${formatQty(r.qty)} ${r.unit}` : "—"}</td>
                 <td className="px-3 py-1.5 text-right tabular-nums">{formatCurrency(r.expense || 0)}</td>
@@ -140,6 +145,7 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
                 <td className="max-w-[260px] truncate px-3 py-1.5" title={r.reason}>{r.reason}</td>
               </tr>
             ))}
+            {data && rows.length === 0 && <tr><td colSpan={10} className="px-3 py-6 text-center text-[#8E8E93]">Belum ada rincian kejadian pada periode ini.</td></tr>}
           </tbody>
         </table>
       </div>

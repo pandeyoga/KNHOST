@@ -8,6 +8,11 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 import usePagedRows from "../../hooks/usePagedRows";
+import { LIFECYCLE_LABEL } from "../../utils/lifecycle";
+
+// Kolom tabel saran: lebar tetap + wadah gulir samping (min-w) supaya kolom Produk tidak
+// terjepit habis di HP. Header pendek & tidak pecah baris.
+const COLS = "grid-cols-[28px_minmax(180px,1.3fr)_88px_96px_96px_88px_104px_96px_110px_140px]";
 
 function fmtEta(d) {
   if (!d) return "";
@@ -122,11 +127,11 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
           reorder_qty: Number(v.reorder_qty ?? r.reorder_qty),
         },
       });
-      flash(`Reorder point ${r.sku} diperbarui.`);
+      flash(`Titik restock ${r.sku} diperbarui.`);
       setEditing(null);
       load();
     } catch (e) {
-      flash(e.response?.data?.detail || "Gagal menyimpan reorder point.");
+      flash(e.response?.data?.detail || "Gagal menyimpan titik restock.");
     } finally { setBusy(false); }
   }
 
@@ -140,16 +145,16 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
           <div className="flex items-center gap-2 min-w-0">
             <Target size={15} className="text-[#0058CC]" />
             <span className="kicker">Pembelian</span>
-            <h2 data-testid="reorder-title">Saran Reorder · Replenishment</h2>
+            <h2 data-testid="reorder-title">Saran Reorder (Restock)</h2>
           </div>
           <button data-testid="reorder-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
         <p className="px-4 py-2 text-[12px] text-[#6B6B73]">
-          Proyeksi = <b>Tersedia + Dalam Pesanan (PO terbuka) + Dalam Permintaan (PR terbuka)</b>. Produk muncul
-          jika proyeksi ≤ reorder point. On-order & on-request diperhitungkan agar tidak
-          <i> pesanan ganda / permintaan ganda</i> (PR ganda).
+          Proyeksi = <b>Tersedia + Dipesan (PO terbuka) + Diminta (PR terbuka)</b>. Produk muncul
+          jika proyeksi ≤ titik restock. Barang yang sudah dipesan & diminta ikut dihitung agar tidak
+          terjadi <i>pesanan ganda / PR ganda</i>.
         </p>
 
         <section className="grid gap-3 sm:grid-cols-3 px-3 pb-3">
@@ -160,14 +165,14 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
       </section>
 
       <section className="section-card">
-        <div className="section-head">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="section-head flex-wrap gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h2 className="text-[13px] font-bold">Daftar Saran</h2>
             <SearchBox value={q} onChange={setQ} placeholder="Cari SKU / produk / supplier…" testId="reorder-search" />
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] px-2 py-1" data-testid="reorder-pr-target">
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] px-2 py-1.5 sm:w-auto" data-testid="reorder-pr-target">
             <span className="text-[11px] font-semibold text-[#6B6B73]">PR dikirim ke gudang:</span>
-            <div style={{ maxWidth: 200, minWidth: 160 }}>
+            <div className="min-w-[160px] flex-1 sm:max-w-[200px]">
               <KNSelect
                 data-testid="reorder-warehouse"
                 className="form-input"
@@ -184,14 +189,15 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
         </div>
 
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-[28px_1.3fr_80px_80px_84px_84px_84px_92px_110px_120px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            <span><input type="checkbox" data-testid="reorder-check-all" checked={rows.length > 0 && selectedRows.length === rows.length} onChange={toggleAll} /></span>
+          <div className="min-w-[1060px]">
+          <div className={`grid ${COLS} gap-x-1 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]`}>
+            <span><input type="checkbox" aria-label="Pilih semua" data-testid="reorder-check-all" checked={rows.length > 0 && selectedRows.length === rows.length} onChange={toggleAll} /></span>
             <span>Produk</span>
             <span className="text-right">Tersedia</span>
-            <span className="text-right">Dalam Pesanan</span>
-            <span className="text-right">Dalam Permintaan</span>
+            <span className="text-right" title="Dalam pesanan — PO terbuka">Dipesan (PO)</span>
+            <span className="text-right" title="Dalam permintaan — PR terbuka">Diminta (PR)</span>
             <span className="text-right">Proyeksi</span>
-            <span className="text-right">Reorder Pt</span>
+            <span className="text-right" title="Reorder point — batas stok untuk mulai restock">Titik Restock</span>
             <span className="text-right">Saran Qty</span>
             <span>Lead / ETA</span>
             <span>Supplier</span>
@@ -204,7 +210,7 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
           ) : rows.length === 0 ? (
             <div data-testid="reorder-empty" className="flex flex-col items-center gap-2 py-12 text-center text-[12px] text-[#6B6B73]">
               <CheckCircle2 size={28} className="text-[#16A34A]" />
-              <span>Semua stok di atas reorder point. Tidak ada saran replenishment.</span>
+              <span>Semua stok di atas titik restock. Tidak ada saran restock.</span>
             </div>
           ) : (
             <div className="divide-y divide-[#EFF0F2]">
@@ -212,16 +218,16 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
                 const below = r.projected < r.reorder_point;
                 const isEditing = editing === r.product_id;
                 return (
-                  <div key={r.product_id} data-testid={`reorder-row-${r.product_id}`} className="grid grid-cols-[28px_1.3fr_80px_80px_84px_84px_84px_92px_110px_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                  <div key={r.product_id} data-testid={`reorder-row-${r.product_id}`} className={`grid ${COLS} gap-x-1 items-center px-3 py-2.5 hover:bg-[#FAFBFC]`}>
                     <span><input type="checkbox" data-testid={`reorder-check-${r.product_id}`} checked={!!checked[r.product_id]} onChange={() => setChecked({ ...checked, [r.product_id]: !checked[r.product_id] })} /></span>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase text-[#0058CC]">{r.sku}</p>
+                      <p className="truncate text-[11px] font-bold uppercase text-[#0058CC]">{r.sku}</p>
                       <p className="text-[12px] font-semibold truncate">{r.product_name}</p>
                       {Array.isArray(r.existing_prs) && r.existing_prs.length > 0 && (
                         <span
                           data-testid={`reorder-pr-badge-${r.product_id}`}
                           title="Sudah ada Permintaan Pembelian terbuka untuk produk ini — hindari PR ganda"
-                          className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-[#FFF4E5] px-2 py-0.5 text-[10px] font-semibold text-[#8C4A00] border border-[#FFD9A8]"
+                          className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-[#FFF4E5] px-2 py-0.5 text-[11px] font-semibold text-[#8C4A00] border border-[#FFD9A8]"
                         >
                           <Clock size={9} /> Sudah ada PR: {r.existing_prs.join(", ")}
                         </span>
@@ -230,9 +236,9 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
                         <span
                           data-testid={`reorder-lifecycle-badge-${r.product_id}`}
                           title="Produk belum sampai tahap produksi (mode penegakan: peringatkan). PR tetap boleh dibuat, tetapi akan diberi peringatan."
-                          className="mt-0.5 ml-1 inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-semibold text-[#9B1C1C] border border-[#F5B5B5]"
+                          className="mt-0.5 ml-1 inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-2 py-0.5 text-[11px] font-semibold text-[#9B1C1C] border border-[#F5B5B5]"
                         >
-                          Tahap: {r.lifecycle}
+                          Tahap: {LIFECYCLE_LABEL[r.lifecycle] || r.lifecycle}
                         </span>
                       )}
                     </div>
@@ -260,7 +266,7 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
                       {r.lead_time_days > 0 ? (
                         <>
                           <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold"><Clock size={11} className="text-[#0058CC]" />{r.lead_time_days} hari</span>
-                          {r.expected_arrival_date && <p className="text-[10px] text-[#6B6B73]">≈ {fmtEta(r.expected_arrival_date)}</p>}
+                          {r.expected_arrival_date && <p className="text-[11px] text-[#6B6B73]">≈ {fmtEta(r.expected_arrival_date)}</p>}
                         </>
                       ) : <span className="text-[11px] text-[#9A9BA3]">—</span>}
                     </span>
@@ -272,10 +278,11 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
                   </div>
                 );
               })}
-              <div className="px-3 py-2">{pager}</div>
             </div>
           )}
+          </div>
         </div>
+        {!loading && shown.length > 0 && <div className="px-3 py-2">{pager}</div>}
       </section>
     </div>
   );
@@ -286,7 +293,7 @@ function Metric({ icon: Icon, label, value, tone, testId }) {
     <div data-testid={testId} className="metric-card">
       <div className="metric-icon" style={{ background: tone }}><Icon size={16} className="text-[#1C1C1E]" /></div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
         <p className="text-[17px] font-bold tabular-nums">{value}</p>
       </div>
     </div>

@@ -210,7 +210,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             <p className="stat-value text-[#B26A00]" data-testid="cb-kpi-waiting">
               {summary.waiting_count}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">
+            <p className="text-[11px] text-[#8E8E93]">
               {formatCurrency(summary.waiting_value)} diajukan / terverifikasi
             </p>
           </div>
@@ -219,26 +219,26 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             <p className="stat-value text-[#0F6B52]" data-testid="cb-kpi-scheduled">
               {summary.scheduled_count}
             </p>
-            <p className="text-[10px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.scheduled_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.scheduled_value)}</p>
           </div>
           <div className={`stat-card ${summary.due_soon_count ? "ring-1 ring-[#FFE0B2]" : ""}`}>
             <p className="stat-label">Jatuh tempo ≤ 7 hari</p>
             <p className="stat-value text-[#0058CC]" data-testid="cb-kpi-duesoon">
               {summary.due_soon_count}
             </p>
-            <p className="text-[10px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.due_soon_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.due_soon_value)}</p>
           </div>
           <div className={`stat-card ${summary.disputed_count ? "ring-1 ring-[#F3C9C7]" : ""}`}>
             <p className="stat-label">Sengketa</p>
             <p className={`stat-value ${summary.disputed_count ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}
               data-testid="cb-kpi-disputed">{summary.disputed_count}</p>
-            <p className="text-[10px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.disputed_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.disputed_value)}</p>
           </div>
           <div className={`stat-card ${summary.overdue_count ? "ring-1 ring-[#F3C9C7]" : ""}`}>
             <p className="stat-label">Lewat batas waktu</p>
             <p className={`stat-value ${summary.overdue_count ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}
               data-testid="cb-kpi-overdue">{summary.overdue_count}</p>
-            <p className="text-[10px] text-[#8E8E93]">batas {summary.sla_days} hari</p>
+            <p className="text-[11px] text-[#8E8E93]">batas {summary.sla_days} hari</p>
           </div>
           <button className="stat-card text-left" data-testid="cb-kpi-unbilled"
             onClick={() => setTab("unbilled")}>
@@ -246,7 +246,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             <p className="stat-value text-[#8C4A00]">
               {formatCurrency(summary.unbilled_gr_value)}
             </p>
-            <p className="text-[10px] text-[#8E8E93]">
+            <p className="text-[11px] text-[#8E8E93]">
               {summary.unbilled_gr_po_count} PO
               {summary.unbilled_gr_overdue ? ` · ${summary.unbilled_gr_overdue} tertunggak` : ""}
             </p>
@@ -325,7 +325,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
       <p className="mt-3 flex items-start gap-1 text-[11px] text-[#9A9BA3]">
         <AlertTriangle size={11} className="mt-[2px] shrink-0" />
         Satu faktur hanya boleh berada di satu kontrabon berjalan, dan satu nota debit / uang muka
-        hanya boleh dipotong sekali — dijaga invarian INV-CB-01..04. Toleransi 3-way, ambang
+        hanya boleh dipotong sekali — sistem menolak bila dilanggar. Toleransi 3-way, ambang
         persetujuan, dan jadwal pengingat diatur di Pengaturan → Kontrabon.
       </p>
 

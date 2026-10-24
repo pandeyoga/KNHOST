@@ -26,12 +26,15 @@ export const MONTH_OPTS = [
 const STATUS_TONE = { ok: "ok", warning: "warning", over: "over" };
 const STATUS_LABEL = { ok: "Aman", warning: "Waspada", over: "Over Budget" };
 
+// Audit UI 24 Okt (074): kode kebijakan mentah (WARN/BLOCK/allow) tidak lagi tampil ke pengguna.
+export const MODE_LABEL = { off: "Pantau saja", warn: "Peringatan", block: "Tolak PO" };
+const UNBUDGETED_LABEL = { allow: "izinkan", warn: "peringatkan", block: "tolak" };
 const MODE_META = {
-  off: { icon: ShieldOff, label: "OFF — tanpa kontrol", tone: "text-[#6B6B73]", bg: "bg-[#F2F2F5]",
+  off: { icon: ShieldOff, label: "Pantau saja (tanpa kontrol)", tone: "text-[#6B6B73]", bg: "bg-[#F2F2F5]",
          hint: "Anggaran hanya dipantau; PO tidak diperiksa." },
-  warn: { icon: ShieldCheck, label: "WARN — peringatan", tone: "text-[#C77700]", bg: "bg-[#FBF3E5]",
+  warn: { icon: ShieldCheck, label: "Peringatan", tone: "text-[#C77700]", bg: "bg-[#FBF3E5]",
           hint: "PO over-budget tetap dibuat, tapi diberi peringatan & jejak audit." },
-  block: { icon: ShieldAlert, label: "BLOCK — tolak PO", tone: "text-[#C0392B]", bg: "bg-[#FDECEC]",
+  block: { icon: ShieldAlert, label: "Tolak PO melebihi anggaran", tone: "text-[#C0392B]", bg: "bg-[#FDECEC]",
            hint: "PO yang melampaui anggaran DITOLAK saat dibuat maupun disetujui." },
 };
 
@@ -185,8 +188,8 @@ export function BudgetRulesPanel({ rules, isAdmin, onSave, defaultAccount }) {
         </span>
         <span className="text-[11px] text-[#8E8E93]">{meta.hint}</span>
         <span className="text-[11px] text-[#8E8E93] ml-auto">
-          Ambang waspada {cur.warn_threshold_pct ?? 85}% · tanpa anggaran: {cur.unbudgeted_action || "allow"}
-          {cur.is_default ? " · (default)" : ""}
+          Ambang waspada {cur.warn_threshold_pct ?? 85}% · belum ada anggaran: {UNBUDGETED_LABEL[cur.unbudgeted_action || "allow"] || cur.unbudgeted_action}
+          {cur.is_default ? " · (bawaan)" : ""}
         </span>
         {isAdmin && (
           <button data-testid="budget-rules-toggle" className="btn-secondary text-[11.5px] py-1 px-2.5"
@@ -202,9 +205,9 @@ export function BudgetRulesPanel({ rules, isAdmin, onSave, defaultAccount }) {
             <label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Mode Kontrol</label>
             <KNSelect data-testid="budget-rules-mode-select" className="field py-1.5 text-[12px]" value={d.mode}
               onValueChange={(v) => set("mode", v)} options={[
-                { value: "off", label: "OFF — pantau saja" },
-                { value: "warn", label: "WARN — beri peringatan" },
-                { value: "block", label: "BLOCK — tolak PO over-budget" },
+                { value: "off", label: "Pantau saja" },
+                { value: "warn", label: "Beri peringatan" },
+                { value: "block", label: "Tolak PO yang melebihi anggaran" },
               ]} />
           </div>
           <div>

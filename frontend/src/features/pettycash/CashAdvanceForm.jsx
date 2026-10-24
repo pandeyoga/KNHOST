@@ -106,16 +106,18 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
             </Field>
           </div>
 
-          {/* Lines */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1.6fr_90px_110px_130px_120px_36px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+          {/* Lines — Audit UI 24 Okt (063): rincian biaya wajib (≥1 baris) ditandai *, HP digulir di dalam kotak. */}
+          <p className="text-[11px] font-bold uppercase text-[#6B6B73] -mb-1">Rincian Biaya <span className="req">*</span></p>
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+           <div className="min-w-[640px]">
+            <div className="grid grid-cols-[1.6fr_90px_110px_130px_120px_36px] whitespace-nowrap bg-[#FAFBFC] px-3 py-1.5 text-[11px] font-bold uppercase text-[#6B6B73]">
               <span>Uraian</span><span className="text-right">Qty</span><span>Satuan</span><span className="text-right">Harga</span><span className="text-right">Jumlah</span><span></span>
             </div>
             {lines.map((l, i) => (
               <div key={i} data-testid={`ca-line-${i}`} className="grid grid-cols-[1.6fr_90px_110px_130px_120px_36px] items-center gap-1 px-3 py-2 border-t border-[#F4F5F7]">
                 <input data-testid={`ca-line-desc-${i}`} className="form-input" value={l.description} onChange={(e) => updLine(i, "description", e.target.value)} placeholder="Uraian item / biaya" />
                 <input type="number" data-testid={`ca-line-qty-${i}`} className="form-input text-right" value={l.qty} onChange={(e) => updLine(i, "qty", e.target.value)} placeholder="0" />
-                <KNSelect data-testid={`ca-line-satuan-${i}`} className="form-input" value={l.satuan} onValueChange={(v) => updLine(i, "satuan", v)} options={SATUAN_OPTIONS} />
+                <KNSelect data-testid={`ca-line-satuan-${i}`} className="form-input" value={l.satuan} onValueChange={(v) => updLine(i, "satuan", v)} options={SATUAN_OPTIONS} searchable={false} />
                 <MoneyInput testId={`ca-line-price-${i}`} className="form-input text-right" value={l.unit_price} placeholder="0" onChange={(v) => updLine(i, "unit_price", v)} />
                 <span className="text-[12px] tabular-nums text-right font-semibold">{formatCurrency((Number(l.qty) || 0) * (Number(l.unit_price) || 0))}</span>
                 <button className="icon-button text-red-500" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={14} /></button>
@@ -128,6 +130,7 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
                 <span data-testid="ca-form-total" className="text-[16px] font-bold tabular-nums text-[#0058CC]">{formatCurrency(total)}</span>
               </div>
             </div>
+           </div>
           </div>
 
           {/* Payment */}

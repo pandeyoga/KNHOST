@@ -10,6 +10,7 @@ import { Plus, Sparkles, Star } from "lucide-react";
 import { fetchFeatured, fetchRecommendations, recToProduct } from "./posApi";
 import { formatCurrency } from "../../utils/formatters";
 import { onImageError, productImage } from "../../utils/productImage";
+import { displaySku, maskedSkuTitle } from "./skuDisplay";
 
 export function ProductStrip({ title, hint, icon: Icon, tone = "#0058CC", items, loading, onAdd, priceMap = {}, testId, badge }) {
   if (!loading && !(items || []).length) return null;
@@ -32,7 +33,7 @@ export function ProductStrip({ title, hint, icon: Icon, tone = "#0058CC", items,
                     {badge?.(p) && <span className="absolute left-1.5 top-1.5 max-w-[120px] truncate rounded-md px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: tone }}>{badge(p)}</span>}
                   </div>
                   <div className="flex flex-1 flex-col p-2">
-                    <p className="text-[9px] font-bold uppercase text-[#0058CC]">{p.sku}</p>
+                    <p className="truncate text-[10px] font-bold uppercase text-[#0058CC]" title={maskedSkuTitle(p.sku)}>{displaySku(p.sku)}</p>
                     <h3 className="line-clamp-2 text-[11.5px] font-semibold leading-tight">{p.product_name}</h3>
                     <p className="mt-auto pt-1 text-[12px] font-bold tabular-nums">
                       {formatCurrency(priceMap[p.product_id]?.price != null ? priceMap[p.product_id].price : p.price)}

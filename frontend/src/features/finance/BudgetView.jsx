@@ -19,7 +19,7 @@ import {
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 import {
-  DIM_TABS, BudgetFormRow, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel,
+  DIM_TABS, BudgetFormRow, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel, MODE_LABEL,
 } from "./BudgetParts";
 import { can } from "../../config/roles";
 
@@ -104,7 +104,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
     try {
       const res = await axios.put(`${API}/finance/budget-rules`, { ...entityParam(selectedEntity), ...patch });
       setRules(res.data);
-      notify(`Kebijakan anggaran disimpan: mode ${String(res.data?.mode).toUpperCase()}.`);
+      notify(`Kebijakan anggaran disimpan: ${MODE_LABEL[res.data?.mode] || res.data?.mode}.`);
       await load();
       return true;
     } catch (e) {
@@ -130,7 +130,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
         <KpiCard testId="budget-kpi-over" label="Pos Over-Budget" value={`${tot.over_count || 0}`}
           icon={AlertTriangle} accent={FC.expense}
           tone={(tot.over_count || 0) > 0 ? "text-[#C0392B]" : "text-[#1B7F4B]"}
-          sub={`Kebijakan: ${String(rules?.mode || "warn").toUpperCase()}`} />
+          sub={`Kebijakan: ${MODE_LABEL[rules?.mode || "warn"] || rules?.mode}`} />
       </div>
 
       {/* Toolbar: tahun + tab dimensi + aksi */}

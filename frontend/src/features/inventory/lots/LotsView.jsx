@@ -226,16 +226,16 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
             <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
               <Layers3 size={14} className="text-[#0058CC]" /> Lot & Silsilah
             </h2>
-            <p className="text-[10.5px] text-[#6B6B73]">
+            <p className="text-[11px] text-[#6B6B73]">
               Lot = identitas batch (satu lot menaungi banyak roll). Nomor dibuat otomatis per
-              entitas <b>KSC/LOT-YYMM-####</b> saat penerimaan barang, hasil makloon, dan produksi
-              (keputusan <b>D-10</b>/<b>D-26</b>). Dari sini Anda bisa menelusuri silsilah,
-              menjalankan <b>recall</b>, dan mencetak label/QR.
+              badan usaha (contoh <b>KSC/LOT-2610-0001</b>) saat penerimaan barang, hasil makloon, dan
+              produksi. Dari sini Anda bisa menelusuri silsilah, menarik kembali lot bermasalah
+              (<b>recall</b>), dan mencetak label/QR.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {canEdit && (
-              <button data-testid="lot-create-open" className="primary-button !px-2 !py-1 !text-[10.5px]"
+              <button data-testid="lot-create-open" className="primary-button !px-3 !py-1.5 !text-[12px]"
                 onClick={() => setModal("create")}>
                 <span className="flex items-center gap-1"><Plus size={11} /> Buat Lot</span>
               </button>
@@ -288,7 +288,7 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
               <div className="ml-auto">
                 <LotFilters filter={filter} setFilter={setFilter} sourceOptions={sourceOptions}
                   statusOptions={statusOptions} stageOptions={stageOptions} warehouses={warehouses}
-                  onSearch={() => { setPage(1); setApplied(filter); }} />
+                  onSearch={(next) => { setPage(1); setApplied(next || filter); }} />
               </div>
             </div>
             <LotTable lots={lots} loading={loading} activeId={activeId} labelOf={labelOf}

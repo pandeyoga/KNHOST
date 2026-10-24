@@ -32,7 +32,7 @@ export const STAGE_STATUS_CLASS = {
 
 /** Penyaring status PO di papan (nilai `?status=`). */
 export const PO_STATUS_TABS = [
-  { key: "open", label: "Berjalan" },
+  { key: "open", label: "PO aktif" },
   { key: "", label: "Semua" },
   { key: "pending", label: "Menunggu kirim" },
   { key: "receiving", label: "Sedang diterima" },

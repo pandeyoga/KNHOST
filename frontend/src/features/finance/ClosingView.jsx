@@ -150,17 +150,17 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       </div>
 
       <div className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <CalendarX size={15} className="text-[#6B219A]" />
-            <h3 className="text-[13px] font-bold text-[#1C1C1E]">Tutup Buku (Closing)</h3>
+            <h3 className="text-[13px] font-bold text-[#1C1C1E]">Tutup Buku</h3>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <div className="w-[200px]">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <div className="w-full sm:w-[200px]">
               <KNSelect data-testid="closing-entity-select" className="field py-1.5 text-[12px]" value={entityId}
                 onValueChange={setEntityId} placeholder="Pilih Entitas (PT)" options={entityOptions} />
             </div>
-            <button data-testid="closing-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="closing-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
 
@@ -301,7 +301,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                             {c.stale && c.status === "closed" && (
                               <span data-testid={`closing-stale-${c.id}`} title={c.stale_reason || "Angka berubah setelah periode ditutup"}
                                 className="ml-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-[#FDEDE7] text-[#C0392B] inline-flex items-center gap-1">
-                                <AlertTriangle size={9} /> Basi
+                                <AlertTriangle size={9} /> Perlu tutup ulang
                               </span>
                             )}
                           </td>
@@ -329,7 +329,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                   </table>
                 </div>
               )}
-              <p className="mt-2 text-[11px] text-[#9A9BA3]">Jurnal penutup memindahkan Laba/Rugi Bersih ke akun Laba Ditahan (3-2000). Periode yang ditutup <b>terkunci penuh</b> — jurnal/koreksi mundur ditolak kecuali ada izin resmi di menu <b>Buka Periode (Unlock)</b>.</p>
+              <p className="mt-2 text-[11px] text-[#9A9BA3]">Jurnal penutup memindahkan Laba/Rugi Bersih ke akun Laba Ditahan. Periode yang ditutup <b>terkunci penuh</b> — jurnal/koreksi mundur ditolak kecuali ada izin resmi di menu <b>Buka Periode (Unlock)</b>.</p>
             </>
           )}
         </div>

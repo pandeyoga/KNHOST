@@ -16,6 +16,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { designerKpiTrend } from "./designerApi";
+import { actorLabel } from "../../utils/actorLabel";   // audit UI 24 Okt — akun teknis tidak tampil mentah
 
 // Palet garis — dibedakan tegas & aman untuk buta warna ringan.
 const PALETTE = ["#0058CC", "#1B7F4B", "#B8860B", "#C0392B",
@@ -134,7 +135,7 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
                     key={s.designer_key || s.designer}
                     type="monotone"
                     dataKey={s.designer_key || s.designer}
-                    name={s.designer}
+                    name={actorLabel(s.designer)}
                     stroke={PALETTE[idx % PALETTE.length]}
                     strokeWidth={2.2}
                     dot={{ r: 2.5 }}
@@ -155,7 +156,7 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
               <span key={s.designer_key || s.designer} className="inline-flex items-center gap-1 text-[11px] text-[#4A4B52]">
                 <span className="inline-block h-2 w-2 rounded-full"
                   style={{ background: PALETTE[idx % PALETTE.length] }} />
-                {s.designer}
+                {actorLabel(s.designer)}
                 <b className="tabular-nums">· rata-rata {s.avg ?? "—"}</b>
               </span>
             ))}

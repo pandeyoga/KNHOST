@@ -115,7 +115,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
                 className="field" placeholder="salur / batik / bunga / polkadot…" searchable />
             </label>
             <label className="block">
-              <span className="field-label">Kategori Design *</span>
+              <span className="field-label">Kategori Desain *</span>
               <KNSelect data-testid="dsr-dcategory-select" value={form.design_category_code}
                 onValueChange={(v) => set({ design_category_code: v })} options={designOpts}
                 className="field" placeholder="allover / pinggiran" />
@@ -125,7 +125,8 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
               <textarea data-testid="dsr-brief-input" className="field" rows={3}
                 placeholder="mis. Motif batik pesisir untuk katalog lebaran — 3 alternatif warna, repeat ±32 cm."
                 value={form.brief} onChange={(e) => set({ brief: e.target.value })} />
-              <span className={`mt-0.5 block text-right text-[10px] ${briefOk ? "text-[#8E8E93]" : "text-[#A8221A]"}`}>
+              {/* Audit UI 24 Okt (047) — merah hanya bila brief sudah diketik tapi masih terlalu pendek. */}
+              <span className={`mt-0.5 block text-right text-[11px] ${briefOk || !(form.brief || "").trim() ? "text-[#8E8E93]" : "text-[#A8221A]"}`}>
                 {briefOk ? `${form.brief.trim().length} karakter` : "minimal satu kalimat (≥ 5 karakter)"}
               </span>
             </label>

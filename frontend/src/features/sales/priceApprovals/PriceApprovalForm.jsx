@@ -40,7 +40,7 @@ export function PriceApprovalForm({
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-[11px] font-semibold text-[#6B6B73]">
-          Pelanggan
+          Pelanggan *
           <KNSelect
             data-testid="price-approvals-customer"
             className="field"
@@ -55,7 +55,7 @@ export function PriceApprovalForm({
           />
         </label>
         <label className="grid gap-1 text-[11px] font-semibold text-[#6B6B73]">
-          Produk
+          Produk *
           <KNSelect
             data-testid="price-approvals-product"
             className="field"
@@ -70,7 +70,7 @@ export function PriceApprovalForm({
           />
         </label>
         <label className="grid gap-1 text-[11px] font-semibold text-[#6B6B73]">
-          Harga Khusus / unit
+          Harga Khusus / unit *
           {selectedProduct && (
             <span className="text-[10px] font-normal text-[#8E8E93]">Harga normal: {formatCurrency(selectedProduct.price)}</span>
           )}
@@ -112,21 +112,28 @@ export function PriceApprovalForm({
         </label>
       </div>
       {formErr && <p data-testid="price-approvals-form-error" className="mt-2 text-[11px] font-semibold text-[#A8221A]">{formErr}</p>}
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* Audit UI 24 Okt (002) — kaki standar modal: Batal kiri, aksi kanan; tombol utama biru (dulu ungu). */}
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+        <button type="button" data-testid="price-approvals-cancel" className="secondary-button"
+          disabled={busyId === "form"} onClick={onClose}>
+          Batal
+        </button>
         <button
+          type="button"
           data-testid="price-approvals-save"
           disabled={busyId === "form"}
           onClick={() => onSubmit(false)}
-          className="rounded-md border border-[#E5E5EA] px-4 py-1.5 text-[12px] font-semibold text-[#3C3C43] disabled:opacity-50"
+          className={editId ? "primary-button" : "secondary-button"}
         >
-          {editId ? "Simpan Perubahan" : "Simpan sebagai Draft"}
+          {editId ? "Simpan Perubahan" : "Simpan sebagai Draf"}
         </button>
         {!editId && (
           <button
+            type="button"
             data-testid="price-approvals-save-submit"
             disabled={busyId === "form"}
             onClick={() => onSubmit(true)}
-            className="flex items-center gap-1.5 rounded-md bg-[#6B219A] px-4 py-1.5 text-[12px] font-bold text-white disabled:opacity-50"
+            className="primary-button"
           >
             <Send size={13} /> Ajukan untuk Persetujuan
           </button>

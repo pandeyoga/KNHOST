@@ -74,22 +74,22 @@ export default function ProfitabilityView({ selectedEntity }) {
         <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
         <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk landed ${compactIDR(tot.cogs_landed || 0)}` : "tanpa landed cost"} />
         <KpiCard testId="prof-kpi-margin" label="Marjin Kotor" value={formatCurrency(tot.margin)} icon={Boxes} accent={FC.net} tone={(tot.margin ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
-        <KpiCard testId="prof-kpi-marginpct" label="Marjin %" value={fmtPct(tot.margin_pct)} icon={Percent} accent={FC.teal} sub={`${tot.orders || 0} pesanan · ${Number(tot.qty || 0).toLocaleString("id-ID")} unit`} />
+        <KpiCard testId="prof-kpi-marginpct" label="Marjin %" value={fmtPct(tot.margin_pct)} icon={Percent} accent={FC.teal} sub={`${tot.orders || 0} pesanan terkirim`} />
       </div>
 
       <div className="rounded-lg border border-[#EFF0F2] p-3 mb-3 bg-[#FCFCFD] flex flex-wrap items-end gap-3">
-        <div><label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Dari</label>
+        <div><label className="block text-[11px] font-bold uppercase text-[#8E8E93] mb-1">Dari</label>
           <KNDatePicker data-testid="prof-start" className="w-[170px] text-[12px]" clearable={false} value={range.start}
             onChange={(v) => setRange((r) => ({ ...r, start: v }))} /></div>
-        <div><label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Sampai</label>
+        <div><label className="block text-[11px] font-bold uppercase text-[#8E8E93] mb-1">Sampai</label>
           <KNDatePicker data-testid="prof-end" className="w-[170px] text-[12px]" clearable={false} min={range.start} value={range.end}
             onChange={(v) => setRange((r) => ({ ...r, end: v }))} /></div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-[10px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP snapshot saat kirim</span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP dicatat saat kirim</span>
           <button data-testid="prof-export-xlsx" className="btn-secondary !h-8 !px-3 text-[12px] inline-flex items-center gap-1" onClick={doExport} disabled={exporting}>
             <Download size={13} />{exporting ? "Menyiapkan…" : "Excel Realisasi vs Estimasi"}
           </button>
-          <button data-testid="prof-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+          <button data-testid="prof-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
       </div>
 
@@ -101,7 +101,8 @@ export default function ProfitabilityView({ selectedEntity }) {
         <Panel title="Profitabilitas" icon={Boxes}><EmptyState icon={Boxes} title="Belum ada penjualan pada periode ini" hint="Pilih rentang tanggal lain atau pastikan ada Pesanan Penjualan terkonfirmasi." testId="prof-empty" /></Panel>
       ) : (
         <>
-          <div className="grid lg:grid-cols-2 gap-3 mb-3">
+          {/* Audit UI 24 Okt (072 HP): kolom grid minmax(0,1fr) supaya isi lebar tidak melebarkan halaman. */}
+          <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-2 gap-3 mb-3">
             <Panel title="Tren Bulanan — Pendapatan, HPP & Marjin" icon={TrendingUp} testId="prof-trend">
               <ResponsiveContainer width="100%" height={260}>
                 <ComposedChart data={monthly} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
@@ -143,17 +144,17 @@ export default function ProfitabilityView({ selectedEntity }) {
               </div>
             }>
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]" data-testid="prof-table">
+              <table className="w-full min-w-[820px] text-[12px]" data-testid="prof-table">
                 <thead>
-                  <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
+                  <tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                     <th className="px-3 py-2">{DIMS.find((d) => d.id === dim)?.label}</th>
                     <th className="px-3 py-2 text-right">Pendapatan</th>
                     <th className="px-3 py-2 text-right">HPP Dasar</th>
                     <th className="px-3 py-2 text-right">Landed</th>
-                    <th className="px-3 py-2 text-right">Total COGS</th>
+                    <th className="px-3 py-2 text-right">Total HPP</th>
                     <th className="px-3 py-2 text-right">Marjin</th>
                     <th className="px-3 py-2 text-right">Marjin %</th>
-                    <th className="px-3 py-2 text-right">Qty</th>
+                    <th className="px-3 py-2 text-right" title="Jumlah barang dalam satuan asli produk (kg / yard). Baris kategori/pelanggan/sales bisa mencampur satuan.">Qty (satuan produk)</th>
                   </tr>
                 </thead>
                 <tbody>

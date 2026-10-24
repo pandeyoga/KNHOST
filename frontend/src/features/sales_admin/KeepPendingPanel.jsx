@@ -91,23 +91,26 @@ function KeepList({ rows, limit, overdue, onOpen, tp }) {
       <p className="mb-2 text-[11px] text-[#6B6B73]" data-testid={`${tp}-keep-limit`}>
         Keep = SO belum diverifikasi Admin Sales (bukan berarti stok dicadangkan).{" "}
         {limit > 0 ? <>Batas umur <b>{limit} hari</b> · <b className="text-[#C0392B]">{overdue}</b> lewat batas (tanda saja, tidak dibatalkan).</>
-          : "Batas umur belum diatur (Pusat Pengaturan › sales.keep_max_age_days)."}
+          // Audit UI 24 Okt (144/HP Beranda) — dulu menulis kunci konfigurasi mentah "sales.keep_max_age_days".
+          : "Batas umur belum diatur (Pusat Pengaturan › Harga, Diskon & Komisi › Batas umur Keep)."}
       </p>
       {rows.length === 0 ? <Empty tp={tp} text="Semua SO sudah diverifikasi." /> : (
         <ul className="divide-y divide-[#F2F3F5] rounded-lg border border-[#EFF0F2]">
           {rows.map((r) => (
             <li key={r.order_id} data-testid={`${tp}-keep-row-${r.order_id}`}>
+              {/* Audit UI 24 Okt (144/HP) — di layar sempit chip & nilai turun ke baris kedua; dulu kolom kiri
+                  terjepit sehingga nomor SO & nama pelanggan pecah per kata (±7 baris per SO). */}
               <button type="button" onClick={() => onOpen(r.order_id, r.number)}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[#FAFBFC]">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-semibold">{r.number} <span className="font-normal text-[#6B6B73]">· {r.customer_name}</span></p>
-                  <p className="text-[10.5px] text-[#8E8E93]">{r.items_count} baris · {r.sales_name || "—"} · {statusText(r.status)}</p>
+                className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-[#FAFBFC]">
+                <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
+                  <p className="text-[12px] font-semibold"><span className="whitespace-nowrap">{r.number}</span> <span className="font-normal text-[#6B6B73]">· {r.customer_name}</span></p>
+                  <p className="text-[11px] text-[#8E8E93]">{r.items_count} baris · {r.sales_name || "—"} · {statusText(r.status)}</p>
                 </div>
-                {r.also_pending && <span className="rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[9.5px] font-bold text-[#9A5B00]" data-testid={`${tp}-keep-also-pending-${r.order_id}`}>juga Pending</span>}
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${r.overdue ? "bg-[#FDECEA] text-[#C0392B]" : "bg-[#F2F3F5] text-[#3C3C43]"}`} data-testid={`${tp}-keep-age-${r.order_id}`}>
-                  {r.age_days} hari{r.overdue ? " · lewat batas" : ""}
+                {r.also_pending && <span className="whitespace-nowrap rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[10px] font-bold text-[#9A5B00]" data-testid={`${tp}-keep-also-pending-${r.order_id}`}>juga Pending</span>}
+                <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${r.overdue ? "bg-[#FDECEA] text-[#C0392B]" : "bg-[#F2F3F5] text-[#3C3C43]"}`} data-testid={`${tp}-keep-age-${r.order_id}`}>
+                  {r.age_days > 0 ? `${r.age_days} hari` : "< 1 hari"}{r.overdue ? " · lewat batas" : ""}
                 </span>
-                <span className="w-28 text-right text-[11.5px] font-bold tabular-nums">{formatCurrency(r.grand_total)}</span>
+                <span className="ml-auto text-right text-[11.5px] font-bold tabular-nums sm:w-28">{formatCurrency(r.grand_total)}</span>
               </button>
             </li>
           ))}

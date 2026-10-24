@@ -189,7 +189,7 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
         <div className="section-card">
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFF0F2]">
             <span className="text-[11px] font-bold uppercase text-[#6B6B73] flex items-center gap-1"><Users size={13} /> Karyawan Lapangan</span>
-            <span data-testid="live-online-count" className="text-[11px] font-semibold text-[#1F9D55] tabular-nums">{onlineCount} online</span>
+            <span data-testid="live-online-count" className={`text-[11px] font-semibold tabular-nums ${onlineCount > 0 ? "text-[#1F9D55]" : "text-[#8E8E93]"}`}>{onlineCount} online</span>
           </div>
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="live-tracking-loading">Memuat posisi...</div>

@@ -36,6 +36,8 @@ export function LotStatCards({ stats }) {
 
 export function LotFilters({ filter, setFilter, sourceOptions, statusOptions, stageOptions,
                              warehouses = [], onSearch }) {
+  // Audit UI 059 — pilihan dropdown langsung diterapkan (dulu wajib tekan "Terapkan"); tombol tetap untuk teks cari.
+  const pick = (patch) => { const next = { ...filter, ...patch }; setFilter(next); onSearch?.(next); };
   return (
     <div data-testid="lot-filters" className="flex flex-wrap items-center gap-1.5">
       <div className="relative">
@@ -44,27 +46,27 @@ export function LotFilters({ filter, setFilter, sourceOptions, statusOptions, st
           placeholder="Cari nomor lot / lot supplier / dye lot / SKU"
           value={filter.q}
           onChange={(e) => setFilter({ ...filter, q: e.target.value })}
-          onKeyDown={(e) => { if (e.key === "Enter") onSearch?.(); }} />
+          onKeyDown={(e) => { if (e.key === "Enter") onSearch?.(filter); }} />
       </div>
       <KNSelect data-testid="lot-filter-source" className="field !py-1 !text-[10.5px] w-[150px]"
         value={filter.source} placeholder="Semua sumber"
         options={[{ value: "", label: "Semua sumber" }, ...sourceOptions]}
-        onValueChange={(v) => setFilter({ ...filter, source: v })} />
+        onValueChange={(v) => pick({ source: v })} />
       <KNSelect data-testid="lot-filter-status" className="field !py-1 !text-[10.5px] w-[150px]"
         value={filter.lot_status} placeholder="Semua status"
         options={[{ value: "", label: "Semua status" }, ...statusOptions]}
-        onValueChange={(v) => setFilter({ ...filter, lot_status: v })} />
+        onValueChange={(v) => pick({ lot_status: v })} />
       <KNSelect data-testid="lot-filter-stage" className="field !py-1 !text-[10.5px] w-[140px]"
         value={filter.stage} placeholder="Semua tahap"
         options={[{ value: "", label: "Semua tahap" }, ...stageOptions]}
-        onValueChange={(v) => setFilter({ ...filter, stage: v })} />
+        onValueChange={(v) => pick({ stage: v })} />
       <KNSelect data-testid="lot-filter-warehouse" className="field !py-1 !text-[10.5px] w-[160px]"
         value={filter.warehouse_id} placeholder="Semua gudang"
         options={[{ value: "", label: "Semua gudang" },
                   ...warehouses.map((w) => ({ value: w.id, label: w.name || w.id }))]}
-        onValueChange={(v) => setFilter({ ...filter, warehouse_id: v })} />
+        onValueChange={(v) => pick({ warehouse_id: v })} />
       <button data-testid="lot-filter-apply" className="btn-secondary !px-2 !py-1 !text-[10.5px]"
-        onClick={onSearch}>Terapkan</button>
+        onClick={() => onSearch?.(filter)}>Cari</button>
     </div>
   );
 }

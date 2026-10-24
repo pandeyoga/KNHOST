@@ -37,6 +37,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import ReturnDetailPanel from "./ReturnDetailPanel";
 import RollPickerModal from "./RollPickerModal";
 import { can } from "../../config/roles";
+import { actorLabel } from "../../utils/actorLabel";
 // 23 Okt — alasan, kondisi, checklist & foto PER ROLL (bentuk sama dengan retur pelanggan).
 import { PickedRollClaims, claimDetails, emptyClaim, pickedClaimErrors } from "../sales/ReturnRollClaims";
 
@@ -321,11 +322,11 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="pret-error" />
       <ErrorNotice message={paged.error} onRetry={paged.refresh} testId="pret-list-error" />
 
-      <PageHeader icon={RotateCcw} title={<span data-testid="purchase-returns-title">Retur Pembelian (Nota Debit)</span>}
+      <PageHeader icon={RotateCcw} title={<span data-testid="purchase-returns-title">Retur ke Supplier (Nota Debit)</span>}
         subtitle="Kembalikan barang ke pemasok — setelah disetujui terbit Nota Debit yang memotong tagihan pemasok."
         actions={<button data-testid="create-return-button" onClick={() => { setError(""); setShowForm(!showForm); }} className="primary-button"><Plus size={14} /> Buat Retur</button>} />
       <MetricRow testId="pret-stats" items={[
-        { label: "Total retur beli", value: counts.all ?? 0, icon: RotateCcw, hint: "semua status" },
+        { label: "Total retur", value: counts.all ?? 0, icon: RotateCcw, hint: "semua status" },
         { label: "Draf", value: counts.draft ?? 0, icon: FileText },
         { label: "Menunggu persetujuan", value: counts.pending_approval ?? 0, icon: Clock },
         { label: "Disetujui", value: counts.approved ?? 0, icon: CheckCircle },
@@ -343,7 +344,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
       <FormModal
         open={showForm}
         onClose={() => setShowForm(false)}
-        title="Buat Retur Beli"
+        title="Buat Retur ke Supplier"
         subtitle="Pilih PO & roll yang dikembalikan ke supplier"
         icon={RotateCcw}
         size="lg"
@@ -438,8 +439,9 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Alasan Retur">
-                <input data-testid="return-reason-input" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="field" placeholder="Keterangan retur" />
+              {/* Audit UI 24 Okt (036) — alasan sudah dipilih PER BARIS; isian ini hanya ringkasan untuk supplier. */}
+              <Field label="Ringkasan untuk supplier (opsional)">
+                <input data-testid="return-reason-input" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="field" placeholder="mis. 4 roll cacat warna dari kiriman 12 Okt" />
               </Field>
               <Field label="Catatan">
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="field" placeholder="Catatan tambahan" />
@@ -454,12 +456,12 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
 
       {/* List */}
       {loading ? (
-        <div className="loading-state"><Loader2 size={22} className="spin" /><p>Memuat retur beli…</p></div>
+        <div className="loading-state"><Loader2 size={22} className="spin" /><p>Memuat retur ke supplier…</p></div>
       ) : filtered.length === 0 ? (
         <div className="empty-state" data-testid="pret-empty">
           <RotateCcw size={30} style={{ opacity: 0.3 }} />
-          <p className="font-semibold">{search.trim() ? `Tidak ada retur beli yang cocok dengan “${search.trim()}”.` : "Belum ada retur beli."}</p>
-          <p className="text-sm text-muted" style={{ maxWidth: 460 }}>Retur beli mencatat barang yang dikembalikan ke pemasok; alurnya draf → ajukan → disetujui (Nota Debit terbit).</p>
+          <p className="font-semibold">{search.trim() ? `Tidak ada retur yang cocok dengan “${search.trim()}”.` : "Belum ada retur ke supplier."}</p>
+          <p className="text-sm text-muted" style={{ maxWidth: 460 }}>Retur ke supplier mencatat barang yang dikembalikan ke supplier; alurnya draf → ajukan → disetujui (Nota Debit terbit).</p>
         </div>
       ) : (
         <div className="table-container">
@@ -485,12 +487,17 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                     <StatusPill status={r.status} />
                     {r.supplier_flow && r.supplier_status && SUP_LABEL[r.supplier_status] && (
                       <span data-testid={`pret-supplier-status-${r.id}`}
-                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold bg-[#F1F5FF] text-[#1B4F9C] border border-[#DBE7FF]">
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[#F1F5FF] text-[#1B4F9C] border border-[#DBE7FF]">
                         {SUP_LABEL[r.supplier_status]}
                       </span>
                     )}
                     {r.origin_sales_return_number && (
-                      <span className="text-[9px] text-[#6B219A]" title="Dari retur jual">↩ {r.origin_sales_return_number}</span>
+                      <span className="text-[10.5px] text-[#6B219A]" title="Dari retur jual">↩ {r.origin_sales_return_number}</span>
+                    )}
+                    {(r.status === "approved" || r.status === "rejected") && (r.approved_by || r.rejected_by) && (
+                      <span className="text-[10.5px] text-[#8E8E93]" data-testid={`pret-decided-by-${r.id}`}>
+                        oleh {actorLabel(r.status === "approved" ? (r.approved_by || r.rejected_by) : (r.rejected_by || r.approved_by))}
+                      </span>
                     )}
                   </div>
                   </td>
@@ -510,9 +517,12 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                         {canReject && <button data-testid={`return-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="danger-button !px-2 !py-1 text-[11px]"><XCircle size={11} /></button>}
                       </>
                     )}
-                    {(r.status === "approved" || r.status === "rejected") && (
-                      <span className="text-[10.5px] text-[#9A9BA3]">{r.approved_by || r.rejected_by || "—"}</span>
-                    )}
+                    {/* Audit UI 24 Okt (036) — kolom AKSI dulu berisi nama penyetuju; nama kini di kolom Status. */}
+                    {(r.status !== "draft" && !(r.status === "pending_approval" && (canApprove || canReject))) ? (
+                      <button type="button" data-testid={`return-open-${r.id}`} onClick={() => setDetail(r)} className="secondary-button !px-2 !py-1 text-[11px]">
+                        <FileText size={11} /> Rincian
+                      </button>
+                    ) : null}
                   </div>
                   </td>
                 </tr>
@@ -528,7 +538,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
           page={paged.page} pageSize={paged.pageSize} total={paged.total}
           hasMore={paged.hasMore} loading={paged.loading}
           onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
-          testId="pret-pager" label="retur beli"
+          testId="pret-pager" label="retur"
           exportConfig={{ columns: CSV_COLUMNS, rows: filtered,
             fetchAll: paged.fetchAll, filename: "retur-beli" }}
         />

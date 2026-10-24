@@ -94,13 +94,14 @@ export function RfidHeader({ icon: Icon, title, subtitle, children }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">RFID & TRACEABILITY</p>
+        <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">RFID & KETERTELUSURAN</p>
         <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2">
           <Icon size={20} className="text-[#0058CC]" /> {title}
         </h1>
         {subtitle && <p className="text-[12px] text-[#6B6B73] mt-0.5">{subtitle}</p>}
       </div>
-      <div className="flex items-center gap-2">{children}</div>
+      {/* Audit UI 094/096 (HP) — kontrol kanan membungkus; dulu halaman bergulir ke samping & tombol keluar layar. */}
+      <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
 }

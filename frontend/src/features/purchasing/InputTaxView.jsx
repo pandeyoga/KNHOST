@@ -130,7 +130,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0">
             <Percent size={16} className="text-[#0058CC]" />
-            <h2 data-testid="input-tax-title">Faktur Pajak Masukan (Input VAT)</h2>
+            <h2 data-testid="input-tax-title">Faktur Pajak Masukan</h2>
           </div>
           <div className="flex items-center gap-2">
             <div className="tab-bar !mb-0">
@@ -168,7 +168,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
               <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="it-empty">
                 <Layers className="mx-auto mb-2 text-gray-300" size={28} />
                 <p>Belum ada Faktur Pajak Masukan{tab !== "all" ? ` (${tab})` : ""}.</p>
-                {canCreate && tab === "all" && <p className="mt-1 text-[11px]">Catat dari Tagihan Supplier (Vendor Bill) ber-PPN untuk mengkreditkan PPN Masukan.</p>}
+                {canCreate && tab === "all" && <p className="mt-1 text-[11px]">Catat dari Tagihan Supplier ber-PPN untuk mengkreditkan PPN Masukan.</p>}
               </div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
@@ -218,7 +218,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
               <h2 className="text-[14px] font-bold">Batalkan Faktur Masukan {cancelTarget.number}</h2>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-[12px] text-[#6B6B73]">NSFP {cancelTarget.nsfp} akan dilepas & bisa dipakai ulang. Vendor Bill kembali dapat dicatat.</p>
+              <p className="text-[12px] text-[#6B6B73]">NSFP {cancelTarget.nsfp} akan dilepas & bisa dipakai ulang. Tagihan supplier-nya kembali dapat dicatat.</p>
               <textarea data-testid="it-cancel-reason" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
                 className="field" rows={3} placeholder="Alasan pembatalan (wajib)" />
               <div className="flex items-center justify-end gap-2">

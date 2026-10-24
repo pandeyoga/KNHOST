@@ -112,7 +112,7 @@ export function EscalationPanel({ esc = {}, stats = {}, perms, saving, onSave })
             Pemindaian berjalan lewat job <b>Eskalasi Alert Belum Ditindak</b> (tiap 2 jam).
           </span>
           <button data-testid="esc-save-button" disabled={saving} onClick={submit}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B219A] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#581680] disabled:opacity-50">
+                  className="primary-button inline-flex items-center gap-1.5">
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             Simpan Kebijakan
           </button>

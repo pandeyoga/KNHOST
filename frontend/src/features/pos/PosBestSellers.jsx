@@ -3,6 +3,7 @@ import { Flame, Plus } from "lucide-react";
 import { fetchBestSellers, recToProduct } from "./posApi";
 import { formatCurrency } from "../../utils/formatters";
 import { onImageError, productImage } from "../../utils/productImage";
+import { displaySku, maskedSkuTitle } from "./skuDisplay";
 
 /** F-4b — Strip produk terlaris (kurasi otomatis dari histori order). */
 export function PosBestSellers({ entityId, onAdd, priceMap = {}, customerId = "" }) {
@@ -40,7 +41,7 @@ export function PosBestSellers({ entityId, onAdd, priceMap = {}, customerId = ""
                     <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-md bg-[#FF6B35] px-1.5 py-0.5 text-[9px] font-bold text-white">#{idx + 1}</span>
                   </div>
                   <div className="flex flex-1 flex-col p-2">
-                    <p className="text-[9px] font-bold uppercase text-[#0058CC]">{p.sku}</p>
+                    <p className="truncate text-[10px] font-bold uppercase text-[#0058CC]" title={maskedSkuTitle(p.sku)}>{displaySku(p.sku)}</p>
                     <h3 className="line-clamp-2 text-[11.5px] font-semibold leading-tight">{p.product_name}</h3>
                     <p className="mt-0.5 text-[10px] text-[#8E8E93]">{p.order_count}× pesanan</p>
                     {/* F1b — harga efektif pelanggan bila sudah dipilih, supaya satu layar

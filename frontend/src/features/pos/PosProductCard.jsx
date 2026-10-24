@@ -3,6 +3,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../utils/lifecycle";
 import { onImageError, productImage } from "../../utils/productImage";
 import { ownStockText } from "../../utils/variants";
+import { displaySku, maskedSkuTitle } from "./skuDisplay";
 
 /**
  * EPIC-VAR — kartu produk POS (group-aware & ringkas).
@@ -74,7 +75,7 @@ export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnf
         )}
       </button>
       <div className="flex flex-1 flex-col p-3">
-        <p data-testid={`product-sku-${rep.id}`} className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">{group.isMulti ? rep.category : rep.sku}</p>
+        <p data-testid={`product-sku-${rep.id}`} className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]" title={group.isMulti ? undefined : maskedSkuTitle(rep.sku)}>{group.isMulti ? rep.category : displaySku(rep.sku)}</p>
         {isExclusive && (
           <span data-testid={`product-exclusive-badge-${rep.id}`}
             className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-[#6D4AC0] px-2 py-0.5 text-[9.5px] font-bold text-white">

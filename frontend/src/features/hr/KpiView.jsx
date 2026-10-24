@@ -117,7 +117,10 @@ export default function KpiView({ currentUser, selectedEntity }) {
       {/* Rekap */}
       <section className="grid gap-3 sm:grid-cols-3">
         <RecapCard icon={BarChart3} label="Total Entri KPI" value={rows.length} />
-        <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)" value={avg ?? "—"} valueCls={scoreCls(avg)} suffix="" />
+        {/* Audit UI 24 Okt (084): desimal koma + keterangan skala (skor > 100 = aktual melampaui target). */}
+        <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)"
+          value={avg == null ? "—" : Number(avg).toLocaleString("id-ID", { maximumFractionDigits: 1 })}
+          valueCls={scoreCls(avg)} suffix="" hint="skala 100 = sesuai target; > 100 = melampaui target" />
         <RecapCard icon={Target} label="Periode Aktif" value={period || "—"} small />
       </section>
 
@@ -139,12 +142,12 @@ export default function KpiView({ currentUser, selectedEntity }) {
             <div className="overflow-x-auto">
               <table className="w-full text-[12.5px]" data-testid="kpi-table">
                 <thead>
-                  <tr className="text-left text-[11px] uppercase text-[#9A9BA3] border-b border-[#EFF0F2]">
+                  <tr className="whitespace-nowrap text-left text-[11px] uppercase text-[#9A9BA3] border-b border-[#EFF0F2]">
                     <th className="py-2 pr-3">Karyawan</th><th className="py-2 pr-3">Periode</th>
                     <th className="py-2 pr-3">Metrik</th>
                     <th className="py-2 pr-3 text-right">Target</th><th className="py-2 pr-3 text-right">Aktual</th>
                     <th className="py-2 pr-3 text-right">Skor</th><th className="py-2 pr-3 text-right">Bobot</th>
-                    {canManage && <th className="py-2 pr-1 text-right">Aksi</th>}
+                    {canManage && <th className="sticky right-0 bg-white py-2 pr-1 text-right">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F2F3F5]">
@@ -157,10 +160,10 @@ export default function KpiView({ currentUser, selectedEntity }) {
                         <td className="py-2 pr-3">{r.metric}{r.note ? <span className="block text-[11px] text-[#9A9BA3] truncate max-w-[220px]">{r.note}</span> : null}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">{r.target}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">{r.actual}</td>
-                        <td className="py-2 pr-3 text-right"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{r.score}</span> <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${b.cls}`}>{b.label}</span></td>
+                        <td className="py-2 pr-3 text-right"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{r.score}</span> <span className={`ml-1 px-1.5 py-0.5 rounded text-[11px] font-semibold ${b.cls}`}>{b.label}</span></td>
                         <td className="py-2 pr-3 text-right tabular-nums">{r.weight}</td>
                         {canManage && (
-                          <td className="py-2 pr-1 text-right whitespace-nowrap">
+                          <td className="sticky right-0 bg-white py-2 pr-1 text-right whitespace-nowrap">
                             <button data-testid={`kpi-edit-${r.id}-button`} className="icon-button" title="Ubah" onClick={() => openEdit(r)}><Pencil size={14} /></button>
                             <button data-testid={`kpi-delete-${r.id}-button`} className="icon-button text-[#C0341D]" title="Hapus" onClick={() => setDelTarget(r)}><Trash2 size={14} /></button>
                           </td>
@@ -220,13 +223,14 @@ export default function KpiView({ currentUser, selectedEntity }) {
   );
 }
 
-function RecapCard({ icon: Icon, label, value, valueCls = "", small = false }) {
+function RecapCard({ icon: Icon, label, value, valueCls = "", small = false, hint = "" }) {
   return (
     <div className="section-card !p-3 flex items-center gap-3">
       <div className="h-9 w-9 rounded-lg bg-[#EAF1FF] flex items-center justify-center shrink-0"><Icon size={17} className="text-[#0058CC]" /></div>
       <div className="min-w-0">
-        <p className="text-[10.5px] uppercase font-semibold text-[#9A9BA3] truncate">{label}</p>
+        <p className="text-[11px] uppercase font-semibold text-[#9A9BA3] truncate">{label}</p>
         <p className={`${small ? "text-[15px]" : "text-[20px]"} font-bold leading-tight tabular-nums ${valueCls}`}>{value}</p>
+        {hint && <p className="text-[11px] text-[#9A9BA3]">{hint}</p>}
       </div>
     </div>
   );

@@ -1,11 +1,23 @@
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
 import { useEffect, useState } from "react";
-import { Inbox, Gauge, Monitor, Loader2, ClipboardList, Bell, Sparkles } from "lucide-react";
+import { Inbox, Gauge, Monitor, Loader2, ClipboardList, Bell, Sparkles, LayoutGrid } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import TanyaKnView from "../tanya/TanyaKnView";
 import MobileShell from "./MobileShell";
 import MobileApprovalInbox from "./MobileApprovalInbox";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatUnitTotals } from "../../utils/qtyByUnit";
+import { actorLabel } from "../../utils/actorLabel";
+
+// Audit UI HP (manager) — status/tahap mentah di teks notifikasi ("tahap: pending_approval") → label Indonesia.
+const STAGE_LABEL = {
+  pending_approval: "menunggu persetujuan", pending: "menunggu", approved: "disetujui", rejected: "ditolak",
+  draft: "draf", submitted: "diajukan", in_review: "ditinjau", inspecting: "diperiksa", received: "diterima",
+  completed: "selesai", done: "selesai", cancelled: "dibatalkan", waiting_stock: "menunggu stok",
+};
+const humanizeNotif = (text) => String(text || "")
+  .replace(/\b(tahap|status):\s*([a-z][a-z_]+)/g, (m, k, code) => `${k}: ${STAGE_LABEL[code] || code.replace(/_/g, " ")}`)
+  .replace(/\bAvailable\b/g, "Tersedia");
 
 function QueuePanel() {
   const [q, setQ] = useState(null);
@@ -19,8 +31,9 @@ function QueuePanel() {
     <div className="space-y-2 p-3" data-testid="mo-queue-list">
       {items.map((it, i) => (
         <div key={it.id || i} className="m-card p-3" data-testid={`mo-queue-${it.id || i}`}>
-          <div className="flex justify-between"><b>{it.doc_number || it.number || it.title || it.stage_label || it.stage}</b><span className="status-pill pill-warning">{it.stage_label || it.stage || "menunggu"}</span></div>
-          <div className="text-xs text-[#6E6E73] mt-1">{it.customer_name || it.requester_name || ""}{it.amount != null ? ` · ${formatCurrency(it.amount)}` : ""}</div>
+          <div className="flex justify-between"><b>{it.doc_number || it.number || it.title || it.stage_label || it.stage}</b><span className="status-pill pill-warning">{it.stage_label || STAGE_LABEL[it.stage] || it.stage || "menunggu"}</span></div>
+          {/* Audit UI 24 Okt (HP manager › Antrean) — titik yatim "· Rp 0" & akun teknis ("system-seed") tidak tampil. */}
+          <div className="text-xs text-[#6E6E73] mt-1">{[it.customer_name || actorLabel(it.requester_name || it.requester, ""), Number(it.amount) > 0 ? formatCurrency(it.amount) : ""].filter(Boolean).join(" · ")}</div>
         </div>
       ))}
       <p className="text-xs text-[#6E6E73] px-1">Harga khusus & pesanan khusus bisa diputuskan di tab Persetujuan; dokumen lain di tampilan desktop.</p>
@@ -31,7 +44,7 @@ function QueuePanel() {
 function DesktopPanel({ role, onForceDesktop }) {
   return (
     <div className="p-6 text-center space-y-3" data-testid="mo-desktop">
-      <p className="text-sm">Layar lengkap peran <b>{role}</b> tersedia di tampilan desktop.</p>
+      <p className="text-sm">Layar lengkap untuk <b>{roleLabel(role)}</b> tersedia di tampilan desktop.</p>
       <button className="primary-button w-full py-4" onClick={onForceDesktop} data-testid="mo-open-desktop">Buka Tampilan Desktop</button>
     </div>
   );
@@ -41,13 +54,26 @@ function KpiPanel({ desktop }) {
   const [d, setD] = useState(null);
   useEffect(() => { axios.get(`${API}/dashboard`).then((r) => setD(r.data)).catch(() => setD({})); }, []);
   if (!d) return <div className="p-6 text-center text-sm">Memuat…</div>;
-  const nums = Object.entries(d).filter(([, v]) => typeof v === "number").slice(0, 8);
+  // Audit UI HP (manager/Ringkas) — dulu menampilkan kunci mentah tingkat atas ("expired released 0");
+  // angka ringkas sebenarnya ada di `metrics`. Label Indonesia + satuan per kg/yard.
+  const m = d.metrics || {};
+  const nums = [
+    ["Pesanan aktif", m.active_orders, "pesanan"],
+    ["Stok tersedia", m.available_by_unit ? formatUnitTotals(m.available_by_unit, m.available_qty) : null],
+    ["Stok dipesan", m.reserved_by_unit ? formatUnitTotals(m.reserved_by_unit, m.reserved_qty) : null],
+    ["Roll tersedia", m.available_rolls, "roll"],
+    ["Produk", m.products, "SKU"],
+    ["Pelanggan", m.customers, "pelanggan"],
+    ["Gudang", m.warehouses, "gudang"],
+    ["Reservasi kedaluwarsa dilepas", d.expired_released, "baris"],
+  ].filter(([, v]) => v != null && v !== "");
   return (
     <>
       {nums.length ? (
         <div className="grid grid-cols-2 gap-2 p-3" data-testid="mo-kpi">
-          {nums.map(([k, v]) => (
-            <div key={k} className="m-card p-3"><div className="text-[11px] text-[#6E6E73]">{k.replace(/_/g, " ")}</div><div className="text-xl font-bold tabular-nums">{v}</div></div>
+          {nums.map(([k, v, unit]) => (
+            <div key={k} className="m-card p-3"><div className="text-[11px] text-[#6E6E73]">{k}</div>
+              <div className={`${typeof v === "number" ? "text-xl" : "text-[14px] leading-snug"} font-bold tabular-nums`}>{typeof v === "number" ? formatQty(v) : v}{unit ? <span className="ml-1 text-[11px] font-semibold text-[#6E6E73]">{unit}</span> : null}</div></div>
           ))}
         </div>
       ) : <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mo-kpi-empty">Belum ada angka ringkas untuk peran ini.</div>}
@@ -70,8 +96,8 @@ function NotifPanel({ setTab }) {
     <div className="space-y-2 p-3" data-testid="mo-notif-list">
       {rows.map((n) => (
         <button key={n.id} className="m-card m-press w-full p-3 text-left" onClick={() => open(n)} data-testid={`mo-notif-${n.id}`}>
-          <div className="flex items-center gap-2 text-[13px]"><Bell size={14} className={n.severity === "warning" ? "text-[#B25E00]" : "text-[#0058CC]"} /><b className="flex-1 truncate">{n.title}</b>{isApproval(n) && <span className="status-pill pill-warning text-[10px]">Putuskan di HP</span>}</div>
-          <p className="text-[11px] text-[#6E6E73] mt-1">{n.body}</p>
+          <div className="flex items-center gap-2 text-[13px]"><Bell size={14} className={n.severity === "warning" ? "text-[#B25E00]" : "text-[#0058CC]"} /><b className="min-w-0 flex-1 break-words">{humanizeNotif(n.title)}</b>{isApproval(n) && <span className="status-pill pill-warning shrink-0 text-[10px] !normal-case">Putuskan di HP</span>}</div>
+          <p className="text-[11px] text-[#6E6E73] mt-1">{humanizeNotif(n.body)}</p>
         </button>
       ))}
     </div>
@@ -95,7 +121,9 @@ export default function MobileOpsApp(props) {
     tabs.push({ id: "desktop", label: "Desktop", icon: Monitor, render: () => desktop });
   }
   if (['admin', 'manager', 'md'].includes(props.user?.role)) tabs.splice(4, 0, {
-    id: 'catalog', label: 'Produk', icon: ClipboardList,
+    // Audit UI HP (manager) — tab ini berisi pintasan (produk, sample R&D, kedatangan barang, order makloon),
+    // bukan hanya produk; ikonnya juga dibedakan dari tab Antrean.
+    id: 'catalog', label: 'Pintasan', icon: LayoutGrid,
     render: () => <div className="space-y-3 p-5"><button data-testid="mobile-open-catalog" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('products-pricing', 'md-products')}>Produk & varian</button><button data-testid="mobile-open-rnd" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('rnd-hub', 'rnd-samples')}>Permintaan Sample R&D</button>{props.user?.role !== 'md' && <button data-testid="mobile-open-grn-ops" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('wms-operations', 'goods-receipts')}>Kedatangan Barang & foto SJ</button>}{can(props.user?.permissions, 'makloon_order', 'view') && <button data-testid="mobile-open-makloon-orders" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('purchase-orders', 'makloon-orders')}>Order Makloon (detail & retur bahan)</button>}</div>,
   });
   // L05 — petugas QC/MD Quality: Meja QC (SPK, random check dari scan) bisa dibuka dari HP.

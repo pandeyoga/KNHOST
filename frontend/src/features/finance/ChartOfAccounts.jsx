@@ -209,23 +209,23 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
       </div>
 
       <div className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-[#6B219A]" />
             <h2 data-testid="coa-title">
               Bagan Akun · <span className="text-[#6B219A]">{scopeLabel}</span>
             </h2>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
             <SearchBox value={q} onChange={setQ} placeholder="Cari kode / nama akun…" testId="coa-search" />
             <div className="w-[170px]">
               <KNSelect data-testid="coa-filter-type" className="field py-1 text-[12px]" value={filterType} onValueChange={setFilterType}
                 placeholder="Semua tipe" options={[{ value: "", label: "Semua tipe" }, ...TYPE_OPTIONS]} />
             </div>
-            <button data-testid="coa-add-toggle" className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => setShowForm((v) => !v)}>
+            <button data-testid="coa-add-toggle" className="primary-button whitespace-nowrap" onClick={() => setShowForm((v) => !v)}>
               <Plus size={14} /> Tambah Akun
             </button>
-            <button data-testid="coa-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="coa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
         <div className="section-body">
@@ -257,7 +257,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
               </Labeled>
               <Labeled label="Jenis Akun">
                 <div className="flex gap-1 mt-0.5">
-                  {[{ k: true, t: "Detail" }, { k: false, t: "Header" }].map((o) => (
+                  {[{ k: true, t: "Detail" }, { k: false, t: "Kelompok" }].map((o) => (
                     <button type="button" key={String(o.k)} data-testid={`coa-form-postable-${o.k}`}
                       className={`flex-1 text-[12px] font-semibold rounded-md py-1 border ${form.is_postable === o.k ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73]"}`}
                       onClick={() => setForm({ ...form, is_postable: o.k })}>{o.t}</button>
@@ -289,13 +289,14 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
               {TYPE_ORDER.filter((t) => grouped[t] && grouped[t].length > 0).map((t) => (
                 <div key={t} data-testid={`coa-group-${t}`}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`text-[10px] font-bold uppercase tracking-wide rounded px-2 py-0.5 ${TYPE_META[t].tone}`}>{TYPE_META[t].label}</span>
+                    <span className={`text-[11px] font-bold uppercase tracking-wide rounded px-2 py-0.5 ${TYPE_META[t].tone}`}>{TYPE_META[t].label}</span>
                     <span className="text-[11px] text-[#9A9BA3]">{grouped[t].length} akun</span>
                   </div>
-                  <div className="overflow-hidden rounded-md border border-[#EFF0F2]">
-                    <table className="w-full text-[12px]">
+                  {/* Audit UI 24 Okt (070 HP): tabel digulir di dalam kotak; kode akun tidak patah. */}
+                  <div className="overflow-x-auto rounded-md border border-[#EFF0F2]">
+                    <table className="w-full min-w-[560px] text-[12px]">
                       <thead>
-                        <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
+                        <tr className="whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">
                           <th className="w-[110px] px-3 py-1.5">Kode</th>
                           <th className="px-3 py-1.5">Nama Akun</th>
                           {scopeEntityId && <th className="w-[190px] px-3 py-1.5">Dipakai Entitas</th>}
@@ -309,7 +310,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
                           const usedHere = a.is_active !== false;
                           return (
                           <tr key={a.code + "|" + (a.entity_id || "g")} data-testid={`coa-row-${a.code}`} className={`border-b border-[#F5F5F7] last:border-0 ${a.is_postable ? "" : "bg-[#FAFBFC]"} ${scopeEntityId && !usedHere ? "opacity-60" : ""}`}>
-                            <td className="px-3 py-2 w-[110px]"><span className="font-mono font-semibold text-[#3C3C43] tabular-nums">{a.code}</span></td>
+                            <td className="px-3 py-2 w-[110px]"><span className="whitespace-nowrap font-mono font-semibold text-[#3C3C43] tabular-nums">{a.code}</span></td>
                             <td className="px-3 py-2">
                               <span className={a.is_postable ? "text-[#1C1C1E]" : "font-bold text-[#3C3C43] uppercase text-[11px] tracking-wide"}>{a.name}</span>
                               {a.is_active === false && !scopeEntityId && <span className="ml-2 text-[10px] text-[#C0392B]">nonaktif</span>}
@@ -342,7 +343,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
                                 </button>
                               </td>
                             )}
-                            <td className="px-3 py-2 text-right text-[10px] text-[#9A9BA3]">{a.is_postable ? "Detail" : "Header"} · {a.normal_balance === "debit" ? "D" : "K"}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right text-[11px] text-[#6B6B73]">{a.is_postable ? "Detail" : "Kelompok"} · {a.normal_balance === "debit" ? "Debit" : "Kredit"}</td>
                             <td className="px-3 py-2 w-[104px] text-right">
                               <div className="inline-flex items-center gap-1">
                                 <button data-testid={`coa-detail-${a.code}`} className="icon-button" onClick={() => setDetailAcc(a)} aria-label="Detail akun" title="Detail & riwayat perubahan"><History size={13} /></button>
@@ -384,7 +385,7 @@ function AccountDetailModal({ acc, canAudit, scopeLabel, entities, onClose }) {
   const info = [
     ["Kode", acc.code], ["Nama", acc.name], ["Jenis", TYPE_META[acc.type]?.label || acc.type],
     ["Induk", acc.parent_code || "—"], ["Saldo normal", acc.normal_balance === "debit" ? "Debit" : "Kredit"],
-    ["Detail/Header", acc.is_postable ? "Detail (dapat dijurnal)" : "Header"], ["Status", acc.is_active === false ? "Nonaktif" : "Aktif"],
+    ["Detail/Kelompok", acc.is_postable ? "Detail (dapat dijurnal)" : "Kelompok (tidak dijurnal)"], ["Status", acc.is_active === false ? "Nonaktif" : "Aktif"],
     ["Lapisan", layer], ["Dilihat sebagai", scopeLabel], ["Akun sistem", acc.system ? "Ya" : "Tidak"],
   ];
   return (

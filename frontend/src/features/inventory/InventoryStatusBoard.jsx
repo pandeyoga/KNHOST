@@ -12,6 +12,15 @@ import InternalRequestCreateModal from "../internal_requests/InternalRequestCrea
 import { SearchBox } from "../../components/ListControls";
 import usePagedRows from "@/hooks/usePagedRows";
 
+// Audit UI 057 — { kg: 120, yard: 1500 } → "120 kg · 1.500 yard" (nilai negatif ikut tampil; ATP bisa minus).
+const formatUnitTotals = (byUnit) => {
+  const parts = Object.entries(byUnit || {})
+    .filter(([, q]) => Math.abs(Number(q) || 0) > 0.0001)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([u, q]) => `${formatQty(q)} ${u}`);
+  return parts.length ? parts.join(" · ") : "0";
+};
+
 // W2-REQ-04 — POV sales: angka utama = total GRUP (tanpa owner); baris kecil = entitas saya.
 const pv = (row, k) => (row.detail_scope === "own_entity" && row.global_total
   ? Number(row.global_total[k] || 0) : Number(row[`total_${k}`] || 0));
@@ -25,8 +34,8 @@ const STOCK_TABS = [
   { key: "", label: "Semua" },
   { key: "empty", label: "Stok Habis", test: (r) => (pv(r, "available") || 0) <= 0 },
   { key: "short", label: "ATP Kurang", test: (r) => (pv(r, "atp") || 0) < 0 || (r.total_pending_demand || 0) > 0 },
-  { key: "incoming", label: "Ada Incoming", test: (r) => (pv(r, "incoming") || 0) > 0 },
-  { key: "interco", label: "Peluang Inter-Co", test: (r) => !!r.has_intercompany_opportunity },
+  { key: "incoming", label: "Ada Barang Masuk", test: (r) => (pv(r, "incoming") || 0) > 0 },
+  { key: "interco", label: "Peluang Antar-PT", test: (r) => !!r.has_intercompany_opportunity },
 ];
 
 export default function InventoryStatusBoard({ currentUser, selectedEntity = "all", entities = [] }) {
@@ -71,12 +80,20 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
   const pgInv = usePagedRows(filtered, { pageSize: 25, testId: "inventory-board-pager" });
   const tabCounts = useMemo(() => Object.fromEntries(STOCK_TABS.map((t) => [t.key, t.test ? rows.filter(t.test).length : rows.length])), [rows]);
 
-  const totals = useMemo(() => ({
-    products: rows.length,
-    interco: rows.filter((r) => r.has_intercompany_opportunity).length,
-    atp: rows.reduce((s, r) => s + (pv(r, "atp") || 0), 0),
-    incoming: rows.reduce((s, r) => s + (pv(r, "incoming") || 0), 0),
-  }), [rows]);
+  // UAT 24 Okt (audit UI 057) — total PER SATUAN (kg & yard tidak dijumlahkan jadi satu angka tanpa satuan).
+  const totals = useMemo(() => {
+    const byUnit = (k) => rows.reduce((m, r) => {
+      const u = r.unit || "meter";
+      m[u] = (m[u] || 0) + (pv(r, k) || 0);
+      return m;
+    }, {});
+    return {
+      products: rows.length,
+      interco: rows.filter((r) => r.has_intercompany_opportunity).length,
+      atp: byUnit("atp"),
+      incoming: byUnit("incoming"),
+    };
+  }, [rows]);
 
   const toggle = (id) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
   const entityName = selectedEntity !== "all"
@@ -101,17 +118,18 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
           </div>
         </div>
         <p className="px-4 py-2 text-[12px] text-[#6B6B73]">
-          Konteks: <span className="font-semibold">{entityName}</span>. ATP = Available + Incoming (barang masuk / PO terbuka).
-          Indikator <ArrowLeftRight size={11} className="inline -mt-0.5 text-[#6B219A]" /> = peluang pemenuhan lintas-entitas (inter-company).
+          Konteks: <span className="font-semibold">{entityName}</span>. ATP (siap dijanjikan) = Tersedia + barang masuk (PO terbuka) − permintaan tertunda.
+          Angka per baris memakai satuan dasar produk (kg / yard).
+          Indikator <ArrowLeftRight size={11} className="inline -mt-0.5 text-[#6B219A]" /> = peluang pemenuhan dari badan usaha lain (antar-PT).
         </p>
       </section>
 
       {/* Summary metrics */}
       <section data-testid="status-board-metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric icon={Boxes} label="Produk" value={totals.products} tone="rgba(0,122,255,.12)" testId="sb-metric-products" />
-        <Metric icon={Truck} label="Total Incoming" value={formatQty(totals.incoming)} tone="rgba(255,149,0,.16)" testId="sb-metric-incoming" />
-        <Metric icon={PackageCheck} label="Total ATP" value={formatQty(totals.atp)} tone="rgba(52,199,89,.15)" testId="sb-metric-atp" />
-        <Metric icon={ArrowLeftRight} label="Peluang Inter-Co" value={totals.interco} tone="rgba(175,82,222,.14)" testId="sb-metric-interco" />
+        <Metric icon={Truck} label="Total Barang Masuk (Incoming)" value={formatUnitTotals(totals.incoming)} tone="rgba(255,149,0,.16)" testId="sb-metric-incoming" />
+        <Metric icon={PackageCheck} label="Total ATP" value={formatUnitTotals(totals.atp)} tone="rgba(52,199,89,.15)" testId="sb-metric-atp" />
+        <Metric icon={ArrowLeftRight} label="Peluang Antar-PT" value={totals.interco} tone="rgba(175,82,222,.14)" testId="sb-metric-interco" />
       </section>
 
       <div className="tab-bar" data-testid="status-board-tabs">
@@ -154,7 +172,7 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
                   <th className="px-2 text-right">Stok Fisik</th>
                   <th className="px-2 text-right">Tersedia</th>
                   <th className="px-2 text-right">Dipesan</th>
-                  <th className="px-2 text-right">Incoming</th>
+                  <th className="px-2 text-right">Barang Masuk</th>
                   <th className="px-2 text-right">ATP</th>
                   <th className="px-2">Entitas</th>
                 </tr>
@@ -226,7 +244,8 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
             {open ? <ChevronDown size={14} className="text-[#8E8E93]" /> : <ChevronRight size={14} className="text-[#8E8E93]" />}
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">{row.sku}</p>
-              <p className="truncate font-semibold">{row.product_name}</p>
+              <p className="truncate font-semibold">{row.product_name}
+                <span data-testid={`isb-unit-${row.product_id}`} className="ml-1 text-[10px] font-normal text-[#8E8E93]">· {row.unit || "meter"}</span></p>
             </div>
           </div>
         </td>
@@ -267,7 +286,7 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
                   ? `Tersedia ${formatQty(row.other_entities_available)} di badan usaha lain — minta lewat Admin Sales`
                   : "Peluang pemenuhan antar badan usaha"}
               >
-                <ArrowLeftRight size={11} /> Inter-Co
+                <ArrowLeftRight size={11} /> Antar-PT
                 {row.detail_scope === "own_entity" && row.other_entities_available > 0 && (
                   <span className="ml-1 tabular-nums">{formatQty(row.other_entities_available)}</span>
                 )}
@@ -331,7 +350,7 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
                           <th className="px-2 text-right">Stok Fisik</th>
                           <th className="px-2 text-right">Tersedia</th>
                           <th className="px-2 text-right">Dipesan</th>
-                          <th className="px-2 text-right">Incoming</th>
+                          <th className="px-2 text-right">Barang Masuk</th>
                           <th className="px-2 text-right">ATP</th>
                         </tr>
                       </thead>

@@ -52,18 +52,24 @@ export default function ColorLibraryView({ currentUser }) {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const res = await axios.get(`${API}/color-library`, { params: { status } });
+      // Muat SEMUA status sekali, saring di klien — supaya hitungan tab Aktif/Nonaktif/Semua
+      // selalu benar (sebelumnya hanya status terpilih yang dimuat → "Semua 0" padahal "Aktif 109").
+      const res = await axios.get(`${API}/color-library`, { params: { status: "all" } });
       setColors(Array.isArray(res.data) ? res.data : []);
       setReloadKey((k) => k + 1);
     } catch (e) {
       setError(e.response?.data?.detail || "Gagal memuat pustaka warna.");
     } finally { setLoading(false); }
-  }, [status]);
+  }, []);
   useEffect(() => { load(); }, [load]);
 
   // Warna milik pelanggan / hanya dipakai produk eksklusif → tab "Warna Pelanggan", bukan Warna Internal.
-  const internal = useMemo(() => colors.filter((c) => !c.is_customer_color), [colors]);
-  const customerCount = colors.length - internal.length;
+  const allInternal = useMemo(() => colors.filter((c) => !c.is_customer_color), [colors]);
+  const internal = useMemo(
+    () => (status === "all" ? allInternal : allInternal.filter((c) => c.status === status)), [allInternal, status]);
+  const activeColors = useMemo(() => colors.filter((c) => c.status === "active"), [colors]);
+  const activeInternalCount = activeColors.filter((c) => !c.is_customer_color).length;
+  const customerCount = activeColors.length - activeInternalCount;
   const families = useMemo(
     () => [...new Set(internal.map((c) => c.family).filter(Boolean))].sort(), [internal]);
 
@@ -96,7 +102,7 @@ export default function ColorLibraryView({ currentUser }) {
   return (
     <div data-testid="color-library-view">
       <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi testId="color-kpi-total" label="Warna Internal" value={internal.length} icon={Palette} />
+        <Kpi testId="color-kpi-total" label="Warna Internal Aktif" value={activeInternalCount} icon={Palette} />
         <Kpi testId="color-kpi-family" label="Family" value={families.length} icon={Layers} tone="#6B219A" />
         <Kpi testId="color-kpi-customer" label="Warna Pelanggan" value={customerCount} icon={Users} tone="#B45309" />
         <div className="section-card hidden lg:block">
@@ -109,13 +115,13 @@ export default function ColorLibraryView({ currentUser }) {
 
       <div className="section-card">
         <div className="flex flex-wrap items-center gap-1.5 border-b border-[#EFF0F2] px-3 pt-2.5" data-testid="color-subtabs">
-          {[["internal", "Warna Internal", Palette, internal.length], ["customer", "Warna Pelanggan", Users, customerCount], ["supplier", "Warna Supplier", Layers, colors.reduce((n, c) => n + (c.supplier_variants || []).length, 0)]].map(([k, label, Icon, n]) => (
+          {[["internal", "Warna Internal", Palette, activeInternalCount], ["customer", "Warna Pelanggan", Users, customerCount], ["supplier", "Warna Supplier", Layers, activeColors.reduce((n, c) => n + (c.supplier_variants || []).length, 0)]].map(([k, label, Icon, n]) => (
             <button key={k} type="button" data-testid={`color-subtab-${k}`} onClick={() => setTab(k)}
               className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[12px] font-semibold transition-colors ${tab === k ? "border-[#0058CC] text-[#0058CC]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
-              <Icon size={13} /> {label} <span className="rounded bg-[#F5F5F7] px-1.5 text-[10px] text-[#6B6B73]">{n}</span>
+              <Icon size={13} /> {label} <span className="rounded bg-[#F5F5F7] px-1.5 text-[11px] text-[#6B6B73]">{n}</span>
             </button>
           ))}
-          <p className="ml-auto hidden pb-2 text-[10.5px] text-[#8E8E93] md:block">
+          <p className="ml-auto hidden pb-2 text-[11px] text-[#8E8E93] md:block">
             {tab === "internal" ? "Warna standar KN (Pantone-style) — acuan produk & labdip."
               : tab === "customer" ? "Warna milik pelanggan & warna produk eksklusif — dipisah per pelanggan."
                 : "Nama/kode warna versi tiap supplier — lahir dari labdip ACC, tertaut ke warna internal & produk."}
@@ -131,8 +137,8 @@ export default function ColorLibraryView({ currentUser }) {
           <KNSelect data-testid="color-family-filter" className="field w-[150px]" value={family} onValueChange={setFamily} options={familyOpts} />
           <KNSelect data-testid="color-system-filter" className="field w-[140px]" value={system} onValueChange={setSystem} options={[{ value: "", label: "Semua Sistem" }, ...SYSTEMS]} />
           <OptionTabs testId="color-status-filter" value={status} onChange={setStatus} options={STATUS_OPTS}
-            countOf={(v) => colors.filter((c) => !c.is_customer_color && (!v || c.status === v)).length} />
-          <button data-testid="color-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            countOf={(v) => (v === "all" || !v ? allInternal.length : allInternal.filter((c) => c.status === v).length)} />
+          <button data-testid="color-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           {canCreate && (
             <button data-testid="color-create-btn" className="primary-button" onClick={() => setModal({ mode: "create" })}><Plus size={14} /> Tambah Warna</button>
           )}
@@ -164,32 +170,32 @@ export default function ColorLibraryView({ currentUser }) {
                   )}
                   <div className="p-2">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="truncate text-[11.5px] font-bold text-[#1C1C1E]">{c.code}</span>
-                      <span className="shrink-0 rounded bg-[#F5F5F7] px-1 text-[9px] font-bold text-[#6B6B73]">{c.system}</span>
+                      <span className="truncate text-[12px] font-bold text-[#1C1C1E]">{c.code}</span>
+                      <span className="shrink-0 rounded bg-[#F5F5F7] px-1 text-[10px] font-bold text-[#6B6B73]">{c.system}</span>
                     </div>
-                    <p className="truncate text-[10.5px] text-[#6B6B73]">{c.name}</p>
+                    <p className="truncate text-[11px] text-[#6B6B73]">{c.name}</p>
                     {(c.pantone_code || (c.source || {}).kind === "labdip") && (
-                      <p className="truncate text-[10.5px] text-[#6B6B73]" data-testid={`color-pantone-${c.id}`}>
+                      <p className="truncate text-[11px] text-[#6B6B73]" data-testid={`color-pantone-${c.id}`}>
                         {c.pantone_code ? `Pantone ${c.pantone_code}` : ""}{(c.source || {}).kind === "labdip" ? `${c.pantone_code ? " · " : ""}lahir dari labdip ${c.source.sample_number || ""}` : ""}
                       </p>
                     )}
                     {c.factory_name && (
-                      <p className="truncate text-[10.5px] text-[#6B6B73]" data-testid={`color-factory-name-${c.id}`} title="Nama versi pabrik/supplier">pabrik: {c.factory_name}</p>
+                      <p className="truncate text-[11px] text-[#6B6B73]" data-testid={`color-factory-name-${c.id}`} title="Nama versi pabrik/supplier">pabrik: {c.factory_name}</p>
                     )}
                     <button type="button" data-testid={`color-variants-${c.id}`} onClick={() => setVariants({ colorId: c.id, supplierId: "" })}
                       title="Keterkaitan: warna internal ↔ versi supplier ↔ master produk"
-                      className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-px text-[9.5px] font-bold ${(c.supplier_variants || []).length ? "bg-[#EEF4FF] text-[#0058CC] hover:bg-[#DCE8FF]" : "bg-[#F5F5F7] text-[#8E8E93] hover:bg-[#ECECEF]"}`}>
-                      <Layers size={9} /> {(c.supplier_variants || []).length} versi supplier · keterkaitan
+                      className={`mt-0.5 inline-flex max-w-full items-center gap-1 rounded px-1.5 py-px text-[11px] font-semibold ${(c.supplier_variants || []).length ? "bg-[#EEF4FF] text-[#0058CC] hover:bg-[#DCE8FF]" : "bg-[#F5F5F7] text-[#8E8E93] hover:bg-[#ECECEF]"}`}>
+                      <Layers size={10} className="shrink-0" /> <span className="truncate">{(c.supplier_variants || []).length} versi supplier</span>
                     </button>
-                    <p className="mt-0.5 flex items-center justify-between text-[9.5px] text-[#9A9BA3]">
+                    <p className="mt-0.5 flex items-center justify-between gap-1 text-[11px] text-[#8E8E93]">
                       <span className="truncate">{c.family || "—"}</span>
                       <span className="font-mono">{c.hex}</span>
                     </p>
                     {canCreate && c.status !== "inactive" && (
                       <div className="mt-1.5 flex gap-1">
                         <button data-testid={`color-labdip-${c.id}`}
-                          title="Buat permintaan labdip memakai warna ini (PS-13: warna dari pustaka, bukan teks bebas)"
-                          className="flex-1 rounded border border-[#E5E5EA] px-1 py-[3px] text-[9.5px] font-bold text-[#0058CC] hover:border-[#0058CC] hover:bg-[#F2F7FF]"
+                          title="Buat permintaan labdip memakai warna ini (warna dari pustaka, bukan teks bebas)"
+                          className="flex-1 rounded border border-[#E5E5EA] px-1 py-[3px] text-[11px] font-bold text-[#0058CC] hover:border-[#0058CC] hover:bg-[#F2F7FF]"
                           onClick={() => openRnd({
                             view: "rnd-samples", colorId: c.id,
                             colorLabel: `warna ${c.code} · ${c.name}`,

@@ -68,12 +68,12 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
 
   return (
     <div data-testid="rfid-tags-view" className="space-y-4">
-      <RfidHeader icon={Tag} title="Tags (tag ↔ item)" subtitle="Encode tag EPC ke roll fisik. Roll-as-SSOT: encode tak mengubah stok.">
+      <RfidHeader icon={Tag} title="Tag RFID (tag ↔ roll)" subtitle="Pasangkan (encode) tag EPC ke roll fisik. Memasang tag tidak mengubah stok.">
         <KNSelect data-testid="rfid-tags-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-tags-refresh" onClick={load}
           className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
 
@@ -83,13 +83,14 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={Tag} label="Total Tag" value={summary?.tags_total ?? 0} color="#0058CC" loading={loading} testId="rfid-stat-total" />
         <Stat icon={Radio} label="Tag Aktif" value={summary?.tags_active ?? 0} color="#34C759" loading={loading} testId="rfid-stat-active" />
-        <Stat icon={Boxes} label="Roll Belum Ber-tag" value={summary?.untagged_rolls ?? 0} color="#FF9500" loading={loading} testId="rfid-stat-untagged" />
-        <Stat icon={PackageSearch} label="Reader Online" value={`${summary?.devices_online ?? 0}/${summary?.devices_total ?? 0}`} color="#5856D6" loading={loading} />
+        {/* Audit UI 095 — server menghitung paling banyak 5.000 roll (rfid_service.summary); tandai "5.000+" agar tidak terbaca sebagai angka pasti. */}
+        <Stat icon={Boxes} label="Roll Belum Ber-tag" value={(summary?.untagged_rolls ?? 0) >= 5000 ? "5.000+" : (summary?.untagged_rolls ?? 0).toLocaleString("id-ID")} color="#FF9500" loading={loading} testId="rfid-stat-untagged" />
+        <Stat icon={PackageSearch} label="Pembaca Aktif" value={`${summary?.devices_online ?? 0}/${summary?.devices_total ?? 0}`} color="#5856D6" loading={loading} />
       </div>
 
       <div className="flex gap-1 border-b border-[#EFF0F2]">
         <TabBtn id="tags" tab={tab} setTab={setTab} label={`Tag Aktif${tags.length ? ` (${tags.length})` : ""}`} testId="rfid-tab-tags" />
-        <TabBtn id="untagged" tab={tab} setTab={setTab} label={`Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls}` : untagged.length})` : ""}`} testId="rfid-tab-untagged" />
+        <TabBtn id="untagged" tab={tab} setTab={setTab} label={`Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls >= 5000 ? "5.000+" : summary.untagged_rolls.toLocaleString("id-ID")}` : untagged.length})` : ""}`} testId="rfid-tab-untagged" />
         <TabBtn id="print" tab={tab} setTab={setTab} label="Cetak & Verifikasi" testId="rfid-tab-print" />
       </div>
 
@@ -105,7 +106,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                   <table className="w-full text-[12px]">
                     <thead><tr className="text-left text-[11px] text-[#8E8E93] border-b border-[#EFF0F2]">
                       <th className="py-2 pr-2">EPC</th><th className="pr-2">SKU</th><th className="pr-2">Produk</th>
-                      <th className="pr-2">Roll / Lot</th><th className="pr-2">Last Seen</th><th className="pr-2 text-right">Aksi</th>
+                      <th className="pr-2">Roll / Lot</th><th className="pr-2">Terakhir Terbaca</th><th className="pr-2 text-right">Aksi</th>
                     </tr></thead>
                     <tbody>
                       <PagedRows rows={srch.shown} testId="rfid-tags-pager">{(t) => (
@@ -122,7 +123,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                             </button>
                             <button data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t.id)}
                               className="inline-flex items-center gap-1 text-[#C0341D] hover:bg-[#FBE9E7] rounded px-2 py-1 disabled:opacity-40">
-                              <Trash2 size={13} /> Retire
+                              <Trash2 size={13} /> Pensiunkan
                             </button>
                           </td>
                         </tr>

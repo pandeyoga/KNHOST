@@ -2,15 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
-import { X, Scale, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Scale, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import FormModal from "@/components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import GrnDocVariance from "./GrnDocVariance";
 import POReceiptVariancePanel from "../admin/po/POReceiptVariancePanel";
 
 /**
- * VendorBillCreateModal (Fase 5.2) — buat Vendor Bill dari PO + 3-way match LIVE.
+ * VendorBillCreateModal (Fase 5.2) — buat Tagihan Supplier dari PO + 3-way match LIVE.
  * Preview match dihitung client-side (panduan); kebenaran final = server.
+ *
+ * Audit UI 24 Okt (031): modal dulu TANPA kaki tombol sebelum PO dipilih (hanya ✕).
+ * Sekarang memakai FormModal — kaki Batal / Simpan Draf / Kirim selalu terlihat
+ * (nonaktif sampai PO & minimal satu baris tagih terisi) dan galat tampil di dalam modal.
  */
 const MATCH_MODES = [
   { value: "received", label: "Barang Diterima (3-way ketat)" },
@@ -21,7 +26,7 @@ function MatchBadge({ status }) {
   const map = {
     ok: ["pill-success", "Cocok"],
     warning: ["pill-warning", "Selisih"],
-    blocked: ["pill-danger", "Over-bill"],
+    blocked: ["pill-danger", "Lebih tagih"],
   };
   const [cls, label] = map[status] || ["pill-muted", status];
   return <span className={`status-pill ${cls}`} data-testid="vb-row-match">{label}</span>;
@@ -40,6 +45,8 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
   const [priceTol, setPriceTol] = useState(5);
   const [qtyTol, setQtyTol] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const fail = (m) => { setErr(m); onError?.(m); };
 
   useEffect(() => {
     if (!open) { reset(); return; }
@@ -56,11 +63,12 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
 
   function reset() {
     setPoId(""); setCtx(null); setItems([]); setInvNo("");
-    setBillDate(""); setDueDate(""); setNotes(""); setMatchMode("received");
+    setBillDate(""); setDueDate(""); setNotes(""); setMatchMode("received"); setErr("");
   }
 
   async function onSelectPO(id) {
     setPoId(id);
+    setErr("");
     if (!id) { setCtx(null); setItems([]); return; }
     setLoadingCtx(true);
     try {
@@ -73,7 +81,7 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
         include: it.billable_received > 0,
       })));
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal memuat konteks penagihan PO.");
+      fail(e.response?.data?.detail || "Gagal memuat konteks penagihan PO.");
     } finally { setLoadingCtx(false); }
   }
 
@@ -102,13 +110,13 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
   const overall = hasBlocked ? "blocked" : hasWarning ? "warning" : "matched";
 
   async function submit(now) {
-    if (!poId) { onError?.("Pilih PO terlebih dahulu."); return; }
+    if (!poId) { fail("Pilih PO terlebih dahulu."); return; }
     const payloadItems = active.map((r) => ({
       product_id: r.product_id, po_line_id: r.po_line_id || undefined,
       billed_qty: r.billed, price: r.price, discount_percent: 0,
     }));
-    if (payloadItems.length === 0) { onError?.("Minimal 1 item dengan qty tagih > 0."); return; }
-    if (now && hasBlocked) { onError?.("Ada item over-billing di luar toleransi. Perbaiki qty dulu."); return; }
+    if (payloadItems.length === 0) { fail("Minimal 1 item dengan qty tagih > 0."); return; }
+    if (now && hasBlocked) { fail("Ada item yang ditagih melebihi toleransi. Perbaiki qty dulu."); return; }
     setBusy(true);
     try {
       const body = {
@@ -121,32 +129,43 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
       onCreated?.(r.data, now);
       reset();
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat Vendor Bill.");
+      fail(e.response?.data?.detail || "Gagal membuat tagihan supplier.");
     } finally { setBusy(false); }
   }
 
   if (!open) return null;
   const overallMap = {
-    matched: ["pill-success", "Match Bersih", CheckCircle2],
-    warning: ["pill-warning", "Ada Selisih (perlu approval)", AlertTriangle],
-    blocked: ["pill-danger", "Over-billing (tidak bisa submit)", AlertTriangle],
+    matched: ["pill-success", "Cocok bersih", CheckCircle2],
+    warning: ["pill-warning", "Ada selisih (perlu persetujuan)", AlertTriangle],
+    blocked: ["pill-danger", "Lebih tagih (tidak bisa dikirim)", AlertTriangle],
   };
   const [oCls, oLabel, OIcon] = overallMap[overall];
 
-  return (
-    <div className="modal-overlay" data-testid="vendor-bill-create-modal"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 920, width: "94vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <Scale size={16} className="text-[#0058CC]" />
-            <h2 className="text-[14px] font-bold">Buat Vendor Bill (3-Way Matching)</h2>
-          </div>
-          <button data-testid="vb-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
-        </div>
+  const canSave = !!poId && !loadingCtx && active.length > 0;
+  const submitLabel = hasBlocked ? "Perbaiki Kelebihan Tagih Dulu"
+    : overall === "warning" ? "Kirim (minta persetujuan)" : "Kirim & Posting";
+  const footer = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {!poId && <span className="mr-auto text-[11px] text-[#6B6B73]">Pilih PO dulu untuk memuat baris tagihan.</span>}
+      <button type="button" data-testid="vb-create-close" onClick={onClose} disabled={busy}
+        className="secondary-button">Batal</button>
+      <button type="button" data-testid="vb-save-draft" onClick={() => submit(false)} disabled={busy || !canSave}
+        className="secondary-button">Simpan Draf</button>
+      <button type="button" data-testid="vb-submit-now" onClick={() => submit(true)} disabled={busy || !canSave || hasBlocked}
+        className="primary-button">
+        {busy && <Loader2 size={13} className="animate-spin" />} {submitLabel}
+      </button>
+    </div>
+  );
 
-        <div className="p-4 space-y-3">
-          <div className="grid grid-cols-3 gap-3">
+  return (
+    <FormModal open={open} onClose={onClose} size="lg" icon={Scale} busy={busy}
+      testId="vendor-bill-create-modal"
+      title="Buat Tagihan Supplier"
+      subtitle="Tagihan dicocokkan dengan PO dan penerimaan barang (3-way matching) sebelum menjadi hutang."
+      error={err} footer={footer}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Pesanan Pembelian" req>
               <KNSelect data-testid="vb-po-select" value={poId} onValueChange={onSelectPO} className="field"
                 placeholder="Pilih PO yang akan ditagih"
@@ -161,8 +180,8 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
                 className="field" options={MATCH_MODES} />
             </Field>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Tanggal Bill">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field label="Tanggal Tagihan">
               <KNDatePicker data-testid="vb-bill-date" value={billDate} onChange={setBillDate} />
             </Field>
             <Field label="Jatuh Tempo">
@@ -180,11 +199,13 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
               {/* FASE SL — catatan selisih penerimaan dari gudang: finance membacanya SEBELUM menagih */}
               <POReceiptVariancePanel variances={ctx.receipt_variances} testId="vb-receipt-variances" />
               <GrnDocVariance poId={poId} testId="vb-create-grn-variance" />
-              <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-                <div className="grid grid-cols-[26px_1.6fr_82px_82px_92px_104px_120px_84px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+              {/* HP: grid baris lebar → gulir samping di dalam kotak, bukan memecah halaman. */}
+              <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+               <div className="min-w-[760px]">
+                <div className="grid grid-cols-[26px_1.6fr_82px_82px_92px_104px_120px_84px] whitespace-nowrap px-2.5 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
                   <span></span><span>Baris PO · Produk</span><span className="text-right">Dipesan</span>
                   <span className="text-right">Diterima</span><span className="text-right">Sisa Tagih</span>
-                  <span className="text-right">Qty Tagih</span><span className="text-right">Harga</span><span>Match</span>
+                  <span className="text-right">Qty Tagih</span><span className="text-right">Harga</span><span>Cocok?</span>
                 </div>
                 {rows.map((r, i) => (
                   <div key={r.po_line_id || `line-${r.line_no}`} data-testid={`vb-item-row-${i}`}
@@ -216,41 +237,32 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
                     </div>
                   </div>
                 ))}
+               </div>
               </div>
 
               {/* Match summary + totals */}
-              <div className="flex items-center justify-between gap-3 rounded-md border border-[#EFF0F2] px-3 py-2.5 bg-[#FAFBFC]">
-                <div className="flex items-center gap-2" data-testid="vb-overall-match">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#EFF0F2] px-3 py-2.5 bg-[#FAFBFC]">
+                <div className="flex flex-wrap items-center gap-2" data-testid="vb-overall-match">
                   <OIcon size={15} className={overall === "matched" ? "text-green-600" : overall === "warning" ? "text-amber-500" : "text-red-500"} />
                   <span className={`status-pill ${oCls}`}>{oLabel}</span>
-                  <span className="text-[10.5px] text-[#6B6B73]">toleransi qty {qtyTol}% · harga ±{priceTol}%</span>
+                  <span className="text-[11px] text-[#6B6B73]">toleransi qty {qtyTol}% · harga ±{priceTol}%</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase font-bold text-[#6B6B73]">Subtotal (sebelum PPN)</p>
+                  <p className="text-[11px] uppercase font-bold text-[#6B6B73]">Subtotal (sebelum PPN)</p>
                   <p className="text-[16px] font-bold tabular-nums" data-testid="vb-gross-total">{formatCurrency(grossTotal)}</p>
                 </div>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button data-testid="vb-save-draft" onClick={() => submit(false)} disabled={busy}
-                  className="secondary-button">Simpan Draf</button>
-                <button data-testid="vb-submit-now" onClick={() => submit(true)} disabled={busy || hasBlocked}
-                  className="flex-1 primary-button justify-center">
-                  {hasBlocked ? "Perbaiki Over-billing Dulu" : overall === "warning" ? "Submit (minta approval)" : "Submit & Posting"}
-                </button>
               </div>
             </>
           )}
         </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
 function Field({ label, req, children }) {
   return (
     <div>
-      <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">{label} {req && <span className="req">*</span>}</label>
+      <label className="field-label">{label} {req && <span className="req">*</span>}</label>
       {children}
     </div>
   );

@@ -28,7 +28,7 @@ export function Modal({ title, children, onClose, wide }) {
         <div className="flex items-center gap-2 border-b border-[#F0F0F3] px-4 py-3">
           <h3 className="text-[13px] font-bold text-[#1C1C1E]">{title}</h3>
           <button data-testid="prod-modal-close" onClick={onClose}
-                  className="ml-auto rounded-lg p-1 text-[#8E8E93] hover:bg-[#F2F2F5]"><X size={16} /></button>
+                  className="ml-auto rounded-lg p-1 text-[#8E8E93] hover:bg-[#F2F2F5]" aria-label="Tutup"><X size={16} /></button>
         </div>
         <div className="p-4">{children}</div>
       </div>
@@ -48,16 +48,16 @@ export function StatusBadge({ status }) {
   return <Badge tone={s.tone} testId={`wo-status-${status}`}>{s.label}</Badge>;
 }
 
-const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
+const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#0058CC] focus:outline-none";
 const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── BOM table ──────────────────────────────────────────────────────────────
 export function BOMTable({ boms, perms, onEdit, onDelete }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="bom-table">
-      <table className="w-full text-[12px]">
+    <div className="overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white" data-testid="bom-table">
+      <table className="w-full min-w-[720px] text-[12px]">
         <thead>
-          <tr className="bg-[#FAFAFC] text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
+          <tr className="whitespace-nowrap bg-[#FAFAFC] text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
             <th className="px-3 py-2.5 font-bold">Nama BOM</th>
             <th className="px-3 py-2.5 font-bold">Barang Jadi (Output)</th>
             <th className="px-3 py-2.5 font-bold text-center">Komponen</th>
@@ -72,7 +72,7 @@ export function BOMTable({ boms, perms, onEdit, onDelete }) {
               <td className="px-3 py-2.5 font-semibold text-[#1C1C1E]">{b.name}</td>
               <td className="px-3 py-2.5">
                 <span className="font-medium text-[#3A3A3C]">{b.output_name || b.output_product_id}</span>
-                <span className="ml-1 text-[10.5px] text-[#9A9BA3]">{b.output_sku}</span>
+                <span className="ml-1 text-[11px] text-[#8E8E93]">{b.output_sku}</span>
               </td>
               <td className="px-3 py-2.5 text-center tabular-nums">{(b.components || []).length}</td>
               <td className="px-3 py-2.5 text-right tabular-nums">{b.overhead_per_unit ? formatCurrency(b.overhead_per_unit) : "—"}</td>
@@ -172,10 +172,10 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
 
       <div>
         <div className="mb-1.5 flex items-center gap-2">
-          <Layers3 size={13} className="text-[#6B219A]" />
+          <Layers3 size={13} className="text-[#0058CC]" />
           <span className="text-[11px] font-bold text-[#3A3A3C]">Komponen Bahan</span>
           <button data-testid="bom-add-component" onClick={addRow}
-                  className="ml-auto inline-flex items-center gap-1 rounded-md border border-[#E2E2E7] px-2 py-1 text-[10.5px] font-bold text-[#6B219A] hover:bg-[#F3EAFB]"><Plus size={12} /> Tambah</button>
+                  className="secondary-button ml-auto !px-2 !py-1 text-[11px]"><Plus size={12} /> Tambah bahan</button>
         </div>
         <div className="space-y-2">
           {rows.length === 0 && <p className="text-[11px] text-[#9A9BA3]">Belum ada komponen.</p>}
@@ -194,13 +194,12 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
             </div>
           ))}
         </div>
-        <p className="mt-1.5 text-[10.5px] text-[#9A9BA3]">qty/unit = kebutuhan bahan untuk memproduksi 1 unit output.</p>
+        <p className="mt-1.5 text-[11px] text-[#8E8E93]">qty/unit = kebutuhan bahan untuk memproduksi 1 unit output.</p>
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button data-testid="bom-cancel" onClick={onCancel} className="rounded-lg border border-[#E2E2E7] px-3 py-2 text-[12px] font-semibold text-[#3A3A3C] hover:bg-[#FAFAFA]">Batal</button>
-        <button data-testid="bom-save" onClick={submit} disabled={saving}
-                className="rounded-lg bg-[#6B219A] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#581680] disabled:opacity-50">
+        <button data-testid="bom-cancel" onClick={onCancel} className="secondary-button">Batal</button>
+        <button data-testid="bom-save" onClick={submit} disabled={saving} className="primary-button">
           {saving ? "Menyimpan…" : bom?.id ? "Simpan Perubahan" : "Simpan BOM"}
         </button>
       </div>

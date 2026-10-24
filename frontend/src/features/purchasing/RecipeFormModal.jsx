@@ -87,14 +87,14 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
           <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
             <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
               <div>
-                <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Input</p>
+                <p className="mb-1 text-[11px] font-bold uppercase text-[#6B6B73]">Bahan masuk (input) <span className="text-[#D14343]">*</span></p>
                 <KNSelect data-testid="recipe-input-stage" className="field mb-1.5" value={f.input_stage} onValueChange={(v) => setF({ ...f, input_stage: v })} options={STAGE_OPTS} />
                 <ProductSelect triggerTestId="recipe-input-product" stage={f.input_stage} value={f.input_product_id} valueName={f.input_name}
                   onSelect={(p) => setF({ ...f, input_product_id: p.id, input_name: `${p.name} (${p.sku})` })} label="Pilih produk input…" />
               </div>
               <ArrowRight size={18} className="mb-2 text-[#0058CC]" />
               <div>
-                <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Output</p>
+                <p className="mb-1 text-[11px] font-bold uppercase text-[#6B6B73]">Hasil (output) <span className="text-[#D14343]">*</span></p>
                 <KNSelect data-testid="recipe-output-stage" className="field mb-1.5" value={f.output_stage} onValueChange={(v) => setF({ ...f, output_stage: v })} options={STAGE_OPTS} />
                 <ProductSelect triggerTestId="recipe-output-product" stage={f.output_stage} value={f.output_product_id} valueName={f.output_name}
                   onSelect={(p) => setF({ ...f, output_product_id: p.id, output_name: `${p.name} (${p.sku})` })} label="Pilih produk output…" />
@@ -103,8 +103,8 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Yield Factor (out/in)"><input data-testid="recipe-yield" type="number" step="0.01" className="field" value={f.yield_factor} onChange={set("yield_factor")} /></Field>
-            <Field label="Susut / Waste (%)"><input data-testid="recipe-waste" type="number" step="0.1" className="field" value={f.waste_pct} onChange={set("waste_pct")} /></Field>
+            <Field label="Rendemen (hasil per 1 bahan)"><input data-testid="recipe-yield" type="number" step="0.01" className="field" value={f.yield_factor} onChange={set("yield_factor")} /></Field>
+            <Field label="Susut (%)"><input data-testid="recipe-waste" type="number" step="0.1" className="field" value={f.waste_pct} onChange={set("waste_pct")} /></Field>
             <Field label="Barang Sisa (%)"><input data-testid="recipe-byproduct" type="number" step="0.1" className="field" value={f.byproduct_pct} onChange={set("byproduct_pct")} /></Field>
           </div>
 
@@ -122,16 +122,20 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
             <Field label="Biaya Bahan Pembantu (Rp)"><MoneyInput testId="recipe-aux" className="field" value={f.aux_cost_default} onChange={(v) => set("aux_cost_default")({ target: { value: v } })} /></Field>
           </div>
 
-          <Field label="Formula Forecast (opsional)">
+          <Field label="Rumus perkiraan hasil (opsional — untuk pengguna lanjutan)">
             <input data-testid="recipe-formula" className="field font-mono text-[11px]" value={f.formula} onChange={set("formula")}
-              placeholder="mis. input_qty * yield_factor * (1 - waste_pct/100)" />
-            <p className="mt-1 text-[10px] text-[#9A9BA3]">Variabel: input_qty, gramasi, lebar, yield_factor, waste_pct, byproduct_pct. Kosong = rumus baku.</p>
+              placeholder="Kosongkan untuk rumus baku: bahan × rendemen − susut" />
+            <p className="mt-1 text-[11px] text-[#8E8E93]">
+              Kosong = rumus baku (jumlah bahan × rendemen × (1 − susut%)). Nama yang bisa dipakai:
+              {" "}<b>input_qty</b> (jumlah bahan), <b>yield_factor</b> (rendemen), <b>waste_pct</b> (susut %),
+              {" "}<b>byproduct_pct</b> (barang sisa %), <b>gramasi</b>, <b>lebar</b>.
+            </p>
           </Field>
 
           {/* Preview forecast inline */}
           <div className="rounded-lg border border-dashed border-[#0058CC]/40 bg-[#EAF2FF]/40 p-3">
             <div className="flex items-end gap-2">
-              <Field label="Uji Input Qty"><input data-testid="recipe-test-qty" type="number" className="field w-28" value={testQty} onChange={(e) => setTestQty(e.target.value)} /></Field>
+              <Field label="Uji jumlah bahan"><input data-testid="recipe-test-qty" type="number" className="field w-28" value={testQty} onChange={(e) => setTestQty(e.target.value)} /></Field>
               <button data-testid="recipe-forecast-btn" type="button" className="secondary-button mb-0.5" onClick={runForecast}><Calculator size={13} /> Hitung Estimasi</button>
               {preview && (
                 <div className="mb-0.5 flex-1 text-[11.5px]" data-testid="recipe-forecast-result">
@@ -157,7 +161,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
 function Field({ label, req, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">{label} {req && <span className="text-[#D14343]">*</span>}</span>
+      <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">{label} {req && <span className="text-[#D14343]">*</span>}</span>
       {children}
     </label>
   );

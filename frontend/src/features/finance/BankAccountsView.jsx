@@ -13,6 +13,14 @@ import { formatCurrency } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
+import FormModal from "../../components/FormModal";
+import KNSelect from "../../components/KNSelect";
+import MoneyInput from "@/components/MoneyInput";
+
+const ACCOUNT_TYPE_OPTIONS = [
+  { value: "bank", label: "Rekening bank" },
+  { value: "cash", label: "Kas tunai" },
+];
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -83,19 +91,20 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
     }
   };
 
+  const [formErr, setFormErr] = useState("");
+  const closeForm = () => { setShowForm(false); setForm(EMPTY_FORM); setFormErr(""); };
   const submitForm = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
+    e?.preventDefault?.();
+    if (!form.name.trim()) { setFormErr("Nama akun wajib diisi."); return; }
     setSaving(true);
     try {
       await axios.post(`${API}/bank-accounts`, {
         ...form, opening_balance: Number(form.opening_balance || 0),
       });
-      setForm(EMPTY_FORM);
-      setShowForm(false);
+      closeForm();
       await load();
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal membuat akun.");
+      setFormErr(err.response?.data?.detail || "Gagal membuat akun.");
     } finally {
       setSaving(false);
     }
@@ -111,64 +120,66 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
 
   return (
     <div data-testid="bank-accounts-view">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-1.5">
         <Kpi testId="bank-kpi-total" label="Total Saldo" value={formatCurrency(summary.total)} icon={Banknote} />
         <Kpi testId="bank-kpi-bank" label="Saldo Bank" value={formatCurrency(summary.bank)} icon={Landmark} tone="text-[#0058CC]" />
         <Kpi testId="bank-kpi-cash" label="Saldo Kas" value={formatCurrency(summary.cash)} icon={Wallet} tone="text-[#1B7F4B]" />
-        <Kpi testId="bank-kpi-unrec" label="Belum Rekonsiliasi" value={summary.unrec} icon={Circle} tone={summary.unrec > 0 ? "text-[#B45309]" : ""} />
+        <Kpi testId="bank-kpi-unrec" label="Mutasi Belum Dicocokkan" value={summary.unrec} icon={Circle} tone={summary.unrec > 0 ? "text-[#B45309]" : ""} />
       </div>
+      {/* Audit UI 24 Okt (060↔061): angka di sini = saldo awal + mutasi yang TERTAUT ke
+          rekening. Transaksi kas yang dicatat tanpa rekening hanya muncul di Transaksi Kas,
+          jadi kedua layar bisa berbeda — dijelaskan terang-terangan, bukan disamarkan. */}
+      <p className="mb-3 text-[11px] text-[#6B6B73]" data-testid="bank-balance-basis">
+        Saldo per akun = saldo awal + mutasi yang tertaut ke akun tersebut. Transaksi kas yang
+        dicatat tanpa memilih rekening hanya terhitung di tab Transaksi Kas.
+      </p>
 
       <div className="section-card">
         <div className="section-head">
-          <div className="flex items-center gap-2"><Landmark size={16} className="text-[#6B219A]" /><h2 data-testid="bank-title">Akun Kas & Bank</h2></div>
+          <div className="flex items-center gap-2"><Landmark size={16} className="text-[#0058CC]" /><h2 data-testid="bank-title">Akun Kas & Bank</h2></div>
           <div className="flex items-center gap-2 ml-auto">
-            <button data-testid="bank-add-toggle" className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => setShowForm((v) => !v)}>
+            <button data-testid="bank-add-toggle" className="primary-button" onClick={() => setShowForm(true)}>
               <Plus size={14} /> Tambah Akun
             </button>
-            <button data-testid="bank-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="bank-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="bank-error" />
 
-          {showForm && (
-            <form data-testid="bank-add-form" onSubmit={submitForm} className="mb-3 rounded-lg border border-[#E6E0F2] bg-[#FAF8FE] p-3 grid grid-cols-2 md:grid-cols-3 gap-2">
+          {/* Audit UI 24 Okt (060): form inline + segmented ungu → FormModal standar. */}
+          <FormModal open={showForm} onClose={closeForm} title="Tambah Akun Kas / Bank"
+            subtitle="Rekening bank atau kas tunai milik badan usaha aktif." icon={Landmark}
+            testId="bank-add-form" onSubmit={submitForm} submitLabel="Simpan Akun"
+            submitTestId="bank-form-submit" busy={saving} error={formErr}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Nama Akun</label>
-                <input data-testid="bank-form-name" className="field py-1 text-[12px]" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="BCA Operasional" required />
+                <label className="field-label">Nama Akun <span className="req">*</span></label>
+                <input data-testid="bank-form-name" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="mis. BCA Operasional" />
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Jenis</label>
-                <div className="flex gap-1 mt-0.5">
-                  {["bank", "cash"].map((t) => (
-                    <button type="button" key={t} data-testid={`bank-form-type-${t}`}
-                      className={`flex-1 text-[12px] font-semibold rounded-md py-1 border ${form.account_type === t ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73]"}`}
-                      onClick={() => setForm({ ...form, account_type: t })}>{t === "bank" ? "Bank" : "Kas"}</button>
-                  ))}
-                </div>
+                <label className="field-label">Jenis <span className="req">*</span></label>
+                <KNSelect data-testid="bank-form-type" value={form.account_type} options={ACCOUNT_TYPE_OPTIONS}
+                  onValueChange={(v) => setForm({ ...form, account_type: v || "bank" })} />
               </div>
               <div>
-                <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Saldo Awal</label>
-                <input data-testid="bank-form-opening" type="number" className="field py-1 text-[12px] tabular-nums" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} placeholder="0" />
+                <label className="field-label">Saldo Awal</label>
+                <MoneyInput testId="bank-form-opening" value={form.opening_balance} onChange={(v) => setForm({ ...form, opening_balance: v })} placeholder="0" />
               </div>
               {form.account_type === "bank" && (
                 <>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Nama Bank</label>
-                    <input data-testid="bank-form-bankname" className="field py-1 text-[12px]" value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="BCA" />
+                    <label className="field-label">Nama Bank</label>
+                    <input data-testid="bank-form-bankname" className="field" value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="mis. BCA" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-[#8E8E93]">No. Rekening</label>
-                    <input data-testid="bank-form-accountno" className="field py-1 text-[12px] tabular-nums" value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} placeholder="0123456789" />
+                    <label className="field-label">No. Rekening</label>
+                    <input data-testid="bank-form-accountno" className="field tabular-nums" value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} placeholder="0123456789" />
                   </div>
                 </>
               )}
-              <div className="col-span-2 md:col-span-3 flex justify-end gap-2 mt-1">
-                <button type="button" className="btn-secondary text-[12px] py-1.5 px-3" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>Batal</button>
-                <button type="submit" data-testid="bank-form-submit" className="btn-primary text-[12px] py-1.5 px-4" disabled={saving}>{saving ? "Menyimpan..." : "Simpan Akun"}</button>
-              </div>
-            </form>
-          )}
+            </div>
+          </FormModal>
 
           {srch.toolbar}
           {loading ? (
@@ -185,7 +196,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                   type="button"
                   data-testid={`bank-card-${a.id}`}
                   onClick={() => openLedger(a.id)}
-                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#6B219A] ring-1 ring-[#6B219A]/30 bg-[#FBF8FE]" : "border-[#EFF0F2] bg-white"}`}
+                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${a.account_type === "bank" ? "bg-[#E7F0FF] text-[#0058CC]" : "bg-[#E6F6EC] text-[#1B7F4B]"}`}>
@@ -193,9 +204,9 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     </span>
                     <div className="min-w-0">
                       <p className="font-bold text-[13px] text-[#1C1C1E] truncate">{a.name}</p>
-                      <p className="text-[10px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? `${a.bank_name || "Bank"} · ${a.account_number || "-"}` : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
+                      <p className="text-[11px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? `${a.bank_name || "Bank"} · ${a.account_number || "-"}` : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
                       {a.cash_type && (
-                        <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[9px] font-semibold rounded-full px-1.5 py-0.5 bg-[#F3EAFB] text-[#6B219A]">
+                        <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[11px] font-semibold rounded-full px-1.5 py-0.5 bg-[#EFF4FF] text-[#0058CC]">
                           {a.cash_type === "kas_kecil" ? "Kas kecil" : "Kas besar"}
                         </span>
                       )}
@@ -211,10 +222,10 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     </div>
                   </div>
                   <p className="text-[20px] font-bold tabular-nums text-[#1C1C1E] mt-1">{formatCurrency(a.balance)}</p>
-                  <div className="flex items-center gap-3 text-[10.5px] text-[#6B6B73] mt-1.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#6B6B73] mt-1.5">
                     <span className="inline-flex items-center gap-1 text-[#1B7F4B]"><ArrowDownLeft size={12} />{formatCurrency(a.inflow)}</span>
                     <span className="inline-flex items-center gap-1 text-[#C0392B]"><ArrowUpRight size={12} />{formatCurrency(a.outflow)}</span>
-                    <span className="ml-auto">{a.txn_count} txn{a.unreconciled_count > 0 ? ` · ${a.unreconciled_count} belum rekon` : ""}</span>
+                    <span className="ml-auto">{a.txn_count} transaksi{a.unreconciled_count > 0 ? ` · ${a.unreconciled_count} belum dicocokkan` : ""}</span>
                   </div>
                 </button>
               ))}
@@ -268,9 +279,9 @@ function LedgerPanel({ ledger, loading, onClose, onToggle }) {
           <div className="py-8 text-center text-[12px] text-[#8E8E93]" data-testid="bank-ledger-empty">Belum ada transaksi pada akun ini.</div>
         ) : (
           <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-            <table className="w-full text-[12px]">
+            <table className="w-full min-w-[620px] text-[12px]">
               <thead>
-                <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
+                <tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                   <th className="px-3 py-2">Tanggal</th>
                   <th className="px-3 py-2">No / Deskripsi</th>
                   <th className="px-3 py-2 text-right">Masuk</th>
@@ -283,7 +294,7 @@ function LedgerPanel({ ledger, loading, onClose, onToggle }) {
                 {ledger.transactions.map((t) => (
                   <tr key={t.id} data-testid={`bank-ledger-row-${t.id}`} className="border-b border-[#F5F5F7] last:border-0">
                     <td className="px-3 py-2 text-[#3C3C43]">{fmtDate(t.txn_date)}</td>
-                    <td className="px-3 py-2"><span className="font-mono text-[10px] text-[#9A9BA3]">{t.number}</span><br />{t.description}</td>
+                    <td className="px-3 py-2"><span className="font-mono text-[11px] text-[#9A9BA3]">{t.number}</span><br />{t.description}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#1B7F4B]">{t.direction === "in" ? formatCurrency(t.amount) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#C0392B]">{t.direction === "out" ? formatCurrency(t.amount) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatCurrency(t.running_balance)}</td>
@@ -308,13 +319,15 @@ function LedgerPanel({ ledger, loading, onClose, onToggle }) {
 }
 
 function Kpi({ label, value, icon: Icon, tone = "", testId }) {
+  // Audit UI 24 Okt (060 HP): nilai dulu `truncate` → "Rp 775.00…". Di HP ikon disembunyikan
+  // dan angka boleh turun baris, tidak pernah dipotong.
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
+        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#EFF4FF] items-center justify-center sm:flex"><Icon size={17} className="text-[#0058CC]" /></div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
         </div>
       </div>
     </div>

@@ -45,7 +45,7 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
     <div className="space-y-3" data-testid="cycle-count-panel">
       {error && <p data-testid="cc-error" className="rounded bg-[#FBE9E7] px-3 py-2 text-[12px] font-semibold text-[#C0341D]">{error}</p>}
 
-      <SectionCard title="Stock Opname Kilat (Sweep RFID)" right={
+      <SectionCard title="Stock Opname Kilat (Pindai RFID)" right={
         !session && (
           <button data-testid="cc-start" disabled={busy || !whId} onClick={start}
             className="flex items-center gap-1 rounded-lg bg-[#0058CC] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40">
@@ -99,7 +99,7 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
                 {result.extra_items.slice(0, 10).map((m) => <p key={m.epc}>· {m.roll_no || m.epc} — {m.note}</p>)}
               </div>
             )}
-            <p className="mt-1.5 text-[10.5px] text-[#8E8E93]">Laporan saja — stok TIDAK diubah otomatis (Roll-as-SSOT). Tindak lanjuti selisih via inspeksi/insiden.</p>
+            <p className="mt-1.5 text-[10.5px] text-[#8E8E93]">Laporan saja — stok TIDAK diubah otomatis. Tindak lanjuti selisih lewat inspeksi/insiden.</p>
           </div>
         )}
       </SectionCard>

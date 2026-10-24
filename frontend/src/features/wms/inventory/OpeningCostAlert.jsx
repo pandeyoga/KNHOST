@@ -21,7 +21,7 @@ export default function OpeningCostAlert({ refreshKey }) {
   return (
     <div data-testid="opening-cost-alert" className="mb-2.5 rounded-lg border border-[#F1D08A] bg-[#FFF6E0] p-2.5 text-[11px]">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-semibold text-[#7A5B00]">{data.total} roll stok awal belum punya HPP — lengkapi sebelum go-live (laba & nilai persediaan salah).</p>
+        <p className="font-semibold text-[#7A5B00]">{data.total} roll stok awal belum punya HPP — lengkapi supaya laba & nilai persediaan tidak salah hitung.</p>
         <button data-testid="opening-cost-toggle" className="secondary-button" onClick={() => setOpen((v) => !v)}>{open ? "Tutup" : "Lengkapi"}</button>
       </div>
       {open && (

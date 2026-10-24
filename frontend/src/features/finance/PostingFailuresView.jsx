@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import EntityBadge from "../../components/EntityBadge";
 
 const rp = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });   // 23 Okt — rupiah tanpa desimal liar
 
@@ -38,17 +39,29 @@ export default function PostingFailuresView() {
   const rows = data.items.filter((i) => !filter || i.kind === filter);
   return (
     <div className="space-y-4" data-testid="posting-failures-view">
-      <div className="flex flex-wrap items-center gap-2">
-        <button data-testid="pf-filter-all" onClick={() => setFilter("")}
-          className={`rounded-full px-3 py-1 text-[12px] font-semibold ${!filter ? "bg-[#1C1C1E] text-white" : "bg-[#F2F2F7]"}`}>
-          Semua ({data.total || 0})</button>
-        {Object.entries(data.labels || {}).map(([k, label]) => (
-          <button key={k} data-testid={`pf-filter-${k}`} onClick={() => setFilter(k)}
-            className={`rounded-full px-3 py-1 text-[12px] font-semibold ${filter === k ? "bg-[#1C1C1E] text-white" : "bg-[#F2F2F7]"}`}>
-            {label} ({(data.counts || {})[k] || 0})</button>
-        ))}
-        <button data-testid="pf-refresh" onClick={load} className="ml-auto flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]">
-          <RefreshCw size={13} /> Muat ulang</button>
+      {/* Audit UI 24 Okt (135): judul + kartu standar, tab garis bawah (dulu pil hitam), muat ulang = tombol. */}
+      <div className="section-card">
+        <div className="section-head flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-[#C0392B]" />
+            <h2 data-testid="pf-title">Posting Jurnal Gagal</h2>
+          </div>
+          <button data-testid="pf-refresh" onClick={load} className="secondary-button ml-auto">
+            <RefreshCw size={13} /> Muat ulang</button>
+        </div>
+        <div className="section-body">
+          <p className="mb-2 text-[11.5px] text-[#6B6B73]">Dokumen yang jurnalnya gagal tercatat (kas, kwitansi piutang, retur beli, penerimaan barang, surat jalan). Perbaiki penyebabnya lalu tekan “Ulang Posting”.</p>
+          <div className="tab-bar !mb-0">
+            <button data-testid="pf-filter-all" onClick={() => setFilter("")}
+              className={`tab-button ${!filter ? "active" : ""}`}>
+              Semua <span className="tab-badge">{data.total || 0}</span></button>
+            {Object.entries(data.labels || {}).map(([k, label]) => (
+              <button key={k} data-testid={`pf-filter-${k}`} onClick={() => setFilter(k)}
+                className={`tab-button ${filter === k ? "active" : ""}`}>
+                {label} <span className="tab-badge">{(data.counts || {})[k] || 0}</span></button>
+            ))}
+          </div>
+        </div>
       </div>
       {msg && <div data-testid="pf-msg" className="rounded-lg bg-[#FFF8E6] px-3 py-2 text-[12px] font-semibold text-[#8C4A00]">{msg}</div>}
       {rows.length === 0 ? (
@@ -56,8 +69,8 @@ export default function PostingFailuresView() {
           Tidak ada dokumen dengan jurnal gagal. Semua posting tercatat.</div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[#E5E5EA]">
-          <table className="w-full text-[12px]" data-testid="pf-table">
-            <thead className="bg-[#F7F7FA] text-left text-[11px] uppercase text-[#6B7280]">
+          <table className="w-full min-w-[720px] text-[12px]" data-testid="pf-table">
+            <thead className="whitespace-nowrap bg-[#F7F7FA] text-left text-[11px] uppercase text-[#6B7280]">
               <tr><th className="p-2">Jenis</th><th className="p-2">Nomor</th><th className="p-2">Entitas</th>
                 <th className="p-2 text-right">Nilai</th><th className="p-2">Galat</th><th className="p-2" /></tr>
             </thead>
@@ -66,8 +79,8 @@ export default function PostingFailuresView() {
                 <tr key={`${it.kind}-${it.id}`} className="border-t border-[#F2F2F7]" data-testid={`pf-row-${it.id}`}>
                   <td className="p-2 font-semibold"><span className="inline-flex items-center gap-1"><AlertTriangle size={12} className="text-[#C2410C]" />{it.kind_label}</span></td>
                   <td className="p-2 font-mono">{it.number}</td>
-                  <td className="p-2">{it.entity_id}</td>
-                  <td className="p-2 text-right tabular-nums">{rp.format(Number(it.amount) || 0)}</td>
+                  <td className="p-2">{it.entity_id ? <EntityBadge entityId={it.entity_id} /> : "—"}</td>
+                  <td className="whitespace-nowrap p-2 text-right tabular-nums">Rp {rp.format(Number(it.amount) || 0)}</td>
                   <td className="max-w-[360px] truncate p-2 text-[#B42318]" title={it.error}>{it.error || "—"}</td>
                   <td className="p-2 text-right">
                     <button data-testid={`pf-retry-${it.id}`} disabled={busy === it.id} onClick={() => retry(it)}

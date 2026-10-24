@@ -106,7 +106,7 @@ test("panel: pemegang decide_rolls menolak roll dengan alasan → POST roll-deci
   const onChanged = jest.fn();
   let m = await mount(<ReturnRollsPanel ret={RET} items={[ITEM]} fullView canDecide onChanged={onChanged} />);
   expect(q(m.host, "return-roll-r2").textContent).toContain("Sudah dipotong");
-  expect(q(m.host, "return-roll-r2").querySelector("a").getAttribute("href")).toBe("/api/sales-returns/sret_1/attachments/a1/download");
+  expect(q(m.host, "return-roll-r2").querySelector("[data-url]").getAttribute("data-url")).toBe("/api/sales-returns/sret_1/attachments/a1/download");
   await act(async () => { q(m.host, "roll-reject-r2").click(); });
   await act(async () => { q(m.host, "roll-decisions-save").click(); });
   expect(q(m.host, "roll-decisions-error").textContent).toMatch(/alasan tolak/i);   // alasan wajib
@@ -154,7 +154,7 @@ test("panel roll generik: URL keputusan & foto milik modul pemanggil; canReject=
     decideUrl="/api/interco/returns/icr_1/roll-decisions" valueLabel="Nilai retur antar-PT" fullView estimatedValue={100}
     attachmentHref={(a) => `/api/interco/returns/icr_1/attachments/${a.id}/download`} />);
   expect(q(host, "roll-reject-r1")).toBeNull();
-  expect(q(host, "return-roll-r1").querySelector("a").getAttribute("href")).toBe("/api/interco/returns/icr_1/attachments/a9/download");
+  expect(q(host, "return-roll-r1").querySelector("[data-url]").getAttribute("data-url")).toBe("/api/interco/returns/icr_1/attachments/a9/download");
   expect(q(host, "return-estimated-value").textContent).toContain("Nilai retur antar-PT");
   await act(async () => { q(host, "roll-accept-r1").click(); });
   await act(async () => { q(host, "roll-decisions-save").click(); });

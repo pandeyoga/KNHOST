@@ -25,6 +25,9 @@ export default function MobileOrderDashboard({ selectedEntity, onOpenOrder }) {
   const up = (d.growth_pct ?? 0) >= 0;
   return (
     <div className="space-y-2.5 p-3" data-testid="m-odash">
+      {/* Audit UI 24 Okt (HP Dasbor Pesanan) — dasbor hanya menghitung SO dengan pengguna ini sebagai SALES PEMILIK;
+          dulu tanpa keterangan sehingga Admin Sales melihat semua angka nol tanpa tahu sebabnya. */}
+      <p className="text-[11px] m-muted" data-testid="m-odash-scope">Hanya pesanan dengan Anda sebagai sales pemilik. Semua pesanan PT ada di tab Pesanan.</p>
       <div className="m-card p-3" data-testid="m-odash-revenue">
         <div className="flex items-start justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B6B73]">Omzet bulan ini</p>
@@ -44,7 +47,7 @@ export default function MobileOrderDashboard({ selectedEntity, onOpenOrder }) {
         {d.status_counts.map((s) => (
           <div key={s.key} className="m-card px-1.5 py-2 text-center" data-testid={`m-odash-status-${s.key}`}>
             <p className="text-[18px] font-bold tabular-nums" style={{ color: TONE[s.key] }}>{s.count}</p>
-            <p className="text-[9.5px] font-semibold leading-tight text-[#6B6B73]">{s.label}</p>
+            <p className="text-[10px] font-semibold leading-tight text-[#6B6B73]">{s.label}</p>
           </div>
         ))}
       </div>

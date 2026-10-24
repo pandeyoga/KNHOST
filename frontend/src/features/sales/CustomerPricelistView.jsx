@@ -232,10 +232,11 @@ export default function CustomerPricelistView({
                 : "Tidak ada produk yang cocok dengan pencarian."}
             </div>
           ) : (
+            /* Audit UI 24 Okt (015, HP) — lebar minimum tabel: kolom Produk tidak lagi 1 kata/baris & aksi tidak keluar layar. */
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]">
+              <table className="w-full min-w-[880px] text-[12px]">
                 <thead>
-                  <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
+                  <tr className="whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10.5px] font-bold uppercase text-[#8E8E93]">
                     <th className="px-3 py-2">SKU</th>
                     <th className="px-3 py-2">Produk</th>
                     <th className="px-3 py-2 text-right">Harga Umum</th>

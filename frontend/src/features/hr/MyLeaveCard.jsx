@@ -135,7 +135,7 @@ export function MyLeaveCard() {
                 <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
                   <textarea data-testid="ess-leave-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opsional" /></div>
                 <div className="modal-actions">
-                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Tutup</button>
+                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
                   <button data-testid="ess-leave-submit" className="btn-primary" onClick={submitLeave} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Cuti"}</button>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export function MyLeaveCard() {
                 <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
                   <textarea data-testid="ess-ot-reason" className="form-input" rows="2" value={otReason} onChange={(e) => setOtReason(e.target.value)} placeholder="Opsional" /></div>
                 <div className="modal-actions">
-                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Tutup</button>
+                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
                   <button data-testid="ess-ot-submit" className="btn-primary" onClick={submitOt} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Lembur"}</button>
                 </div>
               </div>

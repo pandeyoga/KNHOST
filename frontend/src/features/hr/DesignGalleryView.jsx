@@ -13,12 +13,13 @@ import { listDesigns, designFileUrl } from "../rnd/rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, fmtScore } from "../rnd/rndMeta";
 import DesignShowcaseModal from "./DesignShowcaseModal";
 import { OwnershipBadge } from "./DesignOwnershipPanel";
+import { actorLabel } from "../../utils/actorLabel";
 
 const ACC_STATUSES = ["approved", "final_submitted", "active"];
 const coverOf = (g) => (g.files || []).find((f) => (f.kind || "artwork") === "artwork" && (f.version || 1) === (g.approved_version || g.version))
   || (g.files || []).find((f) => (f.kind || "artwork") === "artwork");
 const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort();
-const opts = (vals, all) => [{ value: "", label: all }, ...vals.map((v) => ({ value: v, label: v }))];
+const opts = (vals, all, fmt = (v) => v) => [{ value: "", label: all }, ...vals.map((v) => ({ value: v, label: fmt(v) }))];
 
 const EMPTY_F = { status: "", cat: "", dcat: "", tag: "", designer: "", rnd: "", line: "", own: "", produced: "" };
 // UAT 24 Okt (P1.5) — kepemilikan & status produksi desain.
@@ -87,14 +88,15 @@ export default function DesignGalleryView({ selectedEntity, currentUser }) {
             <input data-testid="gallery-search" className="field !pl-8" placeholder="Cari kode, judul, tag, produk…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
-        <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8" data-testid="gallery-filters">
+        {/* Audit UI 24 Okt (050) — 8 kolom di 1440px memotong teks dropdown ("Semua kategori patt…"); maks 4 kolom. */}
+        <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" data-testid="gallery-filters">
           <div className="col-span-full"><OptionTabs testId="gallery-filter-status" value={f.status} onChange={set("status")}
             countOf={(v) => items.filter((g) => !v || g.status === v).length}
             options={[{ value: "", label: "Semua status ACC" }, ...ACC_STATUSES.map((s) => ({ value: s, label: DESIGN_STATUS_META[s].label }))]} /></div>
           <KNSelect data-testid="gallery-filter-category" className="field" value={f.cat} onValueChange={set("cat")} options={opts(options.cat, "Semua kategori pattern")} />
-          <KNSelect data-testid="gallery-filter-dcategory" className="field" value={f.dcat} onValueChange={set("dcat")} options={opts(options.dcat, "Semua kategori design")} />
+          <KNSelect data-testid="gallery-filter-dcategory" className="field" value={f.dcat} onValueChange={set("dcat")} options={opts(options.dcat, "Semua kategori desain")} />
           <KNSelect data-testid="gallery-filter-tag" className="field" value={f.tag} onValueChange={set("tag")} options={opts(options.tag, "Semua tag")} />
-          <KNSelect data-testid="gallery-filter-designer" className="field" value={f.designer} onValueChange={set("designer")} options={opts(options.designer, "Semua desainer")} />
+          <KNSelect data-testid="gallery-filter-designer" className="field" value={f.designer} onValueChange={set("designer")} options={opts(options.designer, "Semua desainer", actorLabel)} />
           <KNSelect data-testid="gallery-filter-rnd" className="field" value={f.rnd} onValueChange={set("rnd")}
             options={[{ value: "", label: "Semua status R&D" }, ...Object.entries(PROOFING_STATE_META).map(([k, m]) => ({ value: k, label: m.label }))]} />
           <KNSelect data-testid="gallery-filter-line" className="field" value={f.line} onValueChange={set("line")} options={opts(options.line, "Semua lini")} />
@@ -167,8 +169,9 @@ function ShowcaseCard({ g, onOpen }) {
           </span>
         </div>
         <h3 className="truncate text-[13px] font-bold leading-tight">{g.title}</h3>
-        <p className="text-[10.5px] text-[#6B6B73]">
-          {g.category_name || g.category_code || "—"} · {g.design_category_name || g.design_category_code || "—"} · {g.created_by}
+        <p className="text-[10.5px] text-[#6B6B73]" data-testid={`gallery-card-meta-${g.id}`}>
+          {[g.category_name || g.category_code, g.design_category_name || g.design_category_code, g.created_by && actorLabel(g.created_by)]
+            .filter(Boolean).join(" · ") || "—"}
         </p>
         <div className="flex flex-wrap gap-1">
           {(g.tags || []).slice(0, 4).map((t) => <span key={t} className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10px] text-[#6B219A]">{t}</span>)}

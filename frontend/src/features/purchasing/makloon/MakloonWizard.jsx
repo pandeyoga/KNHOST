@@ -345,7 +345,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                 <KNSelect data-testid="wizard-mode" className="field" value={head.mode}
                   onValueChange={(v) => setHead((p) => ({ ...p, mode: v }))} options={MODE_OPTS} />
               </Field>
-              <Field label="Produk Bahan (input awal)">
+              <Field label="Produk Bahan (input awal) *">
                 <ProductSelect value={head.material_product_id} valueName={head.material_name}
                   triggerTestId="wizard-material"
                   onSelect={(p) => {
@@ -353,11 +353,11 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                     setHead((h) => ({ ...h, material_product_id: p.id, material_name: p.name, material_unit: p.base_unit }));
                   }} />
               </Field>
-              <Field label={`Qty Bahan (${head.material_unit || "unit"})`}>
+              <Field label={`Qty Bahan (${head.material_unit || "unit"}) *`}>
                 <input data-testid="wizard-material-qty" className="field" value={head.material_qty}
                   onChange={(e) => setHead((p) => ({ ...p, material_qty: e.target.value }))} placeholder="mis. 200" />
               </Field>
-              <Field label="Gudang Sumber Bahan">
+              <Field label="Gudang Sumber Bahan *">
                 <KNSelect data-testid="wizard-from-wh" className="field" value={head.from_warehouse_id}
                   onValueChange={(v) => setHead((p) => ({ ...p, from_warehouse_id: v }))} options={whOpts} />
               </Field>
@@ -367,7 +367,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
               </Field>
               {head.mode === "buy_process" && (
                 <>
-                  <Field label="Supplier Bahan">
+                  <Field label="Supplier Bahan *">
                     <KNSelect data-testid="wizard-supplier" className="field" value={head.supplier_id}
                       onValueChange={(v) => setHead((p) => ({ ...p, supplier_id: v, supplier_name: suppliers.find((s) => s.id === v)?.name || "" }))}
                       options={supOpts} />
@@ -511,7 +511,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
 
         <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={stage === 1 ? onClose : () => setStage((v) => v - 1)} data-testid="wizard-back">
-            <ArrowLeft size={13} /> {stage === 1 ? "Batal" : "Kembali"}
+            {stage === 1 ? "Batal" : <><ArrowLeft size={13} /> Kembali</>}
           </button>
           {stage < 3 ? (
             <button className="primary-button" onClick={next} data-testid="wizard-next">
@@ -531,7 +531,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">{label}</span>
+      <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">{label}</span>
       {children}
     </label>
   );

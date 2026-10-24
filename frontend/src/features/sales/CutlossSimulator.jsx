@@ -32,15 +32,15 @@ export default function CutlossSimulator() {
         {num(c, setC, "defect_from", "Cacat dari yd", "cutloss-from")}
         {num(c, setC, "defect_to", "Cacat s/d yd", "cutloss-to")}
         {num(c, setC, "unit_price", "Harga transaksi/yd", "cutloss-price")}
-        <span className="w-px h-8 bg-[#E5E5EA]" />
+        <span className="hidden sm:block w-px h-8 bg-[#E5E5EA]" />
         {num(d, setD, "qty_affected", "Qty cacat diskon", "discount-qty")}
         {num(d, setD, "amount", "Nominal diskon (Rp)", "discount-amount")}
-        <button type="button" data-testid="cutloss-simulate" onClick={run} className="primary-button">Hitung</button>
+        <button type="button" data-testid="cutloss-simulate" onClick={run} className="secondary-button">Hitung</button>
       </div>
       {err && <p className="text-[12px] text-[#C62828]">{String(err)}</p>}
       {res && (
         <div className="space-y-1 text-[12px]" data-testid="cutloss-result">
-          <p data-testid="cutloss-pieces">Customer menerima potongan baik: <b>{res.customer_pieces.join(" yd + ")} yd</b> · qty cacat {res.defect_qty} yd · kompensasi <b>{rp(res.compensation_value)}</b> {res.reconciles ? "✓ seimbang" : "✗"}</p>
+          <p data-testid="cutloss-pieces">Pelanggan menerima potongan baik: <b>{res.customer_pieces.join(" yd + ")} yd</b> · qty cacat {res.defect_qty} yd · kompensasi <b>{rp(res.compensation_value)}</b> {res.reconciles ? "✓ seimbang" : "✗"}</p>
           <p className="text-[#8A4B08]" data-testid="cutloss-note">{res.note}</p>
           {disc && <p data-testid="discount-result">Diskon: <b>{rp(disc.discount_value)}</b> untuk {disc.qty_affected} qty cacat · stok tidak bergerak · {disc.note}</p>}
         </div>

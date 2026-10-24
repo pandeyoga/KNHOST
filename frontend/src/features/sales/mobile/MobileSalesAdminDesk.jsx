@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Inbox, Layers, RefreshCw, ShieldAlert, ClipboardCheck } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { formatUnitTotals } from "../../../utils/qtyByUnit";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
@@ -52,7 +53,12 @@ function DeskQueue({ queue, busyRef, onAction }) {
   const rows = Array.isArray(queue.rows) ? queue.rows : [];
   const shown = all ? rows : rows.slice(0, PREVIEW);
   const oldest = ageTone(queue.oldest_age_days);
-  const total = queue.value_kind === "qty" ? `${formatQty(queue.total_value)} ${rows[0]?.unit || ""}`.trim()
+  // Audit UI 24 Okt (HP Meja Admin Sales) — total qty PER SATUAN (dulu 60 kg + 1.000 yard + 60 kg tertulis
+  // "1.120 kg" memakai satuan baris pertama). Sama dengan DeskQueueCard desktop.
+  const unitTotals = queue.value_kind === "qty"
+    ? rows.reduce((m, r) => { const u = r.unit || ""; m[u] = (m[u] || 0) + (Number(r.value) || 0); return m; }, {})
+    : null;
+  const total = queue.value_kind === "qty" ? (rows.length ? formatUnitTotals(unitTotals, queue.total_value) : formatQty(queue.total_value))
     : queue.value_kind === "count" ? `${rows.length} dok` : formatCurrency(Number(queue.total_value) || 0);
   return (
     <div className="m-card overflow-hidden" data-testid={`m-desk-queue-${queue.id}`}>

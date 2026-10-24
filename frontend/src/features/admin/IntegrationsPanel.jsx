@@ -46,7 +46,7 @@ export default function IntegrationsPanel() {
 
   return (
     <section className="section-card" data-testid="integrations-panel">
-      <div className="section-head flex items-center gap-2"><Sparkles size={15} className="text-[#0058CC]" /><h2 className="text-[13px] font-bold">Integrasi AI — Anthropic Claude</h2></div>
+      <div className="section-head flex items-center !justify-start gap-2"><Sparkles size={15} className="text-[#0058CC]" /><h2 className="text-[13px] font-bold">Integrasi AI — Anthropic Claude</h2></div>
       <div className="section-body">
         {loading ? (
           <p className="text-[12px] text-[#6B6B73] py-4">Memuat…</p>

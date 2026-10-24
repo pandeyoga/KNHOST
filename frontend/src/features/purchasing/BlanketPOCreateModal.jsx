@@ -250,7 +250,7 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
 
           {/* PB-01 — syarat komersial: turun otomatis ke tiap call-off (PO anak) */}
           <div className="rounded-md border border-[#DCE7F7] bg-[#F7FAFF] p-2.5" data-testid="blanket-terms-block">
-            <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Termin & PPN kontrak (PB-01) — turun otomatis ke tiap call-off</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">Termin & PPN kontrak — turun otomatis ke tiap call-off</p>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Termin pembayaran">
                 <KNSelect value={paymentTermCode} onValueChange={setPaymentTermCode} className="field"

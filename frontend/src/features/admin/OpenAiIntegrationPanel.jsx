@@ -21,15 +21,15 @@ export default function OpenAiIntegrationPanel() {
   const has = !!cfg?.has_key, verified = !!cfg?.verified_at;
   return (
     <section className="section-card" data-testid="openai-integration-panel">
-      <div className="section-head flex items-center gap-2"><ScanText size={15} className="text-[#0F766E]" /><h2 className="text-[13px] font-bold">Integrasi AI — OpenAI (Baca Otomatis Surat Jalan)</h2></div>
+      <div className="section-head flex items-center !justify-start gap-2"><ScanText size={15} className="text-[#0F766E]" /><h2 className="text-[13px] font-bold">Integrasi AI — OpenAI (Baca Otomatis Surat Jalan)</h2></div>
       <div className="section-body">
         {!cfg && !err ? <p className="py-4 text-[12px] text-[#6B6B73]">Memuat…</p> : (
           <div className="grid max-w-[560px] gap-3">
             <div data-testid="openai-status" className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${has && verified ? "bg-[#E7F5EC] text-[#1F7A45]" : "bg-[#FBF3E2] text-[#B7791F]"}`}>
               {has && verified ? <CheckCircle2 size={15} /> : has ? <AlertTriangle size={15} /> : <FlaskConical size={15} />}
               {!has ? "BELUM DIKONFIGURASI — baca otomatis SJ tidak bisa dipakai; kedatangan tetap bisa diisi manual."
-                : verified ? `KEY TERUJI — ${String(cfg.verified_at).slice(0, 16).replace("T", " ")}${cfg.source === "env" ? " (dari env OPENAI_API_KEY)" : ""}.`
-                  : `KEY TERSIMPAN${cfg.source === "env" ? " (env)" : ""}, BELUM DIUJI — klik "Uji koneksi".`}
+                : verified ? `KEY TERUJI — ${String(cfg.verified_at).slice(0, 16).replace("T", " ")}${cfg.source === "env" ? " (dari pengaturan server)" : ""}.`
+                  : `KEY TERSIMPAN${cfg.source === "env" ? " (pengaturan server)" : ""}, BELUM DIUJI — klik "Uji koneksi".`}
             </div>
             {err && <div className="notice-bar danger !py-1.5" data-testid="openai-error"><span className="text-[11.5px]">{err}</span></div>}
             {msg && <div className="notice-bar success !py-1.5" data-testid="openai-msg"><span className="text-[11.5px]">{msg}</span></div>}
@@ -37,7 +37,7 @@ export default function OpenAiIntegrationPanel() {
               <label className="flex items-center gap-1 text-[11px] font-bold uppercase text-[#6B6B73]"><KeyRound size={12} /> OpenAI API Key</label>
               <input data-testid="openai-apikey" type="password" className="form-input" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
                 placeholder={has ? "•••• tersimpan — isi untuk mengganti" : "sk-… dari platform.openai.com/api-keys"} />
-              <p className="text-[10.5px] text-[#9A9BA3]">Foto surat jalan dikirim ke OpenAI (store=false). Aktifkan per badan usaha lewat konfigurasi <code>receiving.ocr_enabled</code>; model, anggaran bulanan & tarif diatur di grup Penerimaan.</p>
+              <p className="text-[10.5px] text-[#9A9BA3]">Foto surat jalan dikirim ke OpenAI tanpa disimpan di sana. Fitur baca otomatis dinyalakan per badan usaha di Pusat Pengaturan › Penerimaan Barang; model, anggaran bulanan & tarif juga diatur di sana.</p>
             </div>
             <div className="flex items-center gap-2 pt-1">
               <button data-testid="openai-save" className="btn-primary" onClick={save} disabled={busy || !apiKey.trim()}>{busy ? "Menyimpan…" : "Simpan Kunci"}</button>

@@ -82,7 +82,7 @@ export default function PostFormModal({ meta, campaigns = [], initial = {}, post
         )}
         {!post && meta?.active_entity_name && <p className="text-[10.5px] text-[#8E8E93]" data-testid="mkt-f-entity-note">Konten ini dibuat untuk badan usaha <b>{meta.active_entity_name}</b>.</p>}
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Jenis konten"><KNSelect data-testid="mkt-f-type" className="field" value={f.content_type} onValueChange={(v) => set("content_type", v)} options={(meta?.content_types || ["foto"]).map((t) => ({ value: t, label: t }))} /></Field>
+          <Field label="Jenis konten"><KNSelect data-testid="mkt-f-type" className="field" value={f.content_type} onValueChange={(v) => set("content_type", v)} options={(meta?.content_types || ["foto"]).map((t) => ({ value: t, label: String(t).charAt(0).toUpperCase() + String(t).slice(1).replace(/_/g, " ") }))} /></Field>
           <Field label="Tanggal & jam tayang"><input type="datetime-local" className="field w-full" value={f.publish_at} onChange={(e) => set("publish_at", e.target.value)} data-testid="mkt-f-publish-at" /></Field>
           <Field label="PIC (yang memposting)"><KNSelect data-testid="mkt-f-pic" className="field" value={f.pic_user_id} onValueChange={(v) => set("pic_user_id", v)} options={[{ value: "", label: "— pilih —" }, ...(meta?.pic_options || []).map((u) => ({ value: u.id, label: `${u.name} (${u.role})` }))]} /></Field>
         </div>

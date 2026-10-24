@@ -8,6 +8,19 @@ import PrinterStatusWidget from "../../components/PrinterStatusWidget";
 import OfflineBanner from "./OfflineBanner";
 import { InboundActions, OutboundActions, SampleCutActions } from "./MobileTaskActions";
 import ErrorNotice from "../../components/ErrorNotice";
+import { formatQty } from "../../utils/formatters";
+
+// Audit UI HP (warehouse) — nama gudang, bukan id mentah ("wh_jakarta"); dipakai di Belum Tag & hasil pindai.
+function useWarehouseNames() {
+  const [names, setNames] = useState({});
+  useEffect(() => {
+    axios.get(`${API}/warehouses`).then((r) => {
+      const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
+      setNames(Object.fromEntries(list.map((w) => [w.id, w.name || w.code || w.id])));
+    }).catch(() => {});
+  }, []);
+  return names;
+}
 
 const STATUS_ID = { pending: "Menunggu", receiving: "Menerima", qc_check: "Cek QC", put_away: "Simpan", picking: "Ambil", packing: "Kemas", escalated: "Eskalasi", completed: "Selesai", shipped: "Terkirim" };
 
@@ -28,7 +41,8 @@ function TaskList({ type, focusTaskId, onFocused }) {
     document.querySelector(`[data-testid="mw-task-${focusTaskId}"]`)?.scrollIntoView({ block: "center" });
     onFocused?.();
   }, [focusTaskId, rows]); // eslint-disable-line
-  if (err) return <div className="notice-bar danger m-4" data-testid="mw-task-error">{String(err)}</div>;
+  // Audit UI HP (warehouse/Masuk) — galat muat (mis. sesi baru saja diperbarui → 401 sesaat) kini bisa dicoba ulang.
+  if (err) return <div className="p-3"><ErrorNotice message={String(err)} onRetry={() => { setErr(""); load(); }} testId="mw-task-error" /></div>;
   if (rows === null) return <div className="p-6 text-center text-sm"><Loader2 className="animate-spin inline" size={16} /> Memuat…</div>;
   const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sample" }[type] || type;
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
@@ -54,7 +68,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
         <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-[#0058CC]" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
           <div className="flex items-center justify-between"><b className="text-[15px]">{t.product_name || t.product_id}</b>
             <span className={`status-pill ${t.status === "escalated" ? "pill-danger" : "pill-warning"}`}>{STATUS_ID[t.status] || t.status}</span></div>
-          <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || t.warehouse_id} · qty <b className="tabular-nums">{t.quantity}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
+          <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || t.warehouse_id} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>
       ))}
@@ -72,7 +86,8 @@ function ScanPanel({ onOpenTask }) {
   const setBin = (v) => { setMyBin(v); localStorage.setItem("kn_my_bin", v); };
   const videoRef = useRef(null);
   const canCamera = typeof window !== "undefined" && "BarcodeDetector" in window && !!navigator.mediaDevices;
-  const fmtScan = (s) => s ? `${new Date(s.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · ${s.by || "-"}${s.warehouse_id ? ` · ${s.warehouse_id}` : ""}${s.bin_id ? ` · bin ${s.bin_id}` : ""}` : "";
+  const whNames = useWarehouseNames();
+  const fmtScan = (s) => s ? `${new Date(s.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · ${s.by || "-"}${s.warehouse_id ? ` · ${whNames[s.warehouse_id] || s.warehouse_id}` : ""}${s.bin_id ? ` · bin ${s.bin_id}` : ""}` : "";
   const lookup = async (code) => {
     if (!code.trim()) return;
     setBusy(true); setRes(null); setTasks([]);
@@ -81,7 +96,7 @@ function ScanPanel({ onOpenTask }) {
       const r = data.roll || {};
       const held = ["reserved", "committed", "picked", "packed"].includes(r.status);
       setRes({ kind: held ? "warn" : "ok", title: held ? "TERIKAT PESANAN" : "COCOK", roll: r, productName: data.product_name, lastScan: data.last_scan,
-        text: `${r.roll_no} · ${data.product_name || r.product_id || ""} · status ${r.status || "-"} · ${r.warehouse_id || ""} · sisa ${r.length_remaining ?? "-"} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
+        text: `${r.roll_no} · ${data.product_name || r.product_id || ""} · status ${r.status || "-"} · ${whNames[r.warehouse_id] || r.warehouse_id || ""} · sisa ${r.length_remaining == null ? "-" : formatQty(r.length_remaining)} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
       // Pindai → aksi: tugas terbuka yang menyentuh roll ini (dari backend) langsung ditawarkan.
       setTasks(data.open_tasks || []);
     } catch (e) {
@@ -119,8 +134,15 @@ function ScanPanel({ onOpenTask }) {
   return (
     <div className="p-4 space-y-3" data-testid="mw-scan">
       <p className="text-sm text-[#6E6E73]">Pindai QR label (nomor roll) atau tag EPC. Hasil ditampilkan besar: ikon + teks, bukan warna saja.</p>
-      <input className="w-full rounded-xl border-2 border-[#E5E5EA] p-4 text-lg" placeholder="Nomor roll / EPC tag…" value={epc} onChange={(e) => setEpc(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") lookup(epc); }} data-testid="mw-scan-input" autoFocus />
-      <input className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Bin / lokasi saya (opsional, diingat di HP)" value={myBin} onChange={(e) => setBin(e.target.value)} data-testid="mw-scan-bin" />
+      {/* Audit UI HP (Pindai) — dua isian kini berlabel & berukuran huruf sama (dulu placeholder saja, 18px vs 13px). */}
+      <label className="block">
+        <span className="field-label">Nomor roll / tag EPC</span>
+        <input className="w-full rounded-xl border-2 border-[#E5E5EA] p-3.5 text-[16px]" placeholder="Pindai atau ketik…" value={epc} onChange={(e) => setEpc(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") lookup(epc); }} data-testid="mw-scan-input" autoFocus />
+      </label>
+      <label className="block">
+        <span className="field-label">Bin / lokasi saya <span className="normal-case font-normal">(opsional, diingat di HP)</span></span>
+        <input className="w-full rounded-xl border border-[#E5E5EA] p-3 text-[16px]" placeholder="mis. A1-01" value={myBin} onChange={(e) => setBin(e.target.value)} data-testid="mw-scan-bin" />
+      </label>
       <div className="flex gap-2">
         <button className="primary-button flex-1 py-4 text-lg" disabled={busy} onClick={() => lookup(epc)} data-testid="mw-scan-btn">{busy ? "Mencari…" : "Pindai"}</button>
         {canCamera && <button className="secondary-button px-4" onClick={() => setCam((c) => !c)} data-testid="mw-scan-camera-btn" aria-label="Kamera"><Camera size={20} /></button>}
@@ -150,23 +172,41 @@ function ScanPanel({ onOpenTask }) {
   );
 }
 
+const UNTAGGED_PAGE = 30;
+
 function UntaggedPanel() {
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState(null);
+  // Audit UI HP (Belum Tag) — dulu 500 baris dirender sekaligus tanpa cari/halaman.
+  const [q, setQ] = useState("");
+  const [shown, setShown] = useState(UNTAGGED_PAGE);
+  const whNames = useWarehouseNames();
   const load = () => { setErr(null); axios.get(`${API}/rfid/untagged-rolls`).then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.rolls || r.data.items || [])).catch((e) => { setErr(e); setRows([]); }); };
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="p-3"><ErrorNotice message={err} onRetry={load} testId="mw-untagged-error" /></div>;   // dulu "Semua roll sudah bertag"
   if (rows === null) return <div className="p-6 text-center text-sm">Memuat…</div>;
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-empty">Semua roll sudah bertag.</div>;
+  const term = q.trim().toLowerCase();
+  const filtered = term ? rows.filter((r) => [r.roll_no, r.product_name, r.sku, r.lot, whNames[r.warehouse_id]]
+    .some((v) => String(v || "").toLowerCase().includes(term))) : rows;
+  const LIMIT = 500;   // batas server (/rfid/untagged-rolls)
   return (
     <div className="space-y-2 p-3" data-testid="mw-untagged-list">
-      <div className="text-xs text-[#6E6E73] px-1">{rows.length} roll belum bertag (termasuk potongan baru — P-1).</div>
-      {rows.map((r) => (
+      <div className="text-xs text-[#6E6E73] px-1">{rows.length >= LIMIT ? `${LIMIT}+` : rows.length} roll belum bertag (termasuk potongan baru).</div>
+      <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari nomor roll, produk, SKU, gudang…"
+        aria-label="Cari roll belum bertag" value={q} onChange={(e) => { setQ(e.target.value); setShown(UNTAGGED_PAGE); }} data-testid="mw-untagged-search" />
+      {filtered.length === 0 && <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-nomatch">Tidak ada roll yang cocok.</div>}
+      {filtered.slice(0, shown).map((r) => (
         <div key={r.id} className="m-card p-3 flex items-center justify-between" data-testid={`mw-untagged-${r.id}`}>
-          <div><b>{r.roll_no}</b><div className="text-xs text-[#6E6E73]">{r.product_name || r.product_id} · {r.warehouse_id} · sisa {r.length_remaining} {r.unit || ""}</div></div>
-          <Tags size={18} />
+          <div className="min-w-0"><b>{r.roll_no}</b><div className="text-xs text-[#6E6E73]">{r.product_name || r.product_id} · {whNames[r.warehouse_id] || r.warehouse_id} · sisa <span className="tabular-nums">{formatQty(r.length_remaining)}</span> {r.unit || ""}</div></div>
+          <Tags size={18} className="shrink-0" />
         </div>
       ))}
+      {filtered.length > shown && (
+        <button className="secondary-button w-full py-3" onClick={() => setShown((n) => n + UNTAGGED_PAGE)} data-testid="mw-untagged-more">
+          Tampilkan {Math.min(UNTAGGED_PAGE, filtered.length - shown)} lagi ({filtered.length - shown} tersisa)
+        </button>
+      )}
     </div>
   );
 }

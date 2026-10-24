@@ -81,12 +81,12 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="blanket-error" />
 
       <div className="section-card mb-3">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <FileStack size={16} className="text-[#0058CC]" />
+            <FileStack size={16} className="shrink-0 text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">Pembelian</span>
-              <h2 data-testid="blanket-title">Blanket / Contract PO — Call-off</h2>
+              <h2 data-testid="blanket-title">Kontrak PO (Blanket) — Penarikan Bertahap</h2>
             </div>
           </div>
           {canCreate && (
@@ -97,7 +97,7 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
         </div>
         <div className="section-body">
           <p className="text-[11.5px] text-[#6B6B73] mb-2">
-            Kontrak harga sepakat dengan supplier (komitmen kuantitas per item + plafon nilai). Penarikan bertahap (call-off) memicu PO anak yang melewati approval & penerimaan normal.
+            Kontrak harga sepakat dengan supplier (komitmen kuantitas per item + plafon nilai). Setiap penarikan bertahap (call-off) membuat PO anak yang melewati persetujuan & penerimaan barang seperti biasa.
           </p>
           <div className="tab-bar">
             {TABS.map((t) => (
@@ -111,9 +111,10 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_400px]">
-        <div className="section-card">
-          <div className="overflow-hidden">
-            <div className="grid grid-cols-[100px_1.4fr_60px_1fr_120px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+        <div className="section-card min-w-0">
+          <div className="overflow-x-auto">
+            <div className="min-w-[620px]">
+            <div className="grid grid-cols-[110px_1.4fr_60px_1fr_120px] gap-x-2 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Nomor</span><span>Supplier</span><span className="text-center">Item</span><span>Terpakai / Plafon</span><span>Status</span>
             </div>
             {loading ? (
@@ -121,7 +122,7 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
             ) : filtered.length === 0 ? (
               <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="blanket-empty">
                 <Layers className="mx-auto mb-2 text-gray-300" size={28} />
-                <p>Belum ada kontrak Blanket PO{tab !== "all" ? ` (${tab})` : ""}.</p>
+                <p>Belum ada kontrak Blanket PO{tab !== "all" ? ` berstatus ${(TABS.find((t) => t.key === tab)?.label || "").toLowerCase()}` : ""}.</p>
                 {canCreate && tab === "all" && (
                   <p className="mt-1 text-[11px]">Buat kontrak untuk mengunci harga & komitmen kuantitas dengan supplier.</p>
                 )}
@@ -134,11 +135,11 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
                   const pct = cap > 0 ? Math.min(100, Math.round((called / cap) * 100)) : 0;
                   return (
                     <button key={b.id} data-testid={`blanket-row-${b.id}`} onClick={() => setDetailId(b.id)}
-                      className={`w-full text-left grid grid-cols-[100px_1.4fr_60px_1fr_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC] transition-colors ${detailId === b.id ? "bg-[#EFF4FF]" : ""}`}>
+                      className={`w-full text-left grid grid-cols-[110px_1.4fr_60px_1fr_120px] gap-x-2 items-center px-3 py-2.5 hover:bg-[#FAFBFC] transition-colors ${detailId === b.id ? "bg-[#EFF4FF]" : ""}`}>
                       <span className="text-[11.5px] font-bold text-[#0058CC]">{b.po_number}</span>
                       <div className="min-w-0">
                         <p className="text-[12px] font-semibold truncate">{b.supplier_name}</p>
-                        <p className="text-[10.5px] text-[#6B6B73] truncate">{b.warehouse_name} · {b.call_off_count || 0} call-off</p>
+                        <p className="text-[11px] text-[#6B6B73] truncate">{b.warehouse_name} · {b.call_off_count || 0} penarikan</p>
                       </div>
                       <span className="text-[12px] text-center tabular-nums">{(b.contract_items || []).length}</span>
                       <div className="pr-2">
@@ -146,18 +147,19 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
                           <div className="flex-1 h-1.5 rounded-full bg-[#EFF0F2] overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct >= 100 ? "#B45309" : "#0058CC" }} />
                           </div>
-                          <span className="text-[10px] tabular-nums text-[#6B6B73] whitespace-nowrap">{pct}%</span>
+                          <span className="text-[11px] tabular-nums text-[#6B6B73] whitespace-nowrap">{pct}%</span>
                         </div>
-                        <p className="text-[10.5px] text-[#6B6B73] tabular-nums mt-0.5">{formatCurrency(called)} / {formatCurrency(cap)}</p>
+                        <p className="text-[11px] text-[#6B6B73] tabular-nums mt-0.5">{formatCurrency(called)} / {formatCurrency(cap)}</p>
                       </div>
                       <div><ContractStatusPill status={b.contract_status || "active"} />
-                        {b.valid_until && <p className="text-[10px] text-[#6B6B73] mt-0.5">s/d {fmtDate(b.valid_until)}</p>}
+                        {b.valid_until && <p className="text-[11px] text-[#6B6B73] mt-0.5">s/d {fmtDate(b.valid_until)}</p>}
                       </div>
                     </button>
                   );
                 })}
               </div>
             )}
+            </div>
           </div>
         </div>
 

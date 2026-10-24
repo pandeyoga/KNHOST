@@ -148,7 +148,7 @@ export default function InternalRequestCreateModal({
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Tambah Barang</label>
+            <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Tambah Barang <span className="text-red-500">*</span> <span className="font-normal text-[#8E8E93]">(min. 1 barang)</span></label>
             <div className="flex gap-2">
               <KNSelect data-testid="pin-product-pick" className="field flex-1" value={pick}
                 onValueChange={(v) => { setPick(v); loadAvail(v); }}
@@ -162,7 +162,7 @@ export default function InternalRequestCreateModal({
           {lines.length > 0 && (
             <div className="rounded-lg border border-[#EFF0F2] overflow-hidden" data-testid="pin-lines">
               <div className="grid grid-cols-[1.6fr_110px_1fr_36px] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
-                <span>Barang</span><span className="text-right">Jumlah</span><span>Catatan</span><span />
+                <span>Barang</span><span className="text-right">Jumlah *</span><span>Catatan</span><span />
               </div>
               {lines.map((l, i) => {
                 const p = prodOf(l.product_id);

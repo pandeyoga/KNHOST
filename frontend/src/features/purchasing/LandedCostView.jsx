@@ -23,6 +23,8 @@ const TABS = [
   { key: "cancelled", label: "Batal" },
 ];
 
+const BASIS_LABEL = { value: "Nilai", quantity: "Kuantitas" };
+
 function StatusPill({ status }) {
   const map = {
     draft: ["pill-muted", "Draf"], pending_approval: ["pill-warning", "Menunggu"],
@@ -71,13 +73,13 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
 
   function onCreated(v) {
     setShowCreate(false);
-    const msg = v.status === "pending_approval" ? "menunggu approval manager" : "disimpan sebagai draft";
-    setNotice(`Landed Cost ${v.voucher_number} dibuat — ${msg}.`);
+    const msg = v.status === "pending_approval" ? "menunggu persetujuan manajer" : "disimpan sebagai draf";
+    setNotice(`Biaya masuk ${v.voucher_number} dibuat — ${msg}.`);
     loadAll();
   }
 
   async function onAction(action, data) {
-    const labels = { submit: "disubmit", approve: "disetujui & HPP dialokasikan", reject: "ditolak", cancel: "dibatalkan", pay: "pembayaran dicatat" };
+    const labels = { submit: "dikirim", approve: "disetujui & HPP dialokasikan", reject: "ditolak", cancel: "dibatalkan", pay: "pembayaran dicatat" };
     setNotice(`${data.voucher_number}: ${labels[action] || action}.`);
     setDetail(data);
     await loadAll();
@@ -90,7 +92,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
         approve: `${API}/landed-costs/${v.id}/approve`,
       };
       const r = await axios.post(urls[action], {});
-      const labels = { submit: "disubmit", approve: "disetujui & HPP dialokasikan" };
+      const labels = { submit: "dikirim", approve: "disetujui & HPP dialokasikan" };
       setNotice(`${r.data.voucher_number}: ${labels[action] || action}.`);
       await loadAll();
     } catch (e) {
@@ -115,10 +117,10 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3" data-testid="lc-summary">
-          <SummaryCard label="Total Landed Cost (applied)" value={formatCurrency(summary.total_applied)} big testId="lc-summary-applied" />
+          <SummaryCard label="Total Biaya Masuk (diterapkan)" value={formatCurrency(summary.total_applied)} big testId="lc-summary-applied" />
           <SummaryCard label="Sisa Hutang Biaya" value={formatCurrency(summary.total_outstanding)} tone="text-red-600" big testId="lc-summary-outstanding" />
           <SummaryCard label="Penyedia Berhutang" value={String((summary.by_provider || []).length)} />
-          <SummaryCard label="Voucher Aktif" value={String((summary.vouchers || []).length)} />
+          <SummaryCard label="Dokumen Aktif" value={String((summary.vouchers || []).length)} />
         </div>
       )}
 
@@ -126,11 +128,11 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0">
             <Ship size={16} className="text-[#0058CC]" />
-            <h2 data-testid="landed-cost-title">Landed Cost (Alokasi HPP Roll)</h2>
+            <h2 data-testid="landed-cost-title">Biaya Masuk / Landed Cost (Alokasi HPP Roll)</h2>
           </div>
           {canCreate && (
             <button data-testid="create-landed-cost-button" onClick={() => setShowCreate(true)} className="primary-button">
-              <Plus size={13} /> Buat Landed Cost
+              <Plus size={13} /> Buat Biaya Masuk
             </button>
           )}
         </div>
@@ -147,17 +149,19 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
       </div>
 
       <div className="section-card">
-        <div className="overflow-hidden">
-          <div className="grid grid-cols-[120px_1.5fr_130px_120px_90px_90px_70px_120px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+        {/* HP: grid 8 kolom digulir di dalam kartu (header tidak bertumpuk, aksi tetap terjangkau). */}
+        <div className="overflow-x-auto">
+         <div className="min-w-[860px]">
+          <div className="grid grid-cols-[120px_1.5fr_130px_120px_90px_90px_70px_120px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Nomor</span><span>Penyedia / PO</span><span className="text-right">Total Biaya</span><span className="text-right">Sisa</span>
             <span>Basis</span><span>Status</span><span className="text-right">Roll</span><span className="text-right">Aksi</span>
           </div>
           {loading ? (
-            <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat landed cost...</div>
+            <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat biaya masuk…</div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]">
               <Layers className="mx-auto mb-2 text-gray-300" size={28} />
-              <p>Belum ada voucher landed cost{tab !== "all" ? ` (${tab})` : ""}.</p>
+              <p>Belum ada biaya masuk{tab !== "all" ? ` berstatus "${(TABS.find((t) => t.key === tab) || {}).label || tab}"` : ""}.</p>
               {canCreate && tab === "all" && <p className="mt-1 text-[11px]">Buat dari PO yang sudah diterima untuk membebankan biaya angkut/bea ke HPP roll.</p>}
             </div>
           ) : (
@@ -168,11 +172,11 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
                   <span className="text-[11.5px] font-bold text-[#0058CC]">{v.voucher_number}</span>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold truncate">{v.provider_name || "—"}</p>
-                    <p className="text-[10.5px] text-[#6B6B73] truncate">{(v.po_numbers || []).join(", ") || "—"} · {(v.cost_lines || []).length} biaya</p>
+                    <p className="text-[11px] text-[#6B6B73] truncate">{(v.po_numbers || []).join(", ") || "—"} · {(v.cost_lines || []).length} biaya</p>
                   </div>
                   <span className="text-[12px] font-bold tabular-nums text-right">{formatCurrency(v.total_cost)}</span>
                   <span className="text-[12px] tabular-nums text-right text-red-600">{formatCurrency(v.financials?.outstanding ?? 0)}</span>
-                  <span className="text-[10.5px] text-[#6B6B73] capitalize">{v.effective_basis || v.basis}</span>
+                  <span className="text-[11px] text-[#6B6B73]">{BASIS_LABEL[v.effective_basis || v.basis] || v.effective_basis || v.basis || "—"}</span>
                   <StatusPill status={v.status} />
                   <span className="text-[11px] tabular-nums text-right">{v.target_roll_count || 0}</span>
                   <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -190,6 +194,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
               ))}
             </div>
           )}
+         </div>
         </div>
       </div>
 
@@ -222,7 +227,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
 function SummaryCard({ label, value, tone, big, testId }) {
   return (
     <div className="section-card !p-3" data-testid={testId}>
-      <p className="text-[9.5px] font-bold uppercase text-[#6B6B73]">{label}</p>
+      <p className="text-[11px] font-bold uppercase text-[#6B6B73]">{label}</p>
       <p className={`${big ? "text-[18px]" : "text-[14px]"} font-bold tabular-nums ${tone || "text-[#0F1115]"}`}>{value}</p>
     </div>
   );

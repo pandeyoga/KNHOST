@@ -48,8 +48,9 @@ const fmtCell = (col, row) => cellText(col, row, formatCurrency);
 // IA 2026-10 (B4–B7, B14) — layar ini = lapisan OVERRIDE per badan usaha; editor lengkap ada di domainnya.
 const FULL_EDITOR = {
   "approval-rules": { view: "approval-rules", label: "Pengaturan › Aturan Persetujuan" },
-  "incentive-rates": { view: "customers-crm", label: "Pelanggan › CRM › Rate Insentif" },
-  "sales-return-policies": { view: "return-policies", label: "Pengaturan › Penjualan › Kebijakan Retur" },
+  // Audit UI 102 — tautan & label mengikuti letak editor sekarang (Rate Insentif = tab Pengaturan; Kebijakan Retur = hub Retur).
+  "incentive-rates": { view: "incentive-rates", label: "Pengaturan › Rate Insentif Sales" },
+  "sales-return-policies": { view: "return-policies", label: "Retur › Kebijakan Retur" },
   "expense-categories": { view: "expense-categories", label: "Pengaturan › Keuangan › Kategori Beban" },
   "document-templates": { view: "doc-templates-basic", label: "Pengaturan › Template Dokumen Dasar" },
   "process-stages": { view: "domain-registry", label: "Pengaturan › Registri Domain" },

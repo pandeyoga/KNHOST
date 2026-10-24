@@ -140,14 +140,15 @@ export default function ManagerEscalationDashboard({ user }) {
               {hangingCount} Menggantung
             </span>
           )}
-          <span className="bg-red-100 text-red-700 text-sm font-bold px-4 py-2 rounded-full">
+          {/* Audit UI 127 — merah (bahaya) hanya bila memang ada tugas tereskalasi. */}
+          <span className={`text-sm font-bold px-4 py-2 rounded-full ${escalatedTasks.length ? "bg-red-100 text-red-700" : "bg-[#F2F2F7] text-[#6B6B73]"}`}>
             {escalatedTasks.length} Tugas
           </span>
         </div>
       </div>
 
       {/* Filter */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {["all", "inbound", "outbound"].map((type) => (
           <button
             key={type}
@@ -155,8 +156,8 @@ export default function ManagerEscalationDashboard({ user }) {
             onClick={() => setFilterType(type)}
             className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
               filterType === type
-                ? "bg-red-500 text-white"
-                : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:border-red-500"
+                ? "bg-[#007AFF] text-white"
+                : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:border-[#007AFF]"
             }`}
           >
             {{ all: "Semua", inbound: "Barang Masuk", outbound: "Barang Keluar" }[type]}
@@ -196,7 +197,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   )}
                   {task.task_type === "outbound" && (
                     <p className="text-xs text-[#3C3C43] mt-1">
-                      Pelanggan: {task.customer_name} | Warehouse: {task.warehouse_name}
+                      Pelanggan: {task.customer_name} | Gudang: {task.warehouse_name}
                     </p>
                   )}
                 </div>
@@ -224,11 +225,11 @@ export default function ManagerEscalationDashboard({ user }) {
                 <p className="text-sm font-semibold text-[#856404] mb-1">Qty Issue:</p>
                 {task.task_type === "inbound" ? (
                   <p className="text-sm text-[#856404]">
-                    Expected: {formatQty(task.expected_qty)} {task.unit} | Received: {formatQty(task.received_qty || 0)} {task.unit}
+                    Diharapkan: {formatQty(task.expected_qty)} {task.unit} | Diterima: {formatQty(task.received_qty || 0)} {task.unit}
                   </p>
                 ) : (
                   <p className="text-sm text-[#856404]">
-                    Expected: {formatQty(task.quantity)} {task.unit} | Picked: {formatQty(task.picked_qty || 0)} {task.unit}
+                    Diharapkan: {formatQty(task.quantity)} {task.unit} | Diambil: {formatQty(task.picked_qty || 0)} {task.unit}
                   </p>
                 )}
               </div>
@@ -236,7 +237,7 @@ export default function ManagerEscalationDashboard({ user }) {
               {/* Escalation Info */}
               {task.escalation && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 text-sm">
-                  <p className="font-semibold text-red-700 mb-1">Reason:</p>
+                  <p className="font-semibold text-red-700 mb-1">Alasan:</p>
                   <p className="text-red-600">{task.escalation.reason}</p>
                   <p className="text-[#3C3C43] text-xs mt-2">
                     Escalated by: {task.escalation.escalated_by} | {new Date(task.escalation.escalated_at).toLocaleString('id-ID')}
@@ -265,7 +266,7 @@ export default function ManagerEscalationDashboard({ user }) {
                 className="w-full bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium flex items-center justify-center gap-2"
               >
                 <Eye size={14} />
-                Review & Resolve
+                Tinjau & Selesaikan
               </button>
               )}
             </div>
@@ -289,7 +290,7 @@ export default function ManagerEscalationDashboard({ user }) {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Resolve Escalation</h3>
+                <h3 className="text-lg font-semibold">Selesaikan Eskalasi</h3>
                 <button onClick={() => {
                   setShowResolveModal(false);
                   setSelectedTask(null);
@@ -313,21 +314,21 @@ export default function ManagerEscalationDashboard({ user }) {
 
               {/* Qty Mismatch */}
               <div className="bg-[#FFF3CD] border border-[#FFC107] rounded-lg p-3 mb-4">
-                <p className="text-sm font-semibold text-[#856404]">Qty Status:</p>
+                <p className="text-sm font-semibold text-[#856404]">Status Qty:</p>
                 {selectedTask.task_type === "inbound" ? (
                   <div className="text-sm text-[#856404] mt-1">
-                    <p>Expected: <strong>{formatQty(selectedTask.expected_qty)} {selectedTask.unit}</strong></p>
-                    <p>Received: <strong>{formatQty(selectedTask.received_qty || 0)} {selectedTask.unit}</strong></p>
+                    <p>Diharapkan: <strong>{formatQty(selectedTask.expected_qty)} {selectedTask.unit}</strong></p>
+                    <p>Diterima: <strong>{formatQty(selectedTask.received_qty || 0)} {selectedTask.unit}</strong></p>
                     <p className="text-red-600 font-semibold mt-1">
-                      Difference: {formatQty((selectedTask.expected_qty - (selectedTask.received_qty || 0)))} {selectedTask.unit}
+                      Selisih: {formatQty((selectedTask.expected_qty - (selectedTask.received_qty || 0)))} {selectedTask.unit}
                     </p>
                   </div>
                 ) : (
                   <div className="text-sm text-[#856404] mt-1">
-                    <p>Expected: <strong>{formatQty(selectedTask.quantity)} {selectedTask.unit}</strong></p>
+                    <p>Diharapkan: <strong>{formatQty(selectedTask.quantity)} {selectedTask.unit}</strong></p>
                     <p>Sudah Diambil: <strong>{formatQty(selectedTask.picked_qty || 0)} {selectedTask.unit}</strong></p>
                     <p className="text-red-600 font-semibold mt-1">
-                      Difference: {formatQty((selectedTask.quantity - (selectedTask.picked_qty || 0)))} {selectedTask.unit}
+                      Selisih: {formatQty((selectedTask.quantity - (selectedTask.picked_qty || 0)))} {selectedTask.unit}
                     </p>
                   </div>
                 )}
@@ -336,7 +337,7 @@ export default function ManagerEscalationDashboard({ user }) {
               {/* Escalation Reason */}
               {selectedTask.escalation && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm font-semibold text-red-700">Escalation Reason:</p>
+                  <p className="text-sm font-semibold text-red-700">Alasan Eskalasi:</p>
                   <p className="text-sm text-red-600 mt-1">{selectedTask.escalation.reason}</p>
                   <p className="text-xs text-[#3C3C43] mt-2">
                     By: {selectedTask.escalation.escalated_by} on {new Date(selectedTask.escalation.escalated_at).toLocaleString('id-ID')}
@@ -356,7 +357,7 @@ export default function ManagerEscalationDashboard({ user }) {
                     value={resolveData.adjusted_qty || ""}
                     onChange={(e) => setResolveData({ ...resolveData, adjusted_qty: e.target.value ? parseFloat(e.target.value) : null })}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                    placeholder={`Current: ${selectedTask.task_type === "inbound" ? selectedTask.expected_qty : selectedTask.quantity}`}
+                    placeholder={`Saat ini: ${formatQty(selectedTask.task_type === "inbound" ? selectedTask.expected_qty : selectedTask.quantity)}`}
                   />
                   <p className="text-xs text-[#3C3C43] mt-1">
                     Adjust qty jika setelah investigasi memang ada perubahan legitimate (shortage, damage, etc)
@@ -372,7 +373,7 @@ export default function ManagerEscalationDashboard({ user }) {
                     onChange={(e) => setResolveData({ ...resolveData, resolution_notes: e.target.value })}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
                     rows="4"
-                    placeholder="Jelaskan hasil investigasi dan action yang diambil..."
+                    placeholder="Jelaskan hasil pemeriksaan dan tindakan yang diambil..."
                   />
                   <p className="text-xs text-[#3C3C43] mt-1">
                     Contoh: "Konfirmasi dengan supplier, barang shortage 10m. Qty disesuaikan ke actual received."

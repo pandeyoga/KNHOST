@@ -8,13 +8,14 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, FileText, Users } from "lucide-react";
 import { badPctTone, goodPctTone, gradeMeta, num } from "./designerMeta";
+import { actorLabel } from "../../utils/actorLabel";
 
 const COLS = [
   { key: "designer", label: "Desainer", align: "left", w: "minmax(150px,1.5fr)" },
   { key: "division_name", label: "Divisi", align: "left", w: "minmax(92px,0.9fr)",
     hint: "Divisi R&D (PS-17)", noSort: true },
-  { key: "rounds", label: "Round", w: "62px", hint: "Jumlah round yang ditangani" },
-  { key: "acc", label: "ACC", w: "58px", hint: "Round yang langsung diterima" },
+  { key: "rounds", label: "Ronde", w: "62px", hint: "Jumlah ronde yang ditangani" },
+  { key: "acc", label: "ACC", w: "58px", hint: "Ronde yang langsung diterima" },
   { key: "revisi", label: "Revisi", w: "62px", hint: "Diminta perbaikan" },
   { key: "tolak", label: "Tolak", w: "58px", hint: "Hasil ditolak" },
   { key: "late_total", label: "Terlambat", w: "84px",
@@ -22,7 +23,7 @@ const COLS = [
   { key: "on_time_pct", label: "Tepat waktu", w: "92px", hint: "Patuh tenggat SLA" },
   { key: "rework_pct", label: "Diulang", w: "78px", hint: "Revisi + tolak dari yang dinilai" },
   { key: "avg_score", label: "Rata skor", w: "80px", hint: "Skor penilaian manajer" },
-  { key: "avg_days", label: "Rata hari", w: "80px", hint: "Lama round dari kirim ke setor" },
+  { key: "avg_days", label: "Rata hari", w: "80px", hint: "Lama ronde dari kirim ke setor" },
   { key: "design_versions", label: "Versi desain", w: "84px",
     hint: "Design Studio: jumlah versi desain yang dibuat pada periode ini" },
   { key: "design_avg_score", label: "Nilai desain", w: "88px",
@@ -80,7 +81,7 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
           Belum ada kinerja desainer pada periode ini
         </p>
         <p className="mt-0.5 text-[12px] text-[#6B6B73]">
-          Angka di sini terbentuk sendiri begitu desainer menyetor hasil round sample
+          Angka di sini terbentuk sendiri begitu desainer menyetor hasil ronde sample
           (lampiran + catatan wajib) — tidak pernah diisi manual. Coba pilih periode
           yang lebih panjang, atau mulai dari menu R&amp;D &rsaquo; Permintaan Sample.
         </p>
@@ -91,19 +92,19 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[1560px]">
-        <div className="grid px-1 pb-1 text-[9.5px] font-bold uppercase text-[#8E8E93]"
+        <div className="grid px-1 pb-1 text-[10px] font-bold uppercase text-[#8E8E93]"
           style={{ gridTemplateColumns: GRID }}>
           {COLS.map((c) => (
             c.noSort ? (
               <span key={c.key} title={c.hint || c.label}
-                className="flex items-center justify-start truncate text-[9.5px] font-bold uppercase text-[#8E8E93]">
+                className="flex items-center justify-start truncate text-[10px] font-bold uppercase text-[#8E8E93]">
                 {c.label}
               </span>
             ) : (
               <button key={c.key} type="button" title={c.hint || c.label}
                 data-testid={`designer-kpi-sort-${c.key}`}
                 onClick={() => toggle(c.key)}
-                className={`flex items-center gap-0.5 bg-transparent text-[9.5px] font-bold uppercase
+                className={`flex items-center gap-0.5 bg-transparent text-[10px] font-bold uppercase
                   ${c.align === "left" ? "justify-start" : "justify-start"}
                   ${sortKey === c.key ? "text-[#0058CC]" : "text-[#8E8E93]"}`}>
                 <span className="truncate">{c.label}</span>
@@ -130,8 +131,8 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
                   ${active ? "bg-[#F2F7FF]" : "bg-white hover:bg-[#FAFBFC]"}`}
                 style={{ gridTemplateColumns: GRID }}>
                 <span className="truncate font-semibold text-[#1C1C1E]">
-                  <span className="mr-1 text-[10px] text-[#9A9BA3]">#{r.rank}</span>
-                  {r.designer}
+                  <span className="mr-1 text-[10.5px] text-[#8E8E93]">#{r.rank}</span>
+                  {actorLabel(r.designer)}
                 </span>
                 <span className="truncate" data-testid={`designer-kpi-division-${r.designer}`}>
                   {r.division_name ? (

@@ -37,6 +37,7 @@ import IntercoMarginPanel from "./IntercoMarginPanel";
 import IntercoLoansPanel from "./IntercoLoansPanel";
 import { TransactionsPanel, BalancesPanel, SettlementsPanel } from "./IntercoPanels";
 import DetailModal from "../../../components/DetailModal";
+import { PageHeader, MetricRow } from "../../../components/ListPageParts";
 
 const TABS = [
   { id: "transactions", label: "Daftar Transaksi", icon: ArrowRightLeft },
@@ -95,6 +96,9 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   // di bawah, peran yang hanya mengurus BARANG (Admin Sales, gudang) akan membuka tab
   // yang pasti 403 — layar penuh galat merah yang bukan salah penggunanya.
   const canMoney = can(perms, "interco_finance", "view");
+  // Audit UI 24 Okt (035) — dibuka dari menu Retur (view `interco-returns`): layar ini berkonteks RETUR,
+  // bukan halaman "Transaksi Antar Entitas" utuh (dulu judul, KPI uang, Settlement & Transaksi Baru ikut tampil).
+  const returnsMode = Array.isArray(only) && only.length > 0 && only.every((t) => RETURN_TABS.includes(t));
   const tabs = TABS.filter((t) => (canMoney || !MONEY_TABS.includes(t.id))
     && (only ? only.includes(t.id) : !RETURN_TABS.includes(t.id)));
   // `selectedEntity` dari App adalah ID string ("all" = semua PT); objek {id} tetap didukung.
@@ -112,6 +116,11 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   const refresh = useCallback(async () => {
     setBusy(true); setErr("");
     try {
+      if (returnsMode) {   // menu Retur: cukup daftar retur antar-PT (tanpa ringkasan uang/transaksi)
+        const rt = await axios.get(`${API}/interco/returns`, { params: { entity_id: entityId } });
+        setReturns(rt.data || []);
+        return;
+      }
       const params = { entity_id: entityId, status: fStatus, role: fRole };
       const money = (url, cfg) => (canMoney
         ? axios.get(url, cfg)
@@ -132,7 +141,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       setMargin(mg.data || null);
     } catch (e) { setErr(apiErrorText(e)); }
     finally { setBusy(false); }
-  }, [entityId, fStatus, fRole, canMoney]);
+  }, [entityId, fStatus, fRole, canMoney, returnsMode]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -194,17 +203,38 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   };
 
   return (
-    <div className="space-y-6" data-testid="interco-view">
+    <div className={returnsMode ? "space-y-4" : "space-y-6"} data-testid="interco-view">
+      {returnsMode ? (
+        <>
+          <PageHeader icon={Undo2} testId="interco-returns-header"
+            title={<span data-testid="interco-returns-title">Retur Antar-PT</span>}
+            subtitle="Retur barang yang sudah berpindah antar-PT dalam grup: retur yang diajukan PT Anda (keluar) dan retur yang masuk ke PT Anda."
+            actions={(
+              <button onClick={refresh} disabled={busy} data-testid="interco-refresh-btn" className="secondary-button">
+                <RefreshCw size={14} className={busy ? "animate-spin" : ""} /> Muat ulang
+              </button>
+            )} />
+          <MetricRow testId="interco-returns-stats" items={[
+            { label: "Total retur antar-PT", value: returns.length, icon: Undo2, hint: "keluar & masuk" },
+            { label: "Draf", value: returns.filter((r) => r.status === "draft").length, icon: Layers, hint: "menunggu persetujuan rekan" },
+            { label: "Disetujui", value: returns.filter((r) => r.status === "approved").length, icon: CheckCircle2, hint: "barang belum kembali" },
+            { label: "Barang sudah kembali", value: returns.filter((r) => r.status === "completed").length, icon: CheckCircle2, tone: "#1B7F4B" },
+          ]} />
+        </>
+      ) : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-[#1D1D1F]">Transaksi Antar Entitas</h1>
+          {/* Audit UI 24 Okt (136): H1 ±32px → ukuran judul halaman standar; tombol aksi boleh
+              membungkus di HP (dulu "Transaksi Baru" keluar layar) dan tombol utama biru. */}
+          <h1 className="text-[20px] font-bold text-[#1D1D1F]">Transaksi Antar Entitas</h1>
           <p className="text-sm text-[#6E6E73] mt-1 max-w-3xl">
             Jual-beli antar-PT dengan harga internal &amp; margin. Dokumen kembar (PO
             internal ↔ SO+Surat Jalan+Invoice) + faktur pajak internal + saldo pasangan
             PT + settlement (netting) + retur — barang fisik tetap lewat jalur gudang.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={refresh} disabled={busy} data-testid="interco-refresh-btn"
                   className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white hover:bg-[#F2F2F5] transition text-[#3C3C43]">
             <RefreshCw size={15} className={busy ? "animate-spin" : ""} />
@@ -223,7 +253,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
                 <Layers size={15} /> Buat Settlement
               </button>
               <button onClick={() => setShowCreate(true)} data-testid="interco-create-btn"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black transition">
+                      className="primary-button">
                 <Plus size={15} /> Transaksi Baru
               </button>
             </>
@@ -242,6 +272,8 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
              value={formatCurrency(margin?.totals?.unrealized_margin || 0)}
              hint="dieliminasi di laporan konsolidasi grup" testid="interco-kpi-unrealized" />
       </div>
+      </>
+      )}
 
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
       {msg && (

@@ -9,9 +9,11 @@ const RETURN_TYPE_LABEL = {
 const STATUS_STYLE = {
   draft:            { cls: "pill-muted",   label: "Draf" },
   pending_approval: { cls: "pill-warning", label: "Menunggu Persetujuan" },
-  approved:         { cls: "pill-warning", label: "Disetujui" },
-  inspecting:       { cls: "pill-warning", label: "Inspeksi" },
-  inspected:        { cls: "pill-warning", label: "Selesai Inspeksi" },
+  // Audit UI 24 Okt (034) — "Disetujui" hijau seperti di Retur ke Supplier; tahap inspeksi biru/ungu
+  // supaya tidak sewarna dengan "Menunggu Persetujuan" (kuning = perlu keputusan).
+  approved:         { cls: "pill-success", label: "Disetujui" },
+  inspecting:       { cls: "pill-info",    label: "Inspeksi" },
+  inspected:        { cls: "pill-purple",  label: "Selesai Inspeksi" },
   refund_settled:   { cls: "pill-success", label: "Pengembalian Dana" },
   credit_settled:   { cls: "pill-success", label: "Store Credit" },
   nego_settled:     { cls: "pill-success", label: "Nego" },

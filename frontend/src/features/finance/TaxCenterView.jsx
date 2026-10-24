@@ -77,8 +77,8 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
       <div className="section-card mb-3">
         <div className="section-head">
           <div className="flex items-center gap-2">
-            <Landmark size={16} className="text-[#6B219A]" />
-            <h2 data-testid="tax-center-title">Pusat Pajak</h2>
+            <Landmark size={16} className="text-[#0058CC]" />
+            <h2 data-testid="tax-center-title">PPh & Rekap Pajak</h2>
             <EntityBadge entity={ent} isPkp={isPkp} />
           </div>
           <div className="flex items-center gap-2 ml-auto">
@@ -90,14 +90,14 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
           </div>
         </div>
         <div className="section-body py-0">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 border-b border-[#EFF0F2] -mx-4 px-4">
+          {/* Tabs — Audit UI 24 Okt (068): tab standar biru (dulu garis bawah ungu buatan sendiri). */}
+          <div className="tab-bar !mb-0">
             {TABS.map((t) => {
               const Icon = t.icon;
               const active = tab === t.key;
               return (
                 <button key={t.key} data-testid={`tax-tab-${t.key}`} onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-semibold border-b-2 -mb-px transition-colors ${active ? "border-[#6B219A] text-[#6B219A]" : "border-transparent text-[#8E8E93] hover:text-[#3C3C43]"}`}>
+                  className={`tab-button inline-flex items-center gap-1.5 ${active ? "active" : ""}`}>
                   <Icon size={14} /> {t.label}
                 </button>
               );
@@ -189,8 +189,10 @@ function PpnTab({ ppn, isPkp, entity, period }) {
           sub={`${keluaran.count || 0} faktur · DPP ${formatCurrency(keluaran.dpp)}`} color="#0058CC" />
         <Kpi testId="tax-kpi-masukan" label="Pajak Masukan" value={formatCurrency(masukan.ppn)} icon={TrendingDown}
           sub={`${masukan.count || 0} faktur · DPP ${formatCurrency(masukan.dpp)}`} color="#B45309" />
-        <Kpi testId="tax-kpi-net" label={ppn?.position_label || "PPN Net"} value={formatCurrency(Math.abs(net))}
-          icon={Wallet} color={posTone} tone={posTone} />
+        {/* Audit UI 24 Okt (068): label posisi ("PPN Nihil" dst.) sudah tampil di kartu posisi
+            di bawah — KPI ini cukup "Selisih PPN" agar tidak tertulis dua kali. */}
+        <Kpi testId="tax-kpi-net" label="Selisih PPN" value={formatCurrency(Math.abs(net))}
+          sub="Keluaran − Masukan" icon={Wallet} color={posTone} tone={posTone} />
       </div>
 
       <div className="section-card" data-testid="tax-ppn-position">
@@ -213,7 +215,7 @@ function PpnTab({ ppn, isPkp, entity, period }) {
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
               <table className="w-full text-[12px]" data-testid="tax-masukan-table">
-                <thead><tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
+                <thead><tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                   <th className="px-3 py-2">Pemasok</th><th className="px-3 py-2 text-center">Faktur</th>
                   <th className="px-3 py-2 text-right">DPP</th><th className="px-3 py-2 text-right">PPN Masukan</th>
                 </tr></thead>

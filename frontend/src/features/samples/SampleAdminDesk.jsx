@@ -55,6 +55,8 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const queues = Array.isArray(data?.queues) ? data.queues : [];
   const openItems = queues.filter((q) => ["bayar_sampel", "siap_gudang"].includes(q.id)).reduce((s, q) => s + (q.count || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
+  // Audit UI 24 Okt (145) — "Umur tertua < 1 hari" dulu tampil walau tak ada satu pun antrean berisi.
+  const anyQueued = queues.some((q) => (q.count || 0) > 0);
 
   return (
     <div data-testid="sample-desk" className="grid gap-4">
@@ -71,14 +73,16 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
         </div>
         <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">Pesanan sample dari sales (SOS-): <b>sample berbayar</b> disetujui pembayarannya dulu (Finance/Admin Sample), <b>sample gratis</b> langsung siap. Lalu <b>teruskan ke gudang</b> → gudang memotong dari roll (pindai RFID, catat panjang aktual) → dikirim / diambil pelanggan.</p>
         <section data-testid="sample-desk-metrics" className="grid gap-3 p-3 sm:grid-cols-3">
-          <Metric icon={Inbox} label="Perlu Tindakan Saya" value={openItems} tone="rgba(255,149,0,.16)" testId="sample-desk-metric-open" />
-          <Metric icon={Layers} label="Antrean Aktif" value={queues.filter((q) => q.count > 0).length} tone="rgba(154,91,0,.14)" testId="sample-desk-metric-queues" />
-          <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "< 1 hari"} tone="rgba(255,59,48,.14)" testId="sample-desk-metric-oldest" />
+          {/* Label KPI disamakan dengan meja lain (Perlu Ditindak · Antrean · Umur Tertua). */}
+          <Metric icon={Inbox} label="Perlu Ditindak" value={openItems} tone="rgba(255,149,0,.16)" testId="sample-desk-metric-open" />
+          <Metric icon={Layers} label="Antrean" value={queues.filter((q) => q.count > 0).length} tone="rgba(154,91,0,.14)" testId="sample-desk-metric-queues" />
+          <Metric icon={ShieldAlert} label="Umur Tertua" value={!anyQueued ? "—" : oldest > 0 ? `${oldest} hari` : "< 1 hari"} tone="rgba(255,59,48,.14)" testId="sample-desk-metric-oldest" />
         </section>
         {(data?.not_my_desk || []).length > 0 && (
-          <div data-testid="sample-desk-not-mine" className="mx-3 mb-3 rounded-lg border border-[#F3D9A4] bg-[#FFF9EC] px-3 py-2">
-            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9A5B00]">Bukan wewenang meja ini</p>
-            <p className="text-[11.5px] text-[#5C4A1E]">{data.not_my_desk.join(" · ")}</p>
+          // Warna kotak batas wewenang disamakan dengan Meja Admin Sales (biru, dulu kuning).
+          <div data-testid="sample-desk-not-mine" className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
+            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Bukan wewenang meja ini</p>
+            <p className="text-[11.5px] text-[#3C3C43]">{data.not_my_desk.join(" · ")}</p>
           </div>
         )}
       </section>

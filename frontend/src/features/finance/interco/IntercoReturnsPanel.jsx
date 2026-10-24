@@ -35,13 +35,13 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
         Retur antar-PT adalah jalan resmi ketika barangnya <b>sudah berpindah</b>
         {" "}(pembatalan dokumen sengaja ditolak saat itu). Setiap retur menerbitkan
         nota retur di PT pembeli dan nota kredit di PT penjual — dokumen kembar,
-        jurnalnya berpasangan di dua buku (INV-IC-08).
+        jurnalnya berpasangan di dua buku.
       </div>
 
       <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="interco-returns-table">
-            <thead className="bg-[#F7F7F9] text-[#3C3C43]">
+            <thead className="bg-[#F7F7F9] text-[#3C3C43] whitespace-nowrap">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Nomor</th>
                 <th className="text-left px-4 py-3 font-medium">Peran</th>
@@ -56,8 +56,8 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
             <tbody className="divide-y divide-[#F2F2F5]">
               {rows.length === 0 && (
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-[#8E8E93]">
-                  Belum ada retur antar-PT. Buka tab <b>Daftar Transaksi</b>, lalu tekan
-                  tombol <b>Retur</b> pada transaksi yang barangnya sudah berpindah.
+                  Belum ada retur antar-PT. Retur dibuat dari menu <b>Akuntansi &amp; Pajak › Antar Entitas (Grup)</b>:
+                  tekan tombol <b>Retur</b> pada transaksi yang barangnya sudah berpindah.
                 </td></tr>
               )}
               {rows.map((r) => (

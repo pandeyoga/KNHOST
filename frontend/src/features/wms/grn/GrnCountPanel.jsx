@@ -58,7 +58,7 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
             tanpa breakpoint → ±50px per kolom di HP, placeholder terpotong). */}
         <div className={`grid grid-cols-2 items-end gap-2 sm:grid-cols-3 ${{ 4: "lg:grid-cols-4", 5: "lg:grid-cols-5", 6: "lg:grid-cols-6" }[cols]}`}>
           {showLen && <label><span className="field-label">{sisa ? "Qty sisa" : `Panjang (${lenUnit})`}</span>
-            <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "mis. kg" : "0"} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} /></label>}
+            <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${lenUnit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} /></label>}
           {!sisa && unitChoices.length > 1 && (
             <label><span className="field-label">Satuan panjang</span>
               <KNSelect data-testid={`grn-count-unit-${ln.line_no}`} value={lenUnit} onValueChange={setLenUnit} searchable={false}

@@ -39,7 +39,13 @@ export function TanyaChatPane({ children, scrollKey, composer }) {
   const [atBottom, setAtBottom] = useState(true);
   useFillHeight(paneRef);
   const toBottom = (smooth = true) => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-  useEffect(() => { if (atBottom) toBottom(); }, [scrollKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Audit UI 24 Okt (119, HP) — JANGAN gulir ke bawah saat pertama dipasang: sapaan pembuka (judul) dulu
+  // terpotong tinggal "ini?" karena area pesan langsung digulir ke dasar sebelum ada percakapan.
+  const initialKey = useRef(scrollKey);
+  useEffect(() => {
+    if (scrollKey === initialKey.current) return;
+    if (atBottom) toBottom();
+  }, [scrollKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const onScroll = (e) => {
     const el = e.currentTarget;
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 80);

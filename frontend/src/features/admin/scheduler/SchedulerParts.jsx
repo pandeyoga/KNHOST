@@ -11,6 +11,24 @@ import { can } from "../../../config/roles";
 export const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
 export const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
+/**
+ * Audit UI 098 — deskripsi job datang dari server dan masih memuat kunci konfigurasi & jargon pengembang
+ * ("(antar_entitas.settlement_reminder_days)", "config periode.unlock_window_hours", "Idempotent: …",
+ * status mentah 'reclosed'/'expired'). Untuk layar, bagian itu dibersihkan; teks aslinya tetap di server.
+ */
+const RAW_STATUS = { reclosed: "ditutup ulang", expired: "kedaluwarsa", basi: "basi" };
+export function jobDesc(text) {
+  if (!text) return text;
+  return String(text)
+    .replace(/\s*\((?:config\s+)?[a-z][a-z0-9_]*\.[a-z0-9_.]+(?:,\s*([^)]*))?\)/g, (m, extra) => (extra ? ` (${extra})` : ""))
+    .replace(/\bconfig\s+[a-z][a-z0-9_]*\.[a-z0-9_.]+/g, "pengaturan")
+    .replace(/\(?\b[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*_(?:days|hours|minutes)\b\)?/g, "batas di Pusat Pengaturan")
+    .replace(/\s*Idempotent:?[^.]*\./gi, "")
+    .replace(/'(reclosed|expired|basi)'/g, (m, k) => `“${RAW_STATUS[k]}”`)
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // ── RBAC UI (selaras permissions_config: resource "scheduler") ───────────────
 export function schedPerms(perms) {
   // Sisir lanjutan gerbang peran (2026-10-21) — izin efektif scheduler.view/run/configure (= endpoint), bukan nama peran.
@@ -102,7 +120,7 @@ function ScheduleEditor({ job, onSave, saving }) {
 export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) {
   const srch = useListSearch(jobs, (j) => [j.id, j.label, j.description, j.module], { testId: "jobs", pageSize: 20, placeholder: "Cari job…" });
   return (
-    <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="job-table">
+    <div className="overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white" data-testid="job-table">
       <table className="w-full text-[12px]">
         <thead>
           <tr className="bg-[#FAFAFC] text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
@@ -124,8 +142,8 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
                         className="text-left font-semibold text-[#6B219A] hover:underline">
                   {j.label}
                 </button>
-                <div className="mt-0.5 max-w-[420px] text-[10.5px] leading-snug text-[#8E8E93]">
-                  {j.description}
+                <div className="mt-0.5 max-w-[420px] text-[11px] leading-snug text-[#8E8E93]">
+                  {jobDesc(j.description)}
                 </div>
               </td>
               <td className="px-3 py-2.5">
@@ -147,8 +165,9 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
               <td className="px-3 py-2.5 text-[#3A3A3C]">
                 {fmtWaktu(j.last_run_at)}
                 {j.last_detail && (
+                  // Audit UI 098 — rincian berupa data mentah server ("[{'entity_id': …}]") tidak ditampilkan apa adanya.
                   <div className="mt-0.5 max-w-[260px] truncate text-[10px] text-[#9A9BA3]"
-                       title={j.last_detail}>{j.last_detail}</div>
+                       title={j.last_detail}>{/^\s*[[{]/.test(String(j.last_detail)) ? "Rincian teknis tersedia (arahkan kursor)" : j.last_detail}</div>
                 )}
               </td>
               <td className="px-3 py-2.5 text-center">
@@ -239,7 +258,7 @@ export function JobDetail({ job, runs, onRun, busy, perms, onNavigate }) {
   const mine = runs.filter((r) => r.job_id === job.id).slice(0, 8);
   return (
     <div className="space-y-3" data-testid="job-detail-panel">
-      <p className="text-[12px] leading-relaxed text-[#3A3A3C]">{job.description}</p>
+      <p className="text-[12px] leading-relaxed text-[#3A3A3C]">{jobDesc(job.description)}</p>
       <div className="grid grid-cols-2 gap-2 text-[11.5px]">
         <div className="rounded-lg border border-[#EFF0F2] bg-[#FCFCFD] px-3 py-2">
           <div className="text-[10px] font-bold uppercase text-[#9A9BA3]">Jadwal</div>
@@ -289,7 +308,7 @@ export function JobDetail({ job, runs, onRun, busy, perms, onNavigate }) {
           </button>
         )}
         <button data-testid="job-detail-run" disabled={!perms.run || busy} onClick={() => onRun(job.id)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B219A] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#581680] disabled:opacity-50">
+                className="primary-button inline-flex items-center gap-1.5">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} Jalankan sekarang
         </button>
       </div>

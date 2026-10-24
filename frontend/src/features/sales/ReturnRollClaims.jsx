@@ -18,7 +18,7 @@ export const emptyClaim = (roll) => ({ qty: String(roll.remaining), condition: "
 function LocalThumb({ file }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
-    if (!file || !String(file.type || "").startsWith("image/")) return undefined;
+    if (!file || !String(file.type || "").startsWith("image/") || typeof URL.createObjectURL !== "function") return undefined;
     const u = URL.createObjectURL(file);
     setSrc(u);
     return () => URL.revokeObjectURL(u);

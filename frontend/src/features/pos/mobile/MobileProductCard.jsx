@@ -3,6 +3,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../../utils/lifecycle";
 import { onImageError, productImage } from "../../../utils/productImage";
 import { ownStockText } from "../../../utils/variants";
+import { displaySku, maskedSkuTitle } from "../skuDisplay";
 
 /** EPIC-VAR — Kartu produk MOBILE (group-aware, kompak). Klik membuka MobileQuickView. */
 export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforcement = "block", siteStock = null, siteName = "" }) {
@@ -32,7 +33,10 @@ export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforceme
     <article data-testid={`mobile-product-${rep.id}`} className="flex flex-col overflow-hidden rounded-xl border border-[#E5E5EA] bg-white">
       <button data-testid={`mobile-product-image-${rep.id}`} className="relative block w-full text-left" onClick={() => onOpen(group)}>
         <img src={productImage(rep)} onError={onImageError} alt={group.name} className="h-28 w-full object-cover" />
-        <span className="absolute right-1.5 top-1.5 rounded-md bg-black/85 px-1.5 py-0.5 text-[9px] font-bold text-white">{rep.grade}</span>
+        {/* Audit UI 24 Okt (HP Katalog) — lencana grade hanya bila ada nilainya (dulu kotak hitam kosong bagi sales). */}
+        {rep.grade && !String(rep.grade).includes("•") && (
+          <span className="absolute right-1.5 top-1.5 rounded-md bg-black/85 px-1.5 py-0.5 text-[10px] font-bold text-white">{rep.grade}</span>
+        )}
         {group.isMulti
           ? <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[#0058CC] px-1.5 py-0.5 text-[8.5px] font-bold text-white"><Layers size={9} /> {group.variants.length} varian</span>
           : <span className={`status-pill ${availPill} absolute left-1.5 top-1.5 scale-90`}>{availLabel}</span>}
@@ -45,7 +49,7 @@ export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforceme
         )}
       </button>
       <div className="flex flex-1 flex-col p-2.5">
-        <p data-testid={`mobile-product-sku-${rep.id}`} className="text-[9.5px] font-bold uppercase tracking-wide text-[#0058CC]">{group.isMulti ? rep.category : rep.sku}</p>
+        <p data-testid={`mobile-product-sku-${rep.id}`} className="truncate text-[10px] font-bold uppercase tracking-wide text-[#0058CC]" title={group.isMulti ? undefined : maskedSkuTitle(rep.sku)}>{group.isMulti ? rep.category : displaySku(rep.sku)}</p>
         <h3 data-testid={`mobile-product-name-${rep.id}`} className="mt-0.5 line-clamp-2 text-[12.5px] font-semibold leading-tight">{group.name}</h3>
         <p className="mt-0.5 line-clamp-1 text-[10.5px] text-[#6B6B73]">{group.isMulti ? `${group.variants.length} ${group.variants.some((v) => v.grade) ? "warna/grade" : "warna"}` : rep.color}</p>
         <p data-testid={`mobile-product-price-${rep.id}`} className="mt-1.5 text-[14px] font-bold tabular-nums text-[#1C1C1E]">{priceText}<span className="text-[9.5px] font-medium text-[#8E8E93]">/{rep.base_unit || "meter"}</span></p>

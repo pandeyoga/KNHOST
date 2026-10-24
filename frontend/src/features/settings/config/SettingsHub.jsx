@@ -42,7 +42,7 @@ const TABS = [
   { k: "health", label: "Kesehatan Konfigurasi", icon: ShieldCheck },
   { k: "history", label: "Riwayat Perubahan", icon: History },
   { k: "impact", label: "Koreksi Harga & Daftar Dampak", icon: Wand2 },
-  { k: "saga", label: "Kunci Saga", icon: Lock, adminOnly: true },
+  { k: "saga", label: "Kunci Proses", icon: Lock, adminOnly: true },
   { k: "hygiene", label: "Kebersihan Data", icon: Sparkles },
 ];
 
@@ -114,16 +114,22 @@ export default function SettingsHub({
   /* muat katalog grup + peta kesehatan sekali */
   useEffect(() => {
     let alive = true;
+    // Audit UI 097 — katalog kelompok TIDAK lagi menunggu peta kesehatan (permintaan paling lambat):
+    // dulu layar tertahan di "Memuat pengaturan…" dengan kotak KELOMPOK kosong sampai keduanya selesai.
+    configApi.health().then((hp) => {
+      if (!alive) return;
+      const map = {};
+      (hp.rows || []).forEach((r) => { map[r.key] = r; });
+      setHealth(map);
+    }).catch(() => {});
     (async () => {
       try {
-        const [reg, hp] = await Promise.all([configApi.registry(), configApi.health()]);
+        const reg = await configApi.registry();
         if (!alive) return;
         setGroups(reg.groups || []);
         setCaps(reg.caps || { settings_manage: false, impact_apply: false });
         if (reg.caps && !reg.caps.global_write && singleEntity) { setScopeType("entity"); setScopeId(singleEntity); }
-        const map = {};
-        (hp.rows || []).forEach((r) => { map[r.key] = r; });
-        setHealth(map);
+        if (!(reg.groups || []).length) setLoading(false);
         // Fungsional: `group` di closure ini adalah nilai saat efek DIPASANG.
         // Bila deep-link (`kn-open-config`) sudah menetapkan kelompok tujuan
         // sebelum permintaan registry selesai, pembacaan closure yang basi akan
@@ -131,7 +137,7 @@ export default function SettingsHub({
         // salah. Bentuk fungsional selalu membaca nilai TERBARU.
         if ((reg.groups || []).length) setGroup((cur) => cur || reg.groups[0].id);
       } catch (e) {
-        if (alive) setError(errMsg(e, "Gagal memuat katalog pengaturan."));
+        if (alive) { setError(errMsg(e, "Gagal memuat katalog pengaturan.")); setLoading(false); }
       }
     })();
     return () => { alive = false; };

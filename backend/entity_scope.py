@@ -276,6 +276,9 @@ INHERITED_GLOBAL_VALUES: Dict[str, List[Any]] = {
     # LN-140 — supplier luar milik grup (`entity_id="all"`) dipakai semua PT; dulu hilang
     # dari daftar & pemilih PO di setiap badan usaha (rantai CST → supplier buntu).
     "suppliers": ["all"],
+    # UAT 24 Okt (audit UI 027) — mitra makloon milik grup (`entity_id="all"`) dipakai semua PT; dulu daftar Mitra
+    # Makloon & pemilih mitra di resep proses kosong padahal kontrak menyebut mitra itu.
+    "makloons": ["all"],
     "expense_categories": ["all", "", None],
     "document_templates": ["all", "", None],
     "sales_return_policies": ["all", "", None],

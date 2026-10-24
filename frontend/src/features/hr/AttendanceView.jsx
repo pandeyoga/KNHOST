@@ -219,7 +219,9 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
 
           <div className="section-card">
             {srch.toolbar}
-            <div className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+            {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
+            <div className="overflow-x-auto"><div className="min-w-[920px]">
+            <div className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Karyawan</span><span>Shift</span><span>Masuk</span><span>Keluar</span><span>Telat</span><span>Kerja</span><span>Metode</span><span>Status</span><span className="text-right">Aksi</span>
             </div>
             {loadingDaily ? (
@@ -250,6 +252,7 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
                 })}
               </div>
             )}
+            </div></div>
           </div>
         </>
       )}
@@ -271,7 +274,8 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
                 <Stat label="Total Lembur" value={fmtMin(recap?.totals?.total_overtime_min)} color="#0058CC" />
               </div>
               <div className="section-card">
-                <div className="grid grid-cols-[90px_1.6fr_1.1fr_72px_72px_84px_90px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+                <div className="overflow-x-auto"><div className="min-w-[680px]">
+                <div className="grid grid-cols-[90px_1.6fr_1.1fr_72px_72px_84px_90px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
                   <span>Kode</span><span>Nama</span><span>Departemen</span><span className="text-right">Hadir</span><span className="text-right">Telat</span><span className="text-right">Review</span><span className="text-right">Lembur</span>
                 </div>
                 {(recap?.rows || []).length === 0 ? (
@@ -291,6 +295,7 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
                     ))}
                   </div>
                 )}
+                </div></div>
               </div>
             </>
           )}

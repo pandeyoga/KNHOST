@@ -116,30 +116,30 @@ export default function CategoryManager({ onChanged }) {
           )}
         </div>
         <div className="section-body grid gap-2">
-          <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Nama kategori *</label>
-          <input data-testid="category-name-input" className="field" placeholder="mis. Batik"
+          <label className="field-label" htmlFor="category-name-field">Nama kategori *</label>
+          <input id="category-name-field" data-testid="category-name-input" className="field" placeholder="mis. Batik"
             value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Kode (opsional)</label>
-          <input data-testid="category-code-input" className="field" placeholder="auto dari nama (BATIK)"
+          <label className="field-label" htmlFor="category-code-field">Kode (opsional)</label>
+          <input id="category-code-field" data-testid="category-code-input" className="field" placeholder="otomatis dari nama (BATIK)"
             value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
 
-          <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Base unit default</label>
+          <label className="field-label">Satuan dasar bawaan</label>
           <KNSelect data-testid="category-base-unit-input" className="field" value={form.base_unit}
             onValueChange={(v) => setForm({ ...form, base_unit: v })} options={baseUnitOptions} />
 
-          <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Deskripsi</label>
-          <input data-testid="category-description-input" className="field" placeholder="Deskripsi singkat"
+          <label className="field-label" htmlFor="category-description-field">Deskripsi</label>
+          <input id="category-description-field" data-testid="category-description-input" className="field" placeholder="Deskripsi singkat"
             value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Urutan</label>
-              <input data-testid="category-sort-order-input" className="field" type="number"
+              <label className="field-label" htmlFor="category-sort-field">Urutan tampil</label>
+              <input id="category-sort-field" data-testid="category-sort-order-input" className="field" type="number"
                 value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Status</label>
+              <label className="field-label">Status</label>
               <KNSelect data-testid="category-status-input" className="field" value={form.status}
                 onValueChange={(v) => setForm({ ...form, status: v })}
                 options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} />
@@ -150,7 +150,7 @@ export default function CategoryManager({ onChanged }) {
 
           <div className="flex gap-2 mt-1">
             <button data-testid="category-save-button" className="primary-button" onClick={save} disabled={saving}>
-              <Save size={14} /> {saving ? "Menyimpan..." : editingId ? "Update Kategori" : "Simpan Kategori"}
+              <Save size={14} /> {saving ? "Menyimpan…" : editingId ? "Simpan Perubahan" : "Simpan Kategori"}
             </button>
             {editingId && (
               <button data-testid="category-cancel-edit-button-2" className="secondary-button" onClick={resetForm}>Batal</button>
@@ -163,7 +163,7 @@ export default function CategoryManager({ onChanged }) {
       <div className="section-card">
         <div className="section-head">
           <h2>Daftar Kategori {rows.length > 0 ? `(${rows.length})` : ""}</h2>
-          <button data-testid="category-refresh-button" className="icon-button ml-auto" onClick={load} aria-label="Refresh">
+          <button data-testid="category-refresh-button" className="icon-button ml-auto" onClick={load} aria-label="Muat ulang" title="Muat ulang">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
@@ -184,45 +184,71 @@ export default function CategoryManager({ onChanged }) {
               </button>
             </div>
           ) : (
-            <div className="overflow-auto">
-              <table className="w-full text-[12.5px]" data-testid="category-table">
-                <thead>
-                  <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] border-b border-[#EFF0F2]">
-                    <th className="py-2">Kode</th>
-                    <th className="py-2">Nama</th>
-                    <th className="py-2">Base Unit</th>
-                    <th className="py-2 text-right">Produk</th>
-                    <th className="py-2 text-center">Status</th>
-                    <th className="py-2 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeRows.map((row) => (
-                    <tr key={row.id} data-testid={`category-row-${row.id}`} className="border-b border-[#F5F5F7] last:border-0">
-                      <td className="py-2 font-mono text-[11px] text-[#6B6B73]">{row.code}</td>
-                      <td className="py-2 font-semibold text-[#1C1C1E]">{row.name}</td>
-                      <td className="py-2 text-[#3C3C43]">{row.base_unit}</td>
-                      <td className="py-2 text-right tabular-nums" data-testid={`category-count-${row.id}`}>{row.product_count ?? 0}</td>
-                      <td className="py-2 text-center">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${row.status === "active" ? "text-[#1B7F4B] bg-[#E6F6EC]" : "text-[#8E8E93] bg-[#F0F0F2]"}`}>
+            <>
+              {/* HP: kartu ringkas — status & tombol ubah/nonaktifkan selalu terlihat tanpa gulir samping. */}
+              <div className="grid gap-2 md:hidden" data-testid="category-cards">
+                {activeRows.map((row) => (
+                  <div key={row.id} data-testid={`category-card-${row.id}`} className="flex items-center gap-2 rounded-md border border-[#EFF0F2] bg-white p-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[#1C1C1E]">
+                        <span className="truncate">{row.name}</span>
+                        <span className={`status-pill shrink-0 ${row.status === "active" ? "pill-success" : "pill-muted"}`}>
                           {row.status === "active" ? "Aktif" : "Nonaktif"}
                         </span>
-                      </td>
-                      <td className="py-2">
-                        <div className="flex items-center justify-end gap-1">
-                          <button data-testid={`category-edit-${row.id}`} className="icon-button" onClick={() => startEdit(row)} aria-label={`Ubah ${row.name}`}>
-                            <Pencil size={13} />
-                          </button>
-                          <button data-testid={`category-delete-${row.id}`} className="icon-button" onClick={() => remove(row)} aria-label={`Hapus ${row.name}`}>
-                            <Trash2 size={13} className="text-[#D14343]" />
-                          </button>
-                        </div>
-                      </td>
+                      </p>
+                      <p className="truncate text-[11px] text-[#6B6B73]">
+                        <span className="font-mono">{row.code}</span> · satuan {row.base_unit || "—"} · {row.product_count ?? 0} produk
+                      </p>
+                    </div>
+                    <button className="icon-button shrink-0" onClick={() => startEdit(row)} aria-label={`Ubah ${row.name}`}>
+                      <Pencil size={13} />
+                    </button>
+                    <button className="icon-button shrink-0" onClick={() => remove(row)} aria-label={`Nonaktifkan ${row.name}`}>
+                      <Trash2 size={13} className="text-[#D14343]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="data-table" data-testid="category-table">
+                  <thead>
+                    <tr>
+                      <th>Kode</th>
+                      <th>Nama</th>
+                      <th>Satuan Dasar</th>
+                      <th className="text-right">Jumlah Produk</th>
+                      <th className="text-center">Status</th>
+                      <th className="text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {activeRows.map((row) => (
+                      <tr key={row.id} data-testid={`category-row-${row.id}`}>
+                        <td className="font-mono text-[11px] text-[#6B6B73]">{row.code}</td>
+                        <td className="font-semibold text-[#1C1C1E]">{row.name}</td>
+                        <td className="text-[#3C3C43]">{row.base_unit}</td>
+                        <td className="text-right tabular-nums" data-testid={`category-count-${row.id}`}>{row.product_count ?? 0}</td>
+                        <td className="text-center">
+                          <span className={`status-pill ${row.status === "active" ? "pill-success" : "pill-muted"}`}>
+                            {row.status === "active" ? "Aktif" : "Nonaktif"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1">
+                            <button data-testid={`category-edit-${row.id}`} className="icon-button" onClick={() => startEdit(row)} aria-label={`Ubah ${row.name}`} title="Ubah">
+                              <Pencil size={13} />
+                            </button>
+                            <button data-testid={`category-delete-${row.id}`} className="icon-button" onClick={() => remove(row)} aria-label={`Nonaktifkan ${row.name}`} title="Nonaktifkan">
+                              <Trash2 size={13} className="text-[#D14343]" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

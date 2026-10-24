@@ -225,7 +225,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
         </div>
         {perms.run && (
           <button data-testid="sched-run-all" onClick={runAll} disabled={runningAll}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B219A] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#581680] disabled:opacity-50">
+                  className="primary-button inline-flex items-center gap-1.5">
             {runningAll ? <Loader2 size={14} className="animate-spin" /> : <PlayCircle size={14} />}
             Jalankan Semua
           </button>

@@ -19,9 +19,12 @@ export default function DatasetPicker({ datasets, unavailable, value, onChange }
         <input data-testid="export-dataset-search" value={q} onChange={(e) => setQ(e.target.value)}
                placeholder="Cari dataset…" className="field w-full pl-8 text-[12.5px]" />
       </div>
+      {/* Audit UI 24 Okt (139 HP): ±100 dataset dulu ditumpuk penuh di atas builder (builder baru
+          terlihat setelah gulir >3000px). Daftar kini dibatasi tinggi & digulir sendiri. */}
+      <div className="max-h-[280px] space-y-3 overflow-y-auto pr-1 lg:max-h-[70vh]" data-testid="export-dataset-list">
       {Object.entries(groups).map(([g, list]) => (
         <div key={g}>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">{g}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">{g}</p>
           <div className="space-y-0.5">
             {list.map((d) => (
               <button key={d.id} type="button" data-testid={`export-dataset-${d.id}`} onClick={() => onChange(d.id)}
@@ -34,9 +37,10 @@ export default function DatasetPicker({ datasets, unavailable, value, onChange }
           </div>
         </div>
       ))}
+      </div>
       {unavailable.length > 0 && (
         <div data-testid="export-dataset-unavailable" className="border-t border-[#EFF0F2] pt-2">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">Tidak tersedia untuk peran Anda</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">Tidak tersedia untuk peran Anda</p>
           {unavailable.map((d) => (
             <p key={d.id} title={d.reason} className="flex items-center gap-1.5 text-[11.5px] text-[#8E8E93] py-0.5">
               <Lock size={11} /> {d.label}

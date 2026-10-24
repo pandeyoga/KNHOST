@@ -143,7 +143,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
           <h2 className="flex items-center gap-2 text-[15px] font-bold">
             <FileText size={16} className="text-[#0058CC]" /> {isEdit ? `Ubah ${contract.contract_number}` : "Kontrak Baru"}
           </h2>
-          <button className="icon-button" onClick={onClose} data-testid="contract-form-close"><X size={18} /></button>
+          <button className="icon-button" onClick={onClose} aria-label="Tutup" data-testid="contract-form-close"><X size={18} /></button>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
@@ -157,18 +157,18 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
             </Field>
             {f.contract_type === "makloon" ? (
               <>
-                <Field label="Mitra Makloon">
+                <Field label="Mitra Makloon *">
                   <MakloonSelect value={f.partner_id} valueName={f.partner_name} processType={f.process_type}
                     triggerTestId="contract-partner" onSelect={(m) => set({ partner_id: m.id, partner_name: m.name })} />
                 </Field>
-                <Field label="Jenis Proses">
+                <Field label="Jenis Proses *">
                   <KNSelect data-testid="contract-process" className="field" value={f.process_type}
                     onValueChange={(v) => set({ process_type: v })} options={processOptions} />
                 </Field>
               </>
             ) : (
               <>
-                <Field label="Supplier">
+                <Field label="Supplier *">
                   <KNSelect data-testid="contract-supplier" className="field" value={f.partner_id}
                     onValueChange={(v) => set({ partner_id: v, partner_name: suppliers.find((s) => s.id === v)?.name || "" })}
                     options={supOpts} />
@@ -195,7 +195,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
           </div>
 
           <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-            <p className="mb-2 text-[11px] font-bold uppercase text-[#6B6B73]">Tarif (basis bebas · D-07)</p>
+            <p className="mb-2 text-[11px] font-bold uppercase text-[#6B6B73]">Tarif (basis bebas)</p>
             <div className="grid gap-2.5 md:grid-cols-4">
               <Field label="Basis tarif">
                 <KNSelect data-testid="contract-basis" className="field" value={f.tariff_basis}
@@ -212,17 +212,22 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
                 <MoneyInput testId="contract-min-charge" className="field" value={f.min_charge} onChange={(v) => set({ min_charge: v })} />
               </Field>
               <div className="md:col-span-4">
-                <Field label="Formula custom (opsional — var: qty_base, basis_qty, rate, gsm, lebar, ppi, roll_count, colors, repeats)">
-                  <input data-testid="contract-formula" className="field" value={f.tariff_formula}
+                <Field label="Rumus tarif khusus (opsional — kosongkan bila memakai tarif × basis)">
+                  <input data-testid="contract-formula" className="field font-mono" value={f.tariff_formula}
                     onChange={(e) => set({ tariff_formula: e.target.value })} placeholder="mis. basis_qty * rate + colors * 150000" />
                 </Field>
+                <p className="mt-1 text-[11px] text-[#8E8E93]">
+                  Nama yang bisa dipakai: <b>basis_qty</b> (jumlah sesuai basis tarif), <b>rate</b> (tarif),
+                  {" "}<b>qty_base</b> (jumlah satuan dasar), <b>gsm</b>, <b>lebar</b>, <b>ppi</b>,
+                  {" "}<b>roll_count</b> (jumlah roll), <b>colors</b> (jumlah warna), <b>repeats</b> (jumlah repeat).
+                </p>
               </div>
             </div>
 
             <div className="mt-2">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-[10.5px] font-semibold text-[#6B6B73]">Biaya tambahan (screen, repeat, dll)</span>
-                <button type="button" className="secondary-button !py-0.5 !px-2 text-[10.5px]" onClick={addAux} data-testid="contract-add-aux">+ Biaya</button>
+                <span className="text-[11px] font-semibold text-[#6B6B73]">Biaya tambahan (screen, repeat, dll)</span>
+                <button type="button" className="secondary-button !py-0.5 !px-2 text-[11px]" onClick={addAux} data-testid="contract-add-aux">+ Biaya</button>
               </div>
               {(f.aux_fees || []).map((a, i) => (
                 <div key={i} className="mb-1 grid grid-cols-[1.2fr_1fr_0.9fr_auto] items-center gap-1.5">
@@ -231,7 +236,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
                   <KNSelect className="field !py-1.5 text-[11.5px]" value={a.basis} onValueChange={(v) => updAux(i, "basis", v)} options={AUX_BASIS_OPTIONS} />
                   <input className="field !py-1.5 text-[11.5px]" placeholder="Rp" value={a.amount}
                     data-testid={`contract-aux-amount-${i}`} onChange={(e) => updAux(i, "amount", e.target.value)} />
-                  <button type="button" className="icon-button text-red-400" onClick={() => set({ aux_fees: f.aux_fees.filter((_, x) => x !== i) })}>
+                  <button type="button" className="icon-button text-red-400" aria-label="Hapus biaya" onClick={() => set({ aux_fees: f.aux_fees.filter((_, x) => x !== i) })}>
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -246,7 +251,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
               {sim && (
                 <div className="flex-1 rounded border border-[#DCE9FF] bg-[#F5F9FF] px-2.5 py-1.5 text-[11px]" data-testid="contract-sim-result">
                   <b>Hasil: Rp {Number(sim.amount || 0).toLocaleString("id-ID")}</b>
-                  <ul className="mt-1 space-y-0.5 text-[10.5px] text-[#3C3C43]">
+                  <ul className="mt-1 space-y-0.5 text-[11px] text-[#3C3C43]">
                     {(sim.explain || []).map((l, i) => <li key={i}>• {l}</li>)}
                   </ul>
                 </div>
@@ -255,20 +260,20 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
           </div>
 
           <div className="grid gap-2.5 md:grid-cols-4">
-            <Field label="Susut standar (%) — D-05">
+            <Field label="Susut standar (%)">
               <input data-testid="contract-shrinkage" className="field" value={f.shrinkage_pct} onChange={(e) => set({ shrinkage_pct: e.target.value })} />
             </Field>
-            <Field label="Toleransi selisih &amp; susut wajar di mitra (%) — D-09">
+            <Field label="Toleransi selisih &amp; susut wajar di mitra (%)">
               <input data-testid="contract-tolerance" className="field" value={f.tolerance_pct} onChange={(e) => set({ tolerance_pct: e.target.value })}
                 placeholder="kosong = kebijakan global" />
             </Field>
-            <Field label="Yield override (0 = rumus GSM)">
+            <Field label="Rendemen manual (kosong/0 = rumus GSM)">
               <input data-testid="contract-yield" className="field" value={f.yield_factor} onChange={(e) => set({ yield_factor: e.target.value })} />
             </Field>
             <Field label="Barang sisa (%)">
               <input data-testid="contract-byproduct" className="field" value={f.byproduct_pct} onChange={(e) => set({ byproduct_pct: e.target.value })} />
             </Field>
-            <Field label="MOQ">
+            <Field label="Pesanan minimum (MOQ)">
               <input data-testid="contract-moq" className="field" value={f.moq} onChange={(e) => set({ moq: e.target.value })} />
             </Field>
             <Field label="Lead time (hari)">
@@ -302,7 +307,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">{label}</span>
+      <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">{label}</span>
       {children}
     </label>
   );

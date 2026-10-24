@@ -35,6 +35,7 @@ import {
 } from "./designRequestsApi";
 import { DESIGN_STATUS_META } from "../rnd/rndMeta";
 import { roleIs } from "../../config/roles";
+import { actorLabel } from "../../utils/actorLabel";
 
 /** Kartu papan: nomor · kategori · brief · desain Studio tertaut · desainer · tenggat. */
 function BoardCard({ r, onOpen }) {
@@ -46,16 +47,16 @@ function BoardCard({ r, onOpen }) {
       <p className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold text-[#1C1C1E]">
         {r.number}
         <RevisionBadge count={r.revision_count} size="xs" testId={`dsr-card-revision-${r.id}`} />
-        {r.is_overdue && <span className="status-pill pill-danger !text-[9px]">lewat tenggat</span>}
+        {r.is_overdue && <span className="status-pill pill-danger !text-[10px]">lewat tenggat</span>}
       </p>
       {(r.category_code || r.design_category_code) && (
         <p className="mt-1 flex flex-wrap gap-1" data-testid={`dsr-card-cats-${r.id}`}>
-          {r.category_code && <span className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#6B219A]">{r.category_name || r.category_code}</span>}
-          {r.design_category_code && <span className="rounded bg-[#EEF4FF] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#0058CC]">{r.design_category_name || r.design_category_code}</span>}
+          {r.category_code && <span className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#6B219A]">{r.category_name || r.category_code}</span>}
+          {r.design_category_code && <span className="rounded bg-[#EEF4FF] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0058CC]">{r.design_category_name || r.design_category_code}</span>}
         </p>
       )}
-      <p className="mt-1 line-clamp-2 text-[10.5px] leading-snug text-[#3C3C43]">{r.brief}</p>
-      {r.customer_name && <p className="mt-0.5 truncate text-[10px] text-[#8E8E93]">{r.so_number ? `${r.so_number} · ` : ""}{r.customer_name}</p>}
+      <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-[#3C3C43]">{r.brief}</p>
+      {r.customer_name && <p className="mt-0.5 truncate text-[10.5px] text-[#8E8E93]">{r.so_number ? `${r.so_number} · ` : ""}{r.customer_name}</p>}
       {(r.references || []).length > 0 && (
         <p className="mt-1 flex gap-1" data-testid={`dsr-card-refs-${r.id}`}>
           {r.references.slice(0, 4).map((f) => (
@@ -70,12 +71,12 @@ function BoardCard({ r, onOpen }) {
           <span className={`status-pill ${dm.cls} !text-[9px]`}>{dm.label}</span>
         </p>
       )}
-      <p className="mt-1.5 flex items-center justify-between gap-1 text-[10px] text-[#8E8E93]">
+      <p className="mt-1.5 flex items-center justify-between gap-1 text-[10.5px] text-[#8E8E93]">
         <span className="flex items-center gap-1 truncate">
           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#E5E5EA] text-[8.5px] font-bold text-[#3C3C43]">
-            {(r.assigned_name || "?").slice(0, 1).toUpperCase()}
+            {(actorLabel(r.assigned_name, "?")).slice(0, 1).toUpperCase()}
           </span>
-          <span className="truncate">{r.assigned_name || "Belum ditugaskan"}</span>
+          <span className="truncate">{actorLabel(r.assigned_name, "Belum ditugaskan")}</span>
         </span>
         {r.due_date && (
           <span className={`shrink-0 ${r.is_overdue ? "font-semibold text-[#A8221A]" : ""}`}>
@@ -181,6 +182,9 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
     return out;
   }, [paged.items]);
 
+  const offBoard = (paged.items || []).filter((r) => !DSR_BOARD_ACTIVE.includes(r.status) && r.status !== statusFilter);
+  const offBoardText = Object.entries(offBoard.reduce((a, r) => ({ ...a, [r.status]: (a[r.status] || 0) + 1 }), {}))
+    .map(([st, n]) => `${DSR_STATUS_LABEL[st] || st}: ${n}`).join(", ");
   const chips = [{ key: "", label: "Semua" }].concat(
     DSR_BOARD_ORDER.map((s) => ({ key: s, label: DSR_STATUS_LABEL[s] })));
 
@@ -193,8 +197,9 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
 
       {/* Kepala + aksi */}
       <div className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2 min-w-0">
+        {/* Audit UI 24 Okt (047) — kepala boleh turun baris: di HP judul dulu terjepit oleh filter & tombol. */}
+        <div className="section-head flex-wrap">
+          <div className="flex min-w-[200px] flex-1 items-center gap-2">
             <Palette size={15} className="text-[#6B219A]" />
             <div className="min-w-0">
               <span className="kicker">Desain</span>
@@ -204,7 +209,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
           <div className="flex flex-wrap items-center gap-2">
             <LineFilter value={line} onChange={setLine} storageKey="design-requests"
               allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="dsr-line-filter" />
-            <input data-testid="dsr-search" className="field !py-1.5 !text-[11.5px] w-52"
+            <input data-testid="dsr-search" className="field !py-1.5 !text-[11.5px] w-full sm:w-52"
               placeholder={tab === "report" ? "Cari nama desainer…" : "Cari nomor / brief / pelanggan…"}
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <button data-testid="dsr-refresh" className="secondary-button !py-1.5" onClick={() => { paged.refresh(); loadSummary(); }}>
@@ -219,7 +224,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
         </div>
 
         {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman) */}
-        <div className="grid gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-5">
           {[
             ["Total", summary.total ?? 0, "dsr-kpi-total"],
             ["Berjalan", summary.open ?? 0, "dsr-kpi-open"],
@@ -228,7 +233,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
             ["Lewat tenggat", summary.overdue ?? 0, "dsr-kpi-overdue"],
           ].map(([label, value, tid]) => (
             <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
               <p data-testid={tid} className="text-[15px] font-bold tabular-nums text-[#1C1C1E]">{value}</p>
             </div>
           ))}
@@ -300,6 +305,12 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
               </div>
             ))}
           </div>
+          {offBoard.length > 0 && (
+            <p data-testid="dsr-board-offboard-note" className="text-[11px] text-[#6B6B73]">
+              {offBoard.length} permintaan sudah selesai ({offBoardText}) dan tidak tampil di papan yang hanya memuat tahap berjalan.{" "}
+              <button type="button" className="link-button" data-testid="dsr-board-offboard-open" onClick={() => setTab("list")}>Lihat di tab Daftar</button>
+            </p>
+          )}
           {paged.total > (paged.items || []).length && (
             <p data-testid="dsr-board-note" className="text-[11px] text-[#8E8E93]">
               Papan menampilkan {(paged.items || []).length} permintaan terbaru dari {paged.total}.
@@ -327,7 +338,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
                   <tr key={r.id} data-testid={`dsr-row-${r.id}`} className="border-b border-[#F2F2F5] last:border-0">
                     <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">{r.number}</td>
                     <td className="px-2 py-1.5 text-[#3C3C43]"><span className="line-clamp-1">{r.brief}</span></td>
-                    <td className="px-2 py-1.5">{r.assigned_name || "—"}</td>
+                    <td className="px-2 py-1.5">{actorLabel(r.assigned_name)}</td>
                     <td className={`px-2 py-1.5 ${r.is_overdue ? "font-semibold text-[#A8221A]" : ""}`}>
                       {r.due_date ? formatDateId(r.due_date, "dd MMM yyyy") : "—"}
                     </td>

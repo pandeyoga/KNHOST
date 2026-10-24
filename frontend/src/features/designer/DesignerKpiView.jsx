@@ -24,6 +24,7 @@ import DesignerSlaPanel from "./DesignerSlaPanel";
 import { designerKpi, downloadDesignerKpi, downloadDesignerReport, runSlaEscalation, saveBlob, slaBoard } from "./designerApi";
 import { gradeFormula, gradeMeta, num, PERIOD_OPTIONS } from "./designerMeta";
 import { roleIs } from "../../config/roles";
+import { actorLabel, isTechActor } from "../../utils/actorLabel";
 
 export default function DesignerKpiView({ currentUser, selectedEntity }) {
   const [period, setPeriod] = useState("30d");
@@ -124,7 +125,10 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
     }
   }
 
-  const items = report?.items || [];
+  // Audit UI 24 Okt (048) — akun teknis (system-seed) bukan desainer: tidak diperingkat & tidak dihitung
+  // "Desainer aktif". Peringkat dinomori ulang mengikuti urutan nilai komposit dari server.
+  const items = (report?.items || []).filter((r) => !isTechActor(r.designer)).map((r, i) => ({ ...r, rank: i + 1 }));
+  const techCount = (report?.items || []).length - items.length;
   const sum = report?.summary || {};
   const w = report?.weights || null;
   const bands = report?.grade_bands || [];
@@ -132,7 +136,9 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
     : PERIOD_OPTIONS);
   const divisionOpts = [{ value: "", label: "Semua divisi" },
     ...((report?.divisions_present || []).map((d) => ({ value: d.id, label: d.name })))];
-  const best = items.find((r) => r.grade_score !== null) || null;
+  // "Terbaik" hanya dari desainer yang punya bukti kerja pada periode ini (ronde sample atau versi desain).
+  const best = items.find((r) => r.grade_score !== null && r.grade_score !== undefined
+    && (Number(r.rounds || 0) > 0 || Number(r.design_versions || 0) > 0)) || null;
 
   return (
     <div className="grid gap-3" data-testid="designer-kpi-view">
@@ -141,7 +147,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
 
       {/* ── Toolbar + ringkasan ─────────────────────────────────────────── */}
       <section className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap">
           <div className="flex items-center gap-2">
             <BarChart3 size={16} className="text-[#0058CC]" />
             <h2 data-testid="designer-kpi-title">KPI Desainer</h2>
@@ -196,7 +202,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
           <p className="text-[11.5px] text-[#6B6B73]" data-testid="designer-kpi-period-note">
             Periode: <b>{report?.period_label || "—"}</b>
             {report?.from_date ? ` (${report.from_date} s/d ${report.to_date})` : ""}
-            {" · "}angka terbentuk sendiri dari round sample yang disetor beserta buktinya —
+            {" · "}angka terbentuk sendiri dari ronde sample yang disetor beserta buktinya —
             tidak ada input manual.
           </p>
 
@@ -206,8 +212,9 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
           ) : (
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-8"
               data-testid="designer-kpi-summary">
-              <Kpi label="Desainer aktif" value={String(sum.designers ?? 0)} />
-              <Kpi label="Round dikerjakan" value={String(sum.rounds ?? 0)} tone="#0058CC" />
+              <Kpi label="Desainer aktif" testId="designer-kpi-summary-designers"
+                value={String(Math.max(0, (sum.designers ?? 0) - techCount))} />
+              <Kpi label="Ronde dikerjakan" value={String(sum.rounds ?? 0)} tone="#0058CC" />
               <Kpi label="Tepat waktu" value={num(sum.on_time_pct, "%")}
                 tone={(sum.on_time_pct ?? 0) >= 80 ? "#1B7F4B" : "#B26A00"} />
               <Kpi label="Kerja diulang" value={num(sum.rework_pct, "%")}
@@ -235,7 +242,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
                 {gradeFormula(w)}
               </p>
               <p className="mt-1 text-[11.5px] leading-relaxed text-[#6B6B73]">
-                Bila satu komponen belum punya data (mis. belum ada round yang dinilai),
+                Bila satu komponen belum punya data (mis. belum ada ronde yang dinilai),
                 bobotnya tidak dihitung nol — bobot sisanya disesuaikan, supaya desainer
                 baru tidak langsung jatuh ke nilai terendah.
               </p>
@@ -270,18 +277,21 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
 
       {/* ── Desainer terbaik + tabel ────────────────────────────────────── */}
       <section className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap">
           <div className="flex items-center gap-2">
             <Users size={16} className="text-[#0058CC]" />
             <h2>Peringkat kinerja desainer</h2>
           </div>
           {best && (
-            <span className="flex items-center gap-1.5 text-[11.5px]"
+            <span className="flex flex-wrap items-center gap-1.5 text-[11.5px]"
               data-testid="designer-kpi-best">
               <Award size={13} className="text-[#B8860B]" />
-              Terbaik periode ini: <b>{best.designer}</b>
+              Terbaik periode ini: <b>{actorLabel(best.designer)}</b>
               <span className={`status-pill ${gradeMeta(best.grade_letter).cls}`}>
                 {best.grade_letter} · {num(best.grade_score)}
+              </span>
+              <span className="text-[11px] text-[#6B6B73]" data-testid="designer-kpi-best-basis">
+                dasar: {Number(best.rounds || 0)} ronde sample · {Number(best.design_versions || 0)} versi desain
               </span>
             </span>
           )}
@@ -307,8 +317,9 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
                 </p>
               )}
               <p className="mt-2 text-[10.5px] leading-relaxed text-[#9A9BA3]">
-                Penanggung jawab round = yang menyetor hasilnya; bila round masih berjalan
-                dipakai yang membuka round tersebut. Kolom bisa diklik untuk mengurutkan.
+                Penanggung jawab ronde = yang menyetor hasilnya; bila ronde masih berjalan
+                dipakai yang membuka ronde tersebut. Kolom bisa diklik untuk mengurutkan.
+                {techCount > 0 ? " Akun sistem (data awal) tidak ikut diperingkat." : ""}
               </p>
             </>
           )}
@@ -371,7 +382,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
 function Kpi({ label, value, tone = "#1C1C1E", testId }) {
   return (
     <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2" data-testid={testId}>
-      <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
+      <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
       <p className="text-[13px] font-bold leading-tight tabular-nums" style={{ color: tone }}>
         {value}
       </p>

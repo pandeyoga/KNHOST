@@ -162,10 +162,11 @@ export default function ExportCenterView({ selectedEntity }) {
         <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2"><FileSpreadsheet size={20} className="text-[#0058CC]" /> Pusat Export</h1>
         <p className="text-[12px] text-[#6B6B73] mt-0.5">Pilih dataset → kolom → periode → filter → pratinjau → unduh. Isi mengikuti hak akses, badan usaha, dan lokasi Anda.</p>
       </div>
-      <div className="flex gap-1.5">
-        {[["builder", "Buat export"], ["templates", "Template"], ["jobs", "Pekerjaan"], ["coverage", "Cakupan data"]].map(([id, label]) => (
+      {/* Audit UI 24 Okt (139): tab standar (dulu pil hitam). */}
+      <div className="tab-bar">
+        {[["builder", "Buat ekspor"], ["templates", "Template"], ["jobs", "Pekerjaan"], ["coverage", "Cakupan data"]].map(([id, label]) => (
           <button key={id} type="button" data-testid={`export-tab-${id}`} onClick={() => setTab(id)}
-                  className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold border ${tab === id ? "bg-[#1C1C1E] text-white border-[#1C1C1E]" : "bg-white text-[#3A3A3C] border-[#E5E5EA]"}`}>{label}</button>
+                  className={`tab-button ${tab === id ? "active" : ""}`}>{label}</button>
         ))}
       </div>
       {error && <ErrorNotice message={error} onDismiss={() => setError(null)} testId="export-error" />}
@@ -189,19 +190,22 @@ export default function ExportCenterView({ selectedEntity }) {
               <Step n="5" title="Ringkasan (opsional)"><GroupStep ds={ds} cols={baseCols} spec={spec} set={set} /></Step>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" data-testid="export-preview-button" onClick={runPreview} disabled={!!busy || !spec.columns.length}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#1C1C1E] px-4 py-2 text-[12.5px] font-semibold disabled:opacity-50"><Eye size={14} /> {busy === "preview" ? "Memuat…" : "Pratinjau"}</button>
+                        className="secondary-button"><Eye size={14} /> {busy === "preview" ? "Memuat…" : "Pratinjau"}</button>
                 <button type="button" data-testid="export-xlsx-button" onClick={() => runExport("xlsx")} disabled={!!busy || !spec.columns.length}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#0058CC] text-white px-4 py-2 text-[12.5px] font-semibold disabled:opacity-50"><FileDown size={14} /> Export XLSX</button>
+                        className="primary-button"><FileDown size={14} /> Unduh XLSX</button>
                 <button type="button" data-testid="export-csv-button" onClick={() => runExport("csv")} disabled={!!busy || !spec.columns.length}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#1C1C1E] text-white px-4 py-2 text-[12.5px] font-semibold disabled:opacity-50"><FileDown size={14} /> Export CSV</button>
+                        className="secondary-button"><FileDown size={14} /> Unduh CSV</button>
                 <label className="ml-auto flex items-center gap-1.5 text-[11.5px] text-[#6B6B73]">Baris per sheet XLSX
                   <input data-testid="export-rows-per-sheet" type="number" min={100} max={1000000} value={rowsPerSheet}
                          onChange={(e) => setRowsPerSheet(e.target.value)} className="field w-28 text-[12px]" />
                 </label>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <input data-testid="export-template-name" value={tplName} onChange={(e) => setTplName(e.target.value)}
-                       placeholder="Nama template (mis. Omzet bulanan per pelanggan)" className="field w-80 text-[12.5px]" />
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="w-full sm:w-80">
+                  <span className="field-label">Nama template</span>
+                  <input data-testid="export-template-name" value={tplName} onChange={(e) => setTplName(e.target.value)}
+                         placeholder="mis. Omzet bulanan per pelanggan" className="field w-full text-[12.5px]" />
+                </label>
                 <button type="button" data-testid="export-template-save" onClick={() => saveTemplate("xlsx")}
                         disabled={!!busy || tplName.trim().length < 3 || !spec.columns.length}
                         className="rounded-full border border-[#0058CC] text-[#0058CC] px-4 py-1.5 text-[12.5px] font-semibold disabled:opacity-50">Simpan template</button>

@@ -60,14 +60,16 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
             <h2 className="text-base font-bold md:text-lg" data-testid="advance-report-title">Laporan Uang Muka Pelanggan</h2>
             <p className="max-w-2xl text-[12px] text-[#6B6B73]">
               Kas yang sudah diterima tetapi barangnya belum keluar gudang — kewajiban di akun
-              <b> 2-1400 Uang Muka Pelanggan</b>. Berkurang otomatis (pro-rata) setiap surat jalan terbit.
+              <b> Uang Muka Pelanggan</b>. Berkurang otomatis (pro-rata) setiap surat jalan terbit.
               Deposit = kelebihan bayar yang belum dialokasikan ke pesanan.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Audit UI 24 Okt (129): ikon kaca pembesar dulu menimpa placeholder ("Qari pelanggan") —
+                padding kiri .form-input menimpa `pl-7`, jadi jaraknya dipaksa lewat style. */}
             <label className="relative">
-              <Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
-              <input data-testid="advance-report-search" className="form-input pl-7 text-[12px]" placeholder="Cari pelanggan / no. pesanan"
+              <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 z-10 -translate-y-1/2 text-[#9A9BA3]" />
+              <input data-testid="advance-report-search" className="form-input text-[12px]" style={{ paddingLeft: 30 }} placeholder="Cari pelanggan / no. pesanan"
                 value={q} onChange={(e) => setQ(e.target.value)} />
             </label>
             <button data-testid="advance-report-refresh" className="btn-secondary btn-xs" onClick={load} disabled={loading}>
@@ -77,7 +79,7 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3" data-testid="advance-report-metrics">
-          <Metric icon={Wallet} label="Total Kewajiban 2-1400" value={formatCurrency(t.liability || 0)} tone="rgba(0,88,204,.14)" testId="advance-metric-liability" />
+          <Metric icon={Wallet} label="Total Kewajiban Uang Muka" value={formatCurrency(t.liability || 0)} tone="rgba(0,88,204,.14)" testId="advance-metric-liability" />
           <Metric icon={PackageOpen} label="Uang Muka Pesanan" value={formatCurrency(t.advance_orders || 0)} sub={`${t.orders || 0} pesanan belum dikirim`} tone="rgba(255,149,0,.16)" testId="advance-metric-orders" />
           <Metric icon={Users} label="Deposit / Kelebihan Bayar" value={formatCurrency(t.deposit_balance || 0)} sub={`${t.customers || 0} pelanggan`} tone="rgba(52,199,89,.16)" testId="advance-metric-deposit" />
         </div>
@@ -85,7 +87,7 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="advance-report-buckets">
           {BUCKETS.map((b) => (
             <div key={b.key} data-testid={`advance-bucket-${b.key}`} className="rounded-lg px-3 py-2" style={{ background: b.bg }}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: b.tone }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: b.tone }}>
                 <Clock3 size={10} className="mr-1 inline" />{b.label}
               </p>
               <p className="text-[13px] font-bold" style={{ color: b.tone }}>{formatCurrency((t.buckets || {})[b.key] || 0)}</p>

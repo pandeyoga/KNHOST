@@ -14,6 +14,8 @@ import PaginationBar from "../../components/PaginationBar";
 import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
 import ApprovalDecisionModal from "./ApprovalDecisionModal";
 import { notifySuccess } from "../../utils/feedback";
+import { actorLabel } from "../../utils/actorLabel";
+import { roleLabel } from "../../config/roles";
 
 /**
  * ApprovalInbox — "Pusat Persetujuan" (FASE 5 — terpadu).
@@ -31,8 +33,8 @@ const INBOX_CSV_COLUMNS = [
   { key: "subtitle", header: "Keterangan" },
   { key: "meta", header: "Info" },
   { key: "amount", header: "Nilai", type: "num" },
-  { key: "requester", header: "Diajukan oleh" },
-  { key: "role", header: "Butuh peran" },
+  { header: "Diajukan oleh", get: (it) => actorLabel(it.requester, "") },
+  { header: "Butuh peran", get: (it) => roleLabel(it.role || "manager") },
   { key: "at", header: "Diajukan pada", type: "date" },
 ];
 
@@ -44,7 +46,7 @@ const KIND_META = {
   price:           { label: "Harga Khusus",  icon: Tag,            fg: "#6D28D9", bg: "#F3EEFF", group: "price" },
   sales_return:    { label: "Retur Penjualan",    icon: RotateCcw,      fg: "#B45309", bg: "#FEF3C7", group: "returns" },
   purchase_return: { label: "Retur Pembelian",    icon: RotateCcw,      fg: "#0E7490", bg: "#E0F2FE", group: "returns" },
-  cycle:           { label: "Stock Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
+  cycle:           { label: "Stok Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
   // FASE G-1 — koreksi angka dokumen keuangan (amandemen ber-alasan & ber-dampak).
   // IA 2026-10 (B9) — override kredit pelanggan (dulu hanya di CRM › Persetujuan Kredit).
   credit:          { label: "Override Kredit", icon: CreditCard, fg: "#0058CC", bg: "#E8F1FF", group: "credit" },
@@ -60,7 +62,7 @@ const TABS = [
   { key: "po",          label: "Pembelian (PO)" },
   { key: "price",       label: "Harga Khusus" },
   { key: "returns",     label: "Retur" },
-  { key: "cycle",       label: "Stock Opname" },
+  { key: "cycle",       label: "Stok Opname" },
   { key: "credit",      label: "Kredit Pelanggan" },
 ];
 
@@ -265,9 +267,9 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
           <Clock size={14} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] font-bold text-[#1C1C1E] truncate">{o.number}</span>
-            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#F2F2F7] text-[#6B6B73]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-[12px] font-bold text-[#1C1C1E] [overflow-wrap:anywhere]">{o.number}</span>
+            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#F2F2F7] text-[#6B6B73]">
               {o.queue_label.replace(" menunggu ACC", "")}
             </span>
           </div>
@@ -321,7 +323,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
               <p className="text-[11px] text-[#6B6B73]">Semua persetujuan yang menunggu keputusan — daftar rinci untuk Pesanan Penjualan (nilai/kredit/harga), PO, retur, amandemen &amp; stock opname; antrean lain (transfer gudang, kontrabon, cuti, uang muka, …) tampil beserta nomor dokumen &amp; umur tunggunya.</p>
             </div>
           </div>
-          <button data-testid="approval-inbox-refresh" onClick={load} className="secondary-button">
+          <button data-testid="approval-inbox-refresh" onClick={load} className="secondary-button shrink-0 whitespace-nowrap">
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat Ulang
           </button>
         </div>
@@ -338,9 +340,11 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                     data-testid="approval-inbox-backlog-total">{backlog.total}</span>
                 </p>
                 {elsewhere > 0 && (
+                  // Audit UI 24 Okt (000) — tiga angka (total / tab "Semua" / "dari N dokumen") dulu tampak
+                  // bertentangan; kini rinciannya disebut: berapa di daftar bawah & berapa di layar lain.
                   <span className="text-[11px] text-[#6B6B73]"
                     data-testid="approval-inbox-backlog-elsewhere">
-                    {elsewhere} di antaranya ditangani di layar lain
+                    {Math.max(0, (backlog.total || 0) - elsewhere)} di daftar bawah · {elsewhere} ditangani di layar lain
                   </span>
                 )}
               </div>
@@ -443,16 +447,17 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                     <Icon size={15} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] font-bold text-[#1C1C1E] truncate">{it.title}</span>
-                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded"
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="text-[12px] font-bold text-[#1C1C1E] [overflow-wrap:anywhere]">{it.title}</span>
+                      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
                         style={{ background: m.bg, color: m.fg }}>
                         {m.label}
                       </span>
                     </div>
                     <p className="text-[11px] text-[#6B6B73] truncate">{it.subtitle}{it.meta ? ` · ${it.meta}` : ""}</p>
-                    <p className="text-[10px] text-[#9A9BA3] flex items-center gap-1 mt-0.5">
-                      <Clock size={10} /> {timeAgo(it.at)} · diajukan {it.requester || "—"} · butuh <b className="uppercase">{it.role || "manager"}</b>
+                    {/* Audit UI 24 Okt (000) — akun teknis ("system-seed") tidak ditampilkan mentah; peran berlabel Indonesia. */}
+                    <p className="text-[11px] text-[#8E8E93] flex flex-wrap items-center gap-x-1 mt-0.5">
+                      <Clock size={10} /> {timeAgo(it.at)} · diajukan {actorLabel(it.requester)} · butuh <b>{roleLabel(it.role || "manager")}</b>
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">

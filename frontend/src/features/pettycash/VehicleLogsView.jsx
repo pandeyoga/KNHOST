@@ -234,11 +234,12 @@ function LogFormModal({ form, vehicles, entities, selectedEntity, onClose, onSav
         <div className="flex items-center justify-between mb-2"><p className="modal-title">{isEdit ? "Ubah Log Perjalanan" : "Catat Perjalanan Kendaraan"}</p><button className="icon-button" onClick={onClose}><X size={15} /></button></div>
         {err && <div className="notice-bar danger" data-testid="veh-log-form-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
         <div className="grid gap-3 sm:grid-cols-2 mt-1">
-          <F label="Kendaraan">
+          {/* Audit UI 24 Okt (137): wajib = kendaraan dari master ATAU No. Polisi (salah satu). */}
+          <F label="Kendaraan" req>
             <KNSelect data-testid="veh-log-vehicle" className="form-input" value={f.vehicle_id} onValueChange={(v) => { const veh = vehicles.find((x) => x.id === v); setF({ ...f, vehicle_id: v, no_polisi: veh?.no_polisi || f.no_polisi }); }}
               placeholder="Pilih dari master" options={vehicles.map((v) => ({ value: v.id, label: `${v.no_polisi} · ${v.nama || v.jenis}` }))} />
           </F>
-          <F label="No. Polisi (manual)"><input data-testid="veh-log-nopol" className="form-input" value={f.no_polisi} onChange={(e) => upd("no_polisi", e.target.value)} placeholder="B 1234 XX" /></F>
+          <F label="No. Polisi (bila tak ada di master)"><input data-testid="veh-log-nopol" className="form-input" value={f.no_polisi} onChange={(e) => upd("no_polisi", e.target.value)} placeholder="B 1234 XX" /></F>
           <F label="Tanggal"><KNDatePicker data-testid="veh-log-tanggal" value={f.tanggal} onChange={(v) => upd("tanggal", v)} clearable={false} /></F>
           <F label="Tujuan"><input data-testid="veh-log-tujuan" className="form-input" value={f.tujuan} onChange={(e) => upd("tujuan", e.target.value)} placeholder="mis. Kirim sample ke pelanggan" /></F>
           <F label="KM Awal"><input type="number" data-testid="veh-log-kmawal" className="form-input text-right" value={f.km_awal} onChange={(e) => upd("km_awal", e.target.value)} /></F>
@@ -247,7 +248,7 @@ function LogFormModal({ form, vehicles, entities, selectedEntity, onClose, onSav
           <F label="Tol (Rp)"><MoneyInput testId="veh-log-tol" className="form-input text-right" value={f.tol} onChange={(v) => upd("tol", v)} /></F>
           <F label="Parkir (Rp)"><MoneyInput testId="veh-log-parkir" className="form-input text-right" value={f.parkir} onChange={(v) => upd("parkir", v)} /></F>
           <F label="Lain-lain (Rp)"><MoneyInput testId="veh-log-lain" className="form-input text-right" value={f.lain_lain} onChange={(v) => upd("lain_lain", v)} /></F>
-          <F label="Driver"><input data-testid="veh-log-driver" className="form-input" value={f.driver} onChange={(e) => upd("driver", e.target.value)} /></F>
+          <F label="Sopir"><input data-testid="veh-log-driver" className="form-input" value={f.driver} onChange={(e) => upd("driver", e.target.value)} /></F>
           <F label="Pemakai"><input data-testid="veh-log-pemakai" className="form-input" value={f.pemakai} onChange={(e) => upd("pemakai", e.target.value)} /></F>
         </div>
         <div className="flex items-center justify-between mt-3 rounded-md bg-[#FAFBFC] px-3 py-2 border border-[#EFF0F2]">

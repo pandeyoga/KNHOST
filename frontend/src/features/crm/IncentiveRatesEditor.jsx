@@ -30,7 +30,8 @@ const MECHANICS = [
   { value: "cutoff", label: "Cutoff (komisi 0)" },
 ];
 const EMPTY = {
-  entity_id: "all", category: "", incentive_unit: "meter", per_unit_amount: 0,
+  // Audit UI 111 — bawaan "yard" (seluruh matriks memakai /yard; dulu bawaan "Meter (m)").
+  entity_id: "all", category: "", incentive_unit: "yard", per_unit_amount: 0,
   discount_threshold_type: "pct", discount_threshold: 10, discount_mechanic: "tier_factor",
   discount_factor: 0.5, discount_potong_rp: 0, margin_cap_pct: 50, status: "active",
 };
@@ -97,7 +98,7 @@ export default function IncentiveRatesEditor() {
       if (editingId) await axios.patch(`${API}/incentive-rates/${editingId}`, { data: payload });
       else await axios.post(`${API}/incentive-rates`, payload);
       resetForm(); await load();
-      setNotice("Rate insentif tersimpan.");
+      setNotice("Tarif insentif tersimpan.");
     } catch (e) {
       setFormError(e.response?.data?.detail || "Gagal menyimpan rate.");
     } finally { setSaving(false); }
@@ -158,7 +159,7 @@ export default function IncentiveRatesEditor() {
         {/* Form */}
         <div className="section-card">
           <div className="section-head">
-            <div className="flex items-center gap-2"><Percent size={14} className="text-[#6B219A]" /><h2>{editingId ? "Edit Rate" : "Rate Baru"}</h2></div>
+            <div className="flex items-center gap-2"><Percent size={14} className="text-[#6B219A]" /><h2>{editingId ? "Ubah Tarif" : "Tarif Baru"}</h2></div>
             {editingId && <button className="icon-button ml-auto" onClick={resetForm} data-testid="incentive-cancel-edit"><XCircle size={14} /></button>}
           </div>
           <div className="section-body grid gap-2">
@@ -169,8 +170,8 @@ export default function IncentiveRatesEditor() {
               <KNSelect data-testid="rate-category-input" className="field" value={form.category} onValueChange={(v) => setForm({ ...form, category: v })} options={catOptions} placeholder="Pilih kategori" />
             </L>
             <div className="grid grid-cols-2 gap-2">
-              <L label="Rate (Rp/unit)"><MoneyInput testId="rate-per-unit-input" className="field" value={form.per_unit_amount} onChange={(v) => setForm({ ...form, per_unit_amount: v })} /></L>
-              <L label="Unit"><KNSelect data-testid="rate-unit-input" className="field" value={form.incentive_unit} onValueChange={(v) => setForm({ ...form, incentive_unit: v })} options={unitOpts} /></L>
+              <L label="Tarif (Rp/satuan)"><MoneyInput testId="rate-per-unit-input" className="field" value={form.per_unit_amount} onChange={(v) => setForm({ ...form, per_unit_amount: v })} /></L>
+              <L label="Satuan"><KNSelect data-testid="rate-unit-input" className="field" value={form.incentive_unit} onValueChange={(v) => setForm({ ...form, incentive_unit: v })} options={unitOpts} /></L>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <L label="Ambang diskon (basis)"><KNSelect data-testid="rate-threshold-type" className="field" value={form.discount_threshold_type} onValueChange={(v) => setForm({ ...form, discount_threshold_type: v })} options={THRESHOLD_TYPES} /></L>
@@ -181,7 +182,7 @@ export default function IncentiveRatesEditor() {
               <L label="Faktor (tier)"><input data-testid="rate-factor-input" type="number" step="0.1" className="field" value={form.discount_factor} onChange={(e) => setForm({ ...form, discount_factor: e.target.value })} /></L>
               <L label="Potong Rp/unit"><MoneyInput testId="rate-potong-input" className="field" value={form.discount_potong_rp} onChange={(v) => setForm({ ...form, discount_potong_rp: v })} /></L>
             </div>
-            <L label="Margin cap (%)"><input data-testid="rate-margin-cap-input" type="number" className="field" value={form.margin_cap_pct} onChange={(e) => setForm({ ...form, margin_cap_pct: e.target.value })} /></L>
+            <L label="Batas margin komisi (%)"><input data-testid="rate-margin-cap-input" type="number" className="field" value={form.margin_cap_pct} onChange={(e) => setForm({ ...form, margin_cap_pct: e.target.value })} /></L>
             {formError && <p className="text-[12px] font-semibold text-[#D14343]" data-testid="rate-form-error">{formError}</p>}
             <button data-testid="rate-save-button" className="primary-button mt-1" onClick={save} disabled={saving}>
               <Save size={14} /> {saving ? "Menyimpan..." : editingId ? "Update Rate" : "Simpan Rate"}
@@ -192,22 +193,22 @@ export default function IncentiveRatesEditor() {
         {/* Table */}
         <div className="section-card">
           <div className="section-head">
-            <h2>Matriks Rate Insentif {rows.length > 0 ? `(${rows.length})` : ""}</h2>
+            <h2>Matriks Tarif Insentif {rows.length > 0 ? `(${rows.length})` : ""}</h2>
             <button data-testid="rate-refresh-button" className="icon-button ml-auto" onClick={load}><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
           <div className="section-body">
             {loading ? (
               <div className="grid gap-2" data-testid="rate-loading">{[0, 1, 2, 3].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
             ) : rows.length === 0 ? (
-              <div className="py-10 text-center text-[12px] text-[#8E8E93]" data-testid="rate-empty">Belum ada rate insentif.</div>
+              <div className="py-10 text-center text-[12px] text-[#8E8E93]" data-testid="rate-empty">Belum ada tarif insentif.</div>
             ) : (
               <div className="overflow-auto rounded-md border border-[#EFF0F2]">
                 <table className="w-full text-[12px]" data-testid="rate-table">
                   <thead>
                     <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                       <th className="px-2 py-2">Entitas</th><th className="px-2 py-2">Kategori</th>
-                      <th className="px-2 py-2 text-right">Rate</th><th className="px-2 py-2">Diskon</th>
-                      <th className="px-2 py-2 text-right">Margin Cap</th><th className="px-2 py-2 text-right">Aksi</th>
+                      <th className="px-2 py-2 text-right">Tarif</th><th className="px-2 py-2">Diskon</th>
+                      <th className="px-2 py-2 text-right">Batas Margin</th><th className="px-2 py-2 text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -216,7 +217,7 @@ export default function IncentiveRatesEditor() {
                         <td className="px-2 py-2 text-[11px] text-[#6B6B73]">{r.entity_id === "all" ? "Semua" : entityFullById(entities, r.entity_id)}</td>
                         <td className="px-2 py-2 font-semibold">{r.category}</td>
                         <td className="px-2 py-2 text-right tabular-nums">{formatCurrency(r.per_unit_amount)}<span className="text-[10px] text-[#9A9BA3]">/{r.incentive_unit}</span></td>
-                        <td className="px-2 py-2 text-[11px] text-[#6B6B73] tabular-nums">{r.discount_mechanic === "cutoff" ? "Cutoff" : r.discount_mechanic === "potong_rp" ? `−${formatCurrency(r.discount_potong_rp)}` : `×${r.discount_factor}`} @ {r.discount_threshold}{r.discount_threshold_type === "pct" ? "%" : "Rp"}</td>
+                        <td className="px-2 py-2 text-[11px] text-[#6B6B73] tabular-nums">{r.discount_mechanic === "cutoff" ? "Komisi 0" : r.discount_mechanic === "potong_rp" ? `−${formatCurrency(r.discount_potong_rp)}` : `×${String(r.discount_factor).replace(".", ",")}`} bila diskon ≥ {r.discount_threshold_type === "pct" ? `${String(r.discount_threshold).replace(".", ",")}%` : formatCurrency(r.discount_threshold)}</td>
                         <td className="px-2 py-2 text-right tabular-nums">{r.margin_cap_pct}%</td>
                         <td className="px-2 py-2">
                           <div className="flex items-center justify-end gap-1">

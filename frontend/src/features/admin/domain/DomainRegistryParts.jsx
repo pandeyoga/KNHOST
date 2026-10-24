@@ -24,11 +24,30 @@ export function Kpi({ label, value, hint, icon: Icon, tone = "#0058CC", testId }
 }
 
 /** Rantai stage visual: yarn → grey → pfd|pfp → finished (+ sisa/hasil samping). */
+// Audit UI 105 — layar ini untuk pemilik, bukan pengembang: kode enum/API diganti label.
+const PROC_LABEL = {
+  weaving: "tenun", knitting: "rajut", pre_treatment: "pra-proses", dyeing: "celup", printing: "printing",
+  finishing: "finishing", screen: "screen", other: "lainnya", lainnya: "lainnya",
+};
+const USE_LABEL = { dye: "untuk celup", print: "untuk printing" };
+const DEV_TERMS = [
+  [/target_use\s*=\s*dye/g, "tujuan celup"], [/target_use\s*=\s*print/g, "tujuan printing"],
+  [/`?fabric_type`?/g, "jenis kain"], [/`?pre_treatment`?/g, "pra-proses"], [/`?process_type`?/g, "jenis proses"],
+  [/`?target_use`?/g, "tujuan pra-proses"], [/`?tariff_basis`?/g, "basis tarif"], [/`([^`]+)`/g, "$1"],
+];
+export function cleanDevText(text) {
+  const plain = DEV_TERMS.reduce((t, [re, to]) => t.replace(re, to), String(text || ""));
+  return stripInternalCodes(plain
+    .replace(/[;,]?\s*(?:lihat\s+)?(?:GET|POST)\s+\/api\/[\w/.-]+/gi, "")
+    .replace(/\s*\(HTTP\s*\d{3}\)/g, ""));
+}
+
 export function StageChain({ stages, transitions }) {
   const label = (v) => (stages.find((s) => s.value === v)?.label || v);
   const procFor = (from, to) => transitions
     .filter((t) => t.from_stage === from && t.to_stage === to)
-    .map((t) => t.process_type + (t.target_use ? `(${t.target_use})` : ""))
+    .map((t) => (t.process_label || PROC_LABEL[t.process_type] || t.process_type)
+      + (t.target_use ? ` ${USE_LABEL[t.target_use] || t.target_use}` : ""))
     .join(" / ");
   const steps = [
     { from: "yarn", to: "grey" },
@@ -72,8 +91,8 @@ export function StageChain({ stages, transitions }) {
         ))}
       </div>
       <p className="text-[10.5px] text-[#6B6B73]">
-        Aturan: satu proses <code>pre_treatment</code> menghasilkan <b>PFD</b>
-        (tujuan celup) atau <b>PFP</b> (tujuan printing). Transisi lain ditolak server (HTTP 400).
+        Aturan: satu proses <b>pra-proses</b> (scouring/bleaching) menghasilkan <b>PFD</b>
+        (tujuan celup) atau <b>PFP</b> (tujuan printing). Perpindahan tahap lain ditolak sistem.
       </p>
     </div>
   );
@@ -196,23 +215,21 @@ export function EnumCard({ name, meta }) {
   return (
     <div className="rounded-md border border-[#EFF0F2] bg-white p-2.5" data-testid={`enum-card-${name}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[12.5px] font-semibold">{meta.label}</p>
-        <code className="rounded bg-[#F2F4F7] px-1.5 py-0.5 text-[10.5px] text-[#6B6B73]">{name}</code>
+        <p className="text-[12.5px] font-semibold" title={name}>{meta.label}</p>
         <span className={`status-pill ${meta.in_use ? "pill-success" : "pill-muted"}`}>
           {meta.in_use ? "dipakai" : "disiapkan"}
         </span>
         {/* Kode internal (meta.ps / meta.decision) sengaja tidak ditampilkan ke pengguna. 23 Okt — dulu ditulis
             `{false && …}` sehingga lint seluruh proyek merah (no-constant-binary-expression). */}
       </div>
-      {meta.note && <p className="mt-1 text-[10.5px] text-[#6B6B73]">{stripInternalCodes(meta.note)}</p>}
+      {meta.note && <p className="mt-1 text-[11px] text-[#6B6B73]">{cleanDevText(meta.note)}</p>}
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {values.map((v) => (
           <span key={v.value} data-testid={`enum-value-${name}-${v.value}`}
             title={stripInternalCodes(v.description || v.label)}
             className="rounded-full border border-[#E5E5EA] bg-[#FAFBFC] px-2 py-0.5 text-[11px]">
-            <b className="font-mono">{v.value}</b>
-            {v.rank ? <span className="ml-1 text-[#6B219A]">rank {v.rank}</span> : null}
-            <span className="ml-1 text-[#6B6B73]">{stripInternalCodes(v.label)}</span>
+            {v.rank ? <span className="mr-1 text-[#6B219A]">urutan {v.rank}</span> : null}
+            <span className="text-[#3A3A3C]">{stripInternalCodes(v.label)}</span>
           </span>
         ))}
       </div>

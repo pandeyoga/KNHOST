@@ -100,27 +100,31 @@ function VisitsLog({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_330px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_330px]">
         {/* Tabel kunjungan */}
-        <div>
+        <div className="min-w-0">
           <div className="section-card mb-3">
-            <div className="section-body grid gap-2 md:grid-cols-4">
-              <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Dari</label>
+            <div className="section-body grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Dari</label>
                 <KNDatePicker data-testid="visits-date-from" value={dateFrom} onChange={setDateFrom} placeholder="Dari" /></div>
-              <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Sampai</label>
+              <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Sampai</label>
                 <KNDatePicker data-testid="visits-date-to" value={dateTo} onChange={setDateTo} min={dateFrom} placeholder="Sampai" /></div>
-              <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Karyawan</label>
+              <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Karyawan</label>
                 <KNSelect data-testid="visits-emp-filter" value={empFilter} onValueChange={setEmpFilter} className="field" searchable options={empOpts} /></div>
-              <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Status</label>
+              <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Status</label>
                 <OptionTabs testId="visits-status-filter" value={statusFilter} onChange={setStatusFilter} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? total)} /></div>
             </div>
           </div>
+          {/* Audit UI 24 Okt (008) — kotak cari di ATAS kepala tabel (dulu di bawahnya); tabel diberi lebar minimum
+              dan digeser di dalam wadahnya di HP (dulu seluruh halaman bergulir ke samping). */}
           <div className="section-card">
-            <div className="grid grid-cols-[1.4fr_1.4fr_84px_84px_72px_96px_96px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">{srch.searchBox}
+              <KNPager page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} testId="visits-pager" /></div>
+            <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
+            <div className="grid grid-cols-[1.4fr_1.4fr_84px_84px_72px_96px_96px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[10.5px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Sales</span><span>Pelanggan</span><span>Masuk</span><span>Keluar</span><span className="text-right">Durasi</span><span>Hasil</span><span>Status</span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 px-3 py-2">{srch.searchBox}
-              <KNPager page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} testId="visits-pager" /></div>
             {loading ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="visits-loading">Memuat kunjungan...</div>
             ) : srch.shown.length === 0 ? (
@@ -144,6 +148,8 @@ function VisitsLog({ currentUser, selectedEntity }) {
                 })}
               </div>
             )}
+            </div>
+            </div>
           </div>
         </div>
 

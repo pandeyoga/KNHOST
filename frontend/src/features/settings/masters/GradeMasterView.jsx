@@ -26,7 +26,7 @@ function GradeRow({ g, perms, onSaved, onError }) {
       <td className="px-3 py-2 text-right">{edit ? <input className="input w-16" type="number" data-testid={`grade-edit-rank-${g.code}`} value={edit.rank} onChange={(e) => setEdit({ ...edit, rank: e.target.value })} /> : g.rank}</td>
       <td className="px-3 py-2 text-right">{edit ? <input className="input w-20" type="number" data-testid={`grade-edit-points-${g.code}`} value={edit.max_points ?? ""} onChange={(e) => setEdit({ ...edit, max_points: e.target.value })} /> : (g.max_points ?? "—")}</td>
       <td className="px-3 py-2 text-right" data-testid={`grade-usage-${g.code}`}>{g.rolls_using}</td>
-      <td className="px-3 py-2"><span data-testid={`grade-status-${g.code}`} className={g.active ? "pill-success" : "pill-muted"}>{g.active ? "Aktif" : (g.historical ? "Historis" : "Nonaktif")}</span></td>
+      <td className="px-3 py-2"><span data-testid={`grade-status-${g.code}`} className={g.active ? "pill-success" : "pill-muted"}>{g.active ? "Aktif" : (g.historical ? "Nonaktif (riwayat)" : "Nonaktif")}</span></td>
       <td className="px-3 py-2">
         <div className="flex flex-wrap items-center gap-1.5">
           {can(perms, "grade_master", "update") && (edit
@@ -34,7 +34,7 @@ function GradeRow({ g, perms, onSaved, onError }) {
             : <button type="button" data-testid={`grade-edit-${g.code}`} className="secondary-button !py-1 text-[11px]" onClick={() => setEdit({ name: g.name, rank: g.rank, description: g.description || "", max_points: g.max_points ?? "" })}>Ubah</button>)}
           {can(perms, "grade_master", "activate") && (
             <>
-              <input className="input !py-1 text-[11px] w-40" placeholder="Alasan aktif/nonaktif" data-testid={`grade-reason-${g.code}`} value={reason} onChange={(e) => setReason(e.target.value)} />
+              <input className="input !py-1 text-[11px] w-40" placeholder="Alasan aktif/nonaktif" aria-label={`Alasan ubah status grade ${g.code}`} data-testid={`grade-reason-${g.code}`} value={reason} onChange={(e) => setReason(e.target.value)} />
               <button type="button" disabled={busy || reason.trim().length < 5} data-testid={`grade-toggle-${g.code}`} className="secondary-button !py-1 text-[11px] disabled:opacity-50" onClick={toggle}>
                 <Power size={12} /> {g.active ? "Nonaktifkan" : "Aktifkan"}
               </button>
@@ -75,17 +75,22 @@ export default function GradeMasterView({ currentUser }) {
       {loading ? <div className="p-4"><Loader2 className="animate-spin" size={16} /></div> : (
         <div className="overflow-x-auto p-3">
           <table className="w-full text-[12px]" data-testid="grade-master-table">
-            <thead><tr className="text-left text-[#8E8E93]"><th className="px-3 py-1">Kode</th><th className="px-3 py-1">Nama</th><th className="px-3 py-1 text-right">Rank</th><th className="px-3 py-1 text-right">Maks. poin</th><th className="px-3 py-1 text-right">Roll memakai</th><th className="px-3 py-1">Status</th><th className="px-3 py-1">Aksi</th></tr></thead>
+            <thead><tr className="text-left text-[#8E8E93]"><th className="px-3 py-1">Kode</th><th className="px-3 py-1">Nama</th><th className="px-3 py-1 text-right">Urutan</th><th className="px-3 py-1 text-right">Maks. poin</th><th className="px-3 py-1 text-right">Roll memakai</th><th className="px-3 py-1">Status</th><th className="px-3 py-1">Aksi</th></tr></thead>
             <tbody>{rows.map((g) => <GradeRow key={g.code} g={g} perms={perms} onSaved={saved} onError={setErr} />)}</tbody>
           </table>
         </div>
       )}
       {can(perms, "grade_master", "create") && (
         <div className="flex flex-wrap items-end gap-2 border-t border-[#E5E7EB] p-3 text-[11.5px]" data-testid="grade-create-form">
-          <input className="input w-20" placeholder="Kode" maxLength={2} data-testid="grade-new-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
-          <input className="input w-48" placeholder="Nama, mis. A3 — Baik minus" data-testid="grade-new-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input className="input w-20" type="number" placeholder="Rank" data-testid="grade-new-rank" value={form.rank} onChange={(e) => setForm({ ...form, rank: e.target.value })} />
-          <input className="input w-24" type="number" placeholder="Maks. poin" data-testid="grade-new-points" value={form.max_points} onChange={(e) => setForm({ ...form, max_points: e.target.value })} />
+          {/* Audit UI 104 — isian berlabel (dulu placeholder-sebagai-label). */}
+          <label className="grid gap-1"><span className="field-label">Kode *</span>
+            <input className="input w-20" placeholder="mis. A3" maxLength={2} data-testid="grade-new-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
+          <label className="grid gap-1"><span className="field-label">Nama *</span>
+            <input className="input w-48" placeholder="mis. A3 — Baik minus" data-testid="grade-new-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+          <label className="grid gap-1"><span className="field-label">Urutan *</span>
+            <input className="input w-20" type="number" placeholder="1 = terbaik" data-testid="grade-new-rank" value={form.rank} onChange={(e) => setForm({ ...form, rank: e.target.value })} /></label>
+          <label className="grid gap-1"><span className="field-label">Maks. poin</span>
+            <input className="input w-24" type="number" placeholder="mis. 20" data-testid="grade-new-points" value={form.max_points} onChange={(e) => setForm({ ...form, max_points: e.target.value })} /></label>
           <button type="button" className="primary-button !py-1.5 text-[12px]" data-testid="grade-new-submit" disabled={!form.code || !form.name || !form.rank} onClick={create}><Plus size={13} /> Tambah Grade</button>
         </div>
       )}

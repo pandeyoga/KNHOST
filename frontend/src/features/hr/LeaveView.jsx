@@ -7,6 +7,7 @@ import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
+import FormModal from "../../components/FormModal";
 import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells } from "./leaveUtils";
 import { can } from "../../config/roles";
 
@@ -42,38 +43,34 @@ function LeaveCreateModal({ open, onClose, employees, onSubmit }) {
     finally { setBusy(false); }
   }
 
+  // Audit UI 24 Okt (079): modal HR memakai FormModal standar (ikon, deskripsi, kaki terpisah).
   return (
-    <div className="modal-overlay" data-testid="leave-create-modal" onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="modal-card">
-        <p className="modal-title">Ajukan Cuti / Izin untuk Karyawan</p>
-        {err && <div className="notice-bar danger !mb-2 !py-1.5"><span className="text-[11.5px]">{err}</span></div>}
-        <div className="grid gap-2.5 mt-1">
+    <FormModal open={open} onClose={onClose} title="Ajukan Cuti / Izin untuk Karyawan"
+      subtitle="Dicatat atas nama karyawan; menunggu persetujuan HRD/atasan." icon={CalendarDays}
+      testId="leave-create-modal" onSubmit={submit} submitLabel="Ajukan" submitTestId="leave-form-submit"
+      busy={busy} error={err}>
+        <div className="grid gap-2.5">
           <div className="grid gap-1">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Karyawan *</label>
+            <label className="field-label">Karyawan <span className="req">*</span></label>
             <KNSelect data-testid="leave-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan"
               options={employees.map((e) => ({ value: e.id, label: `${e.name}${e.code ? ` (${e.code})` : ""}` }))} />
           </div>
           <div className="grid gap-1">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Tipe</label>
+            <label className="field-label">Tipe <span className="req">*</span></label>
             <KNSelect data-testid="leave-form-type" value={type} onValueChange={setType} className="field"
               options={LEAVE_TYPES.map((t) => ({ value: t.value, label: t.label + (t.deduct ? " · potong saldo" : "") }))} />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Dari</label>
+            <div className="grid gap-1"><label className="field-label">Dari <span className="req">*</span></label>
               <KNDatePicker data-testid="leave-form-from" value={from} onChange={setFrom} /></div>
-            <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Sampai</label>
+            <div className="grid gap-1"><label className="field-label">Sampai <span className="req">*</span></label>
               <KNDatePicker data-testid="leave-form-to" value={to} onChange={setTo} min={from} /></div>
           </div>
           <p className="text-[11px] text-[#6B6B73]">Estimasi <b>{days}</b> hari kerja.</p>
-          <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
+          <div className="grid gap-1"><label className="field-label">Alasan</label>
             <textarea data-testid="leave-form-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opsional" /></div>
         </div>
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose} disabled={busy}>Batal</button>
-          <button data-testid="leave-form-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : "Ajukan"}</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
@@ -176,14 +173,14 @@ export default function LeaveView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2"><CalendarDays size={16} className="text-[#0058CC]" /><h2 data-testid="leave-title">Cuti & Izin</h2></div>
           <div className="flex items-center gap-2">
-            {canManage && <button data-testid="leave-create-button" onClick={() => setCreateOpen(true)} className="primary-button !py-1.5"><Plus size={14} /> Ajukan utk Karyawan</button>}
+            {canManage && <button data-testid="leave-create-button" onClick={() => setCreateOpen(true)} className="primary-button !py-1.5"><Plus size={14} /> Ajukan untuk Karyawan</button>}
             <button data-testid="leave-refresh" onClick={() => { loadRequests(); loadBalances(); loadCalendar(); }} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-3 pb-2">
+        <div className="tab-bar !mb-0 px-3">
           {TABS.map((t) => (
             <button key={t.id} data-testid={`leave-tab-${t.id}`} onClick={() => setTab(t.id)}
-              className={`px-3 py-1.5 text-[12px] font-semibold rounded-md ${tab === t.id ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>{t.label}</button>
+              className={`tab-button ${tab === t.id ? "active" : ""}`}>{t.label}</button>
           ))}
         </div>
       </div>
@@ -191,12 +188,14 @@ export default function LeaveView({ currentUser, selectedEntity }) {
       {/* TAB: Pengajuan */}
       {tab === "requests" && (
         <div className="section-card">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">
             <div className="w-[150px]"><KNSelect data-testid="leave-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
             <OptionTabs testId="leave-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
-            <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="leave-search" />
+            <div className="w-full sm:w-auto sm:min-w-[220px] sm:flex-1"><SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="leave-search" /></div>
           </div>
-          <div className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
+          <div className="overflow-x-auto"><div className="min-w-[780px]">
+          <div className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Karyawan</span><span>Tipe</span><span>Periode</span><span className="text-center">Hari</span><span>Status</span><span className="text-right">Aksi</span>
           </div>
           {loading ? (
@@ -209,7 +208,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
                 <div key={r.id} data-testid={`leave-row-${r.id}`} className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={r.entity_id} /><span className="text-[12px] font-semibold truncate">{r.employee_name}</span></span>
                   <span className="text-[11.5px]">{LEAVE_TYPE_LABEL[r.leave_type] || r.leave_type}</span>
-                  <span className="text-[11px] text-[#6B6B73]">{r.date_from} → {r.date_to}</span>
+                  <span className="whitespace-nowrap text-[11px] text-[#6B6B73]">{r.date_from} → {r.date_to}</span>
                   <span className="text-[12px] font-bold text-center tabular-nums">{r.days}</span>
                   <span><StatusPill status={r.status} /></span>
                   <div className="flex items-center justify-end gap-1">
@@ -227,6 +226,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
               ))}
             </div>
           )}
+          </div></div>
         </div>
       )}
 
@@ -262,7 +262,8 @@ export default function LeaveView({ currentUser, selectedEntity }) {
       {/* TAB: Saldo */}
       {tab === "balance" && (
         <div className="section-card" data-testid="leave-balance-tab">
-          <div className="grid grid-cols-[1.6fr_110px_90px_90px_100px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          <div className="overflow-x-auto"><div className="min-w-[560px]">
+          <div className="grid grid-cols-[1.6fr_110px_90px_90px_100px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Karyawan</span><span className="text-center">Jatah</span><span className="text-center">Terpakai</span><span className="text-center">Menunggu</span><span className="text-right">Sisa</span>
           </div>
           {loading ? (
@@ -282,6 +283,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
               ))}
             </div>
           )}
+          </div></div>
         </div>
       )}
 

@@ -10,6 +10,7 @@ import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { badgeClass, badgeLabel } from "../../sales_admin/workDeskApi";
 import { askReason } from "../../../services/confirmService";
+import { actorLabel } from "../../../utils/actorLabel";
 
 const errText = (e, fb) => { const d = e?.response?.data?.detail; return (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || fb; };
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-");
@@ -137,9 +138,10 @@ export function MobileApprovalWatch() {
             <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-bold">{it.number || it.doc_number || it.title}</p>
               <p className="truncate text-[11.5px] text-[#3C3C43]">{it.title || it.doc_label}</p>
-              <p className="text-[10.5px] m-muted">{it.stage_label || it.stage}{it.requester ? ` · ${it.requester}` : ""}{it.days_waiting != null ? ` · ${it.days_waiting} hari menunggu` : ""}</p>
+              {/* Audit UI 24 Okt (HP Pantau Persetujuan) — akun teknis tidak tampil mentah; "0 hari" → "< 1 hari"; Rp 0 tidak ditampilkan. */}
+              <p className="text-[11px] m-muted">{it.stage_label || it.stage}{it.requester ? ` · ${actorLabel(it.requester)}` : ""}{it.days_waiting != null ? ` · ${it.days_waiting > 0 ? `${it.days_waiting} hari` : "< 1 hari"} menunggu` : ""}</p>
             </div>
-            {it.amount != null && <span className="shrink-0 text-[12px] font-bold tabular-nums">{formatCurrency(it.amount)}</span>}
+            {Number(it.amount) > 0 && <span className="shrink-0 text-[12px] font-bold tabular-nums">{formatCurrency(it.amount)}</span>}
           </div>
         </div>
       ))}

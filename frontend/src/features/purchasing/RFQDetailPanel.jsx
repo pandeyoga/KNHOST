@@ -261,7 +261,7 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
 }
 
 function StatusPill({ status }) {
-  const map = { draft: ["pill-muted", "Draft"], open: ["pill-info", "Berjalan"], awarded: ["pill-success", "Awarded"], cancelled: ["pill-muted", "Batal"] };
+  const map = { draft: ["pill-muted", "Draf"], open: ["pill-info", "Berjalan"], awarded: ["pill-success", "Pemenang dipilih"], cancelled: ["pill-muted", "Batal"] };
   const [cls, label] = map[status] || ["pill-muted", status];
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }

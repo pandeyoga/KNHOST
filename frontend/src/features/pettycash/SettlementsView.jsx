@@ -117,7 +117,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
 
         <div className="flex flex-wrap gap-1.5 px-3 pb-3">
           {TABS.map((t) => (<button key={t.key || "all"} data-testid={`stl-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>))}
-          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / PD / pemohon…" testId="stl-search" /></div>
+          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, PD, pemohon…" testId="stl-search" /></div>
         </div>
       </section>
 
@@ -188,7 +188,7 @@ function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onCha
             {stl.hutang_reimburse?.status === "open" && canPayReimburse && (
               <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy}
                 onClick={() => act("pay-reimburse", { cash_type: "kas_besar" },
-                  `Kelebihan LPJ ${stl.number} dibayar ke karyawan (Dr 2-1650 / Cr Kas).`)}>
+                  `Kelebihan LPJ ${stl.number} dibayar ke karyawan (hutang reimburse dilunasi dari kas).`)}>
                 <CheckCircle2 size={13} /> Bayar Reimburse Rp {Number(stl.hutang_reimburse.amount || 0).toLocaleString("id-ID")}
               </button>)}
             {stl.hutang_reimburse?.status === "paid" && (

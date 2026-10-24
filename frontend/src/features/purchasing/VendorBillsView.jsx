@@ -110,14 +110,14 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
 
   function onCreated(bill, submitted) {
     setShowCreate(false);
-    const msg = bill.status === "posted" ? "langsung di-posting (match bersih)"
-      : bill.status === "pending_approval" ? "menunggu approval (ada selisih)" : "disimpan sebagai draft";
-    setNotice(`Vendor Bill ${bill.bill_number} dibuat — ${msg}.`);
+    const msg = bill.status === "posted" ? "langsung terposting (cocok bersih)"
+      : bill.status === "pending_approval" ? "menunggu persetujuan (ada selisih)" : "disimpan sebagai draf";
+    setNotice(`Tagihan ${bill.bill_number} dibuat — ${msg}.`);
     reload();
   }
 
   async function onAction(action, data) {
-    const labels = { submit: "disubmit", approve: "disetujui & posted", reject: "ditolak", cancel: "dibatalkan", pay: "pembayaran dicatat" };
+    const labels = { submit: "dikirim", approve: "disetujui & terposting", reject: "ditolak", cancel: "dibatalkan", pay: "pembayaran dicatat" };
     setNotice(`${data.bill_number}: ${labels[action] || action}.`);
     setDetail(data);
     reload();
@@ -130,7 +130,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
         approve: `${API}/vendor-bills/${bill.id}/approve`,
       };
       const r = await axios.post(urls[action], body || {});
-      const labels = { submit: "disubmit", approve: "disetujui & posted" };
+      const labels = { submit: "dikirim", approve: "disetujui & terposting" };
       setNotice(`${r.data.bill_number}: ${labels[action] || action}.`);
       reload();
     } catch (e) {
@@ -143,8 +143,8 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
       {notice && <div className="notice-bar success" data-testid="vb-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error || paged.error} onRetry={reload} onDismiss={() => setError("")} testId="vb-error" />
 
-      <PageHeader icon={Receipt} title={<span data-testid="vendor-bills-title">Tagihan Supplier (Vendor Bill)</span>}
-        subtitle="Tagihan dicocokkan PO ↔ penerimaan ↔ bill (3-way matching); yang terposting menjadi hutang usaha sampai dibayar."
+      <PageHeader icon={Receipt} title={<span data-testid="vendor-bills-title">Tagihan Supplier</span>}
+        subtitle="Tagihan dicocokkan PO ↔ penerimaan ↔ tagihan (3-way matching); yang terposting menjadi hutang usaha sampai dibayar."
         actions={canCreate && (
           <button data-testid="create-vendor-bill-button" onClick={() => setShowCreate(true)} className="primary-button">
             <Plus size={14} /> Buat Tagihan

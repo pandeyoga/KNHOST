@@ -7,8 +7,10 @@ import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
+import FormModal from "../../components/FormModal";
 import { REQ_STATUS, recentMonths, wibToday } from "./leaveUtils";
 import { can } from "../../config/roles";
+import { formatDate } from "../../utils/formatters";
 
 function StatusPill({ status }) {
   const s = REQ_STATUS[status] || REQ_STATUS.pending;
@@ -36,30 +38,26 @@ function OvertimeCreateModal({ open, onClose, employees, onSubmit }) {
     finally { setBusy(false); }
   }
 
+  // Audit UI 24 Okt (080): modal HR memakai FormModal standar (ikon, deskripsi, kaki terpisah).
   return (
-    <div className="modal-overlay" data-testid="overtime-create-modal" onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="modal-card">
-        <p className="modal-title">Ajukan Lembur untuk Karyawan</p>
-        {err && <div className="notice-bar danger !mb-2 !py-1.5"><span className="text-[11.5px]">{err}</span></div>}
-        <div className="grid gap-2.5 mt-1">
-          <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Karyawan *</label>
+    <FormModal open={open} onClose={onClose} title="Ajukan Lembur untuk Karyawan"
+      subtitle="Dicatat atas nama karyawan; menunggu persetujuan atasan." icon={Timer}
+      testId="overtime-create-modal" onSubmit={submit} submitLabel="Ajukan" submitTestId="overtime-form-submit"
+      busy={busy} error={err}>
+        <div className="grid gap-2.5">
+          <div className="grid gap-1"><label className="field-label">Karyawan <span className="req">*</span></label>
             <KNSelect data-testid="overtime-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan"
               options={employees.map((e) => ({ value: e.id, label: `${e.name}${e.code ? ` (${e.code})` : ""}` }))} /></div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Tanggal</label>
+            <div className="grid gap-1"><label className="field-label">Tanggal <span className="req">*</span></label>
               <KNDatePicker data-testid="overtime-form-date" value={date} onChange={setDate} /></div>
-            <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Jam (maks 12)</label>
+            <div className="grid gap-1"><label className="field-label">Jam (maks 12) <span className="req">*</span></label>
               <input data-testid="overtime-form-hours" type="number" step="0.5" min="0" max="12" className="form-input" value={hours} onChange={(e) => setHours(e.target.value)} /></div>
           </div>
-          <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
+          <div className="grid gap-1"><label className="field-label">Alasan</label>
             <textarea data-testid="overtime-form-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opsional" /></div>
         </div>
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose} disabled={busy}>Batal</button>
-          <button data-testid="overtime-form-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : "Ajukan"}</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
@@ -119,19 +117,21 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2"><Timer size={16} className="text-[#0058CC]" /><h2 data-testid="overtime-title">Lembur</h2></div>
           <div className="flex items-center gap-2">
-            {canManage && <button data-testid="overtime-create-button" onClick={() => setCreateOpen(true)} className="primary-button !py-1.5"><Plus size={14} /> Ajukan utk Karyawan</button>}
+            {canManage && <button data-testid="overtime-create-button" onClick={() => setCreateOpen(true)} className="primary-button !py-1.5"><Plus size={14} /> Ajukan untuk Karyawan</button>}
             <button data-testid="overtime-refresh" onClick={load} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 pb-2">
+        <div className="flex flex-wrap items-center gap-2 px-3 pb-2">
           <div className="w-[150px]"><KNSelect data-testid="overtime-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
           <OptionTabs testId="overtime-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
-          <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="overtime-search" />
+          <div className="w-full sm:w-auto sm:min-w-[220px] sm:flex-1"><SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="overtime-search" /></div>
         </div>
       </div>
 
       <div className="section-card">
-        <div className="grid grid-cols-[1.5fr_110px_80px_1.4fr_100px_90px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+        {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
+        <div className="overflow-x-auto"><div className="min-w-[720px]">
+        <div className="grid grid-cols-[1.5fr_110px_80px_1.4fr_100px_90px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
           <span>Karyawan</span><span>Tanggal</span><span className="text-center">Jam</span><span>Alasan</span><span>Status</span><span className="text-right">Aksi</span>
         </div>
         {loading ? (
@@ -143,11 +143,12 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
             {shown.map((r) => (
               <div key={r.id} data-testid={`overtime-row-${r.id}`} className="grid grid-cols-[1.5fr_110px_80px_1.4fr_100px_90px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                 <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={r.entity_id} /><span className="text-[12px] font-semibold truncate">{r.employee_name}</span></span>
-                <span className="text-[11px] text-[#6B6B73]">{r.date}</span>
+                <span className="whitespace-nowrap text-[11px] text-[#6B6B73]">{formatDate(r.date)}</span>
                 <span className="text-[12px] font-bold text-center tabular-nums">{r.hours} j</span>
                 <span className="text-[11px] text-[#6B6B73] truncate" title={r.reason}>{r.reason || "—"}</span>
                 <span><StatusPill status={r.status} /></span>
                 <div className="flex items-center justify-end gap-1">
+                  {r.status !== "pending" && <span className="text-[11px] text-[#9A9BA3]" title="Pengajuan ini sudah diputuskan — tidak ada aksi lagi">tidak ada aksi</span>}
                   {canManage && r.status === "pending" && (
                     <>
                       <button data-testid={`overtime-approve-${r.id}`} onClick={() => approve(r.id)} className="icon-button text-[#1F7A45] hover:bg-green-50" title="Setujui"><Check size={14} /></button>
@@ -159,6 +160,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
             ))}
           </div>
         )}
+        </div></div>
       </div>
 
       <OvertimeCreateModal open={createOpen} onClose={() => setCreateOpen(false)} employees={employees} onSubmit={createOt} />

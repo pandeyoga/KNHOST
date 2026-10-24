@@ -89,7 +89,7 @@ export default function IntercoSettlementModal({
           <div>
             <h2 className="text-lg font-semibold text-[#1D1D1F]">Settlement Antar-PT</h2>
             <p className="text-xs text-[#6E6E73] mt-0.5">
-              Setiap transaksi dibayar penuh, tanpa netting silang tagihan (LN-024). Satu dokumen boleh
+              Setiap transaksi dibayar penuh, tanpa netting silang tagihan. Satu dokumen boleh
               memuat beberapa transaksi, rinciannya tetap per transaksi.
             </p>
           </div>

@@ -177,6 +177,8 @@ export default function AdminView({
   const TAB_SINGULAR = { products: "Produk", customers: "Pelanggan", uoms: "Satuan", templates: "Template Dokumen" };
   const SECTION_LABEL = { header: "Kop surat", customer: "Data pelanggan", items: "Daftar barang", allocation: "Alokasi roll", signature: "Tanda tangan", footer: "Catatan kaki" };
   const tabLabel = Object.fromEntries(ALL_TABS);
+  // Audit UI 107 — tipe dokumen tampil sebagai label, bukan kode mentah ("surat_jalan", "invoice").
+  const DOC_TYPE_LABEL = { surat_jalan: "Surat Jalan", invoice: "Faktur (Invoice)" };
   const statusLabel = (row) => ((row.status || (row.active === false ? "inactive" : "active")) === "inactive" ? "nonaktif" : "aktif");
   const isInactive = (row) => statusLabel(row) === "nonaktif";
   const tabs = Array.isArray(only) && only.length ? ALL_TABS.filter(([id]) => only.includes(id)) : ALL_TABS;
@@ -268,20 +270,12 @@ export default function AdminView({
       {!embedded && (
       <section className="section-card mb-3">
         <div className="section-head">
+          {/* Audit UI 099 — judul mengikuti tab yang benar-benar tampil (dulu "Kelola produk · pelanggan · …"
+              padahal isinya hanya Integrasi AI & Jejak Audit). */}
           <div className="flex items-center gap-3 min-w-0">
-            <span className="kicker">Admin Master Data</span>
-            <h2>Kelola produk · pelanggan · satuan · template dokumen · hak akses · jejak audit</h2>
+            <span className="kicker">{Array.isArray(only) && only.length ? "Pengaturan Sistem" : "Admin Master Data"}</span>
+            <h2>{tabs.map(([, label]) => label).join(" · ")}</h2>
           </div>
-          {onSeedDemo && (
-            <button
-              data-testid="admin-seed-demo-button"
-              onClick={onSeedDemo}
-              className="ml-auto secondary-button text-orange-700 border-orange-200 hover:bg-orange-50"
-              title="Reset database & isi ulang dengan demo data (DESTRUCTIVE)"
-            >
-              <RefreshCw size={13} /> Reset Demo Data
-            </button>
-          )}
         </div>
         <div className="flex flex-wrap gap-1.5 px-3 pb-3" role="tablist">
           {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} data-testid={`admin-tab-${id}-button`} className={`tab-pill inline-flex items-center gap-1.5 ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}><Settings size={13} /> {label}</button>)}
@@ -290,6 +284,26 @@ export default function AdminView({
       )}
       {tab === "categories" && <CategoryManager onChanged={loadCategories} />}
       {tab === "integrations" && <div className="grid gap-3"><IntegrationsPanel /><GeminiIntegrationPanel /><OpenAiIntegrationPanel /></div>}
+      {/* Audit UI 099 — "Reset Demo Data" (menghapus data) DIPINDAH dari kepala kartu ke zona berbahaya terpisah. */}
+      {!embedded && onSeedDemo && tab === "integrations" && (
+        <section className="section-card mt-3" data-testid="admin-danger-zone">
+          <div className="section-head">
+            <div className="min-w-0">
+              <span className="kicker !text-[#C0392B]">Zona berbahaya</span>
+              <h2>Reset data demo</h2>
+              <p className="text-[11.5px] text-[#6B6B73]">Menghapus seluruh data lalu mengisi ulang dengan data contoh. Hanya untuk lingkungan uji/demo — tidak bisa dibatalkan.</p>
+            </div>
+            <button
+              data-testid="admin-seed-demo-button"
+              onClick={onSeedDemo}
+              className="ml-auto secondary-button !text-[#C0392B] !border-[#F1CFCB] hover:!bg-[#FDF3F2]"
+              title="Hapus semua data & isi ulang dengan data demo (tidak bisa dibatalkan)"
+            >
+              <RefreshCw size={13} /> Reset Data Demo
+            </button>
+          </div>
+        </section>
+      )}
       {tab !== "categories" && tab !== "integrations" && (
       <section className="flex flex-col gap-3">
         {/* FASE P4 — form master data menjadi POP-UP. Tombolnya kini di ATAS daftar
@@ -375,7 +389,13 @@ export default function AdminView({
           </div>}
           {tab === "templates" && <div className="grid gap-2">
             <div className="grid gap-2 sm:grid-cols-2">
-              {[["document_type", "Tipe dokumen", "mis. surat_jalan / invoice"], ["name", "Nama template", "mis. Template SJ Standard"], ["header", "Kop / header", "Kain Nusantara"], ["footer", "Catatan kaki", "Terima kasih"], ["columns", "Kolom (pisahkan koma)", "SKU,Nama Barang,Qty,Unit"], ["logo_url", "URL logo", "https://…"], ["margin_mm", "Margin (mm)", "12"], ["signature_left", "Tanda tangan kiri", "Dibuat Oleh"], ["signature_right", "Tanda tangan kanan", "Disetujui Oleh"]].map(([key, label, ph]) => (
+              <label className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">Tipe dokumen *
+                <KNSelect data-testid="admin-template-document_type-input" className="field" value={template.document_type}
+                  options={[...Object.entries(DOC_TYPE_LABEL).map(([value, label]) => ({ value, label })),
+                    ...(template.document_type && !DOC_TYPE_LABEL[template.document_type] ? [{ value: template.document_type, label: template.document_type }] : [])]}
+                  onValueChange={(v) => setTemplate({ ...template, document_type: v })} />
+              </label>
+              {[["name", "Nama template", "mis. Template SJ Standard"], ["header", "Kop / header", "Kain Nusantara"], ["footer", "Catatan kaki", "Terima kasih"], ["columns", "Kolom (pisahkan koma)", "SKU,Nama Barang,Qty,Unit"], ["logo_url", "URL logo", "https://…"], ["margin_mm", "Margin (mm)", "12"], ["signature_left", "Tanda tangan kiri", "Dibuat Oleh"], ["signature_right", "Tanda tangan kanan", "Disetujui Oleh"]].map(([key, label, ph]) => (
                 <label key={key} className={`grid gap-1 text-[11px] font-semibold text-[#3C3C43] ${["columns", "logo_url"].includes(key) ? "sm:col-span-2" : ""}`}>{label}{["document_type", "name"].includes(key) ? " *" : ""}
                   <input data-testid={`admin-template-${key}-input`} className="field" type={key === "margin_mm" ? "number" : "text"} min={key === "margin_mm" ? 0 : undefined} placeholder={ph} value={template[key]} onChange={(e) => setTemplate({ ...template, [key]: key === "margin_mm" ? Number(e.target.value) : e.target.value })} />
                 </label>
@@ -502,8 +522,8 @@ export default function AdminView({
                 <div className="min-w-0">
                   <p data-testid={`admin-record-title-${row.id}`} className="text-[12.5px] font-semibold truncate">{row.name || row.legal_name || row.code || row.email}</p>
                   <p data-testid={`admin-record-meta-${row.id}`} className="text-[11px] text-[#3C3C43] truncate">{tab === "uoms"
-                    ? `${row.code} · ${{ length: "panjang", weight: "berat", count: "hitungan" }[row.base_type] || row.base_type || "—"} · 1 ${row.code} = ${row.factor_to_base ?? "?"} satuan dasar · ${row.precision ?? 2} desimal${(row.aliases || []).length ? ` · alias: ${row.aliases.join(", ")}` : ""}${row.factor_per_document ? " · faktor per dokumen" : ""}`
-                    : <>{row.sku || row.code || row.document_type || row.role || row.short_name || row.city} • <span className={isInactive(row) ? "text-[#8E8E93]" : "text-[#1A7A3A]"}>{statusLabel(row)}</span>{tab === "products" ? supplierCodesLabel(row) : ""}</>}</p>
+                    ? `${row.code} · ${{ length: "panjang", weight: "berat", count: "hitungan" }[row.base_type] || "dimensi lain"} · 1 ${row.code} = ${row.factor_to_base == null ? "?" : Number(row.factor_to_base).toLocaleString("id-ID", { maximumFractionDigits: 6 })} ${{ length: "meter", weight: "kg", count: "pcs" }[row.base_type] || "satuan dasar"} · ${row.precision ?? 2} angka desimal${(row.aliases || []).length ? ` · alias: ${row.aliases.join(", ")}` : ""}${row.factor_per_document ? " · faktor per dokumen" : ""}`
+                    : <>{row.sku || row.code || DOC_TYPE_LABEL[row.document_type] || row.document_type || row.role || row.short_name || row.city} • <span className={isInactive(row) ? "text-[#8E8E93]" : "text-[#1A7A3A]"}>{statusLabel(row)}</span>{tab === "products" ? supplierCodesLabel(row) : ""}</>}</p>
                   {tab === "products" && (
                     <div data-testid={`admin-product-domain-${row.id}`} className="mt-1 flex flex-wrap items-center gap-1">
                       <ProductLifecycleCell product={row}

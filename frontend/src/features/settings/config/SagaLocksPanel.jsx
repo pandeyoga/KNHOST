@@ -31,7 +31,7 @@ export default function SagaLocksPanel() {
     try {
       const { data } = await axios.get(`${API}/saga-locks`);
       setRows(Array.isArray(data) ? data : []);
-    } catch (e) { setErr(errMsg(e, "Gagal memuat kunci saga.")); }
+    } catch (e) { setErr(errMsg(e, "Gagal memuat kunci proses.")); }
     finally { setBusy(false); }
   }, []);
 
@@ -70,11 +70,11 @@ export default function SagaLocksPanel() {
       <div className={`cfg-health-verdict ${n ? "bad" : "good"}`} data-testid="saga-locks-verdict">
         {n ? <Lock size={20} /> : <ShieldCheck size={20} />}
         <div>
-          <h3>{n ? `${n} kunci saga menggantung` : "Tidak ada kunci saga yang menggantung"}</h3>
+          <h3>{n ? `${n} kunci proses menggantung` : "Tidak ada kunci proses yang menggantung"}</h3>
           <p>
             Aksi multi-koleksi (selesaikan GR, batalkan SO, setujui transfer, reversal retur, …) diklaim
             dulu lalu dicabut saat selesai. Kunci yang tersisa berarti prosesnya mati di tengah: aksi ulang
-            ditolak 409 agar tidak menulis dua kali. Periksa data hilir, lalu lepas kunci bila aman.
+            ditolak agar tidak tercatat dua kali. Periksa dokumen lanjutannya, lalu lepas kunci bila aman.
           </p>
         </div>
         <button className="btn-secondary btn-sm" onClick={load} disabled={busy} data-testid="saga-locks-refresh">

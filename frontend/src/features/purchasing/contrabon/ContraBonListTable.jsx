@@ -9,13 +9,31 @@ import { STATUS_CLASS, fmtDate, slaText, pendingExceptions } from "./contraBonAp
 import PagedRows from "@/components/PagedRows";
 
 export default function ContraBonListTable({ rows, loading, activeId, onOpen }) {
+  // Audit UI 24 Okt (032 HP): empty state dulu berada di dalam tabel min-w 880px sehingga
+  // kalimatnya terpotong di layar sempit ("…saat supplier data"). Kosong → kotak biasa.
+  if (!loading && rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-[#E5E5EA] bg-white px-4 py-8 text-center"
+        data-testid="cb-list-table">
+        <div data-testid="cb-list-empty">
+          <p className="text-[13px] font-semibold text-[#1C1C1E]">
+            Belum ada kontrabon pada saringan ini.
+          </p>
+          <p className="mt-1 text-[11.5px] text-[#6B6B73]">
+            Tekan “Kontrabon baru” saat supplier datang menukar faktur — banyak faktur
+            digabung jadi satu tanda terima dan satu pembayaran.
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="overflow-hidden rounded-lg border border-[#E5E5EA] bg-white"
       data-testid="cb-list-table">
       <div className="max-h-[560px] overflow-auto">
         <table className="data-table w-full min-w-[880px] text-[12px]">
           <thead className="sticky top-0 z-10 bg-[#FAFBFC]">
-            <tr className="text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
+            <tr className="whitespace-nowrap text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
               <th className="px-3 py-2">Nomor</th>
               <th className="px-3 py-2">Supplier</th>
               <th className="px-3 py-2">Faktur</th>
@@ -29,17 +47,6 @@ export default function ContraBonListTable({ rows, loading, activeId, onOpen }) 
             {loading && (
               <tr><td colSpan={7} className="px-3 py-8 text-center text-[12px] text-[#8E8E93]">
                 Memuat kontrabon…
-              </td></tr>
-            )}
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center" data-testid="cb-list-empty">
-                <p className="text-[13px] font-semibold text-[#1C1C1E]">
-                  Belum ada kontrabon pada saringan ini.
-                </p>
-                <p className="mt-1 text-[11.5px] text-[#6B6B73]">
-                  Tekan “Kontrabon baru” saat supplier datang menukar faktur — banyak faktur
-                  digabung jadi satu tanda terima dan satu pembayaran.
-                </p>
               </td></tr>
             )}
             {!loading && <PagedRows rows={rows} testId="contrabon-pager">{(cb) => {

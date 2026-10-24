@@ -35,7 +35,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
   })), [bills]);
 
   async function submit() {
-    if (!billId) { onError?.("Pilih Vendor Bill sumber dulu."); return; }
+    if (!billId) { onError?.("Pilih tagihan supplier sumber dulu."); return; }
     if (!nsfp.trim()) { onError?.("NSFP (Nomor Seri Faktur Pajak) wajib diisi."); return; }
     setBusy(true);
     try {
@@ -62,10 +62,11 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
         </div>
 
         <div className="p-4 space-y-3">
-          <Field label="Tagihan Supplier (Vendor Bill ber-PPN)" req>
+          <Field label="Tagihan Supplier ber-PPN" req>
             {(bills || []).length === 0 ? (
-              <p className="text-[11px] text-[#9A9BA3] px-2 py-2 rounded-md border border-[#EFF0F2]" data-testid="it-no-bills">
-                Tidak ada Vendor Bill ber-PPN (posted/paid) yang belum dicatat. Posting Tagihan Supplier dulu.
+              <p className="notice-bar warning !mb-0 text-[11.5px]" data-testid="it-no-bills">
+                Belum ada tagihan supplier ber-PPN (terposting/lunas) yang belum dicatat.
+                Posting tagihannya dulu di tab Tagihan Supplier.
               </p>
             ) : (
               <KNSelect value={billId} onValueChange={setBillId} options={billOptions}
@@ -74,7 +75,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
           </Field>
 
           {bill && (
-            <div className="grid grid-cols-3 gap-3 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] p-3" data-testid="it-bill-preview">
+            <div className="grid grid-cols-2 gap-3 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] p-3 sm:grid-cols-3" data-testid="it-bill-preview">
               <Info label="DPP" value={formatCurrency(bill.dpp)} />
               <Info label={`PPN (${bill.ppn_rate || 0}%)`} value={formatCurrency(bill.ppn_amount)} strong />
               <Info label="Total Tagihan" value={formatCurrency(bill.grand_total)} />
@@ -84,7 +85,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="NSFP — No. Seri Faktur Pajak (16 digit)" req>
               <input data-testid="it-nsfp-input" value={nsfp} onChange={(e) => setNsfp(e.target.value)}
                 className="field tabular-nums" placeholder="010.000-00.00000000" />
@@ -94,10 +95,11 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Kode Transaksi">
-              <KNSelect value={kode} onValueChange={setKode} options={KODE_OPTIONS} className="field" data-testid="it-kode-select" />
-            </Field>
+          {/* Audit UI 24 Okt (067): label kode transaksi panjang → isian selebar modal agar tak terpotong. */}
+          <Field label="Kode Transaksi">
+            <KNSelect value={kode} onValueChange={setKode} options={KODE_OPTIONS} className="field" data-testid="it-kode-select" />
+          </Field>
+          <div>
             <Field label="Catatan">
               <input data-testid="it-notes-input" value={notes} onChange={(e) => setNotes(e.target.value)}
                 className="field" placeholder="opsional" />
@@ -128,7 +130,7 @@ function Field({ label, req, children }) {
 function Info({ label, value, strong }) {
   return (
     <div>
-      <p className="text-[9.5px] font-bold uppercase text-[#9A9BA3]">{label}</p>
+      <p className="text-[11px] font-bold uppercase text-[#9A9BA3]">{label}</p>
       <p className={`text-[12px] ${strong ? "font-bold" : "font-medium"} tabular-nums truncate text-[#0F1115]`}>{value}</p>
     </div>
   );

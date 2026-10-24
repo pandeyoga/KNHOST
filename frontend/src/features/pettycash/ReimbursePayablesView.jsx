@@ -35,7 +35,7 @@ export default function ReimbursePayablesView({ selectedEntity = "all", entities
           <div className="flex items-center gap-2 min-w-0">
             <HandCoins size={15} className="text-[#0058CC]" />
             <span className="kicker">Kas & Petty Cash</span>
-            <h2 data-testid="rp-title">Hutang Reimburse Karyawan (2-1650)</h2>
+            <h2 data-testid="rp-title">Hutang Reimburse Karyawan</h2>
           </div>
           <button data-testid="rp-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
@@ -53,7 +53,7 @@ export default function ReimbursePayablesView({ selectedEntity = "all", entities
         <div className="section-head"><h2 className="text-[13px] font-bold">Per Karyawan</h2></div>
         <div className="overflow-x-auto">
           <div className="min-w-[720px]">
-            <Head cols={["Karyawan", "LPJ", "Terlama", ...buckets.map((b) => `${b} hr`), "Total"]} />
+            <Head cols={["Karyawan", "LPJ", "Terlama", ...buckets.map((b) => `${b} hari`), "Total"]} />
             {!loading && (data?.by_employee || []).length === 0 && (
               <p data-testid="rp-empty" className="py-10 text-center text-[12px] text-[#6B6B73]">Tidak ada hutang reimburse terbuka.</p>)}
             {(data?.by_employee || []).map((e) => (
@@ -61,7 +61,7 @@ export default function ReimbursePayablesView({ selectedEntity = "all", entities
                 className={`grid w-full ${EMP_GRID} items-center px-3 py-2 text-left text-[12px] border-t border-[#F4F5F7] hover:bg-[#FAFBFC] ${emp === e.employee ? "bg-[#EEF4FF]" : ""}`}>
                 <span className="font-semibold truncate">{e.employee}</span>
                 <span className="tabular-nums">{e.count}</span>
-                <span className="tabular-nums font-semibold" style={{ color: e.oldest_days > 30 ? "#B91C1C" : undefined }}>{e.oldest_days} hr</span>
+                <span className="tabular-nums font-semibold" style={{ color: e.oldest_days > 30 ? "#B91C1C" : undefined }}>{e.oldest_days} hari</span>
                 {buckets.map((b) => <span key={b} className="tabular-nums text-right">{e.aging[b] ? formatCurrency(e.aging[b]) : "—"}</span>)}
                 <span className="tabular-nums text-right font-bold">{formatCurrency(e.outstanding)}</span>
               </button>

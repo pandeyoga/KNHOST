@@ -86,9 +86,10 @@ test.each([["warehouse", warehouse, true], ["qc", qc, false]])(
     expect(q(host, "m-timeline").dataset.canedit).toBe(String(canScan));     // form scan = wms.scan
     expect(q(host, "return-spk-panel")).not.toBeNull();                     // 23 Okt — QC retur lewat SPK (qc.inspect)
     expect(q(host, "upload-attachment-btn")).toBeNull();                    // unggah = sales_return.update
-    // Keputusan owner 2026-10-21 — foto/video bukti keluhan boleh diunduh Gudang/QC; lampiran lain tidak.
-    expect(q(host, "attachment-a1").querySelector("a").getAttribute("href")).toBe("/api/sales-returns/sret_1/attachments/a1/download");
-    expect(q(host, "attachment-a2").querySelector("a")).toBeNull();
+    // Keputusan owner 2026-10-21 — foto/video bukti keluhan boleh dibuka Gudang/QC; lampiran lain tidak.
+    // UAT 24 Okt (P17) — dibuka sebagai thumbnail + lightbox (URL dimuat lewat axios, tanpa href mentah).
+    expect(q(host, "attachment-a1").querySelector("[data-url]").getAttribute("data-url")).toBe("/api/sales-returns/sret_1/attachments/a1/download");
+    expect(q(host, "attachment-a2").querySelector("[data-url]")).toBeNull();
     expect(axios.get).not.toHaveBeenCalledWith("/api/credit-notes", expect.anything());
     await act(async () => { root.unmount(); });
   });
@@ -104,8 +105,8 @@ test("detail Sales (sales_return.view): harga, nilai & panel tetap seperti sebel
   expect(q(host, "m-timeline").dataset.canedit).toBe("true");
   expect(q(host, "m-journey").dataset.canedit).toBe("true");
   expect(q(host, "upload-attachment-btn")).not.toBeNull();
-  expect(q(host, "attachment-a1").querySelector("a")).not.toBeNull();   // Sales: semua lampiran tetap bisa diunduh
-  expect(q(host, "attachment-a2").querySelector("a")).not.toBeNull();
+  expect(q(host, "attachment-a1").querySelector("[data-url]")).not.toBeNull();   // Sales: semua lampiran tetap bisa diunduh
+  expect(q(host, "attachment-a2").querySelector("[data-url]")).not.toBeNull();
   await act(async () => { root.unmount(); });
 });
 

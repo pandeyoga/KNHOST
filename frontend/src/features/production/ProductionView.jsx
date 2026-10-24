@@ -108,7 +108,7 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
   const createWo = async (payload) => {
     await axios.post(`${API}/production/work-orders`, { ...payload, entity_id: selectedEntity !== "all" ? selectedEntity : undefined });
     setWoModal(false);
-    flash("Work Order dibuat (draft).");
+    flash("Perintah Kerja dibuat (draf).");
     load();
   };
   const woAction = async (wo, action) => {
@@ -117,12 +117,13 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
       const body = action === "cancel" ? { reason: "" } : {};
       const { data } = await axios.post(`${API}/production/work-orders/${wo.id}/${action}`, body);
       const labels = { release: "dirilis", complete: "diselesaikan", cancel: "dibatalkan" };
-      flash(`Work Order ${data.wo_number} ${labels[action]}.`);
+      flash(`Perintah Kerja ${data.wo_number} ${labels[action]}.`);
       if (detailWo && detailWo.id === wo.id) setDetailWo(data);
       load();
     } catch (e) {
       const d = e.response?.data?.detail;
-      flash((typeof d === "string" ? d : d?.message) || `Gagal ${action} Work Order.`, "err");
+      const verb = { release: "merilis", complete: "menyelesaikan", cancel: "membatalkan" }[action] || "memproses";
+      flash((typeof d === "string" ? d : d?.message) || `Gagal ${verb} Perintah Kerja.`, "err");
     } finally { setBusyId(""); }
   };
   const openDetail = async (wo) => {
@@ -142,27 +143,24 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
     <div className="space-y-4" data-testid="production-view">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#F3EAFB] flex items-center justify-center">
-          <Factory size={19} className="text-[#6B219A]" />
+        <div className="w-10 h-10 shrink-0 rounded-xl bg-[#EAF2FF] flex items-center justify-center">
+          <Factory size={19} className="text-[#0058CC]" />
         </div>
-        <div className="mr-auto">
+        <div className="mr-auto min-w-0">
           <h2 className="text-[16px] font-bold text-[#1C1C1E]">Produksi In-House</h2>
-          <p className="text-[11px] text-[#8E8E93]">BOM (resep) & Perintah Kerja · konsumsi bahan → barang jadi (Roll-as-SSOT)</p>
+          <p className="text-[11px] text-[#8E8E93]">BOM (resep) & Perintah Kerja · bahan diolah menjadi barang jadi, tercatat per roll</p>
         </div>
         {tab === "wo" && perms.createWo && (
-          <button data-testid="wo-add-button" onClick={() => setWoModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B219A] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#581680]">
+          <button data-testid="wo-add-button" onClick={() => setWoModal(true)} className="primary-button">
             <Plus size={14} /> Buat Perintah Kerja
           </button>
         )}
         {tab === "bom" && perms.manageBom && (
-          <button data-testid="bom-add-button" onClick={() => setBomModal({ mode: "create" })}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#6B219A] px-3 py-2 text-[12px] font-bold text-white hover:bg-[#581680]">
+          <button data-testid="bom-add-button" onClick={() => setBomModal({ mode: "create" })} className="primary-button">
             <Plus size={14} /> Tambah BOM
           </button>
         )}
-        <button data-testid="production-refresh" onClick={() => { load(); loadRefs(); }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E2E7] bg-white px-3 py-2 text-[12px] font-semibold text-[#3A3A3C] hover:bg-[#FAFAFA]">
+        <button data-testid="production-refresh" onClick={() => { load(); loadRefs(); }} className="secondary-button">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </div>
@@ -180,21 +178,23 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard testId="prod-kpi-boms" label="Total BOM" value={summary?.boms ?? boms.length} icon={Layers3} accent="#6B219A" sub={`${activeBoms.length} aktif`} />
-        <KpiCard testId="prod-kpi-open" label="WO Terbuka" value={summary?.open ?? 0} icon={ClipboardList} accent="#C77700" sub="draf + dirilis" />
-        <KpiCard testId="prod-kpi-done" label="WO Selesai" value={summary?.completed ?? 0} icon={CheckCircle2} accent="#1B7F4B" />
+        <KpiCard testId="prod-kpi-boms" label="Total BOM" value={summary?.boms ?? boms.length} icon={Layers3} accent="#0058CC" sub={`${activeBoms.length} aktif`} />
+        <KpiCard testId="prod-kpi-open" label="Perintah Kerja Terbuka" value={summary?.open ?? 0} icon={ClipboardList} accent="#C77700" sub="draf + dirilis" />
+        <KpiCard testId="prod-kpi-done" label="Perintah Kerja Selesai" value={summary?.completed ?? 0} icon={CheckCircle2} accent="#1B7F4B" />
         <KpiCard testId="prod-kpi-value" label="Nilai Produksi" value={`Rp ${compactIDR(summary?.produced_value || 0)}`} icon={Wallet} accent="#0058CC" sub={`${summary?.produced_qty ?? 0} unit`} />
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-[#EFEFF4]">
-        {[{ k: "wo", label: "Perintah Kerja", icon: ClipboardList }, { k: "bom", label: "BOM / Resep", icon: Layers3 }].map((t) => (
-          <button key={t.k} data-testid={`prod-tab-${t.k}`} onClick={() => setTab(t.k)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-[12px] font-bold border-b-2 -mb-px transition ${tab === t.k ? "border-[#6B219A] text-[#6B219A]" : "border-transparent text-[#8E8E93] hover:text-[#3A3A3C]"}`}>
-            <t.icon size={14} /> {t.label}
-          </button>
-        ))}
-        <div className="ml-auto pb-1"><SearchBox value={q} onChange={setQ} placeholder={tab === "wo" ? "Cari nomor / produk WO…" : "Cari kode / nama BOM…"} testId="prod-search" /></div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="tab-bar min-w-0">
+          {[{ k: "wo", label: "Perintah Kerja", icon: ClipboardList }, { k: "bom", label: "BOM / Resep", icon: Layers3 }].map((t) => (
+            <button key={t.k} data-testid={`prod-tab-${t.k}`} onClick={() => setTab(t.k)}
+                    className={`tab-button whitespace-nowrap ${tab === t.k ? "active" : ""}`}>
+              <t.icon size={14} /> {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="w-full pb-1 sm:ml-auto sm:w-auto"><SearchBox value={q} onChange={setQ} placeholder={tab === "wo" ? "Cari nomor / produk…" : "Cari kode / nama BOM…"} testId="prod-search" /></div>
       </div>
       {tab === "wo" ? (
         wos.length === 0 && !loading ? (

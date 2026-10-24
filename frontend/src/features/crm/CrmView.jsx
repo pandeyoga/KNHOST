@@ -19,10 +19,10 @@ export default function CrmView({ currentUser, selectedEntity, focusDoc, onClear
   const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
   const TABS = [
     { key: "customers", label: "Pelanggan", icon: Users },
-    { key: "leads", label: "Leads", icon: KanbanSquare },
+    { key: "leads", label: "Prospek (Lead)", icon: KanbanSquare },
     { key: "interactions", label: "Interaksi", icon: MessageSquare },
     { key: "collection", label: "Penagihan", icon: Receipt },
-    { key: "salesforce", label: "Sales Force", icon: TrendingUp },
+    { key: "salesforce", label: "Kinerja Sales", icon: TrendingUp },
     ...(isManager ? [{ key: "schemes", label: "Skema (Arsip)", icon: SlidersHorizontal }] : []),
     ...(isManager ? [{ key: "approvals", label: "Persetujuan Kredit", icon: ShieldCheck }] : []),
   ];

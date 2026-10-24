@@ -288,13 +288,17 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
                     const items = (order.items || []).filter((i) => i.status !== "cancelled");
                     const units = [...new Set(items.map((i) => i.unit || "meter"))];
                     const multi = items.length > 1;
+                    // Audit UI 24 Okt (120) — satuan berbeda TIDAK dijumlah; tampil per satuan (dulu hanya item pertama).
+                    const perUnit = units.map((u) => ({ u, q: items.filter((i) => (i.unit || "meter") === u).reduce((a, i) => a + Number(i.quantity || 0), 0) }));
+                    const target = Number(order.custom_item?.target_price || 0);
                     return (<>
                       <td className="whitespace-nowrap text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
-                        {multi && units.length === 1
-                          ? <><strong>{formatQty(items.reduce((a, i) => a + Number(i.quantity || 0), 0))}</strong> {units[0]}</>
+                        {multi
+                          ? perUnit.map(({ u, q }, ix) => <span key={u}>{ix > 0 ? " · " : ""}<strong>{formatQty(q)}</strong> {u}</span>)
                           : <><strong>{formatQty(order.custom_item?.quantity)}</strong> {order.custom_item?.unit}</>}
-                        <div className="text-[10.5px] text-muted">
-                          {multi ? "harga per item" : `@ ${formatCurrency(order.custom_item?.target_price)}`}
+                        {/* Audit UI 24 Okt (120) — "@ Rp 0" dulu tampil saat harga target kosong padahal total terisi. */}
+                        <div className="text-[11px] text-muted">
+                          {multi ? "harga per item" : target > 0 ? `@ ${formatCurrency(target)}` : "harga di rincian"}
                         </div>
                       </td>
                     </>);

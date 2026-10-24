@@ -12,6 +12,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { EmptyState } from "../finance/financeShared";
 import { apiText, designerReport } from "./designRequestsApi";
+import { actorLabel } from "../../utils/actorLabel";   // audit UI 24 Okt — akun teknis tidak tampil mentah
 
 function Kpi({ label, value, testId }) {
   return (
@@ -106,7 +107,7 @@ export default function DesignerReportPanel({ selectedEntity = "all", line = "",
                 {items.map((r) => (
                   <tr key={r.designer_id || r.designer} data-testid={`dsr-report-row-${r.designer_id || "none"}`}
                     className="border-b border-[#F2F2F5] last:border-0">
-                    <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">{r.designer}</td>
+                    <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">{actorLabel(r.designer)}</td>
                     <td className="px-2 py-1.5 text-right tabular-nums">{r.assigned}</td>
                     <td className="px-2 py-1.5 text-right tabular-nums">{r.in_progress}</td>
                     <td className="px-2 py-1.5 text-right tabular-nums">{r.delivered}</td>

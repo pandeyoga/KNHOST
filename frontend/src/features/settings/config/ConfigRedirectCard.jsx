@@ -40,12 +40,11 @@ export default function ConfigRedirectCard({
       </div>
 
       <div className="cfg-redirect-body">
-        <h4 className="cfg-redirect-title">{title} kini diatur di Pusat Pengaturan</h4>
+        {/* Audit UI 24 Okt (059/111) — tanpa catatan pengembang ("form lama dihapus"); cukup ke mana pengguna pergi. */}
+        <h4 className="cfg-redirect-title">{title} diatur di Pusat Pengaturan</h4>
         <p className="cfg-redirect-text">
-          Form lama di halaman ini sudah dihapus supaya tidak ada dua tempat yang
-          menyimpan aturan yang sama. Semua pengaturan sekarang berada di satu
-          layar — lengkap dengan penjelasan, contoh angka, simulator{" "}
-          <b>“coba dulu”</b>, jadwal berlaku, dan riwayat perubahan.
+          Ubah aturan ini di Pusat Pengaturan — di sana ada penjelasan, contoh angka,
+          simulasi <b>“coba dulu”</b>, jadwal berlaku, dan riwayat perubahan.
           {note ? <> {note}</> : null}
         </p>
 

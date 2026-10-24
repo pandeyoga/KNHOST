@@ -119,7 +119,8 @@ export default function UomInputConvert({
           masih dalam toleransi {Number(settings?.warn_pct ?? variance.warn_pct)}%.
         </p>
       )}
-      {!trail && !warn && parseDecimal(qty) > 0 && (
+      {/* UAT 24 Okt (audit UI 013) — tanpa satuan tidak ada yang dihitung; dulu "Menghitung…" tampil selamanya. */}
+      {!trail && !warn && unit && parseDecimal(qty) > 0 && (
         <p className="flex items-center gap-1 text-[10.5px] text-[#8E8E93]">
           <Info size={11} /> Menghitung konversi…
         </p>

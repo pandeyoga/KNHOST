@@ -86,10 +86,18 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
         </span>
         {canSet && (
           <div className="ml-auto flex items-center gap-1.5">
-            <input data-testid="ic-bulk-pct" type="number" min={1} max={500} className="field !h-8 w-[70px] text-right text-[12px]"
-              value={pct} onChange={(e) => setPct(num(e.target.value))} />
+            {/* Audit UI 24 Okt (016) — isian persen dulu tanpa label & satuan ("70" saja). */}
+            <label className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#6B6B73]" htmlFor="ic-bulk-pct-input">
+              Harga internal =
+            </label>
+            <div className="relative">
+              <input id="ic-bulk-pct-input" data-testid="ic-bulk-pct" type="number" min={1} max={500} aria-label="Persen dari harga jual"
+                className="field !h-8 w-[78px] !pr-6 text-right text-[12px]"
+                value={pct} onChange={(e) => setPct(num(e.target.value))} />
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11.5px] text-[#8E8E93]">%</span>
+            </div>
             <button className="secondary-button" data-testid="ic-bulk-fill-pct" onClick={fillPct} disabled={!rows.length || pct <= 0}>
-              <Wand2 size={13} /> Isi % dari harga jual
+              <Wand2 size={13} /> Isi dari harga jual
             </button>
             <button className="primary-button" data-testid="ic-bulk-save" onClick={save} disabled={busy || !filled.length}>
               <Save size={13} /> {busy ? "Menyimpan…" : `Simpan ${filled.length} harga`}

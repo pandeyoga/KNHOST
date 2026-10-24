@@ -33,7 +33,7 @@ export function MyPayslipCard() {
         <div data-testid="ess-payslip-latest">
           <p className="text-[11px] text-[#6B6B73]">Periode {latest.period}</p>
           <p className="text-[20px] font-bold tabular-nums text-[#0058CC] leading-tight">{rp(latest.net)}</p>
-          <p className="text-[10.5px] text-[#6B6B73]">Take-home pay</p>
+          <p className="text-[11px] text-[#6B6B73]">Gaji bersih diterima</p>
           <button data-testid="ess-payslip-pdf" disabled={busy} onClick={() => openPdf(latest.id)}
             className="primary-button w-full justify-center mt-2 !py-1.5"><FileText size={13} /> {busy ? "Membuka..." : "Lihat Slip (PDF)"}</button>
           {slips.length > 1 && <p className="text-[10.5px] text-[#6B6B73] mt-1 text-center">{slips.length} slip tersedia</p>}

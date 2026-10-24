@@ -177,10 +177,13 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
 
         {/* Kartu ringkasan — dari agregat server (seluruh hasil filter) */}
         <div className="grid gap-2 px-3 pb-3 sm:grid-cols-3 lg:grid-cols-5">
+          {/* Kartu menghitung KEMAJUAN TAHAP produksi PO pada penyaring aktif — beda dengan
+              tab status PO di bawah (PO aktif / menunggu kirim / …). Label sengaja menyebut
+              "tahap" supaya tidak dibaca sebagai jumlah tab "PO aktif". */}
           <Metric testId="po-board-metric-total" label="PO di papan" value={sum.total ?? 0} />
-          <Metric testId="po-board-metric-belum" label="Belum mulai" value={sum.belum_mulai ?? 0} />
-          <Metric testId="po-board-metric-berjalan" label="Berjalan" value={sum.berjalan ?? 0} />
-          <Metric testId="po-board-metric-selesai" label="Tahap selesai" value={sum.selesai ?? 0} />
+          <Metric testId="po-board-metric-belum" label="Tahap belum mulai" value={sum.belum_mulai ?? 0} />
+          <Metric testId="po-board-metric-berjalan" label="Tahap sedang berjalan" value={sum.berjalan ?? 0} />
+          <Metric testId="po-board-metric-selesai" label="Semua tahap selesai" value={sum.selesai ?? 0} />
           <Metric testId="po-board-metric-terlambat" label="Lewat estimasi"
                   value={sum.terlambat ?? 0} tone="#FFF1F0" />
         </div>
@@ -205,7 +208,7 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
           ))}
           {(data.line_restricted || []).length ? (
             <span data-testid="po-board-line-restricted"
-                  className="ml-1 rounded bg-[#FFF4E5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#B45309]"
+                  className="ml-1 rounded bg-[#FFF4E5] px-1.5 py-0.5 text-[11px] font-bold text-[#B45309]"
                   title="Akses akun Anda dibatasi pada lini ini oleh admin (Badan Usaha & Akses → Akun).">
               akses lini terbatas
             </span>
@@ -228,7 +231,7 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
       <section className="section-card">
         <div className="overflow-x-auto">
           <div className="min-w-[1500px]">
-            <div className="grid px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase
+            <div className="grid px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase whitespace-nowrap
                             text-[#6B6B73] border-b border-[#EFF0F2]"
                  style={{ gridTemplateColumns: COLS }}>
               <span>Nama Sales</span><span>No PO</span><span>Nama Item</span>
@@ -386,7 +389,7 @@ function Metric({ label, value, testId, tone = "#F2F6FF" }) {
         <ClipboardList size={16} className="text-[#1C1C1E]" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
         <p className="text-[17px] font-bold tabular-nums">{value}</p>
       </div>
     </div>

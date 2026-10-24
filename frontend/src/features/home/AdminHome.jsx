@@ -126,9 +126,9 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading} />
-          <KPICard icon={TrendingUp} label="Penjualan MTD" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
-          <KPICard icon={ArrowUpRight} label="Tertagih MTD" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
-          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)} sub={`Piutang ledger ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`} color="#5856D6" loading={loading} />
+          <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
+          <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
+          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)} sub={`Buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`} color="#5856D6" loading={loading} />
           <KPICard icon={AlertTriangle} label="Piutang Lewat Tempo" value={fmtCur(ar.overdue)} sub="Jatuh tempo lewat" color="#FF3B30" loading={loading} />
           {/* AUDIT PERAN 2026-08-15 — KPI ini dulu SELALU 0 (menghitung koleksi
               `approval_requests` yang tak pernah diisi siapa pun), padahal 16 dokumen
@@ -142,7 +142,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             testId="kpi-persetujuan-menunggu"
             onClick={() => onNavigate && onNavigate(topApproval?.view || "approval-inbox")} />
           <KPICard icon={PackageX} label="Stok Rendah" value={lowStock.count ?? "—"} sub="Perlu reorder" color="#FF6B00" loading={loading} />
-          <KPICard icon={Award} label="Payout Insentif" value={fmtCur(data?.incentive_payout)} sub="Estimasi MTD" color="#AF52DE" loading={loading} />
+          <KPICard icon={Award} label="Insentif Sales" value={fmtCur(data?.incentive_payout)} sub="Estimasi bulan ini" color="#AF52DE" loading={loading} />
         </div>
 
         {/* FASE G-5 — ringkasan periode yang sedang dibuka (unlock) + sisa waktu */}
@@ -236,7 +236,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {/* Leaderboard */}
           <div className="rounded-xl border border-[#EFF0F2] bg-white p-4" data-testid="admin-home-leaderboard">
-            <div className="flex items-center gap-2 mb-3"><Trophy size={15} className="text-[#FF9500]" /><h3 className="text-[14px] font-bold">Top Sales (MTD)</h3></div>
+            <div className="flex items-center gap-2 mb-3"><Trophy size={15} className="text-[#FF9500]" /><h3 className="text-[14px] font-bold">Sales Teratas (bulan ini)</h3></div>
             {board.length > 0 ? (
               <div className="grid gap-1.5">
                 {board.map((r, idx) => (

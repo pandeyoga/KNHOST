@@ -56,12 +56,12 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
 
   return (
     <div data-testid="rfid-locations-view" className="space-y-4">
-      <RfidHeader icon={MapPin} title="Lokasi RFID" subtitle="Lokasi terkini per tag (last-seen) + rekonsiliasi vs bin assigned.">
+      <RfidHeader icon={MapPin} title="Lokasi RFID" subtitle="Lokasi terakhir tiap tag terbaca + pencocokan dengan bin yang ditetapkan.">
         <KNSelect data-testid="rfid-loc-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-loc-refresh" onClick={load}
           className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
 
@@ -84,13 +84,13 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         <Stat icon={AlertTriangle} label="Beda Gudang (Drift)" value={counts.drift} color="#C0341D" loading={loading} testId="rfid-loc-drift" />
       </div>
 
-      <SectionCard title="Simulasi Sweep (Fixed Reader)" right={
+      <SectionCard title="Simulasi Pindai Area (Pembaca Tetap)" right={
         <div className="flex items-center gap-2">
           <KNSelect data-testid="rfid-loc-reader" value={readerId} onValueChange={setReaderId} options={readerOpts}
             className="field !py-1 !px-2 text-[12px] w-64" placeholder="Pilih reader" />
           <button data-testid="rfid-loc-sweep" disabled={busy || !readerId} onClick={sweep}
             className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
-            <Radar size={14} /> Sweep
+            <Radar size={14} /> Pindai
           </button>
         </div>}>
         {srch.toolbar}
@@ -101,7 +101,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
                 <table className="w-full text-[12px]">
                   <thead><tr className="text-left text-[11px] text-[#8E8E93] border-b border-[#EFF0F2]">
                     <th className="py-2 pr-2">EPC</th><th className="pr-2">Produk</th><th className="pr-2">Roll</th>
-                    <th className="pr-2">Bin Assigned</th><th className="pr-2">Last Seen</th><th className="pr-2 text-right">Status</th>
+                    <th className="pr-2">Bin Ditetapkan</th><th className="pr-2">Terakhir Terbaca</th><th className="pr-2 text-right">Status</th>
                   </tr></thead>
                   <tbody>
                     {srch.pageRows.map((i) => (

@@ -22,7 +22,7 @@ export function CatalogFilters({ value, onChange, suppliers = [] }) {
       {sel("line_code", "Lini", options("product_line"))}
       {sel("supplier_id", "Supplier", suppliers.map((s) => ({ value: s.id, label: s.name })))}
       {sel("lifecycle", "Status", [{ value: "active", label: "SKU aktif" }, { value: "inactive", label: "SKU nonaktif" }, { value: "archived", label: "Induk diarsipkan" }])}
-      <input data-testid="catalog-filter-color" className="field !w-40 !py-1.5 text-xs" placeholder="Warna / motif"
+      <input data-testid="catalog-filter-color" className="field !w-40 !py-1.5 text-xs" placeholder="Cari warna / motif…" aria-label="Cari warna / motif"
              value={value.color} onChange={(e) => set("color", e.target.value)} />
       {active && <button data-testid="catalog-filter-reset" className="secondary-button !py-1 text-xs" onClick={() => onChange(emptyCatalogFilters())}><RotateCcw size={12} />Reset</button>}
     </div>

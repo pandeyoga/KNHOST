@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import { formatDate } from "../../utils/formatters";
 import {
   FC, compactIDR, entityParam, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
@@ -85,7 +86,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
             )}
           </Panel>
 
-          <div className="grid lg:grid-cols-2 gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-2 gap-3">
             <DueList title="Piutang (AR) Jatuh Tempo" icon={ArrowDownCircle} items={data.ar_items} tone="in" testId="fcst-ar" />
             <DueList title="Hutang (AP) Jatuh Tempo" icon={ArrowUpCircle} items={data.ap_items} tone="out" testId="fcst-ap" />
           </div>
@@ -105,9 +106,9 @@ function DueList({ title, icon: Icon, items, tone, testId }) {
         <p className="text-[11px] text-[#9A9BA3] py-4 text-center">Tidak ada tagihan terbuka.</p>
       ) : (
         <div className="overflow-auto max-h-[320px] rounded-md border border-[#EFF0F2]">
-          <table className="w-full text-[12px]">
+          <table className="w-full min-w-[460px] text-[12px]">
             <thead className="sticky top-0 bg-[#FAFBFC]">
-              <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] border-b border-[#EFF0F2]">
+              <tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] border-b border-[#EFF0F2]">
                 <th className="px-3 py-2">No</th><th className="px-3 py-2">Pihak</th>
                 <th className="px-3 py-2 text-right">Nilai</th><th className="px-3 py-2 text-right">Jatuh Tempo</th>
               </tr>
@@ -115,13 +116,14 @@ function DueList({ title, icon: Icon, items, tone, testId }) {
             <tbody>
               {arr.map((it, i) => (
                 <tr key={`${it.number}-${i}`} data-testid={`${testId}-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
-                  <td className="px-3 py-1.5 font-semibold text-[#1C1C1E]">{it.number}</td>
+                  <td className="whitespace-nowrap px-3 py-1.5 font-semibold text-[#1C1C1E]">{it.number}</td>
                   <td className="px-3 py-1.5 text-[#6B6B73] max-w-[140px] truncate" title={it.party}>{it.party}</td>
                   <td className={`px-3 py-1.5 text-right tabular-nums font-semibold ${color}`}>{formatCurrency(it.amount)}</td>
                   <td className="px-3 py-1.5 text-right text-[11px]">
-                    <span className={it.days_to_due < 0 ? "text-[#C0392B] font-semibold" : "text-[#6B6B73]"}>{it.due_date}</span>
-                    {it.days_to_due < 0 && <span className="block text-[9px] text-[#C0392B]">telat {Math.abs(it.days_to_due)}h</span>}
-                    {it.due_basis === "estimate_not_shipped" && <span className="block text-[9px] text-[#8E8E93]">perkiraan · belum dikirim</span>}
+                    {/* Audit UI 24 Okt (073): tanggal ISO "2026-11-22" → "22 Nov 2026". */}
+                    <span className={`whitespace-nowrap ${it.days_to_due < 0 ? "text-[#C0392B] font-semibold" : "text-[#6B6B73]"}`}>{it.due_date ? formatDate(it.due_date) : "—"}</span>
+                    {it.days_to_due < 0 && <span className="block text-[11px] text-[#C0392B]">telat {Math.abs(it.days_to_due)} hari</span>}
+                    {it.due_basis === "estimate_not_shipped" && <span className="block text-[11px] text-[#8E8E93]">perkiraan · belum dikirim</span>}
                   </td>
                 </tr>
               ))}

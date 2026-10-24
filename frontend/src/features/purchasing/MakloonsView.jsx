@@ -69,7 +69,7 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
       <div className="section-card mb-3">
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0"><Factory size={16} className="text-[#0058CC]" /><h2 data-testid="makloons-title">Mitra Makloon (Subkontraktor)</h2></div>
-          {canManage && <button data-testid="create-makloon-button" onClick={() => { setEditTarget(null); setShowForm(true); }} className="primary-button"><Plus size={13} /> Buat Makloon</button>}
+          {canManage && <button data-testid="create-makloon-button" onClick={() => { setEditTarget(null); setShowForm(true); }} className="primary-button"><Plus size={13} /> Tambah Mitra Makloon</button>}
         </div>
         <div className="section-body">
           <div className="relative max-w-sm">
@@ -79,15 +79,16 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="section-card">
-        <div className="grid grid-cols-[90px_1.5fr_1.1fr_130px_80px_110px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-          <span>Kode</span><span>Nama / Proses</span><span>Kontak</span><span>Kota / Lead</span><span>Status</span><span className="text-right">Aksi</span>
+      <div className="section-card overflow-x-auto">
+        <div className="min-w-[760px]">
+        <div className="grid grid-cols-[90px_1.5fr_1.1fr_130px_80px_110px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          <span>Kode</span><span>Nama / Proses</span><span>Kontak</span><span>Kota / Lead Time</span><span>Status</span><span className="text-right">Aksi</span>
         </div>
         {loading ? <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat makloon…</div>
          : filtered.length === 0 ? (
           <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="makloon-empty">
             <Factory className="mx-auto mb-2 text-gray-300" size={28} />
-            <p>{search ? "Tidak ada makloon cocok." : "Belum ada makloon. Buat mitra makloon pertama."}</p>
+            <p>{search ? "Tidak ada mitra makloon yang cocok." : "Belum ada mitra makloon di badan usaha ini. Tambahkan mitra makloon pertama."}</p>
           </div>
         ) : (
           <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
@@ -96,13 +97,13 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
                 <span className="text-[11.5px] font-bold text-[#0058CC]">{m.code}</span>
                 <div className="min-w-0">
                   <p className="text-[12px] font-semibold truncate">{m.name}</p>
-                  <p className="text-[10.5px] text-[#6B6B73] truncate flex items-center gap-1"><EntityBadge entityId={m.entity_id} /><span className="truncate">{(m.process_types || []).map((p) => processLabel(p)).join(", ") || "—"}</span></p>
+                  <p className="text-[11px] text-[#6B6B73] truncate flex items-center gap-1"><EntityBadge entityId={m.entity_id} /><span className="truncate">{(m.process_types || []).map((p) => processLabel(p)).join(", ") || "—"}</span></p>
                 </div>
-                <div className="min-w-0"><p className="text-[11px] truncate">{m.pic_name || "—"}</p><p className="text-[10.5px] text-[#6B6B73] truncate">{m.phone || "—"}</p></div>
-                <div className="min-w-0"><p className="text-[11px] truncate flex items-center gap-1"><MapPin size={10} />{m.city || "—"}</p><p className="text-[10.5px] text-[#6B6B73]">{m.lead_time_days || 0} hari</p></div>
+                <div className="min-w-0"><p className="text-[11px] truncate">{m.pic_name || "—"}</p><p className="text-[11px] text-[#6B6B73] truncate">{m.phone || "—"}</p></div>
+                <div className="min-w-0"><p className="text-[11px] truncate flex items-center gap-1"><MapPin size={10} />{m.city || "—"}</p><p className="text-[11px] text-[#6B6B73]">{m.lead_time_days || 0} hari</p></div>
                 <span className={`status-pill ${m.status === "active" ? "pill-success" : "pill-muted"}`}>{m.status === "active" ? "Aktif" : "Nonaktif"}</span>
                 <div className="flex items-center justify-end gap-1">
-                  <button data-testid={`detail-makloon-${m.id}`} onClick={() => setDetailId(m.id)} className="icon-button text-[#0058CC]" title="Makloon 360"><BarChart3 size={13} /></button>
+                  <button data-testid={`detail-makloon-${m.id}`} onClick={() => setDetailId(m.id)} className="icon-button text-[#0058CC]" title="Makloon 360" aria-label={`Detail ${m.name}`}><BarChart3 size={13} /></button>
                   {(canUpdate || canDeactivate) && <>
                     {canUpdate && <button data-testid={`edit-makloon-${m.id}`} onClick={() => { setEditTarget(m); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
                     {canDeactivate && m.status === "active" && <button data-testid={`deactivate-makloon-${m.id}`} onClick={() => setDeactivateTarget(m)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
@@ -112,6 +113,7 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       <MakloonFormModal open={showForm} editTarget={editTarget} entities={entities} terms={terms} selectedEntity={selectedEntity}

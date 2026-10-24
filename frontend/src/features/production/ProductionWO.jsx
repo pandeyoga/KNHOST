@@ -9,7 +9,7 @@ import { OptionTabs } from "../../components/ListControls";
 import { StatusBadge } from "./ProductionParts";
 import { formatCurrency, Badge } from "../finance/financeShared";
 
-const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
+const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#0058CC] focus:outline-none";
 const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── WO table ──────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ export function WOTable({ wos, perms, busyId, onDetail, onAction }) {
   const rows = useMemo(() => (filter ? wos.filter((w) => w.status === filter) : wos), [wos, filter]);
   return (
     <div className="space-y-2.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <OptionTabs testId="wo-status-filter" value={filter} onChange={setFilter}
                   countOf={(v) => wos.filter((w) => !v || w.status === v).length}
                   options={[{ value: "", label: "Semua status" }, { value: "draft", label: "Draf" },
@@ -28,11 +28,11 @@ export function WOTable({ wos, perms, busyId, onDetail, onAction }) {
                             { value: "cancelled", label: "Dibatalkan" }]} />
         <span className="text-[11px] text-[#9A9BA3]">{rows.length} Perintah Kerja</span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="wo-table">
-        <table className="w-full text-[12px]">
+      <div className="overflow-x-auto rounded-xl border border-[#EFF0F2] bg-white" data-testid="wo-table">
+        <table className="w-full min-w-[760px] text-[12px]">
           <thead>
-            <tr className="bg-[#FAFAFC] text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
-              <th className="px-3 py-2.5 font-bold">No. WO</th>
+            <tr className="whitespace-nowrap bg-[#FAFAFC] text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
+              <th className="px-3 py-2.5 font-bold">No. Perintah Kerja</th>
               <th className="px-3 py-2.5 font-bold">Barang Jadi</th>
               <th className="px-3 py-2.5 font-bold text-right">Qty</th>
               <th className="px-3 py-2.5 font-bold">Gudang</th>
@@ -47,30 +47,30 @@ export function WOTable({ wos, perms, busyId, onDetail, onAction }) {
               const open = w.status === "draft" || w.status === "released";
               return (
                 <tr key={w.id} data-testid={`wo-row-${w.id}`} className="hover:bg-[#FCFAFE]">
-                  <td className="px-3 py-2.5 font-bold text-[#6B219A]">{w.wo_number}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 font-bold text-[#0058CC]">{w.wo_number}</td>
                   <td className="px-3 py-2.5">
                     <span className="font-medium text-[#3A3A3C]">{w.output_name || w.output_product_id}</span>
-                    <span className="ml-1 block text-[10.5px] text-[#9A9BA3]">{w.bom_name}</span>
+                    <span className="ml-1 block text-[11px] text-[#8E8E93]">{w.bom_name}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{w.planned_qty} {w.output_unit}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{w.planned_qty} {w.output_unit}</td>
                   <td className="px-3 py-2.5 text-[#3A3A3C]">{w.warehouse_name || w.warehouse_id}</td>
                   <td className="px-3 py-2.5 text-center"><StatusBadge status={w.status} /></td>
                   <td className="px-3 py-2.5 text-right tabular-nums">{w.status === "completed" ? formatCurrency(w.total_cost) : "—"}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-end gap-1.5">
                       <button data-testid={`wo-detail-${w.id}`} onClick={() => onDetail(w)}
-                              className="rounded-md border border-[#E2E2E7] p-1.5 text-[#3A3A3C] hover:bg-[#F2F2F5]" title="Detail"><Eye size={13} /></button>
+                              className="rounded-md border border-[#E2E2E7] p-1.5 text-[#3A3A3C] hover:bg-[#F2F2F5]" title="Detail" aria-label="Detail"><Eye size={13} /></button>
                       {open && perms.release && w.status === "draft" && (
                         <button data-testid={`wo-release-${w.id}`} disabled={busy} onClick={() => onAction(w, "release")}
-                                className="rounded-md border border-[#D9CBEA] p-1.5 text-[#6B219A] hover:bg-[#F3EAFB] disabled:opacity-50" title="Rilis"><PlayCircle size={13} /></button>
+                                className="rounded-md border border-[#CFE0F7] p-1.5 text-[#0058CC] hover:bg-[#EAF2FF] disabled:opacity-50" title="Rilis" aria-label="Rilis"><PlayCircle size={13} /></button>
                       )}
                       {w.status === "released" && perms.complete && (
                         <button data-testid={`wo-complete-${w.id}`} disabled={busy} onClick={() => onAction(w, "complete")}
-                                className="rounded-md border border-[#CBE7D5] p-1.5 text-[#1B7F4B] hover:bg-[#EAF6EF] disabled:opacity-50" title="Selesaikan"><CheckCircle2 size={13} /></button>
+                                className="rounded-md border border-[#CBE7D5] p-1.5 text-[#1B7F4B] hover:bg-[#EAF6EF] disabled:opacity-50" title="Selesaikan" aria-label="Selesaikan"><CheckCircle2 size={13} /></button>
                       )}
                       {open && perms.cancel && (
                         <button data-testid={`wo-cancel-${w.id}`} disabled={busy} onClick={() => onAction(w, "cancel")}
-                                className="rounded-md border border-[#F3D6D6] p-1.5 text-[#C0392B] hover:bg-[#FDECEC] disabled:opacity-50" title="Batalkan"><XCircle size={13} /></button>
+                                className="rounded-md border border-[#F3D6D6] p-1.5 text-[#C0392B] hover:bg-[#FDECEC] disabled:opacity-50" title="Batalkan" aria-label="Batalkan"><XCircle size={13} /></button>
                       )}
                     </div>
                   </td>
@@ -124,7 +124,7 @@ export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }
     try {
       await onCreate({ bom_id: bomId, planned_qty: Number(qty), warehouse_id: warehouseId, notes });
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal membuat Work Order.");
+      setErr(e.response?.data?.detail || "Gagal membuat Perintah Kerja.");
       setSaving(false);
     }
   };
@@ -133,24 +133,25 @@ export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }
     <div className="space-y-3" data-testid="wo-form">
       {err && <div data-testid="wo-form-error" className="rounded-lg border border-[#F3D6D6] bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C0392B]">{err}</div>}
       {boms.length === 0 && <div className="rounded-lg border border-[#F5D9A8] bg-[#FFFBF3] px-3 py-2 text-[11.5px] text-[#8A5A00]">Belum ada BOM aktif. Buat BOM terlebih dahulu di tab BOM / Resep.</div>}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Tanpa BOM aktif form tidak bisa dipakai → tidak ditampilkan (dulu tetap terbuka penuh). */}
+      {boms.length > 0 && <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className={labelCls}>BOM / Resep</label>
+          <label className={labelCls}>BOM / Resep *</label>
           <KNSelect data-testid="wo-bom-select" value={bomId} onValueChange={setBomId} options={bomOptions} searchable placeholder="Pilih BOM" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Jumlah Produksi (unit output)</label>
+          <label className={labelCls}>Jumlah Produksi (unit output) *</label>
           <input data-testid="wo-qty-input" type="number" min="0" step="0.01" className={inputCls} value={qty} onChange={(e) => setQty(e.target.value)} />
         </div>
         <div>
-          <label className={labelCls}>Gudang Produksi</label>
+          <label className={labelCls}>Gudang Produksi *</label>
           <KNSelect data-testid="wo-warehouse-select" value={warehouseId} onValueChange={setWarehouseId} options={whOptions} searchable placeholder="Pilih gudang" className={inputCls} />
         </div>
         <div className="col-span-2">
           <label className={labelCls}>Catatan (opsional)</label>
           <input data-testid="wo-notes-input" className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
-      </div>
+      </div>}
 
       {bom && (
         <div data-testid="wo-plan-preview" className="rounded-xl border border-[#EFF0F2] bg-[#FCFCFD] p-3">
@@ -163,7 +164,7 @@ export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }
           </div>
           <table className="w-full text-[11.5px]">
             <thead>
-              <tr className="text-left text-[10px] uppercase tracking-wide text-[#9A9BA3]">
+              <tr className="text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
                 <th className="py-1 font-bold">Bahan</th>
                 <th className="py-1 font-bold text-right">Butuh</th>
                 <th className="py-1 font-bold text-right">Tersedia</th>
@@ -184,16 +185,17 @@ export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }
               ))}
             </tbody>
           </table>
-          <p className="mt-1.5 text-[10px] text-[#9A9BA3]">Ketersediaan dihitung dari saldo gudang terpilih. Validasi final saat WO diselesaikan.</p>
+          <p className="mt-1.5 text-[11px] text-[#8E8E93]">Ketersediaan dihitung dari saldo gudang terpilih. Validasi final saat Perintah Kerja diselesaikan.</p>
         </div>
       )}
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button data-testid="wo-cancel" onClick={onCancel} className="rounded-lg border border-[#E2E2E7] px-3 py-2 text-[12px] font-semibold text-[#3A3A3C] hover:bg-[#FAFAFA]">Batal</button>
-        <button data-testid="wo-save" onClick={submit} disabled={saving || boms.length === 0}
-                className="rounded-lg bg-[#6B219A] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#581680] disabled:opacity-50">
-          {saving ? "Membuat…" : "Buat Work Order"}
-        </button>
+        <button data-testid="wo-cancel" onClick={onCancel} className="secondary-button">{boms.length === 0 ? "Tutup" : "Batal"}</button>
+        {boms.length > 0 && (
+          <button data-testid="wo-save" onClick={submit} disabled={saving} className="primary-button">
+            {saving ? "Membuat…" : "Buat Perintah Kerja"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -227,7 +229,7 @@ export function WODetailPanel({ wo, perms, busy, onAction }) {
         </div>
         <table className="w-full text-[11.5px]">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-wide text-[#9A9BA3]">
+            <tr className="text-left text-[11px] uppercase tracking-wide text-[#8E8E93]">
               <th className="px-3 py-1.5 font-bold">Bahan</th>
               <th className="px-3 py-1.5 font-bold text-right">{wo.status === "completed" ? "Qty" : "Butuh"}</th>
               {wo.status !== "completed" && <th className="px-3 py-1.5 font-bold text-right">Tersedia</th>}
@@ -260,9 +262,9 @@ export function WODetailPanel({ wo, perms, busy, onAction }) {
           <CostRow label="Total HPP" value={wo.total_cost} strong />
           <div className="mt-1 flex items-center justify-between">
             <span className="text-[11.5px] text-[#6B6B73]">HPP / unit</span>
-            <span className="tabular-nums text-[12px] font-bold text-[#6B219A]">{formatCurrency(wo.unit_cost || 0)}</span>
+            <span className="tabular-nums text-[12px] font-bold text-[#0058CC]">{formatCurrency(wo.unit_cost || 0)}</span>
           </div>
-          <p className="mt-2 text-[10.5px] text-[#9A9BA3]">
+          <p className="mt-2 text-[11px] text-[#8E8E93]">
             {wo.produced_qty} {wo.output_unit} barang jadi diproduksi ({(wo.produced_roll_ids || []).length} roll).
             {wo.je_id ? " Overhead dikapitalisasi ke persediaan (jurnal terbit)." : " Tanpa overhead — transformasi persediaan (GL net-0)."}
           </p>
@@ -277,7 +279,7 @@ export function WODetailPanel({ wo, perms, busy, onAction }) {
           )}
           {perms.release && wo.status === "draft" && (
             <button data-testid="wo-detail-release" disabled={busy} onClick={() => onAction("release")}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#D9CBEA] px-3 py-2 text-[12px] font-semibold text-[#6B219A] hover:bg-[#F3EAFB] disabled:opacity-50"><PlayCircle size={14} /> Rilis</button>
+                    className="secondary-button"><PlayCircle size={14} /> Rilis</button>
           )}
           {perms.complete && wo.status === "released" && (
             <button data-testid="wo-detail-complete" disabled={busy} onClick={() => onAction("complete")}

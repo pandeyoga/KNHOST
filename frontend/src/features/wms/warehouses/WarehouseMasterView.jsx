@@ -221,7 +221,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             <span key={s.id} data-testid={`wh-site-chip-${s.id}`}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5EA] bg-[#FAFBFC] px-2.5 py-1 text-[11.5px] font-semibold">
               {s.name}{s.city ? <span className="font-normal text-[#8E8E93]">· {s.city}</span> : null}
-              <span className="rounded bg-[#EAF2FF] px-1 text-[10px] font-bold text-[#0058CC]">{s.warehouse_count} gedung</span>
+              <span className="rounded bg-[#EAF2FF] px-1 text-[11px] font-bold text-[#0058CC]">{s.warehouse_count} gedung</span>
               {canDelete && s.warehouse_count === 0 && (
                 <button data-testid={`wh-site-del-${s.id}`} onClick={() => removeSite(s)} aria-label="Hapus lokasi"
                   className="text-[#C0341D] hover:opacity-70"><X size={11} /></button>
@@ -292,22 +292,34 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             <div className="mb-3 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="wh-create-form">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang baru</p>
               <div className="grid gap-2 md:grid-cols-2">
-                {[["code", "Kode gudang (mis. WH-SMG)"], ["name", "Nama gudang"],
-                  ["bin_code", "Kode bin pertama"]].map(([key, ph]) => (
-                  <input key={key} data-testid={`wh-form-${key}`} className="field" placeholder={ph}
-                    value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+                {[["code", "Kode gudang *", "mis. WH-SMG"], ["name", "Nama gudang *", "mis. Gudang Semarang"],
+                  ["bin_code", "Kode bin pertama", "mis. A1-01"]].map(([key, label, ph]) => (
+                  <label key={key} className="block">
+                    <span className="field-label">{label}</span>
+                    <input data-testid={`wh-form-${key}`} className="field" placeholder={ph}
+                      value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+                  </label>
                 ))}
-                <input data-testid="wh-form-bin_capacity" className="field" type="number"
-                  placeholder="Kapasitas bin" value={form.bin_capacity}
-                  onChange={(e) => setForm({ ...form, bin_capacity: e.target.value })} />
+                <label className="block">
+                  <span className="field-label">Kapasitas bin pertama (roll)</span>
+                  <input data-testid="wh-form-bin_capacity" className="field" type="number"
+                    placeholder="mis. 1000" value={form.bin_capacity}
+                    onChange={(e) => setForm({ ...form, bin_capacity: e.target.value })} />
+                </label>
                 <LocationFields testId="wh-form-loc" compact value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
                 <div className="grid grid-cols-2 gap-2">
-                  <input data-testid="wh-form-lat" className="field" type="number" step="0.0001"
-                    placeholder="Latitude (opsional)" value={form.lat}
-                    onChange={(e) => setForm({ ...form, lat: e.target.value })} />
-                  <input data-testid="wh-form-lng" className="field" type="number" step="0.0001"
-                    placeholder="Longitude (opsional)" value={form.lng}
-                    onChange={(e) => setForm({ ...form, lng: e.target.value })} />
+                  <label className="block">
+                    <span className="field-label">Lintang (opsional)</span>
+                    <input data-testid="wh-form-lat" className="field" type="number" step="0.0001"
+                      placeholder="mis. -6.9175" value={form.lat}
+                      onChange={(e) => setForm({ ...form, lat: e.target.value })} />
+                  </label>
+                  <label className="block">
+                    <span className="field-label">Bujur (opsional)</span>
+                    <input data-testid="wh-form-lng" className="field" type="number" step="0.0001"
+                      placeholder="mis. 107.6191" value={form.lng}
+                      onChange={(e) => setForm({ ...form, lng: e.target.value })} />
+                  </label>
                 </div>
               </div>
 
@@ -319,25 +331,28 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                     className={`rounded-md border px-2.5 py-2 text-left text-[12px] ${
                       form.sharing_mode === "dedicated" ? "border-[#6B219A] bg-[#F3E9FA]" : "border-[#E5E5EA] bg-white"}`}>
                     <span className="block font-bold">Khusus {entityFullById(entities, selectedEntity)}</span>
-                    <span className="block text-[10.5px] text-[#6B6B73]">Bawaan — badan usaha lain tidak melihat gudang ini.</span>
+                    <span className="block text-[11px] text-[#6B6B73]">Bawaan — badan usaha lain tidak melihat gudang ini.</span>
                   </button>
                   <button type="button" data-testid="wh-form-mode-shared"
                     onClick={() => setForm({ ...form, sharing_mode: "shared" })}
                     className={`rounded-md border px-2.5 py-2 text-left text-[12px] ${
                       form.sharing_mode === "shared" ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#E5E5EA] bg-white"}`}>
                     <span className="block font-bold">Bersama semua badan usaha</span>
-                    <span className="block text-[10.5px] text-[#6B6B73]">Dipakai bergantian oleh semua badan usaha.</span>
+                    <span className="block text-[11px] text-[#6B6B73]">Dipakai bergantian oleh semua badan usaha.</span>
                   </button>
                 </div>
               </div>
 
-              <button data-testid="wh-form-save" className="primary-button mt-2.5" onClick={submit}
+              <div className="mt-2.5 flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => setShowCreate(false)}>Batal</button>
+              <button data-testid="wh-form-save" className="primary-button" onClick={submit}
                 disabled={saving || (!canWrite && form.sharing_mode === "dedicated")}
                 title={!canWrite ? writeBlockHint : ""}>
                 <Save size={14} /> {saving ? "Menyimpan…" : "Simpan gudang"}
               </button>
+              </div>
               {!canWrite && (
-                <p data-testid="wh-form-scope-note" className="mt-1 text-[10.5px] text-[#8C4A00]">{writeBlockHint}</p>
+                <p data-testid="wh-form-scope-note" className="mt-1 text-[11px] text-[#8C4A00]">{writeBlockHint}</p>
               )}
             </div>
           )}
@@ -355,15 +370,16 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             </div>
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]">
+              {/* min-w + kolom Aksi menempel kanan → di HP tabel digulir, tombol tetap terlihat. */}
+              <table className="w-full min-w-[980px] text-[12px]">
                 <thead>
-                  <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
+                  <tr className="whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[11px] font-bold uppercase text-[#8E8E93]">
                     <th className="px-3 py-2">Gudang</th>
                     <th className="px-3 py-2">Profil (peran · aturan · gerbang)</th>
                     <th className="px-3 py-2">Mode pemakaian</th>
                     <th className="px-3 py-2">Isi gudang (pemilik stok)</th>
                     <th className="px-3 py-2 text-center">Status</th>
-                    <th className="px-3 py-2 text-right">Aksi</th>
+                    <th className="sticky right-0 bg-[#FAFBFC] px-3 py-2 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -374,47 +390,47 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                         className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#FBFCFE]">
                         <td className="px-3 py-2">
                           <span className="font-semibold text-[#1C1C1E]">{w.name}</span>
-                          <span className="block text-[10.5px] text-[#9A9BA3]">
-                            <MapPin size={9} className="inline" /> {w.code} · {siteName(w.site_id) || w.city || "—"}
+                          <span className="block text-[11px] text-[#8E8E93]">
+                            <MapPin size={10} className="inline" /> {w.code} · {siteName(w.site_id) || w.city || "—"}
                           </span>
                         </td>
                         <td className="px-3 py-2" data-testid={`wh-profile-cell-${w.id}`}>
                           {(w.roles || []).length === 0 ? (
-                            <span className="text-[10.5px] text-[#9A9BA3]">belum diatur</span>
+                            <span className="text-[11px] text-[#8E8E93]">peran belum diatur</span>
                           ) : (
                             <span className="flex flex-wrap gap-1">
                               {(w.roles || []).map((r) => (
-                                <span key={r} className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10px] font-bold text-[#0058CC]">
+                                <span key={r} className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[11px] font-bold text-[#0058CC]">
                                   {ROLE_LABELS[r] || r}
                                 </span>
                               ))}
                             </span>
                           )}
-                          <span className="mt-0.5 block text-[10px] text-[#8E8E93]">
+                          <span className="mt-0.5 block text-[11px] text-[#8E8E93]">
                             {(() => {
                               const m = (w.storage_rules || {}).mode;
-                              if (m === "category") return `rules: ${(w.storage_rules.categories || []).join(", ") || "semua kategori"}`;
-                              if (m === "grade") return `rules: grade ${(w.storage_rules.grades || []).join("/")}`;
-                              return "tanpa rules";
+                              if (m === "category") return `aturan simpan: ${(w.storage_rules.categories || []).join(", ") || "semua kategori"}`;
+                              if (m === "grade") return `aturan simpan: grade ${(w.storage_rules.grades || []).join("/")}`;
+                              return "tanpa aturan simpan";
                             })()}
-                            {" · "}{(w.gate_config || {}).physical_gate ? "gate fisik" : "handheld"}
+                            {" · "}{(w.gate_config || {}).physical_gate ? "gerbang pindai fisik" : "pindai genggam"}
                           </span>
                         </td>
                         <td className="px-3 py-2">
                           <WarehouseModeBadge warehouse={w} testId={`wh-mode-badge-${w.id}`} />
-                          <label className="mt-1 flex items-center gap-1 text-[10px] text-[#6B6B73]">
-                            Loading check
-                            <KNSelect data-testid={`wh-lc-policy-${w.id}`} value={w.loading_check_policy || "optional"} disabled={!canWrite} aria-label="Kebijakan loading check"
+                          <label className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] text-[#6B6B73]">
+                            Cek muat
+                            <KNSelect data-testid={`wh-lc-policy-${w.id}`} value={w.loading_check_policy || "optional"} disabled={!canWrite} aria-label="Kebijakan cek muat sebelum kirim"
                               onValueChange={async (v) => {
                                 try { await patchWarehouse(w.id, { loading_check_policy: v }); load(); }
-                                catch (ex) { setError(errText(ex, "Gagal mengubah kebijakan loading check.")); }
+                                catch (ex) { setError(errText(ex, "Gagal mengubah kebijakan cek muat.")); }
                               }}
-                              className="!h-auto !w-auto rounded border border-[#E5E5EA] bg-white !px-1 !py-0.5 text-[10px] font-semibold"
+                              className="!h-auto !w-auto rounded border border-[#E5E5EA] bg-white !px-1 !py-0.5 text-[11px] font-semibold"
                               options={[{ value: "optional", label: "opsional" }, { value: "required", label: "wajib sebelum kirim" }]} />
                           </label>
                           {w.usable_by_active === false && (
                             <span data-testid={`wh-not-usable-${w.id}`}
-                              className="mt-1 block text-[10px] font-semibold text-[#8C4A00]">
+                              className="mt-1 block text-[11px] font-semibold text-[#8C4A00]">
                               tidak bisa dipakai {activeEntityLabel}
                             </span>
                           )}
@@ -425,9 +441,12 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                           ) : (
                             <span className="flex flex-wrap gap-1" data-testid={`wh-owners-${w.id}`}>
                               {owners.map((o) => (
+                                // UAT 24 Okt — server mengirim jumlah PER SATUAN (`qty_by_unit`); satuan berbeda tidak dijumlah.
                                 <span key={o.entity_id || "none"}
-                                  className="inline-flex items-center gap-1 rounded bg-[#F5F5F7] px-1.5 py-0.5 text-[10px] font-semibold text-[#3C3C43]">
-                                  <Boxes size={9} /> {o.entity_name}: {o.rolls} roll · {formatQty(o.qty)}
+                                  title={o.rolls ? Object.entries(o.qty_by_unit || {}).map(([u, q]) => `${formatQty(q)} ${u}`).join(" · ") : "Stok non-roll (saldo)"}
+                                  className="inline-flex items-center gap-1 whitespace-nowrap rounded bg-[#F5F5F7] px-1.5 py-0.5 text-[11px] font-semibold text-[#3C3C43]">
+                                  <Boxes size={10} /> {o.entity_name}: {o.rolls ? `${formatQty(o.rolls)} roll` : `${formatQty(o.balances || 0)} saldo stok`}
+                                  {Object.entries(o.qty_by_unit || {}).map(([u, q]) => <span key={u} className="font-normal text-[#6B6B73]">· {formatQty(q)} {u}</span>)}
                                 </span>
                               ))}
                             </span>
@@ -438,21 +457,24 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                             {w.active === false ? "Nonaktif" : "Aktif"}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <td className="sticky right-0 bg-white px-3 py-2 text-right whitespace-nowrap shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.12)]">
                           {(canEdit || canDelete) && (
                             <>
                               {canEdit && <button data-testid={`wh-edit-profile-${w.id}`} className="secondary-button text-[11px]"
-                                onClick={() => setProfileFor(w)}>
-                                <Building2 size={12} /> Profil
+                                title="Profil gudang" aria-label={`Profil ${w.name}`} onClick={() => setProfileFor(w)}>
+                                <Building2 size={12} /> <span className="hidden sm:inline">Profil</span>
                               </button>}
                               {canEdit && <button data-testid={`wh-edit-mode-${w.id}`} className="secondary-button ml-1.5 text-[11px]"
-                                onClick={() => setModeFor(w)}>
-                                <Settings2 size={12} /> Atur mode
+                                title="Atur mode pemakaian" aria-label={`Atur mode ${w.name}`} onClick={() => setModeFor(w)}>
+                                <Settings2 size={12} /> <span className="hidden sm:inline">Atur mode</span>
                               </button>}
                               {(w.active === false ? canEdit : canDelete) && <button data-testid={`wh-toggle-active-${w.id}`}
-                                className={`${w.active === false ? "secondary-button" : "danger-button"} ml-1.5 text-[11px]`}
+                                // Nonaktifkan = aksi jarang → tombol sekunder bertulisan merah, bukan blok merah penuh di tiap baris.
+                                className={`secondary-button ml-1.5 text-[11px] ${w.active === false ? "" : "!text-[#C0392B]"}`}
+                                title={w.active === false ? "Aktifkan" : "Nonaktifkan"}
+                                aria-label={`${w.active === false ? "Aktifkan" : "Nonaktifkan"} ${w.name}`}
                                 onClick={() => toggleActive(w)}>
-                                {w.active === false ? <><RotateCcw size={12} /> Aktifkan</> : <><Ban size={12} /> Nonaktifkan</>}
+                                {w.active === false ? <><RotateCcw size={12} /> <span className="hidden sm:inline">Aktifkan</span></> : <><Ban size={12} /> <span className="hidden sm:inline">Nonaktifkan</span></>}
                               </button>}
                             </>
                           )}
@@ -516,7 +538,7 @@ function Kpi({ label, value, icon: Icon, tone = "", testId }) {
           <Icon size={17} className="text-[#0058CC]" />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
           <p className={`truncate text-[17px] font-bold tabular-nums ${tone || "text-[#1C1C1E]"}`}
             data-testid={`${testId}-value`}>{value}</p>
         </div>

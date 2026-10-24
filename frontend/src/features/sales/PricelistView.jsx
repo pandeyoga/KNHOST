@@ -264,10 +264,12 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
               {onlyOverride ? `Belum ada harga khusus untuk ${entityName}.` : "Tidak ada produk."}
             </div>
           ) : (
+            /* Audit UI 24 Okt (014, HP) — tabel diberi lebar minimum: dulu kolom Produk terjepit 1 kata/baris dan
+               tombol aksi keluar layar; kini tabel digeser utuh di dalam wadahnya. */
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]">
+              <table className="w-full min-w-[900px] text-[12px]">
                 <thead>
-                  <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
+                  <tr className="whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10.5px] font-bold uppercase text-[#8E8E93]">
                     <th className="px-3 py-2">SKU</th>
                     <th className="px-3 py-2">Produk</th>
                     <th className="px-3 py-2 text-right">Harga global</th>
@@ -287,10 +289,10 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
                     return (
                       <tr key={r.product_id} data-testid={`pl-row-${r.product_id}`}
                         className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#FBF8FE]">
-                        <td className="px-3 py-2 font-mono text-[11px] text-[#6B6B73]">{r.sku}</td>
-                        <td className="px-3 py-2">
+                        <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px] text-[#6B6B73]">{r.sku}</td>
+                        <td className="min-w-[200px] px-3 py-2">
                           <span className="font-medium text-[#1C1C1E]">{r.product_name}</span>
-                          <span className="block text-[10px] text-[#9A9BA3]">
+                          <span className="block text-[11px] text-[#8E8E93]">
                             {r.category} · per {r.base_unit}
                             {r.scheduled_count > 0 && (
                               <span data-testid={`pl-scheduled-${r.product_id}`} className="ml-1 font-semibold text-[#0058CC]">

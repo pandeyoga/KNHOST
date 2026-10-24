@@ -13,6 +13,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { designerKpiTrend } from "./designerApi";
+import { actorLabel } from "../../utils/actorLabel";   // audit UI 24 Okt — akun teknis tidak tampil mentah
 
 const PALETTE = ["#0058CC", "#1B7F4B", "#B8860B", "#C0392B",
   "#7E57C2", "#0097A7", "#EF6C00", "#5D4037"];
@@ -102,7 +103,7 @@ export default function DesignScoreTrendChart({ params = {}, accMin = 1.5, testI
                   formatter={(v, name) => [v == null ? "—" : `${fmt(v)}/2`, name]} />
                 <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 6 }} iconType="plainline" />
                 {series.map((s, idx) => (
-                  <Line key={s.designer} type="monotone" dataKey={s.designer} name={s.designer}
+                  <Line key={s.designer} type="monotone" dataKey={s.designer} name={actorLabel(s.designer)}
                     stroke={PALETTE[idx % PALETTE.length]} strokeWidth={2.2}
                     dot={{ r: 2.5 }} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
                 ))}
@@ -117,7 +118,7 @@ export default function DesignScoreTrendChart({ params = {}, accMin = 1.5, testI
               <span key={s.designer} className="inline-flex items-center gap-1 text-[11px] text-[#4A4B52]">
                 <span className="inline-block h-2 w-2 rounded-full"
                   style={{ background: PALETTE[idx % PALETTE.length] }} />
-                {s.designer}
+                {actorLabel(s.designer)}
                 <b className="tabular-nums">· rata-rata {fmt(s.avg)}/2 · {s.versions} versi</b>
               </span>
             ))}

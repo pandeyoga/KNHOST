@@ -93,14 +93,15 @@ export default function StoreCreditView({ selectedEntity, currentUser }) {
     <div data-testid="store-credit-view">
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
-        <Kpi testId="sc-kpi-total" label="Total Saldo (Kewajiban 2-1450)" value={formatCurrency(totals.total)} icon={Wallet} tone="text-[#6B219A]" />
+        {/* Audit UI 24 Okt (132): kartu ketiga dulu hanya kode akun "2-1450" — diganti metrik nyata. */}
+        <Kpi testId="sc-kpi-total" label="Total Saldo (Kewajiban)" value={formatCurrency(totals.total)} icon={Wallet} tone="text-[#6B219A]" />
         <Kpi testId="sc-kpi-customers" label="Pelanggan ber-Saldo" value={String(totals.customers)} icon={Users} />
-        <Kpi testId="sc-kpi-info" label="Akun GL" value="2-1450" icon={TicketPercent} tone="text-[#0058CC]" />
+        <Kpi testId="sc-kpi-info" label="Rata-rata per Pelanggan" value={totals.customers ? formatCurrency(totals.total / totals.customers) : "—"} icon={TicketPercent} tone="text-[#0058CC]" />
       </div>
 
       <div className="section-card">
         <div className="section-head">
-          <div className="flex items-center gap-2"><Wallet size={16} className="text-[#6B219A]" /><h2 data-testid="sc-title">Saldo Store Credit Pelanggan</h2></div>
+          <div className="flex items-center gap-2"><Wallet size={16} className="text-[#6B219A]" /><h2 data-testid="sc-title">Saldo Kredit Pelanggan (Store Credit)</h2></div>
           <div className="flex items-center gap-2 ml-auto">
             <div className="relative">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
@@ -155,7 +156,7 @@ export default function StoreCreditView({ selectedEntity, currentUser }) {
               </table>
             </div>
           )}
-          <p className="text-[10.5px] text-[#9A9BA3] mt-2">Store credit = kewajiban perusahaan ke pelanggan (GL <b>2-1450</b>). <b>Pakai</b> mengurangi saldo & melunasi piutang pesanan (Dr 2-1450 / Cr 1-1200). Berlaku untuk pesanan dari <b>POS, Pesanan Penjualan, & Faktur</b>.</p>
+          <p className="text-[11px] text-[#9A9BA3] mt-2">Saldo kredit = kewajiban perusahaan ke pelanggan. <b>Pakai</b> mengurangi saldo & melunasi piutang pesanan. Berlaku untuk pesanan dari <b>POS, Pesanan Penjualan, & Faktur</b>.</p>
         </div>
       </div>
 

@@ -116,7 +116,9 @@ async def best_sellers(scope_ids: List[str], limit: int = 8, *, window_days: int
                 counted.add(pid)
     ranked = sorted(agg.items(), key=lambda kv: (kv[1]["order_count"], kv[1]["qty"], kv[1]["revenue"]), reverse=True)
     prods = await _products(pid for pid, _ in ranked[: max(limit * 6, 60)])
-    picked = [(pid, a) for pid, a in ranked if visible_for(prods.get(pid), customer_id)][:limit]
+    # SKU hasil Pesanan Khusus bukan barang katalog — tidak ikut "Terlaris" (audit UI 143).
+    picked = [(pid, a) for pid, a in ranked if visible_for(prods.get(pid), customer_id)
+              and not (prods.get(pid) or {}).get("special_order_id")][:limit]
     avail = await _available_many([pid for pid, _ in picked])
     return [_row(prods[pid], avail.get(pid, 0), {"order_count": int(a["order_count"]), "qty_sold": round(a["qty"], 2),
                                                "revenue": round(a["revenue"], 2), "window_days": window_days})
@@ -154,7 +156,8 @@ async def recommended_for_customer(customer_id: str, scope_ids: List[str], limit
     ors = [{f: {"$in": list(v)}} for f, v in keys.items() if v]
     if not ors:
         return []
-    cands = [p for p in await db.products.find({"$or": ors, "id": {"$nin": list(bought)}, "status": {"$ne": "inactive"}},
+    cands = [p for p in await db.products.find({"$or": ors, "id": {"$nin": list(bought)}, "status": {"$ne": "inactive"},
+                                                "special_order_id": {"$in": [None, ""]}},
                                                {"_id": 0}).to_list(600) if visible_for(p, customer_id)]
     avail = await _available_many([p["id"] for p in cands])
     scored = []

@@ -136,7 +136,7 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
           {TABS.map((t) => (
             <button key={t.key || "all"} data-testid={`ca-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>
           ))}
-          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / keperluan / pemohon…" testId="ca-search" /></div>
+          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, keperluan…" testId="ca-search" /></div>
         </div>
       </section>
 

@@ -310,7 +310,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
         <div className="bg-white border border-[#EFF0F2] rounded-xl overflow-hidden">
           <div className="px-3 py-2 border-b border-[#EFF0F2] bg-[#FAFBFC] flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tugas Barang Keluar</span>
-            <button onClick={fetchTasks} className="text-[#007AFF] text-[11px] font-medium">Refresh</button>
+            <button onClick={fetchTasks} className="text-[#007AFF] text-[11px] font-medium">Muat ulang</button>
           </div>
           {loading ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>

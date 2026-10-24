@@ -17,6 +17,7 @@ import { askReason } from "../../services/confirmService";
 import { normalizeZones, fmtUnits, TERMS } from "./location/locUtils";
 
 const SUPERVISORS = ["warehouse_admin", "manager", "admin"];
+const isActiveWh = (w) => (w.status || "active") === "active" && w.active !== false;
 
 export default function LocationPutawayView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("putaway");
@@ -43,7 +44,9 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
       const ids = locScope?.restricted ? locScope.warehouse_ids || [] : null;
       const rows = (r.data || []).filter((w) => !ids || ids.includes(w.id));
       setWarehouses(rows);
-      if (rows.length && !whId) setWhId(rows[0].id);
+      // Gudang aktif lebih dulu — dulu gudang pertama (bisa nonaktif & kosong) terpilih,
+      // sehingga KPI "0 roll / semua sudah ditempatkan" menyesatkan.
+      if (rows.length && !whId) setWhId((rows.find(isActiveWh) || rows[0]).id);
       if (!rows.length) setLoading(false);
     }).catch((e) => setError(apiErrorText(e)));
   }, [locScope]); // eslint-disable-line
@@ -101,16 +104,16 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
           <p data-testid="lp-hierarchy" className="text-[12px] text-[#6B6B73] mt-0.5 flex flex-wrap items-center gap-1">
             {[TERMS.site, TERMS.warehouse, TERMS.zone, TERMS.rack, TERMS.level, TERMS.bin].map((t, i) => (
               <span key={t} className="inline-flex items-center gap-1">{i > 0 && <ChevronRight size={11} />}{t}</span>))}
-            {w.name && <span className="ml-2 font-semibold text-[#1C1C1E]">· {w.site || "—"} › {w.name}</span>}
+            {w.name && <span className="ml-2 font-semibold text-[#1C1C1E]">· {w.site ? `${w.site} › ` : ""}{w.name}</span>}
           </p>
           <div className="mt-1"><LocationScopeBadge scope={locScope} /></div>
         </div>
-        <div className="flex items-center gap-2">
-          <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId} options={warehouses.map((x) => ({ value: x.id, label: x.name }))}
+        <div className="flex flex-wrap items-center gap-2">
+          <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId}
+            options={warehouses.map((x) => ({ value: x.id, label: isActiveWh(x) ? x.name : `${x.name} (nonaktif)` }))}
             className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-          <button data-testid="lp-refresh" onClick={loadAll}
-            className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          <button data-testid="lp-refresh" onClick={loadAll} className="secondary-button">
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
           </button>
         </div>
       </div>
@@ -123,15 +126,16 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         <Stat icon={Package} label="Kapasitas" value={capTxt} color="#5856D6" loading={loading} testId="lp-kpi-capacity" />
         <Stat icon={PackageCheck} label="Terisi di Rak" value={`${loc?.binned_rolls ?? 0} roll`} sub={fmtUnits(loc?.binned_by_unit)} color="#34C759" loading={loading} testId="lp-kpi-occupied" />
         <Stat icon={Layers} label="Belum Ditempatkan" value={`${loc?.unassigned?.rolls ?? 0} roll`} sub={fmtUnits(loc?.unassigned?.by_unit)} color="#FF9500" loading={loading} testId="lp-unassigned" />
-        <Stat icon={AlertOctagon} label="Alamat Yatim" value={`${loc?.orphan?.rolls ?? 0} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
+        <Stat icon={AlertOctagon} label="Alamat Tak Terdaftar" value={`${loc?.orphan?.rolls ?? 0} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
       </div>
 
-      <div className="flex gap-1 border-b border-[#EFF0F2] overflow-x-auto">
-        <TabBtn id="putaway" tab={tab} setTab={setTab} label={`Putaway${queue.length ? ` (${queue.length})` : ""}`} testId="lp-tab-putaway" />
+      {/* Tab dibungkus (bukan digulir) supaya ke-7 tab terlihat di HP & tanpa panah gulir vertikal di desktop. */}
+      <div className="flex flex-wrap gap-x-1 border-b border-[#EFF0F2]">
+        <TabBtn id="putaway" tab={tab} setTab={setTab} label={`Penempatan Rak${queue.length ? ` (${queue.length})` : ""}`} testId="lp-tab-putaway" />
         <TabBtn id="structure" tab={tab} setTab={setTab} label="Struktur Lokasi" testId="lp-tab-structure" />
         <TabBtn id="stock" tab={tab} setTab={setTab} label="Stok per Alamat" testId="lp-tab-stock" />
         <TabBtn id="bins" tab={tab} setTab={setTab} label="Okupansi Bin" testId="lp-tab-bins" />
-        <TabBtn id="orphans" tab={tab} setTab={setTab} label={`Alamat Yatim${loc?.orphan?.rolls ? ` (${loc.orphan.rolls})` : ""}`} testId="lp-tab-orphans" />
+        <TabBtn id="orphans" tab={tab} setTab={setTab} label={`Alamat Tak Terdaftar${loc?.orphan?.rolls ? ` (${loc.orphan.rolls})` : ""}`} testId="lp-tab-orphans" />
         <TabBtn id="pa" tab={tab} setTab={setTab} label="Perintah Simpan ke Rak (Antar Gedung)" testId="lp-tab-pa" />
         <TabBtn id="cuts" tab={tab} setTab={setTab} label="Antrean Potong" testId="lp-tab-cuts" />
       </div>
@@ -173,7 +177,7 @@ function TabBtn({ id, tab, setTab, label, testId }) {
   const active = tab === id;
   return (
     <button data-testid={testId} onClick={() => setTab(id)}
-      className={`px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px whitespace-nowrap transition-colors ${active ? "border-[#0058CC] text-[#0058CC]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
+      className={`px-3 py-2 text-[13px] font-semibold border-b-2 -mb-px whitespace-nowrap transition-colors sm:px-4 ${active ? "border-[#0058CC] text-[#0058CC]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
       {label}
     </button>
   );

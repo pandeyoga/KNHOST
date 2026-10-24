@@ -16,7 +16,8 @@
 .tanya-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--solid-line); background: #fff; color: var(--ios-muted);
   transition: background-color .15s, border-color .15s, color .15s; }
 .tanya-chip:hover { border-color: #6B219A; color: #6B219A; }
-.tanya-chip.active { background: #6B219A; border-color: #6B219A; color: #fff; }
+/* Audit UI 24 Okt (119) — pilihan aktif & tab aktif memakai biru standar (dulu ungu). */
+.tanya-chip.active { background: #0058CC; border-color: #0058CC; color: #fff; }
 .tanya-group { margin-bottom: var(--sp-3); }
 .tanya-group-title { font-size: 12px; font-weight: 700; color: var(--ios-muted-2); margin: var(--sp-2) 0 4px; }
 .tanya-tpl { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px;
@@ -61,9 +62,9 @@
   .tanya-side { position: static; max-height: none; }
   .tanya-rules-btn { margin-left: 0; }
 }
-.tanya-side-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; margin-bottom: var(--sp-3); background: var(--ios-bg); border-radius: var(--r-md); }
-.tanya-side-tab { font-size: 12px; font-weight: 600; padding: 6px 4px; border-radius: calc(var(--r-md) - 2px); color: var(--ios-muted); transition: background-color .15s, color .15s; }
-.tanya-side-tab.active { background: #fff; color: #6B219A; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.tanya-side-tabs { display: flex; overflow-x: auto; scrollbar-width: none; gap: 4px; padding: 3px; margin-bottom: var(--sp-3); background: var(--ios-bg); border-radius: var(--r-md); }
+.tanya-side-tab { flex: 1 0 auto; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 6px 8px; border-radius: calc(var(--r-md) - 2px); color: var(--ios-muted); transition: background-color .15s, color .15s; }
+.tanya-side-tab.active { background: #fff; color: #0058CC; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
 .tanya-history, .tanya-schedules { display: flex; flex-direction: column; gap: 6px; }
 .tanya-search { display: flex; align-items: center; gap: 6px; color: var(--ios-muted-2); margin: 4px 0; }
 .tanya-sess { display: flex; align-items: center; gap: 4px; border-radius: var(--r-md); transition: background-color .15s; }

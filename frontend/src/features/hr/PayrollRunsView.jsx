@@ -97,6 +97,9 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
   // `/api/entities` tak punya field `name` — dulu label pilihan entitas KOSONG.
   const entOpts = entityOptions(entities);
   const monthOpts = recentMonths().map((m) => ({ value: m, label: m }));
+  // Audit UI 24 Okt (082): daftar run dulu tidak kronologis (PR-00002 2026-08 di atas PR-00001 2026-09).
+  const sortedRuns = [...runs].sort((a, b) => String(b.period || "").localeCompare(String(a.period || ""))
+    || String(b.number || "").localeCompare(String(a.number || "")));
 
   return (
     <div data-testid="payroll-runs-view">
@@ -105,15 +108,16 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
 
       {/* Buat Run */}
       <div className="section-card mb-3">
-        <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-[#0058CC]" /><h2 data-testid="payroll-runs-title">Payroll Run — Penggajian</h2></div>
+        <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-[#0058CC]" /><h2 data-testid="payroll-runs-title">Penggajian — Run Payroll</h2></div>
           <button data-testid="payroll-runs-refresh" onClick={loadRuns} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
         </div>
         <div className="section-body grid gap-2 md:grid-cols-[1fr_180px_auto] items-end">
-          <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Entitas</label>
+          <div><label className="field-label">Entitas <span className="req">*</span></label>
             <KNSelect data-testid="payroll-create-entity" value={form.entity_id} onValueChange={(v) => setForm((f) => ({ ...f, entity_id: v }))} className="field" options={entOpts} placeholder="Pilih entitas" /></div>
-          <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Periode</label>
-            <KNSelect data-testid="payroll-create-period" value={form.period} onValueChange={(v) => setForm((f) => ({ ...f, period: v }))} className="field" options={monthOpts} /></div>
-          <button data-testid="payroll-create-submit" disabled={busy === "create"} onClick={createRun} className="primary-button justify-center"><Plus size={14} /> {busy === "create" ? "Memproses..." : "Buat / Hitung Run"}</button>
+          <div><label className="field-label">Periode <span className="req">*</span></label>
+            <KNSelect data-testid="payroll-create-period" value={form.period} onValueChange={(v) => setForm((f) => ({ ...f, period: v }))} className="field" options={monthOpts} placeholder="Pilih periode" /></div>
+          <button data-testid="payroll-create-submit" disabled={busy === "create" || !form.entity_id || !form.period} onClick={createRun} className="primary-button justify-center"
+            title={form.period ? `Hitung gaji periode ${form.period}` : "Pilih periode dulu"}><Plus size={14} /> {busy === "create" ? "Memproses..." : form.period ? `Hitung Run ${form.period}` : "Buat / Hitung Run"}</button>
         </div>
       </div>
 
@@ -127,7 +131,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
             <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-runs-empty"><Calculator className="mx-auto mb-2 text-gray-300" size={26} /><p>Belum ada payroll run.</p></div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-              {runs.map((r) => {
+              {sortedRuns.map((r) => {
                 const st = RUN_STATUS[r.status] || RUN_STATUS.draft;
                 return (
                   <button key={r.id} data-testid={`payroll-run-${r.id}`} onClick={() => openRun(r.id)}
@@ -177,15 +181,15 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
                 )}
                 <div className="overflow-x-auto border border-[#EFF0F2] rounded-lg">
                   <table className="w-full text-[11.5px] tabular-nums" data-testid="payroll-payslips-table">
-                    <thead><tr className="bg-[#FAFBFC] text-[10px] uppercase text-[#6B6B73] text-right">
+                    <thead><tr className="whitespace-nowrap bg-[#FAFBFC] text-[11px] uppercase text-[#6B6B73] text-right">
                       <th className="text-left px-2 py-1.5">Karyawan</th><th className="px-2">Pokok</th><th className="px-2">Tunj.</th><th className="px-2">Lembur</th><th className="px-2">Komisi</th><th className="px-2">Bruto</th><th className="px-2">BPJS</th><th className="px-2">PPh21</th><th className="px-2 pr-3">Net</th>
                     </tr></thead>
                     <tbody>
                       {(sel.payslips || []).map((s) => (
                         <tr key={s.id} data-testid={`payslip-${s.id}`} className="border-t border-[#EFF0F2] text-right hover:bg-[#FAFBFC]">
-                          <td className="text-left px-2 py-1.5 font-semibold">{s.employee_name}<span className="text-[9.5px] text-[#9A9BA3] ml-1">TER-{s.ter_category}</span></td>
+                          <td className="text-left px-2 py-1.5 font-semibold">{s.employee_name}</td>
                           <td className="px-2 tabular-nums">{rp(s.base_salary)}</td><td className="px-2 tabular-nums">{rp(s.allowances)}</td><td className="px-2 tabular-nums">{rp(s.overtime)}</td><td className="px-2 tabular-nums">{rp(s.commission)}</td>
-                          <td className="px-2 font-semibold text-[#0058CC] tabular-nums">{rp(s.gross)}</td><td className="px-2 text-[#C0392B] tabular-nums">{rp(s.bpjs_emp_total)}</td><td className="px-2 text-[#C0392B] tabular-nums">{rp(s.pph21)} <span className="text-[9px] text-[#9A9BA3]">{pct(s.pph21_rate)}</span></td>
+                          <td className="px-2 font-semibold text-[#0058CC] tabular-nums">{rp(s.gross)}</td><td className="px-2 text-[#C0392B] tabular-nums">{rp(s.bpjs_emp_total)}</td><td className="px-2 text-[#C0392B] tabular-nums" title={s.ter_category ? `Tarif efektif PPh 21 kategori ${s.ter_category}` : undefined}>{rp(s.pph21)} <span className="text-[11px] text-[#9A9BA3]">{pct(s.pph21_rate)}</span></td>
                           <td className="px-2 pr-3 font-bold text-[#1F7A45] tabular-nums">{rp(s.net)}</td>
                         </tr>
                       ))}

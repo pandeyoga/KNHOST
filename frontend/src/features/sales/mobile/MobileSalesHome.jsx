@@ -35,6 +35,14 @@ function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) 
 const BOARD_SUB = { "price-approvals": "price-status", "special-orders": "special", "internal-requests": "internal", returns: "returns", amendments: "amendments", "customers-crm": "crm" };
 const CREDIT_TONE = { ok: ["Aman", "#1B7F4B", "#E6F6EC"], warning: ["Waspada", "#8A5300", "#FFF4E5"], blocked: ["Blokir", "#C0392B", "#FDEDE7"] };
 
+// Audit UI 24 Okt — label grafik tren komisi (HP Beranda sales).
+const COMPACT = new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 });
+const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const monthLabel = (p) => {
+  const m = /^(\d{4})-(\d{2})/.exec(String(p || ""));
+  return m ? BULAN[Number(m[2]) - 1] || p : p;
+};
+
 export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, onAskKn, onOpenSub, onOpenFull, onOpenOrder, selectedEntity = "all" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -159,16 +167,18 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
       )}
       <div className="m-card p-4" data-testid="m-home-trend">
         <h3 className="mb-2 text-[13px] font-bold">Tren Komisi (6 bulan)</h3>
-        {loading ? <div className="h-28 animate-pulse rounded bg-[#F1F2F4]" /> : history.length > 0 ? (
+        {/* Audit UI 24 Okt (HP Beranda) — grafik datar bernilai 0 dulu berlabel "0k" lima kali & sumbu bulan "05…10";
+            kini: tanpa komisi → pesan kosong; sumbu Y ringkas (rb/jt), sumbu X nama bulan. */}
+        {loading ? <div className="h-28 animate-pulse rounded bg-[#F1F2F4]" /> : history.some((h) => Number(h.incentive) > 0) ? (
           <ResponsiveContainer width="100%" height={130}>
-            <LineChart data={history} margin={{ top: 4, right: 6, left: -18, bottom: 0 }}>
-              <XAxis dataKey="period" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+            <LineChart data={history} margin={{ top: 4, right: 6, left: -10, bottom: 0 }}>
+              <XAxis dataKey="period" tick={{ fontSize: 10 }} tickFormatter={monthLabel} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => COMPACT.format(v)} allowDecimals={false} />
               <Tooltip formatter={(v) => [formatCurrency(v), "Insentif"]} />
               <Line type="monotone" dataKey="incentive" stroke="#34C759" strokeWidth={2} dot={{ r: 2 }} />
             </LineChart>
           </ResponsiveContainer>
-        ) : <p className="py-6 text-center text-[12px] m-muted">Belum ada riwayat komisi.</p>}
+        ) : <p className="py-6 text-center text-[12px] m-muted" data-testid="m-home-trend-empty">Belum ada komisi dalam 6 bulan terakhir — komisi terbentuk saat pembayaran pelanggan masuk.</p>}
       </div>
 
       {/* Recent orders */}

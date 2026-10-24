@@ -81,9 +81,9 @@ export default function AmendmentReasonsPanel({ currentUser }) {
         <div className="flex items-center gap-2">
           <Tag size={15} className="text-[#0058CC]" />
           <div>
-            <h3 className="text-[12.5px] font-bold">Label Alasan Koreksi</h3>
+            <h3 className="text-[12.5px] font-bold">Label Alasan Amandemen (Koreksi)</h3>
             <p className="text-[10.5px] text-[#6B6B73]">
-              Taksonomi alasan yang boleh dipilih pengusul. Bisa diubah tanpa deploy.
+              Daftar alasan yang boleh dipilih pengusul koreksi/amandemen. Perubahan langsung berlaku.
             </p>
           </div>
         </div>
@@ -105,8 +105,10 @@ export default function AmendmentReasonsPanel({ currentUser }) {
             <Loader2 size={14} className="inline animate-spin" /> Memuat label…
           </p>
         ) : (
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[150px_1fr_110px_96px] gap-2 bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
+          // Audit UI 110 (HP) — dulu kolom Nama menyusut jadi kotak kosong & Status terpotong "Akti":
+          // tabel kini punya lebar minimum dan digeser horizontal di layar sempit.
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+            <div className="min-w-[640px] grid grid-cols-[150px_1fr_110px_96px] gap-2 bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Kode</span><span>Nama & penjelasan</span><span>Data master</span><span>Status</span>
             </div>
             {srch.toolbar}
@@ -126,9 +128,9 @@ export default function AmendmentReasonsPanel({ currentUser }) {
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5" data-testid="amd-reason-new">
             <p className="mb-2 text-[10px] font-bold uppercase text-[#6B6B73]">Tambah label alasan</p>
             <div className="grid gap-2 md:grid-cols-[150px_1fr_auto]">
-              <input data-testid="amd-reason-new-code" className="field" placeholder="kode_alasan"
+              <input data-testid="amd-reason-new-code" className="field" placeholder="Kode singkat, mis. salah_harga" aria-label="Kode alasan"
                 value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} />
-              <input data-testid="amd-reason-new-label" className="field" placeholder="Nama yang dilihat pengguna"
+              <input data-testid="amd-reason-new-label" className="field" placeholder="Nama yang dilihat pengguna" aria-label="Nama alasan"
                 value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
               <button data-testid="amd-reason-new-save" className="primary-button" onClick={addNew} disabled={saving === "new"}>
                 <Plus size={13} /> {saving === "new" ? "Menyimpan…" : "Tambah"}
@@ -165,12 +167,12 @@ function ReasonRow({ row, isAdmin, saving, onSave }) {
 
   return (
     <div data-testid={`amd-reason-row-${row.code}`}
-      className="grid grid-cols-[150px_1fr_110px_96px] items-start gap-2 px-2.5 py-2 border-b border-[#EFF0F2] last:border-0">
+      className="min-w-[640px] grid grid-cols-[150px_1fr_110px_96px] items-start gap-2 px-2.5 py-2 border-b border-[#EFF0F2] last:border-0">
       <span className="text-[10.5px] font-mono text-[#6B6B73] break-all">{row.code}</span>
       <div className="space-y-1">
-        <input data-testid={`amd-reason-label-${row.code}`} className="field !py-1 text-[11.5px]" value={label}
+        <input data-testid={`amd-reason-label-${row.code}`} className="field !py-1 text-[11.5px]" value={label} aria-label={`Nama alasan ${row.code}`}
           disabled={!isAdmin} onChange={(e) => setLabel(e.target.value)} />
-        <input data-testid={`amd-reason-help-${row.code}`} className="field !py-1 text-[10.5px]" value={help}
+        <input data-testid={`amd-reason-help-${row.code}`} className="field !py-1 text-[10.5px]" value={help} aria-label={`Penjelasan alasan ${row.code}`}
           disabled={!isAdmin} onChange={(e) => setHelp(e.target.value)} placeholder="Penjelasan singkat" />
         {isAdmin && dirty && (
           <button data-testid={`amd-reason-save-${row.code}`} className="primary-button !py-1 !px-2 !text-[10.5px]"

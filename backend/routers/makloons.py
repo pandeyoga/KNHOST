@@ -11,7 +11,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_list_scope_inherit, assert_entity_access
 from schemas import MakloonCreate, GenericPatch
 from services.wilayah_service import normalize_location
 from services.makloon_service import makloon_360, compute_makloon_scorecard
@@ -37,7 +37,7 @@ async def list_makloons(request: Request, entity_id: str = None, status: str = N
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
-    query = resolve_list_scope("makloons", query, ctx, entity_id)
+    query = resolve_list_scope_inherit("makloons", query, ctx, entity_id)   # mitra grup ("all") ikut tampil
     return await db.makloons.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
 
 

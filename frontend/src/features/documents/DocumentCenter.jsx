@@ -13,11 +13,20 @@ import {
 import { openTrace } from "./trace/traceDeepLink";
 import PagedRows from "@/components/PagedRows";
 import { formatCurrency } from "../../utils/formatters";
+import { docStatusLabel } from "../../utils/docStatus";
 
 const ESIGN_ROLES = ["admin", "manager", "sales", "warehouse"];
 const WA_MANAGE_ROLES = ["admin", "manager"];
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
+// Audit UI 24 Okt (089): status dulu tampil mentah ("Waiting_stock", "Reserved", "Done").
+const DC_STATUS_LABEL = {
+  waiting_stock: "Menunggu stok", partially_shipped: "Sebagian dikirim", partially_picked: "Sebagian diambil",
+  picked: "Sudah diambil", confirmed: "Dikonfirmasi", paid: "Lunas", unpaid: "Belum lunas",
+  partial: "Sebagian dibayar", partially_paid: "Sebagian dibayar", posted: "Terposting", issued: "Terbit",
+  normal: "Normal", pengganti: "Pengganti", batal: "Batal", void: "Dianulir", expired: "Kedaluwarsa",
+};
+const dcStatus = (s) => (s ? DC_STATUS_LABEL[s] || docStatusLabel(s) : "-");
 
 export default function DocumentCenter({ currentUser, selectedEntity, entities = [] }) {
   const [docTypes, setDocTypes] = useState([]);
@@ -150,9 +159,9 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
               <p className="text-[11.5px] text-[#9A9BA3]">Coba ubah jenis dokumen, entitas, atau kata kunci.</p>
             </div>
           ) : (
-            <table className="w-full text-[12.5px]" data-testid="dc-table">
+            <table className="w-full min-w-[900px] text-[12.5px]" data-testid="dc-table">
               <thead>
-                <tr className="border-b border-[#EDEEF1] text-left text-[10.5px] uppercase tracking-wide text-[#9A9BA3]">
+                <tr className="whitespace-nowrap border-b border-[#EDEEF1] text-left text-[11px] uppercase tracking-wide text-[#9A9BA3]">
                   <th className="px-2 py-2">Nomor</th>
                   <th className="px-2 py-2">Tanggal</th>
                   <th className="px-2 py-2">Pihak</th>
@@ -166,11 +175,11 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
               <tbody>
                 <PagedRows rows={rows} testId="document-center-pager">{(d) => (
                   <tr key={d.source_id} className="border-b border-[#F2F3F5] hover:bg-[#FAFBFC]" data-testid={`dc-row-${d.source_id}`}>
-                    <td className="px-2 py-2 font-semibold text-[#0B1B3B]">{d.number}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-semibold text-[#0B1B3B]">{d.number}</td>
                     <td className="px-2 py-2 text-[#6B6B73]">{d.date || "-"}</td>
                     <td className="px-2 py-2">{d.party || "-"}</td>
                     <td className="px-2 py-2 text-right font-medium tabular-nums">{rp(d.amount)}</td>
-                    <td className="px-2 py-2"><span className="rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[10.5px] font-medium capitalize text-[#4A4B52]">{d.status || "-"}</span></td>
+                    <td className="px-2 py-2"><span className="whitespace-nowrap rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[11px] font-medium text-[#4A4B52]">{dcStatus(d.status)}</span></td>
                     <td className="px-2 py-2">
                       {d.signed ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#ECFAF1] px-2 py-0.5 text-[10.5px] font-semibold text-[#1F7A45]" title={`Kode: ${d.verification_code}`} data-testid={`dc-signed-${d.source_id}`}>

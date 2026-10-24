@@ -170,7 +170,7 @@ export default function DocTraceView({
                 <GitBranch size={30} className="text-[#C4C5CC]" />
                 <p className="text-[12.5px] font-semibold text-[#3C3C43]">Pilih dokumen untuk ditelusuri</p>
                 <p className="max-w-md text-[11.5px] text-[#6B6B73]">
-                  Cari nomor surat di panel kiri, atau tekan tombol <b>Jejak Dokumen</b> pada
+                  Cari nomor surat di kotak pencarian, atau tekan tombol <b>Jejak Dokumen</b> pada
                   detail Pesanan, Purchase Order, Tagihan Supplier, Kwitansi, dan Penerimaan Barang.
                   QR pada dokumen cetak juga membuka halaman ini.
                 </p>

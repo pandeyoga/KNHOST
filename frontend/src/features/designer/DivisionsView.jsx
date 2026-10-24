@@ -17,10 +17,8 @@ import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { approvalMatrix } from "../approvals/approvalsMatrixApi";
 import { listDivisionMembers, listDivisions, setMemberDivision } from "./designerApi";
-import { roleIs } from "../../config/roles";
+import { roleIs, roleLabel } from "../../config/roles";
 
-const ROLE_LABEL = { admin: "Admin", manager: "Manager", sales: "Sales",
-  warehouse: "Gudang", designer: "Desainer" };
 
 const MODE_TONE = {
   enforce: "bg-[#E9F7EF] text-[#1B7F4B]",
@@ -278,7 +276,8 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
                         )}
                       </td>
                       <td className="py-2 pr-3 text-[11.5px] text-[#4A4B52]">
-                        {ROLE_LABEL[m.role] || m.role || "—"}
+                        {/* Audit UI 116 — semua peran berlabel (dulu "warehouse_admin", "md", "qc" … tampil mentah). */}
+                        {m.role ? roleLabel(m.role) : "—"}
                       </td>
                       <td className="py-2">
                         {canManage ? (

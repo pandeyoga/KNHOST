@@ -20,6 +20,7 @@ import {
 import ErrorNotice from "../../components/ErrorNotice";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { actorLabel } from "../../utils/actorLabel";
 import InternalRequestCreateModal from "./InternalRequestCreateModal";
 import {
   apiText, cancelInternalRequest, convertInternalRequest, getInternalRequest,
@@ -100,7 +101,7 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
   }
 
   return (
-    <div data-testid="internal-requests-view" className="grid gap-4">
+    <div data-testid="internal-requests-view" className="grid grid-cols-1 gap-4">
       {toast && (
         <div className="notice-bar success" data-testid="pin-toast">
           <span>{toast}</span><button onClick={() => setToast("")}>×</button>
@@ -109,13 +110,14 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="pin-error" />
 
       <section className="section-card">
-        <div className="section-head">
+        {/* Audit UI 24 Okt (006, HP) — kepala membungkus; tombol tidak menjepit judul. */}
+        <div className="section-head flex-wrap gap-y-2">
           <div className="flex min-w-0 items-center gap-2">
-            <ArrowLeftRight size={15} className="text-[#0058CC]" />
-            <span className="kicker">Antar Entitas</span>
+            <ArrowLeftRight size={15} className="shrink-0 text-[#0058CC]" />
+            <span className="kicker hidden sm:inline">Antar Entitas</span>
             <h2 data-testid="pin-title">Permintaan Internal (PIN)</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button data-testid="pin-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </button>
@@ -160,8 +162,11 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
       </section>
 
       <section className="section-card">
+        {/* Audit UI 24 Okt (006, HP) — grid diberi lebar minimum supaya kepala kolom tidak bertumpuk di 390px;
+            tabel digeser ke samping di dalam wadahnya. */}
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-[110px_1.4fr_150px_140px_170px_100px] border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+          <div className="min-w-[820px]">
+          <div className="grid grid-cols-[110px_1.4fr_150px_140px_170px_100px] whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10.5px] font-bold uppercase text-[#6B6B73]">
             <span>Nomor</span><span>Barang</span><span>Sumber / Hasil</span>
             <span className="text-right pr-3">Taksiran</span><span className="pl-1">Status</span><span className="text-right">Aksi</span>
           </div>
@@ -183,8 +188,8 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
                       {r.items?.[0]?.product_name || "—"}
                       {r.items?.length > 1 ? ` +${r.items.length - 1}` : ""}
                     </p>
-                    <p className="truncate text-[10.5px] text-[#9A9BA3]">
-                      {r.requested_by} · {r.reason}
+                    <p className="truncate text-[11px] text-[#8E8E93]">
+                      {actorLabel(r.requested_by)} · {r.reason}
                       {r.source_order_number ? ` · untuk ${r.source_order_number}` : ""}
                     </p>
                   </div>
@@ -211,6 +216,7 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
               ))}
             </div>
           )}
+          </div>
         </div>
       </section>
 
@@ -334,7 +340,7 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
         {err && <div className="notice-bar danger" data-testid="pin-detail-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
 
         <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Peminta" value={`${req.requested_by} (${req.requester_entity_name})`} testId="pin-f-requester" />
+          <Field label="Peminta" value={`${actorLabel(req.requested_by)} (${req.requester_entity_name})`} testId="pin-f-requester" />
           <Field label="Alasan" value={req.reason} testId="pin-f-reason" />
           <Field label="Dibutuhkan Sebelum" value={req.needed_date || "—"} testId="pin-f-needed" />
           <Field label="Untuk Pesanan" value={req.source_order_number || "—"} testId="pin-f-order" />
@@ -503,7 +509,7 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
                 <p className="text-[11.5px] font-semibold">{t.label || t.event}</p>
                 <p className="text-[10.5px] text-[#8E8E93]">
                   {(t.at || t.timestamp || "").slice(0, 16).replace("T", " ")}
-                  {t.actor ? ` · ${t.actor}` : ""}{t.note ? ` · ${t.note}` : ""}
+                  {t.actor ? ` · ${actorLabel(t.actor)}` : ""}{t.note ? ` · ${t.note}` : ""}
                 </p>
               </div>
             </div>

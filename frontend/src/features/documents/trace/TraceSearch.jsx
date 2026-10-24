@@ -51,7 +51,8 @@ export default function TraceSearch({ entityId, onPick, onError }) {
           <input data-testid="trace-search-input" value={q}
             onChange={(e) => { setQ(e.target.value); setTouched(true); }}
             className="field !pl-8"
-            placeholder="Nomor surat (SO-0001, PO-00003, SCT-, SMP-, SPEC-, FKT-, AR-, VB-…) / pelanggan / supplier" />
+            placeholder="Nomor surat / pelanggan / supplier"
+            title="Contoh nomor: SO-0001, PO-00003, SCT-, SMP-, SPEC-, FKT-, AR-, VB-" />
         </div>
         <p className="text-[10.5px] text-[#8E8E93]">
           Penelusuran bisa dimulai dari dokumen APA PUN — termasuk dari tengah rantai

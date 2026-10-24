@@ -4,6 +4,7 @@ import axios, { API } from "../../../services/apiClient";
 import { can } from "../../../config/roles";
 import { formatQty } from "../../../utils/formatters";
 import InternalRequestCreateModal from "../../internal_requests/InternalRequestCreateModal";
+import { displaySku, maskedSkuTitle } from "../../pos/skuDisplay";
 
 // Sama dengan papan desktop: POV sales = total grup; baris kecil = PT saya.
 const pv = (r, k) => (r.detail_scope === "own_entity" && r.global_total ? Number(r.global_total[k] || 0) : Number(r[`total_${k}`] || 0));
@@ -53,6 +54,11 @@ export default function MobileStockAtp({ user, selectedEntity = "all" }) {
           </button>
         ))}
       </div>
+      {/* Audit UI 24 Okt (HP Stok & ATP) — angka utama kartu = total GRUP, baris "PT saya" = badan usaha sendiri;
+          dulu tanpa keterangan sehingga "Tersedia 50" tampak bertentangan dengan "PT saya: tersedia 0". */}
+      {(rows || []).some((r) => r.detail_scope === "own_entity") && (
+        <p className="text-[11px] m-muted" data-testid="m-stock-scope-note">Angka utama = total grup (semua PT). Baris “PT saya” = stok badan usaha Anda. Siap janji = tersedia + akan datang − permintaan tertunda (yang dipesan sudah tidak dihitung tersedia).</p>
+      )}
       {toast && <div className="notice-bar success text-xs" data-testid="m-stock-toast">{toast}</div>}
       {err && <div className="notice-bar danger text-xs" data-testid="m-stock-error">{err}</div>}
       {rows === null && <p className="p-6 text-center text-sm m-muted">Memuat…</p>}
@@ -70,7 +76,7 @@ export default function MobileStockAtp({ user, selectedEntity = "all" }) {
 function Num({ icon: Icon, label, value, unit, tone, testId }) {
   return (
     <div className="rounded-lg px-2 py-1.5" style={{ background: tone }} data-testid={testId}>
-      <p className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-wide text-[#6B6B73]"><Icon size={10} /> {label}</p>
+      <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#6B6B73]"><Icon size={10} /> {label}</p>
       <p className="text-[13px] font-bold tabular-nums">{formatQty(value)} <span className="text-[10px] font-medium text-[#6B6B73]">{unit}</span></p>
     </div>
   );
@@ -84,11 +90,11 @@ function StockCard({ r, open, onToggle, canRequest, onRequest }) {
       <button className="flex w-full items-start gap-2 text-left" onClick={onToggle} data-testid={`m-stock-toggle-${r.product_id}`}>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-bold">{r.product_name}</p>
-          <p className="truncate font-mono text-[10px] m-muted">{r.sku}</p>
+          <p className="truncate font-mono text-[11px] m-muted" title={maskedSkuTitle(r.sku)}>{displaySku(r.sku)}</p>
         </div>
         <div className="text-right">
           <p className={`text-[16px] font-bold tabular-nums ${atp <= 0 ? "text-[#C62828]" : "text-[#1B7F4B]"}`} data-testid={`m-stock-atp-${r.product_id}`}>{formatQty(atp)}</p>
-          <p className="text-[9.5px] font-semibold uppercase m-muted">siap janji · {r.unit}</p>
+          <p className="text-[10px] font-semibold uppercase m-muted">siap janji · {r.unit}</p>
         </div>
         {open ? <ChevronDown size={16} className="mt-1 text-[#C7C7CC]" /> : <ChevronRight size={16} className="mt-1 text-[#C7C7CC]" />}
       </button>
@@ -97,7 +103,7 @@ function StockCard({ r, open, onToggle, canRequest, onRequest }) {
         <Num icon={Clock3} label="Dipesan" value={pv(r, "reserved")} unit={r.unit} tone="#FFF6E9" testId={`m-stock-reserved-${r.product_id}`} />
         <Num icon={Truck} label="Akan datang" value={pv(r, "incoming")} unit={r.unit} tone="#EEF9F1" testId={`m-stock-incoming-${r.product_id}`} />
       </div>
-      {own && <p className="mt-1.5 text-[10.5px] m-muted" data-testid={`m-stock-own-${r.product_id}`}>PT saya ({own.entity_name}): tersedia {formatQty(own.available)} · ATP {formatQty(own.atp)} {r.unit}</p>}
+      {own && <p className="mt-1.5 text-[11px] m-muted" data-testid={`m-stock-own-${r.product_id}`}>PT saya ({own.entity_name}): tersedia {formatQty(own.available)} · ATP {formatQty(own.atp)} {r.unit}</p>}
       {(r.total_pending_demand || 0) > 0 && <p className="text-[10.5px] text-[#A05000]">Permintaan tertunda {formatQty(r.total_pending_demand)} {r.unit}</p>}
       {r.has_intercompany_opportunity && (
         <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#F6EEFC] px-2.5 py-1.5" data-testid={`m-stock-interco-${r.product_id}`}>

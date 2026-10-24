@@ -53,7 +53,7 @@ export default function WizardCreditPicker({ credits, picked, amounts, onToggleP
         </div>
       ))}
       <p className="border-t border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10.5px] text-[#6B6B73]">
-        Satu nota debit / uang muka hanya boleh dipotong SEKALI (INV-CB-04) — yang sudah
+        Satu nota debit / uang muka hanya boleh dipotong SEKALI — yang sudah
         terpakai di kontrabon lain tidak muncul di sini. Denda supplier & selisih 3-way
         ditambahkan dari panel detail setelah kontrabon terbit.
       </p>

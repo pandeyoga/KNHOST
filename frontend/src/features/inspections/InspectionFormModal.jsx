@@ -134,7 +134,7 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
           </label>
         ) : (
           <label className="block min-w-0">
-            <span className="field-label">Dokumen yang diperiksa</span>
+            <span className="field-label">Dokumen yang diperiksa *</span>
             <KNSelect data-testid="ins-ref-select" value={refId} onValueChange={setRefId}
               options={refs} className="field" searchable
               placeholder={loadingRefs ? "Memuat dokumen…"

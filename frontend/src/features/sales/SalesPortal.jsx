@@ -234,13 +234,14 @@ export function SalesPortal({
 
         <section className="min-w-0">
           <div className="section-card mb-4">
-            <div className="section-head">
+            {/* Audit UI 24 Okt (143, HP) — kepala membungkus: kotak cari tidak lagi menimpa judul di 390px. */}
+            <div className="section-head flex-wrap gap-y-2">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="kicker">Sales POS</span>
+                <span className="kicker">POS</span>
                 <h2 data-testid="sales-portal-title">Katalog Kain Nusantara</h2>
               </div>
-              <div className="flex items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 min-w-[240px]">
-                <Search size={14} className="text-[#6B6B73]" />
+              <div className="flex w-full items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 sm:w-auto sm:min-w-[240px]">
+                <Search size={14} className="shrink-0 text-[#6B6B73]" />
                 <input data-testid="product-search-input" className="w-full bg-transparent text-[13px] outline-none" placeholder="Cari SKU, motif, warna..." value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
             </div>
@@ -282,10 +283,13 @@ export function SalesPortal({
         </section>
       </div>
 
-      {/* Persistent cart button (badge: item + subtotal) */}
+      {/* Persistent cart button (badge: item + subtotal).
+          Audit UI 24 Okt (143) — diletakkan DI ATAS tombol Bantuan (dulu menimpanya), dan halaman diberi ruang bawah
+          supaya tombol "Lihat Detail & Tambah" kartu terakhir tidak tertutup. */}
+      {cartCount > 0 && <div aria-hidden="true" className="h-28" />}
       {cartCount > 0 && (
         <button data-testid="floating-cart-button" onClick={() => setCheckoutOpen(true)}
-          className={`fixed bottom-6 right-6 z-[90] flex items-center gap-3 rounded-full px-5 py-3 text-white shadow-xl transition ${sampleMode ? "bg-[#9A5B00] hover:bg-[#7A4700]" : "bg-[#0058CC] hover:bg-[#0047a8]"}`}>
+          className={`fixed bottom-20 right-4 md:bottom-24 md:right-6 z-[90] flex items-center gap-3 rounded-full px-5 py-3 text-white shadow-xl transition ${sampleMode ? "bg-[#9A5B00] hover:bg-[#7A4700]" : "bg-[#0058CC] hover:bg-[#0047a8]"}`}>
           <span className="relative">
             {sampleMode ? <Scissors size={20} /> : <ShoppingCart size={20} />}
             <span data-testid="cart-badge-count" className={`absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold ${sampleMode ? "text-[#9A5B00]" : "text-[#0058CC]"}`}>{cartCount}</span>

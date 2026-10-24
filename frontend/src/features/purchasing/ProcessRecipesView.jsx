@@ -73,9 +73,10 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="section-card">
-        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_150px_100px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-          <span>Resep / Proses</span><span>Konversi (Input → Output)</span><span>Makloon Default</span><span>Yield / Susut / Sisa</span><span className="text-right">Aksi</span>
+      <div className="section-card overflow-x-auto">
+        <div className="min-w-[820px]">
+        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_190px_90px] gap-x-2 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          <span>Resep / Proses</span><span>Bahan → Hasil</span><span>Makloon Default</span><span>Rendemen / Susut / Sisa</span><span className="text-right">Aksi</span>
         </div>
         {loading ? <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat resep…</div>
          : filtered.length === 0 ? (
@@ -86,25 +87,26 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
         ) : (
           <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
             {filtered.map((r) => (
-              <div key={r.id} data-testid={`recipe-row-${r.id}`} className="grid grid-cols-[1.4fr_1.6fr_1fr_150px_100px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                <div className="min-w-0"><p className="text-[12px] font-semibold truncate">{r.name}</p><span className="rounded bg-[#F3E9FA] px-1.5 text-[10px] font-bold text-[#6B219A]">{processLabel(r.process_type)}</span></div>
+              <div key={r.id} data-testid={`recipe-row-${r.id}`} className="grid grid-cols-[1.4fr_1.6fr_1fr_190px_90px] gap-x-2 items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                <div className="min-w-0"><p className="text-[12px] font-semibold truncate">{r.name}</p><span className="rounded bg-[#F3E9FA] px-1.5 text-[11px] font-bold text-[#6B219A]">{processLabel(r.process_type)}</span></div>
                 <div className="min-w-0 flex items-center gap-1.5 text-[11px]">
                   <span className="truncate"><b>{r.input_sku || "?"}</b> <span className="text-[#9A9BA3]">{r.input_unit}</span></span>
                   <ArrowRight size={12} className="shrink-0 text-[#0058CC]" />
                   <span className="truncate"><b>{r.output_sku || "?"}</b> <span className="text-[#9A9BA3]">{r.output_unit}</span></span>
                 </div>
                 <p className="text-[11px] truncate">{r.default_makloon_name || "—"}</p>
-                <p className="text-[10.5px] tabular-nums text-[#3C3C43]">y {r.yield_factor} · s {r.waste_pct}% · sisa {r.byproduct_pct}%</p>
+                <p className="text-[11px] tabular-nums text-[#3C3C43]" title="Rendemen · susut · barang sisa">×{Number(r.yield_factor || 0).toLocaleString("id-ID")} · susut {Number(r.waste_pct || 0).toLocaleString("id-ID")}% · sisa {Number(r.byproduct_pct || 0).toLocaleString("id-ID")}%</p>
                 <div className="flex items-center justify-end gap-1">
                   {(canUpdate || canDeactivate) && <>
-                    {canUpdate && <button data-testid={`edit-recipe-${r.id}`} onClick={() => { setEditTarget(r); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
-                    {canDeactivate && r.status === "active" && <button data-testid={`deactivate-recipe-${r.id}`} onClick={() => setDeactivateTarget(r)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
+                    {canUpdate && <button data-testid={`edit-recipe-${r.id}`} onClick={() => { setEditTarget(r); setShowForm(true); }} className="icon-button" title="Ubah" aria-label={`Ubah ${r.name}`}><Pencil size={13} /></button>}
+                    {canDeactivate && r.status === "active" && <button data-testid={`deactivate-recipe-${r.id}`} onClick={() => setDeactivateTarget(r)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan" aria-label={`Nonaktifkan ${r.name}`}><Power size={13} /></button>}
                   </>}
                 </div>
               </div>
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {showForm && <RecipeFormModal editTarget={editTarget} makloons={makloons} selectedEntity={selectedEntity}

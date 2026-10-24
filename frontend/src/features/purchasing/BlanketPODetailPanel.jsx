@@ -115,7 +115,7 @@ export default function BlanketPODetailPanel({ blanketId, currentUser, onClose, 
 
         {/* PB-01 — termin & PPN kontrak (turun ke tiap call-off) */}
         <div className="rounded-md border border-[#DCE7F7] overflow-hidden text-[11.5px]" data-testid="blanket-terms">
-          <div className="px-2.5 py-1.5 bg-[#F7FAFF] text-[10px] font-bold uppercase text-[#0058CC] border-b border-[#DCE7F7]">Termin & PPN (PB-01) → turun ke call-off</div>
+          <div className="px-2.5 py-1.5 bg-[#F7FAFF] text-[11px] font-bold uppercase text-[#0058CC] border-b border-[#DCE7F7]">Termin & PPN → turun ke tiap call-off</div>
           <div className="p-2.5 space-y-1">
             <Row label="Termin pembayaran" testId="blanket-terms-payment"
               value={po.payment_term?.code ? `${po.payment_term.code} · ${po.payment_term.name || ""}${po.payment_term.net_days ? ` · jatuh tempo ${po.payment_term.net_days} hari` : ""}${po.payment_term.dp_percent ? ` · DP ${po.payment_term.dp_percent}%` : ""}` : "ikut supplier / pengaturan"} />

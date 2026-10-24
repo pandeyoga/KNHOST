@@ -97,10 +97,12 @@ export default function StockBucketsView({ entities = [], currentUser }) {
     return [...m].map(([value, label]) => ({ value, label }));
   }, [board]);
 
+  // UAT 24 Okt (audit UI 058) — total PER SATUAN: { kg: …, yard: … }. Dulu kg + yard dijumlah jadi satu angka.
   const totals = useMemo(() => {
-    const t = { available_qty: 0, hold_qty: 0, wip_qty: 0, atp_qty: 0 };
-    view.board.forEach((p) => { Object.keys(t).forEach((k) => { t[k] += p.totals?.[k] || 0; }); });
-    t.pending_qty = view.pending.reduce((s, r) => s + (r.backorder_qty || 0), 0);
+    const t = { available_qty: {}, hold_qty: {}, wip_qty: {}, atp_qty: {}, pending_qty: {} };
+    const add = (k, unit, q) => { const u = unit || "meter"; t[k][u] = (t[k][u] || 0) + (q || 0); };
+    view.board.forEach((p) => { ["available_qty", "hold_qty", "wip_qty", "atp_qty"].forEach((k) => add(k, p.base_unit, p.totals?.[k])); });
+    view.pending.forEach((r) => add("pending_qty", r.unit, r.backorder_qty));
     return t;
   }, [view]);
 
@@ -116,22 +118,24 @@ export default function StockBucketsView({ entities = [], currentUser }) {
   return (
     <div data-testid="stock-buckets-view">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
-        <Kpi testId="sb-kpi-available" label="Total Tersedia" value={formatQty(totals.available_qty)} icon={Boxes} tone="text-[#1B7F4B]" />
-        <Kpi testId="sb-kpi-hold" label="Ditahan" value={formatQty(totals.hold_qty)} icon={PauseCircle} tone="text-[#9A6700]" />
-        <Kpi testId="sb-kpi-wip" label="WIP (Proses)" value={formatQty(totals.wip_qty)} icon={Hammer} tone="text-[#6B2FB3]" />
-        <Kpi testId="sb-kpi-atp" label="ATP (Janji Jual)" value={formatQty(totals.atp_qty)} icon={Layers} tone="text-[#0058CC]" />
-        <Kpi testId="sb-kpi-pending" label="SO Menunggu" value={formatQty(totals.pending_qty)} icon={PackageSearch} tone="text-[#C0392B]" />
+        <Kpi testId="sb-kpi-available" label="Total Tersedia" value={<UnitLines byUnit={totals.available_qty} />} icon={Boxes} tone="text-[#1B7F4B]" />
+        <Kpi testId="sb-kpi-hold" label="Ditahan" value={<UnitLines byUnit={totals.hold_qty} />} icon={PauseCircle} tone="text-[#9A6700]" />
+        <Kpi testId="sb-kpi-wip" label="WIP (Proses)" value={<UnitLines byUnit={totals.wip_qty} />} icon={Hammer} tone="text-[#6B2FB3]" />
+        {/* Audit UI 057 vs 058 — ATP di sini = jumlah ATP PER GUDANG (proyeksi saldo); angka resmi per produk ada di
+            "Status Stok & ATP". Selisih keduanya berasal dari server (lihat laporan audit UI), jadi labelnya dibedakan. */}
+        <Kpi testId="sb-kpi-atp" label="ATP per Gudang (Σ)" title="Jumlah ATP tiap gudang. ATP resmi per produk: Status Stok & ATP." value={<UnitLines byUnit={totals.atp_qty} />} icon={Layers} tone="text-[#0058CC]" />
+        <Kpi testId="sb-kpi-pending" label="SO Menunggu (sisa)" value={<UnitLines byUnit={totals.pending_qty} />} icon={PackageSearch} tone="text-[#C0392B]" />
       </div>
 
       <div className="section-card">
         <div className="section-head">
           <div className="tab-bar !mb-0 !border-b-0">
-            <Tab id="board" tab={tab} setTab={setTab} testId="sb-tab-board">Ringkasan Bucket <span className="tab-badge">{view.board.length}</span></Tab>
+            <Tab id="board" tab={tab} setTab={setTab} testId="sb-tab-board">Ringkasan Kantong <span className="tab-badge">{view.board.length}</span></Tab>
             <Tab id="holds" tab={tab} setTab={setTab} testId="sb-tab-holds">Tahanan Aktif <span className="tab-badge">{view.holds.length}</span></Tab>
             <Tab id="wip" tab={tab} setTab={setTab} testId="sb-tab-wip">WIP Aktif <span className="tab-badge">{view.wips.length}</span></Tab>
             <Tab id="pending" tab={tab} setTab={setTab} testId="sb-tab-pending">SO Menunggu <span className="tab-badge">{view.pending.length}</span></Tab>
           </div>
-          <button data-testid="sb-refresh" className="icon-button ml-auto" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+          <button data-testid="sb-refresh" className="icon-button ml-auto" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
         <div className="section-body">
           <ListToolbar testId="sb-toolbar">
@@ -190,9 +194,9 @@ function BoardTab({ board, entities, expanded, setExpanded, canManage, onOp }) {
               </div>
               <div className="flex flex-wrap gap-1 justify-end">
                 {CHIPS.filter((c) => (p.totals?.[c.key] || 0) > 0).map((c) => (
-                  <span key={c.key} className={`text-[10px] rounded px-1.5 py-0.5 ${c.tone}`}>{c.label}: {formatQty(p.totals[c.key])}</span>
+                  <span key={c.key} className={`text-[10px] rounded px-1.5 py-0.5 ${c.tone}`}>{c.label}: {formatQty(p.totals[c.key])} {p.base_unit}</span>
                 ))}
-                <span className="text-[10px] rounded px-1.5 py-0.5 bg-[#1C1C1E] text-white font-bold" data-testid={`sb-atp-${p.product_id}`}>ATP {formatQty(p.totals.atp_qty)}</span>
+                <span className="text-[10px] rounded px-1.5 py-0.5 bg-[#1C1C1E] text-white font-bold" data-testid={`sb-atp-${p.product_id}`}>ATP {formatQty(p.totals.atp_qty)} {p.base_unit}</span>
               </div>
             </button>
             {open && (
@@ -257,7 +261,7 @@ function RefList({ items, entities, canManage, action, actionLabel, icon: Icon, 
               <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatQty(it.quantity)} {it.unit}</td>
               <td className="px-3 py-2 text-[#6B6B73]">
                 {it.hold_type && it.hold_type !== "general" ? (
-                  <span className="inline-block mb-0.5 text-[10px] rounded px-1.5 py-0.5 bg-[#FDEDE7] text-[#C0392B] border border-[#F3C9BD] capitalize">{it.hold_type}</span>
+                  <span className="inline-block mb-0.5 text-[10px] rounded px-1.5 py-0.5 bg-[#FDEDE7] text-[#C0392B] border border-[#F3C9BD] ">{HOLD_TYPES.find((h) => h.value === it.hold_type)?.label || it.hold_type}</span>
                 ) : null}
                 <span className="block">{it[metaKey] || "—"}</span>
                 {it.ref_doc_id ? <span className="block text-[10px] text-[#0058CC]">Menunggu: {it.ref_doc_id}</span> : null}
@@ -362,14 +366,24 @@ function Tab({ id, tab, setTab, children, testId }) {
   );
 }
 
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
+function UnitLines({ byUnit }) {
+  const parts = Object.entries(byUnit || {})
+    .filter(([, q]) => Math.abs(Number(q) || 0) > 0.0001)
+    .sort(([a], [b]) => a.localeCompare(b));
+  if (!parts.length) return <span>0</span>;
+  return parts.map(([unit, qty]) => (
+    <span key={unit} className="block">{formatQty(qty)} <span className="text-[11px] font-semibold">{unit}</span></span>
+  ));
+}
+
+function Kpi({ label, value, icon: Icon, tone = "", testId, title }) {
   return (
-    <div className="section-card" data-testid={testId}>
+    <div className="section-card" data-testid={testId} title={title}>
       <div className="section-body flex items-center gap-3 py-3">
         <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          <p className={`text-[17px] font-bold leading-tight tabular-nums ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
         </div>
       </div>
     </div>

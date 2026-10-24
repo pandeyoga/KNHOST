@@ -21,7 +21,7 @@ export function AttachmentThumb({ item, size = 56, onOpen, testId, showName = fa
   else if (kind === "video") inner = <Film size={18} className="text-[#3C3C43]" />;
   else inner = <FileText size={18} className="text-[#3C3C43]" />;
   return (
-    <button type="button" onClick={onOpen} title={fileNameOf(item)} data-testid={testId}
+    <button type="button" onClick={onOpen} title={fileNameOf(item)} data-testid={testId} data-url={item?.url || ""}
       className={`group ${fill ? "block h-full w-full" : "inline-flex flex-col items-center gap-0.5 align-top"}`}>
       <span style={box} className={`flex items-center justify-center overflow-hidden bg-[#F7F8FA] ${fill ? "" : "rounded-md border border-[#E5E5EA] group-hover:border-[#0058CC]"}`}>{inner}</span>
       {showName && <span className="max-w-[88px] truncate text-[10px] text-[#6B6B73]">{fileNameOf(item)}</span>}

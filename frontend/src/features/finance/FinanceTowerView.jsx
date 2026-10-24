@@ -74,7 +74,9 @@ export default function FinanceTowerView({ selectedEntity }) {
             <KpiCard testId="tower-kpi-rev-ytd" label="Pendapatan YTD" value={formatCurrency(ytd.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" />
             <KpiCard testId="tower-kpi-net-ytd" label="Laba Bersih YTD" value={formatCurrency(ytd.net_income)} icon={PiggyBank} accent={FC.net} tone={(ytd.net_income ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
             <KpiCard testId="tower-kpi-margin-ytd" label="Marjin Bersih YTD" value={fmtPct(ytd.net_margin)} icon={Percent} accent={FC.teal} />
-            <KpiCard testId="tower-kpi-rev-mtd" label="Pendapatan Bulan Ini" value={formatCurrency(mtd.revenue)} icon={TrendingUp} accent={FC.blue} tone="text-[#0058CC]" sub={`Laba ${formatCurrency(mtd.net_income)}`} />
+            {/* Audit UI 24 Okt (085↔092): ini pendapatan JURNAL bulan berjalan (diakui saat kirim) —
+                beda dengan "Nilai Pesanan 30 Hari" di Analitik › Ringkasan. */}
+            <KpiCard testId="tower-kpi-rev-mtd" label="Pendapatan Bulan Ini (Jurnal)" value={formatCurrency(mtd.revenue)} icon={TrendingUp} accent={FC.blue} tone="text-[#0058CC]" sub={`diakui saat kirim · laba ${formatCurrency(mtd.net_income)}`} />
           </div>
 
           <div className="grid lg:grid-cols-3 gap-3 mb-3">

@@ -357,7 +357,7 @@ function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel,
           {/* Lines */}
           {lines.length > 0 && (
             <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-              <div className="grid grid-cols-[1.3fr_150px_100px_74px_120px_110px_40px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+              <div className="grid grid-cols-[1.3fr_150px_100px_74px_120px_110px_40px] bg-[#FAFBFC] px-3 py-1.5 text-[11px] font-bold uppercase text-[#6B6B73]">
                 <span>Produk</span><span>Pemenuhan</span><span className="text-right">Qty</span><span className="text-right">Roll</span><span className="text-right">Est. Harga</span><span className="text-right">Subtotal</span><span></span>
               </div>
               {lines.map((l, i) => (
@@ -436,8 +436,9 @@ function CreateForm({ products, warehouses, suppliers, selectedEntity, onCancel,
               <input data-testid="pr-reason" className="form-input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Restock produksi…" />
             </div>
             <div className="grid gap-1.5">
-              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan Jalur Restock</label>
-              <input data-testid="pr-route-reason" className="form-input" value={routeReason} onChange={(e) => setRouteReason(e.target.value)} placeholder="Wajib bila artikel bisa keduanya atau default-nya makloon" />
+              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan Jalur Restock <span className="normal-case text-[#B45309]">(wajib bersyarat)</span></label>
+              <input data-testid="pr-route-reason" className="form-input" value={routeReason} onChange={(e) => setRouteReason(e.target.value)} placeholder="mis. supplier lebih cepat dari makloon" />
+              <p className="text-[11px] text-[#8E8E93]">Wajib diisi bila artikel bisa dibeli maupun dimakloon, atau jalur bawaannya makloon.</p>
             </div>
           </div>
 

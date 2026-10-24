@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { AttachmentThumb } from "../../../components/AttachmentThumb";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { actorLabel } from "../../../utils/actorLabel";
 
 const STATUS_META = {
   draft: { label: "Draf", icon: Pencil },
@@ -95,9 +96,9 @@ export function PriceApprovalCard({
             </p>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[10.5px] text-[#8E8E93]">
-            <span>Pengaju: <span className="font-medium text-[#3C3C43]">{r.requested_by_name || "—"}</span></span>
+            <span>Pengaju: <span className="font-medium text-[#3C3C43]">{actorLabel(r.requested_by_name)}</span></span>
             {r.valid_until && <span>Berlaku s/d: <span className="font-medium text-[#3C3C43]">{(r.valid_until || "").slice(0, 10)}</span></span>}
-            {r.approved_by_name && <span>{r.status === "rejected" ? "Ditolak" : "Disetujui"}: <span className="font-medium text-[#3C3C43]">{r.approved_by_name}</span></span>}
+            {r.approved_by_name && <span>{r.status === "rejected" ? "Ditolak" : "Disetujui"}: <span className="font-medium text-[#3C3C43]">{actorLabel(r.approved_by_name)}</span></span>}
           </div>
           {r.decision_notes && (
             <p className={`text-[11px] ${r.status === "rejected" ? "text-[#A8221A]" : "text-[#126E2C]"}`}>Catatan: {r.decision_notes}</p>
@@ -151,7 +152,7 @@ export function PriceApprovalCard({
               data-testid={`price-approvals-submit-${r.id}`}
               disabled={busyId === r.id}
               onClick={() => onSubmit(r.id)}
-              className="flex items-center justify-center gap-1.5 rounded-md bg-[#6B219A] px-3 py-1.5 text-[11.5px] font-bold text-white disabled:opacity-50"
+              className="primary-button !py-1.5 text-[11.5px]"
             >
               <Send size={13} /> Kirim
             </button>

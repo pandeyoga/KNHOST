@@ -99,12 +99,13 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
         testId="rnd-specs-error" />
 
       <div className="section-card mb-3">
-        <div className="section-head">
+        {/* Audit UI 24 Okt (md HP) — kepala boleh turun baris: "+ Spesifikasi Baru" dulu keluar layar 390px. */}
+        <div className="section-head flex-wrap">
           <div className="flex items-center gap-2">
             <FlaskConical size={16} className="text-[#0058CC]" />
             <h2 data-testid="rnd-specs-title">Spesifikasi Produk (R&D)</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button className="secondary-button" onClick={load} data-testid="rnd-specs-refresh">
               <RefreshCw size={13} /> Muat ulang
             </button>
@@ -136,11 +137,11 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
             Barang hasil R&D baru boleh dipesan/dijual setelah <b>dirilis ke produksi</b>.
             Ketegasan sekarang: <b>{policy.lifecycle_enforcement === "block" ? "tolak"
               : policy.lifecycle_enforcement === "warn" ? "peringatkan" : "abaikan"}</b>
-            {" · "}batas iterasi sample <b>{policy.max_rounds ?? "—"}</b> round
-            {" · "}target <b>{policy.round_sla_days ?? "—"}</b> hari/round.
+            {" · "}batas iterasi sample <b>{policy.max_rounds ?? "—"}</b> ronde
+            {" · "}target <b>{policy.round_sla_days ?? "—"}</b> hari/ronde.
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative max-w-sm flex-1">
+            <div className="relative min-w-[200px] max-w-sm flex-1">
               <Search size={14}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="rnd-specs-search" value={q} onChange={(e) => setQ(e.target.value)}
@@ -163,12 +164,9 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
         </div>
       </div>
 
-      <div className="section-card overflow-x-auto section-pad">
-        <div className="min-w-[850px] grid grid-cols-[130px_1.5fr_1fr_130px_150px_120px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-          <span>No. Spesifikasi</span><span>Judul / target kain</span><span>Warna target</span>
-          <span>Jenis sample</span><span>Produk & tahap</span>
-          <span className="text-right">Status</span>
-        </div>
+      {/* Audit UI 24 Okt (md HP) — `.section-card.section-pad` memaksa overflow:visible, jadi tabel 850px dulu
+          melebarkan HALAMAN (gulir samping, tombol & kolom terpotong). Kini wadah gulir ada di dalam kartu. */}
+      <div className="section-card section-pad">
         {loading ? (
           <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat spesifikasi…</div>
         ) : filtered.length === 0 ? (
@@ -178,6 +176,13 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
               barang sesuai standar kita (bukan membeli dari katalog).</p>
           </div>
         ) : (
+          <div className="overflow-x-auto" data-testid="rnd-specs-table">
+          <div className="min-w-[850px]">
+          <div className="grid grid-cols-[130px_1.5fr_1fr_130px_150px_120px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[10.5px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+            <span>No. Spesifikasi</span><span>Judul / target kain</span><span>Warna target</span>
+            <span>Jenis sample</span><span>Produk & tahap</span>
+            <span className="text-right">Status</span>
+          </div>
           <div className="divide-y divide-[#EFF0F2] max-h-[620px] overflow-y-auto">
             {filtered.map((s) => {
               const meta = SPEC_STATUS_META[s.status] || SPEC_STATUS_META.draft;
@@ -185,7 +190,7 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
               return (
                 // 23 Okt — seluruh baris membuka rincian (dulu hanya nomor; baris ber-hover tapi klik judul diam).
                 <div key={s.id} data-testid={`rnd-spec-row-${s.id}`} onClick={() => setOpenId(s.id)}
-                  className="min-w-[850px] grid cursor-pointer grid-cols-[130px_1.5fr_1fr_130px_150px_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                  className="grid cursor-pointer grid-cols-[130px_1.5fr_1fr_130px_150px_120px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <button className="text-left text-[11.5px] font-bold text-[#0058CC]"
                     data-testid={`rnd-spec-open-${s.id}`} onClick={(e) => { e.stopPropagation(); setOpenId(s.id); }}>
                     {s.number}
@@ -214,7 +219,7 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[11.5px] font-semibold">{s.product_sku || "—"}</p>
-                    <p className="text-[10px] font-bold" style={{ color: life.tone }}
+                    <p className="text-[10.5px] font-bold" style={{ color: life.tone }}
                       data-testid={`rnd-spec-lifecycle-${s.id}`}>{life.label}</p>
                   </div>
                   <div className="flex items-center justify-end">
@@ -224,6 +229,8 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
                 </div>
               );
             })}
+          </div>
+          </div>
           </div>
         )}
       </div>
@@ -247,7 +254,7 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
 function Kpi({ label, value, tone = "#1C1C1E" }) {
   return (
     <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2">
-      <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
+      <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
       <p className="text-[14px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value}</p>
     </div>
   );

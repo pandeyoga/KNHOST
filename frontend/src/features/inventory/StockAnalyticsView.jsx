@@ -14,16 +14,18 @@ const fmt = new Intl.NumberFormat("id-ID");
 const fmtQty = (v) => fmt.format(Math.round((v || 0) * 100) / 100);
 function fmtShort(v) {
   const n = Math.round(v || 0);
-  if (n >= 1e9) return `Rp ${(n / 1e9).toFixed(1)} M`;
-  if (n >= 1e6) return `Rp ${(n / 1e6).toFixed(1)} jt`;
+  // Audit UI 24 Okt (088): desimal koma ("Rp 22,4 M"), bukan titik.
+  const d1 = (x) => x.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (n >= 1e9) return `Rp ${d1(n / 1e9)} M`;
+  if (n >= 1e6) return `Rp ${d1(n / 1e6)} jt`;
   if (n >= 1e3) return `Rp ${(n / 1e3).toFixed(0)} rb`;
   return `Rp ${n}`;
 }
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
 
 const CLASS_META = {
-  fast: { label: "Fast Moving", color: "#34C759", icon: Flame },
-  slow: { label: "Slow Moving", color: "#FF9500", icon: Clock },
+  fast: { label: "Cepat Laku", color: "#34C759", icon: Flame },
+  slow: { label: "Lambat Laku", color: "#FF9500", icon: Clock },
   dead: { label: "Stok Mati", color: "#C0341D", icon: Snowflake },
 };
 
@@ -65,7 +67,7 @@ function ClassBadge({ cls, neverSold }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
           style={{ background: `${m.color}18`, color: m.color }}>
-      <m.icon size={11} /> {m.label}{neverSold ? " • blm terjual" : ""}
+      <m.icon size={11} /> {m.label}{neverSold ? " · belum pernah terjual" : ""}
     </span>
   );
 }
@@ -132,22 +134,23 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
       {/* Header + filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">GUDANG</p>
+          <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">ANALITIK</p>
           <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2">
             <TrendingUp size={20} className="text-[#0058CC]" /> Analitik Stok — Cepat / Lambat / Mati
           </h1>
           <p className="text-[12px] text-[#6B6B73] mt-0.5">
-            Klasifikasi per SKU berdasar penjualan terakhir. Ambang: Fast ≤ {th.fast_max_days ?? 30}h · Slow ≤ {th.slow_max_days ?? 90}h · Dead &gt; {th.slow_max_days ?? 90}h · jendela velocity {th.velocity_window_days ?? 90}h.
+            Klasifikasi per SKU berdasar penjualan terakhir. Ambang: cepat ≤ {th.fast_max_days ?? 30} hari · lambat ≤ {th.slow_max_days ?? 90} hari · mati &gt; {th.slow_max_days ?? 90} hari · jendela kecepatan jual {th.velocity_window_days ?? 90} hari.
+            SKU yang belum pernah terjual dimasukkan ke <b>Lambat Laku</b> (tidak dihitung sebagai stok mati).
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <KNSelect data-testid="sa-warehouse-filter" value={warehouseId} onValueChange={setWarehouseId}
             options={warehouseOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
           <KNSelect data-testid="sa-category-filter" value={category} onValueChange={setCategory}
             options={categoryOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Kategori" />
           <button data-testid="sa-refresh" onClick={load}
             className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1C1C1E] hover:bg-[#F5F5F7]">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
           </button>
         </div>
       </div>
@@ -159,17 +162,17 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
         <KPICard testId="sa-kpi-total-value" icon={Boxes} label="Nilai Persediaan" color="#0058CC" loading={loading}
           value={fmtShort(summary.total_on_hand_value)} sub={`${summary.sku_count ?? 0} SKU · biaya penuh (landed ${fmtShort(summary.total_landed_value || 0)})`}
           active={classFilter === "all"} onClick={() => setClassFilter("all")} />
-        <KPICard testId="sa-kpi-fast" icon={Flame} label="Fast Moving" color="#34C759" loading={loading}
+        <KPICard testId="sa-kpi-fast" icon={Flame} label="Cepat Laku" color="#34C759" loading={loading}
           value={byClass.fast?.count ?? 0} sub={fmtShort(byClass.fast?.value)}
           active={classFilter === "fast"} onClick={() => setClassFilter("fast")} />
-        <KPICard testId="sa-kpi-slow" icon={Clock} label="Slow Moving" color="#FF9500" loading={loading}
+        <KPICard testId="sa-kpi-slow" icon={Clock} label="Lambat Laku" color="#FF9500" loading={loading}
           value={byClass.slow?.count ?? 0} sub={fmtShort(byClass.slow?.value)}
           active={classFilter === "slow"} onClick={() => setClassFilter("slow")} />
         <KPICard testId="sa-kpi-dead" icon={Snowflake} label="Stok Mati" color="#C0341D" loading={loading}
           value={byClass.dead?.count ?? 0} sub={fmtShort(byClass.dead?.value)}
           active={classFilter === "dead"} onClick={() => setClassFilter("dead")} />
         <KPICard testId="sa-kpi-neversold" icon={PackageX} label="Belum Pernah Terjual" color="#8E8E93" loading={loading}
-          value={summary.never_sold_skus ?? 0} sub="perlu strategi jual" />
+          value={summary.never_sold_skus ?? 0} sub="sudah termasuk di Lambat Laku" />
       </div>
 
       {/* Charts */}

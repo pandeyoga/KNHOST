@@ -37,7 +37,7 @@ export default function ReturnAssumptionsPanel({ canManage }) {
         customer_window_days: Math.max(1, parseInt(f.customer_window_days, 10) || 21),
         supplier_window_days: Math.max(1, parseInt(f.supplier_window_days, 10) || 21),
         supplier_reminder_days: Math.max(0, parseInt(f.supplier_reminder_days, 10) || 0) } });
-      setMsg("Asumsi tersimpan.");
+      setMsg("Batas umum tersimpan.");
     } catch (e) { setMsg(e.response?.data?.detail || e.message); }
   };
   const num = (k, label) => (
@@ -48,9 +48,9 @@ export default function ReturnAssumptionsPanel({ canManage }) {
   return (
     <div data-testid="return-assumptions-panel" className="mb-4 rounded-xl border border-[#F5E0C3] bg-[#FDF6EC] p-3 space-y-2">
       <p className="flex items-start gap-2 text-[12px] text-[#8A4B08]"><Info size={14} className="mt-0.5 shrink-0" />
-        <span><b>ASUMSI SEMENTARA</b>: batas customer dihitung dari SJ, batas supplier per penerimaan roll di gudang. Keduanya independen. Batas dinilai pada tanggal pengajuan (customer) dan tanggal klaim dikirim (supplier) — KLR-09. Hangtag hilang / kain dipotong hanya checklist + peringatan; Finance memutus saat penyelesaian (KLR-08).</span></p>
+        <span><b>Batas retur umum (sementara)</b>: batas pelanggan dihitung dari tanggal Surat Jalan, batas supplier dari tanggal roll diterima di gudang — keduanya terpisah. Batas dinilai pada tanggal pengajuan (pelanggan) dan tanggal klaim dikirim (supplier). Hangtag hilang / kain dipotong hanya dicatat sebagai checklist + peringatan; Finance memutus saat penyelesaian. Kebijakan di daftar bawah boleh menimpa batas pelanggan ini.</span></p>
       <div className="flex flex-wrap items-end gap-3">
-        {num("customer_window_days", "Customer (hari dari SJ)")}
+        {num("customer_window_days", "Pelanggan (hari dari SJ)")}
         {num("supplier_window_days", "Supplier (hari dari terima)")}
         {num("supplier_reminder_days", "Ingatkan PT pemasok (hari sebelum batas)")}
         <label className="flex items-center gap-1.5 text-[12px]"><input type="checkbox" data-testid="return-assume-bill_first" disabled={!canManage}
@@ -59,7 +59,7 @@ export default function ReturnAssumptionsPanel({ canManage }) {
       <GradeFactors value={f.grade_price_factors} disabled={!canManage}
         onChange={(g) => setF({ ...f, grade_price_factors: g })} />
       <div className="flex flex-wrap items-center gap-3">
-        {canManage && <button type="button" data-testid="return-assume-save" onClick={save} className="primary-button">Simpan asumsi</button>}
+        {canManage && <button type="button" data-testid="return-assume-save" onClick={save} className="secondary-button">Simpan batas umum</button>}
         {msg && <span className="text-[12px]" data-testid="return-assume-msg">{msg}</span>}
       </div>
     </div>

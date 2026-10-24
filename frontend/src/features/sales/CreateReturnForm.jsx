@@ -155,7 +155,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
       }
       onCreated(doc);
     } catch (err) {
-      setError("Gagal membuat return: " + (err.response?.data?.detail || err.message));
+      setError("Gagal membuat retur: " + (err.response?.data?.detail || err.message));
     } finally { setSaving(false); }
   }
 
@@ -168,7 +168,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
       {!isModal && (
         <div className="view-header">
           <div>
-            <h1 className="view-title">Buat Return Baru</h1>
+            <h1 className="view-title">Buat Retur Baru</h1>
             <p className="view-subtitle">Retur barang, Barang Sisa (BS), penggantian, komplain & garansi (purna jual) dari pelanggan</p>
           </div>
         </div>
@@ -210,7 +210,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
             </p>
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="ret-type">Tipe Return <span className="req">*</span></label>
+            <label className="form-label" htmlFor="ret-type">Tipe Retur <span className="req">*</span></label>
             <KNSelect
               data-testid="return-type-select"
               className="form-select"
@@ -271,6 +271,10 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
 
         <div className="form-group">
           <label className="form-label">Item yang Diretur <span className="req">*</span></label>
+          {/* Audit UI 24 Okt (034) — label dulu menggantung tanpa isi sebelum pesanan dipilih. */}
+          {!orderId && (
+            <p className="text-[11.5px] text-[#6B6B73]" data-testid="return-items-hint">Pilih pesanan dulu — barang terkirim (Surat Jalan) yang masih bisa diretur tampil di sini.</p>
+          )}
           {orderId && shipped && !items.length && (
             <p className="text-[11.5px] text-[#A05000]" data-testid="return-nothing-shipped">Belum ada barang terkirim (Surat Jalan) yang masih bisa diretur untuk pesanan ini.</p>
           )}
@@ -339,7 +343,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         </div>
 
         <div className="form-group" data-testid="return-condition-flags">
-          <label className="form-label">Kondisi barang</label>
+          <label className="form-label">Bukti tambahan</label>
           <label className="form-check-label text-sm">
             <input type="checkbox" data-testid="return-cond-replacement_proof" checked={replacementProof}
                    onChange={(e) => setReplacementProof(e.target.checked)} /> Ada bukti pengganti (foto/nota)
@@ -352,7 +356,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
           )}
         </div>
 
-        <div className="form-group">
+        <div className="form-group border-t border-[#EFF0F2] pt-3">
           <label className="form-check-label">
             <input type="checkbox" data-testid="submit-now-check" checked={submitNow}
               onChange={e => setSubmitNow(e.target.checked)} />
@@ -363,7 +367,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         <div className="form-actions">
           <button type="button" className="secondary-button" onClick={onCancel}>Batal</button>
           <button type="submit" data-testid="save-return-btn" className="primary-button" disabled={saving}>
-            {saving ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />} Buat Return
+            {saving ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />} Buat Retur
           </button>
         </div>
       </form>

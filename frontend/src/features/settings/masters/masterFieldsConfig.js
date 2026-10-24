@@ -30,7 +30,8 @@ export const COLUMNS = {
   "payment-terms": [
     { key: "code", label: "Kode", mono: true },
     { key: "name", label: "Nama" },
-    { key: "type", label: "Jenis" },
+    // Audit UI 102 — kode mentah (cash/credit/dp/installment) → label yang sama dengan form tambah.
+    { key: "type", label: "Jenis", labels: { cash: "Tunai", credit: "Kredit", dp: "DP + pelunasan", installment: "Bertahap" } },
     { key: "net_days", label: "Jatuh tempo (hari)", align: "right" },
     { key: "dp_percent", label: "DP %", align: "right" },
   ],

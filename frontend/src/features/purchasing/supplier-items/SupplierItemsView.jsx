@@ -18,6 +18,9 @@ import {
 } from "./supplierItemsApi";
 import { can } from "../../../config/roles";
 
+// Kolom tabel — kepala & baris memakai string yang sama; wadah gulir samping (min-w) untuk HP.
+const COLS = "grid-cols-[minmax(150px,1.1fr)_minmax(190px,1.3fr)_minmax(170px,1.3fr)_130px_120px_90px_80px]";
+
 export default function SupplierItemsView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({});
@@ -123,12 +126,12 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="supplier-items-error" />
 
       <section className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <PackageSearch size={15} className="text-[#0058CC]" />
+            <PackageSearch size={15} className="shrink-0 text-[#0058CC]" />
             <h2>Barang Supplier</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button data-testid="supplier-items-refresh" className="btn-secondary btn-xs" onClick={load}>
               <RefreshCw size={13} /> Muat ulang
             </button>
@@ -154,7 +157,7 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
             termasuk konversi satuan supplier ke satuan dasar KN.
           </p>
 
-          <div className="grid gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {[
               ["Total Barang", stats.total ?? 0, "supplier-items-kpi-total"],
               ["Aktif", stats.active ?? 0, "supplier-items-kpi-active"],
@@ -162,8 +165,8 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
               ["Produk Terpeta", stats.mapped_products ?? 0, "supplier-items-kpi-products"],
               ["Perlu Ditinjau", stats.needs_review ?? 0, "supplier-items-kpi-review"],
             ].map(([label, value, tid]) => (
-              <div key={tid} className="metric-card">
-                <span className="text-[10px] font-bold uppercase text-[#6B6B73]">{label}</span>
+              <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
+                <span className="block text-[11px] font-bold uppercase text-[#6B6B73]">{label}</span>
                 <b data-testid={tid} className="text-[18px] tabular-nums">{value}</b>
               </div>
             ))}
@@ -171,7 +174,7 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
 
           {/* Cari barang KN dari kode supplier */}
           <div className="rounded-lg border border-[#E5F0FF] bg-[#F5F9FF] px-3 py-2.5 grid gap-2">
-            <span className="text-[10px] font-bold uppercase text-[#0058CC]">
+            <span className="text-[11px] font-bold uppercase text-[#0058CC]">
               Cari Barang KN dari Kode Supplier
             </span>
             <div className="flex flex-wrap gap-2">
@@ -216,8 +219,9 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
           </div>
 
           {/* Tabel */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1.1fr_1.3fr_1.3fr_130px_120px_90px_80px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+            <div className="min-w-[960px]">
+            <div className={`grid ${COLS} gap-x-2 whitespace-nowrap bg-[#FAFBFC] px-3 py-1.5 text-[11px] font-bold uppercase text-[#6B6B73]`}>
               <span>Kode Supplier</span><span>Nama Supplier</span><span>Produk KN</span>
               <span className="text-right">Konversi</span><span className="text-right">Harga Terakhir</span>
               <span className="text-center">Status</span><span className="text-right">Aksi</span>
@@ -230,13 +234,13 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
             {!loading && filtered.length > 25 && <div className="px-3 py-1.5">{pager}</div>}
             {!loading && pageRows.map((r) => (
               <div key={r.id} data-testid={`supplier-item-row-${r.id}`}
-                className="grid grid-cols-[1.1fr_1.3fr_1.3fr_130px_120px_90px_80px] items-center px-3 py-2 border-t border-[#F4F5F7]">
+                className={`grid ${COLS} gap-x-2 items-center px-3 py-2 border-t border-[#F4F5F7]`}>
                 <div className="min-w-0">
                   <p className="text-[12px] font-bold truncate">{r.supplier_sku}</p>
-                  <p className="text-[10px] text-[#9A9BA3] truncate">{r.supplier_name}</p>
+                  <p className="text-[11px] text-[#8E8E93] truncate">{r.supplier_name}</p>
                   {r.label_pattern && (
                     <span data-testid={`supplier-item-label-pattern-${r.id}`} title="Pola label khusus barang ini (dicoba lebih dulu saat scan)"
-                      className="mt-0.5 inline-block rounded border border-[#CFE3FF] bg-[#F0F6FF] px-1 py-px text-[9px] font-semibold text-[#0058CC]">
+                      className="mt-0.5 inline-block rounded border border-[#CFE3FF] bg-[#F0F6FF] px-1 py-px text-[11px] font-semibold text-[#0058CC]">
                       pola label: {r.label_pattern.format}
                     </span>
                   )}
@@ -244,12 +248,12 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                 <div className="min-w-0">
                   <p className="text-[11.5px] truncate">{r.supplier_item_name || "—"}</p>
                   {(r.supplier_color_code || r.internal_color_code) && (
-                    <p data-testid={`supplier-item-color-map-${r.id}`} className="text-[10px] text-[#6B6B73] truncate">
+                    <p data-testid={`supplier-item-color-map-${r.id}`} className="text-[11px] text-[#6B6B73] truncate">
                       Warna supplier <b>{r.supplier_color_code || r.supplier_color || "—"}</b> → internal <b>{r.internal_color_code || "—"}</b>
                     </p>
                   )}
                   {r.review_status === "needs_review" && (
-                    <div data-testid={`supplier-item-review-${r.id}`} className="mt-0.5 rounded border border-[#F0C88A] bg-[#FEF7EC] px-1.5 py-0.5 text-[10px] text-[#8C4A00]">
+                    <div data-testid={`supplier-item-review-${r.id}`} className="mt-0.5 rounded border border-[#F0C88A] bg-[#FEF7EC] px-1.5 py-0.5 text-[11px] text-[#8C4A00]">
                       Perlu ditinjau: {(r.review_reasons || []).join(" ")}
                       {canUpdate && <button data-testid={`supplier-item-resolve-${r.id}`} className="ml-1 font-semibold underline" onClick={() => resolveReview(r)}>Tandai benar</button>}
                     </div>
@@ -257,9 +261,9 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11.5px] font-semibold truncate">{r.product_name}</p>
-                  <p className="text-[10px] text-[#9A9BA3]">{r.sku}</p>
+                  <p className="truncate text-[11px] text-[#8E8E93]">{r.sku}</p>
                 </div>
-                <span className="text-[11px] tabular-nums text-right">
+                <span className="whitespace-nowrap text-[11px] tabular-nums text-right">
                   1 {r.supplier_uom} = {formatQty(r.conv_factor)} {r.base_unit}
                 </span>
                 <span className="text-[11.5px] tabular-nums text-right font-semibold">
@@ -273,11 +277,11 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                 <div className="flex justify-end gap-1">
                   {(canUpdate || canDelete) && (
                     <>
-                      {canUpdate && <button data-testid={`supplier-item-edit-${r.id}`} className="icon-button"
+                      {canUpdate && <button data-testid={`supplier-item-edit-${r.id}`} className="icon-button" title="Ubah" aria-label={`Ubah ${r.supplier_sku}`}
                         onClick={() => { setEditing(r); setShowForm(true); }}>
                         <Pencil size={13} />
                       </button>}
-                      {canDelete && <button data-testid={`supplier-item-delete-${r.id}`} className="icon-button text-red-500"
+                      {canDelete && <button data-testid={`supplier-item-delete-${r.id}`} className="icon-button text-red-500" title="Hapus" aria-label={`Hapus ${r.supplier_sku}`}
                         onClick={() => remove(r)}>
                         <Trash2 size={13} />
                       </button>}
@@ -292,6 +296,7 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                 PO & penerimaan bisa memakai kode/nama versi supplier.
               </div>
             )}
+            </div>
           </div>
         </div>
       </section>

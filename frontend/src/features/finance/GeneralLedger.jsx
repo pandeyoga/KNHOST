@@ -19,12 +19,54 @@ import SuspensePanel from "./SuspensePanel";
 import { Kpi, BalancedKpi } from "./GeneralLedgerParts";
 import { openTrace } from "../documents/trace/traceDeepLink";
 
-const SOURCE_META = {
+const TONE_GRAY = "bg-gray-100 text-gray-600";
+const SOURCE_META_BASE = {
   manual: { label: "Manual", tone: "bg-[#F3EAFB] text-[#6B219A]" },
   sales_order: { label: "Penjualan", tone: "bg-[#E6F6EC] text-[#1B7F4B]" },
   cash_transaction: { label: "Kas", tone: "bg-[#E7F0FF] text-[#0058CC]" },
   reversal: { label: "Pembalik", tone: "bg-[#FFF4E5] text-[#B45309]" },
 };
+// Audit UI 24 Okt (069): kolom Sumber dulu menampilkan kode mentah ("shipment_cogs",
+// "interco_transaction", "goods_receipt", …). Semua jenis sumber jurnal backend diberi
+// label Indonesia; kode baru yang belum dikenal tetap dibaca manusiawi (bukan snake_case).
+const SOURCE_LABELS = {
+  shipment_revenue: "Pendapatan Kirim", shipment_cogs: "HPP Kirim", sales_cogs: "HPP Penjualan",
+  sales_invoice: "Faktur Penjualan", sales_return: "Retur Penjualan", sales_return_reversal: "Pembalik Retur Jual",
+  purchase_order: "Pembelian (PO)", po: "Pembelian (PO)", purchase: "Pembelian", purchase_return: "Retur Pembelian",
+  goods_receipt: "Penerimaan Barang", vendor_bill: "Tagihan Supplier", vendor_bill_reversal: "Pembalik Tagihan Supplier",
+  landed_cost: "Biaya Masuk", contra_bon_deduction: "Potongan Kontrabon", ap_variance_writeoff: "Hapus Selisih Hutang",
+  interco_transaction: "Antar-PT", interco: "Antar-PT", interco_return: "Retur Antar-PT",
+  interco_settlement: "Pelunasan Antar-PT", interco_loan: "Pinjaman Antar-PT", interco_loan_repayment: "Cicilan Pinjaman Antar-PT",
+  inter_company_transfer: "Transfer Antar-PT",
+  cash_transaction_void: "Anulir Kas", cash_transaction_reversal: "Pembalik Kas", petty_cash_settlement: "LPJ Kas Kecil",
+  bank_holding_alloc: "Alokasi Dana Titipan", bank_opening_adjustment: "Penyesuaian Saldo Awal Bank",
+  ar_receipt_deposit: "Penerimaan Piutang", ar_receipt_deposit_void: "Anulir Penerimaan Piutang",
+  advance_reclass: "Reklas Uang Muka", advance_reclass_reversal: "Pembalik Reklas Uang Muka",
+  payment_variance_alloc: "Alokasi Selisih Bayar", payment_variance_reversal: "Pembalik Selisih Bayar",
+  payment_variance_writeoff: "Hapus Selisih Bayar", amendment_credit_note: "Nota Kredit Koreksi",
+  store_credit_adjust: "Penyesuaian Saldo Kredit", store_credit_redeem: "Pemakaian Saldo Kredit",
+  penalty: "Denda", penalty_payment: "Pembayaran Denda", penalty_reversal: "Pembalik Denda",
+  inventory_opening: "Saldo Awal Persediaan", inventory_writeoff: "Hapus Persediaan", cycle_count_variance: "Selisih Stok Opname",
+  return_cutloss: "Rugi Retur (cut-loss)", return_grade_impairment: "Penurunan Grade Retur", return_logistics: "Ongkir Retur",
+  repair_order: "Perbaikan", production_output: "Hasil Produksi", rnd_sample_issue: "Pemakaian Sample R&D",
+  subcon_issue: "Kirim ke Makloon", subcon_issue_reversal: "Pembalik Kirim Makloon", subcon_receipt: "Terima dari Makloon",
+  subcon_service: "Jasa Makloon", subcon_service_unabsorbed: "Jasa Makloon Tak Terserap",
+  makloon_claim: "Klaim Makloon", makloon_material_loss: "Susut Bahan Makloon",
+  payroll_run: "Penggajian", payroll_pay: "Pembayaran Gaji", incentive_accrual: "Akrual Insentif", incentive_accrual_adj: "Koreksi Akrual Insentif",
+  fixed_asset_acquisition: "Perolehan Aset", fixed_asset_depreciation: "Penyusutan Aset", fixed_asset_disposal: "Pelepasan Aset",
+  fixed_asset_transfer: "Mutasi Aset", fixed_asset_transfer_settlement: "Pelunasan Mutasi Aset",
+  closing: "Tutup Buku", suspense_reclass: "Reklas Akun Penampung", finance_case: "Kasus Keuangan",
+  manual_void: "Anulir Manual",
+};
+const humanizeSource = (code) => {
+  const s = String(code || "").replace(/_/g, " ").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+};
+const SOURCE_META = {
+  ...Object.fromEntries(Object.entries(SOURCE_LABELS).map(([k, label]) => [k, { label, tone: TONE_GRAY }])),
+  ...SOURCE_META_BASE,
+};
+const sourceMeta = (code) => SOURCE_META[code] || { label: humanizeSource(code), tone: TONE_GRAY };
 const TABS = [
   { id: "journal", label: "Jurnal", icon: FileStack },
   { id: "trial", label: "Neraca Saldo", icon: Scale },
@@ -45,11 +87,11 @@ function fmtDate(iso) {
 const JOURNAL_CSV_COLUMNS = [
   { key: "number", header: "No Jurnal" },
   { key: "date", header: "Tanggal", type: "date" },
-  { header: "Sumber", get: (je) => SOURCE_META[je.source_type]?.label || je.source_type || "" },
+  { header: "Sumber", get: (je) => (je.source_type ? sourceMeta(je.source_type).label : "") },
   { key: "source_label", header: "Rujukan Sumber" },
   { key: "description", header: "Keterangan" },
   { key: "total_debit", header: "Nilai", type: "num" },
-  { header: "Status", get: (je) => (je.status === "void" ? "Anulir" : "Posted") },
+  { header: "Status", get: (je) => (je.status === "void" ? "Anulir" : "Terposting") },
 ];
 
 export default function GeneralLedger({ selectedEntity, entities = [], focusDoc, onClearFocus }) {
@@ -243,7 +285,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
             </thead>
             <tbody>
               {entries.map((je) => {
-                const sm = SOURCE_META[je.source_type] || { label: je.source_type, tone: "bg-gray-100 text-gray-600" };
+                const sm = sourceMeta(je.source_type);
                 return (
                   <tr key={je.id} data-testid={`gl-journal-row-${je.id}`} onClick={() => setDetail(je)}
                     className="border-b border-[#F5F5F7] last:border-0 cursor-pointer hover:bg-[#FBF8FE]">
@@ -255,7 +297,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
                     <td className="px-3 py-2 text-center">
                       {je.status === "void"
                         ? <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#FDEDE7] text-[#C0392B]">Anulir</span>
-                        : <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#E6F6EC] text-[#1B7F4B]">Posted</span>}
+                        : <span className="text-[11px] font-bold rounded-full px-2 py-0.5 bg-[#E6F6EC] text-[#1B7F4B]">Terposting</span>}
                     </td>
                   </tr>
                 );
@@ -288,7 +330,7 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
   const [revReason, setRevReason] = useState("");
   const [revBusy, setRevBusy] = useState(false);
   const [revErr, setRevErr] = useState("");
-  const sm = SOURCE_META[je.source_type] || { label: je.source_type, tone: "" };
+  const sm = sourceMeta(je.source_type);
   const entId = je.entity_id || (selectedEntity && selectedEntity !== "all" ? selectedEntity : "");
   const ent = entities.find((e) => e.id === entId);
   const entityName = ent?.short_name || ent?.legal_name || "";

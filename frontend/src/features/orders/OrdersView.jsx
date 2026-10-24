@@ -45,7 +45,27 @@ import EntityBadge from "../../components/EntityBadge";
 import { scopeSuffix } from "../../utils/entityLabel";
 import { useEntityScope } from "../../context/EntityScopeContext";
 
-export default function OrdersView({ 
+// Audit UI 24 Okt (004) — pesan daftar kosong dulu menulis kode saringan mentah
+// ("reserved,waiting_approval,approved"); kini memakai label tahap yang sama dengan tab.
+const STATUS_FILTER_LABEL = {
+  "reserved,waiting_approval,approved": "Dipesan",
+  waiting_stock: "Backorder",
+  "confirmed,partially_picked,picked": "Diproses",
+  "partially_shipped,shipped,dispatched": "Dikirim",
+  done: "Selesai",
+  "cancelled,expired": "Dibatalkan / Kedaluwarsa",
+  waiting_approval: "Menunggu Persetujuan",
+  reserved: "Dipesan",
+  approved: "Disetujui",
+  confirmed: "Terkonfirmasi (Ditahan)",
+  partially_picked: "Sebagian Diambil",
+  picked: "Sudah Diambil (Siap)",
+  partially_shipped: "Sebagian Dikirim",
+  shipped: "Dikirim",
+  dispatched: "Terkirim (lama)",
+};
+
+export default function OrdersView({
   orders, 
   onApprove, 
   onConfirm, 
@@ -201,9 +221,9 @@ export default function OrdersView({
                   title={`Saring daftar: ${label}`}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${bg} ${
                     active ? "border-[#007AFF] ring-1 ring-[#007AFF]" : "border-[#EFF0F2] hover:border-[#B9CFF2]"}`}>
-                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#6B6B73]">{label}</p>
+                  <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">{label}</p>
                   <p className={`text-[20px] font-bold leading-tight ${color}`}>{value}</p>
-                  <p className="mt-0.5 truncate text-[10px] font-semibold tabular-nums text-[#6B6B73]">
+                  <p className="mt-0.5 truncate text-[11px] font-semibold tabular-nums text-[#6B6B73]">
                     {formatCurrency(amt)}
                   </p>
                 </button>
@@ -257,7 +277,7 @@ export default function OrdersView({
               <div className="section-head">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="kicker">Kendali Pesanan</span>
-                  <h2>Sales Orders</h2>
+                  <h2>Pesanan Penjualan</h2>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -265,8 +285,10 @@ export default function OrdersView({
                   <span>Pesanan</span><span>Pelanggan</span><span>Qty Pesan</span><span className="text-right" data-testid="orders-col-total-dpp" title="Nilai sebelum PPN (DPP). Nilai termasuk PPN tampil di rincian pesanan & piutang.">Total (DPP)</span><span>Tanggal</span><span>Tahap</span>
                 </div>
                 <div className="min-w-[720px] divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
-                  {(loading || paged.loading) && (
-                    <div className="px-3 py-8 text-center text-[12px] text-[#6B6B73] animate-pulse">Memuat pesanan…</div>
+                  {/* Audit UI 24 Okt (004) — dulu ikut `loading` global (muat dasbor) sehingga "Memuat pesanan…"
+                      tetap tampil DI ATAS daftar yang sudah termuat. Daftar ini hanya bergantung pada halaman server. */}
+                  {paged.loading && (
+                    <div data-testid="orders-loading" className="px-3 py-8 text-center text-[12px] text-[#6B6B73] animate-pulse">Memuat pesanan…</div>
                   )}
                   {!paged.loading && filteredOrders.length === 0 && (
                     <div data-testid="orders-empty" className="px-3 py-8 text-center text-[12px] text-[#6B6B73]">
@@ -274,7 +296,7 @@ export default function OrdersView({
                         ? `Tidak ada pesanan yang cocok dengan “${searchQuery.trim()}” ${scopeSuffix(entities, selectedEntity)}.`
                         : statusFilter === "all"
                           ? `Belum ada pesanan aktif ${scopeSuffix(entities, selectedEntity)}.`
-                          : `Tidak ada pesanan berstatus “${statusFilter}” ${scopeSuffix(entities, selectedEntity)}.`}
+                          : `Tidak ada pesanan berstatus “${STATUS_FILTER_LABEL[statusFilter] || statusFilter}” ${scopeSuffix(entities, selectedEntity)}.`}
                     </div>
                   )}
                   {!paged.loading && filteredOrders.map((order) => {
@@ -299,7 +321,7 @@ export default function OrdersView({
                           {order.has_backorder && (
                             <span
                               data-testid={`order-backorder-chip-${order.id}`}
-                              className="rounded-sm bg-[#FFF1EA] px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wide text-[#B23B14]"
+                              className="rounded-sm bg-[#FFF1EA] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#B23B14]"
                             >
                               Backorder
                             </span>
@@ -307,13 +329,13 @@ export default function OrdersView({
                           {order.has_sample && (
                             <span
                               data-testid={`order-sample-chip-${order.id}`}
-                              className="rounded-sm bg-[#FFF3D6] px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wide text-[#9A5B00]"
+                              className="rounded-sm bg-[#FFF3D6] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"
                             >
                               Sample
                             </span>
                           )}
                         </div>
-                        <p className="text-[10.5px] text-[#6B6B73] truncate">
+                        <p className="text-[11px] text-[#6B6B73] truncate">
                           {(order.items || []).length} item ·{" "}
                           <PaymentBadge order={order} showRemaining testId={`order-payment-${order.id}`} />
                         </p>

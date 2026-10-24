@@ -126,7 +126,7 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
               </div>
               <div className="mt-2 flex items-center gap-2">
                 {canEdit && <button type="button" className="primary-button !py-1 text-[11px]" disabled={busy} onClick={saveMetrics} data-testid="mkt-save-metrics">Simpan performa</button>}
-                {post.metrics?.recorded_at && <span className="text-[10.5px] text-[#6B6B73]">terakhir dicatat {fmtWhen(post.metrics.recorded_at)} · engagement {fmtN((post.metrics.likes || 0) + (post.metrics.comments || 0) + (post.metrics.shares || 0) + (post.metrics.saves || 0))}</span>}
+                {post.metrics?.recorded_at && <span className="text-[10.5px] text-[#6B6B73]">terakhir dicatat {fmtWhen(post.metrics.recorded_at)} · interaksi {fmtN((post.metrics.likes || 0) + (post.metrics.comments || 0) + (post.metrics.shares || 0) + (post.metrics.saves || 0))}</span>}
               </div>
             </section>
           )}

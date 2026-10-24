@@ -35,20 +35,35 @@ export function MonthlyTrendPanel({ monthly }) {
   );
 }
 
+// Audit UI 24 Okt (092/093): rasio dulu "2722.02x" (desimal titik, tanpa batas). Desimal koma;
+// di atas 50x angka tidak bermakna (kewajiban lancar hampir nol) → "> 50x", angka persis di tooltip.
+const RATIO_CAP = 50;
+const fmtRatio = (v) => {
+  if (v == null || Number.isNaN(Number(v))) return "—";
+  const n = Number(v);
+  if (n > RATIO_CAP) return `> ${RATIO_CAP}x`;
+  return `${n.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x`;
+};
+const fmtPctId = (v, d = 1) => (v == null ? "—" : `${Number(v).toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d })}%`);
+
 export function RatiosStrip({ ratios }) {
   const r = ratios || {};
+  const exact = (v) => (v == null ? "" : `Nilai persis: ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })}x`);
   const items = [
-    { label: "Marjin Kotor", value: fmtPct(r.gross_margin), icon: Percent },
-    { label: "Marjin Bersih", value: fmtPct(r.net_margin), icon: Percent },
-    { label: "Rasio Lancar", value: r.current_ratio == null ? "—" : `${Number(r.current_ratio).toFixed(2)}x`, icon: Scale },
-    { label: "Debt-to-Equity", value: r.debt_to_equity == null ? "—" : `${Number(r.debt_to_equity).toFixed(2)}x`, icon: Landmark },
+    { label: "Marjin Kotor", value: fmtPctId(r.gross_margin), icon: Percent },
+    { label: "Marjin Bersih", value: fmtPctId(r.net_margin), icon: Percent },
+    { label: "Rasio Lancar", value: fmtRatio(r.current_ratio), icon: Scale, title: exact(r.current_ratio),
+      hint: Number(r.current_ratio) > RATIO_CAP ? "kewajiban lancar hampir nol" : "aset lancar ÷ kewajiban lancar" },
+    { label: "Utang thd Ekuitas", value: fmtRatio(r.debt_to_equity), icon: Landmark, title: exact(r.debt_to_equity),
+      hint: "total kewajiban ÷ ekuitas" },
   ];
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="tower-ratios">
       {items.map((it) => (
-        <div key={it.label} className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2.5">
-          <div className="flex items-center gap-1.5 mb-0.5"><it.icon size={12} className="text-[#6B219A]" /><p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{it.label}</p></div>
+        <div key={it.label} className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2.5" title={it.title || undefined}>
+          <div className="flex items-center gap-1.5 mb-0.5"><it.icon size={12} className="text-[#6B219A]" /><p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{it.label}</p></div>
           <p className="text-[15px] font-bold tabular-nums text-[#1C1C1E]">{it.value}</p>
+          {it.hint && <p className="text-[11px] text-[#9A9BA3]">{it.hint}</p>}
         </div>
       ))}
     </div>

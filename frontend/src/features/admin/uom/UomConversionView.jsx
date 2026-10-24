@@ -13,7 +13,6 @@
  *
  * Nav: Produk & Harga → Konversi Satuan (admin & manager; ubah butuh izin uom:update).
  */
-import { stripInternalCodes } from "../../../utils/cleanText";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calculator, Plus, RefreshCw, Ruler, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
@@ -31,7 +30,7 @@ const EMPTY_RULE = { from_unit: "", to_unit: "", kind: "fixed", factor: "", form
                      note: "", status: "active" };
 
 export default function UomConversionView({ user, products = [] }) {
-  const { units, dimensions, kinds, settings, unitOptions } = useUomConversions();
+  const { units, dimensions, kinds, formulas, settings, unitOptions } = useUomConversions();
   const canEdit = can(user?.permissions, "uom", "update");   // Sisir gerbang peran (2026-10-20) — tulis /uom-conversions/rules
 
   const [rules, setRules] = useState([]);
@@ -101,6 +100,16 @@ export default function UomConversionView({ user, products = [] }) {
   }
 
   const calcProduct = products.find((p) => p.id === calc.product_id);
+  // Kalkulator langsung siap pakai: pilih satuan contoh dari katalog server (sedimensi dengan
+  // satuan dasar, bukan satuan dasar itu sendiri). Tanpa satuan, kalkulator dulu macet di
+  // "Menghitung konversi…" karena qty 1 sudah terisi tapi satuan masih kosong.
+  useEffect(() => {
+    if (calc.unit || !units.length) return;
+    const base = calcProduct?.base_unit || "meter";
+    const baseDim = (units.find((u) => u.code === base) || {}).dimension;
+    const pick = units.find((u) => u.dimension === baseDim && u.code !== base) || units[0];
+    if (pick) setCalc((c) => (c.unit ? c : { ...c, unit: pick.code }));
+  }, [units, calc.unit, calcProduct]);
   const productOptions = products.slice(0, 300).map((p) => ({
     value: p.id, label: `${p.sku} — ${p.name} (dasar: ${p.base_unit || "meter"})` }));
 
@@ -112,13 +121,13 @@ export default function UomConversionView({ user, products = [] }) {
             <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
               <Ruler size={14} className="text-[#0058CC]" /> Konversi Satuan (Global)
             </h2>
-            <p className="text-[10.5px] text-[#6B6B73]">
-              Satu registry untuk semua produk — dipakai PR, PO, penerimaan barang, dan
+            <p className="text-[11px] text-[#6B6B73]">
+              Satu daftar aturan untuk semua produk — dipakai PR, PO, penerimaan barang, dan
               perhitungan makloon. Setiap konversi menyimpan <b>jejak</b> (faktor + sumber)
               sebagai aturan tetap perusahaan.
             </p>
           </div>
-          <button data-testid="uom-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
+          <button data-testid="uom-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang">
             <RefreshCw size={13} />
           </button>
         </div>
@@ -132,9 +141,9 @@ export default function UomConversionView({ user, products = [] }) {
           {!loading && rules.length === 0 && (
             <p data-testid="uom-empty-state" className="notice-bar">
               <span>
-                Belum ada aturan konversi. Jalankan <b>python backend/scripts/migrate_fase_b_uom.py</b>
-                {" "}untuk memasang aturan standar (yard↔meter, lbs↔kg, GSM × lebar), atau tambah
-                aturan sendiri lewat tombol “Tambah Aturan”.
+                Belum ada aturan konversi. Minta admin sistem memasang aturan standar
+                (yard↔meter, lbs↔kg, GSM × lebar), atau tambah aturan sendiri lewat tombol
+                “Tambah Aturan”.
               </span>
             </p>
           )}
@@ -161,13 +170,14 @@ export default function UomConversionView({ user, products = [] }) {
           <div data-testid="uom-calculator" className="rounded-md border border-[#EFF0F2] bg-white">
             <div className="flex items-center gap-1.5 border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5">
               <Calculator size={12} className="text-[#0058CC]" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
-                Kalkulator Konversi (hasil dari server — sama dengan yang tersimpan)
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
+                Kalkulator Konversi
               </span>
+              <span className="text-[11px] text-[#8E8E93]">— hasil sama dengan yang tersimpan di dokumen</span>
             </div>
             <div className="grid gap-2 px-2.5 py-2 md:grid-cols-[1fr_1fr]">
               <label className="grid gap-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
+                <span className="text-[11px] font-semibold text-[#3C3C43]">
                   Produk (opsional — untuk faktor per produk & GSM × lebar)
                 </span>
                 <KNSelect data-testid="uom-calc-product" className="field" searchable
@@ -177,7 +187,7 @@ export default function UomConversionView({ user, products = [] }) {
                     const p = products.find((x) => x.id === v);
                     setCalc({ ...calc, product_id: v, unit: calc.unit || p?.base_unit || "meter" });
                   }} />
-                <span className="text-[10px] text-[#8E8E93]">
+                <span className="text-[11px] text-[#8E8E93]">
                   {calc.product_id
                     ? `Satuan dasar produk: ${calcProduct?.base_unit || "meter"}`
                     : "Tanpa produk: hanya konversi antar satuan sedimensi (mis. yard → meter). "
@@ -185,7 +195,7 @@ export default function UomConversionView({ user, products = [] }) {
                 </span>
               </label>
               <label className="grid gap-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
+                <span className="text-[11px] font-semibold text-[#3C3C43]">
                   Jumlah & satuan dokumen → satuan dasar produk
                 </span>
                 <UomInputConvert testId="uom-calc"
@@ -200,16 +210,16 @@ export default function UomConversionView({ user, products = [] }) {
           {/* Tabel aturan */}
           <div className="rounded-md border border-[#EFF0F2] bg-white">
             <div className="flex flex-wrap items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
                 Aturan Konversi
               </span>
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                <KNSelect data-testid="uom-filter-dimension" className="field !py-1 !text-[10.5px] w-[130px]"
+                <KNSelect data-testid="uom-filter-dimension" className="field !py-1 !text-[11px] w-[130px]"
                   value={filter.dimension} placeholder="Semua dimensi"
                   options={[{ value: "", label: "Semua dimensi" },
                             ...dimensions.map((d) => ({ value: d.value, label: d.label }))]}
                   onValueChange={(v) => setFilter({ ...filter, dimension: v })} />
-                <KNSelect data-testid="uom-filter-kind" className="field !py-1 !text-[10.5px] w-[130px]"
+                <KNSelect data-testid="uom-filter-kind" className="field !py-1 !text-[11px] w-[130px]"
                   value={filter.kind} placeholder="Semua jenis"
                   options={[{ value: "", label: "Semua jenis" },
                             ...kinds.map((k) => ({ value: k.value, label: k.label }))]}
@@ -223,7 +233,7 @@ export default function UomConversionView({ user, products = [] }) {
                     && (!filter.kind || r.kind === filter.kind) && (!v || r.status === v)).length}
                   onChange={(v) => setFilter({ ...filter, status: v })} />
                 {canEdit && (
-                  <button data-testid="uom-rule-add" className="primary-button !px-2 !py-1 !text-[10.5px]"
+                  <button data-testid="uom-rule-add" className="primary-button !px-2 !py-1 !text-[11px]"
                     onClick={() => { setModal({ mode: "create", data: { ...EMPTY_RULE } }); setModalErr(""); }}>
                     <span className="flex items-center gap-1"><Plus size={11} /> Tambah Aturan</span>
                   </button>
@@ -233,12 +243,12 @@ export default function UomConversionView({ user, products = [] }) {
             {srch.toolbar}
             <RuleTable rules={srch.pageRows} canEdit={canEdit} busyId={busyId} loading={loading}
               onEdit={(r) => { setModal({ mode: "edit", data: { ...r, factor: String(r.factor ?? "") } }); setModalErr(""); }}
-              onToggle={toggleRule} />
+              onToggle={toggleRule} kinds={kinds} dimensions={dimensions} formulas={formulas} />
           </div>
 
           {/* Jejak konversi dokumen */}
           <div className="rounded-md border border-[#EFF0F2] bg-white">
-            <div className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
+            <div className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
               Jejak Konversi Dokumen Terakhir
             </div>
             <UsageTable usage={usage} loading={loading} />
@@ -271,14 +281,14 @@ export default function UomConversionView({ user, products = [] }) {
             <div className="mt-2 grid gap-2">
               <div className="grid grid-cols-2 gap-2">
                 <label className="grid gap-1">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Satuan asal</span>
+                  <span className="text-[11px] font-semibold text-[#3C3C43]">Satuan asal *</span>
                   <KNSelect data-testid="uom-rule-from" className="field" searchable
                     value={modal.data.from_unit} placeholder="mis. yard"
                     options={unitOptions()}
                     onValueChange={(v) => setModal({ ...modal, data: { ...modal.data, from_unit: v } })} />
                 </label>
                 <label className="grid gap-1">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Satuan tujuan</span>
+                  <span className="text-[11px] font-semibold text-[#3C3C43]">Satuan tujuan *</span>
                   <KNSelect data-testid="uom-rule-to" className="field" searchable
                     value={modal.data.to_unit} placeholder="mis. meter"
                     options={unitOptions()}
@@ -286,17 +296,17 @@ export default function UomConversionView({ user, products = [] }) {
                 </label>
               </div>
               <label className="grid gap-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Jenis aturan</span>
+                <span className="text-[11px] font-semibold text-[#3C3C43]">Jenis aturan *</span>
                 <KNSelect data-testid="uom-rule-kind" className="field" value={modal.data.kind}
                   options={kinds.map((k) => ({ value: k.value, label: k.label }))}
                   onValueChange={(v) => setModal({ ...modal, data: { ...modal.data, kind: v } })} />
-                <span className="text-[10px] text-[#8E8E93]">
+                <span className="text-[11px] text-[#8E8E93]">
                   {(kinds.find((k) => k.value === modal.data.kind) || {}).note}
                 </span>
               </label>
               {modal.data.kind === "formula" ? (
                 <label className="grid gap-1">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Formula</span>
+                  <span className="text-[11px] font-semibold text-[#3C3C43]">Formula *</span>
                   <KNSelect data-testid="uom-rule-formula" className="field"
                     value={modal.data.formula || "gsm_width"}
                     options={[{ value: "gsm_width", label: "GSM × lebar ÷ 1000 (kg per meter)" }]}
@@ -304,8 +314,8 @@ export default function UomConversionView({ user, products = [] }) {
                 </label>
               ) : (
                 <label className="grid gap-1">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
-                    Faktor (1 {modal.data.from_unit || "asal"} = ? {modal.data.to_unit || "tujuan"})
+                  <span className="text-[11px] font-semibold text-[#3C3C43]">
+                    Faktor (1 {modal.data.from_unit || "asal"} = ? {modal.data.to_unit || "tujuan"}) *
                   </span>
                   <DecimalInput data-testid="uom-rule-factor" className="field" min={0}
                     placeholder="mis. 0,9144" value={modal.data.factor}
@@ -313,7 +323,7 @@ export default function UomConversionView({ user, products = [] }) {
                 </label>
               )}
               <label className="grid gap-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Catatan</span>
+                <span className="text-[11px] font-semibold text-[#3C3C43]">Catatan</span>
                 <input data-testid="uom-rule-note" className="field"
                   placeholder="mis. cone benang standar pabrik A"
                   value={modal.data.note || ""}

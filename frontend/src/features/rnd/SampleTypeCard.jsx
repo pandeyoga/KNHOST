@@ -51,32 +51,33 @@ export default function SampleTypeCard({ s, code, onOpen }) {
         )}
       </div>
       <div className="space-y-1 p-2">
-        <div className="flex items-center justify-between gap-1">
-          <span className="truncate font-mono text-[11.5px] font-bold" data-testid={`sample-type-number-${s.id}`}>{s.number}</span>
+        {/* Audit UI 24 Okt — di HP nomor dulu terpotong ("KSC/SMP-…"); kini boleh turun baris. */}
+        <div className="flex flex-wrap items-center justify-between gap-1">
+          <span className="min-w-0 break-all font-mono text-[11.5px] font-bold" data-testid={`sample-type-number-${s.id}`}>{s.number}</span>
           <span className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${acc ? "border-[#1A7A3A] text-[#1A7A3A]" : "border-[#E5E5EA] text-[#6B6B73]"}`}
             data-testid={`sample-type-score-${s.id}`}>
             {best == null ? "belum dinilai" : <>{best}{acc ? " · ACC" : ""}</>}
           </span>
         </div>
         <p className="truncate text-[11px] text-[#1C1C1E]">{s.title}</p>
-        <p className="truncate text-[9.5px] font-semibold text-[#0058CC]" data-testid={`sample-type-spec-${s.id}`}>
+        <p className="truncate text-[10.5px] font-semibold text-[#0058CC]" data-testid={`sample-type-spec-${s.id}`}>
           {s.spec_summary
             ? [s.spec_summary.template_name && `Induk ${s.spec_summary.template_name}`, s.spec_summary.fabric_type, s.spec_summary.gramasi && `${s.spec_summary.gramasi} gsm`,
               s.spec_summary.lebar && `lebar ${s.spec_summary.lebar} cm`, s.spec_summary.product_sku && `SKU ${s.spec_summary.product_sku}`].filter(Boolean).join(" · ") || s.spec_summary.number
             : <span className="text-[#B26A00]">⚠ belum ada spesifikasi</span>}
         </p>
-        <p className="flex items-center gap-1 truncate text-[9.5px] text-[#9A9BA3]">
+        <p className="flex items-center gap-1 truncate text-[10.5px] text-[#8E8E93]">
           {hex && <span className="inline-block h-2.5 w-2.5 rounded-sm border border-black/10" style={{ background: hex }} />}
           {s.color_target?.name && <span className="truncate">{s.color_target.name} · </span>}
           {s.design_code && <span className="truncate">{s.design_code} · </span>}
           <span className="truncate">{suppliers.length ? suppliers.join(", ") : "belum ada supplier"}</span>
         </p>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-1">
           <span className={`status-pill ${meta.cls}`} data-testid={`sample-type-status-${s.id}`}>{meta.label}</span>
-          <span className="text-[9.5px] text-[#8E8E93]">{rounds.length} round · {proofs} bukti</span>
+          <span className="text-[10.5px] text-[#8E8E93]">{rounds.length} ronde · {proofs} bukti</span>
         </div>
-        <p className="flex items-center justify-between text-[9.5px] text-[#8E8E93]">
-          <span>{lastMeta ? <span style={{ color: lastMeta.tone }} className="font-semibold">{lastMeta.label}</span> : "belum ada round"}</span>
+        <p className="flex items-center justify-between text-[10.5px] text-[#8E8E93]">
+          <span>{lastMeta ? <span style={{ color: lastMeta.tone }} className="font-semibold">{lastMeta.label}</span> : "belum ada ronde"}</span>
           {s.target_date && <span className="inline-flex items-center gap-1"><Droplets size={9} /> {formatDateId(s.target_date, "dd MMM")}</span>}
         </p>
       </div>

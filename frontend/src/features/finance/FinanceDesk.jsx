@@ -72,7 +72,10 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
 
   return (
-    <div data-testid="finance-desk" className="grid gap-4">
+    // Audit UI 24 Okt (141 HP): `grid` tanpa kolom eksplisit = kolom `auto` yang ikut melebar
+    // mengikuti tabel min-w 760px di Pelacak SO → seluruh halaman > 390px. minmax(0,1fr)
+    // mengunci kolom selebar layar; tabel lebar tetap bergulir di dalam kartunya sendiri.
+    <div data-testid="finance-desk" className="grid grid-cols-[minmax(0,1fr)] gap-4">
       {toast && (
         <div className="notice-bar success" data-testid="fin-desk-toast">
           <span>{toast}</span><button onClick={() => setToast("")}>×</button>
@@ -108,7 +111,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           kewenangan Anda, terbitkan denda, dan pantau jatuh tempo.
         </p>
 
-        <section data-testid="fin-desk-metrics" className="grid gap-3 p-3 sm:grid-cols-4">
+        <section data-testid="fin-desk-metrics" className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-4">
           <Metric icon={Inbox} label="Perlu Ditindak" value={openItems}
                   tone="rgba(255,149,0,.16)" testId="fin-desk-metric-open" />
           <Metric icon={Coins} label="Nilai Antrean" value={formatCurrency(totalMoney)}
@@ -124,7 +127,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
         {(desk?.not_my_desk || []).length > 0 && (
           <div data-testid="fin-desk-not-mine"
                className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
-            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">
               Bukan wewenang meja ini
             </p>
             <p className="text-[11.5px] text-[#31465F]">
@@ -148,7 +151,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           Belum ada antrean untuk badan usaha yang sedang Anda lihat.
         </div>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
           {queues.map((q) => (
             <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading}
                            testPrefix="fin-desk" rowTestPrefix={`fin-desk-${q.id}`} onAction={handleAction} />
@@ -177,8 +180,8 @@ function Metric({ icon: Icon, label, value, tone, testId }) {
         <Icon size={16} className="text-[#1C1C1E]" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-        <p className="text-[15px] font-bold tabular-nums">{value}</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+        <p className="text-[15px] font-bold tabular-nums break-words">{value}</p>
       </div>
     </div>
   );

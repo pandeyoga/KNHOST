@@ -159,8 +159,8 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
     if (!f.from_warehouse_id) { setModalErr("Gudang sumber bahan wajib dipilih."); return; }
     if (f.mode === "buy_process" && !f.supplier_id) { setModalErr("Supplier bahan wajib dipilih untuk mode Beli + Proses."); return; }
     if (parseFloat(f.yield_factor) > 0 && !f.yield_override_reason.trim()) {
-      setModalErr("Yield yang diisi manual adalah override atas rumus GSM — alasannya wajib "
-        + "diisi agar bisa diaudit (PS-03).");
+      setModalErr("Rendemen (yield) yang diisi manual menimpa hasil rumus GSM — alasannya wajib "
+        + "diisi agar bisa diaudit.");
       return;
     }
     // Mitra TIDAK memblokir (keputusan pemilik 3b) — backend menyimpan peringatannya

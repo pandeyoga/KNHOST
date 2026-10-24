@@ -21,7 +21,8 @@ import { measurementMeta, typeLabel, typeMeta } from "./sampleTypeMeta";
 const listBaseFabrics = () => axios.get(`${API}/rnd/base-fabrics`).then((r) => r.data?.items || []);
 const hasAcc = (s, code) => s.status === "decided" || (s.rounds || []).some((r) => r.result === "acc" && (!r.type_code || r.type_code === code));
 
-function Section({ step, icon: Icon, title, hint, children, testId, required }) {
+// Audit UI 24 Okt — badge "WAJIB" di judul bagian dihapus: isian wajib sudah bertanda *.
+function Section({ step, icon: Icon, title, hint, children, testId }) {
   return (
     <section className="rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid={testId}>
       <div className="mb-2.5 flex items-start gap-2">
@@ -29,9 +30,8 @@ function Section({ step, icon: Icon, title, hint, children, testId, required }) 
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#1C1C1E]">
             <Icon size={13} className="text-[#6B6B73]" /> {title}
-            {required && <span className="rounded bg-[#FDECEC] px-1.5 py-px text-[9px] font-bold uppercase text-[#C0392B]">wajib</span>}
           </p>
-          {hint && <p className="text-[10.5px] text-[#6B6B73]">{hint}</p>}
+          {hint && <p className="text-[11px] text-[#6B6B73]">{hint}</p>}
         </div>
       </div>
       {children}
@@ -58,7 +58,8 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
     so_id: prefill?.so_id || "", line_code: prefill?.line_code || "",
     target_date: "", qty_requested: "3", unit: "meter",
   });
-  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  const [touched, setTouched] = useState(false);
+  const set = (k, v) => { setTouched(true); setF((p) => ({ ...p, [k]: v })); };
   const masters = useCatalogMasters({ current: { base_unit: f.unit } });
   const [catalog, setCatalog] = useState({});
   const [sp, setSp] = useState(EMPTY_SPEC);
@@ -92,7 +93,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
     if (f.sample_types.length || types.length === 0) return;
     if (prefill?.need_design !== undefined) {
       const hit = types.find((t) => Boolean(t.requires_design) === Boolean(prefill.need_design));
-      if (hit) set("sample_types", [hit.value]);
+      if (hit) setF((p) => ({ ...p, sample_types: [hit.value] }));   // otomatis, bukan isian pengguna
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [types]);
@@ -170,7 +171,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
           </div>
         ) : null}
 
-        <Section step={1} icon={Package} title={isExisting ? "SKU aktif yang diuji ulang" : "Spesifikasi produk target"} required testId="sample-section-spec"
+        <Section step={1} icon={Package} title={isExisting ? "SKU aktif yang diuji ulang" : "Spesifikasi produk target"} testId="sample-section-spec"
           hint={isExisting ? "Pilih jenis uji, SKU aktif, lalu supplier yang diuji ulang beserta alasannya. Tidak ada SKU atau spesifikasi baru yang dibuat." : "Isinya menyesuaikan jenis: labdip → warna target · proofing → desain ACC · handfeel → konstruksi kain. Pilih lebih dari satu jenis bila kain yang sama diuji bertahap — spesifikasinya tetap satu."}>
           <div className="mb-3">
             <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Jenis sampling * (boleh lebih dari satu)</span>
@@ -210,14 +211,18 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
                   {parentId && <span className="mt-1 block text-[10.5px] text-[#1B7F4B]">Konstruksi kain (jenis, gramasi, lebar, benang) diwarisi dari handfeel induk saat disimpan.</span>}
                 </label>
               )}
-              <SampleSpecFields sp={sp} setSp={setSp} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
+              <SampleSpecFields sp={sp} setSp={(v) => { setTouched(true); setSp(v); }} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
                 sampleTypes={f.sample_types} types={types} colors={colors} designs={designs}
-                colorTargets={colorTargets} setColorTargets={setColorTargets} maxColors={Number(policy.labdip_max_colors) || 10}
+                colorTargets={colorTargets} setColorTargets={(v) => { setTouched(true); setColorTargets(v); }} maxColors={Number(policy.labdip_max_colors) || 10}
                 passedFabrics={policy.require_stage_chain === false ? null : passed} />
             </>
           )}
+          {/* Audit UI 24 Okt (039) — dulu merah "Belum lengkap" sejak form dibuka. Kini panduan netral; merah hanya
+              setelah pengguna mulai mengisi bagian ini (judul/brief/warna/spesifikasi berubah). */}
           {!isExisting && problems.length > 0 && typesOk && (
-            <p className="mt-2 text-[11px] text-[#A8221A]" data-testid="sample-spec-problems">Belum lengkap: <b>{problems.join(", ")}</b>.</p>
+            <p className={`mt-2 text-[11px] ${touched ? "text-[#A8221A]" : "text-[#6B6B73]"}`} data-testid="sample-spec-problems">
+              {touched ? "Belum lengkap" : "Agar bisa disimpan, lengkapi"}: <b>{problems.join(", ")}</b>.
+            </p>
           )}
         </Section>
 

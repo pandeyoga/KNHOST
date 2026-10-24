@@ -17,6 +17,23 @@ const STATUS_COLORS = {
   cancelled: "#FF3B30", expired: "#FF6B00", shipped: "#5856D6",
 };
 
+// Audit UI 24 Okt (085): sumbu corong dulu memakai kode status mentah ("reserved",
+// "waiting_stock", "done").
+const FUNNEL_LABEL = {
+  draft: "Draf", reserved: "Stok dipesan", waiting_approval: "Menunggu persetujuan",
+  approved: "Disetujui", confirmed: "Dikonfirmasi", waiting_stock: "Menunggu stok",
+  partially_picked: "Sebagian diambil", picked: "Sudah diambil", partially_shipped: "Sebagian dikirim",
+  shipped: "Dikirim", done: "Selesai", cancelled: "Batal", expired: "Kedaluwarsa",
+};
+const funnelLabel = (s) => FUNNEL_LABEL[s] || String(s || "—").replace(/_/g, " ");
+const fmtCompact = (v) => {
+  const n = Number(v) || 0;
+  if (Math.abs(n) >= 1e9) return `${(n / 1e9).toLocaleString("id-ID", { maximumFractionDigits: 1 })} M`;
+  if (Math.abs(n) >= 1e6) return `${(n / 1e6).toLocaleString("id-ID", { maximumFractionDigits: 1 })} jt`;
+  if (Math.abs(n) >= 1e3) return `${(n / 1e3).toLocaleString("id-ID", { maximumFractionDigits: 1 })} rb`;
+  return n.toLocaleString("id-ID");
+};
+
 const CHART_COLORS = ["#007AFF", "#34C759", "#FF9500", "#FF3B30", "#5856D6", "#FF6B00", "#8E8E93"];
 
 function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", trend, loading }) {
@@ -109,11 +126,14 @@ export default function ManagerDashboard({ token, selectedEntity }) {
   useEffect(() => { load(); }, [load]);
   useEffect(() => () => { genRef.current += 1; abortRef.current?.abort(); }, []);
 
-  const funnelChartData = (funnel?.funnel || []).filter(f => !SKIP_FUNNEL.includes(f.status));
+  const funnelChartData = (funnel?.funnel || []).filter(f => !SKIP_FUNNEL.includes(f.status))
+    .map((f) => ({ ...f, label: funnelLabel(f.status) }));
   // G3 D4-FE-01 — grafik memakai SELURUH rentang periode terpilih (tanpa potong 14 hari).
   const velocityData = velocity?.period_days === period ? (velocity?.velocity || []) : [];
+  // Audit UI 24 Okt (085): sumbu X dulu nama KOTA ("Bandung" berulang untuk gudang
+  // berbeda) — sekarang nama gudang (dipendekkan di sumbu, utuh di tooltip).
   const utilizationData = utilization.map(w => ({
-    name: w.warehouse_city || w.warehouse_name,
+    name: w.warehouse_name || w.warehouse_city,
     on_hand: w.on_hand_qty,
     capacity: w.total_capacity,
     pct: w.utilization_pct,
@@ -146,7 +166,10 @@ export default function ManagerDashboard({ token, selectedEntity }) {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <KPICard icon={TrendingUp} label="Pesanan Hari Ini" value={summary?.orders_today ?? "—"} color="#007AFF" loading={loading} />
-          <KPICard icon={Star} label="Pendapatan Bulan Ini" value={summary?.monthly_revenue !== undefined ? fmtCur(summary.monthly_revenue) : "—"} sub="30 hari terakhir" color="#34C759" loading={loading} />
+          {/* Audit UI 24 Okt (085↔092): angka ini = NILAI PESANAN (SO) yang masuk 30 hari terakhir,
+              bukan pendapatan jurnal bulan berjalan di Posisi & Kontrol. Label disesuaikan
+              supaya dua layar tidak memakai nama yang sama untuk angka berbeda. */}
+          <KPICard icon={Star} label="Nilai Pesanan 30 Hari" value={summary?.monthly_revenue !== undefined ? fmtCur(summary.monthly_revenue) : "—"} sub="nilai SO masuk · bukan pendapatan jurnal" color="#34C759" loading={loading} />
           <KPICard icon={Clock} label="Menunggu Persetujuan" value={summary?.pending_approvals ?? "—"} sub="Perlu ditindak" color="#FF9500" loading={loading} />
           <KPICard icon={AlertTriangle} label="Stok Rendah" value={summary?.low_stock_items ?? "—"} sub="<100 unit tersedia" color="#FF3B30" loading={loading} />
           <KPICard icon={CheckCircle} label="Stock Opname Menunggu" value={summary?.pending_cycle_counts ?? "—"} sub="Menunggu review" color="#5856D6" loading={loading} />
@@ -156,7 +179,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
         <div className="mt-5 rounded-xl border border-[#EFF0F2] bg-white p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[14px] font-bold" data-testid="manager-velocity-title">Kecepatan Pesanan — {period} hari terakhir{velocityData.length ? ` (${velocityData[0].date} s/d ${velocityData[velocityData.length - 1].date})` : ""}</h3>
-            <span className="text-[12px] text-[#6B6B73]">{velocity?.total_orders ?? 0} order total • Avg {velocity?.avg_per_day ?? 0}/hari</span>
+            <span className="text-[12px] text-[#6B6B73]">{velocity?.total_orders ?? 0} pesanan • rata-rata {velocity?.avg_per_day ?? 0}/hari</span>
           </div>
           {loading ? (
             <div className="h-40 bg-[#F5F5F7] rounded animate-pulse" />
@@ -167,7 +190,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={v => v.slice(5)} minTickGap={8} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
-                  formatter={(val, name) => [name === "total_amount" ? fmtCur(val) : val, name === "count" ? "Order" : "Revenue"]}
+                  formatter={(val, name) => [name === "total_amount" ? fmtCur(val) : val, name === "count" ? "Pesanan" : name === "done" ? "Selesai" : "Nilai"]}
                   labelFormatter={l => `Tgl ${l}`}
                 />
                 <Line type="monotone" dataKey="count" stroke="#007AFF" strokeWidth={2} dot={false} name="count" />
@@ -184,7 +207,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
           {/* Reservation Funnel */}
           <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[14px] font-bold">Reservation Funnel</h3>
+              <h3 className="text-[14px] font-bold">Corong Status Pesanan</h3>
               <span className="text-[12px] text-[#6B6B73]">{funnel?.total_orders ?? 0} total</span>
             </div>
             {loading ? (
@@ -193,7 +216,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               <ResponsiveContainer width="100%" height={170}>
                 <BarChart data={funnelChartData} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                  <XAxis dataKey="status" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" interval={0} />
                   <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                   <Tooltip formatter={(val) => [val, "Order"]} />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
@@ -218,9 +241,10 @@ export default function ManagerDashboard({ token, selectedEntity }) {
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={utilizationData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(val, name) => [fmt.format(val), name === "on_hand" ? "On Hand" : "Kapasitas"]} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0}
+                      tickFormatter={(v) => (String(v).length > 12 ? `${String(v).slice(0, 11)}…` : v)} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtCompact} width={48} />
+                    <Tooltip formatter={(val, name) => [fmt.format(val), name === "on_hand" ? "Stok fisik" : "Kapasitas"]} />
                     <Bar dataKey="capacity" fill="#EFF0F2" name="capacity" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="on_hand" fill="#007AFF" name="on_hand" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -298,8 +322,8 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-8 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
             ) : aging.length > 0 ? (
               <div className="grid gap-1 max-h-56 overflow-auto">
-                <div className="grid grid-cols-[1fr_80px_60px_80px_80px] gap-2 text-[10px] font-bold uppercase text-[#8E8E93] pb-1 border-b border-[#EFF0F2]">
-                  <span>Produk</span><span>Gudang</span><span>Stok Fisik</span><span>Hari</span><span>Nilai</span>
+                <div className="grid grid-cols-[1fr_80px_60px_80px_80px] gap-2 whitespace-nowrap text-[11px] font-bold uppercase text-[#8E8E93] pb-1 border-b border-[#EFF0F2]">
+                  <span>Produk</span><span>Gudang</span><span>Stok Fisik</span><span>Diam</span><span>Nilai</span>
                 </div>
                 {aging.map((item, idx) => (
                   <div key={`${item.product_id}-${item.warehouse_id}-${item.lot || item.owner_entity_id || idx}`}
@@ -315,7 +339,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
                         : item.days_since_movement > 30 ? "text-orange-500"
                         : "text-[#1C1C1E]"
                     }`}>
-                      {item.days_since_movement === null ? "Baru" : `${item.days_since_movement}h`}
+                      {item.days_since_movement === null ? "Baru" : `${item.days_since_movement} hari`}
                     </span>
                     <span className="text-[#3C3C43]">{fmtCur(item.estimated_value || 0)}</span>
                   </div>
@@ -323,7 +347,8 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               </div>
             ) : (
               <div className="h-24 flex items-center justify-center text-[13px] text-[#8E8E93]">
-                Semua stok aktif (tidak ada yang menua dalam {agingDays} hari)
+                Tidak ada stok yang diam lebih dari {agingDays} hari sejak pergerakan terakhir.
+                (Stok yang belum pernah terjual dihitung terpisah di Analitik Stok.)
               </div>
             )}
           </div>

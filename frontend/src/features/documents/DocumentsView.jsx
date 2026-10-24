@@ -3,6 +3,19 @@ import { Barcode } from "lucide-react";
 import { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 
+// Audit UI 24 Okt (091): deskripsi template dulu memuat kunci mentah ("invoice • sku, name, qty…").
+const DOC_TYPE_LABEL = {
+  invoice: "Faktur", surat_jalan: "Surat Jalan", delivery_note: "Surat Jalan", purchase_order: "Pesanan Pembelian",
+  sales_order: "Pesanan Penjualan", quotation: "Penawaran", receipt: "Kwitansi", packing_list: "Daftar Kemas",
+};
+const COLUMN_LABEL = {
+  sku: "SKU", name: "Nama barang", product_name: "Nama barang", qty: "Jumlah", quantity: "Jumlah", unit: "Satuan",
+  uom: "Satuan", price: "Harga", unit_price: "Harga", subtotal: "Subtotal", total: "Total", discount: "Diskon",
+  batch: "Batch", lot: "Lot", roll: "Roll", roll_no: "No. roll", color: "Warna", grade: "Grade", notes: "Catatan",
+  length: "Panjang", weight: "Berat",
+};
+const humanKey = (k) => { const t = String(k || "").replace(/_/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
+
 export default function DocumentsView({ templates, loading = false, lastDocument, lastLabel, onGenerateLabel, products }) {
   const [selectedProductId, setSelectedProductId] = useState("");
 
@@ -33,7 +46,7 @@ export default function DocumentsView({ templates, loading = false, lastDocument
             {!loading && (templates || []).map((template) => (
               <div data-testid={`template-card-${template.id}`} key={template.id} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3">
                 <p data-testid={`template-name-${template.id}`} className="text-[13px] font-semibold">{template.name}</p>
-                <p data-testid={`template-type-${template.id}`} className="text-[11.5px] text-[#3C3C43]">{template.document_type} • {template.columns.join(", ")}</p>
+                <p data-testid={`template-type-${template.id}`} className="text-[11.5px] text-[#3C3C43]">{DOC_TYPE_LABEL[template.document_type] || humanKey(template.document_type)} • kolom: {(template.columns || []).map((c) => COLUMN_LABEL[c] || humanKey(c)).join(", ")}</p>
               </div>
             ))}
           </div>
@@ -63,18 +76,19 @@ export default function DocumentsView({ templates, loading = false, lastDocument
             >
               <Barcode size={14} /> Buat Label Roll
             </button>
+            {!selectedProductId && <p className="text-[11px] text-[#6B6B73]" data-testid="label-hint">Pilih produk dulu untuk membuat label roll.</p>}
             {lastLabel && (
               <div data-testid="last-barcode-label" className="mt-4 inline-block rounded-md border border-[#EFF0F2] bg-white p-3">
-                <p data-testid="last-barcode-code" className="mb-2 text-[10.5px] font-bold tracking-wider">{lastLabel.code}</p>
+                <p data-testid="last-barcode-code" className="mb-2 text-[11px] font-bold tracking-wider">{lastLabel.code}</p>
                 <div className="grid w-[130px] grid-cols-[repeat(13,10px)] gap-0">
                   {lastLabel.qr_matrix.flatMap((row, i) => row.map((cell, j) => <span data-testid={`qr-cell-${i}-${j}`} key={`${i}-${j}`} className={`qr-cell ${cell ? "on" : "off"} h-2.5 w-2.5`} />))}
                 </div>
-                <p className="mt-2 text-[11px] font-semibold">Size: {lastLabel.label_size}</p>
+                <p className="mt-2 text-[11px] font-semibold">Ukuran: {lastLabel.label_size}</p>
               </div>
             )}
             {lastDocument && (
               <div data-testid="last-generated-document" className="mt-4 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-                <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">Dokumen terakhir</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Dokumen terakhir</p>
                 <p data-testid="last-generated-document-number" className="text-[13px] font-semibold">{lastDocument.number}</p>
                 <a data-testid="open-last-document-link" className="mt-2 inline-flex text-[12px] font-semibold text-[#0058CC] underline" href={`${API}/documents/${lastDocument.id}/print`} target="_blank" rel="noreferrer">Buka tampilan cetak</a>
               </div>

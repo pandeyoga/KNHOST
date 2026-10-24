@@ -39,7 +39,7 @@ export function MyKpiCard() {
       {loading ? (
         <p className="text-[12px] text-[#6B6B73] py-3" data-testid="ess-kpi-loading">Memuat…</p>
       ) : shown.length === 0 ? (
-        <p className="text-[11px] text-[#9A9BA3] py-3" data-testid="ess-kpi-empty">Belum ada KPI tercatat untuk Anda.</p>
+        <p className="text-[11px] text-[#9A9BA3] py-3" data-testid="ess-kpi-empty">Belum ada KPI manual tercatat untuk Anda. (KPI desainer/R&D dihitung otomatis — lihat kartunya sendiri.)</p>
       ) : (
         <div data-testid="ess-kpi-content">
           <div className="rounded-lg bg-[#F7F8FA] p-2.5 mb-2 flex items-center justify-between">

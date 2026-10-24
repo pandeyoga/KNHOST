@@ -22,6 +22,7 @@
  */
 import { AlertTriangle, BellRing, Clock, ShieldAlert } from "lucide-react";
 import { tierMeta } from "./designerMeta";
+import { actorLabel } from "../../utils/actorLabel";   // audit UI 24 Okt — akun teknis tidak tampil mentah
 
 export default function DesignerSlaPanel({ board, filterDesigner, busy, canManage,
                                            onEscalate, runInfo }) {
@@ -99,7 +100,7 @@ export default function DesignerSlaPanel({ board, filterDesigner, busy, canManag
                         {r.supplier_name ? ` · ${r.supplier_name}` : ""}
                       </span>
                     </span>
-                    <span className="truncate text-[#3C3C43]">{r.designer}</span>
+                    <span className="truncate text-[#3C3C43]">{actorLabel(r.designer)}</span>
                     <span className="tabular-nums text-[#6B6B73]">tenggat {r.due_date}</span>
                     <span className="font-bold tabular-nums text-[#C0392B]">
                       {r.days_late} hari

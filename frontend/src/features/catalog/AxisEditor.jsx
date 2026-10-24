@@ -32,7 +32,7 @@ export const AxisEditor = ({ axes, onChange, structuralLocked = false, axisConfi
     {!structuralLocked && <p data-testid="axis-config-hint" className="text-xs text-[#6B6B73]">Sumbu bawaan: {catalog.filter(a => a.preset).map(a => a.label).join(" × ") || "—"}. Material yang berbeda dibuat sebagai induk master data terpisah. Daftar sumbu diatur di Pusat Pengaturan → R&D & Desain.</p>}
     {!structuralLocked && <div className="flex flex-wrap gap-2">
       <input data-testid="axis-custom-label" className="field flex-1 min-w-32" value={label} onChange={e => { setLabel(e.target.value); setKey(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/_$/, "")); }} placeholder="Nama atribut lainnya" />
-      <input data-testid="axis-custom-key" className="field w-36" value={key} onChange={e => setKey(e.target.value)} placeholder="kode_atribut" />
+      <input data-testid="axis-custom-key" className="field w-36" value={key} onChange={e => setKey(e.target.value)} placeholder="kode (otomatis)" aria-label="Kode atribut" title="Kode atribut dibuat otomatis dari nama: huruf kecil, angka, garis bawah" />
       <button type="button" data-testid="axis-add-custom" className="secondary-button" disabled={!/^[a-z][a-z0-9_]{0,39}$/.test(key) || !label || axes.length >= 6 || axes.some(a => a.key === key)} onClick={() => add(key, label)}><Plus size={13} />Tambah atribut</button>
     </div>}
     {structuralLocked && <p data-testid="axis-structure-locked" className="text-xs text-[#6B6B73]">Struktur SKU sudah terbentuk. Pilihan baru masih dapat ditambahkan.</p>}

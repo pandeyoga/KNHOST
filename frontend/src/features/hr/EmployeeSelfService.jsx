@@ -3,12 +3,21 @@ import axios, { API } from "../../services/apiClient";
 import { IdCard, Clock, Wallet, CalendarDays, Building2, Briefcase, Phone, Mail, CreditCard, LogIn, LogOut, MapPin } from "lucide-react";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_PILL, fmtTime, fmtMin } from "./AttendanceView";
 import { MyPayslipCard } from "./MyPayslipCard";
 import { MyLeaveCard } from "./MyLeaveCard";
 import { MyKpiCard } from "./MyKpiCard";
 import { MyDesignerKpiCard } from "./MyDesignerKpiCard";
+
+// Audit UI 24 Okt (140): nilai mentah ("tetap", "TK0", "2023-01-15") → label manusiawi.
+const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
+const ptkpLabel = (v) => {
+  const m = /^(TK|K)\/?(\d)$/i.exec(String(v || "").trim());
+  if (!m) return v || "—";
+  const kawin = m[1].toUpperCase() === "K";
+  return `${m[1].toUpperCase()}/${m[2]} — ${kawin ? "kawin" : "tidak kawin"}, ${m[2]} tanggungan`;
+};
 
 function InfoRow({ icon: Icon, label, value }) {
   return (
@@ -100,11 +109,11 @@ function AttendanceClockCard() {
           )}
           {(me?.recent || []).length > 0 && (
             <div className="mt-3 pt-2 border-t border-[#EFF0F2]">
-              <p className="text-[10px] uppercase font-semibold text-[#9A9BA3] mb-1">Riwayat Terakhir</p>
+              <p className="text-[11px] uppercase font-semibold text-[#9A9BA3] mb-1">Riwayat Terakhir</p>
               <div className="space-y-1 max-h-[120px] overflow-y-auto">
                 {(me.recent || []).slice(0, 7).map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#6B6B73]">{r.date}</span>
+                    <span className="text-[#6B6B73]">{formatDate(r.date)}</span>
                     <span className="tabular-nums">{fmtTime(r.clock_in)}–{fmtTime(r.clock_out)}</span>
                     <span className={`status-pill ${(STATUS_PILL[r.status] || STATUS_PILL.hadir).cls}`}>{(STATUS_PILL[r.status] || STATUS_PILL.hadir).label}</span>
                   </div>
@@ -206,8 +215,8 @@ export default function EmployeeSelfService({ currentUser }) {
               <div className="section-body">
                 <InfoRow icon={Building2} label="Departemen" value={emp.department_name} />
                 <InfoRow icon={Briefcase} label="Jabatan" value={emp.position_name} />
-                <InfoRow icon={IdCard} label="Tipe" value={emp.employment_type} />
-                <InfoRow icon={CalendarDays} label="Tanggal Masuk" value={emp.join_date} />
+                <InfoRow icon={IdCard} label="Tipe" value={EMP_TYPE_LABEL[emp.employment_type] || emp.employment_type} />
+                <InfoRow icon={CalendarDays} label="Tanggal Masuk" value={emp.join_date ? formatDate(emp.join_date) : emp.join_date} />
                 <InfoRow icon={Phone} label="Telepon" value={emp.phone} />
                 <InfoRow icon={Mail} label="Email" value={emp.email} />
               </div>
@@ -220,7 +229,7 @@ export default function EmployeeSelfService({ currentUser }) {
                 <InfoRow icon={CreditCard} label="Bank" value={emp.bank_name} />
                 <InfoRow icon={CreditCard} label="No Rekening" value={emp.bank_acc_no} />
                 <InfoRow icon={IdCard} label="NPWP" value={emp.npwp} />
-                <InfoRow icon={IdCard} label="Status PTKP" value={emp.ptkp_status} />
+                <InfoRow icon={IdCard} label="Status PTKP" value={emp.ptkp_status ? ptkpLabel(emp.ptkp_status) : emp.ptkp_status} />
               </div>
             </div>
           </div>
