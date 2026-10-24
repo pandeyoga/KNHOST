@@ -76,6 +76,31 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 | F-03 | Grade & LOT bocor ke Sales lewat `variant_label` | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `3f8ce21` | [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md) |
 | F-01 | Login cepat per peran gagal (seed `demo1234` vs tombol `demo12345`) | P1* | implemented_pending_review | ya — direproduksi runtime di `193c048` (data acuan restore) | `941a9c2` | [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md) |
 
+## UAT 24 Okt — paket 2026-10-21 (analisis temuan UAT 23 Okt)
+
+Sumber: `docs/uat/2026-10-21/ANALISIS_TEMUAN_UAT_23OKT.md` (P1..P17, fase F0..F5; keputusan pemilik = usulan bawaan §4,
+P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
+
+| ID | Judul | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|
+| P1 | Produk eksklusif & galeri desain: white/customer label, klaim diputus Manajer | F3 | implemented_pending_review | ya — analisis 23 Okt §5 | `e8c7739` | [F3](../uat/2026-10-21/hasil/UAT24-F3.md) |
+| P2 | Harga OD: Grade A induk / harga PIC (SO-12), nego lewat harga khusus SO, kunci ≠ pengadaan, biaya tersembunyi | F4 | implemented_pending_review | ya — kode (SO-12 tak pernah diterapkan) | `272575a` | [F4](../uat/2026-10-21/hasil/UAT24-F4.md) |
+| P3 | Surat perintah kerja R&D per supplier, PNG cetak, Pantone wajib | F3 | implemented_pending_review | ya — analisis 23 Okt | `e8c7739` | [F3](../uat/2026-10-21/hasil/UAT24-F3.md) |
+| P4 | R&D dua pintu (produk baru / uji ulang), rantai tahap, labdip multi-warna, Pustaka dari labdip | F0 (P4.8), F3 | implemented_pending_review | ya — analisis 23 Okt | `663745a`, `e8c7739` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) · [F3](../uat/2026-10-21/hasil/UAT24-F3.md) |
+| P5 | Galat buntu "Kombinasi ini sudah memiliki SKU…" | F3 | implemented_pending_review | ya — analisis 23 Okt | `e8c7739` | [F3](../uat/2026-10-21/hasil/UAT24-F3.md) |
+| P6 | Kode/pattern/kategori/tag desain di master produk, POS, Pusat Export | F3 | implemented_pending_review | ya — analisis 23 Okt | `e8c7739` | [F3](../uat/2026-10-21/hasil/UAT24-F3.md) |
+| P7 | Menu baru "Perbaikan" (repair & celup ulang) | F5 | open | ya — fitur belum ada | — | — |
+| P8 | POS/HP sadar lokasi + pelanggan wajib di awal | F1 | implemented_pending_review | ya — analisis 23 Okt | `663745a` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P9 | Model lokasi (site → gudang ber-peran), PO ke lokasi, label QR, putaway satu lokasi | F0–F2 | implemented_pending_review | ya — uji alur 23 Okt | `663745a`, `5f52372` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P10 | Transfer antar-PT sadar gudang bersama, roll pilihan utuh, barang ke SO peminta | F2 | implemented_pending_review | ya — uji alur 23 Okt | `663745a` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P11 | Penanda roll MD Quality / 4-point + sampling | F0, F2 | implemented_pending_review | ya — uji alur 23 Okt | `663745a` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P12 | Sorotan POS (Terlaris / Unggulan / Rekomendasi) bisa dinyalakan-dimatikan | F5 | open | ya — kode | — | — |
+| P13 | Keep & Pending juga terlihat oleh sales (bukti UI + tautan menu) | F5 | open | sebagian — fitur ada, bukti UI & tautan menu belum | — | — |
+| P14 | Sales hanya melihat pelanggannya sendiri + walk-in | F0 | implemented_pending_review | ya — uji alur 23 Okt | `663745a`, `5f52372` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P15 | Gabung beberapa PR (supplier & lokasi sama) → 1 PO + saran untuk MD; OD supplier sama → 1 PO | F0 (bug `kind`), F4 | implemented_pending_review | ya — kode | `663745a`, `272575a` | [F4](../uat/2026-10-21/hasil/UAT24-F4.md) |
+| P16 | UI rusak: GRN tanpa kartu, unduh di Jejak Dokumen, Pengaturan berantakan | F0 (P16.1b, P16.2 PDF GRN, label dobel), F5 | open — sebagian | ya — analisis 23 Okt | `663745a` (sebagian) | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
+| P17 | Semua foto yang diunggah bisa dipratinjau tanpa unduh (tanpa token di URL) | F5 | open | ya — analisis 23 Okt | — | — |
+
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
 | ID usulan | Judul | Status | Laporan |
@@ -94,6 +119,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-24 | Claude Code | Paket UAT 24 Okt dicatat (P1..P17): F0–F3 implemented_pending_review (`663745a`, `5f52372`, `e8c7739`; laporan [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md), [F3](../uat/2026-10-21/hasil/UAT24-F3.md)); F4 P2 + P15 implemented_pending_review (`272575a`, [F4](../uat/2026-10-21/hasil/UAT24-F4.md)); P7, P12, P13, P16 (sisa), P17 open (F5) |
 | 2026-10-21 | Claude Code | F-07/F-04/F-17/F-02/F-08 implemented_pending_review ([laporan](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md)): stempel waktu & pelaku transisi SO + "Disiapkan" menghitung tugas terkirim; KPI POS per satuan; nilai antrean retur; stok strip Sering dibeli = katalog; Faktur Komersial sebagai dokumen tagihan di Perjalanan (default implementer, mohon review Finance) — semua dicek di UI. Seluruh 17 temuan UAT kini berstatus implemented_pending_review |
 | 2026-10-21 | Claude Code | F-13 implemented_pending_review (`debc38a`, [F-13](../uat/2026-10-21/hasil/F-13.md)): keputusan Q-06b — hasil SPK (MD Quality/QC/umum) hanya sesudah SPK ditugaskan; tombol di SPK draft disembunyikan + petunjuk — dicek di UI |
 | 2026-10-21 | Claude Code | F-15 implemented_pending_review (`049c8ab`, [F-15](../uat/2026-10-21/hasil/F-15.md)): keputusan Q-04 — toleransi selisih tagihan sample (`sales.sample_payment_tolerance_pct`, 5%) otomatis, di atasnya persetujuan ulang + kiriman ditahan; cek UI: tautan ?doc=SOS- kini membuka Pesanan Sample |
