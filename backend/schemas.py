@@ -785,6 +785,7 @@ class SoSpecialPriceRequest(BaseModel):
     """Ajukan harga khusus pada item SO yang SUDAH dibuat (aksi di detail SO)."""
     item_index: Optional[int] = None      # indeks item pada SO.items (prioritas)
     product_id: str = ""                   # alternatif: cari item by product_id
+    special_order_item_id: str = ""        # UAT 24 Okt (P2.2) — baris SO dari item Pesanan Khusus (menang atas indeks)
     requested_price: float = Field(..., ge=0)                 # harga khusus per unit (jual)
     reason: str = ""                       # WAJIB alasan (divalidasi di router)
     min_quantity: float = Field(0, ge=0)

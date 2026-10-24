@@ -346,10 +346,83 @@ async def price_in_unit(prod: Dict[str, Any], price: float, price_unit: str, doc
 async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
                         warehouse_id: str = "", line_nos: Optional[List[int]] = None,
                         expected_delivery_date: str = "", notes: str = "") -> Dict[str, Any]:
-    """Realisasikan baris PR ber-mode `purchase` menjadi **satu PO**.
+    """Realisasikan baris PR ber-mode `purchase` menjadi **satu PO** (kasus satu PR dari `realize_many_to_po`).
 
     Baris `makloon` DIABAIKAN (dipenuhi via Order Makloon) sehingga PR campur tidak
     lagi harus dipecah manual. PR menjadi `converted` hanya bila SEMUA baris terealisasi.
+    """
+    return await realize_many_to_po([{"pr_id": pr_id, "line_nos": line_nos or []}], supplier_id=supplier_id,
+                                    actor=actor, warehouse_id=warehouse_id,
+                                    expected_delivery_date=expected_delivery_date, notes=notes)
+
+
+async def merge_suggestions(query: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """UAT 24 Okt (P15.2) — kelompok PR approved yang masih punya baris PEMBELIAN terbuka, per (badan usaha, lokasi
+    tujuan, supplier). Supplier = `preferred_supplier_id` PR, atau supplier yang layak untuk SEMUA barangnya (kontrak
+    aktif / barang supplier) bila PR belum menyebut supplier. Hanya kelompok ≥ 2 PR yang disarankan."""
+    from fastapi import HTTPException as _HE
+    from services import site_receiving_service as srs
+    today = now_iso()[:10]
+    groups: Dict[tuple, Dict[str, Any]] = {}
+    async for pr in db.purchase_requisitions.find({**query, "status": {"$in": ["approved", "converted"]}}, {"_id": 0}):
+        ensure_line_shape(pr)
+        lines = _open_lines(pr, "purchase")
+        lines = [it for it in lines if it.get("product_id")]
+        if not lines:
+            continue
+        ent = pr.get("entity_id") or DEFAULT_ENTITY_ID
+        try:
+            dest = await srs.resolve_destination(ent, pr.get("ship_to_site_id", ""), pr.get("warehouse_id", ""))
+        except _HE:
+            continue
+        sups = [pr["preferred_supplier_id"]] if pr.get("preferred_supplier_id") else []
+        if not sups:
+            pids = [it["product_id"] for it in lines]
+            sets = []
+            for pid in pids:
+                ok = {c["partner_id"] async for c in db.supplier_contracts.find(
+                    {"product_id": pid, "status": "active", "contract_type": "purchase",
+                     "$or": [{"valid_to": {"$in": [None, ""]}}, {"valid_to": {"$gte": today}}]}, {"_id": 0, "partner_id": 1})}
+                ok |= {si["supplier_id"] async for si in db.supplier_items.find({"product_id": pid, "status": "active"},
+                                                                               {"_id": 0, "supplier_id": 1})}
+                sets.append(ok)
+            sups = sorted(set.intersection(*sets)) if sets else []
+        value = round(sum((float(it["quantity"]) - float(it.get("realized_qty") or 0)) * float(it.get("est_price") or 0)
+                          for it in lines), 2)
+        row = {"pr_id": pr["id"], "number": pr.get("number", ""), "needed_by_date": pr.get("needed_by_date", ""),
+               "lines": len(lines), "est_value": value, "preferred": bool(pr.get("preferred_supplier_id")),
+               "skus": sorted({it.get("sku") or it["product_id"] for it in lines})}
+        for sid in sups:
+            g = groups.setdefault((ent, dest["warehouse"]["id"], sid), {
+                "entity_id": ent, "warehouse_id": dest["warehouse"]["id"], "site_id": dest.get("site_id", ""),
+                "site_name": dest.get("site_name") or dest["warehouse"].get("name", ""), "supplier_id": sid, "prs": []})
+            g["prs"].append(row)
+    out = []
+    names = {}
+    for (ent, wid, sid), g in groups.items():
+        if len(g["prs"]) < 2:
+            continue
+        if sid not in names:
+            names[sid] = ((await db.suppliers.find_one({"id": sid}, {"_id": 0, "name": 1})) or {}).get("name", sid)
+        dates = sorted(d for d in (p["needed_by_date"] for p in g["prs"]) if d)
+        shared_sku = len({s for p in g["prs"] for s in p["skus"]}) < sum(len(p["skus"]) for p in g["prs"])
+        g.update({"supplier_name": names[sid], "pr_count": len(g["prs"]),
+                  "est_value": round(sum(p["est_value"] for p in g["prs"]), 2),
+                  "needed_from": dates[0] if dates else "", "needed_to": dates[-1] if dates else "",
+                  "shared_sku": shared_sku,
+                  "score": len(g["prs"]) * 10 + (5 if shared_sku else 0) + sum(1 for p in g["prs"] if p["preferred"])})
+        out.append(g)
+    out.sort(key=lambda g: (-g["score"], -g["est_value"]))
+    return out
+
+
+async def realize_many_to_po(pr_refs: List[Dict[str, Any]], *, supplier_id: str, actor: Dict[str, Any],
+                             warehouse_id: str = "", ship_to_site_id: str = "",
+                             expected_delivery_date: str = "", notes: str = "") -> Dict[str, Any]:
+    """UAT 24 Okt (P15.1) — GABUNG beberapa PR (badan usaha, lokasi tujuan & supplier sama) menjadi SATU PO.
+
+    Baris SKU kembar dari PR berbeda dilebur menjadi SATU baris PO (KN-B15) ber-`pr_allocations[]`; tiap PR mencatat
+    realisasinya sebesar alokasinya dan menaut ke PO. Semua PR diklaim atomik (gagal satu → semua dilepas).
     """
     from routers.purchase_orders import _create_inbound_tasks_for_po
     from services import grade_service
@@ -357,22 +430,46 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     from services.supplier_service import assess_price_deviation
     from services.config_service import get_effective_settings
 
-    pr = await _load_pr(pr_id)
-    # PR dari Pesanan Khusus yang lahir sebelum SKU R&D ada → baris diisi SKU hasil R&D (bukan "non-katalog").
+    seen_ids: List[str] = []
+    for ref in pr_refs or []:
+        if ref.get("pr_id") and ref["pr_id"] not in seen_ids:
+            seen_ids.append(ref["pr_id"])
+    if not seen_ids:
+        raise SourcingError("Pilih minimal satu PR.")
+    want_lines = {r["pr_id"]: list(r.get("line_nos") or []) for r in pr_refs if r.get("pr_id")}
+    multi = len(seen_ids) > 1
     from services import special_order_link as _odl
-    if await _odl.repair_pr_lines(pr):
-        pr = await _load_pr(pr_id)
-    if pr.get("status") not in ("approved", "converted"):
-        raise SourcingError(
-            f"Hanya PR 'approved' yang bisa direalisasikan (status sekarang: {pr.get('status')}).")
-    lines = _open_lines(pr, "purchase", line_nos)
-    if not lines:
-        raise SourcingError("Tidak ada baris PEMBELIAN yang masih perlu direalisasikan "
-                            "(sudah terealisasi atau semua baris ber-mode makloon).")
-    non_catalog = [it for it in lines if not it.get("product_id")]
-    if non_catalog:
-        raise SourcingError("Ada baris tanpa produk katalog. Bila berasal dari Pesanan Khusus, selesaikan ACC spesifikasi "
-                            "di R&D agar SKU lahir; selain itu pilih produk untuk baris tersebut dulu.")
+    prs: List[Dict[str, Any]] = []
+    lines_by_pr: Dict[str, List[Dict[str, Any]]] = {}
+    for pid in seen_ids:
+        pr = await _load_pr(pid)
+        # PR dari Pesanan Khusus yang lahir sebelum SKU R&D ada → baris diisi SKU hasil R&D (bukan "non-katalog").
+        if await _odl.repair_pr_lines(pr):
+            pr = await _load_pr(pid)
+        tag = f"{pr.get('number')}: " if multi else ""
+        if pr.get("status") not in ("approved", "converted"):
+            raise SourcingError(
+                f"{tag}Hanya PR 'approved' yang bisa direalisasikan (status sekarang: {pr.get('status')}).")
+        plines = _open_lines(pr, "purchase", want_lines.get(pid))
+        if not plines:
+            raise SourcingError(f"{tag}Tidak ada baris PEMBELIAN yang masih perlu direalisasikan "
+                                "(sudah terealisasi atau semua baris ber-mode makloon).")
+        if [it for it in plines if not it.get("product_id")]:
+            raise SourcingError(f"{tag}Ada baris tanpa produk katalog. Bila berasal dari Pesanan Khusus, selesaikan ACC "
+                                "spesifikasi di R&D agar SKU lahir; selain itu pilih produk untuk baris tersebut dulu.")
+        prs.append(pr)
+        lines_by_pr[pid] = plines
+    pr = prs[0]
+    if multi:
+        ents = {p.get("entity_id") or DEFAULT_ENTITY_ID for p in prs}
+        if len(ents) > 1:
+            raise SourcingError("PR yang dipilih milik badan usaha berbeda — satu PO hanya untuk satu badan usaha.")
+        prefs = {p.get("preferred_supplier_id") for p in prs if p.get("preferred_supplier_id")}
+        if not supplier_id and len(prefs) == 1:
+            supplier_id = next(iter(prefs))
+        if supplier_id and prefs - {supplier_id}:
+            others = ", ".join(p["number"] for p in prs if p.get("preferred_supplier_id") not in ("", None, supplier_id))
+            raise SourcingError(f"PR {others} ditujukan ke supplier lain — gabung hanya PR untuk supplier yang sama.")
 
     supplier_id = supplier_id or pr.get("preferred_supplier_id", "")
     if not supplier_id:
@@ -394,22 +491,46 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     # UAT 24 Okt (P9) — tujuan PO = lokasi PR (atau lokasi gudang pilihan) → gudang penerimaan aktif lokasi itu.
     from fastapi import HTTPException as _HE
     from services import site_receiving_service as srs
-    try:
-        _dest = await srs.resolve_destination(entity_id, "" if warehouse_id else pr.get("ship_to_site_id", ""),
-                                              warehouse_id or pr.get("warehouse_id", ""))
-    except _HE as exc:
-        raise SourcingError(str(exc.detail) if exc.status_code != 400 or "wajib" not in str(exc.detail)
-                            else "Lokasi kirim wajib dipilih untuk realisasi ke PO.")
+    async def _dest_of(p: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            if ship_to_site_id or warehouse_id:
+                return await srs.resolve_destination(entity_id, ship_to_site_id if not warehouse_id else "", warehouse_id)
+            return await srs.resolve_destination(entity_id, p.get("ship_to_site_id", ""), p.get("warehouse_id", ""))
+        except _HE as exc:
+            raise SourcingError(str(exc.detail) if exc.status_code != 400 or "wajib" not in str(exc.detail)
+                                else "Lokasi kirim wajib dipilih untuk realisasi ke PO.")
+    _dest = await _dest_of(pr)
+    if multi and not (ship_to_site_id or warehouse_id):
+        for p in prs[1:]:
+            d2 = await _dest_of(p)
+            if d2["warehouse"]["id"] != _dest["warehouse"]["id"]:
+                raise SourcingError(f"PR {pr['number']} dikirim ke {_dest.get('site_name') or _dest['warehouse']['name']}, "
+                                    f"{p['number']} ke {d2.get('site_name') or d2['warehouse']['name']} — satu PO hanya "
+                                    "untuk satu lokasi tujuan.")
     warehouse = _dest["warehouse"]
     warehouse_id = warehouse["id"]
     raw_items: List[Dict[str, Any]] = []
     used_contracts: set = set()
     used_items: List[tuple] = []
-    for it in lines:
+    # P15.1 — baris dari banyak PR dilebur per produk (satu produk = satu baris PO, KN-B15), alokasi per PR dicatat.
+    merged: Dict[str, Dict[str, Any]] = {}
+    for p in prs:
+        for it in lines_by_pr[p["id"]]:
+            q = round(float(it["quantity"]) - float(it.get("realized_qty") or 0), 3)
+            m = merged.setdefault(it["product_id"], {"product_id": it["product_id"], "unit": it.get("unit") or "",
+                                                     "est_price": 0.0, "qty": 0.0, "allocations": [], "line_no": it.get("line_no")})
+            if (it.get("unit") or "") != m["unit"]:
+                raise SourcingError(f"{it.get('sku') or it['product_id']}: satuan di {p['number']} ({it.get('unit')}) beda dari "
+                                    f"PR lain ({m['unit']}) — samakan satuannya atau realisasikan terpisah.")
+            m["qty"] = round(m["qty"] + q, 3)
+            m["est_price"] = m["est_price"] or float(it.get("est_price") or 0)
+            m["allocations"].append({"pr_id": p["id"], "pr_number": p.get("number", ""), "line_no": it.get("line_no"),
+                                     "qty": q})
+    for it in merged.values():
         prod = await db.products.find_one({"id": it["product_id"]}, {"_id": 0})
         if not prod:
             raise SourcingError(f"Produk {it['product_id']} tidak ditemukan.")
-        qty = round(float(it["quantity"]) - float(it.get("realized_qty") or 0), 3)
+        qty = it["qty"]
         base_unit = prod.get("base_unit") or "meter"
         doc_unit = it.get("unit") or base_unit
         src = await resolve_line_sourcing(
@@ -437,6 +558,8 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
             "supplier_conv_factor": src.get("supplier_conv_factor", 0),
             "price_source": src["source"], "sourcing_explain": src["explain"],
             "pr_line_no": it.get("line_no"),
+            "pr_allocations": it["allocations"],
+            "pr_ids": sorted({a["pr_id"] for a in it["allocations"]}),
         }
         if src["expected_grade"]:
             row["expected_grade"] = src["expected_grade"]
@@ -474,6 +597,10 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     # P-0 — runut asal dokumen & Nama Sales SEBELUM PO dibentuk, lewat SATU definisi
     # bersama (`po_origin_from_pr`) yang juga dipakai jalur award RFQ & PO manual.
     _origin = await po_origin_from_pr(pr, source="pr")
+    so_union = sorted({s for p in prs for s in _so_ids_of_pr(p)})
+    if multi:
+        _origin.update({"source_so_ids": so_union, **await _sales_of_so_ids(so_union)})
+    numbers = [p["number"] for p in prs]
     po = {
         "id": new_id("po"),
         "po_number": await next_doc_number("purchase_orders", "po_number", "PO-", entity_id=entity_id),
@@ -492,7 +619,7 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         "ppn_mode": pricing["ppn_mode"], "is_pkp": pricing["is_pkp"],
         "ppn_amount": pricing["ppn_amount"], "grand_total": grand_total, "tax_mode": "",
         "expected_delivery_date": expected_delivery_date or pr.get("needed_by_date", ""),
-        "notes": notes or f"Dari {pr['number']}",
+        "notes": notes or f"Dari {', '.join(numbers)}",
         "status": "waiting_approval" if needs_approval else "pending",
         "approval_required": needs_approval, "required_approval_role": required_role,
         "approval_status": "pending" if needs_approval else "not_required",
@@ -500,16 +627,20 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         "approval_reason": approval_reason, "price_deviation": price_deviation,
         "amount_paid": 0.0, "returned_amount": 0.0, "outstanding": round(grand_total, 2),
         "payment_status": "unpaid", "payments": [],
-        "source_pr_id": pr_id, "source_pr_number": pr["number"],
-        "source_pr_line_nos": [it.get("line_no") for it in lines],
+        "source_pr_id": pr["id"], "source_pr_number": pr["number"],
+        "source_pr_line_nos": [it.get("line_no") for it in lines_by_pr[pr["id"]]],
+        # P15.1 — PO gabungan: SEMUA PR asal (`pr_id` tetap PR pertama demi pembaca lama).
+        "pr_ids": [p["id"] for p in prs], "pr_numbers": numbers,
+        "source_pr_lines": {p["id"]: [it.get("line_no") for it in lines_by_pr[p["id"]]] for p in prs},
+        "merged_from_prs": multi,
         # P-0 (prasyarat FASE P, 2026-08-20) — nama field KANONIK untuk rantai
         # PO → PR → SO. Sebelum ini hanya ada `source_pr_*` yang **tidak pernah
         # dibaca siapa pun**, sehingga papan PO tidak bisa menjawab "PO ini untuk
         # pesanan siapa" dan kolom Nama Sales akan selamanya kosong.
         # `source_so_ids` diturunkan dari PR (PR hasil "ulangi pesanan" menyimpan
         # `source="so_repeat"` + `source_ref_id`), bukan diketik.
-        "pr_id": pr_id, "pr_number": pr["number"], "source": "pr",
-        "source_so_ids": _so_ids_of_pr(pr),
+        "pr_id": pr["id"], "pr_number": pr["number"], "source": "pr",
+        "source_so_ids": so_union,
         # P-0 — kolom "Nama Sales" papan PO: DIRUNUT dari SO asal, tidak diketik.
         # Sengaja KOSONG untuk PO pembelian rutin (lihat `_sales_of_so_ids`).
         **_origin,
@@ -520,7 +651,7 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         "budget_dimension": "", "budget_key": "",
         "version": 1, "amendments": [],
         "timeline": (
-            [timeline_entry("created", f"PO dibuat dari {pr['number']}", actor_name,
+            [timeline_entry("created", f"PO dibuat dari {', '.join(numbers)}", actor_name,
                             f"{len(items)} item · {rupiah(total_amount)}")]
             + ([timeline_entry("submitted_for_approval", f"Menunggu persetujuan {required_role}",
                                actor_name,
@@ -548,16 +679,25 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     # KN-B03 — klaim ATOMIK PR sebelum PO nyata dibuat: dua realisasi bersamaan → tepat
     # satu PO (yang lain 409), bukan dua PO + tugas gudang ganda dengan PR mencatat satu.
     from services import atomic_claim as _saga
-    await _saga.claim("purchase_requisitions", pr_id, "pr_realize_to_po",
-                      precondition={"status": pr.get("status")}, actor=actor.get("name", ""))
+    claimed: List[tuple] = []
+    try:
+        for p in prs:
+            got = await _saga.claim("purchase_requisitions", p["id"], "pr_realize_to_po",
+                                    precondition={"status": p.get("status")}, actor=actor.get("name", ""))
+            claimed.append((p["id"], (got.get(_saga.LOCK) or {}).get("token", "")))
+    except Exception:
+        for cid, tok in claimed:   # P15.1 — gagal klaim satu PR → lepas semua yang sudah diklaim
+            await _saga.release("purchase_requisitions", cid, tok)
+        raise
     from services import line_scope as _lines            # FASE L
     await _lines.stamp_doc(db, po)
     await db.purchase_orders.insert_one(dict(po))
     # FASE G-4 — PO hasil realisasi PR menaut ke PR-nya (dua arah).
     from services import doc_refs_service as _refs
-    await _refs.safe_link(("purchase_order", po["id"]),
-                          ("purchase_requisition", pr["id"]), "parent",
-                          note="realisasi permintaan pembelian")
+    for p in prs:
+        await _refs.safe_link(("purchase_order", po["id"]),
+                              ("purchase_requisition", p["id"]), "parent",
+                              note="realisasi permintaan pembelian" + (" (PO gabungan)" if multi else ""))
     if not needs_approval:
         await _create_inbound_tasks_for_po(po)
     else:
@@ -569,18 +709,21 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
     for sid, price in used_items:
         await sis.mark_used(sid, price)
 
-    for it in lines:
-        _record(it, kind="purchase_order", ref_id=po["id"], ref_number=po["po_number"],
-                qty=float(it["quantity"]) - float(it.get("realized_qty") or 0), actor=actor_name)
-    pr.setdefault("timeline", []).append(timeline_entry(
-        "realized_po", f"{len(lines)} baris direalisasi ke {po['po_number']}", actor_name,
-        f"{rupiah(total_amount)}"))
-    updated = await _save_realization(pr, extra={
-        "po_id": pr.get("po_id") or po["id"],
-        "po_number": pr.get("po_number") or po["po_number"],
-        "converted_by": actor_name,
-    })
-    return {"pr": updated, "po": safe_doc(po)}
+    updated_all: List[Dict[str, Any]] = []
+    for p in prs:
+        plines = lines_by_pr[p["id"]]
+        for it in plines:
+            _record(it, kind="purchase_order", ref_id=po["id"], ref_number=po["po_number"],
+                    qty=float(it["quantity"]) - float(it.get("realized_qty") or 0), actor=actor_name)
+        p.setdefault("timeline", []).append(timeline_entry(
+            "realized_po", f"{len(plines)} baris direalisasi ke {po['po_number']}"
+            + (f" (gabungan {', '.join(numbers)})" if multi else ""), actor_name, f"{rupiah(total_amount)}"))
+        updated_all.append(await _save_realization(p, extra={
+            "po_id": p.get("po_id") or po["id"],
+            "po_number": p.get("po_number") or po["po_number"],
+            "converted_by": actor_name,
+        }))
+    return {"pr": updated_all[0], "prs": updated_all, "po": safe_doc(po)}
 
 
 # ═══════════════════════════════════════════════════════════════════════════

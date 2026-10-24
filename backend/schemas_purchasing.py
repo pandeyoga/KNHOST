@@ -586,6 +586,20 @@ class QCDecision(BaseModel):
 
 # ─── FASE E — Sourcing PR: realisasi ke PO / Order Makloon ───────────────────
 
+class PRRef(BaseModel):
+    pr_id: str
+    line_nos: List[int] = Field(default_factory=list)
+
+
+class PRRealizeManyIn(BaseModel):
+    """UAT 24 Okt (P15.1) — gabung beberapa PR (badan usaha, lokasi & supplier sama) menjadi SATU PO."""
+    pr_refs: List[PRRef] = Field(default_factory=list)
+    supplier_id: str = ""
+    ship_to_site_id: str = ""
+    expected_delivery_date: str = ""
+    notes: str = ""
+
+
 class PRRealizePoIn(BaseModel):
     """Realisasi baris PR ber-mode `purchase` menjadi SATU Purchase Order.
 

@@ -1,6 +1,7 @@
 import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
+import { MergeModal, MergeSuggestions, canMerge } from "./PrMergePanel";
 import axios, { API } from "../../services/apiClient";
 import {
   ClipboardList, Plus, ArrowLeft, Trash2, CheckCircle2, XCircle, Send,
@@ -42,10 +43,15 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
   const [products, setProducts] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const canApprove = can(currentUser?.permissions, "purchase_requisition", "approve");   // Sisir lanjutan gerbang peran (2026-10-21)
+  const canApprove = can(currentUser?.permissions, "purchase_requisition", "approve");
+  const canPo = can(currentUser?.permissions, "purchase_order", "create");   // P15 — gabung = buat PO (hak sama dgn konversi PR)   // Sisir lanjutan gerbang peran (2026-10-21)
 
   useEffect(() => { loadMasters(); }, []);             // eslint-disable-line
   const [lineFilter, setLineFilter] = useState("");   // FASE L
+  // UAT 24 Okt (P15) — gabung beberapa PR ke 1 PO.
+  const [picked, setPicked] = useState([]);
+  const [merge, setMerge] = useState(null);   // { supplier } saat modal gabung terbuka
+  const [mergeKey, setMergeKey] = useState(0);
   useEffect(() => { load(); }, [statusFilter, selectedEntity, lineFilter]); // eslint-disable-line
 
   async function loadMasters() {
@@ -162,6 +168,25 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
       <StatusTabs value={statusFilter} onChange={setStatusFilter} testId={(k) => `pr-tab-${k || "all"}`}
         tabs={tabs.map((t) => ({ ...t, count: t.key ? byStatus[t.key] : 0 }))} />
 
+      <MergeSuggestions entityId={selectedEntity} reloadKey={mergeKey} canAct={canPo}
+        onPick={(g) => { setPicked(g.prs.map((p) => p.pr_id)); setMerge({ supplier: g.supplier_id }); }} />
+      {picked.length > 0 && (
+        <div className="notice-bar" data-testid="pr-merge-bar">
+          <span>{picked.length} PR dipilih untuk digabung.</span>
+          <span className="flex gap-2">
+            <button type="button" className="link-button" onClick={() => setPicked([])}>Batal pilih</button>
+            <button type="button" className="primary-button !h-8" data-testid="pr-merge-open" disabled={picked.length < 2}
+              onClick={() => setMerge({ supplier: "" })}>Gabung ke 1 PO</button>
+          </span>
+        </div>
+      )}
+      {merge && (
+        <MergeModal prs={items.filter((p) => picked.includes(p.id))} suppliers={suppliers} presetSupplier={merge.supplier}
+          onClose={() => setMerge(null)}
+          onDone={(res) => { setMerge(null); setPicked([]); setMergeKey((k) => k + 1);
+            flash(`${res.po?.po_number} dibuat dari ${(res.prs || []).map((p) => p.number).join(", ")}.`); load(); }} />
+      )}
+
       {loading ? (
         <div data-testid="pr-loading" className="loading-state"><Loader2 size={22} className="spin" /><p>Memuat permintaan pembelian…</p></div>
       ) : shown.length === 0 ? (
@@ -174,11 +199,18 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
         <div className="table-container">
           <table className="data-table" style={{ minWidth: 860 }}>
             <thead>
-              <tr><th>Nomor</th><th>Barang / Gudang</th><th>Sumber</th><th className="text-right">Estimasi</th><th>Status</th><th className="text-right">Aksi</th></tr>
+              <tr><th className="w-8" aria-label="Pilih untuk digabung" /><th>Nomor</th><th>Barang / Gudang</th><th>Sumber</th><th className="text-right">Estimasi</th><th>Status</th><th className="text-right">Aksi</th></tr>
             </thead>
             <tbody>
               {shown.map((pr) => (
                 <tr key={pr.id} data-testid={`pr-row-${pr.id}`} className="cursor-pointer" onClick={() => openDetail(pr.id)}>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {canPo && canMerge(pr) && (
+                      <input type="checkbox" data-testid={`pr-pick-${pr.id}`} aria-label={`Pilih ${pr.number} untuk digabung`}
+                        checked={picked.includes(pr.id)}
+                        onChange={() => setPicked((cur) => (cur.includes(pr.id) ? cur.filter((x) => x !== pr.id) : [...cur, pr.id]))} />
+                    )}
+                  </td>
                   <td><span className="font-mono font-semibold">{pr.number}</span></td>
                   <td className="max-w-[420px]">
                     <p className="truncate font-medium">{pr.items?.[0]?.product_name || "-"}{pr.items?.length > 1 ? ` +${pr.items.length - 1}` : ""}</p>

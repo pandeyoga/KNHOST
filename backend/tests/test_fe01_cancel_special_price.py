@@ -25,9 +25,7 @@ def test_batal_item_od_sesudah_so_membatalkan_harga_khusus_baris_itu(H):  # noqa
                          headers=H["admin"]).status_code == 200
     assert requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False},
                          headers=H["admin"]).status_code == 200
-    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
-    assert cv.status_code == 200, cv.text
-    so = cv.json()["sales_order"]
+    so = fe._so(H, od["id"])
     req = requests.post(f"{BASE}/sales-orders/{so['id']}/request-special-price", headers=H["admin"],
                         json={"product_id": fe.PB["id"], "requested_price": 1234, "reason": "TEST nego item 2"})
     assert req.status_code == 200, req.text[:300]

@@ -622,6 +622,12 @@ DEFAULT_PERMISSIONS["manager"]["od_fulfillment"] = ["view", "choose_route", "ove
 DEFAULT_PERMISSIONS["md"]["od_fulfillment"] = ["view", "choose_route", "override_default", "realize"]
 for _role in ("sales", "sales_admin", "finance"):
     DEFAULT_PERMISSIONS[_role]["od_fulfillment"] = ["view"]
+# UAT 24 Okt (P2-K1/P2.5) — harga Pesanan Khusus: kunci & harga PIC (Admin Sales/Manajer/Admin), biaya kontrak terlihat
+# hanya oleh pemegang view_cost (tambah MD). Sales melihat harga final saja dan mengajukan nego lewat harga khusus SO.
+for _role, _acts in {"sales_admin": ["view_cost", "set_price", "lock"], "manager": ["view_cost", "set_price", "lock"],
+                     "admin": ["view_cost", "set_price", "lock"], "md": ["view_cost"]}.items():
+    if _role in DEFAULT_PERMISSIONS:
+        DEFAULT_PERMISSIONS[_role]["od_pricing"] = list(_acts)
 # L03 LN-034 — keputusan PIC atas uji ulang gagal & override eksplisit (terpisah dari ACC teknis/kontrak).
 DEFAULT_PERMISSIONS["admin"]["rnd"] = list(DEFAULT_PERMISSIONS["admin"]["rnd"]) + ["pic_decide", "override_fail"]
 # LN-015-T03 — ACC teknis per jenis uji; `assess`/`decide` umum tetap mencakup semua jenis.

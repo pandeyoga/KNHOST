@@ -425,10 +425,19 @@ class CustomerDecisionBody(BaseModel):
 class LockPriceBody(BaseModel):
     margin_pct: Optional[float] = None
     item_margins: Dict[str, float] = Field(default_factory=dict)   # FE-01 — margin per item OD multi-item
+    # UAT 24 Okt (P2.0) — harga PIC Special Order per SATUAN ITEM untuk item tanpa induk (`od_pricing.set_price`).
+    item_prices: Dict[str, float] = Field(default_factory=dict)
+    unit_price: Optional[float] = None
     note: str = ""
     site_id: str = ""             # UAT 24 Okt (P9) — lokasi kirim pengadaan; gudang penerimaan diturunkan server
     warehouse_id: str = ""
-    auto_po: bool = True
+    auto_po: bool = False         # UAT 24 Okt (P2.1) — kunci harga ≠ pengadaan; PO menyusul sesudah nego beres
+
+
+class PicPriceBody(BaseModel):
+    item_prices: Dict[str, float] = Field(default_factory=dict)
+    unit_price: Optional[float] = None
+    note: str = ""
 
 
 class ProcureBody(BaseModel):
@@ -607,42 +616,82 @@ async def customer_decision_evidence_file(order_id: str, file_id: str, request: 
 
 @router.get("/special-orders/{order_id}/pricing")
 async def pricing_preview(order_id: str, request: Request, margin_pct: Optional[float] = None,
-                          item_margins: str = "") -> Dict[str, Any]:
-    """`item_margins` (FE-01, OD multi-item) = JSON {item_id: margin%}; item tanpa entri ikut `margin_pct`."""
-    await require_permission(request, "order", "view")
+                          item_margins: str = "", item_prices: str = "", unit_price: Optional[float] = None) -> Dict[str, Any]:
+    """`item_margins` (FE-01, OD multi-item) = JSON {item_id: margin%}; item tanpa entri ikut `margin_pct`.
+    UAT 24 Okt (P2) — `item_prices` = JSON {item_id: harga PIC per satuan item}; `unit_price` untuk OD satu item.
+    Respons memuat `nego` (pengajuan harga nego atas SO tertaut) dan `can` (hak harga pengguna)."""
+    user = await require_permission(request, "order", "view")
     od = await _od_or_404(order_id, request)
     try:
         margins = json.loads(item_margins) if item_margins else {}
-        if not isinstance(margins, dict):
+        prices = json.loads(item_prices) if item_prices else {}
+        if not isinstance(margins, dict) or not isinstance(prices, dict):
             raise ValueError
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail="item_margins harus objek JSON {item_id: margin}.") from exc
+        raise HTTPException(status_code=400, detail="item_margins/item_prices harus objek JSON {item_id: angka}.") from exc
     try:
-        return await p2.pricing_preview(od, margin_pct, margins)
+        out = await p2.pricing_preview(od, margin_pct, margins, prices, unit_price)
     except p2.ODError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    from dependencies import has_permission
+    from services import od_pricing_service as odp
+    out["nego"] = await odp.nego_view(od)
+    out["can"] = {a: await has_permission(user, "od_pricing", a) for a in ("lock", "set_price", "view_cost")}
+    out["pricing_input"] = od.get("pricing_input") or {}
+    return out
+
+
+@router.post("/special-orders/{order_id}/pic-prices")
+async def save_pic_prices(order_id: str, payload: PicPriceBody, request: Request) -> Dict[str, Any]:
+    """UAT 24 Okt (P2.0) — PIC Special Order mengisi harga item TANPA induk (per satuan item) sebelum harga dikunci."""
+    user = await require_permission(request, "od_pricing", "set_price")
+    od = await _od_or_404(order_id, request)
+    if (od.get("pricing") or {}).get("locked"):
+        raise HTTPException(status_code=400, detail="Harga sudah dikunci — perubahan harga lewat nego (harga khusus SO).")
+    from services import od_pricing_service as odp
+    try:
+        prices = odp.clean_prices(payload.item_prices)
+    except odp.NegoError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    unit = float(payload.unit_price) if payload.unit_price else None
+    if unit is not None and unit <= 0:
+        raise HTTPException(status_code=400, detail="Harga PIC harus lebih dari 0.")
+    known = {i.get("id") for i in od.get("items") or []}
+    if set(prices) - known:
+        raise HTTPException(status_code=400, detail="Item harga PIC tidak dikenal pada Pesanan Khusus ini.")
+    doc = {"item_prices": prices, "unit_price": unit, "by": user.get("name", ""), "at": now_iso(),
+           "note": (payload.note or "").strip()}
+    await db.special_orders.update_one({"id": order_id}, {"$set": {"pricing_input": doc, "updated_at": now_iso()}})
+    await audit(user.get("name", ""), "special_order_pic_price_set", "special_order", order_id,
+                {"number": od.get("number"), "item_prices": prices, "unit_price": unit})
+    return {"pricing_input": doc, "pricing": await p2.pricing_preview(await _fresh(order_id))}
 
 
 @router.post("/special-orders/{order_id}/lock-price")
 async def lock_price(order_id: str, payload: LockPriceBody, request: Request) -> Dict[str, Any]:
-    """Fase 2 — harga final = kontrak supplier pemenang + margin → dikunci, OD Confirmed."""
-    user = await require_permission(request, "order", "update")
-    from role_registry import role_in
-    # FE-04 — aturan peran pengunci tetap; peran kustom turunan Sales/Admin Sales/Manager dikenali (sama dengan UI).
-    if not role_in(user.get("role"), ("sales", "sales_admin", "manager", "admin")):
-        raise HTTPException(status_code=403, detail="Hanya Sales / manager / admin yang boleh mengunci harga final.")
+    """Fase 2 — harga final dikunci, OD Confirmed. UAT 24 Okt (P2): dasar harga = Grade A induk / harga PIC (SO-12);
+    pengunci = pemegang `od_pricing.lock` (bawaan Admin Sales/Manajer/Admin — P2-K1); SO SELALU lahir saat kunci
+    (backorder) supaya nego memakai harga khusus SO; pengadaan menyusul (tidak otomatis kecuali `auto_po`)."""
+    await require_permission(request, "order", "update")
+    user = await require_permission(request, "od_pricing", "lock")
+    from dependencies import has_permission
+    may_set = await has_permission(user, "od_pricing", "set_price")
+    if (payload.item_prices or payload.unit_price) and not may_set:
+        raise HTTPException(status_code=403, detail="Permission ditolak: od_pricing.set_price (harga item tanpa induk diisi PIC Special Order).")
     od = await _od_or_404(order_id, request)
     await _site_to_warehouse(payload, od)
     try:
-        pricing = await p2.lock_price(od, payload.model_dump(), user)
+        pricing = await p2.lock_price(od, {**payload.model_dump(), "_may_set_price": may_set}, user)
     except p2.ODError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await audit(user.get("name", ""), "special_order_price_locked", "special_order", order_id,
                 {"number": od.get("number"), "final_unit_price": pricing["final_unit_price"], "margin_pct": pricing["margin_pct"],
                  "total": pricing.get("total"), "items": pricing.get("item_count")})
     # Fase 4 — SO hasil OD lahir otomatis (harga final) agar barang PO nanti langsung direservasi & Surat Jalan lahir.
-    # 23 Okt — item yang menunggu Manajer (SKU baru) = pengadaan belum lengkap → SO otomatis menunggu juga.
-    if payload.auto_po and pricing.get("procurement") and not pricing.get("procurement_error")             and not (pricing.get("procurement") or {}).get("pending"):
+    # UAT 24 Okt (P2.1) — SO lahir SAAT KUNCI (bukan menunggu pengadaan): sales langsung bisa mengajukan harga nego
+    # lewat mekanisme harga khusus SO sebelum PO terbit.
+    linked = await db.special_orders.find_one({"id": order_id}, {"_id": 0, "linked_sales_order_id": 1}) or {}
+    if not linked.get("linked_sales_order_id"):
         try:
             await convert_special_order_to_so(order_id, request)
         except HTTPException as exc:
@@ -751,14 +800,34 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
     return {"cancelled": done, "fulfillment": await ful.progress(await _fresh(order_id))}
 
 
+def _shared_keys(od: Dict[str, Any], n: Dict[str, Any]) -> list:
+    """UAT 24 Okt (P15.4) — item LAIN (masih aktif) yang memakai PO gabungan yang sama dengan item ini."""
+    po_ids = {d["id"] for d in n.get("active_docs") or [] if d.get("type") == "po"}
+    out = []
+    for key, st in (od.get("fulfillment") or {}).items():
+        if key == n["key"] or not isinstance(st, dict):
+            continue
+        if any(d.get("type") == "po" and d.get("id") in po_ids for d in st.get("docs") or []):
+            out.append(key)
+    return out
+
+
 async def _cancel_item_docs(od: Dict[str, Any], n: Dict[str, Any], reason: str, user: Dict[str, Any],
-                            request: Request) -> list:
+                            request: Request, *, cascade_shared: bool = True) -> list:
     """Batalkan PO/MKO aktif satu item lewat aturan modul asal; arsipkan dokumen & pensiunkan PR.
-    Dipakai batal dokumen pengadaan (LN-033 T08) dan batal item OD (FE-01 lanjutan)."""
+    Dipakai batal dokumen pengadaan (LN-033 T08) dan batal item OD (FE-01 lanjutan).
+    UAT 24 Okt (P15.4) — PO gabungan beberapa item: batal dokumen pengadaan ikut mengembalikan item lain di PO itu
+    ke "direncanakan" (realisasi ulang); batal SATU item OD ditolak selama PO-nya masih dipakai item lain."""
     from services.makloon_order_service import cancel_order as cancel_mko
     from routers.purchase_orders_extra import cancel_purchase_order
     order_id, item_key = od["id"], n["key"]
     live = n["active_docs"]
+    shared = _shared_keys(od, n)
+    if shared and not cascade_shared:
+        lines = ", ".join(str(i.get("line_no")) for i in od.get("items") or [] if i.get("id") in shared)
+        raise HTTPException(status_code=409, detail=(
+            f"PO item ini gabungan dengan item {lines or ', '.join(shared)} — batalkan dokumen pengadaan PO gabungan "
+            "di panel Pemenuhan dulu (item lain akan direalisasi ulang), lalu batalkan item ini."))
     done = []
     for d in live:
         if d["type"] == "po" and float(d.get("received_qty") or 0) > 0:
@@ -787,7 +856,16 @@ async def _cancel_item_docs(od: Dict[str, Any], n: Dict[str, Any], reason: str, 
         except ValueError:
             pass   # PR sudah terminal (converted) — jejak tetap ada
     await audit(user.get("name", ""), "special_order_fulfillment_cancel", "special_order", order_id,
-                {"item": item_key, "docs": done}, reason=reason)
+                {"item": item_key, "docs": done, "shared_items": shared}, reason=reason)
+    if shared:
+        from services import special_order_fulfillment as ful
+        fresh = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
+        for other in (await ful.progress(fresh))["items"]:
+            if other["key"] in shared:
+                # PO gabungan sudah batal → item lain tinggal diarsipkan (tanpa membatalkan dokumen dua kali).
+                await _cancel_item_docs(fresh, {**other, "active_docs": [d for d in other["active_docs"] if d.get("type") != "po"]},
+                                        f"{reason} (PO gabungan dengan item lain dibatalkan)", user, request, cascade_shared=False)
+                fresh = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
     return done
 
 
@@ -837,6 +915,8 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
     if cancellable and not await ful._can(user, "cancel"):  # noqa: SLF001
         raise HTTPException(status_code=403, detail="Item punya PO/MKO aktif — membatalkannya butuh izin "
                                                     "od_fulfillment.cancel.")
+    if need and _shared_keys(od, {**need, "active_docs": cancellable}):   # P15.4 — cek sebelum apa pun diubah
+        await _cancel_item_docs(od, {**need, "active_docs": cancellable}, payload.reason, user, request, cascade_shared=False)
     own_ids = [x for x in [item.get("rnd_sample_id")] + list(item.get("sample_ids") or []) if x]
     samples = await db.md_samples.find({"$or": [{"special_order_id": order_id, "special_order_item_id": item_id},
                                                 {"id": {"$in": own_ids}}],
@@ -853,7 +933,7 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
         except so_line.SoLineError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
     # PO/MKO aktif dibatalkan; PR yang belum jadi PO ikut dipensiunkan (tanpa ini PR yatim tetap hidup).
-    docs = await _cancel_item_docs(od, {**need, "active_docs": cancellable}, reason, user, request) \
+    docs = await _cancel_item_docs(od, {**need, "active_docs": cancellable}, reason, user, request, cascade_shared=False) \
         if (cancellable or ((need or {}).get("state") or {}).get("pr_id")) else []
     why = f"Item OD {od.get('number')} dibatalkan: {reason}"
     cancelled_samples = []
@@ -1125,6 +1205,10 @@ async def create_pr_from_special_order(
                             detail="PR hanya bisa dibuat untuk special order yang sudah confirmed")
     if so.get("request_types") and not (so.get("pricing") or {}).get("locked"):
         raise HTTPException(status_code=400, detail="Kunci harga final (ACC pelanggan + margin) dulu sebelum membuat PR ke supplier.")
+    from services import od_pricing_service as _odp
+    _nego = await _odp.nego_block(so)   # UAT 24 Okt (P2.4) — nego harga diputus dulu, baru pengadaan
+    if _nego:
+        raise HTTPException(status_code=400, detail=_nego)
 
     ci = so.get("custom_item", {})
     from services import special_order_link as _odl

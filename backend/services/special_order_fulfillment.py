@@ -201,6 +201,10 @@ async def _blockers(od: Dict[str, Any], n: Dict[str, Any]) -> List[str]:
                                                       if n["source_mode"] == "unmapped" else " — artikel bisa supplier atau makloon."))
     if n["effective_route"] == "purchase" and not n["supplier_id"]:
         out.append("Supplier pemenang belum diketahui untuk jalur supplier.")
+    from services import od_pricing_service as odp
+    nego = await odp.nego_block(od)   # UAT 24 Okt (P2.4) — nego harga SO tertaut diputus dulu, baru PO/MKO
+    if nego:
+        out.append(nego)
     return out
 
 
@@ -478,8 +482,10 @@ async def _po_eta(od: Dict[str, Any], n: Dict[str, Any]) -> tuple:
 
 
 async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
-    existing = await db.purchase_orders.find_one({"special_order_id": od["id"], "special_order_item_key": n["key"],
-                                                  "status": {"$nin": list(PO_DEAD)}}, {"_id": 0, "id": 1, "po_number": 1})
+    existing = await db.purchase_orders.find_one({"special_order_id": od["id"], "status": {"$nin": list(PO_DEAD)},
+                                                  "$or": [{"special_order_item_key": n["key"]},
+                                                          {"special_order_item_keys": n["key"]}]},   # P15.4 — PO gabungan
+                                                 {"_id": 0, "id": 1, "po_number": 1})
     if not existing:
         pr = await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0, "items": 1})
         # UAT 24 Okt (P15) — `_record` menulis kunci "type" (bukan "kind"): dulu PO lama hasil realisasi PR tak pernah ketemu
@@ -581,11 +587,124 @@ async def _has_active_doc(n: Dict[str, Any]) -> bool:
     return False
 
 
+async def _merge_groups(od: Dict[str, Any], may_release: bool) -> List[List[Dict[str, Any]]]:
+    """UAT 24 Okt (P15.4) — kelompok item SATU OD yang bisa digabung ke satu PO: jalur supplier, supplier sama,
+    belum punya dokumen aktif, tanpa penghalang, SKU berbeda (satu produk = satu baris PO, harga kontrak per item)."""
+    by_sup: Dict[str, List[Dict[str, Any]]] = {}
+    for n in await needs(od):
+        if n.get("effective_route") != "purchase" or not n.get("supplier_id") or not n.get("product_id"):
+            continue
+        if await _has_active_doc(n) or await _blockers(od, n):
+            continue
+        if needs_release(n) and not may_release:
+            continue
+        grp = by_sup.setdefault(n["supplier_id"], [])
+        if all(g["product_id"] != n["product_id"] for g in grp):
+            grp.append(n)
+    return [g for g in by_sup.values() if len(g) >= 2]
+
+
+async def _realize_group(od: Dict[str, Any], group: List[Dict[str, Any]], actor: Dict[str, Any],
+                         warehouse_id: str = "") -> List[Dict[str, Any]]:
+    """Realisasi beberapa item OD ber-supplier sama → PR per item (jejak per item tetap) → SATU PO gabungan
+    (`pr_sourcing_service.realize_many_to_po`). PO membawa `special_order_item_keys[]`; harga tiap baris = kontrak
+    pemenang item itu; Siap/QC tetap membaca `special_order_id` PO."""
+    tokens: Dict[str, str] = {}
+    try:
+        for n in group:
+            tokens[n["key"]] = await _claim(od["id"], n["key"], actor.get("name", ""))
+        from services import special_order_phase2 as p2
+        wh = warehouse_id or od.get("procurement_warehouse_id") or await p2.default_warehouse_id(od.get("entity_id", ""))
+        if not wh:
+            raise FulfillmentError("Tidak ada gudang aktif untuk badan usaha ini — pilih gudang tujuan.")
+        from services import warehouse_scope_service as whs
+        await whs.assert_usable(wh, od.get("entity_id", ""), action="menerima barang di sini", field_label="Gudang tujuan")
+        from services import purchase_requisition_service as pr_svc
+        prs: Dict[str, Dict[str, Any]] = {}
+        etas = []
+        for n in group:
+            if not n["route"]:
+                await _save(od["id"], n["key"], {"route": "purchase", "default_route": n["default_route"],
+                                                 "source_mode": n["source_mode"], "reason": "", "deviation": False,
+                                                 "version": 1, "decided_by": actor.get("name", ""),
+                                                 "decided_at": now_iso(), "status": "planned"})
+            await ensure_released(n, actor, od)
+            await _renew(od["id"], n["key"], tokens[n["key"]])
+            pr = await ensure_pr(od, n, "purchase", actor, wh)
+            if pr.get("status") in ("draft", "pending_approval"):
+                try:
+                    await pr_svc.approve_requisition(pr["id"], actor, notes=f"Otomatis — pemenuhan {_label(od)}")
+                except ValueError as exc:
+                    raise FulfillmentError(f"PR {pr.get('number')} belum bisa disetujui otomatis: {exc}") from exc
+            prs[n["key"]] = pr
+            eta, warn = await _po_eta(od, n)
+            await _save(od["id"], n["key"], {"eta_warning": warn})
+            if eta:
+                etas.append(eta)
+        from services import pr_sourcing_service as srcg
+        res = await srcg.realize_many_to_po(
+            [{"pr_id": prs[n["key"]]["id"]} for n in group], supplier_id=group[0]["supplier_id"], actor=actor,
+            warehouse_id=wh, expected_delivery_date=min(etas) if etas else "",
+            notes=f"Otomatis dari {_label(od)} · gabungan {len(group)} item · kontrak "
+                  + ", ".join(sorted({n['contract_number'] or '-' for n in group})))
+        po = res.get("po") or {}
+        for n in group:
+            await _fix_po_price(po["id"], n, od)
+        keys = [n["key"] for n in group]
+        await db.purchase_orders.update_one({"id": po["id"]}, {"$set": {
+            "special_order_id": od["id"], "special_order_number": od.get("number", ""),
+            "special_order_item_key": keys[0], "special_order_item_keys": keys,
+            "special_order_item_id": group[0]["item_id"], "special_order_item_ids": [n["item_id"] for n in group],
+            "exclusive_customer_id": od.get("customer_id", ""), "exclusive_customer_name": od.get("customer_name", "")}})
+        out = []
+        from services import rnd_revalidation_service as _rv
+        lines = ", ".join(str(n["line_no"]) for n in group)
+        for i, n in enumerate(group):
+            pr = prs[n["key"]]
+            doc = {"type": "po", "id": po["id"], "number": po.get("po_number", ""), "pr_id": pr["id"],
+                   "product_id": n["product_id"], "quantity": n["quantity"], "unit": n["unit"], "created_at": now_iso(),
+                   "merged_item_keys": keys, "revalidation_ref": await _rv.latest_for(n["product_id"], n["supplier_id"])}
+            await db.special_orders.update_one({"id": od["id"]}, {
+                "$set": {f"fulfillment.{n['key']}.status": "realized", f"fulfillment.{n['key']}.error": "",
+                         "procurement_warehouse_id": wh, "procurement_error": "", "procurement_note": "",
+                         "updated_at": now_iso(),
+                         **({"linked_po_id": po["id"], "linked_po_number": po.get("po_number", "")}
+                            if i == 0 and not od.get("linked_po_id") else {})},
+                "$push": {f"fulfillment.{n['key']}.docs": doc,
+                          "status_history": {"status": od.get("status"), "timestamp": now_iso(), "user": actor.get("email", ""),
+                                             "note": f"Item {n['line_no']}: PR {pr.get('number')} → PO {po.get('po_number', '')} "
+                                                     f"(gabungan item {lines}, supplier sama)"}}})
+            out.append({"key": n["key"], "pr_id": pr["id"], "pr_number": pr.get("number"), "doc": doc,
+                        "warehouse_id": wh, "merged": True})
+        if od.get("status") == "confirmed":
+            from services.special_order_service import transition_special_order_status
+            try:
+                await transition_special_order_status(od["id"], "in_production", actor.get("email", ""))
+            except ValueError as exc:
+                logger.warning("[fulfillment.realize_group] transisi status diabaikan: %s", exc)
+        return out
+    finally:
+        for k, t in tokens.items():
+            await _release(od["id"], k, t)
+
+
 async def realize_all(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: str = "") -> Dict[str, Any]:
     """Dipakai auto-procure (kunci harga / retry): realisasikan setiap item yang jalurnya sudah jelas."""
     out: Dict[str, Any] = {"items": [], "errors": [], "pending": []}
     may_release = await can_release(actor, od.get("entity_id", ""))
+    # UAT 24 Okt (P15.4) — item jalur supplier dengan supplier sama → SATU PO (bukan satu PO per item).
+    merged: set = set()
+    for group in await _merge_groups(od, may_release):
+        fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
+        try:
+            r = await _realize_group(fresh, group, actor, warehouse_id)
+            out["items"] += r
+            merged |= {n["key"] for n in group}
+        except Exception as exc:  # noqa: BLE001 — gagal gabung → item dicoba satu per satu (jalur lama)
+            logger.warning("[fulfillment.realize_all] gabung PO gagal, lanjut per item: %s", exc)
     for n in await needs(od):
+        if n["key"] in merged:
+            continue
         # 23 Okt — SKU baru yang belum dirilis & pelaku tidak berwenang merilis (mis. Admin Sales saat kunci harga):
         # bukan GALAT — memang menunggu Manajer (rilis = wewenang Manajer saat realisasi). Dulu dicoba lalu dicatat
         # "Gagal — bisa diulang" + pesan peran mentah di tiap item.

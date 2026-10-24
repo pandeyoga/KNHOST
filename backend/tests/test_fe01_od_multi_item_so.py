@@ -66,8 +66,10 @@ def cleanup():
 
 def _od(H, lines):
     """lines: [(product, qty, unit, cost)]. Sample R&D per item yang lahir saat approve diputus dengan
-    produk hasil + harga kontrak `cost` (cost 0 = diputus tanpa harga kontrak → item belum siap)."""
-    items = [{"source_type": "parent_product", "source_product_id": p["id"], "description": f"TEST FE01 {i + 1} {TAG}",
+    produk hasil + harga kontrak `cost` (cost 0 = diputus tanpa harga kontrak → item belum siap).
+    UAT 24 Okt (P2, SO-12) — item ber-INDUK kini berharga Grade A induk; uji mekanika multi-item ini memakai item
+    TANPA induk (referensi pelanggan) sehingga harga = usulan kontrak + margin yang dikonfirmasi PIC (admin)."""
+    items = [{"source_type": "customer_reference", "description": f"TEST FE01 {i + 1} {TAG}",
               "request_types": ["labdip"], "quantity": q, "unit": u} for i, (p, q, u, _c) in enumerate(lines)]
     r = requests.post(f"{BASE}/special-orders", json={"customer_id": CUST, "title": f"TEST_FE01_{TAG}", "entity_id": ENT,
                                                      "expected_delivery": "2026-12-31", "items": items,
@@ -127,10 +129,9 @@ def test_a100_b200_menjadi_dua_rincian_so(H):
     assert r.status_code == 200, r.text
     locked = DB.special_orders.find_one({"id": od_id}, {"_id": 0, "pricing": 1, "total_amount": 1})
     assert locked["pricing"]["locked"] and len(locked["pricing"]["items"]) == 2 and locked["total_amount"] == 9100.0
-    r = _convert(H, od_id)
-    assert r.status_code == 200, r.text
-    sos = _sos(od_id)
+    sos = _sos(od_id)                                  # UAT 24 Okt (P2.1) — SO lahir saat harga dikunci
     assert len(sos) == 1
+    assert _convert(H, od_id).status_code == 400       # sudah dikonversi saat kunci
     ln = _lines(sos[0])
     assert [(i["product_id"], i["quantity"], i["unit"], i["price"]) for i in ln] == \
         [(A["id"], 100, "yard", 13.0), (B["id"], 200, "yard", 39.0)]
@@ -153,7 +154,7 @@ def test_harga_satu_item_berubah(H):
     assert [i["margin_pct"] for i in pv["items"]] == [30.0, 50.0]
     assert pv["total"] == 1300.0 + 9000.0
     assert _lock(H, od_id, item_margins={item_ids[1]: 50}).status_code == 200
-    assert _convert(H, od_id).status_code == 200
+    assert _sos(od_id)
     assert [i["price"] for i in _lines(_sos(od_id)[0])] == [13.0, 45.0]
 
 
@@ -177,7 +178,6 @@ def test_satuan_berbeda_dan_produk_kg(H):
     assert m["unit"] == "meter" and m["base_unit"] == "yard" and m["price_per_unit"] != m["final_unit_price"]
     assert k["unit"] == "kg" and k["price_per_unit"] == 26.0 and k["total"] == 1300.0
     assert _lock(H, od_id).status_code == 200
-    assert _convert(H, od_id).status_code == 200
     ln = _lines(_sos(od_id)[0])
     assert [(i["unit"], i["price"]) for i in ln] == [("meter", m["price_per_unit"]), ("kg", 26.0)]
     assert round(sum(i["quantity"] * i["price"] for i in ln), 2) == pv["total"]
@@ -186,7 +186,6 @@ def test_satuan_berbeda_dan_produk_kg(H):
 def test_dua_item_sku_sama_kebutuhan_berbeda(H):
     od_id, item_ids = _od(H, [(A, 50, "yard", 10), (A, 70, "yard", 10)])
     assert _lock(H, od_id, item_margins={item_ids[1]: 40}).status_code == 200
-    assert _convert(H, od_id).status_code == 200
     ln = _lines(_sos(od_id)[0])
     assert [(i["product_id"], i["quantity"], i["price"], i.get("special_order_item_id")) for i in ln] == \
         [(A["id"], 50, 13.0, item_ids[0]), (A["id"], 70, 14.0, item_ids[1])]
@@ -194,9 +193,11 @@ def test_dua_item_sku_sama_kebutuhan_berbeda(H):
 
 def test_gagal_di_tengah_konversi_lalu_retry_tanpa_so_ganda(H):
     od_id, _ = _od(H, [(A, 100, "yard", 10), (B, 200, "yard", 30)])
-    assert _lock(H, od_id).status_code == 200
     DB.products.update_one({"id": B["id"]}, {"$set": {"status": "inactive"}})   # gangguan: produk item 2 nonaktif
     try:
+        # UAT 24 Okt (P2.1) — SO lahir saat kunci; gagal → harga tetap terkunci, galat tercatat, tanpa SO setengah jadi.
+        assert _lock(H, od_id).status_code == 200
+        assert "SO otomatis gagal" in (DB.special_orders.find_one({"id": od_id}, {"shipping_error": 1}).get("shipping_error") or "")
         r = _convert(H, od_id)
         assert r.status_code >= 400, r.text
         assert _sos(od_id) == []
@@ -215,6 +216,5 @@ def test_od_satu_item_tetap_jalur_lama(H):
     pv = _pricing(H, od_id, margin_pct=30)
     assert pv.get("mode") != "items" and pv["total"] == 1300.0
     assert _lock(H, od_id).status_code == 200
-    assert _convert(H, od_id).status_code == 200
     ln = _lines(_sos(od_id)[0])
     assert [(i["product_id"], i["quantity"], i["price"]) for i in ln] == [(A["id"], 100, 13.0)]

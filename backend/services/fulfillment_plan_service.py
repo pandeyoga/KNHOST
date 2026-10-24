@@ -39,13 +39,19 @@ async def _rolls_for(product_id: str, entity_id: str, limit: int = 60, usable_fo
     rows = await db.inventory_rolls.find(
         {"product_id": product_id, "owner_entity_id": entity_id, "status": "available",
          "earmarked_for": {"$in": [None, ""]}, "length_remaining": {"$gt": EPS}},
-        {"_id": 0, "id": 1, "roll_no": 1, "lot": 1, "grade": 1, "length_remaining": 1, "warehouse_id": 1, "unit": 1,
-         "received_date": 1, "created_at": 1},
+        {"_id": 0, "id": 1, "roll_no": 1, "lot": 1, "grade": 1, "length_remaining": 1, "length_reserved": 1,
+         "warehouse_id": 1, "unit": 1, "received_date": 1, "created_at": 1},
     ).sort([("received_date", 1), ("created_at", 1)]).to_list(limit)
     out = []
     for r in rows:
         w = whs.get(r.get("warehouse_id")) or {}
-        row = {**r, "length_remaining": round(float(r.get("length_remaining") or 0), 2),
+        # UAT 24 Okt — roll yang sebagian panjangnya sudah dicadangkan pesanan lain: yang bisa dipilih = panjang BEBAS
+        # (dulu sisa roll penuh → Admin Sales memilih qty yang lalu ditolak "melebihi panjang bebas").
+        on_roll = float(r.get("length_remaining") or 0)
+        free = round(on_roll - float(r.pop("length_reserved", 0) or 0), 2)
+        if free <= EPS:
+            continue
+        row = {**r, "length_remaining": free, "length_on_roll": round(on_roll, 2),
                "warehouse_name": w.get("name", r.get("warehouse_id")),
                "site_name": sites.get(w.get("site_id"), "")}
         if usable_for:

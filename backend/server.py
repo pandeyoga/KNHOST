@@ -137,6 +137,9 @@ app.add_middleware(IdempotencyMiddleware)
 # L01 LN-012 — grade/LOT/asal disaring per peran di satu choke point (layar, API, ekspor JSON).
 from services.field_visibility import FieldVisibilityMiddleware  # noqa: E402
 app.add_middleware(FieldVisibilityMiddleware)
+# UAT 24 Okt (P2.5) — biaya kontrak/margin/supplier Pesanan Khusus disaring untuk peran tanpa od_pricing.view_cost.
+from services.od_pricing_service import ODCostVisibilityMiddleware  # noqa: E402
+app.add_middleware(ODCostVisibilityMiddleware)
 
 # T-02 (audit 2026-09) — CORS gagal BERISIK, bukan diam-diam permisif: tanpa
 # CORS_ORIGINS backend menolak start; '*' dilarang bersama allow_credentials=True.

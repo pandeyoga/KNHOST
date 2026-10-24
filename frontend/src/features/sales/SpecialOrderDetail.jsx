@@ -53,7 +53,9 @@ export default function SpecialOrderDetail({
   const priceLocked = !!(order.pricing || {}).locked;
   // OD terstruktur (Fase 1+): SKU lahir dari R&D, PR/SO hanya setelah harga final dikunci.
   const canCreateSku = canTransition && skuStages.includes(order.status) && !order.linked_product_id && !structured;
-  const canCreatePr = ["confirmed", "in_production"].includes(order.status) && !order.linked_pr_id && (!structured || priceLocked);
+  // UAT 24 Okt (P2.1) — pengadaan = hak pembelian; OD multi-item (jenis uji per item) juga menunggu harga terkunci.
+  const canCreatePr = ["confirmed", "in_production"].includes(order.status) && !order.linked_pr_id
+    && (!(structured || (order.items || []).length > 0) || priceLocked) && can(perms, "purchase_requisition", "create");
   const odProductId = order.linked_product_id || (order.pricing || {}).product_id;
   const canConvert = canTransition && !!odProductId && !order.linked_sales_order_id
     && (structured ? ["in_production", "ready"].includes(order.status) && priceLocked : skuStages.includes(order.status));

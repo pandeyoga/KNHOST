@@ -100,9 +100,21 @@ async def _alloc_sig(order_id: str, item: Dict[str, Any]) -> str:
     return f"{pid}|{round(float(item.get('quantity') or 0), 4)}|{item.get('unit') or ''}|{','.join(rolls)}"
 
 
+def _line_index(items: List[Dict[str, Any]], product_id: str, od_item_id: str = "",
+                index_hint: Optional[int] = None) -> Optional[int]:
+    """UAT 24 Okt (P2.2) — baris SO yang dituju: item Pesanan Khusus (`special_order_item_id`) bila ada — dua item OD
+    ber-SKU sama tidak lagi tertukar — lalu petunjuk indeks (bila produknya cocok), baru produk pertama."""
+    if od_item_id:
+        return next((i for i, it in enumerate(items) if it.get("special_order_item_id") == od_item_id
+                     and (not product_id or it.get("product_id") == product_id)), None)
+    if index_hint is not None and 0 <= index_hint < len(items) and items[index_hint].get("product_id") == product_id:
+        return index_hint
+    return next((i for i, it in enumerate(items) if it.get("product_id") == product_id), None)
+
+
 async def _special_price_target(order_id: str, items: List[Dict[str, Any]], entry: Dict[str, Any]) -> int:
     """Baris yang dituju approval harga — dicari lewat produk (bukan posisi array) + versi alokasi."""
-    idx = next((i for i, it in enumerate(items) if it.get("product_id") == entry.get("product_id")), None)
+    idx = _line_index(items, entry.get("product_id"), entry.get("special_order_item_id") or "", entry.get("item_index"))
     if idx is None:
         raise HTTPException(status_code=409, detail="Produk pengajuan harga sudah tidak ada di pesanan — tolak lalu ajukan ulang.")
     if entry.get("alloc_sig") and entry["alloc_sig"] != await _alloc_sig(order_id, items[idx]):
@@ -124,7 +136,10 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
         raise HTTPException(status_code=400, detail="Alasan WAJIB diisi untuk pengajuan harga khusus.")
     items = order.get("items", [])
     idx = payload.item_index
-    if idx is None and payload.product_id:
+    sid = (payload.special_order_item_id or "").strip()
+    if sid:
+        idx = _line_index(items, payload.product_id or "", sid)
+    elif idx is None and payload.product_id:
         idx = next((i for i, it in enumerate(items) if it.get("product_id") == payload.product_id), None)
     if idx is None or idx < 0 or idx >= len(items):
         raise HTTPException(status_code=400, detail="Item tidak ditemukan pada pesanan.")
@@ -134,6 +149,12 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
     req_price = float(payload.requested_price or 0)
     if req_price <= 0:
         raise HTTPException(status_code=400, detail="Harga khusus harus lebih dari 0.")
+    # UAT 24 Okt (P2.2, P2-K3) — nego baris pesanan khusus: lantai = harga kontrak supplier.
+    from services import od_pricing_service as odp
+    try:
+        await odp.assert_nego_allowed(order, item, req_price, actor)
+    except odp.NegoError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     pra_id = new_id("pra")
     pra = {
         "id": pra_id, "customer_id": order.get("customer_id"), "customer_name": order.get("customer_name"),
@@ -142,6 +163,7 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
         "min_quantity": float(payload.min_quantity or 0), "valid_until": "",
         "reason": payload.reason.strip(), "entity_id": order.get("entity_id", DEFAULT_ENTITY_ID),
         "status": "pending", "scope": "order", "so_id": order_id, "so_item_index": idx,  # P16d — lingkup pesanan
+        "special_order_item_id": item.get("special_order_item_id", ""),
         "attachments": [], "requested_by": actor["name"], "requested_by_id": actor["id"],
         "created_at": now_iso(), "updated_at": now_iso(),
     }
@@ -170,7 +192,9 @@ async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str
             "code": "SO_LOCKED",
             "message": "Harga khusus hanya bisa diajukan sebelum pesanan disetujui (tahap Dipesan)."})
     pid = pra.get("product_id")
-    item = next((it for it in order.get("items", []) if it.get("product_id") == pid), None)
+    sid = pra.get("special_order_item_id") or ""
+    _idx = _line_index(order.get("items", []), pid, sid, pra.get("so_item_index"))
+    item = order["items"][_idx] if _idx is not None else None
     if not item:
         raise HTTPException(status_code=400, detail="Produk pengajuan tidak ada di pesanan ini.")
     claimed = await _saga.claim("sales_orders", order_id, "so_special_price_request", actor=actor.get("name", ""),
@@ -182,11 +206,13 @@ async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str
             requested_by=actor.get("name", ""), requested_by_id=actor.get("id", ""), ref_id=pra["id"],
             product_id=pid, product_name=item.get("product_name"),
             normal_price=float(item.get("price", 0) or 0), requested_price=float(pra.get("requested_price") or 0),
-            alloc_sig=await _alloc_sig(order_id, item))
+            alloc_sig=await _alloc_sig(order_id, item), item_index=_idx,
+            special_order_item_id=item.get("special_order_item_id", ""))
         entry["evidence"] = [a for a in (pra.get("attachments") or []) if not a.get("is_deleted")]
         pa = list(order.get("pending_approvals") or [])
         stale = [p for p in pa if p.get("type") == "special_price" and p.get("status") == "pending"
-                 and p.get("product_id") == pid]
+                 and p.get("product_id") == pid
+                 and (p.get("special_order_item_id") or "") == (item.get("special_order_item_id") or "")]
         for p in stale:
             p.update({"status": "superseded", "superseded_by": entry["id"], "decided_at": now_iso()})
         if stale:
@@ -301,12 +327,16 @@ async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, p
         if new_status == "approved":
             items = order.get("items", [])
             idx = target_idx
+            old_price = float(items[idx].get("price") or 0)
             items[idx]["price"] = float(entry.get("requested_price") or items[idx].get("price"))
             items[idx]["special_price_id"] = entry.get("ref_id")
             items[idx]["price_source"] = "special_approval"
             await db.sales_orders.update_one({"id": order_id}, {"$set": {"items": items}})
             order["items"] = items
             await _recompute_so_totals(order)
+            # UAT 24 Okt (P2.3) — baris pesanan khusus: harga nego ACC turun ke rincian harga OD & SKU eksklusif.
+            from services import od_pricing_service as odp
+            await odp.apply_nego(order, idx, entry, actor, old_price)
     elif atype == "kredit":
         ref = entry.get("ref_id")
         if ref:
@@ -326,7 +356,8 @@ async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, p
             await set_order_rolls_status(order_id, "committed")
     await audit(actor["name"], f"so_approval_{new_status}", "sales_order", order_id,
                 {"type": atype, "approval_id": approval_id, "notes": (payload.notes or "").strip()})
-    if new_status == "approved":
+    if new_status == "approved" and not order.get("source_special_order_id"):
+        # UAT 24 Okt (P2.3) — SO pesanan khusus TIDAK dilepas otomatis: barangnya belum ada (menunggu PO).
         # Trial 22 Okt (E8) — pesanan yang sudah diperiksa Admin Sales dilepas ke gudang otomatis sesudah ACC terakhir.
         # Dipanggil SESUDAH klaim keputusan dilepas pemanggil? Tidak — klaim milik entri approval ini; konfirmasi
         # memakai CAS status sendiri, jadi aman dijalankan di sini.

@@ -16,7 +16,7 @@ ALWAYS_NAV = ["hr-my-profile"]
 MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "penjualan", "group": "Penjualan", "label": "Pesanan Penjualan",
      "description": "Pesanan (SO), koreksi, retur, pesanan khusus, dan permintaan internal antar badan usaha.",
-     "resources": ["order", "sales_return", "internal_request", "od_fulfillment"],
+     "resources": ["order", "sales_return", "internal_request", "od_fulfillment", "od_pricing"],
      "nav": ["penjualan", "sales", "sales-orders", "orders", "amendments", "returns", "returns-hub",
              "return-policies", "special-orders", "internal-requests"]},
     {"id": "sample_order", "group": "Penjualan", "label": "Pesanan Sample",
@@ -252,11 +252,14 @@ RESOURCE_LABEL = {
     "field_visibility": "Visibilitas Atribut Stok", "sales_pov": "Profil POV Sales",
     "grade_master": "Master Grade Mutu",
     "od_fulfillment": "Pemenuhan Pesanan Khusus (supplier/makloon)",
+    "od_pricing": "Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak)",
     "data_export": "Pusat Export Data",
 }
 
 ACTION_LABEL = {
     "view": "Lihat", "create": "Buat", "update": "Ubah", "delete": "Hapus", "approve": "Setujui", "reject": "Tolak",
+    "lock": "Kunci harga final", "set_price": "Isi harga (PIC Special Order)",
+    "view_cost": "Lihat biaya kontrak, margin & supplier",
     "confirm": "Konfirmasi", "cancel": "Batalkan", "print": "Cetak", "export": "Ekspor", "import": "Impor",
     "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_payment": "Setujui bayar", "cutting_config": "Atur kemampuan cutting lokasi", "cutting_receive": "Terima hasil potong (Admin Cutting)",
     "assess": "Nilai", "assign": "Tugaskan", "award": "Tetapkan pemenang", "backdate": "Tanggal mundur", "claim": "Klaim",

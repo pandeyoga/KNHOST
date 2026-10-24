@@ -67,7 +67,9 @@ def test_seed_so_product_pr(dbc, scenario_ids):
         }],
         "total_est_amount": 1000000,
         "entity_id": "ent_ksc",
-        "preferred_supplier_id": "sup_5ffaf80582d0",
+        # UAT 24 Okt — supplier nyata di DB uji (dulu id tetap yang tidak ada di semua DB uji).
+        "preferred_supplier_id": (dbc.suppliers.find_one({"group_entity_id": {"$in": [None, ""]}, "status": {"$ne": "inactive"}},
+                                                         {"_id": 0, "id": 1}) or {}).get("id", ""),
         "created_at": _now(), "updated_at": _now(),
     })
     scenario_ids.update({"so_id": so_id, "pr_id": pr_id, "prod_id": prod_id, "spec_id": spec_id})
@@ -84,10 +86,13 @@ def test_get_pr_repairs_lines(client, scenario_ids):
     assert it.get("sku")
 
 
-def test_convert_pr_to_po(client, scenario_ids):
+def test_convert_pr_to_po(client, dbc, scenario_ids):
     pr_id = scenario_ids["pr_id"]
+    sup = dbc.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0, "preferred_supplier_id": 1})["preferred_supplier_id"]
+    # UAT 24 Okt (P9) — gudang NONAKTIF (WH-BDG) tidak lagi boleh menerima barang → pakai gudang penerimaan aktif.
+    wh = dbc.warehouses.find_one({"active": {"$ne": False}, "roles": {"$in": ["central_inbound", "transit"]}}, {"_id": 0, "id": 1})
     r = client.post(f"{BASE}/purchase-requisitions/{pr_id}/convert-to-po",
-                    json={"supplier_id": "sup_5ffaf80582d0", "warehouse_id": "wh_bandung"})
+                    json={"supplier_id": sup, "warehouse_id": wh["id"]})
     assert r.status_code == 200, r.text
     result = r.json()
     assert result.get("po"), result

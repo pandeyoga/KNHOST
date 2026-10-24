@@ -13,6 +13,7 @@ from schemas import (
     PurchaseRequisitionCreate, PurchaseRequisitionDecision, PurchaseRequisitionConvert,
     PRRealizePoIn, PRRealizeMakloonIn, PRLineQtyIn,
 )
+from schemas_purchasing import PRRealizeManyIn   # UAT 24 Okt (P15.1)
 from services import purchase_requisition_service as svc
 from services import pr_sourcing_service as src
 from services import approval_matrix_service as amx  # PS-20 — matriks persetujuan mengikat
@@ -60,6 +61,38 @@ async def reorder_suggestions(request: Request, entity_id: Optional[str] = Query
     await require_permission(request, "purchase_requisition", "view")
     ctx = await entity_ctx(request)
     return await svc.reorder_suggestions(entity_id=entity_id, ctx=ctx)
+
+
+@router.get("/purchase-requisitions/merge-suggestions")
+async def merge_suggestions(request: Request, entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """UAT 24 Okt (P15.2) — saran gabung: kelompok ≥ 2 PR approved ke supplier & lokasi tujuan yang sama."""
+    actor = await require_permission(request, "purchase_requisition", "view")
+    ctx = await entity_ctx(request)
+    q = resolve_list_scope("purchase_requisitions", {}, ctx, entity_id)
+    q = line_scope.narrow(q, actor, "", field=line_scope.LINES_FIELD)
+    return {"groups": await src.merge_suggestions(q)}
+
+
+@router.post("/purchase-requisitions/realize-many")
+async def realize_many(payload: PRRealizeManyIn, request: Request) -> Dict[str, Any]:
+    """UAT 24 Okt (P15.1) — gabung beberapa PR menjadi SATU PO (SKU kembar = satu baris beralokasi per PR)."""
+    await require_permission(request, "purchase_order", "create")
+    actor = await current_user(request)
+    ctx = await entity_ctx(request)
+    for ref in payload.pr_refs:
+        doc = await db.purchase_requisitions.find_one({"id": ref.pr_id}, {"_id": 0})
+        if not doc:
+            raise HTTPException(status_code=404, detail="PR tidak ditemukan.")
+        assert_entity_access(doc, "purchase_requisitions", ctx)
+    try:
+        result = await src.realize_many_to_po([r.model_dump() for r in payload.pr_refs], supplier_id=payload.supplier_id,
+                                              actor=actor, ship_to_site_id=payload.ship_to_site_id,
+                                              expected_delivery_date=payload.expected_delivery_date, notes=payload.notes)
+    except src.SourcingError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(actor.get("name", ""), "pr_realized_po_merged", "purchase_order", result["po"]["id"],
+                {"po_number": result["po"]["po_number"], "prs": [p.get("number") for p in result["prs"]]})
+    return result
 
 
 @router.get("/purchase-requisitions/eligible-suppliers")

@@ -28,9 +28,7 @@ def _so_paid(H):  # noqa: F811
                          headers=H["admin"]).status_code == 200
     assert requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False},
                          headers=H["admin"]).status_code == 200
-    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
-    assert cv.status_code == 200, cv.text
-    so = cv.json()["sales_order"]
+    so = fe._so(H, od["id"])
     DB.sales_orders.update_one({"id": so["id"]}, {"$set": {"paid_total": so["grand_total"], "payment_status": "paid"}})
     return od, items, DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
 
@@ -94,7 +92,7 @@ def test_batal_item_so_terbit_tanpa_pembayaran_tidak_membuat_nota(H):  # noqa: F
     fe._decide(i2, fe.PB, 30)
     requests.post(f"{BASE}/special-orders/{od['id']}/customer-decision", json={"decision": "acc"}, headers=H["admin"])
     requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False}, headers=H["admin"])
-    so = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"]).json()["sales_order"]
+    so = fe._so(H, od["id"])
     r = fe._cancel(H, od["id"], i2["id"])
     assert r.status_code == 200, r.text
     assert r.json().get("credit_note") is None                                   # belum terbit → cukup hitung ulang SO

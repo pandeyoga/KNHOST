@@ -65,8 +65,11 @@ RESUBMITTABLE_TYPES = {"special_price", "kredit"}
 
 
 def _resubmit_key(p: Dict[str, Any]) -> tuple:
-    """Kunci "pengajuan yang sama": harga khusus per produk, kredit per tipe."""
-    return (p.get("type"), p.get("product_id") if p.get("type") == "special_price" else None)
+    """Kunci "pengajuan yang sama": harga khusus per produk (dan per item Pesanan Khusus — UAT 24 Okt P2.2: dua item
+    OD ber-SKU sama adalah dua baris nego berbeda), kredit per tipe."""
+    if p.get("type") != "special_price":
+        return (p.get("type"), None, None)
+    return (p.get("type"), p.get("product_id"), p.get("special_order_item_id") or "")
 
 
 def _mark_superseded(p: Dict[str, Any], by_id: str) -> None:

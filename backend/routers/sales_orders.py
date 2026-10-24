@@ -168,8 +168,12 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # FASE F (PS-12) — produk yang belum dirilis ke produksi tidak boleh dijual.
     # Produk lama tanpa `lifecycle` dianggap `produksi` → transaksi existing aman.
     from services import rnd_gate
-    await rnd_gate.assert_orderable(list(products.values()), entity_id=payload.entity_id or "",
-                                    where="Pesanan Penjualan")
+    # UAT 24 Okt (P2.1) — SO pesanan khusus lahir saat harga dikunci (sebelum PO): SKU eksklusif OD itu sendiri
+    # sudah lolos R&D (sample & spesifikasi ACC) dan dirilis ke produksi saat pengadaan direalisasi.
+    _od_own = (getattr(payload, "source_special_order_id", "") or "").strip()
+    await rnd_gate.assert_orderable([{**p, "lifecycle": "produksi"} if _od_own and p.get("special_order_id") == _od_own else p
+                                     for p in products.values()],   # hanya tahap R&D yang dikecualikan; nonaktif tetap ditolak
+                                    entity_id=payload.entity_id or "", where="Pesanan Penjualan")
     fixed_factors = await load_fixed_factors()   # Sub-fase 1.13 — peta faktor UOM (FIXED)
     # REVISI SAMPEL — jenis pesanan diputus di POS sebelum checkout. Sample & roll biasa
     # TIDAK boleh bercampur dalam satu dokumen: nomor, penyetuju, dan meja kerjanya berbeda.

@@ -15,6 +15,18 @@ import requests  # noqa: E402
 import test_l03_ln033_fulfillment as m  # noqa: E402
 
 BASE, DB = m.BASE, m.DB
+
+
+def _so(H, od_id):
+    """UAT 24 Okt (P2.1) — SO pesanan khusus lahir SAAT harga dikunci; konversi manual hanya bila belum ada."""
+    so_id = (DB.special_orders.find_one({"id": od_id}, {"linked_sales_order_id": 1}) or {}).get("linked_sales_order_id")
+    if not so_id:
+        cv = requests.post(f"{BASE}/special-orders/{od_id}/convert-to-so", json={}, headers=H["admin"])
+        assert cv.status_code == 200, cv.text
+        return cv.json()["sales_order"]
+    r = requests.get(f"{BASE}/sales-orders/{so_id}", headers=H["admin"])
+    assert r.status_code == 200, r.text
+    return r.json()
 ENT, CUST = "ent_ksc", "cust_toko_kain"
 TAG = uuid.uuid4().hex[:6]
 SUP = DB.suppliers.find_one({}, {"_id": 0, "id": 1, "name": 1})
@@ -105,9 +117,7 @@ def test_batal_item_sebelum_acc_sampai_so(H):
     assert pv["ready"] is True and [ln["item_id"] for ln in pv["items"]] == [i1["id"], i2["id"]], pv
     lk = requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False}, headers=H["admin"])
     assert lk.status_code == 200, lk.text
-    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
-    assert cv.status_code == 200, cv.text
-    so = cv.json()["sales_order"]
+    so = _so(H, od["id"])
     assert sorted(i["product_id"] for i in so["items"]) == sorted([PA["id"], PB["id"]])
     assert PC["id"] not in [i["product_id"] for i in so["items"]]
     # keputusan owner (lanjutan): batal item SESUDAH SO boleh → baris SO keluar, reservasi lepas, total turun, MD diberi tahu
@@ -148,9 +158,8 @@ def test_batal_item_sesudah_kunci_harga(H):
         assert lines[k]["total"] == before[k]["total"] and lines[k]["price_per_unit"] == before[k]["price_per_unit"]
     total = round(before[i1["id"]]["total"] + before[i3["id"]]["total"], 2)
     assert pr["pricing"]["total"] == total and pr["total_amount"] == total and pr["pricing"]["item_count"] == 2
-    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
-    assert cv.status_code == 200, cv.text
-    assert sorted(i["product_id"] for i in cv.json()["sales_order"]["items"]) == sorted([PA["id"], PC["id"]])
+    so = _so(H, od["id"])
+    assert sorted(i["product_id"] for i in so["items"] if i.get("status") != "cancelled") == sorted([PA["id"], PC["id"]])
 
 
 # ─── Sesudah SO terbit (ada pembayaran): ditolak, tidak ada yang berubah ─────────────────
@@ -163,9 +172,7 @@ def test_batal_item_sesudah_so_terbit_jadi_nota_kredit(H):
     _decide(i2, PB, 30)
     assert requests.post(f"{BASE}/special-orders/{od['id']}/customer-decision", json={"decision": "acc"}, headers=H["admin"]).status_code == 200
     assert requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False}, headers=H["admin"]).status_code == 200
-    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
-    assert cv.status_code == 200, cv.text
-    so_id = cv.json()["sales_order"]["id"]
+    so_id = _so(H, od["id"])["id"]
     DB.sales_orders.update_one({"id": so_id}, {"$set": {"paid_total": 1000.0}})     # fixture: sudah ada pembayaran
     roll = DB.inventory_rolls.find_one({"reserved_ref.id": so_id, "product_id": PB["id"], "status": "reserved"}, {"_id": 0, "id": 1})
     if roll:   # penjaga fisik: roll terpick → tetap ditolak walau SO terbit

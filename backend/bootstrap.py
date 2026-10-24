@@ -486,6 +486,11 @@ async def sync_permission_revocations() -> None:
         GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim"] if _r != "finance" else ["view"]
     for _r in ("manager", "admin"):
         GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim", "decide"]
+    # UAT 24 Okt (P2, keputusan pemilik P2-K1) — kunci harga OD oleh Admin Sales/Manajer/Admin (bukan sales);
+    # harga item tanpa induk diisi PIC Special Order; biaya kontrak/margin/supplier hanya untuk peran pemegang view_cost.
+    for _r in ("sales_admin", "manager", "admin"):
+        GRANT.setdefault(_r, {})["od_pricing"] = ["view_cost", "set_price", "lock"]
+    GRANT.setdefault("md", {})["od_pricing"] = ["view_cost"]
     for role, mp in GRANT.items():
         rm = matrix.setdefault(role, {})
         for m, actions in mp.items():
