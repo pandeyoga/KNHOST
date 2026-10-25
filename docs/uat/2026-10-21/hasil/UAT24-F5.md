@@ -92,6 +92,12 @@
   "Produk Terlaris · 90 hari terakhir".
 
 ## Sapuan UI (audit 147 layar desktop + HP, 24 Okt)
+
+> **Koreksi cakupan (25 Okt).** "147 layar" = 147 entri menu/tab hub dalam **keadaan awalnya** (admin; meja kerja
+> sesuai peran), ditambah hanya **satu** form "Buat/Tambah" pertama per layar (47 pop-up terbuka, 24 form inline/tidak
+> terbuka, 76 layar tanpa tombol buat). Belum tercakup: 11 view (mis. Perbaikan, Keep & Pending, Beranda per peran,
+> Matriks Izin, Template Produk, Konversi Satuan), form **ubah**, dialog konfirmasi/alasan, halaman detail, tab di
+> dalam halaman, menu tindakan, pop-up bersarang. Ini dikerjakan di **audit UI tahap 2** (crawler mendalam).
 Audit visual 147 layar (admin, desktop 1440 px + HP 390 px + form) dan aplikasi HP lima peran, dikerjakan per kelompok
 layar. **Tidak ada menu/layar yang dihapus atau digabung** — kandidat duplikasi dicatat di bawah untuk keputusan pemilik.
 

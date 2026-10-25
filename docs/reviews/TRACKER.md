@@ -98,7 +98,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | P13 | Keep & Pending juga terlihat oleh sales (bukti UI + tautan menu) | F5 | implemented_pending_review | sebagian — fitur ada, bukti UI & tautan menu belum | `2d4d108` | [F5](../uat/2026-10-21/hasil/UAT24-F5.md) |
 | P14 | Sales hanya melihat pelanggannya sendiri + walk-in | F0 | implemented_pending_review | ya — uji alur 23 Okt | `663745a`, `5f52372` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) |
 | P15 | Gabung beberapa PR (supplier & lokasi sama) → 1 PO + saran untuk MD; OD supplier sama → 1 PO | F0 (bug `kind`), F4 | implemented_pending_review | ya — kode | `663745a`, `272575a` | [F4](../uat/2026-10-21/hasil/UAT24-F4.md) |
-| P16 | UI rusak: GRN tanpa kartu, unduh di Jejak Dokumen, Pengaturan berantakan + sapuan 147 layar | F0, F5 | implemented_pending_review — P16.3 susunan Pengaturan menunggu P16-K1 (mock di laporan) | ya — analisis 23 Okt | `663745a`, `2d4d108`, `ce7cce4`, `78b14b6` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) · [F5](../uat/2026-10-21/hasil/UAT24-F5.md) |
+| P16 | UI rusak: GRN tanpa kartu, unduh di Jejak Dokumen, Pengaturan berantakan + sapuan 147 layar + audit UI tahap 2 (semua tab/detail/pop-up/HP) | F0, F5 | implemented_pending_review — P16.3 susunan Pengaturan menunggu P16-K1 (mock di laporan) | ya — analisis 23 Okt | `663745a`, `2d4d108`, `ce7cce4`, `78b14b6`, `fb0d069`…`ddad3bc` | [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md) · [F5](../uat/2026-10-21/hasil/UAT24-F5.md) · [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md) |
 | P17 | Semua foto yang diunggah bisa dipratinjau tanpa unduh (tanpa token di URL) | F5 | implemented_pending_review | ya — analisis 23 Okt | `2d4d108`, `ce7cce4` | [F5](../uat/2026-10-21/hasil/UAT24-F5.md) |
 
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
@@ -114,6 +114,8 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
+| AUD2-K | 16 keputusan bisnis audit UI tahap 2 (K-01 definisi piutang, K-02 kas, K-03 DPP vs bruto & tampilan PPN, K-04 stok tersedia, K-05 "Cepat laku", K-06 hitungan Menunggu, K-07 utang antar-PT, K-08 bobot desainer 120 %, K-09 awalan PR- ganda, K-10 bawaan "Langsung dikonfirmasi", K-11 wewenang per peran, K-12 tab Ringkas HP, K-13 glosarium, K-14 ambang alasan, K-15 tutup buku saat Suspense ≠ 0, K-16 Labdip tanpa handfeel) — rincian di [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md) › rencana-perbaikan §5.3 | 2026-10-26 |
+| AUD2-D | 29 kandidat duplikasi layar & 10 pekerjaan tata letak besar dari audit UI tahap 2 (rencana-perbaikan §5.1–5.2) | 2026-10-26 |
 | P16-K1 | Setujui susunan baru menu Pengaturan (7 kelompok, mock di [F5](../uat/2026-10-21/hasil/UAT24-F5.md)) sebelum menu dipindah | 2026-10-24 |
 | UI-DUP | Kandidat layar duplikat dari sapuan UI (daftar di [F5](../uat/2026-10-21/hasil/UAT24-F5.md) › "Kandidat duplikasi") — gabung/jadikan alias? | 2026-10-24 |
 
@@ -121,6 +123,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-26 | Claude Code | Audit UI tahap 2 ([Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md)): crawler mendalam 156 layar desktop + 117 titik awal aplikasi HP (2.395 keadaan, 388 pop-up unik, 255 detail, 442 tab), 243 butir perbaikan (47 T/163 S/33 R) dikerjakan 7 grup paralel (`fb0d069`…`ddad3bc`) + perbaikan hasil verifikasi; verifikasi desktop 73/80 butir terverifikasi; P16 tetap implemented_pending_review; keputusan AUD2-K/AUD2-D dicatat |
 | 2026-10-25 | Claude Code | UAT 24 Okt lanjutan sapuan UI (`78b14b6`, [F5 › Lanjutan](../uat/2026-10-21/hasil/UAT24-F5.md)): ATP 057=058, saldo rekening vs kas, qty profitabilitas per satuan, Beranda Bulan Ini vs Hari Ini, label Tagihan HP, akun teknis keluar dari KPI desainer, status & petunjuk PDF, pelacak SO meja Admin Sample, ikon KNSelect, pemilih tanggal/jam, chip filter Barang Masuk — status P16 tetap implemented_pending_review |
 | 2026-10-24 | Claude Code | UAT 24 Okt F5 implemented_pending_review ([F5](../uat/2026-10-21/hasil/UAT24-F5.md)): P7 menu Perbaikan, P12 sorotan POS, P13 tab Keep & Pending, P16.1 GRN, P16.2 PDF di Jejak Dokumen, P17 pratinjau lampiran (`2d4d108`) + sapuan UI 147 layar (`ce7cce4`); P16-K1 & kandidat duplikasi dicatat sebagai keputusan yang ditunggu |
 | 2026-10-24 | Claude Code | Paket UAT 24 Okt dicatat (P1..P17): F0–F3 implemented_pending_review (`663745a`, `5f52372`, `e8c7739`; laporan [F0–F2](../uat/2026-10-21/hasil/UAT24-F0-F2.md), [F3](../uat/2026-10-21/hasil/UAT24-F3.md)); F4 P2 + P15 implemented_pending_review (`272575a`, [F4](../uat/2026-10-21/hasil/UAT24-F4.md)); P7, P12, P13, P16 (sisa), P17 open (F5) |
