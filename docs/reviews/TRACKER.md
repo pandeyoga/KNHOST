@@ -114,15 +114,16 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
-| AUD2-K | 16 keputusan bisnis audit UI tahap 2 (K-01 definisi piutang, K-02 kas, K-03 DPP vs bruto & tampilan PPN, K-04 stok tersedia, K-05 "Cepat laku", K-06 hitungan Menunggu, K-07 utang antar-PT, K-08 bobot desainer 120 %, K-09 awalan PR- ganda, K-10 bawaan "Langsung dikonfirmasi", K-11 wewenang per peran, K-12 tab Ringkas HP, K-13 glosarium, K-14 ambang alasan, K-15 tutup buku saat Suspense ≠ 0, K-16 Labdip tanpa handfeel) — rincian di [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md) › rencana-perbaikan §5.3 | 2026-10-26 |
-| AUD2-D | 29 kandidat duplikasi layar & 10 pekerjaan tata letak besar dari audit UI tahap 2 (rencana-perbaikan §5.1–5.2) | 2026-10-26 |
-| P16-K1 | Setujui susunan baru menu Pengaturan (7 kelompok, mock di [F5](../uat/2026-10-21/hasil/UAT24-F5.md)) sebelum menu dipindah | 2026-10-24 |
+| AUD2-K | ~~16 keputusan bisnis audit UI tahap 2~~ — **DIJAWAB 26 Okt**: semua rekomendasi kecuali K-05 (kelas dari moving average, top/bottom 20 %) & K-13 (istilah tidak diubah); diterapkan `c9b3f76` ([Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md)) | 2026-10-26 |
+| AUD2-D | ~~29 kandidat duplikasi & 10 tata letak besar~~ — **DIJAWAB 26 Okt**: semua rekomendasi disetujui (form input HP tetap lengkap), tata letak urutan L-04 → L-03 → L-01 & L-05 → L-09 → sisanya; dikerjakan di fase 3 (rencana di [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md) › rencana-fase3) | 2026-10-26 |
+| P16-K1 | **DIJAWAB 26 Okt — disetujui (fase 3)** · Setujui susunan baru menu Pengaturan (7 kelompok, mock di [F5](../uat/2026-10-21/hasil/UAT24-F5.md)) sebelum menu dipindah | 2026-10-24 |
 | UI-DUP | Kandidat layar duplikat dari sapuan UI (daftar di [F5](../uat/2026-10-21/hasil/UAT24-F5.md) › "Kandidat duplikasi") — gabung/jadikan alias? | 2026-10-24 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-26 | Claude Code | Keputusan pemilik audit UI 2 diterapkan (`c9b3f76`, [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md)): K-01..K-16 kecuali K-13, B1-B5; verifikasi crawl HP 37/53 + regresi Inspeksi 390 px diperbaiki (`e508e7d`); DB kn_rnd_base & kn_uat_sim dihapus (cadangan), saldo yatim DB uji dibersihkan; fase 3 (duplikasi & tata letak) disetujui, belum dikerjakan |
 | 2026-10-26 | Claude Code | Audit UI tahap 2 ([Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md)): crawler mendalam 156 layar desktop + 117 titik awal aplikasi HP (2.395 keadaan, 388 pop-up unik, 255 detail, 442 tab), 243 butir perbaikan (47 T/163 S/33 R) dikerjakan 7 grup paralel (`fb0d069`…`ddad3bc`) + perbaikan hasil verifikasi; verifikasi desktop 73/80 butir terverifikasi; P16 tetap implemented_pending_review; keputusan AUD2-K/AUD2-D dicatat |
 | 2026-10-25 | Claude Code | UAT 24 Okt lanjutan sapuan UI (`78b14b6`, [F5 › Lanjutan](../uat/2026-10-21/hasil/UAT24-F5.md)): ATP 057=058, saldo rekening vs kas, qty profitabilitas per satuan, Beranda Bulan Ini vs Hari Ini, label Tagihan HP, akun teknis keluar dari KPI desainer, status & petunjuk PDF, pelacak SO meja Admin Sample, ikon KNSelect, pemilih tanggal/jam, chip filter Barang Masuk — status P16 tetap implemented_pending_review |
 | 2026-10-24 | Claude Code | UAT 24 Okt F5 implemented_pending_review ([F5](../uat/2026-10-21/hasil/UAT24-F5.md)): P7 menu Perbaikan, P12 sorotan POS, P13 tab Keep & Pending, P16.1 GRN, P16.2 PDF di Jejak Dokumen, P17 pratinjau lampiran (`2d4d108`) + sapuan UI 147 layar (`ce7cce4`); P16-K1 & kandidat duplikasi dicatat sebagai keputusan yang ditunggu |

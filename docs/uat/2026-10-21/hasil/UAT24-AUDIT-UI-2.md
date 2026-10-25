@@ -1,7 +1,8 @@
 # UAT 24 Okt — Audit UI tahap 2 (semua layar, tab, detail, pop-up, form ubah, konfirmasi — desktop + HP)
 
 - Commit: `fb0d069` (G0) · `683ab1d` (G1) · `90876cb` (G2) · `29ec1a7` (G3) · `fb38851` (G4) · `5cea115` (G5a) ·
-  `8358694` (G5b) · `ddad3bc` (lintas grup) · `60318b8` (perbaikan hasil verifikasi) · branch `main`.
+  `8358694` (G5b) · `ddad3bc` (lintas grup) · `60318b8` & `e508e7d` (perbaikan hasil verifikasi desktop & HP) ·
+  `c9b3f76` (keputusan pemilik 26 Okt) · branch `main`.
   Baseline audit: `e5b2579`.
 - Alasan: sapuan 24 Okt hanya 147 entri menu dalam keadaan awal + satu form "Buat" per layar (lihat koreksi di
   [UAT24-F5.md](UAT24-F5.md)). Tahap 2 menelusuri **semua** keadaan yang bisa dicapai dari tiap layar.
@@ -107,19 +108,50 @@ menyembunyikan opsi kosong ("Semua …") selama terpilih & menandai nilai yang t
 * Penanda otomatis yang ternyata palsu: kode di Cek Peran (ada di blok `<details>` tertutup), `{{nomor}}` di editor
   template PDF (memang placeholder template), 404 lampiran desain (berkas tidak ada di DB uji — layar kini punya
   fallback).
-* **HP** — 117 titik awal aplikasi HP per peran dirayapi ulang sesudah perbaikan (993 keadaan; aplikasi HP Ops
-  sudah dengan susunan tab baru). Penilaian per butir menyusul di commit berikutnya.
+* **HP** — 117 titik awal aplikasi HP per peran dirayapi ulang (993 keadaan; aplikasi HP Ops dengan susunan tab
+  baru). Dari 53 butir HP: **37 terverifikasi**, 6 belum, 10 tak tertangkap (tab sesudah Notifikasi pada HP Ops
+  terlewat crawler; peran QC/MD Quality langsung mendarat di Inspeksi). **Regresi T yang ditemukan & langsung
+  diperbaiki (`e508e7d`):** halaman SPK Inspeksi & Spesifikasi Produk melebar di 390 px (`.section-pad` kini
+  `min-width: 0`; diukur ulang: lebar dokumen 390 = layar). Juga diperbaiki: notifikasi HP Ops membuka "tampilan
+  penuh" sementara (dulu mode desktop menetap), galat kembar tanpa kunci React ganda, form CRM Pelanggan Baru 1
+  kolom di HP. Sisa "belum": G4-12 & G5-46 pada **data lama** (perbaikan berlaku untuk dokumen baru), G5-09
+  tautan notifikasi nota kredit/desain ke daftar umum, G5-61 riwayat pengaturan MD (ditutup oleh keputusan K-11),
+  G5-62 saran Tanya KN tertutup kotak input. Rincian: [`audit-ui-2/verifikasi/`](audit-ui-2/verifikasi/).
 
-## Belum dikerjakan / menunggu keputusan
-* **Keputusan bisnis K-01…K-16** (definisi piutang/kas/stok tersedia/"Cepat laku"/Menunggu/utang antar-PT, DPP vs
-  bruto & tampilan PPN, bobot desainer 120 %, awalan nomor "PR-" ganda, bawaan "Langsung dikonfirmasi", wewenang per
-  peran, isi tab Ringkas HP, glosarium istilah, ambang alasan, tutup buku saat Suspense ≠ 0, Labdip tanpa handfeel)
-  — rincian & dua definisinya di `rencana-perbaikan.md` §5.3. Layar kini memberi label sumber angka.
-* **29 kandidat duplikasi** (D-01…) & **P16-K1** — keputusan pemilik; tidak ada menu yang dihapus/digabung.
-* **10 pekerjaan tata letak besar** (navigasi berlapis, kepala halaman tanpa kartu, pop-up buatan sendiri → FormModal,
-  halaman desktop mentah di HP, gaya aplikasi HP per peran) — butuh keputusan pola.
-* **Sebagian/backend lanjutan:** G1-33 eliminasi basi; nama pengaju di matriks persetujuan, nomor dokumen di Jejak
-  Audit & Cek Peran, kode wilayah di wizard entitas, host QR dari URL publik, filter `has_backorder`, grade per roll
-  di timeline retur (rincian di `perbaikan/COORD.md` & laporan grup).
-* **Data uji** di DB uji: saldo yatim `wh_TEST_*`, 15 produk bersaldo tanpa master, cache antar-PT basi — butuh izin
-  pemilik sebelum dibersihkan.
+## Keputusan pemilik 26 Okt (diterapkan `c9b3f76`)
+Semua rekomendasi K-xx disetujui kecuali **K-05** (pemilik: kelas murni dari moving average penjualan, top/bottom
+20 %) dan **K-13** (istilah UI tidak diubah). Ringkas yang diterapkan: piutang & lewat tempo satu definisi (semua
+pelanggan, lewat ≥ 1 hari), kas utama = saldo GL, Total termasuk PPN + DPP & "DPP nilai lain (11/12)" di layar & PDF
+(diskon pratinjau SO tidak lagi dihitung dua kali), stok tersedia berbasis roll (`stock_availability.py`), Analitik
+Stok kelas Best seller / Normal / Slow moving / Tidak bergerak / Baru (MA 90 hari, persentil per satuan — dasar
+ABC/Pareto & FSN; semua ambang di Pusat Pengaturan), KPI "Menunggu persetujuan", antar-PT posisi bersih, bobot
+desainer 100 %, payroll `PAY-`, "Langsung dikonfirmasi" mati bawaan, wewenang per peran (papan PO Custom sales
+tersaring, MD hanya pengaturan R&D), tab Ringkas HP per peran, alasan minimum 5 huruf, tutup buku diblokir saat
+Suspense ≠ 0 (admin menembus beralasan), Labdip tanpa handfeel boleh beralasan; B1 SPK QC peringatan (setelan bisa
+blokir), B3 grade per roll di timeline retur, B4 kasus tanpa nominal. Rincian & cara cek:
+[`audit-ui-2/keputusan/`](audit-ui-2/keputusan/).
+
+**Bukti uji keputusan:** Jest penuh **46 suite / 223 uji lulus**; ESLint 57 berkas 0 error; tanpa peringatan pyflakes
+baru; pytest 1.149 uji (8 berkas baru + regresi terkait): kegagalan yang tidak ada di daftar gagal sebelumnya (83)
+dijalankan ulang di baseline `e508e7d` → 82 juga gagal di baseline, 1 karena input uji alasan "TEST" (< 5 huruf,
+K-14) → uji disesuaikan, lulus.
+
+**Tindakan data (izin pemilik):** DB `kn_rnd_base` & `kn_uat_sim` dihapus (cadangan mongodump disimpan); 38 saldo
+yatim di DB uji `kn_test_trial` dihapus (dicadangkan); data antar-PT DB uji diisi ulang. Catatan: uji
+`tests/test_interco_g6.py` **mengosongkan seluruh koleksi antar-PT** di DB tempat ia dijalankan — jangan pernah
+dijalankan ke DB UAT. Data "test" UAT (rantai SORD-261023-0003) **dibiarkan** atas keputusan pemilik.
+
+**Fase 3 (disetujui, belum dikerjakan):** penggabungan layar duplikat (P16-K1 + D-01…D-29; layar lama menjadi
+tautan/alias, form input HP tetap lengkap) dan tata letak L-04 → L-03 → L-01 & L-05 → L-09 → sisanya — rencana
+paket kerja: [`audit-ui-2/rencana-fase3.md`](audit-ui-2/rencana-fase3.md).
+
+## Belum dikerjakan
+* **Fase 3** (disetujui pemilik 26 Okt): penggabungan 25 layar duplikat (G) + P16-K1, layar lama menjadi tautan/alias,
+  form input HP tetap lengkap; tata letak L-04 → L-03 → L-01 & L-05 → L-09 → sisanya. Papan PO Custom & Barang
+  ditahan QC di Beranda menjadi tautan; Labdip/Handfeel/Proofing satu layar Sample R&D (chip jenis, galeri tetap).
+* **Sebagian/backend lanjutan:** G1-33 eliminasi basi (perlu analisis); nama pengaju di matriks persetujuan, nomor
+  dokumen di Jejak Audit & Cek Peran, kode wilayah di wizard entitas, host QR dari URL publik, filter
+  `has_backorder` (rincian di `perbaikan/COORD.md` & laporan grup); tautan notifikasi nota kredit/desain ke dokumen
+  (G5-09); saran Tanya KN tertutup kotak input (G5-62).
+* **Data lama:** PR yang menunjuk PO batal sebelum perbaikan G4-12 & teks riwayat sample lama (G5-46) belum
+  diperbaiki datanya (butuh skrip rekonsiliasi + izin); 6 segmen saldo basi di DB uji perlu rebuild.
