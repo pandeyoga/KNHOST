@@ -176,8 +176,8 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
     <div className="section-card" data-testid="account-list-card">
       <div className="section-head">
         <div className="flex items-center gap-2">
-          <h2 data-testid="account-list-title">Akun & Akses</h2>
-          <span className="text-[10.5px] text-[#9A9BA3] tabular-nums"
+          <h2 data-testid="account-list-title" className="whitespace-nowrap">Akun & Akses</h2>
+          <span className="whitespace-nowrap text-[10.5px] text-[#9A9BA3] tabular-nums"
                 data-testid="account-list-count">{total} akun</span>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -271,7 +271,9 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                   <th className="px-3 py-2">Taut HR</th>
                   <th className="px-3 py-2">Terakhir masuk</th>
                   <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2 text-right">Aksi</th>
+                  {/* Audit UI tahap 2 (verifikasi) — kolom aksi menempel di kanan: tombol Nonaktifkan dulu terdorong ke luar
+                      layar pada 1440 px karena tabel bergulir samping. */}
+                  <th className="sticky right-0 bg-[#FAFBFC] px-3 py-2 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -340,7 +342,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {u.status === "active" ? "Aktif" : "Nonaktif"}
                       </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="sticky right-0 bg-white px-3 py-2 shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.12)]">
                       <div className="flex flex-nowrap items-center justify-end gap-1">
                         {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"

@@ -12,6 +12,7 @@ import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta, soTrackerLink } from "../sales_admin/workDeskApi";
 import { resolveView } from "../../utils/viewAlias";
+import { docStatusLabel } from "../../utils/docStatus";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -29,6 +30,9 @@ const DESKS = {
     intro: <>Semua yang menunggu tindakan Anda hari ini: <b>Giliran saya</b> (dokumen yang baru berpindah tahap ke Anda) dan antrean khas peran Anda. Buka baris untuk melompat ke layar penanganannya.</>,
   },
 };
+
+const humanizeStage = (text) => (typeof text !== "string" ? text
+  : text.replace(/\b(tahap|status):\s*([a-z][a-z_]+)/g, (m, k, code) => `${k}: ${docStatusLabel(code).toLowerCase()}`));
 
 export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDocument }) {
   const cfg = DESKS[desk] || DESKS.md;
@@ -75,7 +79,11 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
     onOpenDocument?.(rowLink(row, queue?.id, desk));
   }
 
-  const queues = Array.isArray(data?.queues) ? data.queues : [];
+  // Audit UI tahap 2 (G5-10, verifikasi) — notifikasi LAMA di "Giliran saya" masih berteks "tahap: cancelled" /
+  // "tahap: refund_settled" (notifikasi baru sudah berlabel dari server) → kode tahap/status dilabeli di layar.
+  const queues = (Array.isArray(data?.queues) ? data.queues : []).map((q) => (q.id !== "giliran_saya" ? q : {
+    ...q, rows: (q.rows || []).map((r) => ({ ...r, title: humanizeStage(r.title), subtitle: humanizeStage(r.subtitle) })),
+  }));
   const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
   const p = cfg.testPrefix;

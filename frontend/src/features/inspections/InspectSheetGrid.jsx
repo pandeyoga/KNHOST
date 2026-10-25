@@ -136,7 +136,9 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
           </thead>
           <tbody>
             {lines.map((ln) => {
-              const r = rows[ln.id] || { cells: {} };
+              // Audit UI tahap 2 (verifikasi) — render pertama sebelum efek mengisi `rows` dulu memberi nilai undefined
+              // (peringatan React "uncontrolled → controlled"); kini langsung memakai baris dari data SPK.
+              const r = rows[ln.id] || rowFromLine(ln);
               const p = points(r);
               const st = stdrt(p, r.yards, r.widthInch);
               const ro = !editable;

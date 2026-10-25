@@ -182,7 +182,10 @@ async def _record(order: Dict[str, Any], decision: Dict[str, Any]) -> None:
     from services import amendment_service as _amd
     labels = {"stock": "Stok sendiri", "interco": "Transfer PT lain", "reorder": "PO supplier",
               "wait": "Tunggu barang datang"}
+    # Audit UI tahap 2 (G1-17) — satuan ikut dicatat supaya Pusat Amandemen menulis "1,35 yard", bukan angka polos.
+    units = {it.get("product_id"): (it.get("base_unit") or it.get("unit") or "") for it in (order.get("items") or [])}
     changes = [{"product_id": p.get("product_id", ""),
+                "unit": p.get("unit") or units.get(p.get("product_id"), ""),
                 "product_name": str(p.get("summary") or "").split(":")[0] or "Pesanan",
                 "field": "fulfillment", "label": labels.get(p.get("mode"), p.get("mode") or "Pemenuhan"),
                 "from": "Kekurangan",

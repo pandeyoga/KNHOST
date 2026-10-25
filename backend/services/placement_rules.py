@@ -139,7 +139,10 @@ async def warehouse_violations(wh: Dict[str, Any], roll: Dict[str, Any], product
     out = []
     owner = roll.get("owner_entity_id")
     if owner and not is_usable(wh, owner):
-        out.append(f"Gudang {wh.get('name', '')} khusus (dedicated) badan usaha lain — barang milik {owner} tidak boleh masuk.")
+        # Audit UI tahap 2 — nama badan usaha, bukan id mentah ("ent_kanda") & tanpa istilah "(dedicated)".
+        ent = await db.business_entities.find_one({"id": owner}, {"_id": 0, "short_name": 1, "name": 1}) or {}
+        owner_name = ent.get("short_name") or ent.get("name") or owner
+        out.append(f"Gudang {wh.get('name', '')} khusus untuk badan usaha lain — barang milik {owner_name} tidak boleh masuk.")
     out += _attr_violations([("Gudang " + (wh.get("name") or ""), warehouse_rules(wh))], product, roll.get("grade", "A"))
     return out
 

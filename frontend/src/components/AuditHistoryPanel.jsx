@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { History, ShieldCheck, ShieldAlert, ShieldQuestion, EyeOff, RefreshCw, ArrowRight } from "lucide-react";
 import axios, { API } from "../services/apiClient";
+import { auditActionInfo } from "../config/auditLabels";
+import { roleLabel } from "../config/roles";
 
 const ACTION_LABELS = {
   created: "Dibuat", updated: "Diubah", deleted: "Dihapus", deactivated: "Dinonaktifkan",
@@ -11,6 +13,12 @@ const SOURCE_SUFFIX = Object.keys(ACTION_LABELS);
 function actionLabel(action = "") {
   const key = SOURCE_SUFFIX.find((s) => action.endsWith(`_${s}`) || action === s);
   return key ? ACTION_LABELS[key] : action.replace(/_/g, " ");
+}
+
+// Audit UI tahap 2 (verifikasi) — "Sumber: bank_account_created" & peran "· admin" dulu tampil mentah.
+function sourceLabel(key = "") {
+  const info = auditActionInfo(key);
+  return info.known ? info.label : actionLabel(key);
 }
 
 function fmtTime(iso) {
@@ -79,12 +87,12 @@ function HistoryRow({ row, testId, showLayer }) {
       <span className="absolute left-[8px] top-4 bottom-0 w-px bg-[#E5E5EA]" />
       <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
         <b className="text-[#1C1C1E]" data-testid={`${testId}-action`}>{actionLabel(row.action)}</b>
-        <span className="text-[#6B6B73]">oleh <b data-testid={`${testId}-actor`}>{row.actor || "Sistem"}</b>{row.role ? ` · ${row.role}` : ""}</span>
+        <span className="text-[#6B6B73]">oleh <b data-testid={`${testId}-actor`}>{row.actor || "Sistem"}</b>{row.role ? ` · ${roleLabel(row.role)}` : ""}</span>
         <span className="text-[#9A9BA3]" data-testid={`${testId}-time`}>{fmtTime(row.timestamp)}</span>
         <IntegrityBadge status={row.integrity} testId={`${testId}-integrity`} />
       </div>
       <div className="mt-0.5 flex flex-wrap gap-2 text-[10px] text-[#8E8E93]">
-        <span>Sumber: <span className="font-mono" data-testid={`${testId}-source`}>{row.source || row.action}</span></span>
+        <span>Sumber: <span data-testid={`${testId}-source`} title={row.source || row.action}>{sourceLabel(row.source || row.action)}</span></span>
         <span>Badan usaha: <span data-testid={`${testId}-scope`}>{row.scope_entity_name}</span></span>
         {showLayer && <span data-testid={`${testId}-layer`}>Lapisan: {row.layer_entity_id ? `Override ${row.layer_entity_name}` : "Template global"}</span>}
         {row.reason && <span>Alasan: {row.reason}</span>}
