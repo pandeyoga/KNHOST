@@ -192,7 +192,10 @@ async def get_inspection(ins_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "inspection", "view")
     doc = await _guarded(ins_id, request, actor)
     # UAT 24 Okt (P11.3) — indikator "x/y roll dicek (wajib n)" di layar SPK.
-    return {**doc, "sampling": await svc.sampling_rule(doc)}
+    # B1 (keputusan pemilik 26 Okt 2026) — roll yang masih/akan ditahan, supaya layar memperingatkan SEBELUM
+    # "Diterima seluruhnya" (termasuk roll gagal QC 4-point yang tahanannya menunggu lepas karantina).
+    held = await svc.held_rolls(doc) if doc.get("status") in svc.OPEN_STATUSES else []
+    return {**doc, "sampling": await svc.sampling_rule(doc), "held_rolls": held}
 
 
 @router.post("/inspections")

@@ -1365,6 +1365,51 @@ async def get_settlement(sid: str) -> Optional[Dict[str, Any]]:
 # ═══════════════════════════════════════════════════════════════════════════
 # META & SUMMARY
 # ═══════════════════════════════════════════════════════════════════════════
+def net_positions(accs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keputusan pemilik K-07 (26 Okt) — posisi BERSIH dua arah per pasangan PT (netting) = angka utama utang/piutang
+    antar-PT. Setiap arah dagang (penjual → pembeli) dihitung SEKALI (baris piutang penjual & utang pembeli adalah
+    cermin angka yang sama), lalu dua arah pasangan yang sama saling dikurangkan. Jadwal bayar per dokumen tetap
+    rincian (bruto)."""
+    directed: Dict[Any, float] = {}
+    names: Dict[str, str] = {}
+    for a in accs:
+        role = a.get("role")
+        seller, buyer = a.get("seller_entity_id"), a.get("buyer_entity_id")
+        if not (seller and buyer):   # baris lama tanpa arah eksplisit → turunkan dari peran
+            if role == "receivable":
+                seller, buyer = a.get("from_entity_id"), a.get("to_entity_id")
+            elif role == "payable":
+                seller, buyer = a.get("to_entity_id"), a.get("from_entity_id")
+        if not (seller and buyer) or seller == buyer:
+            continue
+        if a.get("from_entity_id") and a.get("from_entity_name"):
+            names[a["from_entity_id"]] = a["from_entity_name"]
+        if a.get("to_entity_id") and a.get("to_entity_name"):
+            names[a["to_entity_id"]] = a["to_entity_name"]
+        directed[(buyer, seller)] = round(float(a.get("outstanding") or 0), 2)   # buyer berutang ke seller
+    out: List[Dict[str, Any]] = []
+    seen = set()
+    for (debtor, creditor) in list(directed.keys()):
+        key = tuple(sorted((debtor, creditor)))
+        if key in seen:
+            continue
+        seen.add(key)
+        a, b = key
+        a_owes_b = directed.get((a, b), 0.0)
+        b_owes_a = directed.get((b, a), 0.0)
+        net = round(a_owes_b - b_owes_a, 2)
+        if abs(net) <= EPS and a_owes_b <= EPS and b_owes_a <= EPS:
+            continue
+        d, c = (a, b) if net >= 0 else (b, a)
+        out.append({"debtor_entity_id": d, "debtor_entity_name": names.get(d, d),
+                    "creditor_entity_id": c, "creditor_entity_name": names.get(c, c),
+                    "net": abs(net),
+                    "gross_debtor_owes": directed.get((d, c), 0.0),
+                    "gross_creditor_owes": directed.get((c, d), 0.0)})
+    out.sort(key=lambda r: -r["net"])
+    return out
+
+
 async def summary(scope_entity_ids: List[str], entity_id: str = "") -> Dict[str, Any]:
     """Ringkasan untuk layar (US5): saldo aktif + jumlah dokumen open + settlement bulan ini."""
     accs = await list_accounts(scope_entity_ids)
@@ -1378,7 +1423,22 @@ async def summary(scope_entity_ids: List[str], entity_id: str = "") -> Dict[str,
         "entity_id": {"$in": scope_entity_ids} if scope_entity_ids else {"$exists": True},
         "status": {"$in": list(OPEN_STATUSES)},
     })
+    # K-07 — posisi bersih (netting dua arah) dari sudut pandang PT aktif; mode gabungan: Σ posisi bersih semua pasangan.
+    pairs = net_positions(accs)
+    one = entity_id if entity_id and entity_id != "all" else ""
+    if one:
+        pairs = [p for p in pairs if one in (p["debtor_entity_id"], p["creditor_entity_id"])]
+        net_payable = sum(p["net"] for p in pairs if p["debtor_entity_id"] == one)
+        net_receivable = sum(p["net"] for p in pairs if p["creditor_entity_id"] == one)
+    else:
+        net_payable = net_receivable = sum(p["net"] for p in pairs)
     return {
+        # Angka utama (K-07): posisi bersih dua arah.
+        "net_payable": round(net_payable, 2),
+        "net_receivable": round(net_receivable, 2),
+        "net_pairs": pairs,
+        "net_basis": "Posisi bersih dua arah per pasangan PT (netting); rincian per dokumen di Jadwal Bayar",
+        # Rincian (bruto per arah dagang / dokumen terbuka).
         "total_receivable": round(total_receivable, 2),
         "total_payable": round(total_payable, 2),
         "open_documents": open_docs,

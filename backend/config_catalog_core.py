@@ -545,31 +545,74 @@ E("inventory.intercompany_transfer_required", group="stok-satuan", type="bool", 
   example="Aktif → SO di KSC yang mengambil roll milik KANDA ditolak (400)",
   consumers=("services/config_service.py:get_allocation_policy",), risk="high")
 
+# K-05 (keputusan pemilik 26 Okt 2026) — kelas laju jual Analitik Stok HANYA dari moving average penjualan
+# (persentil per satuan). Ambang lama "hari sejak jual terakhir" tidak lagi dibaca mesin.
 E("inventory.stock_analytics.fast_max_days", group="stok-satuan", type="duration",
   default=30, min=1, max=365, step=1, unit="hari", scopes=("global", "entity"),
-  simulate="stock_class",
-  label="Batas hari barang 'Cepat Laku'",
-  help="Barang yang terjual dalam rentang hari ini dihitung Fast Moving.",
-  impact="Mengubah klasifikasi Fast/Slow/Dead pada Analitik Stok dan usulan reorder.",
-  example="30 hari → terjual 20 hari lalu = Cepat Laku",
-  consumers=("services/stock_analytics_service.py",), risk="low")
+  status="not_used",
+  not_used_reason="Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving average penjualan & "
+                  "persentil per satuan — lihat 'Best seller — persen teratas' dan setelan terkait.",
+  label="Batas hari barang 'Cepat Laku' (lama)",
+  help="Aturan lama: barang yang terjual dalam rentang hari ini dihitung Cepat Laku.",
+  impact="Tidak berpengaruh lagi.",
+  example="—", risk="low")
 
 E("inventory.stock_analytics.slow_max_days", group="stok-satuan", type="duration",
   default=90, min=1, max=1095, step=1, unit="hari", scopes=("global", "entity"),
-  simulate="stock_class",
-  label="Batas hari barang 'Lambat'",
-  help="Di atas batas Cepat Laku sampai batas ini = Slow Moving. Lebih dari itu = Dead Stock.",
-  impact="Mengubah daftar barang mati yang perlu didiskon atau dihentikan pembeliannya.",
-  example="90 hari → terjual 120 hari lalu = Dead Stock",
-  consumers=("services/stock_analytics_service.py",), risk="low")
+  status="not_used",
+  not_used_reason="Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving average penjualan & "
+                  "persentil per satuan — lihat 'Slow moving — persen terbawah' dan setelan terkait.",
+  label="Batas hari barang 'Lambat' (lama)",
+  help="Aturan lama: di atas batas Cepat Laku sampai batas ini = Lambat; lebih dari itu = Stok Mati.",
+  impact="Tidak berpengaruh lagi.",
+  example="—", risk="low")
 
 E("inventory.stock_analytics.velocity_window_days", group="stok-satuan", type="duration",
   default=90, min=7, max=730, step=1, unit="hari", scopes=("global", "entity"),
-  label="Jendela hitung kecepatan jual",
-  help="Rentang hari ke belakang yang dipakai menghitung rata-rata penjualan harian.",
-  impact="Mempengaruhi angka kecepatan jual dan usulan titik pesan ulang.",
-  example="90 hari · terjual 900 yard → rata-rata 10 yard/hari",
-  consumers=("services/stock_analytics_service.py",), risk="low")
+  simulate="stock_class",
+  label="Analitik Stok — jendela moving average penjualan",
+  help="Rentang hari ke belakang untuk rata-rata bergerak (moving average) qty terjual per hari, dihitung dari "
+       "pesanan penjualan yang hidup (tanpa batal/draf/kedaluwarsa/ditolak & tanpa pesanan sample).",
+  impact="Menjadi dasar kelas Best seller / Normal / Slow moving / Tidak bergerak di Analitik Stok dan angka "
+         "'cukup untuk' (hari persediaan). Jendela pendek lebih peka tren, jendela panjang lebih stabil.",
+  example="90 hari · terjual 900 yard → moving average 10 yard/hari",
+  consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
+  related=("inventory.stock_analytics.best_seller_pct", "inventory.stock_analytics.slow_moving_pct",
+           "inventory.stock_analytics.new_sku_age_days"), risk="low")
+
+E("inventory.stock_analytics.best_seller_pct", group="stok-satuan", type="pct",
+  default=20, min=1, max=50, step=1, unit="%", scopes=("global", "entity"),
+  simulate="stock_class",
+  label="Analitik Stok — Best seller = persen teratas",
+  help="SKU yang terjual diurutkan menurut moving average penjualannya DI DALAM SATUAN YANG SAMA (yard, meter, "
+       "kg tidak dibandingkan). Persen teratas ini disebut Best seller (dasar analisis ABC/Pareto).",
+  impact="Menambah/mengurangi jumlah SKU berlabel Best seller di Analitik Stok.",
+  example="20% · 50 SKU bersatuan yard terjual → 10 SKU yard dengan laju jual tertinggi = Best seller",
+  consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
+  related=("inventory.stock_analytics.slow_moving_pct",), risk="low")
+
+E("inventory.stock_analytics.slow_moving_pct", group="stok-satuan", type="pct",
+  default=20, min=1, max=50, step=1, unit="%", scopes=("global", "entity"),
+  simulate="stock_class",
+  label="Analitik Stok — Slow moving = persen terbawah",
+  help="Persen terbawah di antara SKU yang TERJUAL dalam jendela (per satuan) disebut Slow moving. SKU yang punya "
+       "stok tetapi tidak terjual sama sekali dalam jendela masuk kelas Tidak bergerak (dead stock).",
+  impact="Menambah/mengurangi daftar SKU Slow moving yang perlu didorong penjualannya.",
+  example="20% · 50 SKU bersatuan yard terjual → 10 SKU yard dengan laju jual terendah = Slow moving",
+  consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
+  related=("inventory.stock_analytics.best_seller_pct",), risk="low")
+
+E("inventory.stock_analytics.new_sku_age_days", group="stok-satuan", type="duration",
+  default=90, min=0, max=730, step=1, unit="hari", scopes=("global", "entity"),
+  simulate="stock_class",
+  label="Analitik Stok — umur SKU baru",
+  help="SKU yang umurnya (sejak bukti pertama: produk dibuat, roll pertama tercatat, atau penjualan pertama) "
+       "kurang dari angka ini berlabel Baru dan TIDAK diperingkat, supaya tidak dinilai tidak adil karena belum "
+       "sempat terjual sepanjang jendela. 0 = tidak ada kelas Baru.",
+  impact="Mengubah SKU mana yang dikecualikan dari peringkat Best seller / Slow moving / Tidak bergerak.",
+  example="90 hari · produk masuk 40 hari lalu → Baru (belum diperingkat)",
+  consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
+  related=("inventory.stock_analytics.velocity_window_days",), risk="low")
 
 E("inventory.reorder.velocity_window_days", group="stok-satuan", type="duration",
   default=90, min=7, max=730, step=1, unit="hari", scopes=("global", "entity"),
@@ -774,6 +817,21 @@ E("qc.handfeel_mismatch_action", group="kualitas", type="enum", default="peringa
   consumers=("services/inspection_service.py:_policy",
              "services/qc_inspection_service.py:inspect_roll"),
   related=("qc.color_mismatch_action",), risk="medium")
+
+# B1 (keputusan pemilik 26 Okt 2026) — SPK QC ditutup "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC.
+E("qc.accept_all_with_hold_action", group="kualitas", type="enum", default="peringatkan",
+  scopes=("global", "entity"),
+  options=[{"value": "peringatkan", "label": "Beri peringatan, SPK tetap bisa ditutup (roll tetap ditahan)"},
+           {"value": "blokir", "label": "Blokir — wajib 'Diterima sebagian'/'Ditolak' atau putus tahanan dulu"}],
+  label="Bila SPK 'Diterima seluruhnya' tetapi masih ada roll ditahan",
+  help="Roll yang gagal QC 4-point / random check atau ditahan MD Quality TETAP ditahan walau keputusan dokumennya "
+       "'Diterima seluruhnya'. Bawaan: petugas diberi peringatan (daftar roll yang ditahan) lalu boleh tetap menutup; "
+       "jumlah roll yang ditahan tercatat di SPK.",
+  impact="Pada pilihan Blokir, server menolak keputusan 'Diterima seluruhnya' selama masih ada roll ditahan — "
+         "petugas harus memilih 'Diterima sebagian'/'Ditolak' atau melepas/menolak tahanannya lebih dulu.",
+  example="Peringatkan → SPK 10 roll, 1 roll gagal 4-point: dialog “1 roll masih ditahan (RL-00005)”, "
+          "SPK tetap bisa ditutup dan RL-00005 tetap ditahan",
+  consumers=("services/inspection_service.py:finish", "services/inspection_service.py:meta"), risk="medium")
 
 # UAT 24 Okt 2026 (P11.2/P11.3, permintaan pemilik) — MD Quality & QC 4-point boleh memeriksa SEBAGIAN roll (sampling).
 E("qc.md_sampling_pct", group="kualitas", type="int", default=0,

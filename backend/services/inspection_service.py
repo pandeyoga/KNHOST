@@ -138,6 +138,49 @@ def _today() -> str:
     return datetime.now(ZoneInfo("Asia/Jakarta")).date().isoformat()
 
 
+#: B1 (keputusan pemilik 26 Okt 2026) — SPK ditutup "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC.
+ACCEPT_ALL_HOLD_ACTIONS: Dict[str, str] = {
+    "peringatkan": "Beri peringatan, SPK tetap bisa ditutup (roll tetap ditahan)",
+    "blokir": "Blokir — pilih 'Diterima sebagian'/'Ditolak' atau putus tahanan dulu",
+}
+
+
+async def accept_all_hold_action(entity_id: str) -> str:
+    """B1 — kebijakan `qc.accept_all_with_hold_action` (bawaan: peringatkan)."""
+    from services.config_resolver import value_of
+    v = str(await value_of("qc.accept_all_with_hold_action", {"entity_id": entity_id or ""}) or "peringatkan").lower()
+    return v if v in ACCEPT_ALL_HOLD_ACTIONS else "peringatkan"
+
+
+async def held_rolls(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """B1 — roll SPK yang MASIH/AKAN ditahan bila SPK ditutup "Diterima seluruhnya":
+    baris bertanda tahan (`hold`), baris QC 4-point/random check yang ditolak (ditahan saat SPK ditutup), dan roll
+    yang di gudang berstatus ditahan/diblokir atau menunggu tahanan QC 4-point saat lepas karantina
+    (`qc_hold_pending`, kasus G3-17: KSC/INS-00072 · RL-00005). Baris `tolak` SPK penerimaan tidak dihitung — server
+    sudah menolak "Diterima seluruhnya" untuk itu."""
+    lines = [ln for ln in doc.get("lines") or [] if isinstance(ln, dict)]
+    rids = [ln["roll_id"] for ln in lines if ln.get("roll_id")]
+    rolls = {r["id"]: r async for r in db.inventory_rolls.find(
+        {"id": {"$in": rids}}, {"_id": 0, "id": 1, "status": 1, "hold": 1, "qc_hold_pending": 1})} if rids else {}
+    fails_hold = doc.get("kind") in (KIND_QC_4POINT, KIND_RANDOM_CHECK)
+    out: List[Dict[str, Any]] = []
+    for ln in lines:
+        roll = rolls.get(ln.get("roll_id") or "") or {}
+        reason = ""
+        if ln.get("hold"):
+            reason = ln.get("hold_reason") or "baris ditahan"
+        elif fails_hold and str(ln.get("decision") or "") == "tolak":
+            reason = "baris ditolak — roll ditahan saat SPK ditutup"
+        elif (roll.get("hold") or {}).get("held") or roll.get("status") == "blocked":
+            reason = (roll.get("hold") or {}).get("reason") or "roll diblokir di gudang"
+        elif roll.get("qc_hold_pending"):
+            reason = (roll.get("qc_hold_pending") or {}).get("reason") or QC4_HOLD_PREFIX
+        if reason:
+            out.append({"line_id": ln.get("id", ""), "roll_id": ln.get("roll_id", ""),
+                        "roll_no": ln.get("roll_no") or ln.get("sku") or "", "reason": reason})
+    return out
+
+
 async def _policy(entity_id: str) -> Dict[str, str]:
     """Kebijakan selisih warna & handfeel yang BERLAKU (config, bukan `if` di kode)."""
     from services.config_resolver import value_of
@@ -1307,6 +1350,19 @@ async def finish(ins_id: str, decision: str, remark: str,
         raise InspectionError(
             f"Baru {rule['checked']} dari {rule['total']} roll {apa} — wajib minimal {rule['required']} roll "
             f"(sampling {rule['pct']}%, minimal {rule['min']} roll) sebelum SPK ditutup.")
+    # B1 (keputusan pemilik 26 Okt 2026) — "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC: bawaan
+    # PERINGATAN (layar meminta konfirmasi; jumlahnya dicatat di dokumen), setelan `qc.accept_all_with_hold_action`
+    # = "blokir" → ditolak di sini. Dicek SEBELUM perubahan apa pun pada dokumen/stok.
+    held: List[Dict[str, Any]] = []
+    if dec == "terima":
+        keep_lines = ([ln for ln in lines if ln.get("qc_at") or not ln.get("roll_id")]
+                      if doc.get("kind") == KIND_QC_4POINT else lines)
+        held = await held_rolls({**doc, "lines": keep_lines})
+        if held and await accept_all_hold_action(doc.get("entity_id") or "") == "blokir":
+            nos = ", ".join(h["roll_no"] or "—" for h in held[:6]) + (" …" if len(held) > 6 else "")
+            raise InspectionError(
+                f"{len(held)} roll masih ditahan/gagal QC ({nos}) — keputusan 'Diterima seluruhnya' diblokir "
+                "pengaturan QC. Pilih 'Diterima sebagian' atau 'Ditolak', atau lepas/tolak tahanannya dulu.")
     if doc.get("kind") == KIND_QC_4POINT and rule["checked"] < rule["total"]:
         # Roll yang TIDAK diperiksa dikeluarkan dari SPK (tetap "belum 4-point"), bukan diluluskan.
         keep = [ln for ln in lines if ln.get("qc_at") or not ln.get("roll_id")]
@@ -1332,7 +1388,10 @@ async def finish(ins_id: str, decision: str, remark: str,
         # tidak ada lagi "SPK ditutup terima tetapi roll masih karantina" (F-14).
         qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids)
     extra = {"quarantine_result": qres} if qres else {}
-    out = await _save(doc, "finished", f"Keputusan: {DECISIONS[dec]}", actor, note,
+    if held:   # B1 — peringatan diterima: jejaknya tinggal di dokumen & riwayat.
+        extra["accepted_with_held_rolls"] = [{"roll_no": h["roll_no"], "reason": h["reason"]} for h in held]
+    label = f"Keputusan: {DECISIONS[dec]}" + (f" — {len(held)} roll tetap ditahan" if held else "")
+    out = await _save(doc, "finished", label, actor, note,
                       status=STATUS_DONE, decision=dec, decision_label=DECISIONS[dec],
                       remark=note, reject_reason=(note if dec == "tolak" else ""),
                       finished_at=now_iso(),
@@ -1702,6 +1761,7 @@ async def defect_codes(entity_id: str = "") -> List[Dict[str, str]]:
 async def meta(entity_id: str = "") -> Dict[str, Any]:
     """Kosakata + kebijakan yang BERLAKU — layar tidak boleh menebak keduanya."""
     pol = await _policy(entity_id)
+    acc = await accept_all_hold_action(entity_id)
     from services import qc_inspection_service as _qc
     return {
         "defect_codes": await defect_codes(entity_id),
@@ -1727,5 +1787,8 @@ async def meta(entity_id: str = "") -> Dict[str, Any]:
             # seharusnya sudah terlihat SEBELUM tombolnya bisa ditekan. Ambangnya
             # tetap milik server (`MIN_REASON`); layar hanya menampilkannya.
             "min_reason_length": MIN_REASON,
+            # B1 (26 Okt 2026) — "Diterima seluruhnya" saat masih ada roll ditahan: peringatan (bawaan) / blokir.
+            "accept_all_with_hold_action": acc,
+            "accept_all_with_hold_label": ACCEPT_ALL_HOLD_ACTIONS[acc],
         },
     }

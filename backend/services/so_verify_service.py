@@ -210,6 +210,9 @@ async def order_preview(order: Dict[str, Any]) -> Dict[str, Any]:
     # Pesanan AMBIL SENDIRI: alamat kirim tidak relevan dan TIDAK dikirim ke layar (anti-bocor).
     is_pickup = (order.get("fulfillment_method") or "kirim").strip().lower() == "ambil"
     addr = {} if is_pickup else (order.get("shipping_address") or {})
+    disc = float(order.get("discount_total") or 0)
+    net = float(order.get("net_subtotal") or order.get("total_amount") or 0)
+    gross = float(order.get("total_amount") or 0) or round(net + disc, 2)
     return {
         "customer_name": order.get("customer_name") or "",
         "customer_city": order.get("customer_city") or "",
@@ -228,9 +231,17 @@ async def order_preview(order: Dict[str, Any]) -> Dict[str, Any]:
         "status": order.get("status") or "",
         "items": rows,
         "backorders": backs,
+        # Keputusan pemilik K-03 (26 Okt) — rincian sama dengan PDF SO & detail pesanan: Subtotal (bruto) · Diskon ·
+        # DPP (harga sebelum PPN) · DPP nilai lain (11/12) · PPN · Total (termasuk PPN). Dulu layar menulis
+        # "Subtotal" = net_subtotal (SUDAH dipotong diskon) lalu "Diskon" lagi → diskon tampak terpotong dua kali.
         "totals": {
-            "net_subtotal": float(order.get("net_subtotal") or order.get("total_amount") or 0),
-            "discount_total": float(order.get("discount_total") or 0),
+            "gross_subtotal": gross,   # Σ harga × qty, sebelum diskon
+            "net_subtotal": net,
+            "discount_total": disc,
+            "dpp": float(order.get("dpp") or 0),
+            # None = dokumen lama tanpa bendera → layar mengenali dari DPP ≈ 11/12 (utils/taxBreakdown).
+            "dpp_nilai_lain": (bool(order["dpp_nilai_lain"]) if order.get("dpp_nilai_lain") is not None else None),
+            "ppn_mode": order.get("ppn_mode") or "excluded",
             "ppn_amount": float(order.get("ppn_amount") or 0),
             "ppn_rate": float(order.get("ppn_rate") or 0),
             "grand_total": float(order.get("grand_total") or 0),

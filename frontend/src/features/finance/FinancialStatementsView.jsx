@@ -384,6 +384,12 @@ function BalanceSheetTab({ selectedEntity }) {
         </div>
       )}
       <p className="mt-2 text-[11px] text-[#9A9BA3]">Ekuitas termasuk Laba Tahun Berjalan (akumulatif) sehingga Aset = Kewajiban + Ekuitas.</p>
+      {/* Keputusan pemilik K-01/K-02 (26 Okt) — Neraca = buku besar; layar operasional memakai sub-buku. Disebut terang. */}
+      <p className="mt-1 text-[11px] text-[#9A9BA3]" data-testid="bs-source-label">
+        Sumber: saldo buku besar. Piutang Usaha hanya memuat penjualan yang sudah diakui (dikirim) — layar
+        Piutang, Control Tower & Dasbor Keuangan memakai sub-buku dokumen belum lunas (termasuk pesanan belum dikirim),
+        sehingga angkanya bisa lebih besar. Kas & setara kas = saldo buku besar akun kas & bank (angka utama "Kas & Bank").
+      </p>
     </div>
   );
 }

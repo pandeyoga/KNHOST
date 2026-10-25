@@ -170,6 +170,9 @@ async def manager_home(period: Optional[str] = None, entity_id: Optional[str] = 
     achievement = round(totals["total_collected"] / target_total * 100, 2) if target_total else 0
     # SATU sumber angka: KPI & daftar rincian dihitung sekali (dulu dua sumber → 0 vs 6).
     approvals = await approval_backlog(entity_id)
+    # K-01 (26 Okt) — KPI piutang Beranda manajer & baris "Piutang lewat jatuh tempo" = SEMUA pelanggan, sumber
+    # layar Piutang (sub-buku). `totals` (papan tim per sales aktif) tetap ada sebagai rincian kinerja tim.
+    ar_all = await ar_all_customers(entity_id)
     # 2026-06 — papan antrean mahal kini ADA JUGA di Dasbor Manajer. Sebelum ini hanya
     # beranda pemilik memilikinya, padahal yang menandatangani PO custom & sengketa
     # kontrabon justru manajer: pemilik melihat pekerjaannya, orangnya tidak.
@@ -187,7 +190,9 @@ async def manager_home(period: Optional[str] = None, entity_id: Optional[str] = 
                    "day": day, "days_in_month": days_in_month},
         "approvals_pending": approvals["total"],
         "approvals": approvals,
-        "late_today": await _late_today(entity_id, totals["overdue_amount"]),
+        "ar_all": {k: ar_all[k] for k in ("outstanding", "overdue", "ar_ledger", "exposure", "customers",
+                                          "overdue_customers", "scope", "source", "source_label")},
+        "late_today": await _late_today(entity_id, ar_all["overdue"]),
         "designers": await _designer_snapshot(entity_id),
     }
 
@@ -316,7 +321,7 @@ async def _late_today(entity_id: Optional[str], ar_overdue: float = 0.0) -> Dict
     rows = [
         {"key": "ar", "label": "Piutang lewat jatuh tempo", "view": "ar-aging",
          "count": None, "amount": round(float(ar_overdue or 0), 2),
-         "hint": "Tagih pelanggan atau ajukan rencana bayar"},
+         "hint": "Semua pelanggan · sama dengan layar Piutang — tagih atau ajukan rencana bayar"},
         {"key": "rnd", "label": "Round sample R&D lewat tenggat", "view": "designer-kpi",
          "count": int(rnd_board.get("count") or 0), "amount": None,
          "hint": (f"{rnd_board.get('admin_count') or 0} sudah dinaikkan ke admin · "
@@ -362,23 +367,49 @@ async def _designer_snapshot(entity_id: Optional[str]) -> Dict[str, Any]:
     }
 
 
-async def _ar_outside_board(sales_ids: Any, entity_id: Optional[str]) -> Dict[str, Any]:
-    """G1-13 — piutang pelanggan yang TIDAK ikut papan sales (tanpa sales / sales nonaktif), rumus sama
-    (`compute_customer_credit`)."""
-    q: Dict[str, Any] = {"assigned_sales_id": {"$nin": [x for x in sales_ids if x]}}
-    if entity_id and entity_id != "all":
-        q["entity_id"] = entity_id
-    out = {"customers": 0, "outstanding": 0.0, "overdue": 0.0, "overdue_customers": 0}
-    async for c in db.customers.find(q, {"_id": 0}):
-        cc = await compute_customer_credit(c, entity_id)
-        if cc["ar_outstanding"] <= 0.01:
-            continue
-        out["customers"] += 1
-        out["outstanding"] = round(out["outstanding"] + cc["ar_outstanding"], 2)
-        if cc["overdue_amount"] > 0.01:
-            out["overdue_customers"] += 1
-            out["overdue"] = round(out["overdue"] + cc["overdue_amount"], 2)
-    return out
+# Keputusan pemilik K-01 (26 Okt) — layar operasional (Piutang, Dasbor Keuangan, Control Tower, Beranda) memakai
+# SUB-BUKU piutang (dokumen penjualan belum lunas) sebagai angka utama, untuk SEMUA pelanggan; Neraca memakai GL.
+AR_SOURCE_LABEL = "Sub-buku piutang (dokumen belum lunas) · semua pelanggan — sama dengan layar Piutang"
+
+
+async def ar_all_customers(entity_id: Optional[str]) -> Dict[str, Any]:
+    """K-01 — piutang SEMUA pelanggan dari sumber yang sama dengan layar Piutang (`ar_aging_service.aging_report`).
+
+    Dulu (G1-13) KPI Control Tower = Σ papan sales (hanya pelanggan milik sales AKTIF) dengan jatuh tempo
+    `compute_customer_credit` (telat sejak detik pertama) → "Lewat tempo Rp 0" walau layar Piutang menunjukkan
+    tunggakan pelanggan tanpa sales. Kini total, lewat tempo (≥ 1 hari, definisi layar Piutang) dan rincian per
+    sales (termasuk baris "Tanpa sales") diambil dari laporan aging yang SAMA."""
+    from services.ar_aging_service import aging_report
+
+    rep = await aging_report(entity_id if entity_id and entity_id != "all" else None)
+    tot = rep.get("totals") or {}
+    by_sales: Dict[str, Dict[str, Any]] = {}
+    overdue_customers = 0
+    for c in rep.get("customers") or []:
+        sid = c.get("assigned_sales_id") or ""
+        g = by_sales.setdefault(sid, {
+            "sales_id": sid, "has_sales": bool(sid),
+            "sales_name": (c.get("assigned_sales_name") or "Sales tidak dikenal") if sid else "Tanpa sales",
+            "ar_outstanding": 0.0, "overdue_amount": 0.0, "customers": 0, "overdue_customers": 0})
+        g["ar_outstanding"] = round(g["ar_outstanding"] + float(c.get("outstanding") or 0), 2)
+        g["customers"] += 1
+        if float(c.get("overdue") or 0) > 0.01:
+            g["overdue_amount"] = round(g["overdue_amount"] + float(c.get("overdue") or 0), 2)
+            g["overdue_customers"] += 1
+            overdue_customers += 1
+    rows = sorted(by_sales.values(), key=lambda r: (r["overdue_amount"], r["ar_outstanding"]), reverse=True)
+    return {
+        "outstanding": round(float(tot.get("total") or 0), 2),
+        "overdue": round(float(tot.get("overdue") or 0), 2),
+        "ar_ledger": round(float(tot.get("ar_ledger") or 0), 2),
+        "exposure": round(float(tot.get("exposure") or 0), 2),
+        "customers": int(tot.get("customers") or 0),
+        "overdue_customers": overdue_customers,
+        "by_sales": rows,
+        "scope": "semua pelanggan",
+        "source": "sub_ledger",
+        "source_label": AR_SOURCE_LABEL,
+    }
 
 
 async def admin_home(entity_id: Optional[str] = None,
@@ -389,13 +420,9 @@ async def admin_home(entity_id: Optional[str] = None,
     period = _current_month()
     board = await sf.leaderboard(period, entity_id)
 
-    ar_total = round(sum(r["ar_outstanding"] for r in board), 2)
-    overdue_total = round(sum(r["overdue_amount"] for r in board), 2)
-    # UAT 24 Okt (audit UI tahap 2) — G1-13: papan ini hanya menjumlah pelanggan milik sales AKTIF (leaderboard).
-    # Di data acuan satu-satunya tagihan telat (Toko Kain Sejahtera, Rp 1.193.250) milik pelanggan TANPA sales →
-    # "Lewat tempo Rp 0" walau layar Piutang menunjukkan tunggakan. Definisi papan TIDAK diubah (keputusan K-01);
-    # yang di luar papan dihitung terpisah supaya layar bisa menyebut cakupannya dengan jujur.
-    outside = await _ar_outside_board({r["sales_id"] for r in board}, entity_id)
+    # Keputusan pemilik K-01 (26 Okt) — KPI piutang & papan "Lewat Tempo per Sales" menghitung SEMUA pelanggan
+    # (termasuk tanpa sales / sales nonaktif) dari sumber layar Piutang. Dulu (G1-13) = Σ papan sales aktif saja.
+    ar_all = await ar_all_customers(entity_id)
 
     # Penjualan hari ini & bulan ini — UAT 24 Okt (audit UI Beranda): keduanya dari populasi SO yang SAMA (semua SO
     # hidup di entitas). Dulu "Bulan Ini" = jumlah leaderboard (hanya pelanggan yang ber-sales aktif), sehingga SO POS /
@@ -429,13 +456,18 @@ async def admin_home(entity_id: Optional[str] = None,
 
     reorder = await reorder_suggestions(entity_id)
     reorder_items = reorder.get("items", [])
+    # K-04 (keputusan pemilik 26 Okt, permintaan D2) — KPI "Stok Rendah" = definisi TUNGGAL `low_stock_summary`
+    # (per produk × badan usaha, 0 < Tersedia < 100) = Dasbor Manajer & Operasi Gudang. Dulu = jumlah saran reorder
+    # (di bawah ROP) — konsep lain; daftar saran reorder tetap dikirim sebagai `reorder` (papan "Stok Perlu Reorder").
+    from services.stock_availability import low_stock_summary
+    low = await low_stock_summary([entity_id] if entity_id and entity_id != "all" else None, limit=8)
 
     payout = 0.0
     for r in board:
         c = await sf.compute_commission(r["sales_id"], period, entity_id)
         payout += c["total_incentive"]
 
-    top_overdue = sorted(board, key=lambda r: r["overdue_amount"], reverse=True)[:5]
+    top_overdue = ar_all["by_sales"][:5]
 
     return {
         "period": period,
@@ -443,20 +475,24 @@ async def admin_home(entity_id: Optional[str] = None,
             "today": today_sales, "today_orders": len(live_today),
             "mtd": sales_mtd, "collected_mtd": collected_mtd,
         },
-        "ar": {"outstanding": ar_total, "overdue": overdue_total,
-               "ar_ledger": round(sum(r["ar_ledger"] for r in board), 2),
-               "exposure": round(sum(r["exposure"] for r in board), 2),
-               "scope": "pelanggan ber-sales aktif", "outside_board": outside},
+        "ar": {"outstanding": ar_all["outstanding"], "overdue": ar_all["overdue"],
+               "ar_ledger": ar_all["ar_ledger"], "exposure": ar_all["exposure"],
+               "customers": ar_all["customers"], "overdue_customers": ar_all["overdue_customers"],
+               "scope": ar_all["scope"], "source": ar_all["source"], "source_label": ar_all["source_label"]},
         "approvals_pending": approvals["total"],
         "approvals": approvals,
         "special_orders_waiting": special_orders_waiting,
         "waiting_boards": waiting_boards,
-        "low_stock": {"count": len(reorder_items), "items": reorder_items[:8]},
+        "low_stock": {"count": low["count"], "items": low["items"], "label": low["label"],
+                      "threshold": low["threshold"]},
+        "reorder": {"count": len(reorder_items), "items": reorder_items[:8]},
         "incentive_payout": round(payout, 2),
         "leaderboard_top": board[:5],
+        # K-01 — per sales dari laporan aging yang sama (baris "Tanpa sales" ikut), bukan papan sales aktif.
         "top_overdue": [
-            {"sales_name": r.get("sales_name", ""), "overdue_amount": r["overdue_amount"],
-             "ar_outstanding": r["ar_outstanding"]}
+            {"sales_name": r["sales_name"], "sales_id": r["sales_id"], "has_sales": r["has_sales"],
+             "overdue_amount": r["overdue_amount"], "ar_outstanding": r["ar_outstanding"],
+             "customers": r["customers"], "overdue_customers": r["overdue_customers"]}
             for r in top_overdue
         ],
     }

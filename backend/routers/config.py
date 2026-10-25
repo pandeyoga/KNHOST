@@ -11,7 +11,7 @@ Satu pintu API untuk seluruh konfigurasi sistem:
   POST /api/config/impact-preview  — DAFTAR DAMPAK koreksi harga master
   POST /api/config/impact-apply    — terapkan HANYA ke dokumen yang dicentang
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -85,6 +85,59 @@ def _can_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List
     return _may_edit(entry, user, perms)
 
 
+#: Keputusan pemilik K-11 (26 Okt) — peran yang hanya boleh MEMBACA sebagian Pusat Pengaturan. Dulu setiap pengguna
+#: login membaca SELURUH kelompok (registry/effective/explain/history terbuka). MD kini hanya membaca kelompok
+#: "R&D & Desain" + setting yang dijaga izin R&D (`rnd.*`, mis. matriks persetujuan divisi R&D — persis yang memang
+#: bisa ia ubah), jadi hak UBAH MD tidak berkurang. Peran lain TIDAK berubah. Pemegang `settings.view` (diberi lewat
+#: Peran & Hak Akses) tetap membaca semuanya — batas ini mengikuti matriks izin, bukan menggantikannya.
+READ_LIMITS: Dict[str, Dict[str, Any]] = {
+    "md": {"groups": ("rnd",), "modules": ("rnd",), "label": "R&D & Desain"},
+}
+
+
+def _read_limit(user: Dict[str, Any], perms: Dict[str, List[str]]) -> Optional[Dict[str, Any]]:
+    """Batas baca Pusat Pengaturan untuk user ini — `None` = boleh membaca semua kelompok."""
+    if _may(perms, "settings", "view"):
+        return None
+    role = user.get("role") or ""
+    for base, lim in READ_LIMITS.items():
+        if role_in(role, (base,)):
+            return lim
+    return None
+
+
+def _visible(entry: Optional[Dict[str, Any]], lim: Optional[Dict[str, Any]]) -> bool:
+    if not lim:
+        return True
+    if not entry:
+        return False
+    if entry.get("group") in lim["groups"]:
+        return True
+    module = (entry.get("permission") or ["settings", "manage"])[0]
+    return module in lim["modules"]
+
+
+def _visible_groups(lim: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Daftar kelompok + hitungan yang TERLIHAT user (hitungan ikut saringan, bukan jumlah katalog)."""
+    if not lim:
+        return registry.groups()
+    out = []
+    for g in registry.groups():
+        items = [e for e in registry.by_group(g["id"]) if _visible(e, lim)]
+        if items:
+            out.append({**g, "count": len(items),
+                        "active_count": len([e for e in items if e.get("status") == "active"])})
+    # Kelompok utama peran (mis. R&D & Desain untuk MD) di urutan pertama → layar membukanya lebih dulu.
+    out.sort(key=lambda g: g["id"] not in lim["groups"])
+    return out
+
+
+def _deny_read(lim: Dict[str, Any]) -> HTTPException:
+    return HTTPException(status_code=403, detail=(
+        f"Peran Anda hanya dapat membuka pengaturan kelompok {lim['label']}. "
+        "Minta Admin/Manajer bila perlu melihat pengaturan lain."))
+
+
 async def _global_write_allowed(request: Request) -> bool:
     from entity_scope import entity_ctx
     return (await entity_ctx(request)).is_cross_entity
@@ -108,10 +161,11 @@ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[
     """Katalog setting (label awam, penjelasan, dampak, tipe, batas, scope, consumer)."""
     user = await current_user(request)
     perms = await _allowed(user)
+    lim = _read_limit(user, perms)
     entries = registry.search(q) if q else (
         registry.by_group(group) if group else registry.all_entries())
-    entries = [{**e, "can_edit": _can_edit(e, user, perms)} for e in entries]
-    return {"groups": registry.groups(), "entries": entries, "total": len(entries),
+    entries = [{**e, "can_edit": _can_edit(e, user, perms)} for e in entries if _visible(e, lim)]
+    return {"groups": _visible_groups(lim), "entries": entries, "total": len(entries),
             "scope_levels": registry.SCOPE_LEVELS, "simulators": config_simulator.catalog(),
             # `caps` membuat UI jujur: tab/tombol yang tidak diizinkan server
             # tidak ditampilkan sama sekali (bukan ditampilkan lalu ditolak 403).
@@ -121,6 +175,8 @@ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[
                 "editable_count": sum(1 for e in entries if e["can_edit"]),
                 # IX-06 — UI hanya menawarkan lapisan "Global" bila server mengizinkannya
                 "global_write": await _global_write_allowed(request),
+                # K-11 — batas baca (mis. MD: hanya R&D & Desain); kosong = semua kelompok terbaca.
+                "read_scope": (lim or {}).get("label", ""),
             }}
 
 
@@ -131,13 +187,17 @@ async def read_effective(request: Request, group: str = "", q: str = "",
     """Nilai efektif + lapisan asal untuk satu grup (atau hasil pencarian)."""
     user = await current_user(request)
     perms = await _allowed(user)
+    lim = _read_limit(user, perms)
+    if lim and group and not q and not any(_visible(e, lim) for e in registry.by_group(group)):
+        raise _deny_read(lim)
     await resolver.apply_due_values()      # aktifkan perubahan berjadwal yang jatuh tempo
     ctx = {"entity_id": entity_id, "customer_id": customer_id, "supplier_id": supplier_id,
            "product_id": product_id, "document_id": document_id}
     items = await resolver.resolve_group(group or None, ctx, term=q)
+    items = [it for it in items if _visible(registry.get(it["key"]), lim)]
     for it in items:
         it["can_edit"] = _can_edit(registry.get(it["key"]) or it, user, perms)
-    return {"groups": registry.groups(), "context": ctx, "items": items, "total": len(items)}
+    return {"groups": _visible_groups(lim), "context": ctx, "items": items, "total": len(items)}
 
 
 @router.get("/explain")
@@ -145,10 +205,13 @@ async def explain(request: Request, key: str, entity_id: str = "", customer_id: 
                   supplier_id: str = "", product_id: str = "",
                   document_id: str = "") -> Dict[str, Any]:
     """Jejak lapisan: default kode → global → entitas → pelanggan → … dan mana yang menang."""
-    await current_user(request)
+    user = await current_user(request)
     entry = registry.get(key)
     if not entry:
         raise HTTPException(status_code=404, detail=f"Setting '{key}' tidak ada di registry")
+    lim = _read_limit(user, await _allowed(user))
+    if not _visible(entry, lim):
+        raise _deny_read(lim)
     ctx = {"entity_id": entity_id, "customer_id": customer_id, "supplier_id": supplier_id,
            "product_id": product_id, "document_id": document_id}
     res = await resolver.resolve(key, ctx)
@@ -160,7 +223,8 @@ async def explain(request: Request, key: str, entity_id: str = "", customer_id: 
 @router.post("/simulate")
 async def simulate(payload: ConfigSimulateIn, request: Request) -> Dict[str, Any]:
     """"Coba dulu": jalankan aturan memakai nilai efektif (+ nilai hipotetis) tanpa menyimpan."""
-    await current_user(request)
+    user = await current_user(request)
+    lim = _read_limit(user, await _allowed(user))
     sim_id = payload.simulator
     if not sim_id:
         entry = registry.get(payload.key)
@@ -175,6 +239,8 @@ async def simulate(payload: ConfigSimulateIn, request: Request) -> Dict[str, Any
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    if lim and not all(_visible(registry.get(k), lim) for k in sim["needs"]):
+        raise _deny_read(lim)
     ctx = _ctx(payload.ctx)
     values: Dict[str, Any] = {}
     trail: List[Dict[str, Any]] = []
@@ -285,8 +351,15 @@ async def clear_value_layer(payload: ConfigValueIn, request: Request) -> Dict[st
 async def read_history(request: Request, key: str = "", scope_type: str = "",
                        scope_id: str = "", limit: int = 100) -> Dict[str, Any]:
     """Riwayat perubahan konfigurasi (append-only, terbaru dulu)."""
-    await current_user(request)
-    rows = await resolver.history(key, scope_type, scope_id, min(max(int(limit), 1), 500))
+    user = await current_user(request)
+    lim = _read_limit(user, await _allowed(user))
+    n = min(max(int(limit), 1), 500)
+    if lim and key and not _visible(registry.get(key), lim):
+        raise _deny_read(lim)
+    # K-11 — peran berbatas baca hanya melihat riwayat setting yang terlihat olehnya.
+    rows = await resolver.history(key, scope_type, scope_id, 500 if lim else n)
+    if lim:
+        rows = [r for r in rows if _visible(registry.get(r["key"]), lim)][:n]
     return {"rows": rows, "total": len(rows)}
 
 

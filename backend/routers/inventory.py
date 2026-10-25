@@ -176,7 +176,19 @@ async def inventory_status_board(
         owner_entity_id=owner_entity_id if ctx.is_cross_entity else None,
         visible_entity_ids=None if (ctx.is_cross_entity and not owner_entity_id) else ids,
         cross_entity_detail=ctx.is_cross_entity,
+        registered_only=True,   # K-04 — definisi tunggal "Tersedia": gudang terdaftar saja
     )
+
+
+@router.get("/inventory/low-stock-summary")
+async def inventory_low_stock_summary(request: Request, owner_entity_id: Optional[str] = None,
+                                      limit: int = 50) -> Dict[str, Any]:
+    """K-04 (keputusan pemilik 26 Okt 2026) — "Stok rendah" dengan definisi TUNGGAL (`services/stock_availability`):
+    per produk per badan usaha, 0 < Tersedia < 100 satuan dasar; Tersedia = papan stok. Dipakai Operasi Gudang."""
+    await require_permission(request, "product", "view")
+    ctx = await entity_ctx(request)
+    from services.stock_availability import low_stock_summary
+    return await low_stock_summary(resolve_scope_ids(ctx, owner_entity_id), limit=max(0, min(int(limit or 0), 500)))
 
 
 @router.get("/inventory/balances")

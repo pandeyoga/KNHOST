@@ -51,7 +51,8 @@ export default function CashFlowForecastView({ selectedEntity }) {
   return (
     <div data-testid="cashflow-forecast-view">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <KpiCard testId="fcst-kpi-cash" label="Kas Saat Ini" value={formatCurrency(data?.cash_now)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" />
+        {/* K-02 (26 Okt) — label sumber: kas = saldo buku besar akun kas & bank (angka utama "Kas & Bank"). */}
+        <KpiCard testId="fcst-kpi-cash" label="Kas Saat Ini" value={formatCurrency(data?.cash_now)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" sub="Saldo buku besar akun kas & bank" />
         <KpiCard testId="fcst-kpi-inflow" label="Estimasi Masuk (AR)" value={formatCurrency(data?.total_inflow)} icon={ArrowDownCircle} accent={FC.revenue} tone="text-[#1B7F4B]" />
         <KpiCard testId="fcst-kpi-outflow" label="Estimasi Keluar (AP)" value={formatCurrency(data?.total_outflow)} icon={ArrowUpCircle} accent={FC.expense} tone="text-[#C0392B]" />
         <KpiCard testId="fcst-kpi-projected" label="Proyeksi Kas Akhir" value={formatCurrency(data?.projected_cash)} icon={LineIcon} accent={FC.purple} tone={(data?.projected_cash ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />

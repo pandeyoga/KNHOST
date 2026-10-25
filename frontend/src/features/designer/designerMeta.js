@@ -64,10 +64,11 @@ const pctId = (v) => `${String(v).replace(".", ",")}%`;
 export function gradeFormula(w) {
   if (!w) return "";
   const n = normalizedWeights(w);
+  // Keputusan pemilik K-08 (26 Okt) — nilai versi desain BAGIAN dari 100% (bukan bonus); kalimat menyebut jumlahnya.
   const head = n && n.total > 0
     ? `Nilai = tepat waktu ${pctId(n.on_time)} + skor penilaian ${pctId(n.score)} + ` +
-      `sekali-jadi (ACC) ${pctId(n.acc)} + nilai versi desain ${pctId(n.design)} ` +
-      `(skala 0–2 dikonversi ×50 menjadi 0–100)`
+      `sekali-jadi (ACC) ${pctId(n.acc)} + nilai versi desain ${pctId(n.design)} = 100% ` +
+      `(nilai versi desain skala 0–2 dikonversi ×50 menjadi 0–100)`
     : "Nilai = gabungan tepat waktu, skor penilaian, sekali-jadi (ACC), dan nilai versi desain";
   const note = n && n.total > 0 && Math.round(n.total) !== 100
     ? ` Porsi ini hasil penyetaraan dari setelan bobot ${w.on_time} : ${w.score} : ${w.acc} : ${w.design ?? 0} (jumlah ${n.total}) menjadi 100%.`

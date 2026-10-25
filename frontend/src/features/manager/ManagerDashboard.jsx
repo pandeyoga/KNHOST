@@ -170,8 +170,10 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               bukan pendapatan jurnal bulan berjalan di Posisi & Kontrol. Label disesuaikan
               supaya dua layar tidak memakai nama yang sama untuk angka berbeda. */}
           <KPICard icon={Star} label="Nilai Pesanan 30 Hari" value={summary?.monthly_revenue !== undefined ? fmtCur(summary.monthly_revenue) : "—"} sub="nilai SO masuk · bukan pendapatan jurnal" color="#34C759" loading={loading} />
-          <KPICard icon={Clock} label="Menunggu Persetujuan" value={summary?.pending_approvals ?? "—"} sub="Perlu ditindak" color="#FF9500" loading={loading} />
-          <KPICard icon={AlertTriangle} label="Stok Rendah" value={summary?.low_stock_items ?? "—"} sub="<100 unit tersedia" color="#FF3B30" loading={loading} />
+          {/* K-06 (26 Okt) — sama dengan KPI Pesanan: SO berstatus Menunggu persetujuan, tanpa pesanan sample. */}
+          <KPICard icon={Clock} label="Menunggu Persetujuan" value={summary?.pending_approvals ?? "—"} sub="SO menunggu persetujuan · tanpa sample" color="#FF9500" loading={loading} />
+          {/* K-04 (26 Okt) — definisi tunggal "Stok rendah": per produk per badan usaha, 0 < tersedia (papan stok) < 100. */}
+          <KPICard icon={AlertTriangle} label="Stok Rendah" value={summary?.low_stock_items ?? "—"} sub="produk · tersedia < 100 (papan stok)" color="#FF3B30" loading={loading} />
           <KPICard icon={CheckCircle} label="Stock Opname Menunggu" value={summary?.pending_cycle_counts ?? "—"} sub="Menunggu review" color="#5856D6" loading={loading} />
         </div>
 
@@ -210,6 +212,10 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               <h3 className="text-[14px] font-bold">Corong Status Pesanan</h3>
               <span className="text-[12px] text-[#6B6B73]">{funnel?.total_orders ?? 0} total</span>
             </div>
+            {/* K-06 (26 Okt) — populasi corong = daftar Pesanan; pesanan sample dikecualikan dan disebut jumlahnya. */}
+            <p className="-mt-2 mb-2 text-[11px] text-[#8E8E93]" data-testid="manager-funnel-scope">
+              Sama dengan daftar Pesanan · tanpa pesanan sample{funnel?.sample_excluded ? ` (${funnel.sample_excluded} dikecualikan)` : ""}
+            </p>
             {loading ? (
               <div className="h-36 bg-[#F5F5F7] rounded animate-pulse" />
             ) : funnelChartData.length > 0 ? (

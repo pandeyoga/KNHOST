@@ -116,14 +116,15 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
       title: `Anulir keputusan ${row.number}?`,
       message: "Efek keputusan sebelumnya dibalik lewat jurnal pembalik. Jejak keputusan lama "
         + "tetap tersimpan (append-only).",
-      reasonLabel: "Alasan anulir (minimal 3 huruf)",
+      reasonLabel: "Alasan anulir (minimal 5 huruf)",
+      reasonMinLength: 5,   // K-14 (26 Okt) — seragam 5 huruf (server juga)
       confirmLabel: "Anulir Keputusan",
       danger: true,
       testId: "pv-reverse-confirm",
     });
     if (reason === null) return;
-    if (reason.trim().length < 3) {
-      setError("Alasan anulir minimal 3 huruf supaya jejaknya bisa dibaca ulang.");
+    if (reason.trim().length < 5) {
+      setError("Alasan anulir minimal 5 huruf supaya jejaknya bisa dibaca ulang.");
       return;
     }
     setReversing(row.id);

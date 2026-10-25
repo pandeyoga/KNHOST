@@ -44,7 +44,8 @@ class PlanUpdate(BaseModel):
 
 
 class VoidBody(BaseModel):
-    reason: str = Field(..., min_length=3)
+    # K-14 (26 Okt) — panjang alasan minimum seragam 5 huruf (layar & server).
+    reason: str = Field(..., min_length=5)
 
 
 class WaiveBody(BaseModel):

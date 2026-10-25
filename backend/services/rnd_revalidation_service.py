@@ -94,8 +94,8 @@ async def prepare(body: Dict[str, Any], pid: str, types: List[str]) -> Dict[str,
     if not sid:
         raise RevalError("Pilih supplier/mitra yang diuji ulang — hasil disimpan per supplier.")
     reason = (body.get("revalidation_reason") or "").strip()
-    if len(reason) < 3:
-        raise RevalError("Tulis alasan siklus uji ulang (mis. supplier baru, keluhan, pergantian bahan).")
+    if len(reason) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise RevalError("Tulis alasan siklus uji ulang minimal 5 huruf (mis. supplier baru, keluhan, pergantian bahan).")
     p = await partner(sid)
     ctx = await cycle_context(pid, sid, types)
     return {**p, "reason": reason, **ctx, "requested_at": now_iso()}

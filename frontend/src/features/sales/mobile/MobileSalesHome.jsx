@@ -73,13 +73,16 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
   const customers = data?.customers || [];
   const history = (data?.history || []).map((h) => ({ period: (h.period || "").slice(5), incentive: h.total_incentive ?? h.commission ?? 0 }));
   const boardsUnreadable = !loading && (!data || !!error);
-  // UAT 24 Okt (audit UI tahap 2) — G2-23: untuk peran SALES, papan "PO Custom — menunggu keputusan" berisi pesanan
-  // pelanggan lain yang hanya bisa diputus Manajer (tanpa aksi bagi sales) → papan disembunyikan bila tidak ada satu
-  // baris pun yang bisa ditindak akun ini. Baris papan dari server belum membawa pemilik/pelanggan, jadi penyaringan
-  // "milik saya" menunggu backend (approval_backlog_service) — keputusan K-11.
+  // UAT 24 Okt (audit UI tahap 2) — G2-23: untuk peran SALES, papan "PO Custom — menunggu keputusan" dulu berisi
+  // pesanan pelanggan rekan yang hanya bisa diputus Manajer. Keputusan pemilik K-11 (26 Okt): sales hanya melihat
+  // PO Custom pelanggannya sendiri — server (`approval_backlog_service.owner_scope`) menyaring baris & hitungannya dan
+  // menandai `owner_scoped`. Server lama (belum menyaring) → aturan G2-23 tetap: papan disembunyikan bila tak ada
+  // satu baris pun yang bisa ditindak akun ini.
   const isSalesRole = roleIs(user?.role, ["sales"]);
   const boards = selectWaitingBoards(data, boardsUnreadable)
-    .filter((b) => !(isSalesRole && !boardsUnreadable && b.key === "special_order" && !(b.rows || []).some((r) => r.action)));
+    .filter((b) => !(isSalesRole && !boardsUnreadable && b.key === "special_order" && !b.owner_scoped
+      && !(b.rows || []).some((r) => r.action)));
+  const boardTitle = (b, look) => (isSalesRole && b.owner_scoped ? `${look.title} · pelanggan Anda` : look.title);
   const goBoard = (view) => {
     if (view === "orders") return onOpenTab?.("orders");
     if (BOARD_SUB[view]) return onOpenSub?.(BOARD_SUB[view]);
@@ -113,7 +116,8 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
             return (
               <WaitingQueueBoard key={b.key} board={b} loading={loading && !data} unreadable={boardsUnreadable} onRetry={load}
                 onNavigate={goBoard} onActed={load} icon={look.icon} accent={look.accent} gotoLabel={look.goto}
-                emptyText={look.empty} title={look.title} testIdBase={`m-home-board-${b.key}`} rowTestIdBase={`m-home-board-${b.key}-row`} />
+                emptyText={isSalesRole && b.owner_scoped && b.key === "special_order" ? "Tidak ada PO custom pelanggan Anda yang menunggu keputusan" : look.empty}
+                title={boardTitle(b, look)} testIdBase={`m-home-board-${b.key}`} rowTestIdBase={`m-home-board-${b.key}-row`} />
             );
           })}
         </div>
@@ -132,7 +136,7 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
         <MiniKpi icon={Banknote} label="Penjualan MTD" value={formatCurrency(kpi.total_sales)} sub={`${kpi.orders_count || 0} pesanan`} color="#FF9500" loading={loading} />
         <MiniKpi icon={ArrowUpRight} label="Tertagih" value={formatCurrency(kpi.total_collected)} sub={`${Math.round((kpi.collection_rate || 0) * 1000) / 10}% tertagih`} color="#30D158" loading={loading} />
         <MiniKpi icon={Receipt} label="Belum Lunas" value={formatCurrency(kpi.ar_outstanding)} sub={`Ledger ${formatCurrency(kpi.ar_ledger || 0)} · eksposur ${formatCurrency(kpi.exposure || 0)}`} color="#007AFF" loading={loading} />
-        <MiniKpi icon={AlertTriangle} label="Lewat Jatuh Tempo" value={formatCurrency(kpi.overdue_amount)} sub="Lewat jatuh tempo" color="#FF3B30" loading={loading} />
+        <MiniKpi icon={AlertTriangle} label="Lewat Jatuh Tempo" value={formatCurrency(kpi.overdue_amount)} sub="Lewat ≥ 1 hari (definisi Piutang)" color="#FF3B30" loading={loading} />
         <MiniKpi icon={Users} label="Pelanggan Saya" value={kpi.customers_count || 0} sub={`${kpi.new_customers || 0} baru bulan ini`} color="#8E8E93" loading={loading} />
         <MiniKpi icon={Target} label="Capaian Target" value={`${target.achievement_pct || 0}%`} sub={formatCurrency(target.amount)} color="#5856D6" loading={loading} />
       </div>

@@ -101,6 +101,33 @@ export function formatValue(entry, value) {
   }
 }
 
+/**
+ * Keputusan pemilik K-08 (26 Okt) — kelompok bobot yang membentuk SATU nilai dan dibaca sebagai porsi dari 100%.
+ * Server (`rnd_kpi_service.compute_grade`) menyetarakan jumlahnya ke 100%; layar menampilkan jumlah setelan dan,
+ * bila bukan 100, porsi efektif hasil penyetaraan — supaya tidak ada lagi "40% + 40% + 20% + 20% = 120%".
+ */
+export const WEIGHT_SETS = [
+  {
+    id: "rnd-designer-grade",
+    label: "Bobot nilai desainer",
+    keys: ["rnd.kpi_weight_on_time", "rnd.kpi_weight_score", "rnd.kpi_weight_acc", "rnd.kpi_weight_design"],
+    names: ["tepat waktu", "skor penilaian", "sekali-jadi (ACC)", "nilai versi desain"],
+  },
+];
+
+/** Ringkasan kelompok bobot yang SEMUA kuncinya ada di `items` (nilai efektif) → [{id,label,total,parts:[{name,value,share}]}]. */
+export function weightSetSummaries(items) {
+  const byKey = new Map((items || []).map((i) => [i.key, i]));
+  return WEIGHT_SETS.filter((s) => s.keys.every((k) => byKey.has(k))).map((s) => {
+    const values = s.keys.map((k) => Number(byKey.get(k).value) || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+    const parts = values.map((v, i) => ({
+      name: s.names[i], value: v, share: total > 0 ? Math.round((v * 1000) / total) / 10 : 0,
+    }));
+    return { id: s.id, label: s.label, total, parts };
+  });
+}
+
 export const RISK_LABEL = { low: "Risiko rendah", medium: "Risiko sedang", high: "Risiko tinggi" };
 
 /**

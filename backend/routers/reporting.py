@@ -15,8 +15,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Request, Query
 from db import db
 from dependencies import require_permission
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, resolve_list_scope, resolve_scope_ids
 from services import sales_ownership   # FASE E-8 (E8.4/US11) — "Pesanan Saya"
+from services import line_scope        # K-06 — corong pesanan memakai pagar lini yang sama dengan daftar
 logger = logging.getLogger(__name__)
 
 
@@ -81,10 +82,18 @@ async def stock_aging(request: Request, days_threshold: int = 30,
 @router.get("/reports/reservation-funnel")
 async def reservation_funnel(request: Request,
                              entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Orders grouped by status with conversion rates (per entitas)."""
-    await require_permission(request, "order", "view")
+    """Orders grouped by status with conversion rates (per entitas).
+
+    K-06 (keputusan pemilik 26 Okt 2026) — corong memakai POPULASI YANG SAMA dengan daftar Pesanan
+    (`GET /sales-orders`): tanpa pesanan sample, cakupan badan usaha & kepemilikan sales yang sama, pagar lini
+    peran. Dulu ikut menghitung pesanan sample (corong 405 vs daftar 373)."""
+    actor = await require_permission(request, "order", "view")
     ctx = await entity_ctx(request)
-    match = resolve_list_scope("sales_orders", {}, ctx, entity_id)
+    match = resolve_list_scope("sales_orders", {"order_type": {"$ne": "sample"}}, ctx, entity_id)
+    match = sales_ownership.apply_scope(match, actor)
+    match = line_scope.narrow(match, actor, "", field=line_scope.LINES_FIELD)
+    sample_excluded = await db.sales_orders.count_documents(sales_ownership.apply_scope(
+        resolve_list_scope("sales_orders", {"order_type": "sample"}, ctx, entity_id), actor))
     status_order = [
         "draft", "reserved", "waiting_approval", "approved", "confirmed",
         "partially_picked", "picked", "partially_shipped", "shipped", "done",
@@ -115,7 +124,9 @@ async def reservation_funnel(request: Request,
                 "percentage": round(data["count"] / total * 100, 1) if total > 0 else 0,
                 "total_amount": round(data.get("total_amount", 0), 0),
             })
-    return {"funnel": funnel, "total_orders": total, "active_orders": active_total}
+    return {"funnel": funnel, "total_orders": total, "active_orders": active_total,
+            "sample_excluded": sample_excluded,
+            "scope_label": "Sama dengan daftar Pesanan: tanpa pesanan sample, cakupan badan usaha & sales Anda"}
 
 
 @router.get("/reports/order-velocity")
@@ -279,11 +290,15 @@ async def dashboard_summary(request: Request,
     ]
     rev_result = await db.sales_orders.aggregate(pipeline_rev).to_list(1)
     monthly_revenue = rev_result[0]["total"] if rev_result else 0
-    # Pending approvals
-    pending_approvals = await db.sales_orders.count_documents({**so_base, "status": "waiting_approval"})
-    # Low stock (available < 100) — per entitas pemilik
-    inv_base = resolve_list_scope("inventory_balances", {}, ctx, entity_id)
-    low_stock = await db.inventory_balances.count_documents({**inv_base, "available_qty": {"$lt": 100, "$gt": 0}})
+    # Pending approvals — K-06 (26 Okt 2026): populasi sama dengan daftar Pesanan (tanpa pesanan sample).
+    pending_approvals = await db.sales_orders.count_documents(
+        {**so_base, "status": "waiting_approval", "order_type": {"$ne": "sample"}})
+    # K-04 (keputusan pemilik 26 Okt 2026) — "Stok rendah" = definisi TUNGGAL (`services/stock_availability.py`):
+    # per PRODUK per badan usaha, 0 < Tersedia < 100 satuan dasar; Tersedia = papan stok (roll siap jual, gudang
+    # terdaftar, sesudah cadangan makloon). Dulu menghitung BARIS saldo per gudang (angka beda dengan layar lain).
+    from services.stock_availability import low_stock_summary
+    low = await low_stock_summary(resolve_scope_ids(ctx, entity_id), limit=0)
+    low_stock = low["count"]
     # Cycle count pending (operasional gudang — global; tidak entity-scoped di codebase ini)
     pending_cc = await db.cycle_count_sessions.count_documents({"status": "submitted"})
     return {
@@ -291,5 +306,6 @@ async def dashboard_summary(request: Request,
         "monthly_revenue": round(monthly_revenue, 0),
         "pending_approvals": pending_approvals,
         "low_stock_items": low_stock,
+        "low_stock_label": low["label"],
         "pending_cycle_counts": pending_cc,
     }

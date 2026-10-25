@@ -37,9 +37,11 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
     () => customers.map((c) => ({ value: c.id, label: partyLabel(c) })), [customers]);
   const supOptions = useMemo(
     () => suppliers.map((s) => ({ value: s.id, label: partyLabel(s) })), [suppliers]);
-  // G1-36 — isian wajib: jenis kasus, judul (atau judul bawaan jenis), nominal > 0, cerita kejadian.
+  // G1-36 — isian wajib: jenis kasus & cerita kejadian (≥ 5 huruf).
+  // Keputusan pemilik B4 (26 Okt) — nominal OPSIONAL: boleh kosong/0 (mis. kasus dokumen/data tanpa angka);
+  // server memang menerima 0 (`amount ≥ 0`) → batas waktu memakai tingkat nominal terendah.
   const amountNum = parseDecimal(String(amount ?? "")) || 0;
-  const canSubmit = !!caseType && amountNum > 0 && description.trim().length >= 5;
+  const canSubmit = !!caseType && amountNum >= 0 && description.trim().length >= 5;
 
   async function submit() {
     setSaving(true); setErr("");
@@ -96,11 +98,11 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Nominal yang dipertaruhkan (Rp) <span className="text-[#C0392B]">*</span>
+              Nominal yang dipertaruhkan (Rp) <span className="font-normal text-[#8E8E93]">(opsional)</span>
             </label>
-            <MoneyInput testId="case-create-amount" className="input-field w-full" value={amount} onChange={setAmount} placeholder="0" />
+            <MoneyInput testId="case-create-amount" className="input-field w-full" value={amount} onChange={setAmount} placeholder="Boleh dikosongkan" />
             <p className="mt-1 text-[10px] text-[#8E8E93]">
-              Nominal menentukan batas waktu penyelesaian & apakah perlu persetujuan.
+              Nominal menentukan batas waktu penyelesaian & apakah perlu persetujuan. Kosong = Rp 0 (batas waktu tingkat terendah).
             </p>
           </div>
 
@@ -143,7 +145,7 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button className="primary-button" data-testid="case-create-submit"
             disabled={saving || !canSubmit} onClick={submit}
-            title={canSubmit ? undefined : "Lengkapi jenis kasus, nominal, dan cerita kejadian"}>
+            title={canSubmit ? undefined : "Lengkapi jenis kasus dan cerita kejadian (minimal 5 huruf)"}>
             {saving ? "Menyimpan…" : "Buat kasus"}
           </button>
         </div>

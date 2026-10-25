@@ -21,7 +21,7 @@ import {
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
-import { askReason } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
 import { formatDate } from "../../utils/formatters";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -120,11 +120,33 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
     ? { reject_disposition: needsDisposition ? disposition : "", rejected_roll_ids: decision === "terima_sebagian" ? rejectedRolls : [] }
     : {});
   const toggleRejected = (rid) => setRejectedRolls((cur) => (cur.includes(rid) ? cur.filter((x) => x !== rid) : [...cur, rid]));
+  // B1 (keputusan pemilik 26 Okt) — "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC: bawaan PERINGATAN
+  // (dialog), setelan Pusat Pengaturan `qc.accept_all_with_hold_action` = blokir → tombol mati + alasan. Daftar roll
+  // dari server (`held_rolls`, termasuk tahanan QC 4-point yang menunggu lepas karantina); cadangan dari baris.
+  const heldRolls = Array.isArray(doc.held_rolls) ? doc.held_rolls
+    : lines.filter((ln) => ln.hold || ((isQc4 || isRandom) && ln.decision === "tolak"))
+      .map((ln) => ({ line_id: ln.id, roll_no: ln.roll_no || ln.sku || "", reason: ln.hold_reason || "" }));
+  const acceptHoldBlocked = (meta?.policy?.accept_all_with_hold_action || "peringatkan") === "blokir";
+  const acceptAllWithHeld = decision === "terima" && heldRolls.length > 0;
+  const heldNos = heldRolls.slice(0, 6).map((h) => h.roll_no || "—").join(", ") + (heldRolls.length > 6 ? " …" : "");
 
   async function tutupDenganKeputusan() {
     if (!decision) return;
     if (needsDisposition && !disposition) { setErr("Pilih tindakan untuk roll yang ditolak: retur ke supplier atau barang rusak."); return; }
     if (partialMissing) { setErr("Diterima sebagian: centang roll yang DITOLAK (minimal satu, tidak semuanya)."); return; }
+    if (acceptAllWithHeld) {
+      if (acceptHoldBlocked) {
+        setErr(`${heldRolls.length} roll masih ditahan (${heldNos}) — pengaturan QC memblokir "Diterima seluruhnya". Pilih "Diterima sebagian"/"Ditolak" atau putus tahanannya dulu.`);
+        return;
+      }
+      const ok = await askConfirm({
+        title: "Terima seluruhnya walau ada roll ditahan?",
+        message: `${heldRolls.length} roll masih ditahan/gagal QC: ${heldNos}. Keputusan "Diterima seluruhnya" TIDAK melepas tahanan itu — roll tetap ditahan sampai diputus (lepas/tolak) di rincian SPK atau antrean barang ditahan. Jumlahnya dicatat di SPK.`,
+        confirmLabel: "Tetap terima seluruhnya",
+        cancelLabel: "Kembali",
+      });
+      if (!ok) return;
+    }
     // “Tolak” WAJIB ber-alasan dan alasannya tersimpan DI DOKUMEN (bukan hanya di
     // jejak audit yang tak pernah dibaca orang yang sedang bertanya).
     if (decision === "tolak") {
@@ -534,9 +556,20 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                 </label>
               )}
               <button data-testid="ins-finish-button" className="primary-button"
-                disabled={busy || !decision || (needsDisposition && !disposition) || partialMissing} onClick={tutupDenganKeputusan}>
+                disabled={busy || !decision || (needsDisposition && !disposition) || partialMissing
+                  || (acceptAllWithHeld && acceptHoldBlocked)}
+                title={acceptAllWithHeld && acceptHoldBlocked ? "Pengaturan QC memblokir 'Diterima seluruhnya' selama masih ada roll ditahan" : undefined}
+                onClick={tutupDenganKeputusan}>
                 <CheckCircle2 size={13} /> Tutup SPK
               </button>
+              {acceptAllWithHeld && (
+                <p data-testid="ins-held-warning"
+                  className={`w-full rounded-md px-2 py-1 text-[11px] ${acceptHoldBlocked ? "bg-[#FDECEA] text-[#9B1C1C]" : "bg-[#FFF7EC] text-[#8C4A00]"}`}>
+                  {heldRolls.length} roll masih ditahan/gagal QC ({heldNos}). “Diterima seluruhnya” tidak melepas tahanannya
+                  {acceptHoldBlocked ? " — diblokir pengaturan QC: pilih “Diterima sebagian”/“Ditolak” atau putus tahanannya dulu."
+                    : " — Anda akan diminta konfirmasi."}
+                </p>
+              )}
               {isPoReceipt && (
                 <p className="w-full text-[10.5px] text-[#4A4A52]" data-testid="ins-quarantine-note">
                   Keputusan ini langsung memutus karantina: roll diterima → stok tersedia (grade hasil 4-point),

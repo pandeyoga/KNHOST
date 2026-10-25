@@ -104,13 +104,23 @@ export async function askConfirm(opts = {}) {
 }
 
 /**
+ * Keputusan pemilik K-14 (26 Okt) — panjang MINIMUM alasan seragam 5 huruf untuk semua dialog alasan (layar & server).
+ * Dulu tiap layar berbeda (kosong-saja, 3, 5, 10, 15). Pemanggil yang aturannya memang menuntut lebih panjang secara
+ * bisnis (mis. SPK inspeksi 15 dari server, lepas kunci proses 10) tetap mengirim `reasonMinLength` sendiri.
+ */
+export const REASON_MIN_LENGTH = 5;
+
+/**
  * Pertanyaan yang MENUNTUT alasan tertulis (aksi berdampak uang/stok).
+ * Bawaan `reasonMinLength` = {@link REASON_MIN_LENGTH} bila alasan wajib (catatan opsional — `reasonRequired:false` —
+ * tidak dibatasi).
  * @returns {Promise<string|null>} alasan, atau null bila dibatalkan.
  */
 export async function askReason(opts = {}) {
   const res = await request({
     reasonLabel: "Alasan",
     reasonRequired: true,
+    reasonMinLength: REASON_MIN_LENGTH,
     inputType: "textarea",
     ...opts,
     withReason: true,

@@ -59,12 +59,14 @@ DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
     "inventory": {
         "default_uom": "meter",
         "min_cut_qty": 0.5,
-        # Stock Analytics (Fase 5) — ambang klasifikasi Fast/Slow/Dead & jendela kecepatan jual.
-        # Basis klasifikasi = hari sejak PENJUALAN terakhir (movement outbound_ship).
+        # Stock Analytics — K-05 (keputusan pemilik 26 Okt 2026): kelas laju jual HANYA dari moving average
+        # penjualan (SO hidup) dengan peringkat persentil per satuan. Ambang lama fast/slow_max_days (hari sejak
+        # jual terakhir) tidak dipakai lagi.
         "stock_analytics": {
-            "fast_max_days": 30,        # ≤ 30 hari sejak terjual → Fast
-            "slow_max_days": 90,        # 31–90 → Slow ; > 90 (atau tak pernah terjual & tua) → Dead
-            "velocity_window_days": 90,  # jendela hitung qty terjual & rata-rata harian
+            "velocity_window_days": 90,  # jendela moving average qty terjual per hari
+            "best_seller_pct": 20,       # persen teratas (per satuan) = Best seller
+            "slow_moving_pct": 20,       # persen terbawah di antara SKU terjual = Slow moving
+            "new_sku_age_days": 90,      # SKU berumur < N hari = Baru (tidak diperingkat)
         },
         # Reorder/ROP (Fase 5) — usulan ROP dinamis berbasis kecepatan jual.
         # ROP disarankan = rata2 jual harian × (lead_time + safety_days).

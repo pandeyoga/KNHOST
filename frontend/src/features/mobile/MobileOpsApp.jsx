@@ -1,10 +1,11 @@
-import { can, roleLabel } from "../../config/roles";
+import { can, roleIs, roleLabel } from "../../config/roles";
 import { useEffect, useState } from "react";
 import { Inbox, Gauge, Loader2, ClipboardList, Bell, Sparkles, LayoutGrid, ChevronRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import TanyaKnView from "../tanya/TanyaKnView";
 import MobileShell from "./MobileShell";
 import MobileApprovalInbox, { usePendingApprovals } from "./MobileApprovalInbox";
+import MobileRoleSummary, { roleSummaryKind } from "./MobileRoleSummary";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { actorLabel } from "../../utils/actorLabel";
@@ -118,6 +119,9 @@ function KpiPanel({ desktop }) {
 }
 
 const AI_ROLES = ["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin"];
+// Keputusan pemilik K-11 (26 Okt) — Admin Sample TIDAK memutus pesanan khusus (SORD) di HP: tab/aksi PO custom
+// disembunyikan apa pun izin yang termuat (server: matriks bawaan sample_admin tanpa `order.approve` → 403).
+const NO_SORD_DECISION_ROLES = ["sample_admin"];
 
 // UAT 24 Okt (audit UI tahap 2, G5-09) — lencana "Putuskan di HP" dulu dipasang dari regex teks ("persetujuan",
 // "harga khusus") lalu selalu membuka tab Persetujuan yang tidak memuat dokumennya. Kini lencana hanya bila
@@ -203,7 +207,7 @@ export default function MobileOpsApp(props) {
   const perms = props.user?.permissions;
   const allow = (m, a) => !perms || can(perms, m, a);
   const canPrice = allow("price_approval", "approve");
-  const canSpecial = allow("order", "approve");
+  const canSpecial = allow("order", "approve") && !roleIs(props.user?.role, NO_SORD_DECISION_ROLES);
   const canQueue = allow("approval", "view");
   const [focus, setFocus] = useState("");
   // Verifikasi HP (N-02) — notifikasi bertautan membuka layar terkait sebagai "tampilan penuh" SEMENTARA (tombol
@@ -222,7 +226,15 @@ export default function MobileOpsApp(props) {
   const desktop = <DesktopPanel role={props.user?.role} onForceDesktop={props.onForceDesktop} />;
   // G5-58 — bilah bawah maksimal 5 tab: tab "Desktop" (isinya hanya satu tombol) dilebur ke Ringkas; tombol desktop
   // juga sudah ada di app bar. Peran pemakai asisten mendapat tab "Tanya".
-  tabs.push({ id: "kpi", label: "Ringkas", icon: Gauge, render: () => <KpiPanel desktop={desktop} /> });
+  // K-12 (26 Okt) — Ringkas per peran: Desainer & Admin Sample melihat angka pekerjaannya; peran lain panel umum.
+  const summaryKind = roleSummaryKind(props.user?.role);
+  const openRoleView = (navId, view) => {
+    if (props.onOpenFull) { props.onOpenFull(navId, view); return; }
+    props.onNavigate?.(navId, view); props.onForceDesktop?.();
+  };
+  tabs.push({ id: "kpi", label: "Ringkas", icon: Gauge, render: () => (summaryKind
+    ? <MobileRoleSummary kind={summaryKind} selectedEntity={props.selectedEntity} onOpen={openRoleView} desktop={desktop} />
+    : <KpiPanel desktop={desktop} />) });
   const qcAllowed = can(perms, 'qc', 'inspect') || can(perms, 'qc', 'random_check');
   const qcButton = <button data-testid="mobile-open-inspections" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('quality-hub', 'inspections')}>Meja QC · SPK inspeksi & random check scan</button>;
   if (['admin', 'manager', 'md'].includes(props.user?.role)) tabs.push({

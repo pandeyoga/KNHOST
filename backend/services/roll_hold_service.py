@@ -22,8 +22,8 @@ def _entry(action: str, reason: str, actor: Dict[str, Any], status_from: str, st
 
 async def hold_roll(roll: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     reason = (reason or "").strip()
-    if len(reason) < 3:
-        raise ValueError("Alasan tahan wajib diisi (min. 3 karakter).")
+    if len(reason) < 5:   # keputusan K-14 (26 Okt) — alasan minimum seragam 5 huruf
+        raise ValueError("Alasan tahan wajib diisi (min. 5 karakter).")
     status = roll.get("status")
     if status not in HOLDABLE_STATUSES:
         raise ValueError(f"Roll berstatus '{status}' tidak dapat ditahan (hanya Tersedia/Karantina).")
@@ -43,8 +43,8 @@ async def hold_roll(roll: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
 
 async def release_roll(roll: Dict[str, Any], note: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     note = (note or "").strip()
-    if len(note) < 3:
-        raise ValueError("Catatan pelepasan wajib diisi (min. 3 karakter).")
+    if len(note) < 5:     # keputusan K-14
+        raise ValueError("Catatan pelepasan wajib diisi (min. 5 karakter).")
     insp_hold = ((roll.get("inspection") or {}).get("hold") or {})
     now = now_iso()
     if roll.get("status") == HOLD_STATUS and (roll.get("hold") or {}).get("held"):

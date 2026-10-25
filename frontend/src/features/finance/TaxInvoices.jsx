@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { FileText, RefreshCw, Search, Printer, Hash, Copy, Ban } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
+import { docDpp, usesDppNilaiLain } from "../../utils/taxBreakdown";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -178,7 +179,7 @@ export default function TaxInvoices({ currentUser = {} }) {
                   <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">Pembeli</th>
                   <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">DPP</th>
                   <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">PPN</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">Total</th>
+                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]" data-testid="fkt-col-total">Total (termasuk PPN)</th>
                   <th className="px-2.5 py-2 text-center font-bold uppercase tracking-wide text-[11px]">Status</th>
                   <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">Aksi</th>
                 </tr>
@@ -208,7 +209,14 @@ export default function TaxInvoices({ currentUser = {} }) {
                           <span className="block truncate max-w-[160px]">{f.customer_name}</span>
                           <span className="text-[11px] text-[#8E8E93]">{f.customer_npwp || "tanpa NPWP"}</span>
                         </td>
-                        <td className="px-2.5 py-2 text-right tabular-nums">{formatCurrency(f.dpp)}</td>
+                        {/* Keputusan pemilik K-03 (26 Okt) — DPP = harga sebelum PPN; rezim 12% → baris DPP nilai lain (11/12).
+                            Dulu kolom DPP berisi nilai 11/12 tanpa keterangan. */}
+                        <td className="px-2.5 py-2 text-right tabular-nums" data-testid={`fkt-dpp-${f.id}`}>
+                          {formatCurrency(docDpp(f))}
+                          {usesDppNilaiLain(f) && (
+                            <span className="block whitespace-nowrap text-[10.5px] text-[#8E8E93]">nilai lain (11/12) {formatCurrency(f.dpp)}</span>
+                          )}
+                        </td>
                         <td className="px-2.5 py-2 text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
                         <td className="px-2.5 py-2 text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
                         <td className="px-2.5 py-2 text-center">

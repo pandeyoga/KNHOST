@@ -112,6 +112,9 @@ async def sales_kpi(sales_id: str, period: Optional[str] = None, entity_id: Opti
             if _in_period(p.get("created_at") or p.get("date"), period):
                 total_collected += float(p.get("amount", 0) or 0)
 
+    # K-01 (26 Okt) — `overdue_amount` (Performa Saya "Lewat Jatuh Tempo", papan tim Dasbor Manajer) memakai definisi
+    # layar Piutang: lewat ≥ 1 hari setelah jatuh tempo (SJ pertama + termin) — diselaraskan di
+    # `compute_customer_credit`; cakupan tetap pelanggan milik sales ini (`assigned_sales_id`).
     ar = overdue = ledger = 0.0
     blocked = warning = 0
     for c in customers:

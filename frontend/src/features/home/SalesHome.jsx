@@ -104,7 +104,9 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                 unreadable={boardsUnreadable} onRetry={load} onNavigate={onNavigate}
                 onActed={load}
                 icon={look.icon} accent={look.accent} gotoLabel={look.goto}
-                emptyText={look.empty} title={look.title}
+                /* K-11 (permintaan D3) — papan PO Custom yang disaring server ke pelanggan sales ini diberi label cakupan. */
+                emptyText={b.owner_scoped && b.key === "special_order" ? "Tidak ada PO custom pelanggan Anda yang menunggu keputusan" : look.empty}
+                title={b.owner_scoped ? `${look.title} · pelanggan Anda` : look.title}
                 testIdBase={`sales-home-board-${b.key}`}
                 rowTestIdBase={`sales-home-board-${b.key}-row`} />
             );
@@ -118,8 +120,9 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
           <KPICard icon={Target} label="Capaian Target Penagihan" value={`${target.achievement_pct || 0}%`} sub={`dari ${fmtCur(target.amount)}`} color="#5856D6" loading={loading} />
           <KPICard icon={Banknote} label="Penjualan MTD" value={fmtCur(kpi.total_sales)} sub={target.sales_amount ? `${target.sales_pct || 0}% dari target ${fmtCur(target.sales_amount)}` : `${kpi.orders_count || 0} pesanan`} color="#FF9500" loading={loading} />
           <KPICard icon={ArrowUpRight} label="Tertagih" value={fmtCur(kpi.total_collected)} sub={`${Math.round((kpi.collection_rate || 0) * 1000) / 10}% dari penjualan`} color="#30D158" loading={loading} />
-          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(kpi.ar_outstanding)} sub={`Piutang ledger ${fmtCur(kpi.ar_ledger)} · eksposur ${fmtCur(kpi.exposure)}`} color="#007AFF" loading={loading} />
-          <KPICard icon={AlertTriangle} label="Lewat Jatuh Tempo" value={fmtCur(kpi.overdue_amount)} sub="Jatuh tempo lewat" color="#FF3B30" loading={loading} />
+          {/* K-01 (26 Okt) — label cakupan: Performa Saya = pelanggan milik sales ini saja (bukan semua pelanggan). */}
+          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(kpi.ar_outstanding)} sub={`Pelanggan saya · sub-buku · piutang ledger ${fmtCur(kpi.ar_ledger)} · eksposur ${fmtCur(kpi.exposure)}`} color="#007AFF" loading={loading} />
+          <KPICard icon={AlertTriangle} label="Lewat Jatuh Tempo" value={fmtCur(kpi.overdue_amount)} sub="Pelanggan saya · lewat ≥ 1 hari, sama dengan layar Piutang" color="#FF3B30" loading={loading} />
           <KPICard icon={Users} label="Pelanggan Saya" value={kpi.customers_count || 0} sub={`${kpi.new_customers || 0} baru bulan ini`} color="#8E8E93" loading={loading} />
         </div>
 

@@ -17,6 +17,7 @@ import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems, toTarget 
 import { emptyColor } from "./ColorTargetsEditor";
 import ExistingSkuSection from "./ExistingSkuSection";
 import { measurementMeta, typeLabel, typeMeta } from "./sampleTypeMeta";
+import { REASON_MIN_LENGTH } from "../../services/confirmService";
 
 const listBaseFabrics = () => axios.get(`${API}/rnd/base-fabrics`).then((r) => r.data?.items || []);
 // UAT 24 Okt (audit UI tahap 2) — G5-44: contoh isian per jenis (dulu Handfeel/Proofing/Uji ulang memakai contoh labdip
@@ -54,6 +55,9 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   // UAT 24 Okt (P4.2/P4.3/P4.8) — handfeel induk (labdip produk baru), warna labdip berkelompok, kain dasar lolos.
   const [handfeels, setHandfeels] = useState([]);
   const [parentId, setParentId] = useState(prefill?.parent_sample_id || "");
+  // Keputusan pemilik K-16 (26 Okt) — labdip produk baru TANPA handfeel ACC boleh, dengan peringatan + alasan wajib.
+  const [skipParent, setSkipParent] = useState(false);
+  const [skipReason, setSkipReason] = useState("");
   const [colorTargets, setColorTargets] = useState(prefill?.color_id ? [{ ...emptyColor(), color_id: prefill.color_id }] : [emptyColor()]);
   const [passed, setPassed] = useState(null);
   const [policy, setPolicy] = useState({});
@@ -119,11 +123,14 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
       listBaseFabrics().then((rows) => setPassed(new Set(rows.map((t) => t.id)))).catch(() => setPassed(new Set()));
     }
   }, [needDesign, passed, policy.require_stage_chain]);
+  const skipOk = skipParent && skipReason.trim().length >= REASON_MIN_LENGTH;
   const problems = [...specProblems({ sp, catalog, f, sampleTypes: f.sample_types, types, colorTargets: isLabdip ? colorTargets : null }),
-    ...(needParent && !parentId ? ["sampel handfeel induk yang ACC (labdip produk baru)"] : [])];
+    ...(needParent && !parentId && !skipParent ? ["sampel handfeel induk yang ACC (labdip produk baru)"] : []),
+    ...(needParent && !parentId && skipParent && !skipOk ? [`alasan lanjut tanpa handfeel ACC (minimal ${REASON_MIN_LENGTH} huruf)`] : [])];
   const titleOk = f.title.trim().length > 0;
   const typesOk = f.sample_types.length > 0;
-  const existingOk = !!existing && typesOk && !!reval.supplierId && reval.reason.trim().length >= 3;
+  // K-14 (26 Okt) — alasan minimum seragam 5 huruf (server `rnd_revalidation_service.prepare` sama).
+  const existingOk = !!existing && typesOk && !!reval.supplierId && reval.reason.trim().length >= REASON_MIN_LENGTH;
   const canSave = isExisting ? existingOk : titleOk && typesOk && problems.length === 0;
 
   const submit = async () => {
@@ -140,6 +147,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
       } : {
         ...base, color_target: targets[0] || (f.color_id ? { color_id: f.color_id } : {}), color_targets: targets,
         design_id: needDesign ? f.design_id : "", line_code: f.line_code, parent_sample_id: needParent || parentId ? parentId : "",
+        chain_override_reason: needParent && !parentId && skipParent ? skipReason.trim() : "",
         special_order_id: prefill?.special_order_id || "",
         spec: buildSpecPayload({ sp, catalog, f, sampleTypes: f.sample_types, colorTargets: isLabdip ? colorTargets : null }),
       });
@@ -237,6 +245,35 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
                     </span>
                   )}
                 </label>
+              )}
+              {needParent && !parentId && (
+                <div className="mb-2.5" data-testid="sample-parent-skip-wrap">
+                  <label className="flex items-center gap-2 text-[11.5px] font-semibold text-[#3C3C43]">
+                    <input type="checkbox" data-testid="sample-parent-skip" checked={skipParent}
+                      onChange={(e) => { setTouched(true); setSkipParent(e.target.checked); }} />
+                    Lanjut tanpa handfeel ACC
+                  </label>
+                  {skipParent && (
+                    <div className="mt-1.5 rounded-lg border border-[#F2B48A] bg-[#FFF4E5] p-2.5" data-testid="sample-parent-skip-warning">
+                      <p className="text-[11px] text-[#8A5300]">
+                        <b>Peringatan:</b> labdip tanpa handfeel ACC berisiko — konstruksi kain (rasa, gramasi, lebar) belum
+                        teruji, sehingga warna yang ACC bisa bergeser bila kainnya nanti diganti. Alasan wajib diisi dan
+                        tercatat di riwayat sample.
+                      </p>
+                      <label className="mt-1.5 block">
+                        <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Alasan lanjut tanpa handfeel ACC *</span>
+                        <textarea className="field" rows={2} data-testid="sample-parent-skip-reason" value={skipReason}
+                          onChange={(e) => { setTouched(true); setSkipReason(e.target.value); }}
+                          placeholder="mis. kain sama dengan produk berjalan, pelanggan hanya minta warna baru" />
+                      </label>
+                      {skipReason.trim().length > 0 && !skipOk && (
+                        <span className="mt-1 block text-[10.5px] text-[#B45309]" data-testid="sample-parent-skip-hint">
+                          Minimal {REASON_MIN_LENGTH} huruf.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
               <SampleSpecFields sp={sp} setSp={(v) => { setTouched(true); setSp(v); }} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
                 sampleTypes={f.sample_types} types={types} colors={colors} designs={designs}

@@ -17,6 +17,7 @@ from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-
 
 INF = float("inf")
 WORK_HOURS_DIVISOR = 173  # jam kerja/bulan (rumus upah-sejam Kepmenaker)
+PAYROLL_PREFIX = "PAY-"   # K-09 (26 Okt): awalan nomor penggajian baru (dulu "PR-", bentrok Permintaan Pembelian)
 
 # ── PPh21 TER bulanan (PMK 168/2023) — (upper_inclusive, rate) ─────────────────
 TER_A: List[Tuple[float, float]] = [
@@ -372,7 +373,9 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
     prev = await preview_run(entity_id, period)
     if prev["count"] == 0:
         raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
-    number = await next_doc_number("hr_payroll_runs", "number", "PR-", entity_id=entity_id)
+    # Keputusan pemilik K-09 (26 Okt) — awalan "PR-" dulu sama dengan Permintaan Pembelian (KSC/PR-00002 · Payroll).
+    # Penggajian BARU memakai "PAY-" (deret per badan usaha sendiri: KSC/PAY-00001); nomor lama TIDAK diubah.
+    number = await next_doc_number("hr_payroll_runs", "number", PAYROLL_PREFIX, entity_id=entity_id)
     run_id = new_id("prun")
     run = {
         "id": run_id, "number": number, "entity_id": entity_id, "period": period,
@@ -495,8 +498,8 @@ async def reject_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[st
     if run["status"] != "pending_approval":
         raise ValueError(f"Hanya payroll yang sedang diajukan bisa dikembalikan "
                          f"(status sekarang: '{run['status']}').")
-    if not (reason or "").strip():
-        raise ValueError("Alasan wajib diisi supaya HR tahu apa yang harus diperbaiki.")
+    if len((reason or "").strip()) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise ValueError("Alasan wajib diisi (minimal 5 huruf) supaya HR tahu apa yang harus diperbaiki.")
     hist = list(run.get("decision_history") or [])
     hist.append({"action": "rejected", "by": actor.get("name", "system"),
                  "at": now_iso(), "reason": reason.strip(),

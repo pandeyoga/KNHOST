@@ -27,7 +27,10 @@ def test_returns_and_makloon_documents():
     assert sr["number"] == "SRET-00001" and "milestones" in sr and sr["items"]
     pr = _doc(s, "purchase_return", "PRET-00002").json()["document"]
     assert pr["number"] == "PRET-00002" and "reason" in pr
-    mk = _doc(s, "makloon_order", "MKO-00001").json()["document"]
+    # K-09 (26 Okt): order makloon baru ber-prefiks badan usaha (KSC/MKO-00001); data lama tanpa prefiks.
+    r = next((x for x in (_doc(s, "makloon_order", n) for n in ("KSC/MKO-00001", "MKO-00001")) if x.status_code == 200), None)
+    assert r is not None, "order makloon seed MKO-00001 tidak ditemukan"
+    mk = r.json()["document"]
     assert mk["steps"] and "stage_label" in mk["steps"][0] and "tariff" not in mk["steps"][0]
 
 

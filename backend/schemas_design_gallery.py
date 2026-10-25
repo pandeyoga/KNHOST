@@ -116,8 +116,8 @@ class DesignRatingIn(BaseModel):
 
 
 class DesignRejectIn(BaseModel):
-    """Alasan pengembalian desain ke draf — WAJIB."""
-    reason: str = Field(min_length=3, max_length=500)
+    """Alasan pengembalian desain ke draf — WAJIB (min 5 huruf, keputusan pemilik K-14 26 Okt)."""
+    reason: str = Field(min_length=5, max_length=500)
 
 
 class DesignAiIllustrateIn(BaseModel):

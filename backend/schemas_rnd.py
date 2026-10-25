@@ -91,7 +91,7 @@ class SpecPatch(BaseModel):
 
 
 class ReasonBody(BaseModel):
-    reason: str = Field(..., min_length=3)
+    reason: str = Field(..., min_length=5)   # K-14 (26 Okt): alasan minimum seragam 5 huruf
     note: str = ""
 
 
@@ -137,6 +137,8 @@ class SampleInput(BaseModel):
     revalidation_reason: str = ""       # L03 LN-034 — alasan siklus
     # UAT 24 Okt (P4.2) — rantai produk baru: labdip merujuk handfeel ACC (induk).
     parent_sample_id: str = ""
+    # Keputusan pemilik K-16 (26 Okt) — labdip produk baru TANPA handfeel ACC: boleh dengan alasan (≥ 5 huruf, tercatat).
+    chain_override_reason: str = ""
     # UAT 24 Okt (P4.3) — labdip MULTI-WARNA: ≥2 warna → satu sampel per warna dalam satu kelompok.
     color_targets: List[ColorTarget] = Field(default_factory=list)
     special_order_id: str = ""          # diisi jalur pesanan khusus (bebas aturan rantai produk baru)

@@ -71,8 +71,13 @@ async def _roll_rows(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
     for it in ret.get("items", []):
         insp = it.get("inspection") or {}
         actuals = insp.get("roll_actuals") or {}
+        # B3 (keputusan pemilik 26 Okt 2026) — grade PER ROLL dari hasil QC SPK (`roll_results`, ditulis
+        # `return_service.complete_inspection_from_spk`); grade baris (terburuk) hanya cadangan untuk QC lama tanpa
+        # hasil per roll — sumbernya disebut (`qc_grade_source`) supaya layar tidak menyamakan keduanya.
+        per_roll = insp.get("roll_results") or {}
         for rid in it.get("roll_ids") or []:
             orig = docs.get(rid, {})
+            rres = per_roll.get(rid) or {}
             # Disposisi: roll asli yang diaktifkan lagi, atau child potongan retur dari roll ini.
             disp = orig if orig.get("return_id") == ret["id"] else next(
                 (d for d in docs.values() if d.get("return_id") == ret["id"] and d.get("parent_roll_id") == rid), {})
@@ -82,7 +87,11 @@ async def _roll_rows(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "unit": it.get("unit") or orig.get("unit", ""), "qty_claimed": round(claimed, 2),
                 "location": _location_text(locs.get(rid) or {}), "location_stage": (locs.get(rid) or {}).get("stage", ""),
                 "location_doc": (locs.get(rid) or {}).get("doc_no", ""),
-                "qc_done": bool(insp), "qc_grade": insp.get("grade", ""),
+                "qc_done": bool(insp), "qc_grade": rres.get("grade") or insp.get("grade", ""),
+                "qc_grade_source": ("roll" if rres.get("grade") else ("line" if insp.get("grade") else "")),
+                "qc_line_grade": insp.get("grade", ""),
+                "qc_condition": rres.get("condition") or "",
+                "qc_points": rres.get("points"),
                 "qc_actual": (round(float(actuals[rid]), 2) if rid in actuals
                               else (round(claimed, 2) if insp else None)),
                 "qc_disposition": insp.get("disposition", ""),

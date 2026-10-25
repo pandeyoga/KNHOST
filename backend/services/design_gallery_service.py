@@ -448,8 +448,8 @@ async def reject_design(gallery_id: str, actor_name: str, reason: str) -> Dict[s
     if cur.get("status") != "pending_approval":
         raise ValueError(f"Hanya desain yang sedang diajukan bisa dikembalikan "
                          f"(status sekarang: '{cur.get('status')}').")
-    if not (reason or "").strip():
-        raise ValueError("Alasan wajib diisi supaya desainer tahu apa yang harus diperbaiki.")
+    if len((reason or "").strip()) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise ValueError("Alasan wajib diisi (minimal 5 huruf) supaya desainer tahu apa yang harus diperbaiki.")
     hist = list(cur.get("decision_history") or [])
     hist.append({"action": "rejected", "by": actor_name, "at": now_iso(),
                  "reason": reason.strip(), "from_status": "pending_approval",

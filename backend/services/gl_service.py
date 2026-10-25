@@ -811,8 +811,8 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
     if not je:
         return None
     reason = (reason or "").strip()
-    if len(reason) < 3:
-        raise ValueError("Alasan pembalikan wajib diisi.")
+    if len(reason) < 5:   # K-14 (26 Okt) — minimum seragam 5 huruf
+        raise ValueError("Alasan pembalikan wajib diisi (minimal 5 huruf).")
     d = (date or "").strip()[:10]
     if len(d) != 10:
         raise ValueError("Tanggal jurnal pembalik wajib diisi (YYYY-MM-DD).")
@@ -3053,7 +3053,7 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
     net = round(sum(float(s.get("net", 0) or 0) for s in slips), 2)
     commission = round(sum(float(s.get("commission", 0) or 0) for s in slips), 2)
     mode = run.get("commission_mode", "accrue_then_settle")
-    label = run.get("number", f"PR-{period}")
+    label = run.get("number", f"PAY-{period}")   # K-09 — payroll memakai awalan PAY- (bukan PR- = Permintaan Pembelian)
     desc = f"Payroll {period} ({label})"
 
     # Mode accrue: pastikan akrual insentif sudah diposting agar 2-1500 punya saldo.
@@ -3122,7 +3122,7 @@ async def pay_payroll_run(run: Dict[str, Any], created_by: str = "system",
     # W2-023 — sumber pembayaran WAJIB akun kas/bank (anak 1-1000); tidak ada fallback diam-diam.
     if not acc or acc.get("is_active") is False or acc.get("parent_code") != "1-1000":
         raise ValueError(f"Akun pembayaran '{cash}' bukan akun kas/bank aktif — pilih akun Kas/Bank.")
-    label = run.get("number", f"PR-{period}")
+    label = run.get("number", f"PAY-{period}")   # K-09
     lines = _balanced_pair(ACC_HUTANG_GAJI, cash, net, f"Pembayaran gaji {period} ({label})")
     return await _insert_entry(
         lines=lines, description=f"Pembayaran gaji {period} ({label})", date=now_iso(),

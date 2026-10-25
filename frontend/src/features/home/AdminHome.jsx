@@ -66,8 +66,10 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
 
   const sales = data?.sales || {};
   const ar = data?.ar || {};
-  const outsideAr = ar.outside_board || {};
+  // K-04 (26 Okt) — KPI "Stok Rendah" = definisi tunggal (`low_stock`); papan "Stok Perlu Reorder" = saran reorder
+  // (di bawah ROP, `reorder`). Respons lama tanpa `reorder` → papan memakai `low_stock` lama (isi = saran reorder).
   const lowStock = data?.low_stock || {};
+  const reorderBoard = data?.reorder || (lowStock.label === undefined ? lowStock : {});
   const board = data?.leaderboard_top || [];
   const overdue = data?.top_overdue || [];
   // Papan antrean mahal (PO custom · kontrabon bersengketa · retur antar-PT).
@@ -131,16 +133,16 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
           <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading} />
           <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
           <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
-          {/* UAT 24 Okt (audit UI tahap 2) — G1-13: kedua KPI piutang = papan sales (pelanggan ber-sales aktif), BUKAN
-              seluruh piutang di layar Piutang. Cakupan & bagian di luar papan disebut, kartu membuka layar Piutang. K-01. */}
+          {/* Keputusan pemilik K-01 (26 Okt): kedua KPI piutang = SEMUA pelanggan, sumber sub-buku (dokumen belum
+              lunas) — angka & definisi lewat tempo SAMA dengan layar Piutang. Dulu (G1-13) hanya pelanggan ber-sales aktif.
+              Label sumber wajib tampil di kartu. */}
           <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)}
-            sub={`Pelanggan ber-sales · buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`
-              + (outsideAr.outstanding > 0 ? ` · di luar papan ${fmtCur(outsideAr.outstanding)} (${outsideAr.customers} pelanggan tanpa sales)` : "")}
+            sub={`Semua pelanggan · sub-buku (dokumen belum lunas) · buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`}
             color="#5856D6" loading={loading} testId="kpi-belum-lunas" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
           <KPICard icon={AlertTriangle} label="Piutang Lewat Tempo" value={fmtCur(ar.overdue)}
-            sub={outsideAr.overdue > 0
-              ? `Pelanggan ber-sales · + ${fmtCur(outsideAr.overdue)} lewat tempo di pelanggan tanpa sales`
-              : "Pelanggan ber-sales · klik untuk layar Piutang"}
+            sub={(ar.overdue_customers || 0) > 0
+              ? `Semua pelanggan · ${ar.overdue_customers} pelanggan · sama dengan layar Piutang`
+              : "Semua pelanggan · sama dengan layar Piutang"}
             color="#FF3B30" loading={loading} testId="kpi-piutang-lewat-tempo" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
           {/* AUDIT PERAN 2026-08-15 — KPI ini dulu SELALU 0 (menghitung koleksi
               `approval_requests` yang tak pernah diisi siapa pun), padahal 16 dokumen
@@ -153,7 +155,9 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             color="#FF9500" loading={loading}
             testId="kpi-persetujuan-menunggu"
             onClick={() => onNavigate && onNavigate(topApproval?.view || "approval-inbox")} />
-          <KPICard icon={PackageX} label="Stok Rendah" value={lowStock.count ?? "—"} sub="Perlu reorder" color="#FF6B00" loading={loading} />
+          <KPICard icon={PackageX} label="Stok Rendah" value={lowStock.count ?? "—"}
+            sub={lowStock.threshold ? `produk · tersedia < ${lowStock.threshold} (papan stok) · per badan usaha` : "Perlu reorder"}
+            color="#FF6B00" loading={loading} testId="kpi-stok-rendah" onClick={onNavigate ? () => onNavigate("operations") : undefined} />
           <KPICard icon={Award} label="Insentif Sales" value={fmtCur(data?.incentive_payout)} sub="Estimasi bulan ini" color="#AF52DE" loading={loading} />
         </div>
 
@@ -265,24 +269,21 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
 
           {/* Top overdue */}
           <div className="rounded-xl border border-[#EFF0F2] bg-white p-4" data-testid="admin-home-overdue">
-            <div className="flex items-center gap-2 mb-3"><AlertTriangle size={15} className="text-[#FF3B30]" /><h3 className="text-[14px] font-bold">Lewat Tempo per Sales</h3></div>
+            <div className="flex items-center gap-2 mb-1"><AlertTriangle size={15} className="text-[#FF3B30]" /><h3 className="text-[14px] font-bold">Lewat Tempo per Sales</h3></div>
+            {/* K-01 — rincian dari laporan Piutang yang sama (semua pelanggan; pelanggan tanpa sales = baris "Tanpa sales"). */}
+            <p className="mb-2 text-[10.5px] text-[#8E8E93]" data-testid="admin-home-overdue-source">Semua pelanggan · sub-buku, sama dengan layar Piutang</p>
             {overdue.length > 0 && overdue.some((o) => o.overdue_amount > 0) ? (
               <div className="grid gap-1.5">
                 {overdue.filter((o) => o.overdue_amount > 0).map((o, idx) => (
-                  <div key={idx} className="flex items-center gap-2 py-1.5 border-b border-[#F5F5F7] last:border-0">
-                    <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold truncate">{o.sales_name}</p>
-                      <p className="text-[10.5px] text-[#8E8E93]">AR {fmtCur(o.ar_outstanding)}</p></div>
+                  <button type="button" key={o.sales_id || `none-${idx}`} data-testid={`admin-home-overdue-row-${o.sales_id || "none"}`}
+                    onClick={() => onNavigate && onNavigate("ar-aging")}
+                    className="flex w-full items-center gap-2 py-1.5 border-b border-[#F5F5F7] last:border-0 text-left">
+                    <div className="flex-1 min-w-0"><p className={`text-[12px] font-semibold truncate ${o.has_sales === false ? "italic text-[#6B6B73]" : ""}`}>{o.sales_name}</p>
+                      <p className="text-[10.5px] text-[#8E8E93]">Belum lunas {fmtCur(o.ar_outstanding)}{o.overdue_customers ? ` · ${o.overdue_customers} pelanggan telat` : ""}</p></div>
                     <span className="text-[12px] font-bold text-red-600 tabular-nums">{fmtCur(o.overdue_amount)}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
-            ) : outsideAr.overdue > 0 ? (
-              <button type="button" data-testid="admin-home-overdue-outside"
-                onClick={() => onNavigate && onNavigate("ar-aging")}
-                className="h-20 w-full flex flex-col items-center justify-center gap-0.5 text-center text-[12.5px] text-[#6B6B73]">
-                <span>Tidak ada lewat tempo di pelanggan ber-sales.</span>
-                <span className="font-semibold text-red-600">{fmtCur(outsideAr.overdue)} lewat tempo di {outsideAr.overdue_customers} pelanggan tanpa sales — buka Piutang →</span>
-              </button>
             ) : <div className="h-20 flex items-center justify-center text-[13px] text-[#8E8E93]">Tidak ada tagihan lewat tempo 🎉</div>}
           </div>
         </div>
@@ -293,21 +294,21 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             <div className="flex items-center gap-2"><PackageX size={15} className="text-[#FF6B00]" /><h3 className="text-[14px] font-bold">Stok Perlu Reorder</h3></div>
             <button onClick={() => onNavigate && onNavigate("reorder")} className="text-[12px] font-semibold text-[#007AFF]" data-testid="admin-home-goto-reorder">Lihat semua →</button>
           </div>
-          {(lowStock.items || []).length > 0 ? (
+          {(reorderBoard.items || []).length > 0 ? (
             <>
               {/* UI/UX 2026-06 — dulu seluruh baris digulung dalam kotak ber-scroll;
                   sekarang cuplikan 6 teratas + pop-up "Lihat semua" ber-pencarian. */}
               <div className="grid gap-1">
-                {(lowStock.items || []).slice(0, 6).map((it, idx) => renderStockRow(it, idx))}
+                {(reorderBoard.items || []).slice(0, 6).map((it, idx) => renderStockRow(it, idx))}
               </div>
-              <SeeAllFooter shown={Math.min(6, (lowStock.items || []).length)}
-                total={(lowStock.items || []).length} label="produk" accent="#FF6B00"
+              <SeeAllFooter shown={Math.min(6, (reorderBoard.items || []).length)}
+                total={(reorderBoard.items || []).length} label="produk" accent="#FF6B00"
                 onClick={() => setShowAllStock(true)} testId="admin-home-lowstock-see-all" />
             </>
           ) : <div className="h-20 flex items-center justify-center text-[13px] text-[#8E8E93]">Semua stok di atas titik reorder</div>}
           <SeeAllModal open={showAllStock} onClose={() => setShowAllStock(false)}
             title="Stok Perlu Reorder" subtitle="Produk di bawah titik reorder (ROP)"
-            icon={PackageX} accent="#FF6B00" rows={lowStock.items || []}
+            icon={PackageX} accent="#FF6B00" rows={reorderBoard.items || []}
             rowText={(it) => `${it.product_name || it.name || ""} ${it.sku || ""}`}
             renderRow={(it, idx) => renderStockRow(it, idx)}
             listClassName="px-4" searchPlaceholder="Cari produk atau SKU…"

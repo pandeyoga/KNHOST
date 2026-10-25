@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { BadgePercent, CheckCircle, XCircle, RefreshCw, ClipboardList, ChevronRight, ChevronDown, AlertCircle, Clock, Lock, Layers } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import { docDpp, docGrandTotal, docPpn } from "../../utils/taxBreakdown";
 import POTimeline from "../admin/po/POTimeline";
 import PODeviationBanner from "../admin/po/PODeviationBanner";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -188,7 +189,7 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
             judul kolom ikut bertabrakan ("TOTALTINGKAT PERSETUJUAN"). */}
         <div className="overflow-x-auto">
           <div className={`${GRID} min-w-[980px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]`}>
-            <span>Nomor</span><span>Supplier / Gudang</span><span className="text-right">Total</span><span>Tingkat Persetujuan</span><span>Status</span><span className="text-right">Aksi</span>
+            <span>Nomor</span><span>Supplier / Gudang</span><span className="text-right" data-testid="po-approval-col-total" title="Total PO termasuk PPN; baris kecil = DPP (harga sebelum PPN)">Total (termasuk PPN)</span><span>Tingkat Persetujuan</span><span>Status</span><span className="text-right">Aksi</span>
           </div>
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat pesanan pembelian…</div>
@@ -218,7 +219,14 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
                         <p className="text-[12px] font-semibold truncate">{po.supplier_name}</p>
                         <p className="text-[10.5px] text-[#6B6B73] truncate">{po.warehouse_name} · {po.items?.length || 0} item</p>
                       </div>
-                      <span className="whitespace-nowrap text-right text-[12px] font-bold tabular-nums">{formatCurrency(po.total_amount)}</span>
+                      {/* Keputusan pemilik K-03 (26 Okt) — Total = termasuk PPN (sama dengan Meja Saya & PDF PO); DPP rincian.
+                          Dulu kolom "Total" berisi `total_amount` (sebelum PPN) → Rp 120 jt vs Meja Saya Rp 133,2 jt. */}
+                      <span className="whitespace-nowrap text-right text-[12px] font-bold tabular-nums" data-testid={`po-approval-total-${po.id}`}>
+                        {formatCurrency(docGrandTotal(po))}
+                        {docPpn(po) > 0 && (
+                          <span className="block text-[10px] font-normal text-[#8E8E93]">DPP {formatCurrency(docDpp(po))}</span>
+                        )}
+                      </span>
                       <ApprovalLevelCell po={po} chain={chain} pending={pending} totalLevels={totalLevels} />
                       <ApprovalStatusPill po={po} />
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -364,7 +372,8 @@ function ApprovalDetail({ po, chain, pending, totalLevels, currentUser, approveO
       ) : po.status === "waiting_approval" ? (
         <div className="flex items-center gap-1.5 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1.5 text-[11px] text-[#9A5B00]">
           <AlertCircle size={13} />
-          <span>Nilai PO <b className="tabular-nums">{formatCurrency(po.total_amount)}</b> butuh persetujuan tingkat <b>{pending?.level || 1}/{totalLevels}</b> — role <b className="uppercase">{roleLabel(pending?.required_role)}</b>.</span>
+          {/* K-03 — ambang persetujuan dihitung dari nilai SEBELUM PPN (server `build_approval_chain(total_amount)`); disebut. */}
+          <span>Nilai PO sebelum diskon &amp; PPN <b className="tabular-nums">{formatCurrency(po.total_amount)}</b> (dasar ambang persetujuan) butuh persetujuan tingkat <b>{pending?.level || 1}/{totalLevels}</b> — role <b className="uppercase">{roleLabel(pending?.required_role)}</b>.</span>
         </div>
       ) : null}
 

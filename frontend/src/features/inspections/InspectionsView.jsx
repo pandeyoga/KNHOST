@@ -380,7 +380,13 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
           size="xl" testId="ins-detail-modal" framed>
           <InspectionDetailPanel
             doc={detail} meta={meta} currentUser={currentUser}
-            onChanged={(fresh) => { if (fresh) setDetail(fresh); refreshAll(); }}
+            onChanged={(fresh) => {
+              if (fresh) setDetail(fresh);
+              // B1 (26 Okt) — respons aksi tidak memuat kolom hitungan server (`held_rolls`, `sampling`); muat ulang
+              // rincian supaya peringatan "roll masih ditahan" tetap lengkap sesudah baris diperiksa/dilepas.
+              if (fresh?.id) getInspection(fresh.id).then((d) => { if (d) setDetail(d); }).catch(() => {});
+              refreshAll();
+            }}
             onClose={() => { setDetail(null); refreshAll(); }}
           />
         </DetailModal>

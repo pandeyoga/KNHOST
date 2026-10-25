@@ -49,6 +49,8 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
   const go = (view) => { if (view && onNavigate) onNavigate(view); };
 
   const totals = data?.totals || {};
+  const arAll = data?.ar_all || null;   // K-01 — piutang semua pelanggan (sumber layar Piutang)
+  const arOverdue = arAll ? arAll.overdue : totals.overdue_amount;
   const target = data?.target || {};
   const approvals = data?.approvals || {};
   const late = data?.late_today || {};
@@ -129,10 +131,15 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
                 <Kpi label="Penjualan tim (bulan ini)" value={formatCurrency(totals.total_sales || 0)} />
                 <Kpi label="Tertagih" value={formatCurrency(totals.total_collected || 0)}
                   tone="#1B7F4B" />
-                <Kpi label="Piutang berjalan" value={formatCurrency(totals.ar_outstanding || 0)}
-                  tone="#0058CC" />
-                <Kpi label="Piutang lewat tempo" value={formatCurrency(totals.overdue_amount || 0)}
-                  tone={(totals.overdue_amount || 0) > 0 ? "#C0392B" : "#1B7F4B"} />
+                {/* Keputusan pemilik K-01 (26 Okt) — piutang = SEMUA pelanggan, sub-buku (sama dengan layar Piutang);
+                    dulu Σ papan tim (pelanggan ber-sales aktif). Data lama tanpa `ar_all` jatuh ke angka tim. */}
+                <Kpi label="Piutang berjalan" value={formatCurrency((arAll ? arAll.outstanding : totals.ar_outstanding) || 0)}
+                  tone="#0058CC" note={arAll ? "Semua pelanggan · sub-buku" : "Pelanggan tim sales"}
+                  onClick={() => go("ar-aging")} testId="manager-home-ar-kpi" />
+                <Kpi label="Piutang lewat tempo" value={formatCurrency(arOverdue || 0)}
+                  tone={(arOverdue || 0) > 0 ? "#C0392B" : "#1B7F4B"}
+                  note={arAll ? "Semua pelanggan · = layar Piutang" : "Pelanggan tim sales"}
+                  onClick={() => go("ar-aging")} testId="manager-home-ar-overdue-kpi" />
                 <Kpi label="Menunggu tanda tangan"
                   value={boardsUnreadable ? "—" : String(approvals.total ?? 0)}
                   tone={boardsUnreadable ? "#C0392B"
@@ -448,7 +455,7 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
   );
 }
 
-function Kpi({ label, value, tone = "#1C1C1E", hint = "", onClick = null, testId = "" }) {
+function Kpi({ label, value, tone = "#1C1C1E", hint = "", note = "", onClick = null, testId = "" }) {
   const Tag = onClick ? "button" : "div";
   return (
     <Tag {...(onClick ? { type: "button", onClick } : {})}
@@ -459,6 +466,8 @@ function Kpi({ label, value, tone = "#1C1C1E", hint = "", onClick = null, testId
       <p className="text-[13px] font-bold leading-tight tabular-nums" style={{ color: tone }}>
         {value}
       </p>
+      {/* `note` = label sumber/cakupan angka (abu-abu); `hint` = peringatan (merah). */}
+      {note && <p className="mt-0.5 text-[9px] leading-tight text-[#8E8E93]" data-testid={testId ? `${testId}-note` : undefined}>{note}</p>}
       {hint && <p className="mt-0.5 text-[9px] leading-tight text-[#C0392B]">{hint}</p>}
     </Tag>
   );

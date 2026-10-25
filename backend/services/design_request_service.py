@@ -439,9 +439,9 @@ async def reject(req_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, A
             "Permintaan ini tertaut ke desain di Design Studio \u2014 minta revisi di halaman "
             "desainnya (ronde baru dibuka otomatis); status permintaan mengikuti.")
     why = (reason or "").strip()
-    if len(why) < 3:
+    if len(why) < REASON_MIN:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
         raise DesignRequestError(
-            "Tulis alasannya \u2014 desainer perlu tahu apa yang harus diubah.")
+            f"Tulis alasannya (minimal {REASON_MIN} huruf) \u2014 desainer perlu tahu apa yang harus diubah.")
     return await _save(doc, "revision", "Minta revisi", actor, note=why,
                        status=STATUS_REVISION, reject_reason=why,
                        decided_by=actor.get("name", ""), decided_at=now_iso(),
@@ -674,13 +674,34 @@ async def cancel(req_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, A
     if doc.get("status") in TERMINAL_STATUSES:
         raise DesignRequestError("Permintaan ini sudah selesai/dibatalkan.")
     why = (reason or "").strip()
-    if len(why) < 3:
-        raise DesignRequestError("Sebutkan alasan pembatalan.")
+    if len(why) < REASON_MIN:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise DesignRequestError(f"Sebutkan alasan pembatalan (minimal {REASON_MIN} huruf).")
     return await _save(doc, "cancelled", "Dibatalkan", actor, note=why,
                        status=STATUS_CANCELLED, cancelled_reason=why)
 
 
 # ─── Daftar & ringkasan ──────────────────────────────────────────────────────
+#: Keputusan pemilik K-14 (26 Okt) — panjang minimum alasan seragam (layar `confirmService.REASON_MIN_LENGTH`).
+REASON_MIN = 5
+
+#: K-12 (26 Okt) — batas "tenggat dekat" untuk tab Ringkas HP desainer (hari kalender, termasuk hari ini).
+DUE_SOON_DAYS = 3
+
+
+def due_soon(doc: Dict[str, Any], today: str = "", days: int = DUE_SOON_DAYS) -> bool:
+    """Tenggat dekat = ada tenggat, BELUM lewat, jatuh dalam `days` hari ke depan, pekerjaan belum selesai."""
+    due = (doc.get("due_date") or "").strip()[:10]
+    if not due or doc.get("status") in TERMINAL_STATUSES:
+        return False
+    from datetime import date, timedelta
+    t = today or _today()
+    try:
+        limit = (date.fromisoformat(t) + timedelta(days=days)).isoformat()
+    except ValueError:
+        return False
+    return t <= due <= limit
+
+
 def overdue(doc: Dict[str, Any], today: str = "") -> bool:
     """Lewat tenggat = ada tenggat, sudah lewat, dan pekerjaannya belum selesai."""
     due = (doc.get("due_date") or "").strip()
@@ -715,14 +736,20 @@ async def summary(query: Dict[str, Any]) -> Dict[str, Any]:
     out: Dict[str, int] = {s: 0 for s in STATUS_LABEL}
     total = 0
     late = 0
+    soon = 0
     today = _today()
     async for d in db[COLL].find(query, {"_id": 0, "status": 1, "due_date": 1}):
         total += 1
         out[d.get("status", "")] = out.get(d.get("status", ""), 0) + 1
         if overdue(d, today):
             late += 1
+        elif due_soon(d, today):
+            soon += 1
     out["total"] = total
     out["overdue"] = late
+    # Keputusan pemilik K-12 (26 Okt) — tab Ringkas HP desainer: "tenggat dekat" (belum lewat, ≤ DUE_SOON_DAYS hari).
+    out["due_soon"] = soon
+    out["due_soon_days"] = DUE_SOON_DAYS
     out["open"] = sum(out.get(s, 0) for s in OPEN_STATUSES)
     return out
 

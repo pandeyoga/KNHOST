@@ -64,8 +64,10 @@ export default function FinanceTowerView({ selectedEntity }) {
         <>
           {/* Baris KPI likuiditas */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <KpiCard testId="tower-kpi-cash" label="Posisi Kas" value={formatCurrency(data.cash?.total)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" />
-            <KpiCard testId="tower-kpi-ar" label="Piutang (AR)" value={formatCurrency(data.ar?.outstanding)} icon={Users} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Lewat Jatuh Tempo ${formatCurrency(data.ar?.overdue)}`} />
+            {/* Keputusan pemilik K-01/K-02 (26 Okt) — label sumber di tiap kartu: kas = saldo buku besar akun kas+bank
+                (angka utama "Kas & Bank"); piutang = sub-buku dokumen belum lunas, semua pelanggan (= layar Piutang). */}
+            <KpiCard testId="tower-kpi-cash" label="Posisi Kas" value={formatCurrency(data.cash?.total)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" sub="Saldo buku besar akun kas & bank" />
+            <KpiCard testId="tower-kpi-ar" label="Piutang (AR)" value={formatCurrency(data.ar?.outstanding)} icon={Users} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Sub-buku (dokumen belum lunas) · lewat jatuh tempo ${formatCurrency(data.ar?.overdue)}`} />
             <KpiCard testId="tower-kpi-ap" label="Hutang (AP)" value={formatCurrency(data.ap?.outstanding)} icon={Truck} accent={FC.expense} tone="text-[#C0392B]" />
             <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub="Kas + AR − AP" />
           </div>

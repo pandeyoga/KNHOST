@@ -112,6 +112,53 @@ async def list_accounts(entity_id: Optional[str] = None,
     return out
 
 
+async def unlinked_transactions(entity_ids: List[str]) -> Dict[str, Any]:
+    """Transaksi kas (non-void) yang TIDAK masuk saldo rekening mana pun: tanpa `account_id` dan tidak terserap
+    rekening tunggal PT untuk jenis kasnya (aturan `_txns_for`). Penjelas selisih buku besar vs total rekening."""
+    out = {"count": 0, "inflow": 0.0, "outflow": 0.0, "net": 0.0}
+    if not entity_ids:
+        return out
+    sole: Dict[Any, str] = {}
+    q = {"entity_id": {"$in": list(entity_ids)}, "status": {"$ne": "void"},
+         "$or": [{"account_id": {"$exists": False}}, {"account_id": {"$in": [None, ""]}}]}
+    async for t in db.cash_transactions.find(q, {"_id": 0, "entity_id": 1, "cash_type": 1, "amount": 1,
+                                                 "direction": 1}):
+        key = (t.get("entity_id") or "", t.get("cash_type") or "")
+        if key not in sole:
+            sole[key] = await sole_account_id(key[0], key[1]) if key[1] in CASH_TYPES else ""
+        if sole[key]:
+            continue   # ikut dihitung di saldo rekening tunggal PT itu
+        amt = float(t.get("amount", 0) or 0)
+        out["count"] += 1
+        if t.get("direction") == "in":
+            out["inflow"] += amt
+        else:
+            out["outflow"] += amt
+    out["inflow"], out["outflow"] = round(out["inflow"], 2), round(out["outflow"], 2)
+    out["net"] = round(out["inflow"] - out["outflow"], 2)
+    return out
+
+
+async def cash_position(entity_ids: List[str]) -> Dict[str, Any]:
+    """Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo BUKU BESAR akun kas+bank (kode
+    `CASH_CODES`, sumber yang sama dengan Dasbor Keuangan & Proyeksi Arus Kas). Rekening & Saldo = rincian per
+    rekening; selisih keduanya dijelaskan lewat transaksi kas yang belum tertaut ke rekening."""
+    from services import financial_statement_service as fs
+    from services.cash_flow_service import CASH_CODES
+    scope = {"entity_id": {"$in": list(entity_ids or [])}}
+    amap = await fs._accounts_map(scope)   # noqa: SLF001 — helper laporan yang sama dipakai Dasbor Keuangan
+    agg = await fs._aggregate(scope, None, include_closing=True)   # noqa: SLF001
+    lines, total = [], 0.0
+    for code in sorted(CASH_CODES):
+        v = agg.get(code, {"debit": 0.0, "credit": 0.0})
+        bal = round(float(v.get("debit", 0) or 0) - float(v.get("credit", 0) or 0), 2)
+        total += bal
+        lines.append({"code": code, "name": amap.get(code, {}).get("name", code), "balance": bal})
+    return {"gl_total": round(total, 2), "gl_accounts": lines,
+            "unlinked": await unlinked_transactions(entity_ids or []),
+            "source_label": "Saldo buku besar akun kas & bank"}
+
+
 async def create_account(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
     if payload.account_type not in VALID_ACCOUNT_TYPES:
         raise ValueError("account_type harus 'bank' atau 'cash'")

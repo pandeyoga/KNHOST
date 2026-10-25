@@ -237,9 +237,13 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         ar_rows.append((o, outstanding))
         open_orders += 1
         due = order_due(customer, o, dctx)
-        if due is not None and due < now:
+        # Keputusan pemilik K-01 (26 Okt) — "lewat tempo" = definisi layar Piutang (`ar_aging_service`) & daftar tagih
+        # (`collection_worklist`): mulai 1 hari PENUH setelah jatuh tempo. Dulu sejak detik pertama (`due < now`) →
+        # Performa Saya / Customer 360 / status kredit menulis "lewat tempo" untuk tagihan yang di Piutang masih
+        # "Belum jatuh tempo" (selisih pada hari jatuh tempo).
+        days_late = (now - due).days if due is not None else 0
+        if days_late > 0:
             overdue += outstanding
-            days_late = (now - due).days
             max_overdue_days = max(max_overdue_days, days_late)
     status = "active"
     near_limit = credit_limit > 0 and ar >= WARNING_RATIO * credit_limit

@@ -533,9 +533,13 @@ async def create_sample(payload: SampleInput, request: Request) -> Dict[str, Any
                                       actor=actor.get("name", ""))
     except RndError as exc:
         raise _err(exc) from exc
+    override = doc.get("chain_override") or {}
     await audit(actor.get("name", ""), "rnd_sample_created", "md_samples", doc["id"],
                 {"number": doc["number"], "types": doc.get("sample_types") or [],
-                 "so_id": doc.get("so_id", "")})
+                 "so_id": doc.get("so_id", ""),
+                 # K-16 (26 Okt) — labdip tanpa handfeel ACC: alasan ikut jejak audit.
+                 **({"chain_override": override.get("missing", "")} if override else {})},
+                **({"reason": override.get("reason", "")} if override else {}))
     return doc
 
 

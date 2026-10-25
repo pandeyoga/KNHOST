@@ -184,8 +184,11 @@ export default function BankReconciliationView() {
           <div className="stat-card">
             <p className="stat-label">Buku (bersih)</p>
             <p className="stat-value tabular-nums whitespace-nowrap">{formatCurrency(summary.book.net)}</p>
-            <p className="text-[11px] text-[#8E8E93]">
-              {summary.unmatched_book_txns} transaksi belum tertaut
+            {/* K-02 (26 Okt) — kolam "buku" di sini ikut memuat transaksi kas TANPA rekening berjenis kas sama, jadi bisa
+                lebih banyak dari jumlah transaksi di kartu Rekening & Saldo. Disebut terang. */}
+            <p className="text-[11px] text-[#8E8E93]" data-testid="recon-unmatched-book"
+              title="Transaksi buku rekening ini + transaksi kas tanpa rekening berjenis kas sama yang belum dicocokkan ke mutasi bank.">
+              {summary.unmatched_book_txns} transaksi belum tertaut · termasuk kas tanpa rekening
             </p>
           </div>
           <div className="stat-card">

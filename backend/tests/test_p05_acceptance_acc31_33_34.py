@@ -58,7 +58,8 @@ REVAL = {"revalidation_supplier_id": DB.suppliers.find_one({"entity_id": "all"},
 
 
 def _tpl():
-    return DB.makloon_orders.find_one({"mko_number": "MKO-00004", "entity_id": ENT}, {"_id": 0})
+    # K-09 (26 Okt): nomor MKO baru ber-prefiks badan usaha (KSC/MKO-00004) — cocokkan dengan/tanpa prefiks.
+    return DB.makloon_orders.find_one({"mko_number": {"$regex": "(^|/)MKO-00004$"}, "entity_id": ENT}, {"_id": 0})
 
 
 def _free(pid, wh):

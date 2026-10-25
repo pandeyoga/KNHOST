@@ -382,12 +382,13 @@ async def transition(gallery_id: str, action: str, actor: Dict[str, Any], note: 
             raise DesignError(f"Ronde '{round_label(cur.get('version', 1))}' belum punya berkas desain — "
                               "unggah dulu hasil kerjanya (boleh beberapa file sekaligus).")
         updates.update({"submitted_by": actor.get("name", ""), "submitted_at": now_iso()})
-    if action == "request_revision" and not (note or "").strip():
-        raise DesignError("Catatan revisi wajib diisi supaya desainer tahu apa yang harus diperbaiki.")
-    if action == "return_final" and not (note or "").strip():
-        raise DesignError("Tulis apa yang kurang pada berkas final (mockup / varian warna).")
-    if action == "archive" and not (note or "").strip():
-        raise DesignError("Alasan pengarsipan wajib diisi.")
+    # K-14 (26 Okt) — catatan yang berfungsi sebagai ALASAN minimal 5 huruf (seragam dengan dialog alasan layar).
+    if action == "request_revision" and len((note or "").strip()) < 5:
+        raise DesignError("Catatan revisi wajib diisi (minimal 5 huruf) supaya desainer tahu apa yang harus diperbaiki.")
+    if action == "return_final" and len((note or "").strip()) < 5:
+        raise DesignError("Tulis apa yang kurang pada berkas final, minimal 5 huruf (mockup / varian warna).")
+    if action == "archive" and len((note or "").strip()) < 5:
+        raise DesignError("Alasan pengarsipan wajib diisi (minimal 5 huruf).")
     if action == "submit_final":
         req = final_requirement(cur)
         if not req["complete"]:
@@ -505,8 +506,8 @@ async def set_hold(gallery_id: str, actor: Dict[str, Any], on: bool, reason: str
             raise DesignError("Hold hanya untuk desain yang sudah ACC (ACC / Final Diserahkan / Aktif).")
         if cur.get("on_hold"):
             raise DesignError("Desain ini sudah dalam status HOLD.")
-        if not reason:
-            raise DesignError("Alasan hold wajib diisi supaya R&D tahu kenapa desain ditahan.")
+        if len(reason) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+            raise DesignError("Alasan hold wajib diisi (minimal 5 huruf) supaya R&D tahu kenapa desain ditahan.")
         hold = {"by": actor.get("name", ""), "user_id": actor.get("id", ""), "at": now_iso(), "reason": reason}
         updates = {"on_hold": True, "hold": hold, "updated_at": now_iso()}
         ev = event(actor, "hold", reason, version=cur.get("version", 1), status=cur.get("status"))

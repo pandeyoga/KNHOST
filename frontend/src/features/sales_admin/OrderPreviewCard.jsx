@@ -7,12 +7,21 @@
  */
 import { CalendarDays, MapPin, Package, StickyNote, UserRound, Wallet } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { taxBreakdownRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
 
 export default function OrderPreviewCard({ preview, testPrefix = "order-preview" }) {
   if (!preview) return null;
   const items = Array.isArray(preview.items) ? preview.items : [];
   const backs = Array.isArray(preview.backorders) ? preview.backorders : [];
   const t = preview.totals || {};
+  // Keputusan pemilik K-03 (26 Okt) — Subtotal (bruto) · Diskon · DPP (harga sebelum PPN) · DPP nilai lain (11/12) ·
+  // PPN · Total (termasuk PPN), sama dengan detail pesanan & PDF SO. Dulu "Subtotal" = net_subtotal (sudah dipotong
+  // diskon) lalu baris "Diskon" lagi → pembaca menghitung diskon dua kali (Subtotal − Diskon + PPN ≠ Total).
+  const disc = Number(t.discount_total) || 0;
+  const ppn = Number(t.ppn_amount) || 0;
+  const net = Number(t.net_subtotal) || 0;
+  const gross = t.gross_subtotal != null ? Number(t.gross_subtotal) || 0 : net + disc;   // server lama tanpa bruto
+  const taxRows = ppn > 0 ? taxBreakdownRows(t) : [];
   const addr = preview.shipping_address || {};
   const isPickup = (preview.fulfillment_method || "kirim") === "ambil";
   // Cek UI UAT v3 (S15) — tanggal lokal (dulu potongan ISO UTC: pesanan 22 Okt dini hari tertulis 21 Okt).
@@ -118,15 +127,26 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
       </div>
 
       <div className="border-t border-[#F4F5F7] px-3 py-2" data-testid={`${testPrefix}-totals`}>
-        <TotalRow label="Subtotal" value={formatCurrency(t.net_subtotal)} />
-        {t.discount_total > 0 && (
-          <TotalRow label="Diskon" value={`− ${formatCurrency(t.discount_total)}`} />
+        <TotalRow label="Subtotal (bruto)" value={formatCurrency(gross)} testId={`${testPrefix}-gross`} />
+        {disc > 0 && (
+          <TotalRow label="Diskon" value={`− ${formatCurrency(disc)}`} testId={`${testPrefix}-discount`} />
         )}
-        <TotalRow
-          label={t.is_pkp ? `PPN ${formatQty(t.ppn_rate)}%` : "PPN (non-PKP)"}
-          value={formatCurrency(t.ppn_amount)} />
+        {ppn > 0 ? (
+          taxRows.filter((r) => !r.strong).map((r) => (
+            <TotalRow key={r.key} label={r.label} value={formatCurrency(r.value)} testId={`${testPrefix}-${r.key}`} />
+          ))
+        ) : (
+          <>
+            {disc > 0 && <TotalRow label="Subtotal netto (DPP)" value={formatCurrency(net)} testId={`${testPrefix}-net`} />}
+            <TotalRow
+              label={t.is_pkp ? `PPN ${formatQty(t.ppn_rate)}%` : "PPN (non-PKP)"}
+              value={formatCurrency(t.ppn_amount)} />
+          </>
+        )}
         <div className="mt-1 flex items-center justify-between border-t border-[#EFF0F2] pt-1.5">
-          <span className="text-[11px] font-bold uppercase text-[#6B6B73]">Total Pesanan</span>
+          <span className="text-[11px] font-bold uppercase text-[#6B6B73]" data-testid={`${testPrefix}-total-label`}>
+            {ppn > 0 ? taxRows[taxRows.length - 1].label : "Total Pesanan"}
+          </span>
           <span className="text-[13.5px] font-bold tabular-nums" data-testid={`${testPrefix}-grand-total`}>
             {formatCurrency(t.grand_total)}
           </span>
@@ -158,9 +178,9 @@ function InfoRow({ icon: Icon, label, value, warn = false, testId }) {
   );
 }
 
-function TotalRow({ label, value }) {
+function TotalRow({ label, value, testId }) {
   return (
-    <div className="flex items-center justify-between py-0.5">
+    <div className="flex items-center justify-between py-0.5" data-testid={testId}>
       <span className="text-[10.5px] text-[#6B6B73]">{label}</span>
       <span className="text-[11.5px] tabular-nums">{value}</span>
     </div>

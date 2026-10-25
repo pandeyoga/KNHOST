@@ -570,7 +570,7 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
         upd["delivered_at"] = now_iso()
     elif to == "failed":
         reason = (payload.get("reason") or "").strip()
-        if len(reason) < 3:
+        if len(reason) < 5:   # K-14 — alasan minimum seragam 5 huruf
             raise ValueError("Alasan gagal kirim wajib diisi.")
         upd["fail_reason"] = reason
         note = reason
@@ -578,7 +578,7 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
         upd["completed_at"] = now_iso()
     elif to == "prepared" and cur == "loaded":
         reason = (payload.get("reason") or note or "").strip()
-        if len(reason) < 3:
+        if len(reason) < 5:   # K-14 — alasan minimum seragam 5 huruf
             raise ValueError("Alasan bongkar muatan (kembali ke Disiapkan) wajib diisi.")
         upd["loaded_at"] = None
         note = f"Dibongkar / kembali ke Disiapkan: {reason}"

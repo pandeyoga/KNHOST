@@ -34,6 +34,15 @@ async def list_bank_accounts(request: Request, entity_id: str = Query(None)) -> 
     return await bank_service.list_accounts(scope=scope)
 
 
+@router.get("/bank-accounts/position")
+async def bank_cash_position(request: Request, entity_id: str = Query(None)) -> Dict[str, Any]:
+    """K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank (sama dengan Dasbor Keuangan),
+    plus transaksi kas yang belum tertaut ke rekening (penjelas selisih terhadap Σ saldo rekening)."""
+    await require_permission(request, "cash", "view")
+    ctx = await entity_ctx(request)
+    return await bank_service.cash_position(resolve_scope_ids(ctx, entity_id))
+
+
 @router.post("/bank-accounts")
 async def create_bank_account(payload: BankAccountCreate, request: Request) -> Dict[str, Any]:
     """Buat akun kas/bank baru."""

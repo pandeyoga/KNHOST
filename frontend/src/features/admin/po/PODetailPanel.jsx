@@ -3,6 +3,7 @@ import { DualName } from "../../../components/DualName";
 import { useState } from "react";
 import { FileText, CheckCircle, XCircle, AlertCircle, Receipt, Ban, FileEdit, PackageCheck, Printer, ListOrdered } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { taxBreakdownRows } from "../../../utils/taxBreakdown";
 import { can, roleLabel, roleSatisfies } from "../../../config/roles";
 import { getStatusBadge, lateState } from "./poUtils";
 import POTimeline from "./POTimeline";
@@ -251,11 +252,14 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
             <div className="p-2.5 space-y-1">
               <Row label="Subtotal" value={formatCurrency(po.total_amount)} />
               {Number(po.discount_total) > 0 && <Row label="Diskon" value={`- ${formatCurrency(po.discount_total)}`} tone="text-amber-700" />}
-              <Row label="DPP" value={formatCurrency(po.dpp)} />
-              <Row label={`PPN Masukan${Number(po.ppn_rate) > 0 ? ` (${po.ppn_rate}%)` : ""}`}
-                value={Number(po.ppn_amount) > 0 ? formatCurrency(po.ppn_amount) : "—"} />
+              {/* Keputusan pemilik K-03 (26 Okt) — DPP = harga sebelum PPN; PPN 12% atas DPP nilai lain → baris
+                  "DPP nilai lain (11/12)"; Total = termasuk PPN (sama dengan PDF PO). Dulu "DPP" = nilai 11/12. */}
+              {taxBreakdownRows(po, { ppnLabel: "PPN Masukan" }).filter((r) => !r.strong).map((r) => (
+                <Row key={r.key} label={r.label} value={formatCurrency(r.value)} />
+              ))}
+              {!(Number(po.ppn_amount) > 0) && <Row label="PPN Masukan" value="—" />}
               <div className="flex justify-between border-t border-[#EFF0F2] pt-1 mt-1">
-                <span className="font-bold">Grand Total</span>
+                <span className="font-bold">{Number(po.ppn_amount) > 0 ? "Total (termasuk PPN)" : "Total"}</span>
                 <span data-testid="po-grand-total" className="font-bold tabular-nums text-[#007AFF]">{formatCurrency(po.grand_total)}</span>
               </div>
             </div>

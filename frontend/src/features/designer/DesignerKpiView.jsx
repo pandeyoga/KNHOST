@@ -196,7 +196,8 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
             </button>
             {canManage && (
               <button className="secondary-button" data-testid="designer-kpi-policy-button"
-                onClick={() => openConfig({ group: "rnd", key: "rnd.kpi_weight_on_time" })}>
+                onClick={() => openConfig({ group: "rnd", key: "rnd.kpi_weight" })}
+                title="Membuka keempat bobot sekaligus beserta jumlahnya (porsi dari 100%)">
                 <Settings2 size={13} /> Ubah bobot nilai
               </button>
             )}

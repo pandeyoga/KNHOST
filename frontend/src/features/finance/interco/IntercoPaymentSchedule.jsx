@@ -82,6 +82,8 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
           <p className="mt-1">Pembayaran penuh per transaksi, netting antar tagihan <b>dinonaktifkan</b>. Saldo setiap PT dihitung sendiri-sendiri.</p>
           {/* G1-31 — dasar angka disebut: sisa per dokumen terbuka (nilai − pelunasan − retur); umur = sejak tanggal dokumen. */}
           <p className="mt-1 text-[11.5px] opacity-80" data-testid="interco-schedule-basis">Sisa = nilai dokumen − pelunasan − retur, per dokumen yang sudah dikonfirmasi (draf tidak dihitung). Umur dihitung dari tanggal dokumen.</p>
+          {/* Keputusan pemilik K-07 (26 Okt) — jadwal ini RINCIAN per dokumen (bruto); angka utama = posisi bersih. */}
+          <p className="mt-1 text-[11.5px] font-semibold" data-testid="interco-schedule-detail-label">Rincian per dokumen (bruto, sebelum netting dua arah). Angka utama utang antar-PT = posisi bersih di tab Saldo Antar-PT &amp; kartu ringkasan.</p>
         </div>
       </div>
       {canConfigure && <CutoffForm cfg={data.config} onSaved={load} />}

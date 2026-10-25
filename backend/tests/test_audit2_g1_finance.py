@@ -126,26 +126,14 @@ def test_g112_stored_variance_is_single_source(monkeypatch):
     assert old["boundary"] == 169830.0
 
 
-# ─── G1-13 — Control Tower: piutang di luar papan sales dihitung terpisah (definisi papan tetap, K-01) ────────
-def test_g113_ar_outside_board_counts_customers_without_active_sales(monkeypatch):
+# ─── G1-13 — Control Tower: piutang pelanggan tanpa sales ────────────────────────────────────────────────────
+# Keputusan pemilik K-01 (26 Okt) menggantikan G1-13: KPI & papan kini menghitung SEMUA pelanggan dari laporan
+# aging (`home_service.ar_all_customers`); `_ar_outside_board` dihapus. Ujinya pindah ke
+# `tests/test_decisions_d1_finance.py::test_k01_ar_all_customers_uses_aging_and_groups_without_sales`.
+def test_g113_superseded_by_k01_all_customers():
     from services import home_service as hs
-    eid = f"ent_TEST_G1_{TAG}"
-    custs = [{"id": f"cust_TEST_G1a_{TAG}", "name": "TEST_G1 ber-sales", "entity_id": eid, "assigned_sales_id": "user_TEST_aktif"},
-             {"id": f"cust_TEST_G1b_{TAG}", "name": "TEST_G1 tanpa sales", "entity_id": eid},
-             {"id": f"cust_TEST_G1c_{TAG}", "name": "TEST_G1 sales nonaktif", "entity_id": eid, "assigned_sales_id": "user_TEST_off"}]
-    DB.customers.insert_many([dict(c) for c in custs])
-    credit = {custs[0]["id"]: (500.0, 100.0), custs[1]["id"]: (1193250.0, 1193250.0), custs[2]["id"]: (300.0, 0.0)}
-
-    async def fake_credit(c, entity_id=None):
-        ar, od = credit[c["id"]]
-        return {"ar_outstanding": ar, "overdue_amount": od}
-    monkeypatch.setattr(hs, "compute_customer_credit", fake_credit)
-    try:
-        out = run(hs._ar_outside_board({"user_TEST_aktif"}, eid))
-        assert out["customers"] == 2 and out["outstanding"] == 1193550.0
-        assert out["overdue"] == 1193250.0 and out["overdue_customers"] == 1
-    finally:
-        DB.customers.delete_many({"id": {"$in": [c["id"] for c in custs]}})
+    assert not hasattr(hs, "_ar_outside_board")
+    assert callable(hs.ar_all_customers)
 
 
 # ─── G1-31 — Saldo Antar-PT: angka tampil = dokumen terbuka saat ini (cache basi tidak dipakai) ─────────────

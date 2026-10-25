@@ -537,6 +537,11 @@ async def create_sample(payload: Dict[str, Any], *, entity_id: str,
         "timeline": [timeline_entry("created", "Permintaan sample dibuat (draf)", actor)],
         "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
     }
+    if doc.get("chain_override"):
+        # K-16 (26 Okt) — pengecualian rantai (labdip tanpa handfeel ACC) tercatat di riwayat beserta alasannya.
+        doc["timeline"].append(timeline_entry(
+            "chain_override", "Labdip tanpa handfeel ACC — dilanjutkan dengan alasan", actor,
+            note=doc["chain_override"].get("reason", "")))
     if not doc["title"]:
         raise RndError("Judul permintaan sample wajib diisi.")
     if doc["so_id"]:

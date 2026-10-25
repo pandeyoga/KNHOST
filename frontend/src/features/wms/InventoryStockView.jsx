@@ -15,7 +15,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
 import FormModal from "../../components/FormModal";
 import LineFilter from "../../components/LineFilter";   // FASE L
-import { stockStatus, MOV_TYPE_OPTIONS, movTypeLabel } from "./inventory/inventoryConstants";
+import { formatQty, MOV_TYPE_OPTIONS, movTypeLabel } from "./inventory/inventoryConstants";
 import InventorySummaryCards from "./inventory/InventorySummaryCards";
 import InitialStockForm from "./inventory/InitialStockForm";
 import OpeningCostAlert from "./inventory/OpeningCostAlert";
@@ -67,6 +67,8 @@ const emptyForm = {
 export default function InventoryStockView({ warehouses = [], products = [], entities = [], customers = [], selectedEntity = "all", user }) {
   const [balances, setBalances]       = useState([]);
   const [balancesTotal, setBalancesTotal] = useState({ truncated: false, total: 0 });
+  // K-04 (keputusan pemilik 26 Okt) — "Stok rendah" dari definisi tunggal server (per produk per badan usaha).
+  const [lowSummary, setLowSummary] = useState(null);
   const [peggedRolls, setPeggedRolls] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState("");
@@ -160,6 +162,8 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
                          total: Number(b.headers?.["x-total-count"] || 0) });
       setPeggedRolls(Array.isArray(pg.data) ? pg.data : []);
       setError("");
+      axios.get(`${API}/inventory/low-stock-summary`, { params: { ...ownerParams, limit: 0 } })
+        .then((r) => setLowSummary(r.data || null)).catch(() => setLowSummary(null));
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat data stok & inventori."); }
     finally { setLoading(false); }
   };
@@ -263,7 +267,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   const onHandByUnit   = sumByUnit("on_hand_qty");
   const availByUnit    = sumByUnit("available_qty");
   const reservedByUnit = sumByUnit("reserved_qty");
-  const lowCount      = filteredBalances.filter(b => stockStatus(b) === "low").length;
+  // K-04 — kartu "Stok Rendah" = definisi tunggal server (produk, 0 < tersedia < 100, seluruh badan usaha; tidak ikut
+  // saringan gudang/cari). Penanda baris "rendah" di tabel tetap per gudang. Cadangan bila server belum menjawab: "—".
+  const lowCount      = lowSummary ? lowSummary.count : "—";
 
   const entityLabel = selectedEntity === "all"
     ? "Semua Entitas"
@@ -286,6 +292,8 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         availByUnit={availByUnit}
         reservedByUnit={reservedByUnit}
         lowCount={lowCount}
+        lowHint={lowSummary ? `produk · tersedia < ${formatQty(lowSummary.threshold)} · seluruh badan usaha` : ""}
+        availHint={lowSummary?.available_label || ""}
       />
 
       {/* Owner context banner */}

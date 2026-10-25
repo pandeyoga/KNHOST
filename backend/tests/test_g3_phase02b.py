@@ -153,11 +153,12 @@ def test_stock01_value_and_velocity_not_double_counted(monkeypatch):
         await db.inventory_rolls.insert_many([
             _roll("ra", base_unit_cost=10.0),
             _roll("rb", owner_entity_id="ent_B", length_remaining=20.0, base_unit_cost=20.0)])
-        await db.inventory_movements.insert_many([
-            {"product_id": "p1", "warehouse_id": "wh1", "owner_entity_id": "ent_A", "movement_type": "outbound_ship",
-             "quantity": -3, "timestamp": iso(-1)},
-            {"product_id": "p1", "warehouse_id": "wh1", "owner_entity_id": "ent_B", "movement_type": "outbound_ship",
-             "quantity": -7, "timestamp": iso(-1)}])
+        # K-05 (26 Okt 2026) — laju jual kini dari SO hidup (bukan mutasi kirim per segmen pemilik).
+        await db.sales_orders.insert_many([
+            {"id": "soA", "entity_id": "ent_A", "status": "confirmed", "order_type": "regular", "created_at": iso(-1),
+             "items": [{"product_id": "p1", "quantity": 3, "base_quantity": 3}]},
+            {"id": "soB", "entity_id": "ent_B", "status": "shipped", "order_type": "regular", "created_at": iso(-1),
+             "items": [{"product_id": "p1", "quantity": 7, "base_quantity": 7}]}])
         ctx = EntityContext({"id": "u", "role": "super_admin"}, "ent_A", SCOPE, True)
         return await sas.compute_stock_analytics(ctx, None)
     res = run(go())

@@ -108,10 +108,10 @@ function RollTable({ rolls }) {
   return (
     <div className="overflow-x-auto">
       <table className="data-table" data-testid="return-timeline-rolls" style={{ minWidth: 760 }}>
-        {/* UAT 24 Okt (audit UI tahap 2) — G2-15 · P-12: kolom grade di sini = grade QC BARIS item (terburuk dari
-            pemeriksaan baris, sama untuk semua roll baris itu), bukan grade per roll di SPK/Stok → diberi label sumber. */}
+        {/* B3 (keputusan pemilik 26 Okt) — grade PER ROLL dari hasil QC SPK; grade baris (terburuk) hanya cadangan untuk
+            QC lama tanpa hasil per roll dan diberi tanda "grade baris" (G2-15). */}
         <thead><tr><th>Roll</th><th>Klaim</th><th>Lokasi fisik</th><th>QC aktual</th>
-          <th title="Grade terburuk hasil QC untuk baris item ini (sama untuk semua roll di baris). Grade per roll ada di panel SPK & Stok.">Grade QC baris</th>
+          <th title="Grade hasil QC per roll (SPK retur). Bertanda “grade baris” bila QC lama hanya mencatat grade terburuk per baris item.">Grade QC</th>
           <th>Disposisi stok</th></tr></thead>
         <tbody>
           {rolls.map((r) => (
@@ -123,7 +123,15 @@ function RollTable({ rolls }) {
                 {r.location_doc && <div className="font-mono text-[10px] text-[#8E8E93]">{r.location_doc}</div>}
               </td>
               <td className="tabular-nums">{r.qc_actual == null ? "—" : `${formatQty(r.qc_actual)} ${r.unit}`}</td>
-              <td>{r.qc_grade || "—"}</td>
+              <td data-testid={`timeline-roll-grade-${r.roll_id}`}>
+                {r.qc_grade || "—"}
+                {r.qc_grade && r.qc_grade_source === "line" && (
+                  <div className="text-[10px] text-[#8E8E93]" title="QC lama tanpa hasil per roll: grade terburuk baris item ini">grade baris</div>
+                )}
+                {r.qc_grade_source === "roll" && r.qc_line_grade && r.qc_line_grade !== r.qc_grade && (
+                  <div className="text-[10px] text-[#8E8E93]">baris: {r.qc_line_grade} (terburuk)</div>
+                )}
+              </td>
               <td>{r.stock_roll_no ? `${r.stock_roll_no} · ${r.stock_status} · ${r.stock_warehouse}` : "belum masuk stok"}</td>
             </tr>
           ))}

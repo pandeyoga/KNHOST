@@ -235,25 +235,31 @@ E("rnd.sla_escalate_admin_days", group="rnd", type="duration", default=3, min=1,
 # Grade dihitung sendiri dari jejak round; bobot di bawah menentukan apa yang
 # PALING dinilai. Bila satu komponen belum punya data, bobotnya dinormalkan ulang
 # (desainer baru tidak langsung jatuh ke grade D karena datanya belum lengkap).
+# Keputusan pemilik K-08 (26 Okt) — keempat bobot (tepat waktu + skor + ACC + nilai
+# versi desain) adalah porsi dari 100%; nilai versi desain BUKAN bonus. Bawaan
+# 40/40/20/20 (= 120, dinormalkan jadi 33,3/33,3/16,7/16,7) diganti 30/30/20/20 (= 100).
+# Bila pemilik menyimpan bobot yang jumlahnya bukan 100, `compute_grade` tetap
+# menyetarakannya ke 100% (Σ bobot × komponen ÷ Σ bobot) dan layar menyebutnya.
 # ═══════════════════════════════════════════════════════════════════════════
-E("rnd.kpi_weight_on_time", group="rnd", type="pct", default=40, min=0, max=100, step=5,
+E("rnd.kpi_weight_on_time", group="rnd", type="pct", default=30, min=0, max=100, step=5,
   unit="%", scopes=G,
   label="Bobot ketepatan waktu pada nilai desainer",
-  help="Seberapa besar 'menepati tenggat round' menentukan nilai akhir (grade) desainer.",
+  help="Seberapa besar 'menepati tenggat round' menentukan nilai akhir (grade) desainer. "
+       "Keempat bobot nilai desainer dijumlah menjadi 100%.",
   impact="Menaikkan angka ini membuat desainer yang cepat & tepat waktu naik peringkat; "
          "menurunkannya membuat mutu/skor penilaian lebih dominan.",
-  example="40% → desainer dengan on-time 100% mendapat 40 dari 100 poin dari komponen ini",
+  example="30% → desainer dengan on-time 100% mendapat 30 dari 100 poin dari komponen ini",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
   related=("rnd.kpi_weight_score", "rnd.kpi_weight_acc"), risk="low",
   roles=_MANAGER_TOO, permission=_RND_PERM)
 
-E("rnd.kpi_weight_score", group="rnd", type="pct", default=40, min=0, max=100, step=5,
+E("rnd.kpi_weight_score", group="rnd", type="pct", default=30, min=0, max=100, step=5,
   unit="%", scopes=G,
   label="Bobot skor penilaian manager pada nilai desainer",
   help="Seberapa besar rata-rata SKOR yang diberi manager saat menilai round (0–100) "
        "menentukan nilai akhir desainer.",
   impact="Menaikkan angka ini membuat mutu hasil lebih menentukan daripada kecepatan.",
-  example="40% → rata-rata skor 90 memberi 36 dari 100 poin",
+  example="30% → rata-rata skor 90 memberi 27 dari 100 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
   related=("rnd.kpi_weight_on_time",), risk="low", roles=_MANAGER_TOO,
   permission=_RND_PERM)
@@ -274,7 +280,8 @@ E("rnd.kpi_weight_design", group="rnd", type="pct", default=20, min=0, max=100, 
   label="Bobot nilai versi desain (Design Studio) pada nilai desainer",
   help="Seberapa besar rata-rata NILAI versi desain (skala 0–2 dari penilai di Design "
        "Studio) menentukan nilai akhir desainer. Nilai 0–2 dikonversi ke 0–100 "
-       "(dikali 50) sebelum dibobotkan bersama komponen round sample.",
+       "(dikali 50) sebelum dibobotkan bersama komponen round sample. Bobot ini BAGIAN "
+       "dari 100% (bukan bonus di atas 100%).",
   impact="0 = nilai desain hanya ditampilkan, tidak mengubah grade. Menaikkan angka ini "
          "membuat mutu karya desain ikut menentukan peringkat, bukan hanya round sample.",
   example="20% → rata nilai desain 1,5/2 (=75) memberi 15 dari 100 poin",

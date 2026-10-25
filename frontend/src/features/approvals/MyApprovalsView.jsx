@@ -21,6 +21,7 @@ import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency } from "../../utils/formatters";
 import { actorLabel } from "../../utils/actorLabel";
 import { can, roleLabel } from "../../config/roles";
+import { REASON_MIN_LENGTH } from "../../services/confirmService";
 import axios, { API } from "../../services/apiClient";
 import {
   apiErr, approvalMatrixLog, approveMakloonClaim, approvePr, approveSpec, approveSpecialOrder,
@@ -227,7 +228,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
   const needSku = modal?.action === "approve" && modalItem?.stage === "design_acc";
   const canSubmit = modal?.action === "approve"
     ? (!needSku || form.sku.trim().length >= 3)
-    : form.reason.trim().length >= 3;
+    : form.reason.trim().length >= REASON_MIN_LENGTH;   // K-14 (26 Okt): alasan minimum seragam 5 huruf
 
   return (
     <div className="grid gap-3" data-testid="my-approvals-view">
@@ -543,7 +544,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                 </label>
               ) : (
                 <label className="grid gap-1 text-[11px] font-semibold text-[#4A4B52]">
-                  Alasan penolakan (wajib, min. 3 huruf)
+                  Alasan penolakan (wajib, min. {REASON_MIN_LENGTH} huruf)
                   <textarea className="field !h-16" data-testid="my-approvals-reason"
                     value={form.reason}
                     onChange={(e) => setForm({ ...form, reason: e.target.value })} />

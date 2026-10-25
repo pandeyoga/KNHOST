@@ -10,6 +10,9 @@ from db import db
 from services.work_desk_service import _queue, _row, _age_days
 
 ROLES = ("admin", "manager", "sales", "warehouse", "designer", "driver")
+# Keputusan pemilik K-03 (26 Okt) — kolom nilai SO/PO di Meja Saya = grand total → diberi label tegas (sama dengan
+# Pusat Dokumen, Persetujuan Pembelian & PDF: "Total" = termasuk PPN, DPP = rincian).
+TOTAL_LABEL = "Total (termasuk PPN)"
 LABEL = {"admin": "Meja Admin", "manager": "Meja Manajer", "sales": "Meja Sales", "warehouse": "Meja Operator Gudang",
          "designer": "Meja Desainer", "driver": "Meja Pengemudi"}
 
@@ -63,11 +66,12 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
     so_no = {o["id"]: o.get("number", "") for o in await db.sales_orders.find(
         {"id": {"$in": [p["so_id"] for p in pa if p.get("so_id")]}}, {"_id": 0, "id": 1, "number": 1}).to_list(200)}
     return [
-        _queue("so_acc", "Pesanan penjualan menunggu ACC", "Setujui atau tolak — sales & pelanggan menunggu.", _so_rows(so, "Putuskan"), action_label="Putuskan", owner="manager"),
+        _queue("so_acc", "Pesanan penjualan menunggu ACC", "Setujui atau tolak — sales & pelanggan menunggu.", _so_rows(so, "Putuskan"), action_label="Putuskan", owner="manager",
+               value_label=TOTAL_LABEL),
         _queue("po_acc", "Pesanan pembelian menunggu ACC", "PO di atas ambang persetujuan.",
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),
                      value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("created_at")), badge=o.get("status", ""), action="Putuskan") for o in po],
-               action_label="Putuskan", owner="manager"),
+               action_label="Putuskan", owner="manager", value_label=TOTAL_LABEL),
         _queue("retur_acc", "Retur menunggu ACC", "Retur penjualan & pembelian yang perlu keputusan.",
                [_row(ref_type="sales_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"), value=sr_value.get(o["id"], 0.0),
                      age_days=_age_days(o.get("created_at")), badge="retur penjualan", action="Putuskan") for o in sr]
@@ -96,9 +100,9 @@ async def sales_queues(actor, scope, ids) -> List[Dict[str, Any]]:
     rejected = await _find("sales_orders", {**sq, **mine, "order_type": {"$ne": "sample"}, "status": {"$in": ["rejected", "cancelled"]}, "updated_at": {"$gte": _days_ago(7)}})
     samples = await _find("sales_orders", {**sq, **mine, "order_type": "sample", "status": {"$nin": ["done", "cancelled", "expired", "rejected"]}})
     return [
-        _queue("so_menunggu", "Pesanan saya menunggu", "Menunggu ACC manajer atau stok — pantau, jangan janji tanggal kirim dulu.", _so_rows(waiting, "Lihat"), action_label="Lihat", owner="sales"),
-        _queue("so_konfirmasi", "Disetujui — konfirmasi ke pelanggan", "Kabari pelanggan; admin sales akan memproses.", _so_rows(approved, "Lihat"), action_label="Lihat", owner="sales"),
-        _queue("so_ditolak", "Ditolak / dibatalkan (7 hari)", "Hubungi pelanggan & ajukan ulang bila perlu.", _so_rows(rejected, "Lihat"), action_label="Lihat", owner="sales"),
+        _queue("so_menunggu", "Pesanan saya menunggu", "Menunggu ACC manajer atau stok — pantau, jangan janji tanggal kirim dulu.", _so_rows(waiting, "Lihat"), action_label="Lihat", owner="sales", value_label=TOTAL_LABEL),
+        _queue("so_konfirmasi", "Disetujui — konfirmasi ke pelanggan", "Kabari pelanggan; admin sales akan memproses.", _so_rows(approved, "Lihat"), action_label="Lihat", owner="sales", value_label=TOTAL_LABEL),
+        _queue("so_ditolak", "Ditolak / dibatalkan (7 hari)", "Hubungi pelanggan & ajukan ulang bila perlu.", _so_rows(rejected, "Lihat"), action_label="Lihat", owner="sales", value_label=TOTAL_LABEL),
         _queue("sampel_saya", "Pesanan sample saya", "Pesanan berisi baris sample yang sedang dipotong / disiapkan gudang.",
                _so_rows(samples, "Lihat"), action_label="Lihat", owner="sales", value_kind="count", value_label="Item"),
     ]
@@ -140,7 +144,7 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
         _queue("po_terima", "PO menunggu penerimaan", "Barang pemasok yang akan/sedang diterima.",
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),
                      value=o.get("grand_total") or 0, age_days=_age_days(o.get("updated_at")), badge=o.get("status", ""), action="Terima") for o in po],
-               action_label="Terima", owner="warehouse"),
+               action_label="Terima", owner="warehouse", value_label=TOTAL_LABEL),
         _queue("sampel_potong", "Sample untuk dipotong", "Permintaan potong sample dari pesanan sales — pindai roll, potong, catat panjang.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("order_number", ""), title=t.get("customer_name", "—"), subtitle=t.get("product_name", ""),
                      age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Potong") for t in samples],

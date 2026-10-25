@@ -372,13 +372,13 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
             <div data-testid="gl-reverse-form" className="mt-3 grid gap-2 rounded-lg border border-[#E9D8F5] bg-[#FBF8FE] p-3 text-[12px]">
               <p className="font-bold">Jurnal pembalik (debit ↔ kredit) — tanggal wajib di periode terbuka; jurnal asli tidak diubah.</p>
               <KNDatePicker data-testid="gl-reverse-date" clearable={false} value={revDate} onChange={setRevDate} />
-              <textarea data-testid="gl-reverse-reason" className="field" rows={2} placeholder="Alasan pembalikan (wajib)"
+              <textarea data-testid="gl-reverse-reason" className="field" rows={2} placeholder="Alasan pembalikan (wajib, minimal 5 huruf)"
                 value={revReason} onChange={(e) => setRevReason(e.target.value)} />
               {revErr && <p data-testid="gl-reverse-error" className="text-[#C0392B] font-semibold">{revErr}</p>}
               <div className="flex gap-2 justify-end">
                 <button className="btn-secondary text-[12px] py-1 px-3" onClick={() => setRevOpen(false)}>Batal</button>
                 <button data-testid="gl-reverse-submit" className="btn-primary text-[12px] py-1 px-3"
-                  disabled={revBusy || !revDate || revReason.trim().length < 3}
+                  disabled={revBusy || !revDate || revReason.trim().length < 5 /* K-14 — seragam 5 huruf */}
                   onClick={async () => {
                     setRevBusy(true); setRevErr("");
                     try { await onReverse(je, revDate, revReason); } catch (e) { setRevErr(apiErrorText(e, "Gagal membalik jurnal.")); } finally { setRevBusy(false); }

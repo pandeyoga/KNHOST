@@ -19,7 +19,7 @@ export default function OrderPriceRequestModal({ open, item, normalPrice, value,
   const unit = item.unit || item.product?.base_unit || "";
   const p = Number(price || 0);
   const pct = normalPrice > 0 && p > 0 ? Math.round(((p - normalPrice) / normalPrice) * 1000) / 10 : null;
-  const ok = p > 0 && reason.trim().length >= 3;
+  const ok = p > 0 && reason.trim().length >= 5;   // K-14
   return (
     <div className="modal-overlay" style={{ zIndex: 200 }} data-testid="order-price-request-modal" {...overlayDismiss(onClose)}>
       <div className="modal-card" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>

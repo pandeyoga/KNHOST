@@ -10,7 +10,7 @@ import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "../../../components/KNDatePicker";
 import { formatCurrency, formatDate, formatQty, todayWib } from "../../../utils/formatters";
-import { askConfirm, askReason } from "../../../services/confirmService";
+import { askConfirm, askReason, REASON_MIN_LENGTH } from "../../../services/confirmService";
 import {
   PIN_STATUS_CLASS, PIN_STATUS_LABEL, cancelInternalRequest, convertInternalRequest, createInternalRequest,
   internalRequestSources, listInternalRequests, pinMeta, productAvailability, rejectInternalRequest,
@@ -135,7 +135,9 @@ function PinCreate({ onBack, onDone }) {
     setLine(i, { product_id: pid });
     if (pid && !avail[pid]) productAvailability(pid).then((a) => setAvail((m) => ({ ...m, [pid]: a }))).catch(() => {});
   };
-  const valid = lines.every((l) => l.product_id && Number(l.quantity) > 0) && f.reason.trim();
+  // K-14 (26 Okt) — alasan minimum 5 huruf, sama dengan server (`internal_request_service`: < 5 → ditolak).
+  const reasonShort = f.reason.trim().length < REASON_MIN_LENGTH;
+  const valid = lines.every((l) => l.product_id && Number(l.quantity) > 0) && !reasonShort;
   const submit = async () => {
     setBusy(true); setErr("");
     try {
@@ -168,7 +170,8 @@ function PinCreate({ onBack, onDone }) {
         })}
         <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" onClick={() => setLines((ls) => [...ls, { product_id: "", quantity: "", notes: "" }])} data-testid="m-pin-add-line"><Plus size={13} /> Tambah barang</button>
         <label className="block"><FLabel req>Alasan permintaan</FLabel>
-          <input className="field" placeholder="mis. stok sendiri kurang untuk pesanan pelanggan" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pin-reason" /></label>
+          <input className="field" placeholder="mis. stok sendiri kurang untuk pesanan pelanggan" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pin-reason" />
+          {f.reason.trim() && reasonShort && <span className="mt-1 block text-[10.5px] text-[#B45309]" data-testid="m-pin-reason-hint">Minimal {REASON_MIN_LENGTH} huruf.</span>}</label>
         <div><FLabel optional>Untuk pesanan</FLabel>
           <KNSelect value={f.source_order_id} onValueChange={(v) => setF({ ...f, source_order_id: v })} placeholder="— Tanpa pesanan (stok sendiri) —" aria-label="Untuk pesanan"
             options={[{ value: "", label: "— Tanpa pesanan (stok sendiri) —" }, ...orders.map((s) => ({ value: s.id, label: `${s.number} · ${s.customer_name || ""}` }))]} data-testid="m-pin-order" /></div>

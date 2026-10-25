@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx
 from services import closing_service as cs
+from role_registry import role_in
 
 router = APIRouter(prefix="/api")
 
@@ -20,6 +21,8 @@ class CloseRequest(BaseModel):
     period_key: str             # "YYYY-MM" atau "YYYY"
     entity_id: Optional[str] = None
     note: Optional[str] = ""
+    # K-15 — alasan admin menembus blokir Suspense ≠ 0 (≥ 5 huruf; tercatat di record & audit).
+    suspense_override_reason: Optional[str] = ""
 
 
 async def _resolve_entity(request: Request, entity_id: Optional[str]) -> str:
@@ -72,12 +75,29 @@ async def close_period(payload: CloseRequest, request: Request) -> Dict[str, Any
     """Tutup buku periode: buat jurnal penutup otomatis + tandai tertutup."""
     actor = await require_permission(request, "accounting", "manage")
     eid = await _resolve_entity(request, payload.entity_id)
+    # K-15 — hanya admin yang boleh menembus blokir Suspense (aturan peran sama dengan Reopen).
+    is_admin = role_in(actor.get("role"), ("admin",)) or actor.get("role") == "system/demo"
     try:
-        rec = await cs.close_period(payload.period_type, payload.period_key, actor, eid, payload.note or "")
+        rec = await cs.close_period(payload.period_type, payload.period_key, actor, eid, payload.note or "",
+                                    suspense_override_reason=payload.suspense_override_reason or "",
+                                    can_override_suspense=is_admin)
+    except cs.SuspenseNotZero as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except cs.SuspenseOverrideForbidden as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    await audit(actor["name"], "period_closed", "period_closing", rec["id"],
-                {"period": rec["period_key"], "type": rec["period_type"], "net_income": rec["net_income"]})
+    details = {"period": rec["period_key"], "type": rec["period_type"], "net_income": rec["net_income"]}
+    ovr = rec.get("suspense_override")
+    if ovr:
+        details.update({"suspense_override_reason": ovr.get("reason"),
+                        "suspense_balance": ovr.get("suspense_balance")})
+    await audit(actor["name"], "period_closed", "period_closing", rec["id"], details)
+    if ovr:
+        # Jejak terpisah supaya tembus blokir mudah dicari di Jejak Audit (bukan hanya rincian "period_closed").
+        await audit(actor["name"], "period_close_suspense_override", "period_closing", rec["id"],
+                    {"period": rec["period_key"], "reason": ovr.get("reason"),
+                     "suspense_balance": ovr.get("suspense_balance")}, reason=ovr.get("reason") or "")
     return rec
 
 

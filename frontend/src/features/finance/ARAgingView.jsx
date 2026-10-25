@@ -180,6 +180,12 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
         <Kpi testId="ar-kpi-denda" label={`Est. Denda (${dendaRate}%/bln)`} value={formatCurrency(totals.denda)} icon={TrendingDown} tone={totals.denda > 0 ? "text-[#B45309]" : ""} />
         <Kpi testId="ar-kpi-denda-doc" label={`Nota Denda (${totals.penalty_docs || 0} dok)`} value={formatCurrency(totals.penalty_actual)} icon={BadgeDollarSign} tone={totals.penalty_actual > 0 ? "text-[#0058CC]" : ""} />
       </div>
+      {/* Keputusan pemilik K-01 (26 Okt) — label sumber: layar operasional = sub-buku; Neraca = buku besar Piutang Usaha. */}
+      <p className="mb-2 text-[11px] text-[#6B6B73]" data-testid="ar-source-label">
+        Sumber angka: <b>sub-buku piutang</b> — semua dokumen penjualan belum lunas, semua pelanggan (sama dengan Control
+        Tower, Beranda & Dasbor Keuangan). Neraca di Laporan Keuangan memakai saldo buku besar Piutang Usaha (hanya yang
+        sudah diakui saat kirim) — lihat "Piutang tercatat (buku besar)" di bawah.
+      </p>
       <LedgerExposureStrip totals={totals} />
 
       {/* Aging bucket strip */}

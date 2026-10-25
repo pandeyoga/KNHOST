@@ -53,11 +53,11 @@ def test_stats_summary_avg_order_value_formula(admin_h):
         # top customer revenue is Σ grand_total of that customer's fulfilled orders in period
         for tc in p["top_customers"]:
             assert "revenue" in tc and tc["revenue"] >= 0
-    # pending_count = sum of waiting_approval/reserved/approved
+    # K-06 + B2 (keputusan pemilik 26 Okt 2026) — pending_count = waiting_approval SAJA ("Menunggu persetujuan").
     bs = data.get("by_status", {})
-    expected_pending = sum(int((bs.get(s) or {}).get("count", 0))
-                           for s in ("waiting_approval", "reserved", "approved"))
+    expected_pending = int((bs.get("waiting_approval") or {}).get("count", 0))
     assert data["pending_count"] == expected_pending
+    assert "Menunggu persetujuan" in data.get("pending_basis", "")
 
 
 def test_stats_summary_line_scope(admin_h):

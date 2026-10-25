@@ -56,7 +56,7 @@ export function RollHoldControl({ roll, onChanged, size = "sm" }) {
             {error && <p className="mt-1.5 rounded bg-[#FBE9E7] px-2 py-1 text-[11px] text-[#C0341D]" data-testid="roll-hold-error">{error}</p>}
             <div className="mt-3 flex justify-end gap-2">
               <button className="secondary-button text-[11.5px]" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
-              <button data-testid={`roll-${mode}-submit`} className="primary-button text-[11.5px]" disabled={busy || text.trim().length < 3}
+              <button data-testid={`roll-${mode}-submit`} className="primary-button text-[11.5px]" disabled={busy || text.trim().length < 5}
                 onClick={submit}>{busy ? "…" : isHold ? "Tahan roll" : "Lepas tahanan"}</button>
             </div>
           </div>

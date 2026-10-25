@@ -4,6 +4,7 @@ import ProductSelect from "../../components/ProductSelect";
 import KNSelect from "../../components/KNSelect";
 import { labdipHistory, revalPartners } from "./rndApi";
 import SupplierEligibilityPanel from "./SupplierEligibilityPanel";
+import { REASON_MIN_LENGTH } from "../../services/confirmService";
 
 const RESULT = { acc: "ACC", revisi: "Revisi", tolak: "Tolak" };
 
@@ -47,6 +48,12 @@ function PartnerFields({ productId, supplierId, reason, onChange }) {
         <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Alasan siklus uji ulang *</span>
         <input className="field" data-testid="existing-sku-reason" value={reason} onChange={(e) => onChange({ reason: e.target.value })}
           placeholder="mis. supplier baru, keluhan pelanggan, ganti benang" />
+        {/* K-14 (26 Okt) — alasan minimum seragam 5 huruf. */}
+        {reason.trim().length > 0 && reason.trim().length < REASON_MIN_LENGTH && (
+          <span className="mt-1 block text-[10.5px] text-[#B45309]" data-testid="existing-sku-reason-hint">
+            Minimal {REASON_MIN_LENGTH} huruf.
+          </span>
+        )}
       </label>
     </div>
   );

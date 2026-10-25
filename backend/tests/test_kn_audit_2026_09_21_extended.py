@@ -154,7 +154,7 @@ def test_kn_a05_purchase_return_actions_cross_entity(admin, action):
     if not pr:
         pytest.skip("tidak ada purchase return demo")
     r = admin.post(f"{API}/purchase-returns/{pr['id']}/{action}",
-                   json={"reason": "TEST"} if action == "reject" else {},
+                   json={"reason": "TEST alasan lintas entitas"} if action == "reject" else {},   # K-14: min 5 huruf
                    headers={"X-Entity-Id": _other(pr["entity_id"])}, timeout=20)
     _assert_cross_denied(r, f"purchase-return {action}")
 
@@ -184,7 +184,7 @@ def test_kn_b30_payroll_actions_cross_entity(admin, action):
     if not run:
         pytest.skip("tidak ada payroll run demo")
     r = admin.post(f"{API}/hr/payroll/runs/{run['id']}/{action}",
-                   json={"reason": "TEST"} if action == "reject" else {},
+                   json={"reason": "TEST alasan lintas entitas"} if action == "reject" else {},   # K-14: min 5 huruf
                    headers={"X-Entity-Id": _other(run["entity_id"])}, timeout=20)
     _assert_cross_denied(r, f"payroll {action}")
 

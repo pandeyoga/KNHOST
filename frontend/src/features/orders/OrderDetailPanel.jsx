@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
 import { can, roleLabel } from "../../config/roles";
 import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
+import { taxBreakdownRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
 import { isClosedSo, lotModeLabel, lotSelectionLabel, allocationExplain } from "./soStatusView";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
@@ -490,15 +491,23 @@ export function OrderDetailPanel({
           <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1">Ringkasan Harga</p>
           <BreakRow label="Subtotal (bruto)" value={formatCurrency(sel.total_amount)} />
           {Number(sel.discount_total) > 0 && (
-            <>
-              <BreakRow label="Diskon" value={`− ${formatCurrency(sel.discount_total)}`} amber />
-              <BreakRow label="Subtotal netto (DPP)" value={formatCurrency(sel.net_subtotal != null ? sel.net_subtotal : sel.total_amount)} />
-            </>
+            <BreakRow label="Diskon" value={`− ${formatCurrency(sel.discount_total)}`} amber />
           )}
+          {/* Keputusan pemilik K-03 (26 Okt) — sama dengan PDF SO: DPP (harga sebelum PPN) · DPP nilai lain (11/12)
+              (rezim PPN 12%) · PPN · Total (termasuk PPN). Dulu: "Subtotal netto (DPP)" · "PPN x%" · "Grand Total". */}
           {Number(sel.ppn_amount) > 0 ? (
-            <BreakRow label={`PPN ${sel.ppn_rate || 0}%`} value={formatCurrency(sel.ppn_amount)} />
+            taxBreakdownRows(sel).filter((r) => !r.strong).map((r) => (
+              <div key={r.key} data-testid={`order-break-${r.key}`}>
+                <BreakRow label={r.label} value={formatCurrency(r.value)} />
+              </div>
+            ))
           ) : (
-            <BreakRow label="PPN" value={sel.is_pkp === false ? "Non-PKP (0)" : formatCurrency(0)} muted />
+            <>
+              {Number(sel.discount_total) > 0 && (
+                <BreakRow label="Subtotal netto (DPP)" value={formatCurrency(sel.net_subtotal != null ? sel.net_subtotal : sel.total_amount)} />
+              )}
+              <BreakRow label="PPN" value={sel.is_pkp === false ? "Non-PKP (0)" : formatCurrency(0)} muted />
+            </>
           )}
           {sel.needs_tax_invoice && (
             <div data-testid="order-needs-faktur-badge" className="mt-1 flex items-center gap-1 rounded bg-[#EFF4FF] px-2 py-1 text-[10px] font-semibold text-[#0058CC]">
@@ -506,7 +515,9 @@ export function OrderDetailPanel({
             </div>
           )}
           <div className="flex items-center justify-between border-t border-[#E5E5EA] pt-1 mt-1">
-            <span className="text-[10px] font-bold uppercase text-[#6B6B73]">Grand Total</span>
+            <span className="text-[10px] font-bold uppercase text-[#6B6B73]" data-testid="order-grand-total-label">
+              {Number(sel.ppn_amount) > 0 ? "Total (termasuk PPN)" : "Grand Total"}
+            </span>
             <span data-testid="order-grand-total" className="text-[14px] font-bold text-[#007AFF]">
               {formatCurrency(sel.grand_total != null ? sel.grand_total : sel.total_amount)}
             </span>

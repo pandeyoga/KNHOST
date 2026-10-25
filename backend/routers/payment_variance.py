@@ -40,7 +40,8 @@ class DecideBody(BaseModel):
 
 
 class ReverseBody(BaseModel):
-    reason: str = Field(..., min_length=3)
+    # K-14 (26 Okt) — panjang alasan minimum seragam 5 huruf (layar & server).
+    reason: str = Field(..., min_length=5)
 
 
 def _err(exc: Exception, code: int = 400) -> HTTPException:

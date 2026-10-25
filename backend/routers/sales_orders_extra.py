@@ -206,11 +206,15 @@ async def get_orders_stats(request: Request, entity_id: str = None,
     scope = line_scope.narrow(scope, actor, line, field=line_scope.LINES_FIELD)
 
     # Count by status
+    # Keputusan pemilik K-03 (26 Okt) — kartu tahap di layar Pesanan menampilkan nilai TERMASUK PPN (sama dengan
+    # kolom "Total (termasuk PPN)" daftar) → `grand_total` per status; `total_amount` (bruto) tetap untuk konsumen lama.
     pipeline = [
         {"$match": scope},
-        {"$group": {"_id": "$status", "count": {"$sum": 1}, "total_amount": {"$sum": "$total_amount"}}}
+        {"$group": {"_id": "$status", "count": {"$sum": 1}, "total_amount": {"$sum": "$total_amount"},
+                    "grand_total": {"$sum": {"$ifNull": ["$grand_total", "$total_amount"]}}}}
     ]
-    status_counts = {doc["_id"]: {"count": doc["count"], "total_amount": doc["total_amount"]}
+    status_counts = {doc["_id"]: {"count": doc["count"], "total_amount": doc["total_amount"],
+                                  "grand_total": round(float(doc.get("grand_total") or 0), 2)}
                      for doc in await db.sales_orders.aggregate(pipeline).to_list(100)}
 
     # Reserved qty across all products — G3 D4-ORDER-01: tanpa batas 200 dokumen.
@@ -284,8 +288,10 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         "total_orders": await db.sales_orders.count_documents(scope),
         "revenue": revenue,
         "periods": periods,
-        "pending_count": sum(int((status_counts.get(s) or {}).get("count", 0))
-                             for s in ("waiting_approval", "reserved", "approved")),
+        # K-06 + B2 (keputusan pemilik 26 Okt 2026) — KPI "Menunggu persetujuan" = SO `waiting_approval` SAJA
+        # (dulu + reserved + approved = "Belum diproses"). Populasi = daftar Pesanan (tanpa sample, cakupan sama).
+        "pending_count": int((status_counts.get("waiting_approval") or {}).get("count", 0)),
+        "pending_basis": "Pesanan berstatus Menunggu persetujuan · semua tanggal · tanpa pesanan sample",
         "avg_basis": "rata-rata = revenue status terpenuhi ÷ jumlah pesanan terpenuhi pada periode yang sama",
         "revenue_basis": "grand_total (setelah diskon & PPN) · status terpenuhi · seluruh pesanan ter-scope",
     }

@@ -3,6 +3,8 @@ import { BarChart2, FileText, Route } from "lucide-react";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
+// Keputusan pemilik K-03 (26 Okt) — "Total" dokumen = termasuk PPN; DPP (harga sebelum PPN) = rincian.
+import { docDpp, docGrandTotal, docPpn } from "../../utils/taxBreakdown";
 import PaymentBadge from "../../components/PaymentBadge";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -23,7 +25,10 @@ const CSV_COLUMNS = [
   // FASE U — dua satuan: gulungan (bisa di-SUM) + ukuran per satuan. Dokumen lama
   // tanpa `qty_rolls` menghasilkan sel KOSONG, bukan 0 (keputusan pemilik).
   ...qtyDualCsvColumns(),
-  { key: "total_amount", header: "Total (DPP)", type: "num" },
+  // K-03 (26 Okt) — dulu "Total (DPP)" berisi nilai BRUTO (sebelum diskon & PPN); kini total dokumen termasuk PPN
+  // + kolom rincian DPP (harga sebelum PPN), sama dengan PDF SO & Pusat Dokumen.
+  { header: "Total (termasuk PPN)", type: "num", get: (r) => docGrandTotal(r) },
+  { header: "DPP (harga sebelum PPN)", type: "num", get: (r) => docDpp(r) },
   { key: "paid_total", header: "Sudah Dibayar", type: "num" },
   { key: "payment_status", header: "Status Bayar" },
   { key: "stage", header: "Tahap" },
@@ -217,14 +222,17 @@ export default function OrdersView({
               { label: "Selesai", value: stats.done, color: "text-[#5856D6]", bg: "bg-purple-50", st: "done", keys: ["done"] },
               { label: "Dibatalkan", value: stats.cancelled, color: "text-red-500", bg: "bg-red-50", st: "cancelled,expired", keys: ["cancelled", "expired"] },
             ].map(({ label, value, color, bg, st, keys, hint }) => {
+              // K-03 (26 Okt) — nilai kartu = total termasuk PPN (sama dengan kolom daftar); server lama tanpa
+              // `grand_total` per status jatuh ke `total_amount`.
+              const stAmt = (v) => Number(v?.grand_total ?? v?.total_amount ?? 0);
               const amt = keys.length === 0
-                ? Object.values(byStatus).reduce((s, v) => s + Number(v?.total_amount || 0), 0)
-                : keys.reduce((s, k) => s + Number(byStatus[k]?.total_amount || 0), 0);
+                ? Object.values(byStatus).reduce((s, v) => s + stAmt(v), 0)
+                : keys.reduce((s, k) => s + stAmt(byStatus[k]), 0);
               const active = statusFilter === st;
               return (
                 <button key={label} type="button" data-testid={`orders-stat-${label.toLowerCase()}`}
                   onClick={() => setStatusFilter(st)}
-                  title={hint ? `Saring daftar: ${label} — ${hint}` : `Saring daftar: ${label}`}
+                  title={`Saring daftar: ${label}${hint ? ` — ${hint}` : ""} · nilai = total termasuk PPN`}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${bg} ${
                     active ? "border-[#007AFF] ring-1 ring-[#007AFF]" : "border-[#EFF0F2] hover:border-[#B9CFF2]"}`}>
                   <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">{label}</p>
@@ -287,8 +295,8 @@ export default function OrdersView({
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <div className="min-w-[720px] grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_100px_56px_minmax(120px,1fr)] gap-2 bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
-                  <span>Pesanan</span><span>Pelanggan</span><span>Qty Pesan</span><span className="text-right" data-testid="orders-col-total-dpp" title="Nilai sebelum PPN (DPP). Nilai termasuk PPN tampil di rincian pesanan & piutang.">Total (DPP)</span><span>Tanggal</span><span>Tahap</span>
+                <div className="min-w-[720px] grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_112px_56px_minmax(120px,1fr)] gap-2 bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
+                  <span>Pesanan</span><span>Pelanggan</span><span>Qty Pesan</span><span className="text-right leading-tight" data-testid="orders-col-total" title="Total dokumen termasuk PPN (setelah diskon). Baris kecil = DPP (harga sebelum PPN); rincian lengkap di detail pesanan.">Total (termasuk PPN)</span><span>Tanggal</span><span>Tahap</span>
                 </div>
                 <div className="min-w-[720px] divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
                   {/* Audit UI 24 Okt (004) — dulu ikut `loading` global (muat dasbor) sehingga "Memuat pesanan…"
@@ -313,7 +321,7 @@ export default function OrdersView({
                     <div 
                       data-testid={`order-card-${order.id}`} 
                       key={order.id}
-                      className={`grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_100px_56px_minmax(120px,1fr)] gap-2 items-center px-3 py-2.5 cursor-pointer hover:bg-[#FAFBFC] transition-colors ${
+                      className={`grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_112px_56px_minmax(120px,1fr)] gap-2 items-center px-3 py-2.5 cursor-pointer hover:bg-[#FAFBFC] transition-colors ${
                         selectedOrder === order.id ? 'bg-[#EFF4FF] border-l-2 border-[#007AFF]' : ''
                       }`}
                       onClick={() => setSelectedOrder(order.id === selectedOrder ? null : order.id)}
@@ -353,9 +361,16 @@ export default function OrdersView({
                         <p className="font-semibold" data-testid={`order-qty-${order.id}`}>{formatQtyByUnit(its)}</p>
                         <p className="text-[10px] text-[#6B6B73]">{its.length} item{units.length > 1 ? " · campuran" : ""}</p>
                       </div>
-                      <p data-testid={`order-total-${order.id}`} className="text-right text-[11.5px] font-bold tabular-nums">
-                        {formatCurrency(order.total_amount)}
-                      </p>
+                      <div className="text-right tabular-nums">
+                        <p data-testid={`order-total-${order.id}`} className="text-[11.5px] font-bold">
+                          {formatCurrency(docGrandTotal(order))}
+                        </p>
+                        {docPpn(order) > 0 && (
+                          <p data-testid={`order-dpp-${order.id}`} className="text-[10px] text-[#6B6B73]">
+                            DPP {formatCurrency(docDpp(order))}
+                          </p>
+                        )}
+                      </div>
                       <p className="text-[10.5px] text-[#6B6B73]" data-testid={`order-date-${order.id}`}>
                         {order.created_at ? new Date(order.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "—"}
                       </p>

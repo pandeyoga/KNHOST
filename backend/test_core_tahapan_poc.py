@@ -333,7 +333,8 @@ def main() -> int:  # noqa: C901 — POC linear supaya mudah dibaca sebagai bukt
 
     # ══ T4. REGRESI — SPK gaya lama menghasilkan angka IDENTIK ══════════════
     print("\n── T4. Manajer membuka SPK lama: angkanya tidak boleh bergeser ──")
-    seed_o = db.makloon_orders.find_one({"mko_number": "MKO-00001"}, {"_id": 0})
+    # K-09 (26 Okt): nomor MKO baru ber-prefiks badan usaha (KSC/MKO-00001) — cocokkan dengan/tanpa prefiks.
+    seed_o = db.makloon_orders.find_one({"mko_number": {"$regex": "(^|/)MKO-00001$"}}, {"_id": 0})
     seed_step = ((seed_o or {}).get("steps") or [{}])[0]
     seed_est = seed_step.get("estimate") or {}
     benang = db.products.find_one({"sku": "BNG-KTN-001"}, {"_id": 0, "id": 1})

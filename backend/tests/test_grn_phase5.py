@@ -123,7 +123,9 @@ def test_makloon_ocr_validate_count_close_and_learn(admin, mdb, mk_env):
         g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/lines/1/rolls", json={
             "length": length, "weight_kg": kg, "lot": "071225", "grade": "A"}))["grn"]
     g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/lines/2/rolls", json={"length": 4.2, "grade": "BS"}))["grn"]
-    assert g["lines"][1]["counted"]["makloon_rolls"][0]["lot"] == "SISA-MKO-00002-1"
+    # K-09 (26 Okt): nomor MKO bisa ber-prefiks badan usaha (SISA-KSC/MKO-00002-1) bila data acuan disemai ulang.
+    lot0 = g["lines"][1]["counted"]["makloon_rolls"][0]["lot"]
+    assert lot0.startswith("SISA-") and lot0.endswith("MKO-00002-1"), lot0
     g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/finish-count", json={"expected_version": g["version"]}))
     for d in [d for d in g.get("discrepancies") or [] if d.get("blocking") and d.get("status") == "open"]:
         g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/discrepancies/{d['key']}/resolve", json={
@@ -133,7 +135,8 @@ def test_makloon_ocr_validate_count_close_and_learn(admin, mdb, mk_env):
     step = mdb.makloon_orders.find_one({"id": MKO})["steps"][0]
     assert step["status"] == "received" and step["supplier_dn"] == "SJ-MKL-0139A"
     assert step["actual_output_qty"] == 72.0 and step["actual_byproduct_qty"] == 4.2
-    assert step["byproduct_lot"] == "SISA-MKO-00002-1" and all(lot.get("weight_kg") for lot in step["lots"])
+    assert step["byproduct_lot"].startswith("SISA-") and step["byproduct_lot"].endswith("MKO-00002-1")
+    assert all(lot.get("weight_kg") for lot in step["lots"])
     roll = mdb.inventory_rolls.find_one({"id": step["lots"][0]["roll_id"]})
     assert roll["weight_kg"] == 5.1
     prof = _ok(admin.get(f"{BASE}/goods-receipts/dn-profiles/{MAK}"))

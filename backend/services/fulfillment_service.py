@@ -23,6 +23,7 @@ from core_utils import DEFAULT_ENTITY_ID
 # Status PO yang masih "pipeline" (belum jadi roll available). Mencakup PO yang
 # menunggu approval, sudah disetujui/dikirim ke supplier, dan sedang diterima.
 from services.roll_service import OPEN_PO_STATUSES  # KN-A11 — satu definisi bersama
+from services.stock_availability import deduct_makloon, registered_warehouse_ids  # K-04 — definisi "Tersedia"
 
 EPS = 0.001
 
@@ -38,6 +39,7 @@ def _entity_label(entities: Dict[str, Dict[str, Any]], eid: str) -> str:
 
 async def build_supply_index(
     product_ids: Optional[List[str]] = None,
+    registered_only: bool = False,
 ) -> Dict[str, Dict[str, Any]]:
     """Bangun indeks pasokan per produk → per entitas → per gudang.
 
@@ -55,6 +57,10 @@ async def build_supply_index(
     if product_ids:
         bal_query["product_id"] = {"$in": product_ids}
     balances = await db.inventory_balances.find(bal_query, {"_id": 0}).to_list(None)
+    # K-04 (keputusan pemilik 26 Okt 2026) — definisi tunggal "Tersedia" (`services/stock_availability.py`): papan
+    # stok hanya menghitung gudang TERDAFTAR (saldo yatim gudang yang sudah dihapus tidak ikut, sama dengan Saran
+    # Reorder). Pemanggil lama (pratinjau alokasi) tetap tanpa saringan → `registered_only=False`.
+    known_wh = await registered_warehouse_ids() if registered_only else None
 
     supply: Dict[str, Dict[str, Any]] = {}
 
@@ -75,6 +81,8 @@ async def build_supply_index(
         wid = b.get("warehouse_id")
         if not pid or not wid:
             continue
+        if known_wh is not None and wid not in known_wh:
+            continue
         ent, wh = _seg(pid, eid, wid)
         avail = float(b.get("available_qty", 0) or 0)
         rsv = float(b.get("reserved_qty", 0) or 0)
@@ -85,22 +93,8 @@ async def build_supply_index(
         ent["on_hand"] += oh; wh["on_hand"] += oh
         ent["incoming"] += in_inbound; wh["incoming"] += in_inbound
 
-    # W2-REQ-07 — bahan yang dicadangkan untuk makloon bukan stok bebas untuk sales.
-    mres_q: Dict[str, Any] = {"status": "active"}
-    if product_ids:
-        mres_q["product_id"] = {"$in": product_ids}
-    for m in await db.material_reservations.find(mres_q, {"_id": 0, "product_id": 1, "owner_entity_id": 1,
-                                                          "qty": 1}).to_list(5000):
-        ent = supply.get(m.get("product_id"), {}).get(m.get("owner_entity_id") or DEFAULT_ENTITY_ID)
-        if not ent:
-            continue
-        left = float(m.get("qty") or 0)
-        ent["makloon_reserved"] = round(ent.get("makloon_reserved", 0.0) + left, 2)
-        take = min(left, ent["available"]); ent["available"] -= take; left = take
-        for wh in sorted(ent["warehouses"].values(), key=lambda w: -w["available"]):
-            cut = min(left, wh["available"]); wh["available"] -= cut; left -= cut
-            if left <= EPS:
-                break
+    # W2-REQ-07 — bahan yang dicadangkan untuk makloon bukan stok bebas untuk sales (satu implementasi, K-04).
+    await deduct_makloon(supply, product_ids)
 
     # on_order dari PO terbuka (qty - received_qty), per (produk, gudang, entitas)
     po_query: Dict[str, Any] = {"status": {"$in": OPEN_PO_STATUSES}}
@@ -110,7 +104,7 @@ async def build_supply_index(
     for po in pos:
         eid = po.get("entity_id") or DEFAULT_ENTITY_ID
         wid = po.get("warehouse_id")
-        if not wid:
+        if not wid or (known_wh is not None and wid not in known_wh):
             continue
         if not _atp.within_horizon(po.get("expected_delivery_date")):   # KN-D11 — horizon ATP tunggal
             continue
@@ -283,6 +277,7 @@ async def status_board(
     owner_entity_id: Optional[str] = None,
     visible_entity_ids: Optional[List[str]] = None,
     cross_entity_detail: bool = True,
+    registered_only: bool = False,
 ) -> List[Dict[str, Any]]:
     """Inventory Status Board: ringkasan per produk (on_hand/available/reserved/
     incoming/atp) + breakdown per entitas & gudang + indikator peluang inter-entitas.
@@ -304,7 +299,7 @@ async def status_board(
     products = {p["id"]: p for p in products_cur}
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     entities = await _entity_map()
-    supply = await build_supply_index(product_ids)
+    supply = await build_supply_index(product_ids, registered_only=registered_only)
 
     rows: List[Dict[str, Any]] = []
     for pid, prod in products.items():

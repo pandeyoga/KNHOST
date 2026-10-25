@@ -586,7 +586,7 @@ async def main():  # noqa: C901 — satu skrip POC lengkap (protokol repo)
                json={"line_no": 3, "payload": payload}, timeout=60)
     rm = r.json() if r.ok else {}
     mko = rm.get("makloon_order") or {}
-    if r.ok and mko.get("mko_number", "").startswith("MKO-"):
+    if r.ok and "MKO-" in mko.get("mko_number", ""):   # K-09: nomor baru ber-prefiks badan usaha (KSC/MKO-…)
         ok(f"Order Makloon {mko['mko_number']} dibuat dari baris PR 3 "
            f"(estimasi {rm.get('expected_output_qty')} yard)")
         ok(f"Order Makloon tertaut PR: pr_number={mko.get('pr_number')} "

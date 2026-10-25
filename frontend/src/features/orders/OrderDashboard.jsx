@@ -22,14 +22,10 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
         totalRevenue: srv.revenue,
         fulfilledCount: srv.fulfilled_count,
         totalOrders: srv.orders,
-        pendingOrders: summary.pending_count ?? 0,
-        // UAT 24 Okt (audit UI tahap 2) — G2-04 · P-12: pending_count server = waiting_approval + reserved + approved
-        // (SEMUA tanggal) — beda definisi dengan "Sebaran status" (per periode). Rinciannya ditampilkan di kartu.
-        pendingBreakdown: {
-          waiting: summary.by_status?.waiting_approval?.count || 0,
-          reserved: summary.by_status?.reserved?.count || 0,
-          approved: summary.by_status?.approved?.count || 0,
-        },
+        // K-06 + B2 (keputusan pemilik 26 Okt) — KPI "Menunggu persetujuan" = SO `waiting_approval` SAJA, semua tanggal,
+        // populasi = daftar Pesanan (tanpa sample). Dulu "Belum diproses" = + Dipesan + Disetujui.
+        pendingOrders: summary.pending_count ?? (summary.by_status?.waiting_approval?.count || 0),
+        pendingBasis: summary.pending_basis || "",
         expiringSoon: summary.expiring_soon_count ?? 0,
         avgOrderValue: srv.avg_order_value,
         topCustomers: srv.top_customers || [],
@@ -60,11 +56,8 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
       totalRevenue,
       fulfilledCount: fulfilled.length,
       totalOrders: recentOrders.length,
-      pendingOrders: cnt(o => ["waiting_approval", "reserved", "approved"].includes(o.status)),
-      pendingBreakdown: {
-        waiting: cnt(o => o.status === "waiting_approval"), reserved: cnt(o => o.status === "reserved"),
-        approved: cnt(o => o.status === "approved"),
-      },
+      pendingOrders: orders.filter(o => o.status === "waiting_approval").length,
+      pendingBasis: "",
       expiringSoon: cnt(o => { const h = (new Date(o.reservation_expires_at) - now) / 36e5; return h > 0 && h < 24; }),
       avgOrderValue: fulfilled.length > 0 ? totalRevenue / fulfilled.length : 0,
       topCustomers: Object.values(customerOrders).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
@@ -81,7 +74,6 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
   }, [orders, timeRange, summary]);
   const scopeLabel = metrics.fromServer ? "seluruh pesanan dalam cakupan Anda" : "sementara: hanya pesanan yang termuat";
   const rangeLabel = { "7d": "7 hari terakhir", "30d": "30 hari terakhir", "90d": "90 hari terakhir" }[timeRange] || timeRange;
-  const pb = metrics.pendingBreakdown || {};
   
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("id-ID", {
@@ -134,12 +126,14 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             <div className="p-1.5 rounded-lg bg-orange-50">
               <Clock size={14} className="text-[#FF9500]" />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Belum diproses</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]" data-testid="order-dashboard-pending-label">Menunggu persetujuan</p>
           </div>
           <p className="text-[18px] font-bold text-[#FF9500]" data-testid="order-dashboard-pending">{metrics.pendingOrders}</p>
-          {/* G2-04 — dulu "Butuh persetujuan" padahal ikut menghitung SO Dipesan & Disetujui (≠ "Menunggu Persetujuan" di sebaran status). */}
+          {/* K-06 + B2 — label sumber/cakupan: hanya status Menunggu persetujuan, semua tanggal (≠ sebaran per periode). */}
           <p className="text-[10px] text-[#8E8E93] mt-1" data-testid="order-dashboard-pending-breakdown">
-            {pb.waiting || 0} menunggu persetujuan · {pb.reserved || 0} dipesan · {pb.approved || 0} disetujui · semua tanggal
+            {metrics.fromServer
+              ? (metrics.pendingBasis || "Pesanan berstatus Menunggu persetujuan · semua tanggal · tanpa pesanan sample")
+              : "Pesanan berstatus Menunggu persetujuan · sementara: hanya pesanan yang termuat"}
           </p>
         </div>
         

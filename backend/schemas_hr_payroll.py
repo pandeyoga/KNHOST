@@ -19,5 +19,5 @@ class HrSettingsUpdate(BaseModel):
 
 
 class PayrollRejectInput(BaseModel):
-    """Alasan pengembalian payroll ke draf — WAJIB (min 3 karakter yang berarti)."""
-    reason: str = Field(min_length=3, max_length=500)
+    """Alasan pengembalian payroll ke draf — WAJIB (min 5 huruf, keputusan pemilik K-14 26 Okt)."""
+    reason: str = Field(min_length=5, max_length=500)

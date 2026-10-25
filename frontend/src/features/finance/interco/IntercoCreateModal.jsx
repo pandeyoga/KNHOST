@@ -23,7 +23,9 @@ export default function IntercoCreateModal({
   const [ppnMode, setPpnMode] = useState("ikut_pkp");
   const [items, setItems] = useState([{ product_id: "", quantity: 1, unit_price: "" }]);
   const [products, setProducts] = useState([]);
-  const [submitNow, setSubmitNow] = useState(true);
+  // Keputusan pemilik K-10 (26 Okt) — bawaan TIDAK tercentang: transaksi baru lahir sebagai draf (tanpa jurnal);
+  // langsung konfirmasi (post jurnal) harus dipilih sadar. Sama dengan bawaan server (`submit_now=False`).
+  const [submitNow, setSubmitNow] = useState(false);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -208,6 +210,11 @@ export default function IntercoCreateModal({
             />
             Langsung dikonfirmasi (post jurnal & saldo antar-PT segera bergerak)
           </label>
+          <p className="-mt-4 pl-6 text-xs text-[#8E8E93]" data-testid="interco-create-submit-now-hint">
+            {submitNow
+              ? "Jurnal diposting saat diterbitkan."
+              : "Tidak dicentang: disimpan sebagai draf tanpa jurnal — konfirmasi nanti dari daftar transaksi."}
+          </p>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[#E5E5EA] bg-[#FAFAFB]">

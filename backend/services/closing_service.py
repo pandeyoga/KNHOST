@@ -26,12 +26,27 @@ import calendar
 from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import now_iso, new_id, safe_doc
+from core_utils import now_iso, new_id, safe_doc, rupiah
 from services import financial_statement_service as fs
 from services import gl_service
 
 RETAINED_EARNINGS = "3-2000"  # Laba Ditahan
 EPS = 0.005
+# Keputusan pemilik K-15 (26 Okt) — tutup buku DIBLOKIR selama saldo Suspense (1-9999) ≠ 0; hanya admin yang boleh
+# menembus, wajib dengan alasan (panjang minimum seragam K-14 = 5 huruf) yang tersimpan di record & jejak audit.
+SUSPENSE_OVERRIDE_MIN_LEN = 5
+
+
+class SuspenseNotZero(ValueError):
+    """Tutup buku ditolak karena saldo Suspense belum nol (tanpa alasan tembus admin)."""
+
+    def __init__(self, balance: float, message: str):
+        super().__init__(message)
+        self.balance = balance
+
+
+class SuspenseOverrideForbidden(PermissionError):
+    """Alasan tembus dikirim oleh peran selain admin."""
 
 
 # ─── Util periode ─────────────────────────────────────────────────────────────
@@ -245,20 +260,51 @@ async def preview(period_type: str, period_key: str, entity_id: str) -> Dict[str
         "blocking_closing": blocking,
         "suspense_balance": suspense,
         "suspense_warning": abs(suspense) > EPS,
+        # K-15 — suspense ≠ 0 MEMBLOKIR tutup buku (bukan sekadar peringatan); admin dapat menembus dengan alasan.
+        "suspense_blocks_close": abs(suspense) > EPS,
+        "suspense_override_min_len": SUSPENSE_OVERRIDE_MIN_LEN,
     }
+
+
+def _suspense_message(balance: float) -> str:
+    return (f"Tutup buku diblokir: saldo Suspense (1-9999) belum nol ({rupiah(balance)}). "
+            "Reklasifikasi dulu lewat Buku Besar › Suspense, atau admin menembus blokir dengan alasan.")
+
+
+async def check_suspense_gate(entity_id: str, end: str, override_reason: str = "",
+                              can_override: bool = False,
+                              actor_name: str = "") -> Optional[Dict[str, Any]]:
+    """K-15 — gerbang suspense untuk tutup buku.
+
+    Saldo 0 → None (lolos). Saldo ≠ 0 tanpa alasan → `SuspenseNotZero`. Alasan dari non-admin →
+    `SuspenseOverrideForbidden`. Alasan < 5 huruf → ValueError. Lolos dengan alasan → dict catatan tembus.
+    """
+    balance = await gl_service.suspense_balance(entity_id, as_of=end)
+    if abs(balance) <= EPS:
+        return None
+    reason = (override_reason or "").strip()
+    if not reason:
+        raise SuspenseNotZero(balance, _suspense_message(balance))
+    if not can_override:
+        raise SuspenseOverrideForbidden("Hanya admin yang dapat menembus blokir Suspense saat tutup buku.")
+    if len(reason) < SUSPENSE_OVERRIDE_MIN_LEN:
+        raise ValueError(f"Alasan menembus blokir Suspense minimal {SUSPENSE_OVERRIDE_MIN_LEN} huruf.")
+    return {"reason": reason, "suspense_balance": balance, "by": actor_name or "system", "at": now_iso()}
 
 
 # ─── Aksi close / reopen / reclose ───────────────────────────────────────────────
 
 async def close_period(period_type: str, period_key: str, actor: Dict[str, Any],
-                       entity_id: str, note: str = "") -> Dict[str, Any]:
+                       entity_id: str, note: str = "", suspense_override_reason: str = "",
+                       can_override_suspense: bool = False) -> Dict[str, Any]:
     if period_type not in ("month", "year"):
         raise ValueError("period_type harus 'month' atau 'year'.")
     start, end = await period_bounds(period_type, period_key, entity_id)
     # FN-13 — klaim atomik per entitas: close (bulan/tahun) tidak boleh berjalan bersamaan.
     await _acquire_close_lock(entity_id, f"{period_type}:{period_key}", actor.get("name", ""))
     try:
-        return await _close_period_locked(period_type, period_key, actor, entity_id, note, start, end)
+        return await _close_period_locked(period_type, period_key, actor, entity_id, note, start, end,
+                                          suspense_override_reason, can_override_suspense)
     finally:
         await db.period_close_locks.delete_one({"_id": entity_id})
 
@@ -285,12 +331,17 @@ async def _acquire_close_lock(entity_id: str, period: str, actor: str) -> None:
 
 
 async def _close_period_locked(period_type: str, period_key: str, actor: Dict[str, Any],
-                               entity_id: str, note: str, start: str, end: str) -> Dict[str, Any]:
+                               entity_id: str, note: str, start: str, end: str,
+                               suspense_override_reason: str = "",
+                               can_override_suspense: bool = False) -> Dict[str, Any]:
     blocking = await _blocking_closing(entity_id, period_type, start, end)
     if blocking:
         raise ValueError(
             f"Periode tumpang tindih dengan penutupan aktif ({_period_label(blocking['period_type'], blocking['period_key'])}). "
             "Buka kembali (reopen) periode tersebut lebih dulu.")
+    # K-15 — Suspense ≠ 0 memblokir; tembus hanya admin + alasan (dicek sebelum jurnal penutup dibuat).
+    override = await check_suspense_gate(entity_id, end, suspense_override_reason, can_override_suspense,
+                                         actor.get("name", ""))
 
     scope = {"entity_id": entity_id}
     stmt = await fs.income_statement(start=start, end=end, scope=scope)
@@ -327,6 +378,8 @@ async def _close_period_locked(period_type: str, period_key: str, actor: Dict[st
         "journal_entry_id": je["id"] if je else None,
         "journal_entry_number": je["number"] if je else None,
         "note": (note or "").strip(),
+        # K-15 — jejak tembus blokir suspense (None bila suspense nol saat ditutup).
+        "suspense_override": override,
         "stale": False,
         "stale_at": None,
         "stale_reason": "",

@@ -42,13 +42,20 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
+  // Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank; kartu rekening =
+  // rincian. Posisi buku besar dimuat terpisah: bila gagal (mis. izin), kartu rekening tetap tampil.
+  const [position, setPosition] = useState(null);
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
-      const res = await axios.get(`${API}/bank-accounts`, { params });
+      const [res, pos] = await Promise.all([
+        axios.get(`${API}/bank-accounts`, { params }),
+        axios.get(`${API}/bank-accounts/position`, { params }).catch(() => ({ data: null })),
+      ]);
       setAccounts(Array.isArray(res.data) ? res.data : []);
+      setPosition(pos?.data && typeof pos.data.gl_total === "number" ? pos.data : null);
       setError("");
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat akun kas/bank."));
@@ -116,14 +123,30 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
     return { total, bank, cash, unrec, count: accounts.length };
   }, [accounts]);
 
+  const gap = position ? Math.round((position.gl_total - summary.total) * 100) / 100 : 0;
+  const unlinked = position?.unlinked || { count: 0, net: 0 };
+
   return (
     <div data-testid="bank-accounts-view">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-1.5">
-        <Kpi testId="bank-kpi-total" label="Total Saldo" value={formatCurrency(summary.total)} icon={Banknote} />
-        <Kpi testId="bank-kpi-bank" label="Saldo Bank" value={formatCurrency(summary.bank)} icon={Landmark} tone="text-[#0058CC]" />
-        <Kpi testId="bank-kpi-cash" label="Saldo Kas" value={formatCurrency(summary.cash)} icon={Wallet} tone="text-[#1B7F4B]" />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-1.5">
+        {/* K-02 — angka utama: saldo buku besar akun kas & bank (= Dasbor Keuangan & Proyeksi Arus Kas). */}
+        <Kpi testId="bank-kpi-gl" label="Kas & Bank (buku besar)" value={position ? formatCurrency(position.gl_total) : "—"}
+          icon={Banknote} tone="text-[#0058CC]" sub="Angka utama · saldo buku besar akun kas & bank" />
+        <Kpi testId="bank-kpi-total" label="Total Saldo Rekening" value={formatCurrency(summary.total)} icon={Landmark}
+          sub="Rincian per rekening di bawah" />
+        <Kpi testId="bank-kpi-bank" label="Saldo Bank" value={formatCurrency(summary.bank)} icon={Landmark} tone="text-[#0058CC]" sub="Rekening bank" />
+        <Kpi testId="bank-kpi-cash" label="Saldo Kas" value={formatCurrency(summary.cash)} icon={Wallet} tone="text-[#1B7F4B]" sub="Kas tunai" />
         <Kpi testId="bank-kpi-unrec" label="Mutasi Belum Dicocokkan" value={summary.unrec} icon={ListChecks} tone={summary.unrec > 0 ? "text-[#B45309]" : ""} />
       </div>
+      {position && Math.abs(gap) >= 1 && (
+        <p className="mb-1.5 rounded-md border border-[#F0D9B8] bg-[#FDF6EC] px-3 py-2 text-[11.5px] text-[#8A4B08]" data-testid="bank-gap-label">
+          Selisih buku besar vs total saldo rekening: <b className="tabular-nums">{formatCurrency(gap)}</b>.
+          {unlinked.count > 0
+            ? <> {unlinked.count} transaksi kas belum tertaut ke rekening mana pun (bersih <b className="tabular-nums">{formatCurrency(unlinked.net)}</b>) — tercatat di buku besar & Transaksi Kas, tidak di kartu rekening.</>
+            : null}
+          {" "}Sisa selisih (bila ada) berasal dari jurnal kas manual atau saldo awal buku besar yang tidak tercatat sebagai mutasi rekening.
+        </p>
+      )}
       {/* Audit UI 24 Okt (060↔061): angka di sini = saldo awal + mutasi yang TERTAUT ke
           rekening. Transaksi kas yang dicatat tanpa rekening hanya muncul di Transaksi Kas,
           jadi kedua layar bisa berbeda — dijelaskan terang-terangan, bukan disamarkan. */}
@@ -319,9 +342,9 @@ function LedgerPanel({ ledger, loading, onClose, onToggle, tabs = null, children
   );
 }
 
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
+function Kpi({ label, value, icon: Icon, tone = "", testId, sub = "" }) {
   // Audit UI 24 Okt (060 HP): nilai dulu `truncate` → "Rp 775.00…". Di HP ikon disembunyikan
-  // dan angka boleh turun baris, tidak pernah dipotong.
+  // dan angka boleh turun baris, tidak pernah dipotong. K-02 — `sub` = label sumber/cakupan angka.
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
@@ -329,6 +352,7 @@ function Kpi({ label, value, icon: Icon, tone = "", testId }) {
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
           <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          {sub && <p className="text-[10.5px] leading-tight text-[#8E8E93]" data-testid={`${testId}-sub`}>{sub}</p>}
         </div>
       </div>
     </div>

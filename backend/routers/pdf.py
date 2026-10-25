@@ -24,10 +24,30 @@ def _summarize_doc(r: Dict[str, Any]) -> Dict[str, Any]:
             or r.get("created_at") or "")
     party = (r.get("customer_name") or r.get("supplier_name") or r.get("vendor_name")
              or r.get("makloon_name") or r.get("to_warehouse_name") or r.get("warehouse_name") or "")
-    amount = (r.get("total_amount") or r.get("grand_total") or r.get("total")
-              or r.get("amount") or r.get("net_total") or 0)
+    # Keputusan pemilik K-03 (26 Okt) — "Total" dokumen = TERMASUK PPN (grand_total bila ada); DPP (harga sebelum
+    # PPN) dikirim sebagai rincian `amount_dpp`. Dulu `total_amount` didahulukan → SO tampil Rp 202.318 (sebelum PPN)
+    # padahal PDF/CRM Rp 224.573. Dokumen tanpa grand_total memakai rantai lama.
+    grand = r.get("grand_total")
+    if isinstance(grand, (int, float)) and not isinstance(grand, bool) and grand:
+        amount = grand
+    else:
+        amount = (r.get("total_amount") or r.get("grand_total") or r.get("total")
+                  or r.get("amount") or r.get("net_total") or 0)
+    try:
+        ppn = float(r.get("ppn_amount") or 0)
+    except (TypeError, ValueError):
+        ppn = 0.0
+    try:
+        amt_f = float(amount or 0)
+    except (TypeError, ValueError):
+        amt_f = 0.0
+    dpp_base = round(amt_f - ppn, 2) if ppn > 0 else amt_f
+    nilai_lain = bool(r.get("dpp_nilai_lain")) and ppn > 0 and bool(r.get("dpp"))
     return {"number": number, "date": str(date)[:10], "party": party,
-            "amount": amount, "status": r.get("status") or ""}
+            "amount": amount, "amount_dpp": dpp_base, "ppn_amount": round(ppn, 2),
+            "amount_includes_ppn": ppn > 0,
+            "dpp_nilai_lain": r.get("dpp") if nilai_lain else None,
+            "status": r.get("status") or ""}
 
 
 def _origin(request: Request) -> str:

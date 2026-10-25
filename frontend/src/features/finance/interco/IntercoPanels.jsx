@@ -190,14 +190,53 @@ export function TransactionsPanel({
   );
 }
 
-export function BalancesPanel({ accounts, onNetting, onRemind, canWrite }) {
+export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPairs }) {
+  const pairs = Array.isArray(netPairs) ? netPairs : null;
   return (
     <div className="space-y-3">
+      {/* Keputusan pemilik K-07 (26 Okt) — ANGKA UTAMA = posisi bersih dua arah per pasangan PT (netting).
+          Tabel per arah dagang di bawahnya & Jadwal Bayar (per dokumen) = rincian bruto. */}
+      {pairs && (
+        <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden" data-testid="interco-net-positions">
+          <div className="px-4 py-2.5 border-b border-[#F2F2F5] text-sm">
+            <b className="text-[#1D1D1F]">Posisi bersih per pasangan PT</b>
+            <span className="text-[#6E6E73]"> — angka utama utang/piutang antar-PT (dua arah saling dikurangkan). Pembayaran tetap per dokumen (Jadwal Bayar).</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F7F7F9] text-[#3C3C43]">
+                <tr>
+                  <th className="text-left px-4 py-2 font-medium">Berutang (bersih)</th>
+                  <th className="text-left px-4 py-2 font-medium">Kepada</th>
+                  <th className="text-right px-4 py-2 font-medium">Utang arah ini</th>
+                  <th className="text-right px-4 py-2 font-medium">Dikurangi arah sebaliknya</th>
+                  <th className="text-right px-4 py-2 font-medium">Posisi bersih</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F2F2F5]">
+                {pairs.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-6 text-center text-[#8E8E93]">Tidak ada posisi antar-PT terbuka.</td></tr>
+                )}
+                {pairs.map((p) => (
+                  <tr key={`${p.debtor_entity_id}>${p.creditor_entity_id}`}
+                      data-testid={`interco-net-${p.debtor_entity_id}-${p.creditor_entity_id}`}>
+                    <td className="px-4 py-2 text-[#1D1D1F]">{p.debtor_entity_name}</td>
+                    <td className="px-4 py-2 text-[#1D1D1F]">{p.creditor_entity_name}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{formatCurrency(p.gross_debtor_owes)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-[#6E6E73]">{formatCurrency(p.gross_creditor_owes)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums font-semibold text-[#1D1D1F]">{formatCurrency(p.net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       <div className="text-sm text-[#6E6E73]">
-        Saldo per <b>arah dagang</b> — piutang di PT penjual, utang di PT pembeli.
+        <b>Rincian per arah dagang (bruto)</b> — piutang di PT penjual, utang di PT pembeli.
         Kedua sisi harus sama besar. Dua PT yang berdagang <b>dua arah</b>
-        (mis. lewat Permintaan Internal) punya saldo <b>terpisah</b> untuk tiap arah,
-        jadi utang satu arah tidak pernah terhapus oleh arah sebaliknya. <b>Umur</b>
+        (mis. lewat Permintaan Internal) punya baris <b>terpisah</b> untuk tiap arah di tabel ini
+        (dokumennya dibayar/di-settle per arah); posisi bersihnya ada di tabel atas. <b>Umur</b>
         dihitung dari aktivitas nyata terakhir (dokumen &amp; settlement), bukan dari
         kapan barisnya terakhir dihitung ulang.
       </div>

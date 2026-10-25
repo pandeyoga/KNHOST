@@ -29,7 +29,7 @@ WAJIB layar yang benar-benar ada di `AppViewRouter.jsx` (dijaga invarian D). Jan
 menambah baris yang tak punya tempat kerja — angka tanpa jalan hanya membuat panik.
 """
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from db import db
 
 #: (kunci, label, layar tujuan, koleksi, query) — urut sesuai kelaziman kerja.
@@ -659,6 +659,35 @@ def _as_float(value: Any) -> float:
         return 0.0
 
 
+#: Keputusan pemilik K-11 (26 Okt) — papan yang ISINYA dibatasi ke milik aktor bagi peran ber-pagar kepemilikan
+#: (`sales_ownership.OWNER_LOCKED_ROLES` = sales). Dulu beranda HP sales memuat "PO Custom — menunggu keputusan (9)"
+#: berisi pesanan pelanggan rekan, semuanya "perlu Manajer" tanpa aksi. Kini sales hanya melihat PO Custom untuk
+#: pelanggannya sendiri (PIC/anggota tim sales pelanggan) atau dokumen buatannya. Peran lain tidak berubah.
+OWNER_SCOPED_BOARDS: Tuple[str, ...] = ("special_order",)
+
+
+async def owner_scope(key: str, actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Klausa Mongo "milik aktor" untuk papan `key` — `{}` bila papan/peran tidak dibatasi."""
+    from services import sales_ownership
+    if key not in OWNER_SCOPED_BOARDS or not actor or not sales_ownership.is_owner_locked(actor):
+        return {}
+    uid = str(actor.get("id") or "")
+    email = str(actor.get("email") or "")
+    if not uid and not email:
+        return {"id": "__tanpa_pemilik__"}   # tanpa identitas → jangan buka semuanya diam-diam
+    ors: List[Dict[str, Any]] = []
+    if uid:
+        # Pelanggan "ber-sales dia": PIC atau anggota tim sales (walk-in bersama PT TIDAK termasuk — bukan miliknya).
+        cust_ids = await db.customers.distinct(
+            "id", {"$or": [{"assigned_sales_id": uid}, {"sales_team.sales_id": uid}]})
+        if cust_ids:
+            ors.append({"customer_id": {"$in": cust_ids}})
+        ors += [{"created_by": uid}, {"sales_id": uid}]
+    if email:
+        ors.append({"created_by": email})   # `special_orders.created_by` menyimpan email pembuat
+    return {"$or": ors}
+
+
 async def queue_detail(key: str, entity_id: Optional[Any] = None,
                        limit: int = 12,
                        allowed: Optional[Dict[str, List[str]]] = None,
@@ -682,7 +711,9 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
     meta = AGING_META.get(key) or {"since": ["created_at"], "number": ["number"],
                                    "title": ["title"]}
     extra = DETAIL_META.get(key, {})
-    scope = _scope(entity_id)
+    # K-11 — saringan kepemilikan ikut ke HITUNGAN dan BARIS (angka judul papan = isi papan).
+    owner = await owner_scope(key, actor)
+    scope = {**_scope(entity_id), **owner}
     count = await db[coll].count_documents({**scope, **query})
     # B3 DIBAYAR (2026-08-25) — dulu barisnya `.sort([(meta["since"][0], 1)]).limit(limit)`.
     # Field pengurutnya bisa TIDAK ADA di dokumen mana pun (lihat B1): seluruh dokumen
@@ -721,7 +752,9 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
     shown = len(rows)
     return {"key": key, "label": label, "view": view, "count": int(count),
             "shown": shown, "hidden": max(0, int(count) - shown),
-            "truncated": int(count) > shown, "rows": rows}
+            "truncated": int(count) > shown, "rows": rows,
+            # K-11 — layar memberi label cakupan ("pelanggan Anda") hanya bila server memang menyaring.
+            "owner_scoped": bool(owner)}
 
 
 async def boards(keys: List[str], entity_id: Optional[Any] = None,

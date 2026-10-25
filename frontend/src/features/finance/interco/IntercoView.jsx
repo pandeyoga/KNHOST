@@ -277,10 +277,16 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <Kpi label="Total Piutang Antar-PT" value={formatCurrency(summary?.total_receivable || 0)}
-             hint="sisa dokumen terbuka yang wajib ditagih ke PT lain" testid="interco-kpi-receivable" />
-        <Kpi label="Total Utang Antar-PT" value={formatCurrency(summary?.total_payable || 0)}
-             hint="sisa dokumen terbuka yang wajib dibayar ke PT lain" testid="interco-kpi-payable" />
+        {/* Keputusan pemilik K-07 (26 Okt) — angka utama = posisi BERSIH dua arah per pasangan PT (netting);
+            sisa per dokumen (bruto) = rincian di Jadwal Bayar. Server lama tanpa `net_*` jatuh ke angka bruto. */}
+        <Kpi label="Piutang Antar-PT (bersih)"
+             value={formatCurrency((summary?.net_receivable ?? summary?.total_receivable) || 0)}
+             hint={`posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_receivable || 0)}`}
+             testid="interco-kpi-receivable" />
+        <Kpi label="Utang Antar-PT (bersih)"
+             value={formatCurrency((summary?.net_payable ?? summary?.total_payable) || 0)}
+             hint={`posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_payable || 0)} — lihat Jadwal Bayar`}
+             testid="interco-kpi-payable" />
         <Kpi label="Dokumen Terbuka" value={String(summary?.open_documents || 0)}
              hint="dikonfirmasi s/d difakturkan, belum lunas · draf tidak dihitung" testid="interco-kpi-open" />
         <Kpi label="Margin Belum Terealisasi"
@@ -334,6 +340,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       {tab === "balances" && (
         <BalancesPanel
           accounts={accounts} canWrite={canWrite} onRemind={remind}
+          netPairs={summary?.net_pairs}
           onNetting={(a) => setShowSettle({ open: true, from: a.from_entity_id,
                                             to: a.to_entity_id })}
         />

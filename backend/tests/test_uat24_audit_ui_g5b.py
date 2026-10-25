@@ -2,7 +2,7 @@
 
 * G5-10/G5-57 — eskalasi: satu kartu per dokumen sumber (bukan per salinan per orang), "oleh <label peran>"
   (bukan "oleh all"); teks giliran "tahap: dikirim" (bukan "tahap: shipped").
-* G5-11 — PDF: tanggal "25 Okt 2026" (WIB), angka id-ID, baris DPP nilai lain + "PPN 12% × DPP".
+* G5-11 — PDF: tanggal "25 Okt 2026" (WIB), angka id-ID, baris DPP nilai lain + PPN (format akhir K-03, 26 Okt).
 * G5-12 — Surat Jalan Transfer Antar-PT: PT dari entitas sumber/tujuan, gudang di baris sendiri, pembuat = pengaju.
 * G5-13 — SPK Makloon: jenis order berlabel, kolom proses dari `process_type`, angka id-ID.
 
@@ -84,7 +84,9 @@ def test_pdf_sales_order_shows_dpp_nilai_lain():
           "ppn_mode": "excluded", "ppn_amount": 22255.02, "grand_total": 224573.42}
     out = run(pr.resolve_sales_order(so, None))
     labels = [t["label"] for t in out["totals"]]
-    assert labels[1].startswith("DPP nilai lain") and labels[2] == "PPN 12% × DPP", labels
+    # Keputusan pemilik K-03 (26 Okt): DPP · DPP nilai lain (11/12) · PPN · Total (termasuk PPN).
+    assert labels == ["DPP (harga sebelum PPN)", "DPP nilai lain (11/12)", "PPN 12% × DPP nilai lain",
+                      "Total (termasuk PPN)"], labels
     assert "12.0" not in " ".join(labels)
     assert out["items"][0]["qty"] == "353,79 yard"
     assert out["date"] == "25 Okt 2026"

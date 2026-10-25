@@ -231,14 +231,29 @@ def _qc_grade(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _stock_class(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
-    days = int(_f(s.get("days_since_sale"), 45))
-    fast = _f(c.get("inventory.stock_analytics.fast_max_days"), 30)
-    slow = _f(c.get("inventory.stock_analytics.slow_max_days"), 90)
-    label = "Cepat Laku (Fast)" if days <= fast else ("Lambat (Slow)" if days <= slow else "Mati (Dead)")
-    steps = [{"label": "Hari sejak terakhir terjual", "value": f"{days} hari"},
-             {"label": "Ambang Fast / Slow", "value": f"≤{_num(fast)} / ≤{_num(slow)} hari"}]
-    return {"steps": steps, "result": f"Klasifikasi: {label}",
-            "verdict": "ok" if days <= fast else ("warn" if days <= slow else "block")}
+    """K-05 (26 Okt 2026) — kelas laju jual dari moving average penjualan + persentil per satuan.
+    Memakai fungsi kelas yang SAMA dengan Analitik Stok (`stock_analytics_service.class_from_percentile`)."""
+    from services.stock_analytics_service import CLASS_LABEL, class_from_percentile
+    window = max(_f(c.get("inventory.stock_analytics.velocity_window_days"), 90), 1)
+    best = _f(c.get("inventory.stock_analytics.best_seller_pct"), 20)
+    slow = _f(c.get("inventory.stock_analytics.slow_moving_pct"), 20)
+    new_age = _f(c.get("inventory.stock_analytics.new_sku_age_days"), 90)
+    sold = _f(s.get("sold_qty"), 900)
+    pct = max(0.0, min(_f(s.get("percentile"), 50), 100.0))
+    age = _f(s.get("age_days"), 365)
+    steps = [{"label": f"Terjual dalam {_num(window)} hari (SO hidup)", "value": _num(sold)},
+             {"label": "Moving average per hari", "value": f"{_num(sold / window, 3)} / hari"},
+             {"label": "Umur SKU · batas SKU baru", "value": f"{_num(age)} · < {_num(new_age)} hari"},
+             {"label": "Persentil di satuannya", "value": _num(pct)},
+             {"label": "Best seller / Slow moving", "value": f"{_num(best)}% teratas / {_num(slow)}% terbawah"}]
+    if age < new_age:
+        cls = "new"
+    elif sold <= 0:
+        cls = "dead"
+    else:
+        cls = class_from_percentile(pct, best, slow)
+    verdict = {"best": "ok", "normal": "ok", "new": "ok", "slow": "warn", "dead": "block"}[cls]
+    return {"steps": steps, "result": f"Kelas: {CLASS_LABEL[cls]}", "verdict": verdict}
 
 
 def _reorder(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
@@ -515,10 +530,14 @@ SIMULATORS: Dict[str, Dict[str, Any]] = {
                            "qc.four_point_enabled"],
                  "inputs": [I("points", "Poin cacat 4-point", "decimal", 25, "poin")],
                  "run": _qc_grade},
-    "stock_class": {"label": "Klasifikasi Fast/Slow/Dead",
-                    "needs": ["inventory.stock_analytics.fast_max_days",
-                              "inventory.stock_analytics.slow_max_days"],
-                    "inputs": [I("days_since_sale", "Hari sejak terjual", "int", 45, "hari")],
+    "stock_class": {"label": "Kelas laju jual (moving average)",
+                    "needs": ["inventory.stock_analytics.velocity_window_days",
+                              "inventory.stock_analytics.best_seller_pct",
+                              "inventory.stock_analytics.slow_moving_pct",
+                              "inventory.stock_analytics.new_sku_age_days"],
+                    "inputs": [I("sold_qty", "Terjual dalam jendela", "decimal", 900, "satuan"),
+                               I("percentile", "Persentil laju jual di satuannya", "decimal", 50, ""),
+                               I("age_days", "Umur SKU", "int", 365, "hari")],
                     "run": _stock_class},
     "reorder": {"label": "Hitung titik pesan ulang",
                 "needs": ["inventory.reorder.velocity_window_days", "inventory.reorder.safety_days"],

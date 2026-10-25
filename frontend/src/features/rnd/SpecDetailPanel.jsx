@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
 import { CheckCircle2, FlaskConical, Rocket, Send, X, XCircle } from "lucide-react";
 import { overlayDismiss } from "@/utils/overlayDismiss";
+import { REASON_MIN_LENGTH } from "../../services/confirmService";
 import { formatCurrency, formatQty, formatDateTime } from "../../utils/formatters";
 import { approveSpec, getSpec, rejectSpec, releaseProduct, submitSpec } from "./rndApi";
 import { specOverride } from "./requiredTests";
@@ -209,7 +210,8 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
               <input className="field max-w-[220px]" placeholder="Alasan penolakan…" disabled={!canWrite || busy}
                 data-testid="spec-reject-reason" value={reason}
                 onChange={(e) => setReason(e.target.value)} />
-              <button className="secondary-button" disabled={busy || !canWrite || reason.trim().length < 3} title={writeBlockHint || undefined}
+              <button className="secondary-button" disabled={busy || !canWrite || reason.trim().length < REASON_MIN_LENGTH}
+                title={writeBlockHint || (reason.trim().length < REASON_MIN_LENGTH ? `Alasan penolakan minimal ${REASON_MIN_LENGTH} huruf` : undefined)}
                 data-testid="spec-reject-button"
                 onClick={() => act(() => rejectSpec(spec.id, reason))}>
                 <XCircle size={13} /> Tolak

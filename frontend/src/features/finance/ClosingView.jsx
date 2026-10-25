@@ -13,7 +13,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
-import { askConfirm } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
 
 const NOW = new Date();
@@ -97,8 +97,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
   };
 
   // UAT 24 Okt (audit UI tahap 2) — G1-03: Tutup Buku mengunci periode penuh → wajib dialog konfirmasi yang
-  // menyebut periode, entitas & peringatan pratinjau (pratinjau diambil dulu bila belum ada). Suspense ≠ 0 hanya
-  // diperingatkan (memblokir atau tidak = keputusan pemilik K-15).
+  // menyebut periode, entitas & peringatan pratinjau (pratinjau diambil dulu bila belum ada). Suspense ≠ 0 kini
+  // MEMBLOKIR (K-15, di bawah).
   const doClose = async () => {
     setError(""); setNotice("");
     let pv = preview;
@@ -120,8 +120,35 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     if (pv && pv.can_close === false) return;   // blokir tumpang tindih sudah tampil di pratinjau
     const periodText = periodType === "year" ? `tahun ${year}` : `${MONTHS.find((m) => m.value === month)?.label || month} ${year}`;
     const entityText = entityOptions.find((e) => e.value === entityId)?.label || entityId;
+    // Keputusan pemilik K-15 (26 Okt) — Suspense ≠ 0 MEMBLOKIR tutup buku. Non-admin berhenti di sini (pesan jelas,
+    // tanpa POST). Admin boleh menembus lewat dialog alasan (≥ 5 huruf) yang tercatat di record & Jejak Audit.
+    const suspenseBlocked = !!(pv?.suspense_blocks_close ?? pv?.suspense_warning);
+    let overrideReason = "";
+    if (suspenseBlocked) {
+      const balText = formatCurrency(pv.suspense_balance);
+      if (!isAdmin) {
+        setError(`Tutup buku diblokir: saldo Suspense (1-9999) belum nol (${balText}). Reklasifikasi dulu lewat Buku Besar › Suspense, atau minta Admin menembus blokir dengan alasan.`);
+        return;
+      }
+      const reason = await askReason({
+        danger: true,
+        title: `Tembus blokir Suspense — tutup buku ${periodText} — ${entityText}?`,
+        message: (
+          <>
+            <span className="block">Saldo Suspense (1-9999) belum nol: <b>{balText}</b>. Tutup buku biasanya diblokir sampai saldo ini direklasifikasi.</span>
+            <span className="block mt-1">Sebagai Admin Anda bisa tetap menutup periode. Alasan wajib dan tercatat di riwayat tutup buku & Jejak Audit.</span>
+          </>
+        ),
+        reasonLabel: "Alasan menembus blokir",
+        reasonMinLength: pv?.suspense_override_min_len || 5,
+        confirmLabel: "Lanjut ke konfirmasi",
+        testId: "closing-suspense-override",
+      });
+      if (typeof reason !== "string") return;   // dibatalkan
+      overrideReason = reason.trim();
+    }
     const warnings = [];
-    if (pv?.suspense_warning) warnings.push(`Saldo Suspense (1-9999) belum nol: ${formatCurrency(pv.suspense_balance)}.`);
+    if (suspenseBlocked) warnings.push(`Menembus blokir Suspense (${formatCurrency(pv.suspense_balance)}) — alasan: ${overrideReason}`);
     if (pv && Math.abs((pv.residual_net_income || 0) - (pv.net_income || 0)) > 0.01) {
       warnings.push(`Sebagian periode sudah ditutup bulanan — jurnal hanya menutup sisa ${formatCurrency(pv.residual_net_income)}.`);
     }
@@ -142,8 +169,9 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     try {
       const res = await axios.post(`${API}/finance/closing/close`, {
         period_type: periodType, period_key: periodKey, entity_id: entityId,
+        ...(overrideReason ? { suspense_override_reason: overrideReason } : {}),
       });
-      setNotice(`Periode ${res.data.period_label} berhasil ditutup. Jurnal penutup: ${res.data.journal_entry_number || "—"}.`);
+      setNotice(`Periode ${res.data.period_label} berhasil ditutup${res.data.suspense_override ? " (menembus blokir Suspense)" : ""}. Jurnal penutup: ${res.data.journal_entry_number || "—"}.`);
       setPreview(null);
       load();
     } catch (e) {
@@ -269,9 +297,12 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                       </div>
                     )}
                     {preview.suspense_warning && (
-                      <div className="mb-2 rounded-md bg-[#FDF3E7] border border-[#F0D9B8] text-[#B9770E] text-[12px] px-3 py-2 flex items-center gap-2" data-testid="closing-preview-suspense">
-                        <AlertTriangle size={14} />
-                        Saldo Suspense (1-9999) belum nol: {formatCurrency(preview.suspense_balance)}. Sebaiknya reklasifikasi via Buku Besar → tab Suspense sebelum tutup buku.
+                      <div className="mb-2 rounded-md bg-[#FDEDE7] border border-[#F5C6C0] text-[#C0392B] text-[12px] px-3 py-2 flex items-center gap-2" data-testid="closing-preview-suspense">
+                        <AlertTriangle size={14} className="shrink-0" />
+                        <span>
+                          <b>Tutup buku diblokir:</b> saldo Suspense (1-9999) belum nol: {formatCurrency(preview.suspense_balance)}. Reklasifikasi dulu via Buku Besar → tab Suspense.
+                          {isAdmin ? " Sebagai Admin, Anda dapat menembus blokir dengan alasan (tercatat di audit)." : " Hanya Admin yang dapat menembus blokir ini dengan alasan."}
+                        </span>
                       </div>
                     )}
                     {Math.abs((preview.residual_net_income || 0) - (preview.net_income || 0)) > 0.01 && (
@@ -351,6 +382,14 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                               <span data-testid={`closing-stale-${c.id}`} title={c.stale_reason || "Angka berubah setelah periode ditutup"}
                                 className="ml-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-[#FDEDE7] text-[#C0392B] inline-flex items-center gap-1">
                                 <AlertTriangle size={9} /> Perlu tutup ulang
+                              </span>
+                            )}
+                            {/* K-15 — penutupan yang menembus blokir Suspense ditandai; alasan & saldo di tooltip. */}
+                            {c.suspense_override && (
+                              <span data-testid={`closing-suspense-override-${c.id}`}
+                                title={`Suspense ${formatCurrency(c.suspense_override.suspense_balance)} · alasan: ${c.suspense_override.reason || "—"} · oleh ${c.suspense_override.by || "—"}`}
+                                className="ml-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-[#FDF3E7] text-[#B26B00] inline-flex items-center gap-1">
+                                <AlertTriangle size={9} /> Tembus Suspense
                               </span>
                             )}
                           </td>

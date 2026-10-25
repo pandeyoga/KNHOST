@@ -199,6 +199,12 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
         </span>
       </div>
       {!isReval && <Stepper status={sample.status} />}
+      {/* Keputusan pemilik K-16 (26 Okt) — labdip yang dilanjutkan TANPA handfeel ACC selalu terlihat beserta alasannya. */}
+      {sample.chain_override?.missing === "handfeel_acc" && (
+        <div className="rounded-lg border border-[#F2B48A] bg-[#FFF4E5] px-3 py-2 text-[11.5px] text-[#8A5300]" data-testid="sample-detail-chain-override">
+          <b>Labdip tanpa handfeel ACC.</b> Alasan: {sample.chain_override.reason || "—"}
+        </div>
+      )}
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="sample-detail-error" />}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">

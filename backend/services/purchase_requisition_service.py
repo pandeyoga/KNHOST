@@ -421,20 +421,11 @@ async def reorder_suggestions(entity_id: Optional[str] = None, ctx: Any = None) 
     `rop_candidates` = produk bergerak yang BELUM punya ROP (usulan set ROP)."""
     products = await db.products.find({"status": "active"}, {"_id": 0}).to_list(2000)
 
-    # available per produk (Σ available_qty balances, owner-scoped bila entity_id)
-    bal_q: Dict[str, Any] = {}
-    if entity_id and entity_id != "all":
-        bal_q["owner_entity_id"] = entity_id
-    avail: Dict[str, float] = {}
-    # UAT 24 Okt (audit UI tahap 2) — G4-24: saldo milik gudang yang SUDAH TIDAK ADA di master dilewati.
-    # Terbukti di data acuan: "Ulos Batak Ragidup TERSEDIA 29" berasal dari saldo yatim gudang uji
-    # `wh_TEST_F1_…` (tanpa roll), sementara gudang nyata (Jakarta) tersedia 0 karena rollnya diblokir —
-    # sama dengan Operasi Gudang. Definisi "tersedia" (saldo `available_qty`) TIDAK diubah (K-04).
-    known_wh = {w["id"] async for w in db.warehouses.find({}, {"_id": 0, "id": 1})}
-    async for b in db.inventory_balances.find(bal_q, {"_id": 0, "product_id": 1, "available_qty": 1, "warehouse_id": 1}):
-        if b.get("warehouse_id") and b["warehouse_id"] not in known_wh:
-            continue
-        avail[b["product_id"]] = avail.get(b["product_id"], 0.0) + float(b.get("available_qty", 0) or 0)
+    # K-04 (keputusan pemilik 26 Okt 2026) — "Tersedia" = definisi TUNGGAL berbasis roll yang sama dengan papan stok
+    # (`services/stock_availability.py`): roll siap jual (bukan diblokir/karantina/ditahan) dikurangi yang dipesan,
+    # gudang terdaftar saja (G4-24: saldo yatim gudang uji yang dihapus tidak ikut), dikurangi cadangan makloon.
+    from services.stock_availability import available_by_product
+    avail: Dict[str, float] = await available_by_product(entity_id)
 
     # on_order per produk (Σ qty-received pada PO terbuka), owner-scoped bila entity_id
     po_q: Dict[str, Any] = {"status": {"$in": list(OPEN_PO_STATUSES)}}

@@ -19,6 +19,8 @@ from db import db
 _PANTONE_FHI = re.compile(r"^\d{2}-\d{4}\s?(TCX|TPX|TPG|TN)$", re.I)
 _PANTONE_CU = re.compile(r"^[A-Z0-9][A-Z0-9 .-]{0,24}\s(C|U|CP|UP)$", re.I)
 ACC_DESIGN = ("approved", "final_submitted", "active")
+#: K-16 (26 Okt) — alasan minimum untuk melanjutkan labdip tanpa handfeel ACC (seragam K-14: 5 huruf).
+CHAIN_OVERRIDE_MIN_REASON = 5
 
 
 class FlowError(ValueError):
@@ -82,9 +84,21 @@ async def assert_stage_chain(payload: Dict[str, Any], stypes: List[str], spec: O
         return out
     if "labdip" in stypes and "handfeel" not in stypes:
         if not parent or "handfeel" not in (parent.get("sample_types") or []) or not await _sample_has_acc(parent, "handfeel"):
-            raise FlowError(
-                "Labdip produk baru harus berasal dari HANDFEEL yang sudah ACC (urutan: handfeel → labdip → produk baru). "
-                "Pilih sampel handfeel induknya, atau sertakan handfeel di permintaan ini.")
+            # Keputusan pemilik K-16 (26 Okt) — labdip produk baru TANPA handfeel ACC BOLEH, dengan peringatan + alasan
+            # wajib yang tercatat (dulu form buntu). Tanpa alasan → tetap ditolak dengan pesan yang menyebut jalan keluarnya.
+            why = str(payload.get("chain_override_reason") or "").strip()
+            if len(why) < CHAIN_OVERRIDE_MIN_REASON:
+                raise FlowError(
+                    "Labdip produk baru semestinya berasal dari HANDFEEL yang sudah ACC (urutan: handfeel → labdip → "
+                    "produk baru). Pilih sampel handfeel induknya, sertakan handfeel di permintaan ini, atau lanjutkan "
+                    f"TANPA handfeel ACC dengan menulis alasannya (minimal {CHAIN_OVERRIDE_MIN_REASON} huruf).")
+            out["chain_override"] = {
+                "missing": "handfeel_acc",
+                "label": "Labdip tanpa handfeel ACC",
+                "reason": why,
+                "parent_sample_id": (parent or {}).get("id", ""),
+                "at": now_iso(),
+            }
     if "proofing" in stypes:
         tpl_id = (spec or {}).get("base_fabric_template_id") or ""
         if not tpl_id:

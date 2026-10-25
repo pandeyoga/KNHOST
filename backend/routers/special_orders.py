@@ -110,7 +110,7 @@ class SpecialOrderApprove(BaseModel):
 
 class SpecialOrderReject(BaseModel):
     """Reject special order"""
-    reason: str = Field(..., min_length=1, description="Rejection reason")
+    reason: str = Field(..., min_length=5, description="Rejection reason")   # K-14
 
 
 class SpecialOrderStatusUpdate(BaseModel):

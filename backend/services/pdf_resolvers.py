@@ -47,21 +47,45 @@ def fmt_num(v, max_dec: int = 2) -> str:
     return f"-{txt}" if n < 0 and txt != "0" else txt
 
 
-def _ppn_rows(doc, *, rate_key: str = "ppn_rate", amount_key: str = "ppn_amount", default_rate=11) -> list:
-    """Baris PPN di total. G5-11 — rezim 12% × DPP nilai lain (11/12): dulu hanya "PPN 12.0%" pada nominal yang
-    efektif 11% dari subtotal, tanpa dasar pengenaannya. Kini DPP-nya ditulis (bila dipakai) dan tarifnya id-ID."""
-    if not doc.get(amount_key):
-        return []
+def _num(v) -> float:
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _uses_dpp_nilai_lain(doc, base: float) -> bool:
+    """DPP nilai lain (11/12) dipakai? Bendera dokumen bila ada; PO lama tanpa bendera → DPP ≈ 11/12 × harga."""
+    dpp = _num(doc.get("dpp"))
+    if dpp <= 0:
+        return False
+    if doc.get("dpp_nilai_lain") is not None:
+        return bool(doc.get("dpp_nilai_lain"))
+    return base > 0 and abs(dpp - base * 11 / 12) <= 1 and abs(dpp - base) > 1
+
+
+def _total_rows(doc, *, grand=None, rate_key: str = "ppn_rate", amount_key: str = "ppn_amount",
+                default_rate=11) -> list:
+    """Baris total dokumen. Keputusan pemilik K-03 (26 Okt): "Total" = TERMASUK PPN; DPP tampil sebagai rincian;
+    PPN 12% atas DPP nilai lain → baris "DPP nilai lain (11/12)". Urutan:
+    DPP (harga sebelum PPN) · [DPP nilai lain (11/12)] · PPN x% · Total (termasuk PPN).
+    G5-11 (sebelumnya): "Subtotal · DPP nilai lain (11/12 × subtotal) · PPN 12% × DPP · Grand Total"."""
+    grand = _num(doc.get("grand_total", doc.get("total_amount")) if grand is None else grand)
+    ppn = _num(doc.get(amount_key))
+    if ppn <= 0:
+        return [{"label": "Total", "value": fmt_rp(grand), "strong": True}]
+    base = round(grand - ppn, 2)   # harga sebelum PPN — benar untuk harga belum/sudah termasuk PPN
     rate = fmt_num(doc.get(rate_key, default_rate))
-    rows = []
-    if doc.get("dpp_nilai_lain") and doc.get("dpp"):
-        rows.append({"label": "DPP nilai lain (11/12 × subtotal)", "value": fmt_rp(doc.get("dpp"))})
-        label = f"PPN {rate}% × DPP"
+    rows = [{"label": "DPP (harga sebelum PPN)", "value": fmt_rp(base)}]
+    if _uses_dpp_nilai_lain(doc, base):
+        rows.append({"label": "DPP nilai lain (11/12)", "value": fmt_rp(doc.get("dpp"))})
+        label = f"PPN {rate}% × DPP nilai lain"
     else:
         label = f"PPN {rate}%"
     if doc.get("ppn_mode") == "included":
-        label += " (sudah termasuk)"
-    rows.append({"label": label, "value": fmt_rp(doc.get(amount_key))})
+        label += " (sudah termasuk dalam harga)"
+    rows.append({"label": label, "value": fmt_rp(ppn)})
+    rows.append({"label": "Total (termasuk PPN)", "value": fmt_rp(grand), "strong": True})
     return rows
 
 
@@ -258,11 +282,7 @@ async def resolve_sales_order(doc, db):
             "price": fmt_rp(it.get("price")), "disc": f"{fmt_num(it.get('discount_percent', 0))}%",
             "total": fmt_rp(it.get("line_total", it.get("subtotal"))),
         })
-    totals = []
-    if doc.get("net_subtotal"):
-        totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal"))})
-    totals.extend(_ppn_rows(doc))
-    totals.append({"label": "Grand Total", "value": fmt_rp(doc.get("grand_total", doc.get("total_amount"))), "strong": True})
+    totals = _total_rows(doc)   # K-03 — DPP · [DPP nilai lain] · PPN · Total (termasuk PPN)
     return {
         "title": "Konfirmasi Pesanan Penjualan", "number": doc.get("number"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
@@ -304,11 +324,7 @@ async def resolve_purchase_order(doc, db):
             "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
             "price": fmt_rp(it.get("price")), "total": fmt_rp(it.get("line_total", it.get("subtotal"))),
         })
-    totals = []
-    if doc.get("net_subtotal"):
-        totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal"))})
-    totals.extend(_ppn_rows(doc))
-    totals.append({"label": "Grand Total", "value": fmt_rp(doc.get("grand_total", doc.get("total_amount"))), "strong": True})
+    totals = _total_rows(doc)   # K-03 — DPP · [DPP nilai lain] · PPN · Total (termasuk PPN)
     return {
         "title": "Pesanan Pembelian", "number": doc.get("po_number"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
@@ -366,9 +382,11 @@ async def resolve_vendor_bill(doc, db):
         "columns": [_col("no", "No", "num"), _col("desc", "Uraian"), _col("ref", "Ref"),
                     _col("net", "DPP", "num"), _col("ppn", "PPN", "num"), _col("total", "Total", "num")],
         "items": items,
-        "totals": [{"label": "DPP", "value": fmt_rp(doc.get("net_amount"))},
+        # K-03 — "Total" = termasuk PPN; DPP rincian (label seragam dengan SO/PO/Faktur).
+        "totals": [{"label": "DPP (harga sebelum PPN)", "value": fmt_rp(doc.get("net_amount"))},
                    {"label": "PPN", "value": fmt_rp(doc.get("ppn_amount"))},
-                   {"label": "Grand Total", "value": fmt_rp(doc.get("grand_total")), "strong": True}],
+                   {"label": "Total (termasuk PPN)" if _num(doc.get("ppn_amount")) > 0 else "Total",
+                    "value": fmt_rp(doc.get("grand_total")), "strong": True}],
         "terbilang": terbilang(doc.get("grand_total")),
         "signatures": [{"label": "Diperiksa", "role": "Accounting", "name": ""},
                        {"label": "Disetujui", "role": "Manager", "name": ""}],
@@ -1024,12 +1042,8 @@ async def resolve_invoice(doc, db):
                       "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
                       "price": fmt_rp(it.get("price")), "disc": f"{fmt_num(it.get('discount_percent', 0))}%",
                       "total": fmt_rp(it.get("line_total", it.get("subtotal")))})
-    totals = []
-    if doc.get("net_subtotal") or doc.get("total_amount"):
-        totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal", doc.get("total_amount")))})
-    totals.extend(_ppn_rows(doc))
     grand = doc.get("grand_total", doc.get("total_amount"))
-    totals.append({"label": "Grand Total", "value": fmt_rp(grand), "strong": True})
+    totals = _total_rows(doc, grand=grand)   # K-03 — DPP · [DPP nilai lain] · PPN · Total (termasuk PPN)
     return {
         "title": "Faktur", "number": (doc.get("number") or "").replace("SO-", "INV-"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("payment_status") or doc.get("status"),
@@ -1087,9 +1101,8 @@ async def resolve_tax_invoice(doc, db):
                     _col_rolls(), _col("qty", "Jumlah", "num"),
                     _col("price", "Harga", "num"), _col("total", "Total", "num")],
         "items": items,
-        "totals": [{"label": "DPP", "value": fmt_rp(doc.get("dpp"))},
-                   {"label": f"PPN {fmt_num(doc.get('ppn_rate', 12))}%", "value": fmt_rp(doc.get("ppn_amount"))},
-                   {"label": "Total", "value": fmt_rp(grand), "strong": True}],
+        # K-03 — sama dengan Faktur/SO/PO: DPP · [DPP nilai lain (11/12)] · PPN · Total (termasuk PPN).
+        "totals": _total_rows(doc, grand=grand, default_rate=12),
         "terbilang": terbilang(grand), "notes": _notes,
         "signatures": [{"label": "Penjual / PKP", "role": doc.get("seller_name", ""), "name": doc.get("created_by", "")}],
         "_amount": grand,

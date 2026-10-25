@@ -121,7 +121,7 @@ def test_reverse_manual_success_and_fields(admin_h):
 def test_reverse_twice_returns_400(admin_h):
     je = _create_manual_je(admin_h, "twice")
     r1 = requests.post(f"{BASE_URL}/api/gl/journal/{je['id']}/reverse",
-                       json={"date": _today(), "reason": "once"},
+                       json={"date": _today(), "reason": "balik pertama"},   # K-14: ≥ 5 huruf
                        headers=admin_h, timeout=20)
     assert r1.status_code == 200
     CREATED_JES.append(r1.json()["id"])
@@ -141,7 +141,7 @@ def test_reverse_a_reversal_rejected(admin_h):
     rev = r1.json()
     CREATED_JES.append(rev["id"])
     r2 = requests.post(f"{BASE_URL}/api/gl/journal/{rev['id']}/reverse",
-                       json={"date": _today(), "reason": "boom"},
+                       json={"date": _today(), "reason": "balik lagi"},
                        headers=admin_h, timeout=20)
     assert r2.status_code == 400, f"expected 400 for reversal-of-reversal, got {r2.status_code}"
 
@@ -151,7 +151,7 @@ def test_reverse_empty_reason_rejected(admin_h):
     r = requests.post(f"{BASE_URL}/api/gl/journal/{je['id']}/reverse",
                       json={"date": _today(), "reason": ""},
                       headers=admin_h, timeout=20)
-    # ≥3-char reason enforced in service → 400 (schema allows empty string → service ValueError)
+    # ≥5-char reason (K-14) enforced in service → 400 (schema allows empty string → service ValueError)
     assert r.status_code in (400, 422), f"got {r.status_code} {r.text[:200]}"
 
 
@@ -251,7 +251,7 @@ def test_reverse_closing_journal_rejected(admin_h):
     db.journal_entries.insert_one(doc)
     CREATED_JES.append(doc["id"])
     r = requests.post(f"{BASE_URL}/api/gl/journal/{doc['id']}/reverse",
-                      json={"date": _today(), "reason": "nope"},
+                      json={"date": _today(), "reason": "coba balik penutup"},
                       headers=admin_h, timeout=20)
     assert r.status_code == 400, f"expected 400 for closing, got {r.status_code} {r.text[:200]}"
     assert "penutup" in r.text.lower() or "closing" in r.text.lower()

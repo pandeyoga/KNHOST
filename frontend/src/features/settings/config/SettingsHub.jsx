@@ -33,7 +33,7 @@ import LocationBacklogPanel from "./LocationBacklogPanel";
 import {
   WhyThisValueDrawer, SimulatorPanel, ChangeHistoryDrawer, ChangeHistoryInline,
 } from "./ConfigDrawers";
-import { configApi, errMsg, SCOPE_LABEL } from "./configApi";
+import { configApi, errMsg, idNum, SCOPE_LABEL, weightSetSummaries } from "./configApi";
 import { LEGACY_DEEPLINK, groupForKey } from "./configDeepLink";
 import { entityOptions, entityShortById } from "../../../utils/entityLabel";
 import { can } from "../../../config/roles";
@@ -269,6 +269,7 @@ export default function SettingsHub({
     [scopeType, scopeId, entities]);
 
   const notUsedCount = items.filter((i) => i.status === "not_used").length;
+  const weightSets = useMemo(() => weightSetSummaries(items), [items]);
   // Berapa setting yang benar-benar boleh diubah user ini di daftar yang tampil.
   const editableShown = items.filter((i) => i.can_edit !== false).length;
 
@@ -312,7 +313,20 @@ export default function SettingsHub({
         </div>
       ) : null}
 
-      {!caps.settings_manage ? (
+      {/* Keputusan pemilik K-11 (26 Okt) — peran berbatas baca (mis. MD) hanya menerima kelompok tertentu dari server. */}
+      {!caps.settings_manage && caps.read_scope ? (
+        <div className="cfg-notice info" data-testid="cfg-read-scope">
+          <ShieldCheck size={15} />
+          <span>
+            Peran Anda hanya dapat membuka pengaturan <b>{caps.read_scope}</b> (termasuk aturan persetujuan yang
+            dijaga hak R&amp;D). Kelompok lain tidak ditampilkan
+            {tab === "settings" && items.length > 0
+              ? ` · yang bisa Anda ubah di daftar ini: ${editableShown} dari ${items.length} pengaturan`
+              : ""}
+            .
+          </span>
+        </div>
+      ) : !caps.settings_manage ? (
         <div className="cfg-notice info" data-testid="cfg-limited-rights">
           <ShieldCheck size={15} />
           <span>
@@ -456,6 +470,24 @@ export default function SettingsHub({
                     : "Belum ada pengaturan di kelompok ini."}
                 </p>
               ) : null}
+
+              {/* Keputusan pemilik K-08 (26 Okt) — kelompok bobot ditampilkan sebagai porsi dari 100%. */}
+              {!loading && weightSets.map((s) => (
+                <div key={s.id} className={`cfg-notice info ${s.total === 100 ? "" : "!bg-[#FFF4E5] !text-[#8A5300]"}`}
+                  data-testid={`cfg-weight-total-${s.id}`}>
+                  <SlidersHorizontal size={15} />
+                  <span>
+                    <b>{s.label}:</b>{" "}
+                    {s.parts.map((p) => `${p.name} ${idNum(p.value)}%`).join(" + ")} ={" "}
+                    <b data-testid={`cfg-weight-total-${s.id}-sum`}>{idNum(s.total)}%</b>
+                    {s.total === 100
+                      ? "."
+                      : s.total > 0
+                        ? ` — bukan 100%, jadi sistem menyetarakannya ke 100%: ${s.parts.map((p) => `${p.name} ${idNum(p.share, 1)}%`).join(" + ")}. Sesuaikan agar jumlahnya 100%.`
+                        : " — semua bobot 0, nilai tidak bisa dihitung."}
+                  </span>
+                </div>
+              ))}
 
               <div className="cfg-cards">
                 {items.map((item) => (

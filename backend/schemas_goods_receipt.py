@@ -20,7 +20,7 @@ class GRNVersionIn(BaseModel):
 
 
 class GRNReasonIn(GRNVersionIn):
-    reason: str = Field(..., min_length=3)
+    reason: str = Field(..., min_length=5)   # K-14
 
 
 class GRNDnPatch(GRNVersionIn):
@@ -125,4 +125,4 @@ class GRNCountRollIn(BaseModel):
 
 class GRNResolveIn(GRNVersionIn):
     action: Literal["accept_note", "claim_supplier", "claim_makloon", "reject_goods"]
-    reason: str = Field(..., min_length=3)
+    reason: str = Field(..., min_length=5)   # K-14

@@ -154,6 +154,12 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         </div>
       )}
 
+      {/* K-02 (26 Okt) — label sumber: kartu di layar ini = catatan transaksi kas; angka utama "Kas & Bank" = buku besar. */}
+      <p className="mb-1.5 text-[11px] text-[#6B6B73]" data-testid="cash-source-label">
+        Saldo di kartu ini = saldo awal rekening + transaksi kas yang tercatat (masuk − keluar). Angka utama &ldquo;Kas &amp;
+        Bank&rdquo; = saldo buku besar akun kas &amp; bank (Rekening &amp; Saldo, Dasbor Keuangan) — bisa berbeda karena jurnal
+        kas manual di buku besar.
+      </p>
       {/* Summary cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-3">
         <SummaryCard testId="cash-besar-card" title="Kas Besar / Bank"

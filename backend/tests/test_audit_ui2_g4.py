@@ -114,5 +114,8 @@ def test_g4_24_reorder_ignores_orphan_warehouse_balances():
     for row in res["items"][:25]:
         exp = sum(float(b.get("available_qty") or 0) for b in DB.inventory_balances.find(
             {"owner_entity_id": "ent_ksc", "product_id": row["product_id"]}, {"_id": 0, "available_qty": 1, "warehouse_id": 1})
-            if not b.get("warehouse_id") or b["warehouse_id"] in known)
-        assert abs(float(row["available"]) - exp) < 0.01, row["sku"]
+            if b.get("warehouse_id") in known)
+        # K-04 (keputusan pemilik 26 Okt 2026) — definisi tunggal = papan stok: cadangan makloon aktif ikut dikurangi.
+        mk = sum(float(m.get("qty") or 0) for m in DB.material_reservations.find(
+            {"status": "active", "owner_entity_id": "ent_ksc", "product_id": row["product_id"]}, {"_id": 0, "qty": 1}))
+        assert abs(float(row["available"]) - max(exp - mk, 0.0)) < 0.01, row["sku"]

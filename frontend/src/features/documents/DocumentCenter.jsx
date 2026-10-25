@@ -167,8 +167,9 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
                   <th className="px-2 py-2">Nomor</th>
                   <th className="px-2 py-2">Tanggal</th>
                   <th className="px-2 py-2">Pihak</th>
-                  {/* G5-50 — kolom ini = nilai SEBELUM PPN (subtotal); PDF/CRM memakai total tagihan (termasuk PPN) — K-03. */}
-                  <th className="px-2 py-2 text-right" title="Nilai sebelum PPN (subtotal dokumen). Total tagihan termasuk PPN ada di PDF.">Nilai sebelum PPN</th>
+                  {/* Keputusan pemilik K-03 (26 Okt) — kolom = TOTAL termasuk PPN (sama dengan PDF/CRM); DPP (harga sebelum
+                      PPN) & DPP nilai lain (11/12) jadi rincian di baris kedua. Dulu (G5-50) "Nilai sebelum PPN". */}
+                  <th className="px-2 py-2 text-right" data-testid="dc-col-total" title="Total dokumen termasuk PPN. Baris kecil = DPP (harga sebelum PPN).">Total (termasuk PPN)</th>
                   <th className="px-2 py-2">Status</th>
                   <th className="px-2 py-2">Tanda Tangan</th>
                   <th className="px-2 py-2">Referensi</th>
@@ -181,7 +182,15 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
                     <td className="whitespace-nowrap px-2 py-2 font-semibold text-[#0B1B3B]">{d.number}</td>
                     <td className="whitespace-nowrap px-2 py-2 text-[#6B6B73]">{d.date ? formatDate(d.date) : "-"}</td>
                     <td className="px-2 py-2">{d.party || "-"}</td>
-                    <td className="px-2 py-2 text-right font-medium tabular-nums">{rp(d.amount)}</td>
+                    <td className="px-2 py-2 text-right font-medium tabular-nums" data-testid={`dc-amount-${d.source_id}`}>
+                      {rp(d.amount)}
+                      {d.amount_includes_ppn && (
+                        <span className="block whitespace-nowrap text-[10.5px] font-normal text-[#8E8E93]" data-testid={`dc-dpp-${d.source_id}`}>
+                          DPP {rp(d.amount_dpp)}
+                          {d.dpp_nilai_lain ? <span className="block">DPP nilai lain (11/12) {rp(d.dpp_nilai_lain)}</span> : null}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2 py-2"><span className="whitespace-nowrap rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[11px] font-medium text-[#4A4B52]">{dcStatus(d.status)}</span></td>
                     <td className="px-2 py-2">
                       {d.signed ? (

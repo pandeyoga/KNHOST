@@ -8,19 +8,20 @@ import { designLifecycle, designNewVersion, holdDesign, releaseDesignHold } from
 import { errMsg, roundLabel } from "../rndMeta";
 import ScoreInput from "./ScoreInput";
 import ProductPicker from "./ProductPicker";
+import { REASON_MIN_LENGTH } from "../../../services/confirmService";
 
 const ACTIONS = {
   submit: { label: "Ajukan untuk review", icon: Send, side: "designer", cls: "primary-button" },
   start_review: { label: "Mulai review", icon: Eye, side: "assessor", cls: "primary-button" },
   approve: { label: "Setujui (ACC) + nilai akhir", icon: CheckCircle2, side: "assessor", cls: "primary-button", needScore: true },
-  request_revision: { label: "Minta revisi", icon: RotateCcw, side: "assessor", cls: "secondary-button", needNote: true },
+  request_revision: { label: "Minta revisi", icon: RotateCcw, side: "assessor", cls: "secondary-button", needNote: true, reason: true },
   submit_final: { label: "Serahkan berkas final", icon: PackageCheck, side: "designer", cls: "primary-button" },
-  return_final: { label: "Kembalikan berkas final", icon: RotateCcw, side: "assessor", cls: "secondary-button", needNote: true },
+  return_final: { label: "Kembalikan berkas final", icon: RotateCcw, side: "assessor", cls: "secondary-button", needNote: true, reason: true },
   activate: { label: "Aktifkan untuk produksi", icon: Rocket, side: "assessor", cls: "primary-button" },
-  archive: { label: "Arsipkan", icon: Archive, side: "assessor", cls: "secondary-button", needNote: true },
+  archive: { label: "Arsipkan", icon: Archive, side: "assessor", cls: "secondary-button", needNote: true, reason: true },
   reopen: { label: "Buka kembali", icon: Undo2, side: "assessor", cls: "secondary-button" },
   new_version: { label: "Buat versi baru", icon: GitBranch, side: "designer", cls: "secondary-button", needNote: true },
-  hold: { label: "Tahan desain", icon: PauseCircle, side: "holder", cls: "secondary-button !border-[#F2B48A] !text-[#B24A00]", needNote: true },
+  hold: { label: "Tahan desain", icon: PauseCircle, side: "holder", cls: "secondary-button !border-[#F2B48A] !text-[#B24A00]", needNote: true, reason: true },
   release_hold: { label: "Lepas penahanan", icon: PlayCircle, side: "holder", cls: "primary-button !bg-[#B24A00]" },
 };
 
@@ -94,6 +95,8 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
     const a = dlg.action;
     const m = ACTIONS[a];
     if (m.needNote && !note.trim()) { setDlgErr("Catatan wajib diisi."); return; }
+    // K-14 (26 Okt) — catatan yang berfungsi sebagai ALASAN (revisi, kembalikan, arsip, tahan) minimal 5 huruf (= server).
+    if (m.reason && note.trim().length < REASON_MIN_LENGTH) { setDlgErr(`Alasan minimal ${REASON_MIN_LENGTH} huruf.`); return; }
     if (m.needScore && score === null) { setDlgErr("Beri nilai akhir (0–2) — nilai hanya diberikan saat ACC."); return; }
     setBusy(true); setDlgErr("");
     try {

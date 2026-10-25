@@ -165,9 +165,17 @@ def assert_yield_reason(steps_in: List[Dict[str, Any]], settings: Dict[str, Any]
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async def _next_mko_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def _next_mko_number(entity_id: str = "") -> str:
+    """KN-A12 — sequence ATOMIK (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+
+    Keputusan pemilik K-09 (26 Okt) — order makloon BARU ikut prefiks badan usaha (deret per badan usaha,
+    `KSC/MKO-00037`), seperti PO/SO/CASH. Deret per badan usaha disemai dari nomor tertinggi badan usaha itu
+    (termasuk nomor lama `MKO-000nn`), jadi angkanya melanjutkan. Nomor lama TIDAK diubah. Tanpa badan usaha
+    (data lama/uji) tetap memakai deret bersama `MKO-`.
+    """
     from core_utils import next_doc_number
+    if entity_id and entity_id != "all":
+        return await next_doc_number("makloon_orders", "mko_number", "MKO-", width=5, entity_id=entity_id)
     return await next_doc_number("makloon_orders", "mko_number", "MKO-", width=5, scheme="shared")
 
 
@@ -502,7 +510,7 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
                                                     entity_id, actor_name, mko_id, from_wh)
 
     order = {
-        "id": mko_id, "mko_number": await _next_mko_number(), "entity_id": entity_id,
+        "id": mko_id, "mko_number": await _next_mko_number(entity_id), "entity_id": entity_id,
         "mode": mode,
         "material_product_id": material_pid, "material_sku": mat_snap["sku"],
         "material_name": mat_snap["name"], "material_qty": material_qty,
