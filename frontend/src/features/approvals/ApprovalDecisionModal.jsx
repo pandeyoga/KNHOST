@@ -15,6 +15,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { ArrowRight, Check, Clock, ExternalLink, Loader2, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
+import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 import { apiErrorText } from "../../utils/apiError";
 import { can, roleLabel } from "../../config/roles";
 import { actorLabel } from "../../utils/actorLabel";
@@ -187,7 +188,7 @@ function DetailBody({ item, doc }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Info label="Produk">{doc?.product_name || doc?.sku}</Info>
         <Info label="Pelanggan">{doc?.customer_name}</Info>
-        <Info label="Diskon">{doc?.discount_percent ? `${doc.discount_percent}%` : "—"}</Info>
+        <Info label={discountInfo(doc?.discount_percent)?.above ? "Selisih" : "Diskon"}>{discountInfo(doc?.discount_percent)?.long || "—"}</Info>
         <Info label="Harga Normal">{formatCurrency(doc?.normal_price)}</Info>
         <Info label="Harga Diminta">
           <span className="text-[#B45309]">{formatCurrency(doc?.requested_price)}</span>

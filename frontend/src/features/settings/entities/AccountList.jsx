@@ -7,7 +7,7 @@
  * akun tanpa tautan HR adalah sumber utama badan usaha akun ≠ badan usaha payroll.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { can } from "../../../config/roles";
+import { can, roleLabel } from "../../../config/roles";
 import { Search, UserPlus, KeyRound, Power, RotateCcw, LogOut, AlertTriangle,
   Loader2, Pencil } from "lucide-react";
 
@@ -16,7 +16,7 @@ import PaginationBar from "../../../components/PaginationBar";
 import AccountFormDrawer from "./AccountFormDrawer";
 import { listUsers, deactivateUser, reactivateUser, resetUserPassword,
   revokeUserSessions, ROLE_OPTIONS, errText } from "./entityApi";
-import { askText } from "@/services/confirmService";
+import { askConfirm, askText } from "@/services/confirmService";
 
 const STATUSES = [
   { key: "", label: "Semua status" },
@@ -114,7 +114,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
     { key: "name", header: "Nama" },
     { key: "email", header: "Email" },
     { header: "Peran",
-      get: (u) => ROLE_OPTIONS.find((r) => r.value === u.role)?.label || u.role },
+      get: (u) => roleLabel(u.role) },
     { header: "Badan Usaha Utama", get: (u) => entityName(u.home_entity_id) },
     { header: "Badan Usaha Diizinkan",
       get: (u) => (u.allowed_entity_ids || []).map(entityName).filter(Boolean).join(", ") },
@@ -205,7 +205,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                       data-testid={`account-status-${s.key || "all"}`}
                       onClick={() => { setStatus(s.key); setPage(1); }}
                       className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                        status === s.key ? "bg-[#6B219A] text-white"
+                        status === s.key ? "bg-[#007AFF] text-white"
                           : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
                 {s.label}
               </button>
@@ -240,9 +240,9 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
             <button key={r.value} type="button" data-testid={`account-role-${r.value}`}
                     onClick={() => { setRole(r.value); setPage(1); }}
                     className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-                      role === r.value ? "bg-[#1C1C1E] text-white"
+                      role === r.value ? "bg-[#007AFF] text-white"
                         : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
-              {r.label}
+              {roleLabel(r.value)}
             </button>
           ))}
         </div>
@@ -283,7 +283,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                       <p className="text-[10px] text-[#9A9BA3]">{u.email}</p>
                     </td>
                     <td className="px-3 py-2 text-[#3C3C43]" data-testid={`account-role-cell-${u.id}`}>
-                      {ROLE_OPTIONS.find((r) => r.value === u.role)?.label || u.role}
+                      <span className="whitespace-nowrap" title={roleLabel(u.role, true)}>{roleLabel(u.role)}</span>
                     </td>
                     <td className="px-3 py-2" data-testid={`account-home-${u.id}`}>
                       <EntityBadge entityId={u.home_entity_id} entities={entities} />
@@ -341,7 +341,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex flex-wrap items-center justify-end gap-1">
+                      <div className="flex flex-nowrap items-center justify-end gap-1">
                         {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-edit-${u.id}`}
@@ -352,27 +352,38 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-reset-${u.id}`}
+                                  title="Setel ulang kata sandi" aria-label={`Setel ulang kata sandi ${u.name}`}
                                   disabled={busy === u.id} onClick={() => doReset(u)}>
-                            <KeyRound size={11} /> Reset
+                            <KeyRound size={12} />
                           </button>
                         )}
                         {canEditUser && u.has_active_session && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-revoke-${u.id}`}
+                                  title="Cabut semua sesi" aria-label={`Cabut semua sesi ${u.name}`}
                                   disabled={busy === u.id}
-                                  onClick={() => act(revokeUserSessions, u.id,
-                                    (r) => `${r.sessions_revoked} sesi ${u.name} dicabut.`)}>
-                            <LogOut size={11} /> Cabut sesi
+                                  onClick={async () => {
+                                    if (!(await askConfirm({ title: `Cabut semua sesi ${u.name}?`,
+                                      message: "Akun ini keluar dari semua perangkat dan harus masuk lagi.",
+                                      confirmLabel: "Cabut sesi" }))) return;
+                                    act(revokeUserSessions, u.id, (r) => `${r.sessions_revoked} sesi ${u.name} dicabut.`);
+                                  }}>
+                            <LogOut size={12} />
                           </button>
                         )}
                         {canDeactivateUser && u.status === "active" && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-deactivate-${u.id}`}
+                                  title="Nonaktifkan akun" aria-label={`Nonaktifkan akun ${u.name}`}
                                   disabled={busy === u.id}
-                                  onClick={() => act(deactivateUser, u.id,
-                                    `Akun ${u.name} dinonaktifkan — datanya tetap tersimpan.`)}>
-                            {busy === u.id ? <Loader2 size={11} className="animate-spin" />
-                                           : <Power size={11} />} Nonaktifkan
+                                  onClick={async () => {
+                                    if (!(await askConfirm({ title: `Nonaktifkan akun ${u.name}?`,
+                                      message: "Akun tidak bisa masuk lagi; datanya tetap tersimpan dan bisa diaktifkan kembali.",
+                                      confirmLabel: "Nonaktifkan", danger: true }))) return;
+                                    act(deactivateUser, u.id, `Akun ${u.name} dinonaktifkan — datanya tetap tersimpan.`);
+                                  }}>
+                            {busy === u.id ? <Loader2 size={12} className="animate-spin" />
+                                           : <Power size={12} />}
                           </button>
                         )}
                         {canEditUser && u.status !== "active" && (

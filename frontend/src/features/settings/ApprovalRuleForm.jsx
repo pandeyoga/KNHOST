@@ -40,7 +40,8 @@ export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCa
           </div>
 
           <div className="form-group">
-            <label className="form-label">Peran Penyetuju <span className="req">*</span></label>
+            {/* UAT 24 Okt (audit UI tahap 2, G5-20) — server menerima kosong (= lolos otomatis), jadi bukan isian wajib. */}
+            <label className="form-label">Peran Penyetuju</label>
             <KNSelect
               data-testid="rule-required-role"
               className="form-select"

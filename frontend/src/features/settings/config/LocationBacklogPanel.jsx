@@ -27,10 +27,12 @@ export default function LocationBacklogPanel({ canEdit = true }) {
   }, [coll]);
   useEffect(() => { load(); }, [load]);
 
-  const startEdit = (r) => { setEditing(`${r.collection}/${r.doc_id}`); setDraft({ ...r, country_code: r.country_code || "ID" }); setErr(""); };
+  // UAT 24 Okt (audit UI tahap 2, catatan G0) — galat kelengkapan di blok alamat tampil setelah Simpan gagal validasi.
+  const [tried, setTried] = useState(false);
+  const startEdit = (r) => { setEditing(`${r.collection}/${r.doc_id}`); setDraft({ ...r, country_code: r.country_code || "ID" }); setErr(""); setTried(false); };
   const save = async (r) => {
     const miss = locationIncomplete(draft);
-    if (miss) { setErr(`Alamat: ${miss}`); return; }
+    if (miss) { setErr(`Alamat: ${miss}`); setTried(true); return; }
     setSaving(true); setErr("");
     try {
       await axios.post(`${API}/data-hygiene/location/${r.collection}/${r.doc_id}`, draft);
@@ -75,7 +77,7 @@ export default function LocationBacklogPanel({ canEdit = true }) {
                   <td style={{ minWidth: 320 }}>
                     {isEdit ? (
                       <div style={{ maxWidth: 560 }}>
-                        <LocationFields testId={`locfix-${r.doc_id}`} compact value={draft} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} />
+                        <LocationFields testId={`locfix-${r.doc_id}`} compact showErrors={tried} value={draft} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} />
                       </div>
                     ) : (
                       <span data-testid={`location-backlog-current-${r.doc_id}`}>{[r.address, r.city, r.province, r.postal_code].filter(Boolean).join(", ") || "—"}</span>

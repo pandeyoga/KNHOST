@@ -77,6 +77,9 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
     <section className="cfg-health" data-testid="cfg-health-panel">
       <ErrorNotice message={err} onRetry={load} />
 
+      {/* UAT 24 Okt (audit UI tahap 2, G5-15) — dulu galat muat (mis. tanpa izin) tetap diikuti vonis hijau "Semua
+          setting aktif benar-benar tersambung … Diperiksa 0 setting" + 4 KPI 0. Tanpa data: tidak ada vonis & KPI. */}
+      {data ? (<>
       <div className={`cfg-health-verdict ${broken ? "bad" : "good"}`}
         data-testid="cfg-health-verdict">
         {broken ? <AlertTriangle size={20} /> : <ShieldCheck size={20} />}
@@ -117,6 +120,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
           );
         })}
       </div>
+      </>) : null}
 
       <div className="cfg-health-legend" data-testid="cfg-health-legend">
         <h4>Arti setiap status</h4>
@@ -130,7 +134,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
         </ul>
       </div>
 
-      <div className="cfg-health-toolbar">
+      {data ? <div className="cfg-health-toolbar">
         <label className="cfg-search-wrap cfg-search-sm">
           <Search size={14} />
           <input
@@ -150,7 +154,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
         <span className="cfg-hint-sm">
           Menampilkan <b>{rows.length}</b> dari {data?.total || 0} pengaturan
         </span>
-      </div>
+      </div> : null}
 
       {busy && !data ? <p className="cfg-hint">Memuat…</p> : null}
 

@@ -5,6 +5,9 @@
  * dan tidak ada URL yang tersebar (aturan repo: satu jalur, bukan ad-hoc).
  */
 import axios, { API } from "../../../services/apiClient";
+import { apiErrorText } from "../../../utils/apiError";
+import { stripInternalCodes } from "../../../utils/cleanText";
+import { entityShortFromCtx } from "../../../utils/entityLabel";
 
 const BASE = `${API}/config`;
 
@@ -44,8 +47,23 @@ export const configApi = {
 };
 
 /** Pesan error yang enak dibaca user (bukan stack trace). */
-export const errMsg = (e, fallback = "Terjadi kesalahan.") =>
-  e?.response?.data?.detail || e?.message || fallback;
+// UAT 24 Okt (audit UI tahap 2, G5-15) — lewat apiErrorText: "Permission ditolak: settings.view" mentah dulu tampil
+// apa adanya; kini kalimat akses Indonesia (G0-03), detail objek/422 juga terbaca.
+export const errMsg = (e, fallback = "Terjadi kesalahan.") => apiErrorText(e, fallback) || fallback;
+
+// UAT 24 Okt (audit UI tahap 2, G5-61) — teks bantu registri memuat backtick markdown literal (`rnd.x`) dan kode
+// keputusan "(KN-D16)"; dibersihkan sebelum tampil. Setting "(Lama) … TIDAK DIPAKAI LAGI" dikenali sebagai usang.
+export const cleanCfgText = (t) => stripInternalCodes(String(t || "").replace(/`([^`]+)`/g, "$1"));
+export const isDeprecatedSetting = (item) => item?.status === "not_used"
+  || /\(lama\)|tidak dipakai lagi/i.test(`${item?.label || ""} ${item?.help || ""}`);
+/** Cakupan riwayat/lapisan: nama badan usaha, bukan id (`ent_ksc`). */
+export const scopeText = (type, id) => {
+  const t = SCOPE_LABEL_SHORT[type] || type || "";
+  if (!id) return t;
+  return `${t}: ${type === "entity" ? entityShortFromCtx(id, id) : id}`;
+};
+const SCOPE_LABEL_SHORT = { global: "Global", entity: "Badan usaha", customer: "Pelanggan", supplier: "Supplier",
+  product: "Produk", document: "Dokumen" };
 
 /** Angka gaya Indonesia (titik ribuan, koma desimal). */
 export function idNum(v, maxDec = 2) {

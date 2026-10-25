@@ -41,6 +41,9 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   const [employees, setEmployees] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // UAT 24 Okt (audit UI tahap 2, G5-24) — kotak merah "Nama wajib diisi / Email wajib diisi" dulu sudah tampil saat
+  // form baru dibuka. Kini galat muncul setelah pengguna mencoba menyimpan.
+  const [tried, setTried] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const isCross = CROSS_ROLES.includes(form.role);
@@ -75,8 +78,9 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
     const out = [];
     if (!form.name.trim()) out.push("Nama wajib diisi.");
     if (!form.email.trim()) out.push("Email wajib diisi (dipakai untuk masuk).");
-    if (!editing && form.password && form.password.length < 8) {
-      out.push("Password minimal 8 karakter.");
+    if (!editing && !form.password) out.push("Sandi awal wajib diisi.");
+    if (form.password && form.password.length < 8) {
+      out.push("Sandi minimal 8 karakter.");
     }
     if (!effectiveHome) out.push("Badan usaha utama wajib dipilih.");
     return out;
@@ -105,6 +109,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   };
 
   const submit = async () => {
+    if (errors.length) { setTried(true); return; }
     setBusy(true);
     setError("");
     try {
@@ -129,7 +134,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
       } else {
         const res = await createUser({
           name: form.name, email: form.email, phone: form.phone, role: form.role,
-          password: form.password || "demo12345",
+          password: form.password,
           employee_id: form.employee_id,
           home_entity_id: form.home_entity_id,
           allowed_entity_ids: form.allowed_entity_ids,
@@ -174,22 +179,22 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
         <div className="space-y-2.5 p-4" style={{ maxHeight: "62vh", overflowY: "auto" }}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="grid gap-1">
-              <label className="kicker">Nama</label>
+              <label className="kicker">Nama <span className="text-[#C0392B]">*</span></label>
               <input className="field" data-testid="account-form-name"
                      value={form.name} onChange={(e) => set({ name: e.target.value })} />
             </div>
             <div className="grid gap-1">
-              <label className="kicker">Email (untuk masuk)</label>
+              <label className="kicker">Email untuk masuk <span className="text-[#C0392B]">*</span></label>
               <input className="field" data-testid="account-form-email"
                      value={form.email} onChange={(e) => set({ email: e.target.value })} />
             </div>
             <div className="grid gap-1">
-              <label className="kicker">Telepon / WhatsApp</label>
+              <label className="kicker">Telepon / WhatsApp (opsional)</label>
               <input className="field" data-testid="account-form-phone"
                      value={form.phone} onChange={(e) => set({ phone: e.target.value })} />
             </div>
             <div className="grid gap-1">
-              <label className="kicker">{editing ? "Password baru (opsional)" : "Password awal"}</label>
+              <label className="kicker">{editing ? "Sandi baru (opsional)" : <>Sandi awal <span className="text-[#C0392B]">*</span></>}</label>
               <input className="field" type="password" data-testid="account-form-password"
                      placeholder={editing ? "biarkan kosong = tidak diubah" : "minimal 8 karakter"}
                      value={form.password}
@@ -231,6 +236,13 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
                           : "border-[#E5E5EA] bg-white"}`}>
                 Tidak ditautkan (isi badan usaha manual)
               </button>
+              {form.employee_id && linkedEmployee && !employees.some((e) => e.id === form.employee_id) && (
+                <button type="button" data-testid="account-form-hr-linked"
+                        className="mb-1 w-full rounded-md border border-[#0058CC] bg-[#EAF2FF] px-2 py-1 text-left text-[11px] font-semibold">
+                  {[linkedEmployee.code, linkedEmployee.name].filter(Boolean).join(" · ")}
+                  <span className="ml-1 text-[10px] font-normal text-[#6B6B73]">(tertaut ke akun ini)</span>
+                </button>
+              )}
               {employees.map((e) => (
                 <button key={e.id} type="button" data-testid={`account-form-hr-${e.id}`}
                         onClick={() => set({ employee_id: e.id })}
@@ -260,7 +272,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
 
           {/* Badan usaha utama */}
           <div className="grid gap-1" data-testid="account-form-home">
-            <label className="kicker">Badan usaha utama (home)</label>
+            <label className="kicker">Badan usaha utama <span className="text-[#C0392B]">*</span></label>
             {homeFromHr ? (
               <div className="flex items-center gap-2 rounded-md border border-[#BFE3CC] bg-[#EEF9F1] px-2.5 py-1.5"
                    data-testid="account-form-home-locked">
@@ -372,7 +384,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
             </div>
           )}
 
-          {errors.length > 0 && (
+          {tried && errors.length > 0 && (
             <ul className="space-y-1 rounded-md border border-[#F0B5AE] bg-[#FCEBEA] p-2.5"
                 data-testid="account-form-errors">
               {errors.map((e, i) => (
@@ -391,7 +403,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           <button type="button" className="secondary-button" data-testid="account-form-cancel"
                   onClick={onClose}>Batal</button>
           <button type="button" className="primary-button" data-testid="account-form-submit"
-                  disabled={busy || errors.length > 0} onClick={submit}>
+                  disabled={busy} onClick={submit}>
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             {editing ? "Simpan Perubahan" : "Buat Akun"}
           </button>

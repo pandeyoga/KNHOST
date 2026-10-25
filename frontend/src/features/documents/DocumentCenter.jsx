@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { openTrace } from "./trace/traceDeepLink";
 import PagedRows from "@/components/PagedRows";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { docStatusLabel } from "../../utils/docStatus";
 
 const ESIGN_ROLES = ["admin", "manager", "sales", "warehouse"];
@@ -27,6 +27,8 @@ const DC_STATUS_LABEL = {
   normal: "Normal", pengganti: "Pengganti", batal: "Batal", void: "Dianulir", expired: "Kedaluwarsa",
 };
 const dcStatus = (s) => (s ? DC_STATUS_LABEL[s] || docStatusLabel(s) : "-");
+// UAT 24 Okt (audit UI tahap 2, G5-50) — dokumen batal/ditolak tidak ditawari Tanda Tangan Elektronik & Kirim WA.
+const DEAD_STATUS = ["cancelled", "canceled", "void", "voided", "rejected", "expired"];
 
 export default function DocumentCenter({ currentUser, selectedEntity, entities = [] }) {
   const [docTypes, setDocTypes] = useState([]);
@@ -165,7 +167,8 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
                   <th className="px-2 py-2">Nomor</th>
                   <th className="px-2 py-2">Tanggal</th>
                   <th className="px-2 py-2">Pihak</th>
-                  <th className="px-2 py-2 text-right">Nilai</th>
+                  {/* G5-50 — kolom ini = nilai SEBELUM PPN (subtotal); PDF/CRM memakai total tagihan (termasuk PPN) — K-03. */}
+                  <th className="px-2 py-2 text-right" title="Nilai sebelum PPN (subtotal dokumen). Total tagihan termasuk PPN ada di PDF.">Nilai sebelum PPN</th>
                   <th className="px-2 py-2">Status</th>
                   <th className="px-2 py-2">Tanda Tangan</th>
                   <th className="px-2 py-2">Referensi</th>
@@ -176,7 +179,7 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
                 <PagedRows rows={rows} testId="document-center-pager">{(d) => (
                   <tr key={d.source_id} className="border-b border-[#F2F3F5] hover:bg-[#FAFBFC]" data-testid={`dc-row-${d.source_id}`}>
                     <td className="whitespace-nowrap px-2 py-2 font-semibold text-[#0B1B3B]">{d.number}</td>
-                    <td className="px-2 py-2 text-[#6B6B73]">{d.date || "-"}</td>
+                    <td className="whitespace-nowrap px-2 py-2 text-[#6B6B73]">{d.date ? formatDate(d.date) : "-"}</td>
                     <td className="px-2 py-2">{d.party || "-"}</td>
                     <td className="px-2 py-2 text-right font-medium tabular-nums">{rp(d.amount)}</td>
                     <td className="px-2 py-2"><span className="whitespace-nowrap rounded-full bg-[#F1F2F4] px-2 py-0.5 text-[11px] font-medium text-[#4A4B52]">{dcStatus(d.status)}</span></td>
@@ -208,14 +211,14 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
                         <IconBtn title="Unduh PDF" onClick={() => downloadPdf(d)} testId={`dc-download-${d.source_id}`}>
                           {downloading === d.source_id ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
                         </IconBtn>
-                        {d.esignable && canSign && (
+                        {d.esignable && canSign && !DEAD_STATUS.includes(String(d.status || "").toLowerCase()) && (
                           <IconBtn title="Tanda Tangan Elektronik" tone="primary" onClick={() => setEsignDoc({ doc_type: docType, source_id: d.source_id, entity_id: d.entity_id, number: d.number, label: currentLabel })} testId={`dc-esign-${d.source_id}`}>
                             <PenLine size={15} />
                           </IconBtn>
                         )}
-                        <IconBtn title="Kirim via WhatsApp" tone={d.last_delivery ? "wa-sent" : "wa"} onClick={() => setWaDoc({ doc_type: docType, source_id: d.source_id, entity_id: d.entity_id, number: d.number, label: currentLabel })} testId={`dc-wa-${d.source_id}`}>
+                        {!DEAD_STATUS.includes(String(d.status || "").toLowerCase()) && <IconBtn title="Kirim via WhatsApp" tone={d.last_delivery ? "wa-sent" : "wa"} onClick={() => setWaDoc({ doc_type: docType, source_id: d.source_id, entity_id: d.entity_id, number: d.number, label: currentLabel })} testId={`dc-wa-${d.source_id}`}>
                           <MessageCircle size={15} />
-                        </IconBtn>
+                        </IconBtn>}
                       </div>
                     </td>
                   </tr>

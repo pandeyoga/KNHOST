@@ -162,9 +162,13 @@ export default function ESignModal({ open, onClose, doc, currentUser, onSigned }
                 <input className="form-input" value={signerContact} onChange={(e) => setSignerContact(e.target.value)} placeholder="No. HP / email penandatangan" data-testid="esign-signer-contact" />
               </div>
               <SignaturePad onChange={setSignature} />
-              <button className="btn-primary flex items-center justify-center gap-2" onClick={sendOtp} disabled={busy} data-testid="esign-send-otp">
-                {busy ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} Kirim OTP
-              </button>
+              {/* G5-50 — kaki baku: Batal + aksi (dulu hanya satu tombol lebar tanpa jalan keluar selain ×). */}
+              <div className="flex gap-2">
+                <button className="btn-secondary flex-1" onClick={onClose} disabled={busy} data-testid="esign-cancel">Batal</button>
+                <button className="btn-primary flex flex-1 items-center justify-center gap-2" onClick={sendOtp} disabled={busy} data-testid="esign-send-otp">
+                  {busy ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />} Kirim OTP
+                </button>
+              </div>
             </div>
           )}
 

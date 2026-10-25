@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
+import { docStatusLabel } from "../../utils/docStatus";
 
 /**
  * EPIC6 — ProcessTimeline / Document Hub (generic).
@@ -29,6 +30,18 @@ const TYPE_META = {
   landed_cost:           { Icon: Layers,        tone: "#9A5B00", bg: "#FFF7EC" },
   vendor_bill:           { Icon: Wallet,        tone: "#B23B14", bg: "#FFF1EA" },
 };
+
+// UAT 24 Okt (audit UI tahap 2, G5-51) — status mentah huruf besar ("CANCELLED", "qc_pending"), lencana "AKTIF" pada
+// dokumen yang sedang dibuka (terbaca kontradiktif untuk SO batal), id teknis (`wms_6870951e5c`) dan sumber jurnal
+// ("sales_order / sales_cogs") kini berlabel.
+const SOURCE_LABEL = {
+  sales_order: "Pesanan penjualan", sales_cogs: "HPP penjualan", purchase_order: "Pesanan pembelian",
+  vendor_bill: "Tagihan supplier", ar_receipt: "Penerimaan piutang", goods_receipt: "Penerimaan barang",
+  sales_return: "Retur penjualan", purchase_return: "Retur pembelian", landed_cost: "Biaya masuk",
+  tax_invoice: "Faktur pajak", shipment: "Pengiriman", wms_task: "Tugas gudang", commission: "Komisi",
+};
+const isTechId = (v) => /^[a-z]{2,10}_[0-9a-f]{6,}$/.test(String(v || ""));
+const cleanMeta = (t) => String(t || "").replace(/\b[a-z]+(?:_[a-z]+)+\b/g, (m) => SOURCE_LABEL[m] || docStatusLabel(m).toLowerCase());
 
 function fmtDate(iso) {
   if (!iso) return "";
@@ -68,14 +81,14 @@ function DocNode({ node, isAnchor, onNavigate }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <p className="truncate text-[11.5px] font-bold text-[#1C1C1E]">{node.number || node.title}</p>
+          <p className="truncate text-[11.5px] font-bold text-[#1C1C1E]" title={isTechId(node.number) ? node.number : undefined}>{(!isTechId(node.number) && node.number) || node.title}</p>
           {node.status && (
-            <span className="rounded bg-[#F2F2F7] px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wide text-[#6B6B73]">{node.status}</span>
+            <span className="rounded bg-[#F2F2F7] px-1 py-0.5 text-[9.5px] font-semibold text-[#6B6B73]">{docStatusLabel(node.status)}</span>
           )}
-          {isAnchor && <span className="rounded bg-[#0058CC] px-1 py-0.5 text-[8.5px] font-bold uppercase text-white">Aktif</span>}
+          {isAnchor && <span className="rounded bg-[#0058CC] px-1 py-0.5 text-[9px] font-bold text-white">Dokumen ini</span>}
         </div>
         <p className="truncate text-[10px] text-[#6B6B73]">
-          {node.number ? node.title : ""}{node.meta ? `${node.number ? " · " : ""}${node.meta}` : ""}
+          {node.number && !isTechId(node.number) ? node.title : ""}{node.meta ? `${node.number && !isTechId(node.number) ? " · " : ""}${cleanMeta(node.meta)}` : ""}
           {node.date ? ` · ${fmtDate(node.date)}` : ""}
         </p>
       </div>

@@ -12,7 +12,7 @@ export const DOC_TYPES = [
 
 export const ROLES = [
   { value: "", label: "Tanpa persetujuan (lolos otomatis)" },
-  { value: "manager", label: "Manager" },
+  { value: "manager", label: "Manajer" },
   { value: "admin", label: "Admin" },
   { value: "owner", label: "Owner" },
 ];

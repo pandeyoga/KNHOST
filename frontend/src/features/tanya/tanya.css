@@ -129,6 +129,13 @@
   box-shadow: 0 1px 0 var(--solid-line); scrollbar-width: none; }
 .tanya-page.compact .tanya-side-tabs::-webkit-scrollbar { display: none; }
 .tanya-page.compact .tanya-side-tab { flex: 1 0 auto; min-height: 40px; padding: 8px 14px; font-size: 13px; }
+/* UAT 24 Okt (audit UI tahap 2, G5-62) — di HP 6 tab dulu bergulir horizontal tanpa penanda (label terpotong di kedua
+   tepi): kini dua baris × tiga tab, semua terbaca. Saran pembuka diberi ruang di bawah agar tidak tertutup kotak input. */
+@media (max-width: 640px) {
+  .tanya-page.compact .tanya-side-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  .tanya-page.compact .tanya-side-tab { min-width: 0; padding: 8px 4px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+.tanya-page.compact .tanya-scroll > .tanya-col { padding-bottom: 72px; }
 .tanya-page.compact .tanya-side { position: static; max-height: none; padding: var(--sp-3); }
 @media (max-width: 900px) {
   .tanya-rules { flex-wrap: nowrap; overflow-x: auto; gap: var(--sp-4); padding: var(--sp-3); }

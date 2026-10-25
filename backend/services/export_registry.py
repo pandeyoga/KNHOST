@@ -7,10 +7,19 @@ ditampilkan sebagai "belum dipetakan" (LN-110-T02), tidak diam-diam hilang.
 from typing import Any, Dict, List, Optional
 
 
+# UAT 24 Okt (audit UI tahap 2, G5-14) — kolom kode (status, status bayar, jenis pesanan) dulu tercetak mentah di
+# pratinjau & berkas ("shipped", "waiting_stock", "regular"). Kolom ber-`enum` dilabeli Indonesia oleh export_engine
+# (`_norm`); filter tetap menerima kode maupun labelnya. Kolom bernama status/payment_status/order_type otomatis.
+AUTO_ENUM = {"status": "status", "payment_status": "payment_status", "order_type": "order_type"}
+
+
 def C(key: str, label: str, type: str = "string", path: Optional[str] = None, vis: Optional[str] = None,
-      cost: bool = False, perm: Optional[tuple] = None, filterable: bool = True) -> Dict[str, Any]:
+      cost: bool = False, perm: Optional[tuple] = None, filterable: bool = True,
+      enum: Optional[str] = None) -> Dict[str, Any]:
+    if enum is None and type == "string":
+        enum = AUTO_ENUM.get(key)
     return {"key": key, "label": label, "type": type, "path": path or key, "vis": vis, "cost": cost,
-            "perm": perm, "filterable": filterable}
+            "perm": perm, "filterable": filterable, "enum": enum}
 
 
 def J(id: str, label: str, collection: str, local: str, fields: List[Dict[str, Any]],
@@ -44,7 +53,10 @@ DATASETS: List[Dict[str, Any]] = [
      "date_fields": [C("created_at", "Tanggal pesanan dibuat", "datetime"),
                      C("delivery_date", "Tanggal kirim diminta", "date"),
                      C("delivered_at", "Tanggal terkirim", "datetime")],
-     "columns": [C("number", "No. SO"), C("status", "Status"), C("stage", "Tahap"), C("order_type", "Jenis pesanan"),
+     # G5-14 — `stage` = penanda tahap LAMA yang tidak ikut diperbarui saat status berubah (data: SO-00295 status
+     # waiting_stock, stage "Reserved"); dilabeli "(data lama)" supaya tidak dibaca sebagai status kini.
+     "columns": [C("number", "No. SO"), C("status", "Status"), C("stage", "Tahap (data lama)", enum="stage_legacy"),
+                 C("order_type", "Jenis pesanan"),
                  C("customer_name", "Pelanggan"), C("customer_city", "Kota"), C("sales_name", "Sales"),
                  C("payment_term_name", "Syarat bayar"), C("payment_status", "Status bayar"),
                  C("net_subtotal", "Subtotal neto", "money"), C("discount_total", "Total diskon", "money"),

@@ -28,7 +28,7 @@ from db import db
 from core_utils import now_iso
 from services.notification_service import create_notification
 from services.wa_alert_service import SEVERITY_RANK, raw_settings
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import base_or_self, role_in, role_label  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 logger = logging.getLogger("alerts.escalation")
 
@@ -70,6 +70,76 @@ def _age_hours(created_at: str) -> float:
     return max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 3600.0)
 
 
+def _source_key(n: Dict[str, Any]) -> str:
+    """Kunci DOKUMEN/peristiwa sumber sebuah notifikasi.
+
+    UAT 24 Okt (audit UI tahap 2, G5-57) — `create_addressed` mengirim SATU salinan per orang dengan ref
+    `<ref>#<user_id>`. Dulu tiap salinan dieskalasi sendiri-sendiri → admin menerima 2–10 kartu "ESKALASI" yang
+    sama berurutan untuk satu PO custom. Semua salinan berbagi ref dasar yang sama, jadi eskalasinya satu.
+    """
+    base = str(n.get("ref") or "").split("#", 1)[0]
+    return f"{n.get('type', '')}:{base}" if base else f"id:{n.get('id', '')}"
+
+
+def _recipient(n: Dict[str, Any], users: Dict[str, Dict[str, Any]]) -> tuple:
+    """(peran penerima efektif, frasa manusia untuk "oleh …"). Salinan per orang memakai peran orangnya."""
+    uid = n.get("recipient_user")
+    if uid:
+        u = users.get(uid) or {}
+        role = u.get("role") or ""
+        name = str(u.get("name") or "").strip()
+        label = role_label(role) if role else ""
+        who = f"{name} ({label})" if name and label else (name or label or "penerima")
+        return role, who
+    role = n.get("recipient_role") or "all"
+    return role, ("semua penerima" if role in ("all", "") else role_label(role))
+
+
+def plan_escalations(candidates, users: Dict[str, Dict[str, Any]], *, min_rank: int,
+                     max_level: int) -> Dict[str, Any]:
+    """Rencana eskalasi MURNI (tanpa DB, mudah diuji): satu eskalasi per (sumber, kedalaman, peran tujuan).
+
+    Return `{"groups": [{lead, siblings, next_role, depth, who, key}], "skipped_top", "skipped_depth"}`;
+    `siblings` = salinan lain dari sumber yang sama → ikut ditandai sudah dieskalasi tanpa kartu baru.
+    """
+    groups: Dict[str, Dict[str, Any]] = {}
+    skipped_top = skipped_depth = 0
+    for n in candidates:
+        if SEVERITY_RANK.get(n.get("severity", "info"), 1) < min_rank:
+            continue
+        role, who = _recipient(n, users)
+        if role_in(role, TOP_ROLES):
+            skipped_top += 1
+            continue
+        next_role = ESCALATION_CHAIN.get(role) or ESCALATION_CHAIN.get(base_or_self(role))
+        if not next_role and n.get("recipient_user"):
+            next_role = "admin"   # salinan per orang dulu selalu naik ke admin (peran "") — perilaku dipertahankan
+        if not next_role:
+            skipped_top += 1
+            continue
+        depth = int(n.get("escalation_depth", 0) or 0) + 1
+        if depth > max_level:
+            skipped_depth += 1
+            continue
+        key = f"{_source_key(n)}|{depth}|{next_role}"
+        if key in groups:
+            groups[key]["siblings"].append(n)
+            continue
+        groups[key] = {"lead": n, "siblings": [], "next_role": next_role, "depth": depth, "who": who, "key": key}
+    return {"groups": list(groups.values()), "skipped_top": skipped_top, "skipped_depth": skipped_depth}
+
+
+async def _mark_escalated(notifs, next_role: str, escal_id: str) -> None:
+    ids = [x.get("id") for x in notifs if x.get("id")]
+    if ids:
+        await db.notifications.update_many({"id": {"$in": ids}}, {"$set": {
+            "escalation_level": 1,
+            "escalated_at": now_iso(),
+            "escalated_to": next_role,
+            "escalation_notif_id": escal_id,
+        }})
+
+
 async def job_escalation_scan() -> Dict[str, Any]:
     """Naikkan alert penting yang belum dibaca melewati batas waktu ke level di atasnya."""
     cfg = await effective_config()
@@ -88,32 +158,35 @@ async def job_escalation_scan() -> Dict[str, Any]:
         "$or": [{"escalation_level": {"$exists": False}}, {"escalation_level": 0}],
     }, {"_id": 0}).sort("created_at", 1).to_list(500)
 
-    created = skipped_top = skipped_depth = 0
-    for n in candidates:
+    uids = sorted({n.get("recipient_user") for n in candidates if n.get("recipient_user")})
+    users: Dict[str, Dict[str, Any]] = {}
+    if uids:
+        users = {u["id"]: u for u in await db.users.find(
+            {"id": {"$in": uids}}, {"_id": 0, "id": 1, "role": 1, "name": 1}).to_list(len(uids))}
+    plan = plan_escalations(candidates, users, min_rank=min_rank, max_level=max_level)
+    skipped_top, skipped_depth = plan["skipped_top"], plan["skipped_depth"]
+
+    created = merged = 0
+    for g in plan["groups"]:
         if created >= MAX_PER_RUN:
             break
-        if SEVERITY_RANK.get(n.get("severity", "info"), 1) < min_rank:
+        n, next_role, depth = g["lead"], g["next_role"], g["depth"]
+        copies = [n, *g["siblings"]]
+        # Sumber yang sama sudah dieskalasi di run sebelumnya (salinan lain) → gabungkan, jangan buat kartu baru.
+        prior = await db.notifications.find_one(
+            {"type": "escalation", "escalated_from_key": g["key"]}, {"_id": 0, "id": 1})
+        if prior:
+            await _mark_escalated(copies, next_role, prior["id"])
+            merged += len(copies)
             continue
-        role = (n.get("recipient_role") or "all")
-        if role_in(role, TOP_ROLES):
-            skipped_top += 1
-            continue
-        next_role = ESCALATION_CHAIN.get(role)
-        if not next_role:
-            skipped_top += 1
-            continue
-        depth = int(n.get("escalation_depth", 0) or 0) + 1
-        if depth > max_level:
-            skipped_depth += 1
-            continue
-
         age = _age_hours(n.get("created_at", ""))
         note = await create_notification(
             notif_type="escalation",
-            ref=f"escal:{n.get('id')}:{depth}",
+            ref=f"escal:{_source_key(n)}:{depth}:{next_role}",
             title=f"ESKALASI: {n.get('title', '')}",
+            # UAT 24 Okt (audit UI tahap 2, G5-10) — dulu "… oleh all." (kode peran mentah).
             body=(f"Belum ditindak {age:.0f} jam (batas {after_hours:.0f} jam) oleh "
-                  f"{role}. {n.get('body', '')}"),
+                  f"{g['who']}. {n.get('body', '')}"),
             severity="critical",
             link=n.get("link", ""),
             entity_id=n.get("entity_id"),
@@ -125,25 +198,23 @@ async def job_escalation_scan() -> Dict[str, Any]:
         )
         if not note:
             continue
-        # Jejak rantai pada notifikasi eskalasi + tandai induk agar tidak berulang.
+        # Jejak rantai pada notifikasi eskalasi + tandai induk (dan salinan per orangnya) agar tidak berulang.
         await db.notifications.update_one({"id": note["id"]}, {"$set": {
             "escalation_depth": depth,
             "escalated_from": n.get("id"),
-            "escalated_from_role": role,
+            "escalated_from_role": n.get("recipient_role") or "",
+            "escalated_from_key": g["key"],
         }})
-        await db.notifications.update_one({"id": n.get("id")}, {"$set": {
-            "escalation_level": 1,
-            "escalated_at": now_iso(),
-            "escalated_to": next_role,
-            "escalation_notif_id": note["id"],
-        }})
+        await _mark_escalated(copies, next_role, note["id"])
+        merged += len(g["siblings"])
         created += 1
 
     detail = (f"{created} alert dieskalasi (>{after_hours:.0f} jam belum dibaca) "
               f"dari {len(candidates)} kandidat"
-              + (f" \u00b7 {skipped_top} sudah di level tertinggi" if skipped_top else "")
-              + (f" \u00b7 {skipped_depth} melewati batas level" if skipped_depth else ""))
-    return {"created": created, "scanned": len(candidates), "detail": detail}
+              + (f" · {merged} salinan digabung ke eskalasi yang sama" if merged else "")
+              + (f" · {skipped_top} sudah di level tertinggi" if skipped_top else "")
+              + (f" · {skipped_depth} melewati batas level" if skipped_depth else ""))
+    return {"created": created, "scanned": len(candidates), "merged": merged, "detail": detail}
 
 
 async def escalation_stats() -> Dict[str, Any]:

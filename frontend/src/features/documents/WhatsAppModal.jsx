@@ -116,9 +116,12 @@ export default function WhatsAppModal({ open, onClose, doc, onSent }) {
             <div className="flex items-center gap-2 text-[11px] text-[#9A9BA3]">
               <Paperclip size={13} /> Lampiran PDF dokumen akan disertakan otomatis.
             </div>
-            <button className="btn-primary flex items-center justify-center gap-2" onClick={send} disabled={busy} data-testid="wa-send">
-              {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Kirim{settings?.simulate ? " (Simulasi)" : ""}
-            </button>
+            <div className="flex gap-2">
+              <button className="btn-secondary flex-1" onClick={onClose} disabled={busy} data-testid="wa-cancel">Batal</button>
+              <button className="btn-primary flex flex-1 items-center justify-center gap-2" onClick={send} disabled={busy} data-testid="wa-send">
+                {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Kirim{settings?.simulate ? " (Simulasi)" : ""}
+              </button>
+            </div>
           </div>
 
           {/* Riwayat */}

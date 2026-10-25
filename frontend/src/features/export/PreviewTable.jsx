@@ -1,3 +1,5 @@
+import { formatDate, formatDateTime } from "../../utils/formatters";
+
 const fmt = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
 
 function cell(col, v) {
@@ -5,11 +7,13 @@ function cell(col, v) {
   if (col.type === "money") return `Rp ${fmt.format(v)}`;
   if (col.type === "number") return fmt.format(v);
   if (col.type === "bool") return v ? "Ya" : "Tidak";
-  if (col.type === "datetime") return String(v).replace("T", " ").slice(0, 16);
+  // UAT 24 Okt (audit UI tahap 2) — dulu potongan stempel UTC ("2026-10-24 18:30"); kini WIB berformat Indonesia.
+  if (col.type === "datetime") return formatDateTime(v);
+  if (col.type === "date") return formatDate(v);
   return String(v);
 }
 
-export default function PreviewTable({ data }) {
+export default function PreviewTable({ data, datasetId = "", scopeText = "" }) {
   if (!data) return null;
   return (
     <div data-testid="export-preview" className="space-y-2">
@@ -17,6 +21,8 @@ export default function PreviewTable({ data }) {
         <span data-testid="export-preview-total"><b className="text-[#1C1C1E]">{fmt.format(data.total)}</b> baris cocok</span>
         <span>menampilkan {data.shown}</span>
         <span>Grain: {data.grain}</span>
+        {/* G5-52 — cakupan baris disebut (angka bisa beda dari layar lain yang hanya badan usaha aktif / tanpa SO sampel). */}
+        {scopeText && <span data-testid="export-preview-scope">Cakupan: {scopeText}{datasetId === "sales_orders" ? " · termasuk pesanan sampel & batal" : ""}</span>}
       </div>
       <p data-testid="export-preview-filter" className="text-[11.5px] text-[#6B6B73]">
         Filter: {data.filter_text} · Periode: {data.date_text} · Urutan: {data.sort_text}

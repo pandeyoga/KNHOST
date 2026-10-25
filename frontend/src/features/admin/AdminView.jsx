@@ -6,7 +6,7 @@ import CategoryManager from "./CategoryManager";
 import IntegrationsPanel from "./IntegrationsPanel";
 import GeminiIntegrationPanel from "./GeminiIntegrationPanel";
 import OpenAiIntegrationPanel from "./OpenAiIntegrationPanel";
-import { auditActionLabel } from "../../config/auditLabels";   // X-2
+import { auditActionInfo, moduleLabel } from "../../config/auditLabels";   // X-2 · G0-16
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import UomConversionView from "./uom/UomConversionView";
@@ -14,12 +14,52 @@ import ProductMasterForm from "./products/ProductMasterForm";
 import LineFilter from "../../components/LineFilter";   // FASE L — chip penyaring lini
 import ProductLifecycleCell from "../rnd/ProductLifecycleCell";
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { productMatches, supplierCodesLabel } from "../../utils/productSearch";   // MD-08
 import { useEntityScope } from "../../context/EntityScopeContext";
-import { scopeSuffix } from "../../utils/entityLabel";
+import { scopeSuffix, entityShortById } from "../../utils/entityLabel";
+import { docStatusLabel } from "../../utils/docStatus";
+import { actorLabel } from "../../utils/actorLabel";
 // INV-ROLE-01 — wewenang layar dibaca dari IZIN pengguna, bukan nama peran.
-import { can } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
+
+// UAT 24 Okt (audit UI tahap 2, G5-01) — Jejak Audit dulu menampilkan kunci aksi mono ("reservation_expired"), id
+// ("user • user_09145fb56bb0", "sales_order • so_ccce…"), JSON mentah dan peran "system/demo". Tampilan bawaan kini:
+// label aksi, nama pelaku, jenis dokumen berlabel, ringkasan data ("Email: …, Peran: Desainer"); kode/id hanya tooltip.
+const AUDIT_RES_LABEL = {
+  user: "Akun pengguna", sales_order: "Pesanan penjualan", purchase_order: "Pesanan pembelian", uom: "Satuan",
+  document_template: "Template dokumen", product: "Produk", customer: "Pelanggan", wms_task: "Tugas gudang",
+  design_gallery: "Galeri desain", journal_entry: "Jurnal", vendor_bill: "Tagihan supplier", settings: "Pengaturan",
+};
+const auditResource = (t) => (t ? AUDIT_RES_LABEL[t] || moduleLabel(t) : "—");
+const AUDIT_FIELD_LABEL = {
+  email: "Email", role: "Peran", status: "Status", name: "Nama", number: "Nomor", order_number: "Nomor pesanan",
+  po_number: "Nomor PO", code: "Kode", amount: "Nilai", grand_total: "Total", quantity: "Jumlah", reason: "Alasan",
+  customer_name: "Pelanggan", supplier_name: "Supplier", grade: "Grade",
+};
+const auditFieldValue = (k, v) => (k === "role" ? roleLabel(v) : k === "status" ? docStatusLabel(v)
+  : ["amount", "grand_total"].includes(k) && Number.isFinite(Number(v)) ? formatCurrency(v) : String(v));
+function auditSummary(log) {
+  const src = log.after ?? log.details ?? {};
+  const parts = [];
+  if (src && typeof src === "object" && !Array.isArray(src)) {
+    const keys = Object.keys(src);
+    keys.filter((k) => AUDIT_FIELD_LABEL[k] && src[k] != null && src[k] !== "" && typeof src[k] !== "object")
+      .slice(0, 4).forEach((k) => parts.push(`${AUDIT_FIELD_LABEL[k]}: ${auditFieldValue(k, src[k])}`));
+    const rest = keys.length - parts.length;
+    if (rest > 0) parts.push(parts.length ? `+${rest} data lain` : `${rest} data teknis`);
+  }
+  if (log.reason) parts.unshift(`Alasan: ${log.reason}`);
+  return parts.join(" · ");
+}
+/** Peran pelaku: "system/demo" bukan peran — login mencatat peran akun di `after.role`; job sistem = "Sistem". */
+const auditRole = (log) => {
+  const r = String(log.role || "");
+  if (r && !r.startsWith("system")) return roleLabel(r);
+  if (log.action === "login" && log.after?.role) return roleLabel(log.after.role);
+  return actorLabel(log.actor) === "Sistem" ? "Sistem" : "—";
+};
+const auditTech = (log) => `Kunci aksi: ${log.action} · ${log.entity_type || "-"}: ${log.entity_id || "-"}`;
 
 export default function AdminView({
   data,
@@ -88,7 +128,7 @@ export default function AdminView({
   const [savingProduct, setSavingProduct] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [productError, setProductError] = useState("");
-  const [customer, setCustomer] = useState({ name: "", pic_name: "", phone: "", city: "Jakarta", address: "", npwp: "", credit_limit: 0, sales_pic: "" });
+  const [customer, setCustomer] = useState({ name: "", pic_name: "", phone: "", city: "", address: "", npwp: "", credit_limit: "", sales_pic: "", assigned_sales_id: "" });
   const [entity, setEntity] = useState({ legal_name: "", short_name: "", type: "PT", npwp: "", address: "", city: "Bandung", default_tax_mode: "ppn", doc_prefix: "", logo_url: "" });
   // FASE U (D1) — master satuan kini membawa `aliases`: kata satuan yang BENAR-BENAR
   // tersimpan di dokumen (`yard`, `kg`, `meter`, `panel`). Tanpa alias, baris master
@@ -96,6 +136,7 @@ export default function AdminView({
   // apa pun di layar. `factor_per_document` = satuan yang faktornya boleh ditulis
   // per baris dokumen (keputusan pemilik: panjang 1 panel berbeda per pesanan).
   const [showImportExport, setShowImportExport] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState(null);   // G5-19 — template bisa diubah
   const [uom, setUom] = useState({ code: "", name: "", base_type: "length", precision: 2, factor_to_base: 1, aliases: "", factor_per_document: false });
   const [template, setTemplate] = useState({ document_type: "surat_jalan", name: "", header: "Kain Nusantara", footer: "", columns: "SKU,Nama Barang,Qty,Unit", logo_url: "", paper_size: "A4", orientation: "portrait", margin_mm: 12, signature_left: "Dibuat Oleh", signature_right: "Disetujui Oleh", section_order: ["header", "customer", "items", "allocation", "signature", "footer"] });
   const [userForm, setUserForm] = useState({ name: "", email: "", role: "sales", password: "demo12345", home_entity_id: "", allowed_entity_ids: [] });
@@ -179,8 +220,28 @@ export default function AdminView({
   const tabLabel = Object.fromEntries(ALL_TABS);
   // Audit UI 107 — tipe dokumen tampil sebagai label, bukan kode mentah ("surat_jalan", "invoice").
   const DOC_TYPE_LABEL = { surat_jalan: "Surat Jalan", invoice: "Faktur (Invoice)" };
-  const statusLabel = (row) => ((row.status || (row.active === false ? "inactive" : "active")) === "inactive" ? "nonaktif" : "aktif");
-  const isInactive = (row) => statusLabel(row) === "nonaktif";
+  const statusLabel = (row) => ((row.status || (row.active === false ? "inactive" : "active")) === "inactive" ? "Nonaktif" : "Aktif");
+  const isInactive = (row) => statusLabel(row) === "Nonaktif";
+  // G5-17 — laci rincian Master Data: dulu hanya MODUL & STATUS + kalimat "gunakan tombol di baris ini untuk mengubah
+  // atau menonaktifkan" padahal baris hanya punya Nonaktifkan. Kini isi yang berarti per jenis + kalimat yang sesuai.
+  const masterDetail = (row) => {
+    const facts = tab === "customers" ? [
+      { label: "PIC toko", value: row.pic_name || "—" }, { label: "HP/WhatsApp", value: row.phone || "—" },
+      { label: "Kota", value: row.city || "—" }, { label: "Sales penanggung jawab", value: row.assigned_sales_name || row.sales_pic || "—" },
+      { label: "Batas kredit", value: Number(row.credit_limit) > 0 ? formatCurrency(row.credit_limit) : "Tanpa batas" },
+    ] : tab === "templates" ? [
+      { label: "Tipe dokumen", value: DOC_TYPE_LABEL[row.document_type] || row.document_type || "—" },
+      { label: "Kertas", value: `${row.paper_size || "A4"} · ${row.orientation === "landscape" ? "mendatar" : "tegak"}` },
+      { label: "Kolom tabel", value: (Array.isArray(row.columns) ? row.columns : []).join(", ") || "—" },
+    ] : tab === "uoms" ? [
+      { label: "Dimensi", value: { length: "Panjang", weight: "Berat", count: "Hitungan" }[row.base_type] || "—" },
+      { label: "Alias", value: (row.aliases || []).join(", ") || "—" },
+    ] : [];
+    const actions = [tab === "templates" && "Ubah", isInactive(row) ? "Aktifkan" : "Nonaktifkan"].filter(Boolean).join(" / ");
+    return { title: row.name || row.legal_name || row.code || row.email,
+      body: `${TAB_SINGULAR[tab] || "Data"} — ${actions} ada di baris daftar.`,
+      facts: [...facts, { label: "Status", value: statusLabel(row) }] };
+  };
   const tabs = Array.isArray(only) && only.length ? ALL_TABS.filter(([id]) => only.includes(id)) : ALL_TABS;
   // Embedded (1 tab): sembunyikan header + tab-bar internal — konteks sudah dari HubTabs + PageMeta.
   const embedded = Array.isArray(only) && only.length === 1;
@@ -225,12 +286,13 @@ export default function AdminView({
     setImportLoading(false);
   };
 
-  const emptyCustomer = { name: "", pic_name: "", phone: "", city: "Jakarta", address: "", npwp: "", credit_limit: 0, sales_pic: "" };
+  // G5-18 — Kota dulu bawaan "Jakarta" untuk SETIAP pelanggan baru; batas kredit kosong = tanpa batas.
+  const emptyCustomer = { name: "", pic_name: "", phone: "", city: "", address: "", npwp: "", credit_limit: "", sales_pic: "", assigned_sales_id: "" };
   const emptyUom = { code: "", name: "", base_type: "length", factor_to_base: 1, precision: 2, aliases: "", factor_per_document: false };
   const [modalBusy, setModalBusy] = useState(false);
   const modalSubmit = {
     customers: async () => {
-      const r = await onAdminCreate("customers", customer);
+      const r = await onAdminCreate("customers", { ...customer, credit_limit: Number(customer.credit_limit) || 0 });
       if (r?.ok) { setCustomer(emptyCustomer); setShowCreateForm(false); }
     },
     uoms: async () => {
@@ -238,18 +300,27 @@ export default function AdminView({
       if (r?.ok) { setUom(emptyUom); setShowCreateForm(false); }   // tutup & kosongkan supaya tidak tercipta duplikat
     },
     templates: async () => {
-      const r = await onAdminCreate("document-templates", { ...template, columns: template.columns.split(",").map((c) => c.trim()).filter(Boolean) });
-      if (r?.ok) setShowCreateForm(false);
+      const body = { ...template, columns: String(template.columns || "").split(",").map((c) => c.trim()).filter(Boolean) };
+      const r = editingTemplateId ? await onAdminPatch("document-templates", editingTemplateId, body) : await onAdminCreate("document-templates", body);
+      if (r?.ok !== false) { setShowCreateForm(false); setEditingTemplateId(null); }
     },
     audit: () => { onRefreshAudit(); setShowCreateForm(false); },
   }[tab];
   const modalSubmitDisabled = {
-    customers: !canWrite || !customer.name.trim(),
+    // G5-18 — wajib sesuai aturan server (POST /customers): nama, PIC toko, HP, alamat (≥ 3 huruf).
+    customers: !canWrite || !customer.name.trim() || !customer.pic_name.trim() || !customer.phone.trim()
+      || customer.address.trim().replace(/^-+|-+$/g, "").length < 3 || (salesOwners.length > 0 && !customer.assigned_sales_id),
     uoms: !uom.code || !uom.name || !(uom.factor_to_base > 0),
     templates: !template.document_type.trim() || !template.name.trim(),
     audit: false,
   }[tab] ?? false;
-  const modalSubmitLabel = { customers: "Simpan Pelanggan", uoms: "Simpan Satuan", templates: "Simpan Template", audit: "Terapkan Filter" }[tab];
+  const modalSubmitLabel = { customers: "Simpan Pelanggan", uoms: "Simpan Satuan", templates: editingTemplateId ? "Simpan Perubahan" : "Simpan Template", audit: "Terapkan Filter" }[tab];
+  const loadTemplateForEdit = (row) => {
+    setTemplate({ ...template, ...row, columns: Array.isArray(row.columns) ? row.columns.join(", ") : String(row.columns || ""),
+      section_order: Array.isArray(row.section_order) && row.section_order.length ? row.section_order : template.section_order });
+    setEditingTemplateId(row.id);
+    setShowCreateForm(true);
+  };
   const runModalSubmit = async () => {
     if (!modalSubmit) return;
     setModalBusy(true);
@@ -308,7 +379,7 @@ export default function AdminView({
       <section className="flex flex-col gap-3">
         {/* FASE P4 — form master data menjadi POP-UP. Tombolnya kini di ATAS daftar
             (dulu menempati kolom kiri 360px yang tampak sebagai panel kosong besar). */}
-        {tab !== "permissions" && (
+        {tab !== "permissions" && tab !== "audit" && (
           <button
             data-testid="toggle-admin-create-form-button"
             className={`${tab === "audit" ? "secondary-button" : "primary-button"} self-start`}
@@ -319,10 +390,13 @@ export default function AdminView({
         )}
         <FormModal
           open={showCreateForm}
-          onClose={() => setShowCreateForm(false)}
-          title={tab === "audit" ? "Filter Jejak Audit" : editingProductId && tab === "products" ? `Ubah ${TAB_SINGULAR[tab]}` : `Buat ${TAB_SINGULAR[tab] || "Data Master"}`}
+          onClose={() => { setShowCreateForm(false); setEditingTemplateId(null); }}
+          title={tab === "audit" ? "Filter Jejak Audit" : (editingProductId && tab === "products") || (editingTemplateId && tab === "templates") ? `Ubah ${TAB_SINGULAR[tab]}` : `Buat ${TAB_SINGULAR[tab] || "Data Master"}`}
           subtitle={tab === "products" ? "Data induk produk. Harga di sini = harga dasar untuk pesanan BARU; pesanan yang sudah dibuat tidak berubah."
             : tab === "audit" ? "Persempit jejak audit berdasarkan pelaku, modul, aksi, dan rentang tanggal."
+            : tab === "templates" ? "Kop, kolom tabel, kertas dan urutan bagian untuk cetak dasar surat jalan / faktur."
+            : tab === "customers" ? "Pelanggan baru di badan usaha aktif. Tanda * wajib diisi."
+            : tab === "uoms" ? "Satuan baru untuk stok, PO, SO dan POS."
             : `Isian ${TAB_SINGULAR[tab] || "data master"} baru.`}
           icon={tab === "audit" ? Filter : Plus}
           size="md"
@@ -350,13 +424,24 @@ export default function AdminView({
             />
           )}
           {tab === "customers" && <div className="grid gap-2">
-            {[["name", "Nama pelanggan"], ["pic_name", "Nama PIC"], ["phone", "Telepon"], ["city", "Kota"], ["address", "Alamat"], ["npwp", "NPWP"], ["sales_pic", "Sales penanggung jawab"]].map(([key, ph]) => (
-              <label key={key} className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">{ph}{key === "name" ? " *" : ""}
+            {[["name", "Nama pelanggan", "mis. Toko Kain Sejahtera", true], ["pic_name", "Nama PIC toko", "mis. Ibu Sari", true], ["phone", "HP/WhatsApp PIC", "mis. 0812 3456 7890", true], ["city", "Kota", "mis. Bandung"], ["address", "Alamat toko", "mis. Jl. Pasar Baru No. 12", true], ["npwp", "NPWP", "mis. 01.234.567.8-901.000"]].map(([key, label, ph, req]) => (
+              <label key={key} className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">{label}{req ? " *" : " (opsional)"}
                 <input data-testid={`admin-customer-${key}-input`} className="field" placeholder={ph} value={customer[key]} onChange={(e) => setCustomer({ ...customer, [key]: e.target.value })} />
               </label>
             ))}
-            <label className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">Batas kredit
-              <MoneyInput testId="admin-customer-credit_limit-input" className="field" placeholder="Batas kredit" value={customer.credit_limit} onChange={(v) => setCustomer({ ...customer, credit_limit: Number(v) || 0 })} />
+            {salesOwners.length ? (
+              <label className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">Sales penanggung jawab *
+                <KNSelect data-testid="admin-customer-sales_pic-input" className="field" value={customer.assigned_sales_id} placeholder="Pilih sales"
+                  options={salesOwners.map((u) => ({ value: u.id, label: u.name || u.email }))}
+                  onValueChange={(v) => setCustomer({ ...customer, assigned_sales_id: v, sales_pic: (salesOwners.find((u) => u.id === v) || {}).name || "" })} />
+              </label>
+            ) : (
+              <label className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">Sales penanggung jawab *
+                <input data-testid="admin-customer-sales_pic-input" className="field" placeholder="mis. Bima Saputra" value={customer.sales_pic} onChange={(e) => setCustomer({ ...customer, sales_pic: e.target.value })} />
+              </label>
+            )}
+            <label className="grid gap-1 text-[11px] font-semibold text-[#3C3C43]">Batas kredit (opsional)
+              <MoneyInput testId="admin-customer-credit_limit-input" className="field" placeholder="Kosongkan bila tanpa batas" value={customer.credit_limit} onChange={(v) => setCustomer({ ...customer, credit_limit: v })} />
             </label>
             {!canWrite && <p data-testid="admin-customer-scope-note" className="text-[10.5px] text-[#8C4A00]">{writeBlockHint}</p>}
           </div>}
@@ -395,8 +480,8 @@ export default function AdminView({
                     ...(template.document_type && !DOC_TYPE_LABEL[template.document_type] ? [{ value: template.document_type, label: template.document_type }] : [])]}
                   onValueChange={(v) => setTemplate({ ...template, document_type: v })} />
               </label>
-              {[["name", "Nama template", "mis. Template SJ Standard"], ["header", "Kop / header", "Kain Nusantara"], ["footer", "Catatan kaki", "Terima kasih"], ["columns", "Kolom (pisahkan koma)", "SKU,Nama Barang,Qty,Unit"], ["logo_url", "URL logo", "https://…"], ["margin_mm", "Margin (mm)", "12"], ["signature_left", "Tanda tangan kiri", "Dibuat Oleh"], ["signature_right", "Tanda tangan kanan", "Disetujui Oleh"]].map(([key, label, ph]) => (
-                <label key={key} className={`grid gap-1 text-[11px] font-semibold text-[#3C3C43] ${["columns", "logo_url"].includes(key) ? "sm:col-span-2" : ""}`}>{label}{["document_type", "name"].includes(key) ? " *" : ""}
+              {[["name", "Nama template", "mis. Template SJ Standar"], ["header", "Kop / header", "mis. Kain Nusantara"], ["footer", "Catatan kaki", "mis. Terima kasih"], ["columns", "Kolom tabel (pisahkan dengan koma)", "mis. SKU, Nama Barang, Qty, Unit"], ["logo_url", "Alamat (URL) logo", "mis. https://…/logo.png"], ["margin_mm", "Margin (mm)", "mis. 12"], ["signature_left", "Tanda tangan kiri", "mis. Dibuat Oleh"], ["signature_right", "Tanda tangan kanan", "mis. Disetujui Oleh"]].map(([key, label, ph]) => (
+                <label key={key} className={`grid gap-1 text-[11px] font-semibold text-[#3C3C43] ${key === "columns" ? "sm:col-span-2" : ""}`}>{label}{["document_type", "name"].includes(key) ? " *" : ""}
                   <input data-testid={`admin-template-${key}-input`} className="field" type={key === "margin_mm" ? "number" : "text"} min={key === "margin_mm" ? 0 : undefined} placeholder={ph} value={template[key]} onChange={(e) => setTemplate({ ...template, [key]: key === "margin_mm" ? Number(e.target.value) : e.target.value })} />
                 </label>
               ))}
@@ -409,9 +494,10 @@ export default function AdminView({
                   options={[{ value: "portrait", label: "Tegak (portrait)" }, { value: "landscape", label: "Mendatar (landscape)" }]} onValueChange={(v) => setTemplate({ ...template, orientation: v })} />
               </label>
             </div>
-            <div data-testid="template-section-order-editor" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
+            <div data-testid="template-section-order-editor" className="mb-2 max-h-60 overflow-y-auto rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
               <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Urutan bagian dokumen</p>
-              {template.section_order.map((section) => <div key={section} data-testid={`template-section-${section}`} className="mb-1.5 flex items-center justify-between rounded-md bg-white px-2 py-1 text-[12px] font-semibold border border-[#EFF0F2]"><span>{SECTION_LABEL[section] || section}</span><span className="flex gap-1"><button type="button" aria-label="Naik" data-testid={`template-section-${section}-up-button`} className="icon-button" onClick={() => moveSection(section, -1)}><ChevronUp size={13} /></button><button type="button" aria-label="Turun" data-testid={`template-section-${section}-down-button`} className="icon-button" onClick={() => moveSection(section, 1)}><ChevronDown size={13} /></button></span></div>)}
+              {/* G5-19 — ▲ nonaktif di baris pertama, ▼ di baris terakhir (dulu aktif tapi tak berbuat apa-apa). */}
+              {template.section_order.map((section, idx) => <div key={section} data-testid={`template-section-${section}`} className="mb-1.5 flex items-center justify-between rounded-md bg-white px-2 py-1 text-[12px] font-semibold border border-[#EFF0F2]"><span>{SECTION_LABEL[section] || section}</span><span className="flex gap-1"><button type="button" aria-label="Naik" data-testid={`template-section-${section}-up-button`} className="icon-button disabled:opacity-30" disabled={idx === 0} onClick={() => moveSection(section, -1)}><ChevronUp size={13} /></button><button type="button" aria-label="Turun" data-testid={`template-section-${section}-down-button`} className="icon-button disabled:opacity-30" disabled={idx === template.section_order.length - 1} onClick={() => moveSection(section, 1)}><ChevronDown size={13} /></button></span></div>)}
             </div>
           </div>}
           {tab === "audit" && <div data-testid="audit-filter-panel" className="grid gap-2">
@@ -432,6 +518,11 @@ export default function AdminView({
         <div className="section-card">
           <div className="section-head flex items-center justify-between gap-2">
             <h2>{tab === "audit" ? "Jejak Audit" : `Daftar ${tabLabel[tab] || "Data"}`}</h2>
+            {tab === "audit" && (
+              <button type="button" data-testid="toggle-admin-create-form-button" className="secondary-button text-[11px]" onClick={() => setShowCreateForm(true)}>
+                <Filter size={13} /> Filter
+              </button>
+            )}
             {!["audit", "integrations"].includes(tab) && (
               <button type="button" data-testid="admin-toggle-import-export" className="secondary-button text-[11px]"
                 onClick={() => setShowImportExport((v) => !v)}>
@@ -476,7 +567,12 @@ export default function AdminView({
             )}
           </div>}
           {tab === "audit" && <div data-testid="audit-history-records" className="grid gap-2">
-            {(auditLogs || []).slice(0, auditShown).map((log) => <button data-testid={`audit-row-${log.id}`} key={log.id} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] interactive-card p-2.5 text-left" onClick={() => onShowDetail({ title: auditActionLabel(log.action), body: `Dicatat oleh ${log.actor} pada ${log.entity_type}. Kunci aksi: ${log.action}`, facts: [{ label: "Sumber Daya", value: `${log.entity_type} · ${log.entity_id}` }, { label: "Badan Usaha", value: log.scope_entity_name || log.scope_entity_id || "Tingkat grup" }, { label: "Peran", value: log.role || "—" }, { label: "Waktu", value: new Date(log.timestamp).toLocaleString("id-ID") }], target: "admin", cta: "Tetap di Audit" })}><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[12.5px] font-semibold">{auditActionLabel(log.action)} <span className="text-[10px] font-mono font-normal text-[#9A9BA3]" title="kunci aksi">{log.action}</span></p><p className="text-[10.5px] font-semibold text-[#0058CC]">{new Date(log.timestamp).toLocaleString("id-ID")}</p></div><p className="mt-0.5 text-[11.5px] text-[#3C3C43]">{log.actor} • {log.entity_type} • {log.entity_id}{log.scope_entity_name ? ` • ${log.scope_entity_name}` : ""}</p><p className="mt-1 line-clamp-2 text-[10.5px] text-[#3C3C43]">{JSON.stringify(log.after ?? log.details ?? {}).slice(0, 240)}</p></button>)}
+            {(auditLogs || []).slice(0, auditShown).map((log) => {
+              const info = auditActionInfo(log.action);
+              const scopeName = log.scope_entity_name || (log.scope_entity_id ? entityShortById(scopeEntities, log.scope_entity_id, "") : "");
+              const summary = auditSummary(log);
+              return <button data-testid={`audit-row-${log.id}`} key={log.id} title={auditTech(log)} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] interactive-card p-2.5 text-left" onClick={() => onShowDetail({ title: info.label, body: `${actorLabel(log.actor)} · ${auditResource(log.entity_type)}${summary ? ` — ${summary}` : ""}`, facts: [{ label: "Pelaku", value: actorLabel(log.actor) }, { label: "Peran", value: auditRole(log) }, { label: "Jenis data", value: auditResource(log.entity_type) }, { label: "Badan Usaha", value: scopeName || "Tingkat grup" }, { label: "Waktu", value: formatDateTime(log.timestamp) }] })}><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[12.5px] font-semibold">{info.label}</p><p className="text-[10.5px] font-semibold text-[#0058CC]">{formatDateTime(log.timestamp)}</p></div><p className="mt-0.5 text-[11.5px] text-[#3C3C43]">{[actorLabel(log.actor), auditResource(log.entity_type), scopeName].filter(Boolean).join(" • ")}</p>{summary && <p className="mt-1 line-clamp-2 text-[10.5px] text-[#3C3C43]">{summary}</p>}</button>;
+            })}
             {(auditLogs || []).length > auditShown && (
               <button data-testid="audit-show-more" className="secondary-button justify-self-center" onClick={() => setAuditShown((n) => n + AUDIT_PAGE)}>
                 Tampilkan {Math.min(AUDIT_PAGE, (auditLogs || []).length - auditShown)} lagi ({auditShown} dari {(auditLogs || []).length})
@@ -515,14 +611,14 @@ export default function AdminView({
                       { label: "Spesifikasi", value: row.stage === "yarn"
                         ? [row.yarn_count ? `${row.yarn_count}${row.yarn_count_system ? ` ${row.yarn_count_system}` : ""}` : null, row.yarn_material, row.yarn_ply ? `${row.yarn_ply} ply` : null, row.yarn_twist ? `puntiran ${row.yarn_twist}` : null, row.yarn_dye_status].filter(Boolean).join(" · ") || "benang —"
                         : [row.fabric_type, Number(row.gramasi) > 0 ? `${row.gramasi} gsm` : null, Number(row.lebar) > 0 ? `lebar ${row.lebar}` : null].filter(Boolean).join(" · ") || "—" },
-                      { label: "Status", value: `${row.status || (row.active === false ? "inactive" : "active")} · tahap ${row.stage || "finished"}` },
+                      { label: "Status", value: `${statusLabel(row)} · tahap ${row.stage || "finished"}` },
                     ],
                   }
-                : { title: row.name || row.legal_name || row.code || row.email, body: `${TAB_SINGULAR[tab] || "Data"} — gunakan tombol di baris ini untuk mengubah atau menonaktifkan.`, facts: [{ label: "Modul", value: tabLabel[tab] || tab }, { label: "Status", value: statusLabel(row) }] })}>
+                : masterDetail(row))}>
                 <div className="min-w-0">
                   <p data-testid={`admin-record-title-${row.id}`} className="text-[12.5px] font-semibold truncate">{row.name || row.legal_name || row.code || row.email}</p>
                   <p data-testid={`admin-record-meta-${row.id}`} className="text-[11px] text-[#3C3C43] truncate">{tab === "uoms"
-                    ? `${row.code} · ${{ length: "panjang", weight: "berat", count: "hitungan" }[row.base_type] || "dimensi lain"} · 1 ${row.code} = ${row.factor_to_base == null ? "?" : Number(row.factor_to_base).toLocaleString("id-ID", { maximumFractionDigits: 6 })} ${{ length: "meter", weight: "kg", count: "pcs" }[row.base_type] || "satuan dasar"} · ${row.precision ?? 2} angka desimal${(row.aliases || []).length ? ` · alias: ${row.aliases.join(", ")}` : ""}${row.factor_per_document ? " · faktor per dokumen" : ""}`
+                    ? `${row.code} · ${{ length: "panjang", weight: "berat", count: "hitungan" }[row.base_type] || "dimensi lain"} · 1 ${row.code} = ${row.factor_to_base == null ? "?" : Number(row.factor_to_base).toLocaleString("id-ID", { maximumFractionDigits: 6 })} ${{ length: "meter", weight: "kg", count: "pcs" }[row.base_type] || "satuan dasar"} · ${row.precision ?? 2} angka desimal${(row.aliases || []).length ? ` · alias: ${row.aliases.join(", ")}` : ""}${row.factor_per_document ? " · faktor per dokumen" : ""} · ${statusLabel(row)}`
                     : <>{row.sku || row.code || DOC_TYPE_LABEL[row.document_type] || row.document_type || row.role || row.short_name || row.city} • <span className={isInactive(row) ? "text-[#8E8E93]" : "text-[#1A7A3A]"}>{statusLabel(row)}</span>{tab === "products" ? supplierCodesLabel(row) : ""}</>}</p>
                   {tab === "products" && (
                     <div data-testid={`admin-product-domain-${row.id}`} className="mt-1 flex flex-wrap items-center gap-1">
@@ -557,7 +653,8 @@ export default function AdminView({
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {tab === "products" && <button data-testid={`admin-edit-products-${row.id}-button`} className="secondary-button" onClick={(e) => { e.stopPropagation(); loadProductForEdit(row); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Ubah</button>}
-                  {!["products", "uoms"].includes(tab) && isInactive(row) && <button data-testid={`admin-update-${tab}-${row.id}-button`} className="secondary-button" onClick={(e) => { e.stopPropagation(); onAdminPatch(tab === "templates" ? "document-templates" : tab, row.id, { status: "active" }); }}>Aktifkan</button>}
+                  {tab === "templates" && <button data-testid={`admin-edit-templates-${row.id}-button`} className="secondary-button" onClick={(e) => { e.stopPropagation(); loadTemplateForEdit(row); }}>Ubah</button>}
+                  {tab !== "products" && isInactive(row) && <button data-testid={`admin-update-${tab}-${row.id}-button`} className="secondary-button" onClick={(e) => { e.stopPropagation(); onAdminPatch(tab === "templates" ? "document-templates" : tab, row.id, { status: "active" }); }}>Aktifkan</button>}
                   {tab === "templates" && data.orders?.[0] && <button data-testid={`admin-preview-template-${row.id}-button`} className="secondary-button" onClick={(e) => { e.stopPropagation(); onPreviewTemplate(row.id, data.orders[0].id); }}>Pratinjau</button>}
                   {!isInactive(row) && <button data-testid={`admin-delete-${tab}-${row.id}-button`} className="secondary-button !border-[#F1CFCB] !text-[#C0392B] hover:!border-[#E3A9A3] hover:!bg-[#FDF3F2]" onClick={(e) => { e.stopPropagation(); onAdminDelete(tab === "templates" ? "document-templates" : tab, row.id); }}>Nonaktifkan</button>}
                 </div>

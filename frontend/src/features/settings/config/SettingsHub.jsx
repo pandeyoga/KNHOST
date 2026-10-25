@@ -36,10 +36,11 @@ import {
 import { configApi, errMsg, SCOPE_LABEL } from "./configApi";
 import { LEGACY_DEEPLINK, groupForKey } from "./configDeepLink";
 import { entityOptions, entityShortById } from "../../../utils/entityLabel";
+import { can } from "../../../config/roles";
 
 const TABS = [
   { k: "settings", label: "Pengaturan", icon: SlidersHorizontal },
-  { k: "health", label: "Kesehatan Konfigurasi", icon: ShieldCheck },
+  { k: "health", label: "Kesehatan Konfigurasi", icon: ShieldCheck, perm: ["settings", "view"] },
   { k: "history", label: "Riwayat Perubahan", icon: History },
   { k: "impact", label: "Koreksi Harga & Daftar Dampak", icon: Wand2 },
   { k: "saga", label: "Kunci Proses", icon: Lock, adminOnly: true },
@@ -66,6 +67,9 @@ export default function SettingsHub({
   // Sisir gerbang peran (2026-10-20): tab Kunci Saga & aksi Data Hygiene tetap khusus Admin (server require_role admin);
   // pemberitahuan hak terbatas mengikuti caps.settings_manage dari server.
   const isAdmin = currentUser?.role === "admin";
+  // UAT 24 Okt (audit UI tahap 2, G5-15) — tab ber-izin (Kesehatan Konfigurasi = settings.view di server) hanya untuk
+  // peran yang memegangnya; dulu MD melihat galat izin lalu vonis hijau "semua tersambung". Izin belum termuat → tampil.
+  const permOk = (t) => !t.perm || !currentUser?.permissions || can(currentUser.permissions, t.perm[0], t.perm[1]);
 
   const [tab, setTab] = useState("settings");
   const [groups, setGroups] = useState([]);
@@ -151,6 +155,10 @@ export default function SettingsHub({
    * Pengaturan tidak "nyangkut" pada kunci lama. */
   const [highlight, setHighlight] = useState("");
   const [pendingScroll, setPendingScroll] = useState("");
+  // UAT 24 Okt (audit UI tahap 2, G5-61) — tautan "Kebijakan R&D" (openConfig({ group: "rnd" })) dulu membuka SELURUH
+  // Pusat Pengaturan. Deep-link berisi kelompok saja kini MENYARING daftar kelompok ke kelompok itu (+ tombol
+  // "Tampilkan semua kelompok"). Hak membaca kelompok lain tetap diatur server (keputusan K-11).
+  const [lockedGroup, setLockedGroup] = useState("");
 
   useEffect(() => {
     if (!focusNonce) return;
@@ -158,6 +166,7 @@ export default function SettingsHub({
     const g = focusGroup || groupForKey(key);
     setTab("settings");
     if (g) setGroup(g);
+    setLockedGroup(!key && g ? g : "");
     if (key) {
       setQ(key);
       setTerm(key);            // lewati debounce: hasil harus langsung muncul
@@ -279,7 +288,7 @@ export default function SettingsHub({
       </header>
 
       <nav className="tab-pills cfg-tabs" role="tablist">
-        {TABS.filter((t) => (t.k !== "impact" || caps.impact_apply) && (!t.adminOnly || isAdmin)).map((t) => (
+        {TABS.filter((t) => (t.k !== "impact" || caps.impact_apply) && (!t.adminOnly || isAdmin) && permOk(t)).map((t) => (
           <button
             key={t.k}
             role="tab"
@@ -392,7 +401,11 @@ export default function SettingsHub({
           <div className="cfg-body">
             <aside className="cfg-groupnav" data-testid="cfg-group-nav">
               <h4>Kelompok</h4>
-              {groups.map((g) => (
+              {lockedGroup && (
+                <button type="button" className="cfg-link-btn" data-testid="cfg-group-show-all"
+                  onClick={() => setLockedGroup("")}>Tampilkan semua kelompok</button>
+              )}
+              {groups.filter((g) => !lockedGroup || g.id === lockedGroup).map((g) => (
                 <button
                   key={g.id}
                   className={`cfg-group-btn ${group === g.id && !term ? "active" : ""}`}

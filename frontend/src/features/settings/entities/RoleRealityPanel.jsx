@@ -15,12 +15,13 @@
  *    `sales_admin` tidak pernah sampai ke mata pengguna (INV-ROLE-01).
  *  · Nama badan usaha datang dari server sebagai NAMA SINGKAT saja (INV-UI-02).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ShieldAlert, ShieldCheck, SplitSquareHorizontal, UserCog, ChevronDown,
   ChevronRight, Loader2, Info, ArrowDownRight, CircleSlash } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
 import { roleLabel, ROLE_OPTIONS } from "../../../config/roles";
+import { moduleLabel, actionLabel } from "../../../config/auditLabels";
 import { roleReality, applyRoleReality, errText } from "./entityApi";
 
 const VERDICTS = {
@@ -57,6 +58,15 @@ const FILTERS = [
   { key: "sesuai", label: "Sesuai" },
   { key: "tanpa_jejak", label: "Tanpa jejak" },
 ];
+
+// UAT 24 Okt (audit UI tahap 2, G5-02) — "Lihat bukti" dulu memuat izin mentah ("wms.update/order.deliver") dan id
+// teknis contoh dokumen ("wms_d67d0d53980b · so_854aa6b2bc83"). Izin → label modul/aksi; id teknis disembunyikan
+// (nomor dokumen seperti KSC/SO-00505 tetap tampil).
+const permText = (perm) => String(perm || "").split("/").filter(Boolean).map((p) => {
+  const [m, a] = p.split(".");
+  return a ? `${moduleLabel(m)}: ${actionLabel(a)}` : moduleLabel(m);
+}).join(" · ") || "—";
+const isTechId = (v) => /^[a-z][a-z0-9]*_[a-z0-9_]+$/.test(String(v || ""));
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -127,6 +137,12 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
   }, [data, filter]);
 
   const summary = data?.summary || {};
+  // G5-02 — cakupan penilaian ditampilkan DI ATAS kartu vonis (dulu hanya paragraf kecil di bawah tabel).
+  const unmapped = Array.isArray(data?.unmapped_actions) ? data.unmapped_actions : [];
+  const coverage = unmapped.length ? {
+    mapped: Number(data?.activities_mapped || 0), unmapped: unmapped.length,
+    total: Number(data?.activities_mapped || 0) + unmapped.length,
+  } : null;
 
   const apply = async (row, targetRole) => {
     setBusy(row.user_id);
@@ -174,6 +190,18 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
           </div>
         </div>
 
+        {coverage && (
+          <div className="mb-2 flex items-start gap-2 rounded-md border border-[#F5D9A8] bg-[#FFF8EC] px-3 py-2 text-[11.5px] text-[#8C4A00]"
+               data-testid="role-reality-coverage">
+            <Info size={14} className="mt-0.5 shrink-0" />
+            <span>
+              Kesimpulan dihitung dari <b className="tabular-nums">{coverage.mapped}</b> dari{" "}
+              <b className="tabular-nums">{coverage.total}</b> jenis kegiatan yang tercatat;{" "}
+              {coverage.unmapped} jenis lainnya belum dipetakan ke izin sehingga belum ikut menilai.
+            </span>
+          </div>
+        )}
+
         <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
              data-testid="role-reality-summary">
           <SummaryChip label="Perlu ditinjau" value={summary.perlu_ditinjau || 0}
@@ -201,7 +229,7 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                     data-testid={`role-reality-filter-${f.key || "all"}`}
                     onClick={() => setFilter(f.key)}
                     className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
-                      filter === f.key ? "bg-[#1C1C1E] text-white"
+                      filter === f.key ? "bg-[#0058CC] text-white"
                         : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
               {f.label}
             </button>
@@ -274,8 +302,8 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                   const expanded = open === r.user_id;
                   const confirmKey = `${r.user_id}:${r.suggested_role}`;
                   return (
-                    <>
-                      <tr key={r.user_id} data-testid={`role-reality-row-${r.user_id}`}
+                    <Fragment key={r.user_id}>
+                      <tr data-testid={`role-reality-row-${r.user_id}`}
                           className="border-b border-[#F5F5F7] hover:bg-[#FAFBFF]">
                         <td className="px-3 py-2">
                           <p className="font-semibold text-[#1C1C1E]">{r.name}</p>
@@ -338,7 +366,7 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                       </tr>
 
                       {expanded && (
-                        <tr key={`${r.user_id}-ev`} className="border-b border-[#F5F5F7] bg-[#FCFCFD]">
+                        <tr className="border-b border-[#F5F5F7] bg-[#FCFCFD]">
                           <td colSpan={6} className="px-3 py-3">
                             <p className="mb-2 text-[11.5px] font-semibold text-[#1C1C1E]"
                                data-testid={`role-reality-headline-${r.user_id}`}>
@@ -381,8 +409,8 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                                         <td className="px-2 py-1.5 text-[#6B6B73]">
                                           {e.domain_label}
                                         </td>
-                                        <td className="px-2 py-1.5 text-[#8E8E93]">
-                                          {e.permission}
+                                        <td className="px-2 py-1.5 text-[#8E8E93]" title={e.permission}>
+                                          {permText(e.permission)}
                                         </td>
                                         <td className="px-2 py-1.5 text-right tabular-nums text-[#3C3C43]">
                                           {e.count}
@@ -391,7 +419,7 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                                           {fmtDate(e.last_at)}
                                         </td>
                                         <td className="px-2 py-1.5 text-[#6B6B73]">
-                                          {(e.samples || []).join(" · ") || "—"}
+                                          {(e.samples || []).filter((x) => !isTechId(x)).join(" · ") || "—"}
                                         </td>
                                       </tr>
                                     ))}
@@ -457,7 +485,7 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -465,13 +493,17 @@ export default function RoleRealityPanel({ canManage = false, onChanged, onError
           </div>
         )}
 
-        {(data?.unmapped_actions || []).length > 0 && (
-          <p className="mt-2 text-[10px] text-[#9A9BA3]"
-             data-testid="role-reality-unmapped">
-            Catatan kejujuran cakupan: {data.unmapped_actions.length} jenis kegiatan
-            belum dipetakan ke izin ({data.unmapped_actions.map((u) => u.action).join(", ")}),
-            jadi tidak ikut menilai peran. {data.activities_mapped} jenis kegiatan sudah dipetakan.
-          </p>
+        {/* G5-02 — daftar kode kegiatan (±280 kode snake_case) dulu tampil sebagai dinding teks 10px di SEMUA saringan;
+            kini terlipat sebagai rincian teknis untuk admin. */}
+        {unmapped.length > 0 && (
+          <details className="mt-2 text-[10.5px] text-[#6B6B73]" data-testid="role-reality-unmapped">
+            <summary className="cursor-pointer font-semibold">
+              Lihat daftar teknis kegiatan yang belum dipetakan ({unmapped.length})
+            </summary>
+            <p className="mt-1 break-words font-mono text-[10px] text-[#9A9BA3]">
+              {unmapped.map((u) => u.action).join(", ")}
+            </p>
+          </details>
         )}
       </div>
     </div>

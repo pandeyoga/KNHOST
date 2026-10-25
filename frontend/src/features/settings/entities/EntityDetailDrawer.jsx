@@ -11,6 +11,8 @@ import { X, Save, Loader2, Lock, History, ClipboardCheck, ExternalLink,
   ShieldCheck, Building2 } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
+import KNSelect from "../../../components/KNSelect";
+import { auditActionInfo } from "../../../config/auditLabels";
 import { getEntity, patchEntity, getReadiness, getEntityAudit, errText } from "./entityApi";
 
 const EDITABLE = [
@@ -24,8 +26,15 @@ const EDITABLE = [
   ["email", "Email"],
   ["npwp", "NPWP"],
   ["logo_url", "URL logo (kop surat)"],
-  ["fiscal_year_start", "Awal tahun fiskal (MM-DD)"],
+  ["fiscal_year_start", "Awal tahun fiskal"],
 ];
+// UAT 24 Okt (audit UI tahap 2, G5-25) — isian perorangan dulu tampil juga untuk PT; awal tahun fiskal teks bebas
+// "MM-DD"; tombol simpan di tengah kartu. Jenis perorangan sama dengan wizard buat (EntityWizard PERSONAL_TYPES).
+const PERSONAL_TYPES = ["Perorangan", "UD"];
+const PERSONAL_FIELDS = ["owner_name", "business_label"];
+const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
+  "November", "Desember"];
+const pad2 = (n) => String(n).padStart(2, "0");
 
 function fmtTime(iso) {
   if (!iso) return "—";
@@ -161,7 +170,8 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                 <div className="section-body py-3">
                   <p className="kicker mb-2">Identitas & kontak</p>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {EDITABLE.map(([key, label]) => (
+                    {EDITABLE.filter(([key]) => key !== "fiscal_year_start"
+                      && (PERSONAL_TYPES.includes(entity?.type) || !PERSONAL_FIELDS.includes(key))).map(([key, label]) => (
                       <div key={key} className="grid gap-1">
                         <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
                           {label}
@@ -176,16 +186,24 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                       </div>
                     ))}
                   </div>
-                  {canManage && entity?.status === "active" && (
-                    <div className="mt-2.5 flex justify-end">
-                      <button type="button" className="primary-button"
-                              data-testid="entity-detail-save"
-                              disabled={busy} onClick={save}>
-                        {busy ? <Loader2 size={13} className="animate-spin" />
-                              : <Save size={13} />} Simpan Perubahan
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    const [mm, dd] = String(form.fiscal_year_start || "01-01").split("-");
+                    const off = !canManage || entity?.status !== "active";
+                    const setFy = (m, d) => setForm((f) => ({ ...f, fiscal_year_start: `${pad2(m)}-${pad2(d)}` }));
+                    return (
+                      <div className="mt-2 grid gap-1" data-testid="entity-detail-fiscal_year_start-input">
+                        <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Awal tahun fiskal</label>
+                        <div className="flex gap-2">
+                          <div className="w-24"><KNSelect className="field" disabled={off} value={String(Number(dd) || 1)}
+                            onValueChange={(v) => setFy(Number(mm) || 1, v)} testId="entity-detail-fy-day"
+                            options={Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} /></div>
+                          <div className="w-40"><KNSelect className="field" disabled={off} value={String(Number(mm) || 1)}
+                            onValueChange={(v) => setFy(v, Number(dd) || 1)} testId="entity-detail-fy-month"
+                            options={BULAN.map((b, i) => ({ value: String(i + 1), label: b }))} /></div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -235,9 +253,10 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                       )}
                     </div>
                   )}
+                  {/* G5-25 — dulu "Contoh nomor berikutnya: KSC/SO-00001" padahal sudah KSC/SO-00505 (bukan penghitung nyata). */}
                   <p className="mt-2 text-[10.5px] text-[#6B6B73]">
-                    Contoh nomor berikutnya:{" "}
-                    <b className="font-mono">{entity?.doc_prefix}/SO-00001</b>
+                    Format nomor dokumen:{" "}
+                    <b className="font-mono">{entity?.doc_prefix}/SO-nnnnn</b> (nomor urut per jenis dokumen)
                   </p>
                 </div>
               </div>
@@ -291,7 +310,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                     <div className="grid gap-1" data-testid="entity-detail-audit">
                       {audit.slice(0, 12).map((a) => (
                         <p key={a.id} className="flex flex-wrap gap-2 border-b border-[#F5F5F7] py-1 text-[11px] last:border-0">
-                          <span className="font-semibold text-[#1C1C1E]">{a.action}</span>
+                          <span className="font-semibold text-[#1C1C1E]" title={a.action}>{auditActionInfo(a.action).label}</span>
                           <span className="text-[#6B6B73]">oleh {a.actor}</span>
                           <span className="ml-auto text-[10px] text-[#9A9BA3] tabular-nums">
                             {fmtTime(a.timestamp)}
@@ -305,6 +324,17 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
             </>
           )}
         </div>
+        {!loading && canManage && entity?.status === "active" && (
+          <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
+            <button type="button" className="secondary-button" data-testid="entity-detail-cancel" onClick={onClose}>Tutup</button>
+            <button type="button" className="primary-button"
+                    data-testid="entity-detail-save"
+                    disabled={busy} onClick={save}>
+              {busy ? <Loader2 size={13} className="animate-spin" />
+                    : <Save size={13} />} Simpan Perubahan
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

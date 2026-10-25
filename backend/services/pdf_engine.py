@@ -175,7 +175,8 @@ MASTER_TEMPLATE = r"""
         <div class="ttl">Referensi Dokumen</div>
         <div class="nums">Merujuk: {{ doc.refs_block.text }}{% if doc.refs_block.hidden %} <span class="rel">+{{ doc.refs_block.hidden }} lainnya</span>{% endif %}</div>
         <div class="rel">{% for it in doc.refs_block['items'] %}{{ it.rel_label }} {{ it.label }} <b>{{ it.number }}</b>{% if not loop.last %} · {% endif %}{% endfor %}</div>
-        {% if doc.refs_block.qr_src %}<div class="hint">Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).{% if doc.refs_block.trace_host %} Atau buka {{ doc.refs_block.trace_host }} › Jejak Dokumen, cari nomor {{ doc.number }}.{% endif %}</div>{% endif %}
+        {# UAT 24 Okt (audit UI tahap 2, G5-11) — host localhost/127.x tidak ditulis: penerima surat tak bisa membukanya. #}
+        {% if doc.refs_block.qr_src %}<div class="hint">Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).{% if doc.refs_block.trace_host and not (doc.refs_block.trace_host.startswith('localhost') or doc.refs_block.trace_host.startswith('127.')) %} Atau buka {{ doc.refs_block.trace_host }} › Jejak Dokumen, cari nomor {{ doc.number }}.{% endif %}</div>{% endif %}
       </div>
     </div>
     {% endif %}
@@ -290,6 +291,19 @@ DOC_STATUS_LABEL = {
     "inspecting": "Sedang diinspeksi", "inspected": "Selesai inspeksi", "in_progress": "Sedang berjalan",
     "completed": "Selesai", "done": "Selesai", "closed": "Ditutup", "posted": "Diposting", "open": "Terbuka",
     "sent": "Terkirim", "expired": "Kedaluwarsa",
+    # UAT 24 Okt (audit UI tahap 2, G5-10) — status giliran notifikasi (turn_notification_service) yang dulu
+    # tercetak mentah ("tahap: refund_settled").
+    "partially_shipped": "Dikirim sebagian", "receiving": "Sedang diterima",
+    "reserved": "Dipesan", "submitted": "Diajukan", "refund_settled": "Selesai · pengembalian dana",
+    "credit_settled": "Selesai · store credit", "nego_settled": "Selesai · nego",
+    "settled": "Selesai · per roll (campuran)",
+    # G5-14 — status umum master/roll/pekerjaan yang ikut dilabeli Pusat Export (dulu "Active", "Ready").
+    "active": "Aktif", "inactive": "Nonaktif", "archived": "Diarsipkan", "failed": "Gagal", "released": "Dilepas",
+    "on_hold": "Ditahan", "hold": "Ditahan", "ready": "Siap", "scheduled": "Dijadwalkan", "verified": "Diverifikasi",
+    "in_production": "Dalam produksi", "reversed": "Dibalik", "voided": "Dianulir", "waiting": "Menunggu",
+    "new": "Baru", "available": "Tersedia", "quarantine": "Karantina", "sold": "Terjual", "scrapped": "Dibuang",
+    "waiting_goods": "Menunggu barang",
+    "qc_pending": "Menunggu QC", "escalated": "Dieskalasi", "created": "Dibuat",
 }
 
 

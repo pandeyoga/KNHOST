@@ -82,7 +82,7 @@ export default function GeminiIntegrationPanel() {
               </div>
             </div>
             <label className="flex items-center gap-2 text-[12.5px] cursor-pointer">
-              <input data-testid="gemini-enabled" type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="h-4 w-4 accent-[#5B2EA6]" />
+              <input data-testid="gemini-enabled" type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="h-4 w-4 accent-[#0058CC]" />
               Aktifkan ilustrasi AI pada Galeri Desain & Varian Produk
             </label>
             <div className="flex items-center gap-2 pt-1">

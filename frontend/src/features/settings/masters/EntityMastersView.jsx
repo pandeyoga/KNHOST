@@ -33,6 +33,8 @@ import useUomConversions from "../../../hooks/useUomConversions";   // FASE U
 import { uomSelectOptions } from "../../../utils/uomCatalog";        // FASE U
 import { entityShort, entityShortById } from "../../../utils/entityLabel";
 import { formatCurrency } from "../../../utils/formatters";
+import { stripInternalCodes } from "../../../utils/cleanText";
+import { askConfirm } from "../../../services/confirmService";
 import { COLUMNS, CREATE_FIELDS, cellText, defaultsFor, fieldOf, parseFieldValue, toInputValue }
   from "./masterFieldsConfig";
 
@@ -45,11 +47,29 @@ import { COLUMNS, CREATE_FIELDS, cellText, defaultsFor, fieldOf, parseFieldValue
  */
 const fmtCell = (col, row) => cellText(col, row, formatCurrency);
 
+// UAT 24 Okt (audit UI tahap 2, G5-03/G5-26) — teks banner server memuat nama kolom teknis berbacktick
+// (`process_type`, `changes_stage=false`, `needs_inspection`) dan untuk Tarif Insentif menyebut letak editor yang
+// bertentangan dengan tautan "Kelola lengkap di …". Untuk jenis berikut banner ditulis ulang dengan nama kolom di layar;
+// teks server lain dibersihkan dari backtick & kode internal.
+const HINT_OVERRIDE = {
+  "incentive-rates": "Tarif komisi per kategori produk.",
+  "approval-rules": "Ambang nilai (atau persen diskon) dan peran yang wajib menyetujui.",
+  "process-stages": "Langkah kerja yang dipantau papan PO & SPK makloon. “Mesin tarif/estimasi” menyambung ke tarif; "
+    + "“Mengubah kain? Tidak” = jasa yang tidak mengubah kain (mis. pembuatan screen/kasa); “Aliran kain” menentukan "
+    + "apakah kain benar-benar dikirim ke mitra atau hanya jasa.",
+  "sample-types": "Jenis sampling yang bisa diminta ke supplier; satu permintaan boleh menempuh beberapa jenis sekaligus. "
+    + "“Wajib kode desain?” memaksa kode desain; “Hasil ukur wajib” menentukan kolom hasil ukur di form setor hasil.",
+  "complaint-reasons": "Sebab keluhan yang bisa dipilih saat mencatat retur pelanggan. “Wajib diperiksa fisik?” memaksa "
+    + "retur diperiksa lewat SPK Inspeksi sebelum kredit/ganti diberikan; “Bisa diklaim ke supplier?” menandai keluhan "
+    + "yang wajar diteruskan sebagai klaim ke supplier.",
+};
+const cleanHint = (t) => stripInternalCodes(String(t || "").replace(/`([^`]+)`/g, "$1"));
+
 // IA 2026-10 (B4–B7, B14) — layar ini = lapisan OVERRIDE per badan usaha; editor lengkap ada di domainnya.
 const FULL_EDITOR = {
   "approval-rules": { view: "approval-rules", label: "Pengaturan › Aturan Persetujuan" },
-  // Audit UI 102 — tautan & label mengikuti letak editor sekarang (Rate Insentif = tab Pengaturan; Kebijakan Retur = hub Retur).
-  "incentive-rates": { view: "incentive-rates", label: "Pengaturan › Rate Insentif Sales" },
+  // Audit UI 102 — tautan & label mengikuti letak editor sekarang (Tarif Insentif = tab Pengaturan; Kebijakan Retur = hub Retur).
+  "incentive-rates": { view: "incentive-rates", label: "Pengaturan › Tarif Insentif Sales" },
   "sales-return-policies": { view: "return-policies", label: "Retur › Kebijakan Retur" },
   "expense-categories": { view: "expense-categories", label: "Pengaturan › Keuangan › Kategori Beban" },
   "document-templates": { view: "doc-templates-basic", label: "Pengaturan › Template Dokumen Dasar" },
@@ -132,6 +152,13 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
 
   // ─── aksi ──────────────────────────────────────────────────────────────────
   async function doOverride(row) {
+    // G5-26 — dulu satu klik langsung POST salinan.
+    if (!(await askConfirm({
+      title: `Buat salinan khusus ${entityLabel}?`,
+      message: `Baris global “${row.name || row.label || row.code || row.doc_type || "ini"}” disalin menjadi milik ${entityLabel}. `
+        + "Setelah itu perubahan global tidak lagi berlaku untuk badan usaha ini sampai salinannya dikembalikan ke global.",
+      confirmLabel: "Buat salinan",
+    }))) return;
     setBusyId(row.id); setError("");
     try {
       await axios.post(`${API}/entity-masters/${kind}/${row.id}/override`);
@@ -175,6 +202,11 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
       setError(`Lengkapi dulu: ${missing.map((m) => m.label).join(", ")}.`);
       return;
     }
+    if (createGlobal && !groupMode && !(await askConfirm({
+      title: "Simpan sebagai baris Global?",
+      message: `Baris ini akan berlaku untuk SEMUA badan usaha, bukan hanya ${entityLabel}.`,
+      confirmLabel: "Simpan sebagai Global", danger: true,
+    }))) return;
     setBusyId("create");
     try {
       const body = { ...createValues };
@@ -316,7 +348,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
             {(spec.hint || data?.hint) && (
               <div className="mb-3 flex items-start gap-2 rounded-md border border-[#D6E6FF] bg-[#F0F6FF] px-3 py-2 text-[11.5px] text-[#004099]">
                 <Info size={14} className="mt-0.5 shrink-0" />
-                <span data-testid="em-hint">{spec.hint || data?.hint}</span>
+                <span data-testid="em-hint">{HINT_OVERRIDE[kind] || cleanHint(spec.hint || data?.hint)}</span>
               </div>
             )}
 
@@ -335,6 +367,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
               subtitle={groupMode || createGlobal ? "Berlaku Global — untuk semua badan usaha." : `Khusus ${entityLabel}.`}
               icon={Plus} size="md" testId="em-create-form"
               onSubmit={saveCreate} submitLabel={busyId === "create" ? "Menyimpan…" : "Simpan baris"} busy={busyId === "create"}
+              submitDisabled={createFields.some((f) => f.required && !String(createValues[f.key] ?? "").trim())}
               error={creating ? error : ""} submitTestId="em-form-save" cancelTestId="em-form-cancel">
               <div className="grid gap-2.5 sm:grid-cols-2">
                 {createFields.map((f) => (
@@ -360,7 +393,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                     )}
                     {f.hint && (
                       <span className="text-[10px] text-[#8E8E93]" data-testid={`em-form-hint-${f.key}`}>
-                        {f.hint}
+                        {cleanHint(f.hint)}
                       </span>
                     )}
                   </label>
@@ -371,7 +404,8 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                   className="mt-3 flex cursor-pointer items-center gap-2 text-[11.5px] text-[#3A3A3C]">
                   <input type="checkbox" checked={createGlobal}
                     onChange={(e) => setCreateGlobal(e.target.checked)} />
-                  <span>Jadikan <b>Global</b> — berlaku untuk semua badan usaha, bukan hanya {entityLabel}</span>
+                  <span>Jadikan <b>Global</b> — berlaku untuk semua badan usaha, bukan hanya {entityLabel}.
+                    {createGlobal && <b className="ml-1 text-[#8C4A00]">Perubahan ini memengaruhi seluruh grup.</b>}</span>
                 </label>
               )}
             </FormModal>
@@ -418,7 +452,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                         </th>
                       ))}
                       <th className="px-3 py-2 text-center">Asal</th>
-                      <th className="px-3 py-2 text-right">Aksi</th>
+                      <th className="sticky right-0 z-[1] bg-[#FAFBFC] px-3 py-2 text-right shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.15)]">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -466,7 +500,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                               </span>
                             )}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2 text-right">
+                          <td className="sticky right-0 z-[1] whitespace-nowrap bg-white px-3 py-2 text-right shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.15)]">
                             {editing ? (
                               <>
                                 <button data-testid={`em-edit-cancel-${r.id}`} className="secondary-button text-[11px]"

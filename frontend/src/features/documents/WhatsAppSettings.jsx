@@ -99,9 +99,12 @@ export default function WhatsAppSettings({ open, onClose }) {
                 <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Access Token {s.has_token && <span className="text-[#1F7A45]">(tersimpan)</span>}</label>
                 <input className="form-input" type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder={s.has_token ? "•••• (isi untuk mengganti)" : "opsional (mode nyata)"} data-testid="wa-set-token" />
               </div>
-              <button className="btn-primary flex items-center justify-center gap-2" onClick={save} disabled={busy} data-testid="wa-set-save">
-                {busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Pengaturan
-              </button>
+              <div className="flex gap-2">
+                <button className="btn-secondary flex-1" onClick={onClose} disabled={busy} data-testid="wa-set-cancel">Batal</button>
+                <button className="btn-primary flex flex-1 items-center justify-center gap-2" onClick={save} disabled={busy} data-testid="wa-set-save">
+                  {busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Pengaturan
+                </button>
+              </div>
             </div>
           )}
         </div>

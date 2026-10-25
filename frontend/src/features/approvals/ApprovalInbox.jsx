@@ -4,7 +4,8 @@ import {
   Inbox, ShoppingCart, Tag, ArrowRight, Clock, RefreshCw, CheckSquare,
   RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit,
 } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatPeriod } from "../../utils/formatters";
+import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 // Tujuan navigasi yang SAH untuk peran ini (sumber sama dengan Ctrl+K & deep-link) —
@@ -167,7 +168,8 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         .filter((p) => !p.so_id && !soPriceRefIds.has(p.id))
         .map((p) => ({
           kind: "price", id: p.id, title: p.product_name || p.sku, subtitle: p.customer_name,
-          meta: `${formatCurrency(p.normal_price)} → ${formatCurrency(p.requested_price)}${p.discount_percent ? ` (-${p.discount_percent}%)` : ""}`,
+          // UAT 24 Okt (audit UI tahap 2, dari G2-02) — harga di ATAS normal dulu "(--3064%)"; kini "+3.064% di atas harga normal".
+          meta: `${formatCurrency(p.normal_price)} → ${formatCurrency(p.requested_price)}${discountInfo(p.discount_percent) ? ` (${discountInfo(p.discount_percent).long})` : ""}`,
           amount: p.requested_price, requester: p.requested_by_name || p.requested_by, role: "manager",
           at: p.created_at, target: "price-approvals",
         }));
@@ -256,6 +258,11 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
   const othersOldest = (backlog?.oldest || [])
     .filter((o) => !DITAMPILKAN_DI_SINI.includes(o.key));
 
+  // UAT 24 Okt (audit UI tahap 2, G5-21) — label antrean server berbahasa campur ("Payroll menunggu pengesahan") dan
+  // periode mentah ("2026-08") di judul. Teks server tidak diubah di sini (berkas backend grup lain).
+  const queueText = (label) => String(label || "").replace(" menunggu ACC", "").replace(/^Payroll\b/, "Penggajian");
+  const periodText = (t) => String(t || "").replace(/\b(\d{4}-\d{2})\b(?!-)/g, (m) => formatPeriod(m)).replace(/\bPayroll\b/g, "Penggajian");
+
   // Satu penggambar baris "menunggu di layar lain" untuk kartu (cuplikan 5) DAN
   // pop-up "Lihat semua" — testid dibedakan lewat `base`.
   const renderOther = (o, base = "approval-inbox-other") => {
@@ -270,10 +277,10 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="text-[12px] font-bold text-[#1C1C1E] [overflow-wrap:anywhere]">{o.number}</span>
             <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#F2F2F7] text-[#6B6B73]">
-              {o.queue_label.replace(" menunggu ACC", "")}
+              {queueText(o.queue_label)}
             </span>
           </div>
-          <p className="text-[11px] text-[#6B6B73] truncate">{o.title || "—"}</p>
+          <p className="text-[11px] text-[#6B6B73] truncate">{periodText(o.title) || "—"}</p>
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-[11px] font-semibold tabular-nums text-[#B45309]">
@@ -344,7 +351,8 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                   // bertentangan; kini rinciannya disebut: berapa di daftar bawah & berapa di layar lain.
                   <span className="text-[11px] text-[#6B6B73]"
                     data-testid="approval-inbox-backlog-elsewhere">
-                    {Math.max(0, (backlog.total || 0) - elsewhere)} di daftar bawah · {elsewhere} ditangani di layar lain
+                    {/* G5-21 — dulu "total − layar lain" (4) padahal daftar memuat 5 baris; kini jumlah baris yang dirender. */}
+                    {items.length} di daftar bawah · {elsewhere} ditangani di layar lain
                   </span>
                 )}
               </div>
@@ -366,7 +374,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                           target
                             ? "border-[#CFDBEC] bg-white text-[#1C1C1E] hover:border-[#0058CC] hover:text-[#0058CC]"
                             : "border-[#E5E5EA] bg-[#F2F2F7] text-[#8E8E93] cursor-not-allowed"}`}>
-                        <span className="truncate max-w-[15rem]">{q.label.replace(" menunggu ACC", "")}</span>
+                        <span className="truncate max-w-[15rem]">{queueText(q.label)}</span>
                         <span className="font-bold tabular-nums">{q.count}</span>
                         {target && <ArrowRight size={11} />}
                       </button>
@@ -431,8 +439,16 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         ) : filtered.length === 0 ? (
           <div className="py-14 text-center text-[12px] text-[#6B6B73]" data-testid="approval-inbox-empty">
             <CheckSquare className="mx-auto mb-2 text-gray-300" size={30} />
-            <p className="font-semibold text-[#3C3C43]">Tidak ada yang menunggu persetujuan.</p>
-            <p>Semua keputusan sudah ditindaklanjuti.</p>
+            {/* G5-21 — bila ada kategori yang tak terbaca (403), jangan menyatakan "semua beres". */}
+            {unavailable.length > 0 ? (<>
+              <p className="font-semibold text-[#3C3C43]">Tidak ada yang menunggu di kategori yang bisa Anda lihat.</p>
+              <p>Sebagian kategori tidak bisa ditampilkan untuk peran Anda ({unavailable.join(", ")}).</p>
+            </>) : inboxQ.trim() || tab !== "all" ? (
+              <p className="font-semibold text-[#3C3C43]">Tidak ada persetujuan yang cocok dengan saringan ini.</p>
+            ) : (<>
+              <p className="font-semibold text-[#3C3C43]">Tidak ada yang menunggu persetujuan.</p>
+              <p>Semua keputusan sudah ditindaklanjuti.</p>
+            </>)}
           </div>
         ) : (
           <div className="divide-y divide-[#EFF0F2]">

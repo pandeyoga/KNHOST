@@ -23,7 +23,28 @@
 // FASE T — kosakata tahapan proses dipinjam dari SATU sumber (`constants/makloonVocab`)
 // supaya tabel master, form master, dan wizard SPK memakai kalimat yang sama; pemilik
 // tidak perlu menerjemahkan `service_only` menjadi "jasa murni" di kepalanya.
-import { MATERIAL_FLOW_LABELS, STAGE_KIND_LABELS } from "../../../constants/makloonVocab";
+import { MATERIAL_FLOW_LABELS, STAGE_KIND_LABELS, PROCESS_TYPE_FALLBACK } from "../../../constants/makloonVocab";
+import { roleLabel } from "../../../config/roles";
+import { DOC_TYPES } from "../approvalRulesConstants";
+
+// UAT 24 Okt (audit UI tahap 2, G5-03) — kolom berjenis enum dulu tercetak sebagai kode (`discount`, `purchase_order`,
+// "manager", `pre_treatment`, `invoice`, "benang · tenun · celup · inspect") dan batas diskon (persen) tercetak
+// "Rp 0 – Rp 10". Peta label di bawah dipakai `labels`/`format` kolom; kode tak dikenal tetap tampil apa adanya.
+const DOC_TYPE_LABELS = Object.fromEntries(DOC_TYPES.map((t) => [t.value, t.label]));
+const TEMPLATE_DOC_LABELS = { invoice: "Faktur (Invoice)", surat_jalan: "Surat Jalan" };
+const FABRIC_LABELS = { woven: "Woven (tenun)", knit: "Knit (rajut)" };
+const STAGE_STEP_LABELS = {
+  ...PROCESS_TYPE_FALLBACK, benang: "Benang", pfp: "PFP", pfd: "PFD", grey: "Grey", inspect: "Inspeksi",
+  inspection: "Inspeksi", proofing: "Proofing", sampling: "Sampling", finished: "Kain jadi", screen: "Screen / kasa",
+};
+const MEASURE_LABELS = {
+  delta_e: "ΔE", colorfastness_wash: "Tahan luntur cuci", colorfastness_rub: "Tahan luntur gosok",
+  gsm_actual: "GSM aktual", lebar: "Lebar", shrinkage_pct: "Susut (%)", handfeel_score: "Skor handfeel",
+  repeat_cm: "Repeat (cm)", register_mm: "Register (mm)",
+};
+const isPercentRule = (row) => row?.is_percent || row?.doc_type === "discount";
+const fmtRuleAmount = (v, row, fmtCur) => (v === null || v === undefined || v === ""
+  ? "—" : isPercentRule(row) ? `${Number(v).toLocaleString("id-ID")}%` : (fmtCur ? fmtCur(v) : String(v)));
 
 /** Kolom yang ditampilkan per jenis master (label manusia + cara render). */
 export const COLUMNS = {
@@ -41,7 +62,7 @@ export const COLUMNS = {
     { key: "account_code", label: "Akun buku besar", mono: true },
   ],
   "document-templates": [
-    { key: "document_type", label: "Jenis dokumen", mono: true },
+    { key: "document_type", label: "Jenis dokumen", labels: TEMPLATE_DOC_LABELS },
     { key: "name", label: "Nama template" },
     { key: "header", label: "Kop surat" },
     { key: "paper_size", label: "Kertas" },
@@ -59,10 +80,10 @@ export const COLUMNS = {
     { key: "margin_cap_pct", label: "Batas margin %", align: "right" },
   ],
   "approval-rules": [
-    { key: "doc_type", label: "Dokumen", mono: true },
-    { key: "min_amount", label: "Dari", align: "right", money: true },
-    { key: "max_amount", label: "Sampai", align: "right", money: true },
-    { key: "required_role", label: "Wajib disetujui" },
+    { key: "doc_type", label: "Dokumen", labels: DOC_TYPE_LABELS },
+    { key: "min_amount", label: "Dari", align: "right", format: fmtRuleAmount },
+    { key: "max_amount", label: "Sampai", align: "right", format: fmtRuleAmount },
+    { key: "required_role", label: "Wajib disetujui", format: (v) => (v ? roleLabel(v) : "Tanpa persetujuan") },
   ],
   // ── FASE L — LINI PRODUK (pembagian kerja MD). Kolom dipilih supaya pemilik bisa
   // menjawab tiga pertanyaan langsung dari tabel: lini ini untuk kain apa
@@ -70,9 +91,9 @@ export const COLUMNS = {
   "product-lines": [
     { key: "code", label: "Kode", mono: true },
     { key: "name", label: "Nama lini" },
-    { key: "fabric_type_required", label: "Khusus jenis kain", empty: "bebas" },
+    { key: "fabric_type_required", label: "Khusus jenis kain", empty: "bebas", labels: FABRIC_LABELS },
     { key: "measure_unit_default", label: "Satuan usulan" },
-    { key: "stage_sequence", label: "Urutan tahap", list: true },
+    { key: "stage_sequence", label: "Urutan tahap", list: true, labels: STAGE_STEP_LABELS },
     { key: "sort", label: "Urut", align: "right" },
   ],
   // ── FASE T — TAHAPAN PROSES (termasuk pembuatan SCREEN/kasa). Kolom dipilih supaya
@@ -86,7 +107,7 @@ export const COLUMNS = {
     { key: "code", label: "Kode", mono: true },
     { key: "name", label: "Nama tahap" },
     { key: "kind", label: "Jenis", labels: STAGE_KIND_LABELS },
-    { key: "process_type", label: "Mesin tarif/estimasi", empty: "—" },
+    { key: "process_type", label: "Mesin tarif/estimasi", empty: "—", labels: PROCESS_TYPE_FALLBACK },
     { key: "changes_stage", label: "Mengubah kain?",
       labels: { true: "Ya — kain naik tahap", false: "Tidak — hanya jasa" } },
     { key: "material_flow", label: "Aliran kain", labels: MATERIAL_FLOW_LABELS, empty: "—" },
@@ -109,7 +130,7 @@ export const COLUMNS = {
     { key: "requires_design", label: "Wajib kode desain?",
       labels: { true: "Ya — harus ada desain", false: "Tidak" } },
     { key: "measurement_fields", label: "Hasil ukur wajib", list: true,
-      empty: "tidak ada" },
+      empty: "tidak ada", labels: MEASURE_LABELS },
     { key: "applies_to_lines", label: "Lini", list: true, empty: "semua lini" },
     { key: "seq", label: "Urut", align: "right" },
   ],
@@ -300,7 +321,11 @@ export const CREATE_FIELDS = {
 /** Nilai sel → teks. Dipakai tabel (list dirender "a · b · c"). */
 export function cellText(col, row, formatCurrency) {
   const v = row[col.key];
-  if (Array.isArray(v)) return v.length ? v.join(" · ") : (col.empty || "—");
+  if (typeof col.format === "function") return col.format(v, row, formatCurrency);
+  if (Array.isArray(v)) {
+    if (!v.length) return col.empty || "—";
+    return v.map((x) => (col.labels && col.labels[String(x)]) || String(x)).join(" · ");
+  }
   // `labels` mendahului pemformatan bawaan: "Tidak" tidak memberi tahu apa pun,
   // sedangkan "Tidak — hanya jasa" menjelaskan akibatnya di layar SPK.
   if (col.labels && v !== null && v !== undefined && v !== "") {

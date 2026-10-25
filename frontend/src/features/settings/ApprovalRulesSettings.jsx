@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
-  AlertCircle, CheckCircle2, Edit2, Loader2, Plus, Settings, Trash2, X
+  AlertCircle, CheckCircle2, Edit2, Loader2, Plus, Power, Settings, X
 } from "lucide-react";
 import ApprovalRuleForm from "./ApprovalRuleForm";
 import FormModal from "../../components/FormModal";
@@ -121,7 +121,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
   async function handleDelete(rule) {
     const ok = await askConfirm({
       title: `Nonaktifkan aturan ${docTypeLabel(rule.doc_type)} (${fmtRange(rule)})?`,
-      message: "Mesin approval berhenti membaca aturan ini; dokumen pada rentang tsb tidak lagi otomatis meminta persetujuan.",
+      message: "Mesin persetujuan berhenti membaca aturan ini; dokumen pada rentang tersebut tidak lagi otomatis meminta persetujuan.",
       confirmLabel: "Nonaktifkan Aturan",
       danger: true,
       testId: "approval-rule-delete-confirm",
@@ -132,17 +132,26 @@ export default function ApprovalRulesSettings({ currentUser }) {
       setNotice("Aturan dinonaktifkan.");
       loadRules();
     } catch (e) {
-      setError("Gagal menghapus: " + (e.response?.data?.detail || e.message));
+      setError("Gagal menonaktifkan: " + (e.response?.data?.detail || e.message));
     }
   }
 
+  // G5-20 — badge "Aktif" dulu langsung PATCH sekali klik (tanpa konfirmasi) sementara ikon sampah membuka dialog
+  // "Nonaktifkan aturan". Kini satu tombol ⏻: aktif → dialog nonaktifkan; nonaktif → dialog aktifkan.
   async function toggleActive(rule) {
+    if (rule.active !== false) { await handleDelete(rule); return; }
+    const ok = await askConfirm({
+      title: `Aktifkan aturan ${docTypeLabel(rule.doc_type)} (${fmtRange(rule)})?`,
+      message: "Mesin persetujuan kembali membaca aturan ini untuk dokumen baru pada rentang tersebut.",
+      confirmLabel: "Aktifkan Aturan",
+    });
+    if (!ok) return;
     try {
       await axios.patch(`${API}/approval-rules/${rule.id}`,
         { active: rule.active === false }, auth);
       loadRules();
     } catch (e) {
-      setError("Gagal toggle status: " + (e.response?.data?.detail || e.message));
+      setError("Gagal mengubah status: " + (e.response?.data?.detail || e.message));
     }
   }
 
@@ -178,7 +187,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
             <Settings size={20} /> Aturan Persetujuan
           </h1>
           <p className="view-subtitle">
-            Rentang nilai dokumen &amp; peran yang berwenang memutuskan — dibaca langsung oleh mesin approval
+            Rentang nilai dokumen &amp; peran yang berwenang memutuskan — dibaca langsung oleh mesin persetujuan
           </p>
         </div>
         {!showCreateForm && (
@@ -266,13 +275,12 @@ export default function ApprovalRulesSettings({ currentUser }) {
                   </td>
                   <td className="text-center tabular-nums">{rule.sort}</td>
                   <td>
-                    <button
+                    <span
                       data-testid={`toggle-rule-${rule.id}`}
                       className={`status-pill ${rule.active !== false ? "pill-success" : "pill-muted"}`}
-                      onClick={() => toggleActive(rule)}
                     >
                       {rule.active !== false ? "Aktif" : "Nonaktif"}
-                    </button>
+                    </span>
                   </td>
                   <td>
                     <div className="flex gap-2">
@@ -285,10 +293,12 @@ export default function ApprovalRulesSettings({ currentUser }) {
                       </button>
                       <button
                         data-testid={`delete-rule-${rule.id}`}
-                        className="icon-button danger"
-                        onClick={() => handleDelete(rule)}
+                        className={`icon-button ${rule.active !== false ? "danger" : ""}`}
+                        title={rule.active !== false ? "Nonaktifkan aturan" : "Aktifkan aturan"}
+                        aria-label={rule.active !== false ? "Nonaktifkan aturan" : "Aktifkan aturan"}
+                        onClick={() => toggleActive(rule)}
                       >
-                        <Trash2 size={14} />
+                        <Power size={14} />
                       </button>
                     </div>
                   </td>

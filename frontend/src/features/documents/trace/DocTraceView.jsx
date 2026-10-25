@@ -160,7 +160,13 @@ export default function DocTraceView({
       <div className="grid gap-3 lg:grid-cols-[380px_1fr] lg:items-start">
         <div className="grid gap-3">
           <TraceSearch entityId={selectedEntity} onPick={pick} onError={setError} />
-          {canBackfill && <TraceBackfill onDone={() => cur && load(cur, depth)} />}
+          {/* UAT 24 Okt (audit UI tahap 2, G5-70) — alat admin dilipat (dulu kartu penuh di layar kerja harian). */}
+          {canBackfill && (
+            <details className="rounded-lg border border-[#EDEEF1] bg-white" data-testid="trace-admin-tools">
+              <summary className="cursor-pointer px-3 py-2 text-[11.5px] font-semibold text-[#6B6B73]">Alat admin · susun ulang relasi dokumen lama</summary>
+              <div className="p-2"><TraceBackfill onDone={() => cur && load(cur, depth)} /></div>
+            </details>
+          )}
         </div>
 
         <div className="grid gap-3">
@@ -171,7 +177,7 @@ export default function DocTraceView({
                 <p className="text-[12.5px] font-semibold text-[#3C3C43]">Pilih dokumen untuk ditelusuri</p>
                 <p className="max-w-md text-[11.5px] text-[#6B6B73]">
                   Cari nomor surat di kotak pencarian, atau tekan tombol <b>Jejak Dokumen</b> pada
-                  detail Pesanan, Purchase Order, Tagihan Supplier, Kwitansi, dan Penerimaan Barang.
+                  detail Pesanan Penjualan, Pesanan Pembelian (PO), Tagihan Supplier, Kwitansi, dan Penerimaan Barang.
                   QR pada dokumen cetak juga membuka halaman ini.
                 </p>
               </div>

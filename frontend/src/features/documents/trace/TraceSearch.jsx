@@ -55,8 +55,8 @@ export default function TraceSearch({ entityId, onPick, onError }) {
             title="Contoh nomor: SO-0001, PO-00003, SCT-, SMP-, SPEC-, FKT-, AR-, VB-" />
         </div>
         <p className="text-[10.5px] text-[#8E8E93]">
-          Penelusuran bisa dimulai dari dokumen APA PUN — termasuk dari tengah rantai
-          seperti Kwitansi atau Tagihan Supplier, maupun dari HULU seperti Kontrak
+          Penelusuran bisa dimulai dari dokumen apa pun — termasuk dari tengah rantai
+          seperti Kwitansi atau Tagihan Supplier, maupun dari hulu seperti Kontrak
           Supplier, Permintaan Sample (SMP), dan Spesifikasi Produk (SPEC).
         </p>
 

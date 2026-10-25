@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import SettingEditor from "./SettingEditor";
 import KNDateTimePicker from "@/components/KNDateTimePicker";
+import { formatDate } from "../../../utils/formatters";
 import {
-  formatValue, LAYER_TONE, RISK_LABEL, SCOPE_LABEL, WIRING_LABEL, WIRING_TONE,
+  cleanCfgText, formatValue, isDeprecatedSetting, LAYER_TONE, RISK_LABEL, SCOPE_LABEL, WIRING_LABEL, WIRING_TONE,
 } from "./configApi";
 
 export default function SettingCard({
@@ -28,7 +29,8 @@ export default function SettingCard({
   const [showMore, setShowMore] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const notUsed = item.status === "not_used";
+  // G5-61 — setting usang berlabel "(Lama) … TIDAK DIPAKAI LAGI" dulu tetap berlencana hijau "Aktif & tersambung".
+  const notUsed = isDeprecatedSetting(item);
   const dirty = draft !== undefined && JSON.stringify(draft) !== JSON.stringify(item.value);
   const editable = canEdit && !notUsed;
   const wStatus = notUsed ? "NOT_USED" : (wiring?.wiring_status || "OK");
@@ -57,8 +59,8 @@ export default function SettingCard({
       data-testid={`cfg-card-${item.key}`}>
       <header className="cfg-card-head">
         <div className="cfg-card-title">
-          <h3 data-testid={`cfg-card-label-${item.key}`}>{item.label}</h3>
-          <code className="cfg-key">{item.key}</code>
+          {/* G5-61 — kunci teknis (`rnd.lifecycle_enforcement`) pindah ke "Contoh & detail teknis" + tooltip. */}
+          <h3 data-testid={`cfg-card-label-${item.key}`} title={item.key}>{cleanCfgText(item.label)}</h3>
         </div>
         <div className="cfg-card-badges">
           <span className={`badge-${LAYER_TONE[item.source_layer] || "muted"}`}
@@ -102,15 +104,15 @@ export default function SettingCard({
         </p>
       ) : null}
 
-      <p className="cfg-help"><Info size={13} /> <span><b>Artinya:</b> {item.help}</span></p>
-      <p className="cfg-impact"><Zap size={13} /> <span><b>Kalau diubah:</b> {item.impact}</span></p>
+      <p className="cfg-help"><Info size={13} /> <span><b>Artinya:</b> {cleanCfgText(item.help)}</span></p>
+      <p className="cfg-impact"><Zap size={13} /> <span><b>Kalau diubah:</b> {cleanCfgText(item.impact)}</span></p>
 
       {notUsed ? (
         <div className="cfg-notused-box" data-testid={`cfg-notused-${item.key}`}>
           <Ban size={14} />
           <div>
             <b>Pengaturan ini TIDAK dipakai sistem saat ini.</b>
-            <p>{item.not_used_reason}</p>
+            <p>{cleanCfgText(item.not_used_reason || item.help)}</p>
           </div>
         </div>
       ) : null}
@@ -123,8 +125,9 @@ export default function SettingCard({
       {showMore ? (
         <div className="cfg-more">
           {item.example ? (
-            <p className="cfg-example"><b>Contoh:</b> {item.example}</p>
+            <p className="cfg-example"><b>Contoh:</b> {cleanCfgText(item.example)}</p>
           ) : null}
+          <p className="cfg-hint-sm">Kunci teknis: <code className="cfg-key">{item.key}</code></p>
           <p className="cfg-hint-sm">
             Bisa diatur pada level: {(item.scopes || []).map((s) => SCOPE_LABEL[s] || s).join(" · ")}
           </p>
@@ -146,7 +149,7 @@ export default function SettingCard({
             Terjadwal:{" "}
             {item.scheduled.map((s, i) => (
               <b key={i}>
-                {formatValue(item, s.value)} mulai {String(s.effective_from).slice(0, 10)}
+                {formatValue(item, s.value)} mulai {formatDate(s.effective_from)}
                 {i < item.scheduled.length - 1 ? " · " : ""}
               </b>
             ))}

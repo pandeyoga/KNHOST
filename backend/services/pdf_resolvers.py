@@ -5,17 +5,64 @@ yang dikonsumsi MASTER_TEMPLATE. Setiap resolver async(doc, db) -> dict.
 DOC_REGISTRY = SSOT daftar jenis dokumen yang bisa dicetak/PDF/e-sign/kirim.
 """
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from services.pdf_engine import fmt_rp, terbilang
+
+# UAT 24 Okt (audit UI tahap 2, G5-11) — dokumen cetak berbahasa Indonesia: dulu `strftime("%d %b %Y")` mencetak
+# bulan Inggris ("25 Oct 2026") dalam zona server (UTC), dan angka `:g` bergaya Inggris ("353.79 yard", "5337.91").
+_BULAN = ("Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des")
+_WIB = timezone(timedelta(hours=7))
 
 
 def fmt_date(s) -> str:
+    """"25 Okt 2026" (WIB bila stempel berzona; tanggal polos apa adanya). Kosong → ""."""
     if not s:
         return ""
     try:
-        return datetime.fromisoformat(str(s).replace("Z", "+00:00")).strftime("%d %b %Y")
+        d = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
     except (ValueError, TypeError):
         return str(s)[:10]
+    if d.tzinfo:
+        d = d.astimezone(_WIB)
+    return f"{d.day:02d} {_BULAN[d.month - 1]} {d.year}"
+
+
+def fmt_now(seconds: bool = False) -> str:
+    """Stempel "Dicetak" — "25 Okt 2026 14.30 WIB"."""
+    d = datetime.now(_WIB)
+    t = f"{d.hour:02d}.{d.minute:02d}" + (f".{d.second:02d}" if seconds else "")
+    return f"{d.day:02d} {_BULAN[d.month - 1]} {d.year} {t} WIB"
+
+
+def fmt_num(v, max_dec: int = 2) -> str:
+    """Angka gaya Indonesia: ribuan bertitik, desimal berkoma, nol di belakang dibuang ("5.337,91", "12", "0,75")."""
+    try:
+        n = float(v or 0)
+    except (TypeError, ValueError):
+        return str(v)
+    txt = f"{abs(n):,.{max_dec}f}"
+    if "." in txt:
+        txt = txt.rstrip("0").rstrip(".")
+    txt = txt.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+    return f"-{txt}" if n < 0 and txt != "0" else txt
+
+
+def _ppn_rows(doc, *, rate_key: str = "ppn_rate", amount_key: str = "ppn_amount", default_rate=11) -> list:
+    """Baris PPN di total. G5-11 — rezim 12% × DPP nilai lain (11/12): dulu hanya "PPN 12.0%" pada nominal yang
+    efektif 11% dari subtotal, tanpa dasar pengenaannya. Kini DPP-nya ditulis (bila dipakai) dan tarifnya id-ID."""
+    if not doc.get(amount_key):
+        return []
+    rate = fmt_num(doc.get(rate_key, default_rate))
+    rows = []
+    if doc.get("dpp_nilai_lain") and doc.get("dpp"):
+        rows.append({"label": "DPP nilai lain (11/12 × subtotal)", "value": fmt_rp(doc.get("dpp"))})
+        label = f"PPN {rate}% × DPP"
+    else:
+        label = f"PPN {rate}%"
+    if doc.get("ppn_mode") == "included":
+        label += " (sudah termasuk)"
+    rows.append({"label": label, "value": fmt_rp(doc.get(amount_key))})
+    return rows
 
 
 def fmt_address(val) -> str:
@@ -207,15 +254,14 @@ async def resolve_sales_order(doc, db):
         items.append({
             "no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
             "rolls": _rolls_cell(it.get("qty_rolls")),
-            "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
-            "price": fmt_rp(it.get("price")), "disc": f"{it.get('discount_percent', 0):g}%",
+            "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
+            "price": fmt_rp(it.get("price")), "disc": f"{fmt_num(it.get('discount_percent', 0))}%",
             "total": fmt_rp(it.get("line_total", it.get("subtotal"))),
         })
     totals = []
     if doc.get("net_subtotal"):
         totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal"))})
-    if doc.get("ppn_amount"):
-        totals.append({"label": f"PPN {doc.get('ppn_rate', 11)}%", "value": fmt_rp(doc.get("ppn_amount"))})
+    totals.extend(_ppn_rows(doc))
     totals.append({"label": "Grand Total", "value": fmt_rp(doc.get("grand_total", doc.get("total_amount"))), "strong": True})
     return {
         "title": "Konfirmasi Pesanan Penjualan", "number": doc.get("number"),
@@ -255,14 +301,13 @@ async def resolve_purchase_order(doc, db):
         items.append({
             "no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
             "rolls": _rolls_cell(it.get("qty_rolls")),
-            "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
+            "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
             "price": fmt_rp(it.get("price")), "total": fmt_rp(it.get("line_total", it.get("subtotal"))),
         })
     totals = []
     if doc.get("net_subtotal"):
         totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal"))})
-    if doc.get("ppn_amount"):
-        totals.append({"label": f"PPN {doc.get('ppn_rate', 11)}%", "value": fmt_rp(doc.get("ppn_amount"))})
+    totals.extend(_ppn_rows(doc))
     totals.append({"label": "Grand Total", "value": fmt_rp(doc.get("grand_total", doc.get("total_amount"))), "strong": True})
     return {
         "title": "Pesanan Pembelian", "number": doc.get("po_number"),
@@ -416,7 +461,7 @@ async def resolve_ar_receipt(doc, db):
 async def resolve_sales_return(doc, db):
     items = [{"no": i, "desc": it.get("product_name", ""),
               "rolls": _rolls_cell(it.get("qty_rolls")),
-              "qty": f"{it.get('quantity_returned', 0):g} {it.get('unit', '')}",
+              "qty": f"{fmt_num(it.get('quantity_returned', 0))} {it.get('unit', '')}",
               "reason": it.get("reason", "-"), "cond": it.get("condition", "-")}
              for i, it in enumerate(doc.get("items", []), 1)]
     return {
@@ -442,7 +487,7 @@ async def resolve_sales_return(doc, db):
 async def resolve_purchase_return(doc, db):
     items = [{"no": i, "desc": it.get("product_name", it.get("sku", "")),
               "rolls": _rolls_cell(it.get("qty_rolls")),
-              "qty": f"{it.get('quantity', it.get('quantity_returned', 0)):g} {it.get('unit', '')}",
+              "qty": f"{fmt_num(it.get('quantity', it.get('quantity_returned', 0)))} {it.get('unit', '')}",
               "reason": it.get("reason", "-")}
              for i, it in enumerate(doc.get("items", []), 1)]
     return {
@@ -475,11 +520,11 @@ def _mko_partial_tables(steps):
     if not rows:
         return []
     items = [{"step": f"#{s.get('seq')}", "grn": r.get("grn_number") or r.get("grn_id", ""),
-              "dn": r.get("dn_number") or "-", "qty": f"{float(r.get('out_qty') or 0):g} {unit}",
+              "dn": r.get("dn_number") or "-", "qty": f"{fmt_num(float(r.get('out_qty') or 0))} {unit}",
               "rolls": str(len(r.get("rolls") or [])), "by": f"{r.get('by', '')} · {fmt_date(r.get('at'))}",
               "status": st} for s, r, unit, st in rows]
     notes = [f"Langkah #{s.get('seq')}: penerimaan akhir {a.get('final_ref')} menyerap {a.get('count')} kiriman sebagian "
-             f"— {a.get('partial_qty'):g} + {a.get('final_qty'):g} = {a.get('total_qty'):g} {s.get('output_unit') or ''}."
+             f"— {fmt_num(a.get('partial_qty'))} + {fmt_num(a.get('final_qty'))} = {fmt_num(a.get('total_qty'))} {s.get('output_unit') or ''}."
              for s in steps for a in [s.get("partial_absorption")] if a]
     return [{"title": "Riwayat Kiriman Bertahap", "note": " ".join(notes),
              "columns": [_col("step", "Langkah"), _col("grn", "Kedatangan"), _col("dn", "SJ"),
@@ -488,21 +533,44 @@ def _mko_partial_tables(steps):
              "items": items}]
 
 
+MKO_MODE_LABEL = {"process_only": "Proses saja (bahan dari stok)", "buy_process": "Beli bahan + proses"}
+
+
+def _process_label(step) -> str:
+    """G5-13 — nama proses langkah SPK. Langkah baru hanya menyimpan `process_type` ("printing") sehingga kolom
+    PROSES dulu tercetak "-"; labelnya diambil dari registri domain (sumber yang sama dengan layar)."""
+    name = step.get("process_name") or step.get("name") or step.get("process") or step.get("stage_label")
+    if name:
+        return str(name)
+    pt = str(step.get("process_type") or "").strip()
+    if not pt:
+        return "-"
+    try:
+        import domain_registry as dr
+        return next((v.get("label") for v in dr.enum_items("process_type") if v.get("value") == pt), None) \
+            or pt.replace("_", " ").capitalize()
+    except Exception:  # noqa: BLE001 — registri gagal dimuat ≠ surat gagal terbit
+        return pt.replace("_", " ").capitalize()
+
+
 async def resolve_makloon_spk(doc, db):
     steps = doc.get("steps", []) or []
-    items = [{"no": i, "proc": s.get("process_name", s.get("name", s.get("process", "-"))),
-              "wh": s.get("makloon_name", s.get("subcon_name", s.get("vendor_name", "-"))),
+    items = [{"no": i, "proc": _process_label(s),
+              "wh": s.get("makloon_name") or s.get("subcon_name") or s.get("vendor_name") or "-",
               "rolls": _rolls_cell(s.get("qty_rolls")),
               "rolls_out": _rolls_cell(s.get("qty_rolls_out")),
-              "qty": f"{s.get('input_qty', s.get('qty', 0)):g}", "tariff": fmt_rp(s.get("tariff", s.get("cost", 0)))}
+              "qty": f"{fmt_num(s.get('input_qty', s.get('qty', 0)))} {s.get('input_unit') or ''}".strip(),
+              "tariff": fmt_rp(s.get("tariff", s.get("cost", 0)))}
              for i, s in enumerate(steps, 1)]
+    mode = doc.get("mode") or ""
     return {
         "title": "SPK Makloon / Work Order", "number": doc.get("mko_number"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
-        "meta": [{"label": "Material", "value": f"{doc.get('material_name', '-')} ({doc.get('material_qty', 0):g} {doc.get('material_unit', '')})"},
+        "meta": [{"label": "Material", "value": f"{doc.get('material_name', '-')} ({fmt_num(doc.get('material_qty', 0))} {doc.get('material_unit', '')})"},
                  {"label": "Output", "value": doc.get("final_output_name", "-")},
-                 {"label": "Mode", "value": doc.get("mode", "-")},
-                 {"label": "Dibuat oleh", "value": doc.get("created_by", "-")}],
+                 # G5-13 — dulu "Mode process_only" (kode mentah) tercetak di surat untuk mitra.
+                 {"label": "Jenis order", "value": MKO_MODE_LABEL.get(mode) or (mode.replace("_", " ").capitalize() or "-")},
+                 {"label": "Dibuat oleh", "value": doc.get("created_by") or doc.get("created_by_name") or "-"}],
         "columns": [_col("no", "No", "num"), _col("proc", "Proses"), _col("wh", "Pelaksana"),
                     _col_rolls("Roll Masuk"), _col("qty", "Jumlah Masuk", "num"),
                     _col("rolls_out", "Roll Keluar", "num"), _col("tariff", "Tarif", "num")],
@@ -520,7 +588,7 @@ async def resolve_special_order(doc, db):
     ci = doc.get("custom_item", {}) or {}
     items = [{"no": 1, "desc": ci.get("name", ci.get("description", "Custom item")),
               "spec": ci.get("spec", ci.get("specification", "-")),
-              "qty": f"{ci.get('quantity', 1):g} {ci.get('unit', '')}", "total": fmt_rp(doc.get("total_amount"))}]
+              "qty": f"{fmt_num(ci.get('quantity', 1))} {ci.get('unit', '')}", "total": fmt_rp(doc.get("total_amount"))}]
     return {
         "title": "Pesanan Khusus", "number": doc.get("number"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
@@ -546,7 +614,7 @@ async def resolve_special_order(doc, db):
 async def resolve_transfer(doc, db):
     items = [{"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
               "rolls": _rolls_cell(it.get("qty_rolls")),
-              "qty": f"{it.get('quantity', it.get('qty', 0)):g} {it.get('unit', '')}"}
+              "qty": f"{fmt_num(it.get('quantity', it.get('qty', 0)))} {it.get('unit', '')}"}
              for i, it in enumerate(doc.get("items", []), 1)]
     is_ic = doc.get("transfer_kind") == "inter_entity"
     from_name = doc.get("from_warehouse_name") or doc.get("source_warehouse_name")
@@ -561,15 +629,32 @@ async def resolve_transfer(doc, db):
         if wid:
             w = await db.warehouses.find_one({"id": wid}, {"_id": 0, "name": 1})
             to_name = (w or {}).get("name")
-    from_name = from_name or doc.get("source_entity_id") or doc.get("from_warehouse_id") or "-"
-    to_name = to_name or doc.get("dest_entity_id") or doc.get("to_warehouse_id") or "-"
+    from_name = from_name or doc.get("from_warehouse_id") or "-"
+    to_name = to_name or doc.get("to_warehouse_id") or "-"
+    # UAT 24 Okt (audit UI tahap 2, G5-12) — transfer antar-PT dulu mencetak NAMA GUDANG di baris "PT Asal/PT
+    # Tujuan" (keduanya "Jakarta · Gudang Sukacita" untuk Sukacita → Kanda Fabric) dan "Dibuat oleh -" karena
+    # pengajunya tersimpan di `requested_by`. Kini PT dari entitas sumber/tujuan, gudang di baris sendiri.
+    creator = doc.get("created_by") or doc.get("requested_by") or doc.get("created_by_name") or "-"
+    if is_ic:
+        async def _pt(eid):
+            if not eid:
+                return "-"
+            e = await db.business_entities.find_one({"id": eid}, {"_id": 0, "legal_name": 1, "short_name": 1})
+            return (e or {}).get("legal_name") or (e or {}).get("short_name") or "-"
+        meta = [{"label": "PT Asal", "value": await _pt(doc.get("source_entity_id"))},
+                {"label": "Gudang Asal", "value": from_name},
+                {"label": "PT Tujuan", "value": await _pt(doc.get("dest_entity_id"))},
+                {"label": "Gudang Tujuan", "value": to_name},
+                {"label": "Dibuat oleh", "value": creator}]
+    else:
+        meta = [{"label": "Dari Gudang", "value": from_name},
+                {"label": "Ke Gudang", "value": to_name},
+                {"label": "Dibuat oleh", "value": creator}]
     return {
         "title": "Surat Jalan Transfer Antar-PT" if is_ic else "Surat Jalan Transfer",
         "number": doc.get("number") or doc.get("transfer_number") or doc.get("code"),
         "date": fmt_date(doc.get("created_at")), "status": doc.get("status"),
-        "meta": [{"label": "PT Asal" if is_ic else "Dari Gudang", "value": from_name},
-                 {"label": "PT Tujuan" if is_ic else "Ke Gudang", "value": to_name},
-                 {"label": "Dibuat oleh", "value": doc.get("created_by", "-")}],
+        "meta": meta,
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"),
                     _col_rolls(), _col("qty", "Jumlah", "num")],
         "items": items,
@@ -597,8 +682,8 @@ async def resolve_cycle_count(doc, db):
         return ln.get("counted_qty", ln.get("actual_qty", 0)) or 0
 
     items = [{"no": i, "sku": ln.get("sku", ""), "desc": ln.get("product_name", ""),
-              "sys": f"{_sys(ln):g}", "count": f"{_cnt(ln):g}",
-              "diff": f"{(_cnt(ln) - _sys(ln)):g}"}
+              "sys": f"{fmt_num(_sys(ln))}", "count": f"{fmt_num(_cnt(ln))}",
+              "diff": f"{fmt_num((_cnt(ln) - _sys(ln)))}"}
              for i, ln in enumerate(lines, 1)]
     return {
         "title": "Laporan Stock Opname",
@@ -625,7 +710,7 @@ def _sum_by_unit(pairs) -> str:
     for q, u in pairs:
         u = (u or "").strip()
         agg[u] = agg.get(u, 0.0) + float(q or 0)
-    return " + ".join(f"{v:g} {u}".strip() for u, v in agg.items() if v) or "0"
+    return " + ".join(f"{fmt_num(v)} {u}".strip() for u, v in agg.items() if v) or "0"
 
 
 async def _wms_scan_rows(db, match: dict, flow_type: str):
@@ -684,7 +769,7 @@ async def _sj_number(db, order):
 async def resolve_picking_list(doc, db):
     rows, _ = await _wms_scan_rows(db, {"order_id": doc.get("id")}, "outbound")
     items = [{"no": i, "sku": r["sku"], "desc": r["product_name"], "bin": r["bin_id"],
-              "roll": r["roll_id"], "lot": r["lot"], "qty": f"{r['qty']:g} {r['unit']}"}
+              "roll": r["roll_id"], "lot": r["lot"], "qty": f"{fmt_num(r['qty'])} {r['unit']}"}
              for i, r in enumerate(rows, 1)]
     wh = next((r["warehouse_name"] for r in rows if r["warehouse_name"]), "-")
     total = _sum_by_unit([(r["qty"], r["unit"]) for r in rows])
@@ -696,7 +781,7 @@ async def resolve_picking_list(doc, db):
         "meta": [{"label": "No. Pesanan Penjualan", "value": doc.get("number", "-")},
                  {"label": "Gudang", "value": wh},
                  {"label": "Pelanggan", "value": doc.get("customer_name", "-")},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+                 {"label": "Dicetak", "value": fmt_now()}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"),
                     _col("bin", "Lokasi Bin", "ctr"), _col("roll", "Roll ID", "ctr"),
                     _col("lot", "Lot", "ctr"), _col("qty", "Qty Ambil", "num")],
@@ -720,7 +805,7 @@ async def resolve_packing_list(doc, db):
         a["rolls"] += 1
         a["qty"] += r["qty"]
     items = [{"no": i, "sku": a["sku"], "desc": a["product_name"], "rolls": str(a["rolls"]),
-              "qty": f"{a['qty']:g} {a['unit']}"} for i, a in enumerate(agg.values(), 1)]
+              "qty": f"{fmt_num(a['qty'])} {a['unit']}"} for i, a in enumerate(agg.values(), 1)]
     total_rolls = sum(a["rolls"] for a in agg.values())
     total = _sum_by_unit([(a["qty"], a["unit"]) for a in agg.values()])
     shp = await db.shipments.find_one({"order_id": doc.get("id")}, {"_id": 0, "shipment_no": 1})
@@ -733,7 +818,7 @@ async def resolve_packing_list(doc, db):
         "meta": [{"label": "No. Pesanan Penjualan", "value": doc.get("number", "-")},
                  {"label": "No. Surat Jalan", "value": (shp or {}).get("shipment_no", "-")},
                  {"label": "Pelanggan", "value": doc.get("customer_name", "-")},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+                 {"label": "Dicetak", "value": fmt_now()}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"),
                     _col_rolls(), _col("qty", "Jumlah", "num")],
         "items": items,
@@ -755,21 +840,21 @@ async def resolve_delivery_note(doc, db):
     for i, r in enumerate(rows, 1):
         p = pidx.get(r["sku"], {})
         items.append({"no": i, "nama": r["product_name"], "warna": p.get("color", "-"),
-                      "kode": r["sku"], "roll": r["roll_id"], "jumlah": f"{r['qty']:g} {r['unit']}"})
+                      "kode": r["sku"], "roll": r["roll_id"], "jumlah": f"{fmt_num(r['qty'])} {r['unit']}"})
     total_rolls = len(rows)
     total = _sum_by_unit([(r["qty"], r["unit"]) for r in rows])
     rname, rphone = _ship_recipient(doc.get("shipping_address"))
     return {
         "title": "Surat Jalan", "number": await _sj_number(db, doc),
         # CX-10 — tanggal SJ = tanggal kirim (stabil untuk hash versi), bukan tanggal cetak
-        "date": fmt_date(doc.get("dispatched_at")) or datetime.now().strftime("%d %b %Y"), "status": doc.get("status"),
+        "date": fmt_date(doc.get("dispatched_at")) or fmt_date(datetime.now(_WIB).isoformat()), "status": doc.get("status"),
         "party_to": {"title": "Kepada Yth", "name": (rname or doc.get("customer_name")),
                      "address": fmt_address(doc.get("shipping_address")),
                      "phone": (rphone or doc.get("customer_phone", ""))},
         "meta": [{"label": "No. Pesanan Penjualan", "value": doc.get("number", "-")},
                  {"label": "Sales", "value": doc.get("sales_name", doc.get("created_by", "-"))},
                  {"label": "Ekspedisi / Kendaraan", "value": doc.get("expedition") or doc.get("vehicle") or "-"},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M:%S")}],
+                 {"label": "Dicetak", "value": fmt_now(seconds=True)}],
         "columns": [_col("no", "No", "num"), _col("nama", "Nama Kain"), _col("warna", "Warna"),
                     _col("kode", "Kode Brg"), _col("roll", "Roll", "ctr"), _col("jumlah", "Jumlah", "num")],
         "items": items,
@@ -787,7 +872,7 @@ async def resolve_delivery_note(doc, db):
 async def resolve_put_away(doc, db):
     rows, tasks = await _wms_scan_rows(db, {"po_id": doc.get("id")}, "inbound")
     items = [{"no": i, "sku": r["sku"], "desc": r["product_name"], "roll": r["roll_id"],
-              "lot": r["lot"], "bin": r["bin_id"], "qty": f"{r['qty']:g} {r['unit']}"}
+              "lot": r["lot"], "bin": r["bin_id"], "qty": f"{fmt_num(r['qty'])} {r['unit']}"}
              for i, r in enumerate(rows, 1)]
     wh = next((r["warehouse_name"] for r in rows if r["warehouse_name"]), "-")
     total = _sum_by_unit([(r["qty"], r["unit"]) for r in rows])
@@ -797,7 +882,7 @@ async def resolve_put_away(doc, db):
         "meta": [{"label": "No. Pesanan Pembelian", "value": doc.get("po_number", "-")},
                  {"label": "Supplier", "value": doc.get("supplier_name", "-")},
                  {"label": "Gudang", "value": wh},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+                 {"label": "Dicetak", "value": fmt_now()}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"),
                     _col("roll", "Roll ID", "ctr"), _col("lot", "Lot", "ctr"),
                     _col("bin", "Bin Tujuan", "ctr"), _col("qty", "Qty", "num")],
@@ -821,10 +906,10 @@ async def resolve_goods_receipt(doc, db):
         received = float(it.get("received_qty") or 0)
         items.append({"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
                       "rolls_ord": _rolls_cell(it.get("qty_rolls")),
-                      "ordered": f"{ordered:g}",
+                      "ordered": f"{fmt_num(ordered)}",
                       "rolls_rcv": _rolls_cell(it.get("received_rolls")),
-                      "received": f"{received:g}",
-                      "diff": f"{(received - ordered):g}", "unit": it.get("unit", "")})
+                      "received": f"{fmt_num(received)}",
+                      "diff": f"{fmt_num((received - ordered))}", "unit": it.get("unit", "")})
     total_ord = _sum_by_unit([(float(it.get("quantity") or 0), it.get("unit", "")) for it in doc.get("items", [])])
     total_rcv = _sum_by_unit([(float(it.get("received_qty") or 0), it.get("unit", "")) for it in doc.get("items", [])])
     wh = next((r["warehouse_name"] for r in rows if r["warehouse_name"]), "-")
@@ -836,7 +921,7 @@ async def resolve_goods_receipt(doc, db):
         "meta": [{"label": "No. Pesanan Pembelian", "value": doc.get("po_number", "-")},
                  {"label": "Gudang Penerima", "value": wh},
                  {"label": "Total Roll Diterima", "value": str(total_rolls)},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+                 {"label": "Dicetak", "value": fmt_now()}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"),
                     _col("rolls_ord", "Roll Dipesan", "num"), _col("ordered", "Dipesan", "num"),
                     _col("rolls_rcv", "Roll Diterima", "num"), _col("received", "Diterima", "num"),
@@ -871,9 +956,9 @@ async def resolve_grn(doc, db):
         items.append({"no": ln.get("line_no"), "sku": tgt.get("sku") or (ln.get("read") or {}).get("item_code", ""),
                       "desc": tgt.get("product_name") or (ln.get("read") or {}).get("description", ""),
                       "ref": tgt.get("po_number") or (ln.get("read") or {}).get("po_ref", ""),
-                      "rolls_dn": _rolls_cell(dec.get("rolls")), "qty_dn": f"{float(dec.get('qty') or 0):g}",
-                      "rolls_cnt": _rolls_cell(cnt.get("rolls")), "qty_cnt": f"{float(cnt.get('qty') or 0):g}",
-                      "diff": f"{float(rc.get('diff_qty') or 0):g}" if rc else "-", "unit": unit})
+                      "rolls_dn": _rolls_cell(dec.get("rolls")), "qty_dn": f"{fmt_num(float(dec.get('qty') or 0))}",
+                      "rolls_cnt": _rolls_cell(cnt.get("rolls")), "qty_cnt": f"{fmt_num(float(cnt.get('qty') or 0))}",
+                      "diff": f"{fmt_num(float(rc.get('diff_qty') or 0))}" if rc else "-", "unit": unit})
     discs = [d for d in doc.get("discrepancies") or [] if not d.get("superseded")]
     note = "; ".join(f"Baris {d.get('line_no')}: {d.get('detail', '')}"
                      + (f" — {(d.get('resolution') or {}).get('action')}" if d.get("resolution") else "") for d in discs)
@@ -884,7 +969,7 @@ async def resolve_grn(doc, db):
         "meta": [{"label": "No. Surat Jalan", "value": dn.get("number") or "-"},
                  {"label": "Rujukan", "value": ", ".join(dn.get("po_refs") or []) or "-"},
                  {"label": "Gudang Penerima", "value": (wh or {}).get("name", "-")},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y %H:%M")}],
+                 {"label": "Dicetak", "value": fmt_now()}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Nama Barang"), _col("ref", "PO / SPK"),
                     _col("rolls_dn", "Roll SJ", "num"), _col("qty_dn", "Qty SJ", "num"),
                     _col("rolls_cnt", "Roll Dihitung", "num"), _col("qty_cnt", "Qty Dihitung", "num"),
@@ -909,7 +994,7 @@ async def resolve_purchase_requisition(doc, db):
     for i, it in enumerate(doc.get("items", []), 1):
         items.append({"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", it.get("description", "")),
                       "rolls": _rolls_cell(it.get("qty_rolls")),
-                      "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
+                      "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
                       "price": fmt_rp(it.get("est_price")), "total": fmt_rp(it.get("subtotal"))})
     return {
         "title": "Permintaan Pembelian", "number": doc.get("number"),
@@ -936,14 +1021,13 @@ async def resolve_invoice(doc, db):
     for i, it in enumerate(doc.get("items", []), 1):
         items.append({"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
                       "rolls": _rolls_cell(it.get("qty_rolls")),
-                      "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
-                      "price": fmt_rp(it.get("price")), "disc": f"{it.get('discount_percent', 0):g}%",
+                      "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
+                      "price": fmt_rp(it.get("price")), "disc": f"{fmt_num(it.get('discount_percent', 0))}%",
                       "total": fmt_rp(it.get("line_total", it.get("subtotal")))})
     totals = []
     if doc.get("net_subtotal") or doc.get("total_amount"):
         totals.append({"label": "Subtotal", "value": fmt_rp(doc.get("net_subtotal", doc.get("total_amount")))})
-    if doc.get("ppn_amount"):
-        totals.append({"label": f"PPN {doc.get('ppn_rate', 11)}%", "value": fmt_rp(doc.get("ppn_amount"))})
+    totals.extend(_ppn_rows(doc))
     grand = doc.get("grand_total", doc.get("total_amount"))
     totals.append({"label": "Grand Total", "value": fmt_rp(grand), "strong": True})
     return {
@@ -955,7 +1039,7 @@ async def resolve_invoice(doc, db):
         "meta": [{"label": "No. Pesanan Penjualan", "value": doc.get("number", "-")},
                  {"label": "Termin Bayar", "value": doc.get("payment_term_name", "-")},
                  {"label": "Status Bayar", "value": doc.get("payment_status", "-")},
-                 {"label": "Dicetak", "value": datetime.now().strftime("%d %b %Y")}],
+                 {"label": "Dicetak", "value": fmt_date(datetime.now(_WIB).isoformat())}],
         "columns": [_col("no", "No", "num"), _col("sku", "SKU"), _col("desc", "Produk"),
                     _col_rolls(), _col("qty", "Jumlah", "num"), _col("price", "Harga", "num"),
                     _col("disc", "Disc", "num"), _col("total", "Subtotal", "num")],
@@ -972,7 +1056,7 @@ async def resolve_tax_invoice(doc, db):
     for i, it in enumerate(doc.get("items", []), 1):
         items.append({"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
                       "rolls": _rolls_cell(it.get("qty_rolls")),
-                      "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
+                      "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
                       "price": fmt_rp(it.get("price")), "total": fmt_rp(it.get("line_total", it.get("subtotal")))})
     grand = doc.get("grand_total", doc.get("total_amount"))
     # FASE P2 — faktur pajak INTERNAL antar-PT (G-6): beri judul & catatan tegas supaya
@@ -1004,7 +1088,7 @@ async def resolve_tax_invoice(doc, db):
                     _col("price", "Harga", "num"), _col("total", "Total", "num")],
         "items": items,
         "totals": [{"label": "DPP", "value": fmt_rp(doc.get("dpp"))},
-                   {"label": f"PPN {doc.get('ppn_rate', 12)}%", "value": fmt_rp(doc.get("ppn_amount"))},
+                   {"label": f"PPN {fmt_num(doc.get('ppn_rate', 12))}%", "value": fmt_rp(doc.get("ppn_amount"))},
                    {"label": "Total", "value": fmt_rp(grand), "strong": True}],
         "terbilang": terbilang(grand), "notes": _notes,
         "signatures": [{"label": "Penjual / PKP", "role": doc.get("seller_name", ""), "name": doc.get("created_by", "")}],
@@ -1016,7 +1100,7 @@ async def resolve_tax_invoice(doc, db):
 async def resolve_rfq(doc, db):
     items = [{"no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", it.get("description", "")),
               "rolls": _rolls_cell(it.get("qty_rolls")),
-              "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}"}
+              "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}"}
              for i, it in enumerate(doc.get("items", []), 1)]
     sup = doc.get("supplier_name") or ", ".join(s.get("name", "") for s in (doc.get("suppliers") or []) if s.get("name")) or "-"
     return {
@@ -1087,13 +1171,13 @@ async def resolve_interco_return(doc, db):
         items.append({
             "no": i, "sku": it.get("sku", ""), "desc": it.get("product_name", ""),
             "rolls": _rolls_cell(it.get("qty_rolls")),
-            "qty": f"{it.get('quantity', 0):g} {it.get('unit', '')}",
+            "qty": f"{fmt_num(it.get('quantity', 0))} {it.get('unit', '')}",
             "price": fmt_rp(it.get("unit_price", it.get("price"))),
             "total": fmt_rp(it.get("line_subtotal", it.get("subtotal"))),
         })
     totals = [{"label": "Subtotal (DPP)", "value": fmt_rp(doc.get("subtotal"))}]
     if doc.get("tax_apply"):
-        totals.append({"label": f"PPN {doc.get('tax_rate', 11):g}%", "value": fmt_rp(doc.get("tax_amount"))})
+        totals.append({"label": f"PPN {fmt_num(doc.get('tax_rate', 11))}%", "value": fmt_rp(doc.get("tax_amount"))})
     grand = doc.get("grand_total")
     totals.append({"label": "Total Nilai Retur", "value": fmt_rp(grand), "strong": True})
 
@@ -1156,9 +1240,9 @@ async def resolve_inspection_spk(doc, db):
             "roll_no": ln.get("roll_no") or "—",
             "desc": ln.get("article") or ln.get("sku") or "—",
             "rolls": _rolls_cell(ln.get("qty_rolls")),
-            "qty": f"{float(ln.get('quantity') or 0):g} {ln.get('unit', '')}".strip(),
+            "qty": f"{fmt_num(float(ln.get('quantity') or 0))} {ln.get('unit', '')}".strip(),
             "points": ("—" if ln.get("points_snapshot") in (None, "")
-                       else f"{float(ln['points_snapshot']):g}"),
+                       else f"{fmt_num(float(ln['points_snapshot']))}"),
             "grade": (f"{ln.get('grade_before') or '—'} → {ln.get('grade_after') or '—'}"
                       if ln.get("grade_after") else (ln.get("grade_before") or "—")),
             "color": _color.get(ln.get("color_result") or "", "—"),
@@ -1185,7 +1269,7 @@ async def resolve_inspection_spk(doc, db):
             {"label": "Bagian", "value": doc.get("bagian") or "Bagian Inspect"},
             {"label": "Acuan sample (ACC)", "value": acuan or "belum ada sample ACC"},
             {"label": "Total roll", "value": _sum_rolls([ln.get("qty_rolls") for ln in lines])},
-            {"label": "Total poin cacat", "value": f"{summary.get('points_total', 0):g}"},
+            {"label": "Total poin cacat", "value": f"{fmt_num(summary.get('points_total', 0))}"},
             {"label": "Keputusan", "value": doc.get("decision_label") or "belum diputuskan"},
         ],
         "columns": [_col("no", "No", "num"), _col("roll_no", "No. Roll"),

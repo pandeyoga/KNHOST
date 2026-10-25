@@ -111,7 +111,7 @@ export default function EntityList({ entities = [], loading, canManage, onOpen,
                 data-testid="entity-type-all"
                 onClick={() => { setType(""); setPage(1); }}
                 className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                  !type ? "bg-[#6B219A] text-white"
+                  !type ? "bg-[#007AFF] text-white"
                        : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}
               >
                 Semua jenis
@@ -123,7 +123,7 @@ export default function EntityList({ entities = [], loading, canManage, onOpen,
                   data-testid={`entity-type-${t}`}
                   onClick={() => { setType(t); setPage(1); }}
                   className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                    type === t ? "bg-[#6B219A] text-white"
+                    type === t ? "bg-[#007AFF] text-white"
                               : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}
                 >
                   {t}

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, GitBranch, Loader2, RefreshCw } from "lucide-react";
 import { errText, fetchRefs, relTone } from "./traceApi";
 import { openTrace } from "./traceDeepLink";
+import { docStatusLabel } from "../../../utils/docStatus";
 
 export default function DocRefsPanel({ docType, docId, onOpenDocument, compact = false }) {
   const [rows, setRows] = useState([]);
@@ -48,10 +49,11 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
           <div className="flex items-center gap-1.5">
             <span className="rounded px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
               style={{ background: tone.bg, color: tone.fg }}>{r.rel_label || r.rel}</span>
-            <span className="truncate text-[11px] font-bold text-[#0058CC]">{r.doc_number || r.doc_id}</span>
+            {/* G5-51 — id teknis tidak ditampilkan bila dokumen tak bernomor; status berlabel. */}
+            <span className="truncate text-[11px] font-bold text-[#0058CC]" title={r.doc_number ? undefined : r.doc_id}>{r.doc_number || "(tanpa nomor)"}</span>
           </div>
           <p className="truncate text-[9.5px] text-[#8E8E93]">
-            {r.label}{r.status ? ` · ${r.status}` : ""}{r.alive === false ? " · dokumen sudah tidak ada" : ""}
+            {r.label}{r.status ? ` · ${docStatusLabel(r.status)}` : ""}{r.alive === false ? " · dokumen sudah tidak ada" : ""}
             {r.note ? ` · ${r.note}` : ""}
           </p>
         </div>

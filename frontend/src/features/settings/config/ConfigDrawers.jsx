@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react";
 import { X, Layers, FlaskConical, History, Play, Check, AlertTriangle, Ban, Clock } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
-import { configApi, errMsg, formatValue, idNum, shortVal, LAYER_TONE, VERDICT_TONE } from "./configApi";
+import { configApi, errMsg, formatValue, idNum, scopeText, shortVal, LAYER_TONE, VERDICT_TONE } from "./configApi";
 import { formatDateTime } from "../../../utils/formatters";
 
 function Shell({ title, subtitle, icon, onClose, children, testId }) {
@@ -83,7 +83,8 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
               >
                 <div className="cfg-layer-head">
                   <span className={`badge-${LAYER_TONE[l.layer] || "muted"}`}>{l.label}</span>
-                  {l.scope_id ? <code className="cfg-scope-id">{l.scope_id}</code> : null}
+                  {/* G5-61 — nama badan usaha, bukan id (`ent_ks…`). */}
+                  {l.scope_id ? <span className="cfg-scope-id" title={l.scope_id}>{scopeText(l.layer === "entity" || String(l.scope_id).startsWith("ent_") ? "entity" : l.layer, l.scope_id).split(": ").pop()}</span> : null}
                   {l.winner ? (
                     <span className="cfg-layer-win">
                       <Check size={12} /> DIPAKAI
@@ -319,8 +320,8 @@ export function ChangeHistoryDrawer({ entry, onClose }) {
                 </td>
                 <td>{r.label}</td>
                 <td>
-                  <span className="badge-muted">
-                    {r.scope_type}{r.scope_id ? `: ${r.scope_id}` : ""}
+                  <span className="badge-muted" title={r.scope_id || undefined}>
+                    {scopeText(r.scope_type, r.scope_id)}
                   </span>
                 </td>
                 <td className="tabular-nums">
@@ -382,8 +383,8 @@ export function ChangeHistoryInline() {
                 </td>
                 <td>{r.label}</td>
                 <td>
-                  <span className="badge-muted">
-                    {r.scope_type}{r.scope_id ? `: ${r.scope_id}` : ""}
+                  <span className="badge-muted" title={r.scope_id || undefined}>
+                    {scopeText(r.scope_type, r.scope_id)}
                   </span>
                 </td>
                 <td className="tabular-nums">

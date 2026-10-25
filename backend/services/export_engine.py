@@ -85,6 +85,36 @@ def _all_keys(ds: Dict[str, Any]) -> set:
     return {c["key"] for c in ds["columns"]} | {f"{j['id']}.{c['key']}" for j in ds.get("joins", []) for c in j["fields"]}
 
 
+_ORDER_TYPE_LABEL = {"regular": "Reguler", "sample": "Sampel"}
+
+
+def enum_label(enum: Optional[str], v: Any) -> Any:
+    """G5-14 — label Indonesia untuk nilai kode (peta status bersama `pdf_engine.status_label`)."""
+    if not enum or v is None or v == "":
+        return v
+    from services.pdf_engine import status_label
+    s = str(v)
+    if enum == "order_type":
+        return _ORDER_TYPE_LABEL.get(s, status_label(s))
+    if enum == "stage_legacy":            # "Reserved"/"Shipped" (huruf besar, Inggris) → peta status
+        return status_label(s.strip().lower().replace(" ", "_"))
+    return status_label(s, payment=(enum == "payment_status"))
+
+
+def _enum_codes(col: Dict[str, Any], v: Any) -> List[str]:
+    """Filter boleh berisi LABEL ("Dikirim") — dipetakan balik ke SEMUA kode berlabel itu (dispatched + shipped).
+    Kosong = nilai sudah berupa kode / tak dikenali (dipakai apa adanya)."""
+    enum = col.get("enum")
+    if not enum or not isinstance(v, str) or not v.strip():
+        return []
+    from services.pdf_engine import DOC_STATUS_LABEL, PAYMENT_STATUS_LABEL
+    pool = {**DOC_STATUS_LABEL, **PAYMENT_STATUS_LABEL, **_ORDER_TYPE_LABEL}
+    want = v.strip().lower()
+    if want in pool:
+        return []
+    return [code for code in pool if str(enum_label(enum, code)).lower() == want]
+
+
 def _coerce(col: Dict[str, Any], v: Any) -> Any:
     t = col["type"]
     if t in ("number", "money"):
@@ -134,7 +164,10 @@ def compile_filter(node: Optional[Dict[str, Any]], cols: Dict[str, Dict[str, Any
         return {p: {"$not": re.compile(re.escape(str(val or "")), re.I)}} if cmp == "not_contains" else {p: cond}
     if cmp == "in":
         vals = val if isinstance(val, list) else [x.strip() for x in str(val or "").split(",") if x.strip()]
-        return {p: {"$in": [_coerce(col, x) for x in vals]}}
+        return {p: {"$in": [c for x in vals for c in (_enum_codes(col, x) or [_coerce(col, x)])]}}
+    codes = _enum_codes(col, val)
+    if codes and cmp in ("eq", "ne"):
+        return {p: {"$in" if cmp == "eq" else "$nin": codes}}
     v = _coerce(col, val)
     return {p: v} if cmp == "eq" else {p: {f"${cmp}": v}}
 
@@ -323,7 +356,7 @@ def _norm(col: Dict[str, Any], v: Any) -> Any:
         return ", ".join(str(x) for x in v if not isinstance(x, (dict, list)))
     if isinstance(v, dict):
         return None
-    return str(v)
+    return enum_label(col.get("enum"), str(v)) if col.get("enum") else str(v)
 
 
 def _shape_grouped(plan, docs):

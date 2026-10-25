@@ -26,6 +26,9 @@ export default function DocumentActionsBar({
   docType, sourceId, entityId, number, label: labelProp,
   currentUser, esignable: esignableProp, onChanged, className = "", compact = false,
   autoCheckSignature = true,
+  // UAT 24 Okt (audit UI tahap 2, permintaan G4-15 & G5-50) — dokumen batal tidak ditawari Kirim WA / Tanda Tangan.
+  // `hideWhatsapp` / `hideEsign` eksplisit; `status` batal (cancelled/void/rejected/expired) menyembunyikan keduanya.
+  hideWhatsapp = false, hideEsign = false, status = "",
 }) {
   const [meta, setMeta] = useState({ label: labelProp || "", esignable: esignableProp });
   const [preview, setPreview] = useState(null);
@@ -36,6 +39,9 @@ export default function DocumentActionsBar({
   const [err, setErr] = useState("");
 
   const canSign = ESIGN_ROLES.includes(currentUser?.role);
+  const dead = ["cancelled", "canceled", "void", "voided", "rejected", "expired"].includes(String(status || "").toLowerCase());
+  const showWa = !hideWhatsapp && !dead;
+  const showEsign = !hideEsign && !dead;
 
   useEffect(() => {
     if (esignableProp !== undefined && labelProp) {
@@ -110,16 +116,18 @@ export default function DocumentActionsBar({
         className={`${btnCls} border-[#EDEEF1] text-[#4A4B52] hover:bg-[#F2F3F5]`} data-testid="doc-act-download">
         {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}{!compact && "Unduh PDF"}
       </button>
-      {meta.esignable && canSign && (
+      {meta.esignable && canSign && showEsign && (
         <button type="button" onClick={() => setEsignOpen(true)} title="Tanda Tangan Elektronik"
           className={`${btnCls} border-[#BBD3FF] bg-[#EAF2FF] text-[#0058CC] hover:bg-[#DBEAFE]`} data-testid="doc-act-esign">
           <PenLine size={15} />{!compact && (signed ? "Tanda Tangan Ulang" : "Tanda Tangan")}
         </button>
       )}
-      <button type="button" onClick={() => setWaOpen(true)} title="Kirim via WhatsApp"
-        className={`${btnCls} border-[#BFE6CE] text-[#1F7A45] hover:bg-[#E7F8EE]`} data-testid="doc-act-wa">
-        <MessageCircle size={15} />{!compact && "Kirim WA"}
-      </button>
+      {showWa && (
+        <button type="button" onClick={() => setWaOpen(true)} title="Kirim via WhatsApp"
+          className={`${btnCls} border-[#BFE6CE] text-[#1F7A45] hover:bg-[#E7F8EE]`} data-testid="doc-act-wa">
+          <MessageCircle size={15} />{!compact && "Kirim WA"}
+        </button>
+      )}
       {signed && (
         <span className="inline-flex items-center gap-1 rounded-full bg-[#ECFAF1] px-2 py-0.5 text-[10.5px] font-semibold text-[#1F7A45]"
           title={`Kode verifikasi: ${signed.verification_code}`} data-testid="doc-act-signed-badge">

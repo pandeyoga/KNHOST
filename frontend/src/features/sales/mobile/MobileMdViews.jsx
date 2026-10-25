@@ -15,7 +15,8 @@ import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Plus, RefreshCw, S
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
-import { askReason } from "../../../services/confirmService";
+import { askConfirm, askReason } from "../../../services/confirmService";
+import KNDatePicker from "../../../components/KNDatePicker";
 import { ageTone, badgeClass, badgeLabel, mdDesk, rowLink } from "../../sales_admin/workDeskApi";
 import { errText } from "./MobileSalesFlows";
 import { STATUS_STYLE as PR_STATUS_STYLE } from "../../purchasing/prConstants";
@@ -26,7 +27,7 @@ const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-di
 
 function Chips({ items, value, onChange, prefix }) {
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto py-1">
+    <div className="flex flex-wrap gap-2 py-1">
       {items.map(([id, label]) => (
         <button key={id || "all"} onClick={() => onChange(id)} data-testid={`${prefix}-${id || "all"}`}
           className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-[12px] font-semibold ${value === id ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`}>{label}</button>
@@ -36,6 +37,15 @@ function Chips({ items, value, onChange, prefix }) {
 }
 const Pill = ({ label, tone = "mute", testId }) => <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${badgeClass(tone)}`} data-testid={testId}>{label}</span>;
 const Back = ({ label, onClick, testId }) => <button className="m-subpage-back" onClick={onClick} data-testid={testId}><ArrowLeft size={17} /> {label}</button>;
+// UAT 24 Okt (audit UI tahap 2, G5-59) — form HP berlabel di atas isian (dulu placeholder sebagai label).
+const Field = ({ label, req, hint, children }) => (
+  <label className="block space-y-1 text-[11.5px] font-semibold text-[#4A4B53]">
+    <span>{label}{req ? <span className="text-[#C0392B]"> *</span> : <span className="font-normal text-[#8E8E93]"> (opsional)</span>}</span>
+    {children}
+    {hint ? <span className="block text-[10.5px] font-normal text-[#8E8E93]">{hint}</span> : null}
+  </label>
+);
+const FormHead = ({ title }) => <p className="px-1 text-[15px] font-bold" data-testid="m-form-title">{title}</p>;
 const Notice = ({ msg, testId }) => (msg ? <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid={testId}>{msg.text}</div> : null);
 
 /* ───────────── Meja MD ───────────── */
@@ -130,16 +140,19 @@ function DesignCreate({ meta, onBack, onDone }) {
   };
   return (
     <div className="space-y-2" data-testid="m-dsr-create">
-      <Back label="Permintaan desain" onClick={onBack} testId="m-dsr-create-back" />
-      <div className="m-card space-y-2 p-3">
-        <Chips items={(meta?.target_types || []).map((t) => [t.id, t.label])} value={f.target_type} onChange={(v) => setF({ ...f, target_type: v, category_code: "" })} prefix="m-dsr-type" />
-        <KNSelect value={f.category_code} onValueChange={(v) => setF({ ...f, category_code: v })} options={cats.map((c) => ({ value: c.code, label: c.name }))} placeholder="Kategori" data-testid="m-dsr-category" />
-        <KNSelect value={f.customer_id} onValueChange={(v) => setF({ ...f, customer_id: v })} options={[{ value: "", label: "— Internal (tanpa pelanggan) —" }, ...customers.map((c) => ({ value: c.id, label: c.name }))]} placeholder="Pelanggan (opsional)" data-testid="m-dsr-customer" />
-        <textarea className="field" rows={4} placeholder="Brief: motif, warna, referensi, pemakaian… *" value={f.brief} onChange={(e) => setF({ ...f, brief: e.target.value })} data-testid="m-dsr-brief" />
-        <KNSelect value={f.assigned_to} onValueChange={(v) => setF({ ...f, assigned_to: v })} options={[{ value: "", label: "— Tugaskan nanti —" }, ...(meta?.designers || []).map((d) => ({ value: d.id, label: d.name }))]} placeholder="Desainer (opsional)" data-testid="m-dsr-designer" />
-        <label className="block text-[11.5px] font-semibold text-[#4A4B53]">Tenggat<input type="date" className="field mt-1" value={f.due_date} onChange={(e) => setF({ ...f, due_date: e.target.value })} data-testid="m-dsr-due" /></label>
+      <FormHead title="Permintaan desain baru" />
+      <div className="m-card space-y-2.5 p-3">
+        <div className="space-y-1 text-[11.5px] font-semibold text-[#4A4B53]"><span>Jenis<span className="text-[#C0392B]"> *</span></span><Chips items={(meta?.target_types || []).map((t) => [t.id, t.label])} value={f.target_type} onChange={(v) => setF({ ...f, target_type: v, category_code: "" })} prefix="m-dsr-type" /></div>
+        <Field label="Kategori"><KNSelect value={f.category_code} onValueChange={(v) => setF({ ...f, category_code: v })} options={cats.map((c) => ({ value: c.code, label: c.name }))} placeholder="Pilih kategori" data-testid="m-dsr-category" /></Field>
+        <Field label="Pelanggan"><KNSelect value={f.customer_id} onValueChange={(v) => setF({ ...f, customer_id: v })} options={[{ value: "", label: "— Internal (tanpa pelanggan) —" }, ...customers.map((c) => ({ value: c.id, label: c.name }))]} placeholder="Internal (tanpa pelanggan)" data-testid="m-dsr-customer" /></Field>
+        <Field label="Brief" req hint="Minimal 5 huruf: motif, warna, referensi, pemakaian."><textarea className="field" rows={4} placeholder="mis. motif bunga kecil, navy & krem, untuk kemeja" value={f.brief} onChange={(e) => setF({ ...f, brief: e.target.value })} data-testid="m-dsr-brief" /></Field>
+        <Field label="Desainer"><KNSelect value={f.assigned_to} onValueChange={(v) => setF({ ...f, assigned_to: v })} options={[{ value: "", label: "— Tugaskan nanti —" }, ...(meta?.designers || []).map((d) => ({ value: d.id, label: d.name }))]} placeholder="Tugaskan nanti" data-testid="m-dsr-designer" /></Field>
+        <Field label="Tenggat"><KNDatePicker value={f.due_date} onChange={(v) => setF({ ...f, due_date: v || "" })} data-testid="m-dsr-due" /></Field>
         {err && <div className="notice-bar danger text-xs" data-testid="m-dsr-create-error">{err}</div>}
-        <button className="primary-button w-full py-3" disabled={busy || f.brief.trim().length < 5} onClick={submit} data-testid="m-dsr-submit">{busy ? "Mengirim…" : "Ajukan permintaan desain"}</button>
+        <div className="flex gap-2">
+          <button className="secondary-button flex-1 py-3" onClick={onBack} disabled={busy} data-testid="m-dsr-create-back">Batal</button>
+          <button className="primary-button flex-[2] py-3" disabled={busy || f.brief.trim().length < 5} onClick={submit} data-testid="m-dsr-submit">{busy ? "Mengirim…" : "Ajukan permintaan desain"}</button>
+        </div>
       </div>
     </div>
   );
@@ -157,7 +170,12 @@ function DesignDetail({ id, meta, onBack }) {
     try { await axios.post(`${API}/design-requests/${id}/${path}`, body); await load(); setMsg({ ok: true, text: okText }); }
     catch (e) { setMsg({ ok: false, text: errText(e, "Aksi gagal.") }); } finally { setBusy(false); }
   };
-  const withReason = async (path, title, okText) => { const reason = await askReason({ title, danger: path !== "approve" }); if (reason) act(path, { reason, note: reason }, okText); };
+  // G5-59 — dialog batal dulu bertombol generik "Konfirmasi"; "ACC desain" langsung menulis tanpa konfirmasi.
+  const withReason = async (path, title, okText, confirmLabel) => { const reason = await askReason({ title, danger: path !== "approve", confirmLabel }); if (reason) act(path, { reason, note: reason }, okText); };
+  const approve = async () => {
+    if (!(await askConfirm({ title: `ACC desain ${d.number}?`, message: "Desain yang dikirim desainer disetujui dan permintaan ditutup.", confirmLabel: "ACC desain" }))) return;
+    act("approve", { note: "" }, "Desain di-ACC.");
+  };
   if (!d) return <div className="space-y-2"><Back label="Permintaan desain" onClick={onBack} testId="m-dsr-back" />{msg ? <Notice msg={msg} /> : <p className="text-xs m-muted">Memuat…</p>}</div>;
   const open = !["approved", "cancelled"].includes(d.status);
   return (
@@ -178,18 +196,18 @@ function DesignDetail({ id, meta, onBack }) {
         <div className="m-card space-y-2 p-3" data-testid="m-dsr-assign">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">{d.assigned_to ? "Tugaskan ulang" : "Tugaskan desainer"}</p>
           <KNSelect value={assign.assigned_to} onValueChange={(v) => setAssign({ ...assign, assigned_to: v })} options={(meta?.designers || []).map((x) => ({ value: x.id, label: x.name }))} placeholder="Pilih desainer" data-testid="m-dsr-assign-designer" />
-          <input type="date" className="field" value={assign.due_date} onChange={(e) => setAssign({ ...assign, due_date: e.target.value })} data-testid="m-dsr-assign-due" />
+          <Field label="Tenggat"><KNDatePicker value={assign.due_date} onChange={(v) => setAssign({ ...assign, due_date: v || "" })} data-testid="m-dsr-assign-due" /></Field>
           <button className="primary-button w-full py-2.5" disabled={busy || !assign.assigned_to} onClick={() => act("assign", assign, "Desainer ditugaskan.")} data-testid="m-dsr-assign-submit">Tugaskan</button>
         </div>
       )}
       {d.status === "delivered" && (
         <div className="grid grid-cols-2 gap-2" data-testid="m-dsr-decide">
-          <button className="primary-button py-3" disabled={busy} onClick={() => act("approve", { note: "" }, "Desain di-ACC.")} data-testid="m-dsr-approve">ACC desain</button>
-          <button className="secondary-button py-3" disabled={busy} onClick={() => withReason("reject", "Minta revisi — apa yang perlu diubah?", "Dikembalikan untuk revisi.")} data-testid="m-dsr-reject">Minta revisi</button>
+          <button className="primary-button py-3" disabled={busy} onClick={approve} data-testid="m-dsr-approve">ACC desain</button>
+          <button className="secondary-button py-3" disabled={busy} onClick={() => withReason("reject", "Minta revisi — apa yang perlu diubah?", "Dikembalikan untuk revisi.", "Minta revisi")} data-testid="m-dsr-reject">Minta revisi</button>
         </div>
       )}
       {d.status === "draft" && <button className="primary-button w-full py-3" disabled={busy} onClick={() => act("submit", {}, "Diajukan.")} data-testid="m-dsr-submit-draft">Ajukan</button>}
-      {open && <button className="w-full py-2 text-[12px] font-semibold text-[#C0392B]" disabled={busy} onClick={() => withReason("cancel", `Batalkan ${d.number}?`, "Permintaan dibatalkan.")} data-testid="m-dsr-cancel">Batalkan permintaan</button>}
+      {open && <button className="w-full py-2 text-[12px] font-semibold text-[#C0392B]" disabled={busy} onClick={() => withReason("cancel", `Batalkan ${d.number}?`, "Permintaan dibatalkan.", "Batalkan permintaan")} data-testid="m-dsr-cancel">Batalkan permintaan</button>}
       {(d.history || []).length > 0 && (
         <div className="m-card p-3" data-testid="m-dsr-history">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Riwayat</p>
@@ -490,25 +508,29 @@ function PrCreate({ onBack, onDone }) {
   };
   return (
     <div className="space-y-2" data-testid="m-pr-create">
-      <Back label="Permintaan pembelian" onClick={onBack} testId="m-pr-create-back" />
-      <div className="m-card space-y-2 p-3">
+      <FormHead title="Buat PR bahan" />
+      <div className="m-card space-y-2.5 p-3">
         {lines.map((l, i) => (
           <div key={i} className="space-y-1.5 rounded-xl border border-[#EFF0F2] p-2" data-testid={`m-pr-line-${i}`}>
             {products.length === 0 ? <div className="field text-[#8E8E93]" data-testid={`m-pr-product-loading-${i}`}>Memuat produk…</div> :
-              <KNSelect value={l.product_id} onValueChange={(v) => setLine(i, { product_id: v })} options={products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))} placeholder="Pilih bahan / produk" data-testid={`m-pr-product-${i}`} />}
-            <div className="flex gap-2">
-              <input type="number" inputMode="decimal" className="field flex-1" placeholder="Jumlah" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pr-qty-${i}`} />
-              <input type="number" inputMode="decimal" className="field flex-1" placeholder="Est. harga" value={l.est_price} onChange={(e) => setLine(i, { est_price: e.target.value })} data-testid={`m-pr-price-${i}`} />
-              {lines.length > 1 && <button className="px-1 text-[#C0392B]" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} aria-label="Hapus baris"><Trash2 size={16} /></button>}
-            </div>
+              <Field label="Bahan / produk" req><KNSelect value={l.product_id} onValueChange={(v) => setLine(i, { product_id: v })} options={products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))} placeholder="Pilih bahan / produk" data-testid={`m-pr-product-${i}`} /></Field>}
+            {(() => { const unit = products.find((x) => x.id === l.product_id)?.base_unit || "satuan"; return (
+            <div className="flex items-end gap-2">
+              <Field label={`Jumlah (${unit})`} req><input type="number" inputMode="decimal" className="field" placeholder="mis. 120" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pr-qty-${i}`} /></Field>
+              <Field label={`Est. harga (Rp/${unit})`}><input type="number" inputMode="decimal" className="field" placeholder="mis. 25000" value={l.est_price} onChange={(e) => setLine(i, { est_price: e.target.value })} data-testid={`m-pr-price-${i}`} /></Field>
+              {lines.length > 1 && <button className="mb-2 px-1 text-[#C0392B]" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} aria-label="Hapus baris"><Trash2 size={16} /></button>}
+            </div>); })()}
           </div>
         ))}
         <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" onClick={() => setLines((ls) => [...ls, { product_id: "", quantity: "", est_price: "" }])} data-testid="m-pr-add-line"><Plus size={13} /> Tambah baris</button>
-        <input className="field" placeholder="Alasan kebutuhan *" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pr-reason" />
-        <label className="block text-[11.5px] font-semibold text-[#4A4B53]">Dibutuhkan tanggal<input type="date" className="field mt-1" value={f.needed_by_date} onChange={(e) => setF({ ...f, needed_by_date: e.target.value })} data-testid="m-pr-date" /></label>
-        <textarea className="field" rows={2} placeholder="Catatan" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pr-notes" />
+        <Field label="Alasan kebutuhan" req><input className="field" placeholder="mis. bahan sample proofing SORD-…" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pr-reason" /></Field>
+        <Field label="Dibutuhkan tanggal"><KNDatePicker value={f.needed_by_date} onChange={(v) => setF({ ...f, needed_by_date: v || "" })} data-testid="m-pr-date" /></Field>
+        <Field label="Catatan"><textarea className="field" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pr-notes" /></Field>
         {err && <div className="notice-bar danger text-xs" data-testid="m-pr-create-error">{err}</div>}
-        <button className="primary-button w-full py-3" disabled={busy || !valid} onClick={submit} data-testid="m-pr-submit">{busy ? "Mengirim…" : "Ajukan PR"}</button>
+        <div className="flex gap-2">
+          <button className="secondary-button flex-1 py-3" onClick={onBack} disabled={busy} data-testid="m-pr-create-back">Batal</button>
+          <button className="primary-button flex-[2] py-3" disabled={busy || !valid} onClick={submit} data-testid="m-pr-submit">{busy ? "Mengirim…" : "Ajukan PR"}</button>
+        </div>
       </div>
     </div>
   );
@@ -542,8 +564,9 @@ export function MobilePurchaseRequisitions({ focusId }) {
           <button className="m-press flex w-full items-start gap-2 p-3 text-left" onClick={() => setOpen(open === r.id ? null : r.id)}>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5"><span className="text-[12.5px] font-bold text-[#0058CC]">{r.number}</span><Pill label={PR_STATUS_STYLE[r.status]?.label || badgeLabel(r.status)} tone={r.status} /></div>
-              <p className="truncate text-[12px]">{r.reason || "-"}</p>
-              <p className="text-[11px] m-muted">{(r.items || []).length} baris · {fmtDate(r.created_at)}{r.po_number ? ` · ${r.po_number}` : ""}</p>
+              {/* G5-60 — judul dulu terpotong tepat di nomor pembeda ("…SORD-261024-0…"); kini 2 baris & nomor tak patah. */}
+              <p className="line-clamp-2 break-words text-[12px]">{r.reason || "-"}</p>
+              <p className="text-[11px] m-muted">{(r.items || []).length} baris · {fmtDate(r.created_at)}{r.po_number ? ` · PO ${r.po_number}` : r.status === "converted" ? " · nomor PO belum tercatat" : ""}</p>
             </div>
             <span className="text-[12px] font-bold tabular-nums">{formatCurrency(r.total_est_amount)}</span>
           </button>
@@ -575,7 +598,7 @@ export function MobilePoWatch() {
         <div key={p.id} className="m-card p-3" data-testid={`m-po-${p.id}`}>
           <div className="flex items-center justify-between gap-2"><span className="text-[12.5px] font-bold text-[#0058CC]">{p.po_number}</span><Pill label={badgeLabel(p.status || p.approval_status)} tone={p.status || p.approval_status} /></div>
           <p className="truncate text-[12px]">{p.supplier_name || "-"}{p.pr_number ? ` · dari ${p.pr_number}` : ""}</p>
-          <p className="text-[10.5px] m-muted">{(p.items || []).length} baris · kirim {fmtDate(p.expected_delivery_date)} · {formatCurrency(p.grand_total)}</p>
+          <p className="text-[10.5px] m-muted">{[`${(p.items || []).length} baris`, p.expected_delivery_date ? `kirim ${fmtDate(p.expected_delivery_date)}` : "", formatCurrency(p.grand_total)].filter(Boolean).join(" · ")}</p>
         </div>
       ))}
     </div>

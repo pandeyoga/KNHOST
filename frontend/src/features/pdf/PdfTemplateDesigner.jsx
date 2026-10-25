@@ -244,12 +244,17 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
               disabled={downloading || !hasSample} data-testid="pdf-download">
               {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Unduh PDF
             </button>
+            {/* UAT 24 Okt (audit UI tahap 2, G5-53) — dua tombol simpan berbeda cakupan kini dijelaskan. */}
             <button className="btn-primary flex items-center gap-1.5" onClick={saveTemplate}
+              title="Menyimpan tata letak, tabel, field tambahan & tanda tangan untuk jenis dokumen ini. Kop/logo/kontak disimpan di tab Kop Surat (Simpan Branding)."
               disabled={savingTpl || !config} data-testid="pdf-save-template">
               {savingTpl ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Template
             </button>
           </div>
         </div>
+        <p className="px-4 pb-1 text-[11px] text-[#6B6B73]" data-testid="pdf-save-scope-hint">
+          <b>Simpan Template</b> = tata letak, tabel, field &amp; tanda tangan jenis dokumen ini · <b>Simpan Branding</b> (tab Kop Surat) = kop, logo &amp; kontak badan usaha untuk semua dokumen.
+        </p>
         <div className="px-4 pb-3 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="pdf-layer-info">
           <Layers size={13} className="text-[#0058CC]" />
           {isDefault ? (

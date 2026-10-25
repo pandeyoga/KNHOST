@@ -20,7 +20,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency } from "../../utils/formatters";
 import { actorLabel } from "../../utils/actorLabel";
-import { roleLabel } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
+import axios, { API } from "../../services/apiClient";
 import {
   apiErr, approvalMatrixLog, approveMakloonClaim, approvePr, approveSpec, approveSpecialOrder,
   myApprovalQueue, rejectMakloonClaim, rejectPr, rejectSpec, rejectSpecialOrder,
@@ -93,11 +94,14 @@ function StageCard({ stage, count, active, onClick }) {
 }
 
 /** Rantai tingkat persetujuan (mis. Manager → Direksi). */
+// UAT 24 Okt (audit UI tahap 2, G5-22) — dua gaya untuk hal yang sama ("Tingkat 1/1 · Manager" pil abu vs
+// "○ 1. Manager" oranye): kini satu bentuk pil + istilah Indonesia.
+const levelText = (t) => String(t || "").replace(/\bManager\b/g, "Manajer").replace(/\bOwner\b/g, "Pemilik");
 function ChainPills({ chain = [], level = 1, total = 1, label = "" }) {
   if (!chain.length) {
     return (
-      <span className="inline-block rounded-full bg-[#EEF1F5] px-2 py-0.5 text-[10px] font-semibold text-[#4A4B52]">
-        Tingkat {level}/{total}{label ? ` · ${label}` : ""}
+      <span className="inline-block rounded-full bg-[#FFF4E5] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">
+        ○ {level}/{total}{label ? `. ${levelText(label)}` : ""}
       </span>
     );
   }
@@ -109,7 +113,7 @@ function ChainPills({ chain = [], level = 1, total = 1, label = "" }) {
             lv.status === "approved"
               ? "bg-[#E9F7EF] text-[#1B7F4B]"
               : "bg-[#FFF4E5] text-[#B45309]"}`}>
-          {lv.status === "approved" ? "✓ " : "○ "}{lv.level}. {lv.label}
+          {lv.status === "approved" ? "✓ " : "○ "}{lv.level}. {levelText(lv.label)}
         </span>
       ))}
     </span>
@@ -152,6 +156,23 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
   }, [params, onlyViolations]);
 
   useEffect(() => { load(); }, [load]);
+
+  // G5-22 — pengaju dulu tampil sebagai email mentah ("admin@kainnusantara.id"); kini nama (email di tooltip).
+  const [userNames, setUserNames] = useState({});
+  useEffect(() => {
+    if (!can(currentUser?.permissions, "user", "view")) return;
+    axios.get(`${API}/users`).then((r) => {
+      const m = {};
+      (Array.isArray(r.data) ? r.data : r.data?.items || []).forEach((u) => { if (u.email) m[String(u.email).toLowerCase()] = u.name; });
+      setUserNames(m);
+    }).catch(() => {});
+  }, [currentUser]);
+  const personText = (v) => {
+    const s = String(v || "");
+    if (!s.includes("@")) return actorLabel(s);
+    if (currentUser?.email && s.toLowerCase() === String(currentUser.email).toLowerCase()) return currentUser.name || s;
+    return userNames[s.toLowerCase()] || s.split("@")[0].replace(/[._-]+/g, " ").replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+  };
 
   const cfg = data?.config || {};
   const items = (data?.items || []).filter((it) => !stage || it.stage === stage);
@@ -377,7 +398,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                           <div className="mt-1.5 sm:hidden" data-testid={`my-approvals-actions-m-${it.id}`}>{renderActions("m-")}</div>
                         </td>
                         <td className="py-2 pr-3 text-[11.5px] text-[#4A4B52]">
-                          {actorLabel(it.requester)}
+                          <span title={String(it.requester || "").includes("@") ? it.requester : undefined}>{personText(it.requester)}</span>
                           <div className="text-[11px] text-[#9A9BA3]">{fmtDate(it.created_at)}</div>
                         </td>
                         <td className="py-2 pr-3 text-right font-semibold text-[#1C1C1E]">
@@ -486,7 +507,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                 <p className="modal-subtitle">
                   {modalItem.title}
                   {modalItem.amount ? ` · ${formatCurrency(modalItem.amount)}` : ""}
-                  {" · diajukan "}{actorLabel(modalItem.requester)}
+                  {" · diajukan "}{personText(modalItem.requester)}
                 </p>
               </div>
               <button className="secondary-button !h-7 !px-2" onClick={() => setModal(null)}

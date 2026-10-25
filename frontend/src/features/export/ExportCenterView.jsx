@@ -72,8 +72,11 @@ function cleanFilter(node) {
   return noValue || String(node.value ?? "").trim() !== "" ? node : null;
 }
 
+// UAT 24 Okt (audit UI tahap 2, G5-52) — kolom teknis ("ID badan usaha", "ID roll", key `*_id`) tidak lagi terpilih
+// bawaan; tetap bisa dicentang di langkah Kolom.
+const isTechCol = (c) => c.key === "id" || /_id$/.test(c.key) || /^ID /.test(c.label || "");
 const freshSpec = (ds) => ({
-  dataset: ds.id, columns: ds.columns.filter((c) => c.source === "base").map((c) => c.key),
+  dataset: ds.id, columns: ds.columns.filter((c) => c.source === "base" && !isTechCol(c)).map((c) => c.key),
   filter: emptyGroup(), date_field: "", date_from: "", date_to: "", sort: [], group_by: [],
 });
 
@@ -210,7 +213,7 @@ export default function ExportCenterView({ selectedEntity }) {
                         disabled={!!busy || tplName.trim().length < 3 || !spec.columns.length}
                         className="rounded-full border border-[#0058CC] text-[#0058CC] px-4 py-1.5 text-[12.5px] font-semibold disabled:opacity-50">Simpan template</button>
               </div>
-              {preview && <Step n="6" title="Pratinjau"><PreviewTable data={preview} /></Step>}
+              {preview && <Step n="6" title="Pratinjau"><PreviewTable data={preview} datasetId={spec?.dataset} scopeText={selectedEntity === "all" ? "semua badan usaha" : "badan usaha aktif"} /></Step>}
             </div>
           )}
         </div>

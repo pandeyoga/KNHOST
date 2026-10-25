@@ -153,7 +153,9 @@ MORE = [
     S("payment_variance_decisions", "Keputusan Selisih Bayar", "Keuangan", "payment_variance_decisions", ("payment_variance", "view"),
       "number:No.|customer_name:Pelanggan|receipt_number:No. kwitansi|direction:Arah|kind_label:Jenis|expected:Diharapkan:m"
       "|funds:Diterima:m|delta:Selisih:m|reason_label:Alasan|decided_by:Diputus oleh|entity_id:ID badan usaha"),
-    S("doc_amendments", "Amandemen Dokumen", "Keuangan", "doc_amendments", ("finance_amendment", "view"),
+    # G5-52 — izin `finance_amendment.view` TIDAK ADA di matriks (aksinya propose/approve/admin), jadi dataset ini
+    # "tidak tersedia" untuk SEMUA peran termasuk admin. Pakai izin yang sama dengan daftar amandemen (propose).
+    S("doc_amendments", "Amandemen Dokumen", "Keuangan", "doc_amendments", ("finance_amendment", "propose"),
       "number:No.|doc_type:Jenis dokumen|doc_number:No. dokumen|reason_label:Alasan|method_label:Metode|status:Status"
       "|proposed_by:Diajukan oleh|entity_id:ID badan usaha"),
     S("purchase_requisitions", "Permintaan Pembelian (PR)", "Pembelian", "purchase_requisitions", ("purchase_requisition", "view"),
@@ -301,7 +303,8 @@ MORE += [
     S("roll_cost_history", "Riwayat Nilai Roll", "Gudang", "roll_cost_history", ("inventory", "view"),
       "roll_id:ID roll|reason:Sebab|old_unit_cost:Nilai lama:m|new_unit_cost:Nilai baru:m|ref_number:Dokumen|actor:Oleh",
       joins=[], grain="1 baris = 1 perubahan nilai satuan roll"),
-    S("store_credit_ledger", "Mutasi Kredit Toko Pelanggan", "Keuangan", "store_credit_ledger", ("store_credit", "view"),
+    # G5-52 — modul izin `store_credit` tidak ada; API kredit toko memakai `ar_receipt.view`.
+    S("store_credit_ledger", "Mutasi Kredit Toko Pelanggan", "Keuangan", "store_credit_ledger", ("ar_receipt", "view"),
       "customer_name:Pelanggan|type:Jenis|amount:Nilai:m|balance_after:Saldo:m|ref_number:Dokumen|entity_id:ID badan usaha"),
     S("mdq_cuts", "Potongan MD Quality", "Gudang", "mdq_cuts", ("inventory", "view"),
       "roll_no:Roll|length:Panjang:n|unit:Satuan|status:Status|entity_id:ID badan usaha"),

@@ -81,6 +81,16 @@ STALE_DAYS = 7   # sapuan terjadwal: dokumen yang tidak bergerak > 7 hari tidak 
 OWNER_FIELDS = ("created_by", "requested_by", "sales_id", "sales_user_id", "requested_by_id")
 
 
+def stage_text(status: str) -> str:
+    """UAT 24 Okt (audit UI tahap 2, G5-10) — label tahap untuk teks notifikasi. Dulu kode mentah tercetak
+    ("tahap: shipped", "tahap: refund_settled"); kini lewat peta status bersama (pdf_engine.status_label)."""
+    from services.pdf_engine import status_label
+    if status == "partial":   # hanya dipakai PO di TURN_MAP; di peta bersama "partial" = dibayar sebagian
+        return "diterima sebagian"
+    t = status_label(status) or str(status or "")
+    return t[:1].lower() + t[1:]
+
+
 def _number(doc: Dict[str, Any]) -> str:
     return str(doc.get("number") or doc.get("po_number") or doc.get("code") or doc.get("id") or "")
 
@@ -137,7 +147,7 @@ async def notify_turn(coll: str, doc: Dict[str, Any], *, stale_days: int = 0) ->
     await resolve_action("turn", f"{coll}:{doc['id']}", outcome=f"tahap → {status}", actor="sistem")
     owner = await _owner_user_id(doc) if rule.get("owner") else ""
     total = doc.get("grand_total") or doc.get("total_amount")
-    body = " · ".join(x for x in [_party(doc), rupiah(float(total)) if total else "", f"tahap: {status}"] if x)
+    body = " · ".join(x for x in [_party(doc), rupiah(float(total)) if total else "", f"tahap: {stage_text(status)}"] if x)
     made = await create_addressed(
         roles=await turn_roles(rule), also_users=(owner,) if owner else (),
         notif_type="turn", ref=f"turn:{coll}:{doc['id']}:{status}",

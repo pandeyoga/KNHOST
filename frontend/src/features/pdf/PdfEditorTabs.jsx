@@ -210,7 +210,7 @@ export default function PdfEditorTabs({
             <ImageUpload label="Gambar kop (mode 'Gambar kop')" hint="PNG/JPG lebar penuh, ≤ 1 MB. Dipakai bila Layout → Mode kop = Gambar." src={img("header_image_b64")} onFile={(f) => onImageFile("header_image_b64", f)} onRemove={() => onImageFile("header_image_b64", null)} testId="pdf-brand-header-image" />
             <ImageUpload label="Gambar footer (mode 'Gambar footer')" hint="Strip bawah halaman, ≤ 1 MB." src={img("footer_image_b64")} onFile={(f) => onImageFile("footer_image_b64", f)} onRemove={() => onImageFile("footer_image_b64", null)} testId="pdf-brand-footer-image" />
             <ImageUpload label="Cap perusahaan (stempel)" hint="PNG transparan; muncul di slot tanda tangan yang mencentang 'Cap'." src={img("stamp_b64")} onFile={(f) => onImageFile("stamp_b64", f)} onRemove={() => onImageFile("stamp_b64", null)} testId="pdf-brand-stamp" />
-            <Row label="Logo" hint="PNG/JPG, disarankan < 200 KB. Disimpan sebagai base64.">
+            <Row label="Logo" hint="PNG/JPG, disarankan < 200 KB.">
               <div className="flex items-center gap-3">
                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-[#E5E6EB] bg-[#F7F8FA]">
                   {logoSrc ? <img src={logoSrc} alt="logo" className="max-h-full max-w-full object-contain" /> : <ImageOff size={20} className="text-[#C4C5CC]" />}
@@ -230,6 +230,7 @@ export default function PdfEditorTabs({
               <button className="btn-primary flex items-center gap-1.5" onClick={onSaveBranding} disabled={savingBrand} data-testid="pdf-brand-save">
                 {savingBrand ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Branding
               </button>
+              <span className="text-[10.5px] text-[#6B6B73]">Kop, logo &amp; kontak berlaku untuk semua dokumen badan usaha ini; pratinjau memakai kop baru setelah disimpan.</span>
               {brandingMsg && <span className="text-[11.5px] font-semibold text-[#1F7A45]">{brandingMsg}</span>}
               {brandingErr && <span className="text-[11.5px] font-semibold text-[#C0392B]">{brandingErr}</span>}
             </div>
@@ -279,16 +280,21 @@ export default function PdfEditorTabs({
               <button type="button" className="btn-secondary flex items-center gap-1" onClick={addCustom} data-testid="pdf-custom-add"><Plus size={13} /> Tambah</button>
             </div>
             {customFields.length === 0 && <p className="text-[11.5px] text-[#9A9BA3]">Belum ada field tambahan. Field ini muncul di bagian meta dokumen.</p>}
+            {customFields.length > 0 && (
+              <div className="flex items-center gap-2 text-[10.5px] font-semibold text-[#6B6B73]" aria-hidden="true">
+                <span className="flex-1">Label</span><span className="flex-1">Nilai</span><span className="w-8" />
+              </div>
+            )}
             <div className="grid gap-2">
               {customFields.map((r, i) => (
                 <div key={i} className="flex items-center gap-2" data-testid={`pdf-custom-row-${i}`}>
-                  <input className="form-input flex-1" placeholder="Label" value={r.label} onChange={(e) => updCustom(i, "label", e.target.value)} />
-                  <input className="form-input flex-1" placeholder="Nilai" value={r.value} onChange={(e) => updCustom(i, "value", e.target.value)} />
+                  <input className="form-input flex-1" aria-label={`Label field ${i + 1}`} placeholder="mis. No. Kontrak" value={r.label} onChange={(e) => updCustom(i, "label", e.target.value)} />
+                  <input className="form-input flex-1" aria-label={`Nilai field ${i + 1}`} placeholder="mis. KTR-2026-01" value={r.value} onChange={(e) => updCustom(i, "value", e.target.value)} />
                   <button type="button" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#EDEEF1] text-[#C0392B] transition-colors hover:bg-[#FDECEA]" onClick={() => delCustom(i)} data-testid={`pdf-custom-del-${i}`} aria-label="Hapus"><Trash2 size={15} /></button>
                 </div>
               ))}
             </div>
-            <Row label="Sembunyikan Field (meta)" hint="Daftar label meta yang disembunyikan, pisahkan dengan koma. mis: Termin, Referensi">
+            <Row label="Sembunyikan baris info dokumen" hint="Tulis label baris info (di bawah judul dokumen) yang tidak ingin dicetak, pisahkan dengan koma. mis: Termin, Referensi">
               <input className="form-input" value={hiddenStr} onChange={(e) => setHidden(e.target.value)} data-testid="pdf-hidden-fields" />
             </Row>
           </TabsContent>
@@ -300,12 +306,17 @@ export default function PdfEditorTabs({
               <button type="button" className="btn-secondary flex items-center gap-1" onClick={addSig} data-testid="pdf-sig-add"><Plus size={13} /> Tambah Slot</button>
             </div>
             {sigs.length === 0 && <p className="text-[11.5px] text-[#9A9BA3]">Kosong = pakai slot tanda tangan bawaan dokumen. Tambahkan untuk override.</p>}
+            {sigs.length > 0 && (
+              <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 text-[10.5px] font-semibold text-[#6B6B73]" aria-hidden="true">
+                <span>Label</span><span>Peran / jabatan</span><span>Nama</span><span>Cap</span><span className="w-8" />
+              </div>
+            )}
             <div className="grid gap-2">
               {sigs.map((r, i) => (
                 <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-2" data-testid={`pdf-sig-row-${i}`}>
-                  <input className="form-input" placeholder="Label (mis. Hormat kami)" value={r.label} onChange={(e) => updSig(i, "label", e.target.value)} />
-                  <input className="form-input" placeholder="Peran (mis. finance)" value={r.role} onChange={(e) => updSig(i, "role", e.target.value)} />
-                  <input className="form-input" placeholder="Nama" value={r.name} onChange={(e) => updSig(i, "name", e.target.value)} />
+                  <input className="form-input min-w-0" aria-label={`Label slot ${i + 1}`} placeholder="mis. Hormat kami" value={r.label} onChange={(e) => updSig(i, "label", e.target.value)} />
+                  <input className="form-input min-w-0" aria-label={`Peran slot ${i + 1}`} placeholder="mis. Keuangan" value={r.role} onChange={(e) => updSig(i, "role", e.target.value)} />
+                  <input className="form-input min-w-0" aria-label={`Nama slot ${i + 1}`} placeholder="mis. Dewi" value={r.name} onChange={(e) => updSig(i, "name", e.target.value)} />
                   <label className="flex items-center gap-1 text-[10.5px] whitespace-nowrap" title="Tempel cap perusahaan di slot ini"><input type="checkbox" checked={!!r.show_stamp} onChange={(e) => updSig(i, "show_stamp", e.target.checked)} data-testid={`pdf-sig-stamp-${i}`} /> Cap</label>
                   <button type="button" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#EDEEF1] text-[#C0392B] transition-colors hover:bg-[#FDECEA]" onClick={() => delSig(i)} data-testid={`pdf-sig-del-${i}`} aria-label="Hapus"><Trash2 size={15} /></button>
                 </div>
