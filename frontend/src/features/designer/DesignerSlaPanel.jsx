@@ -35,7 +35,7 @@ export default function DesignerSlaPanel({ board, filterDesigner, busy, canManag
       <div className="section-head">
         <div className="flex items-center gap-2">
           <ShieldAlert size={16} className="text-[#C0392B]" />
-          <h2>Eskalasi SLA — round yang lewat tenggat</h2>
+          <h2>Eskalasi SLA — ronde yang lewat tenggat</h2>
         </div>
         {canManage && (
           <button className="secondary-button" onClick={onEscalate} disabled={busy}
@@ -48,10 +48,10 @@ export default function DesignerSlaPanel({ board, filterDesigner, busy, canManag
       <div className="section-body space-y-2">
         <p className="text-[11px] leading-relaxed text-[#6B6B73]"
           data-testid="designer-sla-policy-note">
-          Setiap hari pukul <b>07:35</b> sistem memeriksa round sample yang belum selesai.
+          Setiap hari pukul <b>07:35</b> sistem memeriksa ronde sample yang belum selesai.
           Yang sudah lewat tenggat diberitahukan ke <b>manajer</b>; bila keterlambatannya
           mencapai <b>{adminDays} hari</b> peringatannya <b>ikut dinaikkan ke admin/pemilik</b>.
-          Satu round hanya menghasilkan satu peringatan per hari (tidak berisik), dan
+          Satu ronde hanya menghasilkan satu peringatan per hari (tidak berisik), dan
           pesannya juga terkirim lewat WhatsApp bila kanal itu aktif.
         </p>
 
@@ -66,18 +66,18 @@ export default function DesignerSlaPanel({ board, filterDesigner, busy, canManag
           <div className="py-8 text-center" data-testid="designer-sla-empty">
             <Clock size={24} className="mx-auto mb-2 text-[#C7C9CF]" />
             <p className="text-[12.5px] font-semibold text-[#1B7F4B]">
-              Tidak ada round yang lewat tenggat
+              Tidak ada ronde yang lewat tenggat
             </p>
             <p className="mt-0.5 text-[11.5px] text-[#6B6B73]">
               {filterDesigner
-                ? `${filterDesigner} tidak punya round yang menggantung saat ini.`
-                : "Semua round sample masih dalam tenggat. Tidak ada peringatan yang perlu dikirim."}
+                ? `${filterDesigner} tidak punya ronde yang menggantung saat ini.`
+                : "Semua ronde sample masih dalam tenggat. Tidak ada peringatan yang perlu dikirim."}
             </p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2">
-              <Mini label="Round terlambat" value={items.length} tone="#C0392B"
+              <Mini label="Ronde terlambat" value={items.length} tone="#C0392B"
                 testId="designer-sla-count" />
               <Mini label="Sudah naik ke admin" value={board?.admin_count ?? 0}
                 tone="#8C1C13" testId="designer-sla-admin-count" />
@@ -92,7 +92,7 @@ export default function DesignerSlaPanel({ board, filterDesigner, busy, canManag
                     className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-[11.5px]">
                     <AlertTriangle size={12} className="shrink-0 text-[#C0392B]" />
                     <span className="font-bold text-[#0058CC]">{r.number}</span>
-                    <span className="text-[#9A9BA3]">rnd {r.round_no}</span>
+                    <span className="text-[#9A9BA3]">ronde {r.round_no}</span>
                     <span className="min-w-0 flex-1 truncate">
                       {r.title}
                       <span className="text-[#9A9BA3]">

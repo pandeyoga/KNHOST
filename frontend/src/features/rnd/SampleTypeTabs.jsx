@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import SampleRoundList from "./SampleRoundList";
 import SampleProofGallery from "./SampleProofGallery";
-import { ROUND_RESULT_META, typeTone } from "./rndMeta";
+import { cleanRndNote, ROUND_RESULT_META, typeTone } from "./rndMeta";
 import { FALLBACK_TYPE_CODES, measurementMeta, roundTypeOf, sampleTypesOf, typeLabel, typeMeta } from "./sampleTypeMeta";
 
 function TypeCompare({ sample, code }) {
@@ -26,7 +26,7 @@ function TypeCompare({ sample, code }) {
     <div className="rounded-lg border border-[#EFF0F2]" data-testid={`sample-compare-type-${code}`}>
       <p className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10.5px] font-bold uppercase text-[#8E8E93]">Perbandingan supplier</p>
       <div className="grid grid-cols-[1.4fr_70px_90px_1fr_110px] px-3 py-1 text-[9.5px] font-bold uppercase text-[#8E8E93]">
-        <span>Supplier</span><span>Round</span><span>Skor terbaik</span><span>Hasil terakhir</span><span className="text-right">Biaya</span>
+        <span>Supplier</span><span>Ronde</span><span>Skor terbaik</span><span>Hasil terakhir</span><span className="text-right">Biaya</span>
       </div>
       <div className="divide-y divide-[#F4F5F7]">
         {rows.map(({ p, rs, rm, cost, best }) => (
@@ -96,14 +96,14 @@ export default function SampleTypeTabs({ sample, types, measurements, busy, load
       <div className="grid gap-2.5 p-3" data-testid={`sample-tab-panel-${active}`}>
         {meta.notes && (
           <p className="rounded-lg px-3 py-2 text-[11px]" style={{ background: tone.bg, color: tone.fg }} data-testid="sample-tab-notes">
-            {meta.notes}
+            {cleanRndNote(meta.notes)}
             {(meta.measurement_fields || []).length > 0 && <> Hasil ukur: <b>{meta.measurement_fields.map((f) => measurementMeta(f, measurements).label).join(", ")}</b>.</>}
           </p>
         )}
         {!requested ? (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#D9D9DE] px-3 py-8 text-center" data-testid={`sample-tab-empty-${active}`}>
             <p className="text-[12px] font-semibold text-[#1C1C1E]">{typeLabel(active, types)} tidak termasuk dalam permintaan ini</p>
-            <p className="max-w-sm text-[11px] text-[#8E8E93]">Setiap jenis punya rangkaian round & kuota revisi sendiri. Tambahkan bila supplier juga harus mengerjakan jenis ini.</p>
+            <p className="max-w-sm text-[11px] text-[#8E8E93]">Setiap jenis punya rangkaian ronde & kuota revisi sendiri. Tambahkan bila supplier juga harus mengerjakan jenis ini.</p>
             {canAddType && (
               <button type="button" className="secondary-button" disabled={busy} data-testid={`sample-tab-add-${active}`}
                 onClick={() => onAddType?.(active)}>

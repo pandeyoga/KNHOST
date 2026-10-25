@@ -1,5 +1,6 @@
 /** DuplicatePostModal — salin konten (caption, hashtag, platform, bahan) jadi ide baru dengan jadwal baru. */
 import { useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { Copy } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import KNDateTimePicker from "../../components/KNDateTimePicker";
@@ -15,7 +16,7 @@ export default function DuplicatePostModal({ post, onClose, onDone }) {
   const submit = async () => {
     setBusy(true); setErr("");
     try { onDone(await mktApi.duplicate(post.id, { publish_at: when })); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menduplikat konten."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menduplikat konten.")); } finally { setBusy(false); }
   };
 
   return (

@@ -8,6 +8,7 @@
  * untuk tahu diri, tanpa membuka rapor orang lain.
  */
 import { useCallback, useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { Award, CalendarClock, Palette, RefreshCw, TriangleAlert } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { gradeMeta, num, PERIOD_OPTIONS } from "../designer/designerMeta";
@@ -32,7 +33,7 @@ export function MyDesignerKpiCard() {
       setData(await myDesignerKpi({ period }));
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat KPI R&D Anda.");
+      setError(apiErrorText(e, "Gagal memuat KPI R&D Anda."));
     } finally { setLoading(false); }
   }, [period]);
   useEffect(() => { load(); }, [load]);

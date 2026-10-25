@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import L from "leaflet";
 import axios, { API } from "../../services/apiClient";
 import { Navigation, RefreshCw, Radio, Battery, Crosshair, Users, MapPin } from "lucide-react";
@@ -59,7 +60,7 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
       setPositions(list);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat posisi lapangan.");
+      setError(apiErrorText(e, "Gagal memuat posisi lapangan."));
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,8 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
           </div>
           <div className="flex items-center gap-2">
             <span data-testid="live-ws-status" className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full ${wsLive ? "bg-[#E7F6EE] text-[#1F7A45]" : "bg-[#F2F4F7] text-[#6B6B73]"}`}>
-              <Radio size={12} /> {wsLive ? "Realtime" : "Polling"}
+              {/* UAT 24 Okt (audit UI tahap 2) — G5-65: lencana menyatakan sambungan, bukan "Realtime" (bisa 0 online). */}
+              <Radio size={12} /> {wsLive ? "Terhubung" : "Diperbarui berkala"}
             </span>
             <button data-testid="live-tracking-refresh" onClick={() => loadLatest(true)} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
           </div>
@@ -211,7 +213,7 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
                   <div className="flex items-center gap-3 mt-1 pl-[18px] text-[11px] text-[#6B6B73]">
                     <span>{timeAgo(p.ts)}</span>
                     <span className="inline-flex items-center gap-0.5"><Battery size={12} /> {p.battery != null ? `${Math.round(p.battery)}%` : "\u2014"}</span>
-                    <span className="inline-flex items-center gap-0.5"><Crosshair size={11} /> {p.accuracy != null ? `${Math.round(p.accuracy)}m` : "\u2014"}</span>
+                    <span className="inline-flex items-center gap-0.5" title="Akurasi GPS"><Crosshair size={11} /> {p.accuracy != null ? `akurasi ±${Math.round(p.accuracy)} m` : "\u2014"}</span>
                   </div>
                 </button>
               ))}
@@ -223,7 +225,7 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
               <button data-testid="live-clear-trail" className="underline" onClick={() => {
                 setTrailEmp("");
                 if (trailRef.current && mapRef.current) { try { mapRef.current.removeLayer(trailRef.current); } catch (_) { /* noop */ } trailRef.current = null; }
-              }}>Bersihkan</button>
+              }}>Sembunyikan jejak</button>
             </div>
           )}
         </div>

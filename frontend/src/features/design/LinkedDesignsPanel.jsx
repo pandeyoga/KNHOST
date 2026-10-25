@@ -9,6 +9,7 @@ import { ExternalLink, Link2, Plus, Sparkles } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { openRnd } from "../rnd/rndDeepLink";
 import { designFileUrl } from "../rnd/rndApi";
+import DesignImage from "../rnd/design/DesignImage";
 import { DESIGN_STATUS_META, fmtScore } from "../rnd/rndMeta";
 import { createDesignFromRequest, linkDesignToRequest, linkableDesigns } from "./designRequestsApi";
 
@@ -18,7 +19,9 @@ export function DesignMiniCard({ d, testId }) {
     <div data-testid={testId} className="flex items-center gap-2.5 rounded-lg border border-[#EFF0F2] bg-white p-2">
       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-[#F5F5F7]">
         {d.cover_file_id
-          ? <img src={designFileUrl(d.id, d.cover_file_id)} alt={d.title} className="h-full w-full object-cover" loading="lazy" />
+          // UAT 24 Okt (audit UI tahap 2) — G5-06: lewat DesignImage (axios + fallback); dulu <img> polos tanpa onError
+          // → teks alt "Kawung Navy" tumpah di kotak sampul.
+          ? <DesignImage src={designFileUrl(d.id, d.cover_file_id)} alt={d.title} compact className="h-full w-full object-cover" loading="lazy" data-testid={`${testId}-cover`} />
           : <span className="flex h-full items-center justify-center px-1 text-center text-[9px] text-[#9A9BA3]">belum ada berkas</span>}
       </div>
       <div className="min-w-0 flex-1">

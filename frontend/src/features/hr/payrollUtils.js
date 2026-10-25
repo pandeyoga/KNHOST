@@ -1,9 +1,10 @@
 // HRD H4 — util Payroll bersama.
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatPct } from "../../utils/formatters";
 
 export const rp = (v) => formatCurrency(v || 0);
-export const pct = (v) => `${(Number(v || 0) * 100).toFixed(2)}%`;
+// UAT 24 Okt (audit UI tahap 2) — G5-66: persen id-ID ("0,75%", dulu "0.75%" dari toFixed). `v` = rasio 0–1.
+export const pct = (v) => formatPct(Number(v || 0) * 100, 2);
 
 export const RUN_STATUS = {
   draft: { cls: "pill-muted", label: "Draf" },
@@ -11,7 +12,7 @@ export const RUN_STATUS = {
   // masih dikerjakan HR tidak bercampur dengan yang menunggu keputusan penyetuju.
   pending_approval: { cls: "pill-warning", label: "Menunggu pengesahan" },
   approved: { cls: "pill-info", label: "Disetujui" },
-  posted: { cls: "pill-warning", label: "Posted GL" },
+  posted: { cls: "pill-warning", label: "Terposting ke GL" },
   paid: { cls: "pill-success", label: "Dibayar" },
   void: { cls: "pill-danger", label: "Batal" },
 };

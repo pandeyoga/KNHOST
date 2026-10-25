@@ -9,6 +9,7 @@ import { mktApi, fmtN } from "./marketingShared";
 import useIntentKey from "../../hooks/useIntentKey";
 import CampaignBillsSection, { BillForm, RejectModal } from "./CampaignBillsSection";
 import { todayWib } from "../../utils/formatters";
+import MoneyInput from "../../components/MoneyInput";
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const today = () => todayWib();
@@ -32,7 +33,7 @@ export default function CampaignCostsModal({ campaign, canPost, canVoid = canPos
   };
   return (
     <>
-    <FormModal open title={`Biaya kampanye · ${campaign.name}`} subtitle="Biaya dijurnal saat uang keluar: Dr Beban Pemasaran / Cr Kas-Bank. Anggaran tidak dijurnal." icon={Wallet}
+    <FormModal open title={`Biaya kampanye · ${campaign.name}`} subtitle="Biaya dicatat sebagai beban pemasaran saat uang keluar dari kas/bank. Anggaran hanya rencana — tidak dicatat ke pembukuan." icon={Wallet}
       onClose={onClose} onSubmit={canPost ? submit : undefined} busy={busy} error={err} submitLabel="Catat & posting biaya" testId="mkt-costs-modal" submitTestId="mkt-cost-submit" cancelTestId="mkt-costs-close">
       <div className="grid gap-3">
         <BudgetSummary data={data} />
@@ -70,7 +71,8 @@ function CostForm({ f, set }) {
   return (
     <div className="grid gap-2 rounded-xl border border-[#EFF0F2] p-3 sm:grid-cols-2" data-testid="mkt-cost-form">
       <Field label="Tanggal keluar *"><KNDatePicker value={f.date} onChange={(v) => set("date", v)} clearable={false} data-testid="mkt-cost-date" /></Field>
-      <Field label="Nominal (Rp) *"><input type="number" min="0" className="field w-full" value={f.amount} onChange={(e) => set("amount", e.target.value)} data-testid="mkt-cost-amount" /></Field>
+      {/* UAT 24 Okt (audit UI tahap 2) — G5-67: input uang standar (dulu number bawaan dengan panah putar). */}
+      <Field label="Nominal (Rp) *"><MoneyInput className="field w-full" value={f.amount} onChange={(v) => set("amount", v)} testId="mkt-cost-amount" placeholder="mis. 1.500.000" /></Field>
       <Field label="Uraian *"><input className="field w-full" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="mis. Iklan Instagram minggu 1" data-testid="mkt-cost-description" /></Field>
       <Field label="Vendor / penerima"><input className="field w-full" value={f.vendor_name} onChange={(e) => set("vendor_name", e.target.value)} data-testid="mkt-cost-vendor" /></Field>
       <Field label="Dibayar dari"><KNSelect className="field w-full" value={f.cash_type} onValueChange={(v) => set("cash_type", v)} data-testid="mkt-cost-cash-type" options={[{ value: "kas_besar", label: "Kas Besar / Bank" }, { value: "kas_kecil", label: "Kas Kecil" }]} /></Field>

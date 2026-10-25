@@ -48,6 +48,7 @@ export default function DesignerReportPanel({ selectedEntity = "all", line = "",
   useEffect(() => { load(); }, [load]);
 
   const t = data.totals || {};
+  const un = data.unassigned;   // G5-37 — permintaan tanpa desainer, dipisah dari baris desainer
   return (
     <div data-testid="designer-report-panel" className="grid gap-3">
       {error && <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="dsr-report-error" />}
@@ -82,12 +83,17 @@ export default function DesignerReportPanel({ selectedEntity = "all", line = "",
               <div key={i} className="h-8 animate-pulse rounded-md bg-[#F2F2F5]" />
             ))}
           </div>
-        ) : items.length === 0 ? (
-          <EmptyState icon={BarChart3} title="Belum ada angka untuk periode ini"
+        ) : items.length === 0 && !un ? (
+          <EmptyState icon={BarChart3} title={term ? "Tidak ada desainer yang cocok dengan pencarian" : "Belum ada angka untuk periode ini"}
             hint="Rapor terisi begitu ada permintaan desain yang ditugaskan & diserahkan."
             testId="dsr-report-empty" />
         ) : (
           <div className="overflow-x-auto">
+            {un && un.requests > 0 && (
+              <p className="mb-2 rounded-lg bg-[#FFF8EE] px-3 py-1.5 text-[11px] text-[#8C4A00]" data-testid="dsr-report-unassigned">
+                <b>{un.requests}</b> permintaan belum ditugaskan ke desainer{un.overdue ? <> · <b>{un.overdue}</b> lewat tenggat</> : null} — tidak dihitung sebagai rapor desainer mana pun.
+              </p>
+            )}
             <table className="w-full text-[11.5px]">
               <thead>
                 <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">

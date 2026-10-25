@@ -112,7 +112,9 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
             {canManage && (
               <button className="secondary-button" data-testid="rnd-specs-policy-button"
                 title="Kebijakan R&D diatur di Pusat Pengaturan"
-                onClick={() => openConfig({ group: "rnd", key: "rnd.lifecycle_enforcement" })}>
+                // UAT 24 Okt (audit UI tahap 2) — G5-61: buka KELOMPOK R&D saja (dulu kunci + kelompok → seluruh Pusat
+                // Pengaturan terbuka untuk MD). Penyaringan kelompok di sisi Pusat Pengaturan = G5b.
+                onClick={() => openConfig({ group: "rnd" })}>
                 <Settings2 size={13} /> Kebijakan R&D
               </button>
             )}

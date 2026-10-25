@@ -1,5 +1,6 @@
 /** Campaigns — kampanye/tema konten (periode, platform, target) + ringkasan post & performa. */
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { Flag, Plus, Pencil, Wallet } from "lucide-react";
 import CampaignCostsModal from "./CampaignCostsModal";
 import CampaignBudgetChart from "./CampaignBudgetChart";
@@ -10,6 +11,8 @@ import KNDatePicker from "../../components/KNDatePicker";
 import { SearchBox } from "../../components/ListControls";
 import { mktApi, PLATFORM_STYLE, fmtN, STATUS_STYLE } from "./marketingShared";
 import { can } from "../../config/roles";
+import { formatDate } from "../../utils/formatters";
+import MoneyInput from "../../components/MoneyInput";
 
 const COLORS = ["#0058CC", "#C13584", "#1B7F4B", "#B45309", "#6D28D9", "#C0392B", "#0F766E"];
 
@@ -46,7 +49,8 @@ export default function Campaigns({ currentUser }) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-[13px] font-bold">{c.name} {c.status === "archived" && <span className="ml-1 rounded-full bg-[#F2F2F7] px-2 py-px text-[10px] text-[#6B6B73]">arsip</span>}</p>
-                <p className="text-[11px] text-[#6B6B73]">{c.theme}{c.start_date ? ` · ${c.start_date} → ${c.end_date || "…"}` : ""}</p>
+                {/* G5-67: tanggal Indonesia & tanpa titik menggantung bila tema kosong (dulu "· 2026-10-01 → 2026-10-31"). */}
+                <p className="text-[11px] text-[#6B6B73]">{[c.theme, c.start_date && `${formatDate(c.start_date)} – ${c.end_date ? formatDate(c.end_date) : "…"}`].filter(Boolean).join(" · ")}</p>
               </div>
               <div className="flex gap-1">
                 <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => setCosting(c)} data-testid={`mkt-campaign-costs-${c.id}`}><Wallet size={11} /> Biaya</button>
@@ -81,7 +85,7 @@ function CampaignForm({ campaign, onClose, onSaved }) {
   const submit = async () => {
     setBusy(true); setErr("");
     try { if (campaign) await mktApi.updateCampaign(campaign.id, { ...f, budget: Number(f.budget || 0) }); else await mktApi.createCampaign({ ...f, budget: Number(f.budget || 0) }); onSaved(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan kampanye."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menyimpan kampanye.")); } finally { setBusy(false); }
   };
   return (
     <FormModal open title={campaign ? "Ubah kampanye" : "Kampanye baru"} icon={Flag} onClose={onClose} onSubmit={submit} busy={busy} error={err} testId="mkt-campaign-form" submitTestId="mkt-campaign-submit">
@@ -92,7 +96,7 @@ function CampaignForm({ campaign, onClose, onSaved }) {
           <Field label="Tujuan"><input className="field w-full" value={f.goal} onChange={(e) => set("goal", e.target.value)} placeholder="+500 pengikut, 50 prospek DM" data-testid="mkt-c-goal" /></Field>
           <Field label="Mulai"><KNDatePicker className="w-full" value={f.start_date} onChange={(v) => set("start_date", v)} data-testid="mkt-c-start" /></Field>
           <Field label="Selesai"><KNDatePicker className="w-full" value={f.end_date} min={f.start_date || undefined} onChange={(v) => set("end_date", v)} data-testid="mkt-c-end" /></Field>
-          <Field label="Anggaran (Rp)"><input type="number" min="0" className="field w-full" value={f.budget} onChange={(e) => set("budget", e.target.value)} data-testid="mkt-c-budget" /></Field>
+          <Field label="Anggaran (Rp)"><MoneyInput className="field w-full" value={f.budget} onChange={(v) => set("budget", v)} testId="mkt-c-budget" placeholder="mis. 5.000.000" /></Field>
           <Field label="Status"><KNSelect className="field w-full" value={f.status} onValueChange={(v) => set("status", v)} data-testid="mkt-c-status" options={[{ value: "active", label: "Aktif" }, { value: "archived", label: "Arsip" }]} /></Field>
         </div>
         <Field label="Platform">

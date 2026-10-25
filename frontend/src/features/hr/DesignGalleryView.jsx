@@ -4,6 +4,7 @@
  * Filter: cari · status · kategori pattern · kategori design · tag · desainer · status R&D · lini.
  */
 import DesignImage from "../rnd/design/DesignImage";
+import apiErrorText from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import { Award, ImageOff, Palette, Search, X } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -44,7 +45,7 @@ export default function DesignGalleryView({ selectedEntity, currentUser }) {
       const rows = await listDesigns(params);
       setItems((Array.isArray(rows) ? rows : []).filter((g) => ACC_STATUSES.includes(g.status)));
       setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat galeri."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat galeri.")); }
     finally { setLoading(false); }
   }
 
@@ -72,7 +73,8 @@ export default function DesignGalleryView({ selectedEntity, currentUser }) {
         .some((t) => String(t || "").toLowerCase().includes(s)))
     ));
   }, [items, q, f]);
-  const activeFilters = Object.values(f).filter(Boolean).length + (q ? 1 : 0);
+  // UAT 24 Okt (audit UI tahap 2) — G5-40: tab status bukan "filter" (dulu tab ACC → "× Hapus 1 filter").
+  const activeFilters = Object.entries(f).filter(([k, v]) => v && k !== "status").length + (q ? 1 : 0);
 
   return (
     <div className="grid gap-3" data-testid="design-gallery-view">
@@ -107,7 +109,7 @@ export default function DesignGalleryView({ selectedEntity, currentUser }) {
           <span data-testid="gallery-count"><b>{visible.length}</b> dari {items.length} desain ACC</span>
           {activeFilters > 0 && (
             <button className="inline-flex items-center gap-1 text-[#0058CC]" data-testid="gallery-filter-reset"
-              onClick={() => { setQ(""); setF(EMPTY_F); }}>
+              onClick={() => { setQ(""); setF({ ...EMPTY_F, status: f.status }); }}>
               <X size={11} /> Hapus {activeFilters} filter
             </button>
           )}
@@ -127,7 +129,11 @@ export default function DesignGalleryView({ selectedEntity, currentUser }) {
       ) : visible.length === 0 ? (
         <div className="section-card !p-12 text-center" data-testid="gallery-filter-empty">
           <Palette size={30} className="mx-auto mb-2 text-[#C7C9CF]" />
-          <p className="text-[13px] font-semibold text-[#3A3B42]">Tidak ada desain yang cocok dengan filter</p>
+          <p className="text-[13px] font-semibold text-[#3A3B42]">
+            {f.status && !activeFilters ? `Tidak ada desain berstatus ${DESIGN_STATUS_META[f.status]?.label || f.status}` : "Tidak ada desain yang cocok dengan filter"}
+          </p>
+          <button type="button" className="link-button mt-1" data-testid="gallery-filter-empty-reset"
+            onClick={() => { setQ(""); setF(EMPTY_F); }}>{f.status && !activeFilters ? "Tampilkan semua status" : "Hapus semua saringan"}</button>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="gallery-grid">

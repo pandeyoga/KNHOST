@@ -1,5 +1,6 @@
 /** PostFormModal — buat / ubah konten: judul, caption, hashtag, platform, jadwal, PIC, kampanye, bahan (desain/produk/OD). */
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { Megaphone, Search, X } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import KNDateTimePicker from "../../components/KNDateTimePicker";
@@ -7,6 +8,8 @@ import { KNSelect } from "../../components/KNSelect";
 import { Field } from "../rnd/RndField";
 import axios, { API } from "../../services/apiClient";
 import { mktApi, PLATFORM_STYLE } from "./marketingShared";
+import { roleLabel } from "../../config/roles";
+import { formatDate } from "../../utils/formatters";
 import TemplatePicker from "./TemplatePicker";
 
 export default function PostFormModal({ meta, campaigns = [], initial = {}, post = null, currentUser, onClose, onSaved }) {
@@ -51,7 +54,7 @@ export default function PostFormModal({ meta, campaigns = [], initial = {}, post
       const saved = post ? await mktApi.updatePost(post.id, body) : await mktApi.createPost(body);
       if (!post && templateId) mktApi.useTemplate(templateId).catch(() => {});
       onSaved?.(saved);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan konten."); } finally { setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal menyimpan konten.")); } finally { setBusy(false); }
   };
 
   const capLen = f.caption.length;
@@ -85,9 +88,9 @@ export default function PostFormModal({ meta, campaigns = [], initial = {}, post
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Jenis konten"><KNSelect data-testid="mkt-f-type" className="field" value={f.content_type} onValueChange={(v) => set("content_type", v)} options={(meta?.content_types || ["foto"]).map((t) => ({ value: t, label: String(t).charAt(0).toUpperCase() + String(t).slice(1).replace(/_/g, " ") }))} /></Field>
           <Field label="Tanggal & jam tayang"><KNDateTimePicker className="w-full" value={f.publish_at} onChange={(v) => set("publish_at", v)} data-testid="mkt-f-publish-at" /></Field>
-          <Field label="PIC (yang memposting)"><KNSelect data-testid="mkt-f-pic" className="field" value={f.pic_user_id} onValueChange={(v) => set("pic_user_id", v)} options={[{ value: "", label: "— pilih —" }, ...(meta?.pic_options || []).map((u) => ({ value: u.id, label: `${u.name} (${u.role})` }))]} /></Field>
+          <Field label="PIC (yang memposting)"><KNSelect data-testid="mkt-f-pic" className="field" value={f.pic_user_id} onValueChange={(v) => set("pic_user_id", v)} options={[{ value: "", label: "— pilih —" }, ...(meta?.pic_options || []).map((u) => ({ value: u.id, label: u.role ? `${u.name} (${roleLabel(u.role)})` : u.name }))]} /></Field>
         </div>
-        <Field label="Kampanye"><KNSelect data-testid="mkt-f-campaign" className="field" value={f.campaign_id} onValueChange={(v) => set("campaign_id", v)} options={[{ value: "", label: "— tanpa kampanye —" }, ...campaigns.filter((c) => c.status !== "archived").map((c) => ({ value: c.id, label: `${c.name}${c.start_date ? ` (${c.start_date} → ${c.end_date || "…"})` : ""}` }))]} /></Field>
+        <Field label="Kampanye"><KNSelect data-testid="mkt-f-campaign" className="field" value={f.campaign_id} onValueChange={(v) => set("campaign_id", v)} options={[{ value: "", label: "— tanpa kampanye —" }, ...campaigns.filter((c) => c.status !== "archived").map((c) => ({ value: c.id, label: `${c.name}${c.start_date ? ` (${formatDate(c.start_date)} – ${c.end_date ? formatDate(c.end_date) : "…"})` : ""}` }))]} /></Field>
         <Field label={`Caption · ${capLen} karakter${capLen > 2200 ? " (melebihi batas Instagram 2.200)" : ""}`}>
           <textarea className="field w-full" rows={5} value={f.caption} onChange={(e) => set("caption", e.target.value)} placeholder="Tulis caption lengkap di sini…" data-testid="mkt-f-caption" />
         </Field>

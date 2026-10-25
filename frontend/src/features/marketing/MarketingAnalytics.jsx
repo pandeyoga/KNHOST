@@ -1,5 +1,6 @@
 /** MarketingAnalytics — Dashboard sosmed: KPI vs bulan lalu, tren 6 bulan, per platform/akun/PT, terbaik, 7 hari ke depan, terlambat. */
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { monthKey, monthLabel, fmtN, PLATFORM_STYLE, STATUS_STYLE, fmtWhen, PlatformChip } from "./marketingShared";
@@ -10,7 +11,7 @@ export default function MarketingAnalytics({ selectedEntity = "all" }) {
   const [err, setErr] = useState("");
   useEffect(() => {
     const params = { month }; if (selectedEntity) params.entity_id = selectedEntity;
-    axios.get(`${API}/marketing/dashboard`, { params }).then((r) => { setD(r.data); setErr(""); }).catch((e) => setErr(e.response?.data?.detail || "Gagal memuat dasbor."));
+    axios.get(`${API}/marketing/dashboard`, { params }).then((r) => { setD(r.data); setErr(""); }).catch((e) => setErr(apiErrorText(e, "Gagal memuat dasbor.")));
   }, [month, selectedEntity]);
   const shift = (x) => { const [y, m] = month.split("-").map(Number); setMonth(monthKey(new Date(y, m - 1 + x, 1))); };
   const loading = !d;
@@ -43,11 +44,16 @@ export default function MarketingAnalytics({ selectedEntity = "all" }) {
       <div className="grid gap-3 lg:grid-cols-3">
         <section className="rounded-xl border border-[#EFF0F2] bg-white p-3 lg:col-span-2" data-testid="mkt-trend">
           <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Tren 6 bulan · jangkauan (batang) & konten tayang</p>
-          <div className="flex h-40 items-end gap-3">
+          {/* UAT 24 Okt (audit UI tahap 2) — G5-54: batang dulu tak terlihat (tinggi persen di kolom flex tanpa tinggi).
+              Kini tiap kolom setinggi wadah, batang di area tumbuh `flex-1` dan diposisikan absolut dari bawah. */}
+          <div className="flex h-40 items-stretch gap-3">
             {d.trend.map((t) => (
-              <div key={t.month} className="flex flex-1 flex-col items-center gap-1" data-testid={`mkt-trend-${t.month}`} title={`${t.label}: jangkauan ${fmtN(t.reach)} · interaksi ${fmtN(t.engagement)} · ${t.published}/${t.posts} tayang`}>
+              <div key={t.month} className="flex h-full flex-1 flex-col items-center gap-1" data-testid={`mkt-trend-${t.month}`} title={`${t.label}: jangkauan ${fmtN(t.reach)} · interaksi ${fmtN(t.engagement)} · ${t.published}/${t.posts} tayang`}>
                 <span className="text-[10.5px] text-[#6B6B73]">{fmtN(t.reach)}</span>
-                <div className="w-full rounded-t-md bg-[#0058CC]" style={{ height: `${Math.max(3, (t.reach / maxTrend) * 100)}%`, opacity: t.month === month ? 1 : 0.55 }} />
+                <div className="relative w-full flex-1">
+                  <div className="absolute inset-x-0 bottom-0 rounded-t-md bg-[#0058CC]" data-testid={`mkt-trend-bar-${t.month}`}
+                    style={{ height: `${Math.max(3, (t.reach / maxTrend) * 100)}%`, opacity: t.month === month ? 1 : 0.55 }} />
+                </div>
                 <span className="text-[10.5px] font-bold">{t.label}</span>
                 <span className="text-[10.5px] text-[#8E8E93]">{t.published}/{t.posts} tayang</span>
               </div>

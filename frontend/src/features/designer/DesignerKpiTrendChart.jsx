@@ -103,8 +103,8 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
         <p className="mb-1 text-[11.5px] text-[#6B6B73]" data-testid={`${testId}-note`}>
           {metric === "grade"
             ? "Nilai komposit (0–100) bila desainer dinilai dari pekerjaan bulan itu — rumus sama dengan tabel."
-            : "Rata-rata skor mutu round (0–100) yang disetor pada bulan itu."}
-          {" "}Titik kosong = tidak ada round pada bulan tersebut.
+            : "Rata-rata skor mutu ronde (0–100) yang disetor pada bulan itu."}
+          {" "}Titik kosong = tidak ada ronde pada bulan tersebut.
         </p>
 
         {loading && !data ? (
@@ -114,7 +114,7 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
           <div className="py-10 text-center" data-testid={`${testId}-empty`}>
             <p className="text-[12px] font-semibold text-[#4A4B52]">Belum ada data tren</p>
             <p className="text-[11.5px] text-[#9A9BA3]">
-              Round sample yang sudah dinilai akan muncul sebagai titik bulanan di sini.
+              Ronde sample yang sudah dinilai akan muncul sebagai titik bulanan di sini.
             </p>
           </div>
         ) : (

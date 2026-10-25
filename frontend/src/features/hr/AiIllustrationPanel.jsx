@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Wand2, X, FlaskConical, MessageSquare, Send, Maximize2, PowerOff, Trash2 } from "lucide-react";
 import { askConfirm } from "../../services/confirmService";
@@ -42,7 +43,7 @@ export default function AiIllustrationPanel({ g, canManage, canComment = canMana
       setMsg("Ilustrasi AI selesai.");
       setPrompt(""); setPreview(r.data?.id || null);
       await onChanged();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal membuat ilustrasi AI."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal membuat ilustrasi AI.")); }
     finally { setBusy(false); }
   }
   async function remove(fid) {
@@ -54,7 +55,7 @@ export default function AiIllustrationPanel({ g, canManage, canComment = canMana
     if (!ok) return;
     setErr(""); setMsg("");
     try { await axios.delete(`${API}/design-gallery/${g.id}/files/${fid}`); if (preview === fid) setPreview(null); setMsg("Ilustrasi dihapus."); await onChanged(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menghapus ilustrasi."); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menghapus ilustrasi.")); }
   }
 
   const sourceOpts = artworks.map((f, i) => ({ value: f.id, label: `Artwork ${i + 1} — ${f.filename}` }));
@@ -148,7 +149,7 @@ function IllustrationComments({ g, file, canComment, currentUser, onChanged }) {
     if (!(await askConfirm({ title: "Hapus komentar ini?", description: c.text.slice(0, 120), confirmLabel: "Hapus", danger: true }))) return;
     setErr("");
     try { await axios.delete(`${API}/design-gallery/${g.id}/files/${file.id}/comments/${c.id}`); await onChanged(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menghapus komentar."); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menghapus komentar.")); }
   }
   async function send() {
     if (!text.trim()) return;
@@ -156,7 +157,7 @@ function IllustrationComments({ g, file, canComment, currentUser, onChanged }) {
     try {
       await axios.post(`${API}/design-gallery/${g.id}/files/${file.id}/comments`, { text: text.trim() });
       setText(""); await onChanged();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal mengirim komentar."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal mengirim komentar.")); }
     finally { setBusy(false); }
   }
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Users, Plus, Search, Pencil, Power, UserCheck, Building2, Briefcase, BarChart3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -14,7 +15,7 @@ import { can, roleLabel } from "../../config/roles";
 const STATUS_PILL = {
   active: { cls: "pill-success", label: "Aktif" },
   inactive: { cls: "pill-muted", label: "Nonaktif" },
-  resigned: { cls: "pill-danger", label: "Keluar (resign)" },
+  resigned: { cls: "pill-danger", label: "Keluar" },
 };
 const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
 
@@ -83,7 +84,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
       setShifts((Array.isArray(shiftRes.data) ? shiftRes.data : []).filter((s) => s.status === "active"));
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data karyawan.");
+      setError(apiErrorText(e, "Gagal memuat data karyawan."));
     } finally {
       setLoading(false);
     }
@@ -95,11 +96,11 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
   async function doDeactivate(emp) {
     try {
       await axios.delete(`${API}/hr/employees/${emp.id}`);
-      setNotice(`${emp.name} ditandai resigned.`);
+      setNotice(`${emp.name} ditandai keluar.`);
       setDeactivateTarget(null);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menonaktifkan karyawan.");
+      setError(apiErrorText(e, "Gagal menonaktifkan karyawan."));
       setDeactivateTarget(null);
     }
   }
@@ -160,7 +161,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
           <div className="md:col-span-2">
             <OptionTabs testId="employee-filter-status" value={filterStatus} onChange={setFilterStatus}
               countOf={(v) => employees.filter((e) => !v || e.status === v).length}
-              options={[{ value: "", label: "Semua Status" }, { value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Keluar (resign)" }]} />
+              options={[{ value: "", label: "Semua Status" }, { value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Keluar" }]} />
           </div>
         </div>
       </div>
@@ -204,7 +205,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
                       <>
                         {canUpdate && <button data-testid={`edit-employee-${e.id}`} onClick={() => openEdit(e)} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
                         {canDeactivate && e.status !== "resigned" && (
-                          <button data-testid={`deactivate-employee-${e.id}`} onClick={() => setDeactivateTarget(e)} className="icon-button text-red-400 hover:text-red-600" title="Resign / Nonaktifkan"><Power size={13} /></button>
+                          <button data-testid={`deactivate-employee-${e.id}`} onClick={() => setDeactivateTarget(e)} className="icon-button text-red-400 hover:text-red-600" title="Tandai keluar"><Power size={13} /></button>
                         )}
                       </>
                     )}
@@ -233,9 +234,9 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
 
       <ConfirmModal
         open={!!deactivateTarget}
-        title={`Tandai Resigned · ${deactivateTarget?.name || "Karyawan"}`}
-        message="Karyawan akan ditandai keluar (resign) dan tidak muncul di daftar aktif. Anda dapat mengubah statusnya kembali lewat Ubah."
-        confirmLabel="Tandai Resigned"
+        title={`Tandai keluar · ${deactivateTarget?.name || "Karyawan"}`}
+        message="Karyawan akan ditandai Keluar dan tidak muncul di daftar aktif. Anda dapat mengubah statusnya kembali lewat Ubah."
+        confirmLabel="Tandai Keluar"
         danger
         onConfirm={() => doDeactivate(deactivateTarget)}
         onCancel={() => setDeactivateTarget(null)}

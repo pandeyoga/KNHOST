@@ -798,7 +798,12 @@ async def report_by_designer(query: Dict[str, Any]) -> Dict[str, Any]:
                                if row["assigned"] else 0.0)
         out.append(row)
     out.sort(key=lambda r: (-r["assigned"], r["designer"].lower()))
-    return {"items": out,
+    # UAT 24 Okt (audit UI tahap 2) — G5-37: "Belum ditugaskan" BUKAN desainer. Dulu ikut `items` sebagai baris
+    # desainer (DITUGASKAN 8, % ACC 0%). Kini dipisah ke `unassigned`; total tetap menghitung SEMUA permintaan.
+    people = [r for r in out if r.get("designer_id")]
+    un = next((r for r in out if not r.get("designer_id")), None)
+    return {"items": people,
+            "unassigned": ({"requests": un["assigned"], "overdue": un["overdue"]} if un else None),
             "totals": {
                 "requests": len(docs),
                 "delivered": sum(r["delivered"] for r in out),

@@ -11,6 +11,7 @@ import axios, { API } from "@/services/apiClient";
 import { errMsg } from "./rndMeta";
 import { Field, Footer, Hint } from "./RndField";
 import { roundTypeOf, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
+import GroupEntityBadge, { isGroupEntityPartner } from "../../components/GroupEntityBadge";
 
 // Daftar supplier hidup DI SINI (bukan rndApi.js) — modul bersama itu dipakai layar desainer tanpa izin supplier.view.
 const listSuppliers = (params) => axios.get(`${API}/suppliers`, { params }).then((r) => r.data);
@@ -58,14 +59,14 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
 
   return (
     <FormModal open onClose={onClose} size="md" testId="sample-send-modal" icon={isSend ? Send : Plus} error={err || error}
-      title={isSend ? "Kirim Permintaan ke Supplier" : `Buka round ${nextNo} · ${typeLabel(typeCode, types)}`}
-      subtitle={isSend ? `${sample?.number} · round 1 dibuka untuk tiap supplier × jenis` : `${participant?.supplier_name || ""} · ${sample?.number}`}
+      title={isSend ? "Kirim Permintaan ke Supplier" : `Buka ronde ${nextNo} · ${typeLabel(typeCode, types)}`}
+      subtitle={isSend ? `${sample?.number} · ronde 1 dibuka untuk tiap supplier × jenis` : `${participant?.supplier_name || ""} · ${sample?.number}`}
       footer={<Footer onClose={onClose} onConfirm={confirm} busy={busy} disabled={disabled} icon={isSend ? Send : Plus} testId="sample-send-confirm"
-        confirmLabel={isSend ? `Kirim · ${newRounds} round` : `Buka round ${nextNo}`} />}>
+        confirmLabel={isSend ? `Kirim · ${newRounds} ronde` : `Buka ronde ${nextNo}`} />}>
       <div className="grid gap-3">
         {isSend ? (
           <>
-            <Hint>Pilih <b>lebih dari satu supplier</b> bila ingin membandingkan hasil, dan <b>jenis mana saja</b> yang dikirim sekarang. Setiap kombinasi supplier × jenis mendapat round 1 sendiri dengan tenggat yang sama.</Hint>
+            <Hint>Pilih <b>lebih dari satu supplier</b> bila ingin membandingkan hasil, dan <b>jenis mana saja</b> yang dikirim sekarang. Setiap kombinasi supplier × jenis mendapat ronde 1 sendiri dengan tenggat yang sama. Badan usaha grup (berlencana “Entitas grup”) tidak bisa dipilih.</Hint>
             <div>
               <p className="mb-1 text-[10.5px] font-semibold text-[#6B6B73]">Jenis yang dikirim sekarang</p>
               <div className="flex flex-wrap gap-1.5" data-testid="sample-send-types">
@@ -89,37 +90,40 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
               <div className="mt-1.5 max-h-[240px] divide-y divide-[#F4F5F7] overflow-y-auto rounded-lg border border-[#EFF0F2]" data-testid="sample-send-supplier-list">
                 {filtered.length === 0 && <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]">Tidak ada supplier yang cocok.</p>}
                 {filtered.map((s) => {
-                  const done = pickedTypes.length > 0 && pickedTypes.every((t) => covered.has(`${s.id}|${t}`));
+                  // UAT 24 Okt (audit UI tahap 2) — G5-47: badan usaha grup tidak dipilih sebagai supplier sample
+                  // (dulu "PT Uji Provisioning …" tampil seperti supplier biasa; di Buat RFQ dikunci berlencana).
+                  const group = isGroupEntityPartner(s);
+                  const done = group || (pickedTypes.length > 0 && pickedTypes.every((t) => covered.has(`${s.id}|${t}`)));
                   const on = picked.includes(s.id);
                   const partial = pickedTypes.filter((t) => covered.has(`${s.id}|${t}`)).length;
                   return (
                     <button key={s.id} type="button" disabled={done} data-testid={`sample-send-supplier-${s.id}`} onClick={() => toggle(s.id)}
                       className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${done ? "cursor-not-allowed bg-[#FAFBFC] opacity-60" : on ? "bg-[#EFF4FF]" : "hover:bg-[#FAFBFC]"}`}>
                       <span className="min-w-0">
-                        <span className="block truncate text-[12px] font-semibold">{s.name}</span>
+                        <span className="flex min-w-0 items-center gap-1"><span className="truncate text-[12px] font-semibold">{s.name}</span><GroupEntityBadge partner={s} /></span>
                         <span className="block truncate text-[10.5px] text-[#6B6B73]">{s.code || "—"}{s.city ? ` · ${s.city}` : ""}{!done && partial > 0 ? ` · ${partial} jenis sudah berjalan` : ""}</span>
                       </span>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${done ? "border-[#E5E5EA] text-[#8E8E93]" : on ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] text-[#6B6B73]"}`}>
-                        {done ? "sudah semua jenis" : on ? "dipilih" : "pilih"}
+                        {group ? "tidak bisa dipilih" : done ? "sudah semua jenis" : on ? "dipilih" : "pilih"}
                       </span>
                     </button>
                   );
                 })}
               </div>
               <p className="mt-1.5 text-[11px] text-[#6B6B73]" data-testid="sample-send-count">
-                {picked.length} supplier × {pickedTypes.length} jenis → <b>{newRounds} round baru</b> akan dibuka.
+                {picked.length} supplier × {pickedTypes.length} jenis → <b>{newRounds} ronde baru</b> akan dibuka.
               </p>
             </div>
           </>
         ) : (
           <Hint tone={overLimit ? "warn" : "info"} testId="sample-round-limit-note">
             {overLimit
-              ? <>Round {nextNo} jenis <b>{typeLabel(typeCode, types)}</b> MELEWATI batas {maxRounds} iterasi. Hanya manager/admin yang boleh membukanya dan alasan tertulis WAJIB (batas diubah di Pusat Pengaturan → R&amp;D &amp; Desain).</>
-              : <>Round {nextNo} dari batas {maxRounds} iterasi untuk jenis <b>{typeLabel(typeCode, types)}</b>. Kuota dihitung per jenis — perbaikan warna tidak menghabiskan kuota perbaikan handfeel.</>}
+              ? <>Ronde {nextNo} jenis <b>{typeLabel(typeCode, types)}</b> MELEWATI batas {maxRounds} iterasi. Hanya manager/admin yang boleh membukanya dan alasan tertulis WAJIB (batas diubah di Pusat Pengaturan → R&amp;D &amp; Desain).</>
+              : <>Ronde {nextNo} dari batas {maxRounds} iterasi untuk jenis <b>{typeLabel(typeCode, types)}</b>. Kuota dihitung per jenis — perbaikan warna tidak menghabiskan kuota perbaikan handfeel.</>}
           </Hint>
         )}
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <Field label={`Tenggat round (kosong = SLA ${policy?.round_sla_days || 7} hari)`}>
+          <Field label={`Tenggat ronde (kosong = SLA ${policy?.round_sla_days || 7} hari)`}>
             <KNDatePicker data-testid="sample-send-due" value={due} onChange={setDue} />
           </Field>
           <Field label="Catatan untuk supplier">
@@ -127,7 +131,7 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
           </Field>
         </div>
         {!isSend && (
-          <Field label={`Alasan round tambahan${overLimit ? " *" : " (opsional)"}`}>
+          <Field label={`Alasan ronde tambahan${overLimit ? " *" : " (opsional)"}`}>
             <input className="field" data-testid="sample-round-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. pelanggan minta warna sedikit lebih muda" />
           </Field>
         )}

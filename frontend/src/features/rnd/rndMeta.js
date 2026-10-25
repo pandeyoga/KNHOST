@@ -2,6 +2,23 @@
  * rndMeta (FASE F) — label & warna status R&D di SATU tempat supaya semua layar
  * memakai kosakata yang sama (tidak ada istilah teknis yang bocor ke pengguna).
  */
+import { stripInternalCodes } from "../../utils/cleanText";
+import apiErrorText from "../../utils/apiError";
+
+/**
+ * UAT 24 Okt (audit UI tahap 2) — G5-16: catatan master jenis sample/kebijakan R&D tanpa kode keputusan internal
+ * ("(keputusan pemilik, MD-05)", "AS-01", "(keputusan pemilik #5)"). Dipakai tab rincian sample & galeri per jenis
+ * (dulu penyaring lokal hanya di galeri).
+ */
+export const cleanRndNote = (t) => {
+  if (!t) return "";
+  const s = String(t)
+    .replace(/\s*\(\s*keputusan pemilik(?:\s*#?\d+)?(?:\s*[,;][^)]*)?\)/gi, "")
+    .replace(/,?\s*\b(?:MD|KLR|LN|PB|AS)-\d{2,3}\b/g, "")
+    .replace(/\(\s*\)/g, "");
+  return stripInternalCodes(s);
+};
+
 export const SPEC_STATUS_META = {
   draft: { label: "Draf", cls: "pill-muted" },
   review: { label: "Menunggu ACC", cls: "pill-warning" },
@@ -170,4 +187,6 @@ export const lifecycleMeta = (value) =>
   LIFECYCLE_META[(value || "produksi").toLowerCase()] || LIFECYCLE_META.produksi;
 
 /** Ambil pesan galat backend yang sudah ramah pengguna (Bahasa Indonesia). */
-export const errMsg = (e, fallback) => e?.response?.data?.detail || fallback;
+// Audit UI tahap 2 (G0-03/P-07) — galat API lewat `apiErrorText`: "Permission ditolak: x.y" jadi kalimat Indonesia,
+// detail validasi (array) dirangkai, bukan ditampilkan mentah.
+export const errMsg = (e, fallback) => apiErrorText(e, fallback);

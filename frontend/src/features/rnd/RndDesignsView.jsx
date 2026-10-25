@@ -132,6 +132,13 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
     master: rows.filter((d) => d.proofing?.state === "master").length,
   }), [rows]);
   const activeFilters = Object.entries(f).filter(([k, v]) => v && k !== "q" && k !== "line").length + (date.from || date.to ? 1 : 0);
+  // UAT 24 Okt (audit UI tahap 2) — G5-41: hitungan per tab status = jumlah desain berstatus itu (dulu tab aktif
+  // menampilkan `rows.length` = semua desain termuat, tab lain tanpa angka).
+  const statusCounts = useMemo(() => {
+    const c = { "": rows.length };
+    rows.forEach((d) => { const k = d.status === "retired" ? "archived" : (d.status || "draft"); c[k] = (c[k] || 0) + 1; });
+    return c;
+  }, [rows]);
 
   if (openId) {
     return <DesignDetailPage designId={openId} currentUser={currentUser} onBack={() => setOpenId(null)} onChanged={load} />;
@@ -194,21 +201,22 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
           {showFilters && (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5" data-testid="rnd-designs-filters">
               <div className="col-span-full"><OptionTabs testId="rnd-filter-status" value={f.status} options={STATUS_OPTS} onChange={(v) => set("status", v)}
-                countOf={(v) => (v === (f.status || "") ? rows.length : undefined)} /></div>
-              <KNSelect data-testid="rnd-filter-hold" className="field" value={f.hold} options={HOLD_OPTS} onValueChange={(v) => set("hold", v)} />
-              <KNSelect data-testid="rnd-filter-origin" className="field" value={f.origin} options={ORIGIN_OPTS} onValueChange={(v) => set("origin", v)} />
-              <KNSelect data-testid="rnd-filter-proofing" className="field" value={f.proofing} options={PROOFING_OPTS} onValueChange={(v) => set("proofing", v)} />
-              <KNSelect data-testid="rnd-filter-category" className="field" value={f.cat} options={catOpts} onValueChange={(v) => set("cat", v)} searchable />
-              <KNSelect data-testid="rnd-filter-dcategory" className="field" value={f.dcat} options={dcatOpts} onValueChange={(v) => set("dcat", v)} />
-              <KNSelect data-testid="rnd-filter-designer" className="field" value={f.designer} searchable
-                options={[{ value: "", label: "Semua desainer" }, ...designers.map((n) => ({ value: n, label: actorLabel(n) }))]} onValueChange={(v) => set("designer", v)} />
-              <KNSelect data-testid="rnd-filter-tag" className="field" value={f.tag} searchable
-                options={[{ value: "", label: "Semua tag" }, ...tags.map((t) => ({ value: t, label: t }))]} onValueChange={(v) => set("tag", v)} />
-              <KNSelect data-testid="rnd-filter-product" className="field" value={f.product} searchable
-                options={[{ value: "", label: "Semua peruntukan produk" }, ...products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))]} onValueChange={(v) => set("product", v)} />
-              <KNSelect data-testid="rnd-filter-revision" className="field" value={f.revision} options={REVISION_OPTS} onValueChange={(v) => set("revision", v)} />
-              <KNSelect data-testid="rnd-filter-score" className="field" value={f.score} options={SCORE_OPTS} onValueChange={(v) => set("score", v)} />
-              <KNSelect data-testid="rnd-filter-artwork" className="field" value={f.artwork} options={ARTWORK_OPTS} onValueChange={(v) => set("artwork", v)} />
+                countOf={(v) => statusCounts[v || ""] || 0} /></div>
+              {/* G5-41: setiap saringan diberi label ringkas di atasnya (dulu 11 dropdown tanpa label). */}
+              <FilterField label="Ditahan"><KNSelect data-testid="rnd-filter-hold" className="field" value={f.hold} options={HOLD_OPTS} onValueChange={(v) => set("hold", v)} /></FilterField>
+              <FilterField label="Asal desain"><KNSelect data-testid="rnd-filter-origin" className="field" value={f.origin} options={ORIGIN_OPTS} onValueChange={(v) => set("origin", v)} /></FilterField>
+              <FilterField label="Proofing"><KNSelect data-testid="rnd-filter-proofing" className="field" value={f.proofing} options={PROOFING_OPTS} onValueChange={(v) => set("proofing", v)} /></FilterField>
+              <FilterField label="Kategori pattern"><KNSelect data-testid="rnd-filter-category" className="field" value={f.cat} options={catOpts} onValueChange={(v) => set("cat", v)} searchable /></FilterField>
+              <FilterField label="Kategori desain"><KNSelect data-testid="rnd-filter-dcategory" className="field" value={f.dcat} options={dcatOpts} onValueChange={(v) => set("dcat", v)} /></FilterField>
+              <FilterField label="Desainer"><KNSelect data-testid="rnd-filter-designer" className="field" value={f.designer} searchable
+                options={[{ value: "", label: "Semua desainer" }, ...designers.map((n) => ({ value: n, label: actorLabel(n) }))]} onValueChange={(v) => set("designer", v)} /></FilterField>
+              <FilterField label="Tag"><KNSelect data-testid="rnd-filter-tag" className="field" value={f.tag} searchable
+                options={[{ value: "", label: "Semua tag" }, ...tags.map((t) => ({ value: t, label: t }))]} onValueChange={(v) => set("tag", v)} /></FilterField>
+              <FilterField label="Peruntukan produk"><KNSelect data-testid="rnd-filter-product" className="field" value={f.product} searchable
+                options={[{ value: "", label: "Semua peruntukan produk" }, ...products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))]} onValueChange={(v) => set("product", v)} /></FilterField>
+              <FilterField label="Ronde revisi"><KNSelect data-testid="rnd-filter-revision" className="field" value={f.revision} options={REVISION_OPTS} onValueChange={(v) => set("revision", v)} /></FilterField>
+              <FilterField label="Nilai ACC"><KNSelect data-testid="rnd-filter-score" className="field" value={f.score} options={SCORE_OPTS} onValueChange={(v) => set("score", v)} /></FilterField>
+              <FilterField label="Berkas desain"><KNSelect data-testid="rnd-filter-artwork" className="field" value={f.artwork} options={ARTWORK_OPTS} onValueChange={(v) => set("artwork", v)} /></FilterField>
             </div>
           )}
         </div>
@@ -223,7 +231,11 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="rnd-designs-empty">
               <Layers className="mx-auto mb-2 text-gray-300" size={28} />
-              {(activeFilters || f.q.trim()) ? <p>Tidak ada desain yang cocok dengan saringan saat ini.</p>
+              {(f.status && activeFilters === 1 && !f.q.trim()) ? (
+                <p>Tidak ada desain berstatus <b>{DESIGN_STATUS_META[f.status]?.label || f.status}</b>.{" "}
+                  <button type="button" className="link-button" data-testid="rnd-designs-show-all" onClick={() => set("status", "")}>Tampilkan semua</button></p>
+              ) : (activeFilters || f.q.trim()) ? <p>Tidak ada desain yang cocok dengan saringan saat ini.{" "}
+                  <button type="button" className="link-button" data-testid="rnd-designs-clear" onClick={() => { setF({ ...EMPTY, line: f.line }); setDate(EMPTY_DATE); }}>Hapus saringan</button></p>
                 : <p>Belum ada desain. Buat desain baru — kode terbentuk otomatis dari inisial desainer, jenis, dan kategori.</p>}
             </div>
           ) : (
@@ -297,6 +309,15 @@ function DesignCard({ d, onOpen }) {
         </p>
       </div>
     </button>
+  );
+}
+
+function FilterField({ label, children }) {
+  return (
+    <div className="min-w-0">
+      <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6B6B73]">{label}</p>
+      {children}
+    </div>
   );
 }
 

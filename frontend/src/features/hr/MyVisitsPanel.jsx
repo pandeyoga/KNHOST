@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Play, Square, LocateFixed, Building2, Clock, RefreshCw, MapPin } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -25,7 +26,7 @@ export function MyVisitsPanel({ currentUser }) {
   async function loadMe() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/visits/me`); setMe(r.data || null); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat kunjungan Anda."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat kunjungan Anda.")); }
     finally { setLoading(false); }
   }
   async function loadCustomers() {
@@ -56,7 +57,7 @@ export function MyVisitsPanel({ currentUser }) {
       setNotice("Kunjungan dimulai."); setError("");
       setCi({ customer_id: "", customer_name: "", lat: "", lon: "", photo_url: "", notes: "" });
       loadMe();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memulai kunjungan."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memulai kunjungan.")); }
     finally { setSavingIn(false); }
   }
   async function checkOut(visitId) {
@@ -69,7 +70,7 @@ export function MyVisitsPanel({ currentUser }) {
       setNotice("Kunjungan selesai dicatat."); setError("");
       setCo({ outcome: "order", linked_so_id: "", notes: "", lat: "", lon: "" });
       loadMe();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal menyelesaikan kunjungan."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal menyelesaikan kunjungan.")); }
     finally { setSavingOut(false); }
   }
 

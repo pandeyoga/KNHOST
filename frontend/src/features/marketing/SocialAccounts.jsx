@@ -1,5 +1,6 @@
 /** SocialAccounts — master Akun Sosmed per badan usaha (boleh banyak akun per PT). */
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { AtSign, Plus, Pencil } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
@@ -60,7 +61,7 @@ function AccountForm({ account, onClose, onSaved }) {
   const submit = async () => {
     setBusy(true); setErr("");
     try { const body = { ...f, followers: Number(f.followers || 0) }; if (account) { delete body.platform; await api.update(account.id, body); } else await api.create(body); onSaved(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan akun."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menyimpan akun.")); } finally { setBusy(false); }
   };
   return (
     <FormModal open title={account ? `Ubah @${account.handle}` : "Akun sosmed baru"} icon={AtSign} onClose={onClose} onSubmit={submit} busy={busy} error={err} testId="mkt-account-form" submitTestId="mkt-account-submit">

@@ -19,6 +19,15 @@ import ExistingSkuSection from "./ExistingSkuSection";
 import { measurementMeta, typeLabel, typeMeta } from "./sampleTypeMeta";
 
 const listBaseFabrics = () => axios.get(`${API}/rnd/base-fabrics`).then((r) => r.data?.items || []);
+// UAT 24 Okt (audit UI tahap 2) — G5-44: contoh isian per jenis (dulu Handfeel/Proofing/Uji ulang memakai contoh labdip
+// "Labdip Katun Combed…", "ΔE 1.5").
+const PLACEHOLDERS = {
+  labdip: { title: "mis. Labdip Katun Combed 150 gsm — biru dongker", brief: "mis. Cocokkan warna target maksimal ΔE 1,5, kirim swatch 3 meter" },
+  handfeel: { title: "mis. Handfeel Rayon Twill 180 gsm", brief: "mis. Rasa lembut & jatuh seperti kain acuan, gramasi 180 gsm ± 5%, kirim 3 meter" },
+  proofing: { title: "mis. Proofing motif Kawung — katun 150 gsm", brief: "mis. Cetak satu repeat penuh sesuai desain, kirim foto hasil cetak + 1 meter" },
+  existing: { title: "mis. Uji ulang SKU dari supplier baru", brief: "mis. Bandingkan dengan SKU aktif (warna & rasa kain), kirim 3 meter" },
+  other: { title: "mis. Sample kain katun 150 gsm", brief: "mis. Jelaskan yang harus dicocokkan supplier & jumlah kiriman" },
+};
 const hasAcc = (s, code) => s.status === "decided" || (s.rounds || []).some((r) => r.result === "acc" && (!r.type_code || r.type_code === code));
 
 // Audit UI 24 Okt — badge "WAJIB" di judul bagian dihapus: isian wajib sudah bertanda *.
@@ -142,6 +151,12 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   };
 
   const lockLabel = lockType ? typeLabel(lockType, types).split(" (")[0] : "";
+  const ph = isExisting ? PLACEHOLDERS.existing
+    : PLACEHOLDERS[lockType || f.sample_types[0]] || PLACEHOLDERS.other;
+  // G5-44: subjudul per tujuan — uji ulang TIDAK membuat SKU/spesifikasi baru (dulu "saat ACC … SKU lahir" untuk semua).
+  const subtitle = (purpose === "revalidation" || isExisting)
+    ? "Uji ulang SKU yang sudah aktif — tidak membuat SKU atau spesifikasi baru."
+    : "Setiap permintaan lahir bersama SPESIFIKASI produk target-nya — saat ACC, spesifikasi ikut ACC dan SKU lahir di master.";
   const autoTitle = () => {
     if (f.title.trim()) return;
     const parts = [f.sample_types.map((c) => typeLabel(c, types).split(" (")[0]).join("+"), catalog.template_name || sp.base_fabric_name,
@@ -151,7 +166,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
 
   return (
     <FormModal open onClose={onClose} title={purpose === "revalidation" ? "Uji Ulang SKU" : lockType ? `Sample ${lockLabel} Baru` : "R&D Produk Baru"}
-      subtitle="Setiap permintaan lahir bersama SPESIFIKASI produk target-nya — saat ACC, spesifikasi ikut ACC dan SKU lahir di master."
+      subtitle={subtitle}
       icon={Beaker} size="lg" testId="sample-form-modal"
       onSubmit={submit} submitLabel={isExisting ? "Simpan Uji Tambahan" : "Simpan Permintaan + Spesifikasi"} busy={saving} error={err}
       submitDisabled={!canSave} submitTestId="sample-form-save">
@@ -209,6 +224,18 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
                       ...handfeels.map((s) => ({ value: s.id, label: `${s.number} · ${s.title}${s.status === "decided" ? " · pemenang dipilih" : " · ada ronde ACC"}` }))]}
                     onValueChange={setParentId} />
                   {parentId && <span className="mt-1 block text-[10.5px] text-[#1B7F4B]">Konstruksi kain (jenis, gramasi, lebar, benang) diwarisi dari handfeel induk saat disimpan.</span>}
+                  {/* G5-44: jalan keluar bila belum ada handfeel ACC (dulu isian wajib buntu tanpa tautan). */}
+                  {!handfeels.length && (
+                    <span className="mt-1 block text-[10.5px] text-[#8C4A00]" data-testid="sample-parent-empty-hint">
+                      Belum ada sample handfeel yang ACC.{" "}
+                      {types.some((t) => t.value === "handfeel") && (
+                        <button type="button" className="link-button" data-testid="sample-parent-add-handfeel" onClick={() => toggleType("handfeel")}>
+                          Uji handfeel sekalian di permintaan ini
+                        </button>
+                      )}
+                      {" "}atau buat sample Handfeel dulu lewat menu R&amp;D › Handfeel.
+                    </span>
+                  )}
                 </label>
               )}
               <SampleSpecFields sp={sp} setSp={(v) => { setTouched(true); setSp(v); }} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
@@ -232,7 +259,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Judul permintaan {isExisting ? "(otomatis bila kosong)" : "*"}</span>
               <input className="field" data-testid="sample-title-input" value={f.title} onChange={(e) => set("title", e.target.value)} onBlur={autoTitle}
-                placeholder="mis. Labdip Katun Combed 150 gsm — biru dongker" />
+                placeholder={ph.title} />
             </label>
             <label className="block">
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Jumlah diminta</span>
@@ -250,7 +277,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Brief untuk supplier</span>
               <textarea className="field" rows={3} data-testid="sample-brief-input" value={f.brief} onChange={(e) => set("brief", e.target.value)}
-                placeholder="mis. Cocokkan warna target maksimal ΔE 1.5, kirim swatch 3 meter" />
+                placeholder={ph.brief} />
             </label>
           </div>
         </Section>

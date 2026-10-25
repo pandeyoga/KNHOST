@@ -1,6 +1,7 @@
 /** DateQuickNav — navigasi cepat tanggal untuk daftar desain: pilih acuan (ACC / update), preset, lompat bulan, rentang bebas. */
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import KNDatePicker from "../../../components/KNDatePicker";
 import { DESIGN_DATE_FIELDS } from "../rndMeta";
 
 const iso = (d) => d.toISOString().slice(0, 10);
@@ -58,9 +59,15 @@ export default function DateQuickNav({ value, onChange, testId = "design-date-na
         <span className="min-w-[110px] text-center text-[10.5px] font-semibold text-[#3C3C43]" data-testid={`${testId}-month-label`}>{from ? monthLabel(from) : "semua tanggal"}</span>
         <button type="button" className="rounded border border-[#E5E5EA] bg-white p-0.5 hover:border-[#6B219A]" onClick={() => shiftMonth(1)} data-testid={`${testId}-next-month`} title="Bulan berikutnya"><ChevronRight size={12} /></button>
       </span>
-      <input type="date" className="field !w-[130px] !py-0.5 text-[10.5px]" value={from} onChange={(e) => set({ from: e.target.value, preset: "custom" })} data-testid={`${testId}-from`} />
-      <span className="text-[10px] text-[#8E8E93]">s/d</span>
-      <input type="date" className="field !w-[130px] !py-0.5 text-[10.5px]" value={to} onChange={(e) => set({ to: e.target.value, preset: "custom" })} data-testid={`${testId}-to`} />
+      {/* UAT 24 Okt (audit UI tahap 2) — G5-41: rentang bebas memakai KNDatePicker (dulu <input type=date> bawaan
+          "dd/mm/yyyy" 10,5px yang patah 4 baris di HP); dua isian satu kelompok yang tidak terpecah. */}
+      <span className="flex w-full items-center gap-1.5 sm:w-auto" data-testid={`${testId}-range`}>
+        <KNDatePicker className="min-w-0 flex-1 sm:w-[150px] sm:flex-none" value={from} max={to || undefined} placeholder="Dari tanggal"
+          onChange={(v) => set({ from: v, preset: "custom" })} data-testid={`${testId}-from`} />
+        <span className="shrink-0 text-[10px] text-[#8E8E93]">s/d</span>
+        <KNDatePicker className="min-w-0 flex-1 sm:w-[150px] sm:flex-none" value={to} min={from || undefined} placeholder="Sampai tanggal"
+          onChange={(v) => set({ to: v, preset: "custom" })} data-testid={`${testId}-to`} />
+      </span>
       {active && (
         <button type="button" className="text-[10.5px] text-[#6B219A] underline" onClick={() => set({ from: "", to: "", preset: "" })} data-testid={`${testId}-clear`}>hapus tanggal</button>
       )}

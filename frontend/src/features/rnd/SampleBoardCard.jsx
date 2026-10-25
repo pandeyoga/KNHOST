@@ -30,7 +30,7 @@ export default function SampleBoardCard({ s, types, onOpen }) {
       <p className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-bold text-[#1C1C1E]">
         {s.number}
         <RevisionBadge count={sampleRevisionCount(s)} size="xs" testId={`rnd-sample-card-revision-${s.id}`} />
-        {overdue && <span className="status-pill pill-danger !text-[9px]">round terlambat</span>}
+        {overdue && <span className="status-pill pill-danger !text-[9px]">ronde terlambat</span>}
         {s.purpose === "revalidation" && <span className="rounded bg-[#EAF6EE] px-1.5 py-0.5 text-[9px] font-bold text-[#1E7B3C]" data-testid={`rnd-sample-card-existing-${s.id}`}>uji SKU {s.product_sku}</span>}
       </p>
       <p className="mt-1 flex flex-wrap gap-1" data-testid={`rnd-sample-card-types-${s.id}`}>

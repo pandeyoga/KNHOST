@@ -97,7 +97,8 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
     await run(() => rejectDesignRequest(doc.id, alasan), "Permintaan revisi terkirim.");
   }
   async function batalkan() {
-    const alasan = await askReason({ title: "Batalkan permintaan desain", message: `Sebutkan alasan pembatalan ${doc.number}.`, confirmLabel: "Batalkan permintaan" });
+    // UAT 24 Okt (audit UI tahap 2) — G5-37: konfirmasi pembatalan berwarna bahaya (dulu biru).
+    const alasan = await askReason({ title: `Batalkan permintaan ${doc.number}?`, message: "Permintaan desain dihentikan dan tidak bisa dilanjutkan. Sebutkan alasannya.", confirmLabel: "Batalkan permintaan", danger: true, reasonLabel: "Alasan pembatalan" });
     if (!alasan) return;
     await run(() => cancelDesignRequest(doc.id, alasan), "Permintaan dibatalkan.");
   }

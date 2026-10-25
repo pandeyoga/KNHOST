@@ -161,7 +161,8 @@ export default function DesignOwnershipPanel({ d, currentUser, onChanged }) {
         {!usage ? <p className="text-[11px] text-[#9A9BA3]">Memuat…</p> : (
           <>
             <p className="text-[11px] text-[#6B6B73]" data-testid="design-usage-summary">
-              {usage.products.length} SKU · {usage.orders} SO · {usage.customers.length} pelanggan · {usage.repeat_customers} repeat
+              {/* G5-40: "0 repeat" → kalimat Indonesia, disembunyikan bila nol. */}
+              {usage.products.length} SKU · {usage.orders} SO · {usage.customers.length} pelanggan{Number(usage.repeat_customers) > 0 ? ` · ${usage.repeat_customers} pelanggan beli ulang` : ""}
             </p>
             {usage.customers.length > 0 && (
               <table className="mt-1 w-full text-[11px]">
@@ -169,7 +170,7 @@ export default function DesignOwnershipPanel({ d, currentUser, onChanged }) {
                 <tbody>
                   {usage.customers.map((c) => (
                     <tr key={c.customer_id || c.customer_name} className="border-t border-[#F2F2F5]" data-testid={`design-usage-row-${c.customer_id}`}>
-                      <td className="py-0.5">{c.customer_name}{c.repeat && <span className="ml-1 rounded bg-[#E8F0FF] px-1 text-[9.5px] font-bold text-[#0058CC]">repeat</span>}</td>
+                      <td className="py-0.5">{c.customer_name}{c.repeat && <span className="ml-1 rounded bg-[#E8F0FF] px-1 text-[9.5px] font-bold text-[#0058CC]">beli ulang</span>}</td>
                       <td className="text-right tabular-nums">{c.orders}</td>
                       <td className="text-right tabular-nums">{Object.entries(c.qty_by_unit || {}).map(([u, q]) => `${formatQty(q)} ${u}`).join(" + ")}</td>
                       <td className="text-right tabular-nums">{fmtRp(c.value)}</td>

@@ -13,11 +13,13 @@ import { specOverride } from "./requiredTests";
 import { errMsg, fabricLabel, lifecycleMeta, SAMPLE_STATUS_META, SPEC_STATUS_META } from "./rndMeta";
 import { sampleTypesOf, typeLabel } from "./sampleTypeMeta";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import useDomainEnums from "../../hooks/useDomainEnums";
 
 export default function SpecDetailPanel({ specId, currentUser, types = [], onClose,
                                          onChanged }) {
   const [spec, setSpec] = useState(null);
   const [err, setErr] = useState("");
+  const { labelOf } = useDomainEnums();
   const [busy, setBusy] = useState(false);
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
@@ -85,11 +87,14 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
           <div className="grid gap-2 md:grid-cols-4">
             <Box label="Tahap produk" value={life.label} tone={life.tone}
               testId="spec-detail-lifecycle" />
+            {/* UAT 24 Okt (audit UI tahap 2) — G5-49: tahap bahan berlabel registri (dulu "finished" mentah); nilai
+                kosong "—" (dulu "0 gsm · 0 cm" & "Rp 0"). */}
             <Box label="Jenis kain / tahap bahan"
-              value={`${fabricLabel(spec?.target?.fabric_type) || "—"} · ${spec?.target?.stage || "—"}`} />
+              value={`${fabricLabel(spec?.target?.fabric_type) || "—"} · ${spec?.target?.stage ? labelOf("stage", spec.target.stage) : "—"}`} />
             <Box label="Gramasi / lebar"
-              value={`${formatQty(spec?.target?.gramasi || 0)} gsm · ${formatQty(spec?.target?.lebar || 0)} cm`} />
-            <Box label="Target harga" value={formatCurrency(spec?.target_price || 0)} />
+              value={!(Number(spec?.target?.gramasi) > 0) && !(Number(spec?.target?.lebar) > 0) ? "—"
+                : `${Number(spec?.target?.gramasi) > 0 ? `${formatQty(spec.target.gramasi)} gsm` : "gramasi —"} · ${Number(spec?.target?.lebar) > 0 ? `${formatQty(spec.target.lebar)} cm` : "lebar —"}`} />
+            <Box label="Target harga" value={Number(spec?.target_price) > 0 ? formatCurrency(spec.target_price) : "—"} />
           </div>
 
           <div className="grid gap-2 md:grid-cols-4">

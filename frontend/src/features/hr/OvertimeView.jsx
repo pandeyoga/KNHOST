@@ -1,4 +1,5 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import apiErrorText from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Timer, RefreshCw, Plus, Check, X } from "lucide-react";
@@ -8,9 +9,10 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
-import { REQ_STATUS, recentMonths, wibToday } from "./leaveUtils";
+import { REQ_STATUS, recentMonths, wibToday, employeeOptions } from "./leaveUtils";
 import { can } from "../../config/roles";
-import { formatDate } from "../../utils/formatters";
+import { formatDate, formatPeriod } from "../../utils/formatters";
+import { askConfirm } from "../../services/confirmService";
 
 function StatusPill({ status }) {
   const s = REQ_STATUS[status] || REQ_STATUS.pending;
@@ -34,7 +36,7 @@ function OvertimeCreateModal({ open, onClose, employees, onSubmit }) {
     if (!(h > 0 && h <= 12)) { setErr("Jam lembur harus > 0 dan ≤ 12."); return; }
     setBusy(true); setErr("");
     try { await onSubmit({ employee_id: empId, date, hours: h, reason }); onClose(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal mengajukan lembur."); }
+    catch (e) { setErr(apiErrorText(e, "Gagal mengajukan lembur.")); }
     finally { setBusy(false); }
   }
 
@@ -46,8 +48,8 @@ function OvertimeCreateModal({ open, onClose, employees, onSubmit }) {
       busy={busy} error={err}>
         <div className="grid gap-2.5">
           <div className="grid gap-1"><label className="field-label">Karyawan <span className="req">*</span></label>
-            <KNSelect data-testid="overtime-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan"
-              options={employees.map((e) => ({ value: e.id, label: `${e.name}${e.code ? ` (${e.code})` : ""}` }))} /></div>
+            <KNSelect data-testid="overtime-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan aktif" searchable
+              options={employeeOptions(employees)} /></div>
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1"><label className="field-label">Tanggal <span className="req">*</span></label>
               <KNDatePicker data-testid="overtime-form-date" value={date} onChange={setDate} /></div>
@@ -91,21 +93,31 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
         .then((a) => setStatusCounts((Array.isArray(a.data) ? a.data : []).reduce((m, x) => ({ ...m, [x.status]: (m[x.status] || 0) + 1, total: m.total + 1 }), { total: 0 })))
         .catch(() => setStatusCounts({}));
       const r = await axios.get(`${API}/hr/overtime`, { params: { ...params, ...(month ? { month } : {}), ...(status ? { status } : {}) } }); setRows(Array.isArray(r.data) ? r.data : []); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat data lembur."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat data lembur.")); }
     finally { setLoading(false); }
   }
   async function createOt(payload) { await axios.post(`${API}/hr/overtime`, payload); setNotice("Pengajuan lembur dibuat."); load(); }
-  async function approve(id) {
-    try { await axios.post(`${API}/hr/overtime/${id}/approve`); setNotice("Lembur disetujui & masuk perhitungan payroll."); setError(""); load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menyetujui."); }
+  // UAT 24 Okt (audit UI tahap 2) — G5-29: Setujui meminta konfirmasi (dulu langsung POST).
+  async function approve(r) {
+    const ok = await askConfirm({
+      title: `Setujui lembur ${r.employee_name || ""}?`,
+      message: `${formatDate(r.date)} · ${r.hours} jam. Lembur yang disetujui masuk perhitungan gaji.`,
+      confirmLabel: "Setujui",
+    });
+    if (!ok) return;
+    try { await axios.post(`${API}/hr/overtime/${r.id}/approve`); setNotice("Lembur disetujui & masuk perhitungan gaji."); setError(""); load(); }
+    catch (e) { setError(apiErrorText(e, "Gagal menyetujui.")); }
   }
   async function doReject(reason) {
     const id = rejectTarget.id; setRejectTarget(null);
     try { await axios.post(`${API}/hr/overtime/${id}/reject`, { reason }); setNotice("Lembur ditolak."); setError(""); load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menolak."); }
+    catch (e) { setError(apiErrorText(e, "Gagal menolak.")); }
   }
 
-  const monthOpts = [{ value: "", label: "Semua Periode" }, ...recentMonths().map((m) => ({ value: m, label: m }))];
+  const monthOpts = [{ value: "", label: "Semua Periode" }, ...recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }))];
+  const emptyText = q ? "Tidak ada yang cocok dengan pencarian."
+    : status ? `Tidak ada pengajuan lembur berstatus ${(REQ_STATUS[status]?.label || status).toLowerCase()}${month ? ` pada ${formatPeriod(month)}` : ""}.`
+      : month ? `Belum ada pengajuan lembur pada ${formatPeriod(month)}.` : "Belum ada pengajuan lembur.";
   const statusOpts = [{ value: "", label: "Semua Status" }, ...Object.entries(REQ_STATUS).filter(([v]) => v !== "cancelled").map(([v, s]) => ({ value: v, label: s.label }))];
 
   return (
@@ -122,7 +134,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 px-3 pb-2">
-          <div className="w-[150px]"><KNSelect data-testid="overtime-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
+          <div className="w-[170px]"><KNSelect data-testid="overtime-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
           <OptionTabs testId="overtime-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
           <div className="w-full sm:w-auto sm:min-w-[220px] sm:flex-1"><SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="overtime-search" /></div>
         </div>
@@ -137,7 +149,8 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
         {loading ? (
           <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="overtime-loading">Memuat...</div>
         ) : shown.length === 0 ? (
-          <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="overtime-empty"><Timer className="mx-auto mb-2 text-gray-300" size={28} /><p>{q ? "Tidak ada yang cocok dengan pencarian." : "Belum ada pengajuan lembur."}</p></div>
+          <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="overtime-empty"><Timer className="mx-auto mb-2 text-gray-300" size={28} /><p>{emptyText}</p>
+            {status && !q && <button type="button" className="link-button mt-1" data-testid="overtime-empty-show-all" onClick={() => setStatus("")}>Tampilkan semua status</button>}</div>
         ) : (
           <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
             {shown.map((r) => (
@@ -151,7 +164,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
                   {r.status !== "pending" && <span className="text-[11px] text-[#9A9BA3]" title="Pengajuan ini sudah diputuskan — tidak ada aksi lagi">tidak ada aksi</span>}
                   {canManage && r.status === "pending" && (
                     <>
-                      <button data-testid={`overtime-approve-${r.id}`} onClick={() => approve(r.id)} className="icon-button text-[#1F7A45] hover:bg-green-50" title="Setujui"><Check size={14} /></button>
+                      <button data-testid={`overtime-approve-${r.id}`} onClick={() => approve(r)} className="icon-button text-[#1F7A45] hover:bg-green-50" title="Setujui"><Check size={14} /></button>
                       <button data-testid={`overtime-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="icon-button text-[#C0392B] hover:bg-red-50" title="Tolak"><X size={14} /></button>
                     </>
                   )}

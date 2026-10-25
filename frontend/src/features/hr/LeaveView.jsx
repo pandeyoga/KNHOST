@@ -1,4 +1,5 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import apiErrorText from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { CalendarDays, RefreshCw, Plus, Check, X, Ban, Users } from "lucide-react";
@@ -8,8 +9,10 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
-import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells } from "./leaveUtils";
+import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells, employeeOptions } from "./leaveUtils";
 import { can } from "../../config/roles";
+import { askConfirm } from "../../services/confirmService";
+import { formatDate, formatPeriod } from "../../utils/formatters";
 
 const WEEKDAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -39,7 +42,7 @@ function LeaveCreateModal({ open, onClose, employees, onSubmit }) {
     try {
       await onSubmit({ employee_id: empId, leave_type: type, date_from: from, date_to: to, reason });
       onClose();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal mengajukan cuti."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal mengajukan cuti.")); }
     finally { setBusy(false); }
   }
 
@@ -52,8 +55,8 @@ function LeaveCreateModal({ open, onClose, employees, onSubmit }) {
         <div className="grid gap-2.5">
           <div className="grid gap-1">
             <label className="field-label">Karyawan <span className="req">*</span></label>
-            <KNSelect data-testid="leave-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan"
-              options={employees.map((e) => ({ value: e.id, label: `${e.name}${e.code ? ` (${e.code})` : ""}` }))} />
+            <KNSelect data-testid="leave-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan aktif" searchable
+              options={employeeOptions(employees)} />
           </div>
           <div className="grid gap-1">
             <label className="field-label">Tipe <span className="req">*</span></label>
@@ -110,19 +113,19 @@ export default function LeaveView({ currentUser, selectedEntity }) {
     axios.get(`${API}/hr/leave-requests/status-counts`, { params: { ...params, ...(month ? { month } : {}) } })
       .then((r) => setStatusCounts(r.data || {})).catch(() => setStatusCounts({}));
     try { const r = await axios.get(`${API}/hr/leave-requests`, { params: { ...params, ...(month ? { month } : {}), ...(status ? { status } : {}) } }); setRows(Array.isArray(r.data) ? r.data : []); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat pengajuan cuti."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat pengajuan cuti.")); }
     finally { setLoading(false); }
   }
   async function loadBalances() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/leave-balances`, { params }); setBalances(Array.isArray(r.data) ? r.data : []); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat saldo cuti."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat saldo cuti.")); }
     finally { setLoading(false); }
   }
   async function loadCalendar() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/leave-calendar`, { params: { ...params, month: calMonth } }); setCalendar(r.data || { month: calMonth, leaves: [] }); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat kalender cuti."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat kalender cuti.")); }
     finally { setLoading(false); }
   }
 
@@ -130,24 +133,35 @@ export default function LeaveView({ currentUser, selectedEntity }) {
     await axios.post(`${API}/hr/leave-requests`, payload);
     setNotice("Pengajuan cuti dibuat."); loadRequests();
   }
-  async function approve(id) {
-    try { await axios.post(`${API}/hr/leave-requests/${id}/approve`); setNotice("Cuti disetujui."); setError(""); loadRequests(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menyetujui."); }
+  // UAT 24 Okt (audit UI tahap 2) — G5-29: ✓ Setujui dulu langsung POST (✗ Tolak berdialog) → kini dikonfirmasi.
+  async function approve(r) {
+    const ok = await askConfirm({
+      title: `Setujui cuti ${r.employee_name || ""}?`,
+      message: `${LEAVE_TYPE_LABEL[r.leave_type] || r.leave_type} · ${formatDate(r.date_from)} – ${formatDate(r.date_to)} · ${r.days} hari kerja. Saldo cuti & status absensi pada tanggal tersebut ikut diperbarui.`,
+      confirmLabel: "Setujui",
+    });
+    if (!ok) return;
+    try { await axios.post(`${API}/hr/leave-requests/${r.id}/approve`); setNotice("Cuti disetujui."); setError(""); loadRequests(); }
+    catch (e) { setError(apiErrorText(e, "Gagal menyetujui.")); }
   }
   async function doReject(reason) {
     const id = rejectTarget.id; setRejectTarget(null);
     try { await axios.post(`${API}/hr/leave-requests/${id}/reject`, { reason }); setNotice("Cuti ditolak."); setError(""); loadRequests(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menolak."); }
+    catch (e) { setError(apiErrorText(e, "Gagal menolak.")); }
   }
   async function doCancel(reason) {
     const id = cancelTarget.id; setCancelTarget(null);
     try { await axios.post(`${API}/hr/leave-requests/${id}/cancel`, { reason }); setNotice("Cuti dibatalkan."); setError(""); loadRequests(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal membatalkan."); }
+    catch (e) { setError(apiErrorText(e, "Gagal membatalkan.")); }
   }
 
-  const monthOpts = [{ value: "", label: "Semua Periode" }, ...recentMonths().map((m) => ({ value: m, label: m }))];
+  // G5-29: periode tampil "Oktober 2026" (dulu "2026-10").
+  const monthOpts = [{ value: "", label: "Semua Periode" }, ...recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }))];
   const statusOpts = [{ value: "", label: "Semua Status" }, ...Object.entries(REQ_STATUS).map(([v, s]) => ({ value: v, label: s.label }))];
-  const calMonthOpts = recentMonths(15).map((m) => ({ value: m, label: m }));
+  const calMonthOpts = recentMonths(15).map((m) => ({ value: m, label: formatPeriod(m) }));
+  const emptyText = q ? "Tidak ada yang cocok dengan pencarian."
+    : status ? `Tidak ada pengajuan cuti berstatus ${(REQ_STATUS[status]?.label || status).toLowerCase()}${month ? ` pada ${formatPeriod(month)}` : ""}.`
+      : month ? `Belum ada pengajuan cuti pada ${formatPeriod(month)}.` : "Belum ada pengajuan cuti.";
 
   // index leaves per tanggal untuk kalender
   const leavesByDate = useMemo(() => {
@@ -189,7 +203,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
       {tab === "requests" && (
         <div className="section-card">
           <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">
-            <div className="w-[150px]"><KNSelect data-testid="leave-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
+            <div className="w-[170px]"><KNSelect data-testid="leave-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
             <OptionTabs testId="leave-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
             <div className="w-full sm:w-auto sm:min-w-[220px] sm:flex-1"><SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="leave-search" /></div>
           </div>
@@ -201,20 +215,21 @@ export default function LeaveView({ currentUser, selectedEntity }) {
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="leave-loading">Memuat...</div>
           ) : shown.length === 0 ? (
-            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="leave-empty"><CalendarDays className="mx-auto mb-2 text-gray-300" size={28} /><p>{q ? "Tidak ada yang cocok dengan pencarian." : "Belum ada pengajuan cuti."}</p></div>
+            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="leave-empty"><CalendarDays className="mx-auto mb-2 text-gray-300" size={28} /><p>{emptyText}</p>
+              {status && !q && <button type="button" className="link-button mt-1" data-testid="leave-empty-show-all" onClick={() => setStatus("")}>Tampilkan semua status</button>}</div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
               {shown.map((r) => (
                 <div key={r.id} data-testid={`leave-row-${r.id}`} className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={r.entity_id} /><span className="text-[12px] font-semibold truncate">{r.employee_name}</span></span>
                   <span className="text-[11.5px]">{LEAVE_TYPE_LABEL[r.leave_type] || r.leave_type}</span>
-                  <span className="whitespace-nowrap text-[11px] text-[#6B6B73]">{r.date_from} → {r.date_to}</span>
+                  <span className="whitespace-nowrap text-[11px] text-[#6B6B73]">{r.date_from === r.date_to ? formatDate(r.date_from) : `${formatDate(r.date_from)} – ${formatDate(r.date_to)}`}</span>
                   <span className="text-[12px] font-bold text-center tabular-nums">{r.days}</span>
                   <span><StatusPill status={r.status} /></span>
                   <div className="flex items-center justify-end gap-1">
                     {canManage && r.status === "pending" && (
                       <>
-                        <button data-testid={`leave-approve-${r.id}`} onClick={() => approve(r.id)} className="icon-button text-[#1F7A45] hover:bg-green-50" title="Setujui"><Check size={14} /></button>
+                        <button data-testid={`leave-approve-${r.id}`} onClick={() => approve(r)} className="icon-button text-[#1F7A45] hover:bg-green-50" title="Setujui"><Check size={14} /></button>
                         <button data-testid={`leave-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="icon-button text-[#C0392B] hover:bg-red-50" title="Tolak"><X size={14} /></button>
                       </>
                     )}
@@ -235,7 +250,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
         <div className="section-card" data-testid="leave-calendar">
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFF0F2]">
             <p className="text-[12px] font-bold">Kalender Cuti Disetujui</p>
-            <div className="w-[150px]"><KNSelect data-testid="leave-calendar-month" value={calMonth} onValueChange={setCalMonth} className="field !py-1" options={calMonthOpts} /></div>
+            <div className="w-[170px]"><KNSelect data-testid="leave-calendar-month" value={calMonth} onValueChange={setCalMonth} className="field !py-1" options={calMonthOpts} /></div>
           </div>
           <div className="p-3">
             <div className="grid grid-cols-7 gap-1 mb-1">
@@ -276,8 +291,9 @@ export default function LeaveView({ currentUser, selectedEntity }) {
                 <div key={b.id} data-testid={`leave-balance-row-${b.employee_id}`} className="grid grid-cols-[1.6fr_110px_90px_90px_100px] items-center px-3 py-2.5">
                   <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={b.entity_id} /><span className="text-[12px] font-semibold truncate">{empName[b.employee_id] || b.employee_id}</span></span>
                   <span className="text-[12px] text-center tabular-nums">{b.entitlement} hari</span>
-                  <span className="text-[12px] text-center tabular-nums text-[#C0392B]">{b.used}</span>
-                  <span className="text-[12px] text-center tabular-nums text-[#B7791F]">{b.pending}</span>
+                  {/* G5-29: angka 0 tanpa warna peringatan. */}
+                  <span className={`text-[12px] text-center tabular-nums ${Number(b.used) > 0 ? "text-[#C0392B]" : "text-[#9A9BA3]"}`}>{b.used}</span>
+                  <span className={`text-[12px] text-center tabular-nums ${Number(b.pending) > 0 ? "text-[#B7791F]" : "text-[#9A9BA3]"}`}>{b.pending}</span>
                   <span className="text-[13px] text-right font-bold tabular-nums text-[#1F7A45]">{b.remaining}</span>
                 </div>
               ))}
@@ -289,7 +305,8 @@ export default function LeaveView({ currentUser, selectedEntity }) {
 
       <LeaveCreateModal open={createOpen} onClose={() => setCreateOpen(false)} employees={employees} onSubmit={createLeave} />
       <ConfirmModal open={!!rejectTarget} title="Tolak Pengajuan Cuti" message={`Tolak cuti ${rejectTarget?.employee_name || ""}?`} confirmLabel="Tolak" danger withReason reasonLabel="Alasan penolakan" reasonRequired={false} onConfirm={doReject} onCancel={() => setRejectTarget(null)} testId="leave-reject-modal" />
-      <ConfirmModal open={!!cancelTarget} title="Batalkan Cuti" message={`Batalkan cuti ${cancelTarget?.employee_name || ""}? Status absensi terkait akan dikembalikan.`} confirmLabel="Batalkan" danger withReason reasonLabel="Alasan" reasonRequired={false} onConfirm={doCancel} onCancel={() => setCancelTarget(null)} testId="leave-cancel-modal" />
+      {/* G5-29: tombol tutup "Kembali" vs eksekusi "Batalkan cuti" (dulu "Batal" vs "Batalkan" mudah tertukar); alasan wajib. */}
+      <ConfirmModal open={!!cancelTarget} title={`Batalkan cuti ${cancelTarget?.employee_name || ""}?`} message={`${cancelTarget ? `${formatDate(cancelTarget.date_from)} – ${formatDate(cancelTarget.date_to)}. ` : ""}Cuti yang sudah disetujui akan dibatalkan; saldo & status absensi terkait dikembalikan.`} confirmLabel="Batalkan cuti" cancelLabel="Kembali" danger withReason reasonLabel="Alasan pembatalan" reasonRequired onConfirm={doCancel} onCancel={() => setCancelTarget(null)} testId="leave-cancel-modal" />
     </div>
   );
 }

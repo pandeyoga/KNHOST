@@ -34,6 +34,7 @@ import {
   getDesignRequest, referenceUrl,
 } from "./designRequestsApi";
 import { DESIGN_STATUS_META } from "../rnd/rndMeta";
+import DesignImage from "../rnd/design/DesignImage";
 import { roleIs } from "../../config/roles";
 import { actorLabel } from "../../utils/actorLabel";
 
@@ -59,8 +60,11 @@ function BoardCard({ r, onOpen }) {
       {r.customer_name && <p className="mt-0.5 truncate text-[10.5px] text-[#8E8E93]">{r.so_number ? `${r.so_number} · ` : ""}{r.customer_name}</p>}
       {(r.references || []).length > 0 && (
         <p className="mt-1 flex gap-1" data-testid={`dsr-card-refs-${r.id}`}>
+          {/* UAT 24 Okt (audit UI tahap 2) — G5-05: dimuat lewat axios (header badan usaha) + fallback; dulu <img src>
+              polos tanpa header & tanpa onError → ikon gambar rusak bawaan peramban / kotak putih. */}
           {r.references.slice(0, 4).map((f) => (
-            <img key={f.id} src={referenceUrl(r.id, f.id)} alt="" className="h-7 w-7 rounded border border-[#EFF0F2] object-cover" loading="lazy" />
+            <DesignImage key={f.id} src={referenceUrl(r.id, f.id)} alt="" compact loading="lazy"
+              className="h-7 w-7 rounded border border-[#EFF0F2] object-cover" data-testid={`dsr-card-ref-${r.id}-${f.id}`} />
           ))}
           {r.references.length > 4 && <span className="flex h-7 w-7 items-center justify-center rounded bg-[#F2F2F5] text-[9px] font-bold text-[#6B6B73]">+{r.references.length - 4}</span>}
         </p>
@@ -142,13 +146,21 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
     dsrMeta().then(setMeta).catch((e) => setError(apiText(e, "Gagal memuat pilihan layar.")));
   }, []);
 
+  // UAT 24 Okt (audit UI tahap 2) — G5-37: ringkasan (KPI TOTAL & lencana tab) diambil TANPA saringan status/lini/
+  // ronde — dulu tab Draf → "TOTAL 0 · Semua 0", lencana ikut menyusut. Hanya badan usaha & pencarian yang dipakai.
+  const summaryParams = useMemo(() => {
+    const p = {};
+    if (selectedEntity && selectedEntity !== "all") p.entity_id = selectedEntity;
+    if (search) p.q = search;
+    return p;
+  }, [selectedEntity, search]);
   const loadSummary = useCallback(async () => {
     try {
       const r = await axios.get(`${API}/design-requests`, {
-        params: { ...params, ...(search ? { q: search } : {}), page: 1, page_size: 1 } });
+        params: { ...summaryParams, page: 1, page_size: 1 } });
       setSummary(r.data?.summary || {});
     } catch (e) { /* bilah galat daftar sudah bicara — jangan dobel */ }
-  }, [params, search]);
+  }, [summaryParams]);
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -223,7 +235,9 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
           </div>
         </div>
 
-        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman) */}
+        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman). G5-37: disembunyikan di tab rapor
+            (dulu dua deret KPI bertumpuk dengan KPI rapor). */}
+        {tab !== "report" && tab !== "myreport" && (
         <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-5">
           {[
             ["Total", summary.total ?? 0, "dsr-kpi-total"],
@@ -238,6 +252,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Tab tampilan */}
@@ -276,15 +291,30 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
         </div>
       ) : (paged.items || []).length === 0 ? (
         <div className="section-card section-pad">
-          <EmptyState icon={Palette} title={minRevision ? `Tidak ada permintaan dengan revisi ≥ ${minRevision}` : "Belum ada permintaan desain"}
+          {/* G5-37: pesan kosong per saringan (dulu tab/lini kosong berbunyi "Belum ada permintaan desain…"). */}
+          <EmptyState icon={Palette}
+            title={minRevision ? `Tidak ada permintaan dengan revisi ≥ ${minRevision}`
+              : statusFilter ? `Tidak ada permintaan berstatus ${DSR_STATUS_LABEL[statusFilter] || statusFilter}${line ? ` di lini ${line}` : ""}`
+                : line ? `Tidak ada permintaan desain di lini ${line}`
+                  : search ? "Tidak ada permintaan yang cocok dengan pencarian" : "Belum ada permintaan desain"}
             hint={minRevision ? "Kabar baik — tidak ada desain yang tersendat di revisi berulang. Pilih \"Semua ronde\" untuk melihat seluruhnya."
+              : (statusFilter || line || search) ? "Ubah saringan di atas untuk melihat permintaan lainnya."
               : canCreate
               ? "Buat permintaan dari pesanan pelanggan atau inisiatif internal, lalu tugaskan ke desainer."
               : "Permintaan yang ditugaskan kepada Anda akan muncul di sini."}
             testId="dsr-empty" />
+          {(statusFilter || line) && (
+            <div className="mt-2 text-center">
+              <button type="button" className="link-button" data-testid="dsr-empty-show-all"
+                onClick={() => { setStatusFilter(""); setLine(""); }}>Tampilkan semua status &amp; lini</button>
+            </div>
+          )}
         </div>
       ) : tab === "board" ? (
         <>
+          {/* G5-37: papan bergulir dengan penanda tepi kanan + catatan, supaya kolom paling kanan (mis. ACC saat
+              disaring) tidak tampak terpotong tanpa petunjuk. */}
+          <div className="relative">
           <div data-testid="dsr-board" className="grid grid-flow-col auto-cols-[minmax(176px,1fr)] gap-2 overflow-x-auto pb-1">
             {/* 23 Okt — sama dengan papan sample: saringan "Disetujui (ACC)" dulu menampilkan papan kosong. */}
             {(statusFilter && !DSR_BOARD_ACTIVE.includes(statusFilter) ? [...DSR_BOARD_ACTIVE, statusFilter] : DSR_BOARD_ACTIVE).map((s) => (
@@ -305,6 +335,9 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
               </div>
             ))}
           </div>
+          <span aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-[#F5F6F8] to-transparent" />
+          </div>
+          <p className="text-[10.5px] text-[#8E8E93]" data-testid="dsr-board-scroll-hint">Geser papan ke kanan untuk melihat kolom berikutnya.</p>
           {offBoard.length > 0 && (
             <p data-testid="dsr-board-offboard-note" className="text-[11px] text-[#6B6B73]">
               {offBoard.length} permintaan sudah selesai ({offBoardText}) dan tidak tampil di papan yang hanya memuat tahap berjalan.{" "}

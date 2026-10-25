@@ -8,14 +8,32 @@ import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
 import axios, { API } from "../../services/apiClient";
-import { listColors, listDesigns, patchSpec, sampleTypes as fetchTypes } from "./rndApi";
+import { listColors, listDesigns, listSpecs, patchSpec, sampleTypes as fetchTypes } from "./rndApi";
 import { errMsg, fabricLabel, SPEC_STATUS_META, variantText } from "./rndMeta";
 import { Field, Footer } from "./RndField";
 import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems } from "./SampleSpecFields";
 
 
 export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
-  const spec = sample.spec || null;
+  // UAT 24 Okt (audit UI tahap 2) — G5-45: satu sumber spesifikasi. Kepala rincian menyebut "dari KSC/SPEC-…" tetapi
+  // kartu ini berbunyi "Belum ada spesifikasi — data lama" bila server tak menyertakan `spec`. Kini: bila nomor
+  // spesifikasi tercatat, kartunya dicari lewat nomor itu; bila tetap tidak ketemu, kalimatnya jujur menyebut nomornya.
+  const [found, setFound] = useState(null);
+  const [lookup, setLookup] = useState("");   // "" | "loading" | "missing"
+  const wantNumber = !sample.spec && (sample.spec_number || "");
+  useEffect(() => {
+    if (!wantNumber) { setFound(null); setLookup(""); return undefined; }
+    let alive = true;
+    setLookup("loading");
+    listSpecs({ q: wantNumber, limit: 5 })
+      .then((r) => {
+        const hit = (r?.items || []).find((x) => x.number === wantNumber) || null;
+        if (alive) { setFound(hit); setLookup(hit ? "" : "missing"); }
+      })
+      .catch(() => { if (alive) setLookup("missing"); });
+    return () => { alive = false; };
+  }, [wantNumber]);
+  const spec = sample.spec || found || null;
   const [modal, setModal] = useState(""); // "complete" | "edit"
   const editable = canEdit && spec && ["draft", "review"].includes(spec.status);
   const t = spec?.target || {};
@@ -34,7 +52,13 @@ export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
         )}
       </div>
 
-      {!spec ? (
+      {!spec && lookup === "loading" ? (
+        <div className="mt-2 h-10 animate-pulse rounded-lg bg-[#F2F2F5]" data-testid="sample-spec-loading" />
+      ) : !spec && wantNumber ? (
+        <div className="mt-2 rounded-lg border border-[#F5C26B] bg-[#FFF8EE] px-3 py-2" data-testid="sample-spec-missing">
+          <p className="flex items-center gap-1.5 text-[11.5px] text-[#8C4A00]"><AlertTriangle size={13} /> Spesifikasi <b className="font-mono">{wantNumber}</b> tercatat pada permintaan ini, tetapi rinciannya tidak dapat dimuat (data lama / di badan usaha lain). Buka lewat R&amp;D › Spesifikasi Produk.</p>
+        </div>
+      ) : !spec ? (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#F5C26B] bg-[#FFF8EE] px-3 py-2" data-testid="sample-spec-missing">
           <p className="flex items-center gap-1.5 text-[11.5px] text-[#8C4A00]"><AlertTriangle size={13} /> <b>Belum ada spesifikasi</b> — data lama. Tanpa spesifikasi, SKU produk tidak bisa lahir saat ACC.</p>
           {canEdit && <button className="primary-button !py-1.5 text-[11px]" data-testid="sample-spec-complete-button" onClick={() => setModal("complete")}>Lengkapi spesifikasi</button>}
@@ -136,7 +160,7 @@ function EditSpecModal({ spec, onClose, onDone }) {
   };
   return (
     <FormModal open onClose={onClose} size="md" testId="sample-spec-edit-modal" icon={Pencil} error={err}
-      title={`Ubah spesifikasi · ${spec.number}`} subtitle="Boleh diubah selama spesifikasi belum di-ACC"
+      title={`Ubah spesifikasi · ${spec.number}`} subtitle="Boleh diubah selama spesifikasi belum di-ACC. Konstruksi benang, warna, desain & induk mengikuti permintaan sample ini."
       footer={<Footer onClose={onClose} onConfirm={save} busy={busy} icon={Save} testId="sample-spec-edit-save" confirmLabel="Simpan perubahan" />}>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <Field label="Jenis kain *"><KNSelect data-testid="spec-edit-fabric" className="field" value={v.fabric_type} options={[{ value: "woven", label: "Woven (tenun)" }, { value: "knit", label: "Knit (rajut)" }]} onValueChange={(x) => s("fabric_type", x)} /></Field>

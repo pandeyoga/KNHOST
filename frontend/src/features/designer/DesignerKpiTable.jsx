@@ -104,7 +104,8 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
               <button key={c.key} type="button" title={c.hint || c.label}
                 data-testid={`designer-kpi-sort-${c.key}`}
                 onClick={() => toggle(c.key)}
-                className={`flex items-center gap-0.5 bg-transparent text-[10px] font-bold uppercase
+                className={`flex items-center gap-0.5 text-[10px] font-bold uppercase
+                  ${c.key === "designer" ? "sticky left-0 z-[1] bg-white" : "bg-transparent"}
                   ${c.align === "left" ? "justify-start" : "justify-start"}
                   ${sortKey === c.key ? "text-[#0058CC]" : "text-[#8E8E93]"}`}>
                 <span className="truncate">{c.label}</span>
@@ -130,7 +131,8 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
                 className={`grid w-full cursor-pointer items-center px-1 py-1.5 text-left text-[11.5px]
                   ${active ? "bg-[#F2F7FF]" : "bg-white hover:bg-[#FAFBFC]"}`}
                 style={{ gridTemplateColumns: GRID }}>
-                <span className="truncate font-semibold text-[#1C1C1E]">
+                {/* UAT 24 Okt (audit UI tahap 2) — G5-38: kolom DESAINER beku saat tabel 15+ kolom digulir. */}
+                <span className="sticky left-0 z-[1] truncate bg-inherit pr-1 font-semibold text-[#1C1C1E]" data-testid={`designer-kpi-name-${r.designer}`}>
                   <span className="mr-1 text-[10.5px] text-[#8E8E93]">#{r.rank}</span>
                   {actorLabel(r.designer)}
                 </span>

@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Target, Plus, Pencil, Trash2, RefreshCw, BarChart3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
+import FormModal from "../../components/FormModal";
+import { formatDecimal, formatPeriod } from "../../utils/formatters";
+import { activeEmployees } from "./leaveUtils";
 import { lastMonths, curMonth, scoreCls, scoreBadge, weightedAvg, isCalendarMonth } from "./kpiUtils";
 import { can } from "../../config/roles";
 
@@ -32,11 +36,13 @@ export default function KpiView({ currentUser, selectedEntity }) {
   useEffect(() => { loadEmployees(); }, [selectedEntity]); // eslint-disable-line
   useEffect(() => { load(); }, [period, empFilter, selectedEntity]); // eslint-disable-line
 
+  // UAT 24 Okt (audit UI tahap 2) — G5-35: galat muat karyawan ditampilkan (dulu `catch (_) { /* noop */ }` →
+  // pemilih karyawan diam-diam kosong).
   async function loadEmployees() {
     try {
       const r = await axios.get(`${API}/hr/employees`, { params });
       setEmployees(Array.isArray(r.data) ? r.data : []);
-    } catch (_) { /* noop */ }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat daftar karyawan — pemilih karyawan kosong.")); }
   }
   async function load() {
     setLoading(true);
@@ -47,7 +53,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
       setRows(Array.isArray(r.data) ? r.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data KPI.");
+      setError(apiErrorText(e, "Gagal memuat data KPI."));
     } finally {
       setLoading(false);
     }
@@ -79,16 +85,16 @@ export default function KpiView({ currentUser, selectedEntity }) {
       else await axios.post(`${API}/hr/kpi`, { ...payload, employee_id: form.employee_id });
       setOpen(false); await load();
     } catch (e) {
-      setFErr(e.response?.data?.detail || "Gagal menyimpan KPI.");
+      setFErr(apiErrorText(e, "Gagal menyimpan KPI."));
     } finally { setBusy(false); }
   }
   async function doDelete(r) {
     try { await axios.delete(`${API}/hr/kpi/${r.id}`); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus KPI."); }
+    catch (e) { setError(apiErrorText(e, "Gagal menghapus KPI.")); }
     finally { setDelTarget(null); }
   }
 
-  const periodOpts = lastMonths(12).map((m) => ({ value: m, label: m }));
+  const periodOpts = lastMonths(12).map((m) => ({ value: m, label: formatPeriod(m) }));
   const empOpts = [{ value: "", label: "Semua Karyawan" }, ...employees.map((e) => ({ value: e.id, label: e.name }))];
   const avg = weightedAvg(rows);
 
@@ -121,7 +127,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
         <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)"
           value={avg == null ? "—" : Number(avg).toLocaleString("id-ID", { maximumFractionDigits: 1 })}
           valueCls={scoreCls(avg)} suffix="" hint="skala 100 = sesuai target; > 100 = melampaui target" />
-        <RecapCard icon={Target} label="Periode Aktif" value={period || "—"} small />
+        <RecapCard icon={Target} label="Periode Aktif" value={period ? formatPeriod(period) : "—"} small />
       </section>
 
       {error && <ErrorNotice message={error} onRetry={load} testId="kpi-error" />}
@@ -136,7 +142,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
             <div className="py-10 text-center" data-testid="kpi-empty">
               <Target size={28} className="mx-auto text-[#C7C9CF] mb-2" />
               <p className="text-[13px] font-semibold text-[#3A3B42]">Belum ada data KPI</p>
-              <p className="text-[12px] text-[#9A9BA3] mt-0.5">Tambahkan KPI karyawan untuk periode {period}.</p>
+              <p className="text-[12px] text-[#9A9BA3] mt-0.5">Tambahkan KPI karyawan untuk periode {formatPeriod(period)}.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -156,12 +162,13 @@ export default function KpiView({ currentUser, selectedEntity }) {
                     return (
                       <tr key={r.id} data-testid={`kpi-row-${r.id}`} className="hover:bg-[#FAFBFC]">
                         <td className="py-2 pr-3 font-medium">{r.employee_name}</td>
-                        <td className="py-2 pr-3 tabular-nums">{r.period}</td>
+                        <td className="py-2 pr-3 tabular-nums">{formatPeriod(r.period)}</td>
                         <td className="py-2 pr-3">{r.metric}{r.note ? <span className="block text-[11px] text-[#9A9BA3] truncate max-w-[220px]">{r.note}</span> : null}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{r.target}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{r.actual}</td>
-                        <td className="py-2 pr-3 text-right"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{r.score}</span> <span className={`ml-1 px-1.5 py-0.5 rounded text-[11px] font-semibold ${b.cls}`}>{b.label}</span></td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{r.weight}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.target)}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.actual)}</td>
+                        {/* G5-35: skor desimal koma ("94,4"; dulu "94.4" bercampur dengan rekap "107,4"). */}
+                        <td className="py-2 pr-3 text-right"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{formatDecimal(r.score, 1)}</span> <span className={`ml-1 px-1.5 py-0.5 rounded text-[11px] font-semibold ${b.cls}`}>{b.label}</span></td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.weight)}</td>
                         {canManage && (
                           <td className="sticky right-0 bg-white py-2 pr-1 text-right whitespace-nowrap">
                             <button data-testid={`kpi-edit-${r.id}-button`} className="icon-button" title="Ubah" onClick={() => openEdit(r)}><Pencil size={14} /></button>
@@ -178,16 +185,16 @@ export default function KpiView({ currentUser, selectedEntity }) {
         </div>
       </section>
 
-      {/* Modal create/edit */}
-      {open && (
-        <div className="modal-overlay" data-testid="kpi-modal" onClick={(e) => { if (e.target === e.currentTarget && !busy) setOpen(false); }}>
-          <div className="modal-card">
-            <p className="modal-title">{editing ? "Edit KPI" : "Tambah KPI"}</p>
-            {fErr && <div className="notice-bar danger !mb-2 !py-1.5" data-testid="kpi-modal-error"><span className="text-[11.5px]">{fErr}</span></div>}
+      {/* Modal create/edit — G5-35: FormModal standar (× , deskripsi, kaki) & judul "Ubah KPI" (dulu `.modal-card`
+          polos & "Edit KPI"). */}
+      <FormModal open={open} onClose={() => { if (!busy) setOpen(false); }} title={editing ? "Ubah KPI" : "Tambah KPI"}
+        subtitle="KPI manual per karyawan per bulan; skor bisa dihitung otomatis dari target & aktual." icon={Target} size="sm"
+        testId="kpi-modal" onSubmit={save} submitLabel={editing ? "Simpan Perubahan" : "Simpan KPI"} submitTestId="kpi-form-submit"
+        busy={busy} error={fErr}>
             <div className="grid gap-2.5">
               {!editing && (
                 <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Karyawan *</label>
-                  <KNSelect data-testid="kpi-form-employee" value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} options={employees.map((e) => ({ value: e.id, label: e.name }))} className="field" placeholder="Pilih karyawan" searchable /></div>
+                  <KNSelect data-testid="kpi-form-employee" value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} options={activeEmployees(employees).map((e) => ({ value: e.id, label: e.name }))} className="field" placeholder="Pilih karyawan aktif" searchable /></div>
               )}
               {editing && <p className="text-[12px] text-[#6B6B73]">Karyawan: <b>{editing.employee_name}</b></p>}
               <div className="grid grid-cols-2 gap-2">
@@ -206,17 +213,11 @@ export default function KpiView({ currentUser, selectedEntity }) {
                 <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Skor (opsional)</label>
                   <input data-testid="kpi-form-score" type="number" step="any" className="form-input" value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} placeholder="auto" /></div>
               </div>
-              <p className="text-[10.5px] text-[#9A9BA3]">Kosongkan skor untuk hitung otomatis: min(aktual/target, 1.5) × 100.</p>
+              <p className="text-[10.5px] text-[#9A9BA3]">Kosongkan skor untuk dihitung otomatis: skor = capaian ÷ target × 100, maksimal 150.</p>
               <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan</label>
                 <textarea data-testid="kpi-form-note" className="form-input" rows="2" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Opsional" /></div>
-              <div className="modal-actions">
-                <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
-                <button data-testid="kpi-form-submit" className="btn-primary" onClick={save} disabled={busy}>{busy ? "Menyimpan…" : editing ? "Simpan Perubahan" : "Simpan KPI"}</button>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+      </FormModal>
 
       <ConfirmModal open={!!delTarget} title="Hapus KPI?" message={delTarget ? `Hapus KPI "${delTarget.metric}" untuk ${delTarget.employee_name}?` : ""} confirmLabel="Hapus" danger onConfirm={() => doDelete(delTarget)} onCancel={() => setDelTarget(null)} testId="kpi-delete-modal" />
     </div>

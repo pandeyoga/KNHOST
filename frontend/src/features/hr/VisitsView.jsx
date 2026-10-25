@@ -1,4 +1,6 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import apiErrorText from "../../utils/apiError";
+import { formatDate, formatPeriod } from "../../utils/formatters";
 import KNPager from "@/components/KNPager";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
@@ -66,7 +68,7 @@ function VisitsLog({ currentUser, selectedEntity }) {
       // T-03 Lapis 4 — paginasi server (envelope).
       const r = await axios.get(`${API}/hr/visits`, { params: { ...q, page, page_size: PAGE_SIZE } });
       setRows(Array.isArray(r.data?.items) ? r.data.items : []); setTotal(Number(r.data?.total || 0)); setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat kunjungan."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat kunjungan.")); }
     finally { setLoading(false); }
   }
   async function loadSummary() {
@@ -89,11 +91,13 @@ function VisitsLog({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      {/* KPI bulanan */}
+      {/* KPI bulanan — UAT 24 Okt (audit UI tahap 2) — G5-34: diberi keterangan periode sendiri supaya tidak tampak
+          bertentangan dengan rentang tanggal tabel di bawah (dulu "Oktober 2026" vs tabel "Belum ada kunjungan"). */}
+      <p className="mb-1 text-[11px] font-semibold text-[#6B6B73]" data-testid="visits-kpi-caption">Ringkasan bulanan · periode KPI {formatPeriod(month)} (terpisah dari rentang tanggal tabel)</p>
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-3">
-        <Stat label="Sales Aktif (bln)" value={t.sales ?? 0} />
-        <Stat label="Total Kunjungan" value={t.visits ?? 0} color="#0058CC" />
-        <Stat label="Berbuah Pesanan" value={t.with_order ?? 0} color="#1F9D55" />
+        <Stat label="Sales aktif (bulan ini)" value={t.sales ?? 0} />
+        <Stat label="Total kunjungan (bulan ini)" value={t.visits ?? 0} color="#0058CC" />
+        <Stat label="Berbuah pesanan (bulan ini)" value={t.with_order ?? 0} color="#1F9D55" />
         <div className="section-card !p-3">
           <p className="text-[10.5px] uppercase font-semibold text-[#6B6B73]">Periode KPI</p>
           <KNMonthPicker data-testid="visits-month" value={month} onChange={setMonth} className="!py-1 mt-1 w-full" />
@@ -111,7 +115,8 @@ function VisitsLog({ currentUser, selectedEntity }) {
                 <KNDatePicker data-testid="visits-date-to" value={dateTo} onChange={setDateTo} min={dateFrom} placeholder="Sampai" /></div>
               <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Karyawan</label>
                 <KNSelect data-testid="visits-emp-filter" value={empFilter} onValueChange={setEmpFilter} className="field" searchable options={empOpts} /></div>
-              <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Status</label>
+              {/* G5-34: tab status di baris sendiri selebar kartu (dulu dijejalkan ke kolom ¼ → patah tiga baris). */}
+              <div className="sm:col-span-2 xl:col-span-4"><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Status</label>
                 <OptionTabs testId="visits-status-filter" value={statusFilter} onChange={setStatusFilter} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? total)} /></div>
             </div>
           </div>
@@ -128,7 +133,8 @@ function VisitsLog({ currentUser, selectedEntity }) {
             {loading ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="visits-loading">Memuat kunjungan...</div>
             ) : srch.shown.length === 0 ? (
-              <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="visits-empty"><Route className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada kunjungan pada rentang ini.</p></div>
+              <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="visits-empty"><Route className="mx-auto mb-2 text-gray-300" size={28} /><p>{srch.q ? "Tidak ada kunjungan yang cocok dengan pencarian." : `Belum ada kunjungan ${dateFrom === dateTo ? `pada ${formatDate(dateFrom)}` : `pada ${formatDate(dateFrom)} – ${formatDate(dateTo)}`}${statusFilter ? ` berstatus ${statusFilter === "ongoing" ? "berjalan" : "selesai"}` : ""}.`}</p>
+                <p className="mt-0.5 text-[11px] text-[#9A9BA3]">Ringkasan di atas memakai periode KPI {formatPeriod(month)}; ubah tanggal Dari/Sampai untuk melihat kunjungan lain.</p></div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[520px] overflow-y-auto">
                 {srch.pageRows.map((v) => {

@@ -1,4 +1,5 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import apiErrorText from "../../utils/apiError";
 import { useEffect, useState } from "react";
 import LocationFields from "@/components/LocationFields";
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
@@ -13,7 +14,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 const PTKP_OPTIONS = ["TK0", "TK1", "TK2", "TK3", "K0", "K1", "K2", "K3"].map((v) => ({ value: v, label: v }));
 const JKK_OPTIONS = ["", "I", "II", "III", "IV", "V"].map((v) => ({ value: v, label: v ? `Kelas ${v}` : "— pilih kelas —" }));
 const GENDER_OPTIONS = [{ value: "", label: "— pilih —" }, { value: "L", label: "Laki-laki" }, { value: "P", label: "Perempuan" }];
-const STATUS_OPTIONS = [{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Resigned" }];
+// UAT 24 Okt (audit UI tahap 2) — G5-28: satu nama status "Keluar" di semua tempat (dulu "Resigned"/"Keluar (resign)").
+const STATUS_OPTIONS = [{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Keluar" }];
 
 const EMPTY = {
   name: "", nik: "", user_id: "", dob: "", gender: "", phone: "", email: "", address: "", ...pickLoc(),
@@ -94,7 +96,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
       onClose?.();
     } catch (e) {
       setSaving(false);
-      setError(e.response?.data?.detail || "Gagal menyimpan karyawan.");
+      setError(apiErrorText(e, "Gagal menyimpan karyawan."));
     }
   }
 
@@ -105,7 +107,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose?.(); }}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0" data-testid="employee-form-drawer">
         <SheetHeader className="px-5 py-4 border-b border-[#EFF0F2]">
-          <SheetTitle data-testid="employee-form-title">{editId ? `Edit Karyawan · ${editEmployee?.code || ""}` : "Tambah Karyawan"}</SheetTitle>
+          <SheetTitle data-testid="employee-form-title">{editId ? `Ubah Karyawan · ${editEmployee?.code || ""}` : "Tambah Karyawan"}</SheetTitle>
         </SheetHeader>
 
         <div className="px-5 py-4 space-y-6">
@@ -114,10 +116,10 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           <Section title="Data Pribadi">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nama Lengkap" req>
-                <input data-testid="employee-name-input" value={form.name} onChange={(e) => set("name", e.target.value)} className="field" placeholder="Nama karyawan" />
+                <input data-testid="employee-name-input" value={form.name} onChange={(e) => set("name", e.target.value)} className="field" placeholder="mis. Siti Rahmawati" />
               </Field>
               <Field label="NIK / No. Identitas">
-                <input data-testid="employee-nik-input" value={form.nik} onChange={(e) => set("nik", e.target.value)} className="field" placeholder="NIK KTP" />
+                <input data-testid="employee-nik-input" value={form.nik} onChange={(e) => set("nik", e.target.value)} className="field" placeholder="16 digit NIK KTP" />
               </Field>
               <Field label="Jenis Kelamin">
                 <KNSelect data-testid="employee-gender-select" value={form.gender} onValueChange={(v) => set("gender", v)} className="field" placeholder="Pilih" options={GENDER_OPTIONS} />
@@ -126,10 +128,10 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                 <KNDatePicker data-testid="employee-dob-input" value={form.dob} onChange={(v) => set("dob", v)} placeholder="Tanggal lahir" />
               </Field>
               <Field label="Telepon">
-                <input data-testid="employee-phone-input" value={form.phone} onChange={(e) => set("phone", e.target.value)} className="field" placeholder="0812xxxx" />
+                <input data-testid="employee-phone-input" value={form.phone} onChange={(e) => set("phone", e.target.value)} className="field" placeholder="mis. 0812…" />
               </Field>
               <Field label="Email">
-                <input data-testid="employee-email-input" value={form.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="nama@email.id" />
+                <input data-testid="employee-email-input" value={form.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="mis. nama@perusahaan.id" />
               </Field>
               <div className="col-span-2">
                 <Field label="Alamat">
@@ -172,8 +174,8 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                 <KNSelect data-testid="employee-shift-select" value={form.shift_id} onValueChange={(v) => set("shift_id", v)} className="field" placeholder="Shift default entitas"
                   options={[{ value: "", label: "— Shift default entitas —" }, ...shifts.map((s) => ({ value: s.id, label: `${s.name} (${s.jam_in}–${s.jam_out})` }))]} />
               </Field>
-              <Field label="ID Mesin Fingerprint">
-                <input data-testid="employee-deviceid-input" value={form.device_user_id} onChange={(e) => set("device_user_id", e.target.value)} className="field tabular-nums" placeholder="cth: 1001 (enroll ID ZKTeco)" />
+              <Field label="ID di mesin sidik jari">
+                <input data-testid="employee-deviceid-input" value={form.device_user_id} onChange={(e) => set("device_user_id", e.target.value)} className="field tabular-nums" placeholder="mis. 1001 (ID terdaftar di mesin)" />
               </Field>
               <div className="col-span-2">
                 <Field label="Tautkan ke Akun Pengguna (opsional)">
@@ -200,7 +202,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                 </label>
                 {form.bpjs_kes_enabled && (
                   <Field label="No. BPJS Kesehatan">
-                    <input data-testid="employee-bpjs-kes-input" value={form.bpjs_kes_no} onChange={(e) => set("bpjs_kes_no", e.target.value)} className="field" placeholder="0001234567890" />
+                    <input data-testid="employee-bpjs-kes-input" value={form.bpjs_kes_no} onChange={(e) => set("bpjs_kes_no", e.target.value)} className="field" placeholder="13 digit nomor kartu" />
                   </Field>
                 )}
               </div>
@@ -214,7 +216,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                 {form.bpjs_tk_enabled && (
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="No. BPJS Ketenagakerjaan">
-                      <input data-testid="employee-bpjs-tk-input" value={form.bpjs_tk_no} onChange={(e) => set("bpjs_tk_no", e.target.value)} className="field" placeholder="00001234567" />
+                      <input data-testid="employee-bpjs-tk-input" value={form.bpjs_tk_no} onChange={(e) => set("bpjs_tk_no", e.target.value)} className="field" placeholder="11 digit nomor KPJ" />
                     </Field>
                     <Field label="Kelas Risiko JKK">
                       <KNSelect data-testid="employee-jkk-select" value={form.jkk_risk_class} onValueChange={(v) => set("jkk_risk_class", v)} className="field" placeholder="Kelas" options={JKK_OPTIONS} />
@@ -228,16 +230,16 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           <Section title="Bank & Komponen Gaji">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nama Bank">
-                <input data-testid="employee-bank-name-input" value={form.bank_name} onChange={(e) => set("bank_name", e.target.value)} className="field" placeholder="Bank BCA" />
+                <input data-testid="employee-bank-name-input" value={form.bank_name} onChange={(e) => set("bank_name", e.target.value)} className="field" placeholder="mis. BCA" />
               </Field>
               <Field label="No. Rekening">
-                <input data-testid="employee-bank-acc-input" value={form.bank_acc_no} onChange={(e) => set("bank_acc_no", e.target.value)} className="field" placeholder="1234567890" />
+                <input data-testid="employee-bank-acc-input" value={form.bank_acc_no} onChange={(e) => set("bank_acc_no", e.target.value)} className="field" placeholder="nomor rekening tanpa spasi" />
               </Field>
               <Field label="Atas Nama">
                 <input data-testid="employee-bank-name-acc-input" value={form.bank_acc_name} onChange={(e) => set("bank_acc_name", e.target.value)} className="field" placeholder="Nama pemilik rekening" />
               </Field>
               <Field label="Gaji Pokok (Rp)">
-                <MoneyInput testId="employee-salary-input" value={form.base_salary} onChange={(v) => set("base_salary", v)} className="field tabular-nums" placeholder="5000000" />
+                <MoneyInput testId="employee-salary-input" value={form.base_salary} onChange={(v) => set("base_salary", v)} className="field tabular-nums" placeholder="mis. 5.000.000" />
               </Field>
             </div>
             <div className="space-y-2">
@@ -247,7 +249,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
               </div>
               {(form.allowances || []).map((a, i) => (
                 <div key={i} className="grid grid-cols-[1.4fr_1fr_36px] gap-2 items-center" data-testid={`allowance-row-${i}`}>
-                  <input data-testid={`allowance-name-${i}`} value={a.name} onChange={(e) => updAllowance(i, "name", e.target.value)} className="field" placeholder="Tunjangan transport" />
+                  <input data-testid={`allowance-name-${i}`} value={a.name} onChange={(e) => updAllowance(i, "name", e.target.value)} className="field" placeholder="mis. Tunjangan transport" />
                   <MoneyInput testId={`allowance-amount-${i}`} value={a.amount} onChange={(v) => updAllowance(i, "amount", v)} className="field tabular-nums" placeholder="0" />
                   <button type="button" data-testid={`allowance-del-${i}`} onClick={() => delAllowance(i)} className="icon-button text-red-400 hover:text-red-600"><Trash2 size={13} /></button>
                 </div>
@@ -257,11 +259,12 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           </Section>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-[#EFF0F2] px-5 py-3 flex gap-2">
-          <button data-testid="employee-save-button" disabled={saving} onClick={submit} className="primary-button flex-1 justify-center">
+        {/* G5-28: kaki standar — Batal kiri, tombol utama kanan berukuran normal (dulu terbalik & lebar penuh). */}
+        <div className="sticky bottom-0 bg-white border-t border-[#EFF0F2] px-5 py-3 flex justify-end gap-2">
+          <button data-testid="employee-cancel-button" onClick={() => onClose?.()} className="secondary-button">Batal</button>
+          <button data-testid="employee-save-button" disabled={saving || !form.name?.trim()} title={!form.name?.trim() ? "Nama lengkap wajib diisi" : undefined} onClick={submit} className="primary-button">
             <Save size={14} /> {saving ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Buat Karyawan"}
           </button>
-          <button data-testid="employee-cancel-button" onClick={() => onClose?.()} className="secondary-button">Batal</button>
         </div>
       </SheetContent>
     </Sheet>

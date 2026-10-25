@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
+import { formatDecimal, formatPct } from "../../utils/formatters";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -70,12 +72,16 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
       if (!p && r.data?.period) setPeriod(r.data.period);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat analitik SDM.");
+      setError(apiErrorText(e, "Gagal memuat analitik SDM."));
     } finally { setLoading(false); }
   }
 
   const hc = data?.headcount || {};
   const att = data?.attendance || {};
+  // UAT 24 Okt (audit UI tahap 2) — G5-36: tanpa hari kerja tercatat, rasio "0%" terbaca semua absen; tampilkan "—"
+  // (sama seperti KPI gaji tanpa penggajian).
+  const workRecords = Number(att.present || 0) + Number(att.late || 0) + Number(att.alpha || 0);
+  const presentRecords = Number(att.present || 0) + Number(att.late || 0);
   const tn = data?.turnover || {};
   const pay = data?.payroll || {};
   const stat = data?.statutory || {};
@@ -113,8 +119,8 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3" data-testid="hr-analytics-kpis">
           <KPICard testId="kpi-headcount" icon={Users} label="Jumlah Karyawan" value={loading ? "" : (hc.total ?? "—")} sub={`${tn.new_hires ?? 0} masuk · turnover ${tn.turnover_rate ?? 0}%`} color="#0058CC" loading={loading} />
-          <KPICard testId="kpi-attendance-rate" icon={CalendarCheck} label="Kehadiran" value={loading ? "" : `${att.attendance_rate ?? 0}%`} sub={`${att.present ?? 0} hari hadir (${att.late ?? 0} di antaranya telat)`} color="#34C759" loading={loading} />
-          <KPICard testId="kpi-punctuality" icon={Clock} label="Ketepatan" value={loading ? "" : `${att.punctuality_rate ?? 0}%`} sub={`Rata telat ${att.avg_late_min ?? 0} mnt`} color="#FF9500" loading={loading} />
+          <KPICard testId="kpi-attendance-rate" icon={CalendarCheck} label="Kehadiran" value={loading ? "" : (workRecords > 0 ? formatPct(att.attendance_rate, 1, { trim: true }) : "—")} sub={workRecords > 0 ? `${att.present ?? 0} hari hadir (${att.late ?? 0} di antaranya telat)` : "Belum ada absensi tercatat"} color="#34C759" loading={loading} />
+          <KPICard testId="kpi-punctuality" icon={Clock} label="Ketepatan" value={loading ? "" : (presentRecords > 0 ? formatPct(att.punctuality_rate, 1, { trim: true }) : "—")} sub={presentRecords > 0 ? `Rata telat ${formatDecimal(att.avg_late_min ?? 0, 1)} mnt` : "Belum ada absensi tercatat"} color="#FF9500" loading={loading} />
           <KPICard testId="kpi-payroll-net" icon={Wallet} label="Biaya Gaji (Net)" value={loading ? "" : (hasPayroll ? fmtShort(pay.net) : "—")} sub={hasPayroll ? `Bruto ${fmtShort(pay.gross)}` : noPayText} color="#5856D6" loading={loading} />
           <KPICard testId="kpi-bpjs" icon={ShieldCheck} label="Utang BPJS" value={loading ? "" : (hasPayroll ? fmtShort(stat.bpjs_total) : "—")} sub={hasPayroll ? `Karyawan ${fmtShort(stat.bpjs_emp)} · Perusahaan ${fmtShort(stat.bpjs_er)}` : "—"} color="#1F7A45" loading={loading} />
           <KPICard testId="kpi-pph21" icon={Receipt} label="Utang PPh 21" value={loading ? "" : (hasPayroll ? fmtShort(stat.pph21) : "—")} sub={`periode ${data?.period || "—"}`} color="#C0341D" loading={loading} />

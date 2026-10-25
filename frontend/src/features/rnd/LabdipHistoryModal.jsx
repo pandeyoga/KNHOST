@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, ExternalLink, History, X } from "lucide-react";
 import { labdipHistory } from "./rndApi";
-import { errMsg, ROUND_RESULT_META } from "./rndMeta";
+import { errMsg, ROUND_RESULT_META, SAMPLE_STATUS_META } from "./rndMeta";
 import { openRnd } from "./rndDeepLink";
 import { overlayDismiss } from "../../utils/overlayDismiss";
 import { formatDate } from "../../utils/formatters";
@@ -22,6 +22,9 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
   }, [colorId, productId, entityId]);
 
   const rows = data?.items || [];
+  // UAT 24 Okt (audit UI tahap 2) — G5-48: permintaan tanpa putaran (belum dikirim ke supplier) ikut tampil & bisa
+  // dibuka; KPI "Permintaan" = jumlah permintaan yang tampil (dulu 10 permintaan vs tabel "Belum ada putaran").
+  const waiting = data?.waiting || [];
   const s = data?.summary || {};
   const go = (r) => { openRnd({ view: "rnd-samples", sampleId: r.sample_id, roundId: r.round_id }); onClose?.(); };
 
@@ -38,7 +41,7 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
         {err && <div className="notice-bar danger mt-2" data-testid="labdip-history-error"><span>{err}</span></div>}
         {data && (
           <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6 text-[11px]" data-testid="labdip-history-summary">
-            <Kpi label="Permintaan" value={s.samples || 0} />
+            <Kpi label="Permintaan" value={s.samples_shown ?? s.samples ?? 0} />
             <Kpi label="Putaran" value={s.rounds || 0} />
             <Kpi label="ACC" value={s.acc || 0} tone="#1A7A3A" />
             <Kpi label="Revisi" value={s.revisi || 0} tone="#B26A00" />
@@ -48,10 +51,10 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
         )}
         <div className="mt-3 max-h-[52vh] overflow-y-auto rounded-md border border-[#EFF0F2]">
           <div className="grid grid-cols-[1.3fr_1fr_60px_110px_110px_90px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
-            <span>Permintaan</span><span>Mitra</span><span>Rnd</span><span>Tgl butuh</span><span>Diterima</span><span className="text-right">Hasil</span>
+            <span>Permintaan</span><span>Mitra</span><span>Ronde</span><span>Tgl butuh</span><span>Diterima</span><span className="text-right">Hasil</span>
           </div>
           {!data && !err && <p className="px-3 py-4 text-center text-[12px] text-[#9A9BA3]" data-testid="labdip-history-loading">Memuat riwayat…</p>}
-          {data && rows.length === 0 && (
+          {data && rows.length === 0 && waiting.length === 0 && (
             <p className="px-3 py-5 text-center text-[12px] text-[#9A9BA3]" data-testid="labdip-history-empty">
               Belum ada putaran labdip untuk {label || "objek ini"}.
             </p>
@@ -72,13 +75,27 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
                 <span className="tabular-nums">ronde {r.round_no}</span>
                 <span className="flex items-center gap-1 tabular-nums" data-testid={`labdip-history-due-${r.round_id}`}>
                   <CalendarClock size={11} className={r.overdue ? "text-[#C0392B]" : "text-[#8E8E93]"} />
-                  {r.due_date || "—"}
+                  {r.due_date ? formatDate(r.due_date) : "—"}
                 </span>
-                <span className="tabular-nums text-[#6B6B73]">{formatDate(r.received_at) || "—"}</span>
+                <span className="tabular-nums text-[#6B6B73]">{r.received_at ? formatDate(r.received_at) : "—"}</span>
                 <span className="text-right font-bold" style={{ color: rm.tone }}>{rm.label}{r.score != null ? ` · ${r.score}` : ""}</span>
               </button>
             );
           })}
+          {waiting.map((w) => (
+            <button key={`w-${w.sample_id}`} type="button" onClick={() => go(w)} data-testid={`labdip-history-waiting-${w.sample_id}`}
+              className="grid w-full grid-cols-[1.3fr_1fr_60px_110px_110px_90px] items-center border-t border-[#F4F5F7] px-3 py-2 text-left text-[11.5px] hover:bg-[#F7F9FC]">
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 font-semibold text-[#0058CC]">{w.sample_number} <ExternalLink size={10} /></span>
+                <span className="block truncate text-[10.5px] text-[#6B6B73]">{w.sample_title}</span>
+              </span>
+              <span className="text-[#8E8E93]">{w.sample_status === "draft" ? "belum dikirim" : "—"}</span>
+              <span className="text-[#8E8E93]">—</span>
+              <span className="tabular-nums">{w.target_date ? formatDate(w.target_date) : "—"}</span>
+              <span className="text-[#8E8E93]">—</span>
+              <span className="text-right text-[10.5px] font-semibold text-[#6B6B73]">{SAMPLE_STATUS_META[w.sample_status]?.label || "Belum ada putaran"}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

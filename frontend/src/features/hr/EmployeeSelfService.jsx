@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { IdCard, Clock, Wallet, CalendarDays, Building2, Briefcase, Phone, Mail, CreditCard, LogIn, LogOut, MapPin } from "lucide-react";
 import EntityBadge from "../../components/EntityBadge";
@@ -9,6 +10,7 @@ import { MyPayslipCard } from "./MyPayslipCard";
 import { MyLeaveCard } from "./MyLeaveCard";
 import { MyKpiCard } from "./MyKpiCard";
 import { MyDesignerKpiCard } from "./MyDesignerKpiCard";
+import { can, roleIs } from "../../config/roles";
 
 // Audit UI 24 Okt (140): nilai mentah ("tetap", "TK0", "2023-01-15") → label manusiawi.
 const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
@@ -53,7 +55,7 @@ function AttendanceClockCard() {
   async function load() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/attendance/me`); setMe(r.data || null); setErr(""); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal memuat absensi."); }
+    catch (e) { setErr(apiErrorText(e, "Gagal memuat absensi.")); }
     finally { setLoading(false); }
   }
   async function clock(action) {
@@ -65,7 +67,7 @@ function AttendanceClockCard() {
         ? `Clock-in berhasil pukul ${fmtTime(r.data.clock_in)} (${STATUS_PILL[r.data.status]?.label || r.data.status}).`
         : `Clock-out berhasil pukul ${fmtTime(r.data.clock_out)} · kerja ${fmtMin(r.data.work_min)}.`);
       await load();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal mencatat absen."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal mencatat absen.")); }
     finally { setBusy(""); }
   }
 
@@ -157,7 +159,7 @@ export default function EmployeeSelfService({ currentUser }) {
       setError("");
     } catch (e) {
       if (e.response?.status === 404) setNotFound(true);
-      else setError(e.response?.data?.detail || "Gagal memuat profil.");
+      else setError(apiErrorText(e, "Gagal memuat profil."));
     } finally {
       setLoading(false);
     }
@@ -205,8 +207,11 @@ export default function EmployeeSelfService({ currentUser }) {
           </div>
 
           {/* PS-18 — KPI Saya (R&D): nilai desainer milik SENDIRI. Server menyaring,
-              jadi nilai rekan tidak pernah terkirim ke halaman ini. */}
-          <MyDesignerKpiCard />
+              jadi nilai rekan tidak pernah terkirim ke halaman ini.
+              UAT 24 Okt (audit UI tahap 2) — G5-30: hanya untuk peran yang mengerjakan desain/ronde sample R&D
+              (dulu tampil juga untuk Direktur dll.). */}
+          {(roleIs(currentUser?.role, ["designer", "md", "sample_admin", "md_quality"])
+            || can(currentUser?.permissions, "design_request", "deliver")) && <MyDesignerKpiCard />}
 
           {/* Details */}
           <div className="grid gap-3 md:grid-cols-2">

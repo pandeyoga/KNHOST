@@ -1,5 +1,6 @@
 /** PostDetailModal — rincian konten: status & aksi alur, lampiran, performa, riwayat. */
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { Copy, LayoutTemplate, Loader2, Megaphone, Pencil, Trash2, Upload, X } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import { askReason, askConfirm, askText } from "@/services/confirmService";
@@ -36,22 +37,22 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
     if (a.reason) { note = await askReason({ title: `${a.label} · alasan?`, testId: "mkt-reason" }); if (!note) return; }
     setBusy(true);
     try { setPost(await mktApi.transition(post.id, { to: a.to, note, published_url: a.url ? url : "" })); onChanged?.(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal mengubah status."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Gagal mengubah status.")); } finally { setBusy(false); }
   };
   const saveMetrics = async () => {
     setBusy(true); setErr("");
     try { setPost(await mktApi.metrics(post.id, { metrics })); onChanged?.(); }
-    catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan performa."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Gagal menyimpan performa.")); } finally { setBusy(false); }
   };
   const upload = async (files) => {
     setBusy(true); setErr("");
     try { let latest = post; for (const f of files) latest = (await mktApi.upload(post.id, f)).post; setPost(latest); }
-    catch (e) { setErr(e.response?.data?.detail || "Unggah gagal."); } finally { setBusy(false); }
+    catch (e) { setErr(apiErrorText(e, "Unggah gagal.")); } finally { setBusy(false); }
   };
   const remove = async () => {
     const ok = await askConfirm({ title: `Hapus konten "${post.title}"?`, danger: true, testId: "mkt-delete-confirm" });
     if (!ok) return;
-    try { await mktApi.deletePost(post.id); onChanged?.(); onClose(); } catch (e) { setErr(e.response?.data?.detail || "Gagal menghapus."); }
+    try { await mktApi.deletePost(post.id); onChanged?.(); onClose(); } catch (e) { setErr(apiErrorText(e, "Gagal menghapus.")); }
   };
 
   const saveTemplate = async () => {
@@ -60,7 +61,7 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
     try {
       await mktApi.createTemplate({ name, title: post.title, caption: post.caption, hashtags: post.hashtags, platforms: post.platforms, content_type: post.content_type, cta: post.cta, notes: post.notes, source_post_id: post.id });
       setInfo(`Template "${name}" tersimpan — pilih di "Konten baru".`);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan template."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal menyimpan template.")); }
   };
 
   if (!post) return <FormModal open title="Memuat…" onClose={onClose} testId="mkt-post-detail-loading"><p className="text-[12px]">{err || "…"}</p></FormModal>;

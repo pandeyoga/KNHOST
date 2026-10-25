@@ -55,7 +55,8 @@ export default function ProofingPanel({ design }) {
                 <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${s.finished ? "bg-[#EAF7EF] text-[#1A7A3A]" : "bg-[#F1E9F7] text-[#6B219A]"}`}
                   data-testid={`design-proofing-sample-status-${s.id}`}>
                   {s.finished ? <CheckCircle2 size={11} /> : <Clock size={11} />}
-                  {s.finished ? `Finished · ${s.status_label}${s.finished_at ? ` · jadi ${fmtD(s.finished_at)}` : ""}` : `On progress · ${s.status_label}`}
+                  {/* G5-42: istilah Indonesia (dulu "Finished/On progress"). */}
+                  {s.finished ? `Selesai · ${s.status_label}${s.finished_at ? ` · jadi ${fmtD(s.finished_at)}` : ""}` : `Berjalan · ${s.status_label}`}
                 </span>
               </button>
             ))}

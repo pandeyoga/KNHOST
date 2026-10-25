@@ -1,5 +1,6 @@
 /** ContentCalendar — kalender konten bulanan/mingguan + daftar; klik sel → buat post; klik post → rincian. */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, List, Plus, Filter, FileDown, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { KNSelect } from "../../components/KNSelect";
@@ -62,7 +63,7 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
       await mktApi.reschedule(post.id, to);
       setMoveMsg({ ok: true, text: `"${post.title}" dipindah ke ${Number(day.slice(8))}/${Number(day.slice(5, 7))} jam ${to.slice(11)}.` });
     } catch (e) {
-      setMoveMsg({ ok: false, text: e.response?.data?.detail || "Gagal memindah jadwal." });
+      setMoveMsg({ ok: false, text: apiErrorText(e, "Gagal memindah jadwal.") });
     }
     load();
   };

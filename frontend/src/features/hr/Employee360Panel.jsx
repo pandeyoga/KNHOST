@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
   CalendarCheck, CalendarDays, Wallet, ReceiptText, Target, Download, Loader2 } from "lucide-react";
@@ -34,7 +35,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
   async function load() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/employees/${employeeId}/360`); setData(r.data); }
-    catch (e) { onError?.(e.response?.data?.detail || "Gagal memuat detail karyawan."); onBack?.(); }
+    catch (e) { onError?.(apiErrorText(e, "Gagal memuat detail karyawan.")); onBack?.(); }
     finally { setLoading(false); }
   }
 
@@ -98,7 +99,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
               <UserCircle size={18} className="text-[#0058CC]" />
               <h2 className="truncate" data-testid="employee-360-name">{data.name}</h2>
               <span className="text-[11px] font-bold text-[#0058CC]">{data.code}</span>
-              <span className={`status-pill ${data.status === "active" ? "pill-success" : data.status === "resigned" ? "pill-danger" : "pill-muted"}`}>{data.status === "active" ? "Aktif" : data.status === "resigned" ? "Resigned" : "Nonaktif"}</span>
+              <span className={`status-pill ${data.status === "active" ? "pill-success" : data.status === "resigned" ? "pill-danger" : "pill-muted"}`}>{data.status === "active" ? "Aktif" : data.status === "resigned" ? "Keluar" : "Nonaktif"}</span>
             </div>
             <p className="text-[11px] text-[#6B6B73] mt-0.5 flex items-center gap-2 flex-wrap">
               {data.position_name && <span className="flex items-center gap-1"><Briefcase size={10} />{data.position_name}</span>}

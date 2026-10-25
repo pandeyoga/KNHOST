@@ -1,8 +1,11 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import apiErrorText from "../../utils/apiError";
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { CalendarDays, Plus, Timer } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
+import { formatDate } from "../../utils/formatters";
 import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, wibToday, countWorkdays } from "./leaveUtils";
 
 // ESS — kartu Cuti & Lembur Saya (menggantikan placeholder H3 "Sisa Cuti").
@@ -47,7 +50,7 @@ export function MyLeaveCard() {
       await axios.post(`${API}/hr/leave-requests/me`, { leave_type: type, date_from: from, date_to: to, reason });
       setMsg("Pengajuan cuti terkirim, menunggu persetujuan."); await load();
       setTimeout(() => setOpen(false), 900);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal mengajukan cuti."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal mengajukan cuti.")); }
     finally { setBusy(false); }
   }
   async function submitOt() {
@@ -58,7 +61,7 @@ export function MyLeaveCard() {
       await axios.post(`${API}/hr/overtime/me`, { date: otDate, hours: h, reason: otReason });
       setMsg("Pengajuan lembur terkirim, menunggu persetujuan."); await load();
       setTimeout(() => setOpen(false), 900);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal mengajukan lembur."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal mengajukan lembur.")); }
     finally { setBusy(false); }
   }
 
@@ -98,7 +101,7 @@ export function MyLeaveCard() {
                   return (
                     <div key={h.kind + h.id} className="flex items-center justify-between text-[11px] gap-2">
                       <span className="flex items-center gap-1 min-w-0">{h.kind === "ot" ? <Timer size={11} className="text-[#B7791F] shrink-0" /> : <CalendarDays size={11} className="text-[#0058CC] shrink-0" />}
-                        <span className="truncate">{h.kind === "ot" ? `Lembur ${h.hours}j · ${h.date}` : `${LEAVE_TYPE_LABEL[h.leave_type] || h.leave_type} · ${h.date_from}`}</span></span>
+                        <span className="truncate">{h.kind === "ot" ? `Lembur ${h.hours} jam · ${formatDate(h.date)}` : `${LEAVE_TYPE_LABEL[h.leave_type] || h.leave_type} · ${formatDate(h.date_from)}`}</span></span>
                       <span className={`status-pill ${s.cls}`}>{s.label}</span>
                     </div>
                   );
@@ -109,55 +112,53 @@ export function MyLeaveCard() {
         </div>
       )}
 
-      {open && (
-        <div className="modal-overlay" data-testid="ess-leave-modal" onClick={(e) => { if (e.target === e.currentTarget && !busy) setOpen(false); }}>
-          <div className="modal-card">
-            <p className="modal-title">Ajukan Cuti / Lembur</p>
-            <div className="flex items-center gap-1 mt-1 mb-2">
+      {/* UAT 24 Okt (audit UI tahap 2) — G5-30: pop-up standar FormModal (×, deskripsi, kaki terpisah, penanda
+          wajib) seperti versi admin; dulu `.modal-card` polos. */}
+      <FormModal open={open} onClose={() => { if (!busy) setOpen(false); }} title="Ajukan Cuti / Lembur"
+        subtitle="Diajukan atas nama Anda; menunggu persetujuan atasan/HRD." icon={CalendarDays} size="sm"
+        testId="ess-leave-modal" busy={busy} error={err}
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
+            {tab === "cuti"
+              ? <button type="button" data-testid="ess-leave-submit" className="primary-button" onClick={submitLeave} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Cuti"}</button>
+              : <button type="button" data-testid="ess-ot-submit" className="primary-button" onClick={submitOt} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Lembur"}</button>}
+          </div>
+        )}>
+            <div className="flex items-center gap-1 mb-2">
               <button data-testid="ess-leave-modal-tab-cuti" onClick={() => { setTab("cuti"); setErr(""); }} className={`px-3 py-1.5 text-[12px] font-semibold rounded-md ${tab === "cuti" ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>Cuti / Izin</button>
               <button data-testid="ess-leave-modal-tab-lembur" onClick={() => { setTab("lembur"); setErr(""); }} className={`px-3 py-1.5 text-[12px] font-semibold rounded-md ${tab === "lembur" ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>Lembur</button>
             </div>
-            {err && <div className="notice-bar danger !mb-2 !py-1.5" data-testid="ess-leave-modal-error"><span className="text-[11.5px]">{err}</span></div>}
             {msg && <div className="notice-bar success !mb-2 !py-1.5" data-testid="ess-leave-modal-msg"><span className="text-[11.5px]">{msg}</span></div>}
 
             {tab === "cuti" ? (
               <div className="grid gap-2.5">
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Tipe</label>
+                <div className="grid gap-1"><label className="field-label">Tipe <span className="req">*</span></label>
                   <KNSelect data-testid="ess-leave-type" value={type} onValueChange={setType} className="field"
                     options={LEAVE_TYPES.map((t) => ({ value: t.value, label: t.label + (t.deduct ? " · potong saldo" : "") }))} /></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Dari</label>
+                  <div className="grid gap-1"><label className="field-label">Dari <span className="req">*</span></label>
                     <KNDatePicker data-testid="ess-leave-from" value={from} onChange={setFrom} /></div>
-                  <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Sampai</label>
+                  <div className="grid gap-1"><label className="field-label">Sampai <span className="req">*</span></label>
                     <KNDatePicker data-testid="ess-leave-to" value={to} onChange={setTo} min={from} /></div>
                 </div>
                 <p className="text-[11px] text-[#6B6B73]">Estimasi <b>{countWorkdays(from, to)}</b> hari kerja.</p>
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
-                  <textarea data-testid="ess-leave-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opsional" /></div>
-                <div className="modal-actions">
-                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
-                  <button data-testid="ess-leave-submit" className="btn-primary" onClick={submitLeave} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Cuti"}</button>
-                </div>
+                <div className="grid gap-1"><label className="field-label">Alasan (opsional)</label>
+                  <textarea data-testid="ess-leave-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. acara keluarga" /></div>
               </div>
             ) : (
               <div className="grid gap-2.5">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Tanggal</label>
+                  <div className="grid gap-1"><label className="field-label">Tanggal <span className="req">*</span></label>
                     <KNDatePicker data-testid="ess-ot-date" value={otDate} onChange={setOtDate} /></div>
-                  <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Jam (maks 12)</label>
+                  <div className="grid gap-1"><label className="field-label">Jam (maks 12) <span className="req">*</span></label>
                     <input data-testid="ess-ot-hours" type="number" step="0.5" min="0" max="12" className="form-input" value={otHours} onChange={(e) => setOtHours(e.target.value)} /></div>
                 </div>
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan</label>
-                  <textarea data-testid="ess-ot-reason" className="form-input" rows="2" value={otReason} onChange={(e) => setOtReason(e.target.value)} placeholder="Opsional" /></div>
-                <div className="modal-actions">
-                  <button className="btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
-                  <button data-testid="ess-ot-submit" className="btn-primary" onClick={submitOt} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Lembur"}</button>
-                </div>
+                <div className="grid gap-1"><label className="field-label">Alasan (opsional)</label>
+                  <textarea data-testid="ess-ot-reason" className="form-input" rows="2" value={otReason} onChange={(e) => setOtReason(e.target.value)} placeholder="mis. menyelesaikan stok opname" /></div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </FormModal>
     </div>
   );
 }

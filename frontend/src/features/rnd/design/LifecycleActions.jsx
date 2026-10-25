@@ -2,7 +2,8 @@
  *  Nilai HANYA diberikan sekali, di dialog ACC (keputusan pemilik 2026-09). */
 import { useState } from "react";
 import { overlayDismiss } from "@/utils/overlayDismiss";   // INV-UI-01
-import { Archive, CheckCircle2, Eye, GitBranch, PackageCheck, PauseCircle, PlayCircle, Rocket, RotateCcw, Send, Undo2 } from "lucide-react";
+import { useEscapeClose } from "@/utils/escapeLayers";
+import { Archive, CheckCircle2, Eye, GitBranch, PackageCheck, PauseCircle, PlayCircle, Rocket, RotateCcw, Send, Undo2, X } from "lucide-react";
 import { designLifecycle, designNewVersion, holdDesign, releaseDesignHold } from "../rndApi";
 import { errMsg, roundLabel } from "../rndMeta";
 import ScoreInput from "./ScoreInput";
@@ -32,6 +33,22 @@ const DONE_MSG = {
   new_version: "Versi baru dibuat.", hold: "Desain ditahan.", release_hold: "Penahanan desain dilepas.",
 };
 
+// UAT 24 Okt (audit UI tahap 2) — G5-42: deskripsi singkat di kepala dialog (dulu dialog tanpa × & deskripsi).
+const DLG_DESC = {
+  submit: "Ronde ini masuk antrean penilai.",
+  start_review: "Tandai bahwa penilaian desain ini sedang berjalan.",
+  approve: "Nilai akhir diberikan sekali dan menjadi nilai KPI desainer.",
+  request_revision: "Desain kembali ke desainer bersama catatan Anda.",
+  submit_final: "Mockup & file desain asli diserahkan ke penilai.",
+  return_final: "Berkas final kembali ke desainer untuk dilengkapi.",
+  activate: "Desain dipakai untuk produksi.",
+  archive: "Desain disimpan sebagai arsip dan keluar dari daftar aktif.",
+  reopen: "Desain arsip dibuka kembali.",
+  new_version: "Versi baru dibuat dari desain aktif.",
+  hold: "Desain ditahan sementara.",
+  release_hold: "Penahanan desain dilepas.",
+};
+
 const BY_STATUS = {
   draft: ["submit", "archive"],
   revision: ["submit", "archive"],
@@ -54,6 +71,11 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
   const [dlgErr, setDlgErr] = useState("");
   const status = design.status || "draft";
   const fin = design.final || {};
+  useEscapeClose(!!dlg, () => setDlg(null), busy);
+  // G5-42: "Ajukan untuk review" tidak bisa dijalankan tanpa berkas di ronde berjalan (alasan terlihat).
+  const roundFiles = design.rounds?.find((r) => r.version === design.version)?.file_count
+    ?? (design.files || []).filter((f) => (f.kind || "artwork") === "artwork" && (f.version || 1) === (design.version || 1)).length;
+  const submitBlocked = roundFiles === 0;
 
   const base = design.on_hold ? ["release_hold", "archive"] : (BY_STATUS[status] || []);
   const visible = base.filter((a) => {
@@ -90,20 +112,40 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
 
   if (!visible.length) return null;
   const A = dlg ? ACTIONS[dlg.action] : null;
+  // G5-42: satu tombol utama saja (dulu "Mulai review" & "Setujui" sama-sama primary berdampingan).
+  const firstPrimary = visible.find((a) => ACTIONS[a].cls.startsWith("primary-button"));
+  const clsOf = (a) => (ACTIONS[a].cls.startsWith("primary-button") && a !== firstPrimary ? "secondary-button" : ACTIONS[a].cls);
+  const close = () => { if (!busy) setDlg(null); };
   return (
     <div className="flex flex-wrap gap-1.5" data-testid="design-lifecycle-actions">
       {visible.map((a) => {
         const m = ACTIONS[a]; const Icon = m.icon;
+        const blocked = a === "submit" && submitBlocked;
         return (
-          <button key={a} className={`${m.cls} !py-1.5 text-[11.5px]`} onClick={() => open(a)} data-testid={`design-action-${a}`}>
+          <button key={a} className={`${clsOf(a)} !py-1.5 text-[11.5px]`} onClick={() => open(a)} data-testid={`design-action-${a}`}
+            disabled={blocked} title={blocked ? "Unggah minimal satu berkas desain di ronde ini dulu." : undefined}>
             <Icon size={13} /> {m.label}
           </button>
         );
       })}
+      {visible.includes("submit") && submitBlocked && (
+        <p className="w-full text-[10.5px] text-[#B26A00]" data-testid="design-action-submit-blocked">
+          Belum ada berkas di {roundLabel(design.version)} — unggah berkas desain dulu sebelum mengajukan.
+        </p>
+      )}
       {dlg && (
-        <div className="fixed inset-0 z-[190] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(() => setDlg(null))} data-testid="design-action-dialog">
-          <div className="max-h-[90vh] w-full max-w-[560px] space-y-3 overflow-y-auto rounded-xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-bold">{A.label} — {design.code} · {roundLabel(design.version)}</h3>
+        <div className="fixed inset-0 z-[190] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(close)} data-testid="design-action-dialog">
+          <div role="dialog" aria-modal="true" aria-label={A.label} className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#EFF0F2] bg-white px-4 py-3">
+              <div className="min-w-0">
+                <h3 className="text-[13.5px] font-bold leading-tight text-[#1C1C1E]" data-testid="design-action-title">{A.label}</h3>
+                <p className="mt-0.5 text-[11px] leading-snug text-[#6B6B73]">
+                  <span className="whitespace-nowrap font-mono font-semibold">{design.code}</span> · {roundLabel(design.version)}{DLG_DESC[dlg.action] ? ` — ${DLG_DESC[dlg.action]}` : ""}
+                </p>
+              </div>
+              <button type="button" className="icon-button flex-shrink-0" aria-label="Tutup" onClick={close} data-testid="design-action-close"><X size={14} /></button>
+            </div>
+            <div className="space-y-3 p-4">
             <DialogHint action={dlg.action} design={design} fin={fin} />
             {dlg.action === "approve" && (
               <div>
@@ -131,10 +173,12 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
             </div>
             {dlgErr && <p className="notice-bar danger !mb-0" role="alert" data-testid="design-action-error">{dlgErr}</p>}
             <div className="flex justify-end gap-2">
-              <button className="secondary-button" onClick={() => setDlg(null)}>Batal</button>
-              <button className="primary-button" onClick={run} disabled={busy} data-testid="design-action-confirm">
+              <button className="secondary-button" onClick={close} disabled={busy}>Batal</button>
+              <button className="primary-button" onClick={run} disabled={busy || (A.needScore && score === null)} data-testid="design-action-confirm"
+                title={A.needScore && score === null ? "Pilih nilai akhir dulu" : undefined}>
                 {busy ? "Memproses…" : A.label}
               </button>
+            </div>
             </div>
           </div>
         </div>

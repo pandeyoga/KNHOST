@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Calculator, RefreshCw, CheckCircle2, BookCheck, Banknote, Plus, FileText, Users, Send, Undo2 } from "lucide-react";
-import { askReason } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import { rp, pct, RUN_STATUS, recentMonths, curMonth, openPayslipPdf } from "./payrollUtils";
 import { entityOptions } from "../../utils/entityLabel";
+import { formatPeriod } from "../../utils/formatters";
 
 function Stat({ label, value, color }) {
   return (
@@ -41,24 +43,41 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
   async function loadRuns() {
     setLoading(true);
     try { const r = await axios.get(`${API}/hr/payroll/runs`, { params }); setRuns(Array.isArray(r.data) ? r.data : []); setError(""); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat payroll runs."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat payroll runs.")); }
     finally { setLoading(false); }
   }
   async function openRun(id) {
     try { const r = await axios.get(`${API}/hr/payroll/runs/${id}`); setSel(r.data || null); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal memuat detail run."); }
+    catch (e) { setError(apiErrorText(e, "Gagal memuat detail run.")); }
   }
   async function createRun() {
     if (!form.entity_id || !form.period) { setError("Pilih entitas & periode."); return; }
     setBusy("create");
     try {
       const r = await axios.post(`${API}/hr/payroll/runs`, { entity_id: form.entity_id, period: form.period });
-      setNotice(`Run ${r.data.number} siap (${r.data.totals.employees} karyawan).`); setError("");
+      setNotice(`Penggajian ${r.data.number} siap (${r.data.totals.employees} karyawan).`); setError("");
       await loadRuns(); setSel(r.data);
-    } catch (e) { setError(e.response?.data?.detail || "Gagal membuat run."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal menghitung penggajian.")); }
     finally { setBusy(""); }
   }
+  // UAT 24 Okt (audit UI tahap 2) — G5-33: Sahkan / Posting GL / Bayar menulis jurnal & mengunci gaji → konfirmasi
+  // dulu dengan periode, total, dan akibatnya (dulu langsung POST).
+  const ACT_CONFIRM = {
+    approve: { title: "Sahkan penggajian", effect: "Gaji periode ini dikunci; perubahan berikutnya harus lewat pengembalian ke draf.", label: "Sahkan" },
+    "post-gl": { title: "Posting jurnal gaji", effect: "Jurnal beban gaji & utang gaji dibuat di buku besar.", label: "Posting ke GL" },
+    pay: { title: "Catat pembayaran gaji", effect: "Jurnal pembayaran gaji (kas/bank) dibuat.", label: "Catat pembayaran" },
+  };
   async function act(id, action, label) {
+    const c = ACT_CONFIRM[action];
+    if (c && sel) {
+      const ok = await askConfirm({
+        title: `${c.title} ${sel.number}?`,
+        message: `${formatPeriod(sel.period)} · ${sel.totals?.employees ?? 0} karyawan · gaji bersih ${rp(sel.totals?.net)}. ${c.effect}`,
+        confirmLabel: c.label,
+        danger: action !== "approve",
+      });
+      if (!ok) return;
+    }
     setBusy(action);
     try {
       // Path eksplisit (literal) — agar kontrak FE↔BE terverifikasi statis.
@@ -69,7 +88,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
       else r = await axios.post(`${API}/hr/payroll/runs/${id}/pay`, {});
       setNotice(`${label} berhasil.`); setError("");
       setSel(r.data); await loadRuns();
-    } catch (e) { setError(e.response?.data?.detail || `Gagal ${label.toLowerCase()}.`); }
+    } catch (e) { setError(apiErrorText(e, `Gagal: ${label}.`)); }
     finally { setBusy(""); }
   }
 
@@ -90,13 +109,13 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
       const r = await axios.post(`${API}/hr/payroll/runs/${id}/reject`, { reason });
       setNotice("Payroll dikembalikan ke draf."); setError("");
       setSel(r.data); await loadRuns();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal mengembalikan payroll."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal mengembalikan payroll.")); }
     finally { setBusy(""); }
   }
 
   // `/api/entities` tak punya field `name` — dulu label pilihan entitas KOSONG.
   const entOpts = entityOptions(entities);
-  const monthOpts = recentMonths().map((m) => ({ value: m, label: m }));
+  const monthOpts = recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }));
   // Audit UI 24 Okt (082): daftar run dulu tidak kronologis (PR-00002 2026-08 di atas PR-00001 2026-09).
   const sortedRuns = [...runs].sort((a, b) => String(b.period || "").localeCompare(String(a.period || ""))
     || String(b.number || "").localeCompare(String(a.number || "")));
@@ -108,7 +127,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
 
       {/* Buat Run */}
       <div className="section-card mb-3">
-        <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-[#0058CC]" /><h2 data-testid="payroll-runs-title">Penggajian — Run Payroll</h2></div>
+        <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-[#0058CC]" /><h2 data-testid="payroll-runs-title">Penggajian</h2></div>
           <button data-testid="payroll-runs-refresh" onClick={loadRuns} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
         </div>
         <div className="section-body grid gap-2 md:grid-cols-[1fr_180px_auto] items-end">
@@ -117,18 +136,18 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
           <div><label className="field-label">Periode <span className="req">*</span></label>
             <KNSelect data-testid="payroll-create-period" value={form.period} onValueChange={(v) => setForm((f) => ({ ...f, period: v }))} className="field" options={monthOpts} placeholder="Pilih periode" /></div>
           <button data-testid="payroll-create-submit" disabled={busy === "create" || !form.entity_id || !form.period} onClick={createRun} className="primary-button justify-center"
-            title={form.period ? `Hitung gaji periode ${form.period}` : "Pilih periode dulu"}><Plus size={14} /> {busy === "create" ? "Memproses..." : form.period ? `Hitung Run ${form.period}` : "Buat / Hitung Run"}</button>
+            title={form.period ? `Hitung gaji periode ${formatPeriod(form.period)}` : "Pilih periode dulu"}><Plus size={14} /> {busy === "create" ? "Memproses..." : form.period ? `Hitung gaji ${formatPeriod(form.period)}` : "Hitung gaji"}</button>
         </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[300px_1fr]">
         {/* Daftar runs */}
         <div className="section-card">
-          <div className="px-3 py-2 border-b border-[#EFF0F2] text-[11px] font-bold uppercase text-[#6B6B73]">Daftar Run</div>
+          <div className="px-3 py-2 border-b border-[#EFF0F2] text-[11px] font-bold uppercase text-[#6B6B73]">Daftar penggajian</div>
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-runs-loading">Memuat...</div>
           ) : runs.length === 0 ? (
-            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-runs-empty"><Calculator className="mx-auto mb-2 text-gray-300" size={26} /><p>Belum ada payroll run.</p></div>
+            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-runs-empty"><Calculator className="mx-auto mb-2 text-gray-300" size={26} /><p>Belum ada penggajian.</p></div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
               {sortedRuns.map((r) => {
@@ -137,7 +156,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
                   <button key={r.id} data-testid={`payroll-run-${r.id}`} onClick={() => openRun(r.id)}
                     className={`w-full text-left px-3 py-2.5 hover:bg-[#FAFBFC] ${sel?.id === r.id ? "bg-[#EEF4FF]" : ""}`}>
                     <div className="flex items-center justify-between"><span className="text-[12.5px] font-semibold">{r.number}</span><span className={`status-pill ${st.cls}`}>{st.label}</span></div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-[#6B6B73]"><EntityBadge entityId={r.entity_id} /><span>{r.period}</span><span className="ml-auto tabular-nums">{rp(r.totals?.net)}</span></div>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-[#6B6B73]"><EntityBadge entityId={r.entity_id} /><span>{formatPeriod(r.period)}</span><span className="ml-auto tabular-nums">{rp(r.totals?.net)}</span></div>
                   </button>
                 );
               })}
@@ -148,17 +167,17 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
         {/* Detail run */}
         <div className="section-card">
           {!sel ? (
-            <div className="py-16 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-detail-empty"><FileText className="mx-auto mb-2 text-gray-300" size={28} /><p>Pilih run untuk melihat rincian payslip & alur persetujuan.</p></div>
+            <div className="py-16 text-center text-[12px] text-[#6B6B73]" data-testid="payroll-detail-empty"><FileText className="mx-auto mb-2 text-gray-300" size={28} /><p>Pilih penggajian untuk melihat rincian slip gaji & alur persetujuan.</p></div>
           ) : (
             <div data-testid="payroll-run-detail">
               <div className="section-head">
-                <div className="flex items-center gap-2"><h2>{sel.number} · {sel.period}</h2><span className={`status-pill ${(RUN_STATUS[sel.status] || RUN_STATUS.draft).cls}`} data-testid="payroll-detail-status">{(RUN_STATUS[sel.status] || RUN_STATUS.draft).label}</span></div>
+                <div className="flex items-center gap-2"><h2>{sel.number} · {formatPeriod(sel.period)}</h2><span className={`status-pill ${(RUN_STATUS[sel.status] || RUN_STATUS.draft).cls}`} data-testid="payroll-detail-status">{(RUN_STATUS[sel.status] || RUN_STATUS.draft).label}</span></div>
                 <div className="flex items-center gap-2">
                   {sel.status === "draft" && <button data-testid="payroll-submit" disabled={busy === "submit"} onClick={() => act(sel.id, "submit", "Ajukan")} className="primary-button !py-1.5"><Send size={13} /> Ajukan</button>}
                   {sel.status === "pending_approval" && <button data-testid="payroll-approve" disabled={busy === "approve"} onClick={() => act(sel.id, "approve", "Sahkan")} className="primary-button !py-1.5"><CheckCircle2 size={13} /> Sahkan</button>}
                   {sel.status === "pending_approval" && <button data-testid="payroll-reject" disabled={busy === "reject"} onClick={() => rejectRun(sel.id)} className="secondary-button !py-1.5"><Undo2 size={13} /> Kembalikan ke Draf</button>}
-                  {sel.status === "approved" && <button data-testid="payroll-post-gl" disabled={busy === "post-gl"} onClick={() => act(sel.id, "post-gl", "Posting GL")} className="primary-button !py-1.5" style={{ background: "#B7791F" }}><BookCheck size={13} /> Posting GL</button>}
-                  {sel.status === "posted" && <button data-testid="payroll-pay" disabled={busy === "pay"} onClick={() => act(sel.id, "pay", "Bayar")} className="primary-button !py-1.5" style={{ background: "#1F7A45" }}><Banknote size={13} /> Bayar</button>}
+                  {sel.status === "approved" && <button data-testid="payroll-post-gl" disabled={busy === "post-gl"} onClick={() => act(sel.id, "post-gl", "Posting GL")} className="primary-button !py-1.5"><BookCheck size={13} /> Posting GL</button>}
+                  {sel.status === "posted" && <button data-testid="payroll-pay" disabled={busy === "pay"} onClick={() => act(sel.id, "pay", "Bayar")} className="primary-button !py-1.5"><Banknote size={13} /> Bayar</button>}
                 </div>
               </div>
               <div className="section-body">
@@ -166,7 +185,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
                   <Stat label="Karyawan" value={sel.totals?.employees ?? 0} />
                   <Stat label="Bruto" value={rp(sel.totals?.gross)} color="#0058CC" />
                   <Stat label="Potongan+Pajak" value={rp((sel.totals?.bpjs_emp || 0) + (sel.totals?.pph21 || 0))} color="#C0392B" />
-                  <Stat label="Take-home (Net)" value={rp(sel.totals?.net)} color="#1F7A45" />
+                  <Stat label="Gaji bersih" value={rp(sel.totals?.net)} color="#1F7A45" />
                 </div>
                 {sel.reject_reason && (
                   <div className="notice-bar warning !mb-3" data-testid="payroll-reject-reason">

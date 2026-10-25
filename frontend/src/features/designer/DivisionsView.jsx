@@ -17,7 +17,14 @@ import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { approvalMatrix } from "../approvals/approvalsMatrixApi";
 import { listDivisionMembers, listDivisions, setMemberDivision } from "./designerApi";
-import { roleIs, roleLabel } from "../../config/roles";
+import { roleIs, roleLabel, ROLE_REGISTRY } from "../../config/roles";
+import { askConfirm } from "../../services/confirmService";
+
+// UAT 24 Okt (audit UI tahap 2) — G5-43: nama peran penyetuju berlabel Indonesia ("Manager" → "Manajer").
+const approverLabel = (a) => {
+  const key = String(a || "").trim().toLowerCase();
+  return ROLE_REGISTRY[key] ? roleLabel(key) : String(a || "").replace(/\bManager\b/g, "Manajer");
+};
 
 
 const MODE_TONE = {
@@ -66,6 +73,16 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
   useEffect(() => { load(); }, [load]);
 
   async function assign(name, division) {
+    // G5-43: dropdown per baris dulu langsung menyimpan — kini dikonfirmasi dulu.
+    const target = division
+      ? (data?.divisions.find((x) => x.id === division)?.name || division)
+      : "tanpa divisi";
+    const ok = await askConfirm({
+      title: `Pindahkan ${name} ke ${target}?`,
+      message: "Penempatan divisi menentukan baris KPI & matriks persetujuan R&D orang ini. Menu & hak akses aplikasi tidak berubah.",
+      confirmLabel: "Simpan penempatan",
+    });
+    if (!ok) return;
     setSavingName(name);
     setMsg(null);
     try {
@@ -89,6 +106,11 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
     (matrixInfo?.stages || []).map((s) => [s.stage, s.levels || []]));
   const divOptions = [{ value: "", label: "Belum ditempatkan" },
     ...divisions.map((d) => ({ value: d.id, label: d.name }))];
+  // G5-43: divisi tersimpan yang tidak ada di daftar divisi R&D (mis. Merchandiser, Admin Sample) dulu tampil
+  // "Pilih…" abu — kini tetap terlihat sebagai opsi berlabel.
+  const optionsFor = (m) => (m.division && !divisions.some((d) => d.id === m.division)
+    ? [...divOptions, { value: m.division, label: `${m.division_name || m.division} (di luar divisi R&D)` }]
+    : divOptions);
   const shownMembers = filterDiv
     ? members.filter((m) => m.division === filterDiv)
     : members;
@@ -105,7 +127,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2">
             <Layers size={16} className="text-[#6B219A]" />
-            <h2 data-testid="rnd-divisions-title">Divisi &amp; Persetujuan R&amp;D</h2>
+            <h2 data-testid="rnd-divisions-title">Divisi &amp; Persetujuan</h2>
           </div>
           <button className="secondary-button" onClick={load} data-testid="rnd-divisions-refresh">
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
@@ -184,7 +206,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
               <thead>
                 <tr className="text-[10px] uppercase text-[#8E8E93]">
                   <th className="py-1.5 pr-3 font-bold">Tahap</th>
-                  <th className="py-1.5 pr-3 font-bold">Approver</th>
+                  <th className="py-1.5 pr-3 font-bold">Penyetuju</th>
                   <th className="py-1.5 pr-3 font-bold">Tingkat &amp; peran yang mengikat</th>
                   <th className="py-1.5 font-bold">Keterangan</th>
                 </tr>
@@ -200,7 +222,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
                           {row.approvers.map((a) => (
                             <span key={a}
                               className="inline-block rounded-full bg-[#E9F7EF] px-2 py-0.5 text-[10.5px] font-semibold text-[#1B7F4B]">
-                              {a}
+                              {approverLabel(a)}
                             </span>
                           ))}
                         </span>
@@ -213,7 +235,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
                             {lv.map((l) => (
                               <span key={l.level}
                                 className="inline-block rounded-full bg-[#EEF1F5] px-2 py-0.5 text-[10.5px] font-semibold text-[#4A4B52]">
-                                {l.level}. {l.label} → {l.roles_label}
+                                {l.level}. {l.label} → {String(l.roles_label || "").replace(/\bManager\b/g, "Manajer")}
                               </span>
                             ))}
                           </span>
@@ -238,7 +260,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
       {/* ── Anggota + penempatan divisi ─────────────────────────────────── */}
       <section className="section-card">
         <div className="section-head">
-          <h2>Anggota R&amp;D ({shownMembers.length})</h2>
+          <h2>Anggota &amp; penempatan divisi ({shownMembers.length})</h2>
           {filterDiv && (
             <button className="secondary-button" data-testid="rnd-divisions-clear-filter"
               onClick={() => setFilterDiv("")}>Tampilkan semua</button>
@@ -285,7 +307,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
                             data-testid={`rnd-member-division-${m.name}`}
                             value={m.division || ""}
                             onValueChange={(v) => assign(m.name, v)}
-                            options={divOptions}
+                            options={optionsFor(m)}
                             disabled={savingName === m.name}
                             className="field !h-8 !w-[190px] !text-[11.5px]" />
                         ) : (

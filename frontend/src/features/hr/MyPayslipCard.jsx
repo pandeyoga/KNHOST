@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Wallet, FileText } from "lucide-react";
 import { rp, openPayslipPdf } from "./payrollUtils";
+import { formatPeriod } from "../../utils/formatters";
 
 // ESS — kartu Slip Gaji Terakhir (menggantikan placeholder H4).
 export function MyPayslipCard() {
@@ -31,7 +32,7 @@ export function MyPayslipCard() {
         <p className="text-[12px] text-[#6B6B73] py-3" data-testid="ess-payslip-empty">Belum ada slip gaji terbit.</p>
       ) : (
         <div data-testid="ess-payslip-latest">
-          <p className="text-[11px] text-[#6B6B73]">Periode {latest.period}</p>
+          <p className="text-[11px] text-[#6B6B73]">Periode {formatPeriod(latest.period)}</p>
           <p className="text-[20px] font-bold tabular-nums text-[#0058CC] leading-tight">{rp(latest.net)}</p>
           <p className="text-[11px] text-[#6B6B73]">Gaji bersih diterima</p>
           <button data-testid="ess-payslip-pdf" disabled={busy} onClick={() => openPdf(latest.id)}

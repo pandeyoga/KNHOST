@@ -3,7 +3,7 @@
  * Dipakai di modal buat (pratinjau lokal sebelum permintaan punya nomor) dan di panel
  * rincian (unggah/hapus ke server). Referensi ikut OTOMATIS ke tab Referensi desain Studio.
  */
-import { AttachmentThumb } from "../../components/AttachmentThumb";
+import DesignImage from "../rnd/design/DesignImage";
 import MediaLightbox from "../../components/MediaLightbox";
 import { useEffect, useMemo, useState } from "react";
 import { Image as ImageIcon, Trash2, Upload } from "lucide-react";
@@ -37,8 +37,12 @@ export default function ReferenceGallery({ requestId, files = [], localFiles = [
         <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
           {files.map((f) => (
             <figure key={f.id} className="group relative aspect-square overflow-hidden rounded-lg border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`${testId}-item-${f.id}`}>
-              {/* UAT 24 Okt (P17) — dimuat lewat axios (header badan usaha) + lightbox; dulu <img src> polos (403 di PT lain). */}
-              <AttachmentThumb item={items[files.indexOf(f)]} fill onOpen={() => setView(files.indexOf(f))} testId={`${testId}-open-${f.id}`} />
+              {/* UAT 24 Okt (P17) — dimuat lewat axios (header badan usaha) + lightbox; dulu <img src> polos (403 di PT lain).
+                  Audit UI tahap 2 (G5-05): gagal muat → ikon + teks "Gambar tidak dapat dimuat" (dulu kotak abu kosong). */}
+              <button type="button" className="block h-full w-full" title={f.filename || "Gambar referensi"}
+                data-testid={`${testId}-open-${f.id}`} data-url={items[files.indexOf(f)]?.url || ""} onClick={() => setView(files.indexOf(f))}>
+                <DesignImage src={items[files.indexOf(f)]?.url} alt={f.filename || ""} loading="lazy" className="h-full w-full object-cover" />
+              </button>
               {canEdit && (
                 <button type="button" className="absolute right-1 top-1 hidden rounded bg-white/90 p-1 text-red-500 shadow group-hover:block"
                   data-testid={`${testId}-delete-${f.id}`} title="Hapus" onClick={() => onRemove?.(f)}>

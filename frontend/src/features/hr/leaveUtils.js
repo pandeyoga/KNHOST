@@ -29,6 +29,13 @@ export function recentMonths(n = 12) {
 }
 export const rp = (v) => formatCurrency(v || 0);
 
+// UAT 24 Okt (audit UI tahap 2) — G5-29: pemilih karyawan di form cuti/lembur hanya memuat karyawan AKTIF
+// (dulu karyawan yang sudah Keluar tampil di urutan teratas & bisa dipilih).
+export const activeEmployees = (list) => (list || []).filter((e) => (e.status || "active") === "active");
+export const employeeOptions = (list) => activeEmployees(list)
+  .map((e) => ({ value: e.id, label: `${e.name}${e.code ? ` (${e.code})` : ""}` }))
+  .sort((a, b) => a.label.localeCompare(b.label, "id"));
+
 // Hitung hari kerja (Senin–Jumat) dalam rentang inklusif — cermin logika backend (V1 tanpa libur).
 export function countWorkdays(from, to) {
   if (!from) return 0;

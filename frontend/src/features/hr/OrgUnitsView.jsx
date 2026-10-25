@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import { Network, Plus, Pencil, Power, Building2, Briefcase, Users } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -46,7 +47,7 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
       setEntities(Array.isArray(eRes.data) ? eRes.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat struktur organisasi.");
+      setError(apiErrorText(e, "Gagal memuat struktur organisasi."));
     } finally {
       setLoading(false);
     }
@@ -81,9 +82,14 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
       setShowForm(false); setForm(EMPTY); setEditId(null);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyimpan unit organisasi.");
+      setError(apiErrorText(e, "Gagal menyimpan unit organisasi."));
     }
   }
+
+  // G5-32: hambatan nonaktif dihitung dari pohon yang sudah dimuat (jabatan aktif & karyawan non-keluar).
+  const subCount = (delTarget?.children || []).length;
+  const empCount = Number(delTarget?.employee_count || 0);
+  const delBlocker = [subCount > 0 && `${subCount} jabatan aktif`, empCount > 0 && `${empCount} karyawan aktif`].filter(Boolean).join(" & ");
 
   async function doDelete(unit) {
     try {
@@ -92,7 +98,7 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
       setDelTarget(null);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menonaktifkan unit.");
+      setError(apiErrorText(e, "Gagal menonaktifkan unit."));
       setDelTarget(null);
     }
   }
@@ -213,15 +219,28 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
+      {/* UAT 24 Okt (audit UI tahap 2) — G5-32: unit yang masih punya jabatan/karyawan aktif tidak bisa dicoba
+          dinonaktifkan — dialog menyebut hambatannya & tidak menawarkan tombol merah (dulu kalimat umum + tombol merah
+          yang pasti gagal). */}
       <ConfirmModal
-        open={!!delTarget}
+        open={!!delTarget && !delBlocker}
         title={`Nonaktifkan · ${delTarget?.name || "Unit"}`}
-        message="Unit dengan sub-unit atau karyawan aktif tidak dapat dinonaktifkan. Pindahkan dulu bila perlu."
+        message="Unit ini tidak dipakai lagi untuk penempatan karyawan baru."
         confirmLabel="Nonaktifkan"
         danger
         onConfirm={() => doDelete(delTarget)}
         onCancel={() => setDelTarget(null)}
         testId="org-delete-modal"
+      />
+      <ConfirmModal
+        open={!!delTarget && !!delBlocker}
+        title={`Belum bisa dinonaktifkan · ${delTarget?.name || "Unit"}`}
+        message={`Unit ini masih punya ${delBlocker}. Pindahkan atau nonaktifkan dulu, lalu coba lagi.`}
+        confirmLabel="Mengerti"
+        cancelLabel="Tutup"
+        onConfirm={() => setDelTarget(null)}
+        onCancel={() => setDelTarget(null)}
+        testId="org-delete-blocked-modal"
       />
     </div>
   );

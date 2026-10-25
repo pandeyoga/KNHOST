@@ -18,16 +18,17 @@ import SampleDetailPanel from "./SampleDetailPanel";
 import SampleFormModal from "./SampleFormModal";
 import SampleTypeCard, { typeRoundsOf } from "./SampleTypeCard";
 import { listSamples, sampleTypes } from "./rndApi";
-import { errMsg, SAMPLE_STATUS_META, typeTone } from "./rndMeta";
+import { cleanRndNote, errMsg, SAMPLE_STATUS_META, typeTone } from "./rndMeta";
 import { typeLabel, typeMeta } from "./sampleTypeMeta";
 import { roleIs } from "../../config/roles";
+import { canWriteInScope, WRITE_BLOCK_HINT } from "../../utils/writeScope";
 
 const STATUS_OPTS = [{ value: "", label: "Semua status" },
   ...Object.entries(SAMPLE_STATUS_META).map(([k, m]) => ({ value: k, label: m.label }))];
 const RESULT_OPTS = [
   { value: "", label: "Semua hasil" }, { value: "acc", label: "Sudah ada ACC" },
   { value: "revisi", label: "Hasil terakhir: revisi" }, { value: "pending", label: "Menunggu hasil supplier" },
-  { value: "none", label: "Belum ada round" },
+  { value: "none", label: "Belum ada ronde" },
 ];
 const PROOF_OPTS = [{ value: "", label: "Bukti: semua" }, { value: "yes", label: "Sudah ada foto bukti" }, { value: "no", label: "Belum ada bukti" }];
 const SCORE_OPTS = [
@@ -35,8 +36,6 @@ const SCORE_OPTS = [
   { value: "70", label: "≥ 70" }, { value: "80", label: "≥ 80" }, { value: "90", label: "≥ 90" },
 ];
 const EMPTY = { q: "", status: "", supplier: "", result: "", proof: "", score: "", revision: "", line: "" };
-// Audit UI 24 Okt (041) — catatan jenis dari master memuat kode keputusan internal ("MD-05"); jangan tampil ke pengguna.
-const stripCodes = (t) => String(t || "").replace(/,?\s*\b(?:MD|KLR|LN|PB|AS)-\d{2,3}\b/g, "").replace(/\(\s*\)/g, "").trim();
 // Di HP saringan lanjutan (±600px) dilipat dulu; di layar lebar tetap terbuka seperti sebelumnya.
 const wideScreen = () => (typeof window === "undefined" || !window.matchMedia ? true : window.matchMedia("(min-width: 768px)").matches);
 
@@ -53,6 +52,8 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
 
   const role = currentUser?.role;
   const canCreate = roleIs(role, ["admin", "manager", "sales", "md"]);
+  // UAT 24 Okt (audit UI tahap 2) — G5-63: mode "Semua badan usaha" hanya-lihat → tombol buat nonaktif.
+  const scopeWritable = canWriteInScope(selectedEntity);
   const tone = typeTone(code);
   const label = typeLabel(code, types).split(" (")[0];
   const meta = typeMeta(code, types);
@@ -118,6 +119,15 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
     };
   }, [rows, code]);
   const activeFilters = Object.entries(f).filter(([k, v]) => v && k !== "q" && k !== "line").length;
+  // UAT 24 Okt (audit UI tahap 2) — G5-44: hitungan per tab status dihitung dari seluruh sample jenis ini (bukan
+  // `rows.length` di tab aktif → dulu "Gagal — menunggu PIC 12" pada daftar kosong). "Semua" = tanpa yang batal,
+  // sama dengan saringan di atas.
+  const statusCounts = useMemo(() => {
+    const c = { "": 0 };
+    rows.forEach((s) => { c[s.status] = (c[s.status] || 0) + 1; if (s.status !== "cancelled") c[""] += 1; });
+    return c;
+  }, [rows]);
+  const statusLabel = f.status ? (SAMPLE_STATUS_META[f.status]?.label || f.status) : "";
 
   return (
     <div data-testid={`sample-gallery-${code}`}>
@@ -134,14 +144,15 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           <div className="flex flex-wrap items-center gap-2">
             <button className="secondary-button" onClick={load} data-testid={`sample-gallery-refresh-${code}`}><RefreshCw size={13} /> Muat ulang</button>
             {canCreate && (
-              <button className="primary-button" data-testid={`sample-gallery-create-${code}`} onClick={() => setCreating(true)}>
+              <button className="primary-button" data-testid={`sample-gallery-create-${code}`} onClick={() => setCreating(true)}
+                disabled={!scopeWritable} title={scopeWritable ? undefined : WRITE_BLOCK_HINT}>
                 <Plus size={13} /> Sample {label} Baru
               </button>
             )}
           </div>
         </div>
         <div className="section-body space-y-2.5">
-          {meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid={`sample-gallery-notes-${code}`}>{stripCodes(meta.notes)}</p>}
+          {meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid={`sample-gallery-notes-${code}`}>{cleanRndNote(meta.notes)}</p>}
           <div className="grid grid-cols-2 gap-2 md:grid-cols-6" data-testid={`sample-gallery-stats-${code}`}>
             <Kpi label={`Total ${label.toLowerCase()}`} value={stats.total} testId={`sample-gallery-kpi-total-${code}`} />
             <Kpi label="Terkirim" value={stats.sent} tone="#0058CC" testId={`sample-gallery-kpi-sent-${code}`} />
@@ -172,7 +183,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           {showFilters && (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6" data-testid={`sample-gallery-filters-${code}`}>
               <div className="col-span-full"><OptionTabs testId={`sample-gallery-filter-status-${code}`} value={f.status} options={STATUS_OPTS} onChange={(v) => set("status", v)}
-                countOf={(v) => (v === (f.status || "") ? rows.length : undefined)} /></div>
+                countOf={(v) => statusCounts[v || ""] || 0} /></div>
               <KNSelect data-testid={`sample-gallery-filter-supplier-${code}`} className="field" value={f.supplier} searchable
                 options={[{ value: "", label: "Semua supplier" }, ...suppliers.map(([id, name]) => ({ value: id, label: name }))]} onValueChange={(v) => set("supplier", v)} />
               <KNSelect data-testid={`sample-gallery-filter-result-${code}`} className="field" value={f.result} options={RESULT_OPTS} onValueChange={(v) => set("result", v)} />
@@ -193,7 +204,11 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid={`sample-gallery-empty-${code}`}>
               <FlaskConical className="mx-auto mb-2 text-gray-300" size={28} />
-              {(activeFilters || f.q.trim()) ? <p>Tidak ada sample {label.toLowerCase()} yang cocok dengan saringan saat ini.</p>
+              {(f.status && activeFilters === 1 && !f.q.trim()) ? (
+                <p>Tidak ada sample {label.toLowerCase()} berstatus <b>{statusLabel}</b>.{" "}
+                  <button type="button" className="link-button" data-testid={`sample-gallery-show-all-${code}`} onClick={() => set("status", "")}>Tampilkan semua</button></p>
+              ) : (activeFilters || f.q.trim()) ? <p>Tidak ada sample {label.toLowerCase()} yang cocok dengan saringan saat ini.{" "}
+                  <button type="button" className="link-button" data-testid={`sample-gallery-clear-${code}`} onClick={() => setF({ ...EMPTY, line: f.line })}>Hapus saringan</button></p>
                 : <p>Belum ada sample {label.toLowerCase()}. Klik <b>Sample {label} Baru</b> — jenis sudah terpilih, tinggal tulis brief & target.</p>}
             </div>
           ) : (

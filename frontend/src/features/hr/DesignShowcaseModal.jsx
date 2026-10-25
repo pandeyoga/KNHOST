@@ -111,13 +111,16 @@ function Body({ d, hero, setHero, onClose, currentUser, onChanged }) {
           <div className="section-card !p-3">
             <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Info desain &amp; pattern</p>
             <Row label="Kategori pattern">{d.category_name || d.category_code || "—"}</Row>
-            <Row label="Kategori design">{d.design_category_name || d.design_category_code || "—"}</Row>
+            <Row label="Kategori desain">{d.design_category_name || d.design_category_code || "—"}</Row>
             <Row label="Desainer">{d.created_by || "—"}</Row>
             <Row label="Tanggal ACC">{fmtD(d.approved_at)}</Row>
             <Row label="Nilai ACC">{d.final_score != null ? `${fmtScore(d.final_score)} / 2` : "—"}</Row>
             <Row label="Ronde">{d.revision_count || 0}× revisi · ACC pada {roundLabel(d.approved_version || d.version)}</Row>
             <Row label="Lini">{d.line_code || "semua lini"}</Row>
-            <Row label="Spesifikasi cetak">Repeat {d.repeat_cm ? `${d.repeat_cm} cm` : "—"} · {d.screen_count || 0} screen</Row>
+            {/* UAT 24 Okt (audit UI tahap 2) — G5-40: bagian kosong disembunyikan (dulu "Repeat — · 0 screen"). */}
+            {(d.repeat_cm || Number(d.screen_count) > 0) && (
+              <Row label="Spesifikasi cetak">{[d.repeat_cm && `repeat ${d.repeat_cm} cm`, Number(d.screen_count) > 0 && `${d.screen_count} screen`].filter(Boolean).join(" · ")}</Row>
+            )}
             <div className="pt-1.5">
               <p className="text-[11px] text-[#6B6B73]">Tag</p>
               <div className="mt-0.5 flex flex-wrap gap-1" data-testid="gallery-showcase-tags">

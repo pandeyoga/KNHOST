@@ -25,15 +25,17 @@ export default function SampleFinishModal({ mode = "finish", sample, targets, bu
 
   return (
     <FormModal open onClose={onClose} size="md" testId={isFinish ? "sample-finish-modal" : "sample-deliver-modal"} icon={isFinish ? CheckCircle2 : Send} error={error}
-      title={isFinish ? "Tandai Sample Jadi" : "Catat Pengiriman Sample"} subtitle={sample?.number}
+      // UAT 24 Okt (audit UI tahap 2) — G5-45: satu nama aksi dari tombol sampai pop-up ("Terima sampel fisik";
+      // dulu tombol "Terima sampel fisik" → pop-up "Tandai Sample Jadi" → tombol "Tandai Jadi").
+      title={isFinish ? "Terima sampel fisik" : "Catat Pengiriman Sample"} subtitle={sample?.number}
       footer={<Footer onClose={onClose} busy={busy} disabled={!isFinish && !to} icon={isFinish ? CheckCircle2 : Send}
-        testId={isFinish ? "sample-finish-confirm" : "sample-deliver-confirm"} confirmLabel={isFinish ? "Tandai Jadi" : "Catat Pengiriman"}
+        testId={isFinish ? "sample-finish-confirm" : "sample-deliver-confirm"} confirmLabel={isFinish ? "Terima sampel fisik" : "Catat Pengiriman"}
         title={!isFinish && !to ? "Pilih tujuan pengiriman lebih dulu" : ""}
         onConfirm={() => onConfirm(isFinish ? { date, note } : { to, to_name: toName, date, note })} />}>
       <div className="grid gap-3">
         <Hint>
           {isFinish
-            ? "Menandai sample JADI hanya boleh setelah ada round yang ACC — tanggal ini dipakai laporan sebagai bukti sample-nya sah."
+            ? "Catat bahwa sampel fisik dari supplier pemenang sudah diterima — tanggal ini dipakai laporan sebagai bukti sample-nya sah."
             : "Tujuan pengiriman WAJIB dipilih supaya laporan bisa menjawab: “sample untuk siapa yang belum kembali?”"}
         </Hint>
         {!isFinish && (
@@ -46,7 +48,7 @@ export default function SampleFinishModal({ mode = "finish", sample, targets, bu
             </Field>
           </div>
         )}
-        <Field label={`Tanggal ${isFinish ? "selesai" : "kirim"} (kosong = hari ini)`}>
+        <Field label={`Tanggal ${isFinish ? "diterima" : "kirim"} (kosong = hari ini)`}>
           <KNDatePicker data-testid={isFinish ? "sample-finish-date" : "sample-deliver-date"} value={date} onChange={setDate} />
         </Field>
         <Field label="Catatan">

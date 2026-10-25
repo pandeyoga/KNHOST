@@ -117,7 +117,8 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   useEffect(() => { setModalErr(""); }, [modal]);
   const uploadProof = (round, file) => act(() => uploadRoundProof(sample.id, round.id, file), `Bukti "${file.name}" terunggah pada ronde ${round.round_no}.`);
   const batalkan = async () => {
-    const alasan = await askReason({ title: "Batalkan permintaan sample", message: `Sebutkan alasan pembatalan ${sample.number}.`, confirmLabel: "Batalkan permintaan" });
+    // G5-45: aksi membatalkan = danger (dulu tombol konfirmasi biru).
+    const alasan = await askReason({ title: `Batalkan permintaan ${sample.number}?`, message: "Permintaan sample dihentikan dan tidak bisa dilanjutkan. Sebutkan alasannya.", confirmLabel: "Batalkan permintaan", danger: true, reasonLabel: "Alasan pembatalan" });
     if (!alasan) return;
     await act(() => cancelSample(sample.id, alasan), "Permintaan sample dibatalkan.");
   };
@@ -147,6 +148,17 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const specApprovers = specRoles.map((r) => roleLabel(r)).join(" / ");
   const issues = sample?.material_issues || [];
   const codes = useMemo(() => sampleTypesOf(sample), [sample]);
+  // UAT 24 Okt (audit UI tahap 2) — G5-45: tombol utama = LANGKAH BERIKUTNYA (dulu "Pilih pemenang" selalu primary
+  // walau nonaktif, lebih menonjol dari langkah yang disarankan).
+  const nextStep = !sample ? ""
+    : active && (sample.participants || []).length === 0 ? "send"
+      : active && canDecideNow && mayPickWinner ? "decide"
+        : decided && !sample.finished_at ? "finish"
+          : !cancelled && sample.finished_at && !sample.delivered_at ? "deliver" : "";
+  const stepCls = (key) => (nextStep === key ? "primary-button" : "secondary-button");
+  // "Dibuat oleh" (pengaju) vs pencatat riwayat "dibuat" — bila berbeda, keduanya disebut jelas.
+  const createdEntry = (sample?.timeline || []).find((t) => t.kind === "created" || t.event === "created");
+  const recordedBy = createdEntry?.actor && createdEntry.actor !== sample?.created_by ? createdEntry.actor : "";
 
   if (!sample) {
     return (
@@ -294,15 +306,21 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
 
         <div className="grid content-start gap-3">
           <div className="section-card section-pad">
-            <Row label="Dibuat oleh" testId="sample-detail-creator">{sample.created_by || "—"}</Row>
+            <Row label="Diajukan oleh" testId="sample-detail-creator">{sample.created_by || "—"}</Row>
+            {recordedBy && <Row label="Dicatat oleh" testId="sample-detail-recorder">{recordedBy}</Row>}
             <Row label="Target selesai" testId="sample-detail-target">{sample.target_date ? formatDateId(sample.target_date) : "—"}</Row>
             <Row label="Supplier" testId="sample-detail-suppliers">{(sample.participants || []).length || 0}</Row>
             <Row label="Ronde" testId="sample-detail-rounds">{(sample.rounds || []).length} · {(sample.rounds || []).filter((r) => r.result === "acc").length} ACC</Row>
             <Row label="Biaya sample" testId="sample-detail-cost">{formatCurrency(sample.cost_total || 0)}</Row>
-            <Row label="Sample jadi" testId="sample-detail-finished">
+            {/* G5-45: "Dikirim: Belum" dulu bertentangan dengan stepper "Terkirim ✓" — itu dua hal berbeda:
+                dikirim KE SUPPLIER (permintaan) vs diserahkan ke pelanggan/arsip (sampel jadi). */}
+            <Row label="Dikirim ke supplier" testId="sample-detail-sent">
+              <span className={sample.sent_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>{sample.sent_at ? formatDateId(wibDate(sample.sent_at)) : "Belum"}</span>
+            </Row>
+            <Row label="Sampel fisik diterima" testId="sample-detail-finished">
               <span className={sample.finished_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>{sample.finished_at ? formatDateId(wibDate(sample.finished_at)) : "Belum"}</span>
             </Row>
-            <Row label="Dikirim" testId="sample-detail-delivered">
+            <Row label="Diserahkan" testId="sample-detail-delivered">
               <span className={sample.delivered_at ? "text-[#1B7F4B]" : "text-[#8E8E93]"}>
                 {sample.delivered_at ? `${formatDateId(wibDate(sample.delivered_at))} → ${deliverLabel(sample.delivered_to, deliverTargets)}${sample.delivered_to_name ? ` (${sample.delivered_to_name})` : ""}` : "Belum"}
               </span>
@@ -320,12 +338,12 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             )}
             <div className="grid gap-1.5">
               {canSend && canSubmit && (
-                <button className="secondary-button" disabled={busy} data-testid="sample-send-button" onClick={() => setModal({ kind: "send" })}>
+                <button className={stepCls("send")} disabled={busy} data-testid="sample-send-button" onClick={() => setModal({ kind: "send" })}>
                   <Send size={13} /> Kirim ke supplier
                 </button>
               )}
               {active && canDecide && (
-                <button className="primary-button" disabled={busy || !canDecideNow || !mayPickWinner} data-testid="sample-decide-button"
+                <button className={stepCls("decide")} disabled={busy || !canDecideNow || !mayPickWinner} data-testid="sample-decide-button"
                   title={!mayPickWinner ? `Pemenang diputus oleh: ${decideRoles.map((r) => roleLabel(r)).join(", ")}`
                     : canDecideNow ? (isReval ? "Catat hasil lulus/gagal" : "Pilih supplier pemenang") : "Belum ada ronde yang dinilai — nilai dulu hasil sample-nya"}
                   onClick={() => setModal({ kind: isReval ? "reval" : "decide" })}>
@@ -338,7 +356,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 </p>
               )}
               {!cancelled && !pendingPic && canSubmit && !sample.finished_at && (
-                <button className="secondary-button" disabled={busy || !decided} data-testid="sample-finish-button"
+                <button className={stepCls("finish")} disabled={busy || !decided} data-testid="sample-finish-button"
                   title={decided ? "Catat sampel fisik dari supplier pemenang sudah diterima" : "Pilih pemenang dulu — sampel fisik yang diterima milik pemenang"}
                   onClick={() => setModal({ kind: "finish" })}>
                   <CheckCircle2 size={13} /> Terima sampel fisik
@@ -348,7 +366,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 <p className="text-[10.5px] text-[#6B6B73]" data-testid="sample-finish-hint">Urutan: kirim ke supplier → setor &amp; nilai ronde → pilih pemenang → terima sampel fisik → {forCustomer ? "kirim ke pelanggan" : "arsipkan"}.</p>
               )}
               {!cancelled && canSubmit && sample.finished_at && !sample.delivered_at && (
-                <button className="secondary-button" disabled={busy} data-testid="sample-deliver-button" onClick={() => setModal({ kind: "deliver" })}>
+                <button className={stepCls("deliver")} disabled={busy} data-testid="sample-deliver-button" onClick={() => setModal({ kind: "deliver" })}>
                   <Send size={13} /> {forCustomer ? "Kirim ke pelanggan" : "Arsipkan / serahkan"}
                 </button>
               )}

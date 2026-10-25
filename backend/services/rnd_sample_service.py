@@ -80,6 +80,29 @@ def reasons() -> List[Dict[str, str]]:
     return [dict(r) for r in DECISION_REASONS]
 
 
+# UAT 24 Okt (audit UI tahap 2) — G5-46: teks riwayat sample yang tampil ke pengguna memakai istilah "Ronde",
+# label hasil ("ACC", "revisi", "ditolak"), nama jenis ("Labdip"), dan tanggal Indonesia ("30 Okt 2026").
+# Dulu: "Round 1 (labdip · CV …) → acc", "dibuat (draft)", "target 2026-10-30".
+_BULAN_ID = ("Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des")
+_RESULT_LABEL = {"acc": "ACC", "revisi": "revisi", "tolak": "ditolak"}
+
+
+def _tgl_id(value: Any) -> str:
+    """'2026-10-30' / ISO → '30 Okt 2026'; kosong → '—'; tak dikenal → apa adanya."""
+    s = str(value or "")[:10]
+    try:
+        y, m, d = (int(x) for x in s.split("-"))
+        return f"{d} {_BULAN_ID[m - 1]} {y}"
+    except (ValueError, IndexError):
+        return s or "—"
+
+
+def _jenis_label(code: Any) -> str:
+    """Kode jenis sampling → nama pendek ('labdip' → 'Labdip')."""
+    label = dr.label_of("sample_type", code) if code else ""
+    return (label or str(code or "")).split(" (")[0]
+
+
 def deliver_targets() -> List[Dict[str, Any]]:
     """Pilihan tujuan kirim sample (label manusia) untuk layar & POC."""
     return [dict(r) for r in dr.enum_items("sample_deliver_target")]
@@ -299,7 +322,16 @@ async def labdip_history(scope: Dict[str, Any], *, color_id: str = "", product_i
     docs = await db[COLL].find(flt, {"_id": 0}).sort("created_at", -1).to_list(limit)
     tcode = str(type_code or "").strip().lower()
     rows: List[Dict[str, Any]] = []
+    # UAT 24 Okt (audit UI tahap 2) — G5-48: permintaan yang BELUM punya putaran jenis ini dulu hanya terhitung di
+    # KPI "Permintaan" (10) sementara tabelnya "Belum ada putaran" — tak terlihat & tak bisa dibuka. Kini ikut
+    # dikembalikan sebagai `waiting` supaya layar bisa menampilkan & membukanya.
+    waiting: List[Dict[str, Any]] = []
     for s in docs:
+        has_round = any(not tcode or _type_of_round(r, s) == tcode for r in (s.get("rounds") or []))
+        if not has_round and (not tcode or tcode in types_of(s)):
+            waiting.append({"sample_id": s["id"], "sample_number": s.get("number", ""),
+                            "sample_title": s.get("title", ""), "sample_status": s.get("status", ""),
+                            "target_date": s.get("target_date", ""), "created_at": s.get("created_at", "")})
         for r in s.get("rounds") or []:
             if tcode and _type_of_round(r, s) != tcode:
                 continue
@@ -329,8 +361,11 @@ async def labdip_history(scope: Dict[str, Any], *, color_id: str = "", product_i
         "open": sum(1 for x in rows if not x["result"]),
         "best_score": max(scores) if scores else None,
         "suppliers": len({x["supplier_id"] for x in rows if x["supplier_id"]}),
+        # G5-48 — jumlah permintaan yang benar-benar TAMPIL (punya putaran jenis ini atau menunggu dikirim).
+        "samples_shown": len({x["sample_id"] for x in rows} | {w["sample_id"] for w in waiting}),
+        "waiting": len(waiting),
     }
-    return {"count": len(rows), "items": rows, "summary": summary, "type_code": tcode}
+    return {"count": len(rows), "items": rows, "waiting": waiting, "summary": summary, "type_code": tcode}
 
 
 # ─── CRUD ──────────────────────────────────────────────────────
@@ -499,7 +534,7 @@ async def create_sample(payload: Dict[str, Any], *, entity_id: str,
         "delivered_at": "", "delivered_to": "", "delivered_to_name": "",
         "delivered_by": "", "deliver_note": "",
         "refs": [],
-        "timeline": [timeline_entry("created", "Permintaan sample dibuat (draft)", actor)],
+        "timeline": [timeline_entry("created", "Permintaan sample dibuat (draf)", actor)],
         "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
     }
     if not doc["title"]:
@@ -817,9 +852,10 @@ async def send_sample(sample_id: str, supplier_ids: List[str], *, due_date: str 
     push: Dict[str, Any] = {"rounds": {"$each": new_rounds},
                             "timeline": timeline_entry(
                                 "sent",
-                                f"Dikirim: {len(new_rounds)} round dibuka "
+                                f"Dikirim ke supplier: {len(new_rounds)} ronde dibuka "
                                 f"({len(ids)} supplier × {len(kinds)} jenis: "
-                                f"{', '.join(kinds)}) · target {due}", actor, note)}
+                                f"{', '.join(_jenis_label(k) for k in kinds)}) · target {_tgl_id(due)}",
+                                actor, note)}
     if new_parts:
         push["participants"] = {"$each": new_parts}
     await db[COLL].update_one({"id": sample_id}, {
@@ -884,7 +920,7 @@ async def open_round(sample_id: str, supplier_id: str, *, type_code: str = "",
                      over_limit_reason=reason or "")
     await db[COLL].update_one({"id": sample_id}, {
         "$push": {"rounds": row, "timeline": timeline_entry(
-            "round_opened", f"Round {next_no} ({tcode}) dibuka untuk "
+            "round_opened", f"Ronde {next_no} ({_jenis_label(tcode)}) dibuka untuk "
                             f"{snap['supplier_name']}",
             (actor or {}).get("name", ""), note or reason)},
         "$set": {"status": "in_progress", "updated_at": now_iso()}})
@@ -1003,7 +1039,7 @@ async def submit_round(sample_id: str, round_id: str, payload: Dict[str, Any],
             "rounds.$.overdue": _is_overdue(rnd.get("due_date", ""), at),
             "status": "in_progress", "updated_at": at}})
     await db[COLL].update_one({"id": sample_id}, {"$push": {"timeline": timeline_entry(
-        "round_submitted", f"Hasil round {rnd.get('round_no')} ({tcode}) "
+        "round_submitted", f"Hasil ronde {rnd.get('round_no')} ({_jenis_label(tcode)}) "
                            f"dari {rnd.get('supplier_name')} disetor — dikerjakan "
                            f"{performer['name']}, dicatat {actor or 'Sistem'}", actor, note)}})
     return await _recalc(sample_id)
@@ -1042,8 +1078,8 @@ async def assess_round(sample_id: str, round_id: str, payload: Dict[str, Any],
                   "rounds.$.qc": qc,
                   "updated_at": at}})
     await db[COLL].update_one({"id": sample_id}, {"$push": {"timeline": timeline_entry(
-        "round_assessed", f"Round {rnd.get('round_no')} ({tcode} · "
-                          f"{rnd.get('supplier_name')}) → {result}"
+        "round_assessed", f"Ronde {rnd.get('round_no')} ({_jenis_label(tcode)} · "
+                          f"{rnd.get('supplier_name')}) → {_RESULT_LABEL.get(result, result)}"
                           + (f" · skor {score:g}" if score is not None else ""),
         name, payload.get("note") or "")}})
     return await _recalc(sample_id)
@@ -1076,9 +1112,9 @@ async def finish_sample(sample_id: str, payload: Dict[str, Any],
         "$set": {"finished_at": at, "finished_by": actor, "finish_note": note,
                  "updated_at": now_iso()},
         "$push": {"timeline": timeline_entry(
-            "finished", f"Sample ditandai JADI ({str(at)[:10]})", actor, note)}})
+            "finished", f"Sampel fisik diterima ({_tgl_id(at)})", actor, note)}})
     await _log_design(cur, actor, "proofing_finished" if _is_proofing_sample(cur) else "sample_finished",
-                      f"{cur.get('number')} ditandai JADI ({str(at)[:10]})" + (f" — {note}" if note else ""),
+                      f"{cur.get('number')}: sampel fisik diterima ({_tgl_id(at)})" + (f" — {note}" if note else ""),
                       sample_status=cur.get("status"), finished_at=str(at)[:10])
     return await get_sample(sample_id)
 
@@ -1123,7 +1159,7 @@ async def deliver_sample(sample_id: str, payload: Dict[str, Any],
         "$push": {"timeline": timeline_entry(
             "delivered", f"Sample dikirim ke {label}"
                          + (f" — {to_name}" if to_name else "")
-                         + f" ({str(at)[:10]})", actor, note)}})
+                         + f" ({_tgl_id(at)})", actor, note)}})
     return await get_sample(sample_id)
 
 

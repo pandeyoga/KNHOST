@@ -16,6 +16,9 @@ import { measurementMeta, roundTypeOf, sampleTypesOf, typeLabel } from "./sample
 const fmtAt = formatDateTime;   // 23 Okt — baku WIB ("—" bila kosong)
 const fmtD = (iso) => (iso ? new Date(String(iso).length <= 10 ? `${iso}T00:00:00` : iso).toLocaleDateString("id-ID", { dateStyle: "medium" }) : "—");
 
+// UAT 24 Okt (audit UI tahap 2) — G5-46: vonis QC berlabel (dulu "QC acc" mentah).
+const QC_VERDICT_LABEL = { acc: "ACC", revisi: "revisi", tolak: "ditolak", pass: "lulus", fail: "gagal" };
+
 export default function SampleRoundList({ sample, types, measurements, canSubmit,
   canAssess, onUpload, onSubmit, onAssess, onOpenRound, busy, loading = false,
   highlightRoundId = "", onlyType = "" }) {
@@ -71,7 +74,7 @@ export default function SampleRoundList({ sample, types, measurements, canSubmit
                   </p>
                   {canOpenNext && canSubmit && (
                     <button className="secondary-button !px-2 !py-1 text-[10.5px]" disabled={busy} data-testid={`open-round-${p.supplier_id}-${tc}`} onClick={() => onOpenRound(p, tc)}>
-                      <Plus size={12} /> Buka round berikutnya
+                      <Plus size={12} /> Buka ronde berikutnya
                     </button>
                   )}
                 </div>
@@ -87,7 +90,7 @@ export default function SampleRoundList({ sample, types, measurements, canSubmit
                 )}
                 {rounds.length === 0 && (
                   <p className="mt-2 rounded-lg border border-dashed border-[#E5E5EA] px-3 py-2.5 text-[11px] text-[#6B6B73]" data-testid={`participant-no-rounds-${p.supplier_id}-${tc}`}>
-                    Belum ada round {typeLabel(tc, types)} untuk mitra ini — kirim permintaannya (tombol <b>Kirim ke supplier</b>) untuk membuka round 1.
+                    Belum ada ronde {typeLabel(tc, types)} untuk mitra ini — kirim permintaannya (tombol <b>Kirim ke supplier</b>) untuk membuka ronde 1.
                   </p>
                 )}
 
@@ -177,7 +180,7 @@ function RoundBlock({ r, sample, measurements, decided, highlight, canSubmit, ca
           <div className="text-[11.5px]" style={{ color: rm.tone }}>
             <p className="font-bold">{r.result === "acc" ? `ACC — skor ${r.score ?? "—"}` : r.result === "revisi" ? "Komentar revisi penilai" : "Ditolak — supplier tidak dilanjutkan"}</p>
             {r.assess_note && <p className="whitespace-pre-wrap text-[#3C3C43]">{r.assess_note}</p>}
-            <p className="mt-0.5 text-[10px] opacity-70">{r.assessed_by || r.qc?.by || "penilai"} · {fmtAt(r.assessed_at || r.qc?.at)}{r.qc?.verdict ? ` · QC ${r.qc.verdict}` : ""}{r.result === "revisi" ? ` → ${revisionLabel(r.round_no + 1)} dibuka` : ""}</p>
+            <p className="mt-0.5 text-[10px] opacity-70">{r.assessed_by || r.qc?.by || "penilai"} · {fmtAt(r.assessed_at || r.qc?.at)}{r.qc?.verdict ? ` · QC: ${QC_VERDICT_LABEL[r.qc.verdict] || r.qc.verdict}` : ""}{r.result === "revisi" ? ` → ${revisionLabel(r.round_no + 1)} dibuka` : ""}</p>
           </div>
         </div>
       )}

@@ -13,7 +13,7 @@ import { samplePerformers } from "./rndApi";
 
 const RESULT_OPTS = [
   { value: "acc", label: "ACC — diterima (wajib skor)" },
-  { value: "revisi", label: "Revisi — minta perbaikan (round berikutnya)" },
+  { value: "revisi", label: "Revisi — minta perbaikan (ronde berikutnya)" },
   { value: "tolak", label: "Tolak — supplier tidak dilanjutkan" },
 ];
 

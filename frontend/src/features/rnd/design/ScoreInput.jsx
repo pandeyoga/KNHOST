@@ -6,7 +6,9 @@ export default function ScoreInput({ value, onChange, disabled = false, testId =
     <div data-testid={testId} className="space-y-1">
       <div className="flex flex-wrap gap-1">
         {SCORE_STEPS.map((s) => {
-          const active = Number(value) === s;
+          // UAT 24 Okt (audit UI tahap 2) — G5-42: `Number(null) === 0` membuat "0" tampak terpilih saat dialog ACC
+          // baru dibuka (lalu galat "Beri nilai akhir…"). Kosong = tidak ada yang terpilih.
+          const active = value !== null && value !== undefined && value !== "" && Number(value) === s;
           const pass = minAcc !== undefined && s >= Number(minAcc);
           return (
             <button key={s} type="button" disabled={disabled} onClick={() => onChange(s)}

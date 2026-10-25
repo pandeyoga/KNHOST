@@ -15,6 +15,7 @@ import { Award, BarChart3, Download, FileSpreadsheet, FileText, Info, RefreshCw,
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
+import { askConfirm } from "../../services/confirmService";
 import { openConfig } from "../settings/config/configDeepLink";
 import { errMsg } from "../rnd/rndMeta";
 import DesignerKpiTable from "./DesignerKpiTable";
@@ -103,6 +104,14 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
   }
 
   async function escalateNow() {
+    // UAT 24 Okt (audit UI tahap 2) — G5-38: "Kirim peringatan sekarang" mengirim notifikasi/WA ke manajer →
+    // minta konfirmasi dulu (dulu langsung jalan).
+    const ok = await askConfirm({
+      title: "Kirim peringatan SLA sekarang?",
+      message: "Peringatan untuk ronde sample yang lewat tenggat dikirim ke manajer (dan admin bila sudah lama). Satu ronde hanya diperingatkan sekali per hari.",
+      confirmLabel: "Kirim peringatan",
+    });
+    if (!ok) return;
     setBusy(true);
     setRunInfo(null);
     try {
@@ -114,7 +123,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
           ? (created > 0
             ? `${created} peringatan terkirim — ${run?.detail || ""}`
             : `Tidak ada peringatan baru: ${run?.detail || "semua sudah dikirim hari ini"}. `
-              + "Satu round hanya diperingatkan sekali per hari.")
+              + "Satu ronde hanya diperingatkan sekali per hari.")
           : `Gagal menjalankan eskalasi: ${run?.error || "tidak diketahui"}`,
       });
       await load();
@@ -153,8 +162,11 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
             <h2 data-testid="designer-kpi-title">KPI Desainer</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <KNSelect data-testid="designer-kpi-division" value={division}
-              onValueChange={setDivision} options={divisionOpts} className="field !w-[160px]" />
+            {/* G5-38: saringan divisi hanya tampil bila ada divisi (dulu "Semua divisi" sendirian). */}
+            {divisionOpts.length > 1 && (
+              <KNSelect data-testid="designer-kpi-division" value={division}
+                onValueChange={setDivision} options={divisionOpts} className="field !w-[160px]" />
+            )}
             <KNSelect data-testid="designer-kpi-period" value={period}
               onValueChange={setPeriod} options={periodOpts} className="field !w-[170px]" />
             <button className="secondary-button" onClick={load}
@@ -250,7 +262,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
                 <button type="button" className="mt-1 text-[11.5px] font-semibold text-[#0058CC] hover:underline"
                   data-testid="designer-kpi-design-weight-link"
                   onClick={() => openConfig({ group: "rnd", key: "rnd.kpi_weight_design" })}>
-                  Ubah bobot nilai desain ({w.design ?? 0}%) →
+                  Ubah bobot nilai desain (setelan {w.design ?? 0}) →
                 </button>
               )}
               <div className="mt-1.5 flex flex-wrap gap-1.5">
