@@ -118,7 +118,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
             )}
             {/* Items */}
             <div>
-              <h4 className="text-sm font-semibold mb-2">Items</h4>
+              <h4 className="text-sm font-semibold mb-2">Barang</h4>
               <div className="space-y-2">
                 {transfer.items?.map((item, index) => (
                   <div key={index} className="flex items-center justify-between bg-[#F2F2F7] rounded-lg p-2">
@@ -146,11 +146,11 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   <h4 className="text-sm font-semibold text-[#6B219A]">Jurnal Antar-PT (sebesar biaya)</h4>
                   {je.posted ? (
                     <span className="ml-auto text-[10px] font-bold uppercase tracking-wide rounded-full bg-[#6B219A] text-white px-2 py-0.5">
-                      Posted
+                      Terposting
                     </span>
                   ) : (
                     <span className="ml-auto text-[10px] font-bold uppercase tracking-wide rounded-full bg-gray-200 text-gray-700 px-2 py-0.5">
-                      {je.reason || "Not posted"}
+                      Belum terposting
                     </span>
                   )}
                 </div>
@@ -202,12 +202,13 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                     )}
                   </div>
                 ) : (
-                  <p className="text-[11px] text-[#6B6B73]">
-                    JE tidak di-post — {je.reason === "zero_cost"
-                      ? "produk yang ditransfer belum memiliki cost (WAC=0)."
+                  // UAT 24 Okt (audit UI tahap 2) — dulu "NOT POSTED · JE tidak di-post — alasan tidak diketahui."
+                  <p className="text-[11px] text-[#6B6B73]" data-testid="je-ic-not-posted">
+                    Jurnal belum terposting — {je.reason === "zero_cost"
+                      ? "produk yang ditransfer belum memiliki HPP (rata-rata biaya = 0)."
                       : je.reason === "already_posted"
-                      ? "sudah pernah di-post untuk transfer ini."
-                      : "alasan tidak diketahui."}
+                      ? "jurnal untuk transfer ini sudah pernah diposting."
+                      : <>penyebabnya tercatat di <a href="?view=posting-failures" className="font-semibold text-[#6B219A] underline">Posting Gagal</a>.</>}
                   </p>
                 )}
               </div>
@@ -225,9 +226,9 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   {canApproveTransfer && <button
                     data-testid="approve-transfer-button"
                     onClick={() => onApprove(transfer.id, ruleReason)}
-                    className="flex items-center gap-2 bg-[#34C759] hover:bg-[#28A745] text-white rounded-full px-4 py-2 text-sm font-medium"
+                    className="primary-button flex items-center gap-2"
                   >
-                    <CheckCircle size={14} /> Setujui
+                    <CheckCircle size={14} /> {isIC ? "Setujui & pindahkan kepemilikan" : "Setujui"}
                   </button>}
                   {canRejectTransfer && <button
                     data-testid="reject-transfer-button"

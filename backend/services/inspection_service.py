@@ -519,6 +519,24 @@ async def _baseline_for(product_ids: List[str], entity_id: str, supplier_id: str
 # ═══════════════════════════════════════════════════════════════════════════════
 #  LAHIR: manual (SPK) & OTOMATIS (penerimaan PO masuk antrean QC)
 # ═══════════════════════════════════════════════════════════════════════════════
+# UAT 24 Okt (audit UI tahap 2) — bawaan setengah Inggris "Bagian Inspect" tampil di papan "Barang ditahan QC".
+DEFAULT_BAGIAN = "Bagian Inspeksi"
+LEGACY_BAGIAN = "Bagian Inspect"
+
+
+async def line_code_from_products(product_ids: List[Any]) -> str:
+    """UAT 24 Okt (audit UI tahap 2) — SPK tanpa kode lini (PO/retur lama tak menyimpan `line_code`) tidak pernah
+    tampil saat penyaring LINI Woven/Knit dipakai. Bila dokumen sumber tak menyebut lini, turunkan dari master produk
+    barisnya — hanya bila SEMUA produk berlini sama (campuran → kosong, tidak menebak)."""
+    pids = sorted({str(p) for p in product_ids if p})
+    if not pids:
+        return ""
+    codes = {line_scope.norm(p.get("line_code")) for p in await db.products.find(
+        {"id": {"$in": pids}}, {"_id": 0, "line_code": 1}).to_list(len(pids))}
+    codes.discard("")
+    return codes.pop() if len(codes) == 1 else ""
+
+
 async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
                    ref_doc_type: str = "", ref_doc_id: str = "", ref_doc_number: str = "",
                    task_id: str = "", supplier: Tuple[str, str] = ("", ""),
@@ -533,6 +551,8 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
     if kind not in KIND_LABEL:
         raise InspectionError(f"Jenis inspeksi harus salah satu: {', '.join(KIND_LABEL)}.")
     rows = list(lines or [])
+    if not line_scope.norm(line_code):
+        line_code = await line_code_from_products([r.get("product_id") for r in rows])
     baseline = await _baseline_for([r.get("product_id") for r in rows if r.get("product_id")],
                                   entity_id, supplier[0])
     now = now_iso()
@@ -551,7 +571,7 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
         "customer_id": customer[0], "customer_name": customer[1],
         "spk_date": (spk_date or "").strip() or _today(),
         "assigned_to": assigned_id, "assigned_name": assigned_name,
-        "bagian": (bagian or "").strip() or "Bagian Inspect",
+        "bagian": (bagian or "").strip() or DEFAULT_BAGIAN,
         "started_at": "", "finished_at": "",
         "status": STATUS_ASSIGNED if assigned_id else STATUS_DRAFT,
         **{"baseline_sample_id": "", "baseline_sample_number": "",
@@ -626,12 +646,27 @@ async def _officer_ok(u: Dict[str, Any], roles: set, entity_id: str) -> bool:
     return not entity_id or entity_id in await allowed_entities_for(u)
 
 
+async def dedicated_officer_roles() -> set:
+    """Peran yang kemampuan inspect-nya DISEBUT EKSPLISIT (bukan lewat wildcard `*` seperti admin)."""
+    from dependencies import permission_matrix
+    matrix = await permission_matrix()
+    return {role for role, perms in matrix.items()
+            if any(a in ((perms or {}).get(r) or []) for r, a in INSPECT_CAPABILITIES)}
+
+
 async def eligible_officers(entity_id: str) -> List[Dict[str, Any]]:
     roles = await officer_roles()
     out = []
     async for u in db.users.find({"role": {"$in": sorted(roles)}, "status": "active"}, _OFFICER_PROJ).sort("name", 1):
         if await _officer_ok(u, roles, entity_id):
             out.append(u)
+    # UAT 24 Okt (audit UI tahap 2) — pemilih petugas dulu mencampur Admin/Gudang/QC menurut abjad. Petugas yang
+    # perannya memang berkemampuan inspect (QC/MD Quality/inspeksi) didahulukan; peran wildcard (admin) di belakang.
+    # Keanggotaan daftar TIDAK berubah (FE-04); `dedicated` dipakai pemanggil untuk mengelompokkan.
+    dedicated = await dedicated_officer_roles()
+    for u in out:
+        u["dedicated"] = u.get("role") in dedicated
+    out.sort(key=lambda u: (0 if u["dedicated"] else 1, str(u.get("name") or "").lower()))
     return out
 
 
@@ -856,7 +891,8 @@ async def assign(ins_id: str, payload: Dict[str, Any],
     aid, aname, _div = await _resolve_assignee(str(payload.get("assigned_to") or ""), doc.get("entity_id") or "")
     if not aid:
         raise InspectionError("Pilih petugas inspect-nya dulu.")
-    bagian = str(payload.get("bagian") or "").strip() or doc.get("bagian") or "Bagian Inspect"
+    bagian = (str(payload.get("bagian") or "").strip()
+              or (doc.get("bagian") if doc.get("bagian") != LEGACY_BAGIAN else "") or DEFAULT_BAGIAN)
     spk = str(payload.get("spk_date") or "").strip() or doc.get("spk_date") or _today()
     status = doc.get("status")
     if status == STATUS_DRAFT:

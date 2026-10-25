@@ -7,12 +7,42 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, GitBranch, Layers3, ListOrdered, Printer, RefreshCw, Save, Scissors,
          Merge, Repeat, ShieldCheck, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatQty } from "../../../utils/formatters";
+import { formatDateTime, formatQty } from "../../../utils/formatters";
+import { entityShortFromCtx } from "../../../utils/entityLabel";
+import { rollStatusLabel } from "../../wms/inventory/inventoryConstants";
 import { reprintRollLabel, printRollLabelsBulk } from "../../../utils/rollLabels";
 import LotGenealogyTree from "./LotGenealogyTree";
 import LotRecallPanel from "./LotRecallPanel";
 import { LotSourcePill, LotStatusPill } from "./LotParts";
 import { lotApi, shortDateTime } from "./lotApi";
+
+// UAT 24 Okt (audit UI tahap 2) — dulu "Dokumen sumber: cycle_count_found" (kode mentah) bila lot tanpa nomor dokumen.
+const SOURCE_REF_LABEL = {
+  cycle_count_found: "Temuan stock opname",
+  initial: "Stok awal",
+  legacy_roll: "Roll lama (migrasi)",
+  makloon_order: "Order makloon",
+  manual: "Input manual",
+  sales_return: "Retur penjualan",
+  transfer: "Transfer gudang",
+  wms_task: "Tugas penerimaan gudang",
+  purchase_order: "Pesanan pembelian (PO)",
+  grn: "Penerimaan barang (GRN)",
+  production: "Produksi",
+};
+const sourceRefText = (ref) => {
+  const r = ref || {};
+  return r.number || SOURCE_REF_LABEL[r.type] || (r.type ? String(r.type).replace(/_/g, " ") : "—");
+};
+// Roll terikat: nomor dokumen bila ada; id teknis (so_…) hanya di tooltip.
+const BOUND_TYPE = { sales_order: "Pesanan penjualan", sample_order: "Pesanan sample", transfer: "Transfer", makloon_order: "Order makloon" };
+const boundText = (r) => {
+  const ref = (r.reserved_ref && r.reserved_ref.id) ? r.reserved_ref : (r.earmarked_for || {});
+  if (!ref.id && !ref.number) return "—";
+  return ref.number || BOUND_TYPE[ref.type] || "Terikat dokumen";
+};
+// Peringatan server menyebut nama kolom ("Nomor lot supplier (supplier_lot) belum diisi") — buang nama kolomnya.
+const cleanWarning = (w) => String(w || "").replace(/\s*\((?:supplier_lot|dye_lot|shade_ref)\)/g, "");
 
 const TABS = [
   { id: "ringkasan", label: "Ringkasan" },
@@ -23,7 +53,7 @@ const TABS = [
 
 export default function LotDetailPanel({
   lot, loading, genealogy, genealogyLoading, recall, recallLoading,
-  tab, setTab, onClose, onRefresh, onOpenLot, canEdit, labelOf,
+  tab, setTab, onClose, onRefresh, onOpenLot, canEdit, labelOf, warehouses = [],
   onSaveIdentity, onSplit, onMerge, onRework, onStatus, onLabel, savingIdentity, saveMsg,
 }) {
   const [draft, setDraft] = useState({ supplier_lot: "", dye_lot: "", shade_ref: "", note: "", internal_alias: "", reason: "" });
@@ -37,6 +67,27 @@ export default function LotDetailPanel({
     } catch (e) { const d = e.response?.data?.detail; setQueueInfo((d && (d.message || d)) || "Gagal mengantrekan."); }
     finally { setQueueBusy(false); }
   };
+
+  // UAT 24 Okt (audit UI tahap 2) — gudang/bin tampil sebagai id teknis ("wh_jakarta", "bin_sim_wh_jkt_w11_l1_01").
+  // Nama gudang dari daftar yang sudah dimuat; kode bin dari peta lokasi gudang (dimuat sekali per gudang lot ini).
+  const [binCodes, setBinCodes] = useState({});
+  const whIds = [...new Set([lot?.warehouse_id, ...(lot?.rolls || []).flatMap((r) => [r.warehouse_id, r.last_scan?.warehouse_id])]
+    .filter(Boolean))].sort().join(",");
+  useEffect(() => {
+    if (!whIds) return undefined;
+    let alive = true;
+    Promise.all(whIds.split(",").map((w) => axios.get(`${API}/warehouses/${w}/locations`)
+      .then((r) => r.data?.bins || []).catch(() => [])))
+      .then((lists) => {
+        if (!alive) return;
+        const map = {};
+        lists.flat().forEach((b) => { if (b?.bin_id) map[b.bin_id] = b.code || b.path || b.bin_id; });
+        setBinCodes(map);
+      });
+    return () => { alive = false; };
+  }, [whIds]);
+  const whName = (id) => (id ? (warehouses.find((w) => w.id === id)?.name || id) : "—");
+  const binName = (id) => (id ? (binCodes[id] || id) : "");
 
   useEffect(() => {
     setDraft({
@@ -131,16 +182,16 @@ export default function LotDetailPanel({
               <div data-testid="lot-detail-warnings" className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5">
                 {warnings.map((w) => (
                   <p key={w} className="flex items-start gap-1.5 text-[10.5px] text-amber-800">
-                    <AlertTriangle size={11} className="mt-[2px] shrink-0" /> {w}
+                    <AlertTriangle size={11} className="mt-[2px] shrink-0" /> {cleanWarning(w)}
                   </p>
                 ))}
               </div>
             )}
             <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4">
-              {[["Pemilik (entitas)", lot.owner_entity_id],
-                ["Gudang", lot.warehouse_id || "—"],
+              {[["Pemilik (badan usaha)", lot.owner_entity_name || entityShortFromCtx(lot.owner_entity_id, "—")],
+                ["Gudang", lot.warehouse_name || whName(lot.warehouse_id)],
                 ["Supplier", lot.supplier_name || "—"],
-                ["Dokumen sumber", (lot.source_ref || {}).number || (lot.source_ref || {}).type || "—"],
+                ["Dokumen sumber", sourceRefText(lot.source_ref)],
                 ["Qty awal", `${formatQty(lot.qty_initial)} ${lot.unit}`],
                 ["Sisa tersedia", `${formatQty(lot.qty_available)} ${lot.unit}`],
                 ["Roll aktif", `${lot.active_roll_count ?? 0} / ${lot.roll_count ?? 0}`],
@@ -148,7 +199,7 @@ export default function LotDetailPanel({
               ].map(([k, v]) => (
                 <div key={k} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-2 py-1.5">
                   <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">{k}</p>
-                  <p className="truncate text-[11px] font-semibold">{v}</p>
+                  <p className="truncate text-[11px] font-semibold" title={String(v)}>{v}</p>
                 </div>
               ))}
             </div>
@@ -174,7 +225,7 @@ export default function LotDetailPanel({
                   ["dye_lot", "Dye lot / batch warna", "mis. DL-RED-01"],
                   ["shade_ref", "Referensi shade", "mis. SHADE-A / Pantone 18-1663"],
                   ["note", "Catatan", "mis. hasil kiriman kedua supplier A"],
-                  ["internal_alias", "LOT KN (diisi user, KLX-01)", "mis. KN A"],
+                  ["internal_alias", "LOT KN (diisi pengguna)", "mis. KN A"],
                   ["reason", "Alasan perubahan identitas", "wajib bila lot sudah berisi roll"]].map(([k, label, ph]) => (
                   <label key={k} className="grid gap-1">
                     <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
@@ -273,17 +324,17 @@ export default function LotDetailPanel({
                   {rolls.map((r) => (
                     <tr key={r.id} data-testid={`lot-roll-${r.id}`} className="border-b border-[#F5F5F7] last:border-0">
                       <td className="px-2 py-1.5 font-semibold">{r.roll_no}</td>
-                      <td className="px-2 py-1.5"><span className="status-pill pill-muted">{r.status}</span></td>
+                      <td className="px-2 py-1.5"><span className="status-pill pill-muted">{rollStatusLabel(r.status)}</span></td>
                       <td className="px-2 py-1.5">{r.grade || "—"}</td>
                       <td className="px-2 py-1.5 text-right tabular-nums">{formatQty(r.length_initial)}</td>
                       <td className="px-2 py-1.5 text-right tabular-nums">{formatQty(r.length_remaining)} {r.unit}</td>
-                      <td className="px-2 py-1.5">{r.warehouse_id}{r.bin_id ? ` / ${r.bin_id}` : ""}</td>
+                      <td className="px-2 py-1.5">{whName(r.warehouse_id)}{r.bin_id ? ` / ${binName(r.bin_id)}` : ""}</td>
                       <td className="px-2 py-1.5">{r.dye_lot || "—"}</td>
-                      <td className="px-2 py-1.5 text-[10px] text-[#6B6B73]">
-                        {(r.reserved_ref || {}).id || (r.earmarked_for || {}).id || "—"}
+                      <td className="px-2 py-1.5 text-[10px] text-[#6B6B73]" title={(r.reserved_ref || {}).id || (r.earmarked_for || {}).id || ""}>
+                        {boundText(r)}
                       </td>
                       <td className="px-2 py-1.5 text-[10px] text-[#3C3C43]" data-testid={`lot-roll-last-scan-${r.id}`}>
-                        {r.last_scan ? `${r.last_scan.warehouse_id || ""}${r.last_scan.bin_id ? ` · bin ${r.last_scan.bin_id}` : ""} · ${new Date(r.last_scan.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : "—"}
+                        {r.last_scan ? `${r.last_scan.warehouse_id ? whName(r.last_scan.warehouse_id) : ""}${r.last_scan.bin_id ? ` · bin ${binName(r.last_scan.bin_id)}` : ""} · ${formatDateTime(r.last_scan.at)}` : "—"}
                       </td>
                       <td className="px-2 py-1.5">
                         <button type="button" className="icon-button" data-testid={`lot-roll-reprint-${r.id}`}
@@ -329,7 +380,7 @@ function LotIdentityHistory({ items }) {
         {items.slice().reverse().map((h, i) => (
           <div key={i} className="px-2.5 py-1.5 text-[10.5px]">
             <b>{FIELD_LABEL[h.field] || h.field}</b>: {h.before || "—"} → {h.after || "—"}
-            <span className="text-[#6B6B73]"> · {h.by} · {String(h.at).slice(0, 16).replace("T", " ")}{h.reason ? ` · ${h.reason}` : ""}</span>
+            <span className="text-[#6B6B73]"> · {h.by} · {formatDateTime(h.at)}{h.reason ? ` · ${h.reason}` : ""}</span>
           </div>
         ))}
       </div>

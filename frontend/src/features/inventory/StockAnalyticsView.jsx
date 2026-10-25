@@ -22,6 +22,30 @@ function fmtShort(v) {
   return `Rp ${n}`;
 }
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
+// UAT 24 Okt (audit UI tahap 2) — sumbu Y grafik umur dulu "Rp 24,0 M" sehingga patah dua baris di lebar 60px.
+// Sumbu cukup angka + skala (Rp disebut di judul panel).
+function fmtAxis(v) {
+  const n = Math.round(v || 0);
+  const d = (x) => x.toLocaleString("id-ID", { maximumFractionDigits: 1 });
+  if (n >= 1e9) return `${d(n / 1e9)} M`;
+  if (n >= 1e6) return `${d(n / 1e6)} jt`;
+  if (n >= 1e3) return `${d(n / 1e3)} rb`;
+  return `${n}`;
+}
+// UAT 24 Okt (audit UI tahap 2) — "Coverage 2.708.316,9 hr" (≈ 7.400 tahun) dulu ditulis apa adanya. Tampilan saja:
+// rumus & klasifikasi Cepat/Lambat yang memperhitungkan coverage menunggu keputusan pemilik K-05.
+function fmtCoverage(days) {
+  if (days == null) return null;
+  if (days > 3650) return "> 10 tahun";
+  if (days > 365) return "> 1 tahun";
+  return `${fmtQty(days)} hari`;
+}
+function fmtSinceSale(days) {
+  if (days == null) return null;
+  if (days <= 0) return "hari ini";
+  if (days === 1) return "kemarin";
+  return `${fmt.format(days)} hari lalu`;
+}
 
 const CLASS_META = {
   fast: { label: "Cepat Laku", color: "#34C759", icon: Flame },
@@ -160,7 +184,7 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
       {/* KPI row (klik untuk filter kelas) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KPICard testId="sa-kpi-total-value" icon={Boxes} label="Nilai Persediaan" color="#0058CC" loading={loading}
-          value={fmtShort(summary.total_on_hand_value)} sub={`${summary.sku_count ?? 0} SKU · biaya penuh (landed ${fmtShort(summary.total_landed_value || 0)})`}
+          value={fmtShort(summary.total_on_hand_value)} sub={`${summary.sku_count ?? 0} SKU · biaya penuh, termasuk biaya angkut/impor ${fmtShort(summary.total_landed_value || 0)}`}
           active={classFilter === "all"} onClick={() => setClassFilter("all")} />
         <KPICard testId="sa-kpi-fast" icon={Flame} label="Cepat Laku" color="#34C759" loading={loading}
           value={byClass.fast?.count ?? 0} sub={fmtShort(byClass.fast?.value)}
@@ -191,15 +215,15 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
             </ResponsiveContainer>
           )}
         </Panel>
-        <Panel title="Umur Persediaan (nilai per umur)" right={<span className="text-[11px] text-[#6B6B73]">hari sejak masuk gudang</span>}>
+        <Panel title="Umur Persediaan (nilai Rp per umur)" right={<span className="text-[11px] text-[#6B6B73]">hari sejak masuk gudang</span>}>
           {!hasAgingValue ? (
-            <EmptyBox icon={Clock} text="Belum ada nilai persediaan untuk di-aging." />
+            <EmptyBox icon={Clock} text="Belum ada nilai persediaan untuk dihitung umurnya." />
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={agingData} margin={{ top: 8, right: 8, left: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F2" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={fmtShort} tick={{ fontSize: 10 }} width={60} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10 }} width={52} />
                 <Tooltip formatter={(v) => fmtCur(v)} />
                 <Bar dataKey="value" fill="#0058CC" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -229,9 +253,9 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
                 <th className="py-2 pr-3 font-semibold">Gudang</th>
                 <th className="py-2 pr-3 font-semibold text-right">Stok fisik</th>
                 <th className="py-2 pr-3 font-semibold text-right">Nilai</th>
-                <th className="py-2 pr-3 font-semibold text-right">Terjual ({th.velocity_window_days ?? 90}h)</th>
+                <th className="py-2 pr-3 font-semibold text-right">Terjual ({th.velocity_window_days ?? 90} hari)</th>
                 <th className="py-2 pr-3 font-semibold text-right">Jual terakhir</th>
-                <th className="py-2 pr-3 font-semibold text-right">Coverage</th>
+                <th className="py-2 pr-3 font-semibold text-right" title="Perkiraan stok fisik cukup untuk berapa lama pada kecepatan jual rata-rata jendela ini">Cukup untuk</th>
               </tr>
             </thead>
             <tbody>
@@ -253,13 +277,16 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
                     </td>
                     <td className="py-2 pr-3 text-[11px] text-[#6B6B73]">{r.warehouses?.join(", ") || "—"}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{fmtQty(r.on_hand_qty)} {r.unit}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums font-semibold">{fmtShort(r.value)}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{fmtQty(r.sold_qty_window)}</td>
+                    {/* UAT 24 Okt (audit UI tahap 2) — satu skala Rupiah di kolom (dulu "Rp 1,4 M" bercampur "Rp 928,8 jt"). */}
+                    <td className="py-2 pr-3 text-right tabular-nums font-semibold whitespace-nowrap">{fmtCur(r.value)}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{fmtQty(r.sold_qty_window)} {r.unit}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">
-                      {r.days_since_sale == null ? <span className="text-[#8E8E93]">belum</span> : `${r.days_since_sale} hr lalu`}
+                      {r.days_since_sale == null ? <span className="text-[#8E8E93]">belum pernah</span> : fmtSinceSale(r.days_since_sale)}
                     </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
-                      {r.days_of_supply == null ? <span className="text-[#8E8E93]">∞</span> : `${fmtQty(r.days_of_supply)} hr`}
+                      {r.days_of_supply == null
+                        ? <span className="text-[#8E8E93]" title={`Tidak ada penjualan dalam ${th.velocity_window_days ?? 90} hari terakhir`}>tanpa penjualan</span>
+                        : <span title={`${fmtQty(r.days_of_supply)} hari`}>{fmtCoverage(r.days_of_supply)}</span>}
                     </td>
                   </tr>
                 ))

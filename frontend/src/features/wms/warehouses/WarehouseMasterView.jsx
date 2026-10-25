@@ -41,6 +41,7 @@ import {
 import WarehouseModeDrawer from "./WarehouseModeDrawer";
 import WarehouseProfileDrawer from "./WarehouseProfileDrawer";
 import KNSelect from "../../../components/KNSelect";
+import { askConfirm } from "../../../services/confirmService";
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 
@@ -75,6 +76,8 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("usable");
   const [showCreate, setShowCreate] = useState(false);
+  // UAT 24 Okt (audit UI tahap 2) — galat kelengkapan alamat tampil setelah simpan ditolak validasi (G0 LocationFields).
+  const [locTried, setLocTried] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [modeFor, setModeFor] = useState(null);
@@ -115,7 +118,8 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
   const shown = useMemo(() => {
     const term = q.trim().toLowerCase();
     return rows.filter((w) => {
-      if (scope === "usable" && w.usable_by_active === false) return false;
+      // UAT 24 Okt (audit UI tahap 2) — gudang NONAKTIF dulu ikut tersaring "Boleh dipakai" & terhitung di KPI.
+      if (scope === "usable" && (w.usable_by_active === false || w.active === false)) return false;
       if (!term) return true;
       return `${w.code} ${w.name} ${w.city} ${w.sharing_label}`.toLowerCase().includes(term);
     });
@@ -125,7 +129,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
     total: rows.length,
     shared: rows.filter((w) => w.sharing_mode !== "dedicated").length,
     dedicated: rows.filter((w) => w.sharing_mode === "dedicated").length,
-    usable: rows.filter((w) => w.usable_by_active !== false).length,
+    usable: rows.filter((w) => w.usable_by_active !== false && w.active !== false).length,
   }), [rows]);
 
   const submit = async () => {
@@ -134,7 +138,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
       setError("Kode dan nama gudang wajib diisi."); return;
     }
     const locErr = locationIncomplete(pickLoc(form));
-    if (locErr) { setError(`Alamat gudang: ${locErr}`); return; }
+    if (locErr) { setLocTried(true); setError(`Alamat gudang: ${locErr}`); return; }
     setSaving(true);
     try {
       const payload = {
@@ -151,7 +155,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
       setNotice(form.sharing_mode === "dedicated"
         ? `${created.name} dibuat sebagai gudang khusus ${entityShort(entities.find((e) => e.id === selectedEntity))}.`
         : `${created.name} dibuat sebagai gudang bersama.`);
-      setForm(EMPTY_FORM); setShowCreate(false);
+      setForm(EMPTY_FORM); setShowCreate(false); setLocTried(false);
       load();
     } catch (e) {
       setError(errText(e, "Gagal menyimpan gudang."));
@@ -162,6 +166,18 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
 
   const toggleActive = async (w) => {
     setError(""); setNotice("");
+    if (w.active !== false) {
+      // UAT 24 Okt (audit UI tahap 2) — nonaktifkan gudang dulu langsung tanpa konfirmasi.
+      const owners = occupancy[w.id] || [];
+      const rolls = owners.reduce((n, o) => n + (Number(o.rolls) || 0), 0);
+      const stockTxt = owners.length
+        ? ` Gudang ini masih berisi stok${rolls ? ` ${formatQty(rolls)} roll` : ""} (${owners.map((o) => o.entity_name).filter(Boolean).join(", ") || "pemilik tak tercatat"}).`
+        : "";
+      if (!(await askConfirm({
+        title: `Nonaktifkan ${w.name}?`, danger: true, confirmLabel: "Nonaktifkan",
+        message: `Gudang tidak lagi muncul di pemilih gudang (transfer, penerimaan, stok awal).${stockTxt} Bisa diaktifkan kembali kapan saja.`,
+      }))) return;
+    }
     try {
       if (w.active === false) {
         await patchWarehouse(w.id, { active: true });
@@ -306,7 +322,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                     placeholder="mis. 1000" value={form.bin_capacity}
                     onChange={(e) => setForm({ ...form, bin_capacity: e.target.value })} />
                 </label>
-                <LocationFields testId="wh-form-loc" compact value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
+                <LocationFields testId="wh-form-loc" compact showErrors={locTried} value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block">
                     <span className="field-label">Lintang (opsional)</span>
@@ -371,7 +387,8 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
               {/* min-w + kolom Aksi menempel kanan → di HP tabel digulir, tombol tetap terlihat. */}
-              <table className="w-full min-w-[980px] text-[12px]">
+              {/* UAT 24 Okt (audit UI tahap 2) — dulu min-w 980px → bergulir di 1440 & nama gudang patah 3–5 baris. */}
+              <table className="w-full min-w-[860px] text-[12px]">
                 <thead>
                   <tr className="whitespace-nowrap border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[11px] font-bold uppercase text-[#8E8E93]">
                     <th className="px-3 py-2">Gudang</th>
@@ -388,8 +405,9 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                     return (
                       <tr key={w.id} data-testid={`wh-row-${w.id}`}
                         className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#FBFCFE]">
-                        <td className="px-3 py-2">
+                        <td className="min-w-[170px] px-3 py-2">
                           <span className="font-semibold text-[#1C1C1E]">{w.name}</span>
+                          {w.active === false && <span data-testid={`wh-inactive-${w.id}`} className="ml-1 status-pill pill-muted">Nonaktif</span>}
                           <span className="block text-[11px] text-[#8E8E93]">
                             <MapPin size={10} className="inline" /> {w.code} · {siteName(w.site_id) || w.city || "—"}
                           </span>

@@ -23,6 +23,7 @@ import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
 import { askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
+import { formatDate } from "../../utils/formatters";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import InspectLineModal from "./InspectLineModal";
 import InspectSheetGrid from "./InspectSheetGrid";
@@ -41,11 +42,13 @@ const localTs = (iso) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
+// UAT 24 Okt (audit UI tahap 2) — kartu `.section-card` tanpa padding di dalam pop-up memotong huruf awal
+// ("INDAKAN", "IWAYAT") → semua kartu di panel ini memakai `section-pad`; nilai panjang dibungkus, tidak terpotong di HP.
 function Row({ label, children, testId }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1">
-      <span className="text-[11px] text-[#6B6B73]">{label}</span>
-      <span data-testid={testId} className="text-[11.5px] font-semibold text-[#1C1C1E] text-right">
+      <span className="shrink-0 text-[11px] text-[#6B6B73]">{label}</span>
+      <span data-testid={testId} className="min-w-0 break-words text-[11.5px] font-semibold text-[#1C1C1E] text-right">
         {children}
       </span>
     </div>
@@ -56,7 +59,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [assignee, setAssignee] = useState(doc.assigned_to || "");
-  const [bagian, setBagian] = useState(doc.bagian || "Bagian Inspect");
+  const [bagian, setBagian] = useState(doc.bagian && doc.bagian !== "Bagian Inspect" ? doc.bagian : "Bagian Inspeksi");
   const [decision, setDecision] = useState("");
   const [lineOpen, setLineOpen] = useState(null);
   const [linePart, setLinePart] = useState("");
@@ -219,7 +222,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
         </div>
       )}
       {mdOnly && canQc && qc4Pick !== null && (
-        <div data-testid="ins-qc4-picker" className="section-card grid gap-2">
+        <div data-testid="ins-qc4-picker" className="section-card section-pad grid gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-bold text-[#1C1C1E]">Pilih roll untuk SPK QC 4-point
               <span className="ml-1 font-normal text-[#6B6B73]">({qc4Pick.length} dari {lines.filter((ln) => ln.roll_id).length} roll)</span></p>
@@ -257,7 +260,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
 
       {/* Acuan penilaian — tanpa menyebut NAMA sample-nya, kolom “warna sesuai?”
           hanya berisi pendapat yang tidak bisa diperiksa ulang siapa pun. */}
-      <div className="section-card">
+      <div className="section-card section-pad">
         <div className="flex items-start gap-2">
           <FlaskConical size={14} className="mt-0.5 shrink-0 text-[#6B219A]" />
           <div>
@@ -274,12 +277,12 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <div className="section-card">
-          <Row label="Tanggal SPK" testId="ins-detail-spk-date">{doc.spk_date || "—"}</Row>
+        <div className="section-card section-pad">
+          <Row label="Tanggal SPK" testId="ins-detail-spk-date">{doc.spk_date ? formatDate(doc.spk_date) : "—"}</Row>
           <Row label="Petugas inspect" testId="ins-detail-officer">
             {doc.assigned_name || "Belum ditugaskan"}
           </Row>
-          <Row label="Bagian" testId="ins-detail-bagian">{doc.bagian || "—"}</Row>
+          <Row label="Bagian" testId="ins-detail-bagian">{doc.bagian === "Bagian Inspect" ? "Bagian Inspeksi" : (doc.bagian || "—")}</Row>
           <Row label="Mulai diperiksa" testId="ins-detail-started">
             {localTs(doc.started_at) || "—"}
           </Row>
@@ -287,7 +290,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
             {localTs(doc.finished_at) || "—"}
           </Row>
         </div>
-        <div className="section-card">
+        <div className="section-card section-pad">
           <Row label="Barang diperiksa" testId="ins-detail-qty">
             <QtyDual rolls={summary.rolls} measure={summary.measure} unit={summary.unit}
               testId="ins-detail-qty-dual" />
@@ -321,7 +324,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       </div>
 
       {doc.reject_reason ? (
-        <div className="section-card border-l-2 border-l-[#FF3B30]">
+        <div className="section-card section-pad border-l-2 border-l-[#FF3B30]">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
             Alasan penolakan
           </p>
@@ -332,7 +335,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       ) : null}
 
       {/* ── BARIS PEMERIKSAAN ── */}
-      <div className="section-card">
+      <div className="section-card section-pad">
         <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
           Barang yang diperiksa
         </p>
@@ -392,7 +395,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                     {ln.grade_after
                       ? <span data-testid={`ins-line-grade-${ln.id}`}>
                           {ln.grade_before || "—"} &rarr; <strong>{ln.grade_after}</strong>
-                          {ln.grade_rule?.status === "candidate_unvalidated" && <span data-testid={`ins-line-grade-candidate-${ln.id}`} title="Hasil lama sebelum KLX-02 diputuskan" className="ml-1 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">kandidat</span>}
+                          {ln.grade_rule?.status === "candidate_unvalidated" && <span data-testid={`ins-line-grade-candidate-${ln.id}`} title="Hasil lama sebelum aturan grade diputuskan" className="ml-1 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">kandidat</span>}
                           {ln.grade_rule?.grade_source && <span data-testid={`ins-line-grade-source-${ln.id}`} className="ml-1 rounded-full bg-[#EEF4FF] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#0058CC]">{ln.grade_rule.grade_source === "user" ? "diisi QC" : "saran sistem"}</span>}
                         </span>
                       // 23 Okt — sebelum QC tampil jelas "belum QC" (dulu grade lama roll tampil seolah hasil periksa).
@@ -473,7 +476,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       </div>
 
       {/* ── AKSI ── */}
-      <div className="section-card grid gap-2">
+      <div className="section-card section-pad grid gap-2">
         <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">Tindakan</p>
 
         {canAssign && open && (
@@ -487,7 +490,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
             <label className="block">
               <span className="field-label">Bagian</span>
               <input data-testid="ins-assign-bagian" className="field" value={bagian}
-                onChange={(e) => setBagian(e.target.value)} placeholder="Bagian Inspect" />
+                onChange={(e) => setBagian(e.target.value)} placeholder="mis. Bagian Inspeksi" />
             </label>
             <button data-testid="ins-assign-button" className="primary-button"
               disabled={busy || !assignee}
@@ -504,8 +507,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           </p>
         )}
         <div className="flex flex-wrap items-end gap-2">
+          {/* UAT 24 Okt (audit UI tahap 2) — dulu aktif pada SPK draf tanpa petugas lalu ditolak server. */}
           {canInspect && ["draft", "assigned"].includes(doc.status) && (
-            <button data-testid="ins-start-button" className="secondary-button" disabled={busy}
+            <button data-testid="ins-start-button" className="secondary-button" disabled={busy || !doc.assigned_to}
+              title={!doc.assigned_to ? "Tugaskan petugas inspect dulu" : undefined}
               onClick={() => run(() => startInspection(doc.id), "Pemeriksaan dimulai.")}>
               <Play size={13} /> Mulai periksa
             </button>
@@ -570,20 +575,29 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
             </button>
           )}
 
+        </div>
+
+        {/* Cetak / tanda tangan lewat PLATFORM DOKUMEN (G-4) — bukan mesin PDF sendiri.
+            UAT 24 Okt (audit UI tahap 2): SPK draf (belum ada petugas) belum bisa dicetak/ditandatangani/dikirim. */}
+        <div className="border-t border-[#EFF0F2] pt-2">
+          {doc.status === "draft" ? (
+            <p data-testid="ins-doc-actions-draft" className="text-[11px] text-[#8E8E93]">
+              Cetak, tanda tangan, dan kirim SPK tersedia setelah petugas ditugaskan.
+            </p>
+          ) : (
+            <DocumentActionsBar docType="inspection_spk" sourceId={doc.id}
+              entityId={doc.entity_id} number={doc.number} currentUser={currentUser} />
+          )}
+        </div>
+        <div className="flex justify-end border-t border-[#EFF0F2] pt-2">
           <button data-testid="ins-detail-close" className="secondary-button" onClick={onClose}>
             Tutup
           </button>
         </div>
-
-        {/* Cetak / tanda tangan lewat PLATFORM DOKUMEN (G-4) — bukan mesin PDF sendiri */}
-        <div className="border-t border-[#EFF0F2] pt-2">
-          <DocumentActionsBar docType="inspection_spk" sourceId={doc.id}
-            entityId={doc.entity_id} number={doc.number} currentUser={currentUser} />
-        </div>
       </div>
 
       {/* ── RIWAYAT ── */}
-      <div className="section-card">
+      <div className="section-card section-pad">
         <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">Riwayat</p>
         <div data-testid="ins-detail-history" className="mt-1 grid gap-1">
           {(doc.history || []).slice().reverse().map((h, i) => (

@@ -51,7 +51,7 @@ export default function GrnDetail({ grnId, user, onBack }) {
           <button onClick={onBack} data-testid="grn-detail-back" aria-label="Kembali"><ArrowLeft size={16} /></button>
           <div>
             <p className="font-mono text-[15px] font-bold" data-testid="grn-detail-number">{grn.number}</p>
-            <p className="text-[11px] text-[#6B6B73]">{grn.partner_name} · SJ <span className="font-mono">{grn.dn?.number || "-"}</span></p>
+            <p className="text-[11px] text-[#6B6B73]">{grn.partner_name}{grn.dn?.number ? <> · SJ <span className="font-mono">{grn.dn.number}</span></> : " · nomor SJ belum diisi"}</p>
           </div>
           <GrnStatusBadge status={grn.status} testId="grn-detail-status" />
           <AskKnButton type="goods_receipt" id={grn.id} label={grn.number} />

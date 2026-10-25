@@ -238,11 +238,14 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               <div className="h-36 bg-[#F5F5F7] rounded animate-pulse" />
             ) : utilizationData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={140}>
+                {/* UAT 24 Okt (audit UI tahap 2) — 17 nama gudang di sumbu X dulu saling menimpa; kini miring & dipendekkan
+                    (nama lengkap ada di tooltip dan daftar di bawah grafik). */}
+                <ResponsiveContainer width="100%" height={190}>
                   <BarChart data={utilizationData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0}
-                      tickFormatter={(v) => (String(v).length > 12 ? `${String(v).slice(0, 11)}…` : v)} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={utilizationData.length > 8 ? "preserveStartEnd" : 0}
+                      angle={-35} textAnchor="end" height={56}
+                      tickFormatter={(v) => (String(v).length > 10 ? `${String(v).slice(0, 9)}…` : v)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtCompact} width={48} />
                     <Tooltip formatter={(val, name) => [fmt.format(val), name === "on_hand" ? "Stok fisik" : "Kapasitas"]} />
                     <Bar dataKey="capacity" fill="#EFF0F2" name="capacity" radius={[4, 4, 0, 0]} />
@@ -329,19 +332,21 @@ export default function ManagerDashboard({ token, selectedEntity }) {
                   <div key={`${item.product_id}-${item.warehouse_id}-${item.lot || item.owner_entity_id || idx}`}
                     className="grid grid-cols-[1fr_80px_60px_80px_80px] gap-2 text-[11px] py-1.5 border-b border-[#F5F5F7] last:border-0">
                     <div className="min-w-0">
-                      <p className="font-semibold truncate">{item.product_name}</p>
-                      <p className="text-[10px] text-[#8E8E93]">{item.sku}</p>
+                      {/* UAT 24 Okt (audit UI tahap 2) — saldo tanpa master produk dulu "Unknown · Rp 0". */}
+                      <p className={`truncate ${item.product_missing ? "italic text-[#8E8E93]" : "font-semibold"}`}
+                        title={item.product_missing ? "Saldo stok tanpa data master produk — perlu dibereskan" : item.product_name}>{item.product_name}</p>
+                      <p className="text-[10px] text-[#8E8E93]">{item.sku || "—"}</p>
                     </div>
-                    <span className="text-[#6B6B73] truncate">{item.warehouse_city}</span>
+                    <span className="text-[#6B6B73] truncate" title={[item.warehouse_name, item.warehouse_city].filter(Boolean).join(" · ")}>{item.warehouse_name || item.warehouse_city || "—"}</span>
                     <span className="font-semibold">{fmt.format(item.on_hand_qty)}</span>
                     <span className={`font-bold ${
                       (item.days_since_movement === null || item.days_since_movement > 60) ? "text-red-600"
                         : item.days_since_movement > 30 ? "text-orange-500"
                         : "text-[#1C1C1E]"
                     }`}>
-                      {item.days_since_movement === null ? "Baru" : `${item.days_since_movement} hari`}
+                      {item.days_since_movement === null ? "tanpa mutasi" : `${item.days_since_movement} hari`}
                     </span>
-                    <span className="text-[#3C3C43]">{fmtCur(item.estimated_value || 0)}</span>
+                    <span className="text-[#3C3C43]">{item.product_missing ? "—" : fmtCur(item.estimated_value || 0)}</span>
                   </div>
                 ))}
               </div>

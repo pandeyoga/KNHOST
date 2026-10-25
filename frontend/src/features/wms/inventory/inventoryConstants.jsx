@@ -3,6 +3,7 @@
  * helpers used across the Inventory (WMS Stock tab) sub-components.
  */
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { docStatusLabel } from "../../../utils/docStatus";
 
 export const formatQty = (v) => {
   if (v === undefined || v === null) return "0";
@@ -149,10 +150,19 @@ export const ROLL_STATUS_META = {
   in_transit_transfer:      { label: "Dalam Perjalanan (Transfer)", cls: "bg-cyan-100 text-cyan-700" },
   in_transit_intercompany:  { label: "Dalam Perjalanan (Antar-PT)", cls: "bg-teal-100 text-teal-700" },
   in_transit_sales:         { label: "Dalam Perjalanan (Penjualan)",    cls: "bg-cyan-100 text-cyan-700" },
+  // UAT 24 Okt (audit UI tahap 2) — status roll yang ada di data tetapi dulu tampil mentah ("consumed", "subcon").
+  consumed:                 { label: "Habis Terpakai", cls: "bg-gray-200 text-gray-600" },
+  delivered:                { label: "Terkirim",       cls: "bg-gray-200 text-gray-600" },
+  returned_supplier:        { label: "Diretur ke Supplier", cls: "bg-gray-200 text-gray-600" },
+  subcon:                   { label: "Di Makloon",     cls: "bg-violet-100 text-violet-700" },
+  hold:                     { label: "Ditahan",        cls: "bg-amber-100 text-amber-800" },
 };
 
+/** Label status roll (Indonesia); kode tak dikenal dirapikan lewat docStatusLabel, bukan tampil mentah. */
+export const rollStatusLabel = (status) => ROLL_STATUS_META[status]?.label || docStatusLabel(status) || "—";
+
 export const RollStatusBadge = ({ status }) => {
-  const m = ROLL_STATUS_META[status] || { label: status, cls: "bg-gray-100 text-gray-600" };
+  const m = ROLL_STATUS_META[status] || { label: rollStatusLabel(status), cls: "bg-gray-100 text-gray-600" };
   return (
     <span data-testid={`roll-status-${status}`} className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${m.cls}`}>
       {m.label}

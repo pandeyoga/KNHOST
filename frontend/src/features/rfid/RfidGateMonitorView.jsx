@@ -99,6 +99,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
       setDevices(gates); setTags(t.data.tags || []); setSummary(s.data);
       setReads(r.data.reads || []);
       if (gates.length && !gates.find((g) => g.id === gateId)) setGateId(gates[0].id);
+      if (!gates.length) { setGateId(""); setLive(false); }   // gudang tanpa gerbang: jangan tinggalkan gerbang gudang lain
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat gate monitor"); }
     finally { setLoading(false); }
   };
@@ -117,6 +118,8 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const gateOpts = devices.map((d) => ({ value: d.id, label: `${d.code} · ${d.direction === "in" ? "MASUK" : "KELUAR"} · ${d.warehouse_name || ""}` }));
   const rollOpts = tags.map((t) => ({ value: t.roll_id, label: `${t.roll_no} · ${t.sku || "—"} · ${t.epc}` }));
   const gate = devices.find((d) => d.id === gateId);
+  const noGate = devices.length === 0;
+  const NO_GATE_REASON = "Belum ada gerbang di gudang ini — daftarkan di Pengaturan › Perangkat RFID.";
   const gateStatus = useGateStatus(gateId, live || kiosk);
 
   return (
@@ -140,14 +143,17 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
             sirenMuted ? "border border-[#EFF0F2] bg-white text-[#6B6B73] hover:bg-[#F5F5F7]" : "border border-[#BDE5CC] bg-[#E6F6EC] text-[#1B7F4B]"}`}>
           {sirenMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} Sirene {sirenMuted ? "mati" : "nyala"}
         </button>
-        <button data-testid="rfid-gate-live" onClick={() => setLive((v) => !v)}
-          className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
+        {/* UAT 24 Okt (audit UI tahap 2) — tanpa gerbang, Pantau langsung & Layar penuh dulu menyala dan menampilkan
+            alarm "TIDAK TERHUBUNG — TAHAN". Kini nonaktif dengan alasan. */}
+        <button data-testid="rfid-gate-live" onClick={() => setLive((v) => !v)} disabled={!loading && noGate}
+          title={!loading && noGate ? NO_GATE_REASON : undefined}
+          className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40 ${
             live ? "bg-[#C0341D] text-white" : "border border-[#EFF0F2] bg-white hover:bg-[#F5F5F7]"}`}>
           <Radio size={14} className={live ? "animate-pulse" : ""} /> {live ? "LANGSUNG ●" : "Pantau langsung"}
         </button>
-        <button data-testid="rfid-gate-kiosk-btn" onClick={openKiosk}
-          title="Layar penuh untuk dipasang dekat gerbang — MERAH berkedip bersama sirene"
-          className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
+        <button data-testid="rfid-gate-kiosk-btn" onClick={openKiosk} disabled={!loading && noGate}
+          title={!loading && noGate ? NO_GATE_REASON : "Layar penuh untuk dipasang dekat gerbang — MERAH berkedip bersama sirene"}
+          className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7] disabled:opacity-40">
           <Maximize2 size={14} /> Layar penuh
         </button>
         <button data-testid="rfid-gate-refresh" onClick={load}
@@ -168,7 +174,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
       ) : (
       <>
       {live && (gateId ? <GateLiveVerdict gate={gate} status={gateStatus} />
-        : <p className="rounded-2xl bg-[#F5F5F7] p-6 text-center text-[14px] font-semibold text-[#6B6B73]">Pilih gate untuk melihat verdict live.</p>)}
+        : <p className="rounded-2xl bg-[#F5F5F7] p-6 text-center text-[14px] font-semibold text-[#6B6B73]">{noGate ? NO_GATE_REASON : "Pilih gerbang di Simulasi Pembacaan untuk melihat hasil langsung."}</p>)}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={ArrowLeftRight} label="Gerbang Aktif" value={devices.filter((d) => d.status === "online").length} color="#0058CC" loading={loading} />

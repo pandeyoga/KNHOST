@@ -295,7 +295,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
   };
 
   const FILTERS = ["all", "waiting_goods", "receiving", "qc_check", "escalated"];
-  const FILTER_LABELS = { all: "Semua", waiting_goods: "Waiting", receiving: "Receiving", qc_check: "QC", escalated: "Escalated" };
+  const FILTER_LABELS = { all: "Semua", waiting_goods: "Menunggu barang", receiving: "Sedang diterima", qc_check: "Cek QC", escalated: "Dieskalasi" };
 
   return (
     <div data-testid="inbound-scan-panel" className="flex flex-col gap-3">

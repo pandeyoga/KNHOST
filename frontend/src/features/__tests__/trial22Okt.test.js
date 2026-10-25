@@ -96,7 +96,8 @@ test("D2: hitung GRN — pilihan satuan SJ/PO vs stok, satuan terpilih dikirim, 
   const root = await mount(<GrnCountPanel grn={grn({ unit: "meter", base_unit: "yard" })} onChange={() => {}} canCount />);
   expect(q("grn-count-unit-1")).not.toBeNull();
   expect(q("grn-count-length-1").placeholder).toBe("Panjang (meter)");
-  expect(q("grn-count-roll-r1").textContent).toMatch(/109\.36 yard \(= 100 meter\)/);
+  // UAT 24 Okt (audit UI tahap 2) — satuan utama = satuan SJ/PO, satuan stok dalam kurung (angka id-ID).
+  expect(q("grn-count-roll-r1").textContent).toMatch(/100 meter \(stok 109,36 yard\)/);
   const input = q("grn-count-length-1");
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, "100");

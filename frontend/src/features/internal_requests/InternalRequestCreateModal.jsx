@@ -161,7 +161,9 @@ export default function InternalRequestCreateModal({
 
           {lines.length > 0 && (
             <div className="rounded-lg border border-[#EFF0F2] overflow-hidden" data-testid="pin-lines">
-              <div className="grid grid-cols-[1.6fr_110px_1fr_36px] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+              {/* UAT 24 Okt (audit UI tahap 2) — di HP grid 4 kolom memotong nama & SKU; < 640px baris jadi dua tingkat
+                  (nama penuh di atas; jumlah + satuan · catatan · hapus di bawah), kepala kolom disembunyikan. */}
+              <div className="hidden grid-cols-[1.6fr_130px_1fr_36px] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73] sm:grid">
                 <span>Barang</span><span className="text-right">Jumlah *</span><span>Catatan</span><span />
               </div>
               {lines.map((l, i) => {
@@ -171,9 +173,9 @@ export default function InternalRequestCreateModal({
                 const tooMuch = other !== null && Number(l.quantity) > Number(other);
                 return (
                   <div key={l.product_id} data-testid={`pin-line-${l.product_id}`}
-                       className="grid grid-cols-[1.6fr_110px_1fr_36px] items-center gap-1 border-t border-[#F4F5F7] px-2.5 py-2">
-                    <div className="min-w-0">
-                      <p className="text-[11.5px] font-semibold truncate">{p.name || l.product_id}</p>
+                       className="grid grid-cols-[1fr_1fr_36px] items-center gap-1 border-t border-[#F4F5F7] px-2.5 py-2 sm:grid-cols-[1.6fr_130px_1fr_36px]">
+                    <div className="col-span-3 min-w-0 sm:col-span-1">
+                      <p className="text-[11.5px] font-semibold break-words sm:truncate">{p.name || l.product_id}</p>
                       <p className="text-[10px] text-[#8E8E93]">
                         {p.sku}{a ? ` · tersedia di badan usaha lain: ${formatQty(other)} ${p.base_unit || ""}` : ""}
                       </p>
@@ -184,11 +186,14 @@ export default function InternalRequestCreateModal({
                         </p>
                       )}
                     </div>
-                    <input data-testid={`pin-qty-${l.product_id}`} type="number" min="0" step="0.01"
-                      className="field text-right" value={l.quantity}
-                      onChange={(e) => setLines(lines.map((x, ix) => ix === i ? { ...x, quantity: e.target.value } : x))} />
-                    <input data-testid={`pin-note-${l.product_id}`} className="field" value={l.notes}
-                      placeholder="opsional…"
+                    <div className="relative">
+                      <input data-testid={`pin-qty-${l.product_id}`} type="number" min="0" step="0.01" aria-label="Jumlah"
+                        className={`field text-right ${p.base_unit ? "pr-12" : ""}`} value={l.quantity}
+                        onChange={(e) => setLines(lines.map((x, ix) => ix === i ? { ...x, quantity: e.target.value } : x))} />
+                      {p.base_unit && <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10.5px] font-semibold text-[#8E8E93]">{p.base_unit}</span>}
+                    </div>
+                    <input data-testid={`pin-note-${l.product_id}`} className="field" value={l.notes} aria-label="Catatan"
+                      placeholder="Catatan"
                       onChange={(e) => setLines(lines.map((x, ix) => ix === i ? { ...x, notes: e.target.value } : x))} />
                     <button className="icon-button text-red-500" aria-label="Hapus baris"
                       data-testid={`pin-del-${l.product_id}`}

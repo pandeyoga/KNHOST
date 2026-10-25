@@ -190,7 +190,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
             </div>
             <p data-testid="ins-points-preview" className="mt-1 text-[11px] text-[#6B6B73]">
               Total poin: <strong className="tabular-nums">{previewPoints}</strong>{" "}
-              — kode cacat, poin & grade diisi petugas (KLX-02).{gradeAuto ? " Bila grade dikosongkan, sistem memakai saran dari total poin." : " Grade ditentukan petugas dari total poin — sistem tidak mengisi otomatis."}
+              — kode cacat, poin & grade diisi petugas.{gradeAuto ? " Bila grade dikosongkan, sistem memakai saran dari total poin." : " Grade ditentukan petugas dari total poin — sistem tidak mengisi otomatis."}
             </p>
             <div className="mt-2 flex items-center gap-2 text-[12px]">Grade hasil QC
               <div className="w-48"><KNSelect data-testid="ins-grade-input" className="field" value={form.grade} onValueChange={(v) => set({ grade: v })}

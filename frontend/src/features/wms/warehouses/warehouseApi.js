@@ -6,6 +6,7 @@
  * sendiri, satu perubahan kontrak harus dikejar ke banyak berkas.
  */
 import axios, { API } from "../../../services/apiClient";
+import { permissionDeniedText } from "../../../utils/apiError";
 
 /** Semua gudang beserta lencana modenya (untuk layar MASTER, termasuk yang tak boleh dipakai). */
 export const listAllWarehouses = () =>
@@ -56,7 +57,8 @@ export const WH_ROLES = [
 /** Pesan galat yang layak dibaca (jangan pernah menampilkan "[object Object]"). */
 export const errText = (e, fallback = "Terjadi kesalahan.") => {
   const d = e?.response?.data?.detail;
-  if (typeof d === "string" && d.trim()) return d;
+  // UAT 24 Okt (audit UI tahap 2) — "Permission ditolak: …" (kode izin) → kalimat akses (G0-03).
+  if (typeof d === "string" && d.trim()) return permissionDeniedText(d) || d;
   if (Array.isArray(d) && d.length) return d.map((x) => x?.msg || "").join(" ") || fallback;
   return e?.message || fallback;
 };

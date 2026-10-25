@@ -21,7 +21,10 @@ def test_kpi_stok_dirinci_per_satuan_dan_konsisten_dengan_total():
     m = d["metrics"]
     by = m.get("available_by_unit")
     assert isinstance(by, dict) and by, m                                  # dulu: tidak ada rincian
-    assert set(by) <= {"yard", "kg", "meter", "tanpa satuan", "pcs"}, by
+    # UAT 24 Okt (audit UI tahap 2) — kelompok "tanpa satuan" kini berlabel jujur (lihat routers/dashboard._units_for_products).
+    assert set(by) <= {"yard", "kg", "meter", "pcs", "(satuan belum diisi)", "(produk tak terdaftar)"}, by
+    assert "tanpa satuan" not in by, by
+    assert isinstance(m.get("unitless_product_ids"), list), m
     # Σ per satuan = angka total lama (yang kini hanya dipakai sebagai cadangan) — tidak ada yang hilang/terhitung dua kali
     assert abs(sum(by.values()) - m["available_qty"]) < 0.05 * max(1.0, m["available_qty"]), (by, m["available_qty"])
     units = {p["base_unit"] for p in DB.products.find({"base_unit": {"$in": ["yard", "kg"]}}, {"_id": 0, "base_unit": 1})}

@@ -8,6 +8,7 @@ import { Printer, X } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import { formatQty } from "../../../utils/formatters";
 import { errText, lotApi } from "./lotApi";
+import { rollStatusLabel } from "../../wms/inventory/inventoryConstants";
 
 function Shell({ title, subtitle, onClose, children, actions, testId, error, onDismissError }) {
   return (
@@ -76,7 +77,7 @@ export function SplitLotModal({ lot, rolls, onClose, onDone }) {
               <input type="checkbox" checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
               <span className="font-semibold">{r.roll_no}</span>
               <span className="text-[#6B6B73]">{formatQty(r.length_remaining)} {r.unit}</span>
-              <span className="status-pill pill-muted">{r.status}</span>
+              <span className="status-pill pill-muted">{rollStatusLabel(r.status)}</span>
               {r.dye_lot && <span className="text-[#8E8E93]">dye {r.dye_lot}</span>}
               <span className="ml-auto text-[#8E8E93]">grade {r.grade || "—"}</span>
             </label>
@@ -84,12 +85,12 @@ export function SplitLotModal({ lot, rolls, onClose, onDone }) {
         </div>
       </div>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Dye lot baru (opsional)</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Dye lot baru (opsional)</span>
         <input data-testid="lot-split-dyelot" className="field" value={dyeLot}
           placeholder="mis. DL-RED-B" onChange={(e) => setDyeLot(e.target.value)} />
       </label>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Alasan split</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Alasan split</span>
         <input data-testid="lot-split-reason" className="field" value={reason}
           placeholder="mis. shade berbeda hasil inspeksi" onChange={(e) => setReason(e.target.value)} />
       </label>
@@ -157,7 +158,7 @@ export function MergeLotModal({ lot, onClose, onDone }) {
         </div>
       </div>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Alasan merge</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Alasan merge</span>
         <input data-testid="lot-merge-reason" className="field" value={reason}
           placeholder="mis. sisa beberapa batch disatukan untuk 1 pesanan besar"
           onChange={(e) => setReason(e.target.value)} />
@@ -205,20 +206,20 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
       )}>
       <div className="grid gap-2 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Jenis proses *</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Jenis proses *</span>
           <KNSelect data-testid="lot-rework-process" className="field" value={processType}
             placeholder="Pilih proses" options={processOptions}
             onValueChange={setProcessType} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Tahap tujuan (opsional)</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Tahap tujuan (opsional)</span>
           <KNSelect data-testid="lot-rework-stage" className="field" value={toStage}
             placeholder="Tetap di tahap sekarang"
             options={[{ value: "", label: "Tetap di tahap sekarang" }, ...stageOptions]}
             onValueChange={setToStage} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Mitra pelaksana (opsional)</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Mitra pelaksana (opsional)</span>
           <KNSelect data-testid="lot-rework-partner" className="field" value={partnerId} searchable
             placeholder="Internal / pilih mitra makloon"
             options={[{ value: "", label: "Internal (tanpa mitra)" },
@@ -226,7 +227,7 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
             onValueChange={setPartnerId} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Alasan / catatan</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Alasan / catatan</span>
           <input data-testid="lot-rework-reason" className="field" value={reason}
             placeholder="mis. celup ulang karena shade tidak lolos"
             onChange={(e) => setReason(e.target.value)} />
@@ -243,7 +244,7 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
               <input type="checkbox" checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
               <span className="font-semibold">{r.roll_no}</span>
               <span className="text-[#6B6B73]">{formatQty(r.length_remaining)} {r.unit}</span>
-              <span className="ml-auto status-pill pill-muted">{r.status}</span>
+              <span className="ml-auto status-pill pill-muted">{rollStatusLabel(r.status)}</span>
             </label>
           ))}
         </div>
@@ -262,8 +263,9 @@ export function LotStatusModal({ lot, statusOptions, onClose, onDone }) {
   async function submit() {
     setBusy(true); setErr("");
     try {
-      const out = await lotApi.setStatus(lot.id, { status, reason });
-      onDone(`Status lot ${out.lot_number} → ${out.lot_status}.`, out.id);
+      const out = await lotApi.setStatus(lot.id, { status, reason: reason.trim() });
+      const lbl = (statusOptions || []).find((o) => o.value === out.lot_status)?.label || out.lot_status;
+      onDone(`Status lot ${out.lot_number} → ${lbl}.`, out.id);
     } catch (e) { setErr(errText(e, "Gagal mengubah status lot.")); } finally { setBusy(false); }
   }
 
@@ -274,17 +276,20 @@ export function LotStatusModal({ lot, statusOptions, onClose, onDone }) {
       actions={(
         <>
           <button className="btn-secondary" onClick={onClose}>Batal</button>
+          {/* UAT 24 Okt (audit UI tahap 2) — dulu aktif walau status sama & alasan kosong. */}
           <button data-testid="lot-status-submit" className="primary-button"
-            disabled={busy || !status} onClick={submit}>{busy ? "Menyimpan…" : "Simpan Status"}</button>
+            disabled={busy || !status || status === lot.lot_status || !reason.trim()} onClick={submit}
+            title={status === lot.lot_status ? "Pilih status yang berbeda dari status sekarang" : !reason.trim() ? "Isi alasan perubahan" : undefined}>
+            {busy ? "Menyimpan…" : "Simpan Status"}</button>
         </>
       )}>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Status baru</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Status baru *</span>
         <KNSelect data-testid="lot-status-select" className="field" value={status}
           options={statusOptions} onValueChange={setStatus} />
       </label>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Alasan</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Alasan *</span>
         <input data-testid="lot-status-reason" className="field" value={reason}
           placeholder="mis. lolos inspeksi 4-point" onChange={(e) => setReason(e.target.value)} />
       </label>
@@ -325,42 +330,42 @@ export function CreateLotModal({ products = [], warehouses = [], sourceOptions, 
       )}>
       <div className="grid gap-2 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Produk *</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Produk *</span>
           <KNSelect data-testid="lot-create-product" className="field" searchable
             value={form.product_id} placeholder="Pilih produk"
             options={products.slice(0, 400).map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))}
             onValueChange={(v) => set("product_id", v)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Gudang</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Gudang</span>
           <KNSelect data-testid="lot-create-warehouse" className="field" value={form.warehouse_id}
             placeholder="Pilih gudang"
             options={warehouses.map((w) => ({ value: w.id, label: w.name || w.id }))}
             onValueChange={(v) => set("warehouse_id", v)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Nomor lot supplier</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Nomor lot supplier</span>
           <input data-testid="lot-create-supplier-lot" className="field" value={form.supplier_lot}
             placeholder="mis. SUP-2024-118" onChange={(e) => set("supplier_lot", e.target.value)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Dye lot / shade</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Dye lot / shade</span>
           <input data-testid="lot-create-dye-lot" className="field" value={form.dye_lot}
             placeholder="mis. DL-RED-01" onChange={(e) => set("dye_lot", e.target.value)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Sumber</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Sumber</span>
           <KNSelect data-testid="lot-create-source" className="field" value={form.source}
             options={sourceOptions} onValueChange={(v) => set("source", v)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Status mutu</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Status mutu</span>
           <KNSelect data-testid="lot-create-status" className="field" value={form.lot_status}
             options={statusOptions} onValueChange={(v) => set("lot_status", v)} />
         </label>
       </div>
       <label className="grid gap-1">
-        <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Catatan</span>
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Catatan</span>
         <input data-testid="lot-create-note" className="field" value={form.note}
           placeholder="mis. stok awal opname gudang Bandung"
           onChange={(e) => set("note", e.target.value)} />
@@ -408,19 +413,19 @@ export function LotLabelModal({ lot, rolls = [], onClose }) {
       )}>
       <div className="grid gap-2 md:grid-cols-3">
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Format printer</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Format printer</span>
           <KNSelect data-testid="lot-label-format" className="field" value={format}
             options={[{ value: "zpl", label: "ZPL (Zebra label)" },
                       { value: "escpos", label: "ESC-POS (printer struk)" }]}
             onValueChange={setFormat} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Jumlah label</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Jumlah label</span>
           <input data-testid="lot-label-qty" className="field" type="number" min={1} max={50}
             value={qty} onChange={(e) => setQty(e.target.value)} />
         </label>
         <label className="grid gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Untuk roll (opsional)</span>
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Untuk roll (opsional)</span>
           <KNSelect data-testid="lot-label-roll" className="field" value={rollId}
             placeholder="Label lot (semua roll)"
             options={[{ value: "", label: "Label lot (semua roll)" },

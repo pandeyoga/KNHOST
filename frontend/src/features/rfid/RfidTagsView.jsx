@@ -7,16 +7,20 @@ import axios, { API } from "../../services/apiClient";
 import { nf, q, fmtTime, Stat, EmptyBox, TabBtn, SectionCard, RfidHeader, useWarehouses } from "./rfidShared";
 import RfidPrintVerifyPanel from "./RfidPrintVerifyPanel";
 import { reprintRollLabel } from "../../utils/rollLabels";
+import { askConfirm } from "../../services/confirmService";
+import { docStatusLabel } from "../../utils/docStatus";
 
 import PagedRows from "@/components/PagedRows";
 
 export default function RfidTagsView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("tags");
-  const { whId, setWhId, whOpts } = useWarehouses();
+  const { whId, setWhId, whOpts, warehouses } = useWarehouses();
   const [summary, setSummary] = useState(null);
   const [tags, setTags] = useState([]);
   const srch = useListSearch(tags, null, { testId: "rfid-tags", placeholder: "Cari EPC / SKU / produk / roll…" });
   const [untagged, setUntagged] = useState([]);
+  // UAT 24 Okt (audit UI tahap 2) — tab Belum Ber-tag dulu merender 500 kartu sekaligus tanpa cari/paginasi.
+  const srchU = useListSearch(untagged, ["roll_no", "sku", "product_name", "lot"], { testId: "rfid-untagged", placeholder: "Cari roll / SKU / produk / lot…" });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -55,20 +59,36 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
     try { await axios.post(`${API}/rfid/tags/encode`, { roll_id: rollId }); flash("Tag RFID ter-encode."); await load(); }
     catch (e) { setError(e.response?.data?.detail || "Gagal encode tag"); } finally { setBusy(false); }
   };
+  // UAT 24 Okt (audit UI tahap 2) — Auto-Encode & Pensiunkan dulu langsung POST/DELETE sekali klik (aksi massal
+  // tak bisa dibatalkan). Server meng-encode paling banyak 200 roll per klik (rfid_service.auto_encode cap=200).
+  const whName = whId ? (warehouses.find((w) => w.id === whId)?.name || "gudang terpilih") : "semua gudang";
   const autoEncode = async () => {
+    const total = Math.max(summary?.untagged_rolls ?? 0, untagged.length);
+    const n = Math.min(total, 200);
+    const totalTxt = total >= 5000 ? "5.000+" : total.toLocaleString("id-ID");
+    if (!(await askConfirm({
+      title: `Encode otomatis ${n.toLocaleString("id-ID")} roll di ${whName}?`,
+      message: `Tag RFID baru dibuat untuk setiap roll tanpa tag (paling banyak 200 roll per klik; ${totalTxt} roll belum ber-tag). Encode massal tidak bisa dibatalkan sekaligus — tiap tag harus dipensiunkan satu per satu.`,
+      danger: true, confirmLabel: "Encode otomatis",
+    }))) return;
     setBusy(true); setError(null);
     try { const r = await axios.post(`${API}/rfid/tags/auto-encode`, { warehouse_id: whId || null }); flash(`${r.data.encoded} roll ter-encode otomatis.`); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal auto-encode"); } finally { setBusy(false); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal encode otomatis"); } finally { setBusy(false); }
   };
-  const retire = async (tagId) => {
+  const retire = async (t) => {
+    if (!(await askConfirm({
+      title: `Pensiunkan tag ${t.epc}?`,
+      message: `Tag dilepas dari roll ${t.roll_no || "—"}${t.product_name ? ` (${t.product_name})` : ""}; roll kembali ke daftar Belum Ber-tag.`,
+      danger: true, confirmLabel: "Pensiunkan",
+    }))) return;
     setBusy(true); setError(null);
-    try { await axios.delete(`${API}/rfid/tags/${tagId}`); flash("Tag di-retire (roll kembali tanpa tag)."); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal retire tag"); } finally { setBusy(false); }
+    try { await axios.delete(`${API}/rfid/tags/${t.id}`); flash("Tag dipensiunkan (roll kembali tanpa tag)."); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal memensiunkan tag"); } finally { setBusy(false); }
   };
 
   return (
     <div data-testid="rfid-tags-view" className="space-y-4">
-      <RfidHeader icon={Tag} title="Tag RFID (tag ↔ roll)" subtitle="Pasangkan (encode) tag EPC ke roll fisik. Memasang tag tidak mengubah stok.">
+      <RfidHeader icon={Tag} title="Tag RFID" subtitle="Pasangkan (encode) tag EPC ke roll fisik. Memasang tag tidak mengubah stok.">
         <KNSelect data-testid="rfid-tags-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-tags-refresh" onClick={load}
@@ -121,7 +141,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                               className="inline-flex items-center gap-1 text-[#0058CC] hover:bg-[#EAF2FF] rounded px-2 py-1 disabled:opacity-40" title="Cetak ulang label QR">
                               <Printer size={13} /> Label
                             </button>
-                            <button data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t.id)}
+                            <button data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t)}
                               className="inline-flex items-center gap-1 text-[#C0341D] hover:bg-[#FBE9E7] rounded px-2 py-1 disabled:opacity-40">
                               <Trash2 size={13} /> Pensiunkan
                             </button>
@@ -137,17 +157,19 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         <SectionCard title="Roll Fisik Belum Ber-tag" right={
           <button data-testid="rfid-auto-encode" disabled={busy || untagged.length === 0} onClick={autoEncode}
             className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
-            <Zap size={14} /> Auto-Encode Semua
+            <Zap size={14} /> Encode Otomatis
           </button>}>
           {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
             : untagged.length === 0 ? <EmptyBox icon={Radio} text="Semua roll fisik sudah ber-tag RFID." />
               : (
                 <div className="space-y-2">
-                  {untagged.map((r) => (
+                  {srchU.toolbar}
+                  {srchU.shown.length === 0 && <EmptyBox icon={PackageSearch} text="Tidak ada roll yang cocok dengan pencarian." />}
+                  {srchU.pageRows.map((r) => (
                     <div key={r.id} data-testid={`rfid-untagged-${r.id}`} className="flex flex-wrap items-center gap-2 rounded-lg bg-[#FAFAFB] p-2">
                       <div className="flex-1 min-w-[200px]">
                         <p className="text-[12px] font-semibold">{r.roll_no} · {r.sku || "—"}</p>
-                        <p className="text-[11px] text-[#6B6B73]">{r.product_name} — {q(r.length_remaining)} {r.unit} · Lot {r.lot || "—"} · {r.status}</p>
+                        <p className="text-[11px] text-[#6B6B73]">{r.product_name} — {q(r.length_remaining)} {r.unit} · Lot {r.lot || "—"} · {docStatusLabel(r.status)}</p>
                       </div>
                       <button data-testid={`rfid-untagged-reprint-${r.id}`} disabled={busy} onClick={() => reprintByCode(r.id)}
                         className="flex items-center gap-1 rounded-lg border border-[#0058CC] text-[#0058CC] px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40" title="Cetak ulang label QR">

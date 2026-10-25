@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Route, ArrowUp, ArrowDown, MapPin, Clock, CheckCircle2, AlertTriangle, Navigation, Phone, MessageCircle } from "lucide-react";
 import { listDeliveries, setMyRoute, STATUS_LABEL, STATUS_PILL, mapsUrl, telUrl, waUrl, todayWib } from "./logisticsApi";
 import { formatDateId } from "../../components/KNDatePicker";
+import { wibDate } from "../../utils/formatters";
 
 // Tugas sopir hari ini: pengiriman milik sopir yang login, berurutan tujuan (bisa disusun ulang).
 const ACTIVE = ["prepared", "loaded", "in_transit"];
@@ -19,7 +20,7 @@ export default function DriverTodayPanel({ params, onOpen, refreshKey }) {
   useEffect(() => { load(); }, [refreshKey]); // eslint-disable-line
 
   const tasks = rows.filter((d) => ACTIVE.includes(d.status));
-  const doneToday = rows.filter((d) => ["delivered", "completed"].includes(d.status) && String(d.delivered_at || d.completed_at || "").slice(0, 10) === today);
+  const doneToday = rows.filter((d) => ["delivered", "completed"].includes(d.status) && wibDate(d.delivered_at || d.completed_at) === today);
 
   async function move(i, dir) {
     const j = i + dir;

@@ -67,3 +67,18 @@ export const waUrl = (phone, text = "") => {
 
 // L-1 — "hari ini" operasional = tanggal WIB (Asia/Jakarta), bukan UTC.
 export const todayWib = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
+// UAT 24 Okt (audit UI tahap 2) — keterangan foto/posisi dulu `String(at).slice(5, 16)` = potongan stempel UTC
+// ("10-25 05:24") padahal penerimaan di bawahnya "12.24 WIB" → bukti tampak diambil 7 jam sebelum diterima.
+const WIB_TZ = "Asia/Jakarta";
+const _d = (v) => { if (!v) return null; const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d; };
+/** "25 Okt 12.24" (WIB) — keterangan pendek foto/posisi. Kosong/tak sah → "—". */
+export const shortWib = (v) => {
+  const d = _d(v);
+  return d ? d.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: WIB_TZ }) : "—";
+};
+/** "2026-10-25 12.24" (WIB) — untuk nama berkas unduhan. */
+export const fileStampWib = (v) => {
+  const d = _d(v);
+  if (!d) return "";
+  return `${d.toLocaleDateString("sv-SE", { timeZone: WIB_TZ })} ${d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: WIB_TZ })}`;
+};

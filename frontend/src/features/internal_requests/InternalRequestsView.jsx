@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
 import { actorLabel } from "../../utils/actorLabel";
 import InternalRequestCreateModal from "./InternalRequestCreateModal";
 import {
@@ -54,9 +54,14 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
       const params = {};
       if (statusFilter) params.status = statusFilter;
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
-      const res = await listInternalRequests(params);
+      // UAT 24 Okt (audit UI tahap 2) — KPI & lencana tab dulu ikut tersaring tab (0 di tab Ditolak). Ringkasan
+      // diambil TANPA penyaring status; daftar tetap per tab.
+      const [res, all] = await Promise.all([
+        listInternalRequests(params),
+        statusFilter ? listInternalRequests({ ...params, status: undefined }) : null,
+      ]);
       setItems(res.items || []);
-      setSummary(res.summary || {});
+      setSummary((all || res).summary || {});
       setError("");
     } catch (e) {
       setError(apiText(e, "Gagal memuat permintaan internal."));
@@ -174,7 +179,10 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
             <div data-testid="pin-loading" className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
           ) : shown.length === 0 ? (
             <div data-testid="pin-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">
-              {q ? "Tidak ada permintaan yang cocok dengan pencarian." : <>Belum ada permintaan internal. Papan Stok akan menandai barang yang
+              {q ? "Tidak ada permintaan yang cocok dengan pencarian."
+                : statusFilter ? <>Tidak ada permintaan berstatus <b>{(tabs.find((t) => t.key === statusFilter) || {}).label || statusFilter}</b>.{" "}
+                  <button type="button" className="link-button" data-testid="pin-empty-show-all" onClick={() => setStatusFilter("")}>Tampilkan semua</button></>
+                : <>Belum ada permintaan internal. Papan Stok akan menandai barang yang
               <b> tersedia di badan usaha lain</b> — dari sana Anda bisa langsung meminta.</>}
             </div>
           ) : (
@@ -254,6 +262,8 @@ function Metric({ icon: Icon, label, value, tone, testId }) {
    DETAIL + KEPUTUSAN
    ════════════════════════════════════════════════════════════════════ */
 function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
+  // UAT 24 Okt (audit UI tahap 2) — kolom Diminta/Stok di sana dulu tanpa satuan.
+  const unitOf = (pid) => ((req.items || []).find((i) => i.product_id === pid) || {}).unit || "";
   const [sources, setSources] = useState(null);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [pickedEntity, setPickedEntity] = useState(req.source_entity_id || "");
@@ -381,7 +391,7 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums"><QtyDual rolls={it.qty_rolls} measure={it.quantity} unit={it.unit} /></td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]">
-                      {snap ? formatQty(snap.other_entities_available) : "—"}
+                      {snap ? `${formatQty(snap.other_entities_available)} ${it.unit || ""}`.trim() : "—"}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">≈ {formatCurrency(it.est_value)}</td>
                   </tr>
@@ -391,9 +401,8 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
           </table>
         </div>
         <p className="px-3 py-2 text-[10.5px] text-[#9A9BA3]">
-          Kolom ketiga adalah <b>cuplikan saat permintaan diajukan</b> — stok bergerak, dan
-          tanpa cuplikan ini permintaan yang ditolak dua hari kemudian terlihat seperti
-          permintaan ngawur.
+          Kolom ketiga adalah <b>cuplikan saat permintaan diajukan</b> — stok terus bergerak,
+          jadi angka ini menjelaskan dasar permintaan meskipun stok saat ditinjau sudah berbeda.
         </p>
       </section>
 
@@ -453,8 +462,8 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
                         {(c.lines || []).map((l) => (
                           <tr key={l.product_id}>
                             <td className="truncate py-0.5">{l.sku || l.product_name}</td>
-                            <td className="py-0.5 text-right tabular-nums">{formatQty(l.needed)}</td>
-                            <td className="py-0.5 text-right tabular-nums">{formatQty(l.available)}</td>
+                            <td className="py-0.5 text-right tabular-nums">{formatQty(l.needed)} {unitOf(l.product_id)}</td>
+                            <td className="py-0.5 text-right tabular-nums">{formatQty(l.available)} {unitOf(l.product_id)}</td>
                             <td className={`py-0.5 text-right font-bold ${l.enough ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>
                               {l.enough ? "ya" : "kurang"}
                             </td>
@@ -508,7 +517,7 @@ function DetailPanel({ req, canDecide, currentUser, onBack, onChanged }) {
               <div className="min-w-0">
                 <p className="text-[11.5px] font-semibold">{t.label || t.event}</p>
                 <p className="text-[10.5px] text-[#8E8E93]">
-                  {(t.at || t.timestamp || "").slice(0, 16).replace("T", " ")}
+                  {formatDateTime(t.at || t.timestamp)}
                   {t.actor ? ` · ${actorLabel(t.actor)}` : ""}{t.note ? ` · ${t.note}` : ""}
                 </p>
               </div>

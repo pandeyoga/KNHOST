@@ -5,6 +5,7 @@
 import { AlertTriangle, Boxes, Layers3, Search } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import { formatQty } from "../../../utils/formatters";
+import { formatUnitTotals } from "../../../utils/qtyByUnit";
 import { LOT_STATUS_TONE, SOURCE_TONE, shortDate } from "./lotApi";
 
 export function LotStatCards({ stats }) {
@@ -12,7 +13,12 @@ export function LotStatCards({ stats }) {
   const cards = [
     { k: "Lot terdaftar", v: s.total ?? 0, s: "identitas batch aktif", t: "total" },
     { k: "Roll dalam lot", v: s.rolls_in_lots ?? 0, s: "seluruh roll tertaut", t: "rolls" },
-    { k: "Sisa dalam lot", v: formatQty(s.qty_remaining ?? 0), s: "satuan dasar produk", t: "qty" },
+    // UAT 24 Okt (audit UI tahap 2) — dulu satu angka "1.381.852,24 — satuan dasar produk" yang menjumlah kg + yard +
+    // meter. Rincian per satuan dipakai bila server mengirim `qty_remaining_by_unit`; tanpa itu angka gabungan diberi
+    // label jujur (lot_service.stats belum memecah per satuan — dicatat untuk pemilik berkas backend).
+    s.qty_remaining_by_unit
+      ? { k: "Sisa dalam lot", v: formatUnitTotals(s.qty_remaining_by_unit, s.qty_remaining), s: "per satuan produk", t: "qty" }
+      : { k: "Sisa dalam lot", v: formatQty(s.qty_remaining ?? 0), s: "gabungan semua satuan (kg/yard/meter)", t: "qty" },
     { k: "Data belum lengkap", v: s.incomplete_capture ?? 0, s: "tanpa lot supplier/dye lot",
       t: "incomplete" },
     { k: "Roll tanpa lot", v: s.rolls_without_lot ?? 0,
@@ -42,30 +48,30 @@ export function LotFilters({ filter, setFilter, sourceOptions, statusOptions, st
     <div data-testid="lot-filters" className="flex flex-wrap items-center gap-1.5">
       <div className="relative">
         <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8E8E93]" />
-        <input data-testid="lot-search" className="field !py-1 !pl-6 !text-[10.5px] w-[220px]"
+        <input data-testid="lot-search" className="field !py-1 !pl-6 !text-[12px] w-[260px] max-w-full"
           placeholder="Cari nomor lot / lot supplier / dye lot / SKU"
           value={filter.q}
           onChange={(e) => setFilter({ ...filter, q: e.target.value })}
           onKeyDown={(e) => { if (e.key === "Enter") onSearch?.(filter); }} />
       </div>
-      <KNSelect data-testid="lot-filter-source" className="field !py-1 !text-[10.5px] w-[150px]"
+      <KNSelect data-testid="lot-filter-source" className="field !py-1 !text-[12px] w-auto min-w-[150px]"
         value={filter.source} placeholder="Semua sumber"
         options={[{ value: "", label: "Semua sumber" }, ...sourceOptions]}
         onValueChange={(v) => pick({ source: v })} />
-      <KNSelect data-testid="lot-filter-status" className="field !py-1 !text-[10.5px] w-[150px]"
+      <KNSelect data-testid="lot-filter-status" className="field !py-1 !text-[12px] w-auto min-w-[140px]"
         value={filter.lot_status} placeholder="Semua status"
         options={[{ value: "", label: "Semua status" }, ...statusOptions]}
         onValueChange={(v) => pick({ lot_status: v })} />
-      <KNSelect data-testid="lot-filter-stage" className="field !py-1 !text-[10.5px] w-[140px]"
+      <KNSelect data-testid="lot-filter-stage" className="field !py-1 !text-[12px] w-auto min-w-[140px]"
         value={filter.stage} placeholder="Semua tahap"
         options={[{ value: "", label: "Semua tahap" }, ...stageOptions]}
         onValueChange={(v) => pick({ stage: v })} />
-      <KNSelect data-testid="lot-filter-warehouse" className="field !py-1 !text-[10.5px] w-[160px]"
+      <KNSelect data-testid="lot-filter-warehouse" className="field !py-1 !text-[12px] w-auto min-w-[160px]"
         value={filter.warehouse_id} placeholder="Semua gudang"
         options={[{ value: "", label: "Semua gudang" },
                   ...warehouses.map((w) => ({ value: w.id, label: w.name || w.id }))]}
         onValueChange={(v) => pick({ warehouse_id: v })} />
-      <button data-testid="lot-filter-apply" className="btn-secondary !px-2 !py-1 !text-[10.5px]"
+      <button data-testid="lot-filter-apply" className="btn-secondary !px-2 !py-1 !text-[12px]"
         onClick={() => onSearch?.(filter)}>Cari</button>
     </div>
   );

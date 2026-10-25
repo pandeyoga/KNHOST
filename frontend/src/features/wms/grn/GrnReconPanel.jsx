@@ -95,6 +95,9 @@ export default function GrnReconPanel({ grn, onChange, canReview, canClose }) {
       <div className="space-y-1.5" data-testid="grn-disc-list">
         {discs.length ? discs.map((d) => <Discrepancy key={d.key} grn={grn} d={d} run={run} canReview={canReview} />)
           : PRE_RECON.includes(grn.status) ? <PendingRecon lines={lines} />
+          // UAT 24 Okt (audit UI tahap 2) — GRN batal tanpa baris dulu berpesan hijau "Tidak ada selisih — cocok".
+          : !lines.length || ["cancelled", "rejected"].includes(grn.status)
+            ? <p data-testid="grn-recon-neutral" className="text-[11px] text-[#6B6B73]">{!lines.length ? "Belum ada baris untuk direkonsiliasi." : `Dokumen ${grn.status === "rejected" ? "ditolak" : "dibatalkan"} — tidak ada rekonsiliasi.`}</p>
           : <p className="flex items-center gap-1 text-[11px] text-[#0F766E]"><CheckCircle2 size={13} /> Tidak ada selisih — surat jalan cocok dengan hitungan fisik.</p>}
       </div>
       {results && (

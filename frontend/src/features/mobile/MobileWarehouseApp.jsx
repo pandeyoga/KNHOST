@@ -9,6 +9,8 @@ import OfflineBanner from "./OfflineBanner";
 import { InboundActions, OutboundActions, SampleCutActions } from "./MobileTaskActions";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatQty } from "../../utils/formatters";
+import { docStatusLabel } from "../../utils/docStatus";
+import { rollStatusLabel } from "../wms/inventory/inventoryConstants";
 
 // Audit UI HP (warehouse) — nama gudang, bukan id mentah ("wh_jakarta"); dipakai di Belum Tag & hasil pindai.
 function useWarehouseNames() {
@@ -22,7 +24,15 @@ function useWarehouseNames() {
   return names;
 }
 
-const STATUS_ID = { pending: "Menunggu", receiving: "Menerima", qc_check: "Cek QC", put_away: "Simpan", picking: "Ambil", packing: "Kemas", escalated: "Eskalasi", completed: "Selesai", shipped: "Terkirim" };
+// UAT 24 Okt (audit UI tahap 2) — kode yang ada di data tetapi tak terpetakan dulu tampil mentah ("Waiting_goods",
+// "Qc_pending", "Created"). Peta dilengkapi + cadangan docStatusLabel (bukan kode).
+const STATUS_ID = {
+  pending: "Menunggu", created: "Baru", waiting_goods: "Menunggu barang", receiving: "Menerima", qc_check: "Cek QC",
+  qc_pending: "Menunggu QC", qc_rejected: "Ditolak QC", put_away: "Simpan", picking: "Ambil", picked: "Sudah diambil",
+  packing: "Kemas", packed: "Sudah dikemas", escalated: "Eskalasi", completed: "Selesai", shipped: "Terkirim",
+  dispatched: "Diberangkatkan", cancelled: "Dibatalkan",
+};
+const statusText = (s) => STATUS_ID[s] || docStatusLabel(s) || "—";
 
 function TaskList({ type, focusTaskId, onFocused }) {
   const [rows, setRows] = useState(null);
@@ -31,6 +41,9 @@ function TaskList({ type, focusTaskId, onFocused }) {
   const [lastCut, setLastCut] = useState(null);
   const [lastInbound, setLastInbound] = useState(null);
   const [fromCache, setFromCache] = useState(false);
+  // UAT 24 Okt (audit UI tahap 2) — daftar Masuk 100+ kartu dulu tanpa judul/jumlah/cari.
+  const [q, setQ] = useState("");
+  const whNames = useWarehouseNames();
   const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setRows((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status))); })
     .catch((e) => setErr(e.response?.data?.detail || "Gagal memuat tugas."));
   useEffect(() => { load(); }, [type]); // eslint-disable-line
@@ -47,8 +60,20 @@ function TaskList({ type, focusTaskId, onFocused }) {
   const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sample" }[type] || type;
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
   const Actions = { inbound: InboundActions, outbound: OutboundActions, sample_cut: SampleCutActions }[type];
+  const term = q.trim().toLowerCase();
+  const shownRows = term ? rows.filter((t) => [t.product_name, t.sku, t.po_number, t.order_number, t.customer_name, whNames[t.warehouse_id] || t.warehouse_name, statusText(t.status)]
+    .some((v) => String(v || "").toLowerCase().includes(term))) : rows;
   return (
     <div className="space-y-2 p-3" data-testid={`mw-task-list-${type}`}>
+      <div className="flex items-baseline justify-between px-1">
+        <b className="text-[14px] capitalize" data-testid={`mw-task-title-${type}`}>Tugas {label}</b>
+        <span className="text-xs text-[#6E6E73]" data-testid={`mw-task-count-${type}`}>{term ? `${shownRows.length} dari ${rows.length}` : rows.length} terbuka</span>
+      </div>
+      {rows.length > 5 && (
+        <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari produk, PO/SO, gudang…"
+          aria-label={`Cari tugas ${label}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid={`mw-task-search-${type}`} />
+      )}
+      {term && shownRows.length === 0 && <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid={`mw-task-nomatch-${type}`}>Tidak ada tugas yang cocok.</div>}
       {fromCache && <div className="notice-bar warning text-xs" data-testid="mw-task-from-cache">Offline — menampilkan daftar tugas terakhir yang tersimpan di HP. Aksi akan diantrekan.</div>}
       {lastInbound && (
         <div className="m-card p-3 bg-[#E6F6EC] space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>
@@ -64,11 +89,11 @@ function TaskList({ type, focusTaskId, onFocused }) {
           <button className="secondary-button w-full py-2" onClick={() => setLastCut(null)} data-testid={`mw-sample-done-close-${lastCut.taskId}`}>Tutup</button>
         </div>
       )}
-      {rows.map((t) => (
+      {shownRows.map((t) => (
         <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-[#0058CC]" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
           <div className="flex items-center justify-between"><b className="text-[15px]">{t.product_name || t.product_id}</b>
-            <span className={`status-pill ${t.status === "escalated" ? "pill-danger" : "pill-warning"}`}>{STATUS_ID[t.status] || t.status}</span></div>
-          <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || t.warehouse_id} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
+            <span className={`status-pill ${t.status === "escalated" ? "pill-danger" : "pill-warning"}`}>{statusText(t.status)}</span></div>
+          <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>
       ))}
@@ -96,7 +121,7 @@ function ScanPanel({ onOpenTask }) {
       const r = data.roll || {};
       const held = ["reserved", "committed", "picked", "packed"].includes(r.status);
       setRes({ kind: held ? "warn" : "ok", title: held ? "TERIKAT PESANAN" : "COCOK", roll: r, productName: data.product_name, lastScan: data.last_scan,
-        text: `${r.roll_no} · ${data.product_name || r.product_id || ""} · status ${r.status || "-"} · ${whNames[r.warehouse_id] || r.warehouse_id || ""} · sisa ${r.length_remaining == null ? "-" : formatQty(r.length_remaining)} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
+        text: `${r.roll_no} · ${data.product_name || r.product_id || ""} · status ${rollStatusLabel(r.status)} · ${whNames[r.warehouse_id] || r.warehouse_id || ""} · sisa ${r.length_remaining == null ? "-" : formatQty(r.length_remaining)} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
       // Pindai → aksi: tugas terbuka yang menyentuh roll ini (dari backend) langsung ditawarkan.
       setTasks(data.open_tasks || []);
     } catch (e) {
@@ -160,7 +185,7 @@ function ScanPanel({ onOpenTask }) {
               {tasks.length > 0 && <div className="text-xs font-semibold text-[#3C3C43]" data-testid="mw-scan-tasks">Tugas terbuka untuk roll ini:</div>}
               {tasks.map((t) => (
                 <button key={t.id} className="primary-button w-full py-3 flex items-center justify-between px-3" onClick={() => onOpenTask?.(t.task_subtype === "sample_cut" ? "sample" : (TAB_OF[t.flow_type] || "inbound"), t.id)} data-testid={`mw-scan-task-${t.id}`}>
-                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.product_id}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-xs opacity-80">{t.order_number || t.po_number || STATUS_ID[t.status] || t.status}</span>
+                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.product_id}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-xs opacity-80">{t.order_number || t.po_number || statusText(t.status)}</span>
                 </button>
               ))}
             </div>
@@ -192,7 +217,10 @@ function UntaggedPanel() {
   const LIMIT = 500;   // batas server (/rfid/untagged-rolls)
   return (
     <div className="space-y-2 p-3" data-testid="mw-untagged-list">
-      <div className="text-xs text-[#6E6E73] px-1">{rows.length >= LIMIT ? `${LIMIT}+` : rows.length} roll belum bertag (termasuk potongan baru).</div>
+      {/* UAT 24 Okt (audit UI tahap 2) — dulu "500+" di atas tetapi "(470 tersisa)" di bawah: dua angka berbeda dasar. */}
+      <div className="text-xs text-[#6E6E73] px-1" data-testid="mw-untagged-count">{rows.length >= LIMIT
+        ? `Lebih dari ${LIMIT} roll belum bertag — ${LIMIT} pertama dimuat ke HP (termasuk potongan baru).`
+        : `${rows.length} roll belum bertag (termasuk potongan baru).`}</div>
       <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari nomor roll, produk, SKU, gudang…"
         aria-label="Cari roll belum bertag" value={q} onChange={(e) => { setQ(e.target.value); setShown(UNTAGGED_PAGE); }} data-testid="mw-untagged-search" />
       {filtered.length === 0 && <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-nomatch">Tidak ada roll yang cocok.</div>}
@@ -204,7 +232,7 @@ function UntaggedPanel() {
       ))}
       {filtered.length > shown && (
         <button className="secondary-button w-full py-3" onClick={() => setShown((n) => n + UNTAGGED_PAGE)} data-testid="mw-untagged-more">
-          Tampilkan {Math.min(UNTAGGED_PAGE, filtered.length - shown)} lagi ({filtered.length - shown} tersisa)
+          Tampilkan {Math.min(UNTAGGED_PAGE, filtered.length - shown)} lagi ({shown} dari {filtered.length} yang dimuat sudah tampil)
         </button>
       )}
     </div>

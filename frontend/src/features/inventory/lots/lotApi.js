@@ -3,6 +3,7 @@
  * Komponen layar TIDAK memanggil axios langsung agar jalur data tunggal & mudah diaudit.
  */
 import axios, { API } from "../../../services/apiClient";
+import { permissionDeniedText } from "../../../utils/apiError";
 
 export const lotApi = {
   list: (params) => axios.get(`${API}/lots`, { params }).then((r) => r.data),
@@ -49,8 +50,11 @@ export const SOURCE_TONE = {
   adjustment: "pill-muted",
 };
 
-export const errText = (e, fallback) =>
-  e?.response?.data?.detail || e?.message || fallback || "Terjadi kesalahan.";
+// UAT 24 Okt (audit UI tahap 2) — "Permission ditolak: …" (kode izin) → kalimat akses (G0-03).
+export const errText = (e, fallback) => {
+  const d = e?.response?.data?.detail;
+  return (typeof d === "string" && permissionDeniedText(d)) || d || e?.message || fallback || "Terjadi kesalahan.";
+};
 
 export const shortDate = (iso) => {
   if (!iso) return "—";

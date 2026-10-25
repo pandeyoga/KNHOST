@@ -116,7 +116,7 @@ export default function RepairCreateModal({ onClose, onCreated, preset = {} }) {
       </div>
       <label className="mt-2 block"><span className="field-label">Catatan</span>
         <textarea className="field min-h-16" value={f.notes} onChange={(e) => set("notes", e.target.value)} data-testid="repair-notes" placeholder="cacat apa, permintaan khusus ke mitra…" /></label>
-      <p className="mt-1 text-[10.5px] text-[#6B6B73]">Biaya dikapitalisasi ke nilai roll hasil saat diterima (keputusan pemilik P7-K1); tagihan mitra memakai Vendor Bill.</p>
+      <p className="mt-1 text-[10.5px] text-[#6B6B73]">Biaya dikapitalisasi ke nilai roll hasil saat diterima; tagihan mitra dicatat lewat Tagihan Supplier.</p>
     </FormModal>
   );
 }

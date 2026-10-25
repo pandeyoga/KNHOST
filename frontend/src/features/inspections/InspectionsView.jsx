@@ -130,6 +130,12 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
     INS_BOARD_ORDER.map((s) => ({ key: s, label: INS_STATUS_LABEL[s] })));
 
   const policy = meta.policy || {};
+  const activeFilters = [
+    kindFilter && `jenis ${INS_KIND_SHORT[kindFilter] || kindFilter}`,
+    statusFilter && `status ${INS_STATUS_LABEL[statusFilter] || statusFilter}`,
+    line && "lini produk",
+    search && `cari “${search}”`,
+  ].filter(Boolean);
 
   return (
     <div data-testid="inspections-view" className="grid gap-3">
@@ -177,8 +183,10 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
           </div>
         </div>
 
-        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman) */}
-        <div className="grid gap-2 sm:grid-cols-5">
+        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman).
+            UAT 24 Okt (audit UI tahap 2): dulu 5 KPI bertumpuk satu kolom di HP & menempel tepi kartu. */}
+        <div className="px-3 pb-3 pt-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {[
             ["Total SPK", stats.total ?? 0, "ins-kpi-total"],
             ["Belum ditugaskan", stats.draft ?? 0, "ins-kpi-draft"],
@@ -201,11 +209,12 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
           makloon diperiksa <strong>MD Quality</strong> (yang melepas/menolak tahanan); cacat 4-point &amp; grade
           diisi <strong>QC</strong>. Manajer tetap bisa melepas tahanan sebagai cadangan, dengan alasan tertulis.
         </p>
+        </div>
       </div>
 
       {/* Jaring pengaman: tugas QC tanpa SPK (biasanya kosong) */}
       {orphanTasks.length > 0 && (
-        <div data-testid="ins-orphan-tasks" className="section-card border-l-2 border-l-[#FF9500]">
+        <div data-testid="ins-orphan-tasks" className="section-card section-pad border-l-2 border-l-[#FF9500]">
           <div className="flex items-start gap-2">
             <ShieldAlert size={15} className="mt-0.5 shrink-0 text-[#B45309]" />
             <div>
@@ -254,19 +263,23 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
       </div>
 
       {paged.loading ? (
-        <div data-testid="ins-loading" className="section-card grid gap-2">
+        <div data-testid="ins-loading" className="section-card section-pad grid gap-2">
           {[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-md bg-[#F2F2F5]" />)}
         </div>
       ) : (paged.items || []).length === 0 ? (
-        <div className="section-card">
-          <EmptyState icon={ClipboardCheck} title="Belum ada SPK inspeksi"
+        <div className="section-card section-pad">
+          {/* UAT 24 Okt (audit UI tahap 2) — dulu "Belum ada SPK inspeksi" walau penyebabnya penyaring (mis. lini). */}
+          <EmptyState icon={ClipboardCheck}
+            title={activeFilters.length ? "Tidak ada SPK yang cocok dengan penyaring" : "Belum ada SPK inspeksi"}
             hint={holdOnly
               ? "Tidak ada barang yang sedang ditahan. Hapus penyaring “Hanya yang DITAHAN” untuk melihat seluruh SPK."
-              : "SPK penerimaan PO lahir otomatis saat barang masuk antrean QC. Untuk retur, hasil makloon, atau barang pengganti, terbitkan SPK-nya lewat tombol Buat SPK Inspeksi."}
+              : activeFilters.length
+                ? `Penyaring aktif: ${activeFilters.join(" · ")}.${line ? " SPK lama yang belum bertanda lini produk tidak ikut tampil saat penyaring lini dipakai." : ""}`
+                : "SPK penerimaan PO lahir otomatis saat barang masuk antrean QC. Untuk retur, hasil makloon, atau barang pengganti, terbitkan SPK-nya lewat tombol Buat SPK Inspeksi."}
             testId="ins-empty" />
         </div>
       ) : (
-        <div className="section-card">
+        <div className="section-card section-pad">
           <div className="overflow-x-auto">
             <table className="w-full text-[11.5px]">
               <thead>
@@ -288,7 +301,9 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
                     <tr key={r.id} data-testid={`ins-row-${r.id}`}
                       className="border-b border-[#F2F2F5] last:border-0">
                       <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">
-                        {r.number}
+                        {/* UAT 24 Okt (audit UI tahap 2) — di HP kolom Aksi di luar layar; nomor SPK sendiri membuka rincian. */}
+                        <button type="button" data-testid={`ins-open-${r.id}`} className="link-button !p-0 font-semibold"
+                          onClick={() => openDetail(r.id)}>{r.number}</button>
                         {s.hold ? (
                           <span data-testid={`ins-hold-badge-${r.id}`}
                             className="ml-1 status-pill pill-danger">
@@ -303,7 +318,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
                           {r.supplier_name || r.customer_name || ""}
                         </span>
                       </td>
-                      <td className="px-2 py-1.5">{r.assigned_name || "Belum ditugaskan"}</td>
+                      <td className="px-2 py-1.5 min-w-[110px]">{r.assigned_name || (r.status === "draft" ? "Belum ditugaskan" : <span className="text-[#8E8E93]">tidak tercatat</span>)}</td>
                       <td className="px-2 py-1.5 text-right">
                         <QtyDual rolls={s.rolls} measure={s.measure} unit={s.unit}
                           testId={`ins-qty-${r.id}`} compact />
@@ -317,6 +332,13 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
                         </span>
                         {r.decision_label ? (
                           <span className="block text-[10px] text-[#6B6B73]">{r.decision_label}</span>
+                        ) : null}
+                        {/* UAT 24 Okt (audit UI tahap 2) — "Diterima seluruhnya" + lencana "1 ditahan" tampak bertentangan:
+                            roll yang GAGAL 4-point/random check tetap ditahan walau SPK ditutup. Sebutkan terang. */}
+                        {r.status === "done" && s.hold ? (
+                          <span data-testid={`ins-done-hold-${r.id}`} className="block text-[10px] font-semibold text-[#B4231F]">
+                            {s.hold} roll masih ditahan — lepas/tolak di rincian SPK
+                          </span>
                         ) : null}
                       </td>
                       <td className="px-2 py-1.5 text-right">

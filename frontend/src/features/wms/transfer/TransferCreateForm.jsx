@@ -19,7 +19,7 @@ export default function TransferCreateForm({
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-[#3C3C43] mb-2">Gudang Asal</label>
+          <label className="block text-sm font-medium text-[#3C3C43] mb-2">Gudang Asal *</label>
           <KNSelect
             data-testid="source-warehouse-select"
             value={formData.source_warehouse_id}
@@ -34,7 +34,7 @@ export default function TransferCreateForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[#3C3C43] mb-2">Gudang Tujuan</label>
+          <label className="block text-sm font-medium text-[#3C3C43] mb-2">Gudang Tujuan *</label>
           <KNSelect
             data-testid="dest-warehouse-select"
             value={formData.dest_warehouse_id}
@@ -46,6 +46,9 @@ export default function TransferCreateForm({
               ...warehouses.map(wh => ({ value: wh.id, label: `${wh.name} (${wh.code})` })),
             ]}
           />
+          {formData.dest_warehouse_id && formData.dest_warehouse_id === formData.source_warehouse_id && (
+            <p data-testid="transfer-same-warehouse" className="mt-1 text-[11.5px] text-[#B4231F]">Gudang tujuan harus berbeda dari gudang asal.</p>
+          )}
         </div>
       </div>
 
@@ -55,13 +58,15 @@ export default function TransferCreateForm({
       {/* Tambah Item — aturan gudang: TIDAK ada ketik manual qty/satuan. Operator memilih ROLL
           fisik di gudang asal (picker yang sama dengan Sales); satuan ikut master produk, tampil dua satuan. */}
       <div className="bg-[#F2F2F7] rounded-xl p-4 mb-4">
-        <h4 className="text-sm font-semibold mb-3">Tambah Item — pilih roll di gudang asal</h4>
+        <h4 className="text-sm font-semibold mb-3">Barang * — pilih roll di gudang asal</h4>
+        {/* UAT 24 Okt (audit UI tahap 2) — pemilih produk dulu aktif sebelum gudang asal dipilih (hanya teks oranye). */}
         <KNSelect
           data-testid="item-product-select"
           value={newItem.product_id}
+          disabled={!formData.source_warehouse_id}
           onValueChange={v => setNewItem({ ...newItem, product_id: v })}
           className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
-          placeholder="Pilih Produk"
+          placeholder={formData.source_warehouse_id ? "Pilih Produk" : "Pilih gudang asal dahulu"}
           searchable
           options={[
             { value: "", label: "Pilih Produk" },
@@ -95,7 +100,7 @@ export default function TransferCreateForm({
       {/* Items List */}
       {formData.items.length > 0 && (
         <div className="mb-4">
-          <h4 className="text-sm font-semibold mb-2">Items ({formData.items.length})</h4>
+          <h4 className="text-sm font-semibold mb-2">Barang ({formData.items.length})</h4>
           <div className="space-y-2">
             {formData.items.map((item, index) => {
               const product = products.find((p) => p.id === item.product_id);

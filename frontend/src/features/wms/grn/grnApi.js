@@ -1,4 +1,5 @@
 import axios, { API } from "../../../services/apiClient";
+import { permissionDeniedText } from "../../../utils/apiError";
 
 export const GRN = `${API}/goods-receipts`;
 
@@ -38,7 +39,8 @@ export function errText(e, fallback = "Aksi gagal.") {
   const d = e?.response?.data?.detail;
   if (d && typeof d === "object") return d.message || (d.errors || []).join(" ") || fallback;
   if (Array.isArray(d)) return d.map((x) => x.msg).join("; ");
-  return d || fallback;
+  // UAT 24 Okt (audit UI tahap 2) — "Permission ditolak: …" (kode izin) → kalimat akses (G0-03).
+  return (typeof d === "string" && permissionDeniedText(d)) || d || fallback;
 }
 
 export const grnApi = {

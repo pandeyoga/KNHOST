@@ -9,6 +9,10 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
   // ke bawah. Ia lolos dari gate P4 karena seluruh isiannya ada di berkas ini (anak),
   // sementara penjaganya hanya memeriksa berkas induk — celah itu ikut ditutup.
   const isModal = variant === "modal";
+  // UAT 24 Okt (audit UI tahap 2) — satuan dulu teks bebas ("meter") sehingga roll bisa tersimpan bersatuan beda dari
+  // produk. Kini diambil dari master produk (baca-saja).
+  const productUnit = (pid) => { const p = products.find((x) => x.id === pid); return p ? (p.base_unit || p.unit || "") : ""; };
+  const pickProduct = (v) => setStockForm({ ...stockForm, product_id: v, unit: productUnit(v) || stockForm.unit });
   return (
     <div className={isModal ? "" : "rounded-xl border border-[#E5E5EA] bg-white p-3"}>
       {!isModal && (
@@ -19,15 +23,15 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
       )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div className="col-span-2 sm:col-span-1">
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Produk *</label>
+          <label className="field-label">Produk *</label>
           <KNSelect data-testid="stock-product-select" value={stockForm.product_id}
-            onValueChange={v => setStockForm({ ...stockForm, product_id: v })}
+            onValueChange={pickProduct}
             className="field" placeholder="Pilih produk..."
             options={[{ value: "", label: "Pilih produk..." }, ...products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }))]}
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Pemilik (Entitas) *</label>
+          <label className="field-label">Pemilik (badan usaha) *</label>
           <KNSelect data-testid="stock-owner-select" value={stockForm.owner_entity_id}
             onValueChange={v => setStockForm({ ...stockForm, owner_entity_id: v })}
             className="field" placeholder="Pilih entitas..."
@@ -35,7 +39,7 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Gudang *</label>
+          <label className="field-label">Gudang *</label>
           <KNSelect data-testid="stock-warehouse-select" value={stockForm.warehouse_id}
             onValueChange={v => setStockForm({ ...stockForm, warehouse_id: v })}
             className="field" placeholder="Pilih gudang..."
@@ -43,19 +47,20 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Panjang (Qty) *</label>
+          <label className="field-label">Panjang (Qty) *</label>
           <input type="number" data-testid="stock-qty-input" value={stockForm.quantity} onChange={e => setStockForm({ ...stockForm, quantity: parseFloat(e.target.value) || 0 })} className="field tabular-nums" placeholder="0" />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Unit</label>
-          <input type="text" value={stockForm.unit} onChange={e => setStockForm({ ...stockForm, unit: e.target.value })} className="field" placeholder="meter" />
+          <label className="field-label">Satuan <span className="font-normal normal-case">(dari produk)</span></label>
+          <input type="text" data-testid="stock-unit-input" value={stockForm.product_id ? (productUnit(stockForm.product_id) || stockForm.unit) : ""} readOnly
+            className="field bg-[#F5F5F7] text-[#6B6B73]" placeholder="pilih produk dulu" />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Lot *</label>
+          <label className="field-label">Lot *</label>
           <input type="text" data-testid="stock-lot-input" value={stockForm.lot} onChange={e => setStockForm({ ...stockForm, lot: e.target.value })} className="field" placeholder="LOT-2026-001" />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Grade</label>
+          <label className="field-label">Grade</label>
           <KNSelect data-testid="stock-grade-select" value={stockForm.grade}
             onValueChange={v => setStockForm({ ...stockForm, grade: v })}
             className="field"
@@ -63,20 +68,21 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Roll No</label>
-          <input type="text" value={stockForm.roll_no} onChange={e => setStockForm({ ...stockForm, roll_no: e.target.value })} className="field" placeholder="(auto)" />
+          <label className="field-label">Nomor roll <span className="font-normal normal-case">(opsional)</span></label>
+          <input type="text" value={stockForm.roll_no} onChange={e => setStockForm({ ...stockForm, roll_no: e.target.value })} className="field" placeholder="kosong = otomatis" />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">HPP / satuan (Rp)</label>
-          <input type="number" data-testid="stock-unit-cost-input" value={stockForm.unit_cost ?? ""} onChange={e => setStockForm({ ...stockForm, unit_cost: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="wajib untuk migrasi" />
+          <label className="field-label">HPP / satuan (Rp) <span className="font-normal normal-case">(opsional)</span></label>
+          <input type="number" data-testid="stock-unit-cost-input" value={stockForm.unit_cost ?? ""} onChange={e => setStockForm({ ...stockForm, unit_cost: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="kosong = HPP standar produk" />
+          <span className="mt-0.5 block text-[10.5px] text-[#8E8E93]">Untuk migrasi stok lama isi HPP sebenarnya; tanpa HPP standar, roll ditandai "HPP belum ada".</span>
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Berat (kg)</label>
-          <input type="number" data-testid="stock-weight-input" value={stockForm.weight_kg ?? ""} onChange={e => setStockForm({ ...stockForm, weight_kg: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="opsional" />
+          <label className="field-label">Berat (kg) <span className="font-normal normal-case">(opsional)</span></label>
+          <input type="number" data-testid="stock-weight-input" value={stockForm.weight_kg ?? ""} onChange={e => setStockForm({ ...stockForm, weight_kg: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="0" />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Batch</label>
-          <input type="text" value={stockForm.batch} onChange={e => setStockForm({ ...stockForm, batch: e.target.value })} className="field" />
+          <label className="field-label">Batch <span className="font-normal normal-case">(opsional)</span></label>
+          <input type="text" value={stockForm.batch} onChange={e => setStockForm({ ...stockForm, batch: e.target.value })} className="field" placeholder="kosong = dibentuk dari lot" />
         </div>
       </div>
       <div className="flex gap-2 mt-3">

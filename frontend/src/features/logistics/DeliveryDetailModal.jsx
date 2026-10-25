@@ -7,7 +7,7 @@ import DeliveryPhoto from "./DeliveryPhoto";
 import MediaLightbox from "../../components/MediaLightbox";
 import PositionMap from "./PositionMap";
 import { openOrderJourney } from "./logisticsDeepLink";
-import { addPosition, deletePhoto, deletePosition, getDelivery, photoUrl, transitionDelivery, updateDelivery, uploadPhoto, STATUS_LABEL, STATUS_PILL, STEPS, PICKUP_STEPS, PICKUP_STATUS_LABEL, MODE_PILL, mapsUrl, telUrl, waUrl } from "./logisticsApi";
+import { addPosition, deletePhoto, deletePosition, getDelivery, photoUrl, transitionDelivery, updateDelivery, uploadPhoto, STATUS_LABEL, STATUS_PILL, STEPS, PICKUP_STEPS, PICKUP_STATUS_LABEL, MODE_PILL, mapsUrl, telUrl, waUrl, shortWib, fileStampWib } from "./logisticsApi";
 import PickupHandoverPanel from "./PickupHandoverPanel";
 import ManifestPanel from "./ManifestPanel";
 import MoneyInput from "../../components/MoneyInput";
@@ -175,7 +175,7 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
           <div className="mt-2"><PositionMap positions={d.positions || []} /></div>
           <div className="mt-2 divide-y divide-[#F0F1F3]">
             {(d.positions || []).slice().reverse().map((p) => (
-              <div key={p.id} className="py-1.5 text-[11.5px] flex items-center gap-1" data-testid={`logistics-pos-${p.id}`}><span className="flex-1 min-w-0"><b>{p.location}</b>{p.note ? ` — ${p.note}` : ""}{p.lat != null && p.lng != null && <span className="ml-1.5 text-[10px] text-[#0058CC] font-mono" data-testid={`logistics-pos-gps-${p.id}`}>⌖ {p.lat}, {p.lng}</span>}<span className="text-[10px] text-[#9A9BA3] ml-2">{String(p.at).slice(0, 16).replace("T", " ")} · {p.by}</span></span>
+              <div key={p.id} className="py-1.5 text-[11.5px] flex items-center gap-1" data-testid={`logistics-pos-${p.id}`}><span className="flex-1 min-w-0"><b>{p.location}</b>{p.note ? ` — ${p.note}` : ""}{p.lat != null && p.lng != null && <span className="ml-1.5 text-[10px] text-[#0058CC] font-mono" data-testid={`logistics-pos-gps-${p.id}`}>⌖ {p.lat}, {p.lng}</span>}<span className="text-[10px] text-[#9A9BA3] ml-2">{formatDateTime(p.at)} · {p.by}</span></span>
                 {canManage && !["delivered", "completed"].includes(d.status) && <button type="button" data-testid={`logistics-pos-del-${p.id}`} className="icon-button !p-1 text-[#C0341D]" title="Hapus posisi yang salah" onClick={async () => { if (await askConfirm({ title: "Hapus posisi ini?", description: `${p.location} — penghapusan tercatat di riwayat.`, confirmLabel: "Hapus", danger: true })) run("delpos", () => deletePosition(id, p.id), "Posisi dihapus."); }}><X size={12} /></button>}</div>
             ))}
             {(d.positions || []).length === 0 && <p className="text-[10.5px] text-[#9A9BA3] py-1">Belum ada posisi tercatat.</p>}
@@ -206,7 +206,7 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
         {/* Riwayat */}
         <details className="mt-3"><summary className="text-[11px] font-bold uppercase text-[#6B6B73] cursor-pointer">Riwayat ({(d.timeline || []).length})</summary>
           <div className="mt-1 divide-y divide-[#F0F1F3]" data-testid="logistics-timeline">
-            {(d.timeline || []).slice().reverse().map((t) => <div key={t.id} className="py-1 text-[11px]"><b>{t.action}</b>{t.to_status ? ` → ${STATUS_LABEL[t.to_status]}` : ""}{t.note ? ` · ${t.note}` : ""}<span className="text-[10px] text-[#9A9BA3] ml-2">{String(t.at).slice(0, 16).replace("T", " ")} · {t.by}</span></div>)}
+            {(d.timeline || []).slice().reverse().map((t) => <div key={t.id} className="py-1 text-[11px]"><b>{t.action}</b>{t.to_status ? ` → ${STATUS_LABEL[t.to_status]}` : ""}{t.note ? ` · ${t.note}` : ""}<span className="text-[10px] text-[#9A9BA3] ml-2">{formatDateTime(t.at)} · {t.by}</span></div>)}
           </div></details>
       </div>
     </div>
@@ -235,7 +235,7 @@ function PhotoBlock({ title, hint, kind, list, d, canUpdate, onPick, onDel, busy
           <div key={p.id} className="relative w-[88px]" data-testid={`logistics-photo-${p.id}`}>
             <button type="button" className="block aspect-square w-full overflow-hidden rounded-md border border-[#EFF0F2] bg-[#F2F3F5] hover:border-[#0058CC]"
               onClick={() => setView(list.indexOf(p))} data-testid={`logistics-photo-open-${p.id}`} aria-label={`Perbesar ${title}`}><DeliveryPhoto url={photoUrl(d.id, p.id)} alt={title} /></button>
-            <span className="block text-[9px] text-[#9A9BA3] truncate mt-0.5" title={`${String(p.at).slice(0, 16).replace("T", " ")} · ${p.by}${p.note ? ` · ${p.note}` : ""}`}>{String(p.at).slice(5, 16).replace("T", " ")} · {p.by}</span>
+            <span className="block text-[9px] text-[#9A9BA3] truncate mt-0.5" title={`${formatDateTime(p.at)} · ${p.by}${p.note ? ` · ${p.note}` : ""}`}>{shortWib(p.at)} · {p.by}</span>
             {canUpdate && !locked && <button data-testid={`logistics-photo-del-${p.id}`} className="absolute -top-1.5 -right-1.5 bg-white rounded-full shadow p-0.5 text-[#C0341D]" onClick={() => onDel(p.id)}><X size={12} /></button>}
           </div>
         ))}
@@ -246,7 +246,7 @@ function PhotoBlock({ title, hint, kind, list, d, canUpdate, onPick, onDel, busy
           </label>
         )}
       </div>
-      {view >= 0 && <MediaLightbox items={list.map((p) => ({ url: photoUrl(d.id, p.id), filename: `${title} ${String(p.at).slice(0, 16).replace("T", " ")}.jpg`,
+      {view >= 0 && <MediaLightbox items={list.map((p) => ({ url: photoUrl(d.id, p.id), filename: `${title} ${fileStampWib(p.at)}.jpg`,
         content_type: "image/jpeg", caption: `${title} · ${p.by || ""}` }))} index={view} onClose={() => setView(-1)} testId={`logistics-photo-lightbox-${kind}`} />}
     </div>
   );

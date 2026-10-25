@@ -7,6 +7,8 @@ import { formatQty } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
+import { docStatusLabel } from "../../utils/docStatus";
+import { askConfirm, askReason } from "../../services/confirmService";
 
 /**
  * Transfer Antar-Entitas (Sub-fase 1.5 — Inter-Company Transfer Flow, KN_15 §7).
@@ -20,8 +22,6 @@ export default function InterCompanyTransfers({ currentUser = {} }) {
   const [lineFilter, setLineFilter] = useState("");   // FASE L
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState("");
-  const [rejectFor, setRejectFor] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
 
   const canApprove = ["manager", "admin"].includes((currentUser.role || "").toLowerCase());
 
@@ -44,30 +44,44 @@ export default function InterCompanyTransfers({ currentUser = {} }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [lineFilter]);
 
-  const approve = async (id) => {
+  // UAT 24 Okt (audit UI tahap 2) — setujui (memindah kepemilikan & membuat jurnal antar-PT) dulu sekali klik;
+  // tolak memakai textarea inline tanpa label/minimal alasan. Keduanya kini lewat dialog standar.
+  const itemSummary = (t) => (t.items || []).map((it) => `${it.product_name || it.sku} ${formatQty(it.qty)} ${it.unit || ""}`.trim()).join(", ");
+  const approve = async (t) => {
+    const id = t.id;
+    if (!(await askConfirm({
+      title: `Setujui transfer ${t.code}?`,
+      message: `Kepemilikan barang pindah dari ${t.source_entity_name || "badan usaha asal"} ke ${t.dest_entity_name || "badan usaha tujuan"}: ${itemSummary(t) || "—"}. Jurnal antar-PT dibuat otomatis.`,
+      confirmLabel: "Setujui & pindahkan",
+    }))) return;
     setBusyId(id);
     try {
       await axios.post(`${API}/transfers/${id}/approve`, { approved_by: currentUser.name || "Manager" });
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal approve transfer.");
+      setError(e.response?.data?.detail || "Gagal menyetujui transfer.");
     } finally {
       setBusyId("");
     }
   };
 
-  const reject = async (id) => {
+  const reject = async (t) => {
+    const id = t.id;
+    const reason = await askReason({
+      title: `Tolak transfer ${t.code}?`,
+      message: `Permintaan dari ${t.dest_entity_name || "badan usaha tujuan"} ditolak; barang tetap milik ${t.source_entity_name || "badan usaha asal"}.`,
+      reasonLabel: "Alasan penolakan", reasonMinLength: 5, danger: true, confirmLabel: "Tolak transfer",
+    });
+    if (reason === null) return;
     setBusyId(id);
     try {
       await axios.post(`${API}/transfers/${id}/reject`, {
         rejected_by: currentUser.name || "Manager",
-        reason: rejectReason || "Ditolak entitas sumber",
+        reason: reason.trim(),
       });
-      setRejectFor("");
-      setRejectReason("");
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal reject transfer.");
+      setError(e.response?.data?.detail || "Gagal menolak transfer.");
     } finally {
       setBusyId("");
     }
@@ -171,7 +185,7 @@ export default function InterCompanyTransfers({ currentUser = {} }) {
                 <span className={`status-pill status-${t.status}`} data-testid={`interco-status-${t.id}`}>
                   {t.status === "waiting_approval" && <Clock3 size={11} />}
                   {t.status === "completed" && <PackageCheck size={11} />}
-                  {t.status.replace(/_/g, " ")}
+                  {docStatusLabel(t.status)}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[12px] font-semibold">
@@ -211,59 +225,31 @@ export default function InterCompanyTransfers({ currentUser = {} }) {
 
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#8E8E93]">
                 <span>Diminta: <span className="font-medium text-[#3C3C43]">{t.requested_by || "—"}</span></span>
-                {t.linked_order_id && <span>SO: <span className="font-medium text-[#3C3C43]">{t.linked_order_id}</span></span>}
+                {t.linked_order_id && <span title={t.linked_order_id}>SO: <span className="font-medium text-[#3C3C43]">{t.linked_order_number || "terkait pesanan penjualan"}</span></span>}
                 {t.approved_by && <span>Disetujui: <span className="font-medium text-[#3C3C43]">{t.approved_by}</span></span>}
                 {t.rejected_reason && <span className="text-[#A8221A]">Alasan tolak: {t.rejected_reason}</span>}
               </div>
 
               {t.status === "waiting_approval" && canApprove && (
                 <div className="mt-3 border-t border-[#EFF0F2] pt-3">
-                  {rejectFor === t.id ? (
-                    <div className="grid gap-2">
-                      <textarea
-                        data-testid={`interco-reject-reason-${t.id}`}
-                        className="field min-h-[56px] text-[12px]"
-                        placeholder="Alasan penolakan…"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          data-testid={`interco-reject-confirm-${t.id}`}
-                          disabled={busyId === t.id}
-                          onClick={() => reject(t.id)}
-                          className="flex items-center gap-1 rounded-md bg-[#A8221A] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
-                        >
-                          <X size={13} /> Konfirmasi Tolak
-                        </button>
-                        <button
-                          onClick={() => { setRejectFor(""); setRejectReason(""); }}
-                          className="rounded-md border border-[#E5E5EA] px-3 py-1.5 text-[12px] font-semibold text-[#3C3C43]"
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
                     <div className="flex gap-2">
                       <button
                         data-testid={`interco-approve-${t.id}`}
                         disabled={busyId === t.id}
-                        onClick={() => approve(t.id)}
-                        className="flex items-center gap-1.5 rounded-md bg-[#126E2C] px-4 py-1.5 text-[12px] font-bold text-white transition hover:bg-[#0E5A24] disabled:opacity-50"
+                        onClick={() => approve(t)}
+                        className="primary-button flex items-center gap-1.5"
                       >
-                        <Check size={14} /> {busyId === t.id ? "Memproses…" : "Approve & Pindahkan Kepemilikan"}
+                        <Check size={14} /> {busyId === t.id ? "Memproses…" : "Setujui & pindahkan kepemilikan"}
                       </button>
                       <button
                         data-testid={`interco-reject-${t.id}`}
                         disabled={busyId === t.id}
-                        onClick={() => setRejectFor(t.id)}
+                        onClick={() => reject(t)}
                         className="flex items-center gap-1 rounded-md border border-[#E5E5EA] px-4 py-1.5 text-[12px] font-semibold text-[#A8221A] disabled:opacity-50"
                       >
                         <X size={14} /> Tolak
                       </button>
                     </div>
-                  )}
                 </div>
               )}
             </div>

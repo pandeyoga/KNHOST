@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from db import db
 from services.notification_service import create_notification, create_addressed
@@ -78,10 +78,14 @@ def _rp(v: Any) -> str:
 
 
 def _qty(v: Any) -> str:
+    """Angka teks notifikasi berformat id-ID ("1.250,5"; maks 2 desimal). UAT 24 Okt (audit UI tahap 2): dulu
+    `f"{v:g}"` → "0.02", "50.39" (titik desimal, tanpa pemisah ribuan) di notifikasi HP."""
     try:
-        return f"{float(v or 0):g}"
+        x = round(float(v or 0), 2)
     except (TypeError, ValueError):
         return "0"
+    s = f"{x:,.2f}".rstrip("0").rstrip(".")
+    return s.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
 async def _sales_owner(customer_id: str) -> Dict[str, str]:
@@ -194,16 +198,18 @@ async def notify_backorder_ready(order: Dict[str, Any], product_id: str = "",
     if not order:
         return 0
     owner = await _sales_owner(order.get("customer_id", ""))
-    prod = await db.products.find_one({"id": product_id}, {"_id": 0, "name": 1, "sku": 1}) or {}
+    prod = await db.products.find_one({"id": product_id}, {"_id": 0, "name": 1, "sku": 1, "base_unit": 1, "unit": 1}) or {}
     pname = prod.get("name") or prod.get("sku") or product_id
+    unit = prod.get("base_unit") or prod.get("unit") or ""
+    qty_txt = f"{_qty(qty)} {unit}".strip()
     if kind == "fulfilled":
         title = f"Pendingan siap kirim: {order.get('number', '')}"
-        body = (f"{pname} {_qty(qty)} untuk {order.get('customer_name', '')} sudah "
+        body = (f"{pname} {qty_txt} untuk {order.get('customer_name', '')} sudah "
                 "ter-reservasi dari stok yang baru masuk. Lanjutkan proses kirim.")
         sev = "warning"
     else:
         title = f"Stok pendingan tersedia: {order.get('number', '')}"
-        body = (f"{pname} sudah tersedia {_qty(qty)} di gudang — order "
+        body = (f"{pname} sudah tersedia {qty_txt} di gudang — order "
                 f"{order.get('number', '')} ({order.get('customer_name', '')}) menunggu "
                 "alokasi. Buka order untuk melanjutkan.")
         sev = "warning"

@@ -118,7 +118,8 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
           </div>
         </div>
         <p className="px-4 py-2 text-[12px] text-[#6B6B73]">
-          Konteks: <span className="font-semibold">{entityName}</span>. ATP (siap dijanjikan) = Tersedia + barang masuk (PO terbuka) − permintaan tertunda.
+          {/* UAT 24 Okt (audit UI tahap 2) — rumus ATP dulu ditulis dua kali dengan kata berbeda; kini satu (di atas tabel). */}
+          Konteks: <span className="font-semibold">{entityName}</span>. ATP = jumlah yang siap dijanjikan ke pelanggan (rumus di atas tabel).
           Angka per baris memakai satuan dasar produk (kg / yard).
           Indikator <ArrowLeftRight size={11} className="inline -mt-0.5 text-[#6B219A]" /> = peluang pemenuhan dari badan usaha lain (antar-PT).
         </p>
@@ -162,7 +163,7 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
           {!loading && !error && filtered.length > 0 && (
             <>
             <p data-testid="status-board-formula" className="mb-2 text-[11px] text-[#6B6B73]">
-              Rumus: <b>ATP = Tersedia + Incoming (PO dalam horizon) − permintaan tertunda (backorder)</b> ·
+              Rumus: <b>ATP = Tersedia + Barang Masuk (PO dalam horizon) − permintaan tertunda (backorder)</b> ·
               Stok Fisik = Tersedia + Dipesan + tertahan (karantina/QC/blokir/cadangan makloon).
             </p>
             <table data-testid="status-board-table" className="w-full border-collapse text-[12.5px]">
@@ -231,6 +232,10 @@ function Metric({ icon: Icon, label, value, tone, testId }) {
   );
 }
 
+// UAT 24 Okt (audit UI tahap 2) — ATP negatif dulu hitam (tak menonjol) & 0 berwarna; kini < 0 merah, 0 abu.
+const atpTone = (v) => (Number(v) < 0 ? "text-[#C0392B]" : Number(v) === 0 ? "text-[#AEAEB2]" : "");
+const zeroTone = (v, tone) => (Number(v) === 0 ? "text-[#AEAEB2]" : tone);
+
 function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
   return (
     <>
@@ -263,9 +268,9 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
               title="Siap dijanjikan dari entitas saya; sisanya butuh transfer antar-PT">entitas saya {formatQty(row.total_available)}</span>
           )}
         </td>
-        <td className="px-2 text-right tabular-nums text-[#6B219A]">{formatQty(pv(row, "reserved"))}</td>
-        <td className="px-2 text-right tabular-nums text-[#8C4A00]">{formatQty(pv(row, "incoming"))}</td>
-        <td className="px-2 text-right font-bold tabular-nums" title="ATP = tersedia + incoming (dalam horizon) − permintaan tertunda (backorder)">
+        <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "reserved"), "text-[#6B219A]")}`}>{formatQty(pv(row, "reserved"))}</td>
+        <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "incoming"), "text-[#8C4A00]")}`}>{formatQty(pv(row, "incoming"))}</td>
+        <td className={`px-2 text-right font-bold tabular-nums ${atpTone(pv(row, "atp"))}`} title="ATP = tersedia + barang masuk (dalam horizon) − permintaan tertunda (backorder)">
           {formatQty(pv(row, "atp"))}
           {row.detail_scope !== "own_entity" && row.total_pending_demand > 0 && (
             <span data-testid={`isb-pending-${row.product_id}`} className="block text-[9.5px] font-normal text-[#C0392B]">− tertunda {formatQty(row.total_pending_demand)}</span>
@@ -360,11 +365,24 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
                             <td className="py-1 pr-2">{w.warehouse_name}<span className="ml-1 text-[#8E8E93]">{w.warehouse_city}</span></td>
                             <td className="px-2 text-right tabular-nums">{formatQty(w.on_hand)}</td>
                             <td className="px-2 text-right tabular-nums text-[#126E2C]">{formatQty(w.available)}</td>
-                            <td className="px-2 text-right tabular-nums text-[#6B219A]">{formatQty(w.reserved)}</td>
-                            <td className="px-2 text-right tabular-nums text-[#8C4A00]">{formatQty(w.incoming)}</td>
-                            <td className="px-2 text-right font-semibold tabular-nums">{formatQty(w.atp)}</td>
+                            <td className={`px-2 text-right tabular-nums ${zeroTone(w.reserved, "text-[#6B219A]")}`}>{formatQty(w.reserved)}</td>
+                            <td className={`px-2 text-right tabular-nums ${zeroTone(w.incoming, "text-[#8C4A00]")}`}>{formatQty(w.incoming)}</td>
+                            <td className={`px-2 text-right font-semibold tabular-nums ${atpTone(w.atp)}`}>{formatQty(w.atp)}</td>
                           </tr>
                         ))}
+                        {/* UAT 24 Okt (audit UI tahap 2) — panel per gudang (36 + 1.004 = 1.040) dulu tak menjelaskan total ATP
+                            badan usaha 1.034: selisihnya permintaan tertunda yang dihitung per badan usaha, bukan per gudang. */}
+                        {(() => {
+                          const sumWh = (e.by_warehouse || []).reduce((t, w) => t + (Number(w.atp) || 0), 0);
+                          const pend = e.pending_demand != null ? Number(e.pending_demand) : sumWh - (Number(e.atp) || 0);
+                          if (!(pend > 0.005)) return null;
+                          return (
+                            <tr className="border-t border-[#F4F5F7]" data-testid={`isb-wh-pending-${row.product_id}-${e.entity_id}`}>
+                              <td className="py-1 pr-2 text-[#C0392B]" colSpan={5}>− permintaan tertunda (backorder) badan usaha ini</td>
+                              <td className="px-2 text-right font-semibold tabular-nums text-[#C0392B]">−{formatQty(pend)}</td>
+                            </tr>
+                          );
+                        })()}
                       </tbody>
                     </table>
                   </div>

@@ -37,7 +37,9 @@ export default function RandomCheckModal({ open, onClose, meta, onCreated }) {
     <FormModal open={open} onClose={onClose} title="Random check stok (QC)"
       subtitle="Roll Tersedia dipilih acak dari gudang dan DITAHAN sampai SPK diputuskan."
       icon={Shuffle} testId="ins-random-modal" onSubmit={simpan} submitLabel={form.scan_code.trim() ? "Periksa roll hasil scan" : "Ambil roll & tahan"}
-      busy={busy} error={err} submitTestId="ins-random-submit">
+      busy={busy} error={err} submitTestId="ins-random-submit"
+      // UAT 24 Okt (audit UI tahap 2) — dulu aktif walau gudang belum dipilih (lalu ditolak server).
+      submitDisabled={!form.scan_code.trim() && !form.warehouse_id}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2">
           <span className="field-label">Scan roll fisik (QR / no. roll / EPC) — opsional</span>
@@ -47,13 +49,13 @@ export default function RandomCheckModal({ open, onClose, meta, onCreated }) {
         </label>
         {!form.scan_code.trim() && <>
         <label className="block sm:col-span-2">
-          <span className="field-label">Gudang</span>
+          <span className="field-label">Gudang *</span>
           <KNSelect data-testid="ins-random-warehouse" value={form.warehouse_id}
             onValueChange={(v) => set({ warehouse_id: v })} options={warehouses}
             className="field" placeholder="Pilih gudang" />
         </label>
         <label className="block">
-          <span className="field-label">Jumlah roll (1–30)</span>
+          <span className="field-label">Jumlah roll (1–30) *</span>
           <input data-testid="ins-random-count" type="number" min="1" max="30" className="field"
             value={form.count} onChange={(e) => set({ count: e.target.value })} />
         </label>
@@ -65,7 +67,7 @@ export default function RandomCheckModal({ open, onClose, meta, onCreated }) {
             className="field" placeholder="Pilih petugas" />
         </label>
         <label className="block sm:col-span-2">
-          <span className="field-label">Catatan</span>
+          <span className="field-label">Catatan <span className="font-normal normal-case">(opsional)</span></span>
           <textarea data-testid="ins-random-remark" className="field" rows={2}
             value={form.remark} onChange={(e) => set({ remark: e.target.value })} />
         </label>

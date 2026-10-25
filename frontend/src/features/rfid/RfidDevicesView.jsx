@@ -8,9 +8,9 @@ import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses }
 
 const TYPE_LABEL = { gate: "Gerbang", fixed_reader: "Pembaca tetap", handheld: "Pembaca genggam", printer: "Printer RFID" };
 const TYPE_OPTS = [
-  { value: "gate", label: "Gate (pintu masuk/keluar)" },
+  { value: "gate", label: "Gerbang (pintu masuk/keluar)" },
   { value: "fixed_reader", label: "Pembaca tetap (zona)" },
-  { value: "handheld", label: "Handheld" },
+  { value: "handheld", label: "Pembaca genggam" },
   { value: "printer", label: "Printer RFID (cetak tag)" },
 ];
 const DIR_OPTS = [{ value: "in", label: "Masuk (in)" }, { value: "out", label: "Keluar (out)" }];
@@ -48,7 +48,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
       const params = whId ? { warehouse_id: whId } : {};
       const r = await axios.get(`${API}/rfid/devices`, { params });
       setDevices(r.data.devices || []);
-    } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat devices"); }
+    } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat perangkat RFID"); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [whId]); // eslint-disable-line
@@ -67,15 +67,23 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
       await load();
     } catch (e) { setError(e.response?.data?.detail || "Gagal menerbitkan API key"); } finally { setBusy(false); }
   };
+  // UAT 24 Okt (audit UI tahap 2) — dulu langsung POST sekali klik. Server membuat untuk SEMUA gudang (bukan hanya
+  // gudang terpilih): 2 gerbang + 1 pembaca tetap per gudang yang belum punya (rfid_service.seed_default_devices).
   const seedDefaults = async () => {
+    const n = (warehouses || []).length;
+    if (!(await askConfirm({
+      title: `Buat perangkat bawaan untuk ${n} gudang?`,
+      message: `Untuk setiap gudang dibuat Gerbang Masuk, Gerbang Keluar, dan 1 Pembaca tetap bila kodenya belum ada (paling banyak ${n * 3} perangkat). Perangkat yang sudah ada tidak diubah.`,
+      confirmLabel: "Buat perangkat",
+    }))) return;
     setBusy(true); setError(null);
-    try { const r = await axios.post(`${API}/rfid/devices/seed-defaults`); flash(`${r.data.created} device default dibuat.`); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal seed devices"); } finally { setBusy(false); }
+    try { const r = await axios.post(`${API}/rfid/devices/seed-defaults`); flash(`${r.data.created} perangkat bawaan dibuat.`); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal membuat perangkat bawaan"); } finally { setBusy(false); }
   };
   const toggleStatus = async (d) => {
     setBusy(true); setError(null);
     try { await axios.patch(`${API}/rfid/devices/${d.id}`, { status: d.status === "online" ? "offline" : "online" }); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal ubah status"); } finally { setBusy(false); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal mengubah status perangkat"); } finally { setBusy(false); }
   };
   const toggleEnabled = async (d) => {
     if (d.enabled && !(await askConfirm({
@@ -84,22 +92,27 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
     }))) return;
     setBusy(true); setError(null);
     try { await axios.patch(`${API}/rfid/devices/${d.id}`, { enabled: !d.enabled }); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal ubah aktivasi"); } finally { setBusy(false); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal mengubah aktivasi perangkat"); } finally { setBusy(false); }
   };
-  const remove = async (id) => {
+  const remove = async (d) => {
+    if (!(await askConfirm({
+      title: `Hapus perangkat ${d.code}?`, danger: true, confirmLabel: "Hapus",
+      message: `${d.name || d.code} di ${d.warehouse_name || "gudang ini"} dihapus dari daftar; kunci aksesnya ikut tidak berlaku.`,
+    }))) return;
     setBusy(true); setError(null);
-    try { await axios.delete(`${API}/rfid/devices/${id}`); flash("Perangkat dihapus."); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal hapus device"); } finally { setBusy(false); }
+    try { await axios.delete(`${API}/rfid/devices/${d.id}`); flash("Perangkat dihapus."); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus perangkat"); } finally { setBusy(false); }
   };
+  const formValid = !!(form.name.trim() && form.warehouse_id);
   const submit = async () => {
-    if (!form.name || !form.warehouse_id) { setError("Nama & gudang wajib diisi"); return; }
+    if (!formValid) { setError("Nama & gudang wajib diisi"); return; }
     setBusy(true); setError(null);
     try {
       await axios.post(`${API}/rfid/devices`, { ...form, direction: form.type === "gate" ? form.direction : undefined });
       flash("Perangkat dibuat."); setShowForm(false);
       setForm({ code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" });
       await load();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal buat device"); } finally { setBusy(false); }
+    } catch (e) { setError(e.response?.data?.detail || "Gagal membuat perangkat"); } finally { setBusy(false); }
   };
 
   const online = devices.filter((d) => d.status === "online").length;
@@ -120,23 +133,23 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
 
       {error && <ErrorNotice message={error} onRetry={load} />}
       {msg && <div className="rounded-lg bg-[#E7F7EC] text-[#1B7E3B] text-[12px] font-semibold px-3 py-2">{msg}</div>}
-      {!isAdmin && <div className="rounded-lg bg-[#FFF6E5] text-[#8A5A00] text-[11px] px-3 py-2">Mode baca-saja. Perubahan device memerlukan role admin.</div>}
+      {!isAdmin && <div className="rounded-lg bg-[#FFF6E5] text-[#8A5A00] text-[11px] px-3 py-2">Mode baca-saja. Perubahan perangkat memerlukan peran admin.</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={Cpu} label="Total Perangkat" value={devices.length} color="#0058CC" loading={loading} />
         <Stat icon={Power} label="Menyala" value={online} color="#34C759" loading={loading} testId="rfid-dev-online" />
-        <Stat icon={RadioTower} label="Gate" value={gates} color="#5856D6" loading={loading} />
-        <Stat icon={Router} label="Reader" value={readers} color="#FF9500" loading={loading} />
+        <Stat icon={RadioTower} label="Gerbang" value={gates} color="#5856D6" loading={loading} />
+        <Stat icon={Router} label="Pembaca" value={readers} color="#FF9500" loading={loading} />
       </div>
 
       {isAdmin && (
         <div className="flex flex-wrap gap-2">
           <button data-testid="rfid-seed-devices" disabled={busy} onClick={seedDefaults}
-            className="flex items-center gap-1 rounded-lg border border-[#0058CC] text-[#0058CC] px-3 py-1.5 text-[12px] font-semibold hover:bg-[#EAF2FF] disabled:opacity-40">
+            className="secondary-button flex items-center gap-1">
             <RadioTower size={14} /> Buat Perangkat Bawaan (per gudang)
           </button>
           <button data-testid="rfid-add-device" onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold">
+            className="primary-button flex items-center gap-1">
             <Plus size={14} /> Tambah Perangkat
           </button>
         </div>
@@ -145,29 +158,31 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
       {showForm && isAdmin && (
         <SectionCard title="Perangkat Baru">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div><label className="text-[11px] text-[#6B6B73]">Kode (opsional)</label>
+            <div><label className="text-[11px] text-[#6B6B73]">Kode <span className="text-[#8E8E93]">(opsional)</span></label>
               <input data-testid="rfid-form-code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full mt-1 rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-[12px] outline-none focus:border-[#0058CC]" placeholder="GATE-JKT-OUT" /></div>
-            <div><label className="text-[11px] text-[#6B6B73]">Nama</label>
+                className="field mt-1 text-[12px]" placeholder="mis. GATE-JKT-OUT" /></div>
+            <div><label className="text-[11px] text-[#6B6B73]">Nama *</label>
               <input data-testid="rfid-form-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full mt-1 rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-[12px] outline-none focus:border-[#0058CC]" placeholder="Gate Keluar" /></div>
-            <div><label className="text-[11px] text-[#6B6B73]">Tipe</label>
+                className="field mt-1 text-[12px]" placeholder="mis. Gerbang Keluar Jakarta" /></div>
+            <div><label className="text-[11px] text-[#6B6B73]">Tipe *</label>
               <KNSelect data-testid="rfid-form-type" value={form.type} onValueChange={(v) => setForm({ ...form, type: v })} options={TYPE_OPTS} className="field mt-1 text-[12px]" /></div>
             {form.type === "gate" && (
-              <div><label className="text-[11px] text-[#6B6B73]">Arah</label>
+              <div><label className="text-[11px] text-[#6B6B73]">Arah *</label>
                 <KNSelect data-testid="rfid-form-dir" value={form.direction} onValueChange={(v) => setForm({ ...form, direction: v })} options={DIR_OPTS} className="field mt-1 text-[12px]" /></div>
             )}
-            <div><label className="text-[11px] text-[#6B6B73]">Gudang</label>
+            <div><label className="text-[11px] text-[#6B6B73]">Gudang *</label>
               <KNSelect data-testid="rfid-form-wh" value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })} options={whFormOpts} className="field mt-1 text-[12px]" placeholder="Pilih gudang" /></div>
-            <div><label className="text-[11px] text-[#6B6B73]">Lokasi (dari master zona/bin gudang)</label>
+            <div><label className="text-[11px] text-[#6B6B73]">Lokasi <span className="text-[#8E8E93]">(opsional, dari master zona/bin gudang)</span></label>
               <KNSelect data-testid="rfid-form-loc" value={form.location} onValueChange={(v) => setForm({ ...form, location: v })}
                 options={locOpts} searchable disabled={!form.warehouse_id} className="field mt-1 text-[12px]"
                 placeholder={form.warehouse_id ? "Pilih zona / bin" : "Pilih gudang dahulu"} /></div>
           </div>
-          <div className="flex gap-2 mt-3">
-            <button data-testid="rfid-form-submit" disabled={busy} onClick={submit}
-              className="rounded-lg bg-[#0058CC] text-white px-4 py-1.5 text-[12px] font-semibold disabled:opacity-40">Simpan</button>
-            <button onClick={() => setShowForm(false)} className="rounded-lg border border-[#EFF0F2] px-4 py-1.5 text-[12px] font-semibold">Batal</button>
+          {/* UAT 24 Okt (audit UI tahap 2) — urutan baku: Batal kiri, Simpan kanan; Simpan nonaktif sampai isian wajib lengkap. */}
+          <div className="flex justify-end gap-2 mt-3">
+            <button onClick={() => setShowForm(false)} className="secondary-button">Batal</button>
+            <button data-testid="rfid-form-submit" disabled={busy || !formValid} onClick={submit}
+              title={!formValid ? "Isi Nama dan pilih Gudang" : undefined}
+              className="primary-button">Simpan</button>
           </div>
         </SectionCard>
       )}
@@ -187,7 +202,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
                       </span>
                     </div>
                     <p className="text-[12px] font-semibold mt-1">{d.name}</p>
-                    <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction}` : ""} · {d.warehouse_name || d.warehouse_id}</p>
+                    <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction === "in" ? "masuk" : d.direction === "out" ? "keluar" : d.direction}` : ""} · {d.warehouse_name || "—"}</p>
                     <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · sinyal terakhir {fmtTime(d.last_heartbeat)}</p>
                     {isAdmin && (
                       <div className="flex gap-2 mt-2">
@@ -206,7 +221,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
                           className={`rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold disabled:opacity-40 ${d.enabled ? "text-[#C0341D] hover:bg-[#FBE9E7]" : "text-[#1B7E3B] hover:bg-[#E7F7EC]"}`}>
                           {d.enabled ? "Nonaktifkan" : "Aktifkan"}
                         </button>
-                        <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d.id)} title="Hapus perangkat" aria-label="Hapus perangkat"
+                        <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d)} title="Hapus perangkat" aria-label="Hapus perangkat"
                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[#C0341D] hover:bg-[#FBE9E7] disabled:opacity-40"><Trash2 size={12} /></button>
                       </div>
                     )}

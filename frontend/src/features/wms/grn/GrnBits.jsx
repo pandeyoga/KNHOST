@@ -1,8 +1,9 @@
 import { Check } from "lucide-react";
 import { STATUS, STEPS } from "./grnApi";
+import { docStatusLabel } from "../../../utils/docStatus";
 
 export function GrnStatusBadge({ status, testId }) {
-  const s = STATUS[status] || { label: status, cls: "bg-[#F2F2F7] text-[#3C3C43]" };
+  const s = STATUS[status] || { label: docStatusLabel(status) || "—", cls: "bg-[#F2F2F7] text-[#3C3C43]" };
   return (
     <span data-testid={testId} className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${s.cls}`}>
       {s.label}
@@ -10,8 +11,13 @@ export function GrnStatusBadge({ status, testId }) {
   );
 }
 
+// UAT 24 Okt (audit UI tahap 2) — dokumen Ditutup dulu menampilkan langkah "5 Ditutup" sebagai langkah AKTIF (bukan
+// selesai); dokumen Dibatalkan/Ditolak tidak bertanda apa pun di stepper. Kini Ditutup = semua langkah selesai,
+// Dibatalkan/Ditolak = lencana merah/abu di ujung stepper.
+const TERMINAL = { cancelled: "Dibatalkan", rejected: "Ditolak" };
 export function GrnStepper({ status }) {
-  const idx = STEPS.indexOf(status === "closing" ? "reconcile" : status === "reading" ? "draft" : status);
+  const idx = status === "closed" ? STEPS.length
+    : STEPS.indexOf(status === "closing" ? "reconcile" : status === "reading" ? "draft" : status);
   return (
     <ol data-testid="grn-stepper" className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap text-[10.5px] font-semibold">
       {STEPS.map((s, i) => {
@@ -26,6 +32,13 @@ export function GrnStepper({ status }) {
           </li>
         );
       })}
+      {TERMINAL[status] && (
+        <li className="ml-1 flex items-center" data-testid="grn-stepper-terminal">
+          <span className={`rounded-full px-2 py-0.5 ${status === "rejected" ? "bg-[#FDECEC] text-[#B4231F]" : "bg-[#F2F2F7] text-[#6B6B73]"}`}>
+            {TERMINAL[status]}
+          </span>
+        </li>
+      )}
     </ol>
   );
 }

@@ -4,6 +4,20 @@ import { formatQty, stockStatus, ROW_CLASSES, STATUS_BADGE } from "./inventoryCo
 
 import PagedRows from "@/components/PagedRows";
 
+// UAT 24 Okt (audit UI tahap 2) — "STOK FISIK 562 · DIPESAN 8 · TERSEDIA 4" tak bisa dicocokkan: sisanya (terikat SO
+// yang sudah dikonfirmasi, diambil/dikemas, ditahan QC, karantina, diblokir, rusak, WIP, makloon) tidak punya kolom.
+// Kolom "Lainnya" = Fisik − Dipesan − Tersedia dengan rincian di tooltip. Definisi "Tersedia" TIDAK diubah (K-04).
+const OTHER_BUCKETS = [
+  ["committed_qty", "terikat pesanan (dikonfirmasi)"], ["picked_qty", "sudah diambil"], ["packed_qty", "sudah dikemas"],
+  ["hold_qty", "ditahan"], ["quarantine_qty", "karantina"], ["blocked_qty", "diblokir"], ["damaged_qty", "rusak"],
+  ["wip_qty", "dalam proses"], ["subcon_qty", "di makloon"],
+];
+const otherOf = (b) => Math.max(0, (Number(b.on_hand_qty) || 0) - (Number(b.reserved_qty) || 0) - (Number(b.available_qty) || 0));
+const otherTitle = (b) => {
+  const parts = OTHER_BUCKETS.filter(([k]) => Number(b[k]) > 0).map(([k, l]) => `${formatQty(b[k])} ${l}`);
+  return `Fisik ${formatQty(b.on_hand_qty)} = Dipesan ${formatQty(b.reserved_qty)} + Tersedia ${formatQty(b.available_qty)} + Lainnya ${formatQty(otherOf(b))}${parts.length ? ` (${parts.join(", ")})` : ""}`;
+};
+
 export default function BalancesTable({ loading, rows = [], selectedRow, onRowClick }) {
   return (
     <div className="bg-white rounded-xl border border-[#EFF0F2] overflow-hidden">
@@ -18,16 +32,18 @@ export default function BalancesTable({ loading, rows = [], selectedRow, onRowCl
               <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Stok Fisik</th>
               <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Dipesan</th>
               <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Tersedia</th>
+              <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]"
+                title="Terikat pesanan dikonfirmasi, diambil/dikemas, ditahan QC, karantina, diblokir, rusak, WIP, makloon">Lainnya</th>
               <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EFF0F2]">
             {loading && (
-              <tr><td colSpan={8} className="text-center py-8 text-[12px] text-[#6B6B73]">Memuat…</td></tr>
+              <tr><td colSpan={9} className="text-center py-8 text-[12px] text-[#6B6B73]">Memuat…</td></tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-10">
+                <td colSpan={9} className="text-center py-10">
                   <Package size={28} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-[12px] text-[#6B6B73]">Tidak ada data stok</p>
                 </td>
@@ -79,6 +95,10 @@ export default function BalancesTable({ loading, rows = [], selectedRow, onRowCl
                   <td className="px-3 py-2 text-right text-[#34C759] font-bold tabular-nums">
                     {formatQty(b.available_qty)}
                     <span className="block text-[9px] font-medium text-[#8E8E93]" data-testid={`balance-avail-rolls-${b.id}`}>{b.roll_count || 0} roll · {b.base_unit || "meter"}</span>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]" title={otherTitle(b)} data-testid={`balance-other-${b.id}`}>
+                    {otherOf(b) > 0.005 ? formatQty(otherOf(b)) : <span className="text-[#C7C7CC]">0</span>}
+                    {otherOf(b) > 0.005 && <span className="block text-[9px] font-medium text-[#8E8E93]">{OTHER_BUCKETS.filter(([k]) => Number(b[k]) > 0).map(([, l]) => l.split(" ")[0]).slice(0, 2).join(", ") || "lainnya"}</span>}
                   </td>
                   <td className="px-3 py-2">{STATUS_BADGE[st]}</td>
                 </tr>

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Layers3, Plus, RefreshCw } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import PaginationBar from "../../../components/PaginationBar";
+import DetailModal from "../../../components/DetailModal";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import LotDetailPanel from "./LotDetailPanel";
 import LotIdentityTrace from "./LotIdentityTrace";
@@ -302,10 +303,19 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
                 fetchAll: fetchAllLots, filename: "lot" }} />
           </div>
 
+          {/* UAT 24 Okt (audit UI tahap 2) — detail lot dulu dirender di bawah daftar (±1.500 px, harus digulir);
+              sekarang pop-up rincian standar. Pop-up aksi (split/merge/status) tetap tampil di atasnya. */}
           {activeId && (
+            <DetailModal size="full" label={`Detail lot ${detail?.lot_number || ""}`.trim()} testId="lot-detail-modal"
+              onClose={() => { if (!modal) { setActiveId(""); setDetail(null); setGenealogy(null); setRecall(null); } }}>
+            {!detail && (
+              <div data-testid="lot-detail-modal-loading" className="rounded-md bg-white p-6 text-center text-[12px] text-[#6B6B73]">
+                {detailLoading ? "Memuat detail lot…" : "Detail lot tidak dapat dimuat."}
+              </div>
+            )}
             <LotDetailPanel lot={detail} loading={detailLoading} genealogy={genealogy}
               genealogyLoading={genLoading} recall={recall} recallLoading={recallLoading}
-              tab={tab} setTab={setTab} canEdit={canEdit} labelOf={labelOf}
+              tab={tab} setTab={setTab} canEdit={canEdit} labelOf={labelOf} warehouses={warehouses}
               onClose={() => { setActiveId(""); setDetail(null); setGenealogy(null); setRecall(null); }}
               onRefresh={() => openLot(activeId)}
               onOpenLot={(id) => { setGenealogy(null); setRecall(null); openLot(id, tab); }}
@@ -313,6 +323,7 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
               onSplit={() => setModal("split")} onMerge={() => setModal("merge")}
               onRework={() => setModal("rework")} onStatus={() => setModal("status")}
               onLabel={() => setModal("label")} />
+            </DetailModal>
           )}
         </div>
       </div>

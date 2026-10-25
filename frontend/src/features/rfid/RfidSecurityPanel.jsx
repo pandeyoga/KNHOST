@@ -8,7 +8,7 @@ import axios, { API } from "../../services/apiClient";
 import { Pill, SectionCard, fmtTime, EmptyBox } from "./rfidShared";
 
 const SEV = { high: ["red", "Tinggi"], medium: ["orange", "Sedang"] };
-const HEALTH = { online: ["green", "Online"], stale: ["orange", "Stale (>5 mnt)"], offline: ["gray", "Offline"] };
+const HEALTH = { online: ["green", "Online"], stale: ["orange", "Tidak melapor (>5 mnt)"], offline: ["gray", "Offline"] };
 
 export default function RfidSecurityPanel({ whId, selectedEntity }) {
   const [incidents, setIncidents] = useState([]);
@@ -120,8 +120,8 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
           {!shrink || shrink.per_warehouse.length === 0 ? <EmptyBox icon={ShieldAlert} text="Belum ada data." /> : (
             <table className="w-full text-[11.5px]" data-testid="rfid-shrinkage-table">
               <thead><tr className="border-b border-[#EFF0F2] text-left text-[10px] text-[#8E8E93]">
-                <th className="py-1">Gudang</th><th className="text-right">Red</th>
-                <th className="text-right">Terbuka</th><th className="text-right">Exception</th></tr></thead>
+                <th className="py-1">Gudang</th><th className="text-right">Merah</th>
+                <th className="text-right">Terbuka</th><th className="text-right">Pengecualian</th></tr></thead>
               <tbody>{shrink.per_warehouse.map((r) => (
                 <tr key={r.warehouse_id || "-"} className="border-b border-[#F5F5F7]">
                   <td className="py-1.5 font-semibold">{r.warehouse_name}</td>
@@ -133,8 +133,11 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
           )}
         </SectionCard>
 
-        <SectionCard title={`Kesehatan Device${health ? ` (${health.stale_count} stale)` : ""}`}>
-          {!health ? null : (
+        {/* UAT 24 Okt (audit UI tahap 2) — kartu dulu kosong total ("Kesehatan Device (0 stale)") bila tak ada perangkat. */}
+        <SectionCard title={`Kesehatan Perangkat${health && (health.devices || []).length ? ` (${health.stale_count} tidak melapor)` : ""}`}>
+          {!health ? null : (health.devices || []).length === 0 ? (
+            <EmptyBox icon={HeartPulse} text="Belum ada perangkat RFID di gudang ini. Daftarkan di Pengaturan › Perangkat RFID." />
+          ) : (
             <div className="max-h-64 space-y-1 overflow-y-auto" data-testid="rfid-device-health">
               {health.devices.map((d) => {
                 const [color, label] = HEALTH[d.effective_status] || ["gray", d.effective_status];

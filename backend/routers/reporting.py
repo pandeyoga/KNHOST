@@ -57,13 +57,16 @@ async def stock_aging(request: Request, days_threshold: int = 30,
                 logger.warning("[stock_aging] efek samping gagal diabaikan: %s", exc)  # KN-C10
         is_aging = days_since is None or days_since >= days_threshold
         if is_aging:
+            # UAT 24 Okt (audit UI tahap 2) — dulu "Unknown" (Inggris) untuk saldo yang produk/gudangnya tidak ada di master
+            # (sisa data uji). Label Indonesia + penanda supaya layar bisa membedakannya dari produk sungguhan.
             result.append({
                 "product_id": balance["product_id"],
-                "product_name": product.get("name", "Unknown"),
+                "product_name": product.get("name") or "Produk tidak terdaftar",
+                "product_missing": not product,
                 "sku": product.get("sku", ""),
                 "category": product.get("category", ""),
                 "warehouse_id": balance["warehouse_id"],
-                "warehouse_name": warehouse.get("name", "Unknown"),
+                "warehouse_name": warehouse.get("name") or "Gudang tidak terdaftar",
                 "warehouse_city": warehouse.get("city", ""),
                 "on_hand_qty": balance.get("on_hand_qty", 0),
                 "available_qty": balance.get("available_qty", 0),

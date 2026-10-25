@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
 import { useEntityScope } from "../../../context/EntityScopeContext";
 import { entityShortById } from "../../../utils/entityLabel";
-import { ErrorBox, inputCls } from "./GrnBits";
+import { ErrorBox } from "./GrnBits";
 import { errText, grnApi } from "./grnApi";
+import KNMonthPicker from "../../../components/KNMonthPicker";
+import { todayWib } from "../../../utils/formatters";
 
-const usd = (v) => (v == null ? "—" : `US$${Number(v).toFixed(v >= 1 ? 2 : 4)}`);
+// UAT 24 Okt (audit UI tahap 2) — dulu "US$12.34" (toFixed, titik) berhuruf mono; kini format id-ID.
+const usd = (v) => (v == null ? "—" : Number(v).toLocaleString("id-ID", {
+  style: "currency", currency: "USD", minimumFractionDigits: Number(v) >= 1 ? 2 : 4, maximumFractionDigits: Number(v) >= 1 ? 2 : 4 }));
 const n = (v) => Number(v || 0).toLocaleString("id-ID");
 
 function Kpi({ label, value, testId, tone = "" }) {
   return (
     <div className="rounded-xl border border-[#EFF0F2] bg-white p-3">
       <p className="text-[10px] font-bold uppercase text-[#6B6B73]">{label}</p>
-      <p data-testid={testId} className={`mt-0.5 font-mono text-[16px] font-bold ${tone}`}>{value}</p>
+      <p data-testid={testId} className={`mt-0.5 text-[16px] font-bold tabular-nums ${tone}`}>{value}</p>
     </div>
   );
 }
 
 /** Biaya OCR surat jalan per bulan: token, biaya, lembar, sisa anggaran per model & badan usaha (hak approve). */
 export default function GrnOcrUsagePanel() {
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(todayWib().slice(0, 7));
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const { entities } = useEntityScope();
@@ -30,8 +34,8 @@ export default function GrnOcrUsagePanel() {
   return (
     <div className="space-y-3" data-testid="grn-ocr-usage">
       <div className="flex items-center gap-2">
-        <label className="text-[11px] font-semibold text-[#3C3C43]">Bulan</label>
-        <input data-testid="grn-ocr-usage-month" type="month" className={`${inputCls} !w-40`} value={month} onChange={(e) => setMonth(e.target.value)} />
+        <span className="text-[11px] font-semibold text-[#3C3C43]">Bulan</span>
+        <KNMonthPicker data-testid="grn-ocr-usage-month" value={month} onChange={(v) => v && setMonth(v)} className="!w-44" />
       </div>
       <ErrorBox text={err} />
       {data && (<>
@@ -61,8 +65,8 @@ export default function GrnOcrUsagePanel() {
                   <td className="px-2 tabular-nums">{n(r.pages)}</td>
                   <td className="px-2 tabular-nums">{n(r.input)}</td>
                   <td className="px-2 tabular-nums">{n(r.output)}</td>
-                  <td className="px-2 font-mono">{usd(r.cost_usd)}</td>
-                  <td className="px-2 font-mono">{usd(r.cost_per_page)}</td>
+                  <td className="px-2 tabular-nums">{usd(r.cost_usd)}</td>
+                  <td className="px-2 tabular-nums">{usd(r.cost_per_page)}</td>
                 </tr>
               ))}
             </tbody>

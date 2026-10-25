@@ -40,10 +40,10 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
 
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(""), 2500); };
   const sweep = async () => {
-    if (!readerId) { setError("Pilih reader dulu"); return; }
+    if (!readerId) { setError("Pilih pembaca dulu"); return; }
     setBusy(true); setError(null);
-    try { const r = await axios.post(`${API}/rfid/reader/scan`, { device_id: readerId }); flash(`${r.data.scanned} tag terbaca oleh reader.`); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal sweep reader"); } finally { setBusy(false); }
+    try { const r = await axios.post(`${API}/rfid/reader/scan`, { device_id: readerId }); flash(`${r.data.scanned} tag terbaca oleh pembaca.`); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal memindai area"); } finally { setBusy(false); }
   };
 
   const counts = useMemo(() => ({
@@ -52,7 +52,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
     unseen: items.filter((i) => i.state === "unseen").length,
     drift: items.filter((i) => i.state === "drift").length,
   }), [items]);
-  const readerOpts = readers.map((r) => ({ value: r.id, label: `${r.code} · ${r.location || ""} · ${r.warehouse_name || ""}` }));
+  const readerOpts = readers.map((r) => ({ value: r.id, label: [r.code, r.location, r.warehouse_name].filter(Boolean).join(" · ") }));
 
   return (
     <div data-testid="rfid-locations-view" className="space-y-4">
@@ -84,18 +84,31 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         <Stat icon={AlertTriangle} label="Beda Gudang (Drift)" value={counts.drift} color="#C0341D" loading={loading} testId="rfid-loc-drift" />
       </div>
 
-      <SectionCard title="Simulasi Pindai Area (Pembaca Tetap)" right={
-        <div className="flex items-center gap-2">
-          <KNSelect data-testid="rfid-loc-reader" value={readerId} onValueChange={setReaderId} options={readerOpts}
-            className="field !py-1 !px-2 text-[12px] w-64" placeholder="Pilih reader" />
-          <button data-testid="rfid-loc-sweep" disabled={busy || !readerId} onClick={sweep}
-            className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
-            <Radar size={14} /> Pindai
-          </button>
-        </div>}>
+      {/* UAT 24 Okt (audit UI tahap 2) — dulu "Pilih reader" hanya placeholder tanpa penjelasan, tombol Pindai mati tanpa
+          alasan, dan tabel lokasi tag (31 baris) ada di dalam kartu "Simulasi Pindai Area". Kini dua kartu terpisah. */}
+      <SectionCard title="Simulasi Pindai Area (Pembaca Tetap)">
+        {!loading && readers.length === 0 ? (
+          <p data-testid="rfid-loc-no-reader" className="text-[12px] text-[#6B6B73]">
+            Belum ada pembaca tetap di gudang ini — pindai area butuh pembaca.{" "}
+            <a href="?view=cs-rfid-devices" className="font-semibold text-[#0058CC] underline">Buat di Perangkat RFID</a>.
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <KNSelect data-testid="rfid-loc-reader" value={readerId} onValueChange={setReaderId} options={readerOpts}
+              className="field !py-1 !px-2 text-[12px] w-64 max-w-full" placeholder="Pilih pembaca" />
+            <button data-testid="rfid-loc-sweep" disabled={busy || !readerId} onClick={sweep}
+              title={!readerId ? "Pilih pembaca dulu" : "Baca semua tag di jangkauan pembaca ini"}
+              className="primary-button flex items-center gap-1">
+              <Radar size={14} /> Pindai
+            </button>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Lokasi Tag">
         {srch.toolbar}
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-          : srch.shown.length === 0 ? <EmptyBox icon={MapPin} text="Belum ada tag. Encode roll di menu Tags dulu." />
+          : srch.shown.length === 0 ? <EmptyBox icon={MapPin} text={items.length ? "Tidak ada tag yang cocok dengan pencarian." : "Belum ada tag. Encode roll di menu Tag RFID dulu."} />
             : (
               <div className="overflow-x-auto">
                 <table className="w-full text-[12px]">

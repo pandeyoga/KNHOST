@@ -1,5 +1,5 @@
 """Dashboard router: main metrics + overview."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fastapi import APIRouter, Request
 from db import db
 from core_utils import safe_doc
@@ -9,6 +9,33 @@ from services import sales_ownership          # FASE E-8 (E8.4/US11) — "Pesana
 from entity_scope import entity_ctx, resolve_list_scope
 
 router = APIRouter(prefix="/api")
+
+
+# UAT 24 Okt (audit UI tahap 2) — KPI "Jml Tersedia/Dipesan" dulu memuat kelompok "1.503 tanpa satuan". Penyebab di data
+# acuan: saldo (`inventory_balances`) milik product_id yang dokumen produknya TIDAK ADA (sisa uji), tanpa roll. Satuan kini
+# diturunkan bertahap: base_unit/unit produk → satuan roll produk itu → label jujur "(produk tak terdaftar)" /
+# "(satuan belum diisi)" — bukan "tanpa satuan" yang terbaca seperti nama satuan.
+UNIT_MISSING = "(satuan belum diisi)"
+UNIT_UNKNOWN_PRODUCT = "(produk tak terdaftar)"
+
+
+async def _units_for_products(pids: List[str]):
+    """→ ({pid: satuan}, {pid: label kelompok tanpa satuan})."""
+    prods = {p["id"]: p for p in await db.products.find(
+        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "base_unit": 1, "unit": 1}).to_list(None)}
+    unit_of = {pid: (p.get("base_unit") or p.get("unit") or "") for pid, p in prods.items()}
+    need = [pid for pid in pids if not unit_of.get(pid)]
+    if need:
+        async for r in db.inventory_rolls.aggregate([
+                {"$match": {"product_id": {"$in": need}, "unit": {"$nin": [None, ""]}}},
+                {"$group": {"_id": {"p": "$product_id", "u": "$unit"}, "n": {"$sum": 1}}},
+                {"$sort": {"n": -1}}]):
+            pid = r["_id"]["p"]
+            if not unit_of.get(pid):
+                unit_of[pid] = r["_id"]["u"]
+    unitless = {pid: (UNIT_UNKNOWN_PRODUCT if pid not in prods else UNIT_MISSING)
+                for pid in pids if not unit_of.get(pid)}
+    return unit_of, unitless
 
 
 @router.get("/dashboard")
@@ -107,13 +134,12 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     total_reserved = round(total_reserved, 2)
     # F-04 (uji pra-UAT 2026-10-21) — KPI "Jml Tersedia/Dipesan" per SATUAN: yard dan kg tidak boleh dijumlahkan
     # menjadi satu angka. Satuan = base_unit produk (saldo tidak menyimpan satuan); + jumlah roll tersedia.
-    unit_of = {p["id"]: (p.get("base_unit") or p.get("unit") or "") for p in await db.products.find(
-        {"id": {"$in": list(per_prod)}}, {"_id": 0, "id": 1, "base_unit": 1, "unit": 1}).to_list(None)}
+    unit_of, unitless = await _units_for_products(list(per_prod))
     mk = {p["id"]: float(p.get("makloon_reserved_qty") or 0) for p in products if p.get("id")}
     available_by_unit: Dict[str, float] = {}
     reserved_by_unit: Dict[str, float] = {}
     for pid, d in per_prod.items():
-        unit = unit_of.get(pid) or "tanpa satuan"   # produk lama tanpa base_unit — tetap terlihat, tidak dicampur
+        unit = unit_of.get(pid) or unitless.get(pid) or UNIT_MISSING   # tetap terlihat, tidak dicampur
         free = max(d["available_qty"] - mk.get(pid, 0.0), 0.0)
         available_by_unit[unit] = round(available_by_unit.get(unit, 0.0) + free, 2)
         reserved_by_unit[unit] = round(reserved_by_unit.get(unit, 0.0) + d["reserved_qty"], 2)
@@ -133,6 +159,8 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             "warehouses": total_warehouses,
             "customers": total_customers,
             "available_qty": total_available,
+            # UAT 24 Okt (audit UI tahap 2) — produk yang satuannya tak bisa diturunkan (untuk perbaikan data).
+            "unitless_product_ids": sorted(unitless)[:50],
             "reserved_qty": total_reserved,
             "available_by_unit": {u: q for u, q in available_by_unit.items() if q > 0.004},
             "reserved_by_unit": {u: q for u, q in reserved_by_unit.items() if q > 0.004},

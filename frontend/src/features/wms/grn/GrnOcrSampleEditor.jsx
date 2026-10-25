@@ -3,6 +3,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, sampleApi } from "./grnApi";
 import KNSelect from "../../../components/KNSelect";
+import KNDatePicker from "../../../components/KNDatePicker";
 
 const UNITS = ["yard", "meter", "kg", "pcs"];
 const blank = () => ({ description: "", qty: "", unit: "yard", rolls: "", po_ref: "", is_non_stock: false });
@@ -32,7 +33,7 @@ export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
           <div className="grid gap-2 sm:grid-cols-3">
             <label className="sm:col-span-3"><span className="font-semibold">Nama sample</span><input data-testid="ocr-sample-label" className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} /></label>
             <label className="sm:col-span-2"><span className="font-semibold">Nomor SJ</span><input data-testid="ocr-sample-dn" className={`${inputCls} font-mono`} value={dn} onChange={(e) => setDn(e.target.value)} /></label>
-            <label><span className="font-semibold">Tanggal SJ</span><input data-testid="ocr-sample-date" type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} /></label>
+            <div><span className="font-semibold">Tanggal SJ</span><KNDatePicker data-testid="ocr-sample-date" value={date || ""} onChange={setDate} placeholder="Pilih tanggal SJ" /></div>
           </div>
           <div className="space-y-2" data-testid="ocr-sample-lines">
             <div className="hidden grid-cols-[1fr_90px_90px_60px_130px_50px_24px] gap-1 text-[10px] font-bold uppercase text-[#6B6B73] sm:grid"><span>Barang</span><span>Qty</span><span>Satuan</span><span>Roll</span><span>No. PO</span><span>Non-stok</span><span /></div>

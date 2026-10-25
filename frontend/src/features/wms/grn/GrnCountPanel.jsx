@@ -6,6 +6,7 @@ import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, grnApi } from "./grnApi";
 import PackingChecklist from "./GrnPackingChecklist";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { formatQty } from "../../../utils/formatters";
 
 function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const [raw, setRaw] = useState("");
@@ -77,7 +78,11 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
         {rolls.map((r) => (
           <li key={r.id} data-testid={`grn-count-roll-${r.id}`} className="flex items-center gap-2 py-1">
             <span className="w-20 font-mono font-semibold">{r.roll_no || "makloon"}</span>
-            <span className="flex-1 tabular-nums">{r.length_initial} {r.unit}{r.actual_task_qty != null && t.unit && r.unit && t.unit !== r.unit ? ` (= ${r.actual_task_qty} ${t.unit})` : ""}{r.weight_kg ? ` · ${r.weight_kg} kg` : ""} · lot {r.lot || "-"} · {r.grade}</span>
+            {/* UAT 24 Okt (audit UI tahap 2) — satuan utama = satuan SJ/PO (dulu "109.36 yard (= 100 meter)" untuk barang
+                bermeter); satuan stok dalam kurung, angka berformat id-ID. */}
+            <span className="flex-1 tabular-nums">{r.actual_task_qty != null && t.unit && r.unit && t.unit !== r.unit
+              ? `${formatQty(r.actual_task_qty)} ${t.unit} (stok ${formatQty(r.length_initial)} ${r.unit})`
+              : `${formatQty(r.length_initial)} ${r.unit}`}{r.weight_kg ? ` · ${formatQty(r.weight_kg)} kg` : ""} · lot {r.lot || "-"} · {r.grade}</span>
             <span className="text-[10px] text-[#6B6B73]">{r.scan_source === "count" ? "hitung" : "label"}</span>
             {editable && ["receiving", "makloon"].includes(r.status) && (
               <button data-testid={`grn-count-undo-${r.id}`} aria-label="Batalkan roll" onClick={() => run(() => grnApi.del(grn.id, `rolls/${r.id}`))}><Undo2 size={13} className="text-[#B4231F]" /></button>
@@ -105,6 +110,14 @@ export default function GrnCountPanel({ grn, onChange, canCount }) {
   return (
     <div className="space-y-3" data-testid="grn-count-panel">
       {grn.blind && <p data-testid="grn-blind-note" className="rounded-lg bg-[#EEF4FF] px-3 py-2 text-[11px] text-[#0058CC]">Hitung buta aktif — angka surat jalan sengaja tidak ditampilkan. Ukur dan catat apa adanya.</p>}
+      {/* UAT 24 Okt (audit UI tahap 2) — GRN tanpa baris (mis. dibatalkan) dulu hanya judul + kartu kosong. */}
+      {!lines.length && (
+        <p data-testid="grn-count-empty" className="rounded-xl border border-dashed border-[#E5E5EA] p-4 text-center text-[11.5px] text-[#6B6B73]">
+          {["cancelled", "rejected"].includes(grn.status)
+            ? `Dokumen ${grn.status === "rejected" ? "ditolak" : "dibatalkan"} — tidak ada barang yang dihitung.`
+            : "Belum ada baris barang yang diterima untuk dihitung. Tetapkan baris & target di tab Surat jalan dulu."}
+        </p>
+      )}
       {lines.map((ln) => <CountLine key={ln.line_no} grn={grn} ln={ln} rolls={rolls.filter((r) => r.grn_line_no === ln.line_no)} gradeOptions={gradeOptions} run={run} canCount={canCount} />)}
       <ErrorBox text={err} />
       {grn.status === "counting" && canCount && (

@@ -41,7 +41,10 @@ export function useGateStatus(gateId, enabled, onNewRed) {
   const deviceStale = data && (data.device.status !== "online" || !data.device.enabled || hb == null || hb > HEARTBEAT_STALE_S);
   const p = data?.passage;
   let state = "waiting";
-  if (offline) state = "unknown";
+  // UAT 24 Okt (audit UI tahap 2) — tanpa gerbang polling tak pernah jalan → dulu jatuh ke "unknown" (alarm
+  // TIDAK TERHUBUNG — TAHAN). Tanpa gerbang = keadaan netral, bukan alarm.
+  if (!gateId) state = "no_gate";
+  else if (offline) state = "unknown";
   else if (deviceStale) state = "device_offline";
   else if (p && data.latched) state = "red";
   else if (p && !p.expired) state = p.verdict;
@@ -51,7 +54,8 @@ export function useGateStatus(gateId, enabled, onNewRed) {
 const LOOK = {
   red: ["#C0341D", "✕ MERAH — TAHAN"], green: ["#1B7F4B", "✓ HIJAU — LOLOS"], info: ["#0058CC", "INFO"],
   unknown: ["#5B5B66", "TIDAK TERHUBUNG — TAHAN"], device_offline: ["#8C4A00", "GATE OFFLINE — TAHAN"],
-  waiting: ["#101418", "Menunggu passage…"],
+  waiting: ["#101418", "Menunggu barang lewat…"],
+  no_gate: ["#8E8E93", "BELUM ADA GERBANG"],
 };
 
 export default function GateLiveVerdict({ gate, status, big = false, onAcked }) {

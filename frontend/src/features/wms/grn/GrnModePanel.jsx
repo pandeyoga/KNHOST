@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { ArrowRightLeft, CheckCircle2, History, PackageCheck } from "lucide-react";
+import { ArrowRightLeft, History, PackageCheck } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { askReason } from "../../../services/confirmService";
+import { docStatusLabel } from "../../../utils/docStatus";
 import useReceivingMode, { notifyReceivingModeChanged } from "../../../hooks/useReceivingMode";
 import { ErrorBox } from "./GrnBits";
 import { errText } from "./grnApi";
@@ -15,18 +17,30 @@ function Stat({ label, value, testId, tone = "" }) {
 }
 
 function EntityCard({ e, onSwitched }) {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const grn = e.mode === "grn";
   const target = grn ? "legacy" : "grn";
   const id = e.entity_id;
+  // UAT 24 Okt (audit UI tahap 2) — dulu konfirmasi inline (isian alasan tanpa label, "Batal" berupa teks polos).
+  // Kini dialog alasan standar yang menyebut badan usaha & mode tujuan.
   const go = async () => {
+    const message = target === "grn"
+      ? "Barang dari supplier & makloon hanya masuk stok lewat Kedatangan Barang yang ditutup (surat jalan → hitung fisik → rekonsiliasi). "
+        + "Tombol terima di layar lama (Barang Masuk, \"Terima Hasil\" order makloon, aplikasi gudang) disembunyikan dan ditolak server. "
+        + `${e.started_legacy} tugas yang sudah mulai diterima tetap boleh diselesaikan di layar lama.`
+        + (!e.closed_grns ? " Belum ada Kedatangan yang ditutup di badan usaha ini — disarankan uji coba dulu." : "")
+      : "Layar Barang Masuk lama aktif kembali untuk semua tugas. Kedatangan yang sedang berjalan tetap bisa diselesaikan.";
+    const reason = await askReason({
+      title: `Ubah mode penerimaan ${e.entity_name} ke ${target === "grn" ? "Kedatangan Barang" : "mode lama"}?`,
+      message, reasonLabel: "Alasan perubahan (tercatat di audit)", reasonMinLength: 5,
+      confirmLabel: target === "grn" ? "Beralih ke Kedatangan" : "Kembali ke mode lama",
+    });
+    if (reason === null) return;
     setBusy(true); setErr("");
     try {
       const r = await axios.put(`${API}/goods-receipts/mode`, { entity_id: id, mode: target, reason: reason.trim() });
-      setOpen(false); setReason(""); onSwitched(r.data);
+      onSwitched(r.data);
     } catch (x) { setErr(errText(x)); } finally { setBusy(false); }
   };
   return (
@@ -38,11 +52,11 @@ function EntityCard({ e, onSwitched }) {
             {grn ? <><PackageCheck size={11} /> Kedatangan Barang (GRN)</> : <><History size={11} /> Lama — per tugas Barang Masuk</>}
           </span>
         </div>
-        <button data-testid={`grn-mode-switch-${id}`} className={grn ? "secondary-button" : "primary-button"} onClick={() => setOpen((x) => !x)}>
+        <button data-testid={`grn-mode-switch-${id}`} className="secondary-button" disabled={busy} onClick={go}>
           <ArrowRightLeft size={13} /> {grn ? "Kembali ke mode lama" : "Beralih ke Kedatangan"}
         </button>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Tugas menunggu barang" value={e.waiting_tasks} testId={`grn-mode-waiting-${id}`} />
         <Stat label="Sudah mulai di layar lama" value={e.started_legacy + e.legacy_in_flight.length} testId={`grn-mode-started-${id}`} tone={e.started_legacy + e.legacy_in_flight.length ? "text-[#B26A00]" : ""} />
         <Stat label="Kedatangan terbuka" value={e.open_grns} testId={`grn-mode-open-${id}`} />
@@ -52,31 +66,11 @@ function EntityCard({ e, onSwitched }) {
         <div data-testid={`grn-mode-inflight-${id}`} className="rounded-lg border border-[#F1D08A] bg-[#FFF9EC] p-2.5 text-[11px]">
           <p className="font-semibold text-[#8A5300]">Tugas lama yang masih boleh diselesaikan di Operasi WMS → Terima Cepat (mode lama) ({e.legacy_in_flight.length}):</p>
           <ul className="mt-1 space-y-0.5">
-            {e.legacy_in_flight.map((t) => <li key={t.id}>• {t.po_number} · {t.product_name} — {t.received_qty || 0}/{t.expected_qty} {t.unit} ({t.status})</li>)}
+            {e.legacy_in_flight.map((t) => <li key={t.id}>• {t.po_number} · {t.product_name} — {t.received_qty || 0}/{t.expected_qty} {t.unit} ({docStatusLabel(t.status)})</li>)}
           </ul>
         </div>
       )}
-      {open && (
-        <div data-testid={`grn-mode-confirm-box-${id}`} className="space-y-2 rounded-lg border border-[#E3E8F2] bg-[#F7F9FC] p-3 text-[11px]">
-          {target === "grn" ? (
-            <ul className="space-y-0.5 text-[#3C3C43]">
-              <li>• Barang dari supplier & makloon hanya masuk stok lewat Kedatangan Barang yang ditutup (surat jalan → hitung fisik → rekonsiliasi).</li>
-              <li>• Tombol terima di layar lama (Barang Masuk, "Terima Hasil" MKO, aplikasi gudang) disembunyikan dan ditolak server.</li>
-              <li>• {e.started_legacy} tugas yang sudah mulai diterima tetap boleh diselesaikan di layar lama.</li>
-              {!e.closed_grns && <li className="font-semibold text-[#B26A00]">• Belum ada Kedatangan yang ditutup di badan usaha ini — disarankan uji coba dulu.</li>}
-            </ul>
-          ) : <p className="text-[#3C3C43]">Layar Barang Masuk lama aktif kembali untuk semua tugas. Kedatangan yang sedang berjalan tetap bisa diselesaikan.</p>}
-          <textarea data-testid={`grn-mode-reason-${id}`} rows={2} className="w-full rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-[11.5px] focus:border-[#0058CC] focus:outline-none"
-            placeholder="Alasan perubahan (wajib, tercatat di audit)" value={reason} onChange={(x) => setReason(x.target.value)} />
-          <ErrorBox text={err} />
-          <div className="flex justify-end gap-2">
-            <button className="text-[11px] font-semibold text-[#6B6B73]" onClick={() => setOpen(false)}>Batal</button>
-            <button data-testid={`grn-mode-confirm-${id}`} className="primary-button" disabled={busy || reason.trim().length < 5} onClick={go}>
-              <CheckCircle2 size={13} /> {target === "grn" ? "Ya, beralih ke Kedatangan" : "Ya, kembali ke mode lama"}
-            </button>
-          </div>
-        </div>
-      )}
+      <ErrorBox text={err} />
     </div>
   );
 }

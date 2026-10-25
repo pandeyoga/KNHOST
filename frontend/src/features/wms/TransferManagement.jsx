@@ -4,7 +4,8 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
-import { askReason } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
+import { formatQty } from "../../utils/formatters";
 import { StatusBadge, statusLabel } from "./transfer/transferConstants";
 import TransferCreateForm from "./transfer/TransferCreateForm";
 import FormModal from "../../components/FormModal";
@@ -131,6 +132,16 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
   };
 
   const handleApprove = async (transferId, ruleReason = "") => {
+    // UAT 24 Okt (audit UI tahap 2) — persetujuan (memesan roll; antar-PT memindah kepemilikan + jurnal) dulu sekali klik.
+    const t = (selectedTransfer && selectedTransfer.id === transferId) ? selectedTransfer : (transfers || []).find((x) => x.id === transferId) || {};
+    const ic = t.transfer_kind === "inter_entity";
+    const items = (t.items || []).map((it) => `${it.product_name || it.sku} ${formatQty(it.qty)} ${it.unit || ""}`.trim()).join(", ");
+    if (!(await askConfirm({
+      title: `Setujui transfer ${t.code || ""}?`.replace("  ", " "),
+      message: `${t.source_warehouse_name || "Gudang asal"} → ${t.dest_warehouse_name || "gudang tujuan"}${items ? `: ${items}` : ""}.`
+        + (ic ? " Kepemilikan barang pindah ke badan usaha tujuan dan jurnal antar-PT dibuat." : " Gudang asal lalu bisa mulai pengambilan."),
+      confirmLabel: ic ? "Setujui & pindahkan kepemilikan" : "Setujui",
+    }))) return;
     setActionError("");
     try {
       await axios.post(`${API}/transfers/${transferId}/approve`, { approved_by: user?.name || "Manager", rule_exception_reason: ruleReason });
@@ -150,6 +161,7 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
       message: "Roll yang sudah ditahan akan dilepas kembali ke gudang asal. "
         + "Alasan dicatat pada dokumen supaya pengaju tahu apa yang harus diperbaiki.",
       reasonLabel: "Alasan penolakan",
+      reasonMinLength: 5,
       reasonPlaceholder: "Contoh: stok gudang asal masih dipakai SO-0007",
       confirmLabel: "Tolak Transfer",
       danger: true,
@@ -267,6 +279,9 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
         cancelTestId="cancel-form-button"
         busy={saving}
         error={formError}
+        // UAT 24 Okt (audit UI tahap 2) — "Buat Transfer" dulu aktif pada form kosong.
+        submitDisabled={!formData.source_warehouse_id || !formData.dest_warehouse_id
+          || formData.source_warehouse_id === formData.dest_warehouse_id || !(formData.items || []).length}
       >
         <TransferCreateForm
           variant="modal"
@@ -321,8 +336,8 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
               </div>
 
               <div className="text-xs text-[#3C3C43] space-y-1">
-                <p><span className="font-semibold">Items:</span> {transfer.items?.length || 0}</p>
-                <p><span className="font-semibold">Requested by:</span> {transfer.requested_by}</p>
+                <p><span className="font-semibold">Barang:</span> {transfer.items?.length || 0} baris</p>
+                <p><span className="font-semibold">Diajukan oleh:</span> {transfer.requested_by || "—"}</p>
                 {transfer.approved_by && <p><span className="font-semibold">Disetujui oleh:</span> {transfer.approved_by}</p>}
               </div>
             </div>

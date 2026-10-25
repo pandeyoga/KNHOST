@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { formatDateTime } from "../../utils/formatters";
 
 // Peta kecil posisi sopir (OpenStreetMap). Titik = posisi ber-GPS, garis = urutan perjalanan.
 const dot = (color) => L.divIcon({ className: "", iconSize: [14, 14], iconAnchor: [7, 7],
@@ -27,7 +28,7 @@ export default function PositionMap({ positions = [], height = 220 }) {
     pts.forEach((p, i) => {
       const last = i === pts.length - 1;
       L.marker([p.lat, p.lng], { icon: dot(last ? "#C0341D" : "#0058CC") })
-        .bindPopup(`<b>${p.location || "Posisi"}</b><br/>${String(p.at || "").slice(0, 16).replace("T", " ")}${p.note ? `<br/>${p.note}` : ""}`)
+        .bindPopup(`<b>${p.location || "Posisi"}</b><br/>${p.at ? formatDateTime(p.at) : ""}${p.note ? `<br/>${p.note}` : ""}`)
         .addTo(layer);
     });
     if (latlngs.length === 1) map.setView(latlngs[0], 14); else map.fitBounds(latlngs, { padding: [24, 24] });

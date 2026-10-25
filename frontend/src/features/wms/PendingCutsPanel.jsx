@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { Scissors, Printer } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { printCutChildLabels } from "../../utils/rollLabels";
+import DecimalInput from "../../components/DecimalInput";
+import { parseDecimal } from "../../utils/decimalInput";
+import { askConfirm } from "../../services/confirmService";
+import { formatQty } from "../../utils/formatters";
 
 const nf = new Intl.NumberFormat("id-ID");
 
@@ -24,15 +28,27 @@ export default function PendingCutsPanel({ whId }) {
   };
   useEffect(() => { load(); }, [whId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // UAT 24 Okt (audit UI tahap 2) — "Konfirmasi Potong" dulu langsung POST (52 tombol, tanpa dialog); isian tanpa label
+  // dengan desimal titik. Kini DecimalInput (koma) berlabel + konfirmasi ringkas.
+  const num = (v) => { const n = parseDecimal(String(v ?? "")); return Number.isNaN(n) ? null : n; };
   const cut = async (it) => {
     const f = form[it.reservation_id] || {};
+    const actual = f.actual !== undefined && f.actual !== "" ? num(f.actual) : null;
+    const waste = f.waste !== undefined && f.waste !== "" ? (num(f.waste) || 0) : 0;
+    const len = actual ?? it.qty;
+    if (!(await askConfirm({
+      title: `Potong ${it.roll_no} ${formatQty(len)} ${it.unit || ""}?`.replace(/\s+\?$/, "?"),
+      message: `Roll anak ${formatQty(len)} ${it.unit || ""} dibuat dari ${it.roll_no}${it.order_number ? ` untuk ${it.order_number}` : ""}`
+        + `${waste ? `; susut terbuang ${formatQty(waste)} ${it.unit || ""}` : ""}. Potong fisik tidak bisa dibatalkan.`,
+      confirmLabel: "Konfirmasi potong",
+    }))) return;
     setBusy(true);
     try {
       const r = await axios.post(`${API}/inventory/rolls/${it.roll_id}/reservations/${it.reservation_id}/cut`, {
-        actual_length: f.actual !== undefined && f.actual !== "" ? Number(f.actual) : null,
-        waste: Number(f.waste || 0),
+        actual_length: actual,
+        waste,
       });
-      setMsg(`Potong tercatat — roll anak ${r.data.child.roll_no} (${r.data.child.length_remaining}). Pasang tag/label baru lalu verifikasi sebelum muat.`);
+      setMsg(`Potong tercatat — roll anak ${r.data.child.roll_no} (${formatQty(r.data.child.length_remaining)} ${r.data.child.unit || it.unit || ""}). Pasang tag/label baru lalu verifikasi sebelum muat.`);
       setLastChild(r.data.child);
       await load();
       await loadKids();
@@ -73,16 +89,22 @@ export default function PendingCutsPanel({ whId }) {
         {items.length === 0 && <p className="text-[12px] text-[#8E8E93]" data-testid="pending-cuts-empty">Tidak ada reservasi yang menunggu dipotong.</p>}
         {items.map((it) => (
           <div key={it.reservation_id} data-testid={`pending-cut-${it.reservation_id}`}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-[#DCE6F5] p-2 text-[12px]">
-            <span className="flex-1 font-semibold">{it.roll_no} · pesan {nf.format(it.qty)} {it.unit} dari {nf.format(it.parent_length)} {it.unit}{it.order_number ? <span className="font-normal text-[#6B6B73]" data-testid={`pending-cut-so-${it.reservation_id}`}> · untuk {it.order_number}</span> : null}</span>
-            <input data-testid={`pending-cut-actual-${it.reservation_id}`} className="field w-24" type="number" step="0.01"
-              placeholder={`aktual ${it.qty}`} value={(form[it.reservation_id] || {}).actual ?? ""}
-              onChange={(e) => set(it.reservation_id, "actual", e.target.value)} />
-            <input data-testid={`pending-cut-waste-${it.reservation_id}`} className="field w-20" type="number" step="0.01"
-              placeholder="waste" value={(form[it.reservation_id] || {}).waste ?? ""}
-              onChange={(e) => set(it.reservation_id, "waste", e.target.value)} />
+            className="flex flex-wrap items-end gap-2 rounded-lg border border-[#DCE6F5] p-2 text-[12px]">
+            <span className="flex-1 min-w-[200px] self-center font-semibold">{it.roll_no} · pesan {nf.format(it.qty)} {it.unit} dari {nf.format(it.parent_length)} {it.unit}{it.order_number ? <span className="font-normal text-[#6B6B73]" data-testid={`pending-cut-so-${it.reservation_id}`}> · untuk {it.order_number}</span> : null}</span>
+            <label className="grid gap-0.5">
+              <span className="text-[10.5px] font-semibold text-[#6B6B73]">Panjang aktual <span className="font-normal">(opsional)</span></span>
+              <DecimalInput data-testid={`pending-cut-actual-${it.reservation_id}`} className="field w-32" suffix={it.unit || ""}
+                placeholder={formatQty(it.qty)} value={(form[it.reservation_id] || {}).actual ?? ""}
+                onChange={(v) => set(it.reservation_id, "actual", v)} />
+            </label>
+            <label className="grid gap-0.5">
+              <span className="text-[10.5px] font-semibold text-[#6B6B73]" title="Sisa terbuang saat memotong — dicatat sebagai susut">Susut terbuang</span>
+              <DecimalInput data-testid={`pending-cut-waste-${it.reservation_id}`} className="field w-28" suffix={it.unit || ""}
+                placeholder="0" value={(form[it.reservation_id] || {}).waste ?? ""}
+                onChange={(v) => set(it.reservation_id, "waste", v)} />
+            </label>
             <button data-testid={`pending-cut-confirm-${it.reservation_id}`} disabled={busy} onClick={() => cut(it)}
-              className="rounded-lg bg-[#0058CC] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">
+              className="primary-button">
               Konfirmasi Potong
             </button>
           </div>

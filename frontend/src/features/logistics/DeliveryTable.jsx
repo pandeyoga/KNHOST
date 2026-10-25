@@ -44,7 +44,8 @@ export default function DeliveryTable({ rows, onOpen, canOpenOrder }) {
               <th key={c.key}>
                 {c.sortable === false ? c.label : (
                   <button type="button" data-testid={`logistics-sort-${c.key}`} onClick={() => toggle(c.key)} aria-sort={sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-                    className={`inline-flex items-center gap-1 hover:text-[#0058CC] ${sort.key === c.key ? "text-[#0058CC]" : ""}`}>
+                    // UAT 24 Okt (audit UI tahap 2) — tombol urut tidak mewarisi huruf kapital kepala tabel (Title case vs MAJUSCULE).
+                    className={`inline-flex items-center gap-1 [font:inherit] [letter-spacing:inherit] [text-transform:inherit] hover:text-[#0058CC] ${sort.key === c.key ? "text-[#0058CC]" : ""}`}>
                     {c.label}{sort.key === c.key ? (sort.dir === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ArrowUpDown size={11} className="opacity-40" />}
                   </button>
                 )}

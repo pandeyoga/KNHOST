@@ -3,6 +3,7 @@ import { CheckCircle2, Plus, Save } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import { askReason } from "../../../services/confirmService";
+import KNDatePicker from "../../../components/KNDatePicker";
 import { ErrorBox, Field, inputCls } from "./GrnBits";
 import GrnPhotoPane from "./GrnPhotoPane";
 import GrnLineCard from "./GrnLineCard";
@@ -14,30 +15,36 @@ import { fillFromTarget, suggestTargets, targetLabel } from "./grnTargets";
 const EMPTY = { item_code: "", description: "", po_ref: "", qty: "", unit: "", rolls: "", weight_kg: "", weight_basis: "", grade: "", lot: "", target: "", is_non_stock: false, role: "output" };
 const num = (v) => (v === "" || v == null ? null : Number(v));
 
+// UAT 24 Okt (audit UI tahap 2) — dokumen Dibatalkan/Ditutup/Ditolak dulu tetap menampilkan kepala SJ yang bisa
+// diedit dengan "Simpan kepala SJ" aktif. Kini mode baca.
+const DN_READONLY = ["cancelled", "closed", "rejected", "closing"];
 function DnForm({ grn, run, busy }) {
   const [dn, setDn] = useState(grn.dn || {});
   const [dirty, setDirty] = useState(false);
+  const readOnly = DN_READONLY.includes(grn.status);
   // Isian yang belum disimpan TIDAK ditimpa saat dokumen berubah (mis. hasil "Isi manual").
   useEffect(() => { if (!dirty) setDn(grn.dn || {}); }, [grn.dn, dirty]);
-  const set = (k) => (e) => { setDirty(true); setDn((d) => ({ ...d, [k]: e.target.value })); };
+  const set = (k) => (e) => { setDirty(true); setDn((d) => ({ ...d, [k]: e?.target ? e.target.value : e })); };
   const hd = new Set((grn.extraction?.header_diff || []).map((d) => d.field));
   const warn = (f) => (hd.has(f) ? " !border-[#E5B34A] !bg-[#FFF6E0]" : "");
   const save = async () => { if (await run(() => grnApi.patch(grn.id, "dn", { expected_version: grn.version, number: dn.number || "", date: dn.date || "",
     supplier_name_printed: dn.supplier_name_printed || "", recipient_name: dn.recipient_name || "", vehicle_plate: dn.vehicle_plate || "",
     po_refs: String(dn.po_refs_text ?? (dn.po_refs || []).join(", ")).split(",").map((s) => s.trim()).filter(Boolean) }))) setDirty(false); };
-  const pending = grn.dn?.source === "ocr" && !grn.dn?.verified;
+  const pending = !readOnly && grn.dn?.source === "ocr" && !grn.dn?.verified;
   return (
     <div data-testid="grn-dn-form" className={`grid grid-cols-1 gap-2 sm:grid-cols-2 rounded-xl border p-3 ${pending ? "border-[#F1D08A] bg-[#FFFCF5]" : "border-[#EFF0F2]"}`}>
       {pending && <p data-testid="grn-dn-pending" className="col-span-full text-[11px] font-semibold text-[#8A5300]">Kepala SJ diisi dari baca otomatis — cocokkan dengan foto, perbaiki bila salah, lalu konfirmasi.</p>}
-      <Field label="Nomor surat jalan *"><input data-testid="grn-dn-number" className={`${inputCls} font-mono${warn("dn_number")}`} value={dn.number || ""} onChange={set("number")} /></Field>
-      <Field label="Tanggal kirim"><input data-testid="grn-dn-date" type="date" className={`${inputCls}${warn("dn_date")}`} value={dn.date || ""} onChange={set("date")} /></Field>
-      <Field label="Nama pengirim tercetak"><input data-testid="grn-dn-supplier-printed" className={inputCls} value={dn.supplier_name_printed || ""} onChange={set("supplier_name_printed")} /></Field>
-      <Field label="Penerima"><input data-testid="grn-dn-recipient" className={inputCls} value={dn.recipient_name || ""} onChange={set("recipient_name")} /></Field>
-      <Field label="Nomor PO di SJ (pisah koma)"><input data-testid="grn-dn-po-refs" className={`${inputCls}${warn("po_refs")}`} value={dn.po_refs_text ?? (dn.po_refs || []).join(", ")} onChange={set("po_refs_text")} /></Field>
-      <Field label="Plat kendaraan"><input data-testid="grn-dn-plate" className={inputCls} value={dn.vehicle_plate || ""} onChange={set("vehicle_plate")} /></Field>
+      {readOnly && <p data-testid="grn-dn-readonly" className="col-span-full text-[11px] text-[#6B6B73]">Dokumen {(grn.status === "closing" ? "sedang diposting" : grn.status === "closed" ? "sudah ditutup" : grn.status === "rejected" ? "ditolak" : "dibatalkan")} — kepala surat jalan hanya bisa dibaca.</p>}
+      <Field label="Nomor surat jalan *"><input data-testid="grn-dn-number" disabled={readOnly} className={`${inputCls} font-mono${warn("dn_number")}`} value={dn.number || ""} onChange={set("number")} /></Field>
+      {/* UAT 24 Okt (audit UI tahap 2) — pemilih tanggal aplikasi, bukan <input type=date> bawaan peramban ("dd/mm/yyyy"). */}
+      <Field label="Tanggal kirim"><div className={warn("dn_date") ? "rounded-lg ring-1 ring-[#E5B34A]" : ""}><KNDatePicker data-testid="grn-dn-date" value={dn.date || ""} onChange={set("date")} disabled={readOnly} placeholder="Pilih tanggal kirim" /></div></Field>
+      <Field label="Nama pengirim tercetak"><input data-testid="grn-dn-supplier-printed" disabled={readOnly} className={inputCls} value={dn.supplier_name_printed || ""} onChange={set("supplier_name_printed")} /></Field>
+      <Field label="Penerima"><input data-testid="grn-dn-recipient" disabled={readOnly} className={inputCls} value={dn.recipient_name || ""} onChange={set("recipient_name")} /></Field>
+      <Field label="Nomor PO di SJ (pisah koma)"><input data-testid="grn-dn-po-refs" disabled={readOnly} className={`${inputCls}${warn("po_refs")}`} value={dn.po_refs_text ?? (dn.po_refs || []).join(", ")} onChange={set("po_refs_text")} /></Field>
+      <Field label="Plat kendaraan"><input data-testid="grn-dn-plate" disabled={readOnly} className={inputCls} value={dn.vehicle_plate || ""} onChange={set("vehicle_plate")} /></Field>
       <div className="col-span-full flex flex-wrap items-center justify-between gap-2">
         <span className="text-[10.5px] text-[#0F766E]" data-testid="grn-dn-verified">{grn.dn?.verified ? <><CheckCircle2 size={11} className="mr-0.5 inline" />Dikonfirmasi {grn.dn.verified_by}{(grn.dn.corrected_fields || []).length ? ` · dikoreksi: ${grn.dn.corrected_fields.join(", ")}` : ""}</> : ""}</span>
-        <button data-testid="grn-dn-save" className={pending ? "primary-button" : "secondary-button"} disabled={busy} onClick={save}>{pending ? <><CheckCircle2 size={13} /> Konfirmasi kepala SJ</> : <><Save size={13} /> Simpan kepala SJ</>}</button>
+        {!readOnly && <button data-testid="grn-dn-save" className={pending ? "primary-button" : "secondary-button"} disabled={busy} onClick={save}>{pending ? <><CheckCircle2 size={13} /> Konfirmasi kepala SJ</> : <><Save size={13} /> Simpan kepala SJ</>}</button>}
       </div>
     </div>
   );

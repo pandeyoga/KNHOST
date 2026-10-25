@@ -6,6 +6,12 @@
 import { AlertOctagon, Phone, Truck } from "lucide-react";
 import { formatQty } from "../../../utils/formatters";
 import { shortDate } from "./lotApi";
+import { docStatusLabel } from "../../../utils/docStatus";
+import { SUBSTATUS_LABELS, STAGE_META } from "../../../utils/soStatus";
+
+// UAT 24 Okt (audit UI tahap 2) — status pesanan/pengiriman dulu tampil mentah ("Siap_disahkan", "shipped").
+const orderStatusText = (o) => SUBSTATUS_LABELS[o.sub_status] || STAGE_META[o.status]?.label
+  || docStatusLabel(o.sub_status || o.status) || "—";
 
 export default function LotRecallPanel({ data, loading }) {
   if (loading) {
@@ -83,7 +89,7 @@ export default function LotRecallPanel({ data, loading }) {
             {(data.orders || []).map((o) => (
               <div key={o.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[10.5px]">
                 <span className="font-semibold">{o.number}</span>
-                <span className="status-pill pill-muted">{o.sub_status || o.status}</span>
+                <span className="status-pill pill-muted">{orderStatusText(o)}</span>
                 <span className="text-[#6B6B73]">{o.customer_name}</span>
                 <span className="ml-auto text-[#8E8E93]">{shortDate(o.created_at)}</span>
               </div>
@@ -103,7 +109,7 @@ export default function LotRecallPanel({ data, loading }) {
               <div key={sh.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[10.5px]">
                 <span className="font-semibold">{sh.shipment_no}</span>
                 <span className="text-[#6B6B73]">{sh.order_number}</span>
-                <span className="status-pill pill-muted">{sh.status}</span>
+                <span className="status-pill pill-muted">{docStatusLabel(sh.status) || "—"}</span>
                 <span className="ml-auto tabular-nums text-[#6B6B73]">
                   {formatQty(sh.qty)} {sh.unit}
                 </span>

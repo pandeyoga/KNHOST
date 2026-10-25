@@ -106,7 +106,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
                 <GrnStatusBadge status={r.status} />
               </div>
               <p className="mt-1 text-[12px] font-semibold">{r.partner_name}</p>
-              <p className="text-[10.5px] text-[#6B6B73]">SJ <span className="font-mono">{r.dn_number || "-"}</span> · {r.lines} baris · {r.pages} halaman</p>
+              <p className="text-[10.5px] text-[#6B6B73]">{r.dn_number ? <>SJ <span className="font-mono">{r.dn_number}</span></> : "Nomor SJ belum diisi"} · {r.lines} baris · {r.pages} halaman</p>
               {r.open_blockers > 0 && <p className="mt-1 text-[10.5px] font-semibold text-[#B4231F]">{r.open_blockers} selisih pemblokir</p>}
               <p className="mt-1 text-[10px] text-[#8E8E93]">{formatDateTime(r.created_at)} · {r.created_by}</p>
             </button>

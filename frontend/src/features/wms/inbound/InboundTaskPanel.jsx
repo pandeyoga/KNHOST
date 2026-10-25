@@ -14,19 +14,28 @@ import ScanLabelPanel from "./ScanLabelPanel";
 import DocRefsPanel from "../../documents/trace/DocRefsPanel";
 import { formatQty } from "../../../utils/formatters";
 import QtyDual, { hasRolls, rollsText } from "../../../components/QtyDual";      // FASE U — dua satuan
+import { docStatusLabel } from "../../../utils/docStatus";
 
-const STATUS_MAP = {
-  waiting_goods: { label: "Waiting", cls: "bg-gray-100 text-gray-600" },
-  receiving:     { label: "Penerimaan", cls: "bg-blue-100 text-blue-700" },
-  qc_check:      { label: "QC", cls: "bg-purple-100 text-purple-700" },
-  put_away:      { label: "Put Away", cls: "bg-indigo-100 text-indigo-700" },
+// UAT 24 Okt (audit UI tahap 2) — dulu "Waiting/Put Away/Escalated" Inggris & kode tak terpetakan ("cancelled")
+// tampil mentah huruf kecil. Peta lengkap + cadangan docStatusLabel (bukan kode).
+export const STATUS_MAP = {
+  waiting_goods: { label: "Menunggu barang", cls: "bg-gray-100 text-gray-600" },
+  receiving:     { label: "Sedang diterima", cls: "bg-blue-100 text-blue-700" },
+  qc_check:      { label: "Cek QC", cls: "bg-purple-100 text-purple-700" },
+  put_away:      { label: "Penempatan rak", cls: "bg-indigo-100 text-indigo-700" },
   completed:     { label: "Selesai", cls: "bg-green-100 text-green-700" },
-  escalated:     { label: "Escalated", cls: "bg-red-100 text-red-700" },
-  qc_pending:    { label: "QC Menunggu", cls: "bg-amber-100 text-amber-700" },
+  escalated:     { label: "Dieskalasi", cls: "bg-red-100 text-red-700" },
+  qc_pending:    { label: "Menunggu QC", cls: "bg-amber-100 text-amber-700" },
+  qc_rejected:   { label: "Ditolak QC", cls: "bg-red-100 text-red-700" },
+  cancelled:     { label: "Dibatalkan", cls: "bg-gray-100 text-gray-500" },
+  closed:        { label: "Ditutup", cls: "bg-gray-100 text-gray-500" },
 };
+// Tugas yang sudah final — tidak menawarkan scan/eskalasi lagi (UAT 24 Okt: tugas "cancelled" dulu masih
+// menampilkan Scan Label Supplier / Input Manual / Eskalasi).
+const FINAL_STATUSES = ["completed", "escalated", "cancelled", "closed"];
 
 export function TaskBadge({ status }) {
-  const s = STATUS_MAP[status] || { label: status, cls: "bg-gray-100 text-gray-600" };
+  const s = STATUS_MAP[status] || { label: docStatusLabel(status) || "—", cls: "bg-gray-100 text-gray-600" };
   return (
     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${s.cls}`}>
       {s.label}
@@ -54,7 +63,7 @@ export default function InboundTaskPanel({
     <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white">
       <div className="flex items-center justify-between border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Scan Receive</span>
+          <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Terima per scan</span>
           <TaskBadge status={task.status} />
         </div>
         <div className="flex items-center gap-2">
@@ -150,17 +159,23 @@ export default function InboundTaskPanel({
         {/* Escalation info */}
         {task.status === "escalated" && task.escalation && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-[11px]">
-            <p className="font-semibold text-red-700">Escalated: {task.escalation.escalated_by}</p>
+            <p className="font-semibold text-red-700">Dieskalasi oleh {task.escalation.escalated_by}</p>
             <p className="text-red-600">{task.escalation.reason}</p>
             {task.escalation.status === "resolved" && (
               <p className="mt-1 inline-flex items-center gap-1 text-green-700">
-                <CheckCircle size={12} /> Resolved by {task.escalation.resolved_by}: {task.escalation.resolution_notes}
+                <CheckCircle size={12} /> Diselesaikan oleh {task.escalation.resolved_by}: {task.escalation.resolution_notes}
               </p>
             )}
           </div>
         )}
 
-        {!["completed", "escalated"].includes(task.status) && !task.grn_active_id && (
+        {["cancelled", "closed"].includes(task.status) && (
+          <p data-testid="inbound-task-final" className="rounded-lg border border-[#E5E5EA] bg-[#F5F5F7] px-2 py-1.5 text-[11px] text-[#6B6B73]">
+            Tugas ini {STATUS_MAP[task.status].label.toLowerCase()} — tidak ada penerimaan atau eskalasi yang bisa dilakukan.
+          </p>
+        )}
+
+        {!FINAL_STATUSES.includes(task.status) && !task.grn_active_id && (
           <>
             <div className="flex items-center gap-1 rounded-lg bg-[#F2F2F7] p-0.5 text-[10.5px] font-semibold" data-testid="inbound-mode-toggle">
               <button type="button" onClick={() => setMode("label")} data-testid="inbound-mode-label"
@@ -183,7 +198,7 @@ export default function InboundTaskPanel({
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium ${
                   cameraActive ? "bg-red-500 text-white"
                               : "border border-[#007AFF]/30 bg-[#F5F7FF] text-[#007AFF]"}`}>
-                {cameraActive ? <><CameraOff size={12} /> Stop Camera</> : <><Camera size={12} /> Camera</>}
+                {cameraActive ? <><CameraOff size={12} /> Matikan kamera</> : <><Camera size={12} /> Kamera</>}
               </button>
               {scanData.roll_id && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-700" data-testid="inbound-camera-roll-id">
@@ -217,7 +232,7 @@ export default function InboundTaskPanel({
                 <button onClick={onComplete} disabled={submitting}
                   data-testid={`complete-task-${task.id}`}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#007AFF] px-3 py-2 text-[12px] font-semibold text-white hover:bg-[#0056B3] disabled:opacity-50">
-                  <TrendingUp size={13} /> {(task.qty_rolls_scanned || 0) > 0 ? "Selesaikan Penerimaan" : "Complete"}
+                  <TrendingUp size={13} /> {(task.qty_rolls_scanned || 0) > 0 ? "Selesaikan Penerimaan" : "Selesaikan"}
                 </button>
               )}
               <button onClick={onEscalate} data-testid="inbound-escalate-open"

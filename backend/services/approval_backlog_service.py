@@ -147,7 +147,7 @@ QUEUES: List[tuple] = [
     # dari penjaga karena alurnya belum memungkinkan menghitungnya dengan jujur.
     # Alasan pembebasannya bertanda "UTANG ALUR" di `verify_approval_queues.DOOR_EXEMPT`;
     # sekarang alurnya diperbaiki, jadi pembebasannya DIHAPUS dan digantikan baris ini.
-    ("hr_payroll", "Payroll menunggu pengesahan", "hr-payroll-runs", "hr_payroll_runs",
+    ("hr_payroll", "Penggajian menunggu pengesahan", "hr-payroll-runs", "hr_payroll_runs",
      # Dulu pengesahan bekerja dari `draft` → draf yang masih dikerjakan HR tak bisa
      # dibedakan dari yang siap disahkan, sehingga menghitungnya = menyebut pekerjaan
      # orang sebagai antrean. Kini ada langkah "Ajukan" (`pending_approval`).
@@ -348,16 +348,19 @@ async def oldest(entity_id: Optional[Any] = None, limit: int = 8) -> List[Dict[s
                           .limit(_OLDEST_SCAN).to_list(_OLDEST_SCAN))
         except Exception:  # noqa: BLE001
             continue
+        hold_extra = await inspection_hold_extras(docs) if key == "inspection_hold" else {}
         for d in docs:
             since = _pick(d, meta["since"])
-            rows.append({
+            row = {
                 "key": key, "queue_label": label, "view": view,
                 "id": d.get("id", ""),
                 "number": _pick(d, meta["number"], d.get("id", "")),
                 "title": _pick(d, meta["title"], "—"),
                 "entity_id": d.get("entity_id", ""),
                 "since": since, "days_waiting": days_waiting(since),
-            })
+            }
+            _apply_hold_extras(row, hold_extra.get(d.get("id", "")), with_note=False)
+            rows.append(row)
     rows.sort(key=lambda r: (-r["days_waiting"], r["since"] or ""))
     return rows[:limit]
 
@@ -412,7 +415,9 @@ DETAIL_META: Dict[str, Dict[str, List[str]]] = {
         "note": ["warehouse_name", "notes"],
     },
     "inspection_hold": {
-        "note": ["bagian", "assigned_name"],
+        # UAT 24 Okt (audit UI tahap 2) — `bagian` ("Bagian Inspect") bukan keterangan barang. Note & judul baris
+        # papan ini dirakit dari baris yang DITAHAN (produk · roll · gudang) oleh `inspection_hold_extras`.
+        "note": ["assigned_name"],
     },
     # 2026-06 (lanjutan ke-4) — TAGIHAN SUPPLIER: papan ini menahan UANG, jadi nominalnya
     # harus terlihat tanpa membuka layar. Field diperiksa dari dokumen `vendor_bills`
@@ -575,6 +580,67 @@ def _pick_path(doc: Dict[str, Any], fields: List[str], default: Any = "") -> Any
     return default
 
 
+async def inspection_hold_extras(docs: List[Dict[str, Any]]) -> Dict[str, Dict[str, str]]:
+    """UAT 24 Okt (audit UI tahap 2) — papan "Barang ditahan QC" dulu berbaris "KSC/INS-00072 · —" + "Bagian Inspect":
+    SPK QC 4-point/random check tak punya pemasok/pelanggan/dokumen asal, jadi judulnya kosong dan barang yang
+    ditahan tidak tersebut. Rakit {id_spk: {"title", "note"}} dari baris yang DITAHAN: judul = produk (bila judul
+    asal kosong), note = roll · gudang. Satu kueri roll + satu kueri gudang untuk semua SPK."""
+    held: Dict[str, List[Dict[str, Any]]] = {}
+    roll_ids: List[str] = []
+    for d in docs:
+        lines = [ln for ln in (d.get("lines") or []) if ln.get("hold")]
+        held[d.get("id", "")] = lines
+        roll_ids += [ln["roll_id"] for ln in lines if ln.get("roll_id")]
+    roll_wh: Dict[str, str] = {}
+    wh_name: Dict[str, str] = {}
+    if roll_ids:
+        try:
+            rolls = await db.inventory_rolls.find(
+                {"id": {"$in": sorted(set(roll_ids))}}, {"_id": 0, "id": 1, "warehouse_id": 1}).to_list(len(set(roll_ids)))
+            roll_wh = {r["id"]: r.get("warehouse_id") or "" for r in rolls}
+            wids = sorted({w for w in roll_wh.values() if w})
+            if wids:
+                whs = await db.warehouses.find({"id": {"$in": wids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(wids))
+                wh_name = {w["id"]: w.get("name") or "" for w in whs}
+        except Exception:  # noqa: BLE001 — keterangan tambahan tidak boleh menjatuhkan papan
+            pass
+    out: Dict[str, Dict[str, str]] = {}
+    for doc_id, lines in held.items():
+        if not lines:
+            continue
+        products = []
+        for ln in lines:
+            p = ln.get("article") or ln.get("product_name") or ln.get("sku") or ""
+            if p and p not in products:
+                products.append(p)
+        rolls_txt = [ln.get("roll_no") for ln in lines if ln.get("roll_no")]
+        roll_part = ""
+        if rolls_txt:
+            roll_part = ", ".join(rolls_txt[:2]) + (f" +{len(rolls_txt) - 2} roll" if len(rolls_txt) > 2 else "")
+        whs_txt = []
+        for ln in lines:
+            n = wh_name.get(roll_wh.get(ln.get("roll_id") or "", ""), "")
+            if n and n not in whs_txt:
+                whs_txt.append(n)
+        product_txt = products[0] + (f" +{len(products) - 1} produk" if len(products) > 1 else "") if products else ""
+        out[doc_id] = {"product": product_txt,
+                       "note": " · ".join(x for x in (roll_part, ", ".join(whs_txt)) if x)}
+    return out
+
+
+def _apply_hold_extras(row: Dict[str, Any], extra: Optional[Dict[str, str]], with_note: bool) -> None:
+    """Judul kosong ("—") → nama produk yang ditahan; note → produk/roll/gudang (tanpa " · —")."""
+    if not extra:
+        return
+    if row.get("title") in (None, "", "—") and extra.get("product"):
+        row["title"] = extra["product"]
+        note = extra.get("note", "")
+    else:
+        note = " · ".join(x for x in (extra.get("product", ""), extra.get("note", "")) if x)
+    if with_note and note:
+        row["note"] = note
+
+
 def _as_float(value: Any) -> float:
     """Angka rupiah yang BERTAHAN-GALAT.
 
@@ -630,9 +696,10 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
                   .sort([("created_at", 1)])
                   .limit(_OLDEST_SCAN).to_list(_OLDEST_SCAN))
     rows = []
+    hold_extra = await inspection_hold_extras(docs) if key == "inspection_hold" else {}
     for d in docs:
         since = _pick(d, meta["since"])
-        rows.append({
+        row = {
             "id": d.get("id", ""), "number": _pick(d, meta["number"], d.get("id", "")),
             "title": _pick(d, meta["title"], "—"),
             "amount": _as_float(_pick_path(d, extra.get("amount", []), 0)),
@@ -641,7 +708,9 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
             "action": await _row_action(key, d, allowed, actor),
             "entity_id": d.get("entity_id", ""),
             "since": since, "days_waiting": days_waiting(since),
-        })
+        }
+        _apply_hold_extras(row, hold_extra.get(d.get("id", "")), with_note=True)
+        rows.append(row)
     rows.sort(key=lambda r: (-r["days_waiting"], r["since"] or ""))
     rows = rows[:max(1, limit)]
     # B2 DIBAYAR (2026-08-25) — angka di judul papan bisa lebih besar dari jumlah baris

@@ -65,7 +65,10 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
                 <div key={s.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-[11.5px]" data-testid={`dispatch-sj-${s.id}`}>
                   <span className="font-mono font-bold text-[#0058CC] shrink-0">{s.shipment_no}</span>
                   <span className={`status-pill ${s.fulfillment_method === "ambil" ? "pill-purple" : "pill-info"} shrink-0`}>{s.fulfillment_method === "ambil" ? "Ambil sendiri" : "Kirim"}</span>
-                  <span className="order-last w-full min-w-0 text-[#3A3B42] sm:order-none sm:w-auto sm:flex-1 sm:truncate"><b>{s.order_number}</b> · {s.customer_name} · {s.product_name} · <span className="tabular-nums">{formatQty(s.qty)} {s.unit}</span>{s.pickup_date ? ` · ambil ${formatDateId(s.pickup_date, "dd MMM yyyy")}` : ""}</span>
+                  {/* UAT 24 Okt (audit UI tahap 2) — SJ tanpa pesanan/pelanggan/barang dulu tampil "Kirim · · · 0". */}
+                  <span className="order-last w-full min-w-0 text-[#3A3B42] sm:order-none sm:w-auto sm:flex-1 sm:truncate">{(s.order_number || s.customer_name || s.product_name)
+                    ? <>{s.order_number && <b>{s.order_number}</b>}{[s.customer_name, s.product_name].filter(Boolean).map((t) => ` · ${t}`).join("")}{Number(s.qty) > 0 && <> · <span className="tabular-nums">{formatQty(s.qty)} {s.unit}</span></>}{s.pickup_date ? ` · ambil ${formatDateId(s.pickup_date, "dd MMM yyyy")}` : ""}</>
+                    : <span className="italic text-[#9A9BA3]" data-testid={`dispatch-sj-incomplete-${s.id}`}>Data SJ tidak lengkap (pesanan/barang kosong)</span>}</span>
                   {canManage && <button data-testid={`dispatch-create-${s.id}`} className="primary-button !py-1 !px-2.5 !text-[11px] ml-auto shrink-0" onClick={() => onCreate(s.id)}>{s.fulfillment_method === "ambil" ? "Siapkan pickup" : "Buat pengiriman"} <ChevronRight size={11} /></button>}
                 </div>
               ))}
