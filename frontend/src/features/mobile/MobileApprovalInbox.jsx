@@ -98,7 +98,7 @@ export default function MobileApprovalInbox({ canPrice = true, canSpecial = true
   return (
     <div className="space-y-2 p-3" data-testid="mo-inbox">
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid="mo-inbox-msg">{msg.text}</div>}
-      {errList.map((t) => <div key={t} className="notice-bar warning text-xs" data-testid="mo-inbox-error">{t}</div>)}
+      {[...new Set(errList)].map((t) => <div key={t} className="notice-bar warning text-xs" data-testid="mo-inbox-error">{t}</div>)}
       {loading && <p className="text-xs text-[#6E6E73]" data-testid="mo-inbox-loading">Memuat antrean…</p>}
       {!loading && !errList.length && !prices.length && !specials.length && <p className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mo-inbox-empty">Tidak ada {what} yang menunggu.</p>}
       {(prices || []).map((p) => (

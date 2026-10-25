@@ -401,7 +401,7 @@ function App() {
   if (wantMobile && !responsiveWorkspace && !salesMobileRole) {
     const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin", "driver"]) ? MobileWarehouseApp : MobileOpsApp;
     return <MobileApp user={user} onLogout={logout} entities={entities} selectedEntity={selectedEntity}
-      unreadCount={unreadCount} onForceDesktop={goDesktop} onNavigate={handleNavSelect}
+      unreadCount={unreadCount} onForceDesktop={goDesktop} onNavigate={handleNavSelect} onOpenFull={openFullView}
       initialTab={wantsTanya && MobileApp === MobileOpsApp ? "tanya" : undefined} />;
   }
   if (salesMobileRole && wantMobile && !responsiveWorkspace) {

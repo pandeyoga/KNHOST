@@ -206,7 +206,12 @@ export default function MobileOpsApp(props) {
   const canSpecial = allow("order", "approve");
   const canQueue = allow("approval", "view");
   const [focus, setFocus] = useState("");
-  const openDesktop = (view) => { props.onNavigate?.(view, view); props.onForceDesktop?.(); };
+  // Verifikasi HP (N-02) — notifikasi bertautan membuka layar terkait sebagai "tampilan penuh" SEMENTARA (tombol
+  // kembali ke aplikasi HP), bukan mode desktop menetap yang ikut terbawa saat aplikasi dibuka lagi.
+  const openDesktop = (view) => {
+    if (props.onOpenFull) { props.onOpenFull(view, view); return; }
+    props.onNavigate?.(view, view); props.onForceDesktop?.();
+  };
   const tabs = [];
   if (canPrice || canSpecial || canQueue) {
     tabs.push({ id: "queue", label: "Persetujuan", icon: Inbox, render: () => <ApprovalsTab canPrice={canPrice} canSpecial={canSpecial} canQueue={canQueue} focusId={focus} /> });

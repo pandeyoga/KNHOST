@@ -172,7 +172,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
         <div className="p-4 space-y-3">
           {/* ── 1. Data toko / pelanggan ── */}
           <Section title="Data Toko / Pelanggan" testId="customer-section-store">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Nama toko / pelanggan" req>
                 <input data-testid="customer-name" value={f.name} onChange={(e) => set("name", e.target.value)} onBlur={(e) => set("name", namaUsaha(e.target.value))} className="field" placeholder="PT / Toko ..." />
               </Field>
@@ -208,7 +208,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
           {/* ── 2. PIC toko — orang yang dihubungi di pihak PELANGGAN ── */}
           <Section title="PIC Toko (pihak pelanggan)" testId="customer-section-pic"
             hint="Orang di toko/pelanggan yang dihubungi sales untuk pesanan, tagihan, dan pengiriman.">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Nama PIC toko" req>
                 <input data-testid="customer-pic" value={f.pic_name} onChange={(e) => set("pic_name", e.target.value)} onBlur={(e) => set("pic_name", namaOrang(e.target.value))} className="field" placeholder="mis. Ibu Rina (pemilik / kepala toko)" />
               </Field>
