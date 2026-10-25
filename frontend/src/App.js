@@ -15,7 +15,7 @@ import OnboardingPanel from "./components/OnboardingPanel";
 import EntitySwitcher from "./components/EntitySwitcher";
 import NotificationCenter from "./components/NotificationCenter";
 import { resolveView } from "./utils/viewAlias";
-import { PAGE_META, GUIDANCE_MAP, buildNavGroups, defaultNavIdForRole, defaultViewForRole, isComingSoonView, isHomeView, resolveActiveNavId, resolveDeepLinkTarget, hubForView } from "./config/navigationConfig";
+import { PAGE_META, buildNavGroups, defaultNavIdForRole, defaultViewForRole, isComingSoonView, isHomeView, resolveActiveNavId, resolveDeepLinkTarget, hubForView } from "./config/navigationConfig";
 import CommandPalette from "./components/CommandPalette";
 import useDeepLinks from "./hooks/useDeepLinks";
 import useViewDeepLink from "./hooks/useViewDeepLink";
@@ -108,7 +108,9 @@ function App() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [search, setSearch] = useState("");
-  const [notice, setNotice] = useState("Sistem siap. Stok reservation dikunci 3 hari.");
+  // UAT 24 Okt (audit UI tahap 2) — G0-21: pesan awal "Sistem siap. Stok reservation dikunci 3 hari." (campur Inggris)
+  // selalu tampil & mendesak pemilih badan usaha. Kini kosong — bilah hanya muncul bila ada pesan sungguhan.
+  const [notice, setNotice] = useState("");
   const [lastDocument, setLastDocument] = useState(null);
   const [lastLabel, setLastLabel] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -444,7 +446,6 @@ function App() {
   }
 
   const pageMeta = PAGE_META[activeView] || { kicker: "Workspace", title: "Kain Nusantara" };
-  const guidance = GUIDANCE_MAP[activeView];
   // Restrukturisasi IA — tab bar sekunder bila view aktif bagian dari sebuah hub.
   const hubInfo = hubForView(activeView, user?.role);
 
@@ -458,7 +459,7 @@ function App() {
     <div className={`app-shell layout-grid ${sidebarCollapsed ? "sidebar-hidden" : ""}`}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       {wantMobile && (mobileVisit || activeView === "goods-receipts") && (
-        <button type="button" className="m-back-float" onClick={backToMobile} data-testid="mobile-back-to-app">&larr; Kembali ke aplikasi HP</button>
+        <button type="button" className="m-back-float" onClick={backToMobile} data-testid="mobile-back-to-app"><Smartphone size={14} /> Kembali ke aplikasi HP</button>
       )}
       <Sidebar
         groups={nav}
@@ -480,7 +481,8 @@ function App() {
           onSync={loadAll}
           syncing={loading}
           notice={notice}
-          infoCta={guidance ? { label: guidance.label, onClick: () => setActiveView(guidance.target) } : null}
+          // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
+          infoCta={{ label: "Tutup", onClick: () => setNotice("") }}
           entitySwitcher={<EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />}
           notificationCenter={
             <NotificationCenter
@@ -509,18 +511,22 @@ function App() {
             <MetricCard testId="metric-products" icon={Archive} label="Produk Aktif" value={data.metrics?.products || 0} tone="rgba(0,122,255,.12)" hint="Buka katalog" onClick={() => showMetricDetail("products")} />
             {/* F-04 — stok per SATUAN (yard dan kg tidak dijumlahkan) + jumlah roll tersedia */}
             <MetricCard testId="metric-available" icon={Boxes} label="Jml Tersedia" value={formatUnitTotals(data.metrics?.available_by_unit, data.metrics?.available_qty)} tone="rgba(52,199,89,.14)" hint={data.metrics?.available_rolls != null ? `${formatQty(data.metrics.available_rolls)} roll · Lihat stok` : "Lihat stok"} onClick={() => showMetricDetail("available")} />
-            <MetricCard testId="metric-reserved" icon={Clock3} label="Jml Dipesan" value={formatUnitTotals(data.metrics?.reserved_by_unit, data.metrics?.reserved_qty)} tone="rgba(175,82,222,.14)" hint="Buka orders" onClick={() => showMetricDetail("reserved")} />
-            <MetricCard testId="metric-orders" icon={PackageCheck} label="Pesanan Aktif" value={data.metrics?.active_orders || 0} tone="rgba(255,149,0,.14)" hint="Control room" onClick={() => showMetricDetail("orders")} />
-            <MetricCard testId="metric-warehouses" icon={Building2} label="Gudang" value={data.metrics?.warehouses || 0} tone="rgba(60,60,67,.10)" hint="Buka WMS" onClick={() => showMetricDetail("warehouses")} />
+            <MetricCard testId="metric-reserved" icon={Clock3} label="Jml Dipesan" value={formatUnitTotals(data.metrics?.reserved_by_unit, data.metrics?.reserved_qty)} tone="rgba(175,82,222,.14)" hint="Lihat pesanan" onClick={() => showMetricDetail("reserved")} />
+            <MetricCard testId="metric-orders" icon={PackageCheck} label="Pesanan Aktif" value={data.metrics?.active_orders || 0} tone="rgba(255,149,0,.14)" hint="Lihat pesanan" onClick={() => showMetricDetail("orders")} />
+            <MetricCard testId="metric-warehouses" icon={Building2} label="Gudang" value={data.metrics?.warehouses || 0} tone="rgba(60,60,67,.10)" hint="Buka Operasi Gudang" onClick={() => showMetricDetail("warehouses")} />
             </>}
           </section>
 
-          <div className="md:hidden mt-3">
-            <div data-testid="system-notice-mobile" className="info-ribbon">
-              <Sparkles size={13} className="ribbon-icon" />
-              <span>{notice}</span>
+          {/* UAT 24 Okt (audit UI tahap 2) — G0-09: dulu bilah biru berikon ✨ tampil KOSONG di setiap layar
+              desktop-di-HP. Kini hanya bila ada pesan (sama seperti versi desktop di CoreWidgets). */}
+          {notice && (
+            <div className="md:hidden mt-3">
+              <div data-testid="system-notice-mobile" className="info-ribbon">
+                <Sparkles size={13} className="ribbon-icon" />
+                <span>{notice}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <DetailDrawer detail={activeDetail} onClose={() => setActiveDetail(null)} onNavigate={(target) => { setActiveView(target); setActiveDetail(null); }} />
 
@@ -632,10 +638,12 @@ function App() {
       )}
 
       {/* Kembali ke tampilan HP sesudah memilih "Tampilan Desktop" di layar kecil. */}
+      {/* UAT 24 Okt (audit UI tahap 2) — G0-12: dulu dua gaya berbeda per peran ("Tampilan HP" biru di tengah vs
+          "← Kembali ke aplikasi HP" hitam di kiri) dan menutupi isi/kaki pop-up. Kini satu gaya (.m-back-float, kiri
+          bawah, kecil) dan disembunyikan selama ada pop-up terbuka (styles/mobile.css). */}
       {forceDesktop && (
-        <button type="button" onClick={goMobile} data-testid="switch-to-mobile-btn"
-          className="fixed bottom-4 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#0058CC] px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg">
-          <Smartphone size={15} /> Tampilan HP
+        <button type="button" onClick={goMobile} data-testid="switch-to-mobile-btn" className="m-back-float">
+          <Smartphone size={14} /> Kembali ke aplikasi HP
         </button>
       )}
 

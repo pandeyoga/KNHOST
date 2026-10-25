@@ -17,11 +17,13 @@ import SeeAllModal, { SeeAllFooter } from "./SeeAllModal";
 import axios, { API } from "../services/apiClient";
 import { askConfirm, askReason } from "../services/confirmService";
 import { notifySuccess } from "../utils/feedback";
+import { apiErrorText } from "../utils/apiError";
 import EntityBadge from "./EntityBadge";
 import { roleLabel } from "../config/roles";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
+const hasTitle = (r) => { const t = String(r?.title ?? "").trim(); return !!t && t !== "—" && t !== "-"; };
 
 /** Umur tunggu diberi warna: "12 hari" dan "hari ini" bukan pekerjaan yang sama mendesaknya. */
 function AgeBadge({ days, testId }) {
@@ -136,42 +138,50 @@ export default function WaitingQueueBoard({
       if (onActed) await onActed();
       else if (onRetry) await onRetry();
     } catch (e) {
-      setActError(e.response?.data?.detail
-        || `Gagal ${a.label.toLowerCase()} ${row.number}.`);
+      // G0-03: penolakan izin/teks server lewat apiErrorText (bukan detail mentah "Permission ditolak: …").
+      setActError(e?.response?.data?.detail
+        ? apiErrorText(e) : `Gagal ${a.label.toLowerCase()} ${row.number}.`);
     } finally { setBusyId(""); }
   }
 
   // Satu penggambar baris untuk kartu DAN pop-up "Lihat semua" (testid dibedakan
   // lewat `base` supaya tidak ganda saat pop-up terbuka).
+  // UAT 24 Okt (audit UI tahap 2) — G0-01: di HP (< 640px) nomor dokumen dulu terpotong ("SORD-26(") karena
+  // satu baris berbagi tempat dengan nominal, umur & tombol. Kini nomor utuh di baris sendiri, judul maks 2 baris,
+  // dan nominal/umur/tombol turun ke baris berikutnya; di desktop susunannya tetap satu baris.
   const renderRow = (r, base) => (
     <div key={r.id || r.number}
-      className="flex items-center gap-2 rounded-lg border border-[#EDEFF3] bg-white px-3 py-2 transition hover:border-[#C9D6E8]">
+      className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border border-[#EDEFF3] bg-white px-3 py-2 transition hover:border-[#C9D6E8] sm:flex-nowrap">
       <button type="button" data-testid={`${base}-${r.id}`}
         onClick={go}
-        className="min-w-0 flex-1 text-left">
-        <p className="flex items-center gap-1.5 truncate text-[12px] font-semibold text-[#1C1C1E]">
-          {r.number} · {r.title}
-          {showEntity && r.entity_id ? <EntityBadge entityId={r.entity_id} /> : null}
+        className="min-w-0 basis-full text-left sm:basis-auto sm:flex-1">
+        <p className="flex flex-col text-[12px] font-semibold text-[#1C1C1E] sm:flex-row sm:items-center sm:gap-1.5">
+          <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+            {r.number}
+            {hasTitle(r) && <span className="hidden sm:inline">·</span>}
+          </span>
+          {/* Audit UI tahap 2 (G3-31) — judul kosong/"—" tidak lagi dirakit menjadi "· —". */}
+          {hasTitle(r) && <span className="min-w-0 line-clamp-2 sm:line-clamp-1">{r.title}</span>}
+          {showEntity && r.entity_id ? <span className="shrink-0"><EntityBadge entityId={r.entity_id} /></span> : null}
         </p>
-        <p className="truncate text-[10.5px] text-[#8E8E93]">
+        <p className="line-clamp-2 text-[10.5px] text-[#8E8E93] sm:line-clamp-1">
           {/* Label peran dari registry (`Manajer`), bukan kode mentah (C1). */}
           {r.note || judul}{r.role ? ` · perlu ${roleLabel(r.role)}` : ""}
         </p>
       </button>
       {r.amount > 0 && (
-        <span className="shrink-0 text-[12px] font-bold tabular-nums"
-          style={{ color: accent }}>{fmtCur(r.amount)}</span>
+        <span className="shrink-0 text-[12px] font-bold tabular-nums text-[#1C1C1E]">{fmtCur(r.amount)}</span>
       )}
       <AgeBadge days={r.days_waiting} testId={`${base}-age-${r.id}`} />
       {/* Tombol keputusan hanya ada bila SERVER memberi `action`: itu berarti
-          pintunya nyata DAN peran ini memang berwenang. */}
+          pintunya nyata DAN peran ini memang berwenang. G0-01: tombol biru baku (.primary-button) di semua papan —
+          warna aksen papan hanya untuk ikon & bingkai. */}
       {r.action && (
         <button type="button"
           data-testid={`${base}-act-${r.id}`}
           disabled={busyId === r.id || !!r.action.blocked_reason}
           onClick={() => act(r)}
-          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
-          style={{ background: accent }}
+          className="primary-button ml-auto shrink-0 !rounded-full !px-2.5 !py-1 !text-[11px] !shadow-none sm:ml-0"
           title={r.action.blocked_reason
             || `${r.action.label} langsung dari papan ini`}>
           {busyId === r.id ? "…" : r.action.label}
@@ -187,7 +197,7 @@ export default function WaitingQueueBoard({
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {Icon ? <Icon size={15} style={{ color: accent }} /> : null}
-          <h3 className="truncate text-[14px] font-bold">
+          <h3 className="line-clamp-2 text-[14px] font-bold sm:line-clamp-1">
             {judul} {unreadable ? "(—)" : `(${board.count ?? 0})`}
           </h3>
         </div>

@@ -63,7 +63,7 @@
 .m-tab {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; padding: 8px 2px 7px; border: 0; background: transparent; cursor: pointer;
-  color: #8E8E93; font-size: 10px; font-weight: 600; font-family: inherit;
+  color: #8E8E93; font-size: 11px; font-weight: 600; font-family: inherit;   /* audit UI tahap 2 — minimum 11px */
   transition: color 140ms ease, transform 120ms ease;
 }
 .m-tab.active { color: #0058CC; }
@@ -127,9 +127,16 @@
 .m-sheet-grip { width: 38px; height: 4px; border-radius: 2px; background: #D6D7DC; margin: 8px auto 4px; }
 
 /* Tampilan penuh dari aplikasi HP → tombol kembali mengambang. */
-.m-back-float { position: fixed; left: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60; padding: 10px 16px; border-radius: 999px;
-  background: #1C1C1E; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25); transition: transform .15s; }
+/* UAT 24 Okt (audit UI tahap 2) — G0-12: SATU gaya tombol kembali ke HP untuk semua peran (dulu biru-tengah vs
+   hitam-kiri), kecil di kiri bawah, dan disembunyikan selama ada pop-up/dialog terbuka supaya tidak menutupi
+   tombol kaki ("Batal") — pop-up mengunci gulir body atau memasang dialog aria-modal. */
+.m-back-float { position: fixed; left: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 60;
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  background: #0058CC; color: #fff; font-size: 12px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,40,100,.28); transition: transform .15s; }
 .m-back-float:active { transform: scale(.96); }
+body[style*="overflow: hidden"] .m-back-float,
+body:has([aria-modal="true"]) .m-back-float,
+body:has(.modal-overlay) .m-back-float { display: none; }
 .m-tanya { padding: 12px; }
 
 /* Dialog desktop (Verifikasi, Keputusan Pemenuhan, dll.) di dalam aplikasi HP → lembar bawah. */

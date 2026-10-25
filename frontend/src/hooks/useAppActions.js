@@ -3,12 +3,21 @@ import axios, { API, setAuthToken, setActiveEntity } from "../services/apiClient
 import { defaultViewForRole, defaultNavIdForRole } from "../config/navigationConfig";
 import { can } from "../config/roles";
 import { formatQty } from "../utils/formatters";
+import { formatUnitTotals } from "../utils/qtyByUnit";
 import { offlinePost } from "../utils/offlineQueue";
 import { blocksOrder, isOrderable, notOrderableReason } from "../utils/lifecycle";
 import { sampleLimit, clampSampleQty, SAMPLE_KINDS } from "../utils/sampleOrder";
 import { sirenOnNewAlarms } from "../utils/sirenAlarm";
 import { askConfirm } from "@/services/confirmService";
 import { getStage, getSubStatus, stageMeta, subStatusLabel } from "../utils/soStatus";
+import { apiErrorText } from "../utils/apiError";
+
+// G0-11 — nama resource API → kata benda Indonesia untuk dialog & pesan Master Data.
+const RESOURCE_LABEL = {
+  customers: "pelanggan", products: "produk", categories: "kategori", uoms: "satuan", warehouses: "gudang",
+  "document-templates": "template dokumen", templates: "template dokumen", suppliers: "supplier", users: "pengguna",
+};
+const capFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 // Cek UI UAT v3 — notifikasi SO baru dulu menampilkan kode mentah ("waiting stock"); kini "Dipesan · Menunggu stok (backorder)".
 const soStatusText = (o) => [stageMeta(getStage(o))?.label, ...(getSubStatus(o) || []).map(subStatusLabel)].filter(Boolean).join(" · ");
@@ -111,19 +120,19 @@ export function useAppActions(state) {
     setNotice("Anda sudah logout.");
   };
 
+  // UAT 24 Okt (audit UI tahap 2) — G0-02: klik kartu KPI dulu LANGSUNG memindah halaman lalu membuka laci berisi
+  // angka stok yang menjumlah kg+meter+yard jadi satu dan teks Inggris ("inspect produk", "Review orders").
+  // Kini halaman tetap; pindah hanya lewat tombol di laci, dan stok ditulis per satuan.
   const showMetricDetail = (type) => {
     const metric = data.metrics || {};
     const details = {
-      products: { title: "Produk Aktif", body: "Klik ini membawa Anda ke Sales POS untuk inspect produk dan stok per gudang.", target: "sales", cta: "Buka Sales POS", facts: [{ label: "Total produk", value: metric.products || 0 }, { label: "Langkah berikutnya", value: "Review katalog & stock breakdown" }] },
-      available: { title: "Stok Tersedia", body: "Stok yang masih bisa dijual setelah reserved quantity dikurangi.", target: "sales", cta: "Lihat stok produk", facts: [{ label: "Jml tersedia", value: formatQty(metric.available_qty) }, { label: "Guidance", value: "Prioritaskan item low stock" }] },
-      reserved: { title: "Stok Dipesan", body: "Stok yang sedang dibooking oleh sales order dan akan unlock jika expired/cancelled.", target: "orders", cta: "Review orders", facts: [{ label: "Jml dipesan", value: formatQty(metric.reserved_qty) }, { label: "Kontrol", value: "Cek aging & approval" }] },
-      orders: { title: "Pesanan Aktif", body: "Order aktif membutuhkan approval, confirmation, WMS fulfillment, atau payment simulation.", target: "orders", cta: "Buka ruang pesanan", facts: [{ label: "Pesanan aktif", value: metric.active_orders || 0 }, { label: "Langkah berikutnya", value: "Approve/confirm jika pending" }] },
-      warehouses: { title: "Gudang Aktif", body: "Klik untuk masuk WMS dan melihat struktur gudang, bins, task scan, dan movement ledger.", target: "operations", cta: "Buka WMS", facts: [{ label: "Jumlah gudang", value: metric.warehouses || 0 }, { label: "Guidance", value: "Review task scanner" }] },
+      products: { title: "Produk Aktif", body: "Jumlah produk yang masih aktif dijual. Buka katalog untuk melihat stok per gudang tiap produk.", target: "sales", cta: "Buka katalog", facts: [{ label: "Total produk", value: formatQty(metric.products || 0) }, { label: "Langkah berikutnya", value: "Periksa katalog & rincian stok per gudang" }] },
+      available: { title: "Stok Tersedia", body: "Stok yang masih bisa dijual setelah dikurangi stok yang sudah dipesan.", target: "sales", cta: "Lihat stok produk", facts: [{ label: "Jml tersedia", value: formatUnitTotals(metric.available_by_unit, metric.available_qty) }, ...(metric.available_rolls != null ? [{ label: "Jumlah roll", value: `${formatQty(metric.available_rolls)} roll` }] : []), { label: "Saran", value: "Dahulukan barang yang stoknya menipis" }] },
+      reserved: { title: "Stok Dipesan", body: "Stok yang sedang dipesan pesanan penjualan; dilepas kembali bila pesanan kedaluwarsa atau dibatalkan.", target: "orders", cta: "Lihat pesanan", facts: [{ label: "Jml dipesan", value: formatUnitTotals(metric.reserved_by_unit, metric.reserved_qty) }, { label: "Kontrol", value: "Cek umur pesanan & persetujuan" }] },
+      orders: { title: "Pesanan Aktif", body: "Pesanan aktif yang masih menunggu persetujuan, konfirmasi, penyiapan gudang, atau pembayaran.", target: "orders", cta: "Lihat pesanan", facts: [{ label: "Pesanan aktif", value: formatQty(metric.active_orders || 0) }, { label: "Langkah berikutnya", value: "Setujui/konfirmasi yang masih menunggu" }] },
+      warehouses: { title: "Gudang Aktif", body: "Gudang yang aktif. Buka Operasi Gudang untuk melihat struktur gudang, rak, tugas scan, dan mutasi stok.", target: "operations", cta: "Buka Operasi Gudang", facts: [{ label: "Jumlah gudang", value: formatQty(metric.warehouses || 0) }, { label: "Saran", value: "Periksa tugas scan yang menunggu" }] },
     };
     setActiveDetail(details[type]);
-    if (["products", "available"].includes(type)) setActiveView("sales");
-    if (["reserved", "orders"].includes(type)) setActiveView("orders");
-    if (type === "warehouses") setActiveView("operations");
   };
 
   const loadAll = useCallback(async () => {
@@ -558,13 +567,28 @@ export function useAppActions(state) {
     }
   };
 
-  const adminDelete = async (resource, id) => {
+  // UAT 24 Okt (audit UI tahap 2) — G0-11 · P-01: "Nonaktifkan" di Master Data dulu langsung DELETE tanpa konfirmasi
+  // dan pesannya memakai nama resource mentah ("customers dinonaktifkan.", "Gagal deactivate customers.").
+  const adminDelete = async (resource, id, name = "") => {
+    const noun = RESOURCE_LABEL[resource] || "data";
+    const key = resource === "document-templates" ? "templates" : resource;
+    const row = (Array.isArray(data?.[key]) ? data[key] : []).find((r) => r?.id === id);
+    const nm = name || row?.name || row?.code || "";
+    const subject = `${noun}${nm ? ` ${nm}` : ""}`;
+    const ok = await askConfirm({
+      title: `Nonaktifkan ${subject}?`,
+      message: `${capFirst(noun)} ini tidak bisa dipakai di transaksi baru. Data & riwayat lamanya tetap tersimpan dan bisa diaktifkan kembali.`,
+      danger: true,
+      confirmLabel: "Nonaktifkan",
+      testId: "admin-delete-confirm",
+    });
+    if (!ok) return;
     try {
       await axios.delete(`${API}/${resource}/${id}`);
-      setNotice(`${resource} dinonaktifkan.`);
+      setNotice(`${capFirst(subject)} dinonaktifkan.`);
       await loadAll();
     } catch (error) {
-      setNotice(error.response?.data?.detail || `Gagal deactivate ${resource}.`);
+      setNotice(error.response?.data?.detail ? apiErrorText(error) : `Gagal menonaktifkan ${subject}.`);
     }
   };
 

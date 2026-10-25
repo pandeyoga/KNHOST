@@ -63,6 +63,10 @@ export default function PaginationBar({
   exportConfig = null,
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // UAT 24 Okt (audit UI tahap 2) — G0-19: ukuran halaman aktif di luar `pageSizeOptions` (mis. 25 di Inspeksi)
+  // dulu membuat tak satu pun pilihan "Per halaman" aktif. Ukuran aktif kini selalu ikut di daftar (unik, urut).
+  const sizeOptions = [...new Set([...pageSizeOptions, Number(pageSize)].filter((n) => Number.isFinite(n) && n > 0))]
+    .sort((x, y) => x - y);
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
@@ -163,14 +167,14 @@ export default function PaginationBar({
           {onPageSize && (
             <div className="flex items-center gap-1" data-testid={`${testId}-sizes`}>
               <span className="text-[10.5px] text-[#8E8E93] mr-1">Per halaman</span>
-              {pageSizeOptions.map((sz) => (
+              {sizeOptions.map((sz) => (
                 <button
                   key={sz}
                   data-testid={`${testId}-size-${sz}`}
                   onClick={() => onPageSize(sz)}
                   disabled={loading}
                   className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
-                    pageSize === sz
+                    Number(pageSize) === sz
                       ? "bg-[#007AFF] text-white"
                       : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#007AFF]"
                   }`}

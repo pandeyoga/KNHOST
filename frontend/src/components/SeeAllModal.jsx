@@ -95,7 +95,8 @@ export default function SeeAllModal({
               <div className="min-w-0">
                 <h3 data-testid={`${testId}-title`}
                   className="flex items-center gap-2 text-[13.5px] font-bold leading-tight text-[#1C1C1E]">
-                  <span className="truncate">{title}</span>
+                  {/* UAT 24 Okt (audit UI tahap 2) — G0-01: judul papan panjang terpotong di HP → maks 2 baris. */}
+                  <span className="line-clamp-2 sm:line-clamp-1">{title}</span>
                   <span data-testid={`${testId}-count`}
                     className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular-nums"
                     style={{ background: `${accent}14`, color: accent }}>

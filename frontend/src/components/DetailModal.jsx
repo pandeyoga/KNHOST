@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { X } from "lucide-react";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { useEscapeClose } from "@/utils/escapeLayers";
 
@@ -56,6 +57,10 @@ export default function DetailModal({
   // Sesi #087 — `framed`: panel yang TIDAK punya kartu sendiri (root `grid gap-3`) dibungkus
   // kartu putih di sini; tanpa itu isinya melayang transparan di atas halaman (laporan pemilik).
   framed = false,
+  // UAT 24 Okt (audit UI tahap 2) — G0-07 · P-08: pop-up `framed` dulu tanpa tombol × — penutupan hanya lewat Esc,
+  // klik latar, atau tombol "Tutup" di dasar setelah gulir ±2.600 px di HP. Kini × melayang di pojok kartu
+  // (di luar area gulir, jadi selalu terlihat). `showClose={false}` bila panel sudah punya × sendiri.
+  showClose = true,
   children,
 }) {
   // Esc menutup lewat tumpukan lapisan (INV-UI-10): pemilih/dropdown di dalam panel
@@ -82,10 +87,23 @@ export default function DetailModal({
         aria-modal="true"
         aria-label={label}
         data-testid={testId}
-        className={`w-full ${SIZES[size] || SIZES.xl} my-auto ${framed ? "rounded-2xl bg-white p-4 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto" : ""}`}
+        className={`w-full ${SIZES[size] || SIZES.xl} my-auto ${framed ? "relative" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        {framed ? (
+          <>
+            {showClose && typeof onClose === "function" && (
+              <button type="button" aria-label="Tutup" title="Tutup (Esc)" data-testid={`${testId}-close-x`}
+                onClick={onClose}
+                className="absolute -right-2.5 -top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full border border-[#E5E5EA] bg-white text-[#3C3C43] shadow-md transition hover:bg-[#F2F2F7]">
+                <X size={16} />
+              </button>
+            )}
+            <div className="rounded-2xl bg-white p-4 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+              {children}
+            </div>
+          </>
+        ) : children}
       </div>
     </div>
   );

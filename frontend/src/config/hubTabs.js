@@ -15,7 +15,7 @@ export const HUB_TABS = {
     { view: "approval-inbox",    label: "Inbox Persetujuan",     roles: ["manager", "admin"] },
     { view: "my-approvals",      label: "Persetujuan Saya",      roles: ["manager", "admin"] },
     { view: "price-approvals",   label: "Pengajuan Harga Khusus",   roles: ["admin", "sales", "manager"] },
-    { view: "purchase-approval", label: "Riwayat Persetujuan PO",   roles: ["admin", "manager"] },
+    { view: "purchase-approval", label: "Persetujuan Pembelian",    roles: ["admin", "manager"] },
   ],
   "sales-orders": [
     { view: "orders",            label: "Pesanan (SO)",          roles: ["admin", "sales", "manager"] },
@@ -160,7 +160,7 @@ export const HUB_TABS = {
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },
     { view: "input-tax",         label: "Faktur Masukan",        roles: ["admin", "manager"] },
-    { view: "cs-pajak",          label: "PPh & Rekap",           roles: ["admin", "manager"] },
+    { view: "cs-pajak",          label: "Pajak (PPN & PPh)",     roles: ["admin", "manager"] },
   ],
   "ledger": [
     { view: "general-ledger",    label: "Jurnal & Buku Besar",   roles: ["admin", "manager"] },
@@ -229,7 +229,7 @@ export const HUB_TABS = {
     { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin"], section: "Organisasi & Akses" },
     // master BERLAPIS global → badan usaha (override per BU; editor lengkap ada di domainnya).
     { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"], section: "Organisasi & Akses" },
-    { view: "client-dataset-import", label: "Impor Dataset Client", roles: ["admin"], section: "Kamus & Dokumen" },
+    { view: "client-dataset-import", label: "Impor Dataset Klien", roles: ["admin"], section: "Kamus & Dokumen" },
     { view: "grade-master",      label: "Master Grade Mutu",     roles: ["admin", "manager", "md", "sales_admin", "warehouse_admin", "md_quality", "qc"], section: "Kamus & Dokumen" },
     { view: "domain-registry",   label: "Registri Domain",       roles: ["admin", "manager"], section: "Kamus & Dokumen" },
     { view: "pdf-templates",     label: "Template PDF",          roles: ["admin"], section: "Kamus & Dokumen" },
@@ -240,7 +240,7 @@ export const HUB_TABS = {
     // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
     { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
     { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"], section: "Penjualan" },
-    { view: "incentive-rates",   label: "Rate Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
+    { view: "incentive-rates",   label: "Tarif Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
     { view: "gl-account-mappings", label: "Pemetaan Akun",       roles: ["admin", "manager", "finance"], section: "Keuangan" },
     { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },
     { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"], section: "Keuangan" },

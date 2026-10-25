@@ -15,7 +15,7 @@ export default function useCatalogMasters({ current = {} } = {}) {
   const [m, setM] = useState({ categories: [], motifs: [], suppliers: [] });
   useUomConversions();
   useEffect(() => { let live = true; load().then((d) => { if (live) setM(d); }); return () => { live = false; }; }, []);
-  const withCurrent = (opts, cur) => (cur && !opts.some((o) => o.value === cur) ? [{ value: cur, label: `${cur} (nilai lama)` }, ...opts] : opts);
+  const withCurrent = (opts, cur) => (cur && !opts.some((o) => o.value === cur) ? [{ value: cur, label: `${cur} (tidak ada di master)` }, ...opts] : opts);
   return {
     categoryOptions: withCurrent(m.categories.filter((c) => (c.status || "active") === "active").map((c) => ({ value: c.name, label: c.name })), current.category),
     motifOptions: withCurrent(m.motifs.map((x) => ({ value: x.value, label: x.label })), current.motif),

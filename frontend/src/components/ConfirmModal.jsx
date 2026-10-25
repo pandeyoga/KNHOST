@@ -170,16 +170,18 @@ export default function ConfirmModal({
             )}
             {/* Petunjuk HIDUP: menyebut ambangnya dan berapa huruf lagi yang kurang.
                 Tombol yang mati tanpa penjelasan terbaca sebagai aplikasi rusak. */}
+            {/* UAT 24 Okt (audit UI tahap 2) — G0-20: sebelum mengetik petunjuk abu netral (dulu langsung oranye dan
+                menggurui); setelah mengetik baru hitung mundur oranye → hijau. */}
             {withReason && reasonRequired && Number(reasonMinLength) > 1 && (
               <span data-testid={`${testId}-reason-hint`}
                 className={`text-[10.5px] leading-snug ${
-                  reason.trim().length >= Number(reasonMinLength)
-                    ? "text-[#1E8E3E]" : "text-[#B45309]"}`}>
-                {reason.trim().length >= Number(reasonMinLength)
-                  ? "Alasan sudah memadai."
-                  : `Alasan wajib minimal ${Number(reasonMinLength)} huruf — `
-                    + `kurang ${Number(reasonMinLength) - reason.trim().length} huruf. `
-                    + "Alasan yang tidak bisa dipakai orang lain sama saja dengan kolom kosong."}
+                  !reason.trim() ? "text-[#8E8E93]"
+                    : reason.trim().length >= Number(reasonMinLength) ? "text-[#1E8E3E]" : "text-[#B45309]"}`}>
+                {!reason.trim()
+                  ? `Minimal ${Number(reasonMinLength)} huruf.`
+                  : reason.trim().length >= Number(reasonMinLength)
+                    ? "Alasan sudah memadai."
+                    : `Kurang ${Number(reasonMinLength) - reason.trim().length} huruf lagi (minimal ${Number(reasonMinLength)}).`}
               </span>
             )}
           </div>

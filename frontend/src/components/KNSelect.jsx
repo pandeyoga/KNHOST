@@ -17,8 +17,20 @@
  * kosong. Tanpa item itu, Radix menampilkan kotak KOSONG tanpa petunjuk saat value
  * masih "". Jalur combobox tidak butuh sentinel (kontrol penuh), tapi tetap
  * mengirim "" ke parent seperti biasa.
+ *
+ * UAT 24 Okt (audit UI tahap 2) — P-03 (G0-04/05/06), berlaku ke semua pemakaian:
+ *  · Opsi bernilai "" (placeholder / "Semua …") tidak lagi tampil sebagai pilihan TERCENTANG: selama nilai
+ *    masih kosong ia disembunyikan dari daftar (pemicu tetap menampilkan labelnya); setelah nilai terisi ia
+ *    tampil abu tanpa ✓ sebagai jalan untuk mengosongkan kembali.
+ *  · Sorotan keyboard/kursor netral (abu), BUKAN hijau seperti "terpilih"; nilai terpilih = ✓ + teks tebal biru.
+ *    Combobox dibuka dengan sorotan & gulir di nilai aktif (dulu selalu butir pertama).
+ *  · Menu selebar isinya (minimal selebar pemicu, maksimal 26rem / lebar layar) — dulu dipaksa selebar pemicu
+ *    sehingga nama gudang patah 3–4 baris.
+ *  · Nilai tersimpan yang tidak ada di daftar opsi (dan daftar sudah termuat) tampil "<nilai> (tidak ada di daftar)"
+ *    bergaya peringatan, bukan kotak kosong — prop opsional `unknownLabel(value)` untuk teks lain.
+ *  · Daftar tanpa opsi nyata menampilkan `emptyText` (bawaan "Belum ada pilihan").
  */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import {
   Select,
@@ -44,11 +56,35 @@ const EMPTY_SENTINEL = "__empty__";
 
 const toSafe = (v) =>
   v === "" || v === null || v === undefined ? EMPTY_SENTINEL : String(v);
+const isBlank = (v) => v === "" || v === null || v === undefined;
+// G0-05 — lebar menu: minimal selebar pemicu, mengikuti isi, dibatasi layar.
+const MENU_WIDTH = "min-w-[var(--radix-popover-trigger-width)] w-max max-w-[min(26rem,calc(100vw-1.5rem))]";
+
+/** G0-06 — nilai tersimpan non-kosong yang tidak ada di daftar opsi. Hanya bila daftar sudah berisi: saat opsi
+ *  masih dimuat (kosong) perilaku lama dipertahankan. Dev: console.warn sekali per nilai. */
+function useUnknownValue(value, options, unknownLabel, testId) {
+  const unknown = !isBlank(value) && options.length > 0
+    && !options.some((o) => String(o.value ?? "") === String(value));
+  const text = unknown
+    ? (typeof unknownLabel === "function" ? unknownLabel(value) : `${value} (tidak ada di daftar)`)
+    : "";
+  useEffect(() => {
+    if (unknown && process.env.NODE_ENV === "development") {
+      console.warn(`KNSelect${testId ? ` [${testId}]` : ""}: nilai "${value}" tidak ada di daftar opsi.`);
+    }
+  }, [unknown, value, testId]);
+  return { unknown, text };
+}
 
 /** Combobox dengan pencarian inline. Kontrak prop sama dengan KNSelect. */
-function KNCombobox({ value, onValueChange, options, className, placeholder, disabled, testId, ariaLabel }) {
+function KNCombobox({ value, onValueChange, options, className, placeholder, disabled, testId, ariaLabel, emptyText, unknown, unknownText }) {
   const [open, setOpen] = useState(false);
-  const selected = options.find((o) => String(o.value) === String(value ?? ""));
+  const valueStr = String(value ?? "");
+  const selected = options.find((o) => String(o.value ?? "") === valueStr);
+  const itemValue = (opt) => `${opt.label} ${String(opt.value)}`.trim();
+  // G0-04 — opsi bernilai "" hanya tampil (abu, tanpa ✓) bila nilai sudah terisi: jalan untuk mengosongkan.
+  const listed = options.filter((o) => !isBlank(o.value) || valueStr !== "");
+  const realCount = options.filter((o) => !isBlank(o.value)).length;
 
   const handleSelect = (val) => {
     if (typeof onValueChange === "function") onValueChange(val);
@@ -66,6 +102,8 @@ function KNCombobox({ value, onValueChange, options, className, placeholder, dis
           className={className}
           data-testid={testId}
           aria-label={ariaLabel}
+          data-kn-unknown={unknown ? "true" : undefined}
+          title={unknown ? unknownText : undefined}
           style={{
             display: "flex",
             alignItems: "center",
@@ -88,10 +126,10 @@ function KNCombobox({ value, onValueChange, options, className, placeholder, dis
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
-              color: selected ? "inherit" : "#9A9BA3",
+              color: unknown ? "#B26A00" : selected ? "inherit" : "#9A9BA3",
             }}
           >
-            {selected ? (selected.render || selected.label) : placeholder}
+            {selected ? (selected.render || selected.label) : unknown ? unknownText : placeholder}
           </span>
           {/* UAT 24 Okt (audit UI) — ikon sama dengan jalur Radix: pengguna dulu melihat dua gaya dropdown yang
               berbeda hanya karena jumlah opsinya ≥ / < SEARCH_THRESHOLD. */}
@@ -100,32 +138,37 @@ function KNCombobox({ value, onValueChange, options, className, placeholder, dis
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="p-0 w-[var(--radix-popover-trigger-width)]"
+        className={`p-0 ${MENU_WIDTH}`}
         data-testid={testId ? `${testId}-popover` : undefined}
       >
-        <Command>
+        {/* G0-04 — sorotan awal di nilai aktif (cmdk menggulirnya ke tampilan saat dibuka), bukan butir pertama. */}
+        <Command defaultValue={selected && !isBlank(selected.value) ? itemValue(selected) : undefined}>
           <CommandInput placeholder="Cari..." data-testid={testId ? `${testId}-search` : undefined} />
           <CommandList data-testid={testId ? `${testId}-listbox` : undefined}>
-            <CommandEmpty data-testid={testId ? `${testId}-empty-state` : undefined}>Tidak ada hasil.</CommandEmpty>
+            <CommandEmpty data-testid={testId ? `${testId}-empty-state` : undefined}>
+              {realCount === 0 ? (emptyText || "Belum ada pilihan") : "Tidak ada hasil."}
+            </CommandEmpty>
             <CommandGroup>
-              {options.map((opt) => (
-                <CommandItem
-                  key={String(opt.value)}
-                  value={`${opt.label} ${String(opt.value)}`}
-                  keywords={Array.isArray(opt.keywords) ? opt.keywords.filter(Boolean) : undefined}
-                  disabled={opt.disabled}
-                  data-option-value={String(opt.value ?? "")}
-                  onSelect={() => handleSelect(opt.value)}
-                  data-testid={testId ? `${testId}-option-${String(opt.value) || "empty"}` : undefined}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      String(opt.value) === String(value ?? "") ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  {opt.render || opt.label}
-                </CommandItem>
-              ))}
+              {listed.map((opt) => {
+                const blank = isBlank(opt.value);
+                const chosen = !blank && String(opt.value) === valueStr;
+                return (
+                  <CommandItem
+                    key={String(opt.value)}
+                    value={itemValue(opt)}
+                    keywords={Array.isArray(opt.keywords) ? opt.keywords.filter(Boolean) : undefined}
+                    disabled={opt.disabled}
+                    data-option-value={String(opt.value ?? "")}
+                    data-kn-chosen={chosen ? "true" : undefined}
+                    className={chosen ? "font-semibold text-[#0058CC]" : blank ? "text-[#8E8E93]" : undefined}
+                    onSelect={() => handleSelect(opt.value)}
+                    data-testid={testId ? `${testId}-option-${String(opt.value) || "empty"}` : undefined}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${chosen ? "opacity-100" : "opacity-0"}`} />
+                    {opt.render || opt.label}
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -147,6 +190,9 @@ function KNCombobox({ value, onValueChange, options, className, placeholder, dis
  *   `<select>` bawaan bisa diberi `aria-label` langsung, jadi tanpa pass-through ini
  *   setiap konversi native → KNSelect akan **menghapus** nama kontrolnya secara senyap
  *   (terukur pada `NotificationCenter`, filter "Filter jenis notifikasi").
+ * @param {string} [emptyText] - teks saat tidak ada opsi nyata (bawaan "Belum ada pilihan").
+ * @param {(value) => string} [unknownLabel] - teks untuk nilai tersimpan yang tak ada di daftar
+ *   (bawaan "<nilai> (tidak ada di daftar)").
  */
 export function KNSelect({
   value,
@@ -159,12 +205,16 @@ export function KNSelect({
   "data-testid": testId,
   "aria-label": ariaLabel,
   onChange,
+  emptyText = "Belum ada pilihan",
+  unknownLabel,
 }) {
   // FE-02 — kontraknya `onValueChange`; `onChange` dulu dibuang diam-diam sehingga pilihan tidak tersimpan.
   if (process.env.NODE_ENV !== "production" && typeof onChange === "function" && typeof onValueChange !== "function") {
     // eslint-disable-next-line no-console
     console.error(`KNSelect${testId ? ` [${testId}]` : ""}: gunakan prop onValueChange, bukan onChange — pilihan tidak akan tersimpan.`);
   }
+  // Hook dipanggil SEBELUM percabangan jalur (jumlah opsi bisa melewati ambang antar-render).
+  const { unknown, text: unknownText } = useUnknownValue(value, options, unknownLabel, testId);
   const useSearch =
     searchable === true || (searchable !== false && options.length >= SEARCH_THRESHOLD);
 
@@ -179,6 +229,9 @@ export function KNSelect({
         disabled={disabled}
         testId={testId}
         ariaLabel={ariaLabel}
+        emptyText={emptyText}
+        unknown={unknown}
+        unknownText={unknownText}
       />
     );
   }
@@ -207,18 +260,34 @@ export function KNSelect({
   // Sentinel HANYA disisipkan selama nilainya masih kosong: cukup untuk memunculkan
   // teks petunjuk di trigger, tanpa menambah kemampuan baru "mengosongkan kembali"
   // pada field wajib setelah pengguna memilih (perilaku lama tetap terjaga).
-  const safeOptions = hasEmptyOption || !isEmpty
-    ? mapped
-    : [{ value: "", label: placeholder, safeValue: EMPTY_SENTINEL }, ...mapped];
+  // G0-04 — sentinel & opsi bernilai "" yang sedang aktif tetap TERDAFTAR (pemicu menampilkan labelnya) tetapi
+  // disembunyikan dari daftar: dulu tampil sebagai pilihan tercentang ✓ hijau. Opsi "" saat nilai terisi = abu.
+  // G0-06 — nilai tak dikenal didaftarkan sebagai item tersembunyi agar pemicu menampilkan "<nilai> (tidak ada…)".
+  const safeOptions = [
+    ...(hasEmptyOption || !isEmpty ? [] : [{ value: "", label: placeholder, safeValue: EMPTY_SENTINEL, kn_hidden: true }]),
+    ...mapped.map((opt) => (opt.safeValue === EMPTY_SENTINEL
+      ? { ...opt, kn_hidden: isEmpty, kn_blank: true } : opt)),
+    ...(unknown ? [{ value: String(value), label: unknownText, safeValue: String(value), kn_hidden: true }] : []),
+  ];
+  const realCount = mapped.filter((opt) => opt.safeValue !== EMPTY_SENTINEL).length;
 
   return (
     <Select value={safeValue} onValueChange={handleValueChange} disabled={disabled}>
-      <SelectTrigger className={className} data-testid={testId} aria-label={ariaLabel} data-kn-empty={isEmpty ? "true" : undefined}>
+      <SelectTrigger className={className} data-testid={testId} aria-label={ariaLabel}
+        data-kn-empty={isEmpty ? "true" : undefined} data-kn-unknown={unknown ? "true" : undefined}
+        title={unknown ? unknownText : undefined}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent data-testid={testId ? `${testId}-listbox` : undefined}>
+        {realCount === 0 && (
+          <div className="px-2 py-1.5 text-sm text-[#8E8E93]" data-testid={testId ? `${testId}-empty-state` : undefined}>
+            {emptyText}
+          </div>
+        )}
         {safeOptions.map((opt) => (
-          <SelectItem key={opt.safeValue} value={opt.safeValue} disabled={opt.disabled}
+          <SelectItem key={opt.safeValue} value={opt.safeValue} disabled={opt.disabled || opt.kn_hidden}
+            className={opt.kn_hidden ? "hidden" : opt.kn_blank ? "text-[#8E8E93]" : undefined}
+            aria-hidden={opt.kn_hidden ? "true" : undefined}
             data-option-value={String(opt.value ?? "")}
             data-testid={testId ? `${testId}-option-${String(opt.value) || "empty"}` : undefined}>
             {opt.render || opt.label}

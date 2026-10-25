@@ -5,10 +5,10 @@ export default function DetailDrawer({ detail, onClose, onNavigate }) {
   useEscapeClose(!!detail, onClose, false);   // Esc menutup drawer agar tidak menghalangi baris di belakangnya
   if (!detail) return null;
   return (
-    <aside data-testid="interactive-detail-drawer" className="fixed right-4 top-16 z-50 w-[min(380px,calc(100vw-32px))] rounded-[14px] border border-[#E5E5EA] bg-white/95 p-4 shadow-[0_16px_40px_rgba(20,28,45,0.18)] backdrop-blur-xl no-print" role="dialog" aria-label="Detail insight">
+    <aside data-testid="interactive-detail-drawer" className="fixed right-4 top-16 z-50 w-[min(380px,calc(100vw-32px))] rounded-[14px] border border-[#E5E5EA] bg-white/95 p-4 shadow-[0_16px_40px_rgba(20,28,45,0.18)] backdrop-blur-xl no-print" role="dialog" aria-label="Rincian">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p data-testid="detail-drawer-kicker" className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Detail Insight</p>
+          <p data-testid="detail-drawer-kicker" className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Rincian</p>
           <h3 data-testid="detail-drawer-title" className="mt-0.5 text-[15px] font-bold tracking-tight">{detail.title}</h3>
         </div>
         <button data-testid="detail-drawer-close-button" className="icon-button" onClick={onClose} aria-label="Tutup"><XCircle size={14} /></button>

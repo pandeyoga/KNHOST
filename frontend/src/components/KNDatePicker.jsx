@@ -39,8 +39,13 @@ export default function KNDatePicker({ value, onChange, placeholder = "Pilih tan
             onClick={(e) => { e.preventDefault(); onChange(""); setOpen(false); }}><X size={12} /></button>
         )}
       </div>
-      <PopoverContent className="w-auto p-0" align="start" data-testid={testId ? `${testId}-popover` : undefined}>
-        <Calendar mode="single" locale={localeId} selected={isValid(selected) ? selected : undefined}
+      {/* UAT 24 Okt (audit UI tahap 2) — G0-13: di HP kalender menutupi judul/× pop-up atau tombol kaki, di desktop
+          menjulur keluar pop-up. Kini dijaga di dalam layar (collisionPadding), tinggi dibatasi & bisa digulir,
+          dan lebih rapat di layar sempit. */}
+      <PopoverContent className="w-auto max-h-[min(22rem,70dvh)] overflow-auto p-0" align="start" side="bottom"
+        avoidCollisions collisionPadding={12} sticky="partial"
+        data-testid={testId ? `${testId}-popover` : undefined}>
+        <Calendar className="p-2 sm:p-3" mode="single" locale={localeId} selected={isValid(selected) ? selected : undefined}
           defaultMonth={isValid(selected) ? selected : undefined} initialFocus
           disabled={disabledDays.length ? disabledDays : undefined}
           onSelect={(d) => { onChange(d ? format(d, "yyyy-MM-dd") : ""); setOpen(false); }} />

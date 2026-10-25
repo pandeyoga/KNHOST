@@ -89,7 +89,9 @@ test("modal tolak: gagal → modal & alasan tetap, pesan tampil di modal", async
   await flush();
   expect(q(host, "reject-modal")).not.toBeNull();
   expect(q(host, "reject-modal-reason").value).toBe("Barang tidak sesuai");
-  expect(q(host, "reject-modal-error")?.textContent).toContain("sales_return.reject");
+  // UAT 24 Okt (audit UI tahap 2) — G0-03: kode izin mentah tidak lagi tampil; pesan akses Indonesia.
+  expect(q(host, "reject-modal-error")?.textContent).toContain("Retur Penjualan");
+  expect(q(host, "reject-modal-error")?.textContent).not.toContain("sales_return.reject");
   await act(async () => { root.unmount(); });
 });
 

@@ -58,6 +58,7 @@ export function MobileInstallCard() {
   const [prompt, setPrompt] = useState(() => window.__knInstallPrompt || null);
   const [installed, setInstalled] = useState(isStandalone());
   const [showIos, setShowIos] = useState(false);
+  const [installMsg, setInstallMsg] = useState("");
   useEffect(() => {
     const onPrompt = () => setPrompt(window.__knInstallPrompt || null);
     const onInstalled = () => setInstalled(true);
@@ -73,12 +74,17 @@ export function MobileInstallCard() {
       </div>
     );
   }
+  // UAT 24 Okt (audit UI tahap 2) — G0-10: "Pasang sekarang" dulu diam saja bila prompt peramban gagal/ditutup.
+  // Kini selalu ada umpan balik: langkah pemasangan manual dari menu peramban ditampilkan.
   const install = async () => {
     if (prompt) {
-      prompt.prompt();
-      const choice = await prompt.userChoice.catch(() => null);
-      if (choice?.outcome === "accepted") setInstalled(true);
+      let choice = null;
+      try { await prompt.prompt(); choice = await prompt.userChoice.catch(() => null); } catch (_) { choice = null; }
       window.__knInstallPrompt = null; setPrompt(null);
+      if (choice?.outcome === "accepted") { setInstalled(true); return; }
+      setInstallMsg(choice?.outcome === "dismissed" ? "Pemasangan dibatalkan. Bisa juga dari menu peramban:"
+        : "Peramban tidak menampilkan pemasangan otomatis. Pasang dari menu peramban:");
+      setShowIos(true);
       return;
     }
     setShowIos((v) => !v);
@@ -95,6 +101,9 @@ export function MobileInstallCard() {
       <button className="primary-button mt-2.5 flex w-full items-center justify-center gap-2 py-2.5" onClick={install} data-testid="m-pwa-install-btn">
         <Download size={15} /> {prompt ? "Pasang sekarang" : "Cara memasang"}
       </button>
+      {showIos && !prompt && installMsg && (
+        <p className="mt-2 text-[11.5px] text-[#3C3C43]" data-testid="m-pwa-install-msg">{installMsg}</p>
+      )}
       {showIos && !prompt && (
         <ol className="mt-2 space-y-1.5 rounded-xl bg-[#F7F8FA] p-2.5 text-[11.5px] text-[#3C3C43]" data-testid="m-pwa-install-steps">
           {isIOS() ? (
@@ -122,7 +131,6 @@ export function MobilePushCard({ compact = false }) {
   const [explain, setExplain] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
-  const [help, setHelp] = useState(false);
   const iosNeedsInstall = isIOS() && !isStandalone();
 
   useEffect(() => {
@@ -135,7 +143,8 @@ export function MobilePushCard({ compact = false }) {
     try {
       const p = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
       setPerm(p);
-      if (p !== "granted") { setMsg({ ok: false, text: p === "denied" ? "Izin notifikasi ditolak. Aktifkan dari pengaturan situs untuk menerima pemberitahuan." : "Izin belum diberikan." }); return; }
+      // G0-10 — ditolak: cukup status "Diblokir" + satu panduan (tanpa penjelasan lama & galat merah ganda).
+      if (p !== "granted") { setExplain(false); if (p !== "denied") setMsg({ ok: false, text: "Izin belum diberikan." }); return; }
       const { data } = await axios.get(`${API}/push/public-key`);
       if (!data?.public_key) throw new Error("Server belum siap mengirim notifikasi.");
       const reg = await navigator.serviceWorker.ready;
@@ -181,7 +190,7 @@ export function MobilePushCard({ compact = false }) {
       {supported && !active && perm !== "denied" && !iosNeedsInstall && !explain && (
         <button className="primary-button mt-2.5 w-full py-2.5" onClick={() => setExplain(true)} data-testid="m-push-enable">Aktifkan notifikasi</button>
       )}
-      {explain && (
+      {explain && perm !== "denied" && (
         <div className="mt-2.5 rounded-xl border border-[#CBDFFF] bg-[#F2F7FF] p-2.5" data-testid="m-push-explain">
           <p className="text-[11.5px] text-[#31465F]">Anda akan diberi tahu saat pesanan perlu ditindak, harga khusus diputus, permintaan internal diproses, atau ada tagihan jatuh tempo — tanpa harus membuka aplikasi. Setelah ini browser akan meminta izin.</p>
           <div className="mt-2 flex gap-2">
@@ -190,16 +199,17 @@ export function MobilePushCard({ compact = false }) {
           </div>
         </div>
       )}
+      {/* UAT 24 Okt (audit UI tahap 2) — G0-10: keadaan "diblokir" dulu menumpuk empat pesan (status, penjelasan lama +
+          Nanti/Lanjutkan, tombol cara membuka pengaturan, galat merah) dan langkah 3 merujuk tombol yang sudah tidak ada.
+          Kini satu panduan 3 langkah yang langkah terakhirnya menunjuk tombol yang memang tampil di bawahnya. */}
       {supported && perm === "denied" && (
         <div className="mt-2">
-          <button className="secondary-button w-full py-2.5 text-[12px]" onClick={() => setHelp((v) => !v)} data-testid="m-push-open-settings">Cara membuka pengaturan notifikasi</button>
-          {help && (
-            <ol className="mt-2 space-y-1 rounded-xl bg-[#F7F8FA] p-2.5 text-[11.5px] text-[#3C3C43]" data-testid="m-push-settings-steps">
-              {isIOS() ? (<><li>1. Buka <b>Pengaturan</b> iPhone → <b>Notifikasi</b>.</li><li>2. Pilih <b>Kain Nusantara</b> → aktifkan <b>Izinkan Notifikasi</b>.</li></>)
-                : (<><li>1. Ketuk ikon gembok / ⓘ di sebelah alamat situs.</li><li>2. Pilih <b>Izin</b> / <b>Setelan situs</b> → <b>Notifikasi</b> → <b>Izinkan</b>.</li><li>3. Kembali ke sini lalu ketuk <b>Aktifkan notifikasi</b>.</li></>)}
-            </ol>
-          )}
-          <button className="mt-2 w-full py-1.5 text-[12px] font-semibold text-[#0058CC]" onClick={() => setPerm(Notification.permission)} data-testid="m-push-recheck">Sudah diizinkan? Periksa lagi</button>
+          <ol className="space-y-1 rounded-xl bg-[#F7F8FA] p-2.5 text-[11.5px] text-[#3C3C43]" data-testid="m-push-settings-steps">
+            {isIOS() ? (<><li>1. Buka <b>Pengaturan</b> iPhone → <b>Notifikasi</b>.</li><li>2. Pilih <b>Kain Nusantara</b> → aktifkan <b>Izinkan Notifikasi</b>.</li><li>3. Kembali ke sini lalu ketuk <b>Sudah diizinkan? Periksa lagi</b>.</li></>)
+              : (<><li>1. Ketuk ikon gembok / ⓘ di sebelah alamat situs.</li><li>2. Pilih <b>Izin</b> / <b>Setelan situs</b> → <b>Notifikasi</b> → <b>Izinkan</b>.</li><li>3. Kembali ke sini lalu ketuk <b>Sudah diizinkan? Periksa lagi</b>.</li></>)}
+          </ol>
+          <button className="mt-2 w-full py-1.5 text-[12px] font-semibold text-[#0058CC]" data-testid="m-push-recheck"
+            onClick={() => { const p = Notification.permission; setPerm(p); setMsg(null); if (p === "granted") enable(); }}>Sudah diizinkan? Periksa lagi</button>
         </div>
       )}
       {active && (
@@ -208,7 +218,7 @@ export function MobilePushCard({ compact = false }) {
           <button className="secondary-button py-2 text-[12px]" disabled={busy} onClick={disable} data-testid="m-push-disable">Matikan</button>
         </div>
       )}
-      {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} mt-2 text-xs`} data-testid="m-push-msg">{msg.text}</div>}
+      {msg && perm !== "denied" && <div className={`notice-bar ${msg.ok ? "success" : "danger"} mt-2 text-xs`} data-testid="m-push-msg">{msg.text}</div>}
       {compact && iosNeedsInstall && !active && <div className="mt-2"><MobileInstallCard /></div>}
     </div>
   );

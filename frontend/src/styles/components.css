@@ -635,6 +635,8 @@
    agar terbaca sebagai "belum dipilih", bukan sebagai nilai sungguhan.
    Lihat components/KNSelect.jsx (item sentinel berlabel placeholder). */
 [data-kn-empty="true"] { color: #9A9BA3; }
+/* UAT 24 Okt (audit UI tahap 2) — G0-06: nilai tersimpan yang tidak ada di daftar opsi → teks peringatan. */
+[data-kn-unknown="true"] { color: #B26A00; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    KELAS "HANTU" — BUG NYATA `KN-G7-CSS-GHOST` (ditemukan 2026-07-30)
