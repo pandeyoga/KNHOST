@@ -3,7 +3,8 @@
  * 3 tingkat per modul, template "salin dari peran", pratinjau menu, dan
  * ringkasan perubahan sebelum disimpan.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useEscapeClose } from "@/utils/escapeLayers";
 import { X, Save, Loader2, ShieldCheck, Copy, Trash2, RotateCcw, Info, Lock } from "lucide-react";
 
 import KNSelect from "../../../components/KNSelect";
@@ -75,14 +76,15 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
 
   const dirty = !locked && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || label !== initLabel || description !== initDesc);
   const requestClose = () => { if (busy) return; if (dirty) setDiscard(true); else onClose?.(); };
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key !== "Escape") return;
-      if (discard) setDiscard(false); else if (confirm) setConfirm(false); else if (danger) setDanger(null); else requestClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+  // Fase 3 · P1 — INV-UI-10: Esc lewat tumpukan lapisan bersama (dropdown di dalam laci menutup dirinya saja).
+  // Urutan tutup tetap: dialog buang-perubahan → konfirmasi → dialog bahaya → laci. Callback stabil (ref) supaya
+  // entri tumpukan tidak dipasang ulang tiap render (urutan lapisan terjaga).
+  const escRef = useRef(null);
+  escRef.current = () => {
+    if (discard) setDiscard(false); else if (confirm) setConfirm(false); else if (danger) setDanger(null); else requestClose();
+  };
+  const onEscape = useCallback(() => escRef.current?.(), []);
+  useEscapeClose(true, onEscape);
 
   const copyFrom = (rid) => {
     const src = roles.find((r) => r.id === rid);

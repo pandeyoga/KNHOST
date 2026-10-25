@@ -15,10 +15,16 @@
 import { useCallback, useEffect, useState } from "react";
 import axios, { API } from "../services/apiClient";
 import WaitingQueueBoard from "./WaitingQueueBoard";
-import { boardLook, selectWaitingBoards } from "../config/waitingBoards";
+import { boardLook, boardRowLink, selectWaitingBoards } from "../config/waitingBoards";
 
+/**
+ * Fase 3 · P1 — `linkKeys` (mis. `["inspection_hold"]`, D-28): papan dengan kunci ini digambar `mode="link"`
+ * (tanpa tombol keputusan; klik baris → `onOpenDocument(boardRowLink(board, row))` membuka dokumennya di
+ * layar utama). Papan lain tetap bisa ditindak seperti dulu.
+ */
 export default function WaitingBoardsStrip({
   endpoint, entityId = "all", primaryKey, testIdPrefix, onNavigate, onActed, scopeNote = "",
+  linkKeys = [], onOpenDocument,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,8 +52,11 @@ export default function WaitingBoardsStrip({
       {scopeNote && <p data-testid={`${testIdPrefix}-boards-scope`} className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8E8E93]">{scopeNote}</p>}
       {boards.map((b) => {
         const look = boardLook(b.key);
+        const asLink = linkKeys.includes(b.key);
         return (
           <WaitingQueueBoard key={b.key} board={b} loading={loading && !data}
+            mode={asLink ? "link" : "act"}
+            onOpenRow={asLink && onOpenDocument ? (row) => onOpenDocument(boardRowLink(b, row)) : undefined}
             entityId={entityId}
             unreadable={unreadable} onRetry={load}
             /* T6 DIBAYAR (2026-06c): sesudah keputusan, BUKAN hanya papan ini yang

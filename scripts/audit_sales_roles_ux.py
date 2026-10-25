@@ -299,9 +299,12 @@ def menu_per_role(roles=None):
 # ─── 2. Layar → berkas komponen ──────────────────────────────────────────────
 def view_to_file():
     router = (SRC / "AppViewRouter.jsx").read_text(encoding="utf-8")
+    # Fase 3 · P1 — daftar view lazy dipindah ke appViewImports.js (folder sama, path impor sama).
+    lazy_file = SRC / "appViewImports.js"
+    lazy_src = router + "\n" + (lazy_file.read_text(encoding="utf-8") if lazy_file.exists() else "")
     lazy_map = {}
     for m in re.finditer(r'const\s+(\w+)\s*=\s*lazy\(\(\)\s*=>\s*import\("([^"]+)"',
-                         router):
+                         lazy_src):
         lazy_map[m.group(1)] = m.group(2)
     direct = {}
     for m in re.finditer(r'import\s+(\w+)\s+from\s+"(\.[^"]+)"', router):

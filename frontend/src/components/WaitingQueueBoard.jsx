@@ -10,6 +10,11 @@
  * `count` (yang menunggu), `shown`/`hidden`/`truncated` (kejujuran saat daftar
  * dipotong), dan `days_waiting` per baris. Layar tidak menghitung ulang apa pun,
  * jadi mustahil berselisih dengan antrean di layar yang sama (INV-HOME-01).
+ *
+ * Fase 3 · P1 — `mode="link"` (D-07 PO Custom, D-28 Barang ditahan QC): papan TANPA tombol keputusan;
+ * klik baris membuka dokumennya di layar utama (`onOpenRow(row)`, mis. lewat `boardRowLink()` di
+ * `config/waitingBoards.js` + `openDocument`). Keputusan hanya di layar utama (satu dialog). Bawaan
+ * `mode="act"` = perilaku lama (papan bisa ditindak).
  */
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,10 +47,13 @@ export default function WaitingQueueBoard({
   board = {}, loading = false, unreadable = false, onRetry, onNavigate,
   showEntity = false, icon: Icon, accent = "#6C3FD1", title,
   testIdBase, rowTestIdBase, gotoLabel = "Buka layarnya →", emptyText, gotoTestId,
-  onActed, entityId = "all",
+  onActed, entityId = "all", mode = "act", onOpenRow,
 }) {
   const rows = board.rows || [];
   const go = () => { if (board.view && onNavigate) onNavigate(board.view); };
+  const linkMode = mode === "link";
+  // Mode tautan: baris membuka DOKUMENNYA (terfokus) bila pemanggil memberi `onOpenRow`; selain itu layarnya.
+  const openRow = (r) => { if (linkMode && typeof onOpenRow === "function") onOpenRow(r); else go(); };
   const judul = title || (board.label || "Menunggu keputusan");
   const [busyId, setBusyId] = useState("");
   const [actError, setActError] = useState("");
@@ -153,7 +161,7 @@ export default function WaitingQueueBoard({
     <div key={r.id || r.number}
       className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border border-[#EDEFF3] bg-white px-3 py-2 transition hover:border-[#C9D6E8] sm:flex-nowrap">
       <button type="button" data-testid={`${base}-${r.id}`}
-        onClick={go}
+        onClick={() => openRow(r)} title={linkMode ? `Buka ${r.number || "dokumen"}` : undefined}
         className="min-w-0 basis-full text-left sm:basis-auto sm:flex-1">
         <p className="flex flex-col text-[12px] font-semibold text-[#1C1C1E] sm:flex-row sm:items-center sm:gap-1.5">
           <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
@@ -176,7 +184,7 @@ export default function WaitingQueueBoard({
       {/* Tombol keputusan hanya ada bila SERVER memberi `action`: itu berarti
           pintunya nyata DAN peran ini memang berwenang. G0-01: tombol biru baku (.primary-button) di semua papan —
           warna aksen papan hanya untuk ikon & bingkai. */}
-      {r.action && (
+      {r.action && !linkMode && (
         <button type="button"
           data-testid={`${base}-act-${r.id}`}
           disabled={busyId === r.id || !!r.action.blocked_reason}
@@ -193,7 +201,7 @@ export default function WaitingQueueBoard({
   return (
     <div className="rounded-xl border p-4"
       style={{ borderColor: `${accent}33`, background: `${accent}0A` }}
-      data-testid={testIdBase}>
+      data-testid={testIdBase} data-board-mode={mode}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {Icon ? <Icon size={15} style={{ color: accent }} /> : null}

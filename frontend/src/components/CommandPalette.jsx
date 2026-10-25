@@ -31,7 +31,9 @@ export const CommandPalette = ({ role, onNavigate }) => {
 
   const go = (entry) => {
     setOpen(false);
-    onNavigate(entry.navId, entry.view, entry.tab);
+    // Fase 3 · P1 — entri "Nama lama → kini di <utama>" mengirim id lamanya: handleNavSelect menerjemahkan
+    // alias + preset di satu tempat (sama dengan deep link & notifikasi).
+    onNavigate(entry.navId, entry.aliasOf || entry.view, entry.tab);
   };
 
   return (
@@ -45,9 +47,9 @@ export const CommandPalette = ({ role, onNavigate }) => {
               const Icon = e.icon;
               return (
                 <CommandItem
-                  key={`${e.view}-${e.tab || ""}`}
+                  key={`${e.view}-${e.tab || ""}-${e.aliasOf || ""}`}
                   value={`${group} ${e.label}`}
-                  data-testid={`palette-item-${e.view}${e.tab ? `-${e.tab}` : ""}`}
+                  data-testid={`palette-item-${e.aliasOf || e.view}${e.tab ? `-${e.tab}` : ""}`}
                   onSelect={() => go(e)}
                 >
                   {Icon ? <Icon size={14} className="mr-2 opacity-70" /> : null}

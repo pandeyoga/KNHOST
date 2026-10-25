@@ -276,13 +276,27 @@ def check_config(entries, verbose=False):
     hdr("CHECK 1: Nav config integrity + testid convention")
     issues = 0
     all_ids = []
+    # Fase 3 · P1 — MEJA PERAN "hanya lewat overlay" (IA 2026-10 D5): entri standalone `roles: []` yang SENGAJA
+    # hanya dibuka peran pemiliknya lewat `ROLE_NAV.add` (navStructure.js: "roles kosong = hanya lewat overlay"),
+    # sementara admin melihatnya di grup "Meja Peran" (id SAMA). Dulu gate menyebutnya "tanpa roles" + "id
+    # duplikat" (10 isu merah permanen) — padahal itu rancangan tertulis. Kini SAH bila ≥1 peran memang
+    # mendapatkannya lewat overlay; tanpa satu pun peran = tetap MERAH (menu yatim).
+    overlay_ids = set()
+    for rule in parse_role_nav().values():
+        overlay_ids |= set(rule.get("add", ()))
+    overlay_only = set()
 
     for e in entries:
         if e["type"] == "standalone":
             if not e["id"]:
                 bad("standalone entry tanpa id"); issues += 1
             if not e["roles"]:
-                bad(f"standalone '{e.get('id')}' tanpa roles"); issues += 1
+                if e["id"] and e["id"] in overlay_ids:
+                    overlay_only.add(e["id"])
+                    if verbose:
+                        ok(f"standalone '{e['id']}' roles kosong = hanya lewat overlay ROLE_NAV (sah)")
+                else:
+                    bad(f"standalone '{e.get('id')}' tanpa roles"); issues += 1
             if e["id"]:
                 all_ids.append(e["id"])
         else:
@@ -300,8 +314,9 @@ def check_config(entries, verbose=False):
                     bad(f"group '{gid}': item '{it['id']}' tanpa roles"); issues += 1
                 all_ids.append(it["id"])
 
-    # duplicate ids
-    dups = sorted({x for x in all_ids if all_ids.count(x) > 1})
+    # duplicate ids — kembaran SAH hanya: satu entri biasa + entri standalone "hanya lewat overlay" (id sama).
+    dups = sorted({x for x in all_ids if all_ids.count(x) > 1
+                   and not (x in overlay_only and all_ids.count(x) == 2)})
     if dups:
         bad(f"id navigasi duplikat: {dups}"); issues += len(dups)
 

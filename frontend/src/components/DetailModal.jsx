@@ -40,6 +40,10 @@ import { useEscapeClose } from "@/utils/escapeLayers";
  *  · `role="dialog"` + `aria-modal` + nama yang terbacakan.
  *
  * Dijaga `scripts/guardrails/verify_detail_modal.py` (INV-UI-08).
+ *
+ * Fase 3 · P1 (L-03/L-04) — di layar ≤640 px pop-up ini LAYAR PENUH (100dvh, sudut lurus). `framed`: kartu
+ * sendiri yang bergulir sehingga tombol × tetap terlihat di pojok; tanpa `framed`: panel anak yang bergulir.
+ * API tidak berubah; gaya di `styles/components.css` (`.kn-detail-*`).
  */
 const SIZES = {
   md: "max-w-2xl",
@@ -78,7 +82,7 @@ export default function DetailModal({
 
   return (
     <div
-      className="modal-overlay fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
+      className="modal-overlay kn-modal-overlay fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
       data-testid={`${testId}-overlay`}
       {...overlayDismiss(onClose)}
     >
@@ -87,7 +91,7 @@ export default function DetailModal({
         aria-modal="true"
         aria-label={label}
         data-testid={testId}
-        className={`w-full ${SIZES[size] || SIZES.xl} my-auto ${framed ? "relative" : ""}`}
+        className={`kn-detail-modal ${framed ? "kn-detail-framed relative" : ""} w-full ${SIZES[size] || SIZES.xl} my-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {framed ? (
@@ -95,11 +99,11 @@ export default function DetailModal({
             {showClose && typeof onClose === "function" && (
               <button type="button" aria-label="Tutup" title="Tutup (Esc)" data-testid={`${testId}-close-x`}
                 onClick={onClose}
-                className="absolute -right-2.5 -top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full border border-[#E5E5EA] bg-white text-[#3C3C43] shadow-md transition hover:bg-[#F2F2F7]">
+                className="kn-detail-close absolute -right-2.5 -top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full border border-[#E5E5EA] bg-white text-[#3C3C43] shadow-md transition hover:bg-[#F2F2F7]">
                 <X size={16} />
               </button>
             )}
-            <div className="rounded-2xl bg-white p-4 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+            <div className="kn-detail-frame rounded-2xl bg-white p-4 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
               {children}
             </div>
           </>

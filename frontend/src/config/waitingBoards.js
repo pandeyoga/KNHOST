@@ -11,6 +11,8 @@ import { Scissors, ReceiptText, PackageOpen, Clock, FileCheck2, Tags,
 
 export const BOARD_LOOK = {
   special_order: {
+    // Fase 3 · P1 — `focusType`: jenis dokumen untuk `openDocument` saat papan dalam mode tautan (D-07/D-28).
+    focusType: "special_order",
     icon: Scissors, accent: "#6C3FD1",
     title: "Papan PO Custom — menunggu keputusan",
     goto: "Buka PO Custom →",
@@ -55,6 +57,7 @@ export const BOARD_LOOK = {
     empty: "Tidak ada hasil opname yang menunggu persetujuan",
   },
   inspection_hold: {
+    focusType: "inspection",
     icon: ShieldAlert, accent: "#C0392B",
     title: "Barang ditahan QC — hanya manajer boleh melepas",
     goto: "Buka Inspeksi →",
@@ -80,6 +83,18 @@ export const BOARD_LOOK = {
     empty: "Tidak ada tagihan supplier yang menunggu ACC",
   },
 };
+
+/**
+ * Fase 3 · P1 — tautan dokumen untuk SATU baris papan (mode tautan): `openDocument(boardRowLink(board, row))`
+ * membuka layar utama papan (`board.view` dari server) dengan dokumen baris itu terfokus. Papan tanpa
+ * `focusType` → hanya membuka layarnya.
+ */
+export function boardRowLink(board, row) {
+  const look = BOARD_LOOK[board?.key] || {};
+  const link = { view: board?.view };
+  if (look.focusType && row?.id) Object.assign(link, { focus_type: look.focusType, focus_id: row.id, number: row.number || "" });
+  return link;
+}
 
 export const boardLook = (key) => BOARD_LOOK[key] || {
   icon: Clock, accent: "#6B6B73", goto: "Buka layarnya →",

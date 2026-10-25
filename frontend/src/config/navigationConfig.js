@@ -9,6 +9,11 @@ import { PAGE_META, ROLE_HOME_REGISTRY, GUIDANCE_MAP } from "./navMeta";
 // `sales_admin` & `finance`). Dulu keputusannya `roles.includes(role)` yang disalin di
 // 5 tempat di berkas ini; peran baru harus ditambahkan ke ~40 baris `navStructure.js`.
 import { isModuleNavRole, navExplicitlyHidden, roleCanSee } from "./roles";
+// Fase 3 · P1 — registri alias layar (layar duplikat = tautan ke layar utama; alamat lama tetap hidup).
+import { listAliases, resolveAlias } from "./viewAliases";
+
+/** Fase 3 · P1 — sub-judul di dalam grup sidebar (`{ type: "heading", id, label }`), bukan menu. */
+export const isNavHeading = (item) => !!item && item.type === "heading";
 
 // Re-export data (backward-compat untuk konsumen yang import dari navigationConfig).
 export { HUB_TABS, NAV_STRUCTURE } from "./navStructure";
@@ -44,6 +49,8 @@ const HUB_VIEW_INDEX = (() => {
 
 export function hubForView(view, role) {
   if (view === 'product-templates') view = 'md-products';
+  // Fase 3 · P1 — id lama yang kini alias (tanpa tab sendiri) memakai bilah tab hub layar utamanya.
+  if (!HUB_VIEW_INDEX[view] && resolveAlias(view)) view = resolveAlias(view).to;
   const hubId = HUB_VIEW_INDEX[view];
   if (!hubId) return null;
   const tabs = hubTabsForRole(hubId, role);
@@ -102,6 +109,22 @@ export function withZones(groups) {
   return out;
 }
 
+/** Fase 3 · P1 — sisipkan kembali sub-judul grup yang diikuti >=1 menu tampak (urutan asli dipertahankan). */
+function keepHeadings(items, live) {
+  const byId = new Map(live.map((it) => [it.id, it]));
+  const out = [];
+  let pending = null;
+  for (const it of items || []) {
+    if (isNavHeading(it)) { pending = it; continue; }
+    if (!byId.has(it.id)) continue;
+    if (pending) { out.push(pending); pending = null; }
+    out.push(byId.get(it.id));
+  }
+  return out;
+}
+
+/** `opts.withHeadings` (hanya Sidebar) — ikutkan sub-judul `{type:"heading"}` di dalam grup. Konsumen lain
+ *  (pratinjau peran, aplikasi HP, uji) menerima daftar menu MURNI seperti sebelumnya. */
 export function buildNavGroups(role, opts = {}) {
   const showComingSoon = opts.showComingSoon !== false;
   // FASE G-0 — `ui.coming_soon_collapsed` DULU setting mati (0 consumer). Sekarang
@@ -121,11 +144,11 @@ export function buildNavGroups(role, opts = {}) {
       // jadi induk tidak membuka anak tak berizin; induk yang DISEMBUNYIKAN eksplisit tetap tertutup.
       // Peran bawaan tetap memakai `roles` grup (rancangan menu tertulis).
       if (!ownVisible && (!isModuleNavRole(role) || navExplicitlyHidden(role, entry.groupId))) continue;
-      const roleItems = entry.items.filter(item => roleCanSee(item.roles, role, item.id) && !hubWithoutTabs(item, role));
+      const roleItems = entry.items.filter(item => !isNavHeading(item) && roleCanSee(item.roles, role, item.id) && !hubWithoutTabs(item, role));
       if (!ownVisible && roleItems.length === 0) continue;
       const liveItems = roleItems.filter(item => !item.comingSoon).map(item => withHubView(item, role));
       const soonItems = roleItems.filter(item => item.comingSoon);
-      if (liveItems.length > 0) result.push({ ...entry, items: liveItems });
+      if (liveItems.length > 0) result.push({ ...entry, items: opts.withHeadings ? keepHeadings(entry.items, liveItems) : liveItems });
       soonItems.forEach(item => comingSoonItems.push(item));
     }
   }
@@ -180,7 +203,19 @@ export function buildPaletteEntries(role) {
       }
     };
     if (entry.type === "standalone") walk(entry, "Umum");
-    else entry.items.filter(i => roleCanSee(i.roles, role, i.id)).forEach(i => walk(i, entry.label));
+    else entry.items.filter(i => !isNavHeading(i) && roleCanSee(i.roles, role, i.id)).forEach(i => walk(i, entry.label));
+  }
+  // Fase 3 · P1 — nama lama yang kini alias (punya `label`) tetap bisa dicari: "Nama lama -> kini di <utama>".
+  // Hanya bila peran ini boleh membuka layar utamanya. `aliasOf` dikirim balik ke handleNavSelect (preset ikut).
+  for (const a of listAliases()) {
+    if (!a.label) continue;
+    const target = entries.find((e) => e.view === a.to && !e.aliasOf);
+    if (!target) continue;
+    const key = `${a.to}::${target.tab || ""}::${a.from}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push({ ...target, aliasOf: a.from, preset: a.preset,
+                   label: `${a.label} \u2192 kini di ${target.label}` });
   }
   return entries;
 }
@@ -205,13 +240,14 @@ const VIEW_NAV_INDEX = (() => {
       }
     };
     if (entry.type === "standalone") walk(entry);
-    else (entry.items || []).forEach(walk);
+    else (entry.items || []).filter((i) => !isNavHeading(i)).forEach(walk);
   }
   return idx;
 })();
 
 export function resolveActiveNavId(activeView, currentNavId, role) {
   if (activeView === 'product-templates') activeView = 'md-products';
+  if (!VIEW_NAV_INDEX[activeView] && resolveAlias(activeView)) activeView = resolveAlias(activeView).to;   // fase 3 · P1
   const candidates = VIEW_NAV_INDEX[activeView];
   if (currentNavId && candidates && candidates.includes(currentNavId)) return currentNavId;
   if (candidates && candidates.length) return candidates[0];
@@ -229,7 +265,24 @@ export function resolveActiveNavId(activeView, currentNavId, role) {
 export function resolveDeepLinkTarget(view, role) {
   if (view === 'product-templates') view = 'md-products';
   if (!view || !role) return null;
-  const entries = buildPaletteEntries(role);
+  // Fase 3 · P1 — ALIAS LEBIH DULU: id lama yang kini tautan dibuka di layar utamanya (dengan preset),
+  // dan PERAN divalidasi terhadap layar utama. Bila peran tidak boleh membuka layar utama, id lama
+  // diperlakukan seperti biasa (mis. `purchase-orders` = menu hub untuk peran tanpa tab PO).
+  // Id lama yang DISEMBUNYIKAN untuk peran ini (`hidden_views` peran kustom / `ROLE_NAV.remove`) tetap tertutup:
+  // alias tidak boleh menjadi pintu belakang ke layar utama lewat nama lama (§1.1 butir 6 rencana fase 3).
+  const alias = navExplicitlyHidden(role, view) ? null : resolveAlias(view);
+  if (alias) {
+    const t = resolveDirectTarget(alias.to, role);
+    if (t) {
+      const navId = alias.nav && (VIEW_NAV_INDEX[alias.to] || []).includes(alias.nav) ? alias.nav : t.navId;
+      return { ...t, navId, preset: alias.preset || null, alias: view };
+    }
+  }
+  return resolveDirectTarget(view, role);
+}
+
+function resolveDirectTarget(view, role) {
+  const entries = buildPaletteEntries(role).filter((e) => !e.aliasOf);
   const entry = entries.find((e) => e.view === view);
   if (entry) return { navId: entry.navId, view: entry.view, tab: entry.tab };
   // Alamat boleh juga menyebut ID MENU atau HUB (mis. `?view=ledger`) — diarahkan
@@ -247,4 +300,31 @@ export function resolveDeepLinkTarget(view, role) {
   const home = ROLE_HOME_REGISTRY[role];
   if (home && home.view === view) return { navId: home.navId, view: home.view };
   return null;
+}
+
+// ─── BREADCRUMB DARI MENU (fase 3 · P1, L-05) ─────────────────────────────────
+// Kepala halaman dulu memakai `PAGE_META.kicker` yang ditulis tangan sehingga bisa berbeda dari sorotan
+// sidebar (mis. Pusat Amandemen "Keuangan · Kendali" padahal menunya Penjualan › Pesanan). Kini diturunkan
+// dari menu yang SAMA dengan sorotan sidebar (`resolveActiveNavId`): grup › menu › tab. `[]` = layar di luar
+// menu (beranda peran, layar tanpa menu) → TopBar memakai `kicker` sebagai cadangan.
+export function breadcrumbFor(view, navId, role) {
+  if (!view) return [];
+  let v = view === "product-templates" ? "md-products" : view;
+  if (!VIEW_NAV_INDEX[v] && resolveAlias(v)) v = resolveAlias(v).to;
+  const nid = resolveActiveNavId(v, navId, role);
+  if (!(VIEW_NAV_INDEX[v] || []).includes(nid)) return [];
+  for (const entry of NAV_STRUCTURE) {
+    const items = entry.type === "standalone" ? [entry] : (entry.items || []).filter((i) => !isNavHeading(i));
+    const item = items.find((i) => i.id === nid);
+    if (!item) continue;
+    const crumbs = [];
+    if (entry.type === "group") crumbs.push(entry.label);
+    crumbs.push(item.label);
+    if (item.hub) {
+      const tab = (HUB_TABS[item.hub] || []).find((t) => t.view === v);
+      if (tab) crumbs.push(tab.label);
+    }
+    return crumbs.filter((c, k, arr) => c && c !== arr[k - 1] && c !== "Beranda");
+  }
+  return [];
 }

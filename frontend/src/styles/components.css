@@ -930,3 +930,186 @@
 :where(#root) :where(button, a, [role="tab"]):focus-visible { outline: 2px solid #0058CC; outline-offset: 2px; }
 :where(#root) :where(input, select, textarea) { font-family: inherit; }
 :where(#root) :where(input, select, textarea):focus-visible { outline: 2px solid rgba(0, 88, 204, .35); outline-offset: 1px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FASE 3 · P1 — KOMPONEN STANDAR NAVIGASI & TATA LETAK (rencana fase 3 §1.3)
+   PageTabs · FilterChips · HubTabs · ResponsiveTable · LinkCard · EntityRequiredNotice ·
+   DesktopOnlyNotice · FormSection · FormModal/DetailModal layar penuh di HP.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tab (.tab-bar) satu baris di HP (L-04): dulu membungkus 2–4 baris dan mendorong isi ke bawah. ── */
+.tab-bar .tab-icon { flex-shrink: 0; opacity: .8; }
+.page-tabs { position: relative; }
+@media (max-width: 640px) {
+  .tab-bar {
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; overscroll-behavior-x: contain;
+    border-bottom: 0; box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar > * { flex-shrink: 0; }
+  .tab-bar .tab-button { margin-bottom: 0; }
+}
+
+/* ── HubTabs = tab tingkat-1 baku: garis bawah, 13 px tebal (dulu pil hitam membungkus). ── */
+.hub-tabs-wrap { margin-bottom: 12px; }
+.tab-bar.hub-tabs { gap: 2px; margin-bottom: 0; align-items: flex-end; }
+.tab-bar.hub-tabs .tab-button { font-size: 13px; font-weight: 700; padding: 8px 12px; color: #6B6B73; }
+.tab-bar.hub-tabs .tab-button:hover { color: var(--ios-blue); }
+.tab-bar.hub-tabs .tab-button.active { color: var(--ios-blue); border-bottom-color: var(--ios-blue); }
+.hub-tabs-section { display: contents; }
+.hub-tabs-sep { align-self: center; width: 1px; height: 16px; margin: 0 6px; background: var(--line); flex-shrink: 0; }
+.hub-tabs-caption {
+  margin: 4px 0 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #9A9BA3;
+}
+
+/* ── FilterChips — saringan segmen (bukan tab). ── */
+.filter-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 4px 11px;
+  border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #3A3A3C;
+  font-size: 12px; font-weight: 600; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s;
+}
+.filter-chip:hover { border-color: rgba(0,122,255,.45); color: var(--ios-blue-strong); }
+.filter-chip.active { background: #EAF2FF; border-color: var(--ios-blue); color: var(--ios-blue-strong); }
+.filter-chip-count {
+  min-width: 18px; padding: 0 5px; border-radius: 9px; background: #F2F2F7; color: #6B6B73;
+  font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.filter-chip.active .filter-chip-count { background: var(--ios-blue); color: #fff; }
+@media (max-width: 640px) {
+  .filter-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .filter-chip { flex-shrink: 0; }
+}
+
+/* ── ResponsiveTable — tabel di layar lebar, kartu di ≤640 px (kolom prioritas, aksi di kaki kartu). ── */
+.rt { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rt .data-table tr.rt-clickable { cursor: pointer; }
+.rt .data-table th.rt-actions, .rt .data-table td.rt-actions { text-align: right; white-space: nowrap; }
+.rt .data-table .rt-sticky { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -6px rgba(0,0,0,.12); }
+.rt .data-table thead .rt-sticky { background: #FAFBFC; z-index: 2; }
+.rt-state {
+  padding: 28px 16px; text-align: center; color: #6B6B73; font-size: 13px;
+  background: #fff; border: 1px dashed var(--line); border-radius: var(--r-lg);
+}
+.rt-cards { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.rt-card {
+  display: grid; gap: 6px; min-width: 0; padding: 10px 12px; background: #fff;
+  border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1);
+}
+.rt-card.rt-clickable { cursor: pointer; }
+.rt-card.rt-clickable:active { background: #FAFBFC; }
+.rt-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; min-width: 0; }
+.rt-card-title { min-width: 0; font-size: 13px; font-weight: 700; color: #1C1C1E; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.rt-card-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex-shrink: 0; max-width: 50%; }
+.rt-card-sub { font-size: 11.5px; color: #6B6B73; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.rt-card-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; }
+.rt-card-field { min-width: 0; }
+.rt-card-field dt { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #8E8E93; }
+.rt-card-field dd { margin: 1px 0 0; font-size: 12.5px; color: #1F1F25; overflow-wrap: anywhere; }
+.rt-card-field dd.text-right { text-align: left; font-variant-numeric: tabular-nums; }
+.rt-card-more { justify-self: start; padding: 0; border: 0; background: none; font-size: 11.5px; font-weight: 600; color: var(--ios-blue-strong); }
+.rt-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding-top: 6px; border-top: 1px solid #F2F3F5; }
+.rt-card-actions > * { min-height: 34px; }
+
+/* ── LinkCard — "<Hal> kini dikelola di <Menu › Layar>" + [Buka]. ── */
+.link-card {
+  display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 12px;
+  background: #F5F9FF; border: 1px solid #D6E6FF; border-radius: var(--r-lg); color: #1F1F25; font-size: 12.5px;
+}
+.link-card-icon { flex-shrink: 0; color: var(--ios-blue-strong); }
+.link-card-text { flex: 1; min-width: 0; line-height: 1.4; }
+.link-card-count {
+  display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 6px; border-radius: 9px;
+  background: var(--ios-blue); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.link-card-summary { color: #6B6B73; }
+.link-card-open { flex-shrink: 0; white-space: nowrap; }
+.link-card-readonly { background: #FAFBFC; border-color: var(--line); color: #3C3C43; }
+.link-card-readonly .link-card-icon { color: #8E8E93; }
+@media (max-width: 640px) {
+  .link-card { flex-wrap: wrap; }
+  .link-card-open { margin-left: auto; }
+}
+
+/* ── EntityRequiredNotice — pilih PT = mengganti PT di kepala aplikasi (D-14). ── */
+.entity-required {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px;
+  background: #FFF8EC; border: 1px solid #F5D9A8; border-radius: var(--r-lg); color: #3C3C43;
+}
+.entity-required-icon { flex-shrink: 0; margin-top: 2px; color: #8C4A00; }
+.entity-required-body { min-width: 0; flex: 1; }
+.entity-required-title { margin: 0; font-size: 13.5px; font-weight: 700; color: #1C1C1E; }
+.entity-required-text { margin: 2px 0 0; font-size: 12px; color: #6B6B73; line-height: 1.45; }
+.entity-required-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* ── DesktopOnlyNotice — L-04 kelas C: hanya di HP, layar tetap bisa dipakai. ── */
+.desktop-only-notice { display: none; }
+@media (max-width: 640px) {
+  .desktop-only-notice {
+    display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; padding: 8px 10px;
+    background: #F2F6FC; border: 1px solid #D6E2F3; border-radius: var(--r-md); color: #33538B; font-size: 12px;
+  }
+  .desktop-only-icon { flex-shrink: 0; margin-top: 2px; }
+  .desktop-only-text { flex: 1; margin: 0; line-height: 1.4; }
+  .desktop-only-close { flex-shrink: 0; padding: 2px; border: 0; background: none; color: inherit; }
+}
+
+/* ── FormSection — bagian form bernomor, bisa dilipat (L-10). ── */
+.form-section { border: 1px solid #EFF0F2; border-radius: var(--r-lg); background: #fff; }
+.form-section + .form-section { margin-top: 10px; }
+.form-section-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+.form-section-toggle {
+  display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; padding: 0;
+  border: 0; background: none; text-align: left; color: inherit;
+}
+.form-section-toggle.is-static { cursor: default; }
+.form-section-num {
+  display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: #EFF4FF; color: #0058CC; font-size: 11.5px; font-weight: 800;
+}
+.form-section-titles { display: grid; flex: 1; min-width: 0; line-height: 1.25; }
+.form-section-title { font-size: 13px; font-weight: 700; color: #1C1C1E; }
+.form-section-req { color: #C62828; }
+.form-section-sub { font-size: 11px; color: #6B6B73; }
+.form-section-summary { font-size: 11.5px; color: #3C3C43; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.form-section-chevron { flex-shrink: 0; color: #8E8E93; transition: transform .15s ease; }
+.form-section.is-closed .form-section-chevron { transform: rotate(-90deg); }
+.form-section-actions { display: flex; flex-shrink: 0; gap: 6px; }
+.form-section-body { padding: 2px 12px 12px; }
+.form-section-body[hidden] { display: none; }
+
+/* ── MetricRow — nilai 0 netral (L-08). ── */
+.metric-card .metric-value.metric-zero { color: #8E8E93; }
+
+/* ── FormModal / DetailModal LAYAR PENUH di HP (L-03/L-04). API komponen tidak berubah. ──
+   Isian TIDAK diringkas (keputusan pemilik): yang berubah hanya tata letak — satu kolom, kepala & kaki tetap. */
+@media (max-width: 640px) {
+  .kn-modal-overlay { padding: 0 !important; align-items: stretch !important; }
+  .kn-modal-card {
+    display: flex; flex-direction: column; width: 100%; max-width: 100% !important;
+    height: 100dvh; min-height: 100dvh; margin: 0 !important; border-radius: 0 !important;
+  }
+  .kn-modal-card > .kn-modal-head { flex-shrink: 0; border-radius: 0 !important; padding-top: calc(12px + env(safe-area-inset-top)); }
+  .kn-modal-main { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+  .kn-modal-body { flex: 1; min-height: 0; max-height: none !important; overscroll-behavior: contain; }
+  .kn-modal-foot { flex-shrink: 0; border-radius: 0 !important; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .kn-modal-foot :is(.primary-button, .secondary-button, .danger-button) { min-height: 40px; }
+  /* `sm:grid-cols-N` TANPA kolom dasar = 1 kolom di HP (juga tepat di 640 px). Grid yang memang 2 kolom di HP
+     (`grid-cols-2 sm:grid-cols-4`) dibiarkan. */
+  .kn-modal-body :is(.sm\:grid-cols-2, .sm\:grid-cols-3, .sm\:grid-cols-4):not([class*=" grid-cols-"]):not([class^="grid-cols-"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kn-detail-modal { width: 100%; max-width: 100% !important; height: 100dvh; margin: 0 !important; }
+  .kn-detail-modal:not(.kn-detail-framed) > * {
+    min-height: 100dvh; max-height: 100dvh; overflow-y: auto !important; overscroll-behavior: contain;
+    margin: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  }
+  .kn-detail-frame {
+    height: 100dvh; max-height: 100dvh !important; border-radius: 0 !important; box-shadow: none !important;
+    padding-top: calc(48px + env(safe-area-inset-top)) !important; overscroll-behavior: contain;
+  }
+  .kn-detail-close { top: calc(8px + env(safe-area-inset-top)) !important; right: 8px !important; }
+}

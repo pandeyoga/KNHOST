@@ -103,8 +103,10 @@ def nav():
 
 def view_components():
     txt = read(f"{SRC}/AppViewRouter.jsx")
+    # Fase 3 · P1 — daftar view lazy dipindah ke appViewImports.js (folder sama, path impor sama).
+    lazy_src = txt + "\n" + (read(f"{SRC}/appViewImports.js") if os.path.exists(f"{SRC}/appViewImports.js") else "")
     imports = {}
-    for name, spec in re.findall(r'const (\w+) = lazy\(\(\) => import\("([^"]+)"\)\)', txt):
+    for name, spec in re.findall(r'const (\w+) = lazy\(\(\) => import\("([^"]+)"\)\)', lazy_src):
         imports[name] = spec
     for name, spec in re.findall(r'import (\w+) from "([^"]+)"', txt):
         imports.setdefault(name, spec)

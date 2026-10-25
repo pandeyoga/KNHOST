@@ -110,7 +110,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
     for (const entry of groups) {
       if (entry.type === "standalone" && !entry.comingSoon) idx[entry.id] = entry;
       if (entry.type === "group" && !entry.comingSoonGroup) {
-        (entry.items || []).forEach(item => { if (!item.comingSoon) idx[item.id] = item; });
+        (entry.items || []).forEach(item => { if (!item.comingSoon && item.type !== "heading") idx[item.id] = item; });
       }
     }
     return idx;
@@ -184,6 +184,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                       data-testid={`nav-fav-${item.id}`}
                       className={`sidebar-item sidebar-sub-item ${isActive ? "active" : ""}`}
                       onClick={() => onSelect(item.id, item.view || item.id, item.tab)}
+                      title={item.label}
                     >
                       <ItemIcon size={14} />
                       <span className="label">{item.label}</span>
@@ -250,6 +251,14 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                   {isOpen && (
                     <div className="sidebar-group-items">
                       {entry.items.map(item => {
+                        // Fase 3 · P1 (L-05) — sub-judul di dalam grup (`{ type: "heading" }`), bukan tombol menu.
+                        if (item.type === "heading") {
+                          return (
+                            <p key={`h-${item.id}`} className="sidebar-subheading" data-testid={`nav-heading-${item.id}`} title={item.label}>
+                              {item.label}
+                            </p>
+                          );
+                        }
                         const ItemIcon = item.icon;
                         const isActive = item.id === activeNavId;
                         return (
@@ -302,7 +311,10 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
   );
 }
 
-export function TopBar({ title, kicker, onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, scopeLabel, onAskKn }) {
+// Fase 3 · P1 (L-05) — `crumbs` = jejak menu yang SAMA dengan sorotan sidebar (`breadcrumbFor()` di
+// navigationConfig: grup › menu › tab). `kicker` (PAGE_META) hanya cadangan untuk layar di luar menu.
+export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, scopeLabel, onAskKn }) {
+  const trail = Array.isArray(crumbs) && crumbs.length ? crumbs : (kicker ? [kicker] : []);
   return (
     <header className="topbar no-print" role="banner">
       <button
@@ -315,11 +327,17 @@ export function TopBar({ title, kicker, onToggleSidebar, onSync, syncing, notice
         <Menu size={16} />
       </button>
       <div className="title-block">
-        {kicker && (
-          <nav className="breadcrumb" data-testid="breadcrumb" aria-label="Breadcrumb">
+        {trail.length > 0 && (
+          <nav className="breadcrumb" data-testid="breadcrumb" aria-label="Breadcrumb" title={["Beranda", ...trail].join(" › ")}>
             <span className="crumb-root">Beranda</span>
             <span className="crumb-sep" aria-hidden="true">›</span>
-            <span className="kicker" data-testid="page-kicker">{kicker}</span>
+            <span className="kicker crumb-trail" data-testid="page-kicker">
+              {trail.map((c, i) => (
+                <span key={`${i}-${c}`} className="crumb" data-testid={`page-crumb-${i}`}>
+                  {i > 0 && <span className="crumb-sep" aria-hidden="true">›</span>}{c}
+                </span>
+              ))}
+            </span>
             {/* FASE E-3 — judul layar menyebut badan usaha yang sedang dilihat,
                 supaya angka di layar tidak pernah dibaca untuk badan usaha yang salah. */}
             {scopeLabel && (

@@ -249,6 +249,16 @@ STATIK=(
   # fase capture, dan mengalah bila ada lapisan Radix terbuka.
   "guard:escape_layers SELF-TEST (bukti-merah + anti tuduh palsu, 13 kasus)|python scripts/guardrails/verify_escape_layers.py --self-test"
   "guard:escape_layers (INV-UI-10, Esc menutup lapisan teratas saja)|python scripts/guardrails/verify_escape_layers.py"
+  # FASE 3 · P1 (26 Okt 2026) — penggabungan layar duplikat & rombakan tata letak (audit UI tahap 2).
+  # INV-UI-11/12 = RATCHET: pop-up buatan sendiri (`modal-card`/`fixed inset-0`) dan tab/pil buatan sendiri
+  # per berkas hanya boleh TURUN (baseline di scripts/guardrails/baselines/*.json; P8 mengencangkan `--update`).
+  # INV-NAV-02 = registri alias layar (config/viewAliases.js): tujuan nyata, rute cadangan, hak peran tidak hilang.
+  "guard:custom_modals SELF-TEST (ratchet dua arah, 9 kasus)|python scripts/guardrails/verify_custom_modals.py --self-test"
+  "guard:custom_modals (INV-UI-11, pop-up buatan sendiri hanya boleh berkurang)|python scripts/guardrails/verify_custom_modals.py"
+  "guard:page_tabs SELF-TEST (ratchet dua arah, 7 kasus)|python scripts/guardrails/verify_page_tabs.py --self-test"
+  "guard:page_tabs (INV-UI-12, tab maks 2 tingkat — tab/pil buatan sendiri hanya berkurang)|python scripts/guardrails/verify_page_tabs.py"
+  "guard:view_aliases SELF-TEST (bukti-merah dua arah, 8 kasus)|python scripts/guardrails/verify_view_aliases.py --self-test"
+  "guard:view_aliases (INV-NAV-02, alias layar tidak memutus pintu/hak)|python scripts/guardrails/verify_view_aliases.py"
   # AUDIT 2026-09 T-03 — INV-PERF-01. `to_list(n>20000)` memuat seluruh koleksi ke memori
   # (63 lokasi, beberapa lalu menyaring di Python). Ratchet: angka hanya boleh turun;
   # kejadian baru wajib alasan tertulis di ALLOWLIST skrip.

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Download, FileText, ImageOff, Loader2, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEscapeClose } from "@/utils/escapeLayers";
+import { overlayDismiss } from "@/utils/overlayDismiss";
 import { downloadFile, fileNameOf, kindOf, useBlobUrl } from "../hooks/useBlobUrl";
 
 // UAT 24 Okt (audit UI tahap 2) — G0-18 · P-09: gambar yang gagal dimuat (unduhan gagal ATAU berkas rusak) kini
@@ -54,7 +55,8 @@ export default function MediaLightbox({ items, index = 0, onClose, testId = "med
   if (!it) return null;
   const download = async () => { setBusy(true); try { await downloadFile(it.downloadUrl || it.url, fileNameOf(it)); } finally { setBusy(false); } };
   return createPortal(
-    <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/85 p-3 sm:p-6" data-testid={testId} onClick={onClose} role="dialog" aria-modal="true">
+    // Fase 3 · P1 — INV-UI-01: latar menutup hanya lewat gestur utuh DI LATAR (overlayDismiss), bukan onClick mentah.
+    <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/85 p-3 sm:p-6" data-testid={testId} {...overlayDismiss(onClose)} role="dialog" aria-modal="true">
       <button type="button" className="absolute right-3 top-3 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" onClick={onClose} aria-label="Tutup" data-testid={`${testId}-close`}><X size={18} /></button>
       {n > 1 && (<>
         <button type="button" className="absolute left-2 top-1/2 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); step(-1); }} aria-label="Sebelumnya" data-testid={`${testId}-prev`}><ChevronLeft size={20} /></button>

@@ -1,0 +1,28 @@
+{
+ "_catatan": "Baseline ratchet INV-UI-12 (pil hitam · tombol-toggle primary/secondary · TabBtn · cfg-group-btn per berkas), dibuat fase 3 · P1 26 Okt 2026 sesudah HubTabs dibakukan. Hanya boleh TURUN; kencangkan dengan --update (P8).",
+ "total": 51,
+ "files": {
+  "features/design/DesignRequestsView.jsx": 1,
+  "features/documents/WhatsAppSettings.jsx": 3,
+  "features/export/ColumnPicker.jsx": 1,
+  "features/export/CoveragePanel.jsx": 1,
+  "features/finance/bank/ReconMatchModal.jsx": 2,
+  "features/hr/AttendanceSetupView.jsx": 7,
+  "features/hr/AttendanceView.jsx": 7,
+  "features/logistics/DispatchDashboard.jsx": 1,
+  "features/logistics/LogisticsView.jsx": 1,
+  "features/marketing/PostDetailModal.jsx": 1,
+  "features/rfid/RfidGateMonitorView.jsx": 3,
+  "features/rfid/RfidLocationsView.jsx": 3,
+  "features/rfid/RfidTagsView.jsx": 4,
+  "features/rfid/rfidShared.jsx": 1,
+  "features/rnd/RndSamplesView.jsx": 1,
+  "features/rnd/SampleDetailPanel.jsx": 1,
+  "features/sales/mobile/MobileSalesAdminDesk.jsx": 1,
+  "features/sales/priceApprovals/PriceApprovalForm.jsx": 1,
+  "features/settings/config/SettingsHub.jsx": 1,
+  "features/settings/masters/ClientDatasetImportView.jsx": 1,
+  "features/wms/LocationPutawayView.jsx": 8,
+  "features/wms/grn/GrnReviewPanel.jsx": 1
+ }
+}

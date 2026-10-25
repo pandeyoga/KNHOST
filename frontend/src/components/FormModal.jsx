@@ -35,6 +35,10 @@ import { useEscapeClose } from "@/utils/escapeLayers";
  *
  * Catatan: `onSubmit` opsional. Bila layar butuh tombol aksi khusus (mis. dua tombol
  * "Simpan draf" & "Ajukan"), kirim lewat prop `footer`.
+ *
+ * Fase 3 · P1 (L-03/L-04) — di layar ≤640 px pop-up ini LAYAR PENUH (tinggi 100dvh, kepala & kaki tetap,
+ * badan bergulir; grid `sm:grid-cols-*` tanpa kolom dasar → 1 kolom). Isian TIDAK diringkas (keputusan
+ * pemilik: form HP = form desktop). API tidak berubah; gaya di `styles/components.css` (`.kn-modal-*`).
  */
 const SIZES = {
   sm: "max-w-md",
@@ -103,14 +107,14 @@ export default function FormModal({
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
+    <div className="modal-overlay kn-modal-overlay fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
       data-testid={`${testId}-overlay`} {...overlayDismiss(busy ? undefined : onClose)}>
       <div ref={cardRef} role="dialog" aria-modal="true" aria-label={title}
         data-testid={testId}
-        className={`w-full ${SIZES[size] || SIZES.md} my-auto rounded-xl bg-white shadow-2xl`}
+        className={`kn-modal-card kn-form-modal w-full ${SIZES[size] || SIZES.md} my-auto rounded-xl bg-white shadow-2xl`}
         onClick={(e) => e.stopPropagation()}>
         {/* KEPALA — menempel supaya judul tetap terlihat saat isi di-scroll */}
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 rounded-t-xl border-b border-[#EFF0F2] bg-white px-4 py-3">
+        <div className="kn-modal-head sticky top-0 z-10 flex items-start justify-between gap-3 rounded-t-xl border-b border-[#EFF0F2] bg-white px-4 py-3">
           <div className="flex min-w-0 items-start gap-2">
             {Icon && (
               <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#EFF4FF] text-[#0058CC]">
@@ -133,15 +137,15 @@ export default function FormModal({
             `ApprovalRuleForm` yang punya <form> & tombolnya sendiri), membungkusnya lagi
             akan membuat FORM DI DALAM FORM — HTML tak sah dan tombol simpan bisa
             memicu submit ganda. */}
-        <Wrapper {...(onSubmit ? { onSubmit: submit, noValidate: true } : {})}>
+        <Wrapper className="kn-modal-main" {...(onSubmit ? { onSubmit: submit, noValidate: true } : {})}>
           {/* BADAN — bisa di-scroll bila isian panjang */}
-          <div className="max-h-[calc(100dvh-12rem)] overflow-y-auto px-4 py-3.5" data-testid={`${testId}-body`}>
+          <div className="kn-modal-body max-h-[calc(100dvh-12rem)] overflow-y-auto px-4 py-3.5" data-testid={`${testId}-body`}>
             {children}
           </div>
 
           {/* KAKI — galat + aksi, menempel di bawah */}
           {(footer || onSubmit) && (
-            <div className="sticky bottom-0 rounded-b-xl border-t border-[#EFF0F2] bg-[#FAFBFC] px-4 py-3">
+            <div className="kn-modal-foot sticky bottom-0 rounded-b-xl border-t border-[#EFF0F2] bg-[#FAFBFC] px-4 py-3">
               {error && (
                 <p data-testid={`${testId}-error`}
                   className="mb-2 rounded-md border border-[#FCA5A5] bg-[#FEF2F2] px-2.5 py-1.5 text-[11.5px] font-semibold text-[#B91C1C]">

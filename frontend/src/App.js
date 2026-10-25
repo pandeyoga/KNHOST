@@ -1,21 +1,19 @@
-import { useRef, useState, useEffect } from "react";
-import { openLogistics } from "./features/logistics/logisticsDeepLink";
+import { useState, useEffect } from "react";
 import { formatUnitTotals } from "./utils/qtyByUnit";
 import "./App.css";
 import { LoginScreen, MetricCard, Sidebar, TopBar } from "./components/CoreWidgets";
 import { formatQty } from "./utils/formatters";
 import useIsMobile from "./hooks/useIsMobile";
-import MobileSalesApp from "./features/sales/mobile/MobileSalesApp";
-import MobileMdApp from "./features/sales/mobile/MobileMdApp";
-import MobileWarehouseApp from "./features/mobile/MobileWarehouseApp";
-import MobileOpsApp from "./features/mobile/MobileOpsApp";
+// Fase 3 · P1 — pemilih aplikasi HP diekstrak (wilayah P7); navigasi & sinkron sesi diekstrak ke hook.
+import MobileAppSwitch from "./features/mobile/MobileAppSwitch";
+import useAppNavigation from "./hooks/useAppNavigation";
+import useSessionSync from "./hooks/useSessionSync";
 import DetailDrawer from "./components/DetailDrawer";
 import TourMenu from "./components/TourMenu";
 import OnboardingPanel from "./components/OnboardingPanel";
 import EntitySwitcher from "./components/EntitySwitcher";
 import NotificationCenter from "./components/NotificationCenter";
-import { resolveView } from "./utils/viewAlias";
-import { PAGE_META, buildNavGroups, defaultNavIdForRole, defaultViewForRole, isComingSoonView, isHomeView, resolveActiveNavId, resolveDeepLinkTarget, hubForView } from "./config/navigationConfig";
+import { PAGE_META, breadcrumbFor, buildNavGroups, isComingSoonView, isHomeView, resolveActiveNavId, hubForView } from "./config/navigationConfig";
 import CommandPalette from "./components/CommandPalette";
 import useDeepLinks from "./hooks/useDeepLinks";
 import useViewDeepLink from "./hooks/useViewDeepLink";
@@ -32,7 +30,7 @@ import { EntityScopeProvider } from "./context/EntityScopeContext";
 import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
 import PublicVerify from "./features/documents/PublicVerify";
-import { registerDynamicRoles, ROLE_REGISTRY, setAccessContext, roleIs } from "./config/roles";
+import { setAccessContext, roleIs } from "./config/roles";
 import {
   Archive,
   Boxes,
@@ -43,17 +41,16 @@ import {
   Smartphone,
 } from "lucide-react";
 
-
 function App() {
-  const [activeView, setActiveView] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem("kn_user") || "null");
-    return saved ? defaultViewForRole(saved.role) : "sales";
-  });
-  const [activeNavId, setActiveNavId] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem("kn_user") || "null");
-    return saved ? defaultNavIdForRole(saved.role) : "sales";
-  });
-  const [wmsInitialTab, setWmsInitialTab] = useState("stok");
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("kn_user") || "null"));
+  setAccessContext(user);   // L01 LN-015 — menu/tab mengikuti izin EFEKTIF + tab yang disembunyikan peran
+  const [token, setToken] = useState(() => localStorage.getItem("kn_token") || "");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Fase 3 · P1 — satu jalur navigasi (alias + preset): hooks/useAppNavigation.js.
+  const {
+    activeView, setActiveView, activeNavId, setActiveNavId, wmsInitialTab, focusDoc, setFocusDoc,
+    viewPreset, handleNavSelect, navigateTo, openDocument, lastFocusRef,
+  } = useAppNavigation({ role: user?.role, setSidebarOpen });
   const [data, setData] = useState({ products: [], customers: [], orders: [], warehouses: [], metrics: {} });
   const [movements, setMovements] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -71,9 +68,6 @@ function App() {
   const [showTourMenu, setShowTourMenu] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
   const [activeDetail, setActiveDetail] = useState(null);
-  // EPIC6 — deep-link dokumen: { focus_type, focus_id } untuk auto-open di view tujuan.
-  const [focusDoc, setFocusDoc] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   // Desktop: sidebar bisa di-hide/show (persist). Mobile (<=900px) pakai drawer (sidebarOpen).
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("kn_sidebar_collapsed") === "1"
@@ -89,9 +83,6 @@ function App() {
       });
     }
   };
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("kn_user") || "null"));
-  setAccessContext(user);   // L01 LN-015 — menu/tab mengikuti izin EFEKTIF + tab yang disembunyikan peran
-  const [token, setToken] = useState(() => localStorage.getItem("kn_token") || "");
   // Semua deep-link global (Pusat Pengaturan · Jejak Dokumen · hub R&D) — lihat
   // hooks/useDeepLinks.js. `ready` menahan jangkar QR sampai pengguna masuk.
   const {
@@ -152,39 +143,6 @@ function App() {
   // Pastikan header X-Entity-Id ter-set sejak awal (restore session / refresh).
   useEffect(() => { setActiveEntity(selectedEntity || "all"); }, [selectedEntity]);
 
-  // FASE E-8 — SEGARKAN IZIN saat sesi dipulihkan dari localStorage.
-  // Sejak tombol dinyalakan oleh `can(user.permissions, …)`, profil lama yang
-  // tersimpan SEBELUM peran baru ada (atau setelah admin mengubah matriks izin)
-  // membuat tombol yang sah ikut hilang tanpa alasan. `/auth/me` mengembalikan
-  // izin efektif + label peran terbaru, jadi satu panggilan menutup selisih itu.
-  useEffect(() => {
-    if (!token) return;
-    let alive = true;
-    (async () => {
-      try {
-        const r = await axios.get(`${API}/auth/me`);
-        if (!alive || !r?.data?.id) return;
-        setUser((prev) => {
-          const next = {
-            ...(prev || {}), ...r.data,
-            permissions: r.data.permissions || {},
-            role_label: r.data.role_label || prev?.role_label || "",
-          };
-          localStorage.setItem("kn_user", JSON.stringify(next));
-          return next;
-        });
-        if (r.data.entity_context) {
-          setEntityContext(r.data.entity_context);
-          localStorage.setItem("kn_entity_ctx", JSON.stringify(r.data.entity_context));
-          if (Array.isArray(r.data.entity_context.entities)) setEntities(r.data.entity_context.entities);
-        }
-      } catch {
-        /* token kedaluwarsa → gate auth di bawah yang menangani */
-      }
-    })();
-    return () => { alive = false; };
-  }, [token]);
-
   // Auto-hide notice transien (mis. 'Login berhasil ...') agar tidak menetap permanen di TopBar.
   useEffect(() => {
     if (!notice) return undefined;
@@ -192,51 +150,8 @@ function App() {
     return () => clearTimeout(t);
   }, [notice]);
 
-  // PERAN KUSTOM & IZIN HIDUP — daftarkan peran kustom dari server ke registry
-  // navigasi, lalu segarkan izin/peran tiap 60 detik (tanpa login ulang) dan saat
-  // admin menyimpan perubahan di layar "Peran & Hak Akses".
-  const [rolesVersion, setRolesVersion] = useState(0);
-  useEffect(() => {
-    if (!token) return undefined;
-    let alive = true;
-    const refresh = async () => {
-      try {
-        const [rolesRes, meRes] = await Promise.all([
-          axios.get(`${API}/roles`), axios.get(`${API}/auth/me`),
-        ]);
-        if (!alive) return;
-        const changed = registerDynamicRoles(rolesRes?.data?.roles || []);
-        if (changed) setRolesVersion((v) => v + 1);
-        if (meRes?.data?.id) {
-          setUser((prev) => {
-            const nextPerms = meRes.data.permissions || {};
-            if (prev && JSON.stringify(prev.permissions || {}) === JSON.stringify(nextPerms)
-                && JSON.stringify(prev.hidden_views || []) === JSON.stringify(meRes.data.hidden_views || [])
-                && prev.role === meRes.data.role && prev.role_label === meRes.data.role_label && !changed) return prev;
-            const next = { ...(prev || {}), ...meRes.data, permissions: nextPerms,
-              role_label: meRes.data.role_label || prev?.role_label || "" };
-            localStorage.setItem("kn_user", JSON.stringify(next));
-            return next;
-          });
-        }
-      } catch { /* sesi kedaluwarsa ditangani gate auth */ }
-    };
-    refresh();
-    const id = setInterval(refresh, 60000);
-    const onRolesChanged = () => refresh();
-    window.addEventListener("kn:roles-changed", onRolesChanged);
-    return () => { alive = false; clearInterval(id); window.removeEventListener("kn:roles-changed", onRolesChanged); };
-  }, [token]);
-  // Peran kustom baru terdaftar setelah state awal dihitung → arahkan ke berandanya,
-  // KECUALI alamat menyebut layar yang sah untuk peran ini (deep-link menang).
-  useEffect(() => {
-    if (!rolesVersion || !user?.role || !ROLE_REGISTRY[user.role]?.custom) return;
-    const wanted = new URLSearchParams(window.location.search).get("view");
-    if (wanted && resolveDeepLinkTarget(wanted, user.role)) return;
-    setActiveView(defaultViewForRole(user.role));
-    setActiveNavId(defaultNavIdForRole(user.role));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rolesVersion]);
+  // FASE E-8 · peran kustom · landing per peran — hooks/useSessionSync.js (diekstrak fase 3 · P1).
+  const { rolesVersion } = useSessionSync({ token, user, setUser, setEntityContext, setEntities, setActiveView, setActiveNavId });
 
   // Switcher: cross-entity (admin/manager) lihat SEMUA entitas aktif; single-entity terkunci.
   const canSwitchEntity = entityContext
@@ -281,53 +196,6 @@ function App() {
     approveFromNotification,
   } = actions;
 
-  // Landing per peran: DETERMINISTIK saat pengguna berganti.
-  // `login()` sudah mengarahkan ke halaman depan peran, tetapi pengguna bisa juga
-  // berganti TANPA melewati jalur itu (pulih sesi dari localStorage milik akun lain,
-  // tukar akun di tab yang sama, atau sesi disuntik oleh alat uji). Tanpa penjaga ini
-  // layar peran SEBELUMNYA bisa tertinggal di depan mata — mis. manajer mendarat di
-  // "Operasi Gudang". Deep-link tidak terganggu: efek hanya jalan saat `user.id`
-  // benar-benar berubah, bukan saat berpindah view.
-  const lastUserIdRef = useRef(user?.id || "");
-  useEffect(() => {
-    const id = user?.id || "";
-    if (!id) { lastUserIdRef.current = ""; return; }
-    if (id === lastUserIdRef.current) return;
-    const firstLoad = lastUserIdRef.current === "";
-    lastUserIdRef.current = id;
-    if (firstLoad) return;   // state awal sudah dihitung dari peran tersimpan
-    setActiveView(defaultViewForRole(user.role));
-    setActiveNavId(defaultNavIdForRole(user.role));
-  }, [user?.id, user?.role]);
-
-
-  // \u2500\u2500\u2500 Navigation handler: receives { navId, view, tab } from grouped Sidebar \u2500\u2500\u2500
-  const handleNavSelect = (navId, view, tab) => {
-    if (navId === "home") {
-      setActiveView(defaultViewForRole(user?.role));
-      setActiveNavId(defaultNavIdForRole(user?.role));
-    } else {
-      setActiveNavId(navId);
-      setActiveView(view || navId);
-      if (tab) setWmsInitialTab(tab);
-    }
-    setSidebarOpen(false);
-  };
-
-  // ─── EPIC6 — deep-link dokumen terkait (Process Timeline / Document Hub) ───
-  // Navigasi in-app ke view tujuan + set focusDoc agar view target auto-open dokumen.
-  // Cek UI UAT v3 (S15) — akun multi-PT di mode "Semua entitas": [Putuskan]/[Buka] dari meja lalu memilih PT di banner
-  // me-remount layar dan dokumen tujuan hilang. Dokumen terakhir diingat lalu dibuka ulang setelah PT dipilih.
-  const lastFocusRef = useRef(null);
-  const openDocument = (link) => {
-    if (!link || !link.view) return;
-    lastFocusRef.current = link.focus_id ? { link, at: Date.now() } : null;
-    handleNavSelect(link.nav_id || link.view, link.view, link.tab);
-    if (link.logistics) openLogistics(link.logistics);   // F-06 — saring daftar Logistik (mis. nomor SO untuk POD)
-    if (link.focus_id) setFocusDoc({ focus_type: link.focus_type, focus_id: link.focus_id, number: link.number || "", tab: link.tab || "", from_trace: link.from_trace || null });
-    else setFocusDoc(null);
-  };
-
   // ─── FASE E-4 — alamat untuk setiap layar (`?view=...&tab=...&entity=...`) ───
   // Satu layar sekarang bisa di-bookmark & dibagikan; menyegarkan halaman tidak
   // lagi melempar pengguna ke halaman depan peran.
@@ -343,6 +211,7 @@ function App() {
   });
 
   const navGroups = buildNavGroups(user?.role, {
+    withHeadings: true,   // fase 3 · P1 — sub-judul di dalam grup (L-05)
     showComingSoon: settings?.ui?.show_coming_soon !== false,
     comingSoonCollapsed: settings?.ui?.coming_soon_collapsed !== false,
   });
@@ -383,65 +252,20 @@ function App() {
   const openFullView = (navId, view) => { setMobileVisit(true); handleNavSelect(navId, view); };
   const backToMobile = () => { setMobileVisit(false); handleNavSelect("home"); };
   const wantsTanya = activeView === "tanya-kn";
-  // Admin Sales mewarisi wilayah kerja sales (ROLE_NAV) → aplikasi HP sales + Meja Admin Sales.
-  const salesMobileRole = roleIs(user.role, ["sales", "sales_admin"]);   // Sisir lanjutan gerbang peran (2026-10-21) — tata letak, peran acuan dikenali
   const notifProps = {
     total: notifMeta.total, hasMore: notifMeta.has_more, currentUserRole: user?.role,
     onLoadMore: () => loadMoreNotifications(notifMeta.page + 1), onApprove: approveFromNotification,
   };
-  // MD / Merchandiser → aplikasi HP khusus (Meja MD, desain, sample, produk, PR).
-  if (wantMobile && !responsiveWorkspace && roleIs(user.role, ["md"])) {
+  // MD → MobileMdApp · sales/Admin Sales → MobileSalesApp · gudang → MobileWarehouseApp · lainnya → MobileOpsApp.
+  if (wantMobile && !responsiveWorkspace) {
     return (
-      <MobileMdApp user={user} entities={entities} selectedEntity={selectedEntity}
-        notifications={notifications} unreadCount={unreadCount} onMarkAllRead={markAllNotificationsRead}
-        onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications} notifProps={notifProps}
-        onOpenFull={openFullView} onLogout={logout} onForceDesktop={goDesktop} onSelectEntity={onSelectEntity} />
-    );
-  }
-  if (wantMobile && !responsiveWorkspace && !salesMobileRole) {
-    const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin", "driver"]) ? MobileWarehouseApp : MobileOpsApp;
-    return <MobileApp user={user} onLogout={logout} entities={entities} selectedEntity={selectedEntity}
-      unreadCount={unreadCount} onForceDesktop={goDesktop} onNavigate={handleNavSelect} onOpenFull={openFullView}
-      initialTab={wantsTanya && MobileApp === MobileOpsApp ? "tanya" : undefined} />;
-  }
-  if (salesMobileRole && wantMobile && !responsiveWorkspace) {
-    return (
-      <EntityScopeProvider selectedEntity={selectedEntity} entities={entities} canSwitch pickEntity={onSelectEntity}>
-      <MobileSalesApp
-        initialSub={wantsTanya ? "tanya" : null}
-        onOpenFull={openFullView}
-        onRefresh={actions.loadAll}
-        user={user}
-        token={token}
-        onLogout={logout}
-        allowRollPick={settings?.allocation?.roll_pick_sales !== false}
-        data={data}
-        loading={loading}
-        cart={cart}
-        setCart={setCart}
-        onInspect={actions.inspectProduct}
-        onAdd={actions.addToCart}
-        selectedCustomer={selectedCustomer}
-        setSelectedCustomer={setSelectedCustomer}
-        selectedAddress={selectedAddress}
-        setSelectedAddress={setSelectedAddress}
-        onSubmitOrder={actions.submitOrder}
-        onCreateCustomer={actions.createCustomer}
-        settings={settings}
-        notice={notice}
-        paymentTerms={paymentTerms}
-        selectedEntity={selectedEntity}
-        entities={entities}
-        notifications={notifications}
-        unreadCount={unreadCount}
-        onMarkAllRead={markAllNotificationsRead}
-        onMarkRead={markNotificationRead}
-        onPollNotifications={actions.loadNotifications}
-        notifProps={notifProps}
-        onSelectEntity={onSelectEntity}
-        onForceDesktop={() => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); }}
-      />
-      </EntityScopeProvider>
+      <MobileAppSwitch user={user} token={token} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity}
+        notifications={notifications} unreadCount={unreadCount} notifProps={notifProps} onMarkAllRead={markAllNotificationsRead}
+        onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications}
+        onOpenFull={openFullView} onLogout={logout} onForceDesktop={goDesktop} onNavigate={handleNavSelect} wantsTanya={wantsTanya}
+        actions={actions} settings={settings} data={data} loading={loading} cart={cart} setCart={setCart}
+        selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
+        selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress} notice={notice} paymentTerms={paymentTerms} />
     );
   }
 
@@ -475,6 +299,7 @@ function App() {
         <TopBar
           title={pageMeta.title}
           kicker={pageMeta.kicker}
+          crumbs={breadcrumbFor(activeView, effectiveNavId, user?.role)}
           scopeLabel={groupScope ? "Semua Badan Usaha" : entityShortById(archivedActive ? archivedEntities : entities, selectedEntity)}
           onToggleSidebar={handleToggleSidebar}
           onAskKn={["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"].includes(user?.role) ? () => handleNavSelect("tanya-kn", "tanya-kn") : null}
@@ -500,7 +325,7 @@ function App() {
               onNavigate={(target, n) => {
                 if (target === "purchasing" && n?.action_id && !n?.action_type) {
                   openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: n.action_id });
-                } else setActiveView(resolveView(target));
+                } else navigateTo(target);   // fase 3 · P1 — alias + sorotan menu lewat satu jalur
               }}
             />
           }
@@ -528,7 +353,7 @@ function App() {
             </div>
           )}
 
-          <DetailDrawer detail={activeDetail} onClose={() => setActiveDetail(null)} onNavigate={(target) => { setActiveView(target); setActiveDetail(null); }} />
+          <DetailDrawer detail={activeDetail} onClose={() => setActiveDetail(null)} onNavigate={(target) => { navigateTo(target); setActiveDetail(null); }} />
 
           {/* Onboarding Checklist Panel — hanya di home view (BUG #2 fix) */}
           {showOnboarding && showHomeWidgets && (
@@ -539,7 +364,7 @@ function App() {
             />
           )}
 
-          <PeriodUnlockBanner currentUser={user} onNavigate={(target) => setActiveView(target)} />
+          <PeriodUnlockBanner currentUser={user} onNavigate={(target) => navigateTo(target)} />
 
           {archivedActive && (
             <ArchivedReadOnlyBanner entity={archivedActive}
@@ -566,6 +391,8 @@ function App() {
             hubInfo={hubInfo}
             activeView={activeView}
             onNavSelect={handleNavSelect}
+            onNavigateTo={navigateTo}
+            viewPreset={viewPreset}
             isComingSoon={isComingSoon}
             pageMeta={pageMeta}
             user={user}

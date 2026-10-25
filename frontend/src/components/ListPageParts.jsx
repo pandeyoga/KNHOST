@@ -13,6 +13,13 @@ export function PageHeader({ icon: Icon, title, subtitle, actions, testId }) {
   );
 }
 
+/** Nilai nol ("0", "Rp 0", "0,00", "0 roll") — fase 3 · P1 (L-08): angka nol tampil NETRAL, bukan merah/hijau. */
+export function isZeroMetric(value) {
+  if (value === 0) return true;
+  if (typeof value !== "string") return false;
+  return /^(Rp\s?)?0([.,]0+)?\s*(%|[A-Za-z]\w*)?$/.test(value.trim());
+}
+
 export function MetricRow({ items, testId }) {
   const cols = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-4", 5: "sm:grid-cols-5" }[items.length] || "sm:grid-cols-4";
   return (
@@ -22,7 +29,9 @@ export function MetricRow({ items, testId }) {
           {Icon && <div className="metric-icon"><Icon size={16} /></div>}
           <div className="metric-body">
             <div className="metric-label">{label}</div>
-            <div className="metric-value tabular-nums" style={tone ? { color: tone } : undefined}>{value}</div>
+            {/* L-08 — warna `tone` hanya untuk angka yang ADA; nol berwarna merah/hijau dibaca sebagai peringatan. */}
+            <div className={`metric-value tabular-nums ${isZeroMetric(value) ? "metric-zero" : ""}`.trim()}
+              style={tone && !isZeroMetric(value) ? { color: tone } : undefined}>{value}</div>
             {hint && <div className="metric-hint">{hint}</div>}
           </div>
         </div>

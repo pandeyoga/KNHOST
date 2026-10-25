@@ -5,81 +5,43 @@
 // P3 — CODE SPLITTING: setiap view feature dimuat via React.lazy() sehingga bundle
 // utama tidak lagi memuat SELURUH view sekaligus (dulu main.js ~3.0 MB). Hanya chunk
 // view aktif yang di-fetch saat dibutuhkan. Semua render dibungkus <Suspense> tunggal.
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { can } from "./config/roles";   // INV-ROLE-01 — wewenang dari izin, bukan literal peran
 import { Loader2 } from "lucide-react";
 import HubTabs from "./components/HubTabs";
 import ComingSoon from "./features/ComingSoon";
 import { defaultNavIdForRole, defaultViewForRole } from "./config/navigationConfig";
+// Fase 3 · P1 — preset layar (alias/tautan) & jalur navigasi bersama untuk LinkCard/tombol tautan.
+import { ViewPresetProvider } from "./context/ViewPresetContext";
+import { AppNavProvider } from "./context/AppNavContext";
 
-// ── Lazy views (dipisah per chunk) ──────────────────────────────────────────
-const SalesPortal = lazy(() => import("./features/sales/SalesPortal").then((m) => ({ default: m.SalesPortal })));
-const PriceApprovals = lazy(() => import("./features/sales/PriceApprovals"));
-const OrdersView = lazy(() => import("./features/orders/OrdersView"));
-const CrmView = lazy(() => import("./features/crm/CrmView"));
-const OperationsView = lazy(() => import("./features/wms/OperationsView"));
-// FASE I — SPK Inspeksi & QC sebagai DOKUMEN (`<ENT>/INS-#####`). Layar QC lama di
-// atas tetap ada sebagai antrean karantina; dokumennya hidup di layar ini.
-const QcHubView = lazy(() => import("./features/inspections/QcHubView"));
-const InspectionsView = lazy(() => import("./features/inspections/InspectionsView"));
-const DocumentsView = lazy(() => import("./features/documents/DocumentsView"));
-const AdminView = lazy(() => import("./features/admin/AdminView"));
-const CostingView = lazy(() => import("./features/costing/CostingView"));
-const ARAgingView = lazy(() => import("./features/finance/ARAgingView"));
-const AdvanceReportView = lazy(() => import("./features/finance/AdvanceReportView"));
-const StoreCreditView = lazy(() => import("./features/finance/StoreCreditView"));
-const BankAccountsView = lazy(() => import("./features/finance/BankAccountsView"));
-const BankReconciliationView = lazy(() => import("./features/finance/BankReconciliationView"));
-const FinanceCasesView = lazy(() => import("./features/finance/cases/FinanceCasesView"));
-const FixedAssetsView = lazy(() => import("./features/finance/FixedAssetsView"));
-const ProductionView = lazy(() => import("./features/production/ProductionView"));
-const SchedulerView = lazy(() => import("./features/admin/scheduler/SchedulerView"));
-const ChartOfAccounts = lazy(() => import("./features/finance/ChartOfAccounts"));
-const GeneralLedger = lazy(() => import("./features/finance/GeneralLedger"));
-const GroupConsolidationView = lazy(() => import("./features/finance/GroupConsolidationView"));
-const FinancialStatementsView = lazy(() => import("./features/finance/FinancialStatementsView"));
-const ClosingView = lazy(() => import("./features/finance/ClosingView"));
-const PeriodUnlockView = lazy(() => import("./features/finance/PeriodUnlockView"));
-const PostingFailuresView = lazy(() => import("./features/finance/PostingFailuresView"));
-const BiFinanceView = lazy(() => import("./features/finance/BiFinanceView"));
-const FinanceTowerView = lazy(() => import("./features/finance/FinanceTowerView"));
-const ProfitabilityView = lazy(() => import("./features/finance/ProfitabilityView"));
-const CashFlowForecastView = lazy(() => import("./features/finance/CashFlowForecastView"));
-const BudgetView = lazy(() => import("./features/finance/BudgetView"));
-const TaxCenterView = lazy(() => import("./features/finance/TaxCenterView"));
-const ManagerDashboard = lazy(() => import("./features/manager/ManagerDashboard"));
-const SalesHome = lazy(() => import("./features/home/SalesHome"));
-const AdminHome = lazy(() => import("./features/home/AdminHome"));
-// EPIC 1 · PS-18 — Dasbor Manajer (antrean persetujuan, target tim, keterlambatan hari ini).
-const ManagerHome = lazy(() => import("./features/home/ManagerHome"));
-const ReturnDeskSummaryCard = lazy(() => import("./features/home/ReturnDeskSummaryCard"));
-const PurchaseOrderManagement = lazy(() => import("./features/admin/PurchaseOrderManagement"));
-const BlanketPOView = lazy(() => import("./features/purchasing/BlanketPOView"));
-// FASE P — Papan PO per lini (progres tahap seperti kertas kerja MD).
-const PoBoardView = lazy(() => import("./features/purchasing/PoBoardView"));
-const InventoryStatusBoard = lazy(() => import("./features/inventory/InventoryStatusBoard"));
-const StockBucketsView = lazy(() => import("./features/inventory/StockBucketsView"));
-const LotsView = lazy(() => import("./features/inventory/lots/LotsView"));
-const InterCompanyTransfers = lazy(() => import("./features/transfers/InterCompanyTransfers"));
-const EscalationManagement = lazy(() => import("./features/manager/EscalationManagement"));
-const TaxInvoices = lazy(() => import("./features/finance/TaxInvoices"));
-const SalesReturns = lazy(() => import("./features/sales/SalesReturns"));
-const ReturnPoliciesView = lazy(() => import("./features/sales/ReturnPoliciesView"));const SpecialOrders = lazy(() => import("./features/sales/SpecialOrders"));
-const SamplePriceMaster = lazy(() => import("./features/samples/SamplePriceMaster"));
-const PricelistView = lazy(() => import("./features/sales/PricelistView"));
-// F1b (D-14) — Daftar Harga per Pelanggan (harga langganan + penjagaan batas bawah).
-const CustomerPricelistView = lazy(() => import("./features/sales/CustomerPricelistView"));
-const CatalogWorkspace = lazy(() => import("./features/catalog/CatalogWorkspace"));
-const ColorLibraryView = lazy(() => import("./features/sales/ColorLibraryView"));
-const DomainRegistryView = lazy(() => import("./features/admin/domain/DomainRegistryView"));
-const UomConversionView = lazy(() => import("./features/admin/uom/UomConversionView"));
-const ApprovalInbox = lazy(() => import("./features/approvals/ApprovalInbox"));
-const MyApprovalsView = lazy(() => import("./features/approvals/MyApprovalsView"));
-// FASE E-8 (E8.7/E8.20) — dua MEJA KERJA: Admin Sales (alur pesanan & pemenuhan) dan
-// Finance (uang masuk & pajak keluaran). Keduanya menyusun antrean dari mesin yang sudah
-// ada (papan pending SO · backorder · retur · PIN · penagihan) — bukan mesin baru (E8.11).
-const SalesAdminDesk = lazy(() => import("./features/sales_admin/SalesAdminDesk"));
-const FinanceDesk = lazy(() => import("./features/finance/FinanceDesk"));
+// ── Lazy views (dipisah per chunk) — daftar di ./appViewImports.js (fase 3 · P1, batas 500 baris) ──
+import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHubView, InspectionsView,
+  DocumentsView, AdminView, CostingView, ARAgingView, AdvanceReportView, StoreCreditView, BankAccountsView,
+  BankReconciliationView, FinanceCasesView, FixedAssetsView, ProductionView, SchedulerView, ChartOfAccounts,
+  GeneralLedger, GroupConsolidationView, FinancialStatementsView, ClosingView, PeriodUnlockView,
+  PostingFailuresView, BiFinanceView, FinanceTowerView, ProfitabilityView, CashFlowForecastView, BudgetView,
+  TaxCenterView, ManagerDashboard, SalesHome, AdminHome, ManagerHome, ReturnDeskSummaryCard,
+  PurchaseOrderManagement, BlanketPOView, PoBoardView, InventoryStatusBoard, StockBucketsView, LotsView,
+  InterCompanyTransfers, EscalationManagement, TaxInvoices, SalesReturns, ReturnPoliciesView, SpecialOrders,
+  SamplePriceMaster, PricelistView, CustomerPricelistView, CatalogWorkspace, ColorLibraryView,
+  DomainRegistryView, UomConversionView, ApprovalInbox, MyApprovalsView, SalesAdminDesk, FinanceDesk,
+  AmendmentCenterView, ApprovalRulesSettings, EntityMastersView, MakloonClaimRecapView, ClientDatasetImportView,
+  GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
+  ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
+  AmendmentReasonsPanel, IncentiveRatesEditor, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
+  CashManagementView, PurchaseReturns, VendorBillsView, ContraBonsView, IntercoView, InternalRequestsView,
+  KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
+  PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
+  AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayslipsView, LeaveView, OvertimeView,
+  KpiView, DesignGalleryView, HrAnalyticsView, StockAnalyticsView, ExportCenterView, LocationPutawayView,
+  GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView, RfidDevicesView,
+  RfidGateMonitorView, RfidLocationsView, CashAdvancesView, SettlementsView, ExpenseCategoriesView,
+  GLAccountMappingView, ReimbursePayablesView, VehicleLogsView, PdfTemplateDesigner, RoleDesk, TanyaKnView,
+  SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
+  RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
+  MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView
+} from "./appViewImports";
 
 // PS-20 — peta view tujuan → hub induknya, untuk tombol "Buka" di Persetujuan Saya.
 const APPROVAL_HUB_OF = {
@@ -88,112 +50,6 @@ const APPROVAL_HUB_OF = {
   "rnd-revalidation": "rnd-hub",
   "purchase-requisitions": "sourcing",
 };
-// FASE G-1 — Pusat Amandemen (koreksi ber-alasan, ber-dampak, ber-penyetuju).
-const AmendmentCenterView = lazy(() => import("./features/finance/amendments/AmendmentCenterView"));
-const ApprovalRulesSettings = lazy(() => import("./features/settings/ApprovalRulesSettings"));
-// FASE E-4 (E4d) — satu layar untuk semua master berlapis global → badan usaha.
-const EntityMastersView = lazy(() => import("./features/settings/masters/EntityMastersView"));
-const MakloonClaimRecapView = lazy(() => import("./features/purchasing/makloon/MakloonClaimRecapView"));
-const ClientDatasetImportView = lazy(() => import("./features/settings/masters/ClientDatasetImportView"));
-const GradeMasterView = lazy(() => import("./features/settings/masters/GradeMasterView"));
-// FASE E-3 — layar "Badan Usaha & Akses" (entitas + akun + kesiapan) dalam satu pintu.
-const EntitiesAccessView = lazy(() => import("./features/settings/entities/EntitiesAccessView"));
-// FASE E-4 (E4.1) — Master Gudang: mode pemakaian (bersama / khusus badan usaha),
-// isi gudang per pemilik stok, dan pagar agar barang tidak terkurung.
-const WarehouseMasterView = lazy(() => import("./features/wms/warehouses/WarehouseMasterView"));
-// FASE G-0 — Pusat Pengaturan (satu pintu semua konfigurasi: cari, penjelasan,
-// simulator "coba dulu", jejak lapisan, riwayat, berlaku-sejak, Daftar Dampak).
-const SettingsHub = lazy(() => import("./features/settings/config/SettingsHub"));
-const SuppliersView = lazy(() => import("./features/purchasing/SuppliersView"));
-const MakloonsView = lazy(() => import("./features/purchasing/MakloonsView"));
-const ProcessRecipesView = lazy(() => import("./features/purchasing/ProcessRecipesView"));
-const MakloonOrdersView = lazy(() => import("./features/purchasing/MakloonOrdersView"));
-// FASE D (PS-04/PS-11 · D-05/D-07/D-09) — klaim selisih makloon & kontrak mitra
-const MakloonClaimsView = lazy(() => import("./features/purchasing/makloon/MakloonClaimsView"));
-const ContractsView = lazy(() => import("./features/purchasing/contracts/ContractsView"));
-const InternalPricesView = lazy(() => import("./features/interco_prices/InternalPricesView"));
-const AmendmentReasonsPanel = lazy(() => import("./features/finance/amendments/AmendmentReasonsPanel"));
-const IncentiveRatesEditor = lazy(() => import("./features/crm/IncentiveRatesEditor"));
-const BankRulesSettingsView = lazy(() => import("./features/finance/bank/BankRulesSettingsView"));
-const SupplierItemsView = lazy(() => import("./features/purchasing/supplier-items/SupplierItemsView"));
-const PurchaseApprovalView = lazy(() => import("./features/purchasing/PurchaseApprovalView"));
-const CashManagementView = lazy(() => import("./features/purchasing/CashManagementView"));
-const PurchaseReturns = lazy(() => import("./features/purchasing/PurchaseReturns"));
-const VendorBillsView = lazy(() => import("./features/purchasing/VendorBillsView"));
-// FASE G-7 — Kontrabon (siklus tukar faktur supplier): gabung banyak faktur jadi satu
-// tanda terima + satu pembayaran, plus "GR belum ditagih" & jadwal tukar faktur.
-const ContraBonsView = lazy(() => import("./features/purchasing/contrabon/ContraBonsView"));
-// FASE G-6 — Transaksi Antar Entitas (jual-beli antar-PT): dokumen kembar, saldo
-// pasangan PT, settlement/netting.
-const IntercoView = lazy(() => import("./features/finance/interco/IntercoView"));
-// FASE E-7 (E7d) — Permintaan Internal: sales minta barang dari badan usaha lain,
-// admin/manajer menjadikannya transaksi antar-PT.
-const InternalRequestsView = lazy(() => import("./features/internal_requests/InternalRequestsView"));
-const KeepPendingPanel = lazy(() => import("./features/sales_admin/KeepPendingPanel"));   // UAT 24 Okt (P13.3)
-const RepairOrdersView = lazy(() => import("./features/wms/repair/RepairOrdersView"));     // UAT 24 Okt (P7)
-// FASE D — Permintaan Desain (papan kanban · penugasan · rapor desainer)
-const DesignRequestsView = lazy(() => import("./features/design/DesignRequestsView"));
-const LogisticsView = lazy(() => import("./features/logistics/LogisticsView"));   // FB-02
-const LandedCostView = lazy(() => import("./features/purchasing/LandedCostView"));
-const InputTaxView = lazy(() => import("./features/purchasing/InputTaxView"));
-const RFQView = lazy(() => import("./features/purchasing/RFQView"));
-const PurchaseRequisitions = lazy(() => import("./features/purchasing/PurchaseRequisitions"));
-const ReorderSuggestions = lazy(() => import("./features/purchasing/ReorderSuggestions"));
-const EmployeesView = lazy(() => import("./features/hr/EmployeesView"));
-const OrgUnitsView = lazy(() => import("./features/hr/OrgUnitsView"));
-const EmployeeSelfService = lazy(() => import("./features/hr/EmployeeSelfService"));
-const AttendanceView = lazy(() => import("./features/hr/AttendanceView"));
-const AttendanceSetupView = lazy(() => import("./features/hr/AttendanceSetupView"));
-const LiveTrackingView = lazy(() => import("./features/hr/LiveTrackingView"));
-const VisitsView = lazy(() => import("./features/hr/VisitsView"));
-const PayrollRunsView = lazy(() => import("./features/hr/PayrollRunsView"));
-const PayslipsView = lazy(() => import("./features/hr/PayslipsView"));
-const LeaveView = lazy(() => import("./features/hr/LeaveView"));
-const OvertimeView = lazy(() => import("./features/hr/OvertimeView"));
-const KpiView = lazy(() => import("./features/hr/KpiView"));
-const DesignGalleryView = lazy(() => import("./features/hr/DesignGalleryView"));
-const HrAnalyticsView = lazy(() => import("./features/hr/HrAnalyticsView"));
-const StockAnalyticsView = lazy(() => import("./features/inventory/StockAnalyticsView"));
-const ExportCenterView = lazy(() => import("./features/export/ExportCenterView"));
-const LocationPutawayView = lazy(() => import("./features/wms/LocationPutawayView"));
-const GoodsReceiptsView = lazy(() => import("./features/wms/grn/GoodsReceiptsView"));
-const OutboundView = lazy(() => import("./features/wms/OutboundView"));
-const CuttingOpsView = lazy(() => import("./features/wms/CuttingOpsView"));
-const ReceivingOcrSettings = lazy(() => import("./features/settings/ReceivingOcrSettings"));
-const RfidTagsView = lazy(() => import("./features/rfid/RfidTagsView"));
-const RfidDevicesView = lazy(() => import("./features/rfid/RfidDevicesView"));
-const RfidGateMonitorView = lazy(() => import("./features/rfid/RfidGateMonitorView"));
-const RfidLocationsView = lazy(() => import("./features/rfid/RfidLocationsView"));
-const CashAdvancesView = lazy(() => import("./features/pettycash/CashAdvancesView"));
-const SettlementsView = lazy(() => import("./features/pettycash/SettlementsView"));
-const ExpenseCategoriesView = lazy(() => import("./features/pettycash/ExpenseCategoriesView"));
-const GLAccountMappingView = lazy(() => import("./features/finance/GLAccountMappingView"));
-const ReimbursePayablesView = lazy(() => import("./features/pettycash/ReimbursePayablesView"));
-const VehicleLogsView = lazy(() => import("./features/pettycash/VehicleLogsView"));
-const PdfTemplateDesigner = lazy(() => import("./features/pdf/PdfTemplateDesigner"));
-const RoleDesk = lazy(() => import("./features/desks/RoleDesk"));
-const TanyaKnView = lazy(() => import("./features/tanya/TanyaKnView"));   // Tanya KN F3
-// REVISI SAMPEL — meja & daftar pesanan sample
-const SampleAdminDesk = lazy(() => import("./features/samples/SampleAdminDesk"));
-const SampleOrdersView = lazy(() => import("./features/samples/SampleOrdersView"));
-const DocumentCenter = lazy(() => import("./features/documents/DocumentCenter"));
-// FASE G-4 — Jejak Dokumen (relasi `refs[]` dua arah; jangkar bebas, termasuk QR cetak).
-const DocTraceView = lazy(() => import("./features/documents/trace/DocTraceView"));
-// FASE G-2 — Rencana Pembayaran fleksibel + denda sebagai dokumen.
-const PaymentPlansView = lazy(() => import("./features/finance/payments/PaymentPlansView"));
-// FASE F — R&D & Desain: spesifikasi → labdip/proofing → kontrak harga (hulu rantai).
-const RndSpecsView = lazy(() => import("./features/rnd/RndSpecsView"));
-const RndSamplesView = lazy(() => import("./features/rnd/RndSamplesView"));
-const SampleTypeGalleryView = lazy(() => import("./features/rnd/SampleTypeGalleryView"));
-const RndDesignsView = lazy(() => import("./features/rnd/RndDesignsView"));
-const RndReportsView = lazy(() => import("./features/rnd/RndReportsView"));
-// PS-18 — menu DESAINER (terpisah dari R&D): KPI desainer + eskalasi SLA aktif.
-const DesignerKpiView = lazy(() => import("./features/designer/DesignerKpiView"));
-const ContentCalendar = lazy(() => import("./features/marketing/ContentCalendar"));
-const MktCampaigns = lazy(() => import("./features/marketing/Campaigns"));
-const MarketingAnalytics = lazy(() => import("./features/marketing/MarketingAnalytics"));
-const SocialAccounts = lazy(() => import("./features/marketing/SocialAccounts"));
-const DivisionsView = lazy(() => import("./features/designer/DivisionsView"));
 
 /** Fallback saat chunk view sedang di-fetch (code-splitting). */
 function ViewLoader() {
@@ -207,7 +63,7 @@ function ViewLoader() {
 
 export default function AppViewRouter(props) {
   const {
-    hubInfo, activeView, onNavSelect, isComingSoon, pageMeta,
+    hubInfo, activeView, onNavSelect, onNavigateTo, viewPreset, isComingSoon, pageMeta,
     user, token, selectedEntity, entities,
     data, loading, users, uoms, templates, permissions, previewHtml,
     auditLogs, auditFilters, setAuditFilters,
@@ -256,6 +112,8 @@ export default function AppViewRouter(props) {
   };
 
   return (
+    <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={openDocument}>
+    <ViewPresetProvider preset={viewPreset}>
     <div className="mt-4 md:mt-5">
       {hubInfo && (
         <HubTabs
@@ -510,5 +368,7 @@ export default function AppViewRouter(props) {
       {activeView === "documents" && <DocumentsView templates={templates} loading={loading} lastDocument={lastDocument} lastLabel={lastLabel} onGenerateLabel={generateLabel} products={data.products || []} />}
       </Suspense>
     </div>
+    </ViewPresetProvider>
+    </AppNavProvider>
   );
 }

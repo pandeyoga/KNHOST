@@ -87,7 +87,9 @@ export default function useViewDeepLink({ role, ready, activeView, activeEntity,
     if (!wanted) return;
     const target = resolveDeepLinkTarget(wanted, role);
     if (!target) return;
-    navRef.current?.(target.navId, target.view, params.get("tab") || target.tab);
+    // Fase 3 · P1 — id lama yang kini alias mendarat di layar utama BESERTA presetnya (tab/mode/saringan).
+    navRef.current?.(target.navId, target.view, params.get("tab") || target.tab,
+      target.preset ? { preset: target.preset } : undefined);
   }, [ready, role]);
 
   // ─── 2) TULIS alamat agar layar aktif selalu bisa dibagikan ────────────────

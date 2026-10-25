@@ -231,6 +231,22 @@
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.20);
 }
 .sidebar-item .label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Fase 3 · P1 (L-05) — label menu/grup panjang ("Uang Muka Pelanggan", "AKUNTANSI & PAJAK") dulu terpotong di satu
+   baris ("Uang Muka Pelan…"). Istilahnya TIDAK diubah (K-13): label boleh 2 baris, lebih dari itu dipotong + tooltip
+   (`title` di tombol). Sidebar terlipat tetap menyembunyikan label (aturan `.layout-grid.collapsed` di bawah). */
+.sidebar-item .label,
+.sidebar-group-header .group-label {
+  white-space: normal; overflow-wrap: break-word; line-height: 1.25;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden; text-overflow: ellipsis;
+}
+/* Fase 3 · P1 (L-05) — sub-judul di dalam grup (`{ type: "heading" }` di navStructure), mis. "Kebijakan per Domain". */
+.sidebar-subheading {
+  margin: 6px 0 2px; padding: 0 10px 0 12px;
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #9A9BA3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-group-items > .sidebar-subheading:first-child { margin-top: 2px; }
 
 .sidebar-footer {
   padding: 10px;
@@ -310,7 +326,14 @@
    sebagai KONTEKS DATA, bukan bagian nama halaman. */
 .topbar .kicker-scope { color: var(--ios-muted); }
 /* EPIC 0 — breadcrumb eksplisit (Beranda › kicker) */
-.topbar .breadcrumb { display: flex; align-items: center; gap: 6px; line-height: 1; }
+.topbar .breadcrumb { display: flex; align-items: center; gap: 6px; line-height: 1; min-width: 0; }
+/* Fase 3 · P1 (L-05) — jejak menu grup › menu › tab; panjang → dipotong (judul lengkap di tooltip). */
+.topbar .breadcrumb .crumb-trail { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.topbar .breadcrumb .crumb { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.topbar .breadcrumb .crumb:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.topbar .breadcrumb .crumb-root,
+.topbar .breadcrumb > .crumb-sep,
+.topbar .breadcrumb .kicker-scope { flex-shrink: 0; white-space: nowrap; }
 .topbar .breadcrumb .crumb-root { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-soft, #8A8B92); }
 .topbar .breadcrumb .crumb-sep { font-size: 12px; color: var(--text-soft, #B0B1B8); }
 .topbar h1.page-title { font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
