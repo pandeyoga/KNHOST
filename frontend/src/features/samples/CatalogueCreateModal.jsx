@@ -8,7 +8,9 @@ import { cataloguePreview, catalogueTemplates, createCatalogueOrder } from "./sa
 
 const rows = (d) => (Array.isArray(d) ? d : d?.items || []);
 
-/** L06 LN-060 — Pesanan Sample Catalogue: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah). */
+/** L06 LN-060 — Pesanan Sample Katalog: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah).
+ *  UAT 24 Okt (audit UI tahap 2) — G2-19: satu istilah "Katalog" (dulu tombol "Sample Katalog" membuka pop-up
+ *  "Sample Catalogue" bertombol "Buat Pesanan Catalogue"); * pada Pelanggan/Artikel; pilihan skema standar. */
 export default function CatalogueCreateModal({ open, onClose, entityId, onCreated, initialTemplateId = "", initialCustomerId = "" }) {
   const [customers, setCustomers] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -30,7 +32,7 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
     let live = true;
     cataloguePreview({ template_id: form.template_id, soft_product_id: form.soft || undefined, ...(entityId ? { entity_id: entityId } : {}) })
       .then((p) => { if (live) { setPreview(p); setErr(""); } })
-      .catch((e) => { if (live) { setPreview(null); setErr(apiErrorText(e, "Komposisi catalogue tidak bisa disusun.")); } });
+      .catch((e) => { if (live) { setPreview(null); setErr(apiErrorText(e, "Komposisi katalog tidak bisa disusun.")); } });
     return () => { live = false; };
   }, [form.template_id, form.soft, entityId]);
 
@@ -44,26 +46,29 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
         order_type: "sample", sample_billing: form.billing, items: [],
         catalogue: { template_id: form.template_id, soft_product_id: form.soft } });
       onCreated?.(so); onClose();
-    } catch (e) { setErr(apiErrorText(e, "Gagal membuat catalogue.")); } finally { setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal membuat pesanan katalog.")); } finally { setBusy(false); }
   };
 
   return (
-    <FormModal open={open} onClose={onClose} title="Sample Catalogue" subtitle="1 yard tiap warna tersedia + 2 yard satu warna soft"
-      icon={BookOpen} testId="catalogue-create" onSubmit={submit} submitLabel="Buat Pesanan Catalogue" busy={busy} error={err}>
+    <FormModal open={open} onClose={onClose} title="Sample Katalog Baru" subtitle="1 yard tiap warna tersedia + 2 yard satu warna soft"
+      icon={BookOpen} testId="catalogue-create" onSubmit={submit} submitLabel="Buat Pesanan Katalog" busy={busy} error={err}>
       <div className="grid gap-3 text-[12px]">
-        <label className="grid gap-1"><span className="field-label">Pelanggan</span>
-          <KNSelect data-testid="catalogue-customer" aria-label="Pelanggan" placeholder="— pilih —" value={form.customer_id}
+        <label className="grid gap-1"><span className="field-label">Pelanggan <span className="text-red-500">*</span></span>
+          <KNSelect data-testid="catalogue-customer" aria-label="Pelanggan" placeholder="— Pilih pelanggan —" value={form.customer_id}
             onValueChange={(v) => { if (v) set("customer_id", v); }} options={customers.map((c) => ({ value: c.id, label: c.name }))} /></label>
-        <label className="grid gap-1"><span className="field-label">Artikel (woven, yard)</span>
-          <KNSelect data-testid="catalogue-template" aria-label="Artikel" placeholder={templates.length ? "— pilih —" : "Tidak ada artikel ber-stok di badan usaha ini"}
+        <label className="grid gap-1"><span className="field-label">Artikel (woven, yard) <span className="text-red-500">*</span></span>
+          <KNSelect data-testid="catalogue-template" aria-label="Artikel" placeholder={templates.length ? "— Pilih artikel —" : "Tidak ada artikel ber-stok di badan usaha ini"}
             value={form.template_id} onValueChange={(v) => { if (v) setForm((f) => ({ ...f, template_id: v, soft: "" })); }}
             options={templates.map((t) => ({ value: t.id, label: t.name || t.code || t.id }))} /></label>
-        <div className="grid grid-cols-2 gap-2">
-          {["free", "paid"].map((b) => (
-            <button key={b} type="button" data-testid={`catalogue-billing-${b}`} onClick={() => set("billing", b)}
-              className={`rounded-md border px-2 py-1.5 font-semibold transition-colors ${form.billing === b ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white"}`}>
-              {b === "free" ? "Gratis" : "Berbayar"}</button>
-          ))}
+        <div className="grid gap-1">
+          <span className="field-label">Skema biaya</span>
+          <div className="inline-flex w-full rounded-lg border border-[#E5E5EA] bg-[#F5F5F7] p-0.5" role="radiogroup" aria-label="Skema biaya">
+            {["free", "paid"].map((b) => (
+              <button key={b} type="button" role="radio" aria-checked={form.billing === b} data-testid={`catalogue-billing-${b}`} onClick={() => set("billing", b)}
+                className={`flex-1 rounded-md px-2 py-1.5 font-semibold transition-colors ${form.billing === b ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>
+                {b === "free" ? "Gratis" : "Berbayar"}</button>
+            ))}
+          </div>
         </div>
         {preview && <CataloguePreview preview={preview} soft={form.soft} onSoft={(v) => set("soft", v)} />}
       </div>

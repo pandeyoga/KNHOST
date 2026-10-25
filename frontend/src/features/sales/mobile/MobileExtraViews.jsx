@@ -11,6 +11,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { badgeClass, badgeLabel } from "../../sales_admin/workDeskApi";
 import { askReason } from "../../../services/confirmService";
 import { actorLabel } from "../../../utils/actorLabel";
+import { discountInfo, deciderName } from "../priceApprovals/priceApprovalText";
 
 const errText = (e, fb) => { const d = e?.response?.data?.detail; return (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || fb; };
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-");
@@ -41,18 +42,19 @@ export function MobilePriceStatus({ onNew }) {
       <Chips items={PRICE_FILTERS} value={status} onChange={setStatus} prefix="m-price-status-filter" />
       {err && <div className="notice-bar danger text-xs">{err}</div>}
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
-      {rows && shown.length === 0 && <p className="py-8 text-center text-xs m-muted" data-testid="m-price-status-empty">Belum ada pengajuan harga khusus.</p>}
+      {rows && shown.length === 0 && <p className="py-8 text-center text-xs m-muted" data-testid="m-price-status-empty">{status && rows.length ? `Tidak ada pengajuan berstatus ${(PRICE_FILTERS.find(([id]) => id === status) || [])[1] || status}.` : "Belum ada pengajuan harga khusus."}</p>}
       {shown.map((p) => (
         <div key={p.id} className="m-card p-3" data-testid={`m-price-status-${p.id}`}>
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-bold">{p.customer_name}</p>
-              <p className="truncate text-[11.5px] text-[#3C3C43]">{p.product_name} · min {formatQty(p.min_quantity)} {p.unit}</p>
+              <p className="truncate text-[11.5px] text-[#3C3C43]">{[p.product_name, Number(p.min_quantity) > 0 ? `min ${formatQty(p.min_quantity)} ${p.unit || ""}`.trim() : ""].filter(Boolean).join(" · ")}</p>
             </div>
             <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${badgeClass(p.is_expired ? "expired" : p.status)}`}>{p.is_expired ? "Kedaluwarsa" : (p.status_label || badgeLabel(p.status))}</span>
           </div>
-          <p className="mt-1 text-[12px] tabular-nums"><s className="text-[#8E8E93]">{formatCurrency(p.normal_price)}</s> → <b>{formatCurrency(p.requested_price)}</b>{p.discount_percent ? <span className="text-[#B25E00]"> (−{Math.round(p.discount_percent)}%)</span> : null}</p>
-          <p className="text-[10.5px] m-muted">Diajukan {fmtDate(p.created_at)}{p.valid_until ? ` · berlaku s/d ${fmtDate(p.valid_until)}` : ""}{p.approved_by_name ? ` · diputus ${p.approved_by_name}` : ""}</p>
+          {/* UAT 24 Okt (audit UI tahap 2) — G2-02: harga di atas normal ditulis "+X% di atas harga normal" (dulu "−-3064%"); kode keputusan tidak tampil. */}
+          <p className="mt-1 text-[12px] tabular-nums"><s className="text-[#8E8E93]">{formatCurrency(p.normal_price)}</s> → <b>{formatCurrency(p.requested_price)}</b>{(() => { const d = discountInfo(p.discount_percent); return d ? <span className={d.above ? "text-[#0058CC]" : "text-[#B25E00]"} data-testid={`m-price-status-diff-${p.id}`}> ({d.long})</span> : null; })()}</p>
+          <p className="text-[10.5px] m-muted">Diajukan {fmtDate(p.created_at)}{p.valid_until ? ` · berlaku s/d ${fmtDate(p.valid_until)}` : ""}{deciderName(p) ? ` · diputus ${deciderName(p)}` : ""}</p>
           {p.decision_notes && <p className="mt-0.5 text-[11px] text-[#3C3C43]">Catatan: {p.decision_notes}</p>}
         </div>
       ))}

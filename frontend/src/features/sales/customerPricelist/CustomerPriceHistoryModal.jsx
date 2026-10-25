@@ -84,7 +84,7 @@ export default function CustomerPriceHistoryModal({
             </div>
           ) : records.length === 0 ? (
             <div data-testid="cpl-history-empty" className="py-8 text-center text-[12px] text-[#8E8E93]">
-              Belum ada harga langganan untuk produk ini — pesanan memakai harga PT/umum.
+              Belum ada harga pelanggan untuk produk ini — pesanan memakai harga PT/umum.
             </div>
           ) : (
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">

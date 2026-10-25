@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { formatQty } from "../../utils/formatters";
+import { formatDate, formatQty } from "../../utils/formatters";
+import { docStatusLabel } from "../../utils/docStatus";
 
 const MODE = { interco: "Transfer PT lain", reorder: "PR/PO supplier", makloon: "Produksi makloon", wait: "Tunggu barang datang" };
 
@@ -30,15 +31,18 @@ export default function PendingProductRow({ p, onOpen, tp }) {
                 <span className="ml-auto text-[11.5px] font-bold tabular-nums">{formatQty(o.short_qty)} {p.unit}</span>
               </div>
               {o.supply.length === 0 ? (
-                <p className="mt-0.5 text-[10.5px] text-[#8E8E93]" data-testid={`${tp}-pending-nosupply-${o.order_id}`}>Belum ada keputusan pemenuhan — putuskan di "Putuskan Pemenuhan".</p>
+                /* UAT 24 Okt (audit UI tahap 2) — G2-29: kalimat jadi tautan ke SO (tempat "Putuskan pemenuhan"). */
+                <p className="mt-0.5 text-[10.5px] text-[#8E8E93]" data-testid={`${tp}-pending-nosupply-${o.order_id}`}>Belum ada keputusan pemenuhan —{" "}
+                  <button type="button" className="font-semibold text-[#0058CC] hover:underline" data-testid={`${tp}-pending-decide-${o.order_id}`}
+                    onClick={() => onOpen(o.order_id, o.number)}>putuskan pemenuhan {o.number} →</button></p>
               ) : o.supply.map((s, i) => (
                 <p key={i} className="mt-0.5 text-[10.5px] text-[#3C3C43]" data-testid={`${tp}-pending-supply-${o.order_id}-${i}`}>
                   {MODE[s.mode] || s.mode}: <b className="tabular-nums">{formatQty(s.qty)}</b>
                   {s.ref_number ? ` · ${s.ref_number}` : ""}{s.po_number ? ` → ${s.po_number}` : ""}
-                  {s.note ? ` · ${s.note}` : ""} · ETA {s.eta ? String(s.eta).slice(0, 10) : "belum diketahui"}
+                  {s.note ? ` · ${s.note}` : ""} · ETA {s.eta ? formatDate(s.eta) : "belum diketahui"}
                   {(s.makloon_orders || []).map((m) => (
                     <span key={m.id} className="mt-0.5 block pl-3 text-[#5B3C00]" data-testid={`${tp}-pending-mko-${m.id}`}>
-                      {m.number} ({m.status}) · bahan {m.material_name}: dikunci {formatQty(m.material_reserved)} {m.material_unit}
+                      {m.number} ({docStatusLabel(m.status)}) · bahan {m.material_name}: dikunci {formatQty(m.material_reserved)} {m.material_unit}
                       {m.material_shortage > 0 ? ` · kurang ${formatQty(m.material_shortage)}` : ""}
                       {m.material_issued > 0 ? ` · dikirim ke mitra ${formatQty(m.material_issued)}` : ""}
                     </span>

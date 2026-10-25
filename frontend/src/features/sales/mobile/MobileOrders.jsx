@@ -9,8 +9,9 @@ import { releaseMessage, releaseOrder } from "../../sales_admin/workDeskApi";
 import { apiErrorText } from "../../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, PackageX, ChevronDown, FileEdit, ClipboardCheck, CheckCircle2, PackageSearch, Wallet, RotateCcw } from "lucide-react";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { StagePill, SubStatusChips } from "../../../components/SoStatusBadges";
+import { isClosedSo, visibleSubs } from "../../orders/soStatusView";
 import { roleIs } from "../../../config/roles";
 
 const FILTERS = [
@@ -93,7 +94,9 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
       ) : list.length === 0 ? (
         <div data-testid="mobile-orders-empty" className="flex flex-col items-center gap-3 py-20 text-center m-muted">
           <PackageX size={32} className="text-[#C7C7CC]" />
-          <p className="text-[13px] font-medium text-[#1C1C1E]">Belum ada pesanan.</p>
+          <p className="text-[13px] font-medium text-[#1C1C1E]">{orders.length && (filter !== "all" || q.trim())
+            ? `Tidak ada pesanan ${filter !== "all" ? `berstatus ${(FILTERS.find((f) => f.id === filter) || {}).label}` : ""}${q.trim() ? ` yang cocok dengan “${q.trim()}”` : ""}.`
+            : "Belum ada pesanan."}</p>
           <button onClick={onBrowse} className="primary-button mt-1 px-5 py-2.5">Buat Pesanan</button>
         </div>
       ) : (
@@ -110,8 +113,9 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                       <StagePill order={o} testId={`mobile-order-stage-${o.id}`} />
                     </div>
                     <p className="mt-0.5 truncate text-[11.5px] text-[#3C3C43]">{o.customer_name}</p>
-                    <SubStatusChips order={o} testIdPrefix={`mobile-order-sub-${o.id}`} className="mt-0.5" />
-                    <p className="mt-0.5 text-[10.5px] m-muted">{(o.items || []).length} item • {isFreeSample(o) ? "Gratis" : o.payment_status === "paid" ? <span className="text-[#1A7A3A]">Lunas</span> : "Belum bayar"}</p>
+                    {/* UAT 24 Okt (audit UI tahap 2) — G2-20: SO batal tidak lagi "Dibatalkan" dua kali + "Belum bayar". */}
+                    <SubStatusChips subs={visibleSubs(o)} testIdPrefix={`mobile-order-sub-${o.id}`} className="mt-0.5" />
+                    <p className="mt-0.5 text-[10.5px] m-muted" data-testid={`mobile-order-meta-${o.id}`}>{(o.items || []).length} item{isClosedSo(o) ? "" : <> • {isFreeSample(o) ? "Gratis" : o.payment_status === "paid" ? <span className="text-[#1A7A3A]">Lunas</span> : o.payment_status === "partial" ? "Bayar sebagian" : "Belum bayar"}</>}</p>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-[13px] font-bold tabular-nums">{formatCurrency(total)}</span>
@@ -122,7 +126,8 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                   <div data-testid={`mobile-order-detail-${o.id}`} className="border-t border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2.5">
                     {(o.items || []).map((it, i) => (
                       <div key={i} className="flex items-center justify-between py-1 text-[12px]">
-                        <span className="min-w-0 flex-1 truncate text-[#3C3C43]">{it.product_name || it.name} <span className="m-muted">× {it.quantity}</span></span>
+                        {/* G2-33 — qty berformat id-ID + satuan (dulu "× 24.78"). */}
+                        <span className="min-w-0 flex-1 truncate text-[#3C3C43]">{it.product_name || it.name} <span className="m-muted">× {formatQty(it.quantity)} {it.unit || ""}</span></span>
                         <span className="tabular-nums font-semibold">{formatCurrency((it.price || it.unit_price || 0) * (it.quantity || 0))}</span>
                       </div>
                     ))}
@@ -154,7 +159,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                         </button>
                       )}
                       {o.payment_status !== "paid" && !isFreeSample(o) && !["cancelled", "expired"].includes(o.status) && (
-                        <button className="secondary-button flex items-center justify-center gap-1.5 py-2.5 text-[12px]" onClick={() => setPay({ id: o.customer_id, name: o.customer_name })} data-testid={`mobile-order-pay-${o.id}`}>
+                        <button className="secondary-button flex items-center justify-center gap-1.5 py-2.5 text-[12px]" onClick={() => setPay({ id: o.customer_id, name: o.customer_name, focus_order_id: o.id })} data-testid={`mobile-order-pay-${o.id}`}>
                           <Wallet size={14} /> Catat bayar
                         </button>
                       )}

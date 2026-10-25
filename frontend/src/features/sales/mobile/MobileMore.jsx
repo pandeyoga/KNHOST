@@ -43,7 +43,8 @@ const MENU = [
   { id: "crm", label: "Pelanggan (CRM)", desc: "Kelola pelanggan & insentif", icon: Users },
   { id: "returns", label: "Retur Penjualan", desc: "Pengajuan & status retur", icon: RotateCcw },
   { id: "special", label: "Pesanan Khusus (OD)", desc: "Pesanan khusus / dibuat sesuai pesanan", icon: FileStack },
-  { id: "pricelist", label: "Daftar Harga", desc: "Lihat harga per entitas", icon: Tags },
+  // UAT 24 Okt (audit UI tahap 2) — G2-30: deskripsi sesuai isi layar (pilih pelanggan → harga efektif).
+  { id: "pricelist", label: "Daftar Harga", desc: "Harga efektif per pelanggan", icon: Tags },
   { id: "amendments", label: "Koreksi & Amandemen", desc: "Koreksi jumlah / harga pesanan dalam dua ketukan", icon: FileEdit },
 ];
 

@@ -134,8 +134,9 @@ export default function CustomerPricelistView({
   return (
     <div data-testid="customer-pricelist-view">
       <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* G2-31 — sub KPI sesuai isi: jumlah = semua produk aktif di daftar (bukan milik pelanggan). */}
         <Kpi testId="cpl-kpi-products" label="Produk terdaftar" value={grid?.count ?? 0} icon={Tag}
-          hint={customer ? customer.name : "pilih pelanggan"} />
+          hint={customer ? "semua produk aktif" : "pilih pelanggan"} />
         <Kpi testId="cpl-kpi-customer" label="Harga pelanggan aktif" value={withCustomer}
           icon={Users} tone="text-[#0058CC]" />
         <Kpi testId="cpl-kpi-pending" label="Menunggu persetujuan" value={pendingCount}
@@ -228,7 +229,7 @@ export default function CustomerPricelistView({
             <div data-testid="cpl-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">
               <Tag size={26} className="mx-auto mb-2 text-gray-300" />
               {onlyWithPrice
-                ? "Pelanggan ini belum punya harga langganan — hilangkan filter untuk menetapkan harga."
+                ? "Pelanggan ini belum punya harga pelanggan — hilangkan filter untuk menetapkan harga."
                 : "Tidak ada produk yang cocok dengan pencarian."}
             </div>
           ) : (
@@ -261,7 +262,7 @@ export default function CustomerPricelistView({
             <p className="mt-2 text-[11px] text-[#8E8E93]">
               Menampilkan {rows.length} produk · harga efektif dipakai otomatis saat membuat
               Pesanan Penjualan & POS untuk {customer?.name || "pelanggan ini"}. Harga khusus
-              yang sudah disetujui tetap menang di atas harga langganan.
+              yang sudah disetujui tetap menang di atas harga pelanggan.
             </p>
           )}
         </div>

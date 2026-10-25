@@ -3,8 +3,9 @@ import {
   Repeat, ShieldAlert, Tag, Ban,
 } from "lucide-react";
 import { AttachmentThumb } from "../../../components/AttachmentThumb";
-import { formatCurrency, formatQty } from "../../../utils/formatters";
-import { actorLabel } from "../../../utils/actorLabel";
+import { API } from "../../../services/apiClient";
+import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
+import { discountInfo, requesterName, deciderName } from "./priceApprovalText";
 
 const STATUS_META = {
   draft: { label: "Draf", icon: Pencil },
@@ -79,7 +80,14 @@ export function PriceApprovalCard({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px]">
             <span className="text-[#8E8E93] line-through tabular-nums">{formatCurrency(r.normal_price)}</span>
             <span className="font-bold text-[#6B219A] tabular-nums" data-testid={`price-approvals-price-${r.id}`}>{formatCurrency(r.requested_price)}</span>
-            <span className="rounded-full bg-[#F3E9FA] px-2 py-0.5 text-[10px] font-bold text-[#6B219A]">−{formatQty(r.discount_percent)}%</span>
+            {/* UAT 24 Okt (audit UI tahap 2) — G2-02: harga di atas normal tidak lagi tampil "−-X%". */}
+            {(() => {
+              const d = discountInfo(r.discount_percent);
+              return d ? (
+                <span data-testid={`price-approvals-diff-${r.id}`}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${d.above ? "bg-[#E7F0FF] text-[#0058CC]" : "bg-[#F3E9FA] text-[#6B219A]"}`}>{d.long}</span>
+              ) : null;
+            })()}
             {r.min_quantity > 0 && <span className="text-[11px] text-[#6B6B73]">min {formatQty(r.min_quantity)} {r.unit}</span>}
           </div>
           {r.reason && <p className="text-[11.5px] text-[#6B6B73]">{r.reason}</p>}
@@ -96,9 +104,10 @@ export function PriceApprovalCard({
             </p>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[10.5px] text-[#8E8E93]">
-            <span>Pengaju: <span className="font-medium text-[#3C3C43]">{actorLabel(r.requested_by_name)}</span></span>
-            {r.valid_until && <span>Berlaku s/d: <span className="font-medium text-[#3C3C43]">{(r.valid_until || "").slice(0, 10)}</span></span>}
-            {r.approved_by_name && <span>{r.status === "rejected" ? "Ditolak" : "Disetujui"}: <span className="font-medium text-[#3C3C43]">{actorLabel(r.approved_by_name)}</span></span>}
+            {/* G2-14: pengajuan dari checkout/SO menyimpan nama pengaju di `requested_by` — dulu selalu "Pengaju: —". */}
+            <span>Pengaju: <span className="font-medium text-[#3C3C43]" data-testid={`price-approvals-requester-${r.id}`}>{requesterName(r)}</span></span>
+            {r.valid_until && <span>Berlaku s/d: <span className="font-medium text-[#3C3C43]">{formatDate(r.valid_until)}</span></span>}
+            {r.approved_by_name && <span>{r.status === "rejected" ? "Ditolak" : "Disetujui"}: <span className="font-medium text-[#3C3C43]">{deciderName(r, "—")}</span></span>}
           </div>
           {r.decision_notes && (
             <p className={`text-[11px] ${r.status === "rejected" ? "text-[#A8221A]" : "text-[#126E2C]"}`}>Catatan: {r.decision_notes}</p>

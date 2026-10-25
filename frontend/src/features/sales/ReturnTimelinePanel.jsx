@@ -108,7 +108,11 @@ function RollTable({ rolls }) {
   return (
     <div className="overflow-x-auto">
       <table className="data-table" data-testid="return-timeline-rolls" style={{ minWidth: 760 }}>
-        <thead><tr><th>Roll</th><th>Klaim</th><th>Lokasi fisik</th><th>QC aktual</th><th>Grade</th><th>Disposisi stok</th></tr></thead>
+        {/* UAT 24 Okt (audit UI tahap 2) — G2-15 · P-12: kolom grade di sini = grade QC BARIS item (terburuk dari
+            pemeriksaan baris, sama untuk semua roll baris itu), bukan grade per roll di SPK/Stok → diberi label sumber. */}
+        <thead><tr><th>Roll</th><th>Klaim</th><th>Lokasi fisik</th><th>QC aktual</th>
+          <th title="Grade terburuk hasil QC untuk baris item ini (sama untuk semua roll di baris). Grade per roll ada di panel SPK & Stok.">Grade QC baris</th>
+          <th>Disposisi stok</th></tr></thead>
         <tbody>
           {rolls.map((r) => (
             <tr key={r.roll_id} data-testid={`timeline-roll-${r.roll_id}`}>

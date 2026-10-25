@@ -75,7 +75,8 @@ export function PriceRow({ row, canManage, onSetPrice, onHistory, onOpenApproval
       <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px] text-[#6B6B73]">{row.sku}</td>
       <td className="min-w-[200px] px-3 py-2">
         <span className="font-medium text-[#1C1C1E]">{row.product_name}</span>
-        <span className="block text-[11px] text-[#8E8E93]">{row.category} · /{row.base_unit}</span>
+        {/* UAT 24 Okt (audit UI tahap 2) — G2-31: produk tanpa kategori dulu tampil "· /meter" (pemisah yatim). */}
+        <span className="block text-[11px] text-[#8E8E93]">{[row.category, row.base_unit ? `per ${row.base_unit}` : ""].filter(Boolean).join(" · ")}</span>
       </td>
       <td className="px-3 py-2 text-right tabular-nums text-[#8E8E93]">
         {formatCurrency(row.global_price)}
@@ -127,7 +128,7 @@ export function EmptyCustomer() {
       <p className="text-[13px] font-semibold text-[#3C3C43]">Pilih pelanggan lebih dulu</p>
       <p className="mt-1 text-[11.5px] text-[#8E8E93]">
         Daftar harga bersifat per pelanggan — pilih pelanggan di kotak atas untuk melihat
-        dan menetapkan harga langganannya.
+        dan menetapkan harga pelanggannya.
       </p>
     </div>
   );

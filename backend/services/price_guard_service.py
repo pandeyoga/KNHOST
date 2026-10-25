@@ -36,7 +36,8 @@ K_TOL = "pricelist.customer_price_tolerance_pct"
 BASIS_LABEL = {
     "entity_price": "harga jual PT",
     "hpp": "biaya pokok (HPP)",
-    "both": "harga PT & HPP (dipakai yang lebih tinggi)",
+    # UAT 24 Okt (audit UI tahap 2) — G2-11: tanpa kurung (layar membungkusnya dalam kurung → "((…))").
+    "both": "harga PT & HPP, dipakai yang lebih tinggi",
 }
 
 

@@ -1,4 +1,5 @@
 import KNSelect from "../../components/KNSelect";
+import { formatCurrency } from "../../utils/formatters";
 
 // Satu jenis biaya logistik: cara kirim → penanggung → nominal (+PPN) → akun bayar (Finance) → PT pembeban.
 // 23 Okt — setiap isian berlabel (dulu dropdown & kotak tanpa label yang membungkus ke baris kedua).
@@ -18,6 +19,35 @@ export default function LogisticsCostRow({ type, label, v, ctx, locked, onChange
   const entOpts = ctx.entities.map((e) => ({ value: e.id, label: e.name }));
   const setMode = (mode) => set({ mode, bearer: ctx.bearer_options.find((o) => o.mode === mode)?.bearer || "company" });
   const needsAmount = v.mode !== "pickup" && !(v.mode === "third_party" && v.bearer === "customer");
+  // UAT 24 Okt (audit UI tahap 2) — G2-28: retur sudah selesai → mode BACA (teks), bukan 6 isian nonaktif yang tampak
+  // bisa diubah tanpa tombol simpan.
+  if (locked) {
+    const optLabel = (opts, val) => (opts.find((o) => o.value === val) || {}).label || "";
+    const facts = !v.filled ? [] : [
+      ["Cara kirim", optLabel(modeOpts, v.mode) || v.mode],
+      v.mode !== "pickup" && ["Ditanggung", optLabel(bearerOpts, v.bearer) || v.bearer],
+      needsAmount && ["Ongkir", formatCurrency(Number(v.amount) || 0)],
+      ctx.vat_enabled && companyPaid && Number(v.vat_amount) > 0 && ["PPN", formatCurrency(Number(v.vat_amount) || 0)],
+      companyPaid && ["Akun pembayaran", optLabel(payOpts, v.pay_account_code) || "Bawaan (Pemetaan Akun)"],
+      needsAmount && ["PT pembeban", optLabel(entOpts, v.charged_entity_id) || "—"],
+      v.note && ["Catatan", v.note],
+    ].filter(Boolean);
+    return (
+      <div className="border-t border-[#F2F3F5] pt-2.5" data-testid={`logistics-row-${type}`}>
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className="text-[12px] font-semibold text-[#1C1C1E]">{label}</span>
+          {v.journal_entry_number && <span className="rounded bg-[#EAF7EE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#1A7F37]" data-testid={`logistics-je-${type}`}>Jurnal {v.journal_entry_number}</span>}
+        </div>
+        {facts.length === 0
+          ? <p className="text-[11px] text-[#8E8E93]" data-testid={`logistics-readonly-${type}`}>Tidak dicatat.</p>
+          : <dl className="grid gap-x-4 gap-y-1 text-[11.5px] sm:grid-cols-2 lg:grid-cols-4" data-testid={`logistics-readonly-${type}`}>
+            {facts.map(([k, val]) => (
+              <div key={k}><dt className="text-[10.5px] text-[#6B6B73]">{k}</dt><dd className="font-medium text-[#1C1C1E] tabular-nums">{val}</dd></div>
+            ))}
+          </dl>}
+      </div>
+    );
+  }
   return (
     <div className="border-t border-[#F2F3F5] pt-2.5" data-testid={`logistics-row-${type}`}>
       <div className="mb-1.5 flex flex-wrap items-center gap-2">

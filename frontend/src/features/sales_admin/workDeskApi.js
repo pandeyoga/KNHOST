@@ -11,6 +11,7 @@
  * ada di **Meja Finance**, alur pesanan & pemenuhan di **Meja Admin Sales**.
  */
 import axios, { API } from "../../services/apiClient";
+import { docStatusLabel } from "../../utils/docStatus";
 import {
   AlertTriangle, ArrowLeftRight, BadgeCheck, CalendarClock, CheckCircle2,
   ClipboardCheck, FileSignature, PackageSearch, Printer, RotateCcw, Scale,
@@ -155,6 +156,8 @@ const BADGE_LABEL = {
   // Cek UI UAT v3 — status tugas gudang yang dulu tampil mentah ("created") di Meja Saya Gudang
   created: "Siap diambil", staging: "Siap muat", escalated: "Dieskalasi", qc_pending: "Menunggu QC",
   completed: "Selesai", qc_check: "Pemeriksaan QC", put_away: "Penyimpanan",
+  // UAT 24 Okt (audit UI tahap 2) — G2-13: tingkat keparahan baris Meja Saya dulu tampil mentah ("warning · 84").
+  warning: "Perlu perhatian", info: "Info", critical: "Mendesak", high: "Tinggi", medium: "Sedang", low: "Rendah",
 };
 
 const BADGE_TONE = {
@@ -166,19 +169,19 @@ const BADGE_TONE = {
 };
 
 const BADGE_GROUP = {
-  danger: ["lewat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak"],
+  danger: ["lewat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak", "critical", "high"],
   warn: ["segera", "partial", "menunggu", "menunggu acc", "ditahan", "waiting_approval", "waiting_stock",
-         "pending_approval", "pending_process", "pending", "draft"],
+         "pending_approval", "pending_process", "pending", "draft", "warning", "medium"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],
   info: ["reserved", "submitted", "open", "partially_picked", "partially_shipped", "picking", "packing", "loading",
-         "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban"],
+         "scheduled", "prepared", "in_transit", "receiving", "assigned", "in_progress", "kewajiban", "info", "low"],
 };
 
-/** Kata Indonesia untuk penanda baris; tak dikenal → dirapikan, tidak dibuang. */
+/** Kata Indonesia untuk penanda baris; tak dikenal → label status bersama (docStatusLabel), tidak dibuang. */
 export function badgeLabel(badge) {
   if (!badge) return "";
   const key = String(badge).toLowerCase();
-  return BADGE_LABEL[key] || String(badge).replace(/_/g, " ");
+  return BADGE_LABEL[key] || docStatusLabel(badge);
 }
 
 export function badgeClass(badge) {

@@ -1,8 +1,9 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import { useEffect, useState } from "react";
 import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
-import { can } from "../../config/roles";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { can, roleLabel } from "../../config/roles";
+import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
+import { isClosedSo, lotModeLabel, lotSelectionLabel, allocationExplain } from "./soStatusView";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import PaymentBadge from "../../components/PaymentBadge";
@@ -57,6 +58,9 @@ export function OrderDetailPanel({
   onIssueTaxInvoice,
   onOpenDocument,
   onClose,
+  // UAT 24 Okt (audit UI tahap 2) — G2-06: true bila dibungkus pop-up (DetailPopup) yang sudah punya ×,
+  // nomor & pelanggan di kepalanya → panel tidak mengulang kepala kartu & tombol tutup sendiri.
+  embedded = false,
 }) {
   const [shipments, setShipments] = useState([]);
   const [taxInvoices, setTaxInvoices] = useState([]);
@@ -140,11 +144,13 @@ export function OrderDetailPanel({
     }
   };
   const ff = sel.fulfillment || {};
+  const closed = isClosedSo(sel);
+  const unitOf = (pid) => (sel.items || []).find((it) => it.product_id === pid)?.unit || "";
   return (
-    <aside data-testid="order-detail-panel" className="section-card self-start">
-      <div className="section-head">
+    <aside data-testid="order-detail-panel" className={embedded ? "self-start" : "section-card self-start"}>
+      <div className={embedded ? "flex items-start justify-between gap-2 pb-2" : "section-head"}>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">{sel.number}</p>
+          {!embedded && <p className="text-[10px] font-bold uppercase tracking-wide text-[#0058CC]">{sel.number}</p>}
           <div className="my-1"><AskKnButton type="sales_order" id={sel.id} label={sel.number} /></div>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <StagePill order={sel} testId="order-stage-pill" />
@@ -157,16 +163,18 @@ export function OrderDetailPanel({
             )}
             {sel.has_mixed_lot && (
               <span data-testid="order-mixedlot-chip" className="rounded bg-[#F3E9FA] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#6B219A]">
-                Mixed Lot
+                Campur lot
               </span>
             )}
           </div>
         </div>
-        <button className="icon-button" onClick={onClose}>
-          <XCircle size={14} />
-        </button>
+        {!embedded && (
+          <button className="icon-button" onClick={onClose} aria-label="Tutup">
+            <XCircle size={14} />
+          </button>
+        )}
       </div>
-      <div className="section-body space-y-3">
+      <div className={embedded ? "space-y-3" : "section-body space-y-3"}>
         <DocumentActionsBar docType="sales_order" sourceId={sel.id} entityId={sel.entity_id}
           number={sel.number} label="Pesanan Penjualan" esignable currentUser={user} onChanged={onRefresh}
           className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
@@ -188,11 +196,12 @@ export function OrderDetailPanel({
           />
         )}
         <div>
-          <p data-testid="order-customer-detail" className="text-[12px] font-semibold">{sel.customer_name}</p>
+          <p data-testid="order-customer-detail" className={embedded ? "sr-only" : "text-[12px] font-semibold"}>{sel.customer_name}</p>
           <p className="text-[11px] text-[#6B6B73]">{sel.customer_city || sel.shipping_city || "—"} · Sales: {sel.sales_name || "—"}</p>
-          {sel.reservation_expires_at && (
+          {/* G2-06 — dulu tanggal ungu tanpa label ("28/10/2026, 12.53.59"), juga pada SO batal/selesai. */}
+          {sel.reservation_expires_at && ["reserved", "waiting_approval", "approved", "waiting_stock", "draft"].includes(sel.status) && (
             <p data-testid="order-expiry-detail" className="mt-0.5 flex items-center gap-1 text-[10.5px] text-[#7A2CA0]">
-              <Clock3 size={11} /> {new Date(sel.reservation_expires_at).toLocaleString("id-ID")}
+              <Clock3 size={11} /> Reservasi berlaku s/d {formatDateTime(sel.reservation_expires_at)}
             </p>
           )}
         </div>
@@ -205,8 +214,8 @@ export function OrderDetailPanel({
             <ClipboardCheck size={13} className="mt-0.5 shrink-0" />
             <span>
               <b>Terverifikasi Admin Sales</b> — {sel.verification.by}
-              {sel.verification.by_role ? ` (${sel.verification.by_role})` : ""}
-              {" · "}{(sel.verification.at || "").slice(0, 16).replace("T", " ")}
+              {sel.verification.by_role ? ` (${roleLabel(sel.verification.by_role)})` : ""}
+              {" · "}{formatDateTime(sel.verification.at)}
               {sel.verification.note ? ` · “${sel.verification.note}”` : ""}
             </span>
           </div>
@@ -286,7 +295,7 @@ export function OrderDetailPanel({
         <DocRefsPanel docType="sales_order" docId={sel.id} onOpenDocument={onOpenDocument} />
 
         <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-          <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">Items</div>
+          <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">Item</div>
           {(sel.items || []).map((item, idx) => (
             <div
               data-testid={`order-item-${sel.id}-${item.id || item.product_id || idx}`}
@@ -324,7 +333,7 @@ export function OrderDetailPanel({
                     </span>
                   )}
                   {Number(item.discount_percent) > 0 && (
-                    <span className="ml-1 text-[#FF9500] font-semibold">· disc {item.discount_percent}%</span>
+                    <span className="ml-1 text-[#FF9500] font-semibold">· disc {formatQty(item.discount_percent)}%</span>
                   )}
                 </span>
                 <span className="font-semibold text-[#3C3C43]">
@@ -363,7 +372,7 @@ export function OrderDetailPanel({
               <div key={r.id} data-testid={`order-release-${r.id}`} className="px-2.5 py-1.5 border-b border-[#F4F5F7] last:border-0 text-[10.5px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-[#1C1C1E] truncate">{r.product_name} · {formatQty(r.qty)} {r.unit} · {(r.roll_nos || []).filter(Boolean).join(", ") || `${(r.roll_ids || []).length} roll`}</span>
-                  <span className="shrink-0 text-[#6B6B73]">{r.by} · {String(r.at || "").slice(0, 16).replace("T", " ")}</span>
+                  <span className="shrink-0 text-[#6B6B73]">{r.by} · {formatDateTime(r.at)}</span>
                 </div>
                 <p className="text-[#6B6B73]">Alasan: {r.reason}</p>
               </div>
@@ -371,13 +380,19 @@ export function OrderDetailPanel({
           </div>
         )}
 
-        {/* Sub-fase 1.7 — Alokasi Stok (Lot & Gudang) + penjelasan (CLARITY) */}
-        {(sel.allocations || []).length > 0 && (
+        {/* Sub-fase 1.7 — Alokasi Stok (Lot & Gudang) + penjelasan (CLARITY).
+            G2-06 — SO batal/kedaluwarsa: alokasi tidak lagi berlaku → hanya catatan singkat. */}
+        {closed && (sel.allocations || []).length > 0 && (
+          <p data-testid="order-allocation-closed" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5 text-[10.5px] text-[#6B6B73]">
+            Pesanan {sel.status === "expired" ? "kedaluwarsa" : "dibatalkan"} — alokasi stok tidak berlaku lagi.
+          </p>
+        )}
+        {!closed && (sel.allocations || []).length > 0 && (
           <div data-testid="order-allocation-panel" className="rounded-md border border-[#EFF0F2] overflow-hidden">
             <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2] flex items-center justify-between gap-2">
               <span>Alokasi Stok (Lot & Gudang)</span>
               {sel.allocation_policy?.lot_selection && (
-                <span className="text-[9px] font-semibold text-[#6B219A] normal-case lowercase">{sel.allocation_policy.lot_selection?.toUpperCase()} · {sel.allocation_policy.lot_mode}</span>
+                <span className="text-[9px] font-semibold text-[#6B219A] normal-case">{lotSelectionLabel(sel.allocation_policy.lot_selection)} · {lotModeLabel(sel.allocation_policy.lot_mode)}</span>
               )}
             </div>
             {(sel.allocations || []).map((a, idx) => (
@@ -386,16 +401,16 @@ export function OrderDetailPanel({
                   <span className="text-[11px] font-semibold text-[#1C1C1E] truncate">{a.warehouse_name}{a.warehouse_city ? ` · ${a.warehouse_city}` : ""}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${a.lot_mode === "mixed" ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#EAF6EC] text-[#126E2C]"}`}>
-                      {a.lot_mode === "mixed" ? "Mixed Lot" : "Single Lot"}
+                      {a.lot_mode === "mixed" ? "Campur lot" : "Satu lot"}
                     </span>
-                    <span className="text-[11px] font-semibold tabular-nums">{formatQty(a.quantity)}</span>
+                    <span className="text-[11px] font-semibold tabular-nums">{formatQty(a.quantity)} {a.unit || unitOf(a.product_id)}</span>
                   </div>
                 </div>
                 {(a.lots || []).length > 0 && (
                   <p className="text-[10px] text-[#6B6B73] mt-0.5">Lot: <span className="font-medium text-[#3C3C43]">{(a.lots || []).join(", ")}</span></p>
                 )}
                 {a.allocation_explanation && (
-                  <p data-testid={`order-alloc-explain-${a.id || idx}`} className="text-[10px] text-[#8E8E93] mt-0.5 italic">{a.allocation_explanation}</p>
+                  <p data-testid={`order-alloc-explain-${a.id || idx}`} className="text-[10px] text-[#8E8E93] mt-0.5 italic">{allocationExplain(a.allocation_explanation, a.unit || unitOf(a.product_id))}</p>
                 )}
               </div>
             ))}
@@ -513,7 +528,7 @@ export function OrderDetailPanel({
                   data-testid="issue-tax-invoice-btn"
                   disabled={issuingTax}
                   onClick={handleIssueTax}
-                  className="rounded bg-[#0058CC] px-2 py-1 text-[10px] font-bold text-white disabled:opacity-50"
+                  className="primary-button !py-1 !px-2 !text-[10.5px]"
                 >
                   {issuingTax ? "Menerbitkan…" : "Terbitkan Faktur Pajak"}
                 </button>
@@ -567,7 +582,7 @@ export function OrderDetailPanel({
         {sel.approval_required && sel.required_approval_role && ["reserved", "waiting_approval"].includes(sel.status) && (
           <div data-testid="order-approval-badge" className="flex items-center gap-2 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1.5 text-[11px] text-[#9A5B00]">
             <ShieldAlert size={13} />
-            <span>Butuh persetujuan peran <b className="uppercase">{sel.required_approval_role}</b> (Rp {formatQty(sel.approval_amount || sel.grand_total)})</span>
+            <span>Butuh persetujuan <b>{roleLabel(sel.required_approval_role)}</b> ({formatCurrency(sel.approval_amount || sel.grand_total)})</span>
           </div>
         )}
 
@@ -603,17 +618,17 @@ export function OrderDetailPanel({
           )}
           {sel.status === "waiting_approval" && canApprove && (
             <button data-testid={`approve-order-button-${sel.id}`} className="primary-button" onClick={() => onApprove(sel.id)}>
-              <FileText size={13} /> Setujui{sel.required_approval_role ? ` (${sel.required_approval_role})` : ""}
+              <FileText size={13} /> Setujui{sel.required_approval_role ? ` (${roleLabel(sel.required_approval_role)})` : ""}
             </button>
           )}
           {sel.status === "confirmed" && sel.payment_status !== "paid" && canTakeMoney && (
             <button data-testid={`simulate-payment-button-${sel.id}`} className="secondary-button" onClick={() => onPay(sel.id)}>
-              <CreditCard size={13} /> Simulate Payment
+              <CreditCard size={13} /> Simulasi Pembayaran
             </button>
           )}
           {["reserved", "waiting_approval", "approved", "waiting_stock"].includes(sel.status) && (
             <button data-testid={`release-reservation-button-${sel.id}`} className="secondary-button" onClick={() => onReleaseReservation(sel.id)}>
-              <PackageX size={13} /> Release Reservation
+              <PackageX size={13} /> Lepas Reservasi
             </button>
           )}
           {sel.status === "shipped" && onMarkDelivered && canDeliver && (

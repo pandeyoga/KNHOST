@@ -185,21 +185,26 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         <div className="form-row-2col">
           <div className="form-group">
             <label className="form-label" htmlFor="ret-order">Pesanan (SO) <span className="req">*</span></label>
-            <input data-testid="return-order-search" className="form-input mb-1.5" value={orderQ}
-              onChange={(e) => setOrderQ(e.target.value)} placeholder="Cari nomor SO / nama pelanggan…" />
+            {/* UAT 24 Okt (audit UI tahap 2) — G2-17: kotak cari (pencarian SERVER, berhalaman) & pemilih dikelompokkan jadi
+                satu kontrol berbingkai (dulu dua kotak lepas bertumpuk). KNSelect belum punya pencarian sisi server → G0. */}
+            <div className="grid gap-1.5 rounded-md border border-[#E5E5EA] bg-[#FAFBFC] p-1.5" data-testid="return-order-picker">
+            <input data-testid="return-order-search" className="form-input" value={orderQ} aria-label="Cari pesanan"
+              onChange={(e) => setOrderQ(e.target.value)} placeholder="Ketik nomor SO / nama pelanggan untuk menyaring…" />
             <KNSelect
               data-testid="return-order-select"
               className="form-select"
               value={orderId}
               onValueChange={handleOrderChange}
-              placeholder="-- Pilih pesanan --"
+              placeholder="— Pilih pesanan —"
+              aria-label="Pesanan (SO)"
               options={[
-                { value: "", label: "-- Pilih pesanan --" },
+                { value: "", label: "— Pilih pesanan —" },
                 ...(orderId && !orderOpts.some((o) => o.id === orderId) && knownRef.current[orderId]
                   ? [knownRef.current[orderId]] : []).concat(orderOpts)
                   .map(o => ({ value: o.id, label: `${o.number} — ${o.customer_name} (${stageMeta(getStage(o)).label})` })),
               ]}
             />
+            </div>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#6B6B73]" data-testid="return-order-meta">
               {orderMeta.loading ? "Mencari…" : orderMeta.error ? <span className="text-[#A8221A]">{orderMeta.error}</span>
                 : `${orderOpts.length} dari ${orderMeta.total} pesanan yang masih punya barang terkirim untuk diretur`}
@@ -270,7 +275,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         )}
 
         <div className="form-group">
-          <label className="form-label">Item yang Diretur <span className="req">*</span></label>
+          <label className="form-label mb-1.5 block">Item yang diretur <span className="req">*</span></label>
           {/* Audit UI 24 Okt (034) — label dulu menggantung tanpa isi sebelum pesanan dipilih. */}
           {!orderId && (
             <p className="text-[11.5px] text-[#6B6B73]" data-testid="return-items-hint">Pilih pesanan dulu — barang terkirim (Surat Jalan) yang masih bisa diretur tampil di sini.</p>
@@ -321,15 +326,15 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         {/* Cek UI UAT v3 (S14) — sebab keluhan dari master; dulu hanya bisa diisi belakangan di detail retur. */}
         {reasons.length > 0 && (
           <div className="form-group">
-            <label className="form-label">Sebab keluhan</label>
+            <label className="form-label">Sebab keluhan <span className="text-[10.5px] font-normal text-[#6B6B73]">(opsional)</span></label>
             <KNSelect data-testid="return-complaint-code" className="form-select" value={complaintCode}
-              onValueChange={setComplaintCode} placeholder="-- Pilih sebab keluhan --"
+              onValueChange={setComplaintCode} placeholder="— Pilih sebab keluhan —"
               options={reasons.map((r) => ({ value: r.value, label: r.label }))} />
           </div>
         )}
 
         <div className="form-group">
-          <label className="form-label" htmlFor="ret-notes">Catatan</label>
+          <label className="form-label" htmlFor="ret-notes">Catatan <span className="text-[10.5px] font-normal text-[#6B6B73]">(opsional)</span></label>
           <textarea id="ret-notes" data-testid="return-notes-input" className="textarea" rows={2}
             placeholder="Keterangan tambahan..." value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
@@ -343,7 +348,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         </div>
 
         <div className="form-group" data-testid="return-condition-flags">
-          <label className="form-label">Bukti tambahan</label>
+          <label className="form-label">Bukti tambahan <span className="text-[10.5px] font-normal text-[#6B6B73]">(opsional)</span></label>
           <label className="form-check-label text-sm">
             <input type="checkbox" data-testid="return-cond-replacement_proof" checked={replacementProof}
                    onChange={(e) => setReplacementProof(e.target.checked)} /> Ada bukti pengganti (foto/nota)

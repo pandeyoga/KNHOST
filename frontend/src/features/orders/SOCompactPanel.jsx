@@ -15,6 +15,7 @@ import EntityBadge from "../../components/EntityBadge";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import FulfillmentDecisionDialog from "../sales_admin/FulfillmentDecisionDialog";
 import { formatQtyByUnit } from "../../utils/qtyByUnit";
+import { visibleSubs } from "./soStatusView";
 
 export default function SOCompactPanel({ order, onClose, onOpenFull }) {
   const [showWizard, setShowWizard] = useState(false);
@@ -33,7 +34,7 @@ export default function SOCompactPanel({ order, onClose, onOpenFull }) {
           </p>
           <div className="mt-1 flex flex-col items-start gap-0.5">
             <StagePill order={order} testId="so-compact-stage" />
-            <SubStatusChips order={order} testIdPrefix="so-compact-substatus" />
+            <SubStatusChips subs={visibleSubs(order)} testIdPrefix="so-compact-substatus" />
           </div>
         </div>
         <div className="flex items-center gap-1">

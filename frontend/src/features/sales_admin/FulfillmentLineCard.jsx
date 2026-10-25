@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
 
 const num = (v) => Math.max(0, Number(String(v).replace(",", ".")) || 0);
 
-function QtyRow({ label, hint, max, value, onChange, testId }) {
+// UAT 24 Okt (audit UI tahap 2) — G2-07: grid 2 kolom (bukan flex-wrap) → isian qty + "maks" selalu di kanan
+// walau petunjuk gudang panjang; satuan tampil di samping isian.
+function QtyRow({ label, hint, max, value, onChange, testId, unit = "" }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 py-1">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1">
       <div className="min-w-0">
         <p className="text-[12px] font-semibold text-[#1C1C1E]">{label}</p>
         {hint && <p className="text-[10.5px] text-[#6B6B73]">{hint}</p>}
       </div>
       <div className="flex items-center gap-1.5">
-        <input data-testid={testId} type="number" min={0} step="0.01" className="field !h-8 w-[110px] text-right text-[12px]"
+        <input data-testid={testId} type="number" min={0} step="0.01" className="field !h-8 w-[96px] text-right text-[12px]"
+          aria-label={`${label}${unit ? ` (${unit})` : ""}`}
           value={value || ""} placeholder="0" disabled={max <= 0} onChange={(e) => onChange(num(e.target.value))} />
+        {unit && <span className="w-9 text-[11px] text-[#6B6B73]" data-testid={`${testId}-unit`}>{unit}</span>}
         <button type="button" data-testid={`${testId}-max`} disabled={max <= 0} onClick={() => onChange(max)}
           className="rounded-full border border-[#E5E5EA] px-2 py-0.5 text-[10px] font-bold text-[#0058CC] disabled:opacity-40">maks</button>
       </div>
@@ -87,14 +91,14 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
         <p className="text-[11.5px]">Kekurangan <b data-testid={`fulfill-short-${pid}`}>{formatQty(line.backorder_qty)} {line.unit}</b>
           {line.planned_qty > 0 && <span className="ml-2 text-[#8A5300]">· sudah direncanakan sebelumnya {formatQty(line.planned_qty)}</span>}</p>
       </div>
-      <QtyRow label="Ambil dari stok sendiri" testId={`fulfill-stock-${pid}`} value={v.stock}
+      <QtyRow label="Ambil dari stok sendiri" testId={`fulfill-stock-${pid}`} value={v.stock} unit={line.unit}
         max={Math.min(line.own_available, room(v.stock))} onChange={(q) => onChange({ ...v, stock: q })}
         hint={line.own_by_warehouse.length ? line.own_by_warehouse.map((w) => `${w.warehouse_name} ${formatQty(w.available_qty)}`).join(" · ") : "Tidak ada stok tersedia di entitas penjual."} />
       <RollPick rolls={line.own_rolls} picked={v.stockRolls || []} unit={line.unit} testId={`fulfill-stock-pick-${pid}`}
         onChange={(ids) => onChange({ ...v, stockRolls: ids, stock: ids.length ? Math.min(sumOf(line.own_rolls || [], ids), room(v.stock)) : 0 })} />
       {line.other_entities.map((o) => (
         <div key={o.entity_id}>
-          <QtyRow label={`Transfer dari ${o.entity_name}`} testId={`fulfill-ic-${pid}-${o.entity_id}`}
+          <QtyRow label={`Transfer dari ${o.entity_name}`} testId={`fulfill-ic-${pid}-${o.entity_id}`} unit={line.unit}
             value={v.ic[o.entity_id]} max={o.price_ready === false ? 0 : Math.min(o.usable_available ?? o.available, room(v.ic[o.entity_id] || 0))}
             hint={`Bisa diambil ${formatQty(o.usable_available ?? o.available)} (gudang bersama)${o.needs_move > 0 ? ` · ${formatQty(o.needs_move)} di gudang khusus ${o.entity_name} — pindahkan dulu lewat Transfer Gudang` : ""}${proposed.has(o.entity_id) ? " · diusulkan sales (roll pilihan)" : ""}${((v.icRolls || {})[o.entity_id] || []).length ? " · roll pilihan dikirim utuh, kelebihannya jadi stok PT ini" : ""}`}
             onChange={(q) => onChange({ ...v, ic: { ...v.ic, [o.entity_id]: q } })} />
@@ -107,13 +111,13 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
           )}
         </div>
       ))}
-      <QtyRow label="PO ke supplier (lewat PR)" testId={`fulfill-reorder-${pid}`} value={v.reorder}
+      <QtyRow label="PO ke supplier (lewat PR)" testId={`fulfill-reorder-${pid}`} value={v.reorder} unit={line.unit}
         max={room(v.reorder)} onChange={(q) => onChange({ ...v, reorder: q })} hint="Membuat Permintaan Pembelian bertaut pesanan ini." />
-      <QtyRow label="Tunggu barang datang" testId={`fulfill-wait-${pid}`} value={v.wait}
+      <QtyRow label="Tunggu barang datang" testId={`fulfill-wait-${pid}`} value={v.wait} unit={line.unit}
         max={Math.min(line.incoming_total, room(v.wait))} onChange={(q) => onChange({ ...v, wait: q })}
-        hint={line.incoming_total > 0 ? `Perkiraan sisa barang masuk untuk SO ini ${formatQty(line.incoming_total)}${line.incoming_claimed_by_older > 0 ? ` (${formatQty(line.incoming_claimed_by_older)} sudah untuk SO lebih lama)` : ""}${line.promise_date ? ` · perkiraan ${String(line.promise_date).slice(0, 10)}` : ""} — tidak dijamin` : line.incoming_claimed_by_older > 0 ? "Barang masuk terjadwal sudah diperkirakan untuk SO yang lebih lama." : "Tidak ada barang masuk terjadwal."} />
+        hint={line.incoming_total > 0 ? `Perkiraan sisa barang masuk untuk SO ini ${formatQty(line.incoming_total)}${line.incoming_claimed_by_older > 0 ? ` (${formatQty(line.incoming_claimed_by_older)} sudah untuk SO lebih lama)` : ""}${line.promise_date ? ` · perkiraan ${formatDate(line.promise_date)}` : ""} — tidak dijamin` : line.incoming_claimed_by_older > 0 ? "Barang masuk terjadwal sudah diperkirakan untuk SO yang lebih lama." : "Tidak ada barang masuk terjadwal."} />
       <p data-testid={`fulfill-left-${pid}`} className={`mt-1 text-right text-[11px] font-semibold ${left < -0.005 ? "text-[#C0392B]" : left > 0.005 ? "text-[#8A5300]" : "text-[#1B7F4B]"}`}>
-        {left < -0.005 ? `Melebihi kekurangan ${formatQty(-left)}` : left > 0.005 ? `Sisa tetap backorder: ${formatQty(left)} ${line.unit}` : "Terpenuhi penuh"}
+        {left < -0.005 ? `Melebihi kekurangan ${formatQty(-left)} ${line.unit}` : left > 0.005 ? `Sisa tetap backorder: ${formatQty(left)} ${line.unit}` : "Terpenuhi penuh"}
       </p>
     </div>
   );

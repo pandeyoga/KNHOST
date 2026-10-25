@@ -103,7 +103,10 @@ function StockCard({ r, open, onToggle, canRequest, onRequest }) {
         <Num icon={Clock3} label="Dipesan" value={pv(r, "reserved")} unit={r.unit} tone="#FFF6E9" testId={`m-stock-reserved-${r.product_id}`} />
         <Num icon={Truck} label="Akan datang" value={pv(r, "incoming")} unit={r.unit} tone="#EEF9F1" testId={`m-stock-incoming-${r.product_id}`} />
       </div>
-      {own && <p className="mt-1.5 text-[11px] m-muted" data-testid={`m-stock-own-${r.product_id}`}>PT saya ({own.entity_name}): tersedia {formatQty(own.available)} · ATP {formatQty(own.atp)} {r.unit}</p>}
+      {/* UAT 24 Okt (audit UI tahap 2) — G2-30: kartu tanpa stok di PT sendiri diberi tanda jelas (dulu hanya total grup). */}
+      {r.detail_scope === "own_entity" && (own && Number(own.available || 0) > 0
+        ? <p className="mt-1.5 text-[11px] m-muted" data-testid={`m-stock-own-${r.product_id}`}>PT saya ({own.entity_name}): tersedia {formatQty(own.available)} · ATP {formatQty(own.atp)} {r.unit}</p>
+        : <p className="mt-1.5 rounded-md bg-[#FFF4E5] px-2 py-1 text-[11px] font-semibold text-[#8A5300]" data-testid={`m-stock-own-${r.product_id}`}>PT saya{own?.entity_name ? ` (${own.entity_name})` : ""}: 0 {r.unit}{pv(r, "available") > 0 ? " — stok ada di PT lain" : ""}</p>)}
       {(r.total_pending_demand || 0) > 0 && <p className="text-[10.5px] text-[#A05000]">Permintaan tertunda {formatQty(r.total_pending_demand)} {r.unit}</p>}
       {r.has_intercompany_opportunity && (
         <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#F6EEFC] px-2.5 py-1.5" data-testid={`m-stock-interco-${r.product_id}`}>

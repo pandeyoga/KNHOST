@@ -1,5 +1,7 @@
 /**
- * SetCustomerPriceModal (F1b) — tetapkan harga langganan satu pelanggan × satu produk.
+ * SetCustomerPriceModal (F1b) — tetapkan harga pelanggan satu pelanggan × satu produk.
+ * UAT 24 Okt (audit UI tahap 2) — G2-11: satu istilah "Harga Pelanggan" (dulu "Harga Langganan" di pop-up
+ * sementara layar menulis "Harga per Pelanggan"/"HARGA PELANGGAN"; keputusan glosarium akhir K-13).
  *
  * Yang penting di layar ini: pengguna melihat **batas bawah** (harga PT / biaya pokok)
  * dan diberi tahu SEBELUM menyimpan bahwa harganya akan masuk antrean persetujuan.
@@ -75,7 +77,7 @@ export default function SetCustomerPriceModal({
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
         <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-4 py-3">
           <Tag size={16} className="text-[#0058CC]" />
-          <h3 className="truncate text-[14px] font-bold">Harga Langganan · {customer.name}</h3>
+          <h3 className="truncate text-[14px] font-bold">Harga Pelanggan · {customer.name}</h3>
           <button data-testid="cpl-setprice-close" className="icon-button ml-auto" onClick={onClose}
             aria-label="Tutup"><X size={15} /></button>
         </div>
@@ -102,7 +104,7 @@ export default function SetCustomerPriceModal({
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Harga Langganan (per {row.base_unit})
+              Harga pelanggan (per {row.base_unit}) <span className="text-red-500">*</span>
             </label>
             <MoneyInput testId="cpl-input-price" className="field py-2 text-[13px]"
               placeholder="Mis. 165000" value={price} onChange={(v) => setPrice(v)}
@@ -146,12 +148,12 @@ export default function SetCustomerPriceModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Berlaku Mulai</label>
+              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Berlaku mulai</label>
               <KNDatePicker data-testid="cpl-input-from" value={validFrom} onChange={setValidFrom} />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Berlaku Sampai <span className="font-normal text-[#9A9BA3]">(opsional)</span>
+                Berlaku sampai <span className="font-normal text-[#9A9BA3]">(opsional)</span>
               </label>
               <KNDatePicker data-testid="cpl-input-until" value={validUntil} onChange={setValidUntil} />
             </div>

@@ -27,11 +27,13 @@ import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 
 // L08 LN-080-T04 — status & tipe adalah SARINGAN (dropdown), bukan deretan tab.
+// UAT 24 Okt (audit UI tahap 2) — G2-16: tanpa nomor urut & satu nama dengan kartu/lencana
+// (dulu "2 · Menunggu ACC" sementara KPI menulis "Menunggu Persetujuan").
 const STATUS_OPTIONS = [
-  ["all", "Semua status"], ["draft", "1 · Draf"], ["pending_approval", "2 · Menunggu ACC"],
-  ["approved", "3 · Disetujui"], ["inspecting", "4 · Inspeksi"], ["inspected", "5 · Siap Diselesaikan"],
-  ["refund_settled", "Hasil · Refund"], ["credit_settled", "Hasil · Store Credit"], ["nego_settled", "Hasil · Nego"], ["settled", "Hasil · Per roll (campuran)"],
-  ["rejected", "Hasil · Ditolak"], ["cancelled", "Hasil · Dibatalkan"],
+  ["all", "Semua status"], ["draft", "Draf"], ["pending_approval", "Menunggu Persetujuan"],
+  ["approved", "Disetujui"], ["inspecting", "Inspeksi"], ["inspected", "Siap diselesaikan"],
+  ["refund_settled", "Selesai · refund"], ["credit_settled", "Selesai · store credit"], ["nego_settled", "Selesai · nego"], ["settled", "Selesai · per roll (campuran)"],
+  ["rejected", "Ditolak"], ["cancelled", "Dibatalkan"],
 ];
 const OPERATOR_STATUSES = ["all", "approved", "inspecting"];   // F-11-layar — tahap kerja Gudang/QC
 const TYPE_OPTIONS = [
@@ -477,7 +479,8 @@ const TERMINAL_ST = ["refund_settled", "credit_settled", "nego_settled", "settle
 
 /** Umur dokumen retur yang masih berjalan — retur menua = uang pelanggan menggantung. */
 function AgeCell({ r }) {
-  if (TERMINAL_ST.includes(r.status)) return <span className="text-muted text-sm">selesai</span>;
+  // G2-16 — retur yang sudah tutup tidak punya umur berjalan → "—" (dulu kata "selesai" di kolom UMUR).
+  if (TERMINAL_ST.includes(r.status)) return <span className="text-muted text-sm" title="Retur sudah ditutup">—</span>;
   const days = Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000));
   const cls = days >= 7 ? "bg-[#FFE5E5] text-[#C62828]"
     : days >= 3 ? "bg-[#FFF1DB] text-[#B26A00]" : "bg-[#EFF3FB] text-[#33538B]";

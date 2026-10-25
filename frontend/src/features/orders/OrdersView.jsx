@@ -33,6 +33,7 @@ const CSV_COLUMNS = [
 import { StagePill, SubStatusChips } from "../../components/SoStatusBadges";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import OrderDashboard from "./OrderDashboard";
+import { visibleSubs } from "./soStatusView";
 import { OrderDetailPanel } from "./OrderDetailPanel";
 import SOCompactPanel from "./SOCompactPanel";
 import DetailPopup from "../../components/DetailPopup";
@@ -159,7 +160,11 @@ export default function OrdersView({
   const stats = {
     total: Number(summary?.total_orders ?? paged.total ?? 0),
     reserved: sCnt("reserved", "waiting_approval", "approved"),
-    backorder: Number(summary?.backorder_count || 0),
+    // UAT 24 Okt (audit UI tahap 2) — G2-05 · P-04: kartu & tab Backorder dulu memakai `backorder_count`
+    // (has_backorder — ikut SO Dipesan/Dibatalkan yang punya sisa backorder) sementara daftarnya menyaring
+    // status `waiting_stock` → "Backorder 8" di atas daftar 5 baris & jumlah kartu > Total. Kini kriteria sama.
+    backorder: sCnt("waiting_stock"),
+    backorderAny: Number(summary?.backorder_count || 0),
     confirmed: sCnt("confirmed", "partially_picked", "picked"),
     shipped: sCnt("partially_shipped", "shipped", "dispatched"),
     done: sCnt("done"),
@@ -205,12 +210,13 @@ export default function OrdersView({
             {[
               { label: "Total", value: stats.total, color: "text-[#007AFF]", bg: "bg-[#EFF4FF]", st: "all", keys: [] },
               { label: "Dipesan", value: stats.reserved, color: "text-[#FF9500]", bg: "bg-orange-50", st: "reserved,waiting_approval,approved", keys: ["reserved", "waiting_approval", "approved"] },
-              { label: "Backorder", value: stats.backorder, color: "text-[#B23B14]", bg: "bg-[#FFF1EA]", st: "waiting_stock", keys: ["waiting_stock"] },
+              { label: "Backorder", value: stats.backorder, color: "text-[#B23B14]", bg: "bg-[#FFF1EA]", st: "waiting_stock", keys: ["waiting_stock"],
+                hint: stats.backorderAny > stats.backorder ? `Menunggu stok penuh. ${stats.backorderAny - stats.backorder} SO lain punya sisa backorder (tahap lain).` : "" },
               { label: "Diproses", value: stats.confirmed, color: "text-[#34C759]", bg: "bg-green-50", st: "confirmed,partially_picked,picked", keys: ["confirmed", "partially_picked", "picked"] },
               { label: "Dikirim", value: stats.shipped, color: "text-[#0058CC]", bg: "bg-[#EAF2FF]", st: "partially_shipped,shipped,dispatched", keys: ["partially_shipped", "shipped", "dispatched"] },
               { label: "Selesai", value: stats.done, color: "text-[#5856D6]", bg: "bg-purple-50", st: "done", keys: ["done"] },
               { label: "Dibatalkan", value: stats.cancelled, color: "text-red-500", bg: "bg-red-50", st: "cancelled,expired", keys: ["cancelled", "expired"] },
-            ].map(({ label, value, color, bg, st, keys }) => {
+            ].map(({ label, value, color, bg, st, keys, hint }) => {
               const amt = keys.length === 0
                 ? Object.values(byStatus).reduce((s, v) => s + Number(v?.total_amount || 0), 0)
                 : keys.reduce((s, k) => s + Number(byStatus[k]?.total_amount || 0), 0);
@@ -218,7 +224,7 @@ export default function OrdersView({
               return (
                 <button key={label} type="button" data-testid={`orders-stat-${label.toLowerCase()}`}
                   onClick={() => setStatusFilter(st)}
-                  title={`Saring daftar: ${label}`}
+                  title={hint ? `Saring daftar: ${label} — ${hint}` : `Saring daftar: ${label}`}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${bg} ${
                     active ? "border-[#007AFF] ring-1 ring-[#007AFF]" : "border-[#EFF0F2] hover:border-[#B9CFF2]"}`}>
                   <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">{label}</p>
@@ -355,7 +361,7 @@ export default function OrdersView({
                       </p>
                       <div className="flex flex-col items-start gap-0.5 min-w-0">
                         <StagePill order={order} testId={`order-status-${order.id}`} />
-                        <SubStatusChips order={order} testIdPrefix={`order-row-substatus-${order.id}`} />
+                        <SubStatusChips subs={visibleSubs(order)} testIdPrefix={`order-row-substatus-${order.id}`} />
                       </div>
                     </div>
                     );
@@ -424,6 +430,7 @@ export default function OrdersView({
                     onIssueTaxInvoice={withRefresh(onIssueTaxInvoice)}
                     onOpenDocument={onOpenDocument}
                     onClose={() => setShowFullOrder(false)}
+                    embedded
                   />
                 </DetailPopup>
               </div>

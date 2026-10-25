@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
-import { errText } from "../../finance/amendments/amendmentApi";
+import { apiErrorText } from "../../../utils/apiError";
 
 const EMPTY = { name: "", pic_name: "", phone: "", email: "", city: "", address: "" };
 
@@ -11,18 +11,29 @@ export default function MobileCustomerForm({ user, selectedEntity, onClose, onCr
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // UAT 24 Okt (audit UI tahap 2) — kekurangan isian (termasuk blok alamat, `showErrors` LocationFields — API G0)
+  // ditampilkan setelah "Simpan" ditekan; dulu tombol mati tanpa keterangan.
+  const [tried, setTried] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const valid = form.name.trim() && form.pic_name.trim() && form.phone.trim() && form.address.trim().length >= 3 && !locationIncomplete(form);
+  const missing = [
+    !form.name.trim() && "nama toko",
+    !form.pic_name.trim() && "nama PIC",
+    !form.phone.trim() && "No. HP",
+    locationIncomplete(form) && "wilayah alamat",
+    form.address.trim().length < 3 && "jalan/nomor",
+  ].filter(Boolean);
+  const valid = missing.length === 0;
 
   const submit = async () => {
-    if (!valid || busy) return;
+    if (busy) return;
+    if (!valid) { setTried(true); return; }
     setBusy(true); setErr("");
     try {
       const body = { ...form, ...(selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}) };
       const r = await axios.post(`${API}/customers`, body);
       onCreated?.(r.data);
     } catch (e) {
-      setErr(errText(e, "Pelanggan gagal disimpan."));
+      setErr(apiErrorText(e, "Pelanggan gagal disimpan."));
     } finally { setBusy(false); }
   };
 
@@ -41,17 +52,18 @@ export default function MobileCustomerForm({ user, selectedEntity, onClose, onCr
         </div>
         <div className="m-card space-y-2.5 p-4">
           <p className="text-[12px] font-bold">Alamat toko <span className="text-[#C0392B]">*</span></p>
-          <LocationFields testId="m-customer-form-loc" compact value={form} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
-          <input className="field" value={form.address} onChange={set("address")} placeholder="Jalan, nomor, patokan" data-testid="m-customer-form-address" />
+          <LocationFields testId="m-customer-form-loc" compact showErrors={tried} value={form} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
+          <Field label="Jalan, nomor, patokan" req><input className="field" value={form.address} onChange={set("address")} placeholder="Jl. … No. …, dekat …" data-testid="m-customer-form-address" /></Field>
         </div>
         <p className="rounded-xl border border-[#CDE9D6] bg-[#F4FCF6] px-3 py-2 text-[11px] text-[#1A7A3A]" data-testid="m-customer-form-owner">
           {user?.role === "sales" ? <>Sales penanggung jawab: <b>{user?.name}</b> (akun Anda) — otomatis.</> : <>Sales penanggung jawab diatur di Manajemen Pelanggan (desktop).</>}
-          {" "}Segment, kebijakan lot & limit kredit bisa dilengkapi nanti.
+          {" "}Segmen, kebijakan lot & limit kredit bisa dilengkapi nanti.
         </p>
         {err && <div className="notice-bar danger text-xs" data-testid="m-customer-form-error">{err}</div>}
+        {tried && !valid && <div className="notice-bar danger text-xs" data-testid="m-customer-form-missing">Lengkapi: {missing.join(", ")}.</div>}
       </div>
       <div className="fixed inset-x-0 bottom-0 border-t border-[#E5E5EA] bg-white p-3" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
-        <button className="primary-button flex w-full items-center justify-center gap-2 py-3" disabled={!valid || busy} onClick={submit} data-testid="m-customer-form-submit">
+        <button className="primary-button flex w-full items-center justify-center gap-2 py-3" disabled={busy} aria-disabled={!valid} onClick={submit} data-testid="m-customer-form-submit">
           <UserPlus size={16} /> {busy ? "Menyimpan…" : "Simpan pelanggan"}
         </button>
       </div>

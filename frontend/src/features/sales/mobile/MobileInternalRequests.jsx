@@ -8,7 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Plus, Trash2, ChevronDown, ArrowLeftRight } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
-import { formatCurrency, formatQty } from "../../../utils/formatters";
+import KNDatePicker from "../../../components/KNDatePicker";
+import { formatCurrency, formatDate, formatQty, todayWib } from "../../../utils/formatters";
 import { askConfirm, askReason } from "../../../services/confirmService";
 import {
   PIN_STATUS_CLASS, PIN_STATUS_LABEL, cancelInternalRequest, convertInternalRequest, createInternalRequest,
@@ -18,7 +19,11 @@ import { useSubpageBack } from "./subpageBack";
 
 const errText = (e, fb) => { const d = e?.response?.data?.detail; return (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || fb; };
 const FILTERS = [["", "Semua"], ["submitted", "Antrean"], ["converted", "Jadi antar-PT"], ["rejected", "Ditolak"], ["cancelled", "Batal"]];
-const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-");
+const fmtDate = (s) => (s ? formatDate(s) : "-");
+// UAT 24 Okt (audit UI tahap 2) — G2-24: label di atas setiap isian (dulu placeholder dipakai sebagai label).
+const FLabel = ({ children, req = false, optional = false }) => (
+  <span className="mb-1 block text-[11.5px] font-semibold text-[#4A4B53]">{children}{req && <span className="text-red-500"> *</span>}{optional && <span className="font-normal text-[#8E8E93]"> (opsional)</span>}</span>
+);
 
 function DecidePanel({ req, onDone }) {
   const [cands, setCands] = useState(null);
@@ -114,7 +119,7 @@ function PinCard({ req, meta, user, open, onToggle, onChanged }) {
 
 function PinCreate({ onBack, onDone }) {
   const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(null);   // null = memuat; [] = kosong (G2-24: dulu "Memuat barang…" selamanya)
   const [orders, setOrders] = useState([]);
   const [lines, setLines] = useState([{ product_id: "", quantity: "", notes: "" }]);
   const [avail, setAvail] = useState({});
@@ -122,7 +127,7 @@ function PinCreate({ onBack, onDone }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => {
-    axios.get(`${API}/products`).then((r) => setProducts(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
+    axios.get(`${API}/products`).then((r) => setProducts(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => setProducts([]));
     axios.get(`${API}/sales-orders`, { params: { limit: 50 } }).then((r) => setOrders(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
   }, []);
   const setLine = (i, patch) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -138,7 +143,7 @@ function PinCreate({ onBack, onDone }) {
       onDone(`${doc.number || "Permintaan"} diajukan — menunggu ditindak Admin Sales/manajer.`);
     } catch (e) { setErr(errText(e, "Gagal mengajukan permintaan.")); } finally { setBusy(false); }
   };
-  const productOpts = useMemo(() => products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` })), [products]);
+  const productOpts = useMemo(() => (products || []).map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` })), [products]);
   return (
     <div className="space-y-2" data-testid="m-pin-create">
       {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-pin-create-back"><ArrowLeft size={17} /> Permintaan internal</button>}
@@ -148,24 +153,29 @@ function PinCreate({ onBack, onDone }) {
           const a = avail[l.product_id];
           return (
             <div key={i} className="space-y-1.5 rounded-xl border border-[#EFF0F2] p-2" data-testid={`m-pin-line-${i}`}>
-              {productOpts.length === 0 ? <div className="field text-[#8E8E93]" data-testid={`m-pin-product-loading-${i}`}>Memuat barang…</div> :
-                <KNSelect value={l.product_id} onValueChange={(v) => pickProduct(i, v)} options={productOpts} placeholder="Pilih barang" data-testid={`m-pin-product-${i}`} />}
+              <FLabel req>Barang</FLabel>
+              {products === null ? <div className="field text-[#8E8E93]" data-testid={`m-pin-product-loading-${i}`}>Memuat barang…</div>
+                : productOpts.length === 0 ? <div className="field text-[#8E8E93]" data-testid={`m-pin-product-empty-${i}`}>Belum ada barang yang bisa diminta.</div>
+                  : <KNSelect value={l.product_id} onValueChange={(v) => pickProduct(i, v)} options={productOpts} placeholder="— Pilih barang —" aria-label="Barang" data-testid={`m-pin-product-${i}`} />}
               {a && <p className="text-[10.5px] m-muted" data-testid={`m-pin-avail-${i}`}>Stok sendiri {formatQty(a.own_available)} · PT lain {formatQty(a.other_entities_available)} {a.product?.base_unit || ""}</p>}
+              <FLabel req>Jumlah{a?.product?.base_unit ? ` (${a.product.base_unit})` : ""}</FLabel>
               <div className="flex gap-2">
-                <input type="number" inputMode="decimal" className="field flex-1" placeholder="Jumlah" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pin-qty-${i}`} />
+                <input type="number" inputMode="decimal" className="field flex-1" placeholder="0" aria-label="Jumlah" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pin-qty-${i}`} />
                 {lines.length > 1 && <button className="px-2 text-[#C0392B]" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} aria-label="Hapus baris" data-testid={`m-pin-remove-${i}`}><Trash2 size={16} /></button>}
               </div>
             </div>
           );
         })}
         <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" onClick={() => setLines((ls) => [...ls, { product_id: "", quantity: "", notes: "" }])} data-testid="m-pin-add-line"><Plus size={13} /> Tambah barang</button>
-        <input className="field" placeholder="Alasan permintaan *" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pin-reason" />
-        <KNSelect value={f.source_order_id} onValueChange={(v) => setF({ ...f, source_order_id: v })} placeholder="Untuk pesanan (opsional)"
-          options={[{ value: "", label: "— Tanpa pesanan (stok sendiri) —" }, ...orders.map((s) => ({ value: s.id, label: `${s.number} · ${s.customer_name || ""}` }))]} data-testid="m-pin-order" />
-        <label className="block text-[11.5px] font-semibold text-[#4A4B53]">Dibutuhkan tanggal
-          <input type="date" className="field mt-1" value={f.needed_date} onChange={(e) => setF({ ...f, needed_date: e.target.value })} data-testid="m-pin-date" />
-        </label>
-        <textarea className="field" rows={2} placeholder="Catatan" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pin-notes" />
+        <label className="block"><FLabel req>Alasan permintaan</FLabel>
+          <input className="field" placeholder="mis. stok sendiri kurang untuk pesanan pelanggan" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pin-reason" /></label>
+        <div><FLabel optional>Untuk pesanan</FLabel>
+          <KNSelect value={f.source_order_id} onValueChange={(v) => setF({ ...f, source_order_id: v })} placeholder="— Tanpa pesanan (stok sendiri) —" aria-label="Untuk pesanan"
+            options={[{ value: "", label: "— Tanpa pesanan (stok sendiri) —" }, ...orders.map((s) => ({ value: s.id, label: `${s.number} · ${s.customer_name || ""}` }))]} data-testid="m-pin-order" /></div>
+        <div><FLabel optional>Dibutuhkan tanggal</FLabel>
+          <KNDatePicker value={f.needed_date} onChange={(v) => setF({ ...f, needed_date: v || "" })} min={todayWib()} data-testid="m-pin-date" /></div>
+        <label className="block"><FLabel optional>Catatan</FLabel>
+          <textarea className="field" rows={2} placeholder="Keterangan tambahan" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pin-notes" /></label>
         {err && <div className="notice-bar danger text-xs" data-testid="m-pin-create-error">{err}</div>}
         <button className="primary-button w-full py-3" disabled={busy || !valid} onClick={submit} data-testid="m-pin-submit">{busy ? "Mengirim…" : "Ajukan permintaan"}</button>
       </div>

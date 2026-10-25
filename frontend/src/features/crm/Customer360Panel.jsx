@@ -6,7 +6,9 @@ import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, CreditCard, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
-import { CreditStatusPill, SegmentBadge, OutcomePill, KpiTile, fmtDate, money } from "./crmUtils";
+import { CreditStatusPill, SegmentBadge, OutcomePill, KpiTile, fmtDate, money, paymentMethodLabel, payStatusLabel, lotPolicyLabel } from "./crmUtils";
+import { docStatusLabel } from "../../utils/docStatus";
+import { apiErrorText } from "../../utils/apiError";
 import CustomerFormModal from "./CustomerFormModal";
 import CustomerColorsSection from "./CustomerColorsSection";
 import CustomerMergeSection from "./CustomerMergeSection";
@@ -22,7 +24,7 @@ const HIST_TABS = [
   { key: "overrides", label: "Override Kredit" },
 ];
 
-/** Customer 360 (KN_17 §2) — profil + kredit + riwayat + aksi. */
+/** Detail pelanggan 360 — profil + kredit + riwayat + aksi. */
 export default function Customer360Panel({ customerId, currentUser, salesUsers, onBack, onChanged, onError }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
       const r = await axios.get(`${API}/customers/${customerId}/360`);
       setData(r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal memuat detail pelanggan.");
+      onError?.(apiErrorText(e, "Gagal memuat detail pelanggan."));
       onBack?.();
     } finally { setLoading(false); }
   }
@@ -71,7 +73,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
           <div className="flex items-center gap-1.5">
             <button data-testid="customer-360-edit" onClick={() => setShowEdit(true)} className="secondary-button"><Edit3 size={13} /> Ubah</button>
             <AskKnButton type="customer" id={data.id} label={data.name} />
-            {isManager && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button"><UserCog size={13} /> Reassign</button>}
+            {isManager && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button"><UserCog size={13} /> Pindah Sales</button>}
           </div>
         </div>
       </div>
@@ -89,11 +91,16 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               <KpiTile label="Jatuh Tempo (Lewat Tempo)" value={formatCurrency(credit.overdue_amount)} tone={Number(credit.overdue_amount) > 0 ? "text-[#C0392B]" : ""} sub={credit.max_overdue_days ? `${credit.max_overdue_days} hari` : ""} testId="customer-360-overdue" />
               <KpiTile label="Sisa Kredit" value={credit.available_credit != null ? formatCurrency(credit.available_credit) : "∞"} sub={`${credit.open_orders || 0} pesanan terbuka`} />
             </div>
-            <div className="px-3 pb-3">
-              <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button w-full justify-center">
-                <ShieldAlert size={13} /> Ajukan Override Kredit
-              </button>
-            </div>
+            {/* UAT 24 Okt (audit UI tahap 2) — G2-10: pelanggan tanpa limit (∞) tidak butuh override kredit. */}
+            {limit > 0 ? (
+              <div className="px-3 pb-3">
+                <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button w-full justify-center">
+                  <ShieldAlert size={13} /> Ajukan Override Kredit
+                </button>
+              </div>
+            ) : (
+              <p className="px-3 pb-3 text-[10.5px] text-[#9A9BA3]" data-testid="customer-360-override-none">Tanpa limit kredit — override tidak diperlukan.</p>
+            )}
           </div>
 
           {/* Profile */}
@@ -112,8 +119,17 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               ))}
               <div className="pt-2 border-t border-[#EFF0F2]">
                 <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold mb-1">Profil Pembayaran</p>
-                <p>Default: <b>{(data.payment_profile?.default_method || "—").toUpperCase()}</b> · Termin {data.payment_profile?.term_days ?? 0} hari · DP {data.payment_profile?.dp_percent ?? 0}%</p>
-                <p className="text-[10.5px] text-[#6B6B73]">Metode: {(data.payment_profile?.allowed_methods || []).join(", ") || "—"}</p>
+                {/* G2-08 — metode bayar berlabel (dulu "Default: TEMPO", "Metode: tunai, tempo"); termin/DP hanya bila metodenya dipakai. */}
+                {(() => {
+                  const pp = data.payment_profile || {};
+                  const ms = pp.allowed_methods || [];
+                  return (<>
+                    <p data-testid="customer-360-pay-default">Metode utama: <b>{pp.default_method ? paymentMethodLabel(pp.default_method) : "—"}</b>
+                      {ms.includes("tempo") && <> · Termin {pp.term_days ?? 0} hari</>}
+                      {ms.includes("dp") && <> · DP {pp.dp_percent ?? 0}%</>}</p>
+                    <p className="text-[10.5px] text-[#6B6B73]">Metode yang diizinkan: {ms.map(paymentMethodLabel).join(", ") || "—"}</p>
+                  </>);
+                })()}
               </div>
               {/* SALES REVAMP V2 — Tim sales (PIC + co-sales + split) */}
               <div className="pt-2 border-t border-[#EFF0F2]" data-testid="customer-360-sales-team">
@@ -134,10 +150,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               <div className="pt-2 border-t border-[#EFF0F2]" data-testid="customer-360-lot-policy">
                 <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold mb-1">Kebijakan Lot</p>
                 <p className="text-[10.5px] text-[#6B6B73]">
-                  {{
-                    "": "Default (prefer single)", prefer_single: "Prefer single lot",
-                    strict_single: "Strict single lot", allow_mixed: "Boleh mixed lot",
-                  }[data.lot_policy || ""] || (data.lot_policy || "—")}
+                  {lotPolicyLabel(data.lot_policy)}
                   {data.enforce_single_dye_lot ? " · Paksa 1 dye lot" : ""}
                 </p>
               </div>
@@ -155,9 +168,13 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
           <div className="section-head">
             <div className="flex items-center gap-3 flex-wrap">
               <h3 className="text-[12.5px] font-bold">Riwayat 360°</h3>
-              <span className="text-[11px] text-[#6B6B73]">{data.stats?.total_orders || 0} order · LTV {money(data.stats?.lifetime_value)}</span>
+              {/* G2-08 — jumlah pesanan & nilai seumur hidup tanpa SO batal/kedaluwarsa (dihitung server). */}
+              <span className="text-[11px] text-[#6B6B73]" data-testid="customer-360-ltv">
+                {data.stats?.total_orders || 0} pesanan · nilai seumur hidup {money(data.stats?.lifetime_value)}
+                {Number(data.stats?.cancelled_orders) > 0 ? ` · ${data.stats.cancelled_orders} batal tidak dihitung` : ""}
+              </span>
             </div>
-            <button data-testid="customer-360-followup" onClick={() => setModal("followup")} className="secondary-button text-[11px]">+ Follow-up</button>
+            <button data-testid="customer-360-followup" onClick={() => setModal("followup")} className="secondary-button text-[11px]">+ Tindak lanjut</button>
           </div>
           <div className="section-body">
             <div className="tab-bar mb-2">
@@ -212,7 +229,7 @@ function HistoryTable({ data, tab }) {
     <div className="divide-y divide-[#EFF0F2] max-h-[440px] overflow-y-auto" data-testid={`customer-360-history-${tab}`}>
       {tab === "orders" && rows.map((o) => (
         <div key={o.id} className="flex items-center justify-between py-2 text-[11.5px]">
-          <div><p className="font-semibold text-[#0058CC]">{o.number}</p><p className="text-[10px] text-[#6B6B73]">{fmtDate(o.created_at)} · {o.status} · {o.payment_status}</p></div>
+          <div><p className="font-semibold text-[#0058CC]">{o.number}</p><p className="text-[10px] text-[#6B6B73]">{fmtDate(o.created_at)} · {docStatusLabel(o.status)}{["cancelled", "expired"].includes(o.status) ? "" : ` · ${payStatusLabel(o.payment_status)}`}</p></div>
           <div className="text-right"><p className="tabular-nums font-semibold">{formatCurrency(o.grand_total)}</p><p className="text-[10px] text-[#6B6B73] tabular-nums">bayar {formatCurrency(o.paid)}</p></div>
         </div>
       ))}
@@ -224,7 +241,7 @@ function HistoryTable({ data, tab }) {
       ))}
       {tab === "prices" && rows.map((p, i) => (
         <div key={i} className="flex items-center justify-between py-2 text-[11.5px]">
-          <div><p className="font-semibold">{p.product_name || p.product_id}</p><p className="text-[10px] text-[#6B6B73]">{p.status} · {fmtDate(p.created_at)}</p></div>
+          <div><p className="font-semibold">{p.product_name || p.product_id}</p><p className="text-[10px] text-[#6B6B73]">{p.status_label || docStatusLabel(p.status)} · {fmtDate(p.created_at)}</p></div>
           <span className="tabular-nums font-semibold">{formatCurrency(p.approved_price || p.special_price || p.price)}</span>
         </div>
       ))}
@@ -244,26 +261,32 @@ function HistoryTable({ data, tab }) {
       {tab === "overrides" && rows.map((ov) => (
         <div key={ov.id} className="flex items-start justify-between py-2 text-[11.5px] gap-2">
           <div className="min-w-0"><p className="truncate">{ov.reason}</p><p className="text-[10px] text-[#6B6B73]">{formatCurrency(ov.amount)} · {ov.requested_by} · {fmtDate(ov.created_at)}</p></div>
-          <span className={`status-pill ${ov.status === "approved" ? "pill-success" : ov.status === "rejected" ? "pill-danger" : "pill-warning"}`}>{ov.status}</span>
+          <span className={`status-pill ${ov.status === "approved" ? "pill-success" : ov.status === "rejected" ? "pill-danger" : "pill-warning"}`}>{docStatusLabel(ov.status)}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function MiniModal({ title, icon, children, onClose, testId }) {
+// G2-10 — tombol aksi di KAKI pop-up (dulu menempel di badan tanpa pemisah).
+function MiniModal({ title, icon, children, footer, onClose, testId }) {
   return (
     <div className="modal-overlay" data-testid={testId} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-card" style={{ maxWidth: 440, width: "92vw" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2]">
           <div className="flex items-center gap-2">{icon}<h2 className="text-[14px] font-bold">{title}</h2></div>
-          <button onClick={onClose} className="icon-button"><X size={16} /></button>
+          <button onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3">{children}</div>
+        {footer && <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">{footer}</div>}
       </div>
     </div>
   );
 }
+
+const MLabel = ({ children, req = false, optional = false }) => (
+  <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">{children}{req && <span className="text-red-500"> *</span>}{optional && <span className="font-normal text-[#9A9BA3]"> (opsional)</span>}</label>
+);
 
 function ReassignModal({ customer, salesUsers, onClose, onDone, onError }) {
   const [sid, setSid] = useState("");
@@ -275,16 +298,22 @@ function ReassignModal({ customer, salesUsers, onClose, onDone, onError }) {
     try {
       await axios.post(`${API}/customers/${customer.id}/reassign`, { assigned_sales_id: sid, reason });
       onDone?.("Pelanggan dipindahkan ke sales baru.");
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal reassign."); } finally { setBusy(false); }
+    } catch (e) { onError?.(apiErrorText(e, "Gagal memindahkan pelanggan.")); } finally { setBusy(false); }
   }
   return (
-    <MiniModal title="Reassign Salesperson" icon={<UserCog size={16} className="text-[#0058CC]" />} onClose={onClose} testId="reassign-modal">
-      <KNSelect value={sid} onValueChange={setSid} className="field" data-testid="reassign-sales-select"
-        placeholder="Pilih sales tujuan" options={(salesUsers || []).filter((s) => s.id !== customer.assigned_sales_id).map((s) => ({ value: s.id, label: s.name }))} />
-      <input data-testid="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" placeholder="Alasan (opsional)" />
-      <div className="flex justify-end gap-2 pt-1">
+    <MiniModal title="Pindahkan ke Sales Lain" icon={<UserCog size={16} className="text-[#0058CC]" />} onClose={onClose} testId="reassign-modal"
+      footer={<>
         <button onClick={onClose} className="secondary-button">Batal</button>
-        <button data-testid="reassign-submit" disabled={busy} onClick={go} className="primary-button">{busy ? "..." : "Pindahkan"}</button>
+        <button data-testid="reassign-submit" disabled={busy || !sid} onClick={go} className="primary-button">{busy ? "Memindahkan…" : "Pindahkan"}</button>
+      </>}>
+      <div>
+        <MLabel req>Sales tujuan</MLabel>
+        <KNSelect value={sid} onValueChange={setSid} className="field" data-testid="reassign-sales-select"
+          placeholder="Pilih sales tujuan" options={(salesUsers || []).filter((s) => s.id !== customer.assigned_sales_id).map((s) => ({ value: s.id, label: s.name }))} />
+      </div>
+      <div>
+        <MLabel optional>Alasan</MLabel>
+        <input data-testid="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" placeholder="mis. wilayah sales berubah" />
       </div>
     </MiniModal>
   );
@@ -302,17 +331,27 @@ function OverrideModal({ customer, onClose, onDone, onError }) {
       await axios.post(`${API}/customers/${customer.id}/credit-override`, {
         customer_id: customer.id, amount: Number(amount) || 0, reason, evidence_url: evidence });
       onDone?.("Permohonan override kredit diajukan (menunggu approval).");
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal mengajukan override."); } finally { setBusy(false); }
+    } catch (e) { onError?.(apiErrorText(e, "Gagal mengajukan override.")); } finally { setBusy(false); }
   }
   return (
-    <MiniModal title="Ajukan Override Kredit" icon={<ShieldAlert size={16} className="text-[#B45309]" />} onClose={onClose} testId="override-modal">
-      <p className="text-[11px] text-[#6B6B73]">Permohonan akan diteruskan ke Manager/Finance untuk persetujuan (KN_17 §5.2).</p>
-      <MoneyInput testId="override-amount" value={amount} onChange={(v) => setAmount(v)} className="field" placeholder="Nilai pesanan yang diminta" />
-      <textarea data-testid="override-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" rows="2" placeholder="Alasan (wajib): mis. PO besar sudah dikonfirmasi" />
-      <input data-testid="override-evidence" value={evidence} onChange={(e) => setEvidence(e.target.value)} className="field" placeholder="URL bukti (opsional)" />
-      <div className="flex justify-end gap-2 pt-1">
+    <MiniModal title="Ajukan Override Kredit" icon={<ShieldAlert size={16} className="text-[#B45309]" />} onClose={onClose} testId="override-modal"
+      footer={<>
         <button onClick={onClose} className="secondary-button">Batal</button>
-        <button data-testid="override-submit" disabled={busy} onClick={go} className="primary-button">{busy ? "..." : "Ajukan"}</button>
+        <button data-testid="override-submit" disabled={busy || !reason.trim()} onClick={go} className="primary-button">{busy ? "Mengajukan…" : "Ajukan"}</button>
+      </>}>
+      {/* G2-10 — tiap isian berlabel; rujukan spesifikasi internal "(KN_17 §5.2)" dihapus dari teks pengguna. */}
+      <p className="text-[11px] text-[#6B6B73]">Permohonan diteruskan ke Manager/Finance untuk persetujuan.</p>
+      <div>
+        <MLabel>Nilai pesanan</MLabel>
+        <MoneyInput testId="override-amount" value={amount} onChange={(v) => setAmount(v)} className="field" placeholder="Rp 0" />
+      </div>
+      <div>
+        <MLabel req>Alasan</MLabel>
+        <textarea data-testid="override-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" rows="2" placeholder="mis. PO besar sudah dikonfirmasi" />
+      </div>
+      <div>
+        <MLabel optional>Tautan bukti</MLabel>
+        <input data-testid="override-evidence" value={evidence} onChange={(e) => setEvidence(e.target.value)} className="field" placeholder="https://…" />
       </div>
     </MiniModal>
   );
@@ -330,21 +369,27 @@ function FollowupModal({ customer, onClose, onDone, onError }) {
       await axios.post(`${API}/customers/${customer.id}/followups`, {
         customer_id: customer.id, note, outcome, next_action_date: next });
       onDone?.("Follow-up penagihan dicatat.");
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menyimpan follow-up."); } finally { setBusy(false); }
+    } catch (e) { onError?.(apiErrorText(e, "Gagal menyimpan tindak lanjut.")); } finally { setBusy(false); }
   }
   return (
-    <MiniModal title="Catat Follow-up Penagihan" icon={<PhoneCall size={16} className="text-[#0058CC]" />} onClose={onClose} testId="followup-modal">
-      <textarea data-testid="followup-note" value={note} onChange={(e) => setNote(e.target.value)} className="field" rows="2" placeholder="Hasil kontak / catatan..." />
-      <KNSelect value={outcome} onValueChange={setOutcome} className="field" data-testid="followup-outcome"
-        options={[{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
-          { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak ada respon" }, { value: "escalated", label: "Eskalasi" }]} />
-      <div>
-        <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Tindak lanjut berikutnya</label>
-        <KNDatePicker data-testid="followup-next" value={next} onChange={setNext} />
-      </div>
-      <div className="flex justify-end gap-2 pt-1">
+    <MiniModal title="Catat Tindak Lanjut Penagihan" icon={<PhoneCall size={16} className="text-[#0058CC]" />} onClose={onClose} testId="followup-modal"
+      footer={<>
         <button onClick={onClose} className="secondary-button">Batal</button>
-        <button data-testid="followup-submit" disabled={busy} onClick={go} className="primary-button">{busy ? "..." : "Simpan"}</button>
+        <button data-testid="followup-submit" disabled={busy || !note.trim()} onClick={go} className="primary-button">{busy ? "Menyimpan…" : "Simpan"}</button>
+      </>}>
+      <div>
+        <MLabel req>Hasil kontak / catatan</MLabel>
+        <textarea data-testid="followup-note" value={note} onChange={(e) => setNote(e.target.value)} className="field" rows="2" placeholder="mis. janji transfer Jumat" />
+      </div>
+      <div>
+        <MLabel>Hasil</MLabel>
+        <KNSelect value={outcome} onValueChange={setOutcome} className="field" data-testid="followup-outcome"
+          options={[{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
+            { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak ada respon" }, { value: "escalated", label: "Eskalasi" }]} />
+      </div>
+      <div>
+        <MLabel optional>Tindak lanjut berikutnya</MLabel>
+        <KNDatePicker data-testid="followup-next" value={next} onChange={setNext} />
       </div>
     </MiniModal>
   );

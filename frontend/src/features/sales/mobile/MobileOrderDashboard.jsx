@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, ChevronRight, RefreshCw, Users } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCompactIDR, formatCurrency, formatPct } from "../../../utils/formatters";
 import LoadingLine from "../../../components/LoadingLine";
 
 const TONE = { waiting: "#B45309", processing: "#0058CC", shipped: "#7A3FA0", done: "#1B7F4B" };
 const KIND_TONE = { rejected: "#C62828", waiting: "#B45309", draft: "#6B6B73", unpaid: "#A05000" };
-const short = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} M` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} jt` : n >= 1e3 ? `${Math.round(n / 1e3)} rb` : `${Math.round(n)}`);
+// UAT 24 Okt (audit UI tahap 2) — P-06: label batang memakai formatter bersama (dulu toFixed → "1.5 jt").
+const short = (n) => formatCompactIDR(n);
 
 /** Dasbor Pesanan HP — hanya data pesanan milik sales yang login (GET /api/sales/order-dashboard). */
 export default function MobileOrderDashboard({ selectedEntity, onOpenOrder }) {
@@ -38,7 +39,7 @@ export default function MobileOrderDashboard({ selectedEntity, onOpenOrder }) {
           <span className="m-muted">Bulan lalu {formatCurrency(d.revenue_last_month)}</span>
           {d.growth_pct !== null && (
             <span className={`ml-auto inline-flex items-center font-semibold ${up ? "text-[#1B7F4B]" : "text-[#C62828]"}`} data-testid="m-odash-growth">
-              {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{Math.abs(d.growth_pct)}%</span>
+              {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{formatPct(Math.abs(d.growth_pct), 1, { trim: true })}</span>
           )}
         </p>
       </div>

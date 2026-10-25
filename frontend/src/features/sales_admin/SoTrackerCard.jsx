@@ -59,6 +59,11 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
       <p className="px-3 pt-1.5 text-[11px] text-[#6B6B73]">SO baru muncul otomatis dan hilang setelah selesai/batal. Tombol aksi hanya muncul bila tahap berikutnya wewenang meja ini.</p>
       {error && <p className="px-3 py-2 text-[11.5px] text-[#C0392B]" data-testid={`${p}-error`}>{error}</p>}
       {all.length > 1 && <TableFilterBar f={f} testId={p} onChange={() => pg.setPage?.(1)} placeholder="Cari no. SO, pelanggan, sales, tahap…" />}
+      {/* UAT 24 Okt (audit UI tahap 2) — G2-25 · P-05: pesan memuat/kosong di LUAR wadah gulir (dulu di dalam tabel
+          min-w-[760px] sehingga terpotong "Tida…" di HP 390). Tabel hanya dirender bila ada baris. */}
+      {loading && !data && <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]" data-testid={`${p}-loading`}>Memuat…</p>}
+      {data && rows.length === 0 && <p className="px-3 py-6 text-center text-[11.5px] text-[#6B6B73]" data-testid={`${p}-empty`}>{f.active ? "Tidak ada SO yang cocok dengan filter." : "Tidak ada SO aktif."}</p>}
+      {pg.pageRows.length > 0 && (
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-[11.5px]">
           <thead><tr className="whitespace-nowrap border-b border-[#EFF0F2] text-left text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
@@ -66,12 +71,11 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
             <th className="px-2 py-2">Waktu</th><th className="px-2 py-2 text-right">Nilai</th><th className="px-3 py-2 text-right">Tindak lanjut</th>
           </tr></thead>
           <tbody className="divide-y divide-[#F4F5F7]">
-            {loading && !data && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B6B73]">Memuat…</td></tr>}
-            {data && rows.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B6B73]" data-testid={`${p}-empty`}>{f.active ? "Tidak ada SO yang cocok dengan filter." : "Tidak ada SO aktif."}</td></tr>}
             {pg.pageRows.map((r) => <TrackerRow key={r.id} r={r} p={p} onOpen={onOpen} />)}
           </tbody>
         </table>
       </div>
+      )}
       {rows.length > 5 && <div className="px-3 pb-2">{pg.pager}</div>}
     </section>
   );

@@ -4,6 +4,7 @@ import MoneyInput from "@/components/MoneyInput";
 import { X, Send } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
+import { customerOptionLabel } from "./priceApprovalText";
 
 /**
  * Form ajukan / edit pengajuan harga khusus.
@@ -50,7 +51,7 @@ export function PriceApprovalForm({
             placeholder="— Pilih Pelanggan —"
             options={[
               { value: "", label: "— Pilih Pelanggan —" },
-              ...customers.map((c) => ({ value: c.id, label: c.name })),
+              ...customers.map((c) => ({ value: c.id, label: customerOptionLabel(c) })),
             ]}
           />
         </label>

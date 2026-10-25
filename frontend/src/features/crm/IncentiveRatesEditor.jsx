@@ -24,6 +24,7 @@ const THRESHOLD_TYPES = [
   { value: "pct", label: "% diskon" },
   { value: "rp_per_unit", label: "Rp / unit" },
 ];
+const HIDDEN_UNITS = ["cm", "mm", "km", "dm", "inch", "in", "ft", "feet", "g", "gr", "gram", "mg", "ton", "ons"];
 const MECHANICS = [
   { value: "tier_factor", label: "Faktor (komisi × faktor)" },
   { value: "potong_rp", label: "Potong Rp/unit" },
@@ -51,10 +52,12 @@ export default function IncentiveRatesEditor() {
   // jual; kalau daftarnya diketik di layar, produk yang dijual per `panel` tidak bisa
   // diberi tarif sama sekali dan komisi sales-nya diam-diam nol.
   useUomConversions();
+  // UAT 24 Okt (audit UI tahap 2) — G2-26: satuan ukur yang tidak pernah dipakai menjual kain (cm, mm, km, gram, …)
+  // tidak ditawarkan. Satuan hitung (roll, pcs, panel, …) tetap ada — alasan FASE U di atas. Nilai tersimpan tetap tampil.
   const unitOpts = uomSelectOptions({
     dimensions: ["length", "weight", "count"],
     extra: [form.incentive_unit].filter(Boolean),
-  });
+  }).filter((o) => !HIDDEN_UNITS.includes(o.value) || o.value === String(form.incentive_unit || "").toLowerCase());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,7 +72,7 @@ export default function IncentiveRatesEditor() {
       setEntities(Array.isArray(e.data) ? e.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat rate insentif.");
+      setError(e.response?.data?.detail || "Gagal memuat tarif insentif.");
     } finally { setLoading(false); }
   }, []);
 
@@ -90,6 +93,7 @@ export default function IncentiveRatesEditor() {
       ...form,
       per_unit_amount: Number(form.per_unit_amount) || 0,
       discount_threshold: Number(form.discount_threshold) || 0,
+      // Isian yang tidak berlaku untuk mekanik terpilih tidak dikirim berubah (nilai lama dipertahankan server).
       discount_factor: Number(form.discount_factor) || 0,
       discount_potong_rp: Number(form.discount_potong_rp) || 0,
       margin_cap_pct: Number(form.margin_cap_pct) || 0,
@@ -100,7 +104,7 @@ export default function IncentiveRatesEditor() {
       resetForm(); await load();
       setNotice("Tarif insentif tersimpan.");
     } catch (e) {
-      setFormError(e.response?.data?.detail || "Gagal menyimpan rate.");
+      setFormError(e.response?.data?.detail || "Gagal menyimpan tarif.");
     } finally { setSaving(false); }
   };
 
@@ -117,7 +121,7 @@ export default function IncentiveRatesEditor() {
     });
     if (reason === null) return;
     try { await axios.delete(`${API}/incentive-rates/${r.id}`, { params: { reason } }); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus rate."); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus tarif."); }
   };
 
   const catOptions = cats.length
@@ -140,7 +144,7 @@ export default function IncentiveRatesEditor() {
       <div className="mb-3">
         <ConfigRedirectCard
           title="Strategi & mekanik komisi"
-          note="Rate per entitas × kategori di bawah ini tetap dikelola dari halaman ini."
+          note="Tarif per entitas × kategori di bawah ini tetap dikelola dari halaman ini."
           group="harga-diskon"
           testId="incentive-config-redirect"
           settings={[
@@ -178,14 +182,20 @@ export default function IncentiveRatesEditor() {
               <L label="Ambang"><input data-testid="rate-threshold-input" type="number" className="field" value={form.discount_threshold} onChange={(e) => setForm({ ...form, discount_threshold: e.target.value })} /></L>
             </div>
             <L label="Mekanik diskon"><KNSelect data-testid="rate-mechanic-input" className="field" value={form.discount_mechanic} onValueChange={(v) => setForm({ ...form, discount_mechanic: v })} options={MECHANICS} /></L>
-            <div className="grid grid-cols-2 gap-2">
-              <L label="Faktor (tier)"><input data-testid="rate-factor-input" type="number" step="0.1" className="field" value={form.discount_factor} onChange={(e) => setForm({ ...form, discount_factor: e.target.value })} /></L>
-              <L label="Potong Rp/unit"><MoneyInput testId="rate-potong-input" className="field" value={form.discount_potong_rp} onChange={(v) => setForm({ ...form, discount_potong_rp: v })} /></L>
-            </div>
+            {/* G2-26 — isian mengikuti mekanik: Faktor → faktor; Potong → Rp/satuan; Cutoff → keduanya tidak berlaku. */}
+            {form.discount_mechanic === "tier_factor" && (
+              <L label="Faktor komisi (× komisi)"><input data-testid="rate-factor-input" type="number" step="0.1" min="0" className="field" value={form.discount_factor} onChange={(e) => setForm({ ...form, discount_factor: e.target.value })} /></L>
+            )}
+            {form.discount_mechanic === "potong_rp" && (
+              <L label={`Potong (Rp/${form.incentive_unit || "satuan"})`}><MoneyInput testId="rate-potong-input" className="field" value={form.discount_potong_rp} onChange={(v) => setForm({ ...form, discount_potong_rp: v })} /></L>
+            )}
+            {form.discount_mechanic === "cutoff" && (
+              <p className="text-[11px] text-[#6B6B73]" data-testid="rate-cutoff-note">Diskon di atas ambang → komisi baris itu 0.</p>
+            )}
             <L label="Batas margin komisi (%)"><input data-testid="rate-margin-cap-input" type="number" className="field" value={form.margin_cap_pct} onChange={(e) => setForm({ ...form, margin_cap_pct: e.target.value })} /></L>
             {formError && <p className="text-[12px] font-semibold text-[#D14343]" data-testid="rate-form-error">{formError}</p>}
             <button data-testid="rate-save-button" className="primary-button mt-1" onClick={save} disabled={saving}>
-              <Save size={14} /> {saving ? "Menyimpan..." : editingId ? "Update Rate" : "Simpan Rate"}
+              <Save size={14} /> {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Simpan Tarif"}
             </button>
           </div>
         </div>

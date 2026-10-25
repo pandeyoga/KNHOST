@@ -9,6 +9,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import { can } from "../../config/roles";
+import { customerOptionLabel } from "./priceApprovals/priceApprovalText";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -327,7 +328,7 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
                 <KNSelect data-testid="price-approvals-customer" className="field" searchable aria-label="Pelanggan"
                   value={form.customer_id} onValueChange={(v) => setForm((f) => ({ ...f, customer_id: v }))}
                   placeholder="— Pilih Pelanggan —"
-                  options={customers.map((c) => ({ value: c.id, label: c.name }))} />
+                  options={customers.map((c) => ({ value: c.id, label: customerOptionLabel(c) }))} />
               </label>
               <label className="grid gap-1">
                 <span className="field-label">Produk *</span>
@@ -379,9 +380,19 @@ export default function PriceApprovals({ currentUser = {}, focusDoc = null, onCl
             Memuat pengajuan…
           </div>
         )}
+        {/* UAT 24 Okt (audit UI tahap 2) — G2-14 · P-04: pesan kosong menyebut saringan yang aktif
+            (dulu "Belum ada pengajuan harga khusus." walau ada 33 pengajuan di tab lain). */}
         {!loading && filtered.length === 0 && (
           <div data-testid="price-approvals-empty" className="section-card p-10 text-center text-[13px] text-[#6B6B73]">
-            Belum ada pengajuan harga khusus.
+            {rows.length === 0 ? "Belum ada pengajuan harga khusus."
+              : search.trim() ? `Tidak ada pengajuan yang cocok dengan “${search.trim()}”${filter !== "all" ? ` berstatus ${(FILTERS.find((f) => f.id === filter) || {}).label}` : ""}.`
+                : `Tidak ada pengajuan berstatus ${(FILTERS.find((f) => f.id === filter) || {}).label || filter}.`}
+            {rows.length > 0 && filter !== "all" && (
+              <div className="mt-2">
+                <button type="button" className="secondary-button !py-1 text-[11.5px]" data-testid="price-approvals-empty-show-all"
+                  onClick={() => setFilter("all")}>Tampilkan semua ({rows.length})</button>
+              </div>
+            )}
           </div>
         )}
         {!loading && filtered.map((r) => (

@@ -18,11 +18,17 @@ const Badge = ({ tone, children, testId }) => {
   return <span data-testid={testId} className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${cls}`}>{children}</span>;
 };
 
+// UAT 24 Okt (audit UI tahap 2) — G2-15: kondisi di panel ini = LAPORAN AWAL saat retur dibuat; hasil QC per roll
+// (mis. "Cacat ringan") ada di panel SPK. Dulu "minor" ikut tampil "Rusak"/"Baik" tanpa keterangan sumber.
+const COND_LABEL = { ok: ["ok", "Baik"], minor: ["warn", "Cacat ringan"], damaged: ["warn", "Rusak"], major: ["bad", "Cacat berat"] };
+const condBadge = (cond) => COND_LABEL[cond] || ["ok", "Baik"];
+
 /** Kolom Kondisi · Alasan · Checklist · Foto satu roll — sama untuk roll aktif maupun yang ditolak. */
 function RollInfoCells({ d, cond, reason, photos, href }) {
+  const [tone, label] = condBadge(cond);
   return (
     <>
-      <td><Badge tone={cond === "damaged" ? "warn" : "ok"}>{cond === "damaged" ? "Rusak" : "Baik"}</Badge></td>
+      <td><Badge tone={tone}>{label}</Badge></td>
       <td className="text-[11.5px] text-[#3C3C43]">{reason || "—"}</td>
       <td className="space-x-1 whitespace-nowrap">
         {d.hangtag_missing && <Badge tone="warn">Hangtag hilang</Badge>}
@@ -91,11 +97,13 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
               <div className="overflow-x-auto">
                 <table className="data-table" style={{ minWidth: 760 }}>
                   <thead>
-                    <tr><th>Roll</th><th className="text-right">Qty</th><th>Kondisi</th><th>Alasan</th><th>Checklist</th><th>Foto</th><th>Keputusan</th></tr>
+                    <tr><th>Roll</th><th className="text-right">Qty</th>
+                      <th title="Kondisi yang dilaporkan saat retur dibuat. Hasil QC aktual per roll ada di panel SPK.">Kondisi (laporan awal)</th>
+                      <th>Alasan</th><th>Checklist</th><th>Foto</th><th>Keputusan</th></tr>
                   </thead>
                   <tbody>
                     {rolls.length === 0 && (
-                      <tr><td colSpan={7} className="text-[11.5px] text-[#6B6B73]">Baris tanpa roll · {item.condition === "ok" ? "Baik" : "Rusak"} · {item.reason || "—"}</td></tr>
+                      <tr><td colSpan={7} className="text-[11.5px] text-[#6B6B73]">Baris tanpa roll · {condBadge(item.condition)[1]} · {item.reason || "—"}</td></tr>
                     )}
                     {rolls.map((rid) => {
                       const d = det[rid] || {};

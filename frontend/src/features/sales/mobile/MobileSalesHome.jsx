@@ -11,6 +11,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { getStage, stageMeta } from "../../../utils/soStatus";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
+import { roleIs } from "../../../config/roles";
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
@@ -72,7 +73,13 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
   const customers = data?.customers || [];
   const history = (data?.history || []).map((h) => ({ period: (h.period || "").slice(5), incentive: h.total_incentive ?? h.commission ?? 0 }));
   const boardsUnreadable = !loading && (!data || !!error);
-  const boards = selectWaitingBoards(data, boardsUnreadable);
+  // UAT 24 Okt (audit UI tahap 2) — G2-23: untuk peran SALES, papan "PO Custom — menunggu keputusan" berisi pesanan
+  // pelanggan lain yang hanya bisa diputus Manajer (tanpa aksi bagi sales) → papan disembunyikan bila tidak ada satu
+  // baris pun yang bisa ditindak akun ini. Baris papan dari server belum membawa pemilik/pelanggan, jadi penyaringan
+  // "milik saya" menunggu backend (approval_backlog_service) — keputusan K-11.
+  const isSalesRole = roleIs(user?.role, ["sales"]);
+  const boards = selectWaitingBoards(data, boardsUnreadable)
+    .filter((b) => !(isSalesRole && !boardsUnreadable && b.key === "special_order" && !(b.rows || []).some((r) => r.action)));
   const goBoard = (view) => {
     if (view === "orders") return onOpenTab?.("orders");
     if (BOARD_SUB[view]) return onOpenSub?.(BOARD_SUB[view]);

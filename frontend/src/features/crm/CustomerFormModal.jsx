@@ -9,14 +9,9 @@ import { X, UserPlus, Edit3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { CustomerSalesTeam, customerTeamError } from "./CustomerSalesTeam";
 import { roleIs } from "../../config/roles";
+import { apiErrorText } from "../../utils/apiError";
+import { PAYMENT_METHODS as METHODS, LOT_POLICY_OPTIONS } from "./crmUtils";
 
-const METHODS = [
-  { key: "tunai", label: "Tunai" },
-  { key: "tempo", label: "Tempo (kredit)" },
-  { key: "dp", label: "DP + Sisa" },
-  { key: "bertahap", label: "Bertahap (cicilan)" },
-  { key: "kontan", label: "Kontan" },
-];
 const SEGMENTS = ["Retail", "Wholesale", "Distributor", "VIP"];
 
 /** Buat / edit pelanggan (CRM-lite KN_17). */
@@ -30,6 +25,9 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
   const [methods, setMethods] = useState(["tunai", "tempo"]);
   const [salesTeam, setSalesTeam] = useState([]);
   const [busy, setBusy] = useState(false);
+  // UAT 24 Okt (audit UI tahap 2) — setelah simpan gagal validasi, blok alamat ikut menampilkan kekurangannya
+  // (`showErrors` LocationFields — API G0).
+  const [tried, setTried] = useState(false);
 
   function blank() {
     return { name: "", segment: "Retail", assigned_sales_id: "", pic_name: "", phone: "", email: "",
@@ -38,15 +36,22 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
       default_method: "tempo", term_days: 30, dp_percent: 30 };
   }
 
+  // UAT 24 Okt (audit UI tahap 2) — G2-09: form ubah kini juga memuat "Alamat toko" (alamat UTAMA pelanggan).
+  const primaryAddr = useMemo(() => {
+    const list = editTarget?.addresses || [];
+    return list.find((a) => a.is_primary) || list[0] || null;
+  }, [editTarget]);
+
   useEffect(() => {
     if (!open) return;
+    setTried(false);
     if (editTarget) {
       const pp = editTarget.payment_profile || {};
       setF({
         name: editTarget.name || "", segment: editTarget.segment || "Retail",
         assigned_sales_id: editTarget.assigned_sales_id || "", pic_name: editTarget.pic_name || "",
         phone: editTarget.phone || "", email: editTarget.email || "", city: editTarget.city || "", ...pickLoc(editTarget),
-        address: (editTarget.addresses?.[0]?.address) || "", npwp: editTarget.npwp || "",
+        address: primaryAddr?.address || "", npwp: editTarget.npwp || "",
         credit_limit: editTarget.credit_limit || "", tags: (editTarget.tags || []).join(", "),
         status: editTarget.status || "active",
         enforce_single_dye_lot: !!editTarget.enforce_single_dye_lot, lot_policy: editTarget.lot_policy || "",
@@ -59,7 +64,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
       setMethods(["tunai", "tempo"]);
       setSalesTeam([]);
     }
-  }, [open, editTarget]);
+  }, [open, editTarget, primaryAddr]);
 
   const salesOptions = useMemo(() => [
     { value: "", label: "— Pilih Sales —" },
@@ -82,22 +87,29 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
     setF((s) => ({ ...s, assigned_sales_id: v }));
     setSalesTeam([]);  // ganti PIC → reset tim (hindari PIC basi)
   }
+  // G2-09 — melepas metode yang sedang jadi default memindah default ke metode yang tersisa (dulu jadi kosong).
   function toggleMethod(m) {
-    setMethods((arr) => (arr.includes(m) ? arr.filter((x) => x !== m) : [...arr, m]));
+    const next = methods.includes(m) ? methods.filter((x) => x !== m) : [...methods, m];
+    setMethods(next);
+    if (!next.includes(f.default_method)) set("default_method", next[0] || "");
   }
+  const usesTempo = methods.includes("tempo");
+  const usesDp = methods.includes("dp");
 
   async function submit() {
+    setTried(true);
     if (!f.name.trim()) { onError?.("Nama toko / pelanggan wajib diisi."); return; }
     if (!f.pic_name.trim()) { onError?.("Nama PIC toko (pihak pelanggan) wajib diisi."); return; }
     if (!f.phone.trim()) { onError?.("Nomor HP/WhatsApp PIC toko wajib diisi."); return; }
-    if (!isEdit && f.address.trim().length < 3) { onError?.("Alamat toko wajib diisi."); return; }
+    if ((!isEdit || primaryAddr) && f.address.trim().length < 3) { onError?.("Alamat toko wajib diisi."); return; }
     if (!isEdit && isManager && !f.assigned_sales_id) { onError?.("Pilih Sales penanggung jawab (PIC internal)."); return; }
     const tErr = customerTeamError(salesTeam);
     if (tErr) { onError?.(tErr); return; }
     const payment_profile = {
       allowed_methods: methods.length ? methods : ["tunai"],
-      default_method: f.default_method, term_days: Number(f.term_days) || 0,
-      dp_percent: Number(f.dp_percent) || 0, installment_count: 0, installment_interval_days: 30,
+      default_method: (methods.includes(f.default_method) ? f.default_method : methods[0]) || "tunai",
+      term_days: usesTempo ? Number(f.term_days) || 0 : 0,
+      dp_percent: usesDp ? Number(f.dp_percent) || 0 : 0, installment_count: 0, installment_interval_days: 30,
     };
     const tags = f.tags.split(",").map((t) => t.trim()).filter(Boolean);
     const locErr = locationIncomplete(pickLoc(f));
@@ -112,7 +124,20 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
           enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
           sales_team: salesTeam,
         }};
+        // G2-09 — alamat & lokasi diubah → alamat UTAMA ikut diperbarui (alamat lain tidak disentuh).
+        const loc = pickLoc(f);
+        const addrChanged = primaryAddr && (f.address.trim() !== (primaryAddr.address || "")
+          || LOC_KEYS.some((k) => (loc[k] || "") !== (primaryAddr[k] || "")));
+        if (addrChanged) {
+          body.data.addresses = (editTarget.addresses || []).map((a) => (a.id === primaryAddr.id
+            ? { ...a, ...loc, address: f.address.trim(), city: loc.city || a.city } : a));
+        }
         const r = await axios.patch(`${API}/customers/${editTarget.id}`, body);
+        if (!primaryAddr && f.address.trim().length >= 3) {
+          await axios.post(`${API}/customers/${editTarget.id}/addresses`, {
+            label: "Alamat Utama", recipient_name: f.pic_name, phone: f.phone, city: loc.city || f.city,
+            address: f.address.trim(), is_primary: true, ...loc });
+        }
         onSaved?.(r.data, true);
       } else {
         const body = {
@@ -128,7 +153,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
         onSaved?.(r.data, false);
       }
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal menyimpan pelanggan.");
+      onError?.(apiErrorText(e, "Gagal menyimpan pelanggan."));
     } finally { setBusy(false); }
   }
 
@@ -139,7 +164,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
           <div className="flex items-center gap-2">
             {isEdit ? <Edit3 size={16} className="text-[#0058CC]" /> : <UserPlus size={16} className="text-[#0058CC]" />}
-            <h2 className="text-[14px] font-bold">{isEdit ? "Edit Pelanggan" : "Pelanggan Baru"}</h2>
+            <h2 className="text-[14px] font-bold">{isEdit ? "Ubah Pelanggan" : "Pelanggan Baru"}</h2>
           </div>
           <button data-testid="customer-form-close" onClick={onClose} className="icon-button"><X size={16} /></button>
         </div>
@@ -148,26 +173,24 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
           {/* ── 1. Data toko / pelanggan ── */}
           <Section title="Data Toko / Pelanggan" testId="customer-section-store">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nama Toko / Pelanggan" req>
+              <Field label="Nama toko / pelanggan" req>
                 <input data-testid="customer-name" value={f.name} onChange={(e) => set("name", e.target.value)} onBlur={(e) => set("name", namaUsaha(e.target.value))} className="field" placeholder="PT / Toko ..." />
               </Field>
-              <Field label="Segment" hint="Klasifikasi untuk laporan BI & analitik penjualan (Retail · Wholesale · Distributor · VIP). Tidak mengubah harga.">
+              <Field label="Segmen" hint="Klasifikasi untuk laporan & analitik penjualan (Retail · Wholesale · Distributor · VIP). Tidak mengubah harga.">
                 <KNSelect value={f.segment} onValueChange={(v) => set("segment", v)} className="field"
                   data-testid="customer-segment" options={SEGMENTS.map((s) => ({ value: s, label: s }))} />
               </Field>
-              <LocationFields testId="customer-loc" value={pickLoc(f)} onChange={(patch) => setF((p) => ({ ...p, ...patch }))} />
-              {!isEdit && (
-                <Field label="Alamat Toko" req>
-                  <input data-testid="customer-address" value={f.address} onChange={(e) => set("address", e.target.value)} className="field" placeholder="Jalan, nomor, RT/RW, patokan" />
-                </Field>
-              )}
-              <Field label="Email Toko">
+              <LocationFields testId="customer-loc" showErrors={tried} value={pickLoc(f)} onChange={(patch) => setF((p) => ({ ...p, ...patch }))} />
+              <Field label="Alamat toko" req={!isEdit || !!primaryAddr} hint={isEdit ? "Alamat utama pelanggan (alamat kirim lain tidak berubah)." : ""}>
+                <input data-testid="customer-address" value={f.address} onChange={(e) => set("address", e.target.value)} className="field" placeholder="Jalan, nomor, RT/RW, patokan" />
+              </Field>
+              <Field label="Email toko" optional>
                 <input data-testid="customer-email" value={f.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="email@..." />
               </Field>
-              <Field label="NPWP">
-                <input data-testid="customer-npwp" value={f.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="NPWP (opsional)" />
+              <Field label="NPWP" optional>
+                <input data-testid="customer-npwp" value={f.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="00.000.000.0-000.000" />
               </Field>
-              <Field label="Limit Kredit (Rp)">
+              <Field label="Limit kredit (Rp)" hint="0 = tanpa limit">
                 <MoneyInput testId="customer-credit-limit" value={f.credit_limit} onChange={(v) => set("credit_limit", v)} className="field" placeholder="0 = tanpa limit" />
               </Field>
               {isEdit && (
@@ -176,7 +199,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
                     options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "blocked", label: "Blokir" }]} />
                 </Field>
               )}
-              <Field label="Tags (pisah koma)">
+              <Field label="Tag (pisah koma)" optional>
                 <input data-testid="customer-tags" value={f.tags} onChange={(e) => set("tags", e.target.value)} className="field" placeholder="grosir, premium" />
               </Field>
             </div>
@@ -186,10 +209,10 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
           <Section title="PIC Toko (pihak pelanggan)" testId="customer-section-pic"
             hint="Orang di toko/pelanggan yang dihubungi sales untuk pesanan, tagihan, dan pengiriman.">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nama PIC Toko" req>
+              <Field label="Nama PIC toko" req>
                 <input data-testid="customer-pic" value={f.pic_name} onChange={(e) => set("pic_name", e.target.value)} onBlur={(e) => set("pic_name", namaOrang(e.target.value))} className="field" placeholder="mis. Ibu Rina (pemilik / kepala toko)" />
               </Field>
-              <Field label="No. HP / WhatsApp PIC Toko" req>
+              <Field label="No. HP / WhatsApp PIC toko" req>
                 <input data-testid="customer-phone" value={f.phone} onChange={(e) => set("phone", e.target.value)} className="field" placeholder="08..." />
               </Field>
             </div>
@@ -203,11 +226,11 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
                 Otomatis: <b>{currentUser?.name}</b> (akun Anda). Pelanggan ini menjadi milik Anda.
               </p>
             ) : (
-              <Field label="Sales Penanggung Jawab" req={!isEdit}>
+              <Field label="Sales penanggung jawab" req={!isEdit}>
                 <KNSelect value={f.assigned_sales_id} onValueChange={setAssignedSales}
                   className="field" data-testid="customer-assigned-sales" disabled={isEdit}
                   options={salesOptions} placeholder="Sales" />
-                {isEdit && <p className="text-[10px] text-[#9A9BA3] mt-0.5">Ubah sales via tombol Reassign di detail.</p>}
+                {isEdit && <p className="text-[10px] text-[#9A9BA3] mt-0.5">Ganti sales lewat tombol Pindah Sales di detail pelanggan.</p>}
               </Field>
             )}
             <CustomerSalesTeam
@@ -226,16 +249,10 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
               <input type="checkbox" className="mt-0.5" checked={f.enforce_single_dye_lot} onChange={(e) => set("enforce_single_dye_lot", e.target.checked)} />
               <span>Paksa <b>1 dye lot</b> saat alokasi (hindari belang warna antar roll)</span>
             </label>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] mb-1">Kebijakan Lot</label>
+            <Field label="Kebijakan lot">
               <KNSelect data-testid="customer-lot-policy" className="field w-full" value={f.lot_policy} onValueChange={(v) => set("lot_policy", v)}
-                options={[
-                  { value: "", label: "Default (prefer single)" },
-                  { value: "prefer_single", label: "Prefer single lot" },
-                  { value: "strict_single", label: "Strict single lot" },
-                  { value: "allow_mixed", label: "Boleh mixed lot" },
-                ]} />
-            </div>
+                options={LOT_POLICY_OPTIONS} />
+            </Field>
           </div>
 
           {/* Payment profile */}
@@ -249,17 +266,23 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
                 </label>
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Field label="Metode Default">
+            {/* G2-09 — Termin hanya bila Tempo dicentang, DP hanya bila DP + Sisa dicentang. */}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Field label="Metode default">
                 <KNSelect value={f.default_method} onValueChange={(v) => set("default_method", v)} className="field"
-                  data-testid="customer-default-method" options={METHODS.filter((m) => methods.includes(m.key)).map((m) => ({ value: m.key, label: m.label }))} />
+                  data-testid="customer-default-method" placeholder="Centang minimal satu metode"
+                  options={METHODS.filter((m) => methods.includes(m.key)).map((m) => ({ value: m.key, label: m.label }))} />
               </Field>
-              <Field label="Termin (hari)">
-                <input type="number" data-testid="customer-term-days" value={f.term_days} onChange={(e) => set("term_days", e.target.value)} className="field" />
-              </Field>
-              <Field label="DP (%)">
-                <input type="number" data-testid="customer-dp-percent" value={f.dp_percent} onChange={(e) => set("dp_percent", e.target.value)} className="field" />
-              </Field>
+              {usesTempo && (
+                <Field label="Termin tempo (hari)">
+                  <input type="number" min={0} data-testid="customer-term-days" value={f.term_days} onChange={(e) => set("term_days", e.target.value)} className="field" />
+                </Field>
+              )}
+              {usesDp && (
+                <Field label="DP (%)">
+                  <input type="number" min={0} max={100} data-testid="customer-dp-percent" value={f.dp_percent} onChange={(e) => set("dp_percent", e.target.value)} className="field" />
+                </Field>
+              )}
             </div>
           </div>
         </div>
@@ -275,10 +298,10 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
   );
 }
 
-function Field({ label, req, hint, children }) {
+function Field({ label, req, optional = false, hint, children }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">{label}{req && <span className="text-red-500"> *</span>}</label>
+      <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">{label}{req && <span className="text-red-500"> *</span>}{optional && !req && <span className="font-normal text-[#9A9BA3]"> (opsional)</span>}</label>
       {children}
       {hint && <p className="mt-0.5 text-[10px] leading-snug text-[#9A9BA3]">{hint}</p>}
     </div>

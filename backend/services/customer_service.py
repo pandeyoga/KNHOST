@@ -307,6 +307,10 @@ async def check_credit_for_order(customer: Dict[str, Any], new_amount: float) ->
     }
 
 
+# SO yang tidak dihitung sebagai pesanan/omzet pelanggan (riwayat tetap menampilkannya).
+DEAD_ORDER_STATUSES = ("cancelled", "expired")
+
+
 async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
     """Profil lengkap + riwayat order/dokumen/special price + kredit."""
     customer = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0}))
@@ -358,6 +362,9 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
         {"customer_id": customer_id, "status": {"$ne": "void"}},
         {"_id": 0, "id": 1, "number": 1, "amount": 1, "method": 1, "receipt_date": 1, "created_at": 1, "notes": 1}
     ).sort("created_at", -1).to_list(50)
+    # UAT 24 Okt (audit UI tahap 2) — G2-08: jumlah pesanan & LTV dulu ikut menghitung SO batal/kedaluwarsa
+    # ("1 order · LTV Rp 224.573" untuk pelanggan yang satu-satunya pesanannya dibatalkan). Riwayat tetap utuh.
+    live_orders = [o for o in order_history if o.get("status") not in DEAD_ORDER_STATUSES]
     return {
         **customer,
         "payments": payments,
@@ -368,8 +375,9 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
         "credit_overrides": [safe_doc(o) for o in overrides],
         "sample_history": [safe_doc(s) for s in samples],
         "stats": {
-            "total_orders": len(order_history),
-            "lifetime_value": round(sum(o["grand_total"] for o in order_history), 2),
+            "total_orders": len(live_orders),
+            "lifetime_value": round(sum(o["grand_total"] for o in live_orders), 2),
+            "cancelled_orders": len(order_history) - len(live_orders),
             "samples_cut": sum(1 for s in samples if s.get("status") == "done"),
         },
     }

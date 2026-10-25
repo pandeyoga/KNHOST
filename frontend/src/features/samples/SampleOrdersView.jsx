@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Scissors, RefreshCw, Gift, Banknote, XCircle, CheckCircle2, Truck, PackageCheck } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDateTime, formatPct, formatQty } from "../../utils/formatters";
 import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
 import { listSampleOrders, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
@@ -28,7 +28,8 @@ const FILTERS = [
 ];
 
 const CUT = { requested: "menunggu potong", cut: "sudah dipotong", awaiting_internal: "menunggu pembelian internal (stok PT lain)" };
-const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Catalogue" };
+// UAT 24 Okt (audit UI tahap 2) — G2-19: satu istilah "Katalog" (dulu "Catalogue").
+const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Katalog" };
 const TABS = [["orders", "Pesanan Sample"], ["desk", "Meja Cutting"], ["locations", "Lokasi Cutting"]];
 
 export default function SampleOrdersView({ user, selectedEntity = "all", focusDoc, onClearFocus }) {
@@ -92,7 +93,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
       ))}
       {canCreateCat && <button data-testid="sample-catalogue-create" className="primary-button ml-auto mb-1.5" onClick={() => setShowCat(true)}>+ Buat Sample Katalog</button>}
       <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
-        onCreated={(so) => { flash(`${so.number} (catalogue) dibuat.`); setTab("orders"); load(); }} />
+        onCreated={(so) => { flash(`${so.number} (katalog) dibuat.`); setTab("orders"); load(); }} />
     </div>
   );
   if (tab !== "orders") {
@@ -175,13 +176,26 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
                 {(sel.items || []).map((i) => (
                   <li key={i.product_id} className="px-2.5 py-1.5">
                     <p className="font-semibold">{i.product_name} <span className="text-[#8E8E93]">{i.sku}</span> <span data-testid={`sample-line-kind-${i.product_id}`} className="rounded bg-[#FFF3D6] px-1.5 text-[10px] text-[#9A5B00]">{KIND[i.sample_kind || "standard"]}</span></p>
-                    <p className="text-[11px] text-[#3C3C43]">{formatQty(i.quantity)} {i.base_unit || i.unit} · {CUT[i.sample_cut_status] || i.sample_cut_status || "—"}{i.child_roll_no ? ` · potongan ${i.child_roll_no} dari ${i.cut_roll_no}` : i.suggested_roll_no ? ` · saran roll ${i.suggested_roll_no}` : ""}</p>
+                    {/* G2-18 — SOS batal tidak lagi berbunyi "menunggu potong · saran roll …". */}
+                    <p className="text-[11px] text-[#3C3C43]" data-testid={`sample-line-cut-${i.product_id}`}>{formatQty(i.quantity)} {i.base_unit || i.unit} · {
+                      ["cancelled", "expired"].includes(sel.status) && i.sample_cut_status !== "cut"
+                        ? "dibatalkan — tidak dipotong"
+                        : <>{CUT[i.sample_cut_status] || i.sample_cut_status || "—"}{i.child_roll_no ? ` · potongan ${i.child_roll_no} dari ${i.cut_roll_no}` : i.suggested_roll_no ? ` · saran roll ${i.suggested_roll_no}` : ""}</>}</p>
                     {sel.sample_billing === "paid" && <p className="text-[11px] tabular-nums">{formatCurrency(i.price)}/{i.base_unit || i.unit} → {formatCurrency(i.line_total ?? i.subtotal ?? i.price * i.quantity)}</p>}
                   </li>
                 ))}
               </ul>
               <CatalogueComponents order={sel} canEdit={canCreateCat} onChanged={() => { flash("Warna soft diganti — komponen dasar tetap."); load(); }} />
-              {sel.sample_billing === "paid" && <p className="text-right text-[13px] font-bold tabular-nums">Total {formatCurrency(sel.grand_total)}</p>}
+              {/* G2-18 — subtotal + PPN + total tertulis (dulu "Rp 15.000 → Rp 15.000" lalu "Total Rp 16.650" tanpa PPN). */}
+              {sel.sample_billing === "paid" && (
+                <div data-testid="sample-detail-totals" className="space-y-0.5 text-[11.5px] tabular-nums">
+                  <p className="flex justify-between"><span className="text-[#6B6B73]">Subtotal</span><span>{formatCurrency(sel.net_subtotal ?? sel.total_amount ?? (sel.grand_total - Number(sel.ppn_amount || 0)))}</span></p>
+                  {Number(sel.ppn_amount) > 0 && (
+                    <p className="flex justify-between" data-testid="sample-detail-ppn"><span className="text-[#6B6B73]">PPN{sel.ppn_rate ? ` ${formatPct(sel.ppn_rate, 2, { trim: true })}` : ""}</span><span>{formatCurrency(sel.ppn_amount)}</span></p>
+                  )}
+                  <p className="flex justify-between border-t border-[#EFF0F2] pt-0.5 text-[13px] font-bold"><span>Total</span><span>{formatCurrency(sel.grand_total)}</span></p>
+                </div>
+              )}
               {sel.sample_billing === "paid" && (
                 <p data-testid="sample-detail-payment" className={`rounded-md px-2.5 py-1.5 text-[11px] ${sel.sample_payment_status === "approved" ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>
                   {sel.sample_payment_status === "approved" ? <><CheckCircle2 size={11} className="inline" /> Pembayaran disetujui {sel.sample_payment_approved_by}</>
@@ -192,7 +206,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
               {/* F-15 — riwayat penyesuaian tagihan karena panjang aktual potong (≤ toleransi otomatis, di atasnya disetujui ulang) */}
               {(sel.sample_payment_adjustments || []).map((a, i) => (
                 <p key={i} data-testid={`sample-detail-adjustment-${i}`} className="text-[10.5px] text-[#4A4A52]">
-                  {a.auto ? "Disesuaikan otomatis" : "Melewati toleransi → persetujuan ulang"}: {formatCurrency(a.from)} → {formatCurrency(a.to)} ({a.pct}% · toleransi {a.tolerance_pct}%)
+                  {a.auto ? "Disesuaikan otomatis" : "Melewati toleransi → persetujuan ulang"}: {formatCurrency(a.from)} → {formatCurrency(a.to)} ({formatPct(a.pct, 2, { trim: true })} · toleransi {formatPct(a.tolerance_pct, 2, { trim: true })})
                 </p>
               ))}
               <div className="flex flex-wrap gap-2">
@@ -212,7 +226,8 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Riwayat</p>
                 <ul data-testid="sample-detail-timeline" className="mt-1 space-y-1 text-[11px] text-[#3C3C43]">
-                  {(sel.timeline || []).slice().reverse().slice(0, 8).map((t, i) => <li key={i}>• {t.label || t.event || t.action} <span className="text-[#8E8E93]">— {t.actor} · {String(t.at || t.timestamp || "").slice(0, 16).replace("T", " ")}</span></li>)}
+                  {(sel.timeline || []).slice().reverse().slice(0, 8).map((t, i) => <li key={i}>• {t.label || t.event || t.action} <span className="text-[#8E8E93]">— {t.actor || "Sistem"} · {formatDateTime(t.at || t.timestamp)}</span></li>)}
+                  {!(sel.timeline || []).length && <li className="text-[#8E8E93]" data-testid="sample-detail-timeline-empty">Belum ada riwayat.</li>}
                 </ul>
               </div>
             </div>

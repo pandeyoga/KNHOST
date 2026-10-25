@@ -14,6 +14,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { openRnd } from "../rnd/rndDeepLink";
 import LabdipHistoryModal from "../rnd/LabdipHistoryModal";   // MD-06 — riwayat labdip per warna
+import SampleFormModal from "../rnd/SampleFormModal";
+import { useEntityScope } from "../../context/EntityScopeContext";
 import ColorLinksModal from "./ColorLinksModal";
 import SupplierColorsTab from "./SupplierColorsTab";
 import CustomerColorsTab from "./CustomerColorsTab";
@@ -48,6 +50,11 @@ export default function ColorLibraryView({ currentUser }) {
   const [variants, setVariants] = useState(null); // {colorId, supplierId} → modal keterkaitan
   const [tab, setTab] = useState("internal"); // internal | customer | supplier
   const [reloadKey, setReloadKey] = useState(0);
+  // UAT 24 Okt (audit UI tahap 2) — G2-12: "Buat Labdip" membuka pop-up Sample Labdip DI LAYAR INI dengan warna
+  // terisi (dulu pindah ke halaman R&D dan membuka pop-up berjudul "R&D Produk Baru").
+  const [labdipColor, setLabdipColor] = useState(null);   // warna sumber labdip
+  const [notice, setNotice] = useState(null);             // {text, sampleId}
+  const { selectedEntity } = useEntityScope();
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -97,13 +104,13 @@ export default function ColorLibraryView({ currentUser }) {
     catch (e) { setError(e.response?.data?.detail || "Gagal menonaktifkan warna."); }
   };
 
-  const familyOpts = [{ value: "", label: "Semua Family" }, ...families.map((f) => ({ value: f, label: f }))];
+  const familyOpts = [{ value: "", label: "Semua keluarga warna" }, ...families.map((f) => ({ value: f, label: f }))];
 
   return (
     <div data-testid="color-library-view">
       <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi testId="color-kpi-total" label="Warna Internal Aktif" value={activeInternalCount} icon={Palette} />
-        <Kpi testId="color-kpi-family" label="Family" value={families.length} icon={Layers} tone="#6B219A" />
+        <Kpi testId="color-kpi-family" label="Keluarga warna" value={families.length} icon={Layers} tone="#6B219A" />
         <Kpi testId="color-kpi-customer" label="Warna Pelanggan" value={customerCount} icon={Users} tone="#B45309" />
         <div className="section-card hidden lg:block">
           <div className="section-body flex items-center gap-3 py-3">
@@ -145,6 +152,16 @@ export default function ColorLibraryView({ currentUser }) {
         </div>
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="color-error" />
+          {notice && (
+            <div className="notice-bar success mb-2 flex flex-wrap items-center gap-2 text-[12px]" data-testid="color-labdip-notice">
+              <span>{notice.text}</span>
+              {notice.sampleId && (
+                <button type="button" className="link-button" data-testid="color-labdip-open"
+                  onClick={() => openRnd({ view: "rnd-samples", sampleId: notice.sampleId })}>Buka di R&D →</button>
+              )}
+              <button type="button" className="ml-auto" aria-label="Tutup" onClick={() => setNotice(null)}><X size={12} /></button>
+            </div>
+          )}
           {loading ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
               {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-[104px] animate-pulse rounded-lg bg-[#F5F5F7]" />)}
@@ -196,10 +213,7 @@ export default function ColorLibraryView({ currentUser }) {
                         <button data-testid={`color-labdip-${c.id}`}
                           title="Buat permintaan labdip memakai warna ini (warna dari pustaka, bukan teks bebas)"
                           className="flex-1 rounded border border-[#E5E5EA] px-1 py-[3px] text-[11px] font-bold text-[#0058CC] hover:border-[#0058CC] hover:bg-[#F2F7FF]"
-                          onClick={() => openRnd({
-                            view: "rnd-samples", colorId: c.id,
-                            colorLabel: `warna ${c.code} · ${c.name}`,
-                          })}>
+                          onClick={() => setLabdipColor(c)}>
                           Buat Labdip
                         </button>
                         <button data-testid={`color-history-${c.id}`}
@@ -235,6 +249,15 @@ export default function ColorLibraryView({ currentUser }) {
         <LabdipHistoryModal colorId={history.colorId} label={history.label} onClose={() => setHistory(null)} />
       )}
       {variants && <ColorLinksModal colorId={variants.colorId} focusSupplierId={variants.supplierId} onClose={() => setVariants(null)} />}
+      {labdipColor && (
+        <SampleFormModal selectedEntity={selectedEntity} lockType="labdip"
+          prefill={{ color_id: labdipColor.id, sample_type: "labdip", source_label: `warna ${labdipColor.code} · ${labdipColor.name}` }}
+          onClose={() => setLabdipColor(null)}
+          onSaved={(created) => {
+            setNotice({ text: `Permintaan labdip ${created?.number || ""} untuk warna ${labdipColor.code} dibuat.`, sampleId: created?.id || "" });
+            setLabdipColor(null); load();
+          }} />
+      )}
     </div>
   );
 }
@@ -289,7 +312,7 @@ function ColorModal({ mode, color, onClose, onSaved, onError }) {
     <div data-testid="color-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
       <div className="w-full max-w-[460px] overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Palette size={16} className="text-[#0058CC]" /> {mode === "edit" ? "Edit Warna" : "Tambah Warna"}</h2>
+          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Palette size={16} className="text-[#0058CC]" /> {mode === "edit" ? "Ubah Warna" : "Tambah Warna"}</h2>
           <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
         </div>
         <div className="space-y-3 p-4">
@@ -317,7 +340,7 @@ function ColorModal({ mode, color, onClose, onSaved, onError }) {
             <Field label="Sistem">
               <KNSelect data-testid="color-form-system" className="field" value={form.system} onValueChange={(v) => setForm({ ...form, system: v })} options={SYSTEMS} />
             </Field>
-            <Field label="Family">
+            <Field label="Keluarga warna">
               <input data-testid="color-form-family" className="field" placeholder="Biru / Merah / …" value={form.family} onChange={set("family")} />
             </Field>
             {/* UAT 24 Okt (P3.5) — kode Pantone eksplisit, wajib jelas untuk labdip ke supplier. */}

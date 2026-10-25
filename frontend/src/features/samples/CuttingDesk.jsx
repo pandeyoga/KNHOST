@@ -9,7 +9,7 @@ import { cuttingDesk, cuttingLocations, receiveCut, receiveOrderCuts } from "./s
 // Hanya gudang yang boleh dipakai pemilik roll (bersama, atau khusus untuk PT itu).
 const destFor = (locs, owner) => locs.filter((l) => !owner || l.sharing_mode !== "dedicated" || (l.entity_ids || []).includes(owner));
 
-const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Catalogue" };
+const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Katalog" };   // G2-19 — satu istilah "Katalog"
 
 const fmtWait = (m) => (m < 60 ? `${m} mnt` : m < 1440 ? `${Math.floor(m / 60)} j ${m % 60} mnt` : `${Math.floor(m / 1440)} hr ${Math.floor((m % 1440) / 60)} j`);
 

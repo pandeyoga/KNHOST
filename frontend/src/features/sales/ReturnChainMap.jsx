@@ -41,10 +41,12 @@ function StageNode({ step, current }) {
   return (
     <div data-testid={`return-chain-map-node-${step.stage}`}
          className={`relative w-[168px] shrink-0 rounded-lg border-2 bg-white ${step.redacted ? "border-dashed" : ""} ${tone.ring} ${current ? "ring-2 ring-[#0058CC] ring-offset-1 shadow-md" : "shadow-sm"}`}>
-      {current && <span data-testid="return-chain-map-current" className="absolute -top-2 left-2 rounded-full bg-[#0058CC] px-1.5 text-[8.5px] font-bold uppercase tracking-wide text-white">dokumen ini</span>}
+      {/* UAT 24 Okt (audit UI tahap 2) — G2-27: lencana "dokumen ini" di DALAM kepala kartu (dulu `absolute -top-2`
+          menumpuk di atas ikon & label tahap). */}
       <div className={`flex items-center gap-1.5 rounded-t-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${tone.head}`}>
-        <Icon size={11} /> <span className="truncate">{step.stage_label}</span>
-        {step.redacted && <EyeOff size={10} className="ml-auto shrink-0" title="Milik badan usaha lain — ringkasan" />}
+        <Icon size={11} className="shrink-0" /> <span className="min-w-0 truncate">{step.stage_label}</span>
+        {current && <span data-testid="return-chain-map-current" className="ml-auto shrink-0 rounded-full bg-[#0058CC] px-1.5 text-[8.5px] font-bold uppercase tracking-wide text-white">dokumen ini</span>}
+        {step.redacted && <EyeOff size={10} className={`${current ? "" : "ml-auto"} shrink-0`} title="Milik badan usaha lain — ringkasan" />}
       </div>
       <div className="px-2 py-1.5 text-[11px] leading-snug">
         {step.number ? <b className="block font-mono text-[11.5px]">{step.number}</b> : <b className="block text-[#8E8E93]">—</b>}

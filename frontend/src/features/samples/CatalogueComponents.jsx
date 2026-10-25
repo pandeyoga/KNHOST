@@ -16,7 +16,7 @@ export default function CatalogueComponents({ order, canEdit, onChanged }) {
   };
   return (
     <div data-testid="catalogue-components" className="rounded-md border border-[#F3D9A4] bg-[#FFF9EC] p-2.5 text-[11.5px]">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]">Catalogue · {cat.base.length} warna × 1 yd + soft 2 yd = {cat.total_qty} yd</p>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]">Katalog · {cat.base.length} warna × 1 yd + soft 2 yd = {cat.total_qty} yd</p>
       <p className="mt-1">Dasar: {cat.base.map((c) => c.color || c.product_name).join(", ")}</p>
       <div className="mt-1 flex items-center gap-2">
         <span>Soft:</span>

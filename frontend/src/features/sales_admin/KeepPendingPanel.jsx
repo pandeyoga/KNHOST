@@ -103,7 +103,8 @@ function KeepList({ rows, limit, overdue, onOpen, tp }) {
               <button type="button" onClick={() => onOpen(r.order_id, r.number)}
                 className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-[#FAFBFC]">
                 <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
-                  <p className="text-[12px] font-semibold"><span className="whitespace-nowrap">{r.number}</span> <span className="font-normal text-[#6B6B73]">· {r.customer_name}</span></p>
+                  {/* UAT 24 Okt (audit UI tahap 2) — G2-29: nomor SO tampil sebagai tautan (baris memang membuka SO). */}
+                  <p className="text-[12px] font-semibold"><span className="whitespace-nowrap text-[#0058CC] underline decoration-dotted underline-offset-2" data-testid={`${tp}-keep-link-${r.order_id}`}>{r.number}</span> <span className="font-normal text-[#6B6B73]">· {r.customer_name}</span></p>
                   <p className="text-[11px] text-[#8E8E93]">{r.items_count} baris · {r.sales_name || "—"} · {statusText(r.status)}</p>
                 </div>
                 {r.also_pending && <span className="whitespace-nowrap rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[10px] font-bold text-[#9A5B00]" data-testid={`${tp}-keep-also-pending-${r.order_id}`}>juga Pending</span>}

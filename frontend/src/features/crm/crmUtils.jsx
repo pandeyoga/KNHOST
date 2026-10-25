@@ -53,6 +53,30 @@ export function KpiTile({ label, value, sub, tone, testId }) {
   );
 }
 
+// UAT 24 Okt (audit UI tahap 2) — G2-08/G2-09: satu kamus metode bayar & kebijakan lot untuk form dan detail
+// (dulu detail menulis "Default: TEMPO", "Metode: tunai, tempo", "Prefer single lot").
+export const PAYMENT_METHODS = [
+  { key: "tunai", label: "Tunai" },
+  { key: "tempo", label: "Tempo (kredit)" },
+  { key: "dp", label: "DP + Sisa" },
+  { key: "bertahap", label: "Bertahap (cicilan)" },
+  { key: "kontan", label: "Kontan" },
+];
+export const paymentMethodLabel = (k) =>
+  PAYMENT_METHODS.find((m) => m.key === k)?.label || (k ? String(k).replaceAll("_", " ") : "—");
+
+export const LOT_POLICY_OPTIONS = [
+  { value: "", label: "Bawaan (utamakan satu lot)" },
+  { value: "prefer_single", label: "Utamakan satu lot" },
+  { value: "strict_single", label: "Wajib satu lot" },
+  { value: "allow_mixed", label: "Boleh campur lot" },
+];
+export const lotPolicyLabel = (v) => LOT_POLICY_OPTIONS.find((o) => o.value === (v || ""))?.label || String(v || "—");
+
+// Status bayar SO di riwayat pelanggan.
+const PAY_LABEL = { paid: "Lunas", partial: "Bayar sebagian", partially_paid: "Bayar sebagian", unpaid: "Belum bayar", pending: "Belum bayar" };
+export const payStatusLabel = (s) => PAY_LABEL[String(s || "").toLowerCase()] || (s ? String(s).replaceAll("_", " ") : "Belum bayar");
+
 export function money(v) {
   return formatCurrency(Number(v) || 0);
 }

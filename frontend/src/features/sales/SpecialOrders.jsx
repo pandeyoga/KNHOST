@@ -17,7 +17,7 @@ import CreateSpecialOrderForm from "./CreateSpecialOrderForm";
 import SpecialOrderDetail from "./SpecialOrderDetail";
 import { StatusPill, fmtDay, odPhaseOf } from "./SpecialOrderShared";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
-import PagedRows from "../../components/PagedRows";
+import usePagedRows from "../../hooks/usePagedRows";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 
@@ -206,8 +206,11 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
       </div>
 
       {/* Status tabs → baris cari (standar daftar penjualan) */}
-      <StatusTabs testIdPrefix="status-tab" value={statusFilter} onChange={setStatusFilter}
-        tabs={statusTabs.map((t) => ({ ...t, count: t.key ? soCnt(t.key) : soTotal }))} />
+      {/* UAT 24 Okt (audit UI tahap 2) — G2-03: di HP tab status digeser horizontal (dulu patah 4 baris). */}
+      <div className="max-sm:[&_.tab-bar]:flex-nowrap max-sm:[&_.tab-bar]:overflow-x-auto max-sm:[&_.tab-button]:shrink-0">
+        <StatusTabs testIdPrefix="status-tab" value={statusFilter} onChange={setStatusFilter}
+          tabs={statusTabs.map((t) => ({ ...t, count: t.key ? soCnt(t.key) : soTotal }))} />
+      </div>
       <ListToolbar testId="special-order-toolbar">
         <SearchBox value={searchQuery} onChange={setSearchQuery} testId="special-order-search"
           placeholder="Cari nomor / pelanggan / keterangan…" />
@@ -236,88 +239,123 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
           )}
         </div>
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nomor</th>
-                <th>Pelanggan</th>
-                <th>Deskripsi item</th>
-                <th className="text-right">Qty · harga target</th>
-                <th className="text-right">Total</th>
-                <th>Status</th>
-                <th>Tenggat kirim</th>
-              </tr>
-            </thead>
-            <tbody>
-              <PagedRows rows={filteredOrders} pageSize={20} testId="special-orders-pager">{(order) => (
-                // 23 Okt — seluruh baris membuka detail; tautan "Detail" pindah ke sel nomor (dulu kolom aksi paling kanan
-                // terdorong keluar layar 1440 px dan nomor OD pecah tiga baris).
-                <tr key={order.id} data-testid={`special-order-row-${order.id}`} className="cursor-pointer"
-                  onClick={() => { setSelectedOrder(order); setView("detail"); }}>
-                  <td className="whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={12} className="text-purple-500" />
-                      <span className="font-mono font-semibold">{order.number}</span>
-                      {order.origin === "redesign" && <span className="feature-badge badge-orange" data-testid={`special-order-redesign-badge-${order.id}`}>Redesign</span>}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 pl-5 text-[10.5px]">
-                      {(order.items || []).length > 1 && <span className="text-muted" data-testid={`special-order-items-count-${order.id}`}>{order.items.length} item</span>}
-                      <button type="button" data-testid={`view-special-order-${order.id}`} className="link-button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setView("detail"); }}>Detail →</button>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="font-medium">{order.customer_name}</div>
-                    <div className="text-xs text-muted">{order.customer_email}</div>
-                  </td>
-                  <td>
-                    <div className="max-w-xs">
-                      <div className="font-medium truncate">
-                        {order.custom_item?.description || "-"}
-                      </div>
-                      {order.custom_item?.specifications && Object.keys(order.custom_item.specifications).length > 0 && (
-                        <div className="text-xs text-muted">
-                          {Object.entries(order.custom_item.specifications).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(", ")}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  {/* Cek UI UAT v3 (S13) — OD multi-item dulu hanya menampilkan qty & harga target item pertama. */}
-                  {(() => {
-                    const items = (order.items || []).filter((i) => i.status !== "cancelled");
-                    const units = [...new Set(items.map((i) => i.unit || "meter"))];
-                    const multi = items.length > 1;
-                    // Audit UI 24 Okt (120) — satuan berbeda TIDAK dijumlah; tampil per satuan (dulu hanya item pertama).
-                    const perUnit = units.map((u) => ({ u, q: items.filter((i) => (i.unit || "meter") === u).reduce((a, i) => a + Number(i.quantity || 0), 0) }));
-                    const target = Number(order.custom_item?.target_price || 0);
-                    return (<>
-                      <td className="whitespace-nowrap text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
-                        {multi
-                          ? perUnit.map(({ u, q }, ix) => <span key={u}>{ix > 0 ? " · " : ""}<strong>{formatQty(q)}</strong> {u}</span>)
-                          : <><strong>{formatQty(order.custom_item?.quantity)}</strong> {order.custom_item?.unit}</>}
-                        {/* Audit UI 24 Okt (120) — "@ Rp 0" dulu tampil saat harga target kosong padahal total terisi. */}
-                        <div className="text-[11px] text-muted">
-                          {multi ? "harga per item" : target > 0 ? `@ ${formatCurrency(target)}` : "harga di rincian"}
-                        </div>
-                      </td>
-                    </>);
-                  })()}
-                  <td className="whitespace-nowrap text-right font-semibold tabular-nums">
-                    {formatCurrency(order.total_amount)}
-                  </td>
-                  <td>
-                    <StatusPill status={order.status} phase={odPhaseOf(order)} />
-                  </td>
-                  <td className="whitespace-nowrap text-muted">
-                    {order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "—"}
-                  </td>
-                </tr>
-              )}</PagedRows>
-            </tbody>
-          </table>
-        </div>
+        <SpecialOrderList orders={filteredOrders} onOpen={(order) => { setSelectedOrder(order); setView("detail"); }} />
       )}
+    </div>
+  );
+}
+
+// UAT 24 Okt (audit UI tahap 2) — G2-03: daftar OD. Di HP (< 640px) tampil sebagai kartu (nomor, pelanggan, nilai,
+// status, tenggat); di layar lebar tabel dengan kolom nomor menempel kiri. Pager di LUAR wadah gulir supaya
+// "Sebelumnya/Berikutnya" selalu terlihat (dulu ikut tergeser keluar layar).
+function SpecialOrderList({ orders, onOpen }) {
+  const { pageRows, pager } = usePagedRows(orders, { pageSize: 20, testId: "special-orders-pager" });
+  return (
+    <div data-testid="special-order-list">
+      <div className="grid gap-2 sm:hidden" data-testid="special-order-cards">
+        {pageRows.map((order) => (
+          <button key={order.id} type="button" data-testid={`special-order-card-${order.id}`}
+            className="w-full rounded-xl border border-[#EFF0F2] bg-white p-3 text-left shadow-sm" onClick={() => onOpen(order)}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono text-[12.5px] font-semibold">{order.number}</span>
+                  {order.origin === "redesign" && <span className="feature-badge badge-orange">Redesign</span>}
+                </div>
+                <div className="truncate text-[12.5px] font-medium">{order.customer_name || "—"}</div>
+              </div>
+              <StatusPill status={order.status} phase={odPhaseOf(order)} />
+            </div>
+            <div className="mt-1 truncate text-[11.5px] text-muted">
+              {order.custom_item?.description || "-"}{(order.items || []).length > 1 ? ` · ${order.items.length} item` : ""}
+            </div>
+            <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px]">
+              <span className="text-muted">{order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "Tenggat —"}</span>
+              <b className="tabular-nums">{formatCurrency(order.total_amount)}</b>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="table-container hidden sm:block">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th className="left-0 z-[2]">Nomor</th>
+              <th>Pelanggan</th>
+              <th>Deskripsi item</th>
+              <th className="text-right">Qty · harga target</th>
+              <th className="text-right">Total</th>
+              <th>Status</th>
+              <th>Tenggat kirim</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map((order) => (
+              <tr key={order.id} data-testid={`special-order-row-${order.id}`} className="cursor-pointer"
+                onClick={() => onOpen(order)}>
+                <td className="sticky left-0 z-[1] whitespace-nowrap bg-white">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={12} className="text-purple-500" />
+                    <span className="font-mono font-semibold">{order.number}</span>
+                    {order.origin === "redesign" && <span className="feature-badge badge-orange" data-testid={`special-order-redesign-badge-${order.id}`}>Redesign</span>}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 pl-5 text-[10.5px]">
+                    {(order.items || []).length > 1 && <span className="text-muted" data-testid={`special-order-items-count-${order.id}`}>{order.items.length} item</span>}
+                    <button type="button" data-testid={`view-special-order-${order.id}`} className="link-button"
+                      onClick={(e) => { e.stopPropagation(); onOpen(order); }}>Detail →</button>
+                  </div>
+                </td>
+                <td>
+                  <div className="font-medium">{order.customer_name}</div>
+                  <div className="text-xs text-muted">{order.customer_email}</div>
+                </td>
+                <td>
+                  <div className="max-w-xs">
+                    <div className="font-medium truncate">
+                      {order.custom_item?.description || "-"}
+                    </div>
+                    {order.custom_item?.specifications && Object.keys(order.custom_item.specifications).length > 0 && (
+                      <div className="text-xs text-muted">
+                        {Object.entries(order.custom_item.specifications).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                {/* Cek UI UAT v3 (S13) — OD multi-item dulu hanya menampilkan qty & harga target item pertama. */}
+                {(() => {
+                  const items = (order.items || []).filter((i) => i.status !== "cancelled");
+                  const units = [...new Set(items.map((i) => i.unit || "meter"))];
+                  const multi = items.length > 1;
+                  // Audit UI 24 Okt (120) — satuan berbeda TIDAK dijumlah; tampil per satuan (dulu hanya item pertama).
+                  const perUnit = units.map((u) => ({ u, q: items.filter((i) => (i.unit || "meter") === u).reduce((a, i) => a + Number(i.quantity || 0), 0) }));
+                  const target = Number(order.custom_item?.target_price || 0);
+                  return (<>
+                    <td className="whitespace-nowrap text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
+                      {multi
+                        ? perUnit.map(({ u, q }, ix) => <span key={u}>{ix > 0 ? " · " : ""}<strong>{formatQty(q)}</strong> {u}</span>)
+                        : <><strong>{formatQty(order.custom_item?.quantity)}</strong> {order.custom_item?.unit}</>}
+                      {/* Audit UI 24 Okt (120) — "@ Rp 0" dulu tampil saat harga target kosong padahal total terisi. */}
+                      <div className="text-[11px] text-muted">
+                        {multi ? "harga per item" : target > 0 ? `@ ${formatCurrency(target)}` : "harga di rincian"}
+                      </div>
+                    </td>
+                  </>);
+                })()}
+                <td className="whitespace-nowrap text-right font-semibold tabular-nums">
+                  {formatCurrency(order.total_amount)}
+                </td>
+                <td>
+                  <StatusPill status={order.status} phase={odPhaseOf(order)} />
+                </td>
+                <td className="whitespace-nowrap text-muted">
+                  {order.expected_delivery ? <><Clock size={11} className="mr-1 inline" />{fmtDay(order.expected_delivery)}</> : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pager}
     </div>
   );
 }

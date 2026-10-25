@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Paperclip, Send, ChevronDown, ChevronUp, Info } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatPct } from "../../utils/formatters";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 
@@ -93,11 +93,13 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
         <MoneyInput value={price} onChange={setPrice} placeholder="0" testId="spr-price-input" /></label>
       {priceNum > 0 && (
         <div className={`notice-bar ${hint?.needs_manager ? "danger" : "success"} flex items-center gap-2`} data-testid="spr-hint">
-          <Info size={14} /> <span>{pct}% di bawah harga daftar{hint ? ` — ${hint.verdict}` : ""}</span>
+          <Info size={14} /> <span>{formatPct(pct, 1, { trim: true })} di bawah harga daftar{hint ? ` — ${hint.verdict}` : ""}</span>
         </div>
       )}
       <div className="grid gap-1">
-        <span className="field-label">Bukti chat / penawaran {allowDraft ? "(wajib saat diajukan)" : "*"}</span>
+        {/* UAT 24 Okt (audit UI tahap 2) — G2-14: penanda wajib standar (*); draf boleh tanpa bukti → keterangan kecil. */}
+        <span className="field-label">Bukti chat / penawaran *</span>
+        {allowDraft && <span className="text-[10.5px] text-[#8E8E93]" data-testid="spr-file-draft-hint">Boleh menyusul bila disimpan sebagai draf.</span>}
         <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" data-testid="spr-file-input"
           onChange={(e) => setFile(e.target.files?.[0] || null)} />
         <button type="button" className="secondary-button w-full flex items-center justify-center gap-2" onClick={() => fileRef.current?.click()} data-testid="spr-file-btn">
@@ -123,17 +125,27 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
         </div>
       )}
       {err && <div className="notice-bar danger" data-testid="spr-error">{String(err)}</div>}
-      <div className="flex flex-wrap gap-2">
-        {onCancel && <button type="button" className="secondary-button flex-1" disabled={busy} onClick={onCancel} data-testid="spr-cancel">Batal</button>}
-        {allowDraft && (
-          <button type="button" className="secondary-button flex-1 whitespace-nowrap" disabled={busy} onClick={() => submit(true)} data-testid="spr-save-draft">
-            Simpan sebagai Draf
+      {allowDraft ? (
+        /* G2-14 — kaki standar pop-up: Batal di kiri, Simpan Draf + Ajukan di kanan (dulu tiga tombol penuh sama besar). */
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#EFF0F2] pt-3" data-testid="spr-footer">
+          {onCancel && <button type="button" className="secondary-button" disabled={busy} onClick={onCancel} data-testid="spr-cancel">Batal</button>}
+          <div className="ml-auto flex flex-wrap gap-2">
+            <button type="button" className="secondary-button whitespace-nowrap" disabled={busy} onClick={() => submit(true)} data-testid="spr-save-draft">
+              Simpan Draf
+            </button>
+            <button type="button" className="primary-button flex items-center justify-center gap-2 whitespace-nowrap" disabled={busy} onClick={() => submit(false)} data-testid="spr-submit">
+              <Send size={14} /> {busy ? "Mengirim…" : "Ajukan"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {onCancel && <button type="button" className="secondary-button flex-1" disabled={busy} onClick={onCancel} data-testid="spr-cancel">Batal</button>}
+          <button type="button" className="primary-button flex-1 flex items-center justify-center gap-2 whitespace-nowrap" disabled={busy} onClick={() => submit(false)} data-testid="spr-submit">
+            <Send size={14} /> {busy ? "Mengirim…" : "Ajukan"}
           </button>
-        )}
-        <button type="button" className="primary-button flex-1 flex items-center justify-center gap-2 whitespace-nowrap" disabled={busy} onClick={() => submit(false)} data-testid="spr-submit">
-          <Send size={14} /> {busy ? "Mengirim…" : "Ajukan"}
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
