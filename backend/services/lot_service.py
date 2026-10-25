@@ -606,11 +606,14 @@ async def stats(query: Dict[str, Any]) -> Dict[str, Any]:
     """Ringkasan untuk kartu KPI + hitungan roll tanpa lot (bukti keputusan 2 = warn)."""
     lots = await db[COLL].find(dict(query or {}),
                               {"_id": 0, "lot_status": 1, "source": 1, "qty_remaining": 1,
-                               "roll_count": 1, "supplier_lot": 1, "dye_lot": 1}).to_list(20000)
+                               "roll_count": 1, "supplier_lot": 1, "dye_lot": 1, "unit": 1}).to_list(20000)
     by_status: Dict[str, int] = {}
     by_source: Dict[str, int] = {}
     qty = rolls = incomplete = 0.0
+    by_unit: Dict[str, float] = {}   # audit UI tahap 2 (G3-33) — yard & kg tidak dijumlah jadi satu angka
     for l in lots:
+        u = l.get("unit") or "meter"
+        by_unit[u] = by_unit.get(u, 0.0) + float(l.get("qty_remaining") or 0)
         by_status[l.get("lot_status", "?")] = by_status.get(l.get("lot_status", "?"), 0) + 1
         by_source[l.get("source", "?")] = by_source.get(l.get("source", "?"), 0) + 1
         qty += float(l.get("qty_remaining") or 0)
@@ -624,6 +627,7 @@ async def stats(query: Dict[str, Any]) -> Dict[str, Any]:
     rolls_without_lot = await db[ROLLS].count_documents(roll_q)
     return {"total": len(lots), "by_status": by_status, "by_source": by_source,
             "qty_remaining": round(qty, 3), "rolls_in_lots": int(rolls),
+            "qty_remaining_by_unit": {u: round(q, 3) for u, q in by_unit.items()},
             "incomplete_capture": int(incomplete),
             "rolls_without_lot": rolls_without_lot,
             "settings": await get_settings()}

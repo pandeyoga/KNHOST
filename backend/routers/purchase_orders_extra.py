@@ -271,5 +271,13 @@ async def cancel_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
     )
 
     await audit(actor["name"], "po_cancelled", "purchase_order", po_id, {})
+    # Audit UI tahap 2 (G4-12) — PO batal → PR yang direalisasikan ke PO ini kembali bisa dipakai (dulu tetap
+    # "Jadi PO" menunjuk PO mati). Idempoten; kegagalan tidak membatalkan pembatalan PO.
+    try:
+        from services import pr_sourcing_service as prs
+        await prs.release_po_realizations(po_id, actor_name=actor["name"], event="dibatalkan")
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("[cancel_purchase_order] PR tidak dilepas: %s", exc)
 
     return safe_doc(updated_po)

@@ -60,9 +60,13 @@ async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
     # Cek UI UAT v3 (S8) — dulu id peran mentah ("warehouse_admin", "md_quality") di pilihan petugas.
     from role_registry import role_label
     from config_divisions import division_name
+    # Audit UI tahap 2 (G3-18) — `dedicated` & `group` ikut dikirim: petugas QC khusus dikelompokkan lebih dulu,
+    # peran lain yang juga berkemampuan inspect di bawah "Peran lain".
     out["officers"] = [{"value": u["id"],
                         "label": f"{u.get('name', '')} · "
-                                 f"{(division_name(u['division']) if u.get('division') else '') or role_label(u.get('role', ''))}"}
+                                 f"{(division_name(u['division']) if u.get('division') else '') or role_label(u.get('role', ''))}",
+                        "dedicated": bool(u.get("dedicated")),
+                        "group": "Petugas QC" if u.get("dedicated") else "Peran lain"}
                        for u in officers]
     out["role"] = (actor or {}).get("role", "")
     out["can_release_hold"] = (actor or {}).get("role") in svc.HOLD_RELEASE_ROLES

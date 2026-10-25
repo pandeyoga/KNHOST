@@ -28,7 +28,7 @@ async def attach_checkout_requests(order_id: str, lines: List[Any], actor: Dict[
             "unit": item.get("unit", ""), "min_quantity": 0, "valid_until": "",
             "reason": (ln.special_price_reason or "").strip(), "entity_id": order.get("entity_id", DEFAULT_ENTITY_ID),
             "status": "pending", "scope": "order", "so_id": order_id, "so_item_index": idx, "source": "checkout",
-            "attachments": [], "requested_by": actor["name"], "requested_by_id": actor["id"],
+            "attachments": [], "requested_by": actor["name"], "requested_by_name": actor["name"], "requested_by_id": actor["id"],
             "created_at": now_iso(), "updated_at": now_iso(),
         }
         await db.price_approvals.insert_one(dict(pra))

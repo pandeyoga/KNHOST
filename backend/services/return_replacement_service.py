@@ -126,9 +126,9 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
         qty_base = round(qty_yard * await _yard_factor(prod), 2)
         appr = pas.build_doc(customer=customer, product=prod, entity_id=ret.get("entity_id", ""),
                              requested_price=obl[pid]["unit_price_base"], requester=actor, status="approved",
-                             reason=f"Harga transaksi asal untuk pengganti retur {ret.get('number', '')} (KLR-05)",
+                             reason=f"Harga transaksi asal untuk pengganti retur {ret.get('number', '')}",   # KLR-05 — kode keputusan tidak tampil
                              valid_until=until, source="return_replacement",
-                             extra={"replacement_return_id": ret["id"], "approved_by_name": "sistem (KLR-05)",
+                             extra={"replacement_return_id": ret["id"], "approved_by_name": "Sistem (harga transaksi asal)",
                                     "decided_at": now_iso()})
         await pas.insert(appr)
         approvals.append(appr["id"])

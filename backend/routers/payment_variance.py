@@ -135,6 +135,9 @@ async def by_receipt(receipt_id: str, request: Request) -> Dict[str, Any]:
              "others_total": assessment.get("others_total", 0),
              "plan_total": assessment.get("capacity", 0),
              "suggested_due_date": assessment.get("suggested_due_date", "")})
+        # Audit UI tahap 2 (G1-12) — API juga satu sumber angka: blok selisih tersimpan di kwitansi menang atas
+        # takar ulang (dulu "seharusnya Rp 0 … Kurang" vs "LEBIH bayar" dalam satu dialog).
+        assessment = pvs.apply_stored_variance(assessment, v)
     return {"receipt": r, "variance": v, "decision": decision, "assessment": assessment}
 
 

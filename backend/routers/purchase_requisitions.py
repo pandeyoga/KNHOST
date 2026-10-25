@@ -222,13 +222,15 @@ async def reject_requisition(pr_id: str, request: Request,
 
 
 @router.post("/purchase-requisitions/{pr_id}/cancel")
-async def cancel_requisition(pr_id: str, request: Request) -> Dict[str, Any]:
+async def cancel_requisition(pr_id: str, request: Request,
+                             payload: PurchaseRequisitionDecision = PurchaseRequisitionDecision()) -> Dict[str, Any]:
     user = await require_permission(request, "purchase_requisition", "update")
+    reason = (payload.notes or "").strip()   # Audit UI tahap 2 (G4-11) — alasan dari dialog layar ikut tercatat
     try:
-        doc = await svc.cancel_requisition(pr_id)
+        doc = await svc.cancel_requisition(pr_id, reason=reason, actor_name=user.get("name", ""))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    await audit(user.get("name", ""), "pr_cancelled", "purchase_requisition", pr_id, {})
+    await audit(user.get("name", ""), "pr_cancelled", "purchase_requisition", pr_id, {"reason": reason})
     return doc
 
 

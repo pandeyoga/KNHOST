@@ -254,8 +254,10 @@ async def purchase_order_status_counts(request: Request, entity_id: str = None, 
     query = await _po_list_query(request, actor, entity_id, line, late)
     if q:
         query = merge_query(query, build_search(q, ["po_number", "supplier_name", "warehouse_name"]))
+    # Audit UI tahap 2 (G4-30) — chip status bayar tidak menghitung PO batal/ditolak ("Belum Bayar 30" vs 26).
     pay_rows = await db.purchase_orders.aggregate(
-        [{"$match": query}, {"$group": {"_id": "$payment_status", "n": {"$sum": 1}}}]).to_list(20)
+        [{"$match": merge_query(query, {"status": {"$nin": ["cancelled", "rejected"]}})},
+         {"$group": {"_id": "$payment_status", "n": {"$sum": 1}}}]).to_list(20)
     by_payment: Dict[str, int] = {}
     for r in pay_rows:
         k = r["_id"] if r["_id"] in PO_PAYMENT_FILTERS else "unpaid"
@@ -954,6 +956,11 @@ async def reject_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail="PO baru saja disetujui/berubah oleh pihak lain. Muat ulang.")
     await audit(actor["name"], "po_rejected", "purchase_order", po_id,
                 {"po_number": po.get("po_number"), "reason": reason})
+    try:   # Audit UI tahap 2 (G4-12) — PO ditolak → realisasi PR dilepas (idempoten)
+        from services import pr_sourcing_service as prs
+        await prs.release_po_realizations(po_id, actor_name=actor["name"], reason=reason, event="ditolak")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[reject_po] PR tidak dilepas: %s", exc)
     try:
         from services.notification_service import resolve_action
         await resolve_action("po_approve", po_id, outcome="ditolak", actor=actor["name"])
