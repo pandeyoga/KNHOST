@@ -82,8 +82,9 @@ export default function IntercoDetailPanel({ intercoId, currentUser, onClose }) 
                 Detail Transaksi Antar-PT
               </h2>
               {pair && (
-                <p className="text-xs text-[#6E6E73] mt-0.5">
-                  {pair.seller?.number} ↔ {pair.buyer?.number} · pair {pair.pair_id}
+                // UAT 24 Okt (audit UI tahap 2) — G1-11: id teknis pasangan hanya di tooltip.
+                <p className="text-xs text-[#6E6E73] mt-0.5" title={`Id pasangan: ${pair.pair_id}`}>
+                  {pair.seller?.number} ↔ {pair.buyer?.number}
                 </p>
               )}
             </div>

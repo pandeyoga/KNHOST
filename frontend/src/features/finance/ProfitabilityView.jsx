@@ -2,6 +2,7 @@
  * ProfitabilityView (FINANCE) — Analisis Profitabilitas / Margin (WAC).
  * Dimensi: Produk · Kategori · Pelanggan · Sales. Sumber: /api/finance/profitability.
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -43,7 +44,7 @@ export default function ProfitabilityView({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/profitability`, { params });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat analisis profitabilitas.");
+      setError(apiErrorText(e, "Gagal memuat analisis profitabilitas."));
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 
@@ -73,7 +74,7 @@ export default function ProfitabilityView({ selectedEntity }) {
     <div data-testid="profitability-view">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
-        <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk landed ${compactIDR(tot.cogs_landed || 0)}` : "tanpa landed cost"} />
+        <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk biaya masuk (landed) ${compactIDR(tot.cogs_landed || 0)}` : "belum ada biaya masuk (landed) yang dibebankan"} />
         <KpiCard testId="prof-kpi-margin" label="Marjin Kotor" value={formatCurrency(tot.margin)} icon={Boxes} accent={FC.net} tone={(tot.margin ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
         <KpiCard testId="prof-kpi-marginpct" label="Marjin %" value={fmtPct(tot.margin_pct)} icon={Percent} accent={FC.teal} sub={`${tot.orders || 0} pesanan terkirim`} />
       </div>
@@ -114,7 +115,7 @@ export default function ProfitabilityView({ selectedEntity }) {
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="revenue" name="Pendapatan" fill={FC.revenue} radius={[4, 4, 0, 0]} maxBarSize={24} />
                   <Bar dataKey="cogs" name="HPP" fill={FC.amber} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Line type="monotone" dataKey="margin" name="Marjin" stroke={FC.net} strokeWidth={2.5} dot={{ r: 2 }} />
+                  <Line type="linear" dataKey="margin" name="Marjin" stroke={FC.net} strokeWidth={2.5} dot={{ r: 2 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             </Panel>
@@ -185,7 +186,9 @@ export default function ProfitabilityView({ selectedEntity }) {
           </Panel>
         </>
       )}
-      <p className="mt-2 text-[11px] text-[#9A9BA3]">Marjin = Pendapatan baris SO − (WAC × qty). HPP memakai Weighted Average Cost per produk/entitas, <b>termasuk landed cost</b> (kolom Landed memisah komponen freight/bea/handling). Dimensi <b>Per-PT</b> menampilkan margin per entitas.</p>
+      <p className="mt-2 text-[11px] text-[#9A9BA3]">Marjin = Pendapatan baris SO − (WAC × qty). HPP memakai Weighted Average Cost per produk/entitas{tot.landed_included
+          ? <>, <b>termasuk biaya masuk (landed cost)</b> (kolom Landed memisah komponen freight/bea/handling)</>
+          : <> — <b>belum ada biaya masuk (landed cost)</b> yang dibebankan pada periode ini</>}. Dimensi <b>Per-PT</b> menampilkan margin per entitas.</p>
     </div>
   );
 }

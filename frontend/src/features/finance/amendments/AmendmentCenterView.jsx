@@ -127,7 +127,8 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
             <button data-testid="amd-tab-daftar" className={`tab-button ${tab === "daftar" ? "active" : ""}`}
               onClick={() => setTab("daftar")}>
               <FileEdit size={12} className="mr-1 inline" /> Daftar Amandemen
-              <span className="tab-badge">{rows.length}</span>
+              {/* G1-45 — lencana = total semua amandemen (stats), bukan jumlah baris yang tersaring tab status. */}
+              <span className="tab-badge">{Number(stats.total ?? rows.length)}</span>
             </button>
             {canSeeReasons && (
               <a data-testid="amd-reasons-link" href="?view=amendment-reasons" className="ml-auto self-center text-[11px] font-semibold text-[#0058CC] underline">
@@ -151,7 +152,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
               <div className="tab-bar" data-testid="amd-status-filters">
                 {STATUS_TABS.map((f) => (
                   <button key={f.key} data-testid={`amd-filter-${f.key || "all"}`} onClick={() => { setStatus(f.key); setSelected(null); }}
-                    className={`tab-button ${status === f.key ? "active" : ""}`}>
+                    className={`tab-button whitespace-nowrap ${status === f.key ? "active" : ""}`}>
                     {f.label}<span className="tab-badge">{Number((f.key ? stats[f.key] : stats.total) ?? 0)}</span>
                   </button>
                 ))}
@@ -166,7 +167,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
                 <span className="text-[10.5px] text-[#8E8E93]">{filtered.length} dokumen</span>
               </div>
               <div className="overflow-hidden">
-                <div className="grid grid-cols-[1fr_120px_110px] gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
+                <div className="grid grid-cols-[1fr_110px_140px] gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
                   <span>Amandemen</span><span className="text-right">Dampak</span><span>Status</span>
                 </div>
                 <div className="max-h-[620px] divide-y divide-[#EFF0F2] overflow-y-auto">
@@ -188,7 +189,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
                       <div key={a.id} data-testid={`amd-row-${a.id}`} role="button" tabIndex={0}
                         onClick={() => setSelected(a.id)}
                         onKeyDown={(e) => { if (e.key === "Enter") setSelected(a.id); }}
-                        className={`grid cursor-pointer grid-cols-[1fr_120px_110px] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[#FAFBFC] ${selected === a.id ? "border-l-2 border-[#007AFF] bg-[#EFF4FF]" : ""}`}>
+                        className={`grid cursor-pointer grid-cols-[1fr_110px_140px] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[#FAFBFC] ${selected === a.id ? "border-l-2 border-[#007AFF] bg-[#EFF4FF]" : ""}`}>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[12px] font-bold text-[#0058CC]">{a.number}</span>
@@ -203,10 +204,10 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
                             {a.proposed_by || "—"} · {when(a.proposed_at)}
                           </p>
                         </div>
-                        <p className={`text-right text-[12px] font-bold tabular-nums ${delta < 0 ? "text-[#A8221A]" : "text-[#1B7A43]"}`}>
-                          {delta < 0 ? "−" : "+"} {formatCurrency(Math.abs(delta))}
+                        <p className={`text-right text-[12px] font-bold tabular-nums ${Math.abs(delta) < 0.005 ? "text-[#6B6B73]" : delta < 0 ? "text-[#A8221A]" : "text-[#1B7A43]"}`}>
+                          {Math.abs(delta) < 0.005 ? "" : delta < 0 ? "− " : "+ "}{formatCurrency(Math.abs(delta))}
                         </p>
-                        <span className="justify-self-start rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                        <span className="justify-self-start whitespace-nowrap rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
                           style={{ background: sm.bg, color: sm.fg }}>{sm.label}</span>
                       </div>
                     );

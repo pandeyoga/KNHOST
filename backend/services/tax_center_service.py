@@ -101,7 +101,8 @@ async def compute_pph(entity_id: Optional[str], period: str,
         if basis == "payroll":
             p21 = await _period_pph21(entity_id, period)
             dpp, amount = p21["dpp"], p21["amount"]
-            source = f"{p21['count']} payroll run (PPh21 aktual/TER)"
+            # G1-40 — tanpa istilah Inggris "payroll run".
+            source = f"{p21['count']} penggajian terposting (PPh 21 tarif efektif/TER)"
         elif basis == "omzet":
             dpp = await _period_omzet(entity_id, period)
             amount = round(dpp * rate / 100.0, 2)

@@ -40,7 +40,7 @@ export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
             <Undo2 size={18} className="text-[#C0392B] mt-0.5" />
             <div>
               <h2 className="text-base font-semibold text-[#1D1D1F]">
-                Batalkan Transaksi Antar-PT
+                {perluAlasan ? "Batalkan Transaksi Antar-PT" : "Batalkan Draf Antar-PT"}
               </h2>
               <p className="text-xs text-[#6E6E73] mt-0.5">
                 {doc.number} · {formatCurrency(doc.grand_total)}
@@ -54,6 +54,11 @@ export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
         </div>
 
         <div className="px-6 py-4 space-y-3">
+          {!perluAlasan && (
+            <p className="text-[12px] text-[#6E6E73]" data-testid="interco-cancel-draft-note">
+              Dokumen masih draf — belum ada jurnal, jadi tidak ada yang dibalik.
+            </p>
+          )}
           {perluAlasan && (
             <div className="flex items-start gap-2 rounded-lg bg-[#FFF7E6] border border-[#FFE1A8] px-3 py-2.5 text-[12px] text-[#8A5A00]">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
@@ -66,7 +71,7 @@ export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
           )}
           <div>
             <label className="block text-xs font-medium text-[#3C3C43] mb-1">
-              Alasan pembatalan {perluAlasan && <span className="text-[#C0392B]">*</span>}
+              Alasan pembatalan {perluAlasan ? <span className="text-[#C0392B]">*</span> : <span className="text-[#8E8E93]">(opsional)</span>}
             </label>
             <textarea
               data-testid="interco-cancel-reason"
@@ -101,7 +106,8 @@ export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
             data-testid="interco-cancel-submit"
             className="px-3.5 py-2 text-sm rounded-lg bg-[#C0392B] text-white hover:bg-[#A93226] disabled:opacity-50"
           >
-            {busy ? "Membatalkan…" : "Batalkan & Balik Jurnal"}
+            {/* UAT 24 Okt (audit UI tahap 2) — G1-29: draf belum berjurnal → tidak menyebut "balik jurnal". */}
+            {busy ? "Membatalkan…" : perluAlasan ? "Batalkan & Balik Jurnal" : "Batalkan Draf"}
           </button>
         </div>
       </div>

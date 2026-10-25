@@ -178,6 +178,12 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
               {s.label}
             </div>
           ))}
+          {/* G1-24 — supplier terpilih selalu terlihat di kepala langkah (dulu hilang saat dibuka dari baris GR). */}
+          {step > 1 && (prep?.supplier?.name || prep?.supplier_name) && (
+            <span className="ml-auto truncate text-[11px] text-[#3C3C43]" data-testid="cb-create-supplier-name">
+              Supplier: <b>{prep?.supplier?.name || prep?.supplier_name}</b>
+            </span>
+          )}
         </div>
 
         <div className="px-4 py-4">
@@ -259,7 +265,8 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
                   <p className="rounded-md bg-[#FFF4E5] px-3 py-2 text-[12px] text-[#8C4A00]"
                     data-testid="cb-create-no-bills">
                     Tidak ada tagihan supplier yang siap dikontrabon. Tagihan harus berstatus
-                    “posted”, masih ada sisa hutang, dan belum dipegang kontrabon lain.
+                    Terposting, masih ada sisa hutang, dan belum dipegang kontrabon lain.{" "}
+                    <a className="font-semibold underline" href="?view=vendor-bills">Buka Tagihan Supplier</a>
                   </p>
                 )
                 : (
@@ -432,10 +439,13 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" data-testid="cb-create-back"
-            disabled={step === 1} onClick={() => setStep((s) => Math.max(1, s - 1))}>
-            <ChevronLeft size={14} /> Kembali
-          </button>
+          {/* G1-24 — tombol Kembali tidak tampil di langkah 1. */}
+          {step > 1 ? (
+            <button className="secondary-button" data-testid="cb-create-back"
+              onClick={() => setStep((s) => Math.max(1, s - 1))}>
+              <ChevronLeft size={14} /> Kembali
+            </button>
+          ) : <span />}
           <div className="flex items-center gap-2">
             <button className="secondary-button" onClick={onClose}>Batal</button>
             {step < 3

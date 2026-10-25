@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Wallet, Plus, RefreshCw, FileText } from "lucide-react";
@@ -47,7 +48,7 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
       setRows(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Pengajuan Dana.");
+      setError(apiErrorText(e, "Gagal memuat Pengajuan Dana."));
     } finally { setLoading(false); }
   }
 
@@ -57,7 +58,7 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
     try {
       const res = await axios.get(`${API}/cash-advances/${id}`);
       setSelected(res.data); setView("detail");
-    } catch (e) { flash(e.response?.data?.detail || "Gagal memuat detail."); }
+    } catch (e) { flash(apiErrorText(e, "Gagal memuat detail.")); }
   }
 
   const metrics = useMemo(() => {

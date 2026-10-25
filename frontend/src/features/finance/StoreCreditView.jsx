@@ -5,6 +5,7 @@
  *          POST /store-credit/redeem, /store-credit/adjust.
  * Akses admin/manager/sales (redeem); adjust admin/manager.
  */
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { can } from "../../config/roles";
@@ -56,7 +57,7 @@ export default function StoreCreditView({ selectedEntity, currentUser }) {
       setRows(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data store credit.");
+      setError(apiErrorText(e, "Gagal memuat data store credit."));
     } finally {
       setLoading(false);
     }
@@ -284,7 +285,7 @@ function RedeemModal({ row, onClose, onDone }) {
         const list = Array.isArray(res.data) ? res.data : [];
         setOrders(list);
         if (list.length) { setOrderId(list[0].order_id); }
-      } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat order AR."); }
+      } catch (e) { setErr(apiErrorText(e, "Gagal memuat order AR.")); }
       finally { setLoading(false); }
     })();
   }, [row.customer_id]);
@@ -304,7 +305,7 @@ function RedeemModal({ row, onClose, onDone }) {
       const res = await axios.post(`${API}/store-credit/redeem`, body);
       setOk(`Berhasil dipakai ${formatCurrency(res.data?.applied_amount)} (${res.data?.number}).`);
       setTimeout(onDone, 900);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal memakai store credit."); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal memakai store credit.")); }
     finally { setBusy(false); }
   };
 
@@ -367,7 +368,7 @@ function AdjustModal({ row, onClose, onDone }) {
         customer_id: row.customer_id, entity_id: row.entity_id || undefined, amount: signed, note,
       });
       setTimeout(onDone, 400);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyesuaikan saldo."); setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal menyesuaikan saldo.")); setBusy(false); }
   };
 
   return (
@@ -410,7 +411,7 @@ function ReverseModal({ entry, onClose, onDone }) {
       await axios.post(`${API}/store-credit/entries/${entry.id}/reverse`, { reason });
       setTimeout(onDone, 400);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal membatalkan entri store credit.");
+      setErr(apiErrorText(e, "Gagal membatalkan entri store credit."));
       setBusy(false);
     }
   };

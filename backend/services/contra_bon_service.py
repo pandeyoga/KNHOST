@@ -497,8 +497,14 @@ async def unbilled_receipts(entity_ids: Optional[List[str]] = None, supplier_id:
         except ValueError:
             age = 0
         total_value += po_value
+        # UAT 24 Okt (audit UI tahap 2) — G1-23: nomor dokumen penerimaan (KSC/GRN-…) untuk layar; dulu layar
+        # hanya bisa menampilkan potongan id tugas gudang ("tugas gudang 245183").
+        grn = await db.goods_receipts.find_one(
+            {"source.po_ids": po["id"], "status": {"$ne": "cancelled"}},
+            {"_id": 0, "number": 1}, sort=[("created_at", -1)]) or {}
         rows.append({
             "po_id": po["id"], "po_number": po.get("po_number", ""),
+            "grn_number": grn.get("number", ""),
             "supplier_id": po.get("supplier_id", ""), "supplier_name": po.get("supplier_name", ""),
             "entity_id": po.get("entity_id", ""), "po_status": po.get("status", ""),
             "grn_task_id": (last or {}).get("id", ""),

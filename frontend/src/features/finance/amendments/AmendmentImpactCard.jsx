@@ -18,6 +18,9 @@ export default function AmendmentImpactCard({ data, testId = "amd-impact", compa
   const delta = Number(data.impact?.delta ?? after - before);
   const pct = Number(data.impact?.delta_pct ?? 0);
   const down = delta < 0;
+  // UAT 24 Okt (audit UI tahap 2) — G1-17/G1-14: dampak 0 tanpa panah & warna; persen id-ID 1 desimal ("0,0%").
+  const flat = Math.abs(delta) < 0.005;
+  const pctText = `${pct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
   const mm = methodMeta(data.method);
   const needsApproval = !!data.requires_approval;
 
@@ -39,11 +42,11 @@ export default function AmendmentImpactCard({ data, testId = "amd-impact", compa
         <div className="rounded-md bg-white px-1.5 py-1.5 border border-[#E5EEFB]">
           <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Dampak</p>
           <p data-testid={`${testId}-delta`}
-            className={`text-[12.5px] font-bold tabular-nums flex items-center justify-center gap-0.5 ${down ? "text-[#A8221A]" : "text-[#1B7A43]"}`}>
-            {down ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
+            className={`text-[12.5px] font-bold tabular-nums flex items-center justify-center gap-0.5 ${flat ? "text-[#3C3C43]" : down ? "text-[#A8221A]" : "text-[#1B7A43]"}`}>
+            {flat ? null : down ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
             {formatCurrency(Math.abs(delta))}
           </p>
-          <p className="text-[9.5px] tabular-nums text-[#8E8E93]">{pct.toFixed(2)}% dari nilai dokumen</p>
+          <p className="text-[9.5px] tabular-nums text-[#8E8E93]">{flat ? "Tanpa perubahan nilai" : `${pctText} dari nilai dokumen`}</p>
         </div>
       </div>
 

@@ -86,7 +86,15 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
         await load();
         return;
       }
-      setDialog({ receipt_id: row.receipt_id, number: row.number, assessment: res.assessment });
+      // UAT 24 Okt (audit UI tahap 2) — G1-12: satu sumber angka. Takar ulang server terjadi SESUDAH uang kwitansi
+      // dialokasikan, jadi batas/rincian/arahnya bisa berbeda dari tabel antrean. Angka kalimat, rincian & arah
+      // diambil dari blok selisih yang tersimpan di kwitansi (sama dengan kolom "Seharusnya"/"Selisih" tabel).
+      const v = res.variance || {};
+      const stored = {};
+      ["expected", "funds", "capacity", "boundary", "boundary_label", "delta", "direction", "explain"].forEach((k) => {
+        if (v[k] !== undefined && v[k] !== null && v[k] !== "" && !(Array.isArray(v[k]) && v[k].length === 0)) stored[k] = v[k];
+      });
+      setDialog({ receipt_id: row.receipt_id, number: row.number, assessment: { ...res.assessment, ...stored } });
     } catch (e) { setError(errText(e, "Gagal memuat rincian selisih.")); }
   };
 

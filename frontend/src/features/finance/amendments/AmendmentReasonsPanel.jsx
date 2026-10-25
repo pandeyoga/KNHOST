@@ -127,17 +127,27 @@ export default function AmendmentReasonsPanel({ currentUser }) {
         {isAdmin && (
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5" data-testid="amd-reason-new">
             <p className="mb-2 text-[10px] font-bold uppercase text-[#6B6B73]">Tambah label alasan</p>
-            <div className="grid gap-2 md:grid-cols-[150px_1fr_auto]">
-              <input data-testid="amd-reason-new-code" className="field" placeholder="Kode singkat, mis. salah_harga" aria-label="Kode alasan"
-                value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} />
-              <input data-testid="amd-reason-new-label" className="field" placeholder="Nama yang dilihat pengguna" aria-label="Nama alasan"
-                value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+            {/* UAT 24 Okt (audit UI tahap 2) — G1-42: label di atas tiap isian (dulu placeholder sebagai label & terpotong). */}
+            <div className="grid gap-2 md:grid-cols-[180px_1fr_auto] md:items-end">
+              <label className="grid gap-1 text-[11px] font-semibold text-[#4A4B53]">
+                <span>Kode <span className="text-[#C0392B]">*</span></span>
+                <input data-testid="amd-reason-new-code" className="field" placeholder="mis. salah_harga" aria-label="Kode alasan"
+                  value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} />
+              </label>
+              <label className="grid gap-1 text-[11px] font-semibold text-[#4A4B53]">
+                <span>Nama <span className="text-[#C0392B]">*</span></span>
+                <input data-testid="amd-reason-new-label" className="field" placeholder="Nama yang dilihat pengguna" aria-label="Nama alasan"
+                  value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+              </label>
               <button data-testid="amd-reason-new-save" className="primary-button" onClick={addNew} disabled={saving === "new"}>
                 <Plus size={13} /> {saving === "new" ? "Menyimpan…" : "Tambah"}
               </button>
             </div>
-            <input data-testid="amd-reason-new-help" className="field mt-2" placeholder="Penjelasan singkat kapan alasan ini dipakai"
-              value={draft.help} onChange={(e) => setDraft({ ...draft, help: e.target.value })} />
+            <label className="mt-2 grid gap-1 text-[11px] font-semibold text-[#4A4B53]">
+              <span>Penjelasan <span className="font-normal text-[#8E8E93]">(opsional)</span></span>
+              <input data-testid="amd-reason-new-help" className="field" placeholder="Kapan alasan ini dipakai"
+                value={draft.help} onChange={(e) => setDraft({ ...draft, help: e.target.value })} />
+            </label>
             <label className="mt-2 flex items-center gap-1.5 text-[11px] text-[#3C3C43]">
               <input data-testid="amd-reason-new-master" type="checkbox" checked={draft.affects_master}
                 onChange={(e) => setDraft({ ...draft, affects_master: e.target.checked })} />

@@ -21,6 +21,7 @@ import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { askConfirm } from "../../../services/confirmService";
 import { can } from "../../../config/roles";
 import IntercoCreateModal from "./IntercoCreateModal";
 import IntercoSettlementModal from "./IntercoSettlementModal";
@@ -44,7 +45,8 @@ const TABS = [
   { id: "balances",     label: "Saldo Antar-PT",   icon: Wallet },
   { id: "settlements",  label: "Settlement",       icon: Layers },
   { id: "schedule",     label: "Jadwal Bayar",     icon: Layers },
-  { id: "returns",      label: "Retur Antar-PT",   icon: Undo2 },
+  // G1-32 — "Retur Antar-PT" sama dengan judul halaman; sub-tab = arah retur.
+  { id: "returns",      label: "Retur Keluar",     icon: Undo2 },
   { id: "return-inbox", label: "Retur Masuk",      icon: Undo2 },
   { id: "loans",        label: "Pinjaman Antar-PT", icon: Wallet },
   { id: "margin",       label: "Rapor Margin",     icon: TrendingUp },
@@ -156,6 +158,19 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
 
   const advance = async (doc, action) => {
     if (!action) return;
+    // UAT 24 Okt (audit UI tahap 2) — G1-29: Konfirmasi menerbitkan jurnal di DUA buku PT → wajib dialog.
+    if (action === "confirm") {
+      const seller = doc.seller_entity_name || "PT penjual";
+      const buyer = doc.buyer_entity_name || "PT pembeli";
+      const ok = await askConfirm({
+        danger: true,
+        title: `Konfirmasi ${doc.number}?`,
+        message: `Jurnal terbit di buku ${seller} (piutang antar-PT) dan ${buyer} (utang antar-PT) senilai `
+          + `${formatCurrency(doc.grand_total || 0)}. Setelah dikonfirmasi, pembatalan harus membalik jurnal.`,
+        confirmLabel: "Konfirmasi & Terbitkan Jurnal",
+      });
+      if (!ok) return;
+    }
     setBusy(true); setErr("");
     try {
       const r = await axios.post(
@@ -263,14 +278,16 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Kpi label="Total Piutang Antar-PT" value={formatCurrency(summary?.total_receivable || 0)}
-             hint="jumlah yang wajib ditagih ke PT lain" testid="interco-kpi-receivable" />
+             hint="sisa dokumen terbuka yang wajib ditagih ke PT lain" testid="interco-kpi-receivable" />
         <Kpi label="Total Utang Antar-PT" value={formatCurrency(summary?.total_payable || 0)}
-             hint="jumlah yang wajib dibayar ke PT lain" testid="interco-kpi-payable" />
+             hint="sisa dokumen terbuka yang wajib dibayar ke PT lain" testid="interco-kpi-payable" />
         <Kpi label="Dokumen Terbuka" value={String(summary?.open_documents || 0)}
-             hint="transaksi belum lunas" testid="interco-kpi-open" />
+             hint="dikonfirmasi s/d difakturkan, belum lunas · draf tidak dihitung" testid="interco-kpi-open" />
         <Kpi label="Margin Belum Terealisasi"
              value={formatCurrency(margin?.totals?.unrealized_margin || 0)}
-             hint="dieliminasi di laporan konsolidasi grup" testid="interco-kpi-unrealized" />
+             hint={(margin?.totals?.unrealized_margin || 0) < 0
+               ? "rugi belum terealisasi — tidak dieliminasi (konservatisme)"
+               : "dieliminasi di laporan konsolidasi grup"} testid="interco-kpi-unrealized" />
       </div>
       </>
       )}
@@ -328,8 +345,17 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           rows={returns} canWrite={canWrite}
           canDecideRolls={can(perms, "interco", "decide_rolls")} activeEntityId={entityId}
           onChanged={refresh}
-          onApprove={(r) => retAct(r, "approve", { note: "" },
-            `Retur ${r.number} disetujui — jurnal pembalik terbit di kedua buku PT`)}
+          onApprove={async (r) => {
+            // G1-32 — Setujui menerbitkan nota retur + nota kredit (jurnal pembalik) di dua buku PT.
+            const ok = await askConfirm({
+              danger: true,
+              title: `Setujui retur ${r.number}?`,
+              message: "Nota retur & nota kredit terbit dan jurnal pembalik dibuat di buku kedua PT "
+                + `(nilai ${formatCurrency(r.total_value ?? r.grand_total ?? r.subtotal ?? 0)}).`,
+              confirmLabel: "Setujui Retur",
+            });
+            if (ok) retAct(r, "approve", { note: "" }, `Retur ${r.number} disetujui — jurnal pembalik terbit di kedua buku PT`);
+          }}
           onTask={(r) => retAct(r, "warehouse-task", { note: "" })}
           onCancel={(r, reason) => retAct(r, "cancel", { reason },
             `Draf retur ${r.number} dibatalkan`)}

@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
@@ -61,7 +62,7 @@ export default function TaxInvoices({ currentUser = {} }) {
       const r = await axios.get(`${API}/tax-invoices`);
       setRows(Array.isArray(r.data) ? r.data : []);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Faktur Pajak.");
+      setError(apiErrorText(e, "Gagal memuat Faktur Pajak."));
     } finally {
       setLoading(false);
     }
@@ -113,7 +114,7 @@ export default function TaxInvoices({ currentUser = {} }) {
       closeModal();
       await load();
     } catch (e) {
-      setModalErr(e.response?.data?.detail || "Operasi gagal.");
+      setModalErr(apiErrorText(e, "Operasi gagal."));
     } finally {
       setBusyId("");
     }

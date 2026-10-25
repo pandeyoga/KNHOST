@@ -303,9 +303,13 @@ async def _late_today(entity_id: Optional[str], ar_overdue: float = 0.0) -> Dict
     d3 = (now - timedelta(days=3)).isoformat()
 
     rnd_board = await rnd_sla.board(dict(scope), entity_id=entity_id or "")
-    wms_stalled = await db.wms_tasks.count_documents({
-        **scope, "status": {"$nin": ["completed", "cancelled", "dispatched"]},
-        "created_at": {"$lt": d2}})
+    stalled_q = {**scope, "status": {"$nin": ["completed", "cancelled", "dispatched"]}, "created_at": {"$lt": d2}}
+    wms_stalled = await db.wms_tasks.count_documents(stalled_q)
+    # UAT 24 Okt (audit UI tahap 2) — G1-44: dulu satu baris menuju "operations" (tab Stok), bukan daftar tugasnya.
+    # Dipecah per arah: tugas barang masuk → Barang Masuk, barang keluar → Barang Keluar, sisanya → Operasi Gudang.
+    wms_in = await db.wms_tasks.count_documents({**stalled_q, "flow_type": "inbound"})
+    wms_out = await db.wms_tasks.count_documents({**stalled_q, "flow_type": "outbound"})
+    wms_other = max(0, int(wms_stalled) - int(wms_in) - int(wms_out))
     wo_stalled = await db.mfg_work_orders.count_documents({
         **scope, "status": "released", "released_at": {"$lt": d3}})
 
@@ -317,9 +321,15 @@ async def _late_today(entity_id: Optional[str], ar_overdue: float = 0.0) -> Dict
          "count": int(rnd_board.get("count") or 0), "amount": None,
          "hint": (f"{rnd_board.get('admin_count') or 0} sudah dinaikkan ke admin · "
                   f"terlama {rnd_board.get('worst_days_late') or 0} hari")},
-        {"key": "wms", "label": "Tugas gudang terbuka > 2 hari", "view": "operations",
-         "count": int(wms_stalled), "amount": None,
-         "hint": "Barang masuk/keluar belum diselesaikan petugas"},
+        {"key": "wms_in", "label": "Tugas barang masuk terbuka > 2 hari", "view": "goods-receipts",
+         "count": int(wms_in), "amount": None,
+         "hint": "Penerimaan barang belum diselesaikan petugas"},
+        {"key": "wms_out", "label": "Tugas barang keluar terbuka > 2 hari", "view": "wms-outbound",
+         "count": int(wms_out), "amount": None,
+         "hint": "Pengambilan/pengiriman belum diselesaikan petugas"},
+        {"key": "wms", "label": "Tugas gudang lain terbuka > 2 hari", "view": "operations",
+         "count": int(wms_other), "amount": None,
+         "hint": "Transfer/opname/penyimpanan belum diselesaikan petugas"},
         {"key": "production", "label": "Perintah Kerja dirilis > 3 hari", "view": "production",
          "count": int(wo_stalled), "amount": None,
          "hint": "Produksi berjalan lebih lama dari rencana"},
@@ -352,6 +362,25 @@ async def _designer_snapshot(entity_id: Optional[str]) -> Dict[str, Any]:
     }
 
 
+async def _ar_outside_board(sales_ids: Any, entity_id: Optional[str]) -> Dict[str, Any]:
+    """G1-13 — piutang pelanggan yang TIDAK ikut papan sales (tanpa sales / sales nonaktif), rumus sama
+    (`compute_customer_credit`)."""
+    q: Dict[str, Any] = {"assigned_sales_id": {"$nin": [x for x in sales_ids if x]}}
+    if entity_id and entity_id != "all":
+        q["entity_id"] = entity_id
+    out = {"customers": 0, "outstanding": 0.0, "overdue": 0.0, "overdue_customers": 0}
+    async for c in db.customers.find(q, {"_id": 0}):
+        cc = await compute_customer_credit(c, entity_id)
+        if cc["ar_outstanding"] <= 0.01:
+            continue
+        out["customers"] += 1
+        out["outstanding"] = round(out["outstanding"] + cc["ar_outstanding"], 2)
+        if cc["overdue_amount"] > 0.01:
+            out["overdue_customers"] += 1
+            out["overdue"] = round(out["overdue"] + cc["overdue_amount"], 2)
+    return out
+
+
 async def admin_home(entity_id: Optional[str] = None,
                      allowed: Optional[Dict[str, Any]] = None,
                      actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -362,6 +391,11 @@ async def admin_home(entity_id: Optional[str] = None,
 
     ar_total = round(sum(r["ar_outstanding"] for r in board), 2)
     overdue_total = round(sum(r["overdue_amount"] for r in board), 2)
+    # UAT 24 Okt (audit UI tahap 2) — G1-13: papan ini hanya menjumlah pelanggan milik sales AKTIF (leaderboard).
+    # Di data acuan satu-satunya tagihan telat (Toko Kain Sejahtera, Rp 1.193.250) milik pelanggan TANPA sales →
+    # "Lewat tempo Rp 0" walau layar Piutang menunjukkan tunggakan. Definisi papan TIDAK diubah (keputusan K-01);
+    # yang di luar papan dihitung terpisah supaya layar bisa menyebut cakupannya dengan jujur.
+    outside = await _ar_outside_board({r["sales_id"] for r in board}, entity_id)
 
     # Penjualan hari ini & bulan ini — UAT 24 Okt (audit UI Beranda): keduanya dari populasi SO yang SAMA (semua SO
     # hidup di entitas). Dulu "Bulan Ini" = jumlah leaderboard (hanya pelanggan yang ber-sales aktif), sehingga SO POS /
@@ -411,7 +445,8 @@ async def admin_home(entity_id: Optional[str] = None,
         },
         "ar": {"outstanding": ar_total, "overdue": overdue_total,
                "ar_ledger": round(sum(r["ar_ledger"] for r in board), 2),
-               "exposure": round(sum(r["exposure"] for r in board), 2)},
+               "exposure": round(sum(r["exposure"] for r in board), 2),
+               "scope": "pelanggan ber-sales aktif", "outside_board": outside},
         "approvals_pending": approvals["total"],
         "approvals": approvals,
         "special_orders_waiting": special_orders_waiting,

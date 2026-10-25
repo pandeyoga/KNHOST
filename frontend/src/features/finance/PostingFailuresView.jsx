@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityBadge from "../../components/EntityBadge";
+import { askConfirm } from "../../services/confirmService";
+import { apiErrorText } from "../../utils/apiError";
 
 const rp = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });   // 23 Okt — rupiah tanpa desimal liar
 
@@ -22,18 +24,25 @@ export default function PostingFailuresView() {
     try {
       const r = await axios.get(`${API}/finance/posting-failures`);
       setData(r.data);
-    } catch (e) { setMsg(e?.response?.data?.detail || "Gagal memuat daftar"); }
+    } catch (e) { setMsg(apiErrorText(e) || "Gagal memuat daftar"); }
   };
   useEffect(() => { load(); }, []);
 
   const retry = async (it) => {
+    // G1-16 — Ulang Posting menerbitkan jurnal nyata → konfirmasi yang menyebut dokumen & nilai.
+    if (!(await askConfirm({
+      title: `Ulang posting ${it.number}?`,
+      message: `${it.kind_label || "Dokumen"} senilai Rp ${rp.format(Number(it.amount) || 0)} akan dicoba diposting ulang ke buku besar. `
+        + "Pastikan penyebab galatnya sudah diperbaiki.",
+      confirmLabel: "Ulang Posting",
+    }))) return;
     setBusy(it.id);
     try {
       const r = await axios.post(`${API}/finance/posting-failures/${it.kind}/${it.id}/retry`);
       setMsg(`${it.number}: status jurnal sekarang ${r.data.gl_status}`);
       await load();
       window.dispatchEvent(new CustomEvent("kn-posting-failures-changed"));
-    } catch (e) { setMsg(`${it.number}: ${e?.response?.data?.detail || "ulang posting gagal"}`); } finally { setBusy(""); }
+    } catch (e) { setMsg(`${it.number}: ${apiErrorText(e) || "ulang posting gagal"}`); } finally { setBusy(""); }
   };
 
   const rows = data.items.filter((i) => !filter || i.kind === filter);

@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import axios, { API } from "../../services/apiClient";
@@ -43,7 +44,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
       const r = await axios.post(`${API}/input-tax-invoices`, body);
       onCreated?.(r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal mencatat Faktur Pajak Masukan.");
+      onError?.(apiErrorText(e, "Gagal mencatat Faktur Pajak Masukan."));
     } finally { setBusy(false); }
   }
 
@@ -64,9 +65,11 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
         <div className="p-4 space-y-3">
           <Field label="Tagihan Supplier ber-PPN" req>
             {(bills || []).length === 0 ? (
+              // UAT 24 Okt (audit UI tahap 2) — G1-37: tanpa tagihan, isian lain disembunyikan & ada jalan keluar.
               <p className="notice-bar warning !mb-0 text-[11.5px]" data-testid="it-no-bills">
                 Belum ada tagihan supplier ber-PPN (terposting/lunas) yang belum dicatat.
-                Posting tagihannya dulu di tab Tagihan Supplier.
+                Posting tagihannya dulu di Tagihan Supplier.{" "}
+                <a href="?view=vendor-bills" className="font-semibold underline" data-testid="it-goto-vendor-bills">Buka Tagihan Supplier</a>
               </p>
             ) : (
               <KNSelect value={billId} onValueChange={setBillId} options={billOptions}
@@ -85,6 +88,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
             </div>
           )}
 
+          {(bills || []).length > 0 && (<>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="NSFP — No. Seri Faktur Pajak (16 digit)" req>
               <input data-testid="it-nsfp-input" value={nsfp} onChange={(e) => setNsfp(e.target.value)}
@@ -105,6 +109,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
                 className="field" placeholder="opsional" />
             </Field>
           </div>
+          </>)}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">

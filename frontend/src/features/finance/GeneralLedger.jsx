@@ -2,6 +2,7 @@
  * GeneralLedger (EPIC7-C) — Jurnal Umum, Neraca Saldo, Buku Besar.
  * Akses admin/manager (permission "accounting"). Sumber: /api/gl/*.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, FileStack, Scale, BookOpen, Plus, RotateCcw, X, CheckCircle2, Boxes, ArrowLeftRight, Printer, Search,
@@ -12,13 +13,15 @@ import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
-import { formatCurrency, todayWib } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint";
 import JournalEntryModal from "./JournalEntryModal";
 import InventoryReconTab from "./InventoryReconTab";
 import SuspensePanel from "./SuspensePanel";
 import { Kpi, BalancedKpi } from "./GeneralLedgerParts";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import { SOURCE_LABELS, sourceLabel } from "./glSourceLabels";
+import { askConfirm } from "../../services/confirmService";
 
 const TONE_GRAY = "bg-gray-100 text-gray-600";
 const SOURCE_META_BASE = {
@@ -27,47 +30,13 @@ const SOURCE_META_BASE = {
   cash_transaction: { label: "Kas", tone: "bg-[#E7F0FF] text-[#0058CC]" },
   reversal: { label: "Pembalik", tone: "bg-[#FFF4E5] text-[#B45309]" },
 };
-// Audit UI 24 Okt (069): kolom Sumber dulu menampilkan kode mentah ("shipment_cogs",
-// "interco_transaction", "goods_receipt", …). Semua jenis sumber jurnal backend diberi
-// label Indonesia; kode baru yang belum dikenal tetap dibaca manusiawi (bukan snake_case).
-const SOURCE_LABELS = {
-  shipment_revenue: "Pendapatan Kirim", shipment_cogs: "HPP Kirim", sales_cogs: "HPP Penjualan",
-  sales_invoice: "Faktur Penjualan", sales_return: "Retur Penjualan", sales_return_reversal: "Pembalik Retur Jual",
-  purchase_order: "Pembelian (PO)", po: "Pembelian (PO)", purchase: "Pembelian", purchase_return: "Retur Pembelian",
-  goods_receipt: "Penerimaan Barang", vendor_bill: "Tagihan Supplier", vendor_bill_reversal: "Pembalik Tagihan Supplier",
-  landed_cost: "Biaya Masuk", contra_bon_deduction: "Potongan Kontrabon", ap_variance_writeoff: "Hapus Selisih Hutang",
-  interco_transaction: "Antar-PT", interco: "Antar-PT", interco_return: "Retur Antar-PT",
-  interco_settlement: "Pelunasan Antar-PT", interco_loan: "Pinjaman Antar-PT", interco_loan_repayment: "Cicilan Pinjaman Antar-PT",
-  inter_company_transfer: "Transfer Antar-PT",
-  cash_transaction_void: "Anulir Kas", cash_transaction_reversal: "Pembalik Kas", petty_cash_settlement: "LPJ Kas Kecil",
-  bank_holding_alloc: "Alokasi Dana Titipan", bank_opening_adjustment: "Penyesuaian Saldo Awal Bank",
-  ar_receipt_deposit: "Penerimaan Piutang", ar_receipt_deposit_void: "Anulir Penerimaan Piutang",
-  advance_reclass: "Reklas Uang Muka", advance_reclass_reversal: "Pembalik Reklas Uang Muka",
-  payment_variance_alloc: "Alokasi Selisih Bayar", payment_variance_reversal: "Pembalik Selisih Bayar",
-  payment_variance_writeoff: "Hapus Selisih Bayar", amendment_credit_note: "Nota Kredit Koreksi",
-  store_credit_adjust: "Penyesuaian Saldo Kredit", store_credit_redeem: "Pemakaian Saldo Kredit",
-  penalty: "Denda", penalty_payment: "Pembayaran Denda", penalty_reversal: "Pembalik Denda",
-  inventory_opening: "Saldo Awal Persediaan", inventory_writeoff: "Hapus Persediaan", cycle_count_variance: "Selisih Stok Opname",
-  return_cutloss: "Rugi Retur (cut-loss)", return_grade_impairment: "Penurunan Grade Retur", return_logistics: "Ongkir Retur",
-  repair_order: "Perbaikan", production_output: "Hasil Produksi", rnd_sample_issue: "Pemakaian Sample R&D",
-  subcon_issue: "Kirim ke Makloon", subcon_issue_reversal: "Pembalik Kirim Makloon", subcon_receipt: "Terima dari Makloon",
-  subcon_service: "Jasa Makloon", subcon_service_unabsorbed: "Jasa Makloon Tak Terserap",
-  makloon_claim: "Klaim Makloon", makloon_material_loss: "Susut Bahan Makloon",
-  payroll_run: "Penggajian", payroll_pay: "Pembayaran Gaji", incentive_accrual: "Akrual Insentif", incentive_accrual_adj: "Koreksi Akrual Insentif",
-  fixed_asset_acquisition: "Perolehan Aset", fixed_asset_depreciation: "Penyusutan Aset", fixed_asset_disposal: "Pelepasan Aset",
-  fixed_asset_transfer: "Mutasi Aset", fixed_asset_transfer_settlement: "Pelunasan Mutasi Aset",
-  closing: "Tutup Buku", suspense_reclass: "Reklas Akun Penampung", finance_case: "Kasus Keuangan",
-  manual_void: "Anulir Manual",
-};
-const humanizeSource = (code) => {
-  const s = String(code || "").replace(/_/g, " ").trim();
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
-};
+// Audit UI 24 Okt (069): kolom Sumber dulu menampilkan kode mentah ("shipment_cogs", …). Peta label kini di
+// glSourceLabels.js (G1-07: dipakai juga panel "Kenapa berselisih?"); kode baru tetap dibaca manusiawi.
 const SOURCE_META = {
   ...Object.fromEntries(Object.entries(SOURCE_LABELS).map(([k, label]) => [k, { label, tone: TONE_GRAY }])),
   ...SOURCE_META_BASE,
 };
-const sourceMeta = (code) => SOURCE_META[code] || { label: humanizeSource(code), tone: TONE_GRAY };
+const sourceMeta = (code) => SOURCE_META[code] || { label: sourceLabel(code), tone: TONE_GRAY };
 const TABS = [
   { id: "journal", label: "Jurnal", icon: FileStack },
   { id: "trial", label: "Neraca Saldo", icon: Scale },
@@ -76,11 +45,8 @@ const TABS = [
   { id: "suspense", label: "Suspense", icon: ArrowLeftRight },
 ];
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }); }
-  catch { return "—"; }
-}
+// UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
+const fmtDate = (iso) => formatDate(iso);
 
 // FASE P6 — kolom Unduh CSV jurnal. Label "Sumber" & "Status" memakai kata yang SAMA
 // dengan yang terbaca di tabel (bukan kode mentah `void`/`sales_order`), supaya berkasnya
@@ -104,7 +70,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
     setTab("journal");
     axios.get(`${API}/gl/journal/${focusDoc.focus_id}`)
       .then((r) => setFocusJe({ ...r.data, _from_trace: focusDoc.from_trace || null }))
-      .catch((e) => setError(e?.response?.data?.detail || "Jurnal tidak ditemukan / di luar badan usaha aktif."))
+      .catch((e) => setError(apiErrorText(e, "Jurnal tidak ditemukan / di luar badan usaha aktif.")))
       .finally(() => onClearFocus && onClearFocus());
   }, [focusDoc?.focus_id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [summary, setSummary] = useState(null);
@@ -124,7 +90,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
       setSummary(s.data || null);
       setAccounts(Array.isArray(a.data) ? a.data : []);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data GL.");
+      setError(apiErrorText(e, "Gagal memuat data GL."));
     }
   }, []);
 
@@ -134,6 +100,13 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
   const refreshAll = () => { setRefreshKey((k) => k + 1); loadMeta(); };
 
   const runSync = async () => {
+    // G1-16 — Sinkronkan memposting jurnal otomatis untuk transaksi yang belum berjurnal → konfirmasi dulu.
+    if (!(await askConfirm({
+      title: "Sinkronkan jurnal otomatis?",
+      message: "Penjualan & transaksi kas yang belum berjurnal akan diposting ke buku besar sekarang. "
+        + "Jurnal yang sudah ada tidak diubah.",
+      confirmLabel: "Sinkronkan",
+    }))) return;
     setSyncing(true); setError(""); setNotice("");
     try {
       const res = await axios.post(`${API}/gl/sync`);
@@ -141,7 +114,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
       setNotice(`Sinkron selesai: ${r.total || 0} jurnal baru (penjualan ${r.sales_orders || 0}, kas ${r.cash_transactions || 0}).`);
       refreshAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal sinkronisasi jurnal.");
+      setError(apiErrorText(e, "Gagal sinkronisasi jurnal."));
     } finally {
       setSyncing(false);
     }
@@ -150,7 +123,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
   return (
     <div data-testid="gl-view">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <Kpi testId="gl-kpi-count" label="Total Jurnal" value={summary?.journal_count ?? "—"} icon={FileStack} />
+        <Kpi testId="gl-kpi-count" label={summary?.void_count ? "Total Jurnal (tanpa anulir)" : "Total Jurnal"} value={summary?.journal_count ?? "—"} icon={FileStack} />
         <Kpi testId="gl-kpi-debit" label="Total Debit" value={formatCurrency(summary?.total_debit)} icon={Scale} tone="text-[#0058CC]" />
         <Kpi testId="gl-kpi-credit" label="Total Kredit" value={formatCurrency(summary?.total_credit)} icon={Scale} tone="text-[#1B7F4B]" />
         <BalancedKpi balanced={summary?.balanced} />
@@ -186,6 +159,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           )}
 
           {tab === "journal" && <JournalTab refreshKey={refreshKey} onChanged={refreshAll} onError={setError} entities={entities} selectedEntity={selectedEntity}
+            sources={summary?.sources} voidCount={summary?.void_count || 0}
             focusJe={focusJe} onFocusShown={() => setFocusJe(null)} />}
           {tab === "trial" && <TrialBalanceTab refreshKey={refreshKey} onError={setError} onDrill={(code) => { setTab("ledger"); setLedgerCode(code); }} />}
           {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError} />}
@@ -203,7 +177,12 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
 }
 
 // ─── JURNAL TAB ──────────────────────────────────────────────────────────────
-function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEntity, focusJe, onFocusShown }) {
+function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEntity, focusJe, onFocusShown,
+  sources = null, voidCount = 0 }) {
+  // G1-26 — opsi sumber dari jenis yang benar-benar ada di buku (dulu hanya Manual/Penjualan/Kas).
+  const sourceOptions = [{ value: "", label: "Semua sumber" },
+    ...(sources && sources.length ? sources : ["manual", "sales_order", "cash_transaction"])
+      .map((s) => ({ value: s, label: sourceLabel(s) }))];
   const [sourceFilter, setSourceFilter] = useState("");
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState(null);
@@ -233,7 +212,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
       setDetail(null);
       onChanged();
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal void jurnal.");
+      onError(apiErrorText(e, "Gagal void jurnal."));
     }
   };
 
@@ -248,7 +227,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <div className="w-[200px]">
           <KNSelect data-testid="gl-journal-source-filter" className="field py-1 text-[12px]" value={sourceFilter} onValueChange={setSourceFilter}
-            placeholder="Semua sumber" options={[{ value: "", label: "Semua sumber" }, { value: "manual", label: "Manual" }, { value: "sales_order", label: "Penjualan" }, { value: "cash_transaction", label: "Kas" }]} />
+            placeholder="Semua sumber" searchable options={sourceOptions} />
         </div>
         <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-md border border-[#EFF0F2] bg-white px-2.5 py-1.5">
           <Search size={13} className="text-[#8E8E93]" />
@@ -260,7 +239,9 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
               className="text-[#8E8E93] hover:text-[#1C1C1E]"><X size={12} /></button>
           )}
         </div>
-        <span className="text-[11px] text-[#9A9BA3] tabular-nums" data-testid="gl-journal-total">{paged.total} jurnal</span>
+        <span className="text-[11px] text-[#9A9BA3] tabular-nums" data-testid="gl-journal-total">
+          {paged.total} jurnal{voidCount > 0 && !sourceFilter && !search ? ` (termasuk ${voidCount} dianulir)` : ""}
+        </span>
       </div>
       {loading ? (
         <div className="grid gap-2" data-testid="gl-journal-loading">{[0, 1, 2, 3].map((i) => <div key={i} className="h-10 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
@@ -335,6 +316,11 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
   const entId = je.entity_id || (selectedEntity && selectedEntity !== "all" ? selectedEntity : "");
   const ent = entities.find((e) => e.id === entId);
   const entityName = ent?.short_name || ent?.legal_name || "";
+  // G1-26 — arah kas dari baris akun kas/bank (1-11xx): debit = kas masuk, kredit = kas keluar.
+  const cashLines = (je.lines || []).filter((l) => String(l.account_code || "").startsWith("1-11"));
+  const cashIn = cashLines.reduce((a, l) => a + Number(l.debit || 0), 0);
+  const cashOut = cashLines.reduce((a, l) => a + Number(l.credit || 0), 0);
+  const cashDir = cashIn > 0 && cashOut <= 0 ? "in" : cashOut > 0 && cashIn <= 0 ? "out" : "";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="gl-journal-detail">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -395,7 +381,7 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
                   disabled={revBusy || !revDate || revReason.trim().length < 3}
                   onClick={async () => {
                     setRevBusy(true); setRevErr("");
-                    try { await onReverse(je, revDate, revReason); } catch (e) { setRevErr(e.response?.data?.detail || "Gagal membalik jurnal."); } finally { setRevBusy(false); }
+                    try { await onReverse(je, revDate, revReason); } catch (e) { setRevErr(apiErrorText(e, "Gagal membalik jurnal.")); } finally { setRevBusy(false); }
                   }}>Buat Jurnal Pembalik</button>
               </div>
             </div>)}
@@ -407,8 +393,14 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
               <ArrowLeftRight size={13} /> Kembali ke Jejak {je._from_trace.number || ""}
             </button>
           )}
-          <button data-testid="gl-print-payment-voucher" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => printPaymentVoucher(je, entityName)}><Printer size={13} /> Payment Voucher</button>
-          <button data-testid="gl-print-received-voucher" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => printReceivedVoucher(je, entityName)}><Printer size={13} /> Received Voucher</button>
+          {/* G1-26 — hanya bukti kas yang sesuai arah kas jurnal ini (dulu "Payment Voucher" & "Received Voucher"
+              selalu tampil berdua, juga untuk jurnal kas masuk). Arah tak jelas → keduanya. */}
+          {cashDir !== "in" && (
+            <button data-testid="gl-print-payment-voucher" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => printPaymentVoucher(je, entityName)}><Printer size={13} /> Bukti Kas Keluar</button>
+          )}
+          {cashDir !== "out" && (
+            <button data-testid="gl-print-received-voucher" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={() => printReceivedVoucher(je, entityName)}><Printer size={13} /> Bukti Kas Masuk</button>
+          )}
           {je.source_type === "manual" && je.status !== "void" && (
             <button data-testid="gl-journal-void" className="btn-secondary text-[12px] py-1.5 px-3 text-[#C0392B]" onClick={() => onVoid(je)}>Anulir Jurnal</button>
           )}
@@ -433,7 +425,7 @@ function TrialBalanceTab({ refreshKey, onError, onDrill }) {
       const res = await axios.get(`${API}/gl/trial-balance`);
       setTb(res.data || null);
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal memuat neraca saldo.");
+      onError(apiErrorText(e, "Gagal memuat neraca saldo."));
     } finally {
       setLoading(false);
     }
@@ -498,7 +490,7 @@ function LedgerTab({ accounts, refreshKey, code, setCode, onError }) {
       const res = await axios.get(`${API}/gl/accounts/${c}/ledger`);
       setLedger(res.data || null);
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal memuat buku besar.");
+      onError(apiErrorText(e, "Gagal memuat buku besar."));
       setLedger(null);
     } finally {
       setLoading(false);

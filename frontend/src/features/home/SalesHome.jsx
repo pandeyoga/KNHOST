@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useState, useCallback } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -55,7 +56,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
       setData(res.data);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Performa Saya. Coba lagi.");
+      setError(apiErrorText(e, "Gagal memuat Performa Saya. Coba lagi."));
     } finally {
       setLoading(false);
     }
@@ -192,7 +193,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
                 <XAxis dataKey="period" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => fmt.format(v / 1000) + "k"} />
                 <Tooltip formatter={(v) => [fmtCur(v), "Insentif"]} />
-                <Line type="monotone" dataKey="incentive" stroke="#34C759" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="linear" dataKey="incentive" stroke="#34C759" strokeWidth={2} dot={{ r: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (

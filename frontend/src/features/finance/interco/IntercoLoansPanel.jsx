@@ -260,18 +260,18 @@ function CreateLoanModal({ entities, defaultEntity, onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Pemberi (piutang) *</label>
+              {/* UAT 24 Okt (audit UI tahap 2) — G1-30: PT lawan tanpa PT yang sama; nominal MoneyInput. */}
               <KNSelect data-testid="loan-lender" className="field" value={lender}
-                onValueChange={setLender} options={opts} placeholder="Pilih badan usaha…" />
+                onValueChange={setLender} options={opts.filter((o) => o.value !== borrower)} placeholder="Pilih badan usaha…" />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Penerima (utang) *</label>
               <KNSelect data-testid="loan-borrower" className="field" value={borrower}
-                onValueChange={setBorrower} options={opts} placeholder="Pilih badan usaha…" />
+                onValueChange={setBorrower} options={opts.filter((o) => o.value !== lender)} placeholder="Pilih badan usaha…" />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Jumlah Pinjaman *</label>
-              <input data-testid="loan-principal" type="number" className="field"
-                value={principal} onChange={(e) => setPrincipal(e.target.value)} placeholder="0" />
+              <MoneyInput testId="loan-principal" className="field" value={principal} onChange={setPrincipal} placeholder="0" />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Rencana Kembali</label>
@@ -295,7 +295,8 @@ function CreateLoanModal({ entities, defaultEntity, onClose, onCreated }) {
         </div>
         <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="btn-secondary" onClick={onClose}>Batal</button>
-          <button data-testid="loan-create-submit" className="btn-primary" disabled={busy} onClick={submit}>
+          <button data-testid="loan-create-submit" className="btn-primary" onClick={submit}
+            disabled={busy || !lender || !borrower || lender === borrower || !(Number(principal) > 0) || purpose.trim().length < 5}>
             {busy ? "Menyimpan…" : "Simpan sebagai Draf"}
           </button>
         </div>

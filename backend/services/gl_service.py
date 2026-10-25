@@ -3250,8 +3250,15 @@ async def gl_summary(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     tb = await trial_balance(scope=scope)
     posted = await db.journal_entries.count_documents({"status": {"$ne": "void"}, **(scope or {})})
     accounts = await db.gl_accounts.count_documents({})
+    # UAT 24 Okt (audit UI tahap 2) — G1-26: KPI menghitung jurnal NON-anulir, daftar jurnal menampilkan semua
+    # (termasuk anulir) → 562 vs 563. Jumlah anulir & jenis sumber yang benar-benar ada dikirim supaya layar bisa
+    # menyebut selisihnya dan filter sumber tidak hanya Manual/Penjualan/Kas.
+    voided = await db.journal_entries.count_documents({"status": "void", **(scope or {})})
+    sources = sorted(s for s in await db.journal_entries.distinct("source_type", dict(scope or {})) if s)
     return {
         "journal_count": posted,
+        "void_count": voided,
+        "sources": sources,
         "account_count": accounts,
         "total_debit": tb["total_debit"],
         "total_credit": tb["total_credit"],
@@ -3330,6 +3337,40 @@ def _roll_ref(roll: Dict[str, Any]) -> Dict[str, Any]:
             "view": "inventory-rolls",
             "source_ref_id": acq.get("ref_id", ""),
             "source_via": acq.get("via") or roll.get("origin_type") or ""}
+
+
+# UAT 24 Okt (audit UI tahap 2) — G1-07: kalimat penjelas selisih dulu memuat kode mentah ("Roll dengan asal
+# 'cycle_count_found'", "Tidak ada jurnal goods_receipt / landed_cost"). Padanan frontend: finance/glSourceLabels.js.
+ROLL_ORIGIN_LABEL: Dict[str, str] = {
+    "initial": "Saldo awal", "inbound": "Barang masuk (penerimaan PO)", "transfer": "Transfer antar-PT",
+    "production_output": "Hasil produksi", "subcon_receipt": "Terima dari makloon",
+    "subcon_receipt_byproduct": "Hasil sampingan makloon", "return": "Retur penjualan",
+    "cycle_count_found": "Temuan stock opname", "cut": "Hasil potong roll", "split": "Pecahan roll",
+    "pod_auto": "Konfirmasi terima otomatis", "tidak tercatat": "Asal tidak tercatat",
+}
+JOURNAL_SOURCE_LABEL: Dict[str, str] = {
+    "inventory_opening": "Saldo Awal Persediaan", "goods_receipt": "Penerimaan Barang", "landed_cost": "Biaya Masuk",
+    "interco_transaction": "Antar-PT", "interco_return": "Retur Antar-PT", "production_output": "Hasil Produksi",
+    "subcon_receipt": "Terima dari Makloon", "subcon_issue": "Kirim ke Makloon", "sales_return": "Retur Penjualan",
+    "shipment_cogs": "HPP Kirim", "sales_cogs": "HPP Penjualan", "cycle_count_variance": "Selisih Stok Opname",
+    "inventory_writeoff": "Hapus Persediaan", "purchase_return": "Retur Pembelian", "vendor_bill": "Tagihan Supplier",
+    "manual": "Manual", "reversal": "Pembalik", "rnd_sample_issue": "Pemakaian Sample R&D",
+    "return_cutloss": "Rugi Retur (cut-loss)", "return_grade_impairment": "Penurunan Grade Retur",
+    "inter_company_transfer": "Transfer Antar-PT", "tanpa sumber": "Tanpa sumber",
+}
+
+
+def _human_code(code: Any) -> str:
+    t = str(code or "").replace("_", " ").strip()
+    return t[:1].upper() + t[1:] if t else "—"
+
+
+def roll_origin_label(code: Any) -> str:
+    return ROLL_ORIGIN_LABEL.get(str(code or ""), _human_code(code))
+
+
+def journal_source_label(code: Any) -> str:
+    return JOURNAL_SOURCE_LABEL.get(str(code or ""), _human_code(code))
 
 
 async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
@@ -3430,7 +3471,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                 "kind": "nilai_cocok_selisih", "value": nilai,
                 "label": (f"Roll {r.get('roll_no') or '(tanpa nomor)'} bernilai "
                           f"{rupiah(nilai)} — PERSIS sebesar selisihnya"),
-                "hint": (f"Masuk lewat '{acq.get('via') or r.get('origin_type') or '—'}'"
+                "hint": (f"Masuk lewat {roll_origin_label(acq.get('via') or r.get('origin_type') or '—')}"
                          f" (dokumen {acq.get('ref_id') or '—'}, "
                          f"{str(acq.get('date') or '')[:10]}). Barangnya ada di gudang "
                          "tetapi nilainya tidak pernah berjurnal ke 1-1300 — periksa "
@@ -3442,7 +3483,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
         if not srcs:
             suspects.append({
                 "kind": "asal_tak_dikenal", "value": slot["value"],
-                "label": f"Roll dengan asal '{slot['origin']}' ({slot['rolls']} roll)",
+                "label": f"Roll dengan asal {roll_origin_label(slot['origin'])} ({slot['rolls']} roll)",
                 "hint": "Asal ini belum punya pasangan jenis jurnal yang diketahui — "
                         "periksa pembuat roll-nya sebelum true-up.",
                 "ref": _roll_ref((biggest_per_origin.get(slot["origin"]) or {}).get("roll") or {})})
@@ -3450,9 +3491,9 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
         if slot["value"] > 0 and not any(abs(gl_by_source.get(s, 0.0)) > 0 for s in srcs):
             suspects.append({
                 "kind": "tanpa_jurnal", "value": slot["value"],
-                "label": (f"Barang dari '{slot['origin']}' bernilai "
+                "label": (f"Barang dari {roll_origin_label(slot['origin'])} bernilai "
                           f"{rupiah(slot['value'])} ({slot['rolls']} roll)"),
-                "hint": f"Tidak ada jurnal {' / '.join(srcs)} di buku ini — "
+                "hint": f"Tidak ada jurnal {' / '.join(journal_source_label(x) for x in srcs)} di buku ini — "
                         "barangnya masuk gudang tanpa jurnal pasangannya.",
                 "ref": _roll_ref((biggest_per_origin.get(slot["origin"]) or {}).get("roll") or {})})
     if zero_cost["count"]:
@@ -3520,7 +3561,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
             "kind": "selisih_belum_terjelaskan", "value": difference,
             "label": f"{rupiah(difference)} belum bisa ditunjuk ke satu kategori",
             "hint": "Roll yang paling baru masuk: "
-                    + " · ".join(f"{t['roll_no']} {rupiah(t['value'])} ({t['via']}, "
+                    + " · ".join(f"{t['roll_no']} {rupiah(t['value'])} ({roll_origin_label(t['via'])}, "
                                  f"{t['date']})" for t in terbaru)
                     + ". Periksa dokumen sumbernya sebelum true-up.",
             "ref": _roll_ref(terbaru_rolls[0]) if terbaru_rolls else {}})
@@ -3529,9 +3570,10 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
         "entity_id": entity_id,
         "entity_name": ent.get("legal_name") or ent.get("name") or entity_id,
         "subledger_value": subledger, "gl_balance": gl_balance, "difference": difference,
-        "physical_by_origin": sorted(per_origin.values(), key=lambda s: -s["value"]),
-        "gl_by_source": sorted(({"source": k, "net": v} for k, v in gl_by_source.items()),
-                               key=lambda s: -abs(s["net"])),
+        "physical_by_origin": sorted(({**o, "origin_label": roll_origin_label(o["origin"])}
+                                      for o in per_origin.values()), key=lambda s: -s["value"]),
+        "gl_by_source": sorted(({"source": k, "source_label": journal_source_label(k), "net": v}
+                                for k, v in gl_by_source.items()), key=lambda s: -abs(s["net"])),
         "zero_cost_rolls": zero_cost, "suspects": suspects, "as_of": now_iso(),
     }
 

@@ -2,6 +2,7 @@
  * EquityChangesTab (FINANCE) — Laporan Perubahan Ekuitas (Statement of Changes in Equity).
  * Sumber: /api/finance/equity-changes (+ export.csv). Dipakai di FinancialStatementsView.
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -30,7 +31,7 @@ export default function EquityChangesTab({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/equity-changes`, { params });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Laporan Perubahan Ekuitas.");
+      setError(apiErrorText(e, "Gagal memuat Laporan Perubahan Ekuitas."));
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 
@@ -47,10 +48,13 @@ export default function EquityChangesTab({ selectedEntity }) {
   };
 
   const comps = data?.components || [];
+  // UAT 24 Okt (audit UI tahap 2) — G1-50: label sumbu dipendekkan (dulu terpotong). Kolom "Saldo Awal" = saldo
+  // H-1 tanggal mulai (equity_statement_service). Jurnal saldo awal/true-up (3-2900) yang BERTANGGAL di dalam
+  // rentang wajar tampil sebagai pergerakan — bukan bug angka; kini diberi keterangan di baris itu.
   const chartData = comps
     .filter((c) => c.begin || c.end)
     .map((c) => ({
-      name: c.name?.length > 16 ? `${c.name.slice(0, 15)}…` : c.name,
+      name: c.name?.length > 12 ? `${c.name.slice(0, 11)}…` : c.name,
       "Saldo Awal": c.begin, "Saldo Akhir": c.end,
     }));
 
@@ -100,7 +104,7 @@ export default function EquityChangesTab({ selectedEntity }) {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartData} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={FC.grid} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-12} textAnchor="end" height={54} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
                   <YAxis tick={{ fontSize: 10 }} tickFormatter={compactIDR} width={52} />
                   <Tooltip formatter={(v, n) => [formatCurrency(v), n]} {...chartTooltip} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -134,6 +138,11 @@ export default function EquityChangesTab({ selectedEntity }) {
                     <tr key={c.code} data-testid={`eq-row-${c.code}`} className="border-b border-[#F5F5F7] last:border-0">
                       <td className="px-3 py-2 font-semibold text-[#1C1C1E]">
                         {c.code !== "__pl__" && <span className="text-[10px] text-[#9A9BA3] mr-1.5">{c.code}</span>}{c.name}
+                        {c.code === "3-2900" && !c.begin && Math.abs(Number(c.movement || 0)) > 0.005 && (
+                          <span className="block text-[10px] font-normal text-[#8E8E93]" data-testid="eq-opening-note">
+                            Jurnal saldo awal diposting di dalam rentang ini → tampil sebagai pergerakan.
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]">{formatCurrency(c.begin)}</td>
                       <td className={`px-3 py-2 text-right tabular-nums font-medium ${c.movement >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>{formatCurrency(c.movement)}</td>

@@ -2,12 +2,17 @@
  * CostingView (EPIC3A) — Margin & HPP (WAC) per produk.
  * Akses admin/manager (sales dicabut dari HPP). Sumber: GET /api/costing/wac.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, TrendingUp, Search, Layers, AlertTriangle } from "lucide-react";
+import { RefreshCw, TrendingUp, Search, Layers, AlertTriangle, CircleSlash } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import usePagedRows from "@/hooks/usePagedRows";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatPct, formatQty } from "../../utils/formatters";
+
+// UAT 24 Okt (audit UI tahap 2) — G1-52/G1-14: warna peringatan hanya di bawah ambang "Margin Rendah" (<15%, sama
+// dengan KPI); dulu 15–29% oranye seolah bermasalah. Persen id-ID ("28%", "12,5%").
+const LOW_MARGIN_PCT = 15;
 
 const SOURCE_LABEL = {
   roll: "Roll (WAC)", roll_partial: "Roll (parsial)", harga_pokok: "HPP manual", none: "Belum ada cost",
@@ -15,9 +20,9 @@ const SOURCE_LABEL = {
 
 function marginBadge(pct) {
   if (pct == null) return { cls: "text-[#8E8E93] bg-[#F0F0F2]", label: "—" };
-  if (pct < 15) return { cls: "text-[#C0392B] bg-[#FCEBEA]", label: `${pct}%` };
-  if (pct < 30) return { cls: "text-[#B45309] bg-[#FDF3E7]", label: `${pct}%` };
-  return { cls: "text-[#1B7F4B] bg-[#E6F6EC]", label: `${pct}%` };
+  const label = formatPct(pct, 1, { trim: true });
+  if (pct < LOW_MARGIN_PCT) return { cls: "text-[#C0392B] bg-[#FCEBEA]", label };
+  return { cls: "text-[#1B7F4B] bg-[#E6F6EC]", label };
 }
 
 export default function CostingView({ selectedEntity }) {
@@ -35,7 +40,7 @@ export default function CostingView({ selectedEntity }) {
       setRows(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data costing (WAC).");
+      setError(apiErrorText(e, "Gagal memuat data costing (WAC)."));
     } finally {
       setLoading(false);
     }
@@ -57,7 +62,7 @@ export default function CostingView({ selectedEntity }) {
     return {
       products: rows.length,
       avgMargin: avg,
-      lowMargin: rows.filter((r) => r.margin_pct != null && r.margin_pct < 15).length,
+      lowMargin: rows.filter((r) => r.margin_pct != null && r.margin_pct < LOW_MARGIN_PCT).length,
       noCost: rows.filter((r) => r.source === "none").length,
     };
   }, [rows]);
@@ -66,9 +71,9 @@ export default function CostingView({ selectedEntity }) {
     <div data-testid="costing-view">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <Kpi label="Produk" value={summary.products} icon={Layers} />
-        <Kpi label="Rata-rata Margin" value={summary.avgMargin != null ? `${summary.avgMargin}%` : "—"} icon={TrendingUp} tone="text-[#1B7F4B]" />
+        <Kpi label="Rata-rata Margin" value={summary.avgMargin != null ? formatPct(summary.avgMargin, 1, { trim: true }) : "—"} icon={TrendingUp} tone="text-[#1B7F4B]" />
         <Kpi label="Margin Rendah (<15%)" value={summary.lowMargin} icon={AlertTriangle} tone={summary.lowMargin > 0 ? "text-[#C0392B]" : ""} />
-        <Kpi label="Tanpa Biaya" value={summary.noCost} icon={AlertTriangle} tone={summary.noCost > 0 ? "text-[#B45309]" : ""} />
+        <Kpi label="Tanpa Biaya" value={summary.noCost} icon={CircleSlash} tone={summary.noCost > 0 ? "text-[#B45309]" : ""} />
       </div>
 
       <div className="section-card">

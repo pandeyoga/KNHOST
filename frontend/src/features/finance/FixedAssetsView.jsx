@@ -4,6 +4,7 @@
  * GL: Dr 6-6000 Beban Penyusutan / Cr 1-2900 Akumulasi Penyusutan.
  * Disposal: gain/loss = proceeds − nilai buku (append-only; aset → status disposed).
  */
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -14,7 +15,8 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatPeriod } from "../../utils/formatters";
+import { askConfirm } from "../../services/confirmService";
 import {
   AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, fmtDate,
 } from "./FixedAssetsParts";
@@ -56,7 +58,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       setTransferFor(null); setTrTo(""); setTrPrice(""); setTrReason("");
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memindahkan aset.");
+      setError(apiErrorText(e, "Gagal memindahkan aset."));
     } finally { setBusy(""); }
   }
 
@@ -68,7 +70,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
         + `kas berpindah: ${(res.data.cash || []).join(" · ")}.`);
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal mencatat pembayaran pindah aset.");
+      setError(apiErrorText(e, "Gagal mencatat pembayaran pindah aset."));
     } finally { setBusy(""); }
   }
 
@@ -99,7 +101,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       setMeta(mt.data || null);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data aset tetap.");
+      setError(apiErrorText(e, "Gagal memuat data aset tetap."));
     } finally {
       setLoading(false);
     }
@@ -118,13 +120,29 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       await load();
       return true;
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal membuat aset.");
+      setError(apiErrorText(e, "Gagal membuat aset."));
       return false;
     } finally { setBusy(""); }
   }
 
+  // G1-25 — aset yang masih bisa disusutkan + perkiraan beban sebulan (garis lurus) untuk dialog konfirmasi.
+  const depreciable = useMemo(() => assets.filter((a) => !["disposed", "transferred"].includes(a.status)
+    && Number(a.depreciated_months || 0) < Number(a.useful_life_months || 0)), [assets]);
+  const estMonthly = useMemo(() => depreciable.reduce((s, a) => s
+    + Math.max(0, Number(a.acquisition_cost || 0) - Number(a.salvage_value || 0)) / Math.max(1, Number(a.useful_life_months || 1)), 0),
+  [depreciable]);
+
   async function runDepreciation() {
     if (!/^\d{4}-\d{2}$/.test(period)) { setError("Format periode harus YYYY-MM (contoh 2026-07)."); return; }
+    // UAT 24 Okt (audit UI tahap 2) — G1-25: menerbitkan jurnal → konfirmasi periode, jumlah aset & perkiraan nilai.
+    const ok = await askConfirm({
+      danger: true,
+      title: `Jalankan penyusutan ${formatPeriod(period)} untuk ${depreciable.length} aset?`,
+      message: `Jurnal Beban Penyusutan / Akumulasi Penyusutan diterbitkan ± ${formatCurrency(estMonthly)} `
+        + "(perkiraan garis lurus; aset yang sudah disusutkan pada periode ini dilewati).",
+      confirmLabel: "Jalankan Penyusutan",
+    });
+    if (!ok) return;
     setBusy("run");
     try {
       const res = await axios.post(`${API}/fixed-assets/run-depreciation`, {
@@ -134,7 +152,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       notify(`Penyusutan ${d.period}: ${d.posted} aset diposting (${formatCurrency(d.total_amount)}), ${d.skipped} dilewati.`);
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menjalankan penyusutan.");
+      setError(apiErrorText(e, "Gagal menjalankan penyusutan."));
     } finally { setBusy(""); }
   }
 
@@ -145,7 +163,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       const res = await axios.get(`${API}/fixed-assets/${asset.id}`);
       setScheduleFor(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat jadwal penyusutan.");
+      setError(apiErrorText(e, "Gagal memuat jadwal penyusutan."));
       setScheduleFor(null);
     } finally { setScheduleLoading(false); }
   }
@@ -161,7 +179,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
       await load();
       return true;
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal melepas aset.");
+      setError(apiErrorText(e, "Gagal melepas aset."));
       return false;
     } finally { setBusy(""); }
   }
@@ -216,7 +234,8 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
             <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Periode</span>
             <KNMonthPicker data-testid="fa-period-input" className="w-[170px] text-[12px]" value={period} onChange={setPeriod} />
           </label>
-          <button data-testid="run-depreciation-btn" className="primary-button" disabled={busy === "run"}
+          <button data-testid="run-depreciation-btn" className="primary-button" disabled={busy === "run" || depreciable.length === 0}
+            title={depreciable.length === 0 ? "Tidak ada aset yang perlu disusutkan" : undefined}
             onClick={runDepreciation}>
             {busy === "run" ? <RefreshCw size={14} className="animate-spin" /> : <PlayCircle size={14} />}
             Jalankan Penyusutan

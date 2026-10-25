@@ -2,6 +2,7 @@
  * CashFlowTab (FINANCE) — Laporan Arus Kas (metode tak langsung).
  * Sumber: /api/finance/cash-flow (+ export.csv). Dipakai di FinancialStatementsView.
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -32,7 +33,7 @@ export default function CashFlowTab({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/cash-flow`, { params });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Laporan Arus Kas.");
+      setError(apiErrorText(e, "Gagal memuat Laporan Arus Kas."));
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 

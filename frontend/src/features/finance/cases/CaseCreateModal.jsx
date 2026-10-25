@@ -12,6 +12,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
 import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
+import { parseDecimal } from "../../../utils/decimalInput";
 
 export default function CaseCreateModal({ playbooks, customers, suppliers, onClose,
   onCreated, onError }) {
@@ -30,10 +31,15 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
     [playbooks, caseType]);
   const typeOptions = useMemo(
     () => playbooks.map((p) => ({ value: p.code, label: p.label })), [playbooks]);
+  // UAT 24 Okt (audit UI tahap 2) — G1-36: nama kembar (QA Cust A/B ×2) tak bisa dibedakan → "Nama · Kode · Kota".
+  const partyLabel = (x) => [x.name || x.id, x.code, x.city].filter(Boolean).join(" · ");
   const custOptions = useMemo(
-    () => customers.map((c) => ({ value: c.id, label: c.name || c.id })), [customers]);
+    () => customers.map((c) => ({ value: c.id, label: partyLabel(c) })), [customers]);
   const supOptions = useMemo(
-    () => suppliers.map((s) => ({ value: s.id, label: s.name || s.id })), [suppliers]);
+    () => suppliers.map((s) => ({ value: s.id, label: partyLabel(s) })), [suppliers]);
+  // G1-36 — isian wajib: jenis kasus, judul (atau judul bawaan jenis), nominal > 0, cerita kejadian.
+  const amountNum = parseDecimal(String(amount ?? "")) || 0;
+  const canSubmit = !!caseType && amountNum > 0 && description.trim().length >= 5;
 
   async function submit() {
     setSaving(true); setErr("");
@@ -42,7 +48,7 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
         case_type: caseType,
         title: title.trim() || pb?.label || "",
         description: description.trim(),
-        amount: Number(amount) || 0,
+        amount: amountNum,
         customer_id: customerId,
         supplier_id: supplierId,
       });
@@ -68,7 +74,7 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
         <div className="space-y-3 px-4 py-4">
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Jenis kasus
+              Jenis kasus <span className="text-[#C0392B]">*</span>
             </label>
             <KNSelect data-testid="case-create-type" value={caseType}
               onValueChange={setCaseType} options={typeOptions} />
@@ -81,7 +87,7 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Judul singkat
+              Judul singkat <span className="font-normal text-[#8E8E93]">(opsional — bawaan: nama jenis kasus)</span>
             </label>
             <input data-testid="case-create-title" className="input-field w-full"
               value={title} onChange={(e) => setTitle(e.target.value)}
@@ -90,7 +96,7 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Nominal yang dipertaruhkan (Rp)
+              Nominal yang dipertaruhkan (Rp) <span className="text-[#C0392B]">*</span>
             </label>
             <MoneyInput testId="case-create-amount" className="input-field w-full" value={amount} onChange={setAmount} placeholder="0" />
             <p className="mt-1 text-[10px] text-[#8E8E93]">
@@ -98,28 +104,28 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Pelanggan (bila terkait)
+                Pelanggan <span className="font-normal text-[#8E8E93]">(opsional)</span>
               </label>
               <KNSelect data-testid="case-create-customer" value={customerId}
-                onValueChange={setCustomerId} options={custOptions}
+                onValueChange={setCustomerId} options={custOptions} searchable
                 placeholder="Pilih pelanggan" />
             </div>
             <div>
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Supplier (bila terkait)
+                Supplier <span className="font-normal text-[#8E8E93]">(opsional)</span>
               </label>
               <KNSelect data-testid="case-create-supplier" value={supplierId}
-                onValueChange={setSupplierId} options={supOptions}
+                onValueChange={setSupplierId} options={supOptions} searchable
                 placeholder="Pilih supplier" />
             </div>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Ceritakan kejadiannya
+              Ceritakan kejadiannya <span className="text-[#C0392B]">*</span>
             </label>
             <textarea data-testid="case-create-desc" className="textarea w-full" rows={3}
               value={description} onChange={(e) => setDescription(e.target.value)}
@@ -136,7 +142,8 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
         <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button className="primary-button" data-testid="case-create-submit"
-            disabled={saving || !caseType} onClick={submit}>
+            disabled={saving || !canSubmit} onClick={submit}
+            title={canSubmit ? undefined : "Lengkapi jenis kasus, nominal, dan cerita kejadian"}>
             {saving ? "Menyimpan…" : "Buat kasus"}
           </button>
         </div>

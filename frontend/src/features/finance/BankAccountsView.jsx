@@ -2,14 +2,15 @@
  * BankAccountsView (EPIC7-B) — Kas & Bank: multi-akun + ledger + rekonsiliasi.
  * Akses admin/manager (permission "cash"). Sumber: /api/bank-accounts (+ /ledger, /reconcile).
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, Circle, X, Banknote, ArrowDownLeft, ArrowUpRight,
+  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, Circle, X, Banknote, ArrowDownLeft, ArrowUpRight, ListChecks,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
@@ -22,11 +23,8 @@ const ACCOUNT_TYPE_OPTIONS = [
   { value: "cash", label: "Kas tunai" },
 ];
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }); }
-  catch { return "—"; }
-}
+// UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
+const fmtDate = (iso) => formatDate(iso);
 
 const EMPTY_FORM = { name: "", account_type: "bank", bank_name: "", account_number: "", opening_balance: "" };
 
@@ -53,7 +51,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       setAccounts(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat akun kas/bank.");
+      setError(apiErrorText(e, "Gagal memuat akun kas/bank."));
     } finally {
       setLoading(false);
     }
@@ -86,7 +84,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       await load();                       // sinkron saldo kartu
       await openLedger(selected, true);   // silent refresh (tanpa flash skeleton)
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal memperbarui rekonsiliasi.");
+      setError(apiErrorText(err, "Gagal memperbarui rekonsiliasi."));
       await openLedger(selected, true);   // revert dari server
     }
   };
@@ -104,7 +102,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       closeForm();
       await load();
     } catch (err) {
-      setFormErr(err.response?.data?.detail || "Gagal membuat akun.");
+      setFormErr(apiErrorText(err, "Gagal membuat akun."));
     } finally {
       setSaving(false);
     }
@@ -124,7 +122,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
         <Kpi testId="bank-kpi-total" label="Total Saldo" value={formatCurrency(summary.total)} icon={Banknote} />
         <Kpi testId="bank-kpi-bank" label="Saldo Bank" value={formatCurrency(summary.bank)} icon={Landmark} tone="text-[#0058CC]" />
         <Kpi testId="bank-kpi-cash" label="Saldo Kas" value={formatCurrency(summary.cash)} icon={Wallet} tone="text-[#1B7F4B]" />
-        <Kpi testId="bank-kpi-unrec" label="Mutasi Belum Dicocokkan" value={summary.unrec} icon={Circle} tone={summary.unrec > 0 ? "text-[#B45309]" : ""} />
+        <Kpi testId="bank-kpi-unrec" label="Mutasi Belum Dicocokkan" value={summary.unrec} icon={ListChecks} tone={summary.unrec > 0 ? "text-[#B45309]" : ""} />
       </div>
       {/* Audit UI 24 Okt (060↔061): angka di sini = saldo awal + mutasi yang TERTAUT ke
           rekening. Transaksi kas yang dicatat tanpa rekening hanya muncul di Transaksi Kas,
@@ -162,10 +160,6 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                 <KNSelect data-testid="bank-form-type" value={form.account_type} options={ACCOUNT_TYPE_OPTIONS}
                   onValueChange={(v) => setForm({ ...form, account_type: v || "bank" })} />
               </div>
-              <div>
-                <label className="field-label">Saldo Awal</label>
-                <MoneyInput testId="bank-form-opening" value={form.opening_balance} onChange={(v) => setForm({ ...form, opening_balance: v })} placeholder="0" />
-              </div>
               {form.account_type === "bank" && (
                 <>
                   <div>
@@ -178,6 +172,11 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                   </div>
                 </>
               )}
+              {/* G1-48 — urutan isian Jenis → Bank → No. Rek → Saldo awal (dulu saldo awal menyela detail bank). */}
+              <div>
+                <label className="field-label">Saldo Awal</label>
+                <MoneyInput testId="bank-form-opening" value={form.opening_balance} onChange={(v) => setForm({ ...form, opening_balance: v })} placeholder="0" />
+              </div>
             </div>
           </FormModal>
 
@@ -196,7 +195,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                   type="button"
                   data-testid={`bank-card-${a.id}`}
                   onClick={() => openLedger(a.id)}
-                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"}`}
+                  className={`text-left rounded-xl border p-3.5 transition-all hover:shadow-md ${selected === a.id ? "border-[#0058CC] ring-1 ring-[#0058CC]/30 bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"} ${a.is_active === false ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${a.account_type === "bank" ? "bg-[#E7F0FF] text-[#0058CC]" : "bg-[#E6F6EC] text-[#1B7F4B]"}`}>
@@ -204,8 +203,9 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     </span>
                     <div className="min-w-0">
                       <p className="font-bold text-[13px] text-[#1C1C1E] truncate">{a.name}</p>
-                      <p className="text-[11px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? `${a.bank_name || "Bank"} · ${a.account_number || "-"}` : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
-                      {a.cash_type && (
+                      {/* G1-48 — bagian kosong tidak ditulis "-"; akun nonaktif diredupkan & berlabel. */}
+                      <p className="text-[11px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? [a.bank_name || "Bank", a.account_number].filter(Boolean).join(" · ") : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
+                      {a.cash_type && (a.account_type !== "bank" || a.cash_type === "kas_kecil") && (
                         <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[11px] font-semibold rounded-full px-1.5 py-0.5 bg-[#EFF4FF] text-[#0058CC]">
                           {a.cash_type === "kas_kecil" ? "Kas kecil" : "Kas besar"}
                         </span>
@@ -237,33 +237,33 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       {selected && (
         <DetailModal onClose={() => { setSelected(null); setLedger(null); }}
           label="Mutasi rekening bank" testId="bank-ledger-modal">
-          {canAudit && (
-            <div className="tab-bar">
-              <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
-              <button data-testid="bank-detail-tab-history" className={`tab-button ${detailTab === "history" ? "active" : ""}`} onClick={() => setDetailTab("history")}>Riwayat Perubahan</button>
-            </div>
-          )}
-          {detailTab === "history" && canAudit ? (
-            <div className="section-card mt-3"><div className="section-body">
-              <AuditHistoryPanel entityType="bank_account" entityId={selected} testIdPrefix="bank-history" />
-            </div></div>
-          ) : (
-            <LedgerPanel
-              ledger={ledger}
-              loading={ledgerLoading}
-              onClose={() => { setSelected(null); setLedger(null); }}
-              onToggle={toggleReconcile}
-            />
-          )}
+          {/* UAT 24 Okt (audit UI tahap 2) — G1-04: tab Mutasi/Riwayat dulu melayang di atas latar buram (di luar
+              kartu putih) dan tab Riwayat tidak punya tombol tutup. Sekarang kepala + tab + isi satu kartu. */}
+          <LedgerPanel
+            ledger={ledger}
+            loading={ledgerLoading}
+            onClose={() => { setSelected(null); setLedger(null); }}
+            onToggle={toggleReconcile}
+            tabs={canAudit ? (
+              <div className="tab-bar px-3" data-testid="bank-detail-tabs">
+                <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
+                <button data-testid="bank-detail-tab-history" className={`tab-button ${detailTab === "history" ? "active" : ""}`} onClick={() => setDetailTab("history")}>Riwayat Perubahan</button>
+              </div>
+            ) : null}
+          >
+            {detailTab === "history" && canAudit
+              ? <AuditHistoryPanel entityType="bank_account" entityId={selected} testIdPrefix="bank-history" />
+              : null}
+          </LedgerPanel>
         </DetailModal>
       )}
     </div>
   );
 }
 
-function LedgerPanel({ ledger, loading, onClose, onToggle }) {
+function LedgerPanel({ ledger, loading, onClose, onToggle, tabs = null, children = null }) {
   return (
-    <div className="section-card mt-3" data-testid="bank-ledger">
+    <div className="section-card" data-testid="bank-ledger">
       <div className="section-head">
         <div className="flex items-center gap-2">
           <Banknote size={15} className="text-[#0058CC]" />
@@ -272,8 +272,9 @@ function LedgerPanel({ ledger, loading, onClose, onToggle }) {
         </div>
         <button data-testid="bank-ledger-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup"><X size={14} /></button>
       </div>
+      {tabs}
       <div className="section-body">
-        {loading ? (
+        {children || (loading ? (
           <div className="grid gap-2" data-testid="bank-ledger-loading">{[0, 1, 2].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
         ) : !ledger || (ledger.transactions || []).length === 0 ? (
           <div className="py-8 text-center text-[12px] text-[#8E8E93]" data-testid="bank-ledger-empty">Belum ada transaksi pada akun ini.</div>
@@ -312,7 +313,7 @@ function LedgerPanel({ ledger, loading, onClose, onToggle }) {
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

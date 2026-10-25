@@ -9,12 +9,21 @@
 import { ArrowRight } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 
-function renderValue(field, value) {
+function renderValue(field, value, unit = "") {
   if (typeof value === "string" && value.trim() !== "" && Number.isNaN(Number(value))) return value;
   const n = Number(value || 0);
   if (field === "price") return formatCurrency(n);
   if (field === "discount_percent" || field === "order_discount_percent") return `${formatQty(n)}%`;
-  return formatQty(n);
+  return unit ? `${formatQty(n)} ${unit}` : formatQty(n);
+}
+
+// UAT 24 Okt (audit UI tahap 2) — G1-17: keputusan pemenuhan dicatat sebagai "Kekurangan → 1.35 · KSC/IC-…" (teks vs
+// angka tanpa satuan, dicoret). Dibaca sebagai satu kalimat: "Kekurangan dipenuhi 1,35 yard · KSC/IC-…".
+function fulfillmentText(to, unit = "") {
+  const [head, ...rest] = String(to ?? "").split(" · ");
+  const n = Number(head);
+  const qty = head.trim() !== "" && !Number.isNaN(n) ? `${formatQty(n)}${unit ? ` ${unit}` : ""}` : head;
+  return [qty, ...rest].filter(Boolean).join(" · ");
 }
 
 export default function AmendmentChangeList({ changes = [], testId = "amd-changes" }) {
@@ -35,12 +44,20 @@ export default function AmendmentChangeList({ changes = [], testId = "amd-change
           data-testid={`${testId}-row-${i}`}
           className="px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0">
           <p className="text-[11px] font-semibold text-[#1C1C1E] truncate">{c.product_name || "Pesanan"}</p>
-          <div className="flex items-center gap-1.5 text-[10.5px]">
-            <span className="text-[#6B6B73]">{c.label || c.field}</span>
-            <span className="tabular-nums text-[#8E8E93] line-through">{renderValue(c.field, c.from)}</span>
-            <ArrowRight size={10} className="text-[#0058CC] shrink-0" />
-            <span className="tabular-nums font-bold text-[#0058CC]">{renderValue(c.field, c.to)}</span>
-          </div>
+          {c.field === "fulfillment" ? (
+            <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]" data-testid={`${testId}-fulfillment-${i}`}>
+              <span className="text-[#6B6B73]">{c.label || "Pemenuhan"}:</span>
+              <span className="text-[#3C3C43]">{c.from || "Kekurangan"} dipenuhi</span>
+              <span className="tabular-nums font-bold text-[#0058CC]">{fulfillmentText(c.to, c.unit)}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[10.5px]">
+              <span className="text-[#6B6B73]">{c.label || c.field}</span>
+              <span className="tabular-nums text-[#8E8E93] line-through">{renderValue(c.field, c.from, c.unit)}</span>
+              <ArrowRight size={10} className="text-[#0058CC] shrink-0" />
+              <span className="tabular-nums font-bold text-[#0058CC]">{renderValue(c.field, c.to, c.unit)}</span>
+            </div>
+          )}
         </div>
       ))}
     </div>

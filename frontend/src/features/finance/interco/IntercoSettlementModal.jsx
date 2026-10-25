@@ -103,12 +103,13 @@ export default function IntercoSettlementModal({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Pembayar</label>
-              <KNSelect value={payer} onValueChange={setPayer} options={entOptions} data-testid="interco-settle-payer" />
+              {/* UAT 24 Okt (audit UI tahap 2) — G1-30: lawan tidak boleh PT yang sama; penanda wajib. */}
+              <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Pembayar <span className="text-[#C0392B]">*</span></label>
+              <KNSelect value={payer} onValueChange={setPayer} options={entOptions.filter((o) => o.value !== payee)} placeholder="Pilih PT pembayar" data-testid="interco-settle-payer" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Penerima</label>
-              <KNSelect value={payee} onValueChange={setPayee} options={entOptions} data-testid="interco-settle-payee" />
+              <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Penerima <span className="text-[#C0392B]">*</span></label>
+              <KNSelect value={payee} onValueChange={setPayee} options={entOptions.filter((o) => o.value !== payer)} placeholder="Pilih PT penerima" data-testid="interco-settle-payee" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#3C3C43] mb-1">Metode</label>
@@ -201,7 +202,7 @@ export default function IntercoSettlementModal({
           </button>
           <button
             onClick={submit}
-            disabled={busy || total <= 0}
+            disabled={busy || total <= 0 || !payer || !payee || payer === payee}
             data-testid="interco-settle-submit"
             className="px-4 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-50"
           >

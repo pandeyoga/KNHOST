@@ -22,6 +22,7 @@ import { KNSelect } from "../../../components/KNSelect";
 import { OptionTabs } from "../../../components/ListControls";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { askConfirm } from "../../../services/confirmService";
 import { entityShortById } from "../../../utils/entityLabel";
 import ContraBonListTable from "./ContraBonListTable";
 import ContraBonDetailPanel from "./ContraBonDetailPanel";
@@ -144,6 +145,13 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
   }, [tab, loadList, loadUnbilled, loadSchedules]);
 
   async function runReminder() {
+    // UAT 24 Okt (audit UI tahap 2) — G1-16: mengirim notifikasi ke finance & manajer → konfirmasi dulu.
+    if (!(await askConfirm({
+      title: "Jalankan pengingat tukar faktur sekarang?",
+      message: "Notifikasi jadwal tukar faktur (H-n) & kontrabon yang menunggu terlalu lama dikirim ke Finance "
+        + "dan Manajer sekarang, tanpa menunggu jadwal harian 07:30 WIB.",
+      confirmLabel: "Kirim Pengingat",
+    }))) return;
     setBusy("reminder"); setErr("");
     try {
       const r = await axios.post(`${API}/contra-bons/run-reminder`, {});

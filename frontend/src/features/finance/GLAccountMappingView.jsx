@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import { BookKey, RefreshCw, Info, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -28,7 +29,7 @@ export default function GLAccountMappingView({ currentUser }) {
     try {
       const r = await axios.get(`${API}/gl/account-mappings`, { params: scope ? { entity_id: scope } : {} });
       setData(r.data); setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat pemetaan akun."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat pemetaan akun.")); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [scope]); // eslint-disable-line
@@ -36,7 +37,7 @@ export default function GLAccountMappingView({ currentUser }) {
   const rows = useMemo(() => (data?.rows || []).filter((r) =>
     (mod === "all" || r.module === mod) && (!onlyUnset || r.status !== "ok")
     && (!q || `${r.label} ${r.key} ${r.account_code} ${r.account_name} ${r.used_by.join(" ")}`.toLowerCase().includes(q.toLowerCase()))), [data, mod, q, onlyUnset]);
-  const scopeOpts = [{ value: "", label: "Global (semua PT)" }, ...(entities || []).filter((e) => e.id && e.id !== "all").map((e) => ({ value: e.id, label: e.name || e.short_name || e.id }))];
+  const scopeOpts = [{ value: "", label: "Global (semua PT)" }, ...(entities || []).filter((e) => e.id && e.id !== "all").map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || e.id }))];
   const modOpts = [{ value: "all", label: "Semua modul" }, ...(data?.modules || []).map((m) => ({ value: m.id, label: m.label }))];
   const s = data?.summary || {};
 
@@ -69,28 +70,30 @@ export default function GLAccountMappingView({ currentUser }) {
               <span>Kebutuhan</span><span>Akun dipakai</span><span>Sumber</span><span>Status</span><span className="text-right">Aksi</span>
             </div>
             {loading && !data ? <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-              : rows.length === 0 ? <div data-testid="glmap-empty" className="py-10 text-center text-[12px] text-[#6B6B73]">Tidak ada baris yang cocok.</div>
+              : rows.length === 0 ? <div data-testid="glmap-empty" className="py-10 text-center text-[12px] text-[#6B6B73]">{onlyUnset && !q && mod === "all" ? "Semua kebutuhan sudah diatur." : "Tidak ada baris yang cocok."}</div>
               : <div className="divide-y divide-[#EFF0F2]">{rows.map((r) => (
-                <MappingRow key={r.key} row={r} canEdit={canEdit} scoped={!!scope} onEdit={() => setEditing(r)} onHistory={() => setHistKey(r.key)} />))}</div>}
+                <MappingRow key={r.key} row={r} canEdit={canEdit} scoped={!!scope} onEdit={() => setEditing(r)} onHistory={() => setHistKey(r)} />))}</div>}
           </div>
         </div>
       </section>
       {editing && <MappingEditDialog row={editing} entityId={scope} scopeLabel={scopeOpts.find((o) => o.value === scope)?.label}
         onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
-      {histKey && <MappingHistory mkey={histKey} entityId={scope} onClose={() => setHistKey(null)} />}
+      {histKey && <MappingHistory mkey={histKey.key} label={histKey.label} entityId={scope} onClose={() => setHistKey(null)} />}
     </div>
   );
 }
 
 function SummaryCards({ s, onlyUnset, setOnlyUnset }) {
+  // UAT 24 Okt (audit UI tahap 2) — G1-47: kartu "Belum diatur 0" tidak bisa diklik (dulu → "Tidak ada baris yang cocok").
+  const none = !(s.unset > 0);
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
       <Card testId="glmap-kpi-total" label="Kebutuhan akun" value={s.total} />
-      <button type="button" data-testid="glmap-kpi-unset" onClick={() => setOnlyUnset(!onlyUnset)}
-        className={`text-left rounded-md border px-3 py-2 transition-colors ${onlyUnset ? "border-[#E5484D] bg-[#FFF1F1]" : "border-[#EFF0F2] bg-white hover:bg-[#FFF7F7]"}`}>
-        <p className="text-[10px] uppercase font-bold text-[#B42318] flex items-center gap-1"><AlertTriangle size={11} /> Belum diatur</p>
+      <button type="button" data-testid="glmap-kpi-unset" onClick={() => setOnlyUnset(!onlyUnset)} disabled={none && !onlyUnset}
+        className={`text-left rounded-md border px-3 py-2 transition-colors disabled:cursor-default ${onlyUnset ? "border-[#E5484D] bg-[#FFF1F1]" : none ? "border-[#EFF0F2] bg-white" : "border-[#EFF0F2] bg-white hover:bg-[#FFF7F7]"}`}>
+        <p className={`text-[10px] uppercase font-bold flex items-center gap-1 ${none ? "text-[#6B6B73]" : "text-[#B42318]"}`}><AlertTriangle size={11} /> Belum diatur</p>
         <p className="text-lg font-semibold">{s.unset ?? 0}</p>
-        <p className="text-[10px] text-[#6B6B73]">{onlyUnset ? "Klik untuk tampilkan semua" : "Klik untuk menyaring"}</p>
+        <p className="text-[10px] text-[#6B6B73]">{onlyUnset ? "Klik untuk tampilkan semua" : none ? "Semua kebutuhan sudah diatur" : "Klik untuk menyaring"}</p>
       </button>
       <Card testId="glmap-kpi-custom" label="Diubah dari bawaan" value={s.custom} />
       <Card testId="glmap-kpi-entity" label="Khusus PT ini" value={s.entity_override} />

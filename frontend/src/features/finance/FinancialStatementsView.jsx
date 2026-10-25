@@ -4,6 +4,7 @@
  * Sumber: /api/finance/income-statement, /api/finance/balance-sheet (+ export.csv).
  * Ikut gaya modul GL (section-card, #6B219A, KNSelect, formatCurrency, ErrorNotice).
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -13,7 +14,7 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatPct } from "../../utils/formatters";
 import { SectionBlock, SummaryRow, GroupHeader, BsSection, BsLine, BsTotalRow, Labeled, Kpi, BalancedKpi } from "./FinancialStatementsParts";
 import CashFlowTab from "./CashFlowTab";
 import EquityChangesTab from "./EquityChangesTab";
@@ -129,7 +130,7 @@ function IncomeStatementTab({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/income-statement`, { params });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Laba-Rugi.");
+      setError(apiErrorText(e, "Gagal memuat Laba-Rugi."));
     } finally {
       setLoading(false);
     }
@@ -154,7 +155,7 @@ function IncomeStatementTab({ selectedEntity }) {
         <Kpi testId="fs-pl-kpi-revenue" label="Pendapatan" value={formatCurrency(data?.revenue_total)} icon={TrendingUp} tone="text-[#1B7F4B]" />
         <Kpi testId="fs-pl-kpi-gross" label="Laba Kotor" value={formatCurrency(data?.gross_profit)} icon={ArrowUpRight} />
         <Kpi testId="fs-pl-kpi-net" label="Laba Bersih" value={formatCurrency(data?.net_income)} icon={PiggyBank} tone={(data?.net_income ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
-        <Kpi testId="fs-pl-kpi-margin" label="Marjin Bersih" value={`${Number(data?.net_margin ?? 0).toFixed(1)}%`} icon={Percent} tone={(data?.net_margin ?? 0) >= 0 ? "text-[#0058CC]" : "text-[#C0392B]"} />
+        <Kpi testId="fs-pl-kpi-margin" label="Marjin Bersih" value={formatPct(Number(data?.net_margin ?? 0))} icon={Percent} tone={(data?.net_margin ?? 0) >= 0 ? "text-[#0058CC]" : "text-[#C0392B]"} />
       </div>
 
       {/* Filter */}
@@ -209,7 +210,7 @@ function IncomeStatementTab({ selectedEntity }) {
               </div>
             </Labeled>
             <span className="text-[11px] text-[#9A9BA3] pb-1.5" data-testid="fs-pl-period-hint">
-              {effRange.start} s/d {effRange.end}
+              {formatDate(effRange.start)} s/d {formatDate(effRange.end)}
             </span>
           </div>
         )}
@@ -232,8 +233,8 @@ function IncomeStatementTab({ selectedEntity }) {
               {(data.sections || []).map((sec) => (
                 <SectionBlock key={sec.key} section={sec} />
               ))}
-              <SummaryRow label="Laba Kotor" value={data.gross_profit} extra={`Marjin ${Number(data.gross_margin || 0).toFixed(1)}%`} />
-              <SummaryRow label="Laba Bersih" value={data.net_income} extra={`Marjin ${Number(data.net_margin || 0).toFixed(1)}%`} highlight />
+              <SummaryRow label="Laba Kotor" value={data.gross_profit} extra={`Marjin ${formatPct(Number(data.gross_margin || 0))}`} />
+              <SummaryRow label="Laba Bersih" value={data.net_income} extra={`Marjin ${formatPct(Number(data.net_margin || 0))}`} highlight />
             </tbody>
           </table>
         </div>
@@ -263,7 +264,7 @@ function BalanceSheetTab({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/balance-sheet`, { params });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Neraca.");
+      setError(apiErrorText(e, "Gagal memuat Neraca."));
       setData(null);   // FE-12 — jangan biarkan hasil periode lama tampil (dan "Seimbang") untuk periode yang gagal dimuat
     } finally {
       setLoading(false);

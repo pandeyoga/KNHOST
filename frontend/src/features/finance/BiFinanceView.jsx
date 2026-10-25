@@ -3,6 +3,7 @@
  * Tren bulanan (Pendapatan/Beban/Laba Bersih), KPI YTD, rasio, & perbandingan
  * antar PT. Sumber: /api/finance/bi. Chart: recharts. Gaya modul GL/existing.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -15,7 +16,7 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCompactIDR, formatCurrency, formatPct } from "../../utils/formatters";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -30,15 +31,8 @@ const COLOR = {
   neutral: "#0058CC",
 };
 
-function compactIDR(v) {
-  const n = Number(v || 0);
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(1)} M`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)} jt`;
-  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(0)} rb`;
-  return `${n}`;
-}
+// UAT 24 Okt (audit UI tahap 2) — G1-14: salinan lokal compactIDR ("150.0 jt") diganti formatter bersama id-ID.
+const compactIDR = (v) => formatCompactIDR(Number(v || 0));
 
 // Audit UI 24 Okt (092/093): rasio dulu "2722.02x" (desimal titik, tanpa batas). Desimal koma;
 // di atas 50x angka tidak bermakna (kewajiban lancar hampir nol) → "> 50x", angka persis di tooltip.
@@ -66,7 +60,7 @@ export default function BiFinanceView({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/bi`, { params: { year, ...entityParam(selectedEntity) } });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data BI Keuangan.");
+      setError(apiErrorText(e, "Gagal memuat data BI Keuangan."));
     } finally {
       setLoading(false);
     }
@@ -96,7 +90,7 @@ export default function BiFinanceView({ selectedEntity }) {
         <Kpi testId="bi-kpi-revenue" label={`Pendapatan ${year}`} value={formatCurrency(kpi.revenue)} icon={TrendingUp} tone="text-[#1B7F4B]" />
         <Kpi testId="bi-kpi-expense" label={`Beban ${year}`} value={formatCurrency(kpi.expense)} icon={TrendingDown} tone="text-[#C0392B]" />
         <Kpi testId="bi-kpi-net" label={`Laba Bersih ${year}`} value={formatCurrency(kpi.net_income)} icon={PiggyBank} tone={(kpi.net_income ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
-        <Kpi testId="bi-kpi-margin" label="Marjin Bersih" value={`${Number(kpi.net_margin ?? 0).toFixed(1)}%`} icon={Percent} tone={(kpi.net_margin ?? 0) >= 0 ? "text-[#0058CC]" : "text-[#C0392B]"} />
+        <Kpi testId="bi-kpi-margin" label="Marjin Bersih" value={formatPct(Number(kpi.net_margin ?? 0))} icon={Percent} tone={(kpi.net_margin ?? 0) >= 0 ? "text-[#0058CC]" : "text-[#C0392B]"} />
       </div>
 
       <div className="section-card">
@@ -149,7 +143,7 @@ export default function BiFinanceView({ selectedEntity }) {
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey="revenue" name="Pendapatan" fill={COLOR.revenue} radius={[4, 4, 0, 0]} maxBarSize={26} />
                       <Bar dataKey="expense" name="Beban" fill={COLOR.expense} radius={[4, 4, 0, 0]} maxBarSize={26} />
-                      <Line type="monotone" dataKey="net_income" name="Laba Bersih" stroke={COLOR.net} strokeWidth={2.5} dot={{ r: 2 }} />
+                      <Line type="linear" dataKey="net_income" name="Laba Bersih" stroke={COLOR.net} strokeWidth={2.5} dot={{ r: 2 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 )}
@@ -231,7 +225,7 @@ export default function BiFinanceView({ selectedEntity }) {
                                 <td className="px-3 py-2 text-right tabular-nums text-[#1B7F4B]">{formatCurrency(r.revenue)}</td>
                                 <td className="px-3 py-2 text-right tabular-nums text-[#C0392B]">{formatCurrency(r.expense)}</td>
                                 <td className={`px-3 py-2 text-right tabular-nums font-semibold ${r.net_income >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>{formatCurrency(r.net_income)}</td>
-                                <td className="px-3 py-2 text-right tabular-nums">{Number(r.net_margin || 0).toFixed(1)}%</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{formatPct(Number(r.net_margin || 0))}</td>
                               </tr>
                             ))
                           )}

@@ -2,6 +2,7 @@
  * CashFlowForecastView (FINANCE) — Proyeksi Arus Kas (AR/AP jatuh tempo).
  * Sumber: /api/finance/cashflow-forecast.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
@@ -35,7 +36,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/cashflow-forecast`, { params: { ...entityParam(selectedEntity) } });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat proyeksi kas.");
+      setError(apiErrorText(e, "Gagal memuat proyeksi kas."));
     } finally { setLoading(false); }
   }, [selectedEntity]);
 
@@ -80,7 +81,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
                   <ReferenceLine y={0} stroke="#C7C7CC" />
                   <Bar dataKey="inflow" name="Masuk (AR)" fill={FC.revenue} radius={[4, 4, 0, 0]} maxBarSize={30} />
                   <Bar dataKey="outflow" name="Keluar (AP)" fill={FC.expense} radius={[0, 0, 4, 4]} maxBarSize={30} />
-                  <Line type="monotone" dataKey="cumulative" name="Posisi Kas Kumulatif" stroke={FC.purple} strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Line type="linear" dataKey="cumulative" name="Posisi Kas Kumulatif" stroke={FC.purple} strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
@@ -106,7 +107,8 @@ function DueList({ title, icon: Icon, items, tone, testId }) {
         <p className="text-[11px] text-[#9A9BA3] py-4 text-center">Tidak ada tagihan terbuka.</p>
       ) : (
         <div className="overflow-auto max-h-[320px] rounded-md border border-[#EFF0F2]">
-          <table className="w-full min-w-[460px] text-[12px]">
+          {/* G1-21 — tanpa min-w 460px: 4 kolom muat di setengah lebar 1440 (kolom Jatuh Tempo dulu tersembunyi). */}
+          <table className="w-full text-[12px]">
             <thead className="sticky top-0 bg-[#FAFBFC]">
               <tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] border-b border-[#EFF0F2]">
                 <th className="px-3 py-2">No</th><th className="px-3 py-2">Pihak</th>
@@ -117,7 +119,7 @@ function DueList({ title, icon: Icon, items, tone, testId }) {
               {arr.map((it, i) => (
                 <tr key={`${it.number}-${i}`} data-testid={`${testId}-row-${i}`} className="border-b border-[#F5F5F7] last:border-0">
                   <td className="whitespace-nowrap px-3 py-1.5 font-semibold text-[#1C1C1E]">{it.number}</td>
-                  <td className="px-3 py-1.5 text-[#6B6B73] max-w-[140px] truncate" title={it.party}>{it.party}</td>
+                  <td className="px-3 py-1.5 text-[#6B6B73] max-w-[160px] truncate" title={it.party}>{it.party}</td>
                   <td className={`px-3 py-1.5 text-right tabular-nums font-semibold ${color}`}>{formatCurrency(it.amount)}</td>
                   <td className="px-3 py-1.5 text-right text-[11px]">
                     {/* Audit UI 24 Okt (073): tanggal ISO "2026-11-22" → "22 Nov 2026". */}

@@ -27,7 +27,7 @@ export function MonthlyTrendPanel({ monthly }) {
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar dataKey="revenue" name="Pendapatan" fill={FC.revenue} radius={[4, 4, 0, 0]} maxBarSize={22} />
             <Bar dataKey="expense" name="Beban" fill={FC.expense} radius={[4, 4, 0, 0]} maxBarSize={22} />
-            <Line type="monotone" dataKey="net_income" name="Laba Bersih" stroke={FC.net} strokeWidth={2.5} dot={{ r: 2 }} />
+            <Line type="linear" dataKey="net_income" name="Laba Bersih" stroke={FC.net} strokeWidth={2.5} dot={{ r: 2 }} />
           </ComposedChart>
         </ResponsiveContainer>
       )}
@@ -145,7 +145,9 @@ export function TopApPanel({ ap }) {
           {rows.map((b, i) => (
             <div key={i} data-testid={`tower-ap-row-${i}`} className="flex items-center justify-between gap-2 text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
               <span className="font-semibold text-[#1C1C1E] truncate max-w-[150px]" title={b.party}>{b.party || b.number}</span>
-              <span className="tabular-nums font-semibold text-[#C0392B]">{formatCurrency(b.amount)}</span>
+              {/* G1-38 — per pemasok (bukan per tagihan): sisa + jumlah tagihan, seperti panel piutang. */}
+              <div className="text-right"><span className="tabular-nums font-semibold text-[#C0392B]">{formatCurrency(b.amount)}</span>
+                {(b.bill_count || 0) > 0 && <span className="block text-[9px] text-[#8E8E93]">{b.bill_count} tagihan</span>}</div>
             </div>
           ))}
         </div>

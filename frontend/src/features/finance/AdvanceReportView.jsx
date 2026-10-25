@@ -3,6 +3,7 @@
  * Saldo 2-1400 per pelanggan: uang muka pesanan yang belum dikirim (+umur) dan deposit.
  * Sumber: GET /api/ar/advance-report?entity_id=
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Search, Wallet, Clock3, Users, ChevronDown, ChevronRight, PackageOpen } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -41,7 +42,7 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
       setData(res.data || null);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat laporan uang muka.");
+      setError(apiErrorText(e, "Gagal memuat laporan uang muka."));
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
                 padding kiri .form-input menimpa `pl-7`, jadi jaraknya dipaksa lewat style. */}
             <label className="relative">
               <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 z-10 -translate-y-1/2 text-[#9A9BA3]" />
-              <input data-testid="advance-report-search" className="form-input text-[12px]" style={{ paddingLeft: 30 }} placeholder="Cari pelanggan / no. pesanan"
+              <input data-testid="advance-report-search" className="form-input text-[12px]" style={{ paddingLeft: 30 }} placeholder="Cari pelanggan/pesanan"
                 value={q} onChange={(e) => setQ(e.target.value)} />
             </label>
             <button data-testid="advance-report-refresh" className="btn-secondary btn-xs" onClick={load} disabled={loading}>

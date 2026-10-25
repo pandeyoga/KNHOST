@@ -126,8 +126,16 @@ export default function BankReconciliationView() {
 
   const suggestedRules = useMemo(
     () => rules.filter((r) => r.status === "suggested").length, [rules]);
+  // UAT 24 Okt (audit UI tahap 2) — G1-18: akun nonaktif dulu tercampur tanpa tanda (dua "TEST_Bank Updated" kembar).
+  // Aktif dulu, nonaktif diberi label & ditaruh paling bawah; nomor rekening membedakan nama kembar.
   const acctOptions = useMemo(
-    () => accounts.map((a) => ({ value: a.id, label: a.name || a.bank_name || a.id })),
+    () => [...accounts]
+      .sort((a, b) => Number(a.is_active === false) - Number(b.is_active === false))
+      .map((a) => ({
+        value: a.id,
+        label: [a.name || a.bank_name || a.id, a.account_number].filter(Boolean).join(" · ")
+          + (a.is_active === false ? " (nonaktif)" : ""),
+      })),
     [accounts]);
   const filterOn = !!(fStatus || fStart || fEnd);
   // Audit UI 24 Okt (062): sebelum ada mutasi diimpor, "Selisih rekening vs buku" dulu

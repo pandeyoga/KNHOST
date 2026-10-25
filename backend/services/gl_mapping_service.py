@@ -123,8 +123,9 @@ async def list_mappings(entity_id: Optional[str]) -> Dict[str, Any]:
 async def candidates(key: str, entity_id: Optional[str]) -> List[Dict[str, Any]]:
     entry = reg.require(key)
     accs = await _accounts(_eid(entity_id))
-    out = [{"code": c, "name": a.get("name", ""), "type": a.get("type", "")} for c, a in accs.items()
-           if a.get("type") in entry["allowed_types"] and a.get("is_active") is not False
+    # UAT 24 Okt (audit UI tahap 2) — G1-08: jenis akun dinormalkan (alias `revenue` → `income`).
+    out = [{"code": c, "name": a.get("name", ""), "type": reg.norm_type(a.get("type"))} for c, a in accs.items()
+           if reg.norm_type(a.get("type")) in entry["allowed_types"] and a.get("is_active") is not False
            and a.get("is_postable") is not False]
     return sorted(out, key=lambda x: x["code"])
 
@@ -148,7 +149,7 @@ async def set_mapping(key: str, entity_id: Optional[str], account_code: str, rea
         raise ValueError(f"Akun {code} tidak ada di bagan akun.")
     if a.get("is_active") is False or a.get("is_postable") is False:
         raise ValueError(f"Akun {code} nonaktif atau akun induk — tidak bisa dipakai.")
-    if a.get("type") not in entry["allowed_types"]:
+    if reg.norm_type(a.get("type")) not in entry["allowed_types"]:
         allowed = ", ".join(reg.TYPE_LABEL[t] for t in entry["allowed_types"])
         raise ValueError(f"Akun {code} berjenis {reg.TYPE_LABEL.get(a.get('type'), a.get('type'))}; kebutuhan ini hanya menerima {allowed}.")
     before = await account_for(key, eid)

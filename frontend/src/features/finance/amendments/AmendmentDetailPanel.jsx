@@ -23,6 +23,28 @@ import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import { amendmentDetail, decideAmendment, errText, statusMeta } from "./amendmentApi";
 
+// UAT 24 Okt (audit UI tahap 2) — G1-05: jejak dokumen dulu mencetak kode mentah (APPLIED_TO, AMENDS, sales_order).
+const REL_LABEL = {
+  applied_to: "Diterapkan ke", amends: "Mengoreksi", amended_by: "Dikoreksi oleh", issued: "Menerbitkan",
+  issued_by: "Diterbitkan oleh", parent: "Berasal dari", child: "Menurunkan", corrects: "Mengoreksi",
+  corrected_by: "Dikoreksi oleh", reverses: "Membalik", reversed_by: "Dibalik oleh", settles: "Melunasi",
+  settled_by: "Dilunasi oleh", references: "Mengacu ke", referenced_by: "Diacu oleh", replaces: "Mengganti",
+  replaced_by: "Diganti oleh", journal_of: "Jurnal atas", journaled_by: "Dijurnal di",
+};
+const DOC_TYPE_LABEL = {
+  sales_order: "Pesanan Penjualan", doc_amendment: "Amandemen", credit_note: "Nota Kredit", debit_note: "Nota Debit",
+  sales_credit_note: "Nota Kredit", sales_debit_note: "Nota Debit", invoice: "Faktur", ar_receipt: "Kwitansi",
+  journal_entry: "Jurnal", purchase_order: "Pesanan Pembelian", vendor_bill: "Tagihan Supplier",
+  sales_return: "Retur Penjualan", shipment: "Pengiriman", delivery: "Surat Jalan", payment_plan: "Rencana Pembayaran",
+  cash_transaction: "Transaksi Kas", special_order: "Pesanan Khusus",
+};
+const humanCode = (v) => {
+  const t = String(v || "").replace(/_/g, " ").trim().toLowerCase();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+};
+const relLabel = (v) => REL_LABEL[String(v || "").toLowerCase()] || humanCode(v);
+const docTypeLabel = (v) => DOC_TYPE_LABEL[String(v || "").toLowerCase()] || humanCode(v);
+
 
 function when(iso) {
   if (!iso) return "—";
@@ -174,8 +196,8 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
             <p className="text-[10px] font-bold uppercase text-[#6B6B73]">Jejak dokumen</p>
             {(amd.refs || []).map((r, i) => (
               <p key={i} data-testid={`amd-detail-ref-${i}`} className="text-[10.5px] text-[#3C3C43]">
-                <span className="rounded bg-[#EFF4FF] px-1 py-0.5 text-[9px] font-bold uppercase text-[#0058CC]">{r.rel}</span>{" "}
-                <b>{r.doc_number}</b> <span className="text-[#8E8E93]">({r.doc_type})</span>
+                <span className="rounded bg-[#EFF4FF] px-1 py-0.5 text-[9.5px] font-semibold text-[#0058CC]" title={r.rel}>{relLabel(r.rel)}</span>{" "}
+                <b>{r.doc_number}</b> <span className="text-[#8E8E93]">({docTypeLabel(r.doc_type)})</span>
                 {r.note ? ` · ${r.note}` : ""}
               </p>
             ))}

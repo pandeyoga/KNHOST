@@ -55,9 +55,19 @@ async def _ap_summary(scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         bk = "d0_30" if days <= 30 else "d31_60" if days <= 60 else "d61_90" if days <= 90 else "d90_plus"
         aging[bk] = round(aging[bk] + out, 2)
         top.append({"number": b.get("bill_number"), "party": b.get("supplier_name", ""),
-                    "amount": out, "days": days})
-    top.sort(key=lambda x: x["amount"], reverse=True)
-    return {"outstanding": round(total, 2), "aging": aging, "top": top[:5]}
+                    "party_id": b.get("supplier_id", ""), "amount": out, "days": days})
+    # UAT 24 Okt (audit UI tahap 2) — G1-38: "Hutang Terbesar" dulu per TAGIHAN (satu pemasok muncul 4×) sementara
+    # "Piutang Terbesar" per pelanggan. Kini dikelompokkan per pemasok: jumlah sisa + banyaknya tagihan + umur tertua.
+    by_party: Dict[str, Dict[str, Any]] = {}
+    for t in top:
+        k = t["party_id"] or t["party"] or t["number"]
+        g = by_party.setdefault(k, {"party": t["party"] or t["number"], "party_id": t["party_id"], "amount": 0.0,
+                                    "bill_count": 0, "days": 0, "number": t["number"]})
+        g["amount"] = round(g["amount"] + t["amount"], 2)
+        g["bill_count"] += 1
+        g["days"] = max(g["days"], t["days"])
+    grouped = sorted(by_party.values(), key=lambda x: x["amount"], reverse=True)
+    return {"outstanding": round(total, 2), "aging": aging, "top": grouped[:5]}
 
 
 def _pl_snapshot(stmt: Dict[str, Any]) -> Dict[str, Any]:

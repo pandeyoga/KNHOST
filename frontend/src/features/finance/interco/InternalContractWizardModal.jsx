@@ -45,6 +45,9 @@ export default function InternalContractWizardModal({
     label: `${p.sku || ""} · ${p.name || ""}`,
   }));
 
+  // UAT 24 Okt (audit UI tahap 2) — G1-30: PT lawan tanpa PT sendiri; tombol nonaktif sampai isian wajib lengkap.
+  const canSubmit = !!seller && !!buyer && seller !== buyer && !!productId && parseFloat(rate) > 0 && !!validFrom;
+
   const submit = async () => {
     setErr("");
     if (!seller || !buyer) { setErr("PT penjual & pembeli wajib dipilih."); return; }
@@ -97,16 +100,16 @@ export default function InternalContractWizardModal({
           {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="PT Penjual (penerbit kontrak)">
-              <KNSelect value={seller} onValueChange={setSeller} options={entOptions} data-testid="interco-contract-seller" />
+            <Field label="PT Penjual (penerbit kontrak)" required>
+              <KNSelect value={seller} onValueChange={setSeller} options={entOptions.filter((o) => o.value !== buyer)} placeholder="Pilih PT penjual" data-testid="interco-contract-seller" />
             </Field>
-            <Field label="PT Pembeli (partner)">
-              <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions} data-testid="interco-contract-buyer" />
+            <Field label="PT Pembeli (partner)" required>
+              <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions.filter((o) => o.value !== seller)} placeholder="Pilih PT pembeli" data-testid="interco-contract-buyer" />
             </Field>
-            <Field label="Produk">
-              <KNSelect value={productId} onValueChange={setProductId} options={prodOptions} data-testid="interco-contract-product" />
+            <Field label="Produk" required>
+              <KNSelect value={productId} onValueChange={setProductId} options={prodOptions} placeholder="Pilih produk" data-testid="interco-contract-product" />
             </Field>
-            <Field label="Harga per unit (Rp)">
+            <Field label="Harga per unit (Rp)" required>
               <MoneyInput
                 value={rate}
                 onChange={(v) => setRate(v)}
@@ -114,7 +117,7 @@ export default function InternalContractWizardModal({
                 className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
               />
             </Field>
-            <Field label="Berlaku sejak">
+            <Field label="Berlaku sejak" required>
               <KNDatePicker value={validFrom} onChange={setValidFrom} data-testid="interco-contract-valid-from" clearable={false} />
             </Field>
             <Field label="Berlaku hingga (opsional)">
@@ -143,7 +146,7 @@ export default function InternalContractWizardModal({
             Batal
           </button>
           <button
-            onClick={submit} disabled={busy}
+            onClick={submit} disabled={busy || !canSubmit}
             data-testid="interco-contract-submit"
             className="px-4 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-50"
           >
@@ -155,10 +158,10 @@ export default function InternalContractWizardModal({
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, required = false, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#3C3C43] mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[#3C3C43] mb-1">{label}{required && <span className="text-[#C0392B]"> *</span>}</label>
       {children}
     </div>
   );

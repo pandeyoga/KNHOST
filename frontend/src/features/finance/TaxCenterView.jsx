@@ -8,6 +8,7 @@
  *    hanya mengantar ke kartu setting yang tepat.
  * Sumber: GET /api/tax/summary · POST/DELETE /api/tax/pph-records.
  */
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -56,7 +57,7 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
       if (!p && r.data?.period) setPeriod(r.data.period);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data pajak.");
+      setError(apiErrorText(e, "Gagal memuat data pajak."));
     } finally {
       setLoading(false);
     }
@@ -78,7 +79,8 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2">
             <Landmark size={16} className="text-[#0058CC]" />
-            <h2 data-testid="tax-center-title">PPh & Rekap Pajak</h2>
+            {/* UAT 24 Okt (audit UI tahap 2) — G1-40: judul kartu sama dengan judul kepala (G0-17) & isi (PPN + PPh). */}
+            <h2 data-testid="tax-center-title">Pajak (PPN & PPh)</h2>
             <EntityBadge entity={ent} isPkp={isPkp} />
           </div>
           <div className="flex items-center gap-2 ml-auto">
@@ -273,12 +275,12 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
                     <tr key={it.code} data-testid={`tax-pph-row-${it.code}`} className="border-b border-[#F5F5F7] last:border-0">
                       <td className="px-3 py-2">
                         <p className="font-semibold text-[#1C1C1E]">{it.name}</p>
-                        <p className="text-[10px] text-[#9A9BA3]">{it.source}</p>
+                        <p className="text-[10px] text-[#9A9BA3]">{String(it.source || "").replace(/(\d+) payroll run \(PPh21 aktual\/TER\)/, "$1 penggajian terposting (PPh 21 tarif efektif/TER)")}</p>
                       </td>
                       <td className="px-3 py-2"><span className="chip text-[10px]">{BASIS_LABEL[it.basis] || it.basis}</span></td>
                       <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]">{it.basis === "payroll" ? "TER" : `${it.rate}%`}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(it.dpp)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[#6B219A]">{formatCurrency(it.amount)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[#1C1C1E]">{formatCurrency(it.amount)}</td>
                       <td className="px-3 py-2 text-center">
                         {it.editable && canManage ? (
                           <button data-testid={`tax-pph-record-${it.code}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC] hover:underline disabled:opacity-40 disabled:no-underline"
@@ -293,7 +295,7 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
                 </tbody>
                 <tfoot><tr className="bg-[#FAFBFC] border-t border-[#EFF0F2] text-[11px] font-bold">
                   <td className="px-3 py-2 uppercase text-[10px] text-[#6B6B73]" colSpan={4}>Total PPh</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-[#6B219A]" data-testid="tax-pph-total">{formatCurrency(pph?.total)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-[#1C1C1E]" data-testid="tax-pph-total">{formatCurrency(pph?.total)}</td>
                   <td />
                 </tr></tfoot>
               </table>
@@ -338,7 +340,7 @@ function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload 
         {rows.map((r) => (
           <div key={r.id} data-testid={`tax-pph-rec-${r.id}`} className="flex items-center gap-2 rounded-md border border-[#EFF0F2] bg-white px-3 py-2 text-[11.5px]">
             <span className="font-semibold text-[#3C3C43]">{r.name}</span>
-            <span className="text-[#9A9BA3]">DPP {formatCurrency(r.dpp)} · {r.rate}% → <b className="text-[#6B219A] tabular-nums">{formatCurrency(r.amount)}</b></span>
+            <span className="text-[#9A9BA3]">DPP {formatCurrency(r.dpp)} · {r.rate}% → <b className="text-[#1C1C1E] tabular-nums">{formatCurrency(r.amount)}</b></span>
             {r.note ? <span className="text-[#9A9BA3] truncate">· {r.note}</span> : null}
             {canManage && (
               <button data-testid={`tax-pph-rec-del-${r.id}`} className="ml-auto icon-button !w-6 !h-6" disabled={busy} onClick={() => del(r.id)} aria-label="Hapus">
@@ -369,7 +371,7 @@ function PphRecordModal({ item, entityId, period, onClose, onSaved }) {
       });
       onSaved();
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal menyimpan rekaman.");
+      setErr(apiErrorText(e, "Gagal menyimpan rekaman."));
     } finally { setSaving(false); }
   };
 

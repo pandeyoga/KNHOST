@@ -126,20 +126,25 @@ async def schedules(entity_ids: Optional[List[str]] = None,
                     entity_id: str = "") -> Dict[str, Any]:
     """Daftar jadwal tukar faktur seluruh supplier + kesiapan siklus berikutnya (US1)."""
     pol = await cbs.policy(entity_id)
+    # UAT 24 Okt (audit UI tahap 2) — G1-02: supplier milik grup (`entity_id="all"`, LN-140) dulu TIDAK ikut
+    # daftar karena filter entitas tepat → tab ini menulis "Belum ditagih Rp 0" padahal tab GR Rp 54 jt. Sekarang
+    # supplier grup ikut, dan angka per supplier memakai cakupan entitas YANG SAMA dengan tab GR Belum Ditagih
+    # (entitas aktif / daftar cakupan) — bukan `sup.entity_id` ("all" = tanpa saring, bocor ke PT lain).
     q: Dict[str, Any] = {}
     if entity_id and entity_id != "all":
-        q["entity_id"] = entity_id
+        q["entity_id"] = {"$in": [entity_id, "all"]}
     elif entity_ids is not None:
-        q["entity_id"] = {"$in": list(entity_ids)}
+        q["entity_id"] = {"$in": list(entity_ids) + ["all"]}
     today = date.today()
     rows: List[Dict[str, Any]] = []
     async for sup in db.suppliers.find(q, {"_id": 0}).sort("name", 1):
         sch = sup.get("invoice_exchange") or {"mode": "none"}
         nxt = next_exchange_date(sch, today)
         days_left = (nxt - today).days if nxt else None
-        bills = await cbs.billable_bills(sup["id"], sup.get("entity_id") or entity_id or "")
-        gr = await cbs.unbilled_receipts(entity_ids, supplier_id=sup["id"],
-                                         entity_id=sup.get("entity_id") or entity_id or "")
+        sup_ent = sup.get("entity_id") or ""
+        bill_ent = entity_id if entity_id and entity_id != "all" else (sup_ent if sup_ent != "all" else "")
+        bills = await cbs.billable_bills(sup["id"], bill_ent)
+        gr = await cbs.unbilled_receipts(entity_ids, supplier_id=sup["id"], entity_id=entity_id or "")
         rows.append({
             "supplier_id": sup["id"], "supplier_code": sup.get("code", ""),
             "supplier_name": sup.get("name", ""), "entity_id": sup.get("entity_id", ""),

@@ -82,7 +82,8 @@ export default function IntercoReturnInbox({ entityId, canAct }) {
   useEffect(() => { load(); }, [load]);
   if (!data) return <LoadingLine text="Memuat retur internal…" testId="ic-inbox-loading" />;
   return (
-    <div className="space-y-4" data-testid="ic-return-inbox">
+    // G1-32 — tab Retur Masuk dibungkus kartu seperti tab lain (dulu teks lepas di latar halaman).
+    <div className="section-card"><div className="section-body space-y-4" data-testid="ic-return-inbox">
       {err && <ErrorNotice message={err} onRetry={load} testId="ic-inbox-error" />}
       <div>
         <h3 className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold"><Inbox size={15} /> Retur internal masuk ({data.counts.incoming || 0})</h3>
@@ -93,6 +94,6 @@ export default function IntercoReturnInbox({ entityId, canAct }) {
         {!data.cases.length && <p className="text-xs text-[#8E8E93]" data-testid="ic-inbox-cases-empty">Tidak ada roll yang menunggu keputusan simpan / retur supplier / buang BS.</p>}
         <div className="space-y-3">{data.cases.map((c) => <CaseCard key={c.return_id} c={c} canAct={canAct} onDone={load} />)}</div>
       </div>
-    </div>
+    </div></div>
   );
 }

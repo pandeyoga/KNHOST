@@ -56,6 +56,13 @@ export default function IntercoCreateModal({
   const removeLine = (i) =>
     setItems((prev) => prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev);
 
+  // UAT 24 Okt (audit UI tahap 2) — G1-30: PT sendiri tidak muncul sebagai lawan; tombol utama nonaktif
+  // sampai isian wajib lengkap (PT penjual, PT pembeli berbeda, ≥1 baris produk ber-qty).
+  const buyerOptions = entOptions.filter((o) => o.value !== seller);
+  const sellerOptions = entOptions.filter((o) => o.value !== buyer);
+  const validLines = items.filter((it) => it.product_id && (parseFloat(it.quantity) || 0) > 0).length;
+  const canSubmit = !!seller && !!buyer && seller !== buyer && validLines > 0;
+
   const subtotalPreview = items.reduce(
     (s, it) => s + (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0), 0);
 
@@ -105,11 +112,11 @@ export default function IntercoCreateModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="PT Penjual" hint="menerbitkan Pesanan Jual + Surat Jalan + Faktur internal">
-              <KNSelect value={seller} onValueChange={setSeller} options={entOptions} data-testid="interco-create-seller" />
+            <Field label="PT Penjual" required hint="menerbitkan Pesanan Jual + Surat Jalan + Faktur internal">
+              <KNSelect value={seller} onValueChange={setSeller} options={sellerOptions} placeholder="Pilih PT penjual" data-testid="interco-create-seller" />
             </Field>
-            <Field label="PT Pembeli" hint="menerbitkan Pesanan Beli internal + Tagihan internal">
-              <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions} data-testid="interco-create-buyer" />
+            <Field label="PT Pembeli" required hint="menerbitkan Pesanan Beli internal + Tagihan internal">
+              <KNSelect value={buyer} onValueChange={setBuyer} options={buyerOptions} placeholder="Pilih PT pembeli" data-testid="interco-create-buyer" />
             </Field>
             <Field label="Mode Harga" hint="Harga tetap: diambil dari kontrak internal yang aktif">
               <KNSelect value={pricingMode} onValueChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
@@ -121,7 +128,7 @@ export default function IntercoCreateModal({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-[#1D1D1F]">Barang</h3>
+              <h3 className="text-sm font-medium text-[#1D1D1F]">Barang <span className="text-[#C0392B]">*</span></h3>
               <button
                 onClick={addLine}
                 data-testid="interco-create-add-line"
@@ -131,6 +138,10 @@ export default function IntercoCreateModal({
               </button>
             </div>
             <div className="space-y-2">
+              <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]" data-testid="interco-create-line-head">
+                <span className="col-span-6">Produk</span><span className="col-span-2">Qty</span>
+                <span className="col-span-3">Harga satuan</span><span className="col-span-1" />
+              </div>
               {items.map((it, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 items-start" data-testid={`interco-create-line-${i}`}>
                   <div className="col-span-6">
@@ -157,7 +168,7 @@ export default function IntercoCreateModal({
                     step="0.01"
                     value={it.unit_price}
                     onChange={(e) => setItem(i, { unit_price: e.target.value })}
-                    placeholder="Harga (auto dari kontrak bila kosong)"
+                    placeholder="Kosong = dari kontrak"
                     data-testid={`interco-create-price-${i}`}
                     className="col-span-3 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
                   />
@@ -174,7 +185,7 @@ export default function IntercoCreateModal({
             </div>
             <div className="mt-3 text-right text-sm text-[#6E6E73]">
               Perkiraan subtotal: <span className="font-medium text-[#1D1D1F] tabular-nums">{formatCurrency(subtotalPreview)}</span>
-              <span className="text-xs ml-1">(final dihitung backend)</span>
+              <span className="text-xs ml-1">(final dihitung sistem)</span>
             </div>
           </div>
 
@@ -205,7 +216,8 @@ export default function IntercoCreateModal({
           </button>
           <button
             onClick={submit}
-            disabled={busy}
+            disabled={busy || !canSubmit}
+            title={canSubmit ? undefined : "Lengkapi PT penjual, PT pembeli, dan minimal satu baris produk"}
             data-testid="interco-create-submit"
             className="px-4 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-50"
           >
@@ -217,10 +229,10 @@ export default function IntercoCreateModal({
   );
 }
 
-function Field({ label, hint, children }) {
+function Field({ label, hint, required = false, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#3C3C43] mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[#3C3C43] mb-1">{label}{required && <span className="text-[#C0392B]"> *</span>}</label>
       {children}
       {hint && <div className="text-xs text-[#8E8E93] mt-1">{hint}</div>}
     </div>

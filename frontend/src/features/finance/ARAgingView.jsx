@@ -10,13 +10,14 @@
  *   • yang belum pernah dibuatkan nota ditandai jelas, dan bisa **dibuatkan sekarang**
  *     lewat tombol “Buat Nota Denda” (nota lahir sebagai usulan, belum menyentuh buku besar).
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, Search, Wallet, AlertTriangle, TrendingDown, Clock3, Users, X, FileText,
   BadgeDollarSign, Loader2, Receipt, Building2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { CreditStatusPill } from "../crm/crmUtils";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
 import PenaltyPanel from "./payments/PenaltyPanel";
@@ -39,11 +40,8 @@ const BASE_LABEL = {
   outstanding: "seluruh sisa piutang pesanan",
 };
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }); }
-  catch { return "—"; }
-}
+// UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
+const fmtDate = (iso) => formatDate(iso);
 
 import PagedRows from "@/components/PagedRows";
 
@@ -68,7 +66,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
       setData(res.data || null);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data piutang (AR aging).");
+      setError(apiErrorText(e, "Gagal memuat data piutang (AR aging)."));
     } finally {
       setLoading(false);
     }
@@ -112,7 +110,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
         : "Tidak ada denda yang layak dibuatkan nota (masih dalam tenggang, di bawah minimum, atau kebijakan denda dimatikan).");
       await load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal membuat nota denda.");
+      setError(apiErrorText(e, "Gagal membuat nota denda."));
     } finally { setAccruing(""); }
   }, [load]);
 
@@ -128,7 +126,19 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
     return r;
   }, [data, q, onlyOverdue]);
 
-  const overduePct = totals.total > 0 ? Math.round((totals.overdue / totals.total) * 100) : 0;
+  // UAT 24 Okt (audit UI tahap 2) — G1-01: baris TOTAL mengikuti cari/chip "Hanya Lewat Jatuh Tempo".
+  // Tanpa saring → total server (semua pelanggan); dengan saring → jumlah baris yang tampil + total semua di bawahnya.
+  const filtered = !!q.trim() || onlyOverdue;
+  const foot = useMemo(() => {
+    if (!filtered) return totals;
+    const sum = (k) => rows.reduce((a, c) => a + Number(c[k] || 0), 0);
+    return { current: sum("current"), b1_30: sum("b1_30"), b31_60: sum("b31_60"), b61_90: sum("b61_90"),
+      b90_plus: sum("b90_plus"), total: sum("outstanding"), penalty_actual: sum("penalty_actual"), denda: sum("denda") };
+  }, [filtered, rows, totals]);
+
+  // G1-51 — persen kecil (> 0 tetapi < 0,5%) tidak dibulatkan menjadi "0%".
+  const overdueRaw = totals.total > 0 ? (totals.overdue / totals.total) * 100 : 0;
+  const overduePct = overdueRaw > 0 && overdueRaw < 1 ? "<1" : Math.round(overdueRaw);
   /**
    * INV-ROLE-01 (AUDIT PERAN 2026-08-15) — dulu `["admin","manager"].includes(role)`.
    * Peran `finance` justru pemegang izin `penalty.issue` (E8.1b: "denda perlu
@@ -287,21 +297,31 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                 </tbody>
                 <tfoot>
                   <tr className="bg-[#FAFBFC] border-t border-[#EFF0F2] text-[11px] font-bold">
-                    <td className="px-3 py-2 text-[#6B6B73] uppercase text-[10px]">Total</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.current)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.b1_30)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.b31_60)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.b61_90)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(totals.b90_plus)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums" data-testid="ar-aging-total">{formatCurrency(totals.total)}</td>
+                    <td className="px-3 py-2 text-[#6B6B73] uppercase text-[10px]" data-testid="ar-aging-total-label">
+                      {filtered ? `Total yang tampil (${rows.length} pelanggan)` : "Total"}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.current)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b1_30)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b31_60)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b61_90)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b90_plus)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" data-testid="ar-aging-total">{formatCurrency(foot.total)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#0058CC]" data-testid="ar-aging-denda-total">
-                      {formatCurrency(totals.penalty_actual)}
+                      {formatCurrency(foot.penalty_actual)}
                       <span className="block text-[9.5px] font-semibold text-[#B45309]">
-                        est. {formatCurrency(totals.denda)}
+                        est. {formatCurrency(foot.denda)}
                       </span>
                     </td>
                     <td className="px-3 py-2" />
                   </tr>
+                  {filtered && (
+                    <tr className="bg-[#FAFBFC] text-[10.5px] text-[#6B6B73]" data-testid="ar-aging-total-all-row">
+                      <td className="px-3 py-1.5 uppercase text-[10px]">Total semua pelanggan</td>
+                      <td colSpan={5} />
+                      <td className="px-3 py-1.5 text-right tabular-nums" data-testid="ar-aging-total-all">{formatCurrency(totals.total)}</td>
+                      <td colSpan={2} />
+                    </tr>
+                  )}
                 </tfoot>
               </table>
             </div>

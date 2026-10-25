@@ -57,7 +57,7 @@ INVARIAN
   punya jurnal + tidak melebihi kelebihan bayar kwitansinya.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from core_utils import DEFAULT_ENTITY_ID, new_id, next_doc_number, now_iso, safe_doc, rupiah
@@ -248,6 +248,11 @@ def _options(direction: str, delta: float, policy: Dict[str, Any],
     if direction == DIR_UNDER:
         has_plan = bool(ctx.get("has_plan"))
         new_due = ctx.get("suggested_due_date", "")
+        try:   # G1-15 — tanggal di kalimat bantuan berformat Indonesia ("8 Nov 2026"), bukan ISO
+            from services.analytics_time import fmt_id
+            new_due = fmt_id(date.fromisoformat(str(new_due)[:10])) if new_due else new_due
+        except ValueError:
+            pass
         out = [
             {"value": "outstanding", "label": KIND_LABEL["outstanding"],
              "help": f"Sisa {_rp(gap)} tetap ditagih seperti biasa — jadwal tidak berubah.",
@@ -326,11 +331,15 @@ async def pre_assess(customer_id: str, funds: float,
     open_capacity = round(sum(t["outstanding"] for t in targets), 2)
     # Bila petugas MENYEBUT alokasinya, yang benar-benar mendarat di tagihan adalah
     # nominal itu (dibatasi sisa tagihan) — sisanya pasti menjadi kelebihan bayar.
-    if allocations:
+    # UAT 24 Okt (audit UI tahap 2) — G1-12: alokasi yang hanya menyebut pesanan (tanpa `amount`, mis. takar ulang
+    # "putus belakangan" dari antrean Selisih Bayar) berarti "pesanan tujuan", BUKAN nominal 0. Dulu kapasitasnya
+    # jadi 0 → dialog menulis "seharusnya Rp 0 … LEBIH bayar" untuk kwitansi yang sebenarnya KURANG bayar.
+    sized = [a for a in (allocations or []) if a.get("amount") is not None]
+    if sized:
         planned = round(sum(min(round(float(a.get("amount") or 0), 2),
                                 next((t["outstanding"] for t in targets
                                       if t["order_id"] == a.get("order_id")), 0.0))
-                            for a in allocations), 2)
+                            for a in sized), 2)
         capacity = min(planned, open_capacity)
     else:
         capacity = open_capacity
@@ -376,6 +385,32 @@ async def pre_assess(customer_id: str, funds: float,
         "options": _options(direction, delta, policy, ctx),
         "explain": explain,
     }
+
+
+STORED_KEYS = ("expected", "funds", "capacity", "boundary", "boundary_label", "delta", "direction", "explain")
+
+
+def apply_stored_variance(assessment: Dict[str, Any], variance: Dict[str, Any]) -> Dict[str, Any]:
+    """G1-12 — dialog "putus belakangan" memakai SATU sumber angka: blok selisih yang disimpan pada kwitansi
+    (angka saat kwitansi dibuat, sebelum uangnya dialokasikan). Takar ulang sesudah alokasi hanya dipakai untuk
+    pesanan tujuan/lain & kebijakan; kalimat, rincian, tabel dan pilihan semuanya dari blok tersimpan."""
+    v = variance or {}
+    out = dict(assessment or {})
+    for k in STORED_KEYS:
+        if v.get(k) not in (None, "", []):
+            out[k] = v[k]
+    for k in ("expected", "funds", "capacity", "boundary", "delta"):
+        if k in out:
+            out[k] = round(float(out.get(k) or 0), 2)
+    if not out.get("boundary"):
+        out["boundary"] = out.get("expected", 0.0)
+    if out.get("policy"):
+        out["options"] = _options(out.get("direction", ""), out.get("delta", 0.0), out["policy"],
+                                  {"has_plan": any(t.get("plan_id") for t in out.get("targets") or []),
+                                   "others_total": out.get("others_total", 0),
+                                   "plan_total": out.get("capacity", 0),
+                                   "suggested_due_date": out.get("suggested_due_date", "")})
+    return out
 
 
 def variance_block(assessment: Dict[str, Any]) -> Dict[str, Any]:

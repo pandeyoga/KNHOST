@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useMemo, useState } from "react";
@@ -67,7 +68,7 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
         : await axios.post(`${API}/cash-advances`, payload);
       onSaved(res.data, isEdit);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal menyimpan Pengajuan Dana.");
+      setErr(apiErrorText(e, "Gagal menyimpan Pengajuan Dana."));
     } finally { setBusy(false); }
   }
 

@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useState } from "react";
 import { HandCoins, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -19,7 +20,7 @@ export default function ReimbursePayablesView({ selectedEntity = "all", entities
       const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
       const r = await axios.get(`${API}/cash-advance-settlements/reimburse-payables`, { params });
       setData(r.data); setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat hutang reimburse."); } finally { setLoading(false); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat hutang reimburse.")); } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line react-hooks/exhaustive-deps
 

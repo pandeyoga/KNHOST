@@ -63,8 +63,9 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
               {rows.map((r) => (
                 <tr key={r.id} data-testid={`interco-ret-${r.id}`} className="hover:bg-[#FAFAFB]">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-[#1D1D1F]">{r.number}</div>
-                    <div className="text-xs text-[#8E8E93]">↔ {r.counterpart_number}</div>
+                    {/* G1-32 — nomor tidak patah 2 baris. */}
+                    <div className="font-medium text-[#1D1D1F] whitespace-nowrap">{r.number}</div>
+                    <div className="text-xs text-[#8E8E93] whitespace-nowrap">↔ {r.counterpart_number}</div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded text-xs ${
@@ -97,9 +98,12 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
                     </div>
                   </td>
                   <td className="px-4 py-3">
+                    {/* G1-32 — nama barang + SKU kecil (dulu hanya kode SKU). */}
                     {(r.items || []).map((it) => (
                       <div key={it.product_id} className="text-xs text-[#3C3C43]">
-                        {it.sku} · {formatQty(it.quantity)} {it.unit}
+                        <span className="font-medium">{it.product_name || it.sku}</span>
+                        {it.product_name && it.sku ? <span className="ml-1 text-[10.5px] text-[#8E8E93]">{it.sku}</span> : null}
+                        {" "}· {formatQty(it.quantity)} {it.unit}
                       </div>
                     ))}
                   </td>
@@ -143,7 +147,7 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
                         </div>
                       </div>
                     ) : (
-                      <span className="text-xs text-[#C9C9CE]">belum dikirim balik</span>
+                      <span className="text-xs text-[#6B6B73]">belum dikirim balik</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

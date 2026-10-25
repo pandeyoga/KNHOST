@@ -5,7 +5,7 @@ import KNSelect from "../../../components/KNSelect";
 
 // GL-08 — Finance/Admin mengubah langsung (tanpa persetujuan kedua), alasan wajib, berlaku ke jurnal baru.
 export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved }) {
-  const [cands, setCands] = useState([]);
+  const [cands, setCands] = useState(null);   // null = sedang dimuat
   const [code, setCode] = useState(row.account_code);
   const [reason, setReason] = useState("");
   const [err, setErr] = useState("");
@@ -25,12 +25,18 @@ export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved 
     <FormModal open onClose={onClose} title={`Ubah akun · ${row.label}`} testId="glmap-edit-modal">
       <div className="grid gap-3 text-[12px]">
         <p className="text-[#6B6B73]">Berlaku untuk: <b data-testid="glmap-edit-scope">{scopeLabel}</b>. Pilihan hanya menampilkan akun berjenis {row.allowed_type_labels.join(" / ")} yang aktif dan bisa diposting.</p>
-        <label className="grid gap-1">Akun
+        <label className="grid gap-1"><span>Akun <span className="text-[#B42318]">*</span></span>
           <KNSelect searchable data-testid="glmap-edit-account" className="field" value={code} onValueChange={setCode}
-            options={cands.map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))} placeholder="Cari kode / nama akun" />
+            options={(cands || []).map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))} placeholder="Cari kode / nama akun" />
         </label>
-        <label className="grid gap-1">Alasan perubahan (wajib)
-          <textarea data-testid="glmap-edit-reason" className="field min-h-[64px]" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis. akun ongkir dipisah per ekspedisi" />
+        {/* UAT 24 Okt (audit UI tahap 2) — G1-08: daftar kandidat kosong dijelaskan, bukan sekadar "Tidak ada hasil". */}
+        {cands && cands.length === 0 && (
+          <p className="rounded-md bg-[#FFF1F1] border border-[#F5C2C0] px-2 py-1.5 text-[11px] text-[#B42318]" data-testid="glmap-edit-no-cands">
+            Tidak ada akun berjenis {row.allowed_type_labels.join(" / ")} yang aktif &amp; bisa dijurnal. Tambahkan atau aktifkan akunnya di Bagan Akun dulu.
+          </p>
+        )}
+        <label className="grid gap-1"><span>Alasan perubahan <span className="text-[#B42318]">*</span></span>
+          <textarea data-testid="glmap-edit-reason" className="field min-h-[64px]" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={`Mengapa akun ${String(row.label || "").toLowerCase()} diubah? (min. 5 huruf)`} />
         </label>
         <p className="rounded-md bg-[#FFF8E6] border border-[#F5D68A] px-2 py-1.5 text-[11px]" data-testid="glmap-edit-warning">Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.</p>
         {err && <p className="text-[#B42318]" data-testid="glmap-edit-error">{err}</p>}

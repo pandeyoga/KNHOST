@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TrendingUp, Layers, AlertTriangle, Package, Filter } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { formatCurrency, formatPct, formatQty } from "../../../utils/formatters";
 import { fmtDate, STATUS_CLASS, STATUS_LABEL } from "./intercoApi";
 import KNSelect from "../../../components/KNSelect";
 
@@ -19,6 +19,15 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
   const pairs = report?.pairs || [];
   const rows = report?.rows || [];
   const gap = Math.abs(t.elimination_gap || 0) > 0.01;
+  // UAT 24 Okt (audit UI tahap 2) — G1-09: teks bantu kartu "Dieliminasi" dulu tetap berkata "sama dengan angka
+  // belum terealisasi" walau kartu sebelahnya −Rp 180.000. Penyebab angka 0 terbukti DISENGAJA (FASE E-9,
+  // konservatisme): yang dieliminasi hanya LABA belum terealisasi; RUGI belum terealisasi tidak dieliminasi.
+  // Teks kini dihitung dari dua angka yang tampil dan menyebut alasannya.
+  const shownDiff = Number(t.eliminated_unrealized || 0) - Number(t.unrealized_margin || 0);
+  const lossNotElim = Number(t.unrealized_loss || 0) > 0.01;
+  const elimHint = Math.abs(shownDiff) <= 0.01 ? "sama dengan angka belum terealisasi"
+    : lossNotElim && !gap ? `berbeda ${formatCurrency(Math.abs(shownDiff))}: rugi belum terealisasi ${formatCurrency(t.unrealized_loss)} tidak dieliminasi`
+      : `berbeda ${formatCurrency(Math.abs(shownDiff))} dari angka belum terealisasi`;
 
   // FASE P3 — Rapor margin PER BARANG (urut margin terbesar) + penyaring pasangan PT.
   const [byProduct, setByProduct] = useState(null);
@@ -56,7 +65,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Kpi label="Margin Antar-PT" value={formatCurrency(t.margin || 0)}
-             hint={`${t.doc_count || 0} dokumen · ${t.margin_pct || 0}% dari nilai jual`}
+             hint={`${t.doc_count || 0} dokumen · ${formatPct(t.margin_pct || 0)} dari nilai jual`}
              testid="interco-margin-kpi-total" />
         <Kpi label="Belum Terealisasi" value={formatCurrency(t.unrealized_margin || 0)}
              hint="masih menempel di persediaan pembeli"
@@ -66,8 +75,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
              testid="interco-margin-kpi-realized" />
         <Kpi label="Dieliminasi di Konsolidasi"
              value={formatCurrency(t.eliminated_unrealized || 0)}
-             hint={gap ? "tidak sama dengan angka belum terealisasi"
-                       : "sama dengan angka belum terealisasi"}
+             hint={elimHint}
              testid="interco-margin-kpi-eliminated" />
       </div>
 
@@ -78,7 +86,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
           <span>
             Selisih {formatCurrency(t.elimination_gap)} antara yang dieliminasi dan yang
             belum terealisasi. Buka <b>Keuangan → Laporan &amp; Analitik → Konsolidasi Grup</b>
-            {" "}lalu tekan <b>Sinkron Antar-PT (G-6)</b> untuk menghitung ulang.
+            {" "}lalu tekan <b>Sinkron Antar-PT</b> untuk menghitung ulang.
           </span>
         </div>
       )}
@@ -142,7 +150,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-medium text-[#1D1D1F]">
                     {formatCurrency(p.margin)}
-                    <div className="text-xs text-[#8E8E93]">{p.margin_pct}%</div>
+                    <div className="text-xs text-[#8E8E93]">{formatPct(p.margin_pct || 0)}</div>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-[#B26A00]">
                     {formatCurrency(p.unrealized_margin)}
@@ -217,7 +225,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
                           ≈ {formatCurrency(r.margin_estimate || 0)}
                         </span>
                         <div className="text-[10px] text-[#B26A00]">
-                          belum final ({r.margin_pct_estimate || 0}%)
+                          belum final ({formatPct(r.margin_pct_estimate || 0)})
                         </div>
                       </>
                     ) : formatCurrency(r.margin)}
@@ -263,7 +271,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
           <MiniKpi label="Produk" value={bpTot.product_count || 0} testid="bp-kpi-count" />
           <MiniKpi label="Nilai Jual Internal" value={formatCurrency(bpTot.revenue || 0)} testid="bp-kpi-revenue" />
           <MiniKpi label="HPP Penjual" value={formatCurrency(bpTot.cost || 0)} testid="bp-kpi-cost" />
-          <MiniKpi label="Margin" value={formatCurrency(bpTot.margin || 0)} hint={`${bpTot.margin_pct || 0}% dari nilai jual`} testid="bp-kpi-margin" />
+          <MiniKpi label="Margin" value={formatCurrency(bpTot.margin || 0)} hint={`${formatPct(bpTot.margin_pct || 0)} dari nilai jual`} testid="bp-kpi-margin" />
         </div>
 
         <div className="overflow-x-auto">
@@ -308,7 +316,7 @@ export default function IntercoMarginPanel({ report, entityId = "" }) {
                   <td className={`px-4 py-3 text-right tabular-nums font-semibold ${r.margin >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>
                     {formatCurrency(r.margin)}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-[#6E6E73]">{r.margin_pct}%</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-[#6E6E73]">{formatPct(r.margin_pct || 0)}</td>
                 </tr>
               ))}
             </tbody>

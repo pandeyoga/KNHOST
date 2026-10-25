@@ -3,6 +3,7 @@
  * KPI posisi kas/AR/AP/modal kerja + Laba-Rugi MTD/YTD + tren + aging + rasio.
  * Sumber: /api/finance/tower. Panel dipisah ke FinanceTowerParts.jsx.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import {
   RefreshCw, Wallet, Users, Truck, Coins, TrendingUp, PiggyBank, Percent, CalendarDays,
@@ -26,7 +27,7 @@ export default function FinanceTowerView({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/tower`, { params: { ...entityParam(selectedEntity) } });
       setData(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat dashboard keuangan.");
+      setError(apiErrorText(e, "Gagal memuat dashboard keuangan."));
     } finally { setLoading(false); }
   }, [selectedEntity]);
 

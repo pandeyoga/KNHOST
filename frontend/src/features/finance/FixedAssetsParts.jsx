@@ -184,7 +184,9 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
 
         <div className="modal-actions">
           <button data-testid="add-asset-cancel-btn" className="secondary-button" onClick={onCancel}>Batal</button>
-          <button data-testid="add-asset-submit-btn" className="primary-button" disabled={busy || salvageBad} onClick={submit}>
+          {/* UAT 24 Okt (audit UI tahap 2) — G1-25: Simpan nonaktif sampai Nama & Harga Perolehan & masa manfaat terisi. */}
+          <button data-testid="add-asset-submit-btn" className="primary-button"
+            disabled={busy || salvageBad || !form.name.trim() || biaya <= 0 || life <= 0} onClick={submit}>
             {busy ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />} Simpan Aset
           </button>
         </div>

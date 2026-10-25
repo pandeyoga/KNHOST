@@ -6,7 +6,8 @@
  */
 import { useState, Fragment } from "react";
 import { PackageSearch, AlertTriangle, ChevronDown, ChevronRight, Plus } from "lucide-react";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { docStatusLabel } from "../../../utils/docStatus";
 import { fmtDate, humanDays } from "./contraBonApi";
 
 export default function UnbilledReceiptsTab({ data, loading, canWrite = true, onCreateFor }) {
@@ -86,13 +87,14 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
                         {open[r.po_id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                         {r.po_number || r.po_id}
                       </button>
-                      <p className="pl-4 text-[10px] text-[#8E8E93]">status {r.po_status}</p>
+                      {/* UAT 24 Okt (audit UI tahap 2) — G1-23: status PO berbahasa Indonesia, bukan "status completed". */}
+                      <p className="pl-4 text-[10px] text-[#8E8E93]">PO {docStatusLabel(r.po_status).toLowerCase()}</p>
                     </td>
                     <td className="px-3 py-2 font-semibold">{r.supplier_name || "—"}</td>
                     <td className="px-3 py-2">
                       <p>{fmtDate(r.last_receipt_at)}</p>
                       <p className="text-[10px] text-[#8E8E93]">
-                        {r.grn_task_id ? `tugas gudang ${r.grn_task_id.slice(-6)}` : "tanpa tugas gudang"}
+                        {r.grn_number || (r.grn_task_id ? "lewat tugas gudang" : "tanpa dokumen penerimaan")}
                       </p>
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">
@@ -105,11 +107,14 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right">
+                      {/* G1-24 — GR tanpa tagihan belum bisa dikontrabon (kontrabon butuh tagihan terposting):
+                          tombol dulu membuka wizard langkah 2 yang buntu. Jalan keluarnya: catat tagihan supplier. */}
                       {canWrite ? (
-                        <button className="link-button" data-testid={`cb-unbilled-make-${r.po_id}`}
-                          onClick={() => onCreateFor(r.supplier_id)}>
-                          <Plus size={11} /> Buat kontrabon
-                        </button>
+                        <a className="link-button" data-testid={`cb-unbilled-make-${r.po_id}`}
+                          href={`?view=vendor-bills&po=${encodeURIComponent(r.po_number || r.po_id)}`}
+                          title="Kontrabon baru bisa dibuat setelah tagihan supplier dicatat & diposting">
+                          <Plus size={11} /> Catat tagihan supplier
+                        </a>
                       ) : (
                         <span className="text-[10px] text-[#C7C7CC]">tagih lewat Keuangan</span>
                       )}
@@ -136,11 +141,11 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
                                   <span className="text-[#8E8E93]"> · {it.sku}</span>
                                 </td>
                                 <td className="py-1 text-right tabular-nums">
-                                  {it.received_qty} {it.unit}
+                                  {formatQty(it.received_qty)} {it.unit}
                                 </td>
-                                <td className="py-1 text-right tabular-nums">{it.billed_qty}</td>
+                                <td className="py-1 text-right tabular-nums">{formatQty(it.billed_qty)} {it.unit}</td>
                                 <td className="py-1 text-right font-semibold tabular-nums">
-                                  {it.unbilled_qty}
+                                  {formatQty(it.unbilled_qty)} {it.unit}
                                 </td>
                                 <td className="py-1 text-right tabular-nums">
                                   {formatCurrency(it.unbilled_value)}

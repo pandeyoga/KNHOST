@@ -3,11 +3,14 @@
  * fisik roll (subledger) per entitas + posting saldo awal / true-up.
  * Diekstrak dari GeneralLedger.jsx (jaga batas ukuran file). Sumber: /api/gl/*.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import { askReason } from "@/services/confirmService";
+import { originLabel, sourceLabel, ROLL_STATUS_LABELS } from "./glSourceLabels";
+import { docStatusLabel } from "../../utils/docStatus";
 
 export default function InventoryReconTab({ refreshKey, onError, onNotice, onChanged,
                                            selectedEntity = "all", entities = [] }) {
@@ -37,7 +40,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
       const hist = await axios.get(`${API}/gl/journal`, { params });
       setHistory((hist.data || []).slice(0, 5));
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal memuat rekonsiliasi persediaan.");
+      onError(apiErrorText(e, "Gagal memuat rekonsiliasi persediaan."));
     } finally {
       setLoading(false);
     }
@@ -54,7 +57,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
         { params: { entity_id: entityId } });
       setExplain(res.data);
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal membaca penjelasan selisih.");
+      onError(apiErrorText(e, "Gagal membaca penjelasan selisih."));
     } finally {
       setExplaining("");
     }
@@ -88,8 +91,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
               cost_history_error: "" };
           } catch (e) {
             data = { ...data, cost_history: [],
-              cost_history_error: e.response?.data?.detail
-                || "Riwayat nilai (HPP) tidak bisa dibaca dengan izin Anda." };
+              cost_history_error: apiErrorText(e, "Riwayat nilai (HPP) tidak bisa dibaca dengan izin Anda.") };
           }
         }
       } else if (ref.kind === "journal" && ref.id) {
@@ -102,12 +104,19 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
       setEvidence({ key, kind: ref.kind, loading: false, error: data ? "" : "Dokumennya tidak bisa dibuka dari layar ini.", data, ref });
     } catch (e) {
       setEvidence({ key, kind: ref.kind, loading: false, data: null, ref,
-        error: e.response?.data?.detail || "Gagal membuka dokumen buktinya." });
+        error: apiErrorText(e, "Gagal membuka dokumen buktinya.") });
     }
   };
 
   const postOpening = async (includeRounding = false) => {
     // Berdampak UANG + STOK: menerbitkan jurnal true-up terhadap ekuitas saldo awal.
+    // G1-46 — dialog menyebut nominal & badan usaha yang akan disesuaikan (dulu tanpa angka/entitas).
+    const affected = (data?.rows || []).filter((r) => (includeRounding
+      ? Math.abs(r.difference || 0) > 0.001 && Math.abs(r.difference || 0) <= tol
+      : Math.abs(r.difference || 0) > tol));
+    const affectedText = affected.length
+      ? ` Badan usaha: ${affected.map((r) => `${r.entity_name} (${formatCurrency(r.difference)})`).join(", ")}.`
+      : "";
     const reason = await askReason({
       title: includeRounding
         ? "Rapikan sisa pembulatan sen?"
@@ -116,7 +125,8 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
         ? "Sisa di bawah ambang pembulatan akan dinolkan dengan jurnal kecil terhadap "
           + "3-2900 Ekuitas Saldo Awal. Jurnalnya nyata dan masuk buku besar."
         : "GL Persediaan (1-1300) akan disamakan dengan nilai fisik roll per badan usaha, "
-          + "dengan lawan akun 3-2900 Ekuitas Saldo Awal. Jurnalnya nyata dan masuk buku besar.",
+          + "dengan lawan akun 3-2900 Ekuitas Saldo Awal. Jurnalnya nyata dan masuk buku besar."
+          + ` Total selisih ${formatCurrency(data?.total_difference || 0)}.${affectedText}`,
       reasonLabel: "Alasan / dasar penyesuaian",
       reasonPlaceholder: includeRounding
         ? "Contoh: merapikan sisa pembulatan sen warisan jurnal lama"
@@ -134,7 +144,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
       await load();
       onChanged();
     } catch (e) {
-      onError(e.response?.data?.detail || "Gagal posting saldo awal persediaan.");
+      onError(apiErrorText(e, "Gagal posting saldo awal persediaan."));
     } finally {
       setPosting(false);
     }
@@ -186,13 +196,16 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                 <td className="py-2 pr-3 text-right tabular-nums">{formatCurrency(r.gl_balance)}</td>
                 <td className={`py-2 pr-3 text-right tabular-nums font-bold ${Math.abs(r.difference) > tol ? "text-[#C0392B]" : "text-[#1B7F4B]"}`} data-testid={`recon-diff-${r.entity_id}`}>{formatCurrency(r.difference)}{r.rounding_only ? <span className="ml-1 text-[10px] font-semibold text-[#8E8E93]" data-testid={`recon-rounding-${r.entity_id}`}>pembulatan</span> : null}</td>
                 <td className="py-2 pr-3 text-right">
-                  <button type="button" className="secondary-button text-[11px] py-1 px-2"
+                  {/* G1-46 — tombol penjelas hanya untuk baris yang benar-benar berselisih. */}
+                  {Math.abs(r.difference || 0) <= tol && explain?.entity_id !== r.entity_id
+                    ? <span className="text-[11px] text-[#1B7F4B]" data-testid={`recon-explain-none-${r.entity_id}`}>Cocok</span>
+                    : <button type="button" className="secondary-button text-[11px] py-1 px-2"
                     onClick={() => loadExplain(r.entity_id)}
                     disabled={explaining === r.entity_id}
                     data-testid={`recon-explain-${r.entity_id}`}>
                     {explaining === r.entity_id ? "Membaca…"
                       : explain?.entity_id === r.entity_id ? "Tutup" : "Kenapa berselisih?"}
-                  </button>
+                  </button>}
                 </td>
               </tr>
             ))}
@@ -225,7 +238,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                 {(explain.physical_by_origin || []).map((o) => (
                   <div key={o.origin} className="flex items-center gap-2 text-[11.5px]"
                     data-testid={`recon-explain-origin-${o.origin}`}>
-                    <span className="min-w-0 flex-1 truncate text-[#3C3C43]">{o.origin}</span>
+                    <span className="min-w-0 flex-1 truncate text-[#3C3C43]" title={o.origin}>{o.origin_label || originLabel(o.origin)}</span>
                     <span className="text-[#8E8E93]">{o.rolls} roll</span>
                     <span className="tabular-nums font-semibold">{formatCurrency(o.value)}</span>
                   </div>
@@ -240,7 +253,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                 {(explain.gl_by_source || []).map((s) => (
                   <div key={s.source} className="flex items-center gap-2 text-[11.5px]"
                     data-testid={`recon-explain-source-${s.source}`}>
-                    <span className="min-w-0 flex-1 truncate text-[#3C3C43]">{s.source}</span>
+                    <span className="min-w-0 flex-1 truncate text-[#3C3C43]" title={s.source}>{s.source_label || sourceLabel(s.source)}</span>
                     <span className={`tabular-nums font-semibold ${s.net < 0 ? "text-[#C0392B]" : ""}`}>
                       {formatCurrency(s.net)}
                     </span>
@@ -311,9 +324,9 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                                   * (evidence.data.unit_cost || evidence.data.base_unit_cost || 0))}</b>
                               </p>
                               <p className="text-[#6B6B73]">
-                                Masuk lewat {(evidence.data.acquired || {}).via || "—"} ·
+                                Masuk lewat {(evidence.data.acquired || {}).via ? originLabel(evidence.data.acquired.via) : "—"} ·
                                 dokumen {(evidence.data.acquired || {}).ref_id || "—"} ·
-                                status {evidence.data.status}
+                                status {docStatusLabel(evidence.data.status)}
                               </p>
                               {evidence.data.cost_history_error ? (
                                 <p className="mt-1 border-t border-[#EDEFF3] pt-1 text-[10.5px] font-semibold text-[#C62828]"
@@ -342,7 +355,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                           ) : evidence.kind === "journal" ? (
                             <div className="grid gap-0.5 text-[11px]">
                               <p className="font-bold text-[#1C1C1E]">
-                                Jurnal {evidence.data.number} · {(evidence.data.date || "").slice(0, 10)}
+                                Jurnal {evidence.data.number} · {formatDate(evidence.data.date)}
                               </p>
                               <p className="text-[#6B6B73]">{evidence.data.description}</p>
                               {(evidence.data.lines || []).map((l, li) => (
@@ -359,7 +372,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
                               </p>
                               {(evidence.data.lines || []).slice(0, 5).map((m, mi) => (
                                 <p key={mi} className="tabular-nums text-[#3C3C43]">
-                                  {(m.date || "").slice(0, 10)} · {m.number || m.source_type || ""} ·
+                                  {formatDate(m.date)} · {m.number || m.source_type || ""} ·
                                   D {formatCurrency(m.debit)} / K {formatCurrency(m.credit)}
                                 </p>
                               ))}
@@ -375,13 +388,13 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
           </div>
         </div>
       )}
-      <p className="text-[10.5px] text-[#8E8E93] mt-2">Nilai fisik = Σ (sisa panjang roll × HPP/unit) status available/reserved/committed/picked/packed/quarantine/hold. Penerimaan barang (GR) baru otomatis berjurnal Dr Persediaan / Cr GR-IR — selisih historis diselesaikan lewat Posting Saldo Awal.</p>
+      <p className="text-[10.5px] text-[#8E8E93] mt-2">Nilai fisik = Σ (sisa panjang roll × HPP/unit) untuk roll berstatus {Object.values(ROLL_STATUS_LABELS).join(", ")}. Penerimaan barang (GR) baru otomatis berjurnal Dr Persediaan / Cr GR-IR — selisih historis diselesaikan lewat Posting Saldo Awal.</p>
 
       {/* Riwayat true-up (lanjutan INV-GL-DRIFT 2026-06) — alasan yang diketik di
           pop-up sekarang tersimpan di jurnalnya, jadi bisa dibaca di sini. */}
       <div className="mt-4 border-t border-[#F0F1F3] pt-3" data-testid="recon-history">
         <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
-          True-up terakhir (5 jurnal)
+          True-up terakhir ({history.length} jurnal)
           {selectedEntity && selectedEntity !== "all"
             ? ` · ${entityName(selectedEntity)}` : " · semua badan usaha"}
         </p>
@@ -395,7 +408,7 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
               <div key={j.id} data-testid={`recon-history-${j.id}`}
                 className="flex flex-wrap items-center gap-2 rounded-lg border border-[#F4F5F7] bg-[#FAFBFC] px-2 py-1.5 text-[11.5px]">
                 <span className="font-semibold text-[#1C1C1E]">{j.number}</span>
-                <span className="text-[#8E8E93]">{(j.date || "").slice(0, 10)}</span>
+                <span className="text-[#8E8E93]">{formatDate(j.date)}</span>
                 {(!selectedEntity || selectedEntity === "all") && j.entity_id && (
                   <span className="rounded bg-[#EFF3FB] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#33538B]"
                     data-testid={`recon-history-entity-${j.id}`}>

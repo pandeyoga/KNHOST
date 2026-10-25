@@ -350,7 +350,7 @@ async def sync_ic_eliminations_from_pairs(as_of: str = "") -> Dict[str, Any]:
             "entity_from": p["source_entity_id"],
             "entity_to": p["dest_entity_id"],
             "effective_date": p["effective_date"] or now_iso()[:10],
-            "note": "Auto-generated dari intercompany transfer JE pair. "
+            "note": "Dibuat otomatis dari pasangan jurnal transfer antar-PT. "
                     "Menghapus dobel-hitung piutang↔utang antar-PT di neraca konsolidasi.",
             "lines": lines,
             "total_debit": total,
@@ -675,15 +675,16 @@ async def sync_g6_ic_eliminations(as_of: str = "", pair_id: str = "") -> Dict[st
         total_debit = round(sum(l["debit"] for l in lines), 2)
         total_credit = round(sum(l["credit"] for l in lines), 2)
         payload: Dict[str, Any] = {
-            "name": f"Auto G-6: Eliminasi antar-PT {p['seller_number'] or p['pair_id']}",
+            # UAT 24 Okt (audit UI tahap 2) — G1-06: judul & catatan tanpa kode fase/invarian internal.
+            "name": f"Eliminasi otomatis antar-PT {p['seller_number'] or p['pair_id']}",
             "entity_from": p["seller_entity_id"],
             "entity_to": p["buyer_entity_id"],
             "effective_date": p["effective_date"] or now_iso()[:10],
             "note": (
-                "Auto-generated dari transaksi antar-PT (FASE G-6). "
-                "Mengeliminasi pendapatan+HPP intra-grup, unrealized profit yang "
-                "masih di persediaan pembeli, dan saldo IC-AR/IC-AP yang belum "
-                "diselesaikan (INV-IC-02/INV-IC-03)."
+                "Dibuat otomatis dari transaksi antar-PT. "
+                "Mengeliminasi pendapatan & HPP intra-grup, laba yang belum terealisasi "
+                "(masih di persediaan pembeli), dan saldo piutang/utang antar-PT yang belum "
+                "diselesaikan."
             ),
             "lines": lines,
             "total_debit": total_debit,
@@ -721,7 +722,8 @@ async def sync_g6_ic_eliminations(as_of: str = "", pair_id: str = "") -> Dict[st
             await db.intercompany_eliminations.insert_one(dict(doc))
             created.append(safe_doc(doc))
         elif _lines_differ(prev.get("lines"), lines) or \
-                bool(prev.get("g6_cost_estimated")) != bool(payload["g6_cost_estimated"]):
+                bool(prev.get("g6_cost_estimated")) != bool(payload["g6_cost_estimated"]) or \
+                prev.get("name") != payload["name"] or prev.get("note") != payload["note"]:
             # Label HPP taksiran juga alasan sah untuk memperbarui entri: begitu HPP
             # sebenarnya diposting, keterangan "taksiran" WAJIB hilang dari layar.
             await db.intercompany_eliminations.update_one(

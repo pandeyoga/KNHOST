@@ -3,6 +3,9 @@ import { CalendarClock, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { docStatusLabel } from "../../../utils/docStatus";
+import { stripInternalCodes } from "../../../utils/cleanText";
+import { STATUS_LABEL } from "./intercoApi";
 
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
@@ -74,8 +77,11 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
            data-testid="interco-cutoff-status">
         <Info size={15} className="shrink-0 mt-0.5" />
         <div>
-          {pending ? data.note : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · acuan periode <b>{data.basis_label}</b> (dapat diubah, KLX-03).</>}
+          {/* UAT 24 Okt (audit UI tahap 2) — G1-10: tanpa kode keputusan (KLX-03) di teks pengguna. */}
+          {pending ? stripInternalCodes(data.note) : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · acuan periode <b>{data.basis_label}</b> (dapat diubah).</>}
           <p className="mt-1">Pembayaran penuh per transaksi, netting antar tagihan <b>dinonaktifkan</b>. Saldo setiap PT dihitung sendiri-sendiri.</p>
+          {/* G1-31 — dasar angka disebut: sisa per dokumen terbuka (nilai − pelunasan − retur); umur = sejak tanggal dokumen. */}
+          <p className="mt-1 text-[11.5px] opacity-80" data-testid="interco-schedule-basis">Sisa = nilai dokumen − pelunasan − retur, per dokumen yang sudah dikonfirmasi (draf tidak dihitung). Umur dihitung dari tanggal dokumen.</p>
         </div>
       </div>
       {canConfigure && <CutoffForm cfg={data.config} onSaved={load} />}
@@ -90,21 +96,22 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="min-w-full text-[12.5px]">
           <thead className="bg-[#F7F7F9] text-left text-[#3A3A3C]">
-            <tr>{["No.", "Pembayar → Penerima", "Status", "Diterima", "Invoice", "Sisa (bayar penuh)", "Umur", "Periode bayar"].map((h) => <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>)}</tr>
+            <tr>{["No. (PT pembayar)", "Pembayar → Penerima", "Status", "Diterima", "Invoice", "Sisa (bayar penuh)", "Umur dokumen", "Periode bayar"].map((h) => <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>)}</tr>
           </thead>
           <tbody>
             {data.rows.map((r) => (
               <tr key={r.interco_id} className="border-t border-[#F0F0F3]" data-testid={`interco-schedule-row-${r.interco_id}`}>
-                <td className="px-3 py-2 font-mono">{r.number}</td>
+                {/* G1-31 — utang dibaca dari sisi PT pembayar: nomor dokumen pembayar (KSC/IC-…), nomor penjual di tooltip. */}
+                <td className="px-3 py-2 font-mono whitespace-nowrap" title={r.counterpart_number ? `Nomor PT penerima: ${r.number}` : undefined}>{r.counterpart_number || r.number}</td>
                 <td className="px-3 py-2">{r.payer_entity_name} → {r.payee_entity_name}</td>
-                <td className="px-3 py-2">{r.status}</td>
+                <td className="px-3 py-2">{docStatusLabel(r.status, STATUS_LABEL)}</td>
                 <td className="px-3 py-2">{formatDate(r.received_at) || "—"}</td>
                 <td className="px-3 py-2">{formatDate(r.invoiced_at) || "—"}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{rp(r.remaining)}</td>
                 <td className="px-3 py-2 tabular-nums">{r.age_days ?? "—"} hari</td>
                 <td className="px-3 py-2" data-testid={`interco-schedule-period-${r.interco_id}`}>
-                  {r.period ? <span className="inline-flex items-center gap-1"><CalendarClock size={12} /> {r.pay_date}</span>
-                            : <span className="text-[#B45309]">Menunggu KLX-03</span>}
+                  {r.period ? <span className="inline-flex items-center gap-1"><CalendarClock size={12} /> {formatDate(r.pay_date)}</span>
+                            : <span className="text-[#B45309]">Menunggu pengaturan cutoff</span>}
                 </td>
               </tr>
             ))}

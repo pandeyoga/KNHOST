@@ -4,6 +4,7 @@
  * Eliminasi manual + auto-deteksi kandidat intercompany.
  * Sumber: /api/finance/consolidation/*. Gaya ikut finance existing.
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -13,8 +14,19 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
-import { askReason } from "@/services/confirmService";
+import { formatCurrency, formatDate } from "../../utils/formatters";
+import { askConfirm, askReason } from "@/services/confirmService";
+import { stripInternalCodes } from "../../utils/cleanText";
+
+// UAT 24 Okt (audit UI tahap 2) — G1-06: judul/catatan entri eliminasi lama masih memuat kode fase/invarian
+// ("Auto G-6:", "(FASE G-6)", "(INV-IC-02/INV-IC-03)", "Auto-generated"); dibersihkan saat render.
+const elimName = (n) => stripInternalCodes(n || "")
+  .replace(/^Auto\s*:?\s*/i, "")
+  .replace(/^Eliminasi antar-PT\b/i, "Eliminasi otomatis antar-PT")
+  .replace(/^Eliminasi IC transfer\b/i, "Eliminasi otomatis transfer antar-PT");
+const elimNote = (n) => stripInternalCodes(n || "")
+  .replace(/Auto-generated dari intercompany transfer JE pair/i, "Dibuat otomatis dari pasangan jurnal transfer antar-PT")
+  .replace(/Auto-generated dari/i, "Dibuat otomatis dari");
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -66,7 +78,7 @@ export default function GroupConsolidationView({ entities = [] }) {
       ]);
       setData(s.data); setElims(Array.isArray(e.data) ? e.data : []);
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal memuat konsolidasi.");
+      setError(apiErrorText(err, "Gagal memuat konsolidasi."));
     } finally { setLoading(false); }
   }, [year, asOf]);
 
@@ -94,7 +106,7 @@ export default function GroupConsolidationView({ entities = [] }) {
     if (reason === null) return;
     setBusy(true); setError("");
     try { await axios.delete(`${API}/finance/consolidation/eliminations/${el.id}`, { params: { reason } }); setNotice("Eliminasi dihapus."); load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus eliminasi."); }
+    catch (e) { setError(apiErrorText(e, "Gagal menghapus eliminasi.")); }
     finally { setBusy(false); }
   };
 
@@ -103,7 +115,7 @@ export default function GroupConsolidationView({ entities = [] }) {
     try {
       const r = await axios.get(`${API}/finance/consolidation/ic-candidates`, { params: { as_of: asOf } });
       setDetect(r.data);
-    } catch (e) { setError(e.response?.data?.detail || "Gagal mendeteksi kandidat."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal mendeteksi kandidat.")); }
     finally { setBusy(false); }
   };
 
@@ -116,33 +128,45 @@ export default function GroupConsolidationView({ entities = [] }) {
    * antar-PT masih ikut terhitung sebagai laba grup.
    */
   const syncG6 = async () => {
+    if (!(await askConfirm({
+      title: "Sinkronkan eliminasi antar-PT?",
+      message: `Entri eliminasi otomatis per ${formatDate(asOf)} dibuat/diperbarui/dihapus mengikuti transaksi antar-PT. `
+        + "Laporan konsolidasi grup ikut berubah; jurnal per-PT tidak tersentuh.",
+      confirmLabel: "Sinkronkan",
+    }))) return;
     setBusy(true); setError(""); setNotice("");
     try {
       const r = await axios.post(`${API}/consolidation/sync-g6`, {}, { params: { as_of: asOf } });
       const d = r.data || {};
       setNotice(
-        `Eliminasi antar-PT (G-6) tersinkron: ${d.created || 0} baru · ` +
+        `Eliminasi antar-PT tersinkron: ${d.created || 0} baru · ` +
         `${d.updated || 0} diperbarui · ${d.removed || 0} dihapus · ` +
         `${d.skipped_existing || 0} sudah pas — dari ${d.pairs_seen || 0} transaksi antar-PT.`);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyinkronkan eliminasi antar-PT (G-6).");
+      setError(stripInternalCodes(e.response?.data?.detail) || "Gagal menyinkronkan eliminasi antar-PT.");
     } finally { setBusy(false); }
   };
 
   /** M-3 — eliminasi dari PASANGAN jurnal transfer antar-PT lama (at-cost). */
   const syncPairs = async () => {
+    if (!(await askConfirm({
+      title: "Sinkronkan eliminasi dari pasangan jurnal?",
+      message: `Entri eliminasi baru dibuat dari pasangan jurnal transfer antar-PT lama (per ${formatDate(asOf)}). `
+        + "Laporan konsolidasi grup ikut berubah; jurnal per-PT tidak tersentuh.",
+      confirmLabel: "Sinkronkan",
+    }))) return;
     setBusy(true); setError(""); setNotice("");
     try {
       const r = await axios.post(`${API}/finance/consolidation/eliminations/sync-from-pairs`,
                                  {}, { params: { as_of: asOf } });
       const d = r.data || {};
       setNotice(
-        `Eliminasi pasangan jurnal (M-3): ${d.created || 0} baru · ` +
+        `Eliminasi pasangan jurnal: ${d.created || 0} baru · ` +
         `${d.skipped_existing || 0} sudah ada — dari ${d.pairs_seen || 0} pasangan.`);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyinkronkan eliminasi pasangan jurnal.");
+      setError(apiErrorText(e, "Gagal menyinkronkan eliminasi pasangan jurnal."));
     } finally { setBusy(false); }
   };
 
@@ -151,7 +175,7 @@ export default function GroupConsolidationView({ entities = [] }) {
       account_code: l.account_code, debit: l.debit || 0, credit: l.credit || 0, description: l.description || "",
     }));
     setDetect(null);
-    setModal({ name: "Eliminasi Intercompany (Auto)", lines: lines.length ? lines : undefined });
+    setModal({ name: "Eliminasi antar-PT (dari deteksi otomatis)", lines: lines.length ? lines : undefined });
   };
 
   const entityCols = data?.entities || [];
@@ -223,7 +247,7 @@ export default function GroupConsolidationView({ entities = [] }) {
           ) : tab === "bs" ? (
             <>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]"><Building2 size={13} className="text-[#6B219A]" /> Neraca Konsolidasi per {asOf}</div>
+                <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]"><Building2 size={13} className="text-[#6B219A]" /> Neraca Konsolidasi per {formatDate(asOf)}</div>
                 <span data-testid="cons-balanced" className={`text-[11px] font-bold rounded-full px-2 py-0.5 inline-flex items-center gap-1 ${data?.balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>
                   {data?.balanced ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />}{data?.balanced ? "Seimbang" : "Tidak Seimbang"}
                 </span>
@@ -266,10 +290,10 @@ function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncP
                   title="Sinkronkan eliminasi margin (unrealized profit) dari transaksi antar-PT"
                   className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1"
                   onClick={onSyncG6} disabled={busy}>
-            <ArrowRightLeft size={13} /> Sinkron Antar-PT (G-6)
+            <ArrowRightLeft size={13} /> Sinkron Antar-PT
           </button>
           <button data-testid="cons-sync-pairs-btn"
-                  title="Sinkronkan eliminasi dari pasangan jurnal transfer antar-PT lama (nilai perolehan · M-3)"
+                  title="Sinkronkan eliminasi dari pasangan jurnal transfer antar-PT lama (nilai perolehan)"
                   className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1"
                   onClick={onSyncPairs} disabled={busy}>
             <Link2 size={13} /> Sinkron Pasangan Jurnal
@@ -280,21 +304,21 @@ function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncP
       </div>
       {elims.length === 0 ? (
         <div data-testid="cons-elim-empty" className="py-10 text-center text-[12px] text-[#8E8E93]">
-          <ScissorsLineDashed size={26} className="mx-auto mb-2 text-gray-300" />Belum ada entri eliminasi. Transaksi antar-PT (G-6) akan mengisi ini sendiri; untuk data lama pakai "Sinkron Antar-PT (G-6)", "Deteksi Otomatis", atau "Tambah Eliminasi".
+          <ScissorsLineDashed size={26} className="mx-auto mb-2 text-gray-300" />Belum ada entri eliminasi. Transaksi antar-PT akan mengisi ini sendiri; untuk data lama pakai "Sinkron Antar-PT", "Deteksi Otomatis", atau "Tambah Eliminasi".
         </div>
       ) : (
         <div className="space-y-2">
           {elims.map((el) => (
             <div key={el.id} data-testid={`cons-elim-${el.id}`} className="rounded-md border border-[#EFF0F2] p-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[12px] font-bold text-[#1C1C1E]">{el.name}</span>
-                <span className="text-[10px] text-[#9A9BA3]">Efektif {el.effective_date}</span>
-                <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${el.balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{el.balanced ? "Balanced" : "Tidak balanced"}</span>
+                <span className="text-[12px] font-bold text-[#1C1C1E]">{elimName(el.name)}</span>
+                <span className="text-[10px] text-[#9A9BA3]">Efektif {formatDate(el.effective_date)}</span>
+                <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${el.balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{el.balanced ? "Seimbang" : "Tidak seimbang"}</span>
                 {el.source_g6_pair_id && (
                   <span data-testid={`cons-elim-auto-g6-${el.id}`}
                         title="Dijaga otomatis dari transaksi antar-PT — ikut berubah saat transaksinya dilunasi/dibatalkan"
                         className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[#EDE7FB] text-[#6B219A]">
-                    AUTO G-6
+                    Otomatis
                   </span>
                 )}
                 {/* FASE E-7 (E7.3) — keputusan pemilik: HPP taksiran BOLEH, tetapi tidak
@@ -316,7 +340,7 @@ function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncP
                   <button data-testid={`cons-elim-del-${el.id}`} className="text-[#C9C9CE] hover:text-[#C0392B]" onClick={() => onDelete(el)} disabled={busy} aria-label="Hapus"><Trash2 size={13} /></button>
                 )}
               </div>
-              {el.note && <p className="text-[11px] text-[#6B6B73] mt-0.5">{el.note}</p>}
+              {el.note && <p className="text-[11px] text-[#6B6B73] mt-0.5">{elimNote(el.note)}</p>}
               <div className="mt-2 overflow-x-auto rounded border border-[#F5F5F7]">
                 <table className="w-full text-[11px]">
                   <thead><tr className="text-left text-[9px] font-bold uppercase text-[#9A9BA3] bg-[#FAFBFC]"><th className="px-2 py-1">Akun</th><th className="px-2 py-1 text-right">Debit</th><th className="px-2 py-1 text-right">Kredit</th></tr></thead>
@@ -345,7 +369,8 @@ function EliminationModal({ initial, accounts, entities, onClose, onSaved, setEr
   const [note, setNote] = useState("");
   const [lines, setLines] = useState(initial.lines || [{ account_code: "", debit: 0, credit: 0, description: "" }, { account_code: "", debit: 0, credit: 0, description: "" }]);
   const [saving, setSaving] = useState(false);
-  const entOpts = [{ value: "", label: "—" }, ...entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.id }))];
+  // G1-34 — tanpa opsi "—"; placeholder menjelaskan isian (opsional).
+  const entOpts = entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.id }));
   const [entFrom, setEntFrom] = useState("");
   const [entTo, setEntTo] = useState("");
 
@@ -367,7 +392,7 @@ function EliminationModal({ initial, accounts, entities, onClose, onSaved, setEr
         lines: clean.map((l) => ({ account_code: l.account_code, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description })),
       });
       onSaved();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal menyimpan eliminasi."); setSaving(false); }
+    } catch (e) { setError(apiErrorText(e, "Gagal menyimpan eliminasi.")); setSaving(false); }
   };
 
   return (
@@ -379,27 +404,31 @@ function EliminationModal({ initial, accounts, entities, onClose, onSaved, setEr
         </div>
         <div className="p-4 space-y-3 overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Nama"><input data-testid="cons-form-name" className="field" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-            <Field label="Tanggal Efektif"><KNDatePicker data-testid="cons-form-date" value={effDate} onChange={setEffDate} /></Field>
+            <Field label="Nama" required><input data-testid="cons-form-name" className="field" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+            <Field label="Tanggal Efektif" required><KNDatePicker data-testid="cons-form-date" value={effDate} onChange={setEffDate} /></Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Entitas Dari"><KNSelect className="field" value={entFrom} onValueChange={setEntFrom} options={entOpts} /></Field>
-            <Field label="Entitas Ke"><KNSelect className="field" value={entTo} onValueChange={setEntTo} options={entOpts} /></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Badan usaha dari (opsional)"><KNSelect className="field" value={entFrom} onValueChange={setEntFrom} options={entOpts} placeholder="Pilih badan usaha" /></Field>
+            <Field label="Badan usaha ke (opsional)"><KNSelect className="field" value={entTo} onValueChange={setEntTo} options={entOpts} placeholder="Pilih badan usaha" /></Field>
           </div>
-          <Field label="Catatan"><input data-testid="cons-form-note" className="field" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+          <Field label="Catatan (opsional)"><input data-testid="cons-form-note" className="field" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
 
           <div className="rounded-md border border-[#EFF0F2]">
             <div className="flex items-center px-2 py-1.5 bg-[#FAFBFC] border-b border-[#EFF0F2]">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Baris Jurnal Eliminasi</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Baris Jurnal Eliminasi <span className="text-[#C0392B]">*</span></span>
               <button data-testid="cons-form-addline" className="ml-auto text-[11px] text-[#6B219A] font-semibold inline-flex items-center gap-1" onClick={addLine}><Plus size={12} /> Baris</button>
             </div>
             <div className="p-2 space-y-2">
+              <div className="grid grid-cols-12 gap-1.5 px-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]" data-testid="cons-form-line-head">
+                <span className="col-span-5">Akun</span><span className="col-span-2 text-right">Debit</span>
+                <span className="col-span-2 text-right">Kredit</span><span className="col-span-2">Keterangan</span><span className="col-span-1" />
+              </div>
               {lines.map((l, i) => (
                 <div key={i} className="grid grid-cols-12 gap-1.5 items-center" data-testid={`cons-form-line-${i}`}>
                   <div className="col-span-5"><KNSelect data-testid={`cons-form-line-acct-${i}`} className="field !py-1 text-[11px]" value={l.account_code} onValueChange={(v) => setLine(i, "account_code", v)} options={accounts} placeholder="Pilih akun" searchable /></div>
                   <input data-testid={`cons-form-line-debit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Debit" value={l.debit || ""} onChange={(e) => setLine(i, "debit", e.target.value)} />
                   <input data-testid={`cons-form-line-credit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Kredit" value={l.credit || ""} onChange={(e) => setLine(i, "credit", e.target.value)} />
-                  <input className="field !py-1 text-[11px] col-span-2" placeholder="Ket." value={l.description || ""} onChange={(e) => setLine(i, "description", e.target.value)} />
+                  <input className="field !py-1 text-[11px] col-span-2" aria-label="Keterangan baris" value={l.description || ""} onChange={(e) => setLine(i, "description", e.target.value)} />
                   <button className="col-span-1 text-[#C9C9CE] hover:text-[#C0392B] flex justify-center" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={13} /></button>
                 </div>
               ))}
@@ -407,7 +436,7 @@ function EliminationModal({ initial, accounts, entities, onClose, onSaved, setEr
             <div className="flex items-center gap-3 px-3 py-2 border-t border-[#EFF0F2] text-[11px]">
               <span className="text-[#6B6B73]">Total Debit: <b className="tabular-nums">{formatCurrency(totalD)}</b></span>
               <span className="text-[#6B6B73]">Total Kredit: <b className="tabular-nums">{formatCurrency(totalC)}</b></span>
-              <span data-testid="cons-form-balance" className={`ml-auto font-bold rounded-full px-2 py-0.5 ${balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{balanced ? "Balanced ✓" : "Belum balanced"}</span>
+              <span data-testid="cons-form-balance" className={`ml-auto font-bold rounded-full px-2 py-0.5 ${balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{balanced ? "Seimbang ✓" : "Belum seimbang"}</span>
             </div>
           </div>
         </div>
@@ -463,6 +492,6 @@ function DetectModal({ detect, onClose, onUse }) {
   );
 }
 
-function Field({ label, children }) {
-  return (<label className="block"><span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] block mb-1">{label}</span>{children}</label>);
+function Field({ label, required = false, children }) {
+  return (<label className="block"><span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] block mb-1">{label}{required && <span className="text-[#C0392B]"> *</span>}</span>{children}</label>);
 }

@@ -9,6 +9,7 @@
  *   3. Apa yang sudah TERLAMBAT hari ini?    → piutang, round R&D, gudang, produksi
  * Ditambah cuplikan kinerja desainer (divisi MD dipimpin manajer).
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import {
   Award, BellRing, CalendarClock, ChevronRight, Clock, Palette, RefreshCw,
@@ -40,7 +41,7 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
       setData(res.data || null);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Dasbor Manajer.");
+      setError(apiErrorText(e, "Gagal memuat Dasbor Manajer."));
     } finally { setLoading(false); }
   }, [selectedEntity]);
   useEffect(() => { load(); }, [load]);

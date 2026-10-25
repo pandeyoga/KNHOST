@@ -5,8 +5,8 @@ Koleksi kanonik: `cash_transactions` (prefix cash_).
 - kas_besar : kas gabungan grup (entity_id = "all")
 direction: in (masuk) | out (keluar). Saldo = Σ(in) − Σ(out).
 """
-from typing import Any, Dict, List
-from fastapi import APIRouter, HTTPException, Request
+from typing import Any, Dict, List, Optional
+from fastapi import APIRouter, Body, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
@@ -187,9 +187,14 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
 
 
 @router.post("/cash-transactions/{txn_id}/void")
-async def void_cash_transaction(txn_id: str, request: Request) -> Dict[str, Any]:
-    """Batalkan/void transaksi kas (saldo tidak lagi dihitung)."""
+async def void_cash_transaction(txn_id: str, request: Request,
+                                payload: Optional[Dict[str, Any]] = Body(None)) -> Dict[str, Any]:
+    """Batalkan/void transaksi kas (saldo tidak lagi dihitung).
+
+    UAT 24 Okt (audit UI tahap 2) — G1-20: alasan anulir (`{"reason": "..."}`) dicatat di dokumen & jejak audit.
+    Opsional demi klien lama; layar Transaksi Kas selalu mengirimnya (wajib di dialog)."""
     actor = await require_permission(request, "cash", "delete")
+    reason = str((payload or {}).get("reason") or "").strip()[:500]
     txn = await db.cash_transactions.find_one({"id": txn_id}, {"_id": 0})
     # KN-A03 — void kas dijaga entitas (dulu tanpa penjaga: saldo PT lain bisa diturunkan).
     await guard_doc(request, "cash_transactions", txn, not_found="Transaksi kas tidak ditemukan")
@@ -223,10 +228,12 @@ async def void_cash_transaction(txn_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(status_code=409, detail=f"Jurnal pembalik gagal, kas tidak di-void: {exc}")
     updated = await db.cash_transactions.find_one_and_update(
         {"id": txn_id}, {"$set": {"status": "void", "updated_at": now_iso(),
-                                  "void_journal_entry_id": (rev or {}).get("id", "")},
+                                  "void_journal_entry_id": (rev or {}).get("id", ""),
+                                  "void_reason": reason, "voided_by": actor.get("name", ""),
+                                  "voided_at": now_iso()},
                          "$unset": {"voiding": ""}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
     )
     await audit(actor["name"], "cash_transaction_voided", "cash_transaction", txn_id,
-                {"reversal_je": (rev or {}).get("number", "")})
+                {"reversal_je": (rev or {}).get("number", ""), "reason": reason})
     return safe_doc(updated)

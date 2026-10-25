@@ -5,6 +5,8 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import { can } from "../../config/roles";
+import { askConfirm } from "../../services/confirmService";
+import { apiErrorText } from "../../utils/apiError";
 
 /**
  * ExpenseCategoriesView — Konfigurasi pemetaan kategori pengeluaran petty cash → akun COA.
@@ -35,7 +37,7 @@ export default function ExpenseCategoriesView({ currentUser }) {
       setAccounts(Array.isArray(a.data) ? a.data : (a.data?.items || []));
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat kategori beban.");
+      setError(apiErrorText(e, "Gagal memuat kategori beban."));
     } finally { setLoading(false); }
   }
   function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 3000); }
@@ -46,13 +48,35 @@ export default function ExpenseCategoriesView({ currentUser }) {
     .map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` })), [accounts]);
   const accName = (code) => accounts.find((a) => a.code === code)?.name || "";
 
+  // UAT 24 Okt (audit UI tahap 2) — G1-16: ganti akun / aktif-nonaktif dulu langsung PATCH begitu dipilih.
+  // Sekarang dikonfirmasi dulu (menyebut kategori, akun lama → baru, dan akibatnya ke LPJ berikutnya).
+  async function changeAccount(c, v) {
+    if (!v || v === c.account_code) return;
+    const ok = await askConfirm({
+      title: `Ganti akun beban "${c.label}"?`,
+      message: `${c.account_code || "—"} ${accName(c.account_code) ? `(${accName(c.account_code)}) ` : ""}→ ${v} (${accName(v) || "—"}). `
+        + "Berlaku untuk LPJ yang disetujui berikutnya; jurnal lama tidak berubah.",
+      confirmLabel: "Ganti Akun",
+    });
+    if (ok) patchCat(c.code, { account_code: v }, `Akun ${c.label} → ${v}`);
+  }
+  async function toggleActive(c, active) {
+    const ok = await askConfirm({
+      danger: !active,
+      title: `${active ? "Aktifkan" : "Nonaktifkan"} kategori "${c.label}"?`,
+      message: active ? "Kategori bisa dipilih lagi di LPJ." : "Kategori tidak bisa dipilih lagi di LPJ baru; data lama tetap.",
+      confirmLabel: active ? "Aktifkan" : "Nonaktifkan",
+    });
+    if (ok) patchCat(c.code, { active }, active ? "Diaktifkan." : "Dinonaktifkan.");
+  }
+
   async function patchCat(code, patch, okMsg) {
     setSavingCode(code); setError("");
     try {
       const res = await axios.patch(`${API}/expense-categories/${code}`, patch);
       setCats(cats.map((c) => (c.code === code ? { ...c, ...res.data } : c)));
       flash(okMsg || "Tersimpan.");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal menyimpan kategori."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal menyimpan kategori.")); }
     finally { setSavingCode(""); }
   }
 
@@ -94,7 +118,7 @@ export default function ExpenseCategoriesView({ currentUser }) {
                       <div className="min-w-0">
                         {canManage ? (
                           <KNSelect data-testid={`excat-account-${c.code}`} className="form-input" value={c.account_code}
-                            onValueChange={(v) => patchCat(c.code, { account_code: v }, `Akun ${c.label} → ${v}`)}
+                            onValueChange={(v) => changeAccount(c, v)}
                             options={accountOptions} placeholder="Pilih akun" />
                         ) : (
                           <span className="text-[12px]">{c.account_code} · {accName(c.account_code)}</span>
@@ -104,7 +128,7 @@ export default function ExpenseCategoriesView({ currentUser }) {
                         {savingCode === c.code && <Save size={13} className="text-[#0058CC] animate-pulse" />}
                         {canManage ? (
                           <label className="flex items-center gap-1.5 text-[11px]">
-                            <input type="checkbox" data-testid={`excat-active-${c.code}`} checked={c.active !== false} onChange={(e) => patchCat(c.code, { active: e.target.checked }, e.target.checked ? "Diaktifkan." : "Dinonaktifkan.")} />
+                            <input type="checkbox" data-testid={`excat-active-${c.code}`} checked={c.active !== false} onChange={(e) => toggleActive(c, e.target.checked)} />
                             Aktif
                           </label>
                         ) : (

@@ -19,6 +19,7 @@ import { KNSelect } from "../../../components/KNSelect";
 import { OptionTabs } from "../../../components/ListControls";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { askConfirm } from "../../../services/confirmService";
 import CaseInboxTable from "./CaseInboxTable";
 import CaseDetailPanel from "./CaseDetailPanel";
 import CasePlaybookWizard from "./CasePlaybookWizard";
@@ -166,6 +167,13 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   }, [focusCase?.nonce]);
 
   async function runScan() {
+    // G1-16 — pemindaian membuat kasus baru & menaikkan kasus lama ke atasan → konfirmasi dulu.
+    if (!(await askConfirm({
+      title: "Pindai temuan sekarang?",
+      message: "Sistem membuat kasus baru dari titipan dana & dugaan bayar dobel, dan menaikkan kasus yang "
+        + "melewati batas ke atasan. Kasus yang sudah ada tidak digandakan.",
+      confirmLabel: "Pindai",
+    }))) return;
     setBusy("scan"); setErr("");
     try {
       const r = await axios.post(`${API}/finance-cases/scan`, {});
@@ -292,7 +300,8 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
           <OptionTabs testId="case-filter-status" value={fStatus}
             onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v ? stats?.by_status?.[v] ?? 0 : stats?.total ?? cases.length)} />
         </div>
-        <div className="min-w-[230px]">
+        {/* G1-35 — lebar tetap supaya memilih jenis tidak menggeser isi bilah. */}
+        <div className="w-[230px] shrink-0">
           <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis kasus</label>
           <KNSelect data-testid="case-filter-type" value={fType}
             onValueChange={setFType} options={typeOptions} />
@@ -313,7 +322,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
         <CaseInboxTable cases={cases} loading={loading} activeId={active?.id}
           onOpen={setActive} />
         {active

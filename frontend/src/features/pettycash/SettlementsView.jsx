@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
@@ -44,7 +45,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
       setRows(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat pertanggungjawaban.");
+      setError(apiErrorText(e, "Gagal memuat pertanggungjawaban."));
     } finally { setLoading(false); }
   }
   async function loadCats() {
@@ -54,7 +55,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
 
   async function openDetail(id) {
     try { const res = await axios.get(`${API}/cash-advance-settlements/${id}`); setSelected(res.data); setView("detail"); }
-    catch (e) { flash(e.response?.data?.detail || "Gagal memuat detail."); }
+    catch (e) { flash(apiErrorText(e, "Gagal memuat detail.")); }
   }
 
   const metrics = useMemo(() => {
@@ -169,7 +170,7 @@ function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onCha
     try {
       const res = await axios.post(`${API}/cash-advance-settlements/${stl.id}/${path}`, body || {});
       flash(okMsg); onChanged(res.data);
-    } catch (e) { setErr(e.response?.data?.detail || "Aksi gagal."); } finally { setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(false); }
   }
 
   return (

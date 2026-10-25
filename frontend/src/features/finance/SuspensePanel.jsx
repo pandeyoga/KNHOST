@@ -3,19 +3,18 @@
  * Saldo suspense harus NOL sebelum tutup buku. Sumber: /api/gl/suspense (+ /reclass).
  * Dipakai sebagai tab di GeneralLedger.
  */
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
+import { parseDecimal } from "../../utils/decimalInput";
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return String(iso).slice(0, 10); }
-}
+// G1-15 — tanggal lewat formatter bersama (WIB, "25 Okt 2026").
+const fmtDate = (iso) => formatDate(iso);
 
 export default function SuspensePanel({ refreshKey, accounts = [], entities = [], selectedEntity, onNotice, onChanged }) {
   const [report, setReport] = useState(null);
@@ -47,7 +46,7 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
         amount: p.amount || (Math.abs(bal) ? String(Math.abs(bal)) : ""),
       }));
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data suspense.");
+      setError(apiErrorText(e, "Gagal memuat data suspense."));
     } finally {
       setLoading(false);
     }
@@ -58,20 +57,30 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
 
   const balance = report?.balance || 0;
   const isZero = Math.abs(balance) < 0.005;
+  // UAT 24 Okt (audit UI tahap 2) — G1-27: validasi isian di dekat isiannya & tombol nonaktif sampai lengkap
+  // (dulu tombol aktif tanpa akun tujuan, galatnya muncul sebagai pita merah halaman dengan "Coba lagi").
+  const [touched, setTouched] = useState(false);
+  const amtNum = parseDecimal(String(form.amount ?? ""));
+  const fieldErr = {
+    entity_id: form.entity_id ? "" : "Pilih entitas (PT).",
+    amount: amtNum > 0 ? "" : "Nominal harus lebih dari 0.",
+    target_account: form.target_account ? "" : "Pilih akun tujuan reklasifikasi.",
+  };
+  const canSubmit = !fieldErr.entity_id && !fieldErr.amount && !fieldErr.target_account;
 
   const submit = async () => {
+    setTouched(true);
+    if (!canSubmit) return;
     setError(""); setBusy(true);
     try {
-      const amt = parseFloat(form.amount);
-      if (!form.entity_id) throw new Error("Pilih entitas (PT) untuk reklasifikasi.");
-      if (!(amt > 0)) throw new Error("Nominal reklasifikasi harus lebih dari 0.");
-      if (!form.target_account) throw new Error("Pilih akun tujuan reklasifikasi.");
+      const amt = amtNum;
       const res = await axios.post(`${API}/gl/suspense/reclass`, {
         amount: amt, side: form.side, target_account: form.target_account,
         note: form.note, entity_id: form.entity_id,
       });
       onNotice && onNotice(`Reklasifikasi suspense berhasil. Jurnal: ${res.data?.number || "—"}.`);
       setForm((p) => ({ ...p, amount: "", note: "" }));
+      setTouched(false);
       await load();
       onChanged && onChanged();
     } catch (e) {
@@ -105,7 +114,7 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
         <div className="rounded-lg border border-[#EFF0F2] p-3 mb-4 bg-[#FCFCFD]" data-testid="suspense-reclass-form">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-2 flex items-center gap-1"><ArrowLeftRight size={13} /> Reklasifikasi Saldo Suspense</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <Field label="Entitas (PT)">
+            <Field label="Entitas (PT)" required error={touched ? fieldErr.entity_id : ""}>
               <KNSelect data-testid="suspense-entity" className="field py-1.5 text-[12px]" value={form.entity_id}
                 onValueChange={(v) => setF("entity_id", v)} placeholder="Pilih PT" options={entityOptions} />
             </Field>
@@ -114,21 +123,22 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
                 onValueChange={(v) => setF("side", v)}
                 options={[{ value: "credit", label: "Kredit (mis. kas masuk tak dikenal)" }, { value: "debit", label: "Debit (mis. kas keluar tak dikenal)" }]} />
             </Field>
-            <Field label="Nominal">
+            <Field label="Nominal" required error={touched ? fieldErr.amount : ""}>
               <MoneyInput testId="suspense-amount" className="field py-1.5 text-[12px] w-full" value={form.amount}
                 onChange={(v) => setF("amount", v)} placeholder="0" />
             </Field>
-            <Field label="Akun Tujuan">
+            <Field label="Akun Tujuan" required error={touched ? fieldErr.target_account : ""}>
               <KNSelect data-testid="suspense-target" className="field py-1.5 text-[12px]" value={form.target_account}
                 onValueChange={(v) => setF("target_account", v)} placeholder="Pilih akun" options={targetOptions} />
             </Field>
-            <Field label="Catatan" className="md:col-span-2">
+            <Field label="Catatan (opsional)" className="md:col-span-2">
               <input data-testid="suspense-note" className="field py-1.5 text-[12px] w-full" value={form.note}
                 onChange={(e) => setF("note", e.target.value)} placeholder="mis. Pelunasan piutang pelanggan X" />
             </Field>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <button data-testid="suspense-submit" onClick={submit} disabled={busy}
+            <button data-testid="suspense-submit" onClick={submit} disabled={busy || !canSubmit}
+              title={canSubmit ? undefined : "Lengkapi entitas, nominal, dan akun tujuan"}
               className="btn-primary text-[12px] py-1.5 px-4 inline-flex items-center gap-1">
               <ArrowLeftRight size={13} /> {busy ? "Memproses…" : "Reklasifikasi"}
             </button>
@@ -176,11 +186,12 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
   );
 }
 
-function Field({ label, children, className = "" }) {
+function Field({ label, children, className = "", required = false, error = "" }) {
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}{required && <span className="text-[#C0392B]"> *</span>}</span>
       {children}
+      {error && <span className="text-[10.5px] text-[#C0392B]" data-testid="suspense-field-error">{error}</span>}
     </div>
   );
 }

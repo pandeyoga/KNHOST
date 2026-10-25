@@ -8,6 +8,7 @@
  *         → lewat batas = tertutup sendiri (auto-reclose).
  * Sumber: /api/finance/period-unlocks/* & /api/finance/closing. Gaya modul Closing.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, Unlock, Lock, ShieldCheck, ShieldAlert, Clock, Building2,
@@ -17,7 +18,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
-import { askReason } from "@/services/confirmService";
+import { askConfirm, askReason } from "@/services/confirmService";
 import { can } from "../../config/roles";
 
 function fmtDateTime(iso) {
@@ -89,7 +90,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
       setClosings(Array.isArray(cRes.data) ? cRes.data : []);
       setRequests(Array.isArray(rRes.data) ? rRes.data : []);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data buka periode.");
+      setError(apiErrorText(e, "Gagal memuat data buka periode."));
     } finally {
       setLoading(false);
     }
@@ -108,6 +109,8 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
     [closings, livePeriods]);
 
   const activeCount = requests.filter((r) => r.is_active_now).length;
+  // G1-16 — jendela disetujui yang batas waktunya sudah lewat (yang akan ditutup tombol "Tutup yang kedaluwarsa").
+  const expiredOpenCount = requests.filter((r) => r.status === "approved" && !r.is_active_now).length;
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
   const doRequest = async () => {
@@ -121,7 +124,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
       setReason(""); setSelPeriod("");
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal mengirim usul buka periode.");
+      setError(apiErrorText(e, "Gagal mengirim usul buka periode."));
     } finally { setBusy(false); }
   };
 
@@ -132,7 +135,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
       setNotice(`Periode ${res.data.period_label} DIBUKA hingga ${fmtDateTime(res.data.window_until)} (${res.data.window_hours} jam). Posting mundur kini diizinkan sementara.`);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyetujui usul.");
+      setError(apiErrorText(e, "Gagal menyetujui usul."));
     } finally { setBusy(false); }
   };
 
@@ -154,18 +157,24 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
       setNotice("Usul buka periode ditolak.");
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menolak usul.");
+      setError(apiErrorText(e, "Gagal menolak usul."));
     } finally { setBusy(false); }
   };
 
   const doReclose = async () => {
+    if (!(await askConfirm({
+      danger: true,
+      title: `Tutup ${expiredOpenCount} jendela buka periode yang kedaluwarsa?`,
+      message: "Periode yang dibuka sementara dikunci kembali; jurnal baru pada periode itu akan ditolak.",
+      confirmLabel: "Tutup Jendela",
+    }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {
       const res = await axios.post(`${API}/finance/period-unlocks/reclose-expired`);
       setNotice(res.data.reclosed ? `${res.data.reclosed} jendela unlock yang lewat batas ditutup.` : "Tidak ada jendela yang perlu ditutup.");
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menutup jendela kedaluwarsa.");
+      setError(apiErrorText(e, "Gagal menutup jendela kedaluwarsa."));
     } finally { setBusy(false); }
   };
 
@@ -188,7 +197,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
             <h3 className="text-[13px] font-bold text-[#1C1C1E]">Buka Periode — Kontrol Ganda</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <button data-testid="plu-reclose-expired" className="btn-secondary text-[11px] py-1 px-2 inline-flex items-center gap-1" onClick={doReclose} disabled={busy || !canManage} title="Tutup jendela yang sudah lewat batas">
+            <button data-testid="plu-reclose-expired" className="btn-secondary text-[11px] py-1 px-2 inline-flex items-center gap-1" onClick={doReclose} disabled={busy || !canManage || expiredOpenCount === 0} title={expiredOpenCount === 0 ? "Tidak ada jendela yang lewat batas" : "Tutup jendela yang sudah lewat batas"}>
               <Timer size={12} /> Tutup yang kedaluwarsa
             </button>
             <div className="w-full sm:w-[200px]">

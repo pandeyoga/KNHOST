@@ -286,7 +286,11 @@ export function AlertsStrip({ alerts }) {
   );
 }
 
-export function UnbudgetedPanel({ items, dimension }) {
+// UAT 24 Okt (audit UI tahap 2) — G1-19: kartu dulu "1-1300 · akun" tanpa nama akun.
+export function UnbudgetedPanel({ items, dimension, keys = null }) {
+  const nameOf = (k) => (dimension === "account"
+    ? (keys?.accounts || []).find((a) => a.code === k)?.name
+    : (keys?.categories || []).find((c) => c.code === k)?.label) || "";
   if (!items || items.length === 0) return null;
   return (
     <Panel title="Komitmen Tanpa Anggaran (perlu ditetapkan pagu)" icon={ClipboardList}
@@ -297,7 +301,7 @@ export function UnbudgetedPanel({ items, dimension }) {
             className="flex items-center justify-between gap-2 rounded-md border border-[#EFF0F2] px-2.5 py-2 text-[11.5px]">
             <span className="truncate">
               <b>{u.key}</b>
-              <span className="text-[#9A9BA3]"> · {dimension === "account" ? "akun" : "kategori"}</span>
+              <span className="text-[#3C3C43]"> · {u.label || nameOf(u.key) || (dimension === "account" ? "akun" : "kategori")}</span>
               {(u.docs || []).length > 0 && (
                 <span className="block text-[10px] text-[#9A9BA3] truncate">
                   {(u.docs || []).map((x) => x.ref).slice(0, 4).join(", ")}

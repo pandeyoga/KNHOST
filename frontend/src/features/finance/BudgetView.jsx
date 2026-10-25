@@ -4,6 +4,7 @@
  * CRUD /api/finance/budgets, /api/finance/budget-keys, GET|PUT /api/finance/budget-rules.
  * Komitmen = PO terbuka + LPJ petty cash pending · Realisasi = jurnal GL / LPJ terposting.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -47,7 +48,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       setData(rep.data || null);
       setRules(rl.data || rep.data?.rules || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat anggaran.");
+      setError(apiErrorText(e, "Gagal memuat anggaran."));
     } finally { setLoading(false); }
   }, [year, selectedEntity]);
 
@@ -66,6 +67,9 @@ export default function BudgetView({ selectedEntity, currentUser }) {
   const dimSum = data?.by_dimension?.[tab] || {};
   const unbudgeted = useMemo(
     () => (data?.unbudgeted_commitments || []).filter((u) => u.dimension === tab), [data, tab]);
+  // G1-19 — KPI Komitmen hanya menjumlah baris yang punya pagu; komitmen tanpa anggaran disebut di sub-teks
+  // supaya KPI "Rp 0" tidak bertentangan dengan kartu "Komitmen Tanpa Anggaran".
+  const unbudgetedTotal = useMemo(() => unbudgeted.reduce((s, u) => s + Number(u.committed || 0), 0), [unbudgeted]);
 
   const chartData = useMemo(() => rows.slice(0, 8).map((r) => ({
     name: (r.label || r.key || "").length > 14 ? `${(r.label || r.key).slice(0, 13)}\u2026` : (r.label || r.key),
@@ -83,7 +87,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       setShowForm(false); await load();
       return true;
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyimpan anggaran.");
+      setError(apiErrorText(e, "Gagal menyimpan anggaran."));
       return false;
     }
   }
@@ -92,12 +96,12 @@ export default function BudgetView({ selectedEntity, currentUser }) {
     try {
       await axios.patch(`${API}/finance/budgets/${id}`, { amount: Number(editAmount) });
       setEditId(null); notify("Nominal anggaran diperbarui."); await load();
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memperbarui anggaran."); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memperbarui anggaran.")); }
   }
 
   async function removeBudget(id) {
     try { await axios.delete(`${API}/finance/budgets/${id}`); notify("Anggaran dihapus."); await load(); }
-    catch (e) { setError(e.response?.data?.detail || "Gagal menghapus anggaran."); }
+    catch (e) { setError(apiErrorText(e, "Gagal menghapus anggaran.")); }
   }
 
   async function saveRules(patch) {
@@ -108,7 +112,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       await load();
       return true;
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyimpan kebijakan anggaran.");
+      setError(apiErrorText(e, "Gagal menyimpan kebijakan anggaran."));
       return false;
     }
   }
@@ -120,7 +124,10 @@ export default function BudgetView({ selectedEntity, currentUser }) {
         <KpiCard testId="budget-kpi-total" label={`Anggaran ${year}`} value={formatCurrency(tot.budget)}
           icon={Target} accent={FC.purple} sub={`${allRows.length} baris anggaran`} />
         <KpiCard testId="budget-kpi-commitment" label="Komitmen (PO/LPJ)" value={formatCurrency(tot.commitment)}
-          icon={ClipboardList} accent={FC.amber} tone="text-[#C77700]" sub="belanja terikat belum realisasi" />
+          icon={ClipboardList} accent={FC.amber} tone="text-[#C77700]"
+          sub={unbudgetedTotal > 0
+            ? `belanja terikat dalam pagu · + ${formatCurrency(unbudgetedTotal)} di luar pagu`
+            : "belanja terikat belum realisasi"} />
         <KpiCard testId="budget-kpi-actual" label="Realisasi" value={formatCurrency(tot.actual)}
           icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" sub={`Terpakai ${fmtPct(tot.used_pct)}`} />
         <KpiCard testId="budget-kpi-remaining" label="Sisa (Tersedia)" value={formatCurrency(tot.remaining)}
@@ -222,7 +229,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
         </>
       )}
 
-      <UnbudgetedPanel items={unbudgeted} dimension={tab} />
+      <UnbudgetedPanel items={unbudgeted} dimension={tab} keys={keys} />
 
       <p className="mt-2 text-[11px] text-[#9A9BA3] flex items-start gap-1.5">
         <ShieldCheck size={12} className="mt-0.5 shrink-0" />

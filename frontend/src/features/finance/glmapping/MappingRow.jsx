@@ -45,7 +45,6 @@ function RowDetail({ row }) {
         <p><span className="text-[#6B6B73]">Fitur pemakai:</span> {row.used_by.join(", ")}</p>
         <p><span className="text-[#6B6B73]">Jenis akun diizinkan:</span> {row.allowed_type_labels.join(", ")}</p>
         <p><span className="text-[#6B6B73]">Akun bawaan:</span> {row.default}{row.source === "entity" ? ` · Global: ${row.global_code}` : ""}</p>
-        <p className="text-[10.5px] text-[#9A9BA3]">Kode kebutuhan: {row.key}</p>
         {row.updated_by && <p className="text-[10.5px] text-[#9A9BA3]">Terakhir diubah {row.updated_by} · {formatDateTime(row.updated_at)}</p>}
       </div>
     </div>

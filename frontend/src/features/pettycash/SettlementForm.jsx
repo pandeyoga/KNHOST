@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
@@ -68,7 +69,7 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
       });
       onSaved(res.data);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal menyimpan pertanggungjawaban.");
+      setErr(apiErrorText(e, "Gagal menyimpan pertanggungjawaban."));
     } finally { setBusy(false); }
   }
 
@@ -102,12 +103,13 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
           </div>
 
           {/* Expense lines */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[120px_1.5fr_1fr_130px_36px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
+          {/* UAT 24 Okt (audit UI tahap 2) — G1-41: kolom tanggal 120→160px (dulu "Min, 25 Okt…" terpotong tanpa tahun). */}
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+            <div className="min-w-[640px] grid grid-cols-[160px_1.5fr_1fr_130px_36px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
               <span>Tanggal</span><span>Uraian</span><span>Kategori</span><span className="text-right">Nominal</span><span></span>
             </div>
             {lines.map((l, i) => (
-              <div key={i} data-testid={`stl-line-${i}`} className="grid grid-cols-[120px_1.5fr_1fr_130px_36px] items-center gap-1 px-3 py-2 border-t border-[#F4F5F7]">
+              <div key={i} data-testid={`stl-line-${i}`} className="min-w-[640px] grid grid-cols-[160px_1.5fr_1fr_130px_36px] items-center gap-1 px-3 py-2 border-t border-[#F4F5F7]">
                 <KNDatePicker data-testid={`stl-line-date-${i}`} value={l.date} onChange={(v) => updLine(i, "date", v)} clearable={false} />
                 <input data-testid={`stl-line-desc-${i}`} className="form-input" value={l.description} onChange={(e) => updLine(i, "description", e.target.value)} placeholder="Uraian pengeluaran" />
                 <KNSelect data-testid={`stl-line-cat-${i}`} className="form-input" value={l.category} onValueChange={(v) => updLine(i, "category", v)} options={catOptions} />

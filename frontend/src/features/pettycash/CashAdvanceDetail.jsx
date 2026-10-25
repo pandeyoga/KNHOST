@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
@@ -46,7 +47,7 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, o
       flash(okMsg);
       onChanged(res.data);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Aksi gagal.");
+      setErr(apiErrorText(e, "Aksi gagal."));
     } finally { setBusy(false); }
   }
 

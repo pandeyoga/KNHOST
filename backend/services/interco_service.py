@@ -888,6 +888,23 @@ async def _update_account_balance(seller_entity_id: str, buyer_entity_id: str) -
     ]}})
 
 
+async def _live_pair_outstanding() -> Dict[Any, Dict[str, Any]]:
+    """Σ dokumen TERBUKA per arah dagang (penjual, pembeli) — rumus sama dengan `_update_account_balance`."""
+    out: Dict[Any, Dict[str, Any]] = {}
+    async for d in db[COLL_ICT].find({"role": "seller", "status": {"$in": list(OPEN_STATUSES)}},
+                                     {"_id": 0, "seller_entity_id": 1, "buyer_entity_id": 1, "grand_total": 1,
+                                      "settled_amount": 1, "returned_amount": 1}):
+        k = (d.get("seller_entity_id"), d.get("buyer_entity_id"))
+        a = out.setdefault(k, {"open_count": 0, "gross_amount": 0.0, "settled_amount": 0.0,
+                               "returned_amount": 0.0, "outstanding": 0.0})
+        a["open_count"] += 1
+        a["gross_amount"] = round(a["gross_amount"] + float(d.get("grand_total") or 0), 2)
+        a["settled_amount"] = round(a["settled_amount"] + float(d.get("settled_amount") or 0), 2)
+        a["returned_amount"] = round(a["returned_amount"] + float(d.get("returned_amount") or 0), 2)
+        a["outstanding"] = round(a["gross_amount"] - a["settled_amount"] - a["returned_amount"], 2)
+    return out
+
+
 async def list_accounts(scope_entity_ids: List[str]) -> List[Dict[str, Any]]:
     """Saldo antar-PT untuk semua pasangan yang menyentuh scope."""
     if not scope_entity_ids:
@@ -895,6 +912,22 @@ async def list_accounts(scope_entity_ids: List[str]) -> List[Dict[str, Any]]:
     q = {"$or": [{"from_entity_id": {"$in": scope_entity_ids}},
                  {"to_entity_id": {"$in": scope_entity_ids}}]}
     rows = await db[COLL_ICA].find(q, {"_id": 0}).sort("outstanding", -1).to_list(1000)
+    # UAT 24 Okt (audit UI tahap 2) — G1-31: baris saldo adalah CACHE yang dihitung ulang hanya saat dokumen
+    # berubah lewat layanan ini. Di data acuan cache KSC→CST tertinggal (Rp 7.015.200, 2 dokumen) padahal dokumen
+    # terbuka saat ini 1 (Rp 6.993.000 — angka yang sama dengan Jadwal Bayar). Angka yang DITAMPILKAN kini dibaca
+    # langsung dari dokumen terbuka dengan rumus yang sama (`_update_account_balance`); cache tidak ditulis di GET.
+    live = await _live_pair_outstanding()
+    for r in rows:
+        k = (r.get("seller_entity_id"), r.get("buyer_entity_id"))
+        if not all(k):
+            continue
+        cur = live.get(k, {"open_count": 0, "gross_amount": 0.0, "settled_amount": 0.0,
+                           "returned_amount": 0.0, "outstanding": 0.0})
+        if abs(float(r.get("outstanding") or 0) - cur["outstanding"]) > EPS \
+                or int(r.get("open_count") or 0) != cur["open_count"]:
+            r["cached_outstanding"] = r.get("outstanding")
+            r.update(cur)
+    rows.sort(key=lambda r: -float(r.get("outstanding") or 0))
     reminder_days = int(await _config("antar_entitas.settlement_reminder_days") or 30)
     today = datetime.now(timezone.utc)
     for r in rows:
@@ -1208,7 +1241,7 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
             "cutoff_status": "configured" if (ready or any(r.get("period") for r in rows)) else "not_configured",
             "basis_label": basis[1] if basis else None, "netting": "disabled" if not cfg["allow_netting"] else "allowed",
             "note": None if ready else "Cutoff & acuan periode pembayaran belum diatur — periode bayar & pengingat "
-                                       "belum jalan. Atur di form di bawah (semua PT atau per PT pembayar, KLX-03)."}
+                                       "belum jalan. Atur di form di bawah (semua PT atau per PT pembayar)."}
 
 
 async def job_interco_payment_reminder() -> Dict[str, Any]:
@@ -1234,7 +1267,7 @@ async def job_interco_payment_reminder() -> Dict[str, Any]:
                     title=f"Bayar antar-PT {r['pay_date']}: {r['number']}",
                     body=(f"{r['payer_entity_name']} → {r['payee_entity_name']} · {rupiah(r['remaining'])} "
                           f"(penuh, per transaksi) · {'hari ini' if left == 0 else f'{left} hari lagi'}. "
-                          "Cutoff berdasarkan pengaturan (ASUMSI sampai KLX-03 diputuskan)."),
+                          "Cutoff mengikuti pengaturan pembayaran antar-PT."),
                     link="interco-transactions", entity_id=payer, recipient_role="finance",
                     ref=f"{r['interco_id']}:{r['pay_date']}", dedupe=True, dedupe_scope="ever")
                 sent += 1 if n else 0

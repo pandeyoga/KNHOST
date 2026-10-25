@@ -2,6 +2,7 @@
  * ChartOfAccounts (EPIC7-C) — Bagan Akun / Chart of Accounts.
  * Akses admin/manager (permission "accounting"). Sumber: /api/gl/accounts.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, Plus, BookOpen, Pencil, Trash2, X, Layers, Globe, Building2,
@@ -51,7 +52,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
       setAccounts(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat bagan akun.");
+      setError(apiErrorText(e, "Gagal memuat bagan akun."));
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
       setShowForm(false);
       await load();
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal membuat akun.");
+      setError(apiErrorText(err, "Gagal membuat akun."));
     } finally {
       setSaving(false);
     }
@@ -122,7 +123,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
       await axios.delete(`${API}/gl/accounts/${acc.code}`, { params });
       await load();
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal menghapus akun.");
+      setError(apiErrorText(err, "Gagal menghapus akun."));
     }
   };
 
@@ -143,7 +144,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
       setTimeout(() => setNotice(""), 4000);
       await load();
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal mengubah pemakaian akun di badan usaha ini.");
+      setError(apiErrorText(err, "Gagal mengubah pemakaian akun di badan usaha ini."));
     } finally { setTogglingCode(""); }
   };
 
@@ -389,7 +390,9 @@ function AccountDetailModal({ acc, canAudit, scopeLabel, entities, onClose }) {
     ["Lapisan", layer], ["Dilihat sebagai", scopeLabel], ["Akun sistem", acc.system ? "Ya" : "Tidak"],
   ];
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="coa-detail-modal" onClick={onClose}>
+    // INV-UI-01 — backdrop hanya menutup bila yang diklik backdrop itu sendiri (bukan opsi dropdown ber-portal).
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="coa-detail-modal"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[#EFF0F2]">
           <BookOpen size={15} className="text-[#6B219A]" />
@@ -431,7 +434,7 @@ function EditAccountModal({ acc, scopeEntityId, scopeLabel, onClose, onSaved, on
       await axios.patch(`${API}/gl/accounts/${acc.code}`, { name: name.trim(), is_active: isActive }, { params });
       await onSaved();
     } catch (err) {
-      onError(err.response?.data?.detail || "Gagal menyimpan akun.");
+      onError(apiErrorText(err, "Gagal menyimpan akun."));
       onClose();
     } finally {
       setSaving(false);
@@ -456,7 +459,8 @@ function EditAccountModal({ acc, scopeEntityId, scopeLabel, onClose, onSaved, on
           </Labeled>
           <label className="flex items-center gap-2 text-[12px] text-[#3C3C43]">
             <input data-testid="coa-edit-active" type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Akun aktif (dapat dijurnal)
+            {/* G1-22 — akun kelompok (is_postable=false) memang tidak bisa dijurnal; label mengikuti jenisnya. */}
+            {acc.is_postable === false ? "Akun aktif (kelompok — tidak dijurnal)" : "Akun aktif (dapat dijurnal)"}
           </label>
           {willOverride && (
             <p data-testid="coa-edit-override-note" className="text-[11px] text-[#6B219A] bg-[#F3EAFB] rounded-md px-2 py-1.5">

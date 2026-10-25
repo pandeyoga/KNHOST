@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useState, useCallback } from "react";
 import {
   Banknote, TrendingUp, ArrowUpRight, Receipt, AlertTriangle,
@@ -30,7 +31,8 @@ function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", loading, on
       {loading ? (
         <div className="h-7 bg-[#F5F5F7] rounded animate-pulse" />
       ) : (
-        <p className="text-2xl font-bold text-[#1C1C1E] tabular-nums">{value}</p>
+        // G1-43 — di HP angka Rp dulu patah ("Rp / 4.292.925") dan menyentuh tepi.
+        <p className="text-xl md:text-2xl font-bold text-[#1C1C1E] tabular-nums whitespace-nowrap">{value}</p>
       )}
       {sub && <p className="text-[11px] text-[#6B6B73]">{sub}</p>}
     </Tag>
@@ -53,7 +55,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
       setData(res.data);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Control Tower. Coba lagi.");
+      setError(apiErrorText(e, "Gagal memuat Control Tower. Coba lagi."));
     } finally {
       setLoading(false);
     }
@@ -64,6 +66,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
 
   const sales = data?.sales || {};
   const ar = data?.ar || {};
+  const outsideAr = ar.outside_board || {};
   const lowStock = data?.low_stock || {};
   const board = data?.leaderboard_top || [];
   const overdue = data?.top_overdue || [];
@@ -124,12 +127,21 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
       <div className="section-body">
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="admin-home-error" />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-4 gap-3">
           <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading} />
           <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
           <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
-          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)} sub={`Buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`} color="#5856D6" loading={loading} />
-          <KPICard icon={AlertTriangle} label="Piutang Lewat Tempo" value={fmtCur(ar.overdue)} sub="Jatuh tempo lewat" color="#FF3B30" loading={loading} />
+          {/* UAT 24 Okt (audit UI tahap 2) — G1-13: kedua KPI piutang = papan sales (pelanggan ber-sales aktif), BUKAN
+              seluruh piutang di layar Piutang. Cakupan & bagian di luar papan disebut, kartu membuka layar Piutang. K-01. */}
+          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)}
+            sub={`Pelanggan ber-sales · buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`
+              + (outsideAr.outstanding > 0 ? ` · di luar papan ${fmtCur(outsideAr.outstanding)} (${outsideAr.customers} pelanggan tanpa sales)` : "")}
+            color="#5856D6" loading={loading} testId="kpi-belum-lunas" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
+          <KPICard icon={AlertTriangle} label="Piutang Lewat Tempo" value={fmtCur(ar.overdue)}
+            sub={outsideAr.overdue > 0
+              ? `Pelanggan ber-sales · + ${fmtCur(outsideAr.overdue)} lewat tempo di pelanggan tanpa sales`
+              : "Pelanggan ber-sales · klik untuk layar Piutang"}
+            color="#FF3B30" loading={loading} testId="kpi-piutang-lewat-tempo" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
           {/* AUDIT PERAN 2026-08-15 — KPI ini dulu SELALU 0 (menghitung koleksi
               `approval_requests` yang tak pernah diisi siapa pun), padahal 16 dokumen
               memang menunggu keputusan. Sekarang angkanya = antrean nyata, `sub`
@@ -264,6 +276,13 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
                   </div>
                 ))}
               </div>
+            ) : outsideAr.overdue > 0 ? (
+              <button type="button" data-testid="admin-home-overdue-outside"
+                onClick={() => onNavigate && onNavigate("ar-aging")}
+                className="h-20 w-full flex flex-col items-center justify-center gap-0.5 text-center text-[12.5px] text-[#6B6B73]">
+                <span>Tidak ada lewat tempo di pelanggan ber-sales.</span>
+                <span className="font-semibold text-red-600">{fmtCur(outsideAr.overdue)} lewat tempo di {outsideAr.overdue_customers} pelanggan tanpa sales — buka Piutang →</span>
+              </button>
             ) : <div className="h-20 flex items-center justify-center text-[13px] text-[#8E8E93]">Tidak ada tagihan lewat tempo 🎉</div>}
           </div>
         </div>

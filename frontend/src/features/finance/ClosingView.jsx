@@ -3,6 +3,7 @@
  * Buat jurnal penutup otomatis (Laba Bersih → Laba Ditahan 3-2000) + kunci periode
  * (soft). Admin dapat Reopen. Sumber: /api/finance/closing/*. Gaya modul GL.
  */
+import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, CalendarX, Lock, Unlock, FileStack, CheckCircle2, AlertTriangle,
@@ -12,6 +13,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
+import { askConfirm } from "../../services/confirmService";
 import { can } from "../../config/roles";
 
 const NOW = new Date();
@@ -71,7 +73,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       const res = await axios.get(`${API}/finance/closing`, { params: { entity_id: entityId } });
       setClosings(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data tutup buku.");
+      setError(apiErrorText(e, "Gagal memuat data tutup buku."));
     } finally {
       setLoading(false);
     }
@@ -88,14 +90,55 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       });
       setPreview(res.data || null);
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat pratinjau.");
+      setError(apiErrorText(e, "Gagal memuat pratinjau."));
     } finally {
       setBusy(false);
     }
   };
 
+  // UAT 24 Okt (audit UI tahap 2) — G1-03: Tutup Buku mengunci periode penuh → wajib dialog konfirmasi yang
+  // menyebut periode, entitas & peringatan pratinjau (pratinjau diambil dulu bila belum ada). Suspense ≠ 0 hanya
+  // diperingatkan (memblokir atau tidak = keputusan pemilik K-15).
   const doClose = async () => {
-    setError(""); setNotice(""); setBusy(true);
+    setError(""); setNotice("");
+    let pv = preview;
+    if (!pv) {
+      setBusy(true);
+      try {
+        const res = await axios.get(`${API}/finance/closing/preview`, {
+          params: { period_type: periodType, period_key: periodKey, entity_id: entityId },
+        });
+        pv = res.data || null;
+        setPreview(pv);
+      } catch (e) {
+        setError(apiErrorText(e, "Gagal memuat pratinjau."));
+        setBusy(false);
+        return;
+      }
+      setBusy(false);
+    }
+    if (pv && pv.can_close === false) return;   // blokir tumpang tindih sudah tampil di pratinjau
+    const periodText = periodType === "year" ? `tahun ${year}` : `${MONTHS.find((m) => m.value === month)?.label || month} ${year}`;
+    const entityText = entityOptions.find((e) => e.value === entityId)?.label || entityId;
+    const warnings = [];
+    if (pv?.suspense_warning) warnings.push(`Saldo Suspense (1-9999) belum nol: ${formatCurrency(pv.suspense_balance)}.`);
+    if (pv && Math.abs((pv.residual_net_income || 0) - (pv.net_income || 0)) > 0.01) {
+      warnings.push(`Sebagian periode sudah ditutup bulanan — jurnal hanya menutup sisa ${formatCurrency(pv.residual_net_income)}.`);
+    }
+    const ok = await askConfirm({
+      danger: true,
+      title: `Tutup buku ${periodText} — ${entityText}?`,
+      message: (
+        <>
+          <span className="block">Jurnal penutup (laba/rugi {pv ? formatCurrency(pv.net_income) : "periode ini"} → Laba Ditahan) akan dibuat dan periode terkunci: jurnal baru pada periode ini ditolak. Membuka lagi hanya lewat Reopen (Admin) atau Buka Periode.</span>
+          {warnings.map((w) => <span key={w} className="block mt-1 font-semibold text-[#B9770E]" data-testid="closing-confirm-warning">⚠ {w}</span>)}
+        </>
+      ),
+      confirmLabel: "Tutup Buku",
+      testId: "closing-confirm",
+    });
+    if (!ok) return;
+    setBusy(true);
     try {
       const res = await axios.post(`${API}/finance/closing/close`, {
         period_type: periodType, period_key: periodKey, entity_id: entityId,
@@ -104,33 +147,39 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       setPreview(null);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menutup periode.");
+      setError(apiErrorText(e, "Gagal menutup periode."));
     } finally {
       setBusy(false);
     }
   };
 
   const doReopen = async (rec) => {
+    if (!(await askConfirm({ danger: true, title: `Buka kembali periode ${rec.period_label}?`,
+      message: `Jurnal penutup ${rec.journal_entry_number || ""} akan di-void dan periode bisa dijurnal lagi.`,
+      confirmLabel: "Buka Kembali" }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {
       await axios.post(`${API}/finance/closing/${rec.id}/reopen`);
       setNotice(`Periode ${rec.period_label} dibuka kembali (jurnal penutup di-void).`);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal membuka kembali periode.");
+      setError(apiErrorText(e, "Gagal membuka kembali periode."));
     } finally {
       setBusy(false);
     }
   };
 
   const doReclose = async (rec) => {
+    if (!(await askConfirm({ danger: true, title: `Tutup ulang periode ${rec.period_label}?`,
+      message: "Jurnal penutup lama di-void dan jurnal penutup baru dibuat dari angka terkini.",
+      confirmLabel: "Tutup Ulang" }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {
       const res = await axios.post(`${API}/finance/closing/${rec.id}/reclose`);
       setNotice(`Periode ${res.data.period_label} ditutup ulang. Jurnal penutup baru: ${res.data.journal_entry_number || "—"}.`);
       load();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menutup ulang periode.");
+      setError(apiErrorText(e, "Gagal menutup ulang periode."));
     } finally {
       setBusy(false);
     }

@@ -7,7 +7,8 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
-import ConfirmModal from "../../components/ConfirmModal";
+import { askReason } from "../../services/confirmService";
+import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 
 /**
@@ -34,12 +35,17 @@ const categoryLabel = (c) => {
   return CATEGORY_LABEL[s] || (s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ");
 };
 
+const REF_LABEL = {
+  ar_receipt: "kwitansi piutang", customer_advance: "uang muka pelanggan", sales_return: "retur penjualan",
+  vendor_bill_payment: "pembayaran tagihan supplier", purchase_return: "retur pembelian", interco_settlement: "pelunasan antar-PT",
+  cash_advance: "pengajuan dana", petty_cash_settlement: "LPJ kas kecil", refund: "pengembalian dana",
+};
+
 export default function CashManagementView({ currentUser, selectedEntity }) {
   const [txns, setTxns] = useState([]);
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [voidTarget, setVoidTarget] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_besar
@@ -66,7 +72,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
       setEntities(Array.isArray(eRes.data) ? eRes.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data kas.");
+      setError(apiErrorText(e, "Gagal memuat data kas."));
     } finally {
       setLoading(false);
     }
@@ -82,23 +88,35 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
       setForm(EMPTY_FORM);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal mencatat transaksi kas.");
+      setError(apiErrorText(e, "Gagal mencatat transaksi kas."));
     }
   }
 
-  async function handleVoid(t) {
-    setVoidTarget(t);
-  }
+  // UAT 24 Okt (audit UI tahap 2) — G1-20: anulir meminta ALASAN (dikirim & dicatat server) dan menyebut dampaknya.
+  // Kas turunan dokumen lain (kwitansi piutang, uang muka, retur, AP) ditolak server — tombolnya dinonaktifkan
+  // dengan penjelasan, bukan dialog yang berakhir galat.
+  const derivedFrom = (t) => (t.ref_type || t.ref_id ? (t.ref_number || REF_LABEL[t.ref_type] || t.ref_type || "dokumen lain") : "");
 
-  async function doVoid(t) {
+  async function handleVoid(t) {
+    const dir = t.direction === "in" ? "masuk" : "keluar";
+    const reason = await askReason({
+      danger: true,
+      title: `Anulir ${t.number}?`,
+      message: `Kas ${dir} ${formatCurrency(t.amount)} (${t.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}`
+        + `${t.description ? ` · ${t.description}` : ""}) dibatalkan dan jurnal pembalik dibuat; saldo kas berubah. `
+        + "Tindakan tidak dapat dibatalkan.",
+      reasonLabel: "Alasan anulir",
+      reasonPlaceholder: "Mis. salah input nominal — dicatat ulang sebagai KSC/CASH-…",
+      confirmLabel: "Anulir Transaksi",
+      testId: "cash-void-modal",
+    });
+    if (reason === null) return;
     try {
-      await axios.post(`${API}/cash-transactions/${t.id}/void`);
-      setNotice(`Transaksi ${t.number} di-void.`);
-      setVoidTarget(null);
+      await axios.post(`${API}/cash-transactions/${t.id}/void`, { reason });
+      setNotice(`Transaksi ${t.number} dianulir.`);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal void transaksi.");
-      setVoidTarget(null);
+      setError(apiErrorText(e, "Gagal menganulir transaksi."));
     }
   }
 
@@ -270,8 +288,11 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
                     </span>
                   </div>
                   <div className="flex justify-end">
-                    {canVoid && (
-                      <button data-testid={`void-cash-${t.id}`} onClick={() => handleVoid(t)} className="icon-button text-red-400 hover:text-red-600" title="Anulir"><Ban size={13} /></button>
+                    {canVoid && t.status !== "void" && (
+                      <button data-testid={`void-cash-${t.id}`} onClick={() => handleVoid(t)}
+                        disabled={!!derivedFrom(t)}
+                        className="icon-button text-red-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title={derivedFrom(t) ? `Berasal dari ${derivedFrom(t)} — batalkan lewat dokumen asalnya` : "Anulir"}><Ban size={13} /></button>
                     )}
                   </div>
                 </div>
@@ -282,16 +303,6 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <ConfirmModal
-        open={!!voidTarget}
-        title={`Anulir ${voidTarget?.number || "Transaksi"}`}
-        message="Anulir transaksi kas ini? Saldo akan disesuaikan otomatis. Tindakan tidak dapat dibatalkan."
-        confirmLabel="Anulir Transaksi"
-        danger
-        onConfirm={() => doVoid(voidTarget)}
-        onCancel={() => setVoidTarget(null)}
-        testId="cash-void-modal"
-      />
     </div>
   );
 }

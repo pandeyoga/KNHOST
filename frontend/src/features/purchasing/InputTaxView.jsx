@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import KNMonthPicker from "@/components/KNMonthPicker";
@@ -69,7 +70,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
       setBills(Array.isArray(bRes.data) ? bRes.data : []);
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat Faktur Pajak Masukan.");
+      setError(apiErrorText(e, "Gagal memuat Faktur Pajak Masukan."));
     } finally { setLoading(false); }
   }
 
@@ -96,7 +97,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
       setCancelTarget(null); setCancelReason("");
       loadAll(); loadSummary();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal membatalkan.");
+      setError(apiErrorText(e, "Gagal membatalkan."));
     } finally { setBusy(false); }
   }
 

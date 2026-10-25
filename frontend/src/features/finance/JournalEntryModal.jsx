@@ -2,6 +2,7 @@
  * JournalEntryModal (EPIC7-C) — buat jurnal manual double-entry seimbang.
  * Dipakai oleh GeneralLedger. Validasi balance di sisi klien + server.
  */
+import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Trash2, Scale, AlertTriangle } from "lucide-react";
@@ -67,7 +68,7 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
       await axios.post(`${API}/gl/journal`, { date, description, lines: payloadLines });
       await onSaved();
     } catch (err) {
-      setError(err.response?.data?.detail || "Gagal menyimpan jurnal.");
+      setError(apiErrorText(err, "Gagal menyimpan jurnal."));
     } finally {
       setSaving(false);
     }
@@ -145,9 +146,16 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
 
           <div className="flex items-center gap-2 mt-2">
             <button data-testid="je-add-line" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={addLine}><Plus size={13} /> Tambah Baris</button>
-            <span data-testid="je-balance-indicator" className={`ml-auto text-[12px] font-semibold inline-flex items-center gap-1 rounded-full px-3 py-1 ${balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>
-              <Scale size={13} />{balanced ? "Seimbang" : twoSidedLines > 0 ? "Baris berisi debit & kredit" : `Selisih ${formatCurrency(Math.abs(totals.diff))}`}
-            </span>
+            {/* G1-46 — jurnal masih kosong (Σ debit = Σ kredit = 0) tampil netral, bukan "Selisih Rp 0" merah. */}
+            {(() => {
+              const empty = !balanced && twoSidedLines === 0 && Math.abs(totals.diff) < 0.005;
+              const cls = balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : empty ? "bg-[#F2F2F5] text-[#6B6B73]" : "bg-[#FDEDE7] text-[#C0392B]";
+              return (
+                <span data-testid="je-balance-indicator" className={`ml-auto text-[12px] font-semibold inline-flex items-center gap-1 rounded-full px-3 py-1 ${cls}`}>
+                  <Scale size={13} />{balanced ? "Seimbang" : twoSidedLines > 0 ? "Baris berisi debit & kredit" : empty ? "Belum ada nominal" : `Selisih ${formatCurrency(Math.abs(totals.diff))}`}
+                </span>
+              );
+            })()}
           </div>
 
           {error && <p data-testid="je-error" className="mt-2 text-[12px] text-[#C0392B]">{error}</p>}

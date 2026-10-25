@@ -3,7 +3,7 @@
  * (Arus Kas, Profitabilitas, Proyeksi Kas, Anggaran, Control Tower).
  * Konsisten dgn gaya existing (section-card, #6B219A, recharts, formatCurrency).
  */
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatCompactIDR, formatPct } from "../../utils/formatters";
 
 export const FC = {
   revenue: "#1B7F4B", cogs: "#C77700", expense: "#C0392B", net: "#6B219A",
@@ -23,18 +23,12 @@ export const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "A
 const pad = (n) => String(n).padStart(2, "0");
 export const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-export function compactIDR(v) {
-  const n = Number(v || 0);
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(1)} M`;
-  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)} jt`;
-  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(0)} rb`;
-  return `${n}`;
-}
+// UAT 24 Okt (audit UI tahap 2) — G1-14: sumbu/ringkas & persen keuangan dulu "150.0 jt", "1.4 M", "32.4%".
+// Kini satu sumber id-ID (utils/formatters G0-14): "150 jt", "1,4 M", "32,4%".
+export const compactIDR = (v) => formatCompactIDR(Number(v || 0));
 
 export const entityParam = (se) => (se && se !== "all" ? { entity_id: se } : {});
-export const fmtPct = (v, d = 1) => (v == null ? "—" : `${Number(v).toFixed(d)}%`);
+export const fmtPct = (v, d = 1) => (v == null ? "—" : formatPct(Number(v), d));
 
 export function saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);

@@ -214,7 +214,7 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite }) {
                 <th className="text-right px-4 py-3 font-medium">Terlunasi</th>
                 <th className="text-right px-4 py-3 font-medium">Diretur</th>
                 <th className="text-right px-4 py-3 font-medium">Sisa</th>
-                <th className="text-right px-4 py-3 font-medium">Umur</th>
+                <th className="text-right px-4 py-3 font-medium" title="Sejak aktivitas nyata terakhir (dokumen/settlement)">Umur (aktivitas)</th>
                 <th className="text-right px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>

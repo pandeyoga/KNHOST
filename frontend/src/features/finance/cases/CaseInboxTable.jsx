@@ -40,9 +40,10 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[#E5E5EA] bg-white"
+    // UAT 24 Okt (audit UI tahap 2) — G1-35: dulu `overflow-hidden` memotong kolom Penanggung jawab & aksi.
+    <div className="overflow-x-auto rounded-lg border border-[#E5E5EA] bg-white"
       data-testid="case-table">
-      <table className="w-full text-[12px]">
+      <table className="w-full min-w-[720px] text-[12px]">
         <caption className="px-3 py-2 text-left">{srch.searchBox}</caption>
         <thead>
           <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
@@ -62,7 +63,7 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
               className={`cursor-pointer border-b border-[#F4F4F6] last:border-0 hover:bg-[#FAFBFF] ${
                 activeId === c.id ? "bg-[#F2F7FF]" : ""}`}>
               <td className="px-3 py-2">
-                <span className="font-semibold text-[#0058CC]">{c.number}</span>
+                <span className="whitespace-nowrap font-semibold text-[#0058CC]">{c.number}</span>
                 <p className="text-[10px] text-[#8E8E93]">{humanAge(c.age_hours)} lalu</p>
               </td>
               <td className="px-3 py-2">

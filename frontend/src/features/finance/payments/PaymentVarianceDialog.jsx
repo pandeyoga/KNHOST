@@ -35,10 +35,13 @@ const METHODS = [
 function Sentence({ a }) {
   const gap = Math.abs(Number(a?.delta || 0));
   const under = Number(a?.delta || 0) < 0;
+  // UAT 24 Okt (audit UI tahap 2) — G1-12: batas 0/kosong (takar ulang sesudah alokasi) tidak boleh menjadi
+  // "seharusnya Rp 0"; pakai `expected` yang sama dengan tabel antrean.
+  const should = Number(a?.boundary) > 0 ? a.boundary : a?.expected;
   return (
     <p className="text-[13px] leading-relaxed text-[#1C1C1E]" data-testid="pv-sentence">
       Dibayar <b className="tabular-nums">{money(a?.funds)}</b>, seharusnya{" "}
-      <b className="tabular-nums">{money(a?.boundary ?? a?.expected)}</b>{" "}
+      <b className="tabular-nums">{money(should)}</b>{" "}
       <span className="text-[#6B6B73]">({a?.boundary_label || "tagihan yang jatuh tempo"})</span>.{" "}
       <b className={under ? "text-[#9B1C1C]" : "text-[#8A6D00]"}>
         {under ? "Kurang" : "Lebih"} {money(gap)}

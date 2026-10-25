@@ -1,3 +1,4 @@
+import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
@@ -59,7 +60,7 @@ export default function VehicleLogsView({ currentUser, selectedEntity = "all", e
       setSummary(s.data || { grand_total: 0, count: 0, per_vehicle: [] });
       setError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat data kendaraan.");
+      setError(apiErrorText(e, "Gagal memuat data kendaraan."));
     } finally { setLoading(false); }
   }
   function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 3500); }
@@ -70,7 +71,7 @@ export default function VehicleLogsView({ currentUser, selectedEntity = "all", e
       if (kind === "log") await axios.delete(`${API}/vehicle-usage-logs/${item.id}`);
       else await axios.delete(`${API}/vehicles/${item.id}`);
       flash("Data dihapus.");
-    } catch (e) { flash(e.response?.data?.detail || "Gagal menghapus."); }
+    } catch (e) { flash(apiErrorText(e, "Gagal menghapus.")); }
     finally { setDelTarget(null); loadAll(); }
   }
 
@@ -225,7 +226,7 @@ function LogFormModal({ form, vehicles, entities, selectedEntity, onClose, onSav
         await axios.post(`${API}/vehicle-usage-logs`, body);
       }
       onSaved(isEdit ? "Log diperbarui." : "Log perjalanan dicatat.");
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan log."); } finally { setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal menyimpan log.")); } finally { setBusy(false); }
   }
 
   return (
@@ -278,7 +279,7 @@ function VehicleFormModal({ form, entities, selectedEntity, onClose, onSaved }) 
       if (isEdit) await axios.patch(`${API}/vehicles/${f.id}`, body);
       else { body.entity_id = selectedEntity && selectedEntity !== "all" ? selectedEntity : (entities[0]?.id || ""); await axios.post(`${API}/vehicles`, body); }
       onSaved(isEdit ? "Kendaraan diperbarui." : "Kendaraan ditambahkan.");
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan kendaraan."); } finally { setBusy(false); }
+    } catch (e) { setErr(apiErrorText(e, "Gagal menyimpan kendaraan.")); } finally { setBusy(false); }
   }
 
   return (
