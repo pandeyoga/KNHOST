@@ -173,3 +173,44 @@ layar. **Tidak ada menu/layar yang dihapus atau digabung** — kandidat duplikas
 `href` dan tab Perbaikan MD); ESLint 0 error di ±220 berkas yang berubah; uji backend terdampak lulus (F1, F4, F5,
 dasbor pesanan, rencana pemenuhan, akses sales); audit tata letak di UAT (CDP) 8 layar desktop + 6 layar HP: tanpa
 gulir samping, tumpang tindih, atau teks terpotong; agen memeriksa langsung di peramban ±25 layar lain pada 375–390 px.
+
+## Lanjutan 25 Okt — sisa temuan sapuan yang perlu backend / komponen bersama
+
+Commit: `78b14b6` · branch `main`. Tidak ada migrasi data; backend UAT & backend uji di-restart.
+
+| Temuan sapuan | Sebelum | Sesudah | Berkas |
+|---|---|---|---|
+| ATP Status Stok (057) ≠ Multi-Kantong (058) | backorder tanpa gudang dikurangkan di **setiap** gudang → total papan −180 vs detail −120 | dikurangkan **sekali** per produk × PT; ATP per gudang hanya backorder gudang itu; total papan = rumus tunggal Status Stok (judul KPI menjelaskan rumusnya) | `atp_policy.py` (`include_unassigned`, `backorder_map`), `stock_bucket_service.py`, `roll_service.py`, `fulfillment_service.py`, `StockBucketsView.jsx` |
+| Saldo rekening ≠ ringkasan kas | transaksi kas tanpa `account_id` (kas manual lama, kwitansi, refund) tidak masuk saldo rekening mana pun | bila PT hanya punya **satu** rekening untuk jenis kas itu, transaksi tanpa rekening ikut rekening tersebut; kas manual baru otomatis memakai rekening tunggal itu. PT dengan ≥ 2 rekening sejenis tidak ditebak | `bank_service.py` (`sole_account_id`, `_txns_for`), `routers/cash.py` |
+| Qty profitabilitas menjumlah kg + yard | "Qty" satu angka campuran | per satuan dasar: "51,17 kg · 238,99 yard" (`qty_by_unit` di tiap baris & total) | `profitability_service.py`, `ProfitabilityView.jsx` |
+| Beranda admin: Bulan Ini < Hari Ini | Bulan Ini = jumlah leaderboard (hanya pelanggan ber-sales aktif), Hari Ini = semua SO | keduanya dari populasi SO hidup yang sama; Tertagih Bulan Ini = pembayaran bulan ini atas semua SO | `home_service.py` |
+| HP "Tagihan Rp 0" vs piutang Beranda | label "Tagihan" tanpa penjelasan | label "Tagihan ≤ 60 hr" + keterangan: hanya pesanan ber-Surat Jalan (keputusan Q-05a) dengan jatuh tempo ≤ 60 hari; total piutang ada di Beranda. Definisi sengaja tidak diubah | `MobileCollectionTargets.jsx` |
+| Akun teknis di peringkat desainer | "system-seed" ikut Desainer Teratas, jumlah desainer & tren | dibuang dari KPI, tren grade & tren nilai desain (`TECH_ACTORS`, sama dengan `actorLabel.js`) | `rnd_kpi_service.py` |
+| Pratinjau/cetak PDF: status & URL mentah | chip status & "Status Bayar" tercetak `waiting_stock`, `unpaid`; petunjuk Jejak Dokumen berisi URL ber-id internal | label Indonesia satu sumber di mesin PDF ("Menunggu stok", "Belum dibayar", "Lunas via retur"); petunjuk: "Atau buka ‹alamat aplikasi› › Jejak Dokumen, cari nomor ‹nomor›" (QR tetap ke URL lengkap) | `pdf_engine.py`, `pdf_service.py` |
+| Pelacak SO di meja Admin Sample | menampilkan SO roll biasa — tak satu pun tahapnya milik Admin Sample | menampilkan **SO sampel** dengan tahap antrean sampel (bayar → teruskan ke gudang → potong → kirim); meja lain tetap tanpa SO sampel | `so_tracker_service.py` |
+| Dua gaya dropdown | ≥ 6 opsi → ikon ⇅, < 6 opsi → ikon ˅ | satu ikon ˅ untuk kedua mode | `components/KNSelect.jsx` |
+| Belum ada pemilih tanggal-jam | `datetime-local`/`date` bawaan peramban (format OS) | `KNDateTimePicker` (kalender + kolom jam) di jadwal konten, duplikasi konten, jadwal jemput retur; `KNDatePicker` di kampanye, tampil-sampai varian, tanggal balik jurnal, berlaku-mulai harga internal, tanggal kirim/ambil koreksi SO, tanggal keputusan pelanggan OD. Isian tanggal di HP sengaja tetap pemilih bawaan HP | 9 berkas (lihat diff) |
+| Dua tab-bar kembar di Barang Masuk | tab layar + filter status sama-sama `tab-bar` | filter status berbentuk chip di baris pencarian | `wms/grn/GoodsReceiptsView.jsx` |
+
+**Bukti lanjutan**
+* `tests/test_uat24_lanjutan.py` **9/9 lulus** (DB uji `kn_test_trial`): backorder tanpa gudang sekali; total ATP papan =
+  ATP detail; transaksi tanpa rekening ikut rekening tunggal (dan tidak ditebak bila ada 2 rekening sejenis);
+  `qty_by_unit` tiap baris = qty; Bulan Ini ≥ Hari Ini; tanpa akun teknis di KPI & tren; label status PDF; pratinjau
+  PDF tanpa kode status mentah & tanpa `/jejak-dokumen/` di teks; pelacak meja Admin Sample hanya SO sampel.
+* Regresi backend 55 berkas uji yang menyentuh modul terkait: 517 lulus, 137 gagal, 109 error. Ke-137 kegagalan
+  dijalankan ulang pada **baseline `7f814b7`** (salinan `backend` HEAD, kontainer & DB uji sama): 129 gagal + 6 error
+  setup yang sama → sudah ada sebelum perubahan ini (data seed lama, mis. kas kecil 9.750.000, desainer "Dewi Lestari").
+  2 sisanya: penomoran 40 permintaan serentak lulus saat diulang (berubah-ubah); `test_l04_mdq_cut::test_cleanup` lulus
+  bila dijalankan sendiri di baseline & kode baru (gagal hanya karena urutan loop event saat digabung). 2 kegagalan
+  `test_review_iter91_trace_print` sama persis di baseline.
+* Jest penuh **37 suite / 156 uji lulus**; ESLint 0 error di 14 berkas FE yang berubah (7 peringatan lama).
+* Diperiksa langsung di UAT (`kn_uat_23okt`): Beranda (Bulan Ini Rp 79.607.724, Hari Ini Rp 0), Profitabilitas per
+  pelanggan "51,17 kg · 238,99 yard", Barang Masuk (chip status), pemilih tanggal-jam di form konten Marketing.
+
+**Masih terbuka**
+* Kerangka halaman (judul/kartu) yang berbeda-beda di beberapa layar keuangan & marketing; form induk produk ±3000 px;
+  form inline → FormModal di beberapa master; 6 lapis filter R&D — pekerjaan tata letak besar, belum disentuh.
+* Isian tanggal OCR/GRN (`grn-dn-date`, `ocr-sample-date`) dan filter tanggal ringkas R&D (`DateQuickNav`) masih
+  `type="date"` (lebar kolom & penanda koreksi OCR bergantung pada elemen input).
+* Data uji di DB UAT ("test — SORD…", data uji UAT sebelumnya) — **menunggu izin pemilik** sebelum dihapus.
+* P16-K1 dan kandidat duplikasi — menunggu keputusan pemilik (lihat di atas).
