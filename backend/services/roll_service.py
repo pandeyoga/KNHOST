@@ -314,7 +314,8 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
     incoming = on_order + buckets["in_transit_inbound_qty"]
     # KN-D11 — ATP memakai rumus tunggal atp_policy: available + incoming(horizon) − backorder aktif.
     from services import atp_policy as _atp
-    pending_demand = await _atp.pending_backorder_qty(product_id, owner_entity_id, warehouse_id)
+    # Backorder tanpa gudang tidak dikurangkan di tiap gudang (dihitung sekali di tingkat produk × PT).
+    pending_demand = await _atp.pending_backorder_qty(product_id, owner_entity_id, warehouse_id, include_unassigned=False)
     atp = _atp.compute_atp(buckets["available_qty"], incoming, pending_demand)
     # F2 (UoM SSOT) — jumlah roll fisik di gudang & roll yang tersedia dijual
     on_hand_roll_count = sum(roll_counts[b] for b in PHYSICAL_STATUS_TO_BUCKET.values())

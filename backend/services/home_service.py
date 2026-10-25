@@ -31,6 +31,12 @@ def _today_range() -> Dict[str, str]:
     return {"$gte": wib_midnight_utc(d), "$lt": wib_midnight_utc(d + timedelta(days=1))}
 
 
+def _month_range() -> Dict[str, str]:
+    d = now_wib().date().replace(day=1)
+    nxt = (d.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return {"$gte": wib_midnight_utc(d), "$lt": wib_midnight_utc(nxt)}
+
+
 def _month_progress() -> tuple:
     now = now_wib()
     return now.day, monthrange(now.year, now.month)[1]
@@ -354,20 +360,26 @@ async def admin_home(entity_id: Optional[str] = None,
     period = _current_month()
     board = await sf.leaderboard(period, entity_id)
 
-    sales_mtd = round(sum(r["total_sales"] for r in board), 2)
-    collected_mtd = round(sum(r["total_collected"] for r in board), 2)
     ar_total = round(sum(r["ar_outstanding"] for r in board), 2)
     overdue_total = round(sum(r["overdue_amount"] for r in board), 2)
 
-    # Penjualan hari ini
+    # Penjualan hari ini & bulan ini — UAT 24 Okt (audit UI Beranda): keduanya dari populasi SO yang SAMA (semua SO
+    # hidup di entitas). Dulu "Bulan Ini" = jumlah leaderboard (hanya pelanggan yang ber-sales aktif), sehingga SO POS /
+    # pelanggan tanpa sales masuk "Hari Ini" tetapi tidak ke "Bulan Ini" → Bulan Ini bisa lebih kecil dari Hari Ini.
     scope: Dict[str, Any] = {}
     if entity_id and entity_id != "all":
         scope["entity_id"] = entity_id
-    today_orders = await db.sales_orders.find(
-        {**scope, "created_at": _today_range()}, {"_id": 0}
-    ).to_list(4000)
-    live_today = [o for o in today_orders if o.get("status") not in DEAD_STATUSES]
+    live = {"status": {"$nin": list(DEAD_STATUSES)}}
+    month_orders = await db.sales_orders.find(
+        {**scope, **live, "created_at": _month_range()}, {"_id": 0}).to_list(20000)
+    today = _today_range()
+    live_today = [o for o in month_orders if today["$gte"] <= str(o.get("created_at") or "") < today["$lt"]]
     today_sales = round(sum(_order_grand_total(o) for o in live_today), 2)
+    sales_mtd = round(sum(_order_grand_total(o) for o in month_orders), 2)
+    period_paid = await db.sales_orders.find(
+        {**scope, **live, "payments.0": {"$exists": True}}, {"_id": 0, "payments": 1}).to_list(20000)
+    collected_mtd = round(sum(float(p.get("amount") or 0) for o in period_paid for p in (o.get("payments") or [])
+                              if sf._in_period(p.get("created_at") or p.get("date"), period)), 2)
 
     # KPI "Persetujuan Menunggu" di Control Tower memakai antrean NYATA yang sama
     # dengan Beranda Manajer, plus rinciannya supaya bisa diklik ke tempat kerjanya

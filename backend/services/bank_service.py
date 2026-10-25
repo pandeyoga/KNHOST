@@ -48,10 +48,29 @@ def _posted(txn: Dict[str, Any]) -> bool:
     return txn.get("status") != "void"
 
 
+async def sole_account_id(entity_id: str, cash_type: str) -> str:
+    """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas besar-bank), atau "" bila 0 / lebih dari 1."""
+    if not entity_id or cash_type not in CASH_TYPES:
+        return ""
+    accs = [a async for a in db.bank_accounts.find({"entity_id": entity_id, "status": {"$ne": "inactive"}},
+                                                    {"_id": 0, "id": 1, "cash_type": 1, "account_type": 1})]
+    ids = [a["id"] for a in accs if account_cash_type(a) == cash_type]
+    return ids[0] if len(ids) == 1 else ""
+
+
 async def _txns_for(account_id: str) -> List[Dict[str, Any]]:
-    return await db.cash_transactions.find(
-        {"account_id": account_id, "status": {"$ne": "void"}}, {"_id": 0}
-    ).sort("txn_date", -1).to_list(None)   # W2-021 — saldo rekening dari SELURUH mutasi (dulu cap 5.000)
+    """Mutasi rekening. UAT 24 Okt (audit UI 060↔061) — transaksi kas TANPA rekening (kas manual lama, kwitansi,
+    refund) dulu tidak masuk saldo rekening mana pun sehingga saldo rekening ≠ ringkasan kas. Bila rekening ini
+    satu-satunya rekening PT untuk jenis kasnya, transaksi tanpa rekening milik PT & jenis kas itu ikut dihitung."""
+    acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "id": 1, "entity_id": 1, "cash_type": 1,
+                                                                "account_type": 1}) or {}
+    q: Dict[str, Any] = {"account_id": account_id, "status": {"$ne": "void"}}
+    ct = account_cash_type(acc) if acc else ""
+    if acc and await sole_account_id(acc.get("entity_id") or "", ct) == account_id:
+        q = {"status": {"$ne": "void"}, "$or": [
+            {"account_id": account_id},
+            {"account_id": {"$in": [None, ""]}, "entity_id": acc.get("entity_id"), "cash_type": ct}]}
+    return await db.cash_transactions.find(q, {"_id": 0}).sort("txn_date", -1).to_list(None)   # W2-021 — SELURUH mutasi
 
 
 def _balance(opening: float, txns: List[Dict[str, Any]], reconciled_only: bool = False) -> float:

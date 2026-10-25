@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { overlayDismiss } from "../../utils/overlayDismiss";
 import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import { OverrideLinesEditor } from "./OverrideLinesEditor";
 
 const num = (v) => (v === "" || v == null ? null : Number(v));
@@ -85,8 +86,8 @@ export default function SalesOrderOverrideDialog({ order, onClose, onDone }) {
               <div>
                 <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">{hv("fulfillment_method") === "ambil" ? "Tanggal ambil" : "Tanggal kirim (opsional)"}</label>
                 {hv("fulfillment_method") === "ambil"
-                  ? <input type="date" data-testid="override-pickup-date" className="field" value={hv("pickup_date")} onChange={(e) => setH("pickup_date", e.target.value)} />
-                  : <input type="date" data-testid="override-delivery-date" className="field" value={hv("delivery_date")} onChange={(e) => setH("delivery_date", e.target.value)} />}
+                  ? <KNDatePicker data-testid="override-pickup-date" value={hv("pickup_date")} onChange={(v) => setH("pickup_date", v)} />
+                  : <KNDatePicker data-testid="override-delivery-date" value={hv("delivery_date")} onChange={(v) => setH("delivery_date", v)} />}
               </div>
               <textarea data-testid="override-notes" className="field sm:col-span-2" rows={2} placeholder="Catatan pesanan" value={hv("notes")} onChange={(e) => setH("notes", e.target.value)} />
             </div>

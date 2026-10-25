@@ -17,7 +17,7 @@ DESK_ROLES = {
     "sales_admin": {"sales_admin"}, "finance": {"finance"}, "md": {"md"},
     "warehouse_admin": {"warehouse_admin", "warehouse"}, "sample_admin": {"sample_admin"},
 }
-ROLE_LABEL = {"sales": "Sales", "sales_admin": "Admin Sales", "manager": "Manager", "finance": "Finance",
+ROLE_LABEL = {"sales": "Sales", "sales_admin": "Admin Sales", "sample_admin": "Admin Sample", "manager": "Manager", "finance": "Finance",
               "warehouse_admin": "Admin Gudang", "warehouse": "Staf Gudang", "logistics": "Logistik",
               "admin": "Admin", "director": "Direktur", "owner": "Pemilik"}
 
@@ -65,6 +65,24 @@ def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[
             "action": "Catat POD"}
 
 
+def sample_next_step(o: Dict[str, Any]) -> Dict[str, Any]:
+    """UAT 24 Okt (audit UI meja Admin Sample) — tahap SO sampel mengikuti antrean `/sample-orders/desk`
+    (bayar → teruskan ke gudang → potong → kirim), bukan alur SO roll biasa."""
+    st = o.get("status") or ""
+    if st in ("draft", "pending", ""):
+        return {"step": "Dilengkapi & diajukan", "roles": ["sales"], "action": "Buka SO"}
+    if o.get("sample_payment_status") == "reapproval_required":
+        return {"step": "Persetujuan ULANG bayar sample (tagihan berubah sesudah potong)", "roles": ["sample_admin", "finance"],
+                "action": "Setujui Bayar"}
+    if st == "waiting_approval":
+        return {"step": "Persetujuan pembayaran sample", "roles": ["sample_admin", "finance"], "action": "Setujui Bayar"}
+    if st in ("approved", "reserved"):
+        return {"step": "Diteruskan ke gudang untuk dipotong", "roles": ["sample_admin"], "action": "Teruskan ke Gudang"}
+    if st in ("confirmed", "partially_picked", "picked", "packing", "packed"):
+        return {"step": "Dipotong dari roll & disiapkan gudang", "roles": ["warehouse_admin", "warehouse"], "action": "Pantau"}
+    return {"step": "Sampai ke pelanggan (bukti terima)", "roles": ["logistics", "warehouse_admin"], "action": "Pantau"}
+
+
 def _age(ts: str, now: datetime) -> int:
     try:
         dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
@@ -77,16 +95,19 @@ def _age(ts: str, now: datetime) -> int:
 async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) -> Dict[str, Any]:
     roles: Set[str] = DESK_ROLES.get(desk) or {actor.get("role") or ""}
     now = datetime.now(timezone.utc)
-    q = {**scope, "status": {"$nin": CLOSED}, "is_sample": {"$ne": True}}
+    sample_desk = desk == "sample_admin"
+    # Meja Admin Sample melacak SO SAMPEL (dulu: SO roll biasa yang tak satu pun tahapnya milik Admin Sample).
+    q = {**scope, "status": {"$nin": CLOSED}, "is_sample": True if sample_desk else {"$ne": True}}
     proj = {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1, "sales_name": 1,
             "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1,
-            "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1}
+            "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1,
+            "sample_payment_status": 1}
     rows: List[Dict[str, Any]] = []
     orders = await db.sales_orders.find(q, proj).to_list(5000)
     from services import dispatch_payment_gate as _gate
     holds = await _gate.holds_for_orders(o["id"] for o in orders if o.get("status") in SHIP_STAGES)
     for o in orders:
-        ns = next_step(o, holds.get(o["id"]))
+        ns = sample_next_step(o) if sample_desk else next_step(o, holds.get(o["id"]))
         upd = o.get("updated_at") or o.get("created_at") or ""
         rows.append({
             "id": o["id"], "number": o.get("order_number") or o.get("number") or o["id"],

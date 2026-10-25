@@ -19,7 +19,7 @@
  * mengirim "" ke parent seperti biasa.
  */
 import React, { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -93,7 +93,9 @@ function KNCombobox({ value, onValueChange, options, className, placeholder, dis
           >
             {selected ? (selected.render || selected.label) : placeholder}
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          {/* UAT 24 Okt (audit UI) — ikon sama dengan jalur Radix: pengguna dulu melihat dua gaya dropdown yang
+              berbeda hanya karena jumlah opsinya ≥ / < SEARCH_THRESHOLD. */}
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
       <PopoverContent

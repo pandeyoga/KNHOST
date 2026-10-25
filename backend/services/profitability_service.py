@@ -38,13 +38,14 @@ def _date_filter(start: Optional[str], end: Optional[str]) -> Dict[str, str]:
 
 def _new_acc() -> Dict[str, Any]:
     return {**{d: {} for d in DIMS}, "monthly": {}, "orders": set(),
-            "rev": 0.0, "base": 0.0, "landed": 0.0, "qty": 0.0}
+            "rev": 0.0, "base": 0.0, "landed": 0.0, "qty": 0.0, "qty_by_unit": {}}
 
 
 def _bump(bucket: Dict[str, Dict[str, Any]], key: str, name: str, r: Dict[str, Any]) -> None:
     row = bucket.setdefault(key, {"key": key, "name": name, "revenue": 0.0, "cogs_base": 0.0,
-                                  "cogs_landed": 0.0, "qty": 0.0, "orders": set()})
+                                  "cogs_landed": 0.0, "qty": 0.0, "qty_by_unit": {}, "orders": set()})
     row["revenue"] += r["revenue"]
+    row["qty_by_unit"][r["unit"]] = row["qty_by_unit"].get(r["unit"], 0.0) + r["qty"]
     row["cogs_base"] += r["cogs_base"]
     row["cogs_landed"] += r["cogs_landed"]
     row["qty"] += r["qty"]
@@ -66,6 +67,7 @@ def _add(acc: Dict[str, Any], r: Dict[str, Any]) -> None:
     acc["base"] += r["cogs_base"]
     acc["landed"] += r["cogs_landed"]
     acc["qty"] += r["qty"]
+    acc["qty_by_unit"][r["unit"]] = acc["qty_by_unit"].get(r["unit"], 0.0) + r["qty"]
     acc["orders"].add(r["oid"])
 
 
@@ -78,6 +80,7 @@ def _finalize(bucket: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
         out.append({"key": row["key"], "name": row["name"], "revenue": rev, "cogs_base": cb,
                     "cogs_landed": cl, "cogs": cogs, "landed_included": cl > EPS, "margin": margin,
                     "margin_pct": _pct(margin, rev), "qty": round(row["qty"], 2),
+                    "qty_by_unit": {u: round(q, 2) for u, q in row["qty_by_unit"].items()},
                     "orders": len(row["orders"])})
     out.sort(key=lambda r: r["margin"], reverse=True)
     return out
@@ -102,7 +105,9 @@ def _totals(acc: Dict[str, Any]) -> Dict[str, Any]:
     gross = round(rev - cogs, 2)
     return {"revenue": rev, "cogs_base": base, "cogs_landed": landed, "cogs": cogs,
             "landed_included": landed > EPS, "margin": gross, "margin_pct": _pct(gross, rev),
-            "qty": round(acc["qty"], 2), "orders": len(acc["orders"])}
+            "qty": round(acc["qty"], 2), "orders": len(acc["orders"]),
+            # UAT 24 Okt (audit UI 072) — `qty` menjumlah satuan dasar berbeda (yard + kg); tampilan memakai per satuan.
+            "qty_by_unit": {u: round(q, 2) for u, q in acc["qty_by_unit"].items()}}
 
 
 def _order_net_alloc(o: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[float]]:
@@ -165,7 +170,8 @@ class _Ctx:
                 "sales_key": o.get("assigned_sales_id") or cust.get("assigned_sales_id") or sales_name,
                 "sales_name": sales_name, "pid": pid, "pname": it.get("product_name") or pid,
                 "cat": it.get("category") or "(Tanpa Kategori)", "revenue": revenue,
-                "cogs_base": cb, "cogs_landed": cl, "qty": qty, "date": date}
+                "cogs_base": cb, "cogs_landed": cl, "qty": qty, "date": date,
+                "unit": it.get("base_unit") or it.get("unit") or "meter"}
 
 
 async def _order_rows(ctx: _Ctx, o: Dict[str, Any], date: str):

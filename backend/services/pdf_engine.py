@@ -175,7 +175,7 @@ MASTER_TEMPLATE = r"""
         <div class="ttl">Referensi Dokumen</div>
         <div class="nums">Merujuk: {{ doc.refs_block.text }}{% if doc.refs_block.hidden %} <span class="rel">+{{ doc.refs_block.hidden }} lainnya</span>{% endif %}</div>
         <div class="rel">{% for it in doc.refs_block['items'] %}{{ it.rel_label }} {{ it.label }} <b>{{ it.number }}</b>{% if not loop.last %} · {% endif %}{% endfor %}</div>
-        {% if doc.refs_block.qr_src %}<div class="hint">Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).{% if doc.refs_block.trace_url %} Atau buka: {{ doc.refs_block.trace_url }}{% endif %}</div>{% endif %}
+        {% if doc.refs_block.qr_src %}<div class="hint">Scan QR untuk membuka Jejak Dokumen (seluruh rantai surat terkait).{% if doc.refs_block.trace_host %} Atau buka {{ doc.refs_block.trace_host }} › Jejak Dokumen, cari nomor {{ doc.number }}.{% endif %}</div>{% endif %}
       </div>
     </div>
     {% endif %}
@@ -272,8 +272,59 @@ _env = Environment(loader=BaseLoader(), autoescape=select_autoescape(["html", "x
 _tmpl = _env.from_string(MASTER_TEMPLATE)
 
 
+# UAT 24 Okt (audit UI 106 — pratinjau Template PDF) — kode status mentah ("waiting_stock", "unpaid",
+# "settled_by_return") dulu tercetak apa adanya di chip status & baris meta "Status …". Peta ini sejalan dengan
+# `frontend/src/utils/docStatus.js`; kode tak dikenal dirapikan ("some_code" → "Some code").
+PAYMENT_STATUS_LABEL = {
+    "unpaid": "Belum dibayar", "pending": "Belum dibayar", "partial": "Dibayar sebagian",
+    "partially_paid": "Dibayar sebagian", "paid": "Lunas", "overpaid": "Lebih bayar", "overdue": "Lewat tempo",
+    "settled_by_return": "Lunas via retur", "refunded": "Dikembalikan", "void": "Batal",
+}
+DOC_STATUS_LABEL = {
+    "draft": "Draf", "pending": "Menunggu", "pending_approval": "Menunggu persetujuan",
+    "waiting_approval": "Menunggu persetujuan", "approved": "Disetujui", "rejected": "Ditolak",
+    "cancelled": "Dibatalkan", "confirmed": "Terkonfirmasi", "processing": "Diproses",
+    "waiting_stock": "Menunggu stok", "ready_to_ship": "Siap kirim", "picking": "Sedang dipick", "picked": "Sudah dipick",
+    "packed": "Dikemas", "dispatched": "Dikirim", "shipped": "Dikirim", "in_transit": "Dalam perjalanan",
+    "delivered": "Terkirim", "received": "Diterima", "partially_received": "Diterima sebagian",
+    "inspecting": "Sedang diinspeksi", "inspected": "Selesai inspeksi", "in_progress": "Sedang berjalan",
+    "completed": "Selesai", "done": "Selesai", "closed": "Ditutup", "posted": "Diposting", "open": "Terbuka",
+    "sent": "Terkirim", "expired": "Kedaluwarsa",
+}
+
+
+def status_label(code, payment: bool = False) -> str:
+    if code in (None, ""):
+        return ""
+    c = str(code)
+    if payment and c in PAYMENT_STATUS_LABEL:
+        return PAYMENT_STATUS_LABEL[c]
+    if c in DOC_STATUS_LABEL:
+        return DOC_STATUS_LABEL[c]
+    if c in PAYMENT_STATUS_LABEL:
+        return PAYMENT_STATUS_LABEL[c]
+    if "_" in c or c.islower():
+        t = c.replace("_", " ")
+        return t[:1].upper() + t[1:]
+    return c
+
+
+def _label_statuses(doc: dict) -> dict:
+    """Salinan dangkal `doc` dengan status & meta "Status …" berlabel Indonesia (dokumen asli tidak diubah)."""
+    out = dict(doc)
+    if out.get("status"):
+        out["status"] = status_label(out["status"], payment=str(out.get("title") or "").lower().startswith("faktur"))
+    meta = out.get("meta")
+    if isinstance(meta, list):
+        out["meta"] = [({**m, "value": status_label(m.get("value"), payment="bayar" in str(m.get("label") or "").lower())}
+                        if isinstance(m, dict) and str(m.get("label") or "").lower().startswith("status")
+                        and m.get("value") not in (None, "", "-") else m)
+                       for m in meta]
+    return out
+
+
 def render_html(cfg: dict, branding: dict, doc: dict) -> str:
-    return _tmpl.render(cfg=cfg, branding=branding, doc=doc)
+    return _tmpl.render(cfg=cfg, branding=branding, doc=_label_statuses(doc))
 
 
 # ─── Engine PDF (fallback chain) ─────────────────────────────────────────────

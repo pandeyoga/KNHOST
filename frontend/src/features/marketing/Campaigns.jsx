@@ -6,6 +6,7 @@ import CampaignBudgetChart from "./CampaignBudgetChart";
 import FormModal from "../../components/FormModal";
 import { Field } from "../rnd/RndField";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import { SearchBox } from "../../components/ListControls";
 import { mktApi, PLATFORM_STYLE, fmtN, STATUS_STYLE } from "./marketingShared";
 import { can } from "../../config/roles";
@@ -89,8 +90,8 @@ function CampaignForm({ campaign, onClose, onSaved }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Tema"><input className="field w-full" value={f.theme} onChange={(e) => set("theme", e.target.value)} placeholder="Koleksi warna hangat & motif klasik" data-testid="mkt-c-theme" /></Field>
           <Field label="Tujuan"><input className="field w-full" value={f.goal} onChange={(e) => set("goal", e.target.value)} placeholder="+500 pengikut, 50 prospek DM" data-testid="mkt-c-goal" /></Field>
-          <Field label="Mulai"><input type="date" className="field w-full" value={f.start_date} onChange={(e) => set("start_date", e.target.value)} data-testid="mkt-c-start" /></Field>
-          <Field label="Selesai"><input type="date" className="field w-full" value={f.end_date} onChange={(e) => set("end_date", e.target.value)} data-testid="mkt-c-end" /></Field>
+          <Field label="Mulai"><KNDatePicker className="w-full" value={f.start_date} onChange={(v) => set("start_date", v)} data-testid="mkt-c-start" /></Field>
+          <Field label="Selesai"><KNDatePicker className="w-full" value={f.end_date} min={f.start_date || undefined} onChange={(v) => set("end_date", v)} data-testid="mkt-c-end" /></Field>
           <Field label="Anggaran (Rp)"><input type="number" min="0" className="field w-full" value={f.budget} onChange={(e) => set("budget", e.target.value)} data-testid="mkt-c-budget" /></Field>
           <Field label="Status"><KNSelect className="field w-full" value={f.status} onValueChange={(v) => set("status", v)} data-testid="mkt-c-status" options={[{ value: "active", label: "Aktif" }, { value: "archived", label: "Arsip" }]} /></Field>
         </div>

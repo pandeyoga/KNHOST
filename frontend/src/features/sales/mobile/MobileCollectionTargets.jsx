@@ -64,10 +64,15 @@ function Collection({ selectedEntity }) {
   return (
     <div className="space-y-2" data-testid="m-collection">
       <div className="grid grid-cols-3 gap-1.5">
-        <Kpi label="Tagihan" value={formatCurrency(t.ar)} testId="m-collection-total" />
+        <Kpi label="Tagihan ≤ 60 hr" value={formatCurrency(t.ar)} testId="m-collection-total" />
         <Kpi label="Lewat tempo" value={formatCurrency(t.overdue)} tone="text-[#C0392B]" testId="m-collection-overdue" />
         <Kpi label="Perlu diingatkan" value={t.need} tone={t.need ? "text-[#B45309]" : ""} testId="m-collection-need" />
       </div>
+      {/* UAT 24 Okt (audit UI HP) — angka ini sengaja BUKAN total piutang Beranda: daftar tagih hanya memuat pesanan
+          yang sudah ber-Surat Jalan (punya jatuh tempo, keputusan Q-05a) dan jatuh tempo ≤ 60 hari. */}
+      <p className="text-[11px] m-muted" data-testid="m-collection-scope">
+        Hanya pesanan yang sudah dikirim (ber-Surat Jalan) dengan jatuh tempo ≤ 60 hari. Total piutang pelanggan ada di Beranda.
+      </p>
       <div className="flex gap-1.5">
         {[["all", "Semua aktif"], ["overdue", "Lewat tempo"]].map(([k, l]) => (
           <button key={k} onClick={() => setMode(k)} data-testid={`m-collection-mode-${k}`}

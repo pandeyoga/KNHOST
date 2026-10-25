@@ -85,14 +85,15 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
           </div>
         </div>
       ) : (<>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* UAT 24 Okt (audit UI 052) — filter status berbentuk chip, bukan tab-bar kedua yang kembar dengan tab layar
+            di atasnya (dulu terlihat seperti dua baris tab yang sama). */}
+        <div className="flex flex-wrap items-center gap-2" data-testid="grn-filter-bar">
           <SearchBox value={q} onChange={setQ} placeholder="Nomor GRN / SJ / mitra" testId="grn-search" />
-        </div>
-        <div className="tab-bar">
+          <span className="text-[11px] font-semibold text-[#6B6B73]">Status:</span>
           {FILTERS.map(([v, l]) => (
-            <button key={l} data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)}
-              className={`tab-button ${status === v ? "active" : ""}`}>{l}
-              {status === v && rows && <span className="tab-badge">{rows.length}</span>}</button>
+            <button key={l} type="button" data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)} aria-pressed={status === v}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11.5px] font-semibold ${status === v ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:bg-[#F7F8FA]"}`}>{l}
+              {status === v && rows && <span className="rounded-full bg-[#0058CC] px-1.5 text-[10px] text-white">{rows.length}</span>}</button>
           ))}
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">

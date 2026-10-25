@@ -11,6 +11,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint";
 import JournalEntryModal from "./JournalEntryModal";
@@ -384,7 +385,7 @@ function JournalDetailModal({ je, entities = [], selectedEntity, onClose, onVoid
           {revOpen && (
             <div data-testid="gl-reverse-form" className="mt-3 grid gap-2 rounded-lg border border-[#E9D8F5] bg-[#FBF8FE] p-3 text-[12px]">
               <p className="font-bold">Jurnal pembalik (debit ↔ kredit) — tanggal wajib di periode terbuka; jurnal asli tidak diubah.</p>
-              <input data-testid="gl-reverse-date" type="date" className="field" value={revDate} onChange={(e) => setRevDate(e.target.value)} />
+              <KNDatePicker data-testid="gl-reverse-date" clearable={false} value={revDate} onChange={setRevDate} />
               <textarea data-testid="gl-reverse-reason" className="field" rows={2} placeholder="Alasan pembalikan (wajib)"
                 value={revReason} onChange={(e) => setRevReason(e.target.value)} />
               {revErr && <p data-testid="gl-reverse-error" className="text-[#C0392B] font-semibold">{revErr}</p>}

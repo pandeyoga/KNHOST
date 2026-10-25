@@ -7,6 +7,7 @@ import { CheckCircle2, Circle, Loader2, PackageCheck, Truck } from "lucide-react
 import axios, { API } from "../../services/apiClient";
 import { Panel } from "../../components/DetailParts";
 import KNSelect from "../../components/KNSelect";
+import KNDateTimePicker from "../../components/KNDateTimePicker";
 import { apiErrorText } from "../../utils/apiError";
 import { fmtDateTime } from "./ReturnShared";
 
@@ -112,7 +113,7 @@ export default function ReturnShipmentPanel({ ret, canEdit, onChanged }) {
                     <input className="form-input mt-1" value={f.vehicle} onChange={(e) => set({ vehicle: e.target.value })} data-testid="return-shipment-vehicle" />
                   </label>
                   <label className="block text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Jadwal jemput
-                    <input type="datetime-local" className="form-input mt-1" value={f.scheduled_at} onChange={(e) => set({ scheduled_at: e.target.value })}
+                    <KNDateTimePicker className="mt-1 normal-case tracking-normal font-normal" value={f.scheduled_at} onChange={(v) => set({ scheduled_at: v })}
                       data-testid="return-shipment-schedule" />
                   </label>
                 </>}

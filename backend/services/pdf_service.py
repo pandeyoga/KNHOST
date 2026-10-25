@@ -402,6 +402,8 @@ async def attach_document_refs(doc: dict, doc_type: str, source_id: str,
         "items": line["items"],
         "hidden": line.get("hidden", 0),
         "trace_url": trace_url,
+        # UAT 24 Okt (audit UI 106) — teks di kertas: alamat aplikasi + nomor dokumen, bukan URL berisi id internal.
+        "trace_host": public_base.split("://", 1)[-1] if public_base else "",
         "qr_src": qr_data_url(trace_url) if (opts.get("qr") and trace_url) else "",
     }
     return doc

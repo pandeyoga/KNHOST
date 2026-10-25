@@ -2,6 +2,7 @@ import { useState } from "react";
 import { variantLabel } from "../../utils/variants";
 import { Save } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import DecimalInput from "../../components/DecimalInput";
 import { CatalogDialog } from "./CatalogDialog";
 import { catalogApi, catalogError } from "./catalogApi";
@@ -43,7 +44,7 @@ export const VariantEditor = ({ product, template, onClose, onSaved }) => {
         <label className="flex items-center gap-2 text-xs font-semibold sm:col-span-4"><input type="checkbox" checked={feat.on} onChange={e => setFeat(x => ({ ...x, on: e.target.checked }))} data-testid="variant-featured-on" /> Produk Unggulan di POS &amp; katalog HP (push)</label>
         {feat.on && (<>
           <label className="text-xs font-semibold">Urutan<input type="number" min="0" className="field mt-1" value={feat.rank} onChange={e => setFeat(x => ({ ...x, rank: e.target.value }))} data-testid="variant-featured-rank" /></label>
-          <label className="text-xs font-semibold">Tampil sampai<input type="date" className="field mt-1" value={feat.until} onChange={e => setFeat(x => ({ ...x, until: e.target.value }))} data-testid="variant-featured-until" /></label>
+          <label className="text-xs font-semibold">Tampil sampai<KNDatePicker className="mt-1 font-normal" value={feat.until} onChange={(v) => setFeat((x) => ({ ...x, until: v }))} data-testid="variant-featured-until" /></label>
           <label className="text-xs font-semibold sm:col-span-2">Label singkat<input className="field mt-1" maxLength={40} value={feat.note} placeholder="mis. Promo Lebaran" onChange={e => setFeat(x => ({ ...x, note: e.target.value }))} data-testid="variant-featured-note" /></label>
         </>)}
       </div>

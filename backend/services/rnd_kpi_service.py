@@ -382,6 +382,9 @@ async def designer_kpi(query: Optional[Dict[str, Any]] = None, *, period: str = 
             row.pop("score_sum"); row.pop("score_n"); row.pop("days_sum"); row.pop("days_n")
             row.pop("on_time"); row.pop("cost")
             items.append(row)
+    # UAT 24 Okt (audit UI 042/047/048) — akun teknis (seed/sistem/penjadwal) bukan desainer: tidak ikut peringkat,
+    # jumlah desainer, maupun rata-rata (dulu "system-seed" tampil di Desainer Teratas & menambah hitungan).
+    items = [r for r in items if _norm(r["designer"]) not in TECH_ACTORS]
     name_count: Dict[str, int] = {}
     for row in items:
         name_count[_norm(row["designer"])] = name_count.get(_norm(row["designer"]), 0) + 1
@@ -471,6 +474,10 @@ def _summary(items: List[Dict[str, Any]]) -> Dict[str, Any]:
 #  posisi peringkat — TIDAK PERNAH nama atau nilai rekan. Karena itu penyaringan
 #  dilakukan di SERVER, bukan disembunyikan di layar.
 # ═════════════════════════════════════════════════════════════════════════════
+#: Nama pelaku teknis (sama dengan `frontend/src/utils/actorLabel.js`).
+TECH_ACTORS = {"system-seed", "seed", "seed-script", "system", "sistem", "scheduler", "cron"}
+
+
 def _norm(name: str) -> str:
     return " ".join(str(name or "").strip().lower().split())
 
@@ -679,6 +686,7 @@ async def designer_kpi_trend(query: Optional[Dict[str, Any]] = None, *, months: 
                        "rounds": total_rounds,
                        "avg": round(sum(vals) / len(vals), 1) if vals else None})
 
+    series = [r for r in series if _norm(r["designer"]) not in TECH_ACTORS]   # UAT 24 Okt — akun teknis bukan desainer
     series.sort(key=lambda r: (r["avg"] is None, -(r["avg"] or 0), str(r["designer"])))
     return {
         "months": keys,
@@ -752,6 +760,7 @@ async def design_score_trend(query: Optional[Dict[str, Any]] = None, *, months: 
         series.append({"designer": who, "points": points, "versions": total_versions,
                        "avg": round(sum(vals) / len(vals), 2)})
 
+    series = [r for r in series if _norm(r["designer"]) not in TECH_ACTORS]
     series.sort(key=lambda r: (r["avg"] is None, -(r["avg"] or 0), str(r["designer"])))
     return {
         "months": keys,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ErrorNotice from "../../components/ErrorNotice";
+import KNDatePicker from "../../components/KNDatePicker";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk } from "./internalPriceApi";
@@ -38,8 +39,8 @@ export default function InternalPriceModal({ target, onClose, onSaved }) {
               value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" autoFocus />
           </label>
           <label className="block text-[11px] font-semibold text-[#3C3C43]">Berlaku mulai
-            <input data-testid="internal-price-valid-from" type="date" className="field mt-1 w-full"
-              value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+            <KNDatePicker data-testid="internal-price-valid-from" className="mt-1 w-full font-normal" clearable={false}
+              value={validFrom} onChange={setValidFrom} />
           </label>
           {value > 0 && <p className="text-[11px] text-[#6B6B73]" data-testid="internal-price-preview">Tersimpan sebagai kontrak internal aktif: {formatCurrency(value)} / {target.unit || "satuan"}.</p>}
         </div>

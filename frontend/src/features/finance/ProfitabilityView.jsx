@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import { formatUnitTotals } from "../../utils/qtyByUnit";
 import {
   FC, NOW, ymd, compactIDR, entityParam, chartTooltip, fmtPct, saveBlob,
   KpiCard, Panel, EmptyState, formatCurrency,
@@ -154,7 +155,7 @@ export default function ProfitabilityView({ selectedEntity }) {
                     <th className="px-3 py-2 text-right">Total HPP</th>
                     <th className="px-3 py-2 text-right">Marjin</th>
                     <th className="px-3 py-2 text-right">Marjin %</th>
-                    <th className="px-3 py-2 text-right" title="Jumlah barang dalam satuan asli produk (kg / yard). Baris kategori/pelanggan/sales bisa mencampur satuan.">Qty (satuan produk)</th>
+                    <th className="px-3 py-2 text-right" title="Jumlah barang per satuan dasar produk (kg / yard) — satuan berbeda tidak dijumlah.">Qty (satuan produk)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,7 +176,7 @@ export default function ProfitabilityView({ selectedEntity }) {
                       <td className="px-3 py-2 text-right tabular-nums">
                         <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-bold ${(r.margin_pct ?? 0) >= 20 ? "bg-[#EAF6EF] text-[#1B7F4B]" : (r.margin_pct ?? 0) >= 0 ? "bg-[#FBF3E5] text-[#C77700]" : "bg-[#FDECEC] text-[#C0392B]"}`}>{fmtPct(r.margin_pct)}</span>
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]">{Number(r.qty || 0).toLocaleString("id-ID")}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73] whitespace-nowrap" data-testid={`prof-qty-${r.key}`}>{formatUnitTotals(r.qty_by_unit, r.qty)}</td>
                     </tr>
                   ))}
                 </tbody>

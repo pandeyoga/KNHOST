@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Check, Loader2, RotateCcw, Upload, UserCheck, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import KNDatePicker from "../../components/KNDatePicker";
 import AttachmentGallery from "../../components/AttachmentThumb";   // UAT 24 Okt (P17)
 import { fmtDate } from "./SpecialOrderShared";
 import { formatDate, todayWib } from "../../utils/formatters";
@@ -98,7 +99,7 @@ export default function SpecialOrderCustomerApprovalPanel({ order, canEdit, onUp
         <div className="mt-2 grid gap-2 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] p-2.5" data-testid="od-customer-form">
           <p className="text-[11px] font-bold">Catat keputusan pelanggan: <span className={`rounded-full border px-2 py-px ${DEC[mode].cls}`}>{DEC[mode].label}</span></p>
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="text-[10.5px] font-semibold text-[#6B6B73]">Tanggal keputusan<input type="date" className="input mt-0.5 w-full" value={date} onChange={(e) => setDate(e.target.value)} data-testid="od-customer-date" /></label>
+            <label className="text-[10.5px] font-semibold text-[#6B6B73]">Tanggal keputusan<KNDatePicker className="mt-0.5 w-full font-normal" clearable={false} value={date} onChange={setDate} data-testid="od-customer-date" /></label>
             <label className="text-[10.5px] font-semibold text-[#6B6B73]">Nama kontak pelanggan<input className="input mt-0.5 w-full" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="mis. Ibu Rina (purchasing)" data-testid="od-customer-contact" /></label>
           </div>
           <label className="text-[10.5px] font-semibold text-[#6B6B73]">Catatan {mode !== "acc" && <span className="text-[#C0392B]">*wajib</span>}

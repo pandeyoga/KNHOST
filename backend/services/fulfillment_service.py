@@ -140,7 +140,7 @@ async def build_supply_index(
         for eid, ent in ents.items():
             pending_ent = await _atp.pending_backorder_qty(pid, eid)
             for wid, wh in ent["warehouses"].items():
-                pending_wh = await _atp.pending_backorder_qty(pid, eid, wid)
+                pending_wh = await _atp.pending_backorder_qty(pid, eid, wid, include_unassigned=False)
                 wh["pending_demand"] = pending_wh
                 wh["atp"] = _atp.compute_atp(wh["available"], wh["incoming"], pending_wh)
                 for k in ("available", "reserved", "on_hand", "incoming"):

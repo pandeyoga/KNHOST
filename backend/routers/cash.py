@@ -167,6 +167,9 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    if not doc["account_id"]:   # UAT 24 Okt — rekening tunggal PT untuk jenis kas ini dipakai otomatis
+        from services.bank_service import sole_account_id
+        doc["account_id"] = await sole_account_id(entity_id, doc["cash_type"])
     await db.cash_transactions.insert_one(doc)
     # FN-07 — kas manual + jurnal = satu operasi: jurnal gagal → kas dibatalkan (tanpa kas yatim GL).
     try:

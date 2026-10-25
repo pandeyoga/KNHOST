@@ -44,8 +44,12 @@ def within_horizon(eta: Optional[str], now: Optional[datetime] = None,
 
 
 async def pending_backorder_qty(product_id: str, owner_entity_id: str,
-                                warehouse_id: Optional[str] = None) -> float:
-    """Σ backorder aktif product×entitas (opsional ×gudang) dalam satuan dasar."""
+                                warehouse_id: Optional[str] = None, *, include_unassigned: bool = True) -> float:
+    """Σ backorder aktif product×entitas (opsional ×gudang) dalam satuan dasar.
+
+    UAT 24 Okt (audit UI 057 vs 058) — backorder TANPA gudang dulu ikut dikurangkan di SETIAP gudang, sehingga
+    penjumlahan ATP per gudang mengurangkannya berkali-kali (−180 vs −120). ATP per gudang memakai
+    `include_unassigned=False`; backorder tanpa gudang dikurangkan SEKALI di tingkat produk × PT."""
     q: Dict[str, Any] = {"has_backorder": True, "backorders.product_id": product_id,
                          "status": {"$in": ACTIVE_BACKORDER_STATUSES}}
     if owner_entity_id:
@@ -55,10 +59,38 @@ async def pending_backorder_qty(product_id: str, owner_entity_id: str,
         for bo in so.get("backorders", []) or []:
             if bo.get("product_id") != product_id or bo.get("status") == "fulfilled":
                 continue
-            if warehouse_id and (bo.get("warehouse_id") or so.get("warehouse_id")) not in (None, "", warehouse_id):
+            bo_wh = bo.get("warehouse_id") or so.get("warehouse_id") or ""
+            if warehouse_id and bo_wh not in ("", warehouse_id):
+                continue
+            if warehouse_id and not include_unassigned and not bo_wh:
                 continue
             total += float(bo.get("backorder_qty", 0) or 0)
     return round(total, 2)
+
+
+async def backorder_map(product_ids: Optional[Iterable[str]] = None) -> Dict[tuple, Dict[str, Any]]:
+    """Satu kali baca: (product_id, entity_id) → {"total", "unassigned", "by_wh": {gudang: qty}} — backorder aktif."""
+    q: Dict[str, Any] = {"has_backorder": True, "status": {"$in": ACTIVE_BACKORDER_STATUSES}}
+    ids = [p for p in (product_ids or []) if p]
+    if ids:
+        q["backorders.product_id"] = {"$in": ids}
+    out: Dict[tuple, Dict[str, Any]] = {}
+    async for so in db.sales_orders.find(q, {"_id": 0, "backorders": 1, "warehouse_id": 1, "entity_id": 1}):
+        for bo in so.get("backorders", []) or []:
+            pid = bo.get("product_id")
+            if not pid or bo.get("status") == "fulfilled" or (ids and pid not in ids):
+                continue
+            qty = float(bo.get("backorder_qty", 0) or 0)
+            if qty <= 0:
+                continue
+            rec = out.setdefault((pid, so.get("entity_id") or ""), {"total": 0.0, "unassigned": 0.0, "by_wh": {}})
+            rec["total"] = round(rec["total"] + qty, 2)
+            wh = bo.get("warehouse_id") or so.get("warehouse_id") or ""
+            if wh:
+                rec["by_wh"][wh] = round(rec["by_wh"].get(wh, 0.0) + qty, 2)
+            else:
+                rec["unassigned"] = round(rec["unassigned"] + qty, 2)
+    return out
 
 
 def sum_incoming_in_horizon(rows: Iterable[Dict[str, Any]], horizon_days: int = ATP_HORIZON_DAYS) -> float:

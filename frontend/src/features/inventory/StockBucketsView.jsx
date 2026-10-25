@@ -123,7 +123,7 @@ export default function StockBucketsView({ entities = [], currentUser }) {
         <Kpi testId="sb-kpi-wip" label="WIP (Proses)" value={<UnitLines byUnit={totals.wip_qty} />} icon={Hammer} tone="text-[#6B2FB3]" />
         {/* Audit UI 057 vs 058 — ATP di sini = jumlah ATP PER GUDANG (proyeksi saldo); angka resmi per produk ada di
             "Status Stok & ATP". Selisih keduanya berasal dari server (lihat laporan audit UI), jadi labelnya dibedakan. */}
-        <Kpi testId="sb-kpi-atp" label="ATP per Gudang (Σ)" title="Jumlah ATP tiap gudang. ATP resmi per produk: Status Stok & ATP." value={<UnitLines byUnit={totals.atp_qty} />} icon={Layers} tone="text-[#0058CC]" />
+        <Kpi testId="sb-kpi-atp" label="ATP" title="ATP = tersedia + barang masuk (≤ 14 hari) − backorder aktif, dihitung per produk × PT (backorder tanpa gudang dikurangkan sekali) — sama dengan Status Stok & ATP." value={<UnitLines byUnit={totals.atp_qty} />} icon={Layers} tone="text-[#0058CC]" />
         <Kpi testId="sb-kpi-pending" label="SO Menunggu (sisa)" value={<UnitLines byUnit={totals.pending_qty} />} icon={PackageSearch} tone="text-[#C0392B]" />
       </div>
 

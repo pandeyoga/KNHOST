@@ -324,6 +324,25 @@ async def bucket_board(scope: Dict[str, Any], product_id: Optional[str] = None) 
         grp["warehouses"].append(row)
         for f in all_fields:
             grp["totals"][f] = round(grp["totals"][f] + row[f], 2)
+    # UAT 24 Okt (audit UI 057 vs 058) — ATP dihitung SEGAR dengan rumus tunggal atp_policy: per gudang dikurangi
+    # backorder gudang itu; total produk dikurangi SELURUH backorder aktif per PT sekali (bukan Σ ATP gudang yang
+    # mengurangkan backorder tanpa gudang berkali-kali dan bisa basi).
+    from services import atp_policy as _atp
+    bmap = await _atp.backorder_map(list(by_product))
+    for grp in by_product.values():
+        owners = {}
+        for row in grp["warehouses"]:
+            rec = bmap.get((grp["product_id"], row.get("owner_entity_id") or ""), {})
+            row["pending_demand_qty"] = round(float((rec.get("by_wh") or {}).get(row.get("warehouse_id") or "", 0)), 2)
+            row["atp_qty"] = _atp.compute_atp(row["available_qty"], row["incoming_qty"], row["pending_demand_qty"])
+            o = owners.setdefault(row.get("owner_entity_id") or "", {"available": 0.0, "incoming": 0.0})
+            o["available"] += row["available_qty"]
+            o["incoming"] += row["incoming_qty"]
+        grp["totals"]["atp_qty"] = round(sum(
+            _atp.compute_atp(o["available"], o["incoming"], float((bmap.get((grp["product_id"], eid)) or {}).get("total", 0)))
+            for eid, o in owners.items()), 2)
+        grp["totals"]["pending_demand_qty"] = round(sum(
+            float((bmap.get((grp["product_id"], eid)) or {}).get("total", 0)) for eid in owners), 2)
     out = list(by_product.values())
     out.sort(key=lambda x: x["product_name"])
     return out
