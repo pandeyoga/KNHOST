@@ -5,7 +5,7 @@
  * setelah mutasi agar form produk (AdminView) refresh opsi dropdown.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Save, Trash2, Pencil, Plus, RefreshCw, Tag, XCircle } from "lucide-react";
+import { Save, Power, Pencil, Plus, RefreshCw, Tag, XCircle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -107,7 +107,7 @@ export default function CategoryManager({ onChanged }) {
         <div className="section-head">
           <div className="flex items-center gap-2">
             <Tag size={15} className="text-[#6B219A]" />
-            <h2>{editingId ? "Edit Kategori" : "Kategori Baru"}</h2>
+            <h2>{editingId ? "Ubah Kategori" : "Kategori Baru"}</h2>
           </div>
           {editingId && (
             <button data-testid="category-cancel-edit-button" className="icon-button ml-auto" onClick={resetForm} aria-label="Batal ubah">
@@ -203,8 +203,9 @@ export default function CategoryManager({ onChanged }) {
                     <button className="icon-button shrink-0" onClick={() => startEdit(row)} aria-label={`Ubah ${row.name}`}>
                       <Pencil size={13} />
                     </button>
-                    <button className="icon-button shrink-0" onClick={() => remove(row)} aria-label={`Nonaktifkan ${row.name}`}>
-                      <Trash2 size={13} className="text-[#D14343]" />
+                    <button className="icon-button shrink-0" onClick={() => remove(row)} aria-label={`Nonaktifkan ${row.name}`} title="Nonaktifkan">
+                      {/* G4-17 — ikon ⏻ (nonaktifkan) seperti master lain; tempat sampah = hapus. */}
+                      <Power size={13} className="text-[#D14343]" />
                     </button>
                   </div>
                 ))}
@@ -239,7 +240,8 @@ export default function CategoryManager({ onChanged }) {
                               <Pencil size={13} />
                             </button>
                             <button data-testid={`category-delete-${row.id}`} className="icon-button" onClick={() => remove(row)} aria-label={`Nonaktifkan ${row.name}`} title="Nonaktifkan">
-                              <Trash2 size={13} className="text-[#D14343]" />
+                              {/* G4-17 — ikon ⏻ (nonaktifkan) seperti master lain; tempat sampah = hapus. */}
+                      <Power size={13} className="text-[#D14343]" />
                             </button>
                           </div>
                         </td>

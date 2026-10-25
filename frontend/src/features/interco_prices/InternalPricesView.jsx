@@ -11,21 +11,26 @@ export const entitiesFromSummary = (summary) => {
   return [...m.entries()].map(([id, name]) => ({ id, name }));
 };
 
-/** Ringkasan "barang ber-stok tanpa harga internal" per pasangan PT (dua arah). */
+/** Ringkasan "barang ber-stok tanpa harga internal" per pasangan PT (dua arah).
+ *  UAT 24 Okt (audit UI tahap 2) — G4-08: angka ubin kini sehimpunan dengan editor (server memakai satu
+ *  definisi "ber-stok"); pasangan tanpa barang ber-stok tidak lagi berlabel "Lengkap" hijau. */
 export function InternalPriceSummary({ summary, onPick }) {
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="ic-price-summary">
-      {(summary?.pairs || []).map((p) => (
-        <button key={`${p.seller_entity_id}-${p.buyer_entity_id}`} type="button" onClick={() => onPick?.(p)}
-          data-testid={`ic-price-pair-${p.seller_entity_id}-${p.buyer_entity_id}`}
-          className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2 text-left hover:border-[#0058CC]">
-          <p className="text-[11px] font-semibold text-[#3C3C43]">{p.seller_name} → {p.buyer_name}</p>
-          <p className={`text-[14px] font-bold tabular-nums ${p.missing ? "text-[#B26A00]" : "text-[#1B7F4B]"}`}>
-            {p.missing ? `${p.missing} tanpa harga` : "Lengkap"}
-          </p>
-          <p className="text-[10px] text-[#8E8E93]">dari {p.stocked} barang ber-stok</p>
-        </button>
-      ))}
+      {(summary?.pairs || []).map((p) => {
+        const noStock = !p.stocked;
+        return (
+          <button key={`${p.seller_entity_id}-${p.buyer_entity_id}`} type="button" onClick={() => onPick?.(p)}
+            data-testid={`ic-price-pair-${p.seller_entity_id}-${p.buyer_entity_id}`}
+            className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2 text-left hover:border-[#0058CC]">
+            <p className="text-[11px] font-semibold text-[#3C3C43]">{p.seller_name} → {p.buyer_name}</p>
+            <p className={`text-[14px] font-bold tabular-nums ${noStock ? "text-[#8E8E93]" : p.missing ? "text-[#B26A00]" : "text-[#1B7F4B]"}`}>
+              {noStock ? "Tidak ada barang ber-stok" : p.missing ? `${p.missing} tanpa harga` : "Lengkap"}
+            </p>
+            {!noStock && <p className="text-[11px] text-[#8E8E93]">dari {p.stocked} barang ber-stok di {p.seller_name}</p>}
+          </button>
+        );
+      })}
     </div>
   );
 }

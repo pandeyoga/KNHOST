@@ -27,7 +27,9 @@ export const AxisEditor = ({ axes, onChange, structuralLocked = false, axisConfi
   };
   return <section data-testid="catalog-axis-editor" className="space-y-4 border-t pt-4">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold" data-testid="axis-section-title">Atribut & pilihan varian</h3>
-      {!structuralLocked && <div className="flex flex-wrap gap-1">{catalog.map(a => <button type="button" key={a.key} data-testid={`axis-add-${a.key}`} className="secondary-button" title={a.preset ? "Sumbu bawaan" : "Sumbu tambahan (opsional)"} disabled={axes.some(x => x.key === a.key) || axes.length >= 6} onClick={() => add(a.key, a.label, a.options || [])}><Plus size={12} />{a.label}</button>)}</div>}
+      {/* UAT 24 Okt (audit UI tahap 2) — G4-29: tombol "+ <sumbu>" hanya untuk sumbu yang BELUM dipakai (dulu
+          "+ Asal/+ Warna…" tetap tampil di samping editor sumbu yang sama sehingga tampak ganda). */}
+      {!structuralLocked && catalog.some(a => !axes.some(x => x.key === a.key)) && <div className="flex flex-wrap gap-1">{catalog.filter(a => !axes.some(x => x.key === a.key)).map(a => <button type="button" key={a.key} data-testid={`axis-add-${a.key}`} className="secondary-button" title={a.preset ? "Sumbu bawaan" : "Sumbu tambahan (opsional)"} disabled={axes.length >= 6} onClick={() => add(a.key, a.label, a.options || [])}><Plus size={12} />{a.label}</button>)}</div>}
     </div>
     {!structuralLocked && <p data-testid="axis-config-hint" className="text-xs text-[#6B6B73]">Sumbu bawaan: {catalog.filter(a => a.preset).map(a => a.label).join(" × ") || "—"}. Material yang berbeda dibuat sebagai induk master data terpisah. Daftar sumbu diatur di Pusat Pengaturan → R&D & Desain.</p>}
     {!structuralLocked && <div className="flex flex-wrap gap-2">

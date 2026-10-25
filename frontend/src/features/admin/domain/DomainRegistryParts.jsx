@@ -99,7 +99,9 @@ export function StageChain({ stages, transitions }) {
 }
 
 /** Matriks transisi: baris = stage asal, kolom = proses. */
-export function TransitionMatrix({ matrix, loading = false }) {
+// UAT 24 Okt (audit UI tahap 2) — G4-21: sel memakai label registri (sama dengan kepala baris), bukan kode
+// tahap mentah ("Grey · Woven", "Pfd · Dye"). `labelOf` = useDomainEnums().labelOf.
+export function TransitionMatrix({ matrix, loading = false, labelOf = (_n, v) => v }) {
   if (loading) {
     return (
       <p data-testid="domain-matrix-loading" className="animate-pulse text-[11.5px] text-[#6B6B73]">
@@ -120,7 +122,7 @@ export function TransitionMatrix({ matrix, loading = false }) {
       <table className="w-full min-w-[720px] border-collapse text-[11.5px]">
         <thead>
           <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
-            <th className="border-b border-[#EFF0F2] px-2 py-1.5 text-left">Stage asal</th>
+            <th className="border-b border-[#EFF0F2] px-2 py-1.5 text-left">Tahap asal</th>
             {procs.map((p) => (
               <th key={p.value} className="border-b border-[#EFF0F2] px-2 py-1.5 text-left">{p.label}</th>
             ))}
@@ -138,8 +140,8 @@ export function TransitionMatrix({ matrix, loading = false }) {
                       <Check size={11} className="text-[#1E7B34]" />
                       {cell.targets.map((t, i) => (
                         <span key={i} className="status-pill pill-success">
-                          {t.to_stage}{t.target_use ? ` · ${t.target_use}` : ""}
-                          {t.fabric_type ? ` · ${t.fabric_type}` : ""}
+                          {labelOf("stage", t.to_stage)}{t.target_use ? ` · ${labelOf("target_use", t.target_use)}` : ""}
+                          {t.fabric_type ? ` · ${labelOf("fabric_type", t.fabric_type)}` : ""}
                         </span>
                       ))}
                     </span>

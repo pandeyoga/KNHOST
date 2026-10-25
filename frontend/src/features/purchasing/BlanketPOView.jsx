@@ -86,12 +86,12 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
             <FileStack size={16} className="shrink-0 text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">Pembelian</span>
-              <h2 data-testid="blanket-title">Kontrak PO (Blanket) — Penarikan Bertahap</h2>
+              <h2 data-testid="blanket-title">Kontrak Blanket PO — Penarikan Bertahap</h2>
             </div>
           </div>
           {canCreate && (
             <button data-testid="blanket-create-button" onClick={() => setShowCreate(true)} className="primary-button">
-              <Plus size={13} /> Buat Kontrak
+              <Plus size={13} /> Buat Kontrak Blanket PO
             </button>
           )}
         </div>

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ClipboardList, Plus, Layers } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatDate } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 import RFQCreateModal from "./RFQCreateModal";
 import RFQDetailPanel from "./RFQDetailPanel";
 import DetailModal from "../../components/DetailModal";
 import { can } from "../../config/roles";
+import { canWriteInScope, WRITE_BLOCK_HINT } from "../../utils/writeScope";
 
 /**
  * RFQView (Fase 6.1 — P1 Sourcing) — RFQ / Quotation.
@@ -20,7 +21,6 @@ const TABS = [
   { key: "awarded", label: "Pemenang dipilih" },
   { key: "cancelled", label: "Batal" },
 ];
-const fmtDate = (iso) => (iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "—");
 
 function StatusPill({ status }) {
   const map = {
@@ -42,6 +42,7 @@ export default function RFQView({ currentUser, selectedEntity }) {
   const [q, setQ] = useState("");
 
   const canCreate = can(currentUser?.permissions, "rfq", "create");   // Sisir gerbang peran (2026-10-20) — POST /rfqs
+  const writable = canWriteInScope(selectedEntity);
 
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
 
@@ -85,7 +86,9 @@ export default function RFQView({ currentUser, selectedEntity }) {
             <h2 data-testid="rfq-title">RFQ / Penawaran — Tender Pengadaan</h2>
           </div>
           {canCreate && (
-            <button data-testid="rfq-create-button" onClick={() => setShowCreate(true)} className="primary-button">
+            // UAT 24 Okt (audit UI tahap 2) — G4-05: mode "Semua badan usaha" hanya untuk melihat.
+            <button data-testid="rfq-create-button" onClick={() => setShowCreate(true)} className="primary-button"
+              disabled={!writable} title={writable ? undefined : WRITE_BLOCK_HINT}>
               <Plus size={13} /> Buat RFQ
             </button>
           )}
@@ -100,42 +103,68 @@ export default function RFQView({ currentUser, selectedEntity }) {
           </div>
           <div className="mt-2"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / judul / PR / supplier…" testId="rfq-search" /></div>
         </div>
-        <div className="overflow-x-auto">
-          <div className="min-w-[700px]">
-          <div className="grid grid-cols-[110px_1.5fr_90px_110px_140px_100px] gap-x-2 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            <span>Nomor</span><span>Judul / Sumber</span><span className="text-center">Item</span><span className="text-center" title="Supplier yang sudah menawar / diundang">Penawaran</span><span>Status</span><span className="text-right">Dibuat</span>
+        {/* UAT 24 Okt (audit UI tahap 2) — G4-04: pesan muat/kosong di LUAR wadah min-w (dulu
+            terpotong di HP); di < 640px daftar tampil sebagai kartu (nomor, status, item, penawaran). */}
+        {loading ? (
+          <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat RFQ...</div>
+        ) : filtered.length === 0 ? (
+          <div className="px-4 py-12 text-center text-[12px] text-[#6B6B73]" data-testid="rfq-empty">
+            <Layers className="mx-auto mb-2 text-gray-300" size={28} />
+            <p>{q.trim() ? `Tidak ada RFQ yang cocok dengan “${q.trim()}”` : `Belum ada RFQ${tab !== "all" ? ` berstatus ${(TABS.find((t) => t.key === tab)?.label || "").toLowerCase()}` : ""}`}.</p>
+            {canCreate && tab === "all" && !q.trim() && <p className="mt-1 text-[11px]">Buat RFQ dari PR disetujui atau manual untuk membandingkan harga supplier.</p>}
           </div>
-          {loading ? (
-            <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat RFQ...</div>
-          ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="rfq-empty">
-              <Layers className="mx-auto mb-2 text-gray-300" size={28} />
-              <p>Belum ada RFQ{tab !== "all" ? ` berstatus ${(TABS.find((t) => t.key === tab)?.label || "").toLowerCase()}` : ""}.</p>
-              {canCreate && tab === "all" && <p className="mt-1 text-[11px]">Buat RFQ dari PR disetujui atau manual untuk membandingkan harga supplier.</p>}
+        ) : (
+          <>
+            <div className="hidden overflow-x-auto sm:block">
+              <div className="min-w-[700px]">
+                <div className="grid grid-cols-[110px_1.5fr_90px_110px_140px_100px] gap-x-2 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+                  <span>Nomor</span><span>Judul / Sumber</span><span className="text-center">Item</span><span className="text-center" title="Supplier yang sudah menawar / diundang">Penawaran</span><span>Status</span><span className="text-right">Dibuat</span>
+                </div>
+                <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
+                  {filtered.map((r) => {
+                    const quoted = (r.suppliers || []).filter((s) => s.quote_status === "quoted").length;
+                    return (
+                      <button key={r.id} data-testid={`rfq-row-${r.id}`} onClick={() => setDetailId(r.id)}
+                              className="w-full text-left grid grid-cols-[110px_1.5fr_90px_110px_140px_100px] gap-x-2 items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
+                        <span className="text-[11.5px] font-bold text-[#0058CC]">{r.rfq_number}</span>
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-semibold truncate">{r.title}</p>
+                          <p className="text-[11px] text-[#6B6B73] truncate">{r.source === "pr" ? `Dari ${r.pr_number}` : "Manual"} · {r.warehouse_name}</p>
+                        </div>
+                        <span className="text-[12px] text-center tabular-nums">{(r.items || []).length}</span>
+                        <span className="text-[12px] text-center tabular-nums">{quoted}/{(r.suppliers || []).length}</span>
+                        <div><StatusPill status={r.status} />{r.status === "awarded" && <p className="text-[11px] text-[#6B6B73] mt-0.5 truncate">{(r.award?.po_numbers || []).join(", ")}</p>}</div>
+                        <span className="text-[11px] text-right text-[#6B6B73]">{formatDate(r.created_at)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
+            <div className="divide-y divide-[#EFF0F2] sm:hidden" data-testid="rfq-cards">
               {filtered.map((r) => {
                 const quoted = (r.suppliers || []).filter((s) => s.quote_status === "quoted").length;
                 return (
-                  <button key={r.id} data-testid={`rfq-row-${r.id}`} onClick={() => setDetailId(r.id)}
-                          className="w-full text-left grid grid-cols-[110px_1.5fr_90px_110px_140px_100px] gap-x-2 items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                    <span className="text-[11.5px] font-bold text-[#0058CC]">{r.rfq_number}</span>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold truncate">{r.title}</p>
-                      <p className="text-[11px] text-[#6B6B73] truncate">{r.source === "pr" ? `Dari ${r.pr_number}` : "Manual"} · {r.warehouse_name}</p>
+                  <button key={r.id} data-testid={`rfq-card-${r.id}`} onClick={() => setDetailId(r.id)}
+                    className="block w-full px-3 py-2.5 text-left hover:bg-[#FAFBFC]">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[12px] font-bold text-[#0058CC]">{r.rfq_number}</span>
+                      <StatusPill status={r.status} />
                     </div>
-                    <span className="text-[12px] text-center tabular-nums">{(r.items || []).length}</span>
-                    <span className="text-[12px] text-center tabular-nums">{quoted}/{(r.suppliers || []).length}</span>
-                    <div><StatusPill status={r.status} />{r.status === "awarded" && <p className="text-[11px] text-[#6B6B73] mt-0.5 truncate">{(r.award?.po_numbers || []).join(", ")}</p>}</div>
-                    <span className="text-[11px] text-right text-[#6B6B73]">{fmtDate(r.created_at)}</span>
+                    <p className="mt-0.5 text-[12px] font-semibold">{r.title || "—"}</p>
+                    <p className="text-[11px] text-[#6B6B73]">{r.source === "pr" ? `Dari ${r.pr_number}` : "Manual"} · {r.warehouse_name}</p>
+                    <p className="mt-0.5 text-[11px] text-[#3C3C43]">
+                      {(r.items || []).length} item · {quoted}/{(r.suppliers || []).length} supplier menawar · {formatDate(r.created_at)}
+                    </p>
+                    {r.status === "awarded" && (r.award?.po_numbers || []).length > 0 && (
+                      <p className="text-[11px] text-[#6B6B73]">PO: {(r.award?.po_numbers || []).join(", ")}</p>
+                    )}
                   </button>
                 );
               })}
             </div>
-          )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       <RFQCreateModal open={showCreate} selectedEntity={selectedEntity}

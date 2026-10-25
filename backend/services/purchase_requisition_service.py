@@ -368,16 +368,24 @@ async def reject_requisition(pr_id: str, actor: Dict[str, Any], reason: str = ""
     return safe_doc(await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0}))
 
 
-async def cancel_requisition(pr_id: str) -> Dict[str, Any]:
+async def cancel_requisition(pr_id: str, reason: str = "", actor_name: str = "") -> Dict[str, Any]:
+    """Batalkan PR. UAT 24 Okt (audit UI tahap 2) — G4-11: layar kini meminta ALASAN pembatalan
+    (dulu langsung POST); alasan & pelaku dicatat bila router meneruskannya (parameter opsional,
+    pemanggil lama tetap berlaku)."""
     pr = await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0})
     if not pr:
         raise ValueError("PR tidak ditemukan")
     if pr["status"] in PR_TERMINAL:
         raise ValueError(f"PR {pr['number']} sudah {pr['status']}")
-    await db.purchase_requisitions.update_one({"id": pr_id}, {"$set": {
-        "status": "cancelled", "updated_at": now_iso()}})
+    now = now_iso()
+    patch: Dict[str, Any] = {"status": "cancelled", "updated_at": now}
+    if reason or actor_name:
+        patch.update({"cancel_reason": (reason or "").strip()[:500], "cancelled_by": actor_name,
+                      "cancelled_at": now})
+    await db.purchase_requisitions.update_one({"id": pr_id}, {"$set": patch})
     from services import material_reservation_service as _mres
-    await _mres.release(pr_id, "PR dibatalkan")  # W2-REQ-07
+    await _mres.release(pr_id, f"PR dibatalkan: {reason.strip()}" if reason and reason.strip() else "PR dibatalkan",
+                        actor_name or "Sistem")  # W2-REQ-07
     return safe_doc(await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0}))
 
 
@@ -418,7 +426,14 @@ async def reorder_suggestions(entity_id: Optional[str] = None, ctx: Any = None) 
     if entity_id and entity_id != "all":
         bal_q["owner_entity_id"] = entity_id
     avail: Dict[str, float] = {}
-    async for b in db.inventory_balances.find(bal_q, {"_id": 0, "product_id": 1, "available_qty": 1}):
+    # UAT 24 Okt (audit UI tahap 2) — G4-24: saldo milik gudang yang SUDAH TIDAK ADA di master dilewati.
+    # Terbukti di data acuan: "Ulos Batak Ragidup TERSEDIA 29" berasal dari saldo yatim gudang uji
+    # `wh_TEST_F1_…` (tanpa roll), sementara gudang nyata (Jakarta) tersedia 0 karena rollnya diblokir —
+    # sama dengan Operasi Gudang. Definisi "tersedia" (saldo `available_qty`) TIDAK diubah (K-04).
+    known_wh = {w["id"] async for w in db.warehouses.find({}, {"_id": 0, "id": 1})}
+    async for b in db.inventory_balances.find(bal_q, {"_id": 0, "product_id": 1, "available_qty": 1, "warehouse_id": 1}):
+        if b.get("warehouse_id") and b["warehouse_id"] not in known_wh:
+            continue
         avail[b["product_id"]] = avail.get(b["product_id"], 0.0) + float(b.get("available_qty", 0) or 0)
 
     # on_order per produk (Σ qty-received pada PO terbuka), owner-scoped bila entity_id

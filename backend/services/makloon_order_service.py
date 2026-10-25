@@ -43,6 +43,8 @@ logger = logging.getLogger(__name__)
 
 DRAFT, IN_PROCESS, PARTIAL, COMPLETED, CANCELLED = (
     "draft", "in_process", "partially_received", "completed", "cancelled")
+# UAT 24 Okt (audit UI tahap 2) — G4-15: label mode order untuk teks riwayat (sama dengan lencana layar).
+MODE_LABELS = {"process_only": "Proses saja", "buy_process": "Beli + Proses"}
 
 # FASE T — aliran kain per langkah (lihat domain_registry.MATERIAL_FLOWS).
 FLOW_MOVES, FLOW_SERVICE = "moves", "service_only"
@@ -213,7 +215,7 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
                                actor_name: str) -> Dict[str, Any]:
     mode = payload.get("mode") or "process_only"
     if mode not in ("process_only", "buy_process"):
-        raise HTTPException(status_code=400, detail="Mode harus process_only atau buy_process")
+        raise HTTPException(status_code=400, detail="Mode order harus 'Proses saja' atau 'Beli + Proses'.")
     steps_in = payload.get("steps") or []
     if not steps_in:
         raise HTTPException(status_code=400, detail="Minimal 1 step proses diperlukan")
@@ -541,7 +543,8 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
         "timeline": [], "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
     }
     _tl(order, "created",
-        f"Order dibuat ({mode}) · {len(steps)} langkah · "
+        # UAT 24 Okt (audit UI tahap 2) — G4-15: label mode, bukan kode mentah "(process_only)".
+        f"Order dibuat ({MODE_LABELS.get(mode, mode)}) · {len(steps)} langkah · "
         f"{len({st['makloon_id'] for st in steps if st.get('makloon_id')})} mitra"
         + (f" · PO {po_number}" if po_number else ""))
     # Rincian HPP berjenjang sudah tersedia sejak draft (rencana) — dipakai wizard.
@@ -1471,6 +1474,8 @@ async def cancel_order(mko_id: str, *, reason: str = "", actor_name: str = "syst
             s["awaiting_return"] = True
     order["status"] = CANCELLED
     order["material_at_partner"] = bool(awaiting)
+    # G4-15 — alasan & pelaku pembatalan disimpan di dokumen (layar detail menampilkannya).
+    order.update({"cancel_reason": (reason or "").strip(), "cancelled_by": actor_name, "cancelled_at": now_iso()})
     _tl(order, "cancelled", (reason or "Dibatalkan") + (
         " · bahan masih di mitra, menunggu retur dicatat" if awaiting else ""))
     order["updated_at"] = now_iso()

@@ -1,10 +1,14 @@
 import { Settings2, Trash2 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
+import { axisLabel, useCatalogLabels } from "./catalogLabels";
 
 const Row = ({ label, value, testId }) => <div className="spec-row" data-testid={testId}><dt>{label}</dt><dd>{value ?? "—"}</dd></div>;
 
 /** Tab "Informasi produk": spesifikasi tersusun 2 kolom, atribut varian sebagai chip. */
-export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div className="catalog-information" data-testid="catalog-info-tab">
+// UAT 24 Okt (audit UI tahap 2) — G4-19: jenis kain, tahap export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div className="catalog-information" data-testid="catalog-info-tab"> nama sumbu dari registri (bukan kode mentah).
+export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => {
+  const { stageLabel, fabricLabel } = useCatalogLabels();
+  return <div className="catalog-information" data-testid="catalog-info-tab">
   <div className="info-grid">
     <section className="info-card">
       <h2 data-testid="family-description-title">Deskripsi produk</h2>
@@ -14,9 +18,9 @@ export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div cla
       <h2>Spesifikasi teknis</h2>
       <dl className="spec-list">
         <Row label="Kategori" value={family.category} />
-        <Row label="Jenis kain" value={family.fabric_type} />
+        <Row label="Jenis kain" value={fabricLabel(family.fabric_type)} />
         <Row label="Motif" value={family.motif} />
-        <Row label="Tahapan" value={{ finished: "Kain jadi", greige: "Greige", yarn: "Benang", dyed: "Celup" }[family.stage] || family.stage} />
+        <Row label="Tahapan" value={stageLabel(family.stage)} />
         <Row label="Satuan dasar" value={family.base_unit} />
         <Row label="Gramasi" value={family.gramasi ? `${family.gramasi} gsm` : null} />
         <Row label="Lebar" value={family.lebar ? `${family.lebar} m` : null} />
@@ -35,7 +39,7 @@ export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div cla
     </section>
     <section className="info-card">
       <h2 data-testid="family-axis-title">Atribut varian</h2>
-      {family.axes.length ? family.axes.map(a => <div key={a.key} className="axis-row" data-testid={`family-axis-info-${a.key}`}><b>{a.label}</b><span className="axis-chips">{a.options.map(o => <span key={o.code} className="catalog-swatch">{o.hex && <i style={{ background: o.hex }} />}{o.label}<small>{o.code}</small></span>)}</span></div>) : <p className="text-sm text-[#737780]">Induk satu varian — belum ada atribut.</p>}
+      {family.axes.length ? family.axes.map(a => <div key={a.key} className="axis-row" data-testid={`family-axis-info-${a.key}`}><b>{axisLabel(a)}</b><span className="axis-chips">{a.options.map(o => <span key={o.code} className="catalog-swatch">{o.hex && <i style={{ background: o.hex }} />}{o.label}<small>{o.code}</small></span>)}</span></div>) : <p className="text-sm text-[#737780]">Induk satu varian — belum ada atribut.</p>}
     </section>
   </div>
   <div className="flex flex-wrap gap-2 pt-2">
@@ -43,3 +47,4 @@ export const FamilyInfoTab = ({ family, caps, onPolicy, onArchive }) => <div cla
     {caps.delete && !family.variant_count && <button data-testid="catalog-archive" className="secondary-button text-red-700" onClick={onArchive}><Trash2 size={14} />Arsipkan induk kosong</button>}
   </div>
 </div>;
+};

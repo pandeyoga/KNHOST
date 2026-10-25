@@ -3,7 +3,7 @@ import { variantLabel } from "../../utils/variants";
 import { Save } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
-import DecimalInput from "../../components/DecimalInput";
+import MoneyInput from "../../components/MoneyInput";
 import { CatalogDialog } from "./CatalogDialog";
 import { catalogApi, catalogError } from "./catalogApi";
 import axios, { API } from "../../services/apiClient";
@@ -20,26 +20,28 @@ export const VariantEditor = ({ product, template, onClose, onSaved }) => {
     try {
       let body = { ...f };
       if (!product?.id) body = { ...body, template_id: template.id, variant_options: options, variant_attrs: {}, fabric_type: template.fabric_type, stage: template.stage, base_unit: template.base_unit, gramasi: template.gramasi, lebar: template.lebar, category: template.category, yarn_count: template.yarn_count || "", yarn_count_system: template.yarn_count_system || "", line_code: template.line_code || "", exclusivity: template.exclusivity || "umum", owner_sales_ids: template.owner_sales_ids || [] };
-      await catalogApi.product(product?.id, body);
-      if (product?.id && JSON.stringify(feat) !== JSON.stringify(feat0)) {
-        await axios.post(`${API}/pos/featured/${product.id}`, { is_featured: feat.on, rank: feat.rank === "" ? null : Number(feat.rank), until: feat.until, note: feat.note });
+      const saved = await catalogApi.product(product?.id, body);
+      // G4-29 — form buat = form ubah: status unggulan juga bisa diatur saat SKU baru dibuat.
+      const pid = product?.id || saved?.id || saved?.product?.id;
+      if (pid && JSON.stringify(feat) !== JSON.stringify(feat0)) {
+        await axios.post(`${API}/pos/featured/${pid}`, { is_featured: feat.on, rank: feat.rank === "" ? null : Number(feat.rank), until: feat.until, note: feat.note });
       }
       onSaved();
     } catch (e) { setError(catalogError(e)); } finally { setBusy(false); }
   };
   return <CatalogDialog title={product ? `Ubah SKU · ${product.sku}` : `SKU baru · ${template.name}`} onClose={onClose} busy={busy} testId="variant-editor-dialog"><form onSubmit={save} className="space-y-4">
     {error && <p data-testid="variant-error" role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-    <div className="grid gap-3 sm:grid-cols-2">{[["sku", "Kode SKU"], ["name", "Nama varian"]].map(([k, l]) => <label key={k} className="text-xs font-semibold">{l}<input data-testid={`variant-${k}`} className="field mt-1" value={f[k]} required disabled={k === "sku" && !!product} onChange={e => set(k, e.target.value)} /></label>)}</div>
+    <div className="grid gap-3 sm:grid-cols-2">{[["sku", "Kode SKU *"], ["name", "Nama varian *"]].map(([k, l]) => <label key={k} className="text-xs font-semibold">{l}<input data-testid={`variant-${k}`} className="field mt-1" value={f[k]} required disabled={k === "sku" && !!product} onChange={e => set(k, e.target.value)} /></label>)}</div>
     <div className="grid gap-3 rounded-lg border border-[#FFE2B8] bg-[#FFFAF2] p-3 sm:grid-cols-2" data-testid="variant-supplier-alias">
       <p className="text-[11px] font-bold uppercase text-[#8C4A00] sm:col-span-2">Versi supplier (nama &amp; warna asal pabrik)</p>
       <label className="text-xs font-semibold">Nama versi supplier<input data-testid="variant-source-name" className="field mt-1" value={f.source_name} onChange={e => set("source_name", e.target.value)} placeholder="mis. RAYON MILANO 3876" /></label>
       <label className="text-xs font-semibold">Warna versi supplier<input data-testid="variant-source-color" className="field mt-1" value={f.source_color} onChange={e => set("source_color", e.target.value)} placeholder="mis. 45 / Dusty Pink" /></label>
       <p className="text-[11px] text-[#8C4A00] sm:col-span-2">Nama per supplier tertentu diatur di Master Pembelian → Barang Supplier; kolom ini dipakai bila belum ada.</p>
     </div>
-    {!product && (template.axes || []).map(a => <label className="block text-xs font-semibold" key={a.key}>{a.label}<KNSelect data-testid={`variant-option-${a.key}`} className="field mt-1" value={options[a.key] || ""} options={a.options.map(o => ({ value: o.code, label: o.label }))} onValueChange={v => setOptions(p => ({ ...p, [a.key]: v }))} /></label>)}
+    {!product && (template.axes || []).map(a => <label className="block text-xs font-semibold" key={a.key}>{a.label} *<KNSelect data-testid={`variant-option-${a.key}`} className="field mt-1" value={options[a.key] || ""} options={a.options.map(o => ({ value: o.code, label: o.label }))} onValueChange={v => setOptions(p => ({ ...p, [a.key]: v }))} /></label>)}
     {product && <p data-testid="variant-identity" className="border-l-2 border-blue-200 pl-3 text-sm">{variantLabel(product)}<span className="block text-xs text-gray-500">{product.spec_id ? "Identitas terkait spesifikasi R&D" : "Identitas kombinasi tetap; SKU lain dibuat sebagai kombinasi baru"}</span></p>}
-    <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold">Harga jual dasar<DecimalInput data-testid="variant-price" className="field mt-1" value={f.price} min={0} onChange={v => set("price", v)} /></label><label className="text-xs font-semibold">Status<KNSelect data-testid="variant-status" className="field mt-1" value={f.status} options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} onValueChange={v => set("status", v)} /></label></div>
-    {product?.id && (
+    <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold">Harga jual dasar<div className="mt-1"><MoneyInput testId="variant-price" className="field" value={f.price} onChange={v => set("price", v)} /></div></label><label className="text-xs font-semibold">Status<KNSelect data-testid="variant-status" className="field mt-1" value={f.status} options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} onValueChange={v => set("status", v)} /></label></div>
+    {(
       <div className="grid gap-3 rounded-lg border border-[#FDE7C7] bg-[#FFFBF3] p-3 sm:grid-cols-4" data-testid="variant-featured">
         <label className="flex items-center gap-2 text-xs font-semibold sm:col-span-4"><input type="checkbox" checked={feat.on} onChange={e => setFeat(x => ({ ...x, on: e.target.checked }))} data-testid="variant-featured-on" /> Produk Unggulan di POS &amp; katalog HP (push)</label>
         {feat.on && (<>

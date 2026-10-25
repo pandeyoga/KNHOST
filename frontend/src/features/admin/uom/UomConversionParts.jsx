@@ -5,6 +5,7 @@
 import { stripInternalCodes } from "../../../utils/cleanText";
 import { ArrowRight, Pencil, Power } from "lucide-react";
 import { SOURCE_LABEL } from "../../../hooks/useUomConversions";
+import { formatDateTime, formatPct } from "../../../utils/formatters";
 
 export const KIND_TONE = { fixed: "pill-info", pack: "pill-warning", formula: "pill-success" };
 
@@ -166,11 +167,12 @@ export function UsageTable({ usage, loading = false }) {
               </td>
               <td className="px-2 py-1.5 text-[#6B6B73]">{u.sku || "—"}</td>
               <td className="px-2 py-1.5 tabular-nums">
-                {u.doc_qty} {u.doc_uom} → <b>{u.base_qty} {u.base_uom}</b>
+                {/* G4-20 — angka id-ID (dulu "109.36" bertitik di samping faktor "1,093613"). */}
+                {fmtNum(u.doc_qty, 4)} {u.doc_uom} → <b>{fmtNum(u.base_qty, 4)} {u.base_uom}</b>
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums">
                 {u.factor == null ? "—"
-                  : Number(u.factor).toLocaleString("id-ID", { maximumFractionDigits: 6 })}
+                  : fmtNum(u.factor)}
               </td>
               <td className="px-2 py-1.5 text-[#6B6B73]">
                 {SOURCE_LABEL[u.source] || u.source}
@@ -181,7 +183,7 @@ export function UsageTable({ usage, loading = false }) {
               <td className="px-2 py-1.5">
                 {u.variance?.level && u.variance.level !== "ok" ? (
                   <span className={`status-pill ${u.variance.level === "block" ? "pill-danger" : "pill-warning"}`}>
-                    {Number(u.variance.variance_pct).toFixed(2)}%
+                    {formatPct(u.variance.variance_pct, 2)}
                     {u.variance.overridden ? " · ditimpa" : ""}
                   </span>
                 ) : (
@@ -189,7 +191,7 @@ export function UsageTable({ usage, loading = false }) {
                 )}
               </td>
               <td className="whitespace-nowrap px-2 py-1.5 text-[11px] text-[#8E8E93]">
-                {u.converted_at ? new Date(u.converted_at).toLocaleString("id-ID") : "—"}
+                {formatDateTime(u.converted_at)}
               </td>
             </tr>
           ))}

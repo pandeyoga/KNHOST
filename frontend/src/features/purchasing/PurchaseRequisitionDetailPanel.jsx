@@ -3,12 +3,14 @@ import { DualName } from "../../components/DualName";
 import KNDatePicker from "@/components/KNDatePicker";
 import axios, { API } from "../../services/apiClient";
 import {
-  ArrowLeft, CheckCircle2, XCircle, Send, ShoppingCart, AlertTriangle, Ban, Printer, Pencil,
+  ArrowLeft, CheckCircle2, XCircle, Send, ShoppingCart, AlertTriangle, Ban, Pencil,
 } from "lucide-react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
+import { actorLabel } from "../../utils/actorLabel";
+import { roleLabel } from "../../config/roles";
+import { askConfirm, askReason } from "../../services/confirmService";
 import KNSelect from "../../components/KNSelect";
 import SiteSelect from "../../components/SiteSelect";
-import { printPurchaseRequisition } from "../../utils/docPrint";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { SOURCE_LABEL, StatusPill, Field } from "./prConstants";
 import PrSourcingPanel from "./PrSourcingPanel";
@@ -43,6 +45,28 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
     } catch (e) {
       setErr(e.response?.data?.detail || "Aksi gagal.");
     } finally { setBusy(false); }
+  }
+
+  // UAT 24 Okt (audit UI tahap 2) — G4-11: Setujui & Batalkan dulu langsung POST tanpa dialog (padahal
+  // Tolak wajib alasan). Setujui → konfirmasi; Batalkan → alasan (dikirim sebagai `notes`).
+  async function approve() {
+    const ok = await askConfirm({
+      title: `Setujui ${pr.number}?`,
+      message: `Estimasi ${formatCurrency(pr.total_est_amount)}. Setelah disetujui, PR bisa direalisasikan menjadi PO dan bahan untuk pesanan dicadangkan.`,
+      confirmLabel: "Setujui PR",
+    });
+    if (ok) act("/approve");
+  }
+
+  async function cancel() {
+    const reason = await askReason({
+      title: `Batalkan ${pr.number}?`,
+      message: "PR yang dibatalkan tidak bisa diajukan atau direalisasikan lagi; cadangan bahan dilepas.",
+      reasonLabel: "Alasan pembatalan",
+      confirmLabel: "Batalkan PR",
+      danger: true,
+    });
+    if (reason !== null) act("/cancel", { notes: reason });
   }
 
   async function doReject() {
@@ -83,7 +107,7 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
             <StatusPill status={pr.status} />
           </div>
           <div className="flex items-center gap-2">
-            <button data-testid="pr-print" className="btn-secondary btn-xs" onClick={() => printPurchaseRequisition(pr, pr.entity_name || pr.entity_short_name || "")}><Printer size={13} /> Cetak PR</button>
+            {/* UAT 24 Okt (audit UI tahap 2) — G4-11: satu pintu cetak (Pratinjau/Unduh PDF di bilah dokumen). */}
             <span className="status-pill pill-muted">{SOURCE_LABEL[pr.source] || pr.source}</span>
           </div>
         </div>
@@ -93,9 +117,9 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
           <div className="grid gap-2 sm:grid-cols-3 text-[12px]">
             <Field label="Lokasi kirim" value={pr.ship_to_site_name ? `${pr.ship_to_site_name} · ${pr.warehouse_name || ""}` : (pr.warehouse_name || "—")} />
             <Field label="Supplier Preferensi" value={pr.preferred_supplier_name || "—"} />
-            <Field label="Dibutuhkan" value={pr.needed_by_date || "—"} />
-            <Field label="Dibuat oleh" value={pr.created_by} />
-            <Field label="Persetujuan" value={pr.approval_required ? `Butuh ${pr.required_approval_role || "manager"}` : "Tidak perlu"} />
+            <Field label="Dibutuhkan" value={formatDate(pr.needed_by_date)} />
+            <Field label="Dibuat oleh" value={actorLabel(pr.created_by)} />
+            <Field label="Persetujuan" value={pr.approval_required ? `Perlu ${roleLabel(pr.required_approval_role || "manager")}` : "Tidak perlu"} />
             <Field label="Total Estimasi" value={formatCurrency(pr.total_est_amount)} />
           </div>
           {pr.reason && <p className="text-[12px] text-[#6B6B73]"><b>Alasan:</b> {pr.reason}</p>}
@@ -162,14 +186,14 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
             {pr.status === "pending_approval" && canApprove && (
               <>
                 <button data-testid="pr-action-reject" className="btn-danger" disabled={busy} onClick={() => { setRejectReason(""); setErr(""); setShowReject(true); }}><XCircle size={14} /> Tolak</button>
-                <button data-testid="pr-action-approve" className="btn-primary" disabled={busy} onClick={() => act("/approve")}><CheckCircle2 size={14} /> Setujui</button>
+                <button data-testid="pr-action-approve" className="btn-primary" disabled={busy} onClick={approve}><CheckCircle2 size={14} /> Setujui</button>
               </>
             )}
             {pr.status === "approved" && (
               <button data-testid="pr-action-convert" className="btn-primary" disabled={busy || nonCatalog} onClick={() => setShowConvert(true)}><ShoppingCart size={14} /> Konversi ke PO</button>
             )}
             {["draft", "pending_approval", "approved"].includes(pr.status) && (
-              <button data-testid="pr-action-cancel" className="btn-secondary" disabled={busy} onClick={() => act("/cancel")}><Ban size={14} /> Batalkan</button>
+              <button data-testid="pr-action-cancel" className="btn-secondary" disabled={busy} onClick={cancel}><Ban size={14} /> Batalkan</button>
             )}
           </div>
         </div>

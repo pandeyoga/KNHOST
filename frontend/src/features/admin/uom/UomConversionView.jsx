@@ -25,6 +25,7 @@ import { RuleTable, StatCards, UsageTable } from "./UomConversionParts";
 import ConfigRedirectCard from "../../settings/config/ConfigRedirectCard";
 import useListSearch from "@/hooks/useListSearch";
 import { can } from "../../../config/roles";
+import { askConfirm } from "../../../services/confirmService";
 
 const EMPTY_RULE = { from_unit: "", to_unit: "", kind: "fixed", factor: "", formula: "",
                      note: "", status: "active" };
@@ -88,6 +89,18 @@ export default function UomConversionView({ user, products = [] }) {
   }
 
   async function toggleRule(r) {
+    // UAT 24 Okt (audit UI tahap 2) — G4-20: aturan konversi GLOBAL dulu langsung dinonaktifkan sekali klik.
+    const off = r.status === "active";
+    const ok = await askConfirm({
+      title: `${off ? "Nonaktifkan" : "Aktifkan"} aturan ${r.from_unit} → ${r.to_unit}?`,
+      message: off
+        ? "Aturan ini berlaku global dan dipakai PR, PO, penerimaan barang & dokumen lain untuk mengubah satuan. "
+          + "Setelah nonaktif, konversi di dokumen baru tidak lagi memakai aturan ini."
+        : "Aturan dipakai lagi untuk konversi satuan di semua dokumen baru.",
+      confirmLabel: off ? "Nonaktifkan aturan" : "Aktifkan aturan",
+      danger: off,
+    });
+    if (!ok) return;
     setBusyId(r.id); setErr("");
     try {
       await axios.post(`${API}/uom-conversions/rules/${r.id}/status`, null,
@@ -242,7 +255,7 @@ export default function UomConversionView({ user, products = [] }) {
             </div>
             {srch.toolbar}
             <RuleTable rules={srch.pageRows} canEdit={canEdit} busyId={busyId} loading={loading}
-              onEdit={(r) => { setModal({ mode: "edit", data: { ...r, factor: String(r.factor ?? "") } }); setModalErr(""); }}
+              onEdit={(r) => { setModal({ mode: "edit", data: { ...r, factor: String(r.factor ?? "").replace(".", ",") } }); setModalErr(""); }}
               onToggle={toggleRule} kinds={kinds} dimensions={dimensions} formulas={formulas} />
           </div>
 

@@ -232,6 +232,10 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
   const save = async () => {
     const msg = validateStage1() || validateStage2();
     if (msg) { setErr(msg); setStage(msg.startsWith("Langkah") ? 2 : 1); return; }
+    // G4-28 — server menolak qty bahan manual tanpa alasan; tunjukkan isiannya (langkah 1) sebelum menyimpan.
+    if (!steps.some((s) => s.recipe_id) && !(head.manual_material_reason || "").trim()) {
+      setErr("Belum ada resep/yield — isi alasan qty bahan manual di langkah Bahan & Gudang."); setStage(1); return;
+    }
     setSaving(true);
     setErr("");
     const payload = {
@@ -321,7 +325,7 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                 : "Rantai proses multi-tahap & multi-mitra · estimasi berbasis GSM · tarif dari kontrak"}
             </p>
           </div>
-          <button className="icon-button" onClick={onClose} data-testid="wizard-close"><X size={18} /></button>
+          <button className="icon-button" onClick={onClose} data-testid="wizard-close" aria-label="Tutup"><X size={18} /></button>
         </div>
 
         <div className="flex items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-2" data-testid="wizard-stages">
@@ -385,7 +389,9 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
                     placeholder="mis. produksi kain printing motif A untuk SO-0007" />
                 </Field>
               </div>
-              {!steps.some((s) => s.recipe_id) && (
+              {/* UAT 24 Okt (audit UI tahap 2) — G4-28: alasan qty manual baru muncul setelah bahan dipilih
+                  dan memang belum ada resep (dulu wajib-merah sebelum apa pun dipilih). */}
+              {head.material_product_id && !steps.some((s) => s.recipe_id) && (
                 <div className="md:col-span-2">
                   <Field label="Alasan qty bahan manual (belum ada resep/yield) *">
                     <input data-testid="wizard-manual-material-reason" className="field" value={head.manual_material_reason}
@@ -509,7 +515,8 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
+        {/* G4-28 — kaki standar: semua tombol rata kanan (Batal/Kembali lalu aksi utama). */}
+        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={stage === 1 ? onClose : () => setStage((v) => v - 1)} data-testid="wizard-back">
             {stage === 1 ? "Batal" : <><ArrowLeft size={13} /> Kembali</>}
           </button>

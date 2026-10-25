@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Edit3, Factory, MapPin, PhoneCall, Gauge, Wallet, FileText,
   ClipboardList, Receipt, BookOpen, BarChart3 } from "lucide-react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatPct, formatQty } from "../../utils/formatters";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import RecordDetailModal from "../documents/RecordDetailModal";
 
@@ -11,24 +11,25 @@ const TABS = [
   { key: "orders", label: "Order Makloon", icon: ClipboardList },
   { key: "bills", label: "Tagihan Jasa", icon: Receipt },
   { key: "documents", label: "Dokumen", icon: FileText },
-  { key: "scorecard", label: "Scorecard", icon: BarChart3 },
+  { key: "scorecard", label: "Skor Mitra", icon: BarChart3 },   // UAT 24 Okt (audit UI tahap 2) — G4-28 (K-13)
 ];
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
-const pct = (v) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
+const pct = (v) => (v == null ? "—" : formatPct(Number(v) * 100));   // P-06 — koma desimal id-ID
 const money = (v) => formatCurrency(Number(v || 0));
 
 const STATUS_TONE = { completed: "success", posted: "success", paid: "success", in_process: "info", in_progress: "info", processing: "info", pending: "warning", draft: "muted", cancelled: "danger", rejected: "danger" };
 const tone = (s) => STATUS_TONE[(s || "").toLowerCase()] || "muted";
 
 /** Makloon 360° — profil + kapasitas + keuangan jasa + resep/order/tagihan + dokumen + scorecard. */
-export default function Makloon360Panel({ makloonId, currentUser, onBack, onEdit, onError }) {
+export default function Makloon360Panel({ makloonId, reloadKey = 0, currentUser, onBack, onEdit, onError }) {
   const { labelOf: processLabel } = useProcessTypes();   // FASE T (4a)
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("orders");
   const [record, setRecord] = useState(null);
 
-  useEffect(() => { load(); }, [makloonId]); // eslint-disable-line
+  // G4-16 — `reloadKey` naik setelah profil diubah dari detail → data dimuat ulang tanpa keluar dari detail.
+  useEffect(() => { load(); }, [makloonId, reloadKey]); // eslint-disable-line
   async function load() {
     setLoading(true);
     try { const r = await axios.get(`${API}/makloons/${makloonId}`); setData(r.data); }

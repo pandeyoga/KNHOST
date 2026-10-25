@@ -62,6 +62,10 @@ const PO_TABS = [
   { key: "done", label: "Selesai", statuses: "completed,closed_short" },
   { key: "closed", label: "Ditolak / Batal", statuses: "rejected,cancelled" },
 ];
+// G4-30 — PO mati tidak dihitung/ditampilkan di chip status bayar.
+const DEAD_PO_STATUSES = ["rejected", "cancelled"];
+const LIVE_PO_STATUSES = PO_TABS.filter((t) => t.statuses && t.key !== "closed").map((t) => t.statuses).join(",");
+const PAYMENT_KEYS = ["unpaid", "partial", "paid", "settled_by_return"];
 
 export default function PurchaseOrderManagement({ user, selectedEntity, onApprovePO, focusDoc, onClearFocus, onOpenDocument, onSwitchEntity, buyerEntities = [] }) {
   const [products, setProducts] = useState([]);
@@ -91,7 +95,10 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   const poParams = useMemo(() => ({
     ...(lineFilter ? { line: lineFilter } : {}),
     ...(lateOnly ? { late: 1 } : {}),
-    ...(statusTab ? { status: PO_TABS.find((t) => t.key === statusTab)?.statuses } : {}),
+    ...(statusTab ? { status: PO_TABS.find((t) => t.key === statusTab)?.statuses }
+      // UAT 24 Okt (audit UI tahap 2) — G4-30: chip status bayar hanya untuk PO HIDUP (PO Ditolak/Batal
+      // bukan "Belum Bayar"); tab "Ditolak / Batal" tetap bisa dipilih bersama chip.
+      : paymentFilter ? { status: LIVE_PO_STATUSES } : {}),
     ...(paymentFilter ? { payment: paymentFilter } : {}),
   }), [lineFilter, lateOnly, statusTab, paymentFilter]);
   const paged = usePagedList("/purchase-orders", { pageSize: 20, search, params: poParams });
@@ -102,7 +109,15 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
     const params = { ...(lineFilter ? { line: lineFilter } : {}), ...(lateOnly ? { late: 1 } : {}), ...(search ? { q: search } : {}),
       ...(paymentFilter ? { payment: paymentFilter } : {}) };
     axios.get(`${API}/purchase-orders/status-counts`, { params })
-      .then((r) => { setCounts(r.data?.by_status || {}); setPayCounts(r.data?.by_payment || {}); }).catch(() => {});
+      .then((r) => { setCounts(r.data?.by_status || {}); }).catch(() => {});
+    // G4-30 — hitungan chip bayar dari PO hidup saja: `by_payment` server ikut menghitung PO Ditolak/Batal
+    // (data acuan: "Belum Bayar 30" = 24 selesai + 2 menunggu + 4 BATAL). Per chip diambil `by_status`
+    // lalu status mati dikurangkan (sampai endpoint menyediakan hitungan ini — lihat laporan G4).
+    const base = { ...params }; delete base.payment;
+    Promise.all(["", ...PAYMENT_KEYS].map((k) => axios.get(`${API}/purchase-orders/status-counts`, { params: k ? { ...base, payment: k } : base })
+      .then((r) => [k || "__all", k ? Object.entries(r.data?.by_status || {}).reduce((a, [s, n]) => a + (DEAD_PO_STATUSES.includes(s) ? 0 : n || 0), 0) : (r.data?.total || 0)])
+      .catch(() => [k || "__all", 0])))
+      .then((pairs) => setPayCounts(Object.fromEntries(pairs)));
   }, [lineFilter, lateOnly, search, pos, selectedEntity, paymentFilter]);
   const tabCount = (t) => (t.statuses ? t.statuses.split(",").reduce((a, k) => a + (counts[k] || 0), 0) : 0);
 
@@ -370,7 +385,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
         <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="purchase-orders"
                     allowed={user?.allowed_line_codes} testId="po-line-filter" />
       </SearchBox>
-      <POPaymentChips value={paymentFilter} onChange={setPaymentFilter} counts={payCounts} />
+      <POPaymentChips value={paymentFilter} onChange={setPaymentFilter} counts={payCounts} allCount={payCounts.__all ?? null} />
       <StatusTabs value={statusTab} onChange={setStatusTab} testId={(k) => `po-tab-${k || "all"}`}
         tabs={PO_TABS.map((t) => ({ ...t, count: tabCount(t) }))} />
 

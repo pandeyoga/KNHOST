@@ -38,6 +38,7 @@ import ReturnDetailPanel from "./ReturnDetailPanel";
 import RollPickerModal from "./RollPickerModal";
 import { can } from "../../config/roles";
 import { actorLabel } from "../../utils/actorLabel";
+import { askConfirm } from "../../services/confirmService";
 // 23 Okt — alasan, kondisi, checklist & foto PER ROLL (bentuk sama dengan retur pelanggan).
 import { PickedRollClaims, claimDetails, emptyClaim, pickedClaimErrors } from "../sales/ReturnRollClaims";
 
@@ -247,6 +248,15 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   }
 
   async function act(id, action, body) {
+    // UAT 24 Okt (audit UI tahap 2) — P-01: Setujui retur (stok keluar + nota debit) dulu sekali klik.
+    if (action === "approve") {
+      const ok = await askConfirm({
+        title: "Setujui retur ke supplier?",
+        message: "Barang retur dikeluarkan dari stok dan nota debit ke supplier dibuat.",
+        confirmLabel: "Setujui retur",
+      });
+      if (!ok) return;
+    }
     try {
       const urls = {
         submit: `${API}/purchase-returns/${id}/submit`,
@@ -502,27 +512,27 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                   </div>
                   </td>
                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                  {/* UAT 24 Okt (audit UI tahap 2) — G4-27: kolom AKSI seragam di semua status — "Rincian" selalu
+                      ada di posisi yang sama, aksi status berlabel (dulu ikon tanpa label & gaya berganti). */}
                   <div className="flex items-center justify-end gap-1.5" >
                     {r.status === "draft" && (
                       <>
                         <button data-testid={`return-submit-${r.id}`} onClick={() => act(r.id, "submit")} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Ajukan</button>
                         {canDelete && (
-                          <button data-testid={`return-delete-${r.id}`} onClick={() => setDeleteTarget(r)} className="danger-button !px-2 !py-1 text-[11px]" title="Hapus retur draf"><Trash2 size={11} /></button>
+                          <button data-testid={`return-delete-${r.id}`} onClick={() => setDeleteTarget(r)} className="secondary-button !px-2 !py-1 text-[11px] !text-[#C0392B]" title="Hapus retur draf"><Trash2 size={11} /> Hapus</button>
                         )}
                       </>
                     )}
                     {r.status === "pending_approval" && (canApprove || canReject) && (
                       <>
-                        {canApprove && <button data-testid={`return-approve-${r.id}`} onClick={() => act(r.id, "approve", { notes: "" })} className="primary-button !px-2 !py-1 text-[11px]"><CheckCircle size={11} /> Setujui</button>}
-                        {canReject && <button data-testid={`return-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="danger-button !px-2 !py-1 text-[11px]"><XCircle size={11} /></button>}
+                        {canApprove && <button data-testid={`return-approve-${r.id}`} onClick={() => act(r.id, "approve", { notes: "" })} className="secondary-button !px-2 !py-1 text-[11px] !text-[#1B7F4B]"><CheckCircle size={11} /> Setujui</button>}
+                        {canReject && <button data-testid={`return-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="secondary-button !px-2 !py-1 text-[11px] !text-[#C0392B]"><XCircle size={11} /> Tolak</button>}
                       </>
                     )}
                     {/* Audit UI 24 Okt (036) — kolom AKSI dulu berisi nama penyetuju; nama kini di kolom Status. */}
-                    {(r.status !== "draft" && !(r.status === "pending_approval" && (canApprove || canReject))) ? (
-                      <button type="button" data-testid={`return-open-${r.id}`} onClick={() => setDetail(r)} className="secondary-button !px-2 !py-1 text-[11px]">
-                        <FileText size={11} /> Rincian
-                      </button>
-                    ) : null}
+                    <button type="button" data-testid={`return-open-${r.id}`} onClick={() => setDetail(r)} className="secondary-button !px-2 !py-1 text-[11px]">
+                      <FileText size={11} /> Rincian
+                    </button>
                   </div>
                   </td>
                 </tr>

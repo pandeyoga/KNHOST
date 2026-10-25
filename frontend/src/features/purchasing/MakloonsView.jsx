@@ -22,6 +22,7 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
   const [editTarget, setEditTarget] = useState(null);
   const [detailId, setDetailId] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [detailRev, setDetailRev] = useState(0);   // G4-16 — muat ulang detail setelah diubah
 
   // Sisir gerbang peran (2026-10-20): buat/ubah/nonaktif = makloon.create/update/delete.
   const canManage = can(currentUser?.permissions, "makloon", "create");
@@ -57,10 +58,24 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
     return [m.name, m.code, m.city, m.pic_name].some((v) => (v || "").toLowerCase().includes(q));
   });
 
+  // UAT 24 Okt (audit UI tahap 2) — G4-16: "Ubah" dari detail dulu menutup detail lalu membuka pop-up di atas
+  // daftar; kini pop-up terbuka DI ATAS detail dan setelah simpan detail dimuat ulang (tetap di detail).
+  const formModal = (
+    <MakloonFormModal open={showForm} editTarget={editTarget} entities={entities} terms={terms} selectedEntity={selectedEntity}
+      onClose={() => { setShowForm(false); setEditTarget(null); }}
+      onSaved={() => { setShowForm(false); setEditTarget(null); loadAll(); if (detailId) setDetailRev((n) => n + 1); }}
+      onError={setError} />
+  );
+
   if (detailId) {
-    return <Makloon360Panel makloonId={detailId} currentUser={currentUser} onError={setError}
-      onBack={() => { setDetailId(null); loadAll(); }}
-      onEdit={(m) => { setDetailId(null); setEditTarget(m); setShowForm(true); }} />;
+    return (
+      <>
+        <Makloon360Panel makloonId={detailId} reloadKey={detailRev} currentUser={currentUser} onError={setError}
+          onBack={() => { setDetailId(null); loadAll(); }}
+          onEdit={(m) => { setEditTarget(m); setShowForm(true); }} />
+        {formModal}
+      </>
+    );
   }
 
   return (
@@ -116,9 +131,7 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <MakloonFormModal open={showForm} editTarget={editTarget} entities={entities} terms={terms} selectedEntity={selectedEntity}
-        onClose={() => { setShowForm(false); setEditTarget(null); }}
-        onSaved={() => { setShowForm(false); setEditTarget(null); loadAll(); }} onError={setError} />
+      {formModal}
       <ConfirmModal open={!!deactivateTarget} title={`Nonaktifkan ${deactivateTarget?.name || "Makloon"}`}
         message="Makloon yang dinonaktifkan tidak akan muncul saat memilih makloon baru."
         confirmLabel="Nonaktifkan" danger onConfirm={() => doDeactivate(deactivateTarget)}

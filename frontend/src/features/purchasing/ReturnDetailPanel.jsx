@@ -179,20 +179,16 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
         <div className="mb-2.5">
           <ReturnRollsPanel ret={ret} items={toPanelItems(ret)} fullView title="Item & roll retur" testId="return-detail-items"
             estimatedValue={ret.total_amount}
-            canDecide={["draft", "pending_approval"].includes(ret.status) && !!canDecideRolls}
+            // UAT 24 Okt (audit UI tahap 2) — G4-27: keputusan per roll hanya bila retur memang punya roll
+            // (dulu "Simpan keputusan roll (0)" tampil di draf tanpa roll).
+            canDecide={["draft", "pending_approval"].includes(ret.status) && !!canDecideRolls && allRolls.length > 0}
             decideUrl={`${API}/purchase-returns/${ret.id}/roll-decisions`}
             attachmentHref={(a) => `${API}/purchase-returns/${ret.id}/attachments/${a.id}/download`}
             hint="Roll yang ditolak keluar dari retur (tetap stok KN). Roll tanpa keputusan ikut disetujui."
-            valueLabel="Nilai retur sebelum PPN (harga per satuan stok; angka resmi = Nota Debit)"
+            // G4-27 — SATU dasar nilai berlabel (dulu label ini + catatan "Basis nilai retur = WAC…" berdampingan).
+            valueLabel={`Nilai retur sebelum PPN = HPP rata-rata (WAC) per roll termasuk biaya masuk${ret.origin_type === "import" ? " (barang impor)" : ""}, bukan harga PO — angka resmi di Nota Debit`}
             onChanged={onChanged} />
         </div>
-
-        {/* R5.5 — basis nilai retur = WAC landed-inclusive (khusus barang impor) */}
-        <p className="mb-2.5 text-[10.5px] text-[#5B6472] flex items-start gap-1" data-testid="pr-cost-basis-note">
-          <ReceiptText size={11} className="mt-0.5 flex-shrink-0 text-[#1B4F9C]" />
-          <span>Basis nilai retur = <b>WAC</b> per roll yang sudah <b>termasuk landed cost</b>
-          (freight/bea/handling){ret.origin_type === "import" ? " — barang impor" : ""}, bukan harga PO mentah.</span>
-        </p>
 
         {/* FASE E-9 (E9.6 · US29) — jejak rantai retur. Dipasang di SINI juga supaya
             dokumen ketiga dalam rantai bukan jalan buntu: dari retur beli pun

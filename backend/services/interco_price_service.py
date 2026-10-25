@@ -38,11 +38,22 @@ async def price_status(seller: str, buyer: str, product_id: str) -> Dict[str, An
 
 
 async def _seller_stock(seller: str) -> Dict[str, float]:
+    """Barang ber-stok di PT penjual — SATU definisi untuk ubin ringkasan & editor massal.
+
+    UAT 24 Okt (audit UI tahap 2) — G4-08: dulu ubin menghitung semua `product_id` di saldo
+    (termasuk barang yang sudah tidak ada/nonaktif di master) sedangkan editor hanya barang
+    aktif → "21 tanpa harga dari 135" vs "6 belum · 116 sudah". Kini saldo milik barang yang
+    tidak ada/nonaktif di master dikeluarkan di sini, sehingga keduanya memakai himpunan sama.
+    """
     out: Dict[str, float] = {}
     async for b in db.inventory_balances.find({"owner_entity_id": seller, "available_qty": {"$gt": 0}},
                                               {"_id": 0, "product_id": 1, "available_qty": 1}):
         out[b["product_id"]] = round(out.get(b["product_id"], 0.0) + float(b.get("available_qty") or 0), 2)
-    return out
+    if not out:
+        return out
+    live = {p["id"] async for p in db.products.find(
+        {"id": {"$in": list(out)}, "status": {"$ne": "inactive"}}, {"_id": 0, "id": 1})}
+    return {pid: qty for pid, qty in out.items() if pid in live}
 
 
 async def _priced_pids(seller: str, buyer: str) -> set:
@@ -77,8 +88,11 @@ async def missing(seller: str, buyer: str, q: str = "", only_stock: bool = True)
     rows = [{"product_id": p["id"], "sku": p.get("sku", ""), "product_name": p.get("name", ""),
              "unit": p.get("base_unit", ""), "seller_stock": stock.get(p["id"], 0.0),
              "sell_price": float((sell.get(p["id"]) or {}).get("price") or 0)} for p in todo]
+    # G4-08 — "sudah" dihitung pada himpunan yang SAMA dengan "belum" (dulu semua kontrak
+    # pasangan, termasuk barang tanpa stok) → total + priced = candidates (= ubin bila ber-stok).
     return {"seller_entity_id": seller, "buyer_entity_id": buyer, "pricing_mode": await pricing_mode(seller),
-            "total": len(rows), "priced": len(priced), "rows": rows}
+            "total": len(rows), "priced": len(prods) - len(todo), "candidates": len(prods),
+            "only_stock": bool(only_stock), "rows": rows}
 
 
 async def summary() -> Dict[str, Any]:

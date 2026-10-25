@@ -9,7 +9,8 @@ import { OptionTabs } from "../../components/ListControls";
 import { StatusBadge } from "./ProductionParts";
 import { formatCurrency, Badge } from "../finance/financeShared";
 
-const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#0058CC] focus:outline-none";
+// UAT 24 Okt (audit UI tahap 2) — G4-22: isian memakai kelas baku `.field` (dulu gaya pil buatan sendiri).
+const inputCls = "field";
 const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── WO table ──────────────────────────────────────────────────────────────

@@ -2,10 +2,11 @@ import { Boxes, Layers3, Ruler, Scale, Sparkles, Tag } from "lucide-react";
 import { mediaUrl } from "../../components/ProductGallery";
 import { formatCurrency } from "../../utils/formatters";
 
-const STAGE = { finished: "Kain jadi", greige: "Greige", yarn: "Benang", dyed: "Celup" };
+import { axisLabel, useCatalogLabels } from "./catalogLabels";   // G4-19 — satu nama tahap/jenis kain (registri)
 
 /** Hero induk produk: foto utama + fakta kunci yang dibaca pemilik dalam 3 detik. */
 export const FamilyHero = ({ family, summary }) => {
+  const { stageLabel, fabricLabel } = useCatalogLabels();
   const variants = family.variants || [];
   const cover = variants.find(v => v.cover_media_id && (v.media || []).some(m => m.id === v.cover_media_id && m.status === "approved"));
   const coverMedia = cover ? cover.media.find(m => m.id === cover.cover_media_id) : null;
@@ -27,7 +28,7 @@ export const FamilyHero = ({ family, summary }) => {
   return <section className="catalog-hero" data-testid="catalog-family-hero">
     <div className="catalog-hero-media">
       {src ? <img src={src} alt={family.name} data-testid="catalog-hero-image" /> : <div className="catalog-hero-empty">Belum ada foto utama</div>}
-      <span className="catalog-hero-badge" data-testid="catalog-hero-stage">{STAGE[family.stage] || family.stage} · {family.fabric_type || "—"}</span>
+      <span className="catalog-hero-badge" data-testid="catalog-hero-stage">{stageLabel(family.stage)} · {fabricLabel(family.fabric_type)}</span>
     </div>
     <div className="catalog-hero-body">
       <div className="catalog-hero-facts">{facts.map(f => <div key={f.label} className="catalog-fact" data-testid={f.testId}><f.icon size={14} /><span><small>{f.label}</small><b>{f.value}</b></span></div>)}</div>
@@ -38,8 +39,8 @@ export const FamilyHero = ({ family, summary }) => {
           if (!opts.length) return null;
           return (
             <span key={a.key} className="inline-flex flex-wrap items-center gap-1" data-testid={`catalog-hero-axis-${a.key}`}>
-              <small className="mr-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{a.label}</small>
-              {opts.map(o => <span key={`${a.key}-${o.code}`} className="catalog-swatch" title={`${a.label}: ${o.label}`}>{o.hex && <i style={{ background: o.hex }} />}{o.label}</span>)}
+              <small className="mr-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{axisLabel(a)}</small>
+              {opts.map(o => <span key={`${a.key}-${o.code}`} className="catalog-swatch" title={`${axisLabel(a)}: ${o.label}`}>{o.hex && <i style={{ background: o.hex }} />}{o.label}</span>)}
             </span>
           );
         })}

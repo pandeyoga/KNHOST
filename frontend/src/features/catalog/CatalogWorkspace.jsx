@@ -26,9 +26,11 @@ import { MasterUsagePanel } from "./MasterUsagePanel";
 import RestockSourcePanel from "./RestockSourcePanel";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
+import { axesText, useCatalogLabels } from "./catalogLabels";   // G4-19
 import "./catalog.css";
 
 export default function CatalogWorkspace({ currentUser, selectedEntity, focus, legacyView }) {
+  const { fabricLabel } = useCatalogLabels();   // G4-19 — jenis kain berlabel (bukan "woven")
   const [meta, setMeta] = useState(null); const [items, setItems] = useState([]); const [total, setTotal] = useState(0);
   const [query, setQuery] = useState(""); const [page, setPage] = useState(0); const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState(null); const [selectedId, setSelectedId] = useState(""); const [summary, setSummary] = useState(null);
@@ -50,7 +52,7 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
   if (legacy && legacyView) return <div data-testid="catalog-legacy-view"><button data-testid="catalog-back-from-legacy" className="secondary-button mb-4" onClick={() => { setLegacy(false); load(); }}><ArrowLeft size={14} />Kembali ke etalase</button>{legacyView}</div>;
   return <div className="kn-catalog" data-testid="catalog-workspace">
     <header className="catalog-heading">
-      <div><div data-testid="catalog-eyebrow" className="catalog-eyebrow">KAIN NUSANTARA / MASTER PRODUK</div><h1 data-testid="catalog-title">{family ? family.name : "Produk & varian"}</h1><p data-testid="catalog-subtitle">{family ? `${family.category} · ${family.fabric_type || "—"} · ${family.sku_prefix}` : `${total} induk produk · katalog bersama`}</p></div>
+      <div><div data-testid="catalog-eyebrow" className="catalog-eyebrow">KAIN NUSANTARA / MASTER PRODUK</div><h1 data-testid="catalog-title">{family ? family.name : "Produk & varian"}</h1><p data-testid="catalog-subtitle">{family ? `${family.category} · ${fabricLabel(family.fabric_type)} · ${family.sku_prefix}` : `${total} induk produk · katalog bersama`}</p></div>
       <div className="flex flex-wrap gap-2">
         {family && <button data-testid="catalog-back" className="secondary-button" onClick={() => { setFamily(null); setSelectedId(""); }}><ArrowLeft size={14} />Semua produk</button>}
         {!family && legacyView && caps.update && <button data-testid="catalog-legacy" className="secondary-button" onClick={() => setLegacy(true)}>Data SKU & impor</button>}
@@ -69,7 +71,7 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
       <div className="mb-3"><CatalogFilters value={filters} suppliers={suppliers} onChange={f => { setPage(0); setFilters(f); }} /></div>
       {loading ? <div className="catalog-grid" data-testid="catalog-loading">{[0, 1, 2, 3].map(i => <div key={i} className="h-72 animate-pulse rounded-lg bg-gray-100" />)}</div> : !items.length ? <div data-testid="catalog-empty" className="catalog-empty"><Layers3 size={36} strokeWidth={1} /><h2>Belum ada produk{query ? " yang cocok" : ""}</h2>{caps.create && <button data-testid="catalog-empty-create" className="primary-button" onClick={() => setModal("create")}><Plus size={14} />Buat induk produk</button>}</div> : <div className="catalog-grid" data-testid="catalog-grid">{items.map(t => <article key={t.id} data-testid={`catalog-card-${t.id}`} className="catalog-card">
         <div className="catalog-card-media"><ProductGallery product={t.cover_product || { name: t.name, image: t.image }} compact testId={`card-gallery-${t.id}`} /><span data-testid={`catalog-variant-count-${t.id}`} className="catalog-count">{t.variant_count} varian</span></div>
-        <button data-testid={`catalog-open-${t.id}`} className="catalog-card-content" onClick={() => { setTab("variants"); open(t.id); }}><span className="catalog-category" data-testid={`catalog-category-${t.id}`}>{[t.category, t.fabric_type].filter(Boolean).join(" · ") || "—"}</span><h2 data-testid={`catalog-name-${t.id}`}>{t.name}</h2><span className="catalog-axis-label" data-testid={`catalog-axes-${t.id}`}>{(t.axes || []).map(a => a.label).join(" × ") || "Produk satu varian"}</span><span className="catalog-card-bottom"><strong data-testid={`catalog-price-${t.id}`}>{formatCurrency(t.price_min || 0)}{t.price_max > t.price_min ? ` – ${formatCurrency(t.price_max)}` : ""}</strong><ArrowUpRight size={17} /></span></button>
+        <button data-testid={`catalog-open-${t.id}`} className="catalog-card-content" onClick={() => { setTab("variants"); open(t.id); }}><span className="catalog-category" data-testid={`catalog-category-${t.id}`}>{[t.category, t.fabric_type && fabricLabel(t.fabric_type)].filter(Boolean).join(" · ") || "—"}</span><h2 data-testid={`catalog-name-${t.id}`}>{t.name}</h2><span className="catalog-axis-label" data-testid={`catalog-axes-${t.id}`}>{axesText(t.axes) || "Produk satu varian"}</span><span className="catalog-card-bottom"><strong data-testid={`catalog-price-${t.id}`}>{formatCurrency(t.price_min || 0)}{t.price_max > t.price_min ? ` – ${formatCurrency(t.price_max)}` : ""}</strong><ArrowUpRight size={17} /></span></button>
       </article>)}</div>}
       <footer className="catalog-pagination"><button data-testid="catalog-prev" className="secondary-button" disabled={!page} onClick={() => setPage(page - 1)}><ChevronLeft size={14} />Sebelumnya</button><span data-testid="catalog-page">{page + 1} / {Math.max(1, Math.ceil(total / 24))}</span><button data-testid="catalog-next" className="secondary-button" disabled={(page + 1) * 24 >= total} onClick={() => setPage(page + 1)}>Berikutnya<ChevronRight size={14} /></button></footer>
     </> : <>

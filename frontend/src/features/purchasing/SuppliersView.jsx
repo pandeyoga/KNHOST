@@ -17,6 +17,7 @@ import { SupplierBankFields, bankSummary } from "./SupplierBankFields";
 import SupplierLabelPatternEditor, { DEFAULT_LABEL_PATTERN } from "./SupplierLabelPatternEditor";
 import { usePagedList } from "../../hooks/usePagedList";
 import { can } from "../../config/roles";
+import apiErrorText from "../../utils/apiError";
 
 // FASE P6 — kolom Unduh CSV (mengikuti kolom tabel supplier).
 const CSV_COLUMNS = [
@@ -68,6 +69,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [tried, setTried] = useState(false);   // G0-08 — galat blok alamat tampil setelah Simpan ditekan
   const [detailId, setDetailId] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
@@ -101,10 +103,12 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
   function openCreate() {
     setEditId(null);
     setForm({ ...EMPTY_FORM, entity_id: (selectedEntity && selectedEntity !== "all") ? selectedEntity : "" });
+    setTried(false);
     setShowForm(true);
   }
 
   function openEdit(s) {
+    setTried(false);
     setEditId(s.id);
     setForm({
       name: s.name || "", npwp: s.npwp || "", pic_name: s.pic_name || "", phone: s.phone || "",
@@ -121,6 +125,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
   }
 
   async function handleSubmit() {
+    setTried(true);
     if (!form.name.trim()) { setError("Nama supplier wajib diisi."); return; }
     const locErr = locationIncomplete(pickLoc(form));
     if (locErr) { setError(`Alamat: ${locErr}`); return; }
@@ -138,7 +143,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
       setEditId(null);
       await loadAll();
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal menyimpan supplier.");
+      setError(apiErrorText(e, "Gagal menyimpan supplier."));
     }
   }
 
@@ -262,7 +267,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
                 <input data-testid="supplier-email-input" value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })} className="field" placeholder="sales@pemasok.co.id" />
               </Field>
-              <LocationFields testId="supplier-loc" value={pickLoc(form)} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
+              <LocationFields testId="supplier-loc" value={pickLoc(form)} showErrors={tried} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
               <Field label="Jenis Barang">
                 <input data-testid="supplier-goods-input" value={form.goods_type}
                   onChange={(e) => setForm({ ...form, goods_type: e.target.value })} className="field" placeholder="Benang / Kain / Bahan Printing" />

@@ -35,7 +35,10 @@ import {
   apiText, fetchBoard, longDateTime, shortDate,
 } from "./poBoardApi";
 
-const COLS = "150px 120px 1.3fr 130px 110px 100px 110px 1.5fr 110px 130px 1fr";
+// UAT 24 Okt (audit UI tahap 2) — G4-14: kolom diperketat supaya muat 1440 px; kolom "Nama Sales"
+// hanya tampil bila ada baris yang punya sales (PO pembelian rutin selalu "—").
+const COLS_REST = "120px minmax(150px,1.3fr) 110px 100px 90px 90px minmax(200px,1.5fr) 90px 120px minmax(90px,1fr)";
+const colsFor = (withSales) => (withSales ? `130px ${COLS_REST}` : COLS_REST);
 
 const CSV_COLUMNS = [
   { key: "sales_name", header: "Nama Sales" },
@@ -128,6 +131,8 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
 
   const rows = data.items;
   const sum = data.summary || {};
+  const withSales = rows.some((r) => r.sales_name || (r.so_numbers || []).length);
+  const COLS = colsFor(withSales);
 
   function onSaved(updated) {
     setData((d) => ({
@@ -229,33 +234,34 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
 
       {/* Papan */}
       <section className="section-card">
+        {/* G4-14 — pesan muat/kosong di luar wadah min-w supaya tidak ikut tergulir. */}
+        {loading ? (
+          <div data-testid="po-board-loading"
+               className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
+        ) : rows.length === 0 ? (
+          <div data-testid="po-board-empty"
+               className="px-4 py-12 text-center text-[12px] text-[#6B6B73]">
+            Belum ada PO pada penyaring ini. Coba tab <b>Semua</b> atau lini lain.
+          </div>
+        ) : (
         <div className="overflow-x-auto">
-          <div className="min-w-[1500px]">
-            <div className="grid px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase whitespace-nowrap
+          <div className={withSales ? "min-w-[1300px]" : "min-w-[1160px]"}>
+            <div className="grid gap-x-2 px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase whitespace-nowrap
                             text-[#6B6B73] border-b border-[#EFF0F2]"
                  style={{ gridTemplateColumns: COLS }}>
-              <span>Nama Sales</span><span>No PO</span><span>Nama Item</span>
+              {withSales && <span>Nama Sales</span>}<span>No PO</span><span>Nama Item</span>
               <span>Qty</span><span>Warna</span><span>Tgl Pesan</span>
               <span>Est. Siap</span><span>Tahap</span><span>Tgl Masuk</span>
               <span>Qty Terima</span><span>Keterangan</span>
             </div>
 
-            {loading ? (
-              <div data-testid="po-board-loading"
-                   className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-            ) : rows.length === 0 ? (
-              <div data-testid="po-board-empty"
-                   className="py-12 text-center text-[12px] text-[#6B6B73]">
-                Belum ada PO pada penyaring ini. Coba tab <b>Semua</b> atau lini lain.
-              </div>
-            ) : (
               <div className="divide-y divide-[#EFF0F2]">
                 {rows.map((r) => (
                   <div key={r.po_id} data-testid={`po-board-row-${r.po_id}`}
-                       className="grid items-center px-3 py-2.5 hover:bg-[#FAFBFC]"
+                       className="grid gap-x-2 items-center px-3 py-2.5 hover:bg-[#FAFBFC]"
                        style={{ gridTemplateColumns: COLS }}>
                     {/* Nama Sales — DIRUNUT dari pesanan (P-0). Kosong = memang tak ada. */}
-                    <div className="min-w-0">
+                    {withSales && <div className="min-w-0">
                       {r.sales_name ? (
                         <p data-testid={`po-board-sales-${r.po_id}`}
                            className="text-[12px] font-semibold truncate">{r.sales_name}</p>
@@ -267,11 +273,11 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
                         </p>
                       )}
                       {r.so_numbers?.length ? (
-                        <p className="text-[10px] text-[#9A9BA3] truncate">
+                        <p className="text-[11px] text-[#9A9BA3] truncate" title={r.so_numbers.join(" · ")}>
                           {r.so_numbers.join(" · ")}
                         </p>
                       ) : null}
-                    </div>
+                    </div>}
 
                     <div className="min-w-0">
                       {/* Klik nomor PO → buka dokumen PO di layar Pesanan Pembelian */}
@@ -287,8 +293,8 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-[12px] font-semibold truncate">{r.items_label || "—"}</p>
-                      <p className="text-[10px] text-[#9A9BA3] truncate">{r.supplier_name}</p>
+                      <p className="text-[12px] font-semibold truncate" title={r.items_label || ""}>{r.items_label || "—"}</p>
+                      <p className="text-[11px] text-[#9A9BA3] truncate" title={r.supplier_name || ""}>{r.supplier_name}</p>
                     </div>
 
                     <QtyDual rolls={r.qty_rolls} measure={r.quantity} unit={r.unit}
@@ -354,9 +360,9 @@ export default function PoBoardView({ selectedEntity = "all", onOpenDocument }) 
                   </div>
                 ))}
               </div>
-            )}
           </div>
         </div>
+        )}
 
         <div className="px-3 py-2">
           <PaginationBar

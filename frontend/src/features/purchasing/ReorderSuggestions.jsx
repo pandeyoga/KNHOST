@@ -152,7 +152,8 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
           </button>
         </div>
         <p className="px-4 py-2 text-[12px] text-[#6B6B73]">
-          Proyeksi = <b>Tersedia + Dipesan (PO terbuka) + Diminta (PR terbuka)</b>. Produk muncul
+          Proyeksi = <b>Tersedia + Dipesan (PO terbuka) + Diminta (PR terbuka)</b>. <i>Tersedia</i> = saldo tersedia semua gudang
+          (dikurangi pesanan pelanggan &amp; roll diblokir). Produk muncul
           jika proyeksi ≤ titik restock. Barang yang sudah dipesan & diminta ikut dihitung agar tidak
           terjadi <i>pesanan ganda / PR ganda</i>.
         </p>
@@ -193,7 +194,7 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
           <div className={`grid ${COLS} gap-x-1 whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]`}>
             <span><input type="checkbox" aria-label="Pilih semua" data-testid="reorder-check-all" checked={rows.length > 0 && selectedRows.length === rows.length} onChange={toggleAll} /></span>
             <span>Produk</span>
-            <span className="text-right">Tersedia</span>
+            <span className="text-right" title="Saldo tersedia di semua gudang badan usaha ini (stok fisik dikurangi yang dipesan pelanggan & roll diblokir)">Tersedia</span>
             <span className="text-right" title="Dalam pesanan — PO terbuka">Dipesan (PO)</span>
             <span className="text-right" title="Dalam permintaan — PR terbuka">Diminta (PR)</span>
             <span className="text-right">Proyeksi</span>

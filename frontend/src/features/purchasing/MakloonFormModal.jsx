@@ -14,6 +14,7 @@ import useProcessTypes from "../../hooks/useProcessTypes";
 import useUomConversions from "../../hooks/useUomConversions";
 import { uomSelectOptions } from "../../utils/uomCatalog";
 import { overlayDismiss } from "@/utils/overlayDismiss";
+import apiErrorText from "../../utils/apiError";
 
 const TARIFF_UNITS = [
   { value: "output", label: "per Output" }, { value: "input", label: "per Input" }, { value: "roll", label: "per Roll" },
@@ -49,12 +50,14 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
   }));
   const [saving, setSaving] = useState(false);
   const [modalErr, setModalErr] = useState("");   // galat tampil di modal ini
+  const [tried, setTried] = useState(false);       // G0-08 — galat blok alamat tampil setelah Simpan ditekan
   if (!open) return null;
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const toggleProc = (p) => setForm((f) => ({ ...f, process_types: f.process_types.includes(p) ? f.process_types.filter((x) => x !== p) : [...f.process_types, p] }));
 
   const save = async () => {
-    if (!form.name.trim()) { setModalErr("Nama makloon wajib diisi."); return; }
+    setTried(true);
+    if (!form.name.trim()) { setModalErr("Nama mitra makloon wajib diisi."); return; }
     const locErr = locationIncomplete(pickLoc(form));
     if (locErr) { setModalErr(`Alamat: ${locErr}`); return; }
     setSaving(true);
@@ -68,24 +71,24 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
       if (isEdit) await axios.patch(`${API}/makloons/${editTarget.id}`, { data: payload });
       else await axios.post(`${API}/makloons`, payload);
       onSaved?.();
-    } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menyimpan makloon."); setSaving(false); }
+    } catch (e) { setModalErr(apiErrorText(e, "Gagal menyimpan mitra makloon.")); setSaving(false); }
   };
 
   return (
     <div data-testid="makloon-form-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
       <div className="flex max-h-[90vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Factory size={16} className="text-[#0058CC]" /> {isEdit ? "Edit Makloon" : "Buat Makloon Baru"}</h2>
+          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Factory size={16} className="text-[#0058CC]" /> {isEdit ? "Ubah Mitra Makloon" : "Tambah Mitra Makloon"}</h2>
           <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Nama Makloon" req><input data-testid="makloon-name-input" className="field" value={form.name} onChange={set("name")} placeholder="PT Tenun Nusantara" /></Field>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Nama Mitra Makloon" req><input data-testid="makloon-name-input" className="field" value={form.name} onChange={set("name")} placeholder="PT Tenun Nusantara" /></Field>
             <Field label="NPWP"><input data-testid="makloon-npwp-input" className="field" value={form.npwp} onChange={set("npwp")} placeholder="00.000.000.0-000.000" /></Field>
             <Field label="Nama PIC"><input data-testid="makloon-pic-input" className="field" value={form.pic_name} onChange={set("pic_name")} placeholder="Nama kontak" /></Field>
             <Field label="Telepon"><input data-testid="makloon-phone-input" className="field" value={form.phone} onChange={set("phone")} placeholder="0812xxxx" /></Field>
             <Field label="Email"><input data-testid="makloon-email-input" className="field" value={form.email} onChange={set("email")} placeholder="pic@makloon.co.id" /></Field>
-            <LocationFields testId="makloon-loc" value={pickLoc(form)} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
+            <LocationFields testId="makloon-loc" value={pickLoc(form)} showErrors={tried} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
           </div>
           <Field label="Jenis Proses (Kemampuan)">
             <div className="flex flex-wrap gap-1.5" data-testid="makloon-process-types">
@@ -95,7 +98,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
               ))}
             </div>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Kapasitas / Bulan"><input data-testid="makloon-capacity-input" type="number" className="field" value={form.capacity_per_month} onChange={set("capacity_per_month")} placeholder="mis. 50000" /></Field>
             <Field label="Satuan Kapasitas">
               <KNSelect data-testid="makloon-capacity-unit" className="field" value={form.capacity_unit} onValueChange={(v) => setForm({ ...form, capacity_unit: v })}
@@ -110,7 +113,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
               <KNSelect data-testid="makloon-term-select" className="field" value={form.payment_term_code} onValueChange={(v) => setForm({ ...form, payment_term_code: v })}
                 options={[{ value: "", label: "— Tidak ditentukan —" }, ...terms.map((t) => ({ value: t.code, label: t.name }))]} />
             </Field>
-            <Field label="Entitas">
+            <Field label="Badan Usaha">
               <KNSelect data-testid="makloon-entity-select" className="field" value={form.entity_id} onValueChange={(v) => setForm({ ...form, entity_id: v })}
                 options={[{ value: "", label: "— Default (KSC) —" }, ...entities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name }))]} />
             </Field>
@@ -121,7 +124,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
         {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="makloon-form-error">{modalErr}</p>}
         <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="makloon-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan"}</button>
+          <button data-testid="makloon-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Tambah Mitra Makloon"}</button>
         </div>
       </div>
     </div>
@@ -131,7 +134,8 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
 function Field({ label, req, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">{label} {req && <span className="text-[#D14343]">*</span>}</span>
+      {/* G4-16 — label 11px seragam dengan form lain (blok lokasi MAJUSCULE milik LocationFields → G0-08). */}
+      <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">{label} {req && <span className="text-[#D14343]">*</span>}</span>
       {children}
     </label>
   );

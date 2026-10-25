@@ -24,7 +24,7 @@ import {
 
 export default function DomainRegistryView() {
   const {
-    loading, error, reload, enums, items, options, fieldRules, fieldLabels,
+    loading, error, reload, enums, items, options, fieldRules, fieldLabels, labelOf,
     transitions, matrix, decisions,
   } = useDomainEnums();
 
@@ -58,7 +58,7 @@ export default function DomainRegistryView() {
     return (
       <div data-testid="domain-registry-loading" className="section-card">
         <div className="section-body py-10 text-center text-[12px] text-[#6B6B73]">
-          Memuat registry enum domain…
+          Memuat registri domain…
         </div>
       </div>
     );
@@ -76,7 +76,7 @@ export default function DomainRegistryView() {
     return (
       <div data-testid="domain-registry-empty" className="section-card">
         <div className="section-body py-10 text-center text-[12px] text-[#6B6B73]">
-          Registry belum berisi enum. Jalankan ulang backend atau muat ulang.
+          Registri belum berisi daftar pilihan. Muat ulang, atau hubungi admin sistem bila tetap kosong.
           <div className="mt-2">
             <button data-testid="domain-registry-empty-reload" className="secondary-button" onClick={reload}>
               <RefreshCw size={13} /> Muat ulang
@@ -90,10 +90,10 @@ export default function DomainRegistryView() {
   return (
     <div data-testid="domain-registry-view" className="grid gap-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi testId="domain-kpi-enums" label="Enum Terdaftar" value={enumNames.length}
+        <Kpi testId="domain-kpi-enums" label="Daftar Pilihan Baku" value={enumNames.length}
           hint={`${activeEnums.length} sudah dipakai sistem`} icon={Layers3} />
-        <Kpi testId="domain-kpi-stages" label="Tahap Bahan (stage)" value={stages.length}
-          hint="yarn → grey → pfd/pfp → finished" icon={Workflow} tone="#6B219A" />
+        <Kpi testId="domain-kpi-stages" label="Tahap Bahan" value={stages.length}
+          hint="Benang → Grey → PFD/PFP → Kain jadi" icon={Workflow} tone="#6B219A" />
         <Kpi testId="domain-kpi-transitions" label="Transisi Sah" value={transitions.length}
           hint="kombinasi lain ditolak server" icon={GitBranch} tone="#1E7B34" />
         <Kpi testId="domain-kpi-decisions" label="Aturan Mengikat" value={Object.keys(decisions).length}
@@ -107,12 +107,12 @@ export default function DomainRegistryView() {
             <h2>Rantai Tahap Bahan & Matriks Transisi</h2>
           </div>
           <button data-testid="domain-registry-reload" className="secondary-button ml-auto" onClick={reload}>
-            <RefreshCw size={13} /> Muat Ulang Registry
+            <RefreshCw size={13} /> Muat Ulang Registri
           </button>
         </div>
         <div className="section-body grid gap-3">
           <StageChain stages={stages} transitions={transitions} />
-          <TransitionMatrix matrix={matrix} />
+          <TransitionMatrix matrix={matrix} labelOf={labelOf} />
         </div>
       </section>
 
@@ -130,7 +130,7 @@ export default function DomainRegistryView() {
           </p>
           <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Stage asal</label>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tahap asal</label>
               <KNSelect data-testid="sim-from-stage" className="field" value={sim.from_stage}
                 onValueChange={(v) => setSim({ ...sim, from_stage: v })} options={options("stage")} />
             </div>

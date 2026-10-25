@@ -9,8 +9,9 @@ const CHIPS = [
   { key: "settled_by_return", label: "Lunas lewat retur", on: "bg-teal-600 text-white", off: "border-teal-200 bg-teal-50 text-teal-700" },
 ];
 
-export function POPaymentChips({ value, onChange, counts = {} }) {
-  const total = Object.values(counts).reduce((a, n) => a + (n || 0), 0);
+export function POPaymentChips({ value, onChange, counts = {}, allCount = null }) {
+  // G4-30 — "Semua" = seluruh PO pada lingkup (termasuk Ditolak/Batal), chip lain = PO hidup saja.
+  const total = allCount ?? Object.values(counts).reduce((a, n) => a + (n || 0), 0);
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-testid="po-payment-filter">
       <span className="mr-1 flex items-center gap-1 text-[11px] font-semibold text-[#6B6B73]"><Wallet size={13} /> Status bayar</span>

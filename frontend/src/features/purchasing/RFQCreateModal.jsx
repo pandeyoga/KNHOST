@@ -91,20 +91,22 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
       <div className="modal-card" style={{ maxWidth: 720, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
           <div className="flex items-center gap-2"><ClipboardList size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Buat RFQ / Penawaran</h2></div>
-          <button data-testid="rfq-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
+          <button data-testid="rfq-create-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-3">
-          <div className="flex gap-2">
-            <button data-testid="rfq-source-manual" onClick={() => setSource("manual")}
-              className={`flex-1 py-2 rounded-md text-[12px] font-semibold border ${source === "manual" ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#EFF0F2] text-[#6B6B73]"}`}>Manual (pilih produk)</button>
-            <button data-testid="rfq-source-pr" onClick={() => setSource("pr")}
-              className={`flex-1 py-2 rounded-md text-[12px] font-semibold border ${source === "pr" ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#EFF0F2] text-[#6B6B73]"}`}>Dari PR disetujui</button>
+          {/* UAT 24 Okt (audit UI tahap 2) — G4-06: pemilih sumber memakai tab standar (bukan
+              segmented #0058CC buatan sendiri). G4-03: grid 1 kolom di HP. */}
+          <div className="tab-bar !mb-0" role="tablist" aria-label="Sumber item RFQ">
+            <button type="button" role="tab" aria-selected={source === "manual"} data-testid="rfq-source-manual"
+              onClick={() => setSource("manual")} className={`tab-button ${source === "manual" ? "active" : ""}`}>Manual (pilih produk)</button>
+            <button type="button" role="tab" aria-selected={source === "pr"} data-testid="rfq-source-pr"
+              onClick={() => setSource("pr")} className={`tab-button ${source === "pr" ? "active" : ""}`}>Dari PR disetujui</button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Judul RFQ"><input data-testid="rfq-title-input" value={title} onChange={(e) => setTitle(e.target.value)} className="field" placeholder="mis. Pengadaan kain Q1" /></Field>
-            <Field label="Gudang Tujuan" req><KNSelect value={warehouseId} onValueChange={setWarehouseId} options={warehouseOptions} className="field" placeholder="Pilih gudang..." data-testid="rfq-warehouse-select" /></Field>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Judul RFQ (opsional)"><input data-testid="rfq-title-input" value={title} onChange={(e) => setTitle(e.target.value)} className="field" placeholder="mis. Kain Q1" /></Field>
+            <Field label="Gudang Tujuan" req><KNSelect value={warehouseId} onValueChange={setWarehouseId} options={warehouseOptions} className="field" placeholder="Pilih gudang" data-testid="rfq-warehouse-select" /></Field>
           </div>
 
           {source === "pr" ? (
@@ -125,13 +127,20 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
           ) : (
             <div>
               <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Item <span className="text-red-500">*</span></label>
+              {/* G4-06 — kepala kolom (dulu hanya placeholder); G4-03 — di < 640px baris item
+                  dua baris: produk penuh, lalu qty + satuan + hapus (ikon tidak keluar tepi). */}
+              <div className="mb-1 hidden grid-cols-[1fr_90px_80px_32px] gap-2 text-[11px] font-semibold text-[#6B6B73] sm:grid" aria-hidden="true">
+                <span>Produk</span><span>Qty</span><span>Satuan</span><span />
+              </div>
               <div className="space-y-2">
                 {rows.map((r, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_90px_80px_32px] gap-2" data-testid={`rfq-item-row-${i}`}>
-                    <KNSelect value={r.product_id} onValueChange={(v) => { const p = products.find((x) => x.id === v); setRow(i, { product_id: v, unit: p?.base_unit || "meter" }); }} options={productOptions} className="field" placeholder="Produk..." data-testid={`rfq-item-product-${i}`} />
-                    <input type="number" value={r.quantity} onChange={(e) => setRow(i, { quantity: e.target.value })} className="field" placeholder="Qty" data-testid={`rfq-item-qty-${i}`} />
-                    <div className="field flex items-center bg-[#F5F5F7] font-semibold text-[#3C3C43]" data-testid={`rfq-item-unit-${i}`} title="Satuan mengikuti master data produk">{r.unit || "—"}</div>
-                    <button onClick={() => delRow(i)} disabled={rows.length === 1} className="icon-button text-red-500 disabled:opacity-30"><Trash2 size={14} /></button>
+                  <div key={i} className="grid grid-cols-[1fr_80px_32px] gap-2 rounded-md border border-[#EFF0F2] p-2 sm:grid-cols-[1fr_90px_80px_32px] sm:border-0 sm:p-0" data-testid={`rfq-item-row-${i}`}>
+                    <div className="col-span-3 min-w-0 sm:col-span-1">
+                      <KNSelect value={r.product_id} onValueChange={(v) => { const p = products.find((x) => x.id === v); setRow(i, { product_id: v, unit: p?.base_unit || "meter" }); }} options={productOptions} className="field" placeholder="Pilih produk" aria-label={`Produk item ${i + 1}`} data-testid={`rfq-item-product-${i}`} />
+                    </div>
+                    <input type="number" min="0" value={r.quantity} onChange={(e) => setRow(i, { quantity: e.target.value })} className="field" placeholder="0" aria-label={`Qty item ${i + 1}`} data-testid={`rfq-item-qty-${i}`} />
+                    <span className="flex items-center text-[12px] font-semibold text-[#3C3C43]" data-testid={`rfq-item-unit-${i}`} title="Satuan mengikuti master data produk">{r.unit || "—"}</span>
+                    <button type="button" onClick={() => delRow(i)} disabled={rows.length === 1} aria-label={`Hapus item ${i + 1}`} className="icon-button text-red-500 disabled:opacity-30"><Trash2 size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -143,7 +152,12 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
 
           <div>
             <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Undang Supplier <span className="text-red-500">*</span> <span className="text-[#9A9BA3]">({supplierIds.length} dipilih)</span></label>
-            <div className="grid grid-cols-2 gap-1.5 max-h-[160px] overflow-y-auto" data-testid="rfq-supplier-list">
+            {suppliers.some(isGroupEntityPartner) && (
+              <p className="mb-1 text-[11px] text-[#6B6B73]" data-testid="rfq-group-entity-hint">
+                Badan usaha grup (berlencana “Entitas grup”) tidak ikut tender — harganya lewat menu Antar Entitas.
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto sm:grid-cols-2 sm:max-h-[160px]" data-testid="rfq-supplier-list">
               {suppliers.map((sup) => {
                 // FASE E-7 (E7.2) — badan usaha grup TIDAK menawar: harganya diatur
                 // kontrak internal. Kotak centangnya dimatikan + diberi lencana supaya
@@ -158,8 +172,8 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
                         : "border-[#EFF0F2] cursor-pointer"}`}>
                     <input type="checkbox" disabled={isGroup} checked={supplierIds.includes(sup.id)}
                       onChange={() => !isGroup && toggleSupplier(sup.id)} />
-                    <span className="truncate">{sup.name}</span>
-                    {isGroup && <GroupEntityBadge partner={sup} className="ml-auto" />}
+                    <span className="min-w-0 flex-1 truncate" title={sup.name}>{sup.name}</span>
+                    {isGroup && <GroupEntityBadge partner={sup} className="shrink-0" />}
                   </label>
                 );
               })}

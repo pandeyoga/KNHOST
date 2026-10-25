@@ -81,8 +81,11 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
       {seller === buyer && <p className="text-[12px] text-[#C0392B]" data-testid="ic-bulk-same">PT penjual dan pembeli harus berbeda.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <SearchBox value={q} onChange={setQ} placeholder="Cari SKU / nama barang…" testId="ic-bulk-search" />
+        {/* UAT 24 Okt (audit UI tahap 2) — G4-08: "sudah" kini dihitung pada himpunan barang yang sama
+            (belum + sudah = barang ber-stok, sama dengan angka ubin ringkasan). */}
         <span className="text-[11.5px] text-[#6B6B73]" data-testid="ic-bulk-count">
-          {data ? `${data.total} barang belum punya harga · ${data.priced} sudah` : ""}
+          {data ? `${data.total} barang belum punya harga · ${data.priced} sudah`
+            + (data.candidates != null ? ` · dari ${data.candidates} barang${data.only_stock ? " ber-stok" : " aktif"}` : "") : ""}
         </span>
         {canSet && (
           <div className="ml-auto flex items-center gap-1.5">
@@ -113,7 +116,11 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
           </thead>
           <tbody className="divide-y divide-[#F2F2F5]">
             {loading ? <tr><td colSpan={4} className="py-8 text-center text-[#6B6B73]">Memuat…</td></tr>
-              : !rows.length ? <tr><td colSpan={4} className="py-8 text-center text-[#6B6B73]" data-testid="ic-bulk-empty">Semua barang pada pasangan ini sudah punya harga internal.</td></tr>
+              : !rows.length ? <tr><td colSpan={4} className="py-8 text-center text-[#6B6B73]" data-testid="ic-bulk-empty">
+                {q.trim() && (data?.rows || []).length ? `Tidak ada barang tanpa harga yang cocok dengan “${q.trim()}”.`
+                  : data && data.candidates === 0 ? (onlyStock ? "Tidak ada barang ber-stok di PT penjual." : "Tidak ada barang aktif.")
+                  : "Semua barang pada pasangan ini sudah punya harga internal."}
+              </td></tr>
               : pageRows.map((r) => (
                 <tr key={r.product_id} data-testid={`ic-bulk-row-${r.product_id}`}>
                   <td className="px-3 py-1.5"><p className="font-mono text-[10.5px] text-[#8E8E93]">{r.sku}</p><p className="font-semibold">{r.product_name}</p></td>

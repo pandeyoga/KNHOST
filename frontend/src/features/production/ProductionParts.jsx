@@ -48,7 +48,8 @@ export function StatusBadge({ status }) {
   return <Badge tone={s.tone} testId={`wo-status-${status}`}>{s.label}</Badge>;
 }
 
-const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#0058CC] focus:outline-none";
+// UAT 24 Okt (audit UI tahap 2) — G4-22: isian memakai kelas baku `.field` (dulu gaya pil buatan sendiri).
+const inputCls = "field";
 const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── BOM table ──────────────────────────────────────────────────────────────
@@ -150,15 +151,15 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
       {err && <div data-testid="bom-form-error" className="rounded-lg border border-[#F3D6D6] bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C0392B]">{err}</div>}
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className={labelCls}>Nama BOM</label>
+          <label className={labelCls}>Nama BOM *</label>
           <input data-testid="bom-name-input" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Batik Cap Mega Mendung" />
         </div>
         <div className="col-span-2">
-          <label className={labelCls}>Produk Output (Barang Jadi)</label>
+          <label className={labelCls}>Produk Output (Barang Jadi) *</label>
           <KNSelect data-testid="bom-output-select" value={outputId} onValueChange={setOutputId} options={prodOptions} searchable placeholder="Pilih produk output" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Overhead / unit (Rp)</label>
+          <label className={labelCls}>Overhead / unit (Rp) (opsional)</label>
           <input data-testid="bom-overhead-input" type="number" min="0" className={inputCls} value={overhead} onChange={(e) => setOverhead(e.target.value)} />
         </div>
         {bom?.id && (
@@ -173,7 +174,7 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
       <div>
         <div className="mb-1.5 flex items-center gap-2">
           <Layers3 size={13} className="text-[#0058CC]" />
-          <span className="text-[11px] font-bold text-[#3A3A3C]">Komponen Bahan</span>
+          <span className="text-[11px] font-bold text-[#3A3A3C]">Komponen Bahan *</span>
           <button data-testid="bom-add-component" onClick={addRow}
                   className="secondary-button ml-auto !px-2 !py-1 text-[11px]"><Plus size={12} /> Tambah bahan</button>
         </div>
@@ -187,7 +188,7 @@ export function BOMFormModal({ bom, products, onCancel, onSave }) {
                           options={prodOptions} searchable placeholder="Pilih bahan" className={inputCls} />
               </div>
               <input data-testid={`bom-component-qty-${i}`} type="number" min="0" step="0.01"
-                     className={`${inputCls} w-28`} value={r.qty_per_unit}
+                     className={`${inputCls} !w-28 shrink-0`} value={r.qty_per_unit}
                      onChange={(e) => setRow(i, { qty_per_unit: e.target.value })} placeholder="qty/unit" />
               <button data-testid={`bom-component-remove-${i}`} onClick={() => rmRow(i)}
                       className="rounded-md border border-[#F3D6D6] p-1.5 text-[#C0392B] hover:bg-[#FDECEC]"><Trash2 size={13} /></button>

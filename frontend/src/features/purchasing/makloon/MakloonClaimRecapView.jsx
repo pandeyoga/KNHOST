@@ -4,19 +4,12 @@ import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "@/components/KNDatePicker";
+import { MetricRow, PageHeader } from "../../../components/ListPageParts";
 
 const SETTLE = { potong_bon: "Potong tagihan jasa", tagih_ganti: "Tagih ganti rugi", terima_catatan: "Diterima (catatan)" };
 const STATUS = { posted: "Dibukukan", pending_approval: "Menunggu persetujuan", rejected: "Ditolak", approved: "Disetujui" };
 const PAGE = 200;   // AUD-MKL-02 — rincian per halaman; ringkasan & Excel tetap utuh
 
-function Kpi({ label, value, testId, tone = "" }) {
-  return (
-    <div className="rounded-xl border border-[#E5E5EA] bg-white px-3 py-2" data-testid={testId}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-      <p className={`text-[15px] font-bold tabular-nums ${tone}`}>{value}</p>
-    </div>
-  );
-}
 
 /** L01 — Rekap susut, klaim & potongan tagihan per mitra makloon (penagihan & evaluasi). */
 export default function MakloonClaimRecapView({ selectedEntity }) {
@@ -61,32 +54,44 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
   const first = total ? (data?.rows_offset || 0) + 1 : 0;
   const last = (data?.rows_offset || 0) + (data?.rows || []).length;
   return (
-    <section className="space-y-3" data-testid="makloon-claim-recap">
-      <div className="flex flex-wrap items-end gap-2">
-        <h2 className="mr-auto flex items-center gap-2 text-[15px] font-bold"><Scale size={16} /> Rekap Susut & Klaim Mitra</h2>
-        <label className="grid gap-0.5 text-[11px] font-semibold text-[#6B6B73]">Dari tanggal
-          <KNDatePicker data-testid="recap-from" placeholder="Awal" value={from} onChange={(v) => { setFrom(v || ""); setOffset(0); }} />
-        </label>
-        <label className="grid gap-0.5 text-[11px] font-semibold text-[#6B6B73]">Sampai tanggal
-          <KNDatePicker data-testid="recap-to" placeholder="Sekarang" min={from} value={to} onChange={(v) => { setTo(v || ""); setOffset(0); }} />
-        </label>
-        <KNSelect className="field !w-auto !py-1 text-[12px]" value={partner} onValueChange={(v) => { setPartner(v); setOffset(0); }} data-testid="recap-partner"
-          aria-label="Mitra makloon" options={[{ value: "", label: "Semua mitra" }, ...partnerOpts.map((p) => ({ value: p.makloon_id, label: p.makloon_name }))]} />
-        <button className="secondary-button !py-1.5 text-[12px]" onClick={download} disabled={busy} data-testid="recap-download-xlsx">
-          <Download size={13} /> Unduh Excel
-        </button>
-        <button className="secondary-button !py-1.5 text-[12px]" onClick={load} disabled={busy} data-testid="recap-reload">
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Muat ulang
-        </button>
+    <section className="view-container" data-testid="makloon-claim-recap">
+      {/* UAT 24 Okt (audit UI tahap 2) — G4-25: kerangka sama dengan tab saudara (PageHeader + kartu
+          penyaring berlabel + MetricRow); nilai 0 tidak lagi merah/hijau. */}
+      <PageHeader icon={Scale} title={<span data-testid="recap-title">Rekap Susut & Klaim Mitra</span>}
+        subtitle="Beban susut wajar, piutang klaim, dan potongan tagihan per mitra makloon dalam periode."
+        actions={<>
+          <button className="secondary-button" onClick={download} disabled={busy} data-testid="recap-download-xlsx">
+            <Download size={13} /> Unduh Excel
+          </button>
+          <button className="secondary-button" onClick={load} disabled={busy} data-testid="recap-reload">
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Muat ulang
+          </button>
+        </>} />
+      <div className="section-card section-pad">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Dari tanggal</span>
+            <KNDatePicker data-testid="recap-from" placeholder="Awal" value={from} onChange={(v) => { setFrom(v || ""); setOffset(0); }} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Sampai tanggal</span>
+            <KNDatePicker data-testid="recap-to" placeholder="Sekarang" min={from} value={to} onChange={(v) => { setTo(v || ""); setOffset(0); }} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Mitra makloon</span>
+            <KNSelect className="field" value={partner} onValueChange={(v) => { setPartner(v); setOffset(0); }} data-testid="recap-partner"
+              aria-label="Mitra makloon" options={[{ value: "", label: "Semua mitra" }, ...partnerOpts.map((p) => ({ value: p.makloon_id, label: p.makloon_name }))]} />
+          </label>
+        </div>
       </div>
       {err && <p className="text-[12px] text-[#C0392B]" data-testid="recap-error">{err}</p>}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-        <Kpi label="Beban susut wajar" value={formatCurrency(t.loss_expense || 0)} testId="recap-kpi-expense" />
-        <Kpi label="Piutang klaim mitra" value={formatCurrency(t.receivable_total || 0)} testId="recap-kpi-receivable" tone="text-[#A8221A]" />
-        <Kpi label="Dipotong dari tagihan" value={formatCurrency(t.deducted_total || 0)} testId="recap-kpi-deducted" tone="text-[#0A7A3B]" />
-        <Kpi label="Susut menunggu" value={t.loss_pending || 0} testId="recap-kpi-loss-pending" />
-        <Kpi label="Klaim selisih menunggu" value={t.variance_pending || 0} testId="recap-kpi-variance-pending" />
-      </div>
+      <MetricRow items={[
+        { label: "Beban susut wajar", value: formatCurrency(t.loss_expense || 0), testId: "recap-kpi-expense" },
+        { label: "Piutang klaim mitra", value: formatCurrency(t.receivable_total || 0), testId: "recap-kpi-receivable", tone: Number(t.receivable_total) > 0 ? "#A8221A" : undefined },
+        { label: "Dipotong dari tagihan", value: formatCurrency(t.deducted_total || 0), testId: "recap-kpi-deducted", tone: Number(t.deducted_total) > 0 ? "#0A7A3B" : undefined },
+        { label: "Susut menunggu", value: String(t.loss_pending || 0), testId: "recap-kpi-loss-pending" },
+        { label: "Klaim selisih menunggu", value: String(t.variance_pending || 0), testId: "recap-kpi-variance-pending" },
+      ]} />
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="w-full text-[12px]" data-testid="recap-partner-table">
           <thead className="whitespace-nowrap bg-[#F7F7F9] text-left text-[11px] uppercase text-[#8E8E93]">
@@ -101,8 +106,8 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
                 <td className="px-3 py-2 text-right tabular-nums">{p.loss_events}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatQty(p.loss_qty)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(p.loss_expense)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-[#A8221A]">{formatCurrency(p.receivable_total)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-[#0A7A3B]">{formatCurrency(p.deducted_total)}</td>
+                <td className={`px-3 py-2 text-right tabular-nums ${Number(p.receivable_total) > 0 ? "text-[#A8221A]" : ""}`}>{formatCurrency(p.receivable_total)}</td>
+                <td className={`px-3 py-2 text-right tabular-nums ${Number(p.deducted_total) > 0 ? "text-[#0A7A3B]" : ""}`}>{formatCurrency(p.deducted_total)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{p.variance_claims} · {formatCurrency(p.variance_claim_amount)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{p.loss_pending + p.variance_pending}</td>
               </tr>

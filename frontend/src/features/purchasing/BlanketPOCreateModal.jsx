@@ -160,12 +160,12 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
     <div className="modal-overlay" data-testid="blanket-create-modal" {...overlayDismiss(onClose)}>
       <div className="modal-card" style={{ maxWidth: 760, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2"><FileStack size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Buat Kontrak Blanket / Contract PO</h2></div>
-          <button data-testid="blanket-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
+          <div className="flex items-center gap-2"><FileStack size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Buat Kontrak Blanket PO</h2></div>
+          <button data-testid="blanket-create-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Supplier (Master)">
               <KNSelect value={supplierId} onValueChange={handleSupplier} options={supplierOptions}
                 className="field" placeholder="Pilih dari master / manual" data-testid="blanket-supplier-select" />
@@ -173,7 +173,7 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
             <Field label="Nama Supplier" req={!supplierId}>
               <input data-testid="blanket-supplier-name" value={supplierName} disabled={!!supplierId}
                 onChange={(e) => setSupplierName(e.target.value)}
-                className="field disabled:bg-gray-100 disabled:text-gray-500" placeholder="PT Supplier Textile" />
+                className="field disabled:bg-gray-100 disabled:text-gray-500" placeholder="mis. PT Sinar Tekstil" />
             </Field>
             <Field label="Kontak Supplier">
               <input data-testid="blanket-supplier-contact" value={supplierContact}
@@ -183,42 +183,44 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
                 INTERNAL, bukan Blanket PO: call-off-nya akan melahirkan PO biasa dan
                 margin antar-PT tidak pernah dieliminasi di konsolidasi. */}
             {supplierIsGroupEntity && (
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <GroupEntityNotice partner={selectedSupplier} docLabel="Kontrak Blanket PO" />
               </div>
             )}
             <Field label="Gudang Default" req>
               <KNSelect value={warehouseId} onValueChange={setWarehouseId} options={warehouseOptions}
-                className="field" placeholder="Pilih gudang..." data-testid="blanket-warehouse-select" />
+                className="field" placeholder="Pilih gudang" data-testid="blanket-warehouse-select" />
             </Field>
             <Field label="Berlaku Mulai">
               <KNDatePicker data-testid="blanket-valid-from" value={validFrom} onChange={setValidFrom} />
             </Field>
             <Field label="Berlaku Sampai">
               <KNDatePicker data-testid="blanket-valid-until" value={validUntil} onChange={setValidUntil} />
-              <p className="text-[10px] text-[#9A9BA3] mt-0.5">Kosongkan = tanpa kadaluarsa</p>
+              <p className="text-[11px] text-[#9A9BA3] mt-0.5">Kosongkan bila tanpa batas waktu</p>
             </Field>
           </div>
 
           {/* Items kontrak */}
           <div>
             <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Item Kontrak <span className="text-red-500">*</span></label>
-            <div className="grid grid-cols-[1fr_80px_100px_130px_32px] gap-2 px-1 mb-1 text-[10px] font-bold uppercase text-[#9A9BA3]">
-              <span>Produk</span><span>Qty Kontrak</span><span>Harga Sepakat</span><span>Unit</span><span></span>
+            {/* UAT 24 Okt (audit UI tahap 2) — G4-09: kepala kolom bergaya label biasa (dulu MAJUSCULE 10px),
+                "Harga per satuan" (dulu "Harga Sepakat", bentrok dengan isian PPN di bawah). */}
+            <div className="grid grid-cols-[1fr_80px_100px_130px_32px] gap-2 px-1 mb-1 text-[11px] font-semibold text-[#4A4B53]">
+              <span>Produk</span><span>Qty kontrak</span><span>Harga per satuan</span><span>Satuan</span><span></span>
             </div>
             <div className="space-y-2">
               {rows.map((r, i) => (
                 <div key={i} className="grid grid-cols-[1fr_80px_100px_130px_32px] gap-2" data-testid={`blanket-item-row-${i}`}>
                   <KNSelect value={r.product_id} onValueChange={(v) => setRow(i, { product_id: v })}
-                    options={productOptions} className="field" placeholder="Produk..." data-testid={`blanket-item-product-${i}`} />
+                    options={productOptions} className="field" placeholder="Pilih produk" data-testid={`blanket-item-product-${i}`} />
                   <input type="number" value={r.contract_qty} onChange={(e) => setRow(i, { contract_qty: e.target.value })}
-                    className="field" placeholder="Qty" data-testid={`blanket-item-qty-${i}`} />
+                    className="field" placeholder="0" aria-label={`Qty kontrak item ${i + 1}`} data-testid={`blanket-item-qty-${i}`} />
                   <MoneyInput value={r.contract_price} onChange={(v) => setRow(i, { contract_price: v })}
-                    className="field" placeholder="Harga" testId={`blanket-item-price-${i}`} />
+                    className="field" placeholder="0" testId={`blanket-item-price-${i}`} />
                   <KNSelect value={r.unit} onValueChange={(v) => setRow(i, { unit: v })}
-                    options={unitOptionsFor(r)} className="field" placeholder="unit"
+                    options={unitOptionsFor(r)} className="field" placeholder="Satuan"
                     disabled={!r.product_id} data-testid={`blanket-item-unit-${i}`} />
-                  <button onClick={() => delRow(i)} disabled={rows.length === 1}
+                  <button onClick={() => delRow(i)} disabled={rows.length === 1} aria-label={`Hapus item ${i + 1}`}
                     className="icon-button text-red-500 disabled:opacity-30"><Trash2 size={14} /></button>
                 </div>
               ))}
@@ -229,13 +231,14 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
           </div>
 
           {/* Plafon nilai + ringkasan */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Plafon Nilai Kontrak (Rp)">
               <MoneyInput testId="blanket-value-cap" value={valueCap}
-                onChange={(v) => setValueCap(v)} className="field" placeholder="0 = otomatis Σ qty×harga" />
+                onChange={(v) => setValueCap(v)} className="field" placeholder="0" />
+              <p className="text-[11px] text-[#9A9BA3] mt-0.5">0 = otomatis (jumlah qty × harga)</p>
             </Field>
             <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5 text-[11.5px]" data-testid="blanket-summary">
-              <div className="flex justify-between"><span className="text-[#6B6B73]">Σ qty × harga</span><span className="tabular-nums">{formatCurrency(computedTotal)}</span></div>
+              <div className="flex justify-between"><span className="text-[#6B6B73]">Jumlah qty × harga</span><span className="tabular-nums">{formatCurrency(computedTotal)}</span></div>
               <div className="flex justify-between font-bold mt-1 pt-1 border-t border-[#EFF0F2]">
                 <span>Plafon Efektif</span>
                 <span data-testid="blanket-effective-cap" className="tabular-nums text-[#007AFF]">{formatCurrency(effectiveCap)}</span>
@@ -250,21 +253,22 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
 
           {/* PB-01 — syarat komersial: turun otomatis ke tiap call-off (PO anak) */}
           <div className="rounded-md border border-[#DCE7F7] bg-[#F7FAFF] p-2.5" data-testid="blanket-terms-block">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">Termin & PPN kontrak — turun otomatis ke tiap call-off</p>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Termin pembayaran">
+            <p className="mb-2 text-[12px] font-semibold text-[#1C1C1E]">Termin & PPN kontrak <span className="font-normal text-[#6B6B73]">— turun otomatis ke tiap penarikan (call-off)</span></p>
+            {/* G4-09 — dua kolom supaya teks pilihan PPN tidak terpotong chevron. */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2"><Field label="Termin pembayaran">
                 <KNSelect value={paymentTermCode} onValueChange={setPaymentTermCode} className="field"
                   placeholder="— ikut termin supplier —" data-testid="blanket-payment-term"
                   options={[{ value: "", label: `— ikut supplier${selectedSupplier?.payment_term_code ? ` (${selectedSupplier.payment_term_code})` : ""} —` },
                     ...paymentTerms.map((t) => ({ value: t.code, label: `${t.code} · ${t.name}${t.net_days ? ` · ${t.net_days} hari` : ""}${t.dp_percent ? ` · DP ${t.dp_percent}%` : ""}` }))]} />
-              </Field>
+              </Field></div>
               <Field label="PPN">
                 <KNSelect value={taxMode} onValueChange={setTaxMode} className="field" data-testid="blanket-tax-mode"
                   options={[{ value: "", label: "Ikut pengaturan badan usaha" }, { value: "ppn", label: "Kena PPN (Faktur Pajak Masukan)" }, { value: "non_ppn", label: "Non-PPN (supplier non-PKP)" }]} />
               </Field>
-              <Field label="Harga sepakat">
+              <Field label="Kebijakan harga">
                 <KNSelect value={priceIncl} onValueChange={setPriceIncl} className="field" data-testid="blanket-price-incl"
-                  options={[{ value: "", label: "Ikut pengaturan" }, { value: "no", label: "Belum termasuk PPN (exclude)" }, { value: "yes", label: "Sudah termasuk PPN (include)" }]} />
+                  options={[{ value: "", label: "Ikut pengaturan badan usaha" }, { value: "no", label: "Harga belum termasuk PPN" }, { value: "yes", label: "Harga sudah termasuk PPN" }]} />
               </Field>
             </div>
           </div>

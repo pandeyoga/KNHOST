@@ -322,6 +322,8 @@ async def stats(query: Dict[str, Any]) -> Dict[str, Any]:
         "active": len(active),
         "makloon": len([r for r in rows if r.get("contract_type") == "makloon"]),
         "purchase": len([r for r in rows if r.get("contract_type") == "purchase"]),
+        # UAT 24 Okt (audit UI tahap 2) — G4-07: hitungan tab "Harga Internal" dari statistik.
+        "internal": len([r for r in rows if r.get("contract_type") == "internal"]),
         "expiring_30d": len(expiring),
         "draft": len([r for r in rows if r.get("status") == "draft"]),
         "terminated": len([r for r in rows if r.get("status") in ("terminated", "expired")]),

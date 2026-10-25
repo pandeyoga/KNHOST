@@ -161,10 +161,12 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
                     {(l.realizations || []).length === 0 ? (
                       <span className="text-[10.5px] text-[#9A9BA3]">Belum ada</span>
                     ) : (l.realizations || []).map((r, i) => (
+                      // UAT 24 Okt (audit UI tahap 2) — G4-12: realisasi ke PO yang batal/ditolak tampil dicoret.
                       <p key={i} data-testid={`pr-source-ref-${l.line_no}-${i}`}
-                        className="text-[10.5px] text-[#0058CC] font-semibold truncate">
+                        title={r.voided ? `PO ${r.ref_number} batal — qty kembali terbuka${r.voided_reason ? `: ${r.voided_reason}` : ""}` : undefined}
+                        className={`text-[11px] font-semibold truncate ${r.voided ? "text-[#9A9BA3] line-through" : "text-[#0058CC]"}`}>
                         {r.ref_number} <span className="text-[#9A9BA3] font-normal">
-                          ({r.type === "purchase_order" ? "PO" : "Makloon"} · {formatQty(r.qty)})
+                          ({r.type === "purchase_order" ? "PO" : "Makloon"} · {formatQty(r.qty)}{r.voided ? " · batal" : ""})
                         </span>
                       </p>
                     ))}

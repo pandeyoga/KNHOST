@@ -58,7 +58,7 @@ export const VariantMedia = ({ product, meta, onChanged }) => {
       </div>
     </div>}
     {caps.update && <div className="border-t pt-4">
-      <button data-testid="media-ai-toggle" className="secondary-button" onClick={() => setShowAI(!showAI)}><Wand2 size={14} />Mockup dengan Gemini</button>
+      <button data-testid="media-ai-toggle" className="secondary-button" onClick={() => setShowAI(!showAI)} title="Mockup dibuat dengan AI (Gemini)"><Wand2 size={14} />Buat mockup (AI)</button>
       {showAI && <div className="mt-3 space-y-3">
         {!meta?.ai?.enabled ? <p data-testid="media-ai-disabled" className="rounded bg-amber-50 p-3 text-sm text-amber-800">{meta?.ai?.reason || "Gemini belum dikonfigurasi. Unggahan manual tetap tersedia."}</p> : <>
           <KNSelect data-testid="media-ai-source" className="field" value={source} onValueChange={setSource} placeholder="Pilih foto/artwork acuan varian" options={items.filter(m => !m.ai).map(m => ({ value: m.id, label: m.filename }))} />

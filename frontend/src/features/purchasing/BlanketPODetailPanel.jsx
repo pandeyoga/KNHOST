@@ -226,7 +226,7 @@ export default function BlanketPODetailPanel({ blanketId, currentUser, onClose, 
 
       <ConfirmModal
         open={confirmClose}
-        title="Tutup Kontrak Blanket"
+        title="Tutup Kontrak Blanket PO"
         message={`Tutup ${po.po_number}? Call-off baru tidak akan diizinkan setelah ditutup.`}
         confirmLabel="Tutup Kontrak"
         danger

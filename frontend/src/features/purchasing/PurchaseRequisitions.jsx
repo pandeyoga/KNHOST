@@ -169,7 +169,7 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
         tabs={tabs.map((t) => ({ ...t, count: t.key ? byStatus[t.key] : 0 }))} />
 
       <MergeSuggestions entityId={selectedEntity} reloadKey={mergeKey} canAct={canPo}
-        onPick={(g) => { setPicked(g.prs.map((p) => p.pr_id)); setMerge({ supplier: g.supplier_id }); }} />
+        onPick={(g) => { setPicked(g.prs.map((p) => p.pr_id)); setMerge({ supplier: g.supplier_id, label: [g.supplier_code, g.supplier_name].filter(Boolean).join(" · ") }); }} />
       {picked.length > 0 && (
         <div className="notice-bar" data-testid="pr-merge-bar">
           <span>{picked.length} PR dipilih untuk digabung.</span>
@@ -181,7 +181,7 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
         </div>
       )}
       {merge && (
-        <MergeModal prs={items.filter((p) => picked.includes(p.id))} suppliers={suppliers} presetSupplier={merge.supplier}
+        <MergeModal prs={items.filter((p) => picked.includes(p.id))} suppliers={suppliers} presetSupplier={merge.supplier} presetSupplierLabel={merge.label}
           onClose={() => setMerge(null)}
           onDone={(res) => { setMerge(null); setPicked([]); setMergeKey((k) => k + 1);
             flash(`${res.po?.po_number} dibuat dari ${(res.prs || []).map((p) => p.number).join(", ")}.`); load(); }} />
@@ -218,7 +218,17 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
                   </td>
                   <td><span className="feature-badge">{SOURCE_LABEL[pr.source] || String(pr.source || "—").replace(/_/g, " ")}</span></td>
                   <td className="text-right font-semibold tabular-nums">{formatCurrency(pr.total_est_amount)}</td>
-                  <td><StatusPill status={pr.status} /></td>
+                  <td>
+                    <StatusPill status={pr.status} />
+                    {/* UAT 24 Okt (audit UI tahap 2) — G4-12: status PR "Disetujui" bisa sudah sebagian jadi PO
+                        (PR baru "Jadi PO" bila SEMUA baris terealisasi) — nomor PO ditampilkan supaya tidak menebak. */}
+                    {pr.status === "approved" && pr.realization_status === "partially_realized" && (
+                      <p className="mt-0.5 text-[11px] text-[#8C4A00]" data-testid={`pr-partial-${pr.id}`}>sebagian sudah jadi PO</p>
+                    )}
+                    {pr.po_number && ["approved", "converted"].includes(pr.status) && (
+                      <p className="mt-0.5 text-[11px] text-[#6B6B73]" data-testid={`pr-po-number-${pr.id}`}>{pr.po_number}</p>
+                    )}
+                  </td>
                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
                     <button data-testid={`pr-open-${pr.id}`} className="link-button" onClick={() => openDetail(pr.id)}>Detail →</button>
                   </td>

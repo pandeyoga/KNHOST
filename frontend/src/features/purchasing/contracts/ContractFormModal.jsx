@@ -10,6 +10,7 @@ import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import MakloonSelect from "../../../components/MakloonSelect";
 import ProductSelect from "../../../components/ProductSelect";
+import EntityBadge from "../../../components/EntityBadge";
 import {
   AUX_BASIS_OPTIONS, createContract, FALLBACK_BASIS_LABELS, fetchEnum, patchContract, tariffPreview,
 } from "../makloon/makloonApi";
@@ -19,6 +20,24 @@ import { useEscapeClose } from "@/utils/escapeLayers";
 const TYPE_OPTS = [
   { value: "makloon", label: "Kontrak Makloon (jasa proses)" },
   { value: "purchase", label: "Kontrak Pembelian (barang supplier)" },
+  // UAT 24 Okt (audit UI tahap 2) — G4-02: kontrak harga internal (antar-PT) dulu tidak
+  // punya opsi → "Jenis Kontrak" kosong saat diubah. Hanya tampil saat UBAH; kontrak
+  // internal baru dibuat lewat "Isi massal harga internal" (mitra = PT, bukan supplier).
+  { value: "internal", label: "Kontrak Harga Internal (antar-PT)" },
+];
+const CREATE_TYPE_OPTS = TYPE_OPTS.filter((o) => o.value !== "internal");
+
+// G4-07 — nama variabel rumus diberi label manusia; klik chip menyisipkan namanya.
+const FORMULA_VARS = [
+  { code: "basis_qty", label: "Qty sesuai basis tarif" },
+  { code: "rate", label: "Tarif" },
+  { code: "qty_base", label: "Qty satuan dasar" },
+  { code: "gsm", label: "Gramasi (GSM)" },
+  { code: "lebar", label: "Lebar kain" },
+  { code: "ppi", label: "PPI" },
+  { code: "roll_count", label: "Jumlah roll" },
+  { code: "colors", label: "Jumlah warna" },
+  { code: "repeats", label: "Jumlah repeat" },
 ];
 const QTY_SOURCE_OPTS = [
   { value: "output", label: "Qty hasil (output)" },
@@ -153,9 +172,32 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
             <Field label="Jenis Kontrak">
               <KNSelect data-testid="contract-type" className="field" value={f.contract_type}
                 onValueChange={(v) => set({ contract_type: v, partner_id: "", partner_name: "" })}
-                options={TYPE_OPTS} disabled={isEdit} />
+                options={isEdit ? TYPE_OPTS : CREATE_TYPE_OPTS} disabled={isEdit} />
             </Field>
-            {f.contract_type === "makloon" ? (
+            {isEdit ? (
+              <>
+                {/* G4-02 — mitra tidak bisa diganti setelah kontrak dibuat (server mengabaikan
+                    partner_id saat ubah); tampil hanya-baca supaya PT mitra kontrak internal
+                    tidak tampil "Pilih…" karena bukan supplier. */}
+                <Field label={f.contract_type === "internal" ? "PT penjual → PT pembeli" : f.contract_type === "makloon" ? "Mitra Makloon" : "Supplier"}>
+                  <div className="field flex min-h-[38px] items-center gap-1.5 !bg-[#F7F8FA]" data-testid="contract-partner-readonly"
+                    title="Mitra tidak bisa diganti setelah kontrak dibuat — buat kontrak baru bila mitra berbeda.">
+                    {f.contract_type === "internal" && <><EntityBadge entityId={contract.entity_id} /><span className="text-[#8E8E93]">→</span></>}
+                    <span className="truncate font-semibold">{f.partner_name || "—"}</span>
+                  </div>
+                </Field>
+                {f.contract_type === "makloon" ? (
+                  <Field label="Jenis Proses *">
+                    <KNSelect data-testid="contract-process" className="field" value={f.process_type}
+                      onValueChange={(v) => set({ process_type: v })} options={processOptions} />
+                  </Field>
+                ) : (
+                  <Field label="Judul Kontrak">
+                    <input data-testid="contract-title" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })} />
+                  </Field>
+                )}
+              </>
+            ) : f.contract_type === "makloon" ? (
               <>
                 <Field label="Mitra Makloon *">
                   <MakloonSelect value={f.partner_id} valueName={f.partner_name} processType={f.process_type}
@@ -193,6 +235,18 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
                 onValueChange={(v) => set({ tariff_qty_source: v })} options={QTY_SOURCE_OPTS} />
             </Field>
           </div>
+          {!isEdit && (
+            <p className="text-[11px] text-[#8E8E93]" data-testid="contract-internal-hint">
+              Harga internal antar-PT tidak dibuat di sini — pakai tombol <b>Isi massal harga internal</b> di layar Kontrak
+              atau menu Antar Entitas › Harga Internal.
+            </p>
+          )}
+          {isEdit && f.contract_type === "internal" && (
+            <p className="rounded-lg border border-[#DCE9FF] bg-[#F5F9FF] px-3 py-2 text-[11px] text-[#3C3C43]" data-testid="contract-internal-note">
+              Kontrak harga internal: <b>Tarif</b> = harga per satuan barang untuk transfer antar-PT ke {f.partner_name || "PT pembeli"}.
+              Isian makloon (PPI, rumus, susut, rendemen) tidak dipakai.
+            </p>
+          )}
 
           <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
             <p className="mb-2 text-[11px] font-bold uppercase text-[#6B6B73]">Tarif (basis bebas)</p>
@@ -206,7 +260,7 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
               </Field>
               <Field label="PPI (basis pick)">
                 <input data-testid="contract-ppi" className="field" value={f.ppi} onChange={(e) => set({ ppi: e.target.value })}
-                  placeholder="kosong = dari konstruksi produk" />
+                  placeholder="kosong = dari produk" title="Kosong = PPI diambil dari konstruksi produk" />
               </Field>
               <Field label="Tagihan minimum (Rp)">
                 <MoneyInput testId="contract-min-charge" className="field" value={f.min_charge} onChange={(v) => set({ min_charge: v })} />
@@ -214,12 +268,23 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
               <div className="md:col-span-4">
                 <Field label="Rumus tarif khusus (opsional — kosongkan bila memakai tarif × basis)">
                   <input data-testid="contract-formula" className="field font-mono" value={f.tariff_formula}
-                    onChange={(e) => set({ tariff_formula: e.target.value })} placeholder="mis. basis_qty * rate + colors * 150000" />
+                    onChange={(e) => set({ tariff_formula: e.target.value })} placeholder="kosong = tarif × qty basis" />
                 </Field>
+                {/* UAT 24 Okt (audit UI tahap 2) — G4-07: variabel rumus berlabel manusia;
+                    klik untuk menyisipkan ke rumus (nama teknis tetap terlihat di tooltip). */}
+                <div className="mt-1 flex flex-wrap items-center gap-1" data-testid="contract-formula-vars">
+                  <span className="text-[11px] text-[#8E8E93]">Sisipkan:</span>
+                  {FORMULA_VARS.map((v) => (
+                    <button key={v.code} type="button" title={`Nama di rumus: ${v.code}`}
+                      data-testid={`contract-formula-var-${v.code}`}
+                      className="rounded-full border border-[#D9E8FF] bg-white px-2 py-[1px] text-[11px] font-semibold text-[#0058CC] hover:border-[#0058CC]"
+                      onClick={() => set({ tariff_formula: `${(f.tariff_formula || "").trimEnd()}${f.tariff_formula?.trim() ? " " : ""}${v.code}` })}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
                 <p className="mt-1 text-[11px] text-[#8E8E93]">
-                  Nama yang bisa dipakai: <b>basis_qty</b> (jumlah sesuai basis tarif), <b>rate</b> (tarif),
-                  {" "}<b>qty_base</b> (jumlah satuan dasar), <b>gsm</b>, <b>lebar</b>, <b>ppi</b>,
-                  {" "}<b>roll_count</b> (jumlah roll), <b>colors</b> (jumlah warna), <b>repeats</b> (jumlah repeat).
+                  Contoh: <i>Qty sesuai basis × Tarif + Jumlah warna × 150.000</i> ditulis <span className="font-mono">basis_qty * rate + colors * 150000</span>.
                 </p>
               </div>
             </div>

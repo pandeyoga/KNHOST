@@ -7,7 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Layers, Merge, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
+import { isGroupEntityPartner } from "../../components/GroupEntityBadge";
 
 const openLines = (pr) => (pr.items || []).filter((it) => it.fulfillment_mode !== "makloon" && it.product_id
   && Number(it.quantity || 0) - Number(it.realized_qty || 0) > 0.0005);
@@ -25,15 +26,18 @@ export function MergeSuggestions({ entityId, onPick, reloadKey, canAct = true })
       <p className="mb-2 flex items-center gap-1.5 text-[12px] font-bold text-[#1C1C1E]"><Layers size={13} className="text-[#0058CC]" /> Saran gabung PR → 1 PO</p>
       <div className="grid gap-2 md:grid-cols-2">
         {groups.slice(0, 6).map((g) => (
-          <div key={`${g.supplier_id}-${g.warehouse_id}`} className="rounded-lg border border-[#EFF0F2] p-2.5 text-[11.5px]" data-testid={`pr-merge-group-${g.supplier_id}`}>
-            <p className="font-semibold">{g.supplier_name} → {g.site_name}</p>
-            <p className="text-[#6B6B73]">{g.pr_count} PR · est. {formatCurrency(g.est_value)}{g.needed_from ? ` · butuh ${g.needed_from}${g.needed_to && g.needed_to !== g.needed_from ? ` – ${g.needed_to}` : ""}` : ""}
+          // UAT 24 Okt (audit UI tahap 2) — G4-10: kunci kelompok = supplier + GUDANG tujuan; dulu hanya nama
+          // lokasi yang tampil sehingga dua saran tampak identik. Kini gudang tujuan ikut ditulis.
+          <div key={`${g.entity_id}-${g.supplier_id}-${g.warehouse_id}`} className="rounded-lg border border-[#EFF0F2] p-2.5 text-[11.5px]" data-testid={`pr-merge-group-${g.supplier_id}-${g.warehouse_id}`}>
+            <p className="font-semibold">{g.supplier_code ? `${g.supplier_code} · ` : ""}{g.supplier_name} → {g.site_name}
+              {g.warehouse_name && g.warehouse_name !== g.site_name ? <span className="font-normal text-[#6B6B73]"> · gudang {g.warehouse_name}</span> : null}</p>
+            <p className="text-[#6B6B73]">{g.pr_count} PR · est. {formatCurrency(g.est_value)}{g.needed_from ? ` · butuh ${formatDate(g.needed_from)}${g.needed_to && g.needed_to !== g.needed_from ? ` – ${formatDate(g.needed_to)}` : ""}` : ""}
               {g.shared_sku ? " · ada SKU sama (dilebur 1 baris)" : ""}</p>
             <p className="mt-0.5 font-mono text-[10.5px] text-[#3C3C43]">{g.prs.map((p) => p.number).join(" · ")}</p>
             {canAct ? (
-              <button type="button" className="secondary-button mt-1.5 !h-7 !text-[11px]" data-testid={`pr-merge-pick-${g.supplier_id}`}
+              <button type="button" className="secondary-button mt-1.5 !h-7 !text-[11px]" data-testid={`pr-merge-pick-${g.supplier_id}-${g.warehouse_id}`}
                 onClick={() => onPick?.(g)}><Merge size={12} /> Gabung kelompok ini</button>
-            ) : <p className="mt-1 text-[10.5px] text-[#6B6B73]" data-testid={`pr-merge-hint-${g.supplier_id}`}>Teruskan ke Purchasing — PO gabungan dibuat pemegang hak buat PO.</p>}
+            ) : <p className="mt-1 text-[11px] text-[#6B6B73]" data-testid={`pr-merge-hint-${g.supplier_id}-${g.warehouse_id}`}>Teruskan ke Purchasing — PO gabungan dibuat pemegang hak buat PO.</p>}
           </div>
         ))}
       </div>
@@ -41,9 +45,19 @@ export function MergeSuggestions({ entityId, onPick, reloadKey, canAct = true })
   );
 }
 
-export function MergeModal({ prs, suppliers, presetSupplier = "", onClose, onDone }) {
+export function MergeModal({ prs, suppliers, presetSupplier = "", presetSupplierLabel = "", onClose, onDone }) {
   const prefs = [...new Set(prs.map((p) => p.preferred_supplier_id).filter(Boolean))];
   const [supplierId, setSupplierId] = useState(presetSupplier || (prefs.length === 1 ? prefs[0] : ""));
+  // G4-10 — opsi "SUP-xxxx · Nama", tanpa badan usaha grup (PO ke PT grup ditolak server) & supplier nonaktif.
+  // Supplier saran yang tidak ada di daftar termuat tetap ditampilkan (dulu pop-up terbuka dengan supplier kosong).
+  const supplierOptions = useMemo(() => {
+    const opts = (suppliers || []).filter((s) => !isGroupEntityPartner(s) && s.status !== "inactive")
+      .map((s) => ({ value: s.id, label: s.code ? `${s.code} · ${s.name}` : s.name }));
+    if (presetSupplier && !opts.some((o) => o.value === presetSupplier)) {
+      opts.unshift({ value: presetSupplier, label: presetSupplierLabel || presetSupplier });
+    }
+    return opts;
+  }, [suppliers, presetSupplier, presetSupplierLabel]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const rows = useMemo(() => {
@@ -83,7 +97,7 @@ export function MergeModal({ prs, suppliers, presetSupplier = "", onClose, onDon
         <label className="mb-2 block">
           <span className="field-label">Supplier *</span>
           <KNSelect data-testid="pr-merge-supplier" className="field" value={supplierId} searchable onValueChange={setSupplierId}
-            options={(suppliers || []).map((s) => ({ value: s.id, label: s.name }))} placeholder="Pilih supplier" />
+            options={supplierOptions} placeholder="Pilih supplier" />
         </label>
         <div className="max-h-[280px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
           <table className="data-table text-[11.5px]" data-testid="pr-merge-preview">

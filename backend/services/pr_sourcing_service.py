@@ -111,7 +111,7 @@ async def _save_realization(pr: Dict[str, Any], *, extra: Optional[Dict[str, Any
         "realization": summary,
         "realization_status": summary["realization_status"],
         "po_ids": sorted({r["ref_id"] for it in pr["items"] for r in (it.get("realizations") or [])
-                          if r.get("type") == "purchase_order"}),
+                          if r.get("type") == "purchase_order" and not r.get("voided")}),   # G4-12
         "makloon_order_ids": sorted({r["ref_id"] for it in pr["items"] for r in (it.get("realizations") or [])
                                      if r.get("type") == "makloon_order"}),
         "timeline": pr.get("timeline") or [],
@@ -364,6 +364,22 @@ async def merge_suggestions(query: Dict[str, Any]) -> List[Dict[str, Any]]:
     from services import site_receiving_service as srs
     today = now_iso()[:10]
     groups: Dict[tuple, Dict[str, Any]] = {}
+    # UAT 24 Okt (audit UI tahap 2) — G4-10: supplier badan usaha grup (partner_kind=entity) TIDAK disarankan —
+    # PO gabungannya pasti ditolak `assert_supplier_not_group_entity` (dulu saran "CV Cipta Sandang" membuka
+    # pop-up gabung dengan supplier kosong). Dokumen supplier di-cache sekali untuk nama & kode.
+    sup_cache: Dict[str, Dict[str, Any]] = {}
+
+    async def _sup(sid: str) -> Dict[str, Any]:
+        if sid not in sup_cache:
+            sup_cache[sid] = (await db.suppliers.find_one(
+                {"id": sid}, {"_id": 0, "name": 1, "code": 1, "partner_kind": 1, "group_entity_id": 1,
+                              "status": 1})) or {}
+        return sup_cache[sid]
+
+    def _buyable(doc: Dict[str, Any]) -> bool:
+        return bool(doc) and doc.get("partner_kind") != "entity" and not doc.get("group_entity_id") \
+            and doc.get("status") != "inactive"
+
     async for pr in db.purchase_requisitions.find({**query, "status": {"$in": ["approved", "converted"]}}, {"_id": 0}):
         ensure_line_shape(pr)
         lines = _open_lines(pr, "purchase")
@@ -387,6 +403,9 @@ async def merge_suggestions(query: Dict[str, Any]) -> List[Dict[str, Any]]:
                                                                                {"_id": 0, "supplier_id": 1})}
                 sets.append(ok)
             sups = sorted(set.intersection(*sets)) if sets else []
+        sups = [sid for sid in sups if _buyable(await _sup(sid))]
+        if not sups:
+            continue
         value = round(sum((float(it["quantity"]) - float(it.get("realized_qty") or 0)) * float(it.get("est_price") or 0)
                           for it in lines), 2)
         row = {"pr_id": pr["id"], "number": pr.get("number", ""), "needed_by_date": pr.get("needed_by_date", ""),
@@ -395,18 +414,19 @@ async def merge_suggestions(query: Dict[str, Any]) -> List[Dict[str, Any]]:
         for sid in sups:
             g = groups.setdefault((ent, dest["warehouse"]["id"], sid), {
                 "entity_id": ent, "warehouse_id": dest["warehouse"]["id"], "site_id": dest.get("site_id", ""),
-                "site_name": dest.get("site_name") or dest["warehouse"].get("name", ""), "supplier_id": sid, "prs": []})
+                "site_name": dest.get("site_name") or dest["warehouse"].get("name", ""),
+                # G4-10 — nama gudang tujuan = pembeda dua saran berlokasi sama (kunci kelompok memakai gudang).
+                "warehouse_name": dest["warehouse"].get("name", ""), "supplier_id": sid, "prs": []})
             g["prs"].append(row)
     out = []
-    names = {}
     for (ent, wid, sid), g in groups.items():
         if len(g["prs"]) < 2:
             continue
-        if sid not in names:
-            names[sid] = ((await db.suppliers.find_one({"id": sid}, {"_id": 0, "name": 1})) or {}).get("name", sid)
+        sdoc = await _sup(sid)
         dates = sorted(d for d in (p["needed_by_date"] for p in g["prs"]) if d)
         shared_sku = len({s for p in g["prs"] for s in p["skus"]}) < sum(len(p["skus"]) for p in g["prs"])
-        g.update({"supplier_name": names[sid], "pr_count": len(g["prs"]),
+        g.update({"supplier_name": sdoc.get("name") or sid, "supplier_code": sdoc.get("code", ""),
+                  "pr_count": len(g["prs"]),
                   "est_value": round(sum(p["est_value"] for p in g["prs"]), 2),
                   "needed_from": dates[0] if dates else "", "needed_to": dates[-1] if dates else "",
                   "shared_sku": shared_sku,
@@ -724,6 +744,87 @@ async def realize_many_to_po(pr_refs: List[Dict[str, Any]], *, supplier_id: str,
             "converted_by": actor_name,
         }))
     return {"pr": updated_all[0], "prs": updated_all, "po": safe_doc(po)}
+
+
+# UAT 24 Okt (audit UI tahap 2) — G4-12: PO yang DIBATALKAN/DITOLAK dulu tidak mengembalikan baris PR-nya,
+# sehingga PR tetap "Jadi PO" menunjuk PO mati (terbukti: route `POST /purchase-orders/{id}/cancel` hanya
+# mengubah PO & tugas gudang). Dua fungsi di bawah membalik realisasinya; router PO perlu memanggil
+# `release_po_realizations` setelah PO batal/ditolak (lihat laporan G4 — berkas router bukan milik G4).
+PO_DEAD_STATUSES = ("cancelled", "rejected")
+
+
+def _void_po_realizations(pr: Dict[str, Any], po_id: str, *, actor: str, reason: str) -> tuple:
+    """Tandai realisasi baris PR ke `po_id` sebagai batal (`voided`) & kurangi `realized_qty`.
+    Murni (tanpa DB) — dikembalikan (jumlah baris, qty dilepas, nomor PO)."""
+    lines, qty, number = 0, 0.0, ""
+    for it in pr.get("items") or []:
+        for r in it.get("realizations") or []:
+            if r.get("type") != "purchase_order" or r.get("ref_id") != po_id or r.get("voided"):
+                continue
+            q = float(r.get("qty") or 0)
+            it["realized_qty"] = round(max(float(it.get("realized_qty") or 0) - q, 0.0), 3)
+            r.update({"voided": True, "voided_at": now_iso(), "voided_by": actor, "voided_reason": reason})
+            lines += 1
+            qty += q
+            number = r.get("ref_number") or number
+    return lines, round(qty, 3), number
+
+
+async def release_po_realizations(po_id: str, *, actor_name: str = "Sistem", reason: str = "",
+                                  event: str = "dibatalkan") -> List[Dict[str, Any]]:
+    """PO batal/ditolak → baris PR yang direalisasikan ke PO itu kembali TERBUKA; PR `converted` kembali
+    `approved` (bisa direalisasikan lagi) dengan catatan di riwayat. Idempoten (realisasi `voided` dilewati).
+    Juga menangani PR hasil award RFQ yang hanya menyimpan `po_id` tanpa catatan realisasi baris."""
+    out: List[Dict[str, Any]] = []
+    async for pr in db.purchase_requisitions.find(
+            {"$or": [{"items.realizations.ref_id": po_id}, {"po_id": po_id}]}, {"_id": 0}):
+        ensure_line_shape(pr)
+        lines, qty, number = _void_po_realizations(pr, po_id, actor=actor_name, reason=reason)
+        if not lines and pr.get("po_id") != po_id:
+            continue
+        number = number or pr.get("po_number") or "PO"
+        pr.setdefault("timeline", []).append(timeline_entry(
+            "po_released", f"{number} {event} — "
+            + (f"{lines} baris kembali terbuka" if lines else "PR kembali bisa direalisasikan"),
+            actor_name, reason or ""))
+        extra: Dict[str, Any] = {}
+        if pr.get("status") == "converted" and compute_realization(pr)["realization_status"] != "realized":
+            extra["status"] = "approved"
+        if pr.get("po_id") == po_id:
+            alive = [r for it in pr["items"] for r in it.get("realizations") or []
+                     if r.get("type") == "purchase_order" and not r.get("voided")]
+            extra["po_id"] = alive[-1]["ref_id"] if alive else ""
+            extra["po_number"] = alive[-1].get("ref_number", "") if alive else ""
+        out.append(await _save_realization(pr, extra=extra))
+    return out
+
+
+async def reconcile_dead_po_realizations(query: Optional[Dict[str, Any]] = None, *,
+                                         actor_name: str = "Sistem (rekonsiliasi PR)") -> List[str]:
+    """Perbaikan data lama: PR yang masih menunjuk PO batal/ditolak dilepas lewat `release_po_realizations`.
+    Mengembalikan nomor PR yang berubah."""
+    dead = {p["id"]: p.get("status") async for p in db.purchase_orders.find(
+        {"status": {"$in": list(PO_DEAD_STATUSES)}}, {"_id": 0, "id": 1, "status": 1})}
+    if not dead:
+        return []
+    changed: List[str] = []
+    flt = {**(query or {}), "$or": [{"items.realizations": {"$elemMatch": {
+        "type": "purchase_order", "ref_id": {"$in": list(dead)}, "voided": {"$ne": True}}}},
+        {"po_id": {"$in": list(dead)}}]}
+    po_ids: set = set()
+    async for pr in db.purchase_requisitions.find(flt, {"_id": 0, "po_id": 1, "items.realizations": 1}):
+        if pr.get("po_id") in dead:
+            po_ids.add(pr["po_id"])
+        for it in pr.get("items") or []:
+            for r in it.get("realizations") or []:
+                if r.get("type") == "purchase_order" and r.get("ref_id") in dead and not r.get("voided"):
+                    po_ids.add(r["ref_id"])
+    for pid in sorted(po_ids):
+        ev = "ditolak" if dead[pid] == "rejected" else "dibatalkan"
+        for doc in await release_po_realizations(pid, actor_name=actor_name, event=ev,
+                                                 reason="PO sudah tidak berlaku (rekonsiliasi)"):
+            changed.append(doc.get("number", ""))
+    return changed
 
 
 # ═══════════════════════════════════════════════════════════════════════════

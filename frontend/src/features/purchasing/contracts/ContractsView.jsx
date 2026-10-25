@@ -23,6 +23,7 @@ import InternalPriceBulkPanel from "../../interco_prices/InternalPriceBulkPanel"
 import { entitiesFromSummary, InternalPriceSummary } from "../../interco_prices/InternalPricesView";
 import { internalPriceAccess, internalPriceSummary } from "../../interco_prices/internalPriceApi";
 import { openConfig } from "../../settings/config/configDeepLink";
+import { askConfirm, askReason } from "../../../services/confirmService";
 import {
   CONTRACT_STATUS_META, contractStats, deleteContract, FALLBACK_BASIS_LABELS,
   listContracts, setContractStatus,
@@ -73,9 +74,11 @@ export default function ContractsView({ currentUser, selectedEntity }) {
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
-      if (type) params.contract_type = type;
+      // UAT 24 Okt (audit UI tahap 2) — G4-07: KPI & hitungan tab dari SELURUH kontrak
+      // (tanpa filter tab); dulu tab "Kontrak Makloon" membuat KPI Pembelian jadi 0.
+      const listParams = type ? { ...params, contract_type: type } : params;
       const [list, st] = await Promise.all([
-        listContracts({ ...params, limit: 300 }),
+        listContracts({ ...listParams, limit: 300 }),
         contractStats(params).catch(() => ({})),
       ]);
       setRows(Array.isArray(list) ? list : []);
@@ -97,19 +100,41 @@ export default function ContractsView({ currentUser, selectedEntity }) {
   }, [rows, q]);
   // 241+ baris → dipecah per halaman (dulu tanpa paginasi).
   const { pageRows, pager } = usePagedRows(filtered, { pageSize: 50, testId: "contracts-pager" });
+  // Hitungan tab dari statistik server (bukan jumlah baris termuat) — tetap sama di semua tab.
   const typeCount = (k) => {
-    if (type) return k === type ? rows.length : undefined;
-    return k ? rows.filter((r) => r.contract_type === k).length : rows.length;
+    const v = k ? stats[k] : stats.total;
+    return typeof v === "number" ? v : undefined;
   };
 
+  // UAT 24 Okt (audit UI tahap 2) — G4-01: Hentikan/Aktifkan meminta alasan pengguna
+  // (dikirim ke server & tercatat di riwayat status), hapus meminta konfirmasi bahaya.
   const changeStatus = async (row, status) => {
+    const stopping = status === "terminated";
+    const reason = await askReason({
+      title: `${stopping ? "Hentikan" : "Aktifkan"} kontrak ${row.contract_number}?`,
+      message: stopping
+        ? `Kontrak ${row.contract_number} (${row.partner_name || "mitra"}) tidak lagi dipakai untuk order/PO baru. Dokumen yang sudah memakai kontrak ini tidak berubah.`
+        : `Kontrak ${row.contract_number} (${row.partner_name || "mitra"}) akan dipakai lagi untuk order/PO baru selama masa berlakunya.`,
+      reasonLabel: stopping ? "Alasan penghentian" : "Alasan pengaktifan",
+      confirmLabel: stopping ? "Hentikan kontrak" : "Aktifkan kontrak",
+      danger: stopping,
+    });
+    if (reason === null) return;
     try {
-      await setContractStatus(row.id, status, `Diubah dari layar kontrak oleh ${currentUser?.name || "pengguna"}`);
+      await setContractStatus(row.id, status, reason);
       await load();
     } catch (e) { setError(e.response?.data?.detail || "Gagal mengubah status kontrak."); }
   };
 
   const remove = async (row) => {
+    const ok = await askConfirm({
+      title: `Hapus kontrak ${row.contract_number}?`,
+      message: `Kontrak ${row.contract_number} (${row.partner_name || "mitra"}) dihapus permanen beserta tarif, susut & toleransinya. `
+        + "Kontrak yang sudah dipakai order makloon/PO tidak bisa dihapus — hentikan saja.",
+      confirmLabel: "Hapus kontrak",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteContract(row.id);
       await load();
@@ -152,11 +177,12 @@ export default function ContractsView({ currentUser, selectedEntity }) {
           </div>
         </div>
         <div className="section-body space-y-2.5">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-5" data-testid="contracts-stats">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-6" data-testid="contracts-stats">
             <Kpi label="Total kontrak" value={String(stats.total ?? 0)} />
             <Kpi label="Aktif" value={String(stats.active ?? 0)} tone="#1B7F4B" />
             <Kpi label="Makloon" value={String(stats.makloon ?? 0)} tone="#0058CC" />
             <Kpi label="Pembelian" value={String(stats.purchase ?? 0)} tone="#6B219A" />
+            <Kpi label="Harga internal" value={String(stats.internal ?? 0)} tone="#0058CC" />
             <Kpi label="Berakhir ≤ 30 hari" value={String(stats.expiring_30d ?? 0)} tone="#B26A00" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -183,7 +209,15 @@ export default function ContractsView({ currentUser, selectedEntity }) {
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="contracts-empty">
             <FileText className="mx-auto mb-2 text-gray-300" size={28} />
-            <p>Belum ada kontrak. Buat kontrak agar tarif, susut & toleransi mitra terkunci per dokumen.</p>
+            {type || q.trim() ? (
+              <>
+                <p>Tidak ada kontrak{type ? ` berjenis ${TYPE_FILTERS.find((f) => f.key === type)?.label.toLowerCase() || type}` : ""}{q.trim() ? ` yang cocok dengan “${q.trim()}”` : ""}.</p>
+                <button className="secondary-button mx-auto mt-2 !py-1 !px-2 text-[11px]" data-testid="contracts-empty-reset"
+                  onClick={() => { setType(""); setQ(""); }}>Tampilkan semua</button>
+              </>
+            ) : (
+              <p>Belum ada kontrak. Buat kontrak agar tarif, susut & toleransi mitra terkunci per dokumen.</p>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-[#EFF0F2] max-h-[620px] overflow-y-auto">
@@ -274,6 +308,10 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                 <InternalPriceBulkPanel key={`${bulkPair.seller}-${bulkPair.buyer}`} entities={entitiesFromSummary(icSummary)} initial={bulkPair}
                   canSet={!!icAccess.can_set} onSaved={() => { loadIc(); load(); }} />
               )}
+            </div>
+            {/* UAT 24 Okt (audit UI tahap 2) — G4-08: pop-up dulu tanpa kaki; simpan ada di panel. */}
+            <div className="sticky bottom-0 mt-3 flex justify-end border-t border-[#EFF0F2] bg-white pt-2.5" data-testid="contracts-internal-bulk-footer">
+              <button className="secondary-button" onClick={() => setBulkPair(null)}>Tutup</button>
             </div>
           </div>
         </div>

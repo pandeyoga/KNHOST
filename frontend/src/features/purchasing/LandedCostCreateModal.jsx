@@ -52,6 +52,7 @@ function previewAllocation(rolls, totalCost, basis) {
 
 export default function LandedCostCreateModal({ open, pos, selectedEntity, onClose, onCreated, onError }) {
   const [selectedPoIds, setSelectedPoIds] = useState([]);
+  const [poQ, setPoQ] = useState("");   // G4-26 — cari PO (dulu daftar centang 140 px tanpa cari)
   const [rolls, setRolls] = useState([]);
   const [loadingCtx, setLoadingCtx] = useState(false);
   const [provider, setProvider] = useState("");
@@ -63,12 +64,19 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
   const [lines, setLines] = useState([{ category: "freight", description: "", amount: "" }]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // G4-26 — PO yang sudah dicentang selalu tampil walau tidak cocok dengan kata cari.
+  const shownPos = useMemo(() => {
+    const t = poQ.trim().toLowerCase();
+    const list = pos || [];
+    return t ? list.filter((p) => selectedPoIds.includes(p.id)
+      || `${p.po_number} ${p.supplier_name || ""}`.toLowerCase().includes(t)) : list;
+  }, [pos, poQ, selectedPoIds]);
   const fail = (m) => { setErr(m); onError?.(m); };
 
   useEffect(() => { if (!open) reset(); }, [open]);
 
   function reset() {
-    setSelectedPoIds([]); setRolls([]); setProvider(""); setInvNo("");
+    setSelectedPoIds([]); setPoQ(""); setRolls([]); setProvider(""); setInvNo("");
     setBasis("value"); setVoucherDate(""); setDueDate(""); setNotes("");
     setLines([{ category: "freight", description: "", amount: "" }]);
     setErr("");
@@ -144,15 +152,20 @@ export default function LandedCostCreateModal({ open, pos, selectedEntity, onClo
   return (
     <FormModal open={open} onClose={onClose} size="lg" icon={Ship} busy={busy}
       testId="landed-cost-create-modal"
-      title="Buat Biaya Masuk (Landed Cost)"
+      title="Buat Biaya Masuk"
       subtitle="Ongkos angkut, bea, asuransi & bongkar muat dibebankan ke HPP roll setelah disetujui manajer."
       error={err} footer={footer}>
         <div className="space-y-3">
           {/* PO selection */}
-          <Field label="Pesanan Pembelian (bisa lebih dari satu)" req>
-            <div className="rounded-md border border-[#EFF0F2] max-h-[140px] overflow-y-auto p-1" data-testid="lc-po-list">
+          <Field label={`Pesanan Pembelian (bisa lebih dari satu)${selectedPoIds.length ? ` · ${selectedPoIds.length} dipilih` : ""}`} req>
+            {pos.length > 6 && (
+              <input data-testid="lc-po-search" className="field mb-1.5" value={poQ} onChange={(e) => setPoQ(e.target.value)}
+                placeholder="Cari nomor PO / supplier…" aria-label="Cari PO" />
+            )}
+            <div className="rounded-md border border-[#EFF0F2] max-h-[220px] overflow-y-auto p-1" data-testid="lc-po-list">
               {pos.length === 0 && <p className="text-[11px] text-[#9A9BA3] px-2 py-2">Tidak ada PO diterima yang bisa dibebani.</p>}
-              {pos.map((p) => (
+              {pos.length > 0 && shownPos.length === 0 && <p className="text-[11px] text-[#9A9BA3] px-2 py-2">Tidak ada PO yang cocok dengan “{poQ.trim()}”.</p>}
+              {shownPos.map((p) => (
                 <label key={p.id} data-testid={`lc-po-option-${p.id}`}
                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#FAFBFC] cursor-pointer text-[11.5px]">
                   <input type="checkbox" checked={selectedPoIds.includes(p.id)} onChange={() => togglePo(p.id)} />

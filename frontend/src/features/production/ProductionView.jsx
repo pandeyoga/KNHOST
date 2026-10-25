@@ -150,8 +150,17 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
           <h2 className="text-[16px] font-bold text-[#1C1C1E]">Produksi In-House</h2>
           <p className="text-[11px] text-[#8E8E93]">BOM (resep) & Perintah Kerja · bahan diolah menjadi barang jadi, tercatat per roll</p>
         </div>
+        {/* UAT 24 Okt (audit UI tahap 2) — G4-22: tanpa BOM aktif tombol dulu membuka pop-up buntu
+            (hanya pesan + Tutup). Kini nonaktif dengan alasan + jalan pintas "Buat BOM dulu". */}
+        {tab === "wo" && perms.createWo && !loading && activeBoms.length === 0 && perms.manageBom && (
+          <button data-testid="wo-need-bom" onClick={() => { setTab("bom"); setBomModal({ mode: "create" }); }} className="secondary-button">
+            <Layers3 size={14} /> Buat BOM dulu
+          </button>
+        )}
         {tab === "wo" && perms.createWo && (
-          <button data-testid="wo-add-button" onClick={() => setWoModal(true)} className="primary-button">
+          <button data-testid="wo-add-button" onClick={() => setWoModal(true)} className="primary-button"
+            disabled={!loading && activeBoms.length === 0}
+            title={!loading && activeBoms.length === 0 ? "Belum ada BOM aktif — Perintah Kerja dibuat dari BOM. Buat BOM dulu di tab BOM / Resep." : undefined}>
             <Plus size={14} /> Buat Perintah Kerja
           </button>
         )}

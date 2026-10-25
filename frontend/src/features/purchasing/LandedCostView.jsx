@@ -118,7 +118,8 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3" data-testid="lc-summary">
           <SummaryCard label="Total Biaya Masuk (diterapkan)" value={formatCurrency(summary.total_applied)} big testId="lc-summary-applied" />
-          <SummaryCard label="Sisa Hutang Biaya" value={formatCurrency(summary.total_outstanding)} tone="text-red-600" big testId="lc-summary-outstanding" />
+          {/* UAT 24 Okt (audit UI tahap 2) — G4-26: merah hanya bila ada sisa (dulu Rp 0 pun merah). */}
+          <SummaryCard label="Sisa Hutang Biaya" value={formatCurrency(summary.total_outstanding)} tone={Number(summary.total_outstanding) > 0 ? "text-red-600" : undefined} big testId="lc-summary-outstanding" />
           <SummaryCard label="Penyedia Berhutang" value={String((summary.by_provider || []).length)} />
           <SummaryCard label="Dokumen Aktif" value={String((summary.vouchers || []).length)} />
         </div>
@@ -128,7 +129,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0">
             <Ship size={16} className="text-[#0058CC]" />
-            <h2 data-testid="landed-cost-title">Biaya Masuk / Landed Cost (Alokasi HPP Roll)</h2>
+            <h2 data-testid="landed-cost-title">Biaya Masuk (landed cost) · Alokasi HPP Roll</h2>
           </div>
           {canCreate && (
             <button data-testid="create-landed-cost-button" onClick={() => setShowCreate(true)} className="primary-button">
@@ -175,7 +176,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
                     <p className="text-[11px] text-[#6B6B73] truncate">{(v.po_numbers || []).join(", ") || "—"} · {(v.cost_lines || []).length} biaya</p>
                   </div>
                   <span className="text-[12px] font-bold tabular-nums text-right">{formatCurrency(v.total_cost)}</span>
-                  <span className="text-[12px] tabular-nums text-right text-red-600">{formatCurrency(v.financials?.outstanding ?? 0)}</span>
+                  <span className={`text-[12px] tabular-nums text-right ${Number(v.financials?.outstanding) > 0 ? "text-red-600" : "text-[#6B6B73]"}`}>{formatCurrency(v.financials?.outstanding ?? 0)}</span>
                   <span className="text-[11px] text-[#6B6B73]">{BASIS_LABEL[v.effective_basis || v.basis] || v.effective_basis || v.basis || "—"}</span>
                   <StatusPill status={v.status} />
                   <span className="text-[11px] tabular-nums text-right">{v.target_roll_count || 0}</span>

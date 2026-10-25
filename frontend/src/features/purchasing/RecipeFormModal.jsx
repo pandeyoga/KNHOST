@@ -11,8 +11,17 @@ import { overlayDismiss } from "@/utils/overlayDismiss";
 
 const STAGE_OPTS = Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }));
 const TARIFF_UNITS = [{ value: "output", label: "per Output" }, { value: "input", label: "per Input" }, { value: "roll", label: "per Roll" }];
+// UAT 24 Okt (audit UI tahap 2) — G4-23: nama manusia untuk variabel rumus (dulu snake_case mentah).
+const RECIPE_VARS = [
+  { code: "input_qty", label: "Jumlah bahan" },
+  { code: "yield_factor", label: "Rendemen" },
+  { code: "waste_pct", label: "Susut (%)" },
+  { code: "byproduct_pct", label: "Barang sisa (%)" },
+  { code: "gramasi", label: "Gramasi" },
+  { code: "lebar", label: "Lebar" },
+];
 
-/** RecipeFormModal (M1) — buat/edit resep konversi + preview forecast inline. */
+/** RecipeFormModal (M1) — buat/ubah resep konversi + preview forecast inline. */
 export default function RecipeFormModal({ editTarget, makloons = [], selectedEntity, onClose, onSaved, onError }) {
   // FASE T (4a) — jenis proses dari registry hidup: `screen`/`rajut`/`pre_treatment`
   // dulu tidak ada di daftar hardcode, jadi resepnya tidak bisa dibuat dari layar ini.
@@ -28,9 +37,10 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
     waste_pct: editTarget?.waste_pct != null ? String(editTarget.waste_pct) : "0",
     byproduct_pct: editTarget?.byproduct_pct != null ? String(editTarget.byproduct_pct) : "0",
     default_makloon_id: editTarget?.default_makloon_id || "", default_makloon_name: editTarget?.default_makloon_name || "",
-    default_tariff: editTarget?.default_tariff != null ? String(editTarget.default_tariff) : "0",
+    // G4-23 — nol = kosong (dulu "0" memunculkan pratinjau "Rp 0" ganda di bawah dua isian).
+    default_tariff: Number(editTarget?.default_tariff) ? String(editTarget.default_tariff) : "",
     tariff_unit: editTarget?.tariff_unit || "output",
-    aux_cost_default: editTarget?.aux_cost_default != null ? String(editTarget.aux_cost_default) : "0",
+    aux_cost_default: Number(editTarget?.aux_cost_default) ? String(editTarget.aux_cost_default) : "",
     formula: editTarget?.formula || "", notes: editTarget?.notes || "",
     entity_id: editTarget?.entity_id || (selectedEntity && selectedEntity !== "all" ? selectedEntity : ""),
   }));
@@ -75,7 +85,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
     <div data-testid="recipe-form-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
       <div className="flex max-h-[92vh] w-full max-w-[680px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><GitBranch size={16} className="text-[#0058CC]" /> {isEdit ? "Edit Resep" : "Buat Resep Konversi"}</h2>
+          <h2 className="flex items-center gap-2 text-[15px] font-bold"><GitBranch size={16} className="text-[#0058CC]" /> {isEdit ? "Ubah Resep Konversi" : "Buat Resep Konversi"}</h2>
           <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
@@ -86,18 +96,20 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
 
           <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
             <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-              <div>
-                <p className="mb-1 text-[11px] font-bold uppercase text-[#6B6B73]">Bahan masuk (input) <span className="text-[#D14343]">*</span></p>
-                <KNSelect data-testid="recipe-input-stage" className="field mb-1.5" value={f.input_stage} onValueChange={(v) => setF({ ...f, input_stage: v })} options={STAGE_OPTS} />
-                <ProductSelect triggerTestId="recipe-input-product" stage={f.input_stage} value={f.input_product_id} valueName={f.input_name}
-                  onSelect={(p) => setF({ ...f, input_product_id: p.id, input_name: `${p.name} (${p.sku})` })} label="Pilih produk input…" />
+              {/* UAT 24 Okt (audit UI tahap 2) — G4-23: satu label per pemilih (dulu dua pemilih di bawah satu
+                  label MAJUSCULE); gaya label sama dengan isian lain. */}
+              <div className="space-y-1.5">
+                <p className="text-[12px] font-semibold text-[#1C1C1E]">Bahan masuk</p>
+                <Field label="Tahap bahan"><KNSelect data-testid="recipe-input-stage" className="field" value={f.input_stage} onValueChange={(v) => setF({ ...f, input_stage: v })} options={STAGE_OPTS} /></Field>
+                <Field label="Produk bahan" req><ProductSelect triggerTestId="recipe-input-product" stage={f.input_stage} value={f.input_product_id} valueName={f.input_name}
+                  onSelect={(p) => setF({ ...f, input_product_id: p.id, input_name: `${p.name} (${p.sku})` })} label="Pilih produk bahan…" /></Field>
               </div>
               <ArrowRight size={18} className="mb-2 text-[#0058CC]" />
-              <div>
-                <p className="mb-1 text-[11px] font-bold uppercase text-[#6B6B73]">Hasil (output) <span className="text-[#D14343]">*</span></p>
-                <KNSelect data-testid="recipe-output-stage" className="field mb-1.5" value={f.output_stage} onValueChange={(v) => setF({ ...f, output_stage: v })} options={STAGE_OPTS} />
-                <ProductSelect triggerTestId="recipe-output-product" stage={f.output_stage} value={f.output_product_id} valueName={f.output_name}
-                  onSelect={(p) => setF({ ...f, output_product_id: p.id, output_name: `${p.name} (${p.sku})` })} label="Pilih produk output…" />
+              <div className="space-y-1.5">
+                <p className="text-[12px] font-semibold text-[#1C1C1E]">Hasil</p>
+                <Field label="Tahap hasil"><KNSelect data-testid="recipe-output-stage" className="field" value={f.output_stage} onValueChange={(v) => setF({ ...f, output_stage: v })} options={STAGE_OPTS} /></Field>
+                <Field label="Produk hasil" req><ProductSelect triggerTestId="recipe-output-product" stage={f.output_stage} value={f.output_product_id} valueName={f.output_name}
+                  onSelect={(p) => setF({ ...f, output_product_id: p.id, output_name: `${p.name} (${p.sku})` })} label="Pilih produk hasil…" /></Field>
               </div>
             </div>
           </div>
@@ -125,13 +137,18 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
           <Field label="Rumus perkiraan hasil (opsional — untuk pengguna lanjutan)">
             <input data-testid="recipe-formula" className="field font-mono text-[11px]" value={f.formula} onChange={set("formula")}
               placeholder="Kosongkan untuk rumus baku: bahan × rendemen − susut" />
-            <p className="mt-1 text-[11px] text-[#8E8E93]">
-              Kosong = rumus baku (jumlah bahan × rendemen × (1 − susut%)). Nama yang bisa dipakai:
-              {" "}<b>input_qty</b> (jumlah bahan), <b>yield_factor</b> (rendemen), <b>waste_pct</b> (susut %),
-              {" "}<b>byproduct_pct</b> (barang sisa %), <b>gramasi</b>, <b>lebar</b>.
-            </p>
           </Field>
-
+          {/* G4-23 — variabel rumus berlabel manusia (klik untuk menyisipkan; nama teknis di tooltip). */}
+          <div className="-mt-1.5 flex flex-wrap items-center gap-1" data-testid="recipe-formula-vars">
+            <span className="text-[11px] text-[#8E8E93]">Kosong = jumlah bahan × rendemen × (1 − susut). Sisipkan:</span>
+            {RECIPE_VARS.map((v) => (
+              <button key={v.code} type="button" title={`Nama di rumus: ${v.code}`} data-testid={`recipe-formula-var-${v.code}`}
+                className="rounded-full border border-[#D9E8FF] bg-white px-2 py-[1px] text-[11px] font-semibold text-[#0058CC] hover:border-[#0058CC]"
+                onClick={() => setF({ ...f, formula: `${(f.formula || "").trimEnd()}${f.formula?.trim() ? " " : ""}${v.code}` })}>
+                {v.label}
+              </button>
+            ))}
+          </div>
           {/* Preview forecast inline */}
           <div className="rounded-lg border border-dashed border-[#0058CC]/40 bg-[#EAF2FF]/40 p-3">
             <div className="flex items-end gap-2">

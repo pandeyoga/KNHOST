@@ -2,8 +2,8 @@ import { AskKnButton } from "../../../components/AskKnButton";
 import { DualName } from "../../../components/DualName";
 import { useState } from "react";
 import { FileText, CheckCircle, XCircle, AlertCircle, Receipt, Ban, FileEdit, PackageCheck, Printer, ListOrdered } from "lucide-react";
-import { formatCurrency } from "../../../utils/formatters";
-import { can, roleSatisfies } from "../../../config/roles";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { can, roleLabel, roleSatisfies } from "../../../config/roles";
 import { getStatusBadge, lateState } from "./poUtils";
 import POTimeline from "./POTimeline";
 import { POVarianceTasksPanel } from "./POVarianceTasksPanel";
@@ -122,7 +122,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         </div>
         <div className="flex items-center gap-1.5">
           <AskKnButton type="purchase_order" id={po.id} label={po.po_number} />
-          <button className="icon-button" onClick={onClose}><XCircle size={14} /></button>
+          <button className="icon-button" onClick={onClose} aria-label="Tutup"><XCircle size={14} /></button>
         </div>
       </div>
       )}
@@ -172,7 +172,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {po.expected_delivery_date && (() => { const late = lateState(po); return (
           <div data-testid="po-detail-eta" className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-[11px] ${late ? "border-red-200 bg-red-50 text-red-700" : "border-[#EFF0F2] bg-[#FAFBFC] text-[#3C3C43]"}`}>
             <span className="text-[10px] uppercase font-semibold">Tgl Kirim Diharap</span>
-            <span className="font-semibold tabular-nums">{String(po.expected_delivery_date).slice(0, 10)}{late ? ` · telat ${late.days} hari` : ""}</span>
+            <span className="font-semibold tabular-nums">{formatDate(po.expected_delivery_date)}{late ? ` · telat ${late.days} hari` : ""}</span>
           </div>
         ); })()}
         {/* PB-01 — termin & jatuh tempo bayar (turun dari kontrak blanket / supplier) */}
@@ -181,8 +181,8 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
             <span className="text-[10px] uppercase font-semibold">Termin · Jatuh tempo bayar</span>
             <span className="font-semibold tabular-nums">
               {po.payment_term?.code || "—"}{po.payment_term?.net_days ? ` (${po.payment_term.net_days} hari)` : ""}
-              {po.payment_due_date ? ` · ${po.payment_due_date}` : ""}
-              {po.price_includes_ppn === true ? " · harga incl. PPN" : po.price_includes_ppn === false ? " · harga excl. PPN" : ""}
+              {po.payment_due_date ? ` · ${formatDate(po.payment_due_date)}` : ""}
+              {po.price_includes_ppn === true ? " · harga sudah termasuk PPN" : po.price_includes_ppn === false ? " · harga belum termasuk PPN" : ""}
               {po.parent_po_number ? ` · dari kontrak ${po.parent_po_number}` : ""}
             </span>
           </div>
@@ -191,7 +191,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {/* Items with receive progress */}
         <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
           <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            Items & Progress Terima ({po.items?.length || 0})
+            Barang & Progres Terima ({po.items?.length || 0})
           </div>
           {po.items?.map((item, i) => {
             const ordered = Number(item.quantity || 0);
@@ -220,7 +220,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
                 {(item.price_source || item.contract_number || item.supplier_sku) && (() => {
                   const SRC = {
                     contract: { label: "Kontrak", cls: "bg-[#E6F6EC] text-[#1B7F4B]" },
-                    manual_override: { label: "Override", cls: "bg-[#FDF3E7] text-[#B26B00]" },
+                    manual_override: { label: "Diubah manual", cls: "bg-[#FDF3E7] text-[#B26B00]" },
                     manual: { label: "Manual", cls: "bg-[#EFF0F2] text-[#6B6B73]" },
                     supplier_item: { label: "Harga Terakhir", cls: "bg-[#EAF2FF] text-[#0058CC]" },
                     price_list: { label: "Daftar Harga", cls: "bg-[#EAF2FF] text-[#0058CC]" },
@@ -267,18 +267,18 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {goodsReceived && (
           <div data-testid="po-billing-summary" className="rounded-md border border-[#EFF0F2] overflow-hidden text-[11.5px]">
             <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-              Status Penagihan (Vendor Bill)
+              Status Penagihan (Tagihan Supplier)
             </div>
             <div className="p-2.5 space-y-1">
               <Row label="Nilai PO (Grand Total)" value={formatCurrency(grand)} />
-              <Row label={`Sudah Ditagih${billCount > 0 ? ` (${billCount} bill)` : ""}`} value={formatCurrency(billed)} tone="text-green-700" />
+              <Row label={`Sudah Ditagih${billCount > 0 ? ` (${billCount} tagihan)` : ""}`} value={formatCurrency(billed)} tone="text-green-700" />
               <div className="flex justify-between border-t border-[#EFF0F2] pt-1 mt-1">
                 <span className="font-bold">Belum Ditagih{po.status === "closed_short" ? " (dari nilai diterima)" : ""}</span>
                 <span data-testid="po-unbilled" className="font-bold tabular-nums text-amber-700">{formatCurrency(unbilled)}</span>
               </div>
               <div className="flex items-start gap-1.5 mt-1.5 rounded-md border border-[#D6E4FF] bg-[#F5F9FF] px-2 py-1.5 text-[10.5px] text-[#0058CC]">
                 <Receipt size={12} className="mt-0.5 shrink-0" />
-                <span>Hutang & pembayaran supplier dikelola di menu <b>Tagihan Supplier</b> (Vendor Bill). Buat Vendor Bill dari menu tersebut untuk menagih & membayar PO ini.</span>
+                <span>Hutang & pembayaran supplier dikelola di menu <b>Tagihan Supplier</b>. Buat tagihan supplier dari menu tersebut untuk menagih & membayar PO ini.</span>
               </div>
             </div>
           </div>
@@ -300,14 +300,14 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {po.status === "waiting_approval" && po.required_approval_role && (
           <div data-testid="po-approval-badge" className="flex items-center gap-2 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1.5 text-[11px] text-[#9A5B00]">
             <AlertCircle size={13} />
-            <span>Butuh persetujuan peran <b className="uppercase">{po.required_approval_role}</b> sebelum tugas barang masuk dibuat.</span>
+            <span>Perlu persetujuan <b>{roleLabel(po.required_approval_role)}</b> sebelum tugas barang masuk dibuat.</span>
           </div>
         )}
         {po.price_deviation?.flagged && <PODeviationBanner deviation={po.price_deviation} />}
         {(po.budget_check?.warnings || []).length > 0 && (
           <div data-testid="po-budget-warning" className="rounded-md border border-[#F5D9A8] bg-[#FFFBF3] px-2.5 py-2 text-[11px] text-[#8A5A00]">
             <div className="flex items-center gap-1.5 font-bold mb-1">
-              <AlertCircle size={13} /> Peringatan Anggaran (kontrol {String(po.budget_check?.mode || "warn").toUpperCase()})
+              <AlertCircle size={13} /> Peringatan Anggaran (mode {po.budget_check?.mode === "block" ? "blokir" : "peringatan"})
             </div>
             <div className="space-y-0.5">
               {(po.budget_check.warnings || []).map((w, i) => (
@@ -381,7 +381,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
             <button data-testid={`${tp}view-receiving-goods-doc`}
               onClick={() => window.open(`/api/inbound/po/${po.id}/receiving-goods-document`, "_blank")}
               className="secondary-button justify-center">
-              <FileText size={13} /> Dokumen Goods Receipt
+              <FileText size={13} /> Dokumen Penerimaan Barang
             </button>
           )}
           {["waiting_approval", "pending"].includes(po.status) && canManage && (

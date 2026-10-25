@@ -10,7 +10,7 @@ import {
   ArrowLeft, Boxes, ArrowRight, PackageCheck, Send, XCircle, Plus, Trash2,
   Factory, Clock, Receipt, X, Save, Wallet, Layers, TriangleAlert, Wrench,
 } from "lucide-react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import useDomainEnums from "../../hooks/useDomainEnums";
 import { MATERIAL_FLOW_BADGE } from "../../constants/makloonVocab";
@@ -48,7 +48,10 @@ const stepStatusMeta = (s) => {
   }
   return base;
 };
-const fmtDT = (s) => (s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+// UAT 24 Okt (audit UI tahap 2) — jam riwayat ber-WIB baku; teks riwayat lama memuat kode mode mentah.
+const fmtDT = (s) => formatDateTime(s);
+const MODE_TEXT = { process_only: "Proses saja", buy_process: "Beli + Proses" };
+const timelineText = (s) => String(s || "").replace(/\((process_only|buy_process)\)/g, (m, k) => `(${MODE_TEXT[k]})`);
 
 export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, onError }) {
   const [data, setData] = useState(null);
@@ -64,8 +67,10 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
 
   // Sisir gerbang peran (2026-10-20): kirim bahan = makloon_order.issue, terima/catat jasa = makloon_order.receive,
   // batal = makloon_order.cancel (sama dengan endpoint).
-  const canIssue = can(currentUser?.permissions, "makloon_order", "issue");
-  const canReceive = can(currentUser?.permissions, "makloon_order", "receive");
+  // UAT 24 Okt (audit UI tahap 2) — G4-15: order DIBATALKAN tidak lagi menawarkan Issue/Terima/Catat Jasa.
+  const orderLive = data?.status !== "cancelled";
+  const canIssue = can(currentUser?.permissions, "makloon_order", "issue") && orderLive;
+  const canReceive = can(currentUser?.permissions, "makloon_order", "receive") && orderLive;
   const canManage = can(currentUser?.permissions, "makloon_order", "cancel");
 
   const load = useCallback(async () => {
@@ -112,9 +117,10 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
     }   // galat diteruskan ke modal jasa (ditampilkan di dalamnya)
     finally { setBusy(false); }
   }
-  async function doCancel() {
+  async function doCancel(reason) {
     setBusy(true);
-    try { await axios.post(`${API}/makloon-orders/${mkoId}/cancel`, { reason: "Dibatalkan dari detail" }); setShowCancel(false); await load(); }
+    // G4-15 — alasan dari pengguna (dulu teks tetap "Dibatalkan dari detail").
+    try { await axios.post(`${API}/makloon-orders/${mkoId}/cancel`, { reason }); setShowCancel(false); await load(); }
     catch (e) { onError?.(e.response?.data?.detail || "Gagal membatalkan order."); setShowCancel(false); }
     finally { setBusy(false); }
   }
@@ -140,9 +146,17 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
           {canCancel && <button data-testid="mko-cancel-button" onClick={() => setShowCancel(true)} className="secondary-button !border-[#F1CFCB] !text-[#C0392B]"><XCircle size={13} /> Batalkan Pesanan</button>}
         </>} />
 
+      {/* G4-15 — SPK order batal: tanpa Tanda Tangan & Kirim WA (pratinjau/unduh tetap untuk arsip).
+          Kirim WA disembunyikan lewat kelas karena DocumentActionsBar belum punya prop untuk itu
+          (diminta ke pemilik komponen dokumen — lihat laporan G4). */}
       <DocumentActionsBar docType="makloon_spk" sourceId={data.id} entityId={data.entity_id}
-        number={data.mko_number} label="SPK Makloon" esignable currentUser={currentUser} onChanged={load}
-        className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
+        number={data.mko_number} label="SPK Makloon" esignable={orderLive} currentUser={currentUser} onChanged={load}
+        className={`rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2 ${orderLive ? "" : "[&_[data-testid=doc-act-wa]]:hidden"}`} />
+      {!orderLive && (
+        <p className="text-[11px] text-[#6B6B73]" data-testid="mko-cancelled-note">
+          Order ini dibatalkan{data.cancel_reason ? `: ${data.cancel_reason}` : ""} — SPK tidak bisa ditandatangani atau dikirim.
+        </p>
+      )}
 
       {/* FASE T (keputusan 3b) — peringatan yang tidak memblokir TETAP terlihat di sini.
           Peringatan itu tersimpan di dokumen saat SPK lahir; kalau hanya muncul sebagai
@@ -211,7 +225,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
             </Panel>
           )}
           <Panel icon={Clock} title={`Riwayat · ${(data.timeline || []).length}`}>
-            <Timeline testId="mko-timeline" items={(data.timeline || []).slice().reverse().map((t) => ({ title: t.note || t.event, meta: fmtDT(t.at) }))} />
+            <Timeline testId="mko-timeline" items={(data.timeline || []).slice().reverse().map((t) => ({ title: timelineText(t.note || t.event), meta: fmtDT(t.at) }))} />
           </Panel>
           {(data.service_bills || []).length > 0 && (
             <Panel icon={Receipt} title="Tagihan jasa">
@@ -376,7 +390,8 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
         onClose={() => setServiceStep(null)} onConfirm={(body) => doRecordService(serviceStep, body)} />}
       <ConfirmModal open={showCancel} title={`Batalkan ${data.mko_number}?`}
         message="Cadangan bahan yang belum dikirim dilepas. Bahan yang sudah dikirim tetap tercatat di mitra (WIP tetap) sampai retur bahan dicatat."
-        confirmLabel="Batalkan Pesanan" danger onConfirm={doCancel} onCancel={() => setShowCancel(false)} testId="mko-cancel-modal" />
+        confirmLabel="Batalkan Pesanan" danger withReason reasonLabel="Alasan pembatalan" reasonPlaceholder="mis. kebutuhan batal / ganti mitra"
+        onConfirm={doCancel} onCancel={() => setShowCancel(false)} testId="mko-cancel-modal" />
     </div>
   );
 }
