@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
-import { Truck, Plus, ArrowRight, Package, AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Truck, Plus, ArrowRight, Search } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import FilterChips from "../../components/FilterChips";
+import LineFilter from "../../components/LineFilter";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { formatQty } from "../../utils/formatters";
-import { StatusBadge, statusLabel } from "./transfer/transferConstants";
+import { statusLabel, TRANSFER_STATUS_FILTERS } from "./transfer/transferConstants";
 import TransferCreateForm from "./transfer/TransferCreateForm";
+import TransferList, { transferKindOf } from "./transfer/TransferList";
 import FormModal from "../../components/FormModal";
 import TransferDetailModal from "./transfer/TransferDetailModal";
 
@@ -17,9 +20,16 @@ import TransferDetailModal from "./transfer/TransferDetailModal";
  * Panel untuk mengelola transfer antar gudang dengan workflow:
  * draft → waiting_approval → approved → picking → staging → dispatched → completed
  *
+ * Fase 3 · P5 — D-16: SATU daftar untuk transfer antar gudang DAN antar badan usaha (PT). Dulu transfer antar-PT
+ * tampil dua kali (di daftar ini + sub-tab "Antar entitas (PT)" dengan kartu & tombol bergaya lain). Kini kolom
+ * "Jenis" + saringan Jenis (Semua · Antar gudang · Antar PT), satu pop-up rincian dengan aksi sesuai jenis.
+ * `kind`/`onKindChange` = saringan terkendali (preset alias `interco-transfers`); tanpa itu `initialKind`.
+ *
  * Sub-components live in ./transfer/ (kept under file-size limits per KN_02).
  */
-export default function TransferManagement({ user, focusTransferId = "", onFocusConsumed }) {
+export default function TransferManagement({
+  user, focusTransferId = "", onFocusConsumed, kind: kindProp, onKindChange, initialKind = "all",
+}) {
   const [transfers, setTransfers] = useState([]);
   const [products, setProducts] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
@@ -28,6 +38,11 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [kindLocal, setKindLocal] = useState(initialKind);
+  const kind = kindProp ?? kindLocal;
+  const setKind = (k) => { setKindLocal(k); onKindChange?.(k); };
+  const [lineFilter, setLineFilter] = useState("");   // FASE L — dulu hanya di daftar antar-PT
+  const [search, setSearch] = useState("");
 
   // FASE P5 — galat muncul DI TEMPAT pengguna sedang bekerja, bukan lewat `alert()`
   // yang memblokir peramban:
@@ -51,8 +66,26 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
 
   useEffect(() => {
     fetchTransfers();
-    fetchMasterData();
-  }, [filterStatus]);
+  }, [filterStatus, lineFilter]); // eslint-disable-line
+  useEffect(() => { fetchMasterData(); }, []);
+
+  // Saringan Jenis & cari dihitung di peramban (satu muatan, hitungan per jenis tetap benar).
+  const kindCounts = useMemo(() => ({
+    all: transfers.length,
+    intra_entity: transfers.filter((t) => transferKindOf(t) === "intra_entity").length,
+    inter_entity: transfers.filter((t) => transferKindOf(t) === "inter_entity").length,
+  }), [transfers]);
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return transfers.filter((t) => {
+      if (kind !== "all" && transferKindOf(t) !== kind) return false;
+      if (!q) return true;
+      const hay = [t.code, t.source_warehouse_name, t.dest_warehouse_name, t.source_entity_name, t.dest_entity_name,
+        t.requested_by, t.sales_order_number, ...(t.items || []).map((i) => `${i.sku || ""} ${i.product_name || ""}`)]
+        .filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [transfers, kind, search]);
 
   // Deep-link dari Meja Admin Gudang ("Setujui") → transfer yang diklik langsung terbuka.
   useEffect(() => {
@@ -65,12 +98,14 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
   const fetchTransfers = async () => {
     setLoading(true);
     try {
-      const params = filterStatus !== "all" ? `?status=${filterStatus}` : "";
-      const response = await axios.get(`${API}/transfers${params}`);
-      setTransfers(response.data);
+      const params = {};
+      if (filterStatus !== "all") params.status = filterStatus;
+      if (lineFilter) params.line = lineFilter;
+      const response = await axios.get(`${API}/transfers`, { params });
+      setTransfers(Array.isArray(response.data) ? response.data : []);
       setError("");
     } catch (error) {
-      setError(error.response?.data?.detail || "Gagal memuat transfer antar gudang.");
+      setError(apiErrorText(error, "Gagal memuat daftar transfer."));
     } finally {
       setLoading(false);
     }
@@ -145,7 +180,9 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
     setActionError("");
     try {
       await axios.post(`${API}/transfers/${transferId}/approve`, { approved_by: user?.name || "Manager", rule_exception_reason: ruleReason });
-      notifySuccess("Transfer disetujui", "Gudang asal bisa mulai pengambilan barang.");
+      notifySuccess("Transfer disetujui", ic
+        ? "Kepemilikan barang pindah ke badan usaha tujuan; jurnal antar-PT dibuat."
+        : "Gudang asal bisa mulai pengambilan barang.");
       fetchTransfers();
       setSelectedTransfer(null);
     } catch (error) {
@@ -220,46 +257,44 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
   return (
     <div data-testid="transfer-management-panel" className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#007AFF]/10">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center w-10 h-10 shrink-0 rounded-full bg-[#007AFF]/10">
             <Truck className="text-[#007AFF]" size={20} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 data-testid="panel-title" className="text-lg font-semibold text-[#000000]">
-              Transfer Antar Gudang
+              Transfer
             </h2>
             <p data-testid="panel-subtitle" className="text-sm text-[#3C3C43]">
-              Kelola perpindahan persediaan antar gudang
+              Antar gudang dan antar badan usaha (PT) — satu daftar
             </p>
           </div>
         </div>
-        <button
-          data-testid="create-transfer-button"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="flex items-center gap-2 bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium transition-all"
-        >
-          <Plus size={16} />
-          Buat Transfer
+        <button data-testid="create-transfer-button" onClick={() => setShowCreateForm(true)} className="primary-button">
+          <Plus size={14} /> Buat Transfer
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {["all", "waiting_approval", "approved", "picking", "staging", "dispatched", "completed"].map((status) => (
-          <button
-            key={status}
-            data-testid={`filter-status-${status}`}
-            onClick={() => setFilterStatus(status)}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${
-              filterStatus === status
-                ? "bg-[#007AFF] text-white"
-                : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:border-[#007AFF]"
-            }`}
-          >
-            {status === "all" ? "Semua" : statusLabel(status)}
-          </button>
-        ))}
+      {/* Saringan — Jenis (D-16), status, lini, cari. Saringan = chip, bukan tab (L-01). */}
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+        <FilterChips testId="trf-kind" ariaLabel="Jenis transfer" value={kind} onChange={setKind}
+          options={[
+            { key: "all", label: "Semua jenis", count: kindCounts.all },
+            { key: "intra_entity", label: "Antar gudang", count: kindCounts.intra_entity },
+            { key: "inter_entity", label: "Antar PT", count: kindCounts.inter_entity },
+          ]} />
+        <FilterChips testId="filter-status" ariaLabel="Status transfer" value={filterStatus} onChange={setFilterStatus}
+          options={TRANSFER_STATUS_FILTERS.map((s) => ({ key: s, label: s === "all" ? "Semua status" : statusLabel(s) }))} />
+        <div className="flex flex-wrap items-center gap-2">
+          <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="transfers"
+            allowed={user?.allowed_line_codes} testId="trf-line-filter" />
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 sm:max-w-xs">
+            <Search size={14} className="shrink-0 text-[#6B6B73]" />
+            <input data-testid="trf-search" className="w-full min-w-0 bg-transparent text-[13px] outline-none"
+              placeholder="Cari kode / gudang / PT / produk…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </label>
+        </div>
       </div>
 
       {/* Create Form */}
@@ -301,49 +336,11 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
 
       {/* Transfers List */}
       <ErrorNotice message={error} onRetry={fetchTransfers} onDismiss={() => setError("")} testId="transfer-error" />
-      <div className="grid gap-3">
-        {loading ? (
-          <div className="text-center py-8 text-[#3C3C43]">Memuat…</div>
-        ) : transfers.length === 0 ? (
-          <div className="text-center py-10 text-[#3C3C43]">
-            <AlertCircle size={48} className="mx-auto mb-2 text-gray-400" />
-            <p className="font-semibold">Belum ada transfer antar gudang</p>
-            <p className="text-[12px] text-[#6B6B73] mt-1">Buat transfer untuk memindahkan stok antar gudang.</p>
-          </div>
-        ) : (
-          transfers.map((transfer) => (
-            <div
-              key={transfer.id}
-              data-testid={`transfer-card-${transfer.id}`}
-              className="bg-white border border-[#E5E5EA] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => { setSelectedTransfer(transfer); setActionError(""); }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#007AFF]/10">
-                    <Package className="text-[#007AFF]" size={18} />
-                  </div>
-                  <div>
-                    <p data-testid={`transfer-code-${transfer.id}`} className="text-sm font-bold text-[#007AFF]">
-                      {transfer.code}
-                    </p>
-                    <p data-testid={`transfer-route-${transfer.id}`} className="text-xs text-[#3C3C43]">
-                      {transfer.source_warehouse_name} <ArrowRight size={12} className="inline" /> {transfer.dest_warehouse_name}
-                    </p>
-                  </div>
-                </div>
-                <StatusBadge status={transfer.status} />
-              </div>
-
-              <div className="text-xs text-[#3C3C43] space-y-1">
-                <p><span className="font-semibold">Barang:</span> {transfer.items?.length || 0} baris</p>
-                <p><span className="font-semibold">Diajukan oleh:</span> {transfer.requested_by || "—"}</p>
-                {transfer.approved_by && <p><span className="font-semibold">Disetujui oleh:</span> {transfer.approved_by}</p>}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <TransferList rows={shown} loading={loading}
+        emptyText={transfers.length
+          ? "Tidak ada transfer yang cocok dengan saringan."
+          : "Belum ada transfer. Buat transfer untuk memindahkan stok antar gudang."}
+        onOpen={(transfer) => { setSelectedTransfer(transfer); setActionError(""); }} />
 
       {/* Detail Modal */}
       {selectedTransfer && (

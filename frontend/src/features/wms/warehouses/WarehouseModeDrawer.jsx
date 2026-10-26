@@ -13,10 +13,11 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  X, Save, Users, Building2, AlertTriangle, Boxes, Loader2, Check,
+  Save, Users, Building2, AlertTriangle, Boxes, Loader2, Check,
 } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { entityFull, entityShort } from "../../../utils/entityLabel";
 import { formatQty } from "../../../utils/formatters";
 import { errText, patchWarehouse, warehouseOccupancy } from "./warehouseApi";
@@ -80,21 +81,20 @@ export default function WarehouseModeDrawer({ warehouse, entities = [], onClose,
     }
   };
 
+  // Fase 3 · P5 (L-03) — dulu laci `div fixed inset-0` buatan sendiri; kini FormModal baku (layar penuh di HP,
+  // Esc berlapis, kaki Simpan tetap). Isi & aturan sama.
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" data-testid="wh-mode-drawer">
-      <div className="h-full w-full max-w-[520px] overflow-auto bg-white shadow-xl">
-        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#EFF0F2] bg-white px-4 py-3">
-          <Building2 size={16} className="text-[#0058CC]" />
-          <div className="min-w-0">
-            <h3 className="truncate text-[14px] font-bold">Mode pemakaian · {warehouse.name}</h3>
-            <p className="text-[11px] text-[#8E8E93]">{warehouse.code} · {warehouse.city}</p>
-          </div>
-          <button data-testid="wh-mode-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup">
-            <X size={15} />
+    <FormModal open onClose={onClose} title={`Mode pemakaian · ${warehouse.name}`} icon={Building2} size="md"
+      subtitle={[warehouse.code, warehouse.city].filter(Boolean).join(" · ")} testId="wh-mode-drawer" busy={saving}
+      footer={(
+        <div className="flex justify-end gap-2">
+          <button type="button" data-testid="wh-mode-close" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" data-testid="wh-mode-save" className="primary-button" onClick={save} disabled={saving}>
+            <Save size={14} /> {saving ? "Menyimpan…" : "Simpan mode"}
           </button>
         </div>
-
-        <div className="space-y-3 p-4">
+      )}>
+        <div className="space-y-3">
           <ErrorNotice message={error} onDismiss={() => setError("")} testId="wh-mode-error" />
 
           {/* Pilihan mode */}
@@ -201,15 +201,7 @@ export default function WarehouseModeDrawer({ warehouse, entities = [], onClose,
             </div>
           )}
         </div>
-
-        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#EFF0F2] bg-white px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="wh-mode-save" className="primary-button" onClick={save} disabled={saving}>
-            <Save size={14} /> {saving ? "Menyimpan…" : "Simpan mode"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 

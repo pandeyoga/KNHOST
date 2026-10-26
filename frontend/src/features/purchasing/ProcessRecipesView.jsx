@@ -7,9 +7,11 @@ import ConfirmModal from "../../components/ConfirmModal";
 import RecipeFormModal from "./RecipeFormModal";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import { can } from "../../config/roles";
+import { useAppNav } from "../../context/AppNavContext";
 
 /** ProcessRecipesView (M1) — master resep konversi (input→output) + tarif + forecast. */
 export default function ProcessRecipesView({ currentUser, selectedEntity }) {
+  const { go, canOpen } = useAppNav();
   // FASE T (4a) — penyaring & lencana proses dibaca dari registry hidup.
   const { options: processOptions, labelOf: processLabel } = useProcessTypes();
   const PROC_FILTER = processOptions([{ value: "", label: "Semua Proses" }]);
@@ -61,7 +63,7 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="recipe-error" />
       <div className="section-card mb-3">
         <div className="section-head flex-wrap gap-2">
-          <div className="flex items-center gap-2 min-w-0"><GitBranch size={16} className="text-[#0058CC]" /><h2 data-testid="recipes-title">Resep Proses (Konversi)</h2></div>
+          <div className="flex items-center gap-2 min-w-0"><GitBranch size={16} className="text-[#0058CC]" /><h2 data-testid="recipes-title">Resep Proses Makloon (konversi bahan → hasil)</h2></div>
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
             <div className="relative min-w-[180px]">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
@@ -71,6 +73,15 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
             {canManage && <button data-testid="create-recipe-button" onClick={() => { setEditTarget(null); setShowForm(true); }} className="primary-button"><Plus size={13} /> Buat Resep</button>}
           </div>
         </div>
+        {/* Fase 3 · P5 — D-25 (B): dua "resep" berbeda arti (makloon vs BOM pabrik sendiri) dulu tanpa penjelas. */}
+        <p className="px-4 pb-3 text-[11.5px] text-[#6B6B73]" data-testid="recipes-crosslink">
+          Resep di sini untuk proses di <b>mitra makloon</b> (celup, printing, finishing…). Produksi di pabrik sendiri
+          (bahan + komponen → barang jadi lewat Perintah Kerja) memakai{" "}
+          {canOpen("production")
+            ? <button type="button" className="link-button !p-0 font-semibold" data-testid="recipes-open-bom"
+                onClick={() => go("production", { preset: { tab: "bom" } })}>BOM Produksi In-House →</button>
+            : <b>BOM Produksi In-House</b>}.
+        </p>
       </div>
 
       <div className="section-card overflow-x-auto">

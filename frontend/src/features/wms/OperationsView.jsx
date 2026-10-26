@@ -1,15 +1,13 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Layers, ArrowLeftRight, ClipboardCheck, Activity } from "lucide-react";
 import InventoryStockView from "./InventoryStockView";
 import TransferManagement from "./TransferManagement";
-import CycleCount from "../inventory/CycleCount";
+import StockOpnameTab from "./StockOpnameTab";
 import WmsHealthDashboard from "./WmsHealthDashboard";
 import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
 import { can } from "../../config/roles";
-import { StatusTabs } from "../../components/ListControls";
-
-const InterCompanyTransfers = lazy(() => import("../transfers/InterCompanyTransfers"));
-const IC_ROLES = ["admin", "warehouse", "manager", "warehouse_admin"];
+import useViewPreset from "../../hooks/useViewPreset";
+import { useAppNav } from "../../context/AppNavContext";
 
 export default function OperationsView({
   data,
@@ -36,17 +34,30 @@ export default function OperationsView({
   // DAFTAR di bawahnya (Transfer & Stock Opname memuat datanya sendiri), supaya
   // satu dokumen tidak tampil "menunggu ACC" di layar yang sama (INV-HOME-01).
   const [boardsVersion, setBoardsVersion] = useState(0);
-  const [transferScope, setTransferScope] = useState("warehouse");
+  // Fase 3 · P5 — D-16: satu daftar transfer dengan saringan Jenis (dulu sub-tab "Antar gudang | Antar entitas (PT)"
+  // yang menampilkan transfer antar-PT DUA kali). D-15: metode stock opname (hitung fisik | sapu RFID).
+  const [transferKind, setTransferKind] = useState("all");
+  const [opnameMethod, setOpnameMethod] = useState("count");
+  const [opnameWarehouse, setOpnameWarehouse] = useState("");
+  const { go } = useAppNav();
 
   // Sync tab when deep-link navigation from sidebar changes defaultTab
   useEffect(() => {
     if (defaultTab && defaultTab !== wmsTab) setWmsTab(defaultTab);
   }, [defaultTab]); // eslint-disable-line
+  // Preset navigasi (alias `interco-transfers` → {tab:"transfer", kind:"inter_entity"}; tautan Lokasi RFID →
+  // {tab:"cycle", method:"rfid", warehouse}). Diterapkan sekali per navigasi; pilihan manual tidak ditimpa.
+  useViewPreset("operations", (p) => {
+    if (p.tab) setWmsTab(p.tab);
+    if (p.kind) setTransferKind(p.kind);
+    if (p.method) setOpnameMethod(p.method);
+    if (p.warehouse !== undefined) setOpnameWarehouse(p.warehouse || "");
+  });
   const WMS_TABS = [
     // 2026-10 — Barang Masuk (termasuk Scan Terima PO mode lama) & Barang Keluar kini tab hub sendiri.
     { id: "stok",     label: "Stok",        icon: Layers,        desc: "Lihat qty per gudang" },
-    { id: "transfer", label: "Transfer",     icon: ArrowLeftRight, desc: "Pindah antar gudang" },
-    { id: "cycle",    label: "Stock Opname",  icon: ClipboardCheck, desc: "Hitung fisik stok" },
+    { id: "transfer", label: "Transfer",     icon: ArrowLeftRight, desc: "Pindah antar gudang / antar PT" },
+    { id: "cycle",    label: "Stock Opname",  icon: ClipboardCheck, desc: "Hitung fisik stok (atau sapu RFID)" },
     { id: "health",   label: "Kesehatan",  icon: Activity, desc: "Ringkasan insiden, opname & antrean per gudang" },
   ];
   // AUDIT SALES vs ADMIN SALES (2026-08-15) — tab disaring per IZIN, bukan per peran.
@@ -68,14 +79,20 @@ export default function OperationsView({
   return (
     <div data-testid="operations-view">
       {/* Papan keputusan yang MENAHAN BARANG (2026-06) — ditempel di atas tab supaya
-          terlihat di tab mana pun petugas berada. Angkanya milik backend. */}
+          terlihat di tab mana pun petugas berada. Angkanya milik backend.
+          Fase 3 · P5 — D-28 (keputusan pemilik 26 Okt): papan "Barang ditahan QC" kini TAUTAN — klik baris membuka
+          SPK-nya di Kualitas › SPK Inspeksi (saringan "Hanya yang DITAHAN"), satu-satunya tempat keputusan
+          lepas/tolak. Papan transfer & opname tetap bisa ditindak di sini. */}
       <WaitingBoardsStrip endpoint="/home/warehouse" entityId={selectedEntity}
         primaryKey="transfer" testIdPrefix="wms-home"
         scopeNote="Antrean ACC · semua gudang (filter gudang di bawah hanya untuk daftar stok)"
+        linkKeys={["inspection_hold"]}
+        onOpenDocument={(link) => onOpenDocument?.({ ...link, preset: { hold: true } })}
         onActed={() => setBoardsVersion((v) => v + 1)}
         onNavigate={(view, key) => {
           const tab = { transfer: "transfer", cycle_count: "cycle" }[key];
           if (tab) setWmsTab(tab);
+          else if (key === "inspection_hold") go("inspections", { preset: { hold: true } });
           else if (onNavigate) onNavigate(view);
         }} />
 
@@ -110,39 +127,30 @@ export default function OperationsView({
         />
       )}
 
-      {/* TRANSFER TAB */}
+      {/* TRANSFER TAB — D-16: satu daftar (antar gudang + antar PT) dengan kolom & saringan Jenis.
+          T6: papan di atas boleh memaksa daftar ini memuat ulang. */}
       {activeTab === "transfer" && (
         <div className="section-card">
-          <div className="section-head">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="kicker">Transfer</span>
-              <h2>{transferScope === "entity" ? "Transfer Antar-Entitas (PT)" : "Transfer Antar Gudang"}</h2>
-            </div>
-          </div>
           <div className="section-body">
-            {IC_ROLES.includes(user?.role) && (
-              <StatusTabs value={transferScope} onChange={setTransferScope} testIdPrefix="wms-transfer-scope"
-                tabs={[{ key: "warehouse", label: "Antar gudang" }, { key: "entity", label: "Antar entitas (PT)" }]} />
-            )}
-            {transferScope === "entity" && IC_ROLES.includes(user?.role) ? (
-              <Suspense fallback={<div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>}>
-                <InterCompanyTransfers currentUser={user} />
-              </Suspense>
-            ) : (
-            /* T6: papan di atas boleh memaksa daftar ini memuat ulang. */
             <TransferManagement key={`transfer-${boardsVersion}`} user={user}
+              kind={transferKind} onKindChange={setTransferKind}
               focusTransferId={focusDoc?.focus_type === "warehouse_transfer" ? focusDoc.focus_id : ""}
               onFocusConsumed={onClearFocus} />
-            )}
           </div>
         </div>
       )}
 
-      {/* CYCLE COUNT TAB */}
+      {/* STOCK OPNAME TAB — D-15: satu alur, dua metode (hitung fisik · sapu RFID). */}
       {activeTab === "cycle" && (
-        <CycleCount key={`cycle-${boardsVersion}`} token={token} warehouses={data.warehouses || []} products={data.products || []} userRole={user?.role}
-          focusSessionId={focusDoc?.focus_type === "cycle_count" ? focusDoc.focus_id : ""}
-          onFocusConsumed={onClearFocus} />
+        <StockOpnameTab method={opnameMethod} onMethodChange={setOpnameMethod}
+          warehouseId={opnameWarehouse} onWarehouseChange={setOpnameWarehouse}
+          warehouses={data.warehouses || []} selectedEntity={selectedEntity}
+          cycleKey={`cycle-${boardsVersion}`}
+          cycleCountProps={{
+            token, warehouses: data.warehouses || [], products: data.products || [], userRole: user?.role,
+            focusSessionId: focusDoc?.focus_type === "cycle_count" ? focusDoc.focus_id : "",
+            onFocusConsumed: onClearFocus,
+          }} />
       )}
 
       {/* KESEHATAN TAB — ringkasan insiden, opname & antrean per gudang */}

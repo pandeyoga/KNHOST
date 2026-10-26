@@ -14,6 +14,12 @@ const STATUS_MAP = {
   cancelled: { label: "Dibatalkan", className: "bg-gray-300 text-gray-600" },
 };
 
+// Saringan status di daftar transfer (D-16: satu daftar untuk antar gudang & antar PT; "Ditolak" dulu hanya
+// ada di daftar antar-PT).
+export const TRANSFER_STATUS_FILTERS = [
+  "all", "waiting_approval", "approved", "picking", "staging", "dispatched", "completed", "rejected",
+];
+
 export function statusLabel(status) {
   return STATUS_MAP[status]?.label || docStatusLabel(status) || "—";
 }

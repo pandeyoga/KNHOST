@@ -133,11 +133,11 @@ export function WOCreateModal({ boms, warehouses, balances, onCancel, onCreate }
   return (
     <div className="space-y-3" data-testid="wo-form">
       {err && <div data-testid="wo-form-error" className="rounded-lg border border-[#F3D6D6] bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C0392B]">{err}</div>}
-      {boms.length === 0 && <div className="rounded-lg border border-[#F5D9A8] bg-[#FFFBF3] px-3 py-2 text-[11.5px] text-[#8A5A00]">Belum ada BOM aktif. Buat BOM terlebih dahulu di tab BOM / Resep.</div>}
+      {boms.length === 0 && <div className="rounded-lg border border-[#F5D9A8] bg-[#FFFBF3] px-3 py-2 text-[11.5px] text-[#8A5A00]">Belum ada BOM aktif. Buat BOM terlebih dahulu di tab BOM Produksi.</div>}
       {/* Tanpa BOM aktif form tidak bisa dipakai → tidak ditampilkan (dulu tetap terbuka penuh). */}
       {boms.length > 0 && <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className={labelCls}>BOM / Resep *</label>
+          <label className={labelCls}>BOM Produksi *</label>
           <KNSelect data-testid="wo-bom-select" value={bomId} onValueChange={setBomId} options={bomOptions} searchable placeholder="Pilih BOM" className={inputCls} />
         </div>
         <div>

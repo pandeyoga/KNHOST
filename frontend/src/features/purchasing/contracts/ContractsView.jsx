@@ -7,8 +7,10 @@
  * ke Pusat Pengaturan (kelompok "Produksi & Makloon") supaya hanya ada satu editor.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, Plus, RefreshCw, Route, Search, Settings2, Trash2, Beaker, ArrowLeftRight, X } from "lucide-react";
+import { FileText, Plus, RefreshCw, Route, Search, Settings2, Trash2, Beaker, ArrowLeftRight } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import LinkCard from "../../../components/LinkCard";
+import { useAppNav } from "../../../context/AppNavContext";
 import EntityBadge from "../../../components/EntityBadge";
 import { openRnd } from "../../rnd/rndDeepLink";
 import { openTrace } from "../../documents/trace/traceDeepLink";
@@ -19,8 +21,6 @@ import { can } from "../../../config/roles";
 import { StatusTabs } from "../../../components/ListControls";
 import usePagedRows from "../../../hooks/usePagedRows";
 import useProcessTypes from "../../../hooks/useProcessTypes";
-import InternalPriceBulkPanel from "../../interco_prices/InternalPriceBulkPanel";
-import { entitiesFromSummary, InternalPriceSummary } from "../../interco_prices/InternalPricesView";
 import { internalPriceAccess, internalPriceSummary } from "../../interco_prices/internalPriceApi";
 import { openConfig } from "../../settings/config/configDeepLink";
 import { askConfirm, askReason } from "../../../services/confirmService";
@@ -36,6 +36,8 @@ const TYPE_FILTERS = [
   { key: "", label: "Semua" },
   { key: "makloon", label: "Kontrak Makloon" },
   { key: "purchase", label: "Kontrak Pembelian" },
+  // Fase 3 · P5 — D-23: saringan ini DIPERTAHANKAN (hanya untuk melihat/menghentikan kontrak harga internal yang
+  // sudah ada — layar Harga Internal Antar-PT hanya mengisi yang belum berharga); pengisian lewat tautan di bawah.
   { key: "internal", label: "Harga Internal" },
 ];
 
@@ -50,8 +52,8 @@ export default function ContractsView({ currentUser, selectedEntity }) {
   const [editing, setEditing] = useState(null);
   const [icSummary, setIcSummary] = useState(null);
   const [icAccess, setIcAccess] = useState({});
-  const [bulkPair, setBulkPair] = useState(null);
   const { labelOf: processLabel } = useProcessTypes();
+  const { canOpen } = useAppNav();
 
   // Sisir gerbang peran (2026-10-20): buat/ubah status/hapus = supplier_contract.create/update/delete;
   // pintasan kebijakan membuka Pusat Pengaturan (settings.view; hak ubah per setelan dari server).
@@ -163,12 +165,6 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                 <Settings2 size={13} /> Kebijakan Makloon
               </button>
             )}
-            {icAccess.can_view && (
-              <button className="secondary-button" onClick={() => setBulkPair({})} data-testid="contracts-internal-bulk-button">
-                <ArrowLeftRight size={13} /> Isi massal harga internal
-                {icSummary?.missing_total > 0 && <span data-testid="contracts-internal-missing" className="ml-1 rounded-full bg-[#FFF4E0] px-1.5 text-[11px] font-bold text-[#8A5300]">{icSummary.missing_total}</span>}
-              </button>
-            )}
             {canCreate && (
               <button className="primary-button" onClick={() => { setEditing(null); setShowForm(true); }} data-testid="contracts-create-button">
                 <Plus size={13} /> Kontrak Baru
@@ -196,6 +192,17 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                 tabs={TYPE_FILTERS.map((f) => ({ ...f, testKey: f.key || "all", count: typeCount(f.key) }))} />
             </div>
           </div>
+          {/* Fase 3 · P5 — D-23: pop-up "Isi massal harga internal" (ringkasan pasangan + editor massal) dulu
+              menduplikasi layar Harga Internal Antar-PT. Kini satu layar; di sini tautan. Manajer & gudang (tanpa menu
+              Produk & Harga) memakai tab tersembunyi `supplier-internal-prices` (diaktifkan P8) — sampai itu ringkasan
+              baca-saja. Saringan "Harga Internal" tetap untuk melihat/menghentikan kontrak yang sudah ada. */}
+          {icAccess.can_view && (
+            <LinkCard testId="contracts-internal-link" icon={ArrowLeftRight} what="Harga internal antar-PT"
+              where="Produk & Harga › Harga Internal Antar-PT"
+              view={canOpen("internal-prices") ? "internal-prices" : "supplier-internal-prices"}
+              label="Isi / periksa harga internal" count={icSummary?.missing_total || undefined}
+              summary={icSummary ? `${icSummary.missing_total || 0} barang ber-stok belum punya harga` : null} />
+          )}
         </div>
       </div>
 
@@ -293,28 +300,6 @@ export default function ContractsView({ currentUser, selectedEntity }) {
           onClose={() => { setShowForm(false); setEditing(null); }}
           onSaved={() => { setShowForm(false); setEditing(null); load(); }}
           onError={setError} />
-      )}
-      {bulkPair && (
-        <div className="modal-overlay" data-testid="contracts-internal-bulk-modal" onClick={(e) => { if (e.target === e.currentTarget) setBulkPair(null); }}>
-          <div className="modal-card" style={{ maxWidth: 980, maxHeight: "92vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <div><p className="modal-title">Isi massal harga internal</p>
-                <p className="modal-subtitle">Barang ber-stok yang belum punya harga internal untuk pasangan PT. Penetap: MD, Finance, Admin.</p></div>
-              <button className="icon-button" aria-label="Tutup" data-testid="contracts-internal-bulk-close" onClick={() => setBulkPair(null)}><X size={15} /></button>
-            </div>
-            <InternalPriceSummary summary={icSummary} onPick={(p) => setBulkPair({ seller: p.seller_entity_id, buyer: p.buyer_entity_id })} />
-            <div className="mt-3">
-              {entitiesFromSummary(icSummary).length > 1 && (
-                <InternalPriceBulkPanel key={`${bulkPair.seller}-${bulkPair.buyer}`} entities={entitiesFromSummary(icSummary)} initial={bulkPair}
-                  canSet={!!icAccess.can_set} onSaved={() => { loadIc(); load(); }} />
-              )}
-            </div>
-            {/* UAT 24 Okt (audit UI tahap 2) — G4-08: pop-up dulu tanpa kaki; simpan ada di panel. */}
-            <div className="sticky bottom-0 mt-3 flex justify-end border-t border-[#EFF0F2] bg-white pt-2.5" data-testid="contracts-internal-bulk-footer">
-              <button className="secondary-button" onClick={() => setBulkPair(null)}>Tutup</button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

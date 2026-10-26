@@ -4,7 +4,8 @@
  * Semua configurable oleh user (keputusan pemilik: fungsi gudang bisa berubah).
  */
 import { useState } from "react";
-import { X, Save, MapPin, Shield, DoorOpen, Layers } from "lucide-react";
+import { Save, MapPin, Shield, DoorOpen, Layers, Building2 } from "lucide-react";
+import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import { errText, patchWarehouse, WH_ROLES } from "./warehouseApi";
 import useDomainEnums from "../../../hooks/useDomainEnums";
@@ -50,18 +51,20 @@ export default function WarehouseProfileDrawer({ warehouse, sites = [], categori
   const siteOpts = [{ value: "", label: "— Tanpa lokasi —" },
     ...sites.map((s) => ({ value: s.id, label: `${s.name}${s.city ? ` (${s.city})` : ""}` }))];
 
+  // Fase 3 · P5 (L-03) — dulu laci `div fixed inset-0` buatan sendiri (tanpa Esc/klik-latar baku); kini FormModal
+  // baku — layar penuh di HP, tombol Simpan di kaki tetap. Isian sama.
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30" data-testid="wh-profile-drawer">
-      <div className="h-full w-full max-w-md overflow-y-auto bg-white p-4 shadow-xl">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Profil Gedung</p>
-            <h3 className="text-[15px] font-bold">{warehouse.name}</h3>
-          </div>
-          <button data-testid="wh-profile-close" className="icon-button" onClick={onClose}><X size={16} /></button>
+    <FormModal open onClose={onClose} title={`Profil Gedung · ${warehouse.name}`} icon={Building2} size="md"
+      subtitle="Lokasi, peran gedung, aturan penyimpanan & gate RFID" testId="wh-profile-drawer"
+      busy={saving} error={error}
+      footer={(
+        <div className="flex justify-end gap-2">
+          <button type="button" data-testid="wh-profile-close" className="secondary-button" onClick={onClose} disabled={saving}>Tutup</button>
+          <button type="button" data-testid="wh-profile-save" className="primary-button" onClick={save} disabled={saving}>
+            <Save size={14} /> {saving ? "Menyimpan…" : "Simpan Profil"}
+          </button>
         </div>
-        {error && <p data-testid="wh-profile-error" className="mb-2 rounded bg-[#FBE9E7] px-2 py-1.5 text-[11.5px] text-[#C0341D]">{error}</p>}
-
+      )}>
         <div className="space-y-4">
           <section>
             <p className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]"><MapPin size={12} /> Lokasi (Site)</p>
@@ -140,12 +143,6 @@ export default function WarehouseProfileDrawer({ warehouse, sites = [], categori
             </button>
           </section>
         </div>
-
-        <button data-testid="wh-profile-save" className="primary-button mt-4 w-full justify-center"
-          onClick={save} disabled={saving}>
-          <Save size={14} /> {saving ? "Menyimpan…" : "Simpan Profil"}
-        </button>
-      </div>
-    </div>
+    </FormModal>
   );
 }

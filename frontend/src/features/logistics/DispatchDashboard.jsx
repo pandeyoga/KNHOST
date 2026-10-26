@@ -39,7 +39,7 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
     <div className="grid gap-3" data-testid="dispatch-dashboard">
       {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2" data-testid="dispatch-kpi">
-        <Kpi id="unassigned" label="SJ menunggu" value={k.unassigned_sj} icon={PackagePlus} tone="#0058CC" hint="belum dibuat pengiriman" onClick={canManage && k.unassigned_sj ? () => onCreate("") : undefined} />
+        <Kpi id="unassigned" label="SJ menunggu" value={k.unassigned_sj} icon={PackagePlus} tone="#0058CC" hint="belum dibuat pengiriman" />
         <Kpi id="waiting-pickup" label="Menunggu diambil" value={k.waiting_pickup} icon={KeyRound} tone="#6B219A" hint="pelanggan ambil sendiri" />
         <Kpi id="active" label="Diproses" value={k.active} icon={Truck} tone="#1C1C1E" hint="disiapkan · dimuat · jalan" onClick={() => onGotoList("")} />
         <Kpi id="in-transit" label="Di jalan" value={k.in_transit} icon={ArrowRight} tone="#C97A00" onClick={() => onGotoList("in_transit")} />
@@ -53,7 +53,7 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
         <section className="section-card !p-3 lg:col-span-2" data-testid="dispatch-quick-actions">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[12px] font-bold flex items-center gap-1.5"><PackagePlus size={14} className="text-[#0058CC]" /> Aksi cepat — Surat Jalan menunggu pengiriman <span className="tabular-nums text-[#6B6B73] font-semibold">({k.unassigned_sj})</span></p>
-            {canManage && k.unassigned_sj > 0 && <button data-testid="dispatch-create-any" className="secondary-button !py-1 !px-2 !text-[11px]" onClick={() => onCreate("")}>Buat pengiriman…</button>}
+            {/* Fase 3 · P5 — D-19: tombol generik "Buat pengiriman…" dicabut — satu pintu di kepala halaman; aksi per SJ di bawah tetap. */}
           </div>
           {!(d.unassigned || []).length ? (
             <p className="text-[11.5px] text-[#9A9BA3] mt-2" data-testid="dispatch-unassigned-empty">Semua Surat Jalan yang keluar gudang sudah punya pengiriman.</p>

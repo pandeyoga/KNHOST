@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import axios, { API } from "../../services/apiClient";
-import { X, Plus, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Trash2, ClipboardList } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import { productColorText } from "../../components/ProductColorChip";
 import GroupEntityBadge, { isGroupEntityPartner } from "../../components/GroupEntityBadge";
@@ -23,6 +24,8 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
   const [warehouses, setWarehouses] = useState([]);
   const [prs, setPrs] = useState([]);
   const [busy, setBusy] = useState(false);
+  // Fase 3 · P5 (L-03) — galat validasi/simpan tampil DI pop-up (dulu dikirim ke bilah halaman di belakang lapisan).
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     if (!open) { reset(); return; }
@@ -39,12 +42,12 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
         setWarehouses(Array.isArray(w.data) ? w.data : []);
         const prItems = Array.isArray(pr.data) ? pr.data : (pr.data?.items || []);
         setPrs(prItems.filter((x) => x.status === "approved" && !x.po_id));
-      } catch (e) { onError?.("Gagal memuat data master."); }
+      } catch (e) { setErr("Gagal memuat data master."); onError?.("Gagal memuat data master."); }
     })();
   }, [open]); // eslint-disable-line
 
   function reset() {
-    setSource("manual"); setTitle(""); setWarehouseId(""); setPrId(""); setNeededBy("");
+    setSource("manual"); setTitle(""); setWarehouseId(""); setPrId(""); setNeededBy(""); setErr("");
     setRows([{ product_id: "", quantity: "", unit: "meter" }]); setSupplierIds([]);
   }
 
@@ -61,16 +64,16 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
   }
 
   async function submit() {
-    if (!warehouseId) { onError?.("Pilih gudang tujuan."); return; }
-    if (supplierIds.length === 0) { onError?.("Undang minimal 1 supplier."); return; }
+    if (!warehouseId) { setErr("Pilih gudang tujuan."); return; }
+    if (supplierIds.length === 0) { setErr("Undang minimal 1 supplier."); return; }
     let items = [];
     if (source === "manual") {
       items = rows.filter((r) => r.product_id && Number(r.quantity) > 0)
         .map((r) => ({ product_id: r.product_id, quantity: Number(r.quantity), unit: r.unit || "meter" }));
-      if (items.length === 0) { onError?.("Tambah minimal 1 item (produk + qty)."); return; }
-    } else if (!prId) { onError?.("Pilih PR sumber."); return; }
+      if (items.length === 0) { setErr("Tambah minimal 1 item (produk + qty)."); return; }
+    } else if (!prId) { setErr("Pilih PR sumber."); return; }
 
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const body = {
         source, pr_id: source === "pr" ? prId : "", title,
@@ -80,21 +83,20 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
       const r = await axios.post(`${API}/rfqs`, body);
       onCreated?.(r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat RFQ.");
+      setErr(e.response?.data?.detail || "Gagal membuat RFQ.");
     } finally { setBusy(false); }
   }
 
   if (!open) return null;
 
+  // Fase 3 · P5 (L-03) — dulu `modal-overlay`/`modal-card` buatan sendiri (latar menutup walau dropdown terbuka,
+  // tanpa Esc berlapis); kini FormModal baku — layar penuh 1 kolom di HP, tombol Buat RFQ selalu terlihat.
   return (
-    <div className="modal-overlay" data-testid="rfq-create-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 720, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2"><ClipboardList size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Buat RFQ / Penawaran</h2></div>
-          <button data-testid="rfq-create-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
-        </div>
-
-        <div className="p-4 space-y-3">
+    <FormModal open={open} onClose={onClose} title="Buat RFQ / Penawaran" icon={ClipboardList} size="lg"
+      subtitle="Item dari PR disetujui atau manual, lalu undang beberapa supplier untuk menawar"
+      testId="rfq-create-modal" onSubmit={submit} submitLabel={busy ? "Menyimpan..." : "Buat RFQ"}
+      submitTestId="rfq-submit" cancelTestId="rfq-create-close" busy={busy} error={err}>
+        <div className="space-y-3">
           {/* UAT 24 Okt (audit UI tahap 2) — G4-06: pemilih sumber memakai tab standar (bukan
               segmented #0058CC buatan sendiri). G4-03: grid 1 kolom di HP. */}
           <div className="tab-bar !mb-0" role="tablist" aria-label="Sumber item RFQ">
@@ -144,7 +146,7 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
                   </div>
                 ))}
               </div>
-              <button data-testid="rfq-add-item" onClick={addRow} className="secondary-button mt-2 text-[11px]"><Plus size={12} /> Tambah Item</button>
+              <button type="button" data-testid="rfq-add-item" onClick={addRow} className="secondary-button mt-2 text-[11px]"><Plus size={12} /> Tambah Item</button>
             </div>
           )}
 
@@ -180,13 +182,7 @@ export default function RFQCreateModal({ open, selectedEntity, onClose, onCreate
             </div>
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          <button onClick={onClose} className="secondary-button">Batal</button>
-          <button data-testid="rfq-submit" disabled={busy} onClick={submit} className="primary-button">{busy ? "Menyimpan..." : "Buat RFQ"}</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 

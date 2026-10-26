@@ -7,6 +7,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk, internalPriceMissing } from "./internalPriceApi";
 import KNSelect from "../../components/KNSelect";
+import { entityOptions } from "../../utils/entityLabel";
 
 const num = (v) => Number(String(v ?? "").replace(",", ".")) || 0;
 
@@ -62,7 +63,7 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
 
   const pick = (val, set, testId) => (
     <KNSelect data-testid={testId} className="field !h-9 text-[12px]" value={val} onValueChange={set}
-      options={entities.map((e) => ({ value: e.id, label: e.name }))} />
+      options={entityOptions(entities)} />
   );
 
   return (

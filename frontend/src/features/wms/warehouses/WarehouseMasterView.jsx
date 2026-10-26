@@ -20,7 +20,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Warehouse, Search, RefreshCw, Plus, Save, X, Building2, Users, MapPin,
+  Warehouse, Search, RefreshCw, Plus, X, Building2, Users, MapPin,
   CheckCircle2, Boxes, Settings2, Ban, RotateCcw,
 } from "lucide-react";
 
@@ -40,22 +40,17 @@ import {
 } from "./warehouseApi";
 import WarehouseModeDrawer from "./WarehouseModeDrawer";
 import WarehouseProfileDrawer from "./WarehouseProfileDrawer";
+import WarehouseCreateModal from "./WarehouseCreateModal";
 import KNSelect from "../../../components/KNSelect";
 import { askConfirm } from "../../../services/confirmService";
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 
-const EMPTY_FORM = {
-  code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000,
-  lat: "", lng: "", sharing_mode: "dedicated",
-};
+const EMPTY_FORM = { code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000, lat: "", lng: "", sharing_mode: "dedicated" };
 
 const MASTER_SCOPE_ROLES = ["admin", "manager", "warehouse"];   // = backend routers/warehouses.py
 
-const SCOPE_FILTERS = [
-  { key: "usable", label: "Boleh dipakai" },
-  { key: "all", label: "Semua gudang" },
-];
+const SCOPE_FILTERS = [{ key: "usable", label: "Boleh dipakai" }, { key: "all", label: "Semua gudang" }];
 
 export default function WarehouseMasterView({ entities = [], selectedEntity, currentUser }) {
   const { canWrite, writeBlockHint } = useEntityScope();
@@ -283,9 +278,9 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                 placeholder="Cari kode / nama / kota" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             {canCreate && (
-              <button data-testid="wh-toggle-create" className="secondary-button"
-                onClick={() => setShowCreate((v) => !v)}>
-                {showCreate ? <X size={14} /> : <Plus size={14} />} {showCreate ? "Tutup form" : "Gudang baru"}
+              <button data-testid="wh-toggle-create" className="primary-button"
+                onClick={() => { setError(""); setShowCreate(true); }}>
+                <Plus size={14} /> Gudang baru
               </button>
             )}
             <button data-testid="wh-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
@@ -295,7 +290,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
         </div>
 
         <div className="section-body">
-          <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="wh-error" />
+          <ErrorNotice message={showCreate ? "" : error} onRetry={load} onDismiss={() => setError("")} testId="wh-error" />
           {notice && (
             <div data-testid="wh-notice"
               className="mb-3 flex items-center gap-2 rounded-md border border-[#BDE5CC] bg-[#E6F6EC] px-3 py-2 text-[12px] text-[#1B7F4B]">
@@ -304,74 +299,11 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             </div>
           )}
 
-          {showCreate && canCreate && (
-            <div className="mb-3 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="wh-create-form">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang baru</p>
-              <div className="grid gap-2 md:grid-cols-2">
-                {[["code", "Kode gudang *", "mis. WH-SMG"], ["name", "Nama gudang *", "mis. Gudang Semarang"],
-                  ["bin_code", "Kode bin pertama", "mis. A1-01"]].map(([key, label, ph]) => (
-                  <label key={key} className="block">
-                    <span className="field-label">{label}</span>
-                    <input data-testid={`wh-form-${key}`} className="field" placeholder={ph}
-                      value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
-                  </label>
-                ))}
-                <label className="block">
-                  <span className="field-label">Kapasitas bin pertama (roll)</span>
-                  <input data-testid="wh-form-bin_capacity" className="field" type="number"
-                    placeholder="mis. 1000" value={form.bin_capacity}
-                    onChange={(e) => setForm({ ...form, bin_capacity: e.target.value })} />
-                </label>
-                <LocationFields testId="wh-form-loc" compact showErrors={locTried} value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="block">
-                    <span className="field-label">Lintang (opsional)</span>
-                    <input data-testid="wh-form-lat" className="field" type="number" step="0.0001"
-                      placeholder="mis. -6.9175" value={form.lat}
-                      onChange={(e) => setForm({ ...form, lat: e.target.value })} />
-                  </label>
-                  <label className="block">
-                    <span className="field-label">Bujur (opsional)</span>
-                    <input data-testid="wh-form-lng" className="field" type="number" step="0.0001"
-                      placeholder="mis. 107.6191" value={form.lng}
-                      onChange={(e) => setForm({ ...form, lng: e.target.value })} />
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-2 grid gap-1.5">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Siapa yang boleh memakai?</p>
-                <div className="grid gap-1.5 md:grid-cols-2">
-                  <button type="button" data-testid="wh-form-mode-dedicated"
-                    onClick={() => setForm({ ...form, sharing_mode: "dedicated" })}
-                    className={`rounded-md border px-2.5 py-2 text-left text-[12px] ${
-                      form.sharing_mode === "dedicated" ? "border-[#6B219A] bg-[#F3E9FA]" : "border-[#E5E5EA] bg-white"}`}>
-                    <span className="block font-bold">Khusus {entityFullById(entities, selectedEntity)}</span>
-                    <span className="block text-[11px] text-[#6B6B73]">Bawaan — badan usaha lain tidak melihat gudang ini.</span>
-                  </button>
-                  <button type="button" data-testid="wh-form-mode-shared"
-                    onClick={() => setForm({ ...form, sharing_mode: "shared" })}
-                    className={`rounded-md border px-2.5 py-2 text-left text-[12px] ${
-                      form.sharing_mode === "shared" ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#E5E5EA] bg-white"}`}>
-                    <span className="block font-bold">Bersama semua badan usaha</span>
-                    <span className="block text-[11px] text-[#6B6B73]">Dipakai bergantian oleh semua badan usaha.</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-2.5 flex justify-end gap-2">
-              <button type="button" className="secondary-button" onClick={() => setShowCreate(false)}>Batal</button>
-              <button data-testid="wh-form-save" className="primary-button" onClick={submit}
-                disabled={saving || (!canWrite && form.sharing_mode === "dedicated")}
-                title={!canWrite ? writeBlockHint : ""}>
-                <Save size={14} /> {saving ? "Menyimpan…" : "Simpan gudang"}
-              </button>
-              </div>
-              {!canWrite && (
-                <p data-testid="wh-form-scope-note" className="mt-1 text-[11px] text-[#8C4A00]">{writeBlockHint}</p>
-              )}
-            </div>
-          )}
+          {/* Fase 3 · P5 (L-03) — "Gudang baru" dulu form inline yang mendorong tabel; kini FormModal (WarehouseCreateModal). */}
+          <WarehouseCreateModal open={showCreate && canCreate} onClose={() => setShowCreate(false)}
+            form={form} setForm={setForm} pickLoc={pickLoc} locTried={locTried} saving={saving}
+            canWrite={canWrite} writeBlockHint={writeBlockHint} entities={entities} selectedEntity={selectedEntity}
+            onSubmit={submit} error={showCreate ? error : ""} />
 
           {loading ? (
             <div className="grid gap-2" data-testid="wh-loading">

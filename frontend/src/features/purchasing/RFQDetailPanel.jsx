@@ -6,7 +6,7 @@ import { X, Send, Award, Ban, CheckCircle2, Pencil } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 import { can } from "../../config/roles";
 
 /**
@@ -84,10 +84,14 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
     await action(async () => { await axios.post(`${API}/rfqs/${rfqId}/award`, body); }, "RFQ di-award → PO dibuat.");
   }
 
+  // Fase 3 · P5 (L-03/L-04) — panel ini dulu merakit `modal-overlay`/`modal-card` SENDIRI padahal RFQView sudah
+  // membungkusnya dengan DetailModal (dua lapisan latar; di HP 390 px kartu 96vw dengan matriks lebar). Kini
+  // hanya KARTU; lapisan, Esc, kunci gulir & layar penuh di HP milik DetailModal.
+  const CARD = "rfq-detail-card w-full rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto";
   if (!rfq) {
     return (
-      <div className="modal-overlay" {...overlayDismiss(onClose)}>
-        <div className="modal-card p-8 text-center text-[12px]">Memuat RFQ...</div>
+      <div className={`${CARD} p-8 text-center text-[12px]`} data-testid="rfq-detail-loading">
+        {err ? <span className="text-[#C0392B]">{err}</span> : "Memuat RFQ..."}
       </div>
     );
   }
@@ -97,9 +101,9 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
   const priceMap = compare?.price_map || {};
 
   return (
-    <div className="modal-overlay" data-testid="rfq-detail-panel" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 920, width: "96vw", maxHeight: "94vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
+    <div className={CARD} data-testid="rfq-detail-panel">
+      <div>
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-[15px] font-bold text-[#0058CC]">{rfq.rfq_number}</h2>
@@ -191,30 +195,28 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
             </div>
           </div>
 
-          {/* Form quote inline */}
-          {quoteFor && (
-            <div className="section-card !p-3 border-2 border-[#0058CC]" data-testid="rfq-quote-form">
-              <p className="text-[12px] font-bold mb-2">Input Penawaran — {(rfq.suppliers.find((s) => s.supplier_id === quoteFor) || {}).supplier_name}</p>
-              <div className="space-y-1.5">
-                {(rfq.items || []).map((it) => (
-                  <div key={it.line_id} className="grid grid-cols-[1fr_140px] items-center gap-2">
-                    <span className="text-[11.5px]">{it.sku} × {it.quantity} {it.unit}</span>
-                    <MoneyInput testId={`rfq-quote-price-${it.line_id}`} value={quoteLines[it.line_id] || ""}
-                      onChange={(v) => setQuoteLines((q) => ({ ...q, [it.line_id]: v }))}
-                      className="field text-right" placeholder="Harga/unit" />
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <input type="number" value={quoteMeta.lead_time_days} onChange={(e) => setQuoteMeta((m) => ({ ...m, lead_time_days: e.target.value }))} className="field" placeholder="Lead time (hari)" />
-                <KNDatePicker data-testid="rfq-quote-valid-until" placeholder="Penawaran berlaku s/d" value={quoteMeta.valid_until} onChange={(v) => setQuoteMeta((m) => ({ ...m, valid_until: v }))} />
-              </div>
-              <div className="flex justify-end gap-2 mt-2">
-                <button onClick={() => setQuoteFor(null)} className="secondary-button">Tutup</button>
-                <button data-testid="rfq-quote-save" disabled={busy} onClick={submitQuote} className="primary-button">Simpan Penawaran</button>
-              </div>
+          {/* Form penawaran — Fase 3 · P5 (L-03): dulu kartu inline di bawah daftar supplier (di HP di luar
+              pandangan setelah klik "Isi Penawaran"); kini FormModal di atas rincian. Isian sama. */}
+          <FormModal open={!!quoteFor} onClose={() => setQuoteFor(null)} size="md" testId="rfq-quote-form"
+            title={`Input Penawaran — ${(rfq.suppliers.find((s) => s.supplier_id === quoteFor) || {}).supplier_name || ""}`}
+            subtitle={`${rfq.rfq_number} · harga per satuan per baris; kosong = tidak tersedia`}
+            onSubmit={submitQuote} submitLabel="Simpan Penawaran" submitTestId="rfq-quote-save" cancelLabel="Tutup"
+            busy={busy} error={quoteFor ? err : ""}>
+            <div className="space-y-1.5">
+              {(rfq.items || []).map((it) => (
+                <div key={it.line_id} className="grid grid-cols-[minmax(0,1fr)_140px] items-center gap-2">
+                  <span className="text-[11.5px] min-w-0 break-words">{it.sku} × {it.quantity} {it.unit}</span>
+                  <MoneyInput testId={`rfq-quote-price-${it.line_id}`} value={quoteLines[it.line_id] || ""}
+                    onChange={(v) => setQuoteLines((q) => ({ ...q, [it.line_id]: v }))}
+                    className="field text-right" placeholder="Harga/unit" />
+                </div>
+              ))}
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input type="number" value={quoteMeta.lead_time_days} onChange={(e) => setQuoteMeta((m) => ({ ...m, lead_time_days: e.target.value }))} className="field" placeholder="Lead time (hari)" aria-label="Lead time (hari)" />
+              <KNDatePicker data-testid="rfq-quote-valid-until" placeholder="Penawaran berlaku s/d" value={quoteMeta.valid_until} onChange={(v) => setQuoteMeta((m) => ({ ...m, valid_until: v }))} />
+            </div>
+          </FormModal>
 
           {/* Award */}
           {rfq.status === "open" && canAward && quotedSuppliers.length > 0 && (

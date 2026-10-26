@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, RefreshCw, Radar, Radio, PackageX, AlertTriangle } from "lucide-react";
+import { MapPin, RefreshCw, Radar, Radio, PackageX, AlertTriangle, ClipboardCheck } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import LinkCard from "../../components/LinkCard";
+import { useAppNav } from "../../context/AppNavContext";
 import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
-import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, TabBtn, fmtTime, useWarehouses } from "./rfidShared";
-import CycleCountPanel from "./CycleCountPanel";
+import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses } from "./rfidShared";
 
 const STATE_COLOR = { tracked: "green", unseen: "gray", drift: "red" };
 
 export default function RfidLocationsView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
-  const [tab, setTab] = useState("lokasi");
+  const nav = useAppNav();
   const [items, setItems] = useState([]);
   const srch = useListSearch(items, null, { testId: "rfid-loc", placeholder: "Cari EPC / produk / roll / bin…" });
   const [readers, setReaders] = useState([]);
@@ -68,15 +69,13 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
       {error && <ErrorNotice message={error} onRetry={load} />}
       {msg && <div className="rounded-lg bg-[#E7F7EC] text-[#1B7E3B] text-[12px] font-semibold px-3 py-2">{msg}</div>}
 
-      <div className="flex gap-1 border-b border-[#EFF0F2]">
-        <TabBtn id="lokasi" tab={tab} setTab={setTab} label="Lokasi Tag" testId="loc-tab-lokasi" />
-        <TabBtn id="cc" tab={tab} setTab={setTab} label="Stock Opname (RFID)" testId="loc-tab-cc" />
-      </div>
+      {/* Fase 3 · P5 — D-15: tab "Stock Opname (RFID)" dulu alur opname KEDUA di sini. Kini satu alur di Operasi
+          Gudang › Stock Opname (metode "Sapu RFID"); di sini hanya tautan, membawa gudang yang sedang dipilih. */}
+      <LinkCard testId="rfid-loc-opname-link" what="Stock opname RFID (sapu handheld)"
+        where="Operasi Gudang › Stok, Transfer & Opname › Stock Opname" view="operations" tab="cycle"
+        preset={{ tab: "cycle", method: "rfid", warehouse: whId }} label="Buka Stock Opname"
+        icon={ClipboardCheck} />
 
-      {tab === "cc" ? (
-        <CycleCountPanel whId={whId} selectedEntity={selectedEntity} />
-      ) : (
-      <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat icon={Radio} label="Total Tag" value={counts.total} color="#0058CC" loading={loading} />
         <Stat icon={Radar} label="Terlacak" value={counts.tracked} color="#34C759" loading={loading} testId="rfid-loc-tracked" />
@@ -90,7 +89,14 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         {!loading && readers.length === 0 ? (
           <p data-testid="rfid-loc-no-reader" className="text-[12px] text-[#6B6B73]">
             Belum ada pembaca tetap di gudang ini — pindai area butuh pembaca.{" "}
-            <a href="?view=cs-rfid-devices" className="font-semibold text-[#0058CC] underline">Buat di Perangkat RFID</a>.
+            {/* Fase 3 · P8 (D-29) — dulu tautan mentah `?view=cs-rfid-devices` (muat ulang halaman); kini jalur navigasi
+                bersama ke Pengaturan › Integrasi & Sistem › Perangkat tab RFID, hanya bila peran boleh membukanya. */}
+            {nav.canOpen("settings-devices") ? (
+              <button type="button" data-testid="rfid-loc-devices-link" className="font-semibold text-[#0058CC] underline"
+                onClick={() => nav.go("settings-devices", { preset: { tab: "rfid" } })}>Buat di Perangkat RFID</button>
+            ) : (
+              <span data-testid="rfid-loc-devices-readonly">Pembaca ditambahkan Admin di Pengaturan › Integrasi &amp; Sistem › Perangkat.</span>
+            )}
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
@@ -132,8 +138,6 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
               </div>
             )}
       </SectionCard>
-      </>
-      )}
     </div>
   );
 }

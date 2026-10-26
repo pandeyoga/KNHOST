@@ -7,13 +7,13 @@ import LocationFields, { locationIncomplete } from "../../components/LocationFie
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import MoneyInput from "@/components/MoneyInput";
-import { Factory, X, Save } from "lucide-react";
+import { Factory, Save } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import useUomConversions from "../../hooks/useUomConversions";
 import { uomSelectOptions } from "../../utils/uomCatalog";
-import { overlayDismiss } from "@/utils/overlayDismiss";
 import apiErrorText from "../../utils/apiError";
 
 const TARIFF_UNITS = [
@@ -74,14 +74,18 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
     } catch (e) { setModalErr(apiErrorText(e, "Gagal menyimpan mitra makloon.")); setSaving(false); }
   };
 
+  // Fase 3 · P5 (L-03) — dulu `div fixed inset-0` buatan sendiri; kini FormModal baku (layar penuh 1 kolom di HP,
+  // Esc berlapis, tombol simpan & galat di kaki yang selalu terlihat). Isian sama.
   return (
-    <div data-testid="makloon-form-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[90vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Factory size={16} className="text-[#0058CC]" /> {isEdit ? "Ubah Mitra Makloon" : "Tambah Mitra Makloon"}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
+    <FormModal open={open} onClose={onClose} icon={Factory} size="lg" testId="makloon-form-modal"
+      title={isEdit ? "Ubah Mitra Makloon" : "Tambah Mitra Makloon"} busy={saving} error={modalErr}
+      footer={(
+        <div className="flex justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" data-testid="makloon-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Tambah Mitra Makloon"}</button>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      )}>
+        <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Nama Mitra Makloon" req><input data-testid="makloon-name-input" className="field" value={form.name} onChange={set("name")} placeholder="PT Tenun Nusantara" /></Field>
             <Field label="NPWP"><input data-testid="makloon-npwp-input" className="field" value={form.npwp} onChange={set("npwp")} placeholder="00.000.000.0-000.000" /></Field>
@@ -121,13 +125,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
           </div>
           <Field label="Catatan / Kapasitas"><textarea data-testid="makloon-notes-input" className="field" rows="2" value={form.notes} onChange={set("notes")} placeholder="Catatan kapasitas / spesialisasi…" /></Field>
         </div>
-        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="makloon-form-error">{modalErr}</p>}
-        <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="makloon-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Tambah Mitra Makloon"}</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 

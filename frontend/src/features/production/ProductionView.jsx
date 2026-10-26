@@ -13,10 +13,14 @@ import { KpiCard, EmptyState, compactIDR, entityParam } from "../finance/finance
 import { Modal, StatusBadge, BOMTable, BOMFormModal, prodPerms } from "./ProductionParts";
 import { WOTable, WOCreateModal, WODetailPanel } from "./ProductionWO";
 import { askConfirm } from "@/services/confirmService";
+import { useAppNav } from "../../context/AppNavContext";
+import useViewPreset from "../../hooks/useViewPreset";
 
 export default function ProductionView({ selectedEntity, entities, currentUser }) {
   const perms = useMemo(() => prodPerms(currentUser?.role), [currentUser]);
   const [tab, setTab] = useState("wo");
+  const { go, canOpen } = useAppNav();
+  useViewPreset("production", (p) => { if (p.tab === "bom" || p.tab === "wo") setTab(p.tab); });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(null); // {msg, tone:'ok'|'err'}
@@ -148,7 +152,15 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
         </div>
         <div className="mr-auto min-w-0">
           <h2 className="text-[16px] font-bold text-[#1C1C1E]">Produksi In-House</h2>
-          <p className="text-[11px] text-[#8E8E93]">BOM (resep) & Perintah Kerja · bahan diolah menjadi barang jadi, tercatat per roll</p>
+          <p className="text-[11px] text-[#8E8E93]">BOM Produksi In-House & Perintah Kerja · bahan diolah di pabrik sendiri menjadi barang jadi, tercatat per roll</p>
+          {/* Fase 3 · P5 — D-25 (B): tautan silang ke resep makloon (dua "resep" berbeda arti). */}
+          <p className="mt-0.5 text-[11px] text-[#6B6B73]" data-testid="production-crosslink">
+            Proses di mitra makloon (celup, printing, finishing) memakai{" "}
+            {canOpen("process-recipes")
+              ? <button type="button" className="link-button !p-0 font-semibold" data-testid="production-open-recipes"
+                  onClick={() => go("process-recipes")}>Resep Proses Makloon →</button>
+              : <b>Resep Proses Makloon</b>}.
+          </p>
         </div>
         {/* UAT 24 Okt (audit UI tahap 2) — G4-22: tanpa BOM aktif tombol dulu membuka pop-up buntu
             (hanya pesan + Tutup). Kini nonaktif dengan alasan + jalan pintas "Buat BOM dulu". */}
@@ -160,7 +172,7 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
         {tab === "wo" && perms.createWo && (
           <button data-testid="wo-add-button" onClick={() => setWoModal(true)} className="primary-button"
             disabled={!loading && activeBoms.length === 0}
-            title={!loading && activeBoms.length === 0 ? "Belum ada BOM aktif — Perintah Kerja dibuat dari BOM. Buat BOM dulu di tab BOM / Resep." : undefined}>
+            title={!loading && activeBoms.length === 0 ? "Belum ada BOM aktif — Perintah Kerja dibuat dari BOM. Buat BOM dulu di tab BOM Produksi." : undefined}>
             <Plus size={14} /> Buat Perintah Kerja
           </button>
         )}
@@ -196,7 +208,7 @@ export default function ProductionView({ selectedEntity, entities, currentUser }
       {/* Tabs */}
       <div className="flex flex-wrap items-end gap-2">
         <div className="tab-bar min-w-0">
-          {[{ k: "wo", label: "Perintah Kerja", icon: ClipboardList }, { k: "bom", label: "BOM / Resep", icon: Layers3 }].map((t) => (
+          {[{ k: "wo", label: "Perintah Kerja", icon: ClipboardList }, { k: "bom", label: "BOM Produksi", icon: Layers3 }].map((t) => (
             <button key={t.k} data-testid={`prod-tab-${t.k}`} onClick={() => setTab(t.k)}
                     className={`tab-button whitespace-nowrap ${tab === t.k ? "active" : ""}`}>
               <t.icon size={14} /> {t.label}

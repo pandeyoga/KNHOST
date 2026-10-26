@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
-import { X, PackagePlus, AlertTriangle } from "lucide-react";
+import { PackagePlus, AlertTriangle } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 
@@ -23,6 +24,8 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
   const [overrideReason, setOverrideReason] = useState("");
   const [warehouses, setWarehouses] = useState([]);
   const [busy, setBusy] = useState(false);
+  // Fase 3 · P5 (L-03) — galat validasi/simpan tampil DI pop-up (dulu ke bilah halaman di belakang lapisan).
+  const [err, setErr] = useState("");
 
   const items = useMemo(() => (blanket?.contract_items || []), [blanket]);
 
@@ -38,7 +41,7 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
   }, [open]); // eslint-disable-line
 
   function reset() {
-    setRows({}); setWarehouseId(""); setEta(""); setNotes(""); setOverrideReason("");
+    setRows({}); setWarehouseId(""); setEta(""); setNotes(""); setOverrideReason(""); setErr("");
   }
 
   const warehouseOptions = useMemo(
@@ -74,11 +77,11 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
   }, [items, rows, blanket]);
 
   async function submit() {
-    if (analysis.picked.length === 0) { onError?.("Isi qty > 0 pada minimal 1 item."); return; }
+    if (analysis.picked.length === 0) { setErr("Isi qty > 0 pada minimal 1 item."); return; }
     if (analysis.hasOverride && !overrideReason.trim()) {
-      onError?.("Override harga wajib menyertakan alasan (aturan 3.b)."); return;
+      setErr("Override harga wajib menyertakan alasan (aturan 3.b)."); return;
     }
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const body = {
         items: analysis.picked.map((p) => ({
@@ -92,31 +95,24 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
       const r = await axios.post(`${API}/purchase-orders/${blanket.id}/call-off`, body);
       onCreated?.(r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat call-off.");
+      setErr(e.response?.data?.detail || "Gagal membuat call-off.");
     } finally { setBusy(false); }
   }
 
   if (!open || !blanket) return null;
 
+  // Fase 3 · P5 (L-03) — dulu `modal-overlay`/`modal-card` buatan sendiri (klik latar menutup & membuang isian);
+  // kini FormModal baku — layar penuh di HP, baris item 2 baris (produk · sisa / qty · harga). Isian sama.
   return (
-    <div className="modal-overlay" data-testid="calloff-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 680, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <PackagePlus size={16} className="text-[#0058CC]" />
-            <div>
-              <h2 className="text-[14px] font-bold">Buat Call-off</h2>
-              <p className="text-[10.5px] text-[#6B6B73]">Kontrak {blanket.po_number} · {blanket.supplier_name}</p>
-            </div>
-          </div>
-          <button data-testid="calloff-close" onClick={onClose} className="icon-button"><X size={16} /></button>
-        </div>
-
-        <div className="p-4 space-y-3">
+    <FormModal open={open} onClose={onClose} title="Buat Call-off" icon={PackagePlus} size="lg"
+      subtitle={`Kontrak ${blanket.po_number} · ${blanket.supplier_name}`}
+      testId="calloff-modal" onSubmit={submit} submitTestId="calloff-submit" cancelTestId="calloff-close"
+      submitLabel={busy ? "Memproses..." : "Buat Call-off"} busy={busy} error={err}>
+        <div className="space-y-3">
           {/* Item kontrak → qty + harga (override 3.b) */}
           <div>
             <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Tarik dari Kontrak <span className="text-red-500">*</span></label>
-            <div className="grid grid-cols-[1fr_84px_96px_110px] gap-2 px-1 mb-1 text-[10px] font-bold uppercase text-[#9A9BA3]">
+            <div className="hidden grid-cols-[1fr_84px_96px_110px] gap-2 px-1 mb-1 text-[10px] font-bold uppercase text-[#9A9BA3] sm:grid">
               <span>Produk</span><span className="text-right">Sisa</span><span>Qty Tarik</span><span>Harga</span>
             </div>
             <div className="space-y-2">
@@ -126,14 +122,14 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
                 const qty = Number(r.qty) || 0;
                 const over = qty > rem + 1e-6;
                 return (
-                  <div key={it.product_id} className="grid grid-cols-[1fr_84px_96px_110px] gap-2 items-center" data-testid={`calloff-row-${it.product_id}`}>
+                  <div key={it.product_id} className="grid grid-cols-2 gap-2 items-center rounded-md border border-[#EFF0F2] p-2 sm:grid-cols-[1fr_84px_96px_110px] sm:border-0 sm:p-0" data-testid={`calloff-row-${it.product_id}`}>
                     <div className="min-w-0">
                       <p className="text-[11.5px] font-semibold truncate">{it.sku}</p>
                       <p className="text-[10px] text-[#6B6B73] truncate">{it.product_name}</p>
                     </div>
                     <span className={`text-[11px] text-right tabular-nums ${rem <= 0 ? "text-[#B45309]" : "text-[#6B6B73]"}`}>{formatQty(rem)} {it.unit}</span>
                     <input type="number" value={r.qty ?? ""} onChange={(e) => setRow(it.product_id, { qty: e.target.value })}
-                      className={`field ${over ? "!border-[#B45309]" : ""}`} placeholder="0" data-testid={`calloff-qty-${it.product_id}`} />
+                      className={`field ${over ? "!border-[#B45309]" : ""}`} placeholder="Qty tarik" aria-label={`Qty tarik ${it.sku || ""}`} data-testid={`calloff-qty-${it.product_id}`} />
                     <MoneyInput value={r.price ?? it.contract_price} onChange={(v) => setRow(it.product_id, { price: v })}
                       className="field" placeholder={`${it.contract_price}`} testId={`calloff-price-${it.product_id}`} />
                   </div>
@@ -186,14 +182,6 @@ export default function CallOffModal({ open, blanket, onClose, onCreated, onErro
             <div className="flex justify-between mt-0.5"><span className="text-[#6B6B73]">Sisa Plafon</span><span className="tabular-nums">{formatCurrency(analysis.valueRemaining)}</span></div>
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          <button onClick={onClose} className="secondary-button">Batal</button>
-          <button data-testid="calloff-submit" disabled={busy} onClick={submit} className="primary-button">
-            {busy ? "Memproses..." : "Buat Call-off"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }

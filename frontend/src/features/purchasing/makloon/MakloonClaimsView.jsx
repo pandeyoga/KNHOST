@@ -9,6 +9,7 @@ import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../../component
 import axios, { API } from "../../../services/apiClient";
 import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
+import LinkCard from "../../../components/LinkCard";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import MakloonClaimPanel from "./MakloonClaimPanel";
 import { claimStats, CLAIM_STATUS_META, listClaims, partnerScorecard } from "./makloonApi";
@@ -109,42 +110,12 @@ export default function MakloonClaimsView({ currentUser, selectedEntity }) {
           })}
       </div>
 
-      <div className="section-card">
-        <div className="section-head">
-          <h3 className="flex items-center gap-2 text-[12.5px] font-bold"><Award size={14} className="text-[#0058CC]" /> Skor Mitra Makloon</h3>
-        </div>
-        <div className="section-body">
-          {score.length === 0 ? (
-            <p className="py-6 text-center text-[12px] text-[#6B6B73]" data-testid="scorecard-empty">
-              Belum ada penerimaan makloon untuk dinilai.
-            </p>
-          ) : (
-            <table className="data-table" data-testid="partner-scorecard">
-              <thead>
-                <tr>
-                  <th>Mitra</th><th className="text-right">Langkah selesai</th>
-                  <th className="text-right">Rata-rata selisih</th><th className="text-right">Sesuai target</th>
-                  <th className="text-right">Klaim</th><th className="text-right">Nilai klaim</th>
-                </tr>
-              </thead>
-              <tbody>
-                {score.map((s) => (
-                  <tr key={s.makloon_id} data-testid={`scorecard-row-${s.makloon_id}`}>
-                    <td className="font-medium">{s.makloon_name || s.makloon_id}</td>
-                    <td className="text-right tabular-nums">{s.steps}</td>
-                    <td className={`text-right tabular-nums ${(s.avg_variance_pct ?? 0) < 0 ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}>
-                      {s.avg_variance_pct ?? "—"}%
-                    </td>
-                    <td className="text-right tabular-nums">{s.on_target_pct ?? "—"}%</td>
-                    <td className="text-right tabular-nums">{s.claims}</td>
-                    <td className="text-right tabular-nums">{formatCurrency(s.claim_amount || 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      {/* Fase 3 · P5 — D-22: tabel "Skor Mitra Makloon" dulu tampil juga di sini; kini satu layar Kinerja Mitra
+          Makloon (skor + rekap susut & klaim). Peran yang belum boleh membuka layar itu melihat ringkasan satu baris. */}
+      <LinkCard testId="makloon-claims-score-link" icon={Award} what="Skor mitra makloon"
+        where="Pesanan Pembelian › Kinerja Mitra Makloon" view="makloon-claim-recap" label="Lihat skor mitra"
+        summary={score.length ? `${score.length} mitra dinilai` : "belum ada penerimaan makloon untuk dinilai"} />
+
     </div>
   );
 }

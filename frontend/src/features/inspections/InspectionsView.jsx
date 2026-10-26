@@ -19,10 +19,13 @@ import { ClipboardCheck, Lock, Plus, RefreshCw, ShieldAlert, Shuffle } from "luc
 import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
+import FilterChips from "../../components/FilterChips";
 import LineFilter from "../../components/LineFilter";
 import PaginationBar from "../../components/PaginationBar";
 import QtyDual from "../../components/QtyDual";
+import ResponsiveTable from "../../components/ResponsiveTable";
 import { usePagedList } from "../../hooks/usePagedList";
+import useViewPreset from "../../hooks/useViewPreset";
 import { qtyDualCsvColumns } from "../../utils/qtyDualCsv";
 import { EmptyState } from "../finance/financeShared";
 import InspectionDetailPanel from "./InspectionDetailPanel";
@@ -54,6 +57,62 @@ const CSV_COLUMNS = [
   { key: "decision_label", header: "Keputusan" },
 ]);
 
+// Kolom daftar SPK (satu definisi → tabel di desktop, kartu di HP; fase 3 · P5 L-04).
+const INS_COLUMNS = (openDetail) => [
+  { key: "number", header: "Nomor", mobile: "title",
+    render: (r) => {
+      const s = r.summary || {};
+      return (
+        <span className="font-semibold text-[#1C1C1E]">
+          {/* UAT 24 Okt (audit UI tahap 2) — nomor SPK sendiri membuka rincian. */}
+          <button type="button" data-testid={`ins-open-${r.id}`} className="link-button !p-0 font-semibold"
+            onClick={(e) => { e.stopPropagation(); openDetail(r.id); }}>{r.number}</button>
+          {s.hold ? (
+            <span data-testid={`ins-hold-badge-${r.id}`} className="ml-1 status-pill pill-danger">
+              <Lock size={9} className="mr-0.5 inline" />{s.hold} ditahan
+            </span>
+          ) : null}
+        </span>
+      );
+    } },
+  { key: "status", header: "Status", mobile: "badge",
+    render: (r) => {
+      const s = r.summary || {};
+      return (
+        <span>
+          <span className={`status-pill ${INS_STATUS_CLASS[r.status] || "pill-muted"}`}>
+            {INS_STATUS_LABEL[r.status] || r.status}
+          </span>
+          {r.decision_label ? <span className="block text-[10px] text-[#6B6B73]">{r.decision_label}</span> : null}
+          {/* UAT 24 Okt (audit UI tahap 2) — roll yang GAGAL 4-point/random check tetap ditahan walau SPK ditutup. */}
+          {r.status === "done" && s.hold ? (
+            <span data-testid={`ins-done-hold-${r.id}`} className="block text-[10px] font-semibold text-[#B4231F]">
+              {s.hold} roll masih ditahan — lepas/tolak di rincian SPK
+            </span>
+          ) : null}
+        </span>
+      );
+    } },
+  { key: "kind", header: "Jenis", mobile: "subtitle", render: (r) => INS_KIND_SHORT[r.kind] || r.kind },
+  { key: "ref", header: "Dokumen sumber", priority: 1,
+    render: (r) => (
+      <span className="text-[#3C3C43]">
+        {r.ref_doc_number || "—"}
+        <span className="block text-[10px] text-[#8E8E93]">{r.supplier_name || r.customer_name || ""}</span>
+      </span>
+    ) },
+  { key: "assigned", header: "Petugas", priority: 2,
+    render: (r) => r.assigned_name
+      || (r.status === "draft" ? "Belum ditugaskan" : <span className="text-[#8E8E93]">tidak tercatat</span>) },
+  { key: "qty", header: "Barang", align: "right", priority: 3,
+    render: (r) => {
+      const s = r.summary || {};
+      return <QtyDual rolls={s.rolls} measure={s.measure} unit={s.unit} testId={`ins-qty-${r.id}`} compact />;
+    } },
+  { key: "points", header: "Poin", align: "right", priority: 4,
+    render: (r) => ((r.summary || {}).points_total ? r.summary.points_total : "—") },
+];
+
 export default function InspectionsView({ currentUser, selectedEntity = "all", focusDoc, onClearFocus }) {
   const [meta, setMeta] = useState({
     kinds: [], statuses: [], decisions: [], color_results: [], handfeel_results: [],
@@ -69,6 +128,10 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
   const [showRandom, setShowRandom] = useState(false);
   const [orphanTasks, setOrphanTasks] = useState([]);
   const [error, setError] = useState("");
+
+  // Fase 3 · P5 — D-28: papan "Barang ditahan QC" (Beranda manajer, Operasi Gudang) kini TAUTAN ke sini dengan
+  // preset `{ hold: true }` → saringan "Hanya yang DITAHAN"; keputusan lepas/tolak hanya di rincian SPK.
+  useViewPreset("inspections", (p) => { if (p.hold !== undefined) setHoldOnly(!!p.hold); });
 
   const role = meta.role || currentUser?.role || "";
   const canCreate = can(currentUser?.permissions, "inspection", "create");   // FE-04 — izin efektif
@@ -110,7 +173,9 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
   // Deep-link dari Meja MD / Meja Admin Gudang: saring ke nomor SPK + buka detailnya.
   useEffect(() => {
     if (focusDoc?.focus_type !== "inspection" || !focusDoc.focus_id) return;
-    if (focusDoc.number) setSearch(`"${focusDoc.number}"`);
+    // Fase 3 · P5 — dulu nomor dikutip (`"KSC/INS-…"`) lalu dikirim apa adanya sebagai regex server → daftar di
+    // belakang rincian selalu "Tidak ada SPK yang cocok". Nomor polos = cocok dengan dokumen itu.
+    if (focusDoc.number) setSearch(focusDoc.number);
     getInspection(focusDoc.focus_id).then(setDetail).catch(() => {});
     onClearFocus?.();
   }, [focusDoc?.focus_id]); // eslint-disable-line
@@ -124,9 +189,9 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
     paged.refresh(); loadStats(); loadOrphans();
   }, [paged, loadStats, loadOrphans]);
 
-  const kindChips = [{ key: "", label: "Semua jenis" }].concat(
+  const kindChips = [{ key: "all", label: "Semua jenis" }].concat(
     (meta.all_kinds || meta.kinds || []).map((k) => ({ key: k.value, label: INS_KIND_SHORT[k.value] || k.label })));
-  const statusChips = [{ key: "", label: "Semua status" }].concat(
+  const statusChips = [{ key: "all", label: "Semua status" }].concat(
     INS_BOARD_ORDER.map((s) => ({ key: s, label: INS_STATUS_LABEL[s] })));
 
   const policy = meta.policy || {};
@@ -138,7 +203,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
   ].filter(Boolean);
 
   return (
-    <div data-testid="inspections-view" className="grid gap-3">
+    <div data-testid="inspections-view" className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {error && (
         <ErrorNotice message={error} onRetry={refreshAll} onDismiss={() => setError("")}
           testId="ins-error" />
@@ -161,7 +226,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
             <LineFilter value={line} onChange={setLine} storageKey="inspections"
               allowed={currentUser?.allowed_line_codes} className="!py-1.5"
               testId="ins-line-filter" />
-            <input data-testid="ins-search" className="field !py-1.5 !text-[11.5px] w-56"
+            <input data-testid="ins-search" className="field !py-1.5 !text-[11.5px] w-full sm:w-56"
               placeholder="Cari nomor / dokumen sumber / petugas…"
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <button data-testid="ins-refresh" className="secondary-button !py-1.5"
@@ -186,7 +251,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
         {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman).
             UAT 24 Okt (audit UI tahap 2): dulu 5 KPI bertumpuk satu kolom di HP & menempel tepi kartu. */}
         <div className="px-3 pb-3 pt-2">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {[
             ["Total SPK", stats.total ?? 0, "ins-kpi-total"],
             ["Belum ditugaskan", stats.draft ?? 0, "ins-kpi-draft"],
@@ -194,7 +259,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
             ["Barang DITAHAN", stats.hold ?? 0, "ins-kpi-hold"],
             ["Ditolak", stats.rejected ?? 0, "ins-kpi-rejected"],
           ].map(([label, value, tid]) => (
-            <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
+            <div key={tid} className="min-w-0 rounded-lg border border-[#EFF0F2] bg-white px-2.5 py-2 sm:px-3">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
               <p data-testid={tid} className="text-[15px] font-bold tabular-nums text-[#1C1C1E]">{value}</p>
             </div>
@@ -240,26 +305,20 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
         </div>
       )}
 
-      {/* Penyaring */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {kindChips.map((c) => (
-          <button key={c.key || "all-kind"} data-testid={`ins-chip-kind-${c.key || "all"}`}
-            className={`status-pill ${kindFilter === c.key ? "pill-info" : "pill-muted"}`}
-            onClick={() => setKindFilter(c.key)}>{c.label}</button>
-        ))}
-        <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
-        <div className="tab-bar !mb-0 w-full">
-        {statusChips.map((c) => (
-          <button key={c.key || "all-status"} data-testid={`ins-chip-status-${c.key || "all"}`}
-            className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
-            onClick={() => setStatusFilter(c.key)}>{c.label}</button>
-        ))}
+      {/* Penyaring — Fase 3 · P5 (L-01/L-04): jenis & status dulu campuran pil + `.tab-bar` (saringan berlagak tab);
+          kini FilterChips baku, satu baris bergulir di HP. "Hanya yang DITAHAN" = preset papan "Barang ditahan QC" (D-28). */}
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5" data-testid="ins-filters">
+        <FilterChips ariaLabel="Jenis inspeksi" value={kindFilter || "all"}
+          onChange={(k) => setKindFilter(k === "all" ? "" : k)}
+          chipTestId={(k) => `ins-chip-kind-${k}`} options={kindChips} />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <FilterChips ariaLabel="Status SPK" value={statusFilter || "all"}
+            onChange={(k) => setStatusFilter(k === "all" ? "" : k)}
+            chipTestId={(k) => `ins-chip-status-${k}`} options={statusChips} className="min-w-0 max-w-full" />
+          <FilterChips ariaLabel="Barang ditahan" multiple value={holdOnly ? ["hold"] : []}
+            onChange={(v) => setHoldOnly(v.includes("hold"))}
+            options={[{ key: "hold", label: "Hanya yang DITAHAN", icon: Lock, testId: "ins-chip-hold" }]} />
         </div>
-        <button data-testid="ins-chip-hold"
-          className={`status-pill ${holdOnly ? "pill-danger" : "pill-muted"}`}
-          onClick={() => setHoldOnly((v) => !v)}>
-          <Lock size={9} className="mr-1 inline" /> Hanya yang DITAHAN
-        </button>
       </div>
 
       {paged.loading ? (
@@ -280,87 +339,26 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
         </div>
       ) : (
         <div className="section-card section-pad">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11.5px]">
-              <thead>
-                <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
-                  <th className="px-2 py-1.5 text-left">Nomor</th>
-                  <th className="px-2 py-1.5 text-left">Jenis</th>
-                  <th className="px-2 py-1.5 text-left">Dokumen sumber</th>
-                  <th className="px-2 py-1.5 text-left">Petugas</th>
-                  <th className="px-2 py-1.5 text-right">Barang</th>
-                  <th className="px-2 py-1.5 text-right">Poin</th>
-                  <th className="px-2 py-1.5 text-left">Status</th>
-                  <th className="px-2 py-1.5 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(paged.items || []).map((r) => {
-                  const s = r.summary || {};
-                  return (
-                    <tr key={r.id} data-testid={`ins-row-${r.id}`}
-                      className="border-b border-[#F2F2F5] last:border-0">
-                      <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">
-                        {/* UAT 24 Okt (audit UI tahap 2) — di HP kolom Aksi di luar layar; nomor SPK sendiri membuka rincian. */}
-                        <button type="button" data-testid={`ins-open-${r.id}`} className="link-button !p-0 font-semibold"
-                          onClick={() => openDetail(r.id)}>{r.number}</button>
-                        {s.hold ? (
-                          <span data-testid={`ins-hold-badge-${r.id}`}
-                            className="ml-1 status-pill pill-danger">
-                            <Lock size={9} className="mr-0.5 inline" />{s.hold} ditahan
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-2 py-1.5 text-[#3C3C43]">{INS_KIND_SHORT[r.kind] || r.kind}</td>
-                      <td className="px-2 py-1.5 text-[#3C3C43]">
-                        {r.ref_doc_number || "—"}
-                        <span className="block text-[10px] text-[#8E8E93]">
-                          {r.supplier_name || r.customer_name || ""}
-                        </span>
-                      </td>
-                      <td className="px-2 py-1.5 min-w-[110px]">{r.assigned_name || (r.status === "draft" ? "Belum ditugaskan" : <span className="text-[#8E8E93]">tidak tercatat</span>)}</td>
-                      <td className="px-2 py-1.5 text-right">
-                        <QtyDual rolls={s.rolls} measure={s.measure} unit={s.unit}
-                          testId={`ins-qty-${r.id}`} compact />
-                      </td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">
-                        {s.points_total ? s.points_total : "—"}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <span className={`status-pill ${INS_STATUS_CLASS[r.status] || "pill-muted"}`}>
-                          {INS_STATUS_LABEL[r.status] || r.status}
-                        </span>
-                        {r.decision_label ? (
-                          <span className="block text-[10px] text-[#6B6B73]">{r.decision_label}</span>
-                        ) : null}
-                        {/* UAT 24 Okt (audit UI tahap 2) — "Diterima seluruhnya" + lencana "1 ditahan" tampak bertentangan:
-                            roll yang GAGAL 4-point/random check tetap ditahan walau SPK ditutup. Sebutkan terang. */}
-                        {r.status === "done" && s.hold ? (
-                          <span data-testid={`ins-done-hold-${r.id}`} className="block text-[10px] font-semibold text-[#B4231F]">
-                            {s.hold} roll masih ditahan — lepas/tolak di rincian SPK
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-2 py-1.5 text-right">
-                        <button data-testid={`ins-detail-${r.id}`} className="link-button"
-                          onClick={() => openDetail(r.id)}>Buka SPK</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-2">
-            <PaginationBar
-              page={paged.page} pageSize={paged.pageSize} total={paged.total}
-              hasMore={paged.hasMore} loading={paged.loading}
-              onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
-              testId="ins-pager" label="SPK inspeksi"
-              exportConfig={{ columns: CSV_COLUMNS, rows: paged.items,
-                fetchAll: paged.fetchAll, filename: "inspeksi-qc" }}
-            />
-          </div>
+          {/* Fase 3 · P5 — L-04/L-07: tabel mentah → ResponsiveTable (kartu di HP 390 px, pager di luar wadah gulir).
+              Layar ini dibuka dari aplikasi HP (tombol QC, notifikasi) — kelas B. */}
+          <ResponsiveTable testId="ins-list" rows={paged.items || []} rowKey="id"
+            rowTestId={(r) => `ins-row-${r.id}`} columns={INS_COLUMNS(openDetail)}
+            onRowClick={(r) => openDetail(r.id)}
+            actions={(r) => (
+              <button data-testid={`ins-detail-${r.id}`} className="link-button" onClick={() => openDetail(r.id)}>Buka SPK</button>
+            )}
+            footer={(
+              <div className="mt-2">
+                <PaginationBar
+                  page={paged.page} pageSize={paged.pageSize} total={paged.total}
+                  hasMore={paged.hasMore} loading={paged.loading}
+                  onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
+                  testId="ins-pager" label="SPK inspeksi"
+                  exportConfig={{ columns: CSV_COLUMNS, rows: paged.items,
+                    fetchAll: paged.fetchAll, filename: "inspeksi-qc" }}
+                />
+              </div>
+            )} />
         </div>
       )}
 

@@ -8,6 +8,7 @@ import LandedCostCreateModal from "./LandedCostCreateModal";
 import LandedCostDetailPanel from "./LandedCostDetailPanel";
 import DetailModal from "../../components/DetailModal";
 import { can, roleSatisfies } from "../../config/roles";
+import { isZeroMetric } from "../../components/ListPageParts";
 
 /**
  * LandedCostView (Fase 5.4 — P0-5) — Landed Cost Voucher → alokasi HPP roll.
@@ -225,11 +226,13 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
   );
 }
 
+// Fase 3 · P4 (L-08) — nilai nol ("Rp 0", "0") tampil NETRAL abu, tidak pernah berwarna peringatan.
 function SummaryCard({ label, value, tone, big, testId }) {
+  const zero = isZeroMetric(value);
   return (
     <div className="section-card !p-3" data-testid={testId}>
       <p className="text-[11px] font-bold uppercase text-[#6B6B73]">{label}</p>
-      <p className={`${big ? "text-[18px]" : "text-[14px]"} font-bold tabular-nums ${tone || "text-[#0F1115]"}`}>{value}</p>
+      <p className={`${big ? "text-[18px]" : "text-[14px]"} font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#0F1115]")}`}>{value}</p>
     </div>
   );
 }

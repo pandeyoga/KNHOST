@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { X, CheckCircle2, Wallet, Send, XCircle, Ban, Layers } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import { isZeroMetric } from "../../components/ListPageParts";
 
 /**
  * LandedCostDetailPanel (Fase 5.4) — detail voucher: biaya, alokasi HPP roll, aksi.
@@ -77,7 +78,8 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
           <div className="grid grid-cols-4 gap-2.5">
             <Card label="Total Biaya" value={formatCurrency(fin.total_cost)} testId="lc-fin-total" />
             <Card label="Sudah Dibayar" value={formatCurrency(fin.amount_paid)} testId="lc-fin-paid" tone="text-green-700" />
-            <Card label="Sisa" value={formatCurrency(fin.outstanding)} testId="lc-fin-outstanding" tone="text-red-600" />
+            {/* Fase 3 · P4 (L-08) — merah hanya bila ADA sisa; Rp 0 netral (dulu selalu merah, terbaca sebagai tunggakan). */}
+            <Card label="Sisa" value={formatCurrency(fin.outstanding)} testId="lc-fin-outstanding" tone={Number(fin.outstanding) > 0.005 ? "text-red-600" : undefined} />
             <Card label="Roll Terbeban" value={String(voucher.target_roll_count || allocs.length || 0)} testId="lc-fin-rolls" />
           </div>
 
@@ -196,10 +198,11 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
 }
 
 function Card({ label, value, tone, testId }) {
+  const zero = isZeroMetric(value);   // L-08 — "Rp 0" netral (mis. "Sudah Dibayar" Rp 0 dulu hijau)
   return (
     <div className="rounded-md border border-[#EFF0F2] px-3 py-2" data-testid={testId}>
       <p className="text-[9.5px] font-bold uppercase text-[#6B6B73]">{label}</p>
-      <p className={`text-[14px] font-bold tabular-nums ${tone || "text-[#0F1115]"}`}>{value}</p>
+      <p className={`text-[14px] font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#0F1115]")}`}>{value}</p>
     </div>
   );
 }

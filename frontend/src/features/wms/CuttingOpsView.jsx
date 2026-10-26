@@ -8,6 +8,7 @@ import { formatQty } from "../../utils/formatters";
 import { printSampleLabel, printSampleLabels } from "../../utils/rollLabels";
 import SampleCutPanel from "./SampleCutPanel";
 import PendingCutsPanel from "./PendingCutsPanel";
+import useViewPreset from "../../hooks/useViewPreset";
 
 /**
  * Operasi Gudang › **Cutting** — Trial 22 Okt 2026 (F1/A2, permintaan pemilik): operasi potong DIPISAH dari Barang
@@ -32,6 +33,12 @@ export default function CuttingOpsView() {
   const [cutWh, setCutWh] = useState("");
   const [q, setQ] = useState("");
   const [stage, setStage] = useState("cut");
+  // Fase 3 · P5 — D-24 (a): Operasi Gudang › Cutting = layar utama "menunggu dipotong". Tautan dari Meja Cutting
+  // (Pesanan Sample, P3) membawa preset `{ stage, q }` → tahap dan pencarian langsung terpasang.
+  useViewPreset("wms-cutting", (p) => {
+    if (p.stage && STAGES.some((s) => s.id === p.stage)) setStage(p.stage);
+    if (p.q !== undefined) setQ(p.q || "");
+  });
   const [open, setOpen] = useState({});
   const [manual, setManual] = useState(null);
   const [busy, setBusy] = useState("");

@@ -12,6 +12,8 @@ import { SearchBox } from "../../../components/ListControls";
 import { STATUS, errText, grnApi } from "./grnApi";
 import { formatDateTime } from "../../../utils/formatters";
 import LoadingLine from "../../../components/LoadingLine";
+import PageTabs from "../../../components/PageTabs";
+import FilterChips from "../../../components/FilterChips";
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
 const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
@@ -54,12 +56,11 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const tabs = [["list", "Kedatangan (SJ & OCR)"], ["variance", "Selisih Supplier"], ...(showLegacy ? [["legacy", "Scan Terima per PO"]] : [])];
   return (
     <div className="space-y-3 p-4 pb-28 lg:p-0 lg:pb-4" data-testid="goods-receipts-view">
+      {/* Fase 3 · P5 (L-01/L-04) — tab layar = PageTabs baku (satu baris bergulir di HP, tab aktif terlihat);
+          status = FilterChips. Testid lama `grn-view-tab-*` / `grn-filter-*` dipertahankan. */}
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="tab-bar !mb-0 flex-1">
-          {tabs.map(([k, l]) => (
-            <button key={k} type="button" data-testid={`grn-view-tab-${k}`} onClick={() => setTab(k)} className={`tab-button ${tab === k ? "active" : ""}`}>{l}</button>
-          ))}
-        </div>
+        <PageTabs className="!mb-0 min-w-0 flex-1" value={tab} onChange={setTab} ariaLabel="Tab Barang Masuk"
+          tabs={tabs.map(([k, l]) => ({ key: k, label: l, testId: `grn-view-tab-${k}` }))} />
         <div className="flex items-center gap-2 pb-1">
           {SETTINGS_ROLES.includes(currentUser?.role) && (
             <a data-testid="grn-open-ocr-settings" href="?view=settings-receiving-ocr" title="Profil SJ, Sample Uji OCR, Biaya OCR & Mode Penerimaan ada di Pengaturan › Gudang"
@@ -90,11 +91,10 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
         <div className="flex flex-wrap items-center gap-2" data-testid="grn-filter-bar">
           <SearchBox value={q} onChange={setQ} placeholder="Nomor GRN / SJ / mitra" testId="grn-search" />
           <span className="text-[11px] font-semibold text-[#6B6B73]">Status:</span>
-          {FILTERS.map(([v, l]) => (
-            <button key={l} type="button" data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)} aria-pressed={status === v}
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11.5px] font-semibold ${status === v ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:bg-[#F7F8FA]"}`}>{l}
-              {status === v && rows && <span className="rounded-full bg-[#0058CC] px-1.5 text-[10px] text-white">{rows.length}</span>}</button>
-          ))}
+          <FilterChips className="min-w-0 max-w-full" ariaLabel="Status kedatangan" value={status || "all"}
+            onChange={(k) => setStatus(k === "all" ? "" : k)} chipTestId={(k) => `grn-filter-${k}`}
+            options={FILTERS.map(([v, l]) => ({ key: v || "all", label: l,
+              count: (status || "all") === (v || "all") && rows ? rows.length : undefined }))} />
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">
           {rows === null && <LoadingLine className="col-span-full" text="Memuat kedatangan…" testId="grn-list-loading" />}

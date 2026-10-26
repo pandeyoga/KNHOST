@@ -1,9 +1,11 @@
 /**
- * POCompactPanel — RINGKASAN PO di panel kanan (2026-06).
+ * POCompactPanel — RINGKASAN PO + tindakan sesuai lifecycle (2026-06).
  * Dulu panel kanan memuat SEMUANYA (item, pajak, penagihan, timeline, referensi…)
  * sehingga harus di-scroll panjang. Sekarang: fakta kunci + tindakan sesuai
- * lifecycle saja; selebihnya lewat tombol "Lihat detail lengkap" (pop-up berisi
- * `PODetailPanel` yang sama — satu sumber tampilan, bukan duplikat).
+ * lifecycle saja.
+ * Fase 3 · P5 — D-18: panel ini kini KEPALA RINGKAS di dalam SATU pop-up rincian PO (berdampingan dengan
+ * `PODetailPanel inModal`), bukan panel kanan halaman + pop-up kedua. `onClose`/`onOpenFull` opsional —
+ * tombolnya hanya tampil bila diberikan.
  */
 import { FileText, CheckCircle, XCircle, AlertCircle, Ban, FileEdit, Maximize2, PackageCheck } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
@@ -61,7 +63,7 @@ export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
             )}
           </div>
         </div>
-        <button className="icon-button" onClick={onClose} data-testid="po-compact-close"><XCircle size={14} /></button>
+        {onClose && <button className="icon-button" onClick={onClose} data-testid="po-compact-close"><XCircle size={14} /></button>}
       </div>
 
       <div className="section-body space-y-2.5">
@@ -161,10 +163,12 @@ export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
               Batalkan PO
             </button>
           )}
-          <button data-testid="po-open-full-detail" onClick={onOpenFull}
-            className="secondary-button justify-center">
-            <Maximize2 size={13} /> Lihat detail lengkap
-          </button>
+          {onOpenFull && (
+            <button data-testid="po-open-full-detail" onClick={onOpenFull}
+              className="secondary-button justify-center">
+              <Maximize2 size={13} /> Lihat detail lengkap
+            </button>
+          )}
         </div>
       </div>
     </div>

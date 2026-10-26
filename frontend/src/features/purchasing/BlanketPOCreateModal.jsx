@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { useEscapeClose } from "@/utils/escapeLayers";
 import axios, { API } from "../../services/apiClient";
-import { X, Plus, Trash2, FileStack } from "lucide-react";
+import { Plus, Trash2, FileStack } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import useUomConversions from "../../hooks/useUomConversions";
@@ -35,7 +34,8 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
   const [suppliers, setSuppliers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [busy, setBusy] = useState(false);
-  useEscapeClose(open, onClose, busy);
+  // Fase 3 · P5 (L-03) — galat validasi/simpan tampil DI pop-up (dulu ke bilah halaman di belakang lapisan).
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     if (!open) { reset(); return; }
@@ -51,7 +51,7 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
         setSuppliers(Array.isArray(s.data) ? s.data : []);
         setWarehouses(Array.isArray(w.data) ? w.data : []);
         setPaymentTerms(Array.isArray(t.data) ? t.data.filter((x) => x.active !== false) : []);
-      } catch (e) { onError?.("Gagal memuat data master."); }
+      } catch (e) { setErr("Gagal memuat data master."); onError?.("Gagal memuat data master."); }
     })();
   }, [open]); // eslint-disable-line
 
@@ -122,8 +122,8 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
   const effectiveCap = Number(valueCap) > 0 ? Number(valueCap) : computedTotal;
 
   async function submit() {
-    if (!warehouseId) { onError?.("Pilih gudang default."); return; }
-    if (!supplierId && !supplierName.trim()) { onError?.("Pilih supplier master atau isi nama supplier."); return; }
+    if (!warehouseId) { setErr("Pilih gudang default."); return; }
+    if (!supplierId && !supplierName.trim()) { setErr("Pilih supplier master atau isi nama supplier."); return; }
     const items = rows
       .filter((r) => r.product_id && Number(r.contract_qty) > 0)
       .map((r) => ({
@@ -132,11 +132,11 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
         contract_price: Number(r.contract_price) || 0,
         unit: r.unit || "",
       }));
-    if (items.length === 0) { onError?.("Tambah minimal 1 item kontrak (produk + qty > 0)."); return; }
+    if (items.length === 0) { setErr("Tambah minimal 1 item kontrak (produk + qty > 0)."); return; }
     if (validFrom && validUntil && validUntil < validFrom) {
-      onError?.("Masa berlaku akhir tidak boleh sebelum mulai."); return;
+      setErr("Masa berlaku akhir tidak boleh sebelum mulai."); return;
     }
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const body = {
         supplier_id: supplierId, supplier_name: supplierName, supplier_contact: supplierContact,
@@ -150,21 +150,21 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
       const r = await axios.post(`${API}/purchase-orders/blanket`, body);
       onCreated?.(r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || "Gagal membuat kontrak.");
+      setErr(e.response?.data?.detail || "Gagal membuat kontrak.");
     } finally { setBusy(false); }
   }
 
   if (!open) return null;
 
+  // Fase 3 · P5 (L-03) — dulu `modal-overlay`/`modal-card` buatan sendiri; kini FormModal baku (layar penuh di HP,
+  // tombol Buat Kontrak selalu terlihat, galat di dalam pop-up). Isian sama.
   return (
-    <div className="modal-overlay" data-testid="blanket-create-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card" style={{ maxWidth: 760, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2"><FileStack size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Buat Kontrak Blanket PO</h2></div>
-          <button data-testid="blanket-create-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
-        </div>
-
-        <div className="p-4 space-y-3">
+    <FormModal open={open} onClose={onClose} title="Buat Kontrak Blanket PO" icon={FileStack} size="lg"
+      subtitle="Kontrak payung dengan supplier — barang ditarik bertahap lewat call-off"
+      testId="blanket-create-modal" onSubmit={submit} submitTestId="blanket-submit" cancelTestId="blanket-create-close"
+      submitLabel={supplierIsGroupEntity ? "Pakai menu Antar Entitas" : busy ? "Menyimpan..." : "Buat Kontrak"}
+      submitDisabled={supplierIsGroupEntity} busy={busy} error={err}>
+        <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Supplier (Master)">
               <KNSelect value={supplierId} onValueChange={handleSupplier} options={supplierOptions}
@@ -220,12 +220,12 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
                   <KNSelect value={r.unit} onValueChange={(v) => setRow(i, { unit: v })}
                     options={unitOptionsFor(r)} className="field" placeholder="Satuan"
                     disabled={!r.product_id} data-testid={`blanket-item-unit-${i}`} />
-                  <button onClick={() => delRow(i)} disabled={rows.length === 1} aria-label={`Hapus item ${i + 1}`}
+                  <button type="button" onClick={() => delRow(i)} disabled={rows.length === 1} aria-label={`Hapus item ${i + 1}`}
                     className="icon-button text-red-500 disabled:opacity-30"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>
-            <button data-testid="blanket-add-item" onClick={addRow} className="secondary-button mt-2 text-[11px]">
+            <button type="button" data-testid="blanket-add-item" onClick={addRow} className="secondary-button mt-2 text-[11px]">
               <Plus size={12} /> Tambah Item
             </button>
           </div>
@@ -273,19 +273,7 @@ export default function BlanketPOCreateModal({ open, selectedEntity, onClose, on
             </div>
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          <button onClick={onClose} className="secondary-button">Batal</button>
-          <button data-testid="blanket-submit" disabled={busy || supplierIsGroupEntity} onClick={submit}
-            title={supplierIsGroupEntity
-              ? `${selectedSupplier?.name} adalah badan usaha di dalam grup — pakai menu Antar Entitas`
-              : ""}
-            className="primary-button disabled:opacity-50 disabled:cursor-not-allowed">
-            {busy ? "Menyimpan..." : "Buat Kontrak"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 

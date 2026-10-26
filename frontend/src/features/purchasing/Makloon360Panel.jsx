@@ -5,6 +5,7 @@ import { ArrowLeft, Edit3, Factory, MapPin, PhoneCall, Gauge, Wallet, FileText,
 import { formatCurrency, formatPct, formatQty } from "../../utils/formatters";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import RecordDetailModal from "../documents/RecordDetailModal";
+import LinkCard from "../../components/LinkCard";
 
 const TABS = [
   { key: "recipes", label: "Resep", icon: BookOpen },
@@ -169,18 +170,14 @@ export default function Makloon360Panel({ makloonId, reloadKey = 0, currentUser,
           <div className="section-body">
             {tab === "scorecard" ? (
               <div data-testid="makloon-360-scorecard">
-                {!data.scorecard?.has_data ? (
-                  <div className="py-8 text-center text-[11.5px] text-[#9A9BA3]">Belum ada data proses (mulai terisi setelah Order Makloon dijalankan).</div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <Kpi label="Total Pesanan" value={sc.total_orders} />
-                    <Kpi label="Langkah Diterima" value={sc.received_steps} />
-                    <Kpi label="Yield Realisasi" value={pct(sc.realized_yield)} tone="#0058CC" />
-                    <Kpi label="Pencapaian Yield" value={pct(sc.yield_attainment)} />
-                    <Kpi label="Total Input" value={formatQty(sc.total_input_qty)} />
-                    <Kpi label="Total Output" value={formatQty(sc.total_output_qty)} />
-                  </div>
-                )}
+                {/* Fase 3 · P5 — D-22: skor mitra kini satu layar (Kinerja Mitra Makloon); di sini tautan yang
+                    langsung membuka skor mitra ini (yield proses + hasil vs target + klaim). */}
+                <LinkCard testId="makloon-360-score-link" icon={BarChart3} what="Skor mitra"
+                  where="Pesanan Pembelian › Kinerja Mitra Makloon" view="makloon-claim-recap"
+                  preset={{ partner: makloonId }} label="Lihat skor mitra ini"
+                  summary={data.scorecard?.has_data
+                    ? `yield realisasi ${pct(sc.realized_yield)} · ${sc.received_steps ?? 0} langkah diterima`
+                    : "belum ada data proses"} />
               </div>
             ) : tab === "recipes" ? (
               <RecipeList rows={data.recipes || []} />

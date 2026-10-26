@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
+import { entityShortFromCtx } from "../../../utils/entityLabel";
 import { q } from "./locUtils";
 
 const KIND = { warehouse: "Gudang", zone: "Zona", lemari: "Lemari", rak: "Rak", bin: "Bin", unassigned: "", orphan: "", transit: "" };
@@ -77,7 +78,7 @@ export default function StockTreePanel({ whId, ownerOptions = [] }) {
               <p className="mb-1 font-bold text-[#6B6B73]">Per pemilik (bukan lokasi)</p>
               {data.tree.by_owner.map((o) => (
                 <div key={o.owner_entity_id || "none"} className="grid grid-cols-[160px_70px_minmax(0,3fr)] gap-2" data-testid={`stock-tree-owner-${o.owner_entity_id || "none"}`}>
-                  <b>{ownerOptions.find((x) => x.value === o.owner_entity_id)?.label || o.owner_entity_id || "—"}</b>
+                  <b>{ownerOptions.find((x) => x.value === o.owner_entity_id)?.label || entityShortFromCtx(o.owner_entity_id, "—")}</b>
                   <span>{o.rolls} roll</span><Units byUnit={o.by_unit} />
                 </div>
               ))}

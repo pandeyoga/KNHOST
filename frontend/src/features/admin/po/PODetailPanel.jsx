@@ -71,7 +71,9 @@ function PrintPoLabelsButton({ po, tp }) {
  *
  * Props: po, currentUser, onClose, onApprove, onCancel, onCloseShort, onAmend
  */
-export default function PODetailPanel({ po, currentUser, onClose, onApprove, onCancel, onCloseShort, onAmend, onOpenDocument, embedded = false }) {
+export default function PODetailPanel({ po, currentUser, onClose, onApprove, onCancel, onCloseShort, onAmend, onOpenDocument, embedded = false, inModal = false }) {
+  // Fase 3 · P5 — D-18: `inModal` = isi lengkap di SATU pop-up rincian bersama POCompactPanel (kepala + aksi).
+  const lifecycle = !inModal;
   const { isGrn } = useReceivingMode();
   if (!po) {
     return (
@@ -127,7 +129,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         </div>
       </div>
       )}
-      {embedded && (
+      {embedded && !inModal && (
         <div className="mb-2 flex items-center gap-1.5">
           {getStatusBadge(po.status)}
           {version > 1 && (
@@ -345,9 +347,10 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {/* Phase 7.2 — Riwayat amandemen (snapshot + diff per versi) */}
         {po.amendments?.length > 0 && <POVersionHistory amendments={po.amendments} currentVersion={version} />}
 
-        {/* Actions */}
+        {/* Actions — `inModal` (D-18): aksi lifecycle sudah ada di kepala ringkas (POCompactPanel) di pop-up
+            yang sama; di sini hanya aksi tambahan (cetak label roll, dokumen penerimaan). */}
         <div className="flex flex-col gap-1.5">
-          {canReceive && onOpenDocument && (
+          {lifecycle && canReceive && onOpenDocument && (
             <>
             <button data-testid={`${tp}receive-goods-button`} className="primary-button justify-center"
               title="Buka Kedatangan Barang baru dengan supplier & PO ini sudah terisi"
@@ -363,17 +366,17 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
             )}
             </>
           )}
-          {amendable && canManage && (
+          {lifecycle && amendable && canManage && (
             <button data-testid={`${tp}amend-po-button`} onClick={() => onAmend?.(po)} className="secondary-button justify-center">
               <FileEdit size={13} /> Revisi / Amandemen PO
             </button>
           )}
-          {po.status === "waiting_approval" && canApprove && (
+          {lifecycle && po.status === "waiting_approval" && canApprove && (
             <button data-testid={`${tp}approve-po-button`} onClick={() => onApprove(po.id)} className="primary-button justify-center">
               <CheckCircle size={13} /> Setujui PO
             </button>
           )}
-          {["receiving", "partial", "pending"].includes(po.status) && canManage && (
+          {lifecycle && ["receiving", "partial", "pending"].includes(po.status) && canManage && (
             <button data-testid={`${tp}close-po-button`} onClick={() => onCloseShort(po.id)} className="secondary-button justify-center">
               <Ban size={13} /> Tutup PO (Kurang)
             </button>
@@ -388,7 +391,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
               <FileText size={13} /> Dokumen Penerimaan Barang
             </button>
           )}
-          {["waiting_approval", "pending"].includes(po.status) && canManage && (
+          {lifecycle && ["waiting_approval", "pending"].includes(po.status) && canManage && (
             <button data-testid={`${tp}cancel-po-button`} onClick={() => onCancel(po.id)} className="danger-button justify-center">
               Batalkan PO
             </button>

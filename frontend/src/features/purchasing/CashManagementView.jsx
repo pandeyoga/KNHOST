@@ -124,6 +124,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
     if (id === "all") return "Gabungan";
     return entities.find((e) => e.id === id)?.short_name || entities.find((e) => e.id === id)?.legal_name || id || "—";
   };
+  const showPerEntity = Object.keys(summary.kas_kecil_per_entity || {}).length > 1;
   const filtered = txns.filter((t) => filter === "all" || t.cash_type === filter);
   const cashCount = (k) => txns.filter((t) => k === "all" || t.cash_type === k).length;
   const srch = useListSearch(filtered, null, { testId: "cash-txn", placeholder: "Cari nomor / deskripsi / kategori…" });
@@ -160,13 +161,14 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         Bank&rdquo; = saldo buku besar akun kas &amp; bank (Rekening &amp; Saldo, Dasbor Keuangan) — bisa berbeda karena jurnal
         kas manual di buku besar.
       </p>
-      {/* Summary cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-3">
+      {/* Summary cards — Fase 3 · P4 (D-13 B): kartu "Kas Kecil per Entitas" hanya bila ADA lebih dari satu PT di
+          datanya. Dengan satu PT (atau header memilih satu PT) isinya = kartu "Kas Kecil" → angka ganda, disembunyikan. */}
+      <div className={`grid gap-3 sm:grid-cols-2 mb-3 ${showPerEntity ? "lg:grid-cols-3" : ""}`.trim()}>
         <SummaryCard testId="cash-besar-card" title="Kas Besar / Bank"
           sub={selectedEntity && selectedEntity !== "all" ? entityName(selectedEntity) : "Semua entitas"}
           balance={summary.kas_besar?.balance} inAmt={summary.kas_besar?.in} outAmt={summary.kas_besar?.out} tone="rgba(0,88,204,.10)" />
         <SummaryCard testId="cash-kecil-card" title="Kas Kecil" sub={selectedEntity && selectedEntity !== "all" ? entityName(selectedEntity) : "Semua entitas"} balance={summary.kas_kecil?.balance} inAmt={summary.kas_kecil?.in} outAmt={summary.kas_kecil?.out} tone="rgba(107,33,154,.10)" />
-        <div data-testid="cash-per-entity-card" className="section-card">
+        {showPerEntity && <div data-testid="cash-per-entity-card" className="section-card">
           <div className="section-body">
             <p className="text-[11px] font-bold uppercase text-[#6B6B73] mb-1.5">Kas Kecil per Entitas</p>
             {Object.keys(summary.kas_kecil_per_entity || {}).length === 0 ? (
@@ -182,7 +184,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Header + filter */}

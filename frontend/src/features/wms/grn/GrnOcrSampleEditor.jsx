@@ -4,8 +4,12 @@ import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, sampleApi } from "./grnApi";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "../../../components/KNDatePicker";
+import useUomConversions from "../../../hooks/useUomConversions";
+import { uomSelectOptions } from "../../../utils/uomCatalog";
 
-const UNITS = ["yard", "meter", "kg", "pcs"];
+// Fase 3 · P5 (INV-UOM-02) — daftar satuan dulu diketik di kode ("yard/meter/kg/pcs"): satuan yang ditambah pemilik di
+// Master Data → UOM tidak pernah muncul. Kini dari katalog bersama (`uomSelectOptions`), satuan yang sudah tersimpan
+// di baris sample tetap ikut (`extra`).
 const blank = () => ({ description: "", qty: "", unit: "yard", rolls: "", po_ref: "", is_non_stock: false });
 
 /** Ubah kunci jawaban sample: nomor & tanggal SJ + baris (qty, satuan, roll, PO). */
@@ -17,6 +21,8 @@ export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
   const [lines, setLines] = useState((a.lines || []).map((l) => ({ ...blank(), ...l, qty: l.qty ?? "", rolls: l.rolls ?? "", po_ref: l.po_ref || "" })));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  useUomConversions();          // memuat & membagikan katalog satuan ke penyimpan modul
+  const unitOptions = uomSelectOptions({ extra: ["yard", ...lines.map((l) => l.unit)] });
   const set = (i, k, v) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, [k]: v } : l)));
   const save = async () => {
     setBusy(true); setErr("");
@@ -42,7 +48,7 @@ export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
                 <input className={`${inputCls} col-span-3 sm:col-span-1`} placeholder="Barang" value={l.description} onChange={(e) => set(i, "description", e.target.value)} />
                 <input data-testid={`ocr-sample-line-qty-${i}`} type="number" inputMode="decimal" placeholder="Qty" className={`${inputCls} font-mono`} value={l.qty} onChange={(e) => set(i, "qty", e.target.value)} />
                 <KNSelect data-testid={`ocr-sample-line-unit-${i}`} className={inputCls} value={l.unit} onValueChange={(v) => set(i, "unit", v)} aria-label="Satuan"
-                  options={UNITS.map((u) => ({ value: u, label: u }))} />
+                  options={unitOptions} />
                 <input type="number" inputMode="numeric" placeholder="Roll" className={`${inputCls} font-mono`} value={l.rolls} onChange={(e) => set(i, "rolls", e.target.value)} />
                 <input className={`${inputCls} col-span-2 font-mono sm:col-span-1`} value={l.po_ref} placeholder="No. PO, mis. 7460/CST/0726" onChange={(e) => set(i, "po_ref", e.target.value)} />
                 <label className="flex items-center justify-center gap-1 text-[10.5px]"><input type="checkbox" checked={l.is_non_stock} onChange={(e) => set(i, "is_non_stock", e.target.checked)} /><span className="sm:hidden">Non-stok</span></label>

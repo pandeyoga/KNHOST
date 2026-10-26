@@ -7,6 +7,7 @@ import { StatusPill } from "../../components/CoreWidgets";
 import KNSelect from "../../components/KNSelect";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { entityShortFromCtx } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
@@ -195,7 +196,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
         </div>
       </div>
 
-      {err && <div className="mx-4 mb-2"><ErrorNotice message={err} onRetry={loadSessions} onDismiss={() => setErr("")} testId="cycle-count-error" /></div>}
+      {err && view !== "create" && <div className="mx-4 mb-2"><ErrorNotice message={err} onRetry={loadSessions} onDismiss={() => setErr("")} testId="cycle-count-error" /></div>}
       {msg && <div className="mx-4 mb-2 rounded-md bg-green-50 border border-green-200 p-2 text-[12px] text-green-700">{msg}</div>}
 
       <div className="section-body">
@@ -231,28 +232,6 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
 
           {/* Main panel */}
           <div>
-            {view === "create" && (
-              <div className="rounded-md border border-[#EFF0F2] bg-white p-4">
-                <h3 className="text-[14px] font-bold mb-3">Buat Sesi Stock Opname Baru</h3>
-                <div className="grid gap-2 max-w-md">
-                  <KNSelect
-                    data-testid="cc-warehouse-select"
-                    className="field"
-                    value={form.warehouse_id}
-                    onValueChange={v => setForm({...form, warehouse_id: v})}
-                    placeholder="Pilih Gudang"
-                    options={warehouses.map(w => ({ value: w.id, label: `${w.name} — ${w.city}` }))}
-                  />
-                  <input placeholder="Nama sesi (opsional)" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="field" data-testid="cc-session-name-input" />
-                  <textarea placeholder="Catatan (opsional)" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="field" rows={2} data-testid="cc-session-notes-input" />
-                  <div className="flex gap-2">
-                    <button onClick={createSession} className="primary-button" data-testid="cc-create-session-button">Buat Sesi</button>
-                    <button onClick={() => setView("list")} className="secondary-button">Batal</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {view === "detail" && selectedSession && (
               <div className="grid gap-3">
                 {/* Session header */}
@@ -448,6 +427,26 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
           </div>
         </div>
       </div>
+
+      {/* Fase 3 · P5 (L-03) — form "Buat Sesi" dulu diselipkan di panel kanan (di HP terdorong ke bawah daftar
+          sesi); kini pop-up baku. Isian sama. */}
+      <FormModal open={view === "create"} onClose={() => { setView("list"); setErr(""); }} title="Buat Sesi Stock Opname Baru"
+        subtitle="Pilih gudang yang dihitung; produk/roll ditambahkan sesudah sesi dibuat" icon={ClipboardList}
+        testId="cc-create-modal" onSubmit={createSession} submitLabel="Buat Sesi"
+        submitTestId="cc-create-session-button" error={view === "create" ? err : ""} submitDisabled={!form.warehouse_id}>
+        <div className="grid gap-2">
+          <KNSelect
+            data-testid="cc-warehouse-select"
+            className="field"
+            value={form.warehouse_id}
+            onValueChange={v => setForm({...form, warehouse_id: v})}
+            placeholder="Pilih Gudang"
+            options={warehouses.map(w => ({ value: w.id, label: `${w.name} — ${w.city}` }))}
+          />
+          <input placeholder="Nama sesi (opsional)" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="field" data-testid="cc-session-name-input" />
+          <textarea placeholder="Catatan (opsional)" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="field" rows={2} data-testid="cc-session-notes-input" />
+        </div>
+      </FormModal>
     </section>
   );
 }

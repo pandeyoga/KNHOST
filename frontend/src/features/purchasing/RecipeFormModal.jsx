@@ -1,13 +1,13 @@
 import { useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
-import { GitBranch, X, Save, Calculator, ArrowRight } from "lucide-react";
+import { GitBranch, Save, Calculator, ArrowRight } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ProductSelect, { STAGE_LABELS } from "../../components/ProductSelect";
 import MakloonSelect from "../../components/MakloonSelect";
 import useProcessTypes from "../../hooks/useProcessTypes";
 import { formatQty } from "../../utils/formatters";
-import { overlayDismiss } from "@/utils/overlayDismiss";
 
 const STAGE_OPTS = Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }));
 const TARIFF_UNITS = [{ value: "output", label: "per Output" }, { value: "input", label: "per Input" }, { value: "roll", label: "per Roll" }];
@@ -81,21 +81,27 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
     } catch (e) { setModalErr(e.response?.data?.detail || "Gagal menyimpan resep."); setSaving(false); }
   };
 
+  // Fase 3 · P5 (L-03) — dulu `div fixed inset-0` buatan sendiri; kini FormModal baku (layar penuh 1 kolom di HP,
+  // Esc berlapis, tombol Simpan & galat di kaki yang selalu terlihat). Isian sama.
   return (
-    <div data-testid="recipe-form-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[92vh] w-full max-w-[680px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><GitBranch size={16} className="text-[#0058CC]" /> {isEdit ? "Ubah Resep Konversi" : "Buat Resep Konversi"}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
+    <FormModal open onClose={onClose} icon={GitBranch} size="lg" testId="recipe-form-modal"
+      title={isEdit ? "Ubah Resep Konversi" : "Buat Resep Konversi"}
+      subtitle="Resep proses makloon: bahan → hasil, rendemen, susut, tarif"
+      busy={saving} error={modalErr}
+      footer={(
+        <div className="flex justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" data-testid="recipe-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan"}</button>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 gap-3">
+      )}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Nama Resep" req><input data-testid="recipe-name-input" className="field" value={f.name} onChange={set("name")} placeholder="Tenun: Benang → Grey" /></Field>
             <Field label="Jenis Proses"><KNSelect data-testid="recipe-process-type" className="field" value={f.process_type} onValueChange={(v) => setF({ ...f, process_type: v })} options={PROC_OPTS} /></Field>
           </div>
 
           <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+            <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_auto_1fr]">
               {/* UAT 24 Okt (audit UI tahap 2) — G4-23: satu label per pemilih (dulu dua pemilih di bawah satu
                   label MAJUSCULE); gaya label sama dengan isian lain. */}
               <div className="space-y-1.5">
@@ -104,7 +110,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
                 <Field label="Produk bahan" req><ProductSelect triggerTestId="recipe-input-product" stage={f.input_stage} value={f.input_product_id} valueName={f.input_name}
                   onSelect={(p) => setF({ ...f, input_product_id: p.id, input_name: `${p.name} (${p.sku})` })} label="Pilih produk bahan…" /></Field>
               </div>
-              <ArrowRight size={18} className="mb-2 text-[#0058CC]" />
+              <ArrowRight size={18} className="mb-2 rotate-90 justify-self-center text-[#0058CC] sm:rotate-0" />
               <div className="space-y-1.5">
                 <p className="text-[12px] font-semibold text-[#1C1C1E]">Hasil</p>
                 <Field label="Tahap hasil"><KNSelect data-testid="recipe-output-stage" className="field" value={f.output_stage} onValueChange={(v) => setF({ ...f, output_stage: v })} options={STAGE_OPTS} /></Field>
@@ -114,13 +120,13 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Rendemen (hasil per 1 bahan)"><input data-testid="recipe-yield" type="number" step="0.01" className="field" value={f.yield_factor} onChange={set("yield_factor")} /></Field>
             <Field label="Susut (%)"><input data-testid="recipe-waste" type="number" step="0.1" className="field" value={f.waste_pct} onChange={set("waste_pct")} /></Field>
             <Field label="Barang Sisa (%)"><input data-testid="recipe-byproduct" type="number" step="0.1" className="field" value={f.byproduct_pct} onChange={set("byproduct_pct")} /></Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Makloon Default">
               <MakloonSelect triggerTestId="recipe-makloon" processType={f.process_type} value={f.default_makloon_id} valueName={f.default_makloon_name}
                 onSelect={(m) => setF({ ...f, default_makloon_id: m.id, default_makloon_name: m.name })} label="Pilih makloon default…" />
@@ -151,7 +157,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
           </div>
           {/* Preview forecast inline */}
           <div className="rounded-lg border border-dashed border-[#0058CC]/40 bg-[#EAF2FF]/40 p-3">
-            <div className="flex items-end gap-2">
+            <div className="flex flex-wrap items-end gap-2">
               <Field label="Uji jumlah bahan"><input data-testid="recipe-test-qty" type="number" className="field w-28" value={testQty} onChange={(e) => setTestQty(e.target.value)} /></Field>
               <button data-testid="recipe-forecast-btn" type="button" className="secondary-button mb-0.5" onClick={runForecast}><Calculator size={13} /> Hitung Estimasi</button>
               {preview && (
@@ -165,13 +171,7 @@ export default function RecipeFormModal({ editTarget, makloons = [], selectedEnt
 
           <Field label="Catatan"><textarea data-testid="recipe-notes" className="field" rows="2" value={f.notes} onChange={set("notes")} /></Field>
         </div>
-        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="recipe-form-error">{modalErr}</p>}
-        <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="recipe-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan"}</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 

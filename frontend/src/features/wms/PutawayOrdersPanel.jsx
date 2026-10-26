@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Truck, ClipboardList, CheckCircle2, AlertTriangle, Send, Zap, RotateCcw } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import axios, { API } from "../../services/apiClient";
+import { askReason } from "../../services/confirmService";
 
 const nf = new Intl.NumberFormat("id-ID");
 const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
@@ -219,8 +220,13 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
                         <Zap size={12} /> Simulasi Scan Semua
                       </button>
                       <button data-testid={`pa-confirm-manual-${o.id}`} disabled={busy}
-                        onClick={() => {
-                          const why = window.prompt("Konfirmasi MANUAL semua roll tiba tanpa scan (butuh izin approve). Tulis alasan (min. 10 huruf):");
+                        onClick={async () => {
+                          const why = await askReason({
+                            title: "Konfirmasi MANUAL semua roll tiba tanpa scan?",
+                            message: "Butuh izin approve. Roll dianggap tiba tanpa hasil scan EPC.",
+                            confirmLabel: "Konfirmasi manual", reasonMinLength: 10,   // server: MIN_OVERRIDE_REASON = 10
+                            testId: "pa-confirm-manual-dialog",
+                          });
                           if (why && why.trim()) confirm(o, null, why.trim());
                         }}
                         className="rounded-lg border border-[#8C4A00] px-3 py-1.5 text-[11px] font-semibold text-[#8C4A00] disabled:opacity-40">

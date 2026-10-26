@@ -5,21 +5,31 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "@/components/KNDatePicker";
 import { MetricRow, PageHeader } from "../../../components/ListPageParts";
+import useViewPreset from "../../../hooks/useViewPreset";
+import MakloonPartnerScorePanel from "./MakloonPartnerScorePanel";
 
 const SETTLE = { potong_bon: "Potong tagihan jasa", tagih_ganti: "Tagih ganti rugi", terima_catatan: "Diterima (catatan)" };
 const STATUS = { posted: "Dibukukan", pending_approval: "Menunggu persetujuan", rejected: "Ditolak", approved: "Disetujui" };
 const PAGE = 200;   // AUD-MKL-02 — rincian per halaman; ringkasan & Excel tetap utuh
 
 
-/** L01 — Rekap susut, klaim & potongan tagihan per mitra makloon (penagihan & evaluasi). */
+/** L01 — Rekap susut, klaim & potongan tagihan per mitra makloon (penagihan & evaluasi).
+ *  Fase 3 · P5 — D-22: layar ini kini **Kinerja Mitra Makloon** — rekap susut & klaim + bagian "Skor mitra"
+ *  (klik mitra → skor proses per mitra). Skor dulu juga tampil di Klaim Selisih Makloon & tab "Skor Mitra"
+ *  detail Mitra Makloon; keduanya kini tautan ke sini (preset `{ partner }`). Bagian rekap digerbang izin
+ *  endpoint-nya: peran tanpa izin rekap (403) hanya melihat skor mitra. */
 export default function MakloonClaimRecapView({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [denied, setDenied] = useState(false);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [partner, setPartner] = useState("");
   const [offset, setOffset] = useState(0);
+  const [focusPartner, setFocusPartner] = useState("");
+  useViewPreset("makloon-claim-recap", (p) => { if (p.partner) setFocusPartner(p.partner); });
 
   const download = async () => {
     setBusy(true); setErr("");
@@ -38,9 +48,12 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
     try {
       const { data: d } = await axios.get(`${API}/makloon-claims/recap`, {
         params: { date_from: from, date_to: to, makloon_id: partner, rows_offset: offset, rows_limit: PAGE } });
-      setData(d);
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat rekap."); }
-    finally { setBusy(false); }
+      setData(d); setDenied(false);
+    } catch (e) {
+      if (e.response?.status === 403) setDenied(true);
+      else setErr(e.response?.data?.detail || "Gagal memuat rekap.");
+    }
+    finally { setBusy(false); setLoadedOnce(true); }
   }, [from, to, partner, offset]);
   useEffect(() => { load(); }, [load, selectedEntity]);
   // halaman di luar jangkauan (mis. ganti badan usaha) → kembali ke halaman pertama
@@ -57,9 +70,9 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
     <section className="view-container" data-testid="makloon-claim-recap">
       {/* UAT 24 Okt (audit UI tahap 2) — G4-25: kerangka sama dengan tab saudara (PageHeader + kartu
           penyaring berlabel + MetricRow); nilai 0 tidak lagi merah/hijau. */}
-      <PageHeader icon={Scale} title={<span data-testid="recap-title">Rekap Susut & Klaim Mitra</span>}
-        subtitle="Beban susut wajar, piutang klaim, dan potongan tagihan per mitra makloon dalam periode."
-        actions={<>
+      <PageHeader icon={Scale} title={<span data-testid="recap-title">Kinerja Mitra Makloon</span>}
+        subtitle="Skor mitra (hasil vs target, klaim, yield proses) dan rekap susut, piutang klaim & potongan tagihan per mitra dalam periode."
+        actions={denied ? null : <>
           <button className="secondary-button" onClick={download} disabled={busy} data-testid="recap-download-xlsx">
             <Download size={13} /> Unduh Excel
           </button>
@@ -67,6 +80,17 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
             {busy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Muat ulang
           </button>
         </>} />
+      {/* Skor mitra dirender sesudah rekap dimuat sekali (urutan muat stabil; 403 rekap tetap menampilkan skor). */}
+      {loadedOnce && (
+        <MakloonPartnerScorePanel selectedEntity={selectedEntity} focusPartner={focusPartner}
+          onFocusConsumed={() => setFocusPartner("")} />
+      )}
+      {denied ? (
+        <p className="section-card section-pad text-[12px] text-[#6B6B73]" data-testid="recap-denied">
+          Rekap susut &amp; klaim (beban, piutang klaim, potongan tagihan) hanya untuk peran berizin keuangan / persetujuan
+          susut makloon. Skor mitra di atas tetap bisa dipakai.
+        </p>
+      ) : (<>
       <div className="section-card section-pad">
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <label className="block">
@@ -154,6 +178,7 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
           </tbody>
         </table>
       </div>
+      </>)}
     </section>
   );
 }

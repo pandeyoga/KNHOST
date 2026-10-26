@@ -8,6 +8,7 @@ import { StatusBadge } from "./transferConstants";
 import TransferReceiptPanel from "./TransferReceiptPanel";
 import DocumentActionsBar from "../../documents/DocumentActionsBar";
 import ErrorNotice from "../../../components/ErrorNotice";
+import DetailModal from "../../../components/DetailModal";
 import QtyDual from "../../../components/QtyDual";      // FASE U — dua satuan
 import { entityShortFromCtx } from "../../../utils/entityLabel";
 
@@ -27,20 +28,22 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
     if (!isIC || transfer.status !== "waiting_approval") return;
     axios.get(`${API}/transfers/${transfer.id}`).then((r) => setRuleCheck(r.data?.dest_rule_check || [])).catch(() => {});
   }, [isIC, transfer.id, transfer.status]);
+  // Fase 3 · P5 — D-16 / L-03: dulu `div fixed inset-0` buatan sendiri (latar menutup walau KNSelect terbuka,
+  // tanpa Esc berlapis); kini DetailModal baku (layar penuh di HP). Satu pop-up untuk transfer antar gudang & antar
+  // PT — daftar antar-PT terpisah (kartu ungu + tombol lain) sudah dilebur ke daftar Transfer.
   return (
-    <div
-      data-testid="transfer-detail-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white border border-[#E5E5EA] rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Detail Transfer</h3>
-            <button onClick={onClose} data-testid="transfer-detail-close">
+    <DetailModal onClose={onClose} size="lg" label={`Rincian transfer ${transfer.code || ""}`.trim()}
+      testId="transfer-detail-modal" framed showClose={false}>
+        <div className="p-1 sm:p-2">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-lg font-semibold">
+              Detail Transfer
+              <span data-testid="transfer-detail-kind"
+                className={`ml-2 align-middle status-pill ${isIC ? "pill-purple" : "pill-muted"}`}>
+                {isIC ? "Antar PT" : "Antar gudang"}
+              </span>
+            </h3>
+            <button type="button" onClick={onClose} data-testid="transfer-detail-close" className="icon-button" aria-label="Tutup">
               <XCircle size={20} className="text-[#3C3C43]" />
             </button>
           </div>
@@ -76,13 +79,13 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                     <p className="text-xs text-[#6B219A] mb-1 flex items-center gap-1">
                       <ArrowRightLeft size={11} /> PT Sumber
                     </p>
-                    <p className="font-semibold text-sm">{entityShortFromCtx(transfer.source_entity_id)}</p>
+                    <p className="font-semibold text-sm">{entityShortFromCtx(transfer.source_entity_id, transfer.source_entity_name || "—")}</p>
                   </div>
                   <div className="bg-[#F3EAFB] rounded-lg p-3 border border-[#E6D8F0]" data-testid="transfer-detail-dest-entity">
                     <p className="text-xs text-[#6B219A] mb-1 flex items-center gap-1">
                       <ArrowRightLeft size={11} /> PT Tujuan
                     </p>
-                    <p className="font-semibold text-sm">{entityShortFromCtx(transfer.dest_entity_id)}</p>
+                    <p className="font-semibold text-sm">{entityShortFromCtx(transfer.dest_entity_id, transfer.dest_entity_name || "—")}</p>
                   </div>
                 </>
               ) : (
@@ -233,7 +236,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   {canRejectTransfer && <button
                     data-testid="reject-transfer-button"
                     onClick={() => onReject(transfer.id)}
-                    className="flex items-center gap-2 bg-[#FF3B30] hover:bg-[#DC3545] text-white rounded-full px-4 py-2 text-sm font-medium"
+                    className="danger-button flex items-center gap-2"
                   >
                     <XCircle size={14} /> Tolak
                   </button>}
@@ -243,7 +246,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                 <button
                   data-testid="start-picking-button"
                   onClick={() => onUpdateStatus(transfer.id, "picking")}
-                  className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium"
+                  className="primary-button"
                 >
                   Mulai Pengambilan
                 </button>
@@ -252,7 +255,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                 <button
                   data-testid="move-to-staging-button"
                   onClick={() => onUpdateStatus(transfer.id, "staging")}
-                  className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium"
+                  className="primary-button"
                 >
                   Siap Muat (Staging)
                 </button>
@@ -261,7 +264,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                 <button
                   data-testid="dispatch-button"
                   onClick={() => onUpdateStatus(transfer.id, "dispatched")}
-                  className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium"
+                  className="primary-button"
                 >
                   Berangkatkan (Dalam Perjalanan)
                 </button>
@@ -275,7 +278,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                 <button
                   data-testid="cancel-transfer-button"
                   onClick={() => onCancel(transfer.id)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white rounded-full px-4 py-2 text-sm font-medium"
+                  className="secondary-button"
                 >
                   Batal
                 </button>
@@ -283,7 +286,6 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </DetailModal>
   );
 }

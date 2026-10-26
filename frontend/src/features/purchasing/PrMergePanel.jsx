@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Layers, Merge, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
+import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
 import { isGroupEntityPartner } from "../../components/GroupEntityBadge";
 
@@ -114,7 +115,7 @@ export function MergeModal({ prs, suppliers, presetSupplier = "", presetSupplier
           </table>
         </div>
         <p className="mt-1 text-[10.5px] text-[#6B6B73]">SKU yang sama dari beberapa PR dilebur jadi satu baris PO; tiap PR mencatat realisasi sebesar bagiannya.</p>
-        {err && <p className="mt-2 text-[11.5px] text-[#A8221A]" data-testid="pr-merge-error">{err}</p>}
+        <div className="mt-2"><ErrorNotice message={err} testId="pr-merge-error" /></div>
         <div className="mt-3 flex justify-end gap-2">
           <button type="button" className="secondary-button" onClick={onClose}>Batal</button>
           <button type="button" className="primary-button" data-testid="pr-merge-submit" disabled={busy || !supplierId || rows.some((r) => r.unitMismatch)}
