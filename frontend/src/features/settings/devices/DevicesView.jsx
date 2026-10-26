@@ -30,7 +30,7 @@ export default function DevicesView({ currentUser, selectedEntity, initialTab = 
   useViewPreset("settings-devices", (p) => { if (p.tab) setTab(pick(p.tab)); });
 
   return (
-    <div className="grid gap-3" data-testid="settings-devices-view">
+    <div className="grid grid-cols-1 gap-3" data-testid="settings-devices-view">   {/* kolom minmax(0,1fr): baris panjang tidak melebarkan halaman di HP */}
       <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       <p className="text-[12px] text-[#3C3C43]" data-testid="settings-devices-intro">
         <Cpu size={13} className="mr-1 inline align-[-2px] text-[#0058CC]" aria-hidden="true" />

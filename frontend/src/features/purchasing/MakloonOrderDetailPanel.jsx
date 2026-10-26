@@ -187,7 +187,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
       )}
 
 
-      <div className="grid items-start gap-3 lg:grid-cols-[300px_1fr]">
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[300px_1fr]">
         {/* Ringkasan & Costing */}
         <div className="space-y-3">
           <Panel icon={Wallet} title="Costing (HPP)">
