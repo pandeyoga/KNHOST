@@ -9,8 +9,7 @@ import { STATUS_PILL, fmtTime, fmtMin } from "./AttendanceView";
 import { MyPayslipCard } from "./MyPayslipCard";
 import { MyLeaveCard } from "./MyLeaveCard";
 import { MyKpiCard } from "./MyKpiCard";
-import { MyDesignerKpiCard } from "./MyDesignerKpiCard";
-import { can, roleIs } from "../../config/roles";
+import MyDesignerKpiSection, { showMyDesignerKpi } from "./MyDesignerKpiSection";
 
 // Audit UI 24 Okt (140): nilai mentah ("tetap", "TK0", "2023-01-15") → label manusiawi.
 const EMP_TYPE_LABEL = { tetap: "Tetap", kontrak: "Kontrak", harian: "Harian", borongan: "Borongan" };
@@ -206,13 +205,6 @@ export default function EmployeeSelfService({ currentUser }) {
             <MyKpiCard />
           </div>
 
-          {/* PS-18 — KPI Saya (R&D): nilai desainer milik SENDIRI. Server menyaring,
-              jadi nilai rekan tidak pernah terkirim ke halaman ini.
-              UAT 24 Okt (audit UI tahap 2) — G5-30: hanya untuk peran yang mengerjakan desain/ronde sample R&D
-              (dulu tampil juga untuk Direktur dll.). */}
-          {(roleIs(currentUser?.role, ["designer", "md", "sample_admin", "md_quality"])
-            || can(currentUser?.permissions, "design_request", "deliver")) && <MyDesignerKpiCard />}
-
           {/* Details */}
           <div className="grid gap-3 md:grid-cols-2">
             <div className="section-card">
@@ -238,6 +230,16 @@ export default function EmployeeSelfService({ currentUser }) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* PS-18 — KPI Saya: nilai milik SENDIRI (server menyaring; nilai rekan tidak pernah terkirim).
+          UAT 24 Okt (audit UI tahap 2) — G5-30: hanya untuk peran yang mengerjakan desain/ronde sample R&D.
+          Fase 3 · P6 (D-08) — satu kartu bertab (ronde sample R&D + pekerjaan DSR; dulu "Rapor Saya" di Permintaan
+          Desain) dan tampil walau profil karyawan belum tertaut (angkanya dari akun, bukan data HR). */}
+      {!loading && showMyDesignerKpi(currentUser) && (
+        <div className="mt-3">
+          <MyDesignerKpiSection currentUser={currentUser} />
         </div>
       )}
     </div>

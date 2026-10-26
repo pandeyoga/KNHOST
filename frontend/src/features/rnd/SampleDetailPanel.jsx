@@ -225,7 +225,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             </div>
           </div>
 
-          {!isReval && <SampleSpecPanel sample={sample} canEdit={canEdit} onChanged={() => { load(); onChanged?.(); }} />}
+          {!isReval && <SampleSpecPanel sample={sample} canEdit={canEdit} types={types} onChanged={() => { load(); onChanged?.(); }} />}
 
           <SampleTypeTabs sample={sample} types={types} measurements={measurements} busy={busy} loading={loading}
             highlightRoundId={focusRoundId} initialType={initialType} canSubmit={canSubmit} canAssess={canAssess}

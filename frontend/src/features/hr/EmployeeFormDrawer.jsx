@@ -6,10 +6,14 @@ const LOC_KEYS = ["country", "country_code", "province", "province_code", "city"
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, UserRound } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
+import FormSection from "../../components/FormSection";
 import { Switch } from "@/components/ui/switch";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
+// Fase 3 · P6 (L-03/L-10) — dulu `Sheet` samping (kaki terbalik, satu dinding isian). Kini FormModal baku
+// (layar penuh 1 kolom di HP, Esc/latar aman) dengan 4 bagian bernomor. Isian & testid TIDAK berubah.
 
 const PTKP_OPTIONS = ["TK0", "TK1", "TK2", "TK3", "K0", "K1", "K2", "K3"].map((v) => ({ value: v, label: v }));
 const JKK_OPTIONS = ["", "I", "II", "III", "IV", "V"].map((v) => ({ value: v, label: v ? `Kelas ${v}` : "— pilih kelas —" }));
@@ -37,12 +41,11 @@ function Field({ label, req, children }) {
   );
 }
 
-function Section({ title, children }) {
+function Section({ number, title, children }) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">{title}</h3>
-      {children}
-    </div>
+    <FormSection number={number} title={title} testId={`employee-sec-${number}`}>
+      <div className="space-y-3">{children}</div>
+    </FormSection>
   );
 }
 
@@ -104,17 +107,23 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
   const entityOptions = [{ value: "", label: "— Entitas default —" }, ...entities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id }))];
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose?.(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0" data-testid="employee-form-drawer">
-        <SheetHeader className="px-5 py-4 border-b border-[#EFF0F2]">
-          <SheetTitle data-testid="employee-form-title">{editId ? `Ubah Karyawan · ${editEmployee?.code || ""}` : "Tambah Karyawan"}</SheetTitle>
-        </SheetHeader>
-
-        <div className="px-5 py-4 space-y-6">
+    <FormModal open={open} onClose={() => onClose?.()} busy={saving} size="lg" icon={UserRound} testId="employee-form-drawer"
+      title={editId ? `Ubah Karyawan · ${editEmployee?.code || ""}` : "Tambah Karyawan"}
+      subtitle="Data pribadi, kepegawaian, pajak & BPJS, serta rekening dan komponen gaji."
+      footer={(
+        // G5-28: kaki standar — Batal kiri, tombol utama kanan berukuran normal (dulu terbalik & lebar penuh).
+        <div className="flex justify-end gap-2">
+          <button type="button" data-testid="employee-cancel-button" onClick={() => onClose?.()} className="secondary-button" disabled={saving}>Batal</button>
+          <button type="button" data-testid="employee-save-button" disabled={saving || !form.name?.trim()} title={!form.name?.trim() ? "Nama lengkap wajib diisi" : undefined} onClick={submit} className="primary-button">
+            <Save size={14} /> {saving ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Buat Karyawan"}
+          </button>
+        </div>
+      )}>
+        <div className="space-y-4">
           {error && <div className="notice-bar danger" data-testid="employee-form-error"><span>{error}</span></div>}
 
-          <Section title="Data Pribadi">
-            <div className="grid grid-cols-2 gap-3">
+          <Section number={1} title="Data Pribadi">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Nama Lengkap" req>
                 <input data-testid="employee-name-input" value={form.name} onChange={(e) => set("name", e.target.value)} className="field" placeholder="mis. Siti Rahmawati" />
               </Field>
@@ -133,17 +142,19 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
               <Field label="Email">
                 <input data-testid="employee-email-input" value={form.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="mis. nama@perusahaan.id" />
               </Field>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Field label="Alamat">
                   <textarea data-testid="employee-address-input" value={form.address} onChange={(e) => set("address", e.target.value)} className="field" rows="2" placeholder="Alamat domisili" />
                 </Field>
               </div>
-              <LocationFields testId="employee-loc" compact required={false} value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
+              <div className="sm:col-span-2">
+                <LocationFields testId="employee-loc" compact required={false} value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
+              </div>
             </div>
           </Section>
 
-          <Section title="Kepegawaian">
-            <div className="grid grid-cols-2 gap-3">
+          <Section number={2} title="Kepegawaian">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Departemen">
                 <KNSelect data-testid="employee-department-select" value={form.department_id} onValueChange={(v) => setForm((f) => ({ ...f, department_id: v, position_id: "" }))} className="field" placeholder="Pilih departemen"
                   options={[{ value: "", label: "— Tidak ditentukan —" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
@@ -177,7 +188,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
               <Field label="ID di mesin sidik jari">
                 <input data-testid="employee-deviceid-input" value={form.device_user_id} onChange={(e) => set("device_user_id", e.target.value)} className="field tabular-nums" placeholder="mis. 1001 (ID terdaftar di mesin)" />
               </Field>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Field label="Tautkan ke Akun Pengguna (opsional)">
                   <KNSelect data-testid="employee-user-select" value={form.user_id} onValueChange={(v) => set("user_id", v)} className="field" placeholder="Pilih akun" searchable options={userOptions} />
                 </Field>
@@ -185,8 +196,8 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
             </div>
           </Section>
 
-          <Section title="Pajak & Statutory">
-            <div className="grid grid-cols-2 gap-3">
+          <Section number={3} title="Pajak & Statutory">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="NPWP" req={!!toggles.npwp_required}>
                 <input data-testid="employee-npwp-input" value={form.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="00.000.000.0-000.000" />
               </Field>
@@ -214,7 +225,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                   <Switch data-testid="employee-bpjs-tk-switch" checked={!!form.bpjs_tk_enabled} onCheckedChange={(v) => set("bpjs_tk_enabled", v)} />
                 </label>
                 {form.bpjs_tk_enabled && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="No. BPJS Ketenagakerjaan">
                       <input data-testid="employee-bpjs-tk-input" value={form.bpjs_tk_no} onChange={(e) => set("bpjs_tk_no", e.target.value)} className="field" placeholder="11 digit nomor KPJ" />
                     </Field>
@@ -227,8 +238,8 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
             )}
           </Section>
 
-          <Section title="Bank & Komponen Gaji">
-            <div className="grid grid-cols-2 gap-3">
+          <Section number={4} title="Bank & Komponen Gaji">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Nama Bank">
                 <input data-testid="employee-bank-name-input" value={form.bank_name} onChange={(e) => set("bank_name", e.target.value)} className="field" placeholder="mis. BCA" />
               </Field>
@@ -258,15 +269,6 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
             </div>
           </Section>
         </div>
-
-        {/* G5-28: kaki standar — Batal kiri, tombol utama kanan berukuran normal (dulu terbalik & lebar penuh). */}
-        <div className="sticky bottom-0 bg-white border-t border-[#EFF0F2] px-5 py-3 flex justify-end gap-2">
-          <button data-testid="employee-cancel-button" onClick={() => onClose?.()} className="secondary-button">Batal</button>
-          <button data-testid="employee-save-button" disabled={saving || !form.name?.trim()} title={!form.name?.trim() ? "Nama lengkap wajib diisi" : undefined} onClick={submit} className="primary-button">
-            <Save size={14} /> {saving ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Buat Karyawan"}
-          </button>
-        </div>
-      </SheetContent>
-    </Sheet>
+    </FormModal>
   );
 }

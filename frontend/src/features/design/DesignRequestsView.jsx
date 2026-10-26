@@ -13,22 +13,32 @@
  *  · **Daftar** — tabel berhalaman + **Unduh CSV** (INV-UI-07), untuk rekap.
  * Kartu ringkasan SELALU dari agregat server (`summary`) — pelajaran FASE P5:
  * lencana yang dihitung dari halaman aktif diam-diam menyusut.
+ *
+ * Fase 3 · P6:
+ *  · D-08 (keputusan pemilik 26 Okt) — tab "Rapor Desainer" & "Rapor Saya" dicabut dari sini. Penilaian tim =
+ *    Desainer › KPI Desainer tab "Pekerjaan DSR"; angka milik sendiri = Profil Saya › KPI Saya. Di sini tinggal
+ *    KARTU TAUTAN (`LinkCard`) ke keduanya — hanya tampil bila peran boleh membuka layar tujuannya.
+ *  · L-01 — Papan/Daftar = PageTabs; status = FilterChips; revisi = KNSelect (dulu tombol-toggle + tab garis
+ *    sebagai saringan + pil revisi = 3 lapis navigasi).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Palette, Plus, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
-import { RevisionBadge, RevisionFilter } from "../../components/RevisionProgress";
+import { REVISION_FILTER_OPTIONS, RevisionBadge } from "../../components/RevisionProgress";
 import LineFilter from "../../components/LineFilter";
+import KNSelect from "../../components/KNSelect";
+import PageTabs from "../../components/PageTabs";
+import FilterChips from "../../components/FilterChips";
+import LinkCard from "../../components/LinkCard";
+import ResponsiveTable from "../../components/ResponsiveTable";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import { EmptyState } from "../finance/financeShared";
 import DesignRequestCreateModal from "./DesignRequestCreateModal";
 import DesignRequestDetailPanel from "./DesignRequestDetailPanel";
 import { formatDateId } from "../../components/KNDatePicker";
-import DesignerReportPanel from "./DesignerReportPanel";
-import MyDesignerReportPanel from "./MyDesignerReportPanel";
 import {
   apiText, DSR_BOARD_ACTIVE, DSR_BOARD_ORDER, DSR_STATUS_CLASS, DSR_STATUS_LABEL, dsrMeta,
   getDesignRequest, referenceUrl,
@@ -122,9 +132,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
   const canCreate = roleIs(role, ["admin", "manager", "sales_admin", "md"]);
   const canReport = roleIs(role, ["admin", "manager"]);
   // FASE D — desainer TIDAK melihat rapor rekan (itu wewenang atasan), tetapi ia
-  // berhak melihat angkanya SENDIRI. Tanpa cabang ini tab rapor hanya bisa 403 untuk
-  // desainer dan `audit_sales_roles_ux` melaporkannya sebagai **panel mati** — benar,
-  // karena layar menawarkan pintu yang selalu menolak.
+  // berhak melihat angkanya SENDIRI. Fase 3 · P6 (D-08): keduanya kini kartu tautan ke layar utamanya.
   const canReportMine = !canReport && !!meta.own_only;
 
   const params = useMemo(() => {
@@ -201,7 +209,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
     DSR_BOARD_ORDER.map((s) => ({ key: s, label: DSR_STATUS_LABEL[s] })));
 
   return (
-    <div data-testid="design-requests-view" className="grid gap-3">
+    <div data-testid="design-requests-view" className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {error && <ErrorNotice message={error} onRetry={paged.refresh} onDismiss={() => setError("")} testId="dsr-error" />}
       {paged.error && !error && (
         <ErrorNotice message={paged.error} onRetry={paged.refresh} testId="dsr-list-error" />
@@ -222,7 +230,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
             <LineFilter value={line} onChange={setLine} storageKey="design-requests"
               allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="dsr-line-filter" />
             <input data-testid="dsr-search" className="field !py-1.5 !text-[11.5px] w-full sm:w-52"
-              placeholder={tab === "report" ? "Cari nama desainer…" : "Cari nomor / brief / pelanggan…"}
+              placeholder="Cari nomor / brief / pelanggan…"
               value={search} onChange={(e) => setSearch(e.target.value)} />
             <button data-testid="dsr-refresh" className="secondary-button !py-1.5" onClick={() => { paged.refresh(); loadSummary(); }}>
               <RefreshCw size={12} /> Muat ulang
@@ -235,9 +243,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
           </div>
         </div>
 
-        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman). G5-37: disembunyikan di tab rapor
-            (dulu dua deret KPI bertumpuk dengan KPI rapor). */}
-        {tab !== "report" && tab !== "myreport" && (
+        {/* Kartu ringkasan — dari agregat SERVER (bukan dari isi halaman). */}
         <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-5">
           {[
             ["Total", summary.total ?? 0, "dsr-kpi-total"],
@@ -252,40 +258,32 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
             </div>
           ))}
         </div>
-        )}
-      </div>
-
-      {/* Tab tampilan */}
-      <div className="flex flex-wrap items-center gap-2">
-        {[["board", "Papan"], ["list", "Daftar"]]
-          .concat(canReport ? [["report", "Rapor Desainer"]] : [])
-          .concat(canReportMine ? [["myreport", "Rapor Saya"]] : [])
-          .map(([key, label]) => (
-            <button key={key} data-testid={`dsr-tab-${key}`}
-              className={tab === key ? "primary-button !py-1.5" : "secondary-button !py-1.5"}
-              onClick={() => setTab(key)}>{label}</button>
-          ))}
-        {tab !== "report" && tab !== "myreport" && (
-          <div className="ml-auto flex flex-wrap items-center gap-1.5">
-            <RevisionFilter value={minRevision} onChange={setMinRevision} testId="dsr-revision-filter" />
-            <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
-            <div className="tab-bar !mb-0">
-            {chips.map((c) => (
-              <button key={c.key || "all"} data-testid={`dsr-chip-${c.key || "all"}`}
-                className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
-                onClick={() => setStatusFilter(c.key)}>{c.label}
-                {(c.key ? summary?.by_status?.[c.key] : summary?.total) != null && <span className="tab-badge">{c.key ? summary.by_status[c.key] : summary.total}</span>}</button>
-            ))}
+        <PageTabs testId="dsr-tabs" value={tab} onChange={setTab} ariaLabel="Tampilan permintaan desain" className="!mb-0 px-3"
+          tabs={[{ key: "board", label: "Papan", testId: "dsr-tab-board" }, { key: "list", label: "Daftar", testId: "dsr-tab-list" }]} />
+        <div className="section-body space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChips testId="dsr-chips" ariaLabel="Status permintaan" value={statusFilter} onChange={(v) => setStatusFilter(v || "")}
+              options={chips.map((c) => ({ key: c.key, label: c.label, testId: `dsr-chip-${c.key || "all"}`,
+                count: (c.key ? summary?.by_status?.[c.key] : summary?.total) ?? undefined }))} />
+            <div className="ml-auto w-[150px]" title="Saring dokumen yang berulang kali direvisi">
+              <KNSelect data-testid="dsr-revision-filter" className="field !py-1.5" value={minRevision}
+                options={REVISION_FILTER_OPTIONS} onValueChange={setMinRevision} />
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {tab === "report" ? (
-        <DesignerReportPanel selectedEntity={selectedEntity} line={line} search={search} />
-      ) : tab === "myreport" ? (
-        <MyDesignerReportPanel selectedEntity={selectedEntity} line={line} />
-      ) : paged.loading ? (
+      {/* D-08 — rapor desainer kini di layar utamanya (kartu tautan; baca-saja bila peran tak berwenang). */}
+      {canReport && (
+        <LinkCard testId="dsr-report-link" what="Rapor desainer" where="Desainer › KPI Desainer › Pekerjaan DSR"
+          view="designer-kpi" preset={{ tab: "dsr" }} label="Buka rapor" />
+      )}
+      {canReportMine && (
+        <LinkCard testId="dsr-myreport-link" what="Rapor Saya" where="Profil Saya › KPI Saya"
+          view="hr-my-profile" preset={{ section: "kpi", tab: "dsr" }} label="Buka rapor saya" />
+      )}
+
+      {paged.loading ? (
         <div data-testid="dsr-loading" className="section-card grid gap-2 section-pad">
           {[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-md bg-[#F2F2F5]" />)}
         </div>
@@ -353,55 +351,31 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
         </>
       ) : (
         <div className="section-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11.5px]">
-              <thead>
-                <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
-                  <th className="px-2 py-1.5 text-left">Nomor</th>
-                  <th className="px-2 py-1.5 text-left">Brief</th>
-                  <th className="px-2 py-1.5 text-left">Desainer</th>
-                  <th className="px-2 py-1.5 text-left">Tenggat</th>
-                  <th className="px-2 py-1.5 text-left">Status</th>
-                  <th className="px-2 py-1.5 text-left">Ronde</th>
-                  <th className="px-2 py-1.5 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(paged.items || []).map((r) => (
-                  <tr key={r.id} data-testid={`dsr-row-${r.id}`} className="border-b border-[#F2F2F5] last:border-0">
-                    <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">{r.number}</td>
-                    <td className="px-2 py-1.5 text-[#3C3C43]"><span className="line-clamp-1">{r.brief}</span></td>
-                    <td className="px-2 py-1.5">{actorLabel(r.assigned_name)}</td>
-                    <td className={`px-2 py-1.5 ${r.is_overdue ? "font-semibold text-[#A8221A]" : ""}`}>
-                      {r.due_date ? formatDateId(r.due_date, "dd MMM yyyy") : "—"}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <span className={`status-pill ${DSR_STATUS_CLASS[r.status] || "pill-muted"}`}>
-                        {r.status_label}
-                      </span>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <RevisionBadge count={r.revision_count} testId={`dsr-row-revision-${r.id}`} />
-                    </td>
-                    <td className="px-2 py-1.5 text-right">
-                      <button data-testid={`dsr-detail-${r.id}`} className="link-button"
-                        onClick={() => openDetail(r.id)}>Detail</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-2">
-            <PaginationBar
-              page={paged.page} pageSize={paged.pageSize} total={paged.total}
-              hasMore={paged.hasMore} loading={paged.loading}
-              onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
-              testId="dsr-pager" label="permintaan"
-              exportConfig={{ columns: CSV_COLUMNS, rows: paged.items,
-                fetchAll: paged.fetchAll, filename: "permintaan-desain" }}
-            />
-          </div>
+          {/* Fase 3 · P6 (L-04) — ResponsiveTable: tabel di layar lebar, kartu di HP 390 px (layar kelas B — dibuka
+              dari aplikasi HP MD/desainer). Pager + Unduh CSV tetap di LUAR wadah gulir. */}
+          <ResponsiveTable testId="dsr" rows={paged.items || []} rowKey="id" onRowClick={(r) => openDetail(r.id)}
+            columns={[
+              { key: "number", header: "Nomor", mobile: "title", render: (r) => <span className="font-semibold text-[#1C1C1E]">{r.number}</span> },
+              { key: "brief", header: "Brief", mobile: "subtitle", render: (r) => <span className="line-clamp-1 text-[#3C3C43]">{r.brief}</span> },
+              { key: "designer", header: "Desainer", priority: 1, value: (r) => actorLabel(r.assigned_name) },
+              { key: "due", header: "Tenggat", priority: 2, render: (r) => (r.due_date
+                ? <span className={r.is_overdue ? "font-semibold text-[#A8221A]" : ""}>{formatDateId(r.due_date, "dd MMM yyyy")}</span> : "—") },
+              { key: "status", header: "Status", mobile: "badge", render: (r) => <span className={`status-pill ${DSR_STATUS_CLASS[r.status] || "pill-muted"}`}>{r.status_label}</span> },
+              { key: "revision", header: "Ronde", priority: 3, render: (r) => <RevisionBadge count={r.revision_count} testId={`dsr-row-revision-${r.id}`} /> },
+            ]}
+            actions={(r) => <button type="button" data-testid={`dsr-detail-${r.id}`} className="link-button" onClick={() => openDetail(r.id)}>Detail</button>}
+            footer={(
+              <div className="mt-2">
+                <PaginationBar
+                  page={paged.page} pageSize={paged.pageSize} total={paged.total}
+                  hasMore={paged.hasMore} loading={paged.loading}
+                  onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
+                  testId="dsr-pager" label="permintaan"
+                  exportConfig={{ columns: CSV_COLUMNS, rows: paged.items,
+                    fetchAll: paged.fetchAll, filename: "permintaan-desain" }}
+                />
+              </div>
+            )} />
         </div>
       )}
 

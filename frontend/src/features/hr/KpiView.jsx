@@ -186,36 +186,36 @@ export default function KpiView({ currentUser, selectedEntity }) {
       </section>
 
       {/* Modal create/edit — G5-35: FormModal standar (× , deskripsi, kaki) & judul "Ubah KPI" (dulu `.modal-card`
-          polos & "Edit KPI"). */}
+          polos & "Edit KPI"). Fase 3 · P6 (L-03): label membungkus isiannya (crawl: "isian tanpa label"). */}
       <FormModal open={open} onClose={() => { if (!busy) setOpen(false); }} title={editing ? "Ubah KPI" : "Tambah KPI"}
         subtitle="KPI manual per karyawan per bulan; skor bisa dihitung otomatis dari target & aktual." icon={Target} size="sm"
         testId="kpi-modal" onSubmit={save} submitLabel={editing ? "Simpan Perubahan" : "Simpan KPI"} submitTestId="kpi-form-submit"
         busy={busy} error={fErr}>
             <div className="grid gap-2.5">
               {!editing && (
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Karyawan *</label>
-                  <KNSelect data-testid="kpi-form-employee" value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} options={activeEmployees(employees).map((e) => ({ value: e.id, label: e.name }))} className="field" placeholder="Pilih karyawan aktif" searchable /></div>
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Karyawan *</span>
+                  <KNSelect data-testid="kpi-form-employee" value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} options={activeEmployees(employees).map((e) => ({ value: e.id, label: e.name }))} className="field" placeholder="Pilih karyawan aktif" searchable /></label>
               )}
               {editing && <p className="text-[12px] text-[#6B6B73]">Karyawan: <b>{editing.employee_name}</b></p>}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Periode *</label>
-                  <KNSelect data-testid="kpi-form-period" value={form.period} onValueChange={(v) => setForm({ ...form, period: v })} options={periodOpts} className="field" /></div>
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Bobot</label>
-                  <input data-testid="kpi-form-weight" type="number" step="0.5" min="0" className="form-input" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} /></div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Periode *</span>
+                  <KNSelect data-testid="kpi-form-period" value={form.period} onValueChange={(v) => setForm({ ...form, period: v })} options={periodOpts} className="field" /></label>
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Bobot</span>
+                  <input data-testid="kpi-form-weight" type="number" step="0.5" min="0" className="form-input" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} /></label>
               </div>
-              <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Metrik *</label>
-                <input data-testid="kpi-form-metric" className="form-input" value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} placeholder="mis. Jumlah Desain Baru" /></div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Target</label>
-                  <input data-testid="kpi-form-target" type="number" step="any" className="form-input" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} /></div>
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Aktual</label>
-                  <input data-testid="kpi-form-actual" type="number" step="any" className="form-input" value={form.actual} onChange={(e) => setForm({ ...form, actual: e.target.value })} /></div>
-                <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Skor (opsional)</label>
-                  <input data-testid="kpi-form-score" type="number" step="any" className="form-input" value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} placeholder="auto" /></div>
+              <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Metrik *</span>
+                <input data-testid="kpi-form-metric" className="form-input" value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} placeholder="mis. Jumlah Desain Baru" /></label>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Target</span>
+                  <input data-testid="kpi-form-target" type="number" step="any" className="form-input" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} /></label>
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Aktual</span>
+                  <input data-testid="kpi-form-actual" type="number" step="any" className="form-input" value={form.actual} onChange={(e) => setForm({ ...form, actual: e.target.value })} /></label>
+                <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Skor (opsional)</span>
+                  <input data-testid="kpi-form-score" type="number" step="any" className="form-input" value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} placeholder="auto" /></label>
               </div>
               <p className="text-[10.5px] text-[#9A9BA3]">Kosongkan skor untuk dihitung otomatis: skor = capaian ÷ target × 100, maksimal 150.</p>
-              <div className="grid gap-1"><label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan</label>
-                <textarea data-testid="kpi-form-note" className="form-input" rows="2" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Opsional" /></div>
+              <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan</span>
+                <textarea data-testid="kpi-form-note" className="form-input" rows="2" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Opsional" /></label>
             </div>
       </FormModal>
 

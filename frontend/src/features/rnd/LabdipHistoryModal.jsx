@@ -2,13 +2,16 @@
  * LabdipHistoryModal (MD-06) — riwayat labdip per WARNA pustaka / BARANG lintas
  * permintaan: tanggal butuh per putaran, hasil, skor, mitra — klik baris membuka
  * rincian putaran (deep-link `openRnd`).
+ *
+ * Fase 3 · P6 (L-03) — cangkang kartu pop-up buatan sendiri → `DetailModal` baku (layar penuh di HP, Esc &
+ * klik latar lewat tumpukan lapisan). Tabel bergulir ke samping DI DALAM pop-up (lebar minimum 640 px).
  */
 import { useEffect, useState } from "react";
 import { CalendarClock, ExternalLink, History, X } from "lucide-react";
 import { labdipHistory } from "./rndApi";
 import { errMsg, ROUND_RESULT_META, SAMPLE_STATUS_META } from "./rndMeta";
 import { openRnd } from "./rndDeepLink";
-import { overlayDismiss } from "../../utils/overlayDismiss";
+import DetailModal from "../../components/DetailModal";
 import { formatDate } from "../../utils/formatters";
 
 export default function LabdipHistoryModal({ colorId = "", productId = "", label = "", entityId, onClose }) {
@@ -29,14 +32,13 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
   const go = (r) => { openRnd({ view: "rnd-samples", sampleId: r.sample_id, roundId: r.round_id }); onClose?.(); };
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 170 }} data-testid="labdip-history-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card" style={{ maxWidth: 820 }} onClick={(e) => e.stopPropagation()}>
+    <DetailModal framed showClose={false} size="lg" onClose={onClose} label="Riwayat Labdip" testId="labdip-history-modal">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="modal-title flex items-center gap-2"><History size={15} className="text-[#0058CC]" /> Riwayat Labdip</p>
-            <p className="modal-subtitle" data-testid="labdip-history-label">{label || "—"}</p>
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-[14px] font-bold text-[#1C1C1E]"><History size={15} className="text-[#0058CC]" /> Riwayat Labdip</p>
+            <p className="text-[11.5px] text-[#6B6B73]" data-testid="labdip-history-label">{label || "—"}</p>
           </div>
-          <button className="icon-button" onClick={onClose} data-testid="labdip-history-close"><X size={16} /></button>
+          <button type="button" className="icon-button" aria-label="Tutup" onClick={onClose} data-testid="labdip-history-close"><X size={16} /></button>
         </div>
         {err && <div className="notice-bar danger mt-2" data-testid="labdip-history-error"><span>{err}</span></div>}
         {data && (
@@ -49,7 +51,8 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
             <Kpi label="Skor terbaik" value={s.best_score ?? "—"} />
           </div>
         )}
-        <div className="mt-3 max-h-[52vh] overflow-y-auto rounded-md border border-[#EFF0F2]">
+        <div className="mt-3 max-h-[52vh] overflow-auto rounded-md border border-[#EFF0F2]">
+          <div className="min-w-[640px]">
           <div className="grid grid-cols-[1.3fr_1fr_60px_110px_110px_90px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
             <span>Permintaan</span><span>Mitra</span><span>Ronde</span><span>Tgl butuh</span><span>Diterima</span><span className="text-right">Hasil</span>
           </div>
@@ -96,9 +99,9 @@ export default function LabdipHistoryModal({ colorId = "", productId = "", label
               <span className="text-right text-[10.5px] font-semibold text-[#6B6B73]">{SAMPLE_STATUS_META[w.sample_status]?.label || "Belum ada putaran"}</span>
             </button>
           ))}
+          </div>
         </div>
-      </div>
-    </div>
+    </DetailModal>
   );
 }
 

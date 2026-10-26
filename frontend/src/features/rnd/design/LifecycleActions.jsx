@@ -1,9 +1,10 @@
 /** LifecycleActions — tombol aksi sesuai status & peran (desainer vs penilai) + dialog catatan/nilai/ACC/hold.
- *  Nilai HANYA diberikan sekali, di dialog ACC (keputusan pemilik 2026-09). */
+ *  Nilai HANYA diberikan sekali, di dialog ACC (keputusan pemilik 2026-09).
+ *  Fase 3 · P6 (L-03) — dialog lapisan buatan sendiri → `FormModal` baku (Esc/latar lewat
+ *  tumpukan lapisan, layar penuh di HP, galat di kaki dialog). */
 import { useState } from "react";
-import { overlayDismiss } from "@/utils/overlayDismiss";   // INV-UI-01
-import { useEscapeClose } from "@/utils/escapeLayers";
-import { Archive, CheckCircle2, Eye, GitBranch, PackageCheck, PauseCircle, PlayCircle, Rocket, RotateCcw, Send, Undo2, X } from "lucide-react";
+import { Archive, CheckCircle2, Eye, GitBranch, PackageCheck, PauseCircle, PlayCircle, Rocket, RotateCcw, Send, Undo2 } from "lucide-react";
+import FormModal from "../../../components/FormModal";
 import { designLifecycle, designNewVersion, holdDesign, releaseDesignHold } from "../rndApi";
 import { errMsg, roundLabel } from "../rndMeta";
 import ScoreInput from "./ScoreInput";
@@ -72,7 +73,6 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
   const [dlgErr, setDlgErr] = useState("");
   const status = design.status || "draft";
   const fin = design.final || {};
-  useEscapeClose(!!dlg, () => setDlg(null), busy);
   // G5-42: "Ajukan untuk review" tidak bisa dijalankan tanpa berkas di ronde berjalan (alasan terlihat).
   const roundFiles = design.rounds?.find((r) => r.version === design.version)?.file_count
     ?? (design.files || []).filter((f) => (f.kind || "artwork") === "artwork" && (f.version || 1) === (design.version || 1)).length;
@@ -137,18 +137,19 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
         </p>
       )}
       {dlg && (
-        <div className="fixed inset-0 z-[190] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(close)} data-testid="design-action-dialog">
-          <div role="dialog" aria-modal="true" aria-label={A.label} className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#EFF0F2] bg-white px-4 py-3">
-              <div className="min-w-0">
-                <h3 className="text-[13.5px] font-bold leading-tight text-[#1C1C1E]" data-testid="design-action-title">{A.label}</h3>
-                <p className="mt-0.5 text-[11px] leading-snug text-[#6B6B73]">
-                  <span className="whitespace-nowrap font-mono font-semibold">{design.code}</span> · {roundLabel(design.version)}{DLG_DESC[dlg.action] ? ` — ${DLG_DESC[dlg.action]}` : ""}
-                </p>
-              </div>
-              <button type="button" className="icon-button flex-shrink-0" aria-label="Tutup" onClick={close} data-testid="design-action-close"><X size={14} /></button>
+        <FormModal open onClose={close} busy={busy} error={dlgErr} size="md" testId="design-action-dialog" icon={A.icon}
+          title={A.label}
+          subtitle={<><span className="whitespace-nowrap font-mono font-semibold">{design.code}</span> · {roundLabel(design.version)}{DLG_DESC[dlg.action] ? ` — ${DLG_DESC[dlg.action]}` : ""}</>}
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={close} disabled={busy}>Batal</button>
+              <button type="button" className="primary-button" onClick={run} disabled={busy || (A.needScore && score === null)} data-testid="design-action-confirm"
+                title={A.needScore && score === null ? "Pilih nilai akhir dulu" : undefined}>
+                {busy ? "Memproses…" : A.label}
+              </button>
             </div>
-            <div className="space-y-3 p-4">
+          )}>
+          <div className="space-y-3">
             <DialogHint action={dlg.action} design={design} fin={fin} />
             {dlg.action === "approve" && (
               <div>
@@ -162,29 +163,20 @@ export default function LifecycleActions({ design, canAssess, canEdit, canHold =
                 <ScoreInput value={score} onChange={setScore} minAcc={minAcc} testId="design-action-score" />
               </div>
             )}
-            <div>
-              <p className="mb-1 text-[10.5px] font-semibold text-[#6B6B73]">
+            <label className="block">
+              <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">
                 {dlg.action === "new_version" ? "Apa yang berubah pada versi ini? *"
                   : dlg.action === "request_revision" ? "Catatan revisi untuk desainer *"
                     : dlg.action === "return_final" ? "Apa yang kurang pada berkas final? *"
                       : dlg.action === "archive" ? "Alasan pengarsipan *"
                         : dlg.action === "hold" ? "Alasan hold * (terlihat oleh R&D saat proofing ditolak)" : "Catatan (opsional)"}
-              </p>
+              </span>
               <textarea className="field" rows={3} value={note} onChange={(e) => setNote(e.target.value)} data-testid="design-action-note"
                 placeholder={dlg.action === "request_revision" ? "mis. warna latar terlalu gelap, repeat belum rapi"
                   : dlg.action === "hold" ? "mis. menunggu keputusan MD / bahan belum tersedia" : ""} />
-            </div>
-            {dlgErr && <p className="notice-bar danger !mb-0" role="alert" data-testid="design-action-error">{dlgErr}</p>}
-            <div className="flex justify-end gap-2">
-              <button className="secondary-button" onClick={close} disabled={busy}>Batal</button>
-              <button className="primary-button" onClick={run} disabled={busy || (A.needScore && score === null)} data-testid="design-action-confirm"
-                title={A.needScore && score === null ? "Pilih nilai akhir dulu" : undefined}>
-                {busy ? "Memproses…" : A.label}
-              </button>
-            </div>
-            </div>
+            </label>
           </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

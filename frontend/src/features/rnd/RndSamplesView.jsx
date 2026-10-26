@@ -1,54 +1,95 @@
 /**
- * RndSamplesView — **Permintaan Sample** (labdip · handfeel · proofing), dibuat SEMIRIP
- * mungkin dengan papan Permintaan Desain: kartu ringkasan dari agregat SERVER, tab
- * **Papan** (kolom per status) dan **Daftar** (tabel), penyaring jenis dari MASTER
- * `/api/rnd/sample-types`, lalu pop-up rincian bergaya studio dengan tab per jenis.
+ * RndSamplesView — layar **Sample R&D** (labdip · handfeel · proofing), dibuat SEMIRIP mungkin dengan
+ * papan Permintaan Desain: kartu ringkasan, PageTabs **Papan** (kolom per status) · **Daftar** (tabel/kartu)
+ * · **Galeri** (kartu bersampul foto bukti), chip jenis dari MASTER `/api/rnd/sample-types`, lalu pop-up
+ * rincian bergaya studio dengan tab per jenis.
  *
- * Mekanisme di server TIDAK berubah (kirim ke supplier → round → nilai → pemenang);
- * yang diperbarui hanya wajah & alur klik-nya.
+ * Fase 3 · P6 (D-24b, keputusan pemilik 26 Okt): Labdip/Handfeel/Proofing (`SampleTypeGalleryView`) bukan
+ * lagi layar sendiri — galeri per jenis = mode Galeri + chip jenis di layar ini. Id lama `rnd-labdip` dkk.
+ * menjadi alias `rnd-samples` dengan preset `{ mode: "gallery", type, purpose: "all" }` (diaktifkan P8),
+ * dibaca lewat `useViewPreset`. Aturan L-01: satu bilah tab (PageTabs) + saringan berupa chip/KNSelect.
+ *
+ * Mekanisme di server TIDAK berubah (kirim ke supplier → round → nilai → pemenang).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Beaker, Plus, RefreshCw } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import OkNotice from "../../components/OkNotice";
 import LineFilter from "../../components/LineFilter";
 import DetailModal from "../../components/DetailModal";
-import EntityBadge from "../../components/EntityBadge";
-import { formatDateId } from "../../components/KNDatePicker";
-import { RevisionBadge, RevisionFilter, sampleRevisionCount } from "../../components/RevisionProgress";
+import KNSelect from "../../components/KNSelect";
+import PageTabs from "../../components/PageTabs";
+import FilterChips from "../../components/FilterChips";
+import { REVISION_FILTER_OPTIONS } from "../../components/RevisionProgress";
+import { useAppNav } from "../../context/AppNavContext";
+import useViewPreset from "../../hooks/useViewPreset";
+import { canWriteInScope, WRITE_BLOCK_HINT } from "../../utils/writeScope";
 import { EmptyState } from "../finance/financeShared";
 import SampleFormModal from "./SampleFormModal";
 import PicQueuePanel from "./PicQueuePanel";
 import SampleDetailPanel from "./SampleDetailPanel";
-import SampleBoardCard, { TypeBadge } from "./SampleBoardCard";
+import SampleBoard from "./SampleBoard";
+import SampleListTable from "./SampleListTable";
+import SampleGalleryPanel from "./SampleGalleryPanel";
 import { listSamples, sampleTypes } from "./rndApi";
-import { errMsg, SAMPLE_BOARD_ACTIVE, SAMPLE_BOARD_ORDER, SAMPLE_STATUS_META, sampleStatusMeta } from "./rndMeta";
-import { sampleTypesOf } from "./sampleTypeMeta";
+import { cleanRndNote, errMsg, SAMPLE_BOARD_ORDER, SAMPLE_STATUS_META } from "./rndMeta";
+import { typeLabel, typeMeta } from "./sampleTypeMeta";
+import {
+  filterSamples, galleryKpis, LEGACY_TYPE_VIEW, PURPOSE_OPTIONS, purposeParam, SAMPLE_MODES, statusCounts,
+} from "./sampleViewUtils";
 import { roleIs } from "../../config/roles";
 
-const DOT = { "pill-muted": "bg-[#B4B4BB]", "pill-info": "bg-[#0058CC]", "pill-warning": "bg-[#E08A00]", "pill-success": "bg-[#1A7A3A]", "pill-danger": "bg-[#C62828]" };
+const TITLE = { revalidation: "Uji Ulang SKU", new_development: "R&D Produk Baru" };
+const STATUS_KEYS = [...SAMPLE_BOARD_ORDER, "cancelled"];
+const MODE_KEYS = SAMPLE_MODES.map((m) => m.key);
+const PURPOSE_KEYS = PURPOSE_OPTIONS.map((p) => p.key);
 
-export default function RndSamplesView({ currentUser, selectedEntity, focus, onFocusConsumed, purpose = "" }) {
+export default function RndSamplesView({ currentUser, selectedEntity, focus, onFocusConsumed, purpose = "",
+  view = "", initialMode = "board", initialType = "" }) {
+  // Preset navigasi (alias `rnd-labdip` → `rnd-samples` {mode:"gallery", type:"labdip", purpose:"all"}).
+  const presetView = view || (purpose === "revalidation" ? "rnd-revalidation" : "rnd-samples");
+  const preset = useViewPreset(presetView, (p) => applyPreset(p));
+  const [mode, setMode] = useState(() => (MODE_KEYS.includes(preset?.mode) ? preset.mode : initialMode));
+  const [type, setType] = useState(() => (preset?.type !== undefined ? preset.type || "" : initialType));
+  const [galleryPurpose, setGalleryPurpose] = useState(() => (PURPOSE_KEYS.includes(preset?.purpose) ? preset.purpose : "all"));
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({});
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("board");
+  const [okMsg, setOkMsg] = useState("");
   const [q, setQ] = useState("");
-  const [type, setType] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [minRevision, setMinRevision] = useState("");
   const [lineFilter, setLineFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [openId, setOpenId] = useState("");
+  const [openType, setOpenType] = useState("");
   const [focusRoundId, setFocusRoundId] = useState("");
   const [prefill, setPrefill] = useState(null);
   const [pendingNumber, setPendingNumber] = useState("");
   const [queueKey, setQueueKey] = useState(0);
 
+  function applyPreset(p) {
+    if (MODE_KEYS.includes(p?.mode)) setMode(p.mode);
+    if (p?.type !== undefined) setType(p.type || "");
+    if (PURPOSE_KEYS.includes(p?.purpose)) setGalleryPurpose(p.purpose);
+  }
+
   const role = currentUser?.role;
   const canCreate = roleIs(role, ["admin", "manager", "sales", "md"]);
   const canPic = roleIs(role, ["admin", "manager", "md"]);
+  // UAT 24 Okt (audit UI tahap 2) — G5-63: mode "Semua badan usaha" hanya-lihat → tombol buat nonaktif.
+  const scopeWritable = canWriteInScope(selectedEntity);
+  const gallery = mode === "gallery";
+  const serverPurpose = purposeParam(mode, purpose, galleryPurpose);
+
+  // `hidden_views` peran kustom terhadap id lama (`rnd-labdip` dkk.) menyembunyikan chip jenisnya (§1.1.6).
+  // Di luar AppNavProvider (`role` kosong) tidak ada gerbang — server tetap penjaga data.
+  const nav = useAppNav();
+  const typeAllowed = useCallback((code) => !nav.role || !LEGACY_TYPE_VIEW[code] || nav.canOpen(LEGACY_TYPE_VIEW[code]),
+    [nav]);
+  useEffect(() => { if (type && !typeAllowed(type)) setType(""); }, [type, typeAllowed]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,7 +98,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       if (type) params.sample_type = type;
       if (lineFilter) params.line = lineFilter;
-      if (purpose) params.purpose = purpose;   // UAT 24 Okt (P4.1) — dua pintu: produk baru / uji ulang
+      if (serverPurpose) params.purpose = serverPurpose;   // UAT 24 Okt (P4.1) — dua pintu: produk baru / uji ulang
       const res = await listSamples(params);
       setRows(res?.items || []);
       setStats(res?.stats || {});
@@ -66,7 +107,7 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
     } catch (e) {
       setError(errMsg(e, "Gagal memuat permintaan sample."));
     } finally { setLoading(false); }
-  }, [selectedEntity, type, lineFilter, purpose]);
+  }, [selectedEntity, type, lineFilter, serverPurpose]);
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
@@ -103,35 +144,42 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
     if (hit) { setOpenId(hit.id); setPendingNumber(""); }
   }, [pendingNumber, rows]);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const minRev = Number(minRevision) || 0;
-    return rows.filter((r) => {
-      if (statusFilter && r.status !== statusFilter) return false;
-      if (minRev && sampleRevisionCount(r) < minRev) return false;
-      if (!term) return true;
-      return [r.number, r.title, r.spec_number, r.color_target?.name, r.design_code, r.so_number,
-        ...(r.participants || []).map((p) => p.supplier_name)]
-        .some((v) => (v || "").toLowerCase().includes(term));
-    });
-  }, [rows, q, minRevision, statusFilter]);
+  const filtered = useMemo(() => filterSamples(rows, { status: statusFilter, minRevision, q, gallery }),
+    [rows, statusFilter, minRevision, q, gallery]);
+  const counts = useMemo(() => statusCounts(rows, { gallery }), [rows, gallery]);
+  const kpi = gallery ? galleryKpis(rows, type) : stats;
 
-  const grouped = useMemo(() => {
-    const out = {};
-    SAMPLE_BOARD_ORDER.forEach((s) => { out[s] = []; });
-    filtered.forEach((r) => { (out[r.status] = out[r.status] || []).push(r); });
-    return out;
-  }, [filtered]);
+  const typeLbl = type ? typeLabel(type, types).split(" (")[0] : "";
+  const meta = type ? typeMeta(type, types) : {};
+  const typeOptions = [{ key: "", label: "Semua jenis", testId: "rnd-samples-filter-all" },
+    ...types.filter((t) => typeAllowed(t.value)).map((t) => ({ key: t.value, label: t.label.split(" (")[0], testId: `rnd-samples-filter-${t.value}` }))];
+  const statusOptions = [{ key: "", label: "Semua", count: counts[""] || 0, testId: "rnd-samples-chip-all" },
+    ...STATUS_KEYS.filter((s) => !gallery || s !== "cancelled" || counts.cancelled)
+      .map((s) => ({ key: s, label: SAMPLE_STATUS_META[s].label, count: counts[s] || 0, testId: `rnd-samples-chip-${s}` }))];
+  const closeDetail = () => { setOpenId(""); setOpenType(""); setFocusRoundId(""); };
+  const openSample = (id, code = "") => { setOpenId(id); setOpenType(code); };
+  const resetFilters = () => { setStatusFilter(""); setMinRevision(""); setQ(""); };
+  const createLabel = purpose === "revalidation" ? "Buat Uji Ulang" : "Buat Permintaan";
+  const hasFilter = Boolean(statusFilter || minRevision || q.trim());
 
-  const typeChips = [{ value: "", label: "Semua jenis" }, ...types.map((t) => ({ value: t.value, label: t.label.split(" (")[0] }))];
-  const statusChips = [{ key: "", label: "Semua" }, ...SAMPLE_BOARD_ORDER.map((s) => ({ key: s, label: SAMPLE_STATUS_META[s].label }))];
-  const closeDetail = () => { setOpenId(""); setFocusRoundId(""); };
-  const offBoard = filtered.filter((r) => !SAMPLE_BOARD_ACTIVE.includes(r.status) && r.status !== statusFilter);
-  const offBoardText = Object.entries(offBoard.reduce((a, r) => ({ ...a, [r.status]: (a[r.status] || 0) + 1 }), {}))
-    .map(([st, n]) => `${(SAMPLE_STATUS_META[st] || { label: st }).label}: ${n}`).join(", ");
+  const emptyNode = minRevision && !statusFilter && !q.trim() ? (
+    <EmptyState icon={Beaker} testId="rnd-samples-empty" title={`Tidak ada sample dengan revisi ≥ ${minRevision}`}
+      hint={"Tidak ada yang tersendat di revisi berulang. Pilih \"Semua ronde\" untuk melihat seluruhnya."} />
+  ) : hasFilter ? (
+    <EmptyState icon={Beaker} testId="rnd-samples-empty" title="Tidak ada permintaan yang cocok dengan saringan"
+      hint={<button type="button" className="link-button" data-testid="rnd-samples-clear" onClick={resetFilters}>Hapus saringan</button>} />
+  ) : (
+    <EmptyState icon={Beaker} testId="rnd-samples-empty"
+      title={typeLbl ? `Belum ada sample ${typeLbl.toLowerCase()}` : purpose === "revalidation" ? "Belum ada uji ulang SKU" : "Belum ada permintaan sample"}
+      hint={!canCreate ? "Permintaan sample badan usaha ini akan muncul di sini."
+        : purpose === "revalidation" && !gallery
+          ? "Uji ulang SKU aktif ke supplier yang berkontrak (atau pernah PO) — klik Buat Uji Ulang."
+          : typeLbl ? `Klik ${createLabel} — jenis ${typeLbl} sudah terpilih, tinggal tulis brief & target.`
+            : "Buat permintaan labdip / handfeel / proofing, lalu kirim ke satu atau beberapa supplier untuk dibandingkan."} />
+  );
 
   return (
-    <div data-testid="rnd-samples-view" className="grid gap-3">
+    <div data-testid="rnd-samples-view" data-mode={mode} className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="rnd-samples-error" />
 
       <div className="section-card">
@@ -141,22 +189,19 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
             <Beaker size={15} className="text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">R&amp;D</span>
-              <h2 data-testid="rnd-samples-title" className="text-[13px] font-bold">{purpose === "revalidation" ? "Uji Ulang SKU" : purpose === "new_development" ? "R&D Produk Baru" : "Permintaan Sample"}</h2>
+              <h2 data-testid="rnd-samples-title" className="text-[13px] font-bold">{TITLE[purpose] || "Permintaan Sample"}</h2>
               {purpose === "new_development" && <p className="text-[11px] text-[#6B6B73]">Urutan: handfeel → labdip (dari handfeel ACC, banyak warna sekaligus) → spesifikasi/SKU · proofing di atas kain dasar yang sudah lolos.</p>}
               {purpose === "revalidation" && <p className="text-[11px] text-[#6B6B73]">Uji ulang SKU aktif ke supplier yang berkontrak (atau pernah PO) — tidak melahirkan SKU baru.</p>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="rnd-samples"
-              allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="rnd-samples-line-filter" />
-            <input data-testid="rnd-samples-search" className="field w-full sm:w-56 !py-1.5 !text-[11.5px]" value={q}
-              onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor / judul / supplier / warna…" />
-            <button className="secondary-button !py-1.5" onClick={load} data-testid="rnd-samples-refresh">
+            <button type="button" className="secondary-button !py-1.5" onClick={load} data-testid="rnd-samples-refresh">
               <RefreshCw size={12} /> Muat ulang
             </button>
             {canCreate && (
-              <button className="primary-button" data-testid="rnd-sample-create-button" onClick={() => setShowForm(true)}>
-                <Plus size={13} /> {purpose === "revalidation" ? "Buat Uji Ulang" : "Buat Permintaan"}
+              <button type="button" className="primary-button" data-testid="rnd-sample-create-button" onClick={() => setShowForm(true)}
+                disabled={!scopeWritable} title={scopeWritable ? (typeLbl ? `Jenis ${typeLbl} terkunci dari chip jenis` : undefined) : WRITE_BLOCK_HINT}>
+                <Plus size={13} /> {createLabel}
               </button>
             )}
           </div>
@@ -168,151 +213,75 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
         )}
         <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-6" data-testid="rnd-samples-stats">
           {[
-            ["Total", stats.total ?? 0, "rnd-samples-kpi-total"],
-            ["Terkirim", stats.sent ?? 0, "rnd-samples-kpi-sent"],
-            ["Dikerjakan", stats.in_progress ?? 0, "rnd-samples-kpi-in-progress"],
-            ["Ada ACC", stats.assessed ?? 0, "rnd-samples-kpi-assessed"],
-            ["Pemenang dipilih", stats.decided ?? 0, "rnd-samples-kpi-decided"],
-            ["Ronde terlambat", stats.overdue_rounds ?? 0, "rnd-samples-kpi-overdue"],
+            ["Total", kpi.total ?? 0, "rnd-samples-kpi-total"],
+            ["Terkirim", kpi.sent ?? 0, "rnd-samples-kpi-sent"],
+            ["Dikerjakan", kpi.in_progress ?? 0, "rnd-samples-kpi-in-progress"],
+            ["Ada ACC", kpi.assessed ?? 0, "rnd-samples-kpi-assessed"],
+            ["Pemenang dipilih", kpi.decided ?? 0, "rnd-samples-kpi-decided"],
+            ["Ronde terlambat", kpi.overdue_rounds ?? 0, "rnd-samples-kpi-overdue"],
           ].map(([label, value, tid]) => (
             <div key={tid} className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-              <p data-testid={tid} className={`text-[15px] font-bold tabular-nums ${tid.endsWith("overdue") && value ? "text-[#C62828]" : "text-[#1C1C1E]"}`}>{value}</p>
+              <p data-testid={tid} className={`text-[15px] font-bold tabular-nums ${tid.endsWith("overdue") && value ? "text-[#C62828]" : value ? "text-[#1C1C1E]" : "text-[#8E8E93]"}`}>{value}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {canPic && <PicQueuePanel refreshKey={queueKey} onOpen={setOpenId} />}
+      {canPic && !gallery && <PicQueuePanel refreshKey={queueKey} onOpen={setOpenId} />}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {[["board", "Papan"], ["list", "Daftar"]].map(([key, label]) => (
-          <button key={key} data-testid={`rnd-samples-tab-${key}`}
-            className={tab === key ? "primary-button !py-1.5" : "secondary-button !py-1.5"}
-            onClick={() => setTab(key)}>{label}</button>
-        ))}
-        <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
-        <div className="flex flex-wrap gap-1.5" data-testid="rnd-samples-filters">
-          {typeChips.map((f) => (
-            <button key={f.value || "all"} data-testid={`rnd-samples-filter-${f.value || "all"}`}
-              onClick={() => setType(f.value)}
-              className={`rounded-full border px-3 py-1 text-[11px] font-medium ${type === f.value
-                ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <RevisionFilter value={minRevision} onChange={setMinRevision} testId="rnd-samples-revision-filter" />
-          <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
-          <div className="tab-bar !mb-0 w-full">
-          {statusChips.map((c) => (
-            <button key={c.key || "all"} data-testid={`rnd-samples-chip-${c.key || "all"}`}
-              className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
-              onClick={() => setStatusFilter(c.key)}>{c.label}
-              {statusFilter === c.key && <span className="tab-badge">{rows.length}</span>}</button>
-          ))}
+      {/* L-01: satu bilah tab (mode tampilan); semua yang lain adalah saringan. */}
+      <div className="section-card">
+        <PageTabs testId="rnd-samples-tabs" value={mode} onChange={setMode} tabs={SAMPLE_MODES} ariaLabel="Tampilan sample" className="!mb-0 px-3" />
+        <div className="section-body space-y-2">
+          <FilterChips testId="rnd-samples-filters" ariaLabel="Jenis sampling" value={type} onChange={(v) => setType(v || "")} options={typeOptions} />
+          {gallery && (
+            <FilterChips testId="rnd-samples-purpose" ariaLabel="Tujuan sample" value={galleryPurpose} onChange={setGalleryPurpose}
+              options={PURPOSE_OPTIONS.map((p) => ({ ...p, testId: `rnd-samples-purpose-${p.key}` }))} />
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <input data-testid="rnd-samples-search" className="field w-full sm:w-64 !py-1.5 !text-[11.5px]" value={q}
+              onChange={(e) => setQ(e.target.value)} placeholder="Cari nomor / judul / supplier / warna…" />
+            <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="rnd-samples"
+              allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="rnd-samples-line-filter" />
+            <div className="w-[150px]" title="Saring dokumen yang berulang kali direvisi">
+              <KNSelect data-testid="rnd-samples-revision-filter" className="field !py-1.5" value={minRevision}
+                options={REVISION_FILTER_OPTIONS} onValueChange={setMinRevision} />
+            </div>
           </div>
+          <FilterChips testId="rnd-samples-status" ariaLabel="Status sample" value={statusFilter} onChange={(v) => setStatusFilter(v || "")} options={statusOptions} />
+          {gallery && meta.notes && <p className="text-[11px] text-[#6B6B73]" data-testid="rnd-samples-type-notes">{cleanRndNote(meta.notes)}</p>}
         </div>
       </div>
 
-      {loading ? (
+      <OkNotice message={okMsg} onDismiss={() => setOkMsg("")} testId="rnd-samples-ok" />
+
+      {gallery ? (
+        <SampleGalleryPanel rows={filtered} code={type} label={typeLbl} loading={loading} emptyNode={emptyNode} onOpen={openSample} />
+      ) : loading ? (
         <div data-testid="rnd-samples-loading" className="section-card grid gap-2 section-pad">
           {[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-md bg-[#F2F2F5]" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="section-card section-pad">
-          <EmptyState icon={Beaker} testId="rnd-samples-empty"
-            title={minRevision ? `Tidak ada sample dengan revisi ≥ ${minRevision}` : "Belum ada permintaan sample"}
-            hint={minRevision ? "Tidak ada yang tersendat di revisi berulang. Pilih \"Semua ronde\" untuk melihat seluruhnya."
-              : canCreate ? "Buat permintaan labdip / handfeel / proofing, lalu kirim ke satu atau beberapa supplier untuk dibandingkan."
-                : "Permintaan sample badan usaha ini akan muncul di sini."} />
-        </div>
-      ) : tab === "board" ? (
-        <>
-        <div data-testid="rnd-samples-board" className="grid grid-flow-col auto-cols-[minmax(215px,1fr)] gap-2 overflow-x-auto pb-1">
-          {/* 23 Okt — saringan status di luar kolom aktif (mis. "Pemenang dipilih") dulu membuat papan kosong
-              semua padahal hitungannya 2; kolom status itu kini ikut tampil saat disaring. */}
-          {(statusFilter && !SAMPLE_BOARD_ACTIVE.includes(statusFilter) ? [...SAMPLE_BOARD_ACTIVE, statusFilter] : SAMPLE_BOARD_ACTIVE).map((s) => {
-            const meta = SAMPLE_STATUS_META[s];
-            return (
-              <div key={s} data-testid={`rnd-samples-col-${s}`} className="rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] p-2">
-                <p className="mb-1.5 flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">
-                  <span className="flex items-center gap-1.5">
-                    <span className={`inline-block h-2 w-2 rounded-full ${DOT[meta.cls] || DOT["pill-muted"]}`} />
-                    {meta.label}
-                  </span>
-                  <span data-testid={`rnd-samples-col-count-${s}`} className="rounded-full bg-white px-1.5 tabular-nums">{grouped[s].length}</span>
-                </p>
-                <div className="grid gap-1.5">
-                  {grouped[s].map((r) => <SampleBoardCard key={r.id} s={r} types={types} onOpen={() => setOpenId(r.id)} />)}
-                  {grouped[s].length === 0 && <p className="px-1 py-1.5 text-[10.5px] text-[#B4B4BB]">— kosong —</p>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        {/* Audit UI 24 Okt — papan hanya memuat kolom yang masih berjalan; sample selesai dulu "hilang" tanpa keterangan. */}
-        {offBoard.length > 0 && (
-          <p data-testid="rnd-samples-offboard-note" className="text-[11px] text-[#6B6B73]">
-            {offBoard.length} permintaan sudah selesai ({offBoardText}) dan tidak tampil di papan.{" "}
-            <button type="button" className="link-button" data-testid="rnd-samples-offboard-open" onClick={() => setTab("list")}>Lihat di tab Daftar</button>
-          </p>
-        )}
-        </>
+        <div className="section-card section-pad">{emptyNode}</div>
+      ) : mode === "board" ? (
+        <SampleBoard rows={filtered} types={types} statusFilter={statusFilter} onOpen={(id) => openSample(id)} onShowList={() => setMode("list")} />
       ) : (
-        <div className="section-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11.5px]" style={{ minWidth: 760 }}>
-              <thead>
-                <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
-                  <th className="px-2 py-1.5 text-left">Nomor</th>
-                  <th className="px-2 py-1.5 text-left">Judul</th>
-                  <th className="px-2 py-1.5 text-left">Jenis</th>
-                  <th className="px-2 py-1.5 text-left">Supplier</th>
-                  <th className="px-2 py-1.5 text-left">Target</th>
-                  <th className="px-2 py-1.5 text-left">Status</th>
-                  <th className="px-2 py-1.5 text-left">Ronde</th>
-                  <th className="px-2 py-1.5 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => {
-                  const meta = sampleStatusMeta(s);
-                  const overdue = (s.rounds || []).some((r) => r.overdue);
-                  return (
-                    <tr key={s.id} data-testid={`rnd-sample-row-${s.id}`} className="border-b border-[#F2F2F5] last:border-0">
-                      <td className="px-2 py-1.5 font-semibold text-[#1C1C1E]">
-                        <button className="link-button" data-testid={`rnd-sample-open-${s.id}`} onClick={() => setOpenId(s.id)}>{s.number}</button>
-                      </td>
-                      <td className="px-2 py-1.5 text-[#3C3C43]">
-                        <span className="line-clamp-1">{s.title}</span>
-                        <span className="flex items-center gap-1 text-[10px] text-[#8E8E93]"><EntityBadge entityId={s.entity_id} />{s.spec_number || ""}{s.so_number ? ` · ${s.so_number}` : ""}</span>
-                      </td>
-                      <td className="px-2 py-1.5"><span className="flex flex-wrap gap-1" data-testid={`rnd-sample-types-${s.id}`}>{sampleTypesOf(s).map((c) => <TypeBadge key={c} code={c} types={types} />)}</span></td>
-                      <td className="px-2 py-1.5">{(s.participants || []).map((p) => p.supplier_name).join(", ") || "—"}</td>
-                      <td className={`px-2 py-1.5 ${overdue ? "font-semibold text-[#A8221A]" : ""}`}>{s.target_date ? formatDateId(s.target_date, "dd MMM yyyy") : "—"}</td>
-                      <td className="px-2 py-1.5"><span className={`status-pill ${meta.cls}`} data-testid={`rnd-sample-status-${s.id}`}>{meta.label}</span></td>
-                      <td className="px-2 py-1.5"><RevisionBadge count={sampleRevisionCount(s)} testId={`rnd-sample-revision-${s.id}`} /></td>
-                      <td className="px-2 py-1.5 text-right"><button className="link-button" data-testid={`rnd-sample-detail-${s.id}`} onClick={() => setOpenId(s.id)}>Detail</button></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SampleListTable rows={filtered} types={types} onOpen={(id) => openSample(id)} />
       )}
 
       {showForm && (
-        <SampleFormModal selectedEntity={selectedEntity} prefill={prefill} purpose={purpose}
+        <SampleFormModal selectedEntity={selectedEntity} prefill={prefill} purpose={purpose} lockType={prefill ? "" : type}
           onClose={() => { setShowForm(false); setPrefill(null); }}
-          onSaved={(created) => { setShowForm(false); setPrefill(null); load(); setOpenId(created?.id || ""); }} />
+          onSaved={(created) => {
+            setShowForm(false); setPrefill(null); load(); setOpenId(created?.id || "");
+            if (created?.number) setOkMsg(`Permintaan ${created.number} tersimpan.`);
+          }} />
       )}
       {openId && (
         <DetailModal framed onClose={closeDetail} label="Rincian sample" testId="sample-detail-modal">
-          <SampleDetailPanel key={openId} sampleId={openId} currentUser={currentUser} types={types}
-            focusRoundId={focusRoundId} onClose={closeDetail} onChanged={load} onOpenSample={setOpenId} />
+          <SampleDetailPanel key={openId} sampleId={openId} currentUser={currentUser} types={types} initialType={openType || type}
+            focusRoundId={focusRoundId} onClose={closeDetail} onChanged={load} onOpenSample={(id) => openSample(id)} />
         </DetailModal>
       )}
     </div>

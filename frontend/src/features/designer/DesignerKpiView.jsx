@@ -9,11 +9,21 @@
  *
  * Menu ini SENGAJA dipisah dari menu R&D (keputusan pemilik): R&D mengurus
  * spesifikasi & permintaan sample, Desainer mengurus orang & karyanya.
+ *
+ * Fase 3 · P6 (D-08, keputusan pemilik 26 Okt) — SATU tempat menilai tim: PageTabs **Skor & SLA** (isi lama)
+ * | **Pekerjaan DSR** (`DesignerReportPanel`, dulu tab "Rapor Desainer" di Permintaan Desain). Tautan
+ * "Rapor desainer" di Permintaan Desain membuka layar ini dengan preset `{ tab: "dsr" }`. Angka milik
+ * sendiri (desainer) ada di Profil Saya › KPI Saya.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Award, BarChart3, Download, FileSpreadsheet, FileText, Info, RefreshCw, Settings2, Users } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
+import LineFilter from "../../components/LineFilter";
+import PageTabs from "../../components/PageTabs";
+import useViewPreset from "../../hooks/useViewPreset";
+import DesignerReportPanel from "../design/DesignerReportPanel";
 import { formatCurrency } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import { openConfig } from "../settings/config/configDeepLink";
@@ -27,7 +37,17 @@ import { gradeFormula, gradeMeta, num, PERIOD_OPTIONS } from "./designerMeta";
 import { roleIs } from "../../config/roles";
 import { actorLabel, isTechActor } from "../../utils/actorLabel";
 
+const TABS = [
+  { key: "score", label: "Skor & SLA", testId: "designer-kpi-tab-score" },
+  { key: "dsr", label: "Pekerjaan DSR", testId: "designer-kpi-tab-dsr" },
+];
+const tabOf = (p) => (TABS.some((t) => t.key === p?.tab) ? p.tab : null);
+
 export default function DesignerKpiView({ currentUser, selectedEntity }) {
+  const preset = useViewPreset("designer-kpi", (p) => { const t = tabOf(p); if (t) setTab(t); });
+  const [tab, setTab] = useState(() => tabOf(preset) || "score");
+  const [dsrLine, setDsrLine] = useState("");
+  const [dsrSearch, setDsrSearch] = useState("");
   const [period, setPeriod] = useState("30d");
   const [report, setReport] = useState(null);
   const [board, setBoard] = useState(null);
@@ -161,6 +181,14 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
             <BarChart3 size={16} className="text-[#0058CC]" />
             <h2 data-testid="designer-kpi-title">KPI Desainer</h2>
           </div>
+          {tab === "dsr" ? (
+            <div className="flex flex-wrap items-center gap-2" data-testid="designer-kpi-dsr-toolbar">
+              <LineFilter value={dsrLine} onChange={setDsrLine} storageKey="designer-kpi-dsr"
+                allowed={currentUser?.allowed_line_codes} className="!py-1.5" testId="designer-kpi-dsr-line" />
+              <input data-testid="designer-kpi-dsr-search" className="field !py-1.5 !text-[11.5px] w-full sm:w-52"
+                placeholder="Cari nama desainer…" value={dsrSearch} onChange={(e) => setDsrSearch(e.target.value)} />
+            </div>
+          ) : (
           <div className="flex flex-wrap items-center gap-2">
             {/* G5-38: saringan divisi hanya tampil bila ada divisi (dulu "Semua divisi" sendirian). */}
             {divisionOpts.length > 1 && (
@@ -202,7 +230,10 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
               </button>
             )}
           </div>
+          )}
         </div>
+        <PageTabs testId="designer-kpi-tabs" value={tab} onChange={setTab} tabs={TABS} ariaLabel="KPI Desainer" className="!mb-0 px-3" />
+        {tab === "score" && (
         <div className="section-body space-y-2">
           {exportMsg && (
             <div className={`notice-bar ${exportMsg.ok ? "success" : "danger"} !mb-0 !py-1.5`}
@@ -280,8 +311,13 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
             </div>
           )}
         </div>
+        )}
       </section>
 
+      {tab === "dsr" ? (
+        <DesignerReportPanel selectedEntity={selectedEntity} line={dsrLine} search={dsrSearch} />
+      ) : (
+      <>
       {/* ── Tren per bulan: skor round sample (kiri) · nilai desain (kanan) ── */}
       <div className="grid gap-3 xl:grid-cols-2 [&>section]:min-w-0" data-testid="designer-kpi-trend-row">
         <DesignerKpiTrendChart params={params} testId="designer-kpi-trend" />
@@ -342,25 +378,31 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
       {/* ── Papan eskalasi SLA (aktif) ──────────────────────────────────── */}
       <DesignerSlaPanel board={board} filterDesigner={focusDesigner} busy={busy}
         canManage={canManage} onEscalate={escalateNow} runInfo={runInfo} />
+      </>
+      )}
 
-      {/* ── Modal: catatan evaluasi sebelum unduh Rapor PDF ─────────────── */}
-      {reportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          data-testid="designer-report-modal"
-          onClick={() => !reportBusy && setReportModal(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center gap-2">
-              <FileText size={16} className="text-[#0058CC]" />
-              <h3 className="text-[14px] font-bold text-[#1C1C1E]">
-                Rapor PDF — {reportModal.designer}
-              </h3>
-            </div>
-            <p className="mb-2 text-[11.5px] text-[#6B6B73]">
-              Tambahkan catatan evaluasi bebas (opsional). Catatan ini muncul sebagai
-              kotak <b>“Catatan Evaluasi”</b> di rapor, siap ditandatangani. Kosongkan bila
-              tidak perlu.
-            </p>
+      {/* ── Modal: catatan evaluasi sebelum unduh Rapor PDF ─────────────────
+          Fase 3 · P6 (L-03) — FormModal baku (dulu lapisan `fixed inset-0` buatan sendiri). */}
+      <FormModal open={!!reportModal} onClose={() => !reportBusy && setReportModal(null)}
+        title={`Rapor PDF — ${reportModal?.designer || ""}`} icon={FileText} size="md" testId="designer-report-modal"
+        subtitle="Catatan evaluasi opsional — muncul sebagai kotak “Catatan Evaluasi” di rapor, siap ditandatangani."
+        busy={Boolean(reportBusy)}
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" disabled={Boolean(reportBusy)}
+              data-testid="designer-report-cancel"
+              onClick={() => setReportModal(null)}>Batal</button>
+            <button type="button" className="primary-button" disabled={Boolean(reportBusy)}
+              data-testid="designer-report-download"
+              onClick={() => downloadReport(reportModal.designer, reportModal.note)}>
+              <FileText size={13} className={reportBusy ? "animate-pulse" : ""} />
+              {reportBusy ? "Menyiapkan…" : "Unduh PDF"}
+            </button>
+          </div>
+        )}>
+        {reportModal && (
+          <label className="block">
+            <span className="field-label">Catatan evaluasi (opsional)</span>
             <textarea
               data-testid="designer-report-note"
               value={reportModal.note}
@@ -369,25 +411,10 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
               onChange={(e) => setReportModal((m) => ({ ...m, note: e.target.value }))}
               placeholder={"Contoh:\nKonsistensi warna membaik. Perlu percepat setor <2 hari.\nTanda tangan: ................"}
               className="field !h-auto w-full resize-y text-[12px]" />
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-[10px] text-[#9A9BA3]">
-                {reportModal.note.length}/1200
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <button className="secondary-button" disabled={Boolean(reportBusy)}
-                data-testid="designer-report-cancel"
-                onClick={() => setReportModal(null)}>Batal</button>
-              <button className="primary-button" disabled={Boolean(reportBusy)}
-                data-testid="designer-report-download"
-                onClick={() => downloadReport(reportModal.designer, reportModal.note)}>
-                <FileText size={13} className={reportBusy ? "animate-pulse" : ""} />
-                {reportBusy ? "Menyiapkan…" : "Unduh PDF"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <span className="mt-1 block text-[10px] text-[#9A9BA3]">{reportModal.note.length}/1200</span>
+          </label>
+        )}
+      </FormModal>
     </div>
   );
 }

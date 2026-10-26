@@ -4,20 +4,30 @@
  * Sinkron dengan Design Studio: yang diminta dinyatakan dengan **Kategori Pattern** +
  * **Kategori Design** (master yang SAMA dengan form "Desain Baru"), sehingga saat desainer
  * menekan "Buat desain dari permintaan" kode desain terbentuk otomatis tanpa input ulang.
+ *
+ * Fase 3 · P6 (API untuk P7 / D-27) — form ini juga dipakai aplikasi HP (MD) menggantikan form HP ringkas:
+ *  · `meta` & `orders` OPSIONAL: bila tidak dikirim, dimuat sendiri (`/design-requests/meta`, `/sales-orders`
+ *    saat sumber = pesanan) — pemanggil HP cukup `<DesignRequestCreateModal open onClose onCreated />`;
+ *  · sumber "Permintaan pelanggan" kini punya pemilih pelanggan (`customer_id`; dulu hanya di form HP);
+ *  · `prefill` ({ source, so_id, customer_id, brief, due_date }) untuk membuka dari pesanan/pelanggan;
+ *  · `testId` (bawaan `dsr-create-modal`). Di layar ≤640 px FormModal otomatis layar penuh 1 kolom; isian
+ *    TIDAK diringkas (keputusan pemilik).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, ClipboardList, Palette, UserRound } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import PantoneFinder, { ColorChip } from "../../components/PantoneFinder";
 import ReferenceGallery from "./ReferenceGallery";
-import { apiText, createDesignRequest, uploadReference } from "./designRequestsApi";
+import axios, { API } from "../../services/apiClient";
+import { apiText, createDesignRequest, dsrMeta, uploadReference } from "./designRequestsApi";
 
 const EMPTY = {
-  source: "internal", so_id: "", category_code: "", design_category_code: "", brief: "",
+  source: "internal", so_id: "", customer_id: "", category_code: "", design_category_code: "", brief: "",
   due_date: "", assigned_to: "", line_code: "",
 };
+const listOf = (d) => (Array.isArray(d) ? d : (d?.items || []));
 
 function Section({ icon: Icon, step, title, hint, children, testId }) {
   return (
@@ -35,13 +45,36 @@ function Section({ icon: Icon, step, title, hint, children, testId }) {
   );
 }
 
-export default function DesignRequestCreateModal({ open, onClose, onCreated, meta, orders = [] }) {
-  const [form, setForm] = useState(EMPTY);
+export default function DesignRequestCreateModal({ open, onClose, onCreated, meta: metaProp, orders: ordersProp,
+  prefill = null, testId = "dsr-create-modal" }) {
+  const [form, setForm] = useState(() => ({ ...EMPTY, ...(prefill || {}) }));
+  const [ownMeta, setOwnMeta] = useState(null);
+  const [ownOrders, setOwnOrders] = useState(null);
+  const [customers, setCustomers] = useState(null);
+  const meta = metaProp || ownMeta;
+  const orders = ordersProp || ownOrders || [];
   const [colors, setColors] = useState([]);
   const [refs, setRefs] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  // Pemanggil tanpa `meta` (aplikasi HP) → muat sendiri sekali saat dibuka.
+  useEffect(() => {
+    if (!open || metaProp || ownMeta) return;
+    dsrMeta().then(setOwnMeta).catch((e) => setErr(apiText(e, "Gagal memuat pilihan form.")));
+  }, [open, metaProp, ownMeta]);
+  useEffect(() => {
+    if (!open || ordersProp || ownOrders || form.source !== "so") return;
+    axios.get(`${API}/sales-orders`, { params: { page: 1, page_size: 50 } })
+      .then((r) => setOwnOrders(listOf(r.data))).catch(() => setOwnOrders([]));
+  }, [open, ordersProp, ownOrders, form.source]);
+  useEffect(() => {
+    if (!open || customers || form.source !== "customer") return;
+    axios.get(`${API}/customers`).then((r) => setCustomers(listOf(r.data))).catch(() => setCustomers([]));
+  }, [open, customers, form.source]);
+  const customerOptions = [{ value: "", label: "— Pilih pelanggan —" }].concat(
+    (customers || []).map((c) => ({ value: c.id, label: c.name || c.code || c.id })));
 
   const designerOptions = [{ value: "", label: "— Belum ditugaskan (atasan menugaskan nanti) —" }].concat(
     (meta?.designers || []).map((d) => ({ value: d.id, label: d.has_account ? d.name : `${d.name} (belum punya akun)` })));
@@ -65,7 +98,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
       }
       if (gagal) setErr(`${gagal} gambar referensi gagal diunggah — tambahkan lagi dari rincian ${doc.number}.`);
       onCreated?.(doc);
-      setForm(EMPTY); setColors([]); setRefs([]);
+      setForm({ ...EMPTY, ...(prefill || {}) }); setColors([]); setRefs([]);
     } catch (e) {
       setErr(apiText(e, "Gagal membuat permintaan desain."));
     } finally { setBusy(false); }
@@ -76,7 +109,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
       open={open} onClose={onClose}
       title="Permintaan Desain Baru"
       subtitle="Tentukan kategori seperti di Design Studio, tulis brief, lalu (opsional) tugaskan"
-      icon={Palette} size="lg" testId="dsr-create-modal"
+      icon={Palette} size="lg" testId={testId}
       onSubmit={simpan} submitLabel={form.assigned_to ? "Ajukan & Tugaskan" : "Ajukan Permintaan"} busy={busy} error={err}
       submitDisabled={!briefOk || !catsOk || !soOk}
       submitTestId="dsr-create-submit"
@@ -87,7 +120,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
             <label className="block">
               <span className="field-label">Sumber permintaan</span>
               <KNSelect data-testid="dsr-source-select" value={form.source}
-                onValueChange={(v) => set({ source: v, so_id: v === "so" ? form.so_id : "" })}
+                onValueChange={(v) => set({ source: v, so_id: v === "so" ? form.so_id : "", customer_id: v === "customer" ? form.customer_id : "" })}
                 options={sourceOptions} className="field" placeholder="Pilih sumber" />
             </label>
             {form.source === "so" ? (
@@ -96,6 +129,13 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
                 <KNSelect data-testid="dsr-so-select" value={form.so_id}
                   onValueChange={(v) => set({ so_id: v })} options={orderOptions}
                   className="field" placeholder="Pilih pesanan" searchable />
+              </label>
+            ) : form.source === "customer" ? (
+              <label className="block">
+                <span className="field-label">Pelanggan</span>
+                <KNSelect data-testid="dsr-customer-select" value={form.customer_id}
+                  onValueChange={(v) => set({ customer_id: v })} options={customerOptions}
+                  className="field" placeholder={customers === null ? "Memuat pelanggan…" : "Pilih pelanggan"} searchable />
               </label>
             ) : (
               <p className="self-end pb-2 text-[10.5px] text-[#8E8E93]">

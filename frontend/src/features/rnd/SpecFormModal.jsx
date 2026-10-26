@@ -1,19 +1,28 @@
 /**
- * SpecFormModal (FASE F · PS-12/PS-13/PS-14) — buat spesifikasi produk R&D.
+ * SpecFormModal (FASE F · PS-12/PS-13/PS-14) — buat **dan ubah** spesifikasi produk R&D.
  *
  * Warna WAJIB dari Pustaka Warna (bukan teks bebas). "Butuh desain" TIDAK lagi
  * ditebak layar dengan `if jenis == "proofing"`: sejak FASE S ia dibaca dari baris
  * master jenis sampling (`requires_design`), sama seperti form permintaan sample —
  * jadi jenis printing yang DITAMBAH pemilik ikut menuntut desain tanpa satu baris
  * kode pun berubah.
+ *
+ * Fase 3 · P6:
+ *  · D-24c (keputusan pemilik 26 Okt) — "Ubah spesifikasi" di rincian sample dulu form kecil 6 isian
+ *    (`EditSpecModal`). Kini mode UBAH memakai form yang SAMA dengan mode buat (`spec` = dokumen yang diubah):
+ *    semua isian target kain, benang, kain dasar, warna, desain, SKU usulan, kategori, satuan, grade & catatan.
+ *    Induk produk & kombinasi varian tampil baca-saja (pemilihnya `SpecVariantFields` belum bisa memuat
+ *    pilihan yang tersimpan — lihat laporan P6 "Butuh paket lain"); `lockLinks` (dari rincian sample) mengunci
+ *    warna & desain karena ronde sample sudah berjalan di atas keduanya.
+ *  · L-03 — cangkang lapisan layar penuh buatan sendiri → `FormModal` (layar penuh di HP, Esc/latar aman).
  */
 import { useEffect, useMemo, useState } from "react";
-import { FlaskConical, Save, X } from "lucide-react";
+import { FlaskConical, Pencil, Save } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import BaseFabricPicker from "../../components/BaseFabricPicker";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { createSpec, designFileUrl, listColors, listDesigns } from "./rndApi";
-import { errMsg } from "./rndMeta";
+import { createSpec, designFileUrl, listColors, listDesigns, patchSpec } from "./rndApi";
+import { errMsg, variantText } from "./rndMeta";
 import { typeLabel, typeMeta, typeOptions } from "./sampleTypeMeta";
 import { SpecVariantFields } from "../catalog/SpecVariantFields";
 import useCatalogMasters from "../../hooks/useCatalogMasters";
@@ -42,27 +51,79 @@ const FABRIC_OPTS = [
   { value: "woven", label: "Woven (tenun)" },
   { value: "knit", label: "Knit (rajut)" },
 ];
+const YARN_KEYS = ["yarn_count", "yarn_count_system", "yarn_material", "yarn_ply", "yarn_twist", "yarn_dye_status"];
+const EMPTY = {
+  title: "", category: "", base_unit: "meter", sku_hint: "",
+  sample_type_hint: "labdip", stage: "finished", fabric_type: "woven",
+  gramasi: "", lebar: "", grade: "", epi: "", ppi: "",
+  yarn_count: "", yarn_count_system: "", yarn_material: "", yarn_ply: "", yarn_twist: "", yarn_dye_status: "",
+  color_id: "", design_id: "", target_price: "", notes: "",
+  base_fabric_template_id: "", base_fabric_name: "",
+};
+const numText = (v) => (v === null || v === undefined ? "" : String(v));
 
-export default function SpecFormModal({ selectedEntity, types = [], onClose, onSaved, initial }) {
+/** Isian form dari dokumen spesifikasi yang tersimpan (mode ubah). */
+export function specToForm(spec) {
+  if (!spec) return EMPTY;
+  const t = spec.target || {};
+  return {
+    ...EMPTY,
+    title: spec.title || "", category: spec.category || "", base_unit: spec.base_unit || "meter",
+    sku_hint: spec.sku_hint || "", sample_type_hint: spec.sample_type_hint || EMPTY.sample_type_hint,
+    stage: t.stage || "finished", fabric_type: t.fabric_type || "woven",
+    gramasi: numText(t.gramasi), lebar: numText(t.lebar), grade: t.grade || "", epi: numText(t.epi), ppi: numText(t.ppi),
+    ...Object.fromEntries(YARN_KEYS.map((k) => [k, t[k] || ""])),
+    color_id: spec.color_target?.color_id || "", design_id: spec.design_id || "",
+    target_price: numText(spec.target_price), notes: spec.notes || "",
+    base_fabric_template_id: spec.base_fabric_template_id || "", base_fabric_name: spec.base_fabric_name || "",
+  };
+}
+
+/** Isi `target` yang dikirim — sama untuk buat & ubah (benang dikosongkan bila tahap bukan benang). */
+export function targetOf(f) {
+  const isYarn = f.stage === "yarn";
+  const num = (v) => (isYarn || v === "" || v === null || v === undefined ? null : v);
+  return {
+    stage: f.stage, fabric_type: f.fabric_type, grade: f.grade,
+    gramasi: num(f.gramasi), lebar: num(f.lebar), epi: num(f.epi), ppi: num(f.ppi),
+    ...Object.fromEntries(YARN_KEYS.map((k) => [k, isYarn ? f[k] : ""])),
+  };
+}
+
+/**
+ * Badan PATCH mode ubah: hanya isian yang memang bisa diubah di sini. Warna/desain/kain dasar dikirim HANYA bila
+ * berubah — server mengambil potret baru (versi desain terakhir, kunci warna pelanggan) setiap kali dikirim.
+ */
+export function editPayload(f, spec, { colorLocked = false, designLocked = false } = {}) {
+  const body = {
+    title: f.title, category: f.category, base_unit: f.base_unit, sku_hint: f.sku_hint,
+    sample_type_hint: f.sample_type_hint, notes: f.notes, target: targetOf(f),
+  };
+  if (!colorLocked && f.color_id !== (spec?.color_target?.color_id || "")) body.color_target = f.color_id ? { color_id: f.color_id } : {};
+  if (!designLocked && f.design_id !== (spec?.design_id || "")) body.design_id = f.design_id;
+  if (f.base_fabric_template_id !== (spec?.base_fabric_template_id || "")) body.base_fabric_template_id = f.base_fabric_template_id;
+  return body;
+}
+
+export default function SpecFormModal({ selectedEntity, types = [], onClose, onSaved, initial, spec = null,
+  lockLinks = false, templateName = "" }) {
+  const editing = Boolean(spec?.id);
   const { options: enumOptions } = useDomainEnums();
-  const [catalog, setCatalog] = useState({ invalid: initial?.templateId ? "Memuat kombinasi induk…" : "" });
+  const [catalog, setCatalog] = useState({ invalid: !editing && initial?.templateId ? "Memuat kombinasi induk…" : "" });
   const [colors, setColors] = useState([]);
   const [designs, setDesigns] = useState([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [f, setF] = useState({
-    title: "", category: "", base_unit: "meter", sku_hint: "",
-    sample_type_hint: "labdip", stage: "finished", fabric_type: "woven",
-    gramasi: "", lebar: "", grade: "", epi: "", ppi: "",
-    yarn_count: "", yarn_count_system: "", yarn_material: "", yarn_ply: "", yarn_twist: "", yarn_dye_status: "",
-    color_id: "", design_id: "", target_price: "", notes: "",
-    base_fabric_template_id: "", base_fabric_name: "",
-  });
+  const [f, setF] = useState(() => (editing ? specToForm(spec) : EMPTY));
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const masters = useCatalogMasters({ current: { category: f.category, base_unit: f.base_unit } });
   const isYarn = f.stage === "yarn";   // MD-01 — isian khas benang, bukan gramasi/lebar
   const selColor = useMemo(() => colors.find((c) => c.id === f.color_id), [colors, f.color_id]);
   const selDesign = useMemo(() => designs.find((d) => d.id === f.design_id), [designs, f.design_id]);
+  // Warna dari sumbu varian (mode buat: pilihan induk; mode ubah: varian tersimpan) / dikunci rincian sample.
+  const colorFromVariant = editing ? Boolean(spec?.variant_attrs?.color) : Boolean(catalog.color_target);
+  const colorLocked = colorFromVariant || (editing && lockLinks);
+  const designLocked = editing && lockLinks;
 
   useEffect(() => {
     listColors().then((c) => setColors(Array.isArray(c) ? c : c?.items || [])).catch(() => {});
@@ -92,143 +153,144 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
   const submit = async () => {
     setErr("");
     if (!f.title.trim()) { setErr("Judul spesifikasi wajib diisi."); return; }
-    if (catalog.invalid) { setErr(catalog.invalid); return; }
+    if (!editing && catalog.invalid) { setErr(catalog.invalid); return; }
     setSaving(true);
     try {
-      const created = await createSpec({
-        title: f.title, category: f.category, base_unit: f.base_unit,
-        template_id: catalog.template_id || "", target_product_id: catalog.target_product_id || "",
-        variant_attrs: catalog.variant_attrs || {}, variant_options: catalog.variant_options || {},
-        new_axis_values: catalog.new_axis_values || {},   // UAT 24 Okt (P5.3)
-        line_code: f.line_code || "",
-        base_fabric_template_id: f.base_fabric_template_id || "",
-        sku_hint: f.sku_hint, sample_type_hint: f.sample_type_hint,
-        target: {
-          stage: f.stage, fabric_type: f.fabric_type,
-          gramasi: isYarn || f.gramasi === "" ? null : f.gramasi,
-          lebar: isYarn || f.lebar === "" ? null : f.lebar,
-          grade: f.grade, epi: isYarn || f.epi === "" ? null : f.epi, ppi: isYarn || f.ppi === "" ? null : f.ppi,
-          ...(isYarn ? { yarn_count: f.yarn_count, yarn_count_system: f.yarn_count_system,
-            yarn_material: f.yarn_material, yarn_ply: f.yarn_ply, yarn_twist: f.yarn_twist,
-            yarn_dye_status: f.yarn_dye_status } : {}),
-        },
-        color_target: catalog.color_target || (f.color_id ? { color_id: f.color_id } : {}),
-        design_id: f.design_id, target_price: f.target_price || 0, notes: f.notes,
-        entity_id: selectedEntity && selectedEntity !== "all" ? selectedEntity : "",
-      });
-      onSaved?.(created);
+      const saved = editing
+        ? await patchSpec(spec.id, editPayload(f, spec, { colorLocked, designLocked }))
+        : await createSpec({
+          title: f.title, category: f.category, base_unit: f.base_unit,
+          template_id: catalog.template_id || "", target_product_id: catalog.target_product_id || "",
+          variant_attrs: catalog.variant_attrs || {}, variant_options: catalog.variant_options || {},
+          new_axis_values: catalog.new_axis_values || {},   // UAT 24 Okt (P5.3)
+          line_code: f.line_code || "",
+          base_fabric_template_id: f.base_fabric_template_id || "",
+          sku_hint: f.sku_hint, sample_type_hint: f.sample_type_hint,
+          target: targetOf(f),
+          color_target: catalog.color_target || (f.color_id ? { color_id: f.color_id } : {}),
+          design_id: f.design_id, target_price: f.target_price || 0, notes: f.notes,
+          entity_id: selectedEntity && selectedEntity !== "all" ? selectedEntity : "",
+        });
+      onSaved?.(saved);
     } catch (e) {
-      setErr(errMsg(e, "Gagal menyimpan spesifikasi."));
+      setErr(errMsg(e, editing ? "Gagal mengubah spesifikasi." : "Gagal menyimpan spesifikasi."));
       setSaving(false);
     }
   };
 
   return (
-    <div data-testid="spec-form-modal"
-      className="fixed inset-0 z-[170] flex items-center justify-center bg-black/50 p-4"
-      {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[94vh] w-full max-w-[820px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold">
-            <FlaskConical size={16} className="text-[#0058CC]" /> Spesifikasi Produk Baru (R&D)
-          </h2>
-          <button className="icon-button" onClick={onClose} data-testid="spec-form-close">
-            <X size={18} />
+    <FormModal open onClose={onClose} size="lg" testId="spec-form-modal" icon={editing ? Pencil : FlaskConical} busy={saving} error={err}
+      title={editing ? `Ubah spesifikasi · ${spec.number || ""}` : "Spesifikasi Produk Baru (R&D)"}
+      subtitle={editing ? "Boleh diubah selama spesifikasi belum di-ACC — isian sama dengan saat membuat."
+        : "Produk baru tidak langsung bisa dijual: lahir “Disetujui”, boleh dijual setelah dirilis ke produksi."}
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" data-testid="spec-form-cancel" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" className="primary-button" onClick={submit} disabled={saving || (!editing && !!catalog.invalid)}
+            data-testid="spec-form-save">
+            <Save size={13} /> {saving ? "Menyimpan…" : editing ? "Simpan perubahan" : "Simpan Draft"}
           </button>
         </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {err && (
-            <div className="rounded-lg bg-[#FDEDE7] px-3 py-2 text-[11.5px] text-[#C0392B]"
-              data-testid="spec-form-error">{err}</div>
-          )}
+      )}>
+      <div className="space-y-3">
+        {!editing && (
           <p className="rounded-lg bg-[#F2F7FF] px-3 py-2 text-[11.5px] text-[#004099]">
             Produk baru <b>tidak langsung bisa dijual</b>. Setelah spesifikasi disetujui,
             produk lahir dengan tahap <b>“Disetujui”</b>; barang baru boleh dipesan/dijual
             setelah <b>dirilis ke produksi</b>.
           </p>
+        )}
 
-          <Field label="Judul spesifikasi *">
-            <input className="field" data-testid="spec-title-input" value={f.title}
-              onChange={(e) => set("title", e.target.value)}
-              placeholder="mis. Katun Premium 135gsm warna khusus pelanggan" />
-          </Field>
-          <SpecVariantFields initial={initial} onChange={setCatalog} onInherit={patch => setF(prev => ({ ...prev, ...patch }))} />
-          {catalog.invalid && <p data-testid="spec-combination-error" className="text-xs text-red-700">{catalog.invalid}</p>}
-
-          <div className="grid gap-2.5 md:grid-cols-3">
-            <Field label="Jenis sample yang direncanakan">
-              <KNSelect data-testid="spec-sample-type" className="field" value={f.sample_type_hint}
-                options={typeOpts} onValueChange={(v) => set("sample_type_hint", v)} />
-              {hintRequiresDesign && (
-                <span className="mt-0.5 block text-[10px] text-[#B26A00]"
-                  data-testid="spec-sample-type-needs-design">
-                  Jenis <b>{typeLabel(f.sample_type_hint, types)}</b> menuntut kode desain
-                  — pilih desain/pattern di bawah.
-                </span>
-              )}
-            </Field>
-            <Field label="Tahap bahan">
-              <KNSelect data-testid="spec-stage" className="field" value={f.stage}
-                options={STAGE_OPTS} onValueChange={(v) => set("stage", v)} />
-            </Field>
-            <Field label={isYarn ? "Untuk kain (woven/knit) *" : "Jenis kain *"}>
-              <KNSelect data-testid="spec-fabric" className="field" value={f.fabric_type}
-                options={FABRIC_OPTS} onValueChange={(v) => set("fabric_type", v)} />
-            </Field>
+        <Field label="Judul spesifikasi *">
+          <input className="field" data-testid="spec-title-input" value={f.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="mis. Katun Premium 135gsm warna khusus pelanggan" />
+        </Field>
+        {editing ? (
+          <div className="rounded-md border border-blue-100 bg-blue-50/40 p-3 text-[11.5px]" data-testid="spec-edit-variant">
+            <p><span className="text-[#6B6B73]">Induk produk:</span> <b>{templateName || (spec.template_id ? "induk terpilih" : "— produk konsep mandiri")}</b></p>
+            <p><span className="text-[#6B6B73]">Kombinasi varian:</span> <b>{variantText(spec.variant_attrs) || "—"}</b></p>
+            <p className="mt-1 text-[10.5px] text-[#6B6B73]">Induk & kombinasi varian tidak diubah dari sini — buat spesifikasi baru bila targetnya berbeda.{lockLinks ? " Warna & desain mengikuti permintaan sample ini." : ""}</p>
           </div>
+        ) : (
+          <>
+            <SpecVariantFields initial={initial} onChange={setCatalog} onInherit={(patch) => setF((prev) => ({ ...prev, ...patch }))} />
+            {catalog.invalid && <p data-testid="spec-combination-error" className="text-xs text-red-700">{catalog.invalid}</p>}
+          </>
+        )}
 
-          <div className="block">
-            <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Kain dasar dari master data (mis. kain polos woven yang menjadi bahan labdip/printing)</span>
-            <BaseFabricPicker testId="spec-base-fabric" value={f.base_fabric_template_id} valueName={f.base_fabric_name}
-              onChange={(tpl) => setF((prev) => ({
-                ...prev, base_fabric_template_id: tpl?.id || "", base_fabric_name: tpl?.name || "",
-                ...(tpl ? {
-                  fabric_type: tpl.fabric_type || prev.fabric_type,
-                  gramasi: prev.gramasi || (tpl.gramasi ? String(tpl.gramasi) : ""),
-                  lebar: prev.lebar || (tpl.lebar ? String(Math.round(Number(tpl.lebar) * 100)) : ""),
-                } : {}),
-              }))} />
-            {f.base_fabric_template_id && (
-              <span className="mt-0.5 block text-[10px] text-[#0058CC]" data-testid="spec-base-fabric-hint">
-                Jenis kain, gramasi & lebar yang masih kosong diisi dari kain dasar — ubah bila berbeda.
+        <div className="grid gap-2.5 md:grid-cols-3">
+          <Field label="Jenis sample yang direncanakan">
+            <KNSelect data-testid="spec-sample-type" className="field" value={f.sample_type_hint}
+              options={typeOpts} onValueChange={(v) => set("sample_type_hint", v)} />
+            {hintRequiresDesign && (
+              <span className="mt-0.5 block text-[10px] text-[#B26A00]"
+                data-testid="spec-sample-type-needs-design">
+                Jenis <b>{typeLabel(f.sample_type_hint, types)}</b> menuntut kode desain
+                — pilih desain/pattern di bawah.
               </span>
             )}
-          </div>
+          </Field>
+          <Field label="Tahap bahan">
+            <KNSelect data-testid="spec-stage" className="field" value={f.stage}
+              options={STAGE_OPTS} onValueChange={(v) => set("stage", v)} />
+          </Field>
+          <Field label={isYarn ? "Untuk kain (woven/knit) *" : "Jenis kain *"}>
+            <KNSelect data-testid="spec-fabric" className="field" value={f.fabric_type}
+              options={FABRIC_OPTS} onValueChange={(v) => set("fabric_type", v)} />
+          </Field>
+        </div>
 
-          {isYarn ? (
-            <div className="rounded-md border border-[#DCE7F7] bg-[#F7FAFF] p-2.5" data-testid="spec-yarn-fields">
-              <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Isian khas benang — bukan gramasi/lebar</p>
-              <div className="grid gap-2.5 md:grid-cols-3">
-                <Field label="Nomor benang *">
-                  <input className="field" data-testid="spec-yarn-count-input" value={f.yarn_count}
-                    onChange={(e) => set("yarn_count", e.target.value)} placeholder="30s / 150D" />
-                </Field>
-                <Field label="Sistem nomor">
-                  <KNSelect data-testid="spec-yarn-count-system" className="field" value={f.yarn_count_system}
-                    options={[{ value: "", label: "—" }, ...YARN_SYSTEM_OPTS]} onValueChange={(v) => set("yarn_count_system", v)} />
-                </Field>
-                <Field label="Bahan benang">
-                  <KNSelect data-testid="spec-yarn-material" className="field" value={f.yarn_material}
-                    options={[{ value: "", label: "—" }, ...YARN_MATERIAL_OPTS]} onValueChange={(v) => set("yarn_material", v)} />
-                </Field>
-                <Field label="Ply">
-                  <input className="field" data-testid="spec-yarn-ply-input" value={f.yarn_ply}
-                    onChange={(e) => set("yarn_ply", e.target.value)} placeholder="1 / 2" />
-                </Field>
-                <Field label="Arah puntiran">
-                  <KNSelect data-testid="spec-yarn-twist" className="field" value={f.yarn_twist}
-                    options={[{ value: "", label: "—" }, ...YARN_TWIST_OPTS]} onValueChange={(v) => set("yarn_twist", v)} />
-                </Field>
-                <Field label="Status celup">
-                  <KNSelect data-testid="spec-yarn-dye" className="field" value={f.yarn_dye_status}
-                    options={[{ value: "", label: "—" }, ...YARN_DYE_OPTS]} onValueChange={(v) => set("yarn_dye_status", v)} />
-                </Field>
-              </div>
+        <div className="block">
+          <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Kain dasar dari master data (mis. kain polos woven yang menjadi bahan labdip/printing)</span>
+          <BaseFabricPicker testId="spec-base-fabric" value={f.base_fabric_template_id} valueName={f.base_fabric_name}
+            onChange={(tpl) => setF((prev) => ({
+              ...prev, base_fabric_template_id: tpl?.id || "", base_fabric_name: tpl?.name || "",
+              ...(tpl ? {
+                fabric_type: tpl.fabric_type || prev.fabric_type,
+                gramasi: prev.gramasi || (tpl.gramasi ? String(tpl.gramasi) : ""),
+                lebar: prev.lebar || (tpl.lebar ? String(Math.round(Number(tpl.lebar) * 100)) : ""),
+              } : {}),
+            }))} />
+          {f.base_fabric_template_id && (
+            <span className="mt-0.5 block text-[10px] text-[#0058CC]" data-testid="spec-base-fabric-hint">
+              Jenis kain, gramasi & lebar yang masih kosong diisi dari kain dasar — ubah bila berbeda.
+            </span>
+          )}
+        </div>
+
+        {isYarn ? (
+          <div className="rounded-md border border-[#DCE7F7] bg-[#F7FAFF] p-2.5" data-testid="spec-yarn-fields">
+            <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Isian khas benang — bukan gramasi/lebar</p>
+            <div className="grid gap-2.5 md:grid-cols-3">
+              <Field label="Nomor benang *">
+                <input className="field" data-testid="spec-yarn-count-input" value={f.yarn_count}
+                  onChange={(e) => set("yarn_count", e.target.value)} placeholder="30s / 150D" />
+              </Field>
+              <Field label="Sistem nomor">
+                <KNSelect data-testid="spec-yarn-count-system" className="field" value={f.yarn_count_system}
+                  options={[{ value: "", label: "—" }, ...YARN_SYSTEM_OPTS]} onValueChange={(v) => set("yarn_count_system", v)} />
+              </Field>
+              <Field label="Bahan benang">
+                <KNSelect data-testid="spec-yarn-material" className="field" value={f.yarn_material}
+                  options={[{ value: "", label: "—" }, ...YARN_MATERIAL_OPTS]} onValueChange={(v) => set("yarn_material", v)} />
+              </Field>
+              <Field label="Ply">
+                <input className="field" data-testid="spec-yarn-ply-input" value={f.yarn_ply}
+                  onChange={(e) => set("yarn_ply", e.target.value)} placeholder="1 / 2" />
+              </Field>
+              <Field label="Arah puntiran">
+                <KNSelect data-testid="spec-yarn-twist" className="field" value={f.yarn_twist}
+                  options={[{ value: "", label: "—" }, ...YARN_TWIST_OPTS]} onValueChange={(v) => set("yarn_twist", v)} />
+              </Field>
+              <Field label="Status celup">
+                <KNSelect data-testid="spec-yarn-dye" className="field" value={f.yarn_dye_status}
+                  options={[{ value: "", label: "—" }, ...YARN_DYE_OPTS]} onValueChange={(v) => set("yarn_dye_status", v)} />
+              </Field>
             </div>
-          ) : (
-          <div className="grid gap-2.5 md:grid-cols-4">
+          </div>
+        ) : (
+          <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-4">
             <Field label="Gramasi (gsm)">
               <input className="field" type="number" min="0" step="any" inputMode="decimal" data-testid="spec-gramasi-input" value={f.gramasi}
                 onChange={(e) => set("gramasi", e.target.value)} placeholder="135" />
@@ -246,95 +308,89 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
                 onChange={(e) => set("ppi", e.target.value)} placeholder="58" />
             </Field>
           </div>
-          )}
+        )}
 
-          <div className="grid gap-2.5 md:grid-cols-2">
-            <Field label="Warna target (wajib dari Pustaka Warna)">
-              {/* MD-03 — kotak warna ikut tampil di daftar & ringkasan, bukan hanya kode. */}
-              <KNSelect data-testid="spec-color" className="field" value={f.color_id}
-                disabled={!!catalog.color_target}
-                options={[{ value: "", label: "— belum ditentukan —" },
-                  ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}${c.factory_name ? ` (${c.factory_name})` : ""}`,
+        <div className="grid gap-2.5 md:grid-cols-2">
+          <Field label="Warna target (wajib dari Pustaka Warna)">
+            {/* MD-03 — kotak warna ikut tampil di daftar & ringkasan, bukan hanya kode. */}
+            <KNSelect data-testid="spec-color" className="field" value={f.color_id}
+              disabled={colorLocked}
+              options={[{ value: "", label: "— belum ditentukan —" },
+                ...colors.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}${c.factory_name ? ` (${c.factory_name})` : ""}`,
+                  render: (
+                    <span className="inline-flex min-w-0 items-center gap-2" data-testid={`spec-color-swatch-${c.id}`}>
+                      <span className="h-4 w-4 shrink-0 rounded border border-[#E5E5EA]" style={{ backgroundColor: c.hex }} />
+                      <span className="truncate">{c.code} · {c.name}{c.factory_name ? <span className="text-[#9A9BA3]"> · pabrik: {c.factory_name}</span> : null}</span>
+                    </span>) }))]}
+              onValueChange={(v) => set("color_id", v)} />
+            {selColor && (
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#3C3C43]" data-testid="spec-color-preview">
+                <span className="h-8 w-8 rounded-md border border-[#E5E5EA]" style={{ backgroundColor: selColor.hex }} />
+                <span>{selColor.code} · {selColor.name} <span className="font-mono text-[#9A9BA3]">{selColor.hex}</span></span>
+              </div>
+            )}
+            {!editing && catalog.color_target && <p data-testid="spec-inherited-color" className="mt-1.5 text-xs text-[#0058CC]">Warna varian: {catalog.variant_attrs?.color || catalog.color_target.code} · {catalog.color_target.code}</p>}
+            {editing && !selColor && spec.color_target?.name && (
+              <p className="mt-1.5 text-[11px] text-[#3C3C43]" data-testid="spec-edit-color-current">Tersimpan: {spec.color_target.code} · {spec.color_target.name}</p>
+            )}
+          </Field>
+          <Field label={`Desain / pattern${hintRequiresDesign ? " (wajib untuk jenis ini)" : ""}`}>
+            <KNSelect data-testid="spec-design" className="field" value={f.design_id} disabled={designLocked}
+              options={[{ value: "", label: "— tanpa desain —" },
+                ...designs.map((d) => {
+                  const cover = (d.files || [])[0];
+                  return { value: d.id,
+                    label: `${d.code || "tanpa kode"} · ${d.title} (v${d.version || 1})`,
                     render: (
-                      <span className="inline-flex min-w-0 items-center gap-2" data-testid={`spec-color-swatch-${c.id}`}>
-                        <span className="h-4 w-4 shrink-0 rounded border border-[#E5E5EA]" style={{ backgroundColor: c.hex }} />
-                        <span className="truncate">{c.code} · {c.name}{c.factory_name ? <span className="text-[#9A9BA3]"> · pabrik: {c.factory_name}</span> : null}</span>
-                      </span>) }))]}
-                onValueChange={(v) => set("color_id", v)} />
-              {selColor && (
-                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#3C3C43]" data-testid="spec-color-preview">
-                  <span className="h-8 w-8 rounded-md border border-[#E5E5EA]" style={{ backgroundColor: selColor.hex }} />
-                  <span>{selColor.code} · {selColor.name} <span className="font-mono text-[#9A9BA3]">{selColor.hex}</span></span>
-                </div>
-              )}
-              {catalog.color_target && <p data-testid="spec-inherited-color" className="mt-1.5 text-xs text-[#0058CC]">Warna varian: {catalog.variant_attrs?.color || catalog.color_target.code} · {catalog.color_target.code}</p>}
-            </Field>
-            <Field label={`Desain / pattern${hintRequiresDesign ? " (wajib untuk jenis ini)" : ""}`}>
-              <KNSelect data-testid="spec-design" className="field" value={f.design_id}
-                options={[{ value: "", label: "— tanpa desain —" },
-                  ...designs.map((d) => {
-                    const cover = (d.files || [])[0];
-                    return { value: d.id,
-                      label: `${d.code || "tanpa kode"} · ${d.title} (v${d.version || 1})`,
-                      render: (
-                        <span className="inline-flex min-w-0 items-center gap-2" data-testid={`spec-design-thumb-${d.id}`}>
-                          {cover
-                            ? <img src={designFileUrl(d.id, cover.id)} alt="" className="h-6 w-6 shrink-0 rounded object-cover border border-[#E5E5EA]" />
-                            : <span className="h-6 w-6 shrink-0 rounded bg-[#F5F5F7] border border-[#E5E5EA]" />}
-                          <span className="truncate">{d.code || "tanpa kode"} · {d.title} (v{d.version || 1})</span>
-                        </span>) };
-                  })]}
-                onValueChange={(v) => set("design_id", v)} />
-              {selDesign && (
-                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#3C3C43]" data-testid="spec-design-preview">
-                  {(selDesign.files || [])[0]
-                    ? <img src={designFileUrl(selDesign.id, selDesign.files[0].id)} alt={selDesign.title} className="h-14 w-14 rounded-md object-cover border border-[#E5E5EA]" />
-                    : <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#F5F5F7] text-[9px] text-[#9A9BA3]">tanpa artwork</span>}
-                  <span>{selDesign.code || "tanpa kode"} · {selDesign.title} <span className="text-[#9A9BA3]">v{selDesign.version || 1}</span></span>
-                </div>
-              )}
-            </Field>
-          </div>
-
-          <div className="grid gap-2.5 md:grid-cols-4">
-            <Field label="Kode SKU usulan (huruf/angka)">
-              <input className="field" data-testid="spec-sku-input" value={f.sku_hint}
-                onChange={(e) => set("sku_hint", e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))} placeholder="KTN-PRM-135" />
-            </Field>
-            <Field label="Kategori (Master Kategori)">
-              <KNSelect data-testid="spec-category-input" className="field" searchable value={f.category}
-                options={[{ value: "", label: "— pilih kategori —" }, ...masters.categoryOptions]} onValueChange={(v) => set("category", v)} />
-            </Field>
-            <Field label="Satuan dasar (Master Satuan)">
-              <KNSelect data-testid="spec-unit-input" className="field" value={f.base_unit}
-                options={masters.unitOptions} onValueChange={(v) => set("base_unit", v)} />
-            </Field>
-            <Field label="Grade diharapkan">
-              <KNSelect data-testid="spec-grade" className="field" value={f.grade}
-                options={[{ value: "", label: "— tidak ditentukan —" }, ...enumOptions("grade")]} onValueChange={(v) => set("grade", v)} />
-            </Field>
-          </div>
-
-          {/* MD-04 — kolom target harga jual DIHAPUS dari formulir (harga jual ditetapkan di
-              daftar harga per PT / harga langganan). Data lama tetap tersimpan, hanya tak diisi di sini. */}
-          <div className="grid gap-2.5">
-            <Field label="Catatan">
-              <input className="field" data-testid="spec-notes-input" value={f.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                placeholder="Permintaan pelanggan / referensi" />
-            </Field>
-          </div>
+                      <span className="inline-flex min-w-0 items-center gap-2" data-testid={`spec-design-thumb-${d.id}`}>
+                        {cover
+                          ? <img src={designFileUrl(d.id, cover.id)} alt="" className="h-6 w-6 shrink-0 rounded object-cover border border-[#E5E5EA]" />
+                          : <span className="h-6 w-6 shrink-0 rounded bg-[#F5F5F7] border border-[#E5E5EA]" />}
+                        <span className="truncate">{d.code || "tanpa kode"} · {d.title} (v{d.version || 1})</span>
+                      </span>) };
+                })]}
+              onValueChange={(v) => set("design_id", v)} />
+            {selDesign && (
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#3C3C43]" data-testid="spec-design-preview">
+                {(selDesign.files || [])[0]
+                  ? <img src={designFileUrl(selDesign.id, selDesign.files[0].id)} alt={selDesign.title} className="h-14 w-14 rounded-md object-cover border border-[#E5E5EA]" />
+                  : <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#F5F5F7] text-[9px] text-[#9A9BA3]">tanpa artwork</span>}
+                <span>{selDesign.code || "tanpa kode"} · {selDesign.title} <span className="text-[#9A9BA3]">v{selDesign.version || 1}</span></span>
+              </div>
+            )}
+          </Field>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" data-testid="spec-form-cancel" onClick={onClose}>Batal</button>
-          <button className="primary-button" onClick={submit} disabled={saving || !!catalog.invalid}
-            data-testid="spec-form-save">
-            <Save size={13} /> {saving ? "Menyimpan…" : "Simpan Draft"}
-          </button>
+        <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-4">
+          <Field label="Kode SKU usulan (huruf/angka)">
+            <input className="field" data-testid="spec-sku-input" value={f.sku_hint}
+              onChange={(e) => set("sku_hint", e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))} placeholder="KTN-PRM-135" />
+          </Field>
+          <Field label="Kategori (Master Kategori)">
+            <KNSelect data-testid="spec-category-input" className="field" searchable value={f.category}
+              options={[{ value: "", label: "— pilih kategori —" }, ...masters.categoryOptions]} onValueChange={(v) => set("category", v)} />
+          </Field>
+          <Field label="Satuan dasar (Master Satuan)">
+            <KNSelect data-testid="spec-unit-input" className="field" value={f.base_unit}
+              options={masters.unitOptions} onValueChange={(v) => set("base_unit", v)} />
+          </Field>
+          <Field label="Grade diharapkan">
+            <KNSelect data-testid="spec-grade" className="field" value={f.grade}
+              options={[{ value: "", label: "— tidak ditentukan —" }, ...enumOptions("grade")]} onValueChange={(v) => set("grade", v)} />
+          </Field>
+        </div>
+
+        {/* MD-04 — kolom target harga jual DIHAPUS dari formulir (harga jual ditetapkan di
+            daftar harga per PT / harga langganan). Data lama tetap tersimpan, hanya tak diisi di sini. */}
+        <div className="grid gap-2.5">
+          <Field label="Catatan">
+            <input className="field" data-testid="spec-notes-input" value={f.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Permintaan pelanggan / referensi" />
+          </Field>
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }
 

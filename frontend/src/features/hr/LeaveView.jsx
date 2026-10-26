@@ -9,7 +9,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
-import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells, employeeOptions } from "./leaveUtils";
+import { LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells, employeeOptions } from "./leaveUtils";
+import LeaveRequestFields from "./LeaveRequestFields";
 import { can } from "../../config/roles";
 import { askConfirm } from "../../services/confirmService";
 import { formatDate, formatPeriod } from "../../utils/formatters";
@@ -58,20 +59,8 @@ function LeaveCreateModal({ open, onClose, employees, onSubmit }) {
             <KNSelect data-testid="leave-form-employee" value={empId} onValueChange={setEmpId} className="field" placeholder="Pilih karyawan aktif" searchable
               options={employeeOptions(employees)} />
           </div>
-          <div className="grid gap-1">
-            <label className="field-label">Tipe <span className="req">*</span></label>
-            <KNSelect data-testid="leave-form-type" value={type} onValueChange={setType} className="field"
-              options={LEAVE_TYPES.map((t) => ({ value: t.value, label: t.label + (t.deduct ? " · potong saldo" : "") }))} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="grid gap-1"><label className="field-label">Dari <span className="req">*</span></label>
-              <KNDatePicker data-testid="leave-form-from" value={from} onChange={setFrom} /></div>
-            <div className="grid gap-1"><label className="field-label">Sampai <span className="req">*</span></label>
-              <KNDatePicker data-testid="leave-form-to" value={to} onChange={setTo} min={from} /></div>
-          </div>
-          <p className="text-[11px] text-[#6B6B73]">Estimasi <b>{days}</b> hari kerja.</p>
-          <div className="grid gap-1"><label className="field-label">Alasan</label>
-            <textarea data-testid="leave-form-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opsional" /></div>
+          <LeaveRequestFields type={type} from={from} to={to} reason={reason} testPrefix="leave-form" reasonPlaceholder="Opsional"
+            onChange={(k, v) => ({ type: setType, from: setFrom, to: setTo, reason: setReason })[k](v)} />
         </div>
     </FormModal>
   );

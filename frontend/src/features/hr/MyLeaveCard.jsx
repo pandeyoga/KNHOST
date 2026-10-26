@@ -3,12 +3,15 @@ import apiErrorText from "../../utils/apiError";
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { CalendarDays, Plus, Timer } from "lucide-react";
-import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
+import PageTabs from "../../components/PageTabs";
 import { formatDate } from "../../utils/formatters";
-import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, wibToday, countWorkdays } from "./leaveUtils";
+import { LEAVE_TYPE_LABEL, REQ_STATUS, wibToday, countWorkdays } from "./leaveUtils";
+import LeaveRequestFields from "./LeaveRequestFields";
 
 // ESS — kartu Cuti & Lembur Saya (menggantikan placeholder H3 "Sisa Cuti").
+// Fase 3 · P6 (L-03) — isian cuti = komponen yang SAMA dengan Cuti & Izin (HRD) (`LeaveRequestFields`);
+// pilihan Cuti/Lembur di dalam pop-up = PageTabs baku (dulu dua tombol pil buatan sendiri).
 export function MyLeaveCard() {
   const [data, setData] = useState(null);
   const [ot, setOt] = useState(null);
@@ -125,30 +128,16 @@ export function MyLeaveCard() {
               : <button type="button" data-testid="ess-ot-submit" className="primary-button" onClick={submitOt} disabled={busy}>{busy ? "Mengirim…" : "Ajukan Lembur"}</button>}
           </div>
         )}>
-            <div className="flex items-center gap-1 mb-2">
-              <button data-testid="ess-leave-modal-tab-cuti" onClick={() => { setTab("cuti"); setErr(""); }} className={`px-3 py-1.5 text-[12px] font-semibold rounded-md ${tab === "cuti" ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>Cuti / Izin</button>
-              <button data-testid="ess-leave-modal-tab-lembur" onClick={() => { setTab("lembur"); setErr(""); }} className={`px-3 py-1.5 text-[12px] font-semibold rounded-md ${tab === "lembur" ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>Lembur</button>
-            </div>
+            <PageTabs testId="ess-leave-modal-tabs" value={tab} onChange={(t) => { setTab(t); setErr(""); }} ariaLabel="Jenis pengajuan"
+              tabs={[{ key: "cuti", label: "Cuti / Izin", testId: "ess-leave-modal-tab-cuti" }, { key: "lembur", label: "Lembur", testId: "ess-leave-modal-tab-lembur" }]} />
             {msg && <div className="notice-bar success !mb-2 !py-1.5" data-testid="ess-leave-modal-msg"><span className="text-[11.5px]">{msg}</span></div>}
 
             {tab === "cuti" ? (
-              <div className="grid gap-2.5">
-                <div className="grid gap-1"><label className="field-label">Tipe <span className="req">*</span></label>
-                  <KNSelect data-testid="ess-leave-type" value={type} onValueChange={setType} className="field"
-                    options={LEAVE_TYPES.map((t) => ({ value: t.value, label: t.label + (t.deduct ? " · potong saldo" : "") }))} /></div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1"><label className="field-label">Dari <span className="req">*</span></label>
-                    <KNDatePicker data-testid="ess-leave-from" value={from} onChange={setFrom} /></div>
-                  <div className="grid gap-1"><label className="field-label">Sampai <span className="req">*</span></label>
-                    <KNDatePicker data-testid="ess-leave-to" value={to} onChange={setTo} min={from} /></div>
-                </div>
-                <p className="text-[11px] text-[#6B6B73]">Estimasi <b>{countWorkdays(from, to)}</b> hari kerja.</p>
-                <div className="grid gap-1"><label className="field-label">Alasan (opsional)</label>
-                  <textarea data-testid="ess-leave-reason" className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="mis. acara keluarga" /></div>
-              </div>
+              <LeaveRequestFields type={type} from={from} to={to} reason={reason} testPrefix="ess-leave"
+                onChange={(k, v) => ({ type: setType, from: setFrom, to: setTo, reason: setReason })[k](v)} />
             ) : (
               <div className="grid gap-2.5">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div className="grid gap-1"><label className="field-label">Tanggal <span className="req">*</span></label>
                     <KNDatePicker data-testid="ess-ot-date" value={otDate} onChange={setOtDate} /></div>
                   <div className="grid gap-1"><label className="field-label">Jam (maks 12) <span className="req">*</span></label>

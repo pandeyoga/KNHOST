@@ -1,6 +1,10 @@
 /**
  * DesignDetailPage — halaman satu desain: stepper siklus hidup, kotak progres ronde (Pengajuan awal → Revisi N → ACC → Final),
  * aksi sesuai peran, tab Ringkasan · Ronde & Nilai · Final (warna + mockup) · Timeline · Umpan Balik · Referensi.
+ *
+ * Fase 3 · P6 (D-09) — isi unik galeri showcase lama (`DesignShowcaseModal`): kepemilikan white/customer label,
+ * klaim pelanggan, data pemakaian & tautan desain → induk kini tab **Kepemilikan & Pemakaian** di sini (desain ACC),
+ * sehingga mode Galeri dan Master membuka rincian yang sama.
  */
 import DesignImage from "./DesignImage";
 import { useCallback, useEffect, useState } from "react";
@@ -22,10 +26,12 @@ import RoundsProgress, { RoundBadge } from "./RoundsProgress";
 import { ScoreBadge } from "./ScoreInput";
 import { HoldBadge, OriginBadge, ProofingBadge } from "./DesignBadges";
 import { can, roleIs } from "../../../config/roles";
+import DesignOwnershipPanel from "../../hr/DesignOwnershipPanel";
+import { ACC_STATUSES } from "./designFilters";
 
 const TABS = [
   ["summary", "Ringkasan"], ["final", "Final: Mockup & File Asli"],
-  ["proofing", "Proofing R&D"], ["history", "Riwayat"], ["feedback", "Umpan Balik"], ["refs", "Referensi"],
+  ["proofing", "Proofing R&D"], ["ownership", "Kepemilikan & Pemakaian"], ["history", "Riwayat"], ["feedback", "Umpan Balik"], ["refs", "Referensi"],
 ];
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -185,7 +191,7 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
         {/* G5-07: tab bergulir horizontal (dulu patah 3 baris di HP) + bayangan tepi kanan sebagai penanda gulir. */}
         <div className="relative">
         <div className="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-[#EFF0F2] px-3 pt-2" data-testid="design-detail-tabs">
-          {TABS.map(([k, l]) => (
+          {TABS.filter(([k]) => k !== "ownership" || ACC_STATUSES.includes(d.status)).map(([k, l]) => (
             <button key={k} onClick={() => setTab(k)} data-testid={`design-tab-${k}`}
               className={`-mb-px shrink-0 border-b-2 px-3 py-2 text-[11.5px] font-semibold ${tab === k ? "border-[#6B219A] text-[#6B219A]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
               {l}
@@ -202,6 +208,11 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
           {tab === "summary" && <Summary d={d} canEdit={uploadOpen} canAssess={canAssess} canPaper={canPaper} onDone={done} onError={fail} />}
           {tab === "final" && <FinalPanel design={d} canEdit={canEdit} onDone={done} onError={fail} />}
           {tab === "proofing" && <ProofingPanel design={d} />}
+          {tab === "ownership" && (
+            <div data-testid="design-ownership-tab">
+              <DesignOwnershipPanel d={d} currentUser={currentUser} onChanged={() => done("")} />
+            </div>
+          )}
           {tab === "history" && <HistoryPanel design={d} />}
           {tab === "feedback" && <FeedbackThread design={d} currentUser={currentUser} canWrite={canEdit} onDone={done} onError={fail} />}
           {tab === "refs" && <FilesPanel design={d} kind="reference" canEdit={canEdit} onDone={done} onError={fail} />}

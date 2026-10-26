@@ -1,20 +1,23 @@
 /**
  * SampleSpecPanel — blok SPESIFIKASI di rincian sample (1 sample = 1 spesifikasi).
  * Ada spesifikasi → ringkasan lengkap + ubah (MD, sebelum ACC). Belum ada (data lama) → peringatan + "Lengkapi spesifikasi".
+ *
+ * Fase 3 · P6 (D-24c) — "Ubah" membuka `SpecFormModal` mode ubah (form yang SAMA dengan Spesifikasi Baru;
+ * dulu `EditSpecModal` 6 isian). Warna & desain dikunci (`lockLinks`) karena ronde sample berjalan di atasnya.
  */
 import { useEffect, useState } from "react";
 import { AlertTriangle, ClipboardList, Pencil, Save } from "lucide-react";
 import FormModal from "../../components/FormModal";
-import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
 import axios, { API } from "../../services/apiClient";
-import { listColors, listDesigns, listSpecs, patchSpec, sampleTypes as fetchTypes } from "./rndApi";
+import { listColors, listDesigns, listSpecs, sampleTypes as fetchTypes } from "./rndApi";
 import { errMsg, fabricLabel, SPEC_STATUS_META, variantText } from "./rndMeta";
-import { Field, Footer } from "./RndField";
+import { Footer } from "./RndField";
 import SampleSpecFields, { EMPTY_SPEC, buildSpecPayload, specProblems } from "./SampleSpecFields";
+import SpecFormModal from "./SpecFormModal";
 
 
-export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
+export default function SampleSpecPanel({ sample, canEdit, onChanged, types = [] }) {
   // UAT 24 Okt (audit UI tahap 2) — G5-45: satu sumber spesifikasi. Kepala rincian menyebut "dari KSC/SPEC-…" tetapi
   // kartu ini berbunyi "Belum ada spesifikasi — data lama" bila server tak menyertakan `spec`. Kini: bila nomor
   // spesifikasi tercatat, kartunya dicari lewat nomor itu; bila tetap tidak ketemu, kalimatnya jujur menyebut nomornya.
@@ -92,7 +95,10 @@ export default function SampleSpecPanel({ sample, canEdit, onChanged }) {
       )}
 
       {modal === "complete" && <CompleteSpecModal sample={sample} onClose={() => setModal("")} onDone={() => { setModal(""); onChanged?.(); }} />}
-      {modal === "edit" && <EditSpecModal spec={spec} onClose={() => setModal("")} onDone={() => { setModal(""); onChanged?.(); }} />}
+      {modal === "edit" && (
+        <SpecFormModal spec={spec} types={types} lockLinks templateName={md.template?.name || ""}
+          onClose={() => setModal("")} onSaved={() => { setModal(""); onChanged?.(); }} />
+      )}
     </div>
   );
 }
@@ -138,37 +144,6 @@ function CompleteSpecModal({ sample, onClose, onDone }) {
         <SampleSpecFields sp={sp} setSp={setSp} catalog={catalog} setCatalog={setCatalog} f={f} set={set}
           sampleTypes={sampleTypes} types={types} colors={colors} designs={designs} testPrefix="complete-spec" />
         {problems.length > 0 && <p className="text-[11px] text-[#A8221A]" data-testid="complete-spec-problems">Belum lengkap: <b>{problems.join(", ")}</b>.</p>}
-      </div>
-    </FormModal>
-  );
-}
-
-function EditSpecModal({ spec, onClose, onDone }) {
-  const t = spec.target || {};
-  const [v, setV] = useState({ fabric_type: t.fabric_type || "woven", gramasi: t.gramasi ?? "", lebar: t.lebar ?? "",
-    sku_hint: spec.sku_hint || "", target_price: spec.target_price || "", notes: spec.notes || "" });
-  const s = (k, val) => setV((p) => ({ ...p, [k]: val }));
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const save = async () => {
-    setBusy(true); setErr("");
-    try {
-      await patchSpec(spec.id, { target: { ...t, fabric_type: v.fabric_type, gramasi: v.gramasi === "" ? null : v.gramasi, lebar: v.lebar === "" ? null : v.lebar },
-        sku_hint: v.sku_hint, target_price: v.target_price || 0, notes: v.notes });
-      onDone();
-    } catch (e) { setErr(errMsg(e, "Gagal mengubah spesifikasi.")); setBusy(false); }
-  };
-  return (
-    <FormModal open onClose={onClose} size="md" testId="sample-spec-edit-modal" icon={Pencil} error={err}
-      title={`Ubah spesifikasi · ${spec.number}`} subtitle="Boleh diubah selama spesifikasi belum di-ACC. Konstruksi benang, warna, desain & induk mengikuti permintaan sample ini."
-      footer={<Footer onClose={onClose} onConfirm={save} busy={busy} icon={Save} testId="sample-spec-edit-save" confirmLabel="Simpan perubahan" />}>
-      <div className="grid gap-2.5 sm:grid-cols-2">
-        <Field label="Jenis kain *"><KNSelect data-testid="spec-edit-fabric" className="field" value={v.fabric_type} options={[{ value: "woven", label: "Woven (tenun)" }, { value: "knit", label: "Knit (rajut)" }]} onValueChange={(x) => s("fabric_type", x)} /></Field>
-        <Field label="Gramasi (gsm)"><input className="field" type="number" data-testid="spec-edit-gramasi" value={v.gramasi} onChange={(e) => s("gramasi", e.target.value)} /></Field>
-        <Field label="Lebar (cm)"><input className="field" type="number" data-testid="spec-edit-lebar" value={v.lebar} onChange={(e) => s("lebar", e.target.value)} /></Field>
-        <Field label="SKU usulan"><input className="field" data-testid="spec-edit-sku" value={v.sku_hint} onChange={(e) => s("sku_hint", e.target.value.toUpperCase())} /></Field>
-        <Field label="Target harga (Rp)"><input className="field" type="number" data-testid="spec-edit-price" value={v.target_price} onChange={(e) => s("target_price", e.target.value)} /></Field>
-        <Field label="Catatan"><input className="field" data-testid="spec-edit-notes" value={v.notes} onChange={(e) => s("notes", e.target.value)} /></Field>
       </div>
     </FormModal>
   );

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlaskConical, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
+import FilterChips from "../../components/FilterChips";
 import EntityBadge from "../../components/EntityBadge";
 import { openConfig } from "../settings/config/configDeepLink";
 import SpecFormModal from "./SpecFormModal";
@@ -151,17 +152,11 @@ export default function RndSpecsView({ currentUser, selectedEntity, focus, onFoc
             </div>
             <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="rnd-specs"
                         allowed={currentUser?.allowed_line_codes} testId="rnd-specs-line-filter" />
-            <div className="flex flex-wrap gap-1.5" data-testid="rnd-specs-filters">
-              {STATUS_FILTERS.map((f) => (
-                <button key={f.key} data-testid={`rnd-specs-filter-${f.key || "all"}`}
-                  onClick={() => setStatus(f.key)}
-                  className={`rounded-full border px-3 py-1 text-[11px] font-medium ${status === f.key
-                    ? "border-[#0058CC] bg-[#0058CC] text-white"
-                    : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            {/* Fase 3 · P6 (L-01) — saringan status = FilterChips baku (dulu pil biru buatan sendiri), berhitungan
+                dari agregat server (`stats`) supaya angka chip sama dengan kartu ringkasan. */}
+            <FilterChips testId="rnd-specs-filters" ariaLabel="Status spesifikasi" value={status} onChange={(v) => setStatus(v || "")}
+              options={STATUS_FILTERS.map((f) => ({ key: f.key, label: f.label, testId: `rnd-specs-filter-${f.key || "all"}`,
+                count: f.key ? (stats[f.key] ?? undefined) : (stats.total ?? undefined) }))} />
           </div>
         </div>
       </div>

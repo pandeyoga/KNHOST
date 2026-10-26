@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
 import { CheckCircle2, FlaskConical, Rocket, Send, X, XCircle } from "lucide-react";
-import { overlayDismiss } from "@/utils/overlayDismiss";
 import { REASON_MIN_LENGTH } from "../../services/confirmService";
 import { formatCurrency, formatQty, formatDateTime } from "../../utils/formatters";
 import { approveSpec, getSpec, rejectSpec, releaseProduct, submitSpec } from "./rndApi";
@@ -59,11 +58,11 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
   const life = lifecycleMeta(spec?.lifecycle);
 
   return (
+    // Fase 3 · P6 (L-03) — dulu panel ini memasang lapisan gelapnya sendiri DI DALAM `DetailModal` (dua lapisan,
+    // dua jalur tutup). Kini hanya kartu; lapisan, Esc & klik latar milik `DetailModal` (RndSpecsView).
     <div data-testid="spec-detail-panel"
-      className="fixed inset-0 z-[168] flex items-center justify-center bg-black/50 p-4"
-      {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[94vh] w-full max-w-[880px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}>
+      className="mx-auto flex max-h-[94vh] w-full max-w-[880px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-[15px] font-bold">

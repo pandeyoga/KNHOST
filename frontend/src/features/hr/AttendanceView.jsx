@@ -9,6 +9,7 @@ import { Clock, CalendarDays, BarChart3, Upload, CheckCircle2, Plus, FileSpreads
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
+import PageTabs from "../../components/PageTabs";
 import { OptionTabs } from "../../components/ListControls";
 import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -39,15 +40,6 @@ export const fmtMin = (m) => {
 };
 const todayStr = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
 const monthStr = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 7);
-
-function TabBtn({ id, active, onClick, icon: Icon, children }) {
-  return (
-    <button data-testid={`attendance-tab-${id}`} onClick={() => onClick(id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition ${active ? "bg-[#0058CC] text-white" : "text-[#6B6B73] hover:bg-[#F2F4F7]"}`}>
-      <Icon size={14} /> {children}
-    </button>
-  );
-}
 
 function Stat({ label, value, color }) {
   return (
@@ -184,12 +176,14 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
       <div className="section-card mb-3">
         <div className="section-head">
           <div className="flex items-center gap-2"><Clock size={16} className="text-[#0058CC]" /><h2 data-testid="attendance-title">Presensi & Kehadiran</h2></div>
-          <div className="flex items-center gap-1 bg-[#F7F8FA] rounded-lg p-1">
-            <TabBtn id="harian" active={tab === "harian"} onClick={setTab} icon={CalendarDays}>Kehadiran Harian</TabBtn>
-            <TabBtn id="rekap" active={tab === "rekap"} onClick={setTab} icon={BarChart3}>Rekap Periode</TabBtn>
-            {canManage && <TabBtn id="import" active={tab === "import"} onClick={setTab} icon={Upload}>Impor Sidik Jari</TabBtn>}
-          </div>
         </div>
+        {/* Fase 3 · P6 (L-01) — tab tingkat-2 = PageTabs baku (dulu tombol-toggle `TabBtn` buatan sendiri). */}
+        <PageTabs testId="attendance-tabs" value={tab} onChange={setTab} ariaLabel="Presensi" className="!mb-0 px-3"
+          tabs={[
+            { key: "harian", label: "Kehadiran Harian", icon: CalendarDays, testId: "attendance-tab-harian" },
+            { key: "rekap", label: "Rekap Periode", icon: BarChart3, testId: "attendance-tab-rekap" },
+            { key: "import", label: "Impor Sidik Jari", icon: Upload, testId: "attendance-tab-import", hidden: !canManage },
+          ]} />
       </div>
 
       {tab === "harian" && (
