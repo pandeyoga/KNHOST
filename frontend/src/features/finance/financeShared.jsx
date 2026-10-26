@@ -4,6 +4,7 @@
  * Konsisten dgn gaya existing (section-card, #6B219A, recharts, formatCurrency).
  */
 import { formatCurrency, formatCompactIDR, formatPct } from "../../utils/formatters";
+import { isZeroMetric } from "../../components/ListPageParts";
 
 export const FC = {
   revenue: "#1B7F4B", cogs: "#C77700", expense: "#C0392B", net: "#6B219A",
@@ -41,12 +42,16 @@ export const chartTooltip = {
   contentStyle: { fontSize: 12, borderRadius: 10, border: "1px solid #EFF0F2", boxShadow: "0 4px 14px rgba(0,0,0,.06)" },
 };
 
-/** KPI card modern: chip ikon + aksen gradien tipis. */
+/**
+ * KPI card: chip ikon + angka.
+ * Fase 3 · P4 (L-08) — garis kiri warna-warni DIHAPUS (gaya baku = kartu berbingkai seperti `MetricRow`), dan nilai
+ * nol tampil NETRAL abu (dulu "Rp 0" merah/hijau/ungu terbaca sebagai peringatan). `accent` kini hanya mewarnai ikon.
+ */
 export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A", testId }) {
+  const zero = isZeroMetric(value);
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#EFF0F2] bg-white p-3.5" data-testid={testId}>
-      <span className="absolute left-0 top-0 h-full w-1" style={{ background: accent }} />
-      <div className="flex items-start gap-3 pl-1.5">
+    <div className="rounded-xl border border-[#EFF0F2] bg-white p-3.5" data-testid={testId}>
+      <div className="flex items-start gap-3">
         {/* Audit UI 24 Okt (071–074/092 HP): nilai rupiah dulu `truncate` → "Rp 45.71…".
             Di HP ikon disembunyikan & angka boleh turun baris — tidak pernah dipotong. */}
         {Icon && (
@@ -57,7 +62,7 @@ export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A
         )}
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`}
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${zero ? "text-[#8E8E93]" : (tone || "text-[#1C1C1E]")}`}
              data-testid={testId ? `${testId}-value` : undefined}>{value}</p>
           {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 truncate" title={sub}>{sub}</p>}
         </div>

@@ -1,20 +1,24 @@
 import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import {
-  ReceiptText, Plus, RefreshCw, ArrowLeft, CheckCircle2, XCircle, Send, Printer, FileText,
-} from "lucide-react";
+import { ReceiptText, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
-import ConfirmModal from "../../components/ConfirmModal";
-import { STL_STATUS, StatusPill, fmtDate, printSettlement } from "./pettyCashShared";
+import DetailModal from "../../components/DetailModal";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { STL_STATUS, StatusPill } from "./pettyCashShared";
 import SettlementForm from "./SettlementForm";
+import SettlementDetail from "./SettlementDetail";
 import { can } from "../../config/roles";
 
 /**
  * SettlementsView — Laporan Pertanggungjawaban (LPJ) atas PD dicairkan.
  * List + detail (submit → approve[post GL] / reject) + cetak.
+ *
+ * Fase 3 · P4 (L-03/L-07) — dulu form & rincian MENGGANTI seluruh halaman; kini daftar selalu tampil, form = FormModal
+ * (SettlementForm), rincian = DetailModal framed (SettlementDetail). Daftar dulu grid buatan sendiri (lebar tetap,
+ * aksi di luar layar 390 px) → `ResponsiveTable` (tabel baku ≥641 px, kartu di HP; tombol Detail di kaki kartu).
  */
 const TABS = [
   { key: "", label: "Semua" }, { key: "draft", label: "Draf" },
@@ -75,22 +79,6 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
   const entityName = (id) => entities.find((e) => e.id === id)?.short_name || entities.find((e) => e.id === id)?.legal_name || id || "—";
   const catLabels = useMemo(() => Object.fromEntries(categories.map((c) => [c.code, c.label])), [categories]);
 
-  if (view === "create") {
-    return (
-      <SettlementForm categories={categories} selectedEntity={selectedEntity}
-        onCancel={() => setView("list")}
-        onSaved={(rec) => { flash(`${rec.number} dibuat.`); setSelected(rec); setView("detail"); load(); }} />
-    );
-  }
-
-  if (view === "detail" && selected) {
-    return (
-      <SettlementDetail stl={selected} currentUser={currentUser} entities={entities} catLabels={catLabels}
-        onBack={() => { setSelected(null); setView("list"); load(); }}
-        onChanged={(rec) => { setSelected(rec); load(); }} flash={flash} />
-    );
-  }
-
   return (
     <div data-testid="settlements-view" className="grid gap-4">
       {toast && <div className="notice-bar success" data-testid="stl-toast"><span>{toast}</span><button onClick={() => setToast("")}>×</button></div>}
@@ -123,134 +111,45 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
       </section>
 
       <section className="section-card">
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-[100px_1.3fr_110px_140px_130px_90px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            <span>Nomor</span><span>Ref PD / Divisi</span><span>Entitas</span><span className="text-right">Pengeluaran</span><span>Status</span><span className="text-right">Aksi</span>
-          </div>
-          {loading ? (
-            <div data-testid="stl-loading" className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : filtered.length === 0 ? (
-            <div data-testid="stl-empty" className="py-12 text-center text-[12px] text-[#6B6B73]"><FileText className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada pertanggungjawaban. Klik <b>LPJ Baru</b>.</p></div>
-          ) : (
-            <div className="divide-y divide-[#EFF0F2]">
-              {filtered.map((r) => (
-                <div key={r.id} data-testid={`stl-row-${r.id}`} className="grid grid-cols-[100px_1.3fr_110px_140px_130px_90px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                  <span className="text-[11.5px] font-bold text-[#0058CC]">{r.number}</span>
-                  <div className="min-w-0"><p className="text-[12px] font-semibold truncate">{r.cash_advance_number || "—"}</p><p className="text-[10.5px] text-[#9A9BA3] truncate">{r.divisi || "—"} · {r.periode || "—"}</p></div>
-                  <span className="text-[11px] truncate">{entityName(r.entity_id)}</span>
-                  <span className="text-[12px] tabular-nums text-right font-semibold">{formatCurrency(r.total_pengeluaran)}</span>
-                  <StatusPill status={r.status} map={STL_STATUS} />
-                  <div className="text-right"><button data-testid={`stl-open-${r.id}`} className="btn-secondary btn-xs" onClick={() => openDetail(r.id)}>Detail</button></div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// ─── Detail ──────────────────────────────────────────────────────────────────
-function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onChanged, flash }) {
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [reject, setReject] = useState(false);
-  const entityName = entities.find((e) => e.id === stl.entity_id)?.short_name || entities.find((e) => e.id === stl.entity_id)?.legal_name || stl.entity_id;
-
-  // Sisir lanjutan gerbang peran (2026-10-21): ajukan/setujui/tolak LPJ = cash_settlement.submit/approve/reject; bayar talangan = accounting.create.
-  const canSubmit = stl.status === "draft" && can(currentUser?.permissions, "cash_settlement", "submit");
-  const canApprove = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "approve");
-  const canReject = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "reject");
-  const canPayReimburse = can(currentUser?.permissions, "accounting", "create");
-  const sisa = Number(stl.sisa_kurang_dana) || 0;
-
-  async function act(path, body, okMsg) {
-    setBusy(true); setErr("");
-    try {
-      const res = await axios.post(`${API}/cash-advance-settlements/${stl.id}/${path}`, body || {});
-      flash(okMsg); onChanged(res.data);
-    } catch (e) { setErr(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(false); }
-  }
-
-  return (
-    <div data-testid="stl-detail" className="grid gap-4">
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2 min-w-0">
-            <button className="icon-button" onClick={onBack} aria-label="Kembali"><ArrowLeft size={15} /></button>
-            <ReceiptText size={15} className="text-[#0058CC]" />
-            <h2 data-testid="stl-detail-number">{stl.number}</h2>
-            <StatusPill status={stl.status} map={STL_STATUS} testId="stl-detail-status" />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button data-testid="stl-print" className="btn-secondary btn-xs" onClick={() => printSettlement(stl, entityName, catLabels)}><Printer size={13} /> Cetak LPJ</button>
-            {canSubmit && <button data-testid="stl-submit-btn" className="btn-primary btn-xs" onClick={() => act("submit", {}, `${stl.number} diajukan.`)} disabled={busy}><Send size={13} /> Ajukan</button>}
-            {stl.hutang_reimburse?.status === "open" && canPayReimburse && (
-              <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy}
-                onClick={() => act("pay-reimburse", { cash_type: "kas_besar" },
-                  `Kelebihan LPJ ${stl.number} dibayar ke karyawan (hutang reimburse dilunasi dari kas).`)}>
-                <CheckCircle2 size={13} /> Bayar Reimburse Rp {Number(stl.hutang_reimburse.amount || 0).toLocaleString("id-ID")}
-              </button>)}
-            {stl.hutang_reimburse?.status === "paid" && (
-              <span data-testid="stl-reimburse-paid" className="text-[11px] font-semibold text-[#15803D]">
-                Reimburse dibayar · {stl.hutang_reimburse.cash_txn_number}</span>)}
-            {(canApprove || canReject) && <>
-              {canApprove && <button data-testid="stl-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", {}, `${stl.number} disetujui & diposting ke GL.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui & Posting GL</button>}
-              {canReject && <button data-testid="stl-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>}
-            </>}
-          </div>
-        </div>
-        {err && <div className="notice-bar danger mx-3 mb-3" data-testid="stl-detail-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
-
-        <div className="section-body grid gap-4">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-[12px]">
-            <Meta k="Ref. PD" v={stl.cash_advance_number || "—"} />
-            <Meta k="Entitas" v={entityName} />
-            <Meta k="Divisi" v={stl.divisi || "—"} />
-            <Meta k="Periode" v={stl.periode || "—"} />
-            <Meta k="Dibuat oleh" v={stl.dibuat_oleh || "—"} />
-            {stl.journal_entry_number && <Meta k="Jurnal GL" v={stl.journal_entry_number} />}
-            {stl.disetujui_oleh && <Meta k="Disetujui" v={stl.disetujui_oleh} />}
-            {stl.rejected_reason && <Meta k="Alasan Tolak" v={stl.rejected_reason} danger />}
-          </div>
-
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[110px_1.5fr_1fr_130px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
-              <span>Tanggal</span><span>Uraian</span><span>Kategori</span><span className="text-right">Nominal</span>
-            </div>
-            {(stl.expense_lines || []).map((l, i) => (
-              <div key={i} className="grid grid-cols-[110px_1.5fr_1fr_130px] items-center px-3 py-2 border-t border-[#F4F5F7] text-[12px]">
-                <span>{fmtDate(l.date)}</span>
-                <span className="truncate">{l.description || "—"}</span>
-                <span className="truncate">{catLabels[l.category] || l.category}</span>
-                <span className="text-right tabular-nums font-semibold">{formatCurrency(l.amount)}</span>
-              </div>
-            ))}
-            <div className="px-3 py-2 border-t border-[#EFF0F2] bg-[#FAFBFC] grid gap-1">
-              <RowLine k="Total Pengeluaran" v={formatCurrency(stl.total_pengeluaran)} testId="stl-detail-total" />
-              <RowLine k="Dana Diterima (PD)" v={formatCurrency(stl.total_pettycash)} />
-              <RowLine k={sisa >= 0 ? "Sisa Dikembalikan" : "Kekurangan Dana"} v={formatCurrency(Math.abs(sisa))} strong tone={sisa >= 0 ? "#1A7A3A" : "#C62828"} testId="stl-detail-sisa" />
-            </div>
-          </div>
-          {stl.catatan && <p className="text-[12px] text-[#3C3C43]"><b>Catatan:</b> {stl.catatan}</p>}
-        </div>
+        {loading && rows.length === 0 ? (
+          <div data-testid="stl-loading" className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
+        ) : filtered.length === 0 ? (
+          <div data-testid="stl-empty" className="py-12 text-center text-[12px] text-[#6B6B73]"><FileText className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada pertanggungjawaban. Klik <b>LPJ Baru</b>.</p></div>
+        ) : (
+          <ResponsiveTable testId="stl-table" rows={filtered} rowKey="id" rowTestId={(r) => `stl-row-${r.id}`}
+            onRowClick={(r) => openDetail(r.id)} stickyActions
+            columns={[
+              { key: "number", header: "Nomor", mobile: "title",
+                render: (r) => <span className="text-[11.5px] font-bold text-[#0058CC] whitespace-nowrap">{r.number}</span> },
+              { key: "status", header: "Status", mobile: "badge", render: (r) => <StatusPill status={r.status} map={STL_STATUS} /> },
+              { key: "ref", header: "Ref PD / Divisi", mobile: "subtitle",
+                render: (r) => <span className="min-w-0"><span className="block text-[12px] font-semibold">{r.cash_advance_number || "—"}</span><span className="block text-[10.5px] text-[#9A9BA3]">{r.divisi || "—"} · {r.periode || "—"}</span></span> },
+              { key: "entity", header: "Entitas", priority: 2, render: (r) => entityName(r.entity_id) },
+              { key: "total", header: "Pengeluaran", align: "right", priority: 1,
+                render: (r) => <span className="tabular-nums font-semibold">{formatCurrency(r.total_pengeluaran)}</span> },
+            ]}
+            actions={(r) => <button data-testid={`stl-open-${r.id}`} className="btn-secondary btn-xs" onClick={() => openDetail(r.id)}>Detail</button>}
+          />
+        )}
       </section>
 
-      <ConfirmModal open={reject} title={`Tolak ${stl.number}`} message="Berikan alasan penolakan LPJ."
-        confirmLabel="Tolak LPJ" danger withReason reasonLabel="Alasan" reasonPlaceholder="mis. Bukti tidak lengkap"
-        onConfirm={async (reason) => { setReject(false); await act("reject", { note: reason }, `${stl.number} ditolak.`); }}
-        onCancel={() => setReject(false)} testId="stl-reject-modal" />
+      {view === "create" && (
+        <SettlementForm categories={categories} selectedEntity={selectedEntity}
+          onCancel={() => setView("list")}
+          onSaved={(rec) => { flash(`${rec.number} dibuat.`); setSelected(rec); setView("detail"); load(); }} />
+      )}
+
+      {view === "detail" && selected && (
+        <DetailModal framed size="xl" label={`Rincian ${selected.number || "LPJ"}`} testId="stl-detail-modal"
+          onClose={() => { setSelected(null); setView("list"); load(); }}>
+          <SettlementDetail stl={selected} currentUser={currentUser} entities={entities} catLabels={catLabels}
+            onChanged={(rec) => { setSelected(rec); load(); }} flash={flash} />
+        </DetailModal>
+      )}
     </div>
   );
 }
 
 function Metric({ label, value, tone, testId, money }) {
   return (<div data-testid={testId} className="metric-card"><div className="metric-icon" style={{ background: tone }}><ReceiptText size={16} className="text-[#1C1C1E]" /></div><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p><p className={`${money ? "text-[15px]" : "text-[17px]"} font-bold tabular-nums truncate`}>{value}</p></div></div>);
-}
-function Meta({ k, v, danger }) {
-  return (<div className="flex gap-2"><span className="text-[#8E8E93] w-24 shrink-0">{k}</span><span className={`font-semibold min-w-0 break-words ${danger ? "text-red-600" : ""}`}>{v}</span></div>);
-}
-function RowLine({ k, v, strong, tone, testId }) {
-  return (<div className="flex justify-between text-[12px]"><span className="text-[#3C3C43]">{k}</span><span data-testid={testId} className={`tabular-nums ${strong ? "font-bold" : "font-semibold"}`} style={tone ? { color: tone } : {}}>{v}</span></div>);
 }

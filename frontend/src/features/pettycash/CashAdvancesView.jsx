@@ -8,12 +8,16 @@ import { SearchBox } from "../../components/ListControls";
 import { CA_STATUS, StatusPill, fmtDate } from "./pettyCashShared";
 import CashAdvanceForm from "./CashAdvanceForm";
 import CashAdvanceDetail from "./CashAdvanceDetail";
+import DetailModal from "../../components/DetailModal";
 import { can } from "../../config/roles";
 
 /**
  * CashAdvancesView — Form Pengajuan Dana (PD).
  * List + metrics + filter status; buat/ubah via CashAdvanceForm; detail + workflow
  * (submit → approval berjenjang → disburse) via CashAdvanceDetail.
+ *
+ * Fase 3 · P4 (L-03) — dulu form & rincian MENGGANTI seluruh halaman (daftar hilang). Kini daftar selalu tampil;
+ * form Buat/Ubah = FormModal (di CashAdvanceForm), rincian + alur persetujuan = DetailModal framed.
  */
 const TABS = [
   { key: "", label: "Semua" },
@@ -85,29 +89,6 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
   const entityName = (id) => entities.find((e) => e.id === id)?.short_name
     || entities.find((e) => e.id === id)?.legal_name || id || "—";
 
-  if (view === "create" || view === "edit") {
-    return (
-      <CashAdvanceForm
-        record={view === "edit" ? selected : null}
-        entities={entities} selectedEntity={selectedEntity}
-        onCancel={() => setView(selected && view === "edit" ? "detail" : "list")}
-        onSaved={(rec, isEdit) => { flash(`${rec.number} ${isEdit ? "diperbarui" : "dibuat"}.`); setSelected(rec); setView("detail"); load(); }}
-      />
-    );
-  }
-
-  if (view === "detail" && selected) {
-    return (
-      <CashAdvanceDetail
-        ca={selected} currentUser={currentUser} entities={entities}
-        onBack={() => { setSelected(null); setView("list"); load(); }}
-        onEdit={(rec) => { setSelected(rec); setView("edit"); }}
-        onChanged={(rec) => { setSelected(rec); load(); }}
-        flash={flash}
-      />
-    );
-  }
-
   return (
     <div data-testid="cash-advances-view" className="grid gap-4">
       {toast && <div className="notice-bar success" data-testid="ca-toast"><span>{toast}</span><button onClick={() => setToast("")}>×</button></div>}
@@ -169,6 +150,27 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
           )}
         </div>
       </section>
+
+      {(view === "create" || view === "edit") && (
+        <CashAdvanceForm
+          record={view === "edit" ? selected : null}
+          entities={entities} selectedEntity={selectedEntity}
+          onCancel={() => setView(selected && view === "edit" ? "detail" : "list")}
+          onSaved={(rec, isEdit) => { flash(`${rec.number} ${isEdit ? "diperbarui" : "dibuat"}.`); setSelected(rec); setView("detail"); load(); }}
+        />
+      )}
+
+      {view === "detail" && selected && (
+        <DetailModal framed size="xl" label={`Rincian ${selected.number || "Pengajuan Dana"}`} testId="ca-detail-modal"
+          onClose={() => { setSelected(null); setView("list"); load(); }}>
+          <CashAdvanceDetail
+            ca={selected} currentUser={currentUser} entities={entities}
+            onEdit={(rec) => { setSelected(rec); setView("edit"); }}
+            onChanged={(rec) => { setSelected(rec); load(); }}
+            flash={flash}
+          />
+        </DetailModal>
+      )}
     </div>
   );
 }

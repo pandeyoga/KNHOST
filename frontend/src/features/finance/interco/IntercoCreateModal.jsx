@@ -4,10 +4,14 @@
  * Bawaan: mode harga `fixed_price` (harga dari kontrak internal). Bila barangnya
  * belum berharga di kontrak aktif → backend MENOLAK dengan kalimat menuntun,
  * dan user bisa beralih ke mode manual (override unit_price) tanpa kontrak.
+ *
+ * Fase 3 · P4 (L-03) — overlay `fixed inset-0` buatan sendiri → `FormModal` baku; tombol hitam "Terbitkan" →
+ * `primary-button` biru standar (satu gaya tombol di semua pop-up antar-PT). Isian tidak berubah.
  */
 import { useEffect, useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Plus, Trash2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
@@ -99,140 +103,134 @@ export default function IntercoCreateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" data-testid="interco-create-modal">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5EA]">
-          <div>
-            <h2 className="text-lg font-semibold text-[#1D1D1F]">Transaksi Antar-PT Baru</h2>
-            <p className="text-xs text-[#6E6E73] mt-0.5">Dokumen kembar akan terbit di kedua PT.</p>
-          </div>
-          <button onClick={onClose} data-testid="interco-create-close" className="p-1.5 hover:bg-[#F2F2F5] rounded-lg">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="PT Penjual" required hint="menerbitkan Pesanan Jual + Surat Jalan + Faktur internal">
-              <KNSelect value={seller} onValueChange={setSeller} options={sellerOptions} placeholder="Pilih PT penjual" data-testid="interco-create-seller" />
-            </Field>
-            <Field label="PT Pembeli" required hint="menerbitkan Pesanan Beli internal + Tagihan internal">
-              <KNSelect value={buyer} onValueChange={setBuyer} options={buyerOptions} placeholder="Pilih PT pembeli" data-testid="interco-create-buyer" />
-            </Field>
-            <Field label="Mode Harga" hint="Harga tetap: diambil dari kontrak internal yang aktif">
-              <KNSelect value={pricingMode} onValueChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
-            </Field>
-            <Field label="Mode PPN" hint="Ikut PKP: mengikuti status PKP PT penjual">
-              <KNSelect value={ppnMode} onValueChange={setPpnMode} options={PPN_MODES} data-testid="interco-create-ppn" />
-            </Field>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-[#1D1D1F]">Barang <span className="text-[#C0392B]">*</span></h3>
-              <button
-                onClick={addLine}
-                data-testid="interco-create-add-line"
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-[#E5E5EA] hover:bg-[#F2F2F5]"
-              >
-                <Plus size={12} /> Tambah baris
-              </button>
-            </div>
-            <div className="space-y-2">
-              <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]" data-testid="interco-create-line-head">
-                <span className="col-span-6">Produk</span><span className="col-span-2">Qty</span>
-                <span className="col-span-3">Harga satuan</span><span className="col-span-1" />
-              </div>
-              {items.map((it, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-start" data-testid={`interco-create-line-${i}`}>
-                  <div className="col-span-6">
-                    <KNSelect
-                      value={it.product_id}
-                      onValueChange={(v) => setItem(i, { product_id: v })}
-                      options={prodOptions}
-                      placeholder="Pilih produk"
-                    />
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={it.quantity}
-                    onChange={(e) => setItem(i, { quantity: e.target.value })}
-                    placeholder="Qty"
-                    data-testid={`interco-create-qty-${i}`}
-                    className="col-span-2 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={it.unit_price}
-                    onChange={(e) => setItem(i, { unit_price: e.target.value })}
-                    placeholder="Kosong = dari kontrak"
-                    data-testid={`interco-create-price-${i}`}
-                    className="col-span-3 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
-                  />
-                  <button
-                    onClick={() => removeLine(i)}
-                    disabled={items.length <= 1}
-                    className="col-span-1 p-2 text-[#8E8E93] hover:text-[#9B1C1C] disabled:opacity-30"
-                    data-testid={`interco-create-remove-${i}`}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 text-right text-sm text-[#6E6E73]">
-              Perkiraan subtotal: <span className="font-medium text-[#1D1D1F] tabular-nums">{formatCurrency(subtotalPreview)}</span>
-              <span className="text-xs ml-1">(final dihitung sistem)</span>
-            </div>
-          </div>
-
-          <Field label="Catatan (opsional)">
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              data-testid="interco-create-notes"
-              className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
-            />
-          </Field>
-
-          <label className="flex items-center gap-2 text-sm text-[#3C3C43] cursor-pointer">
-            <input
-              type="checkbox"
-              checked={submitNow}
-              onChange={(e) => setSubmitNow(e.target.checked)}
-              data-testid="interco-create-submit-now"
-            />
-            Langsung dikonfirmasi (post jurnal & saldo antar-PT segera bergerak)
-          </label>
-          <p className="-mt-4 pl-6 text-xs text-[#8E8E93]" data-testid="interco-create-submit-now-hint">
-            {submitNow
-              ? "Jurnal diposting saat diterbitkan."
-              : "Tidak dicentang: disimpan sebagai draf tanpa jurnal — konfirmasi nanti dari daftar transaksi."}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[#E5E5EA] bg-[#FAFAFB]">
-          <button onClick={onClose} data-testid="interco-create-cancel" className="px-4 py-2 text-sm rounded-lg text-[#3C3C43] hover:bg-[#F2F2F5]">
+    <FormModal open onClose={onClose} size="lg" icon={ArrowLeftRight} testId="interco-create-modal" busy={busy}
+      title="Transaksi Antar-PT Baru" subtitle="Dokumen kembar akan terbit di kedua PT."
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} data-testid="interco-create-cancel" className="secondary-button"
+            disabled={busy}>
             Batal
           </button>
           <button
+            type="button"
             onClick={submit}
             disabled={busy || !canSubmit}
             title={canSubmit ? undefined : "Lengkapi PT penjual, PT pembeli, dan minimal satu baris produk"}
             data-testid="interco-create-submit"
-            className="px-4 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-50"
+            className="primary-button"
           >
             {busy ? "Menerbitkan..." : "Terbitkan Transaksi"}
           </button>
         </div>
+      )}>
+      <div className="space-y-5">
+        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="PT Penjual" required hint="menerbitkan Pesanan Jual + Surat Jalan + Faktur internal">
+            <KNSelect value={seller} onValueChange={setSeller} options={sellerOptions} placeholder="Pilih PT penjual" data-testid="interco-create-seller" />
+          </Field>
+          <Field label="PT Pembeli" required hint="menerbitkan Pesanan Beli internal + Tagihan internal">
+            <KNSelect value={buyer} onValueChange={setBuyer} options={buyerOptions} placeholder="Pilih PT pembeli" data-testid="interco-create-buyer" />
+          </Field>
+          <Field label="Mode Harga" hint="Harga tetap: diambil dari kontrak internal yang aktif">
+            <KNSelect value={pricingMode} onValueChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
+          </Field>
+          <Field label="Mode PPN" hint="Ikut PKP: mengikuti status PKP PT penjual">
+            <KNSelect value={ppnMode} onValueChange={setPpnMode} options={PPN_MODES} data-testid="interco-create-ppn" />
+          </Field>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-[#1D1D1F]">Barang <span className="text-[#C0392B]">*</span></h3>
+            <button
+              type="button"
+              onClick={addLine}
+              data-testid="interco-create-add-line"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-[#E5E5EA] hover:bg-[#F2F2F5]"
+            >
+              <Plus size={12} /> Tambah baris
+            </button>
+          </div>
+          <div className="space-y-2">
+            <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]" data-testid="interco-create-line-head">
+              <span className="col-span-6">Produk</span><span className="col-span-2">Qty</span>
+              <span className="col-span-3">Harga satuan</span><span className="col-span-1" />
+            </div>
+            {items.map((it, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-start" data-testid={`interco-create-line-${i}`}>
+                <div className="col-span-6">
+                  <KNSelect
+                    value={it.product_id}
+                    onValueChange={(v) => setItem(i, { product_id: v })}
+                    options={prodOptions}
+                    placeholder="Pilih produk"
+                  />
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={it.quantity}
+                  onChange={(e) => setItem(i, { quantity: e.target.value })}
+                  placeholder="Qty"
+                  data-testid={`interco-create-qty-${i}`}
+                  className="col-span-2 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={it.unit_price}
+                  onChange={(e) => setItem(i, { unit_price: e.target.value })}
+                  placeholder="Kosong = dari kontrak"
+                  data-testid={`interco-create-price-${i}`}
+                  className="col-span-3 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeLine(i)}
+                  disabled={items.length <= 1}
+                  className="col-span-1 p-2 text-[#8E8E93] hover:text-[#9B1C1C] disabled:opacity-30"
+                  data-testid={`interco-create-remove-${i}`}
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-right text-sm text-[#6E6E73]">
+            Perkiraan subtotal: <span className="font-medium text-[#1D1D1F] tabular-nums">{formatCurrency(subtotalPreview)}</span>
+            <span className="text-xs ml-1">(final dihitung sistem)</span>
+          </div>
+        </div>
+
+        <Field label="Catatan (opsional)">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            data-testid="interco-create-notes"
+            className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
+          />
+        </Field>
+
+        <label className="flex items-center gap-2 text-sm text-[#3C3C43] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={submitNow}
+            onChange={(e) => setSubmitNow(e.target.checked)}
+            data-testid="interco-create-submit-now"
+          />
+          Langsung dikonfirmasi (post jurnal & saldo antar-PT segera bergerak)
+        </label>
+        <p className="-mt-4 pl-6 text-xs text-[#8E8E93]" data-testid="interco-create-submit-now-hint">
+          {submitNow
+            ? "Jurnal diposting saat diterbitkan."
+            : "Tidak dicentang: disimpan sebagai draf tanpa jurnal — konfirmasi nanti dari daftar transaksi."}
+        </p>
       </div>
-    </div>
+    </FormModal>
   );
 }
 

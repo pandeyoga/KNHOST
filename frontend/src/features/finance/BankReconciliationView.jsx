@@ -22,6 +22,7 @@ import ReconImportPanel from "./bank/ReconImportPanel";
 import ReconLinesTable from "./bank/ReconLinesTable";
 import ReconMatchModal from "./bank/ReconMatchModal";
 import ReconHoldingPanel from "./bank/ReconHoldingPanel";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
@@ -145,6 +146,8 @@ export default function BankReconciliationView() {
 
   return (
     <div className="p-5" data-testid="bank-reconciliation-view">
+      {/* Fase 3 · P4 (L-04 kelas C) — rekonsiliasi = pekerjaan akuntansi: pemberitahuan desktop di HP. */}
+      <DesktopOnlyNotice testId="recon-desktop-notice" what="Rekonsiliasi Bank" />
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div>
           <h2 className="text-[17px] font-bold text-[#1C1C1E] flex items-center gap-2">

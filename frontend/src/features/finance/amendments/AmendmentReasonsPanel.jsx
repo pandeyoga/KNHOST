@@ -13,6 +13,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import { errText, listReasons, upsertReason } from "./amendmentApi";
 import KNSelect from "../../../components/KNSelect";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";   // fase 3 · P2 (L-04 kelas C)
 import { can } from "../../../config/roles";
 
 const BLANK = { code: "", label: "", help: "", affects_master: false, status: "active" };
@@ -77,6 +78,7 @@ export default function AmendmentReasonsPanel({ currentUser }) {
 
   return (
     <div className="section-card" data-testid="amd-reasons-panel">
+      <DesktopOnlyNotice testId="amd-reasons-desktop-notice" what="Label alasan amandemen" />
       <div className="section-head">
         <div className="flex items-center gap-2">
           <Tag size={15} className="text-[#0058CC]" />

@@ -56,7 +56,7 @@ function CutoffForm({ cfg, onSaved }) {
       <div className="w-56 flex flex-col gap-1">Basis tanggal
         <KNSelect data-testid="interco-cutoff-basis" value={f.basis} options={BASIS} searchable={false} onValueChange={(v) => setF({ ...f, basis: v })} /></div>
       <button type="button" data-testid="interco-cutoff-save" onClick={save}
-              className="rounded-lg bg-[#0F172A] text-white px-4 py-2 font-semibold">Simpan pengaturan</button>
+              className="primary-button">Simpan pengaturan</button>{/* Fase 3 · P4 (L-03/L-08) — tombol hitam → biru standar */}
       {err && <span className="text-[#C62828]" data-testid="interco-cutoff-error">{err}</span>}
       {ok && <span className="text-[#1B7F4B]" data-testid="interco-cutoff-saved">{ok}</span>}
     </div>

@@ -1,20 +1,15 @@
+/**
+ * DocumentsView — Pusat Dokumen › Cetak PDF & Label.
+ *
+ * Fase 3 · P2 (D-01, keputusan pemilik 26 Okt) — kartu "Template aktif" (daftar template ketiga, baca-saja) diganti
+ * SATU baris ringkas: tautan ke Pengaturan › Dokumen & Cetak › Template Dokumen bagi peran yang boleh membukanya,
+ * "dikelola Admin" bagi peran lain. Daftar & form template hanya di layar utama itu.
+ */
 import { useState } from "react";
-import { Barcode } from "lucide-react";
+import { Barcode, FileText } from "lucide-react";
 import { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
-
-// Audit UI 24 Okt (091): deskripsi template dulu memuat kunci mentah ("invoice • sku, name, qty…").
-const DOC_TYPE_LABEL = {
-  invoice: "Faktur", surat_jalan: "Surat Jalan", delivery_note: "Surat Jalan", purchase_order: "Pesanan Pembelian",
-  sales_order: "Pesanan Penjualan", quotation: "Penawaran", receipt: "Kwitansi", packing_list: "Daftar Kemas",
-};
-const COLUMN_LABEL = {
-  sku: "SKU", name: "Nama barang", product_name: "Nama barang", qty: "Jumlah", quantity: "Jumlah", unit: "Satuan",
-  uom: "Satuan", price: "Harga", unit_price: "Harga", subtotal: "Subtotal", total: "Total", discount: "Diskon",
-  batch: "Batch", lot: "Lot", roll: "Roll", roll_no: "No. roll", color: "Warna", grade: "Grade", notes: "Catatan",
-  length: "Panjang", weight: "Berat",
-};
-const humanKey = (k) => { const t = String(k || "").replace(/_/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
+import LinkCard from "../../components/LinkCard";
 
 export default function DocumentsView({ templates, loading = false, lastDocument, lastLabel, onGenerateLabel, products }) {
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -31,26 +26,14 @@ export default function DocumentsView({ templates, loading = false, lastDocument
             <h2>Template dokumen & barcode label</h2>
           </div>
         </div>
-        <p className="px-4 py-2 text-[12px] text-[#6B6B73]">Header, footer, kolom, area tanda tangan, dan ukuran label dapat dikonfigurasi.</p>
+        <div className="px-4 py-2">
+          <LinkCard testId="documents-templates-link" icon={FileText} what="Template dokumen (kop, kolom, tanda tangan)"
+            where="Pengaturan › Dokumen & Cetak › Template Dokumen" view="pdf-templates" preset={{ tab: "dasar" }}
+            summary={loading ? "memuat…" : `${(templates || []).length} template aktif`}
+            readOnlyText="Template dokumen (kop, kolom, tanda tangan) dikelola Admin di Pengaturan." />
+        </div>
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
-        <section className="section-card">
-          <div className="section-head"><h2>Template aktif</h2></div>
-          <div className="section-body grid gap-2">
-            {loading && (
-              <div className="animate-pulse py-2 text-[12px] text-[#6B6B73]">Memuat template…</div>
-            )}
-            {!loading && (templates || []).length === 0 && (
-              <div data-testid="templates-empty" className="py-2 text-[12px] text-[#6B6B73]">Belum ada template aktif.</div>
-            )}
-            {!loading && (templates || []).map((template) => (
-              <div data-testid={`template-card-${template.id}`} key={template.id} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-                <p data-testid={`template-name-${template.id}`} className="text-[13px] font-semibold">{template.name}</p>
-                <p data-testid={`template-type-${template.id}`} className="text-[11.5px] text-[#3C3C43]">{DOC_TYPE_LABEL[template.document_type] || humanKey(template.document_type)} • kolom: {(template.columns || []).map((c) => COLUMN_LABEL[c] || humanKey(c)).join(", ")}</p>
-              </div>
-            ))}
-          </div>
-        </section>
         <section className="section-card">
           <div className="section-head"><h2>Buat label cepat</h2></div>
           <div className="section-body grid gap-2">

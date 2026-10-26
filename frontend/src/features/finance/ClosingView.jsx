@@ -9,6 +9,10 @@ import {
   RefreshCw, CalendarX, Lock, Unlock, FileStack, CheckCircle2, AlertTriangle,
   Eye, Building2, RotateCcw,
 } from "lucide-react";
+import EntityRequiredNotice from "../../components/EntityRequiredNotice";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import { MetricRow } from "../../components/ListPageParts";
+import FinReportLink from "./FinReportLink";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
@@ -45,13 +49,14 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);
 
-  const initialEntity = useMemo(() => {
+  // Fase 3 · P4 (D-14) — PT diambil dari pemilih di HEADER (satu sumber). Dulu ada pemilih PT lokal
+  // (`closing-entity-select`) + KPI "Entitas Aktif": layar bisa menutup buku PT A sementara header bertuliskan PT B.
+  // Header "Semua badan usaha" → EntityRequiredNotice (memilih PT = mengganti header). Akun satu-PT tidak terpengaruh.
+  const entityId = useMemo(() => {
     if (selectedEntity && selectedEntity !== "all") return selectedEntity;
-    return entityOptions[0]?.value || "";
+    return entityOptions.length === 1 ? entityOptions[0].value : "";
   }, [selectedEntity, entityOptions]);
-
-  const [entityId, setEntityId] = useState(initialEntity);
-  useEffect(() => { if (initialEntity && !entityId) setEntityId(initialEntity); }, [initialEntity, entityId]);
+  const entityLabel = entityOptions.find((e) => e.value === entityId)?.label || entityId;
 
   const [periodType, setPeriodType] = useState("month");
   const [month, setMonth] = useState(String(NOW.getMonth() + 1).padStart(2, "0"));
@@ -119,7 +124,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     }
     if (pv && pv.can_close === false) return;   // blokir tumpang tindih sudah tampil di pratinjau
     const periodText = periodType === "year" ? `tahun ${year}` : `${MONTHS.find((m) => m.value === month)?.label || month} ${year}`;
-    const entityText = entityOptions.find((e) => e.value === entityId)?.label || entityId;
+    const entityText = entityLabel;
     // Keputusan pemilik K-15 (26 Okt) — Suspense ≠ 0 MEMBLOKIR tutup buku. Non-admin berhenti di sini (pesan jelas,
     // tanpa POST). Admin boleh menembus lewat dialog alasan (≥ 5 huruf) yang tercatat di record & Jejak Audit.
     const suspenseBlocked = !!(pv?.suspense_blocks_close ?? pv?.suspense_warning);
@@ -219,11 +224,13 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
 
   return (
     <div data-testid="closing-view">
-      {/* KPI ringkas */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
-        <Kpi testId="closing-kpi-closed" label="Periode Tertutup" value={closedCount} icon={Lock} tone="text-[#6B219A]" />
-        <Kpi testId="closing-kpi-total" label="Total Riwayat" value={closings.length} icon={FileStack} />
-        <Kpi testId="closing-kpi-entity" label="Entitas Aktif" value={entityOptions.find((e) => e.value === entityId)?.label || "—"} icon={Building2} />
+      <DesktopOnlyNotice testId="closing-desktop-notice" what="Tutup Buku" />
+      {/* KPI ringkas — Fase 3 · P4 (L-08): MetricRow baku (nol netral). */}
+      <div className="mb-3">
+        <MetricRow testId="closing-kpi" items={[
+          { label: "Periode Tertutup", value: closedCount, icon: Lock, testId: "closing-kpi-closed" },
+          { label: "Total Riwayat", value: closings.length, icon: FileStack, testId: "closing-kpi-total" },
+        ]} />
       </div>
 
       <div className="section-card">
@@ -233,10 +240,12 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
             <h3 className="text-[13px] font-bold text-[#1C1C1E]">Tutup Buku</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <div className="w-full sm:w-[200px]">
-              <KNSelect data-testid="closing-entity-select" className="field py-1.5 text-[12px]" value={entityId}
-                onValueChange={setEntityId} placeholder="Pilih Entitas (PT)" options={entityOptions} />
-            </div>
+            {entityId && (
+              <span className="inline-flex items-center gap-1 text-[11.5px] text-[#6B6B73]" data-testid="closing-entity-label"
+                title="Badan usaha mengikuti pilihan di kepala aplikasi">
+                <Building2 size={12} aria-hidden="true" /> <b className="text-[#1C1C1E]">{entityLabel}</b>
+              </span>
+            )}
             <button data-testid="closing-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
@@ -251,8 +260,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
           )}
 
           {!entityId ? (
-            <div data-testid="closing-no-entity" className="py-10 text-center text-[12px] text-[#8E8E93]">
-              <Building2 size={26} className="mx-auto mb-2 text-gray-300" />Pilih entitas (PT) terlebih dahulu untuk tutup buku.
+            <div data-testid="closing-no-entity">
+              <EntityRequiredNotice when what="tutup buku" testId="closing-entity-required" />
             </div>
           ) : (
             <>
@@ -316,6 +325,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                       <MiniStat label="Beban" value={formatCurrency(preview.expense_total)} tone="text-[#C0392B]" />
                       <MiniStat label="Laba/Rugi Bersih → Laba Ditahan" value={formatCurrency(preview.net_income)} tone={preview.net_income >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
                     </div>
+                    {/* Fase 3 · P4 (D-10) — pratinjau tetap (bagian dari konfirmasi); rincian laba-rugi di Laporan Keuangan. */}
+                    <div className="mb-2 flex justify-end"><FinReportLink testId="closing-pl-link" /></div>
                     <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">Jurnal Penutup (Pratinjau)</p>
                     {(preview.closing_lines || []).length === 0 ? (
                       <p className="text-[12px] text-[#9A9BA3]">Tidak ada saldo laba/rugi untuk ditutup pada periode ini.</p>
@@ -440,20 +451,6 @@ function MiniStat({ label, value, tone = "text-[#1C1C1E]" }) {
     <div className="rounded-md border border-[#EFF0F2] px-3 py-2 bg-white">
       <p className="text-[9px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
       <p className={`text-[13px] font-bold tabular-nums ${tone}`}>{value}</p>
-    </div>
-  );
-}
-
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
-  return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -38,6 +38,7 @@ import IntercoMarginPanel from "./IntercoMarginPanel";
 import IntercoLoansPanel from "./IntercoLoansPanel";
 import { TransactionsPanel, BalancesPanel, SettlementsPanel } from "./IntercoPanels";
 import DetailModal from "../../../components/DetailModal";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import { PageHeader, MetricRow } from "../../../components/ListPageParts";
 
 const TABS = [
@@ -218,6 +219,10 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   };
 
   return (
+    <>
+    {/* Fase 3 · P4 (L-04 kelas C) — akuntansi grup: di HP cukup banner "paling nyaman di desktop" (layar tetap
+        jalan). Di luar wadah `space-y-*` supaya banner yang tersembunyi di desktop tidak menambah jarak atas. */}
+    {!returnsMode && <DesktopOnlyNotice testId="interco-desktop-notice" what="Antar Entitas (grup)" />}
     <div className={returnsMode ? "space-y-4" : "space-y-6"} data-testid="interco-view">
       {returnsMode ? (
         <>
@@ -439,6 +444,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
         />
       )}
     </div>
+    </>
   );
 }
 

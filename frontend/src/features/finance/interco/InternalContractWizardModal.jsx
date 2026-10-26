@@ -4,12 +4,15 @@
  * Keuangan bisa menerbitkan harga tetap PT-A → PT-B untuk barang tertentu
  * tanpa membuka layar Kontrak umum. Setelah tersimpan, transaksi antar-PT
  * dengan `pricing_mode="fixed_price"` untuk barang itu langsung SIAP DITERBITKAN.
+ *
+ * Fase 3 · P4 (L-03) — overlay `fixed inset-0` buatan sendiri → `FormModal` baku; tombol hitam → `primary-button`.
  */
 import { useEffect, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
-import { X, Handshake } from "lucide-react";
+import { Handshake } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { apiErrorText } from "../../../utils/apiError";
@@ -77,84 +80,70 @@ export default function InternalContractWizardModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" data-testid="interco-contract-modal">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5EA]">
-          <div className="flex items-center gap-3">
-            <Handshake size={18} className="text-[#0058CC]" />
-            <div>
-              <h2 className="text-lg font-semibold text-[#1D1D1F]">Kontrak Internal</h2>
-              <p className="text-xs text-[#6E6E73] mt-0.5">
-                Tetapkan harga jual antar-PT untuk satu produk. Transaksi ber-mode
-                <b className="mx-1">Harga tetap</b>
-                setelahnya akan otomatis memakai harga ini.
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} data-testid="interco-contract-close" className="p-1.5 hover:bg-[#F2F2F5] rounded-lg">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="PT Penjual (penerbit kontrak)" required>
-              <KNSelect value={seller} onValueChange={setSeller} options={entOptions.filter((o) => o.value !== buyer)} placeholder="Pilih PT penjual" data-testid="interco-contract-seller" />
-            </Field>
-            <Field label="PT Pembeli (partner)" required>
-              <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions.filter((o) => o.value !== seller)} placeholder="Pilih PT pembeli" data-testid="interco-contract-buyer" />
-            </Field>
-            <Field label="Produk" required>
-              <KNSelect value={productId} onValueChange={setProductId} options={prodOptions} placeholder="Pilih produk" data-testid="interco-contract-product" />
-            </Field>
-            <Field label="Harga per unit (Rp)" required>
-              <MoneyInput
-                value={rate}
-                onChange={(v) => setRate(v)}
-                testId="interco-contract-rate"
-                className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
-              />
-            </Field>
-            <Field label="Berlaku sejak" required>
-              <KNDatePicker value={validFrom} onChange={setValidFrom} data-testid="interco-contract-valid-from" clearable={false} />
-            </Field>
-            <Field label="Berlaku hingga (opsional)">
-              <KNDatePicker value={validTo} onChange={setValidTo} data-testid="interco-contract-valid-to" placeholder="Tanpa batas" />
-            </Field>
-          </div>
-
-          <Field label="Judul (opsional)">
-            <input
-              value={title} onChange={(e) => setTitle(e.target.value)}
-              data-testid="interco-contract-title"
-              className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg"
-            />
-          </Field>
-          <Field label="Catatan (opsional)">
-            <textarea
-              value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              data-testid="interco-contract-notes"
-              className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg"
-            />
-          </Field>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[#E5E5EA] bg-[#FAFAFB]">
-          <button onClick={onClose} data-testid="interco-contract-cancel" className="px-4 py-2 text-sm rounded-lg text-[#3C3C43] hover:bg-[#F2F2F5]">
+    <FormModal open onClose={onClose} icon={Handshake} testId="interco-contract-modal" busy={busy}
+      title="Kontrak Internal"
+      subtitle="Tetapkan harga jual antar-PT untuk satu produk. Transaksi ber-mode Harga tetap setelahnya akan otomatis memakai harga ini."
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} data-testid="interco-contract-cancel" className="secondary-button"
+            disabled={busy}>
             Batal
           </button>
           <button
+            type="button"
             onClick={submit} disabled={busy || !canSubmit}
             data-testid="interco-contract-submit"
-            className="px-4 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-50"
+            className="primary-button"
           >
             {busy ? "Menerbitkan..." : "Terbitkan Kontrak Internal"}
           </button>
         </div>
+      )}>
+      <div className="space-y-4">
+        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="PT Penjual (penerbit kontrak)" required>
+            <KNSelect value={seller} onValueChange={setSeller} options={entOptions.filter((o) => o.value !== buyer)} placeholder="Pilih PT penjual" data-testid="interco-contract-seller" />
+          </Field>
+          <Field label="PT Pembeli (partner)" required>
+            <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions.filter((o) => o.value !== seller)} placeholder="Pilih PT pembeli" data-testid="interco-contract-buyer" />
+          </Field>
+          <Field label="Produk" required>
+            <KNSelect value={productId} onValueChange={setProductId} options={prodOptions} placeholder="Pilih produk" data-testid="interco-contract-product" />
+          </Field>
+          <Field label="Harga per unit (Rp)" required>
+            <MoneyInput
+              value={rate}
+              onChange={(v) => setRate(v)}
+              testId="interco-contract-rate"
+              className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
+            />
+          </Field>
+          <Field label="Berlaku sejak" required>
+            <KNDatePicker value={validFrom} onChange={setValidFrom} data-testid="interco-contract-valid-from" clearable={false} />
+          </Field>
+          <Field label="Berlaku hingga (opsional)">
+            <KNDatePicker value={validTo} onChange={setValidTo} data-testid="interco-contract-valid-to" placeholder="Tanpa batas" />
+          </Field>
+        </div>
+
+        <Field label="Judul (opsional)">
+          <input
+            value={title} onChange={(e) => setTitle(e.target.value)}
+            data-testid="interco-contract-title"
+            className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg"
+          />
+        </Field>
+        <Field label="Catatan (opsional)">
+          <textarea
+            value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+            data-testid="interco-contract-notes"
+            className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg"
+          />
+        </Field>
       </div>
-    </div>
+    </FormModal>
   );
 }
 

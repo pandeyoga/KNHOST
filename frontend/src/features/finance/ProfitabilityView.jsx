@@ -1,6 +1,11 @@
 /**
  * ProfitabilityView (FINANCE) — Analisis Profitabilitas / Margin (WAC).
  * Dimensi: Produk · Kategori · Pelanggan · Sales. Sumber: /api/finance/profitability.
+ *
+ * Fase 3 · P4 (D-11) — SATU layar margin: PageTabs "Realisasi (pelanggan/sales/produk)" | "Margin katalog (HPP/WAC)".
+ * Tab kedua = `CostingView` (dulu menu Analitik › Margin & HPP). Alias `costing` → {tab:"katalog"} diaktifkan P8.
+ * Gerbang per tab: katalog hanya bila peran boleh membuka `costing` (server: /costing/wac admin/manager);
+ * realisasi dijaga izin akuntansi di server (/finance/profitability → accounting.view).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -15,6 +20,12 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatUnitTotals } from "../../utils/qtyByUnit";
+import PageTabs from "../../components/PageTabs";
+import FilterChips from "../../components/FilterChips";
+import useViewPreset from "../../hooks/useViewPreset";
+import { useAppNav } from "../../context/AppNavContext";
+import { canCurrent } from "../../config/roles";
+import CostingView from "../costing/CostingView";
 import {
   FC, NOW, ymd, compactIDR, entityParam, chartTooltip, fmtPct, saveBlob,
   KpiCard, Panel, EmptyState, formatCurrency,
@@ -28,7 +39,36 @@ const DIMS = [
   { id: "by_entity", label: "Per-PT", icon: Building2 },
 ];
 
+const TAB_KEYS = ["realisasi", "katalog"];
+
 export default function ProfitabilityView({ selectedEntity }) {
+  const { role, canOpen } = useAppNav();
+  // Di luar AppNavProvider (uji/komponen lepas) peran tak diketahui → kedua tab tampil; server tetap penjaga.
+  const showKatalog = !role || canOpen("costing");
+  // Fase 3 · P8 (D-11) — tab Realisasi dijaga izin akuntansi (server: /finance/profitability → accounting.view). Peran
+  // kustom modul Laporan kini membuka layar ini untuk tab katalog saja (tanpa 403 di tab pertama). Satu tab selalu tampil.
+  const showRealisasi = canCurrent("accounting", "view") || !showKatalog;
+  const preset = useViewPreset("profitability", (p) => {
+    if (TAB_KEYS.includes(p.tab)) setTab(p.tab);
+  });
+  const [tab, setTab] = useState(() => (TAB_KEYS.includes(preset?.tab) ? preset.tab : (showRealisasi ? "realisasi" : "katalog")));
+  const active = tab === "katalog" && !showKatalog ? "realisasi" : (tab === "realisasi" && !showRealisasi ? "katalog" : tab);
+
+  return (
+    <div data-testid="profitability-view">
+      <PageTabs testId="prof-tabs" ariaLabel="Jenis analisis margin" value={active} onChange={setTab} className="mb-3"
+        tabs={[
+          { key: "realisasi", label: "Realisasi (pelanggan/sales/produk)", icon: TrendingUp, hidden: !showRealisasi },
+          { key: "katalog", label: "Margin katalog (HPP/WAC)", icon: Layers3, hidden: !showKatalog },
+        ]} />
+      {active === "katalog"
+        ? <CostingView selectedEntity={selectedEntity} />
+        : <RealisasiPanel selectedEntity={selectedEntity} />}
+    </div>
+  );
+}
+
+function RealisasiPanel({ selectedEntity }) {
   const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
   const [dim, setDim] = useState("by_product");
   const [data, setData] = useState(null);
@@ -71,7 +111,7 @@ export default function ProfitabilityView({ selectedEntity }) {
   const hasData = (tot.revenue || 0) !== 0 || rows.length > 0 || (est.revenue || 0) !== 0;
 
   return (
-    <div data-testid="profitability-view">
+    <div data-testid="prof-realisasi">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
         <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk biaya masuk (landed) ${compactIDR(tot.cogs_landed || 0)}` : "belum ada biaya masuk (landed) yang dibebankan"} />
@@ -87,7 +127,7 @@ export default function ProfitabilityView({ selectedEntity }) {
           <KNDatePicker data-testid="prof-end" className="w-[170px] text-[12px]" clearable={false} min={range.start} value={range.end}
             onChange={(v) => setRange((r) => ({ ...r, end: v }))} /></div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP dicatat saat kirim</span>
+          <span className="text-[11px] font-semibold text-[#0058CC] bg-[#EFF4FF] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP dicatat saat kirim</span>
           <button data-testid="prof-export-xlsx" className="btn-secondary !h-8 !px-3 text-[12px] inline-flex items-center gap-1" onClick={doExport} disabled={exporting}>
             <Download size={13} />{exporting ? "Menyiapkan…" : "Excel Realisasi vs Estimasi"}
           </button>
@@ -134,17 +174,11 @@ export default function ProfitabilityView({ selectedEntity }) {
             </Panel>
           </div>
 
-          <Panel title="Rincian Profitabilitas" icon={Boxes} testId="prof-table-panel"
-            actions={
-              <div className="flex items-center gap-1">
-                {DIMS.map((d) => (
-                  <button key={d.id} data-testid={`prof-dim-${d.id}`} onClick={() => setDim(d.id)}
-                    className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-lg px-2.5 py-1 border transition-colors ${dim === d.id ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73] hover:border-[#D9C4EC]"}`}>
-                    <d.icon size={12} />{d.label}
-                  </button>
-                ))}
-              </div>
-            }>
+          <Panel title="Rincian Profitabilitas" icon={Boxes} testId="prof-table-panel">
+            {/* Fase 3 · P4 (L-01/L-08) — pil ungu buatan sendiri → FilterChips baku (dimensi = saringan, bukan tab);
+                di badan panel supaya di HP chip bergulir sendiri, tidak melebarkan kepala panel. */}
+            <FilterChips testId="prof-dim" ariaLabel="Dimensi profitabilitas" value={dim} onChange={setDim} className="mb-2"
+              options={DIMS.map((d) => ({ key: d.id, label: d.label, icon: d.icon }))} />
             <div className="overflow-auto rounded-md border border-[#EFF0F2]">
               <table className="w-full min-w-[820px] text-[12px]" data-testid="prof-table">
                 <thead>

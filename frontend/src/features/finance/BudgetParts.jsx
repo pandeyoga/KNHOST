@@ -1,6 +1,6 @@
 /**
  * BudgetParts (R6.3) — komponen pendukung BudgetView (dipisah agar file < 500 baris).
- * Berisi: DIM_TABS, BudgetFormRow, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel.
+ * Berisi: DIM_TABS, BudgetFormModal, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel.
  */
 import MoneyInput from "../../components/MoneyInput";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import {
   Save, Trash2, X, AlertTriangle, ShieldAlert, ShieldCheck, ShieldOff, ClipboardList, Pencil,
 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import { FC, Panel, Progress, Badge, fmtPct, formatCurrency } from "./financeShared";
 
 export const DIM_TABS = [
@@ -39,18 +40,26 @@ const MODE_META = {
 };
 
 /* ── Form tambah anggaran ────────────────────────────────────────────────── */
-export function BudgetFormRow({ dimension, keys, onSubmit, onCancel }) {
+// Fase 3 · P4 (L-03) — dulu form INLINE (`BudgetFormRow`) yang diselipkan di atas tabel; kini pop-up FormModal.
+// Isian sama (akun/kategori, periode, nominal, catatan); galat simpan tampil di dalam pop-up.
+export function BudgetFormModal({ open, dimension, keys, busy = false, error = "", onSubmit, onCancel }) {
   const [form, setForm] = useState({ key: "", month: "0", amount: "", note: "" });
   const opts = dimension === "account"
     ? (keys.accounts || []).map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))
     : (keys.categories || []).map((c) => ({ value: c.code, label: `${c.label} (${c.account_code || "—"})` }));
+  const close = () => { setForm({ key: "", month: "0", amount: "", note: "" }); onCancel(); };
+  const submit = async () => {
+    const ok = await onSubmit(form);
+    if (ok) setForm({ key: "", month: "0", amount: "", note: "" });
+  };
   return (
-    <div className="rounded-lg border border-[#D9C4EC] bg-[#FCF9FF] p-3 mb-3" data-testid="budget-form">
-      <p className="text-[10.5px] font-bold uppercase text-[#6B219A] mb-2">
-        Anggaran baru · {DIM_TABS.find((t) => t.value === dimension)?.label}
-      </p>
-      <div className="grid md:grid-cols-5 gap-3 items-end">
-        <div className="md:col-span-2">
+    <FormModal open={open} onClose={close} size="md" icon={Save} testId="budget-form"
+      title={`Anggaran baru · ${DIM_TABS.find((t) => t.value === dimension)?.label || ""}`}
+      onSubmit={submit} busy={busy} error={error} submitLabel="Simpan"
+      submitDisabled={!form.key || !form.amount}
+      submitTestId="budget-form-submit" cancelTestId="budget-form-cancel">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">
             {dimension === "account" ? "Akun COA" : "Kategori Beban"}
           </label>
@@ -68,18 +77,13 @@ export function BudgetFormRow({ dimension, keys, onSubmit, onCancel }) {
           <MoneyInput testId="budget-form-amount" className="field py-1.5 text-[12px]" value={form.amount} placeholder="0"
             onChange={(v) => setForm((f) => ({ ...f, amount: v }))} />
         </div>
-        <div className="flex items-center gap-2">
-          <button data-testid="budget-form-submit" onClick={() => onSubmit(form)}
-            className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
-            <Save size={13} /> Simpan
-          </button>
-          <button data-testid="budget-form-cancel" onClick={onCancel}
-            className="btn-secondary text-[12px] py-1.5 px-3"><X size={13} /></button>
+        <div className="sm:col-span-2">
+          <label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Catatan</label>
+          <input data-testid="budget-form-note" className="field py-1.5 text-[12px]" value={form.note}
+            placeholder="Catatan (opsional)" onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
         </div>
       </div>
-      <input data-testid="budget-form-note" className="field py-1.5 text-[12px] mt-2" value={form.note}
-        placeholder="Catatan (opsional)" onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
-    </div>
+    </FormModal>
   );
 }
 

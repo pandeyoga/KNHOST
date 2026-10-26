@@ -1,6 +1,10 @@
 /**
  * CostingView (EPIC3A) — Margin & HPP (WAC) per produk.
  * Akses admin/manager (sales dicabut dari HPP). Sumber: GET /api/costing/wac.
+ *
+ * Fase 3 · P4 (D-11) — layar ini kini juga PANEL tab "Margin katalog (HPP/WAC)" di Profitabilitas & Margin
+ * (`ProfitabilityView`, layar utama margin). Tautan "Profitabilitas per pelanggan/sales →" dihapus (sudah satu layar);
+ * `costing` menjadi alias `profitability` {tab:"katalog"} saat P8 mengaktifkan menu.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,6 +13,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import usePagedRows from "@/hooks/usePagedRows";
 import { formatCurrency, formatPct, formatQty } from "../../utils/formatters";
+import { MetricRow } from "../../components/ListPageParts";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-52/G1-14: warna peringatan hanya di bawah ambang "Margin Rendah" (<15%, sama
 // dengan KPI); dulu 15–29% oranye seolah bermasalah. Persen id-ID ("28%", "12,5%").
@@ -69,16 +74,19 @@ export default function CostingView({ selectedEntity }) {
 
   return (
     <div data-testid="costing-view">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <Kpi label="Produk" value={summary.products} icon={Layers} />
-        <Kpi label="Rata-rata Margin" value={summary.avgMargin != null ? formatPct(summary.avgMargin, 1, { trim: true }) : "—"} icon={TrendingUp} tone="text-[#1B7F4B]" />
-        <Kpi label="Margin Rendah (<15%)" value={summary.lowMargin} icon={AlertTriangle} tone={summary.lowMargin > 0 ? "text-[#C0392B]" : ""} />
-        <Kpi label="Tanpa Biaya" value={summary.noCost} icon={CircleSlash} tone={summary.noCost > 0 ? "text-[#B45309]" : ""} />
+      {/* Fase 3 · P4 (L-08) — MetricRow baku (nol netral) menggantikan kartu KPI ungu buatan sendiri. */}
+      <div className="mb-3">
+        <MetricRow testId="costing-kpi" items={[
+          { label: "Produk", value: summary.products, icon: Layers },
+          { label: "Rata-rata Margin", value: summary.avgMargin != null ? formatPct(summary.avgMargin, 1, { trim: true }) : "—", icon: TrendingUp, tone: "#1B7F4B" },
+          { label: "Margin Rendah (<15%)", value: summary.lowMargin, icon: AlertTriangle, tone: "#C0392B" },
+          { label: "Tanpa Biaya", value: summary.noCost, icon: CircleSlash, tone: "#B45309" },
+        ]} />
       </div>
 
       <div className="section-card">
         <div className="section-head flex-wrap gap-2">
-          <div className="flex flex-wrap items-center gap-2"><TrendingUp size={16} className="text-[#6B219A]" /><h2 data-testid="costing-title">Margin Katalog & HPP (WAC)</h2><a href="?view=profitability" data-testid="costing-link-profitability" className="ml-2 text-[11px] font-semibold text-[#0058CC] hover:underline">Profitabilitas per pelanggan/sales →</a></div>
+          <div className="flex flex-wrap items-center gap-2"><TrendingUp size={16} className="text-[#6B219A]" /><h2 data-testid="costing-title">Margin Katalog & HPP (WAC)</h2></div>
           <div className="flex items-center gap-2 ml-auto">
             <div className="relative">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
@@ -135,20 +143,6 @@ export default function CostingView({ selectedEntity }) {
               Sebelumnya/Berikutnya di luar layar. Kini di bawah kotak gulir. */}
           {!loading && view.length > 25 && <div className="mt-2">{pgView.pager}</div>}
           <p className="text-[10.5px] text-[#9A9BA3] mt-2">WAC = rata-rata tertimbang biaya roll (termasuk landed cost) per unit, bobot panjang sisa. <b>Margin Katalog</b> = Harga Jual katalog − WAC (belum memperhitungkan diskon/transaksi nyata); margin realisasi per order bisa lebih rendah setelah diskon.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, icon: Icon, tone = "" }) {
-  return (
-    <div className="section-card">
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[18px] font-bold tabular-nums ${tone || "text-[#1C1C1E]"}`}>{value}</p>
         </div>
       </div>
     </div>

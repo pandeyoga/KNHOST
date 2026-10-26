@@ -1,6 +1,9 @@
 /**
  * ChartOfAccounts (EPIC7-C) — Bagan Akun / Chart of Accounts.
  * Akses admin/manager (permission "accounting"). Sumber: /api/gl/accounts.
+ *
+ * Fase 3 · P4 (L-03) — form Tambah Akun (dulu inline di atas tabel), Ubah Akun & Detail Akun kini pop-up baku
+ * (FormModal/DetailModal) di `ChartOfAccountsParts.jsx`; banner "paling nyaman di desktop" di HP (L-04 kelas C).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -8,23 +11,15 @@ import {
   RefreshCw, Plus, BookOpen, Pencil, Trash2, X, Layers, Globe, Building2,
   ToggleLeft, ToggleRight, CheckCircle2, History,
 } from "lucide-react";
-import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { SearchBox } from "../../components/ListControls";
-
-const TYPE_META = {
-  asset: { label: "Aset", tone: "bg-[#E7F0FF] text-[#0058CC]" },
-  liability: { label: "Kewajiban", tone: "bg-[#FDEDE7] text-[#C0392B]" },
-  equity: { label: "Ekuitas", tone: "bg-[#F3EAFB] text-[#6B219A]" },
-  income: { label: "Pendapatan", tone: "bg-[#E6F6EC] text-[#1B7F4B]" },
-  expense: { label: "Beban", tone: "bg-[#FFF4E0] text-[#B45309]" },
-};
-const TYPE_ORDER = ["asset", "liability", "equity", "income", "expense"];
-const TYPE_OPTIONS = TYPE_ORDER.map((t) => ({ value: t, label: TYPE_META[t].label }));
-const EMPTY_FORM = { code: "", name: "", type: "asset", parent_code: "", is_postable: true };
+import {
+  TYPE_META, TYPE_ORDER, TYPE_OPTIONS, AddAccountModal, EditAccountModal, AccountDetailModal, Kpi,
+} from "./ChartOfAccountsParts";
 
 export default function ChartOfAccounts({ entities = [], currentUser }) {
   const [accounts, setAccounts] = useState([]);
@@ -33,8 +28,6 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
   const [filterType, setFilterType] = useState("");
   const [q, setQ] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
   const [editAcc, setEditAcc] = useState(null);
   const [detailAcc, setDetailAcc] = useState(null);
   const canAudit = can(currentUser?.permissions, "audit", "view");
@@ -97,23 +90,6 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
     return g;
   }, [accounts, filterType, q]);
 
-  const submitForm = async (e) => {
-    e.preventDefault();
-    if (!form.code.trim() || !form.name.trim()) return;
-    setSaving(true);
-    try {
-      const params = scopeEntityId ? { entity_id: scopeEntityId } : {};
-      await axios.post(`${API}/gl/accounts`, form, { params });
-      setForm(EMPTY_FORM);
-      setShowForm(false);
-      await load();
-    } catch (err) {
-      setError(apiErrorText(err, "Gagal membuat akun."));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const removeAccount = async (acc) => {
     setError("");
     try {
@@ -163,6 +139,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
 
   return (
     <div data-testid="coa-view">
+      <DesktopOnlyNotice testId="coa-desktop-notice" what="Bagan Akun" />
       {notice && (
         <div data-testid="coa-notice"
           className="mb-3 flex items-center gap-2 rounded-md border border-[#BDE5CC] bg-[#E6F6EC] px-3 py-2 text-[12px] text-[#1B7F4B]">
@@ -223,7 +200,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
               <KNSelect data-testid="coa-filter-type" className="field py-1 text-[12px]" value={filterType} onValueChange={setFilterType}
                 placeholder="Semua tipe" options={[{ value: "", label: "Semua tipe" }, ...TYPE_OPTIONS]} />
             </div>
-            <button data-testid="coa-add-toggle" className="primary-button whitespace-nowrap" onClick={() => setShowForm((v) => !v)}>
+            <button data-testid="coa-add-toggle" className="primary-button whitespace-nowrap" onClick={() => setShowForm(true)}>
               <Plus size={14} /> Tambah Akun
             </button>
             <button data-testid="coa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
@@ -240,43 +217,6 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
               usaha ini — badan usaha lain tidak terpengaruh, dan kode akun tetap bersama
               sehingga jurnal lama tetap sah.
             </div>
-          )}
-
-          {showForm && (
-            <form data-testid="coa-add-form" onSubmit={submitForm} className="mb-3 rounded-lg border border-[#E6E0F2] bg-[#FAF8FE] p-3 grid grid-cols-2 md:grid-cols-3 gap-2">
-              <Labeled label="Kode Akun">
-                <input data-testid="coa-form-code" className="field py-1 text-[12px] tabular-nums" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="6-5000" required />
-              </Labeled>
-              <Labeled label="Nama Akun">
-                <input data-testid="coa-form-name" className="field py-1 text-[12px]" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Beban Pemasaran" required />
-              </Labeled>
-              <Labeled label="Tipe">
-                <KNSelect data-testid="coa-form-type" className="field py-1 text-[12px]" value={form.type} onValueChange={(v) => setForm({ ...form, type: v })} options={TYPE_OPTIONS} />
-              </Labeled>
-              <Labeled label="Akun Induk (opsional)">
-                <KNSelect data-testid="coa-form-parent" className="field py-1 text-[12px]" value={form.parent_code} onValueChange={(v) => setForm({ ...form, parent_code: v })} options={parentOptions} placeholder="— Tanpa induk —" />
-              </Labeled>
-              <Labeled label="Jenis Akun">
-                <div className="flex gap-1 mt-0.5">
-                  {[{ k: true, t: "Detail" }, { k: false, t: "Kelompok" }].map((o) => (
-                    <button type="button" key={String(o.k)} data-testid={`coa-form-postable-${o.k}`}
-                      className={`flex-1 text-[12px] font-semibold rounded-md py-1 border ${form.is_postable === o.k ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73]"}`}
-                      onClick={() => setForm({ ...form, is_postable: o.k })}>{o.t}</button>
-                  ))}
-                </div>
-              </Labeled>
-              <div className="col-span-2 md:col-span-3 flex items-center justify-between gap-2 mt-1">
-                <span className="text-[10px] text-[#8E8E93]">
-                  {scopeEntityId
-                    ? `Akun akan dibuat khusus untuk PT ${scopeLabel}.`
-                    : "Akun akan dibuat sebagai template global (semua PT)."}
-                </span>
-                <div className="flex gap-2">
-                  <button type="button" className="btn-secondary text-[12px] py-1.5 px-3" onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>Batal</button>
-                  <button type="submit" data-testid="coa-form-submit" className="btn-primary text-[12px] py-1.5 px-4" disabled={saving}>{saving ? "Menyimpan..." : "Simpan Akun"}</button>
-                </div>
-              </div>
-            </form>
           )}
 
           {loading ? (
@@ -367,136 +307,17 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
         </div>
       </div>
 
+      <AddAccountModal open={showForm} scopeEntityId={scopeEntityId} scopeLabel={scopeLabel}
+        parentOptions={parentOptions} onClose={() => setShowForm(false)}
+        onSaved={async () => { setShowForm(false); await load(); }} />
       {editAcc && (
         <EditAccountModal acc={editAcc} scopeEntityId={scopeEntityId} scopeLabel={scopeLabel}
           onClose={() => setEditAcc(null)}
-          onSaved={async () => { setEditAcc(null); await load(); }}
-          onError={(m) => setError(m)} />
+          onSaved={async () => { setEditAcc(null); await load(); }} />
       )}
       {detailAcc && (
         <AccountDetailModal acc={detailAcc} canAudit={canAudit} scopeLabel={scopeLabel} entities={entities} onClose={() => setDetailAcc(null)} />
       )}
-    </div>
-  );
-}
-
-function AccountDetailModal({ acc, canAudit, scopeLabel, entities, onClose }) {
-  const [tab, setTab] = useState("info");
-  const layer = acc.entity_id ? (entities.find((e) => e.id === acc.entity_id)?.short_name || "Badan usaha tidak dikenal") : "Template global";
-  const info = [
-    ["Kode", acc.code], ["Nama", acc.name], ["Jenis", TYPE_META[acc.type]?.label || acc.type],
-    ["Induk", acc.parent_code || "—"], ["Saldo normal", acc.normal_balance === "debit" ? "Debit" : "Kredit"],
-    ["Detail/Kelompok", acc.is_postable ? "Detail (dapat dijurnal)" : "Kelompok (tidak dijurnal)"], ["Status", acc.is_active === false ? "Nonaktif" : "Aktif"],
-    ["Lapisan", layer], ["Dilihat sebagai", scopeLabel], ["Akun sistem", acc.system ? "Ya" : "Tidak"],
-  ];
-  return (
-    // INV-UI-01 — backdrop hanya menutup bila yang diklik backdrop itu sendiri (bukan opsi dropdown ber-portal).
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="coa-detail-modal"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#EFF0F2]">
-          <BookOpen size={15} className="text-[#6B219A]" />
-          <h3 className="font-bold text-[14px] truncate" data-testid="coa-detail-title">
-            <span className="font-mono tabular-nums text-[#6B6B73]">{acc.code}</span> · {acc.name}
-          </h3>
-          <button data-testid="coa-detail-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup"><X size={15} /></button>
-        </div>
-        <div className="tab-bar px-4 pt-2">
-          <button data-testid="coa-detail-tab-info" className={`tab-button ${tab === "info" ? "active" : ""}`} onClick={() => setTab("info")}>Rincian</button>
-          {canAudit && <button data-testid="coa-detail-tab-history" className={`tab-button ${tab === "history" ? "active" : ""}`} onClick={() => setTab("history")}>Riwayat Perubahan</button>}
-        </div>
-        <div className="p-4 overflow-y-auto">
-          {tab === "info" && (
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]" data-testid="coa-detail-info">
-              {info.map(([k, v]) => (
-                <div key={k}><dt className="text-[10px] font-bold uppercase text-[#8E8E93]">{k}</dt><dd className="text-[#1C1C1E]">{v}</dd></div>
-              ))}
-            </dl>
-          )}
-          {tab === "history" && canAudit && (
-            <AuditHistoryPanel entityType="gl_account" entityId={acc.code} testIdPrefix="coa-history" showLayer />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EditAccountModal({ acc, scopeEntityId, scopeLabel, onClose, onSaved, onError }) {
-  const [name, setName] = useState(acc.name);
-  const [isActive, setIsActive] = useState(acc.is_active !== false);
-  const [saving, setSaving] = useState(false);
-
-  const save = async () => {
-    setSaving(true);
-    try {
-      const params = scopeEntityId ? { entity_id: scopeEntityId } : {};
-      await axios.patch(`${API}/gl/accounts/${acc.code}`, { name: name.trim(), is_active: isActive }, { params });
-      await onSaved();
-    } catch (err) {
-      onError(apiErrorText(err, "Gagal menyimpan akun."));
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const willOverride = scopeEntityId && acc.entity_id !== scopeEntityId;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="coa-edit-modal">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#EFF0F2]">
-          <Pencil size={15} className="text-[#6B219A]" />
-          <h3 className="font-bold text-[14px]">
-            Ubah Akun <span className="font-mono tabular-nums text-[#6B6B73]">{acc.code}</span>
-          </h3>
-          <button data-testid="coa-edit-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup"><X size={15} /></button>
-        </div>
-        <div className="p-4 space-y-3">
-          <Labeled label="Nama Akun">
-            <input data-testid="coa-edit-name" className="field py-1.5 text-[13px]" value={name} onChange={(e) => setName(e.target.value)} />
-          </Labeled>
-          <label className="flex items-center gap-2 text-[12px] text-[#3C3C43]">
-            <input data-testid="coa-edit-active" type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            {/* G1-22 — akun kelompok (is_postable=false) memang tidak bisa dijurnal; label mengikuti jenisnya. */}
-            {acc.is_postable === false ? "Akun aktif (kelompok — tidak dijurnal)" : "Akun aktif (dapat dijurnal)"}
-          </label>
-          {willOverride && (
-            <p data-testid="coa-edit-override-note" className="text-[11px] text-[#6B219A] bg-[#F3EAFB] rounded-md px-2 py-1.5">
-              Perubahan ini akan membuat <b>override</b> khusus untuk PT <b>{scopeLabel}</b>. Template global & PT lain tidak terpengaruh.
-            </p>
-          )}
-          {acc.system && !scopeEntityId && <p className="text-[11px] text-[#8E8E93]">Akun baku sistem — hanya nama & status aktif yang dapat diubah.</p>}
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2]">
-          <button className="btn-secondary text-[12px] py-1.5 px-3" onClick={onClose}>Batal</button>
-          <button data-testid="coa-edit-save" className="btn-primary text-[12px] py-1.5 px-4" onClick={save} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Labeled({ label, children }) {
-  return (
-    <div>
-      <label className="text-[10px] font-bold uppercase text-[#8E8E93]">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
-  return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
-        </div>
-      </div>
     </div>
   );
 }

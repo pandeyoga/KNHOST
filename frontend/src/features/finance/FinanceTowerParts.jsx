@@ -6,8 +6,10 @@ import {
   ComposedChart, BarChart, Bar, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, PieChart as PieIcon, Users, Truck, Scale, Landmark, Percent } from "lucide-react";
-import { FC, compactIDR, chartTooltip, fmtPct, Panel, EmptyState, formatCurrency } from "./financeShared";
+import { TrendingUp, PieChart as PieIcon, Users, Truck, Scale, Landmark, Percent, PiggyBank } from "lucide-react";
+import { FC, compactIDR, chartTooltip, Panel, EmptyState, formatCurrency } from "./financeShared";
+import { isZeroMetric } from "../../components/ListPageParts";
+import FinReportLink from "./FinReportLink";
 
 export function MonthlyTrendPanel({ monthly }) {
   const rows = monthly || [];
@@ -50,8 +52,9 @@ export function RatiosStrip({ ratios }) {
   const r = ratios || {};
   const exact = (v) => (v == null ? "" : `Nilai persis: ${Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 })}x`);
   const items = [
-    { label: "Marjin Kotor", value: fmtPctId(r.gross_margin), icon: Percent },
-    { label: "Marjin Bersih", value: fmtPctId(r.net_margin), icon: Percent },
+    // Fase 3 · P4 (D-10) — Marjin Bersih tampil SEKALI di dasbor (dulu juga di baris KPI Laba-Rugi).
+    { label: "Marjin Kotor", value: fmtPctId(r.gross_margin), icon: Percent, hint: "laba kotor ÷ pendapatan, tahun berjalan" },
+    { label: "Marjin Bersih", value: fmtPctId(r.net_margin), icon: Percent, hint: "laba bersih ÷ pendapatan, tahun berjalan" },
     { label: "Rasio Lancar", value: fmtRatio(r.current_ratio), icon: Scale, title: exact(r.current_ratio),
       hint: Number(r.current_ratio) > RATIO_CAP ? "kewajiban lancar hampir nol" : "aset lancar ÷ kewajiban lancar" },
     { label: "Utang thd Ekuitas", value: fmtRatio(r.debt_to_equity), icon: Landmark, title: exact(r.debt_to_equity),
@@ -156,18 +159,55 @@ export function TopApPanel({ ap }) {
   );
 }
 
+// Fase 3 · P4 (D-10) — total "Posisi Kas" sudah di kartu KPI atas (label sumber K-02); panel ini hanya RINCIAN per
+// akun, supaya angka yang sama tidak tampil dua kali di satu layar.
 export function CashPanel({ cash }) {
   const accounts = cash?.accounts || [];
   return (
-    <Panel title="Posisi Kas (GL)" icon={PieIcon} testId="tower-cash-panel">
-      <p className="text-[22px] font-bold tabular-nums text-[#0058CC] mb-2" data-testid="tower-cash-total">{formatCurrency(cash?.total)}</p>
-      <div className="space-y-1.5">
-        {accounts.map((a) => (
-          <div key={a.code} className="flex items-center justify-between text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
-            <span className="text-[#6B6B73]"><span className="text-[10px] text-[#9A9BA3] mr-1.5">{a.code}</span>{a.name}</span>
-            <span className="tabular-nums font-semibold text-[#1C1C1E]">{formatCurrency(a.balance)}</span>
-          </div>
-        ))}
+    <Panel title="Rincian Kas per Akun (GL)" icon={PieIcon} testId="tower-cash-panel">
+      {accounts.length === 0 ? <p className="text-[11px] text-[#9A9BA3] py-3 text-center">Belum ada akun kas/bank bersaldo.</p> : (
+        <div className="space-y-1.5">
+          {accounts.map((a) => (
+            <div key={a.code} className="flex items-center justify-between text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
+              <span className="text-[#6B6B73]"><span className="text-[10px] text-[#9A9BA3] mr-1.5">{a.code}</span>{a.name}</span>
+              <span className="tabular-nums font-semibold text-[#1C1C1E]">{formatCurrency(a.balance)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-[10.5px] text-[#9A9BA3]">Jumlahnya = Posisi Kas di kartu atas.</p>
+    </Panel>
+  );
+}
+
+/**
+ * Fase 3 · P4 (D-10) — SATU kartu ringkas Laba-Rugi YTD (dulu 4 kartu KPI terpisah + Marjin Bersih ganda).
+ * Rincian laba-rugi hanya di Laporan Keuangan (tautan di kepala kartu).
+ */
+function PlStat({ label, value, sub, tone = "text-[#1C1C1E]", testId }) {
+  const zero = isZeroMetric(value);
+  return (
+    <div className="min-w-0" data-testid={testId}>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+      <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${zero ? "text-[#8E8E93]" : tone}`}
+        data-testid={`${testId}-value`}>{value}</p>
+      {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+export function PlYtdCard({ ytd = {}, mtd = {}, year }) {
+  const net = ytd.net_income ?? 0;
+  return (
+    <Panel title={`Laba-Rugi YTD ${year || ""}`.trim()} icon={PiggyBank} testId="tower-pl-ytd"
+      actions={<FinReportLink testId="tower-pl-link" />}>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <PlStat testId="tower-kpi-rev-ytd" label="Pendapatan YTD" value={formatCurrency(ytd.revenue)} tone="text-[#1B7F4B]" />
+        <PlStat testId="tower-kpi-net-ytd" label="Laba Bersih YTD" value={formatCurrency(net)} tone={net >= 0 ? "text-[#1C1C1E]" : "text-[#C0392B]"} />
+        {/* Audit UI 24 Okt (085↔092): pendapatan JURNAL bulan berjalan (diakui saat kirim) — beda dengan
+            "Nilai Pesanan 30 Hari" di Analitik › Ringkasan. */}
+        <PlStat testId="tower-kpi-rev-mtd" label="Pendapatan Bulan Ini (Jurnal)" value={formatCurrency(mtd.revenue)}
+          sub={`diakui saat kirim · laba ${formatCurrency(mtd.net_income)}`} />
       </div>
     </Panel>
   );

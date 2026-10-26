@@ -3,6 +3,9 @@
  * Dua dimensi: **Akun COA** & **Kategori Beban**. Sumber: /api/finance/budget-vs-actual,
  * CRUD /api/finance/budgets, /api/finance/budget-keys, GET|PUT /api/finance/budget-rules.
  * Komitmen = PO terbuka + LPJ petty cash pending · Realisasi = jurnal GL / LPJ terposting.
+ *
+ * Fase 3 · P4 (L-03) — "Tambah Anggaran" kini membuka pop-up FormModal (dulu form inline di atas tabel);
+ * banner "paling nyaman di desktop" di HP (L-04 kelas C).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -14,13 +17,14 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import KNSelect from "../../components/KNSelect";
 import {
   FC, NOW, YEARS, compactIDR, entityParam, chartTooltip, fmtPct,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 import {
-  DIM_TABS, BudgetFormRow, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel, MODE_LABEL,
+  DIM_TABS, BudgetFormModal, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel, MODE_LABEL,
 } from "./BudgetParts";
 import { can } from "../../config/roles";
 
@@ -34,6 +38,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [formBusy, setFormBusy] = useState(false);
+  const [formError, setFormError] = useState("");
   const [editId, setEditId] = useState(null);
   const [editAmount, setEditAmount] = useState("");
   const canConfigRules = can(currentUser?.permissions, "budget", "configure");   // Sisir gerbang peran (2026-10-20) — PUT /finance/budget-rules
@@ -77,7 +83,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
   })), [rows]);
 
   async function submitForm(form) {
-    if (!form.key || !form.amount) { setError("Pilih akun/kategori dan isi nominal anggaran."); return false; }
+    if (!form.key || !form.amount) { setFormError("Pilih akun/kategori dan isi nominal anggaran."); return false; }
+    setFormBusy(true); setFormError("");
     try {
       const res = await axios.post(`${API}/finance/budgets`, {
         ...entityParam(selectedEntity), year: Number(year), month: Number(form.month),
@@ -87,9 +94,9 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       setShowForm(false); await load();
       return true;
     } catch (e) {
-      setError(apiErrorText(e, "Gagal menyimpan anggaran."));
+      setFormError(apiErrorText(e, "Gagal menyimpan anggaran."));
       return false;
-    }
+    } finally { setFormBusy(false); }
   }
 
   async function saveEdit(id) {
@@ -119,6 +126,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
 
   return (
     <div data-testid="budget-view">
+      <DesktopOnlyNotice testId="budget-desktop-notice" what="Anggaran vs Realisasi" />
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
         <KpiCard testId="budget-kpi-total" label={`Anggaran ${year}`} value={formatCurrency(tot.budget)}
@@ -164,7 +172,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button data-testid="budget-add-toggle" onClick={() => setShowForm((s) => !s)}
+          <button data-testid="budget-add-toggle" onClick={() => { setFormError(""); setShowForm(true); }}
             className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
             <Plus size={13} /> Tambah Anggaran
           </button>
@@ -175,7 +183,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       </div>
 
       {showForm && (
-        <BudgetFormRow dimension={tab} keys={keys} onSubmit={submitForm} onCancel={() => setShowForm(false)} />
+        <BudgetFormModal open dimension={tab} keys={keys} busy={formBusy} error={formError}
+          onSubmit={submitForm} onCancel={() => setShowForm(false)} />
       )}
 
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="budget-error" />

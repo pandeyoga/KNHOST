@@ -18,6 +18,9 @@ import { formatCurrency, formatDate, formatPct } from "../../utils/formatters";
 import { SectionBlock, SummaryRow, GroupHeader, BsSection, BsLine, BsTotalRow, Labeled, Kpi, BalancedKpi } from "./FinancialStatementsParts";
 import CashFlowTab from "./CashFlowTab";
 import EquityChangesTab from "./EquityChangesTab";
+import PageTabs from "../../components/PageTabs";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import useViewPreset from "../../hooks/useViewPreset";
 
 const NOW = new Date();
 
@@ -74,20 +77,20 @@ const TABS = [
 //  ROOT
 // ═════════════════════════════════════════════════════════════════════════════
 export default function FinancialStatementsView({ selectedEntity }) {
-  const [tab, setTab] = useState("pl");
+  // Fase 3 · P4 (D-10) — layar UTAMA laba-rugi: Dasbor/BI/Konsolidasi/Tutup Buku menautkan ke sini dengan preset
+  // tab (`{ tab: "pl" }`). Pil ungu tab → PageTabs baku (L-01); testid `fs-tab-<id>` dipertahankan.
+  const preset = useViewPreset("financial-statements", (p) => {
+    if (p.tab && TABS.some((t) => t.id === p.tab)) setTab(p.tab);
+  });
+  const [tab, setTab] = useState(() => (TABS.some((t) => t.id === preset?.tab) ? preset.tab : "pl"));
 
   return (
     <div data-testid="financial-statements-view">
+      <DesktopOnlyNotice testId="fs-desktop-notice" what="Laporan Keuangan" />
       <div className="section-card">
         <div className="section-head">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {TABS.map((t) => (
-              <button key={t.id} data-testid={`fs-tab-${t.id}`} onClick={() => setTab(t.id)}
-                className={`inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-3 py-1.5 border transition-colors ${tab === t.id ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73] hover:border-[#D9C4EC]"}`}>
-                <t.icon size={14} />{t.label}
-              </button>
-            ))}
-          </div>
+          <PageTabs testId="fs-tab" ariaLabel="Jenis laporan keuangan" value={tab} onChange={setTab}
+            tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon }))} />
         </div>
         <div className="section-body">
           {tab === "pl" && <IncomeStatementTab selectedEntity={selectedEntity} />}

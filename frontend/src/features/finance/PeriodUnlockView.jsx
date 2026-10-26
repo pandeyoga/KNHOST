@@ -20,6 +20,9 @@ import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
 import { askConfirm, askReason } from "@/services/confirmService";
 import { can } from "../../config/roles";
+import EntityRequiredNotice from "../../components/EntityRequiredNotice";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import { MetricRow } from "../../components/ListPageParts";
 
 function fmtDateTime(iso) {
   if (!iso) return "—";
@@ -53,13 +56,13 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);
 
-  const initialEntity = useMemo(() => {
+  // Fase 3 · P4 (D-14) — PT diambil dari pemilih di HEADER (satu sumber); pemilih lokal `plu-entity-select` dihapus.
+  // Header "Semua badan usaha" → EntityRequiredNotice (memilih PT = mengganti header). Akun satu-PT tidak terpengaruh.
+  const entityId = useMemo(() => {
     if (selectedEntity && selectedEntity !== "all") return selectedEntity;
-    return entityOptions[0]?.value || "";
+    return entityOptions.length === 1 ? entityOptions[0].value : "";
   }, [selectedEntity, entityOptions]);
-
-  const [entityId, setEntityId] = useState(initialEntity);
-  useEffect(() => { if (initialEntity && !entityId) setEntityId(initialEntity); }, [initialEntity, entityId]);
+  const entityLabel = entityOptions.find((e) => e.value === entityId)?.label || entityId;
 
   const [closings, setClosings] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -180,12 +183,15 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
 
   return (
     <div data-testid="period-unlock-view">
-      {/* KPI ringkas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <Kpi testId="plu-kpi-active" label="Jendela Aktif" value={activeCount} icon={Unlock} tone={activeCount ? "text-[#1B7F4B]" : "text-[#1C1C1E]"} />
-        <Kpi testId="plu-kpi-pending" label="Menunggu Persetujuan" value={pendingCount} icon={Clock} tone={pendingCount ? "text-[#B26B00]" : "text-[#1C1C1E]"} />
-        <Kpi testId="plu-kpi-closed" label="Periode Tertutup" value={closedOptions.length} icon={Lock} tone="text-[#6B219A]" />
-        <Kpi testId="plu-kpi-total" label="Total Riwayat" value={requests.length} icon={FileStack} />
+      <DesktopOnlyNotice testId="plu-desktop-notice" what="Buka Periode" />
+      {/* KPI ringkas — Fase 3 · P4 (L-08): MetricRow baku (nol netral). */}
+      <div className="mb-3">
+        <MetricRow testId="plu-kpi" items={[
+          { label: "Jendela Aktif", value: activeCount, icon: Unlock, tone: "#1B7F4B", testId: "plu-kpi-active" },
+          { label: "Menunggu Persetujuan", value: pendingCount, icon: Clock, tone: "#B26B00", testId: "plu-kpi-pending" },
+          { label: "Periode Tertutup", value: closedOptions.length, icon: Lock, testId: "plu-kpi-closed" },
+          { label: "Total Riwayat", value: requests.length, icon: FileStack, testId: "plu-kpi-total" },
+        ]} />
       </div>
 
       <div className="section-card">
@@ -200,10 +206,12 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
             <button data-testid="plu-reclose-expired" className="btn-secondary text-[11px] py-1 px-2 inline-flex items-center gap-1" onClick={doReclose} disabled={busy || !canManage || expiredOpenCount === 0} title={expiredOpenCount === 0 ? "Tidak ada jendela yang lewat batas" : "Tutup jendela yang sudah lewat batas"}>
               <Timer size={12} /> Tutup yang kedaluwarsa
             </button>
-            <div className="w-full sm:w-[200px]">
-              <KNSelect data-testid="plu-entity-select" className="field py-1.5 text-[12px]" value={entityId}
-                onValueChange={setEntityId} placeholder="Pilih Entitas (PT)" options={entityOptions} />
-            </div>
+            {entityId && (
+              <span className="inline-flex items-center gap-1 text-[11.5px] text-[#6B6B73]" data-testid="plu-entity-label"
+                title="Badan usaha mengikuti pilihan di kepala aplikasi">
+                <Building2 size={12} aria-hidden="true" /> <b className="text-[#1C1C1E]">{entityLabel}</b>
+              </span>
+            )}
             <button data-testid="plu-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
@@ -227,8 +235,8 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
           </div>
 
           {!entityId ? (
-            <div data-testid="plu-no-entity" className="py-10 text-center text-[12px] text-[#8E8E93]">
-              <Building2 size={26} className="mx-auto mb-2 text-gray-300" />Pilih entitas (PT) terlebih dahulu.
+            <div data-testid="plu-no-entity">
+              <EntityRequiredNotice when what="buka periode" testId="plu-entity-required" />
             </div>
           ) : (
             <>
@@ -345,20 +353,6 @@ function Labeled({ label, children }) {
     <div className="flex flex-col gap-1">
       <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
       {children}
-    </div>
-  );
-}
-
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
-  return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[17px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
-        </div>
-      </div>
     </div>
   );
 }

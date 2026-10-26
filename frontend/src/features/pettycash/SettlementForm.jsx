@@ -3,15 +3,18 @@ import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ReceiptText } from "lucide-react";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
-import { fmtDate } from "./pettyCashShared";
+import FormModal from "../../components/FormModal";
 
 /**
  * SettlementForm — Buat Laporan Pertanggungjawaban atas PD yang sudah dicairkan.
  * Baris pengeluaran (tanggal/uraian/kategori/nominal) → ringkasan per kategori +
  * sisa/kurang dana (BE hitung ulang & posting GL saat disetujui).
+ *
+ * Fase 3 · P4 (L-03) — dulu halaman penuh (daftar LPJ hilang); kini FormModal ukuran lg (layar penuh di HP).
+ * Isian tidak berubah. Kaki memakai `footer` (bukan <form>): Enter di baris pengeluaran tidak menyimpan LPJ.
  */
 const emptyLine = () => ({ date: todayWib(), description: "", category: "petty_cash_lain", amount: "" });
 
@@ -73,17 +76,18 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
     } finally { setBusy(false); }
   }
 
+  const footer = (
+    <div className="flex justify-end gap-2">
+      <button type="button" className="btn-secondary" onClick={onCancel} disabled={busy}>Batal</button>
+      <button type="button" data-testid="stl-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : "Simpan LPJ"}</button>
+    </div>
+  );
+
   return (
-    <div data-testid="stl-form" className="grid gap-4">
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2">
-            <button className="icon-button" onClick={onCancel} aria-label="Kembali"><ArrowLeft size={15} /></button>
-            <h2 data-testid="stl-form-title">Buat Pertanggungjawaban (LPJ)</h2>
-          </div>
-        </div>
-        <div className="section-body grid gap-3">
-          {err && <div className="notice-bar danger" data-testid="stl-form-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
+    <FormModal open onClose={onCancel} size="lg" icon={ReceiptText} testId="stl-form" busy={busy} footer={footer}
+      title="Buat Pertanggungjawaban (LPJ)">
+        <div className="grid gap-3">
+          {err && <div className="notice-bar danger" data-testid="stl-form-error"><span>{err}</span><button type="button" onClick={() => setErr("")}>×</button></div>}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Pengajuan Dana (PD)" req>
@@ -114,11 +118,11 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
                 <input data-testid={`stl-line-desc-${i}`} className="form-input" value={l.description} onChange={(e) => updLine(i, "description", e.target.value)} placeholder="Uraian pengeluaran" />
                 <KNSelect data-testid={`stl-line-cat-${i}`} className="form-input" value={l.category} onValueChange={(v) => updLine(i, "category", v)} options={catOptions} />
                 <MoneyInput testId={`stl-line-amount-${i}`} className="form-input text-right" value={l.amount} placeholder="0" onChange={(v) => updLine(i, "amount", v)} />
-                <button className="icon-button text-red-500" onClick={() => rmLine(i)} aria-label="Hapus"><Trash2 size={14} /></button>
+                <button type="button" className="icon-button text-red-500" onClick={() => rmLine(i)} aria-label="Hapus"><Trash2 size={14} /></button>
               </div>
             ))}
             <div className="px-3 py-2 border-t border-[#EFF0F2] bg-[#FAFBFC]">
-              <button data-testid="stl-add-line" className="btn-secondary btn-xs" onClick={addLine}><Plus size={13} /> Tambah Baris</button>
+              <button type="button" data-testid="stl-add-line" className="btn-secondary btn-xs" onClick={addLine}><Plus size={13} /> Tambah Baris</button>
             </div>
           </div>
 
@@ -146,14 +150,8 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
           <Field label="Catatan">
             <textarea data-testid="stl-catatan" className="form-input" rows="2" value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Keterangan tambahan..." />
           </Field>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button className="btn-secondary" onClick={onCancel}>Batal</button>
-            <button data-testid="stl-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : "Simpan LPJ"}</button>
-          </div>
         </div>
-      </section>
-    </div>
+    </FormModal>
   );
 }
 

@@ -2,12 +2,13 @@ import { apiErrorText } from "../../utils/apiError";
 import { useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
-  ArrowLeft, CheckCircle2, XCircle, Send, Banknote, Printer, Pencil,
+  CheckCircle2, XCircle, Send, Banknote, Printer, Pencil,
   FileText, Clock, Building2, ReceiptText,
 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import ConfirmModal from "../../components/ConfirmModal";
+import FormModal from "../../components/FormModal";
 import {
   CA_STATUS, StatusPill, fmtDate, printCashAdvance, printTandaTerima,
 } from "./pettyCashShared";
@@ -16,8 +17,11 @@ import { can, roleIs } from "../../config/roles";
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
  * dan aksi state-machine (submit → approve/reject berjenjang → disburse) + cetak.
+ *
+ * Fase 3 · P4 (L-03) — isi pop-up rincian: CashAdvancesView membungkusnya dengan DetailModal framed (× di pojok
+ * menggantikan tombol "Kembali"). Dialog "Cairkan" (`.modal-card` buatan sendiri) → FormModal.
  */
-export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, onEdit, onChanged, flash }) {
+export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, onChanged, flash }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [reject, setReject] = useState(false);
@@ -57,7 +61,6 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, o
       <section className="section-card">
         <div className="section-head">
           <div className="flex items-center gap-2 min-w-0">
-            <button className="icon-button" onClick={onBack} aria-label="Kembali"><ArrowLeft size={15} /></button>
             <FileText size={15} className="text-[#0058CC]" />
             <h2 data-testid="ca-detail-number">{ca.number}</h2>
             <StatusPill status={ca.status} testId="ca-detail-status" />
@@ -158,24 +161,17 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, o
       />
 
       {disburse && (
-        <div className="modal-overlay" data-testid="ca-disburse-modal" onClick={(e) => { if (e.target === e.currentTarget) setDisburse(false); }}>
-          <div className="modal-card small">
-            <p className="modal-title">Cairkan {ca.number}</p>
-            <p className="modal-subtitle">Pencairan mencatat kas keluar {formatCurrency(ca.total_amount)} & jurnal Uang Muka otomatis.</p>
-            <div className="grid gap-1.5 mt-2">
-              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Sumber Kas</label>
-              <KNSelect data-testid="ca-disburse-cashtype" className="form-input" value={cashType} onValueChange={setCashType}
-                options={[{ value: "kas_kecil", label: "Kas Kecil (per entitas)" }, { value: "kas_besar", label: "Kas Besar (gabungan grup)" }]} />
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setDisburse(false)}>Batal</button>
-              <button data-testid="ca-disburse-confirm" className="btn-primary" disabled={busy}
-                onClick={async () => { setDisburse(false); await act("disburse", { cash_type: cashType }, `${ca.number} dicairkan (${formatCurrency(ca.total_amount)}).`); }}>
-                Cairkan Dana
-              </button>
-            </div>
+        <FormModal open onClose={() => setDisburse(false)} size="sm" icon={Banknote} testId="ca-disburse-modal"
+          title={`Cairkan ${ca.number}`}
+          subtitle={`Pencairan mencatat kas keluar ${formatCurrency(ca.total_amount)} & jurnal Uang Muka otomatis.`}
+          busy={busy} submitLabel="Cairkan Dana" submitTestId="ca-disburse-confirm"
+          onSubmit={async () => { setDisburse(false); await act("disburse", { cash_type: cashType }, `${ca.number} dicairkan (${formatCurrency(ca.total_amount)}).`); }}>
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Sumber Kas</label>
+            <KNSelect data-testid="ca-disburse-cashtype" className="form-input" value={cashType} onValueChange={setCashType}
+              options={[{ value: "kas_kecil", label: "Kas Kecil (per entitas)" }, { value: "kas_besar", label: "Kas Besar (gabungan grup)" }]} />
           </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

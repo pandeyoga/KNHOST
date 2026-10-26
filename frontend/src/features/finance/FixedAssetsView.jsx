@@ -5,7 +5,6 @@
  * Disposal: gain/loss = proceeds − nilai buku (append-only; aset → status disposed).
  */
 import { apiErrorText } from "../../utils/apiError";
-import MoneyInput from "../../components/MoneyInput";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -14,11 +13,11 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import KNSelect from "../../components/KNSelect";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import {
-  AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, fmtDate,
+  AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog, fmtDate,
 } from "./FixedAssetsParts";
 
 const thisPeriod = () => new Date().toISOString().slice(0, 7);
@@ -38,24 +37,21 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [disposeFor, setDisposeFor] = useState(null);     // aset yang akan dilepas
   // FASE E-7 (E7g) — pindah aset tetap ANTAR BADAN USAHA (nilai buku + masa manfaat sisa).
+  // Fase 3 · P4 (L-03) — isian pindah PT kini milik `TransferAssetDialog` (FormModal) di FixedAssetsParts.
   const [transferFor, setTransferFor] = useState(null);
-  const [trTo, setTrTo] = useState("");
-  const [trPrice, setTrPrice] = useState("");
-  const [trReason, setTrReason] = useState("");
 
-  async function submitTransfer() {
+  async function submitTransfer({ to_entity_id, transfer_price, reason }) {
     if (!transferFor) return;
     setBusy("transfer"); setError("");
     try {
       const res = await axios.post(`${API}/fixed-assets/${transferFor.id}/transfer`, {
-        to_entity_id: trTo, transfer_price: trPrice ? Number(trPrice) : null,
-        reason: trReason,
+        to_entity_id, transfer_price, reason,
       });
       setMsg(`${transferFor.number} dipindah → ${res.data.new_asset.number} `
         + `(harga ${formatCurrency(res.data.price)}, nilai buku ${formatCurrency(res.data.book_value)}`
         + `${res.data.gain > 0 ? `, laba ${formatCurrency(res.data.gain)} dieliminasi di konsolidasi` : ""}). `
         + "Utang antar-PT terbentuk — catat pembayarannya bila uangnya sudah pindah.");
-      setTransferFor(null); setTrTo(""); setTrPrice(""); setTrReason("");
+      setTransferFor(null);
       await load();
     } catch (e) {
       setError(apiErrorText(e, "Gagal memindahkan aset."));
@@ -194,6 +190,8 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
 
   return (
     <div data-testid="fixed-assets-view">
+      {/* Fase 3 · P4 (L-04 kelas C) — akuntansi aset: cukup pemberitahuan di HP, layar tetap bisa dipakai. */}
+      <DesktopOnlyNotice testId="fa-desktop-notice" what="Aset Tetap" />
       {/* KPI ringkasan */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
         <FaKpi testId="summary-count" label="Jumlah Aset" icon={Layers3}
@@ -257,7 +255,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
               <input data-testid="fa-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari nomor / nama..."
                 value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <button data-testid="add-asset-btn" className="primary-button" onClick={() => setShowAdd(true)}>
+            <button data-testid="add-asset-btn" className="primary-button" onClick={() => { setError(""); setShowAdd(true); }}>
               <Plus size={14} /> Tambah Aset
             </button>
             <button data-testid="fa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
@@ -330,11 +328,11 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
                             <>
                               <button data-testid={`transfer-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
                                 title="Pindahkan aset ini ke badan usaha lain di dalam grup (nilai buku + masa manfaat sisa ikut pindah)"
-                                onClick={() => { setTransferFor(a); setTrTo(""); setTrPrice(""); setTrReason(""); }}>
+                                onClick={() => { setError(""); setTransferFor(a); }}>
                                 <Building2 size={12} /> Pindah PT
                               </button>
                               <button data-testid={`dispose-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
-                                style={{ color: "#B4231F", borderColor: "#F0B5AE" }} onClick={() => setDisposeFor(a)}>
+                                style={{ color: "#B4231F", borderColor: "#F0B5AE" }} onClick={() => { setError(""); setDisposeFor(a); }}>
                                 <PackageMinus size={12} /> Lepas
                               </button>
                             </>
@@ -367,9 +365,11 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
         </div>
       </div>
 
+      {/* Fase 3 · P4 (L-03) — semua pop-up lewat FormModal/DetailModal; galat server tampil DI DALAM pop-up
+          (dulu tertutup lapisan di belakangnya). */}
       {showAdd && (
         <AddAssetDialog
-          meta={meta} entities={entities} selectedEntity={selectedEntity} busy={busy === "create"}
+          meta={meta} entities={entities} selectedEntity={selectedEntity} busy={busy === "create"} error={error}
           onCancel={() => setShowAdd(false)} onSubmit={createAsset}
         />
       )}
@@ -377,59 +377,13 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
         <ScheduleDialog asset={scheduleFor} loading={scheduleLoading} onClose={() => setScheduleFor(null)} />
       )}
       {disposeFor && (
-        <DisposeDialog asset={disposeFor} busy={busy === "dispose"}
+        <DisposeDialog asset={disposeFor} busy={busy === "dispose"} error={error}
           onCancel={() => setDisposeFor(null)} onSubmit={submitDispose} />
       )}
       {/* FASE E-7 (E7g) — pindah aset tetap antar badan usaha */}
       {transferFor && (
-        <div className="modal-overlay" data-testid="asset-transfer-modal"
-          onClick={(e) => { if (e.target === e.currentTarget) setTransferFor(null); }}>
-          <div className="modal-card" style={{ maxWidth: 560, width: "95vw" }} onClick={(e) => e.stopPropagation()}>
-            <p className="modal-title">Pindah Aset ke Badan Usaha Lain</p>
-            <p className="modal-subtitle">
-              <b>{transferFor.number} · {transferFor.name}</b> — nilai buku sekarang{" "}
-              <b>{formatCurrency(transferFor.book_value)}</b> (akumulasi penyusutan{" "}
-              {formatCurrency(transferFor.accumulated_depreciation)}). Aset akan lahir kembali
-              di badan usaha penerima dengan <b>masa manfaat SISA</b>, akumulasi penyusutan di
-              badan usaha ini dihapus lewat jurnal, dan bila harga pindah di atas nilai buku,
-              labanya <b>dieliminasi di konsolidasi</b> (menjual ke PT sendiri bukan laba grup).
-            </p>
-            <div className="grid gap-3 mt-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Badan Usaha Penerima *</label>
-                <KNSelect data-testid="asset-transfer-to" className="field" value={trTo}
-                  onValueChange={setTrTo} aria-label="Badan usaha tujuan pindah aset"
-                  placeholder="— Pilih badan usaha —"
-                  options={(entities || [])
-                    .filter((en) => en.id !== transferFor.entity_id
-                      && (en.status || "active") === "active")
-                    .map((en) => ({
-                      value: en.id, label: en.short_name || en.legal_name || en.id,
-                    }))} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">
-                  Harga Pindah <span className="font-normal text-[#9A9BA3]">(kosong = nilai buku)</span>
-                </label>
-                <MoneyInput testId="asset-transfer-price" className="field" value={trPrice} onChange={(v) => setTrPrice(v)} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Alasan Pindah *</label>
-                <input data-testid="asset-transfer-reason" className="field" value={trReason}
-                  onChange={(e) => setTrReason(e.target.value)}
-                  placeholder="mis. mesin dipakai produksi badan usaha itu mulai bulan depan" />
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setTransferFor(null)}>Batal</button>
-              <button data-testid="asset-transfer-submit" className="btn-primary"
-                disabled={busy === "transfer" || !trTo || trReason.trim().length < 5}
-                onClick={submitTransfer}>
-                {busy === "transfer" ? "Memproses…" : "Pindahkan Aset"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <TransferAssetDialog asset={transferFor} entities={entities} busy={busy === "transfer"} error={error}
+          onCancel={() => setTransferFor(null)} onSubmit={submitTransfer} />
       )}
     </div>
   );

@@ -9,8 +9,11 @@ import { MappingRow } from "./glmapping/MappingRow";
 import { MappingEditDialog } from "./glmapping/MappingEditDialog";
 import { MappingHistory } from "./glmapping/MappingHistory";
 import { can } from "../../config/roles";
+import LinkCard from "../../components/LinkCard";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 
 // GL-01 — Pemetaan Akun terpusat: setiap fitur → akun pembukuan, Global atau per PT.
+// Fase 3 · P2 (D-02) — cakupannya pemetaan FITUR (bukan kategori LPJ); diberi tautan silang dua arah ke Kategori Beban.
 export default function GLAccountMappingView({ currentUser }) {
   const { entities } = useEntityScope();
   const [scope, setScope] = useState("");
@@ -43,6 +46,7 @@ export default function GLAccountMappingView({ currentUser }) {
 
   return (
     <div data-testid="gl-mapping-view" className="grid gap-4">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="glmap-error" />
       <section className="section-card">
         <div className="section-head">
@@ -58,6 +62,8 @@ export default function GLAccountMappingView({ currentUser }) {
             <Info size={14} className="mt-0.5 shrink-0" />
             <span>Tentukan akun pembukuan yang dipakai setiap fitur. {data?.notice} {canEdit ? "" : "Hanya Admin/Finance yang dapat mengubah."}</span>
           </div>
+          <LinkCard testId="glmap-expense-link" what="Akun beban per kategori pengeluaran kas kecil (LPJ)"
+            where="Pengaturan › Keuangan & Pajak › Kategori Beban" view="expense-categories" hideWhenDenied />
           <SummaryCards s={s} onlyUnset={onlyUnset} setOnlyUnset={setOnlyUnset} />
           <div className="flex flex-wrap items-center gap-2">
             <div className="w-56"><KNSelect data-testid="glmap-scope" className="field text-xs" value={scope} options={scopeOpts} onValueChange={setScope} /></div>

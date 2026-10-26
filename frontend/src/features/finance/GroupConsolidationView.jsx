@@ -3,30 +3,27 @@
  * Matriks Per-PT + Eliminasi + Konsolidasi untuk Laba-Rugi (tahun) & Neraca (as_of).
  * Eliminasi manual + auto-deteksi kandidat intercompany.
  * Sumber: /api/finance/consolidation/*. Gaya ikut finance existing.
+ *
+ * Fase 3 · P4 — D-10: angka laba-rugi di sini DIBERI LABEL "setelah eliminasi antar-PT" (beda dengan Laporan
+ * Keuangan per PT/gabungan yang belum dieliminasi). L-01: pil ungu tab → PageTabs (testid `cons-tab-*` tetap).
+ * L-07: matriks → `.data-table`. L-03/L-08: pop-up & bilah alat di GroupConsolidationParts.jsx. L-04 kelas C:
+ * DesktopOnlyNotice di HP.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, Building2, Scale, TrendingUp, Layers, Plus, Trash2, X, Wand2,
-  CheckCircle2, AlertTriangle, ScissorsLineDashed, ArrowRightLeft, Link2,
+  RefreshCw, Building2, Scale, TrendingUp, Layers, X, CheckCircle2, AlertTriangle, ScissorsLineDashed,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
+import PageTabs from "../../components/PageTabs";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { askConfirm, askReason } from "@/services/confirmService";
 import { stripInternalCodes } from "../../utils/cleanText";
-
-// UAT 24 Okt (audit UI tahap 2) — G1-06: judul/catatan entri eliminasi lama masih memuat kode fase/invarian
-// ("Auto G-6:", "(FASE G-6)", "(INV-IC-02/INV-IC-03)", "Auto-generated"); dibersihkan saat render.
-const elimName = (n) => stripInternalCodes(n || "")
-  .replace(/^Auto\s*:?\s*/i, "")
-  .replace(/^Eliminasi antar-PT\b/i, "Eliminasi otomatis antar-PT")
-  .replace(/^Eliminasi IC transfer\b/i, "Eliminasi otomatis transfer antar-PT");
-const elimNote = (n) => stripInternalCodes(n || "")
-  .replace(/Auto-generated dari intercompany transfer JE pair/i, "Dibuat otomatis dari pasangan jurnal transfer antar-PT")
-  .replace(/Auto-generated dari/i, "Dibuat otomatis dari");
+import { EliminationsPanel, EliminationModal, DetectModal } from "./GroupConsolidationParts";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -179,17 +176,17 @@ export default function GroupConsolidationView({ entities = [] }) {
   };
 
   const entityCols = data?.entities || [];
-  const colClass = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
+  const colClass = "text-right tabular-nums whitespace-nowrap";
 
   const renderMatrix = (rows) => (
-    <div className="overflow-x-auto rounded-md border border-[#EFF0F2]" data-testid={`cons-matrix-${tab}`}>
-      <table className="w-full text-[12px]">
+    <div className="table-wrap" data-testid={`cons-matrix-${tab}`}>
+      <table className="data-table">
         <thead>
-          <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
-            <th className="px-3 py-2 sticky left-0 bg-[#FAFBFC]">Pos</th>
-            {entityCols.map((e) => <th key={e.entity_id} className="px-3 py-2 text-right whitespace-nowrap">{e.short_name}</th>)}
-            <th className="px-3 py-2 text-right whitespace-nowrap text-[#C0392B]">Eliminasi</th>
-            <th className="px-3 py-2 text-right whitespace-nowrap text-[#6B219A]">Konsolidasi</th>
+          <tr>
+            <th className="sticky left-0 z-[2]">Pos</th>
+            {entityCols.map((e) => <th key={e.entity_id} className="text-right">{e.short_name}</th>)}
+            <th className="text-right !text-[#C0392B]">Eliminasi</th>
+            <th className="text-right !text-[#0058CC]" title="Σ per-PT + eliminasi antar-PT">Konsolidasi</th>
           </tr>
         </thead>
         <tbody>
@@ -197,11 +194,11 @@ export default function GroupConsolidationView({ entities = [] }) {
             const elimV = data?.elimination?.[row.key] ?? 0;
             const consV = data?.consolidated?.[row.key] ?? 0;
             return (
-              <tr key={row.key} data-testid={`cons-row-${row.key}`} className={`border-b border-[#F5F5F7] ${row.strong ? "bg-[#FAF6FE] font-bold" : row.muted ? "bg-[#FCFCFD]" : ""}`}>
-                <td className={`px-3 py-2 sticky left-0 ${row.strong ? "bg-[#FAF6FE] font-bold" : "bg-white"} text-[#1C1C1E]`}>{row.label}</td>
+              <tr key={row.key} data-testid={`cons-row-${row.key}`} className={row.strong ? "bg-[#F5F8FF] font-bold" : row.muted ? "bg-[#FCFCFD]" : ""}>
+                <td className={`sticky left-0 ${row.strong ? "bg-[#F5F8FF] font-bold" : "bg-white"} text-[#1C1C1E]`}>{row.label}</td>
                 {entityCols.map((e) => <td key={e.entity_id} className={`${colClass} text-[#3C3C43] tabular-nums`}>{formatCurrency(e[row.key])}</td>)}
                 <td className={`${colClass} tabular-nums ${Math.abs(elimV) > 0.005 ? "text-[#C0392B]" : "text-[#C9C9CE]"}`} data-testid={`cons-elim-${row.key}`}>{formatCurrency(elimV)}</td>
-                <td className={`${colClass} font-bold text-[#6B219A] tabular-nums`} data-testid={`cons-consolidated-${row.key}`}>{formatCurrency(consV)}</td>
+                <td className={`${colClass} font-bold text-[#0058CC] tabular-nums`} data-testid={`cons-consolidated-${row.key}`}>{formatCurrency(consV)}</td>
               </tr>
             );
           })}
@@ -212,16 +209,11 @@ export default function GroupConsolidationView({ entities = [] }) {
 
   return (
     <div data-testid="group-consolidation-view">
+      <DesktopOnlyNotice testId="cons-desktop-notice" what="Konsolidasi grup" />
       <div className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {TABS.map((t) => (
-              <button key={t.id} data-testid={`cons-tab-${t.id}`} onClick={() => setTab(t.id)}
-                className={`inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-3 py-1.5 border transition-colors ${tab === t.id ? "bg-[#6B219A] text-white border-[#6B219A]" : "bg-white border-[#EFF0F2] text-[#6B6B73] hover:border-[#D9C4EC]"}`}>
-                <t.icon size={14} />{t.label}{t.id === "elim" && elims.length ? ` (${elims.length})` : ""}
-              </button>
-            ))}
-          </div>
+        <div className="section-head flex-wrap gap-2">
+          <PageTabs testId="cons-tab" ariaLabel="Laporan konsolidasi" value={tab} onChange={setTab}
+            tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon, count: t.id === "elim" ? elims.length : undefined }))} />
           <div className="flex items-center gap-2 ml-auto">
             {tab === "pnl" && <div className="w-[110px]"><KNSelect data-testid="cons-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} /></div>}
             {tab !== "pnl" && <KNDatePicker data-testid="cons-asof" className="w-[170px] text-[12px]" clearable={false} value={asOf} onChange={setAsOf} />}
@@ -241,13 +233,13 @@ export default function GroupConsolidationView({ entities = [] }) {
             <div className="h-64 bg-[#F5F5F7] rounded animate-pulse" data-testid="cons-loading" />
           ) : tab === "pnl" ? (
             <>
-              <div className="flex items-center gap-2 mb-2 text-[11px] text-[#8E8E93]"><Layers size={13} className="text-[#6B219A]" /> Laba-Rugi Konsolidasi Tahun {year} — {entityCols.length} entitas</div>
+              <div className="flex flex-wrap items-center gap-2 mb-2 text-[11px] text-[#8E8E93]" data-testid="cons-pnl-caption"><Layers size={13} className="text-[#0058CC]" /> Laba-Rugi Konsolidasi Tahun {year} — {entityCols.length} entitas · <b className="text-[#3C3C43]">kolom Konsolidasi = setelah eliminasi antar-PT</b></div>
               {renderMatrix(PNL_ROWS)}
             </>
           ) : tab === "bs" ? (
             <>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]"><Building2 size={13} className="text-[#6B219A]" /> Neraca Konsolidasi per {formatDate(asOf)}</div>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]"><Building2 size={13} className="text-[#0058CC]" /> Neraca Konsolidasi per {formatDate(asOf)} · setelah eliminasi antar-PT</div>
                 <span data-testid="cons-balanced" className={`text-[11px] font-bold rounded-full px-2 py-0.5 inline-flex items-center gap-1 ${data?.balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>
                   {data?.balanced ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />}{data?.balanced ? "Seimbang" : "Tidak Seimbang"}
                 </span>
@@ -264,234 +256,11 @@ export default function GroupConsolidationView({ entities = [] }) {
 
       {modal && (
         <EliminationModal initial={modal} accounts={accounts} entities={entities}
-          onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); setNotice("Eliminasi tersimpan."); }} setError={setError} />
+          onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); setNotice("Eliminasi tersimpan."); }} />
       )}
       {detect && (
         <DetectModal detect={detect} onClose={() => setDetect(null)} onUse={useCandidatesAsDraft} />
       )}
     </div>
   );
-}
-
-function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncPairs, busy }) {
-  const autoG6 = elims.filter((e) => e.source_g6_pair_id).length;
-  return (
-    <div data-testid="cons-elim-panel">
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <h4 className="text-[12px] font-bold text-[#1C1C1E]">Entri Eliminasi Intercompany</h4>
-        {autoG6 > 0 && (
-          <span data-testid="cons-elim-g6-count"
-                className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[#EDE7FB] text-[#6B219A]">
-            {autoG6} otomatis dari transaksi antar-PT
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-2 flex-wrap">
-          <button data-testid="cons-sync-g6-btn"
-                  title="Sinkronkan eliminasi margin (unrealized profit) dari transaksi antar-PT"
-                  className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1"
-                  onClick={onSyncG6} disabled={busy}>
-            <ArrowRightLeft size={13} /> Sinkron Antar-PT
-          </button>
-          <button data-testid="cons-sync-pairs-btn"
-                  title="Sinkronkan eliminasi dari pasangan jurnal transfer antar-PT lama (nilai perolehan)"
-                  className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1"
-                  onClick={onSyncPairs} disabled={busy}>
-            <Link2 size={13} /> Sinkron Pasangan Jurnal
-          </button>
-          <button data-testid="cons-detect-btn" className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={onDetect} disabled={busy}><Wand2 size={13} /> Deteksi Otomatis</button>
-          <button data-testid="cons-elim-add" className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1" onClick={onAdd}><Plus size={13} /> Tambah Eliminasi</button>
-        </div>
-      </div>
-      {elims.length === 0 ? (
-        <div data-testid="cons-elim-empty" className="py-10 text-center text-[12px] text-[#8E8E93]">
-          <ScissorsLineDashed size={26} className="mx-auto mb-2 text-gray-300" />Belum ada entri eliminasi. Transaksi antar-PT akan mengisi ini sendiri; untuk data lama pakai "Sinkron Antar-PT", "Deteksi Otomatis", atau "Tambah Eliminasi".
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {elims.map((el) => (
-            <div key={el.id} data-testid={`cons-elim-${el.id}`} className="rounded-md border border-[#EFF0F2] p-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[12px] font-bold text-[#1C1C1E]">{elimName(el.name)}</span>
-                <span className="text-[10px] text-[#9A9BA3]">Efektif {formatDate(el.effective_date)}</span>
-                <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${el.balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{el.balanced ? "Seimbang" : "Tidak seimbang"}</span>
-                {el.source_g6_pair_id && (
-                  <span data-testid={`cons-elim-auto-g6-${el.id}`}
-                        title="Dijaga otomatis dari transaksi antar-PT — ikut berubah saat transaksinya dilunasi/dibatalkan"
-                        className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[#EDE7FB] text-[#6B219A]">
-                    Otomatis
-                  </span>
-                )}
-                {/* FASE E-7 (E7.3) — keputusan pemilik: HPP taksiran BOLEH, tetapi tidak
-                    boleh tampil sebagai angka telanjang. Entri yang HPP-nya belum
-                    diposting ditandai di sini + alasannya ada di catatan. */}
-                {el.g6_cost_estimated && (
-                  <span data-testid={`cons-elim-cost-estimated-${el.id}`}
-                        title={el.g6_cost_estimate_reason || "HPP penjual belum diposting"}
-                        className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[#FFF4E5] text-[#8A5300]">
-                    HPP TAKSIRAN
-                  </span>
-                )}
-                <span className="text-[11px] text-[#6B6B73] ml-auto tabular-nums">{formatCurrency(el.total_debit || 0)}</span>
-                {el.source_g6_pair_id ? (
-                  <span className="text-[10px] text-[#9A9BA3]" title="Dikelola sistem: ikut transaksi antar-PT-nya (batalkan transaksinya bila ingin hilang)">
-                    dikelola sistem
-                  </span>
-                ) : (
-                  <button data-testid={`cons-elim-del-${el.id}`} className="text-[#C9C9CE] hover:text-[#C0392B]" onClick={() => onDelete(el)} disabled={busy} aria-label="Hapus"><Trash2 size={13} /></button>
-                )}
-              </div>
-              {el.note && <p className="text-[11px] text-[#6B6B73] mt-0.5">{elimNote(el.note)}</p>}
-              <div className="mt-2 overflow-x-auto rounded border border-[#F5F5F7]">
-                <table className="w-full text-[11px]">
-                  <thead><tr className="text-left text-[9px] font-bold uppercase text-[#9A9BA3] bg-[#FAFBFC]"><th className="px-2 py-1">Akun</th><th className="px-2 py-1 text-right">Debit</th><th className="px-2 py-1 text-right">Kredit</th></tr></thead>
-                  <tbody>
-                    {(el.lines || []).map((l, i) => (
-                      <tr key={i} className="border-t border-[#F5F5F7]">
-                        <td className="px-2 py-1"><span className="font-mono text-[9px] text-[#9A9BA3] mr-1">{l.account_code}</span>{l.account_name}</td>
-                        <td className="px-2 py-1 text-right tabular-nums">{l.debit > 0 ? formatCurrency(l.debit) : "—"}</td>
-                        <td className="px-2 py-1 text-right tabular-nums">{l.credit > 0 ? formatCurrency(l.credit) : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EliminationModal({ initial, accounts, entities, onClose, onSaved, setError }) {
-  const [name, setName] = useState(initial.name || "Eliminasi Intercompany");
-  const [effDate, setEffDate] = useState(ymd(NOW));
-  const [note, setNote] = useState("");
-  const [lines, setLines] = useState(initial.lines || [{ account_code: "", debit: 0, credit: 0, description: "" }, { account_code: "", debit: 0, credit: 0, description: "" }]);
-  const [saving, setSaving] = useState(false);
-  // G1-34 — tanpa opsi "—"; placeholder menjelaskan isian (opsional).
-  const entOpts = entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.id }));
-  const [entFrom, setEntFrom] = useState("");
-  const [entTo, setEntTo] = useState("");
-
-  const setLine = (i, k, v) => setLines((ls) => ls.map((l, idx) => idx === i ? { ...l, [k]: v } : l));
-  const addLine = () => setLines((ls) => [...ls, { account_code: "", debit: 0, credit: 0, description: "" }]);
-  const rmLine = (i) => setLines((ls) => ls.filter((_, idx) => idx !== i));
-
-  const totalD = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-  const totalC = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
-  const balanced = Math.abs(totalD - totalC) < 0.5 && totalD > 0;
-
-  const save = async () => {
-    const clean = lines.filter((l) => l.account_code && ((Number(l.debit) || 0) > 0 || (Number(l.credit) || 0) > 0));
-    if (clean.length === 0) { setError("Minimal satu baris eliminasi dengan akun & nominal."); return; }
-    setSaving(true); setError("");
-    try {
-      await axios.post(`${API}/finance/consolidation/eliminations`, {
-        name, effective_date: effDate, note, entity_from: entFrom || null, entity_to: entTo || null,
-        lines: clean.map((l) => ({ account_code: l.account_code, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description })),
-      });
-      onSaved();
-    } catch (e) { setError(apiErrorText(e, "Gagal menyimpan eliminasi.")); setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="cons-elim-modal">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2]">
-          <h3 className="text-[14px] font-bold text-[#1C1C1E]">Tambah Eliminasi Intercompany</h3>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={16} /></button>
-        </div>
-        <div className="p-4 space-y-3 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Nama" required><input data-testid="cons-form-name" className="field" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-            <Field label="Tanggal Efektif" required><KNDatePicker data-testid="cons-form-date" value={effDate} onChange={setEffDate} /></Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Badan usaha dari (opsional)"><KNSelect className="field" value={entFrom} onValueChange={setEntFrom} options={entOpts} placeholder="Pilih badan usaha" /></Field>
-            <Field label="Badan usaha ke (opsional)"><KNSelect className="field" value={entTo} onValueChange={setEntTo} options={entOpts} placeholder="Pilih badan usaha" /></Field>
-          </div>
-          <Field label="Catatan (opsional)"><input data-testid="cons-form-note" className="field" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-
-          <div className="rounded-md border border-[#EFF0F2]">
-            <div className="flex items-center px-2 py-1.5 bg-[#FAFBFC] border-b border-[#EFF0F2]">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Baris Jurnal Eliminasi <span className="text-[#C0392B]">*</span></span>
-              <button data-testid="cons-form-addline" className="ml-auto text-[11px] text-[#6B219A] font-semibold inline-flex items-center gap-1" onClick={addLine}><Plus size={12} /> Baris</button>
-            </div>
-            <div className="p-2 space-y-2">
-              <div className="grid grid-cols-12 gap-1.5 px-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]" data-testid="cons-form-line-head">
-                <span className="col-span-5">Akun</span><span className="col-span-2 text-right">Debit</span>
-                <span className="col-span-2 text-right">Kredit</span><span className="col-span-2">Keterangan</span><span className="col-span-1" />
-              </div>
-              {lines.map((l, i) => (
-                <div key={i} className="grid grid-cols-12 gap-1.5 items-center" data-testid={`cons-form-line-${i}`}>
-                  <div className="col-span-5"><KNSelect data-testid={`cons-form-line-acct-${i}`} className="field !py-1 text-[11px]" value={l.account_code} onValueChange={(v) => setLine(i, "account_code", v)} options={accounts} placeholder="Pilih akun" searchable /></div>
-                  <input data-testid={`cons-form-line-debit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Debit" value={l.debit || ""} onChange={(e) => setLine(i, "debit", e.target.value)} />
-                  <input data-testid={`cons-form-line-credit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Kredit" value={l.credit || ""} onChange={(e) => setLine(i, "credit", e.target.value)} />
-                  <input className="field !py-1 text-[11px] col-span-2" aria-label="Keterangan baris" value={l.description || ""} onChange={(e) => setLine(i, "description", e.target.value)} />
-                  <button className="col-span-1 text-[#C9C9CE] hover:text-[#C0392B] flex justify-center" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={13} /></button>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-3 px-3 py-2 border-t border-[#EFF0F2] text-[11px]">
-              <span className="text-[#6B6B73]">Total Debit: <b className="tabular-nums">{formatCurrency(totalD)}</b></span>
-              <span className="text-[#6B6B73]">Total Kredit: <b className="tabular-nums">{formatCurrency(totalC)}</b></span>
-              <span data-testid="cons-form-balance" className={`ml-auto font-bold rounded-full px-2 py-0.5 ${balanced ? "bg-[#E6F6EC] text-[#1B7F4B]" : "bg-[#FDEDE7] text-[#C0392B]"}`}>{balanced ? "Seimbang ✓" : "Belum seimbang"}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2]">
-          <button className="btn-secondary text-[12px] py-1.5 px-3" onClick={onClose}>Batal</button>
-          <button data-testid="cons-form-save" className="btn-primary text-[12px] py-1.5 px-4" onClick={save} disabled={saving || !balanced}>{saving ? "Menyimpan…" : "Simpan Eliminasi"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetectModal({ detect, onClose, onUse }) {
-  const cands = detect?.candidates || [];
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="cons-detect-modal">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2]">
-          <h3 className="text-[14px] font-bold text-[#1C1C1E] inline-flex items-center gap-2"><Wand2 size={15} className="text-[#6B219A]" /> Deteksi Kandidat Intercompany</h3>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={16} /></button>
-        </div>
-        <div className="p-4 overflow-y-auto">
-          <p className="text-[11px] text-[#8E8E93] mb-3">Terdeteksi {detect?.detected_accounts || 0} akun ber-keyword intercompany. Kandidat dengan saldo per-PT:</p>
-          {cands.length === 0 ? (
-            <div data-testid="cons-detect-empty" className="py-8 text-center text-[12px] text-[#8E8E93]">
-              Tidak ada akun/saldo intercompany terdeteksi. Beri nama akun mengandung kata "Intercompany"/"Antar-PT" agar terdeteksi otomatis.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {cands.map((c) => (
-                <div key={c.account_code} data-testid={`cons-cand-${c.account_code}`} className="rounded-md border border-[#EFF0F2] p-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] text-[#9A9BA3]">{c.account_code}</span>
-                    <span className="text-[12px] font-bold text-[#1C1C1E]">{c.account_name}</span>
-                    <span className="text-[11px] text-[#6B6B73] ml-auto tabular-nums">Net {formatCurrency(c.total_net)}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {c.per_entity.map((p) => (
-                      <span key={p.entity_id} className="text-[10px] rounded-full px-2 py-0.5 bg-[#F3F3F5] text-[#6B6B73]">{p.short_name}: <b className="tabular-nums">{formatCurrency(p.balance)}</b></span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2]">
-          <button className="btn-secondary text-[12px] py-1.5 px-3" onClick={onClose}>Tutup</button>
-          <button data-testid="cons-detect-use" className="btn-primary text-[12px] py-1.5 px-4" onClick={onUse} disabled={(detect?.suggested_lines || []).length === 0}>Jadikan Draf Eliminasi</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, required = false, children }) {
-  return (<label className="block"><span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] block mb-1">{label}{required && <span className="text-[#C0392B]"> *</span>}</span>{children}</label>);
 }

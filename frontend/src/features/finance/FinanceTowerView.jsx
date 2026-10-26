@@ -5,15 +5,13 @@
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
-import {
-  RefreshCw, Wallet, Users, Truck, Coins, TrendingUp, PiggyBank, Percent, CalendarDays,
-} from "lucide-react";
+import { RefreshCw, Wallet, Users, Truck, Coins, CalendarDays } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import { FC, entityParam, fmtPct, KpiCard, EmptyState, formatCurrency } from "./financeShared";
+import { FC, entityParam, KpiCard, EmptyState, formatCurrency } from "./financeShared";
 import {
   MonthlyTrendPanel, RatiosStrip, ArAgingPanel, ApAgingPanel,
-  TopArPanel, TopApPanel, CashPanel,
+  TopArPanel, TopApPanel, CashPanel, PlYtdCard,
 } from "./FinanceTowerParts";
 
 export default function FinanceTowerView({ selectedEntity }) {
@@ -72,15 +70,10 @@ export default function FinanceTowerView({ selectedEntity }) {
             <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub="Kas + AR − AP" />
           </div>
 
-          {/* Baris KPI kinerja (Laba-Rugi) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <KpiCard testId="tower-kpi-rev-ytd" label="Pendapatan YTD" value={formatCurrency(ytd.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" />
-            <KpiCard testId="tower-kpi-net-ytd" label="Laba Bersih YTD" value={formatCurrency(ytd.net_income)} icon={PiggyBank} accent={FC.net} tone={(ytd.net_income ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
-            <KpiCard testId="tower-kpi-margin-ytd" label="Marjin Bersih YTD" value={fmtPct(ytd.net_margin)} icon={Percent} accent={FC.teal} />
-            {/* Audit UI 24 Okt (085↔092): ini pendapatan JURNAL bulan berjalan (diakui saat kirim) —
-                beda dengan "Nilai Pesanan 30 Hari" di Analitik › Ringkasan. */}
-            <KpiCard testId="tower-kpi-rev-mtd" label="Pendapatan Bulan Ini (Jurnal)" value={formatCurrency(mtd.revenue)} icon={TrendingUp} accent={FC.blue} tone="text-[#0058CC]" sub={`diakui saat kirim · laba ${formatCurrency(mtd.net_income)}`} />
-          </div>
+          {/* Fase 3 · P4 (D-10) — dulu 4 kartu KPI Laba-Rugi (Pendapatan/Laba/Marjin Bersih/Pendapatan bulan ini);
+              Marjin Bersih juga tampil di Rasio dan Posisi Kas juga di panel kas → angka ganda di satu layar.
+              Kini satu kartu ringkas + "Rincian di Laporan Keuangan →"; Marjin Bersih hanya di Rasio. */}
+          <div className="mb-3"><PlYtdCard ytd={ytd} mtd={mtd} year={data?.period?.year} /></div>
 
           <div className="grid lg:grid-cols-3 gap-3 mb-3">
             <div className="lg:col-span-2"><MonthlyTrendPanel monthly={data.monthly} /></div>
@@ -100,7 +93,7 @@ export default function FinanceTowerView({ selectedEntity }) {
           </div>
         </>
       )}
-      <p className="mt-3 text-[11px] text-[#9A9BA3]">Dashboard terpadu — posisi kas & rasio memakai saldo akhir; Laba-Rugi operasional (exclude penutup). Klik menu terkait untuk rincian.</p>
+      <p className="mt-3 text-[11px] text-[#9A9BA3]">Dashboard terpadu — posisi kas & rasio memakai saldo akhir; Laba-Rugi operasional (exclude penutup). Rincian laba-rugi, neraca & arus kas ada di Laporan Keuangan.</p>
     </div>
   );
 }

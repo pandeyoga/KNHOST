@@ -6,10 +6,14 @@
  * rekap PPN kurang/lebih bayar di Pusat Pajak jujur. Modal ini menampilkan angka
  * bersih (sesudah retur), alasan bila tombol belum boleh ditekan, dan jalur
  * **Faktur Pengganti** ketika angkanya berubah — dokumen terbit tidak pernah diedit.
+ *
+ * Fase 3 · P4 (L-03) — overlay `fixed inset-0` buatan sendiri → `FormModal` baku; tombol hitam → `primary-button`
+ * (pembatalan = `danger-button`), tombol lain `secondary-button`. Isian & aksi tidak berubah.
  */
 import { useCallback, useEffect, useState } from "react";
-import { X, Receipt, FileCheck2, AlertTriangle, RefreshCw, Ban } from "lucide-react";
+import { Receipt, FileCheck2, AlertTriangle, RefreshCw, Ban } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import FormModal from "../../../components/FormModal";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
@@ -57,138 +61,123 @@ export default function IntercoTaxModal({ doc, onClose, onDone }) {
   const out = state?.out;
   const inn = state?.in;
 
+  const subtitle = `${doc.number} · ${state?.seller_entity_name || "…"} → ${state?.buyer_entity_name || "…"}`
+    + (state?.tax_apply ? ` · PPN ${state.tax_rate}%` : " · tanpa PPN");
+
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.45)] flex items-center justify-center p-4"
-         data-testid="interco-tax-modal"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E5EA] flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-[#1D1D1F] flex items-center gap-2">
-              <Receipt size={17} /> Faktur Pajak Internal
-            </h2>
-            <p className="text-xs text-[#6E6E73] mt-0.5">
-              {doc.number} · {state?.seller_entity_name} → {state?.buyer_entity_name}
-              {state?.tax_apply ? ` · PPN ${state.tax_rate}%` : " · tanpa PPN"}
-            </p>
-          </div>
-          <button onClick={onClose} data-testid="interco-tax-close"
-                  className="p-1.5 rounded-md text-[#6E6E73] hover:bg-[#F2F2F5]" aria-label="Tutup">
-            <X size={17} />
-          </button>
-        </div>
-
-        <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-          {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
-
-          <div className="grid grid-cols-3 gap-3">
-            <Box label="DPP bersih" value={formatCurrency(state?.net_dpp || 0)} testid="interco-tax-dpp" />
-            <Box label="PPN bersih" value={formatCurrency(state?.net_ppn || 0)} testid="interco-tax-ppn" />
-            <Box label="Total" value={formatCurrency(state?.net_total || 0)} testid="interco-tax-total" />
-          </div>
-
-          {state?.blocked_reason && (
-            <div className="flex items-start gap-2 rounded-lg bg-[#FFF4E5] px-3 py-2.5 text-[13px] text-[#8A5300]"
-                 data-testid="interco-tax-blocked">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-              <span>{state.blocked_reason}</span>
-            </div>
-          )}
-
-          {state?.needs_replacement && (
-            <div className="flex items-start gap-2 rounded-lg bg-[#FDEDE7] px-3 py-2.5 text-[13px] text-[#9B1C1C]"
-                 data-testid="interco-tax-needs-replacement">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-              <span>
-                Angka faktur yang sudah terbit <b>tidak lagi sama</b> dengan nilai bersih
-                transaksi (ada retur sesudah faktur terbit). Terbitkan <b>Faktur Pengganti</b>
-                {" "}— dokumen pajak yang sudah terbit tidak boleh diubah diam-diam.
-              </span>
-            </div>
-          )}
-
-          {(out || inn) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="interco-tax-docs">
-              <FakturCard title="Faktur Pajak Keluaran (penjual)" doc={out}
-                          testid="interco-tax-out" />
-              <FakturCard title="Faktur Pajak Masukan (pembeli)" doc={inn}
-                          testid="interco-tax-in" />
-            </div>
-          )}
-
-          {!out && !state?.blocked_reason && (
-            <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] p-3 space-y-2">
-              <label className="block text-xs font-medium text-[#3C3C43]">
-                NSFP resmi DJP (opsional — boleh diisi menyusul)
-              </label>
-              <input
-                value={nsfp}
-                onChange={(e) => setNsfp(e.target.value)}
-                placeholder="mis. 010.000-26.00000001"
-                data-testid="interco-tax-nsfp-input"
-                className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-sm text-[#1D1D1F]"
-              />
-              <p className="text-[11px] text-[#8E8E93]">
-                Tanpa NSFP, faktur tetap terbit dengan nomor internal — nomor seri resmi
-                bisa ditambahkan setelah alokasi dari Coretax/e-Faktur.
-              </p>
-            </div>
-          )}
-
-          {mode && (
-            <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] p-3 space-y-2">
-              <label className="block text-xs font-medium text-[#3C3C43]">
-                Alasan {mode === "replace" ? "penggantian" : "pembatalan"} (wajib, minimal 5 huruf)
-              </label>
-              <textarea
-                value={reason} rows={2}
-                onChange={(e) => setReason(e.target.value)}
-                data-testid="interco-tax-reason-input"
-                className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-sm text-[#1D1D1F]"
-                placeholder="mis. ada retur sebagian sesudah faktur terbit"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-[#E5E5EA] flex flex-wrap items-center justify-end gap-2 bg-[#FAFBFC]">
-          <button onClick={onClose} data-testid="interco-tax-cancel-btn"
-                  className="px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white text-[#3C3C43] hover:bg-[#F2F2F5]">
+    <FormModal open onClose={onClose} icon={Receipt} testId="interco-tax-modal"
+      title="Faktur Pajak Internal" subtitle={subtitle}
+      footer={(
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" onClick={onClose} data-testid="interco-tax-cancel-btn" className="secondary-button">
             Tutup
           </button>
           {out && !mode && (
             <>
-              <button onClick={() => setMode("cancel")} disabled={busy}
+              <button type="button" onClick={() => setMode("cancel")} disabled={busy}
                       data-testid="interco-tax-open-cancel"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg border border-[#F2C9BE] bg-white text-[#C0392B] hover:bg-[#FDEDE7]">
+                      className="secondary-button text-[#C0392B]">
                 <Ban size={14} /> Batalkan Faktur
               </button>
-              <button onClick={() => setMode("replace")} disabled={busy}
+              <button type="button" onClick={() => setMode("replace")} disabled={busy}
                       data-testid="interco-tax-open-replace"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg border border-[#0058CC] bg-white text-[#0058CC] hover:bg-[#EAF2FF]">
+                      className="secondary-button">
                 <RefreshCw size={14} /> Faktur Pengganti
               </button>
             </>
           )}
           {mode && (
             <button
+              type="button"
               onClick={() => act(mode === "replace" ? "replace" : "cancel", { reason })}
               disabled={busy || reason.trim().length < 5}
               data-testid="interco-tax-confirm-reason"
-              className="px-3.5 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-40">
+              className={mode === "replace" ? "primary-button" : "danger-button"}>
               {busy ? "Memproses…" : mode === "replace" ? "Terbitkan Pengganti" : "Batalkan Faktur"}
             </button>
           )}
           {state?.can_issue && !mode && (
-            <button onClick={() => act("", { nsfp, kode_transaksi: "01" })} disabled={busy}
+            <button type="button" onClick={() => act("", { nsfp, kode_transaksi: "01" })} disabled={busy}
                     data-testid="interco-tax-issue-btn"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg bg-[#0F172A] text-white hover:bg-black disabled:opacity-40">
+                    className="primary-button">
               <FileCheck2 size={14} /> {busy ? "Menerbitkan…" : "Terbitkan Faktur Pajak"}
             </button>
           )}
         </div>
+      )}>
+      <div className="space-y-4">
+        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Box label="DPP bersih" value={formatCurrency(state?.net_dpp || 0)} testid="interco-tax-dpp" />
+          <Box label="PPN bersih" value={formatCurrency(state?.net_ppn || 0)} testid="interco-tax-ppn" />
+          <Box label="Total" value={formatCurrency(state?.net_total || 0)} testid="interco-tax-total" />
+        </div>
+
+        {state?.blocked_reason && (
+          <div className="flex items-start gap-2 rounded-lg bg-[#FFF4E5] px-3 py-2.5 text-[13px] text-[#8A5300]"
+               data-testid="interco-tax-blocked">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+            <span>{state.blocked_reason}</span>
+          </div>
+        )}
+
+        {state?.needs_replacement && (
+          <div className="flex items-start gap-2 rounded-lg bg-[#FDEDE7] px-3 py-2.5 text-[13px] text-[#9B1C1C]"
+               data-testid="interco-tax-needs-replacement">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+            <span>
+              Angka faktur yang sudah terbit <b>tidak lagi sama</b> dengan nilai bersih
+              transaksi (ada retur sesudah faktur terbit). Terbitkan <b>Faktur Pengganti</b>
+              {" "}— dokumen pajak yang sudah terbit tidak boleh diubah diam-diam.
+            </span>
+          </div>
+        )}
+
+        {(out || inn) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="interco-tax-docs">
+            <FakturCard title="Faktur Pajak Keluaran (penjual)" doc={out}
+                        testid="interco-tax-out" />
+            <FakturCard title="Faktur Pajak Masukan (pembeli)" doc={inn}
+                        testid="interco-tax-in" />
+          </div>
+        )}
+
+        {!out && !state?.blocked_reason && (
+          <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] p-3 space-y-2">
+            <label className="block text-xs font-medium text-[#3C3C43]">
+              NSFP resmi DJP (opsional — boleh diisi menyusul)
+            </label>
+            <input
+              value={nsfp}
+              onChange={(e) => setNsfp(e.target.value)}
+              placeholder="mis. 010.000-26.00000001"
+              data-testid="interco-tax-nsfp-input"
+              className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-sm text-[#1D1D1F]"
+            />
+            <p className="text-[11px] text-[#8E8E93]">
+              Tanpa NSFP, faktur tetap terbit dengan nomor internal — nomor seri resmi
+              bisa ditambahkan setelah alokasi dari Coretax/e-Faktur.
+            </p>
+          </div>
+        )}
+
+        {mode && (
+          <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] p-3 space-y-2">
+            <label className="block text-xs font-medium text-[#3C3C43]">
+              Alasan {mode === "replace" ? "penggantian" : "pembatalan"} (wajib, minimal 5 huruf)
+            </label>
+            <textarea
+              value={reason} rows={2}
+              onChange={(e) => setReason(e.target.value)}
+              data-testid="interco-tax-reason-input"
+              className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-sm text-[#1D1D1F]"
+              placeholder="mis. ada retur sebagian sesudah faktur terbit"
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </FormModal>
   );
 }
 

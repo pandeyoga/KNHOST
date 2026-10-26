@@ -6,6 +6,7 @@ import KNSelect from "../../components/KNSelect";
 import ESignModal from "./ESignModal";
 import WhatsAppModal from "./WhatsAppModal";
 import WhatsAppSettings from "./WhatsAppSettings";
+import DetailModal from "../../components/DetailModal";
 import {
   FileText, Eye, Download, PenLine, Search, Loader2, X, ShieldCheck, RefreshCw, FileWarning,
   MessageCircle, Settings, Route,
@@ -238,22 +239,24 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
         </div>
       </section>
 
-      {/* Preview modal */}
+      {/* Preview modal — Fase 3 · P4 (L-03): overlay `fixed inset-0` buatan sendiri → `DetailModal` framed (Esc &
+          klik latar baku, layar penuh di HP). Kepala (Unduh PDF + ×) tetap milik panel ini. */}
       {preview && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/45 p-4" data-testid="dc-preview-modal">
-          <div className="flex w-full max-w-[820px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "92vh" }}>
-            <div className="flex items-center justify-between border-b border-[#EDEEF1] px-5 py-3">
+        <DetailModal onClose={() => setPreview(null)} framed showClose={false} size="lg"
+          label={`Pratinjau ${preview.doc?.number || preview.doc?.source_id || "dokumen"}`} testId="dc-preview-modal">
+          <div className="flex flex-col" data-testid="dc-preview-panel">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EDEEF1] pb-3">
               <h3 className="text-[14px] font-bold">Pratinjau · {preview.doc?.number || preview.doc?.source_id}</h3>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary flex items-center gap-1.5 !py-1" onClick={() => downloadPdf({ source_id: preview.doc.source_id, entity_id: preview.doc.entity_id, number: preview.doc.number })}>
+                <button type="button" className="secondary-button !py-1" onClick={() => downloadPdf({ source_id: preview.doc.source_id, entity_id: preview.doc.entity_id, number: preview.doc.number })}>
                   <Download size={13} /> Unduh PDF
                 </button>
-                <button onClick={() => setPreview(null)} className="text-[#9A9BA3] hover:text-[#1a1a1a]" data-testid="dc-preview-close"><X size={18} /></button>
+                <button type="button" onClick={() => setPreview(null)} className="icon-button" aria-label="Tutup" data-testid="dc-preview-close"><X size={16} /></button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden bg-[#F2F3F5] p-3">
+            <div className="rounded-lg bg-[#F2F3F5] p-3">
               {preview.loading ? (
-                <div className="flex h-full items-center justify-center"><Loader2 size={24} className="animate-spin text-[#0058CC]" /></div>
+                <div className="flex min-h-[40vh] items-center justify-center"><Loader2 size={24} className="animate-spin text-[#0058CC]" /></div>
               ) : preview.error ? (
                 <div className="notice-bar danger"><span>{preview.error}</span></div>
               ) : (
@@ -262,7 +265,7 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
               )}
             </div>
           </div>
-        </div>
+        </DetailModal>
       )}
 
       {/* E-Sign modal */}

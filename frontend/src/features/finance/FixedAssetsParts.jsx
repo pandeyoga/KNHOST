@@ -1,15 +1,21 @@
 /**
  * R6.2 — FixedAssetsParts — komponen pendukung FixedAssetsView (dipisah agar file < 500 baris).
- * Berisi: AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog.
+ * Berisi: AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog.
+ *
+ * Fase 3 · P4 (L-03) — tiga pop-up `.modal-card` buatan sendiri (+ dialog Pindah PT dari FixedAssetsView) kini
+ * memakai cangkang baku: form → `FormModal` (Esc/klik-latar aman, kepala & kaki tetap, layar penuh di HP),
+ * jadwal penyusutan (rincian) → `DetailModal framed`. Isian & testid tidak berubah.
  */
 import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useState } from "react";
 import {
-  X, Plus, RefreshCw, PackageMinus, CalendarClock, TrendingUp, TrendingDown,
+  X, Plus, RefreshCw, PackageMinus, CalendarClock, TrendingUp, TrendingDown, Building2,
 } from "lucide-react";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
+import DetailModal from "../../components/DetailModal";
 
 export const fmtDate = (s) => {
   if (!s) return "—";
@@ -56,7 +62,7 @@ export function FaKpi({ label, value, hint, icon: Icon, tone = "", testId }) {
 }
 
 /* ── Tambah Aset ─────────────────────────────────────────────────────────── */
-export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCancel, onSubmit }) {
+export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, error = "", onCancel, onSubmit }) {
   const cats = meta?.categories || ["Peralatan & Mesin"];
   const catAcc = meta?.category_account || {};
   const accounts = meta?.asset_accounts || [];
@@ -92,18 +98,14 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
     });
   }
 
+  // UAT 24 Okt (audit UI tahap 2) — G1-25: Simpan nonaktif sampai Nama & Harga Perolehan & masa manfaat terisi.
+  const cannotSave = salvageBad || !form.name.trim() || biaya <= 0 || life <= 0;
   return (
-    <div className="modal-overlay" data-testid="add-asset-dialog"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="modal-card">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="modal-title">Tambah Aset Tetap</h3>
-            <p className="modal-subtitle">Perolehan otomatis diposting ke GL: Dr akun aset / Cr Kas-Bank.</p>
-          </div>
-          <button className="icon-button" onClick={onCancel} aria-label="Tutup"><X size={15} /></button>
-        </div>
-
+    <FormModal open onClose={onCancel} title="Tambah Aset Tetap" icon={Plus} size="md"
+      subtitle="Perolehan otomatis diposting ke GL: Dr akun aset / Cr Kas-Bank."
+      testId="add-asset-dialog" onSubmit={submit} busy={busy} error={error}
+      submitDisabled={cannotSave} submitLabel="Simpan Aset"
+      submitTestId="add-asset-submit-btn" cancelTestId="add-asset-cancel-btn">
         {localErr && <div className="notice-bar danger mb-2" data-testid="add-asset-error"><span>{localErr}</span></div>}
 
         <div className="grid gap-3">
@@ -113,7 +115,7 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
               placeholder="Mesin Tenun Otomatis TX-200" onChange={(e) => set("name", e.target.value)} />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
               <span className="text-[11px] font-semibold text-[#3C3C43]">Kategori</span>
               <KNSelect data-testid="asset-category-select" className="field" value={form.category}
@@ -129,7 +131,7 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
               <span className="text-[11px] font-semibold text-[#3C3C43]">Harga Perolehan (Rp) *</span>
               <MoneyInput testId="asset-cost-input" className="field" value={form.acquisition_cost} placeholder="mis. 12.000.000"
@@ -142,7 +144,7 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
               <span className="text-[11px] font-semibold text-[#3C3C43]">Masa Manfaat (bulan) *</span>
               <input data-testid="asset-life-input" className="field tabular-nums" type="number" min={1}
@@ -181,17 +183,7 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, onCa
             </p>
           </div>
         </div>
-
-        <div className="modal-actions">
-          <button data-testid="add-asset-cancel-btn" className="secondary-button" onClick={onCancel}>Batal</button>
-          {/* UAT 24 Okt (audit UI tahap 2) — G1-25: Simpan nonaktif sampai Nama & Harga Perolehan & masa manfaat terisi. */}
-          <button data-testid="add-asset-submit-btn" className="primary-button"
-            disabled={busy || salvageBad || !form.name.trim() || biaya <= 0 || life <= 0} onClick={submit}>
-            {busy ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />} Simpan Aset
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
@@ -201,11 +193,11 @@ export function ScheduleDialog({ asset, loading, onClose }) {
   const entries = asset?.depreciation_entries || [];
   const postedCount = schedule.filter((r) => r.posted).length;
 
+  // Rincian (baca-saja) → DetailModal framed; tombol tutup di kepala tetap (testid lama), tabel bergulir di dalam.
   return (
-    <div className="modal-overlay" data-testid="schedule-dialog"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card wide">
-        <div className="flex items-start justify-between mb-3">
+    <DetailModal onClose={onClose} framed showClose={false} size="lg" label="Jadwal penyusutan aset"
+      testId="schedule-dialog">
+        <div className="flex items-start justify-between gap-2 mb-3">
           <div>
             <h3 className="modal-title flex items-center gap-1.5">
               <CalendarClock size={16} className="text-[#0058CC]" /> Jadwal Penyusutan · {asset?.number}
@@ -238,8 +230,8 @@ export function ScheduleDialog({ asset, loading, onClose }) {
             Jadwal penyusutan belum tersedia untuk aset ini.
           </div>
         ) : (
-          <div className="max-h-[46vh] overflow-auto rounded-md border border-[#EFF0F2]">
-            <table className="w-full text-[12px]" data-testid="schedule-table">
+          <div className="table-wrap max-h-[46vh] overflow-auto">
+            <table className="data-table" data-testid="schedule-table">
               <thead className="sticky top-0">
                 <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                   <th className="px-3 py-2">Periode</th>
@@ -273,13 +265,12 @@ export function ScheduleDialog({ asset, loading, onClose }) {
             </table>
           </div>
         )}
-      </div>
-    </div>
+    </DetailModal>
   );
 }
 
 /* ── Disposal ────────────────────────────────────────────────────────────── */
-export function DisposeDialog({ asset, busy, onCancel, onSubmit }) {
+export function DisposeDialog({ asset, busy, error = "", onCancel, onSubmit }) {
   const [proceeds, setProceeds] = useState("");
   const [date, setDate] = useState(todayWib());
   const [note, setNote] = useState("");
@@ -290,20 +281,20 @@ export function DisposeDialog({ asset, busy, onCancel, onSubmit }) {
   const isGain = gainLoss > 0.01;
   const isLoss = gainLoss < -0.01;
 
+  // Tombol konfirmasi berwarna bahaya → kaki sendiri (`footer`), bukan tombol Simpan baku.
+  const footer = (
+    <div className="flex items-center justify-end gap-2">
+      <button type="button" data-testid="dispose-cancel-btn" className="secondary-button" onClick={onCancel} disabled={busy}>Batal</button>
+      <button type="button" data-testid="dispose-submit-btn" className="danger-button" disabled={busy}
+        onClick={() => onSubmit({ proceeds: p, date, note: note.trim() })}>
+        {busy ? <RefreshCw size={14} className="animate-spin" /> : <PackageMinus size={14} />} Konfirmasi Pelepasan
+      </button>
+    </div>
+  );
   return (
-    <div className="modal-overlay" data-testid="dispose-dialog"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="modal-card">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="modal-title flex items-center gap-1.5">
-              <PackageMinus size={16} className="text-[#B4231F]" /> Lepas Aset · {asset?.number}
-            </h3>
-            <p className="modal-subtitle">{asset?.name} · nilai buku saat ini <b className="tabular-nums">{formatCurrency(bookValue)}</b></p>
-          </div>
-          <button className="icon-button" onClick={onCancel} aria-label="Tutup"><X size={15} /></button>
-        </div>
-
+    <FormModal open onClose={onCancel} title={`Lepas Aset · ${asset?.number || ""}`} icon={PackageMinus} size="md"
+      subtitle={`${asset?.name || ""} · nilai buku saat ini ${formatCurrency(bookValue)}`}
+      testId="dispose-dialog" busy={busy} error={error} footer={footer}>
         <div className="grid gap-3">
           <label className="grid gap-1">
             <span className="text-[11px] font-semibold text-[#3C3C43]">Nilai Jual / Proceeds (Rp)</span>
@@ -338,15 +329,52 @@ export function DisposeDialog({ asset, busy, onCancel, onSubmit }) {
             </p>
           </div>
         </div>
+    </FormModal>
+  );
+}
 
-        <div className="modal-actions">
-          <button data-testid="dispose-cancel-btn" className="secondary-button" onClick={onCancel}>Batal</button>
-          <button data-testid="dispose-submit-btn" className="danger-button" disabled={busy}
-            onClick={() => onSubmit({ proceeds: p, date, note: note.trim() })}>
-            {busy ? <RefreshCw size={14} className="animate-spin" /> : <PackageMinus size={14} />} Konfirmasi Pelepasan
-          </button>
+/* ── Pindah aset ke badan usaha lain (FASE E-7 · E7g; dulu `.modal-card` di FixedAssetsView) ──────────── */
+export function TransferAssetDialog({ asset, entities = [], busy, error = "", onCancel, onSubmit }) {
+  const [to, setTo] = useState("");
+  const [price, setPrice] = useState("");
+  const [reason, setReason] = useState("");
+  const submit = () => onSubmit({ to_entity_id: to, transfer_price: price ? Number(price) : null, reason });
+  return (
+    <FormModal open onClose={onCancel} title="Pindah Aset ke Badan Usaha Lain" icon={Building2} size="md"
+      testId="asset-transfer-modal" onSubmit={submit} busy={busy} error={error}
+      submitDisabled={!to || reason.trim().length < 5} submitLabel={busy ? "Memproses…" : "Pindahkan Aset"}
+      submitTestId="asset-transfer-submit">
+      <p className="text-[12px] leading-relaxed text-[#6B6B73]">
+        <b>{asset.number} · {asset.name}</b> — nilai buku sekarang{" "}
+        <b>{formatCurrency(asset.book_value)}</b> (akumulasi penyusutan{" "}
+        {formatCurrency(asset.accumulated_depreciation)}). Aset akan lahir kembali
+        di badan usaha penerima dengan <b>masa manfaat SISA</b>, akumulasi penyusutan di
+        badan usaha ini dihapus lewat jurnal, dan bila harga pindah di atas nilai buku,
+        labanya <b>dieliminasi di konsolidasi</b> (menjual ke PT sendiri bukan laba grup).
+      </p>
+      <div className="grid gap-3 mt-3">
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Badan Usaha Penerima *</label>
+          <KNSelect data-testid="asset-transfer-to" className="field" value={to}
+            onValueChange={setTo} aria-label="Badan usaha tujuan pindah aset"
+            placeholder="— Pilih badan usaha —"
+            options={(entities || [])
+              .filter((en) => en.id !== asset.entity_id && (en.status || "active") === "active")
+              .map((en) => ({ value: en.id, label: en.short_name || en.legal_name || en.id }))} />
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">
+            Harga Pindah <span className="font-normal text-[#9A9BA3]">(kosong = nilai buku)</span>
+          </label>
+          <MoneyInput testId="asset-transfer-price" className="field" value={price} onChange={(v) => setPrice(v)} />
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Alasan Pindah *</label>
+          <input data-testid="asset-transfer-reason" className="field" value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="mis. mesin dipakai produksi badan usaha itu mulai bulan depan" />
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

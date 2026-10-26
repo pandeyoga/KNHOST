@@ -8,6 +8,9 @@
  *
  * Bunga TIDAK diakru sistem (pemilik tidak memintanya) — kolom catatan bunga ada supaya
  * kesepakatannya terbaca, bukan supaya angkanya dikarang.
+ *
+ * Fase 3 · P4 (L-03) — pop-up Angsuran & Pinjaman Baru (`.modal-card` buatan sendiri) → `FormModal` baku; galat
+ * aksi angsuran kini juga tampil DI DALAM pop-up (bilah galat panel tertutup lapisan pop-up).
  */
 import MoneyInput from "../../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -15,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Banknote, Plus, RefreshCw, HandCoins, Ban, CheckCircle2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
+import FormModal from "../../../components/FormModal";
 import { formatCurrency } from "../../../utils/formatters";
 
 const STATUS_CLASS = {
@@ -181,27 +185,24 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
       )}
 
       {repayFor && (
-        <div className="modal-overlay" data-testid="loan-repay-modal"
-          onClick={(e) => { if (e.target === e.currentTarget) setRepayFor(null); }}>
-          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
-            <p className="modal-title">Angsuran {repayFor.number}</p>
-            <p className="modal-subtitle">
-              Sisa pinjaman {formatCurrency(repayFor.outstanding)}. Uang akan berpindah
-              dari {repayFor.borrower_entity_name} ke {repayFor.lender_entity_name}, dan
-              jurnalnya terbit di kedua buku.
-            </p>
-            <MoneyInput testId="loan-repay-amount" className="field mt-2" value={repayAmt} onChange={setRepayAmt} />
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setRepayFor(null)}>Batal</button>
-              <button data-testid="loan-repay-confirm" className="btn-primary"
+        <FormModal open onClose={() => setRepayFor(null)} size="sm" icon={HandCoins} testId="loan-repay-modal"
+          busy={busy === repayFor.id} title={`Angsuran ${repayFor.number}`}
+          subtitle={`Sisa pinjaman ${formatCurrency(repayFor.outstanding)}. Uang akan berpindah dari ${repayFor.borrower_entity_name} ke ${repayFor.lender_entity_name}, dan jurnalnya terbit di kedua buku.`}
+          footer={(
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => setRepayFor(null)}>Batal</button>
+              <button type="button" data-testid="loan-repay-confirm" className="primary-button"
                 disabled={busy === repayFor.id || !(Number(repayAmt) > 0)}
                 onClick={() => act(repayFor, "repay", { amount: Number(repayAmt), note: "" },
                   `Angsuran ${formatCurrency(Number(repayAmt))} untuk ${repayFor.number} dicatat.`)}>
                 Catat Angsuran
               </button>
             </div>
-          </div>
-        </div>
+          )}>
+          {err && <div className="notice-bar danger mb-2" data-testid="loan-repay-error"><span>{err}</span><button type="button" onClick={() => setErr("")}>×</button></div>}
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Jumlah angsuran</label>
+          <MoneyInput testId="loan-repay-amount" className="field" value={repayAmt} onChange={setRepayAmt} />
+        </FormModal>
       )}
     </div>
   );
@@ -248,59 +249,55 @@ function CreateLoanModal({ entities, defaultEntity, onClose, onCreated }) {
   }
 
   return (
-    <div className="modal-overlay" data-testid="loan-create-modal"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 560, width: "95vw" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-4 py-3">
-          <Banknote size={16} className="text-[#0058CC]" />
-          <h2 className="text-[14px] font-bold">Pinjaman Uang Antar-PT</h2>
-        </div>
-        <div className="space-y-3 p-4">
-          {err && <div className="notice-bar danger" data-testid="loan-create-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Pemberi (piutang) *</label>
-              {/* UAT 24 Okt (audit UI tahap 2) — G1-30: PT lawan tanpa PT yang sama; nominal MoneyInput. */}
-              <KNSelect data-testid="loan-lender" className="field" value={lender}
-                onValueChange={setLender} options={opts.filter((o) => o.value !== borrower)} placeholder="Pilih badan usaha…" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Penerima (utang) *</label>
-              <KNSelect data-testid="loan-borrower" className="field" value={borrower}
-                onValueChange={setBorrower} options={opts.filter((o) => o.value !== lender)} placeholder="Pilih badan usaha…" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Jumlah Pinjaman *</label>
-              <MoneyInput testId="loan-principal" className="field" value={principal} onChange={setPrincipal} placeholder="0" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Rencana Kembali</label>
-              <KNDatePicker data-testid="loan-return-date" value={returnDate} onChange={setReturnDate} />
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Tujuan Pinjaman *</label>
-            <input data-testid="loan-purpose" className="field" value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-              placeholder="mis. menutup kebutuhan modal kerja bulan ini" />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">
-              Catatan Bunga / Biaya <span className="font-normal text-[#9A9BA3]">(tidak dihitung sistem)</span>
-            </label>
-            <input data-testid="loan-interest-note" className="field" value={interestNote}
-              onChange={(e) => setInterestNote(e.target.value)}
-              placeholder="mis. tanpa bunga · atau 1%/bulan dibayar saat pelunasan" />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="btn-secondary" onClick={onClose}>Batal</button>
-          <button data-testid="loan-create-submit" className="btn-primary" onClick={submit}
+    <FormModal open onClose={onClose} icon={Banknote} testId="loan-create-modal" busy={busy}
+      title="Pinjaman Uang Antar-PT"
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={busy}>Batal</button>
+          <button type="button" data-testid="loan-create-submit" className="primary-button" onClick={submit}
             disabled={busy || !lender || !borrower || lender === borrower || !(Number(principal) > 0) || purpose.trim().length < 5}>
             {busy ? "Menyimpan…" : "Simpan sebagai Draf"}
           </button>
         </div>
+      )}>
+      <div className="space-y-3">
+        {err && <div className="notice-bar danger" data-testid="loan-create-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Pemberi (piutang) *</label>
+            {/* UAT 24 Okt (audit UI tahap 2) — G1-30: PT lawan tanpa PT yang sama; nominal MoneyInput. */}
+            <KNSelect data-testid="loan-lender" className="field" value={lender}
+              onValueChange={setLender} options={opts.filter((o) => o.value !== borrower)} placeholder="Pilih badan usaha…" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">PT Penerima (utang) *</label>
+            <KNSelect data-testid="loan-borrower" className="field" value={borrower}
+              onValueChange={setBorrower} options={opts.filter((o) => o.value !== lender)} placeholder="Pilih badan usaha…" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Jumlah Pinjaman *</label>
+            <MoneyInput testId="loan-principal" className="field" value={principal} onChange={setPrincipal} placeholder="0" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Rencana Kembali</label>
+            <KNDatePicker data-testid="loan-return-date" value={returnDate} onChange={setReturnDate} />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Tujuan Pinjaman *</label>
+          <input data-testid="loan-purpose" className="field" value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="mis. menutup kebutuhan modal kerja bulan ini" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">
+            Catatan Bunga / Biaya <span className="font-normal text-[#9A9BA3]">(tidak dihitung sistem)</span>
+          </label>
+          <input data-testid="loan-interest-note" className="field" value={interestNote}
+            onChange={(e) => setInterestNote(e.target.value)}
+            placeholder="mis. tanpa bunga · atau 1%/bulan dibayar saat pelunasan" />
+        </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

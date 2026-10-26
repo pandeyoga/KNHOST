@@ -9,14 +9,12 @@ import {
   ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, Cell,
 } from "recharts";
-import {
-  RefreshCw, TrendingUp, TrendingDown, PiggyBank, Percent, Scale, Building2,
-  Activity, Landmark,
-} from "lucide-react";
+import { RefreshCw, TrendingUp, Percent, Scale, Building2, Activity, Landmark } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCompactIDR, formatCurrency, formatPct } from "../../utils/formatters";
+import FinReportLink from "./FinReportLink";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -68,7 +66,6 @@ export default function BiFinanceView({ selectedEntity }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const kpi = data?.kpi || {};
   const ratios = data?.ratios || {};
   const monthly = data?.monthly || [];
   const comparison = data?.entity_comparison || [];
@@ -85,21 +82,17 @@ export default function BiFinanceView({ selectedEntity }) {
 
   return (
     <div data-testid="bi-finance-view">
-      {/* KPI YTD */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <Kpi testId="bi-kpi-revenue" label={`Pendapatan ${year}`} value={formatCurrency(kpi.revenue)} icon={TrendingUp} tone="text-[#1B7F4B]" />
-        <Kpi testId="bi-kpi-expense" label={`Beban ${year}`} value={formatCurrency(kpi.expense)} icon={TrendingDown} tone="text-[#C0392B]" />
-        <Kpi testId="bi-kpi-net" label={`Laba Bersih ${year}`} value={formatCurrency(kpi.net_income)} icon={PiggyBank} tone={(kpi.net_income ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
-        <Kpi testId="bi-kpi-margin" label="Marjin Bersih" value={formatPct(Number(kpi.net_margin ?? 0))} icon={Percent} tone={(kpi.net_margin ?? 0) >= 0 ? "text-[#0058CC]" : "text-[#C0392B]"} />
-      </div>
-
+      {/* Fase 3 · P4 (D-10) — 4 kartu KPI atas (Pendapatan/Beban/Laba Bersih/Marjin Bersih) DIHAPUS: angka yang sama
+          sudah di Dasbor Keuangan (ringkas) & Laporan Keuangan (rinci), dan Marjin Bersih tampil dua kali di layar ini.
+          BI kini fokus pada tren, rasio (Marjin Bersih sekali) dan perbandingan PT + tautan ke Laporan Keuangan. */}
       <div className="section-card">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Activity size={15} className="text-[#6B219A]" />
             <h3 className="text-[13px] font-bold text-[#1C1C1E]">BI Keuangan · Analitik</h3>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <FinReportLink testId="bi-pl-link" />
             <div className="w-[110px]">
               <KNSelect data-testid="bi-year-select" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} />
             </div>
@@ -238,21 +231,6 @@ export default function BiFinanceView({ selectedEntity }) {
               <p className="mt-3 text-[11px] text-[#9A9BA3]">Angka operasional (mengecualikan jurnal penutup). Rasio neraca memakai posisi akhir tahun.</p>
             </>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
-  return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        {/* Audit UI 24 Okt (HP): nilai tidak lagi `truncate` ("Rp 23.321.…"); ikon disembunyikan di HP. */}
-        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#F3EAFB] items-center justify-center sm:flex"><Icon size={17} className="text-[#6B219A]" /></div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
         </div>
       </div>
     </div>

@@ -3,14 +3,18 @@ import MoneyInput from "../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Wallet } from "lucide-react";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import { SATUAN_OPTIONS } from "./pettyCashShared";
 
 /**
  * CashAdvanceForm — Buat / ubah Form Pengajuan Dana (PD).
  * FIX BUG EXCEL: satu kuantitas AKTIF per baris; amount = qty × harga (dihitung BE juga).
+ *
+ * Fase 3 · P4 (L-03) — dulu halaman penuh (daftar PD hilang); kini FormModal ukuran lg (layar penuh di HP).
+ * Isian tidak berubah. Kaki memakai `footer` (bukan <form>): Enter di baris rincian tidak menyimpan PD.
  */
 const emptyLine = () => ({ description: "", qty: "", satuan: "unit", unit_price: "", catatan: "" });
 
@@ -72,17 +76,18 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
     } finally { setBusy(false); }
   }
 
+  const footer = (
+    <div className="flex justify-end gap-2">
+      <button type="button" className="btn-secondary" onClick={onCancel} disabled={busy}>Batal</button>
+      <button type="button" data-testid="ca-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : (isEdit ? "Simpan Perubahan" : "Simpan PD")}</button>
+    </div>
+  );
+
   return (
-    <div data-testid="ca-form" className="grid gap-4">
-      <section className="section-card">
-        <div className="section-head">
-          <div className="flex items-center gap-2">
-            <button className="icon-button" onClick={onCancel} aria-label="Kembali"><ArrowLeft size={15} /></button>
-            <h2 data-testid="ca-form-title">{isEdit ? `Ubah ${record.number}` : "Buat Pengajuan Dana (PD)"}</h2>
-          </div>
-        </div>
-        <div className="section-body grid gap-3">
-          {err && <div className="notice-bar danger" data-testid="ca-form-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
+    <FormModal open onClose={onCancel} size="lg" icon={Wallet} testId="ca-form" busy={busy} footer={footer}
+      title={isEdit ? `Ubah ${record.number}` : "Buat Pengajuan Dana (PD)"}>
+        <div className="grid gap-3">
+          {err && <div className="notice-bar danger" data-testid="ca-form-error"><span>{err}</span><button type="button" onClick={() => setErr("")}>×</button></div>}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Entitas" req>
@@ -121,11 +126,11 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
                 <KNSelect data-testid={`ca-line-satuan-${i}`} className="form-input" value={l.satuan} onValueChange={(v) => updLine(i, "satuan", v)} options={SATUAN_OPTIONS} searchable={false} />
                 <MoneyInput testId={`ca-line-price-${i}`} className="form-input text-right" value={l.unit_price} placeholder="0" onChange={(v) => updLine(i, "unit_price", v)} />
                 <span className="text-[12px] tabular-nums text-right font-semibold">{formatCurrency((Number(l.qty) || 0) * (Number(l.unit_price) || 0))}</span>
-                <button className="icon-button text-red-500" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={14} /></button>
+                <button type="button" className="icon-button text-red-500" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={14} /></button>
               </div>
             ))}
             <div className="flex items-center justify-between px-3 py-2 border-t border-[#EFF0F2] bg-[#FAFBFC]">
-              <button data-testid="ca-add-line" className="btn-secondary btn-xs" onClick={addLine}><Plus size={13} /> Tambah Baris</button>
+              <button type="button" data-testid="ca-add-line" className="btn-secondary btn-xs" onClick={addLine}><Plus size={13} /> Tambah Baris</button>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold uppercase text-[#6B6B73]">Total</span>
                 <span data-testid="ca-form-total" className="text-[16px] font-bold tabular-nums text-[#0058CC]">{formatCurrency(total)}</span>
@@ -157,14 +162,8 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
           <Field label="Catatan">
             <textarea data-testid="ca-catatan" className="form-input" rows="2" value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Keterangan tambahan..." />
           </Field>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button className="btn-secondary" onClick={onCancel}>Batal</button>
-            <button data-testid="ca-submit" className="btn-primary" onClick={submit} disabled={busy}>{busy ? "Menyimpan…" : (isEdit ? "Simpan Perubahan" : "Simpan PD")}</button>
-          </div>
         </div>
-      </section>
-    </div>
+    </FormModal>
   );
 }
 

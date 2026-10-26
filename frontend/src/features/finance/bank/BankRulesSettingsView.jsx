@@ -5,6 +5,7 @@ import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
 import ReconRulesPanel from "./ReconRulesPanel";
 import ReconFormatsPanel from "./ReconFormatsPanel";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 
 /** Pengaturan › Keuangan › Aturan & Template Bank (dulu tab di Rekonsiliasi Bank). */
 export default function BankRulesSettingsView() {
@@ -31,6 +32,8 @@ export default function BankRulesSettingsView() {
   const suggested = rules.filter((r) => r.status === "suggested").length;
   return (
     <div data-testid="bank-rules-settings-view">
+      {/* Fase 3 · P2 (L-04 kelas C) — layar Pengaturan cukup diberi banner "paling nyaman di desktop" di HP. */}
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       <ErrorNotice message={err} onDismiss={() => setErr("")} onRetry={load} testId="bank-rules-error" />
       {msg && <p data-testid="bank-rules-notice" className="mb-2 rounded-lg bg-[#EAF7EF] px-3 py-2 text-[12px] font-semibold text-[#1B7F4B]">{msg}</p>}
       <StatusTabs value={tab} onChange={setTab} testIdPrefix="bank-rules-tab" tabs={[

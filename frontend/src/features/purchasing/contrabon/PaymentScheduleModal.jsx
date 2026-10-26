@@ -1,14 +1,16 @@
 /**
  * FASE G-7 — modal **jadwalkan pembayaran** kontrabon yang sudah disetujui.
  * Tanggal rencana inilah yang dipakai KPI “jatuh tempo ≤ 7 hari” di layar induk.
+ *
+ * Fase 3 · P4 (L-03) — `.modal-card` buatan sendiri → `FormModal` baku (layar penuh 1 kolom di HP). Isian tetap.
  */
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
-import { X, CalendarCheck } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
 import { METHOD_OPTIONS, fmtDate, todayISO } from "./contraBonApi";
 
@@ -54,67 +56,57 @@ export default function PaymentScheduleModal({ cb, onClose, onSaved, onError }) 
     } finally { setSaving(false); }
   }
 
+  // Fase 3 · P4 — sengaja TANPA `onSubmit` (bukan <form>): tombol × di ErrorNotice tidak ber-`type`, jadi di
+  // dalam <form> ia ikut mengirim. Aksi lewat `footer`.
   return (
-    <div className="modal-overlay" data-testid="cb-schedule-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="modal-title flex items-center gap-1.5">
-            <CalendarCheck size={15} /> Jadwalkan pembayaran
-          </h3>
-          <button className="icon-button" data-testid="cb-schedule-close" onClick={onClose}>
-            <X size={15} />
-          </button>
-        </div>
-        <p className="modal-subtitle">
-          {cb.number} · {cb.supplier_name}
-          {cb.due_date ? ` — jatuh tempo faktur ${fmtDate(cb.due_date)}` : ""}
-        </p>
-
-        {err && (
-          <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-schedule-error" />
-        )}
-
-        <div className="mt-3 space-y-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Tanggal rencana pembayaran (wajib)
-            </label>
-            <KNDatePicker data-testid="cb-schedule-date" value={when} onChange={setWhen} clearable={false} />
-            <p className="mt-1 text-[10px] text-[#8E8E93]">
-              Tanggal ini yang dipakai KPI “jatuh tempo ≤ 7 hari” dan proyeksi arus kas.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
-              <KNSelect data-testid="cb-schedule-method" value={method} onValueChange={setMethod}
-                options={METHOD_OPTIONS} className="field" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Rekening rencana
-              </label>
-              <KNSelect data-testid="cb-schedule-account" value={accountId}
-                onValueChange={setAccountId} options={accountOptions} className="field"
-                placeholder="Pilih rekening" />
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
-            <textarea data-testid="cb-schedule-notes" className="textarea w-full" rows={2}
-              value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Mis. dibayar bersama batch transfer Selasa pagi." />
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button className="primary-button" data-testid="cb-schedule-save"
+    <FormModal open onClose={onClose} title="Jadwalkan pembayaran" icon={CalendarCheck}
+      subtitle={`${cb.number} · ${cb.supplier_name}${cb.due_date ? ` — jatuh tempo faktur ${fmtDate(cb.due_date)}` : ""}`}
+      testId="cb-schedule-modal" busy={saving}
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" className="primary-button" data-testid="cb-schedule-save"
             disabled={saving || !when} onClick={save}>
             {saving ? "Menyimpan…" : "Simpan jadwal bayar"}
           </button>
         </div>
+      )}>
+      {err && (
+        <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-schedule-error" />
+      )}
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+            Tanggal rencana pembayaran (wajib)
+          </label>
+          <KNDatePicker data-testid="cb-schedule-date" value={when} onChange={setWhen} clearable={false} />
+          <p className="mt-1 text-[10px] text-[#8E8E93]">
+            Tanggal ini yang dipakai KPI “jatuh tempo ≤ 7 hari” dan proyeksi arus kas.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
+            <KNSelect data-testid="cb-schedule-method" value={method} onValueChange={setMethod}
+              options={METHOD_OPTIONS} className="field" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Rekening rencana
+            </label>
+            <KNSelect data-testid="cb-schedule-account" value={accountId}
+              onValueChange={setAccountId} options={accountOptions} className="field"
+              placeholder="Pilih rekening" />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
+          <textarea data-testid="cb-schedule-notes" className="textarea w-full" rows={2}
+            value={notes} onChange={(e) => setNotes(e.target.value)}
+            placeholder="Mis. dibayar bersama batch transfer Selasa pagi." />
+        </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

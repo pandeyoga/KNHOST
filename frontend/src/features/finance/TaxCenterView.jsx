@@ -7,22 +7,28 @@
  *    pindah ke Pusat Pengaturan (satu sumber kebenaran). Tab "Konfigurasi" kini
  *    hanya mengantar ke kartu setting yang tepat.
  * Sumber: GET /api/tax/summary · POST/DELETE /api/tax/pph-records.
+ *
+ * Fase 3 · P4 (D-20) — layar UTAMA rekap/posisi PPN. "Rincian Pajak Masukan per Pemasok" (tabel yang sama dengan
+ * Faktur Masukan) → kartu tautan ke `input-tax` dengan masa pajak yang sama; angka PPN Masukan per faktur hanya di
+ * satu tabel. Preset `{ tab, period }` dibaca dari tautan (mis. baris "Posisi PPN" di Faktur Masukan).
+ * L-03: pop-up Rekam DPP PPh (`fixed inset-0`) → FormModal.
  */
 import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useState } from "react";
 import {
   Receipt, ShieldCheck, Wallet, TrendingUp, TrendingDown, RefreshCw, Plus,
-  Trash2, Settings, Building2, AlertTriangle, Landmark, X, ScrollText, Info,
+  Trash2, Settings, Building2, AlertTriangle, Landmark, ScrollText, Info, FileText,
 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
 import ConfigRedirectCard from "../settings/config/ConfigRedirectCard";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { useEscapeClose } from "@/utils/escapeLayers";
 import { can } from "../../config/roles";
+import FormModal from "../../components/FormModal";
+import LinkCard from "../../components/LinkCard";
+import useViewPreset from "../../hooks/useViewPreset";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 function fmtPeriod(p) {
@@ -38,11 +44,15 @@ const TABS = [
 ];
 
 export default function TaxCenterView({ currentUser, selectedEntity }) {
-  const [tab, setTab] = useState("ppn");
+  const preset = useViewPreset("cs-pajak", (p) => {
+    if (TABS.some((t) => t.key === p.tab)) setTab(p.tab);
+    if (p.period) setPeriod(p.period);
+  });
+  const [tab, setTab] = useState(() => (TABS.some((t) => t.key === preset?.tab) ? preset.tab : "ppn"));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [period, setPeriod] = useState("");
+  const [period, setPeriod] = useState(() => preset?.period || "");
   const [recordFor, setRecordFor] = useState(null); // pph item cfg → open modal
 
   const canManage = can(currentUser?.permissions, "accounting", "manage");   // Sisir gerbang peran (2026-10-20) — POST/DELETE /tax/pph-records
@@ -71,6 +81,8 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
   const ppn = data?.ppn || {};
   const pph = data?.pph || {};
   const periodOpts = (data?.periods || []).map((p) => ({ value: p, label: fmtPeriod(p) }));
+  // Masa dari tautan yang belum ada di daftar server tetap bisa dipilih (tidak tampil kosong).
+  if (period && !periodOpts.some((o) => o.value === period)) periodOpts.unshift({ value: period, label: fmtPeriod(period) });
 
   return (
     <div data-testid="tax-center-view">
@@ -209,32 +221,14 @@ function PpnTab({ ppn, isPkp, entity, period }) {
         </div>
       </div>
 
-      <div className="section-card mt-3">
-        <div className="section-head"><div className="flex items-center gap-2"><TrendingDown size={15} className="text-[#B45309]" /><h3 className="text-[12px] font-bold">Rincian Pajak Masukan per Pemasok</h3></div></div>
-        <div className="section-body">
-          {bySupplier.length === 0 ? (
-            <div className="py-8 text-center text-[12px] text-[#8E8E93]" data-testid="tax-masukan-empty">Belum ada Faktur Pajak Masukan pada periode ini.</div>
-          ) : (
-            <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]" data-testid="tax-masukan-table">
-                <thead><tr className="whitespace-nowrap text-left text-[11px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
-                  <th className="px-3 py-2">Pemasok</th><th className="px-3 py-2 text-center">Faktur</th>
-                  <th className="px-3 py-2 text-right">DPP</th><th className="px-3 py-2 text-right">PPN Masukan</th>
-                </tr></thead>
-                <tbody>
-                  {bySupplier.map((s, i) => (
-                    <tr key={i} className="border-b border-[#F5F5F7] last:border-0">
-                      <td className="px-3 py-2 font-semibold text-[#1C1C1E]">{s.supplier_name}</td>
-                      <td className="px-3 py-2 text-center tabular-nums text-[#6B6B73]">{s.count}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(s.dpp)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[#B45309]">{formatCurrency(s.ppn)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      {/* D-20 — rincian per pemasok/faktur hanya di Faktur Masukan (masa pajak sama). */}
+      <div className="mt-3">
+        <LinkCard testId="tax-masukan-link" icon={FileText} view="input-tax" preset={{ period }}
+          what={`Rincian Pajak Masukan ${fmtPeriod(period)}`} where="Pajak › Faktur Masukan" label="Lihat faktur"
+          count={bySupplier.length ? `${bySupplier.length} pemasok` : undefined}
+          summary={bySupplier.length
+            ? `${masukan.count || 0} faktur · PPN Masukan di kartu atas`
+            : "Belum ada Faktur Pajak Masukan pada periode ini"} />
       </div>
     </div>
   );
@@ -359,7 +353,6 @@ function PphRecordModal({ item, entityId, period, onClose, onSaved }) {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  useEscapeClose(true, onClose, saving);
   const amount = (parseFloat(dpp) || 0) * (item.rate || 0) / 100;
 
   const save = async () => {
@@ -375,38 +368,27 @@ function PphRecordModal({ item, entityId, period, onClose, onSaved }) {
     } finally { setSaving(false); }
   };
 
+  // Fase 3 · P4 (L-03) — `div fixed inset-0` buatan sendiri → FormModal baku (Esc/klik latar lewat cangkang).
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="tax-pph-modal" {...overlayDismiss(onClose)}>
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-4 py-3">
-          <Plus size={15} className="text-[#6B219A]" />
-          <h3 className="text-[13px] font-bold">Rekam DPP · {item.name}</h3>
-          <button className="icon-button ml-auto" onClick={onClose} aria-label="Tutup" data-testid="tax-pph-modal-close"><X size={14} /></button>
-        </div>
-        <div className="p-4 grid gap-3">
-          <p className="text-[11px] text-[#6B6B73]">Periode <b>{fmtPeriod(period)}</b> · Tarif <b>{item.rate}%</b>. PPh dihitung otomatis = DPP × tarif.</p>
-          <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Dasar Pengenaan Pajak (DPP)</span>
-            <MoneyInput testId="tax-pph-modal-dpp" className="field" value={dpp} placeholder="mis. 10000000" onChange={(v) => setDpp(v)} />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Keterangan (opsional)</span>
-            <input data-testid="tax-pph-modal-note" className="field" placeholder="mis. Sewa gudang" value={note} onChange={(e) => setNote(e.target.value)} />
-          </label>
-          <div className="rounded-md bg-[#F3EAFB] px-3 py-2 text-[12px] flex items-center justify-between">
-            <span className="text-[#6B6B73]">PPh Terutang</span>
-            <b className="text-[#6B219A] tabular-nums" data-testid="tax-pph-modal-amount">{formatCurrency(amount)}</b>
-          </div>
-          {err && <p className="text-[11px] text-[#C0392B]" data-testid="tax-pph-modal-error">{err}</p>}
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="tax-pph-modal-save" className="primary-button" disabled={saving || !(parseFloat(dpp) > 0)} onClick={save}>
-            {saving ? "Menyimpan…" : "Simpan"}
-          </button>
+    <FormModal open onClose={onClose} size="sm" icon={Plus} testId="tax-pph-modal"
+      title={`Rekam DPP · ${item.name}`} subtitle={`Periode ${fmtPeriod(period)} · Tarif ${item.rate}% · PPh = DPP × tarif`}
+      onSubmit={save} submitLabel={saving ? "Menyimpan…" : "Simpan"} submitTestId="tax-pph-modal-save"
+      busy={saving} submitDisabled={!(parseFloat(dpp) > 0)} error={err}>
+      <div className="grid gap-3">
+        <label className="grid gap-1">
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Dasar Pengenaan Pajak (DPP)</span>
+          <MoneyInput testId="tax-pph-modal-dpp" className="field" value={dpp} placeholder="mis. 10000000" onChange={(v) => setDpp(v)} />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-[11px] font-semibold text-[#3C3C43]">Keterangan (opsional)</span>
+          <input data-testid="tax-pph-modal-note" className="field" placeholder="mis. Sewa gudang" value={note} onChange={(e) => setNote(e.target.value)} />
+        </label>
+        <div className="rounded-md bg-[#EFF4FF] px-3 py-2 text-[12px] flex items-center justify-between">
+          <span className="text-[#6B6B73]">PPh Terutang</span>
+          <b className="text-[#0058CC] tabular-nums" data-testid="tax-pph-modal-amount">{formatCurrency(amount)}</b>
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }
 

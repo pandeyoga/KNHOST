@@ -4,19 +4,16 @@
  * Sumber: GET /api/ar/advance-report?entity_id=
  */
 import { apiErrorText } from "../../utils/apiError";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, Wallet, Clock3, Users, ChevronDown, ChevronRight, PackageOpen } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import { formatDateId } from "../../components/KNDatePicker";
-
-const BUCKETS = [
-  { key: "0_30", label: "≤ 30 hari", tone: "#1B7F4B", bg: "#E6F6EC" },
-  { key: "31_60", label: "31–60 hari", tone: "#B45309", bg: "#FDF3E7" },
-  { key: "61_90", label: "61–90 hari", tone: "#C0392B", bg: "#FCEBEA" },
-  { key: "90_plus", label: "> 90 hari", tone: "#7F1D1D", bg: "#FCEBEA" },
-];
+// Fase 3 · P4 (D-12 B) — kelompok umur SAMA dengan layar Piutang (Lancar/1-30/31-60/61-90/90+), satu util.
+// Dulu ≤ 30 / 31–60 / 61–90 / > 90 hari dengan warna sendiri. Dihitung dari umur tiap pesanan (`age_days`) —
+// batas hari sama dengan server; kelompok server "0_30" kini terbagi "Lancar" (hari ini) + "1-30 hr".
+import { AGING_BUCKETS, bucketForDays, bucketMeta, sumByBucket } from "./agingBuckets";
 
 const STATUS_LABEL = {
   draft: "Draf", waiting_approval: "Menunggu persetujuan", approved: "Disetujui", confirmed: "Dikonfirmasi",
@@ -51,7 +48,9 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
   useEffect(() => { load(); }, [load]);
 
   const t = data?.totals || {};
-  const rows = data?.rows || [];
+  const rows = useMemo(() => data?.rows || [], [data]);
+  const buckets = useMemo(() => sumByBucket(
+    rows.flatMap((c) => c.orders || []), (o) => o.age_days, (o) => o.advance_unrecognized), [rows]);
 
   return (
     <div className="space-y-4" data-testid="advance-report">
@@ -85,16 +84,23 @@ export default function AdvanceReportView({ selectedEntity, onOpenDocument }) {
           <Metric icon={Users} label="Deposit / Kelebihan Bayar" value={formatCurrency(t.deposit_balance || 0)} sub={`${t.customers || 0} pelanggan`} tone="rgba(52,199,89,.16)" testId="advance-metric-deposit" />
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="advance-report-buckets">
-          {BUCKETS.map((b) => (
-            <div key={b.key} data-testid={`advance-bucket-${b.key}`} className="rounded-lg px-3 py-2" style={{ background: b.bg }}>
-              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: b.tone }}>
-                <Clock3 size={10} className="mr-1 inline" />{b.label}
-              </p>
-              <p className="text-[13px] font-bold" style={{ color: b.tone }}>{formatCurrency((t.buckets || {})[b.key] || 0)}</p>
-            </div>
-          ))}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5" data-testid="advance-report-buckets">
+          {AGING_BUCKETS.map((b) => {
+            const v = buckets[b.key] || 0;
+            return (
+              <div key={b.key} data-testid={`advance-bucket-${b.key}`} className="rounded-lg px-3 py-2"
+                style={{ background: v > 0 ? b.bg : "#F5F5F7" }}>
+                <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: v > 0 ? b.tone : "#8E8E93" }}>
+                  <Clock3 size={10} className="mr-1 inline" />{b.label}
+                </p>
+                <p className="text-[13px] font-bold" style={{ color: v > 0 ? b.tone : "#8E8E93" }}>{formatCurrency(v)}</p>
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-1.5 text-[10.5px] text-[#8E8E93]" data-testid="advance-bucket-note">
+          Umur = hari sejak kwitansi pertama; <b>Lancar</b> = diterima hari ini. Kelompok umur sama dengan layar Piutang.
+        </p>
       </section>
 
       {error && <ErrorNotice message={error} onRetry={load} />}
@@ -153,7 +159,7 @@ function CustomerRows({ c, open, onToggle, onOpenDocument }) {
         <td className="px-3 py-2 text-right text-[#6B6B73]">{c.oldest_days > 0 ? `${c.oldest_days} hari` : (hasOrders ? "< 1 hari" : "—")}</td>
       </tr>
       {open && c.orders.map((o) => {
-        const b = BUCKETS.find((x) => x.key === o.bucket) || BUCKETS[0];
+        const b = bucketMeta(bucketForDays(o.age_days));
         return (
           <tr key={o.order_id} data-testid={`advance-order-${o.order_id}`} className="border-t border-dashed border-[#EFF0F2] bg-[#FCFCFD]">
             <td className="px-3 py-1.5 pl-9">

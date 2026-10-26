@@ -2,13 +2,17 @@ import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import axios, { API } from "../../services/apiClient";
-import { X, Percent } from "lucide-react";
+import { Percent } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 
 /**
  * InputTaxCreateModal (Fase 5.5) — catat Faktur Pajak Masukan dari Vendor Bill.
  * DPP/PPN otomatis dari bill; user mengisi NSFP supplier (16-digit) + tanggal faktur.
+ *
+ * Fase 3 · P4 (L-03) — `.modal-card` buatan sendiri → FormModal baku (Esc/klik latar aman, layar penuh di HP,
+ * galat tampil DI DALAM pop-up — dulu dikirim ke halaman di belakang pop-up sehingga tak terlihat). Isian tetap.
  */
 const KODE_OPTIONS = [
   { value: "01", label: "01 — Penyerahan ke ber-NPWP (normal)" },
@@ -25,9 +29,10 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
   const [kode, setKode] = useState("01");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
   useEffect(() => { if (!open) reset(); }, [open]);
-  function reset() { setBillId(""); setNsfp(""); setFakturDate(""); setKode("01"); setNotes(""); }
+  function reset() { setBillId(""); setNsfp(""); setFakturDate(""); setKode("01"); setNotes(""); setErr(""); }
 
   const bill = useMemo(() => (bills || []).find((b) => b.vendor_bill_id === billId), [bills, billId]);
   const billOptions = useMemo(() => (bills || []).map((b) => ({
@@ -36,33 +41,26 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
   })), [bills]);
 
   async function submit() {
-    if (!billId) { onError?.("Pilih tagihan supplier sumber dulu."); return; }
-    if (!nsfp.trim()) { onError?.("NSFP (Nomor Seri Faktur Pajak) wajib diisi."); return; }
-    setBusy(true);
+    if (!billId) { setErr("Pilih tagihan supplier sumber dulu."); return; }
+    if (!nsfp.trim()) { setErr("NSFP (Nomor Seri Faktur Pajak) wajib diisi."); return; }
+    setBusy(true); setErr("");
     try {
       const body = { vendor_bill_id: billId, nsfp: nsfp.trim(), faktur_date: fakturDate || "", kode_transaksi: kode, notes };
       const r = await axios.post(`${API}/input-tax-invoices`, body);
       onCreated?.(r.data);
     } catch (e) {
-      onError?.(apiErrorText(e, "Gagal mencatat Faktur Pajak Masukan."));
+      const msg = apiErrorText(e, "Gagal mencatat Faktur Pajak Masukan.");
+      setErr(msg);
+      onError?.(msg);
     } finally { setBusy(false); }
   }
 
-  if (!open) return null;
-
   return (
-    <div className="modal-overlay" data-testid="input-tax-create-modal"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 620, width: "94vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <Percent size={16} className="text-[#0058CC]" />
-            <h2 className="text-[14px] font-bold">Catat Faktur Pajak Masukan</h2>
-          </div>
-          <button data-testid="it-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
-        </div>
-
-        <div className="p-4 space-y-3">
+    <FormModal open={open} onClose={onClose} size="md" icon={Percent} testId="input-tax-create-modal"
+      title="Catat Faktur Pajak Masukan" subtitle="DPP & PPN diambil dari tagihan supplier; isi NSFP dari pemasok."
+      onSubmit={submit} submitLabel={busy ? "Menyimpan..." : "Catat Faktur Masukan"} submitTestId="it-submit"
+      busy={busy} submitDisabled={!billId || !nsfp.trim()} error={err}>
+        <div className="space-y-3">
           <Field label="Tagihan Supplier ber-PPN" req>
             {(bills || []).length === 0 ? (
               // UAT 24 Okt (audit UI tahap 2) — G1-37: tanpa tagihan, isian lain disembunyikan & ada jalan keluar.
@@ -111,15 +109,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
           </div>
           </>)}
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          <button onClick={onClose} className="secondary-button">Batal</button>
-          <button data-testid="it-submit" disabled={busy || !billId || !nsfp.trim()} onClick={submit} className="primary-button">
-            {busy ? "Menyimpan..." : "Catat Faktur Masukan"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }
 
