@@ -28,7 +28,7 @@ export default function ColorTargetsEditor({ value = [], onChange, colors = [], 
         const fromLib = Boolean(r.color_id);
         const prob = colorProblem(r);
         return (
-          <div key={i} className="grid items-end gap-2 rounded-lg border border-[#EFF0F2] p-2 sm:grid-cols-[1.4fr_0.8fr_1fr_1.2fr_auto]" data-testid={`${testId}-row-${i}`}>
+          <div key={i} className="grid grid-cols-1 items-end gap-2 rounded-lg border border-[#EFF0F2] p-2 sm:grid-cols-[1.4fr_0.8fr_1fr_1.2fr_auto]" data-testid={`${testId}-row-${i}`}>
             <label className="block">
               <span className="mb-1 block text-[10px] font-semibold text-[#6B6B73]">Warna {i + 1} — nama *</span>
               <input className="field" data-testid={`${testId}-name-${i}`} disabled={fromLib} value={fromLib ? lib[r.color_id]?.name || r.name : r.name}

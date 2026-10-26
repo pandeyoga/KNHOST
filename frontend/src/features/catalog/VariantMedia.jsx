@@ -35,7 +35,7 @@ export const VariantMedia = ({ product, meta, onChanged }) => {
     </div>
     {error && <p data-testid="media-error" role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {notice && <p data-testid="media-notice" role="status" className="rounded bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
-    {loading ? <div data-testid="media-loading" className="h-40 animate-pulse rounded-lg bg-gray-100" /> : <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
+    {loading ? <div data-testid="media-loading" className="h-40 animate-pulse rounded-lg bg-gray-100" /> : <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
       <div>
         <ProductGallery product={product} items={approvedShown.length ? approvedShown : shown} coverId={cover} testId="media-preview" />
         <p className="mt-2 text-[11px] text-[#737780]">Foto utama & urutan di sini adalah yang dilihat tim sales. Hanya foto <b>disetujui</b> yang tampil di katalog.</p>

@@ -151,7 +151,7 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
             </button>
           )}
         </div>
-        <div className="section-body grid gap-2 md:grid-cols-[1fr_220px]">
+        <div className="section-body grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px]">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
             <input data-testid="employee-search" value={search} onChange={(e) => setSearch(e.target.value)} className="field !pl-8" placeholder="Cari nama / kode / NIK / jabatan..." />

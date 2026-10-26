@@ -2,11 +2,15 @@
  * DesignFormModal — Desain Baru / Ubah Desain (revisi klien 17 Sep 2026).
  * Kode OTOMATIS: inisial desainer · Kategori Pattern · Kategori Design · urut (mis. SRI-SLR-AO-001).
  * Tanpa "jenis desain", tanpa palet warna, tanpa peruntukan produk (itu ditetapkan penilai saat ACC).
+ *
+ * Fase 4 · R4 (L-03) — `FormModal` baku (dulu lapisan `fixed inset-0` buatan sendiri): Esc/klik latar lewat
+ * tumpukan lapisan, galat di kaki pop-up, layar penuh 1 kolom di HP (isian TIDAK diringkas). Master kategori
+ * dibuka sebagai pop-up saudara (bukan bersarang di dalam kartu). Aksen ungu → biru baku (L-08).
  */
 import { useEffect, useState } from "react";
-import { Layers, Save, Settings2, X } from "lucide-react";
+import { Layers, Save, Settings2 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 import { createDesign, patchDesign, studioCategories, studioNextCode } from "./rndApi";
 import { errMsg } from "./rndMeta";
 import TagInput from "./design/TagInput";
@@ -65,32 +69,27 @@ export default function DesignFormModal({ mode = "create", design, canManageMast
 
   const opts = (rows) => rows.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }));
   const manageBtn = (axis) => canManageMaster && (
-    <button type="button" className="inline-flex items-center gap-1 text-[10px] text-[#6B219A] hover:underline"
+    <button type="button" className="inline-flex items-center gap-1 text-[10px] text-[#0058CC] hover:underline"
       data-testid={`design-manage-categories-${axis}`} onClick={() => setCatModal(axis)}>
       <Settings2 size={10} /> kelola
     </button>
   );
 
   return (
-    <div data-testid="design-form-modal"
-      className="fixed inset-0 z-[172] flex items-center justify-center bg-black/50 p-4"
-      {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[92vh] w-full max-w-[680px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold">
-            <Layers size={16} className="text-[#6B219A]" />
-            {isEdit ? "Ubah Desain" : "Desain Baru"}
-          </h2>
-          <button className="icon-button" onClick={onClose} data-testid="design-form-close"><X size={18} /></button>
-        </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {err && (
-            <div className="rounded-lg bg-[#FDEDE7] px-3 py-2 text-[11.5px] text-[#C0392B]" data-testid="design-form-error">{err}</div>
-          )}
-
-          <div className="grid gap-2.5 md:grid-cols-2">
+    <>
+      <FormModal open onClose={onClose} busy={saving} error={err} size="md" icon={Layers}
+        title={isEdit ? "Ubah Desain" : "Desain Baru"} testId="design-form-modal"
+        subtitle={isEdit ? `Kode ${design?.code || "—"} tetap; isian lain bisa diubah.` : "Kode desain dibuat otomatis dari inisial desainer + kategori."}
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" onClick={onClose} disabled={saving} data-testid="design-form-cancel">Batal</button>
+            <button type="button" className="primary-button" onClick={save} disabled={saving} data-testid="design-form-save">
+              <Save size={13} /> {saving ? "Menyimpan…" : "Simpan"}
+            </button>
+          </div>
+        )}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             <Field label="Judul desain *">
               <input className="field" data-testid="design-title-input" value={f.title}
                 onChange={(e) => set("title", e.target.value)} placeholder="mis. Salur Pelangi Senja" />
@@ -108,7 +107,7 @@ export default function DesignFormModal({ mode = "create", design, canManageMast
             </Field>
           </div>
 
-          <div className="grid gap-2.5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             <Field label={<span className="flex items-center justify-between">Kategori Pattern * {manageBtn("pattern")}</span>}>
               <KNSelect data-testid="design-category-select" className="field" value={f.category_code}
                 options={opts(patternCats)} placeholder="salur / batik / bunga / polkadot…" onValueChange={(v) => set("category_code", v)} searchable />
@@ -119,7 +118,7 @@ export default function DesignFormModal({ mode = "create", design, canManageMast
             </Field>
           </div>
 
-          <div className="grid gap-2.5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             <Field label="Repeat (cm)">
               <input className="field" data-testid="design-repeat-input" value={f.repeat_cm}
                 onChange={(e) => set("repeat_cm", e.target.value)} placeholder="32" />
@@ -144,18 +143,12 @@ export default function DesignFormModal({ mode = "create", design, canManageMast
             </p>
           )}
         </div>
-
-        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose} data-testid="design-form-cancel">Batal</button>
-          <button className="primary-button" onClick={save} disabled={saving} data-testid="design-form-save">
-            <Save size={13} /> {saving ? "Menyimpan…" : "Simpan"}
-          </button>
-        </div>
-      </div>
+      </FormModal>
+      {/* Pop-up saudara (bukan anak kartu): lapisan Esc/latar teratas = master kategori. */}
       {catModal && (
         <CategoryManagerModal designType={catModal} onClose={() => { setCatModal(null); loadCats(); }} />
       )}
-    </div>
+    </>
   );
 }
 

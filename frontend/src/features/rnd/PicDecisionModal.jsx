@@ -41,7 +41,7 @@ export default function PicDecisionModal({ sample, canOverride, onClose, onConfi
             placeholder="mis. ganti batch benang lalu uji ulang" />
         </Field>
         {action !== "retest" && (
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Field label="Cakupan dokumen (pisahkan koma)">
               <input className="field" data-testid="pic-scope-documents" value={docs} onChange={(e) => setDocs(e.target.value)} placeholder="mis. PO-00012, MKO-00004" />
             </Field>

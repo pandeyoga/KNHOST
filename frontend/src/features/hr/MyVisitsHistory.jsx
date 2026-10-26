@@ -61,7 +61,7 @@ export default function MyVisitsHistory() {
         <Kpi label="Selesai" value={t.done ?? 0} color="#1B7F4B" testId="my-visits-kpi-done" />
         <Kpi label="Berbuah Pesanan" value={t.with_order ?? 0} color="#0058CC"
              testId="my-visits-kpi-order" />
-        <Kpi label="Konversi" value={`${t.conversion_percent ?? 0}%`} color="#6B219A"
+        <Kpi label="Konversi" value={`${t.conversion_percent ?? 0}%`} color="#004099"
              testId="my-visits-kpi-conversion"
              hint={`Total waktu ${fmtMin(t.total_minutes || 0)}`} />
       </div>

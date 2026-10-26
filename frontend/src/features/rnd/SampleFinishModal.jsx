@@ -39,7 +39,7 @@ export default function SampleFinishModal({ mode = "finish", sample, targets, bu
             : "Tujuan pengiriman WAJIB dipilih supaya laporan bisa menjawab: “sample untuk siapa yang belum kembali?”"}
         </Hint>
         {!isFinish && (
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <Field label="Dikirim ke *">
               <KNSelect data-testid="sample-deliver-to" className="field" value={to} options={options} onValueChange={setTo} />
             </Field>

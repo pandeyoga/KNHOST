@@ -1,9 +1,13 @@
-/** ContentCalendar — kalender konten bulanan/mingguan + daftar; klik sel → buat post; klik post → rincian. */
+/** ContentCalendar — kalender konten bulanan/mingguan + daftar; klik sel → buat post; klik post → rincian.
+ *  Fase 4 · R4 (L-08) — bilah alat padat tiga gaya (navigator, segmented, label "Saring" + 3 dropdown) dirapikan:
+ *  navigator bulan/minggu + "Saring (n)" (panel lipat berisi platform · status · kampanye) + aksi di kanan; pilihan
+ *  tampilan Kalender/Minggu/Daftar = PageTabs baku di bawah bilah. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import apiErrorText from "../../utils/apiError";
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, List, Plus, Filter, FileDown, Loader2 } from "lucide-react";
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, List, Plus, Filter, FileDown, Loader2, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { KNSelect } from "../../components/KNSelect";
+import PageTabs from "../../components/PageTabs";
 import PostFormModal from "./PostFormModal";
 import PostDetailModal from "./PostDetailModal";
 import { mktApi, monthKey, monthLabel, PlatformChip, StatusPill, STATUS_STYLE, PLATFORM_STYLE, fmtWhen, weekStart, weekDays, weekLabel, shiftDays } from "./marketingShared";
@@ -26,6 +30,7 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [moveMsg, setMoveMsg] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
   const multi = selectedEntity === "all";
 
   const load = useCallback(async () => {
@@ -44,6 +49,7 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
   useEffect(() => { mktApi.meta().then(setMeta).catch(() => {}); mktApi.campaigns().then(setCampaigns).catch(() => {}); }, []);
 
   const isWeek = mode === "week";
+  const activeFilters = Object.values(filters).filter(Boolean).length;
   const shift = (d) => {
     if (isWeek) { setWeek(shiftDays(week, 7 * d)); return; }
     const [y, m] = month.split("-").map(Number); setMonth(monthKey(new Date(y, m - 1 + d, 1)));
@@ -69,32 +75,46 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
   };
 
   return (
-    <div className="grid gap-3" data-testid="mkt-calendar">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="grid grid-cols-1 gap-3" data-testid="mkt-calendar">
+      <div className="flex flex-wrap items-center gap-2" data-testid="mkt-toolbar">
         <div className="flex items-center gap-1 rounded-full border border-[#E5E5EA] bg-white p-0.5">
-          <button type="button" className="rounded-full p-1.5 hover:bg-[#F2F2F7]" onClick={() => shift(-1)} data-testid={isWeek ? "mkt-prev-week" : "mkt-prev-month"}><ChevronLeft size={14} /></button>
+          <button type="button" className="rounded-full p-1.5 hover:bg-[#F2F2F7]" onClick={() => shift(-1)} data-testid={isWeek ? "mkt-prev-week" : "mkt-prev-month"} aria-label={isWeek ? "Minggu sebelumnya" : "Bulan sebelumnya"}><ChevronLeft size={14} /></button>
           <span className="min-w-[150px] text-center text-[13px] font-bold" data-testid={isWeek ? "mkt-week-label" : "mkt-month-label"}>{isWeek ? weekLabel(week) : monthLabel(month)}</span>
-          <button type="button" className="rounded-full p-1.5 hover:bg-[#F2F2F7]" onClick={() => shift(1)} data-testid={isWeek ? "mkt-next-week" : "mkt-next-month"}><ChevronRight size={14} /></button>
+          <button type="button" className="rounded-full p-1.5 hover:bg-[#F2F2F7]" onClick={() => shift(1)} data-testid={isWeek ? "mkt-next-week" : "mkt-next-month"} aria-label={isWeek ? "Minggu berikutnya" : "Bulan berikutnya"}><ChevronRight size={14} /></button>
         </div>
         <button type="button" className="secondary-button !py-1 text-[11px]" onClick={() => (isWeek ? setWeek(weekStart()) : setMonth(monthKey()))} data-testid="mkt-today">{isWeek ? "Minggu ini" : "Bulan ini"}</button>
-        <div className="flex rounded-full border border-[#E5E5EA] bg-white p-0.5 text-[11px]">
-          {[["month", CalendarDays, "Kalender"], ["week", CalendarRange, "Minggu"], ["list", List, "Daftar"]].map(([k, I, l]) => (
-            <button key={k} type="button" onClick={() => setMode(k)} data-testid={`mkt-mode-${k}`} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-bold ${mode === k ? "bg-[#0058CC] text-white" : "text-[#6B6B73]"}`}><I size={12} /> {l}</button>
-          ))}
-        </div>
-        <span className="inline-flex items-center gap-1 text-[10.5px] text-[#8E8E93]"><Filter size={11} /> Saring</span>
-        <KNSelect data-testid="mkt-filter-platform" className="field !w-40" value={filters.platform} onValueChange={(v) => setFilters((f) => ({ ...f, platform: v }))}
-          options={[{ value: "", label: "Semua platform" }, ...Object.entries(PLATFORM_STYLE).map(([v, p]) => ({ value: v, label: p.label }))]} />
-        <KNSelect data-testid="mkt-filter-status" className="field !w-40" value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}
-          options={[{ value: "", label: "Semua status" }, ...Object.entries(STATUS_STYLE).map(([v, s]) => ({ value: v, label: s.label }))]} />
-        <KNSelect data-testid="mkt-filter-campaign" className="field !w-48" value={filters.campaign_id} onValueChange={(v) => setFilters((f) => ({ ...f, campaign_id: v }))}
-          options={[{ value: "", label: "Semua kampanye" }, ...campaigns.map((c) => ({ value: c.id, label: c.name }))]} />
-        <div className="ml-auto flex items-center gap-2">
+        <button type="button" className={`secondary-button !py-1 text-[11px] ${activeFilters ? "!border-[#0058CC] !text-[#0058CC]" : ""}`} aria-expanded={showFilters}
+          onClick={() => setShowFilters((v) => !v)} data-testid="mkt-filter-toggle"><Filter size={12} /> Saring{activeFilters ? ` (${activeFilters})` : ""}</button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-[#6B6B73]" data-testid="mkt-post-count">{(isWeek ? posts.filter((p) => p.publish_at).length : posts.length)} konten{multi ? " · semua badan usaha" : ""}{loading ? " · memuat…" : ""}</span>
           <button type="button" className="secondary-button !py-1.5 text-[11px]" onClick={exportPdf} disabled={exporting} data-testid="mkt-export-pdf">{exporting ? <Loader2 size={13} className="spin" /> : <FileDown size={13} />} Ekspor PDF</button>
           {canCreate && <button type="button" className="primary-button !py-1.5 text-[11px]" onClick={() => setCreating({ publish_at: "" })} data-testid="mkt-new-post"><Plus size={13} /> Konten baru</button>}
         </div>
       </div>
+      {showFilters && (
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2.5" data-testid="mkt-filters">
+          <label className="grid gap-1 text-[10.5px] font-semibold text-[#6B6B73]">Platform
+            <KNSelect data-testid="mkt-filter-platform" className="field !w-44" value={filters.platform} onValueChange={(v) => setFilters((f) => ({ ...f, platform: v }))}
+              options={[{ value: "", label: "Semua platform" }, ...Object.entries(PLATFORM_STYLE).map(([v, p]) => ({ value: v, label: p.label }))]} /></label>
+          <label className="grid gap-1 text-[10.5px] font-semibold text-[#6B6B73]">Status
+            <KNSelect data-testid="mkt-filter-status" className="field !w-44" value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+              options={[{ value: "", label: "Semua status" }, ...Object.entries(STATUS_STYLE).map(([v, st]) => ({ value: v, label: st.label }))]} /></label>
+          <label className="grid gap-1 text-[10.5px] font-semibold text-[#6B6B73]">Kampanye
+            <KNSelect data-testid="mkt-filter-campaign" className="field !w-52" value={filters.campaign_id} onValueChange={(v) => setFilters((f) => ({ ...f, campaign_id: v }))}
+              options={[{ value: "", label: "Semua kampanye" }, ...campaigns.map((c) => ({ value: c.id, label: c.name }))]} /></label>
+          {activeFilters > 0 && (
+            <button type="button" className="link-button text-[11px]" data-testid="mkt-filter-reset" onClick={() => setFilters({ platform: "", status: "", campaign_id: "" })}>
+              <X size={11} className="inline" /> Hapus saringan
+            </button>
+          )}
+        </div>
+      )}
+      <PageTabs testId="mkt-mode" value={mode} onChange={setMode} ariaLabel="Tampilan kalender" className="!mb-0"
+        tabs={[
+          { key: "month", label: "Kalender", icon: CalendarDays, testId: "mkt-mode-month" },
+          { key: "week", label: "Minggu", icon: CalendarRange, testId: "mkt-mode-week" },
+          { key: "list", label: "Daftar", icon: List, testId: "mkt-mode-list" },
+        ]} />
 
       {isWeek ? (
         <div className="grid gap-1.5">

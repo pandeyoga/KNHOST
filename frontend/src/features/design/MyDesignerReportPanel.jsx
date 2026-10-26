@@ -67,7 +67,7 @@ export default function MyDesignerReportPanel({ selectedEntity = "all", line = "
       <div className="section-card">
         <div className="section-head">
           <div className="flex items-center gap-2">
-            <BarChart3 size={14} className="text-[#6B219A]" />
+            <BarChart3 size={14} className="text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">Desain</span>
               <h2 className="text-[13px] font-bold">Rapor Saya</h2>
@@ -83,7 +83,7 @@ export default function MyDesignerReportPanel({ selectedEntity = "all", line = "
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <Kpi label="Ditugaskan" value={t.requests ?? 0} testId="dsr-myreport-total" />
           <Kpi label="Diserahkan" value={t.delivered ?? 0} testId="dsr-myreport-delivered" />
           <Kpi label="Disetujui (ACC)" value={t.approved ?? 0} testId="dsr-myreport-approved" />
@@ -105,7 +105,7 @@ export default function MyDesignerReportPanel({ selectedEntity = "all", line = "
             testId="dsr-myreport-empty" />
         ) : (
           <div className="grid gap-3">
-            <div className="grid gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
               <Kpi label="Rata-rata hari kerja" value={nOrDash(me.avg_days)}
                 hint="dari ditugaskan sampai diserahkan" testId="dsr-myreport-avg-days" />
               <div className="rounded-lg border border-[#EFF0F2] bg-white px-3 py-2">
@@ -130,7 +130,7 @@ export default function MyDesignerReportPanel({ selectedEntity = "all", line = "
                 </p>
                 <p data-testid="dsr-myreport-rank"
                   className="inline-flex items-center gap-1 text-[15px] font-bold tabular-nums text-[#1C1C1E]">
-                  <Trophy size={12} className="text-[#6B219A]" />
+                  <Trophy size={12} className="text-[#0058CC]" />
                   {data.rank ? `${data.rank} dari ${data.total_designers}` : "—"}
                 </p>
                 <p className="mt-0.5 text-[10px] text-[#8E8E93]">berdasarkan jumlah pekerjaan</p>

@@ -40,7 +40,7 @@ export default function SampleGalleryPanel({ rows, code = "", label = "", loadin
           <span className="ml-auto text-[11px] text-[#6B6B73]" data-testid="sample-gallery-count"><b>{shown.length}</b> dari {(rows || []).length} {what}</span>
         </div>
         {showFilters && (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" data-testid="sample-gallery-filters">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" data-testid="sample-gallery-filters">
             <KNSelect data-testid="sample-gallery-filter-supplier" className="field" value={g.supplier} searchable
               options={[{ value: "", label: "Semua supplier" }, ...suppliers.map(([id, name]) => ({ value: id, label: name }))]} onValueChange={(v) => set("supplier", v)} />
             <KNSelect data-testid="sample-gallery-filter-result" className="field" value={g.result} options={RESULT_OPTS} onValueChange={(v) => set("result", v)} />

@@ -16,7 +16,8 @@ export const FALLBACK_AXES = [
 export const presetAxes = (axisConfig) => (axisConfig?.catalog?.length ? axisConfig.catalog : FALLBACK_AXES)
   .filter(a => a.preset).map(a => ({ key: a.key, label: a.label, options: (a.options || []).map(o => ({ ...o })) }));
 
-export const AxisEditor = ({ axes, onChange, structuralLocked = false, axisConfig = null }) => {
+// Fase 4 · R4 (L-10) — `embedded`: dipasang di dalam FormSection bernomor (judul & garis atas dari bagian itu).
+export const AxisEditor = ({ axes, onChange, structuralLocked = false, axisConfig = null, embedded = false }) => {
   const [label, setLabel] = useState("");
   const [key, setKey] = useState("");
   const catalog = axisConfig?.catalog?.length ? axisConfig.catalog : FALLBACK_AXES;
@@ -25,8 +26,8 @@ export const AxisEditor = ({ axes, onChange, structuralLocked = false, axisConfi
     if (axes.some(a => a.key === key0) || !key0 || !label0) return;
     onChange([...axes, { key: key0, label: label0, options: opts.map(o => ({ ...o })) }]); setKey(""); setLabel("");
   };
-  return <section data-testid="catalog-axis-editor" className="space-y-4 border-t pt-4">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold" data-testid="axis-section-title">Atribut & pilihan varian</h3>
+  return <section data-testid="catalog-axis-editor" className={embedded ? "space-y-4" : "space-y-4 border-t pt-4"}>
+    <div className="flex flex-wrap items-center justify-between gap-2">{!embedded && <h3 className="font-semibold" data-testid="axis-section-title">Atribut & pilihan varian</h3>}
       {/* UAT 24 Okt (audit UI tahap 2) — G4-29: tombol "+ <sumbu>" hanya untuk sumbu yang BELUM dipakai (dulu
           "+ Asal/+ Warna…" tetap tampil di samping editor sumbu yang sama sehingga tampak ganda). */}
       {!structuralLocked && catalog.some(a => !axes.some(x => x.key === a.key)) && <div className="flex flex-wrap gap-1">{catalog.filter(a => !axes.some(x => x.key === a.key)).map(a => <button type="button" key={a.key} data-testid={`axis-add-${a.key}`} className="secondary-button" title={a.preset ? "Sumbu bawaan" : "Sumbu tambahan (opsional)"} disabled={axes.length >= 6} onClick={() => add(a.key, a.label, a.options || [])}><Plus size={12} />{a.label}</button>)}</div>}

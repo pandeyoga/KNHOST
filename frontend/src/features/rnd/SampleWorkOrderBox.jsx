@@ -43,7 +43,7 @@ export default function SampleWorkOrderBox({ sample, onOpenSample, onSendBatch, 
       )}
       {sample.color_batch_id && (
         <div className="rounded-lg border border-[#E5DDF3] bg-[#FAF7FF] p-2.5" data-testid="sample-color-batch">
-          <p className="mb-1 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-[#6B219A]">
+          <p className="mb-1 flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">
             <Layers size={11} /> Labdip multi-warna · warna {sample.color_batch_index} dari {sample.color_batch_size}
           </p>
           <div className="grid gap-1">

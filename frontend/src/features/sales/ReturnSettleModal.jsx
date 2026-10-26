@@ -6,9 +6,10 @@
  *  kepemilikan lintas-PT dilakukan via aksi "Transfer Kepemilikan" di panel karantina. */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
-import { CheckCircle2, Loader2, X, Wallet, Coins, Percent, Warehouse, Info, Repeat, Receipt } from "lucide-react";
+import { CheckCircle2, Loader2, Wallet, Coins, Percent, Warehouse, Info, Repeat, Receipt } from "lucide-react";
 import { fmtNum } from "./ReturnShared";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 
@@ -159,162 +160,161 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const anyIncluded = decisions.some((d) => d.include && (parseFloat(d.settle_qty) || 0) > 0);
   const ownerName = ret.entity_short_name || ret.entity_name || ret.entity_id || "entitas SO";
 
+  // Fase 4 · R4 (L-03) — FormModal baku (dulu `.modal-overlay`/`.modal-card` tanpa Esc/klik latar & tanpa rupa HP):
+  // kepala & kaki tetap, badan bergulir, layar penuh di HP; galat tetap DI DALAM pop-up (`settle-error`, FE-07).
   return (
-    <div className="modal-overlay" data-testid="settle-modal">
-      <div className="modal-card" style={{ maxWidth: 760 }}>
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="modal-title">Selesaikan Retur {ret.number}</h3>
-          <button className="icon-button" onClick={onClose}><X size={15} /></button>
-        </div>
-        <p className="modal-subtitle">Pilih outcome & item yang diselesaikan (bisa sebagian / kecualikan item).</p>
-
-        {/* Outcome selector */}
-        <div className="grid grid-cols-2 gap-2 my-3 sm:grid-cols-4">
-          {OUTCOMES.map((o) => {
-            const Icon = o.icon; const active = outcome === o.value;
-            return (
-              <button key={o.value} type="button" data-testid={`settle-outcome-${o.value}`}
-                onClick={() => setOutcome(o.value)}
-                className={`text-left rounded-md border p-2.5 transition ${active
-                  ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#EFF0F2] bg-white hover:border-[#C9CDD4]"}`}>
-                <div className="flex items-center gap-1.5 font-semibold text-[12px]">
-                  <Icon size={13} className={active ? "text-[#0058CC]" : "text-[#6B6B73]"} /> {o.label}
-                </div>
-                <div className="text-[10px] text-[#6B6B73] mt-1 leading-snug">{o.desc}</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {outcome === "exchange" && (
-          <div className="notice-bar mb-3 text-[11.5px]" data-testid="settle-swap-hint">
-            {/* notice-bar = flex: isi dibungkus satu blok supaya teks tebal tidak pecah jadi kolom */}
-            <div>
-              <b>Tukar barang</b>: nilai retur menjadi saldo pelanggan, lalu Admin Sales membuat <b>pesanan pengganti</b>
-              {" "}(artikel/warna sama, harga transaksi asal) di panel "Pesanan pengganti". Pengganti <b>lebih banyak</b> → selisihnya
-              ditagih; <b>lebih sedikit</b> → sisa saldo tetap milik pelanggan.
-              {!isSwap && <span className="mt-1 block text-[#8C4A00]" data-testid="settle-swap-type-change">
-                Tipe retur ini berubah dari <b>{TYPE_LABEL[ret.return_type] || ret.return_type}</b> menjadi <b>Penggantian</b> (tercatat di riwayat).</span>}
-            </div>
+    <FormModal open={open} onClose={onClose} busy={busy} size="lg" icon={Receipt} testId="settle-modal"
+      title={`Selesaikan Retur ${ret.number}`}
+      subtitle="Pilih outcome & item yang diselesaikan (bisa sebagian / kecualikan item)."
+      footer={(
+        <>
+          {err && <p role="alert" className="mb-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-error">{err}</p>}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button type="button" className="secondary-button" onClick={onClose} disabled={busy}>Batal</button>
+            <button type="button" data-testid="confirm-settle-btn" className="primary-button" disabled={busy || !anyIncluded}
+              onClick={confirm}>
+              {busy ? <Loader2 size={13} className="spin" /> : <CheckCircle2 size={13} />} Selesaikan ({OUTCOMES.find((o) => o.value === outcome)?.label || outcome})
+            </button>
           </div>
-        )}
-        {isSwap && (outcome === "refund" || outcome === "nego") && (
-          <div className="notice-bar mb-3 text-[11.5px] text-[#A8221A]" data-testid="settle-swap-warning">
-            <div>Retur ini diajukan sebagai <b>Penggantian</b> (tukar barang). Outcome ini tidak membuat pesanan pengganti.</div>
-          </div>
-        )}
-
-        {/* R3 — Lokasi gudang penerimaan (owner tetap = entitas SO) */}
-        {movesStock && physLocs.length > 0 && (
-          <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3 text-[11.5px]" data-testid="settle-physical-location">
-            <Warehouse size={13} className="inline mr-1" /> Roll masuk karantina di <b>lokasi fisik hasil scan</b>: {physNames.join(", ") || "—"}.
-            Untuk memindah barang, scan Kirim → Tiba di panel Perjalanan Retur.
-          </div>
-        )}
-        {movesStock && !physLocs.length && (
-          <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3" data-testid="settle-destination">
-            <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1B4F9C] mb-1.5">
-              <Warehouse size={13} /> Lokasi Gudang Penerimaan Retur
-            </label>
-            <KNSelect className="field w-full" data-testid="settle-return-warehouse"
-              value={returnWarehouseId} onValueChange={setReturnWarehouseId}
-              aria-label="Gudang tujuan roll retur"
-              placeholder="Default cerdas (gudang pengiriman SO)"
-              options={[
-                { value: "", label: "Default cerdas (gudang pengiriman SO)" },
-                ...warehouses.map((w) => ({
-                  value: w.id,
-                  label: `${w.name || w.code || w.id}${w.city ? ` — ${w.city}` : ""}`,
-                })),
-              ]} />
-            <div className="flex items-start gap-1 text-[10.5px] text-[#5B6472] mt-1.5 leading-snug">
-              <Info size={12} className="mt-[1px] shrink-0" />
-              <span>Roll retur masuk <b>karantina</b> di lokasi ini. Kepemilikan tetap pada <b>{ownerName}</b>;
-                pindah kepemilikan lintas-PT dilakukan setelah release via aksi <b>Transfer Kepemilikan</b>.</span>
-            </div>
-          </div>
-        )}
-
-        {/* R5.3 — Akun Kas/Bank untuk refund TUNAI (hanya relevan bila order dibayar tunai) */}
-        {outcome === "refund" && (
-          <div className="rounded-md border border-[#E7E1F5] bg-[#F8F5FE] p-2.5 mb-3" data-testid="settle-refund-account-box">
-            <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#6B219A] mb-1.5">
-              <Coins size={13} /> Akun Kas/Bank Pengembalian Dana Tunai
-            </label>
-            <KNSelect className="field w-full" data-testid="settle-refund-account"
-              value={refundAccount} onValueChange={setRefundAccount}
-              aria-label="Akun kas/bank untuk pengembalian dana tunai"
-              placeholder="Default — 1-1100 Kas Besar / Bank"
-              options={[
-                { value: "", label: "Default — 1-1100 Kas Besar / Bank" },
-                ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
-              ]} />
-            <div className="flex items-start gap-1 text-[10.5px] text-[#5B6472] mt-1.5 leading-snug">
-              <Info size={12} className="mt-[1px] shrink-0" />
-              <span>Berlaku bila retur berasal dari penjualan <b>tunai</b> → dana keluar dari akun ini &
-                tercatat sebagai <b>kas keluar</b>. Penjualan kredit otomatis mengurangi piutang (tanpa kas).</span>
-            </div>
-          </div>
-        )}
-
-        {/* Per-item decisions */}
-        <div className="section-card" style={{ margin: 0 }}>
-          <table className="data-table">
-            <thead>
-              <tr><th>Sertakan</th><th>Produk</th><th>Qty Retur</th><th>Qty Diselesaikan</th></tr>
-            </thead>
-            <tbody>
-              {(ret.items || []).map((it, i) => (
-                <tr key={i} data-testid={`settle-item-${i}`}>
-                  <td>
-                    <input type="checkbox" data-testid={`settle-include-${i}`}
-                      checked={decisions[i].include} onChange={(e) => upd(i, { include: e.target.checked })} />
-                  </td>
-                  <td>{it.product_name || it.product_id}</td>
-                  <td className="font-mono">{fmtNum(it.quantity_returned)} {it.unit}</td>
-                  <td style={{ maxWidth: 110 }}>
-                    <input data-testid={`settle-qty-${i}`} type="number" min="0" max={it.quantity_returned}
-                      className="field tabular-nums" disabled={!decisions[i].include}
-                      value={decisions[i].settle_qty} onChange={(e) => upd(i, { settle_qty: e.target.value })} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <SettleValuePanel pv={pv} err={pvErr} busy={pvBusy} />
-
-        {outcome === "nego" && (
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs" data-testid="settle-nego-payout">
-            <span className="font-semibold">Kompensasi untuk customer (KLR-10):</span>
-            {[["store_credit", "Jadi saldo"], ["refund", "Refund tunai"], ["", "Kurangi piutang SO asal saja"]].map(([v, l]) => (
-              <label key={v || "ar"} className="inline-flex items-center gap-1">
-                <input type="radio" name="nego-payout" data-testid={`settle-payout-${v || "ar"}`} checked={payout === v} onChange={() => setPayout(v)} /> {l}
-              </label>))}
-            <span className="text-[#6B6B73]">Tagihan SO asal yang belum lunas dipotong dulu; utang SO lain tidak ikut dipotong.</span>
-          </div>
-        )}
-        <input data-testid="settle-decision-note" className="field mt-3 w-full"
-          placeholder="Bukti keputusan (mis. ACC Pak Budi via WA 12/10, nego disepakati Rp …)"
-          value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
-        <textarea data-testid="settle-notes" className="textarea mt-3" rows={2}
-          placeholder="Catatan penyelesaian (opsional)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
-
-        <p className="mt-2 text-[10.5px] text-[#5B6472]" data-testid="settle-cost-basis-note">
-          Basis nilai barang kembali (pembalikan HPP ke stok) = <b>WAC</b> produk yang sudah
-          <b> termasuk landed cost</b> (freight/duty/handling) untuk barang impor — bukan harga PO mentah.
-        </p>
-
-        {err && <p role="alert" className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-error">{err}</p>}
-        <div className="modal-actions">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="confirm-settle-btn" className="primary-button" disabled={busy || !anyIncluded}
-            onClick={confirm}>
-            {busy ? <Loader2 size={13} className="spin" /> : <CheckCircle2 size={13} />} Selesaikan ({OUTCOMES.find((o) => o.value === outcome)?.label || outcome})
-          </button>
-        </div>
+        </>
+      )}>
+      {/* Outcome selector */}
+      <div className="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
+        {OUTCOMES.map((o) => {
+          const Icon = o.icon; const active = outcome === o.value;
+          return (
+            <button key={o.value} type="button" data-testid={`settle-outcome-${o.value}`}
+              onClick={() => setOutcome(o.value)}
+              className={`text-left rounded-md border p-2.5 transition ${active
+                ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#EFF0F2] bg-white hover:border-[#C9CDD4]"}`}>
+              <div className="flex items-center gap-1.5 font-semibold text-[12px]">
+                <Icon size={13} className={active ? "text-[#0058CC]" : "text-[#6B6B73]"} /> {o.label}
+              </div>
+              <div className="text-[10px] text-[#6B6B73] mt-1 leading-snug">{o.desc}</div>
+            </button>
+          );
+        })}
       </div>
-    </div>
+
+      {outcome === "exchange" && (
+        <div className="notice-bar mb-3 text-[11.5px]" data-testid="settle-swap-hint">
+          {/* notice-bar = flex: isi dibungkus satu blok supaya teks tebal tidak pecah jadi kolom */}
+          <div>
+            <b>Tukar barang</b>: nilai retur menjadi saldo pelanggan, lalu Admin Sales membuat <b>pesanan pengganti</b>
+            {" "}(artikel/warna sama, harga transaksi asal) di panel "Pesanan pengganti". Pengganti <b>lebih banyak</b> → selisihnya
+            ditagih; <b>lebih sedikit</b> → sisa saldo tetap milik pelanggan.
+            {!isSwap && <span className="mt-1 block text-[#8C4A00]" data-testid="settle-swap-type-change">
+              Tipe retur ini berubah dari <b>{TYPE_LABEL[ret.return_type] || ret.return_type}</b> menjadi <b>Penggantian</b> (tercatat di riwayat).</span>}
+          </div>
+        </div>
+      )}
+      {isSwap && (outcome === "refund" || outcome === "nego") && (
+        <div className="notice-bar mb-3 text-[11.5px] text-[#A8221A]" data-testid="settle-swap-warning">
+          <div>Retur ini diajukan sebagai <b>Penggantian</b> (tukar barang). Outcome ini tidak membuat pesanan pengganti.</div>
+        </div>
+      )}
+
+      {/* R3 — Lokasi gudang penerimaan (owner tetap = entitas SO) */}
+      {movesStock && physLocs.length > 0 && (
+        <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3 text-[11.5px]" data-testid="settle-physical-location">
+          <Warehouse size={13} className="inline mr-1" /> Roll masuk karantina di <b>lokasi fisik hasil scan</b>: {physNames.join(", ") || "—"}.
+          Untuk memindah barang, scan Kirim → Tiba di panel Perjalanan Retur.
+        </div>
+      )}
+      {movesStock && !physLocs.length && (
+        <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3" data-testid="settle-destination">
+          <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1B4F9C] mb-1.5">
+            <Warehouse size={13} /> Lokasi Gudang Penerimaan Retur
+          </label>
+          <KNSelect className="field w-full" data-testid="settle-return-warehouse"
+            value={returnWarehouseId} onValueChange={setReturnWarehouseId}
+            aria-label="Gudang tujuan roll retur"
+            placeholder="Default cerdas (gudang pengiriman SO)"
+            options={[
+              { value: "", label: "Default cerdas (gudang pengiriman SO)" },
+              ...warehouses.map((w) => ({
+                value: w.id,
+                label: `${w.name || w.code || w.id}${w.city ? ` — ${w.city}` : ""}`,
+              })),
+            ]} />
+          <div className="flex items-start gap-1 text-[10.5px] text-[#5B6472] mt-1.5 leading-snug">
+            <Info size={12} className="mt-[1px] shrink-0" />
+            <span>Roll retur masuk <b>karantina</b> di lokasi ini. Kepemilikan tetap pada <b>{ownerName}</b>;
+              pindah kepemilikan lintas-PT dilakukan setelah release via aksi <b>Transfer Kepemilikan</b>.</span>
+          </div>
+        </div>
+      )}
+
+      {/* R5.3 — Akun Kas/Bank untuk refund TUNAI (hanya relevan bila order dibayar tunai) */}
+      {outcome === "refund" && (
+        <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3" data-testid="settle-refund-account-box">
+          <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1B4F9C] mb-1.5">
+            <Coins size={13} /> Akun Kas/Bank Pengembalian Dana Tunai
+          </label>
+          <KNSelect className="field w-full" data-testid="settle-refund-account"
+            value={refundAccount} onValueChange={setRefundAccount}
+            aria-label="Akun kas/bank untuk pengembalian dana tunai"
+            placeholder="Default — 1-1100 Kas Besar / Bank"
+            options={[
+              { value: "", label: "Default — 1-1100 Kas Besar / Bank" },
+              ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
+            ]} />
+          <div className="flex items-start gap-1 text-[10.5px] text-[#5B6472] mt-1.5 leading-snug">
+            <Info size={12} className="mt-[1px] shrink-0" />
+            <span>Berlaku bila retur berasal dari penjualan <b>tunai</b> → dana keluar dari akun ini &
+              tercatat sebagai <b>kas keluar</b>. Penjualan kredit otomatis mengurangi piutang (tanpa kas).</span>
+          </div>
+        </div>
+      )}
+
+      {/* Per-item decisions */}
+      <div className="section-card overflow-x-auto" style={{ margin: 0 }}>
+        <table className="data-table">
+          <thead>
+            <tr><th>Sertakan</th><th>Produk</th><th>Qty Retur</th><th>Qty Diselesaikan</th></tr>
+          </thead>
+          <tbody>
+            {(ret.items || []).map((it, i) => (
+              <tr key={i} data-testid={`settle-item-${i}`}>
+                <td>
+                  <input type="checkbox" data-testid={`settle-include-${i}`}
+                    checked={decisions[i].include} onChange={(e) => upd(i, { include: e.target.checked })} />
+                </td>
+                <td>{it.product_name || it.product_id}</td>
+                <td className="font-mono">{fmtNum(it.quantity_returned)} {it.unit}</td>
+                <td style={{ maxWidth: 110 }}>
+                  <input data-testid={`settle-qty-${i}`} type="number" min="0" max={it.quantity_returned}
+                    className="field tabular-nums" disabled={!decisions[i].include}
+                    value={decisions[i].settle_qty} onChange={(e) => upd(i, { settle_qty: e.target.value })} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <SettleValuePanel pv={pv} err={pvErr} busy={pvBusy} />
+
+      {outcome === "nego" && (
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs" data-testid="settle-nego-payout">
+          <span className="font-semibold">Kompensasi untuk customer (KLR-10):</span>
+          {[["store_credit", "Jadi saldo"], ["refund", "Refund tunai"], ["", "Kurangi piutang SO asal saja"]].map(([v, l]) => (
+            <label key={v || "ar"} className="inline-flex items-center gap-1">
+              <input type="radio" name="nego-payout" data-testid={`settle-payout-${v || "ar"}`} checked={payout === v} onChange={() => setPayout(v)} /> {l}
+            </label>))}
+          <span className="text-[#6B6B73]">Tagihan SO asal yang belum lunas dipotong dulu; utang SO lain tidak ikut dipotong.</span>
+        </div>
+      )}
+      <input data-testid="settle-decision-note" className="field mt-3 w-full"
+        placeholder="Bukti keputusan (mis. ACC Pak Budi via WA 12/10, nego disepakati Rp …)"
+        value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
+      <textarea data-testid="settle-notes" className="textarea mt-3" rows={2}
+        placeholder="Catatan penyelesaian (opsional)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+      <p className="mt-2 text-[10.5px] text-[#5B6472]" data-testid="settle-cost-basis-note">
+        Basis nilai barang kembali (pembalikan HPP ke stok) = <b>WAC</b> produk yang sudah
+        <b> termasuk landed cost</b> (freight/duty/handling) untuk barang impor — bukan harga PO mentah.
+      </p>
+    </FormModal>
   );
 }

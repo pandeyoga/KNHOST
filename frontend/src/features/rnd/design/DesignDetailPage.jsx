@@ -9,6 +9,7 @@
 import DesignImage from "./DesignImage";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Pencil, RefreshCw } from "lucide-react";
+import PageTabs from "../../../components/PageTabs";
 import ErrorNotice from "../../../components/ErrorNotice";
 import OkNotice from "../../../components/OkNotice";
 import { getDesign, patchDesign, studioMeta } from "../rndApi";
@@ -129,7 +130,7 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
                   </p>
                 )}
                 {d.request_number && (
-                  <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-[#F1E9F7] px-2 py-0.5 text-[10.5px] font-semibold text-[#6B219A]" data-testid="design-detail-request">
+                  <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="design-detail-request">
                     Dari permintaan {d.request_number} — status permintaan mengikuti desain ini
                   </p>
                 )}
@@ -188,22 +189,16 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
       </div>
 
       <div className="section-card section-pad">
-        {/* G5-07: tab bergulir horizontal (dulu patah 3 baris di HP) + bayangan tepi kanan sebagai penanda gulir. */}
-        <div className="relative">
-        <div className="flex gap-1 overflow-x-auto whitespace-nowrap border-b border-[#EFF0F2] px-3 pt-2" data-testid="design-detail-tabs">
-          {TABS.filter(([k]) => k !== "ownership" || ACC_STATUSES.includes(d.status)).map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} data-testid={`design-tab-${k}`}
-              className={`-mb-px shrink-0 border-b-2 px-3 py-2 text-[11.5px] font-semibold ${tab === k ? "border-[#6B219A] text-[#6B219A]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
-              {l}
-              {k === "feedback" && d.feedback_count > 0 && <span className="ml-1 rounded-full bg-[#0058CC] px-1.5 text-[9px] text-white">{d.feedback_count}</span>}
-              {k === "final" && d.status === "approved" && <span className="ml-1 rounded-full bg-[#C62828] px-1.5 text-[9px] text-white">wajib</span>}
-              {k === "proofing" && (d.proofing?.samples?.length || 0) > 0 && <span className="ml-1 rounded-full bg-[#6B219A] px-1.5 text-[9px] text-white">{d.proofing.samples.length}</span>}
-              {k === "history" && <span className="ml-1 rounded-full bg-[#F5F5F7] px-1.5 text-[9px] text-[#6B6B73]">{(d.timeline || []).length}</span>}
-            </button>
-          ))}
-        </div>
-        <span aria-hidden="true" className="pointer-events-none absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-white to-transparent sm:hidden" />
-        </div>
+        {/* G5-07 / Fase 4 · R4 — tab = PageTabs baku (dulu tombol garis-bawah ungu buatan sendiri): satu baris bergulir
+            di HP, tab aktif digulir ke pandangan; testid `design-tab-*` tetap. */}
+        <PageTabs testId="design-detail-tabs" value={tab} onChange={setTab} ariaLabel="Rincian desain" className="!mb-0 px-3 pt-1"
+          tabs={TABS.filter(([k]) => k !== "ownership" || ACC_STATUSES.includes(d.status)).map(([k, l]) => ({
+            key: k, testId: `design-tab-${k}`,
+            label: k === "final" && d.status === "approved"
+              ? <>{l} <span className="ml-1 rounded-full bg-[#C62828] px-1.5 text-[9px] text-white">wajib</span></> : l,
+            count: k === "feedback" ? d.feedback_count : k === "proofing" ? (d.proofing?.samples?.length || 0)
+              : k === "history" ? (d.timeline || []).length : undefined,
+          }))} />
         <div className="section-body">
           {tab === "summary" && <Summary d={d} canEdit={uploadOpen} canAssess={canAssess} canPaper={canPaper} onDone={done} onError={fail} />}
           {tab === "final" && <FinalPanel design={d} canEdit={canEdit} onDone={done} onError={fail} />}
@@ -236,7 +231,7 @@ function Summary({ d, canEdit, canAssess, canPaper, onDone, onError }) {
   };
   const accDone = ["approved", "final_submitted", "active"].includes(d.status);
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="space-y-3 lg:col-span-2">
         <div>
           <p className="mb-2 text-[10.5px] font-bold uppercase text-[#8E8E93]">Perjalanan ronde · {d.revision_count || 0}× revisi · nilai diberikan sekali saat ACC</p>
@@ -265,7 +260,7 @@ function Summary({ d, canEdit, canAssess, canPaper, onDone, onError }) {
                 </div>
               ) : <span className="text-[#9A9BA3]" data-testid="design-detail-products-empty">{accDone ? "belum ditetapkan" : "ditentukan penilai saat ACC"}</span>}
               {canAssess && accDone && (
-                <button className="mt-1 block text-[10.5px] text-[#6B219A] underline" onClick={() => { setProds(d.recommended_products || []); setEditProd(true); }}
+                <button className="mt-1 block text-[10.5px] text-[#0058CC] underline" onClick={() => { setProds(d.recommended_products || []); setEditProd(true); }}
                   data-testid="design-detail-products-edit">atur peruntukan</button>
               )}
             </>
@@ -282,7 +277,7 @@ function Summary({ d, canEdit, canAssess, canPaper, onDone, onError }) {
         )}
         <Info label="Tag">
           <div className="flex flex-wrap gap-1" data-testid="design-detail-tags">
-            {(d.tags || []).map((t) => <span key={t} className="rounded-full bg-[#F1E9F7] px-2 py-0.5 text-[10.5px] text-[#6B219A]">{t}</span>)}
+            {(d.tags || []).map((t) => <span key={t} className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] text-[#0058CC]">{t}</span>)}
             {!(d.tags || []).length && <span className="text-[#9A9BA3]">—</span>}
           </div>
         </Info>

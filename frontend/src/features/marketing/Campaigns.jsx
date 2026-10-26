@@ -43,7 +43,7 @@ export default function Campaigns({ currentUser }) {
       <SearchBox value={q} onChange={setQ} placeholder="Cari kampanye…" testId="mkt-campaigns-search" />
       {shown.length === 0 && <p className="rounded-xl border border-dashed border-[#D9D9DE] p-6 text-center text-[12px] text-[#9A9BA3]" data-testid="mkt-campaigns-empty">{q ? "Tidak ada kampanye yang cocok." : "Belum ada kampanye."}</p>}
       <CampaignBudgetChart version={rows} />
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {shown.map((c) => (
           <div key={c.id} className="rounded-xl border border-[#EFF0F2] bg-white p-3" data-testid={`mkt-campaign-${c.id}`} style={{ borderLeft: `4px solid ${c.color || "#0058CC"}` }}>
             <div className="flex items-start justify-between gap-2">
@@ -91,7 +91,7 @@ function CampaignForm({ campaign, onClose, onSaved }) {
     <FormModal open title={campaign ? "Ubah kampanye" : "Kampanye baru"} icon={Flag} onClose={onClose} onSubmit={submit} busy={busy} error={err} testId="mkt-campaign-form" submitTestId="mkt-campaign-submit">
       <div className="grid gap-3">
         <Field label="Nama kampanye *"><input className="field w-full" value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="mis. Lebaran 2027" data-testid="mkt-c-name" /></Field>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Tema"><input className="field w-full" value={f.theme} onChange={(e) => set("theme", e.target.value)} placeholder="Koleksi warna hangat & motif klasik" data-testid="mkt-c-theme" /></Field>
           <Field label="Tujuan"><input className="field w-full" value={f.goal} onChange={(e) => set("goal", e.target.value)} placeholder="+500 pengikut, 50 prospek DM" data-testid="mkt-c-goal" /></Field>
           <Field label="Mulai"><KNDatePicker className="w-full" value={f.start_date} onChange={(v) => set("start_date", v)} data-testid="mkt-c-start" /></Field>

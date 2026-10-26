@@ -135,12 +135,12 @@ export default function RndReportsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {/* Ringkasan kinerja desainer — sumber lengkapnya di menu Desainer */}
         <div className="section-card">
           <div className="section-head flex-wrap">
             <div className="flex items-center gap-2">
-              <Palette size={16} className="text-[#6B219A]" />
+              <Palette size={16} className="text-[#0058CC]" />
               <h2>Desainer Teratas (30 hari)</h2>
             </div>
             {!kpiDenied && (

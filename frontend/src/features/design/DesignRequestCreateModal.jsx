@@ -33,8 +33,8 @@ function Section({ icon: Icon, step, title, hint, children, testId }) {
   return (
     <section data-testid={testId} className="rounded-xl border border-[#EFF0F2] bg-[#FAFBFC] p-3">
       <div className="mb-2.5 flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#6B219A] text-[10.5px] font-bold text-white">{step}</span>
-        <Icon size={13} className="text-[#6B219A]" />
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0058CC] text-[10.5px] font-bold text-white">{step}</span>
+        <Icon size={13} className="text-[#0058CC]" />
         <div>
           <p className="text-[12px] font-bold text-[#1C1C1E]">{title}</p>
           {hint && <p className="text-[10.5px] text-[#8E8E93]">{hint}</p>}
@@ -116,7 +116,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
     >
       <div className="grid gap-3">
         <Section step={1} icon={ClipboardList} title="Untuk siapa & dari mana" testId="dsr-section-source">
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <label className="block">
               <span className="field-label">Sumber permintaan</span>
               <KNSelect data-testid="dsr-source-select" value={form.source}
@@ -147,7 +147,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
 
         <Section step={2} icon={Palette} title="Apa yang harus dibuat"
           hint="Kategori sama dengan Design Studio — kode desain (mis. SRI-SLR-AO-001) terbentuk otomatis saat desainer mulai." testId="dsr-section-what">
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <label className="block">
               <span className="field-label">Kategori Pattern *</span>
               <KNSelect data-testid="dsr-category-select" value={form.category_code}
@@ -197,7 +197,7 @@ export default function DesignRequestCreateModal({ open, onClose, onCreated, met
         </Section>
 
         <Section step={3} icon={UserRound} title="Siapa & kapan" hint="Boleh dikosongkan — atasan bisa menugaskan dari papan." testId="dsr-section-who">
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <label className="block">
               <span className="field-label">Ditugaskan ke</span>
               <KNSelect data-testid="dsr-assignee-select" value={form.assigned_to}

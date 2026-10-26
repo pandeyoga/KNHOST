@@ -46,7 +46,7 @@ export default function ProofingPanel({ design }) {
           <div className="space-y-1.5">
             {p.samples.map((s) => (
               <button key={s.id} type="button" onClick={() => openRndSample?.(s.id)} data-testid={`design-proofing-sample-${s.id}`}
-                className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-[#EFF0F2] bg-white px-3 py-2 text-left hover:border-[#6B219A]">
+                className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border border-[#EFF0F2] bg-white px-3 py-2 text-left hover:border-[#0058CC]">
                 <span className="min-w-0">
                   <span className="font-mono text-[11.5px] font-bold">{s.number}</span>
                   <span className="ml-1 truncate text-[11px] text-[#3C3C43]">{s.title}</span>

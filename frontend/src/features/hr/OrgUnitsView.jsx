@@ -196,7 +196,7 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
                     ) : (
                       (dept.children || []).map((pos) => (
                         <div key={pos.id} className="flex items-center gap-2 px-3 py-2 pl-8" data-testid={`org-position-${pos.id}`}>
-                          <Briefcase size={13} className="text-[#6B219A]" />
+                          <Briefcase size={13} className="text-[#0058CC]" />
                           <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-medium truncate">{pos.name}</p>
                             <p className="text-[10px] text-[#9A9BA3]">{pos.code}</p>

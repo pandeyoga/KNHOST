@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { fmtNum } from "./ReturnShared";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import useDomainEnums from "../../hooks/useDomainEnums";
 
 const STATUS_PILL = {
@@ -182,12 +183,12 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
         <span className="inline-flex items-center gap-1.5"><ShieldAlert size={14} /> Karantina Roll Retur (Ownership vs Lokasi)</span>
         <span className="flex items-center gap-2">
           {linkedPR ? (
-            <span data-testid="linked-purchase-return" className="inline-flex items-center gap-1 rounded border border-[#E4D4F0] bg-[#FBF5FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#6B219A]">
+            <span data-testid="linked-purchase-return" className="inline-flex items-center gap-1 rounded border border-[#CBD9F2] bg-[#F0F5FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#1B4F9C]">
               <Link2 size={11} /> Retur Beli: {linkedPR}
             </span>
           ) : (canApprove && supplierCandidates.length > 0 && (
             <button data-testid="create-supplier-return-btn" className="secondary-button !py-1 !px-2 text-[11px]"
-              onClick={() => setShowSupRet(true)} title="Teruskan barang cacat ke supplier (buat Retur Beli tertaut)">
+              onClick={() => { setErr(null); setShowSupRet(true); }} title="Teruskan barang cacat ke supplier (buat Retur Beli tertaut)">
               <Store size={12} /> Teruskan ke Supplier
             </button>
           ))}
@@ -233,6 +234,8 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
             <FileMinus size={11} className="text-[#1B4F9C]" />
             Basis nilai roll = <b className="mx-0.5">WAC</b> (termasuk <b className="mx-0.5">landed cost</b> bila ada — freight/duty/handling). Roll impor ber-landed ditandai <span className="mx-0.5 rounded border border-[#CBD9F2] bg-[#F0F5FF] px-1 text-[9px] font-semibold text-[#1B4F9C]">incl. landed</span>.
           </div>
+          {/* Fase 4 · R4 — tabel 8 kolom bergulir DI DALAM kartu (dulu melebarkan halaman di HP 390 px). */}
+          <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
@@ -355,6 +358,7 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
               })}
             </tbody>
           </table>
+          </div>
 
           {canApprove && pending.length > 0 && (
             <button data-testid="release-quarantine-btn" className="primary-button mt-2" onClick={release} disabled={busy}>
@@ -370,15 +374,16 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
         </>
       )}
 
+      {/* Fase 4 · R4 (L-03) — tiga pop-up panel karantina = FormModal baku (dulu `.modal-overlay`/`.modal-card small`
+          tanpa Esc & tanpa rupa HP). Galat aksi kini tampil DI DALAM pop-up yang sedang terbuka (dulu di bilah panel
+          di belakang lapisan). Testid lama dipertahankan. */}
       {/* R3 — modal transfer kepemilikan lintas-PT */}
-      {xferRoll && (
-        <div className="modal-overlay" data-testid="transfer-ownership-modal">
-          <div className="modal-card small">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="modal-title">Transfer Kepemilikan Roll</h3>
-              <button className="icon-button" onClick={() => setXferRoll(null)}><X size={15} /></button>
-            </div>
-            <p className="modal-subtitle">
+      <FormModal open={!!xferRoll} onClose={() => { setXferRoll(null); setErr(null); }} busy={xferBusy} error={xferRoll ? err : ""} size="sm"
+        icon={ArrowLeftRight} title="Transfer Kepemilikan Roll" testId="transfer-ownership-modal"
+        onSubmit={submitTransfer} submitLabel="Pindahkan" submitTestId="confirm-transfer-ownership-btn" submitDisabled={!xferDest}>
+        {xferRoll && (
+          <>
+            <p className="text-[12px] leading-relaxed text-[#3C3C43]">
               Roll <b>{xferRoll.roll_no}</b> ({fmtNum(xferRoll.length_remaining ?? xferRoll.length)} m) —
               lokasi fisik <b>{xferRoll.warehouse_name || xferRoll.warehouse_id}</b> tetap. Pindah kepemilikan
               dari <b>{xferRoll.owner_entity_name || xferRoll.owner_entity_id}</b> ke PT tujuan (jurnal inter-company GL-safe).
@@ -388,78 +393,67 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
               value={xferDest} placeholder="— Pilih PT tujuan —" onValueChange={setXferDest}
               options={entities.filter((e) => e.id !== xferRoll.owner_entity_id)
                 .map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id }))} />
-            <div className="modal-actions">
-              <button className="secondary-button" onClick={() => setXferRoll(null)}>Batal</button>
-              <button data-testid="confirm-transfer-ownership-btn" className="primary-button"
-                disabled={xferBusy || !xferDest} onClick={submitTransfer}>
-                {xferBusy ? <Loader2 size={13} className="spin" /> : <ArrowLeftRight size={13} />} Pindahkan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </FormModal>
 
       {/* R4 — modal buat Retur Beli (teruskan barang cacat ke supplier) */}
-      {showSupRet && (
-        <div className="modal-overlay" data-testid="supplier-return-modal">
-          <div className="modal-card small">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="modal-title">Teruskan ke Supplier (Retur Beli)</h3>
-              <button className="icon-button" onClick={() => setShowSupRet(false)}><X size={15} /></button>
-            </div>
-            <p className="modal-subtitle">
-              Membuat <b>Retur Beli</b> tertaut dari {supplierCandidates.length} roll retur (karantina/tersedia).
-              Alur RMA supplier (kirim → terima/tolak → barang kembali) dikelola di modul <b>Retur Beli</b>.
-              Barang <b>impor tak-returnable</b> akan ditolak (rekomendasi regrade + jual lokal).
-            </p>
-            <label className="form-label mt-2">Supplier untuk roll tanpa asal tercatat</label>
-            <KNSelect className="field w-full" data-testid="supplier-return-supplier"
-              value={supRetSupplier} placeholder="Otomatis per roll (supplier & PO asal roll)"
-              onValueChange={setSupRetSupplier}
-              options={[{ value: "", label: "Otomatis per roll (supplier & PO asal roll)" },
-                ...suppliers.map((s) => ({ value: s.id,
-                  label: `${s.name}${s.origin_type === "import" ? " · Impor" : ""}` }))]} />
-            {err && <div className="notice-bar danger mt-2" data-testid="supplier-return-error">{err}</div>}
-            <div className="modal-actions">
-              <button className="secondary-button" onClick={() => setShowSupRet(false)}>Batal</button>
-              <button data-testid="confirm-supplier-return-btn" className="primary-button"
+      <FormModal open={showSupRet} onClose={() => { setShowSupRet(false); setErr(null); }} busy={supRetBusy} size="sm" icon={Store}
+        title="Teruskan ke Supplier (Retur Beli)" testId="supplier-return-modal"
+        footer={(
+          <>
+            {err && <p role="alert" className="mb-2 rounded-md border border-[#FCA5A5] bg-[#FEF2F2] px-2.5 py-1.5 text-[11.5px] font-semibold text-[#B91C1C]" data-testid="supplier-return-error">{err}</p>}
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => { setShowSupRet(false); setErr(null); }} disabled={supRetBusy}>Batal</button>
+              <button type="button" data-testid="confirm-supplier-return-btn" className="primary-button"
                 disabled={supRetBusy} onClick={submitSupplierReturn}>
                 {supRetBusy ? <Loader2 size={13} className="spin" /> : <Store size={13} />} Buat Retur Beli
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}>
+        <p className="text-[12px] leading-relaxed text-[#3C3C43]">
+          Membuat <b>Retur Beli</b> tertaut dari {supplierCandidates.length} roll retur (karantina/tersedia).
+          Alur RMA supplier (kirim → terima/tolak → barang kembali) dikelola di modul <b>Retur Beli</b>.
+          Barang <b>impor tak-returnable</b> akan ditolak (rekomendasi regrade + jual lokal).
+        </p>
+        <label className="form-label mt-2">Supplier untuk roll tanpa asal tercatat</label>
+        <KNSelect className="field w-full" data-testid="supplier-return-supplier"
+          value={supRetSupplier} placeholder="Otomatis per roll (supplier & PO asal roll)"
+          onValueChange={setSupRetSupplier}
+          options={[{ value: "", label: "Otomatis per roll (supplier & PO asal roll)" },
+            ...suppliers.map((s) => ({ value: s.id,
+              label: `${s.name}${s.origin_type === "import" ? " · Impor" : ""}` }))]} />
+      </FormModal>
 
       {/* R5.4b — modal batalkan write-off (un-scrap) roll */}
-      {unscrapRoll && (
-        <div className="modal-overlay" data-testid="unscrap-modal"
-          onClick={(e) => { if (e.target === e.currentTarget) setUnscrapRoll(null); }}>
-          <div className="modal-card small">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="modal-title flex items-center gap-1.5"><RotateCcw size={15} /> Batalkan Write-off Roll</h3>
-              <button className="icon-button" onClick={() => setUnscrapRoll(null)}><X size={15} /></button>
-            </div>
-            <p className="modal-subtitle">
+      <FormModal open={!!unscrapRoll} onClose={() => { setUnscrapRoll(null); setUnscrapReason(""); setErr(null); }} busy={unscrapBusy}
+        error={unscrapRoll ? err : ""} size="sm" icon={RotateCcw} title="Batalkan Write-off Roll" testId="unscrap-modal"
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" disabled={unscrapBusy}
+              onClick={() => { setUnscrapRoll(null); setUnscrapReason(""); setErr(null); }}>Batal</button>
+            <button type="button" data-testid="unscrap-submit" className="danger-button"
+              disabled={!unscrapReason.trim() || unscrapBusy} onClick={submitUnscrap}>
+              {unscrapBusy ? <Loader2 size={13} className="spin" /> : <RotateCcw size={13} />} Kembalikan ke Stok
+            </button>
+          </div>
+        )}>
+        {unscrapRoll && (
+          <>
+            <p className="text-[12px] leading-relaxed text-[#3C3C43]">
               Roll <b>{unscrapRoll.roll_no}</b> ({fmtNum(unscrapRoll.length_remaining ?? unscrapRoll.length)} m) akan
               <b> dikembalikan ke stok (tersedia)</b> dan jurnal write-off
               {unscrapRoll.writeoff_je_number ? <> <b>{unscrapRoll.writeoff_je_number}</b></> : null} dibalik
               (<b>Dr 1-1300 / Cr 5-9500</b>). Nilai persediaan GL dipulihkan.
             </p>
-            <label className="form-label mt-2">Alasan pembatalan</label>
+            <label className="form-label mt-2">Alasan pembatalan *</label>
             <textarea data-testid="unscrap-reason" className="textarea" rows={3}
               placeholder="mis. salah scrap / roll masih layak jual..."
               value={unscrapReason} onChange={(e) => setUnscrapReason(e.target.value)} />
-            <div className="modal-actions">
-              <button className="secondary-button" onClick={() => { setUnscrapRoll(null); setUnscrapReason(""); }}>Batal</button>
-              <button data-testid="unscrap-submit" className="danger-button"
-                disabled={!unscrapReason.trim() || unscrapBusy} onClick={submitUnscrap}>
-                {unscrapBusy ? <Loader2 size={13} className="spin" /> : <RotateCcw size={13} />} Kembalikan ke Stok
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </FormModal>
     </div>
   );
 }

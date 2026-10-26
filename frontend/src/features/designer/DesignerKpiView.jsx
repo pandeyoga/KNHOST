@@ -16,8 +16,9 @@
  * sendiri (desainer) ada di Profil Saya › KPI Saya.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, BarChart3, Download, FileSpreadsheet, FileText, Info, RefreshCw, Settings2, Users } from "lucide-react";
+import { Award, BarChart3, Download, FileSpreadsheet, FileText, Filter, Info, RefreshCw, Settings2, Users, X } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import { MetricRow } from "../../components/ListPageParts";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import LineFilter from "../../components/LineFilter";
@@ -58,6 +59,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
   const [focusDesigner, setFocusDesigner] = useState("");
   const [division, setDivision] = useState(""); // "" = semua divisi (PS-17)
   const [showHow, setShowHow] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [exporting, setExporting] = useState("");
   const [exportMsg, setExportMsg] = useState(null);
   const [reportBusy, setReportBusy] = useState("");
@@ -165,12 +167,15 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
     : PERIOD_OPTIONS);
   const divisionOpts = [{ value: "", label: "Semua divisi" },
     ...((report?.divisions_present || []).map((d) => ({ value: d.id, label: d.name })))];
+  // Fase 4 · R4 (L-08) — saringan (periode, divisi) di panel lipat "Saring (n)"; n = saringan yang bukan bawaan.
+  const activeFilters = (period !== "30d" ? 1 : 0) + (division ? 1 : 0);
+  const periodLabel = (periodOpts.find((o) => o.value === period) || {}).label || period;
   // "Terbaik" hanya dari desainer yang punya bukti kerja pada periode ini (ronde sample atau versi desain).
   const best = items.find((r) => r.grade_score !== null && r.grade_score !== undefined
     && (Number(r.rounds || 0) > 0 || Number(r.design_versions || 0) > 0)) || null;
 
   return (
-    <div className="grid gap-3" data-testid="designer-kpi-view">
+    <div className="grid grid-cols-1 gap-3" data-testid="designer-kpi-view">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")}
         testId="designer-kpi-error" />
 
@@ -189,39 +194,33 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
                 placeholder="Cari nama desainer…" value={dsrSearch} onChange={(e) => setDsrSearch(e.target.value)} />
             </div>
           ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            {/* G5-38: saringan divisi hanya tampil bila ada divisi (dulu "Semua divisi" sendirian). */}
-            {divisionOpts.length > 1 && (
-              <KNSelect data-testid="designer-kpi-division" value={division}
-                onValueChange={setDivision} options={divisionOpts} className="field !w-[160px]" />
-            )}
-            <KNSelect data-testid="designer-kpi-period" value={period}
-              onValueChange={setPeriod} options={periodOpts} className="field !w-[170px]" />
-            <button className="secondary-button" onClick={load}
-              data-testid="designer-kpi-refresh">
-              <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
+          <div className="flex flex-wrap items-center gap-2" data-testid="designer-kpi-toolbar">
+            {/* Fase 4 · R4 (L-08) — dulu 8 kontrol sejajar (divisi, periode, muat ulang, cara nilai, Excel, PDF, CSV,
+                bobot). Kini: Saring (n) → panel lipat · Muat ulang (ikon) · Cara nilai · grup Unduh · Ubah bobot. */}
+            <button type="button" className={`secondary-button ${activeFilters ? "!border-[#0058CC] !text-[#0058CC]" : ""}`}
+              aria-expanded={showFilters} onClick={() => setShowFilters((v) => !v)} data-testid="designer-kpi-filter-toggle"
+              title={`Periode: ${periodLabel}`}>
+              <Filter size={13} /> Saring{activeFilters ? ` (${activeFilters})` : ""}
             </button>
-            <button className="secondary-button" onClick={() => setShowHow((v) => !v)}
-              data-testid="designer-kpi-how-toggle">
+            <button type="button" className="icon-button" onClick={load} title="Muat ulang" aria-label="Muat ulang"
+              data-testid="designer-kpi-refresh">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button type="button" className="secondary-button" onClick={() => setShowHow((v) => !v)}
+              data-testid="designer-kpi-how-toggle" aria-expanded={showHow}>
               <Info size={13} /> Cara nilai dihitung
             </button>
-            <button className="secondary-button" onClick={() => download("xlsx")}
-              disabled={Boolean(exporting)} data-testid="designer-kpi-export-xlsx"
-              title="Unduh sebagai Excel (bisa diolah lagi)">
-              <FileSpreadsheet size={13} className={exporting === "xlsx" ? "animate-pulse" : ""} />
-              {exporting === "xlsx" ? "Menyiapkan…" : "Excel"}
-            </button>
-            <button className="secondary-button" onClick={() => download("pdf")}
-              disabled={Boolean(exporting)} data-testid="designer-kpi-export-pdf"
-              title="Unduh sebagai PDF siap cetak untuk rapat">
-              <FileText size={13} className={exporting === "pdf" ? "animate-pulse" : ""} />
-              {exporting === "pdf" ? "Menyiapkan…" : "PDF"}
-            </button>
-            <button className="secondary-button" onClick={() => download("csv")}
-              disabled={Boolean(exporting)} data-testid="designer-kpi-export-csv"
-              title="Unduh sebagai CSV">
-              <Download size={13} className={exporting === "csv" ? "animate-pulse" : ""} /> CSV
-            </button>
+            <div className="inline-flex items-center overflow-hidden rounded-lg border border-[#E1E4EA] bg-white text-[11.5px]" role="group" aria-label="Unduh laporan">
+              <span className="px-2 text-[10.5px] font-semibold uppercase text-[#8E8E93]">Unduh</span>
+              {[["xlsx", "Excel", FileSpreadsheet, "Unduh sebagai Excel (bisa diolah lagi)"], ["pdf", "PDF", FileText, "Unduh sebagai PDF siap cetak untuk rapat"],
+                ["csv", "CSV", Download, "Unduh sebagai CSV"]].map(([fmt, label, Icon, title]) => (
+                <button key={fmt} type="button" className="inline-flex items-center gap-1 border-l border-[#E1E4EA] px-2 py-1.5 font-semibold text-[#0058CC] hover:bg-[#F2F7FF] disabled:opacity-50"
+                  onClick={() => download(fmt)} disabled={Boolean(exporting)} data-testid={`designer-kpi-export-${fmt}`} title={title}>
+                  <Icon size={12} className={exporting === fmt ? "animate-pulse" : ""} />
+                  {exporting === fmt ? "Menyiapkan…" : label}
+                </button>
+              ))}
+            </div>
             {canManage && (
               <button className="secondary-button" data-testid="designer-kpi-policy-button"
                 onClick={() => openConfig({ group: "rnd", key: "rnd.kpi_weight" })}
@@ -232,6 +231,27 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
           </div>
           )}
         </div>
+        {tab === "score" && showFilters && (
+          <div className="flex flex-wrap items-end gap-3 border-t border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2.5" data-testid="designer-kpi-filters">
+            <label className="grid gap-1 text-[10.5px] font-semibold text-[#6B6B73]">Periode
+              <KNSelect data-testid="designer-kpi-period" value={period}
+                onValueChange={setPeriod} options={periodOpts} className="field !w-[190px]" />
+            </label>
+            {/* G5-38: saringan divisi hanya tampil bila ada divisi (dulu "Semua divisi" sendirian). */}
+            {divisionOpts.length > 1 && (
+              <label className="grid gap-1 text-[10.5px] font-semibold text-[#6B6B73]">Divisi
+                <KNSelect data-testid="designer-kpi-division" value={division}
+                  onValueChange={setDivision} options={divisionOpts} className="field !w-[190px]" />
+              </label>
+            )}
+            {activeFilters > 0 && (
+              <button type="button" className="link-button text-[11px]" data-testid="designer-kpi-filter-reset"
+                onClick={() => { setPeriod("30d"); setDivision(""); }}>
+                <X size={11} className="inline" /> Kembali ke bawaan
+              </button>
+            )}
+          </div>
+        )}
         <PageTabs testId="designer-kpi-tabs" value={tab} onChange={setTab} tabs={TABS} ariaLabel="KPI Desainer" className="!mb-0 px-3" />
         {tab === "score" && (
         <div className="section-body space-y-2">
@@ -254,26 +274,22 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
             <p className="py-8 text-center text-[12px] text-[#6B6B73]"
               data-testid="designer-kpi-loading">Memuat KPI desainer…</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-8"
-              data-testid="designer-kpi-summary">
-              <Kpi label="Desainer aktif" testId="designer-kpi-summary-designers"
-                value={String(Math.max(0, (sum.designers ?? 0) - techCount))} />
-              <Kpi label="Ronde dikerjakan" value={String(sum.rounds ?? 0)} tone="#0058CC" />
-              <Kpi label="Tepat waktu" value={num(sum.on_time_pct, "%")}
-                tone={(sum.on_time_pct ?? 0) >= 80 ? "#1B7F4B" : "#B26A00"} />
-              <Kpi label="Kerja diulang" value={num(sum.rework_pct, "%")}
-                tone={(sum.rework_pct ?? 0) <= 30 ? "#1B7F4B" : "#C0392B"} />
-              <Kpi label="Nunggak lewat tenggat" value={String(sum.overdue_now ?? 0)}
-                tone={(sum.overdue_now ?? 0) > 0 ? "#C0392B" : "#1B7F4B"} />
-              <Kpi label="Biaya sample" value={formatCurrency(sum.cost_total || 0)} />
-              <Kpi label="Nilai desain rata (0–2)" testId="designer-kpi-summary-design-score"
-                value={sum.design_avg_score === null || sum.design_avg_score === undefined ? "—"
-                  : `${String(sum.design_avg_score).replace(".", ",")} · ${sum.design_versions ?? 0} versi`}
-                tone={(sum.design_avg_score ?? 0) >= 1.5 ? "#1B7F4B" : "#B26A00"} />
-              <Kpi label="Revisi desain / ACC" testId="designer-kpi-summary-design-revisions"
-                value={`${sum.design_revisions ?? 0} / ${sum.design_acc ?? 0}`}
-                tone={(sum.design_revisions ?? 0) > (sum.design_acc ?? 0) ? "#C0392B" : "#1B7F4B"} />
-            </div>
+            // Fase 4 · R4 (L-08) — KPI = MetricRow baku (nilai 0 netral, tanpa warna peringatan untuk nol).
+            <MetricRow testId="designer-kpi-summary" items={[
+              { label: "Desainer aktif", testId: "designer-kpi-summary-designers", value: String(Math.max(0, (sum.designers ?? 0) - techCount)) },
+              { label: "Ronde dikerjakan", value: String(sum.rounds ?? 0), tone: "#0058CC" },
+              { label: "Tepat waktu", value: num(sum.on_time_pct, "%"), tone: (sum.on_time_pct ?? 0) >= 80 ? "#1B7F4B" : "#B26A00" },
+              { label: "Kerja diulang", value: num(sum.rework_pct, "%"), tone: (sum.rework_pct ?? 0) <= 30 ? "#1B7F4B" : "#C0392B" },
+              { label: "Nunggak lewat tenggat", value: String(sum.overdue_now ?? 0), tone: (sum.overdue_now ?? 0) > 0 ? "#C0392B" : undefined },
+              { label: "Biaya sample", value: formatCurrency(sum.cost_total || 0) },
+              { label: "Nilai desain rata (0–2)", testId: "designer-kpi-summary-design-score",
+                value: sum.design_avg_score === null || sum.design_avg_score === undefined ? "—"
+                  : `${String(sum.design_avg_score).replace(".", ",")} · ${sum.design_versions ?? 0} versi`,
+                tone: (sum.design_avg_score ?? 0) >= 1.5 ? "#1B7F4B" : "#B26A00" },
+              { label: "Revisi desain / ACC", testId: "designer-kpi-summary-design-revisions",
+                value: `${sum.design_revisions ?? 0} / ${sum.design_acc ?? 0}`,
+                tone: (sum.design_revisions ?? 0) > (sum.design_acc ?? 0) ? "#C0392B" : undefined },
+            ]} />
           )}
 
           {showHow && w && (
@@ -319,7 +335,7 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
       ) : (
       <>
       {/* ── Tren per bulan: skor round sample (kiri) · nilai desain (kanan) ── */}
-      <div className="grid gap-3 xl:grid-cols-2 [&>section]:min-w-0" data-testid="designer-kpi-trend-row">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>section]:min-w-0" data-testid="designer-kpi-trend-row">
         <DesignerKpiTrendChart params={params} testId="designer-kpi-trend" />
         <DesignScoreTrendChart params={params} testId="design-score-trend" />
       </div>
@@ -419,13 +435,3 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
   );
 }
 
-function Kpi({ label, value, tone = "#1C1C1E", testId }) {
-  return (
-    <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2" data-testid={testId}>
-      <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
-      <p className="text-[13px] font-bold leading-tight tabular-nums" style={{ color: tone }}>
-        {value}
-      </p>
-    </div>
-  );
-}

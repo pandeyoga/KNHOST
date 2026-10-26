@@ -43,7 +43,7 @@ function Stepper({ status }) {
     <ol className="flex flex-wrap items-center gap-1" data-testid="dsr-stepper">
       {DSR_STEPS.map((s, i) => {
         const state = status === "cancelled" ? "todo" : status === "revision" && i === 2 ? "warn" : i < cur ? "done" : i === cur ? "cur" : "todo";
-        const cls = { done: "bg-[#1A7A3A] text-white", cur: "bg-[#6B219A] text-white", warn: "bg-[#C62828] text-white", todo: "bg-[#F2F2F5] text-[#8E8E93]" }[state];
+        const cls = { done: "bg-[#1A7A3A] text-white", cur: "bg-[#0058CC] text-white", warn: "bg-[#C62828] text-white", todo: "bg-[#F2F2F5] text-[#8E8E93]" }[state];
         return (
           <li key={s.key} className="flex items-center gap-1" data-testid={`dsr-step-${s.key}`}>
             <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${cls}`}>
@@ -113,7 +113,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[#6B6B73]">
             {hasCats ? (
               <>
-                <span className="rounded-full bg-[#F1E9F7] px-2 py-0.5 text-[10.5px] font-semibold text-[#6B219A]" data-testid="dsr-detail-category">{doc.category_name || doc.category_code}</span>
+                <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="dsr-detail-category">{doc.category_name || doc.category_code}</span>
                 <span className="rounded-full bg-[#EEF4FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="dsr-detail-dcategory">{doc.design_category_name || doc.design_category_code}</span>
               </>
             ) : <span className="rounded-full bg-[#FDF3F2] px-2 py-0.5 text-[10.5px] font-semibold text-[#A8221A]">kategori belum diisi</span>}
@@ -138,7 +138,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
         {/* ── Kiri ── */}
         <div className="grid gap-3">
           <div className="section-card section-pad">

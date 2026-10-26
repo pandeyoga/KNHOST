@@ -219,7 +219,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
           </>
         )}
 
-        <div className="grid gap-2.5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
           <Field label="Jenis sample yang direncanakan">
             <KNSelect data-testid="spec-sample-type" className="field" value={f.sample_type_hint}
               options={typeOpts} onValueChange={(v) => set("sample_type_hint", v)} />
@@ -262,7 +262,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
         {isYarn ? (
           <div className="rounded-md border border-[#DCE7F7] bg-[#F7FAFF] p-2.5" data-testid="spec-yarn-fields">
             <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Isian khas benang — bukan gramasi/lebar</p>
-            <div className="grid gap-2.5 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
               <Field label="Nomor benang *">
                 <input className="field" data-testid="spec-yarn-count-input" value={f.yarn_count}
                   onChange={(e) => set("yarn_count", e.target.value)} placeholder="30s / 150D" />
@@ -290,7 +290,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
             </div>
           </div>
         ) : (
-          <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
             <Field label="Gramasi (gsm)">
               <input className="field" type="number" min="0" step="any" inputMode="decimal" data-testid="spec-gramasi-input" value={f.gramasi}
                 onChange={(e) => set("gramasi", e.target.value)} placeholder="135" />
@@ -310,7 +310,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
           </div>
         )}
 
-        <div className="grid gap-2.5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           <Field label="Warna target (wajib dari Pustaka Warna)">
             {/* MD-03 — kotak warna ikut tampil di daftar & ringkasan, bukan hanya kode. */}
             <KNSelect data-testid="spec-color" className="field" value={f.color_id}
@@ -361,7 +361,7 @@ export default function SpecFormModal({ selectedEntity, types = [], onClose, onS
           </Field>
         </div>
 
-        <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
           <Field label="Kode SKU usulan (huruf/angka)">
             <input className="field" data-testid="spec-sku-input" value={f.sku_hint}
               onChange={(e) => set("sku_hint", e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))} placeholder="KTN-PRM-135" />

@@ -2,55 +2,25 @@
  * SampleProofGallery — **galeri bukti per jenis** (Labdip/Handfeel/Proofing): satu kolom per
  * supplier, thumbnail tiap round berdampingan → membandingkan hasil supplier secara visual.
  * Klik thumbnail → lightbox (panah kiri/kanan, Esc menutup).
+ *
+ * Fase 4 · R4 (L-03) — lightbox = `components/MediaLightbox` bersama (dulu lapisan `fixed inset-0` sendiri dengan
+ * klik-latar mentah): latar lewat `overlayDismiss`, Esc lewat tumpukan lapisan, "Unduh asli" eksplisit, pratinjau
+ * memuat blob ber-header badan usaha (sama dengan lampiran round). Keterangan supplier · round · hasil · skor di
+ * baris keterangan lightbox.
  */
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Images, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Images } from "lucide-react";
+import MediaLightbox from "../../components/MediaLightbox";
 import { roundProofUrl } from "./rndApi";
 import { ROUND_RESULT_META } from "./rndMeta";
 import { roundTypeOf } from "./sampleTypeMeta";
 import ProofImage from "./ProofImage";
-import { useEscapeClose } from "@/utils/escapeLayers";
 
-function ProofLightbox({ items, index, onClose, onStep }) {
-  // INV-UI-10 — Esc lewat tumpukan lapisan bersama (hanya lapisan TERATAS yang tertutup).
-  useEscapeClose(true, onClose);
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "ArrowRight") onStep(1);
-      if (e.key === "ArrowLeft") onStep(-1);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onStep]);
-  const it = items[index];
-  if (!it) return null;
+/** Keterangan lightbox: "Supplier · Round 2 · Lolos · skor 86". */
+function captionOf(it) {
   const rm = ROUND_RESULT_META[it.round.result || ""] || ROUND_RESULT_META[""];
-  return (
-    <div className="fixed inset-0 z-[176] flex items-center justify-center bg-black/80 p-4" data-testid="sample-proof-lightbox"
-      onClick={onClose}>
-      <button type="button" className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" data-testid="sample-proof-lightbox-close" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
-      {items.length > 1 && (
-        <>
-          <button type="button" className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" data-testid="sample-proof-lightbox-prev" onClick={(e) => { e.stopPropagation(); onStep(-1); }} aria-label="Sebelumnya"><ChevronLeft size={20} /></button>
-          <button type="button" className="absolute right-4 top-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20" data-testid="sample-proof-lightbox-next" onClick={(e) => { e.stopPropagation(); onStep(1); }} aria-label="Berikutnya"><ChevronRight size={20} /></button>
-        </>
-      )}
-      <div className="flex max-h-full max-w-5xl flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
-        <ProofImage url={it.url} attachment={it.a} alt={it.a.filename} className="max-h-[72vh] max-w-full rounded-lg shadow-2xl" imgClassName="object-contain" testId="sample-proof-lightbox-image" />
-        <div className="flex flex-wrap items-center justify-center gap-2 text-[12px] text-white" data-testid="sample-proof-lightbox-caption">
-          <b>{it.supplierName}</b>
-          <span className="text-white/60">·</span>
-          <span>Round {it.round.round_no}</span>
-          <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ background: rm.tone, color: "#fff" }}>{rm.label}</span>
-          {it.round.score != null && <span>skor <b>{it.round.score}</b></span>}
-          <span className="text-white/60">·</span>
-          <span className="max-w-[260px] truncate text-white/80">{it.a.filename}</span>
-          <a href={it.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 hover:bg-white/20" data-testid="sample-proof-lightbox-open"><Download size={12} /> buka asli</a>
-          <span className="text-white/60">{index + 1}/{items.length}</span>
-        </div>
-      </div>
-    </div>
-  );
+  return [it.supplierName, `Round ${it.round.round_no}`, rm.label, it.round.score != null ? `skor ${it.round.score}` : ""]
+    .filter(Boolean).join(" · ");
 }
 
 export default function SampleProofGallery({ sample, code }) {
@@ -65,7 +35,6 @@ export default function SampleProofGallery({ sample, code }) {
   const all = useMemo(() => cols.flatMap((c) => c.items), [cols]);
   if (cols.length === 0) return null;
   const openFile = (fileId) => setOpenIdx(all.findIndex((x) => x.a.id === fileId));
-  const step = (d) => setOpenIdx((i) => (i + d + all.length) % all.length);
 
   return (
     <div className="rounded-lg border border-[#EFF0F2]" data-testid={`sample-proof-gallery-${code}`}>
@@ -109,7 +78,10 @@ export default function SampleProofGallery({ sample, code }) {
           })}
         </div>
       )}
-      {openIdx >= 0 && <ProofLightbox items={all} index={openIdx} onClose={() => setOpenIdx(-1)} onStep={step} />}
+      {openIdx >= 0 && (
+        <MediaLightbox index={openIdx} onClose={() => setOpenIdx(-1)} testId="sample-proof-lightbox"
+          items={all.map((it) => ({ url: it.url, filename: it.a.filename, content_type: it.a.content_type, caption: captionOf(it) }))} />
+      )}
     </div>
   );
 }

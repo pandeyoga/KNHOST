@@ -126,7 +126,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
         {/* Audit UI 24 Okt (049) — kepala boleh turun baris: "Desain Baru" dulu keluar layar di HP. */}
         <div className="section-head flex-wrap">
           <div className="flex items-center gap-2">
-            <Layers size={16} className="text-[#6B219A]" />
+            <Layers size={16} className="text-[#0058CC]" />
             <h2 data-testid="rnd-designs-title">Desain & Pattern (Master)</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -168,12 +168,12 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
             </div>
             <LineFilter value={f.line} onChange={(v) => set("line", v)} storageKey="rnd-designs"
               allowed={currentUser?.allowed_line_codes} testId="rnd-designs-line-filter" />
-            <button className={`secondary-button ${activeFilters ? "!border-[#6B219A] !text-[#6B219A]" : ""}`} onClick={() => setShowFilters((s) => !s)}
+            <button className={`secondary-button ${activeFilters ? "!border-[#0058CC] !text-[#0058CC]" : ""}`} onClick={() => setShowFilters((s) => !s)}
               data-testid="rnd-designs-toggle-filters">
               <Filter size={13} /> Filter {activeFilters ? `(${activeFilters})` : ""}
             </button>
             {activeFilters > 0 && (
-              <button className="text-[11px] text-[#6B219A] underline" onClick={resetFilters} data-testid="rnd-designs-reset-filter">
+              <button className="text-[11px] text-[#0058CC] underline" onClick={resetFilters} data-testid="rnd-designs-reset-filter">
                 <X size={10} className="inline" /> reset
               </button>
             )}
@@ -182,7 +182,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
           <FilterChips testId="rnd-filter-status" ariaLabel="Status desain" value={f.status} onChange={(v) => set("status", v || "")}
             options={statusOptions(mode).map((o) => ({ ...o, count: counts[o.key] || 0, testId: `rnd-filter-status-${o.key || "all"}` }))} />
           {showFilters && (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5" data-testid="rnd-designs-filters">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5" data-testid="rnd-designs-filters">
               {/* G5-41: setiap saringan diberi label ringkas di atasnya (dulu 11 dropdown tanpa label). */}
               {gallery && <FilterField label="Kepemilikan"><KNSelect data-testid="rnd-filter-ownership" className="field" value={f.own} options={OWN_OPTS} onValueChange={(v) => set("own", v)} /></FilterField>}
               {gallery && <FilterField label="Produksi"><KNSelect data-testid="rnd-filter-produced" className="field" value={f.produced} options={PROD_OPTS} onValueChange={(v) => set("produced", v)} /></FilterField>}
@@ -224,7 +224,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
                   : <p>Belum ada desain. Buat desain baru — kode terbentuk otomatis dari inisial desainer, jenis, dan kategori.</p>}
             </div>
           ) : gallery ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="gallery-grid">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="gallery-grid">
               {filtered.map((g) => <ShowcaseCard key={g.id} g={g} onOpen={() => setOpenId(g.id)} />)}
             </div>
           ) : (

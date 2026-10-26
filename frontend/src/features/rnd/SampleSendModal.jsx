@@ -122,7 +122,7 @@ export default function SampleSendModal({ mode = "send", sample, participant, ty
               : <>Ronde {nextNo} dari batas {maxRounds} iterasi untuk jenis <b>{typeLabel(typeCode, types)}</b>. Kuota dihitung per jenis — perbaikan warna tidak menghabiskan kuota perbaikan handfeel.</>}
           </Hint>
         )}
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <Field label={`Tenggat ronde (kosong = SLA ${policy?.round_sla_days || 7} hari)`}>
             <KNDatePicker data-testid="sample-send-due" value={due} onChange={setDue} />
           </Field>

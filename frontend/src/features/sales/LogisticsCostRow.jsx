@@ -41,7 +41,7 @@ export default function LogisticsCostRow({ type, label, v, ctx, locked, onChange
         </div>
         {facts.length === 0
           ? <p className="text-[11px] text-[#8E8E93]" data-testid={`logistics-readonly-${type}`}>Tidak dicatat.</p>
-          : <dl className="grid gap-x-4 gap-y-1 text-[11.5px] sm:grid-cols-2 lg:grid-cols-4" data-testid={`logistics-readonly-${type}`}>
+          : <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-[11.5px] sm:grid-cols-2 lg:grid-cols-4" data-testid={`logistics-readonly-${type}`}>
             {facts.map(([k, val]) => (
               <div key={k}><dt className="text-[10.5px] text-[#6B6B73]">{k}</dt><dd className="font-medium text-[#1C1C1E] tabular-nums">{val}</dd></div>
             ))}
@@ -55,7 +55,7 @@ export default function LogisticsCostRow({ type, label, v, ctx, locked, onChange
         <span className="text-[12px] font-semibold text-[#1C1C1E]">{label}</span>
         {v.journal_entry_number && <span className="rounded bg-[#EAF7EE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#1A7F37]" data-testid={`logistics-je-${type}`}>Jurnal {v.journal_entry_number}</span>}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <L label="Cara kirim"><KNSelect data-testid={`logistics-mode-${type}`} disabled={locked} className="field text-xs" value={v.mode} options={modeOpts} onValueChange={setMode} /></L>
         {v.mode !== "pickup" && <L label="Ditanggung"><KNSelect data-testid={`logistics-bearer-${type}`} disabled={locked} className="field text-xs" value={v.bearer} options={bearerOpts} onValueChange={(b) => set({ bearer: b })} /></L>}
         {needsAmount && <L label="Ongkir (Rp)"><input data-testid={`logistics-amount-${type}`} disabled={locked} type="number" min={0} placeholder="0" className="field text-right tabular-nums" value={v.amount} onChange={(e) => set({ amount: e.target.value })} /></L>}

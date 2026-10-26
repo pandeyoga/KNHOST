@@ -15,7 +15,7 @@ export default function ScoreInput({ value, onChange, disabled = false, testId =
               data-testid={`${testId}-${String(s).replace(".", "_")}`}
               className={`min-w-[40px] rounded-md border px-2 py-1 text-[11.5px] font-semibold tabular-nums transition-colors ${active
                 ? (pass ? "border-[#1A7A3A] bg-[#1A7A3A] text-white" : "border-[#B26A00] bg-[#B26A00] text-white")
-                : `border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#6B219A] ${pass ? "" : "opacity-80"}`}`}>
+                : `border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC] ${pass ? "" : "opacity-80"}`}`}>
               {fmtScore(s)}
             </button>
           );

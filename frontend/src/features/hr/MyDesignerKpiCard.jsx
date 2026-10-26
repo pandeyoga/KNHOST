@@ -50,7 +50,7 @@ export function MyDesignerKpiCard() {
     return (
       <div className="section-card !p-4" data-testid="ess-designer-kpi-none">
         <div className="mb-1 flex items-center gap-2">
-          <Palette size={15} className="text-[#6B219A]" />
+          <Palette size={15} className="text-[#0058CC]" />
           <h3 className="text-[12.5px] font-bold">KPI Saya (R&amp;D)</h3>
         </div>
         <p className="text-[11.5px] leading-relaxed text-[#6B6B73]">
@@ -65,7 +65,7 @@ export function MyDesignerKpiCard() {
     <div className="section-card" data-testid="ess-designer-kpi-card">
       <div className="section-head">
         <div className="flex items-center gap-2">
-          <Palette size={16} className="text-[#6B219A]" />
+          <Palette size={16} className="text-[#0058CC]" />
           <h2 className="text-[13px] font-bold">KPI Saya (R&amp;D) — hanya nilai Anda</h2>
         </div>
         <div className="flex items-center gap-2">

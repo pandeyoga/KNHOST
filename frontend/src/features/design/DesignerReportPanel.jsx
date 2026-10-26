@@ -56,7 +56,7 @@ export default function DesignerReportPanel({ selectedEntity = "all", line = "",
       <div className="section-card">
         <div className="section-head">
           <div className="flex items-center gap-2">
-            <BarChart3 size={14} className="text-[#6B219A]" />
+            <BarChart3 size={14} className="text-[#0058CC]" />
             <h2 className="text-[13px] font-bold">Rapor Desainer</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export default function DesignerReportPanel({ selectedEntity = "all", line = "",
             </button>
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <Kpi label="Permintaan" value={t.requests ?? 0} testId="dsr-report-total" />
           <Kpi label="Diserahkan" value={t.delivered ?? 0} testId="dsr-report-delivered" />
           <Kpi label="Disetujui" value={t.approved ?? 0} testId="dsr-report-approved" />

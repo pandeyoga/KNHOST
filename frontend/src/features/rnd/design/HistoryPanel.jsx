@@ -39,7 +39,7 @@ export default function HistoryPanel({ design }) {
       <div className="flex flex-wrap items-center gap-1.5">
         {DESIGN_HISTORY_GROUPS.map((g) => (
           <button key={g.key || "all"} type="button" onClick={() => setGroup(g.key)} data-testid={`design-history-filter-${g.key || "all"}`}
-            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${group === g.key ? "border-[#6B219A] bg-[#F1E9F7] text-[#6B219A]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#6B219A]"}`}>
+            className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${group === g.key ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
             {g.label} <span className="opacity-60">{g.key ? counts[g.key] || 0 : (design.timeline || []).length}</span>
           </button>
         ))}
@@ -71,7 +71,7 @@ function HistoryRow({ e }) {
           </span>
         )}
         {e.file_kind && <span className="ml-1 rounded bg-[#F5F5F7] px-1 text-[9.5px] text-[#6B6B73]">{e.file_kind}</span>}
-        {e.sample_number && <span className="ml-1 rounded bg-[#F1E9F7] px-1 text-[9.5px] font-bold text-[#6B219A]">{e.sample_number}</span>}
+        {e.sample_number && <span className="ml-1 rounded bg-[#EAF2FF] px-1 text-[9.5px] font-bold text-[#0058CC]">{e.sample_number}</span>}
         {e.product_sku && <span className="ml-1 rounded bg-[#E3F0FF] px-1 font-mono text-[9.5px] font-bold text-[#0058CC]">{e.product_sku}</span>}
       </p>
       {e.note && <p className="text-[11px] text-[#3C3C43]">{e.note}</p>}

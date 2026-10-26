@@ -54,7 +54,7 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_360px]">
         <div className="section-card min-w-0">
           {srch.toolbar}
           {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}

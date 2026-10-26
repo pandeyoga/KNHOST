@@ -14,6 +14,8 @@ import { OptionTabs } from "../../components/ListControls";
 import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { MetricRow } from "../../components/ListPageParts";
 import { can } from "../../config/roles";
 
 // UAT 24 Okt (audit UI tahap 2) — G5-31: istilah Indonesia ("Perlu ditinjau", "Alpa"; dulu "Perlu Review"/"Alpha").
@@ -40,15 +42,6 @@ export const fmtMin = (m) => {
 };
 const todayStr = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
 const monthStr = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 7);
-
-function Stat({ label, value, color }) {
-  return (
-    <div className="section-card !p-3">
-      <p className="text-[10.5px] uppercase font-semibold text-[#6B6B73]">{label}</p>
-      <p className="text-[18px] font-bold tabular-nums leading-tight" style={{ color: color || "#1A1A1F" }}>{value}</p>
-    </div>
-  );
-}
 
 export default function AttendanceView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("harian");
@@ -188,31 +181,31 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
 
       {tab === "harian" && (
         <>
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-3">
-            <Stat label="Total Hari Ini" value={total || counts.total} />
-            <Stat label="Hadir" value={counts.hadir} color="#1F9D55" />
-            <Stat label="Telat" value={counts.telat} color="#B7791F" />
-            <Stat label="Perlu ditinjau" value={counts.flagged} color="#C0392B" />
-          </div>
+          {/* Fase 4 · R4 (L-07/L-08) — KPI = MetricRow baku (nilai 0 netral). */}
+          <div className="mb-3"><MetricRow testId="attendance-stats" items={[
+            { label: "Total Hari Ini", value: loadingDaily ? "—" : String(total || counts.total) },
+            { label: "Hadir", value: loadingDaily ? "—" : String(counts.hadir), tone: "#1F9D55" },
+            { label: "Telat", value: loadingDaily ? "—" : String(counts.telat), tone: "#B7791F" },
+            { label: "Perlu ditinjau", value: loadingDaily ? "—" : String(counts.flagged), tone: "#C0392B" },
+          ]} /></div>
           <KNPager page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} testId="attendance-pager" />
           <div className="section-card mb-3">
-            <div className="section-body grid gap-2 md:grid-cols-[180px_180px_1fr]">
+            {/* Fase 4 · R4 — grid berkolom eksplisit di HP (dulu `md:grid-cols-[…]` tanpa kolom dasar + sel kosong). */}
+            <div className="section-body grid grid-cols-1 items-end gap-2 md:grid-cols-[200px_minmax(0,1fr)]">
               <div>
                 <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Tanggal</label>
                 <KNDatePicker data-testid="attendance-date" value={date} onChange={(v) => setDate(v || date)} clearable={false} />
               </div>
-              <div>
-              </div>
-              <div className="md:col-span-full">
+              {canManage ? (
+                <div className="flex items-end md:justify-end">
+                  <button data-testid="attendance-manual-button" onClick={() => { setShowManual(true); setManualErr(""); setManual((m) => ({ ...m, date })); }} className="primary-button"><Plus size={13} /> Input manual</button>
+                </div>
+              ) : <span className="hidden md:block" />}
+              <div className="min-w-0 md:col-span-full">
                 <OptionTabs testId="attendance-status-filter" value={statusFilter} onChange={setStatusFilter}
                   countOf={(v) => (v === "flagged" ? undefined : rows.filter((r) => !v || r.status === v).length)}
                   options={[{ value: "", label: "Semua Status" }, ...STATUS_OPTS, { value: "flagged", label: "Perlu ditinjau" }]} />
               </div>
-              {canManage && (
-                <div className="flex items-end justify-end">
-                  <button data-testid="attendance-manual-button" onClick={() => { setShowManual(true); setManualErr(""); setManual((m) => ({ ...m, date })); }} className="primary-button"><Plus size={13} /> Input manual</button>
-                </div>
-              )}
             </div>
           </div>
           {/* UAT 24 Okt (audit UI tahap 2) — G5-31: input manual sebagai pop-up standar berlabel (dulu 5 isian
@@ -221,7 +214,7 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
             subtitle="Catat kehadiran karyawan yang tidak terekam GPS/mesin sidik jari." icon={Clock} size="sm"
             testId="attendance-manual-panel" submitTestId="manual-save" onSubmit={submitManual} submitLabel="Simpan absen"
             busy={savingManual} error={manualErr} submitDisabled={!manual.employee_id || !manual.date}>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2"><label className={lbl}>Karyawan *</label>
                 <KNSelect data-testid="manual-employee" value={manual.employee_id} onValueChange={(v) => { setManual((m) => ({ ...m, employee_id: v })); setManualErr(""); }} className="field" placeholder="Pilih karyawan aktif" searchable options={empOpts} /></div>
               <div><label className={lbl}>Tanggal *</label>
@@ -237,40 +230,24 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
 
           <div className="section-card">
             {srch.toolbar}
-            {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
-            <div className="overflow-x-auto"><div className="min-w-[920px]">
-            <div className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-              <span>Karyawan</span><span>Shift</span><span>Masuk</span><span>Keluar</span><span>Telat</span><span>Kerja</span><span>Metode</span><span>Status</span><span className="text-right">Aksi</span>
-            </div>
-            {loadingDaily ? (
-              <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="attendance-loading">Memuat kehadiran...</div>
-            ) : srch.shown.length === 0 ? (
-              <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="attendance-empty"><CalendarDays className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada kehadiran pada tanggal ini.</p></div>
-            ) : (
-              <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-                {srch.pageRows.map((r) => {
-                  const pill = STATUS_PILL[r.status] || STATUS_PILL.hadir;
-                  return (
-                    <div key={r.id} data-testid={`attendance-row-${r.id}`} className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                      <div className="min-w-0 flex items-center gap-1"><EntityBadge entityId={r.entity_id} /><span className="text-[12px] font-semibold truncate">{r.employee_name}</span></div>
-                      <span className="text-[11px] text-[#6B6B73] truncate">{r.shift_name || "—"}</span>
-                      <span className="text-[11.5px] tabular-nums">{fmtTime(r.clock_in)}</span>
-                      <span className="text-[11.5px] tabular-nums">{fmtTime(r.clock_out)}</span>
-                      <span className="text-[11.5px] tabular-nums" style={{ color: r.late_min > 0 ? "#B7791F" : "#9A9BA3" }}>{fmtMin(r.late_min)}</span>
-                      <span className="text-[11.5px] tabular-nums">{fmtMin(r.work_min)}</span>
-                      <span className="text-[11px]">{METHOD_LABEL[r.method] || r.method}</span>
-                      <span><span data-testid={`attendance-status-${r.id}`} className={`status-pill ${pill.cls}`}>{pill.label}</span></span>
-                      <div className="flex items-center justify-end">
-                        {canManage && r.status === "flagged" && (
-                          <button data-testid={`approve-attendance-${r.id}`} onClick={() => setApproveTarget(r)} className="icon-button text-[#1F9D55]" title="Setujui"><CheckCircle2 size={15} /></button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            </div></div>
+            {/* Fase 4 · R4 (L-07) — `.data-table` lewat ResponsiveTable (dulu tabel grid 9 kolom min 920 px buatan
+                sendiri); di HP kartu per karyawan, tanpa gulir samping. */}
+            <ResponsiveTable testId="attendance-table" rows={srch.pageRows} rowKey="id" loading={loadingDaily}
+              rowTestId={(r) => `attendance-row-${r.id}`}
+              empty={<div className="py-8" data-testid="attendance-empty"><CalendarDays className="mx-auto mb-2 text-gray-300" size={28} /><p>{srch.shown.length === 0 && rows.length > 0 ? "Tidak ada kehadiran yang cocok dengan saringan." : "Belum ada kehadiran pada tanggal ini."}</p></div>}
+              columns={[
+                { key: "employee_name", header: "Karyawan", mobile: "title", render: (r) => <span className="inline-flex min-w-0 items-center gap-1"><EntityBadge entityId={r.entity_id} /><span className="truncate font-semibold">{r.employee_name}</span></span> },
+                { key: "status", header: "Status", mobile: "badge", render: (r) => { const pill = STATUS_PILL[r.status] || STATUS_PILL.hadir; return <span data-testid={`attendance-status-${r.id}`} className={`status-pill ${pill.cls}`}>{pill.label}</span>; } },
+                { key: "shift_name", header: "Shift", mobile: "subtitle", render: (r) => <span className="text-[#6B6B73]">{r.shift_name || "—"}</span> },
+                { key: "clock_in", header: "Masuk", priority: 1, render: (r) => <span className="tabular-nums">{fmtTime(r.clock_in)}</span> },
+                { key: "clock_out", header: "Keluar", priority: 2, render: (r) => <span className="tabular-nums">{fmtTime(r.clock_out)}</span> },
+                { key: "late_min", header: "Telat", priority: 3, render: (r) => <span className="tabular-nums" style={{ color: r.late_min > 0 ? "#B7791F" : "#9A9BA3" }}>{fmtMin(r.late_min)}</span> },
+                { key: "work_min", header: "Kerja", priority: 4, render: (r) => <span className="tabular-nums">{fmtMin(r.work_min)}</span> },
+                { key: "method", header: "Metode", priority: 5, render: (r) => METHOD_LABEL[r.method] || r.method },
+              ]}
+              actions={canManage ? (r) => (r.status === "flagged" ? (
+                <button data-testid={`approve-attendance-${r.id}`} onClick={() => setApproveTarget(r)} className="icon-button text-[#1F9D55]" title="Setujui" aria-label={`Setujui absen ${r.employee_name}`}><CheckCircle2 size={15} /></button>
+              ) : null) : undefined} />
           </div>
         </>
       )}
@@ -285,35 +262,26 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
             <div className="section-card py-10 text-center text-[12px] text-[#6B6B73]" data-testid="recap-loading">Memuat rekap...</div>
           ) : (
             <>
-              <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-3">
-                <Stat label="Karyawan" value={recap?.totals?.employees ?? 0} />
-                <Stat label="Total Hadir (hari)" value={recap?.totals?.present_days ?? 0} color="#1F9D55" />
-                <Stat label="Total Telat (hari)" value={recap?.totals?.late_days ?? 0} color="#B7791F" />
-                <Stat label="Total Lembur" value={fmtMin(recap?.totals?.total_overtime_min)} color="#0058CC" />
-              </div>
+              <div className="mb-3"><MetricRow testId="recap-stats" items={[
+                { label: "Karyawan", value: String(recap?.totals?.employees ?? 0) },
+                { label: "Total Hadir (hari)", value: String(recap?.totals?.present_days ?? 0), tone: "#1F9D55" },
+                { label: "Total Telat (hari)", value: String(recap?.totals?.late_days ?? 0), tone: "#B7791F" },
+                { label: "Total Lembur", value: fmtMin(recap?.totals?.total_overtime_min), tone: "#0058CC" },
+              ]} /></div>
               <div className="section-card">
-                <div className="overflow-x-auto"><div className="min-w-[680px]">
-                <div className="grid grid-cols-[90px_1.6fr_1.1fr_72px_72px_84px_90px] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-                  <span>Kode</span><span>Nama</span><span>Departemen</span><span className="text-right">Hadir</span><span className="text-right">Telat</span><span className="text-right">Ditinjau</span><span className="text-right">Lembur</span>
-                </div>
-                {(recap?.rows || []).length === 0 ? (
-                  <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="recap-empty"><BarChart3 className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada data kehadiran pada periode ini.</p></div>
-                ) : (
-                  <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-                    {(recap?.rows || []).map((r) => (
-                      <div key={r.employee_id} data-testid={`recap-row-${r.employee_id}`} className="grid grid-cols-[90px_1.6fr_1.1fr_72px_72px_84px_90px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                        <span className="text-[11.5px] font-bold text-[#0058CC]">{r.code || "—"}</span>
-                        <span className="text-[12px] font-semibold truncate">{r.employee_name}</span>
-                        <span className="text-[11px] text-[#6B6B73] truncate">{r.department_name || "—"}</span>
-                        <span className="text-[11.5px] tabular-nums text-right">{r.present_days}</span>
-                        <span className="text-[11.5px] tabular-nums text-right" style={{ color: r.late_days ? "#B7791F" : "#9A9BA3" }}>{r.late_days}</span>
-                        <span className="text-[11.5px] tabular-nums text-right" style={{ color: r.flagged_days ? "#C0392B" : "#9A9BA3" }}>{r.flagged_days}</span>
-                        <span className="text-[11.5px] tabular-nums text-right">{fmtMin(r.total_overtime_min)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                </div></div>
+                {/* Fase 4 · R4 (L-07) — `.data-table` lewat ResponsiveTable (dulu tabel grid min 680 px). */}
+                <ResponsiveTable testId="recap-table" rows={recap?.rows || []} rowKey="employee_id"
+                  rowTestId={(r) => `recap-row-${r.employee_id}`}
+                  empty={<div className="py-8" data-testid="recap-empty"><BarChart3 className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada data kehadiran pada periode ini.</p></div>}
+                  columns={[
+                    { key: "employee_name", header: "Nama", mobile: "title", render: (r) => <span className="font-semibold">{r.employee_name}</span> },
+                    { key: "code", header: "Kode", mobile: "subtitle", render: (r) => <span className="font-bold text-[#0058CC]">{r.code || "—"}</span> },
+                    { key: "department_name", header: "Departemen", priority: 5, render: (r) => <span className="text-[#6B6B73]">{r.department_name || "—"}</span> },
+                    { key: "present_days", header: "Hadir", align: "right", priority: 1, render: (r) => <span className="tabular-nums">{r.present_days}</span> },
+                    { key: "late_days", header: "Telat", align: "right", priority: 2, render: (r) => <span className="tabular-nums" style={{ color: r.late_days ? "#B7791F" : "#9A9BA3" }}>{r.late_days}</span> },
+                    { key: "flagged_days", header: "Ditinjau", align: "right", priority: 3, render: (r) => <span className="tabular-nums" style={{ color: r.flagged_days ? "#C0392B" : "#9A9BA3" }}>{r.flagged_days}</span> },
+                    { key: "total_overtime_min", header: "Lembur", align: "right", priority: 4, render: (r) => <span className="tabular-nums">{fmtMin(r.total_overtime_min)}</span> },
+                  ]} />
               </div>
             </>
           )}
@@ -321,7 +289,7 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
       )}
 
       {tab === "import" && canManage && (
-        <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">
           <div className="section-card">
             <div className="section-head"><div className="flex items-center gap-2"><FileSpreadsheet size={15} className="text-[#0058CC]" /><h2>Impor Log Mesin Sidik Jari (ZKTeco)</h2></div></div>
             <div className="section-body space-y-3">
@@ -358,10 +326,10 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
             {importResult && (
               <div className="section-card" data-testid="import-result"><div className="section-body">
                 <p className="text-[12px] font-bold mb-2">Hasil Impor</p>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <Stat label="Kehadiran terbentuk" value={importResult.imported || 0} color="#1F9D55" />
-                  <Stat label="Baris dilewati" value={importResult.skipped_rows || 0} color="#B7791F" />
-                </div>
+                <div className="mb-2"><MetricRow testId="import-stats" items={[
+                  { label: "Kehadiran terbentuk", value: String(importResult.imported || 0), tone: "#1F9D55" },
+                  { label: "Baris dilewati", value: String(importResult.skipped_rows || 0), tone: "#B7791F" },
+                ]} /></div>
                 {importResult.message && <p className="text-[11.5px] text-[#B7791F]">{importResult.message}</p>}
                 <div className="divide-y divide-[#EFF0F2] max-h-[200px] overflow-y-auto">
                   {(importResult.records || []).map((r, i) => (

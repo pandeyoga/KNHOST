@@ -111,7 +111,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
         {/* Left */}
         <div className="space-y-3">
           <div className="section-card">

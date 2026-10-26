@@ -90,7 +90,7 @@ export default function ReturnShipmentPanel({ ret, canEdit, onChanged }) {
           )}
           {editable && (
             <div className="mt-2 space-y-2 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5" data-testid="return-shipment-form">
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="block text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Cara barang kembali *
                   <KNSelect className="form-select mt-1" value={f.method} onValueChange={(v) => set({ method: v })} searchable={false}
                     placeholder="Pilih cara kembali" options={SHIPMENT_METHODS} data-testid="return-shipment-method" />

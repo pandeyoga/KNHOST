@@ -57,7 +57,7 @@ function ScanForm({ ret, warehouses, onDone }) {
   return (
     <form onSubmit={submit} className="grid gap-2 rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] p-2.5" data-testid="journey-scan-form">
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="journey-scan-error" />}
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <label><span className="field-label">Tahap scan</span>
           <KNSelect data-testid="journey-scan-stage" className="field" value={stage} onValueChange={setStage} options={SCAN_STAGES} /></label>
         <label><span className="field-label">{stage === "dispatched" ? "Dikirim dari gudang" : "Gudang tempat scan"}</span>
@@ -70,7 +70,7 @@ function ScanForm({ ret, warehouses, onDone }) {
       <label><span className="field-label">Scan nomor roll / tag (pisahkan dengan Enter atau koma)</span>
         <textarea data-testid="journey-scan-codes" className="field" rows={2} value={codes}
           onChange={(e) => setCodes(e.target.value)} placeholder="RL-10124&#10;RL-10125" /></label>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label><span className="field-label">Ekspedisi / sopir (opsional)</span>
           <input data-testid="journey-scan-carrier" className="field" value={carrier} onChange={(e) => setCarrier(e.target.value)} /></label>
         <button data-testid="journey-scan-submit" className="primary-button" disabled={busy || !wh || !codes.trim() || (stage === "dispatched" && !toWh)}>

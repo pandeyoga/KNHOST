@@ -58,7 +58,7 @@ export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
           {files.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2" data-testid={`design-file-${f.id}`}>
               <span className="flex min-w-0 items-center gap-2 text-[11.5px]">
-                <FileArchive size={14} className="shrink-0 text-[#6B219A]" />
+                <FileArchive size={14} className="shrink-0 text-[#0058CC]" />
                 <span className="min-w-0">
                   <p className="truncate font-semibold" title={f.filename}>{f.filename}</p>
                   <p className="text-[10px] text-[#8E8E93]">{fmtBytes(f.size)} · {f.uploaded_by || ""} · {f.uploaded_at ? new Date(f.uploaded_at).toLocaleDateString("id-ID", { dateStyle: "medium" }) : ""}</p>
@@ -83,7 +83,7 @@ export default function FilesPanel({ design, kind, canEdit, onDone, onError }) {
                   : <span className="flex h-full items-center justify-center text-[10px] font-bold">PDF</span>}
               </button>
               {kind === "artwork" && (
-                <span className="absolute left-1 top-1 rounded bg-white/90 px-1 py-0.5 text-[8.5px] font-bold text-[#6B219A]">{roundLabel(f.version || 1)}</span>
+                <span className="absolute left-1 top-1 rounded bg-white/90 px-1 py-0.5 text-[8.5px] font-bold text-[#0058CC]">{roundLabel(f.version || 1)}</span>
               )}
               <div className="px-1.5 py-1 text-[9.5px] leading-tight">
                 <p className="truncate font-semibold" title={f.filename}>{f.filename}</p>

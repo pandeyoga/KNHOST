@@ -9,6 +9,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
+import PageTabs from "../../components/PageTabs";
 import { LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells, employeeOptions } from "./leaveUtils";
 import LeaveRequestFields from "./LeaveRequestFields";
 import { can } from "../../config/roles";
@@ -180,12 +181,9 @@ export default function LeaveView({ currentUser, selectedEntity }) {
             <button data-testid="leave-refresh" onClick={() => { loadRequests(); loadBalances(); loadCalendar(); }} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
           </div>
         </div>
-        <div className="tab-bar !mb-0 px-3">
-          {TABS.map((t) => (
-            <button key={t.id} data-testid={`leave-tab-${t.id}`} onClick={() => setTab(t.id)}
-              className={`tab-button ${tab === t.id ? "active" : ""}`}>{t.label}</button>
-          ))}
-        </div>
+        {/* Fase 4 · R4 — tab tingkat-2 = PageTabs baku (testid `leave-tab-*` tetap). */}
+        <PageTabs testId="leave-tabs" value={tab} onChange={setTab} ariaLabel="Cuti & Izin" className="!mb-0 px-3"
+          tabs={TABS.map((t) => ({ key: t.id, label: t.label, testId: `leave-tab-${t.id}` }))} />
       </div>
 
       {/* TAB: Pengajuan */}
@@ -280,10 +278,11 @@ export default function LeaveView({ currentUser, selectedEntity }) {
                 <div key={b.id} data-testid={`leave-balance-row-${b.employee_id}`} className="grid grid-cols-[1.6fr_110px_90px_90px_100px] items-center px-3 py-2.5">
                   <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={b.entity_id} /><span className="text-[12px] font-semibold truncate">{empName[b.employee_id] || b.employee_id}</span></span>
                   <span className="text-[12px] text-center tabular-nums">{b.entitlement} hari</span>
-                  {/* G5-29: angka 0 tanpa warna peringatan. */}
-                  <span className={`text-[12px] text-center tabular-nums ${Number(b.used) > 0 ? "text-[#C0392B]" : "text-[#9A9BA3]"}`}>{b.used}</span>
-                  <span className={`text-[12px] text-center tabular-nums ${Number(b.pending) > 0 ? "text-[#B7791F]" : "text-[#9A9BA3]"}`}>{b.pending}</span>
-                  <span className="text-[13px] text-right font-bold tabular-nums text-[#1F7A45]">{b.remaining}</span>
+                  {/* G5-29 / Fase 4 · R4 (L-08): angka 0 netral abu; "Terpakai" bukan peringatan (dulu merah) — hanya
+                      "Menunggu" > 0 yang ditandai; "Sisa" 0 tidak hijau. */}
+                  <span className={`text-[12px] text-center tabular-nums ${Number(b.used) > 0 ? "text-[#1C1C1E]" : "text-[#9A9BA3]"}`} data-testid={`leave-balance-used-${b.employee_id}`}>{b.used}</span>
+                  <span className={`text-[12px] text-center tabular-nums ${Number(b.pending) > 0 ? "font-semibold text-[#B7791F]" : "text-[#9A9BA3]"}`} data-testid={`leave-balance-pending-${b.employee_id}`}>{b.pending}</span>
+                  <span className={`text-[13px] text-right font-bold tabular-nums ${Number(b.remaining) > 0 ? "text-[#1F7A45]" : "text-[#9A9BA3]"}`} data-testid={`leave-balance-remaining-${b.employee_id}`}>{b.remaining}</span>
                 </div>
               ))}
             </div>

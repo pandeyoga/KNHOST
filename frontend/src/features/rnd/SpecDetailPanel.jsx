@@ -84,7 +84,7 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
               data-testid="spec-detail-error">{err}</div>
           )}
 
-          <div className="grid gap-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
             <Box label="Tahap produk" value={life.label} tone={life.tone}
               testId="spec-detail-lifecycle" />
             {/* UAT 24 Okt (audit UI tahap 2) — G5-49: tahap bahan berlabel registri (dulu "finished" mentah); nilai
@@ -97,7 +97,7 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
             <Box label="Target harga" value={Number(spec?.target_price) > 0 ? formatCurrency(spec.target_price) : "—"} />
           </div>
 
-          <div className="grid gap-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
             <Box label="Warna target"
               value={`${spec?.color_target?.name || "—"}${spec?.color_target?.code ? ` (${spec.color_target.code})` : ""}`}
               swatch={spec?.color_target?.hex} />
@@ -160,7 +160,7 @@ export default function SpecDetailPanel({ specId, currentUser, types = [], onClo
               <p className="mb-2 text-[11.5px] font-semibold text-[#004099]">
                 Setujui spesifikasi → produk baru akan lahir (belum boleh dijual)
               </p>
-              <div className="grid gap-2 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                 <label className="block">
                   <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Kode SKU</span>
                   <input className="field" data-testid="spec-approve-sku" value={sku}

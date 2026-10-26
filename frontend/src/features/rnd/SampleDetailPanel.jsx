@@ -207,7 +207,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
       )}
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="sample-detail-error" />}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="grid gap-3">
           <div className="section-card section-pad">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">Brief untuk supplier</p>

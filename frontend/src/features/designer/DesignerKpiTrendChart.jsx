@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { TrendingUp } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import FilterChips from "../../components/FilterChips";
 import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { designerKpiTrend } from "./designerApi";
@@ -74,25 +75,9 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
           <h2>Tren nilai desainer per bulan</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-lg border border-[#E1E4EA] overflow-hidden"
-            data-testid={`${testId}-metric`}>
-            {[
-              { k: "avg_score", label: "Rata-rata skor" },
-              { k: "grade", label: "Grade" },
-            ].map((m) => (
-              <button
-                key={m.k}
-                type="button"
-                data-testid={`${testId}-metric-${m.k}`}
-                onClick={() => setMetric(m.k)}
-                className={`px-2.5 py-1 text-[11.5px] font-semibold transition-colors ${
-                  metric === m.k ? "bg-[#0058CC] text-white" : "bg-white text-[#4A4B52] hover:bg-[#F2F5FA]"
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          {/* Fase 4 · R4 (L-01/L-08) — pilihan ukuran = FilterChips baku (dulu segmented buatan sendiri). */}
+          <FilterChips testId={`${testId}-metric`} value={metric} onChange={setMetric} ariaLabel="Ukuran tren"
+            options={[{ key: "avg_score", label: "Rata-rata skor" }, { key: "grade", label: "Grade" }]} />
           <KNSelect data-testid={`${testId}-months`} value={months}
             onValueChange={setMonths} options={MONTH_OPTIONS} className="field !w-[170px]" />
         </div>

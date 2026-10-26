@@ -76,7 +76,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
           {candidates.length === 0 ? (
             <Hint tone="warn" testId="decide-no-candidate">Belum ada supplier yang hasilnya <b>ACC</b>. Nilai dulu hasil sample-nya — pemenang hanya boleh dipilih dari supplier yang sudah ACC.</Hint>
           ) : (
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
               <div className="space-y-3">
                 <Block step={1} title="Keputusan">
                   <Field label="Supplier pemenang *">
@@ -103,7 +103,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
                 </Block>
 
                 <Block step={2} title="Data supplier (diisi saat ACC — bukan di awal)">
-                  <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     <Field label="Harga kesepakatan per satuan (Rp) *">
                       <MoneyInput className="field" testId="decide-price" value={price} onChange={(v) => setPrice(v)} placeholder="42500" />
                     </Field>
@@ -147,7 +147,7 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy,
                           <span>Sekaligus <b>ACC spesifikasi {spec.number}</b> → SKU produk lahir (status <i>disetujui</i>, belum dijual). Rilis ke produksi dilakukan terpisah.</span>
                         </label>
                         {approveSpec && (
-                          <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
+                          <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                             <Field label="Kode SKU produk (kosong = otomatis)">
                               <input className="field" data-testid="decide-product-sku" value={productSku} onChange={(e) => setProductSku(e.target.value.toUpperCase())} placeholder="KTN-150-NAVY" />
                             </Field>

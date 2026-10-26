@@ -6,6 +6,8 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
 import FormModal from "../../components/FormModal";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { MetricRow } from "../../components/ListPageParts";
 import { formatDecimal, formatPeriod } from "../../utils/formatters";
 import { activeEmployees } from "./leaveUtils";
 import { lastMonths, curMonth, scoreCls, scoreBadge, weightedAvg, isCalendarMonth } from "./kpiUtils";
@@ -99,7 +101,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
   const avg = weightedAvg(rows);
 
   return (
-    <div className="grid gap-3" data-testid="kpi-view">
+    <div className="grid grid-cols-1 gap-3" data-testid="kpi-view">
       {/* Toolbar */}
       <section className="section-card !p-3">
         <div className="flex flex-wrap items-end gap-2.5">
@@ -120,67 +122,50 @@ export default function KpiView({ currentUser, selectedEntity }) {
         </div>
       </section>
 
-      {/* Rekap */}
-      <section className="grid gap-3 sm:grid-cols-3">
-        <RecapCard icon={BarChart3} label="Total Entri KPI" value={rows.length} />
-        {/* Audit UI 24 Okt (084): desimal koma + keterangan skala (skor > 100 = aktual melampaui target). */}
-        <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)"
-          value={avg == null ? "—" : Number(avg).toLocaleString("id-ID", { maximumFractionDigits: 1 })}
-          valueCls={scoreCls(avg)} suffix="" hint="skala 100 = sesuai target; > 100 = melampaui target" />
-        <RecapCard icon={Target} label="Periode Aktif" value={period ? formatPeriod(period) : "—"} small />
-      </section>
+      {/* Rekap — Fase 4 · R4 (L-08): MetricRow baku (nilai 0 netral; dulu "Rata-rata skor 0" merah saat memuat). */}
+      <MetricRow testId="kpi-recap" items={[
+        { label: "Total Entri KPI", icon: BarChart3, value: loading ? "—" : String(rows.length) },
+        // Audit UI 24 Okt (084): desimal koma + keterangan skala (skor > 100 = aktual melampaui target).
+        { label: "Rata-rata Skor (tertimbang)", icon: Target, testId: "kpi-recap-avg",
+          value: loading || avg == null ? "—" : Number(avg).toLocaleString("id-ID", { maximumFractionDigits: 1 }),
+          tone: loading || avg == null ? undefined : scoreTone(avg), hint: "skala 100 = sesuai target; > 100 = melampaui target" },
+        { label: "Periode Aktif", icon: Target, value: period ? formatPeriod(period) : "—" },
+      ]} />
 
       {error && <ErrorNotice message={error} onRetry={load} testId="kpi-error" />}
 
-      {/* Tabel */}
+      {/* Tabel — Fase 4 · R4 (L-07): `.data-table` lewat ResponsiveTable (dulu <table> mentah 12,5 px); kartu di HP. */}
       <section className="section-card">
         <div className="section-head"><h2 className="text-[13px] font-bold">Daftar KPI</h2></div>
         <div className="section-body">
-          {loading ? (
-            <p className="text-[12px] text-[#6B6B73] py-6 text-center" data-testid="kpi-loading">Memuat data KPI…</p>
-          ) : rows.length === 0 ? (
+          {rows.length === 0 && !loading ? (
             <div className="py-10 text-center" data-testid="kpi-empty">
               <Target size={28} className="mx-auto text-[#C7C9CF] mb-2" />
               <p className="text-[13px] font-semibold text-[#3A3B42]">Belum ada data KPI</p>
               <p className="text-[12px] text-[#9A9BA3] mt-0.5">Tambahkan KPI karyawan untuk periode {formatPeriod(period)}.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[12.5px]" data-testid="kpi-table">
-                <thead>
-                  <tr className="whitespace-nowrap text-left text-[11px] uppercase text-[#9A9BA3] border-b border-[#EFF0F2]">
-                    <th className="py-2 pr-3">Karyawan</th><th className="py-2 pr-3">Periode</th>
-                    <th className="py-2 pr-3">Metrik</th>
-                    <th className="py-2 pr-3 text-right">Target</th><th className="py-2 pr-3 text-right">Aktual</th>
-                    <th className="py-2 pr-3 text-right">Skor</th><th className="py-2 pr-3 text-right">Bobot</th>
-                    {canManage && <th className="sticky right-0 bg-white py-2 pr-1 text-right">Aksi</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F2F3F5]">
-                  {rows.map((r) => {
-                    const b = scoreBadge(r.score);
-                    return (
-                      <tr key={r.id} data-testid={`kpi-row-${r.id}`} className="hover:bg-[#FAFBFC]">
-                        <td className="py-2 pr-3 font-medium">{r.employee_name}</td>
-                        <td className="py-2 pr-3 tabular-nums">{formatPeriod(r.period)}</td>
-                        <td className="py-2 pr-3">{r.metric}{r.note ? <span className="block text-[11px] text-[#9A9BA3] truncate max-w-[220px]">{r.note}</span> : null}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.target)}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.actual)}</td>
-                        {/* G5-35: skor desimal koma ("94,4"; dulu "94.4" bercampur dengan rekap "107,4"). */}
-                        <td className="py-2 pr-3 text-right"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{formatDecimal(r.score, 1)}</span> <span className={`ml-1 px-1.5 py-0.5 rounded text-[11px] font-semibold ${b.cls}`}>{b.label}</span></td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{formatDecimal(r.weight)}</td>
-                        {canManage && (
-                          <td className="sticky right-0 bg-white py-2 pr-1 text-right whitespace-nowrap">
-                            <button data-testid={`kpi-edit-${r.id}-button`} className="icon-button" title="Ubah" onClick={() => openEdit(r)}><Pencil size={14} /></button>
-                            <button data-testid={`kpi-delete-${r.id}-button`} className="icon-button text-[#C0341D]" title="Hapus" onClick={() => setDelTarget(r)}><Trash2 size={14} /></button>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable testId="kpi-table" rows={rows} rowKey="id" loading={loading}
+              rowTestId={(r) => `kpi-row-${r.id}`} stickyActions
+              columns={[
+                { key: "employee_name", header: "Karyawan", mobile: "title", render: (r) => <span className="font-medium">{r.employee_name}</span> },
+                { key: "period", header: "Periode", mobile: "subtitle", render: (r) => formatPeriod(r.period) },
+                { key: "metric", header: "Metrik", priority: 1, render: (r) => <>{r.metric}{r.note ? <span className="block max-w-[220px] truncate text-[11px] text-[#9A9BA3]">{r.note}</span> : null}</> },
+                { key: "target", header: "Target", align: "right", priority: 3, render: (r) => formatDecimal(r.target) },
+                { key: "actual", header: "Aktual", align: "right", priority: 2, render: (r) => formatDecimal(r.actual) },
+                // G5-35: skor desimal koma ("94,4"; dulu "94.4" bercampur dengan rekap "107,4").
+                { key: "score", header: "Skor", align: "right", mobile: "badge", render: (r) => {
+                  const b = scoreBadge(r.score);
+                  return <span className="whitespace-nowrap"><span className={`font-bold tabular-nums ${scoreCls(r.score)}`}>{formatDecimal(r.score, 1)}</span> <span className={`ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ${b.cls}`}>{b.label}</span></span>;
+                } },
+                { key: "weight", header: "Bobot", align: "right", priority: 4, render: (r) => formatDecimal(r.weight) },
+              ]}
+              actions={canManage ? (r) => (
+                <span className="inline-flex whitespace-nowrap">
+                  <button data-testid={`kpi-edit-${r.id}-button`} className="icon-button" title="Ubah" aria-label={`Ubah KPI ${r.metric}`} onClick={() => openEdit(r)}><Pencil size={14} /></button>
+                  <button data-testid={`kpi-delete-${r.id}-button`} className="icon-button text-[#C0341D]" title="Hapus" aria-label={`Hapus KPI ${r.metric}`} onClick={() => setDelTarget(r)}><Trash2 size={14} /></button>
+                </span>
+              ) : undefined} />
           )}
         </div>
       </section>
@@ -197,7 +182,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
                   <KNSelect data-testid="kpi-form-employee" value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} options={activeEmployees(employees).map((e) => ({ value: e.id, label: e.name }))} className="field" placeholder="Pilih karyawan aktif" searchable /></label>
               )}
               {editing && <p className="text-[12px] text-[#6B6B73]">Karyawan: <b>{editing.employee_name}</b></p>}
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Periode *</span>
                   <KNSelect data-testid="kpi-form-period" value={form.period} onValueChange={(v) => setForm({ ...form, period: v })} options={periodOpts} className="field" /></label>
                 <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Bobot</span>
@@ -205,7 +190,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
               </div>
               <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Metrik *</span>
                 <input data-testid="kpi-form-metric" className="form-input" value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} placeholder="mis. Jumlah Desain Baru" /></label>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Target</span>
                   <input data-testid="kpi-form-target" type="number" step="any" className="form-input" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} /></label>
                 <label className="grid gap-1"><span className="text-[11px] font-bold uppercase text-[#6B6B73]">Aktual</span>
@@ -224,15 +209,8 @@ export default function KpiView({ currentUser, selectedEntity }) {
   );
 }
 
-function RecapCard({ icon: Icon, label, value, valueCls = "", small = false, hint = "" }) {
-  return (
-    <div className="section-card !p-3 flex items-center gap-3">
-      <div className="h-9 w-9 rounded-lg bg-[#EAF1FF] flex items-center justify-center shrink-0"><Icon size={17} className="text-[#0058CC]" /></div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase font-semibold text-[#9A9BA3] truncate">{label}</p>
-        <p className={`${small ? "text-[15px]" : "text-[20px]"} font-bold leading-tight tabular-nums ${valueCls}`}>{value}</p>
-        {hint && <p className="text-[11px] text-[#9A9BA3]">{hint}</p>}
-      </div>
-    </div>
-  );
+/** Warna nilai rata-rata skor untuk MetricRow (sama dengan `scoreCls`). */
+function scoreTone(s) {
+  const v = Number(s) || 0;
+  return v >= 100 ? "#1F7A45" : v >= 80 ? "#0058CC" : v >= 60 ? "#B7791F" : "#C0341D";
 }

@@ -85,7 +85,7 @@ export default function PostFormModal({ meta, campaigns = [], initial = {}, post
           </Field>
         )}
         {!post && meta?.active_entity_name && <p className="text-[10.5px] text-[#8E8E93]" data-testid="mkt-f-entity-note">Konten ini dibuat untuk badan usaha <b>{meta.active_entity_name}</b>.</p>}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Jenis konten"><KNSelect data-testid="mkt-f-type" className="field" value={f.content_type} onValueChange={(v) => set("content_type", v)} options={(meta?.content_types || ["foto"]).map((t) => ({ value: t, label: String(t).charAt(0).toUpperCase() + String(t).slice(1).replace(/_/g, " ") }))} /></Field>
           <Field label="Tanggal & jam tayang"><KNDateTimePicker className="w-full" value={f.publish_at} onChange={(v) => set("publish_at", v)} data-testid="mkt-f-publish-at" /></Field>
           <Field label="PIC (yang memposting)"><KNSelect data-testid="mkt-f-pic" className="field" value={f.pic_user_id} onValueChange={(v) => set("pic_user_id", v)} options={[{ value: "", label: "— pilih —" }, ...(meta?.pic_options || []).map((u) => ({ value: u.id, label: u.role ? `${u.name} (${roleLabel(u.role)})` : u.name }))]} /></Field>
@@ -94,7 +94,7 @@ export default function PostFormModal({ meta, campaigns = [], initial = {}, post
         <Field label={`Caption · ${capLen} karakter${capLen > 2200 ? " (melebihi batas Instagram 2.200)" : ""}`}>
           <textarea className="field w-full" rows={5} value={f.caption} onChange={(e) => set("caption", e.target.value)} placeholder="Tulis caption lengkap di sini…" data-testid="mkt-f-caption" />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Hashtag (pisahkan spasi)"><input className="field w-full" value={f.hashtags} onChange={(e) => set("hashtags", e.target.value)} placeholder="#kainnusantara #batik #kainpremium" data-testid="mkt-f-hashtags" /></Field>
           <Field label="Ajakan (CTA)"><input className="field w-full" value={f.cta} onChange={(e) => set("cta", e.target.value)} placeholder="mis. DM untuk katalog / Klik link di bio" data-testid="mkt-f-cta" /></Field>
         </div>

@@ -109,7 +109,7 @@ export function MyVisitsPanel({ currentUser }) {
                   <span className="text-[12px] text-[#6B6B73] flex items-center gap-1"><Clock size={13} /> Mulai {fmtTime(ongoing.check_in?.ts)} · <b className="tabular-nums">{fmtMin(elapsedMin(ongoing.check_in?.ts))}</b></span>
                 </div>
                 {ongoing.notes && <p className="text-[12px] text-[#6B6B73] mb-2">Catatan: {ongoing.notes}</p>}
-                <div className="border-t border-[#EFF0F2] pt-3 grid gap-2 md:grid-cols-[150px_1fr_auto]">
+                <div className="border-t border-[#EFF0F2] pt-3 grid grid-cols-1 gap-2 md:grid-cols-[150px_1fr_auto]">
                   <KNSelect data-testid="checkout-outcome" value={co.outcome} onValueChange={(v) => setCo((s) => ({ ...s, outcome: v }))} className="field" options={OUTCOME_OPTS} />
                   <input data-testid="checkout-linked-so" value={co.linked_so_id} onChange={(e) => setCo((s) => ({ ...s, linked_so_id: e.target.value }))} className="field" placeholder="No. SO terkait (opsional)" />
                   <button data-testid="checkout-submit" disabled={savingOut} onClick={() => checkOut(ongoing.id)} className="primary-button justify-center"><Square size={13} /> {savingOut ? "..." : "Selesai Kunjungan"}</button>
@@ -120,7 +120,7 @@ export function MyVisitsPanel({ currentUser }) {
           ) : (
             <div className="section-card mb-3" data-testid="checkin-card">
               <div className="section-head"><div className="flex items-center gap-2"><Play size={15} className="text-[#1F9D55]" /><h2>Mulai Kunjungan Baru</h2></div></div>
-              <div className="section-body grid gap-2 md:grid-cols-2">
+              <div className="section-body grid grid-cols-1 gap-2 md:grid-cols-2">
                 <div>
                   <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Pelanggan</label>
                   <KNSelect data-testid="checkin-customer" value={ci.customer_id} onValueChange={(v) => setCi((s) => ({ ...s, customer_id: v, customer_name: "" }))} className="field" placeholder="— pilih pelanggan —" searchable options={custOpts} />

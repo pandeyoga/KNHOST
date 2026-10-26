@@ -62,7 +62,7 @@ function BoardCard({ r, onOpen }) {
       </p>
       {(r.category_code || r.design_category_code) && (
         <p className="mt-1 flex flex-wrap gap-1" data-testid={`dsr-card-cats-${r.id}`}>
-          {r.category_code && <span className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#6B219A]">{r.category_name || r.category_code}</span>}
+          {r.category_code && <span className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0058CC]">{r.category_name || r.category_code}</span>}
           {r.design_category_code && <span className="rounded bg-[#EEF4FF] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0058CC]">{r.design_category_name || r.design_category_code}</span>}
         </p>
       )}
@@ -220,7 +220,7 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
         {/* Audit UI 24 Okt (047) — kepala boleh turun baris: di HP judul dulu terjepit oleh filter & tombol. */}
         <div className="section-head flex-wrap">
           <div className="flex min-w-[200px] flex-1 items-center gap-2">
-            <Palette size={15} className="text-[#6B219A]" />
+            <Palette size={15} className="text-[#0058CC]" />
             <div className="min-w-0">
               <span className="kicker">Desain</span>
               <h2 data-testid="panel-title" className="text-[13px] font-bold">Permintaan Desain</h2>

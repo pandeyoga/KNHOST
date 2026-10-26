@@ -31,11 +31,11 @@ export default function TagInput({ value = [], onChange, testId = "design-tags" 
     <div className="relative" data-testid={testId}>
       <div className="field flex min-h-[36px] flex-wrap items-center gap-1 !py-1">
         {value.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-[#F1E9F7] px-2 py-0.5 text-[11px] font-medium text-[#6B219A]"
+          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[11px] font-medium text-[#0058CC]"
             data-testid={`${testId}-chip-${t}`}>
             {t}
             <button type="button" onClick={() => onChange(value.filter((v) => v !== t))}
-              className="text-[#6B219A]/70 hover:text-[#6B219A]" aria-label={`hapus ${t}`}><X size={10} /></button>
+              className="text-[#0058CC]/70 hover:text-[#0058CC]" aria-label={`hapus ${t}`}><X size={10} /></button>
           </span>
         ))}
         <input value={text} data-testid={`${testId}-input`}

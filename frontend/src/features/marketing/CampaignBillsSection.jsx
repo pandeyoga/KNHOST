@@ -66,7 +66,7 @@ export function BillForm({ campaign, onClose, onDone }) {
   return (
     <FormModal open title="Tagihan vendor kampanye" subtitle="Belum dijurnal sampai disetujui Finance/Manager: Dr Beban Pemasaran / Cr Hutang Usaha." icon={Plus}
       onClose={onClose} onSubmit={submit} busy={busy} error={err} submitLabel="Ajukan tagihan" testId="mkt-bill-modal" submitTestId="mkt-bill-submit" cancelTestId="mkt-bill-cancel">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Field label="Vendor *"><KNSelect className="field w-full" value={f.supplier_id} onValueChange={(v) => set("supplier_id", v)} placeholder="Pilih vendor" data-testid="mkt-bill-vendor" options={vendors.map((v) => ({ value: v.id, label: v.name }))} /></Field>
         <Field label="No. invoice vendor"><input className="field w-full" value={f.supplier_invoice_no} onChange={(e) => set("supplier_invoice_no", e.target.value)} data-testid="mkt-bill-invoice" /></Field>
         <Field label="Uraian *"><input className="field w-full" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="mis. Iklan Meta Oktober" data-testid="mkt-bill-description" /></Field>

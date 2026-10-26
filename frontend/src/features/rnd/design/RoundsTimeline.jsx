@@ -44,7 +44,7 @@ export default function RoundsTimeline({ design, canEdit, canPaper, onDone, onEr
               <h3 className="text-[13px] font-bold text-[#1C1C1E]">
                 {roundLabel(v.version)}
                 <span className="ml-2 font-mono text-[10px] font-normal text-[#8E8E93]">v{v.version}</span>
-                {isCur && !v.acc && <span className="ml-2 rounded bg-[#6B219A] px-1.5 py-0.5 text-[9px] font-semibold text-white">ronde berjalan</span>}
+                {isCur && !v.acc && <span className="ml-2 rounded bg-[#0058CC] px-1.5 py-0.5 text-[9px] font-semibold text-white">ronde berjalan</span>}
               </h3>
               <span className="text-[10.5px] text-[#8E8E93]">{v.by ? `${v.by} · ` : ""}{fmtAt(v.at)}</span>
             </div>

@@ -28,12 +28,12 @@ export default function FamilyDesignBar({ family, canEdit, onChanged }) {
   }
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-[#EFF0F2] bg-white px-3 py-2 text-[11.5px]" data-testid="catalog-family-design">
-      <Palette size={13} className="text-[#6B219A]" />
+      <Palette size={13} className="text-[#0058CC]" />
       {v.design_id ? (
         <>
           <span>Desain <b className="font-mono" data-testid="catalog-family-design-code">{v.design_code || "—"}</b>{v.design_title ? ` · ${v.design_title}` : ""}</span>
-          {v.pattern_category_name && <span className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10px] text-[#6B219A]">Pattern: {v.pattern_category_name}</span>}
-          {v.design_category_name && <span className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10px] text-[#6B219A]">Design: {v.design_category_name}</span>}
+          {v.pattern_category_name && <span className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10px] text-[#0058CC]">Pattern: {v.pattern_category_name}</span>}
+          {v.design_category_name && <span className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10px] text-[#0058CC]">Design: {v.design_category_name}</span>}
           {v.exclusive_source === "design" && (
             <span className="inline-flex items-center gap-1 rounded bg-[#B45309] px-1.5 py-0.5 text-[10px] font-bold text-white"><Lock size={9} /> Customer label · {v.exclusive_customer_name}</span>
           )}

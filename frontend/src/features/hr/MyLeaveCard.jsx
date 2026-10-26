@@ -137,7 +137,7 @@ export function MyLeaveCard() {
                 onChange={(k, v) => ({ type: setType, from: setFrom, to: setTo, reason: setReason })[k](v)} />
             ) : (
               <div className="grid gap-2.5">
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div className="grid gap-1"><label className="field-label">Tanggal <span className="req">*</span></label>
                     <KNDatePicker data-testid="ess-ot-date" value={otDate} onChange={setOtDate} /></div>
                   <div className="grid gap-1"><label className="field-label">Jam (maks 12) <span className="req">*</span></label>

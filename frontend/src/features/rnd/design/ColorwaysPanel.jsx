@@ -73,8 +73,8 @@ export default function ColorwaysPanel({ design, canEdit, onDone, onError }) {
         </button>
       )}
       {form && (
-        <div className="space-y-2 rounded-lg border border-[#6B219A] bg-[#FBF8FE] p-3" data-testid="design-colorway-form">
-          <div className="grid gap-2 md:grid-cols-2">
+        <div className="space-y-2 rounded-lg border border-[#0058CC] bg-[#F5F9FF] p-3" data-testid="design-colorway-form">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <input className="field" placeholder="Nama alternatif (mis. Navy–Emas)" value={form.name} data-testid="design-colorway-name"
               onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <input className="field" placeholder="Catatan (opsional)" value={form.note} data-testid="design-colorway-note"

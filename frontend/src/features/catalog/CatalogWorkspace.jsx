@@ -1,6 +1,7 @@
 import ProductColorTriad from "../../components/ProductColorTriad";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowUpRight, ChevronLeft, ChevronRight, Images, Layers3, Pencil, Plus, Search } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ChevronLeft, ChevronRight, Images, Layers3, Package, Pencil, Plus, Search } from "lucide-react";
+import { PageHeader } from "../../components/ListPageParts";
 import { ProductGallery } from "../../components/ProductGallery";
 import { formatCurrency } from "../../utils/formatters";
 import { variantLabel } from "../../utils/variants";
@@ -51,17 +52,19 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
   const stock = summary?.variants.find(v => v.id === selected?.id);
   if (legacy && legacyView) return <div data-testid="catalog-legacy-view"><button data-testid="catalog-back-from-legacy" className="secondary-button mb-4" onClick={() => { setLegacy(false); load(); }}><ArrowLeft size={14} />Kembali ke etalase</button>{legacyView}</div>;
   return <div className="kn-catalog" data-testid="catalog-workspace">
-    <header className="catalog-heading">
-      <div><div data-testid="catalog-eyebrow" className="catalog-eyebrow">KAIN NUSANTARA / MASTER PRODUK</div><h1 data-testid="catalog-title">{family ? family.name : "Produk & varian"}</h1><p data-testid="catalog-subtitle">{family ? `${family.category} · ${fabricLabel(family.fabric_type)} · ${family.sku_prefix}` : `${total} induk produk · katalog bersama`}</p></div>
-      <div className="flex flex-wrap gap-2">
+    {/* Fase 4 · R4 (L-02) — kepala halaman baku `PageHeader` (judul 18 px `view-title`; dulu h1 32/28 px + kicker
+        "KAIN NUSANTARA / MASTER PRODUK" di luar kartu — jejak menu sudah ada di breadcrumb atas). */}
+    <PageHeader icon={family ? Package : Layers3} testId="catalog-heading"
+      title={<span data-testid="catalog-title" className="min-w-0 break-words">{family ? family.name : "Produk & varian"}</span>}
+      subtitle={<span data-testid="catalog-subtitle">{family ? `${family.category} · ${fabricLabel(family.fabric_type)} · ${family.sku_prefix}` : `${total} induk produk · katalog bersama`}</span>}
+      actions={<>
         {family && <button data-testid="catalog-back" className="secondary-button" onClick={() => { setFamily(null); setSelectedId(""); }}><ArrowLeft size={14} />Semua produk</button>}
         {!family && legacyView && caps.update && <button data-testid="catalog-legacy" className="secondary-button" onClick={() => setLegacy(true)}>Data SKU & impor</button>}
         {caps.create && !family && <button data-testid="catalog-create" className="primary-button" onClick={() => setModal("create")}><Plus size={15} />Produk baru</button>}
         {caps.update && family && <button data-testid="catalog-edit-family" className="secondary-button" onClick={() => setModal("edit")}><Pencil size={14} />Ubah induk</button>}
         {caps.update && family && <button data-testid="catalog-link-existing" className="secondary-button" onClick={() => setModal("link")}>Tautkan SKU lama</button>}
         {caps.create && family && <button data-testid="catalog-generate" className="primary-button" onClick={() => setModal(family.axes?.length ? "generate" : "new-variant")}><Plus size={15} />Tambah varian</button>}
-      </div>
-    </header>
+      </>} />
     {error && <div data-testid="catalog-error" role="alert" className="catalog-alert error">{error}<button data-testid="catalog-retry" className="secondary-button" onClick={load}>Coba lagi</button></div>}
     {notice && <div data-testid="catalog-notice" role="status" className="catalog-alert">{notice}<button data-testid="catalog-dismiss-notice" onClick={() => setNotice("")} className="text-xs underline">Tutup</button></div>}
     {!family ? <>

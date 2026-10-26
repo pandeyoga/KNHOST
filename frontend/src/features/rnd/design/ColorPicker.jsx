@@ -42,7 +42,7 @@ export default function ColorPicker({ value = [], onChange, testId = "design-col
           </span>
         ))}
         <button type="button" data-testid={`${testId}-add`} onClick={() => setOpen((o) => !o)}
-          className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#6B219A] px-2 py-0.5 text-[11px] text-[#6B219A] hover:bg-[#F1E9F7]">
+          className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#0058CC] px-2 py-0.5 text-[11px] text-[#0058CC] hover:bg-[#EAF2FF]">
           <Palette size={11} /> {open ? "Tutup" : "Pilih warna dari master"}
         </button>
       </div>

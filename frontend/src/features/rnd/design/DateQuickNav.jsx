@@ -45,19 +45,19 @@ export default function DateQuickNav({ value, onChange, testId = "design-date-na
   const active = !!(from || to);
   return (
     <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] px-2 py-1.5" data-testid={testId}>
-      <CalendarDays size={13} className="text-[#6B219A]" />
+      <CalendarDays size={13} className="text-[#0058CC]" />
       <KNSelect data-testid={`${testId}-field`} className="field !w-40 !py-1 text-[11px]" value={field} options={DESIGN_DATE_FIELDS}
         onValueChange={(v) => set({ field: v })} />
       {DATE_PRESETS.map((p) => (
         <button key={p.key} type="button" data-testid={`${testId}-preset-${p.key}`} onClick={() => set({ ...presetRange(p.key), preset: p.key })}
-          className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${preset === p.key ? "border-[#6B219A] bg-[#F1E9F7] text-[#6B219A]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#6B219A]"}`}>
+          className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${preset === p.key ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
           {p.label}
         </button>
       ))}
       <span className="mx-1 inline-flex items-center gap-0.5">
-        <button type="button" className="rounded border border-[#E5E5EA] bg-white p-0.5 hover:border-[#6B219A]" onClick={() => shiftMonth(-1)} data-testid={`${testId}-prev-month`} title="Bulan sebelumnya"><ChevronLeft size={12} /></button>
+        <button type="button" className="rounded border border-[#E5E5EA] bg-white p-0.5 hover:border-[#0058CC]" onClick={() => shiftMonth(-1)} data-testid={`${testId}-prev-month`} title="Bulan sebelumnya"><ChevronLeft size={12} /></button>
         <span className="min-w-[110px] text-center text-[10.5px] font-semibold text-[#3C3C43]" data-testid={`${testId}-month-label`}>{from ? monthLabel(from) : "semua tanggal"}</span>
-        <button type="button" className="rounded border border-[#E5E5EA] bg-white p-0.5 hover:border-[#6B219A]" onClick={() => shiftMonth(1)} data-testid={`${testId}-next-month`} title="Bulan berikutnya"><ChevronRight size={12} /></button>
+        <button type="button" className="rounded border border-[#E5E5EA] bg-white p-0.5 hover:border-[#0058CC]" onClick={() => shiftMonth(1)} data-testid={`${testId}-next-month`} title="Bulan berikutnya"><ChevronRight size={12} /></button>
       </span>
       {/* UAT 24 Okt (audit UI tahap 2) — G5-41: rentang bebas memakai KNDatePicker (dulu <input type=date> bawaan
           "dd/mm/yyyy" 10,5px yang patah 4 baris di HP); dua isian satu kelompok yang tidak terpecah. */}
@@ -69,7 +69,7 @@ export default function DateQuickNav({ value, onChange, testId = "design-date-na
           onChange={(v) => set({ to: v, preset: "custom" })} data-testid={`${testId}-to`} />
       </span>
       {active && (
-        <button type="button" className="text-[10.5px] text-[#6B219A] underline" onClick={() => set({ from: "", to: "", preset: "" })} data-testid={`${testId}-clear`}>hapus tanggal</button>
+        <button type="button" className="text-[10.5px] text-[#0058CC] underline" onClick={() => set({ from: "", to: "", preset: "" })} data-testid={`${testId}-clear`}>hapus tanggal</button>
       )}
     </div>
   );

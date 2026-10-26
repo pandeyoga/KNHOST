@@ -33,7 +33,7 @@ function PartnerFields({ productId, supplierId, reason, onChange }) {
     revalPartners({ product_id: productId }).then((r) => setPartners(r?.items || [])).catch(() => setPartners([]));
   }, [productId]);
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Supplier / mitra yang diuji ulang *</span>
         <KNSelect data-testid="existing-sku-supplier" className="field" value={supplierId} searchable

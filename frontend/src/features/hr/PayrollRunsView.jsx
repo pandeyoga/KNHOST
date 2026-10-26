@@ -130,7 +130,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
         <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-[#0058CC]" /><h2 data-testid="payroll-runs-title">Penggajian</h2></div>
           <button data-testid="payroll-runs-refresh" onClick={loadRuns} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
         </div>
-        <div className="section-body grid gap-2 md:grid-cols-[1fr_180px_auto] items-end">
+        <div className="section-body grid grid-cols-1 gap-2 md:grid-cols-[1fr_180px_auto] items-end">
           <div><label className="field-label">Entitas <span className="req">*</span></label>
             <KNSelect data-testid="payroll-create-entity" value={form.entity_id} onValueChange={(v) => setForm((f) => ({ ...f, entity_id: v }))} className="field" options={entOpts} placeholder="Pilih entitas" /></div>
           <div><label className="field-label">Periode <span className="req">*</span></label>
@@ -140,7 +140,7 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[300px_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_1fr]">
         {/* Daftar runs */}
         <div className="section-card">
           <div className="px-3 py-2 border-b border-[#EFF0F2] text-[11px] font-bold uppercase text-[#6B6B73]">Daftar penggajian</div>

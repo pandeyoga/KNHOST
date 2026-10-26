@@ -292,7 +292,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
 
         <Section step={2} icon={FlaskConical} title="Brief untuk supplier" testId="sample-section-what"
           hint="Judul terisi otomatis dari spesifikasi bila dikosongkan lalu diklik di luar kolom.">
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <label className="block sm:col-span-2">
               <span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">Judul permintaan {isExisting ? "(otomatis bila kosong)" : "*"}</span>
               <input className="field" data-testid="sample-title-input" value={f.title} onChange={(e) => set("title", e.target.value)} onBlur={autoTitle}

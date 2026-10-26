@@ -123,7 +123,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           {error && <div className="notice-bar danger" data-testid="employee-form-error"><span>{error}</span></div>}
 
           <Section number={1} title="Data Pribadi">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Nama Lengkap" req>
                 <input data-testid="employee-name-input" value={form.name} onChange={(e) => set("name", e.target.value)} className="field" placeholder="mis. Siti Rahmawati" />
               </Field>
@@ -154,7 +154,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           </Section>
 
           <Section number={2} title="Kepegawaian">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Departemen">
                 <KNSelect data-testid="employee-department-select" value={form.department_id} onValueChange={(v) => setForm((f) => ({ ...f, department_id: v, position_id: "" }))} className="field" placeholder="Pilih departemen"
                   options={[{ value: "", label: "— Tidak ditentukan —" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
@@ -197,7 +197,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           </Section>
 
           <Section number={3} title="Pajak & Statutory">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="NPWP" req={!!toggles.npwp_required}>
                 <input data-testid="employee-npwp-input" value={form.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="00.000.000.0-000.000" />
               </Field>
@@ -225,7 +225,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                   <Switch data-testid="employee-bpjs-tk-switch" checked={!!form.bpjs_tk_enabled} onCheckedChange={(v) => set("bpjs_tk_enabled", v)} />
                 </label>
                 {form.bpjs_tk_enabled && (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Field label="No. BPJS Ketenagakerjaan">
                       <input data-testid="employee-bpjs-tk-input" value={form.bpjs_tk_no} onChange={(e) => set("bpjs_tk_no", e.target.value)} className="field" placeholder="11 digit nomor KPJ" />
                     </Field>
@@ -239,7 +239,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
           </Section>
 
           <Section number={4} title="Bank & Komponen Gaji">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Nama Bank">
                 <input data-testid="employee-bank-name-input" value={form.bank_name} onChange={(e) => set("bank_name", e.target.value)} className="field" placeholder="mis. BCA" />
               </Field>

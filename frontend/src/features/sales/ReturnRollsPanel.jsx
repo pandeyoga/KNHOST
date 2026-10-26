@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { Check, Loader2, Package, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { Panel } from "../../components/DetailParts";
+import ResponsiveTable from "../../components/ResponsiveTable";
 import QtyDual from "../../components/QtyDual";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { lengthAlt } from "../../utils/uom";   // 23 Okt — padanan yard↔meter
@@ -23,24 +24,24 @@ const Badge = ({ tone, children, testId }) => {
 const COND_LABEL = { ok: ["ok", "Baik"], minor: ["warn", "Cacat ringan"], damaged: ["warn", "Rusak"], major: ["bad", "Cacat berat"] };
 const condBadge = (cond) => COND_LABEL[cond] || ["ok", "Baik"];
 
-/** Kolom Kondisi · Alasan · Checklist · Foto satu roll — sama untuk roll aktif maupun yang ditolak. */
-function RollInfoCells({ d, cond, reason, photos, href }) {
+/** Kondisi (laporan awal) + checklist satu roll dalam SATU sel — sama untuk roll aktif maupun yang ditolak.
+ *  Fase 4 · R4 (L-06): dulu dua kolom terpisah (Kondisi · Checklist) yang ikut membuat tabel min 760 px. */
+function CondCell({ d, cond }) {
   const [tone, label] = condBadge(cond);
   return (
-    <>
-      <td><Badge tone={tone}>{label}</Badge></td>
-      <td className="text-[11.5px] text-[#3C3C43]">{reason || "—"}</td>
-      <td className="space-x-1 whitespace-nowrap">
-        {d.hangtag_missing && <Badge tone="warn">Hangtag hilang</Badge>}
-        {d.cut_by_customer && <Badge tone="bad">Sudah dipotong</Badge>}
-        {!d.hangtag_missing && !d.cut_by_customer && <span className="text-[11px] text-[#9A9BA3]">—</span>}
-      </td>
-      <td className="text-[11px]">
-        {/* UAT 24 Okt (P17) — thumbnail + lightbox di halaman yang sama (dulu tautan "Foto 1" → unduhan). */}
-        <AttachmentGallery items={photos.map((a) => ({ url: href(a), filename: a.filename, content_type: a.content_type }))}
-          size={32} testId={`roll-photo-${d.roll_id || "x"}`} emptyText="—" />
-      </td>
-    </>
+    <span className="inline-flex flex-wrap gap-1">
+      <Badge tone={tone}>{label}</Badge>
+      {d.hangtag_missing && <Badge tone="warn">Hangtag hilang</Badge>}
+      {d.cut_by_customer && <Badge tone="bad">Sudah dipotong</Badge>}
+    </span>
+  );
+}
+
+/** Foto bukti satu roll — thumbnail + lightbox di halaman yang sama (UAT 24 Okt P17). */
+function PhotoCell({ d, photos, href }) {
+  return (
+    <AttachmentGallery items={photos.map((a) => ({ url: href(a), filename: a.filename, content_type: a.content_type }))}
+      size={32} testId={`roll-photo-${d.roll_id || "x"}`} emptyText="—" />
   );
 }
 
@@ -94,64 +95,61 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
                   )}
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="data-table" style={{ minWidth: 760 }}>
-                  <thead>
-                    <tr><th>Roll</th><th className="text-right">Qty</th>
-                      <th title="Kondisi yang dilaporkan saat retur dibuat. Hasil QC aktual per roll ada di panel SPK.">Kondisi (laporan awal)</th>
-                      <th>Alasan</th><th>Checklist</th><th>Foto</th><th>Keputusan</th></tr>
-                  </thead>
-                  <tbody>
-                    {rolls.length === 0 && (
-                      <tr><td colSpan={7} className="text-[11.5px] text-[#6B6B73]">Baris tanpa roll · {condBadge(item.condition)[1]} · {item.reason || "—"}</td></tr>
-                    )}
-                    {rolls.map((rid) => {
-                      const d = det[rid] || {};
-                      const cond = d.condition || item.condition;
-                      const dr = draft[rid] || {};
-                      const decided = d.decision === "accept" ? <Badge tone="ok" testId={`roll-decision-${rid}`}>Diterima</Badge> : null;
-                      return (
-                        <tr key={rid} data-testid={`return-roll-${rid}`}>
-                          <td className="font-mono text-[11.5px] font-semibold">{nos[rid] || rid}</td>
-                          <td className="text-right tabular-nums">{formatQty((item.roll_qtys || {})[rid])} {item.unit}</td>
-                          <RollInfoCells d={d} cond={cond} reason={d.reason || item.reason} photos={photos[rid] || []} href={href} />
-                          <td className="min-w-[220px]">
-                            {canDecide ? (
-                              <div className="space-y-1">
-                                <div className="inline-flex overflow-hidden rounded-md border border-[#E5E5EA] text-[11px] font-semibold">
-                                  <button type="button" data-testid={`roll-accept-${rid}`}
-                                    className={`inline-flex items-center gap-1 px-2 py-1 ${(dr.decision || d.decision) === "accept" ? "bg-[#E7F6EC] text-[#126E2C]" : "bg-white text-[#3C3C43]"}`}
-                                    onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "accept", reason: "" } }))}><Check size={11} /> Terima</button>
-                                  {canReject && <button type="button" data-testid={`roll-reject-${rid}`}
-                                    className={`inline-flex items-center gap-1 border-l border-[#E5E5EA] px-2 py-1 ${dr.decision === "reject" ? "bg-[#FDECEC] text-[#A8221A]" : "bg-white text-[#3C3C43]"}`}
-                                    onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "reject", reason: x[rid]?.reason || "" } }))}><X size={11} /> Tolak</button>}
-                                </div>
-                                {dr.decision === "reject" && (
-                                  <input className="form-input !py-1 text-[11.5px]" placeholder="Alasan tolak (mis. kain sudah dipotong)"
-                                    data-testid={`roll-reject-reason-${rid}`} value={dr.reason || ""}
-                                    onChange={(e) => setDraft((x) => ({ ...x, [rid]: { ...x[rid], reason: e.target.value } }))} />
-                                )}
-                              </div>
-                            ) : (decided || <span className="text-[11px] text-[#9A9BA3]">—</span>)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {(item.rejected_rolls || []).map((r) => {
-                      const d = det[r.roll_id] || {};
-                      return (
-                        <tr key={`rej-${r.roll_id}`} className="bg-[#FFF8F8]" data-testid={`return-roll-rejected-${r.roll_id}`}>
-                          <td className="font-mono text-[11.5px] font-semibold text-[#6B6B73] line-through">{r.roll_no}</td>
-                          <td className="text-right tabular-nums text-[#6B6B73] line-through">{formatQty(r.qty)} {r.unit}</td>
-                          <RollInfoCells d={d} cond={d.condition || item.condition} reason={d.reason} photos={photos[r.roll_id] || []} href={href} />
-                          <td className="text-[11px]"><Badge tone="bad">{r.by_supplier ? "Ditolak supplier" : "Ditolak"}</Badge>
-                            <span className="block text-[#6B6B73]">{r.reason} · {r.by}</span></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Fase 4 · R4 (L-06) — tabel roll = ResponsiveTable tanpa `min-width: 760` (dulu bergulir ke samping di
+                  1440 px karena panel hanya 1,6/2,6 lebar layar): Kondisi + checklist satu kolom; di HP kartu per roll. */}
+              <ResponsiveTable testId={`${testId}-rolls-${i}`} rowKey="key" cardFields={5}
+                className="[&_.table-container]:rounded-none [&_.table-container]:border-0 [&_.table-container]:shadow-none [&_.rt-cards]:p-2"
+                rows={[
+                  ...rolls.map((rid) => ({ key: rid, kind: "active", rid, d: det[rid] || {} })),
+                  ...(item.rejected_rolls || []).map((r) => ({ key: `rej-${r.roll_id}`, kind: "rejected", rid: r.roll_id, r, d: det[r.roll_id] || {} })),
+                ]}
+                rowTestId={(row) => (row.kind === "rejected" ? `return-roll-rejected-${row.rid}` : `return-roll-${row.rid}`)}
+                rowClassName={(row) => (row.kind === "rejected" ? "bg-[#FFF8F8]" : "")}
+                empty={<span className="text-[11.5px] text-[#6B6B73]">Baris tanpa roll · {condBadge(item.condition)[1]} · {item.reason || "—"}</span>}
+                columns={[
+                  { key: "roll", header: "Roll", mobile: "title", render: (row) => (row.kind === "rejected"
+                    ? <span className="font-mono text-[11.5px] font-semibold text-[#6B6B73] line-through">{row.r.roll_no}</span>
+                    : <span className="font-mono text-[11.5px] font-semibold">{nos[row.rid] || row.rid}</span>) },
+                  { key: "qty", header: "Qty", align: "right", priority: 2, render: (row) => (row.kind === "rejected"
+                    ? <span className="tabular-nums text-[#6B6B73] line-through">{formatQty(row.r.qty)} {row.r.unit}</span>
+                    : <span className="tabular-nums">{formatQty((item.roll_qtys || {})[row.rid])} {item.unit}</span>) },
+                  { key: "cond", header: <span title="Kondisi yang dilaporkan saat retur dibuat. Hasil QC aktual per roll ada di panel SPK.">Kondisi (laporan awal)</span>,
+                    mobileLabel: "Kondisi (laporan awal)", priority: 3,
+                    render: (row) => <CondCell d={row.d} cond={row.d.condition || item.condition} /> },
+                  { key: "reason", header: "Alasan", priority: 4,
+                    render: (row) => <span className="text-[11.5px] text-[#3C3C43]">{(row.kind === "rejected" ? row.d.reason : (row.d.reason || item.reason)) || "—"}</span> },
+                  { key: "photo", header: "Foto", priority: 5,
+                    render: (row) => <PhotoCell d={row.d} photos={photos[row.rid] || []} href={href} /> },
+                  { key: "decision", header: "Keputusan", priority: 1, render: (row) => {
+                    if (row.kind === "rejected") {
+                      return <span className="text-[11px]"><Badge tone="bad">{row.r.by_supplier ? "Ditolak supplier" : "Ditolak"}</Badge>
+                        <span className="block text-[#6B6B73]">{row.r.reason} · {row.r.by}</span></span>;
+                    }
+                    const { rid, d } = row;
+                    const dr = draft[rid] || {};
+                    if (!canDecide) {
+                      return d.decision === "accept" ? <Badge tone="ok" testId={`roll-decision-${rid}`}>Diterima</Badge> : <span className="text-[11px] text-[#9A9BA3]">—</span>;
+                    }
+                    return (
+                      <div className="min-w-[180px] space-y-1">
+                        <div className="inline-flex overflow-hidden rounded-md border border-[#E5E5EA] text-[11px] font-semibold">
+                          <button type="button" data-testid={`roll-accept-${rid}`}
+                            className={`inline-flex items-center gap-1 px-2 py-1 ${(dr.decision || d.decision) === "accept" ? "bg-[#E7F6EC] text-[#126E2C]" : "bg-white text-[#3C3C43]"}`}
+                            onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "accept", reason: "" } }))}><Check size={11} /> Terima</button>
+                          {canReject && <button type="button" data-testid={`roll-reject-${rid}`}
+                            className={`inline-flex items-center gap-1 border-l border-[#E5E5EA] px-2 py-1 ${dr.decision === "reject" ? "bg-[#FDECEC] text-[#A8221A]" : "bg-white text-[#3C3C43]"}`}
+                            onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "reject", reason: x[rid]?.reason || "" } }))}><X size={11} /> Tolak</button>}
+                        </div>
+                        {dr.decision === "reject" && (
+                          <input className="form-input !py-1 text-[11.5px]" placeholder="Alasan tolak (mis. kain sudah dipotong)"
+                            aria-label={`Alasan tolak roll ${nos[rid] || rid}`}
+                            data-testid={`roll-reject-reason-${rid}`} value={dr.reason || ""}
+                            onChange={(e) => setDraft((x) => ({ ...x, [rid]: { ...x[rid], reason: e.target.value } }))} />
+                        )}
+                      </div>
+                    );
+                  } },
+                ]} />
             </div>
           );
         })}

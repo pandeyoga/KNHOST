@@ -166,7 +166,7 @@ export default function DivisionsView({ currentUser, selectedEntity, section = "
         <div className="section-head"><h2>Divisi ({divisions.length})</h2></div>
         <div className="section-body">
           {pgDiv.toolbar}
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             data-testid="rnd-divisions-cards">
             {pgDiv.pageRows.map((d) => {
               const activeCard = filterDiv === d.id;

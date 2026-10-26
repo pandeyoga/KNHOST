@@ -27,14 +27,14 @@ export function DesignCard({ d, onOpen }) {
   const acc = ACC_STATUSES.includes(d.status);
   return (
     <button type="button" onClick={onOpen} data-testid={`design-card-${d.id}`}
-      className={`overflow-hidden rounded-lg border bg-white text-left transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6B219A]/40 ${d.on_hold ? "border-[#F2B48A]" : "border-[#E5E5EA]"}`}>
+      className={`overflow-hidden rounded-lg border bg-white text-left transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0058CC]/40 ${d.on_hold ? "border-[#F2B48A]" : "border-[#E5E5EA]"}`}>
       <div className="relative flex h-28 items-center justify-center bg-[#F5F5F7]">
         {cover ? <DesignImage src={designFileUrl(d.id, cover.id)} alt={d.title} data-testid={`design-cover-${d.id}`} className={`h-full w-full object-cover ${d.on_hold ? "opacity-70" : ""}`} loading="lazy" />
           : <span className="text-[10.5px] text-[#9A9BA3]">belum ada berkas</span>}
         <span className="absolute inset-x-1.5 top-1.5 flex flex-wrap items-start justify-between gap-1">
           <span className="flex flex-wrap gap-1"><RoundBadge design={d} testId={`design-round-${d.id}`} /><HoldBadge design={d} testId={`design-hold-${d.id}`} />{d.origin && d.origin !== "internal" && <OriginBadge design={d} testId={`design-origin-${d.id}`} />}</span>
           {acc && (
-            <span className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-[#6B219A]" data-testid={`design-final-${d.id}`}>
+            <span className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-[#0058CC]" data-testid={`design-final-${d.id}`}>
               final {fin.mockup_files ?? 0}/1 mockup · {fin.source_files ?? 0}/1 file asli
             </span>
           )}
@@ -83,7 +83,7 @@ export function ShowcaseCard({ g, onOpen }) {
   const prods = g.recommended_products || [];
   return (
     <button type="button" onClick={onOpen} data-testid={`gallery-card-${g.id}`}
-      className="section-card flex flex-col overflow-hidden !p-0 text-left transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6B219A]/40">
+      className="section-card flex flex-col overflow-hidden !p-0 text-left transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0058CC]/40">
       <div className="relative aspect-[4/3] bg-[#F2F3F5]">
         {cover ? <DesignImage src={designFileUrl(g.id, cover.id)} alt={g.title} className="h-full w-full object-cover" loading="lazy" />
           : <div className="flex h-full w-full flex-col items-center justify-center text-[#C7C9CF]"><ImageOff size={26} /><span className="mt-1 text-[11px]">Tanpa gambar</span></div>}
@@ -109,7 +109,7 @@ export function ShowcaseCard({ g, onOpen }) {
             .filter(Boolean).join(" · ") || "—"}
         </p>
         <div className="flex flex-wrap gap-1">
-          {(g.tags || []).slice(0, 4).map((t) => <span key={t} className="rounded bg-[#F1E9F7] px-1.5 py-0.5 text-[10px] text-[#6B219A]">{t}</span>)}
+          {(g.tags || []).slice(0, 4).map((t) => <span key={t} className="rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10px] text-[#0058CC]">{t}</span>)}
           {(g.tags || []).length > 4 && <span className="text-[10px] text-[#9A9BA3]">+{g.tags.length - 4}</span>}
         </div>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-1 pt-1.5 text-[10.5px]">
@@ -134,7 +134,7 @@ export function Kpi({ label, value, tone = "#1C1C1E", testId, onClick, active = 
   const Tag = onClick ? "button" : "div";
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick} data-testid={testId}
-      className={`rounded-lg border p-2 text-left ${active ? "border-[#6B219A] bg-[#F1E9F7]" : "border-[#EFF0F2] bg-[#FAFBFC]"} ${onClick ? "hover:border-[#6B219A]" : ""}`}>
+      className={`rounded-lg border p-2 text-left ${active ? "border-[#0058CC] bg-[#EAF2FF]" : "border-[#EFF0F2] bg-[#FAFBFC]"} ${onClick ? "hover:border-[#0058CC]" : ""}`}>
       <p className="text-[10.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
       <p className="text-[14px] font-bold tabular-nums leading-tight" style={{ color: value ? tone : "#8E8E93" }}>{value}</p>
     </Tag>

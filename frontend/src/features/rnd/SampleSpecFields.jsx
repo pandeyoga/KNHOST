@@ -80,7 +80,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
         <p className="mt-1 text-[10px] text-[#8E8E93]">Pilih induk → SKU lahir sebagai <b>varian</b> induk itu saat ACC. Tanpa induk → produk konsep mandiri.</p>
       </div>
 
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <L label="Jenis kain *">
           <KNSelect data-testid={`${testPrefix}-fabric`} className="field" value={sp.fabric_type}
             options={[{ value: "woven", label: "Woven (tenun)" }, { value: "knit", label: "Knit (rajut)" }]} onValueChange={(v) => setSpec("fabric_type", v)} />
@@ -108,7 +108,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
       {needDesign && (
         <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5" data-testid={`${testPrefix}-proofing`}>
           <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Desain / pattern &amp; kain dasar (proofing)</p>
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <L label="Desain / pattern * (ACC)">
               <KNSelect data-testid="sample-design" className="field" value={f.design_id} searchable
                 options={[{ value: "", label: "— pilih desain ACC —" },
@@ -128,7 +128,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
       {isHandfeel && (
         <div className="rounded-lg border border-[#EFF0F2] bg-white p-2.5" data-testid={`${testPrefix}-handfeel`}>
           <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Konstruksi kain (handfeel)</p>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             <L label="Nomor benang"><input className="field" data-testid={`${testPrefix}-yarn`} value={sp.yarn_count} onChange={(e) => setSpec("yarn_count", e.target.value)} placeholder="30s / 40s" /></L>
             <L label="Sistem benang">
               <KNSelect data-testid={`${testPrefix}-yarn-system`} className="field" value={sp.yarn_count_system}
@@ -144,7 +144,7 @@ export default function SampleSpecFields({ sp, setSp, catalog, setCatalog, f, se
         </div>
       )}
 
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         <L label="Target harga (Rp / satuan)"><input className="field" type="number" min="0" data-testid={`${testPrefix}-price`} value={sp.target_price} onChange={(e) => setSpec("target_price", e.target.value)} placeholder="45000" /></L>
         <L label="Catatan spesifikasi"><input className="field" data-testid={`${testPrefix}-notes`} value={sp.notes} onChange={(e) => setSpec("notes", e.target.value)} placeholder="mis. toleransi gramasi ±5%" /></L>
       </div>

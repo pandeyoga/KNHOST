@@ -108,7 +108,7 @@ function VisitsLog({ currentUser, selectedEntity }) {
         {/* Tabel kunjungan */}
         <div className="min-w-0">
           <div className="section-card mb-3">
-            <div className="section-body grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="section-body grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Dari</label>
                 <KNDatePicker data-testid="visits-date-from" value={dateFrom} onChange={setDateFrom} placeholder="Dari" /></div>
               <div><label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Sampai</label>

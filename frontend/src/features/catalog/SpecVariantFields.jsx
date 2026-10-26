@@ -160,7 +160,7 @@ export const SpecVariantFields = ({ initial, onChange, onInherit, mode = "create
     {loading && <p data-testid="spec-family-loading" role="status" className="text-xs text-blue-700">Memuat kombinasi induk…</p>}
     {error && <div role="alert"><p data-testid="spec-family-error" className="text-sm text-red-700">{error}</p>
       <button type="button" data-testid="spec-family-retry" className="secondary-button mt-2" onClick={() => setRetry(n => n + 1)}>Coba lagi</button></div>}
-    {family && <div className="grid gap-2 sm:grid-cols-2">{axes.map(a => <div key={a.key} className="text-xs font-semibold">
+    {family && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{axes.map(a => <div key={a.key} className="text-xs font-semibold">
       <span data-testid={`spec-axis-label-${a.key}`}>{a.label}</span>
       <KNSelect data-testid={`spec-axis-${a.key}`} aria-label={a.label} className="field mt-1" value={choices[a.key] || ""}
         disabled={!!initial?.productId} options={optionList(a)} onValueChange={v => pick(a.key, v)} />

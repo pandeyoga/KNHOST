@@ -54,7 +54,7 @@ export default function ReferenceGallery({ requestId, files = [], localFiles = [
           {previews.map((p, i) => (
             <figure key={p.url} className="group relative aspect-square overflow-hidden rounded-lg border border-dashed border-[#C9B3DB] bg-[#FBF7FE]" data-testid={`${testId}-local-${i}`}>
               <img src={p.url} alt={p.file.name} className="h-full w-full object-cover" />
-              <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1 text-[8.5px] font-bold text-[#6B219A]">baru</span>
+              <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1 text-[8.5px] font-bold text-[#0058CC]">baru</span>
               {canEdit && (
                 <button type="button" className="absolute right-1 top-1 hidden rounded bg-white/90 p-1 text-red-500 shadow group-hover:block"
                   data-testid={`${testId}-local-remove-${i}`} title="Buang" onClick={() => onRemove?.(null, i)}>

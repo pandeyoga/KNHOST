@@ -67,7 +67,7 @@ export default function SampleSpecPanel({ sample, canEdit, onChanged, types = []
           {canEdit && <button className="primary-button !py-1.5 text-[11px]" data-testid="sample-spec-complete-button" onClick={() => setModal("complete")}>Lengkapi spesifikasi</button>}
         </div>
       ) : (
-        <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-[11.5px] sm:grid-cols-2 lg:grid-cols-3" data-testid="sample-spec-summary">
+        <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 text-[11.5px] sm:grid-cols-2 lg:grid-cols-3" data-testid="sample-spec-summary">
           <Row k="Induk produk">{md.template?.name || (spec.template_id ? spec.template_id : "— produk konsep mandiri")}</Row>
           <Row k="Kombinasi varian">{variantText(spec.variant_attrs) || "—"}</Row>
           <Row k="Jenis kain">{fabricLabel(t.fabric_type) || "—"}</Row>

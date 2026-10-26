@@ -71,7 +71,7 @@ export default function RoundActionModal({ mode, sampleId, round, types, measure
             ) : (
               <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
                 <p className="mb-2 text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Hasil ukur · {typeLabel(typeCode, types)}</p>
-                <div className="grid gap-2.5 sm:grid-cols-3" data-testid="round-meas-fields">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3" data-testid="round-meas-fields">
                   {fields.map((key) => {
                     const meta = measurementMeta(key, measurements);
                     return (

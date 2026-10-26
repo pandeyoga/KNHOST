@@ -69,7 +69,7 @@ function BudgetSummary({ data }) {
 
 function CostForm({ f, set }) {
   return (
-    <div className="grid gap-2 rounded-xl border border-[#EFF0F2] p-3 sm:grid-cols-2" data-testid="mkt-cost-form">
+    <div className="grid grid-cols-1 gap-2 rounded-xl border border-[#EFF0F2] p-3 sm:grid-cols-2" data-testid="mkt-cost-form">
       <Field label="Tanggal keluar *"><KNDatePicker value={f.date} onChange={(v) => set("date", v)} clearable={false} data-testid="mkt-cost-date" /></Field>
       {/* UAT 24 Okt (audit UI tahap 2) — G5-67: input uang standar (dulu number bawaan dengan panah putar). */}
       <Field label="Nominal (Rp) *"><MoneyInput className="field w-full" value={f.amount} onChange={(v) => set("amount", v)} testId="mkt-cost-amount" placeholder="mis. 1.500.000" /></Field>

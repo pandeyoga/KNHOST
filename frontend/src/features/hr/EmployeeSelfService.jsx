@@ -104,7 +104,7 @@ function AttendanceClockCard() {
           {!today?.clock_in ? (
             <button data-testid="ess-clock-in-button" disabled={busy} onClick={() => clock("clock-in")} className="primary-button w-full justify-center"><LogIn size={14} /> {busy === "clock-in" ? "Memproses..." : "Clock In"}</button>
           ) : !today?.clock_out ? (
-            <button data-testid="ess-clock-out-button" disabled={busy} onClick={() => clock("clock-out")} className="primary-button w-full justify-center" style={{ background: "#6B219A" }}><LogOut size={14} /> {busy === "clock-out" ? "Memproses..." : "Clock Out"}</button>
+            <button data-testid="ess-clock-out-button" disabled={busy} onClick={() => clock("clock-out")} className="primary-button w-full justify-center"><LogOut size={14} /> {busy === "clock-out" ? "Memproses..." : "Clock Out"}</button>
           ) : (
             <p className="text-[11.5px] text-center text-[#1F9D55] font-semibold py-1.5" data-testid="ess-clock-done">✓ Absensi hari ini lengkap</p>
           )}
@@ -183,7 +183,7 @@ export default function EmployeeSelfService({ currentUser }) {
           {/* Identity header */}
           <div className="section-card !p-5" data-testid="ess-profile-card">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full grid place-items-center text-[18px] font-bold text-white" style={{ background: "linear-gradient(135deg,#0058CC,#6B219A)" }}>
+              <div className="h-14 w-14 rounded-full grid place-items-center text-[18px] font-bold text-white" style={{ background: "linear-gradient(135deg,#004099,#0058CC)" }}>
                 {(emp.name || "?").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
@@ -198,7 +198,7 @@ export default function EmployeeSelfService({ currentUser }) {
           </div>
 
           {/* Live attendance (H1) + Slip Gaji (H4) + Cuti & Lembur (H3) + KPI Saya (H5) */}
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
             <AttendanceClockCard />
             <MyPayslipCard />
             <MyLeaveCard />
@@ -206,7 +206,7 @@ export default function EmployeeSelfService({ currentUser }) {
           </div>
 
           {/* Details */}
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="section-card">
               <div className="section-head"><h2 className="text-[13px] font-bold">Data Kepegawaian</h2></div>
               <div className="section-body">

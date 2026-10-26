@@ -18,7 +18,7 @@ export default function LeaveRequestFields({ type, from, to, reason, onChange, t
       <label className="grid gap-1"><span className="field-label">Tipe <span className="req">*</span></span>
         <KNSelect data-testid={`${testPrefix}-type`} value={type} onValueChange={(v) => onChange("type", v)} className="field"
           options={LEAVE_TYPE_OPTIONS} /></label>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="grid gap-1"><span className="field-label">Dari <span className="req">*</span></span>
           <KNDatePicker data-testid={`${testPrefix}-from`} value={from} onChange={(v) => onChange("from", v)} /></div>
         <div className="grid gap-1"><span className="field-label">Sampai <span className="req">*</span></span>

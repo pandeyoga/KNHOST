@@ -127,7 +127,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
         </div>
 
         {/* Row: Headcount by dept + by type */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Karyawan per Departemen" right={<span className="text-[12px] text-[#6B6B73] flex items-center gap-1"><Building2 size={13} /> {hc.total ?? 0} karyawan</span>}>
             {loading ? <div className="h-44 bg-[#F5F5F7] rounded animate-pulse" />
               : byDept.length > 0 ? (
@@ -162,7 +162,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
         </div>
 
         {/* Row: Attendance breakdown + Payroll trend */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel title="Distribusi Kehadiran" right={<span className="text-[12px] text-[#6B6B73]">{att.total ?? 0} catatan</span>}>
             {loading ? <div className="h-44 bg-[#F5F5F7] rounded animate-pulse" />
               : attStatus.length > 0 ? (
@@ -199,7 +199,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
         </div>
 
         {/* Row: Overtime trend + Statutory & Turnover summary */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Panel title="Tren Lembur (6 bulan)" right={<span className="text-[12px] text-[#6B6B73] flex items-center gap-1"><Timer size={13} /> jam</span>}>
             {loading ? <div className="h-40 bg-[#F5F5F7] rounded animate-pulse" />
               : hasOt ? (

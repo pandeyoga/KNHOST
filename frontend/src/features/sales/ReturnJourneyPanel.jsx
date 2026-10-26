@@ -134,7 +134,7 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
             Sebab keluhan pelanggan
           </p>
           {canEdit ? (
-            <div className="mt-1 grid gap-2 sm:grid-cols-[220px_1fr_auto] sm:items-end">
+            <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-[220px_1fr_auto] sm:items-end">
               <label className="block">
                 <span className="field-label">Alasan (dari Master Data)</span>
                 <KNSelect data-testid="return-complaint-select" value={code}

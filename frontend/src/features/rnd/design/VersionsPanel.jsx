@@ -19,11 +19,11 @@ export default function VersionsPanel({ design }) {
         const isCur = v.version === design.version;
         return (
           <div key={v.version} data-testid={`design-version-${v.version}`}
-            className={`rounded-lg border p-3 ${isCur ? "border-[#6B219A] bg-[#FBF8FE]" : "border-[#EFF0F2] bg-white"}`}>
+            className={`rounded-lg border p-3 ${isCur ? "border-[#0058CC] bg-[#F5F9FF]" : "border-[#EFF0F2] bg-white"}`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="text-[12.5px] font-bold">{roundLabel(v.version)} <span className="font-mono text-[10px] text-[#8E8E93]">v{v.version}</span>
-                  {isCur && <span className="ml-1 rounded bg-[#6B219A] px-1.5 py-0.5 text-[9px] text-white">ronde berjalan</span>}
+                  {isCur && <span className="ml-1 rounded bg-[#0058CC] px-1.5 py-0.5 text-[9px] text-white">ronde berjalan</span>}
                   {v.acc && <span className="ml-1 rounded bg-[#1A7A3A] px-1.5 py-0.5 text-[9px] text-white">ACC FINAL</span>}</p>
                 <p className="text-[10.5px] text-[#6B6B73]">{v.revision_note ? <><b>Catatan revisi:</b> {v.revision_note}</> : (v.note || "—")} · {v.by} · {fmtAt(v.at)}</p>
               </div>

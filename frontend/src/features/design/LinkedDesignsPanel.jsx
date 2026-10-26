@@ -96,7 +96,7 @@ export default function LinkedDesignsPanel({ doc, canWork, onChanged, onError })
               className={`status-pill ${mode === "link" ? "pill-info" : "pill-muted"}`}><Link2 size={10} className="inline" /> Tautkan yang sudah ada</button>
           </div>
           {mode === "create" ? (
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
               <label className="block">
                 <span className="field-label">Judul desain</span>
                 <input data-testid="dsr-new-design-title" className="field" value={title} onChange={(e) => setTitle(e.target.value)}
@@ -113,7 +113,7 @@ export default function LinkedDesignsPanel({ doc, canWork, onChanged, onError })
               </p>
             </div>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
               <label className="block">
                 <span className="field-label">Desain yang masih berjalan & belum tertaut</span>
                 <KNSelect data-testid="dsr-link-design-select" value={pick} onValueChange={setPick} options={choices}

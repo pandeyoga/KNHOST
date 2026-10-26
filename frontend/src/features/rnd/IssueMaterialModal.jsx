@@ -35,7 +35,7 @@ export default function IssueMaterialModal({ onClose, onConfirm, busy, error = "
             options={rolls.map((r) => ({ value: r.id, label: `${r.roll_no} · ${r.product_name || r.product_id} · sisa ${formatQty(r.length_remaining)} ${r.unit || "meter"}` }))}
             onValueChange={setRollId} />
         </Field>
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <Field label="Jumlah diambil *">
             <input className="field" type="number" min="0" step="any" data-testid="issue-qty" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="3" />
           </Field>

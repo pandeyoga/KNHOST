@@ -280,7 +280,7 @@ export default function ReturnDetail({
         {/* R2 — QC retur lewat SPK per roll: layar ini menugaskan & melihat; pemeriksaan diisi di menu Kualitas. */}
         {canSeeGrade(currentUser) && (canInspect || fullView) && <ReturnSpkPanel ret={ret} currentUser={currentUser} onOpenDocument={onOpenDocument} onChanged={refetchReturn} />}
 
-        <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <div className="space-y-2">
             <ReturnRollsPanel ret={ret} items={detailRet.items || []} fullView={fullView}
               estimatedValue={enriched?.estimated_value}

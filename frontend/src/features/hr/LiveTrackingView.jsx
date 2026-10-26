@@ -186,7 +186,7 @@ export default function LiveTrackingView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
         {/* Daftar karyawan lapangan */}
         <div className="section-card">
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFF0F2]">
