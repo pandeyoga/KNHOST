@@ -12,7 +12,7 @@
 import { can } from "../../../config/roles";
 import { useState } from "react";
 import { ClipboardList, Palette, FlaskConical, Package, Layers, ChevronRight, FileStack, ShoppingBag, Tags, BadgeCheck, Boxes,
-  ScrollText, Droplet, Hand, Stamp, BarChart3, Images, LayoutTemplate, FolderTree, Ruler, FileSearch, Truck, SearchCheck, Route, UserCheck, ArrowLeft } from "lucide-react";
+  ScrollText, BarChart3, Images, LayoutTemplate, FolderTree, Ruler, FileSearch, Truck, SearchCheck, Route, UserCheck, ArrowLeft } from "lucide-react";
 import MobileShell from "../../mobile/MobileShell";
 import MobileAccountMenu from "../../mobile/MobileAccountMenu";
 import { notifLink } from "../../mobile/notifText";
@@ -37,9 +37,12 @@ const SUBS = [
 ];
 const FULL = [
   { nav: "rnd-hub", view: "rnd-specs", label: "Spesifikasi Produk", icon: ScrollText },
-  { nav: "rnd-hub", view: "rnd-labdip", label: "Labdip", icon: Droplet },
-  { nav: "rnd-hub", view: "rnd-handfeel", label: "Handfeel", icon: Hand },
-  { nav: "rnd-hub", view: "rnd-proofing", label: "Proofing", icon: Stamp },
+  // Fase 4 · R1 (D-24b HP) — tiga baris Labdip / Handfeel / Proofing (kini alias yang mendarat di layar yang sama) diringkas
+  // jadi SATU baris ke layar utamanya: label = tab menu desktop (`hubTabs` rnd-hub › "R&D Produk Baru"), mode Galeri
+  // dengan chip jenis "Semua" & tujuan "Semua" (preset alias `rnd-labdip` dkk. tanpa jenis). Istilah lama tetap terbaca di
+  // keterangan baris (K-13).
+  { nav: "rnd-hub", view: "rnd-samples", label: "R&D Produk Baru", desc: "Galeri sample: labdip · handfeel · proofing", icon: FlaskConical,
+    preset: { mode: "gallery", type: "", purpose: "all" } },
   { nav: "rnd-hub", view: "rnd-reports", label: "Laporan R&D", icon: BarChart3 },
   { nav: "designer-hub", view: "rnd-designs", label: "Desain & Pattern", icon: Images },
   { nav: "products-pricing", view: "product-templates", label: "Template Produk", icon: LayoutTemplate },
@@ -70,7 +73,7 @@ function MdMore({ user, entities, selectedEntity, onSelectEntity, sub, setSub, s
     return (
       <div className="space-y-2" data-testid={`m-md-sub-${sub}`}>
         <div className="flex items-center gap-2"><button type="button" className="m-subpage-back" onClick={() => setSub(null)} data-testid="m-md-sub-back"><ArrowLeft size={17} /> Kembali</button><span className="m-subpage-title">{SUB_TITLE[sub]}</span></div>
-        {sub === "pr" && <MobilePurchaseRequisitions focusId={subParam?.id} />}
+        {sub === "pr" && <MobilePurchaseRequisitions focusId={subParam?.id} selectedEntity={selectedEntity} />}
         {sub === "po" && <MobilePoWatch />}
         {sub === "pricelist" && <MobilePricelist selectedEntity={selectedEntity} />}
         {sub === "price-status" && <MobilePriceStatus />}
@@ -89,7 +92,8 @@ function MdMore({ user, entities, selectedEntity, onSelectEntity, sub, setSub, s
         </div>
         <div className="m-card px-3" data-testid="m-md-full-menu">
           <p className="pt-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Layar lengkap</p>
-          {FULL.filter((f) => !f.perm || can(user?.permissions, ...f.perm)).map((f) => <Row key={f.view} icon={f.icon} label={f.label} onClick={() => onOpenFull?.(f.nav, f.view)} testId={`m-md-full-${f.view}`} />)}
+          {FULL.filter((f) => !f.perm || can(user?.permissions, ...f.perm)).map((f) => <Row key={f.view} icon={f.icon} label={f.label} desc={f.desc}
+            onClick={() => (f.preset ? onOpenFull?.(f.nav, f.view, { preset: f.preset }) : onOpenFull?.(f.nav, f.view))} testId={`m-md-full-${f.view}`} />)}
         </div>
       </MobileAccountMenu>
     </div>

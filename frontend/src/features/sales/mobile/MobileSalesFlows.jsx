@@ -8,13 +8,15 @@
  */
 import AttachmentGallery from "../../../components/AttachmentThumb";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Camera, Check, MessageCircle, Phone, Plus, RotateCcw, Send, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, ClipboardPen, MapPin, MessageCircle, Phone, Plus, RotateCcw, Send, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
 import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
 import { odPhaseOf, PHASE_LABEL } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
 import KNSelect from "../../../components/KNSelect";
+import KNDatePicker from "../../../components/KNDatePicker";
+import FormModal from "../../../components/FormModal";
 
 export const errText = (e, fb) => {
   const d = e?.response?.data?.detail;
@@ -26,18 +28,6 @@ export const errText = (e, fb) => {
 const fmtDate = formatDate;   // 23 Okt — tanggal baku WIB (formatters)
 const waNumber = (p) => String(p || "").replace(/\D/g, "").replace(/^0/, "62");
 
-function Sheet({ title, onClose, children, footer, testId }) {
-  return (
-    <div className="fixed inset-0 z-[140] flex flex-col bg-[#F2F2F7]" data-testid={testId}>
-      <div className="m-subpage-head">
-        <button className="m-subpage-back" onClick={onClose} data-testid={`${testId}-close`}><ArrowLeft size={17} /> Batal</button>
-        <span className="m-subpage-title">{title}</span>
-      </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 pb-28">{children}</div>
-      {footer && <div className="fixed inset-x-0 bottom-0 border-t border-[#E5E5EA] bg-white p-3" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>{footer}</div>}
-    </div>
-  );
-}
 const Field = ({ label, req, children }) => (
   <label className="block"><span className="mb-1 block text-[11.5px] font-semibold text-[#4A4B53]">{label} {req && <span className="text-[#C0392B]">*</span>}</span>{children}</label>
 );
@@ -95,10 +85,14 @@ export function CustomerAddressSheet({ customer, onClose, onSaved }) {
     try { const r = await axios.post(`${API}/customers/${customer.id}/addresses`, { ...f, city: f.city || f.regency || "" }); onSaved?.(r.data); }
     catch (e) { setErr(errText(e, "Alamat gagal disimpan.")); } finally { setBusy(false); }
   };
+  // Fase 4 · R1 — lembar buatan sendiri (overlay layar penuh) → FormModal baku (layar penuh di HP, galat di kaki pop-up).
+  // Isian = semua isian alamat kirim server (`CustomerAddress`): label, penerima, HP, lokasi tervalidasi, alamat, utama.
+  // Desktop tidak punya form "tambah alamat kirim" terpisah (CustomerFormModal hanya alamat utama) — tidak ada selisih.
   return (
-    <Sheet title="Tambah Alamat Kirim" onClose={onClose} testId="m-address-form"
-      footer={<button className="primary-button w-full py-3" disabled={!valid || busy} onClick={save} data-testid="m-address-form-save">{busy ? "Menyimpan…" : "Simpan alamat"}</button>}>
-      <div className="m-card space-y-2.5 p-4">
+    <FormModal open onClose={onClose} title="Tambah Alamat Kirim" subtitle={customer.name} icon={MapPin} testId="m-address-form"
+      onSubmit={save} submitLabel={busy ? "Menyimpan…" : "Simpan alamat"} submitTestId="m-address-form-save"
+      submitDisabled={!valid} busy={busy} error={err}>
+      <div className="space-y-2.5">
         <Field label="Label alamat"><input className="field" value={f.label} onChange={set("label")} data-testid="m-address-form-label" /></Field>
         <Field label="Nama penerima" req><input className="field" value={f.recipient_name} onChange={set("recipient_name")} data-testid="m-address-form-recipient" /></Field>
         <Field label="No. HP penerima"><input className="field" inputMode="tel" value={f.phone} onChange={set("phone")} data-testid="m-address-form-phone" /></Field>
@@ -106,8 +100,7 @@ export function CustomerAddressSheet({ customer, onClose, onSaved }) {
         <Field label="Alamat lengkap" req><input className="field" value={f.address} onChange={set("address")} placeholder="Jalan, nomor, patokan" data-testid="m-address-form-address" /></Field>
         <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={f.is_primary} onChange={set("is_primary")} data-testid="m-address-form-primary" /> Jadikan alamat utama</label>
       </div>
-      {err && <div className="notice-bar danger text-xs" data-testid="m-address-form-error">{err}</div>}
-    </Sheet>
+    </FormModal>
   );
 }
 
@@ -123,16 +116,22 @@ export function CustomerFollowupSheet({ customer, orders = [], onClose, onSaved 
     try { const r = await axios.post(`${API}/customers/${customer.id}/followups`, { customer_id: customer.id, ...f }); onSaved?.(r.data); }
     catch (e) { setErr(errText(e, "Tindak lanjut gagal disimpan.")); } finally { setBusy(false); }
   };
+  // Fase 4 · R1 — FormModal baku (dulu lembar overlay buatan sendiri). Isian ≥ desktop (Customer360 "Catat Tindak Lanjut
+  // Penagihan": catatan, hasil, tindak lanjut berikutnya) + pesanan opsional; pilihan hasil kini berlabel "Hasil".
   return (
-    <Sheet title="Catat Tindak Lanjut" onClose={onClose} testId="m-followup-form"
-      footer={<button className="primary-button w-full py-3" disabled={!f.note.trim() || busy} onClick={save} data-testid="m-followup-form-save">{busy ? "Menyimpan…" : "Simpan tindak lanjut"}</button>}>
-      <div className="m-card space-y-2.5 p-4">
+    <FormModal open onClose={onClose} title="Catat Tindak Lanjut" subtitle={customer.name} icon={ClipboardPen} testId="m-followup-form"
+      onSubmit={save} submitLabel={busy ? "Menyimpan…" : "Simpan tindak lanjut"} submitTestId="m-followup-form-save"
+      submitDisabled={!f.note.trim()} busy={busy} error={err}>
+      <div className="space-y-2.5">
         <p className="text-[11.5px] m-muted">Jejak penagihan / kunjungan untuk <b>{customer.name}</b> — terlihat juga oleh finance & manajer.</p>
-        <div className="flex flex-wrap gap-1.5">
-          {OUTCOMES.map(([k, l]) => (
-            <button key={k} onClick={() => setF({ ...f, outcome: k })} data-testid={`m-followup-outcome-${k}`}
-              className={`h-9 rounded-full border px-3 text-[12px] font-semibold ${f.outcome === k ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`}>{l}</button>
-          ))}
+        <div role="group" aria-labelledby="m-followup-outcome-label">
+          <span id="m-followup-outcome-label" className="mb-1 block text-[11.5px] font-semibold text-[#4A4B53]">Hasil</span>
+          <div className="flex flex-wrap gap-1.5">
+            {OUTCOMES.map(([k, l]) => (
+              <button type="button" key={k} onClick={() => setF({ ...f, outcome: k })} data-testid={`m-followup-outcome-${k}`} aria-pressed={f.outcome === k}
+                className={`h-9 rounded-full border px-3 text-[12px] font-semibold ${f.outcome === k ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`}>{l}</button>
+            ))}
+          </div>
         </div>
         {orders.length > 0 && (
           <Field label="Untuk pesanan (opsional)">
@@ -141,10 +140,9 @@ export function CustomerFollowupSheet({ customer, orders = [], onClose, onSaved 
           </Field>
         )}
         <Field label="Catatan" req><textarea className="field" rows={3} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="Hasil pembicaraan, janji bayar, dll." data-testid="m-followup-note" /></Field>
-        <Field label="Tindak lanjut berikutnya"><input type="date" className="field" value={f.next_action_date} onChange={(e) => setF({ ...f, next_action_date: e.target.value })} data-testid="m-followup-date" /></Field>
+        <Field label="Tindak lanjut berikutnya"><KNDatePicker value={f.next_action_date} onChange={(v) => setF({ ...f, next_action_date: v || "" })} data-testid="m-followup-date" /></Field>
       </div>
-      {err && <div className="notice-bar danger text-xs" data-testid="m-followup-form-error">{err}</div>}
-    </Sheet>
+    </FormModal>
   );
 }
 

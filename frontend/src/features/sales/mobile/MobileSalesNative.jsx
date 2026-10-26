@@ -82,7 +82,8 @@ function MobileReturnCreate({ onBack, onDone, initialOrder = null }) {
   );
 }
 
-/** Pesanan khusus versi HP: daftar kartu + form ringkas (pelanggan, spesifikasi, target kirim). */
+/** Pesanan khusus versi HP: daftar kartu + form DESKTOP `CreateSpecialOrderForm` (fase 4 · R1: dicek setara — komponen
+ *  yang sama dengan layar Pesanan Khusus desktop, FormModal layar penuh di HP; tidak ada isian yang diringkas). */
 export function MobileSpecialOrders({ focusId = null }) {
   const [rows, setRows] = useState(null);
   const [create, setCreate] = useState(false);

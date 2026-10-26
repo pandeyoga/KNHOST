@@ -1,30 +1,43 @@
 /**
- * MobileMdProducts — master produk versi HP MD: cari, rincian + stok per gudang, ubah nama/harga dasar.
+ * MobileMdProducts — master produk versi HP MD: cari, rincian + stok per gudang, ubah SKU.
  * Diekstrak dari MobileMdViews.jsx tanpa perubahan isi (fase 3 · P7, batas 500 baris per berkas).
+ *
+ * Fase 4 · R1 — form HP "Ubah nama / harga dasar" (2 isian TANPA label) DIGANTI form desktop Katalog › "Ubah SKU"
+ * (`catalog/VariantEditor`): kode SKU (terkunci), nama varian, nama & warna versi supplier, harga jual dasar, status,
+ * produk unggulan (urutan · tampil sampai · label), deskripsi — semua berlabel. Induk + varian dibaca dari
+ * `/product-templates/{id}` SAMA dengan desktop, jadi isian harga = harga DASAR (dulu HP memakai `price` daftar
+ * `/products` yang bisa berupa harga efektif PT → tersimpan sebagai harga dasar). Sesudah simpan daftar dimuat ulang.
  */
 import ProductColorTriad from "../../../components/ProductColorTriad";
 import { useEffect, useMemo, useState } from "react";
-import { Package, Search } from "lucide-react";
+import { Package, Pencil, Search } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import ErrorNotice from "../../../components/ErrorNotice";
-import { errText } from "./MobileSalesFlows";
 import { Back, Chips, Notice, list } from "./mdMobileParts";
+import { VariantEditor } from "../../catalog/VariantEditor";
+import { catalogApi, catalogError } from "../../catalog/catalogApi";
 
 // Daftar ratusan varian dirender bertahap (bukan 283 baris sekaligus di HP).
 const PAGE = 40;
 
 function ProductDetail({ product, canEdit, onBack, onSaved }) {
   const [sb, setSb] = useState(null);
-  const [edit, setEdit] = useState(false);
-  const [f, setF] = useState({ name: product.name || "", price: product.price ?? "" });
+  const [edit, setEdit] = useState(null);   // { template, variant } — sama dengan desktop CatalogWorkspace
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => { axios.get(`${API}/products/${product.id}/stock-breakdown`).then((r) => setSb(r.data)).catch(() => setSb({})); }, [product.id]);
-  const save = async () => {
+  const openEdit = async () => {
     setBusy(true); setMsg(null);
-    try { const r = await axios.patch(`${API}/products/${product.id}`, { data: { name: f.name, price: Number(f.price) } }); setMsg({ ok: true, text: "Produk diperbarui." }); setEdit(false); onSaved?.(r.data); }
-    catch (e) { setMsg({ ok: false, text: errText(e, "Gagal menyimpan produk.") }); } finally { setBusy(false); }
+    try {
+      const fam = product.template_id ? await catalogApi.detail(product.template_id) : null;
+      const variant = (fam?.variants || []).find((v) => v.id === product.id);
+      const basePrice = product.global_price ?? product.price;
+      setEdit({
+        template: fam || { name: product.name, base_price: basePrice, description: product.description || "" },
+        variant: variant || { ...product, price: basePrice },
+      });
+    } catch (e) { setMsg({ ok: false, text: catalogError(e) }); } finally { setBusy(false); }
   };
   const bal = sb?.balances || sb?.warehouses || [];
   return (
@@ -37,17 +50,16 @@ function ProductDetail({ product, canEdit, onBack, onSaved }) {
         <p className="text-[11.5px] m-muted">{product.sku} · {product.category || "-"} · {product.fabric_type || ""}</p>
         <p className="mt-1 text-[16px] font-bold tabular-nums" data-testid="m-md-product-price">{formatCurrency(product.price)} <span className="text-[11px] font-normal m-muted">/ {product.base_unit}</span></p>
         <p className="text-[11.5px]">Tersedia {formatQty(product.available_qty)} {product.base_unit}</p>
-        {canEdit && !edit && <button className="secondary-button mt-2 w-full py-2.5 text-[12px]" onClick={() => setEdit(true)} data-testid="m-md-product-edit">Ubah nama / harga dasar</button>}
-        {edit && (
-          <div className="mt-2 space-y-2" data-testid="m-md-product-form">
-            <input className="field" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} data-testid="m-md-product-form-name" />
-            <input type="number" inputMode="decimal" className="field" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} data-testid="m-md-product-form-price" />
-            <p className="text-[11px] m-muted">Perubahan harga dasar tercatat di audit; harga per pelanggan/PT tetap lewat daftar harga.</p>
-            <div className="grid grid-cols-2 gap-2"><button className="secondary-button py-2.5" onClick={() => setEdit(false)} data-testid="m-md-product-form-cancel">Batal</button><button className="primary-button py-2.5" disabled={busy || !f.name.trim() || !(Number(f.price) >= 0)} onClick={save} data-testid="m-md-product-form-save">Simpan</button></div>
-          </div>
-        )}
+        {canEdit && (<>
+          <button className="secondary-button mt-2 flex w-full items-center justify-center gap-1.5 py-2.5 text-[12px]" disabled={busy} onClick={openEdit} data-testid="m-md-product-edit">
+            <Pencil size={13} /> {busy ? "Memuat…" : "Ubah SKU"}
+          </button>
+          <p className="mt-1 text-[11px] m-muted">Perubahan harga dasar tercatat di audit; harga per pelanggan/PT tetap lewat daftar harga.</p>
+        </>)}
       </div>
       <Notice msg={msg} testId="m-md-product-msg" />
+      {edit && <VariantEditor template={edit.template} product={edit.variant} onClose={() => setEdit(null)}
+        onSaved={async () => { setEdit(null); setMsg({ ok: true, text: "SKU tersimpan." }); await onSaved?.(); }} />}
       <div className="m-card p-3" data-testid="m-md-product-stock">
         <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Stok per gudang</p>
         {sb === null && <p className="text-xs m-muted">Memuat…</p>}
@@ -65,11 +77,12 @@ export function MobileMdProducts({ canEdit }) {
   const [sel, setSel] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
   const [limit, setLimit] = useState(PAGE);
-  const load = () => axios.get(`${API}/products`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
+  const load = () => axios.get(`${API}/products`).then((r) => { const fresh = list(r.data); setRows(fresh); return fresh; })
+    .catch((e) => { setRows([]); setLoadErr(e); return null; });
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setLimit(PAGE); }, [q, cat]);
   const cats = useMemo(() => [...new Set((rows || []).map((p) => p.category).filter(Boolean))], [rows]);
-  if (sel) return <ProductDetail product={sel} canEdit={canEdit} onBack={() => setSel(null)} onSaved={(p) => { setSel((c) => ({ ...c, ...p })); setRows((r) => r.map((x) => (x.id === p.id ? { ...x, ...p } : x))); }} />;
+  if (sel) return <ProductDetail product={sel} canEdit={canEdit} onBack={() => setSel(null)} onSaved={async () => { const p = ((await load()) || []).find((x) => x.id === sel.id); if (p) setSel(p); }} />;
   const shown = (rows || []).filter((p) => (!cat || p.category === cat) && (!q || `${p.name} ${p.sku}`.toLowerCase().includes(q.toLowerCase())));
   return (
     <div className="space-y-2" data-testid="m-md-products">

@@ -41,7 +41,7 @@ function HistoryCard({ a }) {
 }
 
 /** Koreksi & Amandemen versi HP: pilih pesanan → koreksi; riwayat usulan beserta statusnya. */
-export default function MobileAmendments({ orders = [], onRefresh }) {
+export default function MobileAmendments({ orders = [], user, onRefresh }) {
   const [tab, setTab] = useState("new");
   const [rows, setRows] = useState(null);
   const [q, setQ] = useState("");
@@ -93,7 +93,7 @@ export default function MobileAmendments({ orders = [], onRefresh }) {
           : rows.length === 0 ? <p className="py-8 text-center text-[12px] m-muted" data-testid="m-amd-history-empty">Belum ada koreksi.</p>
             : rows.map((a) => <HistoryCard key={a.id} a={a} />)
       )}
-      {sel && <MobileAmendSheet order={sel} onClose={close} />}
+      {sel && <MobileAmendSheet order={sel} user={user} onClose={close} />}
     </div>
   );
 }

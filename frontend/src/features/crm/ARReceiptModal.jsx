@@ -1,17 +1,26 @@
 /**
  * ARReceiptModal (EPIC3B) — Catat penerimaan pembayaran customer + alokasi ke order.
  * POST /api/ar-receipts. Mode Otomatis (FIFO) atau Manual (per order).
+ *
+ * Fase 4 · R1 — pop-up baku `FormModal` (dulu `.modal-card` buatan sendiri): layar penuh di HP (≤ 640 px), kepala &
+ * tombol Simpan tetap terlihat, galat simpan tampil di kaki pop-up. Form ini juga dipakai aplikasi HP Sales
+ * (`sales/mobile/MobileArReceipt`) — keputusan pemilik: form input HP = form desktop (tanggal terima, deposit,
+ * mode alokasi, selisih bayar). Alur khusus HP diteruskan lewat props, bukan dengan memangkas isian:
+ *   · `offline`  — simpan lewat antrean offline HP (`offlinePost`, kunci idempotensi sama) bila sinyal putus.
+ *   · `testId`   — akar pop-up (bawaan `ar-receipt-modal`; isian tetap ber-testid `ar-receipt-*`).
+ * `onDone(pesan, kwitansi)` — argumen kedua baru (data kwitansi dari server; `null` bila masuk antrean offline).
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { useEscapeClose } from "@/utils/escapeLayers";
-import { X, Wallet, Scale } from "lucide-react";
+import { Wallet, Scale } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import { formatCurrency } from "../../utils/formatters";
+import { apiErrorText } from "../../utils/apiError";
+import { offlinePost } from "../../utils/offlineQueue";
 // FASE G-3 — selisih pembayaran: setiap kurang/lebih bayar wajib punya keputusan berlabel.
 import PaymentVarianceDialog from "../finance/payments/PaymentVarianceDialog";
 import { assessVariance, directionMeta, varianceMeta } from "../finance/payments/paymentApi";
@@ -22,15 +31,18 @@ const METHODS = [
   { value: "giro", label: "Giro / Cek" },
   { value: "qris", label: "QRIS" },
 ];
+const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
 // Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
 function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 
-export default function ARReceiptModal({ customerId, customerName, preselectOrderId, onClose, onDone, onError }) {
+export default function ARReceiptModal({ customerId, customerName, preselectOrderId, onClose, onDone, onError,
+  offline = false, testId = "ar-receipt-modal" }) {
   const [openOrders, setOpenOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const newKey = () => (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
   const [requestId, setRequestId] = useState(newKey);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [mode, setMode] = useState("auto"); // auto (FIFO) | manual
   const [amount, setAmount] = useState("");
@@ -39,7 +51,6 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const [notes, setNotes] = useState("");
   const [alloc, setAlloc] = useState({}); // order_id -> amount
   const [busy, setBusy] = useState(false);
-  useEscapeClose(true, onClose, busy);
   const [deposit, setDeposit] = useState(0);
   const [useDeposit, setUseDeposit] = useState(false);
   const [depositAmt, setDepositAmt] = useState("");
@@ -70,9 +81,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
         const total = list.reduce((s, o) => s + Number(o.outstanding || 0), 0);
         setAmount(String(total));
       }
-      setError("");
+      setLoadError("");
     } catch (e) {
-      setError(e.response?.data?.detail || "Gagal memuat order terbuka.");
+      setLoadError(apiErrorText(e, "Gagal memuat order terbuka."));
     } finally { setLoading(false); }
   }, [customerId, preselectOrderId]);
 
@@ -129,37 +140,49 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     const vp = vpayload || variance;
     // FASE G-3 — kalau uangnya tidak pas, keputusannya diambil DULU (tidak ada yang senyap).
     if (assessment?.needs_decision && !vp) { setShowVariance(true); return; }
-    setBusy(true);
+    const body = {
+      customer_id: customerId,
+      amount: effectiveAmount,
+      method,
+      receipt_date: new Date(date).toISOString(),
+      notes,
+      use_deposit_amount: depositUse,
+    };
+    if (vp) body.variance = vp;
+    if (mode === "manual") {
+      body.allocations = Object.entries(alloc)
+        .filter(([, v]) => Number(v) > 0)
+        .map(([order_id, v]) => ({ order_id, amount: Number(v) }));
+      if (body.allocations.length === 0) { setError("Isi alokasi minimal satu order."); return; }
+    }
+    setBusy(true); setError("");
     try {
-      const body = {
-        customer_id: customerId,
-        amount: effectiveAmount,
-        method,
-        receipt_date: new Date(date).toISOString(),
-        notes,
-        use_deposit_amount: depositUse,
-      };
-      if (vp) body.variance = vp;
-      if (mode === "manual") {
-        body.allocations = Object.entries(alloc)
-          .filter(([, v]) => Number(v) > 0)
-          .map(([order_id, v]) => ({ order_id, amount: Number(v) }));
-        if (body.allocations.length === 0) { setError("Isi alokasi minimal satu order."); setBusy(false); return; }
+      let data;
+      if (offline) {
+        // HP — sinyal putus: kwitansi masuk antrean HP dengan kunci yang SAMA (dikirim sekali saat online).
+        const r = await offlinePost(`${API}/ar-receipts`, body,
+          { idempotencyKey: requestId, label: `Kwitansi ${customerName} ${formatCurrency(totalFunds)}` });
+        if (r.queued) {
+          onDone?.("Offline — kwitansi tersimpan di HP, dikirim saat sinyal kembali (tanpa dobel).", null);
+          return;
+        }
+        data = r.data;
+      } else {
+        // L02 LN-023-T03 — satu kunci per dialog: klik ganda / retry jaringan tidak membuat kwitansi dobel.
+        data = (await axios.post(`${API}/ar-receipts`, body, { headers: { "Idempotency-Key": requestId } })).data;
       }
-      // L02 LN-023-T03 — satu kunci per dialog: klik ganda / retry jaringan tidak membuat kwitansi dobel.
-      const r = await axios.post(`${API}/ar-receipts`, body, { headers: { "Idempotency-Key": requestId } });
-      const v = r.data?.variance || {};
+      const v = data?.variance || {};
       const extra = v.decision_number
         ? ` Selisih diputus: ${v.reason_label || v.decision_kind} (${v.decision_number}).`
         : (v.needs_decision
           ? ` Selisihnya masuk antrean Selisih Bayar untuk diputus.${
             v.decision_error ? ` Catatan: ${v.decision_error}` : ""}`
           : "");
-      onDone?.(`Pembayaran ${r.data.number} (${formatCurrency(r.data.applied_total ?? r.data.amount)}) dicatat untuk ${customerName}.${extra}`);
+      onDone?.(`Pembayaran ${data?.number || ""} (${formatCurrency(data?.applied_total ?? data?.amount)}) dicatat untuk ${customerName}.${extra}`, data);
     } catch (e) {
       // Respons gagal (4xx) ikut tersimpan pada kunci — percobaan berikutnya memakai kunci baru.
       if (e.response) setRequestId(newKey());
-      const msg = e.response?.data?.detail || "Gagal mencatat pembayaran.";
+      const msg = apiErrorText(e, "Gagal mencatat pembayaran.");
       setError(msg); onError?.(msg);
     } finally { setBusy(false); }
   }
@@ -168,23 +191,45 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     ? "Tunai → masuk Kas Kecil (per entitas)."
     : "Transfer/Giro/QRIS → masuk Kas Besar (bank).";
 
-  return (
-    <div className="modal-overlay" data-testid="ar-receipt-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card" style={{ maxWidth: 560, width: "94vw" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2]">
-          <div className="flex items-center gap-2"><Wallet size={16} className="text-[#0058CC]" /><h2 className="text-[14px] font-bold">Catat Pembayaran · {customerName}</h2></div>
-          <button onClick={onClose} className="icon-button" data-testid="ar-receipt-close"><X size={16} /></button>
-        </div>
-        <div className="p-4 space-y-3 max-h-[78vh] overflow-y-auto">
-          <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="ar-receipt-error" />
+  const footer = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="min-w-0 text-[12px]">
+        <span className="text-[#6B6B73]">Total dibayar: </span>
+        <span data-testid="ar-receipt-total" className="font-bold tabular-nums text-[#1B7F4B]">{formatCurrency(totalFunds)}</span>
+        {depositUse > 0 && <span className="text-[10.5px] text-[#6B6B73] ml-1">(kas {formatCurrency(effectiveAmount)} + deposit {formatCurrency(depositUse)})</span>}
+        {assessment?.direction && assessment.direction !== "none" && (
+          <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+            style={{ background: directionMeta(assessment.direction).bg,
+              color: directionMeta(assessment.direction).fg }}
+            data-testid="ar-receipt-variance-badge">
+            {directionMeta(assessment.direction).label}
+          </span>
+        )}
+      </div>
+      <div className="ml-auto flex gap-2">
+        <button type="button" onClick={onClose} className="secondary-button" disabled={busy} data-testid="ar-receipt-cancel">Batal</button>
+        <button type="button" data-testid="ar-receipt-submit" disabled={busy || totalFunds <= 0} onClick={() => submit()} className="primary-button">
+          {busy ? "Menyimpan..." : "Simpan Pembayaran"}
+        </button>
+      </div>
+    </div>
+  );
 
-          <div className="grid grid-cols-2 gap-2">
+  return (
+    <>
+      <FormModal open onClose={onClose} title={`Catat Pembayaran · ${customerName || ""}`} icon={Wallet} size="md"
+        testId={testId} busy={busy || showVariance} error={error} footer={footer}>
+        {/* `busy` saat dialog selisih terbuka: Esc / klik latar tidak menutup form di bawahnya (isian tidak hilang). */}
+        <div className="space-y-3">
+          <ErrorNotice message={loadError} onRetry={load} onDismiss={() => setLoadError("")} testId="ar-receipt-error" />
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Metode</label>
+              <label className={LABEL}>Metode</label>
               <KNSelect data-testid="ar-receipt-method" className="field" value={method} onValueChange={setMethod} options={METHODS} />
             </div>
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tanggal</label>
+              <label className={LABEL}>Tanggal</label>
               <KNDatePicker data-testid="ar-receipt-date" value={date} onChange={setDate} clearable={false} />
             </div>
           </div>
@@ -205,14 +250,14 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
             </div>
           )}
 
-          <div className="tab-bar">
-            <button data-testid="ar-receipt-mode-auto" className={`tab-button ${mode === "auto" ? "active" : ""}`} onClick={() => setMode("auto")}>Otomatis (FIFO)</button>
-            <button data-testid="ar-receipt-mode-manual" className={`tab-button ${mode === "manual" ? "active" : ""}`} onClick={() => setMode("manual")}>Manual per Pesanan</button>
+          <div className="tab-bar" role="group" aria-label="Mode alokasi">
+            <button type="button" data-testid="ar-receipt-mode-auto" aria-pressed={mode === "auto"} className={`tab-button ${mode === "auto" ? "active" : ""}`} onClick={() => setMode("auto")}>Otomatis (FIFO)</button>
+            <button type="button" data-testid="ar-receipt-mode-manual" aria-pressed={mode === "manual"} className={`tab-button ${mode === "manual" ? "active" : ""}`} onClick={() => setMode("manual")}>Manual per Pesanan</button>
           </div>
 
           {mode === "auto" ? (
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Jumlah Diterima</label>
+              <label className={LABEL}>Jumlah Diterima</label>
               <MoneyInput testId="ar-receipt-amount" className="field" value={amount} onChange={(v) => setAmount(v)} placeholder="0" />
               <p className="text-[10.5px] text-[#9A9BA3] mt-1">Dialokasikan otomatis ke pesanan terbuka tertua lebih dulu.</p>
             </div>
@@ -231,12 +276,18 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
                 {openOrders.map((o) => (
                   <div key={o.order_id} data-testid={`ar-receipt-order-${o.order_id}`} className="flex items-center gap-2 px-3 py-2 text-[12px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[#0058CC]">{o.number}</p>
+                      <p className="font-semibold text-[#0058CC]">
+                        {o.number}
+                        {/* Pesanan asal (dibuka dari SO / HP) ditandai — dulu hanya di form HP. */}
+                        {preselectOrderId && o.order_id === preselectOrderId && (
+                          <span className="ml-1 rounded bg-[#EAF2FF] px-1 text-[10px] font-semibold" data-testid="ar-receipt-order-focus">dibuka</span>
+                        )}
+                      </p>
                       <p className="text-[10px] text-[#6B6B73] tabular-nums">Belum Lunas {formatCurrency(o.outstanding)}</p>
                     </div>
                     {mode === "manual" ? (
                       <MoneyInput testId={`ar-receipt-alloc-${o.order_id}`} className="field w-36 py-1 text-[12px]"
-                        value={alloc[o.order_id] ?? ""} placeholder="0"
+                        value={alloc[o.order_id] ?? ""} placeholder="0" aria-label={`Alokasi ke ${o.number}`}
                         onChange={(v) => setAllocFor(o.order_id, v, o.outstanding)} />
                     ) : (
                       <span className="text-[11px] text-[#9A9BA3] tabular-nums">{formatCurrency(o.outstanding)}</span>
@@ -248,7 +299,7 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
           </div>
 
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Catatan</label>
+            <label className={LABEL}>Catatan</label>
             <input data-testid="ar-receipt-notes" className="field" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="No. referensi / bank..." />
           </div>
 
@@ -301,30 +352,8 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
               )}
             </div>
           )}
-
-          <div className="flex items-center justify-between pt-1">
-            <div className="text-[12px]">
-              <span className="text-[#6B6B73]">Total dibayar: </span>
-              <span data-testid="ar-receipt-total" className="font-bold tabular-nums text-[#1B7F4B]">{formatCurrency(totalFunds)}</span>
-              {depositUse > 0 && <span className="text-[10.5px] text-[#6B6B73] ml-1">(kas {formatCurrency(effectiveAmount)} + deposit {formatCurrency(depositUse)})</span>}
-              {assessment?.direction && assessment.direction !== "none" && (
-                <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-                  style={{ background: directionMeta(assessment.direction).bg,
-                    color: directionMeta(assessment.direction).fg }}
-                  data-testid="ar-receipt-variance-badge">
-                  {directionMeta(assessment.direction).label}
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={onClose} className="secondary-button">Batal</button>
-              <button data-testid="ar-receipt-submit" disabled={busy || totalFunds <= 0} onClick={() => submit()} className="primary-button">
-                {busy ? "Menyimpan..." : "Simpan Pembayaran"}
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
+      </FormModal>
 
       {showVariance && assessment && (
         <PaymentVarianceDialog assessment={assessment} reasons={reasons} busy={busy}
@@ -336,6 +365,6 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
             submit(payload);
           }} />
       )}
-    </div>
+    </>
   );
 }

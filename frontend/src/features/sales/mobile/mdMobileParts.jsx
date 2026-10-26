@@ -28,5 +28,4 @@ export const Field = ({ label, req, hint, children }) => (
     {hint ? <span className="block text-[10.5px] font-normal text-[#8E8E93]">{hint}</span> : null}
   </label>
 );
-export const FormHead = ({ title }) => <p className="px-1 text-[15px] font-bold" data-testid="m-form-title">{title}</p>;
 export const Notice = ({ msg, testId }) => (msg ? <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid={testId}>{msg.text}</div> : null);

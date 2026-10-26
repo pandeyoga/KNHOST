@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, PackageX, ChevronDown, FileEdit, ClipboardCheck, CheckCircle2, PackageSearch, Wallet, RotateCcw } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { StagePill, SubStatusChips } from "../../../components/SoStatusBadges";
-import { isClosedSo, visibleSubs } from "../../orders/soStatusView";
+import { hasPartialBackorder, isBackorderSo, isClosedSo, visibleSubs } from "../../orders/soStatusView";
 import { roleIs } from "../../../config/roles";
 
 const FILTERS = [
@@ -111,6 +111,16 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[12.5px] font-bold text-[#0058CC]">{o.number}</span>
                       <StagePill order={o} testId={`mobile-order-stage-${o.id}`} />
+                      {/* Fase 4 · R1 — sama dengan daftar Pesanan desktop (R5, keputusan pemilik): "Backorder" = status Menunggu stok
+                          SAJA; SO hidup di tahap lain yang bersisa kurang stok = "Sebagian menunggu stok"; SO tutup tanpa chip. */}
+                      {isBackorderSo(o) && (
+                        <span data-testid={`mobile-order-backorder-chip-${o.id}`}
+                          className="rounded-sm bg-[#FFF1EA] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#B23B14]">Backorder</span>
+                      )}
+                      {hasPartialBackorder(o) && (
+                        <span data-testid={`mobile-order-partial-stock-chip-${o.id}`}
+                          className="rounded-sm bg-[#FFF7EF] px-1 py-0.5 text-[10px] font-semibold text-[#8C4A00]">Sebagian menunggu stok</span>
+                      )}
                     </div>
                     <p className="mt-0.5 truncate text-[11.5px] text-[#3C3C43]">{o.customer_name}</p>
                     {/* UAT 24 Okt (audit UI tahap 2) — G2-20: SO batal tidak lagi "Dibatalkan" dua kali + "Belum bayar". */}
@@ -147,7 +157,8 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                         {o.release?.requested && o.release?.hold && (
                           <button className="primary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" disabled={busy === o.id} onClick={() => doRelease(o)} data-testid={`mobile-order-release-${o.id}`}><CheckCircle2 size={14} /> {busy === o.id ? "Memproses…" : "Lepas ke gudang"}</button>
                         )}
-                        {(o.has_backorder || o.status === "waiting_stock") && (
+                        {/* Fase 4 · R1 (keputusan pemilik R5) — helper yang sama dengan layar Pesanan desktop, bukan `has_backorder` mentah. */}
+                        {(isBackorderSo(o) || hasPartialBackorder(o)) && (
                           <button className="secondary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setFulfill(o)} data-testid={`mobile-order-fulfill-${o.id}`}><PackageSearch size={14} /> Keputusan pemenuhan</button>
                         )}
                       </div>
@@ -185,12 +196,12 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
           })}
         </div>
       )}
-      {amend && <MobileAmendSheet order={amend} onClose={(done) => { setAmend(null); if (done) onRefresh?.(); }} />}
+      {amend && <MobileAmendSheet order={amend} user={user} onClose={(done) => { setAmend(null); if (done) onRefresh?.(); }} />}
       {verify && <VerifyOrderDialog orderId={verify.id} orderNumber={verify.number} customerName={verify.customer_name}
         onClose={() => setVerify(null)} onVerified={(m) => { setVerify(null); flash(true, m); }} />}
       {fulfill && <FulfillmentDecisionDialog orderId={fulfill.id} orderNumber={fulfill.number} customerName={fulfill.customer_name}
         onClose={() => setFulfill(null)} onDecided={(m) => { setFulfill(null); flash(true, m); }} />}
-      {pay && <MobileArReceipt customer={pay} onClose={() => setPay(null)} onDone={(r) => { setPay(null); flash(true, `Kwitansi ${r?.number || ""} tersimpan.`); }} />}
+      {pay && <MobileArReceipt customer={pay} onClose={() => setPay(null)} onDone={(m) => { setPay(null); flash(true, m || "Kwitansi tersimpan."); }} />}
     </div>
   );
 }

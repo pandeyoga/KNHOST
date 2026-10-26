@@ -21,25 +21,28 @@
  *    Tombol yang "berhasil" tanpa efek apa pun adalah tombol palsu.
  * 3. Setelah terkirim, layar menyatakan dengan jelas apakah koreksi langsung
  *    diterapkan atau menunggu persetujuan siapa — bukan sekadar "tersimpan".
+ *
+ * Fase 4 · R1 — pop-up baku `FormModal` (dulu `.modal-card` ×2 buatan sendiri): layar penuh di HP, kepala & tombol
+ * Ajukan tetap terlihat. Form yang SAMA dipakai aplikasi HP Sales (`sales/mobile/MobileAmendSheet`) — keputusan
+ * pemilik: form input HP = form desktop (HP kini juga punya diskon tingkat pesanan & tautan bukti). Alur khusus HP
+ * lewat props: `autoReason` (label alasan dipilih otomatis dari jenis perubahan, tetap bisa diganti) dan `testId`
+ * (akar pop-up; isian tetap `amd-*`). Baris dokumen diekstrak ke `AmendmentItemRows.jsx`.
  */
-import MoneyInput from "../../../components/MoneyInput";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, CheckCircle2, ExternalLink, FileEdit, Link2, Loader2, Plus,
-  RotateCcw, Trash2, XCircle,
+  AlertTriangle, CheckCircle2, ExternalLink, FileEdit, Link2, Loader2, Plus, Trash2,
 } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import FormModal from "../../../components/FormModal";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { openConfig } from "../../settings/config/configDeepLink";
 import AmendmentImpactCard from "./AmendmentImpactCard";
+import AmendmentItemRows, { AMD_FIELDS, EPS, autoReasonFor, clampPct } from "./AmendmentItemRows";
 import {
   errText, listReasons, previewAmendment, proposeAmendment, statusMeta,
 } from "./amendmentApi";
 
-const EPS = 0.0001;
-const clampPct = (v) => Math.min(Math.max(Number(v) || 0, 0), 100);
-const nonNeg = (v) => Math.max(Number(v) || 0, 0);
+const LABEL = "block text-[10.5px] font-semibold text-[#6B6B73] mb-1";
 
 function buildDraft(order) {
   return (order.items || []).map((it) => ({
@@ -58,11 +61,50 @@ function buildDraft(order) {
   }));
 }
 
-export default function AmendmentProposeModal({ order, currentUser, onClose, onDone }) {
+/** Hasil pengajuan — menyatakan jelas: langsung diterapkan atau menunggu persetujuan siapa. */
+function AmendmentResult({ result, onClose, testId }) {
+  const meta = statusMeta(result.status);
+  const waiting = result.status === "pending_approval";
+  return (
+    <FormModal open onClose={onClose} testId={testId} icon={CheckCircle2} size="md"
+      title={`Amandemen ${result.number}`} subtitle={`${result.doc_number || ""} · ${result.reason_label || ""}`}
+      footer={(
+        <div className="flex justify-end">
+          <button type="button" className="primary-button" data-testid="amd-result-done" onClick={onClose}>Selesai</button>
+        </div>
+      )}>
+      <div className="space-y-2.5" data-testid="amd-result">
+        <span data-testid="amd-result-status" className="inline-block rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
+          style={{ background: meta.bg, color: meta.fg }}>
+          {meta.label}
+        </span>
+        <p data-testid="amd-result-message" className="text-[12px] leading-relaxed text-[#3C3C43]">
+          {waiting
+            ? `Usulan terkirim dan MENUNGGU persetujuan ${result.required_role || "manager"}. Nilai dokumen belum berubah sampai keputusan keluar.`
+            : `Koreksi sudah diterapkan (${result.method_label}). Dampak ${formatCurrency(Math.abs(Number(result.impact?.delta || 0)))}.`}
+        </p>
+        {(result.result_refs || []).length > 0 && (
+          <div data-testid="amd-result-refs" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5 space-y-1">
+            <p className="text-[10px] font-bold uppercase text-[#6B6B73]">Dokumen yang dihasilkan</p>
+            {(result.result_refs || []).map((r, i) => (
+              <p key={i} className="text-[11px] text-[#3C3C43]">
+                <b className="text-[#0058CC]">{r.doc_number}</b> · {r.doc_type} {r.note ? `· ${r.note}` : ""}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    </FormModal>
+  );
+}
+
+export default function AmendmentProposeModal({ order, currentUser, onClose, onDone, autoReason = false,
+  testId = "amd-propose-modal" }) {
   const origOrderDisc = Number(order.order_discount_percent || 0);
 
   const [reasons, setReasons] = useState([]);
   const [reasonCode, setReasonCode] = useState("");
+  const [manualReason, setManualReason] = useState(false);
   const [rows, setRows] = useState(() => buildDraft(order));
   const [orderDisc, setOrderDisc] = useState(origOrderDisc);
   const [note, setNote] = useState("");
@@ -76,6 +118,7 @@ export default function AmendmentProposeModal({ order, currentUser, onClose, onD
   const [submitErr, setSubmitErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const errRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -89,7 +132,7 @@ export default function AmendmentProposeModal({ order, currentUser, onClose, onD
   const changes = useMemo(() => {
     const out = [];
     for (const r of rows) {
-      for (const f of ["quantity", "price", "discount_percent"]) {
+      for (const f of AMD_FIELDS) {
         if (Math.abs(Number(r[f] || 0) - Number(r.orig[f] || 0)) > EPS) {
           out.push({ product_id: r.product_id, field: f, to: Number(r[f] || 0) });
         }
@@ -100,6 +143,11 @@ export default function AmendmentProposeModal({ order, currentUser, onClose, onD
 
   const discChanged = Math.abs(clampPct(orderDisc) - origOrderDisc) > EPS;
   const hasChange = changes.length > 0 || discChanged;
+
+  // HP (`autoReason`) — alasan mengikuti jenis perubahan sampai pengguna memilih sendiri.
+  useEffect(() => {
+    if (autoReason && !manualReason) setReasonCode(autoReasonFor(changes, discChanged, reasons));
+  }, [autoReason, manualReason, changes, discChanged, reasons]);
 
   const body = useMemo(() => ({
     doc_type: "sales_order",
@@ -176,242 +224,169 @@ export default function AmendmentProposeModal({ order, currentUser, onClose, onD
   const configShortcut = blockingMsg && blockingMsg.includes("Pusat Pengaturan")
     ? (blockingMsg.includes("Harga, Diskon") ? "harga-diskon" : "amandemen")
     : "";
+  // Galat selalu terlihat — di HP (layar penuh) bilahnya bisa di atas lipatan saat pengguna menekan Ajukan.
+  useEffect(() => {
+    if (blockingMsg) errRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [blockingMsg]);
 
-  if (result) {
-    const meta = statusMeta(result.status);
-    const waiting = result.status === "pending_approval";
-    return (
-      <div className="modal-overlay" data-testid="amd-propose-modal" {...overlayDismiss(onClose)}>
-        <div className="modal-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="modal-title flex items-center gap-1.5">
-                <CheckCircle2 size={17} className="text-[#1B7A43]" /> Amandemen {result.number}
-              </p>
-              <p className="modal-subtitle">{result.doc_number} · {result.reason_label}</p>
-            </div>
-            <button className="icon-button" data-testid="amd-result-close" onClick={onClose}>
-              <XCircle size={16} />
-            </button>
-          </div>
-          <div className="mt-3 space-y-2.5">
-            <span data-testid="amd-result-status" className="inline-block rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
-              style={{ background: meta.bg, color: meta.fg }}>
-              {meta.label}
-            </span>
-            <p data-testid="amd-result-message" className="text-[12px] leading-relaxed text-[#3C3C43]">
-              {waiting
-                ? `Usulan terkirim dan MENUNGGU persetujuan ${result.required_role || "manager"}. Nilai dokumen belum berubah sampai keputusan keluar.`
-                : `Koreksi sudah diterapkan (${result.method_label}). Dampak ${formatCurrency(Math.abs(Number(result.impact?.delta || 0)))}.`}
-            </p>
-            {(result.result_refs || []).length > 0 && (
-              <div data-testid="amd-result-refs" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5 space-y-1">
-                <p className="text-[10px] font-bold uppercase text-[#6B6B73]">Dokumen yang dihasilkan</p>
-                {(result.result_refs || []).map((r, i) => (
-                  <p key={i} className="text-[11px] text-[#3C3C43]">
-                    <b className="text-[#0058CC]">{r.doc_number}</b> · {r.doc_type} {r.note ? `· ${r.note}` : ""}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="modal-actions">
-            <button className="primary-button" data-testid="amd-result-done" onClick={onClose}>Selesai</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (result) return <AmendmentResult result={result} onClose={onClose} testId={testId} />;
+
+  const footer = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <span className="mr-auto text-[10.5px] text-[#8E8E93]">
+        Diusulkan oleh <b>{currentUser?.name || currentUser?.email || "—"}</b>
+      </span>
+      <button type="button" className="secondary-button" data-testid="amd-propose-cancel" onClick={onClose} disabled={submitting}>
+        Batal
+      </button>
+      <button type="button" className="primary-button" data-testid="amd-propose-submit" onClick={handleSubmit} disabled={!canSubmit}
+        title={!reasonCode ? "Pilih label alasan dulu" : (!preview ? "Dampak harus terhitung dulu" : "")}>
+        {submitting ? "Mengirim…" : "Ajukan Amandemen"}
+      </button>
+    </div>
+  );
 
   return (
-    <div className="modal-overlay" data-testid="amd-propose-modal" {...overlayDismiss(submitting ? null : onClose)}>
-      <div className="modal-card wide">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="modal-title flex items-center gap-1.5"><FileEdit size={17} /> Ajukan Amandemen</p>
-            <p className="modal-subtitle">
-              {order.number} · {order.customer_name} · nilai sekarang{" "}
-              <b className="tabular-nums">{formatCurrency(order.grand_total ?? order.total_amount)}</b>
-            </p>
-          </div>
-          <button className="icon-button" data-testid="amd-propose-close" onClick={onClose} disabled={submitting}>
-            <XCircle size={16} />
-          </button>
-        </div>
+    <FormModal open onClose={onClose} testId={testId} icon={FileEdit} size="lg" busy={submitting} footer={footer}
+      title="Ajukan Amandemen"
+      subtitle={<>{order.number} · {order.customer_name} · nilai sekarang{" "}
+        <b className="tabular-nums">{formatCurrency(order.grand_total ?? order.total_amount)}</b></>}>
+      <div data-testid="amd-principle-banner"
+        className="flex items-start gap-2 rounded-md border border-[#D6E4FF] bg-[#F5F9FF] px-2.5 py-2 text-[11.5px] text-[#0058CC]">
+        <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+        <span>
+          Tidak ada perubahan angka secara diam-diam. Koreksi ini akan menjadi <b>dokumen amandemen
+          bernomor</b> berisi alasan, dampak, pengusul, dan jejak ke dokumen asal.
+        </span>
+      </div>
 
-        <div data-testid="amd-principle-banner"
-          className="mt-3 flex items-start gap-2 rounded-md border border-[#D6E4FF] bg-[#F5F9FF] px-2.5 py-2 text-[11.5px] text-[#0058CC]">
+      {preview?.issued && (
+        <div data-testid="amd-issued-banner"
+          className="mt-2 flex items-start gap-2 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-2 text-[11.5px] text-[#9A5B00]">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <span>
-            Tidak ada perubahan angka secara diam-diam. Koreksi ini akan menjadi <b>dokumen amandemen
-            bernomor</b> berisi alasan, dampak, pengusul, dan jejak ke dokumen asal.
+            Dokumen ini <b>sudah terbit</b> ({preview.issued_reason}). Angka dokumen asal tidak akan
+            diubah — koreksinya diterbitkan sebagai <b>{preview.method_label}</b>.
           </span>
         </div>
+      )}
 
-        {preview?.issued && (
-          <div data-testid="amd-issued-banner"
-            className="mt-2 flex items-start gap-2 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-2 text-[11.5px] text-[#9A5B00]">
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>
-              Dokumen ini <b>sudah terbit</b> ({preview.issued_reason}). Angka dokumen asal tidak akan
-              diubah — koreksinya diterbitkan sebagai <b>{preview.method_label}</b>.
-            </span>
-          </div>
-        )}
+      {blockingMsg && (
+        <div data-testid="amd-propose-error" ref={errRef} role="alert"
+          className="mt-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-700">
+          <p>{blockingMsg}</p>
+          {configShortcut && (
+            <button type="button" data-testid="amd-open-config"
+              onClick={() => { onClose?.(); openConfig({ group: configShortcut }); }}
+              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#0058CC] hover:underline">
+              Buka Pusat Pengaturan <ExternalLink size={11} />
+            </button>
+          )}
+        </div>
+      )}
 
-        {blockingMsg && (
-          <div data-testid="amd-propose-error"
-            className="mt-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-700">
-            <p>{blockingMsg}</p>
-            {configShortcut && (
-              <button data-testid="amd-open-config"
-                onClick={() => { onClose?.(); openConfig({ group: configShortcut }); }}
-                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#0058CC] hover:underline">
-                Buka Pusat Pengaturan <ExternalLink size={11} />
-              </button>
-            )}
-          </div>
-        )}
+      <div className="mt-3 space-y-3">
+        {/* Label alasan — WAJIB, dan penjelasannya ikut tampil */}
+        <div>
+          <label className={LABEL}>
+            Label alasan koreksi <span className="req">*</span>
+          </label>
+          <KNSelect data-testid="amd-reason-select" value={reasonCode}
+            onValueChange={(v) => { setReasonCode(v); setManualReason(true); }}
+            className="field" placeholder="Pilih alasan koreksi"
+            options={[{ value: "", label: "— Pilih alasan koreksi —" },
+              ...reasons.map((r) => ({ value: r.code, label: r.label }))]} />
+          {autoReason && !manualReason && reasonCode && (
+            <p data-testid="amd-reason-auto" className="mt-1 text-[10.5px] text-[#6B6B73]">
+              Dipilih otomatis dari jenis perubahan — bisa diganti.
+            </p>
+          )}
+          {selectedReason && (
+            <p data-testid="amd-reason-help" className="mt-1 text-[10.5px] leading-snug text-[#6B6B73]">
+              {selectedReason.help}
+              {selectedReason.affects_master && (
+                <b className="text-[#9A5B00]"> · Alasan ini menyangkut data master.</b>
+              )}
+            </p>
+          )}
+        </div>
 
-        <div className="mt-3 space-y-3">
-          {/* Label alasan — WAJIB, dan penjelasannya ikut tampil */}
+        {/* Baris dokumen — nilai semula selalu terlihat di sebelah nilai baru */}
+        <AmendmentItemRows rows={rows} onField={setField} onReset={resetRow} />
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">
-              Label alasan koreksi <span className="req">*</span>
+            <label className={LABEL} htmlFor={`${testId}-order-discount`}>
+              Diskon pesanan (%) · semula {formatQty(origOrderDisc)}%
             </label>
-            <KNSelect data-testid="amd-reason-select" value={reasonCode} onValueChange={setReasonCode}
-              className="field" placeholder="Pilih alasan koreksi"
-              options={[{ value: "", label: "— Pilih alasan koreksi —" },
-                ...reasons.map((r) => ({ value: r.code, label: r.label }))]} />
-            {selectedReason && (
-              <p data-testid="amd-reason-help" className="mt-1 text-[10.5px] leading-snug text-[#6B6B73]">
-                {selectedReason.help}
-                {selectedReason.affects_master && (
-                  <b className="text-[#9A5B00]"> · Alasan ini menyangkut data master.</b>
-                )}
+            <input id={`${testId}-order-discount`} data-testid="amd-order-discount" type="number" min="0" max="100" step="any"
+              inputMode="decimal" value={orderDisc}
+              onChange={(e) => setOrderDisc(clampPct(e.target.value))} className="field tabular-nums" />
+          </div>
+          <div>
+            <label className={LABEL} htmlFor={`${testId}-note`}>
+              Penjelasan tertulis {noteRequired && <span className="req">*</span>}
+            </label>
+            <textarea id={`${testId}-note`} data-testid="amd-note" rows="2" value={note} onChange={(e) => setNote(e.target.value)}
+              className="field" placeholder="Kronologi singkat: apa yang keliru dan kenapa dikoreksi" />
+            {noteRequired && (
+              <p data-testid="amd-note-required" className="mt-1 text-[10.5px] font-semibold text-[#9A5B00]">
+                Koreksi sebesar {formatCurrency(absDelta)} melewati ambang {formatCurrency(noteThreshold)} —
+                penjelasan tertulis wajib diisi.
               </p>
             )}
           </div>
+        </div>
 
-          {/* Baris dokumen — nilai semula selalu terlihat di sebelah nilai baru */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1fr_96px_120px_84px_28px] gap-1 px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
-              <span>Produk</span><span>Jumlah</span><span>Harga satuan</span><span>Diskon %</span><span />
-            </div>
-            {rows.map((r, i) => {
-              const dirty = ["quantity", "price", "discount_percent"]
-                .some((f) => Math.abs(Number(r[f] || 0) - Number(r.orig[f] || 0)) > EPS);
-              return (
-                <div key={r.product_id} data-testid={`amd-item-${r.product_id}`}
-                  className={`grid grid-cols-[1fr_96px_120px_84px_28px] items-center gap-1 px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0 ${dirty ? "bg-[#FFFBEF]" : ""}`}>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold truncate">{r.product_name}</p>
-                    <p className="text-[9.5px] text-[#9A9BA3] truncate">
-                      {r.sku}{r.unit ? ` · ${r.unit}` : ""} · semula {formatQty(r.orig.quantity)} × {formatCurrency(r.orig.price)}
-                      {r.orig.discount_percent > 0 ? ` · disc ${formatQty(r.orig.discount_percent)}%` : ""}
-                    </p>
-                  </div>
-                  <input data-testid={`amd-item-qty-${r.product_id}`} type="number" min="0" step="any" value={r.quantity}
-                    onChange={(e) => setField(i, "quantity", nonNeg(e.target.value))}
-                    className="field !py-1 !px-1.5 text-[11px] tabular-nums" />
-                  <MoneyInput testId={`amd-item-price-${r.product_id}`} className="field !py-1 !px-1.5 text-[11px] tabular-nums" value={r.price} onChange={(v) => setField(i, "price", nonNeg(v))} />
-                  <input data-testid={`amd-item-disc-${r.product_id}`} type="number" min="0" max="100" step="any" value={r.discount_percent}
-                    onChange={(e) => setField(i, "discount_percent", clampPct(e.target.value))}
-                    className="field !py-1 !px-1.5 text-[11px] tabular-nums" />
-                  <button data-testid={`amd-item-reset-${r.product_id}`} onClick={() => resetRow(i)} disabled={!dirty}
-                    title={dirty ? "Kembalikan ke nilai semula" : "Belum diubah"}
-                    className={`justify-self-end ${dirty ? "text-[#0058CC] hover:text-[#003E92]" : "text-gray-300 cursor-not-allowed"}`}>
-                    <RotateCcw size={12} />
+        {/* Tautan bukti — disimpan apa adanya pada dokumen amandemen */}
+        <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
+          <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1.5">Tautan bukti (opsional)</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr_auto]">
+            <input data-testid="amd-att-name" value={attName} onChange={(e) => setAttName(e.target.value)}
+              className="field" placeholder="Nama bukti" aria-label="Nama bukti" />
+            <input data-testid="amd-att-url" value={attUrl} onChange={(e) => setAttUrl(e.target.value)}
+              className="field" placeholder="https:// … (email, chat, berkas)" aria-label="Tautan bukti" />
+            <button type="button" data-testid="amd-att-add" className="secondary-button !px-3" onClick={addAttachment}
+              aria-label="Tambah tautan bukti">
+              <Plus size={13} /><span className="sm:hidden">Tambah bukti</span>
+            </button>
+          </div>
+          {attachments.length > 0 && (
+            <div className="mt-2 space-y-1" data-testid="amd-att-list">
+              {attachments.map((a, i) => (
+                <div key={i} className="flex items-center gap-2 rounded bg-white px-2 py-1 border border-[#EFF0F2]">
+                  <Link2 size={11} className="text-[#0058CC] shrink-0" />
+                  <span className="text-[10.5px] truncate flex-1">{a.name}</span>
+                  <button type="button" data-testid={`amd-att-remove-${i}`} className="text-red-400 hover:text-red-600"
+                    aria-label={`Hapus bukti ${a.name}`}
+                    onClick={() => setAttachments((arr) => arr.filter((_, j) => j !== i))}>
+                    <Trash2 size={11} />
                   </button>
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">
-                Diskon pesanan (%) · semula {formatQty(origOrderDisc)}%
-              </label>
-              <input data-testid="amd-order-discount" type="number" min="0" max="100" step="any" value={orderDisc}
-                onChange={(e) => setOrderDisc(clampPct(e.target.value))} className="field tabular-nums" />
+              ))}
             </div>
-            <div>
-              <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">
-                Penjelasan tertulis {noteRequired && <span className="req">*</span>}
-              </label>
-              <textarea data-testid="amd-note" rows="2" value={note} onChange={(e) => setNote(e.target.value)}
-                className="field" placeholder="Kronologi singkat: apa yang keliru dan kenapa dikoreksi" />
-              {noteRequired && (
-                <p data-testid="amd-note-required" className="mt-1 text-[10.5px] font-semibold text-[#9A5B00]">
-                  Koreksi sebesar {formatCurrency(absDelta)} melewati ambang {formatCurrency(noteThreshold)} —
-                  penjelasan tertulis wajib diisi.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Tautan bukti — disimpan apa adanya pada dokumen amandemen */}
-          <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
-            <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1.5">Tautan bukti (opsional)</p>
-            <div className="grid grid-cols-[1fr_2fr_auto] gap-2">
-              <input data-testid="amd-att-name" value={attName} onChange={(e) => setAttName(e.target.value)}
-                className="field" placeholder="Nama bukti" />
-              <input data-testid="amd-att-url" value={attUrl} onChange={(e) => setAttUrl(e.target.value)}
-                className="field" placeholder="https:// … (email, chat, berkas)" />
-              <button data-testid="amd-att-add" className="secondary-button !px-3" onClick={addAttachment}>
-                <Plus size={13} />
-              </button>
-            </div>
-            {attachments.length > 0 && (
-              <div className="mt-2 space-y-1" data-testid="amd-att-list">
-                {attachments.map((a, i) => (
-                  <div key={i} className="flex items-center gap-2 rounded bg-white px-2 py-1 border border-[#EFF0F2]">
-                    <Link2 size={11} className="text-[#0058CC] shrink-0" />
-                    <span className="text-[10.5px] truncate flex-1">{a.name}</span>
-                    <button data-testid={`amd-att-remove-${i}`} className="text-red-400 hover:text-red-600"
-                      onClick={() => setAttachments((arr) => arr.filter((_, j) => j !== i))}>
-                      <Trash2 size={11} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Dampak — dihitung server, bukan ditebak browser */}
-          <div>
-            <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1.5">
-              Dampak koreksi {previewing && <Loader2 size={11} className="inline animate-spin text-[#0058CC]" />}
-            </p>
-            {!hasChange ? (
-              <p data-testid="amd-no-change" className="rounded-md border border-dashed border-[#E5E5EA] px-2.5 py-3 text-center text-[11px] text-[#6B6B73]">
-                Ubah salah satu angka di atas untuk melihat dampaknya. Selama belum ada perubahan,
-                tidak ada yang perlu diamandemen.
-              </p>
-            ) : preview ? (
-              <AmendmentImpactCard data={preview} testId="amd-preview-impact" />
-            ) : (
-              <p className="rounded-md border border-dashed border-[#E5E5EA] px-2.5 py-3 text-center text-[11px] text-[#6B6B73]">
-                {previewing ? "Menghitung dampak…" : "Dampak belum bisa dihitung — lihat pesan di atas."}
-              </p>
-            )}
-          </div>
+          )}
         </div>
 
-        <div className="modal-actions">
-          <span className="mr-auto text-[10.5px] text-[#8E8E93]">
-            Diusulkan oleh <b>{currentUser?.name || currentUser?.email || "—"}</b>
-          </span>
-          <button className="secondary-button" data-testid="amd-propose-cancel" onClick={onClose} disabled={submitting}>
-            Batal
-          </button>
-          <button className="primary-button" data-testid="amd-propose-submit" onClick={handleSubmit} disabled={!canSubmit}
-            title={!reasonCode ? "Pilih label alasan dulu" : (!preview ? "Dampak harus terhitung dulu" : "")}>
-            {submitting ? "Mengirim…" : "Ajukan Amandemen"}
-          </button>
+        {/* Dampak — dihitung server, bukan ditebak browser */}
+        <div>
+          <p className="text-[10px] font-bold uppercase text-[#6B6B73] mb-1.5">
+            Dampak koreksi {previewing && <Loader2 size={11} className="inline animate-spin text-[#0058CC]" />}
+          </p>
+          {!hasChange ? (
+            <p data-testid="amd-no-change" className="rounded-md border border-dashed border-[#E5E5EA] px-2.5 py-3 text-center text-[11px] text-[#6B6B73]">
+              Ubah salah satu angka di atas untuk melihat dampaknya. Selama belum ada perubahan,
+              tidak ada yang perlu diamandemen.
+            </p>
+          ) : preview ? (
+            <AmendmentImpactCard data={preview} testId="amd-preview-impact" />
+          ) : (
+            <p className="rounded-md border border-dashed border-[#E5E5EA] px-2.5 py-3 text-center text-[11px] text-[#6B6B73]">
+              {previewing ? "Menghitung dampak…" : "Dampak belum bisa dihitung — lihat pesan di atas."}
+            </p>
+          )}
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

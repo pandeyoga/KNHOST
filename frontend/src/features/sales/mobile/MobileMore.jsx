@@ -163,7 +163,7 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
         <SubpageBackContext.Provider value={backCtx}>
         <div className="m-subpage-body">
           {sub === "tanya" && <TanyaKnView selectedEntity={selectedEntity} entities={entities} />}
-          {sub === "amendments" && <MobileAmendments orders={orders} onRefresh={onRefresh} />}
+          {sub === "amendments" && <MobileAmendments orders={orders} user={user} onRefresh={onRefresh} />}
           {sub === "special-price" && <MobileSpecialPrice selectedEntity={selectedEntity} />}
           {sub === "visits" && <MobileVisits />}
           {sub === "collection" && <MobileCollectionTargets selectedEntity={selectedEntity} />}

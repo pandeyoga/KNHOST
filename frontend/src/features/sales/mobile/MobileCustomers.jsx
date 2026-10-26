@@ -145,7 +145,7 @@ export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStar
           ))}
         </div>
       )}
-      {pay && <MobileArReceipt customer={customer} onClose={() => setPay(false)} onDone={() => { setPay(false); load(); }} />}
+      {pay && <MobileArReceipt customer={customer} onClose={() => setPay(false)} onDone={(m) => { setPay(false); setNote(m || "Kwitansi tersimpan."); load(); }} />}
       {/* D-05 HP — "Ubah" memakai form LENGKAP desktop (dulu lembar 5 isian: nama, PIC, HP, email, kota). */}
       {sheet === "edit" && <MobileCustomerForm user={user} selectedEntity={selectedEntity} customer={customer} onClose={() => setSheet("")}
         onSaved={(c) => { saved("Data pelanggan diperbarui."); onUpdated?.(c); }} />}

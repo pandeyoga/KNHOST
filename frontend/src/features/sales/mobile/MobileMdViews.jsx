@@ -4,13 +4,13 @@
  *  - MobileDesignRequests    : permintaan desain — ajukan, tugaskan desainer, ACC / minta revisi, batalkan.
  *  - MobileRndSamples        : sample & labdip — putaran per supplier, nilai putaran (ACC/revisi/tolak), putuskan pemenang.
  *  - MobileMdProducts        : master produk — cari, detail + stok per gudang, ubah harga/nama.
- *  - MobilePurchaseRequisitions : PR bahan — daftar, buat (langsung ajukan), ajukan draf.
+ *  - MobilePurchaseRequisitions : PR bahan — daftar, buat (form desktop PrCreateModal), ajukan draf.
  *  - MobilePoWatch           : pantau PO (hanya-lihat).
  * Endpoint & wewenang sama dengan layar desktop (RoleDesk, DesignRequests, RnD, Katalog, PR).
  */
 import AttachmentGallery from "../../../components/AttachmentThumb";
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, ClipboardList, Plus, RefreshCw, Search, Trash2, Palette, FlaskConical, FileStack } from "lucide-react";
+import { ChevronDown, ChevronRight, ClipboardList, Plus, RefreshCw, Search, Palette, FlaskConical, FileStack } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
@@ -21,7 +21,8 @@ import { errText } from "./MobileSalesFlows";
 import { STATUS_STYLE as PR_STATUS_STYLE } from "../../purchasing/prConstants";
 import ErrorNotice from "../../../components/ErrorNotice";
 import DesignRequestCreateModal from "../../design/DesignRequestCreateModal";
-import { Back, Chips, Field, FormHead, Notice, Pill, fmtDate, list } from "./mdMobileParts";
+import { Back, Chips, Field, Notice, Pill, fmtDate, list } from "./mdMobileParts";
+import PrCreateModal from "../../purchasing/PrCreateModal";
 import { MobileMdProducts } from "./MobileMdProducts";
 
 // Fase 3 · P7 — layar Produk diekstrak ke MobileMdProducts.jsx (batas 500 baris); diekspor ulang supaya impor lama tetap jalan.
@@ -350,72 +351,73 @@ export function MobileRndSamples({ focusId }) {
 
 /* ───────────── PR bahan & PO ───────────── */
 
-function PrCreate({ onBack, onDone }) {
-  const [products, setProducts] = useState([]);
-  const [lines, setLines] = useState([{ product_id: "", quantity: "", est_price: "" }]);
-  const [f, setF] = useState({ reason: "", needed_by_date: "", notes: "" });
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  useEffect(() => { axios.get(`${API}/products`).then((r) => setProducts(list(r.data))).catch(() => {}); }, []);
-  const setLine = (i, p) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...p } : l)));
-  const valid = f.reason.trim() && lines.every((l) => l.product_id && Number(l.quantity) > 0);
-  const submit = async () => {
-    setBusy(true); setErr("");
-    try {
-      const items = lines.map((l) => { const p = products.find((x) => x.id === l.product_id); return { product_id: l.product_id, quantity: Number(l.quantity), unit: p?.base_unit || "meter", est_price: Number(l.est_price || 0) }; });
-      const r = await axios.post(`${API}/purchase-requisitions`, { ...f, items, submit_now: true });
-      onDone(`${r.data?.number || "PR"} diajukan${r.data?.status === "approved" ? " & langsung disetujui" : " — menunggu persetujuan"}.`);
-    } catch (e) { setErr(errText(e, "Gagal membuat PR.")); } finally { setBusy(false); }
-  };
-  return (
-    <div className="space-y-2" data-testid="m-pr-create">
-      <FormHead title="Buat PR bahan" />
-      <div className="m-card space-y-2.5 p-3">
-        {lines.map((l, i) => (
-          <div key={i} className="space-y-1.5 rounded-xl border border-[#EFF0F2] p-2" data-testid={`m-pr-line-${i}`}>
-            {products.length === 0 ? <div className="field text-[#8E8E93]" data-testid={`m-pr-product-loading-${i}`}>Memuat produk…</div> :
-              <Field label="Bahan / produk" req><KNSelect value={l.product_id} onValueChange={(v) => setLine(i, { product_id: v })} options={products.map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` }))} placeholder="Pilih bahan / produk" data-testid={`m-pr-product-${i}`} /></Field>}
-            {(() => { const unit = products.find((x) => x.id === l.product_id)?.base_unit || "satuan"; return (
-            <div className="flex items-end gap-2">
-              <Field label={`Jumlah (${unit})`} req><input type="number" inputMode="decimal" className="field" placeholder="mis. 120" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pr-qty-${i}`} /></Field>
-              <Field label={`Est. harga (Rp/${unit})`}><input type="number" inputMode="decimal" className="field" placeholder="mis. 25000" value={l.est_price} onChange={(e) => setLine(i, { est_price: e.target.value })} data-testid={`m-pr-price-${i}`} /></Field>
-              {lines.length > 1 && <button className="mb-2 px-1 text-[#C0392B]" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} aria-label="Hapus baris"><Trash2 size={16} /></button>}
-            </div>); })()}
-          </div>
-        ))}
-        <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" onClick={() => setLines((ls) => [...ls, { product_id: "", quantity: "", est_price: "" }])} data-testid="m-pr-add-line"><Plus size={13} /> Tambah baris</button>
-        <Field label="Alasan kebutuhan" req><input className="field" placeholder="mis. bahan sample proofing SORD-…" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pr-reason" /></Field>
-        <Field label="Dibutuhkan tanggal"><KNDatePicker value={f.needed_by_date} onChange={(v) => setF({ ...f, needed_by_date: v || "" })} data-testid="m-pr-date" /></Field>
-        <Field label="Catatan"><textarea className="field" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pr-notes" /></Field>
-        {err && <div className="notice-bar danger text-xs" data-testid="m-pr-create-error">{err}</div>}
-        <div className="flex gap-2">
-          <button className="secondary-button flex-1 py-3" onClick={onBack} disabled={busy} data-testid="m-pr-create-back">Batal</button>
-          <button className="primary-button flex-[2] py-3" disabled={busy || !valid} onClick={submit} data-testid="m-pr-submit">{busy ? "Mengirim…" : "Ajukan PR"}</button>
-        </div>
-      </div>
-    </div>
-  );
+// Fase 4 · R1 — form HP ringkas `PrCreate` (barang, jumlah, est. harga, alasan, tanggal, catatan; selalu langsung
+// diajukan) DIGANTI form desktop `purchasing/PrCreateModal` (keputusan pemilik: form input HP tidak diringkas): pemilih
+// artikel → warna (nama KN / supplier), pemenuhan beli/makloon, roll, lokasi kirim, supplier preferensi (disaring ke yang
+// berkontrak / terdaftar, bisa "Tampilkan semua"), alasan jalur restock, "Langsung ajukan" opsional, total estimasi.
+// Data master dimuat SAMA dengan desktop (`PurchaseRequisitions.loadMasters`: /products, /warehouses, /suppliers;
+// gagal = daftar kosong) — bedanya hanya waktunya: saat "Buat PR bahan" pertama diketuk (hemat kuota HP).
+const PR_STATUS_TEXT = { approved: "diajukan & langsung disetujui", pending_approval: "diajukan — menunggu persetujuan", draft: "tersimpan sebagai draf" };
+export const prCreatedText = (pr) => `${pr?.number || "PR"} ${PR_STATUS_TEXT[pr?.status] || "tersimpan"}.`;
+
+// Fase 4 · R1 (permintaan koordinator, temuan R7) — PR bisa terealisasi ke PO ATAU Order Makloon (mis. PR-00005 Kanda →
+// Order Makloon). Nomor dokumen diambil dari data realisasi baris yang dikirim server (`items[].realizations[]`: jenis +
+// `ref_number`; realisasi PO batal diabaikan — sama dengan panel Pemenuhan & Realisasi desktop). "Belum tercatat" hanya
+// bila memang tidak ada nomor (dulu HP selalu menulis "nomor PO belum tercatat" walau realisasinya Order Makloon).
+export function prRealizationDocs(pr) {
+  const docs = [];
+  (pr?.items || []).forEach((it) => (it.realizations || []).forEach((x) => {
+    if (x.voided || !x.ref_number) return;
+    const label = `${x.type === "makloon_order" ? "Order Makloon" : "PO"} ${x.ref_number}`;
+    if (!docs.includes(label)) docs.push(label);
+  }));
+  if (!docs.length && pr?.po_number) docs.push(`PO ${pr.po_number}`);
+  return docs;
+}
+export function prRealizationText(pr) {
+  const docs = prRealizationDocs(pr);
+  if (docs.length) return ` · ${docs.join(", ")}`;
+  if (pr?.status !== "converted") return "";
+  const makloonOnly = (pr.makloon_order_ids || []).length > 0 && !(pr.po_ids || []).length;
+  return makloonOnly ? " · nomor Order Makloon belum tercatat" : " · nomor PO belum tercatat";
 }
 
-export function MobilePurchaseRequisitions({ focusId }) {
+function usePrMasters(wanted) {
+  const [masters, setMasters] = useState(null);
+  useEffect(() => {
+    if (!wanted || masters) return;
+    Promise.all(["products", "warehouses", "suppliers"].map((p) => axios.get(`${API}/${p}`).catch(() => ({ data: [] }))))
+      .then(([p, w, s]) => setMasters({ products: list(p.data), warehouses: list(w.data), suppliers: list(s.data) }));
+  }, [wanted, masters]);
+  return masters;
+}
+
+export function MobilePurchaseRequisitions({ focusId, selectedEntity }) {
   const [rows, setRows] = useState(null);
   const [status, setStatus] = useState("");
   const [open, setOpen] = useState(focusId || null);
   const [create, setCreate] = useState(false);
   const [msg, setMsg] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
+  const masters = usePrMasters(create);
   const load = () => axios.get(`${API}/purchase-requisitions`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setLoadErr(e); });
   useEffect(() => { load(); }, []);
   const submitDraft = async (pr) => {
     try { await axios.post(`${API}/purchase-requisitions/${pr.id}/submit`); setMsg({ ok: true, text: `${pr.number} diajukan.` }); load(); }
     catch (e) { setMsg({ ok: false, text: errText(e, "Gagal mengajukan PR.") }); }
   };
-  if (create) return <PrCreate onBack={() => setCreate(false)} onDone={(t) => { setCreate(false); setMsg({ ok: true, text: t }); load(); }} />;
   const shown = (rows || []).filter((r) => !status || r.status === status);
   return (
     <div className="space-y-2" data-testid="m-purchase-requisitions">
       {loadErr && <ErrorNotice message={loadErr} onRetry={() => { setLoadErr(""); load(); }} testId="m-pr-load-error" />}
-      <button className="primary-button flex w-full items-center justify-center gap-2 py-3" onClick={() => setCreate(true)} data-testid="m-pr-new"><Plus size={16} /> Buat PR bahan</button>
+      <button className="primary-button flex w-full items-center justify-center gap-2 py-3" disabled={create && !masters} onClick={() => setCreate(true)} data-testid="m-pr-new">
+        <Plus size={16} /> {create && !masters ? "Memuat data PR…" : "Buat PR bahan"}
+      </button>
+      {create && masters && (
+        <PrCreateModal products={masters.products} warehouses={masters.warehouses} suppliers={masters.suppliers}
+          selectedEntity={selectedEntity} onCancel={() => setCreate(false)}
+          onCreated={(pr) => { setCreate(false); setMsg({ ok: true, text: prCreatedText(pr) }); load(); }} />
+      )}
       <Chips items={[["", "Semua"], ["draft", "Draf"], ["pending_approval", "Menunggu"], ["approved", "Disetujui"], ["converted", "Jadi PO"], ["rejected", "Ditolak"]]} value={status} onChange={setStatus} prefix="m-pr-filter" />
       <Notice msg={msg} testId="m-pr-msg" />
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
@@ -427,7 +429,7 @@ export function MobilePurchaseRequisitions({ focusId }) {
               <div className="flex flex-wrap items-center gap-1.5"><span className="text-[12.5px] font-bold text-[#0058CC]">{r.number}</span><Pill label={PR_STATUS_STYLE[r.status]?.label || badgeLabel(r.status)} tone={r.status} /></div>
               {/* G5-60 — judul dulu terpotong tepat di nomor pembeda ("…SORD-261024-0…"); kini 2 baris & nomor tak patah. */}
               <p className="line-clamp-2 break-words text-[12px]">{r.reason || "-"}</p>
-              <p className="text-[11px] m-muted">{(r.items || []).length} baris · {fmtDate(r.created_at)}{r.po_number ? ` · PO ${r.po_number}` : r.status === "converted" ? " · nomor PO belum tercatat" : ""}</p>
+              <p className="text-[11px] m-muted" data-testid={`m-pr-meta-${r.id}`}>{(r.items || []).length} baris · {fmtDate(r.created_at)}{prRealizationText(r)}</p>
             </div>
             <span className="text-[12px] font-bold tabular-nums">{formatCurrency(r.total_est_amount)}</span>
           </button>
