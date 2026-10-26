@@ -95,8 +95,9 @@ Crawler yang sama dengan audit tahap 2 (Edge headless; aksi tulis diblokir, hany
   (designer, finance, md_quality, qc, sample_admin, warehouse 41 · admin, manager, md, sales, sales_admin,
   warehouse_admin 119 · finance ulang 10), **±1.700 keadaan, 0 galat JavaScript, 0 halaman melebar.**
   - Satu regresi P7 ditemukan & diperbaiki: di antrean lintas tahap, "Buka layar lengkap" membawa **Finance** ke layar
-    PR yang tidak boleh ia buka ("Permission ditolak") — Finance tercatat pemutus satu tahap PR tanpa izin
-    `purchase_requisition.view`. Tombol kini hanya tampil bila layar tujuan boleh dibuka peran itu (aturan menu yang
+    PR yang tidak boleh ia buka ("Permission ditolak"). *Koreksi (fase 4):* Finance BUKAN pemutus PR —
+    `/approvals/my-queue` mengirim semua dokumen tertunda ke pemegang `approval.view` (dengan `can_decide`), dan HP
+    menampilkan semuanya; fase 4 · R5 menyaring HP ke `can_decide`. Tombol kini hanya tampil bila layar tujuan boleh dibuka peran itu (aturan menu yang
     sama, termasuk izin server); crawl ulang Finance: 0 akses ditolak.
   - Keterbatasan alat: Edge headless putus setelah "Aktifkan notifikasi" + ganti PT di tab Lainnya (admin/manager);
     dicek manual di peramban biasa (normal, tanpa galat), lalu kedua tombol itu dilewati crawler pada putaran ulang.
@@ -108,6 +109,8 @@ Crawler yang sama dengan audit tahap 2 (Edge headless; aksi tulis diblokir, hany
   lain; hanya melebar bila isinya punya baris panjang yang tak bisa dipatahkan. Tidak tertangkap crawl ini.
 
 ## Belum dikerjakan
+> **Fase 4 (26 Okt) mengerjakan sisa di bawah** — lihat [UAT24-AUDIT-UI-2-FASE4.md](UAT24-AUDIT-UI-2-FASE4.md).
+
 - **Form HP yang belum setara desktop** (audit P7, hanya laporan): PR MD (supplier, pemilih artikel, alasan rute →
   sebaiknya `PrCreateModal`), Kwitansi (tanggal, deposit, mode alokasi, selisih bayar → `ARReceiptModal` perlu
   FormModal dulu), Amandemen (diskon tingkat pesanan, lampiran → `AmendmentProposeModal` perlu FormModal dulu).
@@ -124,8 +127,8 @@ Crawler yang sama dengan audit tahap 2 (Edge headless; aksi tulis diblokir, hany
   credit override 1, Barang Masuk `review` 1, cetak RFID `verified` 4); `/reports/order-velocity` belum disaring per
   sales (panel kecepatan dibatasi admin/manajer); kegagalan POC/uji lama di atas (data penugasan PT akun uji).
 - **Gerbang akses lama yang terlihat di crawl HP**: tab Lot & Silsilah tampil untuk sales tanpa izin lot (sembunyikan
-  tab atau beri izin baca lot); Finance tercatat pemutus tahap PR tanpa izin melihat PR (rapikan aturan persetujuan
-  atau beri izin baca); panggilan latar `/config/health` & `/makloons` ditolak untuk sales/Admin Sales (diam, layar
+  tab atau beri izin baca lot); antrean HP menampilkan dokumen yang tak bisa diputus peran itu (lihat koreksi di
+  atas); panggilan latar `/config/health` & `/makloons` ditolak untuk sales/Admin Sales (diam, layar
   tetap tampil).
 - Aplikasi HP MD masih punya tiga baris "Tampilan lengkap" Labdip/Handfeel/Proofing (kini mendarat di layar yang
   sama lewat alias; istilah tidak diubah — K-13).
