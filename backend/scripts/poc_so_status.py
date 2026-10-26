@@ -44,9 +44,12 @@ def scenarios():
     # approved + stok siap → Approved/siap_confirm
     check("approved (stok siap)", derive_stage_substatus({"status": "approved"}),
           (STAGE_APPROVED, ["siap_confirm"]))
-    # approved + backorder → Approved/menunggu_stok (kunci F4!)
+    # approved + backorder → BERHENTI di Approved (kunci F4!). Fase 4 · R8 (keputusan pemilik #2): "Menunggu stok"
+    # hanya status waiting_stock; tahap lain yang bersisa kurang stok = sebagian_menunggu_stok.
     check("approved + backorder", derive_stage_substatus({"status": "approved", "has_backorder": True}),
-          (STAGE_APPROVED, ["menunggu_stok"]))
+          (STAGE_APPROVED, ["sebagian_menunggu_stok"]))
+    check("partially_shipped + backorder", derive_stage_substatus({"status": "partially_shipped", "has_backorder": True}),
+          (STAGE_SHIPPED, ["sebagian_dikirim", "sebagian_menunggu_stok"]))
     # pure backorder pra-approval
     check("waiting_stock", derive_stage_substatus({"status": "waiting_stock"}),
           (STAGE_RESERVED, ["menunggu_stok"]))

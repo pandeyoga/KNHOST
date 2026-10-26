@@ -5,10 +5,10 @@ lihat services/roll_service.py. Fungsi lama berbasis $inc balance (allocate_stoc
 atomic_reserve/rollback_reservations) telah DIHAPUS (D4) karena melanggar SSOT.
 """
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from fastapi import HTTPException
 from db import db
-from core_utils import now_iso, new_id, rupiah
+from core_utils import now_iso, rupiah
 
 
 async def product_summary(product_id: str) -> Dict[str, float]:
@@ -36,16 +36,22 @@ async def expire_old_reservations() -> int:
     expired = 0
     from services.roll_service import release_order_rolls
     from services.so_status import stage_fields
+    from services import so_approvals
     for order in orders:
         await release_order_rolls(order["id"])
         _exp_set = {"status": "expired", "allocations": [], "backorders": [],
                     "has_backorder": False, "updated_at": now_iso()}
+        # Fase 4 · R8 — entri persetujuan yang masih menunggu ikut ditutup (dulu tetap `pending` di Pusat Persetujuan).
+        _dead, _closed = so_approvals.dead_order_patch(order, "expired", actor_name="system")
+        _exp_set.update(_dead)
         # F4 — stage/sub_status: expired → Cancelled/kedaluwarsa.
         _exp_set.update(stage_fields({**order, **_exp_set}))
         await db.sales_orders.update_one(
             {"id": order["id"]},
             {"$set": _exp_set}
         )
+        if _closed:
+            await so_approvals.close_detail_docs(db, _closed, _closed[0].get("cancel_reason", ""), "system")
         from dependencies import audit
         await audit(
             "system", "reservation_expired", "sales_order",

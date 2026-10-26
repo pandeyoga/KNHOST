@@ -11,7 +11,7 @@ ADDITIVE & idempotent: field `pending_approvals` embedded di dokumen `sales_orde
 (bukan koleksi baru). `so_status.derive_stage_substatus` membaca daftar ini untuk
 menurunkan sub-status (menunggu_approval_nilai/kredit/harga).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from core_utils import new_id, now_iso
 
 APPROVAL_TYPES = {"nilai", "kredit", "special_price", "pembayaran_sampel", "makloon"}
@@ -127,6 +127,70 @@ async def cancel_price_docs(database, entries: List[Dict[str, Any]], reason: str
     if ids:
         await database.price_approvals.update_many(
             {"id": {"$in": ids}, "status": "pending"},
+            {"$set": {"status": "cancelled", "cancel_reason": reason, "cancelled_by": actor_name,
+                      "cancelled_at": now_iso(), "updated_at": now_iso()}})
+
+
+# ─── Fase 4 · R8 (26 Okt 2026) — SO MATI ─────────────────────────────────────────────────────────────────────────
+# Batal/kedaluwarsa dulu tidak menyentuh `pending_approvals`: entri tetap `pending` selamanya, muncul di Pusat
+# Persetujuan & bisa "disetujui" (data acuan: KANDA/SO-00001 & KSC/SOS-00003 kedaluwarsa, KSC/SOS-00013 batal).
+# Status mati = SATU definisi `approval_backlog_service.SO_DEAD_STATUSES` (antrean, KPI, Pusat Persetujuan).
+
+#: Transisi yang MEMATIKAN SO (entri menunggu ditutup). `done` tidak: pesanan selesai bukan pesanan batal.
+DEAD_TRANSITIONS = ("cancelled", "expired", "rejected", "void")
+_DEAD_WORD = {"cancelled": "dibatalkan", "expired": "kedaluwarsa", "rejected": "ditolak", "void": "dibatalkan",
+              "done": "selesai"}
+_DEAD_REASON = {"cancelled": "Pesanan dibatalkan", "expired": "Reservasi pesanan kedaluwarsa",
+                "rejected": "Pesanan ditolak", "void": "Pesanan dibatalkan (void)"}
+
+
+def dead_statuses() -> Tuple[str, ...]:
+    from services.approval_backlog_service import SO_DEAD_STATUSES  # impor malas: modul ini tetap murni
+    return tuple(SO_DEAD_STATUSES)
+
+
+def closed_order_message(order: Dict[str, Any]) -> str:
+    """Kalimat 409 bila SO sudah mati (keputusan persetujuan tidak berlaku lagi); "" bila SO masih hidup."""
+    st = (order or {}).get("status") or ""
+    if st not in dead_statuses():
+        return ""
+    tail = "" if st == "done" else " Buat pesanan baru bila masih diperlukan."
+    return (f"Pesanan {(order or {}).get('number') or ''} sudah {_DEAD_WORD.get(st, st)} — persetujuannya tidak "
+            f"berlaku lagi dan tidak bisa diputuskan.{tail}")
+
+
+def dead_order_patch(order: Dict[str, Any], new_status: str, reason: str = "",
+                     actor_name: str = "") -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """($set tambahan, entri yang ditutup) untuk transisi SO ke status mati.
+
+    Entri yang masih MENUNGGU → `cancelled` (+ `previous_status`, alasan, pelaku); keputusan lama (approved/rejected/
+    superseded) tidak disentuh — riwayat utuh. `has_backorder` → False: baris pendingan SO mati tidak menunggu barang
+    lagi (`backorders` tetap sebagai riwayat). Status lain → ({}, [])."""
+    if new_status not in DEAD_TRANSITIONS:
+        return {}, []
+    why = (reason or "").strip() or _DEAD_REASON.get(new_status, "Pesanan ditutup")
+    pa = [dict(p) for p in (order or {}).get("pending_approvals") or []]
+    closed: List[Dict[str, Any]] = []
+    for p in pa:
+        if p.get("status") == "pending":
+            p.update({"status": "cancelled", "previous_status": "pending", "cancel_reason": why,
+                      "cancelled_by": actor_name, "cancelled_at": now_iso()})
+            closed.append(p)
+    patch: Dict[str, Any] = {"has_backorder": False}
+    if closed:
+        patch["pending_approvals"] = pa
+        patch.update(approval_fields({**(order or {}), "pending_approvals": pa}, require_validation=False))
+    return patch, closed
+
+
+async def close_detail_docs(database, closed: List[Dict[str, Any]], reason: str, actor_name: str = "") -> None:
+    """Dokumen rincian entri yang ditutup ikut `cancelled` bila masih `pending` (yang sudah diputus dibiarkan).
+    Tanpa ini override kredit SO mati yang kelak di-ACC lewat layar Pelanggan bisa TERPAKAI pesanan lain."""
+    await cancel_price_docs(database, [e for e in closed if e.get("type") == "special_price"], reason, actor_name)
+    cro = [e.get("ref_id") for e in closed if e.get("type") == "kredit" and e.get("ref_id")]
+    if cro:
+        await database.credit_overrides.update_many(
+            {"id": {"$in": cro}, "status": "pending"},
             {"$set": {"status": "cancelled", "cancel_reason": reason, "cancelled_by": actor_name,
                       "cancelled_at": now_iso(), "updated_at": now_iso()}})
 

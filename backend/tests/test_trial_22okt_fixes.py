@@ -238,7 +238,8 @@ def test_e4_so_dengan_sisa_backorder_tidak_dikirim_penuh():
         so = DB.sales_orders.find_one({"id": so_id})
         assert so["fulfillment"] == {"total_qty": 1000, "picked_qty": 800, "shipped_qty": 800, "backorder_qty": 200,
                                      "remaining_qty": 200}
-        assert so["sub_status"] == ["sebagian_dikirim", "menunggu_stok"]
+        # Fase 4 · R8 (keputusan pemilik #2) — sisa di tahap lain = "Sebagian menunggu stok" (bukan Backorder).
+        assert so["sub_status"] == ["sebagian_dikirim", "sebagian_menunggu_stok"]
         DB.sales_orders.update_one({"id": so_id}, {"$set": {"backorders.0.backorder_qty": 0, "backorders.0.status": "fulfilled",
                                                             "has_backorder": False}})
         assert _run([], lambda: fs.recompute_so_status(so_id)) == "shipped"

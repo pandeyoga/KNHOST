@@ -6,8 +6,12 @@ Prinsip (KEPUTUSAN OWNER §2):
 - ADDITIVE & TIDAK MENGUBAH transisi: `status` lama tetap SSOT transisi; `stage`+`sub_status`
   adalah field TURUNAN dari `status` + konteks (backorder, approval). Aman & idempotent.
 
-Perubahan kunci: `menunggu_stok` (backorder yang SUDAH di-approve) ada di stage **APPROVED**,
+Perubahan kunci: SO yang SUDAH di-approve tetapi masih kurang stok berhenti di stage **APPROVED**,
 bukan Confirmed — order naik ke Confirmed hanya saat stok benar-benar siap.
+
+Fase 4 · R8 (keputusan pemilik #2, 26 Okt 2026) — "Backorder"/"Menunggu stok" = SO berstatus `waiting_stock` SAJA
+(`menunggu_stok`). SO tahap lain yang masih bersisa kurang stok = `sebagian_menunggu_stok` ("Sebagian menunggu
+stok"), sama dengan `alert_ops_service.BACKORDER_STATUS` & `features/orders/soStatusView.hasPartialBackorder`.
 """
 from typing import Any, Dict, List, Tuple
 
@@ -26,6 +30,10 @@ STAGE_FLOW: List[str] = [
     STAGE_PICKED, STAGE_SHIPPED, STAGE_DELIVERED,
 ]
 VALID_STAGES = set(STAGE_FLOW) | {STAGE_CANCELLED}
+
+# R8 (keputusan pemilik #2) — dua sub-status stok: backorder penuh (status `waiting_stock`) vs sisa di tahap lain.
+SUB_BACKORDER = "menunggu_stok"
+SUB_PARTIAL_STOCK = "sebagian_menunggu_stok"
 
 
 def _approval_subs(order: Dict[str, Any]) -> List[str]:
@@ -71,8 +79,9 @@ def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
         # Status warisan pra-F4 — dokumen lama yang memakainya sudah DIKIRIM;
         # tanpa pemetaan ini ia jatuh ke fallback Reserved dan pill-nya berbohong.
         return STAGE_SHIPPED, []
-    # Trial 22 Okt (E4) — SO yang sudah jalan di gudang tetapi masih punya sisa backorder: tandai "menunggu stok".
-    bo_sub = ["menunggu_stok"] if has_bo else []
+    # Trial 22 Okt (E4) — SO yang sudah jalan di gudang tetapi masih punya sisa backorder diberi tanda.
+    # R8 — tanda itu "Sebagian menunggu stok"; "Menunggu stok" (backorder) hanya untuk status `waiting_stock`.
+    bo_sub = [SUB_PARTIAL_STOCK] if has_bo else []
     if status == "partially_shipped":
         return STAGE_SHIPPED, ["sebagian_dikirim", *bo_sub]
     if status == "picked":
@@ -82,13 +91,13 @@ def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
     if status == "confirmed":
         return STAGE_CONFIRMED, ["siap_pick", *bo_sub]
     if status == "approved":
-        # Backorder yang sudah di-approve BERHENTI di Approved (menunggu_stok).
-        return (STAGE_APPROVED, ["menunggu_stok"]) if has_bo else (STAGE_APPROVED, ["siap_confirm"])
+        # SO yang sudah di-approve tetapi kurang stok BERHENTI di Approved (R8: sebagian menunggu stok).
+        return (STAGE_APPROVED, [SUB_PARTIAL_STOCK]) if has_bo else (STAGE_APPROVED, ["siap_confirm"])
     if status == "waiting_approval":
         return STAGE_RESERVED, _approval_subs(o)
     if status == "waiting_stock":
-        # Pure backorder pra-approval — masih di Reserved.
-        return STAGE_RESERVED, ["menunggu_stok"]
+        # Pure backorder pra-approval — masih di Reserved. SATU-SATUNYA "Menunggu stok (backorder)".
+        return STAGE_RESERVED, [SUB_BACKORDER]
     if status in ("reserved", "draft"):
         # F5 — bila ada pending_approvals (harga/kredit/nilai) → tampilkan alasannya.
         if any(p.get("status") == "pending" for p in (o.get("pending_approvals") or [])):
@@ -96,6 +105,25 @@ def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
         return (STAGE_RESERVED, ["menunggu_validasi"]) if appr_required else (STAGE_RESERVED, ["siap_disahkan"])
     # fallback aman
     return STAGE_RESERVED, []
+
+
+def read_sub_status(order: Dict[str, Any]) -> List[str]:
+    """R8 — `sub_status` TERSIMPAN untuk dibaca layar. Dokumen yang diturunkan sebelum keputusan pemilik #2 bisa
+    menyimpan `menunggu_stok` untuk SO tahap lain (mis. Dikirim sebagian) → dibaca `sebagian_menunggu_stok`.
+    Data tidak diubah; tulisan berikutnya (`stage_fields`) sudah memakai kunci baru."""
+    o = order or {}
+    subs = o.get("sub_status")
+    if not isinstance(subs, list):
+        return derive_stage_substatus(o)[1]
+    status = o.get("status")
+    if not status or status == "waiting_stock":
+        return list(subs)
+    out: List[str] = []
+    for k in subs:
+        k = SUB_PARTIAL_STOCK if k == SUB_BACKORDER else k
+        if k not in out:
+            out.append(k)
+    return out
 
 
 def stage_fields(order: Dict[str, Any]) -> Dict[str, Any]:
@@ -120,7 +148,8 @@ SUBSTATUS_LABELS: Dict[str, str] = {
     "menunggu_approval_makloon": "Menunggu approval stok cadangan makloon",
     "menunggu_persetujuan_bayar_sample": "Menunggu persetujuan bayar sample (Finance/Admin Sample)",
     "siap_disahkan": "Siap disahkan",
-    "menunggu_stok": "Menunggu stok (backorder)",
+    "menunggu_stok": "Menunggu stok (backorder)",          # hanya status `waiting_stock` (R8)
+    "sebagian_menunggu_stok": "Sebagian menunggu stok",    # SO tahap lain yang masih bersisa kurang stok (R8)
     "siap_confirm": "Stok siap — bisa di-confirm",
     "siap_pick": "Siap pick (gudang)",
     "sedang_pick": "Sedang dipick",

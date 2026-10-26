@@ -1709,6 +1709,21 @@ async def _form_header(doc: Dict[str, Any], roll: Dict[str, Any]) -> Dict[str, A
             "inspected_date": now_iso()[:10], "source_kind": doc.get("kind"), "source_ref": doc.get("ref_doc_number")}
 
 
+def hold_waiting_query() -> Dict[str, Any]:
+    """Fase 4 · R8 — "Barang DITAHAN" di QC Hub = antrean `inspection_hold` (papan Beranda/Operasi Gudang yang
+    menautkan ke sini dengan saringan "Hanya yang DITAHAN"). SATU definisi: `approval_backlog_service.QUEUES` —
+    baris yang sudah DITOLAK MD Quality (`reject_hold`: roll tetap ditahan, keputusan sudah diambil) dan SPK draf/
+    ditutup tidak dihitung. Dulu `lines.hold` saja → hitungan & saringan ikut baris yang sudah ditolak."""
+    import copy
+    from services.approval_backlog_service import QUEUES   # impor malas (tak ada impor balik)
+    return copy.deepcopy(next(q[4] for q in QUEUES if q[0] == "inspection_hold"))
+
+
+def _with_hold(flt: Dict[str, Any]) -> Dict[str, Any]:
+    """Saring + definisi tahanan tanpa saling menimpa kunci (`status`/`$or` milik penyaring tetap berlaku)."""
+    return {"$and": [flt, hold_waiting_query()]} if flt else hold_waiting_query()
+
+
 async def list_inspections(scope: Dict[str, Any], *, kind: str = "", status: str = "",
                            assigned_to: str = "", q: str = "", hold_only: bool = False,
                            skip: int = 0, limit: int = 200) -> Tuple[List[Dict[str, Any]], int]:
@@ -1719,12 +1734,12 @@ async def list_inspections(scope: Dict[str, Any], *, kind: str = "", status: str
         flt["status"] = status
     if assigned_to:
         flt["assigned_to"] = assigned_to
-    if hold_only:
-        flt["lines.hold"] = True
     if q:
         rx = {"$regex": q.strip(), "$options": "i"}
         flt["$or"] = [{"number": rx}, {"ref_doc_number": rx}, {"supplier_name": rx},
                       {"customer_name": rx}, {"assigned_name": rx}]
+    if hold_only:
+        flt = _with_hold(flt)   # R8 — sama dengan antrean `inspection_hold` (dulu `lines.hold` saja)
     total = await db[COLL].count_documents(flt)
     rows = await db[COLL].find(flt, {"_id": 0}).sort("created_at", -1) \
         .skip(int(skip)).limit(int(limit)).to_list(int(limit))
@@ -1737,7 +1752,7 @@ async def stats(scope: Dict[str, Any]) -> Dict[str, Any]:
     for st in BOARD_ORDER:
         out[st] = await db[COLL].count_documents({**flt, "status": st})
     out["total"] = await db[COLL].count_documents(flt)
-    out["hold"] = await db[COLL].count_documents({**flt, "lines.hold": True})
+    out["hold"] = await db[COLL].count_documents(_with_hold(flt))   # R8 — = antrean `inspection_hold`
     out["rejected"] = await db[COLL].count_documents({**flt, "decision": "tolak"})
     return out
 

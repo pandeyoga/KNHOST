@@ -2,6 +2,9 @@
 // STAGE (induk linear) + SUB-STATUS (anak kontekstual). Dipakai sebagai FALLBACK
 // bila backend belum mengirim `stage`/`sub_status` (order legacy). Kode menang:
 // bila BE mengirim field, FE memakainya apa adanya.
+// Fase 4 · R8 (keputusan pemilik #2, 26 Okt 2026) — "Backorder"/"Menunggu stok" = SO berstatus `waiting_stock` SAJA
+// (`menunggu_stok`); SO tahap lain yang masih bersisa kurang stok = `sebagian_menunggu_stok` ("Sebagian menunggu stok"),
+// sama dengan `features/orders/soStatusView.hasPartialBackorder` & `alert_ops_service.BACKORDER_STATUS`.
 
 export const STAGE_FLOW = ["Reserved", "Approved", "Confirmed", "Picked", "Shipped", "Delivered"];
 export const STAGE_CANCELLED = "Cancelled";
@@ -14,7 +17,8 @@ export const SUBSTATUS_LABELS = {
   menunggu_approval_makloon: "Menunggu approval stok cadangan makloon",
   menunggu_persetujuan_bayar_sample: "Menunggu persetujuan bayar sample (Finance/Admin Sample)",
   siap_disahkan: "Siap disahkan",
-  menunggu_stok: "Menunggu stok (backorder)",
+  menunggu_stok: "Menunggu stok (backorder)",           // hanya status `waiting_stock` (R8)
+  sebagian_menunggu_stok: "Sebagian menunggu stok",     // SO tahap lain yang masih bersisa kurang stok (R8)
   siap_confirm: "Stok siap — bisa dikonfirmasi",
   siap_pick: "Siap diambil (gudang)",
   sedang_pick: "Sedang dipick",
@@ -82,7 +86,7 @@ export function deriveStageSub(order) {
   // KN-D14 (mirror BE) — baris backorder `fulfilled` tetap di daftar: hitung yang sisa qty-nya > 0.
   const hasBo = Boolean(o.has_backorder)
     || (o.backorders || []).some((b) => Number(b.backorder_qty || 0) > 0.001 && b.status !== "fulfilled");
-  const bo = hasBo ? ["menunggu_stok"] : [];   // Trial 22 Okt (E4) — sisa backorder SO yang sudah jalan di gudang
+  const bo = hasBo ? ["sebagian_menunggu_stok"] : [];   // Trial 22 Okt (E4) / R8 — sisa kurang stok di tahap lain
   const apprReq = Boolean(o.approval_required);
   switch (status) {
     case "cancelled": return ["Cancelled", ["dibatalkan"]];
@@ -95,7 +99,7 @@ export function deriveStageSub(order) {
     case "picked": return ["Picked", ["siap_kirim"]];
     case "partially_picked": return ["Picked", ["sebagian_dipick", ...bo]];
     case "confirmed": return ["Confirmed", ["siap_pick", ...bo]];
-    case "approved": return hasBo ? ["Approved", ["menunggu_stok"]] : ["Approved", ["siap_confirm"]];
+    case "approved": return hasBo ? ["Approved", ["sebagian_menunggu_stok"]] : ["Approved", ["siap_confirm"]];
     case "waiting_approval": return ["Reserved", approvalSubs(o)];
     case "waiting_stock": return ["Reserved", ["menunggu_stok"]];
     case "reserved":
@@ -110,7 +114,15 @@ export function getStage(order) {
   return deriveStageSub(order)[0];
 }
 
+// R8 — `sub_status` tersimpan sebelum keputusan pemilik #2 (atau dari backend lama) bisa menyebut `menunggu_stok` untuk
+// SO tahap lain → dibaca "Sebagian menunggu stok" (mirror `so_status.read_sub_status`).
+function readSubStatus(order) {
+  const subs = order.sub_status;
+  if (!order.status || order.status === "waiting_stock") return subs;
+  return [...new Set(subs.map((k) => (k === "menunggu_stok" ? "sebagian_menunggu_stok" : k)))];
+}
+
 export function getSubStatus(order) {
-  if (order && Array.isArray(order.sub_status)) return order.sub_status;
+  if (order && Array.isArray(order.sub_status)) return readSubStatus(order);
   return deriveStageSub(order)[1];
 }

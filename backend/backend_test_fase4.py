@@ -244,7 +244,7 @@ def main():
             ("reserved", "Reserved", ["siap_disahkan", "menunggu_validasi"]),
             ("waiting_approval", "Reserved", ["menunggu_approval", "menunggu_validasi"]),
             ("waiting_stock", "Reserved", ["menunggu_stok"]),
-            ("approved", "Approved", ["siap_confirm", "menunggu_stok"]),  # depends on backorder
+            ("approved", "Approved", ["siap_confirm", "sebagian_menunggu_stok"]),  # depends on backorder (R8)
             ("confirmed", "Confirmed", ["siap_pick"]),
             ("shipped", "Shipped", []),
             ("done", "Delivered", []),

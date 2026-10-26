@@ -144,7 +144,6 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
     if idx is None or idx < 0 or idx >= len(items):
         raise HTTPException(status_code=400, detail="Item tidak ditemukan pada pesanan.")
     item = items[idx]
-    pid = item.get("product_id")
     normal_price = float(item.get("price", 0) or 0)
     req_price = float(payload.requested_price or 0)
     if req_price <= 0:
@@ -274,6 +273,12 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
     actor = await require_permission(request, "order", "approve")
     ctx = await entity_ctx(request)
     order = await _load_so(order_id, ctx)
+    # Fase 4 · R8 — SO mati (batal/kedaluwarsa/selesai): entri basi tidak boleh diputus (dulu "Setujui" pada SO
+    # kedaluwarsa menulis keputusan & harga ke pesanan yang sudah tutup).
+    dead = so_approvals.closed_order_message(order)
+    if dead:
+        raise HTTPException(status_code=409, detail={"code": "SO_CLOSED", "message": dead,
+                                                     "order_status": order.get("status")})
     decision = (payload.decision or "").strip().lower()
     if decision not in ("approve", "reject"):
         raise HTTPException(status_code=400, detail="decision harus 'approve' atau 'reject'.")
@@ -505,7 +510,10 @@ async def approvals_queue(request: Request, type: str = None, entity_id: str = N
     # akhirnya berlaku. Tombol keputusan tetap dijaga endpoint approve/reject.
     await require_any_permission(request, [("order", "approve"), ("approval", "view")])
     ctx = await entity_ctx(request)
-    query = resolve_list_scope("sales_orders", {"pending_approvals.status": "pending"}, ctx, entity_id)
+    # Fase 4 · R8 — SO mati tidak menunggu siapa pun (sama dengan antrean `sales_order` & KPI beranda).
+    query = resolve_list_scope("sales_orders", {"pending_approvals.status": "pending",
+                                                "status": {"$nin": list(so_approvals.dead_statuses())}},
+                               ctx, entity_id)
     orders = await db.sales_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
     out: List[Dict[str, Any]] = []
     for o in orders:

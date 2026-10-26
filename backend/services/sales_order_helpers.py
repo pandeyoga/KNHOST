@@ -10,14 +10,15 @@ from fastapi import HTTPException
 from pymongo import ReturnDocument
 from db import db
 from dependencies import audit
-from core_utils import new_id, now_iso, safe_doc, next_doc_number, strip_cost_fields
+from core_utils import now_iso, safe_doc, strip_cost_fields
 from services import product_exclusivity as pexcl
 from services.roll_service import (
     reserve_specific_rolls, allocations_from_reserved_rolls, record_reservation_movements,
 )
 from services.so_status import (
-    stage_fields, derive_stage_substatus, SUBSTATUS_LABELS, allowed_action_hint,
+    stage_fields, derive_stage_substatus, SUBSTATUS_LABELS, allowed_action_hint, read_sub_status,
 )
+from services import so_approvals
 
 
 def normalize_sales_team(raw: List[Any]) -> List[Dict[str, Any]]:
@@ -68,6 +69,9 @@ def norm_backorder(o: Dict[str, Any]) -> Dict[str, Any]:
     # pada respons agar order legacy/yang belum ter-backfill tetap konsisten.
     if not o.get("stage"):
         o.update(stage_fields(o))
+    elif isinstance(o.get("sub_status"), list):
+        # Fase 4 · R8 — `menunggu_stok` tersimpan untuk SO tahap lain dibaca "sebagian menunggu stok" (keputusan #2).
+        o["sub_status"] = read_sub_status(o)
     return o
 
 
@@ -220,6 +224,13 @@ async def so_transition(
             "allowed_from": expected_from,
         })
     update_data = {"status": new_status, "updated_at": now_iso(), **extra_data}
+    # Fase 4 · R8 — SO MATI (batal/kedaluwarsa): entri persetujuan yang masih MENUNGGU ditutup & penanda baris
+    # pendingan (`has_backorder`) dibersihkan di tulisan CAS yang sama dengan perubahan status. Dulu keduanya basi:
+    # entri muncul di antrean ("Reservasi kedaluwarsa — buat pesanan baru") & SO batal berlabel Backorder.
+    why = str(extra_data.get("cancel_reason") or extra_data.get("reason") or "").strip()
+    dead_patch, closed = so_approvals.dead_order_patch(
+        order, new_status, f"Pesanan dibatalkan: {why}" if why else "", actor_name)
+    update_data.update(dead_patch)
     # F-07 (uji pra-UAT 2026-10-21) — tahap kunci SELALU berstempel waktu & pelaku (Perjalanan SO menampilkannya);
     # dulu "Disetujui/Dikonfirmasi" tanpa waktu & pelaku. Nilai dari pemanggil tetap menang.
     for _at, _by in TRANSITION_STAMPS.get(new_status, ()):
@@ -239,6 +250,8 @@ async def so_transition(
             "code": "INVALID_TRANSITION",
             "message": f"Pesanan berubah status oleh proses lain sebelum aksi '{action}' selesai. Muat ulang layar.",
             "attempted_action": action, "allowed_from": expected_from})
+    if closed:
+        await so_approvals.close_detail_docs(db, closed, closed[0].get("cancel_reason", ""), actor_name)
     await audit(actor_name, action, "sales_order", order_id, {"status": new_status})
     return order
 

@@ -83,8 +83,16 @@ def backend_source() -> str:
 
 
 def ada_di_kode(field: str, src: str) -> bool:
-    """Field disebut sebagai KUNCI TULIS (bukan sekadar dibaca/di-doc)."""
-    return bool(re.search(rf'"{re.escape(field)}"\s*:', src))
+    """Field disebut sebagai KUNCI TULIS (bukan sekadar dibaca/di-doc): kunci dict literal (`"field": …`) ATAU
+    penugasan subskrip (`doc["field"] = …`).
+
+    Fase 4 · R8 (26 Okt 2026) — positif palsu: `contra_bon_service.recompute` MENULIS `cb["match_summary"] = {…}`
+    (disimpan `_save`/`insert_one` di setiap jalur kontrabon), tetapi pola lama hanya mengenali kunci literal, dan DB
+    uji tanpa kontrabon menghapus bukti A → `match_summary.status` dituduh "ditebak" (merah 2 sejak sebelum fase 4).
+    Subskrip yang hanya DIBACA/dibandingkan (`cb["match_summary"]["pending_count"]`, `== …`) tetap bukan bukti."""
+    f = re.escape(field)
+    return bool(re.search(rf'"{f}"\s*:', src)
+                or re.search(rf"\[\s*[\"']{f}[\"']\s*\]\s*=(?!=)", src))
 
 
 def periksa(g: Guard, queues, aging, db, src, detail=None) -> None:
@@ -185,6 +193,15 @@ def self_test() -> int:
          {"cb": {"amount": ["totals.net_payable"]}}, '{"totals": x}', 0),
         ("DETAIL_META untuk antrean yang tidak ada → merah",
          [], {"hantu": {"amount": ["x"]}}, "", 1),
+        # R8 — penugasan subskrip = jalur tulis (pola `contra_bon_service.recompute`).
+        ("DETAIL_META ditulis lewat penugasan subskrip `cb[\"f\"] = …` → hijau",
+         [("cb", "L", "V", "contra_bons", {})],
+         {"cb": {"note": ["match_summary.status"]}},
+         'cb["match_summary"] = {"status": s}', 0),
+        ("DETAIL_META subskrip yang hanya DIBACA/dibandingkan → merah",
+         [("cb", "L", "V", "contra_bons", {})],
+         {"cb": {"note": ["match_summary.status"]}},
+         'n = cb["match_summary"]["pending_count"]; ok = cb["match_summary"] == x', 1),
     ]
     gagal = 0
     print(f"{B}== SELF-TEST INV-AGING-01 (penjaga harus bisa MEMERAH) =={X}")
