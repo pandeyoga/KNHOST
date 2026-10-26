@@ -50,7 +50,9 @@ PATTERNS = [
      "nama entitas hanya bersumber dari `id` teknis", True),
     (re.compile(r"entityName\s*\|\|\s*selectedEntity\b"), "",
      "cadangan nama entitas jatuh ke `selectedEntity` (id teknis)", False),
-    (re.compile(r"\|\|\s*[\w.]*entity_id\b(?!\s*===)"), "entit",
+    # Fase 3 (26 Okt) — `(a.owner_entity_id || a.entity_id) === filter` juga PERBANDINGAN (kurung tutup
+    # sebelum `===`/`!==`), bukan teks layar; dulu dituduh palsu di StockBucketsView.
+    (re.compile(r"\|\|\s*[\w.]*entity_id\b(?!\s*\)?\s*[!=]==)"), "entit",
      "nama entitas hanya bersumber dari `entity_id` teknis", True),
     # FASE P7 — LUBANG YANG DITEMUKAN SAAT PEMERIKSAAN LAYAR:
     # semua pola di atas hanya menangkap `entity_id` yang dipakai sebagai **CADANGAN**

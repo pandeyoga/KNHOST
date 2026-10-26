@@ -45,18 +45,18 @@ export default function ErrorNotice({ message, onRetry, onDismiss, onAction, act
       <span>{text}</span>
       <span style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
         {onAction && actionLabel && (
-          <button data-testid={`${testId}-action`} onClick={onAction}
+          <button type="button" data-testid={`${testId}-action`} onClick={onAction}
             style={{ marginLeft: 0, fontWeight: 700 }}>
             {actionLabel}
           </button>
         )}
         {onRetry && (
-          <button data-testid={`${testId}-retry`} onClick={onRetry}
+          <button type="button" data-testid={`${testId}-retry`} onClick={onRetry}
             style={{ marginLeft: 0, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
             <RefreshCw size={12} /> Coba lagi
           </button>
         )}
-        {onDismiss && <button onClick={onDismiss} style={{ marginLeft: 0 }}>×</button>}
+        {onDismiss && <button type="button" aria-label="Tutup pesan" onClick={onDismiss} style={{ marginLeft: 0 }}>×</button>}
       </span>
     </div>
   );
