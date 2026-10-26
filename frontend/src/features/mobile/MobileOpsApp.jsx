@@ -11,6 +11,7 @@ import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { actorLabel } from "../../utils/actorLabel";
 import { apiErrorText, isForbiddenError } from "../../utils/apiError";
 import { canSeeMatrix } from "../approvals/inboxTabs";
+import { resolveDeepLinkTarget } from "../../config/navigationConfig";
 import { NoBreakNumbers, decisionTarget, linkView, stageText } from "./notifText";
 
 /**
@@ -26,6 +27,10 @@ export const dedupQueue = (items, specials) => {
 export const queueFullTarget = (it, role) => (canSeeMatrix(role)
   ? { nav: "approval-inbox", view: "approval-inbox", preset: { tab: "matrix" } }
   : { nav: it.view, view: it.view });
+// Verifikasi crawl fase 3: Finance tercatat pemutus satu tahap PR tetapi tanpa izin `purchase_requisition.view` →
+// "Buka layar lengkap" mendarat di "Permission ditolak". Tombol hanya tampil bila layar tujuan boleh dibuka peran
+// ini (aturan menu yang sama: peran + izin server + hidden_views).
+export const canOpenFull = (to, role) => !!(to?.view && role && resolveDeepLinkTarget(to.view, role));
 
 function QueuePanel({ specials, role, onOpenFull }) {
   const [q, setQ] = useState(null);
@@ -48,7 +53,7 @@ function QueuePanel({ specials, role, onOpenFull }) {
             <div className="flex justify-between gap-2"><b className="min-w-0 break-words"><NoBreakNumbers text={it.doc_number || it.number || it.title || it.stage_label || stageText(it.stage || "")} /></b><span className="status-pill pill-warning shrink-0">{it.stage_label || (it.stage ? stageText(it.stage) : "menunggu")}</span></div>
             {/* Audit UI 24 Okt (HP manager › Antrean) — titik yatim "· Rp 0" & akun teknis ("system-seed") tidak tampil. */}
             <div className="text-xs text-[#6E6E73] mt-1">{[it.customer_name || actorLabel(it.requester_name || it.requester, ""), Number(it.amount) > 0 ? formatCurrency(it.amount) : ""].filter(Boolean).join(" · ")}</div>
-            {onOpenFull && to.view && (
+            {onOpenFull && canOpenFull(to, role) && (
               <button type="button" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" data-testid={`mo-queue-open-${it.id || i}`}
                 onClick={() => onOpenFull(to.nav, to.view, to.preset ? { preset: to.preset } : undefined)}>Buka layar lengkap <ExternalLink size={12} /></button>
             )}

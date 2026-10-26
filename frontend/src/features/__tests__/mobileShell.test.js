@@ -2,7 +2,8 @@
 // permintaan P2 (Kebijakan Retur → Pengaturan › Penjualan) & P5 (papan tautan membawa preset).
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import MobileOpsApp, { dedupQueue, queueFullTarget } from "../mobile/MobileOpsApp";
+import MobileOpsApp, { canOpenFull, dedupQueue, queueFullTarget } from "../mobile/MobileOpsApp";
+import { setAccessContext } from "../../config/roles";
 import MobileWarehouseApp from "../mobile/MobileWarehouseApp";
 import MobileApprovalInbox from "../mobile/MobileApprovalInbox";
 import MobileMdApp from "../sales/mobile/MobileMdApp";
@@ -147,6 +148,14 @@ test("D-06 HP: antrean lintas tahap tanpa PO custom yang sudah ada di daftar kep
   expect(dedupQueue(items, [{ id: "sord_a" }]).map((x) => x.id)).toEqual(["sord_b", "pr1"]);
   expect(queueFullTarget(items[2], "admin")).toEqual({ nav: "approval-inbox", view: "approval-inbox", preset: { tab: "matrix" } });
   expect(queueFullTarget(items[2], "finance")).toEqual({ nav: "purchase-requisitions", view: "purchase-requisitions" });
+  // Layar tujuan yang tidak boleh dibuka peran ini → tombol tidak tampil (bukan "Permission ditolak").
+  expect(canOpenFull({ view: "approval-inbox" }, "admin")).toBe(true);
+  expect(canOpenFull({ view: "purchase-requisitions" }, "designer")).toBe(false);
+  expect(canOpenFull({ view: "" }, "admin")).toBe(false);
+  // Finance dengan izin server tanpa `purchase_requisition` (kasus crawl) → tidak bisa membuka layar PR.
+  setAccessContext({ role: "finance", permissions: { order: ["view"] }, view_resources: { "purchase-requisitions": ["purchase_requisition"] } });
+  expect(canOpenFull({ view: "purchase-requisitions" }, "finance")).toBe(false);
+  setAccessContext(null);
 
   routeGet({ "/approvals/my-queue": { items }, "/special-orders": [{ id: "sord_a", number: "SORD-1", status: "pending_approval", customer_name: "Toko" }], "/price-approvals": [] });
   const onOpenFull = jest.fn();
