@@ -4,11 +4,19 @@
  *
  * Kenapa ada pratinjau: sebelum fase ini impor hanya menerima CSV 4 kolom baku yang
  * harus diketik ulang manusia, dan kesalahan baca baru terlihat SETELAH data masuk.
+ *
+ * Fase 4 · R2 (L-03) — dulu panel yang DISELIPKAN di tengah halaman (tombol "Impor mutasi bank" ⇄ "Tutup panel
+ * impor"), galatnya ke bilah halaman. Kini `FormModal` baku: Pratinjau & Impor di kaki yang menempel, galat
+ * pratinjau/impor tampil di DALAM pop-up (`recon-import-error`). Isian & testid tetap (`recon-import-panel` = kartu
+ * pop-up, `recon-format-select`, `recon-file-input`, `recon-raw`, `recon-preview-btn`, `recon-import-submit`).
  */
 import { useMemo, useState } from "react";
 import { Upload, RefreshCw, Eye, AlertTriangle, FileUp } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
+import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
+import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency } from "../../../utils/formatters";
 
 const fmtDate = (s) => {
@@ -19,12 +27,13 @@ const fmtDate = (s) => {
   } catch { return s; }
 };
 
-export default function ReconImportPanel({ accountId, formats, onDone, onError }) {
+export default function ReconImportPanel({ accountId, formats, onDone, onClose }) {
   const [formatId, setFormatId] = useState("");
   const [raw, setRaw] = useState("");
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
 
   const options = useMemo(() => ([
     { value: "", label: "Kenali otomatis dari isi berkas" },
@@ -43,16 +52,16 @@ export default function ReconImportPanel({ accountId, formats, onDone, onError }
   }
 
   async function doPreview() {
-    setBusy("preview");
+    setBusy("preview"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/preview`,
         { raw, format_id: formatId || "", year_hint: new Date().getFullYear() });
       setPreview(r.data);
-    } catch (e) { onError(e); setPreview(null); } finally { setBusy(""); }
+    } catch (e) { setErr(apiErrorText(e)); setPreview(null); } finally { setBusy(""); }
   }
 
   async function doImport() {
-    setBusy("import");
+    setBusy("import"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/import-file`,
         { bank_account_id: accountId, raw, format_id: formatId || "",
@@ -61,14 +70,31 @@ export default function ReconImportPanel({ accountId, formats, onDone, onError }
       onDone(`Impor ${d.format_name || ""}: ${d.imported} baris baru, ${d.skipped} dilewati `
         + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.`);
       setRaw(""); setPreview(null); setFileName("");
-    } catch (e) { onError(e); } finally { setBusy(""); }
+    } catch (e) { setErr(apiErrorText(e)); } finally { setBusy(""); }
   }
 
   return (
-    <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] p-3 mb-4"
-      data-testid="recon-import-panel">
+    <FormModal open onClose={onClose} size="lg" icon={Upload} title="Impor mutasi bank"
+      subtitle="Pilih template bank, unggah atau tempel rekening koran, pratinjau hasil baca, lalu impor."
+      testId="recon-import-panel" busy={busy === "import"}
+      footer={(
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={busy === "import"}>Batal</button>
+          <button type="button" data-testid="recon-preview-btn" className="secondary-button"
+            disabled={!raw.trim() || busy === "preview"} onClick={doPreview}>
+            {busy === "preview" ? <RefreshCw size={14} className="spin" /> : <Eye size={14} />}
+            Pratinjau
+          </button>
+          <button type="button" data-testid="recon-import-submit" className="primary-button"
+            disabled={!raw.trim() || !accountId || busy === "import"} onClick={doImport}>
+            {busy === "import" ? <RefreshCw size={14} className="spin" /> : <Upload size={14} />}
+            Impor
+          </button>
+        </div>
+      )}>
+      <ErrorNotice message={err} onDismiss={() => setErr("")} testId="recon-import-error" />
       <div className="flex flex-wrap items-end gap-3 mb-2">
-        <div className="min-w-[260px]">
+        <div className="w-full sm:w-auto sm:min-w-[260px]">
           <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
             Template bank
           </label>
@@ -94,19 +120,6 @@ export default function ReconImportPanel({ accountId, formats, onDone, onError }
           + "12/07,TRSF E-BANKING CR PT MAJU JAYA SO-0007,0000,\"12.500.000,00\",CR,..."}
         value={raw} onChange={(e) => { setRaw(e.target.value); setPreview(null); }} />
 
-      <div className="flex justify-end gap-2 mt-2">
-        <button data-testid="recon-preview-btn" className="secondary-button"
-          disabled={!raw.trim() || busy === "preview"} onClick={doPreview}>
-          {busy === "preview" ? <RefreshCw size={14} className="spin" /> : <Eye size={14} />}
-          Pratinjau
-        </button>
-        <button data-testid="recon-import-submit" className="primary-button"
-          disabled={!raw.trim() || !accountId || busy === "import"} onClick={doImport}>
-          {busy === "import" ? <RefreshCw size={14} className="spin" /> : <Upload size={14} />}
-          Impor
-        </button>
-      </div>
-
       {preview && (
         <div className="mt-3" data-testid="recon-preview">
           <p className="text-[12px] text-[#1C1C1E] mb-1">
@@ -122,7 +135,7 @@ export default function ReconImportPanel({ accountId, formats, onDone, onError }
               diimpor — contoh: {preview.errors?.[0]?.reason} (baris {preview.errors?.[0]?.row})
             </p>
           )}
-          <div className="rounded border border-[#E5E5EA] overflow-auto max-h-[260px]">
+          <div className="overflow-x-auto rounded border border-[#E5E5EA] sm:max-h-[260px] sm:overflow-auto">
             <table className="w-full text-[11px]">
               <thead>
                 <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#F7F8FA]">
@@ -155,6 +168,6 @@ export default function ReconImportPanel({ accountId, formats, onDone, onError }
           </div>
         </div>
       )}
-    </div>
+    </FormModal>
   );
 }

@@ -5,11 +5,17 @@
  * Panel ini memberi jalan resmi untuk keputusannya: **Terbitkan** · **Bebaskan** ·
  * **Ubah Nominal** · **Catat Pembayaran** — dua yang di tengah WAJIB memilih label
  * alasan, sehingga tidak ada denda yang hilang diam-diam.
+ *
+ * Fase 4 · R2 (L-03) — dialog keputusan `.modal-card` buatan sendiri → `FormModal` baku (Esc, klik latar gestur
+ * utuh, layar penuh di HP); galat tetap di DALAM pop-up (`penalty-dialog-error`). "Terbitkan" (menjurnal piutang
+ * denda) kini dikonfirmasi dulu lewat `askConfirm`. Testid tetap (`penalty-dialog`, `penalty-dialog-*`).
  */
 import MoneyInput from "../../../components/MoneyInput";
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, BadgeDollarSign, Ban, Loader2, PencilLine, Receipt, Send } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import FormModal from "../../../components/FormModal";
+import { askConfirm } from "../../../services/confirmService";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 import {
   adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyMeta, waivePenalty,
@@ -39,6 +45,11 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   }, [entityId]);
 
   const act = useCallback(async (kind, row) => {
+    if (kind === "issue" && !(await askConfirm({
+      title: `Terbitkan denda ${row.number}?`,
+      message: `Denda ${money(row.amount)} diterbitkan dan dijurnal ke piutang denda pelanggan.`,
+      confirmLabel: "Terbitkan",
+    }))) return;
     setBusy(row.id); setErr("");
     try {
       if (kind === "issue") await issuePenalty(row.id);
@@ -67,7 +78,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
 
   return (
     <div data-testid="penalty-panel" className="space-y-1.5">
-      {err && <div className="notice-bar danger !py-1.5" data-testid="penalty-error">
+      {err && !dialog && <div className="notice-bar danger !py-1.5" data-testid="penalty-error">
         <span className="text-[11.5px]">{err}</span></div>}
       {rows.map((p) => {
         const meta = penaltyMeta(p.status);
@@ -108,18 +119,18 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                 {(canAdjust || canWaive) && ["draft", "issued", "adjusted"].includes(p.status) && (
                   <>
                     {canAdjust && <button type="button" className="secondary-button !py-1" data-testid={`penalty-adjust-${p.id}`}
-                      onClick={() => { setDialog({ kind: "adjust", row: p }); setAmount(String(p.amount)); }}>
+                      onClick={() => { setErr(""); setDialog({ kind: "adjust", row: p }); setAmount(String(p.amount)); }}>
                       <PencilLine size={12} /> Ubah Nominal
                     </button>}
                     {canWaive && <button type="button" className="secondary-button !py-1" data-testid={`penalty-waive-${p.id}`}
-                      onClick={() => setDialog({ kind: "waive", row: p })}>
+                      onClick={() => { setErr(""); setDialog({ kind: "waive", row: p }); }}>
                       <Ban size={12} /> Bebaskan
                     </button>}
                   </>
                 )}
                 {canPay && ["issued", "adjusted"].includes(p.status) && (
                   <button type="button" className="secondary-button !py-1" data-testid={`penalty-pay-${p.id}`}
-                    onClick={() => { setDialog({ kind: "pay", row: p }); setAmount(String(p.amount)); }}>
+                    onClick={() => { setErr(""); setDialog({ kind: "pay", row: p }); setAmount(String(p.amount)); }}>
                     <Receipt size={12} /> Catat Bayar
                   </button>
                 )}
@@ -130,52 +141,15 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
       })}
 
       {dialog && (
-        <div className="modal-overlay" data-testid="penalty-dialog"
-          onClick={(e) => { if (e.target === e.currentTarget) setDialog(null); }}>
-          <div className="modal-card" style={{ maxWidth: 460, width: "92vw" }}>
-            <div className="border-b border-[#EFF0F2] px-4 py-3">
-              <h3 className="text-[13.5px] font-bold">
-                {dialog.kind === "waive" ? "Bebaskan Denda"
-                  : dialog.kind === "adjust" ? "Ubah Nominal Denda" : "Catat Pembayaran Denda"}
-                {" · "}{dialog.row.number}
-              </h3>
-              <p className="text-[11px] text-[#6B6B73]">
-                {dialog.kind === "pay"
-                  ? "Pembayaran akan dijurnal: Kas/Bank naik, Piutang Denda turun."
-                  : "Keputusan ini tercatat lengkap dengan alasan & nama pemutus. Denda yang sudah berjurnal dikoreksi lewat jurnal pembalik (tidak dihapus)."}
-              </p>
-            </div>
-            <div className="space-y-2 p-4">
-              {dialog.kind !== "waive" && (
-                <div className="grid gap-1">
-                  <label className="kicker">Nominal</label>
-                  <MoneyInput testId="penalty-dialog-amount" className="field tabular-nums" value={amount} onChange={(v) => setAmount(v)} />
-                </div>
-              )}
-              {dialog.kind !== "pay" && (
-                <div className="grid gap-1">
-                  <label className="kicker">Label alasan (wajib)</label>
-                  <KNSelect value={reasonCode} onValueChange={setReasonCode} className="field"
-                    data-testid="penalty-dialog-reason" placeholder="Pilih alasan…"
-                    options={reasons.map((r) => ({ value: r.code, label: r.label }))} />
-                </div>
-              )}
-              {dialog.kind !== "pay" && (
-                <div className="grid gap-1">
-                  <label className="kicker">Catatan</label>
-                  <textarea className="field" rows={2} value={note} data-testid="penalty-dialog-note"
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Mis. hasil pembicaraan dengan pelanggan…" />
-                </div>
-              )}
-              {err && <div className="notice-bar danger !py-1.5"><span className="text-[11.5px]">{err}</span></div>}
-              {dialog.kind !== "pay" && !reasonCode && (
-                <p className="flex items-center gap-1 text-[10.5px] text-[#8C4A00]">
-                  <AlertTriangle size={11} /> Pilih label alasan dulu — server akan menolak tanpa alasan.
-                </p>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
+        <FormModal open onClose={() => setDialog(null)} size="sm" testId="penalty-dialog" busy={busy !== ""}
+          icon={dialog.kind === "waive" ? Ban : dialog.kind === "adjust" ? PencilLine : Receipt}
+          title={`${dialog.kind === "waive" ? "Bebaskan Denda"
+            : dialog.kind === "adjust" ? "Ubah Nominal Denda" : "Catat Pembayaran Denda"} · ${dialog.row.number}`}
+          subtitle={dialog.kind === "pay"
+            ? "Pembayaran akan dijurnal: Kas/Bank naik, Piutang Denda turun."
+            : "Keputusan ini tercatat lengkap dengan alasan & nama pemutus. Denda yang sudah berjurnal dikoreksi lewat jurnal pembalik (tidak dihapus)."}
+          footer={(
+            <div className="flex justify-end gap-2">
               <button type="button" className="secondary-button" onClick={() => setDialog(null)}
                 data-testid="penalty-dialog-cancel">Batal</button>
               <button type="button" className="primary-button" data-testid="penalty-dialog-submit"
@@ -184,8 +158,38 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                 {busy ? <Loader2 size={13} className="animate-spin" /> : null} Simpan keputusan
               </button>
             </div>
+          )}>
+          <div className="space-y-2">
+            {dialog.kind !== "waive" && (
+              <div className="grid gap-1">
+                <label className="kicker">Nominal</label>
+                <MoneyInput testId="penalty-dialog-amount" className="field tabular-nums" value={amount} onChange={(v) => setAmount(v)} />
+              </div>
+            )}
+            {dialog.kind !== "pay" && (
+              <div className="grid gap-1">
+                <label className="kicker">Label alasan (wajib)</label>
+                <KNSelect value={reasonCode} onValueChange={setReasonCode} className="field"
+                  data-testid="penalty-dialog-reason" placeholder="Pilih alasan…"
+                  options={reasons.map((r) => ({ value: r.code, label: r.label }))} />
+              </div>
+            )}
+            {dialog.kind !== "pay" && (
+              <div className="grid gap-1">
+                <label className="kicker">Catatan</label>
+                <textarea className="field" rows={2} value={note} data-testid="penalty-dialog-note"
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Mis. hasil pembicaraan dengan pelanggan…" />
+              </div>
+            )}
+            {err && <div className="notice-bar danger !py-1.5" data-testid="penalty-dialog-error"><span className="text-[11.5px]">{err}</span></div>}
+            {dialog.kind !== "pay" && !reasonCode && (
+              <p className="flex items-center gap-1 text-[10.5px] text-[#8C4A00]">
+                <AlertTriangle size={11} /> Pilih label alasan dulu — server akan menolak tanpa alasan.
+              </p>
+            )}
           </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

@@ -11,6 +11,11 @@
  *   1. Daftar Kontrabon      — “siklus mana yang sedang jalan & sudah sampai mana?”
  *   2. GR Belum Ditagih      — “barang mana yang sudah masuk tapi belum ditagih?”
  *   3. Jadwal Tukar Faktur   — “supplier mana yang datang hari apa, siap berapa?”
+ *
+ * Fase 4 · R2 — L-02: kepala halaman (ikon + h2 langsung di latar, "Muat ulang" sebelum tombol utama) →
+ * `PageHeader` (tombol utama paling kanan); tab & isi dalam `.section-card`. L-01: pil biru buatan sendiri →
+ * `PageTabs` (`cb-tab-*` tetap); saringan status (tab tingkat ke-3) → `FilterChips` (`cb-filter-status-*` tetap);
+ * jumlah baris di posisi tetap.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -19,7 +24,9 @@ import {
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
-import { OptionTabs } from "../../../components/ListControls";
+import FilterChips from "../../../components/FilterChips";
+import PageTabs from "../../../components/PageTabs";
+import { PageHeader } from "../../../components/ListPageParts";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { askConfirm } from "../../../services/confirmService";
@@ -174,44 +181,40 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
   };
 
   const statusOptions = useMemo(() => STATUS_FILTERS, []);
+  // Hitungan per status (server `status-counts`); "Semua" = total bila dikirim, bila tidak dijumlah dari per status.
+  const statusCount = (v) => (v ? counts[v] || 0 : counts.all ?? Object.entries(counts)
+    .filter(([k]) => k !== "total").reduce((acc, [, n]) => acc + (Number(n) || 0), 0));
   const filterOn = !!(fStatus || q);
 
   return (
-    <div className="p-5" data-testid="contra-bons-view">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-[17px] font-bold text-[#1C1C1E]">
-            <Receipt size={18} className="text-[#0058CC]" /> Kontrabon · Tukar Faktur Supplier
-          </h2>
-          <p className="text-[12px] text-[#6B6B73]">
-            Banyak faktur satu supplier digabung jadi SATU tanda terima dan SATU pembayaran.
-            Potongan retur beli, uang muka, denda, dan selisih 3-way ikut masuk sistem —
-            tidak lagi dihitung di kertas.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button className="secondary-button" data-testid="cb-refresh" onClick={refreshAll}>
-            <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
-          </button>
-          {canWrite && (
-            <button className="primary-button" data-testid="cb-new" onClick={() => openCreate("")}>
-              <Plus size={14} /> Kontrabon baru
+    <div className="view-container" data-testid="contra-bons-view">
+      <PageHeader icon={Receipt} title="Kontrabon · Tukar Faktur Supplier" testId="cb-head"
+        subtitle={"Banyak faktur satu supplier digabung jadi SATU tanda terima dan SATU pembayaran. Potongan retur "
+          + "beli, uang muka, denda, dan selisih 3-way ikut masuk sistem — tidak lagi dihitung di kertas."}
+        actions={(
+          <>
+            <button type="button" className="secondary-button" data-testid="cb-refresh" onClick={refreshAll}>
+              <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
             </button>
-          )}
-        </div>
-      </div>
+            {canWrite && (
+              <button type="button" className="primary-button" data-testid="cb-new" onClick={() => openCreate("")}>
+                <Plus size={14} /> Kontrabon baru
+              </button>
+            )}
+          </>
+        )} />
 
       {err && <ErrorNotice message={err} onRetry={refreshAll} onDismiss={() => setErr("")}
         testId="cb-error" />}
       {msg && (
-        <div className={`notice-bar ${msgKind} mb-3`} data-testid="cb-notice">
+        <div className={`notice-bar ${msgKind} !mb-0`} data-testid="cb-notice">
           {msgKind === "warning" ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
           {" "}{msg}
         </div>
       )}
 
       {summary && (
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
           data-testid="cb-summary">
           <div className="stat-card">
             <p className="stat-label">Menunggu tindakan</p>
@@ -262,75 +265,74 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
         </div>
       )}
 
-      <div className="mb-3 flex flex-wrap items-center gap-1.5" data-testid="cb-tabs">
-        {TABS.map((t) => (
-          <button key={t.id} data-testid={`cb-tab-${t.id}`} onClick={() => setTab(t.id)}
-            className={`rounded-full border px-3 py-1.5 text-[12px] ${
-              tab === t.id
-                ? "border-[#0058CC] bg-[#EAF2FF] font-bold text-[#0058CC]"
-                : "border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#CBDCF7]"}`}>
-            {t.label}
-          </button>
-        ))}
+      <div className="section-card">
+        <div className="section-head flex-wrap gap-2">
+          <PageTabs testId="cb-tabs" ariaLabel="Kontrabon" className="min-w-0" value={tab} onChange={setTab}
+            tabs={TABS.map((t) => ({ key: t.id, label: t.label, testId: `cb-tab-${t.id}` }))} />
+        </div>
+        <div className="section-body">
+          {tab === "list" && (
+            <>
+              <div className="mb-3 grid grid-cols-1 gap-2 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
+                data-testid="cb-filter-bar">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold text-[#6B6B73]">Status</span>
+                  <FilterChips ariaLabel="Saring status kontrabon" className="min-w-0" testId="cb-filter-status"
+                    value={fStatus || "all"} onChange={(k) => setFStatus(k === "all" ? "" : k)}
+                    options={statusOptions.map((o) => ({ key: o.value || "all", label: o.label, count: statusCount(o.value) }))} />
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="w-full sm:w-[260px]">
+                    <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                      Cari nomor / supplier
+                    </label>
+                    <div className="relative">
+                      <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
+                      <input data-testid="cb-filter-q" className="input-field w-full pl-7" value={q}
+                        onChange={(e) => setQ(e.target.value)} placeholder="KSC/CB-00001 atau Solo Weave" />
+                    </div>
+                  </div>
+                  {filterOn && (
+                    <button type="button" className="secondary-button" data-testid="cb-filter-clear"
+                      onClick={() => { setFStatus(""); setQ(""); }}>
+                      <FilterX size={14} /> Bersihkan filter
+                    </button>
+                  )}
+                  <span className="ml-auto self-center text-[11px] text-[#6B6B73]" data-testid="cb-filter-count">
+                    {loading ? "Memuat…" : `${rows.length} kontrabon ditampilkan`}
+                  </span>
+                </div>
+              </div>
+
+              {/* UI/UX 2026-06 — tabel full-width saat detail belum dipilih (audit: sel wrap karena tabel dipaksa ½ lebar) */}
+              <div className={active ? "grid grid-cols-1 gap-4 xl:grid-cols-2" : "grid grid-cols-1 gap-4"}>
+                <ContraBonListTable rows={rows} loading={loading} activeId={active?.id}
+                  onOpen={setActive} />
+                {active && (
+                  <ContraBonDetailPanel cb={active} meta={meta} currentUser={currentUser}
+                    entityLabel={entityShortById(entities, active.entity_id, "")}
+                    onClose={() => setActive(null)}
+                    onChanged={async (updated) => { setActive(updated); await loadList(); }}
+                    onError={fail} onNotify={notify} />
+                )}
+              </div>
+            </>
+          )}
+
+          {tab === "unbilled" && (
+            <UnbilledReceiptsTab data={unbilled} loading={loading} canWrite={canWrite}
+              onCreateFor={(sid) => openCreate(sid)} />
+          )}
+
+          {tab === "schedules" && (
+            <ExchangeSchedulesTab data={schedules} loading={loading} busy={busy} canWrite={canUpdate}
+              onEdit={(row) => setExchangeRow(row)} onCreateFor={(sid) => openCreate(sid)}
+              onRunReminder={runReminder} />
+          )}
+        </div>
       </div>
 
-      {tab === "list" && (
-        <>
-          <div className="mb-3 flex flex-wrap items-end gap-3 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
-            data-testid="cb-filter-bar">
-            <div className="min-w-[210px]">
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
-              <OptionTabs testId="cb-filter-status" value={fStatus} onChange={setFStatus}
-                options={statusOptions} countOf={(v) => (v ? counts[v] || 0 : counts.all ?? Object.entries(counts).filter(([k]) => k !== "total").reduce((s, [, n]) => s + (Number(n) || 0), 0))} />
-            </div>
-            <div className="min-w-[240px]">
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Cari nomor / supplier
-              </label>
-              <div className="relative">
-                <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
-                <input data-testid="cb-filter-q" className="input-field w-full pl-7" value={q}
-                  onChange={(e) => setQ(e.target.value)} placeholder="KSC/CB-00001 atau Solo Weave" />
-              </div>
-            </div>
-            {filterOn && (
-              <button className="secondary-button" data-testid="cb-filter-clear"
-                onClick={() => { setFStatus(""); setQ(""); }}>
-                <FilterX size={14} /> Bersihkan filter
-              </button>
-            )}
-            <span className="text-[11px] text-[#6B6B73]" data-testid="cb-filter-count">
-              {loading ? "Memuat…" : `${rows.length} kontrabon ditampilkan`}
-            </span>
-          </div>
-
-          {/* UI/UX 2026-06 — tabel full-width saat detail belum dipilih (audit: sel wrap karena tabel dipaksa ½ lebar) */}
-          <div className={active ? "grid grid-cols-1 gap-4 xl:grid-cols-2" : "grid grid-cols-1 gap-4"}>
-            <ContraBonListTable rows={rows} loading={loading} activeId={active?.id}
-              onOpen={setActive} />
-            {active && (
-              <ContraBonDetailPanel cb={active} meta={meta} currentUser={currentUser}
-                entityLabel={entityShortById(entities, active.entity_id, "")}
-                onClose={() => setActive(null)}
-                onChanged={async (updated) => { setActive(updated); await loadList(); }}
-                onError={fail} onNotify={notify} />
-            )}
-          </div>
-        </>
-      )}
-
-      {tab === "unbilled" && (
-        <UnbilledReceiptsTab data={unbilled} loading={loading} canWrite={canWrite}
-          onCreateFor={(sid) => openCreate(sid)} />
-      )}
-
-      {tab === "schedules" && (
-        <ExchangeSchedulesTab data={schedules} loading={loading} busy={busy} canWrite={canUpdate}
-          onEdit={(row) => setExchangeRow(row)} onCreateFor={(sid) => openCreate(sid)}
-          onRunReminder={runReminder} />
-      )}
-
-      <p className="mt-3 flex items-start gap-1 text-[11px] text-[#9A9BA3]">
+      <p className="flex items-start gap-1 text-[11px] text-[#9A9BA3]">
         <AlertTriangle size={11} className="mt-[2px] shrink-0" />
         Satu faktur hanya boleh berada di satu kontrabon berjalan, dan satu nota debit / uang muka
         hanya boleh dipotong sekali — sistem menolak bila dilanggar. Toleransi 3-way, ambang

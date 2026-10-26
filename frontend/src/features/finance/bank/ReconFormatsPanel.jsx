@@ -4,13 +4,17 @@
  * Tujuannya menghapus ketergantungan pada developer: kalau bank mengubah susunan
  * kolom (atau Anda memakai bank lain), template baru bisa dibuat sendiri di sini —
  * pemetaan kolom, format tanggal, gaya desimal, dan penanda arah dana.
+ *
+ * Fase 4 · R2 (L-03) — pop-up template `.modal-card` buatan sendiri → `FormModal` baku (kaki Simpan menempel, layar
+ * penuh di HP). "Nonaktifkan" template kini dikonfirmasi dulu (`askConfirm`). Testid tetap.
  */
 import { useState } from "react";
-import { FileCog, Plus, Save, Trash2, X, RefreshCw } from "lucide-react";
+import { FileCog, Plus, Save, Trash2, RefreshCw } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
+import { askConfirm } from "../../../services/confirmService";
 import { apiErrorText } from "../../../utils/apiError";
 
 const KIND_OPTS = [
@@ -80,6 +84,12 @@ export default function ReconFormatsPanel({ formats, onReload, onError, onNotify
   }
 
   async function remove(f) {
+    if (!(await askConfirm({
+      title: `Nonaktifkan template “${f.name}”?`,
+      message: "Template tidak lagi ditawarkan saat impor mutasi. Mutasi yang sudah diimpor tidak berubah.",
+      confirmLabel: "Nonaktifkan",
+      danger: true,
+    }))) return;
     setBusy(f.id);
     try {
       await axios.delete(`${API}/bank-reconciliation/formats/${f.id}`);
@@ -97,7 +107,7 @@ export default function ReconFormatsPanel({ formats, onReload, onError, onNotify
           buka, ubah pemetaan kolomnya, lalu simpan sebagai template Anda sendiri.
         </p>
         <button data-testid="recon-format-new" className="primary-button"
-          onClick={() => setDraft({ ...EMPTY })}>
+          onClick={() => { setMErr(""); setDraft({ ...EMPTY }); }}>
           <Plus size={14} /> Template baru
         </button>
       </div>
@@ -140,7 +150,7 @@ export default function ReconFormatsPanel({ formats, onReload, onError, onNotify
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <div className="flex justify-end gap-2">
                     <button data-testid={`recon-format-edit-${f.id}`} className="link-button"
-                      onClick={() => setDraft({ ...f })}>Buka</button>
+                      onClick={() => { setMErr(""); setDraft({ ...f }); }}>Buka</button>
                     {!f.builtin && (
                       <button data-testid={`recon-format-delete-${f.id}`} className="link-button"
                         style={{ color: "#B4231F" }} disabled={busy === f.id}
@@ -157,134 +167,124 @@ export default function ReconFormatsPanel({ formats, onReload, onError, onNotify
       </div>
 
       {draft && (
-        <div className="modal-overlay" data-testid="recon-format-modal"
-          {...overlayDismiss(() => setDraft(null))}>
-          <div className="modal-card max-w-[720px]">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="modal-title flex items-center gap-1.5">
-                <FileCog size={15} />
-                {draft.id
-                  ? (draft.builtin
-                    ? "Template bawaan — simpan sebagai salinan Anda"
-                    : "Ubah template bank")
-                  : "Template bank baru"}
-              </h3>
-              <button className="icon-button" data-testid="recon-format-close"
-                onClick={() => setDraft(null)}><X size={15} /></button>
-            </div>
-            {mErr && (
-              <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
-                testId="recon-format-error" />
-            )}
-            <p className="modal-subtitle">
-              Kolom bisa ditulis dengan NAMA header (mis. “Keterangan”) atau NOMOR kolom
-              dimulai dari 0 bila berkas tidak punya header.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-              <div className="md:col-span-2">
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Nama template
-                </label>
-                <input data-testid="recon-format-name" className="input-field w-full"
-                  value={draft.name} onChange={(e) => set("name", e.target.value)}
-                  placeholder="Contoh: BCA Giro — ekspor Juli 2026" />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Kode bank
-                </label>
-                <input data-testid="recon-format-bank" className="input-field w-full"
-                  value={draft.bank_code} onChange={(e) => set("bank_code", e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Jenis berkas
-                </label>
-                <KNSelect data-testid="recon-format-kind" value={draft.file_kind}
-                  onValueChange={(v) => set("file_kind", v)} options={KIND_OPTS} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Gaya desimal
-                </label>
-                <KNSelect data-testid="recon-format-decimal" value={draft.decimal_style}
-                  onValueChange={(v) => set("decimal_style", v)} options={DEC_OPTS} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Format tanggal
-                </label>
-                <KNSelect data-testid="recon-format-date" value={draft.date_format}
-                  onValueChange={(v) => set("date_format", v)} options={DATE_OPTS} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Pemisah kolom
-                </label>
-                <input data-testid="recon-format-delimiter" className="input-field w-full"
-                  value={draft.delimiter} onChange={(e) => set("delimiter", e.target.value)}
-                  placeholder="Contoh: , atau ;" />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Baris dilewati di awal
-                </label>
-                <input data-testid="recon-format-skip" type="number" min={0} max={20}
-                  className="input-field w-full" value={draft.skip_rows}
-                  onChange={(e) => set("skip_rows", e.target.value)} />
-              </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 text-[12px]">
-                  <input data-testid="recon-format-header" type="checkbox"
-                    checked={!!draft.has_header}
-                    onChange={(e) => set("has_header", e.target.checked)} />
-                  Baris pertama adalah header
-                </label>
-              </div>
-            </div>
-
-            <p className="mt-3 text-[11px] font-bold uppercase text-[#8E8E93]">Pemetaan kolom</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
-              {COLS.map(([key, label]) => (
-                <div key={key}>
-                  <label className="block text-[11px] text-[#6B6B73] mb-1">{label}</label>
-                  <input data-testid={`recon-format-col-${key}`} className="input-field w-full"
-                    value={(draft.columns || {})[key] ?? ""}
-                    onChange={(e) => setCol(key, e.target.value)} />
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Penanda uang masuk (dipisah koma)
-                </label>
-                <input data-testid="recon-format-in" className="input-field w-full"
-                  value={Array.isArray(draft.in_markers) ? draft.in_markers.join(", ") : draft.in_markers}
-                  onChange={(e) => set("in_markers", e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Penanda uang keluar (dipisah koma)
-                </label>
-                <input data-testid="recon-format-out" className="input-field w-full"
-                  value={Array.isArray(draft.out_markers) ? draft.out_markers.join(", ") : draft.out_markers}
-                  onChange={(e) => set("out_markers", e.target.value)} />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="secondary-button" onClick={() => setDraft(null)}>Batal</button>
-              <button data-testid="recon-format-save" className="primary-button"
+        <FormModal open onClose={() => setDraft(null)} size="lg" icon={FileCog} testId="recon-format-modal"
+          busy={busy === "save"}
+          title={draft.id
+            ? (draft.builtin
+              ? "Template bawaan — simpan sebagai salinan Anda"
+              : "Ubah template bank")
+            : "Template bank baru"}
+          subtitle={"Kolom bisa ditulis dengan NAMA header (mis. “Keterangan”) atau NOMOR kolom dimulai dari 0 "
+            + "bila berkas tidak punya header."}
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => setDraft(null)}
+                disabled={busy === "save"}>Batal</button>
+              <button type="button" data-testid="recon-format-save" className="primary-button"
                 disabled={!draft.name?.trim() || busy === "save"} onClick={save}>
                 {busy === "save" ? <RefreshCw size={14} className="spin" /> : <Save size={14} />}
                 {draft.builtin ? "Simpan sebagai salinan" : "Simpan template"}
               </button>
             </div>
+          )}>
+          {mErr && (
+            <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
+              testId="recon-format-error" />
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Nama template
+              </label>
+              <input data-testid="recon-format-name" className="input-field w-full"
+                value={draft.name} onChange={(e) => set("name", e.target.value)}
+                placeholder="Contoh: BCA Giro — ekspor Juli 2026" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Kode bank
+              </label>
+              <input data-testid="recon-format-bank" className="input-field w-full"
+                value={draft.bank_code} onChange={(e) => set("bank_code", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Jenis berkas
+              </label>
+              <KNSelect data-testid="recon-format-kind" value={draft.file_kind}
+                onValueChange={(v) => set("file_kind", v)} options={KIND_OPTS} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Gaya desimal
+              </label>
+              <KNSelect data-testid="recon-format-decimal" value={draft.decimal_style}
+                onValueChange={(v) => set("decimal_style", v)} options={DEC_OPTS} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Format tanggal
+              </label>
+              <KNSelect data-testid="recon-format-date" value={draft.date_format}
+                onValueChange={(v) => set("date_format", v)} options={DATE_OPTS} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Pemisah kolom
+              </label>
+              <input data-testid="recon-format-delimiter" className="input-field w-full"
+                value={draft.delimiter} onChange={(e) => set("delimiter", e.target.value)}
+                placeholder="Contoh: , atau ;" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Baris dilewati di awal
+              </label>
+              <input data-testid="recon-format-skip" type="number" min={0} max={20}
+                className="input-field w-full" value={draft.skip_rows}
+                onChange={(e) => set("skip_rows", e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-[12px]">
+                <input data-testid="recon-format-header" type="checkbox"
+                  checked={!!draft.has_header}
+                  onChange={(e) => set("has_header", e.target.checked)} />
+                Baris pertama adalah header
+              </label>
+            </div>
           </div>
-        </div>
+
+          <p className="mt-3 text-[11px] font-bold uppercase text-[#8E8E93]">Pemetaan kolom</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
+            {COLS.map(([key, label]) => (
+              <div key={key}>
+                <label className="block text-[11px] text-[#6B6B73] mb-1">{label}</label>
+                <input data-testid={`recon-format-col-${key}`} className="input-field w-full"
+                  value={(draft.columns || {})[key] ?? ""}
+                  onChange={(e) => setCol(key, e.target.value)} />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Penanda uang masuk (dipisah koma)
+              </label>
+              <input data-testid="recon-format-in" className="input-field w-full"
+                value={Array.isArray(draft.in_markers) ? draft.in_markers.join(", ") : draft.in_markers}
+                onChange={(e) => set("in_markers", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Penanda uang keluar (dipisah koma)
+              </label>
+              <input data-testid="recon-format-out" className="input-field w-full"
+                value={Array.isArray(draft.out_markers) ? draft.out_markers.join(", ") : draft.out_markers}
+                onChange={(e) => set("out_markers", e.target.value)} />
+            </div>
+          </div>
+        </FormModal>
       )}
     </div>
   );

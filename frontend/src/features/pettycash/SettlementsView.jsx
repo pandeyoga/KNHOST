@@ -7,6 +7,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 import DetailModal from "../../components/DetailModal";
 import ResponsiveTable from "../../components/ResponsiveTable";
+import FilterChips from "../../components/FilterChips";
+import { MetricRow } from "../../components/ListPageParts";
 import { STL_STATUS, StatusPill } from "./pettyCashShared";
 import SettlementForm from "./SettlementForm";
 import SettlementDetail from "./SettlementDetail";
@@ -97,16 +99,20 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
           </div>
         </div>
 
-        <section data-testid="stl-metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 p-3">
-          <Metric label="Total LPJ" value={metrics.total} tone="rgba(0,122,255,.12)" testId="stl-metric-total" />
-          <Metric label="Diajukan" value={metrics.submitted} tone="rgba(255,149,0,.16)" testId="stl-metric-submitted" />
-          <Metric label="Terposting GL" value={metrics.posted} tone="rgba(52,199,89,.15)" testId="stl-metric-posted" />
-          <Metric label="Total Pengeluaran" value={formatCurrency(metrics.amount)} tone="rgba(0,122,255,.10)" testId="stl-metric-amount" money />
-        </section>
-
-        <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-          {TABS.map((t) => (<button key={t.key || "all"} data-testid={`stl-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>))}
-          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, PD, pemohon…" testId="stl-search" /></div>
+        {/* Fase 4 · R2 — KPI → MetricRow baku (nol netral); saringan status → FilterChips (`stl-tab-*` tetap). */}
+        <div className="section-body space-y-3">
+          <MetricRow testId="stl-metrics" items={[
+            { label: "Total LPJ", value: metrics.total, icon: ReceiptText, testId: "stl-metric-total" },
+            { label: "Diajukan", value: metrics.submitted, icon: ReceiptText, testId: "stl-metric-submitted" },
+            { label: "Terposting GL", value: metrics.posted, icon: ReceiptText, testId: "stl-metric-posted" },
+            { label: "Total Pengeluaran", value: formatCurrency(metrics.amount), icon: ReceiptText, testId: "stl-metric-amount" },
+          ]} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChips ariaLabel="Saring status LPJ" className="min-w-0" value={statusFilter || "all"}
+              onChange={(k) => setStatusFilter(k === "all" ? "" : k)}
+              options={TABS.map((t) => ({ key: t.key || "all", label: t.label, count: countOf(t.key), testId: `stl-tab-${t.key || "all"}` }))} />
+            <div className="w-full sm:ml-auto sm:w-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, PD, pemohon…" testId="stl-search" /></div>
+          </div>
         </div>
       </section>
 
@@ -148,8 +154,4 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
       )}
     </div>
   );
-}
-
-function Metric({ label, value, tone, testId, money }) {
-  return (<div data-testid={testId} className="metric-card"><div className="metric-icon" style={{ background: tone }}><ReceiptText size={16} className="text-[#1C1C1E]" /></div><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p><p className={`${money ? "text-[15px]" : "text-[17px]"} font-bold tabular-nums truncate`}>{value}</p></div></div>);
 }

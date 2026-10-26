@@ -8,12 +8,16 @@ import { docDpp, usesDppNilaiLain } from "../../utils/taxBreakdown";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
+import FilterChips from "../../components/FilterChips";
 
 /**
  * Faktur Pajak Jual (Sub-fase 1.9 — tax_invoices / fkt_).
  * List + kelola Faktur Pajak: isi NSFP resmi, terbitkan PENGGANTI, BATALKAN, cetak dokumen.
  * Penerbitan awal dilakukan dari Order detail (manual, opsional). Respons BE = bare object/array.
+ *
+ * Fase 4 · R2 — L-03: pop-up NSFP/Pengganti/Batal (`div fixed inset-0`) → `FormModal` baku, galat di dalam pop-up
+ * (`fkt-modal-error`); L-01: saringan status (tab) → `FilterChips` (testid `fkt-filter-*` tetap).
  */
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -142,20 +146,10 @@ export default function TaxInvoices({ currentUser = {} }) {
             Faktur Pajak diterbitkan dari <b>detail Pesanan</b> (opsional — pajak tidak wajib, hanya untuk entitas PKP & transaksi ber-PPN).
             Di sini Anda mengisi NSFP resmi, menerbitkan faktur pengganti, atau membatalkan.
           </p>
-          {/* Audit UI 24 Okt (066): filter status memakai tab standar (dulu pil abu kecil). */}
+          {/* Audit UI 24 Okt (066) → fase 4 · R2: saringan status = FilterChips (bukan tab; tab tingkat-2 milik Pusat Pajak). */}
           <div className="flex flex-wrap items-end gap-2">
-            <div className="tab-bar !mb-0">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  data-testid={`fkt-filter-${f.id}`}
-                  onClick={() => setFilter(f.id)}
-                  className={`tab-button ${filter === f.id ? "active" : ""}`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            <FilterChips testId="fkt-filter" ariaLabel="Saring status faktur" value={filter} onChange={setFilter}
+              options={FILTERS.map((f) => ({ key: f.id, label: f.label }))} />
             <div className="relative ml-auto w-full sm:w-[300px]">
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8E8E93]" />
               <input
@@ -260,74 +254,65 @@ export default function TaxInvoices({ currentUser = {} }) {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" {...overlayDismiss(closeModal)}>
-          <div data-testid="fkt-modal" className="w-full max-w-md rounded-lg bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-bold mb-1">
-              {modal.type === "nsfp" && "Isi NSFP Resmi"}
-              {modal.type === "replace" && "Terbitkan Faktur Pengganti"}
-              {modal.type === "cancel" && "Batalkan Faktur Pajak"}
-            </h3>
-            <p className="text-[11px] text-[#6B6B73] mb-3">{modal.fkt.number} · {modal.fkt.order_number}</p>
-
-            {modal.type === "nsfp" && (
-              <div className="space-y-2">
-                <label className="block text-[11px] font-semibold">Nomor Seri Faktur Pajak (16 digit)</label>
-                <input data-testid="fkt-nsfp-input" value={nsfpVal} onChange={(e) => setNsfpVal(e.target.value)}
-                  placeholder="0100123456789012"
-                  className="w-full rounded-md border border-[#E5E5EA] px-2 py-1.5 text-[12px] tabular-nums" />
-                <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
-                <KNSelect
-                  data-testid="fkt-kode-select"
-                  value={kodeVal}
-                  onValueChange={setKodeVal}
-                  className="w-full rounded-md border border-[#E5E5EA] px-2 py-1.5 text-[12px]"
-                  options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
-                />
-              </div>
-            )}
-
-            {modal.type === "replace" && (
-              <div className="space-y-2">
-                <label className="block text-[11px] font-semibold">Alasan Pengganti (opsional)</label>
-                <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
-                  placeholder="mis. Koreksi alamat / nilai"
-                  className="w-full rounded-md border border-[#E5E5EA] px-2 py-1.5 text-[12px]" />
-                <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
-                <KNSelect
-                  data-testid="fkt-kode-select"
-                  value={kodeVal}
-                  onValueChange={setKodeVal}
-                  className="w-full rounded-md border border-[#E5E5EA] px-2 py-1.5 text-[12px]"
-                  options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
-                />
-                <p className="text-[10.5px] text-[#8A6D00]">Faktur lama ditandai diganti; faktur baru berstatus PENGGANTI.</p>
-              </div>
-            )}
-
-            {modal.type === "cancel" && (
-              <div className="space-y-2">
-                <label className="block text-[11px] font-semibold">Alasan Pembatalan (wajib)</label>
-                <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
-                  placeholder="mis. Transaksi dibatalkan pelanggan"
-                  className="w-full rounded-md border border-[#E5E5EA] px-2 py-1.5 text-[12px]" />
-              </div>
-            )}
-
-            {modalErr && <p className="mt-2 text-[11px] text-[#B23B14]">{modalErr}</p>}
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button className="btn-secondary" onClick={closeModal}>Batal</button>
-              <button
-                data-testid="fkt-modal-submit"
-                className={`btn-primary ${modal.type === "cancel" ? "!bg-[#B23B14]" : ""}`}
-                disabled={busyId === modal.fkt.id}
-                onClick={submitModal}
-              >
+        <FormModal open onClose={closeModal} size="sm" icon={modal.type === "cancel" ? Ban : modal.type === "replace" ? Copy : Hash}
+          title={modal.type === "nsfp" ? "Isi NSFP Resmi" : modal.type === "replace" ? "Terbitkan Faktur Pengganti" : "Batalkan Faktur Pajak"}
+          subtitle={`${modal.fkt.number} · ${modal.fkt.order_number || "—"}`}
+          testId="fkt-modal" busy={busyId === modal.fkt.id}
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={closeModal} disabled={busyId === modal.fkt.id}>Batal</button>
+              <button type="button" data-testid="fkt-modal-submit"
+                className={modal.type === "cancel" ? "danger-button" : "primary-button"}
+                disabled={busyId === modal.fkt.id} onClick={submitModal}>
                 {busyId === modal.fkt.id ? "Memproses…" : "Konfirmasi"}
               </button>
             </div>
-          </div>
-        </div>
+          )}>
+          <ErrorNotice message={modalErr} onDismiss={() => setModalErr("")} testId="fkt-modal-error" />
+          {modal.type === "nsfp" && (
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold">Nomor Seri Faktur Pajak (16 digit)</label>
+              <input data-testid="fkt-nsfp-input" value={nsfpVal} onChange={(e) => setNsfpVal(e.target.value)}
+                placeholder="0100123456789012"
+                className="field w-full tabular-nums" />
+              <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
+              <KNSelect
+                data-testid="fkt-kode-select"
+                value={kodeVal}
+                onValueChange={setKodeVal}
+                className="field w-full"
+                options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
+              />
+            </div>
+          )}
+
+          {modal.type === "replace" && (
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold">Alasan Pengganti (opsional)</label>
+              <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
+                placeholder="mis. Koreksi alamat / nilai"
+                className="field w-full" />
+              <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
+              <KNSelect
+                data-testid="fkt-kode-select"
+                value={kodeVal}
+                onValueChange={setKodeVal}
+                className="field w-full"
+                options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
+              />
+              <p className="text-[10.5px] text-[#8A6D00]">Faktur lama ditandai diganti; faktur baru berstatus PENGGANTI.</p>
+            </div>
+          )}
+
+          {modal.type === "cancel" && (
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold">Alasan Pembatalan (wajib)</label>
+              <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
+                placeholder="mis. Transaksi dibatalkan pelanggan"
+                className="field w-full" />
+            </div>
+          )}
+        </FormModal>
       )}
     </div>
   );

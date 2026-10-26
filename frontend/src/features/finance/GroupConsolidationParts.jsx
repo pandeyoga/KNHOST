@@ -259,3 +259,49 @@ function ToolButton({ testId, icon: Icon, label, hint, onClick, disabled }) {
 function Field({ label, required = false, children }) {
   return (<label className="block"><span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] block mb-1">{label}{required && <span className="text-[#C0392B]"> *</span>}</span>{children}</label>);
 }
+
+/**
+ * Fase 4 · R2 (G1-33, data dari R6) — peringatan entri eliminasi otomatis antar-PT yang BASI: dokumen antar-PT
+ * sumbernya sudah tidak ada/batal/draf, tetapi entrinya masih ikut mengeliminasi angka di laporan ini. Server hanya
+ * MENDETEKSI (angka tidak diubah diam-diam) dan pembersihan data butuh keputusan pemilik → di sini HANYA peringatan,
+ * tanpa tombol hapus. Field `eliminations_stale` tidak ada (backend lama) atau kosong → tidak tampil apa pun.
+ */
+export function StaleEliminationsNotice({ stale }) {
+  const list = Array.isArray(stale) ? stale : [];
+  if (list.length === 0) return null;
+  const total = list.reduce((s, e) => s + (Number(e.ic_ar_eliminated) || 0), 0);
+  const withGl = list.filter((e) => Number(e.gl_entries_left) > 0).length;
+  const safe = list.length - withGl;
+  return (
+    <div className="notice-bar warning !items-start" role="alert" data-testid="cons-stale-elims">
+      <div className="min-w-0 text-[12px]">
+        <p className="font-semibold">
+          {list.length} entri eliminasi otomatis antar-PT sudah basi — dokumen antar-PT sumbernya tidak ada lagi
+          (atau batal/draf), tetapi entrinya masih ikut mengeliminasi{" "}
+          <b className="tabular-nums" data-testid="cons-stale-elims-total">{formatCurrency(total)}</b> piutang antar-PT di
+          laporan ini.
+        </p>
+        <ul className="mt-1 list-disc pl-4" data-testid="cons-stale-elims-split">
+          {safe > 0 && <li>{safe} entri tanpa jurnal transaksi tersisa — aman dibersihkan lewat “Sinkron Antar-PT”.</li>}
+          {withGl > 0 && (
+            <li>
+              {withGl} entri jurnal transaksinya MASIH ada — perlu pembersihan data (keputusan pemilik), jangan hanya
+              disinkron.
+            </li>
+          )}
+        </ul>
+        <details className="mt-1">
+          <summary className="cursor-pointer font-semibold">Lihat entri basi</summary>
+          <ul className="mt-1 space-y-0.5" data-testid="cons-stale-elims-list">
+            {list.map((e) => (
+              <li key={e.id || e.pair_id} className="flex flex-wrap justify-between gap-x-3">
+                <span className="min-w-0">{elimName(e.name) || e.pair_id}{e.effective_date ? ` · ${formatDate(e.effective_date)}` : ""}</span>
+                <span className="tabular-nums">{formatCurrency(e.ic_ar_eliminated || 0)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
+    </div>
+  );
+}

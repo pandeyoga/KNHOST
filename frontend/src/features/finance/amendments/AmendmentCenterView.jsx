@@ -8,13 +8,23 @@
  *
  * Angka ringkasan di atas berasal dari `GET /amendments/stats/summary` — bukan
  * hitungan ulang di browser — supaya badge dan daftar tidak pernah berbeda cerita.
+ *
+ * Fase 4 · R2 — L-01: navigasi 3 tingkat (bilah hub › tab-bar berisi SATU tab "Daftar Amandemen" › tab status)
+ * dipangkas: tab tunggal dibuang (lencananya dulu bertabrakan dengan saringan), tautan "Label Alasan" pindah ke kepala
+ * kartu, tab status → `FilterChips` (saringan, `amd-filter-*` tetap). KPI → `MetricRow` baku (nol netral).
+ * Rincian: berdampingan di ≥1024 px seperti dulu; di layar lebih sempit (HP/tablet) dulu jatuh DI BAWAH daftar →
+ * kini `DetailModal`.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ExternalLink, FileEdit, RefreshCw, Scale, Search, Tag,
+  ExternalLink, RefreshCw, Scale, Search, Tag,
 } from "lucide-react";
+import DetailModal from "../../../components/DetailModal";
 import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FilterChips from "../../../components/FilterChips";
+import { MetricRow } from "../../../components/ListPageParts";
+import useIsMobile from "../../../hooks/useIsMobile";
 import { formatCurrency } from "../../../utils/formatters";
 import { openConfig } from "../../settings/config/configDeepLink";
 import AmendmentDetailPanel from "./AmendmentDetailPanel";
@@ -35,17 +45,7 @@ function when(iso) {
   catch { return iso; }
 }
 
-function Kpi({ label, value, tone = "#1C1C1E", testId }) {
-  return (
-    <div data-testid={testId} className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2">
-      <p className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-      <p className="text-[14px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value}</p>
-    </div>
-  );
-}
-
 export default function AmendmentCenterView({ currentUser, selectedEntity }) {
-  const [tab, setTab] = useState("daftar");
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
@@ -54,7 +54,9 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const canSeeReasons = can(currentUser?.permissions, "finance_amendment", "propose");   // Sisir gerbang peran (2026-10-20) — GET /amendment-reasons
+  const canSeeReasons = can(currentUser?.permissions, "finance_amendment", "propose");
+  // Di bawah 1024 px rincian tidak lagi berdampingan dengan daftar → tampil sebagai pop-up.
+  const stacked = useIsMobile(1023);   // Sisir gerbang peran (2026-10-20) — GET /amendment-reasons
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,7 +93,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="amd-center-error" />
 
       <div className="section-card mb-3">
-        <div className="section-head">
+        <div className="section-head flex-wrap gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Scale size={16} className="text-[#0058CC]" />
             <div className="min-w-0">
@@ -102,40 +104,31 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button data-testid="amd-open-policy-config" className="secondary-button"
+          <div className="flex flex-wrap items-center gap-2">
+            {canSeeReasons && (
+              <a data-testid="amd-reasons-link" href="?view=amendment-reasons" className="self-center text-[11px] font-semibold text-[#0058CC] underline">
+                <Tag size={12} className="mr-1 inline" /> Label Alasan (Pengaturan)
+              </a>
+            )}
+            <button type="button" data-testid="amd-open-policy-config" className="secondary-button"
               onClick={() => openConfig({ group: "amandemen" })}>
               <ExternalLink size={13} /> Ambang & Aturan
             </button>
-            <button data-testid="amd-center-refresh" className="secondary-button" onClick={load}>
+            <button type="button" data-testid="amd-center-refresh" className="secondary-button" onClick={load}>
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
             </button>
           </div>
         </div>
-        <div className="section-body space-y-2.5">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-5" data-testid="amd-center-stats">
-            <Kpi testId="amd-kpi-total" label="Total amandemen" value={String(stats.total ?? 0)} />
-            <Kpi testId="amd-kpi-pending" label="Menunggu persetujuan" value={String(stats.pending_approval ?? 0)} tone="#B26A00" />
-            {/* Audit UI 24 Okt (005) — KPI ini menjumlah "Diterapkan" + "Diterapkan otomatis"; labelnya menyebut itu
-                supaya tidak tampak bertentangan dengan tab "Diterapkan 0". */}
-            <Kpi testId="amd-kpi-applied" label="Sudah diterapkan (termasuk otomatis)" value={String(applied)} tone="#1B7F4B" />
-            <Kpi testId="amd-kpi-rejected" label="Ditolak" value={String(stats.rejected ?? 0)} tone="#9B1C1C" />
-            <Kpi testId="amd-kpi-impact" label="Total dampak diterapkan" value={formatCurrency(stats.impact_total || 0)} tone="#0058CC" />
-          </div>
-
-          <div className="tab-bar">
-            <button data-testid="amd-tab-daftar" className={`tab-button ${tab === "daftar" ? "active" : ""}`}
-              onClick={() => setTab("daftar")}>
-              <FileEdit size={12} className="mr-1 inline" /> Daftar Amandemen
-              {/* G1-45 — lencana = total semua amandemen (stats), bukan jumlah baris yang tersaring tab status. */}
-              <span className="tab-badge">{Number(stats.total ?? rows.length)}</span>
-            </button>
-            {canSeeReasons && (
-              <a data-testid="amd-reasons-link" href="?view=amendment-reasons" className="ml-auto self-center text-[11px] font-semibold text-[#0058CC] underline">
-                <Tag size={12} className="mr-1 inline" /> Label Alasan (Pengaturan)
-              </a>
-            )}
-          </div>
+        <div className="section-body">
+          <MetricRow testId="amd-center-stats" items={[
+            { label: "Total amandemen", value: String(stats.total ?? 0), testId: "amd-kpi-total" },
+            { label: "Menunggu persetujuan", value: String(stats.pending_approval ?? 0), tone: "#B26A00", testId: "amd-kpi-pending" },
+            // Audit UI 24 Okt (005) — KPI ini menjumlah "Diterapkan" + "Diterapkan otomatis"; labelnya menyebut itu
+            // supaya tidak tampak bertentangan dengan saringan "Diterapkan 0".
+            { label: "Sudah diterapkan (termasuk otomatis)", value: String(applied), tone: "#1B7F4B", testId: "amd-kpi-applied" },
+            { label: "Ditolak", value: String(stats.rejected ?? 0), tone: "#9B1C1C", testId: "amd-kpi-rejected" },
+            { label: "Total dampak diterapkan", value: formatCurrency(stats.impact_total || 0), tone: "#0058CC", testId: "amd-kpi-impact" },
+          ]} />
         </div>
       </div>
 
@@ -144,23 +137,21 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
         <>
           <div className="section-card mb-3">
             <div className="section-body flex flex-wrap items-center gap-2">
-              <div className="relative max-w-sm flex-1">
+              <div className="relative w-full sm:max-w-sm sm:flex-1">
                 <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
                 <input data-testid="amd-search" value={q} onChange={(e) => setQ(e.target.value)}
                   className="field !pl-8" placeholder="Cari no. amandemen / dokumen / alasan / pengusul…" />
               </div>
-              <div className="tab-bar" data-testid="amd-status-filters">
-                {STATUS_TABS.map((f) => (
-                  <button key={f.key} data-testid={`amd-filter-${f.key || "all"}`} onClick={() => { setStatus(f.key); setSelected(null); }}
-                    className={`tab-button whitespace-nowrap ${status === f.key ? "active" : ""}`}>
-                    {f.label}<span className="tab-badge">{Number((f.key ? stats[f.key] : stats.total) ?? 0)}</span>
-                  </button>
-                ))}
-              </div>
+              <FilterChips testId="amd-status-filters" ariaLabel="Saring status amandemen" className="min-w-0"
+                value={status || "all"} onChange={(k) => { setStatus(k === "all" ? "" : k); setSelected(null); }}
+                options={STATUS_TABS.map((f) => ({
+                  key: f.key || "all", label: f.label, testId: `amd-filter-${f.key || "all"}`,
+                  count: Number((f.key ? stats[f.key] : stats.total) ?? 0),
+                }))} />
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_360px]">
             <section className="section-card">
               <div className="section-head">
                 <h3 className="text-[12.5px] font-bold">Daftar amandemen</h3>
@@ -216,7 +207,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
               </div>
             </section>
 
-            {selected ? (
+            {stacked ? null : selected ? (
               <AmendmentDetailPanel amdId={selected} currentUser={currentUser}
                 onDecided={load} onClose={() => setSelected(null)} />
             ) : (
@@ -229,6 +220,13 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
             )}
           </div>
         </>
+      )}
+
+      {stacked && selected && (
+        <DetailModal open onClose={() => setSelected(null)} size="lg" label="Rincian amandemen" testId="amd-detail-modal">
+          <AmendmentDetailPanel amdId={selected} currentUser={currentUser}
+            onDecided={load} onClose={() => setSelected(null)} />
+        </DetailModal>
       )}
     </div>
   );

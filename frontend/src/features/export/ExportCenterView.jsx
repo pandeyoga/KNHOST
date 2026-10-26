@@ -1,7 +1,16 @@
+/**
+ * ExportCenterView — Pusat Export (dataset → kolom → periode → filter → pratinjau → unduh).
+ *
+ * Fase 4 · R2 — L-02: kepala halaman (kicker + h1 20 px di latar) → `PageHeader`; L-01: deret `tab-button` lepas →
+ * `PageTabs` (`export-tab-*` tetap); nomor langkah hitam → biru baku; tombol "Simpan template" → `secondary-button`.
+ * Pil hitam pemilih kolom & saringan cakupan → `FilterChips` (lihat ColumnPicker/CoveragePanel).
+ */
 import { useEffect, useMemo, useState } from "react";
 import { FileSpreadsheet, Eye, FileDown, Info } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import PageTabs from "../../components/PageTabs";
+import { PageHeader } from "../../components/ListPageParts";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import DatasetPicker from "./DatasetPicker";
@@ -22,7 +31,7 @@ function Step({ n, title, children, right }) {
   return (
     <section className="rounded-xl border border-[#EFF0F2] bg-white p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="h-5 w-5 rounded-full bg-[#1C1C1E] text-white text-[11px] font-bold grid place-items-center">{n}</span>
+        <span className="h-5 w-5 shrink-0 rounded-full bg-[#0058CC] text-white text-[11px] font-bold grid place-items-center">{n}</span>
         <h3 className="text-[13px] font-bold text-[#1C1C1E]">{title}</h3>
         <span className="ml-auto">{right}</span>
       </div>
@@ -159,21 +168,15 @@ export default function ExportCenterView({ selectedEntity }) {
   };
 
   return (
-    <div data-testid="export-center-view" className="space-y-4">
-      <div>
-        <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">LAPORAN</p>
-        <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2"><FileSpreadsheet size={20} className="text-[#0058CC]" /> Pusat Export</h1>
-        <p className="text-[12px] text-[#6B6B73] mt-0.5">Pilih dataset → kolom → periode → filter → pratinjau → unduh. Isi mengikuti hak akses, badan usaha, dan lokasi Anda.</p>
-      </div>
-      {/* Audit UI 24 Okt (139): tab standar (dulu pil hitam). */}
-      <div className="tab-bar">
-        {[["builder", "Buat ekspor"], ["templates", "Template"], ["jobs", "Pekerjaan"], ["coverage", "Cakupan data"]].map(([id, label]) => (
-          <button key={id} type="button" data-testid={`export-tab-${id}`} onClick={() => setTab(id)}
-                  className={`tab-button ${tab === id ? "active" : ""}`}>{label}</button>
-        ))}
-      </div>
+    <div data-testid="export-center-view" className="view-container">
+      <PageHeader icon={FileSpreadsheet} title="Pusat Export" testId="export-head"
+        subtitle="Pilih dataset → kolom → periode → filter → pratinjau → unduh. Isi mengikuti hak akses, badan usaha, dan lokasi Anda." />
+      {/* Audit UI 24 Okt (139) → fase 4 · R2: PageTabs baku (dulu pil hitam, lalu deret tab-button lepas). */}
+      <PageTabs testId="export-tabs" ariaLabel="Pusat Export" className="!mb-0" value={tab} onChange={setTab}
+        tabs={[["builder", "Buat ekspor"], ["templates", "Template"], ["jobs", "Pekerjaan"], ["coverage", "Cakupan data"]]
+          .map(([id, label]) => ({ key: id, label, testId: `export-tab-${id}` }))} />
       {error && <ErrorNotice message={error} onDismiss={() => setError(null)} testId="export-error" />}
-      {notice && <p data-testid="export-notice" className="rounded-lg bg-[#34C759]/10 text-[#1E7B3A] text-[12.5px] px-3 py-2">{notice}</p>}
+      {notice && <p data-testid="export-notice" className="notice-bar success !mb-0">{notice}</p>}
       {tab === "jobs" && <JobsPanel refreshKey={jobsKey} />}
       {tab === "coverage" && <CoveragePanel />}
       {tab === "templates" && meta && <TemplatesPanel refreshKey={tplKey} onUse={useTemplate} onRan={() => setJobsKey((k) => k + 1)} />}
@@ -211,7 +214,7 @@ export default function ExportCenterView({ selectedEntity }) {
                 </label>
                 <button type="button" data-testid="export-template-save" onClick={() => saveTemplate("xlsx")}
                         disabled={!!busy || tplName.trim().length < 3 || !spec.columns.length}
-                        className="rounded-full border border-[#0058CC] text-[#0058CC] px-4 py-1.5 text-[12.5px] font-semibold disabled:opacity-50">Simpan template</button>
+                        className="secondary-button">Simpan template</button>
               </div>
               {preview && <Step n="6" title="Pratinjau"><PreviewTable data={preview} datasetId={spec?.dataset} scopeText={selectedEntity === "all" ? "semua badan usaha" : "badan usaha aktif"} /></Step>}
             </div>

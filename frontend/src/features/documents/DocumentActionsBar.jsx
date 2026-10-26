@@ -1,8 +1,12 @@
 // DocumentActionsBar — bar aksi dokumen reusable untuk detail-view tiap modul:
 // Pratinjau · Unduh PDF · Tanda Tangan (E-Sign) · Kirim WhatsApp.
 // Menggunakan kembali ESignModal & WhatsAppModal (Pusat Dokumen).
+// Fase 4 · R2 (L-03) — pratinjau `div fixed inset-0 z-[65]` buatan sendiri (tanpa Esc, klik latar tanpa gestur
+// utuh) → `DetailModal framed` (pola yang sama dengan pratinjau Pusat Dokumen fase 3). Testid tetap
+// (`doc-act-preview-modal` = kartu pop-up, `doc-act-preview-close`, `doc-act-preview-frame`).
 import { useCallback, useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import DetailModal from "../../components/DetailModal";
 import ESignModal from "./ESignModal";
 import WhatsAppModal from "./WhatsAppModal";
 import { Eye, Download, PenLine, MessageCircle, Loader2, X, ShieldCheck } from "lucide-react";
@@ -138,21 +142,23 @@ export default function DocumentActionsBar({
 
       {/* Preview modal */}
       {preview && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/45 p-4" data-testid="doc-act-preview-modal"
-          onClick={(e) => { if (e.target === e.currentTarget) setPreview(null); }}>
-          <div className="flex w-full max-w-[820px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "92vh" }}>
-            <div className="flex items-center justify-between border-b border-[#EDEEF1] px-5 py-3">
-              <h3 className="text-[14px] font-bold">Pratinjau · {number || sourceId}</h3>
+        <DetailModal open onClose={() => setPreview(null)} framed size="lg" showClose={false}
+          label={`Pratinjau ${number || sourceId}`} testId="doc-act-preview-modal">
+          <div className="flex flex-col" data-testid="doc-act-preview-panel">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EDEEF1] pb-3">
+              <h3 className="min-w-0 text-[14px] font-bold">Pratinjau · {number || sourceId}</h3>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary flex items-center gap-1.5 !py-1" onClick={downloadPdf}>
+                <button type="button" className="secondary-button !py-1" onClick={downloadPdf} disabled={downloading}>
                   <Download size={13} /> Unduh PDF
                 </button>
-                <button onClick={() => setPreview(null)} className="text-[#9A9BA3] hover:text-[#1a1a1a]" data-testid="doc-act-preview-close"><X size={18} /></button>
+                <button type="button" onClick={() => setPreview(null)} className="icon-button" aria-label="Tutup"
+                  data-testid="doc-act-preview-close"><X size={16} /></button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden bg-[#F2F3F5] p-3">
+            {err && <div className="notice-bar danger"><span>{err}</span></div>}
+            <div className="rounded-lg bg-[#F2F3F5] p-3">
               {preview.loading ? (
-                <div className="flex h-full items-center justify-center"><Loader2 size={24} className="animate-spin text-[#0058CC]" /></div>
+                <div className="flex min-h-[40vh] items-center justify-center"><Loader2 size={24} className="animate-spin text-[#0058CC]" /></div>
               ) : preview.error ? (
                 <div className="notice-bar danger"><span>{preview.error}</span></div>
               ) : (
@@ -161,7 +167,7 @@ export default function DocumentActionsBar({
               )}
             </div>
           </div>
-        </div>
+        </DetailModal>
       )}
 
       <ESignModal open={esignOpen} onClose={() => setEsignOpen(false)} doc={docObj} currentUser={currentUser}

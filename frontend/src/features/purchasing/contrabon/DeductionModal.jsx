@@ -6,15 +6,18 @@
  * layar tidak pernah menawarkan nota yang sudah terpakai. Potongan klaim makloon
  * sengaja TIDAK ada di daftar — nilainya sudah menempel di faktur (Fase D) dan
  * backend menolaknya dengan alasan.
+ *
+ * Fase 4 · R2 (L-03) — `.modal-card` buatan sendiri → `FormModal` baku (layar penuh 1 kolom di HP). Isian & testid
+ * tetap; galat tetap di DALAM pop-up.
  */
 import MoneyInput from "../../../components/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
-import { X, Scissors, Info } from "lucide-react";
+import { Scissors, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
 import { fmtDate } from "./contraBonApi";
 
@@ -102,116 +105,109 @@ export default function DeductionModal({ cb, meta, onClose, onSaved, onError }) 
     || (!spec?.needs_ref && (amount === "" || Number(amount) <= 0));
 
   return (
-    <div className="modal-overlay" data-testid="cb-deduction-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card wide">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="modal-title flex items-center gap-1.5">
-            <Scissors size={15} /> Tambah potongan kontrabon
-          </h3>
-          <button className="icon-button" data-testid="cb-deduction-close" onClick={onClose}>
-            <X size={15} />
-          </button>
-        </div>
-        <p className="modal-subtitle">
+    <FormModal open onClose={onClose} title="Tambah potongan kontrabon" icon={Scissors} size="lg"
+      subtitle={(
+        <>
           {cb.number} · {cb.supplier_name} — sisa ruang potongan <b>{formatCurrency(room)}</b>{" "}
           (nilai bersih kontrabon tidak boleh negatif).
-        </p>
-
-        {err && (
-          <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-deduction-error" />
-        )}
-
-        <div className="mt-3 space-y-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis potongan</label>
-            <KNSelect data-testid="cb-deduction-kind" value={kind}
-              onValueChange={(v) => { setKind(v); setRefId(""); setAmount(""); setReason(""); }}
-              options={kinds.map((k) => ({ value: k.kind, label: k.label }))} className="field" />
-            {spec && (
-              <p className="mt-1 flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]">
-                <Info size={11} className="mt-[2px] shrink-0" /> {spec.help}
-              </p>
-            )}
-            {spec && !spec.posts_gl && (
-              <p className="mt-1 text-[10px] text-[#B26A00]">
-                Tidak dijurnal ulang — jurnalnya sudah lahir di dokumen sumbernya. Di sini ia
-                diterapkan sebagai pelunasan non-kas pada faktur.
-              </p>
-            )}
-          </div>
-
-          {spec?.needs_ref && (
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Dokumen sumber (wajib)
-              </label>
-              {loading
-                ? <p className="text-[11.5px] text-[#8E8E93]">Memuat dokumen yang tersedia…</p>
-                : refOptions.length === 0
-                  ? (
-                    <p className="rounded-md bg-[#FFF4E5] px-2 py-1.5 text-[11px] text-[#8C4A00]"
-                      data-testid="cb-deduction-no-ref">
-                      Tidak ada dokumen tersedia untuk jenis ini. Nota debit harus sudah disetujui
-                      dengan konsekuensi potong hutang, dan uang muka belum terpakai di kontrabon lain.
-                    </p>
-                  )
-                  : (
-                    <KNSelect data-testid="cb-deduction-ref" value={refId} onValueChange={setRefId}
-                      options={refOptions} className="field" placeholder="Pilih dokumen" />
-                  )}
-              {picked && (
-                <p className="mt-1 text-[10px] text-[#8E8E93]">
-                  Sisa nilai dokumen {formatCurrency(picked.amount)} dari total{" "}
-                  {formatCurrency(picked.total_amount)}
-                  {picked.po_number ? ` · ${picked.po_number}` : ""}
-                  {picked.reason ? ` · ${picked.reason}` : ""}
-                </p>
-              )}
-            </div>
-          )}
-
-          {kind === "match_variance" && (
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Tagihan yang selisihnya dipotong (wajib)
-              </label>
-              <KNSelect data-testid="cb-deduction-bill" value={billId} onValueChange={setBillId}
-                options={billOptions} className="field" placeholder="Pilih tagihan" />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Nominal potongan (Rp)
-              </label>
-              <MoneyInput testId="cb-deduction-amount" className="input-field w-full" value={amount} onChange={(v) => setAmount(v)} />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Alasan berlabel {spec?.reason_required ? "(wajib)" : "(otomatis bila dikosongkan)"}
-              </label>
-              <KNSelect data-testid="cb-deduction-reason" value={reason} onValueChange={setReason}
-                options={reasonOptions} className="field" placeholder="Pilih alasan" />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
-            <textarea data-testid="cb-deduction-note" className="textarea w-full" rows={2}
-              value={note} onChange={(e) => setNote(e.target.value)}
-              placeholder="Mis. kain cacat 3 roll sudah diambil kurir supplier tanggal 12." />
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button className="primary-button" data-testid="cb-deduction-save"
+        </>
+      )}
+      testId="cb-deduction-modal" busy={saving}
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" className="primary-button" data-testid="cb-deduction-save"
             disabled={blocked} onClick={save}>
             {saving ? "Menyimpan…" : "Tambah potongan"}
           </button>
         </div>
+      )}>
+      {err && (
+        <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-deduction-error" />
+      )}
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis potongan</label>
+          <KNSelect data-testid="cb-deduction-kind" value={kind}
+            onValueChange={(v) => { setKind(v); setRefId(""); setAmount(""); setReason(""); }}
+            options={kinds.map((k) => ({ value: k.kind, label: k.label }))} className="field" />
+          {spec && (
+            <p className="mt-1 flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]">
+              <Info size={11} className="mt-[2px] shrink-0" /> {spec.help}
+            </p>
+          )}
+          {spec && !spec.posts_gl && (
+            <p className="mt-1 text-[10px] text-[#B26A00]">
+              Tidak dijurnal ulang — jurnalnya sudah lahir di dokumen sumbernya. Di sini ia
+              diterapkan sebagai pelunasan non-kas pada faktur.
+            </p>
+          )}
+        </div>
+
+        {spec?.needs_ref && (
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Dokumen sumber (wajib)
+            </label>
+            {loading
+              ? <p className="text-[11.5px] text-[#8E8E93]">Memuat dokumen yang tersedia…</p>
+              : refOptions.length === 0
+                ? (
+                  <p className="rounded-md bg-[#FFF4E5] px-2 py-1.5 text-[11px] text-[#8C4A00]"
+                    data-testid="cb-deduction-no-ref">
+                    Tidak ada dokumen tersedia untuk jenis ini. Nota debit harus sudah disetujui
+                    dengan konsekuensi potong hutang, dan uang muka belum terpakai di kontrabon lain.
+                  </p>
+                )
+                : (
+                  <KNSelect data-testid="cb-deduction-ref" value={refId} onValueChange={setRefId}
+                    options={refOptions} className="field" placeholder="Pilih dokumen" />
+                )}
+            {picked && (
+              <p className="mt-1 text-[10px] text-[#8E8E93]">
+                Sisa nilai dokumen {formatCurrency(picked.amount)} dari total{" "}
+                {formatCurrency(picked.total_amount)}
+                {picked.po_number ? ` · ${picked.po_number}` : ""}
+                {picked.reason ? ` · ${picked.reason}` : ""}
+              </p>
+            )}
+          </div>
+        )}
+
+        {kind === "match_variance" && (
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Tagihan yang selisihnya dipotong (wajib)
+            </label>
+            <KNSelect data-testid="cb-deduction-bill" value={billId} onValueChange={setBillId}
+              options={billOptions} className="field" placeholder="Pilih tagihan" />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Nominal potongan (Rp)
+            </label>
+            <MoneyInput testId="cb-deduction-amount" className="input-field w-full" value={amount} onChange={(v) => setAmount(v)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Alasan berlabel {spec?.reason_required ? "(wajib)" : "(otomatis bila dikosongkan)"}
+            </label>
+            <KNSelect data-testid="cb-deduction-reason" value={reason} onValueChange={setReason}
+              options={reasonOptions} className="field" placeholder="Pilih alasan" />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
+          <textarea data-testid="cb-deduction-note" className="textarea w-full" rows={2}
+            value={note} onChange={(e) => setNote(e.target.value)}
+            placeholder="Mis. kain cacat 3 roll sudah diambil kurir supplier tanggal 12." />
+        </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

@@ -4,16 +4,19 @@
  * Potongan diterapkan sebagai pelunasan NON-KAS pada pembayaran pertama, sehingga
  * subledger hutang (`vendor_bills`) dan buku besar akhirnya rekonsiliasi — celah
  * nyata yang ada sebelum fase ini.
+ *
+ * Fase 4 · R2 (L-03) — `.modal-card` buatan sendiri → `FormModal` baku (layar penuh 1 kolom di HP). Isian & testid
+ * tetap; galat tetap di DALAM pop-up.
  */
 import MoneyInput from "../../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
-import { X, Banknote, Info } from "lucide-react";
+import { Banknote, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
 import { CASH_TYPE_OPTIONS, METHOD_OPTIONS, todayISO } from "./contraBonApi";
 
@@ -67,114 +70,102 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
   }
 
   return (
-    <div className="modal-overlay" data-testid="cb-pay-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card wide">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="modal-title flex items-center gap-1.5">
-            <Banknote size={15} /> Bayar kontrabon
-          </h3>
-          <button className="icon-button" data-testid="cb-pay-close" onClick={onClose}>
-            <X size={15} />
-          </button>
-        </div>
-        <p className="modal-subtitle">
-          {cb.number} · {cb.supplier_name} — {(cb.bills || []).length} faktur dilunasi oleh
-          SATU transaksi kas.
-        </p>
-
-        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-pay-error" />}
-
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="stat-card">
-            <p className="stat-label">Nilai faktur</p>
-            <p className="stat-value tabular-nums">{formatCurrency(t.bills_total)}</p>
-          </div>
-          <div className="stat-card">
-            <p className="stat-label">Potongan</p>
-            <p className="stat-value text-[#B26A00] tabular-nums">{formatCurrency(t.deductions_total)}</p>
-          </div>
-          <div className="stat-card">
-            <p className="stat-label">Nilai bersih</p>
-            <p className="stat-value text-[#0058CC] tabular-nums">{formatCurrency(t.net_payable)}</p>
-          </div>
-          <div className="stat-card">
-            <p className="stat-label">Sisa dibayar</p>
-            <p className="stat-value text-[#C0392B]" data-testid="cb-pay-outstanding">
-              {formatCurrency(t.outstanding)}
-            </p>
-          </div>
-        </div>
-
-        {firstPayment && Number(t.deductions_total) > 0 && (
-          <p className="mt-2 flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]"
-            data-testid="cb-pay-deduction-note">
-            <Info size={11} className="mt-[2px] shrink-0" />
-            Pada pembayaran pertama, potongan {formatCurrency(t.deductions_total)} ikut diterapkan
-            sebagai pelunasan non-kas pada faktur-faktur di kontrabon ini — uang yang keluar dari
-            kas hanya nilai bersihnya.
-          </p>
-        )}
-
-        <div className="mt-3 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Nominal dibayar (Rp)
-              </label>
-              <MoneyInput testId="cb-pay-amount" className="input-field w-full" value={amount} onChange={(v) => setAmount(v)} />
-              <p className="mt-1 text-[10px] text-[#8E8E93]">
-                Kosongkan untuk melunasi seluruh sisa bersih. Pembayaran sebagian diizinkan.
-              </p>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Tanggal pembayaran
-              </label>
-              <KNDatePicker data-testid="cb-pay-date" value={paidAt} onChange={setPaidAt} clearable={false} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
-              <KNSelect data-testid="cb-pay-method" value={method} onValueChange={setMethod}
-                options={METHOD_OPTIONS} className="field" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Sumber kas</label>
-              <KNSelect data-testid="cb-pay-cashtype" value={cashType} onValueChange={setCashType}
-                options={CASH_TYPE_OPTIONS} className="field" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Rekening / kas
-              </label>
-              <KNSelect data-testid="cb-pay-account" value={accountId} onValueChange={setAccountId}
-                options={accountOptions} className="field" placeholder="Pilih rekening" />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
-            <textarea data-testid="cb-pay-notes" className="textarea w-full" rows={2}
-              value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Mis. transfer BCA jam 14:10, bukti dikirim ke WhatsApp supplier." />
-          </div>
-
-          <p className="text-[10.5px] text-[#9A9BA3]">
-            Transaksi kas yang lahir memuat nomor kontrabon di keterangannya, sehingga langsung
-            menjadi kandidat pada Rekonsiliasi Bank.
-          </p>
-        </div>
-
-        <div className="modal-actions">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button className="primary-button" data-testid="cb-pay-submit"
+    <FormModal open onClose={onClose} title="Bayar kontrabon" icon={Banknote} size="lg"
+      subtitle={`${cb.number} · ${cb.supplier_name} — ${(cb.bills || []).length} faktur dilunasi oleh SATU transaksi kas.`}
+      testId="cb-pay-modal" busy={saving}
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" className="primary-button" data-testid="cb-pay-submit"
             disabled={saving} onClick={pay}>
             {saving ? "Memproses…" : "Catat pembayaran"}
           </button>
         </div>
+      )}>
+      {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-pay-error" />}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="stat-card">
+          <p className="stat-label">Nilai faktur</p>
+          <p className="stat-value tabular-nums">{formatCurrency(t.bills_total)}</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">Potongan</p>
+          <p className="stat-value text-[#B26A00] tabular-nums">{formatCurrency(t.deductions_total)}</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">Nilai bersih</p>
+          <p className="stat-value text-[#0058CC] tabular-nums">{formatCurrency(t.net_payable)}</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">Sisa dibayar</p>
+          <p className="stat-value text-[#C0392B]" data-testid="cb-pay-outstanding">
+            {formatCurrency(t.outstanding)}
+          </p>
+        </div>
       </div>
-    </div>
+
+      {firstPayment && Number(t.deductions_total) > 0 && (
+        <p className="mt-2 flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]"
+          data-testid="cb-pay-deduction-note">
+          <Info size={11} className="mt-[2px] shrink-0" />
+          Pada pembayaran pertama, potongan {formatCurrency(t.deductions_total)} ikut diterapkan
+          sebagai pelunasan non-kas pada faktur-faktur di kontrabon ini — uang yang keluar dari
+          kas hanya nilai bersihnya.
+        </p>
+      )}
+
+      <div className="mt-3 space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Nominal dibayar (Rp)
+            </label>
+            <MoneyInput testId="cb-pay-amount" className="input-field w-full" value={amount} onChange={(v) => setAmount(v)} />
+            <p className="mt-1 text-[10px] text-[#8E8E93]">
+              Kosongkan untuk melunasi seluruh sisa bersih. Pembayaran sebagian diizinkan.
+            </p>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Tanggal pembayaran
+            </label>
+            <KNDatePicker data-testid="cb-pay-date" value={paidAt} onChange={setPaidAt} clearable={false} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
+            <KNSelect data-testid="cb-pay-method" value={method} onValueChange={setMethod}
+              options={METHOD_OPTIONS} className="field" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Sumber kas</label>
+            <KNSelect data-testid="cb-pay-cashtype" value={cashType} onValueChange={setCashType}
+              options={CASH_TYPE_OPTIONS} className="field" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+              Rekening / kas
+            </label>
+            <KNSelect data-testid="cb-pay-account" value={accountId} onValueChange={setAccountId}
+              options={accountOptions} className="field" placeholder="Pilih rekening" />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
+          <textarea data-testid="cb-pay-notes" className="textarea w-full" rows={2}
+            value={notes} onChange={(e) => setNotes(e.target.value)}
+            placeholder="Mis. transfer BCA jam 14:10, bukti dikirim ke WhatsApp supplier." />
+        </div>
+
+        <p className="text-[10.5px] text-[#9A9BA3]">
+          Transaksi kas yang lahir memuat nomor kontrabon di keterangannya, sehingga langsung
+          menjadi kandidat pada Rekonsiliasi Bank.
+        </p>
+      </div>
+    </FormModal>
   );
 }

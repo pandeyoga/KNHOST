@@ -5,16 +5,19 @@
  *
  * Prinsip layar ini: pengguna harus tahu KENAPA sistem menganggap sesuatu cocok.
  * Karena itu skor selalu ditampilkan bersama daftar alasan berpoin.
+ *
+ * Fase 4 · R2 (L-03) — pop-up "Gabung ke 1 transaksi" `.modal-card` buatan sendiri → `FormModal` baku (layar penuh
+ * di HP). Testid tetap (`recon-group-modal`, `recon-group-cand-*`, `recon-group-error`).
  */
 import { useMemo, useState } from "react";
 import {
-  Link2, Unlink, EyeOff, Eye, ArrowDownLeft, ArrowUpRight, PiggyBank, Info, Layers, X,
+  Link2, Unlink, EyeOff, Eye, ArrowDownLeft, ArrowUpRight, PiggyBank, Info, Layers,
   Receipt, Percent,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
 import ReconContraBonModal from "./ReconContraBonModal";
 import useListSearch from "@/hooks/useListSearch";
@@ -89,6 +92,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
   }
 
   async function openGroup() {
+    setMErr("");
     try {
       const first = pickedLines[0];
       const r = await axios.get(`${API}/bank-reconciliation/lines/${first.id}/candidates`,
@@ -132,7 +136,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
         </div>
       )}
 
-      <div className="rounded-lg border border-[#E5E5EA] overflow-hidden" data-testid="recon-lines-table">
+      <div className="rounded-lg border border-[#E5E5EA] overflow-x-auto" data-testid="recon-lines-table">
         {srch.toolbar}
         <table className="w-full text-[12px]">
           <thead>
@@ -297,46 +301,40 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
       </div>
 
       {groupTxn && (
-        <div className="modal-overlay" data-testid="recon-group-modal"
-          {...overlayDismiss(() => setGroupTxn(null))}>
-          <div className="modal-card">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="modal-title flex items-center gap-1.5">
-                <Layers size={15} /> Gabung {pickedLines.length} mutasi ke satu transaksi buku
-              </h3>
-              <button className="icon-button" data-testid="recon-group-close"
-                onClick={() => setGroupTxn(null)}><X size={15} /></button>
-            </div>
-            {mErr && (
-              <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
-                testId="recon-group-error" />
-            )}
-            <p className="modal-subtitle">
+        <FormModal open onClose={() => setGroupTxn(null)} icon={Layers}
+          title={`Gabung ${pickedLines.length} mutasi ke satu transaksi buku`}
+          subtitle={(
+            <>
               Total mutasi terpilih <b>{formatCurrency(groupTxn.total)}</b> — pilih transaksi buku
               yang nilainya mencukupi.
-            </p>
-            <div className="mt-2 max-h-[320px] overflow-auto rounded border border-[#EFF0F2]">
-              {groupTxn.candidates.length === 0 ? (
-                <div className="p-4 text-center text-[12px] text-[#8E8E93]">
-                  Tidak ada transaksi buku yang cocok arah & rentang tanggalnya.
-                </div>
-              ) : groupTxn.candidates.map((t) => (
-                <button key={t.id} data-testid={`recon-group-cand-${t.id}`}
-                  className="w-full text-left px-3 py-2 border-b border-[#F5F5F7] hover:bg-[#F7F8FA] flex items-center justify-between"
-                  disabled={Number(t.outstanding) + 0.01 < groupTxn.total}
-                  onClick={() => doGroup(t.id)}>
-                  <span className="text-[12px]">
-                    <b>{t.number}</b> · {fmtDate(t.txn_date)}{" "}
-                    <span className="text-[#8E8E93]">{t.description || ""}</span>
-                  </span>
-                  <span className="text-[12px] font-semibold">
-                    sisa {formatCurrency(t.outstanding)}
-                  </span>
-                </button>
-              ))}
-            </div>
+            </>
+          )}
+          testId="recon-group-modal">
+          {mErr && (
+            <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
+              testId="recon-group-error" />
+          )}
+          <div className="rounded border border-[#EFF0F2] sm:max-h-[320px] sm:overflow-auto">
+            {groupTxn.candidates.length === 0 ? (
+              <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+                Tidak ada transaksi buku yang cocok arah & rentang tanggalnya.
+              </div>
+            ) : groupTxn.candidates.map((t) => (
+              <button type="button" key={t.id} data-testid={`recon-group-cand-${t.id}`}
+                className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[#F5F5F7] px-3 py-2 text-left hover:bg-[#F7F8FA]"
+                disabled={Number(t.outstanding) + 0.01 < groupTxn.total}
+                onClick={() => doGroup(t.id)}>
+                <span className="min-w-0 text-[12px]">
+                  <b>{t.number}</b> · {fmtDate(t.txn_date)}{" "}
+                  <span className="text-[#8E8E93]">{t.description || ""}</span>
+                </span>
+                <span className="text-[12px] font-semibold">
+                  sisa {formatCurrency(t.outstanding)}
+                </span>
+              </button>
+            ))}
           </div>
-        </div>
+        </FormModal>
       )}
       {cbLine && (
         <ReconContraBonModal line={cbLine} onClose={() => setCbLine(null)}

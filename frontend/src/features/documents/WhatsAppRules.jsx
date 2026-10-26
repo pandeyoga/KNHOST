@@ -1,11 +1,16 @@
 // WhatsAppRules — kelola aturan auto-kirim dokumen via WhatsApp (admin/manager).
 // Aturan: (jenis dokumen + pemicu) → penerima (pelanggan/pemasok/nomor tetap) + caption.
+// Fase 4 · R2 (L-03) — form aturan `div fixed inset-0 z-[80]` buatan sendiri → `FormModal` baku (galat simpan kini di
+// DALAM pop-up, dulu di daftar di belakangnya); hapus aturan dikonfirmasi dulu (`askConfirm`). Testid tetap
+// (`wa-rule-form` = kartu pop-up, `wa-rule-*`).
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import FormModal from "../../components/FormModal";
+import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
+import { askConfirm } from "../../services/confirmService";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Loader2, Zap, Save, X, Info } from "lucide-react";
-import { useEscapeClose } from "@/utils/escapeLayers";
+import { Plus, Trash2, Loader2, Zap, Save, Info } from "lucide-react";
 
 const EVENT_OPTIONS = [
   { value: "created", label: "Dibuat" },
@@ -47,24 +52,21 @@ export default function WhatsAppRules({ docTypes = [] }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Tutup form dengan tombol Escape — lewat tumpukan lapisan (INV-UI-10). Dulu
-  // pendengar sendiri: Esc di dalam KNSelect (jenis dokumen / pemicu) menutup
-  // dropdown DAN membuang seluruh isian aturan.
-  const closeForm = useCallback(() => setShowForm(false), []);
-  useEscapeClose(showForm, closeForm);
+  // Esc lewat tumpukan lapisan (INV-UI-10) kini ditangani FormModal: Esc di dalam KNSelect menutup dropdown saja.
+  const [formErr, setFormErr] = useState("");
 
   const openNew = () => {
     setDraft({ ...emptyDraft, doc_type: docTypes[0]?.doc_type || "" });
-    setMsg(""); setErr(""); setShowForm(true);
+    setMsg(""); setErr(""); setFormErr(""); setShowForm(true);
   };
 
   const save = async () => {
-    setBusy(true); setErr(""); setMsg("");
+    setBusy(true); setFormErr(""); setMsg("");
     try {
       await axios.post(`${API}/deliveries/whatsapp/rules`, draft);
       setShowForm(false); setMsg("Aturan ditambahkan.");
       load();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan aturan."); }
+    } catch (e) { setFormErr(apiErrorText(e, "Gagal menyimpan aturan.")); }
     finally { setBusy(false); }
   };
 
@@ -76,6 +78,12 @@ export default function WhatsAppRules({ docTypes = [] }) {
   };
 
   const remove = async (rule) => {
+    if (!(await askConfirm({
+      title: "Hapus aturan auto-kirim?",
+      message: `${docLabel(rule.doc_type)} · ${eventLabel(rule.event)} tidak lagi dikirim otomatis via WhatsApp.`,
+      confirmLabel: "Hapus",
+      danger: true,
+    }))) return;
     try {
       await axios.delete(`${API}/deliveries/whatsapp/rules/${rule.id}`);
       setRules((prev) => prev.filter((r) => r.id !== rule.id));
@@ -94,7 +102,7 @@ export default function WhatsAppRules({ docTypes = [] }) {
 
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Aturan ({rules.length})</p>
-        <button className="btn-secondary flex items-center gap-1.5 !py-1" onClick={openNew} data-testid="wa-rule-add">
+        <button type="button" className="secondary-button !py-1" onClick={openNew} data-testid="wa-rule-add">
           <Plus size={14} /> Tambah Aturan
         </button>
       </div>
@@ -122,7 +130,7 @@ export default function WhatsAppRules({ docTypes = [] }) {
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={!!r.enabled} onCheckedChange={() => toggle(r)} data-testid={`wa-rule-toggle-${r.id}`} />
-                <button className="flex h-7 w-7 items-center justify-center rounded-md border border-[#F3D0CB] text-[#C0392B] hover:bg-[#FDECEA]"
+                <button type="button" aria-label="Hapus aturan" className="flex h-7 w-7 items-center justify-center rounded-md border border-[#F3D0CB] text-[#C0392B] hover:bg-[#FDECEA]"
                   title="Hapus" onClick={() => remove(r)} data-testid={`wa-rule-del-${r.id}`}><Trash2 size={14} /></button>
               </div>
             </div>
@@ -132,52 +140,52 @@ export default function WhatsAppRules({ docTypes = [] }) {
 
       {/* Form tambah aturan */}
       {showForm && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4" data-testid="wa-rule-form"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
-          <div className="w-full max-w-[440px] overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#EDEEF1] px-5 py-3">
-              <h3 className="text-[13.5px] font-bold">Aturan Auto-Kirim Baru</h3>
-              <button onClick={() => setShowForm(false)} className="relative z-[1] text-[#9A9BA3] hover:text-[#1a1a1a]" data-testid="wa-rule-form-close"><X size={17} /></button>
-            </div>
-            <div className="grid gap-3 px-5 py-4">
-              <div className="grid gap-1">
-                <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Jenis Dokumen</label>
-                <KNSelect value={draft.doc_type} onValueChange={(v) => setDraft((d) => ({ ...d, doc_type: v }))}
-                  options={docTypeOptions} className="field" searchable placeholder="Pilih dokumen…" data-testid="wa-rule-doctype" />
-              </div>
-              <div className="grid gap-1">
-                <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Pemicu (Event)</label>
-                <KNSelect value={draft.event} onValueChange={(v) => setDraft((d) => ({ ...d, event: v }))}
-                  options={EVENT_OPTIONS} className="field" data-testid="wa-rule-event" />
-              </div>
-              <div className="grid gap-1">
-                <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Penerima</label>
-                <KNSelect value={draft.recipient_mode} onValueChange={(v) => setDraft((d) => ({ ...d, recipient_mode: v }))}
-                  options={MODE_OPTIONS} className="field" data-testid="wa-rule-mode" />
-              </div>
-              {draft.recipient_mode === "fixed" && (
-                <div className="grid gap-1">
-                  <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Nomor Tetap</label>
-                  <input className="form-input" value={draft.fixed_number} placeholder="08xxx atau 62xxx"
-                    onChange={(e) => setDraft((d) => ({ ...d, fixed_number: e.target.value }))} data-testid="wa-rule-fixed" />
-                </div>
-              )}
-              <div className="grid gap-1">
-                <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Template Caption (opsional)</label>
-                <input className="form-input" value={draft.caption_template} placeholder="Cth: {label} {number} — mohon dicek"
-                  onChange={(e) => setDraft((d) => ({ ...d, caption_template: e.target.value }))} data-testid="wa-rule-caption" />
-                <span className="text-[10.5px] text-[#9A9BA3]">Placeholder: {"{number}"}, {"{label}"}</span>
-              </div>
-              <label className="flex items-center justify-between gap-3 rounded-lg border border-[#EDEEF1] px-3 py-2">
-                <span className="text-[12.5px] font-medium">Aktifkan aturan</span>
-                <Switch checked={!!draft.enabled} onCheckedChange={(v) => setDraft((d) => ({ ...d, enabled: v }))} data-testid="wa-rule-enabled" />
-              </label>
-              <button className="btn-primary flex items-center justify-center gap-2" onClick={save} disabled={busy || !draft.doc_type} data-testid="wa-rule-save">
+        <FormModal open onClose={() => setShowForm(false)} size="sm" icon={Zap} title="Aturan Auto-Kirim Baru"
+          testId="wa-rule-form" busy={busy}
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => setShowForm(false)} disabled={busy}>Batal</button>
+              <button type="button" className="primary-button" onClick={save} disabled={busy || !draft.doc_type} data-testid="wa-rule-save">
                 {busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Simpan Aturan
               </button>
             </div>
+          )}>
+          <div className="grid gap-3">
+            {formErr && <div className="notice-bar danger !py-1.5" data-testid="wa-rule-form-error"><span className="text-[11.5px]">{formErr}</span></div>}
+            <div className="grid gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Jenis Dokumen</label>
+              <KNSelect value={draft.doc_type} onValueChange={(v) => setDraft((d) => ({ ...d, doc_type: v }))}
+                options={docTypeOptions} className="field" searchable placeholder="Pilih dokumen…" data-testid="wa-rule-doctype" />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Pemicu (Event)</label>
+              <KNSelect value={draft.event} onValueChange={(v) => setDraft((d) => ({ ...d, event: v }))}
+                options={EVENT_OPTIONS} className="field" data-testid="wa-rule-event" />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Penerima</label>
+              <KNSelect value={draft.recipient_mode} onValueChange={(v) => setDraft((d) => ({ ...d, recipient_mode: v }))}
+                options={MODE_OPTIONS} className="field" data-testid="wa-rule-mode" />
+            </div>
+            {draft.recipient_mode === "fixed" && (
+              <div className="grid gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Nomor Tetap</label>
+                <input className="form-input" value={draft.fixed_number} placeholder="08xxx atau 62xxx"
+                  onChange={(e) => setDraft((d) => ({ ...d, fixed_number: e.target.value }))} data-testid="wa-rule-fixed" />
+              </div>
+            )}
+            <div className="grid gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Template Caption (opsional)</label>
+              <input className="form-input" value={draft.caption_template} placeholder="Cth: {label} {number} — mohon dicek"
+                onChange={(e) => setDraft((d) => ({ ...d, caption_template: e.target.value }))} data-testid="wa-rule-caption" />
+              <span className="text-[10.5px] text-[#9A9BA3]">Placeholder: {"{number}"}, {"{label}"}</span>
+            </div>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[#EDEEF1] px-3 py-2">
+              <span className="text-[12.5px] font-medium">Aktifkan aturan</span>
+              <Switch checked={!!draft.enabled} onCheckedChange={(v) => setDraft((d) => ({ ...d, enabled: v }))} data-testid="wa-rule-enabled" />
+            </label>
           </div>
-        </div>
+        </FormModal>
       )}
     </div>
   );

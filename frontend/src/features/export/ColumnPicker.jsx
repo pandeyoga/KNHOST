@@ -1,4 +1,8 @@
 import { EyeOff } from "lucide-react";
+import FilterChips from "../../components/FilterChips";
+
+// Fase 4 · R2 (L-01) — pil hitam buatan sendiri → `FilterChips multiple` (aria-pressed, gaya chip baku, satu baris
+// bergulir di HP). Testid kolom tetap (`export-col-<key>`).
 
 export default function ColumnPicker({ dataset, selected, onChange }) {
   const groups = {};
@@ -10,7 +14,7 @@ export default function ColumnPicker({ dataset, selected, onChange }) {
 
   return (
     <div data-testid="export-column-picker" className="space-y-3">
-      <div className="flex items-center gap-2 text-[12px]">
+      <div className="flex flex-wrap items-center gap-2 text-[12px]">
         <button type="button" data-testid="export-columns-all" className="text-[#0058CC] font-semibold"
                 onClick={() => onChange(dataset.columns.map((c) => c.key))}>Pilih semua</button>
         <span className="text-[#D0D0D5]">·</span>
@@ -24,18 +28,15 @@ export default function ColumnPicker({ dataset, selected, onChange }) {
       {Object.entries(groups).map(([g, cols]) => (
         <div key={g}>
           <p className="text-[11px] font-bold text-[#3A3A3C] mb-1">{g}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {cols.map((c) => {
-              const on = selected.includes(c.key);
-              return (
-                <button key={c.key} type="button" data-testid={`export-col-${c.key}`} onClick={() => toggle(c.key)}
-                        className={`px-2.5 py-1 rounded-full border text-[12px] transition-colors ${
-                          on ? "bg-[#1C1C1E] text-white border-[#1C1C1E]" : "bg-white text-[#3A3A3C] border-[#E5E5EA] hover:border-[#1C1C1E]/40"}`}>
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* Urutan kolom ekspor = urutan dicentang (sama seperti dulu): chip yang berubah di-toggle satu per satu. */}
+          <FilterChips multiple className="!flex-wrap" ariaLabel={`Kolom ${g}`}
+            value={selected.filter((k) => cols.some((c) => c.key === k))}
+            onChange={(next) => {
+              const cur = selected.filter((k) => cols.some((c) => c.key === k));
+              const k = next.find((x) => !cur.includes(x)) || cur.find((x) => !next.includes(x));
+              if (k) toggle(k);
+            }}
+            options={cols.map((c) => ({ key: c.key, label: c.label, testId: `export-col-${c.key}` }))} />
         </div>
       ))}
       {dataset.hidden_columns.length > 0 && (

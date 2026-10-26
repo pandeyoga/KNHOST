@@ -8,6 +8,14 @@
  *   · TIDAK MEMAKSA — kasus tanpa alasan/bukti/persetujuan ditolak berikut arahannya.
  *
  * Akses: izin `finance_case` (admin/manager penuh; sales hanya melapor & memantau).
+ *
+ * Fase 4 · R2 — layar ini dibuka juga dari aplikasi HP (Lainnya › Kasus Keuangan) → layak 390 px:
+ *  · L-02: kepala halaman (h2 + 3 tombol rata kiri) → `PageHeader` (aksi di kanan); saringan & daftar dalam
+ *    `.section-card`;
+ *  · L-01: pil jenis buatan sendiri & tab status (tingkat ke-3) → `FilterChips` (`case-chip-*`,
+ *    `case-filter-status-*` tetap); hitungan status baru tampil setelah ringkasan termuat (dulu "0" saat memuat);
+ *  · rincian kasus: berdampingan di ≥1280 px seperti dulu; di layar lebih sempit (HP/tablet) dulu jatuh DI BAWAH
+ *    daftar (di luar pandangan) → kini `DetailModal` (layar penuh di HP).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -16,7 +24,10 @@ import {
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
-import { OptionTabs } from "../../../components/ListControls";
+import DetailModal from "../../../components/DetailModal";
+import FilterChips from "../../../components/FilterChips";
+import { PageHeader } from "../../../components/ListPageParts";
+import useIsMobile from "../../../hooks/useIsMobile";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { askConfirm } from "../../../services/confirmService";
@@ -49,7 +60,9 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   const [fStatus, setFStatus] = useState("");
   const [fType, setFType] = useState("");
   const [fOverdue, setFOverdue] = useState(false);
-  const canResolve = can(currentUser?.permissions, "finance_case", "resolve");   // Sisir lanjutan gerbang peran (2026-10-21) — POST /finance-cases/{id}/resolve
+  const canResolve = can(currentUser?.permissions, "finance_case", "resolve");
+  // Di bawah 1280 px rincian tidak lagi berdampingan dengan daftar → tampil sebagai pop-up (lihat kepala berkas).
+  const stacked = useIsMobile(1279);   // Sisir lanjutan gerbang peran (2026-10-21) — POST /finance-cases/{id}/resolve
 
   const notify = (m, kind = "success") => {
     setMsg(m); setMsgKind(kind);
@@ -192,33 +205,33 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
     ...playbooks.map((p) => ({ value: p.code, label: p.label })),
   ], [playbooks]);
   const filterOn = !!(fStatus || fType || fOverdue);
+  const detailProps = active ? {
+    caseData: active, reasons, canResolve,
+    onClose: () => setActive(null),
+    onChanged: async (updated) => { setActive(updated); await loadData(); },
+    onOpenWizard: (c) => setWizard(c),
+    onError: fail, onNotify: notify,
+  } : null;
 
   return (
-    <div className="p-5" data-testid="finance-cases-view">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-[17px] font-bold text-[#1C1C1E]">
-            <Briefcase size={18} className="text-[#0058CC]" /> Pusat Kasus Keuangan
-          </h2>
-          <p className="text-[12px] text-[#6B6B73]">
-            Antrean uang yang nyangkut — salah transfer, bayar dobel, giro ditolak, dana tak
-            dikenal — diselesaikan lewat langkah baku yang selalu melahirkan dokumen, bukan
-            perubahan senyap.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button className="secondary-button" data-testid="case-refresh" onClick={loadData}>
-            <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
-          </button>
-          <button className="secondary-button" data-testid="case-scan"
-            disabled={busy === "scan"} onClick={runScan}>
-            <ScanSearch size={14} className={busy === "scan" ? "spin" : ""} /> Pindai temuan
-          </button>
-          <button className="primary-button" data-testid="case-new" onClick={() => setCreating(true)}>
-            <Plus size={14} /> Kasus baru
-          </button>
-        </div>
-      </div>
+    <div className="view-container" data-testid="finance-cases-view">
+      <PageHeader icon={Briefcase} title="Pusat Kasus Keuangan" testId="case-head"
+        subtitle={"Antrean uang yang nyangkut — salah transfer, bayar dobel, giro ditolak, dana tak dikenal — "
+          + "diselesaikan lewat langkah baku yang selalu melahirkan dokumen, bukan perubahan senyap."}
+        actions={(
+          <>
+            <button type="button" className="secondary-button" data-testid="case-refresh" onClick={loadData}>
+              <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
+            </button>
+            <button type="button" className="secondary-button" data-testid="case-scan"
+              disabled={busy === "scan"} onClick={runScan}>
+              <ScanSearch size={14} className={busy === "scan" ? "spin" : ""} /> Pindai temuan
+            </button>
+            <button type="button" className="primary-button" data-testid="case-new" onClick={() => setCreating(true)}>
+              <Plus size={14} /> Kasus baru
+            </button>
+          </>
+        )} />
 
       {err && <ErrorNotice message={err} onRetry={loadData} onDismiss={() => setErr("")}
         onAction={caseNumberFromText(err)
@@ -232,14 +245,14 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
         actionLabel={caseNumberFromText(err) ? `Buka ${caseNumberFromText(err)}` : ""}
         testId="case-error" />}
       {msg && (
-        <div className={`notice-bar ${msgKind} mb-3`} data-testid="case-notice">
+        <div className={`notice-bar ${msgKind} !mb-0`} data-testid="case-notice">
           {msgKind === "warning" ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
           {" "}{msg}
         </div>
       )}
 
       {stats && (
-        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5" data-testid="case-stats">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5" data-testid="case-stats">
           <div className="stat-card">
             <p className="stat-label">Kasus terbuka</p>
             <p className="stat-value" data-testid="case-stat-open">{stats.open}</p>
@@ -278,76 +291,81 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
         </div>
       )}
 
-      {!!stats?.by_type?.length && (
-        <div className="mb-3 flex flex-wrap gap-1.5" data-testid="case-type-chips">
-          {stats.by_type.map((t) => (
-            <button key={t.case_type} data-testid={`case-chip-${t.case_type}`}
-              onClick={() => setFType(fType === t.case_type ? "" : t.case_type)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] ${
-                fType === t.case_type
-                  ? "border-[#0058CC] bg-[#EAF2FF] font-semibold text-[#0058CC]"
-                  : "border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#CBDCF7]"}`}>
-              {t.label} <b>{t.open}</b>/{t.total}
-            </button>
-          ))}
+      <div className="section-card">
+        <div className="section-body space-y-3">
+          {!!stats?.by_type?.length && (
+            <FilterChips testId="case-type-chips" ariaLabel="Saring jenis kasus" clearable
+              value={fType || null} onChange={(k) => setFType(k || "")}
+              options={stats.by_type.map((t) => ({
+                key: t.case_type, testId: `case-chip-${t.case_type}`,
+                label: <>{t.label} <b>{t.open}</b>/{t.total}</>,
+              }))} />
+          )}
+
+          <div className="grid grid-cols-1 gap-2 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
+            data-testid="case-filter-bar">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#6B6B73]">Status</span>
+              <FilterChips ariaLabel="Saring status kasus" className="min-w-0" testId="case-filter-status"
+                value={fStatus || "all"} onChange={(k) => setFStatus(k === "all" ? "" : k)}
+                options={STATUS_FILTERS.map((o) => ({
+                  key: o.value || "all", label: o.label,
+                  count: stats ? (o.value ? stats.by_status?.[o.value] ?? 0 : stats.total ?? cases.length) : undefined,
+                }))} />
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              {/* G1-35 — lebar tetap supaya memilih jenis tidak menggeser isi bilah. */}
+              <div className="w-full shrink-0 sm:w-[230px]">
+                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis kasus</label>
+                <KNSelect data-testid="case-filter-type" value={fType}
+                  onValueChange={setFType} options={typeOptions} />
+              </div>
+              <label className="flex items-center gap-1.5 text-[12px] text-[#1C1C1E]">
+                <input type="checkbox" data-testid="case-filter-overdue" checked={fOverdue}
+                  onChange={(e) => setFOverdue(e.target.checked)} />
+                Hanya yang terlambat
+              </label>
+              {filterOn && (
+                <button type="button" className="secondary-button" data-testid="case-filter-clear"
+                  onClick={() => { setFStatus(""); setFType(""); setFOverdue(false); }}>
+                  <FilterX size={14} /> Bersihkan filter
+                </button>
+              )}
+              <span className="ml-auto self-center text-[11px] text-[#6B6B73]" data-testid="case-filter-count">
+                {loading ? "Memuat…" : `${cases.length} kasus ditampilkan`}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
+            <CaseInboxTable cases={cases} loading={loading} activeId={active?.id}
+              onOpen={setActive} />
+            {!stacked && (active
+              ? <CaseDetailPanel {...detailProps} />
+              : (
+                <div className="rounded-lg border border-dashed border-[#E5E5EA] bg-white px-4 py-10 text-center"
+                  data-testid="case-detail-empty">
+                  <p className="text-[13px] font-semibold text-[#1C1C1E]">
+                    Pilih satu kasus untuk melihat detailnya.
+                  </p>
+                  <p className="mt-1 text-[12px] text-[#6B6B73]">
+                    Panel ini menampilkan sumber uang, langkah playbook, bukti, dokumen turunan,
+                    dan jejak waktu siapa melakukan apa.
+                  </p>
+                </div>
+              ))}
+          </div>
         </div>
+      </div>
+
+      {stacked && active && (
+        <DetailModal open onClose={() => setActive(null)} size="lg" label={`Kasus ${active.number || ""}`}
+          testId="case-detail-modal">
+          <CaseDetailPanel {...detailProps} />
+        </DetailModal>
       )}
 
-      <div className="mb-3 flex flex-wrap items-end gap-3 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
-        data-testid="case-filter-bar">
-        <div className="min-w-[190px]">
-          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
-          <OptionTabs testId="case-filter-status" value={fStatus}
-            onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v ? stats?.by_status?.[v] ?? 0 : stats?.total ?? cases.length)} />
-        </div>
-        {/* G1-35 — lebar tetap supaya memilih jenis tidak menggeser isi bilah. */}
-        <div className="w-[230px] shrink-0">
-          <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis kasus</label>
-          <KNSelect data-testid="case-filter-type" value={fType}
-            onValueChange={setFType} options={typeOptions} />
-        </div>
-        <label className="flex items-center gap-1.5 text-[12px] text-[#1C1C1E]">
-          <input type="checkbox" data-testid="case-filter-overdue" checked={fOverdue}
-            onChange={(e) => setFOverdue(e.target.checked)} />
-          Hanya yang terlambat
-        </label>
-        {filterOn && (
-          <button className="secondary-button" data-testid="case-filter-clear"
-            onClick={() => { setFStatus(""); setFType(""); setFOverdue(false); }}>
-            <FilterX size={14} /> Bersihkan filter
-          </button>
-        )}
-        <span className="text-[11px] text-[#6B6B73]" data-testid="case-filter-count">
-          {loading ? "Memuat…" : `${cases.length} kasus ditampilkan`}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[3fr_2fr]">
-        <CaseInboxTable cases={cases} loading={loading} activeId={active?.id}
-          onOpen={setActive} />
-        {active
-          ? (
-            <CaseDetailPanel caseData={active} reasons={reasons} canResolve={canResolve}
-              onClose={() => setActive(null)}
-              onChanged={async (updated) => { setActive(updated); await loadData(); }}
-              onOpenWizard={(c) => setWizard(c)}
-              onError={fail} onNotify={notify} />
-          )
-          : (
-            <div className="rounded-lg border border-dashed border-[#E5E5EA] bg-white px-4 py-10 text-center"
-              data-testid="case-detail-empty">
-              <p className="text-[13px] font-semibold text-[#1C1C1E]">
-                Pilih satu kasus untuk melihat detailnya.
-              </p>
-              <p className="mt-1 text-[12px] text-[#6B6B73]">
-                Panel ini menampilkan sumber uang, langkah playbook, bukti, dokumen turunan,
-                dan jejak waktu siapa melakukan apa.
-              </p>
-            </div>
-          )}
-      </div>
-
-      <p className="mt-3 flex items-start gap-1 text-[11px] text-[#9A9BA3]">
+      <p className="flex items-start gap-1 text-[11px] text-[#9A9BA3]">
         <AlertTriangle size={11} className="mt-[2px] shrink-0" />
         Kasus yang sudah melahirkan dokumen tidak bisa dibuka ulang — tindak lanjutnya kasus
         baru (buku besar bersifat tambah-saja). Batas waktu, ambang persetujuan, dan jendela

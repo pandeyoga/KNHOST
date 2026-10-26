@@ -5,6 +5,11 @@
  * Akses: izin `cash` (admin/manager). Sumber data: /api/bank-reconciliation/*.
  * Layar ini TIDAK mengubah jurnal terposting; satu-satunya jalur yang menerbitkan
  * jurnal baru adalah TITIPAN DANA & alokasinya (karena di situ ada uang nyata).
+ *
+ * Fase 4 · R2 — L-02: kepala halaman (ikon + h2 langsung di latar) → `PageHeader`; tab & isi dalam `.section-card`.
+ * L-01: tab buatan sendiri → `PageTabs` (`recon-tab-*` tetap); saringan status (tab bertingkat ke-3) →
+ * `FilterChips` (`recon-filter-status-*` tetap); jumlah baris di posisi tetap (tidak melompat saat "Bersihkan filter"
+ * muncul). L-03: panel impor yang diselipkan → pop-up `ReconImportPanel` (FormModal).
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,7 +21,9 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { KNSelect } from "../../components/KNSelect";
-import { OptionTabs } from "../../components/ListControls";
+import FilterChips from "../../components/FilterChips";
+import PageTabs from "../../components/PageTabs";
+import { PageHeader } from "../../components/ListPageParts";
 import { formatCurrency } from "../../utils/formatters";
 import ReconImportPanel from "./bank/ReconImportPanel";
 import ReconLinesTable from "./bank/ReconLinesTable";
@@ -145,40 +152,34 @@ export default function BankReconciliationView() {
   const noStatement = !!summary && !Number(summary.statement?.lines || 0);
 
   return (
-    <div className="p-5" data-testid="bank-reconciliation-view">
+    <div className="view-container" data-testid="bank-reconciliation-view">
       {/* Fase 3 · P4 (L-04 kelas C) — rekonsiliasi = pekerjaan akuntansi: pemberitahuan desktop di HP. */}
       <DesktopOnlyNotice testId="recon-desktop-notice" what="Rekonsiliasi Bank" />
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-        <div>
-          <h2 className="text-[17px] font-bold text-[#1C1C1E] flex items-center gap-2">
-            <Landmark size={18} className="text-[#0058CC]" /> Rekonsiliasi Bank
-          </h2>
-          <p className="text-[12px] text-[#6B6B73]">
-            Baca mutasi rekening koran bank apa pun, cocokkan dengan transaksi kas (buku),
-            dan tampung dana yang belum teridentifikasi tanpa mengubah jurnal.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="min-w-[220px]">
-            <KNSelect data-testid="recon-account-select" value={acctId}
-              onValueChange={setAcctId} options={acctOptions} placeholder="Pilih akun bank" />
-          </div>
-          <button data-testid="recon-refresh" className="secondary-button" onClick={loadData}>
-            <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
-          </button>
-        </div>
-      </div>
+      <PageHeader icon={Landmark} title="Rekonsiliasi Bank" testId="recon-head"
+        subtitle={"Baca mutasi rekening koran bank apa pun, cocokkan dengan transaksi kas (buku), "
+          + "dan tampung dana yang belum teridentifikasi tanpa mengubah jurnal."}
+        actions={(
+          <>
+            <div className="w-full sm:w-[240px]">
+              <KNSelect data-testid="recon-account-select" value={acctId}
+                onValueChange={setAcctId} options={acctOptions} placeholder="Pilih akun bank" />
+            </div>
+            <button type="button" data-testid="recon-refresh" className="secondary-button" onClick={loadData}>
+              <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
+            </button>
+          </>
+        )} />
 
       {err && <ErrorNotice message={err} onRetry={loadData} onDismiss={() => setErr("")}
         testId="recon-error" />}
       {msg && (
-        <div className="notice-bar success mb-3" data-testid="recon-notice">
+        <div className="notice-bar success !mb-0" data-testid="recon-notice">
           <CheckCircle2 size={14} /> {msg}
         </div>
       )}
 
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4" data-testid="recon-summary">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3" data-testid="recon-summary">
           <div className="stat-card">
             <p className="stat-label">Rekening (bersih)</p>
             <p className="stat-value tabular-nums whitespace-nowrap">{noStatement ? "—" : formatCurrency(summary.statement.net)}</p>
@@ -228,101 +229,90 @@ export default function BankReconciliationView() {
         </div>
       )}
 
-      <p className="mb-1 text-[11px] text-[#6B6B73]" data-testid="recon-rules-moved">
-        Aturan pembelajaran & template bank kini di <a className="font-semibold text-[#0058CC] underline" href="?view=bank-recon-rules" data-testid="recon-rules-link">Pengaturan › Keuangan</a>
-        {suggestedRules ? <span className="ml-1 rounded-full bg-[#FFF4E5] px-1.5 text-[10px] font-bold text-[#B26A00]">{suggestedRules} usulan menunggu</span> : null}
-      </p>
-      <div className="flex items-center gap-1 border-b border-[#E5E5EA] mb-3 flex-wrap">
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const badge = t.id === "holding" && holding?.needs_action ? holding.needs_action : 0;
-          return (
-            <button key={t.id} data-testid={`recon-tab-${t.id}`}
-              onClick={() => setTab(t.id)}
-              className={`px-3 py-2 text-[12px] font-semibold flex items-center gap-1.5 border-b-2 -mb-px ${
-                tab === t.id
-                  ? "border-[#0058CC] text-[#0058CC]"
-                  : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
-              <Icon size={14} /> {t.label}
-              {badge ? (
-                <span className="ml-1 rounded-full bg-[#FFF4E5] text-[#B26A00] px-1.5 text-[10px] font-bold">
-                  {badge}
+      <div className="section-card">
+        <div className="section-head flex-wrap gap-2">
+          <PageTabs testId="recon-tabs" ariaLabel="Rekonsiliasi bank" className="min-w-0" value={tab} onChange={setTab}
+            tabs={TABS.map((t) => ({
+              key: t.id, label: t.label, icon: t.icon, testId: `recon-tab-${t.id}`,
+              count: t.id === "holding" && holding?.needs_action ? holding.needs_action : undefined,
+            }))} />
+          <p className="ml-auto text-[11px] text-[#6B6B73]" data-testid="recon-rules-moved">
+            Aturan pembelajaran & template bank kini di <a className="font-semibold text-[#0058CC] underline" href="?view=bank-recon-rules" data-testid="recon-rules-link">Pengaturan › Keuangan</a>
+            {suggestedRules ? <span className="ml-1 rounded-full bg-[#FFF4E5] px-1.5 text-[10px] font-bold text-[#B26A00]">{suggestedRules} usulan menunggu</span> : null}
+          </p>
+        </div>
+        <div className="section-body">
+          {tab === "lines" && (
+            <>
+              <div className="flex items-center gap-2 flex-wrap mb-3">
+                {/* Fase 4 · R2 (L-03) — impor kini pop-up (dulu panel diselipkan; tombol bergantian "Tutup panel impor"). */}
+                <button type="button" data-testid="recon-import-toggle" className="secondary-button"
+                  onClick={() => setShowImport(true)}>
+                  <Upload size={14} /> Impor mutasi bank
+                </button>
+                <button type="button" data-testid="recon-auto-match" className="primary-button"
+                  disabled={busy === "auto" || !acctId} onClick={doAutoMatch}>
+                  {busy === "auto" ? <RefreshCw size={14} className="spin" /> : <Wand2 size={14} />}
+                  Cocokkan otomatis
+                </button>
+                <span className="text-[11px] text-[#8E8E93]">
+                  Ambang & bobot skor diatur di Pengaturan → Rekonsiliasi Bank (tanpa perlu rilis baru).
                 </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+              </div>
 
-      {tab === "lines" && (
-        <>
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <button data-testid="recon-import-toggle" className="secondary-button"
-              onClick={() => setShowImport((v) => !v)}>
-              <Upload size={14} /> {showImport ? "Tutup panel impor" : "Impor mutasi bank"}
-            </button>
-            <button data-testid="recon-auto-match" className="primary-button"
-              disabled={busy === "auto" || !acctId} onClick={doAutoMatch}>
-              {busy === "auto" ? <RefreshCw size={14} className="spin" /> : <Wand2 size={14} />}
-              Cocokkan otomatis
-            </button>
-            <span className="text-[11px] text-[#8E8E93]">
-              Ambang & bobot skor diatur di Pengaturan → Rekonsiliasi Bank (tanpa perlu rilis baru).
-            </span>
-          </div>
+              <div className="mb-3 grid grid-cols-1 gap-2 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
+                data-testid="recon-filter-bar">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold text-[#6B6B73]">Tampilkan status</span>
+                  <FilterChips ariaLabel="Saring status mutasi" className="min-w-0" testId="recon-filter-status"
+                    value={fStatus || "all"} onChange={(k) => setFStatus(k === "all" ? "" : k)}
+                    options={STATUS_FILTERS.map((o) => ({ key: o.value || "all", label: o.label }))} />
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                      Mutasi dari tanggal
+                    </label>
+                    <KNDatePicker data-testid="recon-filter-start" placeholder="Dari"
+                      value={fStart} onChange={setFStart} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                      sampai tanggal
+                    </label>
+                    <KNDatePicker data-testid="recon-filter-end" placeholder="Sampai" min={fStart}
+                      value={fEnd} onChange={setFEnd} />
+                  </div>
+                  {filterOn && (
+                    <button type="button" data-testid="recon-filter-clear" className="secondary-button"
+                      onClick={() => { setFStatus(""); setFStart(""); setFEnd(""); }}>
+                      <FilterX size={14} /> Bersihkan filter
+                    </button>
+                  )}
+                  <span className="ml-auto self-center text-[11px] text-[#6B6B73]" data-testid="recon-filter-count">
+                    {loading ? "Memuat…" : `${lines.length} baris ditampilkan`}
+                    {filterOn ? " · kartu ringkasan mengikuti periode yang dipilih" : ""}
+                  </span>
+                </div>
+              </div>
 
-          <div className="mb-3 flex flex-wrap items-end gap-3 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
-            data-testid="recon-filter-bar">
-            <div className="min-w-[190px]">
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                Tampilkan status
-              </label>
-              <OptionTabs testId="recon-filter-status" value={fStatus}
-                onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? lines.length : undefined)} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                Mutasi dari tanggal
-              </label>
-              <KNDatePicker data-testid="recon-filter-start" placeholder="Dari"
-                value={fStart} onChange={setFStart} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                sampai tanggal
-              </label>
-              <KNDatePicker data-testid="recon-filter-end" placeholder="Sampai" min={fStart}
-                value={fEnd} onChange={setFEnd} />
-            </div>
-            {filterOn && (
-              <button data-testid="recon-filter-clear" className="secondary-button"
-                onClick={() => { setFStatus(""); setFStart(""); setFEnd(""); }}>
-                <FilterX size={14} /> Bersihkan filter
-              </button>
-            )}
-            <span className="text-[11px] text-[#6B6B73]" data-testid="recon-filter-count">
-              {loading ? "Memuat…" : `${lines.length} baris ditampilkan`}
-              {filterOn ? " · kartu ringkasan mengikuti periode yang dipilih" : ""}
-            </span>
-          </div>
-
-          {showImport && (
-            <ReconImportPanel accountId={acctId} formats={formats}
-              onDone={async (info) => { setShowImport(false); notify(info); await loadData(); }}
-              onError={fail} />
+              <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
+                onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
+                onNotify={notify} />
+            </>
           )}
 
-          <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
-            onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
-            onNotify={notify} />
-        </>
-      )}
+          {tab === "holding" && (
+            <ReconHoldingPanel holding={holding} busy={busy}
+              onAction={lineAction} onReload={loadData} onError={fail} onNotify={notify} />
+          )}
+        </div>
+      </div>
 
-      {tab === "holding" && (
-        <ReconHoldingPanel holding={holding} busy={busy}
-          onAction={lineAction} onReload={loadData} onError={fail} onNotify={notify} />
+      {showImport && (
+        <ReconImportPanel accountId={acctId} formats={formats} onClose={() => setShowImport(false)}
+          onDone={async (info) => { setShowImport(false); notify(info); await loadData(); }} />
       )}
-
 
       {matchFor && (
         <ReconMatchModal line={matchFor} onClose={() => setMatchFor(null)}
@@ -330,8 +320,8 @@ export default function BankReconciliationView() {
           onError={fail} />
       )}
 
-      <p className="mt-3 text-[11px] text-[#9A9BA3] flex items-center gap-1">
-        <AlertTriangle size={11} /> Pencocokan bersifat tambah-saja: ia hanya menautkan mutasi ke
+      <p className="text-[11px] text-[#9A9BA3] flex items-center gap-1">
+        <AlertTriangle size={11} className="shrink-0" /> Pencocokan bersifat tambah-saja: ia hanya menautkan mutasi ke
         transaksi kas. Jurnal baru terbit hanya pada tiga jalur berlabel: dana dititipkan
         (Dr Bank / Cr Titipan), titipan dialokasikan (Dr Titipan / Cr Piutang), dan biaya ·
         bunga bank yang dibukukan langsung dari layar ini (Dr Beban Adm Bank / Cr Bank atau

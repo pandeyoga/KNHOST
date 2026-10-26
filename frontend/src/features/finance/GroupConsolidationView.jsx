@@ -8,6 +8,7 @@
  * Keuangan per PT/gabungan yang belum dieliminasi). L-01: pil ungu tab → PageTabs (testid `cons-tab-*` tetap).
  * L-07: matriks → `.data-table`. L-03/L-08: pop-up & bilah alat di GroupConsolidationParts.jsx. L-04 kelas C:
  * DesktopOnlyNotice di HP.
+ * Fase 4 · R2 (G1-33) — peringatan entri eliminasi otomatis basi (`eliminations_stale` dari ringkasan, R6).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -23,7 +24,7 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { askConfirm, askReason } from "@/services/confirmService";
 import { stripInternalCodes } from "../../utils/cleanText";
-import { EliminationsPanel, EliminationModal, DetectModal } from "./GroupConsolidationParts";
+import { EliminationsPanel, EliminationModal, DetectModal, StaleEliminationsNotice } from "./GroupConsolidationParts";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -223,6 +224,8 @@ export default function GroupConsolidationView({ entities = [] }) {
 
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cons-error" />
+          {/* Fase 4 · R2 (G1-33) — entri eliminasi basi dari server (R6); diam bila field tidak ada. */}
+          <StaleEliminationsNotice stale={data?.eliminations_stale} />
           {notice && (
             <div data-testid="cons-notice" className="mb-3 rounded-md bg-[#E6F6EC] border border-[#BDE5CC] text-[#1B7F4B] text-[12px] px-3 py-2 flex items-center gap-2">
               <CheckCircle2 size={14} />{notice}<button className="ml-auto" onClick={() => setNotice("")}><X size={13} /></button>

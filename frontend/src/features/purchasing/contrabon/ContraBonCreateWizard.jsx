@@ -6,17 +6,20 @@
  * Kandidat faktur, potongan tersedia, dan usulan jatuh tempo semuanya datang dari
  * `GET /contra-bons/prepare` supaya layar tidak pernah menawarkan faktur yang sudah
  * dipegang kontrabon lain (INV-CB-01).
+ *
+ * Fase 4 · R2 (L-03) — `.modal-overlay` + `.modal-panel` buatan sendiri → `FormModal` baku (Esc kini milik
+ * FormModal, kaki Kembali/Batal/Lanjut menempel, layar penuh di HP). Langkah, isian & testid tetap
+ * (`cb-create-wizard` kini kartu pop-up, `cb-create-*`).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useEscapeClose } from "@/utils/escapeLayers";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
-import { X, Plus, ChevronRight, ChevronLeft, Info, AlertTriangle, PackageSearch } from "lucide-react";
+import { Plus, ChevronRight, ChevronLeft, Info, AlertTriangle, PackageSearch } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
 import WizardCreditPicker from "./WizardCreditPicker";
 import { fmtDate } from "./contraBonApi";
@@ -43,7 +46,6 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
   const [submitNow, setSubmitNow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  useEscapeClose(true, onClose, saving);
   const [err, setErr] = useState("");
 
   const supplierOptions = useMemo(
@@ -154,318 +156,309 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
   }
 
   return (
-    <div className="modal-overlay" data-testid="cb-create-wizard" {...overlayDismiss(onClose)}>
-      <div className="modal-panel max-h-[92vh] w-[860px] max-w-[96vw] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h3 className="flex items-center gap-2 text-[14px] font-bold text-[#1C1C1E]">
-            <Plus size={15} className="text-[#0058CC]" /> Kontrabon baru · tukar faktur supplier
-          </h3>
-          <button className="icon-button" data-testid="cb-create-close" onClick={onClose}>
-            <X size={15} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-2">
-          {STEPS.map((s) => (
-            <div key={s.n} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] ${
-              step === s.n ? "bg-[#EAF2FF] font-bold text-[#0058CC]"
-                : step > s.n ? "text-[#1B7F4B]" : "text-[#8E8E93]"}`}
-              data-testid={`cb-create-step-${s.n}`}>
-              <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
-                step >= s.n ? "bg-[#0058CC] text-white" : "bg-[#E5E5EA] text-[#8E8E93]"}`}>
-                {s.n}
-              </span>
-              {s.label}
-            </div>
-          ))}
-          {/* G1-24 — supplier terpilih selalu terlihat di kepala langkah (dulu hilang saat dibuka dari baris GR). */}
-          {step > 1 && (prep?.supplier?.name || prep?.supplier_name) && (
-            <span className="ml-auto truncate text-[11px] text-[#3C3C43]" data-testid="cb-create-supplier-name">
-              Supplier: <b>{prep?.supplier?.name || prep?.supplier_name}</b>
-            </span>
-          )}
-        </div>
-
-        <div className="px-4 py-4">
-          {err && (
-            <ErrorNotice message={err} onRetry={supplierId ? () => loadPrepare(supplierId) : undefined}
-              onDismiss={() => setErr("")} testId="cb-create-error" />
-          )}
-
-          {step === 1 && (
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                  Supplier yang datang menukar faktur
-                </label>
-                <KNSelect data-testid="cb-create-supplier" value={supplierId}
-                  onValueChange={setSupplierId} options={supplierOptions} className="field"
-                  placeholder="Pilih supplier" />
-              </div>
-              {loading && <p className="text-[12px] text-[#8E8E93]">Merakit kandidat faktur…</p>}
-              {prep && (
-                <div className="space-y-2" data-testid="cb-create-prep-summary">
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <div className="stat-card">
-                      <p className="stat-label">Tagihan siap</p>
-                      <p className="stat-value text-[#0058CC]">{bills.length}</p>
-                      <p className="text-[10px] text-[#8E8E93]">
-                        {formatCurrency(prep.bills_total)}
-                      </p>
-                    </div>
-                    <div className="stat-card">
-                      <p className="stat-label">Potongan tersedia</p>
-                      <p className="stat-value text-[#B26A00]">{creditCount}</p>
-                      <p className="text-[10px] text-[#8E8E93]">
-                        {formatCurrency(prep.credits_total)}
-                      </p>
-                    </div>
-                    <div className="stat-card">
-                      <p className="stat-label">Belum ditagih</p>
-                      <p className="stat-value">
-                        {formatCurrency((prep.unbilled_receipts || {}).total_value)}
-                      </p>
-                      <p className="text-[10px] text-[#8E8E93]">
-                        {(prep.unbilled_receipts || {}).po_count || 0} PO
-                      </p>
-                    </div>
-                    <div className="stat-card">
-                      <p className="stat-label">Termin</p>
-                      <p className="stat-value">
-                        {(prep.supplier || {}).payment_term_code || "—"}
-                      </p>
-                      <p className="text-[10px] text-[#8E8E93]">
-                        jatuh tempo diusulkan {fmtDate((prep.suggested || {}).due_date)}
-                      </p>
-                    </div>
-                  </div>
-                  {((prep.supplier || {}).invoice_exchange || {}).mode !== "none" && (
-                    <p className="flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]">
-                      <Info size={11} className="mt-[2px] shrink-0" />
-                      Supplier ini punya jadwal tukar faktur tersimpan — pengingat H-n akan terbit
-                      otomatis menjelang siklusnya.
-                    </p>
-                  )}
-                  {(prep.unbilled_receipts || {}).overdue_count > 0 && (
-                    <p className="flex items-start gap-1 rounded-md bg-[#FFF4E5] px-2 py-1.5 text-[11px] text-[#8C4A00]">
-                      <PackageSearch size={11} className="mt-[2px] shrink-0" />
-                      {(prep.unbilled_receipts || {}).overdue_count} PO sudah tertunggak: barang
-                      diterima tapi fakturnya belum datang. Tagih supplier saat tukar faktur ini.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-3">
-              {bills.length === 0
-                ? (
-                  <p className="rounded-md bg-[#FFF4E5] px-3 py-2 text-[12px] text-[#8C4A00]"
-                    data-testid="cb-create-no-bills">
-                    Tidak ada tagihan supplier yang siap dikontrabon. Tagihan harus berstatus
-                    Terposting, masih ada sisa hutang, dan belum dipegang kontrabon lain.{" "}
-                    <a className="font-semibold underline" href="?view=vendor-bills">Buka Tagihan Supplier</a>
-                  </p>
-                )
-                : (
-                  <div className="overflow-hidden rounded-lg border border-[#E5E5EA]">
-                    <table className="w-full text-[12px]">
-                      <thead className="bg-[#FAFBFC]">
-                        <tr className="text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
-                          <th className="px-3 py-2">Pilih</th>
-                          <th className="px-3 py-2">Tagihan</th>
-                          <th className="px-3 py-2">PO</th>
-                          <th className="px-3 py-2">Jatuh tempo</th>
-                          <th className="px-3 py-2 text-right">Sisa hutang</th>
-                          <th className="px-3 py-2 text-right">Ditarik ke kontrabon</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {bills.map((b) => (
-                          <tr key={b.bill_id} className="border-t border-[#F2F2F5]"
-                            data-testid={`cb-create-bill-${b.bill_id}`}>
-                            <td className="px-3 py-2">
-                              <input type="checkbox" data-testid={`cb-create-pick-${b.bill_id}`}
-                                checked={!!picked[b.bill_id]}
-                                onChange={(e) => setPicked((p) => ({
-                                  ...p, [b.bill_id]: e.target.checked,
-                                }))} />
-                            </td>
-                            <td className="px-3 py-2">
-                              <p className="font-bold text-[#0058CC]">{b.bill_number}</p>
-                              <p className="text-[10px] text-[#8E8E93]">
-                                faktur supplier {b.supplier_invoice_no || "—"}
-                              </p>
-                            </td>
-                            <td className="px-3 py-2">{b.po_number || "—"}</td>
-                            <td className="px-3 py-2">{fmtDate(b.due_date)}</td>
-                            <td className="px-3 py-2 text-right tabular-nums">
-                              {formatCurrency(b.outstanding)}
-                              {Number(b.claim_deduction) > 0 && (
-                                <p className="text-[10px] text-[#B26A00]">
-                                  potongan makloon {formatCurrency(b.claim_deduction)} sudah menempel
-                                </p>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <MoneyInput
-                                testId={`cb-create-amount-${b.bill_id}`}
-                                className="input-field w-[140px] text-right"
-                                disabled={!picked[b.bill_id]}
-                                placeholder={String(Math.round(Number(b.outstanding || 0)))}
-                                value={amounts[b.bill_id] ?? ""}
-                                onChange={(v) => setAmounts((a) => ({
-                                  ...a, [b.bill_id]: v,
-                                }))} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-              {(prep?.makloon_attached || []).length > 0 && (
-                <div className="rounded-md border border-[#FFE0B2] bg-[#FFFBF3] px-3 py-2"
-                  data-testid="cb-create-makloon-info">
-                  <p className="flex items-center gap-1 text-[11px] font-bold text-[#8C4A00]">
-                    <AlertTriangle size={11} /> Potongan klaim makloon sudah menempel di faktur
-                  </p>
-                  {(prep.makloon_attached || []).map((m) => (
-                    <p key={m.bill_id} className="mt-0.5 text-[11px] text-[#1C1C1E]">
-                      {m.bill_number} · {formatCurrency(m.amount)} — {m.note}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              <WizardCreditPicker credits={creditList} picked={credPick} amounts={credAmt}
-                onTogglePick={(id, on) => setCredPick((st) => ({ ...st, [id]: on }))}
-                onChangeAmount={(id, v) => setCredAmt((st) => ({ ...st, [id]: v }))} />
-
-              <p className="text-[11.5px] text-[#6B6B73]" data-testid="cb-create-selected-summary">
-                Terpilih <b>{chosen.length}</b> faktur dari <b>{poCount}</b> PO · nilai{" "}
-                <b>{formatCurrency(chosenTotal)}</b>
-                {takenCredits.length > 0 && (
-                  <>
-                    {" · potongan "}<b className="text-[#B26A00]">
-                      {formatCurrency(creditsTotal)}
-                    </b>
-                    {" → dibayar "}<b className={netAfter < 0 ? "text-[#C0392B]" : "text-[#0058CC]"}>
-                      {formatCurrency(netAfter)}
-                    </b>
-                  </>
-                )}
-              </p>
-              {netAfter < 0 && (
-                <p className="rounded-md bg-[#FDE2E2] px-2 py-1.5 text-[11px] text-[#9B1C1C]"
-                  data-testid="cb-create-negative-warning">
-                  Total potongan melebihi nilai faktur — nilai bersih kontrabon tidak boleh
-                  negatif. Kurangi nominal potongan atau tambahkan faktur.
-                </p>
-              )}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                    Tanggal tukar faktur
-                  </label>
-                  <KNDatePicker data-testid="cb-create-cycle-date" value={cycleDate} onChange={setCycleDate} clearable={false} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                    Jatuh tempo pembayaran
-                  </label>
-                  <KNDatePicker data-testid="cb-create-due-date" value={dueDate} onChange={setDueDate} />
-                  <p className="mt-1 text-[10px] text-[#8E8E93]">
-                    Diusulkan dari termin supplier ({(prep?.suggested || {}).term_days || 0} hari).
-                  </p>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                  Yang menyerahkan faktur (pihak supplier)
-                </label>
-                <input data-testid="cb-create-pic" className="input-field w-full" value={pic}
-                  onChange={(e) => setPic(e.target.value)}
-                  placeholder="Nama pengantar faktur — tercetak di tanda terima" />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
-                <textarea data-testid="cb-create-notes" className="textarea w-full" rows={2}
-                  value={notes} onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Mis. 3 faktur asli diterima, 1 masih fotokopi menyusul." />
-              </div>
-
-              <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
-                data-testid="cb-create-review">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
-                  Ringkasan
-                </p>
-                <p className="mt-1 text-[12px] text-[#1C1C1E]">
-                  {(prep?.supplier || {}).name} · <b>{chosen.length}</b> faktur dari{" "}
-                  <b>{poCount}</b> PO · nilai <b>{formatCurrency(chosenTotal)}</b>
-                </p>
-                {takenCredits.length > 0 && (
-                  <p className="mt-0.5 text-[12px] text-[#1C1C1E]"
-                    data-testid="cb-create-review-credits">
-                    Potongan langsung: <b>{takenCredits.length}</b> dokumen ·{" "}
-                    <b className="text-[#B26A00]">{formatCurrency(creditsTotal)}</b> → yang
-                    dibayar <b className="text-[#0058CC]">{formatCurrency(netAfter)}</b>
-                  </p>
-                )}
-                <p className="mt-0.5 text-[11px] text-[#8E8E93]">
-                  Nomor kontrabon terbit otomatis mengikuti kode PT.
-                  {takenCredits.length > 0
-                    ? " Potongan ditempelkan sesudah nomor terbit, masing-masing lewat"
-                      + " penjaganya sendiri."
-                    : ""}
-                </p>
-              </div>
-
-              <label className="flex items-center gap-1.5 text-[12px] text-[#1C1C1E]">
-                <input type="checkbox" data-testid="cb-create-submit-now" checked={submitNow}
-                  onChange={(e) => setSubmitNow(e.target.checked)} />
-                Langsung ajukan untuk verifikasi 3-way match
-              </label>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
+    <FormModal open onClose={onClose} size="lg" icon={Plus} title="Kontrabon baru · tukar faktur supplier"
+      testId="cb-create-wizard" busy={saving}
+      footer={(
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {/* G1-24 — tombol Kembali tidak tampil di langkah 1. */}
           {step > 1 ? (
-            <button className="secondary-button" data-testid="cb-create-back"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}>
+            <button type="button" className="secondary-button" data-testid="cb-create-back"
+              onClick={() => setStep((st) => Math.max(1, st - 1))}>
               <ChevronLeft size={14} /> Kembali
             </button>
           ) : <span />}
-          <div className="flex items-center gap-2">
-            <button className="secondary-button" onClick={onClose}>Batal</button>
+          <div className="ml-auto flex items-center gap-2">
+            <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
             {step < 3
               ? (
-                <button className="primary-button" data-testid="cb-create-next"
+                <button type="button" className="primary-button" data-testid="cb-create-next"
                   disabled={(step === 1 && (!supplierId || !prep))
                     || (step === 2 && chosen.length === 0)}
-                  onClick={() => setStep((s) => s + 1)}>
+                  onClick={() => setStep((st) => st + 1)}>
                   Lanjut <ChevronRight size={14} />
                 </button>
               )
               : (
-                <button className="primary-button" data-testid="cb-create-submit"
+                <button type="button" className="primary-button" data-testid="cb-create-submit"
                   disabled={saving || chosen.length === 0 || netAfter < 0} onClick={create}>
                   {saving ? "Menerbitkan…" : "Terbitkan kontrabon"}
                 </button>
               )}
           </div>
         </div>
+      )}>
+      <div className="-mx-4 -mt-3.5 mb-3 flex flex-wrap items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-2">
+        {STEPS.map((s) => (
+          <div key={s.n} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] ${
+            step === s.n ? "bg-[#EAF2FF] font-bold text-[#0058CC]"
+              : step > s.n ? "text-[#1B7F4B]" : "text-[#8E8E93]"}`}
+            data-testid={`cb-create-step-${s.n}`}>
+            <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
+              step >= s.n ? "bg-[#0058CC] text-white" : "bg-[#E5E5EA] text-[#8E8E93]"}`}>
+              {s.n}
+            </span>
+            {s.label}
+          </div>
+        ))}
+        {/* G1-24 — supplier terpilih selalu terlihat di kepala langkah (dulu hilang saat dibuka dari baris GR). */}
+        {step > 1 && (prep?.supplier?.name || prep?.supplier_name) && (
+          <span className="ml-auto truncate text-[11px] text-[#3C3C43]" data-testid="cb-create-supplier-name">
+            Supplier: <b>{prep?.supplier?.name || prep?.supplier_name}</b>
+          </span>
+        )}
       </div>
-    </div>
+
+      <div>
+        {err && (
+          <ErrorNotice message={err} onRetry={supplierId ? () => loadPrepare(supplierId) : undefined}
+            onDismiss={() => setErr("")} testId="cb-create-error" />
+        )}
+
+        {step === 1 && (
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                Supplier yang datang menukar faktur
+              </label>
+              <KNSelect data-testid="cb-create-supplier" value={supplierId}
+                onValueChange={setSupplierId} options={supplierOptions} className="field"
+                placeholder="Pilih supplier" />
+            </div>
+            {loading && <p className="text-[12px] text-[#8E8E93]">Merakit kandidat faktur…</p>}
+            {prep && (
+              <div className="space-y-2" data-testid="cb-create-prep-summary">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
+                  <div className="stat-card">
+                    <p className="stat-label">Tagihan siap</p>
+                    <p className="stat-value text-[#0058CC]">{bills.length}</p>
+                    <p className="text-[10px] text-[#8E8E93]">
+                      {formatCurrency(prep.bills_total)}
+                    </p>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-label">Potongan tersedia</p>
+                    <p className="stat-value text-[#B26A00]">{creditCount}</p>
+                    <p className="text-[10px] text-[#8E8E93]">
+                      {formatCurrency(prep.credits_total)}
+                    </p>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-label">Belum ditagih</p>
+                    <p className="stat-value">
+                      {formatCurrency((prep.unbilled_receipts || {}).total_value)}
+                    </p>
+                    <p className="text-[10px] text-[#8E8E93]">
+                      {(prep.unbilled_receipts || {}).po_count || 0} PO
+                    </p>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-label">Termin</p>
+                    <p className="stat-value">
+                      {(prep.supplier || {}).payment_term_code || "—"}
+                    </p>
+                    <p className="text-[10px] text-[#8E8E93]">
+                      jatuh tempo diusulkan {fmtDate((prep.suggested || {}).due_date)}
+                    </p>
+                  </div>
+                </div>
+                {((prep.supplier || {}).invoice_exchange || {}).mode !== "none" && (
+                  <p className="flex items-start gap-1 rounded-md bg-[#F2F7FF] px-2 py-1.5 text-[11px] text-[#1C1C1E]">
+                    <Info size={11} className="mt-[2px] shrink-0" />
+                    Supplier ini punya jadwal tukar faktur tersimpan — pengingat H-n akan terbit
+                    otomatis menjelang siklusnya.
+                  </p>
+                )}
+                {(prep.unbilled_receipts || {}).overdue_count > 0 && (
+                  <p className="flex items-start gap-1 rounded-md bg-[#FFF4E5] px-2 py-1.5 text-[11px] text-[#8C4A00]">
+                    <PackageSearch size={11} className="mt-[2px] shrink-0" />
+                    {(prep.unbilled_receipts || {}).overdue_count} PO sudah tertunggak: barang
+                    diterima tapi fakturnya belum datang. Tagih supplier saat tukar faktur ini.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-3">
+            {bills.length === 0
+              ? (
+                <p className="rounded-md bg-[#FFF4E5] px-3 py-2 text-[12px] text-[#8C4A00]"
+                  data-testid="cb-create-no-bills">
+                  Tidak ada tagihan supplier yang siap dikontrabon. Tagihan harus berstatus
+                  Terposting, masih ada sisa hutang, dan belum dipegang kontrabon lain.{" "}
+                  <a className="font-semibold underline" href="?view=vendor-bills">Buka Tagihan Supplier</a>
+                </p>
+              )
+              : (
+                <div className="overflow-hidden rounded-lg border border-[#E5E5EA]">
+                  <table className="w-full text-[12px]">
+                    <thead className="bg-[#FAFBFC]">
+                      <tr className="text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
+                        <th className="px-3 py-2">Pilih</th>
+                        <th className="px-3 py-2">Tagihan</th>
+                        <th className="px-3 py-2">PO</th>
+                        <th className="px-3 py-2">Jatuh tempo</th>
+                        <th className="px-3 py-2 text-right">Sisa hutang</th>
+                        <th className="px-3 py-2 text-right">Ditarik ke kontrabon</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bills.map((b) => (
+                        <tr key={b.bill_id} className="border-t border-[#F2F2F5]"
+                          data-testid={`cb-create-bill-${b.bill_id}`}>
+                          <td className="px-3 py-2">
+                            <input type="checkbox" data-testid={`cb-create-pick-${b.bill_id}`}
+                              checked={!!picked[b.bill_id]}
+                              onChange={(e) => setPicked((p) => ({
+                                ...p, [b.bill_id]: e.target.checked,
+                              }))} />
+                          </td>
+                          <td className="px-3 py-2">
+                            <p className="font-bold text-[#0058CC]">{b.bill_number}</p>
+                            <p className="text-[10px] text-[#8E8E93]">
+                              faktur supplier {b.supplier_invoice_no || "—"}
+                            </p>
+                          </td>
+                          <td className="px-3 py-2">{b.po_number || "—"}</td>
+                          <td className="px-3 py-2">{fmtDate(b.due_date)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatCurrency(b.outstanding)}
+                            {Number(b.claim_deduction) > 0 && (
+                              <p className="text-[10px] text-[#B26A00]">
+                                potongan makloon {formatCurrency(b.claim_deduction)} sudah menempel
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <MoneyInput
+                              testId={`cb-create-amount-${b.bill_id}`}
+                              className="input-field w-[140px] text-right"
+                              disabled={!picked[b.bill_id]}
+                              placeholder={String(Math.round(Number(b.outstanding || 0)))}
+                              value={amounts[b.bill_id] ?? ""}
+                              onChange={(v) => setAmounts((a) => ({
+                                ...a, [b.bill_id]: v,
+                              }))} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+            {(prep?.makloon_attached || []).length > 0 && (
+              <div className="rounded-md border border-[#FFE0B2] bg-[#FFFBF3] px-3 py-2"
+                data-testid="cb-create-makloon-info">
+                <p className="flex items-center gap-1 text-[11px] font-bold text-[#8C4A00]">
+                  <AlertTriangle size={11} /> Potongan klaim makloon sudah menempel di faktur
+                </p>
+                {(prep.makloon_attached || []).map((m) => (
+                  <p key={m.bill_id} className="mt-0.5 text-[11px] text-[#1C1C1E]">
+                    {m.bill_number} · {formatCurrency(m.amount)} — {m.note}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            <WizardCreditPicker credits={creditList} picked={credPick} amounts={credAmt}
+              onTogglePick={(id, on) => setCredPick((st) => ({ ...st, [id]: on }))}
+              onChangeAmount={(id, v) => setCredAmt((st) => ({ ...st, [id]: v }))} />
+
+            <p className="text-[11.5px] text-[#6B6B73]" data-testid="cb-create-selected-summary">
+              Terpilih <b>{chosen.length}</b> faktur dari <b>{poCount}</b> PO · nilai{" "}
+              <b>{formatCurrency(chosenTotal)}</b>
+              {takenCredits.length > 0 && (
+                <>
+                  {" · potongan "}<b className="text-[#B26A00]">
+                    {formatCurrency(creditsTotal)}
+                  </b>
+                  {" → dibayar "}<b className={netAfter < 0 ? "text-[#C0392B]" : "text-[#0058CC]"}>
+                    {formatCurrency(netAfter)}
+                  </b>
+                </>
+              )}
+            </p>
+            {netAfter < 0 && (
+              <p className="rounded-md bg-[#FDE2E2] px-2 py-1.5 text-[11px] text-[#9B1C1C]"
+                data-testid="cb-create-negative-warning">
+                Total potongan melebihi nilai faktur — nilai bersih kontrabon tidak boleh
+                negatif. Kurangi nominal potongan atau tambahkan faktur.
+              </p>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                  Tanggal tukar faktur
+                </label>
+                <KNDatePicker data-testid="cb-create-cycle-date" value={cycleDate} onChange={setCycleDate} clearable={false} />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                  Jatuh tempo pembayaran
+                </label>
+                <KNDatePicker data-testid="cb-create-due-date" value={dueDate} onChange={setDueDate} />
+                <p className="mt-1 text-[10px] text-[#8E8E93]">
+                  Diusulkan dari termin supplier ({(prep?.suggested || {}).term_days || 0} hari).
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
+                Yang menyerahkan faktur (pihak supplier)
+              </label>
+              <input data-testid="cb-create-pic" className="input-field w-full" value={pic}
+                onChange={(e) => setPic(e.target.value)}
+                placeholder="Nama pengantar faktur — tercetak di tanda terima" />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Catatan</label>
+              <textarea data-testid="cb-create-notes" className="textarea w-full" rows={2}
+                value={notes} onChange={(e) => setNotes(e.target.value)}
+                placeholder="Mis. 3 faktur asli diterima, 1 masih fotokopi menyusul." />
+            </div>
+
+            <div className="rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
+              data-testid="cb-create-review">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
+                Ringkasan
+              </p>
+              <p className="mt-1 text-[12px] text-[#1C1C1E]">
+                {(prep?.supplier || {}).name} · <b>{chosen.length}</b> faktur dari{" "}
+                <b>{poCount}</b> PO · nilai <b>{formatCurrency(chosenTotal)}</b>
+              </p>
+              {takenCredits.length > 0 && (
+                <p className="mt-0.5 text-[12px] text-[#1C1C1E]"
+                  data-testid="cb-create-review-credits">
+                  Potongan langsung: <b>{takenCredits.length}</b> dokumen ·{" "}
+                  <b className="text-[#B26A00]">{formatCurrency(creditsTotal)}</b> → yang
+                  dibayar <b className="text-[#0058CC]">{formatCurrency(netAfter)}</b>
+                </p>
+              )}
+              <p className="mt-0.5 text-[11px] text-[#8E8E93]">
+                Nomor kontrabon terbit otomatis mengikuti kode PT.
+                {takenCredits.length > 0
+                  ? " Potongan ditempelkan sesudah nomor terbit, masing-masing lewat"
+                    + " penjaganya sendiri."
+                  : ""}
+              </p>
+            </div>
+
+            <label className="flex items-center gap-1.5 text-[12px] text-[#1C1C1E]">
+              <input type="checkbox" data-testid="cb-create-submit-now" checked={submitNow}
+                onChange={(e) => setSubmitNow(e.target.checked)} />
+              Langsung ajukan untuk verifikasi 3-way match
+            </label>
+          </div>
+        )}
+      </div>
+    </FormModal>
   );
 }

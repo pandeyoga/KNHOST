@@ -5,15 +5,19 @@
  * (Dr Bank / Cr 2-1950) saat dititipkan. Di sini dana itu dialokasikan ke pesanan
  * pelanggan begitu identitasnya ketemu — piutang berkurang, jurnal Dr Titipan /
  * Cr Piutang terbit, dan TIDAK ada kas dobel.
+ *
+ * Fase 4 · R2 (L-03) — pop-up alokasi `.modal-card` buatan sendiri → `FormModal` baku (kaki menempel, layar penuh
+ * di HP). "Batalkan titipan" (membatalkan kas & jurnal) kini dikonfirmasi dulu (`askConfirm`). Testid tetap.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PiggyBank, X, RefreshCw, AlertTriangle, Undo2, HandCoins, Briefcase } from "lucide-react";
+import { PiggyBank, RefreshCw, AlertTriangle, Undo2, HandCoins, Briefcase } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
-import { overlayDismiss } from "../../../utils/overlayDismiss";
 import { apiErrorText } from "../../../utils/apiError";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FormModal from "../../../components/FormModal";
+import { askConfirm } from "../../../services/confirmService";
 import { openFinanceCase, caseNumberFromText } from "../cases/caseDeepLink";
 
 const fmtDate = (s) => {
@@ -151,7 +155,7 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
         tindakan.
       </div>
 
-      <div className="rounded-lg border border-[#E5E5EA] overflow-hidden" data-testid="recon-holding-table">
+      <div className="rounded-lg border border-[#E5E5EA] overflow-x-auto" data-testid="recon-holding-table">
         <table className="w-full text-[12px]">
           <thead>
             <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
@@ -203,7 +207,7 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                   <div className="flex justify-end gap-2 flex-wrap">
                     <button data-testid={`recon-allocate-${h.id}`} className="link-button"
                       disabled={Number(h.remaining) <= 0}
-                      onClick={() => { setTarget(h); setAlloc({}); }}>
+                      onClick={() => { setMErr(""); setTarget(h); setAlloc({}); }}>
                       <HandCoins size={12} /> Alokasikan
                     </button>
                     {/* FASE G-9 — titipan yang belum ketemu pemiliknya diserahkan ke Pusat
@@ -220,8 +224,16 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                     {Number(h.allocated) <= 0 && (
                       <button data-testid={`recon-holding-cancel-${h.id}`} className="link-button"
                         style={{ color: "#B4231F" }} disabled={busy === h.id + "holding/cancel"}
-                        onClick={() => onAction(h.id, "holding/cancel", {},
-                          "Titipan dibatalkan (kas & jurnalnya dibatalkan).")}>
+                        onClick={async () => {
+                          if (!(await askConfirm({
+                            title: "Batalkan titipan ini?",
+                            message: `Dana ${formatCurrency(h.amount)} dikeluarkan dari titipan; transaksi kas & jurnal `
+                              + "titipannya ikut dibatalkan.",
+                            confirmLabel: "Batalkan titipan",
+                            danger: true,
+                          }))) return;
+                          onAction(h.id, "holding/cancel", {}, "Titipan dibatalkan (kas & jurnalnya dibatalkan).");
+                        }}>
                         <Undo2 size={12} /> Batalkan titipan
                       </button>
                     )}
@@ -234,107 +246,99 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
       </div>
 
       {target && (
-        <div className="modal-overlay" data-testid="recon-allocate-modal"
-          {...overlayDismiss(close)}>
-          <div className="modal-card max-w-[640px]">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="modal-title flex items-center gap-1.5">
-                <PiggyBank size={15} /> Alokasikan dana titipan
-              </h3>
-              <button className="icon-button" data-testid="recon-allocate-close" onClick={close}>
-                <X size={15} />
-              </button>
-            </div>
-            {mErr && (
-              <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
-                testId="recon-allocate-error" />
-            )}
-            <p className="modal-subtitle">
+        <FormModal open onClose={close} icon={PiggyBank} title="Alokasikan dana titipan"
+          subtitle={(
+            <>
               {fmtDate(target.stmt_date)} · sisa titipan{" "}
               <b>{formatCurrency(target.remaining)}</b> — {target.description}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Pelanggan <span className="font-normal text-[#8E8E93]">
-                    (hanya pelanggan pada entitas rekening ini)</span>
-                </label>
-                <KNSelect data-testid="recon-allocate-customer" value={customerId}
-                  onValueChange={setCustomerId} placeholder="Pilih pelanggan"
-                  options={customerOptions} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                  Alasan keputusan (wajib)
-                </label>
-                <KNSelect data-testid="recon-allocate-reason" value={reason}
-                  onValueChange={setReason} options={REASONS} />
-              </div>
-            </div>
-
-            <div className="mt-3">
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                Pesanan yang dilunasi
-              </label>
-              <div className="rounded border border-[#EFF0F2] max-h-[240px] overflow-auto">
-                {!customerId ? (
-                  <div className="p-4 text-center text-[12px] text-[#8E8E93]">
-                    Pilih pelanggan dulu untuk melihat pesanan yang masih punya sisa tagihan.
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="p-4 text-center text-[12px] text-[#8E8E93]">
-                    Pelanggan ini tidak punya pesanan bersisa tagihan.
-                  </div>
-                ) : orders.map((o) => (
-                  <div key={o.id || o.order_id}
-                    data-testid={`recon-allocate-order-${o.id || o.order_id}`}
-                    className="flex items-center justify-between gap-3 px-3 py-2 border-b border-[#F5F5F7] last:border-0">
-                    <div className="min-w-0">
-                      <p className="text-[12px]">
-                        <b>{o.number}</b> ·{" "}
-                        {fmtDate(o.date || o.order_date || o.created_at)}
-                      </p>
-                      <p className="text-[10px] text-[#8E8E93]">
-                        Sisa tagihan {formatCurrency(o.outstanding ?? o.outstanding_amount ?? 0)}
-                      </p>
-                    </div>
-                    <input data-testid={`recon-allocate-amount-${o.id || o.order_id}`}
-                      type="number" min={0} step={1000} className="input-field w-[150px]"
-                      placeholder="Nominal"
-                      value={alloc[o.id || o.order_id] ?? ""}
-                      onChange={(e) => setAlloc((cur) => ({
-                        ...cur, [o.id || o.order_id]: e.target.value,
-                      }))} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3">
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
-                Catatan (opsional)
-              </label>
-              <input data-testid="recon-allocate-note" className="input-field w-full" value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Contoh: bukti transfer dikirim via WhatsApp oleh pelanggan" />
-            </div>
-
-            <p className={`mt-2 text-[12px] ${remaining < -0.01 ? "text-[#C0392B]" : "text-[#6B6B73]"}`}>
-              Total alokasi <b>{formatCurrency(allocTotal)}</b> · sisa titipan setelah ini{" "}
-              <b>{formatCurrency(remaining)}</b>
-            </p>
-
-            <div className="flex justify-end gap-2 mt-3">
-              <button className="secondary-button" onClick={close}>Batal</button>
-              <button data-testid="recon-allocate-submit" className="primary-button"
+            </>
+          )}
+          testId="recon-allocate-modal" busy={saving}
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={close} disabled={saving}>Batal</button>
+              <button type="button" data-testid="recon-allocate-submit" className="primary-button"
                 disabled={allocTotal <= 0 || remaining < -0.01 || saving} onClick={submit}>
                 {saving ? <RefreshCw size={14} className="spin" /> : <HandCoins size={14} />}
                 Alokasikan
               </button>
             </div>
+          )}>
+          {mErr && (
+            <ErrorNotice message={mErr} onDismiss={() => setMErr("")}
+              testId="recon-allocate-error" />
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Pelanggan <span className="font-normal text-[#8E8E93]">
+                  (hanya pelanggan pada entitas rekening ini)</span>
+              </label>
+              <KNSelect data-testid="recon-allocate-customer" value={customerId}
+                onValueChange={setCustomerId} placeholder="Pilih pelanggan"
+                options={customerOptions} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+                Alasan keputusan (wajib)
+              </label>
+              <KNSelect data-testid="recon-allocate-reason" value={reason}
+                onValueChange={setReason} options={REASONS} />
+            </div>
           </div>
-        </div>
+
+          <div className="mt-3">
+            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+              Pesanan yang dilunasi
+            </label>
+            <div className="rounded border border-[#EFF0F2] sm:max-h-[240px] sm:overflow-auto">
+              {!customerId ? (
+                <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+                  Pilih pelanggan dulu untuk melihat pesanan yang masih punya sisa tagihan.
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+                  Pelanggan ini tidak punya pesanan bersisa tagihan.
+                </div>
+              ) : orders.map((o) => (
+                <div key={o.id || o.order_id}
+                  data-testid={`recon-allocate-order-${o.id || o.order_id}`}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-3 py-2 border-b border-[#F5F5F7] last:border-0">
+                  <div className="min-w-0">
+                    <p className="text-[12px]">
+                      <b>{o.number}</b> ·{" "}
+                      {fmtDate(o.date || o.order_date || o.created_at)}
+                    </p>
+                    <p className="text-[10px] text-[#8E8E93]">
+                      Sisa tagihan {formatCurrency(o.outstanding ?? o.outstanding_amount ?? 0)}
+                    </p>
+                  </div>
+                  <input data-testid={`recon-allocate-amount-${o.id || o.order_id}`}
+                    type="number" min={0} step={1000} className="input-field w-[150px]"
+                    placeholder="Nominal"
+                    value={alloc[o.id || o.order_id] ?? ""}
+                    onChange={(e) => setAlloc((cur) => ({
+                      ...cur, [o.id || o.order_id]: e.target.value,
+                    }))} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
+              Catatan (opsional)
+            </label>
+            <input data-testid="recon-allocate-note" className="input-field w-full" value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Contoh: bukti transfer dikirim via WhatsApp oleh pelanggan" />
+          </div>
+
+          <p className={`mt-2 text-[12px] ${remaining < -0.01 ? "text-[#C0392B]" : "text-[#6B6B73]"}`}>
+            Total alokasi <b>{formatCurrency(allocTotal)}</b> · sisa titipan setelah ini{" "}
+            <b>{formatCurrency(remaining)}</b>
+          </p>
+        </FormModal>
       )}
     </div>
   );

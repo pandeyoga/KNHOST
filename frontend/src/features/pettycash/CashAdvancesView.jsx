@@ -5,7 +5,10 @@ import { Wallet, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
-import { CA_STATUS, StatusPill, fmtDate } from "./pettyCashShared";
+import FilterChips from "../../components/FilterChips";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { MetricRow } from "../../components/ListPageParts";
+import { StatusPill, fmtDate } from "./pettyCashShared";
 import CashAdvanceForm from "./CashAdvanceForm";
 import CashAdvanceDetail from "./CashAdvanceDetail";
 import DetailModal from "../../components/DetailModal";
@@ -18,6 +21,10 @@ import { can } from "../../config/roles";
  *
  * Fase 3 · P4 (L-03) — dulu form & rincian MENGGANTI seluruh halaman (daftar hilang). Kini daftar selalu tampil;
  * form Buat/Ubah = FormModal (di CashAdvanceForm), rincian + alur persetujuan = DetailModal framed.
+ *
+ * Fase 4 · R2 — layar dibuka juga dari aplikasi HP (Lainnya › Kas Kecil): daftar grid lebar tetap (tombol Detail di luar
+ * layar 390 px) → `ResponsiveTable` (kartu di HP, pola sama dengan LPJ); saringan status → `FilterChips` (`ca-tab-*`
+ * tetap); KPI → `MetricRow` baku (nol netral).
  */
 const TABS = [
   { key: "", label: "Semua" },
@@ -107,48 +114,46 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
           </div>
         </div>
 
-        <section data-testid="ca-metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 p-3">
-          <Metric label="Total PD" value={metrics.total} tone="rgba(0,122,255,.12)" testId="ca-metric-total" />
-          <Metric label="Menunggu Persetujuan" value={metrics.pending} tone="rgba(255,149,0,.16)" testId="ca-metric-pending" />
-          <Metric label="Disetujui" value={metrics.approved} tone="rgba(52,199,89,.15)" testId="ca-metric-approved" />
-          <Metric label="Nilai Diajukan" value={formatCurrency(metrics.amount)} tone="rgba(0,122,255,.10)" testId="ca-metric-amount" money />
-        </section>
-
-        <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-          {TABS.map((t) => (
-            <button key={t.key || "all"} data-testid={`ca-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>
-          ))}
-          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, keperluan…" testId="ca-search" /></div>
+        <div className="section-body space-y-3">
+          <MetricRow testId="ca-metrics" items={[
+            { label: "Total PD", value: metrics.total, icon: Wallet, testId: "ca-metric-total" },
+            { label: "Menunggu Persetujuan", value: metrics.pending, icon: Wallet, testId: "ca-metric-pending" },
+            { label: "Disetujui", value: metrics.approved, icon: Wallet, testId: "ca-metric-approved" },
+            { label: "Nilai Diajukan", value: formatCurrency(metrics.amount), icon: Wallet, testId: "ca-metric-amount" },
+          ]} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChips ariaLabel="Saring status PD" className="min-w-0" value={statusFilter || "all"}
+              onChange={(k) => setStatusFilter(k === "all" ? "" : k)}
+              options={TABS.map((t) => ({ key: t.key || "all", label: t.label, count: countOf(t.key), testId: `ca-tab-${t.key || "all"}` }))} />
+            <div className="w-full sm:ml-auto sm:w-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor, keperluan…" testId="ca-search" /></div>
+          </div>
         </div>
       </section>
 
       <section className="section-card">
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-[100px_1.4fr_120px_140px_130px_90px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            <span>Nomor</span><span>Kegiatan / Divisi</span><span>Entitas</span><span className="text-right">Total</span><span>Status</span><span className="text-right">Aksi</span>
+        {loading && rows.length === 0 ? (
+          <div data-testid="ca-loading" className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
+        ) : filtered.length === 0 ? (
+          <div data-testid="ca-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">
+            <FileText className="mx-auto mb-2 text-gray-300" size={28} />
+            <p>Belum ada Pengajuan Dana. Klik <b>PD Baru</b> untuk membuat.</p>
           </div>
-          {loading ? (
-            <div data-testid="ca-loading" className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : filtered.length === 0 ? (
-            <div data-testid="ca-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">
-              <FileText className="mx-auto mb-2 text-gray-300" size={28} />
-              <p>Belum ada Pengajuan Dana. Klik <b>PD Baru</b> untuk membuat.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#EFF0F2]">
-              {filtered.map((r) => (
-                <div key={r.id} data-testid={`ca-row-${r.id}`} className="grid grid-cols-[100px_1.4fr_120px_140px_130px_90px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
-                  <span className="text-[11.5px] font-bold text-[#0058CC]">{r.number}</span>
-                  <div className="min-w-0"><p className="text-[12px] font-semibold truncate">{r.kegiatan || "—"}</p><p className="text-[10.5px] text-[#9A9BA3] truncate">{r.divisi || "—"} · {fmtDate(r.tanggal_pengajuan)}</p></div>
-                  <span className="text-[11px] truncate">{entityName(r.entity_id)}</span>
-                  <span className="text-[12px] tabular-nums text-right font-semibold">{formatCurrency(r.total_amount)}</span>
-                  <StatusPill status={r.status} />
-                  <div className="text-right"><button data-testid={`ca-open-${r.id}`} className="btn-secondary btn-xs" onClick={() => openDetail(r.id)}>Detail</button></div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        ) : (
+          <ResponsiveTable testId="ca-table" rows={filtered} rowKey="id" rowTestId={(r) => `ca-row-${r.id}`}
+            onRowClick={(r) => openDetail(r.id)} stickyActions
+            columns={[
+              { key: "number", header: "Nomor", mobile: "title",
+                render: (r) => <span className="text-[11.5px] font-bold text-[#0058CC] whitespace-nowrap">{r.number}</span> },
+              { key: "status", header: "Status", mobile: "badge", render: (r) => <StatusPill status={r.status} /> },
+              { key: "kegiatan", header: "Kegiatan / Divisi", mobile: "subtitle",
+                render: (r) => <span className="min-w-0"><span className="block text-[12px] font-semibold">{r.kegiatan || "—"}</span><span className="block text-[10.5px] text-[#9A9BA3]">{r.divisi || "—"} · {fmtDate(r.tanggal_pengajuan)}</span></span> },
+              { key: "entity", header: "Entitas", priority: 2, render: (r) => entityName(r.entity_id) },
+              { key: "total", header: "Total", align: "right", priority: 1,
+                render: (r) => <span className="tabular-nums font-semibold">{formatCurrency(r.total_amount)}</span> },
+            ]}
+            actions={(r) => <button type="button" data-testid={`ca-open-${r.id}`} className="btn-secondary btn-xs" onClick={() => openDetail(r.id)}>Detail</button>}
+          />
+        )}
       </section>
 
       {(view === "create" || view === "edit") && (
@@ -171,18 +176,6 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
           />
         </DetailModal>
       )}
-    </div>
-  );
-}
-
-function Metric({ label, value, tone, testId, money }) {
-  return (
-    <div data-testid={testId} className="metric-card">
-      <div className="metric-icon" style={{ background: tone }}><Wallet size={16} className="text-[#1C1C1E]" /></div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-        <p className={`${money ? "text-[15px]" : "text-[17px]"} font-bold tabular-nums truncate`}>{value}</p>
-      </div>
     </div>
   );
 }
