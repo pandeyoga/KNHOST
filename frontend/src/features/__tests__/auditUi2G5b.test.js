@@ -48,7 +48,9 @@ test("G5-08: peran tanpa izin persetujuan tidak mendapat tab Persetujuan/Antrean
   expect(q(host, "mobile-tab-btn-queue")).toBeNull();
   expect(q(host, "mobile-tab-btn-matrix")).toBeNull();
   expect(q(host, "mobile-tab-btn-desktop")).toBeNull();          // dilebur ke Ringkas & app bar
-  expect(q(host, "mobile-tab-btn-notif")).not.toBeNull();
+  // Fase 3 · P7 (L-09) — tab "Notifikasi" diganti lonceng app bar (NotifSheet) yang sama di keempat aplikasi HP.
+  expect(q(host, "mobile-notif-btn")).not.toBeNull();
+  expect(q(host, "mobile-tab-btn-more")).not.toBeNull();         // tab baku "Lainnya" (akun, satu "Tampilan desktop")
 
   const admin = { role: "admin", name: "Admin", permissions: { price_approval: ["*"], order: ["*"], approval: ["*"], makloon_order: ["*"] } };
   const r2 = await mount(<MobileOpsApp user={admin} />);
@@ -57,23 +59,25 @@ test("G5-08: peran tanpa izin persetujuan tidak mendapat tab Persetujuan/Antrean
 });
 
 test("G5-09: lencana 'Putuskan di HP' hanya untuk dokumen yang ada di daftar Persetujuan", async () => {
+  // Fase 3 · P7 (L-09) — notifikasi kini lewat lonceng bersama (NotifSheet, daftar dari App) — aturan G5-09 & G5-10 ikut.
+  const notifications = [
+    { id: "n1", type: "special_order_approval", ref: "so_custom_appr:sord_a#u1", title: "PO custom menunggu persetujuan: SORD-1", link: "special-orders", severity: "warning" },
+    { id: "n2", type: "special_order_approval", ref: "so_custom_appr:sord_x#u1", title: "PO custom menunggu persetujuan: SORD-9", link: "special-orders", severity: "warning" },
+    { id: "n3", type: "turn", title: "Giliran Anda — Kirim pesanan: KSC/SO-00001", body: "Toko · tahap: shipped", link: "operations" },
+  ];
   routeGet({
-    "/notifications/unread-count": { count: 3 },
-    "/notifications": [
-      { id: "n1", type: "special_order_approval", ref: "so_custom_appr:sord_a#u1", title: "PO custom menunggu persetujuan: SORD-1", link: "special-orders", severity: "warning" },
-      { id: "n2", type: "special_order_approval", ref: "so_custom_appr:sord_x#u1", title: "PO custom menunggu persetujuan: SORD-9", link: "special-orders", severity: "warning" },
-      { id: "n3", type: "turn", title: "Giliran Anda — Kirim pesanan: KSC/SO-00001", body: "Toko · tahap: shipped", link: "operations" },
-    ],
     "/special-orders": [{ id: "sord_a", number: "SORD-1", status: "pending_approval", customer_name: "Toko" }],
     "/price-approvals": [],
   });
   const admin = { role: "admin", permissions: { price_approval: ["*"], order: ["*"], approval: ["*"] } };
-  const { host } = await mount(<MobileOpsApp user={admin} initialTab="notif" />);
+  const { host } = await mount(<MobileOpsApp user={admin} notifications={notifications} unreadCount={3} />);
+  await act(async () => { q(host, "mobile-notif-btn").click(); });
+  expect(q(host, "mobile-notif-sheet")).not.toBeNull();
   expect(q(host, "mo-notif-decide-n1")).not.toBeNull();
   expect(q(host, "mo-notif-decide-n2")).toBeNull();     // dokumennya tidak ada di daftar Persetujuan
   expect(q(host, "mo-notif-decide-n3")).toBeNull();
-  expect(q(host, "mo-notif-n3").textContent).toContain("tahap: dikirim");
-  expect(q(host, "mo-notif-n3").textContent).not.toContain("shipped");
+  expect(q(host, "mobile-notif-n3").textContent).toContain("tahap: dikirim");
+  expect(q(host, "mobile-notif-n3").textContent).not.toContain("shipped");
 });
 
 test("G5-15: galat muat Kesehatan Konfigurasi tidak diikuti vonis hijau & KPI", async () => {

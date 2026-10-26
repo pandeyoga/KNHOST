@@ -81,32 +81,8 @@ export function CustomerContactBar({ customer }) {
   );
 }
 
-export function CustomerEditSheet({ customer, onClose, onSaved }) {
-  const [f, setF] = useState({ name: customer.name || "", pic_name: customer.pic_name || "", phone: customer.phone || "", email: customer.email || "", city: customer.city || "" });
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-  const valid = f.name.trim() && f.phone.trim();
-  const save = async () => {
-    setBusy(true); setErr("");
-    try { const r = await axios.patch(`${API}/customers/${customer.id}`, { data: f }); onSaved?.(r.data); }
-    catch (e) { setErr(errText(e, "Perubahan gagal disimpan.")); } finally { setBusy(false); }
-  };
-  return (
-    <Sheet title="Ubah Data Pelanggan" onClose={onClose} testId="m-customer-edit"
-      footer={<button className="primary-button w-full py-3" disabled={!valid || busy} onClick={save} data-testid="m-customer-edit-save">{busy ? "Menyimpan…" : "Simpan perubahan"}</button>}>
-      <div className="m-card space-y-2.5 p-4">
-        <Field label="Nama toko / pelanggan" req><input className="field" value={f.name} onChange={set("name")} data-testid="m-customer-edit-name" /></Field>
-        <Field label="Nama PIC"><input className="field" value={f.pic_name} onChange={set("pic_name")} data-testid="m-customer-edit-pic" /></Field>
-        <Field label="No. HP / WhatsApp" req><input className="field" inputMode="tel" value={f.phone} onChange={set("phone")} data-testid="m-customer-edit-phone" /></Field>
-        <Field label="Email"><input className="field" inputMode="email" value={f.email} onChange={set("email")} data-testid="m-customer-edit-email" /></Field>
-        <Field label="Kota"><input className="field" value={f.city} onChange={set("city")} data-testid="m-customer-edit-city" /></Field>
-      </div>
-      <p className="px-1 text-[11px] m-muted">Limit kredit, segmen & sales penanggung jawab diatur manajer di Manajemen Pelanggan.</p>
-      {err && <div className="notice-bar danger text-xs" data-testid="m-customer-edit-error">{err}</div>}
-    </Sheet>
-  );
-}
+// Fase 3 · P7 (D-05 HP) — lembar "Ubah Data Pelanggan" 5 isian dihapus: "Ubah" di HP memakai form LENGKAP
+// `crm/CustomerFormModal` lewat `MobileCustomerForm` (keputusan pemilik: form input HP tidak diringkas).
 
 export function CustomerAddressSheet({ customer, onClose, onSaved }) {
   const [f, setF] = useState({ label: "Gudang / Cabang", recipient_name: customer.pic_name || "", phone: customer.phone || "", address: "", city: "", is_primary: false });

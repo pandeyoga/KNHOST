@@ -1,34 +1,39 @@
 /**
  * MobileMdApp — aplikasi HP untuk MD / Merchandiser (dulu jatuh ke inbox generik MobileOpsApp).
- * Tab: Meja · Desain · Sample · Produk · Lainnya. Pola kerangka sama dengan MobileSalesApp
- * (appbar gradient, lonceng interaktif + push, tab bawah); fitur tanpa layar HP khusus dibuka
- * "tampilan penuh" + tombol kembali ke aplikasi HP.
+ * Tab: Meja · Desain · Sample · Produk · Lainnya. Fitur tanpa layar HP khusus dibuka "tampilan penuh" + tombol
+ * kembali ke aplikasi HP.
+ *
+ * Fase 3 · P7 (L-09) — kerangka bersama `MobileShell` v2 (dulu app bar/tab bar sendiri, judul "· MD"): app bar,
+ * lonceng, tab bar & tab "Lainnya" identik dengan aplikasi HP lain; bagian akun = `MobileAccountMenu` (SATU
+ * "Tampilan desktop" — D-26; baris desktop kedua MD dicabut). Testid lama `m-md-tab-*`, `m-md-notif-btn`,
+ * `m-md-tabbar`, `m-md-view-*` dipertahankan lewat `ids`.
+ * D-28 HP — "Status Stok" kini `MobileStockAtp` (Stok & ATP, definisi "Tersedia" K-04), bukan `/inventory/balances`.
  */
 import { can } from "../../../config/roles";
-import { useEffect, useState } from "react";
-import { Bell, ClipboardList, Palette, FlaskConical, Package, Menu, Layers, ChevronRight, LogOut, Monitor, FileStack, ShoppingBag, Tags, BadgeCheck, Boxes,
+import { useState } from "react";
+import { ClipboardList, Palette, FlaskConical, Package, Layers, ChevronRight, FileStack, ShoppingBag, Tags, BadgeCheck, Boxes,
   ScrollText, Droplet, Hand, Stamp, BarChart3, Images, LayoutTemplate, FolderTree, Ruler, FileSearch, Truck, SearchCheck, Route, UserCheck, ArrowLeft } from "lucide-react";
-import { entityShortById } from "../../../utils/entityLabel";
-import { NotifSheet } from "./MobileNotifSheet";
-import { MobileInstallCard, MobilePushCard, dropPushSubscription, syncPushSubscription } from "./MobilePwa";
+import MobileShell from "../../mobile/MobileShell";
+import MobileAccountMenu from "../../mobile/MobileAccountMenu";
+import { notifLink } from "../../mobile/notifText";
 import { MobileDesignRequests, MobileMdDesk, MobileMdProducts, MobilePoWatch, MobilePurchaseRequisitions, MobileRndSamples, mdRowTarget } from "./MobileMdViews";
 import { MobilePricelist } from "./MobileSalesNative";
 import { MobilePriceStatus } from "./MobileExtraViews";
-import { MobileStock } from "./MobileFieldViews";
+import MobileStockAtp from "./MobileStockAtp";
 
 const TABS = [
   { id: "desk", label: "Meja", icon: ClipboardList },
   { id: "design", label: "Desain", icon: Palette },
   { id: "sample", label: "Sample", icon: FlaskConical },
   { id: "products", label: "Produk", icon: Package },
-  { id: "more", label: "Lainnya", icon: Menu },
 ];
 const SUBS = [
   { id: "pr", label: "Permintaan Pembelian (PR)", desc: "Ajukan bahan untuk sample & produksi", icon: FileStack },
   { id: "po", label: "Pantau PO Bahan", desc: "Status PO dari PR Anda (hanya-lihat)", icon: ShoppingBag },
   { id: "pricelist", label: "Daftar Harga", desc: "Harga efektif per pelanggan", icon: Tags },
   { id: "price-status", label: "Pengajuan Harga Khusus", desc: "Status harga khusus yang diajukan", icon: BadgeCheck },
-  { id: "stock", label: "Status Stok", desc: "Ketersediaan per gudang", icon: Boxes },
+  // D-28 — satu layar stok HP (sama dengan Sales): judul mengikuti layar utama "Stok & ATP".
+  { id: "stock", label: "Stok & ATP", desc: "Siap janji, akan datang, peluang antar-PT per gudang", icon: Boxes },
 ];
 const FULL = [
   { nav: "rnd-hub", view: "rnd-specs", label: "Spesifikasi Produk", icon: ScrollText },
@@ -52,7 +57,7 @@ const SUB_TITLE = Object.fromEntries(SUBS.map((s) => [s.id, s.label]));
 
 function Row({ icon: Icon, label, desc, onClick, testId }) {
   return (
-    <button className="m-list-row m-press w-full text-left" onClick={onClick} data-testid={testId}>
+    <button type="button" className="m-list-row m-press w-full text-left" onClick={onClick} data-testid={testId}>
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#EAF2FF]"><Icon size={16} className="text-[#0058CC]" /></span>
       <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">{label}</span>{desc && <span className="block truncate text-[11px] m-muted">{desc}</span>}</span>
       <ChevronRight size={16} className="text-[#C7C7CC]" />
@@ -61,122 +66,73 @@ function Row({ icon: Icon, label, desc, onClick, testId }) {
 }
 
 function MdMore({ user, entities, selectedEntity, onSelectEntity, sub, setSub, subParam, onOpenFull, onLogout, onForceDesktop }) {
-  const switchable = (entities || []).filter((e) => (user?.allowed_entity_ids || []).includes(e.id));
   if (sub) {
     return (
       <div className="space-y-2" data-testid={`m-md-sub-${sub}`}>
-        <div className="flex items-center gap-2"><button className="m-subpage-back" onClick={() => setSub(null)} data-testid="m-md-sub-back"><ArrowLeft size={17} /> Kembali</button><span className="m-subpage-title">{SUB_TITLE[sub]}</span></div>
+        <div className="flex items-center gap-2"><button type="button" className="m-subpage-back" onClick={() => setSub(null)} data-testid="m-md-sub-back"><ArrowLeft size={17} /> Kembali</button><span className="m-subpage-title">{SUB_TITLE[sub]}</span></div>
         {sub === "pr" && <MobilePurchaseRequisitions focusId={subParam?.id} />}
         {sub === "po" && <MobilePoWatch />}
         {sub === "pricelist" && <MobilePricelist selectedEntity={selectedEntity} />}
         {sub === "price-status" && <MobilePriceStatus />}
-        {sub === "stock" && <MobileStock />}
+        {sub === "stock" && <MobileStockAtp user={user} selectedEntity={selectedEntity} />}
       </div>
     );
   }
   return (
-    <div className="space-y-3" data-testid="m-md-more">
-      <div className="m-card flex items-center gap-3 p-4">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-[#0058CC] text-[18px] font-bold text-white">{(user?.name || "M")[0]}</span>
-        <div className="min-w-0 flex-1"><p className="truncate text-[15px] font-bold">{user?.name}</p><p className="truncate text-[11.5px] m-muted">{user?.email}</p><p className="text-[10.5px] font-bold uppercase text-[#0058CC]">MD / Merchandiser</p></div>
-      </div>
-      <MobilePushCard />
-      <MobileInstallCard />
-      {switchable.length > 1 && onSelectEntity && (
-        <div className="m-card p-3" data-testid="m-md-entity-switch">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Badan usaha aktif</p>
-          {selectedEntity === "all" && <p className="mb-2 text-[11px] text-[#8A5300]">Mode "Semua" hanya untuk melihat — pilih satu badan usaha untuk mengajukan PR / desain.</p>}
-          <div className="flex flex-wrap gap-2">
-            {[{ id: "all" }, ...switchable].map((e) => (
-              <button key={e.id} onClick={() => onSelectEntity(e.id)} data-testid={`m-md-entity-${e.id}`}
-                className={`h-9 rounded-full border px-3 text-[12px] font-semibold ${selectedEntity === e.id ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white"}`}>{e.id === "all" ? "Semua" : entityShortById(entities, e.id)}</button>
-            ))}
-          </div>
+    <div data-testid="m-md-more">
+      <MobileAccountMenu user={user} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity}
+        onForceDesktop={onForceDesktop} onLogout={onLogout}
+        entityNote={'Mode "Semua" hanya untuk melihat — pilih satu badan usaha untuk mengajukan PR / desain.'}>
+        <div className="m-card px-3" data-testid="m-md-menu">
+          <p className="pt-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Pembelian, harga & stok</p>
+          {SUBS.map((s) => <Row key={s.id} icon={s.icon} label={s.label} desc={s.desc} onClick={() => setSub(s.id)} testId={`m-md-menu-${s.id}`} />)}
         </div>
-      )}
-      <div className="m-card px-3" data-testid="m-md-menu">
-        <p className="pt-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Pembelian, harga & stok</p>
-        {SUBS.map((s) => <Row key={s.id} icon={s.icon} label={s.label} desc={s.desc} onClick={() => setSub(s.id)} testId={`m-md-menu-${s.id}`} />)}
-      </div>
-      <div className="m-card px-3" data-testid="m-md-full-menu">
-        <p className="pt-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tampilan lengkap</p>
-        {FULL.filter((f) => !f.perm || can(user?.permissions, ...f.perm)).map((f) => <Row key={f.view} icon={f.icon} label={f.label} onClick={() => onOpenFull?.(f.nav, f.view)} testId={`m-md-full-${f.view}`} />)}
-      </div>
-      <div className="m-card px-3">
-        {onForceDesktop && <Row icon={Monitor} label="Tampilan desktop" onClick={onForceDesktop} testId="m-md-desktop" />}
-        <button className="m-list-row m-press w-full text-left text-[#C0392B]" onClick={async () => { await dropPushSubscription(); onLogout?.(); }} data-testid="m-md-logout"><LogOut size={16} /> <span className="text-[13px] font-semibold">Keluar</span></button>
-      </div>
+        <div className="m-card px-3" data-testid="m-md-full-menu">
+          <p className="pt-3 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Layar lengkap</p>
+          {FULL.filter((f) => !f.perm || can(user?.permissions, ...f.perm)).map((f) => <Row key={f.view} icon={f.icon} label={f.label} onClick={() => onOpenFull?.(f.nav, f.view)} testId={`m-md-full-${f.view}`} />)}
+        </div>
+      </MobileAccountMenu>
     </div>
   );
 }
 
 const NOTIF_TAB = { "design-requests": "design", "rnd-samples": "sample", "rnd-hub": "sample", "md-products": "products", "products-pricing": "products", "md-desk": "desk" };
+const MD_IDS = { tab: "m-md-tab-", tabbar: "m-md-tabbar", view: "m-md-view-", notif: "m-md-notif-btn", count: "m-md-notif-count" };
 
-export default function MobileMdApp({ user, entities, selectedEntity, notifications = [], unreadCount = 0, onMarkAllRead, onMarkRead, onPollNotifications,
-  onOpenFull, onLogout, onForceDesktop, onSelectEntity, notifProps = {} }) {
+export default function MobileMdApp(props) {
+  const { user, entities, selectedEntity, onOpenFull, onLogout, onForceDesktop, onSelectEntity } = props;
   const [tab, setTab] = useState("desk");
   const [focus, setFocus] = useState({});
   const [sub, setSub] = useState(null);
   const [subParam, setSubParam] = useState(null);
-  const [notifOpen, setNotifOpen] = useState(false);
   const canEditProduct = (user?.permissions?.product || []).includes("update");
-
-  useEffect(() => {
-    if (!onPollNotifications) return undefined;
-    const tick = () => { if (document.visibilityState === "visible") onPollNotifications(); };
-    tick();
-    const id = setInterval(tick, 60000);
-    document.addEventListener("visibilitychange", tick);
-    const onMsg = (e) => { if (e.data?.type?.startsWith("kn-push")) { onPollNotifications(); if (e.data.type === "kn-push-open") setNotifOpen(true); } };
-    navigator.serviceWorker?.addEventListener?.("message", onMsg);
-    return () => { clearInterval(id); document.removeEventListener("visibilitychange", tick); navigator.serviceWorker?.removeEventListener?.("message", onMsg); };
-  }, [onPollNotifications]);
-  useEffect(() => { syncPushSubscription(); }, [user?.id]);
 
   const go = (t) => {
     if (t.full) return onOpenFull?.(t.full.nav_id, t.full.view);
-    if (t.sub) { setSub(t.sub); setSubParam({ id: t.id }); setTab("more"); return; }
+    if (t.sub) { setSub(t.sub); setSubParam({ id: t.id }); setTab("more"); return undefined; }
     setFocus({ [t.tab]: t.id }); setTab(t.tab);
+    return undefined;
   };
   const openNotif = (n) => {
-    if (!n.read) onMarkRead?.(n.id);
-    const link = String(n.link || "");
-    if (!link) return;
-    setNotifOpen(false);
-    if (link === "purchase-requisitions") return go({ sub: "pr", id: n.action_id });
-    if (NOTIF_TAB[link]) return go({ tab: NOTIF_TAB[link], id: n.action_id || null });
-    onOpenFull?.(link, link);
+    const link = notifLink(n);
+    if (!link) return false;
+    if (link === "purchase-requisitions") go({ sub: "pr", id: n.action_id });
+    else if (NOTIF_TAB[link]) go({ tab: NOTIF_TAB[link], id: n.action_id || null });
+    else onOpenFull?.(link, link);
+    return true;
   };
+  const tabs = TABS.map((t) => ({ ...t, render: () => ({
+    desk: <MobileMdDesk selectedEntity={selectedEntity} onOpenRow={(r, q) => go(mdRowTarget(r, q))} />,
+    design: <MobileDesignRequests focusId={focus.design} />,
+    sample: <MobileRndSamples focusId={focus.sample} />,
+    products: <MobileMdProducts canEdit={canEditProduct} />,
+  }[t.id]) }));
+  const moreTab = { render: () => (
+    <MdMore user={user} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity} sub={sub} setSub={(s) => { setSubParam(null); setSub(s); }}
+      subParam={subParam} onOpenFull={onOpenFull} onLogout={onLogout} onForceDesktop={onForceDesktop} />) };
 
   return (
-    <div className="m-shell" data-testid="mobile-md-app">
-      <header className="m-appbar">
-        <div className="m-brand-mark"><Layers size={16} /></div>
-        <div className="m-title"><span className="t1">Halo, {(user?.name || "MD").split(" ")[0]} · MD</span><span className="t2">{entityShortById(entities, selectedEntity) || "Semua Entitas"}</span></div>
-        <button className="m-act" data-testid="m-md-notif-btn" onClick={() => setNotifOpen(true)} aria-label="Notifikasi">
-          <Bell size={18} />{unreadCount > 0 && <span className="m-badge" data-testid="m-md-notif-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
-        </button>
-      </header>
-      {notifOpen && <NotifSheet {...notifProps} unreadCount={unreadCount} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
-      <main className="m-main" data-testid={`m-md-view-${tab}`}>
-        {tab === "desk" && <MobileMdDesk selectedEntity={selectedEntity} onOpenRow={(r, q) => go(mdRowTarget(r, q))} />}
-        {tab === "design" && <MobileDesignRequests focusId={focus.design} />}
-        {tab === "sample" && <MobileRndSamples focusId={focus.sample} />}
-        {tab === "products" && <MobileMdProducts canEdit={canEditProduct} />}
-        {tab === "more" && <MdMore user={user} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity} sub={sub} setSub={(s) => { setSubParam(null); setSub(s); }}
-          subParam={subParam} onOpenFull={onOpenFull} onLogout={onLogout} onForceDesktop={onForceDesktop} />}
-      </main>
-      <nav className="m-tabbar" data-testid="m-md-tabbar">
-        {TABS.map((t) => {
-          const Icon = t.icon; const active = tab === t.id;
-          return (
-            <button key={t.id} className={`m-tab ${active ? "active" : ""}`} data-testid={`m-md-tab-${t.id}`} aria-current={active}
-              onClick={() => { setFocus({}); if (t.id === "more") setSub(null); setTab(t.id); }}>
-              <span className="m-tab-ico"><Icon size={21} strokeWidth={active ? 2.4 : 2} /></span>{t.label}
-            </button>
-          );
-        })}
-      </nav>
-    </div>
+    <MobileShell {...props} tabs={tabs} moreTab={moreTab} tab={tab} testId="mobile-md-app" ids={MD_IDS}
+      onTabChange={(id) => { setFocus({}); if (id === "more") setSub(null); setTab(id); }} onOpenNotif={openNotif} />
   );
 }

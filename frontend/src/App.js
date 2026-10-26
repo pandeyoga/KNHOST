@@ -90,6 +90,7 @@ function App() {
     caseFocus, clearCaseFocus, logisticsFocus, clearLogisticsFocus,
   } = useDeepLinks({
     setActiveNavId, setActiveView, setSidebarOpen, ready: Boolean(user),
+    role: user?.role,   // fase 3 · P2 — openConfig → layar Pengaturan domain yang boleh dibuka peran ini
     // FB-02 — dari Logistik → detail Pesanan (reuse jalur focusDoc EPIC6).
     onOpenOrder: (orderId) => openDocument({ view: "orders", nav_id: "sales-orders", focus_type: "sales_order", focus_id: orderId }),
   });
@@ -249,7 +250,7 @@ function App() {
   const responsiveWorkspace = ['md-products', 'product-templates', 'rnd-specs', 'goods-receipts', 'makloon-orders', 'inspections'].includes(activeView) || mobileVisit;
   const goDesktop = () => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); };
   const goMobile = () => { localStorage.removeItem("kn_force_desktop"); setForceDesktop(false); setMobileVisit(false); };
-  const openFullView = (navId, view) => { setMobileVisit(true); handleNavSelect(navId, view); };
+  const openFullView = (navId, view, opts = {}) => { setMobileVisit(true); handleNavSelect(navId, view, opts.tab, opts); };   // fase 3 · P7 — + preset
   const backToMobile = () => { setMobileVisit(false); handleNavSelect("home"); };
   const wantsTanya = activeView === "tanya-kn";
   const notifProps = {
@@ -263,6 +264,7 @@ function App() {
         notifications={notifications} unreadCount={unreadCount} notifProps={notifProps} onMarkAllRead={markAllNotificationsRead}
         onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications}
         onOpenFull={openFullView} onLogout={logout} onForceDesktop={goDesktop} onNavigate={handleNavSelect} wantsTanya={wantsTanya}
+        onOpenDocument={(l) => { setMobileVisit(true); openDocument(l); }} onNavigateTo={(v, o) => { setMobileVisit(true); navigateTo(v, o); }}
         actions={actions} settings={settings} data={data} loading={loading} cart={cart} setCart={setCart}
         selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
         selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress} notice={notice} paymentTerms={paymentTerms} />

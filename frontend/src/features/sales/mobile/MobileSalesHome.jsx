@@ -6,7 +6,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import axios, { API } from "../../../services/apiClient";
 import WaitingQueueBoard from "../../../components/WaitingQueueBoard";
-import { boardLook, selectWaitingBoards } from "../../../config/waitingBoards";
+import { boardLook, boardRowLink, isLinkBoard, LINK_BOARD_PRESET, selectWaitingBoards } from "../../../config/waitingBoards";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { getStage, stageMeta } from "../../../utils/soStatus";
@@ -44,7 +44,7 @@ const monthLabel = (p) => {
   return m ? BULAN[Number(m[2]) - 1] || p : p;
 };
 
-export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, onAskKn, onOpenSub, onOpenFull, onOpenOrder, selectedEntity = "all" }) {
+export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, onAskKn, onOpenSub, onOpenSubWith, onOpenFull, onOpenOrder, onOpenDocument, selectedEntity = "all" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -83,10 +83,20 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
     .filter((b) => !(isSalesRole && !boardsUnreadable && b.key === "special_order" && !b.owner_scoped
       && !(b.rows || []).some((r) => r.action)));
   const boardTitle = (b, look) => (isSalesRole && b.owner_scoped ? `${look.title} · pelanggan Anda` : look.title);
-  const goBoard = (view) => {
+  const goBoard = (view, preset) => {
     if (view === "orders") return onOpenTab?.("orders");
     if (BOARD_SUB[view]) return onOpenSub?.(BOARD_SUB[view]);
-    return onOpenFull?.(view, view);
+    return onOpenFull?.(view, view, preset ? { preset } : undefined);
+  };
+  // Fase 3 · P7 (D-07/D-28 HP, keputusan pemilik 26 Okt) — papan PO Custom (& Barang ditahan QC bila suatu saat tampil)
+  // = TAUTAN, sama dengan beranda desktop (`isLinkBoard`): tanpa tombol Setujui/Lepas; baris membuka dokumennya —
+  // PO custom di layar HP Pesanan Khusus (terfokus), selain itu layar penuh dengan preset papan (Inspeksi `{hold:true}`).
+  const openBoardRow = (b, row) => {
+    const sub = BOARD_SUB[b.view];
+    if (sub && onOpenSubWith) return onOpenSubWith(sub, { id: row.id });
+    const link = { ...boardRowLink(b, row), preset: LINK_BOARD_PRESET[b.key] };
+    if (onOpenDocument) return onOpenDocument(link);
+    return goBoard(b.view, LINK_BOARD_PRESET[b.key]);
   };
 
   return (
@@ -113,9 +123,11 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
         <div className="space-y-2" data-testid="m-home-boards">
           {boards.map((b) => {
             const look = boardLook(b.key);
+            const asLink = isLinkBoard(b.key);
             return (
               <WaitingQueueBoard key={b.key} board={b} loading={loading && !data} unreadable={boardsUnreadable} onRetry={load}
-                onNavigate={goBoard} onActed={load} icon={look.icon} accent={look.accent} gotoLabel={look.goto}
+                mode={asLink ? "link" : "act"} onOpenRow={asLink ? (row) => openBoardRow(b, row) : undefined}
+                onNavigate={(view) => goBoard(view, asLink ? LINK_BOARD_PRESET[b.key] : null)} onActed={load} icon={look.icon} accent={look.accent} gotoLabel={look.goto}
                 emptyText={isSalesRole && b.owner_scoped && b.key === "special_order" ? "Tidak ada PO custom pelanggan Anda yang menunggu keputusan" : look.empty}
                 title={boardTitle(b, look)} testIdBase={`m-home-board-${b.key}`} rowTestIdBase={`m-home-board-${b.key}-row`} />
             );

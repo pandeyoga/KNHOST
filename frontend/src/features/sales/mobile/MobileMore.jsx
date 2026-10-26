@@ -1,6 +1,6 @@
-import { Users, RotateCcw, FileStack, Tags, Monitor, LogOut, ChevronRight, ArrowLeft, UserCircle, Target, Sparkles , BarChart3 } from "lucide-react";
+import { Users, RotateCcw, FileStack, Tags, ChevronRight, ArrowLeft, Target, Sparkles, BarChart3 } from "lucide-react";
 import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileText, UserCheck, ExternalLink, FileEdit } from "lucide-react";
-import { roleLabel, roleIs } from "../../../config/roles";
+import { roleIs } from "../../../config/roles";
 import TanyaKnView from "../../tanya/TanyaKnView";
 import MobileAmendments from "./MobileAmendments";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
@@ -13,7 +13,7 @@ import { HUB_TABS } from "../../../config/hubTabs";
 const MORE_SCROLL = { y: 0 };
 const scroller = () => document.querySelector(".m-main");
 import MobileCustomers from "./MobileCustomers";
-import MobileHubMenu from "./MobileHubMenu";
+import MobileHubMenu, { hubViewCount } from "./MobileHubMenu";
 import MobileLeads from "./MobileLeads";
 import { MobileReturns, MobileSpecialOrders, MobilePricelist } from "./MobileSalesNative";
 import MobilePendingQueue from "./MobilePendingQueue";
@@ -23,10 +23,9 @@ import MobileStockAtp from "./MobileStockAtp";
 import MobileCollectionTargets from "./MobileCollectionTargets";
 import MobileOrderDashboard from "./MobileOrderDashboard";
 import MobileInternalRequests from "./MobileInternalRequests";
-import { MobileInstallCard, MobilePushCard, dropPushSubscription } from "./MobilePwa";
+import MobileAccountMenu from "../../mobile/MobileAccountMenu";
 import { MobileSampleOrders, MobileApprovalWatch } from "./MobileExtraViews";
 import PriceApprovals from "../PriceApprovals";
-import { entityShortById } from "../../../utils/entityLabel";
 
 const MENU = [
   { id: "tanya", label: "Tanya KN", desc: "Laporan instan & tanya data penjualan Anda", icon: Sparkles },
@@ -85,18 +84,34 @@ const FULL_VIEWS = [
   { nav: "sales-admin-desk", view: "sales-admin-desk", label: "Meja Admin Sales (desktop)", desc: "Tampilan meja lengkap", icon: ClipboardList, roles: ["sales_admin"] },
   { nav: "wms-operations", view: "operations", label: "Operasi Gudang (pantau)", desc: "Progres ambil/kemas/kirim tanpa aksi", icon: Warehouse, roles: ["sales_admin"] },
   { nav: "sourcing", view: "purchase-requisitions", label: "Permintaan Pembelian (PR)", desc: "Ajukan reorder ke supplier", icon: FileStack, roles: ["sales_admin"] },
-  { nav: "accounts-payable", view: "interco-transactions", label: "Transaksi Antar-PT", desc: "Jual-beli antar badan usaha grup", icon: Building2, roles: ["sales_admin"] },
-  { nav: "sales-orders", view: "return-policies", label: "Kebijakan Retur", desc: "Aturan retur per jenis keluhan", icon: ScrollText, roles: ["sales_admin"] },
+  // Fase 3 · P7 — nav lama `accounts-payable` DICABUT untuk Admin Sales (ROLE_NAV.remove) sehingga butir ini tak pernah
+  // tampil; menu yang benar = `interco-transactions` (ROLE_NAV.add sales_admin).
+  { nav: "interco-transactions", view: "interco-transactions", label: "Transaksi Antar-PT", desc: "Jual-beli antar badan usaha grup", icon: Building2, roles: ["sales_admin"] },
+  // Fase 3 · P2 (P16-K1) — Kebijakan Retur pindah ke Pengaturan › Penjualan (`settings-sales`); view sama.
+  { nav: "settings-sales", view: "return-policies", label: "Kebijakan Retur", desc: "Aturan retur per jenis keluhan", icon: ScrollText, roles: ["sales_admin"] },
 ];
 
 const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Pesanan Khusus (OD)", pricelist: "Daftar Harga",
   "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", "order-dashboard": "Dasbor Pesanan", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
   "sample-orders": "Pesanan Sample", approvals: "Pantau Persetujuan" };
 
-function FullViewMenu({ onOpenFull, role }) {
+// Fase 3 · P7 (D-26) — layar hub yang SUDAH punya layar HP di menu ini tidak diulang di "Layar lengkap".
+// view hub → id layar HP (MENU) atau "tab" (tab bawah aplikasi HP); hanya dibuang bila layar HP itu tampil untuk peran.
+const HP_EQUIV = { orders: "tab", amendments: "amendments", "internal-requests": "internal", "customers-crm": "crm",
+  "hr-visits": "visits", "cs-price-list": "pricelist", "inventory-board": "stock" };
+export const hasHpScreen = (view, role) => {
+  const id = HP_EQUIV[view];
+  if (!id) return false;
+  if (id === "tab") return true;
+  const m = MENU.find((x) => x.id === id);
+  return !!m && roleOk(m, role);
+};
+export const fullViewsFor = (role) => FULL_VIEWS.filter((m) => allowed(m, role) && !hasHpScreen(m.view, role));
+
+function FullViewMenu({ onOpenFull, items }) {
   return (
     <div data-testid="mobile-more-full-views">
-      {FULL_VIEWS.filter((m) => allowed(m, role)).map((m) => {
+      {items.map((m) => {
         const Icon = m.icon;
         return (
           <button key={m.view} data-testid={`mobile-full-${m.view}`} onClick={() => onOpenFull(m.nav, m.view)} className="m-list-row m-press w-full text-left">
@@ -137,7 +152,6 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
   }), []);
   const goBack = () => { const top = backStack.current[backStack.current.length - 1]; if (top) top(); else setSub(null); };
   const role = user?.role;
-  const switchable = (entities || []).filter((e) => (user?.allowed_entity_ids || []).includes(e.id));
   const shownIds = new Set();
   if (sub) {
     return (
@@ -170,88 +184,47 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
     );
   }
 
+  const full = fullViewsFor(role);
   return (
-    <div className="space-y-3" data-testid="mobile-more">
-      <MobilePendingQueue />
-      {/* Profile card */}
-      <div className="m-card flex items-center gap-3 p-4">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#0058CC] text-[16px] font-bold text-white">
-          {(user?.name || "S").slice(0, 1).toUpperCase()}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold">{user?.name || "Sales"}</p>
-          <p className="truncate text-[11.5px] m-muted">{user?.email}</p>
-          {/* FASE E-8 — label peran dari registry (id mentah `sales_admin` tampil buruk). */}
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#0058CC]">{user?.role_label || roleLabel(user?.role)}</p>
-        </div>
-        <UserCircle size={22} className="text-[#C7C7CC]" />
-      </div>
+    <div data-testid="mobile-more">
+      {/* L-09 — profil, PT, push/pasang, SATU "Tampilan desktop" (D-26) & Keluar = MobileAccountMenu (sama di semua aplikasi HP). */}
+      <MobileAccountMenu user={user} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity}
+        onForceDesktop={onForceDesktop} onLogout={onLogout} header={<MobilePendingQueue />}
+        entityNote={'Mode "Semua Entitas" hanya untuk melihat — pilih satu badan usaha untuk membuat pesanan, retur, atau permintaan.'}
+        footer={`Kain Nusantara — Mobile ${roleIs(role, ["sales_admin"]) ? "Admin Sales" : "Sales"}`}>
+        {GROUPS.filter((g) => roleOk(g, role)).map((g) => {
+          // Satu menu hanya tampil sekali (grup pertama yang memuatnya) — testid tetap unik.
+          const items = g.items.map((id) => MENU.find((m) => m.id === id)).filter((m) => m && roleOk(m, role) && !shownIds.has(m.id));
+          items.forEach((m) => shownIds.add(m.id));
+          if (!items.length) return null;
+          return (
+            <MoreSection key={g.id} id={g.id} title={g.label} count={items.length} defaultOpen={g.open}>
+              {items.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <button key={m.id} data-testid={`mobile-more-${m.id}`} onClick={() => setSub(m.id)} className="m-list-row m-press w-full text-left last:border-0">
+                    <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#F2F3F5]"><Icon size={17} className="text-[#0058CC]" /></span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold">{m.label}</p>
+                      <p className="truncate text-[11px] m-muted">{m.desc}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-[#C7C7CC]" />
+                  </button>
+                );
+              })}
+            </MoreSection>
+          );
+        })}
 
-      {/* Menu — dikelompokkan & bisa dibuka/tutup (menu akan terus bertambah) */}
-      <MobilePushCard />
-      <MobileInstallCard />
-
-      {onSelectEntity && switchable.length > 1 && (
-        <div className="m-card p-3" data-testid="mobile-entity-switch">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Badan usaha aktif</p>
-          {selectedEntity === "all" && <p className="mb-2 text-[11px] text-[#8A5300]" data-testid="mobile-entity-all-note">Mode "Semua Entitas" hanya untuk melihat — pilih satu badan usaha untuk membuat pesanan, retur, atau permintaan.</p>}
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => onSelectEntity("all")} data-testid="mobile-entity-all"
-              className={`h-9 rounded-full border px-3 text-[12px] font-semibold ${selectedEntity === "all" ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`}>Semua</button>
-            {switchable.map((e) => (
-              <button key={e.id} onClick={() => onSelectEntity(e.id)} data-testid={`mobile-entity-${e.id}`}
-                className={`h-9 rounded-full border px-3 text-[12px] font-semibold ${selectedEntity === e.id ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`}>
-                {entityShortById(entities, e.id)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {GROUPS.filter((g) => roleOk(g, role)).map((g) => {
-        // Satu menu hanya tampil sekali (grup pertama yang memuatnya) — testid tetap unik.
-        const items = g.items.map((id) => MENU.find((m) => m.id === id)).filter((m) => m && roleOk(m, role) && !shownIds.has(m.id));
-        items.forEach((m) => shownIds.add(m.id));
-        if (!items.length) return null;
-        return (
-          <MoreSection key={g.id} id={g.id} title={g.label} count={items.length} defaultOpen={g.open}>
-            {items.map((m) => {
-              const Icon = m.icon;
-              return (
-                <button key={m.id} data-testid={`mobile-more-${m.id}`} onClick={() => setSub(m.id)} className="m-list-row m-press w-full text-left last:border-0">
-                  <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#F2F3F5]"><Icon size={17} className="text-[#0058CC]" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold">{m.label}</p>
-                    <p className="truncate text-[11px] m-muted">{m.desc}</p>
-                  </div>
-                  <ChevronRight size={16} className="text-[#C7C7CC]" />
-                </button>
-              );
-            })}
+        {/* D-26 — dulu dua seksi ("Hub lengkap · setara desktop" & "Fitur lainnya · tampilan penuh") yang mengulang
+            layar yang sudah ada di menu HP; kini SATU seksi "Layar lengkap" tanpa butir yang punya layar HP. */}
+        {onOpenFull && (
+          <MoreSection id="full" title="Layar lengkap" count={full.length + hubViewCount(role, (v) => !hasHpScreen(v, role))}>
+            <MobileHubMenu role={role} onOpenFull={onOpenFull} exclude={(v) => hasHpScreen(v, role)} />
+            <FullViewMenu onOpenFull={onOpenFull} items={full} />
           </MoreSection>
-        );
-      })}
-
-      {onOpenFull && <MoreSection id="hubs" title="Hub lengkap · setara desktop"><MobileHubMenu role={user?.role} onOpenFull={onOpenFull} /></MoreSection>}
-      {onOpenFull && <MoreSection id="full" title="Fitur lainnya · tampilan penuh" count={FULL_VIEWS.filter((m) => allowed(m, role)).length}><FullViewMenu onOpenFull={onOpenFull} role={role} /></MoreSection>}
-
-      {/* Settings */}
-      <div className="m-card px-4">
-        <button data-testid="mobile-force-desktop" onClick={onForceDesktop} className="m-list-row m-press w-full text-left">
-          <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#F2F3F5]"><Monitor size={17} className="text-[#3C3C43]" /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold">Tampilan Desktop</p>
-            <p className="truncate text-[11px] m-muted">Beralih ke antarmuka penuh</p>
-          </div>
-          <ChevronRight size={16} className="text-[#C7C7CC]" />
-        </button>
-        <button data-testid="mobile-logout" onClick={async () => { await dropPushSubscription(); onLogout?.(); }} className="m-list-row m-press w-full text-left">
-          <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#FFECEB]"><LogOut size={17} className="text-[#C0392B]" /></span>
-          <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-[#C0392B]">Keluar</p></div>
-        </button>
-      </div>
-
-      <p className="pt-1 text-center text-[10.5px] m-muted">Kain Nusantara — Mobile {roleIs(role, ["sales_admin"]) ? "Admin Sales" : "Sales"}</p>
+        )}
+      </MobileAccountMenu>
     </div>
   );
 }

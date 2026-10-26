@@ -14,7 +14,8 @@
   display: flex; align-items: center; gap: 10px;
   padding: 10px 14px;
   padding-top: max(10px, env(safe-area-inset-top));
-  background: linear-gradient(135deg, #0058CC 0%, #6B219A 100%);
+  /* Fase 3 · P7 (L-09) — SATU app bar untuk keempat aplikasi HP: gradien biru baku (dulu berujung ungu #6B219A). */
+  background: linear-gradient(135deg, #0058CC 0%, #2F7BEA 100%);
   color: #fff;
   box-shadow: 0 2px 12px rgba(0, 40, 90, 0.20);
 }
@@ -32,11 +33,7 @@
   transition: transform 120ms ease;
 }
 .m-appbar .m-act:active { transform: scale(0.93); }
-.m-appbar > .m-badge {
-  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
-  height: 20px; padding: 0 7px; border-radius: 999px;
-  background: #FF3B30; color: #fff; font-size: 10px; font-weight: 800; white-space: nowrap;
-}
+/* Fase 3 · P7 (L-09) — pil merah jumlah notifikasi di app bar Gudang/Ops dicabut: semua peran memakai lencana lonceng. */
 .m-appbar .m-act .m-badge {
   position: absolute; top: -4px; right: -4px;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;

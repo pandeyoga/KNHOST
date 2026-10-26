@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, ChevronRight, ArrowLeft, Phone, MapPin, Wallet, Receipt, UserPlus, Pencil, ShoppingCart, Plus, ClipboardPen } from "lucide-react";
-import { CustomerAddressSheet, CustomerContactBar, CustomerCreditCard, CustomerEditSheet, CustomerFollowupSheet, outcomeLabel } from "./MobileSalesFlows";
+import { CustomerAddressSheet, CustomerContactBar, CustomerCreditCard, CustomerFollowupSheet, outcomeLabel } from "./MobileSalesFlows";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import MobileArReceipt from "./MobileArReceipt";
@@ -26,12 +26,13 @@ export default function MobileCustomers({ selectedEntity, user, onRefresh, onSta
       .then((r) => setRows(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => setErr("Gagal memuat pelanggan.")).finally(() => setLoading(false));
   }, [selectedEntity]);
   const list = useMemo(() => (rows || []).filter((c) => !q || `${c.name} ${c.phone || ""} ${c.city || ""}`.toLowerCase().includes(q.toLowerCase())), [rows, q]);
-  if (sel) return <MobileCustomerDetail customer={sel} onStartOrder={onStartOrder}
+  if (sel) return <MobileCustomerDetail customer={sel} onStartOrder={onStartOrder} user={user} selectedEntity={selectedEntity}
     onBack={() => setSel(null)} onUpdated={(c) => { setSel((cur) => ({ ...cur, ...c })); setRows((r) => (r || []).map((x) => (x.id === c.id ? { ...x, ...c } : x))); onRefresh?.(); }} />;
   return (
     <div className="space-y-2 p-3" data-testid="m-customers">
       <button className="primary-button flex w-full items-center justify-center gap-2 py-3" onClick={() => setAdding(true)} data-testid="m-customers-add"><UserPlus size={16} /> Tambah pelanggan</button>
       {saved && <div className="notice-bar success text-xs" data-testid="m-customers-saved">{saved}</div>}
+      {/* D-05 HP — form LENGKAP yang sama dengan CRM desktop (CustomerFormModal), layar penuh di HP. */}
       {adding && <MobileCustomerForm user={user} selectedEntity={selectedEntity} onClose={() => setAdding(false)} onCreated={onCreated} />}
       <div className="m-card flex items-center gap-2 px-3 py-2"><Search size={15} className="m-muted" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Cari nama / kota / telepon" value={q} onChange={(e) => setQ(e.target.value)} data-testid="m-customers-search" /></div>
       {err && <div className="notice-bar danger text-xs">{err}</div>}
@@ -52,7 +53,7 @@ export default function MobileCustomers({ selectedEntity, user, onRefresh, onSta
   );
 }
 
-export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStartOrder }) {
+export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStartOrder, user, selectedEntity }) {
   const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
   const [d, setD] = useState(null);
   const [tab, setTab] = useState("ar");
@@ -145,7 +146,9 @@ export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStar
         </div>
       )}
       {pay && <MobileArReceipt customer={customer} onClose={() => setPay(false)} onDone={() => { setPay(false); load(); }} />}
-      {sheet === "edit" && <CustomerEditSheet customer={customer} onClose={() => setSheet("")} onSaved={(c) => { saved("Data pelanggan diperbarui."); onUpdated?.(c); }} />}
+      {/* D-05 HP — "Ubah" memakai form LENGKAP desktop (dulu lembar 5 isian: nama, PIC, HP, email, kota). */}
+      {sheet === "edit" && <MobileCustomerForm user={user} selectedEntity={selectedEntity} customer={customer} onClose={() => setSheet("")}
+        onSaved={(c) => { saved("Data pelanggan diperbarui."); onUpdated?.(c); }} />}
       {sheet === "address" && <CustomerAddressSheet customer={customer} onClose={() => setSheet("")} onSaved={() => saved("Alamat kirim ditambahkan.")} />}
       {sheet === "followup" && <CustomerFollowupSheet customer={customer} orders={open} onClose={() => setSheet("")} onSaved={() => { saved("Tindak lanjut tercatat."); setTab("followups"); }} />}
     </div>

@@ -5,7 +5,8 @@ import MobileShell from "./MobileShell";
 import { printSampleLabel, printInboundRollLabels, reprintRollLabel } from "./MobileTaskActions";
 import { isNetworkError, queueScan } from "../../utils/offlineQueue";
 import PrinterStatusWidget from "../../components/PrinterStatusWidget";
-import OfflineBanner from "./OfflineBanner";
+import PageTabs from "../../components/PageTabs";
+import { linkView } from "./notifText";
 import { InboundActions, OutboundActions, SampleCutActions } from "./MobileTaskActions";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatQty } from "../../utils/formatters";
@@ -251,15 +252,39 @@ export function GrnEntryCard({ onOpen }) {
   );
 }
 
+/**
+ * Fase 3 · P7 (L-09) — tab "Belum Tag" bergabung ke tab "Pindai" (PageTabs Pindai · Belum Tag) supaya bilah bawah
+ * tetap ≤ 5 tab dengan tab baku "Lainnya" (akun, PT, push, satu "Tampilan desktop", Keluar). Testid lama
+ * `mobile-tab-btn-untagged` → `mw-pindai-tabs-untagged`.
+ */
+function ScanTab({ onOpenTask }) {
+  const [part, setPart] = useState("scan");
+  return (
+    <>
+      <div className="px-3 pt-2">
+        <PageTabs testId="mw-pindai-tabs" value={part} onChange={setPart} ariaLabel="Pindai atau roll belum bertag"
+          tabs={[{ key: "scan", label: "Pindai" }, { key: "untagged", label: "Belum Tag" }]} />
+      </div>
+      {part === "scan" ? <ScanPanel onOpenTask={onOpenTask} /> : <UntaggedPanel />}
+    </>
+  );
+}
+
 export default function MobileWarehouseApp(props) {
   const [focus, setFocus] = useState(null);
+  const [tab, setTab] = useState(props.initialTab || "inbound");
+  const openFull = (navId, view, opts) => {
+    if (props.onOpenFull) { props.onOpenFull(navId, view, opts); return; }
+    props.onNavigate?.(navId, view);
+  };
+  // Lonceng (L-09): tautan notifikasi → layar penuh sementara (tombol kembali ke aplikasi HP).
+  const openNotif = (n) => { const view = linkView(n); if (!view) return false; openFull(view, view); return true; };
   const list = (type) => <TaskList type={type} focusTaskId={focus?.type === type ? focus.taskId : ""} onFocused={() => setFocus(null)} />;
   const tabs = [
-    { id: "inbound", label: "Masuk", icon: PackageCheck, render: () => <><GrnEntryCard onOpen={() => props.onNavigate?.("wms-operations", "goods-receipts")} />{list("inbound")}</> },
+    { id: "inbound", label: "Masuk", icon: PackageCheck, render: () => <><GrnEntryCard onOpen={() => openFull("wms-operations", "goods-receipts")} />{list("inbound")}</> },
     { id: "outbound", label: "Keluar", icon: ClipboardList, render: () => list("outbound") },
     { id: "sample", label: "Sample", icon: Scissors, render: () => list("sample_cut") },
-    { id: "scan", label: "Pindai", icon: ScanLine, render: ({ setTab }) => <ScanPanel onOpenTask={(tab, taskId) => { setFocus({ type: { inbound: "inbound", outbound: "outbound", sample: "sample_cut" }[tab], taskId }); setTab(tab); }} /> },
-    { id: "untagged", label: "Belum Tag", icon: Tags, render: () => <UntaggedPanel /> },
+    { id: "scan", label: "Pindai", icon: ScanLine, render: ({ setTab: go }) => <ScanTab onOpenTask={(t, taskId) => { setFocus({ type: { inbound: "inbound", outbound: "outbound", sample: "sample_cut" }[t], taskId }); go(t); }} /> },
   ];
-  return <MobileShell {...props} tabs={tabs} testId="mobile-warehouse-app" topSlot={<OfflineBanner />} />;
+  return <MobileShell {...props} tabs={tabs} tab={tab} onTabChange={setTab} testId="mobile-warehouse-app" onOpenNotif={openNotif} />;
 }

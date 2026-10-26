@@ -1,81 +1,33 @@
-import { useState } from "react";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
 import axios, { API } from "../../../services/apiClient";
-import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
-import { apiErrorText } from "../../../utils/apiError";
+import CustomerFormModal from "../../crm/CustomerFormModal";
 
-const EMPTY = { name: "", pic_name: "", phone: "", email: "", city: "", address: "" };
-
-/** Tambah pelanggan dari HP — data dasar yang sama dengan desktop; sales pembuat otomatis jadi PIC. */
-export default function MobileCustomerForm({ user, selectedEntity, onClose, onCreated }) {
-  const [form, setForm] = useState(EMPTY);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  // UAT 24 Okt (audit UI tahap 2) — kekurangan isian (termasuk blok alamat, `showErrors` LocationFields — API G0)
-  // ditampilkan setelah "Simpan" ditekan; dulu tombol mati tanpa keterangan.
-  const [tried, setTried] = useState(false);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const missing = [
-    !form.name.trim() && "nama toko",
-    !form.pic_name.trim() && "nama PIC",
-    !form.phone.trim() && "No. HP",
-    locationIncomplete(form) && "wilayah alamat",
-    form.address.trim().length < 3 && "jalan/nomor",
-  ].filter(Boolean);
-  const valid = missing.length === 0;
-
-  const submit = async () => {
-    if (busy) return;
-    if (!valid) { setTried(true); return; }
-    setBusy(true); setErr("");
-    try {
-      const body = { ...form, ...(selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}) };
-      const r = await axios.post(`${API}/customers`, body);
-      onCreated?.(r.data);
-    } catch (e) {
-      setErr(apiErrorText(e, "Pelanggan gagal disimpan."));
-    } finally { setBusy(false); }
-  };
-
+/**
+ * Tambah / ubah pelanggan dari HP — fase 3 · P7 (D-05 HP, keputusan pemilik "form input HP tidak diringkas").
+ *
+ * Dulu form HP sendiri 6 isian (nama, PIC, HP, email, wilayah, jalan; "segmen, kebijakan lot & limit kredit bisa
+ * dilengkapi nanti") untuk TAMBAH dan lembar 5 isian untuk UBAH. Kini PEMBUNGKUS tipis `crm/CustomerFormModal` — form
+ * LENGKAP yang sama dengan Manajemen Pelanggan desktop (segmen, sales penanggung jawab & tim, kebijakan lot, profil
+ * bayar, limit kredit, NPWP, alamat terstruktur); di HP FormModal tampil layar penuh 1 kolom.
+ *
+ * Props: `user` · `selectedEntity` · `customer` (ada = mode ubah) · `onClose` · `onCreated(customer)` (tambah)
+ *   · `onSaved(customer)` (ubah). Testid: pop-up `m-customer-form` (`-body`, `-missing`, `-error`, `-cancel`),
+ *   tombol simpan `m-customer-form-submit`.
+ */
+export default function MobileCustomerForm({ user, selectedEntity, customer = null, onClose, onCreated, onSaved }) {
+  // Daftar sales untuk "Sales penanggung jawab" (akun non-sales) & tim co-sales — sumber sama dengan CRM (ikut PT).
+  const [salesUsers, setSalesUsers] = useState([]);
+  useEffect(() => {
+    let live = true;
+    const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
+    axios.get(`${API}/sales-users`, { params })
+      .then((r) => { if (live) setSalesUsers(Array.isArray(r.data) ? r.data : []); })
+      .catch(() => { /* tidak menghalangi: sales tetap bisa menyimpan pelanggan miliknya */ });
+    return () => { live = false; };
+  }, [selectedEntity]);
   return (
-    <div className="fixed inset-0 z-[140] flex flex-col bg-[#F2F2F7]" data-testid="m-customer-form">
-      <div className="m-subpage-head">
-        <button className="m-subpage-back" onClick={onClose} data-testid="m-customer-form-close"><ArrowLeft size={17} /> Batal</button>
-        <span className="m-subpage-title">Pelanggan Baru</span>
-      </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 pb-28">
-        <div className="m-card space-y-2.5 p-4">
-          <Field label="Nama toko / pelanggan" req><input className="field" value={form.name} onChange={set("name")} placeholder="PT / Toko …" data-testid="m-customer-form-name" /></Field>
-          <Field label="Nama PIC toko" req><input className="field" value={form.pic_name} onChange={set("pic_name")} placeholder="Nama PIC di pihak pelanggan" data-testid="m-customer-form-pic" /></Field>
-          <Field label="No. HP / WhatsApp PIC" req><input className="field" inputMode="tel" value={form.phone} onChange={set("phone")} placeholder="08…" data-testid="m-customer-form-phone" /></Field>
-          <Field label="Email (opsional)"><input className="field" inputMode="email" value={form.email} onChange={set("email")} data-testid="m-customer-form-email" /></Field>
-        </div>
-        <div className="m-card space-y-2.5 p-4">
-          <p className="text-[12px] font-bold">Alamat toko <span className="text-[#C0392B]">*</span></p>
-          <LocationFields testId="m-customer-form-loc" compact showErrors={tried} value={form} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
-          <Field label="Jalan, nomor, patokan" req><input className="field" value={form.address} onChange={set("address")} placeholder="Jl. … No. …, dekat …" data-testid="m-customer-form-address" /></Field>
-        </div>
-        <p className="rounded-xl border border-[#CDE9D6] bg-[#F4FCF6] px-3 py-2 text-[11px] text-[#1A7A3A]" data-testid="m-customer-form-owner">
-          {user?.role === "sales" ? <>Sales penanggung jawab: <b>{user?.name}</b> (akun Anda) — otomatis.</> : <>Sales penanggung jawab diatur di Manajemen Pelanggan (desktop).</>}
-          {" "}Segmen, kebijakan lot & limit kredit bisa dilengkapi nanti.
-        </p>
-        {err && <div className="notice-bar danger text-xs" data-testid="m-customer-form-error">{err}</div>}
-        {tried && !valid && <div className="notice-bar danger text-xs" data-testid="m-customer-form-missing">Lengkapi: {missing.join(", ")}.</div>}
-      </div>
-      <div className="fixed inset-x-0 bottom-0 border-t border-[#E5E5EA] bg-white p-3" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
-        <button className="primary-button flex w-full items-center justify-center gap-2 py-3" disabled={busy} aria-disabled={!valid} onClick={submit} data-testid="m-customer-form-submit">
-          <UserPlus size={16} /> {busy ? "Menyimpan…" : "Simpan pelanggan"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, req, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[11.5px] font-semibold text-[#4A4B53]">{label} {req && <span className="text-[#C0392B]">*</span>}</span>
-      {children}
-    </label>
+    <CustomerFormModal open editTarget={customer} currentUser={user} salesUsers={salesUsers} selectedEntity={selectedEntity}
+      testId="m-customer-form" submitTestId="m-customer-form-submit" onClose={onClose}
+      onSaved={(c, isEdit) => { if (isEdit) onSaved?.(c); else onCreated?.(c); }} />
   );
 }

@@ -4,26 +4,19 @@
  * mis. Admin Sales) langsung MENINDAK di HP: pilih PT sumber → jadikan transaksi
  * antar-PT, atau tolak. Server & aturan sama dengan layar desktop InternalRequestsView.
  */
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ChevronDown, ArrowLeftRight } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
-import KNSelect from "../../../components/KNSelect";
-import KNDatePicker from "../../../components/KNDatePicker";
-import { formatCurrency, formatDate, formatQty, todayWib } from "../../../utils/formatters";
-import { askConfirm, askReason, REASON_MIN_LENGTH } from "../../../services/confirmService";
+import { useEffect, useState } from "react";
+import { Plus, ChevronDown, ArrowLeftRight } from "lucide-react";
+import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
+import { askReason } from "../../../services/confirmService";
 import {
-  PIN_STATUS_CLASS, PIN_STATUS_LABEL, cancelInternalRequest, convertInternalRequest, createInternalRequest,
-  internalRequestSources, listInternalRequests, pinMeta, productAvailability, rejectInternalRequest,
+  PIN_STATUS_CLASS, PIN_STATUS_LABEL, cancelInternalRequest, convertInternalRequest,
+  internalRequestSources, listInternalRequests, pinMeta, rejectInternalRequest,
 } from "../../internal_requests/internalRequestsApi";
-import { useSubpageBack } from "./subpageBack";
+import InternalRequestCreateModal from "../../internal_requests/InternalRequestCreateModal";
 
 const errText = (e, fb) => { const d = e?.response?.data?.detail; return (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || fb; };
 const FILTERS = [["", "Semua"], ["submitted", "Antrean"], ["converted", "Jadi antar-PT"], ["rejected", "Ditolak"], ["cancelled", "Batal"]];
 const fmtDate = (s) => (s ? formatDate(s) : "-");
-// UAT 24 Okt (audit UI tahap 2) — G2-24: label di atas setiap isian (dulu placeholder dipakai sebagai label).
-const FLabel = ({ children, req = false, optional = false }) => (
-  <span className="mb-1 block text-[11.5px] font-semibold text-[#4A4B53]">{children}{req && <span className="text-red-500"> *</span>}{optional && <span className="font-normal text-[#8E8E93]"> (opsional)</span>}</span>
-);
 
 function DecidePanel({ req, onDone }) {
   const [cands, setCands] = useState(null);
@@ -117,75 +110,6 @@ function PinCard({ req, meta, user, open, onToggle, onChanged }) {
   );
 }
 
-function PinCreate({ onBack, onDone }) {
-  const headerBack = useSubpageBack(onBack);   // satu tombol kembali (kepala subhalaman)
-  const [products, setProducts] = useState(null);   // null = memuat; [] = kosong (G2-24: dulu "Memuat barang…" selamanya)
-  const [orders, setOrders] = useState([]);
-  const [lines, setLines] = useState([{ product_id: "", quantity: "", notes: "" }]);
-  const [avail, setAvail] = useState({});
-  const [f, setF] = useState({ reason: "", needed_date: "", notes: "", source_order_id: "" });
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  useEffect(() => {
-    axios.get(`${API}/products`).then((r) => setProducts(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => setProducts([]));
-    axios.get(`${API}/sales-orders`, { params: { limit: 50 } }).then((r) => setOrders(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
-  }, []);
-  const setLine = (i, patch) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
-  const pickProduct = (i, pid) => {
-    setLine(i, { product_id: pid });
-    if (pid && !avail[pid]) productAvailability(pid).then((a) => setAvail((m) => ({ ...m, [pid]: a }))).catch(() => {});
-  };
-  // K-14 (26 Okt) — alasan minimum 5 huruf, sama dengan server (`internal_request_service`: < 5 → ditolak).
-  const reasonShort = f.reason.trim().length < REASON_MIN_LENGTH;
-  const valid = lines.every((l) => l.product_id && Number(l.quantity) > 0) && !reasonShort;
-  const submit = async () => {
-    setBusy(true); setErr("");
-    try {
-      const doc = await createInternalRequest({ ...f, items: lines.map((l) => ({ product_id: l.product_id, quantity: Number(l.quantity), notes: l.notes })) });
-      onDone(`${doc.number || "Permintaan"} diajukan — menunggu ditindak Admin Sales/manajer.`);
-    } catch (e) { setErr(errText(e, "Gagal mengajukan permintaan.")); } finally { setBusy(false); }
-  };
-  const productOpts = useMemo(() => (products || []).map((p) => ({ value: p.id, label: `${p.sku} — ${p.name}` })), [products]);
-  return (
-    <div className="space-y-2" data-testid="m-pin-create">
-      {!headerBack && <button className="m-subpage-back" onClick={onBack} data-testid="m-pin-create-back"><ArrowLeft size={17} /> Permintaan internal</button>}
-      <div className="m-card space-y-2 p-3">
-        <p className="text-[11.5px] m-muted">Minta barang dari badan usaha lain dalam grup saat stok sendiri kurang. PT sumber dipilih oleh yang menindak.</p>
-        {lines.map((l, i) => {
-          const a = avail[l.product_id];
-          return (
-            <div key={i} className="space-y-1.5 rounded-xl border border-[#EFF0F2] p-2" data-testid={`m-pin-line-${i}`}>
-              <FLabel req>Barang</FLabel>
-              {products === null ? <div className="field text-[#8E8E93]" data-testid={`m-pin-product-loading-${i}`}>Memuat barang…</div>
-                : productOpts.length === 0 ? <div className="field text-[#8E8E93]" data-testid={`m-pin-product-empty-${i}`}>Belum ada barang yang bisa diminta.</div>
-                  : <KNSelect value={l.product_id} onValueChange={(v) => pickProduct(i, v)} options={productOpts} placeholder="— Pilih barang —" aria-label="Barang" data-testid={`m-pin-product-${i}`} />}
-              {a && <p className="text-[10.5px] m-muted" data-testid={`m-pin-avail-${i}`}>Stok sendiri {formatQty(a.own_available)} · PT lain {formatQty(a.other_entities_available)} {a.product?.base_unit || ""}</p>}
-              <FLabel req>Jumlah{a?.product?.base_unit ? ` (${a.product.base_unit})` : ""}</FLabel>
-              <div className="flex gap-2">
-                <input type="number" inputMode="decimal" className="field flex-1" placeholder="0" aria-label="Jumlah" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} data-testid={`m-pin-qty-${i}`} />
-                {lines.length > 1 && <button className="px-2 text-[#C0392B]" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} aria-label="Hapus baris" data-testid={`m-pin-remove-${i}`}><Trash2 size={16} /></button>}
-              </div>
-            </div>
-          );
-        })}
-        <button className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]" onClick={() => setLines((ls) => [...ls, { product_id: "", quantity: "", notes: "" }])} data-testid="m-pin-add-line"><Plus size={13} /> Tambah barang</button>
-        <label className="block"><FLabel req>Alasan permintaan</FLabel>
-          <input className="field" placeholder="mis. stok sendiri kurang untuk pesanan pelanggan" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} data-testid="m-pin-reason" />
-          {f.reason.trim() && reasonShort && <span className="mt-1 block text-[10.5px] text-[#B45309]" data-testid="m-pin-reason-hint">Minimal {REASON_MIN_LENGTH} huruf.</span>}</label>
-        <div><FLabel optional>Untuk pesanan</FLabel>
-          <KNSelect value={f.source_order_id} onValueChange={(v) => setF({ ...f, source_order_id: v })} placeholder="— Tanpa pesanan (stok sendiri) —" aria-label="Untuk pesanan"
-            options={[{ value: "", label: "— Tanpa pesanan (stok sendiri) —" }, ...orders.map((s) => ({ value: s.id, label: `${s.number} · ${s.customer_name || ""}` }))]} data-testid="m-pin-order" /></div>
-        <div><FLabel optional>Dibutuhkan tanggal</FLabel>
-          <KNDatePicker value={f.needed_date} onChange={(v) => setF({ ...f, needed_date: v || "" })} min={todayWib()} data-testid="m-pin-date" /></div>
-        <label className="block"><FLabel optional>Catatan</FLabel>
-          <textarea className="field" rows={2} placeholder="Keterangan tambahan" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} data-testid="m-pin-notes" /></label>
-        {err && <div className="notice-bar danger text-xs" data-testid="m-pin-create-error">{err}</div>}
-        <button className="primary-button w-full py-3" disabled={busy || !valid} onClick={submit} data-testid="m-pin-submit">{busy ? "Mengirim…" : "Ajukan permintaan"}</button>
-      </div>
-    </div>
-  );
-}
-
 export default function MobileInternalRequests({ user, focusId }) {
   const [rows, setRows] = useState(null);
   const [meta, setMeta] = useState(null);
@@ -197,10 +121,15 @@ export default function MobileInternalRequests({ user, focusId }) {
   useEffect(() => { pinMeta().then(setMeta).catch(() => setMeta({})); }, []);
   useEffect(() => { setRows(null); load(); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
   const changed = (text, bad) => { setMsg({ ok: !bad, text }); load(); };
-  if (create) return <PinCreate onBack={() => setCreate(false)} onDone={(t) => { setCreate(false); changed(t); }} />;
   return (
     <div className="space-y-2" data-testid="m-internal-requests">
       <button className="primary-button flex w-full items-center justify-center gap-2 py-3" onClick={() => setCreate(true)} data-testid="m-pin-new"><Plus size={16} /> Ajukan permintaan internal</button>
+      {/* Fase 3 · P7 (D-27) — form HP sendiri diganti form DESKTOP `InternalRequestCreateModal` (FormModal → layar penuh
+          1 kolom di HP; isian lengkap: barang + jumlah + catatan per baris, alasan ≥5, tanggal butuh, pesanan, catatan). */}
+      {create && (
+        <InternalRequestCreateModal open onClose={() => setCreate(false)}
+          onCreated={(doc) => { setCreate(false); changed(`${doc?.number || "Permintaan"} diajukan — menunggu ditindak Admin Sales/manajer.`); }} />
+      )}
       <div className="no-scrollbar flex gap-2 overflow-x-auto py-1">
         {FILTERS.map(([id, label]) => (
           <button key={id || "all"} onClick={() => setStatus(id)} data-testid={`m-pin-filter-${id || "all"}`}

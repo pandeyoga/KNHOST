@@ -5,6 +5,9 @@ import { roleLabel } from "../../../config/roles";
 import { isSirenMuted, setSirenMuted, playSiren } from "../../../utils/sirenAlarm";
 import { MobilePushBanner } from "./MobilePwa";
 import KNSelect from "../../../components/KNSelect";
+// Fase 3 · P7 (L-09) — lembar ini kini lonceng SEMUA aplikasi HP: teks tahap mentah dirapikan, kartu identik digabung
+// (G5-57) dan lencana "Putuskan di HP" (G5-09) — dulu hanya di panel Notifikasi aplikasi HP Ops.
+import { NoBreakNumbers, groupNotifications, humanizeNotif } from "../../mobile/notifText";
 
 const SEV_STYLE = {
   critical: { bg: "bg-[#FFECEB]", fg: "text-[#C0261B]", Icon: AlertTriangle },
@@ -18,7 +21,7 @@ function AddrTag({ n }) {
   return <span className="rounded-full bg-[#F2F3F5] px-1.5 py-[1px] text-[9.5px] font-bold text-[#6B6B73]" data-testid={`mobile-notif-addr-all-${n.id}`}>Umum</span>;
 }
 
-function NotifRow({ n, onOpen, onMarkRead, canApprove, approving, onApprove }) {
+function NotifRow({ n, ids = [n.id], decide = false, onOpen, onMarkRead, canApprove, approving, onApprove }) {
   const sev = SEV_STYLE[n.severity] || SEV_STYLE.info;
   const Icon = n.type === "escalation" ? ArrowUpCircle : sev.Icon;
   return (
@@ -26,14 +29,16 @@ function NotifRow({ n, onOpen, onMarkRead, canApprove, approving, onApprove }) {
       className={`flex gap-2.5 border-b border-[#F2F3F5] py-3 last:border-b-0 ${n.read ? "opacity-75" : ""}`}>
       <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${sev.bg} ${sev.fg}`}><Icon size={15} /></span>
       <div className="min-w-0 flex-1">
-        <p className={`text-[12.5px] leading-snug ${n.read ? "font-medium text-[#3C3C43]" : "font-bold text-[#1C1C1E]"}`}>
-          {n.title || typeLabel(n.type)}
+        <p className={`break-words text-[12.5px] leading-snug ${n.read ? "font-medium text-[#3C3C43]" : "font-bold text-[#1C1C1E]"}`}>
+          {n.title ? <NoBreakNumbers text={humanizeNotif(n.title)} /> : typeLabel(n.type)}
+          {ids.length > 1 && <span className="ml-1 text-[10px] font-semibold text-[#6E6E73]" data-testid={`mobile-notif-dup-${n.id}`}>×{ids.length}</span>}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-1">
           {n.type === "escalation" && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FFECEB] px-1.5 py-[1px] text-[9.5px] font-bold text-[#C0261B]" data-testid={`mobile-notif-escalation-${n.id}`}><ArrowUpCircle size={9} /> Eskalasi</span>}
           <AddrTag n={n} />
+          {decide && <span className="status-pill pill-warning shrink-0 text-[10px] !normal-case" data-testid={`mo-notif-decide-${n.id}`}>Putuskan di HP</span>}
         </div>
-        {n.body && <p className="mt-1 text-[11.5px] leading-snug text-[#6B6B73]">{n.body}</p>}
+        {n.body && <p className="mt-1 break-words text-[11.5px] leading-snug text-[#6B6B73]"><NoBreakNumbers text={humanizeNotif(n.body)} /></p>}
         <div className="mt-1 flex items-center justify-between gap-2">
           <p className="text-[10px] text-[#AEAEB2]" data-testid={`mobile-notif-meta-${n.id}`}>{timeAgo(n.created_at)} · {typeLabel(n.type)}</p>
           {canApprove && (
@@ -48,7 +53,7 @@ function NotifRow({ n, onOpen, onMarkRead, canApprove, approving, onApprove }) {
       <div className="flex shrink-0 flex-col items-center justify-between gap-2">
         {!n.read ? (
           <button type="button" aria-label="Tandai dibaca" data-testid={`mobile-notif-read-${n.id}`}
-            onClick={(e) => { e.stopPropagation(); onMarkRead?.(n.id); }}
+            onClick={(e) => { e.stopPropagation(); ids.forEach((id) => onMarkRead?.(id)); }}
             className="grid h-7 w-7 place-items-center rounded-full border border-[#CBDFFF] bg-[#F2F7FF] text-[#0058CC]"><Check size={13} /></button>
         ) : <span className="h-7 w-7" />}
         {n.link && <ChevronRight size={15} className="text-[#C7C7CC]" />}
@@ -57,8 +62,12 @@ function NotifRow({ n, onOpen, onMarkRead, canApprove, approving, onApprove }) {
   );
 }
 
-/** Lembar notifikasi HP — fitur setara lonceng desktop (filter, alamat, setujui, muat lebih banyak). */
-export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll, onOpen, onMarkRead, total = 0, hasMore = false, onLoadMore, onApprove, currentUserRole = "" }) {
+/**
+ * Lembar notifikasi HP — fitur setara lonceng desktop (filter, alamat, setujui, muat lebih banyak).
+ * `decideOf(n)` (opsional) → id dokumen yang bisa diputus di aplikasi HP ini → lencana "Putuskan di HP".
+ * `onOpen(n)` menerima kartu pertama dari kelompok kartu identik; kartu kembarnya ikut ditandai dibaca.
+ */
+export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll, onOpen, onMarkRead, total = 0, hasMore = false, onLoadMore, onApprove, currentUserRole = "", decideOf = null }) {
   const [sev, setSev] = useState("");
   const [type, setType] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -72,6 +81,7 @@ export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll
     return Object.entries(c).map(([k, v]) => ({ value: k, label: `${typeLabel(k)} (${v})` })).sort((a, b) => a.label.localeCompare(b.label));
   }, [notifications]);
   const filtered = useMemo(() => notifications.filter((n) => (!sev || (n.severity || "info") === sev) && (!type || n.type === type) && (!unreadOnly || !n.read)), [notifications, sev, type, unreadOnly]);
+  const groups = useMemo(() => groupNotifications(filtered), [filtered]);
   const unread = unreadCount ?? notifications.filter((n) => !n.read).length;
   const hasFilter = Boolean(sev || type || unreadOnly);
 
@@ -119,8 +129,9 @@ export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll
           <MobilePushBanner />
           {notifications.length === 0 && <div className="py-12 text-center text-[13px] m-muted" data-testid="mobile-notif-empty">Tidak ada notifikasi. Sistem dalam kondisi baik.</div>}
           {notifications.length > 0 && filtered.length === 0 && <div className="py-10 text-center text-[12.5px] m-muted" data-testid="mobile-notif-empty-filter">Tidak ada notifikasi yang cocok dengan filter ini.</div>}
-          {filtered.map((n) => (
-            <NotifRow key={n.id} n={n} onOpen={onOpen} onMarkRead={onMarkRead} onApprove={approve} approving={approving === n.id}
+          {groups.map(({ n, ids }) => (
+            <NotifRow key={n.id} n={n} ids={ids} decide={!!decideOf?.(n)} onMarkRead={onMarkRead} onApprove={approve} approving={approving === n.id}
+              onOpen={(x) => { if (!x.read) ids.slice(1).forEach((id) => onMarkRead?.(id)); onOpen?.(x); }}
               canApprove={["po_approve", "vendor_bill_approve"].includes(n.action_type) && !n.read && !!onApprove && canActOn(currentUserRole, n.action_role || "manager", n.action_type)} />
           ))}
           {hasMore && (

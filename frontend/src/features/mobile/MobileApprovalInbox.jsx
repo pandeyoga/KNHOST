@@ -3,7 +3,7 @@ import { Check, X, Tag, Package } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText, isForbiddenError } from "../../utils/apiError";
-import { askReason } from "../../services/confirmService";
+import { approvePrice, approveSpecialOrder, decisionErrorText, rejectPrice, rejectSpecialOrder } from "../../services/approvalDecisions";
 import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 
 const asList = (d) => (Array.isArray(d) ? d : d?.items || []);
@@ -36,63 +36,36 @@ export function usePendingApprovals({ canPrice = true, canSpecial = true } = {})
   return { prices, specials, errors, reload, loading: prices === null || specials === null };
 }
 
-/** Inbox persetujuan HP (manajer/finance): harga khusus & pesanan khusus — setujui/tolak langsung dari HP. */
-export default function MobileApprovalInbox({ canPrice = true, canSpecial = true, focusId = "" }) {
-  const { prices, specials, errors, reload, loading } = usePendingApprovals({ canPrice, canSpecial });
+/**
+ * Inbox persetujuan HP (manajer/finance): harga khusus & pesanan khusus — setujui/tolak langsung dari HP.
+ * Fase 3 · P7 (D-07/D-27) — dialog keputusan = `services/approvalDecisions` (SAMA dengan Pesanan Khusus desktop &
+ * Matriks divisi): setuju dengan catatan opsional (bawaan "Disetujui dari HP"), tolak dengan alasan ≥ 5 huruf (K-14),
+ * pesan hasil berantai (DSR/SMP yang lahir otomatis). `pending` (opsional) = hasil `usePendingApprovals` milik
+ * aplikasi induk supaya daftar tidak dimuat dua kali (lonceng & antrean lintas tahap memakai daftar yang sama).
+ */
+export default function MobileApprovalInbox({ canPrice = true, canSpecial = true, focusId = "", pending = null }) {
+  const own = usePendingApprovals(pending ? { canPrice: false, canSpecial: false } : { canPrice, canSpecial });
+  const { prices, specials, errors, reload, loading } = pending || own;
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   useEffect(() => {
     if (!focusId || loading) return;
     document.querySelector(`[data-focus-id="${focusId}"]`)?.scrollIntoView?.({ block: "center" });
   }, [focusId, loading]);
-  // Dialog dibatalkan → kembalikan null tanpa pesan galat.
-  const act = async (key, fn, okText) => {
+  // Dialog dibatalkan → helper mengembalikan null: tanpa pesan galat, tanpa muat ulang.
+  const act = async (key, decide, doc) => {
     setBusy(key); setMsg(null);
-    try { const done = await fn(); if (done === false) return; setMsg({ ok: true, text: okText }); reload(); }
-    catch (e) { setMsg({ ok: false, text: apiErrorText(e, "Keputusan gagal disimpan.") }); }
+    try {
+      const res = await decide(doc, { defaultNote: "Disetujui dari HP" });
+      if (res === null) return;
+      setMsg({ ok: true, text: res.message }); reload();
+    } catch (e) { setMsg({ ok: false, text: decisionErrorText(e) }); }
     finally { setBusy(""); }
   };
-  // G5-56 — dialog HP setara papan desktop: judul bernomor/berpelanggan, nilai Rp, catatan opsional, tombol berkata kerja.
-  const approvePrice = (p) => act(p.id, async () => {
-    const note = await askReason({
-      title: `Setujui harga khusus · ${p.customer_name || ""}`,
-      message: `${p.product_name || ""} · ${formatCurrency(p.requested_price)}/${p.unit || "satuan"} (pembanding ${formatCurrency(p.normal_price)}/${p.unit || "satuan"})`,
-      confirmLabel: "Setujui", reasonLabel: "Catatan (opsional)", reasonRequired: false,
-    });
-    if (note === null) return false;
-    await axios.post(`${API}/price-approvals/${p.id}/approve`, { decision_notes: note.trim() || "Disetujui dari HP" });
-    return true;
-  }, "Harga khusus disetujui.");
-  const rejectPrice = (p) => act(p.id, async () => {
-    const reason = await askReason({
-      title: `Tolak harga khusus · ${p.customer_name || ""}`,
-      message: `${p.product_name || ""} · ${formatCurrency(p.requested_price)}/${p.unit || "satuan"}`,
-      confirmLabel: "Tolak", danger: true, reasonLabel: "Alasan penolakan",
-    });
-    if (reason === null) return false;
-    await axios.post(`${API}/price-approvals/${p.id}/reject`, { decision_notes: reason });
-    return true;
-  }, "Harga khusus ditolak.");
-  const approveSpecial = (s) => act(s.id, async () => {
-    const note = await askReason({
-      title: `Setujui ${s.number || "pesanan khusus"} · ${s.customer_name || ""}`,
-      message: [s.custom_item?.description, Number(s.total_amount) > 0 ? formatCurrency(s.total_amount) : ""].filter(Boolean).join(" · "),
-      confirmLabel: "Setujui", reasonLabel: "Catatan (opsional)", reasonRequired: false,
-    });
-    if (note === null) return false;
-    await axios.post(`${API}/special-orders/${s.id}/approve`, { notes: note.trim() || "Disetujui dari HP" });
-    return true;
-  }, "Pesanan khusus disetujui.");
-  const rejectSpecial = (s) => act(s.id, async () => {
-    const reason = await askReason({
-      title: `Tolak ${s.number || "pesanan khusus"} · ${s.customer_name || ""}`,
-      message: [s.custom_item?.description, Number(s.total_amount) > 0 ? formatCurrency(s.total_amount) : ""].filter(Boolean).join(" · "),
-      confirmLabel: "Tolak", danger: true, reasonLabel: "Alasan penolakan",
-    });
-    if (reason === null) return false;
-    await axios.post(`${API}/special-orders/${s.id}/reject`, { reason });
-    return true;
-  }, "Pesanan khusus ditolak.");
+  const approvePriceHp = (p) => act(p.id, approvePrice, p);
+  const rejectPriceHp = (p) => act(p.id, rejectPrice, p);
+  const approveSpecial = (s) => act(s.id, approveSpecialOrder, s);
+  const rejectSpecial = (s) => act(s.id, rejectSpecialOrder, s);
   const errList = [errors.price, errors.special].filter(Boolean);
   const what = [canPrice && "harga khusus", canSpecial && "pesanan khusus"].filter(Boolean).join(" / ");
   return (
@@ -108,8 +81,8 @@ export default function MobileApprovalInbox({ canPrice = true, canSpecial = true
           <p className="text-[12px] tabular-nums"><s className="text-[#6E6E73]">{formatCurrency(p.normal_price)}</s> → <b>{formatCurrency(p.requested_price)}</b>{p.unit ? `/${p.unit}` : ""} {(() => { const d = discountInfo(p.discount_percent ?? (p.normal_price ? ((p.normal_price - p.requested_price) / p.normal_price) * 100 : 0)); return d ? <span className="text-[#B25E00]">({d.long})</span> : null; })()}{p.scope === "standing" ? " · berlaku terus" : " · pesanan ini"}</p>
           {p.reason && <p className="text-[11px] text-[#6E6E73] mt-0.5">{p.reason}</p>}
           <div className="mt-2 flex gap-2">
-            <button className="primary-button flex-1 py-2 flex items-center justify-center gap-1" disabled={busy === p.id} onClick={() => approvePrice(p)} data-testid={`mo-price-approve-${p.id}`}><Check size={14} /> Setujui</button>
-            <button className="secondary-button flex-1 py-2 flex items-center justify-center gap-1" disabled={busy === p.id} onClick={() => rejectPrice(p)} data-testid={`mo-price-reject-${p.id}`}><X size={14} /> Tolak</button>
+            <button className="primary-button flex-1 py-2 flex items-center justify-center gap-1" disabled={busy === p.id} onClick={() => approvePriceHp(p)} data-testid={`mo-price-approve-${p.id}`}><Check size={14} /> Setujui</button>
+            <button className="secondary-button flex-1 py-2 flex items-center justify-center gap-1" disabled={busy === p.id} onClick={() => rejectPriceHp(p)} data-testid={`mo-price-reject-${p.id}`}><X size={14} /> Tolak</button>
           </div>
         </div>
       ))}
