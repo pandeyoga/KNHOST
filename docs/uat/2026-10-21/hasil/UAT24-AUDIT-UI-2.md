@@ -141,14 +141,14 @@ yatim di DB uji `kn_test_trial` dihapus (dicadangkan); data antar-PT DB uji diis
 `tests/test_interco_g6.py` **mengosongkan seluruh koleksi antar-PT** di DB tempat ia dijalankan — jangan pernah
 dijalankan ke DB UAT. Data "test" UAT (rantai SORD-261023-0003) **dibiarkan** atas keputusan pemilik.
 
-**Fase 3 (disetujui, belum dikerjakan):** penggabungan layar duplikat (P16-K1 + D-01…D-29; layar lama menjadi
-tautan/alias, form input HP tetap lengkap) dan tata letak L-04 → L-03 → L-01 & L-05 → L-09 → sisanya — rencana
-paket kerja: [`audit-ui-2/rencana-fase3.md`](audit-ui-2/rencana-fase3.md).
+**Fase 3 (disetujui 26 Okt, dikerjakan `8bbd1fe`…`e7d21bc`):** penggabungan layar duplikat (P16-K1 + D-01…D-29;
+layar lama menjadi tautan/alias, form input HP tetap lengkap) dan tata letak L-04 → L-03 → L-01 & L-05 → L-09 —
+laporan: [UAT24-AUDIT-UI-2-FASE3.md](UAT24-AUDIT-UI-2-FASE3.md) (rencana:
+[`audit-ui-2/rencana-fase3.md`](audit-ui-2/rencana-fase3.md)).
 
 ## Belum dikerjakan
-* **Fase 3** (disetujui pemilik 26 Okt): penggabungan 25 layar duplikat (G) + P16-K1, layar lama menjadi tautan/alias,
-  form input HP tetap lengkap; tata letak L-04 → L-03 → L-01 & L-05 → L-09 → sisanya. Papan PO Custom & Barang
-  ditahan QC di Beranda menjadi tautan; Labdip/Handfeel/Proofing satu layar Sample R&D (chip jenis, galeri tetap).
+* **Sisa fase 3** (form HP PR MD/Kwitansi/Amandemen belum setara desktop, pop-up & tata letak di luar daftar paket,
+  antrean persetujuan backend): lihat [UAT24-AUDIT-UI-2-FASE3.md](UAT24-AUDIT-UI-2-FASE3.md) › Belum dikerjakan.
 * **Sebagian/backend lanjutan:** G1-33 eliminasi basi (perlu analisis); nama pengaju di matriks persetujuan, nomor
   dokumen di Jejak Audit & Cek Peran, kode wilayah di wizard entitas, host QR dari URL publik, filter
   `has_backorder` (rincian di `perbaikan/COORD.md` & laporan grup); tautan notifikasi nota kredit/desain ke dokumen
