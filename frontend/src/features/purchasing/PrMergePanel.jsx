@@ -4,10 +4,10 @@
  *  · MergeModal — pratinjau baris hasil lebur (SKU kembar = satu baris, alokasi per PR) lalu buat PO.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Layers, Merge, X } from "lucide-react";
+import { Layers, Merge } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
-import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
 import { isGroupEntityPartner } from "../../components/GroupEntityBadge";
 
@@ -84,44 +84,34 @@ export function MergeModal({ prs, suppliers, presetSupplier = "", presetSupplier
     } catch (e) { setErr(e?.response?.data?.detail || "Gagal membuat PO gabungan."); }
     finally { setBusy(false); }
   };
+  // Fase 4 · R3 (L-03) — `.modal-card` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, latar tidak
+  // membuang pilihan supplier, galat di kaki pop-up). Testid `pr-merge-modal/-supplier/-preview/-submit` tetap.
   return (
-    <div className="modal-overlay" data-testid="pr-merge-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="modal-card max-w-2xl" role="dialog" aria-modal="true">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <div>
-            <p className="modal-title">Gabung {prs.length} PR menjadi 1 PO</p>
-            <p className="text-[11.5px] text-[#6B6B73]">{prs.map((p) => p.number).join(" · ")} · tujuan {sites.join(" / ")}</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Tutup"><X size={16} /></button>
-        </div>
-        {sites.length > 1 && <p className="mb-2 rounded bg-[#FDECEC] px-2 py-1 text-[11px] text-[#9B1C1C]" data-testid="pr-merge-site-warn">PR dikirim ke lokasi berbeda — satu PO hanya untuk satu lokasi; server akan menolak.</p>}
-        <label className="mb-2 block">
-          <span className="field-label">Supplier *</span>
-          <KNSelect data-testid="pr-merge-supplier" className="field" value={supplierId} searchable onValueChange={setSupplierId}
-            options={supplierOptions} placeholder="Pilih supplier" />
-        </label>
-        <div className="max-h-[280px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
-          <table className="data-table text-[11.5px]" data-testid="pr-merge-preview">
-            <thead><tr><th>Barang</th><th className="text-right">Qty PO</th><th>Dari PR</th></tr></thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.product_id} data-testid={`pr-merge-row-${r.product_id}`}>
-                  <td><span className="font-mono">{r.sku}</span> {r.name}{r.unitMismatch && <span className="ml-1 text-[#A8221A]">· satuan beda</span>}</td>
-                  <td className="text-right tabular-nums">{formatQty(r.qty)} {r.unit}</td>
-                  <td className="text-[10.5px] text-[#6B6B73]">{r.from.join(", ")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-1 text-[10.5px] text-[#6B6B73]">SKU yang sama dari beberapa PR dilebur jadi satu baris PO; tiap PR mencatat realisasi sebesar bagiannya.</p>
-        <div className="mt-2"><ErrorNotice message={err} testId="pr-merge-error" /></div>
-        <div className="mt-3 flex justify-end gap-2">
-          <button type="button" className="secondary-button" onClick={onClose}>Batal</button>
-          <button type="button" className="primary-button" data-testid="pr-merge-submit" disabled={busy || !supplierId || rows.some((r) => r.unitMismatch)}
-            onClick={submit}><Merge size={13} /> Buat 1 PO</button>
-        </div>
+    <FormModal open onClose={onClose} size="md" icon={Merge} testId="pr-merge-modal"
+      title={`Gabung ${prs.length} PR menjadi 1 PO`} subtitle={`${prs.map((p) => p.number).join(" · ")} · tujuan ${sites.join(" / ")}`}
+      onSubmit={submit} busy={busy} error={err} submitTestId="pr-merge-submit" submitLabel="Buat 1 PO"
+      submitDisabled={!supplierId || rows.some((r) => r.unitMismatch)}>
+      {sites.length > 1 && <p className="mb-2 rounded bg-[#FDECEC] px-2 py-1 text-[11px] text-[#9B1C1C]" data-testid="pr-merge-site-warn">PR dikirim ke lokasi berbeda — satu PO hanya untuk satu lokasi; server akan menolak.</p>}
+      <label className="mb-2 block">
+        <span className="field-label">Supplier *</span>
+        <KNSelect data-testid="pr-merge-supplier" className="field" value={supplierId} searchable onValueChange={setSupplierId}
+          options={supplierOptions} placeholder="Pilih supplier" />
+      </label>
+      <div className="max-h-[280px] overflow-auto rounded-lg border border-[#EFF0F2]">
+        <table className="data-table text-[11.5px]" data-testid="pr-merge-preview">
+          <thead><tr><th>Barang</th><th className="text-right">Qty PO</th><th>Dari PR</th></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.product_id} data-testid={`pr-merge-row-${r.product_id}`}>
+                <td><span className="font-mono">{r.sku}</span> {r.name}{r.unitMismatch && <span className="ml-1 text-[#A8221A]">· satuan beda</span>}</td>
+                <td className="text-right tabular-nums">{formatQty(r.qty)} {r.unit}</td>
+                <td className="text-[10.5px] text-[#6B6B73]">{r.from.join(", ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+      <p className="mt-1 text-[10.5px] text-[#6B6B73]">SKU yang sama dari beberapa PR dilebur jadi satu baris PO; tiap PR mencatat realisasi sebesar bagiannya.</p>
+    </FormModal>
   );
 }

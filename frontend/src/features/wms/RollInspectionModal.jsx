@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { X, Ruler, CheckCircle2, RefreshCw } from "lucide-react";
+import { Ruler, CheckCircle2, RefreshCw } from "lucide-react";
 import { formatQty } from "../../utils/formatters";
 import DecimalInput from "../../components/DecimalInput";
 import RollGradePanel from "./RollGradePanel";
 import RollHoldControl from "./inventory/RollHoldControl";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
+import ErrorNotice from "../../components/ErrorNotice";
 
 /**
  * RollInspectionModal (Fase 6.2 — P1) — Inspeksi 4-Point per roll.
  * Catat poin defect (severity 1..4) + GSM/lebar aktual → set Grade roll (A/B/C).
  * Skor = Σ(point_value × count); grade dari ambang configurable (qc.grade_thresholds).
+ *
+ * Fase 4 · R3 (L-03) — `.modal-card` buatan sendiri → FormModal (tanpa kaki: tiap roll punya tombol simpannya).
+ * Layar penuh di HP; Esc berlapis (panel Grade / dialog Tahan di atasnya menutup dirinya dulu); klik latar tidak
+ * membuang isian. Testid `roll-inspection-modal`, `roll-inspect-thresholds`, `roll-*` per roll tetap.
  */
 const POINT_LEVELS = [
   { pv: 1, label: "1 poin (kecil <3\")" },
@@ -120,31 +126,24 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
     : (g === "A2" || g === "B") ? "pill-warning" : g === "BS" ? "pill-danger" : "pill-muted";
 
   return (
-    <div className="modal-overlay" data-testid="roll-inspection-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 720, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <Ruler size={16} className="text-[#0058CC]" />
-            <div>
-              <h2 className="text-[14px] font-bold">Inspeksi 4-Point per Roll</h2>
-              <p className="text-[10.5px] text-[#6B6B73]" data-testid="roll-inspect-thresholds">
-                {taskLabel} · Grade (D-01): ≤{thresholds.a_max}=A, ≤{thresholds.a1_max}=A1,
-                ≤{thresholds.a2_max}=A2, ≤{thresholds.b_max}=B, &gt;{thresholds.b_max}=BS
-              </p>
-            </div>
-          </div>
-          <button data-testid="roll-inspect-close" onClick={onClose} className="icon-button"><X size={16} /></button>
-        </div>
-
-        <div className="p-4 space-y-2">
-          {error && <div className="notice-bar danger"><span>{error}</span><button onClick={() => setError("")}>×</button></div>}
+    <>
+      <FormModal open onClose={onClose} size="lg" icon={Ruler} testId="roll-inspection-modal"
+        title="Inspeksi 4-Point per Roll"
+        subtitle={(
+          <span data-testid="roll-inspect-thresholds">
+            {taskLabel} · Grade (D-01): ≤{thresholds.a_max}=A, ≤{thresholds.a1_max}=A1,
+            ≤{thresholds.a2_max}=A2, ≤{thresholds.b_max}=B, &gt;{thresholds.b_max}=BS
+          </span>
+        )}>
+        <div className="space-y-2">
+          {error && <ErrorNotice message={error} onDismiss={() => setError("")} testId="roll-inspect-error" />}
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]"><RefreshCw size={18} className="animate-spin mx-auto mb-2" /> Memuat roll...</div>
           ) : rolls.length === 0 ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="roll-inspect-empty">Tidak ada roll untuk tugas ini.</div>
           ) : rolls.map((roll) => (
             <div key={roll.id} data-testid={`roll-card-${roll.id}`} className="rounded-md border border-[#EFF0F2]">
-              <div className="flex items-center justify-between px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                 <div className="min-w-0">
                   <p className="text-[12.5px] font-semibold">{roll.roll_no} · {roll.sku}
                     {roll.grade && <span className={`status-pill ${gradeTone(roll.grade)} ml-2`} data-testid={`roll-grade-${roll.id}`}>Grade {roll.grade}</span>}
@@ -168,12 +167,12 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                 </div>
                 <div className="flex shrink-0 gap-1.5 items-center">
                   <RollHoldControl roll={roll} onChanged={load} size="md" />
-                  <button data-testid={`roll-grade-history-btn-${roll.id}`}
+                  <button type="button" data-testid={`roll-grade-history-btn-${roll.id}`}
                           onClick={() => setGradePanelRoll(roll)}
                           className="secondary-button text-[11px]" title="Riwayat & override grade (PS-09)">
                     Grade
                   </button>
-                  <button data-testid={`roll-inspect-btn-${roll.id}`} onClick={() => (openRoll === roll.id ? setOpenRoll(null) : openForm(roll))}
+                  <button type="button" data-testid={`roll-inspect-btn-${roll.id}`} onClick={() => (openRoll === roll.id ? setOpenRoll(null) : openForm(roll))}
                           className="secondary-button text-[11px]">{roll.inspected ? "Ubah" : "Inspeksi"}</button>
                 </div>
               </div>
@@ -191,7 +190,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                       </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="grid grid-cols-1 gap-2 mt-2 sm:grid-cols-3">
                     <div><label className="block text-[10px] text-[#6B6B73] mb-0.5">GSM aktual</label>
                       <DecimalInput data-testid={`roll-gsm-${roll.id}`} value={gsm} onChange={setGsm} min={0}
                         placeholder={String(roll.gsm_standard ?? "gsm")} /></div>
@@ -210,7 +209,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                         {(lotSettings?.enforcement_mode === "block") ? "(wajib — mode blokir)" : "(disarankan — mode peringatan)"}
                       </span>
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <div><label className="block text-[10px] text-[#6B6B73] mb-0.5">Lot supplier</label>
                         <input data-testid={`roll-supplier-lot-${roll.id}`} className="field"
                           value={lotDraft.supplier_lot} placeholder="mis. SUP-2024-118"
@@ -232,25 +231,25 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center justify-between mt-2.5 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
                     <span className="text-[12px]">Total Poin: <b className="tabular-nums" data-testid={`roll-points-${roll.id}`}>{points}</b></span>
                     <label className="flex items-center gap-1.5 text-[12px]">Grade
                       <KNSelect data-testid={`roll-grade-input-${roll.id}`} className="field !h-7 !w-auto !py-0 text-[12px]" value={grade} onValueChange={setGrade} aria-label="Grade"
                         options={[{ value: "", label: thresholds.grade_auto ? `saran sistem: ${predictedGrade}` : "Pilih…" }, ...grades.map((g) => ({ value: g.code, label: g.code }))]} />
                     </label>
-                    <button data-testid={`roll-inspect-save-${roll.id}`} disabled={busy} onClick={() => save(roll.id)} className="primary-button text-[11px]">{busy ? "..." : "Simpan & Set Grade"}</button>
+                    <button type="button" data-testid={`roll-inspect-save-${roll.id}`} disabled={busy} onClick={() => save(roll.id)} className="primary-button text-[11px]">{busy ? "..." : "Simpan & Set Grade"}</button>
                   </div>
                 </div>
               )}
             </div>
           ))}
         </div>
-      </div>
+      </FormModal>
       {gradePanelRoll && (
         <RollGradePanel rollId={gradePanelRoll.id} rollNo={gradePanelRoll.roll_no}
           currentUser={currentUser} onClose={() => setGradePanelRoll(null)}
           onChanged={() => { load(); onDone?.(); }} />
       )}
-    </div>
+    </>
   );
 }

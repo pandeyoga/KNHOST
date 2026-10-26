@@ -131,7 +131,7 @@ export default function ScannerTaskPanel({ tasks, products, warehouses, orders, 
         </div>
       </div>
       <div className="section-body">
-        <div className="grid gap-3 lg:grid-cols-[.9fr_1.1fr]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[.9fr_1.1fr]">
           {/* Left: Create tasks */}
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3">
             <h3 className="text-[13px] font-bold mb-2">Buat tugas barang masuk</h3>
@@ -202,7 +202,7 @@ export default function ScannerTaskPanel({ tasks, products, warehouses, orders, 
                 {terminalTask && <p data-testid="scanner-terminal-task-warning" className="mt-1.5 text-[10.5px] font-bold text-[#A8221A]">Tugas terminal: scan baru diblokir.</p>}
               </div>
             )}
-            <div className="mt-2.5 grid gap-2 sm:grid-cols-[150px_1fr]">
+            <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-[150px_1fr]">
               <div data-testid="scanner-scan-type-select" className="flex flex-wrap gap-1">
                 {["sku", "batch", "lot", "roll", "bin"].map((type) => (
                   <button key={type} data-testid={`scanner-scan-type-${type}-button`}

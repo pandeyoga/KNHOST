@@ -10,6 +10,8 @@ import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import GrnDocVariance from "./GrnDocVariance";
 import VendorBillPayments from "./VendorBillPayments";
 import { can } from "../../config/roles";
+import ErrorNotice from "../../components/ErrorNotice";
+import { isZeroMetric } from "../../components/ListPageParts";
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
@@ -36,12 +38,15 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
   const [method, setMethod] = useState("transfer");
   const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
+  const [err, setErr] = useState("");
+  const fail = (m) => { setErr(m); onError?.(m); };
 
   if (!bill) return null;
   const fin = bill.financials || { grand_total: bill.grand_total, outstanding: bill.outstanding, amount_paid: bill.amount_paid, payment_status: bill.payment_status };
 
   async function act(action, body) {
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const urls = {
         submit: `${API}/vendor-bills/${bill.id}/submit`,
@@ -53,13 +58,13 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
       const r = await axios.post(urls[action], body || {});
       onAction?.(action, r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || `Gagal ${action}.`);
+      fail(e.response?.data?.detail || `Gagal ${action}.`);
     } finally { setBusy(false); }
   }
 
   async function doPay() {
     const amt = Number(payAmount || 0);
-    if (amt <= 0) { onError?.("Nominal pembayaran harus > 0."); return; }
+    if (amt <= 0) { fail("Nominal pembayaran harus > 0."); return; }
     await act("pay", { amount: amt, cash_type: cashType, method });
     setShowPay(false); setPayAmount("");
   }
@@ -67,9 +72,12 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
   const exceptions = bill.match_exceptions || [];
 
   return (
-    <div className="modal-overlay" data-testid="vendor-bill-detail-panel"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 880, width: "94vw", maxHeight: "92vh", overflowY: "auto" }}>
+    // Fase 4 · R3 (L-03) — panel ini SUDAH dibungkus DetailModal oleh VendorBillsView, tetapi dulu merakit lagi
+    // `modal-overlay` + `.modal-card` sendiri (dua latar, dua penutup). Kini kartu saja: lapisan, Esc, klik latar &
+    // layar penuh HP milik DetailModal. Testid `vendor-bill-detail-panel` tetap (pada kartu).
+    <div data-testid="vendor-bill-detail-panel"
+      className="mx-auto w-full max-w-[880px] rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <div>
         {/* Header */}
         <div className="flex items-start justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
           <div className="min-w-0">
@@ -84,17 +92,18 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
               {bill.supplier_invoice_no ? ` · Inv: ${bill.supplier_invoice_no}` : ""}
             </p>
           </div>
-          <button data-testid="vb-detail-close" onClick={onClose} className="icon-button"><X size={16} /></button>
+          <button type="button" data-testid="vb-detail-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-3">
+          <ErrorNotice message={err} onDismiss={() => setErr("")} testId="vb-detail-error" />
           <DocumentActionsBar docType="vendor_bill" sourceId={bill.id} entityId={bill.entity_id}
             number={bill.bill_number} label="Vendor Bill" esignable currentUser={currentUser}
             className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
           {/* FASE G-4 — 3-way match bisa ditelusuri: tagihan → PO → Penerimaan Barang */}
           <DocRefsPanel docType="vendor_bill" docId={bill.id} />
           {/* Financial cards */}
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Card label="Total Tagihan" value={formatCurrency(fin.grand_total)} testId="vb-fin-grand" />
             <Card label="Sudah Dibayar" value={formatCurrency(fin.amount_paid)} testId="vb-fin-paid" tone="text-green-700" />
             <Card label="Sisa Hutang" value={formatCurrency(fin.outstanding)} testId="vb-fin-outstanding" tone="text-red-600" />
@@ -123,25 +132,28 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
 
           <GrnDocVariance poId={bill.po_id || ""} mkoId={bill.po_id ? "" : bill.makloon_order_id || ""} stepSeq={bill.step_seq ?? null} testId="vb-grn-variance" />
           {/* Items table */}
-          <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
-            <div className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-              <span>Produk</span><span className="text-right">Pesan</span><span className="text-right">Terima</span>
-              <span className="text-right">Tagih</span><span className="text-right">Harga PO</span><span className="text-right">Harga Bill</span><span className="text-right">Subtotal</span>
-            </div>
-            {(bill.items || []).map((it, i) => (
-              <div key={i} data-testid={`vb-detail-item-${i}`} className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] items-center px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0">
-                <div className="min-w-0"><p className="text-[11.5px] font-semibold truncate">{it.product_name}</p><p className="text-[10px] text-[#9A9BA3]">{it.sku}</p></div>
-                <span className="text-[11px] tabular-nums text-right">{formatQty(it.ordered_qty)}</span>
-                <span className="text-[11px] tabular-nums text-right">{formatQty(it.received_qty)}</span>
-                <span className="text-[11px] tabular-nums text-right font-semibold">{formatQty(it.billed_qty)}</span>
-                <span className="text-[11px] tabular-nums text-right text-[#6B6B73]">{formatCurrency(it.po_price)}</span>
-                <span className={`text-[11px] tabular-nums text-right ${it.match?.price_status === "price_variance" ? "text-amber-600 font-semibold" : ""}`}>{formatCurrency(it.price)}</span>
-                <span className="text-[11px] tabular-nums text-right">{formatCurrency(it.line_total ?? it.subtotal)}</span>
+          {/* Fase 4 · R3 — tabel baris bergulir di dalam kotaknya sendiri di HP (tidak melebarkan pop-up). */}
+          <div className="rounded-md border border-[#EFF0F2] overflow-x-auto">
+            <div className="min-w-[640px]">
+              <div className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+                <span>Produk</span><span className="text-right">Pesan</span><span className="text-right">Terima</span>
+                <span className="text-right">Tagih</span><span className="text-right">Harga PO</span><span className="text-right">Harga Bill</span><span className="text-right">Subtotal</span>
               </div>
-            ))}
-            <div className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] px-2.5 py-1.5 bg-[#FAFBFC] border-t border-[#EFF0F2]">
-              <span className="text-[10.5px] font-bold uppercase text-[#6B6B73] col-span-6 text-right pr-2">Subtotal · PPN {bill.ppn_rate || 0}% · Grand Total</span>
-              <span className="text-[11.5px] font-bold tabular-nums text-right">{formatCurrency(bill.grand_total)}</span>
+              {(bill.items || []).map((it, i) => (
+                <div key={i} data-testid={`vb-detail-item-${i}`} className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] items-center px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0">
+                  <div className="min-w-0"><p className="text-[11.5px] font-semibold truncate">{it.product_name}</p><p className="text-[10px] text-[#9A9BA3]">{it.sku}</p></div>
+                  <span className="text-[11px] tabular-nums text-right">{formatQty(it.ordered_qty)}</span>
+                  <span className="text-[11px] tabular-nums text-right">{formatQty(it.received_qty)}</span>
+                  <span className="text-[11px] tabular-nums text-right font-semibold">{formatQty(it.billed_qty)}</span>
+                  <span className="text-[11px] tabular-nums text-right text-[#6B6B73]">{formatCurrency(it.po_price)}</span>
+                  <span className={`text-[11px] tabular-nums text-right ${it.match?.price_status === "price_variance" ? "text-amber-600 font-semibold" : ""}`}>{formatCurrency(it.price)}</span>
+                  <span className="text-[11px] tabular-nums text-right">{formatCurrency(it.line_total ?? it.subtotal)}</span>
+                </div>
+              ))}
+              <div className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] px-2.5 py-1.5 bg-[#FAFBFC] border-t border-[#EFF0F2]">
+                <span className="text-[10.5px] font-bold uppercase text-[#6B6B73] col-span-6 text-right pr-2">Subtotal · PPN {bill.ppn_rate || 0}% · Grand Total</span>
+                <span className="text-[11.5px] font-bold tabular-nums text-right">{formatCurrency(bill.grand_total)}</span>
+              </div>
             </div>
           </div>
 
@@ -165,7 +177,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
           {/* Pay panel */}
           {showPay && bill.status === "posted" && (
             <div className="rounded-md border border-[#EFF0F2] p-3 space-y-2.5" data-testid="vb-pay-panel">
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 <Field label="Nominal Bayar">
                   <MoneyInput testId="vb-pay-amount" className="field" value={payAmount} onChange={(v) => setPayAmount(v)} />
                 </Field>
@@ -220,10 +232,11 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
 }
 
 function Card({ label, value, tone, testId }) {
+  const zero = isZeroMetric(value);   // L-08 — "Rp 0" netral (dulu "Sudah Dibayar" Rp 0 hijau, "Sisa Hutang" Rp 0 merah)
   return (
     <div className="rounded-md border border-[#EFF0F2] px-3 py-2" data-testid={testId}>
       <p className="text-[9.5px] font-bold uppercase text-[#6B6B73]">{label}</p>
-      <p className={`text-[14px] font-bold tabular-nums ${tone || "text-[#0F1115]"}`}>{value}</p>
+      <p className={`text-[14px] font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#0F1115]")}`}>{value}</p>
     </div>
   );
 }

@@ -32,6 +32,9 @@ const EMPTY_FILTER = { q: "", source: "", lot_status: "", stage: "", warehouse_i
 export default function LotsView({ user, products = [], warehouses = [], entityId }) {
   const { options, labelOf } = useDomainEnums();
   const canEdit = can(user?.permissions, "inventory", "update");   // Sisir gerbang peran (2026-10-20) — semua tulis /lots*
+  // Fase 4 · R3 (crawl HP) — daftar mitra makloon hanya dipakai pemilih "Mitra pelaksana" di pop-up Rework (butuh
+  // `canEdit`). Dulu `/makloons` selalu dipanggil saat layar dibuka → 403 untuk Admin Sales/peran tanpa `makloon.view`.
+  const canPickMakloon = canEdit && can(user?.permissions, "makloon", "view");
 
   const [lots, setLots] = useState([]);
   const [total, setTotal] = useState(0);
@@ -135,9 +138,10 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
     { key: "created_at", header: "Dibuat", type: "date" },
   ], [labelOf]);
   useEffect(() => {
+    if (!canPickMakloon) { setMakloons([]); return; }
     axios.get(`${API}/makloons`).then((r) => setMakloons(Array.isArray(r.data) ? r.data : r.data?.items || []))
       .catch(() => setMakloons([]));
-  }, []);
+  }, [canPickMakloon]);
 
   const openLot = useCallback(async (id, nextTab) => {
     setActiveId(id); setDetailLoading(true); setSaveMsg("");
@@ -342,7 +346,7 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
       )}
       {modal === "rework" && detail && (
         <ReworkLotModal lot={detail} rolls={detail.rolls || []} processOptions={processOptions}
-          stageOptions={stageOptions} makloons={makloons} onClose={() => setModal("")}
+          stageOptions={stageOptions} makloons={canPickMakloon ? makloons : null} onClose={() => setModal("")}
           onDone={afterAction} />
       )}
       {modal === "status" && detail && (

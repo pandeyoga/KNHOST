@@ -5,6 +5,7 @@ import { X, CheckCircle2, Wallet, Send, XCircle, Ban, Layers } from "lucide-reac
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { isZeroMetric } from "../../components/ListPageParts";
+import ErrorNotice from "../../components/ErrorNotice";
 
 /**
  * LandedCostDetailPanel (Fase 5.4) — detail voucher: biaya, alokasi HPP roll, aksi.
@@ -24,6 +25,9 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
   const [method, setMethod] = useState("transfer");
   const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
+  const [err, setErr] = useState("");
+  const fail = (m) => { setErr(m); onError?.(m); };
 
   if (!voucher) return null;
   const fin = voucher.financials || { total_cost: voucher.total_cost, outstanding: 0, amount_paid: voucher.amount_paid };
@@ -31,7 +35,7 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
   const isApplied = voucher.status === "applied" || voucher.status === "paid";
 
   async function act(action, body) {
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const urls = {
         submit: `${API}/landed-costs/${voucher.id}/submit`,
@@ -43,21 +47,24 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
       const r = await axios.post(urls[action], body || {});
       onAction?.(action, r.data);
     } catch (e) {
-      onError?.(e.response?.data?.detail || `Gagal ${action}.`);
+      fail(e.response?.data?.detail || `Gagal ${action}.`);
     } finally { setBusy(false); }
   }
 
   async function doPay() {
     const amt = Number(payAmount || 0);
-    if (amt <= 0) { onError?.("Nominal pembayaran harus > 0."); return; }
+    if (amt <= 0) { fail("Nominal pembayaran harus > 0."); return; }
     await act("pay", { amount: amt, cash_type: cashType, method });
     setShowPay(false); setPayAmount("");
   }
 
   return (
-    <div className="modal-overlay" data-testid="landed-cost-detail-panel"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 900, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
+    // Fase 4 · R3 (L-03) — panel ini SUDAH dibungkus DetailModal oleh LandedCostView, tetapi dulu merakit lagi
+    // `modal-overlay` + `.modal-card` sendiri (dua latar, dua penutup). Kini kartu saja: lapisan, Esc, klik latar &
+    // layar penuh HP milik DetailModal. Testid `landed-cost-detail-panel` tetap (pada kartu).
+    <div data-testid="landed-cost-detail-panel"
+      className="mx-auto w-full max-w-[900px] rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <div>
         <div className="flex items-start justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -70,12 +77,13 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
               {voucher.supplier_invoice_no ? ` · Inv: ${voucher.supplier_invoice_no}` : ""}
             </p>
           </div>
-          <button data-testid="lc-detail-close" onClick={onClose} className="icon-button"><X size={16} /></button>
+          <button type="button" data-testid="lc-detail-close" onClick={onClose} className="icon-button" aria-label="Tutup"><X size={16} /></button>
         </div>
 
         <div className="p-4 space-y-3">
+          <ErrorNotice message={err} onDismiss={() => setErr("")} testId="lc-detail-error" />
           {/* Financial cards */}
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Card label="Total Biaya" value={formatCurrency(fin.total_cost)} testId="lc-fin-total" />
             <Card label="Sudah Dibayar" value={formatCurrency(fin.amount_paid)} testId="lc-fin-paid" tone="text-green-700" />
             {/* Fase 3 · P4 (L-08) — merah hanya bila ADA sisa; Rp 0 netral (dulu selalu merah, terbaca sebagai tunggakan). */}
@@ -112,20 +120,22 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
             {allocs.length === 0 ? (
               <div className="py-5 text-center text-[11.5px] text-[#9A9BA3]">Belum ada alokasi.</div>
             ) : (
-              <div className="max-h-[260px] overflow-y-auto">
-                <div className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] px-2.5 py-1 bg-white text-[9.5px] font-bold uppercase text-[#9A9BA3] border-b border-[#EFF0F2] sticky top-0">
-                  <span>Roll</span><span>Produk</span><span className="text-right">Panjang</span><span className="text-right">Biaya</span><span className="text-right">+ /unit</span><span className="text-right">HPP Baru</span>
-                </div>
-                {allocs.map((a, i) => (
-                  <div key={a.roll_id || i} data-testid={`lc-detail-alloc-${i}`} className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] items-center px-2.5 py-1 border-b border-[#F2F3F5] last:border-0 text-[10.5px]">
-                    <span className="font-mono">{a.roll_no}</span>
-                    <span className="truncate">{a.product_name || a.sku || "—"}</span>
-                    <span className="tabular-nums text-right">{formatQty(a.length)}</span>
-                    <span className="tabular-nums text-right">{formatCurrency(a.alloc_amount)}</span>
-                    <span className="tabular-nums text-right text-[#0058CC]">+{formatCurrency(a.per_unit)}</span>
-                    <span className="tabular-nums text-right font-semibold">{formatCurrency(a.new_unit_cost)}</span>
+              <div className="max-h-[260px] overflow-auto">
+                <div className="min-w-[600px]">
+                  <div className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] px-2.5 py-1 bg-white text-[9.5px] font-bold uppercase text-[#9A9BA3] border-b border-[#EFF0F2] sticky top-0">
+                    <span>Roll</span><span>Produk</span><span className="text-right">Panjang</span><span className="text-right">Biaya</span><span className="text-right">+ /unit</span><span className="text-right">HPP Baru</span>
                   </div>
-                ))}
+                  {allocs.map((a, i) => (
+                    <div key={a.roll_id || i} data-testid={`lc-detail-alloc-${i}`} className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] items-center px-2.5 py-1 border-b border-[#F2F3F5] last:border-0 text-[10.5px]">
+                      <span className="font-mono">{a.roll_no}</span>
+                      <span className="truncate">{a.product_name || a.sku || "—"}</span>
+                      <span className="tabular-nums text-right">{formatQty(a.length)}</span>
+                      <span className="tabular-nums text-right">{formatCurrency(a.alloc_amount)}</span>
+                      <span className="tabular-nums text-right text-[#0058CC]">+{formatCurrency(a.per_unit)}</span>
+                      <span className="tabular-nums text-right font-semibold">{formatCurrency(a.new_unit_cost)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -148,7 +158,7 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
           {/* Pay panel */}
           {showPay && voucher.status === "applied" && (
             <div className="rounded-md border border-[#EFF0F2] p-3 space-y-2.5" data-testid="lc-pay-panel">
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 <Field label="Nominal Bayar">
                   <MoneyInput testId="lc-pay-amount" className="field" value={payAmount} onChange={(v) => setPayAmount(v)} />
                 </Field>

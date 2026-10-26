@@ -11,7 +11,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
 import { askConfirm } from "../../services/confirmService";
-import { overlayDismiss } from "../../utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import { formatQty } from "../../utils/formatters";
 import { Badge, MiniBar } from "./OutboundScanBadges";
@@ -289,7 +289,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
         ))}
         <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap" data-testid="outbound-task-count">{visibleTasks.length} tugas</span>
       </div>
-      <div className="grid gap-2 md:grid-cols-[1fr_auto_200px]">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_200px]">
         <input data-testid="outbound-search" value={q} onChange={(e) => setQ(e.target.value)}
           className="rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5 text-[12px]" placeholder="Cari no. pesanan, pelanggan, produk, SKU…" />
         <div className="flex gap-1">
@@ -589,30 +589,15 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
         )}
       </div>
 
-      {/* Escalate Modal */}
-      {showEscalateModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" {...overlayDismiss(() => setShowEscalateModal(false))}>
-          <div className="bg-white rounded-xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h3 className="text-[13px] font-bold mb-3">Eskalasi ke Manager</h3>
-            <textarea value={escalationReason} onChange={e => setEscalationReason(e.target.value)}
-              data-testid="outbound-escalate-reason"
-              className="w-full border border-[#E5E5EA] rounded-lg px-3 py-2 text-sm mb-3" rows="3"
-              placeholder="Alasan eskalasi (contoh: Stok fisik hanya 40m, sistem 50m)" />
-            <ErrorNotice message={escalateError} onDismiss={() => setEscalateError("")} testId="outbound-escalate-error" />
-            <div className="flex gap-2">
-              <button onClick={handleEscalate} disabled={submitting}
-                data-testid="outbound-escalate-submit"
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50">
-                Eskalasi
-              </button>
-              <button onClick={() => setShowEscalateModal(false)}
-                className="flex-1 bg-[#F2F2F7] text-[#3C3C43] rounded-lg px-4 py-2 text-[12px] font-semibold">
-                Batal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Escalate Modal — Fase 4 · R3 (L-03): FormModal baku (layar penuh di HP, Esc berlapis, galat di kaki pop-up).
+          Testid `outbound-escalate-reason` / `-submit` tetap. */}
+      <FormModal open={showEscalateModal} onClose={() => setShowEscalateModal(false)} size="sm" icon={AlertTriangle}
+        title="Eskalasi ke Manager" testId="outbound-escalate-modal" onSubmit={handleEscalate} busy={submitting}
+        error={escalateError} submitTestId="outbound-escalate-submit" submitLabel="Eskalasi">
+        <textarea value={escalationReason} onChange={(e) => setEscalationReason(e.target.value)}
+          data-testid="outbound-escalate-reason" className="field w-full" rows="3"
+          placeholder="Alasan eskalasi (contoh: Stok fisik hanya 40m, sistem 50m)" />
+      </FormModal>
     </div>
   );
 }

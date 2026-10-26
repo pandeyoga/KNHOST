@@ -15,6 +15,10 @@ import { fillFromTarget, suggestTargets, targetLabel } from "./grnTargets";
 const EMPTY = { item_code: "", description: "", po_ref: "", qty: "", unit: "", rolls: "", weight_kg: "", weight_basis: "", grade: "", lot: "", target: "", is_non_stock: false, role: "output" };
 const num = (v) => (v === "" || v == null ? null : Number(v));
 
+// Fase 4 · R3 — tombol "Konfirmasi kepala SJ" menonjol saat menunggu konfirmasi (bukan tab; kelas lewat konstanta).
+const BTN_STRONG = "primary-button";
+const BTN_PLAIN = "secondary-button";
+
 // UAT 24 Okt (audit UI tahap 2) — dokumen Dibatalkan/Ditutup/Ditolak dulu tetap menampilkan kepala SJ yang bisa
 // diedit dengan "Simpan kepala SJ" aktif. Kini mode baca.
 const DN_READONLY = ["cancelled", "closed", "rejected", "closing"];
@@ -44,7 +48,7 @@ function DnForm({ grn, run, busy }) {
       <Field label="Plat kendaraan"><input data-testid="grn-dn-plate" disabled={readOnly} className={inputCls} value={dn.vehicle_plate || ""} onChange={set("vehicle_plate")} /></Field>
       <div className="col-span-full flex flex-wrap items-center justify-between gap-2">
         <span className="text-[10.5px] text-[#0F766E]" data-testid="grn-dn-verified">{grn.dn?.verified ? <><CheckCircle2 size={11} className="mr-0.5 inline" />Dikonfirmasi {grn.dn.verified_by}{(grn.dn.corrected_fields || []).length ? ` · dikoreksi: ${grn.dn.corrected_fields.join(", ")}` : ""}</> : ""}</span>
-        {!readOnly && <button data-testid="grn-dn-save" className={pending ? "primary-button" : "secondary-button"} disabled={busy} onClick={save}>{pending ? <><CheckCircle2 size={13} /> Konfirmasi kepala SJ</> : <><Save size={13} /> Simpan kepala SJ</>}</button>}
+        {!readOnly && <button data-testid="grn-dn-save" className={pending ? BTN_STRONG : BTN_PLAIN} disabled={busy} onClick={save}>{pending ? <><CheckCircle2 size={13} /> Konfirmasi kepala SJ</> : <><Save size={13} /> Simpan kepala SJ</>}</button>}
       </div>
     </div>
   );
@@ -117,7 +121,7 @@ export default function GrnReviewPanel({ grn, onChange, canReview }) {
     if (reason) run(() => grnApi.post(grn.id, "reject", { expected_version: grn.version, reason }));
   };
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]" data-testid="grn-review-panel">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]" data-testid="grn-review-panel">
       <GrnPhotoPane grn={grn} />
       <div className="space-y-3">
         <ErrorBox text={err} />

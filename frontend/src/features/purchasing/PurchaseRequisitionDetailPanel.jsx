@@ -8,7 +8,9 @@ import {
 import { formatCurrency, formatDate, formatQty } from "../../utils/formatters";
 import { actorLabel } from "../../utils/actorLabel";
 import { roleLabel } from "../../config/roles";
-import { askConfirm, askReason } from "../../services/confirmService";
+import { askConfirm, askReason, REASON_MIN_LENGTH } from "../../services/confirmService";
+import FormModal from "../../components/FormModal";
+import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
 import SiteSelect from "../../components/SiteSelect";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -32,6 +34,8 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
   const [showReject, setShowReject] = useState(false);   // H3 — tangkap alasan tolak
   const [rejectReason, setRejectReason] = useState("");
   const [qtyLine, setQtyLine] = useState(null);         // AS-02 — baris yang qty-nya diubah
+  // Fase 4 · R3 (L-03) — galat pop-up konversi/tolak tampil DI pop-up, bukan di bilah halaman di belakang lapisan.
+  const [dlgErr, setDlgErr] = useState("");
 
   const nonCatalog = (pr.items || []).some((it) => !it.product_id);
   const canEditQty = ["draft", "pending_approval", "approved"].includes(pr.status);
@@ -70,20 +74,21 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
   }
 
   async function doReject() {
-    if (!rejectReason.trim()) { setErr("Alasan penolakan wajib diisi."); return; }
-    setBusy(true); setErr("");
+    if (rejectReason.trim().length < REASON_MIN_LENGTH) { setDlgErr(`Alasan penolakan minimal ${REASON_MIN_LENGTH} huruf.`); return; }
+    setBusy(true); setDlgErr("");
     try {
       await axios.post(`${API}/purchase-requisitions/${pr.id}/reject`, { notes: rejectReason.trim() });
       onChanged(`${pr.number} ditolak.`);
       setShowReject(false);
       reload(pr.id);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal menolak PR.");
+      setDlgErr(apiErrorText(e, "Gagal menolak PR."));
     } finally { setBusy(false); }
   }
 
-  async function doConvert() {    if (!convSupplier) { setErr("Pilih supplier."); return; }
-    setBusy(true); setErr("");
+  async function doConvert() {
+    if (!convSupplier) { setDlgErr("Pilih supplier."); return; }
+    setBusy(true); setDlgErr("");
     try {
       const res = await axios.post(`${API}/purchase-requisitions/${pr.id}/convert-to-po`, {
         supplier_id: convSupplier, ship_to_site_id: convSite, warehouse_id: convSite ? "" : (pr.warehouse_id || ""),
@@ -93,7 +98,7 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
       setShowConvert(false);
       reload(pr.id);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Konversi gagal.");
+      setDlgErr(apiErrorText(e, "Konversi gagal."));
     } finally { setBusy(false); }
   }
 
@@ -185,12 +190,12 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
             )}
             {pr.status === "pending_approval" && canApprove && (
               <>
-                <button data-testid="pr-action-reject" className="btn-danger" disabled={busy} onClick={() => { setRejectReason(""); setErr(""); setShowReject(true); }}><XCircle size={14} /> Tolak</button>
+                <button data-testid="pr-action-reject" className="btn-danger" disabled={busy} onClick={() => { setRejectReason(""); setDlgErr(""); setShowReject(true); }}><XCircle size={14} /> Tolak</button>
                 <button data-testid="pr-action-approve" className="btn-primary" disabled={busy} onClick={approve}><CheckCircle2 size={14} /> Setujui</button>
               </>
             )}
             {pr.status === "approved" && (
-              <button data-testid="pr-action-convert" className="btn-primary" disabled={busy || nonCatalog} onClick={() => setShowConvert(true)}><ShoppingCart size={14} /> Konversi ke PO</button>
+              <button data-testid="pr-action-convert" className="btn-primary" disabled={busy || nonCatalog} onClick={() => { setDlgErr(""); setShowConvert(true); }}><ShoppingCart size={14} /> Konversi ke PO</button>
             )}
             {["draft", "pending_approval", "approved"].includes(pr.status) && (
               <button data-testid="pr-action-cancel" className="btn-secondary" disabled={busy} onClick={cancel}><Ban size={14} /> Batalkan</button>
@@ -205,40 +210,32 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
           onChanged={onChanged} reload={reload} />
       )}
 
-      {/* Convert modal */}
-      {showConvert && (
-        <div className="modal-overlay" data-testid="pr-convert-modal">
-          <div className="modal-card small">
-            <p className="modal-title">Konversi {pr.number} → Pesanan Pembelian</p>
-            <p className="modal-subtitle">Pilih supplier & gudang untuk membuat PO.</p>
-            {err && <div className="notice-bar danger"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
-            <div className="grid gap-3 mt-2">
-              <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
-                <KNSelect
-                  data-testid="pr-convert-supplier"
-                  className="form-input"
-                  value={convSupplier}
-                  onValueChange={setConvSupplier}
-                  placeholder="— Pilih supplier —"
-                  options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <SiteSelect testId="pr-convert-site" value={convSite} onChange={setConvSite} entityId={pr.entity_id || ""} />
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>
-                <KNDatePicker data-testid="pr-convert-date" value={convDate} onChange={setConvDate} />
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowConvert(false)}>Batal</button>
-              <button data-testid="pr-convert-confirm" className="btn-primary" onClick={doConvert} disabled={busy}>{busy ? "Memproses…" : "Buat PO"}</button>
-            </div>
+      {/* Convert modal — Fase 4 · R3 (L-03): FormModal baku (layar penuh di HP, Esc berlapis, galat DI pop-up). */}
+      <FormModal open={showConvert} onClose={() => setShowConvert(false)} size="sm" icon={ShoppingCart}
+        title={`Konversi ${pr.number} → Pesanan Pembelian`} subtitle="Pilih supplier & gudang untuk membuat PO."
+        testId="pr-convert-modal" onSubmit={doConvert} submitTestId="pr-convert-confirm"
+        submitLabel={busy ? "Memproses…" : "Buat PO"} busy={busy} error={dlgErr}>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
+            <KNSelect
+              data-testid="pr-convert-supplier"
+              className="form-input"
+              value={convSupplier}
+              onValueChange={setConvSupplier}
+              placeholder="— Pilih supplier —"
+              options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <SiteSelect testId="pr-convert-site" value={convSite} onChange={setConvSite} entityId={pr.entity_id || ""} />
+          </div>
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>
+            <KNDatePicker data-testid="pr-convert-date" value={convDate} onChange={setConvDate} />
           </div>
         </div>
-      )}
+      </FormModal>
 
       {/* AS-02 — ubah qty beli baris */}
       {qtyLine && (
@@ -246,26 +243,25 @@ export default function DetailPanel({ pr, canApprove, suppliers, warehouses, onB
           onDone={() => { setQtyLine(null); onChanged("Qty beli diperbarui."); reload(pr.id); }} />
       )}
 
-      {/* H3 — Reject modal (alasan wajib, bukan hardcode) */}
-      {showReject && (
-        <div className="modal-overlay" data-testid="pr-reject-modal">
-          <div className="modal-card small">
-            <p className="modal-title">Tolak {pr.number}</p>
-            <p className="modal-subtitle">Berikan alasan penolakan (akan tersimpan di riwayat & audit).</p>
-            {err && <div className="notice-bar danger"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
-            <div className="grid gap-1.5 mt-2">
-              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan Penolakan *</label>
-              <textarea data-testid="pr-reject-reason" className="form-input" rows="3"
-                value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Mis. nilai di atas anggaran, supplier belum disetujui, dsb." />
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowReject(false)}>Batal</button>
-              <button data-testid="pr-reject-confirm" className="btn-danger" onClick={doReject} disabled={busy || !rejectReason.trim()}>{busy ? "Memproses…" : "Tolak PR"}</button>
-            </div>
+      {/* H3 — Reject modal (alasan wajib, bukan hardcode). Fase 4 · R3 (L-03): FormModal; alasan ≥ 5 huruf (K-14). */}
+      <FormModal open={showReject} onClose={() => setShowReject(false)} size="sm" icon={XCircle}
+        title={`Tolak ${pr.number}`} subtitle="Berikan alasan penolakan (akan tersimpan di riwayat & audit)."
+        testId="pr-reject-modal" onSubmit={doReject} busy={busy} error={dlgErr}
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" disabled={busy} onClick={() => setShowReject(false)}>Batal</button>
+            <button type="submit" data-testid="pr-reject-confirm" className="danger-button"
+              disabled={busy || rejectReason.trim().length < REASON_MIN_LENGTH}>{busy ? "Memproses…" : "Tolak PR"}</button>
           </div>
+        )}>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan Penolakan *</label>
+          <textarea data-testid="pr-reject-reason" className="form-input" rows="3"
+            value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Mis. nilai di atas anggaran, supplier belum disetujui, dsb." />
+          <p className="text-[10.5px] text-[#6B6B73]">Minimal {REASON_MIN_LENGTH} huruf.</p>
         </div>
-      )}
+      </FormModal>
     </div>
   );
 }

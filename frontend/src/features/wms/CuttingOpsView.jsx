@@ -96,7 +96,7 @@ export default function CuttingOpsView() {
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-ops-error" />
         {msg && <p data-testid="cutting-ops-msg" className="rounded-lg bg-[#EAF7EE] px-3 py-2 text-[11.5px] text-[#1B7E3B]">{msg}</p>}
 
-        <div className="grid gap-2 md:grid-cols-[1fr_220px]">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px]">
           <div className="flex items-center gap-2 rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5">
             <Search size={14} className="text-[#8E8E93]" />
             <input data-testid="cutting-ops-search" value={q} onChange={(e) => setQ(e.target.value)} className="w-full bg-transparent text-[12.5px] outline-none"

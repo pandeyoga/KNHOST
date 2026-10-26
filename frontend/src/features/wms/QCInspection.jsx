@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import useDomainEnums from "../../hooks/useDomainEnums";
 import RollInspectionModal from "./RollInspectionModal";
 import { apiText, createQc4point } from "../inspections/inspectionsApi";
@@ -248,119 +249,121 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
         </div>
       </section>
 
-      {/* Inspect modal */}
+      {/* Inspect modal — Fase 4 · R3 (L-03): `.modal-card` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis,
+          latar tidak membuang isian, galat di kaki pop-up). Testid `qc-inspect-modal`, `qc-active-qty`, `qc-*-input`,
+          `qc-submit-decision` tetap. */}
       {active && (
-        <div className="modal-overlay" data-testid="qc-inspect-modal">
-          <div className="modal-card">
-            <p className="modal-title">Inspeksi QC — {active.product_name}</p>
-            <p className="modal-subtitle">
+        <FormModal open onClose={() => setActive(null)} size="md" icon={ShieldCheck} testId="qc-inspect-modal" busy={busy}
+          error={formErr} title={`Inspeksi QC — ${active.product_name || ""}`.trim()}
+          subtitle={(
+            <>
               {active.po_number} · {active.supplier_name || "Tanpa supplier"} ·
               Karantina <b data-testid="qc-active-qty">{activeMixed ? formatTotals(active.quarantine_by_unit || {}) : `${formatQty(active.quarantine_qty)} ${activeUnit}`.trim()}</b>
-            </p>
-            {activeMixed && (
-              <div className="notice-bar warning" data-testid="qc-unit-mixed"><span>Roll karantina bersatuan campuran — keputusan satu angka tidak bisa dipakai. Putuskan per roll lewat 4-Point.</span></div>
-            )}
-            {!activeMixed && activeUnit && activeUnit !== "yard" && (
-              <p className="text-[11px] text-[#6B6B73]" data-testid="qc-unit-note">
-                Qty keputusan dalam satuan stok tugas ini (<b>{activeUnit}</b>). Interval inspeksi 4-Point di mesin tetap dalam yard dan tidak dikonversi.
-              </p>
-            )}
-            {formErr && <div className="notice-bar danger"><span>{formErr}</span><button onClick={() => setFormErr("")}>×</button></div>}
-
-            <div className="grid gap-3 mt-2">
-              <QcPlanPanel taskId={active.id} onCoverage={setCoverage}
-                onOpenRolls={() => { const t = active; setActive(null); setRoll4pTask({ ...t, _fromDecision: true }); }} />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5">
-                  <label className="text-[11px] font-bold uppercase text-[#1E7B34] flex items-center gap-1">
-                    <CheckCircle2 size={13} /> Diterima ({activeUnit || "satuan"})
-                  </label>
-                  <input data-testid="qc-accept-input" type="number" min="0" step="0.01"
-                         className="form-input" value={accept}
-                         onChange={(e) => setAccept(e.target.value)} />
-                </div>
-                <div className="grid gap-1.5">
-                  <label className="text-[11px] font-bold uppercase text-[#B3261E] flex items-center gap-1">
-                    <XCircle size={13} /> Ditolak ({activeUnit || "satuan"})
-                  </label>
-                  <input data-testid="qc-reject-input" type="number" min="0" step="0.01"
-                         className="form-input" value={reject}
-                         onChange={(e) => setReject(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[11.5px] px-1">
-                <span className="text-[#6B6B73]">Total dialokasikan</span>
-                <span className={`tabular-nums font-semibold ${overAllocated ? "text-[#B3261E]" : "text-[#1C1C1E]"}`}>
-                  {formatQty(allocated)} / {formatQty(maxQty)} {activeUnit}
-                </span>
-              </div>
-
-              {acceptNum > 0.01 && (
-                <div className="grid gap-1.5 rounded-md bg-[#F0FCF3] border border-[#BBE9C8] p-2.5">
-                  <label className="text-[11px] font-bold uppercase text-[#1E7B34]">Grade Diterima (hasil inspeksi)</label>
-                  <KNSelect
-                    data-testid="qc-accept-grade-select"
-                    className="form-input"
-                    value={acceptGrade}
-                    onValueChange={setAcceptGrade}
-                    options={gradeOptions}
-                  />
-                  <p className="text-[10.5px] text-[#1E7B34]">
-                    Urutan mutu (D-01): A → A1 → A2 → B → BS. Grade terpilih:{" "}
-                    <b data-testid="qc-accept-grade-label">{labelOf("grade", acceptGrade)}</b>
-                  </p>
-                  <label className="text-[11px] font-bold uppercase text-[#1E7B34] mt-1">Profil Cacat (opsional, pisah koma)</label>
-                  <input data-testid="qc-defects-input" className="form-input" placeholder="mis. belang, noda kuning"
-                         value={defects} onChange={(e) => setDefects(e.target.value)} />
-                </div>
-              )}
-
-              {rejectNum > 0.01 && (
-                <div className="grid gap-1.5 rounded-md bg-[#FFF8EE] border border-[#FFE2B8] p-2.5">
-                  <label className="text-[11px] font-bold uppercase text-[#8C4A00]">Disposisi Barang Ditolak</label>
-                  <KNSelect
-                    data-testid="qc-disposition-select"
-                    className="form-input"
-                    value={disposition}
-                    onValueChange={setDisposition}
-                    options={DISPOSITION_OPTIONS}
-                  />
-                  <p className="text-[10.5px] text-[#8C4A00] flex items-center gap-1">
-                    {disposition === "return"
-                      ? <><RotateCcw size={12} /> Membuat retur beli (Nota Debit) ke {active.supplier_name || "supplier"}.</>
-                      : <><Trash2 size={12} /> Barang dicatat sebagai rusak & tetap di gudang.</>}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan / Alasan</label>
-                <input data-testid="qc-reason-input" className="form-input" placeholder="mis. 5m luntur, sisanya OK"
-                       value={reason} onChange={(e) => setReason(e.target.value)} />
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button data-testid="qc-accept-all" className="btn-secondary btn-sm flex-1"
-                        onClick={() => { setAccept(String(maxQty)); setReject("0"); }}>
-                  Terima Semua
-                </button>
-                <button data-testid="qc-reject-all" className="btn-secondary btn-sm flex-1"
-                        onClick={() => { setReject(String(maxQty)); setAccept("0"); }}>
-                  Tolak Semua
-                </button>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setActive(null)} disabled={busy}>Batal</button>
-              <button data-testid="qc-submit-decision" className="btn-primary"
+            </>
+          )}
+          footer={(
+            <div className="flex items-center justify-end gap-2">
+              <button type="button" className="secondary-button" onClick={() => setActive(null)} disabled={busy}>Batal</button>
+              <button type="button" data-testid="qc-submit-decision" className="primary-button"
                       onClick={submitDecision} disabled={busy || activeMixed || overAllocated || underAllocated || !coverage?.met}>
                 {busy ? "Memproses…" : "Simpan Keputusan QC"}
               </button>
             </div>
+          )}>
+          {activeMixed && (
+            <div className="notice-bar warning" data-testid="qc-unit-mixed"><span>Roll karantina bersatuan campuran — keputusan satu angka tidak bisa dipakai. Putuskan per roll lewat 4-Point.</span></div>
+          )}
+          {!activeMixed && activeUnit && activeUnit !== "yard" && (
+            <p className="text-[11px] text-[#6B6B73]" data-testid="qc-unit-note">
+              Qty keputusan dalam satuan stok tugas ini (<b>{activeUnit}</b>). Interval inspeksi 4-Point di mesin tetap dalam yard dan tidak dikonversi.
+            </p>
+          )}
+          <div className="grid gap-3 mt-2">
+            <QcPlanPanel taskId={active.id} onCoverage={setCoverage}
+              onOpenRolls={() => { const t = active; setActive(null); setRoll4pTask({ ...t, _fromDecision: true }); }} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <label className="text-[11px] font-bold uppercase text-[#1E7B34] flex items-center gap-1">
+                  <CheckCircle2 size={13} /> Diterima ({activeUnit || "satuan"})
+                </label>
+                <input data-testid="qc-accept-input" type="number" min="0" step="0.01"
+                       className="form-input" value={accept}
+                       onChange={(e) => setAccept(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <label className="text-[11px] font-bold uppercase text-[#B3261E] flex items-center gap-1">
+                  <XCircle size={13} /> Ditolak ({activeUnit || "satuan"})
+                </label>
+                <input data-testid="qc-reject-input" type="number" min="0" step="0.01"
+                       className="form-input" value={reject}
+                       onChange={(e) => setReject(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[11.5px] px-1">
+              <span className="text-[#6B6B73]">Total dialokasikan</span>
+              <span className={`tabular-nums font-semibold ${overAllocated ? "text-[#B3261E]" : "text-[#1C1C1E]"}`}>
+                {formatQty(allocated)} / {formatQty(maxQty)} {activeUnit}
+              </span>
+            </div>
+
+            {acceptNum > 0.01 && (
+              <div className="grid gap-1.5 rounded-md bg-[#F0FCF3] border border-[#BBE9C8] p-2.5">
+                <label className="text-[11px] font-bold uppercase text-[#1E7B34]">Grade Diterima (hasil inspeksi)</label>
+                <KNSelect
+                  data-testid="qc-accept-grade-select"
+                  className="form-input"
+                  value={acceptGrade}
+                  onValueChange={setAcceptGrade}
+                  options={gradeOptions}
+                />
+                <p className="text-[10.5px] text-[#1E7B34]">
+                  Urutan mutu (D-01): A → A1 → A2 → B → BS. Grade terpilih:{" "}
+                  <b data-testid="qc-accept-grade-label">{labelOf("grade", acceptGrade)}</b>
+                </p>
+                <label className="text-[11px] font-bold uppercase text-[#1E7B34] mt-1">Profil Cacat (opsional, pisah koma)</label>
+                <input data-testid="qc-defects-input" className="form-input" placeholder="mis. belang, noda kuning"
+                       value={defects} onChange={(e) => setDefects(e.target.value)} />
+              </div>
+            )}
+
+            {rejectNum > 0.01 && (
+              <div className="grid gap-1.5 rounded-md bg-[#FFF8EE] border border-[#FFE2B8] p-2.5">
+                <label className="text-[11px] font-bold uppercase text-[#8C4A00]">Disposisi Barang Ditolak</label>
+                <KNSelect
+                  data-testid="qc-disposition-select"
+                  className="form-input"
+                  value={disposition}
+                  onValueChange={setDisposition}
+                  options={DISPOSITION_OPTIONS}
+                />
+                <p className="text-[10.5px] text-[#8C4A00] flex items-center gap-1">
+                  {disposition === "return"
+                    ? <><RotateCcw size={12} /> Membuat retur beli (Nota Debit) ke {active.supplier_name || "supplier"}.</>
+                    : <><Trash2 size={12} /> Barang dicatat sebagai rusak & tetap di gudang.</>}
+                </p>
+              </div>
+            )}
+
+            <div className="grid gap-1.5">
+              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan / Alasan</label>
+              <input data-testid="qc-reason-input" className="form-input" placeholder="mis. 5m luntur, sisanya OK"
+                     value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button type="button" data-testid="qc-accept-all" className="btn-secondary btn-sm flex-1"
+                      onClick={() => { setAccept(String(maxQty)); setReject("0"); }}>
+                Terima Semua
+              </button>
+              <button type="button" data-testid="qc-reject-all" className="btn-secondary btn-sm flex-1"
+                      onClick={() => { setReject(String(maxQty)); setAccept("0"); }}>
+                Tolak Semua
+              </button>
+            </div>
           </div>
-        </div>
+
+        </FormModal>
       )}
       {/* 4-Point per-roll inspection modal (Fase 6.2) */}
       {roll4pTask && (

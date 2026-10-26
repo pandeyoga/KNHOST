@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Package, Scan, X, ChevronRight } from "lucide-react";
+import { AlertTriangle, Package, Scan, X, ChevronRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
-import { overlayDismiss } from "../../utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 import GRCatchWeightModal from "./inbound/GRCatchWeightModal";
 import InboundTaskPanel, { TaskBadge } from "./inbound/InboundTaskPanel";
 import { hasRolls, rollsText } from "../../components/QtyDual";
@@ -452,30 +452,15 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
         )}
       </div>
 
-      {/* Escalate Modal */}
-      {showEscalateModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" {...overlayDismiss(() => setShowEscalateModal(false))}>
-          <div className="bg-white rounded-xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h3 className="text-[13px] font-bold mb-3">Eskalasi ke Manager</h3>
-            <textarea value={escalationReason} onChange={e => setEscalationReason(e.target.value)}
-              data-testid="inbound-escalate-reason"
-              className="w-full border border-[#E5E5EA] rounded-lg px-3 py-2 text-sm mb-3" rows="3"
-              placeholder="Alasan escalation (contoh: Qty kurang 10m dari PO)" />
-            <ErrorNotice message={escalateError} onDismiss={() => setEscalateError("")} testId="inbound-escalate-error" />
-            <div className="flex gap-2">
-              <button onClick={handleEscalate} disabled={submitting}
-                data-testid="inbound-escalate-submit"
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50">
-                Eskalasi
-              </button>
-              <button onClick={() => setShowEscalateModal(false)}
-                className="flex-1 bg-[#F2F2F7] text-[#3C3C43] rounded-lg px-4 py-2 text-[12px] font-semibold">
-                Batal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Escalate Modal — Fase 4 · R3 (L-03): FormModal baku (layar penuh di HP, Esc berlapis, galat di kaki pop-up).
+          Testid `inbound-escalate-reason` / `-submit` tetap. */}
+      <FormModal open={showEscalateModal} onClose={() => setShowEscalateModal(false)} size="sm" icon={AlertTriangle}
+        title="Eskalasi ke Manager" testId="inbound-escalate-modal" onSubmit={handleEscalate} busy={submitting}
+        error={escalateError} submitTestId="inbound-escalate-submit" submitLabel="Eskalasi">
+        <textarea value={escalationReason} onChange={(e) => setEscalationReason(e.target.value)}
+          data-testid="inbound-escalate-reason" className="field w-full" rows="3"
+          placeholder="Alasan escalation (contoh: Qty kurang 10m dari PO)" />
+      </FormModal>
 
       {/* FASE SL P2 — laporan kualitas label per supplier */}
       <ScanLabelStatsCard />
@@ -492,6 +477,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           tolPct={uom.options?.line_qty_tolerance_pct ?? 2}
           onClose={() => setShowGRModal(false)}
           submitting={submitting}
+          error={error}
           lotFields={lotFields}
           setLotFields={setLotFields}
           lotSettings={lotSettings}

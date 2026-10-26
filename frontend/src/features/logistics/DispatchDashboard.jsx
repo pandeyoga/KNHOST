@@ -40,7 +40,7 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
       {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2" data-testid="dispatch-kpi">
         <Kpi id="unassigned" label="SJ menunggu" value={k.unassigned_sj} icon={PackagePlus} tone="#0058CC" hint="belum dibuat pengiriman" />
-        <Kpi id="waiting-pickup" label="Menunggu diambil" value={k.waiting_pickup} icon={KeyRound} tone="#6B219A" hint="pelanggan ambil sendiri" />
+        <Kpi id="waiting-pickup" label="Menunggu diambil" value={k.waiting_pickup} icon={KeyRound} tone="#0058CC" hint="pelanggan ambil sendiri" />
         <Kpi id="active" label="Diproses" value={k.active} icon={Truck} tone="#1C1C1E" hint="disiapkan · dimuat · jalan" onClick={() => onGotoList("")} />
         <Kpi id="in-transit" label="Di jalan" value={k.in_transit} icon={ArrowRight} tone="#C97A00" onClick={() => onGotoList("in_transit")} />
         <Kpi id="eta-today" label="ETA hari ini" value={k.eta_today} icon={Clock} tone="#0058CC" hint={formatDateId(d.today, "dd MMM")} />
@@ -145,7 +145,7 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
               {pickups.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 py-1.5 text-[11.5px]" data-testid={`dispatch-pickup-${r.id}`}>
                   <span className="min-w-0 truncate"><b>{r.order_number}</b> · {r.customer_name}{r.pickup_date ? ` · tgl ${r.pickup_date}` : ""}</span>
-                  <button data-testid={`dispatch-handover-${r.id}`} className={`${canUpdate ? "primary-button" : "secondary-button"} !py-1 !px-2.5 !text-[11px] ml-auto shrink-0 ${canUpdate ? "!bg-[#6B219A]" : ""}`} onClick={() => onOpen(r.id)}>{canUpdate ? "Serah terima" : "Lihat"}</button>
+                  <button data-testid={`dispatch-handover-${r.id}`} className={`${canUpdate ? BTN_ACT : BTN_VIEW} !py-1 !px-2.5 !text-[11px] ml-auto shrink-0`} onClick={() => onOpen(r.id)}>{canUpdate ? "Serah terima" : "Lihat"}</button>
                 </div>
               ))}
             </div>
@@ -179,19 +179,26 @@ export default function DispatchDashboard({ params, refreshKey, canManage, canUp
   );
 }
 
+// Fase 4 · R3 (L-08) — gaya KPI baku: nilai 0 NETRAL (abu, bukan warna peringatan/aksen), aksen ungu #6B219A → biru
+// baku; tombol "Serah terima" tidak lagi ungu. Kelas tombol lewat konstanta (bukan tombol-toggle tab).
+const BTN_ACT = "primary-button";
+const BTN_VIEW = "secondary-button";
+const ZERO = "#8E8E93";
+
 function Kpi({ id, label, value, icon: Icon, tone, hint, onClick }) {
   const Tag = onClick ? "button" : "div";
+  const color = Number(value || 0) === 0 ? ZERO : tone;
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick} data-testid={`dispatch-kpi-${id}`} className={`section-card !p-2.5 text-left ${onClick ? "hover:bg-[#F7F9FC] transition-colors" : ""}`}>
-      <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">{label}</p><Icon size={13} style={{ color: tone }} /></div>
-      <p className="text-[20px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value ?? 0}</p>
+      <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-[#8E8E93]">{label}</p><Icon size={13} style={{ color }} /></div>
+      <p className="text-[20px] font-bold tabular-nums leading-tight" style={{ color }}>{value ?? 0}</p>
       {hint && <p className="text-[9.5px] text-[#9A9BA3] truncate">{hint}</p>}
     </Tag>
   );
 }
 
 function Mini({ id, label, v, tone }) {
-  return <div className="rounded-md bg-[#F7F9FC] py-1.5" data-testid={`dispatch-${id}`}><p className="text-[16px] font-bold tabular-nums" style={{ color: tone }}>{v ?? 0}</p><p className="text-[9.5px] uppercase font-bold text-[#8E8E93]">{label}</p></div>;
+  return <div className="rounded-md bg-[#F7F9FC] py-1.5" data-testid={`dispatch-${id}`}><p className="text-[16px] font-bold tabular-nums" style={{ color: Number(v || 0) === 0 ? ZERO : tone }}>{v ?? 0}</p><p className="text-[9.5px] uppercase font-bold text-[#8E8E93]">{label}</p></div>;
 }
 
 function ActiveRow({ r, onOpen }) {

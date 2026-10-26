@@ -6,7 +6,8 @@ import useListSearch from "@/hooks/useListSearch";
 import { useEscapeClose } from "../../utils/escapeLayers";
 import axios, { API } from "../../services/apiClient";
 import { playSiren, isSirenMuted, setSirenMuted } from "../../utils/sirenAlarm";
-import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, TabBtn, fmtTime, resultColor, useWarehouses } from "./rfidShared";
+import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, resultColor, useWarehouses } from "./rfidShared";
+import PageTabs from "../../components/PageTabs";
 import RfidSecurityPanel from "./RfidSecurityPanel";
 import GateLiveVerdict, { useGateStatus } from "./GateLiveVerdict";
 import GatePassageHistory from "./GatePassageHistory";
@@ -134,7 +135,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
           <p className="absolute bottom-5 w-full text-center text-[13px] text-white opacity-60">Tekan Esc atau ✕ untuk keluar · sirene {sirenMuted ? "mati" : "nyala"}</p>
         </div>
       )}
-      <RfidHeader icon={Cpu} title="Monitor Gerbang" subtitle="Simulasikan pembacaan tag di gerbang. Sistem memvalidasi HIJAU (sah) / MERAH (tak sah).">
+      <RfidHeader icon={Cpu} testId="rfid-gate-header" title="Monitor Gerbang" subtitle="Simulasikan pembacaan tag di gerbang. Sistem memvalidasi HIJAU (sah) / MERAH (tak sah).">
         <KNSelect data-testid="rfid-gate-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-siren-toggle" onClick={toggleSiren}
@@ -151,23 +152,21 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
             live ? "bg-[#C0341D] text-white" : "border border-[#EFF0F2] bg-white hover:bg-[#F5F5F7]"}`}>
           <Radio size={14} className={live ? "animate-pulse" : ""} /> {live ? "LANGSUNG ●" : "Pantau langsung"}
         </button>
-        <button data-testid="rfid-gate-kiosk-btn" onClick={openKiosk} disabled={!loading && noGate}
+        <button type="button" data-testid="rfid-gate-kiosk-btn" onClick={openKiosk} disabled={!loading && noGate}
           title={!loading && noGate ? NO_GATE_REASON : "Layar penuh untuk dipasang dekat gerbang — MERAH berkedip bersama sirene"}
-          className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7] disabled:opacity-40">
+          className="secondary-button disabled:opacity-40">
           <Maximize2 size={14} /> Layar penuh
         </button>
-        <button data-testid="rfid-gate-refresh" onClick={load}
-          className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
+        <button type="button" data-testid="rfid-gate-refresh" onClick={load} className="secondary-button">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
 
       {error && <ErrorNotice message={error} onRetry={load} />}
 
-      <div className="flex gap-1 border-b border-[#EFF0F2]">
-        <TabBtn id="monitor" tab={tab} setTab={setTab} label="Monitor Gate" testId="gate-tab-monitor" />
-        <TabBtn id="security" tab={tab} setTab={setTab} label="Alarm & Keamanan" testId="gate-tab-security" />
-      </div>
+      {/* Fase 4 · R3 (L-01/L-02) — tab buatan sendiri (TabBtn) → PageTabs baku; testid `gate-tab-*` tetap. */}
+      <PageTabs value={tab} onChange={setTab} testId="gate-tab" ariaLabel="Monitor gerbang"
+        tabs={[{ key: "monitor", label: "Monitor Gate" }, { key: "security", label: "Alarm & Keamanan" }]} />
 
       {tab === "security" ? (
         <RfidSecurityPanel whId={whId} selectedEntity={selectedEntity} />
@@ -196,7 +195,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
             </div>
             {gate && gate.status !== "online" && <p className="text-[11px] text-[#C0341D]">Gerbang ini MATI — nyalakan di Pengaturan › Perangkat RFID.</p>}
             <button data-testid="rfid-gate-simulate" disabled={busy || !gateId || !rollId} onClick={simulate}
-              className="flex items-center gap-2 rounded-lg bg-[#0058CC] text-white px-4 py-2 text-[13px] font-semibold disabled:opacity-40">
+              className="primary-button disabled:opacity-40">
               <ScanLine size={16} /> Baca di Gate
             </button>
 

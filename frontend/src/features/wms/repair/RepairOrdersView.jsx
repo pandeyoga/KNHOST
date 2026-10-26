@@ -4,12 +4,30 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Wrench } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { can } from "../../../config/roles";
-import { SearchBox, StatusTabs } from "../../../components/ListControls";
+import { SearchBox } from "../../../components/ListControls";
+import { PageHeader } from "../../../components/ListPageParts";
+import FilterChips from "../../../components/FilterChips";
+import ResponsiveTable from "../../../components/ResponsiveTable";
 import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
 import RepairCreateModal from "./RepairCreateModal";
 import RepairOrderDetail, { StatusPill } from "./RepairOrderDetail";
 
 const TABS = [["", "Semua"], ["draft", "Draf"], ["sent", "Dikirim"], ["done", "Selesai"], ["cancelled", "Dibatalkan"]];
+
+// Fase 4 · R3 (L-02/L-07) — kepala = PageHeader baku (dulu satu kalimat tanpa judul); status = FilterChips (saringan,
+// bukan tab; testid `repair-tab-*` tetap); tabel min 820 px → ResponsiveTable (kartu di HP; testid `repair-row-<id>` tetap).
+const COLUMNS = [
+  { key: "number", header: "Nomor", mobile: "title", className: "font-mono font-semibold" },
+  { key: "status", header: "Status", mobile: "badge", render: (ro) => <StatusPill ro={ro} /> },
+  { key: "kind_label", header: "Jenis", mobile: "subtitle" },
+  { key: "partner_name", header: "Pelaksana", priority: 1 },
+  { key: "rolls", header: "Roll", align: "right", priority: 2, className: "tabular-nums",
+    render: (ro) => `${ro.lines.length} · ${formatQty(ro.lines.reduce((s, l) => s + Number(l.qty_sent || 0), 0))}` },
+  { key: "cost", header: "Biaya", align: "right", priority: 3, className: "tabular-nums",
+    render: (ro) => formatCurrency(ro.actual_cost ?? ro.cost_estimate) },
+  { key: "created_at", header: "Dibuat", priority: 4,
+    render: (ro) => <>{formatDate(ro.created_at)}<span className="block text-[10px] text-[#8E8E93]">{ro.created_by}</span></> },
+];
 
 export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [status, setStatus] = useState("");
@@ -35,35 +53,22 @@ export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc
   const total = Object.values(data.counts || {}).reduce((s, n) => s + n, 0);
   return (
     <div className="grid gap-3" data-testid="repair-orders-view">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] text-[#6B6B73]">Roll cacat / warna meleset → perbaikan, celup ulang, atau finishing ulang → kembali ke stok. Selama dikirim, roll tidak bisa dijual.</p>
-        {can(currentUser?.permissions, "repair_order", "create") && (
-          <button type="button" className="primary-button" onClick={() => setCreate(true)} data-testid="repair-new"><Plus size={13} /> Perbaikan baru</button>)}
-      </div>
-      <StatusTabs value={status} onChange={setStatus} testIdPrefix="repair-tab"
-        tabs={TABS.map(([k, l]) => ({ key: k, label: l, count: k ? data.counts?.[k] || 0 : total }))} />
-      <SearchBox value={q} onChange={setQ} placeholder="Cari nomor, mitra, roll, SKU…" testId="repair-search" />
-      {err && <p className="text-[11.5px] text-[#A8221A]">{err}</p>}
-      {loading ? <div className="loading-state"><p>Memuat…</p></div> : data.items.length === 0 ? (
-        <div className="empty-state" data-testid="repair-empty"><Wrench size={28} style={{ opacity: 0.3 }} /><p>Belum ada dokumen perbaikan{status ? " dengan status ini" : ""}.</p></div>
-      ) : (
-        <div className="table-container">
-          <table className="data-table" style={{ minWidth: 820 }}>
-            <thead><tr><th>Nomor</th><th>Jenis</th><th>Pelaksana</th><th className="text-right">Roll</th><th className="text-right">Biaya</th><th>Status</th><th>Dibuat</th></tr></thead>
-            <tbody>
-              {data.items.map((ro) => (
-                <tr key={ro.id} className="cursor-pointer" onClick={() => axios.get(`${API}/repair-orders/${ro.id}`).then((r) => setOpen(r.data))} data-testid={`repair-row-${ro.id}`}>
-                  <td className="font-mono font-semibold">{ro.number}</td>
-                  <td>{ro.kind_label}</td>
-                  <td>{ro.partner_name}</td>
-                  <td className="text-right tabular-nums">{ro.lines.length} · {formatQty(ro.lines.reduce((s, l) => s + Number(l.qty_sent || 0), 0))}</td>
-                  <td className="text-right tabular-nums">{formatCurrency(ro.actual_cost ?? ro.cost_estimate)}</td>
-                  <td><StatusPill ro={ro} /></td>
-                  <td>{formatDate(ro.created_at)}<span className="block text-[10px] text-[#8E8E93]">{ro.created_by}</span></td>
-                </tr>))}
-            </tbody>
-          </table>
-        </div>)}
+      <PageHeader icon={Wrench} title="Perbaikan" testId="repair-header"
+        subtitle="Roll cacat / warna meleset → perbaikan, celup ulang, atau finishing ulang → kembali ke stok. Selama dikirim, roll tidak bisa dijual."
+        actions={can(currentUser?.permissions, "repair_order", "create") && (
+          <button type="button" className="primary-button" onClick={() => setCreate(true)} data-testid="repair-new"><Plus size={13} /> Perbaikan baru</button>)} />
+      <section className="section-card section-pad grid gap-3">
+        <FilterChips value={status} onChange={setStatus} testId="repair-tab" ariaLabel="Status perbaikan"
+          options={TABS.map(([k, l]) => ({ key: k, label: l, count: k ? data.counts?.[k] || 0 : total, testId: `repair-tab-${k || "all"}` }))} />
+        <SearchBox value={q} onChange={setQ} placeholder="Cari nomor, mitra, roll, SKU…" testId="repair-search" />
+        {err && <p className="text-[11.5px] text-[#A8221A]">{err}</p>}
+        {!loading && data.items.length === 0 ? (
+          <div className="empty-state" data-testid="repair-empty"><Wrench size={28} style={{ opacity: 0.3 }} /><p>Belum ada dokumen perbaikan{status ? " dengan status ini" : ""}.</p></div>
+        ) : (
+          <ResponsiveTable testId="repair" rows={loading ? [] : data.items} loading={loading} columns={COLUMNS}
+            onRowClick={(ro) => axios.get(`${API}/repair-orders/${ro.id}`).then((r) => setOpen(r.data))} />
+        )}
+      </section>
       {create && <RepairCreateModal onClose={() => setCreate(false)} onCreated={(ro) => { setCreate(false); setOpen(ro); }} />}
     </div>
   );

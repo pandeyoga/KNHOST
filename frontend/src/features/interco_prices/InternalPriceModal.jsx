@@ -1,5 +1,6 @@
 import { useState } from "react";
-import ErrorNotice from "../../components/ErrorNotice";
+import { Tag } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import KNDatePicker from "../../components/KNDatePicker";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
@@ -25,32 +26,25 @@ export default function InternalPriceModal({ target, onClose, onSaved }) {
     finally { setBusy(false); }
   }
 
+  // Fase 4 · R3 (L-03) — `.modal-card` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis: dibuka di atas
+  // dialog Keputusan Pemenuhan dan hanya menutup dirinya; galat di kaki pop-up). Testid isian & tombol tetap.
   return (
-    <div className="modal-overlay" style={{ zIndex: 70 }} data-testid="internal-price-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="modal-card" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
-        <p className="modal-title">Buat harga internal</p>
-        <p className="modal-subtitle">
-          <b>{target.sku}</b> {target.productName} · {target.sellerName} → {target.buyerName}
-        </p>
-        <ErrorNotice message={error} onDismiss={() => setError("")} testId="internal-price-error" />
-        <div className="mt-3 space-y-2.5">
-          <label className="block text-[11px] font-semibold text-[#3C3C43]">Harga per {target.unit || "satuan"} (Rp)
-            <input data-testid="internal-price-input" type="number" min={0} step="1" className="field mt-1 w-full text-right"
-              value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" autoFocus />
-          </label>
-          <label className="block text-[11px] font-semibold text-[#3C3C43]">Berlaku mulai
-            <KNDatePicker data-testid="internal-price-valid-from" className="mt-1 w-full font-normal" clearable={false}
-              value={validFrom} onChange={setValidFrom} />
-          </label>
-          {value > 0 && <p className="text-[11px] text-[#6B6B73]" data-testid="internal-price-preview">Tersimpan sebagai kontrak internal aktif: {formatCurrency(value)} / {target.unit || "satuan"}.</p>}
-        </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button className="secondary-button" data-testid="internal-price-cancel" onClick={onClose}>Batal</button>
-          <button className="primary-button" data-testid="internal-price-save" disabled={busy || value <= 0} onClick={save}>
-            {busy ? "Menyimpan…" : "Simpan harga"}
-          </button>
-        </div>
+    <FormModal open onClose={onClose} size="sm" icon={Tag} title="Buat harga internal" testId="internal-price-modal"
+      subtitle={<><b>{target.sku}</b> {target.productName} · {target.sellerName} → {target.buyerName}</>}
+      onSubmit={save} busy={busy} error={error} submitDisabled={value <= 0}
+      submitTestId="internal-price-save" cancelTestId="internal-price-cancel"
+      submitLabel={busy ? "Menyimpan…" : "Simpan harga"}>
+      <div className="space-y-2.5">
+        <label className="block text-[11px] font-semibold text-[#3C3C43]">Harga per {target.unit || "satuan"} (Rp)
+          <input data-testid="internal-price-input" type="number" min={0} step="1" className="field mt-1 w-full text-right"
+            value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+        </label>
+        <label className="block text-[11px] font-semibold text-[#3C3C43]">Berlaku mulai
+          <KNDatePicker data-testid="internal-price-valid-from" className="mt-1 w-full font-normal" clearable={false}
+            value={validFrom} onChange={setValidFrom} />
+        </label>
+        {value > 0 && <p className="text-[11px] text-[#6B6B73]" data-testid="internal-price-preview">Tersimpan sebagai kontrak internal aktif: {formatCurrency(value)} / {target.unit || "satuan"}.</p>}
       </div>
-    </div>
+    </FormModal>
   );
 }

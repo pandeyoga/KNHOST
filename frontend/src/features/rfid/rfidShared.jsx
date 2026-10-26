@@ -1,6 +1,7 @@
 /** rfidShared — komponen & util bersama untuk view RFID (Fase 5). */
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import { PageHeader } from "../../components/ListPageParts";
 
 export const nf = new Intl.NumberFormat("id-ID");
 export const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
@@ -56,16 +57,6 @@ export function Stat({ icon: Icon, label, value, sub, color = "#0058CC", loading
   );
 }
 
-export function TabBtn({ id, tab, setTab, label, testId }) {
-  const active = tab === id;
-  return (
-    <button data-testid={testId} onClick={() => setTab(id)}
-      className={`px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px ${active ? "border-[#0058CC] text-[#0058CC]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
-      {label}
-    </button>
-  );
-}
-
 export function EmptyBox({ icon: Icon, text }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
@@ -75,33 +66,24 @@ export function EmptyBox({ icon: Icon, text }) {
   );
 }
 
-export function SectionCard({ title, right, children }) {
+// Fase 4 · R3 (L-02) — kartu seksi & kepala halaman RFID memakai kelas baku (`.section-card` + `.section-head`, dan
+// `PageHeader`). Dulu kartu `rounded-xl … p-4` dan judul h1 20 px berkicker "RFID & KETERTELUSURAN" buatan sendiri —
+// lokasi kini dibaca dari breadcrumb menu. Tab dalam layar = `PageTabs` (TabBtn buatan sendiri dicabut).
+export function SectionCard({ title, right, children, testId }) {
   return (
-    <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
+    <section className="section-card" data-testid={testId}>
       {(title || right) && (
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] font-bold text-[#1C1C1E]">{title}</h3>
+        <div className="section-head flex-wrap">
+          <h2>{title}</h2>
           {right}
         </div>
       )}
-      {children}
-    </div>
+      <div className="section-body">{children}</div>
+    </section>
   );
 }
 
-// Header standar view RFID (kicker + judul + kontrol kanan).
-export function RfidHeader({ icon: Icon, title, subtitle, children }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">RFID & KETERTELUSURAN</p>
-        <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2">
-          <Icon size={20} className="text-[#0058CC]" /> {title}
-        </h1>
-        {subtitle && <p className="text-[12px] text-[#6B6B73] mt-0.5">{subtitle}</p>}
-      </div>
-      {/* Audit UI 094/096 (HP) — kontrol kanan membungkus; dulu halaman bergulir ke samping & tombol keluar layar. */}
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
-    </div>
-  );
+// Header standar view RFID (judul + kontrol kanan) = PageHeader baku.
+export function RfidHeader({ icon, title, subtitle, children, testId }) {
+  return <PageHeader icon={icon} title={title} subtitle={subtitle} testId={testId} actions={children} />;
 }

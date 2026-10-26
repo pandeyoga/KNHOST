@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, XCircle, Package, Truck, Eye, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, Package, Truck, Eye } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
-import { overlayDismiss } from "../../utils/overlayDismiss";
+import { PageHeader } from "../../components/ListPageParts";
+import FilterChips from "../../components/FilterChips";
+import FormModal from "../../components/FormModal";
 import { formatQty } from "../../utils/formatters";
 
 /**
@@ -12,6 +14,9 @@ import { formatQty } from "../../utils/formatters";
  * 
  * Manager dashboard untuk resolve escalated inbound & outbound tasks.
  * Manager bisa adjust qty atau investigate issue.
+ *
+ * Fase 4 · R3 (L-02/L-03) — kepala = PageHeader baku; saringan jenis = FilterChips (testid `filter-type-*` tetap);
+ * pop-up "Selesaikan Eskalasi" = FormModal (layar penuh di HP, Esc berlapis, galat di kaki pop-up).
  */
 export default function ManagerEscalationDashboard({ user }) {
   const [escalatedTasks, setEscalatedTasks] = useState([]);
@@ -104,6 +109,13 @@ export default function ManagerEscalationDashboard({ user }) {
     }
   };
 
+  const closeResolve = () => {
+    setShowResolveModal(false);
+    setSelectedTask(null);
+    setResolveError("");
+    setResolveData({ adjusted_qty: null, resolution_notes: "" });
+  };
+
   const isHanging = (task) => task.escalation?.status === "resolving";
   const hangingCount = escalatedTasks.filter(isHanging).length;
 
@@ -123,47 +135,24 @@ export default function ManagerEscalationDashboard({ user }) {
 
   return (
     <div data-testid="escalation-dashboard" className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
-            <AlertTriangle className="text-red-600" size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-[#000000]">Eskalasi Gudang</h2>
-            <p className="text-sm text-[#3C3C43]">Tinjau & selesaikan tugas yang dieskalasi</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {hangingCount > 0 && (
-            <span data-testid="escalation-hanging-count" className="bg-amber-100 text-amber-800 text-sm font-bold px-4 py-2 rounded-full">
-              {hangingCount} Menggantung
+      <PageHeader icon={AlertTriangle} title="Eskalasi Gudang" subtitle="Tinjau & selesaikan tugas yang dieskalasi"
+        testId="escalation-header"
+        actions={(
+          <>
+            {hangingCount > 0 && (
+              <span data-testid="escalation-hanging-count" className="status-pill pill-warning">
+                {hangingCount} Menggantung
+              </span>
+            )}
+            {/* Audit UI 127 — merah (bahaya) hanya bila memang ada tugas tereskalasi. */}
+            <span data-testid="escalation-count" className={`status-pill ${escalatedTasks.length ? "pill-danger" : "pill-muted"}`}>
+              {escalatedTasks.length} Tugas
             </span>
-          )}
-          {/* Audit UI 127 — merah (bahaya) hanya bila memang ada tugas tereskalasi. */}
-          <span className={`text-sm font-bold px-4 py-2 rounded-full ${escalatedTasks.length ? "bg-red-100 text-red-700" : "bg-[#F2F2F7] text-[#6B6B73]"}`}>
-            {escalatedTasks.length} Tugas
-          </span>
-        </div>
-      </div>
+          </>
+        )} />
 
-      {/* Filter */}
-      <div className="flex flex-wrap gap-2">
-        {["all", "inbound", "outbound"].map((type) => (
-          <button
-            key={type}
-            data-testid={`filter-type-${type}`}
-            onClick={() => setFilterType(type)}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-              filterType === type
-                ? "bg-[#007AFF] text-white"
-                : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:border-[#007AFF]"
-            }`}
-          >
-            {{ all: "Semua", inbound: "Barang Masuk", outbound: "Barang Keluar" }[type]}
-          </button>
-        ))}
-      </div>
+      <FilterChips testId="filter-type" value={filterType} onChange={(v) => setFilterType(v || "all")} ariaLabel="Jenis tugas"
+        options={[{ key: "all", label: "Semua" }, { key: "inbound", label: "Barang Masuk" }, { key: "outbound", label: "Barang Keluar" }]} />
 
       {/* Tasks List */}
       <ErrorNotice message={error} onRetry={fetchEscalatedTasks} onDismiss={() => setError("")} testId="escalation-error" />
@@ -181,7 +170,7 @@ export default function ManagerEscalationDashboard({ user }) {
             <div
               key={task.id}
               data-testid={`escalated-task-${task.id}`}
-              className="bg-white/90 backdrop-blur-xl border-2 border-red-200 rounded-2xl p-4 shadow-sm"
+              className="section-card section-pad"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
@@ -250,7 +239,7 @@ export default function ManagerEscalationDashboard({ user }) {
                 <button
                   data-testid={`reopen-task-${task.id}`}
                   onClick={() => handleReopen(task)}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full px-4 py-2 text-sm font-medium flex items-center justify-center gap-2"
+                  className="secondary-button w-full justify-center"
                 >
                   <XCircle size={14} />
                   Buka Kembali Eskalasi (lepas klaim)
@@ -263,7 +252,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   setResolveError("");
                   setShowResolveModal(true);
                 }}
-                className="w-full bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium flex items-center justify-center gap-2"
+                className="primary-button w-full justify-center"
               >
                 <Eye size={14} />
                 Tinjau & Selesaikan
@@ -275,139 +264,94 @@ export default function ManagerEscalationDashboard({ user }) {
       </div>
 
       {/* Resolve Modal */}
-      {showResolveModal && selectedTask && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" {...overlayDismiss(() => {
-            setShowResolveModal(false);
-            setSelectedTask(null);
-            setResolveError("");
-            setResolveData({ adjusted_qty: null, resolution_notes: "" });
-          })}
-        >
-          <div
-            className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-2xl w-full max-w-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Selesaikan Eskalasi</h3>
-                <button onClick={() => {
-                  setShowResolveModal(false);
-                  setSelectedTask(null);
-                  setResolveData({ adjusted_qty: null, resolution_notes: "" });
-                }}>
-                  <X size={20} />
-                </button>
+      <FormModal open={showResolveModal && Boolean(selectedTask)} onClose={closeResolve} size="md" icon={CheckCircle}
+        title="Selesaikan Eskalasi" testId="escalation-resolve-modal" onSubmit={handleResolve} error={resolveError}
+        submitTestId="escalation-resolve-submit" submitLabel="Selesaikan & Lanjutkan Tugas">
+        {selectedTask && (
+          <>
+            {/* Task Info */}
+            <div className="bg-[#F2F2F7] rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                {getTaskTypeBadge(selectedTask.task_type)}
+                <span className="text-sm font-bold">
+                  {selectedTask.task_type === "inbound" ? selectedTask.po_number : selectedTask.order_number}
+                </span>
               </div>
+              <p className="text-sm">{selectedTask.sku} - {selectedTask.product_name}</p>
+              <p className="text-xs text-[#3C3C43] mt-1">Gudang: {selectedTask.warehouse_name}</p>
+            </div>
 
-              {/* Task Info */}
-              <div className="bg-[#F2F2F7] rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  {getTaskTypeBadge(selectedTask.task_type)}
-                  <span className="text-sm font-bold">
-                    {selectedTask.task_type === "inbound" ? selectedTask.po_number : selectedTask.order_number}
-                  </span>
+            {/* Qty Mismatch */}
+            <div className="bg-[#FFF3CD] border border-[#FFC107] rounded-lg p-3 mb-4">
+              <p className="text-sm font-semibold text-[#856404]">Status Qty:</p>
+              {selectedTask.task_type === "inbound" ? (
+                <div className="text-sm text-[#856404] mt-1">
+                  <p>Diharapkan: <strong>{formatQty(selectedTask.expected_qty)} {selectedTask.unit}</strong></p>
+                  <p>Diterima: <strong>{formatQty(selectedTask.received_qty || 0)} {selectedTask.unit}</strong></p>
+                  <p className="text-red-600 font-semibold mt-1">
+                    Selisih: {formatQty((selectedTask.expected_qty - (selectedTask.received_qty || 0)))} {selectedTask.unit}
+                  </p>
                 </div>
-                <p className="text-sm">{selectedTask.sku} - {selectedTask.product_name}</p>
-                <p className="text-xs text-[#3C3C43] mt-1">Gudang: {selectedTask.warehouse_name}</p>
-              </div>
-
-              {/* Qty Mismatch */}
-              <div className="bg-[#FFF3CD] border border-[#FFC107] rounded-lg p-3 mb-4">
-                <p className="text-sm font-semibold text-[#856404]">Status Qty:</p>
-                {selectedTask.task_type === "inbound" ? (
-                  <div className="text-sm text-[#856404] mt-1">
-                    <p>Diharapkan: <strong>{formatQty(selectedTask.expected_qty)} {selectedTask.unit}</strong></p>
-                    <p>Diterima: <strong>{formatQty(selectedTask.received_qty || 0)} {selectedTask.unit}</strong></p>
-                    <p className="text-red-600 font-semibold mt-1">
-                      Selisih: {formatQty((selectedTask.expected_qty - (selectedTask.received_qty || 0)))} {selectedTask.unit}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-sm text-[#856404] mt-1">
-                    <p>Diharapkan: <strong>{formatQty(selectedTask.quantity)} {selectedTask.unit}</strong></p>
-                    <p>Sudah Diambil: <strong>{formatQty(selectedTask.picked_qty || 0)} {selectedTask.unit}</strong></p>
-                    <p className="text-red-600 font-semibold mt-1">
-                      Selisih: {formatQty((selectedTask.quantity - (selectedTask.picked_qty || 0)))} {selectedTask.unit}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Escalation Reason */}
-              {selectedTask.escalation && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm font-semibold text-red-700">Alasan Eskalasi:</p>
-                  <p className="text-sm text-red-600 mt-1">{selectedTask.escalation.reason}</p>
-                  <p className="text-xs text-[#3C3C43] mt-2">
-                    By: {selectedTask.escalation.escalated_by} on {new Date(selectedTask.escalation.escalated_at).toLocaleString('id-ID')}
+              ) : (
+                <div className="text-sm text-[#856404] mt-1">
+                  <p>Diharapkan: <strong>{formatQty(selectedTask.quantity)} {selectedTask.unit}</strong></p>
+                  <p>Sudah Diambil: <strong>{formatQty(selectedTask.picked_qty || 0)} {selectedTask.unit}</strong></p>
+                  <p className="text-red-600 font-semibold mt-1">
+                    Selisih: {formatQty((selectedTask.quantity - (selectedTask.picked_qty || 0)))} {selectedTask.unit}
                   </p>
                 </div>
               )}
+            </div>
 
-              {/* Resolve Form */}
-              <div className="space-y-3 mb-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Adjusted Qty (opsional - kosongkan jika tidak adjust)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={resolveData.adjusted_qty || ""}
-                    onChange={(e) => setResolveData({ ...resolveData, adjusted_qty: e.target.value ? parseFloat(e.target.value) : null })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                    placeholder={`Saat ini: ${formatQty(selectedTask.task_type === "inbound" ? selectedTask.expected_qty : selectedTask.quantity)}`}
-                  />
-                  <p className="text-xs text-[#3C3C43] mt-1">
-                    Adjust qty jika setelah investigasi memang ada perubahan legitimate (shortage, damage, etc)
-                  </p>
-                </div>
+            {/* Escalation Reason */}
+            {selectedTask.escalation && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-sm font-semibold text-red-700">Alasan Eskalasi:</p>
+                <p className="text-sm text-red-600 mt-1">{selectedTask.escalation.reason}</p>
+                <p className="text-xs text-[#3C3C43] mt-2">
+                  By: {selectedTask.escalation.escalated_by} on {new Date(selectedTask.escalation.escalated_at).toLocaleString('id-ID')}
+                </p>
+              </div>
+            )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Catatan Penyelesaian * (wajib)
-                  </label>
-                  <textarea
-                    value={resolveData.resolution_notes}
-                    onChange={(e) => setResolveData({ ...resolveData, resolution_notes: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                    rows="4"
-                    placeholder="Jelaskan hasil pemeriksaan dan tindakan yang diambil..."
-                  />
-                  <p className="text-xs text-[#3C3C43] mt-1">
-                    Contoh: "Konfirmasi dengan supplier, barang shortage 10m. Qty disesuaikan ke actual received."
-                  </p>
-                </div>
+            {/* Resolve Form */}
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Adjusted Qty (opsional - kosongkan jika tidak adjust)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={resolveData.adjusted_qty || ""}
+                  onChange={(e) => setResolveData({ ...resolveData, adjusted_qty: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="field w-full"
+                  placeholder={`Saat ini: ${formatQty(selectedTask.task_type === "inbound" ? selectedTask.expected_qty : selectedTask.quantity)}`}
+                />
+                <p className="text-xs text-[#3C3C43] mt-1">
+                  Adjust qty jika setelah investigasi memang ada perubahan legitimate (shortage, damage, etc)
+                </p>
               </div>
 
-              {/* Actions */}
-              <ErrorNotice message={resolveError} onDismiss={() => setResolveError("")} testId="escalation-resolve-error" />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleResolve}
-                  data-testid="escalation-resolve-submit"
-                  className="flex-1 bg-[#34C759] hover:bg-[#28A745] text-white rounded-full px-4 py-2 font-medium flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={14} />
-                  Selesaikan & Lanjutkan Tugas
-                </button>
-                <button
-                  onClick={() => {
-                    setShowResolveModal(false);
-                    setSelectedTask(null);
-                    setResolveError("");
-                    setResolveData({ adjusted_qty: null, resolution_notes: "" });
-                  }}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full px-4 py-2 font-medium"
-                >
-                  Batal
-                </button>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Catatan Penyelesaian * (wajib)
+                </label>
+                <textarea
+                  value={resolveData.resolution_notes}
+                  onChange={(e) => setResolveData({ ...resolveData, resolution_notes: e.target.value })}
+                  className="field w-full"
+                  rows="4"
+                  placeholder="Jelaskan hasil pemeriksaan dan tindakan yang diambil..."
+                />
+                <p className="text-xs text-[#3C3C43] mt-1">
+                  Contoh: "Konfirmasi dengan supplier, barang shortage 10m. Qty disesuaikan ke actual received."
+                </p>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </FormModal>
     </div>
   );
 }

@@ -15,7 +15,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
-import { Boxes, X, Save, Calculator, ArrowRight, GitBranch, Layers } from "lucide-react";
+import { Boxes, Save, Calculator, ArrowRight, GitBranch, Layers } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ProductSelect from "../../components/ProductSelect";
@@ -23,7 +23,7 @@ import MakloonSelect from "../../components/MakloonSelect";
 import { formatQty } from "../../utils/formatters";
 import { MATERIAL_FLOW_BADGE } from "../../constants/makloonVocab";
 import { fetchStages } from "./makloon/makloonApi";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 
 const MODE_OPTS = [
   { value: "process_only", label: "Proses Saja (bahan dari stok)" },
@@ -194,152 +194,151 @@ export default function MakloonOrderCreateModal({ selectedEntity, initialMode, l
     } catch (e) { setModalErr(e.response?.data?.detail || "Gagal membuat order makloon."); setSaving(false); }
   };
 
+  // Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP — isian sama lengkap,
+  // grid 1 kolom; Esc berlapis: pemilih produk/mitra di dalamnya menutup dirinya dulu; galat di kaki pop-up). Tanpa
+  // `onSubmit`: ProductSelect/MakloonSelect membawa tombol & pop-up sendiri. Testid `mko-*` tetap.
   return (
-    <div data-testid="makloon-order-create-modal" className="fixed inset-0 z-[160] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold"><Boxes size={16} className="text-[#0058CC]" /> {lockMode ? (f.mode === "buy_process" ? "Buat PO — Raw Material & Proses" : "Buat PO — Proses Saja") : "Buat Order Makloon"}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
-        </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {lockMode ? (
-            <div className="rounded-lg border border-[#DCEAFE] bg-[#F2F7FF] p-2.5">
-              <p className="text-[10px] font-bold uppercase text-[#0058CC]">Mode Pengadaan</p>
-              <p className="text-[12.5px] font-semibold text-[#1B2733]">{f.mode === "buy_process" ? "Raw Material & Proses — beli bahan + kirim ke makloon" : "Proses Saja — bahan dari stok, kirim ke makloon"}</p>
-            </div>
-          ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Mode Pengadaan"><KNSelect data-testid="mko-mode" className="field" value={f.mode} onValueChange={(v) => setF((p) => ({ ...p, mode: v }))} options={MODE_OPTS} /></Field>
-            <Field label="Dari Resep (auto-isi)"><KNSelect data-testid="mko-recipe" className="field" value={f.recipe_id} onValueChange={applyRecipe} options={recipeOpts} /></Field>
-          </div>
-          )}
-          {lockMode && (
-            <Field label="Dari Resep (auto-isi)"><KNSelect data-testid="mko-recipe" className="field" value={f.recipe_id} onValueChange={applyRecipe} options={recipeOpts} /></Field>
-          )}
-
-          {f.mode === "buy_process" && (
-            <div className="grid grid-cols-2 gap-3 rounded-lg border border-[#EFD9A8] bg-[#FFFBEF] p-3">
-              <Field label="Supplier Bahan" req><KNSelect data-testid="mko-supplier" className="field" value={f.supplier_id} onValueChange={(v) => setF((p) => ({ ...p, supplier_id: v }))} options={supOpts} /></Field>
-              <Field label="Harga Bahan / unit (Rp)"><MoneyInput testId="mko-material-price" className="field" value={f.material_price} onChange={(v) => set("material_price")({ target: { value: v } })} placeholder="mis. 51500" /></Field>
-            </div>
-          )}
-
-          <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-              <div>
-                <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Bahan (Input)</p>
-                <ProductSelect triggerTestId="mko-material-product" value={f.material_product_id} valueName={f.material_name}
-                  onSelect={(p) => setF((prev) => ({ ...prev, material_product_id: p.id, material_name: `${p.name} (${p.sku})`, material_unit: p.base_unit }))} label="Pilih bahan…" />
-              </div>
-              <ArrowRight size={18} className="mb-2 text-[#0058CC]" />
-              <div>
-                <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Output</p>
-                {noTransform ? (
-                  <div data-testid="mko-output-auto"
-                    className="flex h-[34px] items-center rounded-md border border-dashed border-[#D6E6FF] bg-[#F5F9FF] px-2 text-[11.5px] text-[#004099]">
-                    Otomatis: kain yang sama
-                  </div>
-                ) : (
-                  <ProductSelect triggerTestId="mko-output-product" value={f.output_product_id} valueName={f.output_name}
-                    onSelect={(p) => setF((prev) => ({ ...prev, output_product_id: p.id, output_name: `${p.name} (${p.sku})` }))} label="Pilih output…" />
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Qty Bahan" req><input data-testid="mko-material-qty" type="number" className="field" value={f.material_qty} onChange={set("material_qty")} placeholder="mis. 50" /></Field>
-            <Field label="Satuan"><input data-testid="mko-material-unit" className="field" value={f.material_unit} onChange={set("material_unit")} placeholder="kg" /></Field>
-            <Field label="Tahapan Proses (dari master)">
-              <KNSelect data-testid="mko-stage" className="field" value={f.stage_code}
-                onValueChange={pickStage} options={stageOpts} placeholder="Pilih tahap…" />
-            </Field>
-          </div>
-
-          {stage && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-2"
-              data-testid="mko-stage-meta">
-              <Layers size={13} className="text-[#6B219A]" />
-              <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
-                noTransform ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#EAF2FF] text-[#0058CC]"}`}>
-                {noTransform ? "Tidak mengubah kain — hanya biaya jasa" : "Mengubah tahap kain"}
-              </span>
-              {stage.material_flow === "either" ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="text-[10.5px] font-semibold text-[#6B6B73]">Kainnya:</span>
-                  <KNSelect data-testid="mko-flow" className="field !h-7 !py-0 !text-[11px] w-[180px]"
-                    value={f.material_flow || "moves"}
-                    onValueChange={(v) => setF((p) => ({ ...p, material_flow: v }))}
-                    options={FLOW_PICK_OPTIONS} />
-                </span>
-              ) : (
-                <span className="rounded-full border border-[#E5E5EA] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#3C3C43]">
-                  {MATERIAL_FLOW_BADGE[stage.material_flow] || stage.material_flow || "Kain dikirim"}
-                </span>
-              )}
-              {stage.needs_vendor && !f.makloon_id && (
-                <span className="text-[10.5px] text-[#B26A00]">
-                  Tahap ini dikerjakan mitra — pilih mitranya (boleh disimpan dulu, akan diperingatkan).
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Gudang Sumber Bahan" req><KNSelect data-testid="mko-from-warehouse" className="field" value={f.from_warehouse_id} onValueChange={(v) => setF((p) => ({ ...p, from_warehouse_id: v }))} options={whOpts} /></Field>
-            <Field label="Mitra Makloon">
-              <MakloonSelect triggerTestId="mko-makloon" processType={f.process_type} value={f.makloon_id} valueName={f.makloon_name}
-                onSelect={(m) => setF((p) => ({ ...p, makloon_id: m.id, makloon_name: m.name }))} label="Pilih makloon…" />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            <Field label="Yield (kosong = rumus GSM)">
-              <input data-testid="mko-yield" type="number" step="0.01" className="field" value={f.yield_factor}
-                onChange={set("yield_factor")} disabled={noTransform} placeholder={noTransform ? "—" : "otomatis"} />
-            </Field>
-            <Field label="Waste (%)"><input data-testid="mko-waste" type="number" step="0.1" className="field" value={f.waste_pct} onChange={set("waste_pct")} disabled={noTransform} /></Field>
-            <Field label="Sisa (%)"><input data-testid="mko-byproduct" type="number" step="0.1" className="field" value={f.byproduct_pct} onChange={set("byproduct_pct")} disabled={noTransform} /></Field>
-            <Field label="Tarif/unit (Rp)"><MoneyInput testId="mko-tariff" className="field" value={f.tariff} onChange={(v) => set("tariff")({ target: { value: v } })} /></Field>
-          </div>
-          {parseFloat(f.yield_factor) > 0 && (
-            <Field label="Alasan override yield (wajib — bisa diaudit)" req>
-              <input data-testid="mko-yield-reason" className="field" value={f.yield_override_reason}
-                onChange={set("yield_override_reason")}
-                placeholder="mis. Kontrak mitra menetapkan yield 3.8 yard/kg" />
-            </Field>
-          )}
-
-          <div className="rounded-lg border border-[#EFE0C8] bg-[#FFFBF3] p-3">
-            <p className="mb-1 text-[10px] font-bold uppercase text-[#9A6B1E]">Barang Sisa (leftover bahan input yang dikembalikan makloon, diterima sbg produk tersendiri)</p>
-            <ProductSelect triggerTestId="mko-byproduct-product" value={f.byproduct_product_id} valueName={f.byproduct_name}
-              onSelect={(p) => setF((prev) => ({ ...prev, byproduct_product_id: p.id, byproduct_name: `${p.name} (${p.sku})` }))} label="Pilih produk barang sisa (mis. Benang/Grey Sisa)…" />
-            <p className="mt-1 text-[10px] text-[#9A9BA3]">Kosongkan bila tak ada sisa. Sisa dinilai pada HPP bahan & mengurangi HPP output.</p>
-          </div>
-
-          <div className="rounded-lg border border-dashed border-[#0058CC]/40 bg-[#EAF2FF]/40 p-3">
-            <div className="flex items-center gap-2">
-              <button data-testid="mko-forecast-btn" type="button" className="secondary-button" onClick={runForecast}><Calculator size={13} /> Hitung Estimasi Hasil</button>
-              {preview && (
-                <div className="flex-1 text-[11.5px]" data-testid="mko-forecast-result">
-                  Output ≈ <b className="tabular-nums text-[#0058CC]">{formatQty(preview.expected_output)}</b> · Barang Sisa ≈ <b className="tabular-nums">{formatQty(preview.expected_byproduct)}</b>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Field label="Catatan"><textarea data-testid="mko-notes" className="field" rows="2" value={f.notes} onChange={set("notes")} placeholder="Instruksi khusus…" /></Field>
-        </div>
-        {modalErr && <p className="notice-bar danger mx-4 !mb-0" role="alert" data-testid="mko-form-error">{modalErr}</p>}
-        <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
+    <FormModal open onClose={onClose} size="lg" icon={Boxes} testId="makloon-order-create-modal" busy={saving} error={modalErr}
+      title={lockMode ? (f.mode === "buy_process" ? "Buat PO — Raw Material & Proses" : "Buat PO — Proses Saja") : "Buat Order Makloon"}
+      footer={(
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-[11px] text-[#6B6B73]"><GitBranch size={12} /> Pesanan tersimpan sebagai <b>Draf</b> — lalu {noTransform ? "Catat Jasa" : "Issue & Terima"} di detail.</p>
           <div className="flex gap-2">
-            <button className="secondary-button" onClick={onClose}>Batal</button>
-            <button data-testid="mko-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan Order"}</button>
+            <button type="button" className="secondary-button" disabled={saving} onClick={onClose}>Batal</button>
+            <button type="button" data-testid="mko-form-save" className="primary-button" disabled={saving} onClick={save}><Save size={14} /> {saving ? "Menyimpan…" : "Simpan Order"}</button>
           </div>
         </div>
+      )}>
+      <div className="space-y-3">
+        {lockMode ? (
+          <div className="rounded-lg border border-[#DCEAFE] bg-[#F2F7FF] p-2.5">
+            <p className="text-[10px] font-bold uppercase text-[#0058CC]">Mode Pengadaan</p>
+            <p className="text-[12.5px] font-semibold text-[#1B2733]">{f.mode === "buy_process" ? "Raw Material & Proses — beli bahan + kirim ke makloon" : "Proses Saja — bahan dari stok, kirim ke makloon"}</p>
+          </div>
+        ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Mode Pengadaan"><KNSelect data-testid="mko-mode" className="field" value={f.mode} onValueChange={(v) => setF((p) => ({ ...p, mode: v }))} options={MODE_OPTS} /></Field>
+          <Field label="Dari Resep (auto-isi)"><KNSelect data-testid="mko-recipe" className="field" value={f.recipe_id} onValueChange={applyRecipe} options={recipeOpts} /></Field>
+        </div>
+        )}
+        {lockMode && (
+          <Field label="Dari Resep (auto-isi)"><KNSelect data-testid="mko-recipe" className="field" value={f.recipe_id} onValueChange={applyRecipe} options={recipeOpts} /></Field>
+        )}
+
+        {f.mode === "buy_process" && (
+          <div className="grid grid-cols-1 gap-3 rounded-lg border border-[#EFD9A8] bg-[#FFFBEF] p-3 sm:grid-cols-2">
+            <Field label="Supplier Bahan" req><KNSelect data-testid="mko-supplier" className="field" value={f.supplier_id} onValueChange={(v) => setF((p) => ({ ...p, supplier_id: v }))} options={supOpts} /></Field>
+            <Field label="Harga Bahan / unit (Rp)"><MoneyInput testId="mko-material-price" className="field" value={f.material_price} onChange={(v) => set("material_price")({ target: { value: v } })} placeholder="mis. 51500" /></Field>
+          </div>
+        )}
+
+        <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
+          <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_auto_1fr]">
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Bahan (Input)</p>
+              <ProductSelect triggerTestId="mko-material-product" value={f.material_product_id} valueName={f.material_name}
+                onSelect={(p) => setF((prev) => ({ ...prev, material_product_id: p.id, material_name: `${p.name} (${p.sku})`, material_unit: p.base_unit }))} label="Pilih bahan…" />
+            </div>
+            <ArrowRight size={18} className="mb-2 hidden text-[#0058CC] sm:block" />
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase text-[#6B6B73]">Output</p>
+              {noTransform ? (
+                <div data-testid="mko-output-auto"
+                  className="flex h-[34px] items-center rounded-md border border-dashed border-[#D6E6FF] bg-[#F5F9FF] px-2 text-[11.5px] text-[#004099]">
+                  Otomatis: kain yang sama
+                </div>
+              ) : (
+                <ProductSelect triggerTestId="mko-output-product" value={f.output_product_id} valueName={f.output_name}
+                  onSelect={(p) => setF((prev) => ({ ...prev, output_product_id: p.id, output_name: `${p.name} (${p.sku})` }))} label="Pilih output…" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Field label="Qty Bahan" req><input data-testid="mko-material-qty" type="number" className="field" value={f.material_qty} onChange={set("material_qty")} placeholder="mis. 50" /></Field>
+          <Field label="Satuan"><input data-testid="mko-material-unit" className="field" value={f.material_unit} onChange={set("material_unit")} placeholder="kg" /></Field>
+          <Field label="Tahapan Proses (dari master)">
+            <KNSelect data-testid="mko-stage" className="field" value={f.stage_code}
+              onValueChange={pickStage} options={stageOpts} placeholder="Pilih tahap…" />
+          </Field>
+        </div>
+
+        {stage && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-2"
+            data-testid="mko-stage-meta">
+            <Layers size={13} className="text-[#6B219A]" />
+            <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
+              noTransform ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#EAF2FF] text-[#0058CC]"}`}>
+              {noTransform ? "Tidak mengubah kain — hanya biaya jasa" : "Mengubah tahap kain"}
+            </span>
+            {stage.material_flow === "either" ? (
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10.5px] font-semibold text-[#6B6B73]">Kainnya:</span>
+                <KNSelect data-testid="mko-flow" className="field !h-7 !py-0 !text-[11px] w-[180px]"
+                  value={f.material_flow || "moves"}
+                  onValueChange={(v) => setF((p) => ({ ...p, material_flow: v }))}
+                  options={FLOW_PICK_OPTIONS} />
+              </span>
+            ) : (
+              <span className="rounded-full border border-[#E5E5EA] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#3C3C43]">
+                {MATERIAL_FLOW_BADGE[stage.material_flow] || stage.material_flow || "Kain dikirim"}
+              </span>
+            )}
+            {stage.needs_vendor && !f.makloon_id && (
+              <span className="text-[10.5px] text-[#B26A00]">
+                Tahap ini dikerjakan mitra — pilih mitranya (boleh disimpan dulu, akan diperingatkan).
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Gudang Sumber Bahan" req><KNSelect data-testid="mko-from-warehouse" className="field" value={f.from_warehouse_id} onValueChange={(v) => setF((p) => ({ ...p, from_warehouse_id: v }))} options={whOpts} /></Field>
+          <Field label="Mitra Makloon">
+            <MakloonSelect triggerTestId="mko-makloon" processType={f.process_type} value={f.makloon_id} valueName={f.makloon_name}
+              onSelect={(m) => setF((p) => ({ ...p, makloon_id: m.id, makloon_name: m.name }))} label="Pilih makloon…" />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Field label="Yield (kosong = rumus GSM)">
+            <input data-testid="mko-yield" type="number" step="0.01" className="field" value={f.yield_factor}
+              onChange={set("yield_factor")} disabled={noTransform} placeholder={noTransform ? "—" : "otomatis"} />
+          </Field>
+          <Field label="Waste (%)"><input data-testid="mko-waste" type="number" step="0.1" className="field" value={f.waste_pct} onChange={set("waste_pct")} disabled={noTransform} /></Field>
+          <Field label="Sisa (%)"><input data-testid="mko-byproduct" type="number" step="0.1" className="field" value={f.byproduct_pct} onChange={set("byproduct_pct")} disabled={noTransform} /></Field>
+          <Field label="Tarif/unit (Rp)"><MoneyInput testId="mko-tariff" className="field" value={f.tariff} onChange={(v) => set("tariff")({ target: { value: v } })} /></Field>
+        </div>
+        {parseFloat(f.yield_factor) > 0 && (
+          <Field label="Alasan override yield (wajib — bisa diaudit)" req>
+            <input data-testid="mko-yield-reason" className="field" value={f.yield_override_reason}
+              onChange={set("yield_override_reason")}
+              placeholder="mis. Kontrak mitra menetapkan yield 3.8 yard/kg" />
+          </Field>
+        )}
+
+        <div className="rounded-lg border border-[#EFE0C8] bg-[#FFFBF3] p-3">
+          <p className="mb-1 text-[10px] font-bold uppercase text-[#9A6B1E]">Barang Sisa (leftover bahan input yang dikembalikan makloon, diterima sbg produk tersendiri)</p>
+          <ProductSelect triggerTestId="mko-byproduct-product" value={f.byproduct_product_id} valueName={f.byproduct_name}
+            onSelect={(p) => setF((prev) => ({ ...prev, byproduct_product_id: p.id, byproduct_name: `${p.name} (${p.sku})` }))} label="Pilih produk barang sisa (mis. Benang/Grey Sisa)…" />
+          <p className="mt-1 text-[10px] text-[#9A9BA3]">Kosongkan bila tak ada sisa. Sisa dinilai pada HPP bahan & mengurangi HPP output.</p>
+        </div>
+
+        <div className="rounded-lg border border-dashed border-[#0058CC]/40 bg-[#EAF2FF]/40 p-3">
+          <div className="flex items-center gap-2">
+            <button data-testid="mko-forecast-btn" type="button" className="secondary-button" onClick={runForecast}><Calculator size={13} /> Hitung Estimasi Hasil</button>
+            {preview && (
+              <div className="flex-1 text-[11.5px]" data-testid="mko-forecast-result">
+                Output ≈ <b className="tabular-nums text-[#0058CC]">{formatQty(preview.expected_output)}</b> · Barang Sisa ≈ <b className="tabular-nums">{formatQty(preview.expected_byproduct)}</b>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Field label="Catatan"><textarea data-testid="mko-notes" className="field" rows="2" value={f.notes} onChange={set("notes")} placeholder="Instruksi khusus…" /></Field>
       </div>
-    </div>
+    </FormModal>
   );
 }
 

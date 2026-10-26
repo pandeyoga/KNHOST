@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { roleIs } from "../../config/roles";
 import { MapPin, Package, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon, ChevronRight } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import PageTabs from "../../components/PageTabs";
+import { PageHeader } from "../../components/ListPageParts";
 import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
@@ -95,27 +97,26 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
   const capTxt = loc?.capacity_rolls_total ? `${loc.capacity_rolls_total} roll` : "Belum diatur";
   return (
     <div data-testid="location-putaway-view" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">GUDANG</p>
-          <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2">
-            <MapPin size={20} className="text-[#0058CC]" /> Lokasi Gudang & Penempatan Rak
-          </h1>
-          <p data-testid="lp-hierarchy" className="text-[12px] text-[#6B6B73] mt-0.5 flex flex-wrap items-center gap-1">
-            {[TERMS.site, TERMS.warehouse, TERMS.zone, TERMS.rack, TERMS.level, TERMS.bin].map((t, i) => (
-              <span key={t} className="inline-flex items-center gap-1">{i > 0 && <ChevronRight size={11} />}{t}</span>))}
-            {w.name && <span className="ml-2 font-semibold text-[#1C1C1E]">· {w.site ? `${w.site} › ` : ""}{w.name}</span>}
-          </p>
-          <div className="mt-1"><LocationScopeBadge scope={locScope} /></div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId}
-            options={warehouses.map((x) => ({ value: x.id, label: isActiveWh(x) ? x.name : `${x.name} (nonaktif)` }))}
-            className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-          <button data-testid="lp-refresh" onClick={loadAll} className="secondary-button">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
-          </button>
-        </div>
+      {/* Fase 4 · R3 (L-01/L-02) — kepala = PageHeader baku (dulu kicker "GUDANG" + h1 20 px buatan sendiri); tab = PageTabs
+          (dulu TabBtn buatan sendiri; testid `lp-tab-*` tetap). Di HP bilah tab satu baris bergulir (aturan baku P1). */}
+      <PageHeader icon={MapPin} title="Lokasi Gudang & Penempatan Rak" testId="lp-header"
+        actions={(
+          <>
+            <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId}
+              options={warehouses.map((x) => ({ value: x.id, label: isActiveWh(x) ? x.name : `${x.name} (nonaktif)` }))}
+              className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
+            <button type="button" data-testid="lp-refresh" onClick={loadAll} className="secondary-button">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
+            </button>
+          </>
+        )} />
+      <div className="-mt-2">
+        <p data-testid="lp-hierarchy" className="text-[12px] text-[#6B6B73] flex flex-wrap items-center gap-1">
+          {[TERMS.site, TERMS.warehouse, TERMS.zone, TERMS.rack, TERMS.level, TERMS.bin].map((t, i) => (
+            <span key={t} className="inline-flex items-center gap-1">{i > 0 && <ChevronRight size={11} />}{t}</span>))}
+          {w.name && <span className="ml-2 font-semibold text-[#1C1C1E]">· {w.site ? `${w.site} › ` : ""}{w.name}</span>}
+        </p>
+        <div className="mt-1"><LocationScopeBadge scope={locScope} /></div>
       </div>
 
       {error && <ErrorNotice message={error} onRetry={loadAll} />}
@@ -129,16 +130,15 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         <Stat icon={AlertOctagon} label="Alamat Tak Terdaftar" value={`${loc?.orphan?.rolls ?? 0} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
       </div>
 
-      {/* Tab dibungkus (bukan digulir) supaya ke-7 tab terlihat di HP & tanpa panah gulir vertikal di desktop. */}
-      <div className="flex flex-wrap gap-x-1 border-b border-[#EFF0F2]">
-        <TabBtn id="putaway" tab={tab} setTab={setTab} label={`Penempatan Rak${queue.length ? ` (${queue.length})` : ""}`} testId="lp-tab-putaway" />
-        <TabBtn id="structure" tab={tab} setTab={setTab} label="Struktur Lokasi" testId="lp-tab-structure" />
-        <TabBtn id="stock" tab={tab} setTab={setTab} label="Stok per Alamat" testId="lp-tab-stock" />
-        <TabBtn id="bins" tab={tab} setTab={setTab} label="Okupansi Bin" testId="lp-tab-bins" />
-        <TabBtn id="orphans" tab={tab} setTab={setTab} label={`Alamat Tak Terdaftar${loc?.orphan?.rolls ? ` (${loc.orphan.rolls})` : ""}`} testId="lp-tab-orphans" />
-        <TabBtn id="pa" tab={tab} setTab={setTab} label="Perintah Simpan ke Rak (Antar Gedung)" testId="lp-tab-pa" />
-        <TabBtn id="cuts" tab={tab} setTab={setTab} label="Antrean Potong" testId="lp-tab-cuts" />
-      </div>
+      <PageTabs value={tab} onChange={setTab} testId="lp-tab" ariaLabel="Lokasi gudang" tabs={[
+        { key: "putaway", label: `Penempatan Rak${queue.length ? ` (${queue.length})` : ""}` },
+        { key: "structure", label: "Struktur Lokasi" },
+        { key: "stock", label: "Stok per Alamat" },
+        { key: "bins", label: "Okupansi Bin" },
+        { key: "orphans", label: `Alamat Tak Terdaftar${loc?.orphan?.rolls ? ` (${loc.orphan.rolls})` : ""}` },
+        { key: "pa", label: "Perintah Simpan ke Rak (Antar Gedung)" },
+        { key: "cuts", label: "Antrean Potong" },
+      ]} />
 
       {tab === "pa" ? <PutawayOrdersPanel whId={whId} selectedEntity={selectedEntity} />
         : tab === "cuts" ? <PendingCutsPanel whId={whId} />
@@ -147,7 +147,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         : tab === "bins" ? <BinOccupancyGrid bins={loc?.bins} />
         : tab === "orphans" ? <OrphanPanel whId={whId} binOptions={binOptions} onChanged={loadAll} />
         : (
-          <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
+          <div className="section-card section-pad">
             <h3 className="text-[13px] font-bold mb-1">Antrean Penempatan Rak — roll belum ditempatkan</h3>
             <p className="text-[11.5px] text-[#6B6B73] mb-3">Saran bin hanya menampilkan bin yang lolos aturan & kapasitas; server tetap memeriksa ulang saat disimpan.</p>
             {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
@@ -170,15 +170,5 @@ function Stat({ icon: Icon, label, value, sub, color, loading, testId }) {
         : <p className="text-[18px] font-bold text-[#1C1C1E] tabular-nums leading-tight">{value}</p>}
       {sub && <p className="text-[11px] text-[#6B6B73] truncate" title={sub}>{sub}</p>}
     </div>
-  );
-}
-
-function TabBtn({ id, tab, setTab, label, testId }) {
-  const active = tab === id;
-  return (
-    <button data-testid={testId} onClick={() => setTab(id)}
-      className={`px-3 py-2 text-[13px] font-semibold border-b-2 -mb-px whitespace-nowrap transition-colors sm:px-4 ${active ? "border-[#0058CC] text-[#0058CC]" : "border-transparent text-[#6B6B73] hover:text-[#1C1C1E]"}`}>
-      {label}
-    </button>
   );
 }

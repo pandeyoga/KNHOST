@@ -1,4 +1,5 @@
-import { X, CheckCircle } from "lucide-react";
+import { X, CheckCircle, PackageCheck } from "lucide-react";
+import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import { rollsText } from "../../../components/QtyDual";   // FASE U — satu aturan teks roll
 import { formatQty } from "../inventory/inventoryConstants";
@@ -17,10 +18,14 @@ function kgPerUnit(p) {
  * Operator mengisi panjang (m) + berat (kg) per roll; pasangan kg↔m diisi otomatis
  * dari faktor produk (gramasi×lebar / kg_per_meter) namun bisa di-override (catch-weight aktual).
  * Validasi Σ kontribusi (berat utk PO per-kg, panjang utk PO per-meter) ≈ qty diterima.
+ *
+ * Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, klik latar
+ * tidak membuang isian roll). `error` (galat "Selesaikan Penerimaan" dari layar pemanggil) kini tampil DI pop-up — dulu
+ * hanya di bilah halaman yang tertutup lapisan ini. Testid `gr-catchweight-modal`, `gr-submit-complete`, `gr-roll-*` tetap.
  */
 export default function GRCatchWeightModal({ task, product, rolls, setRolls, onSubmit, onClose,
                                             submitting, lotFields, setLotFields, lotSettings, tolPct = 2,
-                                            sjMode = "warn", sjKnown = [] }) {
+                                            sjMode = "warn", sjKnown = [], error = "" }) {
   const { options } = useDomainEnums();   // GRN Fase 0.4 — grade dari SSOT
   if (!task) return null;
   const isKg = (task.unit || "").toLowerCase() === "kg";
@@ -79,17 +84,25 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-      onClick={() => !submitting && onClose()} data-testid="gr-catchweight-modal">
-      <div className="bg-white rounded-xl p-5 w-full max-w-2xl max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-[14px] font-bold mb-1">Goods Receipt — Rincian Roll</h3>
-        <p className="text-[11px] text-[#6B6B73] mb-3">
+    <FormModal open onClose={onClose} size="md" icon={PackageCheck} testId="gr-catchweight-modal" busy={submitting}
+      error={error} title="Goods Receipt — Rincian Roll"
+      subtitle={(
+        <>
           {task.sku} · {task.product_name} — diterima <b>{formatQty(expected)} {task.unit}</b>
           {kgm > 0
             ? <span className="ml-1 text-[#0058CC]">· catch-weight aktif: 1 {baseUnit} ≈ {kgm.toFixed(3)} kg</span>
             : <span className="ml-1 text-amber-600">· tanpa faktor kg/m (isi panjang & berat manual)</span>}
-        </p>
-
+        </>
+      )}
+      footer={(
+        <div className="flex gap-2">
+          <button type="button" data-testid="gr-submit-complete" onClick={onSubmit} disabled={submitting || !matched || (needSj && sjMode === "block")}
+            className="primary-button flex-1 justify-center">
+            <CheckCircle size={13} /> {submitting ? "Memproses…" : "Selesaikan Penerimaan"}
+          </button>
+          <button type="button" onClick={onClose} disabled={submitting} className="secondary-button">Batal</button>
+        </div>
+      )}>
         {/* FASE U — RENCANA ROLL dari baris PO dibawa ke layar tempat roll benar-benar
             LAHIR. Tanpa ini, PO "12 roll" bisa diselesaikan sebagai 1 roll dan papan PO
             akan mengumumkan "1 roll · 540 yard diterima" tanpa satu pun peringatan —
@@ -107,7 +120,7 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
               {rolls.length === planRolls ? " ✓" : " — pastikan sesuai gulungan fisik yang datang."}
             </span>
             {rolls.length !== planRolls && expected > 0 && (
-              <button data-testid="gr-fill-plan-rolls" onClick={fillPlanRolls}
+              <button type="button" data-testid="gr-fill-plan-rolls" onClick={fillPlanRolls}
                 className="ml-auto rounded-md border border-[#E0C08A] bg-white px-2 py-1 text-[10.5px] font-semibold text-[#8C4A00] hover:bg-[#FFFBF4]">
                 Buat {rollsText(planRolls)} (bagi rata {formatQty(expected)} {task.unit})
               </button>
@@ -175,11 +188,11 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
         </div>
 
         <div className="rounded-md border border-[#EFF0F2] overflow-hidden mb-3">
-          <div className="grid grid-cols-[1fr_1fr_1fr_90px_36px] gap-1 px-2 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
+          <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_90px_36px] gap-1 px-2 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Panjang ({baseUnit})</span><span>Berat (kg)</span><span>Dye Lot</span><span>Grade</span><span></span>
           </div>
           {rolls.map((row, i) => (
-            <div key={i} data-testid={`gr-roll-row-${i}`} className="grid grid-cols-[1fr_1fr_1fr_90px_36px] gap-1 px-2 py-1.5 border-b border-[#EFF0F2] last:border-0 items-center">
+            <div key={i} data-testid={`gr-roll-row-${i}`} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_90px_36px] gap-1 px-2 py-1.5 border-b border-[#EFF0F2] last:border-0 items-center">
               <input data-testid={`gr-roll-length-${i}`} type="number" value={row.length} placeholder="m"
                 onChange={(e) => updateDerived(i, "length", parseFloat(e.target.value) || 0)}
                 className="border border-[#E5E5EA] rounded px-2 py-1 text-[12px]" />
@@ -191,7 +204,7 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
                 className={`border rounded px-2 py-1 text-[12px] ${!(row.dye_lot || "").trim() && (lotSettings?.require_dye_lot !== false) ? "border-amber-400 bg-amber-50" : "border-[#E5E5EA]"}`} />
               <KNSelect className="border border-[#E5E5EA] rounded px-1 py-1 text-[12px] bg-white text-left"
                 value={row.grade} onValueChange={(v) => setField(i, "grade", v)} options={options("grade")} />
-              <button data-testid={`gr-roll-remove-${i}`} onClick={() => setRolls(rolls.filter((_, idx) => idx !== i))}
+              <button type="button" aria-label="Hapus roll" data-testid={`gr-roll-remove-${i}`} onClick={() => setRolls(rolls.filter((_, idx) => idx !== i))}
                 disabled={rolls.length <= 1} className="text-red-400 hover:text-red-600 disabled:opacity-30 justify-self-center">
                 <X size={14} />
               </button>
@@ -199,8 +212,8 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
           ))}
         </div>
 
-        <div className="flex items-center justify-between mb-3">
-          <button data-testid="gr-add-roll" onClick={() => setRolls([...rolls, { length: 0, weight: 0, dye_lot: "", grade: "A" }])}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <button type="button" data-testid="gr-add-roll" onClick={() => setRolls([...rolls, { length: 0, weight: 0, dye_lot: "", grade: "A" }])}
             className="text-[11px] font-semibold text-[#0058CC] flex items-center gap-1">+ Tambah Roll</button>
           <div data-testid="gr-roll-totals" className={`text-[11px] font-semibold ${matched ? "text-green-700" : "text-amber-600"}`}>
             Σ {rolls.length} roll: {sumLen} {baseUnit} · {sumWt} kg
@@ -215,15 +228,6 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button data-testid="gr-submit-complete" onClick={onSubmit} disabled={submitting || !matched || (needSj && sjMode === "block")}
-            className="flex-1 bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5">
-            <CheckCircle size={13} /> {submitting ? "Memproses…" : "Selesaikan Penerimaan"}
-          </button>
-          <button onClick={onClose} disabled={submitting}
-            className="bg-[#F2F2F7] text-[#3C3C43] rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50">Batal</button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }

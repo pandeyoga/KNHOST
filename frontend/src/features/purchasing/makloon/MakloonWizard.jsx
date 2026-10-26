@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import MoneyInput from "@/components/MoneyInput";
-import { ArrowLeft, ArrowRight, Boxes, Check, Plus, Save, TriangleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Boxes, Check, Plus, Save, TriangleAlert } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import ProductSelect from "../../../components/ProductSelect";
@@ -15,7 +15,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import MakloonStepEditor, { effectiveFlow } from "./MakloonStepEditor";
 import { fetchEnum, fetchStages, FALLBACK_BASIS_LABELS } from "./makloonApi";
 import { MATERIAL_FLOW_BADGE, NEXT_ACTION_LABELS } from "../../../constants/makloonVocab";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../../components/FormModal";
 
 const MODE_OPTS = [
   { value: "process_only", label: "Proses Saja (bahan dari stok)" },
@@ -314,21 +314,33 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
   };
 
   return (
-    <div data-testid="makloon-wizard" className="fixed inset-0 z-[170] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[94vh] w-full max-w-[980px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <div>
-            <h2 className="flex items-center gap-2 text-[15px] font-bold"><Boxes size={16} className="text-[#0058CC]" /> Wizard Order Makloon</h2>
-            <p className="text-[11px] text-[#6B6B73]">
-              {prContext?.pr_number
-                ? `Realisasi ${prContext.pr_number} baris ${prContext.line_no} · bahan & mitra ter-prefill dari Resep Proses`
-                : "Rantai proses multi-tahap & multi-mitra · estimasi berbasis GSM · tarif dari kontrak"}
-            </p>
-          </div>
-          <button className="icon-button" onClick={onClose} data-testid="wizard-close" aria-label="Tutup"><X size={18} /></button>
+    // Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, klik latar
+    // tidak membuang isian, galat di kaki pop-up). Isi & langkah wizard tidak berubah. Testid `makloon-wizard`,
+    // `wizard-stages`, `wizard-back/-next/-save` tetap.
+    <FormModal open onClose={onClose} size="xl" icon={Boxes} testId="makloon-wizard" busy={saving} error={err}
+      title="Wizard Order Makloon"
+      subtitle={prContext?.pr_number
+        ? `Realisasi ${prContext.pr_number} baris ${prContext.line_no} · bahan & mitra ter-prefill dari Resep Proses`
+        : "Rantai proses multi-tahap & multi-mitra · estimasi berbasis GSM · tarif dari kontrak"}
+      footer={(
+        /* G4-28 — kaki standar: semua tombol rata kanan (Batal/Kembali lalu aksi utama). */
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={stage === 1 ? onClose : () => setStage((v) => v - 1)} data-testid="wizard-back">
+            {stage === 1 ? "Batal" : <><ArrowLeft size={13} /> Kembali</>}
+          </button>
+          {stage < 3 ? (
+            <button type="button" className="primary-button" onClick={next} data-testid="wizard-next">
+              Lanjut <ArrowRight size={13} />
+            </button>
+          ) : (
+            <button type="button" className="primary-button" onClick={save} disabled={saving} data-testid="wizard-save">
+              <Save size={13} /> {saving ? "Menyimpan…" : "Simpan Order Makloon"}
+            </button>
+          )}
         </div>
-
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-2" data-testid="wizard-stages">
+      )}>
+      <div className="space-y-3">
+        <div className="-mx-4 -mt-3.5 mb-1 flex flex-wrap items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-4 py-2" data-testid="wizard-stages">
           {["Bahan & Gudang", "Rantai Proses", "Ringkasan & Simpan"].map((t, i) => (
             <div key={t} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${stage === i + 1 ? "bg-[#0058CC] text-white" : stage > i + 1 ? "bg-[#E6F4EA] text-[#1B7F4B]" : "bg-white text-[#9A9BA3] border border-[#E5E5EA]"}`}>
               {stage > i + 1 ? <Check size={11} /> : <span>{i + 1}</span>} {t}
@@ -336,202 +348,179 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
           ))}
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {err && (
-            <div data-testid="wizard-error" className="rounded-lg bg-[#FDEDE7] px-3 py-2 text-[11.5px] text-[#C0392B]">
-              <TriangleAlert size={12} className="mr-1 inline" />{err}
+        {stage === 1 && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Mode Pesanan">
+              <KNSelect data-testid="wizard-mode" className="field" value={head.mode}
+                onValueChange={(v) => setHead((p) => ({ ...p, mode: v }))} options={MODE_OPTS} />
+            </Field>
+            <Field label="Produk Bahan (input awal) *">
+              <ProductSelect value={head.material_product_id} valueName={head.material_name}
+                triggerTestId="wizard-material"
+                onSelect={(p) => {
+                  setMaterialProduct(p);
+                  setHead((h) => ({ ...h, material_product_id: p.id, material_name: p.name, material_unit: p.base_unit }));
+                }} />
+            </Field>
+            <Field label={`Qty Bahan (${head.material_unit || "unit"}) *`}>
+              <input data-testid="wizard-material-qty" className="field" value={head.material_qty}
+                onChange={(e) => setHead((p) => ({ ...p, material_qty: e.target.value }))} placeholder="mis. 200" />
+            </Field>
+            <Field label="Gudang Sumber Bahan *">
+              <KNSelect data-testid="wizard-from-wh" className="field" value={head.from_warehouse_id}
+                onValueChange={(v) => setHead((p) => ({ ...p, from_warehouse_id: v }))} options={whOpts} />
+            </Field>
+            <Field label="Gudang Tujuan Hasil">
+              <KNSelect data-testid="wizard-target-wh" className="field" value={head.target_warehouse_id}
+                onValueChange={(v) => setHead((p) => ({ ...p, target_warehouse_id: v }))} options={whOpts} />
+            </Field>
+            {head.mode === "buy_process" && (
+              <>
+                <Field label="Supplier Bahan *">
+                  <KNSelect data-testid="wizard-supplier" className="field" value={head.supplier_id}
+                    onValueChange={(v) => setHead((p) => ({ ...p, supplier_id: v, supplier_name: suppliers.find((s) => s.id === v)?.name || "" }))}
+                    options={supOpts} />
+                </Field>
+                <Field label="Harga Beli Bahan (Rp/unit)">
+                  <MoneyInput testId="wizard-material-price" className="field" value={head.material_price}
+                    onChange={(v) => setHead((p) => ({ ...p, material_price: v }))} />
+                </Field>
+              </>
+            )}
+            <div className="md:col-span-2">
+              <Field label="Catatan">
+                <input data-testid="wizard-notes" className="field" value={head.notes}
+                  onChange={(e) => setHead((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="mis. produksi kain printing motif A untuk SO-0007" />
+              </Field>
             </div>
-          )}
-
-          {stage === 1 && (
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Mode Pesanan">
-                <KNSelect data-testid="wizard-mode" className="field" value={head.mode}
-                  onValueChange={(v) => setHead((p) => ({ ...p, mode: v }))} options={MODE_OPTS} />
-              </Field>
-              <Field label="Produk Bahan (input awal) *">
-                <ProductSelect value={head.material_product_id} valueName={head.material_name}
-                  triggerTestId="wizard-material"
-                  onSelect={(p) => {
-                    setMaterialProduct(p);
-                    setHead((h) => ({ ...h, material_product_id: p.id, material_name: p.name, material_unit: p.base_unit }));
-                  }} />
-              </Field>
-              <Field label={`Qty Bahan (${head.material_unit || "unit"}) *`}>
-                <input data-testid="wizard-material-qty" className="field" value={head.material_qty}
-                  onChange={(e) => setHead((p) => ({ ...p, material_qty: e.target.value }))} placeholder="mis. 200" />
-              </Field>
-              <Field label="Gudang Sumber Bahan *">
-                <KNSelect data-testid="wizard-from-wh" className="field" value={head.from_warehouse_id}
-                  onValueChange={(v) => setHead((p) => ({ ...p, from_warehouse_id: v }))} options={whOpts} />
-              </Field>
-              <Field label="Gudang Tujuan Hasil">
-                <KNSelect data-testid="wizard-target-wh" className="field" value={head.target_warehouse_id}
-                  onValueChange={(v) => setHead((p) => ({ ...p, target_warehouse_id: v }))} options={whOpts} />
-              </Field>
-              {head.mode === "buy_process" && (
-                <>
-                  <Field label="Supplier Bahan *">
-                    <KNSelect data-testid="wizard-supplier" className="field" value={head.supplier_id}
-                      onValueChange={(v) => setHead((p) => ({ ...p, supplier_id: v, supplier_name: suppliers.find((s) => s.id === v)?.name || "" }))}
-                      options={supOpts} />
-                  </Field>
-                  <Field label="Harga Beli Bahan (Rp/unit)">
-                    <MoneyInput testId="wizard-material-price" className="field" value={head.material_price}
-                      onChange={(v) => setHead((p) => ({ ...p, material_price: v }))} />
-                  </Field>
-                </>
-              )}
+            {/* UAT 24 Okt (audit UI tahap 2) — G4-28: alasan qty manual baru muncul setelah bahan dipilih
+                dan memang belum ada resep (dulu wajib-merah sebelum apa pun dipilih). */}
+            {head.material_product_id && !steps.some((s) => s.recipe_id) && (
               <div className="md:col-span-2">
-                <Field label="Catatan">
-                  <input data-testid="wizard-notes" className="field" value={head.notes}
-                    onChange={(e) => setHead((p) => ({ ...p, notes: e.target.value }))}
-                    placeholder="mis. produksi kain printing motif A untuk SO-0007" />
+                <Field label="Alasan qty bahan manual (belum ada resep/yield) *">
+                  <input data-testid="wizard-manual-material-reason" className="field" value={head.manual_material_reason}
+                    onChange={(e) => setHead((p) => ({ ...p, manual_material_reason: e.target.value }))}
+                    placeholder="mis. resep artikel belum diisi, qty dari pengalaman mitra" />
                 </Field>
               </div>
-              {/* UAT 24 Okt (audit UI tahap 2) — G4-28: alasan qty manual baru muncul setelah bahan dipilih
-                  dan memang belum ada resep (dulu wajib-merah sebelum apa pun dipilih). */}
-              {head.material_product_id && !steps.some((s) => s.recipe_id) && (
-                <div className="md:col-span-2">
-                  <Field label="Alasan qty bahan manual (belum ada resep/yield) *">
-                    <input data-testid="wizard-manual-material-reason" className="field" value={head.manual_material_reason}
-                      onChange={(e) => setHead((p) => ({ ...p, manual_material_reason: e.target.value }))}
-                      placeholder="mis. resep artikel belum diisi, qty dari pengalaman mitra" />
-                  </Field>
+            )}
+            <div className="md:col-span-2">
+              <Field label="Alasan jalur restock (wajib bila artikel bisa keduanya atau default-nya supplier)">
+                <input data-testid="wizard-route-reason" className="field" value={head.route_reason}
+                  onChange={(e) => setHead((p) => ({ ...p, route_reason: e.target.value }))}
+                  placeholder="mis. supplier kosong, produksi sendiri lebih murah" />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {stage === 2 && (
+          <div className="space-y-3">
+            {steps.map((s, i) => (
+              <MakloonStepEditor key={i} index={i} step={s} inputProduct={inputProductFor(i)}
+                stageOptions={stageOptions} basisOptions={basisOptions} entityId={selectedEntity}
+                canRemove={steps.length > 1}
+                onChange={(ns) => setSteps((p) => p.map((x, idx) => (idx === i ? ns : x)))}
+                onRemove={() => setSteps((p) => p.filter((_, idx) => idx !== i))} />
+            ))}
+            <button type="button" data-testid="wizard-add-step" className="secondary-button w-full justify-center"
+              onClick={() => setSteps((p) => [...p, emptyStep()])}>
+              <Plus size={13} /> Tambah Langkah Proses (mitra boleh berbeda)
+            </button>
+          </div>
+        )}
+
+        {stage === 3 && (
+          <div className="space-y-3" data-testid="wizard-summary">
+            {softWarnings.length > 0 && (
+              // Peringatan yang TIDAK memblokir tetap harus DIBACA sebelum menyimpan.
+              // Bila hanya muncul sesudah simpan (toast), ia hilang bersama layarnya.
+              <div data-testid="wizard-soft-warnings"
+                className="rounded-lg border border-[#F5D9A8] bg-[#FFF8EC] px-3 py-2">
+                <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#8C4A00]">
+                  <TriangleAlert size={12} /> Bisa disimpan, tetapi perhatikan ini
+                </p>
+                <ul className="mt-1 space-y-1 text-[11.5px] text-[#8C4A00]">
+                  {softWarnings.map((w, i) => (
+                    <li key={`w${i}`} data-testid={`wizard-soft-warning-${i}`}>• {w}</li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-[10.5px] text-[#8C4A00]/80">
+                  Peringatan ini ikut tersimpan di dokumen SPK, jadi petugas berikutnya
+                  tetap melihatnya di layar rincian.
+                </p>
+              </div>
+            )}
+            <div className="section-card">
+              <div className="section-head"><h3 className="text-[12.5px] font-bold">Rantai proses</h3></div>
+              <div className="section-body space-y-2">
+                <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
+                  <span className="rounded bg-[#F3F4F6] px-2 py-1 font-semibold">{head.material_name} · {formatQty(parseFloat(head.material_qty) || 0)} {head.material_unit}</span>
+                  {steps.map((s, i) => {
+                    const stg = stageOf(s);
+                    const noTr = stg?.changes_stage === false;
+                    return (
+                      <span key={i} className="flex items-center gap-1.5">
+                        <ArrowRight size={12} className="text-[#9A9BA3]" />
+                        <span className={`rounded px-2 py-1 font-semibold ${
+                          noTr ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#EAF2FF] text-[#0058CC]"}`}>
+                          {noTr
+                            ? `${stg.label || stg.value} (kain tetap)`
+                            : `${s.output_name || "?"} · ${formatQty(s._preview?.estimate?.expected_output_qty || 0)} ${s.output_unit}`}
+                          <span className="ml-1 text-[10px] font-normal text-[#6B6B73]">({s.makloon_name || "mitra belum dipilih"})</span>
+                        </span>
+                      </span>
+                    );
+                  })}
                 </div>
-              )}
-              <div className="md:col-span-2">
-                <Field label="Alasan jalur restock (wajib bila artikel bisa keduanya atau default-nya supplier)">
-                  <input data-testid="wizard-route-reason" className="field" value={head.route_reason}
-                    onChange={(e) => setHead((p) => ({ ...p, route_reason: e.target.value }))}
-                    placeholder="mis. supplier kosong, produksi sendiri lebih murah" />
-                </Field>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <Kpi label="Jumlah langkah" value={String(steps.length)} />
+                  <Kpi label="Mitra terlibat" value={String(partners.size)} />
+                  <Kpi label="Perkiraan hasil akhir" value={`${formatQty(finalQty)} ${finalStep?.output_unit || ""}`} tone="#0058CC" />
+                  <Kpi label="Rencana ongkos jasa" value={formatCurrency(plannedService)} tone="#1B7F4B" />
+                </div>
               </div>
             </div>
-          )}
-
-          {stage === 2 && (
-            <div className="space-y-3">
-              {steps.map((s, i) => (
-                <MakloonStepEditor key={i} index={i} step={s} inputProduct={inputProductFor(i)}
-                  stageOptions={stageOptions} basisOptions={basisOptions} entityId={selectedEntity}
-                  canRemove={steps.length > 1}
-                  onChange={(ns) => setSteps((p) => p.map((x, idx) => (idx === i ? ns : x)))}
-                  onRemove={() => setSteps((p) => p.filter((_, idx) => idx !== i))} />
-              ))}
-              <button type="button" data-testid="wizard-add-step" className="secondary-button w-full justify-center"
-                onClick={() => setSteps((p) => [...p, emptyStep()])}>
-                <Plus size={13} /> Tambah Langkah Proses (mitra boleh berbeda)
-              </button>
-            </div>
-          )}
-
-          {stage === 3 && (
-            <div className="space-y-3" data-testid="wizard-summary">
-              {softWarnings.length > 0 && (
-                // Peringatan yang TIDAK memblokir tetap harus DIBACA sebelum menyimpan.
-                // Bila hanya muncul sesudah simpan (toast), ia hilang bersama layarnya.
-                <div data-testid="wizard-soft-warnings"
-                  className="rounded-lg border border-[#F5D9A8] bg-[#FFF8EC] px-3 py-2">
-                  <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[#8C4A00]">
-                    <TriangleAlert size={12} /> Bisa disimpan, tetapi perhatikan ini
-                  </p>
-                  <ul className="mt-1 space-y-1 text-[11.5px] text-[#8C4A00]">
-                    {softWarnings.map((w, i) => (
-                      <li key={`w${i}`} data-testid={`wizard-soft-warning-${i}`}>• {w}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-1 text-[10.5px] text-[#8C4A00]/80">
-                    Peringatan ini ikut tersimpan di dokumen SPK, jadi petugas berikutnya
-                    tetap melihatnya di layar rincian.
-                  </p>
-                </div>
-              )}
-              <div className="section-card">
-                <div className="section-head"><h3 className="text-[12.5px] font-bold">Rantai proses</h3></div>
-                <div className="section-body space-y-2">
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
-                    <span className="rounded bg-[#F3F4F6] px-2 py-1 font-semibold">{head.material_name} · {formatQty(parseFloat(head.material_qty) || 0)} {head.material_unit}</span>
+            <div className="section-card">
+              <div className="section-head"><h3 className="text-[12.5px] font-bold">Rincian biaya per langkah (rencana)</h3></div>
+              <div className="section-body">
+                <table className="w-full text-[11.5px]">
+                  <thead>
+                    <tr className="text-left text-[10px] uppercase text-[#6B6B73]">
+                      <th className="py-1">Langkah</th><th>Mitra</th><th>Aliran kain</th><th>Basis tarif</th>
+                      <th className="text-right">Perkiraan hasil</th><th className="text-right">Ongkos jasa</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EFF0F2]">
                     {steps.map((s, i) => {
                       const stg = stageOf(s);
-                      const noTr = stg?.changes_stage === false;
+                      const flow = effectiveFlow(stg, s);
                       return (
-                        <span key={i} className="flex items-center gap-1.5">
-                          <ArrowRight size={12} className="text-[#9A9BA3]" />
-                          <span className={`rounded px-2 py-1 font-semibold ${
-                            noTr ? "bg-[#F3E9FA] text-[#6B219A]" : "bg-[#EAF2FF] text-[#0058CC]"}`}>
-                            {noTr
-                              ? `${stg.label || stg.value} (kain tetap)`
-                              : `${s.output_name || "?"} · ${formatQty(s._preview?.estimate?.expected_output_qty || 0)} ${s.output_unit}`}
-                            <span className="ml-1 text-[10px] font-normal text-[#6B6B73]">({s.makloon_name || "mitra belum dipilih"})</span>
-                          </span>
-                        </span>
+                        <tr key={i} data-testid={`wizard-summary-row-${i + 1}`}>
+                          <td className="py-1.5">{i + 1}. {stg?.label || s.stage_code || s.process_type}</td>
+                          <td>{s.makloon_name || "—"}</td>
+                          <td>
+                            {MATERIAL_FLOW_BADGE[flow] || flow}
+                            <span className="block text-[10px] text-[#6B6B73]">
+                              {NEXT_ACTION_LABELS[flow === "service_only" ? "record_service" : "issue"]}
+                            </span>
+                          </td>
+                          <td>{FALLBACK_BASIS_LABELS[s._preview?.tariff?.basis] || s._preview?.tariff?.basis || "—"}</td>
+                          <td className="text-right tabular-nums">{formatQty(s._preview?.estimate?.expected_output_qty || 0)} {s.output_unit}</td>
+                          <td className="text-right tabular-nums">{formatCurrency(s._preview?.tariff?.amount || 0)}</td>
+                        </tr>
                       );
                     })}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                    <Kpi label="Jumlah langkah" value={String(steps.length)} />
-                    <Kpi label="Mitra terlibat" value={String(partners.size)} />
-                    <Kpi label="Perkiraan hasil akhir" value={`${formatQty(finalQty)} ${finalStep?.output_unit || ""}`} tone="#0058CC" />
-                    <Kpi label="Rencana ongkos jasa" value={formatCurrency(plannedService)} tone="#1B7F4B" />
-                  </div>
-                </div>
-              </div>
-              <div className="section-card">
-                <div className="section-head"><h3 className="text-[12.5px] font-bold">Rincian biaya per langkah (rencana)</h3></div>
-                <div className="section-body">
-                  <table className="w-full text-[11.5px]">
-                    <thead>
-                      <tr className="text-left text-[10px] uppercase text-[#6B6B73]">
-                        <th className="py-1">Langkah</th><th>Mitra</th><th>Aliran kain</th><th>Basis tarif</th>
-                        <th className="text-right">Perkiraan hasil</th><th className="text-right">Ongkos jasa</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#EFF0F2]">
-                      {steps.map((s, i) => {
-                        const stg = stageOf(s);
-                        const flow = effectiveFlow(stg, s);
-                        return (
-                          <tr key={i} data-testid={`wizard-summary-row-${i + 1}`}>
-                            <td className="py-1.5">{i + 1}. {stg?.label || s.stage_code || s.process_type}</td>
-                            <td>{s.makloon_name || "—"}</td>
-                            <td>
-                              {MATERIAL_FLOW_BADGE[flow] || flow}
-                              <span className="block text-[10px] text-[#6B6B73]">
-                                {NEXT_ACTION_LABELS[flow === "service_only" ? "record_service" : "issue"]}
-                              </span>
-                            </td>
-                            <td>{FALLBACK_BASIS_LABELS[s._preview?.tariff?.basis] || s._preview?.tariff?.basis || "—"}</td>
-                            <td className="text-right tabular-nums">{formatQty(s._preview?.estimate?.expected_output_qty || 0)} {s.output_unit}</td>
-                            <td className="text-right tabular-nums">{formatCurrency(s._preview?.tariff?.amount || 0)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* G4-28 — kaki standar: semua tombol rata kanan (Batal/Kembali lalu aksi utama). */}
-        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={stage === 1 ? onClose : () => setStage((v) => v - 1)} data-testid="wizard-back">
-            {stage === 1 ? "Batal" : <><ArrowLeft size={13} /> Kembali</>}
-          </button>
-          {stage < 3 ? (
-            <button className="primary-button" onClick={next} data-testid="wizard-next">
-              Lanjut <ArrowRight size={13} />
-            </button>
-          ) : (
-            <button className="primary-button" onClick={save} disabled={saving} data-testid="wizard-save">
-              <Save size={13} /> {saving ? "Menyimpan…" : "Simpan Order Makloon"}
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+
+    </FormModal>
   );
 }
 

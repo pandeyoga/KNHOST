@@ -69,7 +69,8 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
   return (
     <section className="view-container" data-testid="makloon-claim-recap">
       {/* UAT 24 Okt (audit UI tahap 2) — G4-25: kerangka sama dengan tab saudara (PageHeader + kartu
-          penyaring berlabel + MetricRow); nilai 0 tidak lagi merah/hijau. */}
+          penyaring berlabel + MetricRow); nilai 0 tidak lagi merah/hijau.
+          Fase 4 · R3 (L-07/L-08) — dua tabel rekap = `.data-table` baku dalam `.table-container` (dulu tabel mentah). */}
       <PageHeader icon={Scale} title={<span data-testid="recap-title">Kinerja Mitra Makloon</span>}
         subtitle="Skor mitra (hasil vs target, klaim, yield proses) dan rekap susut, piutang klaim & potongan tagihan per mitra dalam periode."
         actions={denied ? null : <>
@@ -116,9 +117,9 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
         { label: "Susut menunggu", value: String(t.loss_pending || 0), testId: "recap-kpi-loss-pending" },
         { label: "Klaim selisih menunggu", value: String(t.variance_pending || 0), testId: "recap-kpi-variance-pending" },
       ]} />
-      <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
-        <table className="w-full text-[12px]" data-testid="recap-partner-table">
-          <thead className="whitespace-nowrap bg-[#F7F7F9] text-left text-[11px] uppercase text-[#8E8E93]">
+      <div className="table-container">
+        <table className="data-table" data-testid="recap-partner-table">
+          <thead>
             <tr><th className="px-3 py-2">Mitra</th><th className="px-3 py-2 text-right">Kejadian susut</th><th className="px-3 py-2 text-right">Qty susut</th>
               <th className="px-3 py-2 text-right">Beban wajar</th><th className="px-3 py-2 text-right">Piutang klaim</th><th className="px-3 py-2 text-right">Dipotong tagihan</th>
               <th className="px-3 py-2 text-right">Klaim selisih</th><th className="px-3 py-2 text-right">Menunggu</th></tr>
@@ -152,9 +153,9 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
             onClick={() => setOffset(offset + PAGE)} data-testid="recap-rows-next">Berikutnya</button>
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
-        <table className="w-full text-[11.5px]" data-testid="recap-rows-table">
-          <thead className="whitespace-nowrap bg-[#F7F7F9] text-left text-[11px] uppercase text-[#8E8E93]">
+      <div className="table-container">
+        <table className="data-table text-[11.5px]" data-testid="recap-rows-table">
+          <thead>
             <tr><th className="px-3 py-2">Tanggal</th><th className="px-3 py-2">Jenis</th><th className="px-3 py-2">No. Order Makloon</th><th className="px-3 py-2">Mitra</th>
               <th className="px-3 py-2 text-right">Qty</th><th className="px-3 py-2 text-right">Beban</th><th className="px-3 py-2 text-right">Klaim</th>
               <th className="px-3 py-2">Penyelesaian</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Alasan</th></tr>

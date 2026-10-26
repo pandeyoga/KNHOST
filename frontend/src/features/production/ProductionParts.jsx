@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react";
 import { X, Plus, Trash2, Pencil, Layers3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import { Badge, formatCurrency } from "../finance/financeShared";
 
 // ── RBAC UI (selaras permissions_config: resource "production") ───────────────
@@ -19,20 +20,14 @@ export function prodPerms(role) {
   };
 }
 
-// ── Modal generik (background solid, aksesibel) ──────────────────────────────
+// ── Modal generik ── Fase 4 · R3 (L-03): dulu lapisan `fixed inset-0` buatan sendiri; kini FormModal baku tanpa kaki
+// (isi — BOMFormModal / WOCreateModal / WODetailPanel — punya tombolnya sendiri). Layar penuh di HP, Esc berlapis,
+// klik latar tidak membuang isian. Testid `prod-modal` & `prod-modal-close` tetap.
 export function Modal({ title, children, onClose, wide }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-         data-testid="prod-modal" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`mt-10 w-full ${wide ? "max-w-3xl" : "max-w-xl"} rounded-2xl border border-[#E7E7EC] bg-white shadow-xl`}>
-        <div className="flex items-center gap-2 border-b border-[#F0F0F3] px-4 py-3">
-          <h3 className="text-[13px] font-bold text-[#1C1C1E]">{title}</h3>
-          <button data-testid="prod-modal-close" onClick={onClose}
-                  className="ml-auto rounded-lg p-1 text-[#8E8E93] hover:bg-[#F2F2F5]" aria-label="Tutup"><X size={16} /></button>
-        </div>
-        <div className="p-4">{children}</div>
-      </div>
-    </div>
+    <FormModal open onClose={onClose} title={title} size={wide ? "lg" : "md"} testId="prod-modal">
+      {children}
+    </FormModal>
   );
 }
 

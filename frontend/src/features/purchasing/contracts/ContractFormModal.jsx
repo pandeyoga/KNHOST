@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
-import { FileText, Plus, Save, Trash2, X } from "lucide-react";
+import { FileText, Plus, Save, Trash2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import MakloonSelect from "../../../components/MakloonSelect";
@@ -14,8 +14,7 @@ import EntityBadge from "../../../components/EntityBadge";
 import {
   AUX_BASIS_OPTIONS, createContract, FALLBACK_BASIS_LABELS, fetchEnum, patchContract, tariffPreview,
 } from "../makloon/makloonApi";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { useEscapeClose } from "@/utils/escapeLayers";
+import FormModal from "../../../components/FormModal";
 
 const TYPE_OPTS = [
   { value: "makloon", label: "Kontrak Makloon (jasa proses)" },
@@ -50,7 +49,6 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
   const [basisOptions, setBasisOptions] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [saving, setSaving] = useState(false);
-  useEscapeClose(true, onClose, saving);
   const [err, setErr] = useState("");
   const [sim, setSim] = useState(null);
   const [simQty, setSimQty] = useState("100");
@@ -156,216 +154,210 @@ export default function ContractFormModal({ contract, selectedEntity, onClose, o
   const updAux = (i, k, v) => set({ aux_fees: f.aux_fees.map((a, idx) => (idx === i ? { ...a, [k]: v } : a)) });
 
   return (
-    <div data-testid="contract-form-modal" className="fixed inset-0 z-[170] flex items-center justify-center bg-black/50 p-4" {...overlayDismiss(onClose)}>
-      <div className="flex max-h-[94vh] w-full max-w-[820px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <h2 className="flex items-center gap-2 text-[15px] font-bold">
-            <FileText size={16} className="text-[#0058CC]" /> {isEdit ? `Ubah ${contract.contract_number}` : "Kontrak Baru"}
-          </h2>
-          <button className="icon-button" onClick={onClose} aria-label="Tutup" data-testid="contract-form-close"><X size={18} /></button>
+    // Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, klik latar
+    // tidak membuang isian, galat di kaki pop-up). Testid `contract-form-modal`, `contract-save` tetap.
+    <FormModal open onClose={onClose} size="lg" icon={FileText} testId="contract-form-modal" busy={saving} error={err}
+      title={isEdit ? `Ubah ${contract.contract_number}` : "Kontrak Baru"}
+      footer={(
+        <div className="flex justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Batal</button>
+          <button type="button" className="primary-button" onClick={save} disabled={saving} data-testid="contract-save">
+            <Save size={13} /> {saving ? "Menyimpan…" : "Simpan Kontrak"}
+          </button>
         </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {err && <div className="rounded-lg bg-[#FDEDE7] px-3 py-2 text-[11.5px] text-[#C0392B]" data-testid="contract-form-error">{err}</div>}
-
-          <div className="grid gap-2.5 md:grid-cols-3">
-            <Field label="Jenis Kontrak">
-              <KNSelect data-testid="contract-type" className="field" value={f.contract_type}
-                onValueChange={(v) => set({ contract_type: v, partner_id: "", partner_name: "" })}
-                options={isEdit ? TYPE_OPTS : CREATE_TYPE_OPTS} disabled={isEdit} />
-            </Field>
-            {isEdit ? (
-              <>
-                {/* G4-02 — mitra tidak bisa diganti setelah kontrak dibuat (server mengabaikan
-                    partner_id saat ubah); tampil hanya-baca supaya PT mitra kontrak internal
-                    tidak tampil "Pilih…" karena bukan supplier. */}
-                <Field label={f.contract_type === "internal" ? "PT penjual → PT pembeli" : f.contract_type === "makloon" ? "Mitra Makloon" : "Supplier"}>
-                  <div className="field flex min-h-[38px] items-center gap-1.5 !bg-[#F7F8FA]" data-testid="contract-partner-readonly"
-                    title="Mitra tidak bisa diganti setelah kontrak dibuat — buat kontrak baru bila mitra berbeda.">
-                    {f.contract_type === "internal" && <><EntityBadge entityId={contract.entity_id} /><span className="text-[#8E8E93]">→</span></>}
-                    <span className="truncate font-semibold">{f.partner_name || "—"}</span>
-                  </div>
-                </Field>
-                {f.contract_type === "makloon" ? (
-                  <Field label="Jenis Proses *">
-                    <KNSelect data-testid="contract-process" className="field" value={f.process_type}
-                      onValueChange={(v) => set({ process_type: v })} options={processOptions} />
-                  </Field>
-                ) : (
-                  <Field label="Judul Kontrak">
-                    <input data-testid="contract-title" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })} />
-                  </Field>
-                )}
-              </>
-            ) : f.contract_type === "makloon" ? (
-              <>
-                <Field label="Mitra Makloon *">
-                  <MakloonSelect value={f.partner_id} valueName={f.partner_name} processType={f.process_type}
-                    triggerTestId="contract-partner" onSelect={(m) => set({ partner_id: m.id, partner_name: m.name })} />
-                </Field>
+      )}>
+      <div className="space-y-3">
+        <div className="grid gap-2.5 md:grid-cols-3">
+          <Field label="Jenis Kontrak">
+            <KNSelect data-testid="contract-type" className="field" value={f.contract_type}
+              onValueChange={(v) => set({ contract_type: v, partner_id: "", partner_name: "" })}
+              options={isEdit ? TYPE_OPTS : CREATE_TYPE_OPTS} disabled={isEdit} />
+          </Field>
+          {isEdit ? (
+            <>
+              {/* G4-02 — mitra tidak bisa diganti setelah kontrak dibuat (server mengabaikan
+                  partner_id saat ubah); tampil hanya-baca supaya PT mitra kontrak internal
+                  tidak tampil "Pilih…" karena bukan supplier. */}
+              <Field label={f.contract_type === "internal" ? "PT penjual → PT pembeli" : f.contract_type === "makloon" ? "Mitra Makloon" : "Supplier"}>
+                <div className="field flex min-h-[38px] items-center gap-1.5 !bg-[#F7F8FA]" data-testid="contract-partner-readonly"
+                  title="Mitra tidak bisa diganti setelah kontrak dibuat — buat kontrak baru bila mitra berbeda.">
+                  {f.contract_type === "internal" && <><EntityBadge entityId={contract.entity_id} /><span className="text-[#8E8E93]">→</span></>}
+                  <span className="truncate font-semibold">{f.partner_name || "—"}</span>
+                </div>
+              </Field>
+              {f.contract_type === "makloon" ? (
                 <Field label="Jenis Proses *">
                   <KNSelect data-testid="contract-process" className="field" value={f.process_type}
                     onValueChange={(v) => set({ process_type: v })} options={processOptions} />
                 </Field>
-              </>
-            ) : (
-              <>
-                <Field label="Supplier *">
-                  <KNSelect data-testid="contract-supplier" className="field" value={f.partner_id}
-                    onValueChange={(v) => set({ partner_id: v, partner_name: suppliers.find((s) => s.id === v)?.name || "" })}
-                    options={supOpts} />
-                </Field>
+              ) : (
                 <Field label="Judul Kontrak">
                   <input data-testid="contract-title" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })} />
                 </Field>
-              </>
-            )}
-            <Field label="Produk (kosong = semua produk)">
-              <ProductSelect value={f.product_id} valueName={f.product_name} triggerTestId="contract-product"
-                onSelect={(p) => set({ product_id: p.id, product_name: p.name })} />
-            </Field>
-            {f.contract_type === "makloon" && (
-              <Field label="Judul Kontrak">
-                <input data-testid="contract-title-mk" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })}
-                  placeholder="mis. Tenun katun 2026 — per pick" />
-              </Field>
-            )}
-            <Field label="Dasar qty tarif">
-              <KNSelect data-testid="contract-qty-source" className="field" value={f.tariff_qty_source}
-                onValueChange={(v) => set({ tariff_qty_source: v })} options={QTY_SOURCE_OPTS} />
-            </Field>
-          </div>
-          {!isEdit && (
-            <p className="text-[11px] text-[#8E8E93]" data-testid="contract-internal-hint">
-              Harga internal antar-PT tidak dibuat di sini — pakai tombol <b>Isi massal harga internal</b> di layar Kontrak
-              atau menu Antar Entitas › Harga Internal.
-            </p>
-          )}
-          {isEdit && f.contract_type === "internal" && (
-            <p className="rounded-lg border border-[#DCE9FF] bg-[#F5F9FF] px-3 py-2 text-[11px] text-[#3C3C43]" data-testid="contract-internal-note">
-              Kontrak harga internal: <b>Tarif</b> = harga per satuan barang untuk transfer antar-PT ke {f.partner_name || "PT pembeli"}.
-              Isian makloon (PPI, rumus, susut, rendemen) tidak dipakai.
-            </p>
-          )}
-
-          <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
-            <p className="mb-2 text-[11px] font-bold uppercase text-[#6B6B73]">Tarif (basis bebas)</p>
-            <div className="grid gap-2.5 md:grid-cols-4">
-              <Field label="Basis tarif">
-                <KNSelect data-testid="contract-basis" className="field" value={f.tariff_basis}
-                  onValueChange={(v) => set({ tariff_basis: v })} options={basisOptions} />
-              </Field>
-              <Field label="Tarif (Rp per basis)">
-                <MoneyInput testId="contract-rate" className="field" value={f.tariff_rate} onChange={(v) => set({ tariff_rate: v })} />
-              </Field>
-              <Field label="PPI (basis pick)">
-                <input data-testid="contract-ppi" className="field" value={f.ppi} onChange={(e) => set({ ppi: e.target.value })}
-                  placeholder="kosong = dari produk" title="Kosong = PPI diambil dari konstruksi produk" />
-              </Field>
-              <Field label="Tagihan minimum (Rp)">
-                <MoneyInput testId="contract-min-charge" className="field" value={f.min_charge} onChange={(v) => set({ min_charge: v })} />
-              </Field>
-              <div className="md:col-span-4">
-                <Field label="Rumus tarif khusus (opsional — kosongkan bila memakai tarif × basis)">
-                  <input data-testid="contract-formula" className="field font-mono" value={f.tariff_formula}
-                    onChange={(e) => set({ tariff_formula: e.target.value })} placeholder="kosong = tarif × qty basis" />
-                </Field>
-                {/* UAT 24 Okt (audit UI tahap 2) — G4-07: variabel rumus berlabel manusia;
-                    klik untuk menyisipkan ke rumus (nama teknis tetap terlihat di tooltip). */}
-                <div className="mt-1 flex flex-wrap items-center gap-1" data-testid="contract-formula-vars">
-                  <span className="text-[11px] text-[#8E8E93]">Sisipkan:</span>
-                  {FORMULA_VARS.map((v) => (
-                    <button key={v.code} type="button" title={`Nama di rumus: ${v.code}`}
-                      data-testid={`contract-formula-var-${v.code}`}
-                      className="rounded-full border border-[#D9E8FF] bg-white px-2 py-[1px] text-[11px] font-semibold text-[#0058CC] hover:border-[#0058CC]"
-                      onClick={() => set({ tariff_formula: `${(f.tariff_formula || "").trimEnd()}${f.tariff_formula?.trim() ? " " : ""}${v.code}` })}>
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-1 text-[11px] text-[#8E8E93]">
-                  Contoh: <i>Qty sesuai basis × Tarif + Jumlah warna × 150.000</i> ditulis <span className="font-mono">basis_qty * rate + colors * 150000</span>.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-2">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#6B6B73]">Biaya tambahan (screen, repeat, dll)</span>
-                <button type="button" className="secondary-button !py-0.5 !px-2 text-[11px]" onClick={addAux} data-testid="contract-add-aux">+ Biaya</button>
-              </div>
-              {(f.aux_fees || []).map((a, i) => (
-                <div key={i} className="mb-1 grid grid-cols-[1.2fr_1fr_0.9fr_auto] items-center gap-1.5">
-                  <input className="field !py-1.5 text-[11.5px]" placeholder="Nama biaya" value={a.label}
-                    data-testid={`contract-aux-label-${i}`} onChange={(e) => updAux(i, "label", e.target.value)} />
-                  <KNSelect className="field !py-1.5 text-[11.5px]" value={a.basis} onValueChange={(v) => updAux(i, "basis", v)} options={AUX_BASIS_OPTIONS} />
-                  <input className="field !py-1.5 text-[11.5px]" placeholder="Rp" value={a.amount}
-                    data-testid={`contract-aux-amount-${i}`} onChange={(e) => updAux(i, "amount", e.target.value)} />
-                  <button type="button" className="icon-button text-red-400" aria-label="Hapus biaya" onClick={() => set({ aux_fees: f.aux_fees.filter((_, x) => x !== i) })}>
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-end gap-2">
-              <Field label="Simulasi qty">
-                <input data-testid="contract-sim-qty" className="field !py-1.5 !w-32 text-[11.5px]" value={simQty} onChange={(e) => setSimQty(e.target.value)} />
-              </Field>
-              <button type="button" className="secondary-button !py-1.5 text-[11.5px]" onClick={runSim} data-testid="contract-simulate">Simulasikan tarif</button>
-              {sim && (
-                <div className="flex-1 rounded border border-[#DCE9FF] bg-[#F5F9FF] px-2.5 py-1.5 text-[11px]" data-testid="contract-sim-result">
-                  <b>Hasil: Rp {Number(sim.amount || 0).toLocaleString("id-ID")}</b>
-                  <ul className="mt-1 space-y-0.5 text-[11px] text-[#3C3C43]">
-                    {(sim.explain || []).map((l, i) => <li key={i}>• {l}</li>)}
-                  </ul>
-                </div>
               )}
-            </div>
-          </div>
+            </>
+          ) : f.contract_type === "makloon" ? (
+            <>
+              <Field label="Mitra Makloon *">
+                <MakloonSelect value={f.partner_id} valueName={f.partner_name} processType={f.process_type}
+                  triggerTestId="contract-partner" onSelect={(m) => set({ partner_id: m.id, partner_name: m.name })} />
+              </Field>
+              <Field label="Jenis Proses *">
+                <KNSelect data-testid="contract-process" className="field" value={f.process_type}
+                  onValueChange={(v) => set({ process_type: v })} options={processOptions} />
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field label="Supplier *">
+                <KNSelect data-testid="contract-supplier" className="field" value={f.partner_id}
+                  onValueChange={(v) => set({ partner_id: v, partner_name: suppliers.find((s) => s.id === v)?.name || "" })}
+                  options={supOpts} />
+              </Field>
+              <Field label="Judul Kontrak">
+                <input data-testid="contract-title" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })} />
+              </Field>
+            </>
+          )}
+          <Field label="Produk (kosong = semua produk)">
+            <ProductSelect value={f.product_id} valueName={f.product_name} triggerTestId="contract-product"
+              onSelect={(p) => set({ product_id: p.id, product_name: p.name })} />
+          </Field>
+          {f.contract_type === "makloon" && (
+            <Field label="Judul Kontrak">
+              <input data-testid="contract-title-mk" className="field" value={f.title} onChange={(e) => set({ title: e.target.value })}
+                placeholder="mis. Tenun katun 2026 — per pick" />
+            </Field>
+          )}
+          <Field label="Dasar qty tarif">
+            <KNSelect data-testid="contract-qty-source" className="field" value={f.tariff_qty_source}
+              onValueChange={(v) => set({ tariff_qty_source: v })} options={QTY_SOURCE_OPTS} />
+          </Field>
+        </div>
+        {!isEdit && (
+          <p className="text-[11px] text-[#8E8E93]" data-testid="contract-internal-hint">
+            Harga internal antar-PT tidak dibuat di sini — pakai tombol <b>Isi massal harga internal</b> di layar Kontrak
+            atau menu Antar Entitas › Harga Internal.
+          </p>
+        )}
+        {isEdit && f.contract_type === "internal" && (
+          <p className="rounded-lg border border-[#DCE9FF] bg-[#F5F9FF] px-3 py-2 text-[11px] text-[#3C3C43]" data-testid="contract-internal-note">
+            Kontrak harga internal: <b>Tarif</b> = harga per satuan barang untuk transfer antar-PT ke {f.partner_name || "PT pembeli"}.
+            Isian makloon (PPI, rumus, susut, rendemen) tidak dipakai.
+          </p>
+        )}
 
+        <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3">
+          <p className="mb-2 text-[11px] font-bold uppercase text-[#6B6B73]">Tarif (basis bebas)</p>
           <div className="grid gap-2.5 md:grid-cols-4">
-            <Field label="Susut standar (%)">
-              <input data-testid="contract-shrinkage" className="field" value={f.shrinkage_pct} onChange={(e) => set({ shrinkage_pct: e.target.value })} />
+            <Field label="Basis tarif">
+              <KNSelect data-testid="contract-basis" className="field" value={f.tariff_basis}
+                onValueChange={(v) => set({ tariff_basis: v })} options={basisOptions} />
             </Field>
-            <Field label="Toleransi selisih &amp; susut wajar di mitra (%)">
-              <input data-testid="contract-tolerance" className="field" value={f.tolerance_pct} onChange={(e) => set({ tolerance_pct: e.target.value })}
-                placeholder="kosong = kebijakan global" />
+            <Field label="Tarif (Rp per basis)">
+              <MoneyInput testId="contract-rate" className="field" value={f.tariff_rate} onChange={(v) => set({ tariff_rate: v })} />
             </Field>
-            <Field label="Rendemen manual (kosong/0 = rumus GSM)">
-              <input data-testid="contract-yield" className="field" value={f.yield_factor} onChange={(e) => set({ yield_factor: e.target.value })} />
+            <Field label="PPI (basis pick)">
+              <input data-testid="contract-ppi" className="field" value={f.ppi} onChange={(e) => set({ ppi: e.target.value })}
+                placeholder="kosong = dari produk" title="Kosong = PPI diambil dari konstruksi produk" />
             </Field>
-            <Field label="Barang sisa (%)">
-              <input data-testid="contract-byproduct" className="field" value={f.byproduct_pct} onChange={(e) => set({ byproduct_pct: e.target.value })} />
-            </Field>
-            <Field label="Pesanan minimum (MOQ)">
-              <input data-testid="contract-moq" className="field" value={f.moq} onChange={(e) => set({ moq: e.target.value })} />
-            </Field>
-            <Field label="Lead time (hari)">
-              <input data-testid="contract-lead-time" className="field" value={f.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value })} />
-            </Field>
-            <Field label="Berlaku dari">
-              <KNDatePicker data-testid="contract-valid-from" value={f.valid_from} onChange={(v) => set({ valid_from: v })} />
-            </Field>
-            <Field label="Berlaku sampai">
-              <KNDatePicker data-testid="contract-valid-to" value={f.valid_to} onChange={(v) => set({ valid_to: v })} />
+            <Field label="Tagihan minimum (Rp)">
+              <MoneyInput testId="contract-min-charge" className="field" value={f.min_charge} onChange={(v) => set({ min_charge: v })} />
             </Field>
             <div className="md:col-span-4">
-              <Field label="Catatan">
-                <input data-testid="contract-notes" className="field" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
+              <Field label="Rumus tarif khusus (opsional — kosongkan bila memakai tarif × basis)">
+                <input data-testid="contract-formula" className="field font-mono" value={f.tariff_formula}
+                  onChange={(e) => set({ tariff_formula: e.target.value })} placeholder="kosong = tarif × qty basis" />
               </Field>
+              {/* UAT 24 Okt (audit UI tahap 2) — G4-07: variabel rumus berlabel manusia;
+                  klik untuk menyisipkan ke rumus (nama teknis tetap terlihat di tooltip). */}
+              <div className="mt-1 flex flex-wrap items-center gap-1" data-testid="contract-formula-vars">
+                <span className="text-[11px] text-[#8E8E93]">Sisipkan:</span>
+                {FORMULA_VARS.map((v) => (
+                  <button key={v.code} type="button" title={`Nama di rumus: ${v.code}`}
+                    data-testid={`contract-formula-var-${v.code}`}
+                    className="rounded-full border border-[#D9E8FF] bg-white px-2 py-[1px] text-[11px] font-semibold text-[#0058CC] hover:border-[#0058CC]"
+                    onClick={() => set({ tariff_formula: `${(f.tariff_formula || "").trimEnd()}${f.tariff_formula?.trim() ? " " : ""}${v.code}` })}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] text-[#8E8E93]">
+                Contoh: <i>Qty sesuai basis × Tarif + Jumlah warna × 150.000</i> ditulis <span className="font-mono">basis_qty * rate + colors * 150000</span>.
+              </p>
             </div>
+          </div>
+
+          <div className="mt-2">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-[#6B6B73]">Biaya tambahan (screen, repeat, dll)</span>
+              <button type="button" className="secondary-button !py-0.5 !px-2 text-[11px]" onClick={addAux} data-testid="contract-add-aux">+ Biaya</button>
+            </div>
+            {(f.aux_fees || []).map((a, i) => (
+              <div key={i} className="mb-1 grid grid-cols-[1.2fr_1fr_0.9fr_auto] items-center gap-1.5">
+                <input className="field !py-1.5 text-[11.5px]" placeholder="Nama biaya" value={a.label}
+                  data-testid={`contract-aux-label-${i}`} onChange={(e) => updAux(i, "label", e.target.value)} />
+                <KNSelect className="field !py-1.5 text-[11.5px]" value={a.basis} onValueChange={(v) => updAux(i, "basis", v)} options={AUX_BASIS_OPTIONS} />
+                <input className="field !py-1.5 text-[11.5px]" placeholder="Rp" value={a.amount}
+                  data-testid={`contract-aux-amount-${i}`} onChange={(e) => updAux(i, "amount", e.target.value)} />
+                <button type="button" className="icon-button text-red-400" aria-label="Hapus biaya" onClick={() => set({ aux_fees: f.aux_fees.filter((_, x) => x !== i) })}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <Field label="Simulasi qty">
+              <input data-testid="contract-sim-qty" className="field !py-1.5 !w-32 text-[11.5px]" value={simQty} onChange={(e) => setSimQty(e.target.value)} />
+            </Field>
+            <button type="button" className="secondary-button !py-1.5 text-[11.5px]" onClick={runSim} data-testid="contract-simulate">Simulasikan tarif</button>
+            {sim && (
+              <div className="flex-1 rounded border border-[#DCE9FF] bg-[#F5F9FF] px-2.5 py-1.5 text-[11px]" data-testid="contract-sim-result">
+                <b>Hasil: Rp {Number(sim.amount || 0).toLocaleString("id-ID")}</b>
+                <ul className="mt-1 space-y-0.5 text-[11px] text-[#3C3C43]">
+                  {(sim.explain || []).map((l, i) => <li key={i}>• {l}</li>)}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button className="primary-button" onClick={save} disabled={saving} data-testid="contract-save">
-            <Save size={13} /> {saving ? "Menyimpan…" : "Simpan Kontrak"}
-          </button>
+        <div className="grid gap-2.5 md:grid-cols-4">
+          <Field label="Susut standar (%)">
+            <input data-testid="contract-shrinkage" className="field" value={f.shrinkage_pct} onChange={(e) => set({ shrinkage_pct: e.target.value })} />
+          </Field>
+          <Field label="Toleransi selisih &amp; susut wajar di mitra (%)">
+            <input data-testid="contract-tolerance" className="field" value={f.tolerance_pct} onChange={(e) => set({ tolerance_pct: e.target.value })}
+              placeholder="kosong = kebijakan global" />
+          </Field>
+          <Field label="Rendemen manual (kosong/0 = rumus GSM)">
+            <input data-testid="contract-yield" className="field" value={f.yield_factor} onChange={(e) => set({ yield_factor: e.target.value })} />
+          </Field>
+          <Field label="Barang sisa (%)">
+            <input data-testid="contract-byproduct" className="field" value={f.byproduct_pct} onChange={(e) => set({ byproduct_pct: e.target.value })} />
+          </Field>
+          <Field label="Pesanan minimum (MOQ)">
+            <input data-testid="contract-moq" className="field" value={f.moq} onChange={(e) => set({ moq: e.target.value })} />
+          </Field>
+          <Field label="Lead time (hari)">
+            <input data-testid="contract-lead-time" className="field" value={f.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value })} />
+          </Field>
+          <Field label="Berlaku dari">
+            <KNDatePicker data-testid="contract-valid-from" value={f.valid_from} onChange={(v) => set({ valid_from: v })} />
+          </Field>
+          <Field label="Berlaku sampai">
+            <KNDatePicker data-testid="contract-valid-to" value={f.valid_to} onChange={(v) => set({ valid_to: v })} />
+          </Field>
+          <div className="md:col-span-4">
+            <Field label="Catatan">
+              <input data-testid="contract-notes" className="field" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
+            </Field>
+          </div>
         </div>
       </div>
-    </div>
+
+    </FormModal>
   );
 }
 

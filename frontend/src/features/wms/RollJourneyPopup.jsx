@@ -2,10 +2,14 @@
  * RollJourneyPopup — JEJAK BARANG: timeline satu roll lintas semua dokumen
  * (PO→GR→tag→print→verify→PA/BTG→SO→gate→loading check). Data dari
  * GET /inventory/rolls/{id}/journey-timeline (read-only, SSOT tersebar disatukan).
+ *
+ * Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → DetailModal (framed; kepala & × sendiri tetap,
+ * Esc berlapis, layar penuh di HP). Testid `roll-journey-popup`, `roll-journey-close` tetap.
  */
 import { useEffect, useState } from "react";
 import { X, Route } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import DetailModal from "../../components/DetailModal";
 
 const KIND_COLOR = {
   acquired: "#0058CC", tag: "#6B219A", print: "#6B219A", verify: "#6B219A",
@@ -26,12 +30,11 @@ export const RollJourneyPopup = ({ rollId, onClose }) => {
   const fmt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4" data-testid="roll-journey-popup"
-      onClick={onClose}>
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <DetailModal onClose={onClose} size="md" framed showClose={false} label="Jejak Barang" testId="roll-journey-popup">
+      <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="flex items-center gap-1.5 text-[13px] font-bold"><Route size={15} className="text-[#0058CC]" /> Jejak Barang</p>
-          <button data-testid="roll-journey-close" className="icon-button" onClick={onClose}><X size={15} /></button>
+          <button type="button" aria-label="Tutup" data-testid="roll-journey-close" className="icon-button" onClick={onClose}><X size={15} /></button>
         </div>
         {error && <p className="rounded bg-[#FBE9E7] px-2 py-1.5 text-[11.5px] text-[#C0341D]">{error}</p>}
         {!data && !error && <div className="h-24 animate-pulse rounded bg-[#F5F5F7]" />}
@@ -49,7 +52,7 @@ export const RollJourneyPopup = ({ rollId, onClose }) => {
                 </p>
               )}
               <p className="text-[#6B6B73]">Journey: <b>{data.roll.journey_stage_label}</b>
-                {data.roll.routing === "cross_dock" && <span className="ml-1 rounded bg-[#F3E9FA] px-1 text-[10px] font-bold text-[#6B219A]">CROSS-DOCK</span>}
+                {data.roll.routing === "cross_dock" && <span className="ml-1 rounded bg-[#EFF4FF] px-1 text-[10px] font-bold text-[#0058CC]">CROSS-DOCK</span>}
               </p>
               {data.roll.epc && <p className="font-mono text-[10px] text-[#8E8E93]">EPC {data.roll.epc}</p>}
               <p className="text-[#6B6B73]" data-testid="roll-journey-last-scan">Terakhir dipindai HP: <b>{data.roll.last_scan ? `${fmt(data.roll.last_scan.at)} · ${data.roll.last_scan.by || "—"} · ${data.roll.last_scan.warehouse_id || ""}${data.roll.last_scan.bin_id ? ` · bin ${data.roll.last_scan.bin_id}` : ""}` : "belum pernah"}</b></p>
@@ -68,7 +71,7 @@ export const RollJourneyPopup = ({ rollId, onClose }) => {
           </>
         )}
       </div>
-    </div>
+    </DetailModal>
   );
 };
 

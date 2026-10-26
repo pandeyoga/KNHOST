@@ -4,11 +4,11 @@
  */
 import MoneyInput from "../../../components/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
-import { Save, X } from "lucide-react";
+import { Save } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import SupplierLabelPatternEditor, { DEFAULT_LABEL_PATTERN } from "../SupplierLabelPatternEditor";
 import { createSupplierItem, patchSupplierItem } from "./supplierItemsApi";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../../components/FormModal";
 
 import useDomainEnums from "../../../hooks/useDomainEnums";
 
@@ -98,145 +98,131 @@ export default function SupplierItemFormModal({
     }
   }
 
+  // Fase 4 · R3 (L-03) — `.modal-card` buatan sendiri → FormModal (layar penuh di HP — isian sama lengkap, 1 kolom;
+  // Esc berlapis, latar tidak membuang isian, galat di kaki pop-up). Tanpa `onSubmit`: editor pola label di dalamnya
+  // punya tombol sendiri. Testid isian & `supplier-item-save` tetap.
   return (
-    <div className="modal-overlay" data-testid="supplier-item-form-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card wide" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="modal-title">{isEdit ? "Ubah Barang Supplier" : "Barang Supplier Baru"}</p>
-            <p className="modal-subtitle">
-              Petakan KODE & NAMA versi supplier ke SKU KN, termasuk konversi satuan.
-            </p>
-          </div>
-          <button className="icon-button" onClick={onClose} data-testid="supplier-item-form-close">
-            <X size={16} />
-          </button>
-        </div>
-
-        {err && (
-          <div className="notice-bar danger" data-testid="supplier-item-form-error">
-            <span>{err}</span><button onClick={() => setErr("")}>×</button>
-          </div>
-        )}
-
-        <div className="grid gap-3 mt-2 sm:grid-cols-2">
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
-            <KNSelect data-testid="supplier-item-supplier" className="form-input"
-              value={form.supplier_id} onValueChange={(v) => set("supplier_id", v)}
-              placeholder="— Pilih supplier —" disabled={isEdit}
-              options={suppliers.map((s) => ({ value: s.id, label: s.name }))} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Produk KN (SKU) *</label>
-            <KNSelect data-testid="supplier-item-product" className="form-input"
-              value={form.product_id} onValueChange={(v) => set("product_id", v)}
-              placeholder="— Pilih produk —"
-              options={products.filter((p) => p.status !== "inactive")
-                .map((p) => ({ value: p.id, label: `${p.sku} · ${p.name}` }))} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Barang Supplier *</label>
-            <input data-testid="supplier-item-sku" className="form-input" value={form.supplier_sku}
-              onChange={(e) => set("supplier_sku", e.target.value)} placeholder="mis. TX-COT-30S" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Nama Barang Supplier</label>
-            <input data-testid="supplier-item-name" className="form-input" value={form.supplier_item_name}
-              onChange={(e) => set("supplier_item_name", e.target.value)}
-              placeholder="mis. Cotton Combed 30s Cone 1,89kg" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Warna Versi Supplier</label>
-            <input data-testid="supplier-item-color" className="form-input" value={form.supplier_color || ""}
-              onChange={(e) => set("supplier_color", e.target.value)} placeholder="mis. 45 / Navy Dark" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Warna Supplier</label>
-            <input data-testid="supplier-item-color-code" className="form-input" value={form.supplier_color_code || ""}
-              onChange={(e) => set("supplier_color_code", e.target.value)} placeholder="mis. WRN-77" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Warna Internal (KN)</label>
-            <input data-testid="supplier-item-internal-color" className="form-input" value={form.internal_color_code || ""}
-              onChange={(e) => set("internal_color_code", e.target.value)} placeholder="kosong = warna SKU" />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">
-              Satuan Supplier {baseUnit ? `(satuan KN: ${baseUnit})` : ""}
-            </label>
-            <input data-testid="supplier-item-uom" className="form-input" value={form.supplier_uom}
-              onChange={(e) => set("supplier_uom", e.target.value)}
-              placeholder={baseUnit || "mis. cone / roll / bale"} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Faktor Konversi *</label>
-            <input type="number" step="0.0001" data-testid="supplier-item-conv" className="form-input"
-              value={form.conv_factor} onChange={(e) => set("conv_factor", e.target.value)} />
-            {convPreview && (
-              <p className="text-[10.5px] text-[#1B7F4B] tabular-nums" data-testid="supplier-item-conv-preview">
-                {convPreview}
-              </p>
-            )}
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Harga Terakhir (per satuan supplier)</label>
-            <MoneyInput testId="supplier-item-price" className="form-input" value={form.last_price} onChange={(v) => set("last_price", v)} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">MOQ</label>
-            <input type="number" data-testid="supplier-item-moq" className="form-input"
-              value={form.moq} onChange={(e) => set("moq", e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Lead Time (hari)</label>
-            <input type="number" data-testid="supplier-item-lead" className="form-input"
-              value={form.lead_time_days} onChange={(e) => set("lead_time_days", e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Grade Dijanjikan</label>
-            <KNSelect data-testid="supplier-item-grade" className="form-input"
-              value={form.expected_grade} onValueChange={(v) => set("expected_grade", v)}
-              placeholder="— Tidak ditentukan —" options={enumOptions("grade", [{ value: "", label: "— Tidak ditentukan —" }])} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Barcode</label>
-            <input data-testid="supplier-item-barcode" className="form-input" value={form.barcode}
-              onChange={(e) => set("barcode", e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Status</label>
-            <KNSelect data-testid="supplier-item-status" className="form-input"
-              value={form.status} onValueChange={(v) => set("status", v)}
-              options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} />
-          </div>
-          <div className="grid gap-1.5 sm:col-span-2">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan</label>
-            <textarea data-testid="supplier-item-notes" className="form-input" rows="2"
-              value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-          </div>
-          <div className="grid gap-2 sm:col-span-2">
-            <label className="flex items-center gap-2 text-[11.5px] font-semibold text-[#1C1C1E]">
-              <input type="checkbox" data-testid="supplier-item-own-pattern" checked={ownPattern}
-                onChange={(e) => setOwnPattern(e.target.checked)} />
-              Pola label khusus barang ini
-              <span className="text-[10px] font-normal text-[#8E8E93]">— supplier campur-label: pola ini dicoba lebih dulu saat scan, lalu pola supplier</span>
-            </label>
-            {ownPattern && (
-              <div data-testid="supplier-item-label-pattern">
-                <SupplierLabelPatternEditor value={labelPattern} onChange={setLabelPattern} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose}>Batal</button>
-          <button data-testid="supplier-item-save" className="btn-primary" onClick={save} disabled={busy}>
+    <FormModal open onClose={onClose} size="lg" icon={Save} testId="supplier-item-form-modal" busy={busy} error={err}
+      title={isEdit ? "Ubah Barang Supplier" : "Barang Supplier Baru"}
+      subtitle="Petakan KODE & NAMA versi supplier ke SKU KN, termasuk konversi satuan."
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" disabled={busy} onClick={onClose}>Batal</button>
+          <button type="button" data-testid="supplier-item-save" className="primary-button" onClick={save} disabled={busy}>
             <Save size={14} /> {busy ? "Menyimpan…" : "Simpan"}
           </button>
         </div>
+      )}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
+          <KNSelect data-testid="supplier-item-supplier" className="form-input"
+            value={form.supplier_id} onValueChange={(v) => set("supplier_id", v)}
+            placeholder="— Pilih supplier —" disabled={isEdit}
+            options={suppliers.map((s) => ({ value: s.id, label: s.name }))} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Produk KN (SKU) *</label>
+          <KNSelect data-testid="supplier-item-product" className="form-input"
+            value={form.product_id} onValueChange={(v) => set("product_id", v)}
+            placeholder="— Pilih produk —"
+            options={products.filter((p) => p.status !== "inactive")
+              .map((p) => ({ value: p.id, label: `${p.sku} · ${p.name}` }))} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Barang Supplier *</label>
+          <input data-testid="supplier-item-sku" className="form-input" value={form.supplier_sku}
+            onChange={(e) => set("supplier_sku", e.target.value)} placeholder="mis. TX-COT-30S" />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Nama Barang Supplier</label>
+          <input data-testid="supplier-item-name" className="form-input" value={form.supplier_item_name}
+            onChange={(e) => set("supplier_item_name", e.target.value)}
+            placeholder="mis. Cotton Combed 30s Cone 1,89kg" />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Warna Versi Supplier</label>
+          <input data-testid="supplier-item-color" className="form-input" value={form.supplier_color || ""}
+            onChange={(e) => set("supplier_color", e.target.value)} placeholder="mis. 45 / Navy Dark" />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Warna Supplier</label>
+          <input data-testid="supplier-item-color-code" className="form-input" value={form.supplier_color_code || ""}
+            onChange={(e) => set("supplier_color_code", e.target.value)} placeholder="mis. WRN-77" />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Kode Warna Internal (KN)</label>
+          <input data-testid="supplier-item-internal-color" className="form-input" value={form.internal_color_code || ""}
+            onChange={(e) => set("internal_color_code", e.target.value)} placeholder="kosong = warna SKU" />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">
+            Satuan Supplier {baseUnit ? `(satuan KN: ${baseUnit})` : ""}
+          </label>
+          <input data-testid="supplier-item-uom" className="form-input" value={form.supplier_uom}
+            onChange={(e) => set("supplier_uom", e.target.value)}
+            placeholder={baseUnit || "mis. cone / roll / bale"} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Faktor Konversi *</label>
+          <input type="number" step="0.0001" data-testid="supplier-item-conv" className="form-input"
+            value={form.conv_factor} onChange={(e) => set("conv_factor", e.target.value)} />
+          {convPreview && (
+            <p className="text-[10.5px] text-[#1B7F4B] tabular-nums" data-testid="supplier-item-conv-preview">
+              {convPreview}
+            </p>
+          )}
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Harga Terakhir (per satuan supplier)</label>
+          <MoneyInput testId="supplier-item-price" className="form-input" value={form.last_price} onChange={(v) => set("last_price", v)} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">MOQ</label>
+          <input type="number" data-testid="supplier-item-moq" className="form-input"
+            value={form.moq} onChange={(e) => set("moq", e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Lead Time (hari)</label>
+          <input type="number" data-testid="supplier-item-lead" className="form-input"
+            value={form.lead_time_days} onChange={(e) => set("lead_time_days", e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Grade Dijanjikan</label>
+          <KNSelect data-testid="supplier-item-grade" className="form-input"
+            value={form.expected_grade} onValueChange={(v) => set("expected_grade", v)}
+            placeholder="— Tidak ditentukan —" options={enumOptions("grade", [{ value: "", label: "— Tidak ditentukan —" }])} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Barcode</label>
+          <input data-testid="supplier-item-barcode" className="form-input" value={form.barcode}
+            onChange={(e) => set("barcode", e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Status</label>
+          <KNSelect data-testid="supplier-item-status" className="form-input"
+            value={form.status} onValueChange={(v) => set("status", v)}
+            options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} />
+        </div>
+        <div className="grid gap-1.5 sm:col-span-2">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Catatan</label>
+          <textarea data-testid="supplier-item-notes" className="form-input" rows="2"
+            value={form.notes} onChange={(e) => set("notes", e.target.value)} />
+        </div>
+        <div className="grid gap-2 sm:col-span-2">
+          <label className="flex items-center gap-2 text-[11.5px] font-semibold text-[#1C1C1E]">
+            <input type="checkbox" data-testid="supplier-item-own-pattern" checked={ownPattern}
+              onChange={(e) => setOwnPattern(e.target.checked)} />
+            Pola label khusus barang ini
+            <span className="text-[10px] font-normal text-[#8E8E93]">— supplier campur-label: pola ini dicoba lebih dulu saat scan, lalu pola supplier</span>
+          </label>
+          {ownPattern && (
+            <div data-testid="supplier-item-label-pattern">
+              <SupplierLabelPatternEditor value={labelPattern} onChange={setLabelPattern} />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

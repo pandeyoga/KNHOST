@@ -14,14 +14,16 @@ import DetailModal from "../../../components/DetailModal";
 import ResponsiveTable from "../../../components/ResponsiveTable";
 import { formatCurrency, formatPct, formatQty } from "../../../utils/formatters";
 import { partnerScorecard } from "./makloonApi";
+import { isZeroMetric } from "../../../components/ListPageParts";
 
 const pct = (v) => (v == null ? "—" : formatPct(Number(v) * 100));   // P-06 — koma desimal id-ID
 
+// Fase 4 · R3 (L-08) — nilai 0 (mis. selisih "0%") tampil NETRAL, bukan hijau/merah (sama dengan MetricRow baku).
 function Kpi({ label, value, tone = "#1C1C1E", testId }) {
   return (
     <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2" data-testid={testId}>
       <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">{label}</p>
-      <p className="text-[15px] font-bold tabular-nums leading-tight" style={{ color: tone }}>{value ?? "—"}</p>
+      <p className="text-[15px] font-bold tabular-nums leading-tight" style={{ color: isZeroMetric(value) ? "#8E8E93" : tone }}>{value ?? "—"}</p>
     </div>
   );
 }

@@ -49,7 +49,7 @@ export default function PickupHandoverPanel({ d, canUpdate, canManage, onDone })
               <input data-testid="pickup-input-id" className="form-input mt-1.5" placeholder="No. KTP / SIM pengambil (disarankan)" value={f.picker_id_no} onChange={set("picker_id_no")} />
               <input data-testid="pickup-input-note" className="form-input mt-1.5" placeholder="Catatan (opsional)" value={f.note} onChange={set("note")} />
               {err && <p className="text-[11px] text-[#C62828] font-semibold mt-1.5" data-testid="pickup-error">{err}</p>}
-              <button data-testid="pickup-submit" className="primary-button !bg-[#6B219A] w-full mt-2" disabled={busy || f.pickup_code.trim().length < 4 || f.picker_name.trim().length < 2} onClick={submit}><ShieldCheck size={13} /> {busy ? "Memverifikasi…" : "Verifikasi & serahkan"}</button>
+              <button data-testid="pickup-submit" className="primary-button w-full mt-2" disabled={busy || f.pickup_code.trim().length < 4 || f.picker_name.trim().length < 2} onClick={submit}><ShieldCheck size={13} /> {busy ? "Memverifikasi…" : "Verifikasi & serahkan"}</button>
               <p className="text-[9.5px] text-[#9A9BA3] mt-1">Foto bukti serah terima (POD) bisa diunggah di bawah — disarankan foto pengambil bersama barang.</p>
             </>) : <p className="text-[11.5px] text-[#6B6B73] mt-1">Serah terima dilakukan petugas gudang saat pelanggan datang.</p>}
           </div>

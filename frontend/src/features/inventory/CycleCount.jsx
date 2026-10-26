@@ -200,7 +200,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
       {msg && <div className="mx-4 mb-2 rounded-md bg-green-50 border border-green-200 p-2 text-[12px] text-green-700">{msg}</div>}
 
       <div className="section-body">
-        <div className="grid gap-3 lg:grid-cols-[280px_1fr]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[280px_1fr]">
           {/* Sessions List */}
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3">
             <div className="flex items-center justify-between mb-2">

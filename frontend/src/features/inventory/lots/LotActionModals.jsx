@@ -4,35 +4,22 @@
  * Semua aksi memanggil endpoint tunggal `/api/lots/*` (SSOT `lot_service`).
  */
 import { useEffect, useState } from "react";
-import { Printer, X } from "lucide-react";
+import { Printer } from "lucide-react";
+import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import { formatQty } from "../../../utils/formatters";
 import { errText, lotApi } from "./lotApi";
 import { rollStatusLabel } from "../../wms/inventory/inventoryConstants";
 
-function Shell({ title, subtitle, onClose, children, actions, testId, error, onDismissError }) {
+// Fase 4 · R3 (L-03) — cangkang pop-up aksi lot dulu `.modal-card` buatan sendiri; kini FormModal baku (layar penuh di
+// HP, Esc berlapis — pop-up ini terbuka DI ATAS rincian lot, latar tidak membuang isian, galat di kaki pop-up).
+// Testid `${testId}`, `${testId}-close`, `${testId}-error` sama dengan dulu.
+function Shell({ title, subtitle, onClose, children, actions, testId, error }) {
   return (
-    <div className="modal-overlay" data-testid={testId}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 620, width: "95vw", maxHeight: "90vh", overflowY: "auto" }}>
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="modal-title">{title}</p>
-            {subtitle && <p className="modal-subtitle">{subtitle}</p>}
-          </div>
-          <button data-testid={`${testId}-close`} className="icon-button" onClick={onClose} aria-label="Tutup">
-            <X size={15} />
-          </button>
-        </div>
-        {error && (
-          <div className="notice-bar danger" data-testid={`${testId}-error`}>
-            <span>{error}</span><button onClick={onDismissError}>×</button>
-          </div>
-        )}
-        <div className="mt-2 grid gap-2">{children}</div>
-        <div className="modal-actions">{actions}</div>
-      </div>
-    </div>
+    <FormModal open onClose={onClose} title={title} subtitle={subtitle} testId={testId} size="md" error={error}
+      footer={<div className="flex flex-wrap items-center justify-end gap-2">{actions}</div>}>
+      <div className="grid gap-2">{children}</div>
+    </FormModal>
   );
 }
 
@@ -55,7 +42,7 @@ export function SplitLotModal({ lot, rolls, onClose, onDone }) {
 
   return (
     <Shell testId="lot-split-modal" title={`Split Lot ${lot.lot_number}`} onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Pilih roll yang dipisahkan (mis. beda shade setelah inspeksi). Lot asal wajib menyisakan minimal 1 roll; riwayat induk–anak tersimpan otomatis."
       actions={(
         <>
@@ -126,7 +113,7 @@ export function MergeLotModal({ lot, onClose, onDone }) {
 
   return (
     <Shell testId="lot-merge-modal" title="Merge Lot" onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Pilih minimal 2 lot dengan produk & pemilik sama. Seluruh roll dipindahkan ke lot baru dan lot sumber tetap tersimpan sebagai induk (jejak audit)."
       actions={(
         <>
@@ -178,7 +165,10 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const partner = makloons.find((m) => m.id === partnerId);
+  // Fase 4 · R3 — `makloons === null`: peran tidak boleh membaca Mitra Makloon (`makloon.view`) → pemilih mitra
+  // disembunyikan (rework dicatat internal), alih-alih menembak `/makloons` yang ditolak 403.
+  const partnerList = makloons || [];
+  const partner = partnerList.find((m) => m.id === partnerId);
 
   async function submit() {
     setBusy(true); setErr("");
@@ -193,7 +183,7 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
 
   return (
     <Shell testId="lot-rework-modal" title={`Rework Lot ${lot.lot_number}`} onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Proses ulang / proses lanjutan. Roll berpindah ke lot anak; bila tahap tujuan diisi, transisi divalidasi mesin tahap (tidak boleh melompat)."
       actions={(
         <>
@@ -204,7 +194,7 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
           </button>
         </>
       )}>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <label className="grid gap-1">
           <span className="text-[11px] font-semibold text-[#3C3C43]">Jenis proses *</span>
           <KNSelect data-testid="lot-rework-process" className="field" value={processType}
@@ -218,14 +208,16 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
             options={[{ value: "", label: "Tetap di tahap sekarang" }, ...stageOptions]}
             onValueChange={setToStage} />
         </label>
-        <label className="grid gap-1">
-          <span className="text-[11px] font-semibold text-[#3C3C43]">Mitra pelaksana (opsional)</span>
-          <KNSelect data-testid="lot-rework-partner" className="field" value={partnerId} searchable
-            placeholder="Internal / pilih mitra makloon"
-            options={[{ value: "", label: "Internal (tanpa mitra)" },
-                      ...makloons.map((m) => ({ value: m.id, label: m.name }))]}
-            onValueChange={setPartnerId} />
-        </label>
+        {makloons !== null && (
+          <label className="grid gap-1">
+            <span className="text-[11px] font-semibold text-[#3C3C43]">Mitra pelaksana (opsional)</span>
+            <KNSelect data-testid="lot-rework-partner" className="field" value={partnerId} searchable
+              placeholder="Internal / pilih mitra makloon"
+              options={[{ value: "", label: "Internal (tanpa mitra)" },
+                        ...partnerList.map((m) => ({ value: m.id, label: m.name }))]}
+              onValueChange={setPartnerId} />
+          </label>
+        )}
         <label className="grid gap-1">
           <span className="text-[11px] font-semibold text-[#3C3C43]">Alasan / catatan</span>
           <input data-testid="lot-rework-reason" className="field" value={reason}
@@ -271,7 +263,7 @@ export function LotStatusModal({ lot, statusOptions, onClose, onDone }) {
 
   return (
     <Shell testId="lot-status-modal" title={`Status Mutu Lot ${lot.lot_number}`} onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Status mutu lot bersifat informasional (tidak memblokir penjualan) dan seluruh perubahan tercatat dengan alasan + pelaku."
       actions={(
         <>
@@ -317,7 +309,7 @@ export function CreateLotModal({ products = [], warehouses = [], sourceOptions, 
 
   return (
     <Shell testId="lot-create-modal" title="Buat Lot Manual" onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Untuk stok awal atau koreksi data lapangan. Nomor lot dibuat otomatis per entitas (KSC/LOT-YYMM-####) dan tidak bisa diketik manual agar tidak bentrok."
       actions={(
         <>
@@ -328,7 +320,7 @@ export function CreateLotModal({ products = [], warehouses = [], sourceOptions, 
           </button>
         </>
       )}>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <label className="grid gap-1">
           <span className="text-[11px] font-semibold text-[#3C3C43]">Produk *</span>
           <KNSelect data-testid="lot-create-product" className="field" searchable
@@ -400,7 +392,7 @@ export function LotLabelModal({ lot, rolls = [], onClose }) {
 
   return (
     <Shell testId="lot-label-modal" title={`Label Lot ${lot.lot_number}`} onClose={onClose}
-      error={err} onDismissError={() => setErr("")}
+      error={err}
       subtitle="Perintah cetak dibuat server memakai mesin label yang sudah dipakai produk (ZPL untuk printer label, ESC-POS untuk printer struk). Nilai barcode/QR = nomor lot (atau nomor roll bila dipilih)."
       actions={(
         <>
@@ -411,7 +403,7 @@ export function LotLabelModal({ lot, rolls = [], onClose }) {
           </button>
         </>
       )}>
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <label className="grid gap-1">
           <span className="text-[11px] font-semibold text-[#3C3C43]">Format printer</span>
           <KNSelect data-testid="lot-label-format" className="field" value={format}

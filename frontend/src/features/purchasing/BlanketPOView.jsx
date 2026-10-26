@@ -110,7 +110,7 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_400px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_400px]">
         <div className="section-card min-w-0">
           <div className="overflow-x-auto">
             <div className="min-w-[620px]">

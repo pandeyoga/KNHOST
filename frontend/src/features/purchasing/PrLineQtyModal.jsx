@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Pencil, X } from "lucide-react";
+import { Pencil } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { formatQty } from "../../utils/formatters";
-import { overlayDismiss } from "../../utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 
 /**
  * PrLineQtyModal (AS-02) — MD/pembelian mengubah qty beli satu baris PR. Qty boleh NAIK
@@ -28,46 +28,37 @@ export default function PrLineQtyModal({ pr, line, onClose, onDone }) {
     } finally { setBusy(false); }
   };
 
+  // Fase 4 · R3 (L-03) — `.modal-card` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, galat di kaki
+  // pop-up). Testid `pr-line-qty-modal/-close/-cancel/-confirm/-error`, isian tetap.
   return (
-    <div className="modal-overlay" data-testid="pr-line-qty-modal" {...overlayDismiss(onClose)}>
-      <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="modal-title flex items-center gap-2"><Pencil size={14} className="text-[#0058CC]" /> Ubah Qty Beli — baris {line.line_no}</p>
-            <p className="modal-subtitle">{line.product_name || line.description} · {pr.number}</p>
-          </div>
-          <button className="icon-button" onClick={onClose} data-testid="pr-line-qty-close"><X size={16} /></button>
-        </div>
-        {err && <div className="notice-bar danger mt-2" data-testid="pr-line-qty-error"><span>{err}</span></div>}
-        <div className="mt-2 grid gap-3">
-          <div className="grid grid-cols-2 gap-2 text-[11.5px]">
-            <div className="rounded-md bg-[#FAFBFC] p-2"><p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">Qty sekarang</p><p className="font-bold tabular-nums">{formatQty(line.quantity)} {line.unit}</p></div>
-            <div className="rounded-md bg-[#FAFBFC] p-2" data-testid="pr-line-qty-order">
-              <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">Kebutuhan pesanan (SO)</p>
-              <p className="font-bold tabular-nums">{orderQty != null ? `${formatQty(orderQty)} ${line.unit}` : "— (bukan dari SO)"}</p>
-            </div>
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Qty beli baru ({line.unit}) *</label>
-            <input type="number" min="0" step="0.01" className="form-input" value={qty} onChange={(e) => setQty(e.target.value)} data-testid="pr-line-qty-input" />
-            {orderQty != null && n > orderQty && (
-              <p className="text-[10.5px] text-[#126E2C]" data-testid="pr-line-qty-extra">Kelebihan untuk stok: +{formatQty(n - orderQty)} {line.unit} di atas kebutuhan pesanan.</p>
-            )}
-            {orderQty != null && n > 0 && n < orderQty && (
-              <p className="text-[10.5px] text-[#C0392B]">Di bawah kebutuhan pesanan — akan ditolak server.</p>
-            )}
-          </div>
-          <div className="grid gap-1.5">
-            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan (wajib, min. 5 huruf) *</label>
-            <textarea className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} data-testid="pr-line-qty-reason"
-              placeholder="Mis. MOQ supplier 200 m; tambah stok penyangga untuk repeat order." />
+    <FormModal open onClose={onClose} size="sm" icon={Pencil} testId="pr-line-qty-modal"
+      title={`Ubah Qty Beli — baris ${line.line_no}`} subtitle={`${line.product_name || line.description || ""} · ${pr.number}`}
+      onSubmit={save} busy={busy} error={err} submitDisabled={!canSave}
+      submitTestId="pr-line-qty-confirm" cancelTestId="pr-line-qty-cancel" submitLabel={busy ? "Menyimpan…" : "Simpan Qty"}>
+      <div className="grid gap-3">
+        <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+          <div className="rounded-md bg-[#FAFBFC] p-2"><p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">Qty sekarang</p><p className="font-bold tabular-nums">{formatQty(line.quantity)} {line.unit}</p></div>
+          <div className="rounded-md bg-[#FAFBFC] p-2" data-testid="pr-line-qty-order">
+            <p className="text-[9.5px] font-bold uppercase text-[#8E8E93]">Kebutuhan pesanan (SO)</p>
+            <p className="font-bold tabular-nums">{orderQty != null ? `${formatQty(orderQty)} ${line.unit}` : "— (bukan dari SO)"}</p>
           </div>
         </div>
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose} data-testid="pr-line-qty-cancel">Batal</button>
-          <button className="btn-primary" onClick={save} disabled={!canSave} data-testid="pr-line-qty-confirm">{busy ? "Menyimpan…" : "Simpan Qty"}</button>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Qty beli baru ({line.unit}) *</label>
+          <input type="number" min="0" step="0.01" className="form-input" value={qty} onChange={(e) => setQty(e.target.value)} data-testid="pr-line-qty-input" />
+          {orderQty != null && n > orderQty && (
+            <p className="text-[10.5px] text-[#126E2C]" data-testid="pr-line-qty-extra">Kelebihan untuk stok: +{formatQty(n - orderQty)} {line.unit} di atas kebutuhan pesanan.</p>
+          )}
+          {orderQty != null && n > 0 && n < orderQty && (
+            <p className="text-[10.5px] text-[#C0392B]">Di bawah kebutuhan pesanan — akan ditolak server.</p>
+          )}
+        </div>
+        <div className="grid gap-1.5">
+          <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Alasan (wajib, min. 5 huruf) *</label>
+          <textarea className="form-input" rows="2" value={reason} onChange={(e) => setReason(e.target.value)} data-testid="pr-line-qty-reason"
+            placeholder="Mis. MOQ supplier 200 m; tambah stok penyangga untuk repeat order." />
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

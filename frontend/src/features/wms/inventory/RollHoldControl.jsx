@@ -1,7 +1,10 @@
-/** RollHoldControl — QC-06: tombol Tahan / Lepas Tahan satu roll + dialog alasan. */
+/** RollHoldControl — QC-06: tombol Tahan / Lepas Tahan satu roll + dialog alasan.
+ *  Fase 4 · R3 (L-03) — dialog `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis, galat di
+ *  pop-up). Testid `roll-hold-dialog`, `roll-hold-dialog-close`, `roll-hold-reason-input`, `roll-{mode}-submit` tetap. */
 import { useState } from "react";
-import { PauseCircle, PlayCircle, X } from "lucide-react";
+import { PauseCircle, PlayCircle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import FormModal from "../../../components/FormModal";
 
 const HOLDABLE = ["available", "quarantine"];
 
@@ -33,35 +36,24 @@ export function RollHoldControl({ roll, onChanged, size = "sm" }) {
     : "border-[#BFE6CF] text-[#1B7F4B] hover:bg-[#EEFAF3]";
   return (
     <>
-      <button data-testid={`roll-${mode}-btn-${roll.id}`} onClick={() => setOpen(true)}
+      <button type="button" data-testid={`roll-${mode}-btn-${roll.id}`} onClick={() => { setError(""); setOpen(true); }}
         className={`mr-1.5 inline-flex items-center gap-1 rounded-md border bg-white px-2 py-1 font-semibold ${size === "sm" ? "text-[10.5px]" : "text-[11px]"} ${btnCls}`}>
         {isHold ? <PauseCircle size={10} /> : <PlayCircle size={10} />} {isHold ? "Tahan" : "Lepas Tahan"}
       </button>
-      {open && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/40 p-4" data-testid="roll-hold-dialog"
-          onClick={() => !busy && setOpen(false)}>
-          <div className="w-full max-w-md rounded-xl bg-white p-4 text-left shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[13px] font-bold">{isHold ? "Tahan roll" : "Lepas tahanan roll"} {roll.roll_no}</p>
-              <button data-testid="roll-hold-dialog-close" className="icon-button" onClick={() => setOpen(false)}><X size={15} /></button>
-            </div>
-            <p className="mb-2 text-[11.5px] text-[#6B6B73]" data-testid="roll-hold-dialog-info">
-              {isHold
-                ? "Roll akan berstatus Diblokir: tidak tersedia untuk dijual/dialokasikan dan keputusan QC tertahan sampai dilepas."
-                : `Alasan ditahan: ${roll.hold?.reason || roll.inspection?.hold?.reason || "—"}. Roll kembali ke status ${roll.hold?.prev_status || roll.status}.`}
-            </p>
-            <textarea data-testid="roll-hold-reason-input" className="field w-full text-[12px]" rows={3}
-              placeholder={isHold ? "Alasan menahan (wajib)" : "Catatan pelepasan (wajib)"}
-              value={text} onChange={(e) => setText(e.target.value)} />
-            {error && <p className="mt-1.5 rounded bg-[#FBE9E7] px-2 py-1 text-[11px] text-[#C0341D]" data-testid="roll-hold-error">{error}</p>}
-            <div className="mt-3 flex justify-end gap-2">
-              <button className="secondary-button text-[11.5px]" onClick={() => setOpen(false)} disabled={busy}>Batal</button>
-              <button data-testid={`roll-${mode}-submit`} className="primary-button text-[11.5px]" disabled={busy || text.trim().length < 5}
-                onClick={submit}>{busy ? "…" : isHold ? "Tahan roll" : "Lepas tahanan"}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <FormModal open={open} onClose={() => setOpen(false)} size="sm" busy={busy} error={error}
+        icon={isHold ? PauseCircle : PlayCircle} testId="roll-hold-dialog"
+        title={`${isHold ? "Tahan roll" : "Lepas tahanan roll"} ${roll.roll_no || ""}`.trim()}
+        onSubmit={submit} submitDisabled={text.trim().length < 5} submitTestId={`roll-${mode}-submit`}
+        submitLabel={busy ? "…" : isHold ? "Tahan roll" : "Lepas tahanan"}>
+        <p className="mb-2 text-[11.5px] text-[#6B6B73]" data-testid="roll-hold-dialog-info">
+          {isHold
+            ? "Roll akan berstatus Diblokir: tidak tersedia untuk dijual/dialokasikan dan keputusan QC tertahan sampai dilepas."
+            : `Alasan ditahan: ${roll.hold?.reason || roll.inspection?.hold?.reason || "—"}. Roll kembali ke status ${roll.hold?.prev_status || roll.status}.`}
+        </p>
+        <textarea data-testid="roll-hold-reason-input" className="field w-full text-[12px]" rows={3}
+          placeholder={isHold ? "Alasan menahan (wajib)" : "Catatan pelepasan (wajib)"}
+          value={text} onChange={(e) => setText(e.target.value)} />
+      </FormModal>
     </>
   );
 }

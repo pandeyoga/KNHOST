@@ -17,22 +17,24 @@ function UnitLines({ byUnit }) {
 // K-04 (keputusan pemilik 26 Okt) — `lowHint` menyebut cakupan "Stok Rendah" (definisi tunggal server, per produk),
 // `availHint` definisi "Tersedia" (tooltip) supaya angka beda cakupan tidak dibaca sebagai angka yang sama.
 export default function InventorySummaryCards({ onHandByUnit, availByUnit, reservedByUnit, lowCount, lowHint = "", availHint = "" }) {
+  // Fase 4 · R3 (L-06/L-08) — kartu KPI tab Stok memakai gaya `metric-card` baku (dulu latar hijau/oranye/merah per kartu
+  // dan angka berwarna — termasuk "0" merah). Nilai 0 netral; satuan tetap satu baris per satuan (tidak dijumlahkan).
+  const isZero = (byUnit) => !Object.values(byUnit || {}).some((q) => Math.abs(Number(q) || 0) > 0.0001);
   const cards = [
-    { label: "Total Stok Fisik", value: <UnitLines byUnit={onHandByUnit} />,   icon: Layers,        color: "text-[#007AFF]", bg: "bg-[#EFF4FF]" },
-    { label: "Tersedia",     value: <UnitLines byUnit={availByUnit} />,    icon: TrendingUp,    color: "text-[#34C759]", bg: "bg-green-50", title: availHint },
-    { label: "Dipesan",      value: <UnitLines byUnit={reservedByUnit} />, icon: TrendingDown,  color: "text-[#FF9500]", bg: "bg-orange-50" },
-    { label: "Stok Rendah",   value: lowCount, icon: AlertTriangle, color: "text-red-500",   bg: "bg-red-50", hint: lowHint },
+    { label: "Total Stok Fisik", value: <UnitLines byUnit={onHandByUnit} />, icon: Layers, zero: isZero(onHandByUnit) },
+    { label: "Tersedia", value: <UnitLines byUnit={availByUnit} />, icon: TrendingUp, title: availHint, zero: isZero(availByUnit) },
+    { label: "Dipesan", value: <UnitLines byUnit={reservedByUnit} />, icon: TrendingDown, zero: isZero(reservedByUnit) },
+    { label: "Stok Rendah", value: lowCount, icon: AlertTriangle, hint: lowHint, zero: !Number(lowCount) },
   ];
   return (
     <div data-testid="inventory-summary-cards" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {cards.map(({ label, value, icon: Icon, color, bg, hint, title }) => (
-        <div key={label} data-testid={`summary-card-${label.toLowerCase().replace(/\s+/g, "-")}`} title={title || undefined} className={`rounded-xl border border-[#EFF0F2] p-3 flex items-center gap-2.5 ${bg}`}>
-          <div className={`rounded-lg p-1.5 ${bg}`}>
-            <Icon size={16} className={color} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-[#6B6B73] font-semibold uppercase">{label}</p>
-            <p className={`text-[16px] font-bold leading-tight tabular-nums ${color}`}>{value}</p>
+      {cards.map(({ label, value, icon: Icon, hint, title, zero }) => (
+        <div key={label} data-testid={`summary-card-${label.toLowerCase().replace(/\s+/g, "-")}`} title={title || undefined}
+          className="metric-card !cursor-default !items-start">
+          <div className="metric-icon"><Icon size={16} /></div>
+          <div className="metric-body">
+            <div className="metric-label">{label}</div>
+            <div className={`metric-value tabular-nums !text-[16px] leading-tight ${zero ? "metric-zero" : ""}`.trim()}>{value}</div>
             {hint && <p className="text-[10px] leading-tight text-[#6B6B73]" data-testid="summary-card-hint">{hint}</p>}
           </div>
         </div>

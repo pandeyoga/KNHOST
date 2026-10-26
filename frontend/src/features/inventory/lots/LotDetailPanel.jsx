@@ -14,6 +14,7 @@ import { reprintRollLabel, printRollLabelsBulk } from "../../../utils/rollLabels
 import LotGenealogyTree from "./LotGenealogyTree";
 import LotRecallPanel from "./LotRecallPanel";
 import { LotSourcePill, LotStatusPill } from "./LotParts";
+import PageTabs from "../../../components/PageTabs";
 import { lotApi, shortDateTime } from "./lotApi";
 
 // UAT 24 Okt (audit UI tahap 2) — dulu "Dokumen sumber: cycle_count_found" (kode mentah) bila lot tanpa nomor dokumen.
@@ -163,15 +164,12 @@ export default function LotDetailPanel({
           <span className="flex items-center gap-1"><ListOrdered size={11} /> {queueBusy ? "Mengantrekan…" : "Antrean printer"}</span>
         </button>
         {queueInfo && <span className="text-[10.5px] text-[#6B6B73]" data-testid="lot-action-queue-info">{queueInfo}</span>}
-        <div className="ml-auto flex items-center gap-1">
-          {TABS.map((t) => (
-            <button key={t.id} data-testid={`lot-tab-${t.id}`}
-              className={`rounded-full px-2.5 py-1 text-[10.5px] font-semibold transition-colors ${tab === t.id
-                ? "bg-[#0058CC] text-white" : "border border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#0058CC]"}`}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
       </div>
+
+      {/* Fase 4 · R3 (L-01) — tab rincian dulu pil biru bercampur tombol aksi di bilah yang sama; kini PageTabs baku di
+          barisnya sendiri (garis bawah, satu baris bergulir di HP). Testid `lot-tab-<id>` tetap. */}
+      <PageTabs className="px-2.5" value={tab} onChange={setTab} ariaLabel="Rincian lot" testId="lot-tabs"
+        tabTestId={(k) => `lot-tab-${k}`} tabs={TABS.map((t) => ({ key: t.id, label: t.label }))} />
 
       <div className="px-2.5 py-2">
         {loading && <p data-testid="lot-detail-loading" className="py-4 text-center text-[11px] text-[#6B6B73]">Memuat detail lot…</p>}

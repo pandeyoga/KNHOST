@@ -16,7 +16,7 @@ import MakloonWizard from "./makloon/MakloonWizard";
 import {
   FULFILLMENT_META, makloonPrefill, prSourcing, realizePo, REALIZATION_META,
 } from "./supplier-items/supplierItemsApi";
-import { overlayDismiss } from "@/utils/overlayDismiss";
+import FormModal from "../../components/FormModal";
 import { GroupEntityNotice, isGroupEntityPartner, supplierOptionLabel }
   from "../../components/GroupEntityBadge";
 
@@ -31,6 +31,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
   const [siteId, setSiteId] = useState(pr.ship_to_site_id || "");
   const [expDate, setExpDate] = useState("");
   const [wizard, setWizard] = useState(null);         // { lineNo, prefill }
+  const [poErr, setPoErr] = useState("");             // Fase 4 · R3 — galat pop-up realisasi (tampil di pop-up)
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,8 +59,8 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
   }
 
   async function doRealizePo() {
-    if (!supplierId) { setErr("Pilih supplier."); return; }
-    setBusy(true); setErr("");
+    if (!supplierId) { setPoErr("Pilih supplier."); return; }
+    setBusy(true); setPoErr("");
     try {
       const res = await realizePo(pr.id, {
         supplier_id: supplierId, ship_to_site_id: siteId, warehouse_id: siteId ? "" : (pr.warehouse_id || ""),
@@ -70,7 +71,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
       await load();
       reload?.(pr.id);
     } catch (e) {
-      setErr(e.response?.data?.detail || "Realisasi ke PO gagal.");
+      setPoErr(e.response?.data?.detail || "Realisasi ke PO gagal.");
     } finally { setBusy(false); }
   }
 
@@ -205,7 +206,7 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
                     : `Tidak ada baris dipilih — semua ${openPurchase.length} baris beli yang terbuka akan masuk 1 PO.`}
                 </span>
                 <button data-testid="pr-realize-po-open" className="btn-primary"
-                  onClick={() => { setErr(""); setShowPo(true); }}>
+                  onClick={() => { setPoErr(""); setShowPo(true); }}>
                   <ShoppingCart size={14} /> Realisasi ke PO
                 </button>
               </div>
@@ -214,57 +215,53 @@ export default function PrSourcingPanel({ pr, suppliers, warehouses, onChanged, 
         )}
       </div>
 
-      {/* Modal realisasi ke PO */}
-      {showPo && (
-        <div className="modal-overlay" data-testid="pr-realize-po-modal" {...overlayDismiss(() => setShowPo(false))}>
-          <div className="modal-card small" onClick={(e) => e.stopPropagation()}>
-            <p className="modal-title">Realisasi {pr.number} → Pesanan Pembelian</p>
-            <p className="modal-subtitle">
-              Harga diambil otomatis dari <b>kontrak pembelian</b> bila ada, lalu estimasi PR,
-              barang supplier, price-list, terakhir master produk.
-            </p>
-            {err && <div className="notice-bar danger"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
-            <div className="grid gap-3 mt-2">
-              <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
-                <KNSelect data-testid="pr-realize-supplier" className="form-input" value={supplierId}
-                  onValueChange={setSupplierId} placeholder="— Pilih supplier —"
-                  options={suppliers.map((s) => ({ value: s.id, label: supplierOptionLabel(s) }))} />
-                {/* FASE E-7 (E7.2) — pintu inilah yang sebelumnya BOCOR: realisasi PR
-                    membuat PO biasa ke badan usaha grup (bukti: KSC/PO-00013). */}
-                {isGroupEntityPartner(selectedSupplier) && (
-                  <GroupEntityNotice partner={selectedSupplier} docLabel="PO hasil realisasi PR" />
-                )}
-              </div>
-              <div className="grid gap-1.5">
-                <SiteSelect testId="pr-realize-site" value={siteId} onChange={setSiteId} entityId={pr.entity_id || ""} />
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>
-                <KNDatePicker data-testid="pr-sourcing-exp-date" value={expDate} onChange={setExpDate} />
-              </div>
-              <p className="text-[11px] text-[#6B6B73]">
-                Baris yang akan diproses:{" "}
-                <b data-testid="pr-realize-lines">
-                  {picked.length > 0 ? picked.map((n) => `#${n}`).join(", ")
-                    : openPurchase.map((l) => `#${l.line_no}`).join(", ")}
-                </b>
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowPo(false)}>Batal</button>
-              <button data-testid="pr-realize-confirm" className="btn-primary" onClick={doRealizePo}
-                disabled={busy || supplierIsGroupEntity}
-                title={supplierIsGroupEntity
-                  ? `${selectedSupplier?.name} adalah badan usaha di dalam grup — pakai menu Antar Entitas`
-                  : ""}>
-                {supplierIsGroupEntity ? "Pakai menu Antar Entitas"
-                  : busy ? "Memproses…" : "Buat PO"}
-              </button>
-            </div>
+      {/* Modal realisasi ke PO — Fase 4 · R3 (L-03): FormModal baku (layar penuh di HP, Esc berlapis); galat
+          realisasi tampil DI pop-up (`poErr`), bukan di bilah panel di belakang lapisan. Testid tetap. */}
+      <FormModal open={showPo} onClose={() => setShowPo(false)} size="sm" icon={ShoppingCart} testId="pr-realize-po-modal"
+        title={`Realisasi ${pr.number} → Pesanan Pembelian`}
+        subtitle={<>Harga diambil otomatis dari <b>kontrak pembelian</b> bila ada, lalu estimasi PR, barang supplier, price-list, terakhir master produk.</>}
+        busy={busy} error={poErr}
+        footer={(
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" className="secondary-button" disabled={busy} onClick={() => setShowPo(false)}>Batal</button>
+            <button type="button" data-testid="pr-realize-confirm" className="primary-button" onClick={doRealizePo}
+              disabled={busy || supplierIsGroupEntity}
+              title={supplierIsGroupEntity
+                ? `${selectedSupplier?.name} adalah badan usaha di dalam grup — pakai menu Antar Entitas`
+                : ""}>
+              {supplierIsGroupEntity ? "Pakai menu Antar Entitas"
+                : busy ? "Memproses…" : "Buat PO"}
+            </button>
           </div>
+        )}>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Supplier *</label>
+            <KNSelect data-testid="pr-realize-supplier" className="form-input" value={supplierId}
+              onValueChange={setSupplierId} placeholder="— Pilih supplier —"
+              options={suppliers.map((s) => ({ value: s.id, label: supplierOptionLabel(s) }))} />
+            {/* FASE E-7 (E7.2) — pintu inilah yang sebelumnya BOCOR: realisasi PR
+                membuat PO biasa ke badan usaha grup (bukti: KSC/PO-00013). */}
+            {isGroupEntityPartner(selectedSupplier) && (
+              <GroupEntityNotice partner={selectedSupplier} docLabel="PO hasil realisasi PR" />
+            )}
+          </div>
+          <div className="grid gap-1.5">
+            <SiteSelect testId="pr-realize-site" value={siteId} onChange={setSiteId} entityId={pr.entity_id || ""} />
+          </div>
+          <div className="grid gap-1.5">
+            <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Estimasi Tanggal Terima</label>
+            <KNDatePicker data-testid="pr-sourcing-exp-date" value={expDate} onChange={setExpDate} />
+          </div>
+          <p className="text-[11px] text-[#6B6B73]">
+            Baris yang akan diproses:{" "}
+            <b data-testid="pr-realize-lines">
+              {picked.length > 0 ? picked.map((n) => `#${n}`).join(", ")
+                : openPurchase.map((l) => `#${l.line_no}`).join(", ")}
+            </b>
+          </p>
         </div>
-      )}
+      </FormModal>
 
       {/* Wizard Makloon ter-prefill dari baris PR */}
       {wizard && (

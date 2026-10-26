@@ -91,7 +91,7 @@ export default function MakloonClaimPanel({ mkoId, step, currentUser, onDone, on
       )}
 
       {claim.status === "open" && canPropose && !compact && (
-        <div className="mt-2 grid gap-2 md:grid-cols-[1.2fr_0.8fr_1.5fr_auto]">
+        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_0.8fr_1.5fr_auto]">
           <KNSelect data-testid={`claim-action-${step.seq}`} className="field !py-1.5 text-[11.5px]" value={action}
             onValueChange={setAction} options={ACTION_OPTS} />
           <input data-testid={`claim-amount-${step.seq}`} className="field !py-1.5 text-[11.5px]" value={amount}
@@ -117,7 +117,7 @@ export default function MakloonClaimPanel({ mkoId, step, currentUser, onDone, on
             {" "}· {formatCurrency(claim.amount || 0)} · {claim.reason}
           </p>
           {canDecide ? (
-            <div className="mt-1.5 grid gap-2 md:grid-cols-[2fr_auto_auto]">
+            <div className="mt-1.5 grid grid-cols-1 gap-2 md:grid-cols-[2fr_auto_auto]">
               <input data-testid={`claim-note-${step.seq}`} className="field !py-1.5 text-[11.5px]" value={note}
                 onChange={(e) => setNote(e.target.value)} placeholder="Catatan keputusan (opsional untuk setuju, wajib untuk tolak)" />
               <button data-testid={`claim-approve-${step.seq}`} className="primary-button !py-1.5 text-[11.5px]" disabled={busy}

@@ -13,6 +13,8 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityBadge from "../../components/EntityBadge";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
+import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import PendingSoTab from "./PendingSoTab";
 import AtpDetailPanel from "./AtpDetailPanel";
@@ -280,7 +282,9 @@ function RefList({ items, entities, canManage, action, actionLabel, icon: Icon, 
   );
 }
 
-function OpModal({ data, entities, onClose, onDone, onError }) {
+// Fase 4 · R3 (L-03) — pop-up `fixed inset-0` buatan sendiri → FormModal (layar penuh di HP, Esc berlapis); galat
+// validasi/server kini tampil DI pop-up (dulu dikirim ke bilah halaman di belakang lapisan). Testid `sb-op-*` tetap.
+function OpModal({ data, entities, onClose, onDone }) {
   const isHold = data.type === "hold";
   const { row, product } = data;
   const [qty, setQty] = useState("");
@@ -288,12 +292,13 @@ function OpModal({ data, entities, onClose, onDone, onError }) {
   const [refDoc, setRefDoc] = useState("");
   const [holdType, setHoldType] = useState("general");
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
 
   const submit = async () => {
     const q = parseFloat(qty);
-    if (!q || q <= 0) { onError("Qty harus lebih dari 0."); return; }
-    if (q > row.available_qty + 0.01) { onError(`Qty melebihi stok tersedia (${row.available_qty}).`); return; }
-    setSaving(true);
+    if (!q || q <= 0) { setErr("Qty harus lebih dari 0."); return; }
+    if (q > row.available_qty + 0.01) { setErr(`Qty melebihi stok tersedia (${row.available_qty}).`); return; }
+    setSaving(true); setErr("");
     try {
       if (isHold) {
         await axios.post(`${API}/stock/hold`, {
@@ -310,53 +315,44 @@ function OpModal({ data, entities, onClose, onDone, onError }) {
         onDone(`${q} ${product.base_unit} masuk WIP (proses).`);
       }
     } catch (e) {
-      onError(e.response?.data?.detail || "Operasi gagal.");
+      setErr(apiErrorText(e, "Operasi gagal."));
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="sb-op-modal">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#EFF0F2]">
-          {isHold ? <Hand size={16} className="text-[#9A6700]" /> : <Hammer size={16} className="text-[#6B2FB3]" />}
-          <h3 className="font-bold text-[14px]">{isHold ? "Tahan Stok (Hold)" : "Mulai WIP (Proses)"}</h3>
-          <button data-testid="sb-op-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup"><X size={15} /></button>
+    <FormModal open onClose={onClose} size="sm" icon={isHold ? Hand : Hammer} testId="sb-op-modal"
+      title={isHold ? "Tahan Stok (Hold)" : "Mulai WIP (Proses)"} onSubmit={submit} busy={saving} error={err}
+      submitTestId="sb-op-submit" submitLabel={saving ? "Memproses…" : (isHold ? "Tahan" : "Mulai WIP")}>
+      <div className="space-y-3 text-[12px]">
+        <div className="rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
+          <p className="font-semibold text-[#1C1C1E]">{product.product_name}</p>
+          <p className="text-[11px] text-[#9A9BA3]">{product.sku} · {row.warehouse_name} · <EntityBadge entityId={row.owner_entity_id} entities={entities} /></p>
+          <p className="text-[11px] text-[#1B7F4B] mt-1">Tersedia: <b>{formatQty(row.available_qty)} {product.base_unit}</b></p>
         </div>
-        <div className="p-4 space-y-3 text-[12px]">
-          <div className="rounded-md bg-[#FAFBFC] border border-[#EFF0F2] px-3 py-2">
-            <p className="font-semibold text-[#1C1C1E]">{product.product_name}</p>
-            <p className="text-[11px] text-[#9A9BA3]">{product.sku} · {row.warehouse_name} · <EntityBadge entityId={row.owner_entity_id} entities={entities} /></p>
-            <p className="text-[11px] text-[#1B7F4B] mt-1">Tersedia: <b>{formatQty(row.available_qty)} {product.base_unit}</b></p>
-          </div>
+        <div>
+          <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Qty ({product.base_unit})</label>
+          <input data-testid="sb-op-qty" type="number" className="field py-2 text-[13px]" value={qty} onChange={(e) => setQty(e.target.value)} max={row.available_qty} />
+        </div>
+        <div>
+          <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">{isHold ? "Alasan" : "Catatan Proses"} <span className="text-[#9A9BA3] font-normal">(opsional)</span></label>
+          <input data-testid="sb-op-text" className="field py-2 text-[13px]" value={text} onChange={(e) => setText(e.target.value)} placeholder={isHold ? "Mis. tahan untuk pelanggan X" : "Mis. potong & jahit"} />
+        </div>
+        {isHold && (
           <div>
-            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Qty ({product.base_unit})</label>
-            <input data-testid="sb-op-qty" type="number" className="field py-2 text-[13px]" value={qty} onChange={(e) => setQty(e.target.value)} max={row.available_qty} autoFocus />
+            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Jenis Tahanan</label>
+            <KNSelect data-testid="sb-op-hold-type" className="field py-2 text-[13px]" value={holdType} onValueChange={setHoldType}
+              options={HOLD_TYPES.map((h) => ({ value: h.value, label: h.label }))} />
           </div>
+        )}
+        {isHold && (
           <div>
-            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">{isHold ? "Alasan" : "Catatan Proses"} <span className="text-[#9A9BA3] font-normal">(opsional)</span></label>
-            <input data-testid="sb-op-text" className="field py-2 text-[13px]" value={text} onChange={(e) => setText(e.target.value)} placeholder={isHold ? "Mis. tahan untuk pelanggan X" : "Mis. potong & jahit"} />
+            <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">No. SO Menunggu <span className="text-[#9A9BA3] font-normal">(opsional)</span></label>
+            <input data-testid="sb-op-ref" className="field py-2 text-[13px]" value={refDoc} onChange={(e) => setRefDoc(e.target.value)} placeholder="Mis. KSC/SO-00099" />
           </div>
-          {isHold && (
-            <div>
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">Jenis Tahanan</label>
-              <KNSelect data-testid="sb-op-hold-type" className="field py-2 text-[13px]" value={holdType} onValueChange={setHoldType}
-                options={HOLD_TYPES.map((h) => ({ value: h.value, label: h.label }))} />
-            </div>
-          )}
-          {isHold && (
-            <div>
-              <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">No. SO Menunggu <span className="text-[#9A9BA3] font-normal">(opsional)</span></label>
-              <input data-testid="sb-op-ref" className="field py-2 text-[13px]" value={refDoc} onChange={(e) => setRefDoc(e.target.value)} placeholder="Mis. KSC/SO-00099" />
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2]">
-          <button className="btn-secondary text-[12px] py-1.5 px-4" onClick={onClose}>Batal</button>
-          <button data-testid="sb-op-submit" className="btn-primary text-[12px] py-1.5 px-4" onClick={submit} disabled={saving}>{saving ? "Memproses…" : (isHold ? "Tahan" : "Mulai WIP")}</button>
-        </div>
+        )}
       </div>
-    </div>
+    </FormModal>
   );
 }
 
@@ -380,7 +376,7 @@ function Kpi({ label, value, icon: Icon, tone = "", testId, title }) {
   return (
     <div className="section-card" data-testid={testId} title={title}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#F3EAFB] flex items-center justify-center"><Icon size={17} className="text-[#6B219A]" /></div>
+        <div className="w-9 h-9 rounded-lg bg-[#EFF4FF] flex items-center justify-center"><Icon size={17} className="text-[#0058CC]" /></div>
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
           <p className={`text-[17px] font-bold leading-tight tabular-nums ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>

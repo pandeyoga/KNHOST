@@ -4,13 +4,13 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
-import { nf, q, fmtTime, Stat, EmptyBox, TabBtn, SectionCard, RfidHeader, useWarehouses } from "./rfidShared";
+import { q, fmtTime, Stat, EmptyBox, SectionCard, RfidHeader, useWarehouses } from "./rfidShared";
+import PageTabs from "../../components/PageTabs";
+import ResponsiveTable from "../../components/ResponsiveTable";
 import RfidPrintVerifyPanel from "./RfidPrintVerifyPanel";
 import { reprintRollLabel } from "../../utils/rollLabels";
 import { askConfirm } from "../../services/confirmService";
 import { docStatusLabel } from "../../utils/docStatus";
-
-import PagedRows from "@/components/PagedRows";
 
 export default function RfidTagsView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("tags");
@@ -88,11 +88,10 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
 
   return (
     <div data-testid="rfid-tags-view" className="space-y-4">
-      <RfidHeader icon={Tag} title="Tag RFID" subtitle="Pasangkan (encode) tag EPC ke roll fisik. Memasang tag tidak mengubah stok.">
+      <RfidHeader icon={Tag} testId="rfid-tags-header" title="Tag RFID" subtitle="Pasangkan (encode) tag EPC ke roll fisik. Memasang tag tidak mengubah stok.">
         <KNSelect data-testid="rfid-tags-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-        <button data-testid="rfid-tags-refresh" onClick={load}
-          className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F5F5F7]">
+        <button type="button" data-testid="rfid-tags-refresh" onClick={load} className="secondary-button">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
         </button>
       </RfidHeader>
@@ -108,55 +107,50 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         <Stat icon={PackageSearch} label="Pembaca Aktif" value={`${summary?.devices_online ?? 0}/${summary?.devices_total ?? 0}`} color="#5856D6" loading={loading} />
       </div>
 
-      <div className="flex gap-1 border-b border-[#EFF0F2]">
-        <TabBtn id="tags" tab={tab} setTab={setTab} label={`Tag Aktif${tags.length ? ` (${tags.length})` : ""}`} testId="rfid-tab-tags" />
-        <TabBtn id="untagged" tab={tab} setTab={setTab} label={`Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls >= 5000 ? "5.000+" : summary.untagged_rolls.toLocaleString("id-ID")}` : untagged.length})` : ""}`} testId="rfid-tab-untagged" />
-        <TabBtn id="print" tab={tab} setTab={setTab} label="Cetak & Verifikasi" testId="rfid-tab-print" />
-      </div>
+      {/* Fase 4 · R3 (L-01/L-02) — tab buatan sendiri (TabBtn) → PageTabs baku; testid `rfid-tab-*` tetap. */}
+      <PageTabs value={tab} onChange={setTab} testId="rfid-tab" ariaLabel="Tag RFID" tabs={[
+        { key: "tags", label: `Tag Aktif${tags.length ? ` (${tags.length})` : ""}` },
+        { key: "untagged", label: `Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls >= 5000 ? "5.000+" : summary.untagged_rolls.toLocaleString("id-ID")}` : untagged.length})` : ""}` },
+        { key: "print", label: "Cetak & Verifikasi" },
+      ]} />
 
       {tab === "print" ? (
         <RfidPrintVerifyPanel whId={whId} selectedEntity={selectedEntity} onChanged={load} />
       ) : tab === "tags" ? (
         <SectionCard title="Daftar Tag RFID Aktif">
           {srch.searchBox}
+          {/* Fase 4 · R3 (L-07) — `<table>` mentah → ResponsiveTable (`.data-table` di desktop, kartu di HP 390 px);
+              testid baris `rfid-tag-row-<id>` & pager `rfid-tags-pager` tetap. */}
           {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
             : srch.shown.length === 0 ? <EmptyBox icon={Tag} text="Belum ada tag aktif. Encode roll di tab 'Belum Ber-tag'." />
               : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[12px]">
-                    <thead><tr className="text-left text-[11px] text-[#8E8E93] border-b border-[#EFF0F2]">
-                      <th className="py-2 pr-2">EPC</th><th className="pr-2">SKU</th><th className="pr-2">Produk</th>
-                      <th className="pr-2">Roll / Lot</th><th className="pr-2">Terakhir Terbaca</th><th className="pr-2 text-right">Aksi</th>
-                    </tr></thead>
-                    <tbody>
-                      <PagedRows rows={srch.shown} testId="rfid-tags-pager">{(t) => (
-                        <tr key={t.id} data-testid={`rfid-tag-row-${t.id}`} className="border-b border-[#F5F5F7] hover:bg-[#FAFAFB]">
-                          <td className="py-2 pr-2 font-mono font-semibold text-[11px]">{t.epc}</td>
-                          <td className="pr-2">{t.sku || "—"}</td>
-                          <td className="pr-2">{t.product_name || "—"}</td>
-                          <td className="pr-2">{t.roll_no} · {t.lot || "—"}</td>
-                          <td className="pr-2 text-[#6B6B73]">{t.last_seen_at ? `${fmtTime(t.last_seen_at)} @ ${t.last_seen_location || "?"}` : "belum terbaca"}</td>
-                          <td className="pr-2 text-right">
-                            <button data-testid={`rfid-reprint-${t.id}`} disabled={busy} onClick={() => reprintByCode(t.roll_id || t.roll_no)}
-                              className="inline-flex items-center gap-1 text-[#0058CC] hover:bg-[#EAF2FF] rounded px-2 py-1 disabled:opacity-40" title="Cetak ulang label QR">
-                              <Printer size={13} /> Label
-                            </button>
-                            <button data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t)}
-                              className="inline-flex items-center gap-1 text-[#C0341D] hover:bg-[#FBE9E7] rounded px-2 py-1 disabled:opacity-40">
-                              <Trash2 size={13} /> Pensiunkan
-                            </button>
-                          </td>
-                        </tr>
-                      )}</PagedRows>
-                    </tbody>
-                  </table>
-                </div>
+                <ResponsiveTable testId="rfid-tag" rows={srch.pageRows} rowKey="id" footer={srch.pager}
+                  columns={[
+                    { key: "epc", header: "EPC", mobile: "title", className: "font-mono font-semibold text-[11px]" },
+                    { key: "sku", header: "SKU", mobile: "subtitle" },
+                    { key: "product_name", header: "Produk", priority: 1 },
+                    { key: "roll", header: "Roll / Lot", priority: 2, render: (t) => `${t.roll_no} · ${t.lot || "—"}` },
+                    { key: "last_seen", header: "Terakhir Terbaca", priority: 3, className: "text-[#6B6B73]",
+                      render: (t) => (t.last_seen_at ? `${fmtTime(t.last_seen_at)} @ ${t.last_seen_location || "?"}` : "belum terbaca") },
+                  ]}
+                  actions={(t) => (
+                    <span className="inline-flex justify-end gap-1 whitespace-nowrap">
+                      <button type="button" data-testid={`rfid-reprint-${t.id}`} disabled={busy} onClick={() => reprintByCode(t.roll_id || t.roll_no)}
+                        className="inline-flex items-center gap-1 text-[#0058CC] hover:bg-[#EAF2FF] rounded px-2 py-1 disabled:opacity-40" title="Cetak ulang label QR">
+                        <Printer size={13} /> Label
+                      </button>
+                      <button type="button" data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t)}
+                        className="inline-flex items-center gap-1 text-[#C0341D] hover:bg-[#FBE9E7] rounded px-2 py-1 disabled:opacity-40">
+                        <Trash2 size={13} /> Pensiunkan
+                      </button>
+                    </span>
+                  )} />
               )}
         </SectionCard>
       ) : (
         <SectionCard title="Roll Fisik Belum Ber-tag" right={
-          <button data-testid="rfid-auto-encode" disabled={busy || untagged.length === 0} onClick={autoEncode}
-            className="flex items-center gap-1 rounded-lg bg-[#0058CC] text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+          <button type="button" data-testid="rfid-auto-encode" disabled={busy || untagged.length === 0} onClick={autoEncode}
+            className="primary-button disabled:opacity-40">
             <Zap size={14} /> Encode Otomatis
           </button>}>
           {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />

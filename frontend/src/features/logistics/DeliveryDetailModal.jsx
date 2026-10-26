@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X, Camera, MapPin, CheckCircle2, Truck, PackageCheck, Flag, AlertTriangle, RotateCcw, Save, LocateFixed, Navigation, Phone, MessageCircle, ExternalLink } from "lucide-react";
 import { askConfirm, askReason } from "../../services/confirmService";
 import KNDatePicker, { formatDateId } from "../../components/KNDatePicker";
-import { useEscapeClose } from "../../utils/escapeLayers";
+import DetailModal from "../../components/DetailModal";
 import DeliveryPhoto from "./DeliveryPhoto";
 import MediaLightbox from "../../components/MediaLightbox";
 import PositionMap from "./PositionMap";
@@ -15,6 +15,8 @@ import { formatCurrency, formatDateTime } from "../../utils/formatters";
 
 // FB-02 — detail pengiriman: tahapan, foto muat/POD (wajib), posisi, data ekspedisi/armada,
 // serah terima pickup (kode + identitas) untuk pesanan yang diambil sendiri.
+// Fase 4 · R3 (L-03) — dua `.modal-card` buatan sendiri (memuat + rincian) → DetailModal `framed` (kepala & × sendiri
+// tetap, layar penuh di HP). Esc/klik latar lewat cangkang baku dan tetap TERKUNCI selama aksi berjalan (`busy`).
 export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenOrder, onClose, onChanged }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
@@ -38,7 +40,8 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
     catch (e) { setErr(e.response?.data?.detail || "Gagal memuat pengiriman."); }
   }
   useEffect(() => { refresh(); }, [id]); // eslint-disable-line
-  useEscapeClose(true, onClose, !!busy);   // L-11 — Esc menutup lapisan teratas saja
+  // L-11 — Esc menutup lapisan teratas saja (kini lewat DetailModal); selama aksi berjalan pop-up tidak ditutup.
+  const closeSafe = () => { if (!busy) onClose(); };
 
   async function run(label, fn, ok) {
     setBusy(label); setErr(""); setMsg("");
@@ -69,7 +72,7 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
     return (e) => { const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; run(`photo-${kind}`, () => uploadPhoto(id, file, kind), kind === "load" ? "Foto muat terunggah." : "Foto bukti terima terunggah."); };
   }
 
-  if (!d) return <div className="modal-overlay" data-testid="logistics-detail-modal"><div className="modal-card"><p className="text-[12px] text-[#6B6B73]">{err || "Memuat…"}</p></div></div>;
+  if (!d) return <DetailModal onClose={closeSafe} size="md" framed label="Rincian pengiriman" testId="logistics-detail-modal"><p className="text-[12px] text-[#6B6B73]">{err || "Memuat…"}</p></DetailModal>;
   const isPickup = d.mode === "self_pickup";
   const steps = isPickup ? PICKUP_STEPS : STEPS;
   const stepLabel = (s) => (isPickup ? PICKUP_STATUS_LABEL[s] : STATUS_LABEL[s]);
@@ -80,15 +83,15 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
   const active = !isPickup && ["loaded", "in_transit"].includes(d.status);
 
   return (
-    <div className="modal-overlay" data-testid="logistics-detail-modal" onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="modal-card !max-w-[760px]">
+    <DetailModal onClose={closeSafe} size="lg" framed showClose={false} label={`Pengiriman ${d.number}`} testId="logistics-detail-modal">
+      <div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <p className="modal-title !mb-0 font-mono">{d.number}</p>
             <span className={`status-pill ${STATUS_PILL[d.status]}`} data-testid="logistics-detail-status">{d.status_label}</span>
             <span className={`status-pill ${MODE_PILL[d.mode]}`} data-testid="logistics-detail-mode">{d.mode_label}</span>
           </div>
-          <button className="icon-button" onClick={onClose}><X size={16} /></button>
+          <button type="button" className="icon-button" aria-label="Tutup" data-testid="logistics-detail-close" onClick={closeSafe}><X size={16} /></button>
         </div>
         <p className="text-[11.5px] text-[#6B6B73] mt-0.5 flex items-center gap-1.5 flex-wrap">
           {canOpenOrder ? (
@@ -209,7 +212,7 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
             {(d.timeline || []).slice().reverse().map((t) => <div key={t.id} className="py-1 text-[11px]"><b>{t.action}</b>{t.to_status ? ` → ${STATUS_LABEL[t.to_status]}` : ""}{t.note ? ` · ${t.note}` : ""}<span className="text-[10px] text-[#9A9BA3] ml-2">{formatDateTime(t.at)} · {t.by}</span></div>)}
           </div></details>
       </div>
-    </div>
+    </DetailModal>
   );
 }
 

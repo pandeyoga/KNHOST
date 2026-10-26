@@ -122,7 +122,7 @@ export default function Makloon360Panel({ makloonId, reloadKey = 0, currentUser,
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
         <div className="space-y-3">
           {/* Keuangan Jasa (AP) */}
           <div className="section-card">

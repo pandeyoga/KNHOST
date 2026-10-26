@@ -10,6 +10,7 @@ import { formatQty } from "../../utils/formatters";
 // dari baris inilah permintaan internal diajukan (dulu: WhatsApp ke rekan PT lain).
 import InternalRequestCreateModal from "../internal_requests/InternalRequestCreateModal";
 import { SearchBox } from "../../components/ListControls";
+import { MetricRow } from "../../components/ListPageParts";
 import usePagedRows from "@/hooks/usePagedRows";
 
 // Audit UI 057 — { kg: 120, yard: 1500 } → "120 kg · 1.500 yard" (nilai negatif ikut tampil; ATP bisa minus).
@@ -121,17 +122,18 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
           {/* UAT 24 Okt (audit UI tahap 2) — rumus ATP dulu ditulis dua kali dengan kata berbeda; kini satu (di atas tabel). */}
           Konteks: <span className="font-semibold">{entityName}</span>. ATP = jumlah yang siap dijanjikan ke pelanggan (rumus di atas tabel).
           Angka per baris memakai satuan dasar produk (kg / yard).
-          Indikator <ArrowLeftRight size={11} className="inline -mt-0.5 text-[#6B219A]" /> = peluang pemenuhan dari badan usaha lain (antar-PT).
+          Indikator <ArrowLeftRight size={11} className="inline -mt-0.5 text-[#0058CC]" /> = peluang pemenuhan dari badan usaha lain (antar-PT).
         </p>
       </section>
 
       {/* Summary metrics */}
-      <section data-testid="status-board-metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric icon={Boxes} label="Produk" value={totals.products} tone="rgba(0,122,255,.12)" testId="sb-metric-products" />
-        <Metric icon={Truck} label="Total Barang Masuk (Incoming)" value={formatUnitTotals(totals.incoming)} tone="rgba(255,149,0,.16)" testId="sb-metric-incoming" />
-        <Metric icon={PackageCheck} label="Total ATP" value={formatUnitTotals(totals.atp)} tone="rgba(52,199,89,.15)" testId="sb-metric-atp" />
-        <Metric icon={ArrowLeftRight} label="Peluang Antar-PT" value={totals.interco} tone="rgba(175,82,222,.14)" testId="sb-metric-interco" />
-      </section>
+      {/* Fase 4 · R3 (L-08) — KPI = MetricRow baku (nilai 0 netral, ikon tanpa latar warna-warni/ungu). */}
+      <MetricRow testId="status-board-metrics" items={[
+        { icon: Boxes, label: "Produk", value: totals.products, testId: "sb-metric-products" },
+        { icon: Truck, label: "Total Barang Masuk (Incoming)", value: formatUnitTotals(totals.incoming), testId: "sb-metric-incoming" },
+        { icon: PackageCheck, label: "Total ATP", value: formatUnitTotals(totals.atp), testId: "sb-metric-atp" },
+        { icon: ArrowLeftRight, label: "Peluang Antar-PT", value: totals.interco, testId: "sb-metric-interco" },
+      ]} />
 
       <div className="tab-bar" data-testid="status-board-tabs">
         {STOCK_TABS.map((t) => (
@@ -218,20 +220,6 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
   );
 }
 
-function Metric({ icon: Icon, label, value, tone, testId }) {
-  return (
-    <div data-testid={testId} className="metric-card">
-      <div className="metric-icon" style={{ background: tone }}>
-        <Icon size={17} className="text-[#1C1C1E]" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-        <p className="text-[17px] font-bold tabular-nums">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 // UAT 24 Okt (audit UI tahap 2) — ATP negatif dulu hitam (tak menonjol) & 0 berwarna; kini < 0 merah, 0 abu.
 const atpTone = (v) => (Number(v) < 0 ? "text-[#C0392B]" : Number(v) === 0 ? "text-[#AEAEB2]" : "");
 const zeroTone = (v, tone) => (Number(v) === 0 ? "text-[#AEAEB2]" : tone);
@@ -268,7 +256,7 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
               title="Siap dijanjikan dari entitas saya; sisanya butuh transfer antar-PT">entitas saya {formatQty(row.total_available)}</span>
           )}
         </td>
-        <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "reserved"), "text-[#6B219A]")}`}>{formatQty(pv(row, "reserved"))}</td>
+        <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "reserved"), "text-[#0058CC]")}`}>{formatQty(pv(row, "reserved"))}</td>
         <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "incoming"), "text-[#8C4A00]")}`}>{formatQty(pv(row, "incoming"))}</td>
         <td className={`px-2 text-right font-bold tabular-nums ${atpTone(pv(row, "atp"))}`} title="ATP = tersedia + barang masuk (dalam horizon) − permintaan tertunda (backorder)">
           {formatQty(pv(row, "atp"))}
@@ -365,7 +353,7 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
                             <td className="py-1 pr-2">{w.warehouse_name}<span className="ml-1 text-[#8E8E93]">{w.warehouse_city}</span></td>
                             <td className="px-2 text-right tabular-nums">{formatQty(w.on_hand)}</td>
                             <td className="px-2 text-right tabular-nums text-[#126E2C]">{formatQty(w.available)}</td>
-                            <td className={`px-2 text-right tabular-nums ${zeroTone(w.reserved, "text-[#6B219A]")}`}>{formatQty(w.reserved)}</td>
+                            <td className={`px-2 text-right tabular-nums ${zeroTone(w.reserved, "text-[#0058CC]")}`}>{formatQty(w.reserved)}</td>
                             <td className={`px-2 text-right tabular-nums ${zeroTone(w.incoming, "text-[#8C4A00]")}`}>{formatQty(w.incoming)}</td>
                             <td className={`px-2 text-right font-semibold tabular-nums ${atpTone(w.atp)}`}>{formatQty(w.atp)}</td>
                           </tr>

@@ -16,7 +16,7 @@
 import { useState } from "react";
 import { can } from "../../config/roles";
 import {
-  CalendarClock, CheckCircle2, FlaskConical, Lock, LockOpen, Play, RotateCcw, User, XCircle,
+  CheckCircle2, FlaskConical, Lock, Play, RotateCcw, User,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
@@ -27,33 +27,14 @@ import { formatDate } from "../../utils/formatters";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import InspectLineModal from "./InspectLineModal";
 import InspectSheetGrid from "./InspectSheetGrid";
+// Fase 4 · R3 — panel ini dipecah (658 → <500 baris) tanpa mengubah perilaku: tabel baris + bagian tanpa aksi.
+import InspectionLinesTable from "./InspectionLinesTable";
+import { InspectionHistory, localTs, Qc4Picker, Row } from "./InspectionDetailParts";
 import {
-  apiText, assignInspection, finishInspection, INS_COLOR_LABEL, INS_DECISION_LABEL,
-  INS_HANDFEEL_LABEL, INS_KIND_LABEL, INS_STATUS_CLASS, INS_STATUS_LABEL, MD_QUALITY_KINDS,
-  createQc4point, rejectHold, releaseHold, reopenInspection, resultPill, startInspection,
+  apiText, assignInspection, finishInspection, INS_DECISION_LABEL,
+  INS_KIND_LABEL, INS_STATUS_CLASS, INS_STATUS_LABEL, MD_QUALITY_KINDS,
+  createQc4point, rejectHold, releaseHold, reopenInspection, startInspection,
 } from "./inspectionsApi";
-
-// Cek UI UAT v3 (S8) — waktu dulu dipotong dari ISO UTC ("2026-10-21 19:57" padahal WIB 22 Okt 02.57).
-const localTs = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16).replace("T", " ");
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-};
-
-// UAT 24 Okt (audit UI tahap 2) — kartu `.section-card` tanpa padding di dalam pop-up memotong huruf awal
-// ("INDAKAN", "IWAYAT") → semua kartu di panel ini memakai `section-pad`; nilai panjang dibungkus, tidak terpotong di HP.
-function Row({ label, children, testId }) {
-  return (
-    <div className="flex items-start justify-between gap-3 py-1">
-      <span className="shrink-0 text-[11px] text-[#6B6B73]">{label}</span>
-      <span data-testid={testId} className="min-w-0 break-words text-[11.5px] font-semibold text-[#1C1C1E] text-right">
-        {children}
-      </span>
-    </div>
-  );
-}
 
 export default function InspectionDetailPanel({ doc, meta, currentUser, onChanged, onClose }) {
   const [busy, setBusy] = useState(false);
@@ -244,36 +225,12 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
         </div>
       )}
       {mdOnly && canQc && qc4Pick !== null && (
-        <div data-testid="ins-qc4-picker" className="section-card section-pad grid gap-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[12px] font-bold text-[#1C1C1E]">Pilih roll untuk SPK QC 4-point
-              <span className="ml-1 font-normal text-[#6B6B73]">({qc4Pick.length} dari {lines.filter((ln) => ln.roll_id).length} roll)</span></p>
-            <div className="flex gap-2 text-[11px] font-bold text-[#0058CC]">
-              <button type="button" data-testid="ins-qc4-all" onClick={() => setQc4Pick(lines.filter((ln) => ln.roll_id).map((ln) => ln.roll_id))}>Semua</button>
-              <button type="button" data-testid="ins-qc4-none" onClick={() => setQc4Pick([])}>Kosongkan</button>
-            </div>
-          </div>
-          <div className="max-h-[220px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
-            {lines.filter((ln) => ln.roll_id).map((ln) => (
-              <label key={ln.id} className="flex cursor-pointer items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11.5px] last:border-0">
-                <input type="checkbox" data-testid={`ins-qc4-roll-${ln.roll_id}`} checked={qc4Pick.includes(ln.roll_id)}
-                  onChange={() => setQc4Pick((cur) => (cur.includes(ln.roll_id) ? cur.filter((x) => x !== ln.roll_id) : [...cur, ln.roll_id]))} />
-                <span className="font-mono font-semibold">{ln.roll_no || ln.sku}</span>
-                <span className="text-[#6B6B73]">{ln.quantity} {ln.unit}{ln.lot ? ` · lot ${ln.lot}` : ""}</span>
-                {ln.md_quality_at && <span className="ml-auto rounded-full bg-[#E8F6EE] px-1.5 text-[10px] font-bold text-[#1B7F4B]">MDQ ✓</span>}
-              </label>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" className="secondary-button !h-8" onClick={() => setQc4Pick(null)}>Batal</button>
-            <button type="button" data-testid="ins-qc4-submit" className="primary-button !h-8" disabled={busy || qc4Pick.length === 0}
-              onClick={async () => {
-                const fresh = await run(() => createQc4point({ inspection_id: doc.id, roll_ids: qc4Pick }),
-                  `SPK QC 4-point dibuat untuk ${qc4Pick.length} roll.`);
-                if (fresh) setQc4Pick(null);
-              }}>Buat SPK untuk {qc4Pick.length} roll</button>
-          </div>
-        </div>
+        <Qc4Picker lines={lines} pick={qc4Pick} setPick={setQc4Pick} busy={busy}
+          onSubmit={async () => {
+            const fresh = await run(() => createQc4point({ inspection_id: doc.id, roll_ids: qc4Pick }),
+              `SPK QC 4-point dibuat untuk ${qc4Pick.length} roll.`);
+            if (fresh) setQc4Pick(null);
+          }} />
       )}
       {(isQc4 || isRandom) && canQc && (
         <InspectSheetGrid doc={doc} meta={meta} editable={["assigned", "in_progress"].includes(doc.status)}
@@ -357,152 +314,16 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       ) : null}
 
       {/* ── BARIS PEMERIKSAAN ── */}
-      <div className="section-card section-pad">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
-          Barang yang diperiksa
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11.5px]">
-            <thead>
-              <tr className="bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73]">
-                <th className="px-2 py-1.5 text-left">Roll / Artikel</th>
-                <th className="px-2 py-1.5 text-right">Jumlah</th>
-                <th className="px-2 py-1.5 text-right">Poin</th>
-                <th className="px-2 py-1.5 text-left">Grade</th>
-                <th className="px-2 py-1.5 text-left">Warna</th>
-                <th className="px-2 py-1.5 text-left">Handfeel</th>
-                <th className="px-2 py-1.5 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map((ln) => (
-                <tr key={ln.id} data-testid={`ins-line-${ln.id}`}
-                  className="border-b border-[#F2F2F5] last:border-0">
-                  <td className="px-2 py-1.5">
-                    <span className="font-semibold text-[#1C1C1E]">{ln.roll_no || ln.sku || "—"}</span>
-                    <span className="block text-[10px] text-[#8E8E93]">{ln.article || ""}</span>
-                    {ln.hold ? (
-                      <span data-testid={`ins-line-hold-${ln.id}`} className="status-pill pill-danger mt-0.5">
-                        <Lock size={9} className="mr-0.5 inline" /> DITAHAN
-                      </span>
-                    ) : null}
-                    {ln.random_check_result ? (
-                      <span data-testid={`ins-line-rc-${ln.id}`}
-                        className={`status-pill mt-0.5 ${ln.random_check_result === "lulus" ? "pill-success" : "pill-danger"}`}>
-                        Random check {ln.random_check_result.toUpperCase()}
-                      </span>
-                    ) : null}
-                    {ln.md_quality_decision?.action === "reject" ? (
-                      <span data-testid={`ins-line-mdq-rejected-${ln.id}`} className="status-pill pill-danger mt-0.5">
-                        Ditolak MD Quality
-                      </span>
-                    ) : null}
-                    {(ln.md_quality_by || ln.qc_by) ? (
-                      <span className="block text-[10px] text-[#8E8E93]">
-                        {ln.md_quality_by ? `MDQ: ${ln.md_quality_by}` : ""}
-                        {ln.md_quality_by && ln.qc_by ? " · " : ""}
-                        {ln.qc_by ? `QC: ${ln.qc_by}` : ""}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    <QtyDual rolls={ln.qty_rolls} measure={ln.quantity} unit={ln.unit}
-                      testId={`ins-line-qty-${ln.id}`} compact />
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
-                    {ln.points_snapshot === null || ln.points_snapshot === undefined
-                      ? "—" : ln.points_snapshot}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {ln.grade_after
-                      ? <span data-testid={`ins-line-grade-${ln.id}`}>
-                          {ln.grade_before || "—"} &rarr; <strong>{ln.grade_after}</strong>
-                          {ln.grade_rule?.status === "candidate_unvalidated" && <span data-testid={`ins-line-grade-candidate-${ln.id}`} title="Hasil lama sebelum aturan grade diputuskan" className="ml-1 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">kandidat</span>}
-                          {ln.grade_rule?.grade_source && <span data-testid={`ins-line-grade-source-${ln.id}`} className="ml-1 rounded-full bg-[#EEF4FF] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#0058CC]">{ln.grade_rule.grade_source === "user" ? "diisi QC" : "saran sistem"}</span>}
-                        </span>
-                      // 23 Okt — sebelum QC tampil jelas "belum QC" (dulu grade lama roll tampil seolah hasil periksa).
-                      : (ln.grade_before
-                        ? <span className="text-[#9A9BA3]" title="Grade roll saat ini — belum diperiksa QC" data-testid={`ins-line-grade-pending-${ln.id}`}>{ln.grade_before} · belum QC</span>
-                        : "—")}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`status-pill ${resultPill(ln.color_result)}`}>
-                      {INS_COLOR_LABEL[ln.color_result] || "Belum diperiksa"}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`status-pill ${resultPill(ln.handfeel_result)}`}>
-                      {INS_HANDFEEL_LABEL[ln.handfeel_result] || "Belum diperiksa"}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {/* F-13 (keputusan owner Q-06b) — MD Quality hanya sesudah SPK ditugaskan (bukan draft) */}
-                      {canMdq && open && doc.status !== "draft" && (
-                        <button data-testid={`ins-line-mdq-${ln.id}`} className="link-button"
-                          onClick={() => bukaBaris(ln, "md_quality")}>
-                          {ln.md_quality_at ? "Ubah MD Quality" : "MD Quality"}
-                        </button>
-                      )}
-                      {/* Cek UI UAT v3 (S6) — SPK QC Pesanan / retur: peran QC (qc.inspect) dulu tidak punya tombol sama
-                          sekali (hanya "Isi hasil" untuk inspection.inspect). Kini QC 4-point tampil bila "Isi hasil" tidak. */}
-                      {canQc && ln.roll_id && !mdOnly && (isMdKind || isRandom || isQc4 || !canInspectAll) && ["assigned", "in_progress"].includes(doc.status) && (
-                        <button data-testid={`ins-line-qc-${ln.id}`} className="link-button"
-                          onClick={() => bukaBaris(ln, "qc")}>
-                          {ln.qc_at ? "Ubah QC 4-point" : "QC 4-point"}
-                        </button>
-                      )}
-                      {canInspectAll && !isMdKind && !isRandom && !isQc4 && open && doc.status !== "draft" && (
-                        <button data-testid={`ins-line-inspect-${ln.id}`} className="link-button"
-                          onClick={() => bukaBaris(ln, "")}>
-                          {ln.inspected_at ? "Ubah hasil" : "Isi hasil"}
-                        </button>
-                      )}
-                      {ln.hold && canReleaseHold && (
-                        <button data-testid={`ins-line-release-${ln.id}`} className="link-button"
-                          disabled={busy} onClick={() => lepasTahanan(ln)}>
-                          <LockOpen size={11} className="mr-0.5 inline" /> Lepas tahanan
-                        </button>
-                      )}
-                      {ln.hold && canReleaseHold && ln.md_quality_decision?.action !== "reject" && (
-                        <button data-testid={`ins-line-reject-${ln.id}`} className="link-button !text-[#C62828]"
-                          disabled={busy} onClick={() => tolakBarang(ln)}>
-                          <XCircle size={11} className="mr-0.5 inline" /> Tolak barang
-                        </button>
-                      )}
-                      {ln.hold && !canReleaseHold && (
-                        <span data-testid={`ins-line-hold-note-${ln.id}`} className="text-[10px] text-[#B45309]">
-                          {isRandom ? "dilepas saat SPK diputuskan" : "menunggu keputusan MD Quality / manajer"}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {lines.length === 0 && (
-                <tr><td colSpan={7} className="px-2 py-3 text-center text-[11px] text-[#8E8E93]">
-                  SPK ini belum punya baris barang — biasanya karena roll penerimaannya
-                  belum dibuat. Muat ulang setelah penerimaan selesai.
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {lines.some((l) => l.hold) && (
-          <p data-testid="ins-hold-explainer" className="mt-1.5 text-[11px] text-[#B45309]">
-            {isRandom
-              ? "Roll random check DITAHAN selama dicek. Saat SPK diputuskan: roll lulus otomatis dilepas, roll yang barisnya “tolak” (atau SPK ditolak) tetap ditahan; grade mengikuti hasil 4-point."
-              : "Barang yang DITAHAN tidak bisa ditempatkan ke rak (putaway) sebelum MD Quality (atau manajer) melepasnya ber-alasan — supaya barang menyimpang tidak terjual diam-diam."}
-          </p>
-        )}
-      </div>
+      <InspectionLinesTable doc={doc} lines={lines} open={open} busy={busy} mdOnly={mdOnly} isMdKind={isMdKind}
+        isRandom={isRandom} isQc4={isQc4} canMdq={canMdq} canQc={canQc} canInspectAll={canInspectAll}
+        canReleaseHold={canReleaseHold} onOpenLine={bukaBaris} onRelease={lepasTahanan} onReject={tolakBarang} />
 
       {/* ── AKSI ── */}
       <div className="section-card section-pad grid gap-2">
         <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">Tindakan</p>
 
         {canAssign && open && (
-          <div className="grid gap-2 sm:grid-cols-[1fr_160px_auto] sm:items-end">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_160px_auto] sm:items-end">
             <label className="block">
               <span className="field-label">Tugaskan ke petugas inspect</span>
               <KNSelect data-testid="ins-assign-select" value={assignee}
@@ -630,23 +451,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
       </div>
 
       {/* ── RIWAYAT ── */}
-      <div className="section-card section-pad">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">Riwayat</p>
-        <div data-testid="ins-detail-history" className="mt-1 grid gap-1">
-          {(doc.history || []).slice().reverse().map((h, i) => (
-            <div key={`${h.at}-${i}`} className="flex items-start gap-2 text-[11px]">
-              <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
-              <span className="text-[#3C3C43]">
-                <strong>{h.label}</strong> · {h.actor} · {localTs(h.at)}
-                {h.note ? <span className="text-[#6B6B73]"> — {h.note}</span> : null}
-              </span>
-            </div>
-          ))}
-          {(doc.history || []).length === 0 && (
-            <p className="text-[11px] text-[#8E8E93]">Belum ada riwayat.</p>
-          )}
-        </div>
-      </div>
+      <InspectionHistory doc={doc} />
 
       <InspectLineModal
         open={Boolean(lineOpen)} onClose={() => setLineOpen(null)}

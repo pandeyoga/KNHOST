@@ -458,7 +458,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
       </FormModal>
 
       {/* MAIN CONTENT — 2 panel */}
-      <div className={`grid gap-3 ${selectedRow && tab === "balances" ? "lg:grid-cols-[1fr_300px]" : ""}`}>
+      <div className={`grid grid-cols-1 gap-3 ${selectedRow && tab === "balances" ? "lg:grid-cols-[1fr_300px]" : ""}`}>
         {tab === "balances" && (
           <BalancesTable
             loading={loading}

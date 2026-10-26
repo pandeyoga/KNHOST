@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { PageHeader } from "../../components/ListPageParts";
 import axios, { API } from "../../services/apiClient";
 
 const fmt = new Intl.NumberFormat("id-ID");
@@ -92,15 +94,16 @@ function KPICard({ icon: Icon, label, value, sub, color = "#0058CC", loading, te
   );
 }
 
+// Fase 4 · R3 (L-02) — kartu panel = `.section-card` + `.section-head` baku (dulu kartu `rounded-xl p-4` sendiri).
 function Panel({ title, right, children }) {
   return (
-    <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="text-[13px] font-bold text-[#1C1C1E]">{title}</h3>
+    <section className="section-card min-w-0">
+      <div className="section-head flex-wrap">
+        <h2>{title}</h2>
         {right}
       </div>
-      {children}
-    </div>
+      <div className="section-body">{children}</div>
+    </section>
   );
 }
 
@@ -145,6 +148,66 @@ export function MethodNote({ th = {}, method = {} }) {
       </ul>
     </details>
   );
+}
+
+/** Kolom tabel "Rincian per SKU" (Fase 4 · R3 · L-07) — isi sel sama dengan tabel lama. */
+function saColumns({ labels, w, th, capDays }) {
+  const num = "tabular-nums whitespace-nowrap";
+  return [
+    { key: "classification", header: "Kelas", mobile: "badge", render: (r) => <ClassBadge cls={r.classification} labels={labels} /> },
+    { key: "sku", header: "SKU / Produk", mobile: "title", render: (r) => (
+      <>
+        <p className="font-semibold text-[#1C1C1E]">{r.sku}</p>
+        <p className="text-[11px] text-[#6B6B73]">{r.product_name}</p>
+      </>
+    ) },
+    { key: "warehouses", header: "Gudang", priority: 6, className: "text-[11px] text-[#6B6B73]", render: (r) => r.warehouses?.join(", ") || "—" },
+    { key: "on_hand", header: "Stok fisik", align: "right", priority: 1, className: num, render: (r) => (r.stock_out
+      ? <span className="rounded bg-[#FDECEA] px-1.5 py-0.5 text-[11px] font-semibold text-[#C0341D]" data-testid={`sa-stockout-${r.product_id}`}>stok habis</span>
+      : `${fmtQty(r.on_hand_qty)} ${unitText(r.unit)}`) },
+    // UAT 24 Okt (audit UI tahap 2) — satu skala Rupiah di kolom (dulu "Rp 1,4 M" bercampur "Rp 928,8 jt").
+    { key: "value", header: "Nilai", align: "right", priority: 2, className: `${num} font-semibold`, render: (r) => fmtCur(r.value) },
+    { key: "ma", header: <span title={`Moving average qty terjual per hari, ${w} hari terakhir (pesanan hidup)`}>MA {w} hari</span>,
+      mobileLabel: `MA ${w} hari`, align: "right", priority: 3, className: num, render: (r) => (
+        <span data-testid={`sa-ma-${r.product_id}`}>
+          {fmtMa(r.ma_daily)} {unitText(r.unit)}/hari
+          <span className="block text-[10.5px] text-[#8E8E93]">terjual {fmtQty(r.sold_qty_window)} {unitText(r.unit)}</span>
+        </span>
+      ) },
+    { key: "trend", header: <span title={`Moving average ${th.trend_window_days ?? 30} hari terakhir dibanding MA ${w} hari`}>Tren {th.trend_window_days ?? 30} hari</span>,
+      mobileLabel: `Tren ${th.trend_window_days ?? 30} hari`, align: "right", priority: 5, className: num, render: (r) => {
+        const tm = TREND_META[r.trend];
+        return (
+          <>
+            {tm ? (
+              <span className="inline-flex items-center gap-1" style={{ color: tm.color }} data-testid={`sa-trend-${r.product_id}`}>
+                <tm.icon size={12} /> {tm.label}
+              </span>
+            ) : <span className="text-[#8E8E93]">—</span>}
+            <span className="block text-[10.5px] text-[#8E8E93]">{fmtMa(r.ma_trend_daily)} {unitText(r.unit)}/hari</span>
+          </>
+        );
+      } },
+    { key: "percentile", header: <span title="Persentil laju jual di antara SKU terjual bersatuan sama (100 = paling laku)">Persentil</span>,
+      mobileLabel: "Persentil", align: "right", priority: 4, className: num, render: (r) => (
+        <span data-testid={`sa-pct-${r.product_id}`}>
+          {r.percentile == null ? (
+            <span className="text-[#8E8E93]">{r.classification === "new" ? "belum diperingkat" : "—"}</span>
+          ) : (
+            <span title={`Laju jualnya di atas ±${fmt.format(Math.round(r.percentile))}% SKU bersatuan ${unitText(r.unit)} yang terjual`}>
+              P{fmt.format(Math.round(r.percentile))}
+              <span className="block text-[10.5px] text-[#8E8E93]">dari {fmt.format(r.rank_group_size || 0)} SKU {unitText(r.unit)}</span>
+            </span>
+          )}
+        </span>
+      ) },
+    { key: "cover", header: <span title="Stok fisik ÷ moving average harian — tidak menentukan kelas">Cukup untuk</span>,
+      mobileLabel: "Cukup untuk", align: "right", priority: 7, className: num, render: (r) => (r.days_of_supply == null
+        ? <span className="text-[#8E8E93]" title={`Tidak ada penjualan dalam ${w} hari terakhir`}>tanpa penjualan</span>
+        : <span data-testid={`sa-cover-${r.product_id}`} title={`${fmtQty(r.days_of_supply)} hari`}>{fmtCoverage(r.days_of_supply, capDays)}</span>) },
+    { key: "last_sale", header: "Terjual terakhir", align: "right", priority: 8, className: num,
+      render: (r) => (r.days_since_sale == null ? <span className="text-[#8E8E93]">belum pernah</span> : fmtSinceSale(r.days_since_sale)) },
+  ];
 }
 
 export default function StockAnalyticsView({ currentUser, selectedEntity }) {
@@ -223,30 +286,27 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
 
   return (
     <div data-testid="stock-analytics-view" className="space-y-4">
-      {/* Header + filters */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[12px] font-semibold text-[#0058CC] tracking-wide">ANALITIK</p>
-          <h1 className="text-[20px] font-bold text-[#1C1C1E] flex items-center gap-2">
-            <TrendingUp size={20} className="text-[#0058CC]" /> Analitik Stok — Kelas Laju Jual
-          </h1>
-          <p className="text-[12px] text-[#6B6B73] mt-0.5" data-testid="sa-subtitle">
+      {/* Fase 4 · R3 (L-02) — kepala halaman = PageHeader baku (dulu kicker "ANALITIK" + h1 20 px buatan sendiri;
+          lokasi kini dibaca dari breadcrumb menu). */}
+      <PageHeader icon={TrendingUp} title="Analitik Stok — Kelas Laju Jual" testId="sa-header"
+        subtitle={(
+          <span data-testid="sa-subtitle">
             Kelas per SKU dari moving average penjualan {w} hari (pesanan hidup), diperingkat per satuan:
             Best seller {th.best_seller_pct ?? 20}% teratas · Slow moving {th.slow_moving_pct ?? 20}% terbawah ·
             Tidak bergerak = ada stok, tak terjual · Baru = umur &lt; {th.new_sku_age_days ?? 90} hari.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <KNSelect data-testid="sa-warehouse-filter" value={warehouseId} onValueChange={setWarehouseId}
-            options={warehouseOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-          <KNSelect data-testid="sa-category-filter" value={category} onValueChange={setCategory}
-            options={categoryOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Kategori" />
-          <button data-testid="sa-refresh" onClick={load}
-            className="flex items-center gap-1 rounded-lg border border-[#EFF0F2] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1C1C1E] hover:bg-[#F5F5F7]">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
-          </button>
-        </div>
-      </div>
+          </span>
+        )}
+        actions={(
+          <>
+            <KNSelect data-testid="sa-warehouse-filter" value={warehouseId} onValueChange={setWarehouseId}
+              options={warehouseOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
+            <KNSelect data-testid="sa-category-filter" value={category} onValueChange={setCategory}
+              options={categoryOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Kategori" />
+            <button type="button" data-testid="sa-refresh" onClick={load} className="secondary-button">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
+            </button>
+          </>
+        )} />
 
       <MethodNote th={th} method={method} />
 
@@ -305,7 +365,7 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
             <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8E8E93]" />
             <input data-testid="sa-search" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari SKU / nama…" aria-label="Cari SKU atau nama produk"
-              className="pl-7 pr-2 py-1 text-[12px] rounded-lg border border-[#EFF0F2] bg-white w-44" />
+              className="field !py-1 !pl-7 !text-[12px] w-44 max-w-full" />
           </div>
         }
       >
@@ -315,89 +375,14 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
             penjualan seluruh badan usaha (pesanan tidak tercatat per gudang). SKU yang stoknya habis hanya tampil tanpa saringan gudang.
           </p>
         )}
-        <div className="overflow-x-auto">
-          <table className="w-full text-[12px]" style={{ minWidth: 1080 }}>
-            <thead>
-              <tr className="text-left text-[#6B6B73] border-b border-[#EFF0F2]">
-                <th className="py-2 pr-3 font-semibold">Kelas</th>
-                <th className="py-2 pr-3 font-semibold">SKU / Produk</th>
-                <th className="py-2 pr-3 font-semibold">Gudang</th>
-                <th className="py-2 pr-3 font-semibold text-right">Stok fisik</th>
-                <th className="py-2 pr-3 font-semibold text-right">Nilai</th>
-                <th className="py-2 pr-3 font-semibold text-right" title={`Moving average qty terjual per hari, ${w} hari terakhir (pesanan hidup)`}>MA {w} hari</th>
-                <th className="py-2 pr-3 font-semibold text-right" title={`Moving average ${th.trend_window_days ?? 30} hari terakhir dibanding MA ${w} hari`}>Tren {th.trend_window_days ?? 30} hari</th>
-                <th className="py-2 pr-3 font-semibold text-right" title="Persentil laju jual di antara SKU terjual bersatuan sama (100 = paling laku)">Persentil</th>
-                <th className="py-2 pr-3 font-semibold text-right" title="Stok fisik ÷ moving average harian — tidak menentukan kelas">Cukup untuk</th>
-                <th className="py-2 pr-3 font-semibold text-right">Terjual terakhir</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i} className="border-b border-[#F5F5F7]">
-                    <td colSpan={10} className="py-2"><div className="h-5 bg-[#F5F5F7] rounded animate-pulse" /></td>
-                  </tr>
-                ))
-              ) : filteredRows.length === 0 ? (
-                <tr><td colSpan={10}><EmptyBox icon={Boxes} text={classFilter !== "all" || search
-                  ? "Tidak ada SKU sesuai saringan kelas/pencarian."
-                  : "Tidak ada SKU sesuai filter."} /></td></tr>
-              ) : (
-                filteredRows.map((r) => {
-                  const unit = unitText(r.unit);
-                  const tm = TREND_META[r.trend];
-                  return (
-                    <tr key={r.product_id} data-testid={`sa-row-${r.product_id}`} className="border-b border-[#F5F5F7] hover:bg-[#FAFAFB]">
-                      <td className="py-2 pr-3"><ClassBadge cls={r.classification} labels={labels} /></td>
-                      <td className="py-2 pr-3">
-                        <p className="font-semibold text-[#1C1C1E]">{r.sku}</p>
-                        <p className="text-[11px] text-[#6B6B73]">{r.product_name}</p>
-                      </td>
-                      <td className="py-2 pr-3 text-[11px] text-[#6B6B73]">{r.warehouses?.join(", ") || "—"}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
-                        {r.stock_out
-                          ? <span className="rounded bg-[#FDECEA] px-1.5 py-0.5 text-[11px] font-semibold text-[#C0341D]" data-testid={`sa-stockout-${r.product_id}`}>stok habis</span>
-                          : `${fmtQty(r.on_hand_qty)} ${unit}`}
-                      </td>
-                      {/* UAT 24 Okt (audit UI tahap 2) — satu skala Rupiah di kolom (dulu "Rp 1,4 M" bercampur "Rp 928,8 jt"). */}
-                      <td className="py-2 pr-3 text-right tabular-nums font-semibold whitespace-nowrap">{fmtCur(r.value)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap" data-testid={`sa-ma-${r.product_id}`}>
-                        {fmtMa(r.ma_daily)} {unit}/hari
-                        <div className="text-[10.5px] text-[#8E8E93]">terjual {fmtQty(r.sold_qty_window)} {unit}</div>
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
-                        {tm ? (
-                          <span className="inline-flex items-center gap-1" style={{ color: tm.color }} data-testid={`sa-trend-${r.product_id}`}>
-                            <tm.icon size={12} /> {tm.label}
-                          </span>
-                        ) : <span className="text-[#8E8E93]">—</span>}
-                        <div className="text-[10.5px] text-[#8E8E93]">{fmtMa(r.ma_trend_daily)} {unit}/hari</div>
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap" data-testid={`sa-pct-${r.product_id}`}>
-                        {r.percentile == null ? (
-                          <span className="text-[#8E8E93]">{r.classification === "new" ? "belum diperingkat" : "—"}</span>
-                        ) : (
-                          <span title={`Laju jualnya di atas ±${fmt.format(Math.round(r.percentile))}% SKU bersatuan ${unit} yang terjual`}>
-                            P{fmt.format(Math.round(r.percentile))}
-                            <span className="block text-[10.5px] text-[#8E8E93]">dari {fmt.format(r.rank_group_size || 0)} SKU {unit}</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
-                        {r.days_of_supply == null
-                          ? <span className="text-[#8E8E93]" title={`Tidak ada penjualan dalam ${w} hari terakhir`}>tanpa penjualan</span>
-                          : <span data-testid={`sa-cover-${r.product_id}`} title={`${fmtQty(r.days_of_supply)} hari`}>{fmtCoverage(r.days_of_supply, capDays)}</span>}
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
-                        {r.days_since_sale == null ? <span className="text-[#8E8E93]">belum pernah</span> : fmtSinceSale(r.days_since_sale)}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Fase 4 · R3 (L-07) — `<table>` mentah min 1080 px → ResponsiveTable: `.data-table` di desktop (gulir di
+            dalam wadahnya), kartu di HP 390 px (Kelas = lencana, SKU = judul; semua kolom tetap ada). Testid
+            `sa-row-<id>`, `sa-ma-`, `sa-trend-`, `sa-pct-`, `sa-cover-`, `sa-stockout-` tetap. */}
+        <ResponsiveTable testId="sa" rowKey="product_id" rows={loading ? [] : filteredRows} loading={loading}
+          empty={<EmptyBox icon={Boxes} text={classFilter !== "all" || search
+            ? "Tidak ada SKU sesuai saringan kelas/pencarian."
+            : "Tidak ada SKU sesuai filter."} />}
+          columns={saColumns({ labels, w, th, capDays })} />
       </Panel>
     </div>
   );

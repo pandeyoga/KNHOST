@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Camera, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Camera, PackagePlus, Trash2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
-import { ErrorBox, Field } from "./GrnBits";
+import FormModal from "../../../components/FormModal";
+import { Field } from "./GrnBits";
 import GrnPhotoTips from "./GrnPhotoTips";
 import GrnPhotoQuality from "./GrnPhotoQuality";
 import { askConfirm } from "../../../services/confirmService";
 import { errText, grnApi, photoCheck, shrinkImage, sha256Hex } from "./grnApi";
 import { pageBad, quickCheck } from "./photoQuality";
 
-/** Wizard buat GRN: (1) mitra & gudang, (2) foto SJ multi-halaman. `preset` = {partner_type, partner_id, warehouse_id, po_ids}. */
+/** Wizard buat GRN: (1) mitra & gudang, (2) foto SJ multi-halaman. `preset` = {partner_type, partner_id, warehouse_id, po_ids}.
+ *  Fase 4 · R3 (L-03) — lapisan `fixed inset-0` buatan sendiri → FormModal baku (layar penuh di HP, Esc berlapis,
+ *  latar tidak membuang isian, galat di kaki pop-up). Testid `grn-wizard`, `grn-wizard-close` tetap. */
 export default function GrnCreateWizard({ preset, onClose, onCreated }) {
   const [step, setStep] = useState(1);
   const [ptype, setPtype] = useState(preset?.partner_type || "supplier");
@@ -79,84 +82,78 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
     } catch (e) { setErr(errText(e, "Gagal membuat kedatangan.")); } finally { setBusy(false); }
   };
 
+  const footer = (
+    <div className="flex justify-between gap-2">
+      {step === 2 ? <button type="button" className="secondary-button" onClick={() => setStep(1)} data-testid="grn-wizard-back">Kembali</button> : <span />}
+      {step === 1
+        ? <button type="button" className="primary-button" disabled={!partnerId || !whId} onClick={() => setStep(2)} data-testid="grn-wizard-next">Lanjut</button>
+        : <button type="button" className="primary-button" disabled={busy} onClick={submit} data-testid="grn-wizard-submit">{reading ? "Membaca surat jalan…" : busy ? "Menyimpan…" : "Buat kedatangan"}</button>}
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/30 sm:items-center sm:p-4" data-testid="grn-wizard">
-      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Langkah {step} dari 2</p>
-            <h3 className="text-[15px] font-bold">Kedatangan barang baru</h3>
+    <FormModal open onClose={onClose} title="Kedatangan barang baru" subtitle={`Langkah ${step} dari 2`}
+      icon={PackagePlus} testId="grn-wizard" busy={busy} error={err} footer={footer}>
+      <div className="space-y-3">
+        {step === 1 ? (<>
+          <div className="flex gap-1 rounded-lg bg-[#F2F2F7] p-0.5 text-[11px] font-semibold">
+            {["supplier", "makloon"].map((t) => (
+              <button key={t} data-testid={`grn-wizard-type-${t}`} onClick={() => { setPtype(t); setPartnerId(""); setDocIds([]); }}
+                className={`flex-1 rounded-md py-1.5 ${ptype === t ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>
+                {t === "supplier" ? "Supplier (PO)" : "Makloon (MKO)"}
+              </button>
+            ))}
           </div>
-          <button onClick={onClose} data-testid="grn-wizard-close" aria-label="Tutup"><X size={16} /></button>
-        </div>
-        <div className="space-y-3 p-4">
-          {step === 1 ? (<>
-            <div className="flex gap-1 rounded-lg bg-[#F2F2F7] p-0.5 text-[11px] font-semibold">
-              {["supplier", "makloon"].map((t) => (
-                <button key={t} data-testid={`grn-wizard-type-${t}`} onClick={() => { setPtype(t); setPartnerId(""); setDocIds([]); }}
-                  className={`flex-1 rounded-md py-1.5 ${ptype === t ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>
-                  {t === "supplier" ? "Supplier (PO)" : "Makloon (MKO)"}
+          <Field label="Mitra pengirim" hint="Hanya mitra yang punya dokumen terbuka menunggu barang di badan usaha aktif.">
+            <KNSelect data-testid="grn-wizard-partner" value={partnerId} onValueChange={(v) => { setPartnerId(v); setDocIds([]); }}
+              options={partners.map((p) => ({ value: p.partner_id, label: `${p.partner_name} · ${p.open_docs.length} ${ptype === "supplier" ? "PO" : "MKO"} terbuka` }))}
+              placeholder={partners.length ? "Pilih mitra…" : "Tidak ada mitra dengan dokumen terbuka"} />
+          </Field>
+          {partner && (
+            <div data-testid="grn-wizard-docs" className="flex flex-wrap gap-1.5">
+              {partner.open_docs.map((d) => (
+                <button key={d.id} data-testid={`grn-wizard-doc-${d.id}`} onClick={() => toggleDoc(d.id)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${docIds.includes(d.id) ? "border-[#0058CC] bg-[#EEF4FF] text-[#0058CC]" : "border-[#E5E5EA] text-[#3C3C43]"}`}>
+                  {d.number}
                 </button>
               ))}
             </div>
-            <Field label="Mitra pengirim" hint="Hanya mitra yang punya dokumen terbuka menunggu barang di badan usaha aktif.">
-              <KNSelect data-testid="grn-wizard-partner" value={partnerId} onValueChange={(v) => { setPartnerId(v); setDocIds([]); }}
-                options={partners.map((p) => ({ value: p.partner_id, label: `${p.partner_name} · ${p.open_docs.length} ${ptype === "supplier" ? "PO" : "MKO"} terbuka` }))}
-                placeholder={partners.length ? "Pilih mitra…" : "Tidak ada mitra dengan dokumen terbuka"} />
-            </Field>
-            {partner && (
-              <div data-testid="grn-wizard-docs" className="flex flex-wrap gap-1.5">
-                {partner.open_docs.map((d) => (
-                  <button key={d.id} data-testid={`grn-wizard-doc-${d.id}`} onClick={() => toggleDoc(d.id)}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${docIds.includes(d.id) ? "border-[#0058CC] bg-[#EEF4FF] text-[#0058CC]" : "border-[#E5E5EA] text-[#3C3C43]"}`}>
-                    {d.number}
-                  </button>
-                ))}
-              </div>
+          )}
+          <Field label="Gudang penerima">
+            {lockedWh ? (
+              <p data-testid="grn-wizard-warehouse-locked" className="rounded-lg bg-[#F2F7FF] px-3 py-2 text-[12px] text-[#004099]">
+                {(warehouses.find((w) => w.id === lockedWh) || {}).name || "Gudang penerimaan PO"} — mengikuti lokasi kirim PO
+              </p>
+            ) : (
+              <KNSelect data-testid="grn-wizard-warehouse" value={whId} onValueChange={setWhId}
+                options={warehouses.map((w) => ({ value: w.id, label: w.name }))} placeholder="Pilih gudang…" />
             )}
-            <Field label="Gudang penerima">
-              {lockedWh ? (
-                <p data-testid="grn-wizard-warehouse-locked" className="rounded-lg bg-[#F2F7FF] px-3 py-2 text-[12px] text-[#004099]">
-                  {(warehouses.find((w) => w.id === lockedWh) || {}).name || "Gudang penerimaan PO"} — mengikuti lokasi kirim PO
-                </p>
-              ) : (
-                <KNSelect data-testid="grn-wizard-warehouse" value={whId} onValueChange={setWhId}
-                  options={warehouses.map((w) => ({ value: w.id, label: w.name }))} placeholder="Pilih gudang…" />
-              )}
-              {ptype === "supplier" && docWh.length > 1 && (
-                <p className="mt-1 text-[11px] text-[#A8221A]" data-testid="grn-wizard-warehouse-mixed">PO terpilih dikirim ke gudang berbeda — catat kedatangan terpisah per lokasi.</p>
-              )}
-            </Field>
-          </>) : (<>
-            <GrnPhotoTips />
-            <label className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-[#CFE0FF] bg-[#F5F9FF] p-5 text-[12px] font-semibold text-[#0058CC]">
-              <Camera size={20} /> Foto surat jalan (boleh beberapa halaman / PDF)
-              <input data-testid="grn-wizard-files" type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
-                onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-            </label>
-            {pages.map((p, i) => (
-              <div key={p.key} data-testid={`grn-wizard-page-${i + 1}`} className={`flex items-start gap-2 rounded-lg border p-2 ${pageBad(p) ? "border-[#F5C2C0] bg-[#FFF8F8]" : "border-[#EFF0F2]"}`}>
-                {p.preview ? <img src={p.preview} alt="" className="h-16 w-16 shrink-0 rounded object-cover" /> : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-[#F2F2F7] text-[10px]">PDF</span>}
-                <div className="min-w-0 flex-1 space-y-1 text-[11px]">
-                  <p className="font-semibold">Halaman {i + 1}</p>
-                  <GrnPhotoQuality page={p} index={i} onRetake={(f) => retake(p.key, f)} />
-                </div>
-                <button onClick={() => move(i, -1)} aria-label="Naik"><ArrowUp size={14} /></button>
-                <button onClick={() => move(i, 1)} aria-label="Turun"><ArrowDown size={14} /></button>
-                <button onClick={() => setPages((ps) => ps.filter((x) => x.key !== p.key))} data-testid={`grn-wizard-page-remove-${i + 1}`} aria-label="Hapus"><Trash2 size={14} className="text-[#B4231F]" /></button>
+            {ptype === "supplier" && docWh.length > 1 && (
+              <p className="mt-1 text-[11px] text-[#A8221A]" data-testid="grn-wizard-warehouse-mixed">PO terpilih dikirim ke gudang berbeda — catat kedatangan terpisah per lokasi.</p>
+            )}
+          </Field>
+        </>) : (<>
+          <GrnPhotoTips />
+          <label className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed border-[#CFE0FF] bg-[#F5F9FF] p-5 text-[12px] font-semibold text-[#0058CC]">
+            <Camera size={20} /> Foto surat jalan (boleh beberapa halaman / PDF)
+            <input data-testid="grn-wizard-files" type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
+              onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+          </label>
+          {pages.map((p, i) => (
+            <div key={p.key} data-testid={`grn-wizard-page-${i + 1}`} className={`flex items-start gap-2 rounded-lg border p-2 ${pageBad(p) ? "border-[#F5C2C0] bg-[#FFF8F8]" : "border-[#EFF0F2]"}`}>
+              {p.preview ? <img src={p.preview} alt="" className="h-16 w-16 shrink-0 rounded object-cover" /> : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-[#F2F2F7] text-[10px]">PDF</span>}
+              <div className="min-w-0 flex-1 space-y-1 text-[11px]">
+                <p className="font-semibold">Halaman {i + 1}</p>
+                <GrnPhotoQuality page={p} index={i} onRetake={(f) => retake(p.key, f)} />
               </div>
-            ))}
-            {!pages.length && <p className="text-[11px] text-[#6B6B73]">Foto boleh menyusul — Anda tetap bisa mengisi surat jalan secara manual.</p>}
-          </>)}
-          <ErrorBox text={err} />
-        </div>
-        <div className="flex justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          {step === 2 ? <button className="secondary-button" onClick={() => setStep(1)} data-testid="grn-wizard-back">Kembali</button> : <span />}
-          {step === 1
-            ? <button className="primary-button" disabled={!partnerId || !whId} onClick={() => setStep(2)} data-testid="grn-wizard-next">Lanjut</button>
-            : <button className="primary-button" disabled={busy} onClick={submit} data-testid="grn-wizard-submit">{reading ? "Membaca surat jalan…" : busy ? "Menyimpan…" : "Buat kedatangan"}</button>}
-        </div>
+              <button onClick={() => move(i, -1)} aria-label="Naik"><ArrowUp size={14} /></button>
+              <button onClick={() => move(i, 1)} aria-label="Turun"><ArrowDown size={14} /></button>
+              <button onClick={() => setPages((ps) => ps.filter((x) => x.key !== p.key))} data-testid={`grn-wizard-page-remove-${i + 1}`} aria-label="Hapus"><Trash2 size={14} className="text-[#B4231F]" /></button>
+            </div>
+          ))}
+          {!pages.length && <p className="text-[11px] text-[#6B6B73]">Foto boleh menyusul — Anda tetap bisa mengisi surat jalan secara manual.</p>}
+        </>)}
       </div>
-    </div>
+    </FormModal>
   );
 }
