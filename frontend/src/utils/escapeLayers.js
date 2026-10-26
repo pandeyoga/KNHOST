@@ -38,7 +38,7 @@
  * Dijaga gate **INV-UI-10** (`scripts/guardrails/verify_escape_layers.py`):
  * mendaftarkan `keydown` + `Escape` sendiri di komponen pop-up = MERAH.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /** Penanda DOM lapisan Radix yang HIDUP (ada hanya selama lapisannya terbuka). */
 export const RADIX_LAYER_SELECTOR = [
@@ -70,13 +70,22 @@ export function escapeLayerCount() {
  * @param {boolean} busy   sedang menyimpan → Esc diabaikan
  */
 export function useEscapeClose(open, onClose, busy = false) {
+  // Fase 4 (26 Okt) — penutup & `busy` dibaca lewat ref. Dulu keduanya dependensi efek: pemanggil yang memberi
+  // fungsi INLINE (identitas baru tiap render) memicu daftar ulang, sehingga lapisan BAWAH naik ke atas pop-up
+  // anaknya dan Esc menutup lapisan yang salah (atau tidak menutup apa pun). Urutan tumpukan kini hanya berubah
+  // saat pop-up dibuka/ditutup.
+  const closeRef = useRef(onClose);
+  const busyRef = useRef(busy);
+  closeRef.current = onClose;
+  busyRef.current = busy;
+  const hasClose = typeof onClose === "function";
   useEffect(() => {
-    if (!open || typeof onClose !== "function") return undefined;
-    const entry = { onClose };
+    if (!open || !hasClose) return undefined;
+    const entry = { onClose: () => closeRef.current?.() };
     layers.push(entry);
 
     const onKey = (e) => {
-      if (e.key !== "Escape" || busy) return;
+      if (e.key !== "Escape" || busyRef.current) return;
       if (layers[layers.length - 1] !== entry) return; // bukan lapisan teratas
       if (isRadixLayerOpen()) return;                  // Radix menutup miliknya sendiri
       e.stopPropagation();
@@ -88,7 +97,7 @@ export function useEscapeClose(open, onClose, busy = false) {
       const i = layers.indexOf(entry);
       if (i >= 0) layers.splice(i, 1);
     };
-  }, [open, onClose, busy]);
+  }, [open, hasClose]);
 }
 
 export default useEscapeClose;

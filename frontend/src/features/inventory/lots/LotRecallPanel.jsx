@@ -7,11 +7,13 @@ import { AlertOctagon, Phone, Truck } from "lucide-react";
 import { formatQty } from "../../../utils/formatters";
 import { shortDate } from "./lotApi";
 import { docStatusLabel } from "../../../utils/docStatus";
-import { SUBSTATUS_LABELS, STAGE_META } from "../../../utils/soStatus";
+import { STAGE_META, getSubStatus, subStatusLabel } from "../../../utils/soStatus";
 
 // UAT 24 Okt (audit UI tahap 2) — status pesanan/pengiriman dulu tampil mentah ("Siap_disahkan", "shipped").
-const orderStatusText = (o) => SUBSTATUS_LABELS[o.sub_status] || STAGE_META[o.status]?.label
-  || docStatusLabel(o.sub_status || o.status) || "—";
+// Fase 4 · R8 — `sub_status` berupa LARIK (dulu dipakai langsung sebagai kunci label → selalu kosong).
+// Tanpa larik dari server → label tahap (jangan menurunkan sub-status dari data recall yang ringkas).
+const orderStatusText = (o) => (Array.isArray(o.sub_status) ? getSubStatus(o).map(subStatusLabel).filter(Boolean).join(" · ") : "")
+  || STAGE_META[o.status]?.label || docStatusLabel(o.status) || "—";
 
 export default function LotRecallPanel({ data, loading }) {
   if (loading) {

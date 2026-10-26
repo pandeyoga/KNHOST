@@ -25,19 +25,6 @@ import { entityShortById } from "../../../utils/entityLabel";
 import { apiErrorText } from "../../../utils/apiError";
 import EntityMasterKindPanel, { EntityScopeRibbon } from "./EntityMasterKindPanel";
 
-// UAT 24 Okt (audit UI tahap 2, G5-03/G5-26) — teks banner server memuat nama kolom teknis berbacktick; untuk jenis
-// berikut banner ditulis ulang dengan nama kolom di layar.
-const HINT_OVERRIDE = {
-  "process-stages": "Langkah kerja yang dipantau papan PO & SPK makloon. “Mesin tarif/estimasi” menyambung ke tarif; "
-    + "“Mengubah kain? Tidak” = jasa yang tidak mengubah kain (mis. pembuatan screen/kasa); “Aliran kain” menentukan "
-    + "apakah kain benar-benar dikirim ke mitra atau hanya jasa.",
-  "sample-types": "Jenis sampling yang bisa diminta ke supplier; satu permintaan boleh menempuh beberapa jenis sekaligus. "
-    + "“Wajib kode desain?” memaksa kode desain; “Hasil ukur wajib” menentukan kolom hasil ukur di form setor hasil.",
-  "complaint-reasons": "Sebab keluhan yang bisa dipilih saat mencatat retur pelanggan. “Wajib diperiksa fisik?” memaksa "
-    + "retur diperiksa lewat SPK Inspeksi sebelum kredit/ganti diberikan; “Bisa diklaim ke supplier?” menandai keluhan "
-    + "yang wajar diteruskan sebagai klaim ke supplier.",
-};
-
 /** Fase 3 · P2 — jenis master yang dikelola di layar domainnya: di sini hanya TAUTAN (bukan tabel kedua). */
 export const DOMAIN_HOME = {
   "document-templates": { view: "pdf-templates", preset: { tab: "dasar" }, where: "Pengaturan › Dokumen & Cetak › Template Dokumen" },
@@ -176,7 +163,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
           </section>
         ) : (
           <EntityMasterKindPanel key={kind} kind={kind} entities={entities} selectedEntity={selectedEntity}
-            onChanged={loadGroups} hintOverride={HINT_OVERRIDE[kind] || ""}
+            onChanged={loadGroups}
             notice={full ? (
               <LinkCard testId="em-full-editor-link" what="Editor lengkap" where={full.where} view={full.view}
                 label="Buka editor lengkap" />

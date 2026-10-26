@@ -70,8 +70,6 @@ MODAL_BASELINE = {
     "components/LabelPrinterModal.jsx",
     # Fase 3 · P3 (D-05) — CustomerFormModal kini FormModal (galat di dalam pop-up) → keluar dari baseline.
     "features/crm/Customer360Panel.jsx",
-    "features/purchasing/LandedCostDetailPanel.jsx",
-    "features/purchasing/VendorBillDetailPanel.jsx",
     "features/purchasing/BlanketPOCreateModal.jsx",
     "features/purchasing/CallOffModal.jsx",
     "features/purchasing/RFQCreateModal.jsx",

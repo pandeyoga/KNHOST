@@ -84,8 +84,7 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
       {paying && (
         <ARReceiptModal customerId={customerId} customerName={customerName} preselectOrderId={orderId}
                         onClose={() => setPaying(false)}
-                        onDone={() => { setPaying(false); load(); onChanged?.(); }}
-                        onError={(msg) => setErr(msg)} />
+                        onDone={() => { setPaying(false); load(); onChanged?.(); }} />
       )}
       {allowed && (gate.blocked || gate.released) && (
         <div className="space-y-1">

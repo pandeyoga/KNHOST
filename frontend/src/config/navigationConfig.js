@@ -32,7 +32,9 @@ const LIVE_CS_VIEWS = [
   "cs-price-list",
 ];
 // Halaman landing per role — hanya di sini MetricCards & Onboarding ditampilkan.
-const HOME_VIEWS = ["sales", "reports", "operations"];
+// Fase 4 · R3 (L-06) — Operasi Gudang dikeluarkan: deretan KPI global (Produk Aktif/Jml Tersedia/…) mengulang KPI
+// tab Stok yang sudah baku dan kartu "Jml Tersedia" patah 4 baris di 1440 px.
+const HOME_VIEWS = ["sales", "reports"];
 
 export const isComingSoonView = (view) =>
   typeof view === "string" && view.startsWith("cs-") && !LIVE_CS_VIEWS.includes(view);

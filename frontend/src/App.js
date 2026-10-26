@@ -30,6 +30,7 @@ import { EntityScopeProvider } from "./context/EntityScopeContext";
 import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
 import PublicVerify from "./features/documents/PublicVerify";
+import { openNotifDocument } from "./features/notifications/notifDocTarget";
 import { setAccessContext, roleIs } from "./config/roles";
 import {
   Archive,
@@ -325,6 +326,7 @@ function App() {
               onGenerate={generateNotifications}
               onApprove={approveFromNotification}
               onNavigate={(target, n) => {
+                if (openNotifDocument(n, openDocument)) return;   // fase 4 · R6 (G5-09) — nota kredit/desain → dokumennya
                 if (target === "purchasing" && n?.action_id && !n?.action_type) {
                   openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: n.action_id });
                 } else navigateTo(target);   // fase 3 · P1 — alias + sorotan menu lewat satu jalur

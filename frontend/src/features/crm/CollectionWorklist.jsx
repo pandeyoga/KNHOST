@@ -131,8 +131,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
 
       {payRow && <ARReceiptModal customerId={payRow.customer_id} customerName={payRow.customer_name}
         preselectOrderId={payRow.order_id} onClose={() => setPayRow(null)}
-        onDone={(m) => { setPayRow(null); setNotice(m); setReceiptRefresh((k) => k + 1); load(); }}
-        onError={(m) => setError(m)} />}
+        onDone={(m) => { setPayRow(null); setNotice(m); setReceiptRefresh((k) => k + 1); load(); }} />}
 
       {fu && <WorklistFollowup row={fu} onClose={() => setFu(null)}
         onDone={(m) => { setFu(null); setNotice(m); load(); }} onError={(m) => setError(m)} />}

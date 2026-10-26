@@ -166,7 +166,6 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           preselectOrderId={payRow.order_id}
           onClose={() => setPayRow(null)}
           onDone={(msg) => { setPayRow(null); flash(msg || "Kwitansi tercatat."); load(); }}
-          onError={(msg) => setError(msg)}
         />
       )}
     </div>

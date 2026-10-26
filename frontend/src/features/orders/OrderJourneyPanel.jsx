@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowLeftRight, CheckCircle2, Circle, Clock3, FileSignature, PackageSearch,
+  ArrowLeftRight, CheckCircle2, Circle, CircleDashed, CircleMinus, Clock3, FileSignature, PackageSearch,
   RefreshCw, Route, Truck, Wallet, XCircle,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -26,6 +26,9 @@ const STATE_STYLE = {
   done: { icon: CheckCircle2, color: "#1B7F4B", line: "#BFE6CE" },
   pending: { icon: Circle, color: "#C7C7CC", line: "#EFF0F2" },
   cancelled: { icon: XCircle, color: "#C0392B", line: "#F5C9BC" },
+  // Fase 4 · R6 — server menandai langkah yang DILEWATI (sesudahnya sudah selesai) & yang baru SEBAGIAN.
+  skipped: { icon: CircleMinus, color: "#8E8E93", line: "#EFF0F2" },
+  partial: { icon: CircleDashed, color: "#0058CC", line: "#CFE0F7" },
 };
 
 export default function OrderJourneyPanel({ orderId, orderNumber }) {

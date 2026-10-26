@@ -97,6 +97,30 @@ async def _audit_ids():
         cl.close()
 
 
+# Fase 4 (26 Okt) — POC MENYETEL penugasannya sendiri. Data acuan sah menurut E8.10b#1 (Admin Sales berbasis
+# penugasan: satu ATAU beberapa PT) memberi `salesadmin@` hanya KSC & `finance@` beberapa PT; skenario POC ini
+# butuh Admin Sales 2 PT & Finance 1 PT. Dulu POC bergantung pada susunan `seed_realistic.py` → merah di DB lain.
+POC_ASSIGN = {"salesadmin@kainnusantara.id": [ENT_A, ENT_B], "finance@kainnusantara.id": [ENT_A]}
+
+
+async def _set_assignments(want):
+    """Pasang `allowed_entity_ids` akun uji; kembalikan nilai sebelumnya (untuk dipulihkan)."""
+    from motor.motor_asyncio import AsyncIOMotorClient
+    cl = AsyncIOMotorClient(os.environ["MONGO_URL"])
+    try:
+        db = cl[os.environ["DB_NAME"]]
+        before = {}
+        for email, ents in want.items():
+            u = await db.users.find_one({"email": email}, {"_id": 0, "allowed_entity_ids": 1})
+            if u is None:
+                continue
+            before[email] = list(u.get("allowed_entity_ids") or [])
+            await db.users.update_one({"email": email}, {"$set": {"allowed_entity_ids": list(ents)}})
+        return before
+    finally:
+        cl.close()
+
+
 async def _cleanup(before_ids):
     """INV-GATE-01 — POC tidak boleh meninggalkan residu.
 
@@ -404,8 +428,13 @@ def e_finance(fin):
     check("Finance BUAT pelanggan → 403 (hanya melihat)", r.status_code == 403,
           f"HTTP {r.status_code}")
     perms = fin.login_body["permissions"]
-    check("izin efektif Finance: pesanan hanya `view`+`print`",
-          sorted(perms.get("order") or []) == ["print", "view"], str(perms.get("order")))
+    # Matriks izin sah kemudian menambah dua KEPUTUSAN Finance atas pesanan: `approve_price_edit` (2026-10,
+    # setujui harga/diskon override) & `release_unpaid` (F-10, lepas kirim SO belum lunas ber-alasan).
+    # Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/mengonfirmasi/mengirim pesanan.
+    order_perms = set(perms.get("order") or [])
+    check("izin efektif Finance: pesanan hanya lihat/cetak + keputusan keuangan (tanpa buat/ubah/konfirmasi)",
+          {"view", "print"} <= order_perms
+          and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid"}, str(perms.get("order")))
     check("izin efektif Finance: TANPA sisi hutang (vendor_bill/contra_bon/landed_cost)",
           not any(perms.get(m) for m in ("vendor_bill", "contra_bon", "landed_cost")))
     check("izin efektif Finance: batal faktur pajak TETAP manajer",
@@ -471,6 +500,7 @@ def main():
           f"\n  {BASE}\n{'=' * 78}{RST}")
     import asyncio
     audit_before = asyncio.run(_audit_ids())
+    assign_before = asyncio.run(_set_assignments(POC_ASSIGN))
     try:
         adm = client("admin@kainnusantara.id")
         sales = client("sales@kainnusantara.id")
@@ -478,6 +508,7 @@ def main():
         fin = client("finance@kainnusantara.id")
     except Exception as exc:  # noqa: BLE001
         print(f"{RED}Tidak bisa login: {exc}{RST}")
+        asyncio.run(_set_assignments(assign_before))
         return 1
 
     try:
@@ -493,6 +524,8 @@ def main():
         dihapus, sisa = asyncio.run(_cleanup(audit_before))
         check("CLEANUP: nol residu sessions & audit_logs (POC tak membuat dokumen bisnis)",
               sisa == 0, f"dihapus={dihapus} sisa={sisa}")
+        asyncio.run(_set_assignments(assign_before))
+        check("CLEANUP: penugasan badan usaha akun uji dipulihkan", True, str(assign_before))
 
     ok = sum(1 for _, o, _ in RESULTS if o)
     bad = [n for n, o, _ in RESULTS if not o]
