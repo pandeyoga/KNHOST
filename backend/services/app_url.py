@@ -9,11 +9,16 @@ skrip, atau panggilan API integrasi — menghasilkan QR kosong/relatif seperti
 `/jejak-dokumen/...` yang **tidak bisa dibuka** dari HP pemegang surat.
 
 Urutan penentuan (paling dipercaya lebih dulu):
-  1. `Origin` / `Referer` permintaan  → persis host yang sedang dipakai user;
-  2. `PUBLIC_APP_URL`                 → override eksplisit operator (mis. domain resmi);
+  1. `PUBLIC_APP_URL`                 → URL publik resmi yang disetel operator (mis. `https://${DOMAIN}`);
+  2. `Origin` / `Referer` permintaan  → host yang sedang dipakai user (hanya bila operator tidak menyetel 1);
   3. `APP_URL`                        → disediakan platform/supervisor;
   4. `REACT_APP_BACKEND_URL`          → env backend bila disetel;
   5. `frontend/.env`                  → sumber kebenaran alamat aplikasi di stack ini.
+
+Fase 4 · R6 (sisa audit UI tahap 2, G5-11) — dulu `Origin` permintaan menang atas `PUBLIC_APP_URL`, sehingga QR &
+"Jejak Dokumen" pada kertas berisi host yang KEBETULAN dipakai pencetak (`localhost:3063`, IP LAN kantor, alamat
+pratinjau) — tidak bisa dibuka pemegang kertas di luar jaringan itu. Kertas beredar ke luar, jadi alamatnya harus
+alamat publik resmi; `Origin` hanya cadangan bila operator belum menyetel `PUBLIC_APP_URL`.
 
 Tidak ada URL yang di-hardcode di dalam kode.
 """
@@ -69,7 +74,10 @@ def configured_app_url() -> str:
 
 
 def public_app_url(request: Optional[Any] = None) -> str:
-    """URL publik aplikasi; utamakan host yang sedang dipakai pemanggil."""
+    """URL publik aplikasi untuk QR/tautan di kertas: `PUBLIC_APP_URL` operator lebih dulu, lalu host pemanggil."""
+    explicit = _origin_of(os.environ.get("PUBLIC_APP_URL", ""))
+    if explicit:
+        return explicit
     if request is not None:
         try:
             headers = request.headers

@@ -23,6 +23,8 @@ from fastapi import HTTPException
 from db import db
 from core_utils import invalidate_entity_code, now_iso, safe_doc
 from services.entity_context_service import ENTITY_DEFAULTS, is_pkp
+# Fase 4 · R6 (G5-25) — lokasi tervalidasi ikut bisa diubah lewat PATCH (lihat `entity_location_service`).
+from services.entity_location_service import LOCATION_FIELDS
 
 STATUS_ACTIVE = "active"
 STATUS_ARCHIVED = "archived"
@@ -32,13 +34,16 @@ STATUS_INACTIVE = "inactive"
 WRITE_LOCKED_STATUSES = {STATUS_ARCHIVED, STATUS_INACTIVE}
 
 # Field yang boleh diubah lewat PATCH (satu daftar, dipakai router).
+# Fase 4 · R6 (G5-25) — lokasi tervalidasi (negara → provinsi → kota/kab → kecamatan → kode pos) kini ikut bisa
+# diubah, sama dengan wizard buat (`BusinessEntityCreate`). Dulu PATCH hanya menerima `city` teks bebas sehingga form
+# ubah tidak bisa memakai pemilih wilayah dan kode wilayah dari wizard tidak bisa dikoreksi.
 EDITABLE_FIELDS = [
     "legal_name", "short_name", "type", "npwp", "address", "city",
     "default_tax_mode", "doc_prefix", "logo_url",
     "currency", "parent_entity_id", "is_group", "coa_template",
     "fiscal_year_start", "incentive_payer", "numbering_scheme",
     "owner_name", "business_label", "phone", "email",
-]
+] + [k for k in LOCATION_FIELDS if k != "city"]
 
 # (koleksi, field nomor, label manusiawi) — sumber "entitas sudah menerbitkan dokumen".
 # Dipakai kunci prefix (E1.3) dan hitungan dampak deaktivasi (E1.6).
@@ -113,6 +118,9 @@ def uniform_entity(entity: Dict[str, Any]) -> Dict[str, Any]:
         "npwp": e.get("npwp", ""),
         "address": e.get("address", ""),
         "city": e.get("city", ""),
+        # Fase 4 · R6 (G5-25) — lokasi tervalidasi ikut dikirim agar form ubah bisa memakai pemilih wilayah.
+        **{k: e.get(k, "") or "" for k in LOCATION_FIELDS if k != "city"},
+        "location_status": e.get("location_status", ""),
         "phone": e.get("phone", ""),
         "email": e.get("email", ""),
         "owner_name": e.get("owner_name", ""),

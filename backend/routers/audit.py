@@ -19,6 +19,7 @@ from db import db
 from dependencies import require_permission
 from entity_scope import entity_ctx, resolve_list_scope_inherit
 from pagination import build_search, envelope, fetch_page, get_page_params, is_paged
+from services.doc_label_service import attach_doc_numbers
 
 router = APIRouter(prefix="/api")
 
@@ -49,9 +50,10 @@ async def list_audit_logs(request: Request, entity_id: str = Query(None)) -> Any
             query = {"$and": [base, search]}
         items, total = await fetch_page(db.audit_logs, query, page, page_size,
                                         sort_field="timestamp", sort_dir=-1)
-        return envelope([_label(x) for x in items if x], total, page, page_size)
+        return envelope(await attach_doc_numbers([_label(x) for x in items if x]), total, page, page_size)
     logs = await db.audit_logs.find(base, {"_id": 0}).sort("timestamp", -1).to_list(500)
-    return [_label(log) for log in logs if log]
+    # Fase 4 · R6 (G5-01) — `doc_number`: nomor dokumen/nama yang bisa dibaca (bukan id teknis `so_3ee0…`).
+    return await attach_doc_numbers([_label(log) for log in logs if log])
 
 
 def _hash_status(row: Dict[str, Any]) -> str:

@@ -10,6 +10,7 @@ from db import db
 from dependencies import current_user, require_role
 from entity_scope import entity_ctx, resolve_scope_ids
 from pagination import envelope, fetch_page, get_page_params, is_paged
+from services.notification_doc_ref import attach_doc_refs
 from services.notification_service import generate_system_notifications
 from services.notification_read import mark_read as _mark_read_for, personalize, unread_for
 
@@ -74,9 +75,10 @@ async def list_notifications(
         page, page_size, _q, _sort = get_page_params(request)
         items, total = await fetch_page(db.notifications, query, page, page_size,
                                         sort_field="created_at", sort_dir=-1)
-        return envelope([personalize(i, uid) for i in items], total, page, page_size)
+        return envelope(await attach_doc_refs([personalize(i, uid) for i in items]), total, page, page_size)
     rows = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return [personalize(r, uid) for r in rows]
+    # Fase 4 · R6 (G5-09) — `doc` = dokumen yang dituju (nota kredit → SO-nya, desain → rinciannya), bukan hanya layar.
+    return await attach_doc_refs([personalize(r, uid) for r in rows])
 
 
 @router.get("/notifications/unread-count")

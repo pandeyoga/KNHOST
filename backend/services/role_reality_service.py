@@ -352,8 +352,12 @@ async def _collect_from_audit(by_id, by_name) -> Tuple[Dict[str, Dict[str, Any]]
     yang sama dengan `KN-E6-DERIVED-FROM-LIST`: data dibaca dari bentuk yang salah dan
     hasilnya diam-diam kosong.
     """
+    from services.doc_label_service import is_tech_id, resolve_labels
     hits: Dict[str, Dict[str, Any]] = {}
     unmapped: Dict[str, int] = {}
+    # Fase 4 · R6 (G5-02) — contoh dokumen tanpa nomor di isi baris dulu memakai `resource_id`/`entity_id`
+    # (id teknis `so_3ee0…`, disembunyikan layar). Kini id itu diterjemahkan ke NOMOR dokumennya, berkelompok.
+    pending: List[Tuple[Dict[str, Any], str, str]] = []
     action_map: Dict[str, str] = {}
     pair_map: Dict[Tuple[str, str], str] = {}
     for a in ACTIVITIES:
@@ -391,9 +395,19 @@ async def _collect_from_audit(by_id, by_name) -> Tuple[Dict[str, Dict[str, Any]]
         det = row.get("details") or row.get("after") or {}
         if not isinstance(det, dict):
             det = {}
-        label = _norm(det.get("number") or det.get("order_number")
-                      or det.get("po_number")
-                      or row.get("resource_id") or row.get("entity_id"))
+        label = _norm(det.get("number") or det.get("order_number") or det.get("po_number"))
+        if is_tech_id(label):
+            label = ""
+        rid = _norm(row.get("resource_id") or row.get("entity_id"))
+        if not label and is_tech_id(rid):
+            pending.append((bucket, jenis, rid))
+            continue
+        label = label or rid
+        if label and label not in bucket["samples"] and len(bucket["samples"]) < 4:
+            bucket["samples"].append(label)
+    labels = await resolve_labels([(j, r) for _b, j, r in pending]) if pending else {}
+    for bucket, jenis, rid in pending:
+        label = labels.get((jenis, rid))
         if label and label not in bucket["samples"] and len(bucket["samples"]) < 4:
             bucket["samples"].append(label)
     return hits, unmapped

@@ -12,7 +12,7 @@ import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta, soTrackerLink } from "../sales_admin/workDeskApi";
 import { resolveView } from "../../utils/viewAlias";
-import { docStatusLabel } from "../../utils/docStatus";
+import { humanizeQueueRows } from "./deskText";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -30,9 +30,6 @@ const DESKS = {
     intro: <>Semua yang menunggu tindakan Anda hari ini: <b>Giliran saya</b> (dokumen yang baru berpindah tahap ke Anda) dan antrean khas peran Anda. Buka baris untuk melompat ke layar penanganannya.</>,
   },
 };
-
-const humanizeStage = (text) => (typeof text !== "string" ? text
-  : text.replace(/\b(tahap|status):\s*([a-z][a-z_]+)/g, (m, k, code) => `${k}: ${docStatusLabel(code).toLowerCase()}`));
 
 export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDocument }) {
   const cfg = DESKS[desk] || DESKS.md;
@@ -54,7 +51,8 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
 
   useEffect(() => { load(); }, [load]);
 
-  function handleAction(row, queue) {
+  function handleAction(shown, queue) {
+    const row = shown?._raw || shown;   // aksi memakai baris ASLI dari server (nomor/id apa adanya), bukan teks tampilan
     if (row.action_kind === "create_delivery") {
       // Jembatan Gudang → Logistik: buka Logistik dengan SJ ini terpilih untuk dibuat pengiriman.
       openLogistics({ createFromShipmentId: row.ref_id });
@@ -79,11 +77,10 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
     onOpenDocument?.(rowLink(row, queue?.id, desk));
   }
 
-  // Audit UI tahap 2 (G5-10, verifikasi) — notifikasi LAMA di "Giliran saya" masih berteks "tahap: cancelled" /
-  // "tahap: refund_settled" (notifikasi baru sudah berlabel dari server) → kode tahap/status dilabeli di layar.
-  const queues = (Array.isArray(data?.queues) ? data.queues : []).map((q) => (q.id !== "giliran_saya" ? q : {
-    ...q, rows: (q.rows || []).map((r) => ({ ...r, title: humanizeStage(r.title), subtitle: humanizeStage(r.subtitle) })),
-  }));
+  // Audit UI tahap 2 (G5-10) — notifikasi LAMA di "Giliran saya" masih berteks "tahap: cancelled" (notifikasi baru
+  // sudah berlabel dari server). Fase 4 · R6: berlaku untuk SEMUA antrean (subjudul "waiting_approval · Budi",
+  // "outbound", nomor id teknis) lewat `deskText.js`; baris asli disimpan di `_raw` untuk aksi.
+  const queues = humanizeQueueRows(Array.isArray(data?.queues) ? data.queues : []);
   const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
   const p = cfg.testPrefix;

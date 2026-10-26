@@ -208,7 +208,7 @@ async def claim(design_id: str, customer_id: str, actor: Dict[str, Any], reason:
             notif_type="design_claim_pending", title=f"Klaim desain {d.get('code', '')} menunggu keputusan",
             body=(f"{actor.get('name', '')} mengajukan klaim desain {d.get('code', '')} ({d.get('title', '')}) untuk "
                   f"pelanggan {c.get('name', '')}. Alasan: {reason.strip()}"),
-            severity="info", link="design-gallery", entity_id=d.get("entity_id") or None,
+            severity="info", link="rnd-designs", entity_id=d.get("entity_id") or None,
             recipient_role="manager", ref=f"dclaim:{cl['id']}")
     except Exception:  # noqa: BLE001 — notifikasi tidak boleh menggagalkan klaim
         pass
@@ -240,7 +240,7 @@ async def decide_claim(design_id: str, claim_id: str, approve: bool, actor: Dict
             body=(f"Klaim {cl.get('customer_name', '')} atas desain {d.get('code', '')} "
                   f"{'disetujui — desain kini customer label' if approve else 'ditolak'} oleh {actor.get('name', '')}."
                   + (f" Alasan: {reason.strip()}" if (reason or "").strip() else "")),
-            severity="info", link="design-gallery", entity_id=d.get("entity_id") or None,
+            severity="info", link="rnd-designs", entity_id=d.get("entity_id") or None,
             recipient_user=cl.get("by_id") or None, recipient_role="" if cl.get("by_id") else "manager",
             ref=f"dclaim-done:{claim_id}")
     except Exception:  # noqa: BLE001

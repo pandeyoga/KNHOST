@@ -45,6 +45,22 @@ PASS = 0
 FAIL = 0
 CLEANUP: list = []          # (collection, id)
 
+# Fase 4 · R6 — pengecualian BERALASAN pada cek "setelan operasional bisa per badan usaha" (bagian 9): setelan mesin
+# OCR surat jalan (GRN, 2026-09) sengaja tingkat INSTALASI, bukan lupa diberi lapisan. Spesifikasinya
+# (`memory/grn_ocr/Prompt_Implementasi_GRN_OCR_SJ.md` §4.9) menetapkan lingkup "global"; konsumennya
+# (`services/goods_receipt_ocr_service.ocr_config`) membaca kunci-kunci ini dengan konteks kosong `{}`; anggaran
+# dihitung dari pemakaian SEMUA badan usaha (`month_spend`) dengan SATU kunci API & SATU tabel harga. Lapisan per badan
+# usaha untuk kunci ini tidak akan pernah dibaca → menyesatkan. Kunci OCR yang memang per badan usaha (ocr_enabled,
+# ocr_extract_packing_list, client_po_patterns) tetap wajib berlapis. POC ini ditulis (E4) sebelum fitur OCR ada.
+# Daftar ini hanya boleh bertambah dengan alasan yang sama (dicek juga oleh `tests/test_phase4_r6.py`).
+OCR_GLOBAL_BY_DESIGN = frozenset({
+    "receiving.min_photo_short_side_px", "receiving.ocr_model_primary", "receiving.ocr_model_second",
+    "receiving.ocr_auto_orient", "receiving.ocr_photo_check", "receiving.ocr_orient_model",
+    "receiving.ocr_second_reader_mode", "receiving.ocr_reasoning_effort", "receiving.ocr_max_output_tokens",
+    "receiving.ocr_image_max_side", "receiving.ocr_max_pages", "receiving.ocr_monthly_budget_usd",
+    "receiving.ocr_budget_warn_pct", "receiving.ocr_price_table",
+})
+
 
 def ok(cond: bool, label: str, extra: str = "") -> bool:
     global PASS, FAIL
@@ -343,10 +359,20 @@ def main() -> int:
            f"scopes={entry.get('scopes')}")
     ops_keys = [e for e in (reg.get("entries") or [])
                 if e["key"].split(".")[0] in ("hr", "uom", "lot", "receiving", "makloon")]
-    no_entity = [e["key"] for e in ops_keys if "entity" not in (e.get("scopes") or [])]
+    # Fase 4 · R6 — setelan mesin OCR tingkat instalasi dikecualikan dengan alasan (lihat `OCR_GLOBAL_BY_DESIGN`).
+    GLOBAL_BY_DESIGN = OCR_GLOBAL_BY_DESIGN
+    no_entity = [e["key"] for e in ops_keys
+                 if "entity" not in (e.get("scopes") or []) and e["key"] not in GLOBAL_BY_DESIGN]
     ok(not no_entity,
-       f"seluruh {len(ops_keys)} setelan hr./uom./lot./receiving./makloon. bisa per badan usaha",
+       f"seluruh {len(ops_keys) - len(GLOBAL_BY_DESIGN)} setelan hr./uom./lot./receiving./makloon. "
+       f"(di luar {len(GLOBAL_BY_DESIGN)} setelan mesin OCR tingkat instalasi) bisa per badan usaha",
        f"masih hanya-global: {no_entity[:6]}")
+    ocr_keys = {e["key"]: e for e in ops_keys if e["key"] in GLOBAL_BY_DESIGN}
+    ok(set(ocr_keys) == GLOBAL_BY_DESIGN
+       and all("entity" not in (e.get("scopes") or []) for e in ocr_keys.values()),
+       "pengecualian OCR tingkat instalasi masih terdaftar & tetap global (daftar pengecualian tidak basi)",
+       f"hilang={sorted(GLOBAL_BY_DESIGN - set(ocr_keys))} "
+       f"kini-berlapis={sorted(k for k, e in ocr_keys.items() if 'entity' in (e.get('scopes') or []))}")
 
     def lot_mode(ent: str) -> str:
         r = admin.get(f"{BASE}/api/lots/settings", headers=h(ent), timeout=30)

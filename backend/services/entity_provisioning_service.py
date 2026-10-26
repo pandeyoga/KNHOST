@@ -133,6 +133,11 @@ async def validate_entity_input(data: Dict[str, Any], *, entity_id: str = "",
         if not re.fullmatch(r"\d{2}-\d{2}", str(out["fiscal_year_start"])):
             raise HTTPException(status_code=400,
                                 detail="Awal tahun fiskal memakai format MM-DD, mis. 01-01.")
+
+    # ── lokasi tervalidasi pada PATCH (Fase 4 · R6, G5-25) — POST dinormalisasi `provision_entity`. ──
+    if is_patch:
+        from services.entity_location_service import normalize_location_patch
+        out.update(normalize_location_patch(prev, out))
     return out
 
 

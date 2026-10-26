@@ -648,7 +648,7 @@ async def add_illustration_comment(gallery_id: str, file_id: str, actor: Dict[st
             notif_type="design_ai_comment",
             title=f"Arahan ilustrasi AI: {doc.get('title', '')}",
             body=f"{actor.get('name', '')}: {text.strip()[:160]}",
-            severity="info", link="design-gallery", ref=f"{file_id}:{comment['id']}")
+            severity="info", link="rnd-designs", ref=f"{file_id}:{comment['id']}")
     except Exception as exc:  # noqa: BLE001
         print(f"[design_gallery] notifikasi komentar gagal: {exc}")
     return comment

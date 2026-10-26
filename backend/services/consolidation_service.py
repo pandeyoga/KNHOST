@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from core_utils import new_id, now_iso, rupiah, safe_doc
 from services import financial_statement_service as fs
+from services.consolidation_stale_service import stale_g6_eliminations   # Fase 4 · R6 (G1-33)
 
 IC_KEYWORDS = ["intercompany", "inter-co", "interco", "antar entitas",
                "antar-entitas", "antar-pt", "antar pt", "antarperusahaan",
@@ -166,6 +167,7 @@ async def summary(entity_ids: List[str], year: int, as_of: str) -> Dict[str, Any
     consolidated["net_income"] = round(consolidated["revenue"] - consolidated["expense"], 2)
 
     balanced = abs(consolidated["assets"] - (consolidated["liabilities"] + consolidated["equity"])) < 1.0
+    stale = await stale_g6_eliminations(_all)
 
     return {
         "year": year,
@@ -178,6 +180,10 @@ async def summary(entity_ids: List[str], year: int, as_of: str) -> Dict[str, Any
         "eliminations_pl_count": len(pl_elims),
         "eliminations_bs_count": len(bs_elims),
         "eliminations_auto_count": sum(1 for e in _all if e.get("auto_generated")),
+        # Fase 4 · R6 (G1-33) — entri auto yang sumbernya hilang: TETAP dihitung (tidak diubah diam-diam), tetapi
+        # dilaporkan supaya layar bisa memperingatkan "jalankan Sinkron Antar-PT / periksa data".
+        "eliminations_stale": stale,
+        "eliminations_stale_count": len(stale),
         "balanced": balanced,
     }
 

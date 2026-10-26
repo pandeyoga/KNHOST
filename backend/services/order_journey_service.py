@@ -154,6 +154,32 @@ TASK_PREPARED = ("picked", "packing", "staging", "dispatched", "partially_shippe
 TASK_IGNORED = ("cancelled",)
 
 
+# Langkah TAGIHAN berjalan sejajar dengan langkah proses (bisa lunas sebelum dikirim) → tidak dipakai menilai "dilewati".
+MONEY_STEPS = ("ditagih", "dibayar")
+SKIPPED_DETAIL = "Dilewati — tidak dilakukan sebelum langkah berikutnya selesai"
+
+
+def _mark_skipped(steps: List[Dict[str, Any]], tasks: List[Dict[str, Any]],
+                  prepared: List[Dict[str, Any]]) -> None:
+    """Fase 4 · R6 (sisa audit UI tahap 2, G2-20) — langkah proses yang belum selesai padahal langkah SESUDAHNYA
+    sudah selesai ditandai `state="skipped"` DI SERVER (mis. verifikasi Admin Sales saat SO sudah disetujui/dikirim).
+
+    Dulu hanya layar HP (`MobileOrderJourney`) yang menilai "dilewati" sendiri, sementara panel desktop & `current_step`
+    tetap menyebut langkah itu sebagai tahap sekarang. Aturannya sama dengan layar HP, satu pengecualian: "Disiapkan
+    gudang" yang SEBAGIAN tugasnya sudah siap (kirim bertahap) bukan dilewati melainkan `partial` (masih berjalan).
+    """
+    proc = [s for s in steps if s["key"] not in MONEY_STEPS]
+    last_done = max((i for i, s in enumerate(proc) if s["done"]), default=-1)
+    for i, s in enumerate(proc):
+        if i >= last_done or s["done"]:
+            continue
+        if s["key"] == "disiapkan" and tasks and prepared:
+            s["state"] = "partial"
+            continue
+        s["state"] = "skipped"
+        s["detail"] = SKIPPED_DETAIL
+
+
 async def _audit_stamp(order_id: str, actions: tuple) -> tuple:
     """Pesanan lama tanpa `approved_at`/`confirmed_at`: waktu & pelaku diambil dari jejak audit transisinya."""
     row = await db.audit_logs.find_one({"entity_id": order_id, "action": {"$in": list(actions)}},
@@ -248,13 +274,17 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
                else f"Sisa tagihan {sisa:,.0f}".replace(",", "."))),
     ]
 
+    _mark_skipped(steps, tasks, selesai_task)
     if dibatalkan:
         for s in steps:
-            if not s["done"]:
+            if not s["done"] and s["state"] != "skipped":
                 s["state"] = "cancelled"
 
     tercapai = [s for s in steps if s["done"]]
-    kini = next((s for s in steps if not s["done"]), None)
+    dilewati = [s for s in steps if s["state"] == "skipped"]
+    # Tahap sekarang = langkah pertama yang belum selesai DAN tidak dilewati (dulu: verifikasi yang dilewati tetap
+    # disebut "tahap sekarang" walau pesanan sudah dikirim).
+    kini = next((s for s in steps if not s["done"] and s["state"] != "skipped"), None)
 
     return {
         "order_id": oid,
@@ -274,8 +304,11 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         "revenue_recognized_total": round(diakui_rp, 2),
         "revenue_recognized_pct": round(100.0 * diakui_rp / grand, 1) if grand > 0 else 0.0,
         "advance_unrecognized": uang_muka_tertahan,
-        "progress": {"done": len(tercapai), "total": len(steps),
-                     "percent": round(100.0 * len(tercapai) / len(steps), 1)},
+        # `done` = langkah yang benar-benar terjadi; `skipped` = dilewati (sudah di belakang pesanan). Persen = posisi
+        # pesanan di jalurnya, jadi langkah yang dilewati ikut terhitung "terlewati" (pesanan lunas tanpa verifikasi
+        # Admin Sales = 100%, bukan 89%).
+        "progress": {"done": len(tercapai), "skipped": len(dilewati), "total": len(steps),
+                     "percent": round(100.0 * (len(tercapai) + len(dilewati)) / len(steps), 1)},
         "current_step": (kini or {}).get("key", "") if not dibatalkan else "dibatalkan",
         "current_label": ((kini or {}).get("label", "Selesai") if not dibatalkan
                           else "Dibatalkan"),

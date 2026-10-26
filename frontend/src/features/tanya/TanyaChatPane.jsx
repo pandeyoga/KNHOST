@@ -25,7 +25,8 @@ export function TanyaWelcome({ prompts, onPick }) {
       <p className="tanya-welcome-sub">Angka dihitung server sesuai hak akses Anda — lengkap dengan grafik, tabel, dan unduhan Excel.</p>
       <div className="tanya-welcome-prompts">
         {prompts.map((p, i) => (
-          <button key={i} type="button" className="tanya-welcome-prompt" onClick={() => onPick(p)} data-testid={`tanya-welcome-prompt-${i}`}>{p.label}</button>
+          <button key={i} type="button" className="tanya-welcome-prompt" onClick={() => onPick(p)} title={p.label}
+            data-testid={`tanya-welcome-prompt-${i}`}>{p.label}</button>
         ))}
       </div>
     </div>

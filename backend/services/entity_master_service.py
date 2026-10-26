@@ -164,10 +164,12 @@ MASTERS: Dict[str, MasterSpec] = {
                 # FASE T (1c) — apakah KAIN bergerak: moves | service_only | either
                 "material_flow", "material_flow_default"),
         sort=(("seq", 1), ("code", 1)),
-        hint="Langkah kerja yang dipantau papan PO & SPK makloon. `process_type` "
-             "menyambung ke mesin tarif/estimasi; `changes_stage=false` = tidak "
-             "mengubah kain (mis. pembuatan screen/kasa); `material_flow` menentukan "
-             "apakah kainnya benar-benar dikirim ke mitra atau hanya jasa.",
+        # Fase 4 · R6 (G5-61 sisa) — teks bantu tampil ke pengguna: tanpa nama field ber-backtick; istilah sama
+        # dengan label kolom di layar (dulu ditimpa layar lewat `HINT_OVERRIDE` di EntityMastersView).
+        hint="Langkah kerja yang dipantau papan PO & SPK makloon. “Mesin tarif/estimasi” "
+             "menyambung ke tarif; “Mengubah kain? Tidak” = jasa yang tidak mengubah kain "
+             "(mis. pembuatan screen/kasa); “Aliran kain” menentukan apakah kain benar-benar "
+             "dikirim ke mitra atau hanya jasa.",
     ),
     # ── FASE S (2026-08-23) — JENIS SAMPLING: labdip · handfeel · proofing (boleh
     # LEBIH DARI SATU dalam satu permintaan). Dibuat master karena DUA kelakuan yang
@@ -187,10 +189,9 @@ MASTERS: Dict[str, MasterSpec] = {
                 # hasil ukur yang WAJIB diisi saat menutup round jenis ini
                 "measurement_fields"),
         sort=(("seq", 1), ("code", 1)),
-        hint="Jenis sampling yang bisa diminta ke supplier. Satu permintaan boleh "
-             "menempuh beberapa jenis sekaligus (labdip + handfeel), masing-masing "
-             "dengan rangkaian round sendiri. `requires_design` memaksa kode desain; "
-             "`measurement_fields` menentukan kolom hasil ukur di form setor hasil.",
+        hint="Jenis sampling yang bisa diminta ke supplier; satu permintaan boleh menempuh "
+             "beberapa jenis sekaligus. “Wajib kode desain?” memaksa kode desain; “Hasil ukur "
+             "wajib” menentukan kolom hasil ukur di form setor hasil.",
     ),
     # ── FASE I — ALASAN KELUHAN RETUR ──────────────────────────────────────────
     # Pemilik ingin lembar retur menyebut SEBABNYA. Dijadikan master (bukan enum
@@ -210,10 +211,10 @@ MASTERS: Dict[str, MasterSpec] = {
                 # wajar diteruskan sebagai klaim ke supplier/makloon
                 "claimable"),
         sort=(("seq", 1), ("code", 1)),
-        hint="Sebab keluhan yang bisa dipilih saat mencatat retur pelanggan. "
-             "`needs_inspection` memaksa retur itu diperiksa fisik (SPK Inspeksi) "
-             "sebelum kredit/ganti diberikan; `claimable` menandai keluhan yang "
-             "wajar diteruskan sebagai klaim ke supplier.",
+        hint="Sebab keluhan yang bisa dipilih saat mencatat retur pelanggan. “Wajib diperiksa "
+             "fisik?” memaksa retur diperiksa lewat SPK Inspeksi sebelum kredit/ganti diberikan; "
+             "“Bisa diklaim ke supplier?” menandai keluhan yang wajar diteruskan sebagai klaim "
+             "ke supplier.",
     ),
 }
 

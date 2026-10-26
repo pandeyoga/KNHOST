@@ -46,6 +46,9 @@ const auditRole = (log) => {
   return actorLabel(log.actor) === "Sistem" ? "Sistem" : "—";
 };
 const auditTech = (log) => `Kunci aksi: ${log.action} · ${log.entity_type || "-"}: ${log.entity_id || "-"}`;
+// Fase 4 · R6 (G5-01) — server kini mengirim `doc_number` (nomor dokumen/nama yang bisa dibaca, bukan id teknis):
+// "Pesanan penjualan KSC/SO-00012" alih-alih hanya jenis datanya.
+const auditDoc = (log) => [auditResource(log.entity_type), log.doc_number].filter((x) => x && x !== "—").join(" ") || "—";
 const AUDIT_PAGE = 50;   // X-2 — render bertahap, bukan 500 baris sekaligus
 
 export default function AdminAuditList({ auditLogs = [], scopeEntities = [], onShowDetail }) {
@@ -60,15 +63,17 @@ export default function AdminAuditList({ auditLogs = [], scopeEntities = [], onS
         return (
           <button data-testid={`audit-row-${log.id}`} key={log.id} title={auditTech(log)} type="button"
             className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] interactive-card p-2.5 text-left"
-            onClick={() => onShowDetail({ title: info.label, body: `${actorLabel(log.actor)} · ${auditResource(log.entity_type)}${summary ? ` — ${summary}` : ""}`,
+            onClick={() => onShowDetail({ title: info.label, body: `${actorLabel(log.actor)} · ${auditDoc(log)}${summary ? ` — ${summary}` : ""}`,
               facts: [{ label: "Pelaku", value: actorLabel(log.actor) }, { label: "Peran", value: auditRole(log) },
-                { label: "Jenis data", value: auditResource(log.entity_type) }, { label: "Badan Usaha", value: scopeName || "Tingkat grup" },
+                { label: "Jenis data", value: auditResource(log.entity_type) },
+                ...(log.doc_number ? [{ label: "Nomor / nama", value: log.doc_number }] : []),
+                { label: "Badan Usaha", value: scopeName || "Tingkat grup" },
                 { label: "Waktu", value: formatDateTime(log.timestamp) }] })}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[12.5px] font-semibold">{info.label}</p>
               <p className="text-[10.5px] font-semibold text-[#0058CC]">{formatDateTime(log.timestamp)}</p>
             </div>
-            <p className="mt-0.5 text-[11.5px] text-[#3C3C43]">{[actorLabel(log.actor), auditResource(log.entity_type), scopeName].filter(Boolean).join(" • ")}</p>
+            <p className="mt-0.5 text-[11.5px] text-[#3C3C43]" data-testid={`audit-row-doc-${log.id}`}>{[actorLabel(log.actor), auditDoc(log), scopeName].filter(Boolean).join(" • ")}</p>
             {summary && <p className="mt-1 line-clamp-2 text-[10.5px] text-[#3C3C43]">{summary}</p>}
           </button>
         );
