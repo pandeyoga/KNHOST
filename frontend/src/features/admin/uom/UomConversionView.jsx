@@ -12,9 +12,15 @@
  *   4) Jejak konversi dokumen nyata (PO/PR/penerimaan) — bukti D-07.
  *
  * Nav: Produk & Harga → Konversi Satuan (admin & manager; ubah butuh izin uom:update).
+ *
+ * Fase 3 · P2 (D-21) — layar UTAMA "Satuan & Konversi" (`md-uoms`; alias `uom-conversions`). Dulu md-uoms merender
+ * daftar master UOM (AdminView) dengan layar ini disisipkan di bawahnya → satuan tampil di dua daftar dengan nama &
+ * faktor berbeda. Kini satu tabel "Satuan & faktor" (`UomUnitsPanel`: Satuan baru · Ubah faktor) + aturan konversi
+ * antar satuan (kemasan, formula, faktor tetap yang belum tampil sebagai faktor satuan). L-03: pop-up aturan →
+ * `FormModal`.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Calculator, Plus, RefreshCw, Ruler, X } from "lucide-react";
+import { Calculator, Plus, RefreshCw, Ruler } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import DecimalInput from "../../../components/DecimalInput";
 import KNSelect from "../../../components/KNSelect";
@@ -22,6 +28,9 @@ import { OptionTabs } from "../../../components/ListControls";
 import UomInputConvert from "../../../components/UomInputConvert";
 import useUomConversions, { invalidateUomCache } from "../../../hooks/useUomConversions";
 import { RuleTable, StatCards, UsageTable } from "./UomConversionParts";
+import UomUnitsPanel, { buildUnitRows } from "./UomUnitsPanel";
+import FormModal from "../../../components/FormModal";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import ConfigRedirectCard from "../../settings/config/ConfigRedirectCard";
 import useListSearch from "@/hooks/useListSearch";
 import { can } from "../../../config/roles";
@@ -31,8 +40,9 @@ const EMPTY_RULE = { from_unit: "", to_unit: "", kind: "fixed", factor: "", form
                      note: "", status: "active" };
 
 export default function UomConversionView({ user, products = [] }) {
-  const { units, dimensions, kinds, formulas, settings, unitOptions } = useUomConversions();
+  const { catalog, reload, units, dimensions, kinds, formulas, settings, unitOptions } = useUomConversions();
   const canEdit = can(user?.permissions, "uom", "update");   // Sisir gerbang peran (2026-10-20) — tulis /uom-conversions/rules
+  const canCreate = can(user?.permissions, "uom", "create");
 
   const [rules, setRules] = useState([]);
   const [usage, setUsage] = useState([]);
@@ -61,10 +71,13 @@ export default function UomConversionView({ user, products = [] }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const shown = useMemo(() => rules.filter((r) =>
-    (!filter.dimension || r.dimension === filter.dimension)
+  // D-21 — faktor tetap yang sudah tampil sebagai "faktor ke satuan dasar" di tabel Satuan & faktor tidak diulang.
+  const usedRuleIds = useMemo(() => buildUnitRows(catalog?.units || [], catalog?.units_master || [], rules,
+    catalog?.dimensions || []).usedRuleIds, [catalog, rules]);
+  const shown = useMemo(() => rules.filter((r) => !usedRuleIds.has(r.id)
+    && (!filter.dimension || r.dimension === filter.dimension)
     && (!filter.kind || r.kind === filter.kind)
-    && (!filter.status || r.status === filter.status)), [rules, filter]);
+    && (!filter.status || r.status === filter.status)), [rules, filter, usedRuleIds]);
   const srch = useListSearch(shown, null, { testId: "uom-rules", pageSize: 30, placeholder: "Cari satuan / dimensi / jenis…" });
 
   async function submitRule() {    setModalErr("");
@@ -128,14 +141,15 @@ export default function UomConversionView({ user, products = [] }) {
 
   return (
     <div data-testid="uom-conversion-view" className="space-y-3">
+      <DesktopOnlyNotice testId="uom-desktop-notice" what="Satuan & Konversi" />
       <div className="section-card">
         <div className="section-head">
           <div className="min-w-0">
             <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
-              <Ruler size={14} className="text-[#0058CC]" /> Konversi Satuan (Global)
+              <Ruler size={14} className="text-[#0058CC]" /> Satuan &amp; Konversi (Global)
             </h2>
             <p className="text-[11px] text-[#6B6B73]">
-              Satu daftar aturan untuk semua produk — dipakai PR, PO, penerimaan barang, dan
+              Satu daftar satuan & aturan untuk semua produk — dipakai PR, PO, penerimaan barang, dan
               perhitungan makloon. Setiap konversi menyimpan <b>jejak</b> (faktor + sumber)
               sebagai aturan tetap perusahaan.
             </p>
@@ -220,12 +234,18 @@ export default function UomConversionView({ user, products = [] }) {
             </div>
           </div>
 
+          {/* D-21 — satu tabel satuan + faktornya (master satuan / aturan / satuan dasar) */}
+          <UomUnitsPanel catalog={catalog} rules={rules} canCreate={canCreate} canEdit={canEdit}
+            onEditRule={(r) => { setModal({ mode: "edit", data: { ...r, factor: String(r.factor ?? "").replace(".", ",") } }); setModalErr(""); }}
+            onChanged={async () => { await reload(); await load(); }} />
+
           {/* Tabel aturan */}
           <div className="rounded-md border border-[#EFF0F2] bg-white">
             <div className="flex flex-wrap items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
-                Aturan Konversi
+                Aturan Konversi antar Satuan
               </span>
+              <span className="text-[11px] text-[#8E8E93]">kemasan · formula · faktor tetap lain</span>
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
                 <KNSelect data-testid="uom-filter-dimension" className="field !py-1 !text-[11px] w-[130px]"
                   value={filter.dimension} placeholder="Semua dimensi"
@@ -269,30 +289,14 @@ export default function UomConversionView({ user, products = [] }) {
         </div>
       </div>
 
-      {modal && (
-        <div className="modal-overlay" data-testid="uom-rule-modal">
-          <div className="modal-card">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="modal-title">
-                  {modal.mode === "create" ? "Tambah Aturan Konversi" : "Ubah Aturan Konversi"}
-                </p>
-                <p className="modal-subtitle">
-                  Aturan berlaku <b>global</b> untuk semua produk. Faktor per produk (mis. 1 roll
-                  = 50 yard untuk produk tertentu) tetap diisi di master produk dan menang atas
-                  aturan global.
-                </p>
-              </div>
-              <button data-testid="uom-rule-modal-close" className="icon-button"
-                onClick={() => setModal(null)} aria-label="Tutup"><X size={15} /></button>
-            </div>
-            {modalErr && (
-              <div className="notice-bar danger" data-testid="uom-rule-modal-error">
-                <span>{modalErr}</span><button onClick={() => setModalErr("")}>×</button>
-              </div>
-            )}
-            <div className="mt-2 grid gap-2">
-              <div className="grid grid-cols-2 gap-2">
+      <FormModal open={!!modal} onClose={() => setModal(null)} testId="uom-rule-modal" icon={Ruler} size="md"
+        title={modal?.mode === "create" ? "Tambah Aturan Konversi" : "Ubah Aturan Konversi"}
+        subtitle="Aturan berlaku global untuk semua produk. Faktor per produk (mis. 1 roll = 50 yard untuk produk tertentu) tetap diisi di master produk dan menang atas aturan global."
+        onSubmit={submitRule} error={modalErr} submitLabel="Simpan Aturan" submitTestId="uom-rule-submit"
+        submitDisabled={!modal?.data?.from_unit || !modal?.data?.to_unit}>
+        {modal && (
+            <div className="grid gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <label className="grid gap-1">
                   <span className="text-[11px] font-semibold text-[#3C3C43]">Satuan asal *</span>
                   <KNSelect data-testid="uom-rule-from" className="field" searchable
@@ -343,15 +347,8 @@ export default function UomConversionView({ user, products = [] }) {
                   onChange={(e) => setModal({ ...modal, data: { ...modal.data, note: e.target.value } })} />
               </label>
             </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setModal(null)}>Batal</button>
-              <button data-testid="uom-rule-submit" className="primary-button"
-                disabled={!modal.data.from_unit || !modal.data.to_unit}
-                onClick={submitRule}>Simpan Aturan</button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </FormModal>
     </div>
   );
 }

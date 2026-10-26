@@ -1,4 +1,6 @@
 import { useState } from "react";
+import PageTabs from "../../components/PageTabs";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import GrnProfilesPanel from "../wms/grn/GrnProfilesPanel";
 import GrnOcrSamplesPanel from "../wms/grn/GrnOcrSamplesPanel";
 import GrnOcrUsagePanel from "../wms/grn/GrnOcrUsagePanel";
@@ -20,12 +22,10 @@ export default function ReceivingOcrSettings({ currentUser }) {
   if (!active) return <p className="empty-state">Anda tidak memiliki akses ke pengaturan penerimaan.</p>;
   return (
     <div data-testid="receiving-ocr-settings" className="space-y-3">
-      <div className="tab-bar">
-        {tabs.map((t) => (
-          <button key={t.key} type="button" data-testid={`ocr-settings-tab-${t.key}`}
-            className={`tab-button ${active.key === t.key ? "active" : ""}`} onClick={() => setTab(t.key)}>{t.label}</button>
-        ))}
-      </div>
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
+      {/* Fase 3 · P2 (L-01) — bilah tab baku (PageTabs); testid `ocr-settings-tab-<key>` tetap. */}
+      <PageTabs testId="ocr-settings-tabs" tabTestId={(k) => `ocr-settings-tab-${k}`} value={active.key} onChange={setTab}
+        ariaLabel="Penerimaan & OCR" tabs={tabs.map((t) => ({ key: t.key, label: t.label }))} />
       <active.Panel />
     </div>
   );

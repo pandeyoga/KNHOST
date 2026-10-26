@@ -14,6 +14,8 @@ import { can } from "../../../config/roles";
 import { Building2, Users, ClipboardCheck, Plus, RefreshCw, UserCheck, ShieldCheck } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
+import PageTabs from "../../../components/PageTabs";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import EntityList from "./EntityList";
 import EntityWizard from "./EntityWizard";
 import EntityDetailDrawer from "./EntityDetailDrawer";
@@ -72,6 +74,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
 
   return (
     <div data-testid="entities-access-view">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       {/* Pita penjelas: layar ini mengatur SIAPA boleh melihat APA. */}
       <div
         data-testid="entities-access-intro"
@@ -91,24 +94,12 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
         </div>
       </div>
 
+      {/* Fase 3 · P2 (L-01) — pil buatan sendiri → PageTabs baku (tingkat 2); testid `entities-access-tab-<key>` tetap. */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-testid={`entities-access-tab-${t.key}`}
-              onClick={() => setTab(t.key)}
-              className={`tab-pill inline-flex items-center gap-1.5 ${active ? "active" : ""}`}
-            >
-              <Icon size={13} /> {t.label}
-            </button>
-          );
-        })}
+        <div className="min-w-0 flex-1">
+          <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
+            ariaLabel="Badan Usaha & Akses" tabs={TABS.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
+        </div>
         <div className="ml-auto flex items-center gap-2">
           {tab === "entities" && canCreateEntity && (
             <button

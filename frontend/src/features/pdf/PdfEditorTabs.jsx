@@ -1,7 +1,11 @@
 // PdfEditorTabs — panel editor (6 tab) untuk konfigurasi template PDF + branding entitas.
 // Semua kontrol memakai kelas/komponen existing (field/form-input/btn-*, KNSelect, Switch).
-import { useRef } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+// Fase 3 · P2 (L-01) — layar ini kini tab "Desainer PDF" di Template Dokumen (tingkat 1 = hub Dokumen & Cetak,
+// tingkat 2 = PageTabs Template Dokumen). Bagian editor (Naskah/Layout/Kop/…) = tingkat 3 → FilterChips, bukan
+// pil-tab ke-3; testid `pdf-tab-<id>` dipertahankan.
+import { useRef, useState } from "react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import FilterChips from "../../components/FilterChips";
 import { Switch } from "@/components/ui/switch";
 import KNSelect from "../../components/KNSelect";
 import {
@@ -80,6 +84,7 @@ export default function PdfEditorTabs({
   onImageFile, newImages = {}, placeholders = [], defaultEffective = null, isDefault = false,
 }) {
   const fileRef = useRef(null);
+  const [part, setPart] = useState("layout");
   const cf = config || {};
   const patchNested = (group, k, v) => patch(group, { ...(cf[group] || {}), [k]: v });
   const tb = cf.table || {};
@@ -111,15 +116,12 @@ export default function PdfEditorTabs({
 
   return (
     <section className="section-card" data-testid="pdf-editor">
-      <Tabs defaultValue="layout" className="w-full">
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1.5 bg-transparent p-2 border-b border-[#EDEEF1]">
-          {EDITOR_TABS.map((t) => (
-            <TabsTrigger key={t.id} value={t.id} data-testid={`pdf-tab-${t.id}`}
-              className="rounded-full border border-[#E5E5EA] bg-[#F5F5F7] px-3.5 py-1.5 text-[12.5px] font-medium text-[#6B6B73] shadow-none data-[state=active]:border-[#007AFF] data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-none">
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <Tabs value={part} onValueChange={setPart} className="w-full">
+        <div className="border-b border-[#EDEEF1] p-2">
+          <FilterChips testId="pdf-editor-parts" chipTestId={(k) => `pdf-tab-${k}`} ariaLabel="Bagian editor PDF"
+            value={part} onChange={(k) => k && setPart(k)}
+            options={EDITOR_TABS.map((t) => ({ key: t.id, label: t.label }))} />
+        </div>
 
         <div className="section-body grid gap-3">
           {/* ── NASKAH (placeholder) ───────────────────────── */}

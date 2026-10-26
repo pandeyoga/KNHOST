@@ -5,6 +5,7 @@ import { apiErrorText } from "../../../utils/apiError";
 import { can } from "../../../config/roles";
 import { invalidateDomainEnums } from "../../../hooks/useDomainEnums";
 import { askReason } from "../../../services/confirmService";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 
 const EMPTY = { code: "", name: "", rank: "", description: "", max_points: "" };
 
@@ -77,6 +78,8 @@ export default function GradeMasterView({ currentUser }) {
     } catch (e) { setErr(apiErrorText(e, "Gagal menambah grade.")); }
   };
   return (
+    <>
+    <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
     <section className="section-card" data-testid="grade-master-view">
       <div className="section-head"><div className="flex items-center gap-2"><Award size={15} className="text-[#0058CC]" /><h2>Master Grade Mutu</h2></div></div>
       <p className="px-3 pt-2 text-[11.5px] text-[#3C3C43]">Urutan mutu memakai rank (1 = terbaik). Grade nonaktif tidak bisa dipilih di form baru mana pun; roll & dokumen lama tetap terbaca. Batas poin 4-point opsional — kosong = pakai ambang Pengaturan QC.</p>
@@ -105,5 +108,6 @@ export default function GradeMasterView({ currentUser }) {
       {msg && <p className="px-3 pb-3 text-[11px] text-[#126E2C]" data-testid="grade-master-msg">{msg}</p>}
       {err && <p className="px-3 pb-3 text-[11px] text-[#C0392B]" data-testid="grade-master-error">{err}</p>}
     </section>
+    </>
   );
 }

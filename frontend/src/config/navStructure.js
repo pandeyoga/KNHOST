@@ -50,6 +50,8 @@ import {
   FileSpreadsheet,
   RotateCcw,
   ShieldCheck,
+  Building2,
+  Database,
 } from "lucide-react";
 
 // HUB TABS (tab per hub) dipindah ke `hubTabs.js` — re-export agar impor lama tetap jalan.
@@ -277,7 +279,8 @@ export const NAV_STRUCTURE = [
       // dulu menu terpisah yang fungsinya sama dengan tab Barang Masuk. Finance hanya melihat tab itu.
       { id: "wms-operations",     label: "Operasi Gudang", icon: Warehouse, roles: ["admin", "warehouse", "manager", "warehouse_admin", "finance"], hub: "wms-operations" },
       { id: "stock-atp",          label: "Stok & ATP",           icon: Boxes,     roles: ["admin", "warehouse", "manager", "sales"], hub: "stock-atp" },
-      { id: "production",         label: "Produksi",  icon: Factory,   roles: ["admin", "manager", "warehouse"] },
+      // Fase 3 · P8 (D-25) — "Produksi" diperjelas: BOM produksi in-house (resep makloon ada di Master Pembelian).
+      { id: "production",         label: "BOM Produksi In-House",  icon: Factory,   roles: ["admin", "manager", "warehouse"] },
       { id: "wms-locations",      label: "Lokasi Rak",     icon: MapPin,    roles: ["admin", "warehouse", "manager"] },
       { id: "md-warehouses",      label: "Data Gudang",      icon: Warehouse, roles: ["admin", "warehouse", "manager"] },
       // Pengiriman (ekspedisi / armada sendiri, foto muat & POD). Sopir hanya melihat item ini.
@@ -389,16 +392,35 @@ export const NAV_STRUCTURE = [
     hub:   "document-center",
     view:  "document-center",
   },
+  // ── PENGATURAN — fase 3 · P2, keputusan pemilik P16-K1 (mock UAT24-F5 §P16.3): dulu SATU menu dengan ±20 tab
+  // berseksi; kini GRUP berisi 7 kelompok (Perusahaan & Akun · Persetujuan · Kebijakan per Domain · Master Data ·
+  // Dokumen & Cetak · Notifikasi & Penjadwal · Integrasi & Sistem). groupId TETAP `settings-hub` (ROLE_NAV
+  // sales_admin & katalog modul admin tetap sah); alamat lama `?view=settings-hub` = alias legacy (viewAliases.js).
+  // Editor lama mempertahankan view id-nya — hanya pindah hub. warehouse_admin: Gudang & Mutu (Penerimaan & OCR,
+  // Master Grade Mutu); sales_admin (ROLE_NAV): Penjualan › Kebijakan Retur + Gudang & Mutu › Master Grade Mutu.
+  // Sub-judul memakai urutan kunci `type, label, id` supaya pengurai baris `id, label` (audit_ia) tak menganggapnya menu.
   {
-    type:  "standalone",
-    id:    "settings-hub",
-    label: "Pengaturan",
-    icon:  Settings,
-    // manager: HANYA tab "Penjadwal & Notifikasi" (lihat + jalankan job, tanpa configure)
-    // selaras permissions_config resource `scheduler`; tab lain tetap admin-only.
-    // warehouse_admin: hanya tab Gudang › Penerimaan & OCR (dulu tab di Barang Masuk).
-    roles: ["admin", "manager", "warehouse_admin"],
-    hub:   "settings-hub",
+    type:    "group",
+    groupId: "settings-hub",
+    label:   "Pengaturan",
+    icon:    Settings,
+    roles:   ["admin", "manager", "warehouse_admin"],
+    items: [
+      { id: "settings-company",    label: "Perusahaan & Akun",      icon: Building2,    roles: ["admin", "manager"], hub: "settings-company" },
+      { id: "settings-approval",   label: "Persetujuan",            icon: ShieldCheck,  roles: ["admin", "manager"], hub: "settings-approval" },
+      { type: "heading", label: "Kebijakan per Domain", id: "h-settings-domain" },
+      { id: "settings-sales",      label: "Penjualan",              icon: ShoppingCart, roles: ["admin", "manager"], hub: "settings-sales" },
+      { id: "settings-warehouse",  label: "Gudang & Mutu",          icon: Warehouse,    roles: ["admin", "manager", "warehouse_admin"], hub: "settings-warehouse" },
+      { id: "settings-purchasing", label: "Pembelian & Produksi",   icon: Factory,      roles: ["admin", "manager"], hub: "settings-purchasing" },
+      { id: "settings-finance",    label: "Keuangan & Pajak",       icon: Landmark,     roles: ["admin", "manager"], hub: "settings-finance" },
+      { id: "settings-hr",         label: "SDM",                    icon: Users,        roles: ["admin", "manager"], hub: "settings-hr" },
+      { id: "settings-rnd",        label: "R&D",                    icon: FlaskConical, roles: ["admin", "manager"], hub: "settings-rnd" },
+      { type: "heading", label: "Data, Dokumen & Sistem", id: "h-settings-system" },
+      { id: "settings-masters",    label: "Master Data",            icon: Database,     roles: ["admin", "manager"], hub: "settings-masters" },
+      { id: "settings-documents",  label: "Dokumen & Cetak",        icon: Printer,      roles: ["admin", "manager"], hub: "settings-documents" },
+      { id: "settings-notify",     label: "Notifikasi & Penjadwal", icon: BellRing,     roles: ["admin", "manager"], hub: "settings-notify" },
+      { id: "settings-system",     label: "Integrasi & Sistem",     icon: Cpu,          roles: ["admin", "manager"], hub: "settings-system" },
+    ],
   },
   {
     type:  "standalone",

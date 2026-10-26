@@ -140,6 +140,9 @@ def parse_nav_config():
     # isolate NAV_STRUCTURE = [ ... ]; (mendukung 'export const')
     m = re.search(r'(?:export\s+)?const NAV_STRUCTURE\s*=\s*\[(.*?)\n\];', content, re.S)
     body = m.group(1) if m else content
+    # Fase 3 · P2 — sub-judul grup `{ type: "heading", label, id }` (P1, dipakai grup Pengaturan P16-K1) bukan menu.
+    # Tanpa dibuang, pemecah `type:` di bawah memotong grup di sub-judul pertama sehingga item sesudahnya tak diperiksa.
+    body = re.sub(r'\{\s*type:\s*"heading"[^}]*\},?', "", body)
     entries = []
     # split per-entry by 'type:' marker (items inside groups have no 'type:')
     chunks = body.split("type:")

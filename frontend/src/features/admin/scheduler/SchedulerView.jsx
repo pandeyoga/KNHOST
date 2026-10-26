@@ -17,6 +17,7 @@ import { KpiCard, EmptyState } from "../../finance/financeShared";
 import { Modal, JobTable, RunTable, JobDetail, schedPerms } from "./SchedulerParts";
 import { EscalationPanel, DigestPreview } from "./SchedulerPolicy";
 import { WaSettingsPanel, WaOutboxTable } from "./SchedulerWa";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";   // fase 3 · P2 (L-04 kelas C)
 
 const TABS = [
   { k: "jobs", label: "Job Terjadwal", icon: AlarmClock },
@@ -205,6 +206,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
 
   return (
     <div className="space-y-4" data-testid="scheduler-view">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3EAFB]">

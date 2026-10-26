@@ -255,7 +255,9 @@ export default function ImpactPicker({ selectedEntity, canApply }) {
               ) : null}
             </div>
           ) : (
-            <p className="cfg-readonly">Hanya admin/manager yang boleh menerapkan koreksi harga.</p>
+            <p className="cfg-readonly" data-testid="cfg-impact-readonly">
+              Menerapkan koreksi butuh izin ubah master produk — Anda hanya dapat melihat daftar dampaknya.
+            </p>
           )}
         </>
       ) : null}

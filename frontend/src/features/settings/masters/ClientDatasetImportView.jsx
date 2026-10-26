@@ -4,6 +4,8 @@ import axios, { API } from "../../../services/apiClient";
 import AddFabricTypeInline from "./AddFabricTypeInline";
 import { invalidateDomainEnums } from "../../../hooks/useDomainEnums";
 import { formatDateTime } from "../../../utils/formatters";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
+import { askConfirm } from "../../../services/confirmService";
 
 const ST = { ok: "Akan diubah", same: "Sudah sama", error: "Ditolak" };
 const ST_DONE = { ok: "Diubah", same: "Sudah sama", error: "Ditolak" };
@@ -39,7 +41,10 @@ export default function ClientDatasetImportView() {
     finally { setBusy(false); }
   };
   const act = async (id, kind) => {
-    if (kind === "rollback" && !window.confirm("Batalkan impor ini? Nilai sebelum impor dipulihkan.")) return;
+    if (kind === "rollback" && !(await askConfirm({
+      title: "Batalkan impor ini?", message: "Nilai sebelum impor dipulihkan.",
+      confirmLabel: "Batalkan impor", danger: true, testId: "client-dataset-rollback-confirm",
+    }))) return;
     setBusy(true); setErr("");
     try {
       await axios.post(`${API}/client-dataset/batches/${id}/${kind}`);
@@ -54,6 +59,7 @@ export default function ClientDatasetImportView() {
   const unk = rep?.unknown_values || {};
   return (
     <section className="space-y-3" data-testid="client-dataset-import">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       <div className="rounded-xl border border-[#E5E5EA] bg-white p-4">
         <h2 className="text-[15px] font-bold">Impor Dataset Klien — artikel, tahap, jenis kain, supplier/warna</h2>
         <p className="mt-1 text-[12px] text-[#6B6B73]">

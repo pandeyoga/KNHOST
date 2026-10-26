@@ -60,6 +60,8 @@ export const COLUMNS = {
     { key: "code", label: "Kode", mono: true },
     { key: "label", label: "Nama kategori" },
     { key: "account_code", label: "Akun buku besar", mono: true },
+    // Fase 3 · P2 (D-02) — status ikut tampil: editor tunggal Kategori Beban memuat baris nonaktif (bisa diaktifkan lagi).
+    { key: "active", label: "Status", labels: { true: "Aktif", false: "Nonaktif" } },
   ],
   "document-templates": [
     { key: "document_type", label: "Jenis dokumen", labels: TEMPLATE_DOC_LABELS },
@@ -167,6 +169,8 @@ export const CREATE_FIELDS = {
     { key: "code", label: "Kode", required: true, placeholder: "mis. bensin_operasional" },
     { key: "label", label: "Nama kategori", required: true, placeholder: "Bensin Operasional" },
     { key: "account_code", label: "Akun buku besar", required: true, placeholder: "6-4300" },
+    // Fase 3 · P2 (D-02) — aktif/nonaktif lewat form ubah (dulu centang per baris di editor lama).
+    { key: "active", label: "Aktif (bisa dipilih di LPJ)", type: "checkbox", default: true },
   ],
   "document-templates": [
     { key: "document_type", label: "Jenis dokumen", required: true, placeholder: "surat_jalan" },

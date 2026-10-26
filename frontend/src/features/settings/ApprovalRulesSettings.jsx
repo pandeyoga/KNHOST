@@ -2,14 +2,23 @@
  * Approval Rules Settings — matriks ambang persetujuan per jenis dokumen.
  * Skema TUNGGAL = skema mesin: {doc_type, entity_id, min_amount, max_amount,
  * required_role, sort, active, is_percent}.
+ *
+ * Fase 3 · P2 (D-04, keputusan pemilik 26 Okt) — Pengaturan › Persetujuan › Aturan Persetujuan:
+ *  · SATU jalan aktif/nonaktif: tombol "Nonaktifkan/Aktifkan" + dialog konfirmasi (centang "Aktif" di form dicabut;
+ *    lencana status hanya label, tanpa ikon sampah);
+ *  · manajer MEMBACA aturan di sini (dulu hanya lewat Master per Badan Usaha, yang kini menautkan ke sini) — tombol
+ *    buat/ubah/nonaktifkan hanya untuk izin settings.manage (server tetap penjaga: GET = settings.view);
+ *  · L-02: kepala halaman baku (`PageHeader`) + tabel di `section-card`; L-04 kelas C: banner desktop di HP.
  */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
 import {
-  AlertCircle, CheckCircle2, Edit2, Loader2, Plus, Power, Settings, X
+  AlertCircle, CheckCircle2, Edit2, Eye, Loader2, Plus, Power, Settings, X
 } from "lucide-react";
 import ApprovalRuleForm from "./ApprovalRuleForm";
 import FormModal from "../../components/FormModal";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import { PageHeader } from "../../components/ListPageParts";
 import { docTypeLabel, fmtRange, roleLabel } from "./approvalRulesConstants";
 import { askConfirm } from "@/services/confirmService";
 import { useEntityScope } from "../../context/EntityScopeContext";
@@ -155,18 +164,9 @@ export default function ApprovalRulesSettings({ currentUser }) {
     }
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="view-container">
-        <div className="notice-bar danger">
-          <AlertCircle size={14} /> Mengelola aturan persetujuan butuh izin kelola pengaturan (settings.manage).
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div data-testid="approval-rules-settings" className="view-container">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       {notice && (
         <div className="notice-bar success">
           <CheckCircle2 size={14} /> {notice}
@@ -181,28 +181,21 @@ export default function ApprovalRulesSettings({ currentUser }) {
         </div>
       )}
 
-      <div className="view-header">
-        <div>
-          <h1 className="view-title">
-            <Settings size={20} /> Aturan Persetujuan
-          </h1>
-          <p className="view-subtitle">
-            Rentang nilai dokumen &amp; peran yang berwenang memutuskan — dibaca langsung oleh mesin persetujuan
-          </p>
-        </div>
-        {!showCreateForm && (
-          <button
-            data-testid="create-rule-btn"
-            className="primary-button"
-            onClick={() => setShowCreateForm(true)}
-          >
+      <PageHeader icon={Settings} title="Aturan Persetujuan" testId="approval-rules-head"
+        subtitle="Rentang nilai dokumen & peran yang berwenang memutuskan — dibaca langsung oleh mesin persetujuan"
+        actions={isAdmin && !showCreateForm ? (
+          <button data-testid="create-rule-btn" className="primary-button" onClick={() => setShowCreateForm(true)}>
             <Plus size={14} /> Buat Aturan Baru
           </button>
-        )}
-      </div>
+        ) : null} />
+      {!isAdmin && (
+        <div className="notice-bar" data-testid="approval-rules-readonly">
+          <Eye size={14} /> Mode baca — mengubah aturan persetujuan butuh izin kelola pengaturan.
+        </div>
+      )}
 
       <FormModal
-        open={showCreateForm}
+        open={showCreateForm && isAdmin}
         onClose={resetForm}
         title={editingRule ? "Ubah Aturan Persetujuan" : "Aturan Persetujuan Baru"}
         subtitle="Rentang nilai dokumen & peran yang berwenang memutuskan"
@@ -229,13 +222,14 @@ export default function ApprovalRulesSettings({ currentUser }) {
         <div className="empty-state">
           <Settings size={32} style={{ opacity: 0.3 }} />
           <p>Belum ada aturan persetujuan.</p>
-          {!showCreateForm && (
+          {isAdmin && !showCreateForm && (
             <button className="primary-button" onClick={() => setShowCreateForm(true)}>
               <Plus size={14} /> Buat Aturan Pertama
             </button>
           )}
         </div>
       ) : (
+        <section className="section-card">
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -246,7 +240,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
                 <th>Peran Penyetuju</th>
                 <th className="text-center">Urutan</th>
                 <th>Status</th>
-                <th></th>
+                {isAdmin && <th className="text-right">Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -282,31 +276,35 @@ export default function ApprovalRulesSettings({ currentUser }) {
                       {rule.active !== false ? "Aktif" : "Nonaktif"}
                     </span>
                   </td>
+                  {isAdmin && (
                   <td>
-                    <div className="flex gap-2">
+                    <div className="flex justify-end gap-2">
                       <button
                         data-testid={`edit-rule-${rule.id}`}
                         className="icon-button"
+                        title="Ubah aturan"
+                        aria-label="Ubah aturan"
                         onClick={() => handleEdit(rule)}
                       >
                         <Edit2 size={14} />
                       </button>
+                      {/* D-04 — satu-satunya jalan aktif/nonaktif (dialog konfirmasi di toggleActive). */}
                       <button
                         data-testid={`delete-rule-${rule.id}`}
-                        className={`icon-button ${rule.active !== false ? "danger" : ""}`}
-                        title={rule.active !== false ? "Nonaktifkan aturan" : "Aktifkan aturan"}
-                        aria-label={rule.active !== false ? "Nonaktifkan aturan" : "Aktifkan aturan"}
+                        className={`secondary-button text-[11px] ${rule.active !== false ? "!text-[#C0392B]" : ""}`}
                         onClick={() => toggleActive(rule)}
                       >
-                        <Power size={14} />
+                        <Power size={12} /> {rule.active !== false ? "Nonaktifkan" : "Aktifkan"}
                       </button>
                     </div>
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </section>
       )}
     </div>
   );

@@ -17,6 +17,8 @@
  *
  * App.js yang mendengarkan event ini, lalu berpindah view ke `settings-config`
  * dan meneruskan fokus ke <SettingsHub focusKey focusGroup focusNonce />.
+ * Fase 3 · P2 (P16-K1) — tujuannya kini layar DOMAIN yang memuat kelompok itu (`settings-cfg-*`, lihat
+ * `configGroupViews.js` + `hooks/useDeepLinks.js`); "Semua pengaturan" hanya bila peran tak boleh membukanya.
  */
 
 /** Nama event global. Satu konstanta supaya tidak ada salah ketik di 2 tempat. */
@@ -50,13 +52,36 @@ export const LEGACY_DEEPLINK = {
   role_home: "tampilan",
   finance: "keuangan-dasar",
   sales: "harga-diskon",
+  // Fase 3 · P2 — prefiks registri yang dulu tak terpetakan (deep link berbasis kunci jatuh ke kelompok pertama).
+  // Prefiks yang dipakai >1 kelompok (finance, inventory, purchasing, sales) tetap ke kelompok mayoritasnya;
+  // pemanggil yang tahu kelompoknya mengirim `group` sendiri.
+  ai: "asisten-analitik",
+  antar_entitas: "antar-entitas",
+  bank: "bank",
+  case: "kasus",
+  catalog: "stok-satuan",
+  contra_bon: "kontrabon",
+  cutting: "stok-satuan",
+  docref: "dokumen",
+  notif: "notifikasi",
+  payment: "uang-masuk",
+  periode: "keuangan-dasar",
+  pos: "tampilan",
+  pricelist: "harga-diskon",
+  returns: "retur",
+  rnd: "rnd",
+  saga: "keuangan-dasar",
+  sales_admin: "persetujuan",
+  wms: "stok-satuan",
 };
 
-/** Semua id kelompok yang valid (dipakai untuk membedakan key vs group). */
+/** Semua id kelompok yang valid (dipakai untuk membedakan key vs group). Cermin `backend/config_registry.py`. */
 export const CONFIG_GROUP_IDS = [
   "uang-masuk", "harga-diskon", "persetujuan", "pajak", "keuangan-dasar",
   "pembelian", "penerimaan", "stok-satuan", "kualitas", "lot", "makloon",
   "sdm", "tampilan", "amandemen",
+  // Fase 3 · P2 — kelompok yang lahir sesudah daftar ini ditulis (G-1..L08).
+  "dokumen", "rnd", "bank", "kasus", "kontrabon", "antar-entitas", "notifikasi", "asisten-analitik", "retur",
 ];
 
 /** Kelompok mana yang memuat sebuah kunci. Mengembalikan "" bila tak dikenal. */

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";   // fase 3 · P2 (L-04 kelas C)
 import KNSelect from "../../../components/KNSelect";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import {
@@ -89,6 +90,7 @@ export default function DomainRegistryView() {
 
   return (
     <div data-testid="domain-registry-view" className="grid gap-3">
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Registri Domain" />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi testId="domain-kpi-enums" label="Daftar Pilihan Baku" value={enumNames.length}
           hint={`${activeEnums.length} sudah dipakai sistem`} icon={Layers3} />

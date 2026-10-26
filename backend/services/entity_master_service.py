@@ -70,7 +70,8 @@ MASTERS: Dict[str, MasterSpec] = {
         fields=("code", "label", "account_code", "sort", "active", "notes"),
         sort=(("sort", 1), ("code", 1)),
         hint="Memetakan pengeluaran kas kecil & penyelesaian uang muka ke akun buku besar. "
-             "Akun tujuan bisa berbeda antar badan usaha.",
+             "Akun tujuan bisa berbeda antar badan usaha. Dikelola di "
+             "Pengaturan › Keuangan & Pajak › Kategori Beban.",
     ),
     "document-templates": MasterSpec(
         kind="document-templates", collection="document_templates",
@@ -82,7 +83,8 @@ MASTERS: Dict[str, MasterSpec] = {
         sort=(("document_type", 1),),
         active_field="status",
         hint="Kop surat & tata letak Surat Jalan / Invoice. Tiap badan usaha punya nama, "
-             "alamat, dan logo sendiri sehingga template ini wajib bisa ditimpa.",
+             "alamat, dan logo sendiri sehingga template ini wajib bisa ditimpa. Dikelola di "
+             "Pengaturan › Dokumen & Cetak › Template Dokumen.",
     ),
     "sales-return-policies": MasterSpec(
         kind="sales-return-policies", collection="sales_return_policies",
@@ -94,16 +96,19 @@ MASTERS: Dict[str, MasterSpec] = {
         sort=(("created_at", -1),),
         active_field="status",
         manage=False, screen="return-policies",
-        hint="Jendela retur, biaya restocking, dan kewajiban inspeksi. Dikelola di layar "
-             "Kebijakan Retur.",
+        # Fase 3 · P2 (P16-K1) — letak layar mengikuti menu Pengaturan baru.
+        hint="Jendela retur, biaya restocking, dan kewajiban inspeksi. Dikelola di "
+             "Pengaturan › Penjualan › Kebijakan Retur.",
     ),
     "incentive-rates": MasterSpec(
         kind="incentive-rates", collection="incentive_rates", label="Tarif Insentif Sales",
         key_field="category", name_field="category", id_prefix="irate",
         fields=(),
         sort=(("category", 1),),
-        manage=False, screen="crm",
-        hint="Tarif komisi per kategori produk. Dikelola di layar CRM › Tarif Insentif.",
+        # Fase 3 · P2 (D-03) — dulu menunjuk "CRM › Tarif Insentif" () padahal layarnya di Pengaturan.
+        manage=False, screen="incentive-rates",
+        hint="Tarif komisi per kategori produk + bawaan komisi. Dikelola di "
+             "Pengaturan › Penjualan › Komisi & Insentif.",
     ),
     "approval-rules": MasterSpec(
         kind="approval-rules", collection="approval_rules", label="Aturan Persetujuan",
@@ -111,7 +116,8 @@ MASTERS: Dict[str, MasterSpec] = {
         fields=(),
         sort=(("doc_type", 1), ("sort", 1)),
         manage=False, screen="approval-rules",
-        hint="Ambang nilai & peran yang wajib menyetujui. Dikelola di layar Aturan Persetujuan.",
+        hint="Ambang nilai & peran yang wajib menyetujui. Dikelola di "
+             "Pengaturan › Persetujuan › Aturan Persetujuan.",
     ),
     # ── FASE L (2026-08-18) — LINI PRODUK: pembagian kerja MD (woven/knit/printing)
     # yang HARUS bisa bertambah tanpa ubah kode. Dibuat master berlapis supaya satu

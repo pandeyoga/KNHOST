@@ -91,6 +91,11 @@
 
 /* ── Badan: nav kelompok + daftar kartu ──────────────────────────────────── */
 .cfg-body { display: grid; grid-template-columns: 252px 1fr; gap: var(--sp-4); align-items: start; }
+/* Fase 3 · P2 (P16-K1) — layar domain `settings-cfg-*` & Komisi & Insentif: kelompok = chip di atas, tanpa kolom kiri. */
+.cfg-body.cfg-body-single { grid-template-columns: 1fr; }
+.cfg-group-view { display: flex; flex-direction: column; gap: var(--sp-3); }
+.cfg-group-view .filter-chips { margin-top: 2px; }
+.cfg-group-intro { font-size: 12px; color: var(--ink-2, #3c3c43); line-height: 1.5; margin: 0; }
 
 .cfg-groupnav {
   position: sticky; top: calc(var(--topbar-h) + var(--sp-3));

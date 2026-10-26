@@ -3,11 +3,15 @@
  * CRUD kategori produk: list (dengan product_count) + form create/edit + soft-delete.
  * Self-contained: fetch & mutasi via axios + API (path literal). Memanggil `onChanged`
  * setelah mutasi agar form produk (AdminView) refresh opsi dropdown.
+ *
+ * Fase 3 · P2 (L-03) — form yang dulu panel tetap 360 px di kiri (selalu terbuka, mendesak daftar) → pop-up baku
+ * `FormModal` lewat tombol "Kategori baru" / "Ubah" (di HP layar penuh; isian sama).
  */
 import { useCallback, useEffect, useState } from "react";
-import { Save, Power, Pencil, Plus, RefreshCw, Tag, XCircle } from "lucide-react";
+import { Power, Pencil, Plus, RefreshCw, Tag } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
+import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import useUomConversions from "../../hooks/useUomConversions";
@@ -22,6 +26,7 @@ export default function CategoryManager({ onChanged }) {
   const [error, setError] = useState("");
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   // FASE U — satuan dasar kategori dari MASTER satuan (`uoms`). Dulu 5 nilai diketik
@@ -48,7 +53,8 @@ export default function CategoryManager({ onChanged }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const resetForm = () => { setForm(EMPTY); setEditingId(null); setFormError(""); };
+  const resetForm = () => { setForm(EMPTY); setEditingId(null); setFormError(""); setFormOpen(false); };
+  const openCreate = () => { setForm({ ...EMPTY }); setEditingId(null); setFormError(""); setFormOpen(true); };
 
   const startEdit = (row) => {
     setEditingId(row.id);
@@ -57,6 +63,7 @@ export default function CategoryManager({ onChanged }) {
       description: row.description || "", sort_order: row.sort_order || 0, status: row.status || "active",
     });
     setFormError("");
+    setFormOpen(true);
   };
 
   const save = async () => {
@@ -101,21 +108,13 @@ export default function CategoryManager({ onChanged }) {
   const activeRows = srch.pageRows;
 
   return (
-    <section className="grid items-start gap-3 lg:grid-cols-[360px_1fr]" data-testid="category-manager">
-      {/* ─── Form ─── */}
-      <div className="section-card lg:sticky lg:top-3">
-        <div className="section-head">
-          <div className="flex items-center gap-2">
-            <Tag size={15} className="text-[#6B219A]" />
-            <h2>{editingId ? "Ubah Kategori" : "Kategori Baru"}</h2>
-          </div>
-          {editingId && (
-            <button data-testid="category-cancel-edit-button" className="icon-button ml-auto" onClick={resetForm} aria-label="Batal ubah">
-              <XCircle size={14} />
-            </button>
-          )}
-        </div>
-        <div className="section-body grid gap-2">
+    <section className="grid items-start gap-3" data-testid="category-manager">
+      <FormModal open={formOpen} onClose={resetForm} testId="category-form" icon={Tag} size="md"
+        title={editingId ? "Ubah Kategori" : "Kategori Baru"} subtitle="Kategori produk + satuan dasar bawaan untuk produk barunya."
+        onSubmit={save} busy={saving} error={formError}
+        submitLabel={saving ? "Menyimpan…" : editingId ? "Simpan Perubahan" : "Simpan Kategori"}
+        submitTestId="category-save-button" cancelTestId="category-cancel-edit-button">
+        <div className="grid gap-2">
           <label className="field-label" htmlFor="category-name-field">Nama kategori *</label>
           <input id="category-name-field" data-testid="category-name-input" className="field" placeholder="mis. Batik"
             value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -132,7 +131,7 @@ export default function CategoryManager({ onChanged }) {
           <input id="category-description-field" data-testid="category-description-input" className="field" placeholder="Deskripsi singkat"
             value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <label className="field-label" htmlFor="category-sort-field">Urutan tampil</label>
               <input id="category-sort-field" data-testid="category-sort-order-input" className="field" type="number"
@@ -145,27 +144,21 @@ export default function CategoryManager({ onChanged }) {
                 options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }]} />
             </div>
           </div>
-
-          {formError && <p data-testid="category-form-error" className="text-[12px] font-semibold text-[#D14343]">{formError}</p>}
-
-          <div className="flex gap-2 mt-1">
-            <button data-testid="category-save-button" className="primary-button" onClick={save} disabled={saving}>
-              <Save size={14} /> {saving ? "Menyimpan…" : editingId ? "Simpan Perubahan" : "Simpan Kategori"}
-            </button>
-            {editingId && (
-              <button data-testid="category-cancel-edit-button-2" className="secondary-button" onClick={resetForm}>Batal</button>
-            )}
-          </div>
         </div>
-      </div>
+      </FormModal>
 
       {/* ─── List ─── */}
       <div className="section-card">
         <div className="section-head">
           <h2>Daftar Kategori {rows.length > 0 ? `(${rows.length})` : ""}</h2>
-          <button data-testid="category-refresh-button" className="icon-button ml-auto" onClick={load} aria-label="Muat ulang" title="Muat ulang">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button data-testid="category-create-button" className="primary-button" onClick={openCreate}>
+              <Plus size={14} /> Kategori Baru
+            </button>
+            <button data-testid="category-refresh-button" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+          </div>
         </div>
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="category-list-error" />
@@ -179,7 +172,7 @@ export default function CategoryManager({ onChanged }) {
             <div data-testid="category-empty" className="flex flex-col items-center justify-center gap-2 py-10 text-center">
               <Tag size={28} className="text-[#C7C7CC]" />
               <p className="text-[13px] text-[#8E8E93]">Belum ada kategori. Tambahkan kategori pertama Anda.</p>
-              <button className="secondary-button" data-testid="category-empty-add-button" onClick={() => setForm({ ...EMPTY })}>
+              <button className="secondary-button" data-testid="category-empty-add-button" onClick={openCreate}>
                 <Plus size={14} /> Buat Kategori
               </button>
             </div>

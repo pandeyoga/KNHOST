@@ -118,17 +118,8 @@ export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCa
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-check-label sm:mt-6">
-              <input
-                type="checkbox"
-                data-testid="rule-active"
-                checked={formData.active}
-                onChange={e => setFormData({ ...formData, active: e.target.checked })}
-              />
-              {" "}Aktif
-            </label>
-          </div>
+          {/* Fase 3 · P2 (D-04) — centang "Aktif" dicabut: status aturan hanya diubah lewat tombol
+              Nonaktifkan/Aktifkan di daftar (satu jalan, dengan konfirmasi). Nilai `active` lama dipertahankan. */}
         </div>
 
         <div className="form-actions">

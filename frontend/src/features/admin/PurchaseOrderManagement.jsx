@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Package, ChevronDown, Boxes, ShoppingBag, GitBranch, Search, Clock, CheckCircle2 } from "lucide-react";
+import { Plus, Boxes, ShoppingBag, Clock, CheckCircle2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { parseDecimal } from "../../utils/decimalInput";
-import { formatCurrency } from "../../utils/formatters";
-import { getStatusBadge, billingState, lateState } from "./po/poUtils";
+import { lateState } from "./po/poUtils";
 import POPaymentChips from "./po/POPaymentChips";
 import POCreateForm from "./po/POCreateForm";
 import { POBuyerEntitySwitch, takePODraft } from "./po/POBuyerEntitySwitch";
 import PODetailPanel from "./po/PODetailPanel";
 import POCompactPanel from "./po/POCompactPanel";
-import { receiptVarianceSummary } from "./po/POReceiptVariancePanel";
-import DetailPopup from "../../components/DetailPopup";
+import POListTable from "./po/POListTable";
+import POCreateMenu from "./po/POCreateMenu";
+import DetailModal from "../../components/DetailModal";
 import POAmendModal from "./po/POAmendModal";
 import MakloonOrderCreateModal from "../purchasing/MakloonOrderCreateModal";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -74,9 +74,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
   const [search, setSearch] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [makloonMode, setMakloonMode] = useState(null);  // null | "buy_process" | "process_only"
-  const [menuOpen, setMenuOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
-  const [showFullDetail, setShowFullDetail] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -333,40 +331,12 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
 
       <PageHeader icon={ShoppingBag} title={<span data-testid="panel-title">Pesanan Pembelian (PO)</span>}
         subtitle="Pesanan ke supplier — dari persetujuan, kedatangan barang, sampai penagihan (3-way matching)."
-        actions={<>
-            {canCreate && (
-            <div className="relative">
-            <button data-testid="create-po-button"
-              onClick={() => setMenuOpen((o) => !o)}
-              className="primary-button">
-              <Plus size={13} /> Buat PO <ChevronDown size={13} />
-            </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-                <div data-testid="procure-mode-menu" className="absolute right-0 z-30 mt-1 w-72 overflow-hidden rounded-xl border border-[#EFF0F2] bg-white py-1 shadow-2xl">
-                  <p className="px-3 pb-1 pt-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">Cara pengadaan</p>
-                  <button data-testid="mode-finished-goods" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
-                    onClick={() => { setMenuOpen(false); setMakloonMode(null); setShowCreateForm(true); }}>
-                    <ShoppingBag size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Beli Barang Jadi</span><span className="block text-[11px] text-[#6B6B73]">Beli putus barang jadi dari supplier (PO standar).</span></span>
-                  </button>
-                  <button data-testid="mode-raw-process" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
-                    onClick={() => { setMenuOpen(false); setShowCreateForm(false); setMakloonMode("buy_process"); }}>
-                    <Boxes size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Beli Bahan + Proses Makloon</span><span className="block text-[11px] text-[#6B6B73]">Beli bahan baku lalu kirim langsung ke makloon (barang setengah jadi di mitra).</span></span>
-                  </button>
-                  <button data-testid="mode-process-only" className="flex w-full items-start gap-2.5 px-3 py-2 text-left hover:bg-[#F5F8FF]"
-                    onClick={() => { setMenuOpen(false); setShowCreateForm(false); setMakloonMode("process_only"); }}>
-                    <GitBranch size={15} className="mt-0.5 shrink-0 text-[#0058CC]" />
-                    <span><span className="block text-[12.5px] font-semibold text-[#1B2733]">Proses Makloon Saja</span><span className="block text-[11px] text-[#6B6B73]">Bahan dari stok sendiri, kirim ke makloon (sama dengan menu Order Makloon).</span></span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-            )}
-        </>} />
+        actions={canCreate ? (
+          <POCreateMenu onPick={(mode) => {
+            if (mode === "finished") { setMakloonMode(null); setShowCreateForm(true); }
+            else { setShowCreateForm(false); setMakloonMode(mode); }
+          }} />
+        ) : null} />
 
       <MetricRow testId="po-stats" items={[
         { label: "Total PO", value: Object.values(counts).reduce((a, b) => a + b, 0), icon: ShoppingBag, hint: "semua status", testId: "po-metric-total" },
@@ -415,122 +385,62 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
         />
       </FormModal>
 
-      {/* Two-panel: PO table + detail */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
-        {/* PO Table */}
-        <div className="section-card">
-          <div className="overflow-x-auto">
-            <div className="min-w-[860px] grid grid-cols-[115px_1fr_110px_120px_110px_62px_150px] gap-2 px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-              <span>Nomor</span><span>Supplier</span><span>Gudang</span><span>Qty Pesan / Terima</span><span className="text-right">Total</span><span>Tanggal</span><span>Status</span>
+      {/* Fase 3 · P5 — D-18 / L-06: daftar PO LEBAR PENUH; klik baris = SATU pop-up rincian. Dulu panel kanan
+          360 px kosong ("Pilih PO…") + tombol "Lihat detail lengkap" ke pop-up kedua (dua tingkat rincian). */}
+      <div className="section-card">
+        <POListTable rows={pos} loading={loading} selectedId={selectedPO?.id}
+          onOpen={handleViewDetail}
+          emptyText={paymentFilter && !lateOnly ? "Tidak ada PO dengan status bayar ini." : lateOnly ? "Tidak ada PO terlambat — semua kiriman masih dalam janji supplier. 🎉" : "Belum ada Pesanan Pembelian"}
+          footer={(
+            <div className="px-3 py-2 border-t border-[#EFF0F2]">
+              <PaginationBar
+                testId="po-pager" label="PO"
+                page={paged.page} pageSize={paged.pageSize} total={paged.total}
+                hasMore={paged.hasMore} loading={paged.loading}
+                onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
+                exportConfig={{ columns: CSV_COLUMNS, rows: pos, fetchAll: paged.fetchAll,
+                  filename: "pesanan-pembelian" }}
+              />
             </div>
-            {loading ? (
-              <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-            ) : pos.length === 0 ? (
-              <div className="py-10 text-center text-[12px] text-[#6B6B73]">
-                <Package className="mx-auto mb-2 text-gray-300" size={28} />
-                <p>{paymentFilter && !lateOnly ? "Tidak ada PO dengan status bayar ini." : lateOnly ? "Tidak ada PO terlambat — semua kiriman masih dalam janji supplier. 🎉" : "Belum ada Pesanan Pembelian"}</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[#EFF0F2]">
-                {pos.map((po) => {
-                  /* UI/UX 2026-06 — kolom tengah dulu kosong melompong; sekarang diisi
-                     qty pesan vs terima + tanggal supaya tabel informatif tanpa buka detail. */
-                  const items = po.items || [];
-                  const qOrder = items.reduce((s, it) => s + Number(it.quantity || 0), 0);
-                  const qRecv = items.reduce((s, it) => s + Number(it.received_qty || 0), 0);
-                  const units = [...new Set(items.map((it) => it.unit).filter(Boolean))];
-                  const unit = units.length === 1 ? units[0] : "";
-                  // b/d — badge penagihan di baris + sembunyikan "terima 0" bila barang
-                  // memang belum mungkin diterima (belum disetujui / ditolak / batal).
-                  const bill = billingState(po);
-                  const late = lateState(po);
-                  const rvar = receiptVarianceSummary(po.receipt_variances);
-                  const showReceive = !["waiting_approval", "rejected", "cancelled"].includes(po.status);
-                  return (
-                  <div key={po.id} data-testid={`po-card-${po.id}`}
-                    className={`min-w-[860px] grid grid-cols-[115px_1fr_110px_120px_110px_62px_150px] gap-2 items-center px-3 py-2.5 cursor-pointer hover:bg-[#FAFBFC] transition-colors ${selectedPO?.id === po.id ? "bg-[#EFF4FF] border-l-2 border-[#007AFF]" : ""}`}
-                    onClick={() => handleViewDetail(po.id)}>
-                    <p data-testid={`po-number-${po.id}`} className="text-[12px] font-bold text-[#007AFF] whitespace-nowrap">{po.po_number}</p>
-                    <div className="min-w-0">
-                      <p data-testid={`po-supplier-${po.id}`} className="text-[11.5px] font-semibold truncate">{po.supplier_name}</p>
-                      <p className="text-[10.5px] text-[#6B6B73]">{items.length} item</p>
-                    </div>
-                    <p className="text-[11px] text-[#3C3C43] truncate" title={po.warehouse_name}>{po.warehouse_name}</p>
-                    <div className="text-[11px] tabular-nums" data-testid={`po-qty-${po.id}`}>
-                      <p className="font-semibold">{new Intl.NumberFormat("id-ID").format(qOrder)} {unit}</p>
-                      {showReceive && (
-                        <p className={`text-[10px] ${qRecv >= qOrder && qOrder > 0 ? "text-green-600" : "text-[#6B6B73]"}`}>
-                          terima {new Intl.NumberFormat("id-ID").format(qRecv)}{qOrder > 0 ? ` (${Math.round((qRecv / qOrder) * 100)}%)` : ""}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-right text-[11.5px] font-bold tabular-nums" data-testid={`po-total-${po.id}`}>{formatCurrency(po.grand_total ?? po.total_amount)}</p>
-                    <p className="text-[10.5px] text-[#6B6B73]">{po.created_at ? new Date(po.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "—"}</p>
-                    <div className="flex flex-col items-start gap-0.5 min-w-0">
-                      {getStatusBadge(po.status)}
-                      {bill && (
-                        <span data-testid={`po-row-billing-${po.id}`}
-                          className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[9.5px] font-semibold ${bill.cls}`}>{bill.label}</span>
-                      )}
-                      {late && (
-                        <span data-testid={`po-row-late-${po.id}`} title={`Janji kirim supplier: ${late.eta}`}
-                          className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[9.5px] font-semibold ${late.cls}`}>{late.label}</span>
-                      )}
-                      {rvar && (
-                        <span data-testid={`po-row-variance-${po.id}`} title={`Catatan gudang: ${rvar.label}`}
-                          className="whitespace-nowrap rounded px-1.5 py-0.5 text-[9.5px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Selisih terima {rvar.label}</span>
-                      )}
-                    </div>
-                  </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div className="px-3 py-2 border-t border-[#EFF0F2]">
-            <PaginationBar
-              testId="po-pager" label="PO"
-              page={paged.page} pageSize={paged.pageSize} total={paged.total}
-              hasMore={paged.hasMore} loading={paged.loading}
-              onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
-              exportConfig={{ columns: CSV_COLUMNS, rows: pos, fetchAll: paged.fetchAll,
-                filename: "pesanan-pembelian" }}
-            />
-          </div>
-        </div>
-
-        {/* UI/UX 2026-06 — panel kanan = RINGKASAN + aksi lifecycle (tanpa scroll);
-            isi lengkap (item, pajak, penagihan, timeline, referensi) di pop-up. */}
-        <POCompactPanel
-          po={selectedPO}
-          currentUser={user}
-          onClose={() => setSelectedPO(null)}
-          onOpenFull={() => setShowFullDetail(true)}
-          onApprove={handleApprovePO}
-          onCancel={handleCancelPO}
-          onCloseShort={handleCloseShort}
-          onAmend={(po) => { setError(""); setAmendPO(po); }}
-          onOpenDocument={onOpenDocument}
-        />
+          )} />
       </div>
 
-      <DetailPopup open={showFullDetail && !!selectedPO} onClose={() => setShowFullDetail(false)}
-        title={selectedPO?.po_number} subtitle={selectedPO?.supplier_name}
-        testId="po-detail-popup">
-        {selectedPO && (
-          <PODetailPanel
-            po={selectedPO}
-            currentUser={user}
-            embedded
-            onClose={() => setShowFullDetail(false)}
-            onApprove={handleApprovePO}
-            onCancel={handleCancelPO}
-            onCloseShort={handleCloseShort}
-            onAmend={(po) => { setShowFullDetail(false); setError(""); setAmendPO(po); }}
-            onOpenDocument={onOpenDocument}
-          />
-        )}
-      </DetailPopup>
+      {/* Satu pop-up: kepala ringkas + aksi lifecycle (POCompactPanel) berdampingan dengan isi lengkap
+          (PODetailPanel: item, pajak, penagihan, timeline, referensi). Di HP layar penuh, ringkasan di atas. */}
+      {selectedPO && (
+        <DetailModal onClose={() => setSelectedPO(null)} size="xl" framed
+          label={`Rincian ${selectedPO.po_number || "PO"}`} testId="po-detail-popup">
+          {/* Galat aksi (setujui/batal/tutup) tampil DI pop-up — bilah halaman tertutup lapisan ini. */}
+          {error && <div className="mb-2"><ErrorNotice message={error} onDismiss={() => setError("")} testId="po-detail-error" /></div>}
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+            <div className="lg:order-2 lg:sticky lg:top-0">
+              <POCompactPanel
+                po={selectedPO}
+                currentUser={user}
+                onApprove={handleApprovePO}
+                onCancel={handleCancelPO}
+                onCloseShort={handleCloseShort}
+                onAmend={(po) => { setError(""); setSelectedPO(null); setAmendPO(po); }}
+                onOpenDocument={onOpenDocument}
+              />
+            </div>
+            <div className="min-w-0 lg:order-1">
+              <PODetailPanel
+                po={selectedPO}
+                currentUser={user}
+                embedded
+                inModal
+                onClose={() => setSelectedPO(null)}
+                onApprove={handleApprovePO}
+                onCancel={handleCancelPO}
+                onCloseShort={handleCloseShort}
+                onAmend={(po) => { setError(""); setSelectedPO(null); setAmendPO(po); }}
+                onOpenDocument={onOpenDocument}
+              />
+            </div>
+          </div>
+        </DetailModal>
+      )}
 
       {makloonMode && (
         <MakloonOrderCreateModal
@@ -551,7 +461,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
           suppliers={suppliers}
           submitting={amending}
           onSubmit={handleSubmitAmend}
-          onClose={() => setAmendPO(null)}
+          onClose={() => { const id = amendPO?.id; setAmendPO(null); if (id) handleViewDetail(id); }}
         />
       )}
 
