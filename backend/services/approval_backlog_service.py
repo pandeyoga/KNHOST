@@ -152,7 +152,9 @@ QUEUES: List[tuple] = [
      # dibedakan dari yang siap disahkan, sehingga menghitungnya = menyebut pekerjaan
      # orang sebagai antrean. Kini ada langkah "Ajukan" (`pending_approval`).
      {"status": "pending_approval"}),
-    ("design_gallery", "Desain menunggu pengesahan", "cs-design-gallery", "design_gallery",
+    # Fase 3 · P8 (D-09) — tujuan `cs-design-gallery` → `rnd-designs`: id lama kini alias ke mode GALERI (hanya desain
+    # ACC), padahal antrean ini berisi desain yang BELUM disahkan — itu tampil di mode Master Desain & Pattern.
+    ("design_gallery", "Desain menunggu pengesahan", "rnd-designs", "design_gallery",
      # Sama seperti payroll: `draft` adalah keadaan bekerja milik desainer.
      {"status": "pending_approval"}),
     ("payment_variance", "Selisih pembayaran menunggu keputusan", "payment-plans",

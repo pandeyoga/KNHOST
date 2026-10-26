@@ -18,7 +18,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Pesanan (SO), koreksi, retur, pesanan khusus, dan permintaan internal antar badan usaha.",
      "resources": ["order", "sales_return", "internal_request", "od_fulfillment", "od_pricing"],
      "nav": ["penjualan", "sales", "sales-orders", "orders", "amendments", "returns", "returns-hub",
-             "return-policies", "special-orders", "internal-requests", "keep-pending"]},
+             "return-policies", "special-orders", "internal-requests", "keep-pending",
+             # Fase 3 · P8 (P16-K1) — Pengaturan kini GRUP: Kebijakan Retur di Pengaturan › Penjualan (+ aturannya).
+             "settings-hub", "settings-sales", "settings-cfg-sales"]},
     {"id": "sample_order", "group": "Penjualan", "label": "Pesanan Sample",
      "description": "Pesanan sample (SOS) yang terpisah dari pesanan roll biasa.",
      "resources": ["sample_order"], "nav": ["penjualan", "sample-orders"]},
@@ -29,44 +31,60 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Master produk & varian, kategori, pustaka warna, satuan, dan template dokumen.",
      "resources": ["product", "uom", "color", "template"],
      "nav": ["penjualan", "products-pricing", "md-products", "product-templates", "client-dataset-import",
-             "md-categories", "color-library", "md-uoms"]},
+             "md-categories", "color-library", "md-uoms",
+             # Fase 3 · P8 (P16-K1) — Koreksi Harga (dulu tab Pusat Pengaturan): server pratinjau product.view,
+             # terapkan product.update — karena itu modul Produk (bukan Harga).
+             "price-corrections"]},
     {"id": "pricing", "group": "Penjualan", "label": "Harga & Persetujuan Harga",
      "description": "Daftar harga per badan usaha, harga per pelanggan, dan persetujuan harga khusus.",
      "resources": ["pricelist", "price_approval"],
      "nav": ["penjualan", "products-pricing", "pricelist", "cs-price-list",
-             "approval-inbox", "price-approvals"]},
+             "approval-inbox", "price-approvals",
+             "settings-hub", "settings-sales", "settings-cfg-sales"]},   # fase 3 · P8 — aturan harga & diskon
     {"id": "purchasing", "group": "Pembelian", "label": "Pembelian & Pengadaan",
      "description": "Permintaan pembelian (PR), RFQ, pesanan pembelian (PO), dan retur pembelian.",
      "resources": ["purchase_order", "purchase_requisition", "rfq", "purchase_return"],
      "nav": ["pembelian", "sourcing", "reorder", "purchase-requisitions", "rfq",
              "purchase-orders", "purchasing", "po-board", "blanket-po",
-             "approval-inbox", "purchase-approval", "purchase-returns", "returns-hub"]},   # FE-03: tab Hutang milik modul payable
+             "approval-inbox", "purchase-approval", "purchase-returns", "returns-hub",   # FE-03: tab Hutang milik modul payable
+             "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — Pengaturan › Pembelian
     {"id": "supplier", "group": "Pembelian", "label": "Pemasok & Makloon",
      "description": "Master pemasok, mitra makloon, kontrak, barang supplier, resep proses & order makloon.",
      "resources": ["supplier", "supplier_contract", "supplier_item", "makloon",
                    "makloon_order", "process_recipe"],
      "nav": ["pembelian", "master-pembelian", "suppliers", "makloons", "supplier-contracts",
              "supplier-items", "process-recipes", "purchase-orders", "makloon-orders", "makloon-claim-recap",
-             "makloon-claims"]},
+             "makloon-claims",
+             # Fase 3 · P8 (D-23) — Harga Internal dari Kontrak (tab tersembunyi Master Pembelian; tulis = interco_price).
+             "supplier-internal-prices",
+             "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},
     {"id": "payable", "group": "Pembelian", "label": "Hutang Supplier & Kontrabon",
      "description": "Tagihan supplier, kontrabon (tukar faktur), landed cost, dan faktur pajak masukan.",
      "resources": ["vendor_bill", "contra_bon", "landed_cost", "input_tax"],
      "nav": ["pembelian", "accounts-payable", "vendor-bills", "contra-bons", "landed-cost",
-             "keuangan", "tax-hub", "input-tax"]},
+             "keuangan", "akuntansi", "tax-hub", "input-tax",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
+             "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — aturan kontrabon
     {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar Badan Usaha",
      "description": "Jual-beli antar PT dalam grup, settlement, dan saldo pasangan PT.",
      "resources": ["interco", "interco_finance", "interco_price"],
-     "nav": ["pembelian", "interco-transactions", "interco-returns", "returns-hub"]},   # FE-03: tab Hutang milik modul payable
+     "nav": ["pembelian", "interco-transactions", "interco-returns", "returns-hub",   # FE-03: tab Hutang milik modul payable
+             "akuntansi",   # fase 3 · P8 — induk Antar Entitas (Grup) ikut katalog, palet/deep link peran kustom sah
+             "supplier-internal-prices"]},   # fase 3 · P8 (D-23) — Harga Internal Antar-PT dari Kontrak
     {"id": "rnd", "group": "Produk & Desain", "label": "Riset & Sample (R&D)",
      "description": "Spesifikasi produk, permintaan sample, labdip, handfeel, proofing, dan laporan R&D.",
      "resources": ["rnd"],
+     # Fase 3 · P8 (D-24b) — `rnd-labdip` dkk. kini alias ke `rnd-samples` (chip jenis); id lama TETAP di sini: dikenal
+     # rute cadangan, sah sebagai `hidden_views` (menyembunyikan chip jenisnya), dan dipakai `canOpen` layar.
      "nav": ["rnd-hub", "rnd-specs", "rnd-samples", "rnd-revalidation", "rnd-labdip", "rnd-handfeel",
-             "rnd-proofing", "rnd-reports"]},
+             "rnd-proofing", "rnd-reports",
+             "settings-hub", "settings-rnd", "settings-cfg-rnd"]},
     {"id": "design", "group": "Produk & Desain", "label": "Desain & Desainer",
      "description": "Permintaan desain, galeri desain & pattern, KPI desainer.",
      "resources": ["design_request", "design_ownership"],
      "nav": ["designer-hub", "design-requests", "designer-kpi", "rnd-designs",
-             "cs-design-gallery", "rnd-divisions"]},
+             "cs-design-gallery", "rnd-divisions",   # fase 3 · P8 (D-09) — cs-design-gallery = alias mode Galeri
+             # Pengaturan › Persetujuan (Divisi & Persetujuan R&D) + Pengaturan › R&D (aturan & penempatan tim).
+             "settings-hub", "settings-approval", "settings-rnd", "settings-cfg-rnd"]},
     {"id": "marketing", "group": "Penjualan", "label": "Marketing & Sosial Media",
      "description": "Kalender konten, kampanye, persetujuan konten, performa post.",
      "resources": ["marketing"],
@@ -80,16 +98,23 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
              # F-11-layar — retur pelanggan yang menunggu scan terima/kirim/tiba (tampilan tanpa uang)
-             "returns-hub", "returns"]},
+             "returns-hub", "returns",
+             # Fase 3 · P8 (D-29) — Perangkat RFID kini tab di Pengaturan › Integrasi & Sistem › Perangkat
+             # (`cs-rfid-devices` = alias); aturan gudang di Pengaturan › Gudang & Mutu.
+             "settings-hub", "settings-warehouse", "settings-cfg-warehouse", "settings-system", "settings-devices"]},
     {"id": "inventory", "group": "Gudang", "label": "Stok & Persediaan",
      "description": "Status stok & ATP, lot & silsilah, stock opname, transfer antar gudang/entitas.",
      "resources": ["inventory", "transfer"],
      "nav": ["gudang", "stock-atp", "inventory-board", "stock-buckets", "inventory-lots",
-             "wms-operations", "operations", "interco-transfers", "cs-stock-analytics"]},   # FE-03: tab tampak dari alias interco-transfers
+             "wms-operations", "operations", "interco-transfers", "cs-stock-analytics",   # FE-03 · P8 (D-16): interco-transfers = alias Transfer "Antar PT"
+             # Fase 3 · P8 — induk hub Analitik ikut modul yang memuat tab Analitik Stok: tanpa ini `analytics` hanya
+             # milik modul Laporan dan Admin Gudang (izin inventory, tanpa reports) terblokir dari Analitik Stok.
+             "analytics"]},
     {"id": "inspection", "group": "Kualitas", "label": "Inspeksi & QC",
      "description": "SPK inspeksi, hasil pemeriksaan warna/handfeel, keputusan terima/tolak.",
      "resources": ["inspection"],
-     "nav": ["quality-hub", "inspections", "qc-inspection"]},   # 23 Okt — menu Kualitas
+     "nav": ["quality-hub", "inspections", "qc-inspection",   # 23 Okt — menu Kualitas
+             "settings-hub", "settings-warehouse", "settings-cfg-warehouse"]},   # fase 3 · P8 — aturan kualitas & lot
     {"id": "md_quality", "group": "Kualitas", "label": "MD Quality",
      "description": "Warna & handfeel vs sample ACC (penerimaan PO & hasil makloon), lepas/tolak tahanan.",
      "resources": ["md_quality"],
@@ -107,29 +132,38 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Kwitansi AR, piutang, rencana bayar, denda, selisih bayar, faktur pajak keluaran.",
      "resources": ["ar_receipt", "tax_invoice", "payment_plan", "penalty", "payment_variance"],
      "nav": ["keuangan", "ar-aging", "advance-report", "payment-plans", "store-credit",
-             "tax-hub", "tax-invoices", "cs-pajak"]},
+             "akuntansi", "tax-hub", "tax-invoices", "cs-pajak",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
+             "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan piutang & pajak
     {"id": "finance_ops", "group": "Keuangan", "label": "Kas, Bank & Kasus Keuangan",
      "description": "Dasbor keuangan, rekening & saldo, transaksi kas, rekonsiliasi bank, kasus uang nyangkut, amandemen.",
      "resources": ["cash", "finance_case", "finance_amendment"],
      "nav": ["keuangan", "finance-tower", "cash-bank", "bank-accounts", "cash-management",
-             "bank-reconciliation", "finance-cases"]},
+             "bank-reconciliation", "finance-cases",
+             "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan bank & periode
     {"id": "accounting", "group": "Keuangan", "label": "Akuntansi & Tutup Buku",
      "description": "Buku besar, laporan keuangan, anggaran, aset tetap, tutup buku & buka periode.",
      "resources": ["accounting", "period", "budget", "fixed_asset", "gl_mapping"],
-     "nav": ["keuangan", "ledger", "general-ledger", "chart-of-accounts", "gl-account-mappings", "fin-reports",
+     "nav": ["keuangan", "akuntansi", "ledger", "general-ledger", "chart-of-accounts", "gl-account-mappings", "fin-reports",
              "financial-statements", "profitability", "cashflow-forecast", "budget",
-             "consolidation", "closing", "period-unlock", "posting-failures", "kas-aset", "fixed-assets"]},
+             "consolidation", "closing", "period-unlock", "posting-failures", "kas-aset", "fixed-assets",
+             # Fase 3 · P8 (P16-K1) — Pemetaan Akun kini di Pengaturan › Keuangan & Pajak.
+             "settings-hub", "settings-finance", "settings-cfg-finance"]},
     {"id": "petty_cash", "group": "Keuangan", "label": "Kas Kecil (PD / LPJ)",
      "description": "Pengajuan dana, pertanggungjawaban, kategori beban.",
      "resources": ["cash_advance", "cash_settlement"],
-     "nav": ["kas-aset", "petty-cash", "cash-advances", "settlements", "expense-categories"]},
+     "nav": ["kas-aset", "petty-cash", "cash-advances", "settlements", "expense-categories",
+             # Fase 3 · P8 (D-02) — Kategori Beban kini di Pengaturan › Keuangan & Pajak.
+             "settings-hub", "settings-finance", "settings-cfg-finance"]},
     {"id": "hr", "group": "Organisasi", "label": "SDM & Penggajian",
      "description": "Karyawan, struktur organisasi, presensi, cuti, lembur, payroll, KPI.",
      "resources": ["hr"],
      "nav": ["hrd", "hr-people", "hr-employees", "hr-org-units", "hr-attendance-hub",
              "hr-attendance", "hr-leave", "hr-overtime", "hr-live-tracking",
              "hr-attendance-setup", "hr-payroll-hub", "hr-payroll-runs", "hr-payslips",
-             "hr-kpi-hub", "cs-kpi"]},
+             "hr-kpi-hub", "cs-kpi",
+             # Fase 3 · P8 (P16-K1, D-29) — Shift & Geofence + aturan SDM di Pengaturan › SDM; mesin absen di
+             # Pengaturan › Integrasi & Sistem › Perangkat (tab Mesin absen).
+             "settings-hub", "settings-hr", "settings-cfg-hr", "settings-system", "settings-devices"]},
     {"id": "documents", "group": "Alat", "label": "Dokumen, Cetak & Tanda Tangan",
      "description": "Pusat dokumen, jejak dokumen, pusat cetak, e-sign, pengiriman dokumen.",
      "resources": ["document", "esign", "document_delivery", "pdf_template"],
@@ -137,7 +171,12 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "reports", "group": "Alat", "label": "Laporan & Analitik",
      "description": "Dasbor analitik, margin & HPP, BI keuangan/SDM, jejak audit.",
      "resources": ["reports", "audit"],
-     "nav": ["analytics", "reports", "costing", "bi-finance", "cs-bi-hrd"]},   # FE-03: cs-bi-sales/stock tidak ada lagi di menu
+     "nav": ["analytics", "reports", "costing", "bi-finance", "cs-bi-hrd",   # FE-03: cs-bi-sales/stock tidak ada lagi di menu
+             # Fase 3 · P8 (D-11) — Margin & HPP (`costing`, kini alias) = tab "Margin katalog" di Akuntansi & Pajak ›
+             # Laporan › Profitabilitas & Margin. Tab Realisasi tetap dijaga izin akuntansi (server + layar).
+             # `akuntansi` (id grup) WAJIB ikut: palet Ctrl+K / deep link / `canOpen` hanya menelusuri grup yang terlihat
+             # menurut katalog — tanpa itu alias `costing` buntu untuk peran kustom bermodul Laporan.
+             "akuntansi", "fin-reports", "profitability"]},
     {"id": "data_export", "group": "Alat", "label": "Pusat Export Data",
      "description": "Memilih dataset, kolom, filter & periode lalu mengunduh XLSX/CSV. Isi tetap dibatasi izin modul "
                     "sumber, badan usaha/lokasi, dan visibilitas field (grade/LOT/HPP).",
@@ -148,7 +187,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "grade_master", "group": "Produk & Desain", "label": "Master Grade Mutu",
      "description": "Daftar grade & urutan mutu (rank). Tambah, ubah, aktif/nonaktif dipisah; grade nonaktif "
                     "tidak bisa dipakai input baru di semua form, histori tetap terbaca.",
-     "resources": ["grade_master"], "nav": ["grade-master"]},
+     "resources": ["grade_master"],
+     "nav": ["grade-master", "settings-hub", "settings-warehouse"]},   # fase 3 · P8 — Pengaturan › Gudang & Mutu
     {"id": "field_visibility", "group": "Penjualan", "label": "Visibilitas Atribut Stok (grade · LOT · asal)",
      "description": "Boleh melihat grade, LOT (internal/supplier/dye lot) dan asal lokal/impor di layar, API, detail, "
                     "ekspor dan dokumen cetak. Tanpa izin ini atribut disembunyikan server.",
@@ -161,7 +201,12 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Pengaturan sistem, badan usaha, akun pengguna, peran & hak akses, penjadwal. Hati-hati: 'Kelola penuh' berarti bisa mengubah hak akses orang lain.",
      "resources": ["user", "permission", "settings", "entity", "scheduler"],
      "nav": ["settings-hub", "settings-config", "entities-access", "admin", "entity-masters",
-             "scheduler", "pdf-templates", "domain-registry", "approval-rules"],
+             "scheduler", "pdf-templates", "domain-registry", "approval-rules",
+             # Fase 3 · P8 (P16-K1) — "Pengaturan" kini grup: menu kelompoknya + layar Pusat Pengaturan terkunci per
+             # kelompok yang bukan milik modul domain + Perangkat (D-29).
+             "settings-company", "settings-approval", "settings-masters", "settings-documents", "settings-notify",
+             "settings-system", "settings-cfg-approval", "settings-cfg-documents", "settings-cfg-notify",
+             "settings-cfg-system", "settings-devices"],
      "sensitive": True},
 ]
 

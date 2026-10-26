@@ -15,9 +15,29 @@ import { ROLE_IDS } from "../roles";
 import { aliasTarget, listAliases } from "../viewAliases";
 
 /** Penambahan jangkauan yang SAH: { peran: ["view", …] } + alasan di komentar (rujuk D-xx / §6). */
+// Fase 3 · P2 (P16-K1) — layar Pengaturan per domain = Pusat Pengaturan yang DIKUNCI ke kelompok registrinya (fungsi
+// yang sudah dimiliki admin/manajer lewat `settings-config`, kini juga di menu domainnya) + Koreksi Harga (dulu tab
+// Pusat Pengaturan; manajer: pratinjau dampak saja, server product.view).
+const P2_SETTINGS_VIEWS = [
+  "settings-cfg-approval", "settings-cfg-sales", "settings-cfg-warehouse", "settings-cfg-purchasing",
+  "settings-cfg-finance", "settings-cfg-hr", "settings-cfg-rnd", "settings-cfg-documents", "settings-cfg-notify",
+  "settings-cfg-system", "price-corrections",
+];
+// Fase 3 · P8 (D-23) — tab tersembunyi Master Pembelian › "Harga Internal Antar-PT" (`supplier-internal-prices`, peran =
+// peran Kontrak; layar = InternalPricesView). Id layar BARU untuk fungsi yang dulu ada di Kontrak (tab Harga Internal +
+// "Isi massal"). Gudang tidak mendapatkannya: menu Master Pembelian memang tertutup untuk gudang (tanpa saudara tab).
+const P8_SUPPLIER_INTERNAL = ["supplier-internal-prices"];
 export const ROLE_REACH_ADDITIONS = {
-  // Contoh (diaktifkan P8): manager: ["approval-rules", "pdf-templates"],   // D-04 baca · D-01 tab dasar
-  //                         warehouse: ["makloon-claim-recap"],            // D-22
+  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL],
+  manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL,
+    "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
+    "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
+    "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); tab RFID tetap admin
+  ],
+  // Fase 3 · P8 (D-22) — Kinerja Mitra Makloon: gudang dulu melihat skor mitra di Klaim Selisih Makloon. Admin Gudang
+  // mewarisi menu gudang (ROLE_NAV inherit "warehouse"), jadi ikut — bukan keputusan terpisah.
+  warehouse: ["makloon-claim-recap"],
+  warehouse_admin: ["makloon-claim-recap"],
 };
 
 function universe() {

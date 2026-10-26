@@ -12,6 +12,13 @@ test.each(["warehouse", "warehouse_admin"])("%s melihat Pembelian › Pesanan Pe
   expect(tabs).not.toContain("purchasing");                                 // tab PO tetap tertutup untuk gudang
 });
 
+// Fase 3 · P8 (D-22) — gudang dulu melihat skor mitra di Klaim Selisih Makloon; kini satu layar "Kinerja Mitra Makloon"
+// (rekap + skor) di hub yang sama. Admin Gudang mewarisi menu gudang.
+test.each(["warehouse", "warehouse_admin"])("%s melihat tab Kinerja Mitra Makloon", (role) => {
+  const recap = hubTabsForRole("purchase-orders", role).find((t) => t.view === "makloon-claim-recap");
+  expect(recap).toMatchObject({ label: "Kinerja Mitra Makloon" });
+});
+
 test("finance & sales tidak berubah", () => {
   expect(item("finance", "purchase-orders")).toBeTruthy();
   expect(item("sales", "purchase-orders")).toBeFalsy();

@@ -2,7 +2,7 @@
 // Fixture dihasilkan dari backend (`backend/tests/fe03_access_fixture.py`); tes backend
 // `test_fe03_access_catalog.py` menjaga fixture tetap sama dengan katalog.
 import fixture from "./fixtures/access_nav_fixture.json";
-import { buildNavGroups, hubTabsForRole } from "../navigationConfig";
+import { buildNavGroups, hubTabsForRole, resolveDeepLinkTarget } from "../navigationConfig";
 import { registerDynamicRoles, setPreviewRoleNav } from "../roles";
 
 const menu = (role) => {
@@ -58,8 +58,44 @@ test("23 Okt — peran mutu bawaan bekerja di menu Kualitas (antrean & SPK)", ()
 
 test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", () => {
   const m = menu("cr_manager_no_accounting");
-  ["ledger", "fin-reports", "closing", "period-unlock"].forEach((id) => expect((m.akuntansi || {})[id]).toBeUndefined());
+  ["ledger", "closing", "period-unlock"].forEach((id) => expect((m.akuntansi || {})[id]).toBeUndefined());
+  // Fase 3 · P8 (D-11) — Margin & HPP (modul Laporan) kini tab katalog di Laporan › Profitabilitas: menu Laporan hanya
+  // memuat Profitabilitas; laporan keuangan lain tetap tercabut bersama modul Akuntansi.
+  expect(m.akuntansi["fin-reports"]).toEqual(["profitability"]);
   expect(m.akuntansi["interco-transactions"]).toBeDefined();
+});
+
+// Fase 3 · P8 — "Pengaturan" kini GRUP berisi kelompok (P16-K1): peran kustom mendapat kelompok dari modul domainnya.
+test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijakan domain", () => {
+  const s = menu("cr_settings_admin")["settings-hub"];
+  expect(s["settings-company"]).toEqual(["entities-access"]);
+  expect(s["settings-approval"]).toEqual(["approval-rules", "settings-cfg-approval"]);
+  expect(s["settings-masters"]).toEqual(["entity-masters", "domain-registry"]);
+  expect(s["settings-documents"]).toEqual(["pdf-templates", "settings-cfg-documents"]);
+  expect(s["settings-notify"]).toEqual(["scheduler", "settings-cfg-notify"]);
+  expect(s["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "settings-devices", "admin"]);
+  ["settings-sales", "settings-finance", "settings-hr"].forEach((id) => expect(s[id]).toBeUndefined());
+});
+
+test("Pengaturan untuk peran kustom domain: SDM, Akuntansi, Operasi Gudang", () => {
+  const hr = menu("cr_hr")["settings-hub"];
+  expect(hr["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup"]);
+  expect(hr["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab Mesin absen
+  expect(menu("cr_accounting")["settings-hub"]["settings-finance"]).toEqual(["settings-cfg-finance", "gl-account-mappings"]);
+  const wh = menu("cr_warehouse_ops")["settings-hub"];
+  expect(wh["settings-warehouse"]).toEqual(["settings-cfg-warehouse"]);
+  expect(wh["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab RFID (alias cs-rfid-devices)
+  expect(menu("cr_interco")["settings-hub"]).toBeUndefined();
+});
+
+test("D-11: modul Laporan membuka Profitabilitas (tab katalog) — tanpa laporan keuangan lain", () => {
+  const m = menu("cr_reports");
+  expect(m.akuntansi).toEqual({ "fin-reports": ["profitability"] });
+  expect(m.analytics.analytics).toEqual(["reports", "cs-bi-hrd"]);            // tab Margin & HPP sudah dicabut
+  // Alamat/notifikasi lama `costing` → layar utama + preset (palet & deep link menelusuri grup Akuntansi dari katalog).
+  expect(resolveDeepLinkTarget("costing", "cr_reports")).toMatchObject({ view: "profitability", preset: { tab: "katalog" } });
+  expect(resolveDeepLinkTarget("costing", "cr_interco")).toBeNull();
+  expect(resolveDeepLinkTarget("interco-transactions", "cr_interco")).toMatchObject({ view: "interco-transactions" });
 });
 
 test("Induk yang disembunyikan eksplisit tetap tertutup walau anaknya sah", () => {

@@ -7,6 +7,7 @@ import {
   resolveActiveNavId, resolveDeepLinkTarget,
 } from "../navigationConfig";
 import { VIEW_ALIASES, aliasTarget, aliasesOf, listAliases, resolveAlias } from "../viewAliases";
+import { registerDynamicRoles, setAccessContext } from "../roles";
 import { resolveView } from "../../utils/viewAlias";
 import { ViewPresetProvider } from "../../context/ViewPresetContext";
 import { AppNavProvider, useAppNav } from "../../context/AppNavContext";
@@ -98,11 +99,70 @@ describe("deep link ?view= lewat alias", () => {
   }));
 });
 
+// Fase 3 · P8 — aktivasi tabel §6: alias lama → layar utama + preset, tab lama dicabut, peran tanpa layar utama tidak
+// mendapat pintu baru, dan `hidden_views` peran kustom terhadap id lama tetap menutup alias (risiko 6).
+describe("aktivasi P8 (tabel §6 rencana fase 3)", () => {
+  test.each([
+    ["my-approvals", "manager", "approval-inbox", "approval-inbox", { tab: "matrix" }],
+    ["cs-design-gallery", "designer", "rnd-designs", "designer-hub", { mode: "gallery", status: "acc" }],
+    ["cs-design-gallery", "md", "rnd-designs", "designer-hub", { mode: "gallery", status: "acc" }],
+    ["costing", "admin", "profitability", "fin-reports", { tab: "katalog" }],
+    ["interco-transfers", "warehouse", "operations", "wms-operations", { tab: "transfer", kind: "inter_entity" }],
+    ["rnd-labdip", "sales", "rnd-samples", "rnd-hub", { mode: "gallery", type: "labdip", purpose: "all" }],
+    ["rnd-handfeel", "md", "rnd-samples", "rnd-hub", { mode: "gallery", type: "handfeel", purpose: "all" }],
+    ["rnd-proofing", "warehouse", "rnd-samples", "rnd-hub", { mode: "gallery", type: "proofing", purpose: "all" }],
+  ])("?view=%s (%s) → %s + preset", (old, role, view, navId, preset) => {
+    expect(resolveDeepLinkTarget(old, role)).toMatchObject({ view, navId, preset, alias: old });
+    expect(resolveActiveNavId(old, null, role)).toBe(navId);
+  });
+
+  test("tab lama dicabut dari hub; tab tersembunyi interco-transfers tetap", () => {
+    const tabs = (hub) => HUB_TABS[hub].map((t) => t.view);
+    expect(tabs("approval-inbox")).not.toContain("my-approvals");
+    expect(tabs("designer-hub")).not.toContain("cs-design-gallery");
+    expect(tabs("analytics")).not.toContain("costing");
+    ["rnd-labdip", "rnd-handfeel", "rnd-proofing"].forEach((v) => expect(tabs("rnd-hub")).not.toContain(v));
+    expect(HUB_TABS["wms-operations"].find((t) => t.view === "interco-transfers")).toMatchObject({ hidden: true, aliasOf: "operations" });
+  });
+
+  test("palet: 'Nama lama → kini di <utama>' membawa preset", () => {
+    const pal = buildPaletteEntries("admin").find((e) => e.aliasOf === "costing");
+    expect(pal).toMatchObject({ view: "profitability", navId: "fin-reports", preset: { tab: "katalog" } });
+    expect(pal.label).toBe("Margin & HPP → kini di Laporan › Profitabilitas & Margin");
+    expect(buildPaletteEntries("warehouse_admin").some((e) => e.aliasOf === "costing")).toBe(false);
+  });
+
+  test("peran tanpa layar utama tidak mendapat pintu baru lewat nama lama", () => {
+    expect(resolveDeepLinkTarget("costing", "warehouse_admin")).toBeNull();
+    expect(resolveDeepLinkTarget("cs-design-gallery", "sales")).toBeNull();
+    expect(resolveDeepLinkTarget("interco-transfers", "sales")).toBeNull();
+    expect(resolveDeepLinkTarget("rnd-labdip", "finance")).toBeNull();
+  });
+
+  test("D-23: tab tersembunyi supplier-internal-prices (peran Kontrak yang punya Master Pembelian)", () => {
+    expect(resolveDeepLinkTarget("supplier-internal-prices", "manager")).toMatchObject({ navId: "master-pembelian", view: "supplier-internal-prices" });
+    expect(hubForView("supplier-internal-prices", "manager")).toMatchObject({ hubId: "master-pembelian", activeTab: "supplier-contracts" });
+    expect(breadcrumbFor("supplier-internal-prices", null, "manager")).toEqual(["Pembelian", "Master Pembelian", "Harga Internal Antar-PT"]);
+    expect(resolveDeepLinkTarget("supplier-internal-prices", "md")).toBeNull();
+  });
+
+  test("hidden_views peran kustom terhadap id lama (rnd-labdip) tetap menutup alias; jenis lain tetap terbuka", () => {
+    registerDynamicRoles([{ id: "cr_uji_rnd", label: "uji", custom: true, base_role: "",
+      nav: { add: ["rnd-hub", "rnd-samples", "rnd-labdip", "rnd-handfeel", "rnd-proofing"], remove: [] } }]);
+    setAccessContext({ role: "cr_uji_rnd", permissions: { rnd: ["view"] }, view_resources: {}, hidden_views: ["rnd-labdip"] });
+    try {
+      expect(resolveDeepLinkTarget("rnd-labdip", "cr_uji_rnd")).toBeNull();
+      expect(resolveDeepLinkTarget("rnd-handfeel", "cr_uji_rnd")).toMatchObject({ view: "rnd-samples", preset: { type: "handfeel" } });
+    } finally { setAccessContext(null); registerDynamicRoles([]); }
+  });
+});
+
 describe("breadcrumb dari menu (L-05)", () => {
   test.each([
     ["amendments", ["Penjualan", "Pesanan", "Koreksi & Amandemen"]],
     ["cs-stock-analytics", ["Analitik", "Analitik Stok"]],
-    ["costing", ["Analitik", "Margin & HPP"]],
+    // Fase 3 · P8 (D-11) — `costing` kini alias → breadcrumb layar utamanya.
+    ["costing", ["Akuntansi & Pajak", "Laporan", "Profitabilitas & Margin"]],
     ["consolidation", ["Akuntansi & Pajak", "Laporan", "Konsolidasi Grup"]],
     ["financial-statements", ["Akuntansi & Pajak", "Laporan", "Laba-Rugi, Neraca & Arus Kas"]],
     ["profitability", ["Akuntansi & Pajak", "Laporan", "Profitabilitas & Margin"]],

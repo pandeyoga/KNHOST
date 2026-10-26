@@ -13,7 +13,8 @@
 export const HUB_TABS = {
   "approval-inbox": [
     { view: "approval-inbox",    label: "Inbox Persetujuan",     roles: ["manager", "admin"] },
-    { view: "my-approvals",      label: "Persetujuan Saya",      roles: ["manager", "admin"] },
+    // Fase 3 · P8 (D-06) — "Persetujuan Saya" kini tab "Matriks divisi" di dalam Pusat Persetujuan (alias `my-approvals`
+    // → {tab:"matrix"} di viewAliases.js; rute cadangan tetap). Tab hub-nya dicabut.
     { view: "price-approvals",   label: "Pengajuan Harga Khusus",   roles: ["admin", "sales", "manager"] },
     { view: "purchase-approval", label: "Persetujuan Pembelian",    roles: ["admin", "manager"] },
   ],
@@ -44,6 +45,9 @@ export const HUB_TABS = {
     { view: "pricelist",         label: "Harga per Badan Usaha", roles: ["admin", "manager"] },
     { view: "cs-price-list",     label: "Harga per Pelanggan",   roles: ["admin", "manager", "sales"] },
     { view: "internal-prices",   label: "Harga Internal Antar-PT", roles: ["admin"] },
+    // Fase 3 · P2 (P16-K1) — Koreksi Harga & Daftar Dampak (dulu tab di Pusat Pengaturan). Manajer: pratinjau dampak
+    // (server: product.view); menerapkan tetap product.update.
+    { view: "price-corrections", label: "Koreksi Harga",         roles: ["admin", "manager"] },
   ],
   "sourcing": [
     { view: "reorder",               label: "Saran Reorder",     roles: ["admin", "manager"] },
@@ -57,7 +61,9 @@ export const HUB_TABS = {
     { view: "po-board",          label: "Papan PO per Lini",     roles: ["admin", "manager"] },
     { view: "blanket-po",        label: "Blanket / Kontrak",     roles: ["admin", "manager"] },
     { view: "makloon-orders",    label: "Order Makloon",         roles: ["admin", "manager", "warehouse", "sales"] },
-    { view: "makloon-claim-recap", label: "Rekap Susut & Klaim Mitra", roles: ["admin", "manager", "finance", "md"] },
+    // Fase 3 · P8 (D-22) — satu layar Kinerja Mitra Makloon (rekap susut & klaim + skor mitra). + warehouse: gudang dulu
+    // melihat skor mitra di Klaim Selisih Makloon; tanpa izin rekap layar menampilkan skor saja (403 ditangani layar).
+    { view: "makloon-claim-recap", label: "Kinerja Mitra Makloon", roles: ["admin", "manager", "finance", "md", "warehouse"] },
     { view: "makloon-claims",    label: "Klaim Selisih Makloon", roles: ["admin", "manager", "warehouse"] },
   ],
   "master-pembelian": [
@@ -65,7 +71,12 @@ export const HUB_TABS = {
     { view: "makloons",          label: "Mitra Makloon",         roles: ["admin", "manager"] },
     { view: "supplier-contracts", label: "Kontrak Mitra & Supplier", roles: ["admin", "manager", "warehouse"] },
     { view: "supplier-items",    label: "Barang Supplier",       roles: ["admin", "manager", "warehouse"] },
-    { view: "process-recipes",   label: "Resep Proses",          roles: ["admin", "manager"] },
+    // Fase 3 · P8 (D-25) — nama diperjelas (beda dengan BOM Produksi In-House di Gudang).
+    { view: "process-recipes",   label: "Resep Proses Makloon",  roles: ["admin", "manager"] },
+    // Fase 3 · P8 (D-23) — Harga Internal Antar-PT untuk peran Kontrak yang tak punya tab Produk & Harga › Harga
+    // Internal (tautan "Isi massal"/"Harga Internal" di Kontrak). Layar sama (`InternalPricesView`); izin tulis dari
+    // server (`interco_price`).
+    { view: "supplier-internal-prices", label: "Harga Internal Antar-PT", roles: ["admin", "manager", "warehouse"], hidden: true, aliasOf: "supplier-contracts" },
   ],
   "accounts-payable": [
     { view: "vendor-bills",      label: "Tagihan Supplier",      roles: ["admin", "manager"] },
@@ -85,7 +96,7 @@ export const HUB_TABS = {
     { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "sales_admin", "manager", "warehouse", "qc", "md", "md_quality"] },
     { view: "interco-returns",   label: "Retur Antar-PT",        roles: ["admin", "manager", "warehouse", "finance", "sales_admin"] },
     { view: "purchase-returns",  label: "Retur ke Supplier (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
-    { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
+    // Fase 3 · P2 (P16-K1) — "Kebijakan Retur" pindah ke Pengaturan › Penjualan (view id sama).
   ],
   // FASE F — R&D: hulu rantai (spesifikasi → labdip/proofing → kontrak).
   // warehouse ikut melihat karena dialah yang mengeluarkan bahan sample (PS-19).
@@ -101,10 +112,8 @@ export const HUB_TABS = {
     // tersembunyi: antrean "Spesifikasi produk menunggu ACC" (dasbor/Pusat Persetujuan Manajer) & Jejak Dokumen
     // menautkan ke `rnd-specs` — dulu tautan itu melempar pengguna ke Beranda.
     { view: "rnd-specs", label: "Spesifikasi Produk", roles: ["admin", "manager", "sales", "md", "sales_admin"], hidden: true, aliasOf: "rnd-samples" },
-    // Galeri per JENIS — cermin "Desain & Pattern (Master)" di hub Desainer (permintaan user).
-    { view: "rnd-labdip",   label: "Labdip",   roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },
-    { view: "rnd-handfeel", label: "Handfeel", roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },
-    { view: "rnd-proofing", label: "Proofing", roles: ["admin", "manager", "sales", "warehouse", "md", "sales_admin"] },
+    // Fase 3 · P8 (D-24b, keputusan pemilik 26 Okt) — tab Labdip/Handfeel/Proofing dicabut: galeri per jenis = mode
+    // Galeri + chip jenis di R&D Produk Baru (alias `rnd-labdip` dkk. → `rnd-samples` {mode:"gallery", type}).
     { view: "rnd-reports", label: "Laporan R&D",        roles: ["admin", "manager"] },
   ],
   // MARKETING — sosial media & kalender konten.
@@ -121,7 +130,7 @@ export const HUB_TABS = {
     { view: "design-requests",   label: "Permintaan Desain",  roles: ["admin", "manager", "designer"] },
     { view: "designer-kpi",      label: "KPI Desainer",       roles: ["admin", "manager"] },
     { view: "rnd-designs",       label: "Desain & Pattern",   roles: ["admin", "manager", "designer"] },
-    { view: "cs-design-gallery", label: "Galeri Desain (Showcase)", roles: ["admin", "manager"] },
+    // Fase 3 · P8 (D-09) — Galeri Desain (Showcase) = mode Galeri di Desain & Pattern (alias `cs-design-gallery`).
   ],
   "wms-operations": [
     { view: "operations",        label: "Stok, Transfer & Opname", roles: ["admin", "warehouse", "manager", "sales"] },
@@ -195,7 +204,8 @@ export const HUB_TABS = {
   ],
   "analytics": [
     { view: "reports",           label: "Ringkasan",              roles: ["admin", "manager"] },
-    { view: "costing",           label: "Margin & HPP",          roles: ["admin", "manager"] },
+    // Fase 3 · P8 (D-11) — Margin & HPP = tab "Margin katalog" di Akuntansi & Pajak › Laporan › Profitabilitas & Margin
+    // (alias `costing` → `profitability` {tab:"katalog"}).
     { view: "cs-bi-hrd",         label: "BI SDM",                roles: ["admin", "manager"] },
     // 2026-10 — dipindah dari grup Gudang: semua analitik di satu hub.
     { view: "cs-stock-analytics", label: "Analitik Stok",         roles: ["admin", "manager", "warehouse_admin"] },
@@ -218,33 +228,79 @@ export const HUB_TABS = {
     { view: "cs-rfid-tags",      label: "Tag RFID",              roles: ["admin", "warehouse"] },
     { view: "cs-rfid-gate",      label: "Monitor Gerbang",       roles: ["admin", "warehouse"] },
   ],
-  // IA 2026-10 (D3) — 3 seksi: Sistem · Organisasi & Akses · Kamus & Dokumen.
-  "settings-hub": [
-    { view: "settings-config",   label: "Pusat Pengaturan",      roles: ["admin", "manager"], section: "Sistem" },
-    { view: "scheduler",         label: "Penjadwal & Notifikasi", roles: ["admin", "manager"], section: "Sistem" },
-    { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"], section: "Sistem" },
-    { view: "entities-access",   label: "Badan Usaha & Akses",   roles: ["admin", "manager"], section: "Organisasi & Akses" },
+  // ── PENGATURAN — fase 3 · P2 (keputusan pemilik P16-K1, mock UAT24-F5 §P16.3). Dulu satu hub `settings-hub` ±20 tab
+  // berseksi (pil membungkus 3–5 baris); kini grup sidebar "Pengaturan" berisi hub per kelompok. Editor lama TETAP
+  // memakai view id-nya (deep link, notifikasi, katalog akses). Yang baru hanya `settings-cfg-*` (Pusat Pengaturan
+  // terkunci ke kelompok registri domain itu — `features/settings/config/configGroupViews.js`), `settings-devices`
+  // (D-29) dan `price-corrections` (Koreksi Harga, hub Produk & Harga). "Semua pengaturan" (`settings-config`) tetap
+  // satu-satunya tempat cari lintas kelompok, riwayat, kesehatan, kunci proses & kebersihan data (Q6).
+  "settings-company": [
+    { view: "entities-access",   label: "Badan Usaha & Akses",   roles: ["admin", "manager"] },
     // Alias deep-link lama `?view=permission-matrix` → Badan Usaha & Akses tab Peran & Hak Akses.
     { view: "permission-matrix", label: "Peran & Hak Akses",     roles: ["admin", "manager"], hidden: true, aliasOf: "entities-access" },
-    { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin"], section: "Organisasi & Akses" },
-    // master BERLAPIS global → badan usaha (override per BU; editor lengkap ada di domainnya).
-    { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"], section: "Organisasi & Akses" },
-    { view: "client-dataset-import", label: "Impor Dataset Klien", roles: ["admin"], section: "Kamus & Dokumen" },
-    { view: "grade-master",      label: "Master Grade Mutu",     roles: ["admin", "manager", "md", "sales_admin", "warehouse_admin", "md_quality", "qc"], section: "Kamus & Dokumen" },
-    { view: "domain-registry",   label: "Registri Domain",       roles: ["admin", "manager"], section: "Kamus & Dokumen" },
-    { view: "pdf-templates",     label: "Template PDF",          roles: ["admin"], section: "Kamus & Dokumen" },
-    // B3 — template dokumen dasar: kertas/orientasi/urutan bagian (dulu tab di Master Data & Audit).
-    { view: "doc-templates-basic", label: "Template Dokumen Dasar", roles: ["admin"], section: "Kamus & Dokumen" },
+  ],
+  "settings-approval": [
+    // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha); tombol ubah hanya bagi izin settings.manage.
+    { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin", "manager"] },
+    // Matriks approver R&D (DivisionsView bagian "matriks"); penempatan tim pindah ke Pengaturan › R&D.
+    { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"] },
+    { view: "settings-cfg-approval", label: "Persetujuan & Ambang", roles: ["admin", "manager"] },
+  ],
+  "settings-sales": [
+    { view: "settings-cfg-sales", label: "Aturan Penjualan",     roles: ["admin", "manager"] },
+    { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"] },
+    // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar.
+    { view: "incentive-rates",   label: "Komisi & Insentif",     roles: ["admin", "manager"] },
+    // P16-K1 — dipindah dari hub Retur (sales_admin tetap lewat ROLE_NAV `return-policies` + `settings-sales`).
+    { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
+  ],
+  "settings-warehouse": [
+    { view: "settings-cfg-warehouse", label: "Aturan Gudang & Mutu", roles: ["admin", "manager"] },
     // 2026-10 — Profil SJ · Sample Uji OCR · Biaya OCR · Mode Penerimaan (dulu tab di Barang Masuk).
-    { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"], section: "Gudang" },
-    // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
-    { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
-    { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"], section: "Penjualan" },
-    { view: "incentive-rates",   label: "Tarif Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
-    { view: "gl-account-mappings", label: "Pemetaan Akun",       roles: ["admin", "manager", "finance"], section: "Keuangan" },
-    { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },
-    { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"], section: "Keuangan" },
-    { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"], section: "SDM" },
-    { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"], section: "Organisasi & Akses" },
+    { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"] },
+    { view: "grade-master",      label: "Master Grade Mutu",     roles: ["admin", "manager", "md", "sales_admin", "warehouse_admin", "md_quality", "qc"] },
+  ],
+  "settings-purchasing": [
+    { view: "settings-cfg-purchasing", label: "Aturan Pembelian & Makloon", roles: ["admin", "manager"] },
+  ],
+  "settings-finance": [
+    { view: "settings-cfg-finance", label: "Aturan Keuangan & Pajak", roles: ["admin", "manager"] },
+    { view: "gl-account-mappings", label: "Pemetaan Akun",       roles: ["admin", "manager", "finance"] },
+    // D-02 — satu editor kategori (lapis global → badan usaha + pemilih akun COA).
+    { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"] },
+    { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"] },
+  ],
+  "settings-hr": [
+    { view: "settings-cfg-hr",   label: "SDM & Penggajian",      roles: ["admin", "manager"] },
+    { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"] },
+  ],
+  "settings-rnd": [
+    // Aturan R&D (kelompok registri `rnd`) + penempatan tim R&D (bagian "tim" DivisionsView).
+    { view: "settings-cfg-rnd",  label: "R&D & Desain",          roles: ["admin", "manager"] },
+  ],
+  "settings-masters": [
+    // master BERLAPIS global → badan usaha; jenis yang punya rumah domain tampil sebagai TAUTAN (D-01..D-04).
+    { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"] },
+    { view: "domain-registry",   label: "Registri Domain",       roles: ["admin", "manager"] },
+    { view: "client-dataset-import", label: "Impor Dataset Klien", roles: ["admin"] },
+  ],
+  "settings-documents": [
+    // D-01 — Template PDF + Template Dokumen Dasar digabung (alias `doc-templates-basic` → tab "dasar").
+    // Tab "Desainer PDF" di dalam layar tetap khusus admin; hak tulis dijaga server (izin `template`).
+    { view: "pdf-templates",     label: "Template Dokumen",      roles: ["admin", "manager"] },
+    { view: "settings-cfg-documents", label: "Aturan Dokumen",   roles: ["admin", "manager"] },
+  ],
+  "settings-notify": [
+    { view: "scheduler",         label: "Penjadwal & Notifikasi", roles: ["admin", "manager"] },
+    { view: "settings-cfg-notify", label: "Penerima Notifikasi", roles: ["admin", "manager"] },
+  ],
+  "settings-system": [
+    // Q6 — "Semua pengaturan" = Pusat Pengaturan penuh (cari lintas kelompok, kesehatan, riwayat, kunci proses,
+    // kebersihan data). `view: "settings-config"` WAJIB ada di menu (scripts/audit_config_wiring.py).
+    { view: "settings-config",   label: "Semua pengaturan",      roles: ["admin", "manager"] },
+    { view: "settings-cfg-system", label: "Tampilan & Asisten",  roles: ["admin", "manager"] },
+    // D-29 — satu layar Perangkat: mesin absen (dulu Shift & Geofence) + RFID (alias `cs-rfid-devices`).
+    { view: "settings-devices",  label: "Perangkat",             roles: ["admin", "manager"] },
+    { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"] },
   ],
 };

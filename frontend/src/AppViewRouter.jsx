@@ -14,6 +14,7 @@ import { defaultNavIdForRole, defaultViewForRole } from "./config/navigationConf
 // Fase 3 · P1 — preset layar (alias/tautan) & jalur navigasi bersama untuk LinkCard/tombol tautan.
 import { ViewPresetProvider } from "./context/ViewPresetContext";
 import { AppNavProvider } from "./context/AppNavContext";
+import { configDeepLinkTarget } from "./hooks/useDeepLinks";
 
 // ── Lazy views (dipisah per chunk) — daftar di ./appViewImports.js (fase 3 · P1, batas 500 baris) ──
 import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHubView, InspectionsView,
@@ -35,12 +36,13 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
   AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayslipsView, LeaveView, OvertimeView,
   KpiView, DesignGalleryView, HrAnalyticsView, StockAnalyticsView, ExportCenterView, LocationPutawayView,
-  GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView, RfidDevicesView,
+  GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView,
   RfidGateMonitorView, RfidLocationsView, CashAdvancesView, SettlementsView, ExpenseCategoriesView,
-  GLAccountMappingView, ReimbursePayablesView, VehicleLogsView, PdfTemplateDesigner, RoleDesk, TanyaKnView,
+  GLAccountMappingView, ReimbursePayablesView, VehicleLogsView, RoleDesk, TanyaKnView,
   SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
-  MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView
+  MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
+  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView
 } from "./appViewImports";
 
 // PS-20 — peta view tujuan → hub induknya, untuk tombol "Buka" di Persetujuan Saya.
@@ -110,6 +112,15 @@ export default function AppViewRouter(props) {
     // FASE F — kolom Tahap Produk butuh identitas aktor (wewenang rilis) + muat ulang.
     currentUser: user, onReload: actions.loadAll,
   };
+  // Fase 3 · P2 — fokus deep link `openConfig` (kunci/kelompok) HANYA untuk layar tujuannya (useDeepLinks memilih
+  // layar domain / Komisi & Insentif / Semua pengaturan); layar Pengaturan lain yang masih terpasang tidak boleh
+  // menyerap fokus itu lebih dulu.
+  const cfgTarget = configFocus ? configDeepLinkTarget(configFocus, user?.role).view : "";
+  const cfgFocus = cfgTarget === activeView ? {
+    focusKey: configFocus?.key || "", focusGroup: configFocus?.group || "", focusNonce: configFocus?.nonce || 0,
+    onFocusConsumed: onConfigFocusConsumed,
+  } : {};
+  const docTplProps = { currentUser: user, selectedEntity, entities, orders: data.orders || [] };
 
   return (
     <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={openDocument}>
@@ -138,8 +149,10 @@ export default function AppViewRouter(props) {
           onNavigate={(view) => onNavSelect(view, view)}
         />
       )}
-      {activeView === "doc-templates-basic" && <AdminView {...adminProps} only={["templates"]} />}
-      {activeView === "pdf-templates" && <PdfTemplateDesigner currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
+      {/* Fase 3 · P2 (D-01) — Template Dokumen: tab "Kop & tata letak dasar" + "Desainer PDF" (khusus admin).
+          `doc-templates-basic` = alias (viewAliases.js); rute cadangan tetap merender layar utama tab dasar. */}
+      {activeView === "doc-templates-basic" && <DocTemplatesView {...docTplProps} initialTab="dasar" />}
+      {activeView === "pdf-templates" && <DocTemplatesView {...docTplProps} />}
       {activeView === "document-center" && <DocumentCenter currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "doc-trace" && (
         <DocTraceView
@@ -154,13 +167,15 @@ export default function AppViewRouter(props) {
       {/* Master data relokasi ke domain relevan (role-coherent IA). */}
       {activeView === "md-products" && <CatalogWorkspace currentUser={user} selectedEntity={selectedEntity} focus={catalogFocus} legacyView={<AdminView {...adminProps} only={["products"]} />} />}
       {activeView === "md-categories" && <AdminView {...adminProps} only={["categories"]} />}
-      {activeView === "md-uoms" && <AdminView {...adminProps} only={["uoms"]} />}
+      {/* D-21 — satu layar Satuan & Konversi (tabel "Satuan & faktor" + aturan); `uom-conversions` = alias. */}
+      {activeView === "md-uoms" && <UomConversionView user={user} products={data.products || []} />}
       {/* FASE E-4 (E4.1) — gudang punya aturan pemakaian per badan usaha (bersama /
           khusus), jadi ia pindah dari tab generik Master Data ke layarnya sendiri. */}
       {activeView === "md-warehouses" && (
         <WarehouseMasterView entities={entities} selectedEntity={selectedEntity} currentUser={user} />
       )}
       {activeView === "reports" && <ManagerDashboard token={token} selectedEntity={selectedEntity} />}
+      {/* Fase 3 · P8 (D-11) — `costing` = alias ke Profitabilitas & Margin tab katalog; rute cadangan = panel yang sama. */}
       {activeView === "costing" && <CostingView selectedEntity={selectedEntity} />}
       {activeView === "ar-aging" && <ARAgingView selectedEntity={selectedEntity} currentUser={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "advance-report" && <AdvanceReportView selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
@@ -187,7 +202,7 @@ export default function AppViewRouter(props) {
       {/* Kas & Aset — Digitalisasi Formulir Sukacita (PD / LPJ / Kendaraan) */}
       {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} />}
+      {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
@@ -207,6 +222,7 @@ export default function AppViewRouter(props) {
           warehouses={data.warehouses || []} entityId={selectedEntity} />
       )}
       {activeView === "price-approvals" && <PriceApprovals currentUser={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
+      {/* Fase 3 · P8 (D-16) — alias ke Operasi Gudang › Transfer saringan "Antar PT"; rute cadangan = daftar yang sama. */}
       {activeView === "interco-transfers" && <InterCompanyTransfers currentUser={user} />}
       {activeView === "orders" && <OrdersView orders={data.orders || []} loading={loading} user={user} onRefresh={actions.loadAll} onShowDetail={setActiveDetail} onIssueTaxInvoice={issueTaxInvoice} onSubmitForApproval={(id) => mutateOrder(`/sales-orders/${id}/submit-for-approval`, (order) => order.status === "approved" ? `${order.number} auto-approved (di bawah threshold).` : `${order.number} dikirim untuk approval (butuh ${order.required_approval_role || "approver"}).`)} onApprove={(id) => mutateOrder(`/sales-orders/${id}/approve`, (order) => `${order.number} approved.`)} onConfirm={(id) => mutateOrder(`/sales-orders/${id}/confirm`, (order) => `${order.number} confirmed.`)} onCancel={(id) => mutateOrder(`/sales-orders/${id}/cancel`, (order) => `${order.number} dibatalkan, stok unlock.`)} onPay={payInvoice} onGenerateDocument={generateDocument} onReleaseReservation={releaseReservation} onMarkDelivered={markDelivered} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
       {activeView === "tax-invoices" && <TaxInvoices currentUser={user} />}
@@ -248,6 +264,7 @@ export default function AppViewRouter(props) {
       {activeView === "uom-conversions" && <UomConversionView user={user} products={data.products || []} />}
       {activeView === "customers-crm" && <CrmView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "approval-inbox" && <ApprovalInbox currentUser={user} onNavigate={(navId, view, tab) => onNavSelect(navId, view, tab)} onOpenDocument={openDocument} />}
+      {/* Fase 3 · P8 (D-06) — `my-approvals` = alias ke tab Matriks divisi; rute cadangan = panel yang sama. */}
       {activeView === "my-approvals" && <MyApprovalsView currentUser={user} selectedEntity={selectedEntity} onNavigate={(view) => onNavSelect(APPROVAL_HUB_OF[view] || view, view)} />}
       {activeView === "approval-rules" && <ApprovalRulesSettings currentUser={user} />}
       {activeView === "grade-master" && <GradeMasterView currentUser={user} />}
@@ -260,12 +277,15 @@ export default function AppViewRouter(props) {
           currentUser={user}
           selectedEntity={selectedEntity}
           entities={entities}
-          focusKey={configFocus?.key || ""}
-          focusGroup={configFocus?.group || ""}
-          focusNonce={configFocus?.nonce || 0}
-          onFocusConsumed={onConfigFocusConsumed}
+          {...cfgFocus}
         />
       )}
+      {/* Fase 3 · P2 (P16-K1) — Pusat Pengaturan dikunci ke kelompok registri domain (configGroupViews.js). */}
+      {["settings-cfg-approval", "settings-cfg-sales", "settings-cfg-warehouse", "settings-cfg-purchasing", "settings-cfg-finance", "settings-cfg-hr", "settings-cfg-rnd", "settings-cfg-documents", "settings-cfg-notify", "settings-cfg-system"].includes(activeView) && (
+        <SettingsGroupView key={activeView} view={activeView} currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />
+      )}
+      {activeView === "settings-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "price-corrections" && <PriceCorrectionsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "purchasing" && <PurchaseOrderManagement user={user} selectedEntity={selectedEntity} onApprovePO={approvePurchaseOrder} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} onSwitchEntity={props.onSelectEntity} buyerEntities={props.switcherEntities || entities} />}
       {/* FASE P — papan PO per lini (kertas kerja MD: tahap · Nama Sales · qty terima) */}
       {activeView === "po-board" && <PoBoardView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
@@ -277,9 +297,11 @@ export default function AppViewRouter(props) {
       {activeView === "makloon-claim-recap" && <MakloonClaimRecapView selectedEntity={selectedEntity} />}
       {activeView === "makloon-claims" && <MakloonClaimsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "supplier-contracts" && <ContractsView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* Fase 3 · P8 (D-23) — tab tersembunyi Master Pembelian (peran Kontrak): layar Harga Internal yang sama. */}
       {activeView === "internal-prices" && <InternalPricesView />}
+      {activeView === "supplier-internal-prices" && <InternalPricesView />}
       {activeView === "amendment-reasons" && <AmendmentReasonsPanel currentUser={user} />}
-      {activeView === "incentive-rates" && <IncentiveRatesEditor currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "incentive-rates" && <IncentiveRatesEditor currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />}
       {activeView === "bank-recon-rules" && <BankRulesSettingsView />}
       {/* FASE F — hub R&D & Desain (4 tab). `rndFocus` = deep-link dari Pustaka Warna,
           Kontrak Supplier, atau kartu desain (event global `kn-open-rnd`). */}
@@ -299,9 +321,12 @@ export default function AppViewRouter(props) {
               ? { nonce: `desk:${focusDoc.focus_id}`, sampleId: focusDoc.focus_id } : null)}
           onFocusConsumed={() => { onRndFocusConsumed?.(); setFocusDoc(null); }} />
       )}
-      {["rnd-labdip", "rnd-handfeel", "rnd-proofing"].includes(activeView) && (
-        <SampleTypeGalleryView key={activeView} code={activeView.replace("rnd-", "")} currentUser={user} selectedEntity={selectedEntity} />
-      )}
+      {/* Fase 3 · P8 (D-24b) — `rnd-labdip` dkk. = alias ke `rnd-samples` {mode:"gallery", type}; rute cadangan (notifikasi
+          lama, setActiveView langsung) merender layar utama yang sama lewat pembungkus. Ditulis `activeView === "<id>"`
+          supaya katalog akses (verify_access_catalog_nav) & audit_ia tetap mengenali id lama. */}
+      {activeView === "rnd-labdip" && <SampleTypeGalleryView code="labdip" currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "rnd-handfeel" && <SampleTypeGalleryView code="handfeel" currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "rnd-proofing" && <SampleTypeGalleryView code="proofing" currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "rnd-designs" && (
         <RndDesignsView currentUser={user} selectedEntity={selectedEntity}
           focus={rndFocus?.view === "rnd-designs" ? rndFocus : null}
@@ -314,7 +339,7 @@ export default function AppViewRouter(props) {
       {activeView === "mkt-campaigns" && <MktCampaigns currentUser={user} />}
       {activeView === "mkt-analytics" && <MarketingAnalytics currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "mkt-accounts" && <SocialAccounts currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "rnd-divisions" && <DivisionsView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "rnd-divisions" && <DivisionsView section="matrix" currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "supplier-items" && <SupplierItemsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "purchase-approval" && <PurchaseApprovalView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cash-management" && <CashManagementView currentUser={user} selectedEntity={selectedEntity} />}
@@ -350,6 +375,7 @@ export default function AppViewRouter(props) {
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-overtime" && <OvertimeView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-kpi" && <KpiView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* Fase 3 · P8 (D-09) — alias ke Desain & Pattern mode Galeri; rute cadangan (antrean backend design_gallery). */}
       {activeView === "cs-design-gallery" && <DesignGalleryView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-bi-hrd" && <HrAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-stock-analytics" && <StockAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}
@@ -360,7 +386,8 @@ export default function AppViewRouter(props) {
       {activeView === "settings-receiving-ocr" && <ReceivingOcrSettings currentUser={user} />}
       {activeView === "wms-locations" && <LocationPutawayView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-rfid-tags" && <RfidTagsView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "cs-rfid-devices" && <RfidDevicesView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* D-29 — `cs-rfid-devices` = alias ke Perangkat tab RFID; rute cadangan merender layar utama yang sama. */}
+      {activeView === "cs-rfid-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} initialTab="rfid" />}
       {activeView === "cs-rfid-gate" && <RfidGateMonitorView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-rfid-lokasi" && <RfidLocationsView currentUser={user} selectedEntity={selectedEntity} />}
       {isComingSoon && <ComingSoon title={pageMeta.title} kicker={pageMeta.kicker} onBack={() => onNavSelect(defaultNavIdForRole(user?.role), defaultViewForRole(user?.role))} />}

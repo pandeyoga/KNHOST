@@ -11,6 +11,7 @@ import { sirenOnNewAlarms } from "../utils/sirenAlarm";
 import { askConfirm } from "@/services/confirmService";
 import { getStage, getSubStatus, stageMeta, subStatusLabel } from "../utils/soStatus";
 import { apiErrorText } from "../utils/apiError";
+import { makeCreateCustomer } from "../features/pos/customerCreateAction";
 
 // G0-11 — nama resource API → kata benda Indonesia untuk dialog & pesan Master Data.
 const RESOURCE_LABEL = {
@@ -61,9 +62,14 @@ export function useAppActions(state) {
   const rndEnforcementRef = useRef("block");
 
   // Keep axios auth header in sync with token.
-  useEffect(() => {
+  // Fase 3 · P8 (catatan koordinator) — dipasang SINKRON saat render, bukan di useEffect: efek anak berjalan LEBIH DULU
+  // dari efek induk, jadi permintaan pertama layar saat muat halaman dulu berangkat tanpa token (401 sesaat di dev
+  // lintas-origin). Idempoten (hanya bila token berubah) — aman untuk render ganda StrictMode.
+  const authTokenRef = useRef(undefined);
+  if (authTokenRef.current !== token) {
+    authTokenRef.current = token;
     setAuthToken(token);
-  }, [token]);
+  }
 
   const login = async (email, password) => {
     try {
@@ -330,25 +336,9 @@ export function useAppActions(state) {
     setNotice(`${product.name} (${addQty} ${useUnit}) masuk keranjang.`);
   };
 
-  const createCustomer = async (form) => {
-    if (!form.name || !form.pic_name || !form.phone || !form.city || !form.address) {
-      setNotice("Lengkapi data customer baru terlebih dahulu.");
-      return;
-    }
-    if ((form.country_code || "ID") === "ID" && (!form.province_code || !form.city_code || !form.postal_code)) {
-      setNotice("Alamat belum lengkap: pilih provinsi, kota/kabupaten, dan kode pos yang valid.");
-      return;
-    }
-    try {
-      const response = await axios.post(`${API}/customers`, { ...form, entity_id: entityValue });
-      setSelectedCustomer(response.data);
-      setSelectedAddress(response.data.addresses[0].id);
-      setNotice(`Customer ${response.data.name} aktif dan siap dipakai.`);
-      await loadAll();
-    } catch (error) {
-      setNotice(error.response?.data?.detail || "Gagal membuat customer.");
-    }
-  };
+  // Fase 3 · P3 (D-05) — "Pelanggan Baru" = form lengkap CustomerFormModal yang menyimpan sendiri; aksi ini memilih
+  // pelanggan tersimpan (atau jalur form lama). Lihat features/pos/customerCreateAction.js.
+  const createCustomer = makeCreateCustomer({ entityValue, setSelectedCustomer, setSelectedAddress, setNotice, loadAll });
 
   const submitOrder = async (extra = {}) => {
     try {

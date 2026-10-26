@@ -15,6 +15,8 @@
  *        array bila `multiple`) · `onChange(next)` · `multiple` · `clearable` (satu-pilih: klik chip aktif →
  *        `onChange(null)`) · `testId` (bawaan testid chip = `${testId}-${key}`) · `chipTestId(key)` · `ariaLabel`
  *        · `className`. Chip memakai `aria-pressed` (tombol saklar), bukan peran tab.
+ * Tata letak: `.filter-chips` ber-`min-width: 0` (fase 3 · P8) — di HP chip bergulir di dalam lebar induk, tidak
+ *        melebarkan sel grid/flex induknya.
  */
 export default function FilterChips({
   options = [], value, onChange, multiple = false, clearable = false,

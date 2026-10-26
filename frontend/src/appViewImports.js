@@ -96,6 +96,12 @@ export const WarehouseMasterView = lazy(() => import("./features/wms/warehouses/
 // FASE G-0 — Pusat Pengaturan (satu pintu semua konfigurasi: cari, penjelasan,
 // simulator "coba dulu", jejak lapisan, riwayat, berlaku-sejak, Daftar Dampak).
 export const SettingsHub = lazy(() => import("./features/settings/config/SettingsHub"));
+// Fase 3 · P2 (P16-K1) — Pengaturan per domain (`settings-cfg-*`), Perangkat gabungan (D-29), Koreksi Harga,
+// Template Dokumen (D-01: Template PDF + Template Dokumen Dasar).
+export const SettingsGroupView = lazy(() => import("./features/settings/cfg/SettingsGroupView"));
+export const DevicesView = lazy(() => import("./features/settings/devices/DevicesView"));
+export const PriceCorrectionsView = lazy(() => import("./features/settings/config/PriceCorrectionsView"));
+export const DocTemplatesView = lazy(() => import("./features/pdf/DocTemplatesView"));
 export const SuppliersView = lazy(() => import("./features/purchasing/SuppliersView"));
 export const MakloonsView = lazy(() => import("./features/purchasing/MakloonsView"));
 export const ProcessRecipesView = lazy(() => import("./features/purchasing/ProcessRecipesView"));

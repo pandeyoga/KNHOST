@@ -33,7 +33,7 @@ export const PAGE_META = {
   "returns":              { kicker: "Retur",          title: "Retur Pelanggan & Barang Sisa" },
   "returns-hub":          { kicker: "Retur",          title: "Retur \u00b7 Pelanggan \u00b7 Antar-PT \u00b7 Supplier" },
   "interco-returns":      { kicker: "Retur",          title: "Retur Antar-PT \u00b7 Keluar & Masuk" },
-  "return-policies":      { kicker: "Retur", title: "Kebijakan Retur Jual" },
+  "return-policies":      { kicker: "Pengaturan · Penjualan", title: "Kebijakan Retur Jual" },
   "special-orders":       { kicker: "Penjualan",      title: "Pesanan Khusus (OD)" },
   // FASE E-7 (E7d) — permintaan barang antar badan usaha. Tanpa baris ini judul layar
   // jatuh ke cadangan "Kain Nusantara" / kicker "Workspace" (pengguna kehilangan konteks).
@@ -60,7 +60,8 @@ export const PAGE_META = {
   "entity-masters":       { kicker: "Pengaturan",     title: "Master per Badan Usaha" },
   "client-dataset-import": { kicker: "Pengaturan",    title: "Impor Dataset Klien (artikel · tahap · jenis kain · supplier/warna)" },
   "grade-master":         { kicker: "Pengaturan",     title: "Master Grade Mutu" },
-  "pdf-templates":        { kicker: "Pengaturan",     title: "Desainer Template PDF" },
+  // Fase 3 · P2 (D-01) — Template PDF + Template Dokumen Dasar = satu layar "Template Dokumen".
+  "pdf-templates":        { kicker: "Pengaturan",     title: "Template Dokumen \u00b7 Kop, Tata Letak & Desainer PDF" },
   "document-center":      { kicker: "Dokumen",        title: "Pusat Dokumen" },
   "doc-trace":            { kicker: "Dokumen",        title: "Jejak Dokumen (Relasi Antar Surat)" },
   "payment-plans":        { kicker: "Keuangan",       title: "Rencana Pembayaran & Denda" },
@@ -71,8 +72,12 @@ export const PAGE_META = {
   reorder:                { kicker: "Pembelian",      title: "Saran Reorder · Isi Ulang Stok" },
   suppliers:              { kicker: "Pembelian",      title: "Master Pemasok (Supplier)" },
   makloons:               { kicker: "Pembelian",      title: "Mitra Makloon (Subkontraktor)" },
-  "process-recipes":      { kicker: "Pembelian",      title: "Resep Proses (Konversi & Rumus Makloon)" },
-  "makloon-claim-recap":  { kicker: "Pembelian",      title: "Rekap Susut & Klaim Mitra Makloon" },
+  // Fase 3 · P8 (D-25) — nama diperjelas: resep makloon ≠ BOM produksi in-house (Gudang › BOM Produksi In-House).
+  "process-recipes":      { kicker: "Pembelian",      title: "Resep Proses Makloon · Konversi Bahan → Hasil" },
+  // Fase 3 · P8 (D-22) — satu layar: rekap susut & klaim + skor mitra (dulu tersebar di Klaim & rincian mitra).
+  "makloon-claim-recap":  { kicker: "Pembelian",      title: "Kinerja Mitra Makloon · Rekap Susut, Klaim & Skor Mitra" },
+  // Fase 3 · P8 (D-23) — tab tersembunyi di Master Pembelian (peran Kontrak); layar sama dengan Produk & Harga.
+  "supplier-internal-prices": { kicker: "Pembelian",  title: "Harga Internal Antar-PT" },
   "makloon-orders":       { kicker: "Pembelian",      title: "Order Makloon (Subkontrak \u00b7 Bahan di Mitra)" },
   "makloon-claims":       { kicker: "Pembelian",      title: "Klaim Selisih Makloon \u00b7 Persetujuan & Skor Mitra" },
   "supplier-contracts":   { kicker: "Pembelian",      title: "Kontrak Mitra & Supplier \u00b7 Tarif, Susut & Toleransi" },
@@ -89,10 +94,10 @@ export const PAGE_META = {
   // PS-18 — menu DESAINER (terpisah dari R&D): orang + karyanya.
   "designer-kpi":         { kicker: "Desainer",        title: "KPI Desainer \u00b7 Tepat Waktu, Pengulangan & Eskalasi SLA" },
   "rnd-designs":          { kicker: "Desainer",        title: "Desain & Pattern (Master) \u00b7 Kode, Versi & Pengesahan" },
-  "rnd-divisions":        { kicker: "Pengaturan · Organisasi", title: "Divisi & Persetujuan R&D \u00b7 Penempatan Tim & Matriks Approver" },
+  "rnd-divisions":        { kicker: "Pengaturan · Persetujuan", title: "Divisi & Persetujuan R&D \u00b7 Matriks Approver" },
   "md-categories":        { kicker: "Produk & Harga", title: "Kategori Produk" },
   "md-uoms":              { kicker: "Produk & Harga", title: "Satuan & Konversi" },
-  "uom-conversions":      { kicker: "Master Data",    title: "Satuan & Konversi" },
+  "uom-conversions":      { kicker: "Produk & Harga", title: "Satuan & Konversi" },
   "inventory-lots":       { kicker: "Gudang",         title: "Lot & Silsilah \u00b7 Traceability, Recall & Label" },
   "md-warehouses":        { kicker: "Gudang",         title: "Gudang (Master) \u00b7 Lokasi & Bin" },
   "purchase-approval":    { kicker: "Persetujuan",      title: "Persetujuan Pembelian" },
@@ -116,7 +121,8 @@ export const PAGE_META = {
   "cs-price-list":        { kicker: "Produk & Harga", title: "Harga per Pelanggan" },
   "internal-prices":      { kicker: "Produk & Harga", title: "Harga Internal Antar-PT" },
   "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Label Alasan Amandemen" },
-  "incentive-rates":      { kicker: "Pengaturan · Penjualan", title: "Tarif Insentif Sales" },
+  // Fase 3 · P2 (D-03) — tarif per kategori + bawaan komisi (`commission.*`) digabung di satu layar.
+  "incentive-rates":      { kicker: "Pengaturan · Penjualan", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
   "bank-recon-rules":     { kicker: "Pengaturan · Keuangan", title: "Aturan & Template Bank" },
   "cs-bom":               { kicker: "Pembelian",      title: "BOM Printing" },
   "cs-stock-analytics":   { kicker: "Gudang",         title: "Analitik Stok (Cepat/Lambat/Mati)" },
@@ -126,17 +132,18 @@ export const PAGE_META = {
   "wms-cutting":          { kicker: "Operasi Gudang", title: "Cutting · Potong Sample & Potong Roll" },
   "settings-receiving-ocr": { kicker: "Pengaturan › Gudang", title: "Penerimaan & OCR" },
   "wms-locations":        { kicker: "Gudang",         title: "Lokasi Gudang & Penempatan Rak" },
-  "production":           { kicker: "Gudang",         title: "Produksi In-House \u00b7 BOM & Work Order" },
+  "production":           { kicker: "Gudang",         title: "BOM Produksi In-House \u00b7 BOM & Work Order" },
   "scheduler":            { kicker: "Pengaturan",     title: "Penjadwal & Notifikasi \u00b7 Alert Otomatis" },
   "cs-rfid-lokasi":       { kicker: "RFID",           title: "Lokasi RFID" },
   "cs-rfid-tags":         { kicker: "RFID",           title: "Tag RFID" },
-  "cs-rfid-devices":      { kicker: "Pengaturan · Gudang", title: "Perangkat RFID (Pembaca / Gerbang)" },
+  "cs-rfid-devices":      { kicker: "Pengaturan · Integrasi & Sistem", title: "Perangkat RFID (Pembaca / Gerbang)" },
   "cs-rfid-gate":         { kicker: "RFID",           title: "Monitor Gerbang" },
   "chart-of-accounts":    { kicker: "Keuangan",       title: "Bagan Akun · Chart of Accounts" },
   "general-ledger":       { kicker: "Keuangan",       title: "Buku Besar · Jurnal Umum" },
   "financial-statements": { kicker: "Keuangan",       title: "Laporan Keuangan · Laba-Rugi, Neraca & Arus Kas" },
   "finance-tower":        { kicker: "Keuangan",       title: "Dasbor Keuangan" },
-  "profitability":        { kicker: "Keuangan",       title: "Profitabilitas & Margin (WAC)" },
+  // Fase 3 · P8 (D-11) — satu layar margin: realisasi + margin katalog (dulu juga Analitik › Margin & HPP).
+  "profitability":        { kicker: "Keuangan",       title: "Profitabilitas & Margin · Realisasi & Margin Katalog (HPP/WAC)" },
   "cashflow-forecast":    { kicker: "Keuangan",       title: "Proyeksi Arus Kas · Likuiditas" },
   "budget":               { kicker: "Keuangan",       title: "Anggaran vs Realisasi · Commitment Control" },
   "bank-accounts":        { kicker: "Keuangan",       title: "Kas & Bank · Rekening & Saldo" },
@@ -149,7 +156,22 @@ export const PAGE_META = {
   "contra-bons":          { kicker: "Pembelian",      title: "Kontrabon \u00b7 Siklus Tukar Faktur Supplier" },
   // FASE G-6 — antar-PT sebagai jual-beli (bukan pindah gudang).
   "interco-transactions": { kicker: "Pembelian",      title: "Transaksi Antar Entitas \u00b7 Jual-Beli Antar-PT" },
-  "settings-config":      { kicker: "Pengaturan",     title: "Pusat Pengaturan (Konfigurasi Berjalan)" },
+  "settings-config":      { kicker: "Pengaturan",     title: "Semua Pengaturan \u00b7 Pusat Pengaturan (Konfigurasi Berjalan)" },
+  // Fase 3 · P2 (P16-K1) — Pusat Pengaturan terkunci ke kelompok registri tiap domain (configGroupViews.js).
+  "settings-cfg-approval":   { kicker: "Pengaturan",  title: "Persetujuan & Ambang \u00b7 Aturan Lintas Domain" },
+  "settings-cfg-sales":      { kicker: "Pengaturan",  title: "Aturan Penjualan \u00b7 Harga, Diskon, Retur & Amandemen" },
+  "settings-cfg-warehouse":  { kicker: "Pengaturan",  title: "Aturan Gudang & Mutu \u00b7 Penerimaan, Stok, Kualitas & Lot" },
+  "settings-cfg-purchasing": { kicker: "Pengaturan",  title: "Aturan Pembelian & Makloon \u00b7 Toleransi, Makloon & Kontrabon" },
+  "settings-cfg-finance":    { kicker: "Pengaturan",  title: "Aturan Keuangan & Pajak \u00b7 Piutang, Pajak, Periode, Bank & Antar-PT" },
+  "settings-cfg-hr":         { kicker: "Pengaturan",  title: "SDM & Penggajian \u00b7 BPJS, PPh 21 & Lembur" },
+  "settings-cfg-rnd":        { kicker: "Pengaturan",  title: "R&D & Desain \u00b7 Aturan R&D & Penempatan Tim" },
+  "settings-cfg-documents":  { kicker: "Pengaturan",  title: "Aturan Dokumen \u00b7 Referensi, Jejak & Tanda Tangan" },
+  "settings-cfg-notify":     { kicker: "Pengaturan",  title: "Penerima Notifikasi \u00b7 Siapa Menerima Peringatan Apa" },
+  "settings-cfg-system":     { kicker: "Pengaturan",  title: "Tampilan & Asisten \u00b7 Menu, Beranda Peran & Tanya KN" },
+  // D-29 — satu layar Perangkat (mesin absen + RFID).
+  "settings-devices":        { kicker: "Pengaturan",  title: "Perangkat \u00b7 Mesin Absen & RFID (Pembaca / Gerbang)" },
+  // P16-K1 — Koreksi Harga pindah dari Pusat Pengaturan ke Produk & Harga.
+  "price-corrections":       { kicker: "Produk & Harga", title: "Koreksi Harga & Daftar Dampak" },
   "entities-access":      { kicker: "Pengaturan",     title: "Badan Usaha & Akses \u00b7 Entitas, Akun, Kesiapan" },
   "cash-advances":        { kicker: "Kas & Petty Cash", title: "Pengajuan Dana (PD) · Cash Advance" },
   "settlements":          { kicker: "Kas & Petty Cash", title: "Pertanggungjawaban (LPJ) · Petty Cash" },

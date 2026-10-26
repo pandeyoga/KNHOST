@@ -1,0 +1,3491 @@
+{
+ "permissions": {
+  "admin": {
+   "accounting": [
+    "view",
+    "create",
+    "void",
+    "manage"
+   ],
+   "approval": [
+    "view"
+   ],
+   "ar_receipt": [
+    "view",
+    "create",
+    "void"
+   ],
+   "audit": [
+    "view"
+   ],
+   "budget": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "configure"
+   ],
+   "cash": [
+    "view",
+    "create",
+    "delete"
+   ],
+   "cash_advance": [
+    "view",
+    "create",
+    "update",
+    "submit",
+    "approve",
+    "reject",
+    "disburse"
+   ],
+   "cash_settlement": [
+    "view",
+    "create",
+    "update",
+    "submit",
+    "approve",
+    "reject",
+    "manage"
+   ],
+   "color": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "approve"
+   ],
+   "contra_bon": [
+    "view",
+    "create",
+    "update",
+    "verify",
+    "approve",
+    "pay"
+   ],
+   "customer": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import",
+    "export"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim",
+    "decide"
+   ],
+   "design_request": [
+    "view",
+    "create",
+    "update",
+    "assign",
+    "deliver",
+    "decide",
+    "cancel",
+    "report",
+    "release_hold",
+    "paper_check"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send",
+    "manage"
+   ],
+   "entity": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "esign": [
+    "view",
+    "sign",
+    "manage"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "finance_amendment": [
+    "propose",
+    "approve",
+    "admin",
+    "review_credit_note"
+   ],
+   "finance_case": [
+    "view",
+    "create",
+    "resolve",
+    "admin"
+   ],
+   "fixed_asset": [
+    "view",
+    "create",
+    "update",
+    "run",
+    "dispose"
+   ],
+   "gl_mapping": [
+    "view",
+    "update"
+   ],
+   "goods_receipt": [
+    "view",
+    "create",
+    "count",
+    "review",
+    "close",
+    "approve"
+   ],
+   "grade_master": [
+    "view",
+    "create",
+    "update",
+    "activate"
+   ],
+   "hr": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "view_pii",
+    "manage_org",
+    "manage_settings",
+    "manage_attendance",
+    "manage_payroll"
+   ],
+   "input_tax": [
+    "view",
+    "create",
+    "cancel"
+   ],
+   "inspection": [
+    "view",
+    "create",
+    "assign",
+    "inspect",
+    "decide",
+    "reopen"
+   ],
+   "interco": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "ship",
+    "receive",
+    "invoice",
+    "cancel",
+    "settle",
+    "return",
+    "tax",
+    "decide_rolls"
+   ],
+   "interco_finance": [
+    "view"
+   ],
+   "interco_price": [
+    "view",
+    "set"
+   ],
+   "internal_request": [
+    "view",
+    "create",
+    "cancel",
+    "reject",
+    "convert"
+   ],
+   "inventory": [
+    "view",
+    "create",
+    "update",
+    "cycle_count",
+    "approve_count",
+    "pegging"
+   ],
+   "label": [
+    "view",
+    "generate"
+   ],
+   "landed_cost": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "pay"
+   ],
+   "logistics": [
+    "view",
+    "manage",
+    "update"
+   ],
+   "makloon": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "makloon_order": [
+    "view",
+    "create",
+    "issue",
+    "receive",
+    "cancel",
+    "claim",
+    "claim_approve",
+    "record_loss",
+    "approve_loss"
+   ],
+   "marketing": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "delete"
+   ],
+   "md_quality": [
+    "view",
+    "decide",
+    "inspect"
+   ],
+   "od_fulfillment": [
+    "view",
+    "choose_route",
+    "override_default",
+    "realize",
+    "cancel"
+   ],
+   "od_pricing": [
+    "view_cost",
+    "set_price",
+    "lock"
+   ],
+   "order": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "approve",
+    "confirm",
+    "print",
+    "deliver",
+    "verify",
+    "exact_cut",
+    "override",
+    "cancel",
+    "approve_price_edit",
+    "release_unpaid"
+   ],
+   "payment_plan": [
+    "view",
+    "create",
+    "update",
+    "void"
+   ],
+   "payment_variance": [
+    "view",
+    "decide"
+   ],
+   "pdf_template": [
+    "view",
+    "manage"
+   ],
+   "penalty": [
+    "view",
+    "issue",
+    "waive",
+    "adjust",
+    "pay"
+   ],
+   "period": [
+    "unlock",
+    "backdate"
+   ],
+   "permission": [
+    "view",
+    "update"
+   ],
+   "price_approval": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "approve",
+    "reject"
+   ],
+   "pricelist": [
+    "view",
+    "manage"
+   ],
+   "process_recipe": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "product": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import",
+    "export"
+   ],
+   "production": [
+    "view",
+    "manage_bom",
+    "create",
+    "release",
+    "complete",
+    "cancel"
+   ],
+   "purchase_order": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject"
+   ],
+   "purchase_return": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "decide_rolls"
+   ],
+   "qc": [
+    "view",
+    "inspect",
+    "random_check",
+    "release"
+   ],
+   "repair_order": [
+    "view",
+    "create",
+    "send",
+    "receive",
+    "cancel"
+   ],
+   "reports": [
+    "view",
+    "export"
+   ],
+   "rfq": [
+    "view",
+    "create",
+    "update",
+    "award"
+   ],
+   "rnd": [
+    "view",
+    "create",
+    "submit",
+    "assess",
+    "decide",
+    "manage",
+    "hold",
+    "pic_decide",
+    "override_fail",
+    "assess_labdip",
+    "assess_handfeel",
+    "assess_proofing",
+    "decide_labdip",
+    "decide_handfeel",
+    "decide_proofing"
+   ],
+   "sales_return": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "policy",
+    "record_cutloss",
+    "decide_compensation",
+    "post_logistics",
+    "split_cutloss",
+    "decide_rolls"
+   ],
+   "sample_order": [
+    "view",
+    "create",
+    "approve_payment",
+    "confirm",
+    "cancel",
+    "cutting_config",
+    "cutting_receive"
+   ],
+   "scheduler": [
+    "view",
+    "run",
+    "configure"
+   ],
+   "settings": [
+    "view",
+    "manage"
+   ],
+   "supplier": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "supplier_contract": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "supplier_item": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import"
+   ],
+   "tax_invoice": [
+    "view",
+    "create",
+    "update",
+    "replace",
+    "cancel",
+    "print"
+   ],
+   "template": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "print",
+    "import",
+    "export"
+   ],
+   "transfer": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "complete",
+    "cancel"
+   ],
+   "uom": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import",
+    "export"
+   ],
+   "user": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "vehicle_log": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "vendor_bill": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "pay"
+   ],
+   "warehouse": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import",
+    "export"
+   ],
+   "wms": [
+    "view",
+    "create",
+    "update",
+    "scan",
+    "dispatch",
+    "print",
+    "approve",
+    "untagged_override"
+   ]
+  },
+  "designer": {
+   "color": [
+    "view"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim"
+   ],
+   "design_request": [
+    "view",
+    "deliver",
+    "paper_check"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "marketing": [
+    "view",
+    "create",
+    "update"
+   ],
+   "product": [
+    "view"
+   ],
+   "rnd": [
+    "view"
+   ]
+  },
+  "driver": {
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "logistics": [
+    "view",
+    "update"
+   ]
+  },
+  "finance": {
+   "accounting": [
+    "view"
+   ],
+   "approval": [
+    "view"
+   ],
+   "ar_receipt": [
+    "view",
+    "create"
+   ],
+   "cash": [
+    "view",
+    "create"
+   ],
+   "cash_advance": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "cash_settlement": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "customer": [
+    "view"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view"
+   ],
+   "document": [
+    "view",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send"
+   ],
+   "esign": [
+    "view",
+    "sign"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "finance_amendment": [
+    "propose",
+    "review_credit_note"
+   ],
+   "finance_case": [
+    "view",
+    "create"
+   ],
+   "gl_mapping": [
+    "view",
+    "update"
+   ],
+   "goods_receipt": [
+    "view"
+   ],
+   "interco": [
+    "view"
+   ],
+   "interco_finance": [
+    "view"
+   ],
+   "interco_price": [
+    "view",
+    "set"
+   ],
+   "logistics": [
+    "view"
+   ],
+   "od_fulfillment": [
+    "view"
+   ],
+   "order": [
+    "view",
+    "print",
+    "approve_price_edit",
+    "release_unpaid"
+   ],
+   "payment_plan": [
+    "view",
+    "update"
+   ],
+   "payment_variance": [
+    "view",
+    "decide"
+   ],
+   "penalty": [
+    "view",
+    "issue"
+   ],
+   "pricelist": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "purchase_order": [
+    "view"
+   ],
+   "repair_order": [
+    "view"
+   ],
+   "reports": [
+    "view"
+   ],
+   "sales_return": [
+    "view",
+    "decide_compensation",
+    "post_logistics"
+   ],
+   "sample_order": [
+    "view",
+    "approve_payment"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "tax_invoice": [
+    "view",
+    "create",
+    "update",
+    "replace",
+    "print"
+   ],
+   "template": [
+    "view"
+   ],
+   "uom": [
+    "view"
+   ]
+  },
+  "manager": {
+   "accounting": [
+    "view",
+    "create",
+    "void",
+    "manage"
+   ],
+   "approval": [
+    "view"
+   ],
+   "ar_receipt": [
+    "view",
+    "create",
+    "void"
+   ],
+   "budget": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "cash": [
+    "view",
+    "create",
+    "delete"
+   ],
+   "cash_advance": [
+    "view",
+    "create",
+    "update",
+    "submit",
+    "approve",
+    "reject"
+   ],
+   "cash_settlement": [
+    "view",
+    "create",
+    "update",
+    "submit",
+    "approve",
+    "reject",
+    "manage"
+   ],
+   "color": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "approve"
+   ],
+   "contra_bon": [
+    "view",
+    "create",
+    "update",
+    "verify",
+    "approve",
+    "pay"
+   ],
+   "customer": [
+    "view",
+    "create",
+    "update",
+    "export"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim",
+    "decide"
+   ],
+   "design_request": [
+    "view",
+    "create",
+    "update",
+    "assign",
+    "deliver",
+    "decide",
+    "cancel",
+    "report",
+    "release_hold",
+    "paper_check"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send",
+    "manage"
+   ],
+   "entity": [
+    "view"
+   ],
+   "esign": [
+    "view",
+    "sign",
+    "manage"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "finance_amendment": [
+    "propose",
+    "approve",
+    "review_credit_note"
+   ],
+   "finance_case": [
+    "view",
+    "create",
+    "resolve"
+   ],
+   "fixed_asset": [
+    "view",
+    "create",
+    "update",
+    "run",
+    "dispose"
+   ],
+   "gl_mapping": [
+    "view"
+   ],
+   "goods_receipt": [
+    "view",
+    "review",
+    "close",
+    "approve"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "hr": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "view_pii",
+    "manage_org",
+    "manage_attendance",
+    "manage_payroll"
+   ],
+   "input_tax": [
+    "view",
+    "create",
+    "cancel"
+   ],
+   "inspection": [
+    "view",
+    "create",
+    "assign",
+    "inspect",
+    "decide",
+    "reopen"
+   ],
+   "interco": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "ship",
+    "receive",
+    "invoice",
+    "cancel",
+    "settle",
+    "return",
+    "tax",
+    "decide_rolls"
+   ],
+   "interco_finance": [
+    "view"
+   ],
+   "internal_request": [
+    "view",
+    "create",
+    "cancel",
+    "reject",
+    "convert"
+   ],
+   "inventory": [
+    "view",
+    "cycle_count",
+    "approve_count",
+    "update",
+    "pegging"
+   ],
+   "label": [
+    "view",
+    "generate"
+   ],
+   "landed_cost": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "pay"
+   ],
+   "makloon": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "makloon_order": [
+    "view",
+    "create",
+    "issue",
+    "receive",
+    "cancel",
+    "claim",
+    "claim_approve",
+    "record_loss",
+    "approve_loss"
+   ],
+   "marketing": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "delete"
+   ],
+   "md_quality": [
+    "view",
+    "decide"
+   ],
+   "od_fulfillment": [
+    "view",
+    "choose_route",
+    "override_default",
+    "realize",
+    "cancel"
+   ],
+   "od_pricing": [
+    "view_cost",
+    "set_price",
+    "lock"
+   ],
+   "order": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "confirm",
+    "print",
+    "deliver",
+    "verify",
+    "exact_cut",
+    "override",
+    "cancel",
+    "approve_price_edit",
+    "release_unpaid"
+   ],
+   "payment_plan": [
+    "view",
+    "create",
+    "update",
+    "void"
+   ],
+   "payment_variance": [
+    "view",
+    "decide"
+   ],
+   "pdf_template": [
+    "view",
+    "manage"
+   ],
+   "penalty": [
+    "view",
+    "issue",
+    "waive",
+    "adjust",
+    "pay"
+   ],
+   "period": [
+    "unlock",
+    "backdate"
+   ],
+   "price_approval": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject"
+   ],
+   "pricelist": [
+    "view",
+    "manage"
+   ],
+   "process_recipe": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "product": [
+    "view",
+    "export"
+   ],
+   "production": [
+    "view",
+    "manage_bom",
+    "create",
+    "release",
+    "complete",
+    "cancel"
+   ],
+   "purchase_order": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject"
+   ],
+   "purchase_return": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "decide_rolls"
+   ],
+   "qc": [
+    "view",
+    "release"
+   ],
+   "repair_order": [
+    "view",
+    "create",
+    "send",
+    "receive",
+    "cancel"
+   ],
+   "reports": [
+    "view",
+    "export"
+   ],
+   "rfq": [
+    "view",
+    "create",
+    "update",
+    "award"
+   ],
+   "rnd": [
+    "view",
+    "create",
+    "submit",
+    "assess",
+    "decide",
+    "manage",
+    "hold",
+    "pic_decide",
+    "override_fail"
+   ],
+   "sales_return": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "policy",
+    "record_cutloss",
+    "decide_compensation",
+    "post_logistics",
+    "split_cutloss",
+    "decide_rolls"
+   ],
+   "sample_order": [
+    "view",
+    "create",
+    "approve_payment",
+    "confirm",
+    "cancel",
+    "cutting_config",
+    "cutting_receive"
+   ],
+   "scheduler": [
+    "view",
+    "run"
+   ],
+   "settings": [
+    "view"
+   ],
+   "supplier": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "supplier_contract": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "supplier_item": [
+    "view",
+    "create",
+    "update",
+    "delete",
+    "import"
+   ],
+   "tax_invoice": [
+    "view",
+    "create",
+    "update",
+    "replace",
+    "cancel",
+    "print"
+   ],
+   "template": [
+    "view"
+   ],
+   "transfer": [
+    "view",
+    "create",
+    "approve",
+    "reject",
+    "complete"
+   ],
+   "uom": [
+    "view"
+   ],
+   "user": [
+    "view"
+   ],
+   "vehicle_log": [
+    "view",
+    "create",
+    "update",
+    "delete"
+   ],
+   "vendor_bill": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "pay"
+   ],
+   "warehouse": [
+    "view",
+    "create",
+    "update",
+    "export"
+   ],
+   "wms": [
+    "view",
+    "create",
+    "update",
+    "scan",
+    "dispatch",
+    "print",
+    "approve",
+    "untagged_override"
+   ]
+  },
+  "md": {
+   "color": [
+    "view",
+    "create",
+    "update"
+   ],
+   "customer": [
+    "view"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim"
+   ],
+   "design_request": [
+    "view",
+    "create",
+    "update",
+    "decide",
+    "assign",
+    "release_hold"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "inspection": [
+    "view"
+   ],
+   "interco_price": [
+    "view",
+    "set"
+   ],
+   "inventory": [
+    "view"
+   ],
+   "makloon": [
+    "view"
+   ],
+   "makloon_order": [
+    "view",
+    "record_loss"
+   ],
+   "md_quality": [
+    "view",
+    "decide",
+    "inspect"
+   ],
+   "od_fulfillment": [
+    "view",
+    "choose_route",
+    "override_default",
+    "realize"
+   ],
+   "od_pricing": [
+    "view_cost"
+   ],
+   "order": [
+    "view"
+   ],
+   "price_approval": [
+    "view",
+    "create",
+    "update"
+   ],
+   "pricelist": [
+    "view",
+    "manage"
+   ],
+   "process_recipe": [
+    "view",
+    "create",
+    "update"
+   ],
+   "product": [
+    "view",
+    "create",
+    "update"
+   ],
+   "purchase_order": [
+    "view"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update"
+   ],
+   "qc": [
+    "view",
+    "inspect",
+    "random_check",
+    "release"
+   ],
+   "repair_order": [
+    "view",
+    "create",
+    "send",
+    "receive",
+    "cancel"
+   ],
+   "rfq": [
+    "view",
+    "create",
+    "update"
+   ],
+   "rnd": [
+    "view",
+    "create",
+    "submit",
+    "assess",
+    "decide",
+    "manage",
+    "pic_decide"
+   ],
+   "sales_return": [
+    "view",
+    "record_cutloss",
+    "split_cutloss"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "supplier_contract": [
+    "view"
+   ],
+   "supplier_item": [
+    "view"
+   ],
+   "template": [
+    "view"
+   ],
+   "uom": [
+    "view"
+   ],
+   "warehouse": [
+    "view"
+   ]
+  },
+  "md_quality": {
+   "color": [
+    "view"
+   ],
+   "document": [
+    "view",
+    "print"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "inspection": [
+    "view"
+   ],
+   "inventory": [
+    "view"
+   ],
+   "md_quality": [
+    "view",
+    "inspect",
+    "decide"
+   ],
+   "product": [
+    "view"
+   ],
+   "repair_order": [
+    "view",
+    "create"
+   ],
+   "rnd": [
+    "view"
+   ],
+   "sales_return": [
+    "view",
+    "record_cutloss",
+    "split_cutloss"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "warehouse": [
+    "view"
+   ]
+  },
+  "qc": {
+   "color": [
+    "view"
+   ],
+   "document": [
+    "view",
+    "print"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "inspection": [
+    "view"
+   ],
+   "inventory": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "qc": [
+    "view",
+    "inspect",
+    "random_check",
+    "release"
+   ],
+   "repair_order": [
+    "view",
+    "create"
+   ],
+   "rnd": [
+    "view"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "warehouse": [
+    "view"
+   ]
+  },
+  "sales": {
+   "ar_receipt": [
+    "view"
+   ],
+   "cash_advance": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "cash_settlement": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "color": [
+    "view",
+    "create"
+   ],
+   "customer": [
+    "view",
+    "create",
+    "update"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send"
+   ],
+   "esign": [
+    "view",
+    "sign"
+   ],
+   "finance_amendment": [
+    "propose"
+   ],
+   "finance_case": [
+    "view",
+    "create"
+   ],
+   "internal_request": [
+    "view",
+    "create",
+    "cancel"
+   ],
+   "inventory": [
+    "view"
+   ],
+   "logistics": [
+    "view"
+   ],
+   "makloon": [
+    "view"
+   ],
+   "makloon_order": [
+    "view"
+   ],
+   "marketing": [
+    "view",
+    "create",
+    "update"
+   ],
+   "od_fulfillment": [
+    "view"
+   ],
+   "order": [
+    "view",
+    "create",
+    "update",
+    "print",
+    "cancel"
+   ],
+   "payment_plan": [
+    "view"
+   ],
+   "payment_variance": [
+    "view"
+   ],
+   "penalty": [
+    "view"
+   ],
+   "price_approval": [
+    "view",
+    "create",
+    "update"
+   ],
+   "pricelist": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "rnd": [
+    "view",
+    "create"
+   ],
+   "sales_pov": [
+    "commercial"
+   ],
+   "sales_return": [
+    "view",
+    "create",
+    "update"
+   ],
+   "sample_order": [
+    "view",
+    "create",
+    "cancel"
+   ],
+   "tax_invoice": [
+    "view"
+   ],
+   "template": [
+    "view"
+   ],
+   "uom": [
+    "view"
+   ],
+   "vehicle_log": [
+    "view",
+    "create"
+   ],
+   "warehouse": [
+    "view"
+   ]
+  },
+  "sales_admin": {
+   "approval": [
+    "view"
+   ],
+   "ar_receipt": [
+    "view"
+   ],
+   "cash_advance": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "cash_settlement": [
+    "view",
+    "create",
+    "update",
+    "submit"
+   ],
+   "color": [
+    "view"
+   ],
+   "customer": [
+    "view",
+    "create",
+    "update"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "design_ownership": [
+    "view",
+    "claim"
+   ],
+   "design_request": [
+    "view",
+    "create"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send"
+   ],
+   "esign": [
+    "view",
+    "sign"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "finance_amendment": [
+    "propose"
+   ],
+   "finance_case": [
+    "view",
+    "create"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "inspection": [
+    "view"
+   ],
+   "interco": [
+    "view",
+    "create",
+    "update",
+    "invoice"
+   ],
+   "internal_request": [
+    "view",
+    "create",
+    "cancel",
+    "reject",
+    "convert"
+   ],
+   "inventory": [
+    "view",
+    "pegging"
+   ],
+   "logistics": [
+    "view",
+    "manage",
+    "update"
+   ],
+   "makloon_order": [
+    "view"
+   ],
+   "marketing": [
+    "view",
+    "create",
+    "update"
+   ],
+   "od_fulfillment": [
+    "view"
+   ],
+   "od_pricing": [
+    "view_cost",
+    "set_price",
+    "lock"
+   ],
+   "order": [
+    "view",
+    "create",
+    "update",
+    "confirm",
+    "print",
+    "deliver",
+    "verify",
+    "exact_cut",
+    "override",
+    "cancel"
+   ],
+   "payment_plan": [
+    "view",
+    "create",
+    "update"
+   ],
+   "penalty": [
+    "view"
+   ],
+   "price_approval": [
+    "view",
+    "create",
+    "update"
+   ],
+   "pricelist": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update"
+   ],
+   "reports": [
+    "view"
+   ],
+   "rnd": [
+    "view"
+   ],
+   "sales_return": [
+    "view",
+    "create",
+    "update",
+    "decide_rolls"
+   ],
+   "sample_order": [
+    "view"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "supplier_item": [
+    "view"
+   ],
+   "tax_invoice": [
+    "view"
+   ],
+   "template": [
+    "view"
+   ],
+   "transfer": [
+    "view",
+    "create"
+   ],
+   "uom": [
+    "view"
+   ],
+   "vehicle_log": [
+    "view",
+    "create"
+   ],
+   "warehouse": [
+    "view"
+   ],
+   "wms": [
+    "view"
+   ]
+  },
+  "sample_admin": {
+   "color": [
+    "view"
+   ],
+   "customer": [
+    "view"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "inventory": [
+    "view"
+   ],
+   "logistics": [
+    "view"
+   ],
+   "order": [
+    "view",
+    "update",
+    "confirm",
+    "print"
+   ],
+   "pricelist": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "sample_order": [
+    "view",
+    "create",
+    "approve_payment",
+    "confirm",
+    "cancel",
+    "cutting_receive"
+   ],
+   "template": [
+    "view"
+   ],
+   "uom": [
+    "view"
+   ],
+   "warehouse": [
+    "view"
+   ],
+   "wms": [
+    "view"
+   ]
+  },
+  "warehouse": {
+   "color": [
+    "view"
+   ],
+   "contra_bon": [
+    "view"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send"
+   ],
+   "esign": [
+    "view",
+    "sign"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "goods_receipt": [
+    "view",
+    "create",
+    "count"
+   ],
+   "input_tax": [
+    "view"
+   ],
+   "inspection": [
+    "view",
+    "inspect"
+   ],
+   "interco": [
+    "view",
+    "ship",
+    "receive"
+   ],
+   "inventory": [
+    "view",
+    "cycle_count",
+    "update",
+    "pegging"
+   ],
+   "label": [
+    "view",
+    "generate"
+   ],
+   "landed_cost": [
+    "view"
+   ],
+   "logistics": [
+    "view",
+    "manage",
+    "update"
+   ],
+   "makloon": [
+    "view"
+   ],
+   "makloon_order": [
+    "view",
+    "issue",
+    "receive",
+    "claim"
+   ],
+   "order": [
+    "view",
+    "deliver"
+   ],
+   "process_recipe": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "production": [
+    "view",
+    "create",
+    "release",
+    "complete"
+   ],
+   "purchase_order": [
+    "view"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update"
+   ],
+   "purchase_return": [
+    "view",
+    "create"
+   ],
+   "qc": [
+    "view",
+    "inspect"
+   ],
+   "repair_order": [
+    "view",
+    "send",
+    "receive"
+   ],
+   "rfq": [
+    "view",
+    "create",
+    "update"
+   ],
+   "rnd": [
+    "view",
+    "submit"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "supplier_contract": [
+    "view"
+   ],
+   "supplier_item": [
+    "view"
+   ],
+   "template": [
+    "view"
+   ],
+   "transfer": [
+    "view",
+    "create",
+    "update"
+   ],
+   "uom": [
+    "view"
+   ],
+   "vehicle_log": [
+    "view",
+    "create",
+    "update"
+   ],
+   "vendor_bill": [
+    "view"
+   ],
+   "warehouse": [
+    "view",
+    "create",
+    "update"
+   ],
+   "wms": [
+    "view",
+    "create",
+    "update",
+    "scan",
+    "dispatch",
+    "print"
+   ]
+  },
+  "warehouse_admin": {
+   "color": [
+    "view"
+   ],
+   "contra_bon": [
+    "view"
+   ],
+   "data_export": [
+    "view",
+    "export"
+   ],
+   "document": [
+    "view",
+    "create",
+    "print"
+   ],
+   "document_delivery": [
+    "view",
+    "send"
+   ],
+   "esign": [
+    "view",
+    "sign"
+   ],
+   "field_visibility": [
+    "grade",
+    "lot",
+    "origin"
+   ],
+   "goods_receipt": [
+    "view",
+    "create",
+    "count",
+    "review",
+    "close",
+    "approve"
+   ],
+   "grade_master": [
+    "view"
+   ],
+   "input_tax": [
+    "view"
+   ],
+   "inspection": [
+    "view",
+    "create",
+    "assign",
+    "inspect",
+    "decide",
+    "reopen"
+   ],
+   "interco": [
+    "view",
+    "ship",
+    "receive"
+   ],
+   "inventory": [
+    "view",
+    "create",
+    "cycle_count",
+    "approve_count",
+    "update",
+    "pegging"
+   ],
+   "label": [
+    "view",
+    "generate"
+   ],
+   "landed_cost": [
+    "view"
+   ],
+   "logistics": [
+    "view",
+    "manage",
+    "update"
+   ],
+   "makloon": [
+    "view"
+   ],
+   "makloon_order": [
+    "view",
+    "issue",
+    "receive",
+    "claim"
+   ],
+   "md_quality": [
+    "view"
+   ],
+   "order": [
+    "view",
+    "deliver"
+   ],
+   "process_recipe": [
+    "view"
+   ],
+   "product": [
+    "view"
+   ],
+   "production": [
+    "view",
+    "create",
+    "release",
+    "complete"
+   ],
+   "purchase_order": [
+    "view"
+   ],
+   "purchase_requisition": [
+    "view",
+    "create",
+    "update"
+   ],
+   "purchase_return": [
+    "view",
+    "create"
+   ],
+   "qc": [
+    "view",
+    "inspect",
+    "random_check",
+    "release"
+   ],
+   "repair_order": [
+    "view",
+    "create",
+    "send",
+    "receive",
+    "cancel"
+   ],
+   "rfq": [
+    "view"
+   ],
+   "rnd": [
+    "view",
+    "submit"
+   ],
+   "supplier": [
+    "view"
+   ],
+   "supplier_contract": [
+    "view"
+   ],
+   "supplier_item": [
+    "view"
+   ],
+   "template": [
+    "view"
+   ],
+   "transfer": [
+    "view",
+    "create",
+    "update",
+    "approve",
+    "reject",
+    "complete",
+    "cancel"
+   ],
+   "uom": [
+    "view"
+   ],
+   "vehicle_log": [
+    "view",
+    "create",
+    "update"
+   ],
+   "vendor_bill": [
+    "view"
+   ],
+   "warehouse": [
+    "view",
+    "create",
+    "update"
+   ],
+   "wms": [
+    "view",
+    "create",
+    "update",
+    "scan",
+    "dispatch",
+    "print",
+    "approve",
+    "untagged_override"
+   ]
+  }
+ },
+ "view_resources": {
+  "accounts-payable": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "vendor_bill"
+  ],
+  "admin": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "advance-report": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "akuntansi": [
+   "accounting",
+   "ar_receipt",
+   "audit",
+   "budget",
+   "contra_bon",
+   "fixed_asset",
+   "gl_mapping",
+   "input_tax",
+   "interco",
+   "interco_finance",
+   "interco_price",
+   "landed_cost",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "reports",
+   "tax_invoice",
+   "vendor_bill"
+  ],
+  "amendments": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "analytics": [
+   "audit",
+   "inventory",
+   "reports",
+   "transfer"
+  ],
+  "approval-inbox": [
+   "approval",
+   "price_approval",
+   "pricelist",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "approval-rules": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "ar-aging": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "bank-accounts": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "bank-reconciliation": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "bi-finance": [
+   "audit",
+   "reports"
+  ],
+  "blanket-po": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "budget": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "cash-advances": [
+   "cash_advance",
+   "cash_settlement"
+  ],
+  "cash-bank": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "cash-management": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "cashflow-forecast": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "chart-of-accounts": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "client-dataset-import": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "closing": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "color-library": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "consolidation": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "contra-bons": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "vendor_bill"
+  ],
+  "costing": [
+   "audit",
+   "reports"
+  ],
+  "cs-bi-hrd": [
+   "audit",
+   "reports"
+  ],
+  "cs-design-gallery": [
+   "design_ownership",
+   "design_request"
+  ],
+  "cs-kpi": [
+   "hr"
+  ],
+  "cs-pajak": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "cs-price-list": [
+   "price_approval",
+   "pricelist"
+  ],
+  "cs-rfid-devices": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "cs-rfid-gate": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "cs-rfid-lokasi": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "cs-rfid-tags": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "cs-stock-analytics": [
+   "inventory",
+   "transfer"
+  ],
+  "customers-crm": [
+   "customer"
+  ],
+  "design-requests": [
+   "design_ownership",
+   "design_request"
+  ],
+  "designer-hub": [
+   "design_ownership",
+   "design_request"
+  ],
+  "designer-kpi": [
+   "design_ownership",
+   "design_request"
+  ],
+  "doc-trace": [
+   "document",
+   "document_delivery",
+   "esign",
+   "pdf_template"
+  ],
+  "document-center": [
+   "document",
+   "document_delivery",
+   "esign",
+   "pdf_template"
+  ],
+  "documents": [
+   "document",
+   "document_delivery",
+   "esign",
+   "pdf_template"
+  ],
+  "domain-registry": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "entities-access": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "entity-masters": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "escalations": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "expense-categories": [
+   "cash_advance",
+   "cash_settlement"
+  ],
+  "export-center": [
+   "data_export"
+  ],
+  "fin-reports": [
+   "accounting",
+   "audit",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period",
+   "reports"
+  ],
+  "finance-cases": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "finance-tower": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "financial-statements": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "fixed-assets": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "general-ledger": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "gl-account-mappings": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "goods-receipts": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "grade-master": [
+   "grade_master"
+  ],
+  "gudang": [
+   "goods_receipt",
+   "inventory",
+   "label",
+   "logistics",
+   "production",
+   "repair_order",
+   "transfer",
+   "vehicle_log",
+   "warehouse",
+   "wms"
+  ],
+  "hr-attendance": [
+   "hr"
+  ],
+  "hr-attendance-hub": [
+   "hr"
+  ],
+  "hr-attendance-setup": [
+   "hr"
+  ],
+  "hr-employees": [
+   "hr"
+  ],
+  "hr-kpi-hub": [
+   "hr"
+  ],
+  "hr-leave": [
+   "hr"
+  ],
+  "hr-live-tracking": [
+   "hr"
+  ],
+  "hr-org-units": [
+   "hr"
+  ],
+  "hr-overtime": [
+   "hr"
+  ],
+  "hr-payroll-hub": [
+   "hr"
+  ],
+  "hr-payroll-runs": [
+   "hr"
+  ],
+  "hr-payslips": [
+   "hr"
+  ],
+  "hr-people": [
+   "hr"
+  ],
+  "hr-visits": [
+   "customer"
+  ],
+  "hrd": [
+   "hr"
+  ],
+  "input-tax": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "vendor_bill"
+  ],
+  "inspections": [
+   "inspection",
+   "md_quality",
+   "qc"
+  ],
+  "interco-returns": [
+   "interco",
+   "interco_finance",
+   "interco_price"
+  ],
+  "interco-transactions": [
+   "interco",
+   "interco_finance",
+   "interco_price"
+  ],
+  "interco-transfers": [
+   "inventory",
+   "transfer"
+  ],
+  "internal-requests": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "inventory-board": [
+   "inventory",
+   "transfer"
+  ],
+  "inventory-lots": [
+   "inventory",
+   "transfer"
+  ],
+  "kas-aset": [
+   "accounting",
+   "budget",
+   "cash_advance",
+   "cash_settlement",
+   "fixed_asset",
+   "gl_mapping",
+   "logistics",
+   "period",
+   "vehicle_log"
+  ],
+  "keep-pending": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "keuangan": [
+   "accounting",
+   "ar_receipt",
+   "budget",
+   "cash",
+   "contra_bon",
+   "finance_amendment",
+   "finance_case",
+   "fixed_asset",
+   "gl_mapping",
+   "input_tax",
+   "landed_cost",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "tax_invoice",
+   "vendor_bill"
+  ],
+  "landed-cost": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "vendor_bill"
+  ],
+  "ledger": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "logistics": [
+   "logistics",
+   "vehicle_log"
+  ],
+  "makloon-claim-recap": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "makloon-claims": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "makloon-orders": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "makloons": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "marketing-hub": [
+   "marketing"
+  ],
+  "master-pembelian": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "md-categories": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "md-products": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "md-uoms": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "md-warehouses": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "mkt-accounts": [
+   "marketing"
+  ],
+  "mkt-analytics": [
+   "marketing"
+  ],
+  "mkt-calendar": [
+   "marketing"
+  ],
+  "mkt-campaigns": [
+   "marketing"
+  ],
+  "my-approvals": [
+   "approval"
+  ],
+  "operations": [
+   "goods_receipt",
+   "inventory",
+   "label",
+   "production",
+   "repair_order",
+   "transfer",
+   "warehouse",
+   "wms"
+  ],
+  "orders": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "payment-plans": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "pdf-templates": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "pembelian": [
+   "contra_bon",
+   "input_tax",
+   "interco",
+   "interco_finance",
+   "interco_price",
+   "landed_cost",
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq",
+   "supplier",
+   "supplier_contract",
+   "supplier_item",
+   "vendor_bill"
+  ],
+  "penjualan": [
+   "color",
+   "customer",
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "price_approval",
+   "pricelist",
+   "product",
+   "sales_return",
+   "sample_order",
+   "template",
+   "uom"
+  ],
+  "period-unlock": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "petty-cash": [
+   "cash_advance",
+   "cash_settlement"
+  ],
+  "po-board": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "posting-failures": [
+   "accounting",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
+  ],
+  "price-approvals": [
+   "price_approval",
+   "pricelist"
+  ],
+  "price-corrections": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "pricelist": [
+   "price_approval",
+   "pricelist"
+  ],
+  "process-recipes": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "product-templates": [
+   "color",
+   "product",
+   "template",
+   "uom"
+  ],
+  "production": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "products-pricing": [
+   "color",
+   "price_approval",
+   "pricelist",
+   "product",
+   "template",
+   "uom"
+  ],
+  "profitability": [
+   "accounting",
+   "audit",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period",
+   "reports"
+  ],
+  "purchase-approval": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "purchase-orders": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "purchase-requisitions": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "purchase-returns": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "purchasing": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "qc-inspection": [
+   "goods_receipt",
+   "inspection",
+   "label",
+   "md_quality",
+   "production",
+   "qc",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "quality-hub": [
+   "goods_receipt",
+   "inspection",
+   "label",
+   "md_quality",
+   "production",
+   "qc",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "reorder": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "repair-orders": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "reports": [
+   "audit",
+   "reports"
+  ],
+  "return-policies": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "returns": [
+   "goods_receipt",
+   "internal_request",
+   "label",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "production",
+   "qc",
+   "repair_order",
+   "sales_return",
+   "warehouse",
+   "wms"
+  ],
+  "returns-hub": [
+   "goods_receipt",
+   "interco",
+   "interco_finance",
+   "interco_price",
+   "internal_request",
+   "label",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "production",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "qc",
+   "repair_order",
+   "rfq",
+   "sales_return",
+   "warehouse",
+   "wms"
+  ],
+  "rfid-hub": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "rfq": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "rnd-designs": [
+   "design_ownership",
+   "design_request"
+  ],
+  "rnd-divisions": [
+   "design_ownership",
+   "design_request"
+  ],
+  "rnd-handfeel": [
+   "rnd"
+  ],
+  "rnd-hub": [
+   "rnd"
+  ],
+  "rnd-labdip": [
+   "rnd"
+  ],
+  "rnd-proofing": [
+   "rnd"
+  ],
+  "rnd-reports": [
+   "rnd"
+  ],
+  "rnd-revalidation": [
+   "rnd"
+  ],
+  "rnd-samples": [
+   "rnd"
+  ],
+  "rnd-specs": [
+   "rnd"
+  ],
+  "sales": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "sales-orders": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "sample-orders": [
+   "sample_order"
+  ],
+  "scheduler": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-approval": [
+   "design_ownership",
+   "design_request",
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-cfg-approval": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-cfg-documents": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-cfg-finance": [
+   "accounting",
+   "ar_receipt",
+   "budget",
+   "cash",
+   "cash_advance",
+   "cash_settlement",
+   "finance_amendment",
+   "finance_case",
+   "fixed_asset",
+   "gl_mapping",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "tax_invoice"
+  ],
+  "settings-cfg-hr": [
+   "hr"
+  ],
+  "settings-cfg-notify": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-cfg-purchasing": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq",
+   "supplier",
+   "supplier_contract",
+   "supplier_item",
+   "vendor_bill"
+  ],
+  "settings-cfg-rnd": [
+   "design_ownership",
+   "design_request",
+   "rnd"
+  ],
+  "settings-cfg-sales": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "price_approval",
+   "pricelist",
+   "sales_return"
+  ],
+  "settings-cfg-system": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-cfg-warehouse": [
+   "goods_receipt",
+   "inspection",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "settings-company": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-config": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-devices": [
+   "entity",
+   "goods_receipt",
+   "hr",
+   "label",
+   "permission",
+   "production",
+   "repair_order",
+   "scheduler",
+   "settings",
+   "user",
+   "warehouse",
+   "wms"
+  ],
+  "settings-documents": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-finance": [
+   "accounting",
+   "ar_receipt",
+   "budget",
+   "cash",
+   "cash_advance",
+   "cash_settlement",
+   "finance_amendment",
+   "finance_case",
+   "fixed_asset",
+   "gl_mapping",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "tax_invoice"
+  ],
+  "settings-hr": [
+   "hr"
+  ],
+  "settings-hub": [
+   "accounting",
+   "ar_receipt",
+   "budget",
+   "cash",
+   "cash_advance",
+   "cash_settlement",
+   "contra_bon",
+   "design_ownership",
+   "design_request",
+   "entity",
+   "finance_amendment",
+   "finance_case",
+   "fixed_asset",
+   "gl_mapping",
+   "goods_receipt",
+   "grade_master",
+   "hr",
+   "input_tax",
+   "inspection",
+   "internal_request",
+   "label",
+   "landed_cost",
+   "makloon",
+   "makloon_order",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "permission",
+   "price_approval",
+   "pricelist",
+   "process_recipe",
+   "production",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "repair_order",
+   "rfq",
+   "rnd",
+   "sales_return",
+   "scheduler",
+   "settings",
+   "supplier",
+   "supplier_contract",
+   "supplier_item",
+   "tax_invoice",
+   "user",
+   "vendor_bill",
+   "warehouse",
+   "wms"
+  ],
+  "settings-masters": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-notify": [
+   "entity",
+   "permission",
+   "scheduler",
+   "settings",
+   "user"
+  ],
+  "settings-purchasing": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq",
+   "supplier",
+   "supplier_contract",
+   "supplier_item",
+   "vendor_bill"
+  ],
+  "settings-rnd": [
+   "design_ownership",
+   "design_request",
+   "rnd"
+  ],
+  "settings-sales": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "price_approval",
+   "pricelist",
+   "sales_return"
+  ],
+  "settings-system": [
+   "entity",
+   "goods_receipt",
+   "hr",
+   "label",
+   "permission",
+   "production",
+   "repair_order",
+   "scheduler",
+   "settings",
+   "user",
+   "warehouse",
+   "wms"
+  ],
+  "settings-warehouse": [
+   "goods_receipt",
+   "grade_master",
+   "inspection",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "settlements": [
+   "cash_advance",
+   "cash_settlement"
+  ],
+  "sourcing": [
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
+   "rfq"
+  ],
+  "special-orders": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
+  "stock-atp": [
+   "inventory",
+   "transfer"
+  ],
+  "stock-buckets": [
+   "inventory",
+   "transfer"
+  ],
+  "store-credit": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "supplier-contracts": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "supplier-internal-prices": [
+   "interco",
+   "interco_finance",
+   "interco_price",
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "supplier-items": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "suppliers": [
+   "makloon",
+   "makloon_order",
+   "process_recipe",
+   "supplier",
+   "supplier_contract",
+   "supplier_item"
+  ],
+  "tax-hub": [
+   "ar_receipt",
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice",
+   "vendor_bill"
+  ],
+  "tax-invoices": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
+  ],
+  "vehicle-logs": [
+   "logistics",
+   "vehicle_log"
+  ],
+  "vendor-bills": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
+   "vendor_bill"
+  ],
+  "wms-cutting": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "wms-locations": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "wms-operations": [
+   "goods_receipt",
+   "inventory",
+   "label",
+   "production",
+   "repair_order",
+   "transfer",
+   "warehouse",
+   "wms"
+  ],
+  "wms-outbound": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
+  ]
+ }
+}
