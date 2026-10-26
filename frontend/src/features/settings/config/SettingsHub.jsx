@@ -40,7 +40,7 @@ import { configApi, errMsg, idNum, weightSetSummaries } from "./configApi";
 import { LEGACY_DEEPLINK, groupForKey } from "./configDeepLink";
 import { COMMISSION_PREFIX } from "./configGroupViews";
 import { entityShortById } from "../../../utils/entityLabel";
-import { can } from "../../../config/roles";
+import { can, canCurrent } from "../../../config/roles";
 
 const TABS = [
   { k: "settings", label: "Pengaturan", icon: SlidersHorizontal },
@@ -122,7 +122,10 @@ export function useSettingsBrowser({
   /* muat katalog grup + peta kesehatan sekali (Audit UI 097 — katalog TIDAK menunggu peta kesehatan) */
   useEffect(() => {
     let alive = true;
-    configApi.health().then((hp) => {
+    // Fase 4 · R5 — `/config/health` dijaga `settings.view`: peran baca-saja (sales/Admin Sales di "Semua pengaturan",
+    // layar Pengaturan domain) dulu menembaknya di latar → 403 ×2 per layar. Hanya dipanggil bila izinnya ada; tanpa
+    // peta kesehatan kartu tetap tampil (lencana wiring memang hanya untuk pemegang izin).
+    if (canCurrent("settings", "view")) configApi.health().then((hp) => {
       if (!alive) return;
       const map = {};
       (hp.rows || []).forEach((r) => { map[r.key] = r; });

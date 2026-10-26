@@ -13,6 +13,7 @@ import { Tag, ShoppingCart, RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, 
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
 import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
+import { SO_DEAD_STATUSES } from "./inboxTabs";
 
 // kind → tampilan (label, ikon, warna) + tab grup
 export const KIND_META = {
@@ -56,7 +57,9 @@ export async function loadInbox() {
   ]);
 
   // FASE 5 — Sales Order approvals (SSOT pending_approvals): nilai / kredit / harga khusus.
-  const soApprovals = arr(queueRes.data).map((q) => ({
+  // Fase 4 · R5 — entri milik SO mati (batal/kedaluwarsa) tidak ikut: sama dengan baris antrean `sales_order` server.
+  const liveSo = arr(queueRes.data).filter((q) => !SO_DEAD_STATUSES.includes(q.order_status));
+  const soApprovals = liveSo.map((q) => ({
     kind: SO_KIND_BY_TYPE[q.type] || "so_nilai",
     id: q.id, orderId: q.order_id,
     title: q.order_number || "Sales Order",
@@ -69,7 +72,7 @@ export async function loadInbox() {
     at: q.requested_at, isSO: true,
   }));
   // ID SO yang punya approval khusus harga lewat SSOT (untuk dedup dgn price_approvals lama).
-  const soPriceRefIds = new Set(arr(queueRes.data).filter((q) => q.type === "special_price").map((q) => q.ref_id));
+  const soPriceRefIds = new Set(liveSo.filter((q) => q.type === "special_price").map((q) => q.ref_id));
 
   const pos = arr(poRes.data).filter((p) => p.status === "waiting_approval").map((p) => ({
     kind: "po", id: p.id, title: p.po_number, subtitle: p.supplier_name,
@@ -108,7 +111,9 @@ export async function loadInbox() {
     at: s.submitted_at || s.created_at, target: "wms-cycle", targetView: "operations", targetTab: "cycle",
   }));
 
-  const credits = arr(coRes.data).map((c) => ({
+  // Fase 4 · R5 — hanya override MANDIRI (tanpa SO). Yang tertaut SO = entri kredit SO itu (grup Pesanan Penjualan,
+  // diputus lewat entri SO supaya status SO ikut) — dulu tampil DUA kali; sama dengan baris `credit_override` server.
+  const credits = arr(coRes.data).filter((c) => !c.order_id).map((c) => ({
     kind: "credit", id: c.id, title: c.customer_name || "Pelanggan",
     subtitle: c.order_number || c.reason || "Override batas kredit",
     meta: c.reason || "", amount: c.amount ?? c.requested_amount ?? null,

@@ -364,6 +364,40 @@ def _scope(entity_id: str) -> Dict[str, Any]:
     return {} if (not entity_id or entity_id == "all") else {"entity_id": entity_id}
 
 
+def _looks_like_account(v: str) -> bool:
+    """Nilai pengaju yang merupakan KUNCI akun (email / id `user_…`), bukan nama orang."""
+    s = (v or "").strip()
+    return "@" in s or s.startswith("user_")
+
+
+async def _person_names(values: List[str]) -> Dict[str, str]:
+    """Fase 4 · R5 — email/id akun → NAMA orang (satu kueri). Nilai yang sudah berupa nama tidak disentuh.
+
+    Kolom pengaju Matriks divisi dulu menampilkan "admin@kainnusantara.id": `special_orders.created_by` menyimpan
+    EMAIL pembuat, dokumen lain menyimpan nama. Layar menebak nama dari bagian depan email (hanya pemegang
+    `user.view` yang bisa memetakan) — kini server yang menerjemahkan untuk semua peran.
+    """
+    keys = sorted({str(v).strip() for v in values if _looks_like_account(str(v or ""))})
+    if not keys:
+        return {}
+    emails = [k.lower() for k in keys if "@" in k]
+    ids = [k for k in keys if "@" not in k]
+    out: Dict[str, str] = {}
+    try:
+        users = await db.users.find({"$or": [{"email": {"$in": emails}}, {"id": {"$in": ids}}]},
+                                    {"_id": 0, "id": 1, "email": 1, "name": 1}).to_list(len(keys) + 5)
+    except Exception as exc:  # noqa: BLE001 — nama hanya hiasan; antrean tetap harus tampil
+        logger.warning("[my_queue] nama pengaju gagal dibaca: %s", exc)
+        return {}
+    by_email = {str(u.get("email") or "").lower(): u.get("name") or "" for u in users}
+    by_id = {str(u.get("id") or ""): u.get("name") or "" for u in users}
+    for k in keys:
+        name = by_email.get(k.lower()) if "@" in k else by_id.get(k)
+        if name:
+            out[k] = name
+    return out
+
+
 async def my_queue(actor: Dict[str, Any], entity_id: str = "",
                    stage: str = "") -> Dict[str, Any]:
     """Semua dokumen yang MENUNGGU keputusan, lintas 4 tahap matriks.
@@ -488,6 +522,12 @@ async def my_queue(actor: Dict[str, Any], entity_id: str = "",
                                   "shortfall_qty": _as_float(cl.get("shortfall_qty")),
                                   "unit": cl.get("unit", "")})
 
+    # Fase 4 · R5 — pengaju tampil sebagai NAMA orang; email/id asli tetap ada (`requester_account`) untuk tooltip.
+    names = await _person_names([it["requester"] for it in items])
+    for it in items:
+        raw = str(it.get("requester") or "").strip()
+        it["requester_account"] = raw if _looks_like_account(raw) else ""
+        it["requester"] = it["requester_name"] = names.get(raw, raw)
     items.sort(key=lambda x: (not x["can_decide"], -x["days_waiting"], x["stage"]))
     counts = {s["stage"]: 0 for s in APPROVER_MATRIX}
     actionable = 0

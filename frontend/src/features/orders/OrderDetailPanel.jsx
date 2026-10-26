@@ -4,7 +4,7 @@ import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileTe
 import { can, roleLabel } from "../../config/roles";
 import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
 import { taxBreakdownRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
-import { isClosedSo, lotModeLabel, lotSelectionLabel, allocationExplain } from "./soStatusView";
+import { hasPartialBackorder, isBackorderSo, isClosedSo, lotModeLabel, lotSelectionLabel, allocationExplain } from "./soStatusView";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import PaymentBadge from "../../components/PaymentBadge";
@@ -157,7 +157,7 @@ export function OrderDetailPanel({
             <StagePill order={sel} testId="order-stage-pill" />
             <PaymentBadge order={sel} showRemaining testId="order-payment-pill" />
             <QcStatusBadge status={soQcStatus(sel)} testId="order-qc-status-badge" />
-            {sel.has_backorder && (
+            {isBackorderSo(sel) && (   /* R5 — Backorder = status Menunggu stok (bukan penanda baris) */
               <span data-testid="order-backorder-chip" className="rounded bg-[#FFF1EA] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#B23B14]">
                 Backorder
               </span>
@@ -243,12 +243,13 @@ export function OrderDetailPanel({
           </div>
         )}
 
-        {/* Sub-fase 1.6 — banner backorder (waiting_stock) */}
-        {sel.has_backorder && (sel.backorders || []).length > 0 && (
+        {/* Sub-fase 1.6 — banner backorder (waiting_stock). R5 — SO hidup di tahap lain = "Sebagian menunggu stok";
+            SO tutup (batal/selesai) dengan penanda basi tidak lagi memunculkan banner. */}
+        {(isBackorderSo(sel) || hasPartialBackorder(sel)) && sel.has_backorder && (sel.backorders || []).length > 0 && (
           <div data-testid="order-backorder-panel" className="rounded-md border border-[#F5C9A6] bg-[#FFF7EF] p-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <AlertTriangle size={13} className="text-[#B23B14]" />
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8C4A00]">Menunggu Stok (Backorder)</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#8C4A00]">{isBackorderSo(sel) ? "Menunggu Stok (Backorder)" : "Sebagian Menunggu Stok"}</p>
             </div>
             <p className="text-[10.5px] text-[#8C4A00] mb-2">
               Sebagian item menunggu barang masuk. Akan otomatis ter-reservasi saat barang diterima (Goods Receipt).

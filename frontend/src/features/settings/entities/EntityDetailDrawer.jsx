@@ -12,6 +12,7 @@ import { X, Save, Loader2, Lock, History, ClipboardCheck, ExternalLink,
 
 import ErrorNotice from "../../../components/ErrorNotice";
 import KNSelect from "../../../components/KNSelect";
+import LocationFields, { locationSummary } from "../../../components/LocationFields";
 import { auditActionInfo } from "../../../config/auditLabels";
 import { getEntity, patchEntity, getReadiness, getEntityAudit, errText } from "./entityApi";
 
@@ -21,7 +22,6 @@ const EDITABLE = [
   ["owner_name", "Nama pemilik (perorangan)"],
   ["business_label", "Label usaha (perorangan)"],
   ["address", "Alamat"],
-  ["city", "Kota"],
   ["phone", "Telepon"],
   ["email", "Email"],
   ["npwp", "NPWP"],
@@ -32,6 +32,13 @@ const EDITABLE = [
 // "MM-DD"; tombol simpan di tengah kartu. Jenis perorangan sama dengan wizard buat (EntityWizard PERSONAL_TYPES).
 const PERSONAL_TYPES = ["Perorangan", "UD"];
 const PERSONAL_FIELDS = ["owner_name", "business_label"];
+// Fase 4 · R6 (G5-25) — "Kota" dulu teks bebas karena PATCH badan usaha tidak menerima kode wilayah; kini server
+// menerimanya (entity_lifecycle_service.LOCATION_FIELDS) sehingga form ubah memakai pemilih wilayah yang sama dengan
+// wizard buat. Bila satu isian lokasi berubah, SEMUA isian lokasi dikirim (server menormalkan satu set utuh).
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district",
+  "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
+const FORM_KEYS = [...EDITABLE.map(([k]) => k), ...LOC_KEYS];
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
   "November", "Desember"];
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -61,7 +68,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
       const [e, r] = await Promise.all([getEntity(entityId), getReadiness(entityId)]);
       setEntity(e);
       setReadiness(r);
-      setForm(Object.fromEntries(EDITABLE.map(([k]) => [k, e?.[k] ?? ""])));
+      setForm(Object.fromEntries(FORM_KEYS.map((k) => [k, e?.[k] ?? ""])));
       setError("");
       // Riwayat audit boleh gagal (mis. peran tanpa izin audit) tanpa merusak layar.
       getEntityAudit(entityId).then(setAudit).catch(() => setAudit([]));
@@ -84,6 +91,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
     try {
       const dirty = Object.fromEntries(
         Object.entries(form).filter(([k, v]) => (entity?.[k] ?? "") !== v));
+      if (LOC_KEYS.some((k) => k in dirty)) Object.assign(dirty, pickLoc(form));
       if (!Object.keys(dirty).length) {
         setSaved("Tidak ada perubahan untuk disimpan.");
         return;
@@ -185,6 +193,23 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                         />
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 gap-1" data-testid="entity-detail-location">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Lokasi</p>
+                    {canManage && entity?.status === "active" ? (
+                      <LocationFields testId="entity-detail-loc" compact required={false} labelStyle="caps" value={pickLoc(form)}
+                        onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+                    ) : (
+                      <p className="text-[12px] text-[#1C1C1E]" data-testid="entity-detail-location-text">
+                        {locationSummary(entity || {}) || "—"}
+                      </p>
+                    )}
+                    {entity?.city && !entity?.city_code && !form.city_code && (
+                      <p className="text-[10.5px] text-[#8C4A00]" data-testid="entity-detail-location-legacy">
+                        Kota tersimpan “{entity.city}” masih teks lama (belum terverifikasi) — pilih provinsi &amp;
+                        kota dari daftar untuk memverifikasinya.
+                      </p>
+                    )}
                   </div>
                   {(() => {
                     const [mm, dd] = String(form.fiscal_year_start || "01-01").split("-");

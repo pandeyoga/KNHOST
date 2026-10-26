@@ -52,7 +52,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
@@ -76,7 +76,9 @@ TOUCHED = ["warehouse_transfers", "audit_logs", "sessions", "login_attempts"]
 #: Hitung-ulang MANDIRI: 26 antrean, ditulis ULANG di sini dengan sengaja supaya POC ini
 #: menjadi OPINI KEDUA — bukan cermin `approval_backlog_service.QUEUES` yang sedang diuji.
 RECOUNT: Dict[str, tuple] = {
-    "sales_order": ("sales_orders", {"$or": [{"status": "waiting_approval"},
+    # Fase 4 · R5 — SO mati (batal/kedaluwarsa/ditolak/void/selesai) dengan entri approval basi tidak menunggu.
+    "sales_order": ("sales_orders", {"status": {"$nin": ["cancelled", "expired", "rejected", "void", "done"]},
+                                     "$or": [{"status": "waiting_approval"},
                                              {"pending_approvals.status": "pending"}]}),
     "purchase_order": ("purchase_orders", {"status": "waiting_approval"}),
     "price": ("price_approvals", {"status": "pending",
@@ -131,9 +133,24 @@ RECOUNT: Dict[str, tuple] = {
     # definisi backend kelak bergeser, kedua implementasi tidak akan setuju lagi dan
     # POC MEMERAH — itu gunanya. Yang menunggu bukan "inspeksi belum selesai" (itu
     # pekerjaan) melainkan tahanan yang hanya MANAJER boleh lepas.
-    "inspection_hold": ("inspections", {"lines.hold": True,
+    # Fase 4 · R5 — baris yang sudah DITOLAK MD Quality (`reject-hold`) tetap `hold` tetapi sudah diputus.
+    "inspection_hold": ("inspections", {"lines": {"$elemMatch": {
+                                            "hold": True,
+                                            "md_quality_decision.action": {"$ne": "reject"}}},
                                         "status": {"$in": ["assigned", "in_progress",
                                                            "done"]}}),
+    # ── Fase 4 · R5 (26 Okt) — 6 antrean dari pintu keputusan yang dulu tanpa antrean (opini ketiga).
+    "design_claim": ("design_gallery", {"claims.status": "pending", "status": {"$ne": "pending_approval"}}),
+    "credit_override": ("credit_overrides", {"status": "pending",
+                                             "$or": [{"order_id": ""}, {"order_id": None},
+                                                     {"order_id": {"$exists": False}}]}),
+    "od_cancel_credit_note": ("credit_notes", {"status": "pending_finance", "source": "od_item_cancel"}),
+    "makloon_loss": ("makloon_orders", {"steps.material_losses.status": "pending_approval",
+                                        "steps.claim.status": {"$ne": "pending_approval"}}),
+    "po_variance": ("po_variance_tasks", {"status": "open"}),
+    "sales_return_exception": ("sales_returns", {"exceptions.status": "pending",
+                                                 "status": {"$nin": ["pending_approval", "rejected",
+                                                                     "cancelled"]}}),
 }
 
 #: Antrean yang LAHIR di fase ini (dipakai G4 & laporan penutup).

@@ -15,7 +15,7 @@ import EntityBadge from "../../components/EntityBadge";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import FulfillmentDecisionDialog from "../sales_admin/FulfillmentDecisionDialog";
 import { formatQtyByUnit } from "../../utils/qtyByUnit";
-import { visibleSubs } from "./soStatusView";
+import { hasPartialBackorder, isBackorderSo, visibleSubs } from "./soStatusView";
 
 export default function SOCompactPanel({ order, onClose, onOpenFull }) {
   const [showWizard, setShowWizard] = useState(false);
@@ -89,15 +89,18 @@ export default function SOCompactPanel({ order, onClose, onOpenFull }) {
             Uang muka <span className="font-semibold">{formatCurrency(advanceHeld)}</span> tercatat sebagai kewajiban — pendapatan diakui saat dikirim.
           </p>
         )}
-        {order.has_backorder && (
-          <p className="rounded-md border border-[#F6D3C4] bg-[#FFF1EA] px-2.5 py-1.5 text-[11px] font-semibold text-[#B23B14]">
-            Ada backorder — sebagian qty menunggu stok.
+        {/* R5 — Backorder = status Menunggu stok; SO hidup di tahap lain ber-baris pendingan = "sebagian menunggu stok";
+            SO tutup (batal/selesai) dengan penanda basi tidak lagi berbunyi backorder. */}
+        {(isBackorderSo(order) || hasPartialBackorder(order)) && (
+          <p className="rounded-md border border-[#F6D3C4] bg-[#FFF1EA] px-2.5 py-1.5 text-[11px] font-semibold text-[#B23B14]"
+            data-testid="so-compact-backorder-note">
+            {isBackorderSo(order) ? "Backorder — pesanan menunggu stok masuk." : "Sebagian qty menunggu stok."}
           </p>
         )}
 
         {/* Trial 22 Okt (E5) — SATU mekanisme pemenuhan dengan Meja Admin Sales (pilih roll, keputusan tercatat di SO);
             dulu Wizard terpisah yang tidak mencatat keputusan sehingga meja tetap menganggap belum diputus. */}
-        {(order.has_backorder || order.status === "waiting_stock") && (
+        {(isBackorderSo(order) || hasPartialBackorder(order)) && (
           <button type="button" data-testid="so-open-wizard" onClick={() => setShowWizard(true)}
             className="flex w-full items-center justify-center gap-1 rounded-lg border border-[#D9C2EC] bg-[#FBF7FE] px-3 py-2 text-[12px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA]">
             <Wand2 size={13} /> Rencana pemenuhan (pilih roll)

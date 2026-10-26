@@ -63,7 +63,10 @@ AKUN = {
 #: Sengaja ditulis ulang di sini (bukan mengimpor dari service) supaya gate ini
 #: menjadi OPINI KEDUA, bukan cermin dari logika yang sedang diuji.
 EXPECT = {
-    "sales_order": ("sales_orders", {"$or": [{"status": "waiting_approval"},
+    # Fase 4 · R5 — SO mati (batal/kedaluwarsa/ditolak/void/selesai) dengan entri `pending_approvals` basi
+    # tidak menunggu siapa pun (data acuan: KANDA/SO-00001, KSC/SOS-00003, KSC/SOS-00013).
+    "sales_order": ("sales_orders", {"status": {"$nin": ["cancelled", "expired", "rejected", "void", "done"]},
+                                     "$or": [{"status": "waiting_approval"},
                                              {"pending_approvals.status": "pending"}]}),
     "purchase_order": ("purchase_orders", {"status": "waiting_approval"}),
     "price": ("price_approvals", {"status": "pending",
@@ -125,9 +128,26 @@ EXPECT = {
     # sample yang di-ACC — dan hanya MANAJER boleh melepasnya (keputusan pemilik #5).
     # `draft` sengaja TIDAK ikut: dokumen yang belum ditugaskan belum punya petugas
     # yang bisa menandai tahanan, jadi menghitungnya = menunggu yang tidak nyata.
-    "inspection_hold": ("inspections", {"lines.hold": True,
+    # Fase 4 · R5 — baris yang sudah DITOLAK MD Quality (`reject-hold`) tetap `hold` tetapi sudah diputus.
+    "inspection_hold": ("inspections", {"lines": {"$elemMatch": {
+                                            "hold": True,
+                                            "md_quality_decision.action": {"$ne": "reject"}}},
                                         "status": {"$in": ["assigned", "in_progress",
                                                            "done"]}}),
+    # ── Fase 4 · R5 (26 Okt) — opini kedua untuk 6 antrean dari pintu keputusan yang dulu tanpa antrean.
+    "design_claim": ("design_gallery", {"claims.status": "pending",
+                                        "status": {"$ne": "pending_approval"}}),
+    "credit_override": ("credit_overrides", {"status": "pending",
+                                             "$or": [{"order_id": ""}, {"order_id": None},
+                                                     {"order_id": {"$exists": False}}]}),
+    "od_cancel_credit_note": ("credit_notes", {"status": "pending_finance",
+                                               "source": "od_item_cancel"}),
+    "makloon_loss": ("makloon_orders", {"steps.material_losses.status": "pending_approval",
+                                        "steps.claim.status": {"$ne": "pending_approval"}}),
+    "po_variance": ("po_variance_tasks", {"status": "open"}),
+    "sales_return_exception": ("sales_returns", {"exceptions.status": "pending",
+                                                 "status": {"$nin": ["pending_approval", "rejected",
+                                                                     "cancelled"]}}),
 }
 
 

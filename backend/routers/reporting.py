@@ -132,11 +132,19 @@ async def reservation_funnel(request: Request,
 @router.get("/reports/order-velocity")
 async def order_velocity(request: Request, days: int = 30,
                          entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Orders per day for last N days + totals (per entitas)."""
-    await require_permission(request, "order", "view")
+    """Orders per day for last N days + totals (per entitas).
+
+    Fase 4 · R5 (keputusan pemilik #3, 26 Okt) — panel kecepatan di Pesanan › Dasbor kini boleh untuk SALES, dengan
+    DATA MILIKNYA SAJA: pagar kepemilikan `sales_ownership` (sama dengan daftar, ringkasan, corong & pelanggan
+    teratas) + pagar lini. Dulu endpoint ini tanpa pagar sales, sehingga panelnya hanya dibuka untuk peran Analitik.
+    Admin/manajer tetap melihat seluruh cakupan PT."""
+    actor = await require_permission(request, "order", "view")
     ctx = await entity_ctx(request)
     cutoff = _wib_start_utc(days - 1)
     scope = resolve_list_scope("sales_orders", {"created_at": {"$gte": cutoff}}, ctx, entity_id)
+    scope = sales_ownership.apply_scope(scope, actor)
+    scope = line_scope.narrow(scope, actor, "", field=line_scope.LINES_FIELD)
+    owner_scoped = sales_ownership.is_owner_locked(actor)
     orders = await db.sales_orders.find(scope, {"_id": 0}).to_list(10000)
     # Build full day range
     all_days: Dict[str, Dict[str, Any]] = {}
@@ -159,6 +167,10 @@ async def order_velocity(request: Request, days: int = 30,
         "avg_per_day": round(len(orders) / days, 1) if days > 0 else 0,
         "total_revenue": round(sum(_net(o) for o in orders if o.get("status") not in NOT_SOLD), 0),
         "period_days": days,
+        # R5 — layar memberi label cakupan dari server (bukan menebak dari peran).
+        "owner_scoped": owner_scoped,
+        "scope_label": ("Pesanan milik Anda (pelanggan & tim Anda) · termasuk sample" if owner_scoped
+                        else "Semua pesanan dalam cakupan PT · termasuk sample"),
     }
 
 

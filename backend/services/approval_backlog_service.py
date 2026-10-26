@@ -32,12 +32,18 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from db import db
 
+#: Fase 4 · R5 (26 Okt) — SO yang sudah MATI. Kedaluwarsa/batal tidak membersihkan entri `pending_approvals`, jadi
+#: dulu baris `sales_order` menghitung keputusan yang tak akan pernah berarti (data acuan: ketiga SO di antrean =
+#: KANDA/SO-00001 & KSC/SOS-00003 kedaluwarsa, KSC/SOS-00013 batal). "Reservasi kedaluwarsa — buat pesanan baru".
+SO_DEAD_STATUSES: Tuple[str, ...] = ("cancelled", "expired", "rejected", "void", "done")
+
 #: (kunci, label, layar tujuan, koleksi, query) — urut sesuai kelaziman kerja.
 QUEUES: List[tuple] = [
     ("sales_order", "Pesanan penjualan menunggu ACC", "approval-inbox", "sales_orders",
      # SSOT persetujuan SO = `pending_approvals`; `status` lama tetap dihitung supaya
-     # dokumen tahap sebelumnya tidak hilang dari antrean.
-     {"$or": [{"status": "waiting_approval"}, {"pending_approvals.status": "pending"}]}),
+     # dokumen tahap sebelumnya tidak hilang dari antrean. SO mati tidak menunggu siapa pun (R5).
+     {"status": {"$nin": list(SO_DEAD_STATUSES)},
+      "$or": [{"status": "waiting_approval"}, {"pending_approvals.status": "pending"}]}),
     ("purchase_order", "Pesanan pembelian menunggu ACC", "purchase-approval",
      "purchase_orders", {"status": "waiting_approval"}),
     ("price", "Permintaan harga khusus", "price-approvals", "price_approvals",
@@ -120,7 +126,10 @@ QUEUES: List[tuple] = [
     # tanpa ada satu pun layar yang menyebutnya.
     ("inspection_hold", "Barang ditahan (warna/handfeel) menunggu keputusan manajer",
      "inspections", "inspections",
-     {"lines.hold": True, "status": {"$in": ["assigned", "in_progress", "done"]}}),
+     # Fase 4 · R5 — pintu `reject-hold` (MD Quality MENOLAK barang) memutus tahanan tetapi roll TETAP ditahan
+     # (`hold` tidak dilepas). Baris yang sudah ditolak bukan lagi "menunggu keputusan" → dikecualikan.
+     {"lines": {"$elemMatch": {"hold": True, "md_quality_decision.action": {"$ne": "reject"}}},
+      "status": {"$in": ["assigned", "in_progress", "done"]}}),
     ("interco_return", "Retur antar-PT menunggu persetujuan", "interco-transactions",
      # Dual control: pembuat ≠ penyetuju, dan dokumen retur langsung menunggu begitu
      # dibuat (`draft` → `approved`), jadi `draft` di SINI benar-benar keadaan menunggu.
@@ -172,6 +181,31 @@ QUEUES: List[tuple] = [
      "sales_orders", {"status": {"$in": ["reserved", "waiting_stock"]},
                       "verification.status": {"$ne": "verified"},
                       "pending_approvals.status": {"$ne": "pending"}}),
+    # ── Fase 4 · R5 (26 Okt, keputusan pemilik #1) — pintu keputusan tanpa antrean & antrean bayangan yang ditemukan
+    # INV-APPR-01 masuk Pusat Persetujuan + KPI Beranda. Keputusannya tetap di layar kerja masing-masing (`view`).
+    # Klaim kepemilikan desain (Manajer, `design_ownership.decide`). Desain yang SEKALIGUS menunggu pengesahan
+    # sudah dihitung `design_gallery` — satu dokumen satu antrean (invarian C); klaimnya diputus di layar yang sama.
+    ("design_claim", "Klaim kepemilikan desain menunggu keputusan", "rnd-designs", "design_gallery",
+     {"claims.status": "pending", "status": {"$ne": "pending_approval"}}),
+    # Override batas kredit MANDIRI (Pelanggan/POS, tanpa SO; diputus Manajer di Pusat Persetujuan tab Kredit).
+    # Yang tertaut SO (`order_id`) sudah dihitung baris `sales_order` lewat entri `pending_approvals` kredit.
+    ("credit_override", "Override batas kredit pelanggan menunggu ACC", "approval-inbox", "credit_overrides",
+     {"status": "pending", "$or": [{"order_id": ""}, {"order_id": None}, {"order_id": {"$exists": False}}]}),
+    # Nota kredit batal item Pesanan Khusus (SO terbit) menunggu tinjauan Finance (`finance_amendment.
+    # review_credit_note`: koreksi/terbitkan/batalkan) — antreannya di Meja Finance ("Nota kredit batal item").
+    ("od_cancel_credit_note", "Nota kredit batal item menunggu Finance", "finance-desk", "credit_notes",
+     {"status": "pending_finance", "source": "od_item_cancel"}),
+    # Susut/hilang bahan di mitra makloon DI ATAS toleransi (`makloon_order.approve_loss`; pencatat ≠ penyetuju).
+    # MKO yang sekaligus punya klaim selisih menunggu sudah dihitung `makloon_claim` (invarian C).
+    ("makloon_loss", "Susut bahan di mitra makloon menunggu persetujuan", "makloon-orders", "makloon_orders",
+     {"steps.material_losses.status": "pending_approval", "steps.claim.status": {"$ne": "pending_approval"}}),
+    # Selisih penerimaan PO di luar toleransi: MD penanggung jawab memutus tunggu / amendment / short-close.
+    ("po_variance", "Selisih penerimaan PO menunggu keputusan", "purchasing", "po_variance_tasks",
+     {"status": "open"}),
+    # Pengecualian retur (di luar batas waktu / diskon tanpa barang) menunggu `sales_return.approve`. Retur yang
+    # masih menunggu ACC sudah dihitung `sales_return`; retur yang ditolak/batal tidak menunggu siapa pun.
+    ("sales_return_exception", "Pengecualian retur menunggu keputusan", "returns", "sales_returns",
+     {"exceptions.status": "pending", "status": {"$nin": ["pending_approval", "rejected", "cancelled"]}}),
 ]
 
 
@@ -289,6 +323,19 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
     "inspection_hold": {"since": ["started_at", "spk_date", "created_at"],
                         "number": ["number"],
                         "title": ["supplier_name", "customer_name", "ref_doc_number"]},
+    # Fase 4 · R5 — antrean baru. Klaim/susut/pengecualian menempel sebagai SUB-dokumen (array) tanpa tanggal
+    # tingkat-dokumen yang khusus; `updated_at` ditulis saat entri itu didorong (claim/record_loss/request).
+    "design_claim": {"since": ["updated_at", "created_at"], "number": ["code"], "title": ["title"]},
+    "credit_override": {"since": ["created_at"], "number": ["customer_name", "id"],
+                        "title": ["reason", "requested_by"]},
+    "od_cancel_credit_note": {"since": ["created_at"], "number": ["number"],
+                              "title": ["customer_name", "order_number"]},
+    "makloon_loss": {"since": ["updated_at", "created_at"], "number": ["mko_number", "po_number"],
+                     "title": ["material_name", "final_output_name"]},
+    "po_variance": {"since": ["created_at"], "number": ["po_number"],
+                    "title": ["product_name", "supplier_name"]},
+    "sales_return_exception": {"since": ["updated_at", "created_at"], "number": ["number"],
+                               "title": ["customer_name", "order_number"]},
 }
 
 
@@ -590,7 +637,9 @@ async def inspection_hold_extras(docs: List[Dict[str, Any]]) -> Dict[str, Dict[s
     held: Dict[str, List[Dict[str, Any]]] = {}
     roll_ids: List[str] = []
     for d in docs:
-        lines = [ln for ln in (d.get("lines") or []) if ln.get("hold")]
+        # R5 — baris yang sudah DITOLAK MD Quality tetap `hold` (roll ditahan) tetapi bukan lagi yang menunggu.
+        lines = [ln for ln in (d.get("lines") or []) if ln.get("hold")
+                 and (ln.get("md_quality_decision") or {}).get("action") != "reject"]
         held[d.get("id", "")] = lines
         roll_ids += [ln["roll_id"] for ln in lines if ln.get("roll_id")]
     roll_wh: Dict[str, str] = {}

@@ -263,7 +263,9 @@ export default function MyApprovalsPanel({ currentUser, selectedEntity: entityPr
                           <div className="mt-1.5 sm:hidden" data-testid={`my-approvals-actions-m-${it.id}`}>{renderActions(it, "m-")}</div>
                         </td>
                         <td className="py-2 pr-3 text-[11.5px] text-[#4A4B52]">
-                          <span title={String(it.requester || "").includes("@") ? it.requester : undefined}>{personText(it.requester)}</span>
+                          {/* Fase 4 · R5 — server kini mengirim NAMA (`requester`) + akun asli (`requester_account`). */}
+                          <span title={it.requester_account || (String(it.requester || "").includes("@") ? it.requester : undefined)}
+                            data-testid={`my-approvals-requester-${it.id}`}>{personText(it.requester)}</span>
                           <div className="text-[11px] text-[#9A9BA3]">{fmtDate(it.created_at)}</div>
                         </td>
                         <td className="py-2 pr-3 text-right font-semibold text-[#1C1C1E]">

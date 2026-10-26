@@ -91,15 +91,26 @@ test("D-17: satu kontrol status — tab tahap ber-nilai Rp, tanpa kartu pipeline
   expect(q(host, "orders-status-detail")).toBeNull();
 });
 
-test("D-17: Dasbor Pesanan memuat corong (sumber daftar Pesanan); kecepatan hanya untuk peran Analitik", async () => {
+test("D-17 + R5: Dasbor Pesanan memuat corong; kecepatan untuk sales HANYA dari server yang menyaring kepemilikan", async () => {
+  // Server lama (tanpa `owner_scoped`) → sales tidak diberi angka kecepatan seluruh PT.
   routeGet({ "/reports/reservation-funnel": { funnel: [{ status: "reserved", count: 2 }], total_orders: 2, sample_excluded: 1 },
     "/reports/order-velocity": { velocity: [], period_days: 7, total_orders: 0 } });
   const sales = await mount(
     <AppNavProvider role="sales" onNavigateTo={() => {}} onOpenDocument={() => {}}><OrderDashboard orders={[]} /></AppNavProvider>);
   expect(q(sales.host, "order-analytics-funnel-scope").textContent).toContain("1 dikecualikan");
   expect(q(sales.host, "order-analytics-velocity")).toBeNull();
-  expect(mockGet.mock.calls.some(([u]) => u.includes("/reports/order-velocity"))).toBe(false);
   expect(q(sales.host, "dashboard-top-customers")).not.toBeNull();     // tur tetap menemukan widget
+  // Server baru: kecepatan milik sales sendiri + label cakupan dari server.
+  routeGet({ "/reports/reservation-funnel": { funnel: [], total_orders: 0 },
+    "/reports/order-velocity": { velocity: [{ date: "2026-10-26", count: 1, done: 0 }], period_days: 7, total_orders: 1,
+      owner_scoped: true, scope_label: "Pesanan milik Anda (pelanggan & tim Anda) · termasuk sample" } });
+  const sales2 = await mount(
+    <AppNavProvider role="sales" onNavigateTo={() => {}} onOpenDocument={() => {}}><OrderDashboard orders={[]} /></AppNavProvider>);
+  expect(q(sales2.host, "order-analytics-velocity")).not.toBeNull();
+  expect(q(sales2.host, "order-analytics-velocity-scope").textContent).toContain("Pesanan milik Anda");
+  // Admin (peran Analitik) tetap melihat panel walau server lama.
+  routeGet({ "/reports/reservation-funnel": { funnel: [], total_orders: 0 },
+    "/reports/order-velocity": { velocity: [], period_days: 7, total_orders: 0 } });
   const admin = await mount(
     <AppNavProvider role="admin" onNavigateTo={() => {}} onOpenDocument={() => {}}><OrderDashboard orders={[]} /></AppNavProvider>);
   expect(q(admin.host, "order-analytics-velocity")).not.toBeNull();

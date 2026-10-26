@@ -50,11 +50,32 @@ test("Gudang: Kinerja Mitra Makloon (D-22) terbuka dengan izin server", () => {
   expect(menu("warehouse").pembelian["purchase-orders"]).toContain("makloon-claim-recap");
 });
 
+/**
+ * Pintu MATI yang sengaja ditutup izin server: id yang di baseline "sampai" menurut rancangan menu, tetapi server
+ * TIDAK PERNAH melayani layar itu untuk peran tsb. Satu baris per keputusan + alasan.
+ *  · Fase 4 · R5 — sales › Lot & Silsilah: seluruh `/api/lots*` dijaga `field_visibility.lot` (middleware), sales tanpa
+ *    izin itu → layar berbunyi "Registri LOT tidak tersedia untuk peran Anda". Sumber izin tab kini `field_visibility`
+ *    (`access_modules.VIEW_RESOURCE_OVERRIDES`), jadi tab disembunyikan; rancangan `hubTabs` tidak diubah.
+ */
+const SERVER_GATED = { sales: ["inventory-lots"] };
+
+test("R5: Lot & Silsilah tersembunyi untuk sales (tanpa field_visibility.lot), tetap untuk gudang & manajer", () => {
+  expect(builtin.view_resources["inventory-lots"]).toEqual(["field_visibility"]);
+  login("sales");
+  expect(resolveDeepLinkTarget("inventory-lots", "sales")).toBeNull();
+  for (const role of ["warehouse", "manager"]) {
+    login(role);
+    expect(resolveDeepLinkTarget("inventory-lots", role)).toMatchObject({ view: "inventory-lots" });
+  }
+});
+
 describe.each(BUILTIN.filter((r) => r !== "admin"))("peran %s dengan izin server", (role) => {
   test("setiap alamat yang dulu sampai (baseline) masih sampai — izin server tidak memblokir pintu rancangan", () => {
     login(role);
     const lost = [];
+    const gated = new Set(SERVER_GATED[role] || []);
     for (const [id, view] of Object.entries(baseline.roles[role] || {})) {
+      if (gated.has(id)) continue;
       const t = resolveDeepLinkTarget(id, role);
       const ok = new Set([view, aliasTarget(view), aliasTarget(id)]);
       if (!t) lost.push(`${id} → (tidak sampai; dulu ${view})`);

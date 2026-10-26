@@ -28,13 +28,19 @@ export const BACKLOG_INBOX_TAB = {
   purchase_return: "returns",
   cycle_count: "cycle",
   amendment: "amendment",
+  // Fase 4 · R5 — override kredit MANDIRI kini baris antrean server sendiri (dulu tak terhitung KPI).
+  credit_override: "credit",
 };
 
 /**
  * Antrean yang DAFTARNYA dirender inbox. Amandemen sengaja TIDAK (D-06: keputusan amandemen hanya di Pusat
  * Amandemen; tab Amandemen = kartu tautan berhitungan) — jadi ia dihitung "ditangani di layar lain".
  */
-export const LISTED_IN_INBOX = ["sales_order", "purchase_order", "price", "sales_return", "purchase_return", "cycle_count"];
+export const LISTED_IN_INBOX = ["sales_order", "purchase_order", "price", "sales_return", "purchase_return", "cycle_count",
+  "credit_override"];
+
+/** Fase 4 · R5 — SO mati: entri `pending_approvals` basi tidak menunggu siapa pun (sama dengan server SO_DEAD_STATUSES). */
+export const SO_DEAD_STATUSES = ["cancelled", "expired", "rejected", "void", "done"];
 
 /** Tab Matriks divisi hanya untuk peran yang dulu membuka `my-approvals` (manager/admin + overlay/hidden_views). */
 export const canSeeMatrix = (role) => roleCanSee(["manager", "admin"], role, "my-approvals");

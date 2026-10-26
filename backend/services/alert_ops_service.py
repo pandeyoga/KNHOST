@@ -55,6 +55,22 @@ AR_DUE_SOON_OFFSETS = [-3, -1, 0, 1]
 MAX_ALERTS_PER_JOB = 40
 EPS = 0.01
 
+# ── Fase 4 · R5 (keputusan pemilik #2, 26 Okt) — SATU definisi "menunggu stok" untuk layar Pesanan & notifikasi.
+#  · "Backorder" (kartu, tab, hitungan `backorder_count`) = SO berstatus Menunggu stok SAJA (`BACKORDER_STATUS`).
+#  · `has_backorder` tetap penanda BARIS pendingan untuk logika pemenuhan (auto-reservasi saat barang masuk), tetapi
+#    hanya berarti pada SO yang masih HIDUP: batal/kedaluwarsa/selesai tidak selalu membersihkan penanda itu (data
+#    acuan G2-05: 19 SO ber-`has_backorder` = 14 menunggu stok + 3 dipesan + 2 BATAL). Notifikasi "barang pendingan
+#    datang" dulu ikut terkirim untuk SO batal; layar menyebut sisa ini "sebagian menunggu stok", bukan Backorder.
+# Dipakai juga `routers/sales_orders_extra.get_orders_stats` (ringkasan layar Pesanan) — jangan ditulis ulang di sana.
+BACKORDER_STATUS = "waiting_stock"
+SO_CLOSED_STATUSES = ("cancelled", "expired", "rejected", "void", "done", "delivered", "completed", "closed",
+                      "shipped", "dispatched")
+
+
+def pending_stock_query() -> Dict[str, Any]:
+    """SO HIDUP yang masih punya baris pendingan (Backorder + "sebagian menunggu stok")."""
+    return {"has_backorder": True, "status": {"$nin": list(SO_CLOSED_STATUSES)}}
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -150,7 +166,7 @@ async def notify_po_arrival(task: Dict[str, Any]) -> int:
     pid = task.get("product_id") or ""
     if pid:
         orders = await db.sales_orders.find(
-            {"has_backorder": True, "backorders.product_id": pid},
+            {**pending_stock_query(), "backorders.product_id": pid},   # R5 — SO batal/selesai tidak diberi tahu
             {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
              "entity_id": 1}).to_list(50)
         for o in orders:
@@ -239,8 +255,7 @@ async def notify_backorder_ready(order: Dict[str, Any], product_id: str = "",
 async def job_backorder_ready() -> Dict[str, Any]:
     """Pendingan yang stoknya sudah tersedia (siap dialokasikan)."""
     orders = await db.sales_orders.find(
-        {"has_backorder": True,
-         "status": {"$nin": ["cancelled", "rejected", "delivered", "completed", "closed"]}},
+        pending_stock_query(),   # R5 — dulu SO kedaluwarsa/selesai ber-penanda basi ikut dipindai
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
          "entity_id": 1, "backorders": 1, "status": 1}).to_list(2000)
     created, scanned = 0, 0

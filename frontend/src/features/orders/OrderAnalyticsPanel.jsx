@@ -7,8 +7,9 @@
  * tinggal kartu tautan. Pelanggan teratas sudah ada di dasbor (agregat server per periode) — tidak digandakan.
  *
  * Sumber: `GET /reports/reservation-funnel` (izin `order.view`, cakupan sales & populasi daftar Pesanan K-06 —
- * tanpa pesanan sample) dan `GET /reports/order-velocity?days=` (hanya untuk peran yang dulu membuka Analitik ›
- * Ringkasan, `showVelocity`: endpoint ini belum disaring per sales — jangan dibuka ke sales, lihat laporan P3).
+ * tanpa pesanan sample) dan `GET /reports/order-velocity?days=`. Fase 4 · R5 (keputusan pemilik #3): kecepatan kini
+ * untuk sales juga — server menyaring kepemilikan (`owner_scoped`, `scope_label`). `requireScopedVelocity` = peran
+ * tanpa Analitik: angka hanya ditampilkan bila server MENGAKU sudah menyaring (server lama tanpa field → disembunyikan).
  * Tanpa `entity_id` = cakupan PT header, sama dengan daftar & ringkasan Pesanan.
  */
 import { useEffect, useState } from "react";
@@ -35,7 +36,8 @@ const FUNNEL_LABEL = {
 export const funnelLabel = (s) => FUNNEL_LABEL[s] || String(s || "—").replace(/_/g, " ");
 const SKIP_FUNNEL = ["cancelled", "expired"];
 
-export default function OrderAnalyticsPanel({ days = 30, showVelocity = false, testId = "order-analytics" }) {
+export default function OrderAnalyticsPanel({ days = 30, showVelocity = false, requireScopedVelocity = false,
+  testId = "order-analytics" }) {
   const [funnel, setFunnel] = useState(null);
   const [velocity, setVelocity] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,10 +60,12 @@ export default function OrderAnalyticsPanel({ days = 30, showVelocity = false, t
   const funnelData = (funnel?.funnel || []).filter((f) => !SKIP_FUNNEL.includes(f.status))
     .map((f) => ({ ...f, label: funnelLabel(f.status) }));
   // G3 D4-FE-01 — grafik memakai SELURUH rentang periode terpilih (tanpa potong 14 hari).
+  // R5 — server lama (tanpa `owner_scoped`) belum menyaring kepemilikan: jangan tampilkan ke peran tanpa Analitik.
+  const velocityShown = showVelocity && !(requireScopedVelocity && velocity && velocity.owner_scoped === undefined);
   const velocityData = velocity?.period_days === days ? (velocity?.velocity || []) : [];
 
   return (
-    <div className={`grid gap-3 ${showVelocity ? "lg:grid-cols-2" : ""}`} data-testid={testId}>
+    <div className={`grid grid-cols-1 gap-3 ${velocityShown ? "lg:grid-cols-2" : ""}`} data-testid={testId}>
       <div className="section-card" data-testid="order-analytics-funnel">
         <div className="section-head">
           <div className="flex items-center gap-2"><Filter size={14} className="text-[#007AFF]" /><h2>Corong status pesanan</h2></div>
@@ -93,7 +97,7 @@ export default function OrderAnalyticsPanel({ days = 30, showVelocity = false, t
         </div>
       </div>
 
-      {showVelocity && (
+      {velocityShown && (
         <div className="section-card" data-testid="order-analytics-velocity">
           <div className="section-head">
             <div className="flex items-center gap-2"><TrendingUp size={14} className="text-[#007AFF]" /><h2>Kecepatan pesanan — {days} hari</h2></div>
@@ -116,7 +120,9 @@ export default function OrderAnalyticsPanel({ days = 30, showVelocity = false, t
                     </LineChart>
                   </ResponsiveContainer>
                 )}
-            <p className="mt-1 text-[10.5px] text-[#8E8E93]">Semua pesanan dalam cakupan PT (termasuk sample) · garis putus = selesai.</p>
+            <p className="mt-1 text-[10.5px] text-[#8E8E93]" data-testid="order-analytics-velocity-scope">
+              {velocity?.scope_label || "Semua pesanan dalam cakupan PT · termasuk sample"} · garis putus = selesai.
+            </p>
           </div>
         </div>
       )}

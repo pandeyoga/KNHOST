@@ -25,6 +25,7 @@ import KNSelect from "../../components/KNSelect";
 import { scopeSuffix } from "../../utils/entityLabel";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { ORDER_STAGES, STATUS_FILTER_LABEL, orderColumns, subStatusOptions } from "./orderListParts";
+import { hasPartialBackorder, isBackorderSo } from "./soStatusView";
 
 const CSV_COLUMNS = [
   { key: "number", header: "Nomor" },
@@ -44,7 +45,9 @@ const CSV_COLUMNS = [
   { key: "payment_status", header: "Status Bayar" },
   { key: "stage", header: "Tahap" },
   { key: "status", header: "Status" },
-  { header: "Backorder", get: (r) => Boolean(r.has_backorder) },
+  // R5 (keputusan pemilik #2) — Backorder = status Menunggu stok; sisa pendingan SO hidup di tahap lain = kolom sendiri.
+  { header: "Backorder", get: (r) => isBackorderSo(r) },
+  { header: "Sebagian menunggu stok", get: (r) => hasPartialBackorder(r) },
 ];
 const COLUMNS = orderColumns();
 
@@ -136,9 +139,14 @@ export default function OrdersView({
   const countOf = (st) => (st.key === "all" ? Number(summary?.total_orders ?? paged.total ?? 0) : sCnt(st.statuses));
   // UAT 24 Okt (audit UI tahap 2) — G2-05 · P-04: Backorder = status `waiting_stock` (sama dengan daftar); SO lain
   // yang punya sisa backorder di tahap lain disebut di tooltip.
-  const backorderAny = Number(summary?.backorder_count || 0);
-  const backorderHint = backorderAny > sCnt(["waiting_stock"])
-    ? `Menunggu stok penuh. ${backorderAny - sCnt(["waiting_stock"])} SO lain punya sisa backorder (tahap lain).` : "";
+  // Fase 4 · R5 — server kini menghitung `backorder_count` = waiting_stock (keputusan pemilik #2) dan menyebut SO HIDUP
+  // lain ber-baris pendingan di `partial_backorder_count` (SO batal ber-penanda basi tidak lagi ikut). Server lama:
+  // selisih `backorder_count` (has_backorder) − waiting_stock seperti sebelumnya.
+  const partialBo = summary?.partial_backorder_count != null
+    ? Number(summary.partial_backorder_count || 0)
+    : Math.max(0, Number(summary?.backorder_count || 0) - sCnt(["waiting_stock"]));
+  const backorderHint = partialBo > 0
+    ? `Menunggu stok penuh. ${partialBo} SO lain (tahap lain) sebagian masih menunggu stok.` : "";
   const subOptions = subStatusOptions(stage, byStatus);
 
   /** Sesudah aksi yang mengubah status, HALAMAN yang sedang dibuka ikut dimuat ulang. */

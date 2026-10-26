@@ -358,6 +358,18 @@ LINK_ALIASES = {
 }
 
 
+#: Fase 4 · R5 (26 Okt) — id menu/tab yang SUMBER IZIN layarnya bukan sumber daya modul pembukanya. Tab "Lot &
+#: Silsilah" ikut modul Stok & Persediaan (menu peran kustom tetap dari modul itu), tetapi seluruh `/api/lots*` dijaga
+#: middleware `field_visibility` (izin `lot`): sales punya `inventory.view` namun tanpa visibilitas LOT, jadi tab
+#: tampil lalu berbunyi "Registri LOT tidak tersedia untuk peran Anda". Dengan sumber `field_visibility`,
+#: `roles.accessBlocks` menyembunyikannya otomatis bagi peran tanpa izin itu. Catatan: pemeriksa frontend hanya
+#: menguji "ada aksi apa pun" pada sumber daya — peran kustom ber-`field_visibility` tanpa `lot` (mis. hanya `grade`)
+#: masih melihat tab (lalu 403 jujur dari server); presisi per-aksi butuh perubahan `config/roles.js` (berkas bersama).
+VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
+    "inventory-lots": ["field_visibility"],
+}
+
+
 def view_resources_index() -> Dict[str, List[str]]:
     """L01 LN-015 — id menu/tab → sumber daya izin modul yang membukanya (untuk menyaring navigasi
     dari izin EFEKTIF, bukan nama peran)."""
@@ -365,6 +377,8 @@ def view_resources_index() -> Dict[str, List[str]]:
     for m in MODULE_CATALOG:
         for v in m["nav"]:
             idx.setdefault(v, set()).update(m["resources"])
+    for v, res in VIEW_RESOURCE_OVERRIDES.items():   # R5 — sumber izin layar yang sebenarnya menggantikan modul
+        idx[v] = set(res)
     return {k: sorted(v) for k, v in idx.items()}
 
 

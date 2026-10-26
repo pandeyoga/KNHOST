@@ -2613,8 +2613,7 @@
    "transfer"
   ],
   "inventory-lots": [
-   "inventory",
-   "transfer"
+   "field_visibility"
   ],
   "kas-aset": [
    "accounting",

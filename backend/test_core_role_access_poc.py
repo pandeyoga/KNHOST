@@ -129,15 +129,21 @@ def g2_pagar_tidak_longgar(cl):
 
 def g3_kpi_beranda_jujur(cl, db):
     print(f"\n{B}▶ G3 — KPI beranda = antrean NYATA (INV-HOME-01){X}")
+    # Fase 4 · R5 (26 Okt) — DUA ekspektasi lama salah (gagal "sales_order (2, 3)" sejak sebelum fase 3):
+    #  1. CAKUPAN: akun login ber-`X-Entity-Id: ENT` sehingga beranda tersaring satu PT, tetapi hitungan pembanding
+    #     dulu tanpa saringan PT → SO PT lain (KANDA/SO-00001) ikut terhitung. Pembanding kini cakupan yang sama.
+    #  2. DEFINISI: SO mati (batal/kedaluwarsa/ditolak/void/selesai) dengan entri `pending_approvals` basi tidak
+    #     menunggu siapa pun — `approval_backlog_service.SO_DEAD_STATUSES` & `verify_home_kpi.EXPECT` (opini kedua).
     expect = {
-        "sales_order": ("sales_orders", {"$or": [{"status": "waiting_approval"},
+        "sales_order": ("sales_orders", {"status": {"$nin": ["cancelled", "expired", "rejected", "void", "done"]},
+                                         "$or": [{"status": "waiting_approval"},
                                                  {"pending_approvals.status": "pending"}]}),
         "purchase_order": ("purchase_orders", {"status": "waiting_approval"}),
         "purchase_requisition": ("purchase_requisitions", {"status": "pending_approval"}),
         "sales_return": ("sales_returns", {"status": "pending_approval"}),
         "purchase_return": ("purchase_returns", {"status": "pending_approval"}),
     }
-    nyata = {k: db[c].count_documents(q) for k, (c, q) in expect.items()}
+    nyata = {k: db[c].count_documents({**q, "entity_id": ENT}) for k, (c, q) in expect.items()}
     total_nyata = sum(nyata.values())
     ok(total_nyata > 0, "data demo memang punya antrean persetujuan",
        f"({nyata})")

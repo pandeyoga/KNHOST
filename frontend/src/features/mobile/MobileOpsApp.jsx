@@ -1,5 +1,5 @@
 import { can, roleIs } from "../../config/roles";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Inbox, Gauge, Loader2, ClipboardList, Sparkles, LayoutGrid, ExternalLink } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import TanyaKnView from "../tanya/TanyaKnView";
@@ -11,8 +11,10 @@ import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { actorLabel } from "../../utils/actorLabel";
 import { apiErrorText, isForbiddenError } from "../../utils/apiError";
 import { canSeeMatrix } from "../approvals/inboxTabs";
+import { STAGE_META } from "../approvals/myApprovalsParts";   // R5 — lencana tahap sama dengan Matriks divisi desktop
 import { resolveDeepLinkTarget } from "../../config/navigationConfig";
 import { NoBreakNumbers, decisionTarget, linkView, stageText } from "./notifText";
+import { notifDocTarget } from "../notifications/notifDocTarget";
 
 /**
  * Fase 3 · P7 (D-06 HP) — antrean lintas tahap (`/approvals/my-queue`: ACC desain, ACC sample, PR, PO custom, klaim
@@ -24,6 +26,27 @@ export const dedupQueue = (items, specials) => {
   const shown = new Set((specials || []).map((s) => s.id));
   return (items || []).filter((it) => !(it.stage === "po_custom" && shown.has(it.id)));
 };
+// Fase 4 · R5 — `/approvals/my-queue` mengirim SEMUA dokumen tertunda ke pemegang `approval.view` beserta `can_decide`
+// per butir. HP dulu menampilkan semuanya sebagai "menunggu keputusan Anda" (Finance melihat PR & PO custom yang tak
+// boleh ia putus). Kini hanya butir yang BISA diputus peran ini (`can_decide !== false`; server lama tanpa field →
+// tampil); jumlah yang menunggu peran lain disebut di catatan, dan lencana tab ikut angka yang sama.
+export const decidableQueue = (items, specials) => dedupQueue(items, specials).filter((it) => it.can_decide !== false);
+const stageBadge = (it) => STAGE_META[it.stage]?.label || it.stage_label || (it.stage ? stageText(it.stage) : "menunggu");
+
+/** Satu pengambil `/approvals/my-queue` untuk tab Persetujuan (daftar) DAN lencananya; `reload` = "Coba lagi". */
+function useCrossStageQueue(enabled) {
+  const [state, setState] = useState({ data: null, err: "" });
+  const reload = useCallback(() => {
+    if (!enabled) return;
+    setState((s) => ({ ...s, err: "" }));
+    axios.get(`${API}/approvals/my-queue`).then((r) => setState({ data: r.data, err: "" }))
+      // G5-08 — galat memakai kalimat Indonesia (dulu "Permission ditolak: approval.view" mentah).
+      .catch((e) => setState((s) => ({ ...s, err: isForbiddenError(e) ? "Anda tidak punya akses ke antrean persetujuan."
+        : apiErrorText(e, "Antrean tidak bisa dimuat.") })));
+  }, [enabled]);
+  useEffect(() => { reload(); }, [reload]);
+  return { ...state, reload };
+}
 export const queueFullTarget = (it, role) => (canSeeMatrix(role)
   ? { nav: "approval-inbox", view: "approval-inbox", preset: { tab: "matrix" } }
   : { nav: it.view, view: it.view });
@@ -32,25 +55,28 @@ export const queueFullTarget = (it, role) => (canSeeMatrix(role)
 // ini (aturan menu yang sama: peran + izin server + hidden_views).
 export const canOpenFull = (to, role) => !!(to?.view && role && resolveDeepLinkTarget(to.view, role));
 
-function QueuePanel({ specials, role, onOpenFull }) {
-  const [q, setQ] = useState(null);
-  const [err, setErr] = useState("");
-  // G5-08 — galat memakai kalimat Indonesia (dulu "Permission ditolak: approval.view" mentah).
-  // Fase 3 · P7 — muat ulang yang berhasil menghapus galat sebelumnya (dev StrictMode / token baru terpasang).
-  useEffect(() => { axios.get(`${API}/approvals/my-queue`).then((r) => { setQ(r.data); setErr(""); }).catch((e) => setErr(isForbiddenError(e) ? "Anda tidak punya akses ke antrean persetujuan." : apiErrorText(e, "Antrean tidak bisa dimuat."))); }, []);
-  if (err && !q) return <div className="notice-bar warning m-3 text-xs" data-testid="mo-queue-error">{err}</div>;
+function QueuePanel({ queue, specials, role, onOpenFull }) {
+  const { data: q, err, reload } = queue;
+  if (err && !q) return (
+    <div className="notice-bar warning m-3 text-xs" data-testid="mo-queue-error">
+      {err} <button type="button" className="ml-1 font-semibold underline" data-testid="mo-queue-retry" onClick={reload}>Coba lagi</button>
+    </div>
+  );
   if (!q) return <div className="p-6 text-center text-sm"><Loader2 className="animate-spin inline" size={16} /> Memuat…</div>;
   const all = q.items || q.queue || [];
-  const items = dedupQueue(all, specials);
-  const hidden = all.length - items.length;
-  if (!items.length) return <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mo-queue-empty">Tidak ada dokumen lain yang menunggu keputusan Anda.</div>;
+  const deduped = dedupQueue(all, specials);
+  const items = decidableQueue(all, specials);
+  const hidden = all.length - deduped.length;            // PO custom yang sudah ada di daftar keputusan HP
+  const others = deduped.length - items.length;          // menunggu peran lain (bukan keputusan Anda)
+  const othersText = others > 0 ? ` · ${others} dokumen lintas tahap menunggu peran lain` : "";
+  if (!items.length) return <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mo-queue-empty">Tidak ada dokumen lain yang menunggu keputusan Anda{othersText}.</div>;
   return (
     <div className="space-y-2 p-3" data-testid="mo-queue-list">
       {items.map((it, i) => {
         const to = queueFullTarget(it, role);
         return (
           <div key={it.id || i} className="m-card p-3" data-testid={`mo-queue-${it.id || i}`}>
-            <div className="flex justify-between gap-2"><b className="min-w-0 break-words"><NoBreakNumbers text={it.doc_number || it.number || it.title || it.stage_label || stageText(it.stage || "")} /></b><span className="status-pill pill-warning shrink-0">{it.stage_label || (it.stage ? stageText(it.stage) : "menunggu")}</span></div>
+            <div className="flex justify-between gap-2"><b className="min-w-0 break-words"><NoBreakNumbers text={it.doc_number || it.number || it.title || stageBadge(it)} /></b><span className="status-pill pill-warning shrink-0" data-testid={`mo-queue-stage-${it.id || i}`}>{stageBadge(it)}</span></div>
             {/* Audit UI 24 Okt (HP manager › Antrean) — titik yatim "· Rp 0" & akun teknis ("system-seed") tidak tampil. */}
             <div className="text-xs text-[#6E6E73] mt-1">{[it.customer_name || actorLabel(it.requester_name || it.requester, ""), Number(it.amount) > 0 ? formatCurrency(it.amount) : ""].filter(Boolean).join(" · ")}</div>
             {onOpenFull && canOpenFull(to, role) && (
@@ -60,20 +86,22 @@ function QueuePanel({ specials, role, onOpenFull }) {
           </div>
         );
       })}
-      <p className="text-xs text-[#6E6E73] px-1" data-testid="mo-queue-note">Dokumen di atas diputus di layar lengkap{hidden > 0 ? ` · ${hidden} pesanan khusus sudah ada di daftar keputusan HP` : ""}.</p>
+      <p className="text-xs text-[#6E6E73] px-1" data-testid="mo-queue-note">{items.length} dokumen di atas menunggu keputusan Anda — diputus di layar lengkap{hidden > 0 ? ` · ${hidden} pesanan khusus sudah ada di daftar keputusan HP` : ""}{othersText}.</p>
     </div>
   );
 }
 
 /** Tab Persetujuan: yang bisa diputus di HP (harga/pesanan khusus) + antrean lintas tahap (dulu tab "Antrean"). */
-function ApprovalsTab({ canPrice, canSpecial, canQueue, focusId, pending, role, onOpenFull }) {
+function ApprovalsTab({ canPrice, canSpecial, canQueue, focusId, pending, queue, queueCount, role, onOpenFull }) {
   return (
     <div data-testid="mo-approvals">
       {(canPrice || canSpecial) && <MobileApprovalInbox canPrice={canPrice} canSpecial={canSpecial} focusId={focusId} pending={pending} />}
       {canQueue && (
         <section data-testid="mo-queue-section">
-          <h3 className="px-4 pt-3 text-[12px] font-semibold uppercase tracking-wide text-[#6E6E73]">Antrean lintas tahap</h3>
-          <QueuePanel specials={pending?.specials} role={role} onOpenFull={onOpenFull} />
+          <h3 className="px-4 pt-3 text-[12px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+            Antrean lintas tahap{queueCount > 0 && <span className="ml-1 tabular-nums" data-testid="mo-queue-count">({queueCount})</span>}
+          </h3>
+          <QueuePanel queue={queue} specials={pending?.specials} role={role} onOpenFull={onOpenFull} />
         </section>
       )}
     </div>
@@ -124,6 +152,7 @@ export default function MobileOpsApp(props) {
   const canQueue = allow("approval", "view");
   // Satu daftar keputusan HP untuk tab Persetujuan, dedup antrean & lencana "Putuskan di HP" di lonceng.
   const pending = usePendingApprovals({ canPrice, canSpecial });
+  const queue = useCrossStageQueue(canQueue);
   const [focus, setFocus] = useState("");
   const firstTab = canPrice || canSpecial || canQueue ? "queue" : "kpi";
   const [tab, setTab] = useState(props.initialTab || firstTab);
@@ -138,6 +167,10 @@ export default function MobileOpsApp(props) {
   const openNotif = (n) => {
     const target = decideOf(n);
     if (target) { setFocus(target); setTab("queue"); return true; }
+    // Fase 4 · R6 (G5-09) — notifikasi yang menunjuk dokumen (nota kredit → SO) membuka dokumennya di layar penuh.
+    // Desain tetap lewat layar Desain & Pattern (kanal R&D hanya didengar tampilan desktop).
+    const doc = notifDocTarget(n);
+    if (doc?.link && props.onOpenDocument) { props.onOpenDocument(doc.link); return true; }
     const view = linkView(n);
     if (!view) return false;
     openFull(view, view);
@@ -146,10 +179,13 @@ export default function MobileOpsApp(props) {
 
   const tabs = [];
   if (canPrice || canSpecial || canQueue) {
-    const waiting = (pending.prices || []).length + (pending.specials || []).length;
+    // R5 — lencana = SEMUA yang menunggu keputusan Anda di tab ini: harga & pesanan khusus (diputus di HP) + antrean
+    // lintas tahap yang bisa Anda putus (`decidableQueue`, angka yang sama dengan judul seksinya).
+    const queueCount = decidableQueue(queue.data?.items || queue.data?.queue, pending.specials).length;
+    const waiting = (pending.prices || []).length + (pending.specials || []).length + queueCount;
     tabs.push({ id: "queue", label: "Persetujuan", icon: Inbox, badge: waiting, render: () => (
       <ApprovalsTab canPrice={canPrice} canSpecial={canSpecial} canQueue={canQueue} focusId={focus} pending={pending}
-        role={user?.role} onOpenFull={openFull} />) });
+        queue={queue} queueCount={queueCount} role={user?.role} onOpenFull={openFull} />) });
   }
   // K-12 (26 Okt) — Ringkas per peran: Desainer & Admin Sample melihat angka pekerjaannya; peran lain panel umum.
   // D-26 — tombol "Buka Tampilan Desktop" (`mo-open-desktop`) di Ringkas dicabut: satu pintu di tab Lainnya.

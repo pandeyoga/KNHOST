@@ -12,7 +12,7 @@ import PaymentBadge from "../../components/PaymentBadge";
 import EntityBadge from "../../components/EntityBadge";
 import { StagePill, SubStatusChips } from "../../components/SoStatusBadges";
 import { formatQtyByUnit } from "../../utils/qtyByUnit";
-import { visibleSubs } from "./soStatusView";
+import { hasPartialBackorder, isBackorderSo, visibleSubs } from "./soStatusView";
 
 /** Tahap = tab status. `statuses` = status server di tahap itu (multi-status dikirim berkoma). */
 export const ORDER_STAGES = [
@@ -65,9 +65,14 @@ export function orderColumns() {
         <div className="flex flex-wrap items-center gap-1.5">
           <span data-testid={`order-number-${order.id}`} className="text-[12px] font-bold text-[#007AFF]">{order.number}</span>
           <EntityBadge entityId={order.entity_id} />
-          {order.has_backorder && (
+          {/* R5 — Backorder = status Menunggu stok; sisa pendingan di tahap lain = "Sebagian menunggu stok". */}
+          {isBackorderSo(order) && (
             <span data-testid={`order-backorder-chip-${order.id}`}
               className="rounded-sm bg-[#FFF1EA] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#B23B14]">Backorder</span>
+          )}
+          {hasPartialBackorder(order) && (
+            <span data-testid={`order-partial-stock-chip-${order.id}`} title="Sebagian qty pesanan ini menunggu barang masuk"
+              className="rounded-sm bg-[#FFF7EF] px-1 py-0.5 text-[10px] font-semibold text-[#8C4A00]">Sebagian menunggu stok</span>
           )}
           {order.has_sample && (
             <span data-testid={`order-sample-chip-${order.id}`}

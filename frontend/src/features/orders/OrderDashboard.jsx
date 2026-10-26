@@ -240,7 +240,10 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
       </div>
       
       {/* Fase 3 · P3 (D-17) — corong & kecepatan pesanan dari Analitik › Ringkasan pindah ke SINI (satu dasbor). */}
-      <OrderAnalyticsPanel days={rangeDays} showVelocity={canOpen("reports")} />
+      {/* Fase 4 · R5 (keputusan pemilik #3) — kecepatan pesanan untuk SEMUA yang membuka Pesanan; server menyaring
+          kepemilikan sales (`/reports/order-velocity` → data milik sales sendiri, admin/manajer tetap semua).
+          Peran tanpa Analitik hanya diberi angka dari server yang MENGAKU sudah menyaring (`owner_scoped` ada). */}
+      <OrderAnalyticsPanel days={rangeDays} showVelocity requireScopedVelocity={!canOpen("reports")} />
 
       {/* Pesanan terbaru */}
       <div className="section-card">

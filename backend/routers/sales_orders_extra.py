@@ -13,12 +13,13 @@ from pydantic import BaseModel
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
-from core_utils import now_iso, new_id, safe_doc, DEFAULT_ENTITY_ID, strip_cost_fields
+from core_utils import now_iso, new_id, safe_doc, strip_cost_fields
 from schemas import (AllocationPreviewIn, RollReconcilePreviewIn, RepeatRestockIn, SoReallocateIn,
                      SoReleaseRollsIn, SoCancelIn)
 from services import restock_service        # PS-21 — repeat/restock SO → PR
 from services import sales_ownership        # FASE E-8 (E8.4/US11) — "Pesanan Saya"
 from services import line_scope             # FASE L — pagar & penyaring lini produk
+from services import alert_ops_service as _alerts   # R5 — satu definisi Backorder (status) & baris pendingan
 from pagination import (is_paged, get_page_params, build_search, merge_query,
                        fetch_page, envelope)
 from services.inventory_service import expire_old_reservations
@@ -284,7 +285,14 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         # ada di memori peramban (`orders.filter(o => o.has_backorder)`). Begitu daftarnya
         # dipaginasi, angka itu akan diam-diam mengecil mengikuti isi halaman. Dihitung di
         # server supaya kartu & daftar tidak pernah bercerita beda.
-        "backorder_count": await db.sales_orders.count_documents({**scope, "has_backorder": True}),
+        # Fase 4 · R5 (keputusan pemilik #2) — Backorder = SO berstatus Menunggu stok SAJA (sama dengan tab & saringan
+        # daftar `status=waiting_stock`). Dulu `has_backorder` → kartu 19 vs daftar 14 (ikut 3 dipesan + 2 BATAL).
+        # SO hidup lain yang masih punya baris pendingan disebut terpisah (`partial_backorder_count`, keterangan kartu).
+        "backorder_count": await db.sales_orders.count_documents({**scope, "status": _alerts.BACKORDER_STATUS}),
+        "partial_backorder_count": await db.sales_orders.count_documents(
+            {**scope, **_alerts.pending_stock_query(),
+             "status": {"$nin": [_alerts.BACKORDER_STATUS, *_alerts.SO_CLOSED_STATUSES]}}),
+        "backorder_basis": "Backorder = pesanan berstatus Menunggu stok (sama dengan tab & daftar)",
         "total_orders": await db.sales_orders.count_documents(scope),
         "revenue": revenue,
         "periods": periods,
@@ -443,6 +451,12 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
+    # Fase 4 · R8 — SO mati: dulu entri `nilai` ditandai disetujui DULU baru transisi menolak (409) → keputusan basi
+    # tertulis di pesanan batal/kedaluwarsa. Tolak sebelum menyentuh apa pun.
+    dead = so_approvals.closed_order_message(order)
+    if dead:
+        raise HTTPException(status_code=409, detail={"code": "SO_CLOSED", "message": dead,
+                                                     "order_status": order.get("status")})
     required = order.get("required_approval_role")
     if not role_satisfies(actor.get("role"), required):
         raise HTTPException(status_code=403,

@@ -2,7 +2,7 @@
 // permintaan P2 (Kebijakan Retur → Pengaturan › Penjualan) & P5 (papan tautan membawa preset).
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import MobileOpsApp, { canOpenFull, dedupQueue, queueFullTarget } from "../mobile/MobileOpsApp";
+import MobileOpsApp, { canOpenFull, decidableQueue, dedupQueue, queueFullTarget } from "../mobile/MobileOpsApp";
 import { setAccessContext } from "../../config/roles";
 import MobileWarehouseApp from "../mobile/MobileWarehouseApp";
 import MobileApprovalInbox from "../mobile/MobileApprovalInbox";
@@ -163,9 +163,38 @@ test("D-06 HP: antrean lintas tahap tanpa PO custom yang sudah ada di daftar kep
   expect(q(host, "mo-special-sord_a")).not.toBeNull();                 // diputus di HP
   expect(q(host, "mo-queue-sord_a")).toBeNull();                       // tidak ganda di antrean
   expect(q(host, "mo-queue-pr1")).not.toBeNull();
-  expect(q(host, "mobile-tab-btn-queue-badge").textContent).toBe("1");
+  // R5 — lencana tab = pesanan khusus di HP (1) + antrean lintas tahap yang bisa diputus (sord_b, pr1).
+  expect(q(host, "mobile-tab-btn-queue-badge").textContent).toBe("3");
   await click(q(host, "mo-queue-open-pr1"));
   expect(onOpenFull).toHaveBeenCalledWith("approval-inbox", "approval-inbox", { preset: { tab: "matrix" } });
+});
+
+test("R5 HP: antrean lintas tahap hanya butir yang BISA diputus peran ini (can_decide); lencana & teks sama", async () => {
+  const items = [
+    { stage: "purchase_request", id: "pr1", number: "PR-1", view: "purchase-requisitions", stage_label: "Permintaan Pembelian (PR)", can_decide: true, requester: "Budi Santoso" },
+    { stage: "po_custom", id: "sord_x", number: "SORD-9", view: "special-orders", can_decide: false },
+    { stage: "purchase_request", id: "pr2", number: "PR-2", view: "purchase-requisitions", can_decide: false },
+  ];
+  expect(decidableQueue(items, []).map((x) => x.id)).toEqual(["pr1"]);
+  expect(decidableQueue([{ id: "lama", stage: "design_acc" }], []).map((x) => x.id)).toEqual(["lama"]);   // server lama
+  routeGet({ "/approvals/my-queue": { items }, "/special-orders": [], "/price-approvals": [] });
+  const { host } = await mount(<MobileOpsApp user={ADMIN} onOpenFull={() => {}} />);
+  expect(q(host, "mo-queue-pr1")).not.toBeNull();
+  expect(q(host, "mo-queue-sord_x")).toBeNull();
+  expect(q(host, "mo-queue-pr2")).toBeNull();
+  expect(q(host, "mo-queue-stage-pr1").textContent).toBe("Permintaan Pembelian");   // label Matriks divisi desktop
+  expect(q(host, "mo-queue-count").textContent).toBe("(1)");
+  expect(q(host, "mobile-tab-btn-queue-badge").textContent).toBe("1");
+  expect(q(host, "mo-queue-note").textContent).toContain("1 dokumen di atas menunggu keputusan Anda");
+  expect(q(host, "mo-queue-note").textContent).toContain("2 dokumen lintas tahap menunggu peran lain");
+
+  // Peran yang tidak bisa memutus apa pun (kasus crawl: Finance melihat PR) → kosong, tanpa lencana.
+  const FIN = { id: "u9", role: "finance", name: "Fina", permissions: { approval: ["view"] } };
+  routeGet({ "/approvals/my-queue": { items: items.map((x) => ({ ...x, can_decide: false })) } });
+  const fin = await mount(<MobileOpsApp user={FIN} onOpenFull={() => {}} />);
+  expect(q(fin.host, "mo-queue-empty").textContent).toContain("3 dokumen lintas tahap menunggu peran lain");
+  expect(q(fin.host, "mo-queue-count")).toBeNull();
+  expect(q(fin.host, "mobile-tab-btn-queue-badge")).toBeNull();
 });
 
 test("D-07/D-27 HP: Setujui PO custom memakai dialog bersama approvalDecisions (catatan bawaan 'Disetujui dari HP')", async () => {

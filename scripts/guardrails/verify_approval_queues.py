@@ -54,7 +54,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 ROOT = Path(__file__).resolve().parents[2]
 try:
@@ -145,6 +145,19 @@ DOOR_QUEUE: Dict[str, str] = {
     # membuktikan tak ada satu dokumen pun yang dihitung dua kali.
     "design_requests.py::/api/design-requests/{req_id}/approve": "design_request",
     "design_requests.py::/api/design-requests/{req_id}/reject": "design_request",
+    # ── Fase 4 · R5 (26 Okt, keputusan pemilik #1) — pintu keputusan manusia yang bisa menggantung dan dulu
+    # tanpa antrean. Kini masuk Pusat Persetujuan + KPI Beranda lewat baris `QUEUES` di bawah ini.
+    "design_gallery.py::/api/design-gallery/{gallery_id}/claims/{claim_id}/decide": "design_claim",
+    # Tolak barang ditahan = keputusan kedua atas tahanan yang SAMA (lepas ATAU tolak, MD Quality/manajer).
+    "inspections.py::/api/inspections/{ins_id}/lines/{line_id}/reject-hold": "inspection_hold",
+    "makloon_orders.py::/api/makloon-orders/{mko_id}/steps/{seq}/material-loss/{loss_id}/decide": "makloon_loss",
+    # Tagihan vendor kampanye = `vendor_bills` (`bill_type=campaign_expense`) berstatus `pending_approval` —
+    # sudah dihitung baris `vendor_bill`, dan layar Tagihan Supplier memutusnya lewat aturan yang sama (COMM-04).
+    "marketing.py::/api/marketing/campaigns/{cid}/vendor-bills/{bill_id}/approve": "vendor_bill",
+    "marketing.py::/api/marketing/campaigns/{cid}/vendor-bills/{bill_id}/reject": "vendor_bill",
+    "purchase_orders_extra.py::/api/po-variance-tasks/{task_id}/decide": "po_variance",
+    "sales_return_exceptions.py::/api/sales-returns/{return_id}/exceptions/{exc_id}/decide":
+        "sales_return_exception",
 }
 
 #: pintu yang SENGAJA tak punya antrean — alasannya WAJIB ditulis (dan diperiksa).
@@ -185,6 +198,21 @@ DOOR_EXEMPT: Dict[str, str] = {
     "rfid.py::/api/rfid/verify-sessions/{session_id}/complete":
         "Menutup sesi scan; hasil (cocok/hilang/lebih) dihitung MESIN dari selisih "
         "EPC, bukan persetujuan orang — tindak lanjut selisihnya lewat alur WMS biasa.",
+    # ── Fase 4 · R5 (26 Okt) — pintu otomatis/pencatatan yang ber-kata `reject|verify` tetapi bukan keputusan
+    # orang yang menunggu persetujuan (keputusan pemilik #1: dibebaskan dengan alasan tertulis).
+    "goods_receipts.py::/api/goods-receipts/{grn_id}/reject":
+        "Menolak KEDATANGAN di tahap `review` (cek surat jalan) oleh petugas penerimaan sendiri "
+        "(`goods_receipt.review`) — bagian alur kerja Barang Masuk (draf → review → hitung → tutup), bukan "
+        "persetujuan atasan. Antrean kerjanya layar Barang Masuk & Meja Admin Gudang.",
+    "inventory.py::/api/inventory/rolls/{roll_id}/verify-identity":
+        "Verifikasi identitas roll anak lewat SCAN label/barcode (`wms.update`) — mesin mencocokkan kode, "
+        "tidak ada dokumen yang menunggu keputusan orang.",
+    "purchase_returns.py::/api/purchase-returns/{return_id}/supplier-rejected-goods-back":
+        "Pencatatan FISIK roll yang ditolak SUPPLIER kembali ke gudang KN (kejadian pihak luar, sama "
+        "dengan `supplier-reject`) — bukan antrean keputusan orang dalam.",
+    "putaway_orders.py::/api/putaway-orders/verify-labels":
+        "Pindai label QR roll transit (tanpa RFID) → siap Putaway Order (`wms.update`) — pencocokan mesin, "
+        "antrean kerjanya layar Putaway/Operasi Gudang.",
 }
 
 # ─── Sapuan DATA: kosakata "menunggu keputusan" ───────────────────────────────
@@ -224,6 +252,18 @@ DATA_EXEMPT: Dict[Tuple[str, str], str] = {
     ("interco_returns", "draft"):
         "Dihitung baris antrean `interco_return` lewat query `draft`; entri ini hanya "
         "penjelas bila query berubah.",
+    # ── Fase 4 · R5 (26 Okt) ─────────────────────────────────────────────────────
+    ("credit_overrides", "pending"):
+        "ANTI DOBEL-HITUNG: override MANDIRI (tanpa `order_id`) dihitung baris `credit_override`; override "
+        "yang tertaut SO adalah rincian entri `pending_approvals` kredit SO itu dan sudah dihitung baris "
+        "`sales_order` (SO mati — kedaluwarsa/batal — tidak menunggu siapa pun). Penjelas ini hanya terbaca "
+        "gate bila data saat ini berisi override tertaut SO saja (baris `credit_override` tak menyentuhnya).",
+    ("goods_receipts", "review"):
+        "Tahap KERJA penerimaan (cek & koreksi surat jalan/OCR sebelum menghitung) milik petugas Barang "
+        "Masuk — pekerjaan, bukan keputusan atasan; antreannya layar Barang Masuk & Meja Admin Gudang.",
+    ("rfid_print_jobs", "verified"):
+        "Status AKHIR cetak label RFID: label sudah diverifikasi fisik (sesi scan selesai). Tidak ada yang "
+        "menunggu; kata `verified` di kosakata dimaksudkan untuk kontrabon (verified → menunggu ACC).",
 }
 
 
