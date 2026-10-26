@@ -59,7 +59,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
   const anyQueued = queues.some((q) => (q.count || 0) > 0);
 
   return (
-    <div data-testid="sample-desk" className="grid gap-4">
+    <div data-testid="sample-desk" className="grid grid-cols-1 gap-4">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="sample-desk-error" />
       {toast && <div data-testid="sample-desk-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
       <section className="section-card">
@@ -72,7 +72,8 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
           <button data-testid="sample-desk-refresh" className="icon-button" onClick={load} aria-label="Muat ulang meja"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
         <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">Pesanan sample dari sales (SOS-): <b>sample berbayar</b> disetujui pembayarannya dulu (Finance/Admin Sample), <b>sample gratis</b> langsung siap. Lalu <b>teruskan ke gudang</b> → gudang memotong dari roll (pindai RFID, catat panjang aktual) → dikirim / diambil pelanggan.</p>
-        <section data-testid="sample-desk-metrics" className="grid gap-3 p-3 sm:grid-cols-3">
+        {/* L-04 (fase 3 · P3) — 3 KPI satu baris juga di HP 390 px (ikon disembunyikan di layar sempit). */}
+        <section data-testid="sample-desk-metrics" className="grid grid-cols-3 gap-2 p-3 sm:gap-3">
           {/* Label KPI disamakan dengan meja lain (Perlu Ditindak · Antrean · Umur Tertua). */}
           <Metric icon={Inbox} label="Perlu Ditindak" value={openItems} tone="rgba(255,149,0,.16)" testId="sample-desk-metric-open" />
           <Metric icon={Layers} label="Antrean" value={queues.filter((q) => q.count > 0).length} tone="rgba(154,91,0,.14)" testId="sample-desk-metric-queues" />
@@ -89,7 +90,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       <SoTrackerCard desk="sample_admin" selectedEntity={selectedEntity} testPrefix="sample-desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
       {loading && !data ? <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid="sample-desk-loading">Menyusun antrean…</div>
         : (
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             {queues.map((q) => <DeskQueueCard key={q.id} queue={q} loading={loading} busyRef={busyRef} testPrefix="sample-desk" onAction={handleAction} />)}
           </div>
         )}
@@ -99,8 +100,8 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
 
 function Metric({ icon: Icon, label, value, tone, testId }) {
   return (
-    <div data-testid={testId} className="metric-card">
-      <div className="metric-icon" style={{ background: tone }}><Icon size={16} className="text-[#1C1C1E]" /></div>
+    <div data-testid={testId} className="metric-card max-sm:!gap-2 max-sm:!px-2.5">
+      <div className="metric-icon max-sm:!hidden" style={{ background: tone }}><Icon size={16} className="text-[#1C1C1E]" /></div>
       <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p><p className="text-[15px] font-bold tabular-nums">{value}</p></div>
     </div>
   );

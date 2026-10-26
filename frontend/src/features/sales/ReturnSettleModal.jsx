@@ -306,7 +306,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           <b> termasuk landed cost</b> (freight/duty/handling) untuk barang impor — bukan harga PO mentah.
         </p>
 
-        {err && <p className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-error">{err}</p>}
+        {err && <p role="alert" className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-error">{err}</p>}
         <div className="modal-actions">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="confirm-settle-btn" className="primary-button" disabled={busy || !anyIncluded}

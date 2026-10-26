@@ -33,11 +33,8 @@ export const approvePr = (id, body) =>
 export const rejectPr = (id, body) =>
   axios.post(`${API}/purchase-requisitions/${id}/reject`, body).then((r) => r.data);
 
-export const approveSpecialOrder = (id, body) =>
-  axios.post(`${API}/special-orders/${id}/approve`, body).then((r) => r.data);
-
-export const rejectSpecialOrder = (id, body) =>
-  axios.post(`${API}/special-orders/${id}/reject`, body).then((r) => r.data);
+// PO Custom (pesanan khusus): BUKAN di sini — fase 3 · P3 (D-07) memakai `services/approvalDecisions.js`
+// (satu dialog + endpoint `/special-orders/{id}/approve|reject` untuk Pesanan Khusus, HP & Matriks divisi).
 
 // T8 — klaim selisih makloon menempel pada langkah SPK (butuh `step_seq`).
 export const approveMakloonClaim = (id, body) =>

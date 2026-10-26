@@ -3,9 +3,20 @@ import { TrendingUp, TrendingDown, AlertCircle, Clock, Package, DollarSign, User
 import KNSelect from "../../components/KNSelect";
 import { getStage, stageMeta } from "../../utils/soStatus";
 import { formatDate } from "../../utils/formatters";
+import { docGrandTotal } from "../../utils/taxBreakdown";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import { useAppNav } from "../../context/AppNavContext";
+import OrderAnalyticsPanel from "./OrderAnalyticsPanel";
 
+/**
+ * OrderDashboard — Penjualan › Pesanan › **Dasbor** (fase 3 · P3, D-17: SATU dasbor pesanan). Kartu & daftar periode
+ * dari agregat server (`/sales-orders/stats/summary`, cakupan sama dengan daftar); corong & kecepatan dari
+ * `OrderAnalyticsPanel` (dulu di Analitik › Ringkasan).
+ */
 function OrderDashboard({ orders = [], loading = false, summary = null }) {
+  const { canOpen } = useAppNav();
   const [timeRange, setTimeRange] = useState("7d"); // 7d, 30d, 90d
+  const rangeDays = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
   
   // G3 D4-ORDER-01 — SEMUA kartu & daftar periode dari agregat SERVER (scope entitas/sales/lini yang
   // sama dengan daftar). Data lokal hanya cadangan sementara, diberi label "hanya pesanan termuat".
@@ -228,6 +239,9 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
         </div>
       </div>
       
+      {/* Fase 3 · P3 (D-17) — corong & kecepatan pesanan dari Analitik › Ringkasan pindah ke SINI (satu dasbor). */}
+      <OrderAnalyticsPanel days={rangeDays} showVelocity={canOpen("reports")} />
+
       {/* Pesanan terbaru */}
       <div className="section-card">
         <div className="section-head">
@@ -237,41 +251,20 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
           </div>
           <span className="text-[11px] text-[#6B6B73]">10 terbaru</span>
         </div>
-        <div className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#FAFBFC] border-b border-[#EFF0F2]">
-                <tr className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
-                  <th className="px-3 py-2 text-left">Pesanan</th>
-                  <th className="px-3 py-2 text-left">Pelanggan</th>
-                  <th className="px-3 py-2 text-left">Tanggal</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                  <th className="px-3 py-2 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EFF0F2]">
-                {metrics.recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-[#FAFBFC]">
-                    <td className="px-3 py-2 text-[11.5px] font-bold text-[#007AFF]">{order.number}</td>
-                    <td className="px-3 py-2 text-[11px]">{order.customer_name}</td>
-                    <td className="px-3 py-2 text-[10.5px] text-[#6B6B73]">
-                      {formatDate(order.created_at)}
-                    </td>
-                    <td className="px-3 py-2 text-[11.5px] font-semibold text-right tabular-nums">{formatCurrency(order.total_amount)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span
-                        data-testid={`dashboard-order-stage-${order.id}`}
-                        className={`status-pill ${stageMeta(getStage(order)).cls}`}
-                      >
-                        {stageMeta(getStage(order)).label}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* L-04 (fase 3 · P3) — tabel di desktop, kartu di HP 390 px. K-03: total = termasuk PPN (sama dengan daftar). */}
+        <ResponsiveTable testId="dashboard-recent-orders" rows={metrics.recentOrders} rowKey="id"
+          empty="Belum ada pesanan."
+          columns={[
+            { key: "number", header: "Pesanan", mobile: "title", render: (o) => <b className="text-[11.5px] text-[#007AFF]">{o.number}</b> },
+            { key: "customer_name", header: "Pelanggan", mobile: "subtitle" },
+            { key: "created_at", header: "Tanggal", render: (o) => formatDate(o.created_at) },
+            { key: "total", header: "Total (termasuk PPN)", mobileLabel: "Total", align: "right", priority: 1,
+              render: (o) => <span className="tabular-nums font-semibold">{formatCurrency(docGrandTotal(o))}</span> },
+            { key: "stage", header: "Status", align: "center", mobile: "badge", render: (o) => (
+              <span data-testid={`dashboard-order-stage-${o.id}`} className={`status-pill ${stageMeta(getStage(o)).cls}`}>
+                {stageMeta(getStage(o)).label}
+              </span>) },
+          ]} />
       </div>
     </div>
   );

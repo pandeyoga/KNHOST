@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, PackageCheck, Clock } from "lucide-react";
+import { RefreshCw, PackageCheck, Clock, Scissors } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import LinkCard from "../../components/LinkCard";
+import { useEntityScope } from "../../context/EntityScopeContext";
+import { entityShortById } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import { KNSelect } from "../../components/KNSelect";
@@ -28,6 +31,7 @@ function WaitBadge({ row, th, done }) {
 
 /** L06 LN-061 — Meja Cutting / Admin Cutting: potong → terima hasil (boleh pindah lokasi) → kirim. */
 export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
+  const { entities } = useEntityScope();   // nama PT pemilik stok (bukan id teknis, INV-UI-02)
   const [data, setData] = useState(null);
   const [locs, setLocs] = useState([]);
   const [dest, setDest] = useState({});
@@ -61,7 +65,7 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
   };
   const perOrder = (rows) => rows.reduce((m, r) => ({ ...m, [r.order_id]: (m[r.order_id] || 0) + 1 }), {});
   return (
-    <section data-testid="cutting-desk" className="grid gap-3">
+    <section data-testid="cutting-desk" className="grid grid-cols-1 gap-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-desk-error" />
       <div className="flex items-center justify-between">
         <p className="text-[11.5px] text-[#6B6B73]">Gudang memotong → hasil potong <b>diterima Admin Cutting</b> (bisa dipindah ke lokasi kirim) → baru boleh dikirim.</p>
@@ -71,8 +75,8 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
         <p data-testid="cutting-late-alert" className="rounded-lg bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C62828]">
           {data.late_count} potongan menunggu diterima Admin Cutting lebih dari {fmtWait(data.wait_thresholds.late_minutes)}.</p>
       )}
-      <div className="grid gap-3 lg:grid-cols-2">
-        {(data?.queues || []).map((q) => (
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {(data?.queues || []).map((q) => (q.key === "to_cut" ? <ToCutSummary key={q.key} queue={q} /> : (
           <div key={q.key} data-testid={`cutting-queue-${q.key}`} className="section-card overflow-hidden">
             <p className="flex items-center justify-between border-b border-[#EFF0F2] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
               {q.label}<span data-testid={`cutting-queue-count-${q.key}`} className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[10px]">{q.rows.length}</span></p>
@@ -90,7 +94,7 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
                       {data.wait_thresholds && <WaitBadge row={r} th={data.wait_thresholds} done={q.key === "ready"} />}</p>
                     <p className="text-[11px] text-[#6B6B73]">{formatQty(r.quantity)} {r.unit} · {r.warehouse_name || r.warehouse_id}
                       {r.child_roll_no ? ` · potongan ${r.child_roll_no} dari ${r.parent_roll_no}` : ""}
-                      {r.source_owner_entity_id ? ` · stok milik ${r.source_owner_entity_id} — tunggu pembelian internal` : ""}
+                      {r.source_owner_entity_id ? ` · stok milik ${entityShortById(entities, r.source_owner_entity_id, "PT lain")} — tunggu pembelian internal` : ""}
                       {r.handoff ? ` · diterima ${r.handoff.received_by}${r.handoff.transferred ? " (dipindah lokasi)" : ""}` : ""}</p>
                     {q.key === "to_receive" && canReceive && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -108,8 +112,38 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
               </ul>
             )}
           </div>
-        ))}
+        )))}
       </div>
     </section>
+  );
+}
+
+/**
+ * Fase 3 · P3 (D-24a, keputusan pemilik) — "menunggu dipotong gudang" adalah antrean GUDANG: tempat kerjanya
+ * Operasi Gudang › Cutting (`wms-cutting`). Di Meja Cutting cukup ringkasan (jumlah + nomor pesanan) + tautan bila
+ * peran boleh membuka layar itu; bagian penerimaan hasil potong oleh Admin Cutting tetap di sini.
+ */
+function ToCutSummary({ queue }) {
+  const rows = queue.rows || [];
+  const numbers = [...new Set(rows.map((r) => r.order_number).filter(Boolean))];
+  const shown = numbers.slice(0, 8).join(", ");
+  const more = numbers.length > 8 ? ` +${numbers.length - 8} lainnya` : "";
+  return (
+    <div data-testid={`cutting-queue-${queue.key}`} className="section-card overflow-hidden">
+      <p className="flex items-center justify-between border-b border-[#EFF0F2] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
+        {queue.label}<span data-testid={`cutting-queue-count-${queue.key}`} className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[10px]">{rows.length}</span></p>
+      <div className="grid gap-2 p-3 text-[12px]">
+        {rows.length === 0 ? <p className="text-center text-[11.5px] text-[#8E8E93]">Kosong.</p> : (
+          <p data-testid="cutting-to-cut-numbers" className="text-[11.5px] text-[#3C3C43]">
+            {rows.length} baris potong dari {numbers.length} pesanan: <b>{shown}</b>{more}.
+          </p>
+        )}
+        {/* Preset layar Cutting gudang (P5): tahap "cut"; satu pesanan → langsung tersaring nomornya. */}
+        <LinkCard testId="cutting-to-cut-link" icon={Scissors} what="Pemotongan oleh gudang"
+          where="Gudang › Operasi Gudang › Cutting" view="wms-cutting" label="Buka Cutting gudang"
+          preset={{ stage: "cut", q: numbers.length === 1 ? numbers[0] : "" }}
+          readOnlyText="Dipotong oleh gudang di Operasi Gudang › Cutting — hasilnya muncul di antrean penerimaan di sebelah." />
+      </div>
+    </div>
   );
 }

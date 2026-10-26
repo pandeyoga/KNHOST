@@ -1,19 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart2, FileText, Route } from "lucide-react";
-import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
+import { SearchBox, ListToolbar } from "../../components/ListControls";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
 // Keputusan pemilik K-03 (26 Okt) — "Total" dokumen = termasuk PPN; DPP (harga sebelum PPN) = rincian.
-import { docDpp, docGrandTotal, docPpn } from "../../utils/taxBreakdown";
-import PaymentBadge from "../../components/PaymentBadge";
+import { docDpp, docGrandTotal } from "../../utils/taxBreakdown";
 import PaginationBar from "../../components/PaginationBar";
+import PageTabs from "../../components/PageTabs";
+import ResponsiveTable from "../../components/ResponsiveTable";
 import { usePagedList } from "../../hooks/usePagedList";
-
+import useIsMobile from "../../hooks/useIsMobile";
 // FASE P6 — kolom Unduh CSV. Badan usaha sengaja TIDAK diikutkan: dokumen pesanan hanya
 // menyimpan `entity_id`, dan menampilkan id entitas dilarang (INV-UI-02) — sebuah kolom
 // berisi `ent_ksc` tidak berarti apa pun bagi yang membuka berkasnya.
 import { qtyDualCsvColumns } from "../../utils/qtyDualCsv";   // FASE U — dua satuan di CSV
-import { formatQtyByUnit } from "../../utils/qtyByUnit";
+import LineFilter from "../../components/LineFilter";   // FASE L
+import OrderDashboard from "./OrderDashboard";
+import { OrderDetailPanel } from "./OrderDetailPanel";
+import SOCompactPanel from "./SOCompactPanel";
+import DetailPopup from "../../components/DetailPopup";
+// FASE E-8 (E8.14 · US12) — "barang saya sampai mana?" — jawaban gudang dibawa ke layar Pesanan, read-only.
+import OrderJourneyPanel from "./OrderJourneyPanel";
+import KNSelect from "../../components/KNSelect";
+import { scopeSuffix } from "../../utils/entityLabel";
+import { useEntityScope } from "../../context/EntityScopeContext";
+import { ORDER_STAGES, STATUS_FILTER_LABEL, orderColumns, subStatusOptions } from "./orderListParts";
 
 const CSV_COLUMNS = [
   { key: "number", header: "Nomor" },
@@ -35,50 +46,23 @@ const CSV_COLUMNS = [
   { key: "status", header: "Status" },
   { header: "Backorder", get: (r) => Boolean(r.has_backorder) },
 ];
-import { StagePill, SubStatusChips } from "../../components/SoStatusBadges";
-import LineFilter from "../../components/LineFilter";   // FASE L
-import OrderDashboard from "./OrderDashboard";
-import { visibleSubs } from "./soStatusView";
-import { OrderDetailPanel } from "./OrderDetailPanel";
-import SOCompactPanel from "./SOCompactPanel";
-import DetailPopup from "../../components/DetailPopup";
-// FASE E-8 (E8.14 · US12) — "barang saya sampai mana?" adalah pertanyaan pelanggan yang
-// paling sering mampir ke sales, dan jawabannya dulu hanya ada di layar GUDANG (403 untuk
-// sales). Panel ini membawa jawabannya ke layar Pesanan, read-only.
-import OrderJourneyPanel from "./OrderJourneyPanel";
-import KNSelect from "../../components/KNSelect";
-import EntityBadge from "../../components/EntityBadge";
-import { scopeSuffix } from "../../utils/entityLabel";
-import { useEntityScope } from "../../context/EntityScopeContext";
+const COLUMNS = orderColumns();
 
-// Audit UI 24 Okt (004) — pesan daftar kosong dulu menulis kode saringan mentah
-// ("reserved,waiting_approval,approved"); kini memakai label tahap yang sama dengan tab.
-const STATUS_FILTER_LABEL = {
-  "reserved,waiting_approval,approved": "Dipesan",
-  waiting_stock: "Backorder",
-  "confirmed,partially_picked,picked": "Diproses",
-  "partially_shipped,shipped,dispatched": "Dikirim",
-  done: "Selesai",
-  "cancelled,expired": "Dibatalkan / Kedaluwarsa",
-  waiting_approval: "Menunggu Persetujuan",
-  reserved: "Dipesan",
-  approved: "Disetujui",
-  confirmed: "Terkonfirmasi (Ditahan)",
-  partially_picked: "Sebagian Diambil",
-  picked: "Sudah Diambil (Siap)",
-  partially_shipped: "Sebagian Dikirim",
-  shipped: "Dikirim",
-  dispatched: "Terkirim (lama)",
-};
-
+/**
+ * OrdersView — Penjualan › Pesanan (SO).
+ * Fase 3 · P3 (D-17 + L-01/L-04): tab Dasbor/Daftar = PageTabs (testid tur `tab-dashboard`/`tab-list` tetap);
+ * SATU kontrol status = tab tahap (hitungan + nilai Rp, testid `orders-stat-*` pada nilai); kartu pipeline yang
+ * bisa diklik dihapus; dropdown "Sub-status" hanya status rinci tahap aktif; daftar = ResponsiveTable (kartu di HP;
+ * di HP klik baris langsung membuka rincian lengkap).
+ */
 export default function OrdersView({
-  orders, 
-  onApprove, 
-  onConfirm, 
-  onCancel, 
-  onPay, 
-  onGenerateDocument, 
-  onShowDetail, 
+  orders,
+  onApprove,
+  onConfirm,
+  onCancel,
+  onPay,
+  onGenerateDocument,
+  onShowDetail,
   onReleaseReservation,
   onSubmitForApproval,
   onMarkDelivered,
@@ -91,26 +75,22 @@ export default function OrdersView({
   onRefresh,
 }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [stage, setStage] = useState("all");
+  const [subStatus, setSubStatus] = useState("");
+  const statusFilter = subStatus || stage;
   // FASE E-3 — empty state WAJIB menyebut badan usaha yang sedang dilihat,
   // supaya "belum ada pesanan" tidak dikira data hilang padahal salah konteks.
   const { selectedEntity, entities } = useEntityScope();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("list");
-  // Panel kanan punya DUA muka: "Detail & Aksi" (tindakan sesuai izin) dan
-  // "Perjalanan Pesanan" (riwayat + sumber pemenuhan). Dipisah sebagai sakelar,
-  // bukan digabung, supaya panel aksi tidak terdorong ke bawah lipatan layar.
+  // Panel kanan punya DUA muka: "Detail & Aksi" dan "Perjalanan Pesanan" (riwayat + sumber pemenuhan).
   const [detailPane, setDetailPane] = useState("detail");
   const [showFullOrder, setShowFullOrder] = useState(false);
+  const narrow = useIsMobile(640);
 
   // ── P2 — DAFTAR pesanan dipaginasi & dicari di SERVER ────────────────────────
-  // Sebelumnya seluruh daftar (cap 200) ikut respons `/dashboard` lewat prop `orders`,
-  // lalu disaring di peramban. Tab "Dasbor & Analitik" TETAP memakai prop itu karena
-  // analitiknya memang butuh seluruh periode — memaksanya membaca satu halaman akan
-  // membuat grafik bercerita salah. Jadi yang berpindah ke server hanya DAFTARNYA.
-  // FASE L — chip lini ikut dikirim ke SERVER (bukan disaring di peramban):
-  // daftar ini berhalaman, jadi menyaring di klien akan membuat "halaman 1" berisi
-  // 3 baris dari 20 dan pengguna menyimpulkan datanya hilang.
+  // Tab "Dasbor & Analitik" TETAP memakai prop `orders` (analitik butuh seluruh periode); yang berpindah ke server
+  // hanya DAFTARNYA. FASE L — chip lini ikut dikirim ke SERVER (daftar berhalaman; saring klien = data "hilang").
   const [lineFilter, setLineFilter] = useState("");
   const listParams = useMemo(
     () => ({ ...(statusFilter === "all" ? {} : { status: statusFilter }),
@@ -118,8 +98,7 @@ export default function OrdersView({
   const paged = usePagedList("/sales-orders", {
     params: listParams, search: searchQuery, pageSize: 20, enabled: viewMode === "list",
   });
-  // Kartu ringkasan & label "Semua Status (N)" memakai AGREGAT server supaya angkanya
-  // tidak menyusut mengikuti isi halaman (kelas bug "kartu bilang 12, daftar berisi 3").
+  // Hitungan tab & nilai Rp memakai AGREGAT server supaya angkanya tidak menyusut mengikuti isi halaman.
   const [summary, setSummary] = useState(null);
   useEffect(() => {
     let alive = true;
@@ -133,291 +112,126 @@ export default function OrdersView({
   useEffect(() => {
     if (focusDoc?.focus_type === "sales_order" && focusDoc?.focus_id) {
       setViewMode("list");
-      setStatusFilter("all");
+      setStage("all");
+      setSubStatus("");
       if (focusDoc.number) setSearchQuery(`"${focusDoc.number}"`);   // tanda kutip = nomor tepat (bukan substring)
       setSelectedOrder(focusDoc.focus_id);
       onClearFocus?.();
     }
   }, [focusDoc]); // eslint-disable-line
-  
-  // Pesanan terpilih dicari di halaman aktif dulu, lalu di daftar dasbor (prop) sebagai
-  // cadangan — supaya deep-link dari Pusat Dokumen tetap membuka detail walau
-  // dokumennya tidak berada di halaman yang sedang dibuka.
-  const sel = selectedOrder
-    ? (paged.items.find((o) => o.id === selectedOrder)
-      || orders.find((o) => o.id === selectedOrder)
-      || null)
-    : null;
 
-  // Penyaringan status & pencarian dilakukan SERVER; daftar halaman dipakai apa adanya.
-  const filteredOrders = paged.items;
+  // Pesanan terpilih dicari di halaman aktif dulu, lalu di daftar dasbor (prop) sebagai cadangan.
+  const sel = selectedOrder
+    ? (paged.items.find((o) => o.id === selectedOrder) || orders.find((o) => o.id === selectedOrder) || null)
+    : null;
+  const filteredOrders = paged.items;   // penyaringan status & pencarian dilakukan SERVER
 
   const byStatus = summary?.by_status || {};
-  const sCnt = (...keys) => keys.reduce((n, k) => n + Number(byStatus[k]?.count || 0), 0);
+  const sCnt = (keys) => keys.reduce((n, k) => n + Number(byStatus[k]?.count || 0), 0);
+  // K-03 (26 Okt) — nilai tahap = total termasuk PPN (sama dengan kolom daftar); server lama → `total_amount`.
+  const stAmt = (v) => Number(v?.grand_total ?? v?.total_amount ?? 0);
+  const amtOf = (keys) => (keys.length === 0
+    ? Object.values(byStatus).reduce((s, v) => s + stAmt(v), 0)
+    : keys.reduce((s, k) => s + stAmt(byStatus[k]), 0));
+  const countOf = (st) => (st.key === "all" ? Number(summary?.total_orders ?? paged.total ?? 0) : sCnt(st.statuses));
+  // UAT 24 Okt (audit UI tahap 2) — G2-05 · P-04: Backorder = status `waiting_stock` (sama dengan daftar); SO lain
+  // yang punya sisa backorder di tahap lain disebut di tooltip.
+  const backorderAny = Number(summary?.backorder_count || 0);
+  const backorderHint = backorderAny > sCnt(["waiting_stock"])
+    ? `Menunggu stok penuh. ${backorderAny - sCnt(["waiting_stock"])} SO lain punya sisa backorder (tahap lain).` : "";
+  const subOptions = subStatusOptions(stage, byStatus);
 
-  /** Sesudah aksi yang mengubah status, HALAMAN yang sedang dibuka harus ikut dimuat
-   *  ulang. Induk (`useAppActions`) hanya memperbarui daftar dasbornya sendiri, jadi
-   *  tanpa pembungkus ini baris di daftar akan tetap memperlihatkan status lama. */
+  /** Sesudah aksi yang mengubah status, HALAMAN yang sedang dibuka ikut dimuat ulang. */
   const refreshBoth = () => { onRefresh?.(); paged.refresh(); };
   const withRefresh = (fn) => (fn
     ? async (...args) => { const r = await fn(...args); paged.refresh(); return r; }
     : fn);
-  const stats = {
-    total: Number(summary?.total_orders ?? paged.total ?? 0),
-    reserved: sCnt("reserved", "waiting_approval", "approved"),
-    // UAT 24 Okt (audit UI tahap 2) — G2-05 · P-04: kartu & tab Backorder dulu memakai `backorder_count`
-    // (has_backorder — ikut SO Dipesan/Dibatalkan yang punya sisa backorder) sementara daftarnya menyaring
-    // status `waiting_stock` → "Backorder 8" di atas daftar 5 baris & jumlah kartu > Total. Kini kriteria sama.
-    backorder: sCnt("waiting_stock"),
-    backorderAny: Number(summary?.backorder_count || 0),
-    confirmed: sCnt("confirmed", "partially_picked", "picked"),
-    shipped: sCnt("partially_shipped", "shipped", "dispatched"),
-    done: sCnt("done"),
-    cancelled: sCnt("cancelled", "expired"),
+  const pickRow = (order) => {
+    if (narrow) { setSelectedOrder(order.id); setShowFullOrder(true); return; }   // HP: langsung rincian lengkap
+    setSelectedOrder(order.id === selectedOrder ? null : order.id);
   };
 
   return (
     <div data-testid="orders-view" className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        <button
-          onClick={() => setViewMode("dashboard")}
-          className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
-            viewMode === "dashboard"
-              ? "bg-[#007AFF] text-white"
-              : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:bg-[#F2F2F7]"
-          }`}
-          data-testid="tab-dashboard"
-        >
-          <BarChart2 size={14} className="inline mr-1.5" />
-          Dasbor & Analitik
-        </button>
-        <button
-          onClick={() => setViewMode("list")}
-          className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
-            viewMode === "list"
-              ? "bg-[#007AFF] text-white"
-              : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:bg-[#F2F2F7]"
-          }`}
-          data-testid="tab-list"
-        >
-          <FileText size={14} className="inline mr-1.5" />
-          Daftar Pesanan
-        </button>
-      </div>
-      
+      <PageTabs testId="orders-mode-tabs" value={viewMode} onChange={setViewMode} ariaLabel="Mode layar Pesanan"
+        tabs={[
+          { key: "dashboard", label: "Dasbor & Analitik", icon: BarChart2, testId: "tab-dashboard" },
+          { key: "list", label: "Daftar Pesanan", icon: FileText, testId: "tab-list" },
+        ]} />
+
       {viewMode === "dashboard" && <OrderDashboard orders={orders} loading={loading} summary={summary} />}
-      
+
       {viewMode === "list" && (
         <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" data-testid="orders-pipeline">
-            {/* UI/UX 2026-06 — kartu ringkasan = PIPELINE yang bisa diklik (menyaring
-                daftar per tahap, multi-status via koma) + NILAI rupiah per tahap. */}
-            {[
-              { label: "Total", value: stats.total, color: "text-[#007AFF]", bg: "bg-[#EFF4FF]", st: "all", keys: [] },
-              { label: "Dipesan", value: stats.reserved, color: "text-[#FF9500]", bg: "bg-orange-50", st: "reserved,waiting_approval,approved", keys: ["reserved", "waiting_approval", "approved"] },
-              { label: "Backorder", value: stats.backorder, color: "text-[#B23B14]", bg: "bg-[#FFF1EA]", st: "waiting_stock", keys: ["waiting_stock"],
-                hint: stats.backorderAny > stats.backorder ? `Menunggu stok penuh. ${stats.backorderAny - stats.backorder} SO lain punya sisa backorder (tahap lain).` : "" },
-              { label: "Diproses", value: stats.confirmed, color: "text-[#34C759]", bg: "bg-green-50", st: "confirmed,partially_picked,picked", keys: ["confirmed", "partially_picked", "picked"] },
-              { label: "Dikirim", value: stats.shipped, color: "text-[#0058CC]", bg: "bg-[#EAF2FF]", st: "partially_shipped,shipped,dispatched", keys: ["partially_shipped", "shipped", "dispatched"] },
-              { label: "Selesai", value: stats.done, color: "text-[#5856D6]", bg: "bg-purple-50", st: "done", keys: ["done"] },
-              { label: "Dibatalkan", value: stats.cancelled, color: "text-red-500", bg: "bg-red-50", st: "cancelled,expired", keys: ["cancelled", "expired"] },
-            ].map(({ label, value, color, bg, st, keys, hint }) => {
-              // K-03 (26 Okt) — nilai kartu = total termasuk PPN (sama dengan kolom daftar); server lama tanpa
-              // `grand_total` per status jatuh ke `total_amount`.
-              const stAmt = (v) => Number(v?.grand_total ?? v?.total_amount ?? 0);
-              const amt = keys.length === 0
-                ? Object.values(byStatus).reduce((s, v) => s + stAmt(v), 0)
-                : keys.reduce((s, k) => s + stAmt(byStatus[k]), 0);
-              const active = statusFilter === st;
-              return (
-                <button key={label} type="button" data-testid={`orders-stat-${label.toLowerCase()}`}
-                  onClick={() => setStatusFilter(st)}
-                  title={`Saring daftar: ${label}${hint ? ` — ${hint}` : ""} · nilai = total termasuk PPN`}
-                  className={`rounded-lg border p-2.5 text-left transition-colors ${bg} ${
-                    active ? "border-[#007AFF] ring-1 ring-[#007AFF]" : "border-[#EFF0F2] hover:border-[#B9CFF2]"}`}>
-                  <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B6B73]">{label}</p>
-                  <p className={`text-[20px] font-bold leading-tight ${color}`}>{value}</p>
-                  <p className="mt-0.5 truncate text-[11px] font-semibold tabular-nums text-[#6B6B73]">
-                    {formatCurrency(amt)}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-          
-          <StatusTabs testIdPrefix="orders-status-tab" value={statusFilter} onChange={setStatusFilter} tabs={[
-            { key: "all", label: "Semua", count: stats.total },
-            { key: "reserved,waiting_approval,approved", testKey: "reserved", label: "Dipesan", count: stats.reserved },
-            { key: "waiting_stock", label: "Backorder", count: stats.backorder },
-            { key: "confirmed,partially_picked,picked", testKey: "confirmed", label: "Diproses", count: stats.confirmed },
-            { key: "partially_shipped,shipped,dispatched", testKey: "shipped", label: "Dikirim", count: stats.shipped },
-            { key: "done", label: "Selesai", count: stats.done },
-            { key: "cancelled,expired", testKey: "cancelled", label: "Dibatalkan", count: stats.cancelled },
-          ]} />
+          {/* D-17 — SATU kontrol status: tab tahap + jumlah + nilai Rp (total termasuk PPN). */}
+          <PageTabs testId="orders-status-tabs" value={stage} ariaLabel="Tahap pesanan"
+            onChange={(k) => { setStage(k); setSubStatus(""); }}
+            tabs={ORDER_STAGES.map((st) => ({
+              key: st.key, testId: `orders-status-tab-${st.testKey}`, count: countOf(st), showZero: true,
+              title: st.key === "waiting_stock" && backorderHint ? backorderHint : undefined,
+              label: (
+                <>
+                  {st.label}
+                  <span data-testid={st.statTestId || `orders-stat-${st.label.toLowerCase()}`}
+                    title={`${st.label} · nilai = total termasuk PPN`}
+                    className="ml-1.5 text-[10.5px] font-semibold tabular-nums text-[#6B6B73]">
+                    {formatCurrency(amtOf(st.statuses))}
+                  </span>
+                </>
+              ),
+            }))} />
 
           <ListToolbar testId="orders-toolbar">
             <SearchBox value={searchQuery} onChange={setSearchQuery} testId="orders-search-input"
               placeholder='Cari nomor, pelanggan, produk… ("SO-0001" = nomor tepat)' />
-            <KNSelect
-              data-testid="orders-status-detail"
-              className="field !py-1 !text-[11px] w-auto"
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-              options={[
-                { value: "all", label: `Status rinci: semua (${stats.total})` },
-                { value: "reserved,waiting_approval,approved", label: "Tahap: Dipesan (grup)" },
-                { value: "confirmed,partially_picked,picked", label: "Tahap: Diproses (grup)" },
-                { value: "partially_shipped,shipped,dispatched", label: "Tahap: Dikirim (grup)" },
-                { value: "waiting_approval", label: "Menunggu Persetujuan" },
-                { value: "waiting_stock", label: "Menunggu Stok (Backorder)" },
-                { value: "reserved", label: "Dipesan" },
-                { value: "approved", label: "Disetujui" },
-                { value: "confirmed", label: "Terkonfirmasi (Ditahan)" },
-                { value: "partially_picked", label: "Sebagian Diambil" },
-                { value: "picked", label: "Sudah Diambil (Siap)" },
-                { value: "partially_shipped", label: "Sebagian Dikirim" },
-                { value: "shipped", label: "Dikirim" },
-                { value: "dispatched", label: "Terkirim (lama)" },
-                { value: "done", label: "Selesai (Terkirim)" },
-                { value: "cancelled,expired", label: "Dibatalkan / Kedaluwarsa" },
-              ]}
-            />
+            {subOptions.length > 0 && (
+              <KNSelect data-testid="orders-status-detail" aria-label="Sub-status"
+                className="field !py-1 !text-[11px] w-auto"
+                value={subStatus} onValueChange={setSubStatus} options={subOptions} />
+            )}
             <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="orders"
                         allowed={user?.allowed_line_codes} testId="orders-line-filter" />
           </ListToolbar>
-          
+
           <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
-            <section className="section-card">
+            <section className="section-card min-w-0">
               <div className="section-head">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="kicker">Kendali Pesanan</span>
                   <h2>Pesanan Penjualan</h2>
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <div className="min-w-[720px] grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_112px_56px_minmax(120px,1fr)] gap-2 bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
-                  <span>Pesanan</span><span>Pelanggan</span><span>Qty Pesan</span><span className="text-right leading-tight" data-testid="orders-col-total" title="Total dokumen termasuk PPN (setelah diskon). Baris kecil = DPP (harga sebelum PPN); rincian lengkap di detail pesanan.">Total (termasuk PPN)</span><span>Tanggal</span><span>Tahap</span>
-                </div>
-                <div className="min-w-[720px] divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
-                  {/* Audit UI 24 Okt (004) — dulu ikut `loading` global (muat dasbor) sehingga "Memuat pesanan…"
-                      tetap tampil DI ATAS daftar yang sudah termuat. Daftar ini hanya bergantung pada halaman server. */}
-                  {paged.loading && (
-                    <div data-testid="orders-loading" className="px-3 py-8 text-center text-[12px] text-[#6B6B73] animate-pulse">Memuat pesanan…</div>
-                  )}
-                  {!paged.loading && filteredOrders.length === 0 && (
-                    <div data-testid="orders-empty" className="px-3 py-8 text-center text-[12px] text-[#6B6B73]">
-                      {searchQuery.trim()
-                        ? `Tidak ada pesanan yang cocok dengan “${searchQuery.trim()}” ${scopeSuffix(entities, selectedEntity)}.`
-                        : statusFilter === "all"
-                          ? `Belum ada pesanan aktif ${scopeSuffix(entities, selectedEntity)}.`
-                          : `Tidak ada pesanan berstatus “${STATUS_FILTER_LABEL[statusFilter] || statusFilter}” ${scopeSuffix(entities, selectedEntity)}.`}
-                    </div>
-                  )}
-                  {!paged.loading && filteredOrders.map((order) => {
-                    /* UI/UX 2026-06 — kolom tengah dulu kosong; diisi qty & tanggal. */
-                    const its = order.items || [];
-                    const units = [...new Set(its.map((it) => it.unit).filter(Boolean))];
-                    return (
-                    <div 
-                      data-testid={`order-card-${order.id}`} 
-                      key={order.id}
-                      className={`grid grid-cols-[minmax(150px,1.4fr)_minmax(100px,1fr)_86px_112px_56px_minmax(120px,1fr)] gap-2 items-center px-3 py-2.5 cursor-pointer hover:bg-[#FAFBFC] transition-colors ${
-                        selectedOrder === order.id ? 'bg-[#EFF4FF] border-l-2 border-[#007AFF]' : ''
-                      }`}
-                      onClick={() => setSelectedOrder(order.id === selectedOrder ? null : order.id)}
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p data-testid={`order-number-${order.id}`} className="text-[12px] font-bold text-[#007AFF]">
-                            {order.number}
-                          </p>
-                          <EntityBadge entityId={order.entity_id} />
-                          {order.has_backorder && (
-                            <span
-                              data-testid={`order-backorder-chip-${order.id}`}
-                              className="rounded-sm bg-[#FFF1EA] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#B23B14]"
-                            >
-                              Backorder
-                            </span>
-                          )}
-                          {order.has_sample && (
-                            <span
-                              data-testid={`order-sample-chip-${order.id}`}
-                              className="rounded-sm bg-[#FFF3D6] px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"
-                            >
-                              Sample
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-[#6B6B73] truncate">
-                          {(order.items || []).length} item ·{" "}
-                          <PaymentBadge order={order} showRemaining testId={`order-payment-${order.id}`} />
-                        </p>
-                      </div>
-                      <p data-testid={`order-customer-${order.id}`} className="text-[11px] text-[#3C3C43] truncate">
-                        {order.customer_name}
-                      </p>
-                      <div className="text-[11px] tabular-nums" data-testid={`order-qty-cell-${order.id}`}>
-                        <p className="font-semibold" data-testid={`order-qty-${order.id}`}>{formatQtyByUnit(its)}</p>
-                        <p className="text-[10px] text-[#6B6B73]">{its.length} item{units.length > 1 ? " · campuran" : ""}</p>
-                      </div>
-                      <div className="text-right tabular-nums">
-                        <p data-testid={`order-total-${order.id}`} className="text-[11.5px] font-bold">
-                          {formatCurrency(docGrandTotal(order))}
-                        </p>
-                        {docPpn(order) > 0 && (
-                          <p data-testid={`order-dpp-${order.id}`} className="text-[10px] text-[#6B6B73]">
-                            DPP {formatCurrency(docDpp(order))}
-                          </p>
-                        )}
-                      </div>
-                      <p className="text-[10.5px] text-[#6B6B73]" data-testid={`order-date-${order.id}`}>
-                        {order.created_at ? new Date(order.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "—"}
-                      </p>
-                      <div className="flex flex-col items-start gap-0.5 min-w-0">
-                        <StagePill order={order} testId={`order-status-${order.id}`} />
-                        <SubStatusChips subs={visibleSubs(order)} testIdPrefix={`order-row-substatus-${order.id}`} />
-                      </div>
-                    </div>
-                    );
-                  })}
-                </div>
-              </div>
-              {/* P2 — kontrol halaman daftar pesanan */}
-              {!paged.loading && filteredOrders.length > 0 && (
-                <div className="px-3 py-2 border-t border-[#EFF0F2]">
-                  <PaginationBar
-                    page={paged.page} pageSize={paged.pageSize} total={paged.total}
-                    hasMore={paged.hasMore} loading={paged.loading}
-                    onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
-                    testId="orders-pager" label="pesanan"
-                    exportConfig={{ columns: CSV_COLUMNS, rows: filteredOrders,
-                      fetchAll: paged.fetchAll, filename: "pesanan-penjualan" }}
-                  />
-                </div>
-              )}
+              {/* Audit UI 24 Okt (004) — "Memuat pesanan…" hanya ikut halaman server (bukan muat dasbor global). */}
+              <ResponsiveTable testId="orders" columns={COLUMNS} rowKey="id"
+                rows={paged.loading ? [] : filteredOrders} loading={paged.loading}
+                rowTestId={(o) => `order-card-${o.id}`} onRowClick={pickRow}
+                rowClassName={(o) => (selectedOrder === o.id ? "bg-[#EFF4FF]" : "")}
+                empty={searchQuery.trim()
+                  ? `Tidak ada pesanan yang cocok dengan “${searchQuery.trim()}” ${scopeSuffix(entities, selectedEntity)}.`
+                  : statusFilter === "all"
+                    ? `Belum ada pesanan aktif ${scopeSuffix(entities, selectedEntity)}.`
+                    : `Tidak ada pesanan berstatus “${STATUS_FILTER_LABEL[statusFilter] || statusFilter}” ${scopeSuffix(entities, selectedEntity)}.`}
+                footer={!paged.loading && filteredOrders.length > 0 && (
+                  <div className="px-3 py-2 border-t border-[#EFF0F2]">
+                    <PaginationBar
+                      page={paged.page} pageSize={paged.pageSize} total={paged.total}
+                      hasMore={paged.hasMore} loading={paged.loading}
+                      onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
+                      testId="orders-pager" label="pesanan"
+                      exportConfig={{ columns: CSV_COLUMNS, rows: filteredOrders,
+                        fetchAll: paged.fetchAll, filename: "pesanan-penjualan" }}
+                    />
+                  </div>
+                )} />
             </section>
 
             {sel ? (
-              <div className="grid gap-2 content-start">
-                <div className="flex gap-1.5" data-testid="order-pane-switch">
-                  <button type="button" data-testid="order-pane-detail"
-                    onClick={() => setDetailPane("detail")}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-[11.5px] font-semibold transition-colors ${
-                      detailPane === "detail"
-                        ? "bg-[#007AFF] text-white"
-                        : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:bg-[#F2F2F7]"}`}>
-                    <FileText size={12} className="mr-1 inline" /> Detail &amp; Aksi
-                  </button>
-                  <button type="button" data-testid="order-pane-journey"
-                    onClick={() => setDetailPane("journey")}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-[11.5px] font-semibold transition-colors ${
-                      detailPane === "journey"
-                        ? "bg-[#007AFF] text-white"
-                        : "bg-white border border-[#E5E5EA] text-[#3C3C43] hover:bg-[#F2F2F7]"}`}>
-                    <Route size={12} className="mr-1 inline" /> Perjalanan Pesanan
-                  </button>
-                </div>
+              <div className="grid gap-2 content-start min-w-0">
+                <PageTabs testId="order-pane-switch" value={detailPane} onChange={setDetailPane} ariaLabel="Panel pesanan"
+                  tabs={[
+                    { key: "detail", label: "Detail & Aksi", icon: FileText, testId: "order-pane-detail" },
+                    { key: "journey", label: "Perjalanan Pesanan", icon: Route, testId: "order-pane-journey" },
+                  ]} />
 
                 {detailPane === "journey" ? (
                   <OrderJourneyPanel orderId={sel.id} orderNumber={sel.number} />
@@ -450,7 +264,7 @@ export default function OrdersView({
                 </DetailPopup>
               </div>
             ) : (
-              <aside className="section-card flex items-center justify-center min-h-[200px] border-dashed">
+              <aside className="section-card hidden lg:flex items-center justify-center min-h-[200px] border-dashed">
                 <div className="text-center p-6">
                   <FileText size={28} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-[12px] text-[#6B6B73]">Pilih pesanan untuk lihat detail & aksi</p>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, RotateCcw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
+import { askReason, REASON_MIN_LENGTH } from "../../services/confirmService";
 
 export const MasterGovernancePanel = () => {
   const [pv, setPv] = useState(null);
@@ -28,9 +29,11 @@ export const MasterGovernancePanel = () => {
     preview_signature: pv.preview_signature, note,
     accepted: pv.proposals.filter((p) => picked[key(p)]).map((p) => ({ product_id: p.product_id, field: p.field })),
   }));
-  const rollback = (b) => {
-    const reason = window.prompt(`Alasan rollback ${b.id}`) || "";
-    if (reason.trim().length >= 5) run(() => axios.post(`${API}/master-governance/batches/${b.id}/rollback`, { reason }));
+  // Fase 3 · P3 — dialog bawaan `prompt()` (INV-UI-06) → `askReason` (alasan wajib ≥5 huruf, sama dengan server).
+  const rollback = async (b) => {
+    const reason = await askReason({ title: `Rollback ${b.id}?`, confirmLabel: "Rollback", danger: true,
+      reasonLabel: "Alasan rollback", reasonRequired: true, reasonMinLength: REASON_MIN_LENGTH, testId: "mg-rollback-dialog" });
+    if (reason && reason.trim().length >= REASON_MIN_LENGTH) run(() => axios.post(`${API}/master-governance/batches/${b.id}/rollback`, { reason: reason.trim() }));
   };
   if (!pv) return error ? <div data-testid="mg-error" className="catalog-alert error">{error}</div> : null;
   const nPicked = Object.values(picked).filter(Boolean).length;

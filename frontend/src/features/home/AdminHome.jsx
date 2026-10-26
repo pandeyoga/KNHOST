@@ -8,9 +8,11 @@ import axios, { API } from "../../services/apiClient";
 import PeriodUnlockCard from "../../components/PeriodUnlockCard";
 import OpeningCostBanner from "../../components/OpeningCostBanner";
 import ErrorNotice from "../../components/ErrorNotice";
-import WaitingQueueBoard from "../../components/WaitingQueueBoard";
-import { boardLook, selectWaitingBoards } from "../../config/waitingBoards";
+import { selectWaitingBoards } from "../../config/waitingBoards";
 import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
+import { useAppNav } from "../../context/AppNavContext";
+import HomeWaitingBoards from "./HomeWaitingBoards";
+import { queueLink } from "../approvals/inboxTabs";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -20,26 +22,29 @@ function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", loading, on
   return (
     <Tag data-testid={testId || `kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}
       onClick={onClick} type={onClick ? "button" : undefined}
-      className={`rounded-xl border border-[#EFF0F2] bg-white p-4 flex flex-col gap-2 text-left${
+      className={`min-w-0 rounded-xl border border-[#EFF0F2] bg-white p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2 text-left${
         onClick ? " hover:border-[#C9D6E8] hover:shadow-sm transition" : ""}`}>
-      <div className="flex items-center gap-2">
-        <div className="rounded-lg p-1.5" style={{ background: `${color}18` }}>
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="shrink-0 rounded-lg p-1.5" style={{ background: `${color}18` }}>
           <Icon size={16} style={{ color }} />
         </div>
-        <span className="text-[12px] font-semibold text-[#6B6B73]">{label}</span>
+        <span className="min-w-0 text-[11.5px] sm:text-[12px] font-semibold leading-tight text-[#6B6B73]">{label}</span>
       </div>
       {loading ? (
         <div className="h-7 bg-[#F5F5F7] rounded animate-pulse" />
       ) : (
-        // G1-43 — di HP angka Rp dulu patah ("Rp / 4.292.925") dan menyentuh tepi.
-        <p className="text-xl md:text-2xl font-bold text-[#1C1C1E] tabular-nums whitespace-nowrap">{value}</p>
+        // G1-43 — di HP angka Rp dulu patah ("Rp / 4.292.925") dan menyentuh tepi. Fase 3 · P3 (L-04): 2 kolom di
+        // 390 px → angka sedikit lebih kecil di HP agar tetap satu baris.
+        <p className="text-[15px] min-[400px]:text-lg md:text-2xl font-bold text-[#1C1C1E] tabular-nums whitespace-nowrap">{value}</p>
       )}
-      {sub && <p className="text-[11px] text-[#6B6B73]">{sub}</p>}
+      {/* L-04 — keterangan sumber tetap ada (K-01), dipotong 3 baris di HP; teks lengkap di tooltip. */}
+      {sub && <p className="text-[11px] text-[#6B6B73] line-clamp-3 sm:line-clamp-none" title={typeof sub === "string" ? sub : undefined}>{sub}</p>}
     </Tag>
   );
 }
 
 export default function AdminHome({ token, selectedEntity = "all", onNavigate }) {
+  const nav = useAppNav();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -94,7 +99,12 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
   const showEntity = !selectedEntity || selectedEntity === "all";
   // Jenis persetujuan terbanyak → dipakai teks bantu & tujuan klik KPI.
   const approvalItems = (data?.approvals?.items || []);
-  const oldestWaiting = (data?.approvals?.oldest || []);
+  // Fase 3 · P3 (D-06) — chip jenis membuka Pusat Persetujuan di tab jenisnya (bila daftarnya ada di sana).
+  const openQueue = (q) => {
+    const link = queueLink(q, nav.canOpen);
+    if (link.preset) nav.go(link.view, { preset: link.preset });
+    else if (onNavigate && link.view) onNavigate(link.view);
+  };
   const topApproval = approvalItems.slice().sort((a, b) => b.count - a.count)[0] || null;
   const approvalSub = boardsUnreadable
     // Kegagalan pemuatan tidak boleh berbunyi kabar baik ("Tidak ada yang menunggu").
@@ -129,7 +139,8 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
       <div className="section-body">
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="admin-home-error" />
 
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Fase 3 · P3 (L-04) — 2 kolom juga di HP 390 px (dulu 1 kolom: 8 kartu = 2+ layar gulir). */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3" data-testid="admin-home-kpis">
           <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading} />
           <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
           <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
@@ -154,7 +165,7 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             sub={approvalSub}
             color="#FF9500" loading={loading}
             testId="kpi-persetujuan-menunggu"
-            onClick={() => onNavigate && onNavigate(topApproval?.view || "approval-inbox")} />
+            onClick={() => (topApproval ? openQueue(topApproval) : onNavigate && onNavigate("approval-inbox"))} />
           <KPICard icon={PackageX} label="Stok Rendah" value={lowStock.count ?? "—"}
             sub={lowStock.threshold ? `produk · tersedia < ${lowStock.threshold} (papan stok) · per badan usaha` : "Perlu reorder"}
             color="#FF6B00" loading={loading} testId="kpi-stok-rendah" onClick={onNavigate ? () => onNavigate("operations") : undefined} />
@@ -165,14 +176,14 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
         <PeriodUnlockCard onNavigate={onNavigate} />
         <OpeningCostBanner onNavigate={onNavigate} selectedEntity={selectedEntity} />
 
-        {/* AUDIT PERAN 2026-08-15 — RINCIAN antrean persetujuan.
-            KPI di atas tadinya satu angka buram (dan salah). Angka saja tidak membuat
-            orang bertindak: yang menolong adalah "3 PO menunggu ACC" + jalan ke
-            layarnya. Baris hanya muncul bila memang ada yang menunggu. */}
+        {/* AUDIT PERAN 2026-08-15 — RINCIAN antrean persetujuan (angka + jalan ke layarnya).
+            Fase 3 · P3 (D-06) — kartu RINGKAS: total + chip per jenis yang membuka Pusat Persetujuan di tab jenisnya
+            (antrean yang daftarnya bukan di inbox → layar kerjanya). Daftar "paling lama menunggu" tidak lagi
+            digandakan di sini — ada di Pusat Persetujuan ("Menunggu di layar lain") dengan sumber yang sama. */}
         {!boardsUnreadable && approvalItems.length > 0 && (
-          <div className="mt-4 rounded-xl border border-[#FFE2BE] bg-[#FFFBF5] p-4"
+          <div className="mt-4 rounded-xl border border-[#FFE2BE] bg-[#FFFBF5] p-3 sm:p-4"
             data-testid="admin-home-approval-backlog">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
                 <Clock size={15} className="text-[#FF9500]" />
                 <h3 className="text-[14px] font-bold">Antrean Persetujuan ({data?.approvals_pending || 0})</h3>
@@ -181,73 +192,30 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
                 onClick={() => onNavigate && onNavigate("approval-inbox")}
                 data-testid="admin-home-goto-approval-inbox">Pusat Persetujuan →</button>
             </div>
-            <div className="grid gap-1 sm:grid-cols-2">
+            <div className="flex flex-wrap gap-1.5" data-testid="admin-home-approval-chips">
               {approvalItems.map((a) => (
                 <button key={a.key} type="button"
                   data-testid={`admin-home-approval-${a.key}`}
-                  onClick={() => onNavigate && onNavigate(a.view)}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-white border border-[#F0E3D2] px-3 py-2 text-left hover:border-[#FFB25A] transition">
-                  <span className="text-[12px] text-[#3A3A3C] truncate">{a.label}</span>
-                  <span className="text-[13px] font-bold tabular-nums text-[#B26A00]">{a.count}</span>
+                  onClick={() => openQueue(a)} title={`Buka ${a.label}`}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#F0E3D2] bg-white px-2.5 py-1 text-left text-[11.5px] text-[#3A3A3C] transition hover:border-[#FFB25A]">
+                  <span className="truncate">{a.label.replace(" menunggu ACC", "")}</span>
+                  <span className="font-bold tabular-nums text-[#B26A00]">{a.count}</span>
                 </button>
               ))}
             </div>
-
-            {/* PALING LAMA MENUNGGU — angka membuat orang tahu ADA pekerjaan; ini yang
-                membuat orang BERTINDAK. Sumbernya `approvals.oldest` (umur tunggu dari
-                tanggal dokumen mulai menunggu), sama dengan isi pengingat harian. */}
-            {oldestWaiting.length > 0 && (
-              <div className="mt-3 border-t border-[#F0E3D2] pt-2" data-testid="admin-home-approval-oldest">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]">
-                  Paling lama menunggu
-                </p>
-                <div className="grid gap-1">
-                  {oldestWaiting.map((o) => (
-                    <button key={`${o.key}-${o.id}`} type="button"
-                      data-testid={`admin-home-oldest-${o.id || o.number}`}
-                      onClick={() => onNavigate && onNavigate(o.view)}
-                      className="flex items-center gap-2 rounded-lg bg-white border border-[#F0E3D2] px-3 py-1.5 text-left hover:border-[#FFB25A] transition">
-                      <span className="text-[12px] font-semibold text-[#1C1C1E] shrink-0">{o.number}</span>
-                      <span className="text-[11.5px] text-[#6B6B73] truncate flex-1">
-                        {o.queue_label.replace(" menunggu ACC", "")} · {o.title}
-                      </span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
-                        o.days_waiting >= 7 ? "bg-[#FFE5E5] text-[#C62828]" : "bg-[#FFF1DB] text-[#B26A00]"}`}>
-                        {o.days_waiting > 0 ? `${o.days_waiting} hari` : "< 1 hari"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
         {/* PAPAN ANTREAN MAHAL (2026-08-24 · digeneralisasi 2026-06) — dokumen yang
-            salah-tundanya PALING MAHAL. Kain custom sudah dipesan atas nama satu
-            pelanggan; kontrabon bersengketa menahan uang pemasok; retur antar-PT
-            menahan jurnal di DUA buku. Di kartu "Paling Lama Menunggu" dokumen seperti
-            ini bisa tidak pernah muncul (5 baris untuk 33 antrean), jadi masing-masing
-            diberi papannya sendiri: SEMUA yang menunggu + UMUR TUNGGU-nya, terurut
-            dari yang paling lama. Angkanya SATU sumber dengan antrean di atas
-            (`approval_backlog_service`), jadi mustahil berbeda pendapat. */}
-        <div className="mt-4 grid gap-3">
-          {boards.map((b) => {
-            const look = boardLook(b.key);
-            const so = b.key === "special_order";
-            return (
-              <WaitingQueueBoard key={b.key} board={b} loading={loading}
-                entityId={selectedEntity}
-                unreadable={boardsUnreadable} onRetry={load} onNavigate={onNavigate}
-                onActed={load}
-                showEntity={showEntity} icon={look.icon} accent={look.accent}
-                gotoLabel={look.goto} emptyText={look.empty} title={look.title}
-                testIdBase={so ? "admin-home-special-orders" : `admin-home-board-${b.key}`}
-                rowTestIdBase={so ? "admin-home-special-order" : `admin-home-board-${b.key}-row`}
-                gotoTestId={so ? "admin-home-goto-special-orders" : undefined} />
-            );
-          })}
-        </div>
+            salah-tundanya PALING MAHAL, masing-masing SEMUA yang menunggu + UMUR TUNGGU-nya, satu sumber dengan
+            antrean di atas (`approval_backlog_service`). Fase 3 · P3 (D-07/D-28): PO Custom & Barang ditahan QC =
+            papan TAUTAN (baris membuka dokumennya; keputusan hanya di layar utama). */}
+        <HomeWaitingBoards boards={boards} loading={loading} unreadable={boardsUnreadable}
+          onRetry={load} onActed={load} onNavigate={onNavigate}
+          entityId={selectedEntity} showEntity={showEntity} className="mt-4 grid gap-3"
+          ids={(b) => (b.key === "special_order"
+            ? { testIdBase: "admin-home-special-orders", rowTestIdBase: "admin-home-special-order", gotoTestId: "admin-home-goto-special-orders" }
+            : { testIdBase: `admin-home-board-${b.key}`, rowTestIdBase: `admin-home-board-${b.key}-row` })} />
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {/* Leaderboard */}

@@ -163,8 +163,8 @@ export function SalesPortal({
         <PosStartGate user={user} customers={data.customers || []} initialSiteId={siteId}
           initialCustomerId={selectedCustomer?.id || loadPosCtx().customer_id || ""}
           onStart={startSelling} onCreateCustomer={onCreateCustomer ? () => setNewCustOpen(true) : null} />
-        <CreateCustomerModal open={newCustOpen} onClose={() => setNewCustOpen(false)} user={user}
-          onCreateCustomer={async (form) => { await onCreateCustomer(form); setNewCustOpen(false); }} />
+        <CreateCustomerModal open={newCustOpen} onClose={() => setNewCustOpen(false)} user={user} selectedEntity={selectedEntity}
+          onCreated={async (customer) => { await onCreateCustomer(customer); setNewCustOpen(false); }} />
       </div>
     );
   }

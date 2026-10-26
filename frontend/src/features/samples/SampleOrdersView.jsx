@@ -2,7 +2,7 @@
  * SampleOrdersView — REVISI SAMPEL: daftar Pesanan Sample (SOS-) TERPISAH dari SO roll biasa.
  * Sales melihat pesanan sampelnya sendiri; admin/manajer/Admin Sample/Finance melihat semua.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Scissors, RefreshCw, Gift, Banknote, XCircle, CheckCircle2, Truck, PackageCheck } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
@@ -10,7 +10,10 @@ import { formatCurrency, formatDateTime, formatPct, formatQty } from "../../util
 import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
 import { listSampleOrders, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
-import PagedRows from "../../components/PagedRows";
+import PageTabs from "../../components/PageTabs";
+import ResponsiveTable from "../../components/ResponsiveTable";
+import usePagedRows from "../../hooks/usePagedRows";
+import useIsMobile from "../../hooks/useIsMobile";
 import CatalogueCreateModal from "./CatalogueCreateModal";
 import CatalogueComponents from "./CatalogueComponents";
 import CuttingDesk from "./CuttingDesk";
@@ -31,6 +34,22 @@ const CUT = { requested: "menunggu potong", cut: "sudah dipotong", awaiting_inte
 // UAT 24 Okt (audit UI tahap 2) — G2-19: satu istilah "Katalog" (dulu "Catalogue").
 const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Katalog" };
 const TABS = [["orders", "Pesanan Sample"], ["desk", "Meja Cutting"], ["locations", "Lokasi Cutting"]];
+
+// Fase 3 · P3 (L-04) — kolom daftar (ResponsiveTable: tabel ≥641 px, kartu di HP).
+const SAMPLE_COLUMNS = [
+  { key: "number", header: "Nomor", mobile: "title", render: (o) => <span className="font-bold text-[#9A5B00]">{o.number}</span> },
+  { key: "customer", header: "Pelanggan", mobile: "subtitle", render: (o) => (
+    <span><span className="font-semibold">{o.customer_name}</span><span className="block text-[10.5px] text-[#8E8E93]">{o.sales_name || "—"}</span></span>
+  ) },
+  { key: "billing", header: "Skema", priority: 1, render: (o) => <Billing b={o.sample_billing} /> },
+  { key: "items", header: "Item", priority: 3, render: (o) => (
+    <span className="text-[#3C3C43]">{(o.items || []).map((i) => `${i.product_name} ${formatQty(i.quantity)} ${i.base_unit || i.unit}`).join(" · ")}</span>
+  ) },
+  { key: "status", header: "Status", mobile: "badge", render: (o) => <span className={`status-pill status-${o.status}`}>{SAMPLE_STATUS_LABEL[o.status] || o.status}</span> },
+  { key: "value", header: "Nilai", align: "right", priority: 2, render: (o) => (
+    <span className="tabular-nums">{o.sample_billing === "free" ? "Gratis" : formatCurrency(o.grand_total)}</span>
+  ) },
+];
 
 export default function SampleOrdersView({ user, selectedEntity = "all", focusDoc, onClearFocus }) {
   const [orders, setOrders] = useState([]);
@@ -77,6 +96,11 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
     return orders.filter((o) => [o.number, o.customer_name, o.sales_name, ...(o.items || []).flatMap((i) => [i.product_name, i.sku])]
       .some((v) => String(v || "").toLowerCase().includes(t)));
   }, [orders, q]);
+  // L-04 (fase 3 · P3) — paginasi klien untuk ResponsiveTable; di HP rincian ada di BAWAH daftar → digulir ke pandangan.
+  const pgOrders = usePagedRows(shown, { pageSize: 20, testId: "sample-orders-pager" });
+  const narrow = useIsMobile(640);
+  const detailRef = useRef(null);
+  useEffect(() => { if (narrow && selectedId) detailRef.current?.scrollIntoView?.({ block: "start" }); }, [narrow, selectedId]);
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 5000); };
   const run = async (fn, okMsg) => {
     setBusy(sel.id); setError("");
@@ -85,20 +109,19 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
 
   const bs = stats?.by_status || {};
   const tabBar = (
-    // Audit UI 24 Okt (121) — sub-tab memakai tab-bar standar (dulu pil cokelat unik); tombol buat berbahasa Indonesia.
-    <div className="tab-bar !mb-0 items-end" role="tablist">
-      {TABS.map(([k, l]) => (
-        <button key={k} role="tab" aria-selected={tab === k} data-testid={`sample-tab-${k}`} onClick={() => setTab(k)}
-          className={`tab-button ${tab === k ? "active" : ""}`}>{l}</button>
-      ))}
-      {canCreateCat && <button data-testid="sample-catalogue-create" className="primary-button ml-auto mb-1.5" onClick={() => setShowCat(true)}>+ Buat Sample Katalog</button>}
+    // Audit UI 24 Okt (121) — sub-tab memakai tab-bar standar; fase 3 · P3 (L-01/L-04): PageTabs baku (satu baris
+    // bergulir di HP) dan tombol Buat di luar bilah tab (dulu ikut menggeser bilah di 390 px).
+    <div className="flex min-w-0 flex-wrap items-end gap-2">
+      <PageTabs className="!mb-0 min-w-0 flex-1" value={tab} onChange={setTab} ariaLabel="Pesanan sample"
+        tabTestId={(k) => `sample-tab-${k}`} tabs={TABS.map(([k, l]) => ({ key: k, label: l }))} />
+      {canCreateCat && <button data-testid="sample-catalogue-create" className="primary-button mb-1.5" onClick={() => setShowCat(true)}>+ Buat Sample Katalog</button>}
       <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
         onCreated={(so) => { flash(`${so.number} (katalog) dibuat.`); setTab("orders"); load(); }} />
     </div>
   );
   if (tab !== "orders") {
     return (
-      <div data-testid="sample-orders-view" className="grid gap-4">
+      <div data-testid="sample-orders-view" className="grid grid-cols-1 gap-4">
         {tabBar}
         {toast && <div data-testid="sample-orders-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
         {tab === "desk" ? <CuttingDesk selectedEntity={selectedEntity} canReceive={canReceiveCut} />
@@ -107,7 +130,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
     );
   }
   return (
-    <div data-testid="sample-orders-view" className="grid gap-4">
+    <div data-testid="sample-orders-view" className="grid grid-cols-1 gap-4">
       {tabBar}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="sample-orders-error" />
       {toast && <div data-testid="sample-orders-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
@@ -121,7 +144,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
           <button data-testid="sample-orders-refresh" className="icon-button" onClick={load} aria-label="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
         <p className="px-3 pt-2 text-[11.5px] text-[#6B6B73]">Pesanan sample <b>terpisah</b> dari pesanan roll/yard biasa (SO). Gratis → langsung ke Admin Sample; berbayar → disetujui Finance/Admin Sample dulu → diteruskan ke gudang untuk dipotong dari roll (RFID) → dikirim / diambil.</p>
-        <div data-testid="sample-orders-metrics" className="grid gap-3 p-3 sm:grid-cols-4">
+        <div data-testid="sample-orders-metrics" className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 sm:gap-3">
           <Metric label="Total" value={stats?.total ?? "—"} testId="sample-metric-total" />
           <Metric label="Gratis / Berbayar" value={stats ? `${stats.free} / ${stats.paid}` : "—"} testId="sample-metric-billing" />
           <Metric label="Menunggu ACC bayar" value={bs.waiting_approval || 0} testId="sample-metric-waiting" tone="#FFF3D6" />
@@ -138,31 +161,18 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
         </ListToolbar>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-        <section className="section-card overflow-hidden">
-          {loading && orders.length === 0 ? <p className="p-6 text-center text-[12px] text-[#6B6B73]">Memuat…</p>
-            : shown.length === 0 ? <p data-testid="sample-orders-empty" className="p-8 text-center text-[12px] text-[#6B6B73]">{q.trim() ? `Tidak ada pesanan sample yang cocok dengan “${q.trim()}”.` : "Belum ada pesanan sample untuk saringan ini."}</p>
-            : (
-              <table className="w-full text-[12px]">
-                <thead><tr className="border-b border-[#EFF0F2] text-left text-[10px] uppercase tracking-wide text-[#8E8E93]"><th className="px-3 py-2">Nomor</th><th className="px-3 py-2">Pelanggan</th><th className="px-3 py-2">Skema</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Nilai</th></tr></thead>
-                <tbody>
-                  <PagedRows rows={shown} pageSize={20} testId="sample-orders-pager">{(o) => (
-                    <tr key={o.id} data-testid={`sample-order-row-${o.id}`} onClick={() => setSelectedId(o.id)}
-                      className={`cursor-pointer border-b border-[#F2F3F5] hover:bg-[#FFF9EC] ${sel?.id === o.id ? "bg-[#FFF3D6]" : ""}`}>
-                      <td className="px-3 py-2 font-bold text-[#9A5B00]">{o.number}</td>
-                      <td className="px-3 py-2"><p className="font-semibold">{o.customer_name}</p><p className="text-[10.5px] text-[#8E8E93]">{o.sales_name || "—"}</p></td>
-                      <td className="px-3 py-2"><Billing b={o.sample_billing} /></td>
-                      <td className="px-3 py-2 text-[#3C3C43]">{(o.items || []).map((i) => `${i.product_name} ${formatQty(i.quantity)} ${i.base_unit || i.unit}`).join(" · ")}</td>
-                      <td className="px-3 py-2"><span className={`status-pill status-${o.status}`}>{SAMPLE_STATUS_LABEL[o.status] || o.status}</span></td>
-                      <td className="px-3 py-2 text-right tabular-nums">{o.sample_billing === "free" ? "Gratis" : formatCurrency(o.grand_total)}</td>
-                    </tr>
-                  )}</PagedRows>
-                </tbody>
-              </table>
-            )}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="section-card overflow-hidden min-w-0">
+          {/* L-04 (fase 3 · P3) — tabel di desktop, kartu di HP 390 px; pager di luar wadah gulir. */}
+          <ResponsiveTable testId="sample-orders-table" rows={pgOrders.pageRows} rowKey="id" columns={SAMPLE_COLUMNS}
+            loading={loading && orders.length === 0} onRowClick={(o) => setSelectedId(o.id)}
+            rowTestId={(o) => `sample-order-row-${o.id}`}
+            rowClassName={(o) => (sel?.id === o.id ? "bg-[#FFF3D6]" : "")}
+            empty={<span data-testid="sample-orders-empty">{q.trim() ? `Tidak ada pesanan sample yang cocok dengan “${q.trim()}”.` : "Belum ada pesanan sample untuk saringan ini."}</span>}
+            footer={shown.length > 20 ? <div className="px-3 py-2">{pgOrders.pager}</div> : null} />
         </section>
 
-        <aside className="section-card" data-testid="sample-order-detail">
+        <aside ref={detailRef} className="section-card min-w-0" data-testid="sample-order-detail">
           {!sel ? <p className="p-6 text-center text-[12px] text-[#6B6B73]">Pilih pesanan sample untuk melihat detail & tindakan.</p> : (
             <div className="p-3 space-y-3 text-[12px]">
               <div>

@@ -171,7 +171,7 @@ export default function ReturnRollSettleModal({ ret, open, onClose, onDone }) {
           placeholder="Bukti keputusan (mis. ACC Pak Budi via WA 12/10)" value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
         <textarea className="textarea mt-3" rows={2} placeholder="Catatan penyelesaian (opsional)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
 
-        {err && <p className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="roll-settle-error">{err}</p>}
+        {err && <p role="alert" className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="roll-settle-error">{err}</p>}
         <div className="modal-actions">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="roll-settle-confirm" className="primary-button" disabled={busy || !chosen.length || !!pv?.blocked || pvBusy || !pv}

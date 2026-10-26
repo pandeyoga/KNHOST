@@ -13,6 +13,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
+import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { can } from "../../config/roles";
 
 const RETURN_TYPES = [
@@ -137,6 +138,8 @@ export default function ReturnPoliciesView({ currentUser }) {
 
   return (
     <div data-testid="return-policies-view" className="view-container">
+      {/* Fase 3 · P3 (L-04 kelas C, permintaan P2) — layar Pengaturan › Penjualan: cukup banner "paling nyaman di desktop". */}
+      <DesktopOnlyNotice what="Kebijakan Retur" testId="return-policies-desktop-notice" className="mb-3" />
       <div className="view-header">
         <div>
           <h1 className="view-title">Kebijakan Retur Jual</h1>

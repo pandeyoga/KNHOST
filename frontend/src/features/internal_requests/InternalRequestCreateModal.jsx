@@ -15,7 +15,8 @@
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { X, ArrowLeftRight, Plus, Trash2, Info } from "lucide-react";
+import { ArrowLeftRight, Plus, Trash2, Info } from "lucide-react";
+import FormModal from "../../components/FormModal";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../utils/formatters";
@@ -116,20 +117,20 @@ export default function InternalRequestCreateModal({
 
   if (!open) return null;
 
+  // Fase 3 · P3 (L-03, prasyarat D-27 P7) — `.modal-card` buatan sendiri → FormModal baku: layar penuh 1 kolom di HP,
+  // Esc/latar aman (INV-UI-01/10), galat di kaki pop-up dekat tombol Ajukan. Isian & aturan tidak berubah.
   return (
-    <div className="modal-overlay" data-testid="pin-create-modal"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
-      <div className="modal-card" style={{ maxWidth: 720, width: "95vw", maxHeight: "92vh", overflowY: "auto" }}
-           onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2] sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <ArrowLeftRight size={16} className="text-[#0058CC]" />
-            <h2 className="text-[14px] font-bold">Minta Barang dari Badan Usaha Lain</h2>
-          </div>
-          <button data-testid="pin-create-close" onClick={onClose} className="icon-button"><X size={16} /></button>
+    <FormModal open onClose={onClose} size="md" icon={ArrowLeftRight} testId="pin-create-modal"
+      title="Minta Barang dari Badan Usaha Lain" busy={busy} error={err} onSubmit={submit}
+      footer={(
+        <div className="flex items-center justify-end gap-2">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={busy} data-testid="pin-create-cancel">Batal</button>
+          <button type="submit" data-testid="pin-create-submit" className="primary-button" disabled={busy}>
+            {busy ? "Mengajukan…" : "Ajukan Permintaan"}
+          </button>
         </div>
-
-        <div className="p-4 space-y-3">
+      )}>
+        <div className="space-y-3">
           <div className="flex items-start gap-2 rounded-lg border border-[#C9DBF7] bg-[#F2F7FF] px-3 py-2">
             <Info size={14} className="mt-0.5 shrink-0 text-[#0058CC]" />
             <p className="text-[11px] leading-relaxed text-[#1C1C1E]">
@@ -141,19 +142,13 @@ export default function InternalRequestCreateModal({
             </p>
           </div>
 
-          {err && (
-            <div className="notice-bar danger" data-testid="pin-create-error">
-              <span>{err}</span><button onClick={() => setErr("")}>×</button>
-            </div>
-          )}
-
           <div>
             <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">Tambah Barang <span className="text-red-500">*</span> <span className="font-normal text-[#8E8E93]">(min. 1 barang)</span></label>
             <div className="flex gap-2">
               <KNSelect data-testid="pin-product-pick" className="field flex-1" value={pick}
                 onValueChange={(v) => { setPick(v); loadAvail(v); }}
                 options={productOptions} placeholder="Pilih barang…" />
-              <button data-testid="pin-add-line" className="secondary-button" onClick={addLine}>
+              <button type="button" data-testid="pin-add-line" className="secondary-button" onClick={addLine}>
                 <Plus size={13} /> Tambah
               </button>
             </div>
@@ -195,7 +190,7 @@ export default function InternalRequestCreateModal({
                     <input data-testid={`pin-note-${l.product_id}`} className="field" value={l.notes} aria-label="Catatan"
                       placeholder="Catatan"
                       onChange={(e) => setLines(lines.map((x, ix) => ix === i ? { ...x, notes: e.target.value } : x))} />
-                    <button className="icon-button text-red-500" aria-label="Hapus baris"
+                    <button type="button" className="icon-button text-red-500" aria-label="Hapus baris"
                       data-testid={`pin-del-${l.product_id}`}
                       onClick={() => setLines(lines.filter((_, ix) => ix !== i))}>
                       <Trash2 size={13} />
@@ -215,7 +210,7 @@ export default function InternalRequestCreateModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[11px] font-semibold text-[#4A4B53] mb-1">
                 Alasan <span className="text-red-500">*</span>
@@ -240,14 +235,6 @@ export default function InternalRequestCreateModal({
             </div>
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3 sticky bottom-0 bg-white">
-          <button className="secondary-button" onClick={onClose} data-testid="pin-create-cancel">Batal</button>
-          <button data-testid="pin-create-submit" className="primary-button" disabled={busy} onClick={submit}>
-            {busy ? "Mengajukan…" : "Ajukan Permintaan"}
-          </button>
-        </div>
-      </div>
-    </div>
+    </FormModal>
   );
 }

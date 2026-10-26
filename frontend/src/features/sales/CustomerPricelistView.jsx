@@ -19,6 +19,8 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
+import EntityRequiredNotice from "../../components/EntityRequiredNotice";
+import usePriceEntity from "./usePriceEntity";
 import { formatCurrency } from "../../utils/formatters";
 import {
   EmptyCustomer, GuardBanner, Kpi, PriceRow,
@@ -34,9 +36,9 @@ export default function CustomerPricelistView({
   entities = [], selectedEntity, currentUser, onNavigate,
 }) {
   const canManage = can(currentUser?.permissions, "pricelist", "manage");   // Sisir gerbang peran (2026-10-20) — tulis daftar harga
-  const activeEntities = entities.filter((e) => e.status !== "inactive");
-  const [entityId, setEntityId] = useState(
-    selectedEntity && selectedEntity !== "all" ? selectedEntity : (activeEntities[0]?.id || ""));
+  // Fase 3 · P3 (D-14) — PT = PT di kepala aplikasi (pemilih lokal `cpl-entity-select` dihapus; dulu juga tidak
+  // ikut berganti saat header diganti). Header "Semua" → kartu "Pilih badan usaha" yang mengganti header.
+  const entityId = usePriceEntity(selectedEntity, entities);
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState("");
   const [search, setSearch] = useState("");
@@ -52,6 +54,7 @@ export default function CustomerPricelistView({
   // ── Pelanggan (dibatasi entitas aktif) ────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+    if (!entityId) { setCustomers([]); setCustomerId(""); return undefined; }
     (async () => {
       try {
         const res = await axios.get(`${API}/customers`, {
@@ -89,9 +92,6 @@ export default function CustomerPricelistView({
     return () => clearTimeout(t);
   }, [load, search]);
 
-  const entityOptions = useMemo(
-    () => activeEntities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
-    [activeEntities]);
   const customerOptions = useMemo(
     () => customers.map((c) => ({ value: c.id, label: `${c.name}${c.code ? ` · ${c.code}` : ""}` })),
     [customers]);
@@ -181,13 +181,9 @@ export default function CustomerPricelistView({
         </div>
 
         <div className="section-body">
+          <EntityRequiredNotice what="harga per pelanggan" testId="cpl-entity-required" className="mb-3" />
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="w-[180px]">
-              <KNSelect data-testid="cpl-entity-select" className="field py-1.5 text-[12px]"
-                value={entityId} onValueChange={setEntityId} placeholder="Pilih entitas"
-                options={entityOptions} />
-            </div>
-            <div className="w-[260px]">
+            <div className="w-full max-w-[260px]">
               <KNSelect data-testid="cpl-customer-select" className="field py-1.5 text-[12px]"
                 value={customerId} onValueChange={setCustomerId} placeholder="Pilih pelanggan"
                 options={customerOptions} searchable />

@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { StatusPill, STATUS_STYLE, fmtDate, docStatus, odPhaseOf } from "./SpecialOrderShared";
 import { SpecialOrderInfoPanels } from "./SpecialOrderInfoPanels";
-import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { askConfirm } from "@/services/confirmService";
+import { approveSpecialOrder, rejectSpecialOrder, decisionErrorText } from "../../services/approvalDecisions";
 import { formatCurrency } from "../../utils/formatters";
 
 
@@ -35,8 +35,6 @@ export default function SpecialOrderDetail({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [okMsg, setOkMsg] = useState(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
   const refreshFull = async () => {
     try { const r = await axios.get(`${API}/special-orders/${order.id}`); onUpdate && onUpdate(r.data); } catch { /* biarkan tampilan lama */ }
   };
@@ -112,56 +110,25 @@ export default function SpecialOrderDetail({
     }
   }
 
-  async function handleApprove() {
-    const ok = await askConfirm({
-      title: `Setujui pesanan khusus ${order.number}?`,
-      message: "Setelah disetujui, pesanan bisa lanjut ke pembuatan SKU / produksi.",
-      confirmLabel: "Setujui",
-      testId: "so-approve-confirm",
-    });
-    if (!ok) return;
-
+  // Fase 3 · P3 (D-07) — Setujui/Tolak lewat SATU dialog bersama `services/approvalDecisions.js` (sama dengan HP
+  // Persetujuan & Matriks divisi): setuju = catatan opsional, tolak = alasan wajib ≥5 huruf (K-14), pesan hasil
+  // berantai (23 Okt — dokumen yang lahir otomatis disebut). Dulu: askConfirm tanpa catatan + pop-up tolak sendiri.
+  async function decide(fn, failText) {
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${API}/special-orders/${order.id}/approve`,
-        { notes: "" },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fn(order);
+      if (res === null) return;            // dialog dibatalkan
       onUpdate(res.data);
-      // 23 Okt — dulu tanpa umpan balik; Manajer tidak tahu dokumen apa yang lahir otomatis.
-      const ch = res.data.chain || {};
-      const made = [ch.design_request?.number, ...(ch.samples || []).map((s) => s.number)].filter(Boolean);
       setError(null);
-      setOkMsg(res.data.status === "pending_approval"
-        ? "Disetujui di tingkat Anda — menunggu tingkat persetujuan berikutnya."
-        : `Pesanan disetujui.${made.length ? ` Diteruskan otomatis: ${made.join(", ")}.` : ""}`);
+      setOkMsg(res.message);
     } catch (e) {
-      setError("Gagal menyetujui: " + (e.response?.data?.detail || e.message));
+      setError(`${failText}: ${decisionErrorText(e)}`);
     } finally {
       setLoading(false);
     }
   }
-
-  async function handleReject() {
-    if (!rejectReason.trim()) return;
-
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${API}/special-orders/${order.id}/reject`,
-        { reason: rejectReason },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      onUpdate(res.data);
-      setShowRejectModal(false);
-      setRejectReason("");
-    } catch (e) {
-      setError("Gagal menolak: " + (e.response?.data?.detail || e.message));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleApprove = () => decide(approveSpecialOrder, "Gagal menyetujui");
+  const handleReject = () => decide(rejectSpecialOrder, "Gagal menolak");
 
   async function handleStatusTransition(newStatus) {
     const ok = await askConfirm({
@@ -296,7 +263,7 @@ export default function SpecialOrderDetail({
               <button
                 data-testid="reject-special-order-btn"
                 className="danger-button"
-                onClick={() => setShowRejectModal(true)}
+                onClick={handleReject}
                 disabled={loading}
               >
                 <X size={13} /> Tolak
@@ -465,15 +432,6 @@ export default function SpecialOrderDetail({
       )}
       <div className="mt-3" />
       <SpecialOrderInfoPanels order={order} />
-
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <FormModal open title={`Tolak pesanan khusus ${order.number}?`} subtitle="Berikan alasan penolakan — akan tercatat di riwayat OD." icon={X} size="sm"
-          onClose={() => setShowRejectModal(false)} onSubmit={handleReject} busy={loading} submitLabel="Tolak pesanan" submitDisabled={!rejectReason.trim()}
-          testId="reject-modal" submitTestId="confirm-reject-btn">
-          <textarea data-testid="reject-reason-input" className="textarea w-full" rows={3} placeholder="Alasan penolakan…" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
-        </FormModal>
-      )}
     </div>
   );
 }

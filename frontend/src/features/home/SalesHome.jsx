@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import WaitingQueueBoard from "../../components/WaitingQueueBoard";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
-import { boardLook, selectWaitingBoards } from "../../config/waitingBoards";
+import { selectWaitingBoards } from "../../config/waitingBoards";
+import HomeWaitingBoards from "./HomeWaitingBoards";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -96,22 +96,16 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
         {/* Papan antrean mahal versi SALES (2026-06) — dokumen SAYA yang tertahan di
             tanda tangan orang lain. Pemilihan papan & keadaan "tidak bisa dibaca"
             memakai fungsi bersama dengan Control Tower/Dasbor Manajer (regresi B5). */}
-        <div className="mb-3 grid gap-2" data-testid="sales-home-boards">
-          {boards.map((b) => {
-            const look = boardLook(b.key);
-            return (
-              <WaitingQueueBoard key={b.key} board={b} loading={loading && !data}
-                unreadable={boardsUnreadable} onRetry={load} onNavigate={onNavigate}
-                onActed={load}
-                icon={look.icon} accent={look.accent} gotoLabel={look.goto}
-                /* K-11 (permintaan D3) — papan PO Custom yang disaring server ke pelanggan sales ini diberi label cakupan. */
-                emptyText={b.owner_scoped && b.key === "special_order" ? "Tidak ada PO custom pelanggan Anda yang menunggu keputusan" : look.empty}
-                title={b.owner_scoped ? `${look.title} · pelanggan Anda` : look.title}
-                testIdBase={`sales-home-board-${b.key}`}
-                rowTestIdBase={`sales-home-board-${b.key}-row`} />
-            );
-          })}
-        </div>
+        {/* Fase 3 · P3 (D-07) — papan PO Custom = TAUTAN (baris membuka pesanan khususnya; keputusan di Pesanan Khusus). */}
+        <HomeWaitingBoards boards={boards} loading={loading && !data} unreadable={boardsUnreadable}
+          onRetry={load} onActed={load} onNavigate={onNavigate} onOpenDocument={onOpenDocument}
+          testId="sales-home-boards" className="mb-3 grid gap-2"
+          ids={(b) => ({ testIdBase: `sales-home-board-${b.key}`, rowTestIdBase: `sales-home-board-${b.key}-row` })}
+          /* K-11 (permintaan D3) — papan PO Custom yang disaring server ke pelanggan sales ini diberi label cakupan. */
+          look={(b, look) => ({
+            emptyText: b.owner_scoped && b.key === "special_order" ? "Tidak ada PO custom pelanggan Anda yang menunggu keputusan" : look.empty,
+            title: b.owner_scoped ? `${look.title} · pelanggan Anda` : look.title,
+          })} />
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

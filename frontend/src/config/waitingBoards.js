@@ -13,9 +13,10 @@ export const BOARD_LOOK = {
   special_order: {
     // Fase 3 · P1 — `focusType`: jenis dokumen untuk `openDocument` saat papan dalam mode tautan (D-07/D-28).
     focusType: "special_order",
-    icon: Scissors, accent: "#6C3FD1",
+    // Fase 3 · P3 (D-07) — papan beranda = TAUTAN ke layar keputusan satu-satunya (Pesanan Khusus); aksen biru baku.
+    icon: Scissors, accent: "#0058CC",
     title: "Papan PO Custom — menunggu keputusan",
-    goto: "Buka PO Custom →",
+    goto: "Buka Pesanan Khusus →",
     empty: "Tidak ada PO custom yang menunggu keputusan",
   },
   contra_bon_dispute: {
@@ -95,6 +96,21 @@ export function boardRowLink(board, row) {
   if (look.focusType && row?.id) Object.assign(link, { focus_type: look.focusType, focus_id: row.id, number: row.number || "" });
   return link;
 }
+
+/**
+ * Fase 3 · P3 (D-07/D-28, keputusan pemilik 26 Okt) — papan BERANDA yang hanya TAUTAN: PO Custom & Barang ditahan
+ * QC. Keputusannya hanya di layar utama (Pesanan Khusus · SPK Inspeksi) dengan satu dialog; baris papan membuka
+ * dokumennya (`boardRowLink`). Papan lain (kontrabon, retur antar-PT, tagihan, opname, transfer) tetap bisa
+ * ditindak. Dipakai Control Tower, Dasbor Manajer, Beranda Sales — dan beranda HP (P7) memakai daftar yang sama.
+ */
+export const HOME_LINK_BOARDS = ["special_order", "inspection_hold"];
+export const isLinkBoard = (key) => HOME_LINK_BOARDS.includes(key);
+
+/**
+ * Preset layar tujuan tombol "Buka …" papan tautan: Pesanan Khusus langsung di tab Menunggu Persetujuan; SPK
+ * Inspeksi langsung bersaring "hanya ditahan" (preset `{ hold: true }` dibaca layar Inspeksi, P5 D-28).
+ */
+export const LINK_BOARD_PRESET = { special_order: { status: "pending_approval" }, inspection_hold: { hold: true } };
 
 export const boardLook = (key) => BOARD_LOOK[key] || {
   icon: Clock, accent: "#6B6B73", goto: "Buka layarnya →",

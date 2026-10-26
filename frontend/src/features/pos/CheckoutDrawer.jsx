@@ -519,7 +519,7 @@ export default function CheckoutDrawer({
         </div>
       </div>
 
-      <CreateCustomerModal open={showCreateCustomer} onClose={() => setShowCreateCustomer(false)} onCreateCustomer={onCreateCustomer} user={user} />
+      <CreateCustomerModal open={showCreateCustomer} onClose={() => setShowCreateCustomer(false)} onCreated={onCreateCustomer} user={user} selectedEntity={selectedEntity} />
       <OrderPriceRequestModal
         open={!!spModalItem}
         item={spModalItem}

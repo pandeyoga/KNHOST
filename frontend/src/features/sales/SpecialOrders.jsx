@@ -18,6 +18,7 @@ import SpecialOrderDetail from "./SpecialOrderDetail";
 import { StatusPill, fmtDay, odPhaseOf } from "./SpecialOrderShared";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import usePagedRows from "../../hooks/usePagedRows";
+import useViewPreset from "../../hooks/useViewPreset";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 
@@ -43,6 +44,12 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
   useEffect(() => {
     loadOrders();
   }, [statusFilter, originFilter]);
+
+  // Fase 3 · P3 (D-07) — tombol "Buka Pesanan Khusus →" papan beranda membawa preset `{ status }` (mis. Menunggu
+  // Persetujuan): satu-satunya tempat keputusan PO Custom di desktop.
+  useViewPreset("special-orders", (p) => {
+    if (typeof p.status === "string") { setStatusFilter(p.status); setView("list"); setSelectedOrder(null); }
+  });
 
   // Deep-link dari Meja Admin Sales → langsung buka rincian OD.
   useEffect(() => {

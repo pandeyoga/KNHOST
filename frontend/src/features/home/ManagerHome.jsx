@@ -18,8 +18,10 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import OpeningCostBanner from "../../components/OpeningCostBanner";
-import WaitingQueueBoard from "../../components/WaitingQueueBoard";
-import { boardLook, selectWaitingBoards } from "../../config/waitingBoards";
+import { selectWaitingBoards, LINK_BOARD_PRESET } from "../../config/waitingBoards";
+import { useAppNav } from "../../context/AppNavContext";
+import HomeWaitingBoards from "./HomeWaitingBoards";
+import { queueLink } from "../approvals/inboxTabs";
 import { formatCurrency } from "../../utils/formatters";
 import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
 import { gradeMeta, num } from "../designer/designerMeta";
@@ -47,6 +49,12 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
   useEffect(() => { load(); }, [load]);
 
   const go = (view) => { if (view && onNavigate) onNavigate(view); };
+  // Fase 3 · P3 (D-06) — baris antrean membuka Pusat Persetujuan di tab jenisnya (bila daftarnya ada di sana).
+  const nav = useAppNav();
+  const openQueue = (q) => {
+    const link = queueLink(q, nav.canOpen);
+    if (link.preset) nav.go(link.view, { preset: link.preset }); else go(link.view);
+  };
 
   const totals = data?.totals || {};
   const arAll = data?.ar_all || null;   // K-01 — piutang semua pelanggan (sumber layar Piutang)
@@ -83,10 +91,11 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
           <span className="min-w-0 flex-1 truncate font-semibold">
             {t.sales_name}
           </span>
-          <span className="tabular-nums text-[#6B6B73]">
+          {/* L-04 (fase 3 · P3) — di HP 390 px jumlah pesanan disembunyikan supaya nama + nilai + capaian muat. */}
+          <span className="hidden tabular-nums text-[#6B6B73] min-[420px]:inline">
             {t.orders_count || 0} pesanan
           </span>
-          <span className="tabular-nums font-bold text-[#0058CC]">
+          <span className="shrink-0 tabular-nums font-bold text-[#0058CC]">
             {formatCurrency(t.total_sales || 0)}
           </span>
           <span className={`status-pill ${a >= prog ? "pill-success" : "pill-warning"}`}>
@@ -148,7 +157,7 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
                   value={boardsUnreadable ? "—" : String(qcHoldCount)}
                   tone={boardsUnreadable || qcHoldCount > 0 ? "#C0392B" : "#1B7F4B"}
                   hint={qcHoldCount > 0 ? "Hanya Anda yang boleh melepas — klik untuk membuka" : ""}
-                  onClick={() => go("inspections")}
+                  onClick={() => (nav.canOpen("inspections") ? nav.go("inspections", { preset: LINK_BOARD_PRESET.inspection_hold }) : go("inspections"))}
                   testId="manager-home-qc-hold-kpi" />
               </div>
 
@@ -215,7 +224,7 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
             ) : (
               <div className="divide-y divide-[#F4F5F7]" data-testid="manager-home-approvals">
                 {(approvals.items || []).map((a) => (
-                  <button key={a.key} type="button" onClick={() => go(a.view)}
+                  <button key={a.key} type="button" onClick={() => openQueue(a)}
                     data-testid={`manager-home-approval-${a.key}`}
                     className="flex w-full items-center gap-2 bg-white px-1 py-2 text-left text-[12px] hover:bg-[#FAFBFC]">
                     <Clock size={13} className="shrink-0 text-[#B26A00]" />
@@ -313,22 +322,13 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
           ini HANYA ada di Control Tower pemilik: pemilik melihat pekerjaan yang
           tanda tangannya justru ditunggu dari manajer. Komponen & angkanya sama
           persis dengan beranda pemilik (`WaitingQueueBoard` ·
-          `approval_backlog_service`), jadi dua layar tak mungkin berselisih. */}
-      <div className="grid gap-3" data-testid="manager-home-boards">
-        {boards.map((b) => {
-          const look = boardLook(b.key);
-          return (
-            <WaitingQueueBoard key={b.key} board={b} loading={loading && !data}
-              entityId={selectedEntity}
-              unreadable={boardsUnreadable} onRetry={load} onNavigate={onNavigate}
-              onActed={load}
-              showEntity={showEntity} icon={look.icon} accent={look.accent}
-              gotoLabel={look.goto} emptyText={look.empty} title={look.title}
-              testIdBase={`manager-home-board-${b.key}`}
-              rowTestIdBase={`manager-home-board-${b.key}-row`} />
-          );
-        })}
-      </div>
+          `approval_backlog_service`), jadi dua layar tak mungkin berselisih.
+          Fase 3 · P3 (D-07/D-28) — PO Custom & Barang ditahan QC = papan TAUTAN (keputusan di Pesanan Khusus /
+          SPK Inspeksi, satu dialog); papan lain tetap bisa ditindak. */}
+      <HomeWaitingBoards boards={boards} loading={loading && !data} unreadable={boardsUnreadable}
+        onRetry={load} onActed={load} onNavigate={onNavigate}
+        entityId={selectedEntity} showEntity={showEntity} testId="manager-home-boards"
+        ids={(b) => ({ testIdBase: `manager-home-board-${b.key}`, rowTestIdBase: `manager-home-board-${b.key}-row` })} />
 
       <div className="grid gap-3 lg:grid-cols-2">
         {/* ── Papan peringkat tim ───────────────────────────────────────── */}

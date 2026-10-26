@@ -1,31 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
-  TrendingUp, Package, Users, Warehouse, AlertTriangle,
-  Clock, CheckCircle, Star, RefreshCw, ArrowUpRight, ArrowDownRight
+  TrendingUp, Package, AlertTriangle, Clock, CheckCircle, Star, RefreshCw, ArrowUpRight, ArrowDownRight, BarChart2,
 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import LinkCard from "../../components/LinkCard";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 
-const STATUS_COLORS = {
-  draft: "#8E8E93", reserved: "#007AFF", waiting_approval: "#FF9500",
-  approved: "#34C759", confirmed: "#30D158", done: "#1C7C4A",
-  cancelled: "#FF3B30", expired: "#FF6B00", shipped: "#5856D6",
-};
-
-// Audit UI 24 Okt (085): sumbu corong dulu memakai kode status mentah ("reserved",
-// "waiting_stock", "done").
-const FUNNEL_LABEL = {
-  draft: "Draf", reserved: "Stok dipesan", waiting_approval: "Menunggu persetujuan",
-  approved: "Disetujui", confirmed: "Dikonfirmasi", waiting_stock: "Menunggu stok",
-  partially_picked: "Sebagian diambil", picked: "Sudah diambil", partially_shipped: "Sebagian dikirim",
-  shipped: "Dikirim", done: "Selesai", cancelled: "Batal", expired: "Kedaluwarsa",
-};
-const funnelLabel = (s) => FUNNEL_LABEL[s] || String(s || "—").replace(/_/g, " ");
 const fmtCompact = (v) => {
   const n = Number(v) || 0;
   if (Math.abs(n) >= 1e9) return `${(n / 1e9).toLocaleString("id-ID", { maximumFractionDigits: 1 })} M`;
@@ -33,8 +17,6 @@ const fmtCompact = (v) => {
   if (Math.abs(n) >= 1e3) return `${(n / 1e3).toLocaleString("id-ID", { maximumFractionDigits: 1 })} rb`;
   return n.toLocaleString("id-ID");
 };
-
-const CHART_COLORS = ["#007AFF", "#34C759", "#FF9500", "#FF3B30", "#5856D6", "#FF6B00", "#8E8E93"];
 
 function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", trend, loading }) {
   return (
@@ -69,16 +51,16 @@ function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", trend, load
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(v)}`;
 
-const SKIP_FUNNEL = ["cancelled", "expired"];
-
+/**
+ * ManagerDashboard — Analitik › **Ringkasan** (`reports`).
+ * Fase 3 · P3 (D-17, keputusan pemilik): widget PESANAN (corong status, pelanggan teratas, kecepatan pesanan) pindah
+ * ke SATU dasbor pesanan di Penjualan › Pesanan › Dasbor (data server daftar Pesanan; bisa dibuka sales). Di sini
+ * tinggal kartu tautan + ringkasan KPI lintas domain, utilisasi gudang dan umur stok.
+ */
 export default function ManagerDashboard({ token, selectedEntity }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [period, setPeriod] = useState(30);
   const [summary, setSummary] = useState(null);
-  const [funnel, setFunnel] = useState(null);
-  const [velocity, setVelocity] = useState(null);
-  const [topCustomers, setTopCustomers] = useState([]);
   const [utilization, setUtilization] = useState([]);
   const [aging, setAging] = useState([]);
   const [agingDays, setAgingDays] = useState(30);
@@ -87,7 +69,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
   const genRef = useRef(0);
 
   // G3 D4-FE-02 — generation guard + AbortController: respons/error/finally dari request lama
-  // (periode/aging/refresh sebelumnya atau setelah unmount) tidak boleh menyentuh state.
+  // (aging/refresh sebelumnya atau setelah unmount) tidak boleh menyentuh state.
   const load = useCallback(async () => {
     const gen = ++genRef.current;
     abortRef.current?.abort();
@@ -99,19 +81,13 @@ export default function ManagerDashboard({ token, selectedEntity }) {
     const cfg = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       params: { entity_id: ent }, signal: ctrl.signal };
     try {
-      const [sumRes, funnelRes, velRes, custRes, utilRes, agingRes] = await Promise.all([
+      const [sumRes, utilRes, agingRes] = await Promise.all([
         axios.get(`${API}/reports/summary`, cfg),
-        axios.get(`${API}/reports/reservation-funnel`, cfg),
-        axios.get(`${API}/reports/order-velocity?days=${period}`, cfg),
-        axios.get(`${API}/reports/top-customers?limit=10`, cfg),
         axios.get(`${API}/reports/warehouse-utilization`, cfg),
         axios.get(`${API}/reports/stock-aging?days_threshold=${agingDays}`, cfg),
       ]);
       if (gen !== genRef.current) return;
       setSummary(sumRes.data);
-      setFunnel(funnelRes.data);
-      setVelocity(velRes.data);
-      setTopCustomers(Array.isArray(custRes.data) ? custRes.data : []);
       setUtilization(Array.isArray(utilRes.data) ? utilRes.data : []);
       setAging(Array.isArray(agingRes.data) ? agingRes.data : []);
       setError("");
@@ -121,15 +97,11 @@ export default function ManagerDashboard({ token, selectedEntity }) {
     } finally {
       if (gen === genRef.current) setLoading(false);
     }
-  }, [period, agingDays, selectedEntity, token]);
+  }, [agingDays, selectedEntity, token]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => () => { genRef.current += 1; abortRef.current?.abort(); }, []);
 
-  const funnelChartData = (funnel?.funnel || []).filter(f => !SKIP_FUNNEL.includes(f.status))
-    .map((f) => ({ ...f, label: funnelLabel(f.status) }));
-  // G3 D4-FE-01 — grafik memakai SELURUH rentang periode terpilih (tanpa potong 14 hari).
-  const velocityData = velocity?.period_days === period ? (velocity?.velocity || []) : [];
   // Audit UI 24 Okt (085): sumbu X dulu nama KOTA ("Bandung" berulang untuk gudang
   // berbeda) — sekarang nama gudang (dipendekkan di sumbu, utuh di tooltip).
   const utilizationData = utilization.map(w => ({
@@ -142,21 +114,9 @@ export default function ManagerDashboard({ token, selectedEntity }) {
   return (
     <section data-testid="manager-dashboard" className="section-card">
       <div className="section-head">
-        <p className="text-[12px] text-[#6B6B73] min-w-0 truncate">Kinerja tim & operasi — {period} hari terakhir</p>
+        <p className="text-[12px] text-[#6B6B73] min-w-0 truncate">Kinerja tim & operasi</p>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <KNSelect
-            value={String(period)}
-            onValueChange={(v) => setPeriod(Number(v))}
-            className="field !py-1 !px-2 text-[12px] w-auto"
-            options={[
-              { value: "7",  label: "7 Hari" },
-              { value: "14", label: "14 Hari" },
-              { value: "30", label: "30 Hari" },
-              { value: "60", label: "60 Hari" },
-              { value: "90", label: "90 Hari" },
-            ]}
-          />
-          <button onClick={load} className="secondary-button" data-testid="refresh-dashboard-button">
+          <button onClick={load} className="secondary-button" data-testid="refresh-dashboard-button" aria-label="Muat ulang">
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
@@ -167,8 +127,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <KPICard icon={TrendingUp} label="Pesanan Hari Ini" value={summary?.orders_today ?? "—"} color="#007AFF" loading={loading} />
           {/* Audit UI 24 Okt (085↔092): angka ini = NILAI PESANAN (SO) yang masuk 30 hari terakhir,
-              bukan pendapatan jurnal bulan berjalan di Posisi & Kontrol. Label disesuaikan
-              supaya dua layar tidak memakai nama yang sama untuk angka berbeda. */}
+              bukan pendapatan jurnal bulan berjalan di Posisi & Kontrol. */}
           <KPICard icon={Star} label="Nilai Pesanan 30 Hari" value={summary?.monthly_revenue !== undefined ? fmtCur(summary.monthly_revenue) : "—"} sub="nilai SO masuk · bukan pendapatan jurnal" color="#34C759" loading={loading} />
           {/* K-06 (26 Okt) — sama dengan KPI Pesanan: SO berstatus Menunggu persetujuan, tanpa pesanan sample. */}
           <KPICard icon={Clock} label="Menunggu Persetujuan" value={summary?.pending_approvals ?? "—"} sub="SO menunggu persetujuan · tanpa sample" color="#FF9500" loading={loading} />
@@ -177,66 +136,13 @@ export default function ManagerDashboard({ token, selectedEntity }) {
           <KPICard icon={CheckCircle} label="Stock Opname Menunggu" value={summary?.pending_cycle_counts ?? "—"} sub="Menunggu review" color="#5856D6" loading={loading} />
         </div>
 
-        {/* Order Velocity */}
-        <div className="mt-5 rounded-xl border border-[#EFF0F2] bg-white p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[14px] font-bold" data-testid="manager-velocity-title">Kecepatan Pesanan — {period} hari terakhir{velocityData.length ? ` (${velocityData[0].date} s/d ${velocityData[velocityData.length - 1].date})` : ""}</h3>
-            <span className="text-[12px] text-[#6B6B73]">{velocity?.total_orders ?? 0} pesanan • rata-rata {velocity?.avg_per_day ?? 0}/hari</span>
-          </div>
-          {loading ? (
-            <div className="h-40 bg-[#F5F5F7] rounded animate-pulse" />
-          ) : velocityData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={velocityData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={v => v.slice(5)} minTickGap={8} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip
-                  formatter={(val, name) => [name === "total_amount" ? fmtCur(val) : val, name === "count" ? "Pesanan" : name === "done" ? "Selesai" : "Nilai"]}
-                  labelFormatter={l => `Tgl ${l}`}
-                />
-                <Line type="monotone" dataKey="count" stroke="#007AFF" strokeWidth={2} dot={false} name="count" />
-                <Line type="monotone" dataKey="done" stroke="#34C759" strokeWidth={1.5} dot={false} strokeDasharray="4 2" name="done" />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-40 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada data pesanan untuk periode ini</div>
-          )}
-        </div>
+        {/* D-17 — analitik pesanan (corong, pelanggan teratas, kecepatan) = SATU dasbor di Pesanan. */}
+        <LinkCard testId="manager-dashboard-orders-link" icon={BarChart2} className="mt-4"
+          what="Analitik pesanan (corong status, pelanggan teratas, kecepatan pesanan)"
+          where="Penjualan › Pesanan › Dasbor & Analitik" view="orders" label="Buka Dasbor Pesanan" />
 
-        {/* Row: Funnel + Utilization */}
+        {/* Row: Utilization + Stock Aging */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          {/* Reservation Funnel */}
-          <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[14px] font-bold">Corong Status Pesanan</h3>
-              <span className="text-[12px] text-[#6B6B73]">{funnel?.total_orders ?? 0} total</span>
-            </div>
-            {/* K-06 (26 Okt) — populasi corong = daftar Pesanan; pesanan sample dikecualikan dan disebut jumlahnya. */}
-            <p className="-mt-2 mb-2 text-[11px] text-[#8E8E93]" data-testid="manager-funnel-scope">
-              Sama dengan daftar Pesanan · tanpa pesanan sample{funnel?.sample_excluded ? ` (${funnel.sample_excluded} dikecualikan)` : ""}
-            </p>
-            {loading ? (
-              <div className="h-36 bg-[#F5F5F7] rounded animate-pulse" />
-            ) : funnelChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={170}>
-                <BarChart data={funnelChartData} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" interval={0} />
-                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                  <Tooltip formatter={(val) => [val, "Order"]} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {funnelChartData.map((entry, index) => (
-                      <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-36 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada data pesanan</div>
-            )}
-          </div>
-
           {/* Warehouse Utilization */}
           <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
             <h3 className="text-[14px] font-bold mb-3">Utilisasi Gudang</h3>
@@ -274,36 +180,6 @@ export default function ManagerDashboard({ token, selectedEntity }) {
               <div className="h-36 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada data gudang</div>
             )}
           </div>
-        </div>
-
-        {/* Row: Top Customers + Stock Aging */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-          {/* Top Customers */}
-          <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Users size={15} className="text-[#007AFF]" />
-              <h3 className="text-[14px] font-bold">Pelanggan Teratas</h3>
-            </div>
-            {loading ? (
-              <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-8 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
-            ) : topCustomers.length > 0 ? (
-              <div className="grid gap-1.5">
-                {topCustomers.map((c, idx) => (
-                  <div key={c.customer_id} className="flex items-center gap-2 py-1.5 border-b border-[#F5F5F7] last:border-0">
-                    <span className="text-[11px] font-bold text-[#8E8E93] w-5">{idx + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold truncate">{c.customer_name}</p>
-                      <p className="text-[10.5px] text-[#6B6B73]">{c.order_count} pesanan</p>
-                    </div>
-                    <span className="text-[11px] font-bold text-[#007AFF] tabular-nums">{fmtCur(c.total_revenue)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-24 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada data penjualan</div>
-            )}
-          </div>
-
           {/* Stock Aging */}
           <div className="rounded-xl border border-[#EFF0F2] bg-white p-4">
             <div className="flex items-center justify-between mb-3">

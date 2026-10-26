@@ -20,29 +20,20 @@
  * "Harga per Pelanggan".
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { overlayDismiss } from "@/utils/overlayDismiss";
-import { useEscapeClose } from "@/utils/escapeLayers";
-import KNDatePicker from "@/components/KNDatePicker";
-import MoneyInput from "@/components/MoneyInput";
 import {
-  Tag, RefreshCw, Search, Plus, History, X, Download, Upload, Save,
+  Tag, RefreshCw, Search, Plus, History, X, Download, Upload,
   CheckCircle2, AlertTriangle, Building2, RotateCcw, CalendarClock, ArrowUp, ArrowDown,
 } from "lucide-react";
+import { SetPriceModal, HistoryModal, fmtDate } from "./PricelistModals";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import usePagedRows from "@/hooks/usePagedRows";
-import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
-import { entityShort, entityShortById } from "../../utils/entityLabel";
+import EntityRequiredNotice from "../../components/EntityRequiredNotice";
+import { entityShortById } from "../../utils/entityLabel";
+import usePriceEntity, { isActiveEntity } from "./usePriceEntity";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import { can } from "../../config/roles";
-
-const STATUS_META = {
-  current: { label: "Berlaku", tone: "bg-[#E6F6EC] text-[#1B7F4B]" },
-  scheduled: { label: "Terjadwal", tone: "bg-[#E7F0FF] text-[#0058CC]" },
-  expired: { label: "Kadaluarsa", tone: "bg-[#F5F5F7] text-[#8E8E93]" },
-  inactive: { label: "Nonaktif", tone: "bg-[#FDEDE7] text-[#C0392B]" },
-};
 
 // Lencana ASAL harga — sengaja memakai kata yang sama dengan POS/keranjang
 // (`hooks/useEffectivePrices.PRICE_SOURCE_META`) supaya pengguna tidak perlu
@@ -64,17 +55,12 @@ function PriceCell({ value }) {
   return <>{formatCurrency(value)}</>;
 }
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }); }
-  catch { return "—"; }
-}
-
 export default function PricelistView({ entities = [], selectedEntity, currentUser }) {
   const canManage = can(currentUser?.permissions, "pricelist", "manage");   // Sisir gerbang peran (2026-10-20) — tulis daftar harga
-  const activeList = entities.filter((e) => e.status !== "inactive" && e.status !== "archived");
-  const [entityId, setEntityId] = useState(
-    selectedEntity && selectedEntity !== "all" ? selectedEntity : (activeList[0]?.id || ""));
+  const activeList = entities.filter(isActiveEntity);
+  // Fase 3 · P3 (D-14) — PT = PT di kepala aplikasi (pemilih lokal `pl-entity-select` dihapus); header "Semua" →
+  // kartu "Pilih badan usaha" yang mengganti header.
+  const entityId = usePriceEntity(selectedEntity, entities);
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -89,7 +75,7 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
   const entityName = entityShortById(activeList, entityId);
 
   const load = useCallback(async () => {
-    if (!entityId) return;
+    if (!entityId) { setRows([]); setSummary(null); setLoading(false); return; }
     setLoading(true); setError("");
     try {
       const res = await axios.get(`${API}/pricelist`, { params: { entity_id: entityId, search } });
@@ -103,15 +89,6 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
   }, [entityId, search]);
 
   useEffect(() => { load(); }, [load]);
-
-  // Ikuti pemilih badan usaha global bila pengguna berpindah konteks.
-  useEffect(() => {
-    if (selectedEntity && selectedEntity !== "all") setEntityId(selectedEntity);
-  }, [selectedEntity]);
-
-  const entityOptions = useMemo(
-    () => activeList.map((e) => ({ value: e.id, label: entityShort(e) })),
-    [activeList]);
 
   const shown = useMemo(
     () => (onlyOverride ? rows.filter((r) => r.entity_price != null) : rows),
@@ -170,6 +147,16 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
     }
   };
 
+  // D-14 — header "Semua badan usaha": harga berlaku per PT → pilih PT di kartu (= mengganti PT di kepala aplikasi).
+  if (!entityId) {
+    return (
+      <div data-testid="pricelist-view">
+        <EntityRequiredNotice what="harga per badan usaha" testId="pl-entity-required"
+          reason="Harga khusus badan usaha berlaku per PT. Pilihan Anda mengganti badan usaha di kepala aplikasi (berlaku di semua layar)." />
+      </div>
+    );
+  }
+
   return (
     <div data-testid="pricelist-view">
       <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -199,10 +186,7 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
       <div className="section-card">
         <div className="section-head flex-wrap gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-[200px]">
-              <KNSelect data-testid="pl-entity-select" className="field py-1.5 text-[12px]" value={entityId}
-                onValueChange={setEntityId} placeholder="Pilih badan usaha" options={entityOptions} />
-            </div>
+            {/* D-14 — tanpa pemilih PT lokal: PT mengikuti kepala aplikasi (lencana di kartu "Badan usaha"). */}
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="pl-search" className="field w-[220px] py-1.5 pl-8 text-[12px]"
@@ -368,211 +352,6 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
         <HistoryModal row={historyRow} entityId={entityId} entities={entities} canManage={canManage}
           onClose={() => setHistoryRow(null)} onChanged={() => { load(); }} />
       )}
-    </div>
-  );
-}
-
-// ─── Set Harga Modal ─────────────────────────────────────────────────────────
-function SetPriceModal({ row, entityId, entityName, onClose, onSaved, onError }) {
-  const today = todayWib();
-  const [price, setPrice] = useState(row.entity_price != null ? String(row.entity_price) : "");
-  const [validFrom, setValidFrom] = useState(today);
-  const [validUntil, setValidUntil] = useState("");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  useEscapeClose(true, onClose, saving);
-  const [localError, setLocalError] = useState("");
-
-  const numeric = parseFloat(price);
-  const diff = Number.isFinite(numeric) ? numeric - Number(row.global_price || 0) : 0;
-
-  const save = async () => {
-    setLocalError("");
-    const p = parseFloat(price);
-    if (!p || p <= 0) { setLocalError("Harga jual harus lebih dari 0."); return; }
-    setSaving(true);
-    try {
-      await axios.post(`${API}/pricelist`, {
-        product_id: row.product_id, sell_price: p, entity_id: entityId,
-        valid_from: validFrom, valid_until: validUntil, note,
-      });
-      onSaved();
-    } catch (e) {
-      const msg = e.response?.data?.detail || "Gagal menyimpan harga.";
-      setLocalError(msg); onError?.(msg);
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="pl-setprice-modal" {...overlayDismiss(onClose)}>
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-4 py-3">
-          <Tag size={16} className="text-[#6B219A]" />
-          <h3 className="text-[14px] font-bold">Harga {entityName}</h3>
-          <button data-testid="pl-setprice-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup">
-            <X size={15} />
-          </button>
-        </div>
-        <div className="space-y-3 p-4 text-[12px]">
-          <ErrorNotice message={localError} onDismiss={() => setLocalError("")} testId="pl-setprice-error" />
-          <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2">
-            <p className="font-semibold text-[#1C1C1E]">{row.product_name}</p>
-            <p className="text-[11px] text-[#9A9BA3]">
-              {row.sku} · harga global {formatCurrency(row.global_price)} / {row.base_unit}
-              {row.hpp_ref > 0 ? ` · HPP ${formatCurrency(row.hpp_ref)}` : ""}
-            </p>
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Harga jual {entityName} (per {row.base_unit})
-            </label>
-            <MoneyInput testId="pl-input-price" className="field py-2 text-[13px]"
-              placeholder="Mis. 195000" value={price} onChange={(v) => setPrice(v)} autoFocus />
-            {Number.isFinite(numeric) && numeric > 0 && (
-              <p data-testid="pl-price-diff" className="mt-1 text-[10.5px] text-[#6B6B73]">
-                {diff === 0 ? "Sama dengan harga global."
-                  : `${diff > 0 ? "Lebih tinggi" : "Lebih rendah"} ${formatCurrency(Math.abs(diff))} dari harga global.`}
-                {row.hpp_ref > 0 && numeric < row.hpp_ref && (
-                  <span className="ml-1 font-bold text-[#C0392B]">
-                    <AlertTriangle size={10} className="inline" /> di bawah HPP
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Berlaku mulai</label>
-              <KNDatePicker data-testid="pl-input-from" value={validFrom} onChange={setValidFrom} />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-                Berlaku sampai <span className="font-normal text-[#9A9BA3]">(opsional)</span>
-              </label>
-              <KNDatePicker data-testid="pl-input-until" value={validUntil} onChange={setValidUntil} />
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">
-              Catatan <span className="font-normal text-[#9A9BA3]">(opsional)</span>
-            </label>
-            <input data-testid="pl-input-note" className="field py-2 text-[13px]"
-              placeholder="Mis. penyesuaian harga triwulan 3" value={note} onChange={(e) => setNote(e.target.value)} />
-          </div>
-          <p className="text-[10.5px] text-[#8E8E93]">
-            Harga lama tidak hilang: ia ditutup pada tanggal mulai harga baru dan tetap
-            terlihat di riwayat.
-          </p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
-          <button className="secondary-button" onClick={onClose}>Batal</button>
-          <button data-testid="pl-setprice-save" className="primary-button" onClick={save} disabled={saving}>
-            <Save size={14} /> {saving ? "Menyimpan…" : "Simpan harga"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Riwayat Harga Modal ─────────────────────────────────────────────────────
-function HistoryModal({ row, entityId, entities, canManage, onClose, onChanged }) {
-  const [records, setRecords] = useState([]);
-  const pgRec = usePagedRows(records, { pageSize: 25, testId: "pricelist-records-pager" });
-  const [loading, setLoading] = useState(true);
-  useEscapeClose(true, onClose, false);
-  const [err, setErr] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true); setErr("");
-    try {
-      const res = await axios.get(`${API}/pricelist/records`,
-        { params: { product_id: row.product_id, entity_id: entityId } });
-      setRecords(Array.isArray(res.data) ? res.data : []);
-    } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal memuat riwayat.");
-    } finally {
-      setLoading(false);
-    }
-  }, [row.product_id, entityId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const deactivate = async (id) => {
-    try {
-      await axios.delete(`${API}/pricelist/${id}`);
-      load(); onChanged();
-    } catch (e) {
-      setErr(e.response?.data?.detail || "Gagal menonaktifkan harga.");
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" data-testid="pl-history-modal">
-      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl">
-        <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-4 py-3">
-          <History size={16} className="text-[#6B219A]" />
-          <h3 className="text-[14px] font-bold">Riwayat harga · {row.product_name}</h3>
-          <EntityBadge entityId={entityId} entities={entities} />
-          <button data-testid="pl-history-close" className="icon-button ml-auto" onClick={onClose} aria-label="Tutup">
-            <X size={15} />
-          </button>
-        </div>
-        <div className="overflow-auto p-4">
-          <ErrorNotice message={err} onRetry={load} onDismiss={() => setErr("")} testId="pl-history-error" />
-          {loading ? (
-            <div className="grid gap-2">{[0, 1, 2].map((i) => <div key={i} className="h-9 animate-pulse rounded bg-[#F5F5F7]" />)}</div>
-          ) : records.length === 0 ? (
-            <div data-testid="pl-history-empty" className="py-8 text-center text-[12px] text-[#8E8E93]">
-              Belum ada harga khusus badan usaha untuk produk ini — memakai harga global {formatCurrency(row.global_price)}.
-            </div>
-          ) : (
-            <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]">
-                <thead>
-                  <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
-                    <th className="px-3 py-2 text-right">Harga</th>
-                    <th className="px-3 py-2">Mulai</th>
-                    <th className="px-3 py-2">Sampai</th>
-                    <th className="px-3 py-2 text-center">Status</th>
-                    <th className="px-3 py-2">Catatan</th>
-                    {canManage && <th className="px-3 py-2"></th>}
-                  </tr>
-                </thead>
-                <caption className="caption-bottom px-3 py-2">{records.length > 25 && pgRec.pager}</caption>
-                <tbody>
-                  {pgRec.pageRows.map((r) => {
-                    const sm = STATUS_META[r.effective_status] || STATUS_META.inactive;
-                    return (
-                      <tr key={r.id} data-testid={`pl-hist-row-${r.id}`} className="border-b border-[#F5F5F7] last:border-0">
-                        <td className="px-3 py-2 text-right font-semibold tabular-nums text-[#6B219A]">{formatCurrency(r.sell_price)}</td>
-                        <td className="px-3 py-2">{fmtDate(r.valid_from)}</td>
-                        <td className="px-3 py-2">{r.valid_until ? fmtDate(r.valid_until) : "∞"}</td>
-                        <td className="px-3 py-2 text-center">
-                          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${sm.tone}`}>{sm.label}</span>
-                        </td>
-                        <td className="max-w-[160px] truncate px-3 py-2 text-[#6B6B73]" title={r.note}>{r.note || "—"}</td>
-                        {canManage && (
-                          <td className="px-3 py-2 text-right">
-                            {r.status !== "inactive" && (
-                              <button data-testid={`pl-deactivate-${r.id}`} className="text-[11px] text-[#C0392B] hover:underline"
-                                onClick={() => deactivate(r.id)}>Nonaktifkan</button>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end border-t border-[#EFF0F2] px-4 py-3">
-          <button className="primary-button" onClick={onClose}>Tutup</button>
-        </div>
-      </div>
     </div>
   );
 }

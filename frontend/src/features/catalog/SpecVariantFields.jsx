@@ -19,7 +19,21 @@ export function newOptionCode(label, used) {
   return `${base}${Date.now() % 1000}`;
 }
 
-export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
+/**
+ * SpecVariantFields — pemilih induk produk + kombinasi varian untuk spesifikasi R&D.
+ * Props: `initial` · `onChange(selection)` · `onInherit(patch)` · `mode` ("create" bawaan | "edit").
+ *
+ * Fase 3 · P3 (permintaan P6, D-24c) — `mode="edit"`: form "Ubah spesifikasi" memuat pilihan TERSIMPAN
+ *   `initial = { templateId, variantOptions, newAxisValues, specId, productId? }` (dari dokumen spesifikasi:
+ *   `template_id`, `variant_options`, `new_axis_values`, `id`, `target_product_id` bila SKU tujuan dikunci).
+ *   Saat memuat induk tersimpan, judul/gramasi/lebar/kategori/satuan TIDAK ditimpa (`onInherit` tidak dipanggil);
+ *   `onInherit` (lebar/grade) baru dipanggil bila pengguna MENGUBAH pilihan sumbu atau mengganti induk. Varian yang
+ *   sudah ditautkan ke spesifikasi INI (`spec_id === specId`) tidak dianggap "sudah dipakai".
+ */
+export const SpecVariantFields = ({ initial, onChange, onInherit, mode = "create" }) => {
+  const editing = mode === "edit";
+  // Varian "dipakai" — kecuali varian milik spesifikasi yang sedang diubah sendiri.
+  const isTaken = (v) => taken(v) && !(editing && initial?.specId && v.spec_id === initial.specId);
   const [families, setFamilies] = useState([]);
   const [family, setFamily] = useState(null);
   const [tid, setTid] = useState(initial?.templateId || "");
@@ -47,7 +61,7 @@ export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
   const axesOf = (tpl, nv) => (tpl?.axes || []).map(a => (nv[a.key] && !a.options.some(o => o.code === nv[a.key].code)
     ? { ...a, options: [...a.options, { ...nv[a.key], isNew: true }] } : a));
 
-  const resolve = (tpl, options, nv = newValues) => {
+  const resolve = (tpl, options, nv = newValues, { inherit = true } = {}) => {
     const axes = axesOf(tpl, nv);
     const variants = tpl.variants || [];
     const attrs = Object.fromEntries(axes.flatMap(a => {
@@ -58,15 +72,16 @@ export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
     const target = initial?.productId ? variants.find(v => v.id === initial.productId) : existing;
     const invalid = initial?.productId && !target ? "SKU tujuan tidak ditemukan dalam induk ini."
       : axes.some(a => !a.options.some(o => o.code === options[a.key])) ? "Pilih seluruh atribut varian."
-      : !initial?.productId && taken(target)
+      : !initial?.productId && isTaken(target)
         ? `Kombinasi ini sudah menjadi SKU ${target.sku} — pilih nilai lain, ambil warna baru dari labdip, atau uji ulang SKU itu.` : "";
     const option = key => axes.find(a => a.key === key)?.options.find(o => o.code === options[key]);
     const color = option("color"), width = option("lebar"), grade = option("grade");
     const usedNew = Object.fromEntries(Object.entries(nv).filter(([k, v]) => options[k] === v.code));
-    callbacks.current.onChange({ template_id: tpl.id, target_product_id: target && !taken(target) ? target.id : (initial?.productId ? target?.id || "" : ""),
-      variant_attrs: attrs, variant_options: options, invalid, taken_product: taken(target) ? target : null,
+    callbacks.current.onChange({ template_id: tpl.id, target_product_id: target && !isTaken(target) ? target.id : (initial?.productId ? target?.id || "" : ""),
+      variant_attrs: attrs, variant_options: options, invalid, taken_product: isTaken(target) ? target : null,
       color_target: color ? (color.isNew && color.color_id ? { color_id: color.color_id } : { code: color.value || color.code }) : null,
       new_axis_values: Object.fromEntries(Object.entries(usedNew).map(([k, v]) => [k, { code: v.code, label: v.label, value: v.value, hex: v.hex || "" }])) });
+    if (!inherit) return;
     callbacks.current.onInherit({
       ...(width ? { lebar: String(Number(width.value) * 100) } : {}),
       ...(grade ? { grade: grade.value || grade.code } : {}),
@@ -82,12 +97,17 @@ export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
     catalogApi.detail(tid).then(tpl => {
       if (!live) return;
       const target = (tpl.variants || []).find(v => v.id === initial?.productId);
-      const opts = target?.variant_options || {};
-      setFamily(tpl); setChoices(opts);
-      callbacks.current.onInherit({ stage: tpl.stage, fabric_type: tpl.fabric_type, gramasi: target?.gramasi ?? tpl.gramasi ?? "",
-        lebar: String(Number(target?.lebar ?? tpl.lebar ?? 0) * 100), base_unit: tpl.base_unit, category: tpl.category,
-        title: target?.name || tpl.name, sku_hint: target?.sku || "", line_code: tpl.line_code || "", grade: target?.grade || "" });
-      resolve(tpl, opts, {});
+      // Mode ubah di induk TERSIMPAN: pakai pilihan sumbu & nilai baru yang tersimpan, jangan timpa isian form.
+      const stored = editing && tid === initial?.templateId;
+      const opts = stored && initial?.variantOptions ? initial.variantOptions : (target?.variant_options || {});
+      const nv0 = stored ? (initial?.newAxisValues || {}) : {};
+      setFamily(tpl); setChoices(opts); setNewValues(nv0);
+      if (!stored) {
+        callbacks.current.onInherit({ stage: tpl.stage, fabric_type: tpl.fabric_type, gramasi: target?.gramasi ?? tpl.gramasi ?? "",
+          lebar: String(Number(target?.lebar ?? tpl.lebar ?? 0) * 100), base_unit: tpl.base_unit, category: tpl.category,
+          title: target?.name || tpl.name, sku_hint: target?.sku || "", line_code: tpl.line_code || "", grade: target?.grade || "" });
+      }
+      resolve(tpl, opts, nv0, { inherit: !stored });
     }).catch(e => {
       if (live) { setError(catalogError(e)); callbacks.current.onChange(emptySelection("Induk belum berhasil dimuat.")); }
     }).finally(() => { if (live) setLoading(false); });
@@ -125,10 +145,10 @@ export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
   const optionList = (a) => a.options.map(o => {
     const combo = { ...choices, [a.key]: o.code };
     const hit = (family?.variants || []).find(v => axes.every(x => v.variant_options?.[x.key] === combo[x.key]));
-    const done = !initial?.productId && axes.every(x => combo[x.key]) && taken(hit);
+    const done = !initial?.productId && axes.every(x => combo[x.key]) && isTaken(hit);
     return { value: o.code, label: `${o.label}${o.isNew ? " · BARU (dari labdip)" : ""}${done ? ` · sudah ada (SKU ${hit.sku})` : ""}`, disabled: done };
   });
-  const allTaken = family && axes.length && (family.variants || []).filter(taken).length >= axes.reduce((n, a) => n * Math.max(a.options.length, 1), 1);
+  const allTaken = family && axes.length && (family.variants || []).filter(isTaken).length >= axes.reduce((n, a) => n * Math.max(a.options.length, 1), 1);
   const takenTarget = family && (family.variants || []).find(v => axes.length && axes.every(a => v.variant_options?.[a.key] === choices[a.key]));
 
   return <section data-testid="spec-variant-link" aria-busy={loading} className="space-y-3 rounded-md border border-blue-100 bg-blue-50/40 p-3">
@@ -164,11 +184,11 @@ export const SpecVariantFields = ({ initial, onChange, onInherit }) => {
         )}
       </div>
     )}
-    {family && !initial?.productId && (takenTarget && taken(takenTarget) || allTaken) && (
+    {family && !initial?.productId && (takenTarget && isTaken(takenTarget) || allTaken) && (
       <div className="rounded border border-[#F0D9A8] bg-[#FFF9EC] p-2 text-[11px] text-[#5C3B00]" data-testid="spec-variant-exits">
         {allTaken ? "Semua kombinasi induk ini sudah menjadi SKU." : `Kombinasi ini sudah menjadi SKU ${takenTarget.sku}.`} Jalan keluar:
         <div className="mt-1 flex flex-wrap gap-2">
-          {takenTarget && taken(takenTarget) && (
+          {takenTarget && isTaken(takenTarget) && (
             <button type="button" className="secondary-button !h-7 !text-[11px]" data-testid="spec-exit-revalidate"
               onClick={() => openRnd({ view: "rnd-revalidation", productId: takenTarget.id, product: takenTarget, productLabel: `${takenTarget.sku} — ${takenTarget.name}` })}>
               Uji ulang SKU {takenTarget.sku}

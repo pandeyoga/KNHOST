@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import axios, { API } from "../../services/apiClient";
-import {
-  Inbox, ShoppingCart, Tag, ArrowRight, Clock, RefreshCw, CheckSquare,
-  RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit,
-} from "lucide-react";
+import { Inbox, ArrowRight, Clock, RefreshCw, CheckSquare, FileEdit } from "lucide-react";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
-import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 // Tujuan navigasi yang SAH untuk peran ini (sumber sama dengan Ctrl+K & deep-link) —
@@ -13,7 +8,13 @@ import { SearchBox } from "../../components/ListControls";
 import { resolveDeepLinkTarget } from "../../config/navigationConfig";
 import PaginationBar from "../../components/PaginationBar";
 import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
+import PageTabs from "../../components/PageTabs";
+import LinkCard from "../../components/LinkCard";
+import useViewPreset from "../../hooks/useViewPreset";
 import ApprovalDecisionModal from "./ApprovalDecisionModal";
+import MyApprovalsPanel from "./MyApprovalsPanel";
+import { KIND_META, loadInbox } from "./approvalInboxData";
+import { INBOX_TABS, LISTED_IN_INBOX, canSeeMatrix } from "./inboxTabs";
 import { notifySuccess } from "../../utils/feedback";
 import { actorLabel } from "../../utils/actorLabel";
 import { roleLabel } from "../../config/roles";
@@ -22,11 +23,16 @@ import { roleLabel } from "../../config/roles";
  * ApprovalInbox — "Pusat Persetujuan" (FASE 5 — terpadu).
  * Hub lintas-modul: menampilkan SEMUA persetujuan yang menunggu keputusan dalam satu tempat:
  *  - Sales Order (SSOT `pending_approvals`: nilai / kredit / harga khusus) → deep-link ke DETAIL SO.
- *  - PO pembelian, retur jual/beli, cycle count → deep-link ke antrian modul terkait.
- * Read-only di sini — keputusan dilakukan di view yang kaya konteks (detail SO / view modul).
+ *  - PO pembelian, retur jual/beli, cycle count, kredit pelanggan → keputusan di tempat (pop-up) / layar modul.
+ *
+ * Fase 3 · P3 (D-06, keputusan pemilik) — SATU antrean persetujuan:
+ *  · tab **Matriks divisi** = panel "Persetujuan Saya" (ACC desain, PO custom 2 tingkat, PR, klaim makloon + jejak),
+ *    hanya untuk peran yang dulu membuka `my-approvals` (`canSeeMatrix`); alias `my-approvals` → {tab:"matrix"} (P8).
+ *  · tab **Amandemen** = kartu tautan berhitungan ke Pusat Amandemen — keputusan amandemen HANYA di sana, jadi
+ *    amandemen tidak lagi didaftar/diputus di sini dan dihitung "ditangani di layar lain".
+ *  · preset `{ tab }` (chip Control Tower / Dasbor Manajer, alias) membuka tab yang dituju.
  */
 
-// kind → tampilan (label, ikon, warna) + tab grup
 // INV-UI-07 — daftar berhalaman wajib bisa diunduh (kolom = yang dilihat di baris).
 const INBOX_CSV_COLUMNS = [
   { header: "Jenis", get: (it) => KIND_META[it.kind]?.label || it.kind || "" },
@@ -39,34 +45,6 @@ const INBOX_CSV_COLUMNS = [
   { key: "at", header: "Diajukan pada", type: "date" },
 ];
 
-const KIND_META = {
-  so_nilai:         { label: "SO · Nilai Pesanan",  icon: ShieldCheck,    fg: "#4F46E5", bg: "#EEF0FF", group: "sales_order" },
-  so_kredit:        { label: "SO · Kredit",       icon: CreditCard,     fg: "#DC2626", bg: "#FEE2E2", group: "sales_order" },
-  so_special_price: { label: "SO · Harga Khusus", icon: Tag,            fg: "#B45309", bg: "#FEF3C7", group: "sales_order" },
-  po:              { label: "PO Pembelian",  icon: ShoppingCart,   fg: "#0058CC", bg: "#EFF4FF", group: "po" },
-  price:           { label: "Harga Khusus",  icon: Tag,            fg: "#6D28D9", bg: "#F3EEFF", group: "price" },
-  sales_return:    { label: "Retur Penjualan",    icon: RotateCcw,      fg: "#B45309", bg: "#FEF3C7", group: "returns" },
-  purchase_return: { label: "Retur Pembelian",    icon: RotateCcw,      fg: "#0E7490", bg: "#E0F2FE", group: "returns" },
-  cycle:           { label: "Stok Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
-  // FASE G-1 — koreksi angka dokumen keuangan (amandemen ber-alasan & ber-dampak).
-  // IA 2026-10 (B9) — override kredit pelanggan (dulu hanya di CRM › Persetujuan Kredit).
-  credit:          { label: "Override Kredit", icon: CreditCard, fg: "#0058CC", bg: "#E8F1FF", group: "credit" },
-  amendment:       { label: "Amandemen Dokumen", icon: FileEdit,   fg: "#7A2CA0", bg: "#F3E9FA", group: "amendment" },
-};
-
-const SO_KIND_BY_TYPE = { nilai: "so_nilai", kredit: "so_kredit", special_price: "so_special_price" };
-
-const TABS = [
-  { key: "all",         label: "Semua" },
-  { key: "sales_order", label: "Pesanan Penjualan" },
-  { key: "amendment",   label: "Amandemen" },
-  { key: "po",          label: "Pembelian (PO)" },
-  { key: "price",       label: "Harga Khusus" },
-  { key: "returns",     label: "Retur" },
-  { key: "cycle",       label: "Stok Opname" },
-  { key: "credit",      label: "Kredit Pelanggan" },
-];
-
 function timeAgo(iso) {
   if (!iso) return "";
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -75,153 +53,44 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)} hari lalu`;
 }
 
-const arr = (d) => (Array.isArray(d) ? d : (Array.isArray(d?.items) ? d.items : []));
-
 // UI/UX 2026-06 — daftar utama berhalaman (bukan satu gulungan panjang ke bawah).
 const PAGE_SIZE = 15;
 
 export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument }) {
   const [items, setItems] = useState([]);
+  const [amendments, setAmendments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const showMatrix = canSeeMatrix(currentUser?.role);
+  const validTab = (t) => INBOX_TABS.some((x) => x.key === t) && (t !== "matrix" || showMatrix);
   const [tab, setTab] = useState("all");
   const [page, setPage] = useState(1);
+  // Preset navigasi (alias `my-approvals` → matrix, chip beranda → jenis) — juga saat layar sudah terbuka.
+  useViewPreset("approval-inbox", (p) => { if (validTab(p.tab)) { setTab(p.tab); setPage(1); } });
   const [showAllOthers, setShowAllOthers] = useState(false);
   // KEPUTUSAN DI TEMPAT (2026-06) — baris dibuka sebagai pop-up detail + Setujui/Tolak.
   const [reviewItem, setReviewItem] = useState(null);
   /**
-   * RINGKASAN SELURUH ANTREAN (F-3, 2026-08-15) — dari `GET /approvals/backlog`,
-   * sumber yang SAMA dengan KPI beranda. Sebelum ini layar ini menghitung
-   * antreannya sendiri dari 7 permintaan di browser, sementara beranda memakai
-   * sumber lain: satu pertanyaan, tiga angka berbeda (dan yang di beranda selalu 0).
-   * Antrean yang TIDAK ditampilkan layar ini (PR · spesifikasi/sample · pesanan
-   * khusus · antar-PT di atas ambang) tetap disebut di sini beserta jalannya,
-   * supaya "Pusat Persetujuan" berhenti mengaku kosong untuk pekerjaan yang
-   * sebenarnya menumpuk di tab sebelah.
+   * RINGKASAN SELURUH ANTREAN (F-3, 2026-08-15) — dari `GET /approvals/backlog`, sumber yang SAMA dengan KPI
+   * beranda. Antrean yang TIDAK didaftar layar ini tetap disebut di sini beserta jalannya, supaya "Pusat
+   * Persetujuan" berhenti mengaku kosong untuk pekerjaan yang sebenarnya menumpuk di tab sebelah.
    */
   const [backlog, setBacklog] = useState(null);
-  // AUDIT SALES vs ADMIN SALES (2026-08-15) — kategori yang GAGAL dimuat.
-  // Sebelumnya setiap panggilan memakai `.catch(() => ({ data: [] }))` sehingga
-  // penolakan izin berubah menjadi "tidak ada yang menunggu persetujuan" —
-  // kalimat yang TIDAK BENAR dan berbahaya di layar yang dipakai untuk memutuskan.
-  // Sejak layar ini juga dibuka untuk Admin Sales (read-only), kategori di luar
-  // wilayahnya wajar tak terbaca; yang tidak boleh adalah menyembunyikannya.
+  // AUDIT SALES vs ADMIN SALES (2026-08-15) — kategori yang GAGAL dimuat disebut, bukan "tidak ada yang menunggu"
+  // (Admin Sales membuka layar ini read-only; kategori di luar wilayahnya wajar tak terbaca, tapi tidak disembunyikan).
   const [unavailable, setUnavailable] = useState([]);
+  const [inboxQ, setInboxQ] = useState("");
 
   useEffect(() => { load(); }, []); // eslint-disable-line
 
   async function load() {
     setLoading(true);
-    const gagal = [];
-    /** Ambil satu sumber; catat namanya bila tak boleh/gagal (bukan diam-diam kosong). */
-    const grab = (label, promise) => promise.catch((e) => {
-      gagal.push(label);
-      return { data: [], _failed: e };
-    });
     try {
-      const [queueRes, poRes, prRes, srRes, purRes, ccRes, amdRes, blRes, coRes] = await Promise.all([
-        grab("Pesanan Penjualan", axios.get(`${API}/approvals/queue`)),
-        grab("Pembelian (PO)", axios.get(`${API}/purchase-orders`)),
-        grab("Harga Khusus", axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
-        grab("Retur Penjualan", axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
-        grab("Retur Pembelian", axios.get(`${API}/purchase-returns`)),
-        grab("Stock Opname", axios.get(`${API}/cycle-count/sessions`)),
-        grab("Amandemen", axios.get(`${API}/amendments`, { params: { status: "pending_approval" } })),
-        // FASE F-6 — `?oldest=15` sekalian membawa DOKUMEN paling lama menunggu dari
-        // SEMUA antrean (termasuk 14 antrean yang layar ini tidak muat: transfer gudang,
-        // kontrabon, permintaan internal, cuti, lembur, uang muka, klaim makloon, …).
-        // Tanpa ini antrean-antrean itu hanya jadi angka di chip; sekarang orangnya bisa
-        // melihat NOMOR dokumen + sudah berapa lama menunggu, lalu melompat ke layarnya.
-        grab("Ringkasan Antrean", axios.get(`${API}/approvals/backlog`, { params: { oldest: 50 } })),
-        grab("Kredit Pelanggan", axios.get(`${API}/credit-overrides`, { params: { status: "pending" } })),
-      ]);
-      setUnavailable(gagal);
-      setBacklog(blRes?.data && !Array.isArray(blRes.data) ? blRes.data : null);
-
-      // FASE 5 — Sales Order approvals (SSOT pending_approvals): nilai / kredit / harga khusus.
-      const soApprovals = arr(queueRes.data).map((q) => ({
-        kind: SO_KIND_BY_TYPE[q.type] || "so_nilai",
-        id: q.id, orderId: q.order_id,
-        title: q.order_number || "Sales Order",
-        subtitle: q.customer_name || "Customer",
-        meta: q.type === "special_price"
-          ? `${q.product_name || "Item"} · ${formatCurrency(q.normal_price)} → ${formatCurrency(q.requested_price)}`
-          : (q.reason || q.type_label || ""),
-        amount: q.type === "special_price" ? q.requested_price : (q.amount ?? q.grand_total),
-        requester: q.requested_by, role: q.required_role || "manager",
-        at: q.requested_at, isSO: true,
-      }));
-      // ID SO yang punya approval khusus harga lewat SSOT (untuk dedup dgn price_approvals lama).
-      const soPriceRefIds = new Set(arr(queueRes.data).filter((q) => q.type === "special_price").map((q) => q.ref_id));
-
-      const pos = arr(poRes.data)
-        .filter((p) => p.status === "waiting_approval")
-        .map((p) => ({
-          kind: "po", id: p.id, title: p.po_number, subtitle: p.supplier_name,
-          meta: `${p.warehouse_name || ""} · ${p.items?.length || 0} item`,
-          amount: p.total_amount, requester: p.created_by, role: p.required_approval_role,
-          at: p.created_at, target: "purchase-approval",
-        }));
-
-      // Harga khusus STANDALONE saja (yang TIDAK tertaut SO) — yang tertaut SO tampil di grup Sales Order.
-      const prices = arr(prRes.data)
-        .filter((p) => !p.so_id && !soPriceRefIds.has(p.id))
-        .map((p) => ({
-          kind: "price", id: p.id, title: p.product_name || p.sku, subtitle: p.customer_name,
-          // UAT 24 Okt (audit UI tahap 2, dari G2-02) — harga di ATAS normal dulu "(--3064%)"; kini "+3.064% di atas harga normal".
-          meta: `${formatCurrency(p.normal_price)} → ${formatCurrency(p.requested_price)}${discountInfo(p.discount_percent) ? ` (${discountInfo(p.discount_percent).long})` : ""}`,
-          amount: p.requested_price, requester: p.requested_by_name || p.requested_by, role: "manager",
-          at: p.created_at, target: "price-approvals",
-        }));
-
-      const salesReturns = arr(srRes.data)
-        .filter((r) => r.status === "pending_approval")
-        .map((r) => ({
-          kind: "sales_return", id: r.id, title: r.number, subtitle: r.customer_name || "Customer",
-          meta: `Order ${r.order_number || "—"} · ${r.items?.length || 0} item`,
-          amount: null, requester: r.created_by, role: "manager",
-          at: r.created_at, target: "returns",
-        }));
-
-      const purchaseReturns = arr(purRes.data)
-        .filter((r) => r.status === "pending_approval")
-        .map((r) => ({
-          kind: "purchase_return", id: r.id, title: r.number, subtitle: r.supplier_name || "Supplier",
-          meta: `${r.po_number ? `dari ${r.po_number} · ` : ""}${r.items?.length || 0} item`,
-          amount: r.total_amount, requester: r.created_by, role: "manager",
-          at: r.created_at, target: "purchase-returns",
-        }));
-
-      const cycleCounts = arr(ccRes.data)
-        .filter((s) => s.status === "submitted")
-        .map((s) => ({
-          kind: "cycle", id: s.id, title: s.name || "Cycle Count", subtitle: s.warehouse_name || "Gudang",
-          meta: `${s.items?.length || 0} item dihitung`,
-          amount: null, requester: s.submitted_by || s.created_by, role: "manager",
-          at: s.submitted_at || s.created_at, target: "wms-cycle", targetView: "operations", targetTab: "cycle",
-        }));
-
-      const all = [...soApprovals, ...pos, ...prices, ...salesReturns, ...purchaseReturns, ...cycleCounts]
-        .sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0));
-      // FASE G-1 — usulan koreksi angka dokumen yang menunggu keputusan.
-      const amendments = arr(amdRes.data).map((a) => ({
-        kind: "amendment", id: a.id, title: a.number,
-        subtitle: `${a.doc_number || "Dokumen"} · ${a.reason_label || ""}`.trim(),
-        meta: a.method_label || "",
-        amount: Math.abs(Number(a.impact?.delta || 0)),
-        requester: a.proposed_by, role: a.required_role || "manager",
-        at: a.proposed_at, target: "sales-orders", targetView: "amendments",
-      }));
-      all.push(...amendments);
-      all.push(...arr(coRes.data).map((c) => ({
-        kind: "credit", id: c.id, title: c.customer_name || "Pelanggan",
-        subtitle: c.order_number || c.reason || "Override batas kredit",
-        meta: c.reason || "", amount: c.amount ?? c.requested_amount ?? null,
-        requester: c.requested_by, role: "manager", at: c.created_at,
-        target: "customers-crm",
-      })));
-      all.sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0));
-      setItems(all);
+      const res = await loadInbox();
+      setItems(res.items);
+      setAmendments(res.amendments);
+      setBacklog(res.backlog);
+      setUnavailable(res.unavailable);
       setError("");
     } catch (e) {
       setError(e.response?.data?.detail || "Gagal memuat antrian persetujuan.");
@@ -231,40 +100,35 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
   }
 
   const groupOf = (it) => KIND_META[it.kind]?.group;
-  const counts = TABS.reduce((acc, t) => {
-    acc[t.key] = t.key === "all" ? items.length : items.filter((i) => groupOf(i) === t.key).length;
+  const counts = INBOX_TABS.reduce((acc, t) => {
+    acc[t.key] = t.key === "all" ? items.length
+      : t.key === "amendment" ? amendments.length
+        : t.key === "matrix" ? undefined : items.filter((i) => groupOf(i) === t.key).length;
     return acc;
   }, {});
-  const [inboxQ, setInboxQ] = useState("");
   const filtered = items.filter((i) => (tab === "all" || groupOf(i) === tab)
     && (!inboxQ.trim() || Object.values(i).filter((v) => typeof v === "string" || typeof v === "number").join(" ").toLowerCase().includes(inboxQ.trim().toLowerCase())));
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
   /**
-   * Berapa dari total antrean yang TIDAK diurus daftar layar ini (transfer gudang,
-   * kontrabon, permintaan internal & retur antar-PT, tagihan supplier, biaya masuk,
-   * uang muka, klaim makloon, buka periode, cuti, lembur, PR, spesifikasi/sample,
-   * pesanan khusus, antar-PT di atas ambang). Angka ini yang dulu hilang: layar ini
-   * berkata "tidak ada yang menunggu" sementara pekerjaan itu duduk di layar sebelah
-   * tanpa satu pun petunjuk. FASE F-6 menambahkan DAFTAR dokumennya (bukan cuma angka).
+   * Berapa dari total antrean yang TIDAK diurus daftar layar ini (transfer gudang, kontrabon, permintaan
+   * internal & retur antar-PT, tagihan supplier, biaya masuk, uang muka, klaim makloon, buka periode, cuti,
+   * lembur, PR, spesifikasi/sample, pesanan khusus, antar-PT, dan — sejak D-06 — amandemen). FASE F-6 menambahkan
+   * DAFTAR dokumennya (bukan cuma angka).
    */
-  const DITAMPILKAN_DI_SINI = ["sales_order", "purchase_order", "price", "sales_return",
-                               "purchase_return", "cycle_count", "amendment"];
   const elsewhere = (backlog?.all_items || [])
-    .filter((q) => !DITAMPILKAN_DI_SINI.includes(q.key))
+    .filter((q) => !LISTED_IN_INBOX.includes(q.key))
     .reduce((s, q) => s + (q.count || 0), 0);
   //: dokumen NYATA dari antrean-antrean itu (paling lama menunggu lebih dulu).
-  const othersOldest = (backlog?.oldest || [])
-    .filter((o) => !DITAMPILKAN_DI_SINI.includes(o.key));
+  const othersOldest = (backlog?.oldest || []).filter((o) => !LISTED_IN_INBOX.includes(o.key));
 
   // UAT 24 Okt (audit UI tahap 2, G5-21) — label antrean server berbahasa campur ("Payroll menunggu pengesahan") dan
   // periode mentah ("2026-08") di judul. Teks server tidak diubah di sini (berkas backend grup lain).
   const queueText = (label) => String(label || "").replace(" menunggu ACC", "").replace(/^Payroll\b/, "Penggajian");
   const periodText = (t) => String(t || "").replace(/\b(\d{4}-\d{2})\b(?!-)/g, (m) => formatPeriod(m)).replace(/\bPayroll\b/g, "Penggajian");
 
-  // Satu penggambar baris "menunggu di layar lain" untuk kartu (cuplikan 5) DAN
-  // pop-up "Lihat semua" — testid dibedakan lewat `base`.
+  // Satu penggambar baris "menunggu di layar lain" untuk kartu (cuplikan 5) DAN pop-up "Lihat semua".
   const renderOther = (o, base = "approval-inbox-other") => {
     const target = resolveDeepLinkTarget(o.view, currentUser?.role);
     return (
@@ -306,6 +170,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
     }
     onNavigate?.(it.target, it.targetView, it.targetTab);
   };
+  const listTab = tab !== "matrix" && tab !== "amendment";
 
   return (
     <div data-testid="approval-inbox-view">
@@ -327,7 +192,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
             <Inbox size={16} className="text-[#0058CC]" />
             <div className="min-w-0">
               <h2 data-testid="approval-inbox-title">Pusat Persetujuan</h2>
-              <p className="text-[11px] text-[#6B6B73]">Semua persetujuan yang menunggu keputusan — daftar rinci untuk Pesanan Penjualan (nilai/kredit/harga), PO, retur, amandemen &amp; stock opname; antrean lain (transfer gudang, kontrabon, cuti, uang muka, …) tampil beserta nomor dokumen &amp; umur tunggunya.</p>
+              <p className="text-[11px] text-[#6B6B73]">Semua persetujuan yang menunggu keputusan — daftar rinci untuk Pesanan Penjualan (nilai/kredit/harga), PO, retur, stock opname &amp; kredit pelanggan{showMatrix ? "; matriks divisi (ACC desain, PO custom, PR, klaim makloon) di tab Matriks divisi" : ""}; antrean lain (amandemen, transfer gudang, kontrabon, cuti, uang muka, …) tampil beserta nomor dokumen &amp; umur tunggunya.</p>
             </div>
           </div>
           <button data-testid="approval-inbox-refresh" onClick={load} className="secondary-button shrink-0 whitespace-nowrap">
@@ -335,23 +200,20 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
           </button>
         </div>
         <div className="section-body">
-          {/* RINGKASAN SELURUH ANTREAN — angka yang sama dengan KPI beranda (INV-HOME-01).
-              Yang tidak ditampilkan daftar di bawah tetap disebut di sini + jalannya. */}
+          {/* RINGKASAN SELURUH ANTREAN — angka yang sama dengan KPI beranda (INV-HOME-01). */}
           {backlog && (
             <div className="mb-3 rounded-lg border border-[#E4E9F2] bg-[#F8FAFD] p-3"
               data-testid="approval-inbox-backlog">
-              <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <p className="text-[12px] font-semibold text-[#3A3A3C]">
                   Menunggu keputusan (semua jenis):{" "}
                   <span className="tabular-nums text-[#0058CC]"
                     data-testid="approval-inbox-backlog-total">{backlog.total}</span>
                 </p>
                 {elsewhere > 0 && (
-                  // Audit UI 24 Okt (000) — tiga angka (total / tab "Semua" / "dari N dokumen") dulu tampak
-                  // bertentangan; kini rinciannya disebut: berapa di daftar bawah & berapa di layar lain.
+                  // Audit UI 24 Okt (000) / G5-21 — rincian: berapa di daftar bawah & berapa di layar lain.
                   <span className="text-[11px] text-[#6B6B73]"
                     data-testid="approval-inbox-backlog-elsewhere">
-                    {/* G5-21 — dulu "total − layar lain" (4) padahal daftar memuat 5 baris; kini jumlah baris yang dirender. */}
                     {items.length} di daftar bawah · {elsewhere} ditangani di layar lain
                   </span>
                 )}
@@ -370,7 +232,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
                         disabled={!target}
                         title={target ? `Buka ${q.label}` : "Antrean ini bukan wilayah peran Anda"}
                         onClick={() => target && onNavigate?.(target.navId, target.view, target.tab)}
-                        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] ${
+                        className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] ${
                           target
                             ? "border-[#CFDBEC] bg-white text-[#1C1C1E] hover:border-[#0058CC] hover:text-[#0058CC]"
                             : "border-[#E5E5EA] bg-[#F2F2F7] text-[#8E8E93] cursor-not-allowed"}`}>
@@ -384,24 +246,16 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
               )}
             </div>
           )}
-          <div className="tab-bar">
-            {TABS.map((t) => (
-              <button key={t.key} data-testid={`approval-inbox-tab-${t.key}`}
-                className={`tab-button ${tab === t.key ? "active" : ""}`}
-                onClick={() => { setTab(t.key); setPage(1); }}>
-                {t.label}<span className="tab-badge">{counts[t.key]}</span>
-              </button>
-            ))}
-          </div>
+          <PageTabs testId="approval-inbox-tabs" value={tab} ariaLabel="Jenis persetujuan"
+            tabTestId={(k) => `approval-inbox-tab-${k}`}
+            onChange={(k) => { setTab(k); setPage(1); }}
+            tabs={INBOX_TABS.map((t) => ({ key: t.key, label: t.label, count: counts[t.key], showZero: t.key !== "matrix",
+              hidden: t.key === "matrix" && !showMatrix }))} />
         </div>
       </div>
 
-      {/* ── FASE F-6 — ANTREAN LAIN SEBAGAI DOKUMEN, BUKAN CUMA ANGKA ──────────────
-          Sebelum ini "X di antaranya ditangani di layar lain" jujur tetapi tak bisa
-          dikerjakan: orangnya tahu ADA pekerjaan, tanpa tahu MANA. Baris di bawah datang
-          dari sumber yang sama dengan KPI beranda (`/approvals/backlog?oldest=15`) dan
-          menyebut nomor dokumen + umur tunggu + jalan ke tempat keputusannya. */}
-      {othersOldest.length > 0 && (
+      {/* ── FASE F-6 — ANTREAN LAIN SEBAGAI DOKUMEN, BUKAN CUMA ANGKA ── (sumber sama dengan KPI beranda) */}
+      {listTab && othersOldest.length > 0 && (
         <div className="section-card mb-3" data-testid="approval-inbox-others">
           <div className="section-head">
             <div className="flex items-center gap-2 min-w-0">
@@ -409,7 +263,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
               <div className="min-w-0">
                 <h2>Menunggu di layar lain — paling lama dulu</h2>
                 <p className="text-[11px] text-[#6B6B73]">
-                  Keputusan yang tempat kerjanya bukan daftar di bawah: transfer gudang,
+                  Keputusan yang tempat kerjanya bukan daftar di bawah: amandemen, transfer gudang,
                   kontrabon, permintaan internal &amp; retur antar-PT, tagihan supplier,
                   uang muka, klaim makloon, buka periode, cuti &amp; lembur.
                 </p>
@@ -432,6 +286,21 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         </div>
       )}
 
+      {tab === "matrix" && showMatrix && <MyApprovalsPanel currentUser={currentUser} embedded />}
+
+      {tab === "amendment" && (
+        <div className="section-card" data-testid="approval-inbox-amendments">
+          <div className="section-body">
+            {/* D-06 — keputusan amandemen HANYA di Pusat Amandemen (dulu juga diputus di pop-up inbox). */}
+            <LinkCard testId="approval-inbox-amendments-link" icon={FileEdit}
+              what="Keputusan amandemen dokumen" where="Penjualan › Pesanan › Koreksi & Amandemen" view="amendments"
+              count={amendments.length} label="Buka Pusat Amandemen"
+              summary={amendments.length ? `${amendments.length} usulan menunggu keputusan` : "tidak ada usulan yang menunggu"} />
+          </div>
+        </div>
+      )}
+
+      {listTab && (
       <div className="section-card">
         <div className="px-3 py-2"><SearchBox value={inboxQ} onChange={setInboxQ} placeholder="Cari nomor / judul / pengaju…" testId="approval-inbox-search" /></div>
         {loading ? (
@@ -503,6 +372,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
           </div>
         )}
       </div>
+      )}
 
       {reviewItem && (
         <ApprovalDecisionModal item={reviewItem} currentUser={currentUser}

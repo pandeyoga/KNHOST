@@ -1,5 +1,6 @@
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
+import { entityOptions } from "../../utils/entityLabel";
 
 // Satu jenis biaya logistik: cara kirim → penanggung → nominal (+PPN) → akun bayar (Finance) → PT pembeban.
 // 23 Okt — setiap isian berlabel (dulu dropdown & kotak tanpa label yang membungkus ke baris kedua).
@@ -16,7 +17,7 @@ export default function LogisticsCostRow({ type, label, v, ctx, locked, onChange
   const bearerOpts = ctx.bearer_options.filter((o) => o.mode === v.mode).map((o) => ({ value: o.bearer, label: o.label }));
   const companyPaid = v.bearer === "company" && v.mode !== "pickup";
   const payOpts = [{ value: "", label: "Bawaan (Pemetaan Akun)" }, ...ctx.pay_accounts.map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))];
-  const entOpts = ctx.entities.map((e) => ({ value: e.id, label: e.name }));
+  const entOpts = entityOptions(ctx.entities);
   const setMode = (mode) => set({ mode, bearer: ctx.bearer_options.find((o) => o.mode === mode)?.bearer || "company" });
   const needsAmount = v.mode !== "pickup" && !(v.mode === "third_party" && v.bearer === "customer");
   // UAT 24 Okt (audit UI tahap 2) — G2-28: retur sudah selesai → mode BACA (teks), bukan 6 isian nonaktif yang tampak
