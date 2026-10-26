@@ -3,7 +3,7 @@
 - Commit (branch `main`): `a9948ba` (R1 form HP) · `868dce4` (R2 keuangan & dokumen) · `2e46167` (R3 rantai pasok) ·
   `d814e0a` (R4 R&D/SDM/katalog/retur) · `ef6caf8` (R5 antrean, backorder, akses) · `2b49c82` (R6 sisa backend audit 2)
   · `f7fb56b` (R7 skrip data lama) · `d8015f9` (R8 label SO, SO mati, QC) · `3047e50` (integrasi koordinator) ·
-  `b9777cc` (R9 skrip sisa data uji). Baseline fase 4: `5110452` (akhir fase 3).
+  `b9777cc` & `9e43876` (R9 skrip sisa data uji). Baseline fase 4: `5110452` (akhir fase 3).
 - Dasar: "Belum dikerjakan" di [UAT24-AUDIT-UI-2-FASE3.md](UAT24-AUDIT-UI-2-FASE3.md) &
   [UAT24-AUDIT-UI-2.md](UAT24-AUDIT-UI-2.md); keputusan pemilik yang tetap mengikat (form input HP tidak diringkas,
   istilah tidak diubah — K-13) + keputusan baru 26 Okt di bawah.
@@ -69,8 +69,13 @@
     IC-00052 punya jurnal pelunasan yatim) — keduanya konsisten dengan GL, angka grup tidak salah saji.
   * 9 SO mati dirapikan (3 persetujuan pending → batal, 1 override kredit batal, 6 penanda backorder).
   * PR-00106/151/174/179 dibatalkan (alasan "Residu uji").
-  * Ditemukan, BELUM disentuh (di luar izin): 6 PR yatim lain (PR-00032/048/055/070/072/087); 4 pasang jurnal retur
-    antar-PT yatim (IC-AR CST −55.944 / IC-AP KSC −55.944); cache `interco_accounts` KSC↔CST 22.200 (INV-IC-04).
+  * **Lanjutan (pemilik: "setuju semua usulan")** — `scripts/fix_data_2026_10_26_ic_yatim.py` + perluasan `pr_yatim`:
+    KSC/IC-00052 dibersihkan (2 jurnal transaksi + 2 jurnal pelunasan yatim + entri eliminasi); 8 jurnal retur
+    antar-PT yatim (ICR-00010/14/15/23) dihapus → IC-AR/IC-AP bersih 0; cache `interco_accounts` KSC↔CST 22.200 → 0
+    dihitung ulang; 6 PR yatim lain (PR-00032/048/055/070/072/087) dibatalkan. Neraca konsolidasi & neraca saldo
+    tiap PT tetap seimbang; INV-IC-02 & INV-IC-04 PASS; INV-IC-03 tinggal 1 = **KSC/IC-00039 sengaja dibiarkan**
+    (dirujuk pelunasan hidup KANDA/ICS-00002, konsisten dengan GL). Sisa di luar izin: INV-IC-06 (CST/TRF-00002 menaut
+    pair yang sudah terhapus), backorder 76 item + KSC/SO-00162, PR-00005.
 
 ## Belum dikerjakan / catatan
 - Pop-up buatan sendiri tersisa 49 berkas (ratchet), tab buatan sendiri 6 (2 di antaranya positif palsu heuristik:
