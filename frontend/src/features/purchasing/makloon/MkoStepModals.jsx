@@ -18,12 +18,19 @@ import useDomainEnums from "../../../hooks/useDomainEnums";
 import useUomConversions from "../../../hooks/useUomConversions";
 import { formatQty } from "../../../utils/formatters";
 import { uomSelectOptions } from "../../../utils/uomCatalog";   // FASE U — satuan dari master
+import MkoIssueRollPicker from "./MkoIssueRollPicker";   // issue per roll (pilih/pindai) — kasus celup
 
 function FieldR({ label, children }) {
   return <label className="block"><span className="mb-1 block text-[10.5px] font-semibold text-[#6B6B73]">{label}</span>{children}</label>;
 }
 
-export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm }) {
+// Mode issue: lama (sistem memilih roll FEFO dari jumlah) atau roll TERTENTU (centang / pindai nomor roll / EPC).
+const ISSUE_MODES = [
+  { value: "qty", label: "Berdasarkan jumlah (sistem memilih roll)" },
+  { value: "rolls", label: "Pilih roll (centang / pindai)" },
+];
+
+export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm, mkoId = "" }) {
   // Stok bahan MILIK entitas SPK per gudang (dihitung server) — gudang tanpa stok
   // tetap tampil tetapi diberi tanda, supaya 409 "stok tidak cukup" tidak jadi kejutan.
   const stockByWh = Object.fromEntries((step.source_stock || []).map((r) => [r.warehouse_id, r.available_qty]));
@@ -34,6 +41,9 @@ export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfi
   const [err, setErr] = useState("");
   const [docUom, setDocUom] = useState("");
   const [docQty, setDocQty] = useState("");
+  const [mode, setMode] = useState("qty");
+  const [picked, setPicked] = useState([]);
+  const byRolls = mode === "rolls" && Boolean(mkoId);
   // Memuat katalog satuan (dan membagikannya ke penyimpan modul). Dipanggil DI SINI,
   // bukan mengandalkan layar lain sudah memanggilnya: pemilih yang bergantung pada
   // urutan kunjungan layar akan tampak "hanya berisi satu pilihan" secara acak.
@@ -55,19 +65,31 @@ export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfi
   ];
   const submit = async () => {
     setErr("");
-    try { await onConfirm(wh, docUom, docQty); } catch (e) { setErr(e.message || "Gagal issue ke makloon."); }
+    if (byRolls && !picked.length) { setErr("Centang atau pindai minimal satu roll bahan."); return; }
+    try {
+      if (byRolls) await onConfirm(wh, docUom, docQty, picked);
+      else await onConfirm(wh, docUom, docQty);
+    } catch (e) { setErr(e.message || "Gagal issue ke makloon."); }
   };
 
   return (
-    <FormModal open onClose={onClose} size="sm" icon={Send} title="Issue Bahan ke Makloon" testId="mko-issue-modal"
-      onSubmit={submit} busy={busy} error={err} submitDisabled={!wh || insufficient}
+    <FormModal open onClose={onClose} size={byRolls ? "md" : "sm"} icon={Send} title="Issue Bahan ke Makloon" testId="mko-issue-modal"
+      onSubmit={submit} busy={busy} error={err} submitDisabled={!wh || (byRolls ? !picked.length : insufficient)}
       submitTestId="mko-issue-confirm" submitLabel={busy ? "Memproses…" : "Issue Sekarang"}>
       <div className="space-y-3">
-        <p className="text-[12px] text-[#3C3C43]">Keluarkan <b>{formatQty(step.input_qty)} {step.input_unit}</b> {step.input_name} ke <b>{step.makloon_name}</b>. Stok berpindah ke bucket <b>Di Makloon (WIP-Vendor)</b>.</p>
+        <p className="text-[12px] text-[#3C3C43]">Keluarkan {byRolls ? <b>roll terpilih</b> : <b>{formatQty(step.input_qty)} {step.input_unit}</b>} {step.input_name} ke <b>{step.makloon_name}</b>. Stok berpindah ke bucket <b>Di Makloon (WIP-Vendor)</b>.</p>
         <FieldR label="Gudang Sumber Bahan">
           <KNSelect data-testid="mko-issue-warehouse" className="field" value={wh} onValueChange={setWh} options={opts} />
         </FieldR>
-        {wh && (
+        {mkoId && (
+          <FieldR label="Cara memilih bahan">
+            <KNSelect data-testid="mko-issue-mode" className="field" value={mode} onValueChange={setMode} options={ISSUE_MODES} />
+          </FieldR>
+        )}
+        {byRolls && wh && (
+          <MkoIssueRollPicker mkoId={mkoId} step={step} warehouseId={wh} picked={picked} onChange={setPicked} />
+        )}
+        {wh && !byRolls && (
           <p data-testid="mko-issue-stock-hint"
             className={`rounded-md px-2.5 py-1.5 text-[11px] ${insufficient ? "bg-[#FDECEA] text-[#A8221A]" : "bg-[#E6F4EA] text-[#1B7F4B]"}`}>
             {insufficient
@@ -146,6 +168,12 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
           {step.tolerance_pct != null && <> · toleransi selisih <b>{step.tolerance_pct}%</b></>}
           {step.contract_number && <> · kontrak <b>{step.contract_number}</b> (ongkos jasa dihitung otomatis bila dikosongkan)</>}
         </div>
+        {step.receipt_qc_expected && (
+          <p data-testid="mko-recv-qc-note" className="rounded-md bg-[#FFF8EC] px-2.5 py-1.5 text-[11px] text-[#8A5A00]">
+            Langkah terakhir — hasil masuk <b>karantina QC</b> dan SPK inspeksi lahir otomatis (sama dengan barang PO).
+            Stok baru tersedia untuk dijual setelah SPK diputus; roll lalu antre tag/putaway.
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <FieldR label={`Qty Output (${step.output_unit || "unit"})`}><input data-testid="mko-recv-output-qty" type="number" className="field" value={outQty} onChange={(e) => setOutQty(e.target.value)} disabled={usingDoc} /></FieldR>
           <FieldR label={`Qty Barang Sisa (${step.input_unit || "unit"})`}><input data-testid="mko-recv-byproduct-qty" type="number" className="field" value={byQty} onChange={(e) => setByQty(e.target.value)} /></FieldR>

@@ -161,11 +161,25 @@ async def issue_order_step(mko_id: str, payload: MakloonIssueIn, request: Reques
     order = await issue_step(mko_id, payload.step_seq,
                              from_warehouse_id=payload.from_warehouse_id,
                              doc_uom=payload.doc_uom, doc_qty=payload.doc_qty,
+                             roll_ids=payload.roll_ids, roll_codes=payload.roll_codes,
                              actor_name=actor.get("name", ""))
     await audit(actor.get("name", ""), "makloon_order_issued", "makloon_order", mko_id,
                 {"step_seq": payload.step_seq, "doc_uom": payload.doc_uom,
-                 "doc_qty": payload.doc_qty})
+                 "doc_qty": payload.doc_qty, "roll_count": len(payload.roll_ids) + len(payload.roll_codes)})
     return order
+
+
+@router.get("/makloon-orders/{mko_id}/steps/{seq}/issue-rolls")
+async def issue_rolls_ep(mko_id: str, seq: int, request: Request, warehouse_id: str = "") -> Dict[str, Any]:
+    """Pop-up Issue mode "Pilih roll": roll bahan di gudang sumber (boleh dipilih + yang tertahan beserta
+    alasannya, dengan EPC untuk pencocokan pindai). Aturan kelayakan = validasi issue (`makloon_issue_rolls`).
+    Endpoint sendiri, bukan `/inventory/rolls/available`: picker itu menawarkan PANJANG BEBAS roll yang sebagian
+    dipesan & tidak membawa EPC/tahanan inspeksi — roll seperti itu akan ditolak saat issue."""
+    await require_permission(request, "makloon_order", "view")
+    ctx = await entity_ctx(request)
+    await _assert_access(mko_id, ctx)
+    from services import makloon_issue_rolls as mir
+    return await mir.candidates_for(mko_id, seq, warehouse_id.strip())
 
 
 @router.post("/makloon-orders/{mko_id}/receive")

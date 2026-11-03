@@ -476,10 +476,12 @@ E("purchasing.qc_on_receipt", group="pembelian", type="bool", default=True,
   scopes=("global", "entity"),
   label="Barang masuk lewat karantina QC",
   help="Bila aktif, barang yang diterima masuk status karantina dulu dan harus lulus inspeksi "
-       "sebelum bisa dijual.",
+       "sebelum bisa dijual. Berlaku untuk penerimaan PO dan hasil langkah TERAKHIR Order Makloon "
+       "(langkah tengah tidak dikarantina agar rantai proses tidak tertahan).",
   impact="Menambah langkah inspeksi QC pada alur penerimaan; stok belum tersedia sebelum lulus.",
   example="Aktif → 20 roll diterima masuk 'karantina', menunggu Inspeksi QC",
-  consumers=("services/inbound_complete_service.py", "services/qc_service.py"), risk="medium")
+  consumers=("services/inbound_qc_common.py:qc_on_receipt_enabled", "services/inbound_complete_service.py",
+             "services/makloon_receipt_qc.py:receipt_policy", "services/qc_service.py"), risk="medium")
 
 E("purchasing.allow_item_discount", group="pembelian", type="bool", default=True,
   scopes=("global", "entity"), simulate="pricing",

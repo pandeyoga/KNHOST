@@ -33,6 +33,8 @@ from services import gl_service as gl
 from services import contract_service as cs
 from services import makloon_calc_service as mcalc
 from services import makloon_claim_service as mclaim
+from services import makloon_issue_rolls as mir     # issue per roll (pilih/pindai)
+from services import makloon_receipt_qc as mqc      # hasil langkah terakhir = barang PO (karantina/journey)
 from services import uom_rules_service as uomr
 from services.roll_service import create_inbound_roll
 from services.process_recipe_service import compute_forecast
@@ -235,6 +237,8 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
     material_qty = round(float(payload.get("material_qty") or 0), 2)
     if material_qty <= 0:
         raise HTTPException(status_code=400, detail="Qty bahan harus > 0")
+    if mode == "buy_process":   # penjaga satuan — PO bahan otomatis tidak boleh lahir ber-"meter" tebakan
+        mqc.require_unit(payload.get("material_unit") or mat_snap["base_unit"], mat_snap.get("sku") or material_pid)
 
     mko_id = new_id("mko")
     from_wh = payload.get("from_warehouse_id") or ""
@@ -587,7 +591,7 @@ async def _spawn_material_po(payload, mat_snap, qty, entity_id, actor_name, mko_
             supplier_name=payload.get("supplier_name") or "",
             warehouse_id=from_wh,
             items=[POItemCreate(product_id=payload["material_product_id"], quantity=qty,
-                                unit=payload.get("material_unit") or mat_snap["base_unit"] or "meter",
+                                unit=payload.get("material_unit") or mat_snap["base_unit"],   # dijaga require_unit
                                 price=float(payload.get("material_price") or 0))],
             expected_delivery_date=payload.get("expected_delivery_date") or "",
             notes=f"Bahan untuk Order Makloon {mko_id}", entity_id=entity_id,
@@ -640,7 +644,10 @@ async def _assert_source_stock(product_id: str, wh: str, entity_id: str, qty: fl
 
 async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
                      doc_uom: str = "", doc_qty: Any = 0,
+                     roll_ids: Optional[List[str]] = None, roll_codes: Optional[List[str]] = None,
                      actor_name: str = "system") -> Dict[str, Any]:
+    """Keluarkan bahan langkah `seq` ke mitra. `roll_ids`/`roll_codes` (nomor roll/EPC) diisi → roll TERTENTU yang
+    keluar dan qty = Σ panjangnya (`makloon_issue_rolls`); kosong → jalur lama berdasarkan jumlah (FEFO)."""
     order = await _get_order(mko_id)
     if order.get("status") == CANCELLED:
         raise HTTPException(status_code=409, detail="Order sudah dibatalkan")
@@ -667,10 +674,16 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
         raise HTTPException(status_code=400, detail="Gudang sumber bahan wajib diisi")
     input_pid = step["input_product_id"]
     input_qty = round(float(step["input_qty"] or 0), 2)
+    # Kasus celup (20 roll Esmica Blue) — roll TERTENTU yang dimuat ke truk; qty = Σ panjang roll (satuan dasar).
+    picked = await mir.pick_rolls(order, step, wh, roll_ids=roll_ids, roll_codes=roll_codes) \
+        if (roll_ids or roll_codes) else None
+    if picked:
+        input_qty = picked["qty"]
 
     # FASE D (PS-08/D-07) — mitra boleh memakai satuan sendiri (kg/bale/roll):
-    # konversi ke satuan dasar + SIMPAN JEJAK. Bila diisi, qty dokumen menang.
+    # konversi ke satuan dasar + SIMPAN JEJAK. Bila diisi, qty dokumen menang (kecuali roll dipilih: roll fisik menang).
     uom_trail = None
+    deviation = None
     if doc_uom and parse_decimal(doc_qty) > 0:
         prod = await db.products.find_one({"id": input_pid}, {"_id": 0}) or {}
         try:
@@ -679,18 +692,14 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
                                                       context=f"makloon_issue:{mko_id}:{seq}")
         except uomr.UomRuleError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        input_qty = round(float(uom_trail["base_qty"]), 3)
+        if not picked:
+            input_qty = round(float(uom_trail["base_qty"]), 3)
         if input_qty <= 0:
             raise HTTPException(status_code=400, detail="Qty bahan hasil konversi harus > 0")
+    if picked or uom_trail:
         # P05 ACC-34 — issue parsial: estimasi hasil ikut diskalakan, kalau tidak hasil wajar
         # dari bahan yang dikirim terbaca "kurang dari estimasi" dan membuka klaim palsu.
-        old_in = float(step.get("input_qty") or 0)
-        if old_in > 0 and abs(old_in - input_qty) > 0.0005:
-            ratio = input_qty / old_in
-            for k in ("expected_output_qty", "expected_byproduct_qty"):
-                if step.get(k) is not None:
-                    step[k] = round(float(step.get(k) or 0) * ratio, 3)
-        step["input_qty"] = input_qty
+        deviation = mir.apply_issue_qty(step, input_qty)
 
     await _assert_source_stock(input_pid, wh, order["entity_id"], input_qty, step)
     # L04 LN-043 — dicek SESUDAH konversi dokumen: issue parsial memakai qty yang benar-benar dikirim.
@@ -707,17 +716,26 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     ref = {"type": "subcon", "id": step["issue_ref"], "makloon_id": step.get("makloon_id"),
            "makloon_name": step.get("makloon_name"), "mko_id": mko_id, "mko_number": order.get("mko_number"),
            "step": seq, "created_by": actor_name, "created_at": now_iso()}
-    res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref)
+    if picked:
+        res = await sb.issue_rolls_to_subcon(picked["rolls"], ref)
+    else:
+        res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref)
     material_value = res["value"]
     label = f"{order.get('mko_number')} step{seq}"
     await gl.post_subcon_issue(mko_id=mko_id, step_seq=seq, entity_id=order["entity_id"],
                                amount=material_value, label=label)
     step.update({"status": "issued", "material_value": material_value,
                  "issued_at": now_iso(), "from_warehouse_id": wh,
-                 "issue_uom_trail": uom_trail})
+                 "issue_uom_trail": uom_trail, "issue_mode": "rolls" if picked else "qty",
+                 "issued_roll_ids": [m.get("roll_id") for m in res.get("rolls") or [] if m.get("roll_id")],
+                 "issue_deviation": deviation})
     _tl(order, "issued", f"Step {seq}: issue {input_qty} {step.get('input_unit')} "
         f"{step.get('input_name')} → {step.get('makloon_name') or 'makloon'} ({rupiah(material_value)})"
-        + (f" · dokumen {uom_trail['doc_qty']:g} {uom_trail['doc_uom']}" if uom_trail else ""))
+        + (f" · dokumen {uom_trail['doc_qty']:g} {uom_trail['doc_uom']}" if uom_trail else "")
+        + (f" · {len(picked['rolls'])} roll dipilih/dipindai" if picked else ""))
+    if deviation:
+        _tl(order, "issue_deviation", f"Step {seq}: qty dikirim {deviation['issued_qty']:g} ≠ rencana "
+            f"{deviation['planned_qty']:g} {deviation['unit']} ({deviation['diff_pct']:+g}%) — estimasi hasil diskalakan.")
     order["status"] = IN_PROCESS
     order["updated_at"] = now_iso()
     await db.makloon_orders.replace_one({"id": mko_id}, order)
@@ -1001,6 +1019,10 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     from services import warehouse_scope_service as _whscope
     for _wh in sorted({out_wh, *[r.get("warehouse_id") for r in rolls_in if r.get("warehouse_id")]} - {None, ""}) or [out_wh]:
         await _whscope.assert_usable(_wh, entity_id, action="menerima hasil makloon di sini", field_label="Gudang hasil")
+    # Penjaga satuan (400 SEBELUM klaim) — dulu jatuh diam-diam ke "meter" (roll yard bisa dikonversi sebagai meter).
+    out_unit, by_unit = await mqc.receipt_units(step, out_prod, actual_by)
+    # Langkah TERAKHIR = barang masuk gudang seperti barang PO (karantina QC + journey); langkah tengah tidak berubah.
+    rq = await mqc.receipt_policy(order, step, entity_id)
     label = f"{order.get('mko_number')} step{seq}"
 
     # 1) Konsumsi roll subcon (retire input) → nilai material terkonsumsi
@@ -1154,12 +1176,14 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             _uc = round((output_value - _prior) / _len, 6)
         roll = await create_inbound_roll(
             out_pid, r.get("warehouse_id") or out_wh, entity_id, _len,
-            lot=str(r["lot"]).strip(), unit=step.get("output_unit") or "meter",
+            lot=str(r["lot"]).strip(), unit=out_unit,
             grade=r.get("grade") or "A", acquired_via="subcon_receipt", ref_id=mko_id,
             unit_cost=_uc, created_by=actor_name,
             lot_source="makloon", lot_source_ref=_mko_ref,
             parent_lot_ids=_input_lot_ids,
-            dye_lot=(r.get("dye_lot") or "").strip(), roll_id=_rid)
+            dye_lot=(r.get("dye_lot") or "").strip(), roll_id=_rid,
+            status=rq["roll_status"], lot_status=rq["lot_status"])
+        await mqc.mark_roll(roll, rq, mko_id, seq)
         wkg = round(float(r.get("weight_kg") or 0), 3)
         if wkg > 0:
             await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {
@@ -1178,16 +1202,24 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     byproduct_lot = ""
     if actual_by > 0:
         byproduct_lot = (data.get("byproduct_lot") or f"SISA-{order.get('mko_number')}-{seq}").strip()
+    by_roll_id = f"roll_mko_{mko_id}_{seq}_by" if actual_by > 0 else ""   # deterministik: retry = roll sama
     if actual_by > 0 and not prog.get("byproduct_done"):
         target_by_pid = by_pid or out_pid
-        await create_inbound_roll(
+        by_roll = await create_inbound_roll(
             target_by_pid, out_wh, entity_id, actual_by,
-            lot=byproduct_lot, unit=step.get("input_unit") or step.get("output_unit") or "meter",
+            lot=byproduct_lot, unit=by_unit,
             acquired_via="subcon_receipt_byproduct", ref_id=mko_id,
             unit_cost=by_unit_cost, is_remnant=True, created_by=actor_name,
             lot_source="makloon", lot_source_ref=_mko_ref,
-            parent_lot_ids=_input_lot_ids)
+            parent_lot_ids=_input_lot_ids, roll_id=by_roll_id,
+            status=rq["roll_status"], lot_status=rq["lot_status"])
+        await mqc.mark_roll(by_roll, rq, mko_id, seq)
         prog["byproduct_done"] = True
+        await _save_prog()
+    # Langkah terakhir — tugas QC (karantina) per produk × gudang; idempoten, disimpan di progres saga.
+    final_roll_ids = [x["roll_id"] for x in created_lots] + ([by_roll_id] if by_roll_id else [])
+    if rq["final"] and not prog.get("receipt_qc"):
+        prog["receipt_qc"] = await mqc.open_receipt_tasks(order, step, rq, final_roll_ids, data, actor_name)
         await _save_prog()
 
     # 4) GL terima: Dr Persediaan (output+sisa = wip_total) / Cr WIP (clear penuh)
@@ -1231,6 +1263,8 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         # FASE T — jejak penyerapan jasa "jasa murni" ke HPP kain ini.
         "absorbed_service_value": absorbed,
         "absorbed_service_steps": absorbed_from,
+        # Langkah terakhir — karantina QC / journey hasil (None = langkah tengah, perilaku lama).
+        "receipt_qc": prog.get("receipt_qc") or None,
     })
     if absorbed > 0:
         for s2 in order.get("steps", []):
@@ -1278,6 +1312,8 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         raise HTTPException(status_code=409, detail="Kunci penerimaan sudah dilepas proses lain — muat ulang order.")
     await _link_staged_receipts(pend, data.get("grn_id") or "", service_bill_id, seq)
     await _release_leftover_reservation(order, actor_name)
+    if rq["final"]:   # SPK inspeksi otomatis + tag RFID otomatis (best-effort, seperti jalur PO)
+        step["receipt_qc"] = await mqc.after_receipt(order, seq, final_roll_ids, actor_name)
     if (step.get("claim") or {}).get("status") == "open":
         await mclaim.notify_claim_opened(order, step)
     # L03 LN-033 — hasil makloon untuk Pesanan Khusus: korelasi MKO→OD (bukan SKU), lanjut pengiriman OD.
@@ -1285,12 +1321,14 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         try:
             from services import special_order_phase2 as _p2
             await _p2.mark_ready_if_all_received(order["special_order_id"], "Sistem (MKO diterima)")
-            await _p2.on_goods_received(order["special_order_id"])
+            if not rq["qc"]:   # karantina → dilanjutkan saat QC meluluskan (qc_service membaca task.special_order_id)
+                await _p2.on_goods_received(order["special_order_id"])
         except Exception as exc:  # noqa: BLE001 — stok tetap diterima; error terlihat di OD
             await db.special_orders.update_one({"id": order["special_order_id"]}, {"$set": {"shipping_error": str(exc)}})
     # Cek UI UAT v3 (S9) — hasil makloon langsung tersedia, tetapi SO backorder yang menunggunya dulu tidak
     # dicadangkan (jalur PO/QC/antar-PT sudah memanggil ini). Gagal mencadangkan tidak membatalkan penerimaan.
-    if created_lots:
+    # Hasil dikarantina → backorder dipenuhi saat QC meluluskan (sama dengan PO).
+    if created_lots and not rq["qc"]:
         try:
             from services.backorder_service import auto_fulfill_backorders
             await auto_fulfill_backorders(out_pid, entity_id)
@@ -1688,6 +1726,7 @@ async def makloon_order_detail(mko_id: str) -> Optional[Dict[str, Any]]:
         else:
             s["next_action"] = ""
     o["service_absorption_pending"] = round(float(o.get("service_absorption_pending") or 0), 2)
+    await mqc.annotate_detail(o)   # karantina QC hasil langkah terakhir (diharapkan / status tugas QC)
     # Tagihan jasa terkait
     o["service_bills"] = await db.vendor_bills.find(
         {"makloon_order_id": mko_id}, {"_id": 0}).sort("created_at", 1).to_list(100)

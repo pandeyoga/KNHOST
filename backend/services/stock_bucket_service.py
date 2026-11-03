@@ -237,6 +237,54 @@ async def issue_to_subcon(product_id: str, warehouse_id: str, owner_entity_id: s
     return res
 
 
+async def move_specific_rolls(rolls: List[Dict[str, Any]], from_status: str, to_status: str,
+                              ref: Dict[str, Any], movement_type: str = "bucket_move") -> Dict[str, Any]:
+    """Pindahkan roll TERTENTU (utuh, tanpa belah) from_status → to_status, `bucket_ref` = ref.
+
+    Pasangan `move_rolls_by_qty` untuk jalur pilih/pindai roll. CAS per roll (status + sisa panjang + bebas
+    pegangan); satu roll kalah balapan → yang sudah pindah DIKEMBALIKAN (semua atau tidak sama sekali) lalu 409
+    menyebut nomor rollnya. Mutasi baru ditulis sesudah semua roll pindah (tak ada mutasi rollback)."""
+    moved: List[Dict[str, Any]] = []
+    for r in rolls:
+        cas = {"id": r["id"], "status": from_status, "length_remaining": r["length_remaining"],
+               "reserved_ref": {"$in": [None, ""]}, "length_reserved": {"$not": {"$gt": 0}},
+               "active_movement": None, "repair_open": {"$in": [None, ""]}}
+        res = await db.inventory_rolls.update_one(
+            cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso()}})
+        if not res.matched_count:
+            for m in moved:
+                await db.inventory_rolls.update_one(
+                    {"id": m["id"], "bucket_ref.id": ref.get("id"), "status": to_status},
+                    {"$set": {"status": from_status, "bucket_ref": None, "updated_at": now_iso()}})
+            raise HTTPException(status_code=409, detail=(
+                f"Roll {r.get('roll_no') or r['id']} berubah di proses lain (dipesan/dipindah/dipotong) — "
+                "muat ulang daftar roll lalu pilih lagi."))
+        moved.append(r)
+    segments = set()
+    out: List[Dict[str, Any]] = []
+    for r in moved:
+        qty = round(float(r.get("length_remaining") or 0), 2)
+        segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
+        out.append({"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "lot": r.get("lot", ""),
+                    "length": qty, "unit": r.get("unit", "meter")})
+        await db.inventory_movements.insert_one({
+            "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": r["warehouse_id"],
+            "owner_entity_id": r["owner_entity_id"], "movement_type": movement_type,
+            "quantity": qty, "unit": r.get("unit", "meter"), "lot": r.get("lot", ""), "roll_id": r["id"],
+            # FASE U — satu baris mutasi menunjuk SATU roll fisik.
+            "qty_rolls": 1, "source_document": ref.get("id", to_status), "timestamp": now_iso()})
+    for p, w, o in segments:
+        await rebuild_balance(p, w, o)
+    return {"moved": round(sum(x["length"] for x in out), 2), "rolls": out, "conflicts": 0}
+
+
+async def issue_rolls_to_subcon(rolls: List[Dict[str, Any]], ref: Dict[str, Any]) -> Dict[str, Any]:
+    """Issue PER ROLL ke mitra makloon: roll terpilih `available` → `subcon` (bentuk hasil = `issue_to_subcon`)."""
+    res = await move_specific_rolls(rolls, "available", "subcon", ref, movement_type="subcon_issue")
+    res["value"] = await _value_of_moved(res.get("rolls", []))
+    return res
+
+
 async def consume_subcon_by_ref(ref_id: str, movement_type: str = "subcon_consume",
                                 roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Konsumsi (retire) semua roll `subcon` dengan bucket_ref.id == ref_id.

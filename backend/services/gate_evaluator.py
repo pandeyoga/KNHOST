@@ -1,5 +1,6 @@
 """P09 — SATU evaluator gate (ingest perangkat, simulator, kiosk). Keputusan berbasis MOVEMENT aktif
-(PA / transfer gudang / surat jalan SO) yang memuat roll, bukan status roll semata.
+(PA / transfer gudang / surat jalan SO / Order Makloon / Perbaikan) yang memuat roll, bukan status roll semata.
+Makloon & perbaikan: `gate_doc_movements` (roll `subcon` ber-`bucket_ref` langkah MKO · roll `wip` ber-`repair_open`).
 
 Hasil: {result green|red|info, code, reason, movement?}. Tidak ada fallback hijau: dokumen hilang,
 status tidak aktif, gudang salah, roll bukan anggota manifest, atau keluar ulang → MERAH + kode.
@@ -7,6 +8,7 @@ status tidak aktif, gudang salah, roll bukan anggota manifest, atau keluar ulang
 from typing import Any, Dict, Optional
 
 from db import db
+from services import gate_doc_movements as _docs
 
 SHIPMENT_ACTIVE = {"dispatched", "in_transit", "partially_shipped"}
 SO_DEAD = {"cancelled", "void", "rejected"}
@@ -26,6 +28,7 @@ ACTIONS = {
     "WRONG_DESTINATION": "Tolak bongkar — barang untuk gudang lain; hubungi pengirim/supervisor.",
     "MOVEMENT_NOT_ACTIVE": "Tahan — dokumen belum dikirim di sistem; hubungi admin gudang asal.",
     "SO_CANCELLED": "Tahan barang — pesanan dibatalkan; kembalikan ke gudang & lapor supervisor.",
+    "DOC_CANCELLED": "Tahan barang — dokumen keluarnya sudah dibatalkan; kembalikan ke gudang & lapor supervisor.",
     "ALREADY_OUT": "Tahan & panggil supervisor — roll tercatat sudah keluar/habis.",
     "REPLAY_EXIT": "Tahan & panggil supervisor — roll sudah pernah keluar dengan dokumen ini.",
     "QUARANTINE": "Tahan barang — roll karantina QC; kembalikan ke area karantina.",
@@ -57,6 +60,9 @@ async def resolve_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     "active": pa["status"] == "in_transit", "source_wh": pa.get("from_warehouse_id"),
                     "dest_wh": pa.get("to_warehouse_id"),
                     "member": roll["id"] in {i.get("roll_id") for i in pa.get("items") or []}}
+    doc_mv = await _docs.doc_movement(roll)   # Order Makloon (roll di mitra) / Perbaikan (roll wip)
+    if doc_mv:
+        return doc_mv
     ref = roll.get("reserved_ref") or {}
     if not isinstance(ref, dict) or not ref.get("id"):
         return None
@@ -91,6 +97,10 @@ async def evaluate(direction: str, warehouse_id: Optional[str], roll: Dict[str, 
     if direction == "in":
         if status == "in_transit_sales":
             return _v("red", "SALES_TRANSIT_NOT_INBOUND", "Roll dalam pengiriman penjualan — bukan transfer internal ke gudang ini.", mv)
+        if mv and mv["type"] in ("makloon_order", "repair_order"):
+            back = _docs.evaluate_in(mv, warehouse_id)   # kembali dari perbaikan / bahan MKO batal
+            if back:
+                return _v(*back, mv)
         if mv and mv["type"] in ("putaway", "wh_transfer"):
             if mv.get("dest_wh") != warehouse_id:
                 return _v("red", "WRONG_DESTINATION", f"SALAH GUDANG — {mv.get('number')} menuju gudang lain, bukan gudang ini.", mv)
@@ -117,13 +127,17 @@ async def evaluate(direction: str, warehouse_id: Optional[str], roll: Dict[str, 
         return _v("red", "NO_DOCUMENT", f"Status {status} tanpa dokumen keluar aktif — keluar tak sah.")
     if mv["type"] == "sales_order" and mv.get("so_dead"):
         return _v("red", "SO_CANCELLED", f"SO {mv.get('number')} berstatus {mv.get('status')} — keluar ditahan.", mv)
+    if mv.get("cancelled"):
+        return _v("red", "DOC_CANCELLED", f"{mv.get('number')} sudah DIBATALKAN — barang tidak boleh keluar atas dokumen ini.", mv)
     if mv.get("source_wh") != warehouse_id:
         return _v("red", "WRONG_WAREHOUSE", f"{mv.get('number')} berangkat dari gudang lain, bukan gudang ini.", mv)
     if not mv.get("member"):
         return _v("red", "NOT_IN_MANIFEST", f"Roll tidak tercantum di surat jalan/dokumen {mv.get('number')}.", mv)
     if not mv.get("active"):
-        return _v("red", "NOT_RELEASED", f"{mv.get('number')} belum di-dispatch di sistem (status {status}) — tahan.", mv)
-    return _v("green", "MOVEMENT_OUT", f"Keluar ter-otorisasi untuk {mv.get('number')}.", mv)
+        return _v("red", "NOT_RELEASED", mv.get("inactive_reason")
+                  or f"{mv.get('number')} belum di-dispatch di sistem (status {status}) — tahan.", mv)
+    to = f" → {mv['partner']}" if mv.get("partner") and mv["type"] in ("makloon_order", "repair_order") else ""
+    return _v("green", "MOVEMENT_OUT", f"Keluar ter-otorisasi untuk {mv.get('number')}{to}.", mv)
 
 
 async def stamp_exit(roll_id: str, decision: Dict[str, Any], device: Dict[str, Any], at: str) -> None:

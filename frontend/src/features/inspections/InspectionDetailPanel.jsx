@@ -49,7 +49,9 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const isQc4 = doc.kind === "qc_4point";
   const mdOnly = Boolean(doc.md_only);
   // F-14 (keputusan owner Q-03a) — SPK penerimaan PO: keputusan ini SEKALIGUS memutus karantina.
-  const isPoReceipt = doc.kind === "po_receipt" && Boolean(doc.task_id);
+  // + SPK hasil makloon BER-TUGAS QC (karantina hasil langkah terakhir Order Makloon) — keputusan yang sama.
+  const isMakloonQc = doc.kind === "makloon_output" && Boolean(doc.task_id);
+  const isPoReceipt = (doc.kind === "po_receipt" || isMakloonQc) && Boolean(doc.task_id);
   const [disposition, setDisposition] = useState("");
   const [rejectedRolls, setRejectedRolls] = useState([]);
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
@@ -371,8 +373,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                 <label className="block w-64">
                   <span className="field-label">Roll ditolak dijadikan</span>
                   <KNSelect data-testid="ins-reject-disposition" value={disposition} onValueChange={setDisposition}
-                    options={[{ value: "return", label: "Retur ke supplier (Nota Debit)" },
-                              { value: "damaged", label: "Barang rusak (simpan di gudang)" }]}
+                    options={isMakloonQc   // hasil makloon: tuntutan ke mitra lewat Klaim Selisih MKO, bukan Nota Debit
+                      ? [{ value: "damaged", label: "Barang rusak (simpan di gudang · klaim ke mitra di Order Makloon)" }]
+                      : [{ value: "return", label: "Retur ke supplier (Nota Debit)" },
+                         { value: "damaged", label: "Barang rusak (simpan di gudang)" }]}
                     className="field" placeholder="Pilih tindakan" />
                 </label>
               )}

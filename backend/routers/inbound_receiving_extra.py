@@ -116,8 +116,9 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
     for t in tasks:
         po = pos.get(t.get("po_id"), {})
         prod = prods.get(t.get("product_id"), {})
-        t["supplier_name"] = po.get("supplier_name", "")
-        t["po_number"] = t.get("po_number") or po.get("po_number", "")
+        # Tugas QC hasil makloon (tanpa PO): nomor MKO & nama mitra dari tugasnya sendiri.
+        t["supplier_name"] = po.get("supplier_name", "") or t.get("supplier_name", "")
+        t["po_number"] = t.get("po_number") or po.get("po_number", "") or t.get("mko_number", "")
         t["product_name"] = t.get("product_name") or prod.get("name", "")
         t["sku"] = prod.get("sku", "")
         t["warehouse_name"] = whs.get(t.get("warehouse_id"), {}).get("name", "")

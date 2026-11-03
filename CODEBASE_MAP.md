@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 5110452 pada 2026-10-26 -->
+<!-- Dihasilkan dari commit: a8a3f6f pada 2026-11-04 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,8 +13,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 153 |
-| Endpoint (`@router.<method>`) | 1621 |
-| Service (`backend/services/*.py`) | 332 |
+| Endpoint (`@router.<method>`) | 1622 |
+| Service (`backend/services/*.py`) | 336 |
 | Koleksi MongoDB disentuh kode produksi | 197 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -173,11 +173,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_payroll.py` | 15 | 263 | `/hr/payroll/runs`, `/hr/payroll/runs/preview`, `/hr/payroll/runs/{run_id}`, `/hr/payroll/runs/{run_id}/approve`, `/hr/payroll/runs/{run_id}/pay`, `/hr/payroll/runs/{run_id}/post-gl` … |
 | `hr_tracking.py` | 9 | 254 | `/hr/field-tracks`, `/hr/field-tracks/latest`, `/hr/visits`, `/hr/visits/check-in`, `/hr/visits/me`, `/hr/visits/mine` … |
 | `inbound_receiving.py` | 5 | 308 | `/inbound/tasks`, `/inbound/tasks/{task_id}/complete`, `/inbound/tasks/{task_id}/escalate`, `/inbound/tasks/{task_id}/resolve-escalation`, `/inbound/tasks/{task_id}/scan-receive` |
-| `inbound_receiving_extra.py` | 7 | 291 | `/inbound/po/{po_id}/receiving-goods-document`, `/inbound/qc/queue`, `/inbound/tasks/{task_id}/preview-uom`, `/inbound/tasks/{task_id}/qc-decision`, `/inbound/tasks/{task_id}/uom-options`, `/receiving/uom-settings` |
+| `inbound_receiving_extra.py` | 7 | 292 | `/inbound/po/{po_id}/receiving-goods-document`, `/inbound/qc/queue`, `/inbound/tasks/{task_id}/preview-uom`, `/inbound/tasks/{task_id}/qc-decision`, `/inbound/tasks/{task_id}/uom-options`, `/receiving/uom-settings` |
 | `inbound_scan_label.py` | 10 | 328 | `/inbound/rolls/{roll_id}/confirm-measure`, `/inbound/rolls/{roll_id}/putaway`, `/inbound/rolls/{roll_id}/scan`, `/inbound/rolls/{roll_id}/tag`, `/inbound/scan-label/stats`, `/inbound/tasks/{task_id}/scan-label` … |
 | `incentive_rates.py` | 4 | 105 | `/incentive-rates`, `/incentive-rates/{rate_id}` |
 | `input_tax.py` | 6 | 194 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
-| `inspections.py` | 18 | 522 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
+| `inspections.py` | 18 | 524 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 4 | 84 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test` |
 | `interco.py` | 38 | 577 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
@@ -189,7 +189,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `landed_cost.py` | 10 | 392 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
 | `logistics.py` | 27 | 337 | `/dashboard`, `/deliveries`, `/deliveries/{delivery_id}`, `/deliveries/{delivery_id}/manifest`, `/deliveries/{delivery_id}/photos`, `/deliveries/{delivery_id}/photos/{photo_id}` … |
 | `lots.py` | 18 | 364 | `/lots`, `/lots/identity-trace`, `/lots/merge`, `/lots/settings`, `/lots/stats`, `/lots/unassigned-rolls` … |
-| `makloon_orders.py` | 23 | 398 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/{mko_id}`, `/makloon-orders/{mko_id}/cancel` … |
+| `makloon_orders.py` | 24 | 412 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/{mko_id}`, `/makloon-orders/{mko_id}/cancel` … |
 | `makloons.py` | 6 | 142 | `/makloons`, `/makloons/{makloon_id}`, `/makloons/{makloon_id}/scorecard` |
 | `marketing.py` | 35 | 560 | `/marketing/accounts`, `/marketing/accounts/{aid}`, `/marketing/analytics`, `/marketing/assets`, `/marketing/calendar.pdf`, `/marketing/campaigns` … |
 | `master_governance.py` | 7 | 66 | `/master-governance/batches`, `/master-governance/batches/{batch_id}/rollback`, `/master-governance/preview`, `/master/usage/{kind}/{mid}`, `/master/{kind}/{mid}/purge`, `/products/{product_id}/rename` |
@@ -383,7 +383,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `fulfillment_service.py` | 386 | Fulfillment & ATP service (Fase 1 / Sub-fase 1.4 — ATP & Fulfillment Modes). |
 | `fulfillment_status.py` | 144 | Fulfillment status engine (Sub-fase 1.8). |
 | `fulfillment_wizard_service.py` | 182 | FASE R7 — FULFILLMENT WIZARD: matriks skenario S1–S8 menjadi aksi terpandu. |
-| `gate_evaluator.py` | 134 | P09 — SATU evaluator gate (ingest perangkat, simulator, kiosk). Keputusan berbasis MOVEMENT aktif |
+| `gate_doc_movements.py` | 85 | Gate (P09) — dokumen keluar/masuk SELAIN putaway / transfer gudang / surat jalan SO: Order Makloon & Perbaikan |
+| `gate_evaluator.py` | 148 | P09 — SATU evaluator gate (ingest perangkat, simulator, kiosk). Keputusan berbasis MOVEMENT aktif |
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 159 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 187 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
@@ -403,9 +404,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_payroll_pdf.py` | 111 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
 | `hr_payroll_service.py` | 601 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
 | `hr_service.py` | 176 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
-| `inbound_complete_service.py` | 613 | Penyelesaian penerimaan tugas inbound — SATU-SATUNYA jalur yang memposting stok, `received_qty` PO, |
+| `inbound_complete_service.py` | 601 | Penyelesaian penerimaan tugas inbound — SATU-SATUNYA jalur yang memposting stok, `received_qty` PO, |
+| `inbound_qc_common.py` | 53 | Aturan barang MASUK GUDANG yang dipakai bersama jalur PO (`inbound_complete_service.complete_task`) dan hasil |
 | `input_tax_service.py` | 164 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
-| `inspection_service.py` | 1809 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
+| `inspection_service.py` | 1820 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 159 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_loan_service.py` | 274 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
 | `interco_margin.py` | 427 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
@@ -432,10 +434,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `lot_trace_service.py` | 318 | FASE C — Silsilah (genealogi), Recall, dan Label lot. |
 | `makloon_calc_service.py` | 215 | FASE D — ESTIMASI OUTPUT MAKLOON BERBASIS GSM (PS-03) + EVALUASI SELISIH (PS-11). |
 | `makloon_claim_service.py` | 363 | FASE D — SELISIH & KLAIM MAKLOON (PS-11 · keputusan **D-09**). |
+| `makloon_issue_rolls.py` | 204 | Issue bahan makloon PER ROLL — kasus klien "20 roll Esmica Blue dikirim untuk dicelup hitam". |
 | `makloon_loss_service.py` | 258 | L01 (keputusan owner 2026-10-16) — SUSUT / HILANG BAHAN DI MITRA untuk MKO batal. |
 | `makloon_material_ledger.py` | 98 | L04 LN-043 — buku bahan makloon per MKO: forecast · dicadangkan · dikirim/di mitra · terpakai · kembali · susu |
-| `makloon_order_service.py` | 1817 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
+| `makloon_order_service.py` | 1856 | M3 + FASE D — Makloon Order service: orkestrasi transaksi subkontrak (Procure→Process→Pay). |
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
+| `makloon_receipt_qc.py` | 193 | Hasil langkah TERAKHIR Order Makloon = barang masuk gudang, diperlakukan seperti barang PO. |
 | `makloon_service.py` | 150 | M1 — Makloon service: Makloon 360 + scorecard proses (dari data nyata). |
 | `marketing_cost_service.py` | 309 | COMM-04 (keputusan PG04) — realisasi biaya kampanye marketing → jurnal Beban Pemasaran. |
 | `marketing_ext.py` | 299 | marketing_ext.py — Marketing lanjutan: master Akun Sosmed per badan usaha, dashboard analitik |
@@ -488,7 +492,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `purchase_return_state.py` | 66 | R4 — Supplier RMA lifecycle untuk Retur Beli (Purchase Return). |
 | `putaway_order_service.py` | 505 | FASE R2 — PUTAWAY ORDER (PA): dokumen pemindahan roll dari gedung transit ke |
 | `qc_inspection_service.py` | 391 | QC 4-Point Inspection service — Fase 6.2 (P1). |
-| `qc_service.py` | 488 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
+| `qc_service.py` | 494 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
 | `receiving_mode_service.py` | 84 | GRN Fase 7 — beralih penuh: mode penerimaan per badan usaha (`receiving.mode` = legacy | grn). |
 | `receiving_roll_service.py` | 426 | Kelahiran roll `receiving` saat penerimaan (GRN Fase 1: dipindah dari `routers/inbound_scan_label.py`). |
 | `receiving_uom_service.py` | 497 | FASE F-1 — PENERIMAAN BERBASIS **SATUAN SUPPLIER** (lanjutan Fase B & Fase E). |
@@ -568,7 +572,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `status_history.py` | 50 | SSOT bentuk satu entri `status_history[]` — dipakai SEMUA koleksi. |
 | `stock_analytics_service.py` | 470 | Stock Analytics service (Fase 5) — kelas laju jual + aging + nilai persediaan. |
 | `stock_availability.py` | 113 | K-04 (keputusan pemilik 26 Okt 2026) — SATU definisi stok "Tersedia" & "Stok rendah". |
-| `stock_bucket_service.py` | 659 | F2 — Multi-bucket Stock: operasi WIP & Hold (Pending SO) + papan bucket. |
+| `stock_bucket_service.py` | 707 | F2 — Multi-bucket Stock: operasi WIP & Hold (Pending SO) + papan bucket. |
 | `stock_count_roll_service.py` | 394 | L10 LN-101 — opname per roll: snapshot scope node → scan → rekonsiliasi → finalisasi. |
 | `stock_count_service.py` | 157 | P10 — stock opname: scope hitung per bin, adjustment per baris (CAS) + jurnal selisih. |
 | `storage_service.py` | 146 | Local filesystem storage wrapper (FASE 5 — keputusan owner: storage LOKAL). |
@@ -608,7 +612,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 59 | 7440 |
+| `__tests__` | 60 | 7615 |
 | `admin` | 34 | 6574 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 21 | 1203 |
@@ -622,7 +626,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance` | 93 | 20380 |
 | `home` | 5 | 1127 |
 | `hr` | 33 | 5340 |
-| `inspections` | 12 | 2161 |
+| `inspections` | 12 | 2165 |
 | `interco_prices` | 4 | 279 |
 | `internal_requests` | 3 | 854 |
 | `inventory` | 18 | 3985 |
@@ -637,7 +641,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 23 | 2633 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 751 |
-| `purchasing` | 84 | 17772 |
+| `purchasing` | 85 | 17941 |
 | `rfid` | 10 | 1706 |
 | `rnd` | 66 | 7874 |
 | `sales` | 97 | 15778 |

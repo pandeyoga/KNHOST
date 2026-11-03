@@ -80,7 +80,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
     # Sub-fase 1.6 — Roll-as-SSOT + Depth #3a — QC Hold/Quarantine.
     from services.roll_service import rebuild_balance
     from services.backorder_service import auto_fulfill_backorders
-    from services.config_service import get_effective_settings
+    from services import inbound_qc_common as _iqc   # aturan bersama PO & hasil akhir makloon
 
     # Owner entity diturunkan dari PO (default entitas utama)
     owner_entity_id = DEFAULT_ENTITY_ID
@@ -91,8 +91,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
 
     # Depth #3a — bila qc_on_receipt: barang masuk → roll `quarantine` (BUKAN available),
     # task → `qc_pending` (menunggu inspeksi QC). Bila non-aktif: legacy available+completed.
-    qc_cfg = await get_effective_settings(owner_entity_id)
-    qc_on_receipt = bool((qc_cfg.get("purchasing", {}) or {}).get("qc_on_receipt", True))
+    qc_on_receipt = await _iqc.qc_on_receipt_enabled(owner_entity_id)
     roll_status = "quarantine" if qc_on_receipt else "available"
     _created_rolls: List[Dict[str, Any]] = []
     next_stage = "qc_pending" if qc_on_receipt else "completed"
@@ -350,9 +349,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         # UAT 24 Okt (P9.3) — tahap awal mengikuti PERAN gudang penerima: gudang penerimaan (transit/penerimaan
         # pusat) → "received_transit"; gudang simpan murni → langsung "stored". Dulu selalu "received_transit"
         # sehingga roll di gudang simpan (WH-JKT) tercatat "di transit" selamanya.
-        _wh_roles = set(((await db.warehouses.find_one({"id": task["warehouse_id"]}, {"_id": 0, "roles": 1})) or {})
-                        .get("roles") or [])
-        _stage0 = "received_transit" if (not _wh_roles or _wh_roles & {"transit", "central_inbound", "staging"}) else "stored"
+        _stage0 = await _iqc.initial_journey_stage(task["warehouse_id"])
         for spec in roll_specs:
             spec_len = spec["length_base"]
             _lot_doc = _lot_by_dye.get(spec["dye_lot"]) or {}
@@ -596,16 +593,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
     # ditelan diam-diam, karena "diam" pada langkah otomatis adalah kelas cacat yang
     # paling mahal di repo ini.
     if next_stage == "qc_pending":
-        try:
-            from services import inspection_service as _ins
-            _spk = await _ins.ensure_for_qc_task(out, actor)
-            out["inspection"] = {"id": _spk.get("id", ""), "number": _spk.get("number", ""),
-                                 "lines": len(_spk.get("lines") or [])}
-        except Exception as exc:  # noqa: BLE001
-            import logging
-            logging.getLogger(__name__).error(
-                "FASE I: SPK inspeksi GAGAL dibuat untuk task %s: %s", task_id, exc)
-            out["inspection_error"] = str(exc)
+        out.update(await _iqc.ensure_inspection(out, actor))
     # FASE C — kembalikan lot yang terbentuk + peringatan kelengkapan (mode `warn`)
     if next_stage in ("completed", "qc_pending"):
         out["lots"] = _lot_summary

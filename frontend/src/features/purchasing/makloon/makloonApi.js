@@ -58,6 +58,11 @@ export const fetchEnum = (name) => axios.get(`${API}/enums/${name}`).then((r) =>
 export const fetchStages = (params = {}) =>
   axios.get(`${API}/process-stages`, { params: { spk_only: 1, ...params } }).then((r) => r.data);
 
+/** Issue mode "Pilih roll" — roll bahan di gudang sumber (boleh dipilih + tertahan beserta alasan, dengan EPC). */
+export const fetchIssueRolls = (mkoId, seq, warehouseId) =>
+  axios.get(`${API}/makloon-orders/${mkoId}/steps/${seq}/issue-rolls`, { params: { warehouse_id: warehouseId || "" } })
+    .then((r) => r.data);
+
 /** FASE T — selesaikan langkah "jasa murni": tagihan mitra lahir, kain tidak bergerak. */
 export const recordService = (mkoId, body) =>
   axios.post(`${API}/makloon-orders/${mkoId}/record-service`, body).then((r) => r.data);

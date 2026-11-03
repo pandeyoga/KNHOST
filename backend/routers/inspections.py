@@ -301,8 +301,10 @@ async def finish_inspection(ins_id: str, payload: InspectionFinish,
     # F-14 (keputusan owner Q-03a) — SPK penerimaan PO kini SEKALIGUS memutus karantina, jadi pemutus karantina
     # (`qc.release`, bawaan QC/MD/Admin Gudang) boleh menutupnya — sama seperti random check.
     # 23 Okt — + SPK retur pelanggan: menutupnya = "QC retur selesai" (keputusan uang tetap Manajer saat settle).
-    if user_doc and user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT, svc.KIND_QC_4POINT,
-                                             svc.KIND_RETURN_CUSTOMER):   # + SPK QC 4-point (Trial 22 Okt E9)
+    # + SPK hasil makloon BER-TUGAS QC (karantina hasil langkah terakhir) = setara SPK penerimaan PO.
+    if user_doc and (user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT, svc.KIND_QC_4POINT,
+                                              svc.KIND_RETURN_CUSTOMER)   # + SPK QC 4-point (Trial 22 Okt E9)
+                     or (user_doc.get("kind") == svc.KIND_MAKLOON_OUTPUT and user_doc.get("task_id"))):
         perms = [("inspection", "decide"), ("qc", "release")]
         if user_doc.get("md_only"):
             # UAT 24 Okt (P11.6, keputusan pemilik P11-K1) — MD Quality boleh menutup SPK MD-nya sendiri.

@@ -281,7 +281,9 @@ async def process_qc_decision(
     warehouse_id = task["warehouse_id"]
 
     po = None
-    owner = DEFAULT_ENTITY_ID
+    # Tugas QC hasil makloon (tanpa PO) membawa pemilik barangnya sendiri; dulu jatuh ke entitas bawaan sehingga
+    # saldo segmen pemilik yang sebenarnya tidak di-rebuild sesudah keputusan QC.
+    owner = task.get("owner_entity_id") or DEFAULT_ENTITY_ID
     if task.get("po_id"):
         po = safe_doc(await db.purchase_orders.find_one({"id": task["po_id"]}, {"_id": 0}))
         owner = (po or {}).get("entity_id") or DEFAULT_ENTITY_ID
@@ -316,6 +318,9 @@ async def process_qc_decision(
             f"Total terima+tolak ({round(accept_qty + reject_qty, 2)}) melebihi qty karantina ({total_q}).")
     if reject_qty > 0.01 and reject_disposition not in ("damaged", "return"):
         raise ValueError("Disposisi reject harus 'damaged' atau 'return'.")
+    if reject_qty > 0.01 and reject_disposition == "return" and task.get("source_type") == "makloon_order":
+        raise ValueError("Hasil makloon yang ditolak dicatat sebagai barang rusak — tuntutan ke mitra lewat Klaim "
+                         "Selisih di Order Makloon. Retur ke supplier (Nota Debit) hanya untuk barang PO.")
     # IX-15 — task QC terminal hanya bila SELURUH qty karantina punya disposisi
     if accept_qty + reject_qty < total_q - 0.05:
         raise ValueError(
@@ -447,9 +452,10 @@ async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty,
             # L03 LN-033 — korelasi deterministik lewat PO→OD; SKU saja hanya bila kandidat tunggal.
             od = None
             _od_q = {"status": {"$in": ["in_production", "ready"]}}
-            if (po or {}).get("special_order_id"):
-                od = await db.special_orders.find_one({"id": po["special_order_id"], **_od_q}, {"_id": 0, "id": 1})
-            elif not (po or {}).get("id"):
+            _od_id = (po or {}).get("special_order_id") or task.get("special_order_id")   # + hasil makloon (MKO→OD)
+            if _od_id:
+                od = await db.special_orders.find_one({"id": _od_id, **_od_q}, {"_id": 0, "id": 1})
+            elif not (po or {}).get("id") and task.get("source_type") != "makloon_order":   # MKO: hanya tautan pasti
                 _cands = await db.special_orders.find({"$or": [{"pricing.product_id": product_id}, {"linked_product_id": product_id},
                                                                {"pricing.items.product_id": product_id}],   # FE-01 multi-item
                                                        **_od_q}, {"_id": 0, "id": 1}).to_list(2)

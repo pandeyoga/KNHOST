@@ -61,6 +61,8 @@ KIND_QC_4POINT = "qc_4point"
 QC4_HOLD_PREFIX = "QC 4-point GAGAL"
 #: Jenis yang hasil warna & handfeel-nya milik MD Quality (DEC-06, pemilik 2026-10-12).
 MD_QUALITY_KINDS: Tuple[str, ...] = ("po_receipt", "makloon_output")
+#: SPK yang memutus KARANTINA tugas penerimaannya (ber-`task_id`): penerimaan PO & hasil akhir makloon.
+RECEIPT_QC_KINDS: Tuple[str, ...] = ("po_receipt", "makloon_output")
 
 KIND_LABEL: Dict[str, str] = {
     KIND_PO_RECEIPT: "Inspeksi Penerimaan PO",
@@ -913,6 +915,15 @@ async def ensure_for_qc_task(task: Dict[str, Any], actor: Dict[str, Any],
         or task.get("entity_id") or ""
     rolls = await db.inventory_rolls.find({"qc_task_id": task_id}, {"_id": 0}).to_list(500)
     lines = await _lines_from_rolls(rolls)
+    if task.get("source_type") == "makloon_order":
+        # Hasil langkah terakhir Order Makloon (karantina seperti PO) → "Inspeksi Hasil Makloon" ber-tugas QC:
+        # keputusannya memutus karantina tugas ini (`finish` → `_release_quarantine`), acuan = MKO & mitranya.
+        return await _new_doc(
+            kind=KIND_MAKLOON_OUTPUT, entity_id=entity_id, actor=actor, ref_doc_type="makloon_order",
+            ref_doc_id=task.get("mko_id", ""), ref_doc_number=task.get("mko_number", ""), task_id=task_id,
+            supplier=(task.get("makloon_id", ""), task.get("supplier_name", "")),
+            line_code=task.get("line_code", ""), lines=lines,
+            remark="SPK lahir otomatis saat hasil makloon masuk antrean QC.")
     return await _new_doc(
         kind=KIND_PO_RECEIPT, entity_id=entity_id, actor=actor,
         ref_doc_type="purchase_order" if po else "", ref_doc_id=(po or {}).get("id", ""),
@@ -1383,7 +1394,7 @@ async def finish(ins_id: str, decision: str, remark: str,
                 raise InspectionError(f"Periksa SEMUA roll retur dulu (grade belum diisi: {', '.join(todo[:6])}"
                                       f"{' …' if len(todo) > 6 else ''}).")
     qres = None
-    if doc.get("kind") == KIND_PO_RECEIPT and doc.get("task_id"):
+    if doc.get("kind") in RECEIPT_QC_KINDS and doc.get("task_id"):
         # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
         # tidak ada lagi "SPK ditutup terima tetapi roll masih karantina" (F-14).
         qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids)

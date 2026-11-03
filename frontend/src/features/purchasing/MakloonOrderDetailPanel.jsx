@@ -79,11 +79,12 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   useEffect(() => { load(); }, [load]);
   useEffect(() => { axios.get(`${API}/warehouses`).then((r) => setWarehouses(Array.isArray(r.data) ? r.data : [])).catch(() => {}); }, []);
 
-  async function doIssue(step, whId, docUom, docQty) {
+  async function doIssue(step, whId, docUom, docQty, rollIds) {
     setBusy(true);
     try {
       const body = { step_seq: step.seq, from_warehouse_id: whId };
       if (docUom && parseFloat(docQty) > 0) { body.doc_uom = docUom; body.doc_qty = parseFloat(docQty); }
+      if (rollIds?.length) body.roll_ids = rollIds;   // issue per roll (pilih/pindai)
       await axios.post(`${API}/makloon-orders/${mkoId}/issue`, body);
       setIssueStep(null); await load();
     } catch (e) { throw new Error(e.response?.data?.detail || "Gagal issue ke makloon."); }   // 23 Okt — tampil di modal
@@ -304,6 +305,13 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                       )}
                     </div>
                   )}
+                  {s.receipt_qc?.required && (
+                    <p data-testid={`mko-step-qc-${s.seq}`} className="mt-1.5 rounded-md bg-[#FFF8EC] px-2 py-1 text-[10.5px] text-[#8A5A00]">
+                      {(s.receipt_qc.tasks || []).some((t) => t.status === "qc_pending")
+                        ? <>Hasil di <b>karantina QC</b> — tersedia setelah SPK {(s.receipt_qc.inspections || []).map((i) => i.inspection?.number).filter(Boolean).join(", ") || "inspeksi"} diputus.</>
+                        : <>QC hasil makloon sudah diputus.</>}
+                    </p>
+                  )}
                   <MakloonPartialReceipts step={s} mkoId={data.id} onChanged={load} />
                   {/* FASE D — dasar perhitungan (kontrak · susut · tarif) terlihat & bisa diaudit */}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]" data-testid={`mko-step-basis-${s.seq}`}>
@@ -377,8 +385,8 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
         </Panel>
       </div>
 
-      {issueStep && <IssueModal step={issueStep} warehouses={warehouses} defaultWh={data.from_warehouse_id} busy={busy}
-        onClose={() => setIssueStep(null)} onConfirm={(wh, docUom, docQty) => doIssue(issueStep, wh, docUom, docQty)} />}
+      {issueStep && <IssueModal step={issueStep} warehouses={warehouses} defaultWh={data.from_warehouse_id} busy={busy} mkoId={mkoId}
+        onClose={() => setIssueStep(null)} onConfirm={(wh, docUom, docQty, rollIds) => doIssue(issueStep, wh, docUom, docQty, rollIds)} />}
       {receiveStep && <ReceiveModal step={receiveStep} warehouses={warehouses} defaultWh={data.target_warehouse_id || data.from_warehouse_id}
         mkoNumber={data.mko_number} busy={busy} onClose={() => setReceiveStep(null)} onConfirm={(body) => doReceive(receiveStep, body)} />}
       {serviceStep && <RecordServiceModal step={serviceStep} mkoNumber={data.mko_number} busy={busy}

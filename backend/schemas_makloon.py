@@ -149,6 +149,10 @@ class MakloonIssueIn(BaseModel):
     # FASE D (PS-08/D-07) — mitra memakai satuan sendiri: konversi + jejak tersimpan
     doc_uom: str = ""
     doc_qty: QtyDecimal = Field(0, ge=0)
+    # Issue PER ROLL (kasus celup): roll tertentu (id) dan/atau kode pindai/tempel (nomor roll / EPC tag).
+    # Kosong keduanya = jalur lama berdasarkan jumlah (FEFO). Qty issue = Σ panjang roll terpilih.
+    roll_ids: List[str] = Field(default_factory=list, max_length=500)
+    roll_codes: List[str] = Field(default_factory=list, max_length=500)
 
 
 class MakloonReceiveRoll(BaseModel):
