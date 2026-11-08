@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 6bdec54 pada 2026-11-09 -->
+<!-- Dihasilkan dari commit: 0a0d6dc pada 2026-11-09 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -12,9 +12,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Ukuran | Nilai |
 |---|---:|
-| Router (`backend/routers/*.py`) | 156 |
-| Endpoint (`@router.<method>`) | 1680 |
-| Service (`backend/services/*.py`) | 360 |
+| Router (`backend/routers/*.py`) | 157 |
+| Endpoint (`@router.<method>`) | 1693 |
+| Service (`backend/services/*.py`) | 364 |
 | Koleksi MongoDB disentuh kode produksi | 200 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -22,7 +22,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Berkas | Baris |
 |---|---:|
-| `server.py` | 408 |
+| `server.py` | 409 |
 | `db.py` | 12 |
 | `core_utils.py` | 385 |
 | `schemas.py` | 1114 |
@@ -228,8 +228,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `return_disposition.py` | 8 | 137 | `/return-dispositions/inbox`, `/return-dispositions/summary`, `/sales-returns/{return_id}/disposition`, `/sales-returns/{return_id}/disposition/internal`, `/sales-returns/{return_id}/disposition/photos`, `/sales-returns/{return_id}/disposition/photos/{att_id}` … |
 | `return_policies.py` | 7 | 241 | `/return-policies/supplier-deadlines`, `/sales-return-policies`, `/sales-return-policies/eligibility`, `/sales-return-policies/{policy_id}` |
 | `rfid.py` | 48 | 710 | `/rfid/cycle-count/start`, `/rfid/cycle-count/{session_id}/complete`, `/rfid/cycle-counts`, `/rfid/cycle-counts/{cc_id}`, `/rfid/device-health`, `/rfid/device-jobs/pending` … |
-| `rfid_v2.py` | 12 | 224 | `/rfid/v2/device/config`, `/rfid/v2/device/gate-state`, `/rfid/v2/device/telemetry`, `/rfid/v2/events`, `/rfid/v2/ops/devices/{device_id}`, `/rfid/v2/ops/devices/{device_id}/config` … |
-| `rfid_v2_ops.py` | 10 | 158 | `/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge`, `/rfid/v2/ops/devices/{device_id}/gate-parameters`, `/rfid/v2/ops/devices/{device_id}/health`, `/rfid/v2/ops/devices/{device_id}/protocol`, `/rfid/v2/ops/devices/{device_id}/sessions`, `/rfid/v2/ops/devices/{device_id}/simulate` … |
+| `rfid_v2.py` | 12 | 227 | `/rfid/v2/device/config`, `/rfid/v2/device/gate-state`, `/rfid/v2/device/telemetry`, `/rfid/v2/events`, `/rfid/v2/ops/devices/{device_id}`, `/rfid/v2/ops/devices/{device_id}/config` … |
+| `rfid_v2_ops.py` | 10 | 166 | `/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge`, `/rfid/v2/ops/devices/{device_id}/gate-parameters`, `/rfid/v2/ops/devices/{device_id}/health`, `/rfid/v2/ops/devices/{device_id}/protocol`, `/rfid/v2/ops/devices/{device_id}/sessions`, `/rfid/v2/ops/devices/{device_id}/simulate` … |
+| `rfid_v2_review.py` | 13 | 220 | `/rfid/v2/ops/crossings`, `/rfid/v2/ops/crossings/move`, `/rfid/v2/ops/crossings/release`, `/rfid/v2/ops/devices/{device_id}/kiosk`, `/rfid/v2/ops/reviews`, `/rfid/v2/ops/reviews/summary` … |
 | `rfq.py` | 8 | 222 | `/rfqs`, `/rfqs/{rfq_id}`, `/rfqs/{rfq_id}/award`, `/rfqs/{rfq_id}/cancel`, `/rfqs/{rfq_id}/compare`, `/rfqs/{rfq_id}/quote` … |
 | `rnd.py` ⚠️>800 | 46 | 1062 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
 | `rnd_org.py` | 3 | 73 | `/rnd/divisions`, `/rnd/divisions/members` |
@@ -387,7 +388,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `fulfillment_status.py` | 144 | Fulfillment status engine (Sub-fase 1.8). |
 | `fulfillment_wizard_service.py` | 182 | FASE R7 — FULFILLMENT WIZARD: matriks skenario S1–S8 menjadi aksi terpandu. |
 | `gate_doc_movements.py` | 85 | Gate (P09) — dokumen keluar/masuk SELAIN putaway / transfer gudang / surat jalan SO: Order Makloon & Perbaikan |
-| `gate_evaluator.py` | 172 | P09 — SATU evaluator gate (ingest perangkat, simulator, kiosk). Keputusan berbasis MOVEMENT aktif |
+| `gate_evaluator.py` | 174 | P09 — SATU evaluator gate (ingest perangkat, simulator, kiosk). Keputusan berbasis MOVEMENT aktif |
+| `gate_review_actions.py` | 377 | PREP-D2 — tindakan antrean periksa gate V2 (AUD-MW-10) + koreksi klaim crossing beraudit (AUD-MW-08 pemulihan) |
+| `gate_review_service.py` | 312 | PREP-D2 — antrean periksa admin gudang untuk gate V2 (AUD-MW-10, K-RFID-09/10, K-GDG-02). |
+| `gate_txn_service.py` | 439 | PREP-D2 — lintasan gate V2 → transaksi gudang (K-GDG-02/03, K-RFID-09/10, K-OPN-03 — keputusan pemilik 8 Nov 2 |
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 159 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 187 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
@@ -431,11 +435,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `label_printer_service.py` | 198 | Label printer service: Generate ZPL and ESC/POS commands for barcode labels. |
 | `landed_cost_service.py` | 244 | Landed Cost service (Fase 5.4 — P0-5). |
 | `line_scope.py` | 434 | FASE L — PAGAR LINI PRODUK (woven · knit · printing · dan lini baru berikutnya). |
-| `loading_check_service.py` | 344 | FASE R4 — FINAL LOADING CHECK: sweep handheld vs manifest SO sebelum naik mobil. |
+| `loading_check_service.py` | 361 | FASE R4 — FINAL LOADING CHECK: sweep handheld vs manifest SO sebelum naik mobil. |
 | `location_scope.py` | 122 | IMP-20 (P01) — cakupan LOKASI KERJA pengguna gudang (site → gudang). |
 | `location_service.py` | 356 | Location (Zona → Lemari/Rak → Tingkat → Bin) & Putaway — Fase 5, diperkuat P02. |
 | `location_stock_tree.py` | 121 | L10 LN-100/LN-102 — stok per alamat fisik (Lokasi → Gudang → Zona → Lemari → Rak → Bin). |
-| `logistics_service.py` | 689 | FB-02 — Modul Logistik (koleksi `logistics_deliveries`, SCOPED, nomor LG-). |
+| `logistics_service.py` | 700 | FB-02 — Modul Logistik (koleksi `logistics_deliveries`, SCOPED, nomor LG-). |
 | `lot_migration.py` | 132 | FASE C — Migrasi & backfill lot (IDEMPOTEN). |
 | `lot_service.py` | 643 | FASE C — LOT KELAS SATU (`inventory_lots`) · SSOT identitas batch & genealogi. |
 | `lot_trace_service.py` | 318 | FASE C — Silsilah (genealogi), Recall, dan Label lot. |
@@ -502,16 +506,16 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `purchase_requisition_service.py` | 560 | Depth #2 — Purchase Requisition (PR) service + Reorder/Replenishment. |
 | `purchase_return_service.py` | 1098 | Depth #1 — Retur Beli (Purchase Return / Nota Debit). |
 | `purchase_return_state.py` | 66 | R4 — Supplier RMA lifecycle untuk Retur Beli (Purchase Return). |
-| `putaway_arrival_service.py` | 265 | PREP-C (K-GDG-10, K-RFID-10 — keputusan pemilik 8 Nov 2026) — TIBA BERTAHAP Putaway Order per trip. |
+| `putaway_arrival_service.py` | 278 | PREP-C (K-GDG-10, K-RFID-10 — keputusan pemilik 8 Nov 2026) — TIBA BERTAHAP Putaway Order per trip. |
 | `putaway_draft_service.py` | 382 | PREP-C (K-GDG-10 + K-GDG-04, keputusan pemilik 8 Nov 2026) — DRAF Putaway Order otomatis. |
-| `putaway_order_service.py` | 591 | FASE R2 — PUTAWAY ORDER (PA): dokumen pemindahan roll dari gedung transit ke |
+| `putaway_order_service.py` | 593 | FASE R2 — PUTAWAY ORDER (PA): dokumen pemindahan roll dari gedung transit ke |
 | `qc_inspection_service.py` | 391 | QC 4-Point Inspection service — Fase 6.2 (P1). |
 | `qc_service.py` | 499 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
 | `receiving_mode_service.py` | 84 | GRN Fase 7 — beralih penuh: mode penerimaan per badan usaha (`receiving.mode` = legacy | grn). |
 | `receiving_roll_service.py` | 426 | Kelahiran roll `receiving` saat penerimaan (GRN Fase 1: dipindah dari `routers/inbound_scan_label.py`). |
 | `receiving_uom_service.py` | 497 | FASE F-1 — PENERIMAAN BERBASIS **SATUAN SUPPLIER** (lanjutan Fase B & Fase E). |
 | `registration_freeze.py` | 140 | PREP-B (K-OPN-03) — pembekuan gerakan roll selama pendaftaran awal gedung. |
-| `repair_order_service.py` | 344 | UAT 24 Okt (P7) — dokumen Perbaikan (`repair_orders`, nomor RPR-…): roll jadi yang cacat / warnanya meleset |
+| `repair_order_service.py` | 347 | UAT 24 Okt (P7) — dokumen Perbaikan (`repair_orders`, nomor RPR-…): roll jadi yang cacat / warnanya meleset |
 | `restock_service.py` | 288 | PS-21(a) — Repeat/Restock 1-klik dari Sales Order → Purchase Requisition. |
 | `restock_source_service.py` | 133 | P05 IMP-19 — sumber restock per ARTIKEL (product_templates) dan penegakan jalur PR/PO/MKO. |
 | `return_attachment_service.py` | 57 | Lampiran bukti retur — satu jalur untuk retur ke supplier & retur antar-PT (permintaan pemilik 23 Okt 2026). |
@@ -537,19 +541,20 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid_incident_service.py` | 209 | FASE R6 — Insiden gate MERAH: alarm → acknowledge operator → resolve, |
 | `rfid_ingest_service.py` | 386 | FASE R3 — Device Ingest API (kontrak hardware: gate Chainway UR300 / handheld / |
 | `rfid_print_service.py` | 435 | FASE R1 — Print job tag RFID (bulk dari GR/roll transit) + sesi verifikasi handheld. |
-| `rfid_service.py` | 486 | RFID service (Fase 5 — SIMULATOR). |
+| `rfid_service.py` | 487 | RFID service (Fase 5 — SIMULATOR). |
 | `rfid_v2_common.py` | 47 | Utilitas bersama protokol gate U300 V2 (dipakai rfid_v2_service & modul pendukungnya). |
-| `rfid_v2_core.py` | 171 | Inti protokol gate U300 V2: kontrak 2.1, profil commissioning berversi, gate, lintasan, binding manual, protok |
-| `rfid_v2_envelope.py` | 104 | PREP-D1 — pembangun envelope kontrak 2.1 (MURNI: tanpa DB/HTTP) untuk simulator lintasan, skrip |
+| `rfid_v2_core.py` | 177 | Inti protokol gate U300 V2: kontrak 2.1, profil commissioning berversi, gate, lintasan, binding manual, protok |
+| `rfid_v2_envelope.py` | 113 | PREP-D1 — pembangun envelope kontrak 2.1 (MURNI: tanpa DB/HTTP) untuk simulator lintasan, skrip |
 | `rfid_v2_health.py` | 102 | PREP-D1 — aturan kesehatan reader U300 V2 → notifikasi (AUD-MW-17). |
 | `rfid_v2_ingest.py` | 190 | Penerimaan bukti lintasan V2: event mentah (0.4), ringkasan TagSummary & tepi photo-eye GpiEdge (2.1). |
+| `rfid_v2_kiosk.py` | 84 | PREP-D2 — status kios / layar monitor gate untuk reader V2 (bentuk sama dengan `/rfid/gate/{id}/status` lama)  |
 | `rfid_v2_latch.py` | 118 | PREP-D1 — SATU kunci per gate (K-RFID-09 / AUD-MW-03). |
 | `rfid_v2_params.py` | 96 | PREP-D1 — parameter lintasan per gate di profil commissioning BERVERSI (bukan konstanta kode). |
-| `rfid_v2_policy.py` | 255 | PREP-D1 — kebijakan keputusan lintasan gate V2 (aturan bisnis tetap di `gate_evaluator`). |
-| `rfid_v2_service.py` | 356 | Protokol gate U300 V2 (Kubus V2 + PREP-D1). Pengamatan tidak pernah mengubah stok atau akuntansi. |
-| `rfid_v2_sessions.py` | 159 | PREP-D1 — sesi dokumen bertahap (K-RFID-10 / AUD-MW-22) + klaim crossing tanpa bocor (AUD-MW-08). |
+| `rfid_v2_policy.py` | 317 | PREP-D1 — kebijakan keputusan lintasan gate V2 (aturan bisnis tetap di `gate_evaluator`). |
+| `rfid_v2_service.py` | 377 | Protokol gate U300 V2 (Kubus V2 + PREP-D1). Pengamatan tidak pernah mengubah stok atau akuntansi. |
+| `rfid_v2_sessions.py` | 174 | PREP-D1 — sesi dokumen bertahap (K-RFID-10 / AUD-MW-22) + klaim crossing tanpa bocor (AUD-MW-08). |
 | `rfid_v2_simulator.py` | 122 | PREP-D1 — simulator lintasan TANPA perangkat (alat admin/dev, dipakai paket E & UAT). |
-| `rfid_v2_sources.py` | 212 | PREP-D1 — sumber dokumen gate V2: manifest dari dokumen bisnis (bukan dari klien) + auto-cocok (AUD-MW-15). |
+| `rfid_v2_sources.py` | 215 | PREP-D1 — sumber dokumen gate V2: manifest dari dokumen bisnis (bukan dari klien) + auto-cocok (AUD-MW-15). |
 | `rfq_service.py` | 385 | RFQ / Quotation service — Fase 6.1 (P1 Sourcing). |
 | `rnd_catalog_validation.py` | 65 | Validate source relations before saving any R&D specification. |
 | `rnd_flow_service.py` | 236 | UAT 24 Okt (P3/P4) — aturan alur R&D produk baru yang dipakai `rnd_sample_service` & router. |
@@ -614,7 +619,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `tolerances.py` | 9 | KN-A13 (audit 2026-09-21) — SATU sumber toleransi numerik. |
 | `trace_print_service.py` | 63 | Cetak Jejak Dokumen — seluruh rantai dokumen satu jangkar sebagai satu PDF audit. |
 | `tracking_service.py` | 134 | HRD H2 services — Live Field Tracking (WebSocket). |
-| `transfer_receipt_service.py` | 451 | P03 (IMP-26/27) + sisa P02 — transfer terkait SO, penerimaan AKTUAL per roll, exception, cek ulang aturan tuju |
+| `transfer_receipt_service.py` | 458 | P03 (IMP-26/27) + sisa P02 — transfer terkait SO, penerimaan AKTUAL per roll, exception, cek ulang aturan tuju |
 | `trip_service.py` | 140 | L07 LN-070/071 — picking list multi-gudang, cek kesiapan trip multi-SO, manifest armada. |
 | `turn_notification_service.py` | 207 | Notifikasi "giliran Anda" — setiap dokumen berpindah tahap, peran yang harus bertindak |
 | `uom_rules_service.py` | 482 | FASE B — REGISTRY KONVERSI SATUAN **GLOBAL** + TOLERANSI (D-06/D-07). |
@@ -639,7 +644,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 64 | 8221 |
+| `__tests__` | 65 | 8413 |
 | `admin` | 34 | 6574 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1442 |
@@ -669,7 +674,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pricing` | 1 | 151 |
 | `production` | 3 | 751 |
 | `purchasing` | 85 | 17941 |
-| `rfid` | 14 | 2254 |
+| `rfid` | 16 | 2640 |
 | `rnd` | 66 | 7874 |
 | `sales` | 97 | 15782 |
 | `sales_admin` | 11 | 1862 |
@@ -677,7 +682,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `settings` | 49 | 9077 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
-| `wms` | 97 | 12888 |
+| `wms` | 97 | 12896 |
 
 **Komponen bersama (`src/components/*.jsx`, 99):** `ArchivedReadOnlyBanner.jsx`, `AskKnButton.jsx`, `AttachmentThumb.jsx`, `AuditHistoryPanel.jsx`, `BaseFabricPicker.jsx`, `CartPanel.jsx`, `CartPanelBanners.jsx`, `Collapse.jsx`, `CommandPalette.jsx`, `ConfirmHost.jsx`, `ConfirmModal.jsx`, `CoreWidgets.jsx`, `CustomerPanel.jsx`, `DecimalInput.jsx`, `DesktopOnlyNotice.jsx`, `DetailDrawer.jsx`, `DetailModal.jsx`, `DetailParts.jsx`, `DetailPopup.jsx`, `DualName.jsx`, `EntityBadge.jsx`, `EntityRequiredNotice.jsx`, `EntitySwitcher.jsx`, `ErrorBoundary.jsx`, `ErrorNotice.jsx`, `FilterChips.jsx`, `FormModal.jsx`, `FormSection.jsx`, `FulfillmentInfo.jsx`, `GroupEntityBadge.jsx`, `GuidedActionPanel.jsx`, `GuidedTour.jsx`, `HubTabs.jsx`, `KNDatePicker.jsx`, `KNDateTimePicker.jsx`, `KNMonthPicker.jsx`, `KNPager.jsx`, `KNSelect.jsx`, `KNTimePicker.jsx`, `LabelPrinterModal.jsx`, `LineFilter.jsx`, `LinkCard.jsx`, `ListControls.jsx`, `ListPageParts.jsx`, `LoadingLine.jsx`, `LocationFields.jsx`, `LoginScreen.jsx`, `MakloonSelect.jsx`, `MediaLightbox.jsx`, `MixedLotConfirmModal.jsx`, `MoneyInput.jsx`, `NotificationCenter.jsx`, `OkNotice.jsx`, `OnboardingPanel.jsx`, `OpeningCostBanner.jsx`, `PageTabs.jsx`, `PagedRows.jsx`, `PaginationBar.jsx`, `PantoneFinder.jsx`, `PaymentBadge.jsx`, `PeggingModal.jsx`, `PeriodUnlockBanner.jsx`, `PeriodUnlockCard.jsx`, `PrinterStatusWidget.jsx`, `ProductCard.jsx`, `ProductColorChip.jsx`, `ProductColorTriad.jsx`, `ProductDetail.jsx`, `ProductGallery.jsx`, `ProductQuickView.jsx`, `ProductSelect.jsx`, `QcRequestPicker.jsx`, `QcStatusBadge.jsx`, `QtyDual.jsx`, `ResponsiveTable.jsx`, `ReturnPolicyEditor.jsx`, `ReturnTimeline.jsx`, `RevisionProgress.jsx`, `RollCheckChips.jsx`, `RollLabelActions.jsx`, `RollPicker.jsx`, `RollReconcileSheet.jsx`, `SalesStockSummary.jsx`, `SampleKindChooser.jsx`, `ScopeReadOnlyBanner.jsx`, `SeeAllModal.jsx`, `SiteSelect.jsx`, `SoStatusBadges.jsx`, `StarRating.jsx`, `StoreCreditBadge.jsx`, `SupersedeHint.jsx`, `TableFilter.jsx`, `TourMenu.jsx`, `UomConvertHint.jsx`, `UomInputConvert.jsx`, `VariantAxisPicker.jsx`, `WaitingBoardsStrip.jsx`, `WaitingQueueBoard.jsx`, `WarehouseModeBadge.jsx`
 

@@ -175,3 +175,19 @@ hitung ulang lalu dihapus + jurnal; kode tak dikenal → roll baru saat ACC + ju
 tidak bisa diubah** — aturan "SKU stabil"). Celah: data roll temuan diisi penyetuju (bukan di lapangan), kode yang dipindai
 belum dijadikan tag RFID roll baru, belum ada mode "pendaftaran awal gedung" + progres per rak, persetujuan massal, penampung
 "produk belum dikenali", dan fitur menandai produk duplikat "digantikan oleh" kode induk.
+
+## 9. Menunggu konfirmasi pemilik — dari persiapan tanpa perangkat (9 Nov 2026)
+Sudah dibangun dengan pilihan bawaan implementer; **belum** keputusan pemilik. Rincian:
+[`hasil/PREP-GELOMBANG-1.md`](hasil/PREP-GELOMBANG-1.md) · [`hasil/PREP-GELOMBANG-2.md`](hasil/PREP-GELOMBANG-2.md).
+
+| Butir | Bawaan yang dipasang sekarang |
+|---|---|
+| Unduh lembar perbaikan master oleh MD | Peran MD bawaan belum punya izin unduh (`product.export`) |
+| Waktu perbaikan master | Disarankan tepat sebelum opname per gedung (stok lama tetap di SKU lama sampai gedungnya didaftarkan ulang) |
+| Roll lama yang masih dipesan saat pendaftaran awal | Pengecualian yang diputus manual (bukan dilepas otomatis) |
+| Persetujuan Finance terpisah untuk pendaftaran awal | Tidak — cukup izin `inventory.approve_count` |
+| Gate di Gedung Retur RCM | Dianggap tempat inspeksi **tanpa** gate (padahal juga menyimpan grade B/BS/C) |
+| Penanda "minta inspeksi" barang baru | Belum ada; sementara roll di SPK QC 4-point dirutekan ke gedung inspeksi |
+| Cek muat di gedung bergate | Gate OUT tertaut memenuhi "wajib Final Loading Check"; handheld opsional |
+| Pembuka kunci gate merah | Hanya izin approve (Admin/Manajer/Admin Gudang), bukan petugas gudang |
+| Jendela "muatan sebelumnya" | 120 dtk: roll yang baru lewat gate yang sama lalu terbaca lagi → bukan merah (INFO bila puncak sebelum sinar A, kuning bila tidak terbukti) — kalibrasi di lokasi |
