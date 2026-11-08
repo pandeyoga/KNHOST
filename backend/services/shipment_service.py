@@ -66,6 +66,8 @@ async def dispatch_task(
             status_code=400,
             detail=f"Qty kirim ({qty}) melebihi yang siap dikirim ({max_ship}).")
 
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_task_movable(task, "pengiriman outbound")
     # Sesi 12 — klaim saga SESUDAH semua validasi, SEBELUM roll dipindah/surat jalan ditulis.
     from services import atomic_claim as _saga
     fresh = await _saga.claim("wms_tasks", task["id"], "dispatch", actor=actor_name,

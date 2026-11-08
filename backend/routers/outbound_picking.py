@@ -181,6 +181,8 @@ async def scan_pick_item(
     if not math.isfinite(actual_qty) or actual_qty <= 0:
         raise HTTPException(status_code=400, detail="Qty pick harus angka > 0 (koreksi lewat pembatalan pick, bukan qty negatif).")
     roll_id, bin_id, lot = await _resolve_pick_roll(task, roll_id, bin_id, lot, actual_qty)
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_task_movable(task, "pengambilan (picking) outbound", roll_id=roll_id, bin_id=bin_id)
 
     # Update picked qty
     # Cek UI UAT v3 (S10) — 19,42 + 20,37 + 0,21 = 40.00000000000001 dulu ditolak "melebihi 40.0":

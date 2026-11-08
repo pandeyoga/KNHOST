@@ -279,6 +279,8 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     if len(rolls) != len(roll_ids):
         raise HTTPException(status_code=400,
                             detail="Sebagian roll tidak ditemukan di gudang asal / di luar entitas")
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_rolls_movable(rolls, "membuat perintah putaway", to_warehouse_id=warehouse_to)
     owners = {r.get("owner_entity_id") for r in rolls}
     if len(owners) > 1:
         raise HTTPException(status_code=400, detail="Satu PA hanya untuk satu pemilik barang")
@@ -351,6 +353,8 @@ async def dispatch(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     order = await _get(order_id, scope_ids)
     if order["status"] != "open":
         raise HTTPException(status_code=400, detail=f"PA berstatus {order['status']}")
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_order_movable(order, "mengirim perintah putaway")
     await _saga.claim("putaway_orders", order_id, "putaway_dispatch", precondition={"status": "open"})
     moved: List[Dict[str, Any]] = []
     for it in order["items"]:
@@ -503,6 +507,8 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
     elif scanned_epcs is None:
         raise HTTPException(status_code=400, detail=(
             "Kirim hasil scan EPC, atau pilih konfirmasi manual (semua tiba) dengan alasan."))
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_order_movable(order, "konfirmasi tiba perintah putaway")
     # INV-ATOMIC-01 (T-01 Opsi B) — klaim PA sebelum roll/tag/mutasi ditulis.
     from services import atomic_claim as _saga
     fresh = await _saga.claim("putaway_orders", order_id, "putaway_confirm_arrival",

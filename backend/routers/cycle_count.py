@@ -87,7 +87,7 @@ async def list_sessions(request: Request) -> List[Dict[str, Any]]:
     await require_permission(request, "inventory", "cycle_count")
     ctx = await entity_ctx(request)
     # E-02 (audit 2026-09-02) — koleksi SCOPED; dulu `find({})` menampilkan sesi PT lain.
-    q = resolve_list_scope("cycle_count_sessions", {}, ctx)
+    q = resolve_list_scope("cycle_count_sessions", {"mode": {"$ne": "registration"}}, ctx)   # PREP-B — sesi pendaftaran punya daftar sendiri
     sessions = await db.cycle_count_sessions.find(q, {"_id": 0}).sort("created_at", -1).to_list(100)
     return [safe_doc(s) for s in sessions if s]
 
@@ -550,3 +550,9 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
                  "reason": payload.reason.strip()})
     done = await db.cycle_count_sessions.find_one({"id": session_id}, {"_id": 0})
     return {**await rcs.reconcile(done), "status": done["status"], "recount": []}
+
+
+# PREP-B — pendaftaran awal gedung (sesi opname ber-mode "registration") — rute /api/registration/...
+from routers.initial_registration import router as _registration_router  # noqa: E402
+
+router.include_router(_registration_router)

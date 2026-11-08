@@ -9,13 +9,18 @@
  *    dulu bisa membuka menu RFID (`canOpen("cs-rfid-lokasi")`: admin, warehouse, + `hidden_views` peran
  *    kustom dipatuhi lewat SSOT menu) — tidak ada peran yang mendapat akses baru.
  * Lokasi RFID kini hanya menautkan ke sini (`operations` {tab:"cycle", method:"rfid", warehouse}).
+ * PREP-B — metode ketiga "Pendaftaran awal" (opname awal RFID, KEPUTUSAN_GATE_RFID §8): daftar ulang stok gedung dari
+ * fisik. Untuk pemegang `inventory.cycle_count` (penyetuju juga); peran tanpa menu RFID melihat baris pilihan sendiri
+ * (Hitung fisik · Pendaftaran awal) supaya metode Sapu RFID tetap tertutup bagi mereka.
  */
-import { ClipboardCheck, Radar } from "lucide-react";
+import { ClipboardCheck, Radar, ScanLine } from "lucide-react";
 import FilterChips from "../../components/FilterChips";
 import KNSelect from "../../components/KNSelect";
 import { useAppNav } from "../../context/AppNavContext";
 import CycleCount from "../inventory/CycleCount";
 import CycleCountPanel from "../rfid/CycleCountPanel";
+import InitialRegistration from "../inventory/registration/InitialRegistration";
+import { canCurrent } from "../../config/roles";
 
 export default function StockOpnameTab({
   method = "count", onMethodChange, warehouseId = "", onWarehouseChange, warehouses = [],
@@ -23,8 +28,11 @@ export default function StockOpnameTab({
 }) {
   const { canOpen } = useAppNav();
   const rfidAllowed = canOpen("cs-rfid-lokasi");
+  const canRegister = canCurrent("inventory", "cycle_count");
   // Tautan ke sesi opname tertentu (Meja Gudang/papan) selalu membuka metode Hitung fisik.
-  const active = method === "rfid" && rfidAllowed && !cycleCountProps.focusSessionId ? "rfid" : "count";
+  const focus = !!cycleCountProps.focusSessionId;
+  const active = focus ? "count" : (method === "rfid" && rfidAllowed ? "rfid" : (method === "register" && canRegister ? "register" : "count"));
+  const registerChip = { key: "register", label: "Pendaftaran awal gedung (RFID)", icon: ScanLine, hidden: !canRegister };
   const whOpts = [{ value: "", label: "Pilih gudang" }].concat(
     (warehouses || []).map((w) => ({ value: w.id, label: [w.name, w.city].filter(Boolean).join(" — ") })));
 
@@ -38,11 +46,22 @@ export default function StockOpnameTab({
             options={[
               { key: "count", label: "Hitung fisik (mengubah stok lewat persetujuan)", icon: ClipboardCheck },
               { key: "rfid", label: "Sapu RFID (laporan saja)", icon: Radar },
+              registerChip,
             ]} />
         </div>
       )}
+      {!rfidAllowed && canRegister && (
+        <div className="flex flex-wrap items-center gap-2" data-testid="wms-opname-register-row">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#8E8E93]">Metode</span>
+          <FilterChips testId="wms-opname-method" ariaLabel="Metode stock opname" value={active}
+            onChange={(k) => onMethodChange?.(k)}
+            options={[{ key: "count", label: "Hitung fisik (mengubah stok lewat persetujuan)", icon: ClipboardCheck }, registerChip]} />
+        </div>
+      )}
 
-      {active === "rfid" ? (
+      {active === "register" ? (
+        <InitialRegistration warehouses={warehouses} />
+      ) : active === "rfid" ? (
         <section className="section-card" data-testid="wms-opname-rfid">
           <div className="section-head max-sm:!flex-col max-sm:!items-start max-sm:gap-2">
             <div className="min-w-0">

@@ -284,6 +284,8 @@ async def place_roll(roll: Dict[str, Any], wh: Dict[str, Any], node: Dict[str, A
     """Jalur TUNGGAL penulisan bin: evaluasi → kunci bin → evaluasi ulang → CAS tulis → mutasi berjejak."""
     prod = await db.products.find_one({"id": roll["product_id"]}, {"_id": 0}) or {}
     bin_id = node["bin"]["id"]
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_movable(action="penempatan/pindah bin", roll=roll, to_warehouse_id=wh["id"], to_bin_id=bin_id)
     pr.check_override(actor, override, await pr.evaluate(wh, node, roll, prod, extra_status_ok=extra_status_ok))
     await pr.acquire_bin_lock(bin_id, (actor or {}).get("id", "system"))
     try:

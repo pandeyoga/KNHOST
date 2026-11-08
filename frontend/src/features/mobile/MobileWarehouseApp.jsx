@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ClipboardList, ScanLine, Tags, PackageCheck, AlertTriangle, CheckCircle2, Loader2, Scissors, Printer, Camera } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import MobileShell from "./MobileShell";
+import MobileRegistration from "./MobileRegistration";   // PREP-B — pendaftaran awal gedung (opname awal RFID)
 import { printSampleLabel, printInboundRollLabels, reprintRollLabel } from "./MobileTaskActions";
 import { isNetworkError, queueScan } from "../../utils/offlineQueue";
 import PrinterStatusWidget from "../../components/PrinterStatusWidget";
@@ -263,9 +264,9 @@ function ScanTab({ onOpenTask }) {
     <>
       <div className="px-3 pt-2">
         <PageTabs testId="mw-pindai-tabs" value={part} onChange={setPart} ariaLabel="Pindai atau roll belum bertag"
-          tabs={[{ key: "scan", label: "Pindai" }, { key: "untagged", label: "Belum Tag" }]} />
+          tabs={[{ key: "scan", label: "Pindai" }, { key: "untagged", label: "Belum Tag" }, { key: "register", label: "Daftar Awal" }]} />
       </div>
-      {part === "scan" ? <ScanPanel onOpenTask={onOpenTask} /> : <UntaggedPanel />}
+      {part === "scan" ? <ScanPanel onOpenTask={onOpenTask} /> : part === "register" ? <MobileRegistration /> : <UntaggedPanel />}
     </>
   );
 }
