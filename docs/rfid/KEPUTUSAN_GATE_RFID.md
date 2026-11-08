@@ -122,7 +122,7 @@ tidak terdeteksi di gate. Sejak itu (4 Nov, P18) `gate_evaluator` juga mengenali
 | K-RFID-09 | Kebijakan alarm: mana yang **merah terkunci** (pelanggaran) vs **kuning/perlu diperiksa** tanpa mengunci (roll kurang, capture tidak lengkap, waktu, tanpa manifest); satu kunci per gate. Kode Kubus kini mengunci semua non-hijau dan berantai (audit AUD-MW-03) | Pemilik | **ditutup 8 Nov 2026 (pemilik): merah terkunci HANYA untuk pelanggaran nyata** (roll tanpa dokumen, karantina, sudah keluar, dokumen batal, EPC asing bersinyal kuat). Roll kurang / capture tidak lengkap / waktu tidak tervalidasi / tanpa manifest = **kuning**: barang jalan, masuk antrean periksa, gate tidak terkunci. **Satu kunci per gate**; simpan daftar alasan, bukan satu kode yang ditimpa |
 | K-RFID-10 | Muat multi-trip stacker: dinilai **per lintasan terhadap seluruh SJ** (kode Kubus kini) atau **sesi dokumen akumulatif** — roll kurang dinilai saat dokumen ditutup (audit AUD-MW-22) | Pemilik | **ditutup 8 Nov 2026 (pemilik): SESI DOKUMEN BERTAHAP** — tiap trip hijau bila semua roll kuat non-latar milik dokumen aktif & belum pernah lewat; roll yang belum lewat dinilai saat dokumen ditutup/dikirim |
 
-| K-RFID-11 | Cara menautkan tag ke **stok lama**: tempel lalu *tautkan* EPC bawaan (pairing, perlu layar handheld baru) · cetak label RFID dari sistem · tempel lalu *encode* (risiko tertulis ke tag sebelah) | Pemilik | **terbuka** — pemilik minta penjelasan lebih detail dulu (8 Nov). Rencana pemilik: semua stok lama ditag dulu, lalu opname |
+| K-RFID-11 | Cara menandai **stok lama** | Pemilik | **arah diputuskan 8 Nov 2026**: data stok lama TIDAK dapat diandalkan → tagging = **opname awal / pendaftaran ulang dari fisik** per gedung (lihat §8); cara menulis/menautkan tag menunggu cek keunikan EPC tag yang dibeli |
 
 Yang **boleh** dikerjakan tanpa menunggu: analisis/dokumen (mis. K-RFID-07), dan uji meja K-RFID-03 bila perangkat
 tersedia. Perubahan kode middleware/gate hanya setelah pemilik menyatakan butir terkait ditutup — catat keputusannya
@@ -149,3 +149,28 @@ gedung belum tervalidasi → semua hal di bawah dibuat BISA DIKONFIGURASI**, buk
 Masih terbuka: **penamaan alamat rak/bin** (usulan `LOKASI-GEDUNG-ZONA-RAK-TINGKAT-BIN`, mis. `RCM-WVN-A-R01-T2-B03`),
 K-RFID-03 (uji meja SDK), K-RFID-05 (setelan reader & kabel), K-RFID-08 (target uji), K-RFID-11 (cara tag stok lama),
 clear zone per gate (K-RFID-04).
+
+## 8. Opname awal (pendaftaran ulang stok dari fisik) — 8 Nov 2026
+Latar (pemilik): klien punya stok tetapi **tidak yakin isi gudang & jumlahnya; data lama tidak dapat diandalkan**. Karena
+itu tagging stok lama BUKAN menautkan tag ke data lama, tetapi **mendaftarkan ulang setiap roll fisik** (roll + tag lahir
+bersamaan) per gedung, lalu gedung itu di-*cutover* sebelum gatenya dinyalakan.
+
+Alur: (1) master produk dirapikan → (2) gedung dibekukan sesuai keputusan K-OPN-03 → (3) per rak/petak: tempel tag + isi
+produk (pindai label supplier / pilih), panjang, lot, grade, PT, bin di handheld → roll & tag dibuat sekaligus →
+(4) bandingkan dengan data lama per produk per gedung (hilang / temuan / selisih) → (5) Finance setuju, jurnal selisih →
+(6) data gedung diganti hasil pendaftaran, opname RFID verifikasi, gate gedung dinyalakan.
+
+| ID | Hal | Keputusan |
+|---|---|---|
+| K-OPN-01 | Peran data lama | **Hanya referensi/pembanding** (per produk per gedung), bukan acuan. **Master data dirapikan dulu**: kode salah, duplikat, typo diperbaiki sebelum pendaftaran |
+| K-OPN-02 | Nilai barang temuan | **Biaya rata-rata** (perilaku bawaan `stock_count_service.surplus_unit_cost`: rata-rata gudang → rata-rata pemilik → harga master produk) |
+| K-OPN-03 | Pembekuan gerakan gedung selama pendaftaran | **terbuka** — dijelaskan ke pemilik 8 Nov (penuh per gedung / per zona / tanpa beku + catat gerakan) |
+| K-OPN-04 | Sumber panjang roll | **Dari label bila ada**; roll tanpa label ditandai "panjang belum terverifikasi" dan diukur saat diambil/dipotong |
+| K-OPN-05 | Keunikan EPC tag yang dibeli | **terbuka** — cek ±20 tag dari gulungan: EPC bawaan unik → cukup dibaca & didaftarkan; tidak unik → EPC ditulis sistem/printer sebelum ditempel |
+
+Yang sudah ada di ERP: modul Opname per roll (`stock_count_roll_service`: potret → pindai → rekonsiliasi → ACC; hilang →
+hitung ulang lalu dihapus + jurnal; kode tak dikenal → roll baru saat ACC + jurnal surplus), tata kelola master produk
+(`master_governance_service`: pratinjau duplikat dari atribut kanonik, batch + rollback, koreksi nama ber-riwayat; **SKU
+tidak bisa diubah** — aturan "SKU stabil"). Celah: data roll temuan diisi penyetuju (bukan di lapangan), kode yang dipindai
+belum dijadikan tag RFID roll baru, belum ada mode "pendaftaran awal gedung" + progres per rak, persetujuan massal, penampung
+"produk belum dikenali", dan fitur menandai produk duplikat "digantikan oleh" kode induk.
