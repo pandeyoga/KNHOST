@@ -21,6 +21,12 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
   hanya oleh reviewer. Cek ulang setiap temuan di `HEAD` sebelum mengubah kode.
 * Isi paket review adalah arsip — jangan dihapus/diubah; tulis hasil di `hasil/`.
 
+## Middleware & gate RFID
+* Sebelum menyentuh `middleware/` (U300 Reader Agent), logika gate (`gate_evaluator`, `rfid_ingest_service`,
+  `rfid_service`) atau patch `middleware/u300-erp-integration-0.5.0/`: baca **`docs/rfid/KEPUTUSAN_GATE_RFID.md`**
+  (bacaan nyasar, photo-eye, fakta lapangan pemilik, keputusan terbuka K-RFID-01…08).
+* Pemilik: soal bacaan nyasar & photo-eye diselesaikan dulu sebelum membangun/merevisi — butir terbuka = STOP & ASK.
+
 ## Lingkungan lokal (Docker)
 Lengkapnya: `docs/LOCAL_DEV.md`. Ringkas:
 

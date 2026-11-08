@@ -14,6 +14,9 @@ Disalin ke repo ini pada 8 Nov 2026 dari folder lokal
 | [`u300-erp-integration-0.5.0/`](u300-erp-integration-0.5.0/) | Paket integrasi ERP 0.5.0 LAB: `erp-u300-v2.patch` (kumulatif — router/service `rfid_v2`, kontrak, panel "Integrasi reader U300", tes), `README.md`, `REVIEW.md`, `MANIFEST.json`, `evidence/`. |
 
 ## Penting sebelum mengerjakan
+0. **Baca dulu [`docs/rfid/KEPUTUSAN_GATE_RFID.md`](../docs/rfid/KEPUTUSAN_GATE_RFID.md)** — bacaan nyasar
+   (unintended read), photo-eye, fakta lapangan dari pemilik, dan keputusan yang masih terbuka. Pemilik: hal itu
+   diselesaikan dulu sebelum membangun atau merevisi middleware; butir terbuka = tanya pemilik.
 1. **SDK vendor Chainway hanya untuk internal.** Repo KNHOST dijadikan **privat** (8 Nov 2026) justru karena AAR &
    APK ini. Izin distribusi vendor belum dipastikan — jangan salin `u300-agent/app/libs/*.aar` atau APK ke repo/
    tempat publik.

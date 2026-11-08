@@ -115,6 +115,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
+| K-RFID | **Gate RFID — diselesaikan sebelum membangun/merevisi middleware & logika gate:** photo-eye masuk pengadaan? (rekomendasi 2 pasang through-beam/gate), antena EU vs 902–928, uji meja SDK U300 (RSSI per bacaan), tata letak & clear zone, setelan reader/kabel, SOP operator, pemetaan patch Kubus 0.5.0, target uji — [K-RFID-01…08](../rfid/KEPUTUSAN_GATE_RFID.md) | 2026-11-08 |
 | AUD2-K | ~~16 keputusan bisnis audit UI tahap 2~~ — **DIJAWAB 26 Okt**: semua rekomendasi kecuali K-05 (kelas dari moving average, top/bottom 20 %) & K-13 (istilah tidak diubah); diterapkan `c9b3f76` ([Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md)) | 2026-10-26 |
 | AUD2-D | ~~29 kandidat duplikasi & 10 tata letak besar~~ — **DIJAWAB 26 Okt**: semua rekomendasi disetujui (form input HP tetap lengkap), tata letak urutan L-04 → L-03 → L-01 & L-05 → L-09 → sisanya; dikerjakan di fase 3 (rencana di [Audit UI 2](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2.md) › rencana-fase3); **fase 3 SELESAI** `8bbd1fe`…`e7d21bc` ([Fase 3](../uat/2026-10-21/hasil/UAT24-AUDIT-UI-2-FASE3.md)) | 2026-10-26 |
 | P16-K1 | **DIJAWAB 26 Okt — disetujui, diterapkan `2435ad8` (fase 3)** · Setujui susunan baru menu Pengaturan (7 kelompok, mock di [F5](../uat/2026-10-21/hasil/UAT24-F5.md)) sebelum menu dipindah | 2026-10-24 |
