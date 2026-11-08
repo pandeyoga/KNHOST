@@ -146,12 +146,18 @@ def device_cfg(dev):
     return r.json()
 
 
-def build(dev, scenario, doc=(), extra=(), background=()):
+def build(dev, scenario, doc=(), extra=(), background=(), carry=()):
     cfg = device_cfg(dev)
     g = cfg["logical_gates"][0]
     return env.build_passage(scenario=scenario, gate_id=g["logical_gate_id"], config_version=cfg["config_version"],
                              hardware_profile_id=cfg["hardware_profile_id"], direction=g["direction"],
-                             antennas=g["antenna_ids"], doc_epcs=doc, extra_strong=extra, background_epcs=background)
+                             antennas=g["antenna_ids"], doc_epcs=doc, extra_strong=extra, background_epcs=background,
+                             carry_epcs=carry)
+
+
+def age_claims(dev):
+    """Klaim crossing perangkat ini dimundurkan ke luar jendela bawaan muatan → pembacaan ulang = replay sungguhan."""
+    DB.rfid_v2_crossings.update_many({"device_id": dev["id"]}, {"$set": {"at": "2026-01-01T00:00:00Z"}})
 
 
 def send(dev, built, close_patch=None):
@@ -304,6 +310,7 @@ def test_claims_do_not_leak_on_conflict(admin):
     dev = make_device(admin)
     sid, rolls, epcs = shipment(2)
     assert send(dev, build(dev, "partial_trip", epcs[:1]))["verdict"] == "GREEN"
+    age_claims(dev)   # replay sungguhan (bukan bawaan muatan rapat — itu diuji di test_carryover_*)
     both = send(dev, build(dev, "full_load", epcs))
     assert both["verdict"] == "RED" and "REPLAY_EXIT" in both["reason_codes"]
     assert session_of(admin, sid)["passed"] == 1              # roll kedua TIDAK ikut terklaim oleh lintasan merah
@@ -314,6 +321,43 @@ def test_claims_do_not_leak_on_conflict(admin):
     ok, conflicts = run(sessions.insert_claims("mine", "out", [("rA", ref), ("rB", ref)], {"device_id": dev["id"]}))
     assert not ok and conflicts == ["rA"]
     assert not DB.rfid_v2_crossings.find_one({"_id": sessions.claim_id("shipment", ref["source_id"], "out", "rB")})
+
+
+# ── 5b. bawaan muatan rapat berurutan BUKAN pelanggaran (usulan PREP-E §9.2, K-RFID-09) ────
+def test_carryover_previous_load_not_red(admin):
+    """Muatan 2 lewat tak lama setelah muatan 1: pre-buffer lintasan 2 ikut membaca roll muatan 1 (puncak sebelum
+    sinar A) → INFO `PREVIOUS_PASSAGE`, tidak dinilai/diklaim ulang; muatan 2 tetap hijau & tercatat."""
+    dev = make_device(admin)
+    sid1, _, load1 = shipment(2)
+    sid2, _, load2 = shipment(2)
+    assert send(dev, build(dev, "full_load", load1))["verdict"] == "GREEN"
+    d = send(dev, build(dev, "full_load", load2, carry=load1))
+    assert d["verdict"] == "GREEN" and not d["latched"], d["reason_codes"]
+    levels = {i["code"]: i["level"] for i in d["reasons"]}
+    assert levels.get("PREVIOUS_PASSAGE") == "INFO" and "REPLAY_EXIT" not in levels
+    assert d["counts"]["matched"] == 2 and d["counts"]["already_passed"] == 2
+    assert [s["source_id"] for s in d["sources"]] == [sid2]          # dokumen muatan 1 tidak ikut auto-cocok
+    assert session_of(admin, sid1)["passed"] == 2 and session_of(admin, sid2)["passed"] == 2
+    assert DB.rfid_v2_crossings.count_documents({"source_id": sid1}) == 2   # klaim muatan 1 tidak berlipat
+    only = send(dev, build(dev, "empty", carry=load1))               # hanya bawaan, tanpa muatan baru
+    assert only["verdict"] == "CANCELLED" and not only["latched"], only["reason_codes"]
+    assert not gate_state(dev)["latched"]
+
+
+def test_carryover_without_beam_evidence_is_review(admin):
+    """Tanpa bukti sinar (cadangan RF) atau puncak di DALAM lintasan: roll baru saja lewat gate ini → kuning tanpa
+    kunci (`PREVIOUS_PASSAGE_RECENT`). Klaim lebih lama dari jendela → replay tetap MERAH."""
+    dev = make_device(admin)
+    _, _, load1 = shipment(1)
+    assert send(dev, build(dev, "full_load", load1))["verdict"] == "GREEN"
+    rf = send(dev, build(dev, "sensor_fault", load1))
+    assert rf["verdict"] == "REVIEW" and not rf["latched"] and "PREVIOUS_PASSAGE_RECENT" in rf["reason_codes"]
+    inside = send(dev, build(dev, "full_load", load1))                # puncak di dalam jendela sinar
+    assert inside["verdict"] == "REVIEW" and "PREVIOUS_PASSAGE_RECENT" in inside["reason_codes"]
+    assert not gate_state(dev)["latched"]
+    age_claims(dev)
+    old = send(dev, build(dev, "full_load", load1))
+    assert old["verdict"] == "RED" and old["latched"] and "REPLAY_EXIT" in old["reason_codes"]
 
 
 # ── 6. luapan → ACK quarantined durable + REVIEW (AUD-MW-01c) ────────────────────────────

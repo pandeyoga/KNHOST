@@ -127,7 +127,13 @@ async def run():
         s.validate('GateState', r.json())
         check(r.json()['decision'] == decision, 'gate state returns stored passage decision')
         check((await http.post(path + '/acknowledge', headers=headers, json={'device_id': dev['id'], 'note': 'device cannot ack'})).status_code == 401, 'device key cannot acknowledge')
-        second, second_close = batch(cfg, epcs)
+        recent, recent_close = batch(cfg, epcs)   # dibaca lagi di gate yang sama segera sesudahnya (bawaan muatan)
+        await s.events(dev, recent)
+        again = await s.close(dev, recent['context']['local_passage_id'], recent_close, 'recent')
+        check(again['verdict'] == 'REVIEW' and 'PREVIOUS_PASSAGE_RECENT' in again['reason_codes'] and not again['latched'],
+              'recent re-read on the same gate is yellow without latch (K-RFID-09)')
+        await db.rfid_v2_crossings.update_many({'device_id': dev['id']}, {'$set': {'at': '2026-01-01T00:00:00Z'}})
+        second, second_close = batch(cfg, epcs)   # klaim lama (di luar jendela) → replay sungguhan
         await s.events(dev, second)
         replay = await s.close(dev, second['context']['local_passage_id'], second_close, 'second')
         check(replay['verdict'] == 'RED' and replay['reason_code'] in ('REPLAY_CROSSING', 'REPLAY_EXIT'), 'second passage cannot reuse crossing')

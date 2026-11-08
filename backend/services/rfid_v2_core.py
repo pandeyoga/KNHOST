@@ -55,6 +55,7 @@ async def ensure_indexes() -> None:
         await collection(name).create_index([('passage', 1), ('received_at', 1)])
     await collection('rfid_v2_crossings').create_index([('source_type', 1), ('source_id', 1), ('direction', 1)])
     await collection('rfid_v2_crossings').create_index('passage')
+    await collection('rfid_v2_crossings').create_index([('roll_id', 1), ('direction', 1), ('at', -1)])   # cek bawaan muatan
     await collection('rfid_v2_doc_sessions').create_index([('warehouse_id', 1), ('status', 1)])
     await collection('rfid_v2_health').create_index([('device_id', 1), ('active', 1)])
     # PREP-D2 — antrean periksa, buku transaksi gate, koreksi klaim

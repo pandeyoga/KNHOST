@@ -10,6 +10,9 @@ from typing import Any, Dict, List, Optional, Sequence
 
 STRONG_RSSI = -48.0
 WEAK_RSSI = -79.0
+# Muatan lewat: bacaan roll dokumen dimulai sesudah sinar A terpotong (t0+3000) dan memuncak sebelum sinar B
+# (t0+4100) — puncak di DALAM jendela sinar, seperti U300 sungguhan (label di bawah antena).
+LOAD_OFFSET_MS = 3100
 SCENARIOS = {
     'full_load': ('GREEN', 'Muatan penuh lewat: semua roll dokumen kuat, sinar A→B lalu keluar.'),
     'partial_trip': ('GREEN', 'Dua trip satu dokumen (sesi bertahap): trip 1 separuh roll, trip 2 sisanya.'),
@@ -48,8 +51,12 @@ def edge(passage_id: str, n: int, sensor: str, state: str, t: datetime, mono: in
 def build_passage(*, scenario: str, gate_id: str, config_version: str, hardware_profile_id: str, direction: str,
                   antennas: Sequence[str], doc_epcs: Sequence[str] = (), extra_strong: Sequence[str] = (),
                   background_epcs: Sequence[str] = (), passage_id: Optional[str] = None, boot_id: Optional[str] = None,
-                  seq_start: int = 0, batch_size: int = 100, now: Optional[datetime] = None) -> Dict[str, Any]:
-    """Return {'passage_id', 'batches': [EventsRequest], 'close': PassageClose, 'expected': verdict}."""
+                  seq_start: int = 0, batch_size: int = 100, now: Optional[datetime] = None,
+                  carry_epcs: Sequence[str] = ()) -> Dict[str, Any]:
+    """Return {'passage_id', 'batches': [EventsRequest], 'close': PassageClose, 'expected': verdict}.
+
+    `carry_epcs` = bacaan bawaan muatan SEBELUMNYA di pre-buffer (kuat, puncak sebelum sinar A terpotong).
+    """
     if scenario not in SCENARIOS:
         raise ValueError(f'Skenario tidak dikenal: {scenario}')
     pid = passage_id or f'sim-{scenario}-{uuid.uuid4().hex[:12]}'
@@ -64,9 +71,11 @@ def build_passage(*, scenario: str, gate_id: str, config_version: str, hardware_
     sums: List[Dict[str, Any]] = []
     for epc in doc_epcs:
         for i, ant in enumerate(ants[:2]):
-            sums.append(summary(pid, epc, ant, doc_peak - i * 3, t0, mono0))
+            sums.append(summary(pid, epc, ant, doc_peak - i * 3, t0, mono0, offset_ms=LOAD_OFFSET_MS))
     for epc in extra_strong:
-        sums.append(summary(pid, epc, ants[0], STRONG_RSSI, t0, mono0))
+        sums.append(summary(pid, epc, ants[0], STRONG_RSSI, t0, mono0, offset_ms=LOAD_OFFSET_MS))
+    for epc in carry_epcs:
+        sums.append(summary(pid, epc, ants[0], STRONG_RSSI, t0, mono0, offset_ms=0))
     for epc in background_epcs:
         sums.append(summary(pid, epc, ants[-1], STRONG_RSSI + 2, t0, mono0, in_background=True, count=40, offset_ms=0))
     edges: List[Dict[str, Any]] = []

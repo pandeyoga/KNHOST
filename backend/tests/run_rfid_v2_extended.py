@@ -57,6 +57,12 @@ async def run():
             again, close_again = batch(cfg, epcs[:1])
             await s.events(dev, again)
             d = await s.close(dev, again['context']['local_passage_id'], close_again, 'again')
+            # baru saja lewat gate yang sama → kuning tanpa klaim baru (bawaan muatan, K-RFID-09); klaim lama → merah
+            check(d['verdict'] == 'REVIEW' and 'PREVIOUS_PASSAGE_RECENT' in d['reason_codes'], 'regrouping within carry-over window is review, never green')
+            await db.rfid_v2_crossings.update_many({'device_id': dev['id']}, {'$set': {'at': '2026-01-01T00:00:00Z'}})
+            again, close_again = batch(cfg, epcs[:1])
+            await s.events(dev, again)
+            d = await s.close(dev, again['context']['local_passage_id'], close_again, 'again-old')
             check(d['verdict'] == 'RED', 'regrouping cannot bypass per-source crossing protection')
 
     dev, cfg, epcs, _, sources = await pair()

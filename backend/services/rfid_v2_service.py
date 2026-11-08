@@ -227,7 +227,7 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
         body=body, gate=g, params=params, pid=p['_id'], warehouse=cfg['warehouse_id'], events=ev['event'],
         summaries=ev['summary'], binding_entries=binding_entries, binding_reasons=binding_reasons,
         transport_reasons=await _transport_reasons(device, cfg, g, p, body, ev),
-        overflow=sum((p.get('overflow') or {}).values()))
+        overflow=sum((p.get('overflow') or {}).values()), device_id=device['id'])
     await _gate_txn_precheck(result, cfg, device, bool(p.get('simulated')))
     direction = result['direction']
     if result['claimable']:

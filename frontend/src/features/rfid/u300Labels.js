@@ -27,6 +27,8 @@ export const REASON = {
   ALREADY_OUT: "Roll sudah keluar/habis",
   REPLAY_EXIT: "Roll sudah pernah lewat untuk dokumen ini",
   REPLAY_CROSSING: "Roll sudah lewat di lintasan lain",
+  PREVIOUS_PASSAGE: "Terbaca dari muatan sebelumnya (tidak dinilai ulang)",
+  PREVIOUS_PASSAGE_RECENT: "Baru saja lewat gate ini — kemungkinan bacaan muatan lain",
   DOC_CANCELLED: "Dokumen dibatalkan",
   SO_CANCELLED: "Pesanan dibatalkan",
   WRONG_WAREHOUSE: "Dokumen dari gudang lain",

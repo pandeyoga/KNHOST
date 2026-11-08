@@ -12,12 +12,18 @@ Kelas EPC per lintasan: `background` (agent menandai daftar latar) · `weak` (RS
 yang "relevan"; weak & background dicatat, tidak pernah alarm dan tidak pernah diklaim lewat.
 """
 import asyncio
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
 from services import gate_evaluator as ge
 from services import rfid_v2_params as params_mod
 from services import rfid_v2_sources as sources
+from services.rfid_v2_common import parse_ts
+
+# Jendela "bacaan bawaan muatan sebelumnya" (detik) — TITIK AWAL KALIBRASI, bukan aturan. Belum di `GateParameters`
+# (skema kontrak menolak kunci baru); jadikan parameter per gate bila perlu diatur dari panel (usulan PREP-E §9.5).
+CARRYOVER_WINDOW_S = 120
 
 RED, REVIEW, INFO = 'RED', 'REVIEW', 'INFO'
 _RANK = {RED: 3, REVIEW: 2, INFO: 1}
@@ -71,13 +77,15 @@ def epc_evidence(events: List[Dict[str, Any]], summaries: List[Dict[str, Any]], 
     def slot(epc):
         return ev.setdefault(epc, {'count': 0, 'antennas': {}, 'bg': [], 'scored': False})
 
-    def peak(x, antenna, value):
+    def peak(x, antenna, value, at=None):
         if value is None:
             x['antennas'].setdefault(antenna, None)
             return
         x['scored'] = True
         cur = x['antennas'].get(antenna)
         x['antennas'][antenna] = value if cur is None else max(cur, value)
+        if at and (x.get('peak_rssi_at') is None or value > x['peak_rssi_at']):
+            x['peak_rssi_at'], x['peak_at'] = value, at   # waktu bacaan terkuat (jam reader) — dipakai cek bawaan
 
     for row in events:
         e = row['event']
@@ -87,7 +95,7 @@ def epc_evidence(events: List[Dict[str, Any]], summaries: List[Dict[str, Any]], 
         if e.get('epc'):
             x = slot(e['epc'])
             x['count'] += 1
-            peak(x, e.get('antenna'), e.get('rssi_dbm'))
+            peak(x, e.get('antenna'), e.get('rssi_dbm'), e.get('captured_at'))
     for row in summaries:
         s = row['summary']
         if row.get('quarantine'):
@@ -97,7 +105,7 @@ def epc_evidence(events: List[Dict[str, Any]], summaries: List[Dict[str, Any]], 
             x = slot(s['epc'])
             x['count'] += int(s.get('count') or 0)
             x['bg'].append(s.get('in_background'))
-            peak(x, s.get('antenna'), s.get('peak_rssi'))
+            peak(x, s.get('antenna'), s.get('peak_rssi'), s.get('t_peak'))
     for epc, x in ev.items():
         background = bool(x['bg']) and all(b is True for b in x['bg'])
         strong = any(v is not None and v >= params_mod.strong_threshold(params, a) for a, v in x['antennas'].items())
@@ -114,6 +122,45 @@ async def _lookup(epcs: List[str]):
     return tags, rolls
 
 
+async def _carryover(relevant: List[str], ev: Dict[str, Dict[str, Any]], tags, rolls, body: Dict[str, Any],
+                     gate: Dict[str, Any], direction: Optional[str], pid: str, device_id: Optional[str]):
+    """Bacaan bawaan muatan sebelumnya (usulan PREP-E §9.2; K-RFID-09).
+
+    Dua muatan rapat berurutan di gate satu arah yang sama: pre-buffer lintasan ke-2 ikut memuat roll muatan ke-1
+    yang baru saja diklaim lintasan ke-1. Itu bukan pelanggaran → JANGAN merah.
+    * klaim lintasan lain di gate & arah yang sama ≤ CARRYOVER_WINDOW_S DAN bacaan terkuat roll di lintasan ini
+      terjadi SEBELUM sinar A terpotong → INFO `PREVIOUS_PASSAGE` (tidak dinilai, tidak diklaim, tanpa transaksi);
+    * klaim baru-baru ini tetapi waktu tidak membuktikan (tanpa photo-eye / puncak di dalam lintasan) → REVIEW
+      `PREVIOUS_PASSAGE_RECENT` (kuning tanpa kunci; roll sudah tercatat oleh lintasan sebelumnya).
+    Klaim lebih lama dari jendela → penilaian biasa (REPLAY tetap merah).
+    Return (info_epcs, review_epcs: {epc: klaim}).
+    """
+    if not relevant or not direction:
+        return {}, {}
+    by_roll = {tags[e]['roll_id']: e for e in relevant if e in tags and tags[e].get('roll_id') in rolls}
+    if not by_roll:
+        return {}, {}
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=CARRYOVER_WINDOW_S)).isoformat().replace('+00:00', 'Z')
+    q = {'roll_id': {'$in': list(by_roll)}, 'direction': direction, 'gate_id': gate.get('logical_gate_id'),
+         'passage': {'$ne': pid}, 'at': {'$gte': cutoff}}
+    if device_id:
+        q['device_id'] = device_id
+    rows = await db.rfid_v2_crossings.find(q, {'_id': 0, 'roll_id': 1, 'passage': 1, 'local_passage_id': 1, 'at': 1}
+                                           ).to_list(len(by_roll) * 4 + 1)
+    a_blocked = parse_ts((body.get('beam_times') or {}).get('a_blocked'))
+    info, review = {}, {}
+    for row in rows:
+        epc = by_roll.get(row['roll_id'])
+        if not epc or epc in info or epc in review:
+            continue
+        peak_at = parse_ts(ev[epc].get('peak_at'))
+        if a_blocked and peak_at and peak_at < a_blocked:
+            info[epc] = row
+        else:
+            review[epc] = row
+    return info, review
+
+
 async def _gather(items, fn, size: int = 25):
     out = []
     for i in range(0, len(items), size):
@@ -124,7 +171,8 @@ async def _gather(items, fn, size: int = 25):
 async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str, Any], pid: str,
                  warehouse: str, events: List[Dict[str, Any]], summaries: List[Dict[str, Any]],
                  binding_entries: Optional[List[Dict[str, Any]]], binding_reasons: List[Tuple[str, str, str]],
-                 transport_reasons: List[Tuple[str, str, str]], overflow: int) -> Dict[str, Any]:
+                 transport_reasons: List[Tuple[str, str, str]], overflow: int,
+                 device_id: Optional[str] = None) -> Dict[str, Any]:
     R = Reasons()
     direction = body.get('direction') if body.get('direction') in ('in', 'out') else (
         gate['direction'] if gate['direction'] in ('in', 'out') else None)
@@ -133,12 +181,15 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
     weak = [e for e, x in ev.items() if x['cls'] == 'weak']
     background = [e for e, x in ev.items() if x['cls'] == 'background']
     tags, rolls = await _lookup(list(ev)) if ev else ({}, {})
+    # Bawaan muatan sebelumnya dikeluarkan SEBELUM auto-cocok & penilaian (tidak menarik dokumen muatan lain).
+    carry_info, carry_review = await _carryover(relevant, ev, tags, rolls, body, gate, direction, pid, device_id)
+    judged = [e for e in relevant if e not in carry_info and e not in carry_review]
     binding_mode, entries, roll_sources, invalid = 'none', [], {}, {}
     if binding_entries is not None:
         binding_mode, entries = 'manual', binding_entries
         roll_sources = {rid: e['source_ref'] for e in entries for rid in e['roll_ids']}
     elif params.get('auto_match') and direction:
-        known = [rolls[tags[e]['roll_id']] for e in relevant if e in tags and tags[e].get('roll_id') in rolls]
+        known = [rolls[tags[e]['roll_id']] for e in judged if e in tags and tags[e].get('roll_id') in rolls]
         if known:
             auto = await sources.auto_sources(known, warehouse, direction)
             binding_mode, entries, roll_sources, invalid = 'auto', auto['entries'], auto['roll_sources'], auto['invalid']
@@ -182,8 +233,19 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
             counts['extra'] += 1
             R.add(REVIEW, res.get('code') or 'LOCAL_ROLL', f'Roll {label}: {res["reason"]}', epc=epc, roll_id=roll['id'])
 
+    for epc, claim in carry_info.items():
+        roll = rolls[tags[epc]['roll_id']]
+        counts['already_passed'] += 1
+        R.add(INFO, 'PREVIOUS_PASSAGE', f'Roll {roll.get("roll_no") or roll["id"]} terbaca dari muatan sebelumnya '
+              f'(sudah tercatat lewat {claim.get("at")}) — tidak dinilai ulang.', epc=epc, roll_id=roll['id'])
+    for epc, claim in carry_review.items():
+        roll = rolls[tags[epc]['roll_id']]
+        counts['already_passed'] += 1
+        R.add(REVIEW, 'PREVIOUS_PASSAGE_RECENT', f'Roll {roll.get("roll_no") or roll["id"]} baru saja tercatat lewat '
+              f'gate ini ({claim.get("at")}) — kemungkinan terbaca dari muatan sebelumnya/berikutnya; cek fisik.',
+              epc=epc, roll_id=roll['id'])
     if direction:
-        await _gather(relevant, judge)
+        await _gather(judged, judge)
     else:
         R.add(REVIEW, 'DIRECTION_UNVERIFIED', 'Arah lintasan tidak diketahui — roll tidak dinilai.')
     counts['matched'] = len(matched)
@@ -194,7 +256,7 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
     close_reason, open_reason = body.get('close_reason'), body.get('open_reason')
     cancelled_like = close_reason in ('REVERSED', 'ABORTED') or body.get('boundary_reason') == 'cancelled'
     timeout = close_reason == 'TIMEOUT' or body.get('boundary_reason') == 'max_duration'
-    empty = not relevant and not quarantined
+    empty = not [e for e in relevant if e not in carry_info] and not quarantined   # hanya bawaan → lintasan kosong
     if relevant:
         for code, level, message in binding_reasons:
             R.add(level, code, message)
@@ -208,7 +270,7 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
                   else 'RF_FALLBACK', 'Photo-eye tidak dipakai/rusak — lintasan ditentukan logika cadangan RF.')
     cancelled = False
     if cancelled_like:
-        carried = bool(matched) or R.worst() == RED or any(i['roll_id'] for i in R.items)
+        carried = bool(matched) or R.worst() == RED or any(i['roll_id'] and i['code'] != 'PREVIOUS_PASSAGE' for i in R.items)
         R.demote()
         if carried:
             R.add(REVIEW, 'REVERSED_WITH_ROLLS' if close_reason != 'ABORTED' else 'ABORTED_WITH_ROLLS',
