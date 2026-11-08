@@ -254,6 +254,9 @@ class TestRF03GateIn:
              "source_warehouse_id": "wh_jakarta", "dest_warehouse_id": "wh_bandung"}))
         roll = _run(_mk_roll(201, status="in_transit_transfer",
                              reserved_ref={"type": "wh_transfer", "id": tr_id}))
+        # PREP-D1 (patch Kubus 0.5): keanggotaan roll transfer dibaca dari items[].rolls[] dokumen (seperti data nyata),
+        # bukan diasumsikan dari reserved_ref saja.
+        _run(DB.warehouse_transfers.update_one({"id": tr_id}, {"$set": {"items": [{"rolls": [{"roll_id": roll["id"]}]}]}}))
         epc = _run(_encode(roll["id"]))
         g = _mk_device(admin, "gate-in-rf03-ok", "gate", "wh_bandung", "in")
         r = requests.post(f"{BASE}/api/rfid/ingest",

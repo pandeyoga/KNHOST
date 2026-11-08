@@ -4,12 +4,15 @@
  * Fase 3 · P2 — D-29: dirender sebagai tab "RFID (pembaca/gerbang)" di Pengaturan › Integrasi & Sistem ›
  * Perangkat (`settings-devices`, `embedded`); alamat lama `cs-rfid-devices` = alias ke tab itu. L-02: kepala
  * halaman baku (`PageHeader`); L-03: form "Perangkat Baru" yang dulu diselipkan di tengah halaman → `FormModal`.
+ * PREP-D1: tombol "Integrasi reader U300" (gerbang/pembaca tetap) membuka panel gate V2 di `DetailModal`.
  */
 import { useEffect, useState } from "react";
 import { Wifi, RefreshCw, Trash2, Plus, Cpu, Router, Power, RadioTower } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
+import DetailModal from "../../components/DetailModal";
+import U300Operations from "./U300Operations";
 import { PageHeader } from "../../components/ListPageParts";
 import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
@@ -29,6 +32,7 @@ const DIR_OPTS = [{ value: "in", label: "Masuk (in)" }, { value: "out", label: "
 export default function RfidDevicesView({ currentUser, embedded = false }) {
   const { warehouses, whId, setWhId, whOpts } = useWarehouses();
   const [devices, setDevices] = useState([]);
+  const [readerDevice, setReaderDevice] = useState(null); // PREP-D1 — panel Integrasi U300 (pop-up rincian)
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -205,6 +209,11 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
           {/* UAT 24 Okt (audit UI tahap 2) — Simpan nonaktif sampai isian wajib (Nama, Gudang) lengkap. */}
       </FormModal>
 
+      <DetailModal open={!!readerDevice} onClose={() => setReaderDevice(null)} framed size="xl"
+        label="Integrasi reader U300" testId="rfid-u300-modal">
+        {readerDevice && <U300Operations device={readerDevice} isAdmin={isAdmin} />}
+      </DetailModal>
+
       <SectionCard title="Daftar Perangkat">
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
           : devices.length === 0 ? <EmptyBox icon={Wifi} text="Belum ada perangkat. Klik 'Buat Perangkat Bawaan' untuk mulai." />
@@ -222,6 +231,13 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
                     <p className="text-[12px] font-semibold mt-1">{d.name}</p>
                     <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction === "in" ? "masuk" : d.direction === "out" ? "keluar" : d.direction}` : ""} · {d.warehouse_name || "—"}</p>
                     <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · sinyal terakhir {fmtTime(d.last_heartbeat)}</p>
+                    {["gate", "fixed_reader"].includes(d.type) && (
+                      <button type="button" data-testid={`rfid-u300-${d.id}`} onClick={() => setReaderDevice(d)}
+                        className="mt-2 flex items-center gap-1 rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold text-[#5856D6] hover:bg-[#EEEEFB]">
+                        <RadioTower size={12} /> Integrasi reader U300
+                        {d.protocol === "v2" && <Pill color="purple">V2</Pill>}
+                      </button>
+                    )}
                     {isAdmin && (
                       <div className="flex gap-2 mt-2">
                         <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}

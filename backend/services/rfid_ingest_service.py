@@ -65,6 +65,17 @@ async def authenticate(device_key: Optional[str]) -> Dict[str, Any]:
     return dev
 
 
+def assert_legacy_protocol(device: Dict[str, Any]) -> None:
+    """PREP-D1 AUD-MW-09 — perangkat ber-protokol v2 (profil U300 V2 terbit) DITOLAK di jalur lama.
+
+    Jalur lama (jendela 10 s, cap keluar saat terbaca) tidak boleh berjalan berdampingan dengan V2 untuk perangkat
+    yang sama. Handheld/kiosk/gerbang lama (`protocol` kosong/`legacy`) tidak terpengaruh."""
+    if device.get("protocol") == "v2":
+        raise HTTPException(status_code=409, detail={
+            "code": "PROTOCOL_V2_DEVICE", "retryable": False,
+            "message": "Perangkat ini memakai protokol U300 V2 — kirim ke /api/rfid/v2/events, bukan jalur lama."})
+
+
 async def _mark_online(device_id: str) -> None:
     # RF-13 — filter enabled: device yang dinonaktifkan di tengah request tidak "hidup" lagi
     await db.rfid_devices.update_one({"id": device_id, "enabled": {"$ne": False}}, {"$set": {
@@ -124,6 +135,7 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
     from services import gate_evaluator as ge
     if device.get("type") not in ("gate", "fixed_reader", "handheld"):
         raise HTTPException(status_code=400, detail="Tipe device ini tidak menerima pembacaan EPC")
+    assert_legacy_protocol(device)
     evs = _normalize_events(epcs, events)
     await _mark_online(device["id"])
     now = now_iso()
@@ -297,6 +309,7 @@ async def ingest_into_session(device: Dict[str, Any], session_id: str, epcs: Lis
     """RF-07 — sweep handheld/fixed reader langsung ke sesi verifikasi: bukti asal = device (tercatat)."""
     if device.get("type") not in ("handheld", "fixed_reader"):
         raise HTTPException(status_code=400, detail="Hanya handheld/fixed reader yang menyetor scan ke sesi")
+    assert_legacy_protocol(device)
     sess = await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0, "warehouse_id": 1})
     if sess and sess.get("warehouse_id") and sess["warehouse_id"] != device.get("warehouse_id"):
         raise HTTPException(status_code=403, detail="Sesi bukan milik gudang device ini")
