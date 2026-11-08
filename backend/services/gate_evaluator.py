@@ -55,9 +55,10 @@ async def resolve_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if pa_id:
         pa = await db.putaway_orders.find_one({"id": pa_id}, {"_id": 0, "pa_number": 1, "status": 1,
                                                               "from_warehouse_id": 1, "to_warehouse_id": 1, "items.roll_id": 1})
-        if pa and pa.get("status") in ("open", "in_transit"):
+        # PREP-D2 — PA tiba sebagian (PREP-C, trip per lintasan) tetap movement aktif untuk roll yang belum tiba.
+        if pa and pa.get("status") in ("open", "in_transit", "partially_received"):
             return {"type": "putaway", "id": pa_id, "number": pa.get("pa_number"), "status": pa["status"],
-                    "active": pa["status"] == "in_transit", "source_wh": pa.get("from_warehouse_id"),
+                    "active": pa["status"] in ("in_transit", "partially_received"), "source_wh": pa.get("from_warehouse_id"),
                     "dest_wh": pa.get("to_warehouse_id"),
                     "member": roll["id"] in {i.get("roll_id") for i in pa.get("items") or []}}
     doc_mv = await _docs.doc_movement(roll)   # Order Makloon (roll di mitra) / Perbaikan (roll wip)
@@ -78,7 +79,8 @@ async def resolve_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         committed_so = await db.sales_orders.find_one({"id": ref["id"]}, {"_id": 0, "status": 1}) if linked else None
         commitment_valid = not linked or bool(committed_so and committed_so.get("status") not in SO_DEAD | {"closed", "completed", "delivered"})
         return {"type": "wh_transfer", "id": transfer_id, "number": tr.get("code"), "status": tr.get("status"),
-                "active": tr.get("status") == "dispatched" and roll.get("status") == "in_transit_transfer" and commitment_valid,
+                "active": tr.get("status") in ("dispatched", "partially_received")   # PREP-D2 — terima bertahap
+                and roll.get("status") == "in_transit_transfer" and commitment_valid,
                 "source_wh": tr.get("source_warehouse_id"), "dest_wh": tr.get("dest_warehouse_id"),
                 "member": roll["id"] in {r.get("roll_id") for i in tr.get("items", []) for r in i.get("rolls", [])}}
     if ref.get("type") == "sales_order":

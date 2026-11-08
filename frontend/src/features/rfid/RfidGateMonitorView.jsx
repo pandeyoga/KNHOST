@@ -11,6 +11,7 @@ import PageTabs from "../../components/PageTabs";
 import RfidSecurityPanel from "./RfidSecurityPanel";
 import GateLiveVerdict, { useGateStatus } from "./GateLiveVerdict";
 import GatePassageHistory from "./GatePassageHistory";
+import GateReviewQueue from "./GateReviewQueue";
 
 export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
@@ -121,7 +122,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const gate = devices.find((d) => d.id === gateId);
   const noGate = devices.length === 0;
   const NO_GATE_REASON = "Belum ada gerbang di gudang ini — daftarkan di Pengaturan › Perangkat RFID.";
-  const gateStatus = useGateStatus(gateId, live || kiosk);
+  const gateStatus = useGateStatus(gateId, live || kiosk, undefined, gate?.protocol);
 
   return (
     <div data-testid="rfid-gate-view" className="space-y-4">
@@ -135,7 +136,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
           <p className="absolute bottom-5 w-full text-center text-[13px] text-white opacity-60">Tekan Esc atau ✕ untuk keluar · sirene {sirenMuted ? "mati" : "nyala"}</p>
         </div>
       )}
-      <RfidHeader icon={Cpu} testId="rfid-gate-header" title="Monitor Gerbang" subtitle="Simulasikan pembacaan tag di gerbang. Sistem memvalidasi HIJAU (sah) / MERAH (tak sah).">
+      <RfidHeader icon={Cpu} testId="rfid-gate-header" title="Monitor Gerbang" subtitle="Simulasikan pembacaan tag di gerbang. Sistem memvalidasi HIJAU (sah) / KUNING (perlu diperiksa, barang jalan) / MERAH (tak sah).">
         <KNSelect data-testid="rfid-gate-wh" value={whId} onValueChange={setWhId} options={whOpts}
           className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
         <button data-testid="rfid-siren-toggle" onClick={toggleSiren}
@@ -166,11 +167,13 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
 
       {/* Fase 4 · R3 (L-01/L-02) — tab buatan sendiri (TabBtn) → PageTabs baku; testid `gate-tab-*` tetap. */}
       <PageTabs value={tab} onChange={setTab} testId="gate-tab" ariaLabel="Monitor gerbang"
-        tabs={[{ key: "monitor", label: "Monitor Gate" }, { key: "security", label: "Alarm & Keamanan" }]} />
+        tabs={[{ key: "monitor", label: "Monitor Gate" }, { key: "review", label: "Antrean periksa" },
+          { key: "security", label: "Alarm & Keamanan" }]} />
 
+      {tab === "review" && <GateReviewQueue whId={whId} devices={devices} />}
       {tab === "security" ? (
         <RfidSecurityPanel whId={whId} selectedEntity={selectedEntity} />
-      ) : (
+      ) : tab === "review" ? null : (
       <>
       {live && (gateId ? <GateLiveVerdict gate={gate} status={gateStatus} />
         : <p className="rounded-2xl bg-[#F5F5F7] p-6 text-center text-[14px] font-semibold text-[#6B6B73]">{noGate ? NO_GATE_REASON : "Pilih gerbang di Simulasi Pembacaan untuk melihat hasil langsung."}</p>)}

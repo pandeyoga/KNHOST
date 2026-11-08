@@ -589,6 +589,8 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
         "$set": upd, "$push": {"timeline": _event("status", actor_name, note, from_status=cur, to_status=to)}})
     await db.shipments.update_many({"id": {"$in": doc.get("shipment_ids") or []}},
                                    {"$set": {"logistics_status": to}})
+    if to in ("in_transit", "delivered", "completed"):
+        await _close_gate_sessions(doc, "shipment_departed" if to == "in_transit" else f"shipment_{to}")
     # Armada: kendaraan otomatis 'dalam perjalanan' saat berangkat, dilepas saat tiba/gagal/selesai.
     if doc.get("vehicle_id"):
         if to == "in_transit":
@@ -635,6 +637,7 @@ async def pickup_handover(delivery_id: str, payload: Dict[str, Any], actor_name:
                                      f"Diserahkan ke {picker}" + (f" (ID {id_no})" if id_no else "") + " — kode pickup tervalidasi",
                                      from_status="prepared", to_status="delivered")}})
     await db.shipments.update_many({"id": {"$in": doc.get("shipment_ids") or []}}, {"$set": {"logistics_status": "delivered"}})
+    await _close_gate_sessions(doc, "shipment_picked_up")
     await _notify_sales(doc, "delivered", f"diambil oleh {picker}", actor_name)
     from services import so_delivery_service as _sod   # F-06 — serah terima = POD
     await _sod.on_pod(order_ids_of(doc), actor_name)
@@ -645,6 +648,14 @@ async def pickup_handover(delivery_id: str, payload: Dict[str, Any], actor_name:
         except Exception as exc:  # noqa: BLE001
             logger.warning("[pickup_handover] efek samping gagal diabaikan: %s", exc)
     return await get_delivery(delivery_id)
+
+
+async def _close_gate_sessions(doc: Dict[str, Any], trigger: str) -> None:
+    """PREP-D2 (K-RFID-10) — SJ berangkat / diserahkan → sesi gate OUT tiap SJ dinilai (roll yang tidak terbaca gate &
+    tidak tercakup cek muat handheld → antrean periksa admin gudang). Best-effort; gedung tanpa gate dilewati."""
+    from services import gate_txn_service as _gt
+    for sid in doc.get("shipment_ids") or []:
+        await _gt.safe_close("shipment", sid, ("out",), trigger)
 
 
 async def _notify_sales(doc: Dict[str, Any], to: str, note: str, actor_name: str) -> None:

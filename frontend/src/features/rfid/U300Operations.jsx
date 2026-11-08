@@ -2,7 +2,8 @@
  * Integrasi reader U300 (gate V2, patch Kubus + PREP-D1) — dibuka dari kartu perangkat di layar Perangkat RFID
  * (pop-up rincian). Isi: profil & protokol, kesehatan reader (AUD-MW-17), kunci gate tunggal (K-RFID-09: merah
  * terkunci hanya pelanggaran, kuning tanpa kunci), dokumen gate & sesi bertahap (K-RFID-10), riwayat lintasan dengan
- * daftar alasan, parameter gate (titik awal kalibrasi), dan simulator lintasan (admin). Antrean periksa = paket D2.
+ * daftar alasan, parameter gate (titik awal kalibrasi), dan simulator lintasan (admin). PREP-D2: antrean periksa
+ * lengkap (bukti per roll + tindakan) di Monitor Gerbang › Antrean periksa; membuka kunci gate butuh izin approve.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Activity, Lock, RefreshCw, Upload } from "lucide-react";
@@ -10,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
+import { canCurrent } from "../../config/roles";
 import { Pill, SectionCard, fmtTime } from "./rfidShared";
 import U300DocSession from "./U300DocSession";
 import U300PassageList from "./U300PassageList";
@@ -17,6 +19,7 @@ import { HEALTH, PARAM_LABEL, PROTOCOL, SCENARIOS, VERDICT, errorText, reasonTex
 
 function LatchPanel({ latch, busy, onAck }) {
   const [note, setNote] = useState("");
+  const approver = canCurrent("wms", "approve");
   if (!latch) {
     return <p className="text-[12px] text-[#1B7E3B]" data-testid="u300-latch-none">Gate tidak terkunci.</p>;
   }
@@ -26,13 +29,14 @@ function LatchPanel({ latch, busy, onAck }) {
       <ul className="text-[11px] text-[#3C3C43] list-disc pl-4">
         {(latch.reason_codes || []).slice(0, 6).map((c) => <li key={c}>{reasonText(c)}</li>)}
       </ul>
-      <div className="flex flex-wrap gap-2">
+      {!approver && <p className="text-[11px] text-[#6B6B73]">Membuka kunci gate butuh izin persetujuan gudang (Admin Gudang / Manajer).</p>}
+      {approver && <div className="flex flex-wrap gap-2">
         <input aria-label="Catatan pemeriksaan kunci gate" placeholder="Hasil pemeriksaan fisik & dokumen" value={note}
           onChange={(e) => setNote(e.target.value)} className="field !py-1 text-[12px] w-72" />
         <button type="button" className="primary-button !py-1 text-[12px]" data-testid="u300-latch-ack"
           disabled={busy || note.trim().length < 5} onClick={() => onAck(latch, note).then((ok) => ok && setNote(""))}>
           Catat pemeriksaan &amp; buka kunci</button>
-      </div>
+      </div>}
       <p className="text-[10px] text-[#6B6B73]">Membuka kunci tidak mengubah hasil lintasan menjadi hijau dan tidak mengubah stok.</p>
     </div>
   );
@@ -191,7 +195,7 @@ export default function U300Operations({ device, isAdmin }) {
       )}
       <SectionCard title="Riwayat lintasan">
         <U300PassageList passages={data?.passages} busy={busy} onAcknowledge={ackPassage} onEvidence={evidence} page={page} />
-        <p className="mt-2 text-[11px] text-[#6B6B73]">Merah = pelanggaran (gate terkunci) · Kuning = perlu diperiksa, barang jalan · Batal = lintasan kosong/mundur. Riwayat hanya menampilkan dokumen dalam cakupan akses Anda.</p>
+        <p className="mt-2 text-[11px] text-[#6B6B73]">Merah = pelanggaran (gate terkunci) · Kuning = perlu diperiksa, barang jalan · Batal = lintasan kosong/mundur. Tindak lanjut per roll ada di Monitor Gerbang › Antrean periksa. Riwayat hanya menampilkan dokumen dalam cakupan akses Anda.</p>
       </SectionCard>
     </section>
   );

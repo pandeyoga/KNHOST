@@ -3,6 +3,9 @@
 Memakai koleksi `rfid_verify_sessions` yang sama (kind="loading_check") agar tidak
 ada mesin kembar. Hasil terakhir disimpan di `sales_orders.loading_check`; dispatch
 DIBLOKIR bila ada sesi terbuka atau hasil terakhir tidak bersih.
+
+PREP-D2 (K-GDG-02/03) — gedung bermode gate dengan gate OUT tertaut: kebijakan "wajib cek muat" dipenuhi gate
+(validasi per trip sesudah SJ terbit); cek muat handheld tetap tersedia sebagai cadangan dan hasilnya tetap mengikat.
 """
 from typing import Any, Dict, List, Optional
 
@@ -295,7 +298,11 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})
     lc = _result_for(so, warehouse_id)
     if not lc:
-        if await warehouse_policy(warehouse_id) == "required":
+        # PREP-D2 (K-GDG-02/03) — gedung bermode GATE dengan gate OUT tertaut: gate = alat utama yang memvalidasi
+        # barang keluar per trip SESUDAH SJ terbit (sesi dokumen K-RFID-10); cek muat handheld menjadi CADANGAN
+        # (opsional — bila dijalankan, hasilnya tetap mengikat di bawah). Syarat roll bertag tetap berlaku.
+        gate_out = await _gate_validates_out(warehouse_id)
+        if await warehouse_policy(warehouse_id) == "required" and not gate_out:
             raise HTTPException(status_code=400, detail=(
                 "Gudang ini mewajibkan Final Loading Check sebelum kirim — jalankan check (RFID / scan label) "
                 "atau minta override berizin dengan alasan."))
@@ -325,6 +332,14 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
             + (f" ({len(changed)} roll baru/berubah)" if changed else " (hasil lama tanpa manifest)")
             + " — ulangi check sebelum kirim."))
 
+async def _gate_validates_out(warehouse_id: Optional[str]) -> bool:
+    from services import gate_txn_service as _gt
+    try:
+        return await _gt.gate_validates(warehouse_id, "out")
+    except Exception:   # noqa: BLE001 — profil gedung tak terbaca: perilaku lama (handheld)
+        return False
+
+
 async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     open_sess = await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0})
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})
@@ -341,4 +356,6 @@ async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) ->
             "last_scan_log": log, "by_warehouse": by_wh,
             # UAT v3 — layar Barang Keluar menawarkan [Buat tag simulasi] bila mode aktif & ada roll tanpa tag
             "rfid_simulation": await simulation_on(order_id),
-            "untagged_rolls": await untagged_rolls(order_id, warehouse_id)}
+            "untagged_rolls": await untagged_rolls(order_id, warehouse_id),
+            # PREP-D2 — gedung bergate: cek muat handheld opsional (cadangan), gate OUT memvalidasi per trip
+            "gate_out_primary": await _gate_validates_out(warehouse_id)}

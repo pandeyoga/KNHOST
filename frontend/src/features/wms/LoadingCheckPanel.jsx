@@ -21,6 +21,7 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   // UAT v3 — mode simulasi RFID (Pusat Pengaturan `wms.rfid_simulation`): tag & scan simulasi sah tanpa perangkat.
   const [simMode, setSimMode] = useState(false);
   const [untaggedNow, setUntaggedNow] = useState([]);
+  const [gateOut, setGateOut] = useState(false);   // PREP-D2 — gedung bergate: cek muat handheld = cadangan
   const [simMsg, setSimMsg] = useState("");
   const whParams = warehouseId ? { params: { warehouse_id: warehouseId } } : {};
 
@@ -33,6 +34,7 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
       setByWarehouse(r.data.by_warehouse || []);
       setSimMode(!!r.data.rfid_simulation);
       setUntaggedNow(r.data.untagged_rolls || []);
+      setGateOut(!!r.data.gate_out_primary);
     } catch { /* noop */ }
   };
   const simulateTags = () => run(async () => {
@@ -80,6 +82,12 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
         <p data-testid="lc-by-warehouse" className="text-[10.5px] text-[#6B6B73]">
           {/* Trial 22 Okt (B5) — hasil simulasi sah selama mode simulasi aktif (sama dengan gerbang kirim di server). */}
           Progres per pengiriman: {byWarehouse.filter((w) => ["clean", "override", ...(simMode ? ["simulated"] : [])].includes(w.result)).length}/{byWarehouse.length} gudang lolos check
+        </p>
+      )}
+      {gateOut && (
+        <p data-testid="lc-gate-primary" className="text-[10.5px] text-[#4B3B9E]">
+          Gedung bergate: gate OUT memvalidasi muatan per trip sesudah Surat Jalan terbit — cek muat handheld ini opsional
+          (cadangan untuk tag yang tidak terbaca). Bila dijalankan, hasilnya tetap mengikat.
         </p>
       )}
       {error && <p data-testid="lc-error" className="rounded bg-[#FBE9E7] px-2 py-1 text-[11px] font-semibold text-[#C0341D]">{error}</p>}

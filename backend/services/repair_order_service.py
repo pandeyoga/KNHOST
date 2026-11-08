@@ -321,11 +321,14 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
             description=f"{_label(ro)} · {ro.get('partner_name', '')}", date=now_iso(), source_type="repair_order",
             source_id=ro["id"], entity_id=ro["entity_id"], created_by=actor.get("name", ""), source_label=ro["number"])
     total_shrink = round(sum(r["shrink"] for r in results), 2)
-    return await _push(ro, "done", actor,
-                       f"Diterima · hasil {round(sum_out, 2)} (susut {total_shrink}) · biaya {rupiah(total_cost)} dikapitalisasi",
-                       {"lines": results, "received_at": now_iso(), "received_by": actor.get("name", ""),
-                        "actual_cost": total_cost, "cost": cost, "total_shrink": total_shrink,
-                        "journal_id": (je or {}).get("id", ""), "journal_number": (je or {}).get("number", "")}, "sent")
+    out = await _push(ro, "done", actor,
+                      f"Diterima · hasil {round(sum_out, 2)} (susut {total_shrink}) · biaya {rupiah(total_cost)} dikapitalisasi",
+                      {"lines": results, "received_at": now_iso(), "received_by": actor.get("name", ""),
+                       "actual_cost": total_cost, "cost": cost, "total_shrink": total_shrink,
+                       "journal_id": (je or {}).get("id", ""), "journal_number": (je or {}).get("number", "")}, "sent")
+    from services import gate_txn_service as _gt   # PREP-D2 (K-RFID-10) — hasil diterima → sesi gate perbaikan dinilai
+    await _gt.safe_close("repair_order", ro["id"], ("out", "in"), "repair_received")
+    return out
 
 
 async def list_orders(entity_ids: List[str], status: str = "", q: str = "", limit: int = 200) -> List[Dict[str, Any]]:

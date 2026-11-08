@@ -106,8 +106,12 @@ async def _roll_numbers(ids: List[str]) -> Dict[str, Any]:
     return {r['id']: r.get('roll_no') for r in rows}
 
 
-async def status(source: Dict[str, Any], direction: str, warehouse: Optional[str]) -> Dict[str, Any]:
-    """Status sesi dokumen per roll: sudah lewat / belum, lintasan mana."""
+async def status(source: Dict[str, Any], direction: str, warehouse: Optional[str],
+                 roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Status sesi dokumen per roll: sudah lewat / belum, lintasan mana.
+
+    PREP-D2 — `roll_ids` = isi dokumen yang dibaca pemanggil (dokumen yang sudah ditutup/selesai tidak lagi lolos
+    `manifest`): dipakai bila manifest aktif tidak tersedia, sehingga penutupan sesi otomatis tetap menilai roll."""
     record = await collection(SESSIONS).find_one(
         {'_id': session_id(source['source_type'], source['source_id'], direction)}, {'_id': 0})
     ref, ids, active = dict(source), None, False
@@ -117,6 +121,8 @@ async def status(source: Dict[str, Any], direction: str, warehouse: Optional[str
             active = True
         except HTTPException:
             ids = None
+    if ids is None and roll_ids is not None:
+        ref, ids = (record or {}).get('source_ref') or ref, list(roll_ids)
     if ids is None:
         if not record:
             fail(404, 'SESSION_NOT_FOUND', 'Sesi dokumen belum ada (dokumen belum pernah melewati gate) atau dokumen tidak aktif.')
@@ -136,24 +142,33 @@ async def status(source: Dict[str, Any], direction: str, warehouse: Optional[str
 
 
 async def close_session(source: Dict[str, Any], direction: str, warehouse: Optional[str],
-                        actor: Dict[str, Any], note: str = '') -> Dict[str, Any]:
+                        actor: Dict[str, Any], note: str = '', *, roll_ids: Optional[List[str]] = None,
+                        completed: Optional[Dict[str, str]] = None, trigger: str = 'manual') -> Dict[str, Any]:
     """Dokumen ditutup/dikirim: roll yang belum lewat dinilai SEKARANG (REVIEW `ROLLS_MISSING`, bukan alarm).
 
-    Idempoten: penutupan kedua mengembalikan hasil pertama (tidak menimpa)."""
-    state = await status(source, direction, warehouse)
+    PREP-D2 — `completed` = {roll_id: jalur} roll yang tidak lewat gate tetapi SUDAH dilengkapi jalur lain (handheld:
+    konfirmasi tiba PA, terima transfer, cek muat SO; atau kembali ke asal) → bukan "kurang". `trigger` = titik siklus
+    hidup yang menutup sesi (`manual`, `putaway_closed`, `transfer_completed`, `shipment_departed`, …).
+    Idempoten: penutupan kedua mengembalikan hasil pertama (tidak menimpa); `closed_now` = penutupan ini yang menang."""
+    state = await status(source, direction, warehouse, roll_ids=roll_ids)
     if state.get('close'):
-        return state
-    missing = [r for r in state['rolls'] if not r['passed']]
+        return {**state, 'closed_now': False}
+    done = completed or {}
+    missing = [r for r in state['rolls'] if not r['passed'] and r['roll_id'] not in done]
+    other = [{'roll_id': r['roll_id'], 'roll_no': r['roll_no'], 'via': done[r['roll_id']]}
+             for r in state['rolls'] if not r['passed'] and r['roll_id'] in done]
     close = {'at': now(), 'actor_id': actor.get('id'), 'actor_name': actor.get('name'), 'note': (note or '')[:500],
              'verdict': 'REVIEW' if missing else 'GREEN',
              'reason_codes': ['ROLLS_MISSING'] if missing else ['ALL_ROLLS_PASSED'],
              'missing_count': len(missing), 'missing': [{'roll_id': r['roll_id'], 'roll_no': r['roll_no']} for r in missing[:2000]],
+             'completed_count': len(other), 'completed': other[:2000], 'trigger': trigger,
              'review_count': sum(1 for r in state['rolls'] if r['review'])}
     ref = state['source_ref']
     sid = session_id(ref['source_type'], ref['source_id'], direction)
     await collection(SESSIONS).update_one({'_id': sid}, {'$setOnInsert': {
         'source_ref': ref, 'direction': direction, 'warehouse_id': warehouse, 'created_at': now(),
         'roll_ids': [r['roll_id'] for r in state['rolls']], 'passage_ids': [], 'passages': []}}, upsert=True)
-    await collection(SESSIONS).update_one({'_id': sid, 'close': {'$exists': False}},   # CAS: penutup pertama menang
-                                          {'$set': {'close': close, 'status': 'closed'}})
-    return await status(source, direction, warehouse)
+    res = await collection(SESSIONS).update_one({'_id': sid, 'close': {'$exists': False}},   # CAS: penutup pertama menang
+                                                {'$set': {'close': close, 'status': 'closed'}})
+    out = await status(source, direction, warehouse, roll_ids=roll_ids)
+    return {**out, 'closed_now': bool(res.modified_count)}

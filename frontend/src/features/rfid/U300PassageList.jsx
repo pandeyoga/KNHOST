@@ -1,9 +1,10 @@
 /**
  * PREP-D1 — riwayat lintasan gate U300 V2: hasil berwarna (Hijau/Kuning/Merah/Batal), daftar alasan (reason_codes,
- * istilah Indonesia), hitungan cocok/sisa/lain/lemah/latar, tindak lanjut & unduh bukti. Antrean periksa lengkap =
- * paket D2 (belum di sini).
+ * istilah Indonesia), hitungan cocok/sisa/lain/lemah/latar, tindak lanjut & unduh bukti. Antrean periksa lengkap
+ * (PREP-D2) = `GateReviewQueue` di Monitor Gerbang; lintasan merah hanya bisa diakui pemegang izin approve.
  */
 import { useState } from "react";
+import { canCurrent } from "../../config/roles";
 import { Pill } from "./rfidShared";
 import { LEVEL_COLOR, reasonText, verdictInfo } from "./u300Labels";
 
@@ -51,7 +52,8 @@ export default function U300PassageList({ passages, busy, onAcknowledge, onEvide
             {passages.map((p) => {
               const v = verdictInfo(p.decision, p.state);
               const id = p.local_passage_id;
-              const canAck = p.decision && p.decision.verdict !== "GREEN" && p.decision.verdict !== "CANCELLED" && !p.acknowledged;
+              const canAck = p.decision && p.decision.verdict !== "GREEN" && p.decision.verdict !== "CANCELLED" && !p.acknowledged
+                && (p.decision.verdict !== "RED" || canCurrent("wms", "approve"));
               return (
                 <tr key={id} className="border-t border-[#EFF0F2] align-top" data-testid={`u300-passage-${id}`}>
                   <td className="p-2">{new Date(p.created_at).toLocaleString("id-ID")}

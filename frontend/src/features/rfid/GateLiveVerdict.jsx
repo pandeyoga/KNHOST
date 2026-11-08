@@ -1,17 +1,24 @@
 /**
  * GateLiveVerdict (UX-01 / P09) — verdict gate dari SERVER per passage (red-dominant, alarm terkunci
  * sampai diakui). Data basi / gagal ambil / heartbeat lama → TIDAK TERHUBUNG — TAHAN, bukan hijau lama.
+ * PREP-D2 — reader V2: status dari `/rfid/v2/ops/devices/{id}/kiosk`; KUNING = perlu diperiksa, barang jalan,
+ * gate tidak terkunci (K-RFID-09). Membuka kunci merah V2 butuh izin persetujuan gudang.
  */
 import { useEffect, useRef, useState } from "react";
 import { Radio, WifiOff } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
+import { canCurrent } from "../../config/roles";
 import { fmtTime } from "./rfidShared";
 
 const FETCH_STALE_S = 15;
 const HEARTBEAT_STALE_S = 120;
 
-export function useGateStatus(gateId, enabled, onNewRed) {
+export function gateStatusUrl(gateId, protocol) {
+  return protocol === "v2" ? `${API}/rfid/v2/ops/devices/${encodeURIComponent(gateId)}/kiosk` : `${API}/rfid/gate/${gateId}/status`;
+}
+
+export function useGateStatus(gateId, enabled, onNewRed, protocol) {
   const [data, setData] = useState(null);
   const [lastOk, setLastOk] = useState(0);
   const [fetchError, setFetchError] = useState("");
@@ -20,7 +27,7 @@ export function useGateStatus(gateId, enabled, onNewRed) {
   const load = async () => {
     if (!gateId) return;
     try {
-      const r = await axios.get(`${API}/rfid/gate/${gateId}/status`);
+      const r = await axios.get(gateStatusUrl(gateId, protocol));
       setData(r.data); setLastOk(Date.now()); setFetchError("");
       const p = r.data.passage;
       if (p && p.verdict === "red" && seen.current !== null && seen.current !== p.id + p.red_count) onNewRed?.();
@@ -34,7 +41,7 @@ export function useGateStatus(gateId, enabled, onNewRed) {
     const t = setInterval(load, 4000);
     const c = setInterval(() => setNow(Date.now()), 1000);
     return () => { clearInterval(t); clearInterval(c); };
-  }, [gateId, enabled]); // eslint-disable-line
+  }, [gateId, enabled, protocol]); // eslint-disable-line
   const fetchAge = lastOk ? Math.round((now - lastOk) / 1000) : null;
   const hb = data?.device?.heartbeat_age_s;
   const offline = !lastOk || fetchAge > FETCH_STALE_S;
@@ -53,6 +60,7 @@ export function useGateStatus(gateId, enabled, onNewRed) {
 
 const LOOK = {
   red: ["#C0341D", "✕ MERAH — TAHAN"], green: ["#1B7F4B", "✓ HIJAU — LOLOS"], info: ["#0058CC", "INFO"],
+  yellow: ["#B25E00", "! KUNING — PERIKSA"],
   unknown: ["#5B5B66", "TIDAK TERHUBUNG — TAHAN"], device_offline: ["#8C4A00", "GATE OFFLINE — TAHAN"],
   waiting: ["#101418", "Menunggu barang lewat…"],
   no_gate: ["#8E8E93", "BELUM ADA GERBANG"],
@@ -65,12 +73,21 @@ export default function GateLiveVerdict({ gate, status, big = false, onAcked }) 
   const [err, setErr] = useState("");
   const [bg, label] = LOOK[state] || LOOK.waiting;
   const p = data?.passage;
+  const v2 = data?.protocol === "v2";
+  const canAck = !v2 || canCurrent("wms", "approve");
   const ack = async () => {
     setBusy(true); setErr("");
-    try { await axios.post(`${API}/rfid/passages/${p.id}/acknowledge`, { note }); setNote(""); await reload(); onAcked?.(); }
-    catch (e) { setErr(apiErrorText(e, "Gagal mengakui alarm")); } finally { setBusy(false); }
+    try {
+      if (v2) {
+        await axios.post(`${API}/rfid/v2/ops/devices/${encodeURIComponent(data.device.id)}/gate-latch/acknowledge`, {
+          device_id: data.device.id, logical_gate_id: data.gate_id, latch_id: data.latch_id, note });
+      } else {
+        await axios.post(`${API}/rfid/passages/${p.id}/acknowledge`, { note });
+      }
+      setNote(""); await reload(); onAcked?.();
+    } catch (e) { setErr(apiErrorText(e, "Gagal mengakui alarm")); } finally { setBusy(false); }
   };
-  const showPassage = p && ["red", "green", "info"].includes(state);
+  const showPassage = p && ["red", "green", "info", "yellow"].includes(state);
   return (
     <div data-testid={big ? "rfid-kiosk-full-panel" : "rfid-gate-kiosk"} data-state={state}
       className={`${big ? "flex h-full flex-col items-center justify-center" : "rounded-2xl p-6"} text-center text-white transition-colors ${state === "red" ? "kn-kiosk-blink" : ""}`}
@@ -85,18 +102,27 @@ export default function GateLiveVerdict({ gate, status, big = false, onAcked }) 
       {showPassage && (
         <div className={big ? "mt-6 max-w-4xl" : "mt-2"}>
           <p className={`${big ? "text-2xl" : "text-[14px]"} font-bold`} data-testid="rfid-passage-summary">
-            Passage {fmtTime(p.started_at)} · {p.reads?.length || 0} roll · merah {p.red_count} · hijau {p.green_count}
+            Passage {fmtTime(p.started_at)} · {p.reads?.length || 0} roll · merah {p.red_count}
+            {v2 && ` · kuning ${p.yellow_count || 0}`} · hijau {p.green_count}
             {data.latched && " · ALARM TERKUNCI"}
           </p>
+          {state === "yellow" && (
+            <p className={`${big ? "text-xl" : "text-[13px]"} font-semibold`} data-testid="rfid-kiosk-yellow-note">
+              Barang boleh jalan — lintasan masuk antrean periksa admin gudang (gate tidak terkunci).</p>
+          )}
           <div className={`mt-2 space-y-0.5 ${big ? "text-lg" : "text-[12px]"} opacity-95`}>
             {(p.reads || []).slice(0, 8).map((r) => (
               <p key={r.id} data-testid={`rfid-passage-read-${r.id}`}>
-                {r.result === "red" ? "✕" : r.result === "green" ? "✓" : "•"} {r.roll_no || r.epc} —{" "}
+                {r.result === "red" ? "✕" : r.result === "green" ? "✓" : r.result === "yellow" ? "!" : "•"} {r.roll_no || r.epc || "tag tak dikenal"} —{" "}
                 <b data-testid={`rfid-passage-action-${r.id}`}>{r.action || r.reason}</b>
                 {r.action && <span className="opacity-75"> ({r.reason})</span>}
               </p>))}
           </div>
-          {data.latched && (
+          {data.latched && !canAck && (
+            <p className="mt-3 text-[12px] font-semibold" data-testid="rfid-passage-ack-approver">
+              Buka kunci gate lewat Antrean periksa oleh Admin Gudang / Manajer.</p>
+          )}
+          {data.latched && canAck && (
             <div className="mx-auto mt-3 flex max-w-xl gap-1.5" data-testid="rfid-passage-ack-box">
               <input data-testid="rfid-passage-ack-note" value={note} onChange={(e) => setNote(e.target.value)}
                 placeholder="Tindak lanjut (min. 5 karakter)" className="flex-1 rounded px-2 py-1 text-[12px] text-black" />

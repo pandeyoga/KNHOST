@@ -4,6 +4,8 @@
 - Penerimaan per roll (CAS, idempoten): hanya roll yang benar-benar diterima menjadi stok fisik tujuan.
 - Aturan gudang tujuan dievaluasi ULANG saat terima; pelanggaran = exception terkontrol (supervisor + alasan → hold).
 - Exception (hilang, roll salah, rusak, aturan) ber-PIC/alasan; "Selesai" hanya bila tidak ada roll di perjalanan.
+- PREP-D2 — gate IN V2 gedung bermode gate memanggil `receive` per lintasan (aktor = gate, CAS per roll idempoten);
+  transfer selesai menutup sesi dokumen gate (`gate_txn_service.safe_close`).
 """
 from typing import Any, Dict, List, Optional
 
@@ -243,6 +245,11 @@ async def _refresh_status(transfer_id: str) -> Dict[str, Any]:
             upd.update({"completed_at": now_iso(), "completion_basis": "actual_receipt"})
         t = await db.warehouse_transfers.find_one_and_update({"id": transfer_id, "status": t["status"]}, {"$set": upd},
                                                              projection={"_id": 0}, return_document=True) or t
+        if new == "completed" and t.get("status") == "completed":
+            # PREP-D2 (K-RFID-10) — transfer selesai diterima → sesi gate OUT (asal) & IN (tujuan) dinilai; roll yang
+            # tidak terbaca gate & tidak dilengkapi jalur lain → antrean periksa. Best-effort, tidak menggagalkan terima.
+            from services import gate_txn_service as _gt
+            await _gt.safe_close("wh_transfer", transfer_id, ("out", "in"), "transfer_completed")
     return t
 
 

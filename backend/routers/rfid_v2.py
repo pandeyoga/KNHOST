@@ -220,5 +220,8 @@ async def acknowledge(passage_id: str, request: Request):
     if row:
         await _binding_access(row.get('binding'), ctx)
         await _decision_access(row.get('decision'), ctx)
+        if (row.get('decision') or {}).get('verdict') == 'RED':
+            # PREP-D2 (AUD-MW-10) — lintasan merah anggota kunci gate: pengakuan melepas kunci → `wms.approve`.
+            await require_permission(request, 'wms', 'approve')
     return await service.acknowledge(dev, passage_id, body.get('note'), actor,
                                      body.get('latch_id'), body.get('decision_id'))

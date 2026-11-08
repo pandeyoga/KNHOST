@@ -15,8 +15,10 @@ Aturan yang dijaga:
 * Status akhir tanpa satu pun roll tiba = `returned` (semua kembali ke transit) / `exception` — tidak pernah
   `completed` dengan 0 tiba (celah analisis 27 Okt).
 
-Fungsi untuk paket gate (D1, BELUM disambungkan): `confirm_arrival_trip(order_id, epcs,
-source={"type": "gate", "passage_id": ...} | {"type": "handheld"}, actor)`.
+Fungsi untuk paket gate: `confirm_arrival_trip(order_id, epcs, source={"type": "gate", "passage_id": ...} |
+{"type": "handheld"}, actor)`. PREP-D2 — DISAMBUNGKAN: lintasan gate IN V2 yang diputuskan di gedung bermode gate
+memanggilnya lewat `gate_txn_service` (idempoten per lintasan); PA yang mencapai status akhir menutup sesi dokumen
+gate (`gate_txn_service.safe_close`, K-RFID-10: roll yang tidak terbaca gate & tidak dilengkapi handheld → antrean periksa).
 """
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -64,8 +66,9 @@ def norm_source(source: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if not pid:
             raise HTTPException(status_code=400, detail="Trip dari gate wajib membawa passage_id lintasan.")
         out["passage_id"] = pid[:80]
-        if src.get("device_id"):
-            out["device_id"] = str(src["device_id"])[:80]
+        for k in ("device_id", "local_passage_id", "review_case_id"):   # PREP-D2 — jejak lintasan / kasus antrean
+            if src.get(k):
+                out[k] = str(src[k])[:80]
     if str(src.get("client_trip_id") or "").strip():
         out["client_trip_id"] = str(src["client_trip_id"]).strip()[:80]
     return out
@@ -226,10 +229,18 @@ async def confirm_arrival_trip(order_id: str, epcs: Optional[List[str]],
         await _saga.release("putaway_orders", order_id)
         raise
     out = await _load(order_id, scope_ids)
+    await gate_session_hook(out)
     out["trip"] = trip or {"arrived_roll_nos": [], "already_roll_nos": res["already"], "unknown_epcs": res["unknown"],
                            "message": "Tidak ada roll baru yang tiba pada trip ini."}
     out["duplicate_trip"] = False
     return out
+
+
+async def gate_session_hook(order: Dict[str, Any]) -> None:
+    """PREP-D2 (K-RFID-10) — PA berstatus akhir → sesi dokumen gate IN (tujuan) & OUT (asal) ditutup. Best-effort."""
+    if order.get("status") in TERMINAL:
+        from services import gate_txn_service as _gt
+        await _gt.safe_close("putaway", order["id"], ("in", "out"), "putaway_closed")
 
 
 async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Optional[List[str]],
@@ -262,4 +273,6 @@ async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Op
     except BaseException:
         await _saga.release("putaway_orders", order_id)
         raise
-    return await _load(order_id, scope_ids)
+    out = await _load(order_id, scope_ids)
+    await gate_session_hook(out)
+    return out
