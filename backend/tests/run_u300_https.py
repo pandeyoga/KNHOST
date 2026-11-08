@@ -31,8 +31,11 @@ async def run():
     cert.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
     pem.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
     src = agent/'app/src/main/java/id/kubusteknologi/kn/u300'
-    sources = [src/'core/Safety.java'] + [src/(n+'.java') for n in ('Json', 'Api', 'Config', 'DecisionPolicy')] + [agent/'tests/ErpIntegrationTest.java']
-    compiler = await asyncio.create_subprocess_exec(str(java/'bin/javac.exe'), '-cp', str(jar), '-d', str(dest), *map(str, sources))
+    # Agent 0.5: Api/Config bergantung ke kelas inti lain (ClockSync, GatePipeline, PassageMachine, …) → kompilasi
+    # seluruh core/ seperti test-host.ps1.
+    sources = (sorted((src/'core').glob('*.java')) + [src/(n+'.java') for n in ('Json', 'Api', 'Config', 'DecisionPolicy', 'Telemetry')]
+               + [agent/'tests/ErpIntegrationTest.java'])
+    compiler = await asyncio.create_subprocess_exec(str(java/'bin/javac.exe'), '-encoding', 'UTF-8', '-cp', str(jar), '-d', str(dest), *map(str, sources))
     assert await compiler.wait() == 0, 'Java compilation failed'
     _, _, epcs, token = await seed(1)
     app = FastAPI(); app.include_router(router)
