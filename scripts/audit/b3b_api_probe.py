@@ -67,11 +67,14 @@ class Probe:
         try:
             r = s.request(method, f"{self.base}{path}", json=json_body, params=params, timeout=TIMEOUT)
         except Exception as e:  # noqa: BLE001
+            self.sessions.pop(role, None)
             self.results.append({"name": name, "role": role, "method": method, "path": path, "verdict": "GALAT_KONEKSI",
                                  "why": str(e)[:200]})
             return None
         body = r.text[:600]
         if r.status_code >= 500:
+            # sesudah 5xx server menutup koneksi keep-alive → sesi baru agar uji berikutnya tidak "connection reset"
+            self.sessions.pop(role, None)
             verdict = "GALAT_SERVER"
         elif expect == "tolak":
             verdict = "DITOLAK_BENAR" if 400 <= r.status_code < 500 else "DITERIMA_SEHARUSNYA_DITOLAK"
@@ -105,6 +108,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://localhost:8001")
     ap.add_argument("--out", default="/tmp/b3b_probe.json")
+    ap.add_argument("--round", type=int, default=1, help="1 = uji utama · 2 = uji lanjutan yang butuh prasyarat berbeda")
     a = ap.parse_args()
     if not os.environ.get("KN_PROBE_PW"):
         sys.exit("set KN_PROBE_PW")
@@ -117,6 +121,12 @@ def main():
 
     wh_user = P.login(WH)
     ent = wh_user.kn_user["entity"] if wh_user else ""
+    if a.round == 2:
+        round2(P, db, ent)
+        return finish(P, a, db, ent, "")
+    if a.round == 3:
+        round3(P, db, ent)
+        return finish(P, a, db, ent, "")
     wh = one(db, "warehouses", {"active": {"$ne": False}, "zones.0": {"$exists": True}}, {"id": 1, "code": 1, "zones": 1})
     wh_id = (wh or {}).get("id", "")
     roll = one(db, "inventory_rolls", {"status": "available", "warehouse_id": wh_id, "owner_entity_id": ent} if ent else
@@ -280,6 +290,10 @@ def main():
         P.run("antrean periksa tutup kasus alasan titik", WA, "POST", f"/api/rfid/v2/ops/reviews/{case['_id']}/dismiss",
               json_body={"reason": "....."}, note="K-14 'huruf' vs hitungan karakter")
 
+    finish(P, a, db, ent, wh_id)
+
+
+def finish(P, a, db, ent, wh_id):
     out = {"base": a.base, "db": db.name, "user_entity": ent, "warehouse_id": wh_id, "results": P.results}
     with open(a.out, "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)
@@ -287,6 +301,172 @@ def main():
     print(dict(Counter(r["verdict"] for r in P.results)))
     for r in P.results:
         print(f"{r['verdict']:28} {r.get('status', ''):>4} {r['name']}")
+
+
+def _bins_of(wh):
+    out = {}
+    for z in (wh or {}).get("zones") or []:
+        for rk in z.get("racks") or []:
+            groups = [lv.get("bins") or [] for lv in rk.get("levels") or []] or [rk.get("bins") or []]
+            for bins in groups:
+                for b in bins:
+                    out[b.get("id")] = b.get("code")
+    return out
+
+
+def round3(P, db, ent):
+    """Putaran 3 — isian bebas yang mengisi alamat stok (scan terima, opname, stok awal) di gudang aktif ber-zona."""
+    AD = "admin"
+    wh, bins = None, {}
+    for cand in db.warehouses.find({"active": {"$ne": False}, "zones.0": {"$exists": True}}, {"_id": 0, "id": 1, "zones": 1}):
+        b = _bins_of(cand)
+        if b and db.inventory_rolls.count_documents({"warehouse_id": cand["id"], "bin_id": {"$in": list(b)},
+                                                      "status": {"$in": ["available", "reserved"]}}, limit=1):
+            wh, bins = cand, b
+            break
+    wid = (wh or {}).get("id", "")
+    t_in = one(db, "wms_tasks", {"flow_type": "inbound", "status": {"$in": ["waiting_goods", "receiving"]}, "entity_id": ent, "expected_qty": {"$gt": 5}},
+               {"id": 1, "product_id": 1, "expected_qty": 1})
+    if t_in:
+        P.run("scan-receive bin & roll fiktif (actual_qty 1)", AD, "POST", f"/api/inbound/tasks/{t_in['id']}/scan-receive",
+              json_body={"product_id": t_in.get("product_id"), "actual_qty": 1, "bin_id": "BIN-FIKTIF-B3B", "roll_id": "ROLL-FIKTIF-B3B"},
+              check=lambda d: {"bin_id_tugas": d.get("bin_id"), "roll_id_tugas": d.get("roll_id"), "status": d.get("status")})
+    r_in_bin = one(db, "inventory_rolls", {"warehouse_id": wid, "bin_id": {"$in": list(bins)},
+                                           "status": {"$in": ["available", "reserved"]}},
+                   {"id": 1, "product_id": 1, "bin_id": 1, "owner_entity_id": 1})
+    if not r_in_bin:
+        P.skip("opname bin kode vs id", f"tidak ada roll ber-bin di gudang aktif (bin terdaftar {len(bins)})")
+    else:
+        code = bins.get(r_in_bin["bin_id"])
+        for label, binv in (("KODE rak", code), ("ID internal (pembanding)", r_in_bin["bin_id"])):
+            s = P.run(f"buat sesi opname ({label})", AD, "POST", "/api/cycle-count/sessions",
+                      json_body={"warehouse_id": wid, "name": f"Uji B3b {label}", "notes": "audit"}, expect="info")
+            try:
+                sid = (s.json() or {}).get("id") if s is not None and s.status_code < 300 else None
+            except Exception:  # noqa: BLE001
+                sid = None
+            if sid:
+                P.run(f"opname item bin = {label}", AD, "POST", f"/api/cycle-count/sessions/{sid}/items",
+                      json_body={"product_id": r_in_bin["product_id"], "bin_id": binv, "owner_entity_id": r_in_bin.get("owner_entity_id", "")},
+                      expect="tolak" if label.startswith("KODE") else "info", note=f"kode {code} = id {r_in_bin['bin_id']}",
+                      check=lambda d: {"bin_id": d.get("bin_id"), "expected_qty": d.get("expected_qty"),
+                                       "items": [(i.get("bin_id"), i.get("expected_qty")) for i in (d.get("items") or [])][-1:]}
+                      if isinstance(d, dict) else d)
+    prod = one(db, "products", {"is_active": {"$ne": False}, "sku": {"$exists": True}}, {"id": 1})
+    P.run("stok awal satuan/grade/bin ngawur (gudang aktif)", AD, "POST", "/api/inventory/initial-stock",
+          json_body={"product_id": (prod or {}).get("id"), "warehouse_id": wid, "lot": "LOT-B3B", "quantity": 1,
+                     "unit": "hasta", "grade": "ZZ", "bin_id": "bin_tidak_ada"},
+          check=lambda d: {k: d.get(k) for k in ("unit", "grade", "bin_id")} if isinstance(d, dict) else d)
+    case = one(db, "rfid_v2_reviews", {"status": "open"}, {"_id": 1})
+    if case:
+        P.run("antrean periksa tutup kasus alasan titik", "warehouse_admin", "POST",
+              f"/api/rfid/v2/ops/reviews/{case['_id']}/dismiss", json_body={"reason": "....."})
+    else:
+        P.skip("antrean periksa tutup kasus alasan titik", "tidak ada kasus terbuka di snapshot")
+
+
+def round2(P, db, ent):
+    """Putaran 2 — uji yang pada putaran 1 terhalang prasyarat (pagar lokasi tugas, izin, keep-alive sesudah 5xx)."""
+    WH, WA, AD, MG = "warehouse", "warehouse_admin", "admin", "manager"
+    other_qc = one(db, "users", {"role": "qc"}, {"id": 1})
+    P.run("random-check assigned_to (petugas lain)", WA, "POST", "/api/inspections/random-check",
+          json_body={"warehouse_id": "wh_jakarta", "count": 1, "assigned_to": (other_qc or {}).get("id", "")}, expect="info",
+          check=lambda d: {"assigned_to_tersimpan": d.get("assigned_to"), "diminta": (other_qc or {}).get("id")})
+    P.run("GET goods-receipts limit=100000 (tanpa batas atas)", WA, "GET", "/api/goods-receipts", params={"limit": 100000},
+          expect="info", check=lambda d: {"baris": len(d) if isinstance(d, list) else len((d or {}).get("items") or [])})
+    P.run("GET repair-orders q=(", WA, "GET", "/api/repair-orders", params={"q": "("})
+    # tulis lintas PT: PATCH gudang khusus PT lain oleh operator PT aktif
+    wh_other = one(db, "warehouses", {"sharing_mode": "dedicated", "entity_ids": {"$nin": [ent]}}, {"id": 1, "code": 1, "entity_ids": 1})
+    if wh_other:
+        P.run("PATCH gudang khusus PT lain (tembus PT)", WH, "PATCH", f"/api/warehouses/{wh_other['id']}",
+              json_body={"data": {"city": "Uji B3b"}}, note=f"gudang {wh_other.get('code')} khusus {wh_other.get('entity_ids')}; pengguna PT {ent}")
+    # inbound: tugas di luar pagar lokasi operator → pakai admin untuk menguji validasi isian
+    t_in = one(db, "wms_tasks", {"flow_type": "inbound", "status": {"$in": ["waiting_goods", "receiving"]}, "entity_id": ent},
+               {"id": 1, "product_id": 1, "warehouse_id": 1})
+    if t_in:
+        P.run("scan-receive bin & roll fiktif (admin)", AD, "POST", f"/api/inbound/tasks/{t_in['id']}/scan-receive",
+              json_body={"product_id": t_in.get("product_id"), "doc_qty": 1, "bin_id": "BIN-FIKTIF-B3B", "roll_id": "ROLL-FIKTIF-B3B"},
+              expect="tolak", check=lambda d: {"bin_id_tugas": d.get("bin_id"), "roll_id_tugas": d.get("roll_id")})
+        P.run("escalate inbound alasan 1 huruf (admin)", AD, "POST", f"/api/inbound/tasks/{t_in['id']}/escalate", params={"reason": "x"})
+        P.run("resolve-escalation qty negatif (admin)", AD, "POST", f"/api/inbound/tasks/{t_in['id']}/resolve-escalation",
+              params={"adjusted_qty": -10, "resolution_notes": "uji"},
+              check=lambda d: {"expected_qty": d.get("expected_qty") if isinstance(d, dict) else None})
+    roll = one(db, "inventory_rolls", {"status": "available", "owner_entity_id": ent}, {"id": 1})
+    if roll:
+        P.run("grade-override alasan 1 huruf (manager)", MG, "POST", f"/api/inventory/rolls/{roll['id']}/grade-override",
+              json_body={"grade": "B", "reason": "x"})
+    # opname: bin diketik sebagai KODE (yang tercetak di rak) vs id internal
+    wh = one(db, "warehouses", {"id": "wh_bandung", "zones.0": {"$exists": True}}, {"id": 1, "zones": 1}) or \
+        one(db, "warehouses", {"id": {"$ne": "wh_jakarta"}, "zones.0": {"$exists": True}}, {"id": 1, "zones": 1})
+    bins = {}
+    for z in (wh or {}).get("zones") or []:
+        for rk in z.get("racks") or []:
+            for lv in rk.get("levels") or []:
+                for b in lv.get("bins") or []:
+                    bins[b.get("id")] = b.get("code")
+            for b in rk.get("bins") or []:
+                bins[b.get("id")] = b.get("code")
+    r_in_bin = one(db, "inventory_rolls", {"warehouse_id": (wh or {}).get("id"), "bin_id": {"$in": list(bins)},
+                                           "status": {"$in": ["available", "reserved"]}}, {"id": 1, "product_id": 1, "bin_id": 1,
+                                                                                            "owner_entity_id": 1})
+    if r_in_bin:
+        s = P.run("buat sesi opname (uji)", AD, "POST", "/api/cycle-count/sessions",
+                  json_body={"warehouse_id": wh["id"], "name": "Uji B3b bin", "notes": "audit"}, expect="info")
+        sid = None
+        try:
+            sid = (s.json() or {}).get("id")
+        except Exception:  # noqa: BLE001
+            pass
+        if sid:
+            code = bins.get(r_in_bin["bin_id"])
+            P.run("opname item bin = KODE rak", AD, "POST", f"/api/cycle-count/sessions/{sid}/items",
+                  json_body={"product_id": r_in_bin["product_id"], "bin_id": code, "owner_entity_id": r_in_bin.get("owner_entity_id", "")},
+                  expect="tolak", note=f"kode {code} = id {r_in_bin['bin_id']}",
+                  check=lambda d: {"bin_id": d.get("bin_id"), "expected_qty": d.get("expected_qty")} if isinstance(d, dict) else d)
+            s2 = P.run("buat sesi opname (pembanding)", AD, "POST", "/api/cycle-count/sessions",
+                       json_body={"warehouse_id": wh["id"], "name": "Uji B3b bin id", "notes": "audit"}, expect="info")
+            try:
+                sid2 = (s2.json() or {}).get("id")
+            except Exception:  # noqa: BLE001
+                sid2 = None
+            if sid2:
+                P.run("opname item bin = ID internal (pembanding)", AD, "POST", f"/api/cycle-count/sessions/{sid2}/items",
+                      json_body={"product_id": r_in_bin["product_id"], "bin_id": r_in_bin["bin_id"],
+                                 "owner_entity_id": r_in_bin.get("owner_entity_id", "")}, expect="info",
+                      check=lambda d: {"bin_id": d.get("bin_id"), "expected_qty": d.get("expected_qty")} if isinstance(d, dict) else d)
+    # transfer: kunci asing + pelaku dari klien
+    r_t = one(db, "inventory_rolls", {"status": "available", "owner_entity_id": ent, "warehouse_id": "wh_aa50ac5081af"},
+              {"id": 1, "product_id": 1, "length_remaining": 1}) or \
+        one(db, "inventory_rolls", {"status": "available", "owner_entity_id": ent, "warehouse_id": {"$ne": "wh_jakarta"}},
+            {"id": 1, "product_id": 1, "length_remaining": 1, "warehouse_id": 1})
+    if r_t:
+        src = r_t.get("warehouse_id") or "wh_aa50ac5081af"
+        dst = "wh_c2019bb98b13" if src != "wh_c2019bb98b13" else "wh_b12325db6630"
+        P.run("transfer: kunci asing & requested_by klien", AD, "POST", "/api/transfers",
+              json_body={"source_warehouse_id": src, "dest_warehouse_id": dst, "notes": "uji b3b", "requested_by": "Direktur Utama",
+                         "kunci_asing": "harus-ditolak",
+                         "items": [{"product_id": r_t["product_id"], "qty": float(r_t.get("length_remaining") or 1),
+                                    "roll_ids": [r_t["id"]]}]}, expect="tolak",
+              check=lambda d: {"requested_by_tersimpan": d.get("requested_by"), "kunci_asing_tersimpan": "kunci_asing" in d})
+    # stok awal dengan panjang > 0 tapi satuan/grade/bin ngawur
+    prod = one(db, "products", {"is_active": {"$ne": False}}, {"id": 1})
+    P.run("stok awal satuan/grade/bin ngawur (qty 1)", AD, "POST", "/api/inventory/initial-stock",
+          json_body={"product_id": (prod or {}).get("id"), "warehouse_id": "wh_bandung", "lot": "LOT-B3B", "quantity": 1,
+                     "unit": "hasta", "grade": "ZZ", "bin_id": "bin_tidak_ada"},
+          check=lambda d: {k: d.get(k) for k in ("unit", "grade", "bin_id")} if isinstance(d, dict) else d)
+    lot = one(db, "inventory_lots", {}, {"id": 1})
+    if lot:
+        P.run("lot status sah alasan kosong", WA, "POST", f"/api/lots/{lot['id']}/status", json_body={"status": "hold_shade", "reason": ""})
+    # setelan JSON harga OCR rusak → semua pembaca ocr_config
+    P.run("setelan ocr_price_table JSON rusak", AD, "PUT", "/api/config/values",
+          json_body={"items": [{"key": "receiving.ocr_price_table", "value": "{rusak", "scope_type": "global", "scope_id": "",
+                                "reason": "uji b3b json"}]})
+    P.run("GET usage OCR sesudah JSON rusak", AD, "GET", "/api/goods-receipts/usage", expect="info")
+    # print-job kind ngawur sudah putaran 1; PO close alasan kosong (cari PO terbuka)
+    po = one(db, "purchase_orders", {"status": {"$nin": ["closed", "cancelled", "draft", "completed", "received"]}}, {"id": 1, "status": 1})
+    if po:
+        P.run("tutup PO alasan kosong", AD, "POST", f"/api/purchase-orders/{po['id']}/close", json_body={"reason": ""},
+              note=f"status PO {po.get('status')}")
 
 
 if __name__ == "__main__":

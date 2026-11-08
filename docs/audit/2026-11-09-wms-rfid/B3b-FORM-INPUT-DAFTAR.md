@@ -26,16 +26,17 @@ istilah tidak diubah (K-13), alasan minimal 5 huruf (K-14), ekspor Excel (XLSX) 
 | Kontrol isian disensus | 658 (239 pemilih terikat id, 364 teks/angka) |
 | **Layar daftar** | **±55** (lampiran B) |
 | **Endpoint** | 259 panggilan tulis FE → **291 endpoint tulis** + **197 endpoint GET daftar** di 39 router; 11 body `dict`, 13 body diparse manual (V2), ±9 tulis via query string |
-| Uji masukan buruk lewat API | skrip 45 uji siap (`b3b_api_probe.py`) — **lihat §2: Docker engine tidak merespons sejak ±05.00 WIB, hasil uji belum dapat dilampirkan** |
-| **Temuan** | **56** — **P0: 2 · P1: 13 · P2: 27 · P3: 14** (FRM 24 · INP 18 · LST 9 · EXP 5) |
+| Uji masukan buruk lewat API | **59 uji** dalam 3 putaran di stack sementara `kn-tmp-b3b` (kode `5f1e36e`): **29 masukan buruk DITERIMA**, 4 galat server (500), 14 ditolak benar, 8 info, 2 dilewati, 2 putus koneksi (artefak keep-alive sesudah 500 — diulang di putaran 2) (§2) |
+| **Temuan** | **56** — **P0: 3 · P1: 13 · P2: 26 · P3: 14** (FRM 24 · INP 18 · LST 9 · EXP 5) · **20 temuan terverifikasi API** (FRM-09 & INP-09 sebagian), sisanya terverifikasi kode / kandidat |
 
 Lima hal terpenting:
 1. **Isian bebas mengisi alamat stok.** "Bin ID (opsional)" di opname (INP-02, **P0**) dan "Bin Location *" di Scan Terima
-   (INP-01) adalah `<input>` teks; server tidak memakai `resolve_bin` yang sudah ada. Operator yang mengetik kode bin
-   (`A1-01`, yang memang tercetak di rak) — bukan id internal `bin_…` — membuat *expected* = 0, lalu saat disetujui lahir
-   **roll surplus + jurnal** di alamat yang tidak ada.
-2. **Satu baca lintas PT**: `GET /api/inbound/qc/tasks/{id}/rolls` tidak memeriksa badan usaha, padahal endpoint saudaranya
-   (`/plan`) memeriksa (FRM-23, **P0**).
+   (INP-01) adalah `<input>` teks; server tidak memakai `resolve_bin` yang sudah ada. **Terbukti API:** produk & bin yang sama —
+   diketik sebagai kode rak `W01-L2-03` → *expected* **0**, sebagai id `bin_sim_rcm_woven_w01_l2_03` → *expected* **240**;
+   saat disetujui, selisih "surplus" menjadi **roll baru + jurnal** di alamat yang tidak ada.
+2. **Tembus PT.** Operator gudang PT Sukacita berhasil `PATCH` gudang **khusus PT Cipta Sandang** (200, kota berubah) dan
+   mengosongkan struktur bin gudang berisi 18.471 roll (FRM-01, **P0**); `GET /api/inbound/qc/tasks/{id}/rolls` menjawab 200 untuk
+   tugas PT lain sementara endpoint saudaranya `/plan` menjawab 404 (FRM-23, **P0**).
 3. **Form HP jauh lebih sedikit dari desktop** (melanggar keputusan pemilik): Terima/Selesai di HP tidak punya satuan
    dokumen, rincian roll, no. SJ, lot, grade, bin; Ambil di HP tidak memindai roll dan server menerimanya (FRM-02/03/04).
 4. **K-14 (alasan ≥ 5 huruf) baru di layar, belum di server** — 25 jalur menerima alasan kosong/1 huruf/teks tetap (FRM-09).
@@ -55,14 +56,13 @@ Lima hal terpenting:
    tidak dikirim, endpoint tanpa body/body bebas, endpoint GET tanpa halaman.
 3. **Telaah manual per area** (empat penelaah paralel + verifikasi ulang oleh penulis untuk semua butir P0/P1 —
    kutipan berkas:baris di bawah sudah dicek ulang di HEAD `5f1e36e`).
-4. **Bukti data & uji API** direncanakan di stack sementara `kn-tmp-b3b-*` (snapshot `kn_test_trial_2026-11-08`):
-   stack sudah berdiri dan OpenAPI berhasil diambil (1452 path), tetapi **Docker Desktop engine berhenti merespons**
-   (`500 Internal Server Error … API version`, lalu semua `docker ps/exec` habis waktu) sebelum uji dijalankan, dan tetap
-   mati sampai laporan ini ditutup. Akibatnya: (a) semua uji API berstatus **kandidat** dengan payload uji tertulis;
-   (b) bukti data (`kn_test_trial`) **belum dipastikan** — kecuali satu kueri sukses (perangkat `DEV-84134`,
-   `location: ""`, `status: "online"`); (c) sensus OpenAPI/FE memakai kode `70eb9fd`; berkas yang berubah ke `5f1e36e`
-   (`GateReviewQueue/Detail.jsx`, `rfid_v2_review.py`, `LoadingCheckPanel.jsx`, hook gate di putaway/transfer/perbaikan/
-   logistik) **dibaca manual**. Tidak ada temuan yang dinyatakan "terverifikasi API" tanpa dijalankan.
+4. **Bukti data & uji API** di stack sementara `kn-tmp-b3b-*` (restore snapshot `kn_test_trial_2026-11-08` ke
+   `kn_test_trial` dan `test_database`; backend memakai `test_database`). Docker Desktop engine sempat macet (memori) ±05.00–06.16 WIB
+   dan memulai ulang dirinya; stack dijalankan ulang dengan kode **`5f1e36e`**, lalu uji API dijalankan (§2). **Kueri data**
+   (baca-saja) dijalankan ke salinan `kn_test_trial` di kontainer sementara — isinya identik dengan snapshot stack bersama dan
+   tidak disentuh uji; stack bersama `kn-dev-*`/`kn-uji-*` tidak dijalankan/diubah. Sensus FE otomatis memakai kode `70eb9fd`;
+   berkas yang berubah ke `5f1e36e` (`GateReviewQueue/Detail.jsx`, `rfid_v2_review.py`, `LoadingCheckPanel.jsx`, hook gate di
+   putaway/transfer/perbaikan/logistik) **dibaca manual**.
 5. Tidak memakai alat peramban (dipakai paket B1). Hal yang butuh konfirmasi visual ditandai **→ B1**; tumpang tindih
    dengan SSOT/skema penuh ditandai **→ B3a**.
 
@@ -70,25 +70,68 @@ Lima hal terpenting:
 UI wajar, atau tembus PT · **P1** = data operasional salah / kontrol terlewati / form utama buntu · **P2** = validasi,
 kelengkapan, konsistensi yang berdampak nyata · **P3** = kosmetik/kinerja ringan.
 
-## 2. Status uji masukan buruk (butir 3)
+## 2. Hasil uji masukan buruk lewat API (butir 3)
 
-`scripts/audit/b3b_api_probe.py` berisi 45 uji (kosong, negatif, nol, NaN, 5000 huruf, satuan/grade salah, id asing,
-id PT lain, kunci asing, alasan 1 huruf/5 spasi/titik, izin peran) dengan akun peran `warehouse`, `warehouse_admin`,
-`manager`, `admin` dan penilaian otomatis `DITERIMA_SEHARUSNYA_DITOLAK / DITOLAK_BENAR / GALAT_SERVER`.
-**Belum dapat dijalankan** — Docker engine mati (lihat §1.4). Setiap temuan di bawah yang bergantung pada perilaku
-runtime mencantumkan payload ujinya dan berstatus *kandidat*. Cara menjalankan ulang (stack sementara saja):
-```
-docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME=test_database \
-  kn-tmp-b3b-be python /app/scripts/audit/b3b_api_probe.py --out /tmp/b3b_probe.json
-```
+`scripts/audit/b3b_api_probe.py` (3 putaran, 59 uji) — akun peran `warehouse` (operator, PT aktif Sukacita `ent_ksc`),
+`warehouse_admin`, `manager`, `admin`; penilaian otomatis `DITERIMA_SEHARUSNYA_DITOLAK / DITOLAK_BENAR / GALAT_SERVER`,
+hasil tersimpan dicek ulang langsung di DB sementara. Stack: `kn-tmp-b3b-be` (kode `5f1e36e`) + `kn-tmp-b3b-mongo`, 9 Nov
+±06.20–06.30 WIB. Menjalankan ulang (stack sementara saja):
+`docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME=test_database kn-tmp-b3b-be python /app/scripts/audit/b3b_api_probe.py --round 1|2|3`.
+
+**Masukan buruk yang DITERIMA server (seharusnya ditolak):**
+
+| # | Peran | Permintaan | Hasil | Temuan |
+|---|---|---|---|---|
+| 1 | warehouse (PT Sukacita) | `PATCH /warehouses/wh_2328786267dd` (gudang **khusus PT Cipta Sandang**) `{"data":{"city":"Uji B3b"}}` | **200**, `city` tersimpan | FRM-01 (tembus PT) |
+| 2 | warehouse | `PATCH /warehouses/wh_jakarta {"data":{"zones":[]}}` (18.471 roll ber-bin) | **200**, `zones: []` | FRM-01 |
+| 3 | warehouse | `PATCH /warehouses/wh_jakarta {"data":{"name":""}}` lalu `{"lat":999,"lng":-999}` | **200**, nama kosong, lat 999 | FRM-01 |
+| 4 | warehouse (PT Sukacita) | `GET /inbound/qc/tasks/wms_bef96c0e9725/rolls` (tugas PT Cipta Sandang) | **200** `[]` — pembanding `/plan` tugas yang sama **404** "Data di luar lokasi tugas Anda" | FRM-23 |
+| 5 | admin | `POST /cycle-count/sessions/{sid}/items {"bin_id":"W01-L2-03",…}` (kode rak) | **200**, `expected_qty` **0** — dengan id `bin_sim_rcm_woven_w01_l2_03`: **240** | INP-02 |
+| 6 | admin | `POST /inbound/tasks/wms_b7020f220cf0/scan-receive {"actual_qty":1,"bin_id":"BIN-FIKTIF-B3B","roll_id":"ROLL-FIKTIF-B3B"}` | **200**, keduanya tersimpan di tugas | INP-01 |
+| 7 | admin | `POST /inventory/initial-stock {"unit":"hasta","grade":"ZZ","bin_id":"bin_tidak_ada","quantity":1,…}` | **200**, roll `available` ber-unit `hasta`, grade `ZZ`, bin `bin_tidak_ada` | INP-05 |
+| 8 | admin | `POST /inbound/tasks/{id}/resolve-escalation?adjusted_qty=-10` | **200**, `expected_qty: -10` → penerimaan berikutnya ditolak "melebihi toleransi +2% dari PO (-10, maks -10.2)" (tugas macet) | INP-09 |
+| 9 | admin | `POST /master/grades {"code":"Z9","rank":98,"max_points":-5}` | **200**, `max_points: -5` | INP-09 |
+| 10 | warehouse | `POST /outbound/tasks/wms_4610c188a0d4/scan-pick?actual_qty=0.5` tanpa roll | **200**, `picked_qty: 0.5` | FRM-03 |
+| 11 | warehouse_admin | `POST /inspections/random-check {"assigned_to":"user_03f0d6ed87f7"}` | 200, tersimpan `assigned_to: user_whadmin_01` (= pembuat) | FRM-05 |
+| 12 | admin | `POST /transfers {… "requested_by":"Direktur Utama","kunci_asing":"…"}` | **200**, `requested_by: "Direktur Utama"`; `kunci_asing` dibuang diam | FRM-08, INP-13 |
+| 13 | admin / warehouse | `escalate?reason=x` (inbound & outbound) | **200** | FRM-09 |
+| 14 | manager | `grade-override {"grade":"B","reason":"x"}` | **200**, grade berubah | FRM-09 |
+| 15 | manager | `transfers/{id}/reject {"reason":"","rejected_by":"Orang Lain"}` | **200** | FRM-09, FRM-08 |
+| 16 | manager | `makloon-orders/{id}/cancel {"reason":"a"}` | **200** | FRM-09 |
+| 17 | manager | `purchase-returns/{id}/reject {"notes":""}` | **200** | FRM-09 |
+| 18 | admin | `purchase-orders/{id}/close {"reason":""}` | **200** | FRM-09 |
+| 19 | warehouse_admin | `lots/{id}/status {"status":"hold_shade","reason":""}` | **200** | FRM-09 |
+| 20 | warehouse_admin | `goods-receipts/{id}/reject {"reason":"     "}` (5 spasi) | **200**, status `rejected` | FRM-09 |
+| 21 | admin | `PUT /config/values` `receiving.mode` alasan `"x"` (risiko *high*) | **200** | FRM-09 |
+| 22 | warehouse_admin | `PATCH /goods-receipts/{id}/dn {"number":"N"×5000,"date":"bukan-tanggal"}` | **200**, tersimpan | INP-11 |
+| 23 | admin | `POST /rfid/devices {"type":"gate","direction":"samping","status":"rusak","location":"Zona Fiktif"}` | **200**, tersimpan + `last_heartbeat` = saat dibuat | INP-07, FRM-12 |
+| 24 | admin | `PATCH /rfid/devices/{id} {"status":"online"}` | 200, `last_heartbeat` diperbarui ke saat itu | FRM-12 |
+| 25 | warehouse_admin | `POST /rfid/print-jobs {"kind":"qr"}` | **200**, dibuat job `kind: rfid_tag` + EPC baru | INP-14 |
+| 26 | admin | `PUT /config/values receiving.client_po_patterns = ["(?P<core>\\d{3"]` | **200** (regex tak valid tersimpan) | FRM-19 |
+| 27 | admin | `PUT /config/values receiving.ocr_price_table = "{rusak"` | **200** → `GET /goods-receipts/usage` **500** | FRM-19 |
+| 28 | admin | `PUT /config/values receiving.ocr_max_pages = -1` | **200** | FRM-20 |
+| 29 | admin | `PUT /settings {"scope":"global","inventory":{"min_cut_qty":-5}}` | **200** — seksi `inventory` global **kehilangan 5 kunci** (`default_uom`, `stock_analytics`, `reorder`, `intercompany_transfer_required`; tinggal `min_cut_qty:-5`) | FRM-20 |
+| – | warehouse_admin | `GET /goods-receipts?limit=100000` | 200 (tanpa batas atas) | LST-03 |
+
+**Galat server (500):** `GET /goods-receipts?limit=-1` (`ValueError: length must be non-negative`, LST-03);
+`POST /warehouse-sites {"name":"Gudang (Baru"}` (`OperationFailure: Regular expression is invalid`, INP-12);
+`GET /repair-orders?q=(` (INP-12); `GET /goods-receipts/usage` sesudah setelan JSON rusak (FRM-19).
+
+**Ditolak dengan benar (pembanding positif):** `scan-receive doc_qty:-5` (422 `ge=0`); `pengiriman shipping_cost:-100000` (422);
+`initial-stock quantity:0` ("quantity harus > 0"); `lots status:"hold"` (daftar status sah disebutkan); `grade-override` oleh
+`warehouse_admin` (403 D-23); `milestone` retur oleh peran `warehouse` (403 — tetapi tombolnya tampil, FRM-22); `scan-receive` &
+`escalate` oleh operator di luar lokasi tugas (404 pagar lokasi P9.5 ✓); `transfers` gudang asal = tujuan (400);
+`qc-decision` saat SPK aktif (409, keputusan lewat SPK); `dispatch?ship_qty=nan` tertahan lebih dulu oleh syarat tag RFID (400) —
+**NaN belum terbukti** (INP-09 tetap kandidat untuk butir itu). Tidak teruji (tanpa data prasyarat): tindakan antrean periksa D2
+(tidak ada kasus terbuka di snapshot), selesaikan insiden RFID, retur jual tolak.
 
 ---
 
 ## 3. Temuan — FORM (FRM)
 
-### FRM-01 · `PATCH /warehouses/{id}` menerima `zones` sehingga semua pagar struktur bin terlewati
+### FRM-01 · `PATCH /warehouses/{id}` menerima `zones` dan tidak memeriksa PT — pagar struktur bin & isolasi entitas terlewati
 - **Area/form/endpoint:** Data Gudang (profil/mode/cek muat memakai PATCH) · `PATCH /api/warehouses/{id}` (`GenericPatch {data: dict}`)
-- **Klasifikasi:** bug (otorisasi + integritas data) · **Keparahan:** P1
+- **Klasifikasi:** bug (otorisasi + integritas data, tembus PT) · **Keparahan:** **P0**
 - **Bukti:** whitelist `allowed = ["code","name","city",*LOCATION_KEYS,"zones","active","lat","lng",…]`
   (backend/routers/warehouses.py:243-248); untuk `zones` hanya `whp.validate_zone_forms(...)` (:265-266). Jalur resmi
   `PUT /warehouses/{id}/structure` (:143-156) memanggil `assert_supervisor`, `location_scope.assert_warehouse`,
@@ -97,11 +140,11 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   rentang, dan tidak memanggil `assert_usable` (gudang khusus PT lain bisa diubah).
 - **Aturan dilanggar:** satu pintu tulis per invarian (struktur lokasi hanya lewat `/structure`); P9.5 pagar lokasi.
 - **Dampak:** pemegang `warehouse.update` (peran operator `warehouse`, bukan supervisor) dapat menghapus bin berisi stok
-  → roll menjadi "alamat yatim"; kode bin ganda; nama gudang kosong.
+  → roll menjadi "alamat yatim"; kode bin ganda; nama gudang kosong; **dan mengubah gudang khusus PT lain**.
 - **Rekomendasi:** keluarkan `zones` dari whitelist PATCH; ganti `GenericPatch` dengan model PATCH bertipe
   (`WarehousePatchIn`, `extra="forbid"`); panggil `assert_usable` + `location_scope`.
-- **Status:** terverifikasi kode · uji API kandidat: peran `warehouse` → `PATCH {"data":{"zones":[]}}` pada gudang berisi
-  roll ber-bin (harap 403/409) dan `{"data":{"name":""}}` (harap 400).
+- **Status:** **terverifikasi API** (§2 #1–3): operator `warehouse` PT Sukacita → `PATCH` gudang `GU-CST` khusus PT Cipta Sandang
+  **200**; `{"zones":[]}` pada `wh_jakarta` (18.471 roll ber-bin) **200**; `name:""` dan `lat:999` **200**.
 
 ### FRM-02 · HP "Terima" & "Selesai terima" jauh lebih sedikit isiannya dari desktop
 - **Area:** aplikasi HP gudang (alur penerimaan lama `receiving.mode=legacy`) · `POST /inbound/tasks/{id}/scan-receive`, `/complete`
@@ -129,7 +172,7 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Dampak:** roll yang keluar dipilih sistem saat dispatch, bukan roll fisik yang diambil; qty diketik bebas.
 - **Rekomendasi:** HP memindai roll (kamera/handheld) seperti desktop; setelah pemilik memutuskan, setelan
   `wms.require_roll_scan_on_pick` (bawaan *wajib*) dan server menolak pick tanpa `roll_id`.
-- **Status:** terverifikasi kode · uji API kandidat: `scan-pick?actual_qty=0.5` tanpa `roll_id` (dugaan 200).
+- **Status:** **terverifikasi API** (§2 #10): `scan-pick?actual_qty=0.5` tanpa `roll_id` → 200, `picked_qty: 0.5`.
 
 ### FRM-04 · Paritas HP–desktop: ≥ 12 tindakan desktop tidak ada di HP, dan sebaliknya pendaftaran awal hanya lengkap di HP
 - **Area:** aplikasi HP gudang (`features/mobile/*`) vs layar desktop · **Klasifikasi:** fitur belum ada · **Keparahan:** P2
@@ -157,7 +200,7 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** isian layar harus tersimpan atau tidak ditampilkan.
 - **Dampak:** SPK acak selalu ditugaskan ke pembuat; petugas yang dimaksud tidak menerima tugas.
 - **Rekomendasi:** tambahkan `assigned_to: str = ""` ke model + validasi user aktif ber-izin QC; penjaga umum `extra="forbid"` (INP-13).
-- **Status:** terverifikasi kode · uji API kandidat: `{"warehouse_id":W,"count":1,"assigned_to":"<id petugas lain>"}` → cek `assigned_to` tersimpan.
+- **Status:** **terverifikasi API** (§2 #11): diminta `assigned_to: user_03f0d6ed87f7` (petugas QC), tersimpan `user_whadmin_01` (pembuat).
 
 ### FRM-06 · Field skema yang tidak punya isian di layar (dan satu yang dibuang)
 - **Area:** beberapa form · **Klasifikasi:** fitur belum ada / bug · **Keparahan:** P2
@@ -187,8 +230,10 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   (warehouse_profile_service.py:350). Label & bawaan 1000 di WarehouseCreateModal.jsx:46-49 / WarehouseMasterView.jsx:51.
 - **Aturan dilanggar:** isian layar harus berefek; satu nama field per konsep.
 - **Dampak:** bin pertama tercatat "tanpa batas kapasitas"; pengguna mengira sudah dibatasi.
-- **Rekomendasi:** simpan ke `capacity_rolls` (migrasi data lama `capacity` → `capacity_rolls`) → B3a (SSOT field kapasitas).
-- **Status:** terverifikasi kode.
+- **Bukti data (`kn_test_trial`):** **914 bin hanya punya `capacity`**, 10 bin ber-`capacity_rolls` → pagar kapasitas roll tidak
+  berlaku untuk hampir semua bin. (`capacity` lama bermakna panjang, mis. 100000; `capacity_rolls` = jumlah roll — dua konsep satu nama.)
+- **Rekomendasi:** simpan ke `capacity_rolls`; putuskan arti `capacity` lama (panjang) vs `capacity_rolls` (roll) → B3a (SSOT field kapasitas).
+- **Status:** terverifikasi kode + data.
 
 ### FRM-08 · Nama pelaku transfer diambil dari klien
 - **Area:** Transfer · `POST /api/transfers`, `/approve`, `/reject` · **Klasifikasi:** bug (integritas jejak) · **Keparahan:** P2
@@ -198,7 +243,8 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** pelaku = sesi server (`actor["name"]`), bukan isian.
 - **Dampak:** riwayat persetujuan bisa dipalsukan lewat API; nilai "Manager" generik tersimpan.
 - **Rekomendasi:** isi dari `actor`; hapus field dari skema (atau abaikan).
-- **Status:** terverifikasi kode · uji API kandidat: `POST /transfers` dengan `requested_by:"Direktur Utama"`.
+- **Status:** **terverifikasi API** (§2 #12, #15): `requested_by:"Direktur Utama"` tersimpan apa adanya. **Data:**
+  `warehouse_transfers.requested_by` ∈ {"Budi Santoso", **"Warehouse User"**}, `approved_by` ∈ {null, **"Manager"**} — nilai bawaan skema sudah tersimpan di data.
 
 ### FRM-09 · K-14 "alasan minimal 5 huruf" belum ditegakkan server di 25 jalur
 - **Area:** lintas form · **Klasifikasi:** bug aturan / inkonsistensi · **Keparahan:** P2
@@ -240,7 +286,9 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Rekomendasi:** satu validator server `reason_field(min_letters=5)` (menghitung **huruf**, bukan karakter; strip),
   dipakai semua model ber-alasan; bawaan alasan teks tetap dihapus. Penjaga G-FORM-04 (§7). **Butuh keputusan:**
   apakah K-14 dihitung huruf (`[A-Za-z]`) atau karakter non-spasi.
-- **Status:** terverifikasi kode · uji API kandidat: kirim `""`, `"a"`, `"     "`, `"....."` ke tiap jalur.
+- **Status:** terverifikasi kode; **terverifikasi API untuk 10 jalur** (§2 #13–21: eskalasi inbound & outbound `"x"`, override grade `"x"`,
+  tolak transfer `""`, batal MKO `"a"`, tolak retur beli `""`, tutup PO `""`, status lot `""`, tolak GRN 5 spasi, setelan berisiko `"x"`);
+  jalur lain kandidat (tanpa data prasyarat di snapshot).
 
 ### FRM-10 · Tombol "Simulasi Scan Semua" pada perintah putaway melewati syarat konfirmasi manual
 - **Area:** Lokasi Rak → Perintah Simpan ke Rak · `POST /putaway-orders/{id}/confirm-arrival`
@@ -278,7 +326,8 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Dampak:** kios menampilkan "Menunggu barang lewat" alih-alih "GATE OFFLINE — TAHAN" selama 120 detik (GateLiveVerdict.jsx:41);
   status printer dianggap online → alarm "label tertahan" tertutup.
 - **Rekomendasi:** `last_heartbeat` hanya ditulis kanal perangkat; perangkat baru `status:"belum_terhubung"`; tombol "Nyalakan" hanya `enabled`.
-- **Status:** terverifikasi kode · uji API kandidat: PATCH `{"status":"online"}` → `GET /rfid/gate/{id}/status` `heartbeat_age_s≈0`.
+- **Status:** **terverifikasi API** (§2 #23–24): perangkat baru ber-`status:"rusak"` langsung mendapat `last_heartbeat` = saat dibuat;
+  `PATCH {"status":"online"}` memperbarui `last_heartbeat` ke saat itu tanpa sinyal dari perangkat.
 
 ### FRM-13 · "Simulasi Pindai Area" menulis bacaan & lokasi terakhir nyata
 - **Area:** RFID → Lokasi RFID · `POST /api/rfid/reader/scan` · **Klasifikasi:** bug · **Keparahan:** P1
@@ -362,7 +411,8 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** INV-CFG (nilai setelan divalidasi registri); pemilih/isian sesuai tipe.
 - **Dampak:** OCR kedatangan barang galat 500 untuk semua GRN setelah satu suntingan wajar.
 - **Rekomendasi:** editor baris-per-butir untuk tipe `list`; tipe `regex_list` & `json_map` di registri dengan validasi `re.compile`/skema JSON di `coerce`.
-- **Status:** terverifikasi kode · uji API kandidat: `PUT /config/values {"items":[{"key":"receiving.client_po_patterns","value":["(?P<core>\\d{3"],…}]}` → 200 (dugaan), lalu baca OCR → 500.
+- **Status:** **terverifikasi API** (§2 #26–27): regex tak valid diterima 200 (dipakai `re.finditer` tanpa `try` saat OCR/sampel OCR);
+  `ocr_price_table = "{rusak"` diterima 200 lalu `GET /goods-receipts/usage` → **500** (`json.loads`).
 
 ### FRM-20 · Pengaturan: angka tanpa batas, jalur lama `PUT /settings` dict bebas, setelan "tombol palsu"
 - **Area:** Pusat Pengaturan (gudang/mutu/penerimaan) · **Klasifikasi:** bug / duplikasi · **Keparahan:** P2
@@ -376,7 +426,10 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   pesan validasi menyebut kunci teknis (`'{key}' harus angka bulat`) dan angka bulat dibulatkan diam-diam.
 - **Aturan dilanggar:** INV-NUM-01 (diperluas ke registri), INV-CFG-01, INV-UOM-02.
 - **Rekomendasi:** batas wajib untuk setiap setelan angka (penjaga G-CFG-01); tutup/arahkan `PUT /settings` ke registri; status `not_used` untuk setelan tanpa konsumen; satu sumber ambang grade; pemilih satuan dari master.
-- **Status:** terverifikasi kode · uji API kandidat: `ocr_max_pages=-1`; `PUT /settings {"scope":"global","inventory":{"min_cut_qty":-5}}`.
+- **Status:** **terverifikasi API** (§2 #28–29): `ocr_max_pages=-1` → 200; `PUT /settings {"scope":"global","inventory":{"min_cut_qty":-5}}`
+  → 200 dan seksi `inventory` global **kehilangan 5 kunci** (sebelum: `default_uom`, `min_cut_qty:0.5`, `stock_analytics`, `reorder`,
+  `intercompany_transfer_required`; sesudah: hanya `min_cut_qty:-5`). Jalur lama ini masih dipakai FE untuk seksi lain
+  (IntercoPaymentSchedule.jsx:36, ReturnAssumptionsPanel.jsx:36).
 
 ### FRM-21 · Antrean periksa gate (D2): form tindakan baku, sisa celah kecil
 - **Area:** RFID › Monitor Gerbang › Antrean periksa (baru di `5f1e36e`) · `/api/rfid/v2/ops/reviews/*`
@@ -398,7 +451,8 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   di mana pun** dan berisi data contoh `prod_batik_mega`/`wh_jakarta` (ScannerTaskPanel.jsx:18); FormModal "Selesaikan eskalasi"
   tanpa `busy` (EscalationManagement.jsx:267-269) → klik ganda berakhir 409.
 - **Rekomendasi:** turunkan visibilitas tombol dari izin endpoint yang sama; putuskan pemasangan ambil-alih atau hapus berkas mati; `busy` wajib di FormModal ber-`onSubmit`.
-- **Status:** terverifikasi kode · uji API kandidat: akun `warehouse` → `POST /sales-returns/{id}/milestone {"milestone":"goods_arrived"}` (dugaan 403).
+- **Status:** **terverifikasi API**: akun `warehouse` → `POST /sales-returns/{id}/milestone` → 403 "Permission ditolak: sales_return.update"
+  (sementara tombolnya ditampilkan untuk pemegang `wms.scan`).
 
 ### FRM-23 · `GET /api/inbound/qc/tasks/{task_id}/rolls` tanpa cek badan usaha (baca lintas PT)
 - **Area:** Antrean QC kedatangan → Inspeksi 4-point · **Klasifikasi:** bug (tembus PT) · **Keparahan:** **P0**
@@ -408,7 +462,9 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** isolasi entitas (`entity_scope`, AUDIT_ISOLASI_ENTITAS).
 - **Dampak:** pengguna PT A membaca roll_no, lot, dye lot, grade, status tahanan roll PT B bila mengetahui id tugas.
 - **Rekomendasi:** ganti `find_one` dengan `_qc_task(task_id, request)`; tambahkan uji isolasi untuk semua endpoint `/{id}/…` di router cakupan (G-SCOPE-01, §7).
-- **Status:** terverifikasi kode · uji API kandidat: pengguna PT A → `GET …/tasks/{id_tugas_PT_B}/rolls` (harap 403/404).
+- **Status:** **terverifikasi API** (§2 #4): operator PT Sukacita → `GET …/tasks/wms_bef96c0e9725/rolls` (tugas PT Cipta Sandang) **200**,
+  sedangkan `/plan` tugas yang sama **404**. Di snapshot tugas itu kebetulan belum punya roll ber-`qc_task_id` (respons `[]`), jadi
+  belum ada isi yang bocor — tetapi gerbangnya terbukti terbuka.
 
 ### FRM-24 · Koleksi/skema baru tidak terdaftar & konsep yang tergandakan — → B3a
 - **Area:** backend WMS-RFID · **Klasifikasi:** duplikasi / butuh keputusan · **Keparahan:** P3
@@ -443,7 +499,9 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Dampak:** roll dengan `bin_id` kode/fiktif → okupansi (dicocokkan per id, location_service.py:137) salah, roll tidak masuk antrean
   "belum ditempatkan" (:233); "Roll ID" diketik dianggap tag RFID → opname RFID menganggap roll bertag padahal tag tidak ada.
 - **Rekomendasi:** pemilih bin dari struktur gudang tugas + `resolve_bin` di server (tolak bila tak ditemukan); hapus pemetaan roll_id→rfid_tag_id (tag lewat `/inbound/rolls/{id}/tag`); "Lot" dari pemilih lot/penurun server.
-- **Status:** terverifikasi kode · uji API kandidat: `scan-receive {"product_id":P,"doc_qty":1,"bin_id":"BIN-FIKTIF","roll_id":"ROLL-FIKTIF"}` → complete → cek roll.
+- **Status:** **terverifikasi API** (§2 #6): `scan-receive {"actual_qty":1,"bin_id":"BIN-FIKTIF-B3B","roll_id":"ROLL-FIKTIF-B3B"}` → 200,
+  keduanya tersimpan di tugas (dipakai saat `complete`). **Data:** di snapshot hanya 2 dari 607 `bin_id` roll yang tak cocok struktur
+  (`bin_sim_hilang_*`, simulasi) — risiko belum terwujud di data uji, celahnya terbuka.
 
 ### INP-02 · Opname: "Bin ID (opsional)" teks bebas → *expected* 0 → roll surplus + jurnal di alamat yang tidak ada
 - **Area:** Stok, Transfer & Opname → Sesi opname → Tambah item · `POST /cycle-count/sessions/{sid}/items`
@@ -458,13 +516,15 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Dampak:** operator yang mengetik kode bin yang benar (bukan id internal) mendapat *expected* 0 untuk stok yang ada;
   menghitung fisiknya → surplus → **stok ganda + jurnal persediaan** di alamat fiktif; salah ketik apa pun berakibat sama.
 - **Rekomendasi:** ganti dengan pemilih bin (sama dengan RollCountPanel); server `resolve_bin` → simpan id, tolak bila tak dikenal.
-- **Status:** terverifikasi kode · uji API kandidat: `POST …/items {"product_id":X,"bin_id":"A1-01"}` untuk produk ber-roll di bin itu → `expected_qty` 0.
+- **Status:** **terverifikasi API** (§2 #5): gudang RCM-WOVEN, produk `prod_0b9b511406f0`, bin yang sama — `bin_id:"W01-L2-03"` (kode rak)
+  → `expected_qty` **0,0**; `bin_id:"bin_sim_rcm_woven_w01_l2_03"` (id) → **240,0**. Tahap persetujuan (roll surplus + jurnal) dibuktikan dari kode
+  (stock_count_service.py:110-118), tidak dijalankan agar jurnal uji tidak bertambah.
 
 ### INP-03 · HP "Bin / lokasi saya" teks bebas mengisi `bin_id`
 - **Area:** HP → Pindai · `POST /api/rfid/roll-scans` · **Klasifikasi:** inkonsistensi · **Keparahan:** P2
 - **Bukti:** MobileWarehouseApp.jsx:112,122,171; `(bin_id or "").strip() or None` → `roll_scans.bin_id` dan `inventory_rolls.last_scan.bin_id`
   tanpa cek struktur (rfid.py:140,211).
-- **Rekomendasi:** pindai/pilih bin dari struktur; simpan id + kode. **Status:** terverifikasi kode; data belum dipastikan.
+- **Rekomendasi:** pindai/pilih bin dari struktur; simpan id + kode. **Status:** terverifikasi kode; `roll_scans.bin_id` di snapshot masih kosong.
 
 ### INP-04 · Satuan baris SJ & packing list GRN teks bebas; `goods_receipts` di luar penjaga satuan
 - **Area:** Barang Masuk → Tinjau SJ · `POST/PATCH /goods-receipts/{id}/lines` · **Klasifikasi:** inkonsistensi · **Keparahan:** P2
@@ -474,14 +534,17 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   goods_receipt_close_service.py:573); `goods_receipts` tidak ada di `UNIT_DOC_FIELDS` (uom_service.py:137-154) sehingga INV-UOM-02 tak memeriksanya.
 - **Aturan dilanggar:** INV-UOM-02 aturan D (pemilih satuan dari master).
 - **Rekomendasi:** `KNSelect` satuan dari `useUomConversions()`; tambahkan `goods_receipts.lines[].declared.unit` & `packing_list.unit` ke `UNIT_DOC_FIELDS`.
-- **Status:** terverifikasi kode; bukti data belum dipastikan.
+- **Status:** terverifikasi kode; data snapshot: satuan baris SJ hanya `meter` (cocok master) — celah belum terwujud.
 
-### INP-05 · Stok awal: satuan, grade, dan bin tidak divalidasi; grade di FE di-hard-code; panjang 0 diterima
-- **Area:** Stok → Stok awal · `POST /api/inventory/initial-stock` → `RollPayload` · **Klasifikasi:** isian bebas (API) · **Keparahan:** P2
+### INP-05 · Stok awal: satuan, grade, dan bin tidak divalidasi; pilihan grade di layar memuat nilai di luar master
+- **Area:** Stok → Stok awal · `POST /api/inventory/initial-stock` → `RollPayload` · **Klasifikasi:** isian bebas / bug data · **Keparahan:** P1
 - **Bukti:** `"unit": payload.unit, "grade": payload.grade`, `"bin_id": payload.bin_id or None` (inventory.py:474-479); `unit: str = "meter"`,
-  `grade: str = "A"`, `quantity: float = Field(..., ge=0)` (schemas.py:712-719); FE grade A/B/C/Reject keras (InitialStockForm.jsx:64-68).
-- **Rekomendasi:** validasi satuan (master UOM), grade (`domain_registry.require_grade`), `resolve_bin`; `quantity gt=0`.
-- **Status:** kandidat · uji API: `{…,"quantity":0,"unit":"hasta","grade":"ZZ","bin_id":"bin_tidak_ada"}` (harap 400).
+  `grade: str = "A"` (schemas.py:713-714). Pilihan grade di layar diketik keras `A / B / C / Reject` (InitialStockForm.jsx:64-68) —
+  master grade di data: `A, A1, B, B1, BS, C` → **"Reject" bukan grade sah** dan A1/B1/BS tidak bisa dipilih; jalur UI biasa pun
+  menghasilkan grade di luar master. (`quantity` 0 ditolak service "quantity harus > 0" — baik.)
+- **Rekomendasi:** validasi satuan (master UOM), grade (`domain_registry.require_grade`), `resolve_bin`; pemilih grade dari `useDomainEnums`.
+- **Status:** **terverifikasi API** (§2 #7): `{"unit":"hasta","grade":"ZZ","bin_id":"bin_tidak_ada","quantity":1}` → 200, roll
+  `roll_025bfc18050f` `available` dengan unit `hasta`, grade `ZZ`, bin `bin_tidak_ada` tersimpan.
 
 ### INP-06 · Kurir, sopir, kendaraan diketik bebas; plat manual melewati master armada; dua master kendaraan
 - **Area:** Pengiriman, retur (pengembalian barang, perjalanan) · **Klasifikasi:** inkonsistensi / butuh keputusan · **Keparahan:** P2
@@ -495,7 +558,8 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   tugas tetap muncul di "milik saya" sopir lama; rekap per ekspedisi mustahil.
 - **Rekomendasi:** pemilih armada & sopir (akun ber-peran sopir) untuk armada sendiri; plat manual hanya untuk kendaraan luar
   dan ditolak bila plat ada di master; **keputusan pemilik:** master ekspedisi & penyatuan master kendaraan (→ B3a).
-- **Status:** terverifikasi kode; variasi ejaan di data belum dipastikan (kueri disiapkan di §8).
+- **Status:** terverifikasi kode. **Data:** `courier_name` ∈ {"JNE","LALAMOVE"}, retur `courier` = "J&T Express", `vehicle_plate`/`driver_name`
+  kosong, `fleet_vehicles` & `vehicles` kosong di snapshot — belum ada variasi ejaan karena data logistik uji masih tipis.
 
 ### INP-07 · Perangkat RFID: lokasi berupa teks, arah/status tanpa enum, tidak ada form Ubah, hapus tanpa cek rujukan
 - **Area:** RFID / Pengaturan › Perangkat · `POST/PATCH/DELETE /api/rfid/devices` · **Klasifikasi:** inkonsistensi + bug · **Keparahan:** P2
@@ -506,7 +570,7 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   tetapi UI tanpa form Ubah (koreksi = hapus + buat ulang → kunci API & riwayat hilang); `delete_one` tanpa cek `gate_config.pairs`,
   `rfid_v2_bindings`, lease print job (rfid_service.py:253-257). Data: `DEV-84134` `location: ""`.
 - **Rekomendasi:** enum `in|out` (gate) / `n/a`; status hanya dari perangkat (FRM-12); simpan `location_node_id` + label; form Ubah; tolak hapus bila dirujuk (nonaktifkan saja).
-- **Status:** terverifikasi kode · uji API kandidat: `POST {"type":"gate","direction":"samping","status":"rusak",…}`.
+- **Status:** **terverifikasi API** (§2 #23): `{"type":"gate","direction":"samping","status":"rusak","location":"Zona Fiktif"}` → 200, tersimpan apa adanya.
 
 ### INP-08 · Teks bebas lain yang mengisi rujukan master
 - **Area:** lintas form · **Klasifikasi:** isian bebas · **Keparahan:** P2
@@ -536,7 +600,9 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** INV-NUM-01.
 - **Dampak:** SJ dengan qty NaN; kiriman penuh padahal diminta sebagian; stok dihapus sebagai susut; expected qty negatif.
 - **Rekomendasi:** `Field(gt=0, allow_inf_nan=False)` untuk semua qty/panjang (termasuk query: `Query(..., gt=0)`); susut ≤ persen setelan + alasan; perluas INV-NUM-01 ke router & query (G-NUM-02).
-- **Status:** terverifikasi kode · uji API kandidat: `dispatch?ship_qty=nan`, `?ship_qty=-1`; `resolve-escalation?adjusted_qty=-10`; `POST /master/grades {"max_points":-5,…}`.
+- **Status:** **terverifikasi API** untuk `resolve-escalation?adjusted_qty=-10` (§2 #8: tersimpan `expected_qty:-10`, lalu tugas tak bisa
+  menerima barang — "melebihi toleransi +2% dari PO (-10, maks -10.2)") dan `max_points:-5` (§2 #9). `ship_qty=nan` **belum terbukti**
+  (tertahan syarat tag RFID lebih dulu) — kandidat dari kode (shipment_service.py:63-64).
 
 ### INP-10 · Desimal koma Indonesia hilang diam-diam (`parseFloat`/`Number` pada isian teks)
 - **Area:** makloon kirim/terima, lembar inspect, packing list GRN · **Klasifikasi:** bug data · **Keparahan:** P1
@@ -554,12 +620,13 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
   `GRCompletePayload` (:569-575), `PAVerifyLabelsPayload.codes` tanpa batas jumlah, akui passage lama tanpa batas (rfid.py:420);
   FE hanya **3** `maxLength`. `date` SJ berupa string bebas.
 - **Rekomendasi:** `constr(max_length=…)`/`Field(max_length)` baku per jenis (nomor dok 60, nama 120, catatan 1000); `date` bertipe tanggal.
-- **Status:** kandidat · uji API: `PATCH /dn {"number":"N"*5000,"date":"bukan-tanggal"}`.
+- **Status:** **terverifikasi API** (§2 #22): `PATCH /dn {"number":"N"×5000,"date":"bukan-tanggal"}` → 200, tersimpan.
 
 ### INP-12 · Regex dari isian tanpa escape → galat server
 - **Area:** Perbaikan (cari), Lokasi (nama site) · **Klasifikasi:** bug · **Keparahan:** P2
 - **Bukti:** `{"$regex": f"^{name}$"}` (warehouse_profile_service.py:262); `q` mentah (repair_order_service.py:44,336; repair_orders.py:99).
-- **Rekomendasi:** `re.escape`. **Status:** kandidat · uji API: `POST /warehouse-sites {"name":"Gudang (Baru"}`, `GET /repair-orders?q=(` (dugaan 500).
+- **Rekomendasi:** `re.escape`. **Status:** **terverifikasi API**: `POST /warehouse-sites {"name":"Gudang (Baru"}` → **500**
+  (`OperationFailure: Regular expression is invalid: missing closing parenthesis`); `GET /repair-orders?q=(` → **500**.
 
 ### INP-13 · Body tanpa skema & kunci asing dibuang diam-diam (sistemik)
 - **Area:** semua router cakupan · **Klasifikasi:** inkonsistensi (kontrak input) · **Keparahan:** P2
@@ -572,12 +639,13 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Aturan dilanggar:** kontrak input bertipe; privasi (alasan/data di URL).
 - **Rekomendasi:** model baku `KNIn(BaseModel, extra="forbid")` untuk semua body tulis; body untuk data tulis (bukan query);
   daftar pengecualian `dict` beralasan (G-API-01/02).
-- **Status:** terverifikasi kode · uji API kandidat: `POST /transfers {… "kunci_asing":"x"}` (dugaan 200).
+- **Status:** **terverifikasi API** (§2 #12): `POST /transfers {… "kunci_asing":"harus-ditolak"}` → 200, kunci dibuang tanpa galat.
 
 ### INP-14 · `PrintJobPayload.kind` tidak divalidasi — nilai salah menjadi encode tag RFID
 - **Area:** RFID → cetak · `POST /api/rfid/print-jobs` · **Klasifikasi:** bug · **Keparahan:** P2
 - **Bukti:** `if payload.kind == "qr_label": … else: create_print_job` (rfid.py:477-480).
-- **Rekomendasi:** `kind: Literal["rfid_tag","qr_label"]`. **Status:** kandidat · uji: `{"roll_ids":[r],"kind":"qr"}` → job RFID + tag `pending_print`.
+- **Rekomendasi:** `kind: Literal["rfid_tag","qr_label"]`. **Status:** **terverifikasi API** (§2 #25): `{"kind":"qr"}` → 200, dibuat job
+  `PJ00015` ber-`kind:"rfid_tag"` dengan EPC baru untuk roll itu.
 
 ### INP-15 · Keluaran tanggal tanpa zona WIB
 - **Area:** RFID (14 pemakaian `fmtTime`), opname, pendaftaran, transfer exception, eskalasi, retur, makloon · **Klasifikasi:** inkonsistensi · **Keparahan:** P3
@@ -640,13 +708,15 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 - **Bukti:** `db.wms_tasks.find({**scope, "task_subtype": "sample_cut"}).sort("created_at", 1).to_list(500)` — tanpa filter status,
   urut **naik** (backend/services/cutting_service.py:76-77).
 - **Dampak:** begitu total tugas sample (termasuk yang sudah selesai) > 500, tugas baru tidak pernah tampil di "menunggu diterima".
-- **Rekomendasi:** saring status terbuka, urut turun, halaman. **Status:** terverifikasi kode; jumlah di data belum dipastikan (`countDocuments({task_subtype:"sample_cut"})`).
+- **Rekomendasi:** saring status terbuka, urut turun, halaman. **Status:** terverifikasi kode. **Data:** 20 tugas `sample_cut` di snapshot
+  (ambang 500 belum tercapai di data uji; di produksi akan tercapai seiring waktu karena tugas selesai tidak pernah disaring).
 
 ### LST-03 · Parameter `limit` tanpa batas atas (17 endpoint) / negatif
 - **Klasifikasi:** bug kecil · **Keparahan:** P3
 - **Bukti:** daftar di lampiran B.5 (mis. `/goods-receipts`, `/putaway-orders`, `/inventory/rolls` bawaan 5000, `/rfid/incidents`, `/lots`);
   `GET /goods-receipts?limit=-1` → `to_list(-1)` (goods_receipts.py:65).
-- **Rekomendasi:** `Query(…, ge=1, le=500)` baku. **Status:** kandidat · uji: `limit=-1`, `limit=100000`.
+- **Rekomendasi:** `Query(…, ge=1, le=500)` baku. **Status:** **terverifikasi API**: `GET /goods-receipts?limit=-1` → **500**
+  (`ValueError: length must be non-negative`); `limit=100000` → 200 (tanpa batas atas).
 
 ### LST-04 · Saringan tidak lengkap / hilang
 - **Klasifikasi:** hambatan UX · **Keparahan:** P3
@@ -796,21 +866,24 @@ docker exec -e KN_PROBE_PW=… -e MONGO_URL=mongodb://localhost:27017 -e DB_NAME
 | K-B3b-09 | Tombol **simulasi** (PA "Simulasi Scan Semua", pindai area) di produksi? (FRM-10, FRM-13) | Hanya saat `wms.rfid_simulation` aktif, data bertanda `simulated` |
 | K-B3b-10 | Koreksi klaim crossing gate (D2) perlu layar? (FRM-21) | Ya, di rincian antrean periksa (admin gudang), alasan ≥10 |
 
-## 10. Kueri data baca-saja yang disiapkan (belum dapat dijalankan — Docker mati)
+## 10. Bukti data (`kn_test_trial`, baca-saja: find/distinct/aggregate/count)
 
-```js
-// kn_test_trial — HANYA find/aggregate/count
-db.wms_tasks.countDocuments({task_subtype:"sample_cut"})                                   // LST-02
-db.inventory_rolls.aggregate([{$match:{bin_id:{$nin:[null,""]}}},{$lookup:{from:"warehouses",localField:"warehouse_id",foreignField:"id",as:"w"}},{$limit:5000}]) // INP-01/02: bin_id bukan id bin struktur
-db.cycle_count_sessions.distinct("items.bin_id")                                           // INP-02
-db.inventory_rolls.distinct("unit",{ "acquired.via":"initial" }); db.inventory_rolls.distinct("grade") // INP-05
-db.logistics_deliveries.distinct("courier_name"); db.logistics_deliveries.distinct("vehicle_plate") // INP-06
-db.sales_returns.distinct("return_shipment.driver"); db.sales_returns.distinct("return_shipment.courier")
-db.goods_receipts.distinct("lines.declared.unit")                                          // INP-04
-db.warehouse_transfers.distinct("requested_by"); db.warehouse_transfers.distinct("approved_by") // FRM-08
-db.rfid_devices.find({},{_id:0,code:1,direction:1,status:1,location:1})                    // INP-07
-db.warehouse_sites.distinct("country_code")                                                // FRM-06
-```
+Dijalankan ke salinan snapshot `kn_test_trial_2026-11-08` di kontainer sementara (identik dengan data acuan; tidak disentuh uji).
+
+| Kueri | Hasil | Temuan |
+|---|---|---|
+| `inventory_rolls.bin_id` yang tidak cocok id bin struktur `warehouses.zones` | 2 dari 607 nilai (`bin_sim_hilang_01/02`, simulasi); 0 yang berupa **kode** bin | INP-01/02 — risiko belum terwujud di data uji |
+| bin yang hanya punya `capacity` vs `capacity_rolls` | **914 vs 10** | FRM-07 |
+| `warehouse_transfers.requested_by` / `approved_by` | {"Budi Santoso", **"Warehouse User"**} / {null, **"Manager"**} | FRM-08 |
+| `rfid_devices` | 1: `DEV-84134` gate `out`, `location: ""`, `status: "online"` | FRM-12, INP-07 |
+| `inventory_rolls.unit` / `grade` | {kg, meter, yard} / {A, A1, B, B1, BS, C} — **"Reject" (opsi layar stok awal) tidak ada di master** | INP-05 |
+| `goods_receipts.lines.declared.unit` | {meter} (semua cocok master) | INP-04 — belum terwujud |
+| `logistics_deliveries.courier_name` / `vehicle_plate` / `driver_name`; retur `courier` | {JNE, LALAMOVE} / {""} / {""}; {"J&T Express"} | INP-06 — data uji tipis |
+| `fleet_vehicles.plate` / `vehicles.no_polisi` | [] / [] (dua master, keduanya kosong) | INP-06, FRM-24 |
+| `wms_tasks` sample_cut / outbound / inbound | 20 / 123 / 129 | LST-01/02 |
+| `cycle_count_sessions.items.bin_id`, `roll_scans.bin_id` | [] / [] | INP-02/03 — belum ada data |
+| `warehouse_sites.country_code` | {ID} | FRM-06 |
+| `config_values` `receiving.mode` | riwayat berganti `grn` ↔ `legacy` (global & `ent_ksc`) | FRM-02 — jalur lama masih hidup |
 
 ## 11. Koordinasi
 
