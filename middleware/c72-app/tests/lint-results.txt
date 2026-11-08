@@ -1,0 +1,241 @@
+app\src\main\AndroidManifest.xml:10: Warning: Attribute dataExtractionRules is only used in API level 31 and higher (current min is 30) [UnusedAttribute]
+    android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules"
+                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedAttribute":
+   This check finds attributes set in XML files that were introduced in a
+   version newer than the oldest version targeted by your application (with
+   the minSdkVersion attribute).
+
+   This is not an error; the application will simply ignore the attribute.
+   However, if the attribute is important to the appearance or functionality
+   of your application, you should consider finding an alternative way to
+   achieve the same result with only available attributes, and then you can
+   optionally create a copy of the layout in a layout-vNN folder which will be
+   used on API NN or higher where you can take advantage of the newer
+   attribute.
+
+   Note: This check does not only apply to attributes. For example, some tags
+   can be unused too, such as the new <tag> element in layouts introduced in
+   API 21.
+
+app\src\main\AndroidManifest.xml:12: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
+                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:15: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".ProvisionActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:16: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".LoginActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:17: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".HomeActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:18: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".TaskListActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:19: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".ScanActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="stateHidden"/>
+                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:20: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".RegistrationActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="stateHidden"/>
+                                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:21: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".TagWriteActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:22: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".LocateActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:23: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".OutboxActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\AndroidManifest.xml:24: Warning: Expecting android:screenOrientation="unspecified" or "fullSensor" for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices [LockedOrientationActivity]
+    <activity android:name=".DiagnosticsActivity" android:exported="false" android:screenOrientation="portrait"/>
+                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "LockedOrientationActivity":
+   The <activity> element should not be locked to any orientation so that
+   users can take advantage of the multi-window environments and larger
+   screens available on Android. To fix the issue, consider declaring the
+   corresponding activity element with `screenOrientation="unspecified"or
+   "fullSensor"` attribute.
+
+   https://developer.android.com/topic/arc/window-management
+
+app\src\main\java\id\kainnusantara\handheld\DiagnosticsActivity.java:106: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        out.setText("⟳ Menjalankan…");
+                    ~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\DiagnosticsActivity.java:182: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            keys.setText("Tombol: keyCode=" + keyCode + " (" + KeyEvent.keyCodeToString(keyCode) + ")" + (app.profile.isTrigger(keyCode) ? " ✓ pemicu profil" : " ✕ bukan pemicu profil"));
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\DiagnosticsActivity.java:182: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            keys.setText("Tombol: keyCode=" + keyCode + " (" + KeyEvent.keyCodeToString(keyCode) + ")" + (app.profile.isTrigger(keyCode) ? " ✓ pemicu profil" : " ✕ bukan pemicu profil"));
+                         ~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:40: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            if (!ok) t.setText(k.glyph + "  " + k.label + "\n✕ tanpa izin (" + k.hint + ")");
+                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:61: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        who.setText(Json.str(u, "name") + " · " + Json.str(d, "code"));
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:62: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        status.setText("Gudang: " + (whs.length() == 0 ? "—" : whs) + (app.simulation() ? "\n! MODE SIMULASI — tanpa radio" : "")
+                       ^
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:62: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        status.setText("Gudang: " + (whs.length() == 0 ? "—" : whs) + (app.simulation() ? "\n! MODE SIMULASI — tanpa radio" : "")
+                       ~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:71: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+                if (t != null && tk != null && k.optBoolean("allowed")) t.setText(tk.glyph + "  " + tk.label + "  (" + k.optInt("open_count") + ")\n" + tk.hint);
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:77: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            sync.setText(sync.getText() + "\n" + line.getText() + " · daftar tugas dari cache");
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\HomeActivity.java:77: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            sync.setText(sync.getText() + "\n" + line.getText() + " · daftar tugas dari cache");
+                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:89: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        run.setText("■  BERHENTI");
+                    ~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:91: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        msg.setText("Sasaran " + Epc.display(epc));
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:91: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        msg.setText("Sasaran " + Epc.display(epc));
+                    ~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:104: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            runOnUiThread(() -> msg.setText(msg.getText() + " · " + mode));
+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:116: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        run.setText("◉  MULAI CARI  (atau pemicu)");
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\LocateActivity.java:122: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        label.setText((v >= 85 ? "★ " : v > 0 ? "▲ " : "○ ") + LocateMeter.label(v));
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\OutboxActivity.java:44: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        if (app.lastPass != null) status.setText(status.getText() + "\nSinkron terakhir: " + app.lastPass);
+                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:154: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        msg.setText(s.title + " · " + s.statusLabel + " · EPC " + (system ? "DIBUAT SISTEM (ditulis ke tag)" : "BAWAAN TAG (dibaca)") + " · " + s.rows.size() + " baris di ERP"
+                    ^
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:154: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        msg.setText(s.title + " · " + s.statusLabel + " · EPC " + (system ? "DIBUAT SISTEM (ditulis ke tag)" : "BAWAAN TAG (dibaca)") + " · " + s.rows.size() + " baris di ERP"
+                                                      ~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:154: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        msg.setText(s.title + " · " + s.statusLabel + " · EPC " + (system ? "DIBUAT SISTEM (ditulis ke tag)" : "BAWAAN TAG (dibaca)") + " · " + s.rows.size() + " baris di ERP"
+                                                                                                                                                                ~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:175: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            epcView.setText("Tempel tag di roll, dekatkan C72, lalu tekan TULIS (atau pemicu).");
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:176: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            poolView.setText("Cadangan EPC di HP: " + free + (free < 5 ? "  ! hampir habis — sambungkan ke ERP" : "  (cukup untuk kerja offline)"));
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:176: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            poolView.setText("Cadangan EPC di HP: " + free + (free < 5 ? "  ! hampir habis — sambungkan ke ERP" : "  (cukup untuk kerja offline)"));
+                             ~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:203: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        productView.setText("✓ " + form.productLabel + (Json.str(pr, "superseded_by").isEmpty() ? "" : "\n! digantikan — ERP mengalihkan ke penggantinya"));
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:320: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        epcView.setText("⟳ Menulis " + Epc.tail(epc) + " & membaca ulang…");
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:320: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        epcView.setText("⟳ Menulis " + Epc.tail(epc) + " & membaca ulang…");
+                        ~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\RegistrationActivity.java:320: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        epcView.setText("⟳ Menulis " + Epc.tail(epc) + " & membaca ulang…");
+                                                       ~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:163: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        head.setText(kind.glyph + " " + kind.label + " · " + (s.number.isEmpty() ? docId : s.number));
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:164: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        info.setText(s.title + " · " + s.statusLabel + (cached ? " · dari HP" : " · terbaru") + (s.untagged.isEmpty() ? "" : " · " + s.untagged.size() + " roll tanpa tag"));
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:187: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            if (message != null && !message.isEmpty() && !on) sync.setText("Radio: " + message);
+                                                                           ~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:187: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            if (message != null && !message.isEmpty() && !on) sync.setText("Radio: " + message);
+                                                                           ~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:231: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        cExp.setText("≡ " + last.expected);
+                     ~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:232: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        cRead.setText("✓ " + last.read);
+                      ~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:233: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        cMiss.setText("○ " + last.missing);
+                      ~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:234: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        cExtra.setText("+ " + last.extra.size());
+                       ~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:237: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            sendBtn.setText(kind.sendLabel() + (toSend > 0 ? "  (" + toSend + " baru)" : ""));
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:243: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            completeBtn.setText("✔  SELESAIKAN DOKUMEN" + (pend > 0 ? "  (tunggu " + pend + " antre)" : toSend > 0 ? "  (kirim dulu)" : ""));
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:243: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            completeBtn.setText("✔  SELESAIKAN DOKUMEN" + (pend > 0 ? "  (tunggu " + pend + " antre)" : toSend > 0 ? "  (kirim dulu)" : ""));
+                                ~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:402: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        if (p == null) pickedView.setText("Pindai roll induk (tag terkuat / label). Saran FIFO: " + (task == null ? "-" : Json.str(task, "suggested_roll_no")));
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:402: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        if (p == null) pickedView.setText("Pindai roll induk (tag terkuat / label). Saran FIFO: " + (task == null ? "-" : Json.str(task, "suggested_roll_no")));
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:403: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        else pickedView.setText("✓ Roll terpilih: " + p[1] + ("1".equals(p[3]) ? " (saran FIFO)" : " (bukan saran — isi alasan)"));
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:403: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        else pickedView.setText("✓ Roll terpilih: " + p[1] + ("1".equals(p[3]) ? " (saran FIFO)" : " (bukan saran — isi alasan)"));
+                                ~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:469: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+                t.setText("+  LEBIH · " + Epc.display((String) o) + "\n   bukan roll dokumen ini (tahan untuk cari)");
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:469: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                t.setText("+  LEBIH · " + Epc.display((String) o) + "\n   bukan roll dokumen ini (tahan untuk cari)");
+                          ~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:475: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+                t.setText(v.status.glyph + "  " + v.status.text.toUpperCase(java.util.Locale.ROOT) + " · " + (r.rollNo.isEmpty() ? Epc.tail(r.epc) : r.rollNo)
+                          ^
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:481: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+                t.setText("▢  TANPA TAG · " + Json.str(u, "roll_no") + (u.optBoolean("resolved") ? " (pengecualian tercatat)" : "") + "\n   " + Json.str(u, "reason"));
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\ScanActivity.java:481: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                t.setText("▢  TANPA TAG · " + Json.str(u, "roll_no") + (u.optBoolean("resolved") ? " (pengecualian tercatat)" : "") + "\n   " + Json.str(u, "reason"));
+                          ~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\TagWriteActivity.java:89: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            rollView.setText("Roll " + Json.str(roll, "roll_no") + " · " + Json.str(res, "sku") + " " + Json.str(res, "product_name")
+                             ^
+app\src\main\java\id\kainnusantara\handheld\TagWriteActivity.java:89: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            rollView.setText("Roll " + Json.str(roll, "roll_no") + " · " + Json.str(res, "sku") + " " + Json.str(res, "product_name")
+                             ~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\TaskListActivity.java:50: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            status.setText("○ Tidak tersambung (" + e.getMessage() + ") — daftar terakhir dari HP.");
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\TaskListActivity.java:50: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            status.setText("○ Tidak tersambung (" + e.getMessage() + ") — daftar terakhir dari HP.");
+                           ~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\TaskListActivity.java:50: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            status.setText("○ Tidak tersambung (" + e.getMessage() + ") — daftar terakhir dari HP.");
+                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\Ui.java:158: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        n.setText(glyph + " 0");
+                  ~~~~~~~~~~~~
+app\src\main\java\id\kainnusantara\handheld\Ui.java:185: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+        t.setText(glyph + "  " + msg);
+                  ~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "SetTextI18n":
+   When calling TextView#setText
+   * Never call Number#toString() to format numbers; it will not handle
+   fraction separators and locale-specific digits properly. Consider using
+   String#format with proper format specifications (%d or %f) instead.
+   * Do not pass a string literal (e.g. "Hello") to display text. Hardcoded
+   text can not be properly translated to other languages. Consider using
+   Android resource strings instead.
+   * Do not build messages by concatenating text chunks. Such messages can not
+   be properly translated.
+
+   https://developer.android.com/guide/topics/resources/localization.html
+
+0 errors, 66 warnings

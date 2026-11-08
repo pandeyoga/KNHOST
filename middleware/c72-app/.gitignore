@@ -1,0 +1,13 @@
+.gradle/
+build/
+app/build/
+tests/build/
+local.properties
+*.log
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+# APK pengiriman di delivery/ SENGAJA di-commit (repo KNHOST privat). SDK vendor TIDAK disalin ke proyek ini:
+# app/build.gradle merujuk ../u300-agent/app/libs/DeviceAPI_ver20251103_release.aar (satu salinan biner saja).
