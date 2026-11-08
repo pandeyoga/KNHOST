@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+def signingNames = ['KN_RELEASE_STORE_FILE', 'KN_RELEASE_STORE_PASSWORD', 'KN_RELEASE_KEY_ALIAS', 'KN_RELEASE_KEY_PASSWORD']
+def signingReady = signingNames.every { System.getenv(it) }
+if (signingNames.any { System.getenv(it) } && !signingReady) {
+    throw new GradleException('Release signing environment belum lengkap; lengkapi empat variabel KN_RELEASE_* atau kosongkan semuanya.')
+}
+android {
+    namespace 'id.kubusteknologi.kn.u300'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'id.kubusteknologi.kn.u300.agent'
+        minSdk 30
+        targetSdk 34
+        versionCode 4
+        versionName '0.4.0-lab'
+        testInstrumentationRunner 'id.kubusteknologi.kn.u300.ReaderTestRunner'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        if (signingReady) {
+            production {
+                storeFile file(System.getenv('KN_RELEASE_STORE_FILE'))
+                storePassword System.getenv('KN_RELEASE_STORE_PASSWORD')
+                keyAlias System.getenv('KN_RELEASE_KEY_ALIAS')
+                keyPassword System.getenv('KN_RELEASE_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled false
+            if (signingReady) signingConfig signingConfigs.production
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
+dependencies { implementation files('libs/DeviceAPI_ver20251103_release.aar') }

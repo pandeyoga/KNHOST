@@ -1,0 +1,10 @@
+PASS real ERP config parsed by reader
+PASS real ERP durable ACK reaches Java
+PASS Java network retry remains idempotent
+PASS ERP authorizes complete real document manifest
+PASS reader accepts fresh ERP clearance
+PASS reader refuses historical clearance
+PASS close retry keeps decision identity
+PASS ERP conflict reaches reader recovery policy
+PASS ERP reason shown in reader diagnostics
+ERP_JAVA_HTTPS_ASSERTIONS=9

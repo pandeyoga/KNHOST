@@ -1,0 +1,2 @@
+PASS git apply --check against baseline files
+Baseline 055f7ea0f852582867b3ab063d28e7e41f67f410

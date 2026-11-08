@@ -1,0 +1,63 @@
+{
+  "server_time": "2026-10-18T09:07:52.168545400Z",
+  "logical_gates": [
+    {
+      "logical_gate_id": "SET_GATE_ID",
+      "sensor_bindings": {},
+      "site_id": "SET_SITE_ID",
+      "antenna_ids": [
+        "1",
+        "2"
+      ],
+      "completion_basis": "manifest_full",
+      "indicators": {
+        "enabled": false
+      },
+      "enabled": true,
+      "direction": "out",
+      "warehouse_id": "SET_WAREHOUSE_ID"
+    }
+  ],
+  "device_id": "SET_DEVICE_ID",
+  "policies": {
+    "printer_lease_seconds": 60,
+    "passage_idle_close_milliseconds": 3000,
+    "telemetry_interval_seconds": 30,
+    "printer_max_started_items": 1,
+    "capture_offline_allowed": true,
+    "gate_decision_validity_seconds": 5,
+    "queue_full_action": "stop_capture_and_alarm",
+    "retry_initial_seconds": 2,
+    "retry_max_seconds": 60
+  },
+  "device_type": "fixed_reader",
+  "enabled": true,
+  "config_version": "SET_CONFIG_VERSION",
+  "schema_version": 2,
+  "hardware_profile_id": "SET_PROFILE_ID",
+  "hardware_profile": {
+    "profile_revision": "1",
+    "capabilities": [],
+    "sdk_version": "20251103",
+    "model_label": "Chainway U300",
+    "firmware_version": "SET_ACTUAL_FIRMWARE",
+    "sdk_name": "DeviceAPI",
+    "parameters": {
+      "max_passage_milliseconds": 30000,
+      "agent_profile": "kn-u300-v1",
+      "commissioned": false,
+      "expected_region_code": -1,
+      "expected_antenna_power_dbm": {
+        "1": -1,
+        "2": -1
+      }
+    }
+  },
+  "site_id": "SET_SITE_ID",
+  "limits": {
+    "max_body_bytes": 128000,
+    "max_queue_bytes": 10000000,
+    "max_events": 100
+  },
+  "warehouse_id": "SET_WAREHOUSE_ID"
+}

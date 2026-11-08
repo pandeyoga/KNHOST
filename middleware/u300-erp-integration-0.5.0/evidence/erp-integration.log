@@ -1,0 +1,112 @@
+PASS real device-key config route
+PASS device cannot read unbound gate
+PASS published config immutable
+PASS nonfinite JSON rejected
+PASS missing device key denied
+PASS wrong key denied
+PASS journaled per-event ACK
+PASS retry is durable duplicate
+PASS close route returns decision
+PASS full manifest GREEN
+PASS gate protocol does not mutate stock or legacy roll record
+PASS legacy evaluator respects V2 crossing
+PASS same close preserves decision and expiry
+PASS changed close rejected
+PASS changed event payload rejected
+PASS event replay into other passage rejected
+PASS gate state returns stored passage decision
+PASS device key cannot acknowledge
+PASS second passage cannot reuse crossing
+PASS operator acknowledge clears latch
+PASS acknowledge never changes verdict
+PASS disabled reader denied
+PASS missing cannot grant clearance
+PASS unknown cannot grant clearance
+PASS incomplete cannot grant clearance
+PASS backfill cannot grant clearance
+PASS wrong-direction cannot grant clearance
+PASS changed-manifest cannot grant clearance
+PASS pending evidence is retryable
+PASS max-duration cannot grant clearance
+PASS wh_transfer real document evaluator
+PASS putaway real document evaluator
+PASS linked-so correct clearance
+PASS cancelled-linked-so correct clearance
+PASS legacy transfer checks actual roll membership
+PASS nonmember correct clearance
+PASS inbound-transfer correct clearance
+PASS 8 concurrent uploads persist once
+PASS 8 concurrent closes return one durable decision
+PASS old-config fails closed
+PASS old-config closed passage rejects late new event
+PASS expired-close fails closed
+PASS expired-close closed passage rejects late new event
+PASS unsynced fails closed
+PASS unsynced closed passage rejects late new event
+PASS late-binding fails closed
+PASS late-binding closed passage rejects late new event
+PASS bad-antenna retained as quarantine
+PASS bad-antenna fails closed
+PASS bad-antenna closed passage rejects late new event
+PASS invalid-epc retained as quarantine
+PASS invalid-epc fails closed
+PASS invalid-epc closed passage rejects late new event
+{
+  "passed": 53,
+  "database": "kn_rfid_v2_test_552cfde6975041389a62b8b1b3aff3f0",
+  "cases": [
+    "real device-key config route",
+    "device cannot read unbound gate",
+    "published config immutable",
+    "nonfinite JSON rejected",
+    "missing device key denied",
+    "wrong key denied",
+    "journaled per-event ACK",
+    "retry is durable duplicate",
+    "close route returns decision",
+    "full manifest GREEN",
+    "gate protocol does not mutate stock or legacy roll record",
+    "legacy evaluator respects V2 crossing",
+    "same close preserves decision and expiry",
+    "changed close rejected",
+    "changed event payload rejected",
+    "event replay into other passage rejected",
+    "gate state returns stored passage decision",
+    "device key cannot acknowledge",
+    "second passage cannot reuse crossing",
+    "operator acknowledge clears latch",
+    "acknowledge never changes verdict",
+    "disabled reader denied",
+    "missing cannot grant clearance",
+    "unknown cannot grant clearance",
+    "incomplete cannot grant clearance",
+    "backfill cannot grant clearance",
+    "wrong-direction cannot grant clearance",
+    "changed-manifest cannot grant clearance",
+    "pending evidence is retryable",
+    "max-duration cannot grant clearance",
+    "wh_transfer real document evaluator",
+    "putaway real document evaluator",
+    "linked-so correct clearance",
+    "cancelled-linked-so correct clearance",
+    "legacy transfer checks actual roll membership",
+    "nonmember correct clearance",
+    "inbound-transfer correct clearance",
+    "8 concurrent uploads persist once",
+    "8 concurrent closes return one durable decision",
+    "old-config fails closed",
+    "old-config closed passage rejects late new event",
+    "expired-close fails closed",
+    "expired-close closed passage rejects late new event",
+    "unsynced fails closed",
+    "unsynced closed passage rejects late new event",
+    "late-binding fails closed",
+    "late-binding closed passage rejects late new event",
+    "bad-antenna retained as quarantine",
+    "bad-antenna fails closed",
+    "bad-antenna closed passage rejects late new event",
+    "invalid-epc retained as quarantine",
+    "invalid-epc fails closed",
+    "invalid-epc closed passage rejects late new event"
+  ]
+}

@@ -1,0 +1,12 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.log
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+# Di repo KNHOST (PRIVAT): SDK vendor app/libs/*.aar dan APK di delivery/ SENGAJA ikut di-commit agar sesi
+# cloud bisa build & memasang. Jangan pindahkan ke repo publik — izin distribusi SDK Chainway belum dipastikan.

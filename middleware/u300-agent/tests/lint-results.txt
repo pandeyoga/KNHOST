@@ -1,0 +1,22 @@
+C:\Users\abc\Documents\Codex\2026-09-28\sya\output\middleware-development\U300_Agent_0.4.0_2026-10-19\app\src\main\AndroidManifest.xml:10: Warning: Attribute dataExtractionRules is only used in API level 31 and higher (current min is 30) [UnusedAttribute]
+  <application android:label="KN U300 Agent · LAB" android:icon="@drawable/ic_reader" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:usesCleartextTraffic="false"
+                                                                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedAttribute":
+   This check finds attributes set in XML files that were introduced in a
+   version newer than the oldest version targeted by your application (with
+   the minSdkVersion attribute).
+
+   This is not an error; the application will simply ignore the attribute.
+   However, if the attribute is important to the appearance or functionality
+   of your application, you should consider finding an alternative way to
+   achieve the same result with only available attributes, and then you can
+   optionally create a copy of the layout in a layout-vNN folder which will be
+   used on API NN or higher where you can take advantage of the newer
+   attribute.
+
+   Note: This check does not only apply to attributes. For example, some tags
+   can be unused too, such as the new <tag> element in layouts introduced in
+   API 21.
+
+0 errors, 1 warnings

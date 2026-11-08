@@ -1,0 +1,73 @@
+PASS full: two source documents preserved
+PASS full: correct aggregate clearance
+PASS aggregate counts include both SJs
+PASS regrouping cannot bypass per-source crossing protection
+PASS missing: two source documents preserved
+PASS missing: correct aggregate clearance
+PASS cancelled: two source documents preserved
+PASS cancelled: correct aggregate clearance
+PASS changed: two source documents preserved
+PASS changed: correct aggregate clearance
+PASS rebound: two source documents preserved
+PASS rebound: correct aggregate clearance
+PASS duplicate SJ rejected
+PASS empty group rejected
+PASS group capacity enforced
+PASS same roll on two SJs rejected
+PASS cross-warehouse SJ rejected
+PASS other active document cannot authorize selected SJ
+PASS history excludes raw observations
+PASS history excludes raw observations
+PASS history excludes raw observations
+PASS pagination tie-breaker prevents omissions/duplicates
+PASS invalid history cursor rejected
+PASS single-entity operator cannot bind foreign SJ
+PASS authorized multi-entity operator binds group via real route
+PASS device key cannot export evidence
+PASS user without WMS permission cannot export
+PASS foreign-entity passage export denied
+PASS authorized export contains both durable observations
+PASS evidence downloads without browser caching
+PASS overview hides foreign-entity group
+PASS foreign-entity alarm acknowledge denied
+PASS authorized operator acknowledges group alarm
+PASS export and acknowledge preserve evidence and verdict
+{
+  "extended_assertions": 34,
+  "cases": [
+    "full: two source documents preserved",
+    "full: correct aggregate clearance",
+    "aggregate counts include both SJs",
+    "regrouping cannot bypass per-source crossing protection",
+    "missing: two source documents preserved",
+    "missing: correct aggregate clearance",
+    "cancelled: two source documents preserved",
+    "cancelled: correct aggregate clearance",
+    "changed: two source documents preserved",
+    "changed: correct aggregate clearance",
+    "rebound: two source documents preserved",
+    "rebound: correct aggregate clearance",
+    "duplicate SJ rejected",
+    "empty group rejected",
+    "group capacity enforced",
+    "same roll on two SJs rejected",
+    "cross-warehouse SJ rejected",
+    "other active document cannot authorize selected SJ",
+    "history excludes raw observations",
+    "history excludes raw observations",
+    "history excludes raw observations",
+    "pagination tie-breaker prevents omissions/duplicates",
+    "invalid history cursor rejected",
+    "single-entity operator cannot bind foreign SJ",
+    "authorized multi-entity operator binds group via real route",
+    "device key cannot export evidence",
+    "user without WMS permission cannot export",
+    "foreign-entity passage export denied",
+    "authorized export contains both durable observations",
+    "evidence downloads without browser caching",
+    "overview hides foreign-entity group",
+    "foreign-entity alarm acknowledge denied",
+    "authorized operator acknowledges group alarm",
+    "export and acknowledge preserve evidence and verdict"
+  ]
+}
