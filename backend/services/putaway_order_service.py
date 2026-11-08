@@ -532,7 +532,9 @@ async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, act
     if manual_all:
         upd["manual_override"] = {"by": actor_name, "reason": why, "at": now_iso()}
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
-    return await _get(order_id, scope_ids)
+    out = await _get(order_id, scope_ids)
+    await arr.gate_session_hook(out)   # PREP-D2 — PA ditutup → sesi dokumen gate dinilai (K-RFID-10)
+    return out
 
 
 async def resolve_exception(order_id: str, roll_ids: List[str], action: str,

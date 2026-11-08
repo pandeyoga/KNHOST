@@ -57,6 +57,11 @@ async def ensure_indexes() -> None:
     await collection('rfid_v2_crossings').create_index('passage')
     await collection('rfid_v2_doc_sessions').create_index([('warehouse_id', 1), ('status', 1)])
     await collection('rfid_v2_health').create_index([('device_id', 1), ('active', 1)])
+    # PREP-D2 — antrean periksa, buku transaksi gate, koreksi klaim
+    await collection('rfid_v2_reviews').create_index([('status', 1), ('warehouse_id', 1), ('created_at', -1)])
+    await collection('rfid_v2_reviews').create_index([('device_id', 1), ('created_at', -1)])
+    await collection('rfid_v2_gate_txn').create_index('passage')
+    await collection('rfid_v2_claim_corrections').create_index([('source_type', 1), ('source_id', 1), ('direction', 1)])
 
 
 async def config(device: Dict[str, Any], version: Optional[str] = None) -> Dict[str, Any]:

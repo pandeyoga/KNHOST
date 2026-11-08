@@ -62,6 +62,19 @@ export const REASON = {
   NO_DOCUMENT_ROLLS: "Tidak ada roll dokumen terbaca kuat",
   ROLLS_MISSING: "Ada roll dokumen yang belum lewat",
   ALL_ROLLS_PASSED: "Semua roll dokumen sudah lewat",
+  // PREP-D2 — gate → transaksi gudang
+  AREA_FROZEN: "Area sedang dibekukan pendaftaran awal — tidak ada transaksi",
+  HANDHELD_MODE: "Gedung bermode handheld — gate hanya mencatat bukti",
+  GATE_NOT_PAIRED: "Reader belum tertaut sebagai gate gedung — hanya bukti",
+  QUANTITY_MODE: "Gedung mode kuantitas — gate tidak berlaku",
+  SIMULATED_EVIDENCE: "Lintasan simulasi — hanya bukti (Mode simulasi RFID mati)",
+  TXN_CHECK_FAILED: "Mode gedung belum bisa diperiksa — transaksi dicoba ulang",
+  TXN_FAILED: "Transaksi gudang gagal — ulangi dari antrean",
+  ARRIVAL_EXCEPTION: "Roll tidak bisa dicatat tiba (tujuan tidak lagi sah)",
+  RULE_BLOCKED: "Aturan gudang tujuan menolak roll",
+  NOT_IN_TRANSIT: "Roll bukan dalam perjalanan dokumen ini",
+  NOT_RECORDED: "Roll cocok tetapi belum dicatat",
+  RECORDED: "Sudah dicatat dari lintasan",
 };
 
 export const reasonText = (code) => REASON[code] || "Alasan lain — lihat bukti lintasan";
@@ -115,4 +128,53 @@ export function errorText(e) {
   const d = e?.response?.data?.detail;
   if (typeof d === "string") return d;
   return d?.message || e?.message || "Gagal memuat data reader";
+}
+
+/** PREP-D2 — antrean periksa admin gudang (istilah Indonesia; kode server tidak ditampilkan). */
+export const ROLL_STATE = {
+  open: { label: "Perlu tindakan", color: "orange" },
+  rescan: { label: "Menunggu pindai ulang handheld", color: "purple" },
+  accepting: { label: "Sedang diproses", color: "info" },
+  accepted: { label: "Diterima admin", color: "green" },
+  rejected: { label: "Ditolak", color: "red" },
+  ignored: { label: "Diabaikan", color: "gray" },
+  done_elsewhere: { label: "Dilengkapi jalur lain", color: "green" },
+  recorded: { label: "Sudah dicatat gate", color: "green" },
+};
+
+export const CASE_KIND = {
+  passage: "Lintasan gate",
+  rolls_missing: "Roll kurang saat dokumen ditutup",
+};
+
+export const CASE_STATUS = [
+  { value: "open", label: "Terbuka" },
+  { value: "resolved", label: "Selesai" },
+  { value: "all", label: "Semua" },
+];
+
+export const CASE_VERDICT = [
+  { value: "", label: "Semua hasil" },
+  { value: "REVIEW", label: "Kuning — perlu diperiksa" },
+  { value: "RED", label: "Merah — pelanggaran" },
+];
+
+export const DIRECTION = { in: "Masuk", out: "Keluar" };
+
+export const TXN_MODE = {
+  gate: "Gate utama — terima/tolak mencatat transaksi gudang",
+  evidence: "Gedung handheld — gate hanya bukti; transaksi lewat handheld",
+  unknown: "Mode gedung belum diketahui",
+};
+
+export const ACTION_LABEL = {
+  accept: "Diterima", reject: "Ditolak", ignore: "Diabaikan", rescan: "Minta pindai ulang", dismiss: "Kasus ditutup",
+  acknowledge_latch: "Kunci gate diakui", retry: "Transaksi diulang", done_elsewhere: "Dilengkapi jalur lain",
+};
+
+/** Kode → kalimat; daftar kode dirangkum tanpa menampilkan kode mentah. */
+export const codesText = (codes) => (codes || []).map(reasonText).filter((t, i, a) => a.indexOf(t) === i).join(" · ");
+
+export function fmtRssi(v) {
+  return v === null || v === undefined ? "—" : `${Number(v).toFixed(1)} dBm`;
 }

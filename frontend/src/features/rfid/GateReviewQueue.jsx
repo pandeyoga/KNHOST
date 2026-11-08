@@ -1,0 +1,106 @@
+/**
+ * PREP-D2 — Antrean periksa admin gudang untuk gate V2 (AUD-MW-10, K-RFID-09/10). Tab di Monitor Gerbang.
+ * Daftar lintasan kuning & merah + sesi dokumen yang ditutup dengan roll kurang, per gudang/gate, dengan saring
+ * status/hasil/jenis. Klik baris → rincian (DetailModal) berisi bukti per roll dan tindakan.
+ * Merah = pelanggaran (gate terkunci) · Kuning = perlu diperiksa, barang jalan, gate tidak terkunci.
+ */
+import { useCallback, useEffect, useState } from "react";
+import { ClipboardCheck, RefreshCw } from "lucide-react";
+import KNSelect from "../../components/KNSelect";
+import ErrorNotice from "../../components/ErrorNotice";
+import DetailModal from "../../components/DetailModal";
+import axios, { API } from "../../services/apiClient";
+import { EmptyBox, Pill, SectionCard, fmtTime } from "./rfidShared";
+import GateReviewDetail from "./GateReviewDetail";
+import { CASE_KIND, CASE_STATUS, CASE_VERDICT, DIRECTION, VERDICT, codesText, errorText } from "./u300Labels";
+
+const KINDS = [{ value: "", label: "Semua jenis" }, ...Object.entries(CASE_KIND).map(([value, label]) => ({ value, label }))];
+
+export default function GateReviewQueue({ whId, devices = [] }) {
+  const [rows, setRows] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("open");
+  const [verdict, setVerdict] = useState("");
+  const [kind, setKind] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+  const [openId, setOpenId] = useState(null);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { status, limit: 100 };
+      if (whId) params.warehouse_id = whId;
+      if (verdict) params.verdict = verdict;
+      if (kind) params.kind = kind;
+      if (deviceId) params.device_id = deviceId;
+      const [r, s] = await Promise.all([
+        axios.get(`${API}/rfid/v2/ops/reviews`, { params }),
+        axios.get(`${API}/rfid/v2/ops/reviews/summary`, { params: whId ? { warehouse_id: whId } : {} }),
+      ]);
+      setRows(r.data.reviews || []); setSummary(s.data); setError("");
+    } catch (e) { setError(errorText(e)); } finally { setLoading(false); }
+  }, [whId, status, verdict, kind, deviceId]);
+  useEffect(() => { load(); }, [load]);
+  const devOpts = [{ value: "", label: "Semua gate" }, ...devices.map((d) => ({ value: d.id, label: d.code || d.name }))];
+  return (
+    <SectionCard testId="gate-review-queue" title="Antrean periksa gate"
+      right={<button type="button" className="secondary-button !py-1 text-[12px]" onClick={load} disabled={loading}>
+        <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Muat ulang</button>}>
+      <div className="space-y-3">
+        <p className="text-[11px] text-[#6B6B73]" data-testid="gate-review-summary">
+          Terbuka {summary?.open ?? "—"} · merah {summary?.red ?? "—"} · kuning {summary?.review ?? "—"}.
+          {" "}Kuning = barang jalan, gate tidak terkunci; roll yang cocok sudah dicatat, sisanya menunggu keputusan di sini.</p>
+        <div className="flex flex-wrap gap-2">
+          <KNSelect data-testid="gate-review-status" value={status} onValueChange={setStatus} options={CASE_STATUS}
+            className="field !py-1 !px-2 text-[12px] w-auto" />
+          <KNSelect data-testid="gate-review-verdict-filter" value={verdict} onValueChange={setVerdict} options={CASE_VERDICT}
+            className="field !py-1 !px-2 text-[12px] w-auto" />
+          <KNSelect data-testid="gate-review-kind" value={kind} onValueChange={setKind} options={KINDS}
+            className="field !py-1 !px-2 text-[12px] w-auto" />
+          <KNSelect data-testid="gate-review-device" value={deviceId} onValueChange={setDeviceId} options={devOpts}
+            className="field !py-1 !px-2 text-[12px] w-auto" />
+        </div>
+        {error && <ErrorNotice message={error} onRetry={load} />}
+        {!loading && rows.length === 0 ? (
+          <EmptyBox icon={ClipboardCheck} text="Tidak ada lintasan yang perlu diperiksa untuk saringan ini." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[12px]" data-testid="gate-review-list">
+              <thead><tr className="text-[11px] text-[#6B6B73]">
+                <th className="p-2">Waktu</th><th className="p-2">Gate / sumber</th><th className="p-2">Hasil</th>
+                <th className="p-2">Alasan</th><th className="p-2">Roll perlu tindakan</th><th className="p-2" />
+              </tr></thead>
+              <tbody>
+                {rows.map((c) => {
+                  const v = VERDICT[c.verdict] || VERDICT.UNKNOWN;
+                  const todo = (c.rolls || []).filter((r) => ["open", "rescan"].includes(r.state)).length;
+                  return (
+                    <tr key={c.case_id} className="border-t border-[#EFF0F2] align-top" data-testid={`gate-review-row-${c.case_id}`}>
+                      <td className="p-2">{fmtTime(c.created_at)}{c.simulated && <div><Pill color="purple">simulasi</Pill></div>}</td>
+                      <td className="p-2">{c.device_name || CASE_KIND[c.kind]}
+                        <div className="text-[10px] text-[#6B6B73]">{DIRECTION[c.direction] || ""} · {(c.sources || []).map((s) => s.display_ref).join(", ") || "tanpa dokumen"}</div></td>
+                      <td className="p-2"><Pill color={v.color}>{v.short}</Pill>
+                        {c.latch_open && <div className="text-[10px] font-semibold text-[#C0341D]">gate terkunci</div>}
+                        {c.status !== "open" && <div className="text-[10px] text-[#1B7E3B]">selesai</div>}</td>
+                      <td className="p-2 text-[11px]">{codesText(c.reason_codes) || "—"}</td>
+                      <td className="p-2">{todo}</td>
+                      <td className="p-2"><button type="button" className="secondary-button !py-1 text-[11px]"
+                        data-testid={`gate-review-open-${c.case_id}`} onClick={() => setOpenId(c.case_id)}>Periksa</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      {openId && (
+        <DetailModal open onClose={() => setOpenId(null)} size="xl" label="Rincian antrean periksa gate"
+          testId="gate-review-modal" showClose={false}>
+          <GateReviewDetail caseId={openId} onClose={() => setOpenId(null)} onChanged={load} />
+        </DetailModal>
+      )}
+    </SectionCard>
+  );
+}

@@ -20,6 +20,9 @@ SOURCE_LABEL = {'shipment': 'Surat jalan', 'wh_transfer': 'Transfer gudang', 'pu
                 'makloon_order': 'Order Makloon', 'repair_order': 'Perbaikan'}
 DEAD = {'cancelled', 'void', 'rejected'}
 MAX_ROLLS = 2000
+# PREP-D2 — tiba/terima BERTAHAP (PREP-C `partially_received`) tetap dokumen aktif gate sampai ditutup.
+PUTAWAY_ACTIVE = ('in_transit', 'partially_received')
+TRANSFER_ACTIVE = ('dispatched', 'partially_received')
 
 
 def _inactive(message: str):
@@ -70,7 +73,7 @@ async def manifest(source: Dict[str, Any], warehouse: str, direction: str) -> Tu
     elif typ == 'wh_transfer':
         doc = await db.warehouse_transfers.find_one({'id': sid})
         field = 'source_warehouse_id' if direction == 'out' else 'dest_warehouse_id'
-        if not doc or doc.get(field) != warehouse or doc.get('status') != 'dispatched' \
+        if not doc or doc.get(field) != warehouse or doc.get('status') not in TRANSFER_ACTIVE \
                 or doc.get('transfer_kind') == 'inter_entity':
             _inactive('Transfer belum dikirim / gudang tidak sesuai.')
         ids = [r.get('roll_id') for i in doc.get('items', []) for r in i.get('rolls', [])]
@@ -78,7 +81,7 @@ async def manifest(source: Dict[str, Any], warehouse: str, direction: str) -> Tu
     elif typ == 'putaway':
         doc = await db.putaway_orders.find_one({'id': sid})
         field = 'from_warehouse_id' if direction == 'out' else 'to_warehouse_id'
-        if not doc or doc.get(field) != warehouse or doc.get('status') != 'in_transit':
+        if not doc or doc.get(field) != warehouse or doc.get('status') not in PUTAWAY_ACTIVE:
             _inactive('Putaway belum dikirim / gudang tidak sesuai.')
         ids = [i.get('roll_id') for i in doc.get('items', [])]
         label = doc.get('pa_number', sid)
@@ -184,11 +187,11 @@ async def candidates(source_type: str, direction: str, warehouse: str, scope_que
             {'id': 1, 'shipment_no': 1, 'status': 1}
     elif source_type == 'wh_transfer':
         name, query, fields = 'warehouse_transfers', {('source_warehouse_id' if direction == 'out' else 'dest_warehouse_id'): warehouse,
-                                                      'status': 'dispatched', 'transfer_kind': {'$ne': 'inter_entity'}}, \
+                                                      'status': {'$in': list(TRANSFER_ACTIVE)}, 'transfer_kind': {'$ne': 'inter_entity'}}, \
             {'id': 1, 'code': 1, 'status': 1}
     elif source_type == 'putaway':
         name, query, fields = 'putaway_orders', {('from_warehouse_id' if direction == 'out' else 'to_warehouse_id'): warehouse,
-                                                 'status': 'in_transit'}, {'id': 1, 'pa_number': 1, 'status': 1}
+                                                 'status': {'$in': list(PUTAWAY_ACTIVE)}}, {'id': 1, 'pa_number': 1, 'status': 1}
     elif source_type == 'makloon_order':
         if direction != 'out':
             return []

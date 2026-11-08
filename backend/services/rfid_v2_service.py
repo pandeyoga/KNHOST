@@ -16,6 +16,7 @@ from pymongo import ReturnDocument
 
 from db import db
 from services import gate_evaluator  # noqa: F401 — dipakai router (SHIPMENT_ACTIVE) & tes
+from services import gate_txn_service as gate_txn
 from services import rfid_v2_latch as latch
 from services import rfid_v2_params as params_mod
 from services import rfid_v2_policy as policy
@@ -199,6 +200,7 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
     if p.get('close_hash') and (p['close_hash'] != fingerprint or p['close_key'] != key):
         fail(409, 'CLOSE_CONFLICT', 'Close yang sama harus mempertahankan key dan isi.')
     if p['decision']:
+        await gate_txn.post_close(device, p['_id'])   # PREP-D2 — lanjutkan transaksi yang belum tuntas (idempoten)
         return p['decision']
     if p['state'] == 'OPEN':
         if not _counts_match(p, body):   # bukti belum lengkap: jangan bekukan transport yang belum selesai
@@ -214,6 +216,7 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
     if p.get('close_hash') != fingerprint or p.get('close_key') != key:
         fail(409, 'CLOSE_CONFLICT', 'Close bersamaan berbeda; pemeriksaan diperlukan.')
     if p['decision']:
+        await gate_txn.post_close(device, p['_id'])
         return p['decision']
     ev = await load_evidence(p['_id'])
     if len(ev['event']) != p.get('event_count', 0) or len(ev['summary']) != p.get('summary_count', 0):
@@ -225,6 +228,7 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
         summaries=ev['summary'], binding_entries=binding_entries, binding_reasons=binding_reasons,
         transport_reasons=await _transport_reasons(device, cfg, g, p, body, ev),
         overflow=sum((p.get('overflow') or {}).values()))
+    await _gate_txn_precheck(result, cfg, device, bool(p.get('simulated')))
     direction = result['direction']
     if result['claimable']:
         meta = {'device_id': device['id'], 'gate_id': g['logical_gate_id'], 'local_passage_id': passage_id,
@@ -267,9 +271,26 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
             by_source[ref['source_id']] = by_source.get(ref['source_id'], 0) + 1
         await sessions.record_passage(entries, direction, cfg['warehouse_id'], p['_id'], passage_id, verdict, by_source)
     await collection('rfid_v2_passages').update_one({'_id': p['_id'], 'decision': None}, {'$set': {
-        'decision': decision, 'state': 'FINAL', 'weak_epcs': result['weak'], 'background_epcs': result['background']}})
+        'decision': decision, 'state': 'FINAL', 'weak_epcs': result['weak'], 'background_epcs': result['background'],
+        'gate_txn_input': gate_txn.build_input(result, device, cfg, passage_id), 'gate_txn_state': 'pending'}})
     final = await collection('rfid_v2_passages').find_one({'_id': p['_id']}, {'decision': 1})
+    # PREP-D2 — gate → transaksi gudang + antrean periksa (best-effort; keputusan ke reader tidak berubah)
+    await gate_txn.post_close(device, p['_id'])
     return final['decision']
+
+
+async def _gate_txn_precheck(result, cfg, device, simulated):
+    """PREP-D2 — mode gedung & area beku SEBELUM keputusan final. Gagal cek = tanpa transaksi + kuning (aman)."""
+    try:
+        await gate_txn.precheck(result, cfg, device, simulated)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning('[rfid_v2.close] cek transaksi gate gagal: %s', exc)
+        result['txn'] = {'mode': 'unknown', 'frozen': {}}   # dihitung ulang saat transaksi / tombol Ulangi
+        if result['matched']:
+            result['reasons'].add(policy.REVIEW, 'TXN_CHECK_FAILED',
+                                  'Mode gedung / pembekuan area belum bisa diperiksa — transaksi dicoba ulang; cek antrean periksa.')
+            if result['verdict'] == 'GREEN':
+                result['verdict'] = 'REVIEW'
 
 
 async def gate_state(device, gate_id, passage_id=None):

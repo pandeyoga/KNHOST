@@ -183,6 +183,7 @@ DEVICE_PUBLIC_FIELDS = (
     "id", "code", "name", "type", "direction", "warehouse_id", "warehouse_name", "location",
     "status", "last_heartbeat", "created_at", "created_by", "updated_at",
     "disabled_at", "api_key_at", "api_key_hint",
+    "protocol", "v2_config_version",   # PREP-D2 — monitor/kios memilih status V2 (kuning) untuk reader V2
 )
 DEVICE_SECRET_PROJECTION = {"_id": 0, "api_key": 0, "api_key_hash": 0}
 

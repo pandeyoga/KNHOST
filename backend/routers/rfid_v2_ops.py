@@ -2,6 +2,7 @@
 
 Sesi dokumen bertahap (K-RFID-10), kunci gate (K-RFID-09), protokol perangkat (AUD-MW-09), parameter lintasan
 berversi, kesehatan reader (AUD-MW-17), dan simulator lintasan tanpa perangkat (admin/dev).
+PREP-D2: membuka kunci gate butuh `wms.approve`; tutup sesi manual = penilai penutupan otomatis (`gate_txn_service`).
 """
 from fastapi import APIRouter, Request
 
@@ -76,8 +77,13 @@ async def close_doc_session(source_type: str, source_id: str, request: Request):
     if direction not in ('in', 'out'):
         service.fail(400, 'DIRECTION_REQUIRED', 'Arah wajib in/out.')
     ref, doc = await _source_scope(request, source_type, source_id)
-    out = await sessions.close_session(ref, direction, _warehouse_of(source_type, doc, direction), actor,
-                                       str((body or {}).get('note') or ''))
+    # PREP-D2 — penutupan manual memakai penilai yang sama dengan penutupan otomatis siklus hidup (handheld melengkapi)
+    from services import gate_txn_service as gate_txn
+    out = await gate_txn.close_document_session(source_type, source_id, direction, 'manual', actor,
+                                                str((body or {}).get('note') or ''))
+    if out is None:
+        out = await sessions.close_session(ref, direction, _warehouse_of(source_type, doc, direction), actor,
+                                           str((body or {}).get('note') or ''))
     await audit(actor['name'], 'rfid_v2_doc_session_closed', source_type, source_id,
                 {'direction': direction, 'missing': (out.get('close') or {}).get('missing_count')})
     return out
@@ -85,6 +91,8 @@ async def close_doc_session(source_type: str, source_id: str, request: Request):
 
 @router.post('/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge')
 async def acknowledge_latch(device_id: str, request: Request):
+    # PREP-D2 (AUD-MW-10) — membuka kunci gate = keputusan admin gudang: izin `wms.approve`, terpisah dari `wms.scan`.
+    await require_permission(request, 'wms', 'approve')
     actor, dev, _ = await _scoped(request, device_id, True)
     body = await _payload(request)
     if not isinstance(body, dict):
