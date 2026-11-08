@@ -80,7 +80,7 @@ export default function PutawayDraftsPanel({ drafts = [], whId, onChanged }) {
         {msg && <p data-testid="pa-drafts-msg" className="rounded-lg bg-[#E7F7EC] px-3 py-2 text-[12px] font-semibold text-[#1B7E3B]">{msg}</p>}
         {drafts.length === 0 && (
           <p className="py-4 text-center text-[12px] text-[#8E8E93]" data-testid="pa-drafts-empty">
-            Belum ada draf. Draf lahir otomatis sesudah QC lulus / GRN tanpa QC (Pengaturan › putaway.auto_draft).
+            Belum ada draf. Draf lahir otomatis sesudah QC lulus / GRN tanpa QC (bisa dimatikan di Pengaturan: "Siapkan draf Putaway Order otomatis").
           </p>
         )}
         {drafts.map((d) => {
