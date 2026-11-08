@@ -66,14 +66,21 @@ async def resolve_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     ref = roll.get("reserved_ref") or {}
     if not isinstance(ref, dict) or not ref.get("id"):
         return None
-    if ref.get("type") == "wh_transfer":
-        tr = await db.warehouse_transfers.find_one({"id": ref["id"]}, {"_id": 0, "code": 1, "status": 1,
-                                                                       "source_warehouse_id": 1, "dest_warehouse_id": 1})
+    physical = roll.get("transfer_ref") or {}
+    linked = (roll.get("status") == "in_transit_transfer" and ref.get("type") == "sales_order"
+              and physical.get("type") == "wh_transfer" and physical.get("so_id") == ref["id"])
+    if ref.get("type") == "wh_transfer" or linked:
+        transfer_id = physical.get("id") if linked else ref["id"]
+        tr = await db.warehouse_transfers.find_one({"id": transfer_id}, {"_id": 0, "code": 1, "status": 1,
+                  "items.rolls.roll_id": 1, "source_warehouse_id": 1, "dest_warehouse_id": 1})
         if not tr:
-            return {"type": "wh_transfer", "id": ref["id"], "missing": True}
-        return {"type": "wh_transfer", "id": ref["id"], "number": tr.get("code"), "status": tr.get("status"),
-                "active": tr.get("status") == "dispatched" and roll.get("status") == "in_transit_transfer",
-                "source_wh": tr.get("source_warehouse_id"), "dest_wh": tr.get("dest_warehouse_id"), "member": True}
+            return {"type": "wh_transfer", "id": transfer_id, "missing": True}
+        committed_so = await db.sales_orders.find_one({"id": ref["id"]}, {"_id": 0, "status": 1}) if linked else None
+        commitment_valid = not linked or bool(committed_so and committed_so.get("status") not in SO_DEAD | {"closed", "completed", "delivered"})
+        return {"type": "wh_transfer", "id": transfer_id, "number": tr.get("code"), "status": tr.get("status"),
+                "active": tr.get("status") == "dispatched" and roll.get("status") == "in_transit_transfer" and commitment_valid,
+                "source_wh": tr.get("source_warehouse_id"), "dest_wh": tr.get("dest_warehouse_id"),
+                "member": roll["id"] in {r.get("roll_id") for i in tr.get("items", []) for r in i.get("rolls", [])}}
     if ref.get("type") == "sales_order":
         so = await db.sales_orders.find_one({"id": ref["id"]}, {"_id": 0, "number": 1, "status": 1})
         if not so:
@@ -89,9 +96,26 @@ async def resolve_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def evaluate(direction: str, warehouse_id: Optional[str], roll: Dict[str, Any]) -> Dict[str, Any]:
+async def evaluate(direction: str, warehouse_id: Optional[str], roll: Dict[str, Any], crossing_passage_id: Optional[str] = None, expected_source: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     status = roll.get("status", "?")
     mv = await resolve_movement(roll)
+    if expected_source:
+        actual_type = 'shipment' if mv and mv.get('type') == 'sales_order' else (mv or {}).get('type')
+        actual_id = ((mv or {}).get('shipment') or {}).get('id') if actual_type == 'shipment' else (mv or {}).get('id')
+        if (actual_type, actual_id) != (expected_source.get('source_type'), expected_source.get('source_id')):
+            return _v('red', 'SOURCE_CONTEXT_MISMATCH', 'Pergerakan aktif roll berbeda dari dokumen yang dipilih pada gate.', mv)
+    # V2 crossing claims also apply to the legacy ingest/simulator/kiosk paths.
+    # The caller resuming the SAME durable V2 close may reuse its own claim.
+    if mv and not mv.get("missing"):
+        import hashlib
+        import json
+        source_type = "shipment" if mv["type"] == "sales_order" else mv["type"]
+        source_id = (mv.get("shipment") or {}).get("id") if source_type == "shipment" else mv.get("id")
+        if source_id:
+            claim_id = hashlib.sha256(json.dumps([source_type, source_id, direction, roll["id"]], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+            claim = await db.rfid_v2_crossings.find_one({"_id": claim_id})
+            if claim and claim.get("passage") != crossing_passage_id:
+                return _v("red", "REPLAY_EXIT", "Roll sudah divalidasi pada lintasan V2 untuk dokumen dan arah ini.", mv)
     if mv and mv.get("missing"):
         return _v("red", "DOC_MISSING", f"Dokumen {mv['type']} {mv['id']} tidak ditemukan — exception, cek manual.")
     if direction == "in":

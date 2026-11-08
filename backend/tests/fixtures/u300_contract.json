@@ -1,0 +1,168 @@
+{
+  "GateDecision": {
+    "logical_gate_id": "SIM-GATE",
+    "counts": {
+      "observed_unique": 1,
+      "extra": 0,
+      "pending": 0,
+      "missing": 0,
+      "matched": 1,
+      "unknown": 0
+    },
+    "created_at": "2026-10-18T14:10:22.079764Z",
+    "completion_basis": "manifest_full",
+    "source_ref": null,
+    "local_passage_id": "pass-1",
+    "config_version": "sim-v1",
+    "mode": "live",
+    "reason_code": "SIMULATION_ONLY",
+    "expires_at": "2026-10-18T14:10:27.079764Z",
+    "decision_id": "11acb15c-7ba9-49cf-b9f0-ee15c07e4306",
+    "verdict": "GREEN",
+    "final": true,
+    "action": "simulation",
+    "latched": false,
+    "allow_live_signal": true
+  },
+  "GateState": {
+    "server_time": "2026-10-18T14:10:22.080809700Z",
+    "logical_gate_id": "SIM-GATE",
+    "decision": {
+      "logical_gate_id": "SIM-GATE",
+      "counts": {
+        "observed_unique": 1,
+        "extra": 0,
+        "pending": 0,
+        "missing": 0,
+        "matched": 1,
+        "unknown": 0
+      },
+      "created_at": "2026-10-18T14:10:22.079764Z",
+      "completion_basis": "manifest_full",
+      "source_ref": null,
+      "local_passage_id": "pass-1",
+      "config_version": "sim-v1",
+      "mode": "live",
+      "reason_code": "SIMULATION_ONLY",
+      "expires_at": "2026-10-18T14:10:27.079764Z",
+      "decision_id": "11acb15c-7ba9-49cf-b9f0-ee15c07e4306",
+      "verdict": "GREEN",
+      "final": true,
+      "action": "simulation",
+      "latched": false,
+      "allow_live_signal": true
+    },
+    "latch_id": "SIM-LATCH",
+    "latched": true,
+    "request_id": "fd26b2b6-dcef-4a56-af5e-fad92dd0e907",
+    "config_version": "sim-v1"
+  },
+  "EventsResponse": {
+    "server_time": "2026-10-18T14:10:22.079764Z",
+    "batch_id": "batch-1",
+    "event_acks": [{
+      "durable": true,
+      "event_id": "ev-1",
+      "processing_status": "completed",
+      "error": null,
+      "status": "accepted"
+    }],
+    "request_id": "fd21588b-63c0-4f33-9776-1495153a233d"
+  },
+  "EventsRequest": {
+    "schema_version": 2,
+    "mode": "live",
+    "batch_id": "batch-1",
+    "context": {
+      "logical_gate_id": "SIM-GATE",
+      "kind": "gate",
+      "direction_evidence": {
+        "sensor_sequence": [],
+        "source": "fixed_profile",
+        "profile_binding_id": "sim-u300"
+      },
+      "local_passage_id": "pass-1",
+      "direction": "out"
+    },
+    "config_version": "sim-v1",
+    "events": [{
+      "antenna": "1",
+      "event_id": "ev-1",
+      "rssi_dbm": -45,
+      "raw_epc": "E20034120123456789ABCDEF",
+      "epc": "E20034120123456789ABCDEF",
+      "captured_at": "2026-10-18T14:10:21.961147700Z",
+      "time_quality": "synced"
+    }]
+  },
+  "DeviceConfig": {
+    "server_time": "2026-10-18T14:10:22.083237500Z",
+    "logical_gates": [{
+      "logical_gate_id": "SIM-GATE",
+      "sensor_bindings": {},
+      "site_id": "SIM-SITE",
+      "antenna_ids": [
+        "1",
+        "2"
+      ],
+      "completion_basis": "manifest_full",
+      "indicators": {"enabled": false},
+      "enabled": true,
+      "direction": "out",
+      "warehouse_id": "SIM-WH"
+    }],
+    "device_id": "SIM-U300",
+    "policies": {
+      "printer_lease_seconds": 60,
+      "passage_idle_close_milliseconds": 3000,
+      "telemetry_interval_seconds": 30,
+      "printer_max_started_items": 1,
+      "capture_offline_allowed": true,
+      "gate_decision_validity_seconds": 5,
+      "queue_full_action": "stop_capture_and_alarm",
+      "retry_initial_seconds": 2,
+      "retry_max_seconds": 60
+    },
+    "device_type": "fixed_reader",
+    "enabled": true,
+    "config_version": "sim-v1",
+    "schema_version": 2,
+    "hardware_profile_id": "sim-u300",
+    "hardware_profile": {
+      "profile_revision": "1",
+      "capabilities": [],
+      "sdk_version": "20251103",
+      "model_label": "SIMULATOR",
+      "firmware_version": "sim",
+      "sdk_name": "DeviceAPI",
+      "parameters": {
+        "max_passage_milliseconds": 30000,
+        "agent_profile": "kn-u300-v1",
+        "commissioned": false
+      }
+    },
+    "site_id": "SIM-SITE",
+    "limits": {
+      "max_body_bytes": 128000,
+      "max_queue_bytes": 10000000,
+      "max_events": 100
+    },
+    "warehouse_id": "SIM-WH"
+  },
+  "PassageClose": {
+    "mode": "live",
+    "observed_event_count": 1,
+    "closing_captured_at": "2026-10-18T14:10:22.079764Z",
+    "logical_gate_id": "SIM-GATE",
+    "direction_evidence": {
+      "sensor_sequence": [],
+      "source": "fixed_profile",
+      "profile_binding_id": "sim-u300"
+    },
+    "last_event_id": "ev-1",
+    "capture_complete": false,
+    "config_version": "sim-v1",
+    "boundary_reason": "idle_timeout",
+    "direction": "out"
+  }
+}

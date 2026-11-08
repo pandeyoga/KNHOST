@@ -10,6 +10,7 @@ import { Wifi, RefreshCw, Trash2, Plus, Cpu, Router, Power, RadioTower } from "l
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
+import U300Operations from "./U300Operations";
 import { PageHeader } from "../../components/ListPageParts";
 import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
@@ -29,6 +30,7 @@ const DIR_OPTS = [{ value: "in", label: "Masuk (in)" }, { value: "out", label: "
 export default function RfidDevicesView({ currentUser, embedded = false }) {
   const { warehouses, whId, setWhId, whOpts } = useWarehouses();
   const [devices, setDevices] = useState([]);
+  const [readerOpen, setReaderOpen] = useState({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -222,6 +224,7 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
                     <p className="text-[12px] font-semibold mt-1">{d.name}</p>
                     <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction === "in" ? "masuk" : d.direction === "out" ? "keluar" : d.direction}` : ""} · {d.warehouse_name || "—"}</p>
                     <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · sinyal terakhir {fmtTime(d.last_heartbeat)}</p>
+                    {["gate", "fixed_reader"].includes(d.type) && <details className="mt-2" onToggle={e => { const open = e.currentTarget.open; setReaderOpen(prev => ({ ...prev, [d.id]: open })); }}><summary className="cursor-pointer">Operasional U300 / V2</summary>{readerOpen[d.id] && <U300Operations device={d} isAdmin={isAdmin} />}</details>}
                     {isAdmin && (
                       <div className="flex gap-2 mt-2">
                         <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}

@@ -65,6 +65,8 @@ from routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await bootstrap.run_bootstrap()
+    from services.rfid_v2_service import ensure_indexes as ensure_rfid_v2_indexes
+    await ensure_rfid_v2_indexes()
     # PERAN KUSTOM — muat ke registry sebelum request pertama.
     try:
         from services.custom_role_service import sync_registry
@@ -191,6 +193,8 @@ for module in [
     app.include_router(module.router)
 
 app.include_router(color_library.router)
+from routers import rfid_v2
+app.include_router(rfid_v2.router)
 from routers import access_roles as _access_roles  # noqa: E402
 app.include_router(_access_roles.router)
 from routers import so_override as _so_override  # noqa: E402 — 2026-10 override SO Admin
