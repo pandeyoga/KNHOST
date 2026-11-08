@@ -199,6 +199,8 @@ async def confirm_arrival_trip(order_id: str, epcs: Optional[List[str]],
     dup = _existing_trip(order, key)
     if dup:
         return {**order, "trip": dup, "duplicate_trip": True}
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal (integrasi)
+    await _rfz.assert_order_movable(order, "mencatat trip tiba perintah putaway")
     from services import atomic_claim as _saga
     fresh = await _saga.claim("putaway_orders", order_id, "putaway_arrival_trip",
                               precondition={"status": {"$in": list(pa.ARRIVAL_STATUSES)}}, actor=actor_name)
@@ -245,6 +247,8 @@ async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Op
         raise HTTPException(status_code=400, detail=f"Alasan menutup PA wajib (minimal {MIN_CLOSE_REASON} huruf).")
     if not any(i.get("status") == "pending" for i in order["items"]):
         raise HTTPException(status_code=400, detail="Tidak ada roll yang masih menunggu di PA ini.")
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal (integrasi)
+    await _rfz.assert_order_movable(order, "menutup sisa perintah putaway")
     from services import atomic_claim as _saga
     fresh = await _saga.claim("putaway_orders", order_id, "putaway_close_remaining",
                               precondition={"status": {"$in": list(pa.ARRIVAL_STATUSES)}}, actor=actor_name)

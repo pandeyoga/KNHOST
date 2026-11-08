@@ -338,6 +338,8 @@ async def publish(order_id: str, scope_ids: List[str], actor_name: str, split_un
             "code": "PA_DRAFT_NOT_READY", "rolls": [{"roll_no": i.get("roll_no"), "reason": i["block_reason"]} for i in rest],
             "message": f"{len(rest)} roll belum siap (tag/label belum terverifikasi atau berubah). Terbitkan yang siap "
                        "saja (sisanya tetap draf) atau keluarkan roll itu dari draf."})
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal (integrasi)
+    await _rfz.assert_order_movable({**order, "items": ok}, "menerbitkan draf perintah putaway")
     from services import atomic_claim as _saga
     await _saga.claim("putaway_orders", order_id, "putaway_publish",
                       precondition={"status": "draft", "draft_rev": order.get("draft_rev", 0)}, actor=actor_name)
