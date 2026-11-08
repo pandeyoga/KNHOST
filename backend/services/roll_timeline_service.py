@@ -97,7 +97,8 @@ async def roll_timeline(roll_id: str, scope_ids: List[str]) -> Dict[str, Any]:
                        "label": f"Verifikasi handheld selesai ({pj['job_number']} — {pj.get('status')})",
                        "ref": pj["job_number"]})
 
-    async for pa in db.putaway_orders.find({"items.roll_id": roll_id},
+    # PREP-C — draf PA (belum diterbitkan / dibatalkan) bukan kejadian fisik roll
+    async for pa in db.putaway_orders.find({"items.roll_id": roll_id, "status": {"$nin": ["draft", "cancelled"]}},
                                            {"_id": 0, "pa_number": 1, "btg_number": 1,
                                             "to_warehouse_name": 1, "created_at": 1,
                                             "dispatched_at": 1, "confirmed_at": 1, "items": 1}):

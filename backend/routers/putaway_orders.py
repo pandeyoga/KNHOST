@@ -1,13 +1,19 @@
-"""FASE R2 — Router Putaway Order (PA) + BTG. Prefix /api."""
+"""FASE R2 — Router Putaway Order (PA) + BTG. Prefix /api.
+
+PREP-C (K-GDG-10, 8 Nov 2026) — draf otomatis (`/putaway-orders/auto-draft`, `PATCH …/draft`, `…/publish`,
+`…/cancel-draft`), tiba bertahap per trip (`…/arrival-trips`) + penutupan sisa (`…/close`), detail (`GET …/{id}`).
+"""
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids
 from services import warehouse_scope_service as whscope
 from services import putaway_order_service as pa
+from services import putaway_draft_service as pad
+from services import putaway_arrival_service as arr
 
 router = APIRouter(prefix="/api")
 
@@ -108,12 +114,125 @@ async def post_confirm(order_id: str, payload: PAConfirmPayload, request: Reques
 
 @router.post("/putaway-orders/{order_id}/resolve-exception")
 async def post_resolve(order_id: str, payload: PAResolvePayload, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "wms", "update")
+    # PREP-C (celah 27 Okt) — `accept` = menyatakan roll tiba TANPA bukti scan, setara konfirmasi manual (`manual_all`
+    # butuh wms.approve). Dulu cukup wms.update sehingga syarat approve bisa dilewati lewat exception.
+    actor = await require_permission(request, "wms", "approve" if payload.action == "accept" else "update")
     order = await pa.resolve_exception(order_id, payload.roll_ids, payload.action,
                                        await _scope(request), actor["name"], payload.reason)
     await audit(actor["name"], "putaway_exception_resolved", "putaway_order", order_id,
                 {"action": payload.action, "rolls": len(payload.roll_ids)})
     return order
+
+
+# ─── PREP-C — draf otomatis (K-GDG-10) ───────────────────────────────────────
+class PAAutoDraftPayload(BaseModel):
+    from_warehouse_id: str
+
+
+class PADraftPatch(BaseModel):
+    to_warehouse_id: Optional[str] = None
+    purpose: Optional[str] = None             # storage | inspection (kosong = turunan dari gedung tujuan)
+    remove_roll_ids: List[str] = Field(default_factory=list, max_length=2000)
+    add_roll_ids: List[str] = Field(default_factory=list, max_length=2000)
+
+
+class PAPublishPayload(BaseModel):
+    split_unready: bool = False               # terbitkan yang siap, sisanya tetap draf (draf baru)
+
+
+class PAReasonPayload(BaseModel):
+    reason: str = ""
+
+
+class PATripPayload(BaseModel):
+    epcs: List[str] = Field(default_factory=list, max_length=2000)
+    client_trip_id: str = ""                  # idempoten: kirim ulang trip yang sama tidak dicatat dua kali
+
+
+class PAClosePayload(BaseModel):
+    action: str                               # return_transit | exception
+    reason: str = ""
+
+
+@router.post("/putaway-orders/auto-draft")
+async def post_auto_draft(payload: PAAutoDraftPayload, request: Request) -> Dict[str, Any]:
+    """Siapkan draf PA untuk roll tersedia di gudang ini yang belum masuk PA mana pun (pengisi ulang / data lama)."""
+    actor = await require_permission(request, "wms", "update")
+    ctx = await entity_ctx(request)
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, payload.from_warehouse_id, "menyiapkan draf putaway di gudang ini")
+    await whscope.assert_usable(payload.from_warehouse_id, ctx.active_entity_id, action="menyiapkan draf putaway")
+    res = await pad.prepare_for_warehouse(payload.from_warehouse_id, resolve_scope_ids(ctx), actor["name"])
+    await audit(actor["name"], "putaway_drafts_prepared", "warehouse", payload.from_warehouse_id,
+                {"drafts": [d["pa_number"] for d in res["drafts"]], "unrouted": len(res["unrouted"])})
+    return res
+
+
+@router.get("/putaway-orders/{order_id}")
+async def get_order(order_id: str, request: Request) -> Dict[str, Any]:
+    """Detail PA; draf membawa kesiapan per roll, penanda minta-inspeksi, dan pilihan gedung tujuan."""
+    actor = await require_permission(request, "wms", "view")
+    out = await pad.detail(order_id, await _scope(request))
+    from services import location_scope
+    if not location_scope.doc_in_scope("putaway_orders", out, await location_scope.warehouse_ids_for(actor)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="PA di luar lokasi tugas Anda")
+    return out
+
+
+@router.patch("/putaway-orders/{order_id}/draft")
+async def patch_draft(order_id: str, payload: PADraftPatch, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "wms", "update")
+    if payload.to_warehouse_id:
+        from services import location_scope
+        await location_scope.assert_warehouse(actor, payload.to_warehouse_id, "menjadikan gudang ini tujuan putaway")
+    out = await pad.update_draft(order_id, payload.model_dump(exclude_none=True), await _scope(request), actor["name"])
+    await audit(actor["name"], "putaway_draft_updated", "putaway_order", order_id,
+                {"to": out.get("to_warehouse_name"), "items": out.get("item_count"),
+                 "removed": len(payload.remove_roll_ids), "added": len(payload.add_roll_ids)})
+    return out
+
+
+@router.post("/putaway-orders/{order_id}/publish")
+async def post_publish(order_id: str, payload: PAPublishPayload, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "wms", "update")
+    out = await pad.publish(order_id, await _scope(request), actor["name"], split_unready=payload.split_unready)
+    await audit(actor["name"], "putaway_draft_published", "putaway_order", order_id,
+                {"pa_number": out.get("pa_number"), "items": out.get("item_count"), "split": payload.split_unready})
+    return out
+
+
+@router.post("/putaway-orders/{order_id}/cancel-draft")
+async def post_cancel_draft(order_id: str, payload: PAReasonPayload, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "wms", "update")
+    out = await pad.cancel_draft(order_id, payload.reason, await _scope(request), actor["name"])
+    await audit(actor["name"], "putaway_draft_cancelled", "putaway_order", order_id, {}, reason=payload.reason)
+    return out
+
+
+# ─── PREP-C — tiba bertahap per trip (K-GDG-10, K-RFID-10) ───────────────────
+@router.post("/putaway-orders/{order_id}/arrival-trips")
+async def post_arrival_trip(order_id: str, payload: PATripPayload, request: Request) -> Dict[str, Any]:
+    """Satu trip tiba (handheld). Roll yang belum terbaca tetap menunggu; gate memanggil layanan yang sama."""
+    actor = await require_permission(request, "wms", "update")
+    out = await arr.confirm_arrival_trip(order_id, payload.epcs,
+                                         {"type": "handheld", "client_trip_id": payload.client_trip_id},
+                                         actor, await _scope(request))
+    trip = out.get("trip") or {}
+    await audit(actor["name"], "putaway_arrival_trip", "putaway_order", order_id,
+                {"arrived": len(trip.get("arrived_roll_nos") or []), "status": out.get("status"),
+                 "duplicate": out.get("duplicate_trip", False)})
+    return out
+
+
+@router.post("/putaway-orders/{order_id}/close")
+async def post_close(order_id: str, payload: PAClosePayload, request: Request) -> Dict[str, Any]:
+    """Tutup PA: roll yang masih menunggu → kembali ke transit, atau pengecualian (cek ulang handheld)."""
+    actor = await require_permission(request, "wms", "update")
+    out = await arr.close_remaining(order_id, payload.action, payload.reason, await _scope(request), actor)
+    await audit(actor["name"], "putaway_order_closed", "putaway_order", order_id,
+                {"action": payload.action, "status": out.get("status")}, reason=payload.reason)
+    return out
 
 
 @router.get("/wms/health-dashboard")

@@ -5,12 +5,15 @@ from typing import Any, Dict, List, Optional
 
 from core_utils import new_id, now_iso
 from db import db
+from services.warehouse_profile_service import QC_AREA_ROLES
 
 STAGE_LABEL = {"received": "Diterima di gudang", "dispatched": "Dikirim · dalam perjalanan",
                "arrived": "Tiba di gudang tujuan"}
 DOC_PREFIX = {"received": "TRM", "dispatched": "SJ", "arrived": "TBA"}
 OPEN_STATES = {"pending_approval", "approved", "inspecting", "inspected"}
-QC_ROLES = {"return", "qc"}
+# PREP-C (K-GDG-04) — area QC barang retur = gedung ber-peran `inspection` (tempat inspeksi; kini Gedung Retur RCM)
+# atau `return` lama. Dulu {"return", "qc"}: "qc" bukan peran gedung yang sah sehingga tidak pernah cocok.
+QC_ROLES = QC_AREA_ROLES
 
 
 class JourneyConflict(Exception):

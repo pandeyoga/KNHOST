@@ -40,13 +40,15 @@ import {
 } from "./warehouseApi";
 import WarehouseModeDrawer from "./WarehouseModeDrawer";
 import WarehouseProfileDrawer from "./WarehouseProfileDrawer";
+import { gateSummary, rulesSummary } from "./warehouseProfileUtils";
 import WarehouseCreateModal from "./WarehouseCreateModal";
 import KNSelect from "../../../components/KNSelect";
 import { askConfirm } from "../../../services/confirmService";
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 
-const EMPTY_FORM = { code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000, lat: "", lng: "", sharing_mode: "dedicated" };
+// PREP-C (K-GDG-07) — semua gedung dipakai bersama semua PT: bawaan form kini "bersama" (mode khusus tetap bisa dipilih).
+const EMPTY_FORM = { code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000, lat: "", lng: "", sharing_mode: "shared" };
 
 const MASTER_SCOPE_ROLES = ["admin", "manager", "warehouse"];   // = backend routers/warehouses.py
 
@@ -84,6 +86,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
   const [siteError, setSiteError] = useState("");
 
   const activeEntityLabel = entityFullById(entities, selectedEntity);
+  const entityNames = useMemo(() => Object.fromEntries(entities.map((e) => [e.id, entityShort(e)])), [entities]);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -356,14 +359,11 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                               ))}
                             </span>
                           )}
-                          <span className="mt-0.5 block text-[11px] text-[#8E8E93]">
-                            {(() => {
-                              const m = (w.storage_rules || {}).mode;
-                              if (m === "category") return `aturan simpan: ${(w.storage_rules.categories || []).join(", ") || "semua kategori"}`;
-                              if (m === "grade") return `aturan simpan: grade ${(w.storage_rules.grades || []).join("/")}`;
-                              return "tanpa aturan simpan";
-                            })()}
-                            {" · "}{(w.gate_config || {}).physical_gate ? "gerbang pindai fisik" : "pindai genggam"}
+                          <span className="mt-0.5 block text-[11px] text-[#8E8E93]" data-testid={`wh-profile-summary-${w.id}`}>
+                            {/* PREP-C — aturan (termasuk artikel/PT), bentuk simpan, mode stok & gate dari profil */}
+                            {rulesSummary(w.storage_rules, entityNames)}
+                            {w.storage_form === "floor" ? " · petak lantai" : ""}
+                            {" · "}{gateSummary(w)}
                           </span>
                         </td>
                         <td className="px-3 py-2">
@@ -472,6 +472,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
           warehouse={profileFor}
           sites={sites}
           categories={categories}
+          entities={entities}
           onClose={() => setProfileFor(null)}
           onSaved={(msg) => { setProfileFor(null); setNotice(msg); load(); }}
         />

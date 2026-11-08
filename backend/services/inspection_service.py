@@ -1413,6 +1413,12 @@ async def finish(ins_id: str, decision: str, remark: str,
     if doc.get("kind") == KIND_QC_4POINT:
         await _close_qc_4point(out, dec, actor)
         out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
+        # PREP-C (K-GDG-04/10) — inspeksi selesai: roll yang lulus (mis. di gedung inspeksi) disiapkan draf putaway
+        # ke gudang simpan; roll gagal sudah DITAHAN sehingga dilewati. Best-effort, idempoten per SPK.
+        from services import inbound_qc_common as _iqc
+        out["putaway_draft"] = await _iqc.auto_draft_after_release(
+            [ln.get("roll_id") for ln in out.get("lines") or [] if ln.get("roll_id")],
+            {"type": "inspection_close", "id": doc["id"], "number": doc.get("number", "")}, actor.get("name", ""))
     # FASE I.F — `sales_returns.inspect_done_at` DITURUNKAN dari sini, tidak pernah
     # diketik: dua tanggal "inspeksi selesai" yang bisa berbeda adalah kelas bug
     # yang paling sering menipu di repo ini.

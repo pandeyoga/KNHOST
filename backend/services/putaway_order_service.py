@@ -5,8 +5,13 @@ SSOT: perpindahan antar-gedung mengubah `roll.warehouse_id` lalu `rebuild_balanc
 kedua sisi (balance = proyeksi dari rolls, tidak pernah $inc). Kepemilikan TIDAK
 berubah (bukan interco). Journey: putaway_assigned → putaway_in_transit → stored
 (atau gate_exception untuk item yang tak tervalidasi saat tiba).
+
+PREP-C (K-GDG-10, 8 Nov 2026) — status `draft` lahir otomatis sebelum `open` (`putaway_draft_service`), tiba
+BERTAHAP per trip (`putaway_arrival_service`, status `partially_received`), status akhir tanpa roll tiba =
+`returned` (bukan `completed`). PA bertujuan gedung inspeksi (`purpose = inspection`) mengembalikan roll ke tahap
+terverifikasi saat tiba — roll itu nanti di-PA lagi ke gedung simpan sesudah inspeksi.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 
@@ -16,11 +21,19 @@ from services import warehouse_profile_service as whp  # noqa: F401
 from services import placement_rules as pr
 from services.rfid_print_service import set_journey
 
+#: PA yang masih "hidup" (roll di dalamnya tidak boleh masuk PA lain).
+LIVE_STATUSES = ("draft", "open", "in_transit", "partially_received")
+#: PA yang boleh menerima konfirmasi tiba (trip).
+ARRIVAL_STATUSES = ("open", "in_transit", "partially_received")
+PROD_FIELDS = {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1, "fabric_type": 1, "template_id": 1}
+
 
 async def putaway_block_reason(r: Dict[str, Any]) -> Optional[str]:
     """G3 D4-WMS-04 — resolver kelayakan putaway bersama (health, suggest, create). None = siap."""
     if r.get("status") != "available":
         return f"status_{r.get('status') or 'unknown'}"
+    if pr.is_held(r):   # PREP-C — roll DITAHAN (QC/inspeksi) tidak boleh masuk PA
+        return "held"
     if r.get("active_movement"):
         return "active_movement"
     if float(r.get("length_reserved") or 0) > 0:
@@ -28,6 +41,23 @@ async def putaway_block_reason(r: Dict[str, Any]) -> Optional[str]:
     if (await identity_issue(r))[0] is not None:
         return "tag_identity"
     return None
+
+
+async def rolls_in_live_orders(roll_ids: List[str], statuses: tuple = LIVE_STATUSES,
+                               exclude_order: str = "") -> Dict[str, Dict[str, Any]]:
+    """{roll_id: {id, pa_number, status}} untuk roll yang sudah ada di PA hidup (termasuk draf)."""
+    if not roll_ids:
+        return {}
+    q: Dict[str, Any] = {"status": {"$in": list(statuses)}, "items.roll_id": {"$in": list(roll_ids)}}
+    if exclude_order:
+        q["id"] = {"$ne": exclude_order}
+    out: Dict[str, Dict[str, Any]] = {}
+    wanted = set(roll_ids)
+    async for o in db.putaway_orders.find(q, {"_id": 0, "id": 1, "pa_number": 1, "status": 1, "items.roll_id": 1}):
+        for it in o.get("items") or []:
+            if it.get("roll_id") in wanted:
+                out[it["roll_id"]] = {"id": o["id"], "pa_number": o.get("pa_number", ""), "status": o["status"]}
+    return out
 
 
 async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 2000) -> List[Dict[str, Any]]:
@@ -41,14 +71,26 @@ async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 200
         "length_reserved": {"$not": {"$gt": 0}},
     }, {"_id": 0}).to_list(limit)
     rolls = [r for r in rolls if await putaway_block_reason(r) is None]  # G3 D4-TAG-01 / D4-WMS-04
+    # PREP-C — roll yang sudah antre di DRAF PA (otomatis/manual) tidak ditawarkan dua kali.
+    drafted = await rolls_in_live_orders([r["id"] for r in rolls], ("draft",))
+    rolls = [r for r in rolls if r["id"] not in drafted]
     pids = list({r["product_id"] for r in rolls})
-    prods = {p["id"]: p for p in await db.products.find(
-        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1, "fabric_type": 1}).to_list(3000)}
+    prods = {p["id"]: p for p in await db.products.find({"id": {"$in": pids}}, PROD_FIELDS).to_list(3000)}
     for r in rolls:
         p = prods.get(r["product_id"], {})
         r["sku"], r["product_name"], r["category"] = p.get("sku", ""), p.get("name", ""), p.get("category", "")
         r["fabric_type"] = p.get("fabric_type", "")
+        r["template_id"] = p.get("template_id", "")
     return rolls
+
+
+async def storage_candidates(src: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """P9.4 — gudang SIMPAN (peran storage / material — PREP-C) aktif di LOKASI yang sama dengan gudang asal."""
+    st_q: Dict[str, Any] = {"active": {"$ne": False}, "roles": {"$in": sorted(whp.STORAGE_ROLES)},
+                            "id": {"$ne": src.get("id")}}
+    if src.get("site_id"):
+        st_q["site_id"] = src["site_id"]
+    return await db.warehouses.find(st_q, {"_id": 0}).sort("code", 1).to_list(200)
 
 
 async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
@@ -59,18 +101,19 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Gudang asal tidak ditemukan")
     rolls = await _rolls_ready(warehouse_from, scope_ids)
     # P9.4 — kandidat tujuan hanya gudang simpan di LOKASI yang sama (dulu semua lokasi, hanya diurutkan).
-    st_q: Dict[str, Any] = {"active": {"$ne": False}, "roles": "storage", "id": {"$ne": warehouse_from}}
-    if src.get("site_id"):
-        st_q["site_id"] = src["site_id"]
-    storages = await db.warehouses.find(st_q, {"_id": 0}).to_list(200)
+    storages = await storage_candidates(src)
+    # PREP-C (K-GDG-08) — artikel ikut kunci grup HANYA bila ada gudang tujuan yang membatasi artikel.
+    by_template = any(pr.warehouse_rules(w).get("template_ids") for w in storages)
     groups: Dict[str, Dict[str, Any]] = {}
     for r in rolls:
         unit = r.get("unit", "meter")
         # G3 D4-PA-03 — satuan masuk kunci grup: meter dan kg tidak pernah dijumlahkan jadi satu angka
         key = f"{r.get('owner_entity_id')}|{r.get('category') or '—'}|{r.get('fabric_type') or ''}|{(r.get('grade') or 'A').upper()}|{unit}"
+        if by_template:
+            key += f"|{r.get('template_id') or ''}"
         g = groups.setdefault(key, {
             "owner_entity_id": r.get("owner_entity_id"), "category": r.get("category") or "",
-            "fabric_type": r.get("fabric_type") or "",
+            "fabric_type": r.get("fabric_type") or "", "template_id": r.get("template_id") or "",
             "grade": (r.get("grade") or "A").upper(),
             "rolls": [], "qty": 0.0, "unit": unit, "candidates": None})
         g["rolls"].append({k: r.get(k) for k in (
@@ -81,8 +124,9 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
         cands = []
         probe = {"owner_entity_id": g["owner_entity_id"], "grade": g["grade"]}
         for wh in storages:
-            # P02 — evaluator bersama: dedicated/shared + rules gudang AND (kategori, grade, jenis kain)
-            if not await pr.warehouse_violations(wh, probe, {"category": g["category"], "fabric_type": g["fabric_type"]}):
+            # P02 — evaluator bersama: dedicated/shared + rules gudang AND (kategori, grade, jenis kain, artikel, PT)
+            if not await pr.warehouse_violations(wh, probe, {"category": g["category"], "fabric_type": g["fabric_type"],
+                                                             "template_id": g["template_id"]}):
                 cands.append({"warehouse_id": wh["id"], "warehouse_name": wh.get("name", ""),
                               "site_id": wh.get("site_id", ""),
                               "same_site": wh.get("site_id") and wh.get("site_id") == src.get("site_id"),
@@ -136,6 +180,87 @@ async def _release_claims(roll_ids: List[str], order_id: str) -> None:
         await rebuild_balance(pid, wid, own)
 
 
+def assert_same_site(wh_from: Dict[str, Any], wh_to: Dict[str, Any]) -> None:
+    if wh_from.get("site_id") and wh_to.get("site_id") and wh_from["site_id"] != wh_to["site_id"]:
+        # UAT 24 Okt (P9.4) — putaway = transit → gudang simpan DI LOKASI YANG SAMA; antar lokasi = transfer.
+        raise HTTPException(status_code=400, detail=(
+            "Putaway hanya ke gudang simpan di lokasi yang sama. Pindah antar lokasi memakai Transfer Gudang."))
+
+
+def item_row(r: Dict[str, Any], p: Dict[str, Any], epc: str = "") -> Dict[str, Any]:
+    return {"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "epc": epc,
+            "sku": p.get("sku", ""), "product_name": p.get("name", ""),
+            "category": p.get("category", ""), "grade": r.get("grade", ""),
+            "product_id": r["product_id"], "lot": r.get("lot", ""),
+            "qty": float(r.get("length_remaining") or 0), "unit": r.get("unit", "meter"),
+            "status": "pending"}
+
+
+def qty_summary(items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Total item PA. G3 D4-PA-03 — total per satuan (meter/kg/yard tidak dijumlahkan jadi satu label)."""
+    units = {(i.get("unit") or "meter") for i in items}
+    return {"item_count": len(items), "total_qty": round(sum(i["qty"] for i in items), 2),
+            "qty_by_unit": {u: round(sum(i["qty"] for i in items if (i.get("unit") or "meter") == u), 2)
+                            for u in units},
+            "mixed_units": len(units) > 1}
+
+
+async def roll_violation(r: Dict[str, Any], wh_to: Dict[str, Any], p: Dict[str, Any],
+                         purpose: str = "storage") -> Tuple[Optional[str], Any]:
+    """Satu jawaban kelayakan roll untuk PA (buat manual & terbitkan draf). → (alasan | None, tag).
+    `purpose=inspection` — aturan SIMPAN gedung tujuan tidak berlaku (roll hanya singgah diperiksa)."""
+    stage = (r.get("journey") or {}).get("stage")
+    if stage not in ("tag_verified", "label_verified"):
+        return f"Roll {r.get('roll_no')} belum terverifikasi (stage: {stage or '—'})", None
+    # AX-08 — tag terverifikasi BUKAN izin gerak: status kualitas/reservasi roll juga wajib bebas.
+    if r.get("status") != PA_ELIGIBLE_STATUS:
+        return (f"Roll {r.get('roll_no')} berstatus {r.get('status')} — putaway hanya "
+                "untuk roll available (lolos QC, tidak dipesan)"), None
+    if pr.is_held(r):   # PREP-C (celah 27 Okt) — roll DITAHAN inspeksi/QC tidak boleh masuk PA
+        return f"Roll {r.get('roll_no')} sedang DITAHAN (QC/inspeksi) — lepas tahanannya dulu", None
+    if float(r.get("length_reserved") or 0) > 0:  # WM-02 — ada reservasi potong tertunda
+        return f"Roll {r.get('roll_no')} punya reservasi potong yang belum dikonfirmasi", None
+    if float(r.get("length_remaining") or 0) <= 0:
+        return f"Roll {r.get('roll_no')} panjangnya 0", None
+    if (r.get("active_movement") or {}).get("id"):
+        return (f"Roll {r.get('roll_no')} sedang dalam perpindahan "
+                f"{r['active_movement'].get('number') or r['active_movement']['id']}"), None
+    # P02 DEV-F05/G02 — gudang tujuan: dedicated/shared untuk pemilik roll + rules AND
+    wv = await pr.warehouse_violations(wh_to, r, p, attrs=purpose != "inspection")
+    if wv:
+        return f"Roll {r.get('roll_no')}: {wv[0]}", None
+    why, tag = await identity_issue(r)
+    if why:
+        return f"Roll {r.get('roll_no')}: {why}", None
+    return None, tag
+
+
+async def claim_rolls(items: List[Dict[str, Any]], order_id: str, pa_number: str, warehouse_from: str) -> None:
+    """WM-05 — klaim kepemilikan perpindahan PER ROLL (atomik, all-or-none) sebelum PA berlaku."""
+    claimed: List[str] = []
+    for it in items:
+        res = await db.inventory_rolls.update_one(
+            {"id": it["roll_id"], "warehouse_id": warehouse_from, "status": PA_ELIGIBLE_STATUS,
+             "journey.stage": {"$in": ["tag_verified", "label_verified"]},   # P9.3b — RFID atau label QR
+             "length_remaining": {"$gt": 0}, "active_movement": None,
+             "inspection.hold.held": {"$ne": True},                          # PREP-C — roll ditahan tidak diklaim
+             "length_reserved": {"$not": {"$gt": 0}}},
+            {"$set": {"active_movement": {"type": "putaway", "id": order_id, "number": pa_number,
+                                          "claimed_at": now_iso()}}})
+        if res.modified_count != 1:
+            await _release_claims(claimed, order_id)
+            raise HTTPException(status_code=409, detail=(
+                f"Roll {it['roll_no']} baru saja diambil proses lain (PA/reservasi/QC). Muat ulang layar."))
+        claimed.append(it["roll_id"])
+
+
+async def after_claim(items: List[Dict[str, Any]], order: Dict[str, Any]) -> None:
+    from services.roll_service import rebuild_balance
+    for pid in {i["product_id"] for i in items}:  # G3 D4-PA-01 — roll diklaim PA keluar dari ATP
+        await rebuild_balance(pid, order["from_warehouse_id"], order["owner_entity_id"])
+    await set_journey([i["roll_id"] for i in items], "putaway_assigned", {"putaway_order_id": order["id"]})
+
+
 async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[str],
                        scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
     if not roll_ids:
@@ -147,10 +272,7 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     wh_from = await db.warehouses.find_one({"id": warehouse_from}, {"_id": 0})
     if not wh_to or not wh_from:
         raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
-    if wh_from.get("site_id") and wh_to.get("site_id") and wh_from["site_id"] != wh_to["site_id"]:
-        # UAT 24 Okt (P9.4) — putaway = transit → gudang simpan DI LOKASI YANG SAMA; antar lokasi = transfer.
-        raise HTTPException(status_code=400, detail=(
-            "Putaway hanya ke gudang simpan di lokasi yang sama. Pindah antar lokasi memakai Transfer Gudang."))
+    assert_same_site(wh_from, wh_to)
     rolls = await db.inventory_rolls.find(
         {"id": {"$in": roll_ids}, "warehouse_id": warehouse_from,
          "owner_entity_id": {"$in": scope_ids}}, {"_id": 0}).to_list(len(roll_ids) + 5)
@@ -161,78 +283,34 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     if len(owners) > 1:
         raise HTTPException(status_code=400, detail="Satu PA hanya untuk satu pemilik barang")
     pids = list({r["product_id"] for r in rolls})
-    prods = {p["id"]: p for p in await db.products.find(
-        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1, "fabric_type": 1}).to_list(3000)}
+    prods = {p["id"]: p for p in await db.products.find({"id": {"$in": pids}}, PROD_FIELDS).to_list(3000)}
+    in_draft = await rolls_in_live_orders(roll_ids, ("draft",))
     items, violations = [], []
     for r in rolls:
-        stage = (r.get("journey") or {}).get("stage")
-        if stage not in ("tag_verified", "label_verified"):
-            violations.append(f"Roll {r.get('roll_no')} belum terverifikasi (stage: {stage or '—'})")
-            continue
-        # AX-08 — tag terverifikasi BUKAN izin gerak: status kualitas/reservasi roll juga wajib bebas.
-        if r.get("status") != PA_ELIGIBLE_STATUS:
-            violations.append(f"Roll {r.get('roll_no')} berstatus {r.get('status')} — putaway hanya "
-                              "untuk roll available (lolos QC, tidak dipesan)")
-            continue
-        if float(r.get("length_reserved") or 0) > 0:  # WM-02 — ada reservasi potong tertunda
-            violations.append(f"Roll {r.get('roll_no')} punya reservasi potong yang belum dikonfirmasi")
-            continue
-        if float(r.get("length_remaining") or 0) <= 0:
-            violations.append(f"Roll {r.get('roll_no')} panjangnya 0")
-            continue
-        if (r.get("active_movement") or {}).get("id"):
-            violations.append(f"Roll {r.get('roll_no')} sedang dalam perpindahan "
-                              f"{r['active_movement'].get('number') or r['active_movement']['id']}")
+        if r["id"] in in_draft:   # PREP-C — satu roll satu antrean: draf otomatis diterbitkan/diubah, bukan digandakan
+            violations.append(f"Roll {r.get('roll_no')} sudah ada di draf {in_draft[r['id']]['pa_number']} — "
+                              "terbitkan atau keluarkan dari draf itu dulu")
             continue
         p = prods.get(r["product_id"], {})
-        # P02 DEV-F05/G02 — gudang tujuan: dedicated/shared untuk pemilik roll + rules AND
-        wv = await pr.warehouse_violations(wh_to, r, p)
-        if wv:
-            violations.append(f"Roll {r.get('roll_no')}: {wv[0]}")
-            continue
-        why, tag = await identity_issue(r)
+        why, tag = await roll_violation(r, wh_to, p)
         if why:
-            violations.append(f"Roll {r.get('roll_no')}: {why}")
+            violations.append(why)
             continue
-        items.append({
-            "roll_id": r["id"], "roll_no": r.get("roll_no", ""), "epc": tag.get("epc", ""),
-            "sku": p.get("sku", ""), "product_name": p.get("name", ""),
-            "category": p.get("category", ""), "grade": r.get("grade", ""),
-            "product_id": r["product_id"], "lot": r.get("lot", ""),
-            "qty": float(r.get("length_remaining") or 0), "unit": r.get("unit", "meter"),
-            "status": "pending",
-        })
+        items.append(item_row(r, p, tag.get("epc", "")))
     if violations:
         raise HTTPException(status_code=400, detail=" | ".join(violations[:5]))
     order_id = new_id("pa")
     pa_number = await next_doc_number("putaway_orders", "pa_number", "PA")
-    # WM-05 — klaim kepemilikan perpindahan PER ROLL (atomik, all-or-none) sebelum PA lahir.
-    claimed: List[str] = []
-    for it in items:
-        res = await db.inventory_rolls.update_one(
-            {"id": it["roll_id"], "warehouse_id": warehouse_from, "status": PA_ELIGIBLE_STATUS,
-             "journey.stage": {"$in": ["tag_verified", "label_verified"]},   # P9.3b — RFID atau label QR
-             "length_remaining": {"$gt": 0}, "active_movement": None,
-             "length_reserved": {"$not": {"$gt": 0}}},
-            {"$set": {"active_movement": {"type": "putaway", "id": order_id, "number": pa_number,
-                                          "claimed_at": now_iso()}}})
-        if res.modified_count != 1:
-            await _release_claims(claimed, order_id)
-            raise HTTPException(status_code=409, detail=(
-                f"Roll {it['roll_no']} baru saja diambil proses lain (PA/reservasi/QC). Muat ulang layar."))
-        claimed.append(it["roll_id"])
+    await claim_rolls(items, order_id, pa_number, warehouse_from)
     order = {
         "id": order_id,
         "pa_number": pa_number,
         "from_warehouse_id": warehouse_from, "from_warehouse_name": wh_from.get("name", ""),
         "to_warehouse_id": warehouse_to, "to_warehouse_name": wh_to.get("name", ""),
         "owner_entity_id": list(owners)[0],
-        "items": items, "item_count": len(items),
-        "total_qty": round(sum(i["qty"] for i in items), 2),
-        # G3 D4-PA-03 — total per satuan (meter/kg/yard tidak dijumlahkan jadi satu label)
-        "qty_by_unit": {u: round(sum(i["qty"] for i in items if (i.get("unit") or "meter") == u), 2)
-                        for u in {(i.get("unit") or "meter") for i in items}},
-        "mixed_units": len({(i.get("unit") or "meter") for i in items}) > 1,
+        "items": items, **qty_summary(items),
+        "purpose": "inspection" if whp.has_role(wh_to, whp.INSPECTION_ROLE) and not
+                   whp.has_role(wh_to, *whp.STORAGE_ROLES) else "storage",
         "status": "open", "btg_number": None,
         "created_at": now_iso(), "created_by": actor_name,
         "dispatched_at": None, "confirmed_at": None, "confirmed_by": None,
@@ -240,12 +318,9 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     try:
         await db.putaway_orders.insert_one(dict(order))
     except Exception:
-        await _release_claims(claimed, order_id)
+        await _release_claims([i["roll_id"] for i in items], order_id)
         raise
-    from services.roll_service import rebuild_balance
-    for pid in {i["product_id"] for i in items}:  # G3 D4-PA-01 — roll diklaim PA keluar dari ATP
-        await rebuild_balance(pid, warehouse_from, order["owner_entity_id"])
-    await set_journey([i["roll_id"] for i in items], "putaway_assigned", {"putaway_order_id": order["id"]})
+    await after_claim(items, order)
     return safe_doc(order)
 
 
@@ -286,6 +361,7 @@ async def dispatch(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
         # G3 D4-PA-01 — CAS juga menolak roll yang punya reservasi panjang (potong) live
         res = None if bad_identity else await db.inventory_rolls.update_one(
             {"id": it["roll_id"], "active_movement.id": order_id, "status": PA_ELIGIBLE_STATUS,
+             "inspection.hold.held": {"$ne": True},   # PREP-C — roll yang DITAHAN sesudah PA dibuat tidak dikirim
              "warehouse_id": order["from_warehouse_id"], "length_reserved": {"$not": {"$gt": 0}}},
             {"$set": {"status": "in_transit_transfer", "updated_at": now_iso()}})
         if res is None or res.modified_count != 1:
@@ -317,9 +393,10 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
     wh_to = await db.warehouses.find_one({"id": order["to_warehouse_id"]}, {"_id": 0}) or {}
     for item in items:
         # P02 — revalidasi tujuan saat tiba (mode/rules bisa berubah sesudah PA dibuat)
-        prod = await db.products.find_one({"id": item["product_id"]}, {"_id": 0, "category": 1, "fabric_type": 1}) or {}
+        prod = await db.products.find_one({"id": item["product_id"]}, PROD_FIELDS) or {}
         wv = await pr.warehouse_violations(wh_to, {"owner_entity_id": order["owner_entity_id"],
-                                                   "grade": item.get("grade") or "A"}, prod)
+                                                   "grade": item.get("grade") or "A"}, prod,
+                                           attrs=order.get("purpose") != "inspection")
         if wv and not await db.inventory_rolls.find_one({"id": item["roll_id"], "last_pa_landed": order["id"]}, {"_id": 1}):
             item["status"] = "exception"
             item["exception_reason"] = f"Tujuan tidak lagi sah: {wv[0]}"
@@ -342,6 +419,7 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
         await db.rfid_tags.update_one({"roll_id": item["roll_id"], "status": "active"},
                                       {"$set": {"warehouse_id": order["to_warehouse_id"]}})
         item["status"] = "arrived"
+        item.setdefault("arrived_at", now)
         item.pop("exception_reason", None)
         landed.append(item)
         for wh, mtype in ((order["from_warehouse_id"], "putaway_transfer_out"),
@@ -361,9 +439,48 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
         await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
     for pid, wid in segs:
         await rebuild_balance(pid, wid, order["owner_entity_id"])
-    if landed:
+    if landed and order.get("purpose") == "inspection":
+        # PREP-C (K-GDG-04) — tiba di GEDUNG INSPEKSI bukan akhir perjalanan: roll kembali ke tahap terverifikasi
+        # asalnya (RFID / label QR) supaya sesudah inspeksi bisa di-PA lagi ke gudang simpan.
+        await _back_to_verified([i["roll_id"] for i in landed],
+                                {"putaway_order_id": order["id"], "inspection_site": order["to_warehouse_id"]})
+    elif landed:
         await set_journey([i["roll_id"] for i in landed], "stored", {"putaway_order_id": order["id"]})
     return landed
+
+
+async def _back_to_verified(roll_ids: List[str], extra: Dict[str, Any]) -> None:
+    """P9.3b — kembali ke tahap verifikasi asal roll: label QR (`label_verified`) atau tag RFID (`tag_verified`)."""
+    if not roll_ids:
+        return
+    label = [r["id"] async for r in db.inventory_rolls.find(
+        {"id": {"$in": roll_ids}, "journey.verified_via": "label_scan"}, {"_id": 0, "id": 1})]
+    rfid = [r for r in roll_ids if r not in set(label)]
+    if label:
+        await set_journey(label, "label_verified", extra)
+    if rfid:
+        await set_journey(rfid, "tag_verified", extra)
+
+
+async def return_items_to_transit(order: Dict[str, Any], items: List[Dict[str, Any]], actor_name: str) -> None:
+    """Item PA → kembali siap-putaway di gudang ASAL (lepas klaim, status available, tahap verifikasi asal)."""
+    from services.roll_service import rebuild_balance
+    now = now_iso()
+    segs, back = set(), []
+    for item in items:
+        res = await db.inventory_rolls.update_one(
+            {"id": item["roll_id"], "active_movement.id": order["id"],
+             "status": {"$in": [PA_ELIGIBLE_STATUS, "in_transit_transfer"]}},
+            {"$set": {"status": PA_ELIGIBLE_STATUS, "updated_at": now},
+             "$unset": {"active_movement": ""}})
+        if res.modified_count == 1:
+            item["status"] = "returned_transit"
+            item["resolved_by"], item["resolved_at"] = actor_name, now
+            segs.add((item["product_id"], order["from_warehouse_id"]))
+            back.append(item["roll_id"])
+    await _back_to_verified(back, {"exception_resolved_by": actor_name})
+    for pid, wid in segs:
+        await rebuild_balance(pid, wid, order["owner_entity_id"])
 
 
 MIN_OVERRIDE_REASON = 10
@@ -372,10 +489,11 @@ MIN_OVERRIDE_REASON = 10
 async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
                           scope_ids: List[str], actor_name: str,
                           manual_all: bool = False, reason: str = "") -> Dict[str, Any]:
-    """Validasi tiba di gate-in gudang tujuan. WM-03: `scanned_epcs=[]` = NOL roll tiba;
-    tanpa hasil scan hanya boleh lewat override manual ber-alasan (`manual_all`)."""
+    """Konfirmasi tiba TERAKHIR (menutup PA): yang terbaca tiba, roll lain yang masih menunggu → exception.
+    WM-03: `scanned_epcs=[]` = NOL roll tiba; tanpa hasil scan hanya lewat override manual ber-alasan (`manual_all`).
+    PREP-C — tiba bertahap per trip (tanpa menutup) memakai `putaway_arrival_service.confirm_arrival_trip`."""
     order = await _get(order_id, scope_ids)
-    if order["status"] not in ("open", "in_transit"):
+    if order["status"] not in ARRIVAL_STATUSES:
         raise HTTPException(status_code=400, detail=f"PA berstatus {order['status']}")
     why = (reason or "").strip()
     if manual_all:
@@ -387,10 +505,10 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
             "Kirim hasil scan EPC, atau pilih konfirmasi manual (semua tiba) dengan alasan."))
     # INV-ATOMIC-01 (T-01 Opsi B) — klaim PA sebelum roll/tag/mutasi ditulis.
     from services import atomic_claim as _saga
-    await _saga.claim("putaway_orders", order_id, "putaway_confirm_arrival",
-                      precondition={"status": {"$in": ["open", "in_transit"]}}, actor=actor_name)
+    fresh = await _saga.claim("putaway_orders", order_id, "putaway_confirm_arrival",
+                              precondition={"status": {"$in": list(ARRIVAL_STATUSES)}}, actor=actor_name)
     try:
-        return await _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name,
+        return await _confirm_arrival_claimed(fresh, order_id, scanned_epcs, scope_ids, actor_name,
                                               manual_all, why, _saga)
     except BaseException:
         # G3 D4-PA-02 — gagal di tengah: kunci dilepas supaya retry lewat fitur asli bisa MELANJUTKAN
@@ -400,31 +518,13 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
 
 
 async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name, manual_all, why, _saga):
-    scanned = {e.strip().upper() for e in (scanned_epcs or []) if e and e.strip()}
-    candidates, exceptions = [], []
-    for item in order["items"]:
-        if manual_all or (item.get("epc") and item["epc"].upper() in scanned):
-            candidates.append(item)
-        else:
-            item["status"] = "exception"
-            item["exception_reason"] = "EPC tidak terbaca saat konfirmasi tiba"
-            exceptions.append(item)
-    arrived = await _land_items(order, candidates, actor_name,
-                                f"manual: {why}" if manual_all else "gate-in scan")
-    exceptions += [i for i in candidates if i["status"] == "exception"]
-    if exceptions:
-        await set_journey([i["roll_id"] for i in exceptions], "gate_exception",
-                          {"exception_reason": "EPC tidak terbaca / roll berubah saat konfirmasi tiba",
-                           "putaway_order_id": order_id})
-    now = now_iso()
-    btg = await next_doc_number("putaway_orders", "btg_number", "BTG") if arrived else None
-    status = "completed" if not exceptions else ("completed_with_exception" if arrived else "exception")
-    upd: Dict[str, Any] = {
-        "items": order["items"], "status": status, "btg_number": btg,
-        "arrived_count": len(arrived), "exception_count": len(exceptions),
-        "confirmed_at": now, "confirmed_by": actor_name, "updated_at": now}
+    from services import putaway_arrival_service as arr
+    await arr.land_matching(order, None if manual_all else (scanned_epcs or []), actor_name,
+                            f"manual: {why}" if manual_all else "gate-in scan")
+    await arr.mark_pending(order, "exception", actor_name, "EPC tidak terbaca saat konfirmasi tiba")
+    upd = await arr.finish_update(order, actor_name)
     if manual_all:
-        upd["manual_override"] = {"by": actor_name, "reason": why, "at": now}
+        upd["manual_override"] = {"by": actor_name, "reason": why, "at": now_iso()}
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
     return await _get(order_id, scope_ids)
 
@@ -432,8 +532,10 @@ async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, act
 async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
                             scope_ids: List[str], actor_name: str, reason: str = "") -> Dict[str, Any]:
     """Checker (handheld scan ulang di ERP): `accept` = barang ternyata sah → pindahkan (mutasi
-    ditulis lewat jalur yang sama dengan arrival); `return_transit` = kembali siap-putaway di asal."""
-    from services.roll_service import rebuild_balance
+    ditulis lewat jalur yang sama dengan arrival); `return_transit` = kembali siap-putaway di asal.
+    PREP-C — `accept` setara konfirmasi manual (izin `wms.approve`, dijaga router); status akhir dari status item
+    (semua dikembalikan & 0 tiba = `returned`, bukan `completed`)."""
+    from services import putaway_arrival_service as arr
     order = await _get(order_id, scope_ids)
     if action not in ("accept", "return_transit"):
         raise HTTPException(status_code=400, detail="Aksi harus 'accept' atau 'return_transit'")
@@ -450,32 +552,10 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
         for i in target:
             if i["status"] == "arrived":
                 i["resolved_by"], i["resolved_at"] = actor_name, now
+                i["arrived_via"] = "exception_accept"
     else:  # return_transit
-        segs = set()
-        for item in target:
-            res = await db.inventory_rolls.update_one(
-                {"id": item["roll_id"], "active_movement.id": order_id,
-                 "status": {"$in": [PA_ELIGIBLE_STATUS, "in_transit_transfer"]}},
-                {"$set": {"status": PA_ELIGIBLE_STATUS, "updated_at": now},
-                 "$unset": {"active_movement": ""}})
-            if res.modified_count == 1:
-                item["status"] = "returned_transit"
-                item["resolved_by"], item["resolved_at"] = actor_name, now
-                segs.add((item["product_id"], order["from_warehouse_id"]))
-                _vr = await db.inventory_rolls.find_one({"id": item["roll_id"]}, {"_id": 0, "journey.verified_via": 1})
-                await set_journey([item["roll_id"]],   # P9.3b — kembali ke tahap verifikasi asalnya (RFID / label QR)
-                                  "label_verified" if ((_vr or {}).get("journey") or {}).get("verified_via") == "label_scan"
-                                  else "tag_verified", {"exception_resolved_by": actor_name})
-        for pid, wid in segs:
-            await rebuild_balance(pid, wid, order["owner_entity_id"])
-    still_exc = [i for i in order["items"] if i["status"] == "exception"]
-    arrived_any = any(i["status"] == "arrived" for i in order["items"])
-    status = "completed" if not still_exc else "completed_with_exception"
-    upd: Dict[str, Any] = {"items": order["items"], "status": status,
-                           "arrived_count": sum(1 for i in order["items"] if i["status"] == "arrived"),
-                           "exception_count": len(still_exc), "updated_at": now}
-    if arrived_any and not order.get("btg_number"):
-        upd["btg_number"] = await next_doc_number("putaway_orders", "btg_number", "BTG")
+        await return_items_to_transit(order, target, actor_name)
+    upd = await arr.finish_update(order, actor_name)
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
     return await _get(order_id, scope_ids)
 

@@ -11,6 +11,9 @@ Keputusan pemilik (DEC-10, 2026-10-11):
 - Campur SKU/lot dalam satu bin BOLEH, kecuali node diberi aturan `single_sku` / `single_lot` (diwarisi).
 - Saran bin: utamakan bin berisi SKU+lot sama, lalu SKU sama, lalu bin kosong, lalu sisanya.
 - Struktur & kapasitas diubah oleh warehouse_admin, manager, admin.
+- PREP-C (K-GDG-08, 8 Nov 2026) — aturan juga bisa membatasi ARTIKEL (`template_ids` → `products.template_id`) dan
+  PT PEMILIK roll (`owner_entity_ids`); tetap AND dengan aturan lain di setiap lapis (gudang/zona/lemari/tingkat/bin).
+  K-GDG-05 — `storage_form` (rak/petak lantai) per gedung/zona hanya informasi; arti bin & kapasitas tetap.
 """
 import time
 from typing import Any, Dict, List, Optional
@@ -35,6 +38,9 @@ def node_rules(node: Dict[str, Any]) -> Dict[str, Any]:
     return {"categories": [str(x).strip() for x in r.get("categories") or [] if str(x).strip()],
             "grades": [str(x).strip().upper() for x in r.get("grades") or [] if str(x).strip()],
             "fabric_types": [_norm(x) for x in r.get("fabric_types") or [] if _norm(x)],
+            # PREP-C (K-GDG-08) — artikel (product_templates) & PT pemilik roll, digabung AND dengan aturan lain.
+            "template_ids": [str(x).strip() for x in r.get("template_ids") or [] if str(x).strip()],
+            "owner_entity_ids": [str(x).strip() for x in r.get("owner_entity_ids") or [] if str(x).strip()],
             "single_sku": bool(r.get("single_sku")), "single_lot": bool(r.get("single_lot"))}
 
 
@@ -94,21 +100,25 @@ def effective(wh: Dict[str, Any], node: Dict[str, Any]) -> Dict[str, Any]:
         if _norm(n.get("function")) in NODE_FUNCTIONS:
             func = _norm(n.get("function"))
     cap = int((node["bin"].get("capacity_rolls") or 0) or 0)
+    # PREP-C (K-GDG-05) — bentuk simpan: zona > gedung > bawaan rak. Informasi saja: arti & kapasitas bin tetap.
+    form = _norm((node.get("zone") or {}).get("storage_form")) or _norm(wh.get("storage_form")) or "rack"
     return {"layers": layers, "function": func, "capacity_rolls": cap if cap > 0 else None,
-            "single_sku": single_sku or single_lot, "single_lot": single_lot}
+            "single_sku": single_sku or single_lot, "single_lot": single_lot, "storage_form": form}
 
 
 def effective_view(wh: Dict[str, Any], node: Dict[str, Any]) -> Dict[str, Any]:
     """Rules efektif untuk UI (gabungan semua lapisan, tanpa efek samping)."""
     eff = effective(wh, node)
     return {"function": eff["function"], "capacity_rolls": eff["capacity_rolls"],
-            "single_sku": eff["single_sku"], "single_lot": eff["single_lot"],
+            "single_sku": eff["single_sku"], "single_lot": eff["single_lot"], "storage_form": eff["storage_form"],
             "layers": [{"label": lbl, **{k: v for k, v in r.items() if v}} for lbl, r in eff["layers"]
                        if any(r.values())]}
 
 
-def _attr_violations(layers, product: Dict[str, Any], grade: str) -> List[str]:
+def _attr_violations(layers, product: Dict[str, Any], grade: str, owner: str = "",
+                     owner_label: str = "") -> List[str]:
     cat, fab, g = str(product.get("category") or ""), _norm(product.get("fabric_type")), (grade or "A").upper()
+    tpl = str(product.get("template_id") or "")
     out = []
     for label, r in layers:
         if r["categories"] and cat not in r["categories"]:
@@ -117,7 +127,25 @@ def _attr_violations(layers, product: Dict[str, Any], grade: str) -> List[str]:
             out.append(f"Grade '{g}' tidak diizinkan di {label} (hanya grade {', '.join(r['grades'])}).")
         if r["fabric_types"] and fab not in r["fabric_types"]:
             out.append(f"Jenis kain '{fab or '—'}' tidak diizinkan di {label} (hanya {', '.join(r['fabric_types'])}).")
+        if r.get("template_ids") and tpl not in r["template_ids"]:
+            what = product.get("name") or product.get("sku") or "produk ini"
+            out.append(f"Artikel {what} tidak termasuk artikel yang diizinkan di {label}.")
+        if r.get("owner_entity_ids") and (owner or "") not in r["owner_entity_ids"]:
+            out.append(f"Barang milik {owner_label or owner or '—'} tidak diizinkan di {label} (khusus PT lain).")
     return out
+
+
+async def _owner_label(owner: str) -> str:
+    if not owner:
+        return ""
+    ent = await db.business_entities.find_one({"id": owner}, {"_id": 0, "short_name": 1, "name": 1}) or {}
+    return ent.get("short_name") or ent.get("name") or owner
+
+
+def _needs_owner_label(wh: Dict[str, Any]) -> bool:
+    if warehouse_rules(wh).get("owner_entity_ids"):
+        return True
+    return any(node_rules(n).get("owner_entity_ids") for x in flatten_nodes(wh) for n in x["chain"])
 
 
 def is_held(roll: Dict[str, Any]) -> bool:
@@ -133,8 +161,11 @@ def status_violation(roll: Dict[str, Any], extra_ok: tuple = ()) -> Optional[str
     return f"Roll {roll.get('roll_no', '')} berstatus {st or '—'} (bukan stok fisik di gudang) — tidak bisa ditempatkan."
 
 
-async def warehouse_violations(wh: Dict[str, Any], roll: Dict[str, Any], product: Dict[str, Any]) -> List[str]:
-    """Level gudang (dipakai PA & transfer): owner shared/dedicated + rules gudang (DEV-F05, DEV-G04)."""
+async def warehouse_violations(wh: Dict[str, Any], roll: Dict[str, Any], product: Dict[str, Any],
+                               *, attrs: bool = True) -> List[str]:
+    """Level gudang (dipakai PA & transfer): owner shared/dedicated + rules gudang (DEV-F05, DEV-G04).
+    `attrs=False` (PREP-C, PA ke gedung INSPEKSI) — hanya izin pakai gudang; aturan simpan (kategori/grade/…)
+    tidak berlaku untuk roll yang singgah diperiksa, bukan disimpan."""
     from services.warehouse_scope_service import is_usable
     out = []
     owner = roll.get("owner_entity_id")
@@ -143,7 +174,12 @@ async def warehouse_violations(wh: Dict[str, Any], roll: Dict[str, Any], product
         ent = await db.business_entities.find_one({"id": owner}, {"_id": 0, "short_name": 1, "name": 1}) or {}
         owner_name = ent.get("short_name") or ent.get("name") or owner
         out.append(f"Gudang {wh.get('name', '')} khusus untuk badan usaha lain — barang milik {owner_name} tidak boleh masuk.")
-    out += _attr_violations([("Gudang " + (wh.get("name") or ""), warehouse_rules(wh))], product, roll.get("grade", "A"))
+    if not attrs:
+        return out
+    wr = warehouse_rules(wh)
+    label = await _owner_label(owner or "") if wr.get("owner_entity_ids") else ""
+    out += _attr_violations([("Gudang " + (wh.get("name") or ""), wr)], product, roll.get("grade", "A"),
+                            owner or "", label)
     return out
 
 
@@ -166,7 +202,8 @@ EMPTY = {"count": 0, "products": set(), "lots": set()}
 
 
 def evaluate_pure(wh: Dict[str, Any], node: Dict[str, Any], roll: Dict[str, Any], product: Dict[str, Any],
-                  wh_blocks: List[str], contents: Dict[str, Any], extra_status_ok: tuple = ()) -> Dict[str, Any]:
+                  wh_blocks: List[str], contents: Dict[str, Any], extra_status_ok: tuple = (),
+                  owner_label: str = "") -> Dict[str, Any]:
     """Inti evaluasi (tanpa I/O) — SAMA untuk saran dan aksi akhir."""
     eff = effective(wh, node)
     blocks: List[str] = []
@@ -176,7 +213,8 @@ def evaluate_pure(wh: Dict[str, Any], node: Dict[str, Any], roll: Dict[str, Any]
     if roll.get("warehouse_id") and roll["warehouse_id"] != wh.get("id"):
         blocks.append("Bin tujuan bukan di gudang roll ini — pindah gudang lewat transfer/PA.")
     blocks += wh_blocks
-    blocks += _attr_violations(eff["layers"][1:], product, roll.get("grade", "A"))
+    blocks += _attr_violations(eff["layers"][1:], product, roll.get("grade", "A"),
+                               roll.get("owner_entity_id") or "", owner_label)
     if is_held(roll) and eff["function"] != "qc":
         blocks.append(f"Roll {roll.get('roll_no', '')} sedang QC/ditahan — hanya boleh ke area berfungsi QC/karantina.")
     pid, lot = roll.get("product_id"), roll.get("lot") or ""
@@ -196,8 +234,9 @@ async def evaluate(wh: Dict[str, Any], node: Dict[str, Any], roll: Dict[str, Any
     """Hasil: {ok, blocks[], capacity:{limit,count,over}, function, path}. Tanpa efek samping."""
     bid = node["bin"]["id"]
     contents = (await bin_contents(wh["id"], [bid], exclude_roll=roll.get("id", ""))).get(bid, EMPTY)
+    label = await _owner_label(roll.get("owner_entity_id") or "") if _needs_owner_label(wh) else ""
     return evaluate_pure(wh, node, roll, product, await warehouse_violations(wh, roll, product), contents,
-                         extra_status_ok)
+                         extra_status_ok, label)
 
 
 async def recommend(wh: Dict[str, Any], roll: Dict[str, Any], product: Dict[str, Any], limit: int = 8,
@@ -206,10 +245,11 @@ async def recommend(wh: Dict[str, Any], roll: Dict[str, Any], product: Dict[str,
     nodes = flatten_nodes(wh)
     contents = await bin_contents(wh["id"], exclude_roll=roll.get("id", ""))
     wh_blocks = await warehouse_violations(wh, roll, product)
+    label = await _owner_label(roll.get("owner_entity_id") or "") if _needs_owner_label(wh) else ""
     rows, rejected = [], 0
     for n in nodes:
         c = contents.get(n["bin"]["id"], EMPTY)
-        res = evaluate_pure(wh, n, roll, product, wh_blocks, c, extra_status_ok)
+        res = evaluate_pure(wh, n, roll, product, wh_blocks, c, extra_status_ok, label)
         if not res["ok"]:
             rejected += 1
             continue

@@ -370,6 +370,11 @@ async def process_qc_decision(
                       "four_point_pending": True}})
     # 5) Update task — status + jejak QC + cabut kunci (tulisan akhir saga)
     await db.wms_tasks.update_one({"id": task_id}, _saga.finish_set(set_fields))
+    # PREP-C (K-GDG-10) — QC lulus → DRAF Putaway Order per gedung tujuan (best-effort, idempoten per keputusan).
+    if result.get("accepted_qty", 0) > 0.01:
+        from services import inbound_qc_common as _iqc
+        result["putaway_draft"] = await _iqc.auto_draft_after_release(
+            result.get("roll_ids"), {"type": "qc_decision", "id": task_id, "number": doc_ref}, actor.get("name", ""))
     return result
 
 
