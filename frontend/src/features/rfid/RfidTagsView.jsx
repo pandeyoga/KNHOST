@@ -8,6 +8,9 @@ import { q, fmtTime, Stat, EmptyBox, SectionCard, RfidHeader, useWarehouses } fr
 import PageTabs from "../../components/PageTabs";
 import ResponsiveTable from "../../components/ResponsiveTable";
 import RfidPrintVerifyPanel from "./RfidPrintVerifyPanel";
+import PrinterQueuePanel from "./PrinterQueuePanel";
+import { RollTagActionModal } from "./PrinterModals";
+import { canCurrent } from "../../config/roles";
 import { reprintRollLabel } from "../../utils/rollLabels";
 import { askConfirm } from "../../services/confirmService";
 import { docStatusLabel } from "../../utils/docStatus";
@@ -25,6 +28,9 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [msg, setMsg] = useState("");
+  // PREP-F — cetak ulang teks (EPC tetap) vs ganti tag (EPC baru) untuk tag aktif; tombol mengikuti izin.
+  const [tagAction, setTagAction] = useState(null);
+  const canTagAction = canCurrent("wms", "print") || canCurrent("wms", "approve");
   // Cetak ulang label QR roll (rusak/hilang) — data roll segar dari /rfid/lookup.
   const reprintByCode = async (code) => {
     if (!code) return;
@@ -112,10 +118,13 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         { key: "tags", label: `Tag Aktif${tags.length ? ` (${tags.length})` : ""}` },
         { key: "untagged", label: `Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls >= 5000 ? "5.000+" : summary.untagged_rolls.toLocaleString("id-ID")}` : untagged.length})` : ""}` },
         { key: "print", label: "Cetak & Verifikasi" },
+        { key: "printers", label: "Antrean Printer" },
       ]} />
 
       {tab === "print" ? (
         <RfidPrintVerifyPanel whId={whId} selectedEntity={selectedEntity} onChanged={load} />
+      ) : tab === "printers" ? (
+        <PrinterQueuePanel whId={whId} isAdmin={currentUser?.role === "admin"} />
       ) : tab === "tags" ? (
         <SectionCard title="Daftar Tag RFID Aktif">
           {srch.searchBox}
@@ -139,6 +148,13 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                         className="inline-flex items-center gap-1 text-[#0058CC] hover:bg-[#EAF2FF] rounded px-2 py-1 disabled:opacity-40" title="Cetak ulang label QR">
                         <Printer size={13} /> Label
                       </button>
+                      {canTagAction && (
+                        <button type="button" data-testid={`rfid-tag-action-${t.id}`} disabled={busy}
+                          onClick={() => setTagAction({ roll_id: t.roll_id, roll_no: t.roll_no, epc: t.epc })}
+                          className="inline-flex items-center gap-1 text-[#0058CC] hover:bg-[#EAF2FF] rounded px-2 py-1 disabled:opacity-40"
+                          title="Cetak ulang teks label / ganti tag RFID">
+                          <Tag size={13} /> Ganti/Cetak
+                        </button>)}
                       <button type="button" data-testid={`rfid-retire-${t.id}`} disabled={busy} onClick={() => retire(t)}
                         className="inline-flex items-center gap-1 text-[#C0341D] hover:bg-[#FBE9E7] rounded px-2 py-1 disabled:opacity-40">
                         <Trash2 size={13} /> Pensiunkan
@@ -179,6 +195,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
               )}
         </SectionCard>
       )}
+      {tagAction && <RollTagActionModal roll={tagAction} onClose={() => setTagAction(null)} onDone={() => load()} />}
     </div>
   );
 }

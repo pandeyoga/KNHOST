@@ -239,27 +239,43 @@ async def printer_status(request: Request, warehouse_id: Optional[str] = None) -
     if warehouse_id:
         q_dev["warehouse_id"] = warehouse_id
     devices = await db.rfid_devices.find(q_dev, rfid.DEVICE_SECRET_PROJECTION).to_list(200)
-    q_job: Dict[str, Any] = {"status": "queued"}
+    q_job: Dict[str, Any] = {"status": {"$in": ["queued", "printing", "needs_review"]}}
     if scope:
         q_job["owner_entity_id"] = {"$in": scope}
     if warehouse_id:
         q_job["warehouse_id"] = warehouse_id
-    queued = await db.rfid_print_jobs.find(q_job, {"_id": 0, "id": 1, "job_number": 1, "kind": 1, "item_count": 1,
-                                                   "warehouse_id": 1, "warehouse_name": 1, "created_at": 1}).sort("created_at", 1).to_list(500)
+    open_jobs = await db.rfid_print_jobs.find(q_job, {"_id": 0, "id": 1, "job_number": 1, "kind": 1, "item_count": 1,
+                                                      "warehouse_id": 1, "warehouse_name": 1, "created_at": 1, "status": 1,
+                                                      "review_open": 1}).sort("created_at", 1).to_list(1000)
+    queued = [j for j in open_jobs if j.get("status") == "queued"]
     now = datetime.now(timezone.utc)
     cutoff = (now - timedelta(minutes=5)).isoformat()
     by_wh: Dict[str, Dict[str, Any]] = {}
     for d in devices:
         w = by_wh.setdefault(d.get("warehouse_id") or "-", {"warehouse_id": d.get("warehouse_id"), "printers": [], "queued_jobs": 0, "queued_labels": 0, "oldest_queued_at": None})
         hb = d.get("last_heartbeat") or ""
+        ph = d.get("printer_health") or {}
+        ph_fresh = bool(ph.get("at")) and ph["at"] >= (now - timedelta(minutes=2)).isoformat()
         w["printers"].append({"id": d["id"], "code": d.get("code"), "name": d.get("name"), "last_heartbeat": hb or None,
-                              "online": bool(hb) and hb >= cutoff})
+                              "online": bool(hb) and hb >= cutoff,
+                              # PREP-F — kesehatan PRINTER (dari connector) terpisah dari heartbeat CONNECTOR
+                              "connector": {k: (d.get("connector_health") or {}).get(k) for k in
+                                            ("at", "version", "host", "instance_id", "last_error", "ledger")},
+                              "printer_state": ph.get("state") if ph_fresh else ("unknown" if ph else None),
+                              "printer_checked_at": ph.get("checked_at"), "printer_detail": ph.get("detail"),
+                              "printer_ready": ph_fresh and ph.get("state") in ("ready", "printing"),
+                              "last_confirmed_output_at": ph.get("last_confirmed_output_at"),
+                              "connector_conflict": d.get("connector_conflict")})
     for j in queued:
         w = by_wh.setdefault(j.get("warehouse_id") or "-", {"warehouse_id": j.get("warehouse_id"), "printers": [], "queued_jobs": 0, "queued_labels": 0, "oldest_queued_at": None})
         w["queued_jobs"] += 1
         w["queued_labels"] += int(j.get("item_count") or 0)
         if not w["oldest_queued_at"] or j["created_at"] < w["oldest_queued_at"]:
             w["oldest_queued_at"] = j["created_at"]
+    for j in open_jobs:  # PREP-F — job sedang dicetak & butir tindak lanjut per gudang
+        w = by_wh.setdefault(j.get("warehouse_id") or "-", {"warehouse_id": j.get("warehouse_id"), "printers": [], "queued_jobs": 0, "queued_labels": 0, "oldest_queued_at": None})
+        w["printing_jobs"] = w.get("printing_jobs", 0) + (1 if j.get("status") == "printing" else 0)
+        w["review_items"] = w.get("review_items", 0) + int(j.get("review_open") or 0)
     names = {x["id"]: x.get("name") for x in await db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(200)}
     rows = []
     for w in by_wh.values():
@@ -507,8 +523,8 @@ async def post_mark_printed(job_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
-    job = await rps.mark_printed(job_id, resolve_scope_ids(ctx, None))
-    await audit(actor["name"], "rfid_print_job_printed", "rfid_print_job", job_id, {})
+    job = await rps.mark_printed(job_id, resolve_scope_ids(ctx, None), actor["name"])
+    await audit(actor["name"], "rfid_print_job_printed", "rfid_print_job", job_id, {"via": "manual"})
     return job
 
 
@@ -605,11 +621,12 @@ async def post_heartbeat(request: Request) -> Dict[str, Any]:
 
 
 @router.get("/rfid/device-jobs/pending")
-async def get_device_jobs(request: Request) -> Dict[str, Any]:
-    """Printer RFID (middleware) menarik antrean ZPL. Auth: X-Device-Key."""
+async def get_device_jobs(request: Request, limit: int = Query(5, ge=1, le=5)) -> Dict[str, Any]:
+    """Printer RFID (middleware) menarik antrean ZPL. Auth: X-Device-Key. PREP-F — header opsional
+    `X-Connector-Instance` (lease stabil per instance connector)."""
     from services import rfid_ingest_service as ing
     device = await ing.authenticate(request.headers.get("X-Device-Key"))
-    return await ing.pending_jobs_for_device(device)
+    return await ing.pending_jobs_for_device(device, limit, request.headers.get("X-Connector-Instance"))
 
 
 @router.post("/rfid/device-jobs/{job_id}/ack")
@@ -708,3 +725,8 @@ async def get_cc_detail(cc_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import cycle_count_service as cc
     return await cc.get_count(cc_id, resolve_scope_ids(await entity_ctx(request), None))
+
+
+# ─── PREP-F — printer label CP30EN (protokol connector + antrean/tinjauan/ganti tag) ─────────
+from routers import rfid_printers as _rfid_printers  # noqa: E402
+router.include_router(_rfid_printers.router)

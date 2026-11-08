@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Printer, AlertTriangle, CheckCircle2 } from "lucide-react";
 import axios, { API } from "../services/apiClient";
 
+const PRINTER_STATE_TEXT = { ready: "siap", printing: "mencetak", paused: "jeda", paper_out: "kertas habis",
+  ribbon_out: "ribbon habis", head_open: "kepala terbuka", error: "galat", offline: "tidak terjangkau", unknown: "status tidak diketahui" };
 const ago = (iso) => { if (!iso) return "—"; const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 1 ? "baru saja" : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`; };
 
 /** Status printer label per gudang: online/offline, label menunggu, job tertua. compact = versi HP. */
@@ -30,10 +32,16 @@ export default function PrinterStatusWidget({ warehouseId, compact = false }) {
           <div className="mt-1 text-xs text-[#3C3C43]" data-testid={`printer-queue-${w.warehouse_id}`}>
             <b>{w.queued_labels}</b> label menunggu · {w.queued_jobs} job{w.oldest_queued_at ? ` · tertua ${ago(w.oldest_queued_at)}` : ""}
           </div>
+          {(w.review_items > 0) && (
+            <div className="mt-1 text-[11px] font-semibold text-[#B23B14]" data-testid={`printer-review-${w.warehouse_id}`}>
+              {w.review_items} label perlu tindak lanjut (hasil tidak pasti/gagal)</div>)}
           {!compact && w.printers.map((p) => (
             <div key={p.id} className="mt-1 flex items-center gap-1.5 text-[11px]" data-testid={`printer-dev-${p.id}`}>
               <span className={`inline-block h-2 w-2 rounded-full ${p.online ? "bg-[#1B7F4B]" : "bg-[#B23B14]"}`} />
               {p.name || p.code} · {p.online ? "online" : "offline"} · terlihat {ago(p.last_heartbeat)}
+              {/* PREP-F — status PRINTER (dilapor connector) terpisah dari heartbeat connector */}
+              {p.printer_state && <span data-testid={`printer-state-${p.id}`} className={p.printer_ready ? "text-[#1B7F4B]" : "text-[#B23B14]"}>
+                · printer {PRINTER_STATE_TEXT[p.printer_state] || p.printer_state}</span>}
             </div>
           ))}
         </div>
