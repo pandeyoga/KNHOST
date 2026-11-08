@@ -180,7 +180,7 @@ function FieldForm({ session }) {
           <input inputMode="decimal" className={BIG} placeholder="Panjang" value={qty} onChange={(e) => { setQty(e.target.value); setFromLabel(false); }} data-testid="mreg-qty" />
           <KNSelect data-testid="mreg-unit" className={BIG} value={unit || product?.base_unit || ""} placeholder="Satuan" onValueChange={setUnit} options={unitOpts} />
         </div>
-        <div className="text-xs" data-testid="mreg-length-state">{fromLabel ? "Panjang dari label (terverifikasi)." : "Panjang belum terverifikasi — diukur saat diambil/dipotong (K-OPN-04)."}</div>
+        <div className="text-xs" data-testid="mreg-length-state">{fromLabel ? "Panjang dari label (terverifikasi)." : "Panjang belum terverifikasi — diukur saat diambil/dipotong."}</div>
         <details className="text-[13px]">
           <summary>Lot, grade, nomor roll lama</summary>
           <div className="mt-2 grid gap-2">

@@ -62,7 +62,7 @@ async def create_session(payload: Dict[str, Any], actor: Dict[str, Any], ctx) ->
         raise HTTPException(status_code=400, detail="Mode EPC harus 'read' (EPC bawaan tag) atau 'system' (EPC dibuat sistem).")
     node_ids = [n.strip() for n in payload.get("node_ids") or [] if n and n.strip()]
     if fm == "zone" and not node_ids:
-        raise HTTPException(status_code=400, detail="Beku per zona wajib memilih zona/rak cakupan (K-OPN-03).")
+        raise HTTPException(status_code=400, detail="Beku per zona wajib memilih zona/rak cakupan.")
     wh = await whscope.assert_usable(payload.get("warehouse_id") or "", ctx.active_entity_id,
                                      action="melakukan pendaftaran awal stok di sini")
     scope = plan_svc.scope_of(wh, node_ids)

@@ -73,7 +73,7 @@ export default function InitialRegistration({ warehouses = [] }) {
       {err && <div className="mx-4 mb-2"><ErrorNotice message={err} onRetry={load} onDismiss={() => setErr("")} testId="reg-error" /></div>}
       <div className="section-body">
         <p className="mb-3 text-[11.5px] text-[#6B6B73]">
-          Data lama hanya pembanding (K-OPN-01). Tim gudang menempel tag & mengisi baris di HP (<b>Pindai › Daftar Awal</b>);
+          Data lama hanya pembanding. Tim gudang menempel tag & mengisi baris di HP (<b>Pindai › Daftar Awal</b>);
           di sini progres per rak, perbandingan per produk dan persetujuan massal oleh pemegang wewenang ACC opname.
         </p>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_1fr]">
@@ -103,7 +103,7 @@ export default function InitialRegistration({ warehouses = [] }) {
       </div>
 
       <FormModal open={creating} onClose={() => setCreating(false)} title="Sesi pendaftaran awal gedung" icon={ScanLine}
-        subtitle="Gedung, cakupan, pembekuan (K-OPN-03) & sumber EPC (K-OPN-05). Pembekuan aktif saat sesi DIMULAI."
+        subtitle="Gedung, cakupan, cara pembekuan & sumber EPC. Pembekuan aktif saat sesi DIMULAI."
         testId="reg-create-modal" onSubmit={create} submitLabel="Buat sesi" submitTestId="reg-create-submit" busy={busy}
         error={formErr} submitDisabled={!form.warehouse_id || (zoneMode && !form.node_ids.length)}>
         <div className="grid gap-2">
