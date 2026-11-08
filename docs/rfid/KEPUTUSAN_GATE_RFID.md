@@ -25,7 +25,10 @@ Claude Code (26–27 Okt 2026) yang tidak bisa dibaca sesi lain.
   tidak ada di belakang. Muatan kecil 1–3 roll mungkin ada.
 - Kecepatan **≤ 5 km/jam**; berhenti/mundur di gate diatur lewat SOP.
 - Dokumen (surat jalan / putaway / transfer) **selalu dibuat sebelum barang lewat**.
-- **Photo-eye tidak ada di pengadaan** (konsep baru bagi pemilik).
+- **Photo-eye tidak ada di pengadaan** (konsep baru bagi pemilik). → **Diperbarui 8 Nov 2026: photo-eye masuk
+  pengadaan** (K-RFID-01).
+- Antena: → **asumsi kerja 8 Nov 2026: varian Indonesia**, yaitu pita yang mencakup 920–923 MHz, bukan varian EU
+  (K-RFID-02).
 - Middleware dibuat sendiri: reader → middleware → ERP.
 
 ## 2. Kesimpulan riset (ringkas; angka = hitungan model, wajib dibuktikan uji lokasi)
@@ -62,7 +65,10 @@ Claude Code (26–27 Okt 2026) yang tidak bisa dibaca sesi lain.
 - **Middleware 0.4.0** sudah punya `gate.sensor_bindings.a/b` (GPI1–GPI4) tetapi semantiknya **arah** (A→B = out,
   B→A = in). Untuk gate satu arah semantiknya perlu diubah menjadi **lewat vs mundur/batal** + buffer bacaan 2–3 detik
   sebelum sinar terpotong (label depan sudah terbaca sebelum muatan masuk).
-- **Keputusan pemilik: BELUM** → K-RFID-01.
+- **Keputusan pemilik (8 Nov 2026): photo-eye MASUK pengadaan** → K-RFID-01 ditutup. Logika dibangun sebagai
+  **"photo-eye utama + cadangan RF"**: lintasan dibuka/ditutup oleh sensor, logika RF (§4 butir 2) dipakai bila
+  sensor rusak/tidak terbaca. Spesifikasi di atas (2 pasang through-beam per gate) menjadi acuan pengadaan; jumlah
+  pasang & tipe sensor belum dikonfirmasi terpisah oleh pemilik.
 
 ## 4. Usulan logika gate (arah rancangan, belum disetujui formal; semua angka = titik awal kalibrasi)
 Prinsip: tiap bacaan dinilai berlapis, hasilnya status — **kosong / kandidat → terkonfirmasi / perlu diperiksa /
@@ -105,8 +111,8 @@ tidak terdeteksi di gate. Sejak itu (4 Nov, P18) `gate_evaluator` juga mengenali
 ## 6. Yang harus diputuskan / diselesaikan DULU (STOP & ASK)
 | ID | Hal | Pemutus | Status |
 |---|---|---|---|
-| K-RFID-01 | Photo-eye masuk pengadaan? (rekomendasi: ya, 2 pasang through-beam per gate) — menentukan apakah logika dibangun "photo-eye utama + cadangan RF" atau "RF saja" | Pemilik | **terbuka** |
-| K-RFID-02 | Antena varian EU: ukur di 920–923 MHz atau ganti varian 902–928 MHz | Pemilik / teknis | terbuka |
+| K-RFID-01 | Photo-eye masuk pengadaan? (rekomendasi: ya, 2 pasang through-beam per gate) — menentukan apakah logika dibangun "photo-eye utama + cadangan RF" atau "RF saja" | Pemilik | **ditutup 8 Nov 2026 (pemilik): photo-eye masuk pengadaan** → logika "photo-eye utama + cadangan RF" |
+| K-RFID-02 | Antena varian EU: ukur di 920–923 MHz atau ganti varian 902–928 MHz | Pemilik / teknis | **asumsi kerja 8 Nov 2026 (pemilik): antena varian Indonesia** (pita mencakup 920–923 MHz); kinerja tetap diukur saat commissioning |
 | K-RFID-03 | Uji meja SDK U300 (±30 menit): RSSI **per bacaan** lewat **SDK** (bukan hanya aplikasi demo), satuannya (dBm?), nomor antena, waktu baca, daya per antena. Bila RSSI tidak keluar lewat SDK, lapisan sinyal gugur → photo-eye makin penting | Teknis (PT Kubus) | terbuka — lakukan **sebelum pengadaan final** |
 | K-RFID-04 | Tata letak gate (opsi A/B/C), clear zone & jarak rak terdekat, terutama jalur datang di gate OUT | Pemilik | terbuka |
 | K-RFID-05 | Setelan reader & kabel: panjang/jenis kabel, daya per port, peta port → antena atas/kiri/kanan, region 920–923 | Teknis | terbuka |
