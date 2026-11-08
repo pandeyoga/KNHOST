@@ -1,50 +1,90 @@
-# Panduan pemasangan dan penggunaan
+# Panduan pemasangan dan penggunaan (0.5.0-lab)
 
 ERP Kain Nussantara · PT Kubus Teknologi Indonesia
 
 ## A. Menjalankan simulasi tanpa reader
 
-1. Pasang APK pada perangkat Android ARM API 30 atau lebih baru; ARM64 direkomendasikan. Emulator harus mendukung ABI ARM APK ini (atau translasi ARM yang sesuai), bukan sembarang emulator x86. Mode default adalah simulasi. U300 belum diperlukan untuk mode ini.
-2. Buka **KN U300 Agent · LAB**. Pada tindakan pemeliharaan pertama buat PIN 6–12 angka. Lima kegagalan PIN mengunci pemeriksaan selama satu menit.
-3. Tekan **Mulai layanan**. Layanan mengambil konfigurasi dari simulator internal, membuka penyimpanan simulasi, dan menampilkan radio ready serta ERP online. Layanan tetap berjalan setelah layar aplikasi ditutup.
-4. Isi EPC contoh pada **Laboratorium simulasi**, lalu tekan **Simulasikan pembacaan tag**. Setiap penekanan mencatat satu observasi baru; pengulangan EPC tidak dihapus dari jejak observasi.
-5. Tunggu idle tiga detik atau tekan **Tutup lintasan secara manual**. Agent mengirim observasi, menunggu ACK durable, lalu meminta penutupan dan mengambil gate-state.
-6. Untuk skenario penolakan, pilih RED, tekan **Pakai keputusan simulasi**, lalu kirim tag pada lintasan berikutnya. Penguncian terlihat sampai **Simulasikan supervisor melepas red latch** dipilih. Tombol ini hanya tersedia di simulasi.
-7. Untuk skenario offline, aktifkan checkbox offline sebelum kirim tag. Observasi tersimpan lokal. Setelah online lagi antrean dikirim, tetapi lintasan tersebut tidak boleh menyalakan green.
-8. **Simulasikan EPC tidak valid** menghasilkan observasi karantina. Status ini tidak dianggap telah lolos validasi barang.
-9. **Histori lintasan & diagnosis** menampilkan jejak tersimpan. **Ekspor diagnosis JSON** menyimpan file melalui pemilih lokasi Android. Diagnosis tidak menyertakan device key/PIN, tetapi mengandung identitas lintasan dan hasil keputusan.
+1. Pasang APK pada perangkat Android ARM API 30 atau lebih baru (emulator harus mendukung ABI ARM). Mode bawaan =
+   simulasi; U300 belum diperlukan.
+2. Buka **KN U300 Agent · LAB**. Tindakan pemeliharaan pertama meminta PIN 6–12 angka; lima kali salah mengunci satu menit.
+3. Tekan **Mulai layanan**. Layanan memakai profil simulasi 2.1 (gate OUT satu arah, photo-eye GPI1 = A mulut masuk,
+   GPI2 = B mulut keluar, 3 antena atas/kiri/kanan, basis `document_session`, 4 GPO) dan menampilkan *Radio ready*.
+4. Di **Laboratorium simulasi** pilih skenario gate lalu **Jalankan skenario gate**:
 
-Simulasi menggunakan keputusan yang dipilih operator sebagai respons tiruan; ia tidak memeriksa manifest, kepemilikan, stok, atau SO nyata. Green pada simulator bukan bukti bahwa ERP telah mengizinkan pengiriman.
+| Skenario | Yang disimulasikan | Hasil yang diharapkan di agent |
+|---|---|---|
+| `lewat` | 6 roll, sinar A↓ B↓ A↑ B↑ | lintasan `BEAM_A → EXITED`, ringkasan per EPC × antena, keputusan sesuai pilihan |
+| `lewat_kecil` | 2 roll dibawa orang (A bebas sebelum B terpotong) | tetap satu lintasan `EXITED` |
+| `mundur` | masuk lalu mundur (B bebas dulu, A terakhir) | `REVERSED` → simulator: CANCELLED (padam) |
+| `batal_masuk` | A terpotong lalu bebas tanpa B | `ABORTED` setelah `between_timeout_ms` |
+| `kosong` | orang/forklift kosong | lintasan tanpa ringkasan → CANCELLED, tanpa alarm |
+| `beriringan` | dua muatan rapat | satu lintasan digabung, `capture_complete=false` → kuning |
+| `b_sebelum_a` | sinar B terpotong lebih dulu | photo-eye **fault** → cadangan RF membuka lintasan dari rombongan tag |
+| `sinar_macet` | sinar A terhalang terus | setelah `sensor_stuck_ms` (45 s) → fault → cadangan RF |
+| `sinar_pulih` | dua urutan A→B sah | photo-eye kembali sehat |
+| `latar` | tag rak terbaca terus di antena 3 saat gate kosong | masuk daftar latar (`in_background=true` di lintasan berikut) |
+
+   RSSI simulasi sengaja berformat locale Indonesia (`-48,50`) untuk menguji parse tahan locale.
+5. **Pakai keputusan simulasi** (GREEN / REVIEW / RED / UNKNOWN) berlaku untuk lintasan berikut. Lintasan mundur/kosong
+   selalu CANCELLED; capture tidak lengkap atau cadangan RF = REVIEW (kecuali RED). **Sisa roll dokumen** (0/2/5)
+   mensimulasikan trip parsial `document_session`: hijau tetap boleh walau sisa > 0.
+6. RED mengunci gate (lampu merah + buzzer singkat) sampai **Simulasikan supervisor melepas kunci gate**.
+7. Offline (checkbox) sebelum lintasan → lintasan *backfill* (tidak pernah hijau/kuning); di tengah lintasan → lintasan
+   itu kehilangan izin sinyal.
+8. **Skenario jaringan** untuk satu request berikutnya: `partial`, `retry`, `not-durable`, `overflow` (ACK karantina
+   CAPTURE_OVERFLOW), `http-413`, `http-429`, `http-500`, `admin-disabled`, `config-required`, `auth-invalid`,
+   `evidence-pending`, `passage-frozen`, `event-id-conflict`, `http-400/403/409`.
+9. **Histori lintasan & diagnosis** menampilkan pembuka/penutup lintasan, jumlah ringkasan & tepi, kesehatan photo-eye,
+   keputusan + daftar alasan + sisa roll dokumen.
+
+Simulasi memakai keputusan pilihan operator; ia tidak memeriksa manifest, stok, atau dokumen nyata.
 
 ## B. Menyiapkan U300 nyata
 
-1. Pastikan firmware, Android, SDK, antena, catu daya, sensor, dan wiring sesuai hasil commissioning.
-2. Hentikan layanan sebelum membuka **Konfigurasi & provisioning**.
-3. Nonaktifkan mode simulasi. Masukkan origin ERP, misalnya `https://erp.example.com`, logical gate ID, dan device key khusus perangkat. Tidak menerima URL HTTP, kredensial dalam URL, path tambahan, query, atau fragment.
-4. Simpan. Device key disimpan terenkripsi dengan kunci Android Keystore. Jika kolom key kosong pada pembaruan, key lama dipertahankan.
-5. ERP harus menyediakan DeviceConfig yang valid dengan `agent_profile=kn-u300-v1`, `commissioned=true`, `expected_region_code`, dan `expected_antenna_power_dbm` hasil pemeriksaan perangkat. Template contoh sengaja belum memenuhi commissioning.
-6. Mulai layanan. Jika pemeriksaan region/power/antena gagal, agent menghentikan capture; jangan mengubah profil hanya untuk menghilangkan pesan tanpa memeriksa perangkat.
-7. Setelah UAT boot berhasil, pilihan mulai otomatis setelah reboot dapat diaktifkan. Uji juga pembatasan background/battery dari firmware vendor.
+1. Jalankan dulu **Uji meja K-RFID-03** (dokumen 03 §5) — hentikan layanan agent saat uji meja.
+2. Hentikan layanan sebelum **Konfigurasi & provisioning**. Nonaktifkan mode simulasi. Isi origin ERP HTTPS (tanpa path,
+   query, kredensial), logical gate ID, device key khusus perangkat. Key disimpan terenkripsi Android Keystore.
+3. ERP harus menerbitkan profil 2.1 yang valid: `agent_profile=kn-u300-v1`, `commissioned=true`, `radio.region_code`,
+   `radio.antenna_power_dbm` per port, `antenna_positions` per port, sensor A/B, indikator — hasil commissioning,
+   bukan tebakan (template: `docs/device-config.template.json`).
+4. **Mulai layanan**. Saat start agent memeriksa layanan UHF bawaan, menyetel & membaca ulang setelan radio, lalu
+   mengaktifkan antena. Satu butir gagal → capture tidak dimulai; pesan menyebut butirnya. Jangan mengubah profil hanya
+   untuk menghilangkan pesan tanpa memeriksa perangkat.
+5. Setelah uji boot berhasil, opsi mulai otomatis setelah reboot dapat diaktifkan (uji juga pembatasan baterai vendor
+   dan urutan start terhadap layanan UHF bawaan — uji meja butir 9).
 
-## C. Arti kontrol dan status
+## C. Arti status dan indikator
 
-| Kontrol/status | Makna |
+| Status | Makna |
 |---|---|
-| Jeda capture | Menutup capture aktif dan menghentikan radio; pengiriman antrean tetap berjalan |
-| Lanjutkan capture | Mengaktifkan kembali capture jika tidak ada blok identitas/kontrak |
-| Hentikan layanan | Menghentikan layanan Android; data lokal dipertahankan |
-| Menunggu kirim | Event yang belum mendapat ACK durable |
-| Karantina | Event ditolak/ditandai ERP; bukan data yang boleh dihapus atau dianggap sukses |
-| UNKNOWN | Tidak ada clearance live yang sah; bukan izin bergerak |
-| RED | Gate-state menyatakan penguncian aktif |
-| GREEN | Keputusan ERP final dan memenuhi pengaman lokal untuk manifest penuh |
+| Indikator **HIJAU** | Keputusan ERP final & segar untuk lintasan terakhir: semua roll kuat milik dokumen aktif (boleh trip parsial) |
+| Indikator **KUNING** | REVIEW: barang boleh jalan, lintasan masuk antrean periksa di ERP; gate tidak terkunci |
+| Indikator **MERAH** (+ buzzer singkat) | Gate terkunci karena pelanggaran; dilepas hanya lewat pengakuan supervisor di ERP |
+| **PADAM** | Belum ada izin (bukan izin bergerak): menunggu keputusan, CANCELLED, offline, backfill, kedaluwarsa |
+| Photo-eye `ok` / `fault` / `absent` / `degraded` | sehat / rusak → **CADANGAN RF** aktif / gate tanpa sensor / lintasan digabung |
+| ERP `admin_disabled` / `config_required` / `forbidden` | dinonaktifkan admin / profil belum terbit / 403 tanpa kode — dicek ulang berkala, pulih sendiri |
+| ERP `auth_block` / `contract_block` | key ditolak (provisioning ulang) / kontrak ditolak (Pemulihan ber-PIN) |
+| Latar *n* EPC (belum hangat) | daftar tag latar gate; "belum hangat" = belum cukup waktu IDLE untuk dipercaya |
+| Dibuang / Tanpa RSSI | bacaan terbuang karena antrean RAM penuh / bacaan tanpa RSSI (N/A) |
+| Antrean / Karantina / Ditolak | item belum ACK / diterima server sebagai karantina / ditolak lokal (PASSAGE_FROZEN) — semuanya tetap tersimpan |
 
-PIN adalah otorisasi pemeliharaan lokal, bukan pengganti role ERP. Persetujuan supervisor untuk melepas latch dilakukan di ERP dengan identitas pengguna; tidak menggunakan device key.
+Jeda capture: menutup lintasan aktif (tidak lengkap) dan menghentikan radio; pengiriman antrean tetap berjalan.
+PIN adalah otorisasi pemeliharaan lokal, bukan role ERP.
 
 ## D. Penanganan gangguan
 
-- **401/403:** hentikan layanan, periksa device registration/key di ERP, perbarui provisioning dengan tujuan ERP dan gate yang sama. Jangan mengalihkan antrean ke perangkat lain.
-- **400/409:** ekspor diagnosis dan perbaiki request/versi di sisi ERP; gunakan Pemulihan koneksi / kontrak untuk mencoba ulang dengan ID asli. Jika penyebab belum selesai, blok muncul kembali. Perubahan versi config yang valid menunggu antrean lama selesai sebelum diterapkan.
-- **Antrean penuh:** pulihkan koneksi/kapasitas lebih dahulu. Tidak ada pembuangan otomatis data lama. Kebijakan arsip/retensi belum disetujui.
-- **SDK/GPIO gagal:** hentikan pergerakan berdasarkan sinyal agent; periksa koneksi dan lakukan commissioning ulang. Log software tidak membuktikan lampu fisik benar-benar berubah.
-- **Restart saat lintasan terbuka:** lintasan ditandai INTERRUPTED dan tidak lengkap; tidak menerima clearance live dari proses lama. Ulangi lintasan sesuai SOP setelah pemeriksaan fisik.
+- **AUTH_REQUIRED / AUTH_INVALID (401):** hentikan layanan, periksa registrasi/key di ERP, perbarui provisioning dengan
+  ERP & gate yang sama. Antrean tidak dialihkan ke perangkat lain.
+- **ADMIN_DISABLED (403) / CONFIG_REQUIRED (409) / 403 tanpa kode:** tidak perlu ke lokasi. Agent menunggu
+  `poll_after_seconds` (bawaan 60 s) lalu mencoba lagi; capture mengikuti kebijakan offline.
+- **400 / EVENT_ID_CONFLICT / CLOSE_CONFLICT / DEVICE_MOVED / GATE_NOT_BOUND:** ekspor diagnosis, perbaiki di ERP,
+  lalu **Pemulihan koneksi / kontrak** (ID & body asli dikirim ulang).
+- **413 BATCH_TOO_LARGE:** otomatis dipecah (batas body sementara separuh). **PASSAGE_FROZEN:** item ditolak lokal,
+  lintasan ditandai tidak lengkap, transport lanjut. **EVIDENCE_PENDING:** close lintasan itu dicoba ulang bertahap.
+- **Photo-eye fault:** agent tetap bekerja dengan cadangan RF (keputusan kuning sampai terkalibrasi). Periksa kabel,
+  relay, kotoran lensa, sinar terhalang; agent pulih sendiri setelah dua lintasan A→B sah.
+- **Layanan UHF bawaan aktif (port 9160/9260 terbuka) atau `SDK init gagal`:** dokumen 03 §4.
+- **Setelan radio gagal:** pesan menyebut butir (region/daya/Gen2/TagFocus…). Bandingkan dengan hasil uji meja; jangan
+  mengubah profil tanpa bukti unit.
+- **Antrean penuh / disk:** pulihkan koneksi/kapasitas; tidak ada pembuangan otomatis data lama.
+- **Restart saat lintasan terbuka:** lintasan dikirim `ABORTED` tidak lengkap (tanpa klaim lewat di ERP); ulangi sesuai SOP.

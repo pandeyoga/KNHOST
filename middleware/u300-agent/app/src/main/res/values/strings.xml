@@ -2,4 +2,8 @@
     <string name="simulate_offline">Simulasikan jaringan offline</string>
     <string name="simulation_mode">Mode simulasi</string>
     <string name="start_on_boot">Mulai otomatis setelah reboot</string>
+    <string name="bench_apply_profile">Terapkan setelan radio profil tersimpan lalu baca ulang</string>
+    <string name="bench_allow_region">Izinkan set region profil (dikembalikan setelah uji)</string>
+    <string name="bench_cycle_gpo">Uji GPO 1–4 bergantian (pastikan wiring lampu aman)</string>
+    <string name="bench_running">Uji meja berjalan…</string>
 </resources>

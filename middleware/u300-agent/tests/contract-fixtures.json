@@ -1,5 +1,49 @@
 {
+  "GateState#sesudah_lintasan": {
+    "server_time": "2026-11-08T19:23:25.633183700Z",
+    "logical_gate_id": "SIM-GATE",
+    "decision": {
+      "indicator": "GREEN",
+      "logical_gate_id": "SIM-GATE",
+      "counts": {
+        "observed_unique": 15,
+        "extra": 0,
+        "pending": 3,
+        "missing": 0,
+        "matched": 15,
+        "unknown": 0
+      },
+      "latch_id": null,
+      "simulated": true,
+      "created_at": "2026-11-08T19:23:25.632175400Z",
+      "completion_basis": "document_session",
+      "source_ref": null,
+      "local_passage_id": "pass-1",
+      "config_version": "sim-v1",
+      "binding_mode": "none",
+      "mode": "live",
+      "reason_code": "SIMULATION_ONLY",
+      "reason_codes": ["SIMULATION_ONLY"],
+      "expires_at": "2026-11-08T19:23:30.632175400Z",
+      "decision_id": "98110ffd-dcfd-4de2-8e85-b7fe1cd47937",
+      "verdict": "GREEN",
+      "final": true,
+      "open_reason": "BEAM_A",
+      "action": "simulation",
+      "latched": false,
+      "close_reason": "EXITED",
+      "allow_live_signal": true
+    },
+    "latch_passage_count": 0,
+    "latch_id": null,
+    "latch_reason_codes": [],
+    "latched": false,
+    "request_id": "feb0f0a8-4803-4a12-baa7-0503aba0c06f",
+    "config_version": "sim-v1",
+    "latch_since": null
+  },
   "GateDecision": {
+    "indicator": "GREEN",
     "logical_gate_id": "SIM-GATE",
     "counts": {
       "observed_unique": 1,
@@ -9,25 +53,63 @@
       "matched": 1,
       "unknown": 0
     },
-    "created_at": "2026-10-20T11:42:25.772889400Z",
-    "completion_basis": "manifest_full",
+    "latch_id": null,
+    "simulated": true,
+    "created_at": "2026-11-08T19:23:25.057114700Z",
+    "completion_basis": "document_session",
     "source_ref": null,
     "local_passage_id": "pass-1",
     "config_version": "sim-v1",
+    "binding_mode": "none",
     "mode": "live",
     "reason_code": "SIMULATION_ONLY",
-    "expires_at": "2026-10-20T11:42:30.772889400Z",
-    "decision_id": "68785500-8b71-47e0-8642-67c6f1b0282a",
+    "reason_codes": ["SIMULATION_ONLY"],
+    "expires_at": "2026-11-08T19:23:30.057114700Z",
+    "decision_id": "65a67add-5e52-4301-9ef5-21b5ebb60f0d",
     "verdict": "GREEN",
     "final": true,
+    "open_reason": null,
     "action": "simulation",
     "latched": false,
+    "close_reason": null,
     "allow_live_signal": true
   },
+  "PassageClose#mundur": {
+    "observed_event_count": 0,
+    "closing_captured_at": "2026-11-08T19:23:25.647995400Z",
+    "logical_gate_id": "SIM-GATE",
+    "observed_edge_count": 4,
+    "tail_ms": 0,
+    "direction_evidence": {
+      "sensor_sequence": [],
+      "source": "fixed_profile",
+      "profile_binding_id": "sim-u300"
+    },
+    "window_start": "2027-01-15T08:02:07Z",
+    "sensor_health": "ok",
+    "capture_complete": true,
+    "config_version": "sim-v1",
+    "mode": "live",
+    "beam_times": {
+      "a_cleared": "2027-01-15T08:02:12.300Z",
+      "b_blocked": "2027-01-15T08:02:11.100Z",
+      "a_blocked": "2027-01-15T08:02:10Z",
+      "b_cleared": "2027-01-15T08:02:11.700Z"
+    },
+    "boot_id": "boot-uji",
+    "open_reason": "BEAM_A",
+    "last_event_id": null,
+    "observed_summary_count": 1,
+    "close_reason": "REVERSED",
+    "pre_buffer_ms": 3000,
+    "boundary_reason": "cancelled",
+    "direction": "out"
+  },
   "GateState": {
-    "server_time": "2026-10-20T11:42:25.773887100Z",
+    "server_time": "2026-11-08T19:23:25.059310100Z",
     "logical_gate_id": "SIM-GATE",
     "decision": {
+      "indicator": "GREEN",
       "logical_gate_id": "SIM-GATE",
       "counts": {
         "observed_unique": 1,
@@ -37,28 +119,100 @@
         "matched": 1,
         "unknown": 0
       },
-      "created_at": "2026-10-20T11:42:25.772889400Z",
-      "completion_basis": "manifest_full",
+      "latch_id": null,
+      "simulated": true,
+      "created_at": "2026-11-08T19:23:25.057114700Z",
+      "completion_basis": "document_session",
       "source_ref": null,
       "local_passage_id": "pass-1",
       "config_version": "sim-v1",
+      "binding_mode": "none",
       "mode": "live",
       "reason_code": "SIMULATION_ONLY",
-      "expires_at": "2026-10-20T11:42:30.772889400Z",
-      "decision_id": "68785500-8b71-47e0-8642-67c6f1b0282a",
+      "reason_codes": ["SIMULATION_ONLY"],
+      "expires_at": "2026-11-08T19:23:30.057114700Z",
+      "decision_id": "65a67add-5e52-4301-9ef5-21b5ebb60f0d",
       "verdict": "GREEN",
       "final": true,
+      "open_reason": null,
       "action": "simulation",
       "latched": false,
+      "close_reason": null,
       "allow_live_signal": true
     },
+    "latch_passage_count": 1,
     "latch_id": "SIM-LATCH",
+    "latch_reason_codes": [],
     "latched": true,
-    "request_id": "51de4d3e-be40-4c24-a2f9-b6b7c5f209fe",
-    "config_version": "sim-v1"
+    "request_id": "6c9fcd5a-131e-4fbc-b5da-9bd94ff1feb1",
+    "config_version": "sim-v1",
+    "latch_since": "2026-11-08T19:23:25.059310100Z"
+  },
+  "PassageClose#kosong": {
+    "observed_event_count": 0,
+    "closing_captured_at": "2026-11-08T19:23:25.651076400Z",
+    "logical_gate_id": "SIM-GATE",
+    "observed_edge_count": 4,
+    "tail_ms": 1500,
+    "direction_evidence": {
+      "sensor_sequence": [],
+      "source": "fixed_profile",
+      "profile_binding_id": "sim-u300"
+    },
+    "window_start": "2027-01-15T08:02:17Z",
+    "sensor_health": "ok",
+    "capture_complete": true,
+    "config_version": "sim-v1",
+    "mode": "live",
+    "beam_times": {
+      "a_cleared": "2027-01-15T08:02:21.300Z",
+      "b_blocked": "2027-01-15T08:02:20.900Z",
+      "a_blocked": "2027-01-15T08:02:20Z",
+      "b_cleared": "2027-01-15T08:02:21.900Z"
+    },
+    "boot_id": "boot-uji",
+    "open_reason": "BEAM_A",
+    "last_event_id": null,
+    "observed_summary_count": 0,
+    "close_reason": "EXITED",
+    "pre_buffer_ms": 3000,
+    "boundary_reason": "sensor",
+    "direction": "out"
+  },
+  "GateDecision#kuning": {
+    "indicator": "YELLOW",
+    "logical_gate_id": "SIM-GATE",
+    "counts": {
+      "observed_unique": 3,
+      "extra": 0,
+      "pending": 0,
+      "missing": 0,
+      "matched": 0,
+      "unknown": 0
+    },
+    "latch_id": null,
+    "simulated": true,
+    "created_at": "2026-11-08T19:23:25.644499700Z",
+    "completion_basis": "document_session",
+    "source_ref": null,
+    "local_passage_id": "pass-2",
+    "config_version": "sim-v1",
+    "binding_mode": "none",
+    "mode": "live",
+    "reason_code": "SIMULATION_ONLY",
+    "reason_codes": ["SIMULATION_ONLY"],
+    "expires_at": "2026-11-08T19:23:30.644499700Z",
+    "decision_id": "15b46d4e-e81a-42c7-8e2e-b7a34f2a817f",
+    "verdict": "REVIEW",
+    "final": true,
+    "open_reason": "BEAM_A",
+    "action": "simulation",
+    "latched": false,
+    "close_reason": "EXITED",
+    "allow_live_signal": false
   },
   "EventsResponse": {
-    "server_time": "2026-10-20T11:42:25.771877900Z",
+    "server_time": "2026-11-08T19:23:25.052700900Z",
     "batch_id": "batch-1",
     "event_acks": [{
       "durable": true,
@@ -67,49 +221,51 @@
       "error": null,
       "status": "accepted"
     }],
-    "request_id": "3cb7dd84-29fa-4391-b5b7-ee29a1b0fb5d"
+    "request_id": "72acf676-ab45-4ff5-a24e-4106f897acae"
   },
-  "EventsRequest": {
-    "schema_version": 2,
-    "mode": "live",
-    "batch_id": "batch-1",
-    "context": {
-      "logical_gate_id": "SIM-GATE",
-      "kind": "gate",
-      "direction_evidence": {
-        "sensor_sequence": [],
-        "source": "fixed_profile",
-        "profile_binding_id": "sim-u300"
-      },
-      "local_passage_id": "pass-1",
-      "direction": "out"
-    },
-    "config_version": "sim-v1",
-    "events": [{
-      "antenna": "1",
-      "event_id": "ev-1",
-      "rssi_dbm": -45,
-      "raw_epc": "E20034120123456789ABCDEF",
-      "epc": "E20034120123456789ABCDEF",
-      "captured_at": "2026-10-20T11:42:25.530759100Z",
-      "time_quality": "synced"
-    }]
-  },
-  "DeviceConfig": {
-    "server_time": "2026-10-20T11:42:25.778228900Z",
+  "DeviceConfig#sim_050": {
+    "server_time": "2026-11-08T19:23:25.714979600Z",
     "logical_gates": [{
       "logical_gate_id": "SIM-GATE",
-      "sensor_bindings": {},
+      "sensor_bindings": {
+        "mode": "through_beam",
+        "a": "GPI1",
+        "b": "GPI2",
+        "active_state": 1
+      },
       "site_id": "SIM-SITE",
       "antenna_ids": [
         "1",
-        "2"
+        "2",
+        "3"
       ],
-      "completion_basis": "manifest_full",
-      "indicators": {"enabled": false},
+      "completion_basis": "document_session",
+      "indicators": {
+        "green_output": 1,
+        "red_output": 3,
+        "yellow_output": 2,
+        "active_high": true,
+        "buzzer_output": 4,
+        "enabled": true
+      },
       "enabled": true,
       "direction": "out",
-      "warehouse_id": "SIM-WH"
+      "warehouse_id": "SIM-WH",
+      "passage_parameters": {
+        "min_block_ms": 50,
+        "tail_ms": 1500,
+        "stable_interval_ms": 3000,
+        "rssi_default_strong_dbm": -65,
+        "calibration_status": "initial",
+        "max_passage_ms": 30000,
+        "entry_timeout_ms": 10000,
+        "rf_fallback_window_ms": 1500,
+        "bucket_ms": 250,
+        "rssi_strong_dbm": {},
+        "background_retention_s": 86400,
+        "pre_buffer_ms": 3000,
+        "rf_fallback_group_size": 3
+      }
     }],
     "device_id": "SIM-U300",
     "policies": {
@@ -136,14 +292,949 @@
       "firmware_version": "sim",
       "sdk_name": "DeviceAPI",
       "parameters": {
-        "max_passage_milliseconds": 30000,
         "agent_profile": "kn-u300-v1",
-        "commissioned": false
+        "antenna_positions": {
+          "1": "atas",
+          "2": "kiri",
+          "3": "kanan"
+        },
+        "agent_tuning": {"background_warmup_ms": 3000},
+        "commissioned": false,
+        "radio": {
+          "tag_focus": false,
+          "gen2": {
+            "query_session": 0,
+            "query_target": 0
+          },
+          "fast_id": false,
+          "apply": true,
+          "region_code": 63,
+          "antenna_power_dbm": {
+            "1": 15,
+            "2": 15,
+            "3": 15
+          }
+        }
       }
     },
     "site_id": "SIM-SITE",
     "limits": {
-      "max_body_bytes": 128000,
+      "max_body_bytes": 256000,
+      "max_queue_bytes": 10000000,
+      "max_events": 100
+    },
+    "warehouse_id": "SIM-WH"
+  },
+  "GateDecision#batal": {
+    "indicator": "OFF",
+    "logical_gate_id": "SIM-GATE",
+    "counts": {
+      "observed_unique": 1,
+      "extra": 0,
+      "pending": 0,
+      "missing": 0,
+      "matched": 0,
+      "unknown": 0
+    },
+    "latch_id": null,
+    "simulated": true,
+    "created_at": "2026-11-08T19:23:25.649062Z",
+    "completion_basis": "document_session",
+    "source_ref": null,
+    "local_passage_id": "pass-3",
+    "config_version": "sim-v1",
+    "binding_mode": "none",
+    "mode": "live",
+    "reason_code": "SIMULATION_ONLY",
+    "reason_codes": ["SIMULATION_ONLY"],
+    "expires_at": "2026-11-08T19:23:30.649062Z",
+    "decision_id": "db06e592-73e7-4405-9586-8f4710d1835f",
+    "verdict": "CANCELLED",
+    "final": true,
+    "open_reason": "BEAM_A",
+    "action": "simulation",
+    "latched": false,
+    "close_reason": "REVERSED",
+    "allow_live_signal": false
+  },
+  "PassageClose#photo_eye_exited": {
+    "observed_event_count": 0,
+    "closing_captured_at": "2026-11-08T19:23:25.632175400Z",
+    "logical_gate_id": "SIM-GATE",
+    "observed_edge_count": 4,
+    "tail_ms": 1500,
+    "direction_evidence": {
+      "sensor_sequence": [],
+      "source": "fixed_profile",
+      "profile_binding_id": "sim-u300"
+    },
+    "window_start": "2027-01-15T08:01:47Z",
+    "sensor_health": "ok",
+    "capture_complete": true,
+    "config_version": "sim-v1",
+    "mode": "live",
+    "beam_times": {
+      "a_cleared": "2027-01-15T08:01:51.800Z",
+      "b_blocked": "2027-01-15T08:01:51.100Z",
+      "a_blocked": "2027-01-15T08:01:50Z",
+      "b_cleared": "2027-01-15T08:01:52.600Z"
+    },
+    "boot_id": "boot-uji",
+    "open_reason": "BEAM_A",
+    "last_event_id": null,
+    "observed_summary_count": 15,
+    "close_reason": "EXITED",
+    "pre_buffer_ms": 3000,
+    "boundary_reason": "sensor",
+    "direction": "out"
+  },
+  "TagSummary#label_depan": {
+    "antenna": "1",
+    "first_seen_mono": 107050,
+    "in_background": false,
+    "first_seen": "2027-01-15T08:01:47.050Z",
+    "summary_id": "pass-1:E20034120123456789AB0100:1",
+    "last_seen": "2027-01-15T08:01:50.500Z",
+    "raw_epc": "E20034120123456789AB0100",
+    "buckets": [
+      {
+        "max_rssi": -63,
+        "t_off": 0,
+        "n": 2
+      },
+      {
+        "max_rssi": -62.63,
+        "t_off": 250,
+        "n": 1
+      },
+      {
+        "max_rssi": -61.88,
+        "t_off": 500,
+        "n": 2
+      },
+      {
+        "max_rssi": -61.13,
+        "t_off": 750,
+        "n": 2
+      },
+      {
+        "max_rssi": -60.75,
+        "t_off": 1000,
+        "n": 1
+      },
+      {
+        "max_rssi": -60,
+        "t_off": 1250,
+        "n": 2
+      },
+      {
+        "max_rssi": -59.25,
+        "t_off": 1500,
+        "n": 2
+      },
+      {
+        "max_rssi": -58.88,
+        "t_off": 1750,
+        "n": 1
+      },
+      {
+        "max_rssi": -58.13,
+        "t_off": 2000,
+        "n": 2
+      },
+      {
+        "max_rssi": -57.38,
+        "t_off": 2250,
+        "n": 2
+      },
+      {
+        "max_rssi": -57,
+        "t_off": 2500,
+        "n": 1
+      },
+      {
+        "max_rssi": -56.25,
+        "t_off": 2750,
+        "n": 2
+      },
+      {
+        "max_rssi": -55.5,
+        "t_off": 3000,
+        "n": 2
+      },
+      {
+        "max_rssi": -55.13,
+        "t_off": 3250,
+        "n": 1
+      },
+      {
+        "max_rssi": -54.75,
+        "t_off": 3500,
+        "n": 1
+      }
+    ],
+    "count": 24,
+    "reads_before_window": 7,
+    "mean_rssi": -59.07,
+    "t_peak": "2027-01-15T08:01:50.500Z",
+    "last_seen_mono": 110500,
+    "t_peak_mono": 110500,
+    "epc": "E20034120123456789AB0100",
+    "time_quality": "synced",
+    "peak_rssi": -54.75
+  },
+  "EventsRequest#ringkasan_photo_eye": {
+    "schema_version": 2,
+    "mode": "live",
+    "sent_at": "2026-11-08T19:23:25.620754600Z",
+    "tag_summaries": [
+      {
+        "antenna": "1",
+        "first_seen_mono": 107050,
+        "in_background": false,
+        "first_seen": "2027-01-15T08:01:47.050Z",
+        "summary_id": "pass-1:E20034120123456789AB0100:1",
+        "last_seen": "2027-01-15T08:01:50.500Z",
+        "raw_epc": "E20034120123456789AB0100",
+        "buckets": [
+          {
+            "max_rssi": -63,
+            "t_off": 0,
+            "n": 2
+          },
+          {
+            "max_rssi": -62.63,
+            "t_off": 250,
+            "n": 1
+          },
+          {
+            "max_rssi": -61.88,
+            "t_off": 500,
+            "n": 2
+          },
+          {
+            "max_rssi": -61.13,
+            "t_off": 750,
+            "n": 2
+          },
+          {
+            "max_rssi": -60.75,
+            "t_off": 1000,
+            "n": 1
+          },
+          {
+            "max_rssi": -60,
+            "t_off": 1250,
+            "n": 2
+          },
+          {
+            "max_rssi": -59.25,
+            "t_off": 1500,
+            "n": 2
+          },
+          {
+            "max_rssi": -58.88,
+            "t_off": 1750,
+            "n": 1
+          },
+          {
+            "max_rssi": -58.13,
+            "t_off": 2000,
+            "n": 2
+          },
+          {
+            "max_rssi": -57.38,
+            "t_off": 2250,
+            "n": 2
+          },
+          {
+            "max_rssi": -57,
+            "t_off": 2500,
+            "n": 1
+          },
+          {
+            "max_rssi": -56.25,
+            "t_off": 2750,
+            "n": 2
+          },
+          {
+            "max_rssi": -55.5,
+            "t_off": 3000,
+            "n": 2
+          },
+          {
+            "max_rssi": -55.13,
+            "t_off": 3250,
+            "n": 1
+          },
+          {
+            "max_rssi": -54.75,
+            "t_off": 3500,
+            "n": 1
+          }
+        ],
+        "count": 24,
+        "reads_before_window": 7,
+        "mean_rssi": -59.07,
+        "t_peak": "2027-01-15T08:01:50.500Z",
+        "last_seen_mono": 110500,
+        "t_peak_mono": 110500,
+        "epc": "E20034120123456789AB0100",
+        "time_quality": "synced",
+        "peak_rssi": -54.75
+      },
+      {
+        "antenna": "3",
+        "first_seen_mono": 107200,
+        "in_background": true,
+        "first_seen": "2027-01-15T08:01:47.200Z",
+        "summary_id": "pass-1:E20034120123456789AB0FFF:3",
+        "last_seen": "2027-01-15T08:01:53.800Z",
+        "raw_epc": "E20034120123456789AB0FFF",
+        "buckets": [
+          {
+            "max_rssi": -70.1,
+            "t_off": 0,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 500,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 750,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 1000,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 1250,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 1500,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 2000,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 2250,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 2500,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 2750,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 3000,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 3500,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 3750,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 4000,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 4250,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 4500,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 5000,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 5250,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 5500,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 5750,
+            "n": 1
+          },
+          {
+            "max_rssi": -72.1,
+            "t_off": 6000,
+            "n": 1
+          },
+          {
+            "max_rssi": -70.1,
+            "t_off": 6500,
+            "n": 1
+          },
+          {
+            "max_rssi": -71.1,
+            "t_off": 6750,
+            "n": 1
+          }
+        ],
+        "count": 23,
+        "reads_before_window": 24,
+        "mean_rssi": -71.06,
+        "t_peak": "2027-01-15T08:01:47.200Z",
+        "last_seen_mono": 113800,
+        "t_peak_mono": 107200,
+        "epc": "E20034120123456789AB0FFF",
+        "time_quality": "synced",
+        "peak_rssi": -70.1
+      }
+    ],
+    "gpi_edges": [
+      {
+        "t_wall": "2027-01-15T08:01:50Z",
+        "edge_id": "pass-1:g:0",
+        "sensor": "A",
+        "state": "blocked",
+        "time_quality": "synced",
+        "t_mono": 110000
+      },
+      {
+        "t_wall": "2027-01-15T08:01:51.100Z",
+        "edge_id": "pass-1:g:1",
+        "sensor": "B",
+        "state": "blocked",
+        "time_quality": "synced",
+        "t_mono": 111100
+      },
+      {
+        "t_wall": "2027-01-15T08:01:51.800Z",
+        "edge_id": "pass-1:g:2",
+        "sensor": "A",
+        "state": "clear",
+        "time_quality": "synced",
+        "t_mono": 111800
+      },
+      {
+        "t_wall": "2027-01-15T08:01:52.600Z",
+        "edge_id": "pass-1:g:3",
+        "sensor": "B",
+        "state": "clear",
+        "time_quality": "synced",
+        "t_mono": 112600
+      }
+    ],
+    "batch_id": "b4d2271e-001b-49a3-9e62-aa336c39ea67",
+    "boot_id": "boot-uji",
+    "context": {
+      "logical_gate_id": "SIM-GATE",
+      "kind": "gate",
+      "direction_evidence": {
+        "sensor_sequence": [],
+        "source": "fixed_profile",
+        "profile_binding_id": "sim-u300"
+      },
+      "local_passage_id": "pass-1",
+      "direction": "out"
+    },
+    "config_version": "sim-v1",
+    "events": [],
+    "seq": 0
+  },
+  "Telemetry#agent_050": {
+    "platform_health": {
+      "mode": "simulation",
+      "pipeline": {
+        "epc_invalid": 1,
+        "passages_opened": 6,
+        "ring_size": 52,
+        "reads": 331,
+        "rssi_invalid": 0,
+        "last_close": "SENSOR_FAULT",
+        "sensor_health": "fault",
+        "rssi_missing": 1,
+        "ring_evicted": 0,
+        "background_warm": true,
+        "sensor_anomalies": 1,
+        "machine_mode": "ONE_WAY_BEAM",
+        "background_size": 1,
+        "machine_state": "IDLE",
+        "sensor_fault_detail": "BEAM_STUCK A",
+        "orphan_edges": 0,
+        "recent_edges": [
+          "A↓@110000",
+          "B↓@111100",
+          "A↑@111800",
+          "B↑@112600",
+          "A↓@120000",
+          "B↓@121000",
+          "A↑@121700",
+          "B↑@122400",
+          "A↓@130000",
+          "B↓@131100",
+          "B↑@131700",
+          "A↑@132300",
+          "A↓@140000",
+          "B↓@140900",
+          "A↑@141300",
+          "B↑@141900",
+          "A↓@150000",
+          "B↓@151000",
+          "sensor fault: BEAM_STUCK A"
+        ],
+        "antenna_unmapped": 1,
+        "background_released": 11,
+        "antenna_invalid": 0,
+        "ring_age_ms": -40050,
+        "background_chronic": [{
+          "max_rssi": -70.1,
+          "antennas": ["3"],
+          "reads": 41,
+          "epc": "E20034120123456789AB0FFF"
+        }]
+      },
+      "dropped_reads": 0,
+      "boot_id": "boot-uji",
+      "config": {
+        "antennas": [
+          "1",
+          "2",
+          "3"
+        ],
+        "sensor_mode": "one_way_beam",
+        "positions": {
+          "1": "atas",
+          "2": "kiri",
+          "3": "kanan"
+        },
+        "gate": "SIM-GATE",
+        "basis": "document_session",
+        "calibration_status": "initial",
+        "config_version": "sim-v1",
+        "direction": "out"
+      },
+      "transport_state": "online"
+    },
+    "oldest_pending_at": null,
+    "captured_at": "2026-11-08T19:23:25.685024200Z",
+    "free_storage_bytes": 1000000,
+    "config_version": "sim-v1",
+    "pending_event_count": 0,
+    "pending_bytes": 0,
+    "radio_state": "ready",
+    "erp_transport": "online",
+    "event_id": "bdf676f5-e6dc-4000-b468-ef2eecb55991",
+    "app_build": "0.5.0-lab",
+    "uptime_seconds": 100,
+    "sdk_version": "20251103",
+    "last_error": null,
+    "printer_state": "not_applicable",
+    "time_quality": "synced"
+  },
+  "PassageClose#cadangan_rf": {
+    "observed_event_count": 0,
+    "closing_captured_at": "2026-11-08T19:23:25.661355200Z",
+    "logical_gate_id": "SIM-GATE",
+    "observed_edge_count": 0,
+    "tail_ms": 0,
+    "direction_evidence": {
+      "sensor_sequence": [],
+      "source": "fixed_profile",
+      "profile_binding_id": "sim-u300"
+    },
+    "window_start": "2027-01-15T08:03:17.050Z",
+    "sensor_health": "fault",
+    "capture_complete": true,
+    "config_version": "sim-v1",
+    "mode": "live",
+    "beam_times": {
+      "a_cleared": null,
+      "b_blocked": null,
+      "a_blocked": null,
+      "b_cleared": null
+    },
+    "boot_id": "boot-uji",
+    "open_reason": "RF_FALLBACK",
+    "last_event_id": null,
+    "observed_summary_count": 4,
+    "close_reason": "SENSOR_FAULT",
+    "pre_buffer_ms": 3002,
+    "boundary_reason": "idle_timeout",
+    "direction": "out"
+  },
+  "TagSummary#latar": {
+    "antenna": "3",
+    "first_seen_mono": 107200,
+    "in_background": true,
+    "first_seen": "2027-01-15T08:01:47.200Z",
+    "summary_id": "pass-1:E20034120123456789AB0FFF:3",
+    "last_seen": "2027-01-15T08:01:53.800Z",
+    "raw_epc": "E20034120123456789AB0FFF",
+    "buckets": [
+      {
+        "max_rssi": -70.1,
+        "t_off": 0,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 500,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 750,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 1000,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 1250,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 1500,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 2000,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 2250,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 2500,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 2750,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 3000,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 3500,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 3750,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 4000,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 4250,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 4500,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 5000,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 5250,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 5500,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 5750,
+        "n": 1
+      },
+      {
+        "max_rssi": -72.1,
+        "t_off": 6000,
+        "n": 1
+      },
+      {
+        "max_rssi": -70.1,
+        "t_off": 6500,
+        "n": 1
+      },
+      {
+        "max_rssi": -71.1,
+        "t_off": 6750,
+        "n": 1
+      }
+    ],
+    "count": 23,
+    "reads_before_window": 24,
+    "mean_rssi": -71.06,
+    "t_peak": "2027-01-15T08:01:47.200Z",
+    "last_seen_mono": 113800,
+    "t_peak_mono": 107200,
+    "epc": "E20034120123456789AB0FFF",
+    "time_quality": "synced",
+    "peak_rssi": -70.1
+  },
+  "GateDecision#sesi_dokumen_parsial": {
+    "indicator": "GREEN",
+    "logical_gate_id": "SIM-GATE",
+    "counts": {
+      "observed_unique": 15,
+      "extra": 0,
+      "pending": 3,
+      "missing": 0,
+      "matched": 15,
+      "unknown": 0
+    },
+    "latch_id": null,
+    "simulated": true,
+    "created_at": "2026-11-08T19:23:25.632175400Z",
+    "completion_basis": "document_session",
+    "source_ref": null,
+    "local_passage_id": "pass-1",
+    "config_version": "sim-v1",
+    "binding_mode": "none",
+    "mode": "live",
+    "reason_code": "SIMULATION_ONLY",
+    "reason_codes": ["SIMULATION_ONLY"],
+    "expires_at": "2026-11-08T19:23:30.632175400Z",
+    "decision_id": "98110ffd-dcfd-4de2-8e85-b7fe1cd47937",
+    "verdict": "GREEN",
+    "final": true,
+    "open_reason": "BEAM_A",
+    "action": "simulation",
+    "latched": false,
+    "close_reason": "EXITED",
+    "allow_live_signal": true
+  },
+  "EventsResponse#ringkasan": {
+    "server_time": "2026-11-08T19:23:25.623771100Z",
+    "edge_acks": [
+      {
+        "durable": true,
+        "item_id": "pass-1:g:0",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      },
+      {
+        "durable": true,
+        "item_id": "pass-1:g:1",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      },
+      {
+        "durable": true,
+        "item_id": "pass-1:g:2",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      },
+      {
+        "durable": true,
+        "item_id": "pass-1:g:3",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      }
+    ],
+    "batch_id": "b4d2271e-001b-49a3-9e62-aa336c39ea67",
+    "summary_acks": [
+      {
+        "durable": true,
+        "item_id": "pass-1:E20034120123456789AB0100:1",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      },
+      {
+        "durable": true,
+        "item_id": "pass-1:E20034120123456789AB0FFF:3",
+        "processing_status": "completed",
+        "error": null,
+        "status": "accepted"
+      }
+    ],
+    "event_acks": [],
+    "request_id": "1d255112-44a0-4eab-b575-cb758161dd6e",
+    "seq_gap": false,
+    "last_seq": 0
+  },
+  "EventsRequest": {
+    "schema_version": 2,
+    "mode": "live",
+    "batch_id": "batch-1",
+    "context": {
+      "logical_gate_id": "SIM-GATE",
+      "kind": "gate",
+      "direction_evidence": {
+        "sensor_sequence": [],
+        "source": "fixed_profile",
+        "profile_binding_id": "sim-u300"
+      },
+      "local_passage_id": "pass-1",
+      "direction": "out"
+    },
+    "config_version": "sim-v1",
+    "events": [{
+      "antenna": "1",
+      "event_id": "ev-1",
+      "rssi_dbm": -45,
+      "raw_epc": "E20034120123456789ABCDEF",
+      "epc": "E20034120123456789ABCDEF",
+      "captured_at": "2026-11-08T19:23:24.900723600Z",
+      "time_quality": "synced"
+    }]
+  },
+  "DeviceConfig": {
+    "server_time": "2026-11-08T19:23:25.060307200Z",
+    "logical_gates": [{
+      "logical_gate_id": "SIM-GATE",
+      "sensor_bindings": {
+        "mode": "through_beam",
+        "a": "GPI1",
+        "b": "GPI2",
+        "active_state": 1
+      },
+      "site_id": "SIM-SITE",
+      "antenna_ids": [
+        "1",
+        "2",
+        "3"
+      ],
+      "completion_basis": "document_session",
+      "indicators": {
+        "green_output": 1,
+        "red_output": 3,
+        "yellow_output": 2,
+        "active_high": true,
+        "buzzer_output": 4,
+        "enabled": true
+      },
+      "enabled": true,
+      "direction": "out",
+      "warehouse_id": "SIM-WH",
+      "passage_parameters": {
+        "min_block_ms": 50,
+        "tail_ms": 1500,
+        "stable_interval_ms": 3000,
+        "rssi_default_strong_dbm": -65,
+        "calibration_status": "initial",
+        "max_passage_ms": 30000,
+        "entry_timeout_ms": 10000,
+        "rf_fallback_window_ms": 1500,
+        "bucket_ms": 250,
+        "rssi_strong_dbm": {},
+        "background_retention_s": 86400,
+        "pre_buffer_ms": 3000,
+        "rf_fallback_group_size": 3
+      }
+    }],
+    "device_id": "SIM-U300",
+    "policies": {
+      "printer_lease_seconds": 60,
+      "passage_idle_close_milliseconds": 3000,
+      "telemetry_interval_seconds": 30,
+      "printer_max_started_items": 1,
+      "capture_offline_allowed": true,
+      "gate_decision_validity_seconds": 5,
+      "queue_full_action": "stop_capture_and_alarm",
+      "retry_initial_seconds": 2,
+      "retry_max_seconds": 60
+    },
+    "device_type": "fixed_reader",
+    "enabled": true,
+    "config_version": "sim-v1",
+    "schema_version": 2,
+    "hardware_profile_id": "sim-u300",
+    "hardware_profile": {
+      "profile_revision": "1",
+      "capabilities": [],
+      "sdk_version": "20251103",
+      "model_label": "SIMULATOR",
+      "firmware_version": "sim",
+      "sdk_name": "DeviceAPI",
+      "parameters": {
+        "agent_profile": "kn-u300-v1",
+        "antenna_positions": {
+          "1": "atas",
+          "2": "kiri",
+          "3": "kanan"
+        },
+        "agent_tuning": {"background_warmup_ms": 3000},
+        "commissioned": false,
+        "radio": {
+          "tag_focus": false,
+          "gen2": {
+            "query_session": 0,
+            "query_target": 0
+          },
+          "fast_id": false,
+          "apply": true,
+          "region_code": 63,
+          "antenna_power_dbm": {
+            "1": 15,
+            "2": 15,
+            "3": 15
+          }
+        }
+      }
+    },
+    "site_id": "SIM-SITE",
+    "limits": {
+      "max_body_bytes": 256000,
       "max_queue_bytes": 10000000,
       "max_events": 100
     },
@@ -152,7 +1243,7 @@
   "PassageClose": {
     "mode": "live",
     "observed_event_count": 1,
-    "closing_captured_at": "2026-10-20T11:42:25.771877900Z",
+    "closing_captured_at": "2026-11-08T19:23:25.057114700Z",
     "logical_gate_id": "SIM-GATE",
     "direction_evidence": {
       "sensor_sequence": [],
@@ -164,5 +1255,13 @@
     "config_version": "sim-v1",
     "boundary_reason": "idle_timeout",
     "direction": "out"
+  },
+  "GpiEdge#a_blocked": {
+    "t_wall": "2027-01-15T08:01:50Z",
+    "edge_id": "pass-1:g:0",
+    "sensor": "A",
+    "state": "blocked",
+    "time_quality": "synced",
+    "t_mono": 110000
   }
 }

@@ -1,63 +1,136 @@
 {
-  "server_time": "2026-10-18T09:07:52.168545400Z",
-  "logical_gates": [
-    {
-      "logical_gate_id": "SET_GATE_ID",
-      "sensor_bindings": {},
-      "site_id": "SET_SITE_ID",
-      "antenna_ids": [
-        "1",
-        "2"
-      ],
-      "completion_basis": "manifest_full",
-      "indicators": {
-        "enabled": false
-      },
-      "enabled": true,
-      "direction": "out",
-      "warehouse_id": "SET_WAREHOUSE_ID"
-    }
-  ],
+  "_catatan": "TEMPLATE agent 0.5.0-lab, kontrak 2.1.0. BELUM DIKOMISIKAN — jangan diterbitkan apa adanya. Semua angka bertanda titik awal kalibrasi (K-RFID-03 uji meja SDK, K-RFID-05 setelan reader & kabel, K-RFID-08 target uji masih TERBUKA). Hapus semua kunci berawalan '_' sebelum diunggah: skema DeviceConfig/LogicalGate/GateParameters tidak menerima field tambahan; hardware_profile.parameters menerima.",
+  "schema_version": 2,
   "device_id": "SET_DEVICE_ID",
-  "policies": {
-    "printer_lease_seconds": 60,
-    "passage_idle_close_milliseconds": 3000,
-    "telemetry_interval_seconds": 30,
-    "printer_max_started_items": 1,
-    "capture_offline_allowed": true,
-    "gate_decision_validity_seconds": 5,
-    "queue_full_action": "stop_capture_and_alarm",
-    "retry_initial_seconds": 2,
-    "retry_max_seconds": 60
-  },
   "device_type": "fixed_reader",
+  "site_id": "SET_SITE_ID",
+  "warehouse_id": "SET_WAREHOUSE_ID",
   "enabled": true,
   "config_version": "SET_CONFIG_VERSION",
-  "schema_version": 2,
+  "server_time": "2026-11-09T00:00:00Z",
   "hardware_profile_id": "SET_PROFILE_ID",
   "hardware_profile": {
+    "model_label": "Chainway U300",
+    "firmware_version": "SET_ACTUAL_FIRMWARE (uji meja butir 5: getVersion)",
+    "sdk_name": "DeviceAPI",
+    "sdk_version": "20251103",
     "profile_revision": "1",
     "capabilities": [],
-    "sdk_version": "20251103",
-    "model_label": "Chainway U300",
-    "firmware_version": "SET_ACTUAL_FIRMWARE",
-    "sdk_name": "DeviceAPI",
     "parameters": {
-      "max_passage_milliseconds": 30000,
       "agent_profile": "kn-u300-v1",
       "commissioned": false,
-      "expected_region_code": -1,
-      "expected_antenna_power_dbm": {
-        "1": -1,
-        "2": -1
+      "_commissioned": "true HANYA setelah region, daya per port, peta antena, wiring photo-eye & indikator dibuktikan di unit (dokumen 03).",
+      "antenna_positions": {
+        "1": "atas",
+        "2": "kiri",
+        "3": "kanan"
+      },
+      "_antenna_positions": "Peta port → posisi (K-RFID-05, terbuka). Nilai: atas/kiri/kanan/lainnya. Dibuktikan uji meja butir 1 + pemasangan.",
+      "radio": {
+        "apply": true,
+        "_apply": "true = agent MENYETEL lalu membaca ulang tiap butir saat start; beda/gagal → tidak mulai (fail-closed). false = hanya verifikasi (perilaku 0.4).",
+        "region_code": -1,
+        "_region_code": "Kandidat 63 (0x3F) = Indonesia 920–923 MHz menurut Javadoc DeviceAPI [DOC] — WAJIB dikonfirmasi di unit (uji meja butir 5). JANGAN 2 (China2 920–925). -1 = belum dikomisikan (agent menolak start).",
+        "antenna_power_dbm": {
+          "1": -1,
+          "2": -1,
+          "3": -1
+        },
+        "_antenna_power_dbm": "Titik awal riset ±15–16 dBm konduksi (batas ±400 mW EIRP dengan antena 12 dBi). -1 = belum dikomisikan. Rentang/langkah dari uji meja butir 6.",
+        "gen2": {
+          "query_session": 0,
+          "query_target": 0
+        },
+        "_gen2": "Riset: session 0 (tag diam terus melapor → mudah dikenali latar). Kunci lain (q, start_q, min_q, max_q, query_sel, link_frequency, select_*) dibiarkan bawaan firmware sampai uji meja butir 4 membaca nilainya.",
+        "tag_focus": false,
+        "fast_id": false,
+        "rf_link": null,
+        "filter": null,
+        "_filter": "null = tidak disentuh. Bila diisi {bank, ptr, len, data} diteruskan apa adanya ke setFilter; AAR tidak punya getFilter → tanpa baca-balik."
+      },
+      "agent_tuning": {
+        "_catatan": "Semua titik awal kalibrasi (agent 0.5). Ubah = terbitkan config_version baru.",
+        "gpi_poll_ms": 20,
+        "min_clear_ms": 200,
+        "between_timeout_ms": 5000,
+        "sensor_stuck_ms": 45000,
+        "sensor_recovery_sequences": 2,
+        "b_before_a_limit": 1,
+        "ring_buffer_ms": 10000,
+        "read_queue_capacity": 20000,
+        "background_min_reads": 3,
+        "background_min_span_ms": 2000,
+        "background_jump_db": 10,
+        "background_warmup_ms": 5000,
+        "checkpoint_ms": 1000,
+        "upload_budget_ms": 3000,
+        "antenna_index_base": 1,
+        "yellow_hold_ms": 5000,
+        "buzzer_ms": 3000,
+        "builtin_service": {
+          "ports": [9160, 9260],
+          "action": "block"
+        }
       }
     }
   },
-  "site_id": "SET_SITE_ID",
   "limits": {
-    "max_body_bytes": 128000,
-    "max_queue_bytes": 10000000,
-    "max_events": 100
+    "max_events": 100,
+    "max_body_bytes": 512000,
+    "max_queue_bytes": 64000000
   },
-  "warehouse_id": "SET_WAREHOUSE_ID"
+  "policies": {
+    "telemetry_interval_seconds": 30,
+    "retry_initial_seconds": 2,
+    "retry_max_seconds": 60,
+    "capture_offline_allowed": true,
+    "gate_decision_validity_seconds": 5,
+    "passage_idle_close_milliseconds": 3000,
+    "printer_lease_seconds": 60,
+    "printer_max_started_items": 1,
+    "queue_full_action": "stop_capture_and_alarm"
+  },
+  "logical_gates": [
+    {
+      "logical_gate_id": "SET_GATE_ID",
+      "direction": "out",
+      "antenna_ids": ["1", "2", "3"],
+      "sensor_bindings": {
+        "a": "GPI1",
+        "b": "GPI2",
+        "active_state": 1,
+        "mode": "through_beam"
+      },
+      "site_id": "SET_SITE_ID",
+      "warehouse_id": "SET_WAREHOUSE_ID",
+      "completion_basis": "document_session",
+      "enabled": true,
+      "indicators": {
+        "enabled": false,
+        "active_high": true,
+        "green_output": 1,
+        "yellow_output": 2,
+        "red_output": 3,
+        "buzzer_output": 4
+      },
+      "passage_parameters": {
+        "calibration_status": "initial",
+        "pre_buffer_ms": 3000,
+        "tail_ms": 1500,
+        "min_block_ms": 50,
+        "entry_timeout_ms": 10000,
+        "max_passage_ms": 30000,
+        "stable_interval_ms": 3000,
+        "bucket_ms": 250,
+        "rf_fallback_group_size": 3,
+        "rf_fallback_window_ms": 1500,
+        "rssi_strong_dbm": {},
+        "rssi_default_strong_dbm": -65,
+        "background_retention_s": 86400,
+        "auto_match": true,
+        "manual_binding_ttl_s": 14400,
+        "rf_fallback_review": true
+      }
+    }
+  ]
 }

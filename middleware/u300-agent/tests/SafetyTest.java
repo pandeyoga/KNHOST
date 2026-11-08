@@ -14,6 +14,9 @@ public class SafetyTest {
             check(!Safety.greenAllowed(b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7],b[8],"GREEN","manifest_full"));
         }
         check(!Safety.greenAllowed(true,true,true,true,true,true,false,true,true,"GREEN","per_epc_only"));
+        check(Safety.greenAllowed(true,true,true,true,true,true,false,true,true,"GREEN","document_session"));
+        check(!Safety.greenAllowed(true,true,true,true,true,true,false,true,true,"GREEN","manifest_subset"));
+        check(!Safety.greenAllowed(true,true,true,true,true,true,false,true,true,"REVIEW","document_session"));
         check(!Safety.greenAllowed(true,true,true,true,true,true,false,true,true,"RED","manifest_full"));
         Safety.Direction d=new Safety.Direction(); check(d.edge("A",0,1000).equals("unknown"));
         check(d.edge("B",500,1000).equals("out")); check(d.edge("A",600,1000).equals("unknown"));

@@ -19,6 +19,22 @@ public final class DecisionPolicyTest {
         check(!DecisionPolicy.validGreen(state(),decision(),meta(),"p1","backfill",NOW,5000));
         check(!DecisionPolicy.validGreen(state(),decision(),meta(),"other","live",NOW,5000));
         JSONObject s=state();s.put("latched",true);check(!DecisionPolicy.validGreen(s,decision(),meta(),"p1","live",NOW,5000));
+        // 0.5 — document_session (K-RFID-10): sisa dokumen boleh > 0; kuning REVIEW (K-RFID-09)
+        JSONObject sessionMeta=Json.obj("logical_gate_id","g1","config_version","v1","completion_basis","document_session");
+        JSONObject ds=decision();ds.put("completion_basis","document_session");ds.getJSONObject("counts").put("pending",4);
+        check(DecisionPolicy.validGreen(state(),ds,sessionMeta,"p1","live",NOW,5000));
+        check(!DecisionPolicy.validGreen(state(),ds,meta(),"p1","live",NOW,5000));
+        JSONObject frac=Json.parse(ds.toString());frac.getJSONObject("counts").put("pending",1.5);check(!DecisionPolicy.validGreen(state(),frac,sessionMeta,"p1","live",NOW,5000));
+        JSONObject neg=Json.parse(ds.toString());neg.getJSONObject("counts").put("pending",-1);check(!DecisionPolicy.validGreen(state(),neg,sessionMeta,"p1","live",NOW,5000));
+        JSONObject extra=Json.parse(ds.toString());extra.getJSONObject("counts").put("extra",1);check(!DecisionPolicy.validGreen(state(),extra,sessionMeta,"p1","live",NOW,5000));
+        JSONObject yellow=decision();yellow.put("verdict","REVIEW");yellow.put("allow_live_signal",false);
+        check(DecisionPolicy.validYellow(state(),yellow,meta(),"p1","live",NOW,5000));
+        check(!DecisionPolicy.validGreen(state(),yellow,meta(),"p1","live",NOW,5000));
+        check(!DecisionPolicy.validYellow(state(),decision(),meta(),"p1","live",NOW,5000));
+        JSONObject latchedState=state();latchedState.put("latched",true);check(!DecisionPolicy.validYellow(latchedState,yellow,meta(),"p1","live",NOW,5000));
+        check(!DecisionPolicy.validYellow(state(),yellow,meta(),"p1","backfill",NOW,5000));
+        JSONObject stale=Json.parse(yellow.toString());stale.put("created_at",java.time.Instant.ofEpochMilli(NOW-6000).toString());check(!DecisionPolicy.validYellow(state(),stale,meta(),"p1","live",NOW,5000));
+        JSONObject cancelled=decision();cancelled.put("verdict","CANCELLED");check(!DecisionPolicy.validYellow(state(),cancelled,meta(),"p1","live",NOW,5000)&&!DecisionPolicy.validGreen(state(),cancelled,meta(),"p1","live",NOW,5000));
         JSONObject c=Config.simulation(),other=Json.parse(c.toString());other.put("server_time","different");check(Config.fingerprint(c).equals(Config.fingerprint(other)));other.getJSONObject("limits").put("max_events",1);check(!Config.fingerprint(c).equals(Config.fingerprint(other)));
         check(DecisionPolicy.sameIdentity(c,Config.simulation()));other=Config.simulation();other.put("warehouse_id","OTHER");check(!DecisionPolicy.sameIdentity(c,other));
         Api api=new Api(new Api.Settings(){public boolean simulation(){return true;}public String url(){return "";}public String token(){return "";}});

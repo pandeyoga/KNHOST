@@ -7,6 +7,8 @@
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
+  <!-- Android 11+: visibilitas paket layanan UHF bawaan U300 (nama paket dari AAR: UhfBase.sendBroadcastCloseUHF). -->
+  <queries><package android:name="cn.cw.uhf.tcpserver"/></queries>
   <application android:label="KN U300 Agent · LAB" android:icon="@drawable/ic_reader" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:usesCleartextTraffic="false"
     android:theme="@android:style/Theme.Material.Light.NoActionBar">
     <activity android:name=".MainActivity" android:exported="true">
