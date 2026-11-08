@@ -194,3 +194,14 @@ Sudah dibangun dengan pilihan bawaan implementer; **belum** keputusan pemilik. R
 | Cek muat di gedung bergate | Gate OUT tertaut memenuhi "wajib Final Loading Check"; handheld opsional |
 | Pembuka kunci gate merah | Hanya izin approve (Admin/Manajer/Admin Gudang), bukan petugas gudang |
 | Jendela "muatan sebelumnya" | 120 dtk: roll yang baru lewat gate yang sama lalu terbaca lagi → bukan merah (INFO bila puncak sebelum sinar A, kuning bila tidak terbukti) — kalibrasi di lokasi |
+
+## 10. Volume, server & koneksi — pemilik 9 Nov 2026
+- **Volume: ±6.000 roll per hari TOTAL** semua lokasi (bukan per gedung); jam tersibuk belum diketahui → rancangan &
+  uji beban memakai asumsi puncak yang dicatat terbuka di laporan uji.
+- **Server:** VPS sekarang masih bersama (shared), belum dedicated → Claude merekomendasikan spesifikasi VPS
+  berdasarkan hasil uji beban.
+- **Internet gudang: 50 Mbit/s dedicated.**
+- **Saat internet gudang ↔ VPS putus (diputuskan, opsi a):** gate **padam** (tidak pernah hijau tanpa keputusan
+  server) + SOP validasi handheld per dokumen secara **offline** (C72 offline-first, sinkron saat tersambung) +
+  internet cadangan. Server lokal di gudang (opsi b) **tidak** dipakai sekarang.
+- Pemilik AFK 9 Nov: keputusan lanjutan diserahkan ke rekomendasi Claude, dilaporkan di akhir.
