@@ -84,13 +84,14 @@ function LevelBlock({ level, path: [zi, ri, li], update, occByBin, canEdit, leve
   );
 }
 
-function NodeRow({ node, depthLabel, canEdit, testId, onChange, onDelete, onAdd, addLabel, icon: Icon }) {
+function NodeRow({ node, kind, depthLabel, canEdit, testId, onChange, onDelete, onAdd, addLabel, icon: Icon }) {
   return (
     <div className="flex flex-wrap items-start gap-2">
       <span className="mt-0.5 rounded bg-[#F0F0F2] px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-[#6B6B73]">{Icon ? <Icon size={10} className="inline mr-0.5" /> : null}{depthLabel}</span>
       <input value={node.name || ""} disabled={!canEdit} onChange={(e) => onChange({ name: e.target.value })} data-testid={`${testId}-name`}
         className="font-semibold text-[12.5px] bg-transparent outline-none border-b border-transparent focus:border-[#0058CC] min-w-[140px]" />
-      <NodeRulesEditor node={node} testId={testId} onChange={(v) => canEdit && onChange({ function: v.function, rules: v.rules })} />
+      <NodeRulesEditor node={node} kind={kind} testId={testId} onChange={(v) => canEdit && onChange({
+        function: v.function, rules: v.rules, ...(kind === "zone" ? { storage_form: v.storage_form || "" } : {}) })} />
       {canEdit && <button data-testid={`${testId}-add`} onClick={onAdd} className="text-[11px] text-[#0058CC] font-semibold hover:underline flex items-center gap-0.5"><Plus size={11} /> {addLabel}</button>}
       {canEdit && <button data-testid={`${testId}-delete`} onClick={onDelete} className="ml-auto text-[#C0341D] hover:bg-[#FBE9E7] rounded p-1"><Trash2 size={12} /></button>}
     </div>

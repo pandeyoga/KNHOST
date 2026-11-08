@@ -583,6 +583,19 @@ E("wms.location_scope_enforced", group="stok-satuan", type="bool", default=False
   risk="high")
 
 
+E("putaway.auto_draft", group="stok-satuan", type="bool", default=True, scopes=("global", "entity"),
+  label="Siapkan draf Putaway Order otomatis sesudah QC lulus / GRN tanpa QC",
+  help="Bila aktif, begitu barang lepas ke stok tersedia (keputusan QC lulus, GRN tanpa QC, atau SPK QC 4-point "
+       "ditutup) sistem menyiapkan DRAF Putaway Order per gedung tujuan di lokasi yang sama sesuai aturan gedung/zona; "
+       "roll yang diminta inspeksi diarahkan ke gedung inspeksi. Admin gudang mengecek lalu menerbitkan. Berlaku per "
+       "badan usaha pemilik barang.",
+  impact="Mematikan berarti Putaway Order dibuat manual dari saran seperti sebelumnya. Draf tidak mengunci stok — "
+         "barang transit tetap bisa dialokasikan/dijual sampai drafnya diterbitkan.",
+  example="Aktif → QC lulus 12 roll di Gudang Transit → muncul draf PA ke Gudang Woven (8) dan Gudang Knitting (4)",
+  consumers=("services/putaway_draft_service.py:auto_draft_enabled", "services/inbound_qc_common.py:auto_draft_after_release"),
+  risk="low")
+
+
 E("cutting.wait_warn_minutes", group="stok-satuan", type="int", default=120, min=1, max=10080, step=10,
   unit="menit", scopes=("global", "entity"),
   label="Meja Cutting — batas kuning (menit) hasil potong belum diterima",

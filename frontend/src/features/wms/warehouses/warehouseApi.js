@@ -52,7 +52,24 @@ export const WH_ROLES = [
   { key: "return", label: "Retur" },
   { key: "staging", label: "Staging" },
   { key: "central_inbound", label: "Penerimaan Pusat" },
+  // PREP-C (K-GDG-04/06) — tempat inspeksi (kini Gedung Retur RCM) & gudang bahan (greige, benang, …)
+  { key: "inspection", label: "Inspeksi" },
+  { key: "material", label: "Gudang Bahan" },
 ];
+
+/* ── PREP-C (8 Nov 2026) — perangkat gate & kebijakan konfirmasi gerak per gedung ── */
+/** Reader GATE yang terdaftar di gedung ini (Pengaturan RFID → Perangkat). */
+export const listGateDevices = (warehouseId) =>
+  axios.get(`${API}/rfid/devices`, { params: { warehouse_id: warehouseId } })
+    .then((r) => (r.data?.devices || []).filter((d) => d.type === "gate"));
+
+export const getGatePolicy = (id) =>
+  axios.get(`${API}/warehouses/${id}/gate-policy`).then((r) => r.data);
+
+/** Artikel (template produk) untuk aturan zona/gedung — daftar ringkas {id, name}. */
+export const listTemplates = () =>
+  axios.get(`${API}/product-templates`).then((r) => (Array.isArray(r.data) ? r.data : r.data?.items || [])
+    .map((t) => ({ id: t.id, name: t.name || t.code || t.id })));
 
 /** Pesan galat yang layak dibaca (jangan pernah menampilkan "[object Object]"). */
 export const errText = (e, fallback = "Terjadi kesalahan.") => {

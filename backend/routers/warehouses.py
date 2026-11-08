@@ -130,6 +130,15 @@ async def get_warehouse_occupancy(warehouse_id: str, request: Request) -> Dict[s
     }
 
 
+@router.get("/warehouses/{warehouse_id}/gate-policy")
+async def get_warehouse_gate_policy(warehouse_id: str, request: Request) -> Dict[str, Any]:
+    """PREP-C (K-GDG-01/02, K-RFID-04) — cara gerak roll di gedung ini dikonfirmasi: gate / handheld / manual
+    (mode kuantitas), perangkat IN/OUT tertaut, tata letak pasangan. Dibaca layar & paket gate."""
+    await require_permission(request, "warehouse", "view")
+    from services import warehouse_profile_service as whp
+    return await whp.warehouse_gate_policy(warehouse_id)
+
+
 @router.put("/warehouses/{warehouse_id}/structure")
 async def put_warehouse_structure(warehouse_id: str, payload: StructurePayload, request: Request) -> Dict[str, Any]:
     """Simpan struktur Zone→Rack→Level→Bin (node baru otomatis diberi id, kode bin wajib unik)."""
@@ -142,8 +151,9 @@ async def put_warehouse_structure(warehouse_id: str, payload: StructurePayload, 
     # E4.1 — menata bin di gudang badan usaha lain = ikut mengatur operasinya.
     await whscope.assert_usable(warehouse_id, ctx.active_entity_id,
                                action="menata struktur binnya")
-    wh = await save_warehouse_structure(warehouse_id, payload.zones, migration_reason=payload.migration_reason,
-                                        actor_name=actor["name"])
+    from services import warehouse_profile_service as whp   # PREP-C — bentuk simpan zona (rak/lantai)
+    wh = await save_warehouse_structure(warehouse_id, whp.validate_zone_forms(payload.zones),
+                                        migration_reason=payload.migration_reason, actor_name=actor["name"])
     await audit(actor["name"], "warehouse_structure_updated", "warehouse", warehouse_id,
                 {"zones": len(payload.zones), "migration": (wh.get("_migration") or {}).get("id", "")},
                 reason=payload.migration_reason)
@@ -182,9 +192,9 @@ async def create_warehouse(payload: WarehousePayload, request: Request) -> Dict[
     ctx = await entity_ctx(request)
     if await db.warehouses.find_one({"code": payload.code}, {"_id": 0}):
         raise HTTPException(status_code=409, detail="Kode gudang sudah digunakan")
-    # Keputusan pemilik: gudang BARU bawaannya KHUSUS badan usaha aktif — harus
-    # sengaja dibuka kalau memang mau dipakai bersama.
-    mode = (payload.sharing_mode or whscope.DEDICATED).strip().lower()
+    # PREP-C (K-GDG-07, keputusan pemilik 8 Nov 2026) — semua gedung DIPAKAI BERSAMA semua PT (roll tetap milik
+    # PT-nya). Bawaan gudang baru kini `shared` (dulu khusus PT aktif); mode khusus tetap bisa dipilih sengaja.
+    mode = (payload.sharing_mode or whscope.SHARED).strip().lower()
     ents = list(payload.entity_ids or [])
     if mode == whscope.DEDICATED and not ents:
         if not ctx.active_entity_id:
@@ -234,7 +244,9 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
     allowed = ["code", "name", "city", *LOCATION_KEYS, "zones", "active", "lat", "lng",
                "sharing_mode", "entity_ids", "loading_check_policy",
                # FASE R0 — profil gudang (site, peran, rules, gate)
-               "site_id", "roles", "storage_rules", "gate_config"]
+               "site_id", "roles", "storage_rules", "gate_config",
+               # PREP-C (K-GDG-05/06) — mode pencatatan stok & bentuk penyimpanan gedung
+               "stock_mode", "storage_form"]
     data = {k: v for k, v in payload.data.items() if k in allowed}
     if "loading_check_policy" in data and data["loading_check_policy"] not in ("optional", "required"):
         raise HTTPException(status_code=400, detail="Kebijakan loading check harus 'optional' atau 'required'.")
@@ -242,12 +254,15 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
         data.update(normalize_location({**{k: current.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in data.items() if k in LOCATION_KEYS}}))
     # FASE R0 — validasi & normalisasi profil
     from services import warehouse_profile_service as whp
-    profile_keys = {"site_id", "roles", "storage_rules", "gate_config"} & set(data.keys())
+    profile_keys = {"site_id", "roles", "storage_rules", "gate_config", "stock_mode", "storage_form"} & set(data.keys())
     if profile_keys:
         prof = whp.validate_profile({k: data[k] for k in profile_keys})
         if "site_id" in prof:
             await whp.assert_site_exists(prof["site_id"])
+        await whp.assert_profile_refs(warehouse_id, prof)   # PREP-C — perangkat gate / artikel / PT nyata
         data.update(prof)
+    if "zones" in data:   # PREP-C (K-GDG-05/08) — bentuk simpan zona & aturan artikel/PT dinormalisasi
+        data["zones"] = whp.validate_zone_forms(list(data["zones"] or []))
     if data.get("code"):
         duplicate = await db.warehouses.find_one(
             {"code": data["code"], "id": {"$ne": warehouse_id}}, {"_id": 0}

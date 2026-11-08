@@ -15,7 +15,13 @@ export const FUNCTION_OPTIONS = [
 ];
 export const FUNCTION_LABEL = { storage: "Penyimpanan", qc: "QC / Karantina", staging: "Staging", return: "Retur" };
 
-const keep = (n) => ({ function: n.function || "", rules: n.rules || {} });
+// PREP-C (K-GDG-05) — `storage_form` zona (rak / petak lantai; kosong = ikut gedung) ikut dipertahankan.
+const keep = (n) => ({ function: n.function || "", rules: n.rules || {}, ...(n.storage_form ? { storage_form: n.storage_form } : {}) });
+export const ZONE_FORM_OPTIONS = [
+  { value: "", label: "Ikut gedung" },
+  { value: "rack", label: "Rak bertingkat" },
+  { value: "floor", label: "Petak lantai (stacker)" },
+];
 
 // Rak lama (rack.bins langsung) → satu Tingkat ber-id tetap `${rack.id}_lv1` (sama dengan skrip migrasi).
 export function normalizeZones(zones) {
@@ -52,6 +58,8 @@ export function ruleSummary(rules) {
   if ((r.categories || []).length) parts.push(`Kategori: ${r.categories.join(", ")}`);
   if ((r.grades || []).length) parts.push(`Grade: ${r.grades.join(", ")}`);
   if ((r.fabric_types || []).length) parts.push(`Kain: ${r.fabric_types.join(", ")}`);
+  if ((r.template_ids || []).length) parts.push(`${r.template_ids.length} artikel`);   // PREP-C (K-GDG-08)
+  if ((r.owner_entity_ids || []).length) parts.push(`${r.owner_entity_ids.length} PT`);
   if (r.single_lot) parts.push("1 lot per bin");
   else if (r.single_sku) parts.push("1 SKU per bin");
   return parts.join(" · ");

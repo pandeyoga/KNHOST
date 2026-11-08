@@ -594,6 +594,10 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
     # paling mahal di repo ini.
     if next_stage == "qc_pending":
         out.update(await _iqc.ensure_inspection(out, actor))
+    elif _created_rolls:   # PREP-C (K-GDG-10) — GRN tanpa QC: barang langsung tersedia → draf Putaway Order otomatis
+        out["putaway_draft"] = await _iqc.auto_draft_after_release(
+            [r["id"] for r in _created_rolls], {"type": "grn", "id": task_id, "number": task.get("po_number", "")},
+            actor.get("name", ""))
     # FASE C — kembalikan lot yang terbentuk + peringatan kelengkapan (mode `warn`)
     if next_stage in ("completed", "qc_pending"):
         out["lots"] = _lot_summary
