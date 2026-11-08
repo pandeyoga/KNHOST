@@ -255,6 +255,8 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
     node = pr.resolve_bin(dest, body.bin_id) if body.bin_id else None
     if body.bin_id and not node:
         raise HTTPException(status_code=400, detail="Bin/staging tujuan tidak ada di gudang tujuan.")
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_transfer_movable(transfer, "in", to_bin_id=((node or {}).get("bin") or {}).get("id", ""))
     override = (body.rule_exception_reason or "").strip()
     if override:
         pr.assert_supervisor(actor, "memberi pengecualian aturan gudang saat terima")

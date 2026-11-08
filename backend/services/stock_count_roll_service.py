@@ -333,9 +333,21 @@ async def apply_scan(session: Dict[str, Any], scan: Dict[str, Any], kinds: List[
                            "Roll berubah bersamaan — hitung ulang roll ini.")
 
 
-async def write_off_missing(session: Dict[str, Any], e: Dict[str, Any], actor: str) -> Dict[str, Any]:
+async def resume_roll_op(session: Dict[str, Any], key: str, conflict: str) -> Optional[Dict[str, Any]]:
+    """PREP-B — pintu publik catatan operasi bertahap (dipakai pendaftaran awal: roll lama dipakai ulang)."""
+    return await _resume_op(session, key, conflict)
+
+
+async def start_roll_op(session: Dict[str, Any], key: str, cas_fields: Dict[str, Any], upd: Dict[str, Any],
+                        op: Dict[str, Any], conflict: str) -> Dict[str, Any]:
+    return await _apply_op(session, key, cas_fields, upd, op, conflict)
+
+
+async def write_off_missing(session: Dict[str, Any], e: Dict[str, Any], actor: str, *,
+                            post_journal: bool = True, label: str = "hilang") -> Dict[str, Any]:
     """OPS-01 — roll hilang yang SUDAH dihitung ulang → keluar stok + jurnal kerugian (sekali per roll).
-    AUD-WMS-01: memakai catatan operasi bertahap yang sama dengan `apply_scan`."""
+    AUD-WMS-01: memakai catatan operasi bertahap yang sama dengan `apply_scan`.
+    PREP-B: `post_journal=False` → nilai dikembalikan tetapi jurnal diposting pemanggil (per produk, pendaftaran awal)."""
     ref = f"{session['id']}:missing:{e['roll_id']}"
     key = f"missing_{e['roll_id']}"
     resumed = await _resume_op(session, key, "Roll berubah sejak snapshot — tidak dihapus, hitung ulang.")
@@ -358,7 +370,7 @@ async def write_off_missing(session: Dict[str, Any], e: Dict[str, Any], actor: s
     op = {"ref": ref, "roll": roll, "rebuild": True,
           "movements": [{"qty": -float(e["qty"]), "type": "cycle_count_write_off", "extra": {"qty_rolls": -1}}],
           "journal": {"amount_signed": value,
-                      "label": f"Opname {session.get('name', session['id'])} · hilang {roll.get('roll_no')}"},
+                      "label": f"Opname {session.get('name', session['id'])} · {label} {roll.get('roll_no')}"} if post_journal else None,
           "result": {"status": "applied", "written_off": e["qty"], "value": value, "journal_id": None,
                      "at": now_iso(), "by": actor}}
     return await _apply_op(session, key, {"warehouse_id": session["warehouse_id"], "bin_id": e["bin_id"],

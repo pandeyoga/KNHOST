@@ -707,6 +707,8 @@ async def update_transfer_status(transfer_id: str, payload: TransferStatusUpdate
                 "code": "TRANSFER_RECEIPT_REQUIRED",
                 "message": f"{len(left)} roll masih dalam perjalanan. Terima roll yang benar-benar tiba lewat 'Terima per roll'; "
                            "roll yang tidak tiba dicatat sebagai exception."})
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_transfer_movable(transfer, "in" if new_status == "completed" else "out")
     # T-01 Opsi B (INV-ATOMIC-01) — klaim sebelum roll dipindah (dispatch/receive).
     from services import atomic_claim as _saga
     await _saga.claim("warehouse_transfers", transfer_id, f"transfer_status:{new_status}",

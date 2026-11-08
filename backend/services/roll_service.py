@@ -616,6 +616,8 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
             return await _finish_cut(resumed, op)
         raise HTTPException(status_code=404, detail="Reservasi potong tidak ditemukan / sudah dipotong")
     rsv = next(x for x in parent["length_reservations"] if x["id"] == reservation_id)
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_movable(action="pemotongan roll", roll=parent)
     actual = round(float(rsv["qty"] if actual_length is None else actual_length), 2)
     waste = round(float(waste or 0), 2)
     if actual <= 0 or waste < 0:

@@ -417,6 +417,8 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
     roll = await _resolve_roll(task["product_id"], task.get("sku", ""), take, unit,
                                (payload.get("roll_id") or "").strip(), (payload.get("epc") or "").strip(),
                                entity_id=order.get("entity_id") or "")
+    from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
+    await _rfz.assert_movable(action="potong sample", roll=roll)
     reason = (payload.get("reason") or "").strip()
     off_suggestion = bool(task.get("suggested_roll_id")) and roll["id"] != task.get("suggested_roll_id")
     if off_suggestion and not reason:
