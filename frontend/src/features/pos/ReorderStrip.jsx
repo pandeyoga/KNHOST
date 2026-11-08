@@ -37,7 +37,7 @@ export function ReorderStrip({ customer, products = [], onAdd, priceMap = {}, en
           <p className="py-2 text-[12px] text-[#6B6B73] animate-pulse">Memuat riwayat…</p>
         ) : (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {items.map((it) => {
+            {items.filter((it) => !byId[it.id]?.superseded_by).map((it) => {   /* PREP-A — SKU tergantikan tidak ditawarkan */
               const live = byId[it.id] || it;
               const unit = it.reorder_last_unit || live.base_unit || "meter";
               return (

@@ -17,6 +17,7 @@ import CreateCustomerModal from "../pos/CreateCustomerModal";
 import PosStartGate, { loadPosCtx, savePosCtx } from "../pos/PosStartGate";
 import { useSites } from "../../components/SiteSelect";
 import ProductQuickView from "../../components/ProductQuickView";
+import { SupersedeHintList, localSupersedeHints } from "../../components/SupersedeHint";   // PREP-A
 import { useEffectivePrices, pickPrice } from "../../hooks/useEffectivePrices";
 
 export function SalesPortal({
@@ -64,7 +65,8 @@ export function SalesPortal({
 
   const products = useMemo(() => {
     const q = search.toLowerCase();
-    let list = allProducts.filter((p) => visibleToCustomer(p, selectedCustomer?.id)
+    // PREP-A (K-OPN-06) — SKU "digantikan oleh" tidak ditawarkan untuk pesanan BARU (tetap ada di data untuk riwayat).
+    let list = allProducts.filter((p) => !p.superseded_by && visibleToCustomer(p, selectedCustomer?.id)
       && `${p.name} ${p.sku} ${p.category} ${p.color} ${p.motif} ${designSearchText(p)}`.toLowerCase().includes(q));
     if (facets.categories.length) list = list.filter((p) => facets.categories.includes(p.category));
     if (facets.grades.length) list = list.filter((p) => facets.grades.includes(p.grade));
@@ -245,6 +247,8 @@ export function SalesPortal({
                 <input data-testid="product-search-input" className="w-full bg-transparent text-[13px] outline-none" placeholder="Cari SKU, motif, warna..." value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
             </div>
+            <div className="px-4 pt-2"><SupersedeHintList hints={localSupersedeHints(search, allProducts)} testId="pos-supersede-hint"
+              pickable={allProducts.filter((p) => !p.superseded_by)} onPick={(t) => setSearch(t.sku)} /></div>
             <p data-testid="sales-portal-subtitle" className="px-4 py-2 text-[12px] text-[#6B6B73]">
               {groups.length} produk · {groups.reduce((t, g) => t + g.variants.length, 0)} varian · stok di {siteName || "lokasi pilihan"} ditonjolkan; lokasi lain perlu transfer. Klik produk untuk pilih varian, qty & satuan.
             </p>

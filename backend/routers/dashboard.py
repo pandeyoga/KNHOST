@@ -62,6 +62,10 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # admin/warehouse tetap melihat keseluruhan pesanan seperti sebelumnya.
     order_scope = sales_ownership.apply_scope(scope, actor)
     products_raw = await db.products.find({}, {"_id": 0}).to_list(None)   # G3 D4-DASH-01 — tanpa batas 3.000
+    # PREP-A (K-OPN-06) — SKU tergantikan TETAP dikirim (stok lama/lot/riwayat masih menunjuknya) tetapi diberi
+    # `superseded_by_sku` agar katalog jual (POS/Sales Portal) menyembunyikannya & memberi petunjuk kode penggantinya.
+    from services.product_supersede import annotate as _sup_annotate
+    await _sup_annotate(products_raw)
     # S#096 — HPP turunan pembelian (WAC roll) untuk layar Master Produk; diredaksi strip_cost_fields per peran.
     from services import costing_service as _cs
     for _p in products_raw:

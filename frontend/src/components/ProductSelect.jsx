@@ -22,6 +22,7 @@ import axios, { API } from "../services/apiClient";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { useEscapeClose } from "@/utils/escapeLayers";
 import ProductColorChip from "./ProductColorChip";
+import SupersedeHint from "./SupersedeHint";   // PREP-A — "SKU lama digantikan oleh …"
 
 export const STAGE_LABELS = { yarn: "Benang", grey: "Grey", finished: "Finished", remnant: "Barang Sisa" };
 
@@ -90,7 +91,8 @@ function ProductPickerModal({ stage, selectedId, onClose, onPick, supplierId = "
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
            : error ? <div data-testid="product-select-error" className="py-8 text-center text-[12px] text-[#D14343]">{error}</div>
-           : filtered.length === 0 ? <div data-testid="product-select-empty" className="py-8 text-center text-[12px] text-[#8E8E93]">Tidak ada produk{stage ? ` tahap ${STAGE_LABELS[stage] || stage}` : ""}.</div>
+           : filtered.length === 0 ? <div data-testid="product-select-empty" className="space-y-2 py-8 text-center text-[12px] text-[#8E8E93]">Tidak ada produk{stage ? ` tahap ${STAGE_LABELS[stage] || stage}` : ""}.
+              <SupersedeHint query={q} pickable={rows.filter((p) => !stage || (p.stage || "finished") === stage)} onPick={onPick} testId="product-select-supersede" /></div>
            : filtered.map((p) => (
             <button key={p.id} data-testid={`product-select-item-${p.id}`} onClick={() => onPick(p)}
               className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition ${p.id === selectedId ? "border-[#0058CC] bg-[#EAF2FF]" : "border-transparent hover:bg-[#FAFBFC]"}`}>

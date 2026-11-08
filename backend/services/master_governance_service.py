@@ -124,18 +124,30 @@ async def rollback_batch(batch_id: str, reason: str, actor: Dict[str, Any]) -> D
     return safe_doc(await db.master_governance_batches.find_one({"id": batch_id}, {"_id": 0}))
 
 
-async def rename_product(product_id: str, new_name: str, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Koreksi nama tanpa SKU baru; histori nama tercatat."""
+async def rename_product(product_id: str, new_name: str, reason: str, actor: Dict[str, Any], *,
+                         expect_name: Any = None, batch_id: str = "") -> Dict[str, Any]:
+    """Koreksi nama tanpa SKU baru; histori nama tercatat.
+
+    PREP-A: `expect_name` = CAS (nama harus masih seperti saat pratinjau, kalau tidak 409);
+    `batch_id` = penanda batch perbaikan master (untuk rollback berjejak).
+    """
     new_name, reason = (new_name or "").strip(), (reason or "").strip()
     if not new_name or len(reason) < 5:
         raise HTTPException(status_code=422, detail="Nama baru dan alasan (min. 5 karakter) wajib.")
     p = await db.products.find_one({"id": product_id}, {"_id": 0, "name": 1, "sku": 1})
     if not p:
         raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
-    await db.products.update_one({"id": product_id}, {"$set": {"name": new_name, "updated_at": now_iso()},
-                                                      "$push": {"name_history": {
-                                                          "from": p.get("name"), "to": new_name, "reason": reason,
-                                                          "by": actor.get("name", ""), "at": now_iso()}}})
+    match: Dict[str, Any] = {"id": product_id}
+    if expect_name is not None:
+        match.update(name=expect_name, saga_lock={"$exists": False})
+    entry = {"from": p.get("name"), "to": new_name, "reason": reason, "by": actor.get("name", ""), "at": now_iso()}
+    sets: Dict[str, Any] = {"name": new_name, "updated_at": now_iso()}
+    if batch_id:
+        entry["batch"] = batch_id
+        sets["last_cleanup_batch"] = batch_id
+    res = await db.products.update_one(match, {"$set": sets, "$push": {"name_history": entry}})
+    if not res.matched_count:
+        raise HTTPException(status_code=409, detail=f"Nama SKU {p.get('sku')} berubah sejak pratinjau.")
     return safe_doc(await db.products.find_one({"id": product_id}, {"_id": 0}))
 
 
