@@ -70,6 +70,14 @@ def seed():
         DB[name].delete_many({"device_id": {"$in": devs}})
     DB.rfid_v2_doc_sessions.delete_many({"warehouse_id": WH})
     DB.rfid_v2_event_ids.delete_many({"passage": {"$in": pids}})
+    # PREP-D2 — antrean periksa + buku transaksi gate + notifikasinya ikut lahir dari lintasan uji ini
+    case_q = {"$or": [{"device_id": {"$in": devs}}, {"warehouse_id": WH}]}
+    cases = [c["_id"] for c in DB.rfid_v2_reviews.find(case_q, {"_id": 1})]
+    for cid in cases:
+        DB.notifications.delete_many({"ref": {"$regex": f"^rfid_review:{cid}:"}})
+    DB.rfid_v2_reviews.delete_many(case_q)
+    DB.rfid_v2_gate_txn.delete_many({"passage": {"$in": pids}})
+    DB.rfid_v2_claim_corrections.delete_many({"device_id": {"$in": devs}})
     DB.notifications.delete_many({"ref": {"$regex": f"TEST_D1_{TAG}"}})
     for coll in ("inventory_rolls", "shipments", "repair_orders"):
         DB[coll].delete_many({"warehouse_id": WH})
