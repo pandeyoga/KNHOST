@@ -20,10 +20,12 @@ Disalin ke repo ini pada 8 Nov 2026 dari folder lokal
 1. **SDK vendor Chainway hanya untuk internal.** Repo KNHOST dijadikan **privat** (8 Nov 2026) justru karena AAR &
    APK ini. Izin distribusi vendor belum dipastikan — jangan salin `u300-agent/app/libs/*.aar` atau APK ke repo/
    tempat publik.
-2. **Patch ERP BELUM diterapkan ke backend KNHOST.** Patch dibuat terhadap baseline `055f7ea` yang tidak ada lagi di
-   riwayat `main` (riwayat GitHub pernah ditulis ulang), dan backend sudah banyak berubah sejak itu — antara lain
-   `backend/services/gate_evaluator.py` (P18: gate mengenali Order Makloon & Perbaikan, kode `DOC_CANCELLED`).
-   Jangan `git apply` buta: jalankan `git apply --check`, lalu gabungkan manual per berkas dan uji ulang.
+2. **Patch ERP 0.5.0 SUDAH diterapkan ke backend KNHOST (9 Nov 2026, PREP-D1)** dan diperbaiki sesuai keputusan
+   pemilik (alarm merah hanya pelanggaran, sesi dokumen bertahap, klaim tidak bocor, dll.) + kontrak **2.1.0**
+   (`backend/contracts/rfid_v2.json` = `u300-agent/contracts/OPENAPI_RFID_V2.json`). Rincian:
+   [`docs/rfid/hasil/PREP-D1-GATE-V2.md`](../docs/rfid/hasil/PREP-D1-GATE-V2.md). Folder `u300-erp-integration-0.5.0/`
+   kini arsip. **Aplikasi reader (Java) masih 0.4.0** — penyesuaian ke kontrak 2.1 (photo-eye satu arah, ringkasan
+   bacaan, parse RSSI tahan locale, dll.) = paket E.
 3. **Belum diuji di U300 fisik maupun runtime Android**; APK memakai debug signing. Lihat
    `u300-agent/docs/03_COMMISSIONING_DAN_UAT.md` dan bagian "Titik selesai produksi" di README paket integrasi.
 4. Fakta lapangan dari pemilik (brainstorming 27 Okt 2026): gate IN dan OUT **terpisah, masing-masing satu arah**;
