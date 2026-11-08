@@ -117,8 +117,10 @@ tidak terdeteksi di gate. Sejak itu (4 Nov, P18) `gate_evaluator` juga mengenali
 | K-RFID-04 | Tata letak gate (opsi A/B/C), clear zone & jarak rak terdekat, terutama jalur datang di gate OUT | Pemilik | terbuka |
 | K-RFID-05 | Setelan reader & kabel: panjang/jenis kabel, daya per port, peta port → antena atas/kiri/kanan, region 920–923 | Teknis | terbuka |
 | K-RFID-06 | SOP operator: kecepatan pelan & konstan ≤ 5 km/jam, tidak berhenti/mundur di gate, satu muatan per lintasan, arah gulungan di stacker | Pemilik / operasional | terbuka |
-| K-RFID-07 | Pemetaan 13 usulan (§5) terhadap yang sudah dikerjakan PT Kubus di Agent 0.4.0 + patch ERP 0.5.0, lalu putuskan basis pengembangan (patch Kubus vs `gate_evaluator` KNHOST) | Implementer → pemilik | belum dikerjakan |
+| K-RFID-07 | Pemetaan 13 usulan (§5) terhadap yang sudah dikerjakan PT Kubus di Agent 0.4.0 + patch ERP 0.5.0, lalu putuskan basis pengembangan (patch Kubus vs `gate_evaluator` KNHOST) | Implementer → pemilik | **analisis selesai 8 Nov 2026** — [`AUDIT_MIDDLEWARE_RFID_2026-11-08.md`](AUDIT_MIDDLEWARE_RFID_2026-11-08.md) §5 (rekomendasi: transport Kubus V2 + aturan `gate_evaluator` + lapisan lintasan baru); **menunggu keputusan pemilik** |
 | K-RFID-08 | Target penerimaan uji lapangan (M1–M11) | Pemilik | usulan, belum disepakati |
+| K-RFID-09 | Kebijakan alarm: mana yang **merah terkunci** (pelanggaran) vs **kuning/perlu diperiksa** tanpa mengunci (roll kurang, capture tidak lengkap, waktu, tanpa manifest); satu kunci per gate. Kode Kubus kini mengunci semua non-hijau dan berantai (audit AUD-MW-03) | Pemilik | terbuka (muncul dari audit 8 Nov) |
+| K-RFID-10 | Muat multi-trip stacker: dinilai **per lintasan terhadap seluruh SJ** (kode Kubus kini) atau **sesi dokumen akumulatif** — roll kurang dinilai saat dokumen ditutup (audit AUD-MW-22) | Pemilik | terbuka (muncul dari audit 8 Nov) |
 
 Yang **boleh** dikerjakan tanpa menunggu: analisis/dokumen (mis. K-RFID-07), dan uji meja K-RFID-03 bila perangkat
 tersedia. Perubahan kode middleware/gate hanya setelah pemilik menyatakan butir terkait ditutup — catat keputusannya

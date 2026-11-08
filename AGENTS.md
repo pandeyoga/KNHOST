@@ -24,7 +24,8 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
 ## Middleware & gate RFID
 * Sebelum menyentuh `middleware/` (U300 Reader Agent), logika gate (`gate_evaluator`, `rfid_ingest_service`,
   `rfid_service`) atau patch `middleware/u300-erp-integration-0.5.0/`: baca **`docs/rfid/KEPUTUSAN_GATE_RFID.md`**
-  (bacaan nyasar, photo-eye, fakta lapangan pemilik, keputusan terbuka K-RFID-01…08).
+  (bacaan nyasar, photo-eye, fakta lapangan pemilik, keputusan K-RFID-01…10) dan audit kode Kubus
+  **`docs/rfid/AUDIT_MIDDLEWARE_RFID_2026-11-08.md`** (temuan AUD-MW-xx, peta K-RFID-07).
 * Pemilik: soal bacaan nyasar & photo-eye diselesaikan dulu sebelum membangun/merevisi — butir terbuka = STOP & ASK.
 
 ## Lingkungan lokal (Docker)
