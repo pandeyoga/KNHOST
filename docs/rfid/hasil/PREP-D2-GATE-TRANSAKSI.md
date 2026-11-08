@@ -1,7 +1,7 @@
 # PREP-D2 — Gate V2 disambungkan ke transaksi gudang + antrean periksa admin gudang
 
 **Tanggal:** 9 Nov 2026 · **Pelaksana:** Claude Code (implementer) · **Branch:** `worktree-agent-a8888e80abe93a43f`
-(basis `main` `70eb9fd`). Status: `implemented_pending_review` (belum diverifikasi reviewer).
+(basis `main` `70eb9fd`) · **Commit:** `832cb15` (kode + uji) → commit laporan ini. Status: `implemented_pending_review` (belum diverifikasi reviewer).
 Acuan mengikat: [`KEPUTUSAN_GATE_RFID.md`](../KEPUTUSAN_GATE_RFID.md) §6–§8 — **K-GDG-02** (gate IN memvalidasi putaway
 dari GRN, gate OUT memvalidasi barang keluar, handheld = cadangan), **K-GDG-03** (langsung gate utama), **K-RFID-09**
 (merah hanya pelanggaran, kuning tanpa kunci, satu kunci per gate), **K-RFID-10** (sesi dokumen bertahap), **K-OPN-03**
