@@ -1,6 +1,10 @@
 # Integrasi U300 dan ERP — versi 0.4
 
-ERP Kain Nussantara · Production IT PT Kubus Teknologi Indonesia  
+ERP Kain Nussantara · Production IT PT Kubus Teknologi Indonesia
+
+> **Historis (0.4 / kontrak 2.0).** Patch ERP sudah diterapkan dan diperbaiki (PREP-D1, kontrak 2.1). Untuk 0.5.0 lihat
+> [08 Perubahan 0.5.0](08_PERUBAHAN_050.md) dan [05 Validasi](05_VALIDASI.md); uji integrasi 0.5 =
+> `tests/run_erp_local_v2.py`. `backend/tests/run_u300_https.py` (0.4) perlu daftar kompilasi baru sebelum dipakai lagi.  
 19 Oktober 2026 · LAB, belum produksi
 
 ## Perubahan reader

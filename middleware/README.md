@@ -2,15 +2,15 @@
 
 Aplikasi Android yang berjalan **di reader Chainway U300** (gate RFID): membaca EPC/RSSI per antena, menyimpan
 observasi di SQLite, mengirim event ke ERP lewat HTTPS + device key, lalu menyalakan indikator gate sesuai keputusan
-ERP. Dibuat oleh PT Kubus Teknologi Indonesia. Status: **0.4.0-lab (19 Okt 2026) — uji laboratorium, belum untuk
-operasional gate.**
+ERP. Dibuat oleh PT Kubus Teknologi Indonesia. Status: **0.5.0-lab (9 Nov 2026, paket PREP-E, kontrak 2.1) — uji
+laboratorium tanpa perangkat, belum untuk operasional gate.** Perubahan: [`u300-agent/docs/08_PERUBAHAN_050.md`](u300-agent/docs/08_PERUBAHAN_050.md).
 
 Disalin ke repo ini pada 8 Nov 2026 dari folder lokal
 `Documents/Codex/2026-09-28/sya/output/middleware-development/` agar bisa dikerjakan di sesi cloud.
 
 | Folder | Isi |
 |---|---|
-| [`u300-agent/`](u300-agent/) | Proyek Android lengkap (Agent 0.4.0): sumber Java, tes host, kontrak `OPENAPI_RFID_V2.json`, dokumen `docs/01…07`, **SDK vendor** `app/libs/DeviceAPI_ver20251103_release.aar`, APK `delivery/KN-U300-Agent-0.4.0-lab-debug.apk` (+ APK androidTest). Mulai dari [`u300-agent/README.md`](u300-agent/README.md). |
+| [`u300-agent/`](u300-agent/) | Proyek Android lengkap (Agent 0.5.0-lab): sumber Java, tes host, kontrak `OPENAPI_RFID_V2.json` 2.1, dokumen `docs/01…08`, **SDK vendor** `app/libs/DeviceAPI_ver20251103_release.aar`, APK `delivery/KN-U300-Agent-0.5.0-lab-debug.apk` (+ APK androidTest; APK 0.4.0 disimpan sebagai arsip). Mulai dari [`u300-agent/README.md`](u300-agent/README.md). |
 | [`u300-erp-integration-0.5.0/`](u300-erp-integration-0.5.0/) | Paket integrasi ERP 0.5.0 LAB: `erp-u300-v2.patch` (kumulatif — router/service `rfid_v2`, kontrak, panel "Integrasi reader U300", tes), `README.md`, `REVIEW.md`, `MANIFEST.json`, `evidence/`. |
 
 ## Penting sebelum mengerjakan
@@ -24,12 +24,14 @@ Disalin ke repo ini pada 8 Nov 2026 dari folder lokal
    pemilik (alarm merah hanya pelanggaran, sesi dokumen bertahap, klaim tidak bocor, dll.) + kontrak **2.1.0**
    (`backend/contracts/rfid_v2.json` = `u300-agent/contracts/OPENAPI_RFID_V2.json`). Rincian:
    [`docs/rfid/hasil/PREP-D1-GATE-V2.md`](../docs/rfid/hasil/PREP-D1-GATE-V2.md). Folder `u300-erp-integration-0.5.0/`
-   kini arsip. **Aplikasi reader (Java) masih 0.4.0** — penyesuaian ke kontrak 2.1 (photo-eye satu arah, ringkasan
-   bacaan, parse RSSI tahan locale, dll.) = paket E.
+   kini arsip. **Aplikasi reader (Java) 0.5.0-lab** (paket E) memakai kontrak 2.1: photo-eye satu arah + cadangan RF,
+   ringkasan bacaan, daftar latar, parse RSSI tahan locale, galat terstruktur, mode uji meja K-RFID-03 — laporan
+   [`docs/rfid/hasil/PREP-E-AGENT-050.md`](../docs/rfid/hasil/PREP-E-AGENT-050.md).
 3. **Belum diuji di U300 fisik maupun runtime Android**; APK memakai debug signing. Lihat
    `u300-agent/docs/03_COMMISSIONING_DAN_UAT.md` dan bagian "Titik selesai produksi" di README paket integrasi.
 4. Fakta lapangan dari pemilik (brainstorming 27 Okt 2026): gate IN dan OUT **terpisah, masing-masing satu arah**;
-   3 antena per gate (atas, kiri, kanan); **tanpa photo-eye** (tidak ada di pengadaan) → pemicu lintasan harus dari
+   3 antena per gate (atas, kiri, kanan); **tanpa photo-eye** (tidak ada di pengadaan — *diperbarui 8 Nov 2026:
+   photo-eye masuk pengadaan, K-RFID-01; agent 0.5 = photo-eye utama + cadangan RF*) → pemicu lintasan harus dari
    rombongan EPC + RSSI; muatan stacker ±180×180 cm tumpuk menyilang maks 7 lapis, label di kiri/kanan/depan;
    dokumen (surat jalan/putaway/transfer) **selalu dibuat sebelum barang lewat**; Indonesia 920–923 MHz.
    Proposal awal: [`PROPOSAL_MIDDLEWARE_RFID.md`](../PROPOSAL_MIDDLEWARE_RFID.md).

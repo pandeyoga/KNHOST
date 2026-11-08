@@ -1,4 +1,4 @@
-C:\Users\abc\Documents\Codex\2026-09-28\sya\output\middleware-development\U300_Agent_0.4.0_2026-10-19\app\src\main\AndroidManifest.xml:10: Warning: Attribute dataExtractionRules is only used in API level 31 and higher (current min is 30) [UnusedAttribute]
+app\src\main\AndroidManifest.xml:12: Warning: Attribute dataExtractionRules is only used in API level 31 and higher (current min is 30) [UnusedAttribute]
   <application android:label="KN U300 Agent · LAB" android:icon="@drawable/ic_reader" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:usesCleartextTraffic="false"
                                                                                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

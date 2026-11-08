@@ -1,27 +1,31 @@
-# Integrasi ERP dan pekerjaan tersisa
+# Integrasi ERP dan pekerjaan tersisa (0.5.0-lab)
 
-ERP Kain Nussantara · Production IT PT Kubus Teknologi Indonesia
+ERP Kain Nussantara · Production IT PT Kubus Teknologi Indonesia · status 9 November 2026
 
-Status 19 Oktober 2026. Catatan versi 0.3 yang menganggap kontrak tersedia telah digantikan oleh pemeriksaan kode main `055f7ea0f852582867b3ab063d28e7e41f67f410` dan implementasi V2 di salinan kerja lokal. Perubahan belum dipush atau diterapkan ke server.
+## Sisi ERP yang sudah ada (PREP-D1, kontrak 2.1.0)
 
-## Tersedia dalam patch ERP
+Patch Kubus 0.5.0 sudah diterapkan ke backend KNHOST dan diperbaiki sesuai keputusan pemilik: alarm merah hanya
+pelanggaran + satu kunci per gate (K-RFID-09), sesi dokumen bertahap (K-RFID-10), kelas sinyal EPC (kuat/lemah/latar),
+lintasan kosong/mundur = CANCELLED, luapan = ACK karantina + REVIEW, auto-cocok dokumen, parameter lintasan berversi,
+galat terstruktur `detail.code`, alert kesehatan reader. Rincian: `docs/rfid/hasil/PREP-D1-GATE-V2.md`.
+Agent 0.5 memakai semua field 2.1 itu (ringkasan, tepi sinar, `open_reason`/`close_reason`, `seq`/`boot_id`,
+`document_session`, kuning).
 
-Konfigurasi versioned, autentikasi device-key yang sudah ada, journaled ACK per event, identitas event per perangkat, passage close idempotent, keputusan manifest penuh, gate-state/latch, acknowledge melalui sesi pengguna, telemetry, panel U300 di menu Perangkat RFID, serta pilihan dokumen SJ/transfer fisik/putaway. Tidak mengubah stok atau finance karena RFID hanya menjadi bukti validasi.
+## Di luar agent (paket lain)
 
-Resolver gate juga diperbaiki untuk transfer fisik roll yang masih reserved untuk SO (`transfer_ref`), dan memeriksa keanggotaan roll pada dokumen transfer. Jalur gate lama menghormati crossing V2 agar tidak memberi izin kedua atas dokumen yang sama.
+- **D2**: gate → transaksi (gate IN konfirmasi tiba putaway/transfer, gate OUT bukti kirim), antrean periksa dengan
+  bukti per roll, koreksi klaim beraudit, penutupan sesi dokumen otomatis, izin pengakuan terpisah.
+- Uji beban server 2.000 roll / 10.000 ringkasan (AUD-MW-07).
+- Usulan kontrak dari paket E (penanda lintasan digabung, penilaian `t_peak` vs `beam_times`, posisi antena,
+  kunci baku kesehatan) — [08 §9](08_PERUBAHAN_050.md#9-usulan-kontrak-untuk-koordinator-diselaraskan-dengan-d2--kontrak-tidak-diubah-di-paket-ini).
 
 ## Belum dinyatakan selesai
 
-- Runtime Android/SQLite/service/boot pada emulator atau perangkat nyata belum dijalankan; APK dan instrumentation APK sudah dikompilasi.
-- Region, power, firmware, antena, sensor, relay dan waktu passage harus dibuktikan pada U300. Profil contoh tetap belum commissioned.
-- Integrasi lokal memakai router ERP yang sebenarnya dan MongoDB lokal; startup aplikasi ERP lengkap, bootstrap, konfigurasi deployment, serta uji role pengguna end-to-end masih perlu staging.
-- Satu dokumen manifest per passage. Konsolidasi beberapa SJ/SO dalam satu dispatch fisik belum diterapkan pada V2 ini. Jangan memindai gabungan beberapa SJ sebagai satu passage dan mengharapkan GREEN.
-- Transaksi pembelian antar-entitas adalah perubahan kepemilikan, bukan otomatis dokumen perpindahan fisik. Gate menggunakan transfer fisik/putaway/SJ yang sesuai. Transfer komersial `inter_entity` tidak dijadikan izin gate.
-- Mekanisme koreksi crossing yang salah/recovery claim setelah crash belum memiliki layar supervisor tersendiri. Claim dipertahankan; tidak dibersihkan otomatis.
-- Dashboard menampilkan 100 passage terakhir dan pilihan 200 dokumen terbaru. Pagination histori, ekspor evidence server, dan filter lanjutan belum tersedia dalam panel baru.
-- Otoritas operasional memakai izin `wms:view`/`wms:scan` yang sudah ada. Konfigurasi perangkat mengikuti aturan admin infrastruktur eksisting. Pemisahan hak acknowledge dan commissioning yang lebih rinci belum diimplementasikan.
+- Runtime Android/SQLite/service/boot belum dijalankan; APK dan APK instrumentasi hanya dikompilasi.
+- Uji meja K-RFID-03, region, daya, sensor, relay, indikator, kalibrasi lintasan — wajib di U300 & lokasi.
+- Satu logical gate per reader (IN/OUT terpisah = dua reader). Interlock pasangan gate berdampingan (K-RFID-04) belum.
 - Retensi histori menunggu keputusan; tidak ada penghapusan otomatis.
-- Signing produksi, URL staging, credential provisioning dan acceptance operasional masih belum tersedia.
-- Handheld C72 dan printer CP30EN tetap modul berbeda, di luar APK reader ini.
+- Signing produksi, URL staging, provisioning kredensial, dan acceptance operasional belum tersedia.
+- Handheld C72 dan printer CP30EN tetap modul berbeda.
 
-Tidak ada status “production ready” yang diberikan oleh hasil build atau simulasi.
+Tidak ada status "production ready" yang diberikan oleh hasil build, tes host, atau simulasi.

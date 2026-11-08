@@ -2,6 +2,9 @@
 
 ERP Kain Nussantara · PT Kubus Teknologi Indonesia
 
+> **Historis.** Prosedur pemulihan, ekspor snapshot, dan signing di bawah masih berlaku di 0.5.0; perilaku lintasan,
+> sensor, galat, dan simulasi sudah diganti — lihat [08 Perubahan 0.5.0](08_PERUBAHAN_050.md).
+
 ## Hasil pengembangan
 
 Versi ini melanjutkan paket 0.2.0. Application ID tetap sama sehingga pembaruan debug dengan signing key yang sama dapat mempertahankan database. Paket 0.2.0 tetap disimpan terpisah sebagai referensi; jangan menurunkan versi pada perangkat yang sudah diperbarui tanpa prosedur migrasi.
