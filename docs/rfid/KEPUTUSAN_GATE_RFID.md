@@ -30,6 +30,9 @@ Claude Code (26–27 Okt 2026) yang tidak bisa dibaca sesi lain.
 - Antena: → **asumsi kerja 8 Nov 2026: varian Indonesia**, yaitu pita yang mencakup 920–923 MHz, bukan varian EU
   (K-RFID-02).
 - Middleware dibuat sendiri: reader → middleware → ERP.
+- **Perangkat lain (pemilik, 9 Nov 2026):** handheld **Chainway C72 × 8 unit**, printer label RFID **Chainway CP30EN
+  × 2 unit** (jumlah bisa bertambah → desain multi-perangkat per gedung). Label **70 × 22 mm**. Printer tersambung
+  **LAN ke PC di gudang** (connector berjalan di PC itu, bukan di server). Semua perangkat belum datang.
 
 ## 2. Kesimpulan riset (ringkas; angka = hitungan model, wajib dibuktikan uji lokasi)
 - Bacaan nyasar **tidak bisa dihapus** oleh software; software mencegahnya menjadi transaksi salah. Target realistis:
@@ -166,7 +169,7 @@ produk (pindai label supplier / pilih), panjang, lot, grade, PT, bin di handheld
 | K-OPN-02 | Nilai barang temuan | **Biaya rata-rata** (perilaku bawaan `stock_count_service.surplus_unit_cost`: rata-rata gudang → rata-rata pemilik → harga master produk) |
 | K-OPN-03 | Pembekuan gerakan gedung selama pendaftaran | **Diputuskan 8 Nov 2026**: gedung besar **beku per zona/rak** (zona yang sedang dikerjakan ditutup, sistem menolak gerakan dari/ke zona itu; zona lain tetap melayani); gedung kecil **beku penuh**. Lama penutupan ditentukan setelah **uji coba satu rak** mengukur kecepatan tim (roll/jam tempel + input) |
 | K-OPN-04 | Sumber panjang roll | **Dari label bila ada**; roll tanpa label ditandai "panjang belum terverifikasi" dan diukur saat diambil/dipotong |
-| K-OPN-05 | Keunikan EPC tag yang dibeli | **terbuka** — pemilik belum bisa cek (8 Nov). Cek ±20 tag dari gulungan: EPC bawaan unik → cukup dibaca & didaftarkan; tidak unik → EPC ditulis sistem/printer sebelum ditempel |
+| K-OPN-05 | Keunikan EPC tag yang dibeli | **Asumsi kerja pemilik 9 Nov 2026: TIDAK unik** → EPC selalu dibuat sistem lalu **ditulis** ke chip (printer CP30EN saat cetak, atau handheld C72 untuk tag yang sudah ditempel); bila ternyata unik, alur yang sama tetap jalan. Cek ±20 tag dari gulungan tetap dilakukan saat tag datang |
 | K-OPN-06 | Aturan & proses perbaikan master produk | **Diputuskan 8 Nov 2026**: kode SKU yang salah **tidak diubah** — dibuat produk berkode benar, kode lama dinonaktifkan & ditandai "digantikan oleh" kode induk (stok tidak dipindah karena stok didaftarkan ulang dari fisik; dokumen terbuka berkode lama diselesaikan/dialihkan dulu). Proses: master produk diekspor ke lembar kerja → MD/klien menandai duplikat, typo, kode benar → diimpor sebagai satu batch ber-pratinjau & bisa dibatalkan. Ekspor CSV yang ada (`/master-data/export-products`) belum memuat artikel, warna kode, gramasi/lebar, indikasi duplikat & kolom tindakan |
 
 Yang sudah ada di ERP: modul Opname per roll (`stock_count_roll_service`: potret → pindai → rekonsiliasi → ACC; hilang →
