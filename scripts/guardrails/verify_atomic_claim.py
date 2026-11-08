@@ -144,6 +144,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("users.py", "/users"): ("service", "POST: users baru per permintaan; hr_employees.user_id gagal → akun yang baru lahir dihapus (kompensasi saga); tak ada saldo bersama"),
     ("users.py", "/users/{user_id}"): ("service", "PATCH: users $set + hr_employees.user_id (idempoten, tautan satu arah) + sesi dicabut (delete_many) — tulisan independen tanpa saldo/stok, aman diulang"),
     ("warehouse_sites.py", "/warehouse-sites/seed-blueprint"): ("service", "POST seed: warehouses/warehouse_sites di-upsert per kode (idempoten) — pengulangan tidak menggandakan; tak ada saldo"),
+    # ── PREP-A (K-OPN-06, 9 Nov 2026) — lembar perbaikan master produk ─────────────────────
+    ("master_governance.py", "/master-governance/cleanup/apply"): ("service", "rencana batch durable (status planned) → klaim master_cleanup_batches sesudah validasi+tanda tangan pratinjau; per baris CAS produk (status/updated_at/belum digantikan seperti dibaca), produk baru insert ber-SKU unik + kompensasi; finish_set status applied", "master_cleanup_service.apply_cleanup"),
+    ("master_governance.py", "/master-governance/cleanup/batches/{batch_id}/rollback"): ("service", "klaim master_cleanup_batches (status applied*) sesudah validasi alasan/peran; tiap baris dibalik dengan CAS last_cleanup_batch + nilai sesudah; produk yatim dipindai dari penanda batch; finish_set rolled_back", "master_cleanup_service.rollback_cleanup"),
 }
 
 # `family_lock(` = context manager di product_variant_service yang MEMBUNGKUS

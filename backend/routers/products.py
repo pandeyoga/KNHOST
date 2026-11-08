@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/products")
 async def list_products(request: Request, orderable_only: bool = False,
-                        line: str = "", stage: str = "") -> List[Dict[str, Any]]:
+                        line: str = "", stage: str = "", include_superseded: bool = False) -> List[Dict[str, Any]]:
     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): katalog WAJIB login — auth di LUAR try/except.
     actor = await require_permission(request, "product", "view")
     await expire_old_reservations()
@@ -32,6 +32,12 @@ async def list_products(request: Request, orderable_only: bool = False,
     query = line_scope.narrow(pexcl.visibility_query(actor), actor, line)
     if stage:  # temuan 2026-10-19D — `?stage=` sebelumnya diabaikan
         query = {"$and": [query, {"stage": {"$in": [s.strip() for s in stage.split(",") if s.strip()]}}]}
+    # PREP-A (K-OPN-06) — produk "digantikan oleh" (kode salah/duplikat) tidak ditawarkan ke pemilih dokumen BARU.
+    # Daftar ini adalah sumber ±20 pemilih (PR/PO/RFQ/transfer/MKO/ProductSelect …). Laporan/riwayat tidak
+    # memakai daftar ini; layar yang butuh semua SKU memanggil `?include_superseded=true`.
+    if not include_superseded:
+        from services.product_supersede import exclude_superseded
+        query = exclude_superseded(query)
     products = await db.products.find(query, {"_id": 0}).to_list(500)
     # FASE F (PS-12) — katalog jual/beli hanya menampilkan produk yang SAH dipesan.
     # Dipakai POS/Sales Portal (`orderable_only=true`); Master Produk tetap melihat semua.
