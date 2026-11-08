@@ -218,7 +218,10 @@ async def build_line(session: Dict[str, Any], body: Dict[str, Any], actor: Dict[
                 raise HTTPException(status_code=400, detail="EPC tidak valid: pindai tag (24 karakter hex).")
         src = "read"
     elif not epc:
-        epc, src = await _new_system_epc(session), "system"
+        # PREP-G — EPC cadangan perangkat handheld C72 (dibuat sistem lebih dulu, dicek `handheld_tags.process_lines`);
+        # kunci privat ini tidak bisa dikirim klien web (model RegLineIn tidak memuatnya).
+        pre = try_canonical(body.get("epc")) if body.get("_reserved_system_epc") else None
+        epc, src = (pre, "system") if pre else (await _new_system_epc(session), "system")
     st = await epc_status(session, epc, line_id)
     if not st["ok"]:
         raise HTTPException(status_code=409, detail={"code": "EPC_CONFLICT", "message": st["message"]})

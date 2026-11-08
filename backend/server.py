@@ -233,6 +233,8 @@ from routers import sample_orders  # noqa: E402  — REVISI SAMPEL: Pesanan Samp
 app.include_router(sample_orders.router)
 from routers import cutting  # noqa: E402  — L06 LN-061 Meja Cutting / Admin Cutting
 app.include_router(cutting.router)
+from routers import handheld as _handheld  # noqa: E402  — PREP-G API aplikasi handheld Chainway C72
+app.include_router(_handheld.router)
 app.include_router(makloons.router)
 app.include_router(process_recipes.router)
 app.include_router(makloon_orders.router)

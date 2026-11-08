@@ -1,0 +1,49 @@
+plugins { id 'com.android.application' }
+def signingNames = ['KN_RELEASE_STORE_FILE', 'KN_RELEASE_STORE_PASSWORD', 'KN_RELEASE_KEY_ALIAS', 'KN_RELEASE_KEY_PASSWORD']
+def signingReady = signingNames.every { System.getenv(it) }
+if (signingNames.any { System.getenv(it) } && !signingReady) {
+    throw new GradleException('Release signing environment belum lengkap; lengkapi empat variabel KN_RELEASE_* atau kosongkan semuanya.')
+}
+android {
+    namespace 'id.kainnusantara.handheld'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'id.kainnusantara.handheld.c72'
+        minSdk 30
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0-lab'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        if (signingReady) {
+            production {
+                storeFile file(System.getenv('KN_RELEASE_STORE_FILE'))
+                storePassword System.getenv('KN_RELEASE_STORE_PASSWORD')
+                keyAlias System.getenv('KN_RELEASE_KEY_ALIAS')
+                keyPassword System.getenv('KN_RELEASE_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            // LAB: server uji lokal boleh HTTP (LAN). Rilis hanya HTTPS.
+            manifestPlaceholders = [cleartext: 'true']
+        }
+        release {
+            debuggable false
+            minifyEnabled false
+            manifestPlaceholders = [cleartext: 'false']
+            if (signingReady) signingConfig signingConfigs.production
+        }
+    }
+    lint {
+        abortOnError true
+        checkReleaseBuilds false
+        textReport true
+        textOutput file("$buildDir/reports/lint-results.txt")
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
+// SDK vendor Chainway (internal, repo privat): DIRUJUK dari proyek agent U300 — biner tidak digandakan.
+dependencies { implementation files('../../u300-agent/app/libs/DeviceAPI_ver20251103_release.aar') }
