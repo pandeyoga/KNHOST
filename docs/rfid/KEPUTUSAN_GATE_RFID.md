@@ -164,9 +164,10 @@ produk (pindai label supplier / pilih), panjang, lot, grade, PT, bin di handheld
 |---|---|---|
 | K-OPN-01 | Peran data lama | **Hanya referensi/pembanding** (per produk per gedung), bukan acuan. **Master data dirapikan dulu**: kode salah, duplikat, typo diperbaiki sebelum pendaftaran |
 | K-OPN-02 | Nilai barang temuan | **Biaya rata-rata** (perilaku bawaan `stock_count_service.surplus_unit_cost`: rata-rata gudang → rata-rata pemilik → harga master produk) |
-| K-OPN-03 | Pembekuan gerakan gedung selama pendaftaran | **terbuka** — dijelaskan ke pemilik 8 Nov (penuh per gedung / per zona / tanpa beku + catat gerakan) |
+| K-OPN-03 | Pembekuan gerakan gedung selama pendaftaran | **Diputuskan 8 Nov 2026**: gedung besar **beku per zona/rak** (zona yang sedang dikerjakan ditutup, sistem menolak gerakan dari/ke zona itu; zona lain tetap melayani); gedung kecil **beku penuh**. Lama penutupan ditentukan setelah **uji coba satu rak** mengukur kecepatan tim (roll/jam tempel + input) |
 | K-OPN-04 | Sumber panjang roll | **Dari label bila ada**; roll tanpa label ditandai "panjang belum terverifikasi" dan diukur saat diambil/dipotong |
-| K-OPN-05 | Keunikan EPC tag yang dibeli | **terbuka** — cek ±20 tag dari gulungan: EPC bawaan unik → cukup dibaca & didaftarkan; tidak unik → EPC ditulis sistem/printer sebelum ditempel |
+| K-OPN-05 | Keunikan EPC tag yang dibeli | **terbuka** — pemilik belum bisa cek (8 Nov). Cek ±20 tag dari gulungan: EPC bawaan unik → cukup dibaca & didaftarkan; tidak unik → EPC ditulis sistem/printer sebelum ditempel |
+| K-OPN-06 | Aturan & proses perbaikan master produk | **Diputuskan 8 Nov 2026**: kode SKU yang salah **tidak diubah** — dibuat produk berkode benar, kode lama dinonaktifkan & ditandai "digantikan oleh" kode induk (stok tidak dipindah karena stok didaftarkan ulang dari fisik; dokumen terbuka berkode lama diselesaikan/dialihkan dulu). Proses: master produk diekspor ke lembar kerja → MD/klien menandai duplikat, typo, kode benar → diimpor sebagai satu batch ber-pratinjau & bisa dibatalkan. Ekspor CSV yang ada (`/master-data/export-products`) belum memuat artikel, warna kode, gramasi/lebar, indikasi duplikat & kolom tindakan |
 
 Yang sudah ada di ERP: modul Opname per roll (`stock_count_roll_service`: potret → pindai → rekonsiliasi → ACC; hilang →
 hitung ulang lalu dihapus + jurnal; kode tak dikenal → roll baru saat ACC + jurnal surplus), tata kelola master produk
