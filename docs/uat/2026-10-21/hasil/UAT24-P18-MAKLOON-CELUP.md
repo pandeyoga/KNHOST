@@ -34,6 +34,8 @@ Berkas baru: `backend/services/{makloon_issue_rolls,makloon_receipt_qc,inbound_q
 - **Hasil langkah terakhir SEMUA Order Makloon kini menunggu SPK QC** (selama `purchasing.qc_on_receipt` aktif —
   bawaan). Dulu langsung tersedia untuk dijual. Bila pemilik ingin makloon tanpa QC: matikan kunci itu per badan
   usaha (berlaku juga untuk PO) — atau minta kunci terpisah.
+  **Keputusan pemilik 8 Nov 2026: tetap ikut setelan PO** (tidak dibuat kunci terpisah) — K-GDG-11 di
+  `docs/rfid/KEPUTUSAN_GATE_RFID.md`.
 - Pop-up Issue makloon punya pilihan mode; mode lama tetap bawaan. Mode "Pilih roll" mengirim roll **utuh**.
 - SPK hasil makloon mengikuti siklus SPK biasa (Draf → ditugaskan → mulai → periksa baris → tutup).
 - Gate: roll ke/dari makloon & perbaikan tidak lagi merah "tanpa dokumen" bila dokumennya aktif.

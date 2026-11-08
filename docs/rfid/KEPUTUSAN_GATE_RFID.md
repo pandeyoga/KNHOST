@@ -111,17 +111,41 @@ tidak terdeteksi di gate. Sejak itu (4 Nov, P18) `gate_evaluator` juga mengenali
 ## 6. Yang harus diputuskan / diselesaikan DULU (STOP & ASK)
 | ID | Hal | Pemutus | Status |
 |---|---|---|---|
-| K-RFID-01 | Photo-eye masuk pengadaan? (rekomendasi: ya, 2 pasang through-beam per gate) — menentukan apakah logika dibangun "photo-eye utama + cadangan RF" atau "RF saja" | Pemilik | **ditutup 8 Nov 2026 (pemilik): photo-eye masuk pengadaan** → logika "photo-eye utama + cadangan RF" |
-| K-RFID-02 | Antena varian EU: ukur di 920–923 MHz atau ganti varian 902–928 MHz | Pemilik / teknis | **asumsi kerja 8 Nov 2026 (pemilik): antena varian Indonesia** (pita mencakup 920–923 MHz); kinerja tetap diukur saat commissioning |
+| K-RFID-01 | Photo-eye masuk pengadaan? (rekomendasi: ya, 2 pasang through-beam per gate) — menentukan apakah logika dibangun "photo-eye utama + cadangan RF" atau "RF saja" | Pemilik | **ditutup 8 Nov 2026 (pemilik; dikonfirmasi ulang di sesi lokal)**: photo-eye masuk pengadaan → logika "photo-eye utama + cadangan RF" |
+| K-RFID-02 | Antena varian EU: ukur di 920–923 MHz atau ganti varian 902–928 MHz | Pemilik / teknis | **asumsi kerja 8 Nov 2026 (pemilik; dikonfirmasi ulang)**: antena varian Indonesia (pita mencakup 920–923 MHz); kinerja tetap diukur saat commissioning |
 | K-RFID-03 | Uji meja SDK U300 (±30 menit): RSSI **per bacaan** lewat **SDK** (bukan hanya aplikasi demo), satuannya (dBm?), nomor antena, waktu baca, daya per antena. Bila RSSI tidak keluar lewat SDK, lapisan sinyal gugur → photo-eye makin penting | Teknis (PT Kubus) | terbuka — lakukan **sebelum pengadaan final** |
-| K-RFID-04 | Tata letak gate (opsi A/B/C), clear zone & jarak rak terdekat, terutama jalur datang di gate OUT | Pemilik | terbuka |
+| K-RFID-04 | Tata letak gate (opsi A/B/C), clear zone & jarak rak terdekat, terutama jalur datang di gate OUT | Pemilik | **sebagian 8 Nov 2026**: campuran — ada pasangan IN/OUT **berdampingan dengan sekat** (opsi B) dan ada yang **pintunya berjauhan** (opsi C). Sistem menyimpan tata letak per pasangan gate; pasangan berdampingan butuh aturan penengah (interlock/arbitrasi, usulan riset #10) dan efek sekat wajib dibuktikan uji. Clear zone & jarak rak per gate masih terbuka |
 | K-RFID-05 | Setelan reader & kabel: panjang/jenis kabel, daya per port, peta port → antena atas/kiri/kanan, region 920–923 | Teknis | terbuka |
-| K-RFID-06 | SOP operator: kecepatan pelan & konstan ≤ 5 km/jam, tidak berhenti/mundur di gate, satu muatan per lintasan, arah gulungan di stacker | Pemilik / operasional | terbuka |
-| K-RFID-07 | Pemetaan 13 usulan (§5) terhadap yang sudah dikerjakan PT Kubus di Agent 0.4.0 + patch ERP 0.5.0, lalu putuskan basis pengembangan (patch Kubus vs `gate_evaluator` KNHOST) | Implementer → pemilik | **analisis selesai 8 Nov 2026** — [`AUDIT_MIDDLEWARE_RFID_2026-11-08.md`](AUDIT_MIDDLEWARE_RFID_2026-11-08.md) §5 (rekomendasi: transport Kubus V2 + aturan `gate_evaluator` + lapisan lintasan baru); **menunggu keputusan pemilik** |
+| K-RFID-06 | SOP operator: kecepatan pelan & konstan ≤ 5 km/jam, tidak berhenti/mundur di gate, satu muatan per lintasan, arah gulungan di stacker | Pemilik / operasional | **disetujui sebagai DRAF 8 Nov 2026** — difinalkan setelah uji lapangan; pelanggaran SOP → "perlu diperiksa" |
+| K-RFID-07 | Pemetaan 13 usulan (§5) terhadap yang sudah dikerjakan PT Kubus di Agent 0.4.0 + patch ERP 0.5.0, lalu putuskan basis pengembangan (patch Kubus vs `gate_evaluator` KNHOST) | Implementer → pemilik | **ditutup 8 Nov 2026 (pemilik): GABUNGAN** — aplikasi reader & transport Kubus V2 + aturan bisnis `gate_evaluator` KNHOST + lapisan lintasan baru (photo-eye, ringkasan bacaan, daftar latar, status kuning); jalur lama `/api/rfid/ingest` ditutup untuk reader V2 ([audit](AUDIT_MIDDLEWARE_RFID_2026-11-08.md) §5) |
 | K-RFID-08 | Target penerimaan uji lapangan (M1–M11) | Pemilik | usulan, belum disepakati |
-| K-RFID-09 | Kebijakan alarm: mana yang **merah terkunci** (pelanggaran) vs **kuning/perlu diperiksa** tanpa mengunci (roll kurang, capture tidak lengkap, waktu, tanpa manifest); satu kunci per gate. Kode Kubus kini mengunci semua non-hijau dan berantai (audit AUD-MW-03) | Pemilik | terbuka (muncul dari audit 8 Nov) |
-| K-RFID-10 | Muat multi-trip stacker: dinilai **per lintasan terhadap seluruh SJ** (kode Kubus kini) atau **sesi dokumen akumulatif** — roll kurang dinilai saat dokumen ditutup (audit AUD-MW-22) | Pemilik | terbuka (muncul dari audit 8 Nov) |
+| K-RFID-09 | Kebijakan alarm: mana yang **merah terkunci** (pelanggaran) vs **kuning/perlu diperiksa** tanpa mengunci (roll kurang, capture tidak lengkap, waktu, tanpa manifest); satu kunci per gate. Kode Kubus kini mengunci semua non-hijau dan berantai (audit AUD-MW-03) | Pemilik | **ditutup 8 Nov 2026 (pemilik): merah terkunci HANYA untuk pelanggaran nyata** (roll tanpa dokumen, karantina, sudah keluar, dokumen batal, EPC asing bersinyal kuat). Roll kurang / capture tidak lengkap / waktu tidak tervalidasi / tanpa manifest = **kuning**: barang jalan, masuk antrean periksa, gate tidak terkunci. **Satu kunci per gate**; simpan daftar alasan, bukan satu kode yang ditimpa |
+| K-RFID-10 | Muat multi-trip stacker: dinilai **per lintasan terhadap seluruh SJ** (kode Kubus kini) atau **sesi dokumen akumulatif** — roll kurang dinilai saat dokumen ditutup (audit AUD-MW-22) | Pemilik | **ditutup 8 Nov 2026 (pemilik): SESI DOKUMEN BERTAHAP** — tiap trip hijau bila semua roll kuat non-latar milik dokumen aktif & belum pernah lewat; roll yang belum lewat dinilai saat dokumen ditutup/dikirim |
+
+| K-RFID-11 | Cara menautkan tag ke **stok lama**: tempel lalu *tautkan* EPC bawaan (pairing, perlu layar handheld baru) · cetak label RFID dari sistem · tempel lalu *encode* (risiko tertulis ke tag sebelah) | Pemilik | **terbuka** — pemilik minta penjelasan lebih detail dulu (8 Nov). Rencana pemilik: semua stok lama ditag dulu, lalu opname |
 
 Yang **boleh** dikerjakan tanpa menunggu: analisis/dokumen (mis. K-RFID-07), dan uji meja K-RFID-03 bila perangkat
 tersedia. Perubahan kode middleware/gate hanya setelah pemilik menyatakan butir terkait ditutup — catat keputusannya
 di tabel ini (tanggal + siapa).
+
+## 7. Fondasi ERP gudang & putaway untuk gate — keputusan pemilik 8 Nov 2026
+Ditanyakan di sesi lokal 8 Nov (status sekarang + tujuan dijelaskan per pertanyaan). Prinsip pemilik: **data lokasi &
+gedung belum tervalidasi → semua hal di bawah dibuat BISA DIKONFIGURASI**, bukan ditanam di kode.
+
+| ID | Hal | Keputusan |
+|---|---|---|
+| K-GDG-01 | Gedung yang memakai gate fisik | **Hanya gedung penyimpanan** — di Rancamalang dan Soreang. Dibuat **bisa diatur per gedung** (punya gate atau tidak, perangkat IN/OUT, mode konfirmasi gate/handheld). Jakarta & gedung tanpa gate = handheld. Penanda `gate_config.physical_gate` kini hanya disimpan → harus dipakai sistem |
+| K-GDG-02 | Fungsi gate terhadap transaksi | **Gate IN gedung simpan memvalidasi putaway dari GRN**: lintasan terkonfirmasi otomatis mencatat tiba putaway; roll tak terbaca tetap "belum tiba". **Gate OUT memvalidasi barang keluar** (SJ, transfer, makloon, perbaikan) per trip (K-RFID-10). **Handheld = cadangan** untuk tag tak terbaca (dan alat utama di gedung tanpa gate) |
+| K-GDG-03 | Masa awal | **Langsung gate utama** — tanpa periode uji dobel gate + handheld |
+| K-GDG-04 | Area QC / inspeksi | **Bisa diatur** (tempat baru bisa muncul). Kondisi sekarang di Rancamalang: **gedung Retur = tempat inspeksi** — barang retur masuk ke sana untuk diinspeksi, dan **barang baru masuk yang diminta inspeksi juga dibawa ke sana**. **MD Quality tidak perlu inspeksi**: dicek & dicocokkan manual oleh orang. Inspeksi = pemeriksaan per 15 yard. Catatan: ini menggeser keputusan P9-K2 (Okt: "tidak ada area inspeksi terpisah") — barang baru yang diinspeksi kini berpindah gedung (butuh dokumen & lewat gate) |
+| K-GDG-05 | Bentuk penyimpanan | **Campuran per gedung** (rak bertingkat atau petak lantai tumpukan stacker), diatur per gedung/zona; arti & kapasitas "bin" mengikuti |
+| K-GDG-06 | Gudang bahan (greige, benang, dsb.) | **Bisa diatur per gedung**: peran "bahan" dan mode pencatatan (per roll bertag atau kuantitas tanpa tag) |
+| K-GDG-07 | Kepemilikan gedung antar PT | **Semua gedung dipakai bersama** semua PT; roll tetap milik PT masing-masing |
+| K-GDG-08 | Pembagian zona gedung simpan | **Bisa dikonfigurasi** per gedung (kategori / artikel / grade / PT pemilik, boleh kombinasi) |
+| K-GDG-09 | Stok yang masih di transit | **Boleh dialokasikan/dijual seperti sekarang** — rencana P9.6 (mengecualikan stok transit) **tidak** dibangun |
+| K-GDG-10 | Putaway setelah GRN | **Draf otomatis**: setelah QC lulus sistem menyiapkan draf putaway per gedung tujuan (sesuai aturan zona/gedung), admin cek lalu terbitkan; **tiba bertahap per trip** didukung |
+| K-GDG-11 | QC hasil makloon (P18) | **Ikut setelan PO** (`purchasing.qc_on_receipt`) — tidak dibuat setelan terpisah |
+
+Masih terbuka: **penamaan alamat rak/bin** (usulan `LOKASI-GEDUNG-ZONA-RAK-TINGKAT-BIN`, mis. `RCM-WVN-A-R01-T2-B03`),
+K-RFID-03 (uji meja SDK), K-RFID-05 (setelan reader & kabel), K-RFID-08 (target uji), K-RFID-11 (cara tag stok lama),
+clear zone per gate (K-RFID-04).
