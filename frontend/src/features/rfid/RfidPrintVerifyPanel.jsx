@@ -8,11 +8,8 @@ import { Printer, CheckCircle2, Download, ScanLine, PackageCheck, Zap, ArrowRigh
 import DetailModal from "../../components/DetailModal";
 import axios, { API } from "../../services/apiClient";
 import { q, fmtTime, Pill, EmptyBox, SectionCard } from "./rfidShared";
-
-const JOB_STATUS = {
-  queued: ["blue", "Antre Cetak"], printed: ["orange", "Tercetak"],
-  verified: ["green", "Terverifikasi"], verified_with_issues: ["red", "Verif. Bermasalah"],
-};
+// PREP-F — status job & per label dipakai bersama dengan Antrean Printer (cetak sebagian, tidak pasti, gagal).
+import { ITEM_STATUS, JOB_STATUS, jobProgress } from "./printerLabels";
 
 export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }) {
   const [candidates, setCandidates] = useState([]);
@@ -200,6 +197,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
                           className={`mt-0.5 inline-block rounded px-1.5 text-[10px] font-semibold ${leaseCls(leaseInfo(j))}`}>
                           <Printer size={9} className="mr-0.5 inline" />{leaseInfo(j).text}</span>)}
                       {j.status === "queued" && <RetryBadge j={j} />}
+                      {j.counts && j.status !== "queued" && <span className="block text-[10px] text-[#6B6B73]" data-testid={`rfid-job-progress-${j.id}`}>{jobProgress(j)}</span>}
                       {!j.lease && j.status === "printed" && j.printed_via === "device" && (
                         <span data-testid={`rfid-job-printedby-${j.id}`} className="mt-0.5 block text-[10px] text-[#1B7F4B]">Dicetak printer {j.printed_by_device}</span>)}
                     </span>
@@ -228,7 +226,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
                 <Printer size={12} /> Tandai Tercetak
               </button>
             )}
-            {["printed", "verified_with_issues"].includes(activeJob.status) && session?.status !== "open" && activeJob.kind !== "qr_label" && (
+            {["printed", "partial", "needs_review", "verified_with_issues"].includes(activeJob.status) && session?.status !== "open" && (activeJob.kind || "rfid_tag") === "rfid_tag" && (
               <button data-testid="rfid-job-verify" disabled={busy} onClick={startVerify}
                 className="flex items-center gap-1 rounded-lg bg-[#0058CC] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">
                 <ScanLine size={12} /> {activeJob.status === "printed" && !session ? "Mulai Verifikasi" : "Ulangi Verifikasi"}
@@ -254,7 +252,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead><tr className="border-b border-[#EFF0F2] text-left text-[10.5px] text-[#8E8E93]">
-                <th className="py-1.5 pr-2">EPC</th><th className="pr-2">Roll</th><th className="pr-2">Produk</th>
+                <th className="py-1.5 pr-2">EPC</th><th className="pr-2">Roll</th><th className="pr-2">Produk</th><th className="pr-2">Label</th>
                 {session && <th className="pr-2 text-center">Scan</th>}
               </tr></thead>
               <tbody>
@@ -263,6 +261,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
                     <td className="py-1.5 pr-2 font-mono text-[11px] font-semibold">{i.epc}</td>
                     <td className="pr-2">{i.roll_no}</td>
                     <td className="pr-2 text-[#6B6B73]">{i.sku} · {i.product_name}</td>
+                    <td className="pr-2">{i.status ? <Pill color={(ITEM_STATUS[i.status] || ["gray"])[0]}>{(ITEM_STATUS[i.status] || [null, i.status])[1]}</Pill> : "—"}</td>
                     {session && (
                       <td className="pr-2 text-center">
                         {scannedSet.has(i.epc)

@@ -1,0 +1,21 @@
+{
+  "erp_url": "https://erp.contoh-kainnusantara.id/api",
+  "verify_tls": true,
+  "data_dir": "C:\\ProgramData\\KN-Printer-Connector",
+  "log_level": "INFO",
+  "http_timeout_s": 15,
+  "printers": [
+    {
+      "name": "CP30EN-RCM-1",
+      "host": "192.168.10.21",
+      "port": 9100,
+      "device_key_env": "KN_PRN_RCM1_KEY"
+    },
+    {
+      "name": "CP30EN-SOR-1",
+      "host": "192.168.20.21",
+      "port": 9100,
+      "device_key_file": "keys\\CP30EN-SOR-1.key"
+    }
+  ]
+}

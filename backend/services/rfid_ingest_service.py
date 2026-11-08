@@ -321,66 +321,23 @@ async def ingest_into_session(device: Dict[str, Any], session_id: str, epcs: Lis
 
 
 # ─── Printer pull (middleware ambil antrean ZPL) ────────────────────────────
-LEASE_SECONDS = 300
-KIND_CAPABILITY = {"rfid_tag": "rfid", "qr_label": "qr"}
+# PREP-F — logika printer pindah ke `services/rfid_printer_protocol.py` (lease stabil, start barrier, hasil per
+# label, pemulihan efek). Fungsi di bawah dipertahankan sebagai pintu kompatibel kontrak lama.
+from services import rfid_printer_protocol as _prn  # noqa: E402
+
+LEASE_SECONDS = _prn.LEASE_SECONDS
+KIND_CAPABILITY = _prn.KIND_CAPABILITY
+_caps = _prn._caps
 
 
-def _caps(device: Dict[str, Any]) -> List[str]:
-    return list(device.get("capabilities") or ["rfid", "qr"])
-
-
-async def pending_jobs_for_device(device: Dict[str, Any], limit: int = 5) -> Dict[str, Any]:
-    """RF-15 — pull = klaim lease atomik per job ke printer ini (attempt_id + TTL). Lease kedaluwarsa
-    boleh diklaim ulang printer lain; job yang masih di-lease printer lain TIDAK ikut terkirim."""
-    if device.get("type") != "printer":
-        raise HTTPException(status_code=400, detail="Device bukan printer")
-    kinds = [k for k, c in KIND_CAPABILITY.items() if c in _caps(device)]
-    now = datetime.now(timezone.utc)
-    jobs: List[Dict[str, Any]] = []
-    while len(jobs) < limit:
-        lease = {"device_id": device["id"], "device_name": device.get("name") or device.get("code"), "attempt_id": new_id("patt"), "claimed_at": now.isoformat(),
-                 "expires_at": (now + timedelta(seconds=LEASE_SECONDS)).isoformat()}
-        job = await db.rfid_print_jobs.find_one_and_update(
-            {"warehouse_id": device.get("warehouse_id"), "status": "queued", "kind": {"$in": kinds},
-             "id": {"$nin": [j["id"] for j in jobs]},
-             "$or": [{"lease": {"$exists": False}}, {"lease.expires_at": {"$lt": now.isoformat()}},
-                     {"lease.device_id": device["id"]}]},
-            {"$set": {"lease": lease}, "$inc": {"print_attempts": 1}},
-            sort=[("created_at", 1)], projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-        if not job:
-            break
-        jobs.append(safe_doc(job))
-    return {"count": len(jobs), "jobs": jobs, "lease_seconds": LEASE_SECONDS}
+async def pending_jobs_for_device(device: Dict[str, Any], limit: int = 5,
+                                  instance_id: Optional[str] = None) -> Dict[str, Any]:
+    """RF-15 — pull = klaim lease atomik per job ke printer ini (attempt_id + TTL). Lease kedaluwarsa boleh diklaim
+    ulang printer lain; job yang masih di-lease printer lain TIDAK ikut terkirim. PREP-F — tarik ulang oleh pemilik
+    lease yang masih hidup mengembalikan attempt YANG SAMA (tanpa spool ulang / tanpa menaikkan percobaan)."""
+    return await _prn.claim_jobs(device, limit, instance_id)
 
 
 async def ack_job_printed(device: Dict[str, Any], job_id: str, attempt_id: Optional[str]) -> Dict[str, Any]:
-    """RF-15 — ack wajib dari printer pemilik lease aktif dengan attempt_id yang sama."""
-    if device.get("type") != "printer":
-        raise HTTPException(status_code=403, detail="Hanya device printer yang boleh mengakui cetak")
-    job = await db.rfid_print_jobs.find_one({"id": job_id}, {"_id": 0, "items.zpl": 0})
-    if not job:
-        raise HTTPException(status_code=404, detail="Print job tidak ditemukan")
-    if job.get("warehouse_id") != device.get("warehouse_id"):
-        raise HTTPException(status_code=403, detail="Job bukan milik gudang device ini")
-    if not attempt_id:
-        raise HTTPException(status_code=400, detail="attempt_id wajib (dari pull antrean)")
-    if job.get("status") != "queued":
-        if job.get("printed_attempt_id") == attempt_id:
-            return {"ok": True, "status": job["status"], "replay": True}
-        raise HTTPException(status_code=409, detail=f"Job sudah berstatus {job['status']}")
-    lease = job.get("lease") or {}
-    if lease.get("device_id") != device["id"] or lease.get("attempt_id") != attempt_id:
-        raise HTTPException(status_code=409, detail="Lease job bukan milik printer/attempt ini")
-    now = now_iso()
-    if (lease.get("expires_at") or "") < now:
-        raise HTTPException(status_code=409, detail="Lease job kedaluwarsa — tarik ulang antrean")
-    won = await db.rfid_print_jobs.find_one_and_update(
-        {"id": job_id, "status": "queued", "lease.attempt_id": attempt_id, "lease.device_id": device["id"]},
-        {"$set": {"status": "printed", "printed_at": now, "printed_by_device": device["id"],
-                  "printed_attempt_id": attempt_id, "printed_via": "device"}, "$unset": {"lease": ""}},
-        projection={"_id": 0, "items.zpl": 0})
-    if not won:
-        raise HTTPException(status_code=409, detail="Job berubah bersamaan — tarik ulang antrean")
-    from services.rfid_print_service import on_printed
-    await on_printed(won)
-    return {"ok": True, "status": "printed"}
+    """RF-15 — ack wajib dari printer pemilik lease aktif dengan attempt_id yang sama (kontrak tingkat job lama)."""
+    return await _prn.legacy_ack(device, job_id, attempt_id)
