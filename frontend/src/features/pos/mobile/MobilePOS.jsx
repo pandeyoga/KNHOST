@@ -6,6 +6,7 @@ import { PosBestSellers } from "../PosBestSellers";
 import { PosFeatured } from "../PosHighlightStrips";   // UAT 24 Okt (P12)
 import { PosSubstitutesSheet } from "../PosSubstitutesSheet";
 import { formatCurrency } from "../../../utils/formatters";
+import { SupersedeHintList, localSupersedeHints } from "../../../components/SupersedeHint";   // PREP-A
 
 /**
  * F-4a — Mobile POS dedicated.
@@ -33,6 +34,7 @@ export function MobilePOS({
 
   const q = (search || "").toLowerCase().trim();
   const filtered = useMemo(() => products.filter((p) => {
+    if (p.superseded_by) return false;   // PREP-A — SKU "digantikan oleh" tidak untuk pesanan baru
     if (cat !== "all" && p.category !== cat) return false;
     if (!q) return true;
     return [p.name, p.sku, p.color, p.motif, p.category].filter(Boolean).join(" ").toLowerCase().includes(q);
@@ -91,6 +93,8 @@ export function MobilePOS({
             </div>
           ) : filtered.length === 0 ? (
             <div data-testid="mobile-products-empty" className="flex flex-col items-center gap-2 py-16 text-center text-[#6B6B73]">
+              <SupersedeHintList hints={localSupersedeHints(search, products)} testId="mobile-pos-supersede-hint"
+                pickable={products.filter((p) => !p.superseded_by)} onPick={(t) => setSearch(t.sku)} />
               <PackageX size={32} className="text-[#C7C7CC]" />
               <p className="text-[13px] font-medium">Tidak ada produk cocok.</p>
               <p className="text-[11.5px]">Coba kata kunci atau kategori lain.</p>

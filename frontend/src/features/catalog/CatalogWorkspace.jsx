@@ -22,6 +22,7 @@ import { FamilyInfoTab } from "./FamilyInfoTab";
 import ProductColorChip from "../../components/ProductColorChip";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { MasterGovernancePanel } from "./MasterGovernancePanel";
+import MasterCleanupPanel from "./MasterCleanupPanel";   // PREP-A (K-OPN-06) — lembar perbaikan master
 import { CatalogFilters, emptyCatalogFilters } from "./CatalogFilters";
 import { MasterUsagePanel } from "./MasterUsagePanel";
 import RestockSourcePanel from "./RestockSourcePanel";
@@ -42,6 +43,7 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
   const canPurge = ["admin", "md"].includes(currentUser?.role);
   const caps = meta?.permissions || {};
   const canAudit = can(currentUser?.permissions, "audit", "view");
+  const canExport = can(currentUser?.permissions, "product", "export");
   const load = useCallback(async () => { setLoading(true); setError(""); try { const [m, d] = await Promise.all([catalogApi.meta(), catalogApi.list({ search: query, offset: page * 24, limit: 24, paginate: true, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) })]); setMeta(m); setItems(d.items); setTotal(d.total); } catch (e) { setError(catalogError(e)); } finally { setLoading(false); } }, [query, page, selectedEntity, filters]); // eslint-disable-line
   useEffect(() => { const t = setTimeout(load, 200); return () => clearTimeout(t); }, [load]);
   const open = useCallback(async (id, pid = "") => { setError(""); setSummary(null); try { const d = await catalogApi.detail(id); setFamily(d); setSelectedId(pid || d.variants[0]?.id || ""); const s = await catalogApi.summary(id); setSummary(s); } catch (e) { setError(catalogError(e)); } }, []);
@@ -69,6 +71,7 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
     {notice && <div data-testid="catalog-notice" role="status" className="catalog-alert">{notice}<button data-testid="catalog-dismiss-notice" onClick={() => setNotice("")} className="text-xs underline">Tutup</button></div>}
     {!family ? <>
       {caps.update && <details data-testid="catalog-governance-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Tata kelola master (preview · batch · rollback)</summary><MasterGovernancePanel /></details>}
+      {(caps.update || canExport) && <details data-testid="catalog-cleanup-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Perbaikan master produk (lembar kerja · pratinjau · batalkan)</summary><MasterCleanupPanel canExport={canExport} canUpdate={!!caps.update} /></details>}
       <details data-testid="catalog-restock-toggle" className="mb-2"><summary className="cursor-pointer text-xs font-semibold text-[#0058CC]">Sumber restock artikel (supplier / makloon)</summary><RestockSourcePanel canEdit={!!caps.update} /></details>
       <div className="catalog-toolbar"><div className="relative w-full max-w-md"><Search size={16} className="absolute left-3 top-3 text-gray-400" /><input data-testid="catalog-search" placeholder="Cari produk, kategori, atau prefix SKU" className="field !pl-9" value={query} onChange={e => { setPage(0); setQuery(e.target.value); }} /></div><span data-testid="catalog-result-count" className="text-xs text-gray-500">{items.length} dari {total} produk</span></div>
       <div className="mb-3"><CatalogFilters value={filters} suppliers={suppliers} onChange={f => { setPage(0); setFilters(f); }} /></div>
