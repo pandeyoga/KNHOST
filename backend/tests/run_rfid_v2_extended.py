@@ -47,7 +47,10 @@ async def run():
             await s.bind_manifest(dev, 'gate', sources[0], 'out', {'id': 'operator'})
         decision = await s.close(dev, b['context']['local_passage_id'], c, 'close')
         s.validate('GateDecision', decision)
-        check((decision['verdict'] == 'GREEN') == (scenario in ('full', 'rebound')), scenario + ': correct aggregate clearance')
+        # PREP-D1 K-RFID-10: SJ yang belum terbaca = sisa sesi (pending), bukan alasan merah per lintasan.
+        check((decision['verdict'] == 'GREEN') == (scenario in ('full', 'rebound', 'missing')), scenario + ': correct aggregate clearance')
+        if scenario == 'missing':
+            check(decision['counts']['pending'] == 1 and not decision['latched'], 'missing: remainder stays pending without alarm')
         if scenario == 'full':
             check(decision['counts']['matched'] == 2, 'aggregate counts include both SJs')
             await s.bind_manifest(dev, 'gate', sources[0], 'out', {'id': 'operator'})

@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "ERP Kain Nussantara - Middleware RFID Target Contract",
-    "version": "2.0.0",
-    "description": "AVAILABLE CONTRACT baseline per project owner. Produced by PT Kubus Teknologi Indonesia. Hardware commissioning and ERP implementation notes are maintained separately."
+    "version": "2.1.0",
+    "description": "AVAILABLE CONTRACT baseline per project owner. Produced by PT Kubus Teknologi Indonesia. Hardware commissioning and ERP implementation notes are maintained separately. | 2.1.0 (PREP-D1, 8 Nov 2026): ringkasan bacaan per lintasan (TagSummary), peristiwa photo-eye (GpiEdge), seq/boot_id per envelope, open_reason/close_reason lintasan, verdict CANCELLED, reason_codes[] + reasons[], sesi dokumen bertahap (completion_basis document_session, K-RFID-10), kebijakan kunci K-RFID-09 (RED terkunci hanya pelanggaran; REVIEW = kuning tanpa kunci; satu kunci per gate), parameter lintasan per gate (titik awal kalibrasi), galat terstruktur detail.code, endpoint /ops/* terdokumentasi. Semua field baru OPSIONAL bagi pengirim 0.4 (kompatibel mundur); agent 0.4 tetap hanya hijau bila sisa dokumen habis (counts.pending = 0) dan completion_basis manifest_full."
   },
   "servers": [
     {
@@ -740,7 +740,7 @@
     "/api/rfid/v2/passages/{local_passage_id}/acknowledge": {
       "post": {
         "operationId": "API_06",
-        "summary": "Supervisor acknowledge latch tertentu",
+        "summary": "Pengguna berizin mengakui lintasan; melepas kunci gate bila lintasan bagian dari kunci aktif",
         "tags": [
           "Gate"
         ],
@@ -764,14 +764,14 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string",
               "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
               "minLength": 1,
               "maxLength": 160
             },
-            "description": "Persist key before request; same key and different body -> 409. Namespace is authenticated principal plus operation."
+            "description": "Opsional. Pengakuan kedua untuk lintasan yang sama -> 409 NOT_ACKNOWLEDGEABLE."
           },
           {
             "name": "X-Entity-Id",
@@ -792,7 +792,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GateState"
+                  "$ref": "#/components/schemas/AcknowledgeResult"
                 }
               }
             }
@@ -3898,6 +3898,1488 @@
         },
         "x-requirement-id": "AUTH-03"
       }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}": {
+      "get": {
+        "operationId": "OPS_01",
+        "summary": "Ringkasan reader: profil, telemetry, kesehatan, kunci gate, binding, sesi dokumen, riwayat lintasan (cursor)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/config": {
+      "put": {
+        "operationId": "OPS_02",
+        "summary": "Terbitkan profil commissioning (immutable per config_version; set protokol v2)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceConfig"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/manifest": {
+      "post": {
+        "operationId": "OPS_03",
+        "summary": "Binding manual 1-20 dokumen (SJ boleh gabung; transfer/putaway/makloon/perbaikan satu per binding)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "OPS_04",
+        "summary": "Lepas binding manual (kembali ke auto-cocok bila aktif)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/sources": {
+      "get": {
+        "operationId": "OPS_05",
+        "summary": "Kandidat dokumen aktif untuk gudang/arah reader (maks 200)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/passages/{passage_id}/evidence": {
+      "get": {
+        "operationId": "OPS_06",
+        "summary": "Unduh bukti lintasan (JSON, read-only)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passage_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/sessions": {
+      "get": {
+        "operationId": "OPS_07",
+        "summary": "Sesi dokumen bertahap yang terikat/aktif di reader ini",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/doc-sessions/{source_type}/{source_id}": {
+      "get": {
+        "operationId": "OPS_08",
+        "summary": "Status sesi dokumen per roll (query direction=in|out)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/doc-sessions/{source_type}/{source_id}/close": {
+      "post": {
+        "operationId": "OPS_09",
+        "summary": "Tutup sesi dokumen: roll yang belum lewat dinilai (REVIEW ROLLS_MISSING, bukan alarm)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/protocol": {
+      "put": {
+        "operationId": "OPS_10",
+        "summary": "Set protokol perangkat legacy|v2 (AUD-MW-09)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/gate-parameters": {
+      "post": {
+        "operationId": "OPS_11",
+        "summary": "Terbitkan config_version baru dengan parameter lintasan gate",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rfid/v2/ops/gate-parameter-defaults": {
+      "get": {
+        "operationId": "OPS_12",
+        "summary": "Parameter lintasan bawaan (titik awal kalibrasi)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateParameters"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/simulate": {
+      "post": {
+        "operationId": "OPS_13",
+        "summary": "Simulator lintasan tanpa perangkat (admin/dev; lintasan bertanda simulated)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/health": {
+      "get": {
+        "operationId": "OPS_14",
+        "summary": "Aturan kesehatan reader (berhenti, telemetry basi, antrean naik)",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen"
+      }
+    },
+    "/api/rfid/v2/ops/health/check": {
+      "post": {
+        "operationId": "OPS_15",
+        "summary": "Jalankan pemeriksaan kesehatan semua reader V2 + notifikasi",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "admin"
+      }
+    },
+    "/api/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge": {
+      "post": {
+        "operationId": "OPS_16",
+        "summary": "Akui kunci gate (satu kunci per gate) dengan catatan",
+        "tags": [
+          "Gate"
+        ],
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcknowledgeResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Masukan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Izin/cakupan ditolak",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Konflik versi/status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "wms.view / wms.scan + cakupan gudang & entitas dokumen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateAcknowledge"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3928,7 +5410,8 @@
           },
           "details": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": true,
+            "description": "Opsional, mis. {'poll_after_seconds': 60}."
           }
         },
         "additionalProperties": false,
@@ -3940,22 +5423,23 @@
       },
       "ErrorResponse": {
         "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "detail"
+        ],
         "properties": {
-          "request_id": {
-            "type": "string",
-            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
-            "minLength": 1,
-            "maxLength": 160
-          },
-          "error": {
-            "$ref": "#/components/schemas/ErrorDetail"
+          "detail": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetail"
+              },
+              {
+                "type": "string"
+              }
+            ]
           }
         },
-        "additionalProperties": false,
-        "required": [
-          "request_id",
-          "error"
-        ]
+        "description": "Bentuk galat yang DIKIRIM server (FastAPI). Agent membedakan penanganan dari detail.code (x-error-codes), bukan hanya status HTTP."
       },
       "Quantity": {
         "type": "object",
@@ -4136,7 +5620,8 @@
           },
           "sensor_bindings": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": true,
+            "description": "2.1 gate satu arah: {'a': 'GPI1', 'b': 'GPI2', 'active_state': 1, 'mode': 'through_beam'}; A = mulut masuk, B = mulut keluar."
           },
           "site_id": {
             "type": "string",
@@ -4155,7 +5640,8 @@
             "enum": [
               "per_epc_only",
               "manifest_subset",
-              "manifest_full"
+              "manifest_full",
+              "document_session"
             ]
           },
           "enabled": {
@@ -4164,6 +5650,9 @@
           "indicators": {
             "type": "object",
             "additionalProperties": true
+          },
+          "passage_parameters": {
+            "$ref": "#/components/schemas/GateParameters"
           }
         },
         "additionalProperties": false,
@@ -4415,7 +5904,37 @@
             "items": {
               "$ref": "#/components/schemas/Observation"
             },
-            "minItems": 1
+            "minItems": 0
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Nomor urut envelope per perangkat per boot_id (deteksi celah)."
+          },
+          "boot_id": {
+            "type": "string",
+            "description": "ID sesi boot agent; seq mulai ulang per boot_id.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "sent_at": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "tag_summaries": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/TagSummary"
+            }
+          },
+          "gpi_edges": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/GpiEdge"
+            }
           }
         },
         "additionalProperties": false,
@@ -4427,7 +5946,36 @@
           "context",
           "events"
         ],
-        "description": "Backfill hanya evidence historis dan tidak memberikan izin signal green live."
+        "description": "Backfill hanya evidence historis dan tidak memberikan izin signal green live. 2.1: boleh berisi events (0.4), tag_summaries dan/atau gpi_edges; minimal satu tidak kosong.",
+        "anyOf": [
+          {
+            "properties": {
+              "events": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "tag_summaries"
+            ],
+            "properties": {
+              "tag_summaries": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "gpi_edges"
+            ],
+            "properties": {
+              "gpi_edges": {
+                "minItems": 1
+              }
+            }
+          }
+        ]
       },
       "EventAck": {
         "type": "object",
@@ -4505,6 +6053,27 @@
             "items": {
               "$ref": "#/components/schemas/EventAck"
             }
+          },
+          "summary_acks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemAck"
+            }
+          },
+          "edge_acks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemAck"
+            }
+          },
+          "last_seq": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "seq_gap": {
+            "type": "boolean",
+            "description": "true bila seq melompat (envelope hilang) untuk boot_id ini."
           }
         },
         "additionalProperties": false,
@@ -4682,6 +6251,22 @@
           "pending": {
             "type": "integer",
             "minimum": 0
+          },
+          "weak": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "background": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overflow": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "already_passed": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "additionalProperties": false,
@@ -4692,7 +6277,8 @@
           "extra",
           "unknown",
           "pending"
-        ]
+        ],
+        "description": "2.1 sesi dokumen: pending = roll dokumen yang BELUM lewat setelah lintasan ini (dinilai saat dokumen ditutup, bukan alarm); missing hanya terisi di penutupan sesi."
       },
       "GateDecision": {
         "type": "object",
@@ -4731,15 +6317,18 @@
               "GREEN",
               "RED",
               "REVIEW",
-              "UNKNOWN"
-            ]
+              "UNKNOWN",
+              "CANCELLED"
+            ],
+            "description": "RED = pelanggaran nyata, latched=true (K-RFID-09). REVIEW = kuning, tanpa kunci. CANCELLED = lintasan kosong/batal tanpa alarm."
           },
           "completion_basis": {
             "type": "string",
             "enum": [
               "per_epc_only",
               "manifest_subset",
-              "manifest_full"
+              "manifest_full",
+              "document_session"
             ]
           },
           "config_version": {
@@ -4765,7 +6354,8 @@
             "type": "boolean"
           },
           "reason_code": {
-            "type": "string"
+            "type": "string",
+            "description": "Kode utama (terberat). Daftar lengkap di reason_codes."
           },
           "action": {
             "type": "string"
@@ -4781,6 +6371,61 @@
                 "$ref": "#/components/schemas/SourceRef"
               }
             ]
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Semua alasan, urut terberat dulu (tidak saling menimpa)."
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/ReasonEntry"
+            }
+          },
+          "indicator": {
+            "type": "string",
+            "enum": [
+              "GREEN",
+              "YELLOW",
+              "RED",
+              "OFF"
+            ]
+          },
+          "open_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "close_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "binding_mode": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "auto",
+              "none"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            }
+          },
+          "latch_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160,
+            "nullable": true
+          },
+          "simulated": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false,
@@ -4847,6 +6492,22 @@
             "type": "string",
             "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
             "format": "date-time"
+          },
+          "latch_since": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "latch_reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "latch_passage_count": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "additionalProperties": false,
@@ -4858,7 +6519,8 @@
           "latch_id",
           "decision",
           "server_time"
-        ]
+        ],
+        "description": "Satu kunci per gate (K-RFID-09): latched tetap true sampai kunci gate diakui; lintasan selama terkunci dinilai dengan verdict aslinya."
       },
       "PassageClose": {
         "type": "object",
@@ -4893,7 +6555,8 @@
               "sensor",
               "idle_timeout",
               "authorized_manual",
-              "max_duration"
+              "max_duration",
+              "cancelled"
             ]
           },
           "last_event_id": {
@@ -4921,6 +6584,95 @@
           },
           "direction_evidence": {
             "$ref": "#/components/schemas/DirectionEvidence"
+          },
+          "open_reason": {
+            "type": "string",
+            "enum": [
+              "BEAM_A",
+              "RF_FALLBACK",
+              "MANUAL"
+            ]
+          },
+          "close_reason": {
+            "type": "string",
+            "enum": [
+              "EXITED",
+              "REVERSED",
+              "ABORTED",
+              "TIMEOUT",
+              "SENSOR_FAULT",
+              "MANUAL"
+            ]
+          },
+          "window_start": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "beam_times": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "a_blocked": {
+                "type": "string",
+                "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+                "format": "date-time",
+                "nullable": true
+              },
+              "b_blocked": {
+                "type": "string",
+                "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+                "format": "date-time",
+                "nullable": true
+              },
+              "a_cleared": {
+                "type": "string",
+                "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+                "format": "date-time",
+                "nullable": true
+              },
+              "b_cleared": {
+                "type": "string",
+                "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          },
+          "pre_buffer_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tail_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "observed_summary_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "observed_edge_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sensor_health": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded",
+              "fault",
+              "absent"
+            ]
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "boot_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
           }
         },
         "additionalProperties": false,
@@ -4936,18 +6688,17 @@
           "direction",
           "direction_evidence"
         ],
-        "description": "Server menunggu durable evidence passage; pending menghasilkan final=false tanpa live clearance. Query state kemudian memperoleh keputusan final. Idempotent close tidak menghasilkan passage baru."
+        "description": "Server menunggu durable evidence passage; pending menghasilkan final=false tanpa live clearance. Query state kemudian memperoleh keputusan final. Idempotent close tidak menghasilkan passage baru. 2.1: open_reason/close_reason menggantikan boundary_reason untuk gate satu arah ber-photo-eye; observed_*_count wajib sama dengan item yang sudah ACK (termasuk quarantined)."
       },
       "GateAcknowledge": {
         "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_id",
+          "note"
+        ],
         "properties": {
-          "logical_gate_id": {
-            "type": "string",
-            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
-            "minLength": 1,
-            "maxLength": 160
-          },
-          "latch_id": {
+          "device_id": {
             "type": "string",
             "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
             "minLength": 1,
@@ -4955,28 +6706,43 @@
           },
           "note": {
             "type": "string",
-            "minLength": 1
+            "minLength": 5,
+            "maxLength": 1000
+          },
+          "latch_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
           },
           "decision_id": {
             "type": "string",
             "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
             "minLength": 1,
             "maxLength": 160
+          },
+          "logical_gate_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
           }
         },
-        "additionalProperties": false,
-        "required": [
-          "logical_gate_id",
-          "latch_id",
-          "note",
-          "decision_id"
-        ]
+        "description": "Sesi pengguna (bukan device key). latch_id/decision_id opsional; bila dikirim dan sudah tidak berlaku -> 409 STALE_ACKNOWLEDGE."
       },
       "SourceRef": {
         "type": "object",
         "properties": {
           "source_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "shipment",
+              "wh_transfer",
+              "putaway",
+              "makloon_order",
+              "repair_order",
+              "gate_manifest"
+            ]
           },
           "source_id": {
             "type": "string",
@@ -4986,6 +6752,10 @@
           },
           "display_ref": {
             "type": "string"
+          },
+          "doc_id": {
+            "type": "string",
+            "description": "ID dokumen induk bila source_id adalah sub-dokumen (mis. langkah Order Makloon)."
           }
         },
         "additionalProperties": false,
@@ -6748,7 +8518,568 @@
           "sensor_sequence"
         ],
         "description": "Binding/sequence harus sesuai trusted config. Direction unknown tidak memberi automatic clearance dua arah."
+      },
+      "GateParameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Parameter lintasan per gate. Semua nilai bawaan = TITIK AWAL KALIBRASI (audit \u00a78.3), bukan aturan; ubah hanya dengan menerbitkan config_version baru. Field yang tidak dikirim memakai bawaan server.",
+        "properties": {
+          "calibration_status": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "calibrated"
+            ],
+            "description": "initial = titik awal kalibrasi (belum diuji lokasi)."
+          },
+          "pre_buffer_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Bacaan sebelum sinar A terpotong yang ikut lintasan (awal 3000)."
+          },
+          "tail_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Ekor setelah sinar B pulih (awal 1500)."
+          },
+          "min_block_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Debounce sinar terpotong (awal 50)."
+          },
+          "entry_timeout_ms": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 60000,
+            "description": "A terpotong tanpa B dalam batas ini = CANCELLED (awal 10000)."
+          },
+          "max_passage_ms": {
+            "type": "integer",
+            "minimum": 5000,
+            "maximum": 120000,
+            "description": "Lintasan terbuka lebih lama = TIMEOUT -> REVIEW (awal 30000)."
+          },
+          "stable_interval_ms": {
+            "type": "integer",
+            "minimum": 500,
+            "maximum": 10000,
+            "description": "Cadangan RF: tutup bila tidak ada EPC kuat baru selama ini (awal 3000)."
+          },
+          "bucket_ms": {
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 2000,
+            "description": "Lebar bucket TagSummary (awal 250)."
+          },
+          "rf_fallback_group_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Cadangan RF: minimal EPC kuat non-latar baru untuk membuka lintasan (awal 3)."
+          },
+          "rf_fallback_window_ms": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 10000,
+            "description": "Cadangan RF: jendela rombongan (awal 1500)."
+          },
+          "rssi_strong_dbm": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0
+            },
+            "description": "Ambang RSSI 'kuat' per antena (kunci = antenna_id)."
+          },
+          "rssi_default_strong_dbm": {
+            "type": "number",
+            "minimum": -120,
+            "maximum": 0,
+            "description": "Ambang bila antena tidak tercantum (awal -65)."
+          },
+          "background_retention_s": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 604800,
+            "description": "Masa simpan daftar latar (awal 86400)."
+          },
+          "auto_match": {
+            "type": "boolean",
+            "description": "AUD-MW-15: cocokkan otomatis ke dokumen aktif gudang/arah bila tidak ada binding manual (awal true)."
+          },
+          "manual_binding_ttl_s": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 604800,
+            "description": "Binding manual kedaluwarsa setelah ini (awal 14400)."
+          },
+          "rf_fallback_review": {
+            "type": "boolean",
+            "description": "Lintasan open_reason RF_FALLBACK / SENSOR_FAULT dinilai REVIEW sampai terkalibrasi (awal true)."
+          }
+        }
+      },
+      "GpiEdge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "edge_id",
+          "sensor",
+          "state",
+          "t_mono",
+          "t_wall"
+        ],
+        "description": "Tepi sinar photo-eye. A = mulut masuk, B = mulut keluar (gate satu arah).",
+        "properties": {
+          "edge_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "sensor": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "blocked",
+              "clear"
+            ]
+          },
+          "t_mono": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Milidetik monotonik sejak boot (SystemClock.elapsedRealtime)."
+          },
+          "t_wall": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "time_quality": {
+            "type": "string",
+            "enum": [
+              "synced",
+              "estimated",
+              "unsynced"
+            ]
+          }
+        }
+      },
+      "SummaryBucket": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "t_off",
+          "n",
+          "max_rssi"
+        ],
+        "properties": {
+          "t_off": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Milidetik sejak window_start lintasan."
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "max_rssi": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "TagSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "summary_id",
+          "raw_epc",
+          "epc",
+          "antenna",
+          "first_seen",
+          "last_seen",
+          "peak_rssi",
+          "t_peak",
+          "count",
+          "mean_rssi",
+          "buckets",
+          "in_background",
+          "time_quality"
+        ],
+        "description": "Ringkasan per lintasan x EPC x antena (pengganti event per bacaan; AUD-MW-01). Satu summary_id per kombinasi; dikirim sekali (ulang = duplicate, isi berbeda = EVENT_ID_CONFLICT).",
+        "properties": {
+          "summary_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "raw_epc": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "epc": {
+            "type": "string",
+            "pattern": "^[0-9A-F]{24}$",
+            "nullable": true
+          },
+          "antenna": {
+            "type": "string"
+          },
+          "first_seen": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "last_seen": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "first_seen_mono": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_seen_mono": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "peak_rssi": {
+            "type": "number",
+            "nullable": true
+          },
+          "t_peak": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "t_peak_mono": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "mean_rssi": {
+            "type": "number",
+            "nullable": true
+          },
+          "buckets": {
+            "type": "array",
+            "maxItems": 400,
+            "items": {
+              "$ref": "#/components/schemas/SummaryBucket"
+            }
+          },
+          "in_background": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "true = EPC ada di daftar latar gate saat lintasan; null = agent tidak punya info."
+          },
+          "reads_before_window": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reads_after_window": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "time_quality": {
+            "type": "string",
+            "enum": [
+              "synced",
+              "estimated",
+              "unsynced"
+            ]
+          }
+        }
+      },
+      "ItemAck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "status",
+          "durable",
+          "processing_status",
+          "error"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "duplicate",
+              "rejected",
+              "quarantined",
+              "retry"
+            ]
+          },
+          "durable": {
+            "type": "boolean"
+          },
+          "processing_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed",
+              "not_applicable"
+            ]
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetail"
+              }
+            ]
+          }
+        }
+      },
+      "ReasonEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "level"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "RED",
+              "REVIEW",
+              "INFO"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "epc": {
+            "type": "string",
+            "nullable": true
+          },
+          "roll_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "source_id": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AcknowledgeResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request_id",
+          "server_time",
+          "latch_released",
+          "latched"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "server_time": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time"
+          },
+          "latch_released": {
+            "type": "boolean"
+          },
+          "latched": {
+            "type": "boolean",
+            "description": "Status kunci gate SESUDAH pengakuan."
+          }
+        }
+      },
+      "DocumentSessionRoll": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "roll_id",
+          "passed"
+        ],
+        "properties": {
+          "roll_id": {
+            "type": "string"
+          },
+          "roll_no": {
+            "type": "string",
+            "nullable": true
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "local_passage_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "passed_at": {
+            "type": "string",
+            "description": "Timestamp UTC ISO 8601 dengan suffix Z.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "review": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DocumentSession": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "source_ref",
+          "direction",
+          "total",
+          "passed",
+          "remaining",
+          "rolls",
+          "status"
+        ],
+        "description": "K-RFID-10 sesi dokumen bertahap: status per roll (sudah lewat / belum, lintasan mana).",
+        "properties": {
+          "source_ref": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "in",
+              "out"
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "passed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "remaining": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "complete",
+              "closed"
+            ]
+          },
+          "rolls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentSessionRoll"
+            }
+          },
+          "close": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          }
+        }
+      },
+      "SimulationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario"
+        ],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": [
+              "full_load",
+              "partial_trip",
+              "reversed",
+              "reversed_with_rolls",
+              "empty",
+              "foreign_roll",
+              "quarantine_roll",
+              "background_tag",
+              "overflow",
+              "sensor_fault"
+            ]
+          },
+          "logical_gate_id": {
+            "type": "string",
+            "description": "ID opaque yang ditetapkan issuer; stabil sepanjang retry.",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "roll_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "shipment",
+              "wh_transfer",
+              "putaway",
+              "makloon_order",
+              "repair_order"
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
+        "description": "Simulator memakai dokumen aktif gudang (binding manual / source_type+source_id / kandidat pertama); lintasan & klaim bertanda simulated."
       }
     }
+  },
+  "x-error-codes": {
+    "AUTH_REQUIRED": "401 \u2014 header X-Device-Key kosong. Blokir sampai provisioning.",
+    "AUTH_INVALID": "401 \u2014 key tidak dikenal/dirotasi. Blokir sampai provisioning ulang.",
+    "ADMIN_DISABLED": "403 \u2014 perangkat dinonaktifkan admin ERP. BUKAN permanen: polling lambat (retryable=true).",
+    "PROTOCOL_V2_DEVICE": "409 \u2014 jalur lama /api/rfid/ingest ditutup untuk perangkat ber-protokol v2.",
+    "READER_REQUIRED": "403 \u2014 endpoint hanya untuk reader/gate.",
+    "CONFIG_REQUIRED": "409 \u2014 profil V2 belum diterbitkan/versi tak dikenal. BUKAN permanen: polling lambat (retryable=true).",
+    "DEVICE_MOVED": "409 \u2014 gudang perangkat berubah; selesaikan antrean.",
+    "GATE_NOT_BOUND": "403 \u2014 gate tidak terikat pada perangkat.",
+    "PASSAGE_FROZEN": "409 \u2014 event BARU untuk lintasan yang sudah ditutup. Event lama/duplikat tetap ACK duplicate.",
+    "EVENT_ID_CONFLICT": "409 \u2014 ID event/ringkasan/tepi dipakai ulang dengan isi atau lintasan berbeda.",
+    "EVIDENCE_PENDING": "503 \u2014 jumlah bukti belum sama dengan close; kirim ulang item yang belum ACK.",
+    "CAPTURE_OVERFLOW": "ACK quarantined (durable) per item \u2014 lintasan melewati kapasitas; disimpan di koleksi luapan, keputusan REVIEW.",
+    "BATCH_TOO_LARGE": "413 \u2014 pecah batch; tidak ada item yang diproses."
   }
 }

@@ -154,6 +154,12 @@ async def run():
             except Exception as exc: check(exc.status_code == 503, 'pending evidence is retryable'); continue
             raise AssertionError('pending accepted')
         d = await s.close(dev, b['context']['local_passage_id'], c, 'k')
+        if scenario == 'missing':
+            # PREP-D1 K-RFID-10 sesi dokumen bertahap: trip parsial hijau, sisa roll = pending (dinilai saat dokumen
+            # ditutup). Agent 0.4 (DecisionPolicy.validGreen mensyaratkan pending = 0) tetap TIDAK menyalakan hijau.
+            check(d['verdict'] == 'GREEN' and d['counts']['pending'] == 1 and not d['latched'],
+                  'missing: partial trip green with pending remainder (no alarm)')
+            continue
         check(d['verdict'] != 'GREEN' and not d['allow_live_signal'], scenario + ' cannot grant clearance')
     for typ in ('wh_transfer', 'putaway'):
         dev, cfg, epcs, _ = await seed(1, typ)

@@ -41,6 +41,7 @@ from services import turn_notification_service as _turn  # 2026-09 — giliran A
 from services import inventory_drift_watch as invdrift   # 2026-06 — pemantau drift persediaan
 from services import saga_lock_watch as sagawatch         # 2026-09 — kunci saga menggantung (T-01 Opsi B)
 from services import printer_stuck_watch as prstuck       # Sesi 15 — label tertahan tanpa printer online
+from services import rfid_v2_health as rfidhealth         # PREP-D1 — kesehatan reader gate U300 V2 (AUD-MW-17)
 from services import wa_alert_service as wa
 from services import analytics_facts as _facts           # Tanya KN F1 — fakta penjualan
 from services import ai_schedules as _aisched            # Tanya KN F4 — laporan terjadwal
@@ -203,6 +204,13 @@ JOBS: List[Dict[str, Any]] = [
                     "antrean bersih (dedupe unread). Job ini TIDAK mengubah antrean.",
      "kind": "interval", "interval_minutes": 10, "fn": prstuck.job_printer_stuck_watch,
      "link": "operations"},
+    # ── PREP-D1 — kesehatan reader gate U300 V2 ──────────────────────────
+    {"id": "rfid_reader_health_watch", "label": "Kesehatan Reader Gate RFID",
+     "description": "Reader gate U300 V2 yang berhenti membaca, laporannya (telemetry) terlambat, atau antreannya "
+                    "menumpuk diberitahukan ke kepala gudang & manager — satu notifikasi per reader per aturan saat "
+                    "aturan berubah aktif. Ambang = titik awal kalibrasi. Job ini TIDAK mengubah reader/lintasan.",
+     "kind": "interval", "interval_minutes": 5, "fn": rfidhealth.job_rfid_reader_health_watch,
+     "link": "settings-devices"},
     # ── 2026-09 — giliran Anda ───────────────────────────────────────────
     {"id": "turn_scan", "label": "Pemberitahuan Giliran Anda",
      "description": "Menyapu SO, PO, retur penjualan/pembelian, dan permintaan sample: setiap dokumen "

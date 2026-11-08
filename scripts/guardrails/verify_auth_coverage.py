@@ -61,6 +61,13 @@ PUBLIC_ALLOWLIST = {
     "POST /rfid/heartbeat",
     "GET /rfid/device-jobs/pending",
     "POST /rfid/device-jobs/{job_id}/ack",
+    # Reader U300 V2 (PREP-D1, patch Kubus) — auth via X-Device-Key (`routers/rfid_v2._device` →
+    # `rfid_ingest_service.authenticate`: 401 AUTH_REQUIRED/AUTH_INVALID, 403 ADMIN_DISABLED), bukan sesi.
+    "GET /rfid/v2/device/config",
+    "POST /rfid/v2/events",
+    "POST /rfid/v2/device/telemetry",
+    "GET /rfid/v2/device/gate-state",
+    "POST /rfid/v2/passages/{passage_id}/close",
 }
 
 DEC_RE = re.compile(r'@router\.(get|post|patch|put|delete)\(\s*["\']([^"\']+)["\']')
