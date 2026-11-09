@@ -88,12 +88,11 @@ async def availability(product_id: str, requester_entity_id: str) -> Dict[str, A
 
     Pemanggil yang melayani sales WAJIB membuang `by_entity` (keputusan E5.1).
     """
+    # FIX-2 (B3a SSOT-4/STK-5 D2) — definisi tunggal `stock_figures` (cadangan makloon dikurangi, gudang dihitung saja).
+    from services.stock_figures import available_by_owner
     per: Dict[str, float] = {}
-    async for b in db.inventory_balances.find(
-            {"product_id": product_id},
-            {"_id": 0, "owner_entity_id": 1, "available_qty": 1}):
-        ent = b.get("owner_entity_id") or ""
-        per[ent] = round(per.get(ent, 0.0) + float(b.get("available_qty") or 0), 4)
+    for (_pid, ent), v in (await available_by_owner([product_id])).items():
+        per[ent or ""] = round(per.get(ent or "", 0.0) + float(v["qty"]), 4)
     own = round(per.get(requester_entity_id, 0.0), 4)
     group = round(sum(per.values()), 4)
     return {"own_available": own, "group_available": group,

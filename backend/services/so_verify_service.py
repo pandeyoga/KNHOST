@@ -177,12 +177,12 @@ async def order_preview(order: Dict[str, Any]) -> Dict[str, Any]:
     pids = list({it.get("product_id") for it in items if it.get("product_id")})
     stok: Dict[str, float] = {}
     if pids:
-        async for b in db.inventory_balances.find(
-                {"product_id": {"$in": pids},
-                 "owner_entity_id": order.get("entity_id") or ""},
-                {"_id": 0, "product_id": 1, "available_qty": 1}):
-            pid = b.get("product_id") or ""
-            stok[pid] = round(stok.get(pid, 0.0) + float(b.get("available_qty") or 0), 4)
+        # FIX-2 (B3a SSOT-4) — Tersedia PT pesanan menurut definisi tunggal (`stock_figures`, makloon dikurangi).
+        from services.stock_figures import available_by_owner
+        ent = order.get("entity_id") or ""
+        for (pid, owner), v in (await available_by_owner(pids)).items():
+            if owner == ent:
+                stok[pid] = round(stok.get(pid, 0.0) + float(v["qty"]), 4)
 
     rows = []
     for it in items:

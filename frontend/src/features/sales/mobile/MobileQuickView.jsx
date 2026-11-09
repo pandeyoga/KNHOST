@@ -11,6 +11,7 @@ import RollReconcileSheet from "../../../components/RollReconcileSheet";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../../../utils/lifecycle";
 import { sampleLimit, clampSampleQty, canSample } from "../../../utils/sampleOrder";
 import SampleKindChooser from "../../../components/SampleKindChooser";
+import StockFigures from "../../../components/StockFigures";
 
 /** EPIC-VAR — bottom-sheet detail produk + pemilih varian (versi MOBILE).
  * SALES REVAMP V2: mode "Per yard" / "Beli per Roll"; inventory = total global saja.
@@ -77,14 +78,21 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
           <ProductGallery product={selected} testId="mobile-quickview-gallery" compact />
           <div className="mt-2 flex items-end justify-between">
             <p data-testid="mobile-quickview-price" className="text-[20px] font-bold tabular-nums">{selected ? formatCurrency(unitPrice) : "—"}{selected && <span className="text-[11px] font-medium text-[#8E8E93]">/{unit}</span>}</p>
-            {/* Trial 22 Okt (B6) — stok PT penjual dulu; angka grup (semua PT) di bawahnya. */}
-            <div className="text-right">
+            {/* Trial 22 Okt (B6) — stok PT penjual dulu; angka grup (semua PT) di bawahnya.
+                FIX-2 — bila server mengirim dua angka, keduanya tampil di bawah harga (StockFigures, ketuk → rincian). */}
+            <div className={`text-right ${selected?.stock_figures ? "hidden" : ""}`}>
               {ownName && (
                 <p data-testid="mobile-quickview-own-stock" className="text-[12px] m-muted">{ownName}: <b className={Number(selected.entity_available_qty || 0) > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(selected.entity_available_qty, selected.entity_roll_count, baseUnit)}</b></p>
               )}
               <p data-testid="mobile-quickview-stock" className={ownName ? "text-[10.5px] m-muted" : "text-[12px] m-muted"}>{ownName ? "Grup " : "Stok "}<b className={ownName ? "" : "text-[#126E2C]"}>{selected ? formatQty(avail) : "—"}</b> {baseUnit}{selected ? ` · ${rollCount} roll` : ""}</p>
             </div>
           </div>
+          {selected?.stock_figures && (
+            <StockFigures size="lg" className="mt-2" testId="mobile-quickview-stock-figures"
+              unit={selected.stock_figures.unit || baseUnit} local={selected.stock_figures.local}
+              global={selected.stock_figures.global} localLabel={selected.stock_scope_label || ownName || "Cakupan saya"}
+              globalLabel="Total grup (semua PT)" productIds={[selected.id]} />
+          )}
           {ownName && avail > Number(selected.entity_available_qty || 0) && (
             <p data-testid="mobile-quickview-group-note" className="mt-1 text-[10.5px] leading-snug text-[#8C4A00]">Sebagian stok ada di PT lain di grup — tetap bisa dipesan, pemenuhannya diatur Admin Sales.</p>
           )}

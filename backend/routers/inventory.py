@@ -74,12 +74,20 @@ async def roll_cost_history_endpoint(roll_id: str, request: Request) -> Dict[str
 
 
 @router.get("/inventory/putaway/queue")
-async def get_putaway_queue(request: Request, warehouse_id: Optional[str] = None, entity_id: Optional[str] = None) -> Dict[str, Any]:
-    """Fase 5 — antrean putaway: roll fisik yang belum ditempatkan ke bin."""
+async def get_putaway_queue(request: Request, warehouse_id: Optional[str] = None, entity_id: Optional[str] = None,
+                            skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+    """Fase 5 — antrean putaway: roll fisik yang belum ditempatkan ke bin.
+    FIX-2 (B1b UI-46) — berhalaman (bawaan 100, maks 500) + `total` sungguhan + `total_building` (gedung, semua PT —
+    angka agregat sama dengan KPI) + `truncated`; dulu `to_list(500)` diam-diam (Jakarta 4.700 roll tampil "(500)")."""
     await require_permission(request, "product", "view")
     ctx = await entity_ctx(request)
-    rolls = await putaway_queue(warehouse_id, ctx, entity_id)
-    return {"count": len(rolls), "rolls": rolls}
+    from services.location_service import putaway_queue_counts
+    lim = max(1, min(int(limit or 100), 500))
+    sk = max(0, int(skip or 0))
+    rolls = await putaway_queue(warehouse_id, ctx, entity_id, limit=lim, skip=sk)
+    counts = await putaway_queue_counts(warehouse_id, ctx, entity_id)
+    return {"count": len(rolls), "rolls": rolls, "skip": sk, "limit": lim, **counts,
+            "truncated": counts["total"] > sk + len(rolls)}
 
 
 @router.post("/inventory/putaway")
@@ -159,6 +167,7 @@ async def inventory_status_board(
     request: Request,
     product_id: Optional[str] = None,
     owner_entity_id: Optional[str] = None,
+    site_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Sub-fase 1.4 — Inventory Status Board.
 
@@ -171,13 +180,23 @@ async def inventory_status_board(
     # rincian stok per gudang milik PT lain ke sales.
     ctx = await entity_ctx(request)
     ids = resolve_scope_ids(ctx, owner_entity_id)
-    return await _status_board(
+    rows = await _status_board(
         product_id=product_id,
         owner_entity_id=owner_entity_id if ctx.is_cross_entity else None,
         visible_entity_ids=None if (ctx.is_cross_entity and not owner_entity_id) else ids,
         cross_entity_detail=ctx.is_cross_entity,
         registered_only=True,   # K-04 — definisi tunggal "Tersedia": gudang terdaftar saja
     )
+    # FIX-2 (B1 UI-06/UI-40, K-B1-03) — dua angka per produk {LOKAL, GLOBAL} dari SATU layanan: chip "Habis" di desktop
+    # dan HP kini dihitung dari angka yang sama dan menyebut cakupannya (dulu 292 desktop vs 128 HP).
+    from services import stock_figures as _sf
+    _scope = await _sf.viewer_scope(ctx, site_id=site_id or "",
+                                    entity_id=owner_entity_id if owner_entity_id and owner_entity_id != "all" else "")
+    figs = await _sf.figures_for([r["product_id"] for r in rows], _scope)
+    for r in rows:
+        r["stock_figures"] = figs.get(r["product_id"])
+        r["stock_scope_label"] = _scope["label"]
+    return rows
 
 
 @router.get("/inventory/low-stock-summary")
@@ -210,8 +229,14 @@ async def list_balances(request: Request, owner_entity_id: Optional[str] = None)
     from services.supplier_item_service import attach_supplier_codes
     await attach_supplier_codes(list(products.values()))
     entities = await _entity_map()
+    # FIX-2 (B3a SSOT-4/STK-5 D2) — kolom "Tersedia" menurut SATU definisi (`stock_figures`): cadangan makloon
+    # dikurangi per segmen (aturan alokasi tunggal), gudang non-aktif/uji/yatim → `counted=false`, Tersedia 0.
+    # Angka saldo mentah tetap dikirim sebagai `balance_available_qty` (diagnosa).
+    from services import stock_figures as _sf
+    _idx = _sf.segment_index(await _sf.segments(_pids))
     result = []
     for b in balances:
+        _sf.adjust_balance_row(b, _idx)
         b["warehouse_name"] = warehouses.get(b["warehouse_id"], {}).get("name", "")
         b["warehouse_city"] = warehouses.get(b["warehouse_id"], {}).get("city", "")
         p = products.get(b["product_id"], {})

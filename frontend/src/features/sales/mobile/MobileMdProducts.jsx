@@ -17,6 +17,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import { Back, Chips, Notice, list } from "./mdMobileParts";
 import { VariantEditor } from "../../catalog/VariantEditor";
 import { catalogApi, catalogError } from "../../catalog/catalogApi";
+import StockFigures from "../../../components/StockFigures";
 
 // Daftar ratusan varian dirender bertahap (bukan 283 baris sekaligus di HP).
 const PAGE = 40;
@@ -49,7 +50,12 @@ function ProductDetail({ product, canEdit, onBack, onSaved }) {
         <p className="text-[15px] font-bold" data-testid="m-md-product-name">{product.name}</p>
         <p className="text-[11.5px] m-muted">{product.sku} · {product.category || "-"} · {product.fabric_type || ""}</p>
         <p className="mt-1 text-[16px] font-bold tabular-nums" data-testid="m-md-product-price">{formatCurrency(product.price)} <span className="text-[11px] font-normal m-muted">/ {product.base_unit}</span></p>
-        <p className="text-[11.5px]">Tersedia {formatQty(product.available_qty)} {product.base_unit}</p>
+        {/* FIX-2 — dua angka {LOKAL, GLOBAL} (ketuk → rincian); dulu satu angka grup tanpa keterangan cakupan. */}
+        {product.stock_figures ? (
+          <StockFigures size="lg" className="mt-2" testId="m-md-product-figures" unit={product.stock_figures.unit || product.base_unit}
+            local={product.stock_figures.local} global={product.stock_figures.global}
+            localLabel={product.stock_scope_label || "Cakupan saya"} globalLabel="Total grup (semua PT)" productIds={[product.id]} />
+        ) : <p className="text-[14px]">Tersedia {formatQty(product.available_qty)} {product.base_unit}</p>}
         {canEdit && (<>
           <button className="secondary-button mt-2 flex w-full items-center justify-center gap-1.5 py-2.5 text-[12px]" disabled={busy} onClick={openEdit} data-testid="m-md-product-edit">
             <Pencil size={13} /> {busy ? "Memuat…" : "Ubah SKU"}

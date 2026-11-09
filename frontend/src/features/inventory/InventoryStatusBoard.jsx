@@ -12,6 +12,7 @@ import InternalRequestCreateModal from "../internal_requests/InternalRequestCrea
 import { SearchBox } from "../../components/ListControls";
 import { MetricRow } from "../../components/ListPageParts";
 import usePagedRows from "@/hooks/usePagedRows";
+import StockFigures, { figureState } from "../../components/StockFigures";
 
 // Audit UI 057 — { kg: 120, yard: 1500 } → "120 kg · 1.500 yard" (nilai negatif ikut tampil; ATP bisa minus).
 const formatUnitTotals = (byUnit) => {
@@ -22,18 +23,25 @@ const formatUnitTotals = (byUnit) => {
   return parts.length ? parts.join(" · ") : "0";
 };
 
-// W2-REQ-04 — POV sales: angka utama = total GRUP (tanpa owner); baris kecil = entitas saya.
-const pv = (row, k) => (row.detail_scope === "own_entity" && row.global_total
-  ? Number(row.global_total[k] || 0) : Number(row[`total_${k}`] || 0));
+// FIX-2 (B1b UI-45, K-B1-03/K-B1-12) — angka kolom & KPI = cakupan yang tertulis di "Konteks" (PT aktif / PT terpilih);
+// total GRUP hanya baris kedua berlabel "Total grup (semua PT)". Dulu (W2-REQ-04) peran non-lintas-PT melihat angka
+// GRUP sebagai angka utama dengan label "Konteks: <PT>" (387.487,6 kg vs 60.996,16 kg untuk PT yang sama).
+const pv = (row, k) => Number(row[`total_${k}`] || 0);
+const grp = (row, k) => (row.global_total ? Number(row.global_total[k] || 0) : Number(row[`total_${k}`] || 0));
 
 /**
  * Inventory Status Board (Sub-fase 1.4 — ATP & Fulfillment Modes, KN_16).
  * Ringkasan per produk: on_hand / available / reserved / incoming / ATP,
  * breakdown per entitas pemilik & gudang, plus indikator peluang inter-entitas.
  */
+const localState = (r) => figureState(r, "local", r.total_available);
+const globalState = (r) => figureState(r, "global", grp(r, "available"));
 const STOCK_TABS = [
   { key: "", label: "Semua" },
-  { key: "empty", label: "Stok Habis", test: (r) => (pv(r, "available") || 0) <= 0 },
+  // FIX-2 (B1 UI-40) — "Habis" dihitung dari angka LOKAL/GLOBAL server yang sama dengan HP & menyebut cakupannya
+  // (dulu desktop 292 = PT, HP 128 = grup, dua-duanya berlabel "Stok Habis").
+  { key: "empty", label: "Habis di cakupan saya", test: (r) => localState(r) === "habis" },
+  { key: "empty_global", label: "Habis di grup", test: (r) => globalState(r) === "habis" },
   { key: "short", label: "ATP Kurang", test: (r) => (pv(r, "atp") || 0) < 0 || (r.total_pending_demand || 0) > 0 },
   { key: "incoming", label: "Ada Barang Masuk", test: (r) => (pv(r, "incoming") || 0) > 0 },
   { key: "interco", label: "Peluang Antar-PT", test: (r) => !!r.has_intercompany_opportunity },
@@ -83,16 +91,18 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
 
   // UAT 24 Okt (audit UI 057) — total PER SATUAN (kg & yard tidak dijumlahkan jadi satu angka tanpa satuan).
   const totals = useMemo(() => {
-    const byUnit = (k) => rows.reduce((m, r) => {
+    const byUnit = (k, f = pv) => rows.reduce((m, r) => {
       const u = r.unit || "meter";
-      m[u] = (m[u] || 0) + (pv(r, k) || 0);
+      m[u] = (m[u] || 0) + (f(r, k) || 0);
       return m;
     }, {});
+    const anyOwn = rows.some((r) => r.detail_scope === "own_entity");
     return {
       products: rows.length,
       interco: rows.filter((r) => r.has_intercompany_opportunity).length,
       atp: byUnit("atp"),
       incoming: byUnit("incoming"),
+      atpGroup: anyOwn ? byUnit("atp", grp) : null,
     };
   }, [rows]);
 
@@ -131,7 +141,8 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
       <MetricRow testId="status-board-metrics" items={[
         { icon: Boxes, label: "Produk", value: totals.products, testId: "sb-metric-products" },
         { icon: Truck, label: "Total Barang Masuk (Incoming)", value: formatUnitTotals(totals.incoming), testId: "sb-metric-incoming" },
-        { icon: PackageCheck, label: "Total ATP", value: formatUnitTotals(totals.atp), testId: "sb-metric-atp" },
+        { icon: PackageCheck, label: `Total ATP · ${entityName}`, value: formatUnitTotals(totals.atp), testId: "sb-metric-atp",
+          hint: totals.atpGroup ? `Total grup (semua PT): ${formatUnitTotals(totals.atpGroup)}` : undefined },
         { icon: ArrowLeftRight, label: "Peluang Antar-PT", value: totals.interco, testId: "sb-metric-interco" },
       ]} />
 
@@ -165,12 +176,13 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
           {!loading && !error && filtered.length > 0 && (
             <>
             <p data-testid="status-board-formula" className="mb-2 text-[11px] text-[#6B6B73]">
-              Rumus: <b>ATP = Tersedia + Barang Masuk (PO dalam horizon) − permintaan tertunda (backorder)</b> ·
-              Stok Fisik = Tersedia + Dipesan + tertahan (karantina/QC/blokir/cadangan makloon).
+              Rumus: <b>ATP = Tersedia + Barang Masuk (PO terbuka, roll menuju gudang, antar-PT dikonfirmasi — dalam horizon)
+              − permintaan tertunda (backorder)</b> · Stok Fisik = Tersedia + Cadangan makloon + Dipesan + Dialokasikan +
+              tertahan (karantina/QC/blokir/proses). Kolom Tersedia: angka 1 = cakupan Anda, angka 2 = semua PT — klik untuk rincian.
             </p>
             <table data-testid="status-board-table" className="w-full border-collapse text-[12.5px]">
               <thead>
-                <tr className="border-b border-[#EFF0F2] text-left text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
+                <tr className="border-b border-[#EFF0F2] text-left text-[12px] font-bold uppercase tracking-wide text-[#6B6B73]">
                   <th className="py-2 pl-1 pr-2">Produk</th>
                   <th className="px-2 text-right">Stok Fisik</th>
                   <th className="px-2 text-right">Tersedia</th>
@@ -246,15 +258,14 @@ function RowGroup({ row, open, onToggle, canRequest = false, onRequest }) {
           {formatQty(pv(row, "on_hand"))}
           {row.detail_scope !== "own_entity" && row.total_hold > 0 && (
             <span data-testid={`isb-hold-${row.product_id}`} className="block text-[9.5px] font-normal text-[#8E8E93]"
-              title="Stok fisik = tersedia + dipesan + tertahan (karantina/QC/blokir/cadangan makloon)">tertahan {formatQty(row.total_hold)}</span>
+              title="Tertahan = karantina/QC/blokir/hold/rusak/dalam proses (dialokasikan & cadangan makloon tidak termasuk)">tertahan {formatQty(row.total_hold)}</span>
           )}
         </td>
-        <td className="px-2 text-right font-semibold tabular-nums text-[#126E2C]" data-testid={`isb-available-${row.product_id}`}>
-          {formatQty(pv(row, "available"))}
-          {row.detail_scope === "own_entity" && (
-            <span data-testid={`isb-own-promisable-${row.product_id}`} className="block text-[9.5px] font-normal text-[#6B6B73]"
-              title="Siap dijanjikan dari entitas saya; sisanya butuh transfer antar-PT">entitas saya {formatQty(row.total_available)}</span>
-          )}
+        <td className="min-w-[220px] px-2 text-right" data-testid={`isb-available-${row.product_id}`}>
+          {/* FIX-2 (B1 UI-06, K-B1-03) — dua angka: LOKAL (cakupan Anda) lalu GLOBAL (semua PT); klik → rincian. */}
+          <StockFigures testId={`isb-figures-${row.product_id}`} unit={row.stock_figures?.unit || row.unit}
+            local={row.stock_figures?.local} global={row.stock_figures?.global}
+            localLabel={row.stock_scope_label || "Cakupan saya"} globalLabel="Total grup (semua PT)" productIds={[row.product_id]} />
         </td>
         <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "reserved"), "text-[#0058CC]")}`}>{formatQty(pv(row, "reserved"))}</td>
         <td className={`px-2 text-right tabular-nums ${zeroTone(pv(row, "incoming"), "text-[#8C4A00]")}`}>{formatQty(pv(row, "incoming"))}</td>

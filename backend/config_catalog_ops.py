@@ -583,6 +583,20 @@ E("wms.location_scope_enforced", group="stok-satuan", type="bool", default=False
   risk="high")
 
 
+E("stock.atp_horizon_days", group="stok-satuan", type="int", default=14, min=1, max=365, step=1,
+  unit="hari", scopes=("global",),
+  label="Horizon ATP (hari)",
+  help="Barang masuk (PO terbuka, roll menuju gudang, pembelian antar-PT yang sudah dikonfirmasi) hanya dihitung ke "
+       "ATP bila perkiraan tibanya ≤ sekian hari dari hari ini. Barang masuk tanpa tanggal dianggap dalam horizon. "
+       "Satu nilai untuk semua layar: Stok & ATP, Multi-Bucket, rincian angka stok, ringkasan stok Sales, saldo gudang.",
+  impact="Memperpanjang horizon menaikkan ATP (lebih banyak barang yang belum datang boleh dijanjikan); memperpendek "
+         "membuat janji lebih hati-hati. Stok Tersedia tidak berubah.",
+  example="14 (bawaan) → PO dengan ETA 20 hari lagi belum dihitung ke ATP",
+  consumers=("services/atp_policy.py:horizon_days", "services/stock_figures.py:atp_pair",
+             "services/stock_bucket_service.py:atp_detail"),
+  risk="medium")
+
+
 E("putaway.auto_draft", group="stok-satuan", type="bool", default=True, scopes=("global", "entity"),
   label="Siapkan draf Putaway Order otomatis sesudah QC lulus / GRN tanpa QC",
   help="Bila aktif, begitu barang lepas ke stok tersedia (keputusan QC lulus, GRN tanpa QC, atau SPK QC 4-point "

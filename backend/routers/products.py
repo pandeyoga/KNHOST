@@ -49,14 +49,17 @@ async def list_products(request: Request, orderable_only: bool = False,
         ctx = await entity_ctx(request)
         active = ctx.active_entity_id
     except Exception:
-        active = None
+        ctx, active = None, None
     pmap = {p["id"]: p for p in products}
     price_map = await pricelist_service.resolve_many(active, [p["id"] for p in products], pmap)
     # MD-08 — kode/nama versi SUPPLIER ikut dibawa agar pencarian katalog/PR/PO cocok di kedua sisi.
     await _sis.attach_supplier_codes(products)
     # 2026-10 — stok GLOBAL lintas entitas (minus cadangan makloon) + barang datang untuk SO vs restock.
+    # FIX-2 — angka dari SATU layanan (`stock_figures`) + dua angka {LOKAL, GLOBAL} per produk (`stock_figures`).
     from services import sales_stock_service
-    await sales_stock_service.apply_global(products, active or "")
+    from services import stock_figures as _sf
+    _scope = await _sf.viewer_scope(ctx) if ctx is not None else None
+    await sales_stock_service.apply_global(products, active or "", scope=_scope)
     for product in products:
         info = price_map.get(product["id"], {})
         product["global_price"] = float(product.get("price", 0) or 0)
@@ -275,13 +278,22 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
     # produk lini lain (kelas bug IDOR yang sama dengan pagar entitas).
     line_scope.assert_can_touch(actor, product,
                                 what=f"Produk '{product.get('name', product_id)}'")
-    balances_raw = await db.inventory_balances.find({"product_id": product_id}, {"_id": 0}).to_list(100)
-    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
-    entities = {e["id"]: e for e in await db.business_entities.find({}, {"_id": 0}).to_list(100)}
+    # FIX-2 (B3a SSOT-4/STK-7/SCP-4, keputusan #7) — angka dari SATU layanan (`stock_figures`): saldo per segmen sudah
+    # dikurangi cadangan makloon; matriks dihitung dari SELURUH roll (agregasi, tanpa batas 5.000) dengan definisi
+    # tunggal (panjang dipesan potong & klaim PA keluar dari Tersedia, hold/wip ikut Stok Fisik); roll milik PT di luar
+    # izin pengguna hanya angka + identitas (tanpa supplier/PO/faktur/reservasi/HPP).
+    from services import stock_figures as _sf
+    from services.roll_service import PHYSICAL_ROLL_STATUSES
+    _segs = await _sf.segments([product_id])
+    _idx = _sf.segment_index(_segs)
+    balances_raw = await db.inventory_balances.find({"product_id": product_id}, {"_id": 0}).to_list(None)
+    warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(None)}
+    entities = {e["id"]: e for e in await db.business_entities.find({}, {"_id": 0}).to_list(None)}
     # E-01 (audit 2026-09-02) — reservasi HANYA dari badan usaha yang diizinkan, dan
     # diproyeksikan ringkas: dokumen SO utuh PT lain (pelanggan, harga, alamat) pernah
     # bocor ke sales PT lain lewat endpoint ini.
     ctx_sb = await entity_ctx(request)
+    allowed_ents = set(getattr(ctx_sb, "allowed_entity_ids", None) or [])
     reservations_raw = await db.sales_orders.find(
         apply_entity_scope("sales_orders", {
             "allocations.product_id": product_id,
@@ -290,7 +302,9 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
         {"_id": 0, "id": 1, "number": 1, "entity_id": 1, "status": 1, "allocations": 1,
          "customer_name": 1, "created_at": 1}
     ).to_list(100)
-    rolls_raw = await db.inventory_rolls.find({"product_id": product_id}, {"_id": 0}).to_list(5000)
+    _ROLL_LIMIT = 5000
+    rolls_total = await db.inventory_rolls.count_documents({"product_id": product_id})
+    rolls_raw = await db.inventory_rolls.find({"product_id": product_id}, {"_id": 0}).to_list(_ROLL_LIMIT)
 
     def _ent_name(eid):
         e = entities.get(eid, {})
@@ -298,50 +312,89 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
 
     rows = []
     for balance in balances_raw:
-        b = safe_doc(balance)
+        b = _sf.adjust_balance_row(safe_doc(balance), _idx)
         warehouse = safe_doc(warehouses.get(b.get("warehouse_id"), {}))
         rows.append({**b, "warehouse_name": warehouse.get("name"), "warehouse_city": warehouse.get("city"),
                      "owner_entity_name": _ent_name(b.get("owner_entity_id"))})
 
-    # Matriks (Owner × Gudang × Lot) — KN_15 §8 (K1)
+    # Matriks (Owner × Gudang × Lot) — KN_15 §8 (K1); FIX-2: agregasi seluruh roll, definisi tunggal.
+    counted = {wid for wid, w in (await _sf.warehouse_map()).items() if w["counted"]}
     matrix: Dict[tuple, Dict[str, Any]] = {}
+    async for g in db.inventory_rolls.aggregate([
+            {"$match": {"product_id": product_id, "length_remaining": {"$gt": 0}}},
+            {"$group": {"_id": {"o": "$owner_entity_id", "w": "$warehouse_id", "l": "$lot", "s": "$status",
+                                "am": {"$gt": ["$active_movement.id", None]},
+                                "ih": {"$eq": ["$inspection.hold.held", True]}},
+                        "len": {"$sum": "$length_remaining"},
+                        "lres": {"$sum": {"$min": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}},
+                        "n": {"$sum": 1}, "grade": {"$first": "$grade"}}}]):
+        k = g["_id"]
+        if k.get("w") not in counted:
+            continue
+        wh = warehouses.get(k.get("w"), {})
+        cell = matrix.setdefault((k.get("o"), k.get("w"), k.get("l")), {
+            "owner_entity_id": k.get("o"), "owner_entity_name": _ent_name(k.get("o")),
+            "warehouse_id": k.get("w"), "warehouse_name": wh.get("name", ""),
+            "warehouse_city": wh.get("city", ""), "lot": k.get("l"), "grade": g.get("grade"),
+            "available_qty": 0.0, "available_rolls": 0, "reserved_qty": 0.0, "committed_qty": 0.0,
+            "hold_qty": 0.0, "makloon_reserved_qty": 0.0, "on_hand_qty": 0.0, "roll_count": 0,
+        })
+        length, status = float(g["len"] or 0), k.get("s")
+        if status == "available":
+            if k.get("am") or k.get("ih"):
+                cell["hold_qty"] += length          # diklaim PA / tahan inspeksi: fisik, tidak tersedia
+            else:
+                free = length - float(g.get("lres") or 0)
+                cell["available_qty"] += free
+                cell["reserved_qty"] += float(g.get("lres") or 0)   # panjang dipesan potong
+                cell["available_rolls"] += int(g["n"] or 0) if free > 0.001 else 0
+        elif status == "reserved":
+            cell["reserved_qty"] += length
+        elif status in ("committed", "picked", "packed"):
+            cell["committed_qty"] += length
+        elif status in PHYSICAL_ROLL_STATUSES:
+            cell["hold_qty"] += length
+        if status in PHYSICAL_ROLL_STATUSES:
+            cell["on_hand_qty"] += length
+            cell["roll_count"] += int(g["n"] or 0)
+    # cadangan makloon per segmen (aturan tunggal) dibagikan ke lot terbesar dulu dalam segmen itu
+    for s_ in _segs:
+        left = float(s_.get("makloon_reserved_qty") or 0)
+        cells = sorted([c for (o, w, _l), c in matrix.items() if o == s_["owner_entity_id"] and w == s_["warehouse_id"]],
+                       key=lambda c: -c["available_qty"])
+        for c in cells:
+            cut = min(left, max(c["available_qty"], 0.0))
+            c["available_qty"] -= cut
+            c["makloon_reserved_qty"] += cut
+            left -= cut
+            if left <= 0.001:
+                break
+    matrix_list = []
+    for cell in matrix.values():
+        for k in ("available_qty", "reserved_qty", "committed_qty", "hold_qty", "makloon_reserved_qty", "on_hand_qty"):
+            cell[k] = round(max(cell[k], 0.0), 2)
+        matrix_list.append(cell)
+    matrix_list.sort(key=lambda c: (c["owner_entity_name"], c["warehouse_name"], c["lot"] or ""))
+
+    _IDENTITY = ("id", "roll_no", "lot", "dye_lot", "grade", "warehouse_id", "bin_id", "owner_entity_id", "status",
+                 "length_initial", "length_remaining", "length_reserved", "unit", "product_id")
     rolls = []
     for r in rolls_raw:
         r = safe_doc(r)
+        if allowed_ents and r.get("owner_entity_id") not in allowed_ents:
+            r = {k: r.get(k) for k in _IDENTITY if k in r}   # B3a keputusan #7 — angka + identitas saja
+            r["restricted"] = True
         wh = warehouses.get(r.get("warehouse_id"), {})
         r["warehouse_name"] = wh.get("name", "")
         r["owner_entity_name"] = _ent_name(r.get("owner_entity_id"))
         rolls.append(r)
-        key = (r.get("owner_entity_id"), r.get("warehouse_id"), r.get("lot"))
-        cell = matrix.setdefault(key, {
-            "owner_entity_id": r.get("owner_entity_id"), "owner_entity_name": _ent_name(r.get("owner_entity_id")),
-            "warehouse_id": r.get("warehouse_id"), "warehouse_name": wh.get("name", ""),
-            "warehouse_city": wh.get("city", ""), "lot": r.get("lot"), "grade": r.get("grade"),
-            "available_qty": 0.0, "reserved_qty": 0.0, "committed_qty": 0.0, "on_hand_qty": 0.0,
-            "roll_count": 0,
-        })
-        length = float(r.get("length_remaining", 0) or 0)
-        status = r.get("status")
-        if status == "available":
-            cell["available_qty"] += length
-        elif status == "reserved":
-            cell["reserved_qty"] += length
-        elif status == "committed":
-            cell["committed_qty"] += length
-        if status in ("available", "reserved", "committed", "picked", "packed", "quarantine", "blocked", "damaged"):
-            cell["on_hand_qty"] += length
-            cell["roll_count"] += 1
-    matrix_list = []
-    for cell in matrix.values():
-        for k in ("available_qty", "reserved_qty", "committed_qty", "on_hand_qty"):
-            cell[k] = round(cell[k], 2)
-        matrix_list.append(cell)
-    matrix_list.sort(key=lambda c: (c["owner_entity_name"], c["warehouse_name"], c["lot"] or ""))
 
     return strip_cost_fields({
         "product": product,
         "balances": rows,
         "ownership_matrix": matrix_list,
         "rolls": rolls,
+        "rolls_total": rolls_total,
+        "rolls_truncated": rolls_total > len(rolls),
         "reservations": [safe_doc(r) for r in reservations_raw if r]
     }, role)

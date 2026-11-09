@@ -1,6 +1,6 @@
 import { Boxes, Layers3, Ruler, Scale, Sparkles, Tag } from "lucide-react";
 import { mediaUrl } from "../../components/ProductGallery";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatQty } from "../../utils/formatters";
 
 import { axisLabel, useCatalogLabels } from "./catalogLabels";   // G4-19 — satu nama tahap/jenis kain (registri)
 
@@ -22,7 +22,8 @@ export const FamilyHero = ({ family, summary }) => {
     { icon: Tag, label: "Harga jual", value: max > min ? `${formatCurrency(min)} – ${formatCurrency(max)}` : formatCurrency(min), testId: "hero-fact-price" },
     { icon: Scale, label: "Gramasi", value: family.gramasi ? `${family.gramasi} gsm` : "—", testId: "hero-fact-gsm" },
     { icon: Ruler, label: "Lebar kain", value: family.lebar ? `${family.lebar} m` : "—", testId: "hero-fact-width" },
-    { icon: Boxes, label: "Stok entitas aktif", value: summary ? `${available} ${family.base_unit} · ${rolls} roll` : "Memuat…", testId: "hero-fact-stock" },
+    // FIX-2 (B3a STK-1) — angka dulu selalu 0; label "Stok" diganti "Tersedia" (angkanya memang Tersedia K-04).
+    { icon: Boxes, label: "Tersedia (PT aktif)", value: summary ? `${rolls} roll · ${formatQty(available)} ${family.base_unit}` : "Memuat…", testId: "hero-fact-stock" },
     { icon: Sparkles, label: "Foto & mockup", value: `${totalMedia} disetujui`, testId: "hero-fact-media" },
   ];
   return <section className="catalog-hero" data-testid="catalog-family-hero">

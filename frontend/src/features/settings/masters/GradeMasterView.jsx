@@ -6,6 +6,7 @@ import { can } from "../../../config/roles";
 import { invalidateDomainEnums } from "../../../hooks/useDomainEnums";
 import { askReason } from "../../../services/confirmService";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
+import { formatQty } from "../../../utils/formatters";   // FIX-2 (B1b UI-59) — pemisah ribuan
 
 const EMPTY = { code: "", name: "", rank: "", description: "", max_points: "" };
 
@@ -37,7 +38,7 @@ function GradeRow({ g, perms, onSaved, onError }) {
       <td className="px-3 py-2">{edit ? <input className="input" data-testid={`grade-edit-name-${g.code}`} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /> : g.name}</td>
       <td className="px-3 py-2 text-right">{edit ? <input className="input w-20" type="number" data-testid={`grade-edit-rank-${g.code}`} value={edit.rank} onChange={(e) => setEdit({ ...edit, rank: e.target.value })} /> : g.rank}</td>
       <td className="px-3 py-2 text-right">{edit ? <input className="input w-20" type="number" data-testid={`grade-edit-points-${g.code}`} value={edit.max_points ?? ""} onChange={(e) => setEdit({ ...edit, max_points: e.target.value })} /> : (g.max_points ?? "—")}</td>
-      <td className="px-3 py-2 text-right" data-testid={`grade-usage-${g.code}`}>{g.rolls_using}</td>
+      <td className="px-3 py-2 text-right" data-testid={`grade-usage-${g.code}`}>{formatQty(g.rolls_using ?? 0)}</td>
       <td className="px-3 py-2"><span data-testid={`grade-status-${g.code}`} className={g.active ? "pill-success" : "pill-muted"}>{g.active ? "Aktif" : (g.historical ? "Nonaktif (riwayat)" : "Nonaktif")}</span></td>
       <td className="px-3 py-2">
         <div className="flex flex-wrap items-center gap-1.5">

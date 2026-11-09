@@ -120,7 +120,10 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
     <div key={it.product_id || idx} className="grid grid-cols-[1fr_90px_90px] gap-2 text-[12px] py-1.5 border-b border-[#F5F5F7] last:border-0 items-center">
       <div className="min-w-0"><p className="font-semibold truncate">{it.product_name || it.name}</p>
         <p className="text-[10px] text-[#8E8E93]">{it.sku || ""}</p></div>
-      <span className="text-right tabular-nums text-[#6B6B73]">Stok fisik {fmt.format(it.on_hand ?? it.available_qty ?? 0)}</span>
+      {/* FIX-2 (B3a STK-2, P0) — server mengirim `available` (Tersedia K-04, per PT); FE dulu membaca `on_hand`/
+          `available_qty` yang tidak dikirim → selalu "Stok fisik 0". Labelnya juga salah makna (bukan stok fisik). */}
+      <span className="text-right tabular-nums text-[#6B6B73]" data-testid={`admin-home-stock-available-${it.product_id || idx}`}
+        title="Tersedia = roll siap jual dikurangi yang dipesan, ditahan QC, dan cadangan makloon">Tersedia {fmt.format(it.available ?? it.available_qty ?? 0)}</span>
       <span className="text-right tabular-nums font-bold text-[#FF6B00]">ROP {fmt.format(it.reorder_point ?? 0)}</span>
     </div>
   );

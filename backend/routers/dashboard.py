@@ -108,51 +108,51 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # (mis. roll yang kepemilikannya sudah dipindah lintas-PT via R3 ownership transfer),
     # sehingga KPI > Σbalances (drift 1 meter). Kini keduanya seragam per-entitas aktif.
     bal_scope = resolve_list_scope("inventory_balances", {}, ctx, entity_id)
-    bal_docs = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(None)   # G3 D4-DASH-01
+    # FIX-2 (B3a STK-8/SSOT-4, B1 UI-40) — KPI dibangun dari SATU layanan angka stok (`stock_figures.segments`):
+    # cadangan makloon dikurangkan per PT PEMILIK di cakupan (dulu hanya PT AKTIF → mode "Semua PT" +300 kg), gudang
+    # non-aktif/uji/yatim tidak ikut. Cakupan PT & lokasi kerja sama dengan `bal_scope` (resolve_list_scope).
+    from entity_scope import resolve_scope_ids
+    from services import stock_figures as _sf
+    owner_ids = set(resolve_scope_ids(ctx, entity_id))
+    loc_whs = getattr(ctx, "warehouse_ids", None)
+    all_segs = await _sf.segments()
+    kpi_segs = [s for s in all_segs if s["owner_entity_id"] in owner_ids
+                and (loc_whs is None or s["warehouse_id"] in loc_whs)]
     per_prod: Dict[str, Dict[str, float]] = {}
-    total_available = 0.0
-    total_reserved = 0.0
-    for b in bal_docs:
-        pid = b.get("product_id")
-        av = float(b.get("available_qty", 0) or 0)
-        rv = float(b.get("reserved_qty", 0) or 0)
-        d = per_prod.setdefault(pid, {"on_hand_qty": 0.0, "reserved_qty": 0.0,
-                                      "available_qty": 0.0, "roll_count": 0,
-                                      "on_hand_roll_count": 0})
-        d["available_qty"] += av
-        d["reserved_qty"] += rv
-        d["on_hand_qty"] += float(b.get("on_hand_qty", 0) or 0)
-        d["roll_count"] += int(b.get("roll_count", 0) or 0)
-        d["on_hand_roll_count"] += int(b.get("on_hand_roll_count", 0) or 0)
-        total_available += av
-        total_reserved += rv
-    for product in products:
-        s = per_prod.get(product["id"], {"on_hand_qty": 0.0, "reserved_qty": 0.0,
-                                         "available_qty": 0.0, "roll_count": 0,
-                                         "on_hand_roll_count": 0})
-        product.update({k: (round(v, 2) if isinstance(v, float) else v) for k, v in s.items()})
-    # W2-REQ-07 — Kasir membaca produk dari sini: cadangan makloon dikurangkan dari stok bebas.
-    from services import material_reservation_service as _mres
-    await _mres.apply_to_products(products, ctx.active_entity_id)
-    total_available = round(max(total_available - sum(float(p.get("makloon_reserved_qty") or 0) for p in products), 0.0), 2)
-    total_reserved = round(total_reserved, 2)
+    for b in kpi_segs:
+        d = per_prod.setdefault(b["product_id"], {"on_hand_qty": 0.0, "reserved_qty": 0.0, "available_qty": 0.0,
+                                                  "makloon_reserved_qty": 0.0, "roll_count": 0,
+                                                  "on_hand_roll_count": 0})
+        d["available_qty"] += max(float(b["available_qty"]), 0.0)
+        d["reserved_qty"] += float(b.get("reserved_qty") or 0)
+        d["on_hand_qty"] += float(b.get("on_hand_qty") or 0)
+        d["makloon_reserved_qty"] += float(b.get("makloon_reserved_qty") or 0)
+        d["roll_count"] += int(b.get("available_rolls") or 0)
+        d["on_hand_roll_count"] += int(b.get("on_hand_rolls") or 0)
+    total_available = round(sum(d["available_qty"] for d in per_prod.values()), 2)
+    total_reserved = round(sum(d["reserved_qty"] for d in per_prod.values()), 2)
     # F-04 (uji pra-UAT 2026-10-21) — KPI "Jml Tersedia/Dipesan" per SATUAN: yard dan kg tidak boleh dijumlahkan
     # menjadi satu angka. Satuan = base_unit produk (saldo tidak menyimpan satuan); + jumlah roll tersedia.
     unit_of, unitless = await _units_for_products(list(per_prod))
-    mk = {p["id"]: float(p.get("makloon_reserved_qty") or 0) for p in products if p.get("id")}
     available_by_unit: Dict[str, float] = {}
     reserved_by_unit: Dict[str, float] = {}
     for pid, d in per_prod.items():
         unit = unit_of.get(pid) or unitless.get(pid) or UNIT_MISSING   # tetap terlihat, tidak dicampur
-        free = max(d["available_qty"] - mk.get(pid, 0.0), 0.0)
-        available_by_unit[unit] = round(available_by_unit.get(unit, 0.0) + free, 2)
+        available_by_unit[unit] = round(available_by_unit.get(unit, 0.0) + d["available_qty"], 2)
         reserved_by_unit[unit] = round(reserved_by_unit.get(unit, 0.0) + d["reserved_qty"], 2)
     available_rolls = sum(int(d.get("roll_count") or 0) for d in per_prod.values())
     # 2026-10 — kartu produk (Kasir/katalog) memakai stok GLOBAL; KPI di atas tetap per entitas aktif.
+    # FIX-2 — + dua angka {LOKAL, GLOBAL} per produk (`stock_figures`) untuk katalog POS/HP & Master Produk.
     from services import sales_stock_service
-    # Trial 22 Okt (B6) — stok di atas = milik SATU PT (bila cakupan satu entitas) → ikut diberi nama PT-nya.
     _own = bal_scope.get("owner_entity_id")
-    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "")
+    _scope = await _sf.viewer_scope(ctx, entity_id=entity_id if entity_id and entity_id != "all" else "")
+    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "", scope=_scope)
+    if not isinstance(_own, str):
+        # mode gabungan: "stok PT" = Σ PT dalam cakupan (definisi tunggal, makloon per PT pemilik)
+        for product in products:
+            d = per_prod.get(product.get("id"), {})
+            product["entity_available_qty"] = round(float(d.get("available_qty") or 0), 2)
+            product["entity_roll_count"] = int(d.get("roll_count") or 0)
     # MD-08 — kode versi supplier ikut ke Master Produk (pencarian dua sisi).
     from services.supplier_item_service import attach_supplier_codes
     await attach_supplier_codes(products)
@@ -162,6 +162,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             "products": total_products,
             "warehouses": total_warehouses,
             "customers": total_customers,
+            # FIX-2 (STK-8) — angka campur satuan ini TIDAK untuk ditampilkan; layar memakai `available_by_unit`.
             "available_qty": total_available,
             # UAT 24 Okt (audit UI tahap 2) — produk yang satuannya tak bisa diturunkan (untuk perbaikan data).
             "unitless_product_ids": sorted(unitless)[:50],
@@ -172,6 +173,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             "active_orders": active_orders,
         },
         "products": products,
+        "stock_scope": _sf.scope_public(_scope),
         "orders": orders,
         "warehouses": warehouses,
         "customers": customers,

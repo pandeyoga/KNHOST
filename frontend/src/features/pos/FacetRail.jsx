@@ -22,7 +22,7 @@ const SORT_OPTIONS = [
 
 const AVAIL_OPTIONS = [
   { value: "all", label: "Semua" },
-  { value: "available", label: "Tersedia (ATP > 0)" },
+  { value: "available", label: "Tersedia > 0" },   // FIX-2 (B3a STK-10) — saringan membaca Tersedia, bukan ATP
   { value: "low", label: "Stok rendah" },
 ];
 

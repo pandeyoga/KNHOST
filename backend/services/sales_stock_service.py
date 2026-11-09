@@ -1,11 +1,19 @@
 """Stok GLOBAL untuk layar sales (Kasir/POS, katalog): sales tidak memilah per entitas —
 pemenuhan lintas entitas (transfer / PO) diputuskan admin. Barang datang dipisah:
-untuk SO (sudah terikat pesanan, tidak bisa dijanjikan lagi) vs untuk restock (boleh dijanjikan)."""
-from typing import Any, Dict, List
+untuk SO (sudah terikat pesanan, tidak bisa dijanjikan lagi) vs untuk restock (boleh dijanjikan).
+
+FIX-2 (audit B3a SSOT-4/STK-5/STK-8/STK-12, B1 UI-06) — modul ini kini PEMBUNGKUS layanan angka stok tunggal
+`services/stock_figures.py`. Yang berubah untuk pengguna:
+* `entity_available_qty` (stok PT penjual) kini dikurangi cadangan makloon PT itu — dulu `/products` 477,63 vs
+  `/dashboard` 177,63 untuk produk & PT yang sama;
+* gudang non-aktif / data uji / saldo yatim tidak ikut (dulu semua saldo);
+* "barang datang" grup tidak lagi menghitung pembelian antar-PT (barangnya sudah ada di stok PT penjual — hitung
+  ganda); antar-PT dikonfirmasi tampil sebagai `entity_incoming_qty` milik PT pembeli; draf tidak dihitung;
+* bila `scope` diberikan, tiap produk membawa `stock_figures` = dua angka {local, global} (roll lalu panjang).
+"""
+from typing import Any, Dict, List, Optional
 
 from db import db
-from services.roll_service import OPEN_PO_STATUSES
-from services.stock_bucket_service import INCOMING_INTERCO_STATUSES
 
 
 async def _sum_by_product(coll: str, match: Dict[str, Any], fields: List[str]) -> Dict[str, Dict[str, float]]:
@@ -15,73 +23,75 @@ async def _sum_by_product(coll: str, match: Dict[str, Any], fields: List[str]) -
 
 
 async def global_available(pid: str) -> float:
-    bal = await _sum_by_product("inventory_balances", {"product_id": pid}, ["available_qty"])
-    mk = await _sum_by_product("material_reservations", {"status": "active", "product_id": pid}, ["qty"])
-    return round(max(float((bal.get(pid) or {}).get("available_qty") or 0) - float((mk.get(pid) or {}).get("qty") or 0), 0.0), 2)
+    """Tersedia GLOBAL satu produk (definisi tunggal `stock_figures`)."""
+    from services.stock_figures import segments, sum_segments
+    return sum_segments(await segments([pid]))["available_qty"]
 
 
-async def apply_global(products: List[Dict[str, Any]], entity_id: str = "") -> None:
+async def global_available_many(ids: List[str]) -> Dict[str, float]:
+    """Tersedia GLOBAL banyak produk sekaligus (satu baca saldo)."""
+    from services.stock_figures import segments, sum_segments
+    segs = await segments(ids)
+    out: Dict[str, List[Dict[str, Any]]] = {pid: [] for pid in ids}
+    for s in segs:
+        out.setdefault(s["product_id"], []).append(s)
+    return {pid: sum_segments(ss)["available_qty"] for pid, ss in out.items()}
+
+
+async def apply_global(products: List[Dict[str, Any]], entity_id: str = "",
+                       scope: Optional[Dict[str, Any]] = None) -> None:
     """`entity_id` = PT penjual (entitas aktif). Trial 22 Okt (B6): stok PT itu ikut dikirim terpisah
     (`entity_available_qty`, `entity_roll_count`, `stock_entity_name`) supaya katalog HP tidak membuat sales
-    mengira stok grup = stok PT-nya sendiri."""
-    ids = [p["id"] for p in products]
+    mengira stok grup = stok PT-nya sendiri. `scope` (FIX-2) = cakupan LOKAL pengguna (`stock_figures.viewer_scope`)."""
+    from services import stock_figures as sf
+    ids = [p["id"] for p in products if p.get("id")]
     if not ids:
         return
+    segs = await sf.segments(ids)
+    per: Dict[str, List[Dict[str, Any]]] = {}
+    for s in segs:
+        per.setdefault(s["product_id"], []).append(s)
     ent_name = ""
-    if entity_id:
-        own = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}, "owner_entity_id": entity_id},
-                                    ["available_qty", "roll_count"])
-        for p in products:
-            p.setdefault("available_qty", round(float((own.get(p["id"]) or {}).get("available_qty") or 0), 2))
-            p.setdefault("roll_count", int((own.get(p["id"]) or {}).get("roll_count") or 0))
-        ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "short_name": 1, "legal_name": 1, "name": 1}) or {}
+    if entity_id and entity_id != "all":
+        ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "short_name": 1, "legal_name": 1,
+                                                                       "name": 1}) or {}
         ent_name = ent.get("short_name") or ent.get("name") or ent.get("legal_name") or ""
-    bal = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}},
-                                ["available_qty", "reserved_qty", "on_hand_qty", "roll_count", "on_hand_roll_count"])
-    mk = await _sum_by_product("material_reservations", {"status": "active", "product_id": {"$in": ids}}, ["qty"])
     inc_so: Dict[str, float] = {}
     inc_rs: Dict[str, float] = {}
-    idset = set(ids)
-    async for po in db.purchase_orders.find({"status": {"$in": OPEN_PO_STATUSES}, "items.product_id": {"$in": ids}},
-                                            {"_id": 0, "items": 1, "source_so_ids": 1}):
-        bound = bool(po.get("source_so_ids"))
-        for it in po.get("items") or []:
-            pid = it.get("product_id")
-            if pid not in idset:
-                continue
-            open_qty = float(it.get("quantity", it.get("qty", 0)) or 0) - float(it.get("received_qty", 0) or 0)
-            # G3 D4-GLOBAL-01 — konversi ke satuan dasar produk lewat quantity_base (UOM beli ≠ base_unit)
-            q_doc = float(it.get("quantity", it.get("qty", 0)) or 0)
-            if it.get("quantity_base") and q_doc > 0:
-                open_qty = open_qty * float(it["quantity_base"]) / q_doc
-            if open_qty > 0.01:
-                tgt = inc_so if (bound or it.get("source_so_id")) else inc_rs
-                tgt[pid] = tgt.get(pid, 0.0) + open_qty
-    async for d in db.interco_transactions.find({"role": "buyer", "status": {"$in": INCOMING_INTERCO_STATUSES},
-                                                 "items.product_id": {"$in": ids}},
-                                                {"_id": 0, "items": 1, "source_order_id": 1}):
-        for it in d.get("items") or []:
-            pid = it.get("product_id")
-            qty = float(it.get("quantity_base") or it.get("quantity", it.get("qty", 0)) or 0)   # G3 D4-GLOBAL-01
-            if pid in idset and qty > 0.01:
-                tgt = inc_so if d.get("source_order_id") else inc_rs
-                tgt[pid] = tgt.get(pid, 0.0) + qty
+    inc_ent: Dict[str, float] = {}
+    for r in await sf.incoming_rows(ids, sources=("po", "interco")):
+        pid = r["product_id"]
+        if r["in_global"]:
+            tgt = inc_so if r["bound_so"] else inc_rs
+            tgt[pid] = tgt.get(pid, 0.0) + r["qty"]
+        if entity_id and r["owner_entity_id"] == entity_id and r["in_atp"]:
+            inc_ent[pid] = inc_ent.get(pid, 0.0) + r["qty"]
+    figs = await sf.figures_for(ids, scope, segs) if scope is not None else {}
     for p in products:
-        b = bal.get(p["id"], {})
-        if "available_qty" in p:
-            p["entity_available_qty"] = p.get("available_qty")
-            p["entity_roll_count"] = int(p.get("roll_count") or 0)
+        ss = per.get(p.get("id"), [])
+        g = sf.sum_segments(ss)
+        if entity_id and entity_id != "all":
+            e = sf.sum_segments([s for s in ss if s["owner_entity_id"] == entity_id])
+            p["entity_available_qty"] = e["available_qty"]
+            p["entity_roll_count"] = int(e["available_rolls"])
+            p["entity_makloon_reserved_qty"] = e["makloon_reserved_qty"]
+            p["entity_incoming_qty"] = round(inc_ent.get(p["id"], 0.0), 2)
             if ent_name:
                 p["stock_entity_name"] = ent_name
-        makloon = round(float((mk.get(p["id"]) or {}).get("qty") or 0), 2)
         p.update({
-            "available_qty": round(max(float(b.get("available_qty") or 0) - makloon, 0.0), 2),
-            "reserved_qty": round(float(b.get("reserved_qty") or 0), 2),
-            "on_hand_qty": round(float(b.get("on_hand_qty") or 0), 2),
-            "roll_count": int(b.get("roll_count") or 0),
-            "on_hand_roll_count": int(b.get("on_hand_roll_count") or 0),
-            "makloon_reserved_qty": makloon,
+            "available_qty": g["available_qty"],
+            "reserved_qty": round(g["reserved_qty"], 2),
+            "on_hand_qty": round(g["on_hand_qty"], 2),
+            "roll_count": int(g["available_rolls"]),
+            "on_hand_roll_count": int(g["on_hand_rolls"]),
+            "makloon_reserved_qty": round(g["makloon_reserved_qty"], 2),
             "incoming_so_qty": round(inc_so.get(p["id"], 0.0), 2),
             "incoming_restock_qty": round(inc_rs.get(p["id"], 0.0), 2),
             "stock_scope": "global",
         })
+        if p.get("id") in figs:
+            p["stock_figures"] = figs[p["id"]]
+    if scope is not None:
+        label = scope.get("label") or ""
+        for p in products:
+            p["stock_scope_label"] = label

@@ -35,6 +35,10 @@ const STATUS_ID = {
   dispatched: "Diberangkatkan", cancelled: "Dibatalkan",
 };
 const statusText = (s) => STATUS_ID[s] || docStatusLabel(s) || "—";
+// FIX-2 (B1b UI-54) — tugas menunggu keputusan QC / ditolak QC bukan pekerjaan terima petugas: dihitung terpisah dan
+// berpil abu (dulu ikut "30 terbuka" dengan pil oranye yang sama).
+const WAITING_QC = ["qc_pending", "qc_check", "qc_rejected"];
+const pillFor = (s) => (s === "escalated" ? "pill-danger" : WAITING_QC.includes(s) ? "pill-muted" : "pill-warning");
 
 function TaskList({ type, focusTaskId, onFocused }) {
   const [rows, setRows] = useState(null);
@@ -69,7 +73,12 @@ function TaskList({ type, focusTaskId, onFocused }) {
     <div className="space-y-2 p-3" data-testid={`mw-task-list-${type}`}>
       <div className="flex items-baseline justify-between px-1">
         <b className="text-[14px] capitalize" data-testid={`mw-task-title-${type}`}>Tugas {label}</b>
-        <span className="text-xs text-[#6E6E73]" data-testid={`mw-task-count-${type}`}>{term ? `${shownRows.length} dari ${rows.length}` : rows.length} terbuka</span>
+        <span className="text-[14px] text-[#6E6E73]" data-testid={`mw-task-count-${type}`}>
+          {term ? `${shownRows.length} dari ${rows.length} terbuka` : (() => {
+            const waiting = rows.filter((t) => WAITING_QC.includes(t.status)).length;
+            return waiting ? `${rows.length - waiting} perlu dikerjakan · ${waiting} menunggu/ditolak QC` : `${rows.length} terbuka`;
+          })()}
+        </span>
       </div>
       {rows.length > 5 && (
         <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari produk, PO/SO, gudang…"
@@ -94,7 +103,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
       {shownRows.map((t) => (
         <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-[#0058CC]" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
           <div className="flex items-center justify-between"><b className="text-[15px]">{t.product_name || t.product_id}</b>
-            <span className={`status-pill ${t.status === "escalated" ? "pill-danger" : "pill-warning"}`}>{statusText(t.status)}</span></div>
+            <span className={`status-pill ${pillFor(t.status)}`}>{statusText(t.status)}</span></div>
           <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>

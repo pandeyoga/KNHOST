@@ -2,16 +2,19 @@ import { Plus, Info, Layers } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../../utils/lifecycle";
 import { onImageError, productImage } from "../../../utils/productImage";
-import { ownStockText } from "../../../utils/variants";
+import { variantLabel } from "../../../utils/variants";
 import { displaySku, maskedSkuTitle } from "../skuDisplay";
+import StockFigures, { figuresForGroup } from "../../../components/StockFigures";
 
 /** EPIC-VAR — Kartu produk MOBILE (group-aware, kompak). Klik membuka MobileQuickView. */
-export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforcement = "block", siteStock = null, siteName = "" }) {
+export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforcement = "block", siteStock = null, siteName = "", siteId = "" }) {
   const rep = group.base;
-  const total = group.totalAvailable;
-  const availState = total <= 0 ? "habis" : total <= 40 ? "low" : "ready";
-  const availLabel = { habis: "Habis", low: "Rendah", ready: "Tersedia" }[availState];
-  const availPill = { habis: "status-cancelled", low: "status-waiting_approval", ready: "status-confirmed" }[availState];
+  // FIX-2 (B1 UI-06 "kartu HP sales angka besar salah konteks", B3a STK-10/STK-13) — dua angka {LOKAL, GLOBAL}:
+  // angka pertama = lokasi jualan × PT penjual, kedua = semua PT; ambang stok rendah dari server (dulu ≤ 40 di sini).
+  const fig = figuresForGroup(group, { siteStock, siteName, entityName: group.stockEntityName });
+  const availState = fig.badge.key === "habis" ? "habis" : "ready";
+  const availLabel = fig.badge.text;
+  const availPill = fig.badge.pill;
   const anySpecial = group.variants.some((v) => specialMap[v.id]?.has_special);
   const makloonQty = group.variants.reduce((s, v) => s + Number(v.makloon_reserved_qty || 0), 0);
   const incRestock = group.variants.reduce((s, v) => s + Number(v.incoming_restock_qty || 0), 0);
@@ -53,20 +56,11 @@ export function MobileProductCard({ group, onOpen, specialMap = {}, rndEnforceme
         <h3 data-testid={`mobile-product-name-${rep.id}`} className="mt-0.5 line-clamp-2 text-[12.5px] font-semibold leading-tight">{group.name}</h3>
         <p className="mt-0.5 line-clamp-1 text-[10.5px] text-[#6B6B73]">{group.isMulti ? `${group.variants.length} ${group.variants.some((v) => v.grade) ? "warna/grade" : "warna"}` : rep.color}</p>
         <p data-testid={`mobile-product-price-${rep.id}`} className="mt-1.5 text-[14px] font-bold tabular-nums text-[#1C1C1E]">{priceText}<span className="text-[9.5px] font-medium text-[#8E8E93]">/{rep.base_unit || "meter"}</span></p>
-        {/* UAT 24 Okt (P8) — stok DI LOKASI pilihan ditonjolkan. */}
-        {siteStock && (() => {
-          const own = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.own_qty || 0), 0);
-          return (
-            <p data-testid={`mobile-product-site-stock-${rep.id}`} className={`mt-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold ${own > 0 ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF4E5] text-[#8C4A00]"}`}>
-              Di {siteName || "lokasi"}: {own > 0 ? `${formatQty(own)} ${rep.base_unit || "meter"}` : "kosong"}
-            </p>
-          );
-        })()}
-        {/* Trial 22 Okt (B6) — stok PT penjual dulu, stok grup (semua PT) sesudahnya: sales tidak mengira stok PT lain miliknya. */}
-        {group.stockEntityName && (
-          <p data-testid={`mobile-product-own-${rep.id}`} className="text-[10px] text-[#6B6B73]">{group.stockEntityName}: <b className={group.totalOwn > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(group.totalOwn, group.totalOwnRolls, rep.base_unit || "meter")}</b></p>
-        )}
-        <p className="text-[10px] text-[#6B6B73]">{group.stockEntityName ? "Grup: " : ""}<b data-testid={`mobile-product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`mobile-product-available-${rep.id}`} className={group.stockEntityName ? "text-[#1C1C1E]" : "text-[#126E2C]"}>{formatQty(total)}</b> {rep.base_unit || "meter"}</p>
+        {/* UAT 24 Okt (P8) + FIX-2 — dua angka (roll lalu panjang), ketuk → rincian. Dulu tiga baris 10 px. */}
+        <StockFigures size="lg" className="mt-1" testId={`mobile-product-stock-figures-${rep.id}`} unit={fig.unit}
+          local={fig.local} global={fig.global} localLabel={fig.localLabel} globalLabel="Total grup (semua PT)"
+          productIds={group.variants.map((v) => v.id)} siteId={siteId}
+          productLabels={Object.fromEntries(group.variants.map((v) => [v.id, variantLabel(v)]))} />
         {incRestock > 0 && <p data-testid={`mobile-product-incoming-restock-${rep.id}`} className="text-[10px] font-semibold text-[#0058CC]">Datang restock: {formatQty(incRestock)}</p>}
         {incSo > 0 && <p data-testid={`mobile-product-incoming-so-${rep.id}`} className="text-[10px] text-[#6B6B73]">Datang utk SO: {formatQty(incSo)}</p>}
         {makloonQty > 0 && (

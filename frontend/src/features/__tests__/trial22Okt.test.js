@@ -290,12 +290,13 @@ test("E5: pilih roll stok sendiri → qty otomatis = panjang roll terpilih (diba
 });
 
 
-test("B6: kartu katalog HP — stok PT penjual (kosong) dipisah dari stok grup", async () => {
+test("B6 (+FIX-2): kartu katalog HP — stok PT penjual (kosong) dipisah dari stok grup, dua angka roll dulu", async () => {
+  // FIX-2 (B1 UI-06) — tiga baris 10 px (PT · Grup) diganti komponen dua angka: LOKAL (PT penjual) lalu GLOBAL.
   const [group] = groupByTemplate([{ id: "p1", sku: "ALC-14", name: "ALICE KNIT", template_id: "t1", base_unit: "kg", price: 10,
     available_qty: 9285.19, roll_count: 465, entity_available_qty: 0, entity_roll_count: 0, stock_entity_name: "Sukacita" }]);
   const root = await mount(<MobileProductCard group={group} onOpen={() => {}} />);
-  expect(q("mobile-product-own-p1").textContent).toBe("Sukacita: kosong");
-  expect(q("mobile-product-available-p1").parentElement.textContent).toMatch(/^Grup: 465 roll \/ 9\.285,19 kg/);
+  expect(q("mobile-product-stock-figures-p1-local").textContent).toMatch(/Sukacita.*0 roll · 0 kg/);
+  expect(q("mobile-product-stock-figures-p1-global").textContent).toMatch(/Total grup \(semua PT\).*465 roll · 9\.285,19 kg/);
   act(() => root.unmount());
 });
 

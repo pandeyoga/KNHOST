@@ -2,8 +2,9 @@ import { Plus, Layers, Repeat, FlaskConical, Lock } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { blocksOrder, lifecycleLabel } from "../../utils/lifecycle";
 import { onImageError, productImage } from "../../utils/productImage";
-import { ownStockText } from "../../utils/variants";
 import { displaySku, maskedSkuTitle } from "./skuDisplay";
+import StockFigures, { figuresForGroup } from "../../components/StockFigures";
+import { variantLabel } from "../../utils/variants";
 
 /**
  * EPIC-VAR — kartu produk POS (group-aware & ringkas).
@@ -14,15 +15,17 @@ import { displaySku, maskedSkuTitle } from "./skuDisplay";
  * FASE F — varian yang masih di alur R&D (lifecycle ≠ produksi) ditandai jelas
  * "Belum boleh dijual" supaya sales tidak menabrak penolakan di ujung checkout.
  */
-export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnforcement = "block", siteStock = null, siteName = "" }) {
+export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnforcement = "block", siteStock = null, siteName = "", siteId = "" }) {
   const rep = group.base;
-  const total = group.totalAvailable;
   const makloonQty = group.variants.reduce((s, v) => s + Number(v.makloon_reserved_qty || 0), 0);
   const incRestock = group.variants.reduce((s, v) => s + Number(v.incoming_restock_qty || 0), 0);
   const incSo = group.variants.reduce((s, v) => s + Number(v.incoming_so_qty || 0), 0);
-  const availState = total <= 0 ? "habis" : total <= 40 ? "low" : "ready";
-  const availLabel = { habis: "Habis", low: "Stok rendah", ready: "Tersedia" }[availState];
-  const availPill = { habis: "status-cancelled", low: "status-waiting_approval", ready: "status-confirmed" }[availState];
+  // FIX-2 (B1 UI-06/UI-40, B3a STK-10/STK-13) — dua angka {LOKAL, GLOBAL} dari satu layanan; ambang "stok rendah"
+  // dari server (dulu ≤ 40 diketik di sini, server < 100). Tombol jual mati hanya bila GLOBAL habis.
+  const fig = figuresForGroup(group, { siteStock, siteName, entityName: group.stockEntityName });
+  const availState = fig.badge.key === "habis" ? "habis" : "ready";
+  const availLabel = fig.badge.text;
+  const availPill = fig.badge.pill;
   const anySpecial = group.variants.some((v) => specialMap[v.id]?.has_special);
   // F1b — kartu juga menandai harga LANGGANAN pelanggan (bukan cuma harga khusus),
   // supaya sales tahu kenapa angka di kartu berbeda dari daftar harga umum.
@@ -100,24 +103,12 @@ export function PosProductCard({ group, specialMap = {}, onOpen, reorder, rndEnf
           </p>
           <span data-testid={`product-stock-badge-${rep.id}`} className={`status-pill ${availPill}`}>{availLabel}</span>
         </div>
-        {/* UAT 24 Okt (P8) — stok DI LOKASI pilihan (gudang lokasi itu) ditonjolkan; lokasi lain = perlu transfer. */}
-        {siteStock && (() => {
-          const own = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.own_qty || 0), 0);
-          const grp = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.group_qty || 0), 0);
-          const rolls = group.variants.reduce((t, v) => t + Number(siteStock[v.id]?.rolls || 0), 0);
-          const unit = rep.base_unit || "meter";
-          return (
-            <p data-testid={`product-site-stock-${rep.id}`} className={`mt-1 rounded-md px-2 py-1 text-[11px] font-semibold ${own > 0 ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF4E5] text-[#8C4A00]"}`}>
-              Di {siteName || "lokasi ini"}: {own > 0 ? `${formatQty(own)} ${unit} · ${rolls} roll` : "kosong"}
-              {grp > 0 && <span className="font-normal"> · PT lain di lokasi ini {formatQty(grp)} {unit}</span>}
-            </p>
-          );
-        })()}
-        {/* Trial 22 Okt (B6) — stok PT penjual dipisah dari stok grup (semua PT). */}
-        {group.stockEntityName && (
-          <p data-testid={`product-own-${rep.id}`} className="mt-1 text-[10.5px] text-[#6B6B73]">{group.stockEntityName}: <b className={group.totalOwn > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(group.totalOwn, group.totalOwnRolls, rep.base_unit || "meter")}</b></p>
-        )}
-        <p className={`${group.stockEntityName ? "" : "mt-1 "}text-[10.5px] text-[#6B6B73]`}>{group.stockEntityName ? "Grup: " : ""}<b data-testid={`product-rolls-${rep.id}`} className="text-[#1C1C1E]">{group.totalRolls || 0} roll</b> / <b data-testid={`product-available-${rep.id}`} className={group.stockEntityName ? "text-[#1C1C1E]" : "text-[#126E2C]"}>{formatQty(total)}</b> {rep.base_unit || "meter"} tersedia</p>
+        {/* UAT 24 Okt (P8) + FIX-2 — dua angka: LOKAL (lokasi jualan × PT penjual) lalu GLOBAL (semua PT); klik → rincian
+            per lokasi/PT/status/akan datang/ATP. Dulu tiga baris (Di {site} · PT · Grup) dengan rumus berbeda. */}
+        <StockFigures className="mt-1.5" testId={`product-stock-figures-${rep.id}`} unit={fig.unit}
+          local={fig.local} global={fig.global} localLabel={fig.localLabel} globalLabel="Total grup (semua PT)"
+          productIds={group.variants.map((v) => v.id)} siteId={siteId}
+          productLabels={Object.fromEntries(group.variants.map((v) => [v.id, variantLabel(v)]))} />
         {(incRestock > 0 || incSo > 0) && (
           <div className="mt-1 flex flex-wrap gap-1">
             {incRestock > 0 && <span data-testid={`product-incoming-restock-${rep.id}`} title="Barang datang untuk stok — boleh dijanjikan ke pelanggan" className="inline-flex rounded-full bg-[#E8F1FF] px-2 py-0.5 text-[10px] font-semibold text-[#0058CC]">Datang restock: {formatQty(incRestock)} {rep.base_unit || "meter"}</span>}

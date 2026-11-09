@@ -2,23 +2,33 @@ import { useEffect, useState } from "react";
 import { MapPin, Store, UserPlus, Users } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import SiteSelect, { useSites } from "../../components/SiteSelect";
+import axios, { API } from "../../services/apiClient";
 
 const KEY = "kn_pos_ctx";
 /** Konteks jualan (lokasi + pelanggan) per sesi tab — bertahan saat muat ulang, hilang saat tab ditutup. */
 export const loadPosCtx = () => {
   try { return JSON.parse(sessionStorage.getItem(KEY) || "{}") || {}; } catch { return {}; }
 };
+/** FIX-2 (B3a keputusan #3) — lokasi jualan juga DISIMPAN DI SERVER (`PUT /stock/my-site`) karena angka stok LOKAL
+ *  dihitung server dari lokasi itu; pelanggan tetap per sesi tab. Gagal simpan tidak menghalangi jualan. */
 export const savePosCtx = (ctx) => {
+  const prev = loadPosCtx();
   try { sessionStorage.setItem(KEY, JSON.stringify(ctx || {})); } catch { /* penyimpanan sesi tidak tersedia */ }
+  const sid = (ctx || {}).site_id || "";
+  if (sid && sid !== prev.site_id) {
+    Promise.resolve(axios.put?.(`${API}/stock/my-site`, { site_id: sid })).catch(() => { /* tetap jalan */ });
+  }
 };
 
 /**
  * UAT 24 Okt (P8, keputusan pemilik) — "Mulai jualan": pilih LOKASI gudang + PELANGGAN dulu, baru katalog.
  * Dulu pelanggan opsional di atas katalog dan lokasi tidak ada sama sekali (stok = total global semua lokasi).
- * Lokasi bawaan = lokasi akun (`location_site_ids[0]`); pelanggan = milik sales (+ walk-in PT) atau pelanggan baru.
+ * Lokasi bawaan = lokasi jualan terakhir yang tersimpan di server (`pos_site_id`, FIX-2) → lokasi akun
+ * (`location_site_ids[0]`); pelanggan = milik sales (+ walk-in PT) atau pelanggan baru.
  */
 export default function PosStartGate({ user, customers = [], initialSiteId = "", initialCustomerId = "", onStart, onCreateCustomer, testPrefix = "pos-gate" }) {
-  const [siteId, setSiteId] = useState(initialSiteId || (user?.location_site_ids || [])[0] || "");
+  // FIX-2 (keputusan #3) — bawaan: lokasi jualan tersimpan di server → lokasi akun → kosong.
+  const [siteId, setSiteId] = useState(initialSiteId || user?.pos_site_id || (user?.location_site_ids || [])[0] || "");
   const [custId, setCustId] = useState(initialCustomerId || "");
   const sites = useSites();
   useEffect(() => {

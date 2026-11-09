@@ -432,10 +432,14 @@ async def reorder_suggestions(entity_id: Optional[str] = None, ctx: Any = None) 
     if entity_id and entity_id != "all":
         po_q["entity_id"] = entity_id
     on_order: Dict[str, float] = {}
+    # FIX-2 (B3a DUP-2/SCH-3) — sisa PO dalam SATUAN DASAR lewat satu rumus (`stock_figures.po_open_base_qty`); dulu
+    # qty dokumen mentah (PO per roll/yard dijumlah dengan Tersedia meter/kg). Status PO saran reorder sengaja tetap
+    # memuat `waiting_approval` (mencegah PO ganda), berbeda dari "barang datang" ATP.
+    from services.stock_figures import po_open_base_qty
     async for po in db.purchase_orders.find(po_q, {"_id": 0, "items": 1}):
         for it in po.get("items", []):
-            gap = float(it.get("quantity", 0) or 0) - float(it.get("received_qty", 0) or 0)
-            if gap > 0:
+            gap = po_open_base_qty(it)
+            if gap > 0 and it.get("product_id"):
                 on_order[it["product_id"]] = on_order.get(it["product_id"], 0.0) + gap
 
     # R1-05 — on_request per produk (Σ qty PR TERBUKA yang belum dikonversi ke PO),
