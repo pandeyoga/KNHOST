@@ -264,9 +264,13 @@ def test_putaway_orders_tags_incidents_meta(admin):
 
 
 def test_unpaged_rolls_and_tasks_say_when_truncated(admin):
+    r = requests.get(f"{BASE}/inventory/rolls", params={"limit": 2, "with_total": 1}, headers=admin, timeout=120)
+    assert r.status_code == 200 and len(r.json()) == 2 and r.headers["X-Truncated"] == "1"
+    assert int(r.headers["X-Total-Count"]) > 2
     r = requests.get(f"{BASE}/inventory/rolls", params={"limit": 2}, headers=admin, timeout=120)
-    assert r.status_code == 200 and len(r.json()) <= 2
-    assert int(r.headers["X-Total-Count"]) >= len(r.json()) and r.headers["X-Truncated"] in ("0", "1")
+    assert r.headers["X-Truncated"] == "1" and "X-Total-Count" not in r.headers   # hitung hanya bila diminta
+    r = requests.get(f"{BASE}/inventory/rolls", params={"limit": 5000, "q": "TIDAK-ADA-ROLL-INI"}, headers=admin, timeout=120)
+    assert r.json() == [] and r.headers["X-Truncated"] == "0" and r.headers["X-Total-Count"] == "0"
     t = requests.get(f"{BASE}/wms/tasks", headers=admin, timeout=120)
     assert t.status_code == 200 and "X-Total-Count" in t.headers and "X-Truncated" in t.headers
 

@@ -13,6 +13,7 @@ import { rememberDocEntities } from "../../services/docEntityRegistry";
 import EntityBadge from "../../components/EntityBadge";
 import { askReason } from "../../services/confirmService";
 import PutawayDraftsPanel from "./PutawayDraftsPanel";
+import ListLimitNote from "./ListLimitNote";   // FIX-5 (LST-01)
 import { ARRIVAL_STATUSES, parseCodes, pendingCount, statusOf, tripMessage } from "./putawayUtils";
 
 const nf = new Intl.NumberFormat("id-ID");
@@ -35,15 +36,40 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
+  // FIX-5 (B3b LST-01) — dulu 100 PA terbaru (termasuk draf/selesai) dipotong diam-diam → PA yang MASIH BERJALAN tetapi
+  // lebih lama hilang dari layar. Kini: SEMUA PA berjalan (`status=live`, ≤ 500) + riwayat 100 terbaru dengan jumlah
+  // sungguhan & "Muat berikutnya".
+  const [histMeta, setHistMeta] = useState(null);
+  const [moreBusy, setMoreBusy] = useState(false);
+  const merge = (a, b) => {
+    const seen = new Set(a.map((o) => o.id));
+    return [...a, ...b.filter((o) => !seen.has(o.id))]
+      .sort((x, y) => String(y.created_at || "").localeCompare(String(x.created_at || "")));
+  };
   const load = async () => {
     setError("");
+    const wh = whId ? { warehouse_id: whId } : {};
     try {
-      const [s, o] = await Promise.all([
+      const [s, live, o] = await Promise.all([
         whId ? axios.get(`${API}/putaway-orders/suggest`, { params: { from_warehouse_id: whId } }) : Promise.resolve({ data: null }),
-        axios.get(`${API}/putaway-orders`, { params: whId ? { warehouse_id: whId } : {} }),
+        axios.get(`${API}/putaway-orders`, { params: { ...wh, status: "live", limit: 500 } }),
+        axios.get(`${API}/putaway-orders`, { params: { ...wh, limit: 100 } }),
       ]);
-      setSuggest(s.data); setOrders(rememberDocEntities(o.data.orders || []));   // FIX-1 — PA lintas PT: aksi atas nama PT PA
+      setSuggest(s.data);
+      setOrders(rememberDocEntities(merge(live.data.orders || [], o.data.orders || [])));   // FIX-1 — PA lintas PT: aksi atas nama PT PA
+      setHistMeta(o.data.total !== undefined ? { total: o.data.total, truncated: !!o.data.truncated,
+        shown: (o.data.orders || []).length, skip: 0 } : null);
     } catch (e) { setError(e.response?.data?.detail || e.message); }
+  };
+  const loadMore = async () => {
+    if (!histMeta) return;
+    setMoreBusy(true);
+    try {
+      const o = await axios.get(`${API}/putaway-orders`, { params: { ...(whId ? { warehouse_id: whId } : {}), limit: 100,
+        skip: histMeta.shown } });
+      setOrders((prev) => merge(prev, rememberDocEntities(o.data.orders || [])));
+      setHistMeta({ total: o.data.total, truncated: !!o.data.truncated, shown: histMeta.shown + (o.data.orders || []).length, skip: 0 });
+    } catch (e) { setError(e.response?.data?.detail || e.message); } finally { setMoreBusy(false); }
   };
   useEffect(() => { load(); setConfirmFor(null); }, [whId, selectedEntity]); // eslint-disable-line
 
@@ -218,6 +244,8 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
           <Truck size={15} className="text-[#0058CC]" /> Putaway Orders ({active.length})</h2></div>
         <div className="section-body space-y-2">
           {active.length === 0 && <p className="py-6 text-center text-[12px] text-[#8E8E93]">Belum ada Perintah Simpan ke Rak.</p>}
+          <ListLimitNote meta={histMeta} noun="riwayat PA" onMore={loadMore} loading={moreBusy}
+            hint="semua PA yang masih berjalan sudah tampil; riwayat lama dimuat bertahap." testId="pa-list-limit" />
           {active.map((o) => {
             const [color, label] = statusOf(o);
             const excItems = (o.items || []).filter((i) => i.status === "exception");

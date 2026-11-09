@@ -14,6 +14,7 @@ import TransferCreateForm from "./transfer/TransferCreateForm";
 import TransferList, { transferKindOf } from "./transfer/TransferList";
 import FormModal from "../../components/FormModal";
 import TransferDetailModal from "./transfer/TransferDetailModal";
+import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-5 (LST-01)
 
 /**
  * TransferManagement
@@ -96,15 +97,37 @@ export default function TransferManagement({
     onFocusConsumed?.();
   }, [focusTransferId, transfers]); // eslint-disable-line
 
+  // FIX-5 (B3b LST-01) — server memotong 200 transfer terbaru; kini jumlah sungguhan + "Muat berikutnya".
+  const [listMeta, setListMeta] = useState(null);
+  const [moreBusy, setMoreBusy] = useState(false);
+  const listParams = () => {
+    const params = {};
+    if (filterStatus !== "all") params.status = filterStatus;
+    if (lineFilter) params.line = lineFilter;
+    return params;
+  };
+  const loadMoreTransfers = async () => {
+    setMoreBusy(true);
+    try {
+      const response = await axios.get(`${API}/transfers`, { params: { ...listParams(), skip: transfers.length } });
+      const more = rememberDocEntities(Array.isArray(response.data) ? response.data : []);
+      const seen = new Set(transfers.map((t) => t.id));
+      const next = [...transfers, ...more.filter((t) => !seen.has(t.id))];
+      setTransfers(next);
+      setListMeta(metaFromHeaders(response, next.length, 0));
+    } catch (error) {
+      setError(apiErrorText(error, "Gagal memuat daftar transfer."));
+    } finally { setMoreBusy(false); }
+  };
+
   const fetchTransfers = async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (filterStatus !== "all") params.status = filterStatus;
-      if (lineFilter) params.line = lineFilter;
-      const response = await axios.get(`${API}/transfers`, { params });
+      const response = await axios.get(`${API}/transfers`, { params: listParams() });
       // FIX-1 (K-B1-02) — transfer lintas PT di gedung lokasi kerja: detail/aksi dikirim atas nama PT transfer.
-      setTransfers(rememberDocEntities(Array.isArray(response.data) ? response.data : []));
+      const rows = rememberDocEntities(Array.isArray(response.data) ? response.data : []);
+      setTransfers(rows);
+      setListMeta(metaFromHeaders(response, rows.length, 0));
       setError("");
     } catch (error) {
       setError(apiErrorText(error, "Gagal memuat daftar transfer."));
@@ -343,6 +366,8 @@ export default function TransferManagement({
           ? "Tidak ada transfer yang cocok dengan saringan."
           : "Belum ada transfer. Buat transfer untuk memindahkan stok antar gudang."}
         onOpen={(transfer) => { setSelectedTransfer(transfer); setActionError(""); }} />
+      <ListLimitNote meta={listMeta} noun="transfer" onMore={loadMoreTransfers} loading={moreBusy}
+        hint="saringan & pencarian di atas hanya mencakup transfer yang sudah dimuat." testId="transfer-list-limit" />
 
       {/* Detail Modal */}
       {selectedTransfer && (

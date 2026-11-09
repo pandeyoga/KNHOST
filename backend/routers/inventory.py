@@ -381,20 +381,26 @@ async def list_rolls(
 
     # Array telanjang: hormati ?limit (1–5000) & ?skip & ?q — dulu diabaikan sehingga
     # pemindai/pemilih roll selalu menerima ~5.000 baris (±6 MB) dengan 45 ribu roll.
-    from pagination import clamp_limit, window_headers, window_meta
+    from pagination import clamp_limit
     limit = clamp_limit(limit, 5000, 5000)
     sk = clamp_limit(skip, 0, 10 ** 7, minimum=0)
     query = _with_search(query, (q or "").strip())
     rolls = await (db.inventory_rolls.find(query, {"_id": 0}).sort("created_at", -1)
-                   .skip(sk).limit(limit).to_list(limit))
+                   .skip(sk).limit(limit + 1).to_list(limit + 1))
+    more = len(rolls) > limit
+    rolls = rolls[:limit]
     _enrich(rolls)
-    # FIX-5 (B3b LST-01) — array telanjang tetap (kompatibel), batas TIDAK lagi senyap: jumlah sungguhan di header.
+    # FIX-5 (B3b LST-01) — array telanjang tetap (kompatibel), batas TIDAK lagi senyap: `X-Truncated` dari baris ke-(n+1)
+    # (murah). Jumlah sungguhan saat terpotong hanya bila diminta (`with_total=1`) — menghitung ratusan ribu roll
+    # menambah ±0,3 dtk; layar memakai mode berhalaman (`page`/`page_size`) yang sudah membawa `total`.
     from starlette.responses import JSONResponse as _JSON
     from fastapi.encoders import jsonable_encoder
-    # hitung hanya bila halaman penuh (kurang dari batas = sudah semua; hemat COLLSCAN untuk cari regex)
-    total = await db.inventory_rolls.count_documents(query) if len(rolls) >= limit else sk + len(rolls)
-    meta = window_meta(total, len(rolls), sk, limit)
-    return _JSON(jsonable_encoder(strip_cost_fields(rolls, actor.get("role"))), headers=window_headers(meta))
+    headers = {"X-Truncated": "1" if more else "0"}
+    if not more:
+        headers["X-Total-Count"] = str(sk + len(rolls))
+    elif request.query_params.get("with_total") in ("1", "true"):
+        headers["X-Total-Count"] = str(await db.inventory_rolls.count_documents(query))
+    return _JSON(jsonable_encoder(strip_cost_fields(rolls, actor.get("role"))), headers=headers)
 
 
 GROUP_LEVELS = ("product", "lot", "location")

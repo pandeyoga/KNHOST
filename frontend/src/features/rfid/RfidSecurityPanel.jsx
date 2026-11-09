@@ -6,12 +6,14 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, HeartPulse, ShieldAlert } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { Pill, SectionCard, fmtTime, EmptyBox } from "./rfidShared";
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-5 (B3b LST-01)
 
 const SEV = { high: ["red", "Tinggi"], medium: ["orange", "Sedang"] };
 const HEALTH = { online: ["green", "Online"], stale: ["orange", "Tidak melapor (>5 mnt)"], offline: ["gray", "Offline"] };
 
 export default function RfidSecurityPanel({ whId, selectedEntity }) {
   const [incidents, setIncidents] = useState([]);
+  const [incMeta, setIncMeta] = useState(null);   // FIX-5 — dulu 100 insiden dipotong diam-diam
   const [statusFilter, setStatusFilter] = useState("open");
   const [shrink, setShrink] = useState(null);
   const [health, setHealth] = useState(null);
@@ -29,6 +31,8 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
         axios.get(`${API}/rfid/device-health`),
       ]);
       setIncidents(i.data.incidents || []); setShrink(s.data); setHealth(h.data);
+      setIncMeta(i.data.total !== undefined ? { total: i.data.total, truncated: !!i.data.truncated,
+        shown: (i.data.incidents || []).length, skip: 0 } : null);
     } catch (e) { setError(e.response?.data?.detail || e.message); }
   };
   useEffect(() => { load(); }, [whId, statusFilter, selectedEntity]); // eslint-disable-line
@@ -68,6 +72,8 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
             </button>
           ))}
         </div>}>
+        <ListLimitNote meta={incMeta} noun="insiden" hint="tindak lanjuti yang terbaru dulu atau persempit saringan status."
+          testId="rfid-incidents-limit" />
         {incidents.length === 0 ? <EmptyBox icon={ShieldAlert} text="Tidak ada insiden." /> : (
           <div className="max-h-96 space-y-1.5 overflow-y-auto">
             {incidents.map((inc) => {
