@@ -363,13 +363,16 @@ async def delete_tag(tag_id: str, request: Request) -> Dict[str, Any]:
 async def get_devices(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     devs = await rfid.list_devices(warehouse_id)
-    return {"count": len(devs), "devices": devs}
+    # FIX-3a (K-B3b-09) — layar menyembunyikan tombol detak manual/simulasi bila mode simulasi RFID PT aktif mati.
+    _ctx = await entity_ctx(request)
+    return {"count": len(devs), "devices": devs, "rfid_simulation": await rfid.simulation_on(_ctx.active_entity_id or "")}
 
 
 @router.post("/rfid/devices")
 async def post_device(payload: DevicePayload, request: Request) -> Dict[str, Any]:
     actor = await require_role(request, ["admin"])
-    dev = await rfid.create_device(payload.model_dump(), actor["name"])
+    _ctx = await entity_ctx(request)   # FIX-3a (FRM-12) — mode simulasi RFID PT aktif menentukan detak simulasi
+    dev = await rfid.create_device(payload.model_dump(), actor["name"], sim_entity=_ctx.active_entity_id or "")
     await audit(actor["name"], "rfid_device_created", "rfid_device", dev["id"], {"code": dev["code"]})
     return dev
 
@@ -377,7 +380,8 @@ async def post_device(payload: DevicePayload, request: Request) -> Dict[str, Any
 @router.patch("/rfid/devices/{device_id}")
 async def patch_device(device_id: str, payload: DevicePatch, request: Request) -> Dict[str, Any]:
     actor = await require_role(request, ["admin"])
-    dev = await rfid.update_device(device_id, payload.model_dump(exclude_none=True))
+    _ctx = await entity_ctx(request)   # FIX-3a (FRM-12)
+    dev = await rfid.update_device(device_id, payload.model_dump(exclude_none=True), sim_entity=_ctx.active_entity_id or "")
     await audit(actor["name"], "rfid_device_updated", "rfid_device", device_id, {})
     return dev
 
@@ -460,7 +464,7 @@ async def post_reader_scan(payload: ReaderScanPayload, request: Request) -> Dict
     await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
-    return await rfid.reader_scan(payload.device_id, scope)
+    return await rfid.reader_scan(payload.device_id, scope, sim_entity=ctx.active_entity_id or "")   # FIX-3a (FRM-13)
 
 
 # ─── Locations ───────────────────────────────────────────────────────────────

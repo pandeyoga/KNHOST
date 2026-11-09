@@ -34,8 +34,21 @@ async def ocr_config(entity_id: str) -> Dict[str, Any]:
     out = {k: await value_of(f"receiving.{k}", e if k in ("ocr_enabled", "ocr_extract_packing_list",
                                                            "client_po_patterns") else g) for k in keys}
     pt = out["ocr_price_table"]
-    out["ocr_price_table"] = json.loads(pt) if isinstance(pt, str) and pt.strip() else (pt or {})
-    out["client_po_patterns"] = list(out["client_po_patterns"] or R.DEFAULT_PO_PATTERNS)
+    # FIX-3a (B3b FRM-19) — nilai lama yang rusak (tersimpan sebelum validasi registri) tidak lagi membuat 500 untuk
+    # semua GRN: tabel harga rusak → kosong (biaya 0 + peringatan), pola regex rusak dibuang.
+    try:
+        out["ocr_price_table"] = json.loads(pt) if isinstance(pt, str) and pt.strip() else (pt or {})
+        if not isinstance(out["ocr_price_table"], dict):
+            raise ValueError("bukan objek")
+    except ValueError:
+        out["ocr_price_table"], out["config_warnings"] = {}, ["Tabel harga OCR (receiving.ocr_price_table) tidak sah — "
+                                                              "biaya OCR dihitung 0 sampai diperbaiki di Pengaturan."]
+    pats = list(out["client_po_patterns"] or R.DEFAULT_PO_PATTERNS)
+    good = [p for p in pats if R.valid_pattern(p)]
+    if len(good) != len(pats):
+        out.setdefault("config_warnings", []).append(
+            f"{len(pats) - len(good)} pola nomor PO klien tidak sah dan diabaikan — perbaiki di Pengaturan › Penerimaan.")
+    out["client_po_patterns"] = good or list(R.DEFAULT_PO_PATTERNS)
     return out
 
 

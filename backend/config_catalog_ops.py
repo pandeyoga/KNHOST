@@ -251,7 +251,7 @@ E("receiving.client_po_patterns", group="penerimaan", type="list",
   label="Pola nomor PO klien (regex, grup 'core')",
   help="Dipakai mencocokkan nomor PO di SJ dengan PO terbuka. Nomor milik supplier tidak cocok pola dan diabaikan.",
   impact="Pola salah → baris SJ tidak menemukan PO-nya (harus dipilih manual).", example="(?P<core>\\d{3,5})/CST/\\d{4}",
-  consumers=_OCR_C, risk="medium")
+  consumers=_OCR_C, risk="medium", value_format="regex")
 E("receiving.ocr_enabled", group="penerimaan", type="bool", default=False, scopes=G,
   label="Baca surat jalan otomatis (OpenAI)", help="Foto SJ dikirim ke OpenAI untuk dibaca. Wajib persetujuan klien.",
   impact="Mati → SJ diisi manual.", example="Aktif untuk entitas yang sudah setuju", consumers=_OCR_C, risk="high")
@@ -288,7 +288,7 @@ E("receiving.ocr_max_output_tokens", group="penerimaan", type="int", default=600
 E("receiving.ocr_image_max_side", group="penerimaan", type="int", default=2048, scopes=("global",),
   label="Sisi panjang gambar ke OCR (px)", help="Gambar diperkecil sebelum dikirim.", impact="Lebih besar = lebih mahal.",
   example="2048", consumers=_OCR_C, risk="low")
-E("receiving.ocr_max_pages", group="penerimaan", type="int", default=5, scopes=("global",),
+E("receiving.ocr_max_pages", group="penerimaan", type="int", default=5, min=1, max=50, scopes=("global",),
   label="Halaman maksimum per pembacaan", help="Lebih dari ini → ditolak (isi manual).", impact="Batas biaya.",
   example="5", consumers=_OCR_C, risk="low")
 E("receiving.ocr_extract_packing_list", group="penerimaan", type="bool", default=True, scopes=G,
@@ -304,7 +304,8 @@ E("receiving.ocr_price_table", group="penerimaan", type="text",
   default='{"gpt-6-sol": {"in": 2.0, "cached_in": 0.2, "out": 10.0}, "gpt-6-luna": {"in": 0.5, "cached_in": 0.05, "out": 2.0}, "gpt-5.6-sol": {"in": 5.0, "cached_in": 0.5, "out": 30.0}, "price_version": "2026-09-28"}',
   scopes=("global",), label="Tabel harga OCR (USD per 1 juta token, JSON)",
   help="Biaya = usage × harga. Perbarui bila harga OpenAI berubah.", impact="Laporan biaya & rem anggaran.",
-  example='{"gpt-6-sol": {"in": 2.0, "cached_in": 0.2, "out": 10.0}}', consumers=_OCR_C, risk="low")
+  example='{"gpt-6-sol": {"in": 2.0, "cached_in": 0.2, "out": 10.0}}', consumers=_OCR_C, risk="low",
+  value_format="json_map")
 
 E("receiving.label_variance_tolerance_percent", group="penerimaan", type="pct", default=2.0,
   min=0, max=50, step=0.5, unit="%", scopes=G,
@@ -595,6 +596,19 @@ E("stock.atp_horizon_days", group="stok-satuan", type="int", default=14, min=1, 
   consumers=("services/atp_policy.py:horizon_days", "services/stock_figures.py:atp_pair",
              "services/stock_bucket_service.py:atp_detail"),
   risk="medium")
+
+
+E("registration.finance_approval", group="stok-satuan", type="bool", default=True, scopes=("global", "entity"),
+  label="Pendaftaran awal: persetujuan dua langkah (gudang lalu Finance)",
+  help="Bila aktif, sesi pendaftaran awal gedung disetujui DUA langkah: (1) gudang menyetujui HITUNGAN "
+       "(izin Setujui hitung), lalu (2) Finance menyetujui NILAI & JURNAL (izin Setujui nilai) oleh orang yang berbeda. "
+       "Roll lama baru dihapus dan jurnal selisih baru diposting pada langkah kedua. Berlaku per badan usaha sesi.",
+  impact="Mematikan berarti satu persetujuan gudang langsung menghapus roll lama & memposting jurnal (perilaku lama). "
+         "Saat aktif, hitungan yang sudah disetujui gudang terkunci; perubahan baris harus lewat 'Kembalikan'.",
+  example="Aktif → Admin Gudang menyetujui hitungan REG-00003 → Finance meninjau nilai Rp −12 jt → menyetujui → jurnal terposting",
+  consumers=("services/initial_registration_service.py:finance_step_required",
+             "routers/initial_registration.py:approve_reg_session"),
+  risk="high")
 
 
 E("putaway.auto_draft", group="stok-satuan", type="bool", default=True, scopes=("global", "entity"),

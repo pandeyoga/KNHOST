@@ -27,6 +27,29 @@ def grade_or_400(raw: Any, default: str = "A") -> str:
 _grade_or_400 = grade_or_400
 
 
+async def resolve_task_bin(task: Dict[str, Any], ref: Any, *, action: str = "penerimaan barang ke bin"
+                           ) -> Optional[Dict[str, str]]:
+    """FIX-3a (B3b INP-01, B2a FLW-IN-08/OPN-01) — isian bin penerimaan = rujukan struktur gudang TUGAS.
+
+    Kosong → None. Diisi → dicari di struktur gudang lewat resolver tunggal `placement_rules.resolve_bin` (id ATAU
+    kode rak, tanpa beda besar-kecil) → {id, code, path}; tidak ditemukan → 400 (dulu teks bebas tersimpan apa adanya
+    dan roll lahir di "bin" yang tidak ada). Bin di area yang sedang DIBEKUKAN pendaftaran awal → 409."""
+    key = str(ref or "").strip()
+    if not key:
+        return None
+    from services import placement_rules as _pr
+    from services import registration_freeze as _rfz
+    wh = await db.warehouses.find_one({"id": task.get("warehouse_id")}, {"_id": 0}) or {}
+    node = _pr.resolve_bin(wh, key)
+    if not node:
+        raise HTTPException(status_code=400, detail=(
+            f"Bin '{key}' tidak ada di struktur gudang {wh.get('name') or task.get('warehouse_name') or ''} — "
+            "pilih bin dari daftar lokasi gudang (atau kosongkan; roll bisa ditempatkan ke rak sesudah diterima)."))
+    await _rfz.assert_movable(action=action, to_warehouse_id=task.get("warehouse_id") or "",
+                              to_bin_id=node["bin"]["id"])
+    return {"id": node["bin"]["id"], "code": node["bin"].get("code", ""), "path": node.get("path", "")}
+
+
 async def complete_task(task_id: str, payload: Optional[GRCompletePayload], actor: Dict[str, Any], *,
                         ctx: Optional[EntityContext] = None,
                         via_grn: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -48,11 +71,38 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         assert_entity_access(task, "wms_tasks", ctx)
     
     # `via_grn` (Fase 2): GRN boleh menutup tugas `receiving` (kiriman parsial sah, tanpa eskalasi).
-    if task["status"] not in ["qc_check", "put_away"] + (["receiving"] if via_grn else []):
+    # FIX-3a — daftar-izin dari tabel transisi tunggal (`services/inbound_task_state.py`).
+    from services import inbound_task_state as _its
+    _action = "complete_grn" if via_grn else "complete"
+    if task["status"] not in _its.allowed_from(_action):
         raise HTTPException(
             status_code=400,
             detail=f"Task harus dalam status qc_check atau put_away (current: {task['status']})"
         )
+    # FIX-3a (B2a OPN-01/STM-IN-01) — kait pembekuan pendaftaran awal di jalur PENERIMAAN: gudang yang dibekukan penuh
+    # menolak barang masuk; bin di zona beku ditolak. Dulu jalur ini tanpa kait -> roll lahir di rak beku -> stok ganda.
+    # Bin tugas data lama yang tidak ada di struktur gudang tidak dipakai (roll lahir tanpa bin + peringatan).
+    from services import registration_freeze as _rfz
+    _place_warnings: List[str] = []
+    _task_bin: Optional[Dict[str, str]] = None
+    if task.get("bin_id"):
+        try:
+            _task_bin = await resolve_task_bin(task, task.get("bin_id"), action="menyelesaikan penerimaan ke bin")
+        except HTTPException as exc:
+            if exc.status_code == 409:
+                raise
+            _place_warnings.append(f"Bin '{task.get('bin_id')}' tidak ada di struktur gudang — roll masuk antrean "
+                                   "Penempatan Rak tanpa bin.")
+    await _rfz.assert_movable(action="menyelesaikan penerimaan barang", to_warehouse_id=task.get("warehouse_id") or "",
+                              to_bin_id=(_task_bin or {}).get("id", ""))
+    # FIX-3a (B2a FLW-IN-04, B3b FRM-02) — rencana > 1 roll tanpa rincian roll (jalur cepat HP "qty saja") dulu
+    # melahirkan SATU roll untuk seluruh qty dan mencatat "roll kurang" palsu. Sekarang rincian per roll wajib.
+    _exp_rolls_plan = int(task.get("expected_rolls") or 0)
+    if not via_grn and _exp_rolls_plan > 1 and not (payload and payload.rolls) and not await db.inventory_rolls.count_documents(
+            {"grn_task_id": task_id, "status": "receiving"}):
+        raise HTTPException(status_code=400, detail=(
+            f"Rencana penerimaan {_exp_rolls_plan} roll — isi rincian panjang/berat PER ROLL (atau pindai label tiap roll) "
+            "sebelum menyelesaikan. Satu roll data untuk banyak roll fisik membuat label, tag, dan opname per roll salah."))
     
     # LN-014 — SJ supplier: dari form, atau sudah tercatat lewat Kedatangan Barang.
     _sj_missing_warning = ""
@@ -253,7 +303,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         # melahirkan roll dobel. Kunci dicabut oleh tulisan status akhir di bawah.
         from services import atomic_claim as _saga
         await _saga.claim("wms_tasks", task_id, "inbound_complete",
-                          precondition={"status": {"$in": ["qc_check", "put_away"] + (["receiving"] if via_grn else [])}},
+                          precondition={"status": {"$in": list(_its.allowed_from(_action))}},
                           actor=actor["name"])
 
         # P0-5 — base HPP roll dari harga PO saat GR (per BASE unit). Landed cost
@@ -361,7 +411,9 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "ownership_type": "internal",
                 "consignor_ref": None,
                 "warehouse_id": task["warehouse_id"],
-                "bin_id": _ex.get("bin_id") or task.get("bin_id") or None,
+                # FIX-3a (FLW-IN-08) — roll baru lahir TANPA bin; bin isian ditulis sesudahnya lewat evaluator
+                # penempatan tunggal `place_roll` (struktur, aturan zona, kapasitas, pembekuan) — bukan teks bebas.
+                "bin_id": _ex.get("bin_id") or None,
                 "lot": _lot_doc.get("lot_number") or lot,
                 "lot_id": _lot_doc.get("id") or "",
                 "supplier_lot": _ex.get("supplier_lot") or _supplier_lot,
@@ -405,7 +457,11 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "received_date": now_iso(),
                 "vendor_bill_id": "",          # diisi saat Vendor Bill di-posting
                 "supplier_invoice_no": "",     # diisi saat Vendor Bill di-posting
-                "rfid_tag_id": (task.get("roll_id") or None) if not is_multi else None,
+                # FIX-3a (B3b INP-01) — isian "Roll ID" bukan tag RFID (tag lewat encode/`/inbound/rolls/{id}/tag`);
+                # nilainya disimpan sebagai nomor roll supplier (dipakai pencocokan & cegah terima ganda).
+                "rfid_tag_id": None,
+                **({"supplier_roll_no": str(task.get("roll_id")).strip()}
+                   if (task.get("roll_id") and not is_multi and not _ex) else {}),
                 "is_remnant": False,
                 # FASE R0 — journey (jejak fisik, terpisah dari status bucket stok)
                 "journey": {"stage": _stage0, "routing": "store",
@@ -447,6 +503,24 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "source_document": f"PO_{task.get('po_number', '')}",
                 "timestamp": now_iso()
             })
+
+        # FIX-3a (FLW-IN-08/INP-01) — bin isian penerimaan -> evaluator penempatan tunggal per roll baru. Ditolak aturan
+        # (mis. roll karantina hanya ke area QC, bin penuh) -> roll tetap tanpa bin (antrean Penempatan Rak) + peringatan.
+        if _task_bin:
+            from services.location_service import place_roll as _place_roll
+            from services import placement_rules as _pr
+            _wh_doc = await db.warehouses.find_one({"id": task["warehouse_id"]}, {"_id": 0}) or {}
+            _node = _pr.resolve_bin(_wh_doc, _task_bin["id"])
+            for _cr in _created_rolls:
+                _rdoc = await db.inventory_rolls.find_one({"id": _cr["id"]}, {"_id": 0}) or {}
+                if not _node or _rdoc.get("bin_id"):
+                    continue
+                try:
+                    _pl = await _place_roll(_rdoc, _wh_doc, _node, actor=actor, cas={"status": _rdoc.get("status")})
+                    _cr["bin_code"] = _pl.get("bin_code")
+                except HTTPException as exc:
+                    _d = exc.detail if isinstance(exc.detail, str) else (exc.detail or {}).get("message", "")
+                    _place_warnings.append(f"Roll {_cr.get('roll_no')} belum ditempatkan di bin {_task_bin['code']}: {_d}")
 
         # FASE U — jumlah roll yang BENAR-BENAR dibuat (bukan diketik ulang petugas):
         # tersimpan di tugas penerimaan, lalu diakumulasi ke baris PO sebagai turunan.
@@ -557,7 +631,9 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                if (payload and payload.supplier_dn and payload.supplier_dn.strip()) else {}),
             "supplier_dn_missing": bool(_sj_missing_warning),
             **({"receipt_variance": _receipt_variance, "needs_review": True} if _receipt_variance else {}),
-        }, "$unset": {"saga_lock": ""}},  # INV-ATOMIC-01 — tulisan akhir mencabut klaim
+        }, "$unset": {"saga_lock": ""},  # INV-ATOMIC-01 — tulisan akhir mencabut klaim
+           # FIX-3a (B2a STM-IN-07) — jejak status seragam (bentuk SSOT `status_history`).
+           "$push": {"status_history": _its.history_entry(next_stage, actor["name"], _action)}},
         projection={"_id": 0},
         return_document=ReturnDocument.AFTER
     )
@@ -602,4 +678,6 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
     if next_stage in ("completed", "qc_pending"):
         out["lots"] = _lot_summary
         out["lot_warnings"] = _lot_warnings
+    if _place_warnings:
+        out["placement_warnings"] = _place_warnings
     return out

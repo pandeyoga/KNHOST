@@ -1267,20 +1267,27 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
     if not task or task.get("status") != "qc_pending":
         return None
     from services import qc_service
+    from services.roll_hold_service import HOLD_STATUS
     qrolls = await qc_service.get_quarantine_rolls(task["id"])
-    if not qrolls:
+    # FIX-3a (B2a FLW-IN-03, keputusan D3) — roll yang DITAHAN saat karantina tetap ditahan (tidak ikut "terima"),
+    # tetapi BOLEH ditolak lewat "Diterima sebagian"/"Ditolak". Dulu: 400 "lepas tahanan dulu" untuk seluruh SPK.
+    held_docs = await db.inventory_rolls.find({"qc_task_id": task["id"], "status": HOLD_STATUS,
+                                               "length_remaining": {"$gt": 0}}, {"_id": 0}).to_list(None)
+    held_ids = {r["id"] for r in held_docs}
+    if not qrolls and not held_docs:
         return None
     lines = {ln.get("roll_id"): ln for ln in (doc.get("lines") or []) if ln.get("roll_id")}
     ids = [r["id"] for r in qrolls]
-    marked = {rid for rid, ln in lines.items() if ln.get("decision") == "tolak"}
+    all_ids = set(ids) | held_ids
+    marked = {rid for rid, ln in lines.items() if ln.get("decision") == "tolak"} & all_ids
     if dec == "tolak":
-        rejected = set(ids)
+        rejected = set(all_ids)
     elif dec == "terima_sebagian":
         rejected = set(rejected_roll_ids or []) | marked
-        unknown = rejected - set(ids)
+        unknown = rejected - all_ids
         if unknown:
             raise InspectionError("Roll yang ditandai tolak tidak ada di karantina tugas ini — muat ulang SPK.")
-        if not rejected or rejected == set(ids):
+        if not rejected or rejected == all_ids:
             raise InspectionError("Diterima sebagian: tandai roll yang DITOLAK (minimal satu, tidak semuanya).")
     else:
         if marked:
@@ -1288,7 +1295,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
             raise InspectionError(f"Baris {nos} ditandai tolak — pilih keputusan 'Diterima sebagian' atau 'Ditolak'.")
         rejected = set()
     accepted = [rid for rid in ids if rid not in rejected]
-    length = {r["id"]: float(r.get("length_remaining") or 0) for r in qrolls}
+    held_rejected = sorted(rejected & held_ids)
+    length = {r["id"]: float(r.get("length_remaining") or 0) for r in qrolls + held_docs}
     acc_qty = round(sum(length[r] for r in accepted), 2)
     rej_qty = round(sum(length[r] for r in rejected), 2)
     disp = (reject_disposition or "").strip().lower()
@@ -1296,7 +1304,7 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
         raise InspectionError("Pilih tindakan untuk roll yang ditolak: retur ke supplier (Nota Debit) atau barang rusak.")
     from services import grade_service
     grades: Dict[str, str] = {}
-    by_id = {r["id"]: r for r in qrolls}
+    by_id = {r["id"]: r for r in qrolls + held_docs}
     for rid in accepted:
         g = (lines.get(rid) or {}).get("grade_after") or by_id[rid].get("grade") or "A"
         try:
@@ -1307,7 +1315,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
     try:
         res = await qc_service.process_qc_decision(
             task, acc_qty, rej_qty, disp, reason, actor, accept_grade="A",
-            roll_order=accepted + [r for r in ids if r in rejected], roll_grades=grades)
+            roll_order=accepted + [r for r in ids if r in rejected] + held_rejected, roll_grades=grades,
+            reject_held_roll_ids=held_rejected)
     except ValueError as exc:
         raise InspectionError(str(exc)) from exc
     # UAT 24 Okt (P11.3) — roll yang diterima TANPA dicek MD Quality ditandai "lolos lewat sampling" (dulu tidak bisa
@@ -1333,7 +1342,9 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
     return {"task_id": task["id"], "accepted_qty": res.get("accepted_qty", 0.0), "rejected_qty": res.get("rejected_qty", 0.0),
             "reject_disposition": res.get("reject_disposition"), "purchase_return": res.get("purchase_return"),
             "task_status": res.get("task_status"), "rejected_roll_ids": sorted(rejected), "at": now_iso(),
-            "by": actor.get("name", "")}
+            "by": actor.get("name", ""),
+            **({"held_rolls_kept": res["held_rolls_kept"], "warnings": res.get("warnings") or []}
+               if res.get("held_rolls_kept") else {})}
 
 
 async def finish(ins_id: str, decision: str, remark: str,
@@ -1370,6 +1381,11 @@ async def finish(ins_id: str, decision: str, remark: str,
     # B1 (keputusan pemilik 26 Okt 2026) — "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC: bawaan
     # PERINGATAN (layar meminta konfirmasi; jumlahnya dicatat di dokumen), setelan `qc.accept_all_with_hold_action`
     # = "blokir" → ditolak di sini. Dicek SEBELUM perubahan apa pun pada dokumen/stok.
+    if dec == "terima_sebagian" and doc.get("kind") == KIND_QC_4POINT:
+        # FIX-3a (B2a FLW-IN-12) — "Diterima sebagian" padahal SEMUA baris yang diperiksa ditolak = penolakan.
+        checked = [ln for ln in lines if ln.get("roll_id") and (ln.get("qc_at") or ln.get("inspected_at"))]
+        if checked and all(str(ln.get("decision") or "") == "tolak" for ln in checked):
+            raise InspectionError("Diterima sebagian: semua roll yang diperiksa ditolak — pilih keputusan 'Ditolak'.")
     held: List[Dict[str, Any]] = []
     if dec == "terima":
         keep_lines = ([ln for ln in lines if ln.get("qc_at") or not ln.get("roll_id")]
@@ -1419,6 +1435,12 @@ async def finish(ins_id: str, decision: str, remark: str,
     if doc.get("kind") == KIND_QC_4POINT:
         await _close_qc_4point(out, dec, actor)
         out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
+        # FIX-3a (B2a FLW-IN-12) — draf PA "ke gedung inspeksi" untuk roll SPK ini dilepas lebih dulu (pemeriksaan sudah
+        # diputus); roll yang lulus lalu mendapat draf simpan di bawah, roll gagal tetap ditahan.
+        from services import putaway_draft_service as _pds
+        out["inspection_drafts_released"] = await _pds.release_inspection_drafts(
+            [ln.get("roll_id") for ln in (doc.get("lines") or []) + (doc.get("excluded_lines") or []) if ln.get("roll_id")],
+            f"SPK QC 4-point {doc.get('number', '')} sudah ditutup", actor.get("name", ""))
         # PREP-C (K-GDG-04/10) — inspeksi selesai: roll yang lulus (mis. di gedung inspeksi) disiapkan draf putaway
         # ke gudang simpan; roll gagal sudah DITAHAN sehingga dilewati. Best-effort, idempoten per SPK.
         from services import inbound_qc_common as _iqc

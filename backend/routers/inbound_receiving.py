@@ -11,8 +11,20 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from core_utils import new_id, now_iso, safe_doc
 from schemas import POReceiveItem, GRCompletePayload
 from services.inbound_complete_service import complete_task, grade_or_400 as _grade_or_400
+from services import inbound_task_state as _its
+from input_rules import KNIn, require_qty, require_reason, optional_reason
 
 router = APIRouter(prefix="/api")
+
+
+async def _resolve_task_bin(task: Dict[str, Any], ref: Any) -> Optional[Dict[str, str]]:
+    from services.inbound_complete_service import resolve_task_bin
+    return await resolve_task_bin(task, ref)
+
+
+class EscalateIn(KNIn):
+    """FIX-3a (B3b FRM-09 #1, G-API-02) — alasan eskalasi lewat body (query lama tetap diterima)."""
+    reason: str = ""
 
 
 @router.get("/inbound/tasks")
@@ -63,14 +75,18 @@ async def scan_receive_item(
     if task.get("flow_type") != "inbound":
         raise HTTPException(status_code=400, detail="Task ini bukan inbound task")
     
-    if task["status"] in ["completed", "cancelled"]:
-        raise HTTPException(status_code=400, detail="Task sudah selesai atau dibatalkan")
+    # FIX-3a (B2a FLW-IN-01/06) — DAFTAR-IZIN status asal: tugas yang sudah diputus QC (`qc_pending`/`qc_rejected`),
+    # selesai, batal, atau sedang dieskalasi TIDAK bisa menerima barang lagi (dulu daftar-larang completed/cancelled).
+    _its.assert_can(task, "scan_receive")
     from services.goods_receipt_service import guard_legacy_receiving
     await guard_legacy_receiving(task)
     
     # Validate product match
     if payload.product_id != task["product_id"]:
         raise HTTPException(status_code=400, detail="Product ID tidak sesuai dengan task")
+    # FIX-3a (B3b INP-01, B2a FLW-IN-08/OPN-01) — bin = rujukan struktur gudang tugas (id ATAU kode rak), bukan teks
+    # bebas; disimpan sebagai id kanonik. Bin di area yang dibekukan pendaftaran awal ditolak 409.
+    _bin = await _resolve_task_bin(task, payload.bin_id)
 
     # ── FASE F-1 (F1-01/F1-02/F1-03) — qty boleh dalam SATUAN SUPPLIER ──────
     # Bila operator mengirim `doc_uom` + `doc_qty` (apa adanya dari surat jalan supplier),
@@ -97,7 +113,8 @@ async def scan_receive_item(
         "batch": payload.batch,
         "lot": payload.lot,
         "roll_id": payload.roll_id,
-        "bin_id": payload.bin_id,
+        "bin_id": _bin["id"] if _bin else "",
+        **({"bin_code": _bin["code"]} if _bin else {}),
         "actor": actor["name"],
         "timestamp": now_iso(),
         **({"over_override_reason": _pf["override_reason"]} if _pf.get("override_reason") else {}),
@@ -119,35 +136,36 @@ async def scan_receive_item(
         "dye_lot": payload.dye_lot or task.get("dye_lot", ""),
         "grade": payload.grade or task.get("grade", ""),
         "roll_id": payload.roll_id or task.get("roll_id", ""),
-        "bin_id": payload.bin_id or task.get("bin_id", ""),
-        "updated_at": now_iso()
+        "bin_id": (_bin["id"] if _bin else "") or task.get("bin_id", ""),
+        **({"bin_code": _bin["code"]} if _bin else {}),
     }
     if _ruom_trail:
         # Satuan terakhir yang dipakai operator → dipakai UI untuk mengingat pilihan.
         update_data["last_receive_doc_uom"] = _ruom_trail["doc_uom"]
     
     # If received qty matches expected, auto-advance to receiving status
+    new_status = task["status"]
     if task["status"] == "waiting_goods" and new_received_qty > 0:
-        update_data["status"] = "receiving"
+        new_status = "receiving"
     
     # If fully received, mark as ready for QC
     if new_received_qty >= expected_qty:
-        update_data["status"] = "qc_check"
+        new_status = "qc_check"
         update_data["quantity"] = new_received_qty  # Set final quantity
     
     _push: Dict[str, Any] = {"scan_log": scan_entry}
     if _ruom_trail:
         _push["receive_uom_trails"] = {**_ruom_trail, "scan_id": scan_entry["id"],
                                        "actor": actor["name"]}
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id},
-        {
-            "$set": update_data,
-            "$push": _push
-        },
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    # FIX-3a (B2a STM-IN-06) — CAS: status asal yang dibaca + `received_qty` yang dibaca. Dua pindai bersamaan tidak
+    # lagi saling menimpa jumlah diterima; yang kalah mendapat 409 dan mengulang.
+    updated_task = await _its.transition(
+        task_id, "scan_receive", new_status, actor_name=actor["name"], set_fields=update_data, push=_push,
+        from_status=[task["status"]], extra_filter={"received_qty": task.get("received_qty")},
+        prev_status=task["status"])
+    if not updated_task:
+        raise HTTPException(status_code=409, detail=(
+            "Tugas ini baru saja berubah (penerimaan lain/eskalasi/keputusan QC) — muat ulang lalu ulangi pindai."))
     
     await audit(actor["name"], "inbound_scan_receive", "wms_task", task_id, {
         "actual_qty": effective_qty,
@@ -165,7 +183,8 @@ async def scan_receive_item(
 async def escalate_inbound_task(
     task_id: str,
     request: Request,
-    reason: str = "Qty tidak sesuai dengan PO"
+    reason: str = "",
+    payload: Optional[EscalateIn] = Body(default=None),
 ) -> Dict[str, Any]:
     """
     Escalate inbound task to manager due to qty mismatch or other issues.
@@ -173,12 +192,17 @@ async def escalate_inbound_task(
     Manager can then adjust expected_qty or investigate issue.
     """
     actor = await require_permission(request, "wms", "update")
+    # FIX-3a (K-14 / K-B3b-03) — alasan wajib ≥ 5 HURUF, ditegakkan server (dulu bawaan teks tetap & "x" lolos).
+    reason = require_reason((payload.reason if payload and payload.reason else reason), label="Alasan eskalasi")
     
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
         raise HTTPException(status_code=404, detail="Inbound task tidak ditemukan")
     # INV-ENTITY-01 (KN-076-IDOR-WRITE-INBOUND P1): cegah mutasi task lintas-entitas.
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
+    # FIX-3a (B2a FLW-IN-01) — eskalasi hanya SEBELUM barang diposting: tugas `qc_pending`/`qc_rejected` yang dulu
+    # bisa dieskalasi lalu diputus kembali ke `qc_check` membuka "Selesai" ulang (roll ganda).
+    _its.assert_can(task, "escalate")
     # KN-E10 — eskalasi tunduk pada mode GRN & tidak boleh menyentuh tugas yang sedang dihitung GRN.
     from services.goods_receipt_service import guard_legacy_receiving
     await guard_legacy_receiving(task)
@@ -197,19 +221,10 @@ async def escalate_inbound_task(
     # KN-C01 — eskalasi berprasyarat status: tugas yang sudah selesai/dibatalkan/sedang
     # dieskalasi TIDAK boleh dibuka kembali (dulu putaran complete→escalate→resolve→complete
     # bisa diulang dan tiap putaran melahirkan set roll baru + menaikkan received_qty PO).
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "status": {"$nin": ["completed", "cancelled", "escalated"]},
-         "$or": [{"grn_active_id": {"$exists": False}}, {"grn_active_id": {"$in": [None, ""]}}]},
-        {
-            "$set": {
-                "escalation": escalation,
-                "status": "escalated",
-                "updated_at": now_iso()
-            }
-        },
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    updated_task = await _its.transition(
+        task_id, "escalate", "escalated", actor_name=actor["name"], set_fields={"escalation": escalation},
+        extra_filter={"$or": [{"grn_active_id": {"$exists": False}}, {"grn_active_id": {"$in": [None, ""]}}]},
+        note=reason, prev_status=task.get("status"))
     if not updated_task:
         raise HTTPException(status_code=409, detail=(
             f"Tugas berstatus '{task.get('status')}' tidak bisa dieskalasi (sudah selesai/dibatalkan/sedang dieskalasi)."))
@@ -236,6 +251,11 @@ async def resolve_escalation(
     Manager can adjust expected_qty to match actual received qty.
     """
     actor = await require_permission(request, "wms", "approve")  # Manager permission
+    # FIX-3a (B3b INP-09) — qty pesanan baru wajib angka > 0 (dulu -10 tersimpan → tugas macet "melebihi toleransi");
+    # (FRM-09 #2) catatan penyelesaian wajib ≥ 5 huruf.
+    if adjusted_qty is not None:
+        adjusted_qty = require_qty(adjusted_qty, label="Qty pesanan yang disesuaikan", max_value=10_000_000)
+    resolution_notes = require_reason(resolution_notes, label="Catatan penyelesaian eskalasi")
     
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
@@ -259,13 +279,18 @@ async def resolve_escalation(
     # KN-E10 — tugas tanpa barang diterima (mis. waiting_goods) kembali ke status asalnya, bukan
     # qc_check: qc_check membuka scan-receive/complete jalur lama di luar GRN.
     no_goods = float(task.get("received_qty") or 0) <= 0
+    _pre = escalation.get("pre_status") or "waiting_goods"
     update_data = {
         "escalation": escalation,
-        "status": (escalation.get("pre_status") or "waiting_goods") if no_goods else "qc_check",
+        "status": _pre if no_goods else "qc_check",
         "updated_at": now_iso()
     }
-    if update_data["status"] == "escalated":
-        update_data["status"] = "waiting_goods"
+    if update_data["status"] in ("escalated", "put_away"):
+        update_data["status"] = "waiting_goods" if no_goods else "qc_check"
+    if _pre in _its.POSTED:
+        # FIX-3a (B2a FLW-IN-01) — data lama: eskalasi dari tugas yang barangnya SUDAH diposting (karantina/QC)
+        # dikembalikan ke status itu, TIDAK ke `qc_check` (yang membuka "Selesai" ulang → roll ganda).
+        update_data["status"] = _pre
     
     # If manager adjusts qty, update expected and final quantity
     if adjusted_qty is not None:
@@ -274,14 +299,11 @@ async def resolve_escalation(
     
     # T-01 (pola CAS, sama dengan outbound) — tulisan berprasyarat eskalasi BELUM resolved:
     # dua manajer yang menekan "selesaikan" bersamaan → tepat satu 200, sisanya 409.
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "status": "escalated",   # KN-C01 — hanya tugas yang memang tereskalasi
-         "escalation.status": {"$ne": "resolved"},
-         "escalation": {"$exists": True}},
-        {"$set": update_data},
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    _to = update_data.pop("status")
+    updated_task = await _its.transition(   # KN-C01 — hanya tugas yang memang tereskalasi (CAS `escalated`)
+        task_id, "resolve_escalation", _to, actor_name=actor["name"], set_fields=update_data,
+        extra_filter={"escalation.status": {"$ne": "resolved"}, "escalation": {"$exists": True}},
+        note=resolution_notes, prev_status="escalated")
     if not updated_task:
         raise HTTPException(
             status_code=409,

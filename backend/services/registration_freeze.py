@@ -135,6 +135,22 @@ async def assert_transfer_movable(transfer: Dict[str, Any], phase: str, *, to_bi
     await _check(points, "pengiriman transfer gudang")
 
 
+async def assert_count_scope(warehouse_id: str, bin_ids: Optional[Iterable[str]], action: str) -> None:
+    """FIX-3a (B2a OPN-05) — opname BIASA (per item / per roll) di area beku pendaftaran awal ditolak.
+    `bin_ids` = bin yang dihitung; None/kosong = hitung level GUDANG (selisihnya bisa mengenai bin mana pun) → sesi
+    pendaftaran apa pun (zona atau penuh) di gudang itu menolak."""
+    freezes = await active_freezes([warehouse_id])
+    if not freezes:
+        return
+    ids = [b for b in (bin_ids or []) if b]
+    if not ids:
+        _deny(freezes[0], action, "hitungan level gudang")
+    for b in ids:
+        for f in freezes:
+            if hits(f, warehouse_id, b):
+                _deny(f, action, f"bin {b}")
+
+
 async def area_verification(warehouse_id: str) -> List[Dict[str, Any]]:
     """Area yang sudah 'terverifikasi pendaftaran' (dipakai gate/cutover): [{node_id, label, verified_at, session_id}]."""
     return await db.registration_area_status.find({"warehouse_id": warehouse_id}, {"_id": 0}).to_list(500)

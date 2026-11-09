@@ -16,6 +16,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
   const [items, setItems] = useState([]);
   const srch = useListSearch(items, null, { testId: "rfid-loc", placeholder: "Cari EPC / produk / roll / bin…" });
   const [readers, setReaders] = useState([]);
+  const [simMode, setSimMode] = useState(false);
   const [readerId, setReaderId] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -31,6 +32,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         axios.get(`${API}/rfid/devices`, { params }),
       ]);
       setItems(l.data.items || []);
+      setSimMode(!!d.data.rfid_simulation);   // FIX-3a (FRM-13) — simulasi pindai area hanya di mode simulasi RFID
       const rdrs = (d.data.devices || []).filter((x) => x.type !== "gate");
       setReaders(rdrs);
       if (rdrs.length && !rdrs.find((r) => r.id === readerId)) setReaderId(rdrs[0].id);
@@ -97,6 +99,11 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
             ) : (
               <span data-testid="rfid-loc-devices-readonly">Pembaca ditambahkan Admin di Pengaturan › Integrasi &amp; Sistem › Perangkat.</span>
             )}
+          </p>
+        ) : !simMode ? (
+          <p data-testid="rfid-loc-sim-off" className="text-[12px] text-[#6B6B73]">
+            Simulasi pindai area hanya tersedia saat <b>Mode simulasi RFID</b> aktif untuk PT ini (Pusat Pengaturan).
+            Lokasi tag nyata datang dari pembaca/gate yang mengirim bacaan sendiri.
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">

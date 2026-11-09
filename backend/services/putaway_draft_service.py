@@ -75,13 +75,18 @@ def draft_block(r: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def is_specific(wh: Dict[str, Any]) -> bool:
+    """FIX-3a (B2a FLW-IN-02) — gudang ber-aturan SPESIFIK = ada daftar aturan yang TERISI. `storage_rules.mode`
+    tanpa daftar (mis. `{"mode":"category","categories":[]}` = menerima semua) BUKAN aturan spesifik; dulu dianggap
+    spesifik sehingga tiga gedung "kosong" seri dan dipecah urut kode -> roll Woven ke Gudang Knitting."""
+    rules = pr.warehouse_rules(wh)
+    return any(rules.get(k) for k in ("categories", "grades", "fabric_types", "template_ids", "owner_entity_ids"))
+
+
 def _rank(wh: Dict[str, Any], roll: Dict[str, Any]) -> Tuple[int, int, str]:
     material = str(roll.get("stage") or "").lower() in MATERIAL_STAGES
     is_mat = whp.has_role(wh, "material")
-    rules = pr.warehouse_rules(wh)
-    specific = any(rules.get(k) for k in ("categories", "grades", "fabric_types", "template_ids", "owner_entity_ids")) \
-        or (wh.get("storage_rules") or {}).get("mode", "none") != "none"   # sama dengan urutan saran manual
-    return (0 if is_mat == material else 1, 0 if specific else 1, str(wh.get("code") or ""))
+    return (0 if is_mat == material else 1, 0 if is_specific(wh) else 1, str(wh.get("code") or ""))
 
 
 async def site_targets(src: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
@@ -115,7 +120,12 @@ async def choose_destination(src: Dict[str, Any], roll: Dict[str, Any], product:
     cands = [w for w in targets["storage"] if not await pr.warehouse_violations(w, roll, product)]
     if not cands:
         return None, "", "tidak ada gudang simpan di lokasi ini yang aturannya cocok"
-    return sorted(cands, key=lambda w: _rank(w, roll))[0], "storage", ""
+    best = sorted(cands, key=lambda w: _rank(w, roll))[0]
+    if len(cands) > 1 and not is_specific(best):
+        # FIX-3a (FLW-IN-02) — tanpa aturan yang cocok khusus, pilihan hanya urutan kode gudang: beri tahu penyetuju.
+        return best, "storage", (f"tujuan dipilih menurut urutan kode gudang ({len(cands)} gudang simpan menerima barang "
+                                 "ini, belum ada aturan kategori/grade/artikel yang khusus) — periksa tujuan sebelum terbit")
+    return best, "storage", ""
 
 
 def _key(trigger: Dict[str, Any], src_id: str, owner: str, dest_id: str, purpose: str, roll_ids: List[str]) -> str:
@@ -183,7 +193,8 @@ async def auto_draft(roll_ids: List[str], trigger: Dict[str, Any], actor_name: s
                 unrouted.append({"roll_no": r.get("roll_no", ""), "reason": note})
             continue
         dests[dest["id"]] = dest
-        item = {**pa.item_row(r, p, ""), "inspection_requested": r["id"] in requested}
+        item = {**pa.item_row(r, p, ""), "inspection_requested": r["id"] in requested,
+                **({"destination_note": note} if note else {})}
         groups.setdefault((src["id"], r.get("owner_entity_id") or "", dest["id"], purpose), []).append(item)
     out = []
     for (src_id, owner, dest_id, purpose), items in groups.items():
@@ -368,10 +379,32 @@ async def publish(order_id: str, scope_ids: List[str], actor_name: str, split_un
     return await pa._get(order_id, scope_ids)
 
 
+async def release_inspection_drafts(roll_ids: List[str], why: str, actor_name: str) -> int:
+    """FIX-3a (B2a FLW-IN-12) — SPK QC 4-point ditutup: draf PA `purpose=inspection` untuk roll-roll itu tidak relevan
+    lagi (pemeriksaan selesai / roll gagal ditahan). Roll dikeluarkan dari draf (draf kosong → dibatalkan) supaya
+    "satu roll satu antrean" tidak memblok draf simpan berikutnya. Mengembalikan jumlah roll yang dilepas."""
+    ids = [r for r in roll_ids if r]
+    if not ids:
+        return 0
+    freed = 0
+    async for d in db.putaway_orders.find({"status": "draft", "purpose": "inspection", "items.roll_id": {"$in": ids}},
+                                          {"_id": 0, "id": 1, "items": 1, "draft_rev": 1}):
+        keep = [i for i in d.get("items") or [] if i.get("roll_id") not in set(ids)]
+        gone = len(d.get("items") or []) - len(keep)
+        upd: Dict[str, Any] = {"items": keep, **pa.qty_summary(keep), "updated_at": now_iso(),
+                               "draft_edited_by": actor_name}
+        if not keep:
+            upd.update({"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name,
+                        "cancelled_at": now_iso()})
+        res = await db.putaway_orders.update_one({"id": d["id"], "status": "draft", "draft_rev": d.get("draft_rev", 0)},
+                                                 {"$set": upd, "$inc": {"draft_rev": 1}})
+        freed += gone if res.modified_count else 0
+    return freed
+
+
 async def cancel_draft(order_id: str, reason: str, scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
-    why = (reason or "").strip()
-    if len(why) < MIN_CANCEL_REASON:
-        raise HTTPException(status_code=400, detail=f"Alasan membatalkan draf wajib (minimal {MIN_CANCEL_REASON} huruf).")
+    from input_rules import require_reason   # FIX-3a — K-14 dihitung huruf (satu validator bersama)
+    why = require_reason(reason, label="Alasan membatalkan draf")
     await _draft(order_id, scope_ids)
     res = await db.putaway_orders.find_one_and_update(
         {"id": order_id, "status": "draft"},

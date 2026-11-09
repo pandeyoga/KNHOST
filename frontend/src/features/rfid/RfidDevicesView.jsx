@@ -32,6 +32,7 @@ const DIR_OPTS = [{ value: "in", label: "Masuk (in)" }, { value: "out", label: "
 export default function RfidDevicesView({ currentUser, embedded = false }) {
   const { warehouses, whId, setWhId, whOpts } = useWarehouses();
   const [devices, setDevices] = useState([]);
+  const [simMode, setSimMode] = useState(false);   // FIX-3a (K-B3b-09) — detak manual hanya di mode simulasi RFID
   const [readerDevice, setReaderDevice] = useState(null); // PREP-D1 — panel Integrasi U300 (pop-up rincian)
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,7 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
       const params = whId ? { warehouse_id: whId } : {};
       const r = await axios.get(`${API}/rfid/devices`, { params });
       setDevices(r.data.devices || []);
+      setSimMode(!!r.data.rfid_simulation);
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat perangkat RFID"); }
     finally { setLoading(false); }
   };
@@ -240,11 +242,12 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
                     )}
                     {isAdmin && (
                       <div className="flex gap-2 mt-2">
-                        <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}
-                          title="Matikan/nyalakan sementara (mis. perawatan). Perangkat tetap terdaftar dan boleh dinyalakan lagi kapan saja."
+                        {(d.status === "online" || simMode) && <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}
+                          title={d.status === "online" ? "Matikan sementara (mis. perawatan). Perangkat tetap terdaftar."
+                            : "Detak SIMULASI (mode simulasi RFID) — status online sungguhan hanya dari detak perangkat."}
                           className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold hover:bg-[#F5F5F7] disabled:opacity-40">
-                          <Power size={12} /> {d.status === "online" ? "Matikan" : "Nyalakan"}
-                        </button>
+                          <Power size={12} /> {d.status === "online" ? "Matikan" : "Nyalakan (simulasi)"}
+                        </button>}
                         <button data-testid={`rfid-apikey-${d.id}`} disabled={busy} onClick={() => issueKey(d)}
                           title="Kunci akses untuk aplikasi penghubung pembaca RFID"
                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA] disabled:opacity-40">

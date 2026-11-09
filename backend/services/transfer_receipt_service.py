@@ -207,15 +207,31 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
     so_id = (roll.get("transfer_ref") or {}).get("so_id")
     keep = bool(so_id) and await so_still_open(so_id)
     # komitmen SO kembali ke status asalnya (reserved / committed) saat tiba
-    status = {"damaged": "damaged", "hold": "hold"}.get(status_kind) or (
+    # FIX-3a (B2a STM-IN-04) — "diterima ditahan" (pelanggaran aturan + pengecualian supervisor) memakai SATU
+    # representasi tahan: status `blocked` + `hold{held, prev_status}` (dilepas lewat `roll_hold_service.release_roll`).
+    # Dulu status `hold` tersendiri tanpa jalan keluar (dan `hold` di tempat lain berarti soft-hold pesanan).
+    status = {"damaged": "damaged", "hold": "blocked"}.get(status_kind) or (
         (roll.get("transfer_prior_status") if roll.get("transfer_prior_status") in SO_HELD else "reserved") if keep else "available")
     src_wh = roll["warehouse_id"]
-    res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": {
+    _set: Dict[str, Any] = {
         "warehouse_id": dest["id"], "status": status, "reserved_ref": roll.get("reserved_ref") if keep else None,
         "transfer_ref": None, "transfer_prior_status": None, "bin_id": None, "bin_code": "",
         "last_transfer": {"ref_id": transfer["id"], "code": transfer.get("code"), "from_warehouse_id": src_wh,
                           "date": now_iso(), "received_by": actor.get("name"), "outcome": status_kind},
-        "updated_at": now_iso()}})
+        "updated_at": now_iso()}
+    if status_kind == "hold":
+        _set["hold"] = {"held": True, "reason": f"Diterima dengan pengecualian aturan gudang (transfer {transfer.get('code')})",
+                        "by": actor.get("name", ""), "at": now_iso(), "prev_status": "available", "source": "transfer_rule"}
+    # FIX-3a (B2a FLW-IN-19) — tahap fisik dihitung ulang sesuai PERAN gudang tujuan (transit → menunggu putaway,
+    # gudang simpan → tersimpan); dulu `journey` tidak disentuh (data lama: kosong).
+    try:
+        from services import inbound_qc_common as _iqc
+        _set["journey"] = {**(roll.get("journey") or {}), "stage": await _iqc.initial_journey_stage(dest["id"]),
+                           "routing": (roll.get("journey") or {}).get("routing") or "store", "updated_at": now_iso(),
+                           "via": "transfer_in"}
+    except Exception:  # noqa: BLE001 — tahap fisik tidak boleh menggagalkan penerimaan
+        pass
+    res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": _set})
     if not res.matched_count:
         return None
     await db.rfid_tags.update_many({"roll_id": roll["id"], "status": "active"},
@@ -234,18 +250,29 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
     return {**roll, "warehouse_id": dest["id"], "status": status, "bin_id": None}
 
 
-async def _refresh_status(transfer_id: str) -> Dict[str, Any]:
+async def _refresh_status(transfer_id: str, actor_name: str = "") -> Dict[str, Any]:
     t = await db.warehouse_transfers.find_one({"id": transfer_id}, {"_id": 0})
     in_transit = await transfer_held_rolls(transfer_id, ["in_transit_transfer"])
     received = await db.inventory_rolls.count_documents({"last_transfer.ref_id": transfer_id})
     if t["status"] in ("dispatched", "partially_received"):
         new = "completed" if not in_transit else ("partially_received" if received else "dispatched")
+        if new == "completed" and not received and await db.inventory_rolls.count_documents(
+                {"returned_from_transfer.ref_id": transfer_id}):
+            # FIX-3a (B2a FLW-IN-10, keputusan D10) — 0 roll diterima, semua kembali ke asal → `returned` (selaras PA),
+            # bukan `completed` "actual_receipt" yang menyesatkan laporan transfer selesai.
+            new = "returned"
         upd = {"status": new, "updated_at": now_iso()}
         if new == "completed":
             upd.update({"completed_at": now_iso(), "completion_basis": "actual_receipt"})
-        t = await db.warehouse_transfers.find_one_and_update({"id": transfer_id, "status": t["status"]}, {"$set": upd},
+        elif new == "returned":
+            upd.update({"returned_at": now_iso(), "completion_basis": "all_returned"})
+        _ops: Dict[str, Any] = {"$set": upd}
+        if new != t["status"]:   # FIX-3a (STM-IN-07) — jejak status seragam (bentuk SSOT)
+            from services import status_history as _sh
+            _ops["$push"] = {"status_history": _sh.entry(new, user=actor_name, note="penerimaan transfer")}
+        t = await db.warehouse_transfers.find_one_and_update({"id": transfer_id, "status": t["status"]}, _ops,
                                                              projection={"_id": 0}, return_document=True) or t
-        if new == "completed" and t.get("status") == "completed":
+        if new in ("completed", "returned") and t.get("status") == new:
             # PREP-D2 (K-RFID-10) — transfer selesai diterima → sesi gate OUT (asal) & IN (tujuan) dinilai; roll yang
             # tidak terbaca gate & tidak dilengkapi jalur lain → antrean periksa. Best-effort, tidak menggagalkan terima.
             from services import gate_txn_service as _gt
@@ -320,7 +347,7 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
                                  reason=" | ".join(viol[:3]), status="resolved", resolution="received_hold",
                                  resolution_reason=override, resolved_by=actor.get("name"), resolved_at=now_iso())
         row = {**base, "result": kind, "status": landed["status"]}
-        if node and landed["status"] not in ("damaged", "hold"):
+        if node and landed["status"] not in ("damaged", "hold", "blocked"):
             from services.location_service import place_roll
             try:
                 p = await place_roll(landed, dest, node, actor=actor, cas={"status": landed["status"]})
@@ -331,7 +358,20 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
     await db.warehouse_transfers.update_one({"id": transfer["id"]}, {"$push": {"receipt_events": {
         "id": new_id("trc"), "by": actor.get("name"), "at": now_iso(), "note": (body.note or "")[:300],
         "bin_id": body.bin_id or "", "results": [{k: r.get(k) for k in ("ref", "roll_id", "result")} for r in results]}}})
-    t = await _refresh_status(transfer["id"])
+    t = await _refresh_status(transfer["id"], actor.get("name", ""))
+    # FIX-3a (B2a FLW-IN-19) — roll tersedia yang tiba di gedung TRANSIT → draf Putaway Order otomatis (K-GDG-10),
+    # sama dengan barang lepas QC. Best-effort & idempoten per penerimaan.
+    _avail = [r["roll_id"] for r in results if r.get("result") == "received" and r.get("status") == "available"]
+    if _avail:
+        try:
+            from services import inbound_qc_common as _iqc
+            pd = await _iqc.auto_draft_after_release(
+                _avail, {"type": "transfer_in", "id": f"{transfer['id']}:{len(transfer.get('receipt_events') or [])}",
+                         "number": transfer.get("code", "")}, actor.get("name", ""))
+            if pd:
+                return {"results": results, "transfer_status": t["status"], "summary": await summary(t), "putaway_draft": pd}
+        except Exception:  # noqa: BLE001
+            pass
     return {"results": results, "transfer_status": t["status"], "summary": await summary(t)}
 
 
@@ -393,7 +433,7 @@ async def resolve(transfer: Dict[str, Any], exc_id: str, body: Any, actor: Dict[
             "Roll hilang/ditolak aturan tidak bisa ditutup dengan catatan saja — terima roll itu (dengan pengecualian) "
             "atau kembalikan ke gudang asal. Penghapusan stok hilang menunggu keputusan Finance (DEC-13)."))
     await _resolve_exc(transfer["id"], exc_id, body.action, reason, actor)
-    t = await _refresh_status(transfer["id"])
+    t = await _refresh_status(transfer["id"], actor.get("name", ""))
     return {"transfer_status": t["status"], "summary": await summary(t)}
 
 

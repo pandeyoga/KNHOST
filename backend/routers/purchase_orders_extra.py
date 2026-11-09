@@ -251,6 +251,13 @@ async def cancel_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail=(
             f"PO sedang diterima lewat Kedatangan Barang {held.get('grn_active_number') or ''}. "
             "Tutup atau batalkan kedatangan itu dulu."))
+    # FIX-3a (B2a FLW-IN-05) — barang yang SUDAH diposting (karantina/QC/selesai) tidak dibatalkan diam-diam bersama PO.
+    posted = await db.wms_tasks.find_one({"po_id": po_id, "status": {"$in": ["qc_pending", "qc_rejected", "completed"]},
+                                          "received_qty": {"$gt": 0}}, {"_id": 0, "id": 1})
+    if posted:
+        raise HTTPException(status_code=409, detail=(
+            "Sebagian barang PO ini sudah diterima ke stok/karantina — PO tidak bisa dibatalkan. "
+            "Pakai 'Tutup kurang terima' untuk sisanya, dan retur ke supplier lewat QC untuk barang yang ditolak."))
     # INV-ATOMIC-01 — CAS: prasyarat status di tulisan induk; task gudang menyusul idempoten.
     updated_po = await db.purchase_orders.find_one_and_update(
         {"id": po_id, "status": {"$in": ["pending", "receiving", "waiting_approval"]}},
@@ -265,12 +272,28 @@ async def cancel_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail="PO sudah berubah status oleh proses lain. Muat ulang layar.")
 
     # Cancel related inbound tasks
+    # FIX-3a (B2a FLW-IN-05) — roll `receiving` hasil pindai label (sudah bernomor & berlabel) ikut dibatalkan seperti
+    # batal GRN (hapus roll, cabut tag, lepas klaim nomor roll supplier) — dulu tertinggal yatim selamanya.
+    from services import inbound_task_state as _its
+    from services.receiving_roll_service import undo_receiving_roll
+    _cancellable = list(_its.allowed_from("cancel"))
+    _undone = 0
+    async for _t in db.wms_tasks.find({"po_id": po_id, "status": {"$in": _cancellable}}, {"_id": 0}):
+        for _r in await db.inventory_rolls.find({"grn_task_id": _t["id"], "status": "receiving"}, {"_id": 0}).to_list(None):
+            _cur = await db.wms_tasks.find_one({"id": _t["id"]}, {"_id": 0}) or _t
+            try:
+                await undo_receiving_roll(_r, _cur)
+                _undone += 1
+            except HTTPException as exc:   # roll sudah dibatalkan proses lain — lanjutkan sisanya
+                if exc.status_code != 409:
+                    raise
     await db.wms_tasks.update_many(
-        {"po_id": po_id, "status": {"$nin": ["completed", "cancelled"]}},
-        {"$set": {"status": "cancelled", "updated_at": now_iso()}}
+        {"po_id": po_id, "status": {"$in": _cancellable}},
+        {"$set": {"status": "cancelled", "updated_at": now_iso()},
+         "$push": {"status_history": _its.history_entry("cancelled", actor["name"], "cancel", "PO dibatalkan")}}
     )
 
-    await audit(actor["name"], "po_cancelled", "purchase_order", po_id, {})
+    await audit(actor["name"], "po_cancelled", "purchase_order", po_id, {"receiving_rolls_cancelled": _undone})
     # Audit UI tahap 2 (G4-12) — PO batal → PR yang direalisasikan ke PO ini kembali bisa dipakai (dulu tetap
     # "Jadi PO" menunjuk PO mati). Idempoten; kegagalan tidak membatalkan pembatalan PO.
     try:

@@ -9,15 +9,39 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_active_entity_ac
 from services import warehouse_scope_service as whscope
 from services.roll_service import resolve_stock_owner
 from services import stock_count_service as scs
+from services import registration_freeze as rfz
+from input_rules import ReasonStr, OptReasonStr, require_reason
 
 router = APIRouter(prefix="/api")
 
 
 async def _load_session(session_id: str, request: Request) -> Dict[str, Any]:
-    """KN-A02 — semua aksi tulis sesi opname dijaga entitas seketat GET detail."""
+    """KN-A02 — semua aksi tulis sesi opname dijaga entitas seketat GET detail.
+    FIX-3a (B2a STM-IN-03) — sesi PENDAFTARAN AWAL (`mode=registration`) punya mesin statusnya sendiri
+    (`/api/registration/...`); endpoint opname biasa menolaknya (dulu sesi pendaftaran DITOLAK bisa "dibuka kembali"
+    lewat opname biasa lalu berubah menjadi opname per roll)."""
     session = safe_doc(await db.cycle_count_sessions.find_one({"id": session_id}, {"_id": 0}))
     await guard_doc(request, "cycle_count_sessions", session, not_found="Session tidak ditemukan")
+    if (session or {}).get("mode") == "registration":
+        raise HTTPException(status_code=400, detail=(
+            "Sesi ini adalah PENDAFTARAN AWAL gedung — kelola dari menu Pendaftaran awal (tidak lewat opname biasa)."))
     return session
+
+
+async def _resolve_count_bin(warehouse_id: str, ref: str) -> Dict[str, str]:
+    """FIX-3a (B3b INP-02) — bin opname = rujukan struktur gudang sesi (id atau kode rak), disimpan sebagai id.
+    Dulu teks bebas: kode rak yang benar (`W01-L2-03`) menghasilkan expected 0 → selisih lebih → roll + jurnal di
+    alamat yang tidak ada."""
+    key = (ref or "").strip()
+    if not key:
+        return {"id": "", "code": ""}
+    from services import placement_rules as _pr
+    wh = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0}) or {}
+    node = _pr.resolve_bin(wh, key)
+    if not node:
+        raise HTTPException(status_code=400, detail=(
+            f"Bin '{key}' tidak ada di struktur gudang {wh.get('name') or ''} — pilih bin dari daftar lokasi gudang."))
+    return {"id": node["bin"]["id"], "code": node["bin"].get("code", "")}
 
 
 def _assert_item_owners(session: Dict[str, Any], ctx) -> None:
@@ -47,12 +71,13 @@ class CycleCountItemUpdate(BaseModel):
 
 
 class CycleCountApprove(BaseModel):
-    reason: str = "Disetujui sesuai hasil cycle count"
-    zero_cost_reason: str = ""   # FN-14 — wajib bila surplus tanpa biaya acuan
+    # FIX-3a (B3b FRM-09 #10) — tanpa alasan bawaan teks tetap; bila diisi wajib ≥ 5 huruf (K-14).
+    reason: OptReasonStr = ""
+    zero_cost_reason: OptReasonStr = ""   # FN-14 — wajib bila surplus tanpa biaya acuan
 
 
 class CycleCountReject(BaseModel):
-    reason: str
+    reason: ReasonStr
 
 
 @router.post("/cycle-count/sessions")
@@ -116,7 +141,10 @@ async def add_item(session_id: str, payload: CycleCountItemCreate, request: Requ
     prefer = payload.owner_entity_id or ("" if getattr(ctx, "view_all", False) else (ctx.active_entity_id or ""))
     owner = await resolve_stock_owner(payload.product_id, session["warehouse_id"], prefer,
                                       allowed_owners=list(ctx.allowed_entity_ids or []))
-    bin_id = (payload.bin_id or "").strip()
+    _bin = await _resolve_count_bin(session["warehouse_id"], payload.bin_id)
+    bin_id = _bin["id"]
+    # FIX-3a (B2a OPN-05) — opname biasa di area beku pendaftaran awal ditolak (level gudang: sesi apa pun di gudang itu).
+    await rfz.assert_count_scope(session["warehouse_id"], [bin_id] if bin_id else None, "menambah item opname")
     # WM-07 — satu count key (produk×pemilik×bin); level gudang & level bin untuk produk sama tidak boleh tumpang tindih
     for it in session.get("items", []):
         if scs.count_key(it) == (payload.product_id, owner, bin_id):
@@ -133,6 +161,7 @@ async def add_item(session_id: str, payload: CycleCountItemCreate, request: Requ
         "sku": product["sku"],
         "product_name": product["name"],
         "bin_id": bin_id,
+        "bin_code": _bin["code"],
         "owner_entity_id": owner,
         "expected_qty": expected, "expected_scope": "bin" if bin_id else "warehouse",
         "expected_snapshot_at": now_iso(),
@@ -201,7 +230,7 @@ async def submit_session(session_id: str, request: Request) -> Dict[str, Any]:
             })
     from pymongo import ReturnDocument
     updated = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session_id},
+        {"id": session_id, "status": "open"},   # FIX-3a — CAS status asal (dulu R→W `{id}` saja)
         {"$set": {
             "status": "submitted",
             "discrepancies": discrepancies,
@@ -212,6 +241,8 @@ async def submit_session(session_id: str, request: Request) -> Dict[str, Any]:
         projection={"_id": 0},
         return_document=ReturnDocument.AFTER
     )
+    if not updated:
+        raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang")
     await audit(actor["name"], "cycle_count_submitted", "cycle_count", session_id,
                 {"discrepancies_count": len(discrepancies)})
     return safe_doc(updated)
@@ -256,6 +287,10 @@ async def approve_session(session_id: str, payload: CycleCountApprove, request: 
     if session["status"] != "submitted":
         raise HTTPException(status_code=400, detail="Session belum disubmit")
     _assert_item_owners(session, await entity_ctx(request))
+    # FIX-3a (B2a OPN-05) — pembekuan bisa mulai sesudah item ditambah: cek ulang sebelum selisih diterapkan.
+    for _it in session.get("items", []):
+        await rfz.assert_count_scope(session["warehouse_id"], [_it["bin_id"]] if _it.get("bin_id") else None,
+                                     "menyetujui opname")
     # T-01 Opsi B (INV-ATOMIC-01) — klaim sesi sebelum selisih diterapkan ke roll:
     # dua persetujuan bersamaan tidak boleh menyesuaikan stok dua kali.
     from services import atomic_claim as _saga
@@ -386,6 +421,9 @@ async def set_roll_scope(session_id: str, payload: RollScopePayload, request: Re
     if (session.get("roll_count") or {}).get("scans"):
         raise HTTPException(status_code=409, detail="Snapshot sudah dipakai untuk scan — buat sesi baru untuk scope lain.")
     rc = await rcs.make_snapshot(session, payload.node_id.strip(), _owners(await entity_ctx(request)))
+    # FIX-3a (B2a OPN-05) — opname per roll di area beku pendaftaran awal ditolak.
+    await rfz.assert_count_scope(session["warehouse_id"], rc["bin_ids"] if payload.node_id.strip() else None,
+                                 "memulai opname per roll")
     res = await db.cycle_count_sessions.update_one(
         {"id": session_id, "status": "open", "roll_count.scans.0": {"$exists": False}},
         {"$set": {"roll_count": rc, "mode": "roll", "updated_at": now_iso()}})
@@ -473,11 +511,13 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
     from services import stock_count_roll_service as rcs
     from services import atomic_claim as _saga
     actor = await require_permission(request, "inventory", "approve_count")
-    if len(payload.reason.strip()) < 5:
-        raise HTTPException(status_code=400, detail="Alasan finalisasi minimal 5 karakter")
+    require_reason(payload.reason, label="Alasan finalisasi")   # FIX-3a — K-14 dihitung huruf
     session = await _load_session(session_id, request)
     if session["status"] != "open" or not session.get("roll_count"):
         raise HTTPException(status_code=400, detail="Sesi opname per roll tidak open")
+    _rc0 = session.get("roll_count") or {}
+    await rfz.assert_count_scope(session["warehouse_id"], _rc0.get("bin_ids") if _rc0.get("node_id") else None,
+                                 "menyetujui opname per roll")
     rec = await rcs.reconcile(session)
     done_ok = lambda x: (x.get("adjustment") or {}).get("status") == "applied"  # noqa: E731
     todo = [ln for ln in rec["lines"] if rcs.APPLY_KINDS & set(ln["kinds"]) and not done_ok(ln)]
@@ -541,15 +581,19 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
                   "unknown_unresolved": len(unknown) - len(found), "relocation_blocked": blocked, "missing_allocated": held,
                   "tag_followup": c.get("tag_damaged", 0) + c.get("unreadable", 0)}
     exceptions = {k: v for k, v in exceptions.items() if v}
+    # FIX-3a (B2a OPN-06) — roll hilang yang belum dihitung ulang → sesi turunan "hitung ulang" (bukan dibiarkan).
+    followup = await rcs.create_followup_session(session, rec, actor["name"]) if exceptions.get("missing_unconfirmed") else None
     await db.cycle_count_sessions.update_one({"id": session_id}, _saga.finish_set({
         "status": "approved_with_exceptions" if exceptions else "approved", "roll_exceptions": exceptions,
         "approved_by": actor["name"], "approved_at": now_iso(), "approval_reason": payload.reason.strip(),
-        "zero_cost_reason": payload.zero_cost_reason.strip(), "updated_at": now_iso()}))
+        "zero_cost_reason": payload.zero_cost_reason.strip(), "updated_at": now_iso(),
+        **({"followup_session_id": followup["id"]} if followup else {})}))
     await audit(actor["name"], "cycle_count_roll_finalized", "cycle_count", session_id,
                 {"applied": len(todo), "written_off": len(lost), "found": len(found), "exceptions": exceptions,
                  "reason": payload.reason.strip()})
     done = await db.cycle_count_sessions.find_one({"id": session_id}, {"_id": 0})
-    return {**await rcs.reconcile(done), "status": done["status"], "recount": []}
+    return {**await rcs.reconcile(done), "status": done["status"], "recount": [],
+            **({"followup_session": followup} if followup else {})}
 
 
 # PREP-B — pendaftaran awal gedung (sesi opname ber-mode "registration") — rute /api/registration/...

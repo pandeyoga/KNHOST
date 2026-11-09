@@ -709,8 +709,9 @@ class RollPayload(BaseModel):
     warehouse_id: str
     owner_entity_id: str = ""        # default = entitas utama bila kosong
     lot: str
-    quantity: float = Field(..., ge=0)                  # = length_initial = length_remaining awal
-    unit: str = "meter"
+    # FIX-3a (B3b INP-10) — desimal koma Indonesia ("12,5") diterima; batas angka berhingga (INV-NUM-01).
+    quantity: QtyDecimal = Field(..., ge=0, allow_inf_nan=False)   # = length_initial = length_remaining awal
+    unit: str = ""                   # FIX-3a — kosong = satuan dasar produk; lain → wajib terkonversi (master satuan)
     grade: str = "A"
     batch: str = ""
     roll_no: str = ""
