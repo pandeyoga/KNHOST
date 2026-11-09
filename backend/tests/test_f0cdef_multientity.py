@@ -72,12 +72,18 @@ OPS_ENDPOINTS = [
 ]
 
 
+# FIX-1 (keputusan koordinator 9 Nov · K-B1-02/B2a D1) — daftar PEKERJAAN FISIK per gedung lokasi kerja LINTAS PT yang
+# ditugaskan; saringan PT = parameter `entity_id` (header X-Entity-Id tidak lagi memagari daftar ini).
+WORK_LISTS = {"/wms/tasks"}
+
+
 class TestF0C_OperationalIsolation:
     """List operasional ter-scope (default=home, X-Entity-Id, view-all)."""
 
     @pytest.mark.parametrize("endpoint", OPS_ENDPOINTS)
     def test_default_scope_home(self, admin_token, endpoint):
-        r = requests.get(f"{API}{endpoint}", headers=H(admin_token), timeout=20)
+        params = {"entity_id": ENT_KSC} if endpoint in WORK_LISTS else None
+        r = requests.get(f"{API}{endpoint}", headers=H(admin_token), params=params, timeout=20)
         assert r.status_code == 200, f"{endpoint} default: {r.status_code} {r.text[:200]}"
         data = r.json()
         rows = data if isinstance(data, list) else data.get("items", data.get("rows", []))
@@ -89,7 +95,8 @@ class TestF0C_OperationalIsolation:
 
     @pytest.mark.parametrize("endpoint", OPS_ENDPOINTS)
     def test_header_ent_kanda(self, admin_token, endpoint):
-        r = requests.get(f"{API}{endpoint}", headers=H(admin_token, ENT_KANDA), timeout=20)
+        params = {"entity_id": ENT_KANDA} if endpoint in WORK_LISTS else None
+        r = requests.get(f"{API}{endpoint}", headers=H(admin_token, ENT_KANDA), params=params, timeout=20)
         assert r.status_code == 200, f"{endpoint} kanda: {r.status_code} {r.text[:200]}"
         data = r.json()
         rows = data if isinstance(data, list) else data.get("items", data.get("rows", []))

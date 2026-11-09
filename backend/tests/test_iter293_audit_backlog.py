@@ -19,6 +19,9 @@ if not base_url:
 API = base_url.rstrip("/") + "/api"
 DB = MongoClient("mongodb://localhost:27017")["test_database"]
 PW = "demo12345"
+# FIX-1 (B3b INP-18) — sopir pengiriman WAJIB akun ber-peran Sopir yang nyata; id seed lama "user_driver_01" tidak ada
+# di semua DB (data acuan 8 Nov: id acak). Ambil id akun sopir demo dari DB, cadangan id seed lama.
+DRIVER_ID = (DB.users.find_one({"email": "driver@kainnusantara.id"}, {"_id": 0, "id": 1}) or {}).get("id") or "user_driver_01"
 
 
 def _login(email, entity="ent_ksc"):
@@ -81,11 +84,11 @@ class TestAuditBacklog293:
     def test_02_create_deliveries(self, admin, state):
         r = admin.post(f"{API}/logistics/deliveries", json={
             "shipment_ids": [state["ship_a"]["id"]], "mode": "own_fleet", "vehicle_plate": "B 1 QA",
-            "driver_name": "Joko Susilo", "driver_user_id": "user_driver_01", "eta": "2026-01-01"}, timeout=60)
+            "driver_name": "Joko Susilo", "driver_user_id": DRIVER_ID, "eta": "2026-01-01"}, timeout=60)
         assert r.status_code == 200, r.text[:300]
         a = r.json()
         assert a["status"] == "prepared" and a["number"].startswith("KSC/LG-") or a["number"], a
-        assert a["driver_user_id"] == "user_driver_01"
+        assert a["driver_user_id"] == DRIVER_ID
         assert "_id" not in a
         state["A"] = a
         r = admin.post(f"{API}/logistics/deliveries", json={

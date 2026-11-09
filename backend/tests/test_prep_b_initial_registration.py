@@ -42,9 +42,15 @@ Z1, Z2, R1, R2 = f"zone_{TAG}_1", f"zone_{TAG}_2", f"rack_{TAG}_1", f"rack_{TAG}
 WB1 = _b(91, "C1-01")
 
 
+# FIX-1 (B2a STM-IN-02) — pendaftaran awal kini berpagar LOKASI petugas gudang: gedung uji diletakkan di site lokasi
+# kerja petugas `warehouse@` (data acuan: Jakarta) supaya uji tetap menguji alur, bukan pagar lokasi.
+_WH_USER_SITE = ((DB.users.find_one({"email": "warehouse@kainnusantara.id"}, {"_id": 0, "location_site_ids": 1}) or {})
+                 .get("location_site_ids") or [None])[0]
+
+
 def _wh(wid, zones):
     return {"id": wid, "code": wid.upper(), "name": f"TEST_REG {wid[-6:]}", "city": "Bandung", "sharing_mode": "dedicated",
-            "entity_ids": [OWNER], "active": True, "zones": zones, "created_at": OLD_TS}
+            "entity_ids": [OWNER], "active": True, "zones": zones, "created_at": OLD_TS, "site_id": _WH_USER_SITE}
 
 
 def _prod(pid, sku, **kw):
