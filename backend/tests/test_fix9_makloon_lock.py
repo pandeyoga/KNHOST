@@ -209,6 +209,13 @@ def test_pr_disetujui_mengunci_dengan_gudang_pr(monkeypatch):
     res = DB.material_reservations.find_one({"pr_id": pr_id, "status": "active"}, {"_id": 0})
     assert res and res["qty"] == 50 and res["source_warehouse_id"] == WH_B
     assert res["locked_qty"] == 50 and _locked(_r(rb["id"])) == 50
+    # replan (lepas → cadangkan ulang): dulu DuplicateKey (id sama dengan cadangan yang dilepas, index unik uq_id FIX-5)
+    from services import material_reservation_service as mres
+    run(mres.release(pr_id, "replan qty baris 1", "uji"))
+    assert _locked(_r(rb["id"])) == 0
+    run(mres.reserve_for_pr(pr_id, "uji"))
+    again = DB.material_reservations.find_one({"pr_id": pr_id, "status": "active"}, {"_id": 0})
+    assert again["id"] != res["id"] and again["locked_qty"] == 50 and _locked(_r(rb["id"])) == 50
     DB.purchase_requisitions.delete_many({"id": pr_id})
 
 
