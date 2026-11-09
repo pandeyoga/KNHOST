@@ -89,6 +89,16 @@ async def _guard_transfer(request: Request, transfer_id: str, side: str = "any")
             raise HTTPException(
                 status_code=403,
                 detail=f"Hanya entitas {label} transfer ini yang boleh melakukan aksi tersebut.")
+    # FIX-1 (B2a STM-IN-02, B3a SCP-2) — pagar LOKASI di detail & setiap aksi transfer. Dulu tidak ada sama sekali:
+    # petugas Rancamalang menerima transfer di WH-JKT (200, roll mendarat di Jakarta). Sisi aksi: asal untuk
+    # setujui/tolak/kirim/batal, tujuan untuk terima/pengecualian; baca = salah satu sisi di lokasi tugas.
+    from services import location_scope
+    if side == "source":
+        await location_scope.assert_doc_side(ctx.user, transfer, "source_warehouse_id", "mengirim transfer dari gudang ini")
+    elif side == "dest":
+        await location_scope.assert_doc_side(ctx.user, transfer, "dest_warehouse_id", "menerima transfer di gudang ini")
+    elif not location_scope.doc_in_scope("warehouse_transfers", transfer, ctx.warehouse_ids):
+        raise HTTPException(status_code=404, detail="Data di luar lokasi tugas Anda")
     return transfer, ctx
 
 
@@ -100,11 +110,23 @@ async def list_transfers(
     transfer_kind: Optional[str] = Query(None),
     line: str = Query("", description="FASE L — penyaring lini (koma untuk multi)"),
     sales_order_id: Optional[str] = Query(None),
+    entity_id: Optional[str] = Query(None, description="FIX-1 — saringan PT (bawaan: semua PT yang ditugaskan)"),
 ) -> List[Dict[str, Any]]:
     """List all transfers with optional filtering by status, warehouse, or transfer_kind."""
     actor = await require_permission(request, "transfer", "view")
     ctx = await entity_ctx(request)
-    query_filter = dict(_transfer_scope_clause(resolve_scope_ids(ctx)))
+    # FIX-1 (K-B1-02, B3a SCP-2) — daftar transfer per GEDUNG dalam lokasi kerja (asal ATAU tujuan; dulu tanpa
+    # lokasi sama sekali: petugas Soreang melihat 15 transfer termasuk Jakarta) dan lintas PT yang ditugaskan
+    # (`entity_id` = saringan PT eksplisit). Gedung data uji tidak ikut tampilan "semua lokasi".
+    from services import location_scope
+    if entity_id and entity_id != "all":
+        if entity_id not in ctx.allowed_entity_ids:
+            raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
+        _ent_ids = [entity_id]
+    else:
+        _ent_ids = list(ctx.allowed_entity_ids)
+    query_filter = location_scope.narrow_view(
+        "warehouse_transfers", dict(_transfer_scope_clause(_ent_ids)), await location_scope.view_for(ctx))
     if sales_order_id:
         query_filter["sales_order_id"] = sales_order_id
     if status:
@@ -136,6 +158,8 @@ async def list_transfers(
     
     for transfer in transfers:
         transfer["transfer_kind"] = transfer.get("transfer_kind", "intra_entity")
+        transfer["work_entity_id"] = transfer.get("entity_id") or transfer.get("source_entity_id") or ""
+        transfer["work_entity_name"] = _ent_name(transfer["work_entity_id"])
         transfer["source_warehouse_name"] = warehouses.get(transfer.get("source_warehouse_id"), {}).get("name", "")
         transfer["dest_warehouse_name"] = warehouses.get(transfer.get("dest_warehouse_id"), {}).get("name", "")
         transfer["source_entity_name"] = _ent_name(transfer.get("source_entity_id"))
@@ -168,7 +192,10 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
         raise HTTPException(status_code=404, detail="Destination warehouse tidak ditemukan")
     if payload.source_warehouse_id == payload.dest_warehouse_id:
         raise HTTPException(status_code=400, detail="Source dan destination warehouse harus berbeda")
-    
+    # FIX-1 (STM-IN-02) — petugas berpagar hanya MENGIRIM dari gudang di lokasi tugasnya (tujuan boleh lokasi lain).
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, payload.source_warehouse_id, "mengirim transfer dari gudang ini")
+
     # Validate products and items
     if not payload.items or len(payload.items) == 0:
         raise HTTPException(status_code=400, detail="Items tidak boleh kosong")

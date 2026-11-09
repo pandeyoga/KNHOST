@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Package, Scan, X, ChevronRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
@@ -115,7 +116,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
     try {
       const params = filterStatus !== "all" ? `?status=${filterStatus}` : "";
       const res = await axios.get(`${API}/inbound/tasks${params}`);
-      setTasks(res.data);
+      setTasks(rememberDocEntities(res.data));   // FIX-1 — tugas lintas PT: aksi atas nama PT tugas
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat inbound task."); }
     finally { setLoading(false); setFetched(true); }

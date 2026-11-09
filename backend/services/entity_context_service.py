@@ -42,8 +42,10 @@ def is_pkp(entity: Dict[str, Any]) -> bool:
 
 
 async def all_active_entity_ids() -> List[str]:
+    # FIX-1 (B1 K-B1-10) — badan usaha bertanda data uji (`is_test`, dipasang skrip penanda yang bisa dibalik) tidak
+    # ikut penugasan dinamis admin/manajer → tidak muncul di pengalih & tidak ikut "Semua Entitas".
     rows = await db.business_entities.find(
-        {"status": "active"}, {"_id": 0, "id": 1}).to_list(200)
+        {"status": "active", "is_test": {"$ne": True}}, {"_id": 0, "id": 1}).to_list(200)
     return [r["id"] for r in rows]
 
 

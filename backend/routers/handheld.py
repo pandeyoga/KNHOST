@@ -144,6 +144,10 @@ async def device_config(request: Request, app_version: str = "") -> Dict[str, An
 @router.post("/session/start")
 async def session_start(payload: AppVersionIn, request: Request) -> Dict[str, Any]:
     ctx = await core.context(request)
+    # FIX-1 (audit B2b RFID-7, selaras B1 UI-23) — sesi operator hanya untuk akun yang boleh mengerjakan minimal satu
+    # jenis tugas gudang; dulu sopir (izin logistik saja) mendapat sesi C72 dengan gudang SRG-01.
+    if not any(k.get("allowed") for k in await core.allowed_kinds(ctx.user)):
+        raise core.err(403, "NO_HANDHELD_KIND", "Akun ini tidak berizin mengerjakan tugas gudang di perangkat handheld.")
     op = await core.start_operator(ctx, payload.app_version)
     await audit(ctx.actor_name, "handheld_operator_login", "rfid_device", ctx.device["id"],
                 {"device": ctx.device.get("code"), "operator_session_id": op["id"]}, source=ctx.source)

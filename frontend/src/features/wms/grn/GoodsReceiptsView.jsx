@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { can } from "../../../config/roles";
 import { Plus, Settings } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { rememberDocEntities } from "../../../services/docEntityRegistry";
+import EntityBadge from "../../../components/EntityBadge";
 import { ErrorBox, GrnStatusBadge } from "./GrnBits";
 import GrnCreateWizard from "./GrnCreateWizard";
 import GrnDetail from "./GrnDetail";
@@ -37,7 +39,8 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const grnOnly = selectedEntity && selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
   const showLegacy = LEGACY_ROLES.includes(currentUser?.role) && !grnOnly;
   const canCreateGrn = can(currentUser?.permissions, "goods_receipt", "create");   // FE-04 — POST /goods-receipts
-  const load = useCallback(() => grnApi.list({ status, q }).then(setRows).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
+  // FIX-1 (K-B1-02) — kedatangan lintas PT di gedung lokasi kerja: buka/aksi GRN dikirim atas nama PT GRN.
+  const load = useCallback(() => grnApi.list({ status, q }).then((r) => setRows(rememberDocEntities(r))).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
   useEffect(() => { if (!openId) load(); }, [load, openId, selectedEntity]);
   useEffect(() => {
     if (!focusDoc?.focus_id) return;
@@ -106,6 +109,10 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
                 <GrnStatusBadge status={r.status} />
               </div>
               <p className="mt-1 text-[12px] font-semibold">{r.partner_name}</p>
+              {/* FIX-1 (B1 UI-38) — kartu menyebut gudang tujuan & PT pemilik (dulu tanpa gudang). */}
+              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[#3A3B42]" data-testid={`grn-card-wh-${r.id}`}>
+                {r.warehouse_name || "Gudang belum diisi"}{r.work_entity_id && <EntityBadge entityId={r.work_entity_id} />}
+              </p>
               <p className="text-[10.5px] text-[#6B6B73]">{r.dn_number ? <>SJ <span className="font-mono">{r.dn_number}</span></> : "Nomor SJ belum diisi"} · {r.lines} baris · {r.pages} halaman</p>
               {r.open_blockers > 0 && <p className="mt-1 text-[10.5px] font-semibold text-[#B4231F]">{r.open_blockers} selisih pemblokir</p>}
               <p className="mt-1 text-[10px] text-[#8E8E93]">{formatDateTime(r.created_at)} · {r.created_by}</p>

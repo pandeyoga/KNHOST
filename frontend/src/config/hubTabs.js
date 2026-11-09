@@ -224,9 +224,10 @@ export const HUB_TABS = {
   ],
   // IA 2026-10 (D1) — RFID jadi satu hub di grup Gudang (dulu grup sendiri, 4 menu).
   "rfid-hub": [
-    { view: "cs-rfid-lokasi",    label: "Lokasi RFID",           roles: ["admin", "warehouse"] },
-    { view: "cs-rfid-tags",      label: "Tag RFID",              roles: ["admin", "warehouse"] },
-    { view: "cs-rfid-gate",      label: "Monitor Gerbang",       roles: ["admin", "warehouse"] },
+    // FIX-1 (K-B1-07 diputuskan) — manajer diberi menu RFID (baca; aksi dijaga izin server).
+    { view: "cs-rfid-lokasi",    label: "Lokasi RFID",           roles: ["admin", "warehouse", "manager"] },
+    { view: "cs-rfid-tags",      label: "Tag RFID",              roles: ["admin", "warehouse", "manager"] },
+    { view: "cs-rfid-gate",      label: "Monitor Gerbang",       roles: ["admin", "warehouse", "manager"] },
   ],
   // ── PENGATURAN — fase 3 · P2 (keputusan pemilik P16-K1, mock UAT24-F5 §P16.3). Dulu satu hub `settings-hub` ±20 tab
   // berseksi (pil membungkus 3–5 baris); kini grup sidebar "Pengaturan" berisi hub per kelompok. Editor lama TETAP

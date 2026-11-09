@@ -46,12 +46,15 @@ async def photo_check(request: Request, file: UploadFile = File(...)) -> Dict[st
 
 @router.get("/goods-receipts")
 async def list_grn(request: Request, status: str = "", partner_id: str = "", q: str = "",
-                   limit: int = 100) -> List[Dict[str, Any]]:
+                   limit: int = 100, entity_id: str = "") -> List[Dict[str, Any]]:
     actor = await require_permission(request, M, "view")
     ctx = await entity_ctx(request)
-    flt: Dict[str, Any] = {"entity_id": {"$in": ctx.allowed_entity_ids} if ctx.view_all else ctx.active_entity_id}
     # UAT 24 Okt (P9.5) — daftar GRN dulu membangun saringan sendiri tanpa lingkup lokasi petugas gudang.
+    # FIX-1 (K-B1-01/02, B1 UI-38) — kedatangan per GEDUNG dalam lokasi kerja (pagar keras + saringan tampilan),
+    # lintas PT yang ditugaskan; tiap baris menyebut gudang & PT. Detail/aksi tetap PT dokumen (strict).
+    from entity_scope import resolve_work_scope
     from services import location_scope
+    flt: Dict[str, Any] = await resolve_work_scope("goods_receipts", {}, ctx, entity_id or None)
     flt = location_scope.narrow("goods_receipts", flt, await location_scope.warehouse_ids_for(actor))
     if status:
         flt["status"] = {"$in": status.split(",")}
@@ -62,10 +65,17 @@ async def list_grn(request: Request, status: str = "", partner_id: str = "", q: 
         q = _re.escape(q.strip()[:100])   # KN-E23 — regex mentah → 500 / kueri lambat
         flt["$or"] = [{"number": {"$regex": q, "$options": "i"}}, {"dn.number": {"$regex": q, "$options": "i"}},
                       {"partner_name": {"$regex": q, "$options": "i"}}]
-    rows = await db.goods_receipts.find(flt, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 500))
+    rows = await db.goods_receipts.find(flt, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 500)))
+    from services.work_labels import entity_names
+    _ents = await entity_names(r.get("entity_id") for r in rows)
+    _whs = {w["id"]: w.get("name") or w.get("code") or "" async for w in db.warehouses.find(
+        {"id": {"$in": list({r.get("warehouse_id") for r in rows if r.get("warehouse_id")})}}, {"_id": 0, "id": 1, "name": 1, "code": 1})}
     return [{"id": r["id"], "number": r["number"], "status": r["status"], "version": r["version"],
              "partner_type": r["partner_type"], "partner_id": r["partner_id"], "partner_name": r["partner_name"],
              "warehouse_id": r["warehouse_id"], "dn_number": (r.get("dn") or {}).get("number", ""),
+             "warehouse_name": _whs.get(r.get("warehouse_id"), ""),
+             "entity_id": r.get("entity_id"), "work_entity_id": r.get("entity_id"),
+             "work_entity_name": _ents.get(r.get("entity_id"), ""),
              "lines": len(r.get("lines") or []), "pages": len(r.get("files") or []),
              "open_blockers": len(gc.open_blockers(r.get("discrepancies") or [])),
              "created_by": r.get("created_by"), "created_at": r.get("created_at"),

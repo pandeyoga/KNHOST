@@ -12,6 +12,7 @@ import DetailDrawer from "./components/DetailDrawer";
 import TourMenu from "./components/TourMenu";
 import OnboardingPanel from "./components/OnboardingPanel";
 import EntitySwitcher from "./components/EntitySwitcher";
+import LocationScopeBar, { useLocationChoice, showsLocationScope } from "./components/LocationScopeBar";   // FIX-1 (K-B1-01)
 import NotificationCenter from "./components/NotificationCenter";
 import { PAGE_META, breadcrumbFor, buildNavGroups, isComingSoonView, isHomeView, resolveActiveNavId, hubForView } from "./config/navigationConfig";
 import CommandPalette from "./components/CommandPalette";
@@ -154,6 +155,7 @@ function App() {
 
   // FASE E-8 · peran kustom · landing per peran — hooks/useSessionSync.js (diekstrak fase 3 · P1).
   const { rolesVersion } = useSessionSync({ token, user, setUser, setEntityContext, setEntities, setActiveView, setActiveNavId });
+  const loc = useLocationChoice();   // FIX-1 — cakupan lokasi kerja (header X-Location-Scope), dihapus saat logout
 
   // Switcher: cross-entity (admin/manager) lihat SEMUA entitas aktif; single-entity terkunci.
   const canSwitchEntity = entityContext
@@ -189,7 +191,7 @@ function App() {
     setActiveDetail, setLoading, setEntities, setNotifications, setUnreadCount,
     setNotifMeta,
     setSettings, setPaymentTerms, setEntityContext, setSelectedEntity,
-    setActiveNavId,
+    setActiveNavId, setLocationChoice: loc.setChoice,
   });
   const {
     login, logout, showMetricDetail, loadAll,
@@ -261,7 +263,7 @@ function App() {
   // MD → MobileMdApp · sales/Admin Sales → MobileSalesApp · gudang → MobileWarehouseApp · lainnya → MobileOpsApp.
   if (wantMobile && !responsiveWorkspace) {
     return (
-      <MobileAppSwitch user={user} token={token} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity}
+      <MobileAppSwitch user={user} token={token} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity} locationChoice={loc.choice} onLocationChange={loc.setChoice}
         notifications={notifications} unreadCount={unreadCount} notifProps={notifProps} onMarkAllRead={markAllNotificationsRead}
         onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications}
         onOpenFull={openFullView} onLogout={logout} onForceDesktop={goDesktop} onNavigate={handleNavSelect} wantsTanya={wantsTanya}
@@ -311,7 +313,7 @@ function App() {
           notice={notice}
           // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
           infoCta={{ label: "Tutup", onClick: () => setNotice("") }}
-          entitySwitcher={<EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />}
+          entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} />}</>}
           notificationCenter={
             <NotificationCenter
               notifications={notifications}
@@ -389,9 +391,9 @@ function App() {
 
           {/* U-01 — key={selectedEntity}: ganti badan usaha me-remount layar (refetch) */}
           {/* U-04 — ErrorBoundary: satu layar rusak tidak mematikan seluruh aplikasi */}
-          <ErrorBoundary resetKey={`${selectedEntity}:${activeView}`}>
+          <ErrorBoundary resetKey={`${selectedEntity}:${loc.choice}:${activeView}`}>
           <AppViewRouter
-            key={selectedEntity}
+            key={`${selectedEntity}|${loc.choice}`}
             hubInfo={hubInfo}
             activeView={activeView}
             onNavSelect={handleNavSelect}

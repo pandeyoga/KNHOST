@@ -35,9 +35,12 @@ class SitePatch(BaseModel):
 
 
 @router.get("/warehouse-sites")
-async def get_sites(request: Request) -> Dict[str, Any]:
+async def get_sites(request: Request, include_test: bool = False) -> Dict[str, Any]:
     await require_permission(request, "warehouse", "view")
-    return {"sites": await whp.list_sites()}
+    # FIX-1 (B1 K-B1-10) — site bertanda data uji (`is_test`, skrip penanda yang bisa dibalik) tidak ditawarkan di
+    # pemilih bawaan (penugasan lokasi akun, lokasi kirim PO, …); `include_test=true` untuk layar master.
+    sites = await whp.list_sites()
+    return {"sites": [s for s in sites if include_test or not s.get("is_test")]}
 
 
 @router.post("/warehouse-sites")

@@ -199,9 +199,13 @@ async def fulfillment_plan_decide(order_id: str, payload: FulfillmentPlanIn, req
 @router.get("/desks/so-tracker")
 async def desk_so_tracker(request: Request, desk: str = Query("me"), entity_id: str = Query("")) -> Dict[str, Any]:
     """SO aktif + tahap berikutnya + pemilik tahap; `can_act` bila peran meja ini pemiliknya."""
-    from dependencies import current_user
+    from dependencies import current_user, has_permission
     from services import so_tracker_service as sot
     actor = await current_user(request)
+    # FIX-1 (audit B1b UI-56) — pelacak SO memuat nilai Rupiah & pelanggan; dulu terbuka untuk SEMUA akun login (sopir
+    # dengan izin logistik saja melihat 89 SO beserta nilainya). Kini hanya pemegang `order.view`.
+    if actor.get("role") != "admin" and not await has_permission(actor, "order", "view"):
+        raise HTTPException(status_code=403, detail="Pelacak SO hanya untuk peran yang berizin melihat pesanan.")
     _, scope, _ = await _scope(request, entity_id or None)
     return await sot.so_tracker(sot.desk_for(desk), actor, scope)
 

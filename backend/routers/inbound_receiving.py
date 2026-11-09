@@ -7,7 +7,7 @@ from db import db
 # `scan-receive`: `qty_rolls = qty_rolls + _rolls_made`), bukan dari helper konversi,
 # jadi `dual_qty_service` tidak dipakai router ini (importnya dulu menggantung).
 from dependencies import require_permission, audit, has_permission
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_work_scope, assert_entity_access
 from core_utils import new_id, now_iso, safe_doc
 from schemas import POReceiveItem, GRCompletePayload
 from services.inbound_complete_service import complete_task, grade_or_400 as _grade_or_400
@@ -28,7 +28,7 @@ class EscalateIn(KNIn):
 
 
 @router.get("/inbound/tasks")
-async def list_inbound_tasks(request: Request, status: str = None) -> List[Dict[str, Any]]:
+async def list_inbound_tasks(request: Request, status: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
     """List all inbound receiving tasks, optionally filtered by status."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
@@ -36,7 +36,8 @@ async def list_inbound_tasks(request: Request, status: str = None) -> List[Dict[
     query = {"flow_type": "inbound", "source_type": "purchase_order"}
     if status:
         query["status"] = status
-    query = resolve_list_scope("wms_tasks", query, ctx)
+    # FIX-1 (K-B1-02, B2a FLW-IN-07) — tugas terima per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan.
+    query = await resolve_work_scope("wms_tasks", query, ctx, entity_id)
     
     tasks = await db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
     
@@ -48,7 +49,8 @@ async def list_inbound_tasks(request: Request, status: str = None) -> List[Dict[
         if task.get("po_id"):
             po = pos.get(task["po_id"], {})
             task["supplier_name"] = po.get("supplier_name", "")
-    
+    from services.work_labels import label_rows
+    await label_rows(tasks)
     return tasks
 
 

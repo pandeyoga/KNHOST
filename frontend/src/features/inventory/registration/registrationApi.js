@@ -4,6 +4,7 @@
  * merapikan masukan sebelum dikirim dan menyediakan label Bahasa Indonesia.
  */
 import axios, { API } from "../../../services/apiClient";
+import { rememberDocEntities } from "../../../services/docEntityRegistry";
 
 export const REG = `${API}/registration/sessions`;
 
@@ -60,7 +61,8 @@ export function recalledBin(sid) {
 }
 
 export const regApi = {
-  list: (params) => axios.get(REG, { params }).then((r) => r.data || []),
+  // FIX-1 (K-B1-02) — sesi lintas PT di gedung lokasi kerja: aksi sesi dikirim atas nama PT sesi.
+  list: (params) => axios.get(REG, { params }).then((r) => rememberDocEntities(r.data || [])),
   create: (body) => axios.post(REG, body).then((r) => r.data),
   get: (sid) => axios.get(`${REG}/${sid}`).then((r) => r.data),
   start: (sid) => axios.post(`${REG}/${sid}/start`).then((r) => r.data),

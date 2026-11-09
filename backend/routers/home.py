@@ -88,8 +88,13 @@ async def home_warehouse(request: Request,
     adalah penugasan badan usaha, bukan nama peran.
     """
     eid = await _own_entity(request, entity_id, allow_combined=True)
-    return await home_service.warehouse_home(eid, await _allowed(request),
-                                             await current_user(request))
+    # FIX-1 (B1 UI-04) — papan ACC gudang ikut cakupan lokasi kerja yang sama dengan daftar (bilah cakupan).
+    from services import location_scope
+    view = await location_scope.view_for(await entity_ctx(request))
+    out = await home_service.warehouse_home(eid, await _allowed(request),
+                                            await current_user(request), view.get("ids"))
+    out["location_view"] = {k: view.get(k) for k in ("mode", "label")}
+    return out
 
 
 @router.get("/finance")

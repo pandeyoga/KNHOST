@@ -121,11 +121,16 @@ def decorate(warehouse: Dict[str, Any], names: Optional[Dict[str, str]] = None,
 
 
 async def list_for_entity(entity_id: Optional[str], *, include_unusable: bool = False,
-                          only_active: bool = False) -> List[Dict[str, Any]]:
-    """Daftar gudang untuk satu badan usaha (sudah didekorasi & terurut)."""
+                          only_active: bool = False, include_test: bool = False) -> List[Dict[str, Any]]:
+    """Daftar gudang untuk satu badan usaha (sudah didekorasi & terurut).
+
+    FIX-1 (B1 K-B1-10, UI-05) — gudang bertanda data uji (`is_test`, dipasang skrip penanda yang bisa dibalik)
+    tidak ditawarkan di pemilih bawaan; layar master (`include_test=True`) tetap melihatnya beserta tandanya."""
     query: Dict[str, Any] = {} if include_unusable else usable_query(entity_id)
     if only_active:
         query = {**query, "active": {"$ne": False}}
+    if not include_test:
+        query = {**query, "is_test": {"$ne": True}}
     rows = await db.warehouses.find(query, {"_id": 0}).to_list(500)
     names = await entity_name_map()
     out = [decorate(safe_doc(w), names, entity_id) for w in rows if w]

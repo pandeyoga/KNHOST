@@ -21,10 +21,13 @@ export const removePending = (key) => write(Q_KEY, read(Q_KEY).filter((it) => it
 
 /** KN-D26 — konteks badan usaha SAAT DIREKAM ikut disimpan & dipakai saat sinkron (bukan yang aktif nanti). */
 const entityNow = () => axios.defaults.headers.common["X-Entity-Id"] || "";
+/** FIX-1 (audit B1 UI-39) — antrean milik PENGGUNA perekamnya: di HP bersama, pengguna berikutnya tidak boleh
+ *  mengirim pindaian orang sebelumnya atas namanya (token dia). Butir pengguna lain menunggu pemiliknya login lagi. */
+const userNow = () => { try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.id || ""; } catch (_) { return ""; } };
 
 export function enqueue(item) {
   const q = read(Q_KEY);
-  q.push({ ...item, entity_id: item.entity_id ?? entityNow(), queued_at: new Date().toISOString() });
+  q.push({ ...item, entity_id: item.entity_id ?? entityNow(), user_id: item.user_id ?? userNow(), queued_at: new Date().toISOString() });
   write(Q_KEY, q);
   return item.key;
 }
@@ -42,7 +45,11 @@ export async function syncQueue() {
   syncing = true;
   let sent = 0;
   try {
+    const me = userNow();
     let q = read(Q_KEY);
+    const others = q.filter((it) => it.user_id && it.user_id !== me);   // FIX-1 — milik pengguna lain: tunggu
+    q = q.filter((it) => !(it.user_id && it.user_id !== me));
+    const keep = (rest) => write(Q_KEY, [...others, ...rest]);
     while (q.length) {
       const it = q[0];
       try {
@@ -51,7 +58,7 @@ export async function syncQueue() {
         if (!it.entity_id) {
           pushResult({ ok: false, label: it.label, key: it.key, status: 0,
                        detail: "Aksi direkam tanpa konteks badan usaha — tidak dikirim. Ulangi aksi ini setelah memilih badan usaha." });
-          q = q.slice(1); write(Q_KEY, q);
+          q = q.slice(1); keep(q);
           continue;
         }
         const res = await axios({ method: it.method || "post", url: it.url, data: it.data, params: it.params,
@@ -62,7 +69,7 @@ export async function syncQueue() {
         const d = e.response?.data?.detail;
         pushResult({ ok: false, label: it.label, key: it.key, status: e.response?.status, detail: (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || "Ditolak server." });
       }
-      q = q.slice(1); write(Q_KEY, q); sent += 1;
+      q = q.slice(1); keep(q); sent += 1;
     }
   } finally { syncing = false; }
   return { sent };
