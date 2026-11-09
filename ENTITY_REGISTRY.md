@@ -3238,3 +3238,22 @@ admin ke peran dan/atau PT. Dipulihkan saat daftar dibuka (bawaan pribadi → ba
 
 ⚠️ **JANGAN BUAT** koleksi preferensi daftar lain (`list_presets`, `user_filters`, `view_prefs`) — perluas `LISTS`.
 ⚠️ Preset navigasi (`useViewPreset`, alias menu) BUKAN tampilan tersimpan — itu sekali-jalan dari tautan.
+
+### material_reservations — Cadangan Bahan Makloon  [FIX-9 IMPLEMENTED — kunci per roll, 10 Nov 2026]
+Cadangan bahan (produk × PT) untuk PR/MKO makloon (`services/material_reservation_service.py`). Sejak FIX-9 panjangnya
+**dikunci di roll nyata** (`services/makloon_roll_lock.py`) — roll = SSOT, cadangan hanya cermin.
+* Field inti: `id` (unik — dulu bisa ganda saat replan PR, bentrok `uq_id` FIX-5) · `product_id` · `owner_entity_id` ·
+  `ref_type` (`purchase_requisition` | `makloon_order`) · `ref_id` · `pr_id`/`pr_number` · `mko_id`/`mko_number` ·
+  `required_qty` · `qty` · `shortage_qty` · `status` (`active` | `consumed` | `released`) · `history[]`.
+* Field FIX-9: `source_warehouse_id` (gudang sumber MKO `from_warehouse_id` / PR `warehouse_id`; kosong → gudang
+  ber-panjang-bebas terbesar) · `locked_qty` · `locks[] {roll_id, roll_no, warehouse_id, lot, qty, unit, status}` —
+  dibangun ulang dari roll sesudah setiap operasi. `qty − locked_qty` = **cadangan belum terkunci** (stok kurang); hanya
+  bagian ini yang masih dikurangi `stock_figures.allocate_makloon`.
+* Kunci di roll: `inventory_rolls.length_reservations[] {id: "rsv_…", qty, status: "reserved", ref: {type: "makloon",
+  id: <id cadangan>, number, mko_id, mko_number, pr_id, pr_number, entity_id}}` — skema reservasi panjang WM-02 yang
+  sama dengan potong SO (bukan skema kedua). Saldo: `inventory_balances.makloon_locked_qty` (bagian dari `reserved_qty`).
+* Mutex per bahan × PT: `material_reservation_locks` (`_id = "rl:<id>"`, dihapus sesudah operasi).
+* Migrasi cadangan lama: `scripts/fix_data_2026_11_10_fix9_kunci_makloon.py` (dry-run bawaan, `--undo`, pagar produksi).
+
+⚠️ **JANGAN** mengunci cadangan makloon di field roll lain (`reserved_ref`, `makloon_hold`, …) — pakai
+`makloon_roll_lock` (CAS per roll + cermin). Pengurang angka stok tetap satu: `stock_figures`.
