@@ -1,6 +1,7 @@
 # Audit & perbaikan WMS-RFID — ringkasan (9 Nov 2026)
 
 - Pelaksana: Claude Code (koordinator) + agen paralel di worktree terpisah. Status: **implemented_pending_review**.
+- `main` lokal `f1ac37c` (belum di-push).
 - Permintaan pemilik (9 Nov): audit menyeluruh fungsi WMS & RFID — semua fitur, menu, UI/UX & elemen UI; riset WMS
   profesional; SSOT, skema & duplikasi; alur & niat implementasi; input/output & form; pemicu status/efek; standar
   elemen (form, tombol, cari, saring, ekspor Excel); performa, data besar, kegagalan perangkat/koneksi. Pemilik AFK dan
@@ -54,22 +55,41 @@ ditegakkan server; index `id` tidak ada di hampir semua koleksi.
 | FIX-3a | Tabel transisi daftar-izin + CAS tugas masuk; kait pembekuan; bin dari struktur (`BinSelect`); validator alasan `ReasonStr` (huruf, server); pendaftaran awal dua langkah (Finance); form HP lengkap | 28 | [FIX-3a](hasil/FIX-3a-ALUR-MASUK.md) |
 | FIX-3b | Tabel transisi keluar (`outbound_task_state`) + CAS; ambil wajib pindai roll; susut potong dijurnal; batal di jalan → `returning`; simulator terpagar; EPC tak dipakai ulang | 26 | [FIX-3b](hasil/FIX-3b-ALUR-KELUAR.md) |
 | FIX-4 | Standar UI Gudang v1 tahap 1 ([`KN_37`](../../KN_37_STANDAR_UI_GUDANG.md)): token huruf/warna AA (58/58 pasangan lolos), **Unduh Excel/CSV** di 31/37 daftar WMS-RFID lewat Pusat Export, HP gudang ≥ 14/16 px & ≥ 48 px, guardrail ratchet `verify_ui_standard` + `verify_ui_contrast` | 15 + Jest 14 | [FIX-4](hasil/FIX-4-STANDAR-UI.md) |
-| FIX-5 | Performa WMS: index, N+1 terima transfer/putaway, halaman server, layar roll besar | lihat laporan | [FIX-5](hasil/FIX-5-PERFORMA-WMS.md) |
+| FIX-5 | Performa WMS: index `uq_id` di 40 koleksi + index rujukan roll; terima transfer & tiba PA tanpa N+1 (gate IN transfer 2.000 roll 148 → 7,6–10,5 dtk; trip PA 120 roll 82 → 0,36 dtk; start backend 72 → 23 dtk pada 346.700 roll); `limit` dibatasi + total sungguhan; tampilan **Kelompok** roll (Produk › Lot › Lokasi › Roll); Lokasi Rak dirender bertahap; data awal dimuat 1× (dulu 3×); hasil DB sebelum/sesudah identik | 31 + Jest 4 | [FIX-5](hasil/FIX-5-PERFORMA-WMS.md) |
 
 ## 3. Verifikasi gabungan (koordinator)
-- Kode `main` lengkap (F, G, H, FIX-1/2/3a/3b) vs dasar `cb9f924` (audit + F + G, sebelum perbaikan), salinan DB acuan
-  sama, server bersih per putaran (dipastikan lewat rute baru), **83 berkas uji lama** WMS-RFID-stok: daftar gagal/error
-  **identik** (118 / 474 / 21 di keduanya). Uji lama yang perilakunya sengaja diubah disesuaikan & dicatat
-  (commit `252303e`: alasan K-14, cadangan makloon, lokasi kerja, loop bersama, urutan roll). Satu perbaikan kode dari
-  verifikasi: alasan finalisasi opname dicek sesudah izin/cakupan.
-- Uji baru per berkas (DB dipulihkan tiap berkas): FIX-1 30/30, FIX-2 16/16, FIX-3a 28/28, FIX-3b 26/26, PREP-A…G,
-  integrasi pembekuan, worker gate H 7/7 — **lulus semua**; `test_iter117/118` 18/18 & 8/8; skrip gate V2 54/54 & 36/36.
-  **Merah:** 1 dari 3 uji batas kinerja H (transaksi latar terima transfer 2.000 roll 148 dtk > target 120 dtk) →
-  sasaran FIX-5.
-- Peramban (stack `kn-uji`, akun petugas Soreang & admin): bilah "Lokasi: Soreang"; daftar Barang Keluar hanya
-  gedung Soreang, berlabel PT + chip "Pesanan (SO) / Sample"; gate & riwayat ikut lokasi; tab Operasional Gate &
-  Antrean Printer; "Belum Ber-tag (500 dari 2.900)"; papan stok dua angka berlabel; logout → `/auth/me` 401 & PT tidak
-  terbawa; HP 360 & 390 px tanpa geser mendatar, tombol ≥ 44 px; tombol Unduh Excel/CSV di daftar desktop.
+- **Final** — `main` lengkap (F, G, H, FIX-1…5 + penyesuaian integrasi) vs dasar `cb9f924` (audit + F + G, sebelum
+  perbaikan), salinan DB acuan sama, server bersih tiap putaran (dipastikan lewat rute baru), **83 berkas uji lama**
+  WMS-RFID-stok: daftar gagal/error **identik** (118 / 474 / 21 di keduanya — merah lama data acuan/fixture).
+- Uji baru per berkas (DB dipulihkan tiap berkas) — **semua lulus**: FIX-1 30, FIX-2 16, FIX-3a 28, FIX-3b 26, FIX-4 15,
+  FIX-5 31, PREP-A 10, B 3, C 15, D1 20, D2 11, F 22 + connector e2e 5, G 11, integrasi pembekuan 4, H worker 7,
+  **H batas kinerja 3/3** (dulu 1 merah: transaksi latar transfer 2.000 roll), katalog akses 6; `test_iter117/118`
+  18/18 & 8/8; skrip gate V2 54/54 & 36/36.
+- **Jest lengkap**: 603/604 → satu-satunya merah (`serverAccessReach`: manajer kehilangan menu Pengiriman sejak FIX-1)
+  diperbaiki dengan izin lihat logistik untuk manajer → suite jangkauan 45/45. ESLint 0 error di setiap paket.
+- **Guardrail**: tidak ada yang naik; baru: `verify_scope_guard` (FIX-1), `verify_ui_standard` + `verify_ui_contrast`
+  (FIX-4) — hijau (4.316 & 58 cek); `verify_access_catalog_nav` 0 temuan.
+- Penyesuaian integrasi (commit `252303e`, `59bdc68`, `7268093`, `f2fe2df`, `f1ac37c`): alasan finalisasi opname dicek
+  sesudah izin/cakupan; uji lama yang perilakunya sengaja diubah diselaraskan (alasan K-14, cadangan makloon, lokasi
+  kerja, loop bersama, urutan roll); fixture izin dibangkitkan ulang; kolom nilai "Riwayat Nilai Roll" ditandai biaya
+  (Admin Gudang tidak bisa mengunduh HPP); ukuran HP terukur di peramban; manajer izin lihat logistik.
+- **Peramban** (stack `kn-uji`, akun petugas Soreang & admin): bilah "Lokasi: Soreang"; Barang Keluar hanya gedung
+  Soreang, berlabel PT + chip "Pesanan (SO) / Sample"; gate & riwayat ikut lokasi; tab Operasional Gate & Antrean
+  Printer; "Belum Ber-tag (500 dari 2.900)"; papan stok dua angka berlabel; logout → `/auth/me` 401 & PT tidak terbawa;
+  HP 360 & 390 px tanpa geser mendatar, tombol ≥ 44 px, huruf ≥ 14 px (kecuali angka lencana notifikasi); tombol
+  Unduh (Excel/CSV) di daftar desktop. Tangkapan layar tidak tersedia (panel peramban tersembunyi) — bukti lewat DOM.
+
+### Kejadian selama pengerjaan (apa adanya)
+- Docker Desktop macet/restart beberapa kali (memori VM 7,6 GB dipakai banyak stack + proyek lain); disk C: sempat
+  penuh (±18.20–18.55). Putaran uji yang terganggu dibuang & diulang dari salinan DB bersih. Stack `kn-uji`/`kn-dev-mongo`
+  dinyalakan ulang dan diberi kebijakan restart `unless-stopped`; kontainer proyek lain yang ikut mati dinyalakan lagi
+  sejauh bisa (`uiv2-*`, `ujitajam-caddy`, `ujisebelum-caddy` tidak bisa start — berkas mount sesi lain sudah hilang).
+- Ruang disk dipulihkan dengan menghapus salinan kode sementara milik sesi ini dan 23 worktree agen yang sudah
+  tergabung (branch tetap ada) → bebas 9,4 GB.
+- `scripts/verify_state_machine.py` sempat terpanggil sekali oleh agen FIX-5 dalam putaran guardrail di host; langsung
+  gagal impor (pymongo tidak ada) tanpa menyentuh DB.
+- Verifikasi gabungan pertama tidak sah (image kontainer tanpa `pkill` → uji berjalan melawan server lama); diulang
+  dengan restart kontainer & pemeriksaan rute — angka di atas berasal dari putaran yang sah.
 
 ## 4. Yang perlu dilakukan pemilik / admin
 1. **Push** ke GitHub (ditolak pemeriksa izin otomatis — balas "push").
