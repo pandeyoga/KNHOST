@@ -12,37 +12,26 @@ Langkah (idempoten):
 Tidak menyentuh: jurnal/nilai roll, data UAT "test" (SORD-261023-0003).
 Jejak: satu dokumen `migrations` (`id = fix_data_2026_11_10_fix6_retur_masuk_stok`).
 
-DB yang diizinkan: `kn_test_trial` / `test_database` (uji). DB lain (mis. produksi) hanya dengan `--allow-db <nama>`
-yang sama persis — keputusan pemilik (koordinator: "Menjalankan skrip perbaikan data ke DB bersama/produksi" = pemilik).
+PAGAR DB (integrasi: pagar bersama FIX-7 `services/data_fix_guard.py`): DB uji `kn_test_trial` / `test_database`
+diterima; DB produksi `kainnusantara` WAJIB `--production` + bukti backup < 24 jam (juga untuk dry-run); DB lain ditolak.
+Menjalankan ke DB bersama/produksi = keputusan pemilik. Panduan produksi: `docs/audit/2026-11-09-wms-rfid/hasil/
+PANDUAN-SKRIP-DATA-PRODUKSI.md`. Skrip ini TIDAK punya `--undo` (langkah 1 memakai layanan pindai; pembaliknya = tolak
+retur di aplikasi, yang membalik karantina retur).
 
 Pakai (di dalam kontainer backend, repo = /app):
     python /app/scripts/fix_data_2026_11_10_fix6_retur_masuk_stok.py --db kn_test_trial            # dry-run
     python /app/scripts/fix_data_2026_11_10_fix6_retur_masuk_stok.py --db kn_test_trial --apply
+    python /app/scripts/fix_data_2026_11_10_fix6_retur_masuk_stok.py --db kainnusantara --production --backup-file kainnusantara-YYYY-MM-DD_HHMM.archive.gz  # dry-run produksi
 """
-import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
-ALLOWED_DB = {"kn_test_trial", "test_database"}
-
-
-def _args() -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--db", required=True, help="nama DB")
-    ap.add_argument("--allow-db", default="", help="izin eksplisit untuk DB di luar daftar uji (nama sama persis)")
-    ap.add_argument("--apply", action="store_true", help="terapkan (tanpa ini = dry-run)")
-    return ap.parse_args()
-
-
-ARGS = _args()
-if ARGS.db not in ALLOWED_DB and ARGS.allow_db != ARGS.db:
-    print(f"DITOLAK: --db {ARGS.db} bukan DB uji ({', '.join(sorted(ALLOWED_DB))}); butuh --allow-db {ARGS.db}.")
-    sys.exit(2)
-os.environ["DB_NAME"] = ARGS.db          # db.py membaca DB_NAME saat di-import
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND))
+from services import data_fix_guard as G  # noqa: E402
+
+ARGS = G.parse_and_guard(G.build_parser(__doc__.splitlines()[0], undo=False), "fix_data_2026_11_10_fix6_retur_masuk_stok")
 
 from core_utils import now_iso  # noqa: E402
 from db import db  # noqa: E402
@@ -88,8 +77,7 @@ async def step_qc_return_report() -> dict:
 
 
 async def main() -> None:
-    mode = "APPLY" if ARGS.apply else "DRY-RUN"
-    print(f"[{FLAG}] DB={ARGS.db} mode={mode}")
+    G.banner(ARGS)
     r1 = await step_return_intake(ARGS.apply)
     print(f"  1. return_intake_backfill: {r1['returns']} retur · {r1['rolls']} roll"
           + (f" → {len(r1['applied_rolls'])} roll masuk karantina retur" if ARGS.apply else "") + f"  contoh={r1['sample']}")

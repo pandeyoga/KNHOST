@@ -9,6 +9,8 @@
 | `backend/scripts/migrate_fix2_inspection_hold_status.py` | FIX-2 (B3a SSOT-3) | roll yang ditahan inspeksi tetapi masih `available`/`quarantine` → `blocked` (+ saldo dibangun ulang) |
 | `scripts/fix_data_2026_11_09_fix3a_alur_masuk.py` | FIX-3a | transfer 0 roll diterima → `returned`; roll `hold` transfer → `blocked`; "Roll ID" teks bebas di `rfid_tag_id` → `supplier_roll_no`; tag roll habis-opname → `retired`; eskalasi atas barang terposting → status asal; + laporan PO diterima > 1,5× |
 | `scripts/fix_data_2026_11_09_fix3b_alur_keluar.py` | FIX-3b | mode simulasi RFID PT nyata → mati; roll di SJ aktif yang `available` → `in_transit_sales`/`delivered`; reservasi milik SO mati → `available` (+ mutasi `release_reservation`); roll SJ ber-POD → `delivered`; eskalasi tugas terminal → `cancelled`; penanda transfer basi; roll habis "hidup lagi" → `consumed`; SO sampel berbayar batal → `refund_pending`; + laporan EPC ganda |
+| `scripts/fix_data_2026_11_10_fix6_retur_masuk_stok.py` | FIX-6 (keputusan pemilik 10 Nov, D5/D2) | retur penjualan terbuka yang rollnya sudah dipindai tetapi masih `delivered` → karantina retur (nilai 0, jurnal tetap saat settle) lewat layanan pindai; + LAPORAN retur beli tolak-QC tanpa pilihan "ganti barang / potong tagihan". **Tanpa `--undo`** (pembalik = tolak retur di aplikasi). Pagar disamakan dengan modul ini saat integrasi (dulu `--allow-db`) |
+| `scripts/fix_data_2026_11_10_fix9_kunci_makloon.py` | FIX-9 (B3a SSOT-4) | cadangan makloon aktif dikunci ke roll nyata (FIFO, gudang sumber MKO/PR); kunci yatim dilepas; cermin `locked_qty` dibangun ulang. Angka "Tersedia" tidak berubah; roll terkunci tidak bisa dipilih untuk SO/POS/transfer. Punya `--undo`; pagar setara (salinan aturan modul ini) |
 
 Semua skrip **tidak** menyentuh jurnal/GL, nilai roll, atau data UAT "test" (`SORD-261023-0003`).
 
@@ -131,6 +133,8 @@ $DC exec -T backend python /app/scripts/fix_data_2026_11_09_tandai_data_uji.py  
 $DC exec -T backend python /app/scripts/fix_data_2026_11_09_gedung_bersama.py    --db kainnusantara --production --backup-file "$(basename "$B")" [--apply] [--undo]
 $DC exec -T backend python /app/backend/scripts/migrate_fix2_inspection_hold_status.py --db kainnusantara --production --backup-file "$(basename "$B")" [--apply] [--undo]
 $DC exec -T backend python /app/scripts/fix_data_2026_11_09_fix3a_alur_masuk.py  --db kainnusantara --production --backup-file "$(basename "$B")" [--apply] [--undo]
+$DC exec -T backend python /app/scripts/fix_data_2026_11_10_fix6_retur_masuk_stok.py --db kainnusantara --production --backup-file "$(basename "$B")" [--apply]
+$DC exec -T backend python /app/scripts/fix_data_2026_11_10_fix9_kunci_makloon.py   --db kainnusantara --production --backup-file "$(basename "$B")" [--apply] [--undo]
 ```
 
 ### Alternatif yang lebih ketat: kontainer sekali-pakai (backup diperiksa isinya)
@@ -155,6 +159,10 @@ $DC run --rm --no-deps \
 4. **`fix3a_alur_masuk`** — data alur masuk (transfer, tahan, tag, eskalasi masuk).
 5. **`fix3b_alur_keluar`** — data alur keluar (SJ, reservasi SO, POD, eskalasi ambil, sampel) + **mematikan mode simulasi
    RFID** untuk PT nyata — wajib sebelum reader gate sungguhan dipasang.
+6. **`fix6_retur_masuk_stok`** — sesudah kode FIX-6 ter-deploy. Kemungkinan 0 roll di produksi; bagian laporan (retur
+   beli tolak-QC tanpa pilihan penyelesaian) diteruskan ke bagian pembelian untuk diputuskan ulang bila perlu.
+7. **`fix9_kunci_makloon`** — sesudah kode FIX-9 ter-deploy. Mengunci cadangan makloon yang sudah ada ke roll; jalankan
+   di jam sepi (roll yang terkunci langsung hilang dari pemilih roll SO/POS).
 
 Setiap skrip berdiri sendiri dan idempoten; urutan di atas meminimalkan langkah yang saling memengaruhi. Catatan fix3b:
 dry-run menghitung tiap langkah atas data sekarang, sedangkan saat `--apply` langkah berikut melihat hasil langkah
