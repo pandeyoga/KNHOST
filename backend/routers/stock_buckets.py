@@ -52,7 +52,8 @@ async def pending_so(request: Request, owner_entity_id: Optional[str] = Query(No
 @router.get("/stock/atp")
 async def stock_atp(request: Request, product_id: str = Query(...),
                     owner_entity_id: Optional[str] = Query(None),
-                    horizon_days: int = Query(svc.DEFAULT_ATP_HORIZON_DAYS)) -> Dict[str, Any]:
+                    horizon_days: Optional[int] = Query(None, description="kosong = setelan stock.atp_horizon_days")
+                    ) -> Dict[str, Any]:
     """F2b — Detail ATP future-aware satu produk: available + incoming(horizon) − pending."""
     await require_permission(request, "inventory", "view")
     ctx = await entity_ctx(request)

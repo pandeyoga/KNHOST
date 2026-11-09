@@ -573,7 +573,7 @@ def _match_supply(need: float, incoming: List[Dict[str, Any]]) -> Dict[str, Any]
 
 async def atp_detail(scope: Dict[str, Any], product_id: str,
                      owner_entity_id: Optional[str] = None,
-                     horizon_days: int = DEFAULT_ATP_HORIZON_DAYS) -> Dict[str, Any]:
+                     horizon_days: Optional[int] = None) -> Dict[str, Any]:
     """Detail ATP future-aware untuk satu produk: available + incoming(horizon) −
     pending demand. Menyediakan breakdown supply (PO+ETA) & demand (Pending SO)."""
     q = dict(scope or {})
