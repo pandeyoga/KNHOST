@@ -149,8 +149,11 @@ export default function StockFigures({
         <div data-testid={testId} className={`grid gap-0.5 rounded-lg border border-[#E5E5EA] bg-white px-2.5 py-1.5 ${className}`}>{body}</div>
       )}
       {open && (
-        <StockFiguresDetail productIds={ids} productLabels={productLabels} siteId={siteId} big={big}
-          onClose={() => setOpen(false)} testId={`${testId}-detail`} />
+        // Klik di dalam pop-up tidak boleh merambat ke baris/kartu induk (mis. baris papan stok yang bisa dibuka-tutup).
+        <span onClick={(e) => e.stopPropagation()} role="presentation">
+          <StockFiguresDetail productIds={ids} productLabels={productLabels} siteId={siteId} big={big}
+            onClose={() => setOpen(false)} testId={`${testId}-detail`} />
+        </span>
       )}
     </>
   );

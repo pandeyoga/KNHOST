@@ -218,3 +218,16 @@ test("K-07: Saldo Antar-PT — posisi bersih per pasangan PT di atas rincian bru
   expect(row.textContent).toContain("700");
   expect(host.textContent).toContain("Rincian per arah dagang (bruto)");
 });
+
+test("FIX-2 (B3a STK-2): papan 'Stok Perlu Reorder' membaca `available` dari server, berlabel Tersedia (bukan 'Stok fisik 0')", async () => {
+  routeGet({
+    "/home/admin": {
+      sales: {}, ar: {}, top_overdue: [], approvals: { items: [], total: 0 }, approvals_pending: 0, waiting_boards: [],
+      leaderboard_top: [], low_stock: { count: 0, items: [], threshold: 100 },
+      reorder: { count: 1, items: [{ product_id: "p1", product_name: "Batik Parang", sku: "BTK-1", available: 42.5, reorder_point: 50 }] },
+    },
+  });
+  const { host } = await mount(<AdminHome token="t" selectedEntity="ent_ksc" onNavigate={jest.fn()} />);
+  const cell = q(host, "admin-home-stock-available-p1");
+  expect(cell.textContent).toMatch(/^Tersedia 42,5$/);   // dulu: "Stok fisik 0" (field on_hand tak dikirim server)
+});

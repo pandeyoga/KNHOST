@@ -49,7 +49,8 @@ STATUS_GROUPS: List[Dict[str, Any]] = [
      "hint": "Milik sendiri, fisik sedang di mitra makloon."},
     {"key": "in_transit", "label": "Dalam Perjalanan",
      "buckets": ("in_transit_transfer_qty", "in_transit_intercompany_qty", "in_transit_inbound_qty"),
-     "hint": "Transfer antar gudang (dicatat di gudang tujuan), antar-PT, dan barang masuk yang sudah jadi roll."},
+     "hint": "Transfer antar gudang (angka di gudang ASAL; gudang tujuan tampil di 'Akan datang'), antar-PT, dan "
+             "barang masuk yang sudah jadi roll."},
     {"key": "in_transit_sales", "label": "Dikirim ke pelanggan", "buckets": ("in_transit_sales_qty",),
      "hint": "Sudah keluar gudang menuju pelanggan, belum diterima."},
 ]
@@ -66,6 +67,7 @@ DEFINITIONS: Dict[str, str] = {
     "atp": "ATP = Tersedia + barang masuk dalam horizon (PO, roll menuju gudang, antar-PT dikonfirmasi) − sisa "
            "pesanan yang menunggu (backorder). Antar-PT tidak dihitung di angka GLOBAL (sudah ada di stok PT penjual).",
 }
+
 
 def is_test_doc(doc: Optional[Dict[str, Any]]) -> bool:
     """Data uji yang DITANDAI (`is_test: true`). Keputusan implementer FIX-2: TIDAK menebak dari nama ("TEST_WH …") —
