@@ -341,7 +341,10 @@ MORE += [
       search_fields=["number", "counterpart_number", "buyer_entity_name", "seller_entity_name",
                      "source_sales_return_number"]),
     S("roll_cost_history", "Riwayat Nilai Roll", "Gudang", "roll_cost_history", ("inventory", "view"),
-      "roll_id:ID roll|reason:Sebab|old_unit_cost:Nilai lama:m|new_unit_cost:Nilai baru:m|ref_number:Dokumen|actor:Oleh",
+      "roll_id:ID roll|reason:Sebab|ref_number:Dokumen|actor:Oleh",
+      # Integrasi FIX-4 (temuan reviewer) — nilai satuan roll = HPP: kolom ber-`cost` agar diredaksi untuk peran tanpa
+      # hak lihat biaya (Admin Gudang dulu bisa mengunduh nilai roll lewat dataset ini).
+      extra=[C("old_unit_cost", "Nilai lama", "money", cost=True), C("new_unit_cost", "Nilai baru", "money", cost=True)],
       joins=[], grain="1 baris = 1 perubahan nilai satuan roll"),
     # G5-52 — modul izin `store_credit` tidak ada; API kredit toko memakai `ar_receipt.view`.
     S("store_credit_ledger", "Mutasi Kredit Toko Pelanggan", "Keuangan", "store_credit_ledger", ("ar_receipt", "view"),
