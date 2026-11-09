@@ -21,5 +21,5 @@ export default function LazyMount({ children, eager = false, minHeight = 76, tes
     return () => io.disconnect();
   }, [shown]);
   if (shown) return children;
-  return <div ref={ref} style={{ minHeight }} className="rounded-lg bg-[#FAFAFB]" aria-hidden="true" data-testid={testId} />;
+  return <div ref={ref} style={{ minHeight }} className="rounded-lg bg-kn-neutral-soft" aria-hidden="true" data-testid={testId} />;
 }

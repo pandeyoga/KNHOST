@@ -411,12 +411,10 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             <KNSelect data-testid="roll-check-filter" className="field !h-8 !text-[11.5px]"
               value={checkFilter} onValueChange={setCheckFilter} options={ROLL_CHECK_FILTERS} placeholder="Semua status cek" />
           </div>
-          <div className="ml-auto flex items-center gap-1 rounded-lg border border-[#E5E5EA] p-0.5 bg-white" role="group"
-            aria-label="Tampilan roll" data-testid="roll-view-toggle">
+          <div className="ml-auto flex items-center gap-1" role="group" aria-label="Tampilan roll" data-testid="roll-view-toggle">
             {[["group", "Kelompok"], ["list", "Daftar"]].map(([k, label]) => (
               <button key={k} type="button" onClick={() => chooseRollView(k)} data-testid={`roll-view-${k}`}
-                aria-pressed={rollView === k}
-                className={`px-2.5 py-1 rounded-md text-[12px] font-medium ${rollView === k ? "bg-[#007AFF] text-white" : "text-[#6B6B73]"}`}>
+                aria-pressed={rollView === k} className={rollView === k ? "primary-button btn-sm" : "secondary-button btn-sm"}>
                 {label}
               </button>
             ))}

@@ -19,13 +19,13 @@ export default function ListLimitNote({ meta, noun = "baris", onMore, loading = 
   const end = (meta.skip || 0) + (meta.shown || 0);
   return (
     <div data-testid={testId} role="status"
-      className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[#F5D9A8] bg-[#FFF8EB] px-3 py-2 text-[12px] text-[#7A4A00]">
+      className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-kn-divider bg-kn-warning-soft px-3 py-2 text-fs-12 text-kn-warning-text">
       <span>
         Menampilkan {noun} {formatQty(start)}–{formatQty(end)} dari <b>{formatQty(meta.total)}</b>
         {hint ? ` — ${hint}` : " — persempit saringan atau muat berikutnya."}
       </span>
       {onMore && (
-        <button type="button" className="secondary-button ml-auto" disabled={loading} onClick={onMore}
+        <button type="button" className="secondary-button btn-sm ml-auto" disabled={loading} onClick={onMore}
           data-testid={`${testId}-more`}>
           {loading ? "Memuat…" : "Muat berikutnya"}
         </button>

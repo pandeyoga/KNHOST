@@ -1,8 +1,9 @@
 # FIX-5 — Performa WMS (index, N+1, halaman server, layar roll besar)
 
-- Tanggal: 9 Nov 2026 (WIB, ±16.30–19.30) · Pelaksana: Claude Code (paket perbaikan FIX-5) · Branch worktree
+- Tanggal: 9 Nov 2026 (WIB, ±17.00–19.10) · Pelaksana: Claude Code (paket perbaikan FIX-5) · Branch worktree
   `worktree-agent-aaa7d039aa12cbeac`, dasar `main` `dc2bc4c` (gelombang 1–3 + printer F + C72 G + PREP-H + FIX-1/2/3a/3b +
-  keputusan koordinator). Commit: `027a1fc` (server), `57efd2f` (layar), commit laporan ini.
+  keputusan koordinator). Commit: `027a1fc` (server), `57efd2f` (layar), `294cceb` (laporan), `a645522` (gabung `main`
+  `6d76afd` = FIX-4), penyesuaian standar UI + laporan akhir.
 - Bahan: `docs/rfid/hasil/PREP-H-GATE-PERFORMA.md` §3.5/§9 (terima transfer & tiba PA ±18 kueri/roll; `inventory_movements.id`
   tanpa index), B3a SCH-9 (index `id` tidak ada di 131/132 koleksi), B3b LST-01/03/07 (daftar tanpa halaman, `limit` tanpa
   batas, N+1 daftar), B1b UI-46 (Lokasi Rak 12–21 dtk, 1.509 tombol) & UI-51 (`loadAll` 3×), B4 §3.8 (penampil ribuan roll),
@@ -16,7 +17,8 @@
 - **Catatan lingkungan (penting untuk koordinator):** di tengah sesi **disk C: host penuh (0 MB bebas)** — dilaporkan alat
   berkali-kali sejak ±18.20 WIB; Docker sendiri melaporkan 9,7 GB build cache + 10,3 GB volume yang bisa diklaim (bukan
   milik paket ini, tidak saya hapus). Saya hanya menghapus berkas sementara saya sendiri (tar sumber 260 MB, data sintetis di
-  Mongo). Akibat: suite Jest penuh **tidak** dijalankan (hanya suite terkait), lihat §6.
+  Mongo). Menjelang akhir sesi ruang bebas kembali (±2,5 GB, bukan karena tindakan saya selain itu) → suite Jest penuh
+  dijalankan sesudah gabung `main` (§6.3).
 
 ---
 
@@ -187,10 +189,13 @@ Berkas = semua `tests/test_*.py` yang menyebut jalur yang diubah (transfer, puta
 ### 6.3 Jest & ESLint
 * Suite Jest terkait berkas yang diubah (8 suite: `fix5PerformaWms`, `fix1Cakupan`, `fix3aForms`, `phase4R3`,
   `prepCWarehousePutaway`, `trial22Okt`, `uat24F0`, `navAccess`): **8/8 suite, 71/71 uji lulus** (kontainer `node:20` +
-  volume `kn-dev_fe_node_modules` baca-saja). **Suite Jest penuh tidak dijalankan** — disk host penuh (§ kepala); kontainer
-  node dihapus untuk menahan pertumbuhan disk VM.
-* ESLint 13 berkas FE yang diubah/baru: **0 error**, 15 peringatan "Unused eslint-disable directive" (pola lama berkas-berkas
-  itu — konfigurasi ESLint repo tidak memuat aturan `react-hooks`; direktif baru saya mengikuti pola yang sama).
+  volume `kn-dev_fe_node_modules` baca-saja).
+* **Suite Jest penuh** (sesudah gabung `main` + FIX-4, §6.5; dijalankan setelah disk host lega kembali): **84/85 suite,
+  603/604 uji lulus**. Satu gagal: `config/__tests__/serverAccessReach.test.js` ("manager → logistics tidak sampai") — masukan
+  uji itu (`config/`, fixture akses, `navigationConfig`, `roles`) **identik dengan `main`** (`git diff main` kosong untuk
+  berkas tersebut; FIX-5 tidak menyentuh navigasi/izin) → kegagalan bawaan `main`, bukan FIX-5.
+* ESLint 13 berkas FE yang diubah/baru (sesudah gabung): **0 error**, 15 peringatan "Unused eslint-disable directive" (pola
+  lama berkas-berkas itu — konfigurasi ESLint repo tidak memuat aturan `react-hooks`; direktif baru mengikuti pola yang sama).
 
 ### 6.4 Guardrail
 Dijalankan di kontainer uji (Linux, dependensi backend lengkap; berkas dasar `dc2bc4c` vs FIX-5 pada kontainer yang sama,
@@ -204,6 +209,21 @@ DB salinan). `verify_state_machine` **dikecualikan** (larangan brief).
 Catatan jujur: putaran pertama guardrail saya jalankan di **host Windows** untuk semua `verify_*.py` dengan loop berkas —
 `scripts/guardrails/verify_state_machine.py` ikut terpanggil dan **langsung gagal impor** (`No module named 'pymongo'`)
 tanpa menyentuh DB mana pun; putaran host itu tidak dipakai (separator jalur Windows memberi hitungan palsu).
+
+Sesudah gabung `main` (FIX-4 membawa guardrail baru): `verify_ui_standard` (ratchet G-UI) awalnya **merah 8** karena kode
+baru FIX-5 memakai hex/huruf arbitrer & tombol bergaya sendiri → disesuaikan ke token & kelas baku (`text-fs-12/13`,
+`text-kn-*`/`bg-kn-*`, `ghost-button`/`secondary-button btn-sm`/`primary-button btn-sm`) → **PASS (4.316 cek, 0
+pelanggaran)**; angka `font_lt12` 6.937 → 6.935 dan `hex` 16.810 → 16.808 (turun), lainnya = baseline. `verify_ui_contrast`
+PASS 58/58.
+
+### 6.5 Gabung `main` terbaru (FIX-4 Standar UI)
+`main` maju ke `6d76afd` (FIX-4 + integrasi) selama paket berjalan → digabung ke branch ini (commit `a645522`). Konflik teks
+hanya di **baris impor** 4 berkas (`GoodsReceiptsView`, `TransferManagement`, `RfidTagsView`, `RfidSecurityPanel`: impor
+`ExportMenu` FIX-4 + `ListLimitNote` FIX-5) dan satu baris chip GRN (jumlah sungguhan FIX-5 + tombol Unduh FIX-4) — keduanya
+dipertahankan. Tidak ada berkas backend yang diubah kedua paket. Regresi pytest §6.2 dijalankan **sebelum** gabung
+(backend FIX-4 = Pusat Export & dataset ekspor, +3 baris `permissions_config`, +1 baris `entity_write_guard`, uji
+`test_fix4_ekspor.py` — tidak tumpang tindih dengan berkas FIX-5; uji gabungan backend belum dijalankan); Jest penuh, ESLint & guardrail UI
+dijalankan **sesudah** gabung.
 
 ## 7. Keputusan implementer (mohon ditinjau)
 1. **`uq_id` UNIK**, bukan non-unik (brief: unik bila data mengizinkan): sensus 166 koleksi data acuan = 0 kembar. Data
@@ -243,8 +263,10 @@ tanpa menyentuh DB mana pun; putaran host itu tidak dipakai (separator jalur Win
 6. LST-01 lainnya (±40 daftar): pengiriman 1.000/riwayat 3.000, Meja Cutting (LST-02), antrean periksa gate kursor (LST-09),
    daftar tugas HP (`/wms/tasks` 2.000 aktif + `scan_log` penuh; kini bertanda header, layar HP belum menampilkan catatan).
 7. Index `id` untuk ±127 koleksi lain (di luar jalur WMS-RFID & stok).
-8. **Suite Jest penuh** dan suite gate 96 berkas PREP-H penuh belum dijalankan ulang (disk host penuh); yang dijalankan §6.
-9. Disk host C: penuh — perlu tindakan pemilik/koordinator (Docker build cache/volume tak terpakai) sebelum paket berikutnya.
+8. Suite gate 96 berkas PREP-H penuh tidak dijalankan ulang (yang dijalankan: 113 berkas §6.2); uji backend sesudah gabung
+   `main` (FIX-4) belum dijalankan (berkas tidak tumpang tindih).
+9. Disk host C: sempat penuh (0 MB) ±18.20–18.55 WIB — perlu pembersihan Docker build cache/volume tak terpakai (milik paket
+   lain) oleh koordinator/pemilik agar stack uji berikutnya tidak macet.
 10. `CODEBASE_MAP.md` tidak dibangkitkan ulang.
 
 ## 9. Berkas berisiko bentrok
@@ -270,8 +292,10 @@ tanpa menyentuh DB mana pun; putaran host itu tidak dipakai (separator jalur Win
 * **Kesetaraan:** DB ternormalisasi sebelum/sesudah **identik** (acuan & 346.700 roll).
 * **Uji:** baru 31 pytest (24 gagal di dasar → 31 lulus) + 4 Jest (UI-51 gagal di dasar → lulus); regresi 113 berkas
   dasar 935 lulus / 364 id gagal-error → FIX-5 959 / 340, **0 yang hanya gagal di FIX-5**; Jest terkait 8 suite 71/71
-  (suite penuh tidak dijalankan — disk penuh); ESLint 0 error; guardrail 41 identik dengan dasar (tidak ada yang naik).
+  + Jest penuh sesudah gabung 84/85 suite (1 gagal bawaan `main`: `serverAccessReach`); ESLint 0 error; guardrail 41 identik
+  dengan dasar (tidak ada yang naik) + `verify_ui_standard` FIX-4 PASS sesudah penyesuaian token/kelas baku.
 * **Berisiko bentrok:** `routers/inventory.py`, `transfer_receipt_service.py`, `putaway_order_service.py`, `indexes.py`,
   `bootstrap.py`, `rfid_v2_core.py` (index), layar daftar WMS (catatan batas) & `useAppActions.js`.
 * **Sisa utama:** cari roll regex, status-board/stock-tree/dashboard, mutasi berpagar lokasi, lot rebuild per segmen, ±40
-  daftar lain, index `id` koleksi lain, suite Jest penuh. **Disk C: host penuh — perlu dibersihkan.**
+  daftar lain, index `id` koleksi lain. **Disk C: host sempat penuh — perlu dibersihkan.** Branch sudah memuat `main`
+  (FIX-4) — konflik impor diselesaikan (§6.5).
