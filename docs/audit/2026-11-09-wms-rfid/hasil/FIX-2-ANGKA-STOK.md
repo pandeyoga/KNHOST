@@ -179,8 +179,38 @@ Cakupan LOKAL per akun (putaran sesudah): admin/manager/wh.admin/sales = Sukacit
 Fabric (tanpa site, belum memilih lokasi jualan); warehouse.soreang = Soreang · Kanda Fabric; warehouse.rancamalang =
 Rancamalang · Cipta Sandang.
 
-### 6.2 Pytest, Jest, ESLint, regresi
-_(lihat §6.4 catatan pelaksanaan)_
+### 6.2 Pytest — uji baru & perbandingan regresi
+Stack sementara `kn-tmp-fix2-*` (salinan data acuan dipulihkan sebelum tiap putaran), daftar 31 berkas uji yang menyentuh
+angka stok/tahan/antrean (`tests/test_fix2_stock_figures.py` + 30 berkas lama: `test_uat26_d2_decisions`,
+`test_f02_frequent_products_stock`, `test_f2_stock_buckets`, `test_iter150_atp_board`, `test_uat24_f1/f2/lanjutan`,
+`test_uat26_d2_live`, `test_decisions_d1_http`, `test_iter263_wms_rfid_r0r1r2`, `test_p05_imp16_md_quality_qc`,
+`test_l02_ln020_*`, `test_roll_pick_and_reallocate`, `test_iter14_wh_transfer_rolls`, `test_iter143_makloon_po_variance`,
+`test_iter149_audit`, `test_iter270_reallocate_extra`, `test_iter275_g1_admin_sales_audit`, `test_iter276_g2_md_audit`,
+`test_iter292_audit_fixes`, `test_iter313_audit_fixes`, `test_iter39_design_hold_proofing`,
+`test_kn_audit_2026_09_21_iter58`, `test_l01_sales_field_hidden_api`, `test_l01_sku_mask_settle_tol`, `test_p03_p04_e2e`,
+`test_sesi18_regression`, `test_g3_phase05_live`, `test_global_stock`) + `test_g3_phase02` (DB uji sendiri
+`g3_audit_fix2`), urutan sama di kedua putaran.
+
+| | dasar `main` | FIX-2 |
+|---|---:|---:|
+| `test_fix2_stock_figures.py` (16 uji baru) | **16 gagal** | **16 lulus** |
+| 30 berkas uji lama — jumlah gagal/error | 124 | **124** |
+| uji yang **hanya gagal di FIX-2** | — | **0** |
+| `test_g3_phase02` (DB uji sendiri) | 1 gagal / 20 lulus | 1 gagal / 20 lulus (sama: `test_od_lock01_…`) |
+
+Gagal lama (sama persis di dasar & FIX-2) berasal dari data acuan yang tidak cocok dengan asumsi uji lama (mis.
+`test_iter276_g2_md_audit` 50 error setup, `test_iter275_g1` 21, `test_p03_p04_e2e` 13, `test_global_stock` lot 34 vs
+data acuan, `test_f2_stock_buckets` 8 — produk `prod_ulos_batak` tidak ada di data acuan) — tidak disentuh.
+
+Putaran pertama FIX-2 sempat menghasilkan 3 uji yang hanya gagal di FIX-2; ketiganya ditangani (putaran kedua di atas):
+* `test_sesi18_regression::TestPutawaySuccess` — antrean Penempatan Rak sempat diurutkan `roll_no` sehingga kandidat
+  pertama berubah → **urutan alami dikembalikan** (paginasi tetap).
+* `test_iter150_atp_board::test_atp_board_math` — uji mengunci identitas lama "Stok Fisik = Tersedia + Dipesan +
+  tertahan" yang justru temuan STK-9 → **uji disesuaikan**: + Dialokasikan + Cadangan makloon (bidang baru; tanpa bidang itu
+  rumus lama tetap berlaku sehingga uji juga lulus di dasar).
+* `test_uat24_f1::test_stok_per_lokasi_…` — uji menyisipkan roll langsung ke DB tanpa saldo; "Di {lokasi}" kini membaca
+  saldo proyeksi (definisi tunggal) → **uji menjalankan `rebuild_balance`** untuk roll ujinya (seperti alur aplikasi) dan
+  membersihkan saldonya.
 
 ### 6.3 Guardrail (`PYTHONUTF8=1 python scripts/guardrails/verify_*.py`, host, tanpa Mongo; `verify_state_machine` tidak dijalankan)
 Kode keluar 40 guardrail **identik** sebelum (`main`) vs sesudah; jumlah pelanggaran guardrail yang merah sejak dasar
@@ -189,7 +219,12 @@ tidak naik (contoh: `verify_qty_dual` 28 pelanggaran dari 1.717 → 28 dari 1.72
 sesudah: detail_modal (28 → 29 cek), escape_layers, role_label, uom_vocab, codebase_map, auth_coverage-baseline sama.
 
 ### 6.4 Catatan pelaksanaan
-_(diisi di bawah)_
+* Docker Desktop host macet dua kali selama sesi (API `500 Internal Server Error`, ±09:20–10:20 WIB dan sesaat sesudahnya);
+  tidak ada stack yang saya mulai ulang (termasuk `kn-uji-*`). Skrip putaran dibuat tahan-putus (perintah docker diulang,
+  uji berjalan di latar kontainer dengan berkas penanda). Satu putaran pytest yang terputus di tengah dibuang dan diulang
+  dari pemulihan DB.
+* Uji silang & pytest dijalankan pada salinan `kn_test_trial_2026-11-08` di `kn-tmp-fix2-mongo` (DB `test_database`); tidak
+  ada penulisan ke DB bersama.
 
 ---
 

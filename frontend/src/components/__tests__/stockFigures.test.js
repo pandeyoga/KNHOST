@@ -32,6 +32,13 @@ jest.mock("../../services/apiClient", () => ({
 jest.mock("@/utils/escapeLayers", () => ({ useEscapeClose: () => {} }));
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+// CRA `resetMocks: true` mengosongkan implementasi jest.fn sebelum tiap uji → pasang ulang di sini.
+beforeEach(() => {
+  const api = require("../../services/apiClient").default;
+  api.get.mockImplementation(() => Promise.resolve({ data: DETAIL }));
+  api.put.mockImplementation(() => Promise.resolve({ data: {} }));
+});
+
 let host; let root;
 async function mount(el) {
   host = document.createElement("div");
