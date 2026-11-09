@@ -39,13 +39,16 @@ async def forward(args, P) -> None:
     q = {"inspection.hold.held": True, "status": {"$in": list(HOLDABLE_STATUSES)}}
     rows = await db.inventory_rolls.find(q, {"_id": 0, "id": 1, "roll_no": 1, "status": 1, "earmarked_for": 1, "hold": 1,
                                              "updated_at": 1, "product_id": 1, "warehouse_id": 1,
-                                             "owner_entity_id": 1, "hold_history": 1}).to_list(None)
+                                             "owner_entity_id": 1, "hold_history": 1,
+                                             "status_history": 1}).to_list(None)
     print(f"kandidat: {len(rows)} roll (mode {'APPLY' if args.apply else 'dry-run'})")
     for r in rows:
         if r.get("earmarked_for"):
             print(f"  {r.get('roll_no')} {r['id']} status={r.get('status')} (dilewati: di-peg pelanggan)")
             continue
-        before, missing = G.snapshot(r, ("status", "hold", "updated_at"))
+        # FIX-10: perubahan status lewat `roll_state` menambah `status_history` — ikut direkam supaya `--undo` memulihkan
+        # roll PERSIS (dikembalikan bila dulu ada, dihapus bila dulu tidak ada).
+        before, missing = G.snapshot(r, ("status", "hold", "updated_at", "status_history"))
         seg = (r.get("product_id"), r.get("warehouse_id"), r.get("owner_entity_id"))
         if not args.apply:
             P.change("inspection_hold_blocked", "inventory_rolls", r["id"], label=r.get("roll_no") or "",
