@@ -471,16 +471,55 @@ async def add_initial_stock(payload: RollPayload, request: Request) -> Dict[str,
     actor = await require_permission(request, "product", "create")
     if payload.quantity <= 0:
         raise HTTPException(status_code=400, detail="quantity harus > 0")
+    # FIX-3a (audit B3a keputusan 8 / SSOT-7) — pintu stok awal manual DITUTUP untuk gedung yang sudah memakai
+    # Pendaftaran awal (sesi pendaftaran apa pun untuk gedung itu): stok gedung itu lahir dari fisik lewat sesi
+    # pendaftaran, bukan ketikan manual yang bisa menggandakan rak yang sedang/sudah didaftarkan.
+    _reg = await db.cycle_count_sessions.find_one({"mode": "registration", "warehouse_id": payload.warehouse_id},
+                                                  {"_id": 0, "id": 1, "name": 1, "status": 1})
+    if _reg:
+        raise HTTPException(status_code=410, detail={
+            "code": "INITIAL_STOCK_CLOSED", "session_id": _reg.get("id"),
+            "message": (f"Stok awal manual untuk gedung ini sudah ditutup: gedung memakai Pendaftaran awal "
+                        f"(sesi {_reg.get('name') or _reg.get('id')}). Daftarkan roll lewat menu Pendaftaran awal gedung.")})
     # FASE E-1 (E1.10) — stok awal dimiliki badan usaha KONTEKS, bukan default global.
     owner = payload.owner_entity_id or active_entity_or(DEFAULT_ENTITY_ID)
     if not await db.products.find_one({"id": payload.product_id}, {"_id": 0}):
         raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
     # E4.1 — stok awal tidak boleh mendarat di gudang khusus badan usaha lain.
     from services import warehouse_scope_service as whscope
-    await whscope.assert_usable(payload.warehouse_id, owner,
-                               action="menaruh stok awal di sini")
+    _wh = await whscope.assert_usable(payload.warehouse_id, owner,
+                                     action="menaruh stok awal di sini")
     lot = payload.lot or "LOT-MANUAL"
     _prod = await db.products.find_one({"id": payload.product_id}, {"_id": 0}) or {}
+    # FIX-3a (B3b INP-05) — satuan, grade, dan bin divalidasi terhadap master (dulu "hasta"/"ZZ"/bin fiktif tersimpan).
+    _base_unit = _prod.get("base_unit") or "meter"
+    _qty = float(payload.quantity)
+    if (payload.unit or "").strip() and (payload.unit or "").strip().lower() != _base_unit.lower():
+        from services.receiving_roll_service import conv_qty, uom_engine
+        try:
+            _qty = round(conv_qty(_prod, _qty, payload.unit.strip(), _base_unit, await uom_engine()), 4)
+        except Exception:  # noqa: BLE001 — satuan tak dikenal / tanpa faktor konversi
+            raise HTTPException(status_code=400, detail=(
+                f"Satuan '{payload.unit}' tidak dikenal untuk produk ini (satuan dasar {_base_unit}) — "
+                "pakai satuan dasar produk atau satuan yang punya konversi di master satuan."))
+        if _qty <= 0:
+            raise HTTPException(status_code=400, detail="Panjang hasil konversi harus > 0")
+    try:
+        _grade = _dr.require_grade(payload.grade, "A")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    _bin_id, _bin_code = None, ""
+    if (payload.bin_id or "").strip():
+        from services import placement_rules as _pr
+        from services import registration_freeze as _rfz
+        _wh_doc = _wh or await db.warehouses.find_one({"id": payload.warehouse_id}, {"_id": 0}) or {}
+        _node = _pr.resolve_bin(_wh_doc, payload.bin_id)
+        if not _node:
+            raise HTTPException(status_code=400, detail=(
+                f"Bin '{payload.bin_id}' tidak ada di struktur gudang {_wh_doc.get('name') or ''} — pilih dari daftar lokasi."))
+        await _rfz.assert_movable(action="menaruh stok awal", to_warehouse_id=payload.warehouse_id,
+                                  to_bin_id=_node["bin"]["id"])
+        _bin_id, _bin_code = _node["bin"]["id"], _node["bin"].get("code", "")
     _roll_no = (payload.roll_no or "").strip()
     if _roll_no and await db.inventory_rolls.find_one({"roll_no": _roll_no}, {"_id": 1}):
         raise HTTPException(status_code=409, detail=f"Nomor roll {_roll_no} sudah dipakai.")   # temuan lama #12
@@ -498,13 +537,13 @@ async def add_initial_stock(payload: RollPayload, request: Request) -> Dict[str,
     roll = {
         "id": new_id("roll"), "product_id": payload.product_id, "owner_entity_id": owner,
         "ownership_type": payload.ownership_type, "consignor_ref": None,
-        "warehouse_id": payload.warehouse_id, "bin_id": payload.bin_id or None,
+        "warehouse_id": payload.warehouse_id, "bin_id": _bin_id, "bin_code": _bin_code,
         "lot": _lot_doc["lot_number"], "lot_id": _lot_doc["id"],
         "batch": payload.batch or lot.replace("LOT", "BATCH"),
         "dye_lot": getattr(payload, "dye_lot", "") or lot, "defects": [],
         "roll_no": _roll_no,
-        "length_initial": float(payload.quantity), "length_remaining": float(payload.quantity),
-        "unit": payload.unit, "grade": payload.grade, "status": "available",
+        "length_initial": _qty, "length_remaining": _qty,
+        "unit": _base_unit, "grade": _grade, "status": "available",
         # Fase A · PS-02 — snapshot domain produk (INV-DOMAIN-05)
         **_dr.roll_domain_snapshot(_prod),
         "tracking_mode": payload.tracking_mode, "earmarked_for": None,
@@ -524,8 +563,8 @@ async def add_initial_stock(payload: RollPayload, request: Request) -> Dict[str,
     try:
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": payload.product_id, "warehouse_id": payload.warehouse_id,
-            "owner_entity_id": owner, "movement_type": "initial_stock", "quantity": float(payload.quantity),
-            "unit": payload.unit, "batch": roll["batch"], "lot": _lot_doc["lot_number"],
+            "owner_entity_id": owner, "movement_type": "initial_stock", "quantity": _qty,
+            "unit": _base_unit, "batch": roll["batch"], "lot": _lot_doc["lot_number"],
             "lot_id": _lot_doc["id"], "roll_id": roll["id"],
             # FASE U — satu baris mutasi menunjuk SATU roll fisik.
             "qty_rolls": (1 if roll["id"] else None),

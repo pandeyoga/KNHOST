@@ -191,17 +191,19 @@ async def confirm_arrival_trip(order_id: str, epcs: Optional[List[str]],
     Hasil = dokumen PA + `trip` (ringkasan trip ini; None bila tidak ada roll baru) + `duplicate_trip`."""
     actor_name = _actor_name(actor)
     order = await _load(order_id, scope_ids)
-    if order["status"] not in pa.ARRIVAL_STATUSES:
-        raise HTTPException(status_code=400, detail=f"PA berstatus {order['status']} — tidak menerima trip tiba.")
     src = norm_source(source)
     if src["type"] == "manual":
         raise HTTPException(status_code=400, detail="Konfirmasi manual tanpa scan memakai konfirmasi tiba (semua) ber-alasan.")
     if not read_keys(epcs):
         raise HTTPException(status_code=400, detail="Trip tanpa EPC/label terbaca — tidak ada yang dicatat.")
     key = trip_key(src)
+    # FIX-3a (B2a FLW-IN-16) — trip yang SAMA (client_trip_id/passage_id) dijawab sebagai duplikat idempoten SEBELUM
+    # cek status: antrean offline HP yang mengulang trip penutup PA tidak lagi menerima 400 untuk aksi yang tercatat.
     dup = _existing_trip(order, key)
     if dup:
         return {**order, "trip": dup, "duplicate_trip": True}
+    if order["status"] not in pa.ARRIVAL_STATUSES:
+        raise HTTPException(status_code=400, detail=f"PA berstatus {order['status']} — tidak menerima trip tiba.")
     from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal (integrasi)
     await _rfz.assert_order_movable(order, "mencatat trip tiba perintah putaway")
     from services import atomic_claim as _saga
@@ -216,6 +218,11 @@ async def confirm_arrival_trip(order_id: str, epcs: Optional[List[str]],
         res = await land_matching(fresh, epcs, actor_name, f"trip {SOURCE_LABEL[src['type']]}")
         upd = await finish_update(fresh, actor_name)
         upd["last_trip_at"] = now_iso()
+        if not fresh.get("dispatched_at") and (res["arrived"] or res["failed"]):
+            # FIX-3a (B2a FLW-IN-15, keputusan D7) — "Kirim" opsional: trip tiba pertama mengisi `dispatched_at`.
+            upd["dispatched_at"] = now_iso()
+            upd["dispatched_by"] = fresh.get("dispatched_by") or actor_name
+            upd["dispatch_implicit"] = True
         op = _saga.finish_set(upd)
         if res["arrived"] or res["failed"]:
             trip = _trip_doc(fresh, src, res, actor_name, len(epcs or []))

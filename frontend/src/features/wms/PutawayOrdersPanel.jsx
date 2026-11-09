@@ -86,10 +86,12 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
     catch (e) { fail(e, "Gagal dispatch"); } finally { setBusy(false); }
   };
 
-  const confirm = async (pa, epcs, manualReason) => {
+  const confirm = async (pa, epcs, manualReason, simulated = false) => {
     setBusy(true);
     try {
-      const body = manualReason ? { manual_all: true, reason: manualReason } : { scanned_epcs: epcs || [] };
+      // FIX-3a (K-B3b-09) — simulasi dikirim sebagai penanda; server yang menentukan roll & menandai hasilnya.
+      const body = manualReason ? { manual_all: true, reason: manualReason }
+        : (simulated ? { simulated: true } : { scanned_epcs: epcs || [] });
       const r = await axios.post(`${API}/putaway-orders/${pa.id}/confirm-arrival`, body);
       const d = r.data;
       flash(d.btg_number
@@ -125,9 +127,16 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
   };
 
   const resolve = async (pa, rollIds, action) => {
+    // FIX-3a (K-14) — alasan wajib ≥ 5 huruf, ditegakkan server.
+    const why = await askReason({
+      title: action === "accept" ? "Terima roll exception (scan ulang OK)?" : "Kembalikan roll exception ke transit?",
+      message: "Tulis hasil pengecekan ulang — tercatat di jejak perintah putaway.",
+      confirmLabel: action === "accept" ? "Terima" : "Kembalikan", reasonMinLength: 5, testId: "pa-exc-dialog",
+    });
+    if (!why || !why.trim()) return;
     setBusy(true);
     try {
-      await axios.post(`${API}/putaway-orders/${pa.id}/resolve-exception`, { roll_ids: rollIds, action });
+      await axios.post(`${API}/putaway-orders/${pa.id}/resolve-exception`, { roll_ids: rollIds, action, reason: why.trim() });
       flash(action === "accept" ? "Exception diterima — barang masuk gudang tujuan." : "Barang dikembalikan ke antrean transit.");
       await load();
     } catch (e) { fail(e, "Gagal resolve exception"); } finally { setBusy(false); }
@@ -250,11 +259,13 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
                         className="rounded-lg bg-[#1B7F4B] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">
                         <CheckCircle2 size={12} className="mr-1 inline" /> Validasi & tutup (BTG)
                       </button>
-                      <button data-testid={`pa-confirm-sim-${o.id}`} disabled={busy}
-                        onClick={() => confirm(o, (o.items || []).map((i) => i.epc).filter(Boolean))}
-                        className="flex items-center gap-1 rounded-lg border border-[#1B7F4B] px-3 py-1.5 text-[11px] font-semibold text-[#1B7F4B] disabled:opacity-40">
-                        <Zap size={12} /> Simulasi Scan Semua
-                      </button>
+                      {o.rfid_simulation && (   /* FIX-3a (FRM-10) — hanya saat mode simulasi RFID PT aktif */
+                        <button data-testid={`pa-confirm-sim-${o.id}`} disabled={busy}
+                          onClick={() => confirm(o, null, "", true)}
+                          className="flex items-center gap-1 rounded-lg border border-[#1B7F4B] px-3 py-1.5 text-[11px] font-semibold text-[#1B7F4B] disabled:opacity-40">
+                          <Zap size={12} /> Simulasi Scan Semua
+                        </button>
+                      )}
                       <button data-testid={`pa-confirm-manual-${o.id}`} disabled={busy}
                         onClick={async () => {
                           const why = await askReason({

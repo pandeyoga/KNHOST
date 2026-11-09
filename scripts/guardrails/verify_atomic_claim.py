@@ -91,6 +91,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("ar_receipts.py", "/ar-receipts/{receipt_id}/void"): ("service", "klaim ar_receipts (status != void) sebelum keputusan selisih/payments SO/kas/deposit dibalik; release bila reverse_decision gagal; finish_set status void", "ar_receipt_service.void_receipt"),
     ("inventory.py", "/inventory/initial-stock"): ("compensate", "roll baru per permintaan (tak ada dokumen bersama); mutasi+rebuild di try, except → rollback_initial_stock menghapus roll & mutasi yang lahir"),
     ("inbound_receiving.py", "/inbound/tasks/{task_id}/resolve-escalation"): ("cas", "find_one_and_update wms_tasks berprasyarat escalation.status != resolved → 409 bila kalah (pola outbound)"),
+    # ── FIX-3a (9 Nov 2026) — tabel transisi tugas barang masuk (`services/inbound_task_state.py`) ──────────────
+    ("inbound_receiving.py", "/inbound/tasks/{task_id}/scan-receive"): ("cas", "FIX-3a: inbound_task_state.transition = find_one_and_update wms_tasks berprasyarat status asal (daftar-izin) + received_qty seperti dibaca → 409 bila kalah; warehouses/cycle_count_sessions hanya DIBACA (validasi bin & pembekuan), audit append-only"),
+    ("inbound_receiving.py", "/inbound/tasks/{task_id}/escalate"): ("cas", "FIX-3a: inbound_task_state.transition = find_one_and_update wms_tasks berprasyarat status ∈ daftar-izin + bukan dihitung GRN → 409; koleksi lain hanya dibaca (mode GRN) + audit append-only"),
     ("putaway_orders.py", "/putaway-orders/{order_id}/confirm-arrival"): ("service", "klaim putaway_orders di service sebelum bulk roll/tag/mutasi; finish_set", "putaway_order_service.confirm_arrival"),
     # ── PREP-C (2026-11-08) — draf otomatis & tiba bertahap per trip ──────────────────────
     ("putaway_orders.py", "/putaway-orders/{order_id}/dispatch"): ("service", "klaim putaway_orders (status open) sebelum roll → in_transit_transfer; gagal satu roll → kompensasi roll yang sudah pindah + release; finish_set status in_transit", "putaway_order_service.dispatch"),
@@ -166,7 +169,8 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
 # + pencabut kunci yang sah — bukan allowlist per fungsi.
 RE_CLAIM = re.compile(r"atomic_claim|_saga\.claim\(|family_lock\(")
 RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|_saga\.release\(|family_lock\(")
-RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"")
+# FIX-3a — `_its.transition(` = `services/inbound_task_state.transition` (CAS: filter id + status asal ∈ daftar-izin).
+RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|_its\.transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"")
 RE_COMP = re.compile(r"except[^\n]*:\s*\n\s*await (release_|_release|rollback|compensate)")
 # Validasi 400/404/422 SESUDAH klaim meninggalkan saga_lock → percobaan ulang yang benar ditolak 409
 # (bukti: inbound complete × pagar lot mode block, sesi 4). Klaim wajib SESUDAH semua validasi.

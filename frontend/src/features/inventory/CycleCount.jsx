@@ -12,6 +12,7 @@ import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { entityShortFromCtx } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
 import RollCountPanel from "./RollCountPanel";
+import BinSelect from "../../components/BinSelect";
 import { can } from "../../config/roles";
 
 const storedPerms = () => { try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions; } catch { return null; } };
@@ -137,7 +138,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
   const approveSession = async () => {
     try {
       await axios.post(`${API}/cycle-count/sessions/${selectedSession.id}/approve`,
-        { reason: approveReason || "Disetujui sesuai hasil count", zero_cost_reason: zeroCostReason }, { headers });
+        // FIX-3a (FRM-09 #10) — tanpa alasan bawaan teks tetap; bila diisi server menuntut ≥ 5 huruf (K-14).
+        { reason: approveReason.trim(), zero_cost_reason: zeroCostReason.trim() }, { headers });
     } catch (e) {
       setErr(apiErrorText(e, "Gagal approve")); return;
     }
@@ -147,7 +149,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
   };
 
   const rejectSession = async () => {
-    if (!rejectReason) { setErr("Alasan penolakan wajib diisi"); return; }
+    if ((rejectReason.match(/\p{L}/gu) || []).length < 5) { setErr("Alasan penolakan wajib diisi (minimal 5 huruf)"); return; }
     try {
       await axios.post(`${API}/cycle-count/sessions/${selectedSession.id}/reject`,
         { reason: rejectReason }, { headers });
@@ -280,7 +282,10 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                         placeholder="Pilih Produk"
                         options={products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }))}
                       />
-                      <input placeholder="Bin ID (opsional)" value={addItem.bin_id} onChange={e => setAddItem({...addItem, bin_id: e.target.value})} className="field w-28" />
+                      {/* FIX-3a (B3b INP-02) — bin dari struktur gudang sesi (terikat id), bukan teks bebas */}
+                      <BinSelect data-testid="cc-add-bin-select" warehouseId={selectedSession.warehouse_id} value={addItem.bin_id}
+                        onChange={(v) => setAddItem({ ...addItem, bin_id: v })} emptyLabel="Seluruh gudang (tanpa bin)"
+                        className="field flex-1 min-w-32" />
                       <button onClick={addItemToSession} className="primary-button" data-testid="cc-add-item-button">
                         <Plus size={13} /> Tambah
                       </button>
@@ -310,7 +315,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-[12px] font-semibold">{item.product_name}</p>
-                            <p className="text-[11px] text-[#6B6B73]">{item.sku}{item.bin_id ? ` • Bin: ${item.bin_id}` : ""}{item.owner_entity_id ? ` • Pemilik: ${entityShortFromCtx(item.owner_entity_id)}` : ""}</p>
+                            <p className="text-[11px] text-[#6B6B73]">{item.sku}{item.bin_id ? ` • Bin: ${item.bin_code || item.bin_id}` : ""}{item.owner_entity_id ? ` • Pemilik: ${entityShortFromCtx(item.owner_entity_id)}` : ""}</p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div className="text-right">

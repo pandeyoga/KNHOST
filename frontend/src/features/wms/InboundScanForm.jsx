@@ -7,8 +7,9 @@
 import KNSelect from "../../components/KNSelect";
 import ReceiveUomPanel from "./inbound/ReceiveUomPanel";
 import useDomainEnums from "../../hooks/useDomainEnums";
+import BinSelect from "../../components/BinSelect";
 
-export default function InboundScanForm({ scanData, setScanData, uom }) {
+export default function InboundScanForm({ scanData, setScanData, uom, warehouseId }) {
   const { options } = useDomainEnums();   // GRN Fase 0.4 — grade dari SSOT (A, A1, A2, B, BS)
   return (
     <div className="space-y-2">
@@ -60,11 +61,12 @@ export default function InboundScanForm({ scanData, setScanData, uom }) {
             className="w-full rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-sm" placeholder="ROLL-001" />
         </div>
         <div>
-          <label className="mb-1 block text-[10px] font-semibold text-[#6B6B73]">Bin Location *</label>
-          <input type="text" value={scanData.bin_id}
-            data-testid="scan-bin-input"
-            onChange={e => setScanData({ ...scanData, bin_id: e.target.value })}
-            className="w-full rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-sm" placeholder="A1-01" />
+          {/* FIX-3a (B3b INP-01) — bin dipilih dari struktur gudang tugas (terikat id), bukan teks bebas. Opsional:
+              kosong = roll ditempatkan ke rak sesudah diterima (antrean Penempatan Rak). */}
+          <label className="mb-1 block text-[10px] font-semibold text-[#6B6B73]">Bin Location</label>
+          <BinSelect data-testid="scan-bin-input" warehouseId={warehouseId} value={scanData.bin_id}
+            onChange={(v) => setScanData({ ...scanData, bin_id: v })}
+            className="w-full rounded-lg border border-[#E5E5EA] bg-white px-2 py-1.5 text-left text-sm" />
         </div>
       </div>
     </div>

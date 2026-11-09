@@ -709,13 +709,14 @@ class RollPayload(BaseModel):
     warehouse_id: str
     owner_entity_id: str = ""        # default = entitas utama bila kosong
     lot: str
-    quantity: float = Field(..., ge=0)                  # = length_initial = length_remaining awal
-    unit: str = "meter"
+    # FIX-3a (B3b INP-10) — desimal koma Indonesia ("12,5") diterima; batas angka berhingga (INV-NUM-01).
+    quantity: QtyDecimal = Field(..., ge=0, allow_inf_nan=False)   # = length_initial = length_remaining awal
+    unit: str = ""                   # FIX-3a — kosong = satuan dasar produk; lain → wajib terkonversi (master satuan)
     grade: str = "A"
     batch: str = ""
     roll_no: str = ""
-    unit_cost: Optional[float] = Field(None, ge=0)   # temuan lama #12 — HPP stok awal (per satuan dasar)
-    weight_kg: Optional[float] = Field(None, ge=0)   # temuan lama #12 — berat roll stok awal
+    unit_cost: OptMoneyDecimal = Field(None, ge=0)   # temuan lama #12 — HPP stok awal (per satuan dasar); FIX-3a koma desimal
+    weight_kg: OptQtyDecimal = Field(None, ge=0)     # temuan lama #12 — berat roll stok awal; FIX-3a koma desimal
     bin_id: str = ""
     tracking_mode: str = "barcode"   # rfid | barcode | document | manual
     ownership_type: str = "internal" # internal | supplier_consignment | reseller_consignment

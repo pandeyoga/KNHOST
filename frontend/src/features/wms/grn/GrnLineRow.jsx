@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { parseDecimal } from "../../../utils/decimalInput";
 import { BookPlus, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
 import { LineDoubtRow, writtenQty } from "./GrnOcrBits";
@@ -12,11 +13,12 @@ export const tgtBody = (k) => {
   return type === "po_task" ? { type, task_id: a } : { type, mko_id: a, step_seq: Number(b) };
 };
 export const ROLE_OPTIONS = [{ value: "output", label: "Output" }, { value: "byproduct", label: "Barang sisa" }];
-const num = (v) => (v === "" || v == null ? null : Number(v));
+// FIX-3a (B3b INP-10) — koma desimal Indonesia ("1.234,5") tidak lagi hilang diam-diam (dulu NaN → roll dibuang).
+const num = (v) => (v === "" || v == null ? null : parseDecimal(v));
 const VIA = { profile: "riwayat SJ mitra", supplier_sku: "kode barang supplier", supplier_name: "nama barang supplier",
   internal_name: "nama internal KN (cadangan)", supplier_color: "warna supplier", supplier_color_code: "kode warna supplier", internal_color: "warna internal" };
 export const parseRolls = (text, unit, prev, lot) => text.split(/[\n;]+|,(?!\d{1,2}\b)/).map((x) => x.trim()).filter(Boolean)
-  .map((x, i) => ({ length: Number(x.replace(",", ".")), length_unit: unit, lot: prev[i]?.lot || lot, grade: prev[i]?.grade || "" }))
+  .map((x, i) => ({ length: parseDecimal(x), length_unit: unit, lot: prev[i]?.lot || lot, grade: prev[i]?.grade || "" }))
   .filter((r) => r.length > 0);
 const COLS = 14;
 

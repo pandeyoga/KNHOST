@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from services.text_normalize import PhoneStr
 from core_utils import MoneyDecimal, OptQtyDecimal, QtyDecimal
+from input_rules import ReasonStr
 from schemas_return_rolls import ReturnRollDetail, SupplierRollRejectIn  # 23 Okt — retur per roll
 
 
@@ -240,7 +241,8 @@ class POPaymentCreate(BaseModel):
 
 
 class POCloseRequest(BaseModel):
-    reason: str = ""                  # alasan tutup kurang (short-close)
+    # FIX-3a (B3b FRM-09 #5) — tutup PO kurang terima menghapus sisa penerimaan: alasan wajib ≥ 5 huruf (K-14).
+    reason: ReasonStr                 # alasan tutup kurang (short-close)
     created_by: str = "Admin"
 
 
@@ -514,9 +516,10 @@ class POReceiveItem(BaseModel):
     Pydantic. Nilai NEGATIF tetap ditolak lapis skema (INV-NUM-01).
     """
     product_id: str
-    actual_qty: float = Field(0, ge=0)
+    # FIX-3a (B3b INP-10) — koma desimal Indonesia ("12,5") diterima (HP & desktop mengirim teks apa adanya).
+    actual_qty: QtyDecimal = Field(0, ge=0, allow_inf_nan=False)
     doc_uom: str = ""                     # F1-01 — satuan pada surat jalan supplier
-    doc_qty: Optional[float] = Field(None, ge=0)   # F1-01 — qty apa adanya dari surat jalan
+    doc_qty: OptQtyDecimal = Field(None, ge=0)   # F1-01 — qty apa adanya dari surat jalan
     variance_override_reason: str = ""    # F1-06 — lanjutkan walau di luar batas (tercatat audit)
     batch: str = ""
     lot: str = ""

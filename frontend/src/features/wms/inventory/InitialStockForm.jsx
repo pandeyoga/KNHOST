@@ -1,6 +1,9 @@
 /** InitialStockForm — manual initial-stock (roll) entry (admin/manager only). */
 import { X } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import DecimalInput from "../../../components/DecimalInput";
+import BinSelect from "../../../components/BinSelect";
+import useDomainEnums from "../../../hooks/useDomainEnums";
 
 export default function InitialStockForm({ stockForm, setStockForm, products = [], warehouses = [], entities = [], submitting, onSubmit, onClose, variant = "card" }) {
   // FASE P5 — `variant="modal"`: kartu, judul & tombolnya sendiri dilepas karena
@@ -9,6 +12,9 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
   // ke bawah. Ia lolos dari gate P4 karena seluruh isiannya ada di berkas ini (anak),
   // sementara penjaganya hanya memeriksa berkas induk — celah itu ikut ditutup.
   const isModal = variant === "modal";
+  // FIX-3a (B3b INP-05, FRM-18) — grade dari master (A, A1, B, BS, …) — dulu A/B/C/"Reject" diketik di kode
+  // ("Reject" bukan grade sah).
+  const { options: enumOptions } = useDomainEnums();
   // UAT 24 Okt (audit UI tahap 2) — satuan dulu teks bebas ("meter") sehingga roll bisa tersimpan bersatuan beda dari
   // produk. Kini diambil dari master produk (baca-saja).
   const productUnit = (pid) => { const p = products.find((x) => x.id === pid); return p ? (p.base_unit || p.unit || "") : ""; };
@@ -48,7 +54,7 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
         </div>
         <div>
           <label className="field-label">Panjang (Qty) *</label>
-          <input type="number" data-testid="stock-qty-input" value={stockForm.quantity} onChange={e => setStockForm({ ...stockForm, quantity: parseFloat(e.target.value) || 0 })} className="field tabular-nums" placeholder="0" />
+          <DecimalInput data-testid="stock-qty-input" value={stockForm.quantity} onChange={(v) => setStockForm({ ...stockForm, quantity: v })} className="field" placeholder="0" min={0} />
         </div>
         <div>
           <label className="field-label">Satuan <span className="font-normal normal-case">(dari produk)</span></label>
@@ -64,7 +70,7 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
           <KNSelect data-testid="stock-grade-select" value={stockForm.grade}
             onValueChange={v => setStockForm({ ...stockForm, grade: v })}
             className="field"
-            options={[{ value: "A", label: "A" }, { value: "B", label: "B" }, { value: "C", label: "C" }, { value: "Reject", label: "Reject" }]}
+            options={enumOptions("grade")}
           />
         </div>
         <div>
@@ -73,12 +79,17 @@ export default function InitialStockForm({ stockForm, setStockForm, products = [
         </div>
         <div>
           <label className="field-label">HPP / satuan (Rp) <span className="font-normal normal-case">(opsional)</span></label>
-          <input type="number" data-testid="stock-unit-cost-input" value={stockForm.unit_cost ?? ""} onChange={e => setStockForm({ ...stockForm, unit_cost: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="kosong = HPP standar produk" />
+          <DecimalInput data-testid="stock-unit-cost-input" value={stockForm.unit_cost ?? ""} onChange={(v) => setStockForm({ ...stockForm, unit_cost: v === "" ? null : v })} className="field" placeholder="kosong = HPP standar produk" min={0} />
           <span className="mt-0.5 block text-[10.5px] text-[#8E8E93]">Untuk migrasi stok lama isi HPP sebenarnya; tanpa HPP standar, roll ditandai "HPP belum ada".</span>
         </div>
         <div>
           <label className="field-label">Berat (kg) <span className="font-normal normal-case">(opsional)</span></label>
-          <input type="number" data-testid="stock-weight-input" value={stockForm.weight_kg ?? ""} onChange={e => setStockForm({ ...stockForm, weight_kg: e.target.value === "" ? null : parseFloat(e.target.value) })} className="field tabular-nums" placeholder="0" />
+          <DecimalInput data-testid="stock-weight-input" value={stockForm.weight_kg ?? ""} onChange={(v) => setStockForm({ ...stockForm, weight_kg: v === "" ? null : v })} className="field" placeholder="0" min={0} />
+        </div>
+        <div>
+          <label className="field-label">Bin <span className="font-normal normal-case">(opsional)</span></label>
+          <BinSelect data-testid="stock-bin-select" warehouseId={stockForm.warehouse_id} value={stockForm.bin_id || ""}
+            onChange={(v) => setStockForm({ ...stockForm, bin_id: v })} className="field" />
         </div>
         <div>
           <label className="field-label">Batch <span className="font-normal normal-case">(opsional)</span></label>

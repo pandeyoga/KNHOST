@@ -63,7 +63,10 @@ async def surplus_unit_cost(product_id: str, warehouse_id: str, owner: str) -> T
         if rows and rows[0]["l"] > EPS and rows[0]["v"] > EPS:
             return round(rows[0]["v"] / rows[0]["l"], 4), basis
     prod = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
-    for k in ("standard_cost", "cost_price", "purchase_price", "base_price_cost"):
+    # FIX-3a (B2a OPN-03, K-OPN-02) — urutan acuan biaya: rata-rata gudang → rata-rata pemilik → HARGA POKOK MASTER
+    # produk (`harga_pokok`, field yang dipakai penerimaan & `costing_service`). Dulu field ini dilewati (279 produk
+    # ber-`harga_pokok`, 0 ber-`standard_cost`) → roll temuan bernilai 0 tanpa jurnal.
+    for k in ("harga_pokok", "standard_cost", "cost_price", "purchase_price", "base_price_cost"):
         if float(prod.get(k) or 0) > 0:
             return float(prod[k]), f"produk.{k}"
     return 0.0, "tidak_ada"
@@ -89,6 +92,9 @@ async def _shortage(item: Dict[str, Any], warehouse_id: str, need: float, ref: s
                 {"$set": {**upd, "updated_at": now_iso()}})
             if res.modified_count != 1:
                 continue  # roll berubah bersamaan (mis. reservasi) — lewati, dicoba di putaran berikut
+            if new_len <= EPS:   # FIX-3a (B2a OPN-04) — roll habis lewat opname: tag RFID-nya dicabut
+                from services.stock_count_roll_service import retire_tags_of_roll
+                await retire_tags_of_roll(r["id"], f"opname {ref}")
             cost = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
             applied = round(applied + take, 2)
             value += take * cost

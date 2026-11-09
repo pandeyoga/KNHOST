@@ -9,6 +9,7 @@
  */
 import { useEffect, useState, useMemo } from "react";
 import { BarChart2, Plus, X, History, RefreshCw, Search, MapPin, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
+import { parseDecimal } from "../../utils/decimalInput";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { apiErrorText } from "../../utils/apiError";
@@ -60,8 +61,8 @@ const ROLL_CSV_COLUMNS = [
 ];
 
 const emptyForm = {
-  product_id: "", owner_entity_id: "", warehouse_id: "", quantity: 0,
-  unit: "meter", lot: "", grade: "A", batch: "", roll_no: "",
+  product_id: "", owner_entity_id: "", warehouse_id: "", quantity: "",
+  unit: "", lot: "", grade: "A", batch: "", roll_no: "", bin_id: "",
 };
 
 export default function InventoryStockView({ warehouses = [], products = [], entities = [], customers = [], selectedEntity = "all", user }) {
@@ -196,8 +197,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   };
 
   const handleAddInitialStock = async () => {
+    // FIX-3a (B3b INP-10) — panjang diketik dengan koma desimal ("12,5") → dikirim sebagai teks, server mengurai.
     if (!stockForm.product_id || !stockForm.owner_entity_id || !stockForm.warehouse_id
-        || stockForm.quantity <= 0 || !stockForm.lot.trim()) {
+        || !(parseDecimal(stockForm.quantity) > 0) || !stockForm.lot.trim()) {
       setStockFormError("Produk, pemilik (entitas), gudang, panjang, dan lot wajib diisi.");
       return;
     }

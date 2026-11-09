@@ -215,7 +215,15 @@ async def list_devices(warehouse_id: Optional[str] = None) -> List[Dict[str, Any
     return [public_device(d) for d in devs]
 
 
-async def create_device(payload: Dict[str, Any], actor_name: str = "System") -> Dict[str, Any]:
+async def simulation_on(entity_id: str = "") -> bool:
+    """FIX-3a (B3b FRM-12/13, keputusan K-B3b-09) — tombol/endpoint simulasi hanya saat 'Mode simulasi RFID'
+    (`wms.rfid_simulation`) aktif untuk PT pengguna (atau global)."""
+    from services.config_resolver import value_of
+    return bool(await value_of("wms.rfid_simulation", {"entity_id": entity_id or ""}))
+
+
+async def create_device(payload: Dict[str, Any], actor_name: str = "System", *, sim_entity: Optional[str] = None
+                        ) -> Dict[str, Any]:
     dtype = (payload.get("type") or "").strip()
     if dtype not in DEVICE_TYPES:
         raise HTTPException(status_code=400, detail=f"Tipe device tidak valid: {dtype}")
@@ -226,20 +234,24 @@ async def create_device(payload: Dict[str, Any], actor_name: str = "System") -> 
     if code and await db.rfid_devices.find_one({"code": code}):
         raise HTTPException(status_code=409, detail="Kode device sudah dipakai")
     direction = payload.get("direction") or ("out" if dtype == "gate" else "n/a")
+    # FIX-3a (B3b FRM-12) — kesehatan = bukti dari perangkat: perangkat baru TIDAK lagi lahir "online" dengan detak
+    # palsu. Hanya di mode simulasi RFID (sim_entity diberi pemanggil) detak simulasi ditulis — bertanda `simulated`.
+    sim = sim_entity is not None and await simulation_on(sim_entity)
     dev = {
         "id": new_id("rdev"), "code": code or f"DEV-{uuid.uuid4().hex[:5].upper()}",
         "name": (payload.get("name") or "").strip() or "RFID Device",
         "type": dtype, "direction": direction if dtype == "gate" else "n/a",
         "warehouse_id": wh["id"], "warehouse_name": wh.get("name", ""),
         "location": (payload.get("location") or "").strip(),
-        "status": payload.get("status") or "online", "enabled": True,
-        "last_heartbeat": now_iso(), "created_at": now_iso(), "created_by": actor_name,
+        "status": "online" if sim else "offline", "enabled": True,
+        "last_heartbeat": now_iso() if sim else None, **({"heartbeat_source": "simulated"} if sim else {}),
+        "created_at": now_iso(), "created_by": actor_name,
     }
     await db.rfid_devices.insert_one(dev)
     return public_device(dev)
 
 
-async def update_device(device_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+async def update_device(device_id: str, patch: Dict[str, Any], *, sim_entity: Optional[str] = None) -> Dict[str, Any]:
     dev = await db.rfid_devices.find_one({"id": device_id}, {"_id": 0})
     if not dev:
         raise HTTPException(status_code=404, detail="Device tidak ditemukan")
@@ -255,7 +267,13 @@ async def update_device(device_id: str, patch: Dict[str, Any]) -> Dict[str, Any]
     elif allowed.get("status") == "online":
         if not will_enable:
             raise HTTPException(status_code=400, detail="Device nonaktif — aktifkan dulu sebelum dinyalakan")
+        # FIX-3a (B3b FRM-12, K-B3b-09) — "Nyalakan" manual = detak SIMULASI: hanya di mode simulasi RFID & bertanda.
+        if sim_entity is None or not await simulation_on(sim_entity):
+            raise HTTPException(status_code=400, detail=(
+                "Status 'online' hanya dari detak perangkat. Untuk mengaktifkan perangkat pakai 'Aktifkan'; detak manual "
+                "hanya tersedia saat Mode simulasi RFID aktif."))
         allowed["last_heartbeat"] = now_iso()
+        allowed["heartbeat_source"] = "simulated"
     allowed["updated_at"] = now_iso()
     await db.rfid_devices.update_one({"id": device_id}, {"$set": allowed})
     return public_device(await db.rfid_devices.find_one({"id": device_id}, {"_id": 0}))
@@ -308,7 +326,7 @@ async def list_reads(device_id: Optional[str], result: Optional[str], read_type:
 
 
 async def _record_read(device: Dict[str, Any], roll: Dict[str, Any], tag: Dict[str, Any],
-                       read_type: str, decision: Dict[str, str]) -> Dict[str, Any]:
+                       read_type: str, decision: Dict[str, str], *, simulated: bool = False) -> Dict[str, Any]:
     read = {
         "id": new_id("rread"), "epc": tag.get("epc"), "tag_id": tag.get("id"), "roll_id": roll.get("id"),
         "sku": tag.get("sku"), "product_name": tag.get("product_name"), "roll_no": roll.get("roll_no"),
@@ -316,8 +334,11 @@ async def _record_read(device: Dict[str, Any], roll: Dict[str, Any], tag: Dict[s
         "read_type": read_type, "warehouse_id": device.get("warehouse_id"),
         "location": device.get("location"), "owner_entity_id": roll.get("owner_entity_id"),
         "result": decision["result"], "reason": decision["reason"], "timestamp": now_iso(),
+        **({"simulated": True} if simulated else {}),
     }
     await db.rfid_reads.insert_one(read)
+    if simulated:   # FIX-3a (FRM-13) — bacaan simulasi tidak mengubah "terakhir terlihat" tag nyata
+        return safe_doc(read)
     if read["result"] == "red" and read_type in ("gate_in", "gate_out"):
         from services import rfid_incident_service as inc  # FASE R6 — alarm otomatis
         await inc.create_from_read(read)
@@ -358,7 +379,12 @@ async def gate_simulate(device_id: str, roll_id: str, scope_ids: List[str]) -> D
     return {**safe_doc(read), "duplicate": bool(hit.get("duplicate")), "passage": res.get("passage")}
 
 
-async def reader_scan(device_id: str, scope_ids: List[str], cap: int = 60) -> Dict[str, Any]:
+async def reader_scan(device_id: str, scope_ids: List[str], cap: int = 60, *, sim_entity: Optional[str] = None
+                      ) -> Dict[str, Any]:
+    """'Simulasi Pindai Area' (B3b FRM-13, K-B3b-09): hanya di mode simulasi RFID; bacaan bertanda `simulated`
+    dan tidak menulis lokasi/terakhir terlihat tag (dulu mencemari `rfid_reads` → opname RFID menyesatkan)."""
+    if sim_entity is None or not await simulation_on(sim_entity):
+        raise HTTPException(status_code=403, detail="Simulasi pindai area hanya tersedia saat Mode simulasi RFID aktif.")
     device = await db.rfid_devices.find_one({"id": device_id}, {"_id": 0})
     if not device:
         raise HTTPException(status_code=404, detail="Device tidak ditemukan")
@@ -375,7 +401,8 @@ async def reader_scan(device_id: str, scope_ids: List[str], cap: int = 60) -> Di
         if not roll:
             continue
         reads.append(await _record_read(device, roll, tag, "inventory",
-                                        {"result": "info", "reason": "Terbaca fixed reader (inventory sweep)."}))
+                                        {"result": "info", "reason": "SIMULASI sapuan fixed reader (mode simulasi RFID)."},
+                                        simulated=True))
     return {"scanned": len(reads), "device": safe_doc(device), "reads": reads}
 
 

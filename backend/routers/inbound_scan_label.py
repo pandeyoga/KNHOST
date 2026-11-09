@@ -137,8 +137,9 @@ async def scan_label(task_id: str, payload: ScanLabelIn, request: Request) -> Di
     """Decode label → cocokkan Supplier Item → validasi PO → roll `receiving` (idempoten)."""
     actor = await require_permission(request, "wms", "update")
     task = await _load_task(task_id, request)
-    if task["status"] in ("completed", "cancelled", "qc_pending"):
-        raise HTTPException(status_code=400, detail="Task sudah selesai / sedang QC — tidak bisa scan lagi.")
+    # FIX-3a (B2a FLW-IN-01) — daftar-izin status asal (dulu daftar-larang: `qc_rejected`/`escalated` lolos sampai CAS).
+    from services import inbound_task_state as _its
+    _its.assert_can(task, "scan_label")
     from services.receiving_roll_service import create_label_roll, resolve_label_input
     from services.goods_receipt_service import guard_legacy_receiving
     await guard_legacy_receiving(task)

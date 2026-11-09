@@ -77,6 +77,7 @@ export const regApi = {
   submit: (sid) => axios.post(`${REG}/${sid}/submit`).then((r) => r.data),
   reconcile: (sid) => axios.get(`${REG}/${sid}/reconcile`).then((r) => r.data),
   approve: (sid, body) => axios.post(`${REG}/${sid}/approve`, body).then((r) => r.data),
+  approveCount: (sid, reason) => axios.post(`${REG}/${sid}/approve-count`, { reason }).then((r) => r.data),   // FIX-3a
   giveBack: (sid, reason) => axios.post(`${REG}/${sid}/return`, { reason }).then((r) => r.data),
   reject: (sid, reason) => axios.post(`${REG}/${sid}/reject`, { reason }).then((r) => r.data),
 };

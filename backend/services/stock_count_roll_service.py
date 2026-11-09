@@ -79,14 +79,28 @@ async def _relocation_block(roll: Dict[str, Any], bin_id: str) -> Optional[str]:
 async def make_snapshot(session: Dict[str, Any], node_id: str, owners: Optional[List[str]]) -> Dict[str, Any]:
     wh = await db.warehouses.find_one({"id": session["warehouse_id"]}, {"_id": 0}) or {}
     bins = scope_bins(wh, node_id)
+    bin_ids = [b["bin_id"] for b in bins]
     q: Dict[str, Any] = {"warehouse_id": session["warehouse_id"], "status": {"$in": PHYSICAL_ROLL_STATUSES},
-                         "length_remaining": {"$gt": 0}, "bin_id": {"$in": [b["bin_id"] for b in bins]}}
+                         "length_remaining": {"$gt": 0}}
+    if node_id:
+        q["bin_id"] = {"$in": bin_ids}
+    else:
+        # FIX-3a (B2a OPN-02, keputusan koordinator D8) — cakupan SELURUH GEDUNG = semua roll fisik gedung itu:
+        # roll TANPA bin (hasil tiba PA/transfer/retur yang belum ditempatkan) dan roll beralamat yatim (bin tidak ada
+        # di struktur) ikut potret sebagai "harus ditemukan". Dulu tak pernah diharapkan → tak terdeteksi hilang.
+        pass
     if owners is not None:
         q["owner_entity_id"] = {"$in": owners}
     rolls = await db.inventory_rolls.find(q, ROLL_FIELDS).to_list(20000)
+    unbinned = sum(1 for r in rolls if r.get("bin_id") not in set(bin_ids))
+    outside = 0
+    if node_id:   # cakupan zona/rak: roll tanpa bin tidak bisa dipastikan zonanya — dilaporkan, tidak diharapkan
+        outside = await db.inventory_rolls.count_documents({**{k: v for k, v in q.items() if k != "bin_id"},
+                                                            "bin_id": {"$in": [None, ""]}})
     return {
         "node_id": node_id, "node_label": _node_label(bins[0], node_id) if node_id else "Seluruh gudang",
-        "bin_ids": [b["bin_id"] for b in bins], "snapshot_at": now_iso(), "owners": owners,
+        "bin_ids": bin_ids, "snapshot_at": now_iso(), "owners": owners,
+        "unbinned_expected": unbinned, "unbinned_outside_scope": outside,
         "expected": [{"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "product_id": r.get("product_id"),
                       "owner_entity_id": r.get("owner_entity_id", ""), "bin_id": r.get("bin_id"),
                       "qty": float(r.get("length_remaining") or 0), "unit": r.get("unit", ""), "status": r.get("status")}
@@ -178,6 +192,18 @@ LEASE_TTL = 120   # detik
 BUSY = "Baris ini sedang diproses pemroses lain (atau proses sebelumnya terhenti < 2 menit lalu) — finalisasi lagi sebentar lagi."
 
 
+async def retire_tags_of_roll(roll_id: str, reason: str) -> int:
+    """Cabut tag RFID aktif milik roll yang keluar stok karena opname (FIX-3a OPN-04)."""
+    res = await db.rfid_tags.update_many(
+        {"roll_id": roll_id, "status": {"$in": ["active", "pending_print"]}},   # = LIVE_TAG pendaftaran/handheld
+        {"$set": {"status": "retired", "retired_at": now_iso(), "retire_reason": reason[:200], "updated_at": now_iso()}})
+    if res.modified_count:   # sama dengan `rfid_service.retire_tag`: identitas tag & bukti verifikasinya gugur
+        await db.inventory_rolls.update_one({"id": roll_id}, {"$set": {"rfid_tag_id": None, "tracking_mode": "barcode",
+                                                                         "updated_at": now_iso()},
+                                                                "$unset": {"journey.verified_tag_id": ""}})
+    return res.modified_count
+
+
 def _cutoff(seconds: int) -> str:
     return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).isoformat()
 
@@ -234,6 +260,10 @@ async def _finish_op(session: Dict[str, Any], key: str, op: Dict[str, Any]) -> D
         out["journal_id"] = (je or {}).get("id")
     if op.get("rebuild"):
         await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id", ""))
+    if (op.get("upd") or {}).get("status") == "consumed":
+        # FIX-3a (B2a OPN-04) — roll yang dihapus/habis lewat opname: tag RFID-nya dicabut (setara pendaftaran awal);
+        # dulu tag tetap `active` menunjuk roll mati → gate/handheld masih mengenalinya. Idempoten.
+        await retire_tags_of_roll(roll["id"], f"opname {session.get('name') or session['id']}")
     await db.cycle_count_sessions.update_one({"id": session["id"], f"{OPS}.{key}.token": op["token"]},
                                              {"$set": {f"{OPS}.{key}.status": "done", f"{OPS}.{key}.result": out,
                                                        f"{OPS}.{key}.lease": None, f"{OPS}.{key}.done_at": now_iso()}})
@@ -404,3 +434,33 @@ async def create_found_roll(session: Dict[str, Any], scan: Dict[str, Any], spec:
                                                 "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
     return {"status": "applied", "new_roll_id": roll["id"], "new_roll_no": roll.get("roll_no"), "qty": qty, "unit_cost": cost,
             "cost_basis": basis, "value": round(qty * cost, 2), "journal_id": (je or {}).get("id"), "at": now_iso(), "by": actor}
+
+
+async def create_followup_session(session: Dict[str, Any], rec: Dict[str, Any], actor: str) -> Optional[Dict[str, Any]]:
+    """FIX-3a (B2a OPN-06) — roll yang tidak ditemukan & BELUM dihitung ulang saat ACC tidak lagi dibiarkan tanpa
+    tindak lanjut: sistem membuat SESI TURUNAN "hitung ulang" (opname per roll, cakupan & bin sama, daftar harus-
+    ditemukan = roll-roll itu saja). Roll tetap di stok sampai sesi turunan diputuskan (ditemukan → cocok/pindah alamat;
+    tetap tidak ada → dihitung ulang lalu dihapus saat ACC). Idempoten per sesi induk."""
+    pending = [m for m in rec.get("missing") or [] if not m.get("recount") and not m.get("adjustment")]
+    if not pending:
+        return None
+    sid = "cc_" + hashlib.sha1(f"{session['id']}:followup".encode()).hexdigest()[:12]
+    if await db.cycle_count_sessions.find_one({"id": sid}, {"_id": 1}):
+        return {"id": sid, "existing": True}
+    rc0 = session.get("roll_count") or {}
+    doc = {
+        "id": sid, "entity_id": session.get("entity_id"), "warehouse_id": session["warehouse_id"],
+        "warehouse_name": session.get("warehouse_name", ""), "warehouse_city": session.get("warehouse_city", ""),
+        "name": f"Hitung ulang — {session.get('name') or session['id']}", "notes": (
+            f"Sesi turunan otomatis: {len(pending)} roll tidak ditemukan dan belum dihitung ulang saat sesi "
+            f"{session.get('name') or session['id']} disetujui."),
+        "status": "open", "mode": "roll", "items": [], "parent_session_id": session["id"],
+        "roll_count": {"node_id": rc0.get("node_id", ""), "node_label": rc0.get("node_label", ""),
+                       "bin_ids": rc0.get("bin_ids") or [], "snapshot_at": now_iso(), "owners": rc0.get("owners"),
+                       "expected": [{k: m.get(k) for k in ("roll_id", "roll_no", "product_id", "owner_entity_id", "bin_id",
+                                                           "qty", "unit", "status")} for m in pending],
+                       "scans": [], "duplicates": 0, "followup_of": session["id"]},
+        "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
+    }
+    await db.cycle_count_sessions.insert_one(dict(doc))
+    return {"id": sid, "name": doc["name"], "rolls": len(pending)}

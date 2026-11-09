@@ -307,7 +307,7 @@ ACTION_LABEL = {
     "lock": "Kunci harga final", "set_price": "Isi harga (PIC Special Order)",
     "view_cost": "Lihat biaya kontrak, margin & supplier",
     "confirm": "Konfirmasi", "cancel": "Batalkan", "print": "Cetak", "export": "Ekspor", "import": "Impor",
-    "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_payment": "Setujui bayar", "cutting_config": "Atur kemampuan cutting lokasi", "cutting_receive": "Terima hasil potong (Admin Cutting)",
+    "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_value": "Setujui nilai & jurnal pendaftaran awal", "approve_payment": "Setujui bayar", "cutting_config": "Atur kemampuan cutting lokasi", "cutting_receive": "Terima hasil potong (Admin Cutting)",
     "assess": "Nilai", "assign": "Tugaskan", "award": "Tetapkan pemenang", "backdate": "Tanggal mundur", "claim": "Klaim",
     "claim_approve": "Setujui klaim", "complete": "Selesaikan", "configure": "Konfigurasi", "convert": "Konversi",
     "cycle_count": "Stock opname", "decide": "Putuskan", "deliver": "Serahkan / kirim", "disburse": "Cairkan",

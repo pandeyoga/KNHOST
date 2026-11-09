@@ -123,11 +123,22 @@ def pick_declared(quantities: Iterable[Dict[str, Any]], target_unit: str = "") -
 DEFAULT_PO_PATTERNS = [r"(?P<core>\d{3,5})/(CST|SCB)/\d{4}", r"[A-Z]+/PO-(?P<core>\d+)"]
 
 
+def valid_pattern(p: Any) -> bool:
+    """FIX-3a (B3b FRM-19) — pola regex dari setelan bisa rusak (data lama): dicek sebelum dipakai."""
+    try:
+        re.compile(str(p))
+        return bool(str(p).strip())
+    except re.error:
+        return False
+
+
 def po_cores(texts: Iterable[Optional[str]], patterns: Sequence[str]) -> List[str]:
     """Inti nomor PO klien dari teks bebas (grup bernama `core`); nomor milik supplier tidak cocok pola → diabaikan."""
     out: List[str] = []
     for t in texts:
         for p in patterns:
+            if not valid_pattern(p):   # FIX-3a — pola rusak dilewati, bukan galat 500
+                continue
             for m in re.finditer(p, str(t or ""), flags=re.I):
                 core = (m.groupdict().get("core") or "").lstrip("0")
                 if core and core not in out:

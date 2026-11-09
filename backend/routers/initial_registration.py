@@ -10,7 +10,8 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from db import db
-from dependencies import audit, require_permission
+from dependencies import audit, require_any_permission, require_permission
+from input_rules import KNIn, OptReasonStr, ReasonStr
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
 from core_utils import new_id, now_iso, safe_doc
 from services import initial_registration_lines as irl
@@ -21,7 +22,7 @@ from services import registration_freeze as rfz
 router = APIRouter()
 
 
-class RegSessionCreate(BaseModel):
+class RegSessionCreate(KNIn):
     warehouse_id: str
     name: str = ""
     notes: str = ""
@@ -30,7 +31,7 @@ class RegSessionCreate(BaseModel):
     node_ids: List[str] = []
 
 
-class RegLineIn(BaseModel):
+class RegLineIn(KNIn):
     epc: Optional[str] = None
     product_id: Optional[str] = None
     qty: Optional[float] = Field(default=None, gt=0, le=100000)
@@ -47,32 +48,37 @@ class RegLineIn(BaseModel):
     label_raw: Optional[str] = None
 
 
-class RegCodesIn(BaseModel):
+class RegCodesIn(KNIn):
     codes: Any = ""                     # teks tempel (baris/spasi/koma) atau daftar
 
 
-class RegLabelIn(BaseModel):
+class RegLabelIn(KNIn):
     raw: str
     supplier_id: str = ""
 
 
-class RegRackIn(BaseModel):
+class RegRackIn(KNIn):
     done: bool = True
 
 
-class RegLineIds(BaseModel):
+class RegLineIds(KNIn):
     line_ids: List[str] = []
 
 
-class RegReason(BaseModel):
-    reason: str
+class RegReason(KNIn):
+    reason: ReasonStr                    # FIX-3a — K-14 ≥ 5 huruf (satu validator bersama)
 
 
-class RegApproveIn(BaseModel):
+class RegApproveIn(KNIn):
     group_keys: List[str] = []          # kosong = seluruh sesi
-    reason: str = "Disetujui sesuai hasil pendaftaran awal"
-    zero_cost_reason: str = ""
+    # FIX-3a (B3b FRM-09 #11) — tanpa alasan bawaan teks tetap; wajib ≥ 5 huruf.
+    reason: ReasonStr
+    zero_cost_reason: OptReasonStr = ""
     accept_exceptions: bool = False
+
+
+# FIX-3a — izin BACA sesi pendaftaran: petugas/penyetuju hitung ATAU Finance (penyetuju nilai & jurnal).
+_READ_PERMS = [("inventory", "cycle_count"), ("inventory", "approve_value")]
 
 
 async def _session(sid: str, request: Request) -> Dict[str, Any]:
@@ -103,7 +109,7 @@ async def create_reg_session(payload: RegSessionCreate, request: Request) -> Dic
 
 @router.get("/registration/sessions")
 async def list_reg_sessions(request: Request, warehouse_id: str = "", status: str = "") -> List[Dict[str, Any]]:
-    await require_permission(request, "inventory", "cycle_count")
+    await require_any_permission(request, _READ_PERMS)
     q = resolve_list_scope("cycle_count_sessions", {"mode": "registration"}, await entity_ctx(request))
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
@@ -116,7 +122,7 @@ async def list_reg_sessions(request: Request, warehouse_id: str = "", status: st
 
 @router.get("/registration/sessions/{sid}")
 async def get_reg_session(sid: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "inventory", "cycle_count")
+    await require_any_permission(request, _READ_PERMS)
     return await irs.detail(await _session(sid, request))
 
 
@@ -178,6 +184,7 @@ async def update_reg_line(sid: str, line_id: str, payload: RegLineIn, request: R
     s = await _session(sid, request)
     actor = await _line_actor(request, s)
     irs.assert_status(s, "running", "pending_approval")
+    irs.assert_lines_editable(s)   # FIX-3a — hitungan disetujui gudang = baris terkunci
     out = await irl.update_line(s, line_id, payload.model_dump(), actor, await _ctx_owners(request))
     await audit(actor["name"], "registration_line_updated", "cycle_count", sid, {"line_id": line_id, "product_id": out.get("product_id")})
     return out
@@ -188,6 +195,7 @@ async def void_reg_line(sid: str, line_id: str, request: Request) -> Dict[str, A
     s = await _session(sid, request)
     actor = await _line_actor(request, s)
     irs.assert_status(s, "running", "pending_approval")
+    irs.assert_lines_editable(s)   # FIX-3a — hitungan disetujui gudang = baris terkunci
     return await irl.void_line(s, line_id, actor)
 
 
@@ -245,16 +253,18 @@ async def submit_reg_session(sid: str, request: Request) -> Dict[str, Any]:
 
 @router.get("/registration/sessions/{sid}/reconcile")
 async def reconcile_reg_session(sid: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "inventory", "cycle_count")
+    await require_any_permission(request, _READ_PERMS)
     return await irp.reconcile(await _session(sid, request))
 
 
 @router.post("/registration/sessions/{sid}/return")
 async def return_reg_session(sid: str, payload: RegReason, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "inventory", "approve_count")
-    if len(payload.reason.strip()) < 5:
-        raise HTTPException(status_code=400, detail="Alasan minimal 5 karakter.")
-    s = await irs.return_to_running(await _session(sid, request), payload.reason.strip(), actor)
+    s0 = await _session(sid, request)
+    # FIX-3a — saat menunggu Finance, Finance juga boleh mengembalikan sesi ke gudang (angka perlu diperbaiki).
+    actor = (await require_any_permission(request, [("inventory", "approve_count"), ("inventory", "approve_value")])
+             if (s0.get("registration") or {}).get("count_approval") else
+             await require_permission(request, "inventory", "approve_count"))
+    s = await irs.return_to_running(s0, payload.reason.strip(), actor)
     await audit(actor["name"], "registration_returned", "cycle_count", sid, {"reason": payload.reason.strip()})
     return await irs.detail(s)
 
@@ -262,21 +272,33 @@ async def return_reg_session(sid: str, payload: RegReason, request: Request) -> 
 @router.post("/registration/sessions/{sid}/reject")
 async def reject_reg_session(sid: str, payload: RegReason, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "inventory", "approve_count")
-    if len(payload.reason.strip()) < 5:
-        raise HTTPException(status_code=400, detail="Alasan penolakan minimal 5 karakter.")
     s = await irs.reject(await _session(sid, request), payload.reason.strip(), actor)
     await audit(actor["name"], "registration_rejected", "cycle_count", sid, {"reason": payload.reason.strip()})
     return await irs.detail(s)
 
 
+@router.post("/registration/sessions/{sid}/approve-count")
+async def approve_reg_count(sid: str, payload: RegReason, request: Request) -> Dict[str, Any]:
+    """FIX-3a — LANGKAH 1 persetujuan dua langkah: gudang menyetujui HITUNGAN (baris terkunci; stok & jurnal belum)."""
+    actor = await require_permission(request, "inventory", "approve_count")
+    s = await irs.approve_count(await _session(sid, request), payload.reason, actor)
+    await audit(actor["name"], "registration_count_approved", "cycle_count", sid,
+                {"reason": payload.reason, "totals": ((s.get("registration") or {}).get("count_approval") or {}).get("totals")})
+    return await irs.detail(s)
+
+
 @router.post("/registration/sessions/{sid}/approve")
 async def approve_reg_session(sid: str, payload: RegApproveIn, request: Request) -> Dict[str, Any]:
-    """Persetujuan massal per produk×PT (`group_keys`) atau seluruh sesi. Idempoten & aman diulang."""
+    """Persetujuan massal per produk×PT (`group_keys`) atau seluruh sesi. Idempoten & aman diulang.
+    FIX-3a — bila `registration.finance_approval` aktif (bawaan) ini LANGKAH 2: Finance (`inventory.approve_value`,
+    orang berbeda dari penyetuju hitungan) menyetujui nilai & jurnal → roll lama dihapus & jurnal diposting."""
     from services import initial_registration_approve as ira
-    actor = await require_permission(request, "inventory", "approve_count")
-    if len(payload.reason.strip()) < 5:
-        raise HTTPException(status_code=400, detail="Alasan persetujuan minimal 5 karakter.")
     s = await _session(sid, request)
+    if await irs.finance_step_required(s.get("entity_id") or ""):
+        actor = await require_permission(request, "inventory", "approve_value")
+        await irs.assert_finance_ready(s, actor)
+    else:
+        actor = await require_permission(request, "inventory", "approve_count")
     out = await ira.approve(s, [k for k in payload.group_keys if k], actor["name"], await _ctx_owners(request),
                             reason=payload.reason.strip(), zero_cost_reason=payload.zero_cost_reason.strip(),
                             accept_exceptions=payload.accept_exceptions)

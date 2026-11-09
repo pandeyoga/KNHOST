@@ -5,6 +5,7 @@
  * sehingga UI Pusat Pengaturan bisa di-generate dari registry backend — UI dan mesin
  * tidak mungkin lagi berbeda (akar masalah "tombol palsu").
  */
+import { useEffect, useState } from "react";
 import KNSelect from "../../../components/KNSelect";
 import SettingTableEditor from "./SettingTableEditor";
 
@@ -29,6 +30,34 @@ function NumberField({ entry, value, onChange, disabled, testId }) {
           batas {entry.min ?? "−∞"} … {entry.max ?? "∞"}
         </span>
       )}
+    </div>
+  );
+}
+
+// FIX-3a (B3b FRM-19) — daftar POLA REGEX: satu butir per baris. Pemisah koma memecah kuantor `\d{3,5}` menjadi dua
+// butir rusak; server kini juga menolak regex tak sah (value_format "regex").
+const NL = "\n";
+
+function LinesField({ value, onChange, disabled, testId }) {
+  const asText = (v) => (Array.isArray(v) ? v.join(NL) : String(v ?? ""));
+  const [draft, setDraft] = useState(asText(value));
+  const key = JSON.stringify(value);
+  useEffect(() => { setDraft(asText(value)); }, [key]);
+  return (
+    <div className="cfg-num-wrap">
+      <textarea
+        className="form-input cfg-input cfg-input-wide font-mono text-[12px]"
+        rows={Math.max(2, Math.min(8, draft.split(NL).length))}
+        value={draft}
+        disabled={disabled}
+        placeholder="satu pola per baris"
+        onChange={(e) => {
+          setDraft(e.target.value);
+          onChange(e.target.value.split(NL).map((x) => x.trim()).filter((x) => x !== ""));
+        }}
+        data-testid={testId}
+      />
+      <span className="cfg-bounds">satu butir per baris · urutan berpengaruh</span>
     </div>
   );
 }
@@ -110,6 +139,7 @@ export default function SettingEditor({ entry, value, onChange, disabled, testId
           disabled={disabled} testId={tid} />
       );
     case "list":
+      if (entry.value_format === "regex") return <LinesField value={value} onChange={onChange} disabled={disabled} testId={tid} />;
       return <ListField value={value} onChange={onChange} disabled={disabled} testId={tid} />;
     case "table":
       return <TableField entry={entry} value={value} onChange={onChange} disabled={disabled} testId={tid} />;

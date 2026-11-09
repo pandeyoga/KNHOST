@@ -28,6 +28,7 @@ class PAConfirmPayload(BaseModel):
     scanned_epcs: Optional[List[str]] = None
     manual_all: bool = False  # WM-03 — override tanpa scan: wajib alasan + izin wms.approve
     reason: str = ""
+    simulated: bool = False   # FIX-3a (K-B3b-09) — "Simulasi Scan Semua": hanya saat mode simulasi RFID PT aktif
 
 
 class PAResolvePayload(BaseModel):
@@ -105,7 +106,8 @@ async def post_confirm(order_id: str, payload: PAConfirmPayload, request: Reques
     actor = await require_permission(request, "wms", "approve" if payload.manual_all else "update")
     order = await pa.confirm_arrival(order_id, payload.scanned_epcs,
                                      await _scope(request), actor["name"],
-                                     manual_all=payload.manual_all, reason=payload.reason)
+                                     manual_all=payload.manual_all, reason=payload.reason,
+                                     simulated=payload.simulated)
     await audit(actor["name"], "putaway_order_confirmed", "putaway_order", order_id,
                 {"btg": order.get("btg_number"), "exceptions": order.get("exception_count", 0),
                  "manual_all": payload.manual_all, "reason": payload.reason})

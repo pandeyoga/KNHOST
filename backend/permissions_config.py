@@ -31,7 +31,8 @@ DEFAULT_PERMISSIONS = {
         # `interco_finance` = saldo pasangan PT, pelunasan, laporan margin, penagihan
         #   → HANYA admin/manager (L20: gudang sebelumnya bisa membacanya).
         "interco_finance": ["view"],
-        "inventory": ["view", "create", "update", "cycle_count", "approve_count", "pegging"],
+        # FIX-3a — `approve_value`: langkah 2 pendaftaran awal (nilai & jurnal, sesudah hitungan disetujui gudang).
+        "inventory": ["view", "create", "update", "cycle_count", "approve_count", "approve_value", "pegging"],
         "reports": ["view", "export"],
         "label": ["view", "generate"],
         "transfer": ["view", "create", "update", "approve", "reject", "complete", "cancel"],
@@ -176,7 +177,7 @@ DEFAULT_PERMISSIONS = {
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel", "cutting_config", "cutting_receive"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
-        "inventory": ["view", "cycle_count", "approve_count", "update", "pegging"],
+        "inventory": ["view", "cycle_count", "approve_count", "approve_value", "update", "pegging"],
         "reports": ["view", "export"],
         "label": ["view", "generate"],
         "transfer": ["view", "create", "approve", "reject", "complete"],
@@ -343,6 +344,9 @@ DEFAULT_PERMISSIONS = {
     },
     "finance": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
+        # FIX-3a (keputusan koordinator, persetujuan dua langkah) — Finance menyetujui NILAI & JURNAL pendaftaran awal
+        # gedung sesudah gudang menyetujui hitungan. Hanya aksi itu (+ membaca sesi pendaftaran); tidak ada izin stok lain.
+        "inventory": ["approve_value"],
         "goods_receipt": ["view"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
         # REVISI SAMPEL — Finance menyetujui PEMBAYARAN sample berbayar (bersama Admin Sample).
         "sample_order": ["view", "approve_payment"],

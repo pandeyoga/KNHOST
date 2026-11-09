@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios, { API } from "../services/apiClient";
+import { parseDecimal } from "../utils/decimalInput";
 
 /** Label sumber faktor — dipakai UI agar operator tahu dari mana angkanya. */
 export const RECEIVE_SOURCE_LABEL = {
@@ -56,7 +57,7 @@ export default function useReceivingUom(taskId) {
   /** Pratinjau konversi (debounce) — tidak menulis apa pun di server. */
   const runPreview = useCallback((docUom, docQty) => {
     if (timer.current) clearTimeout(timer.current);
-    const qty = Number(docQty);
+    const qty = parseDecimal(docQty);   // FIX-3a (INP-10) — "12,5" = 12.5
     if (!taskId || !docUom || !Number.isFinite(qty) || qty <= 0) {
       setPreview(null); setPreviewError(""); setPreviewing(false);
       return;

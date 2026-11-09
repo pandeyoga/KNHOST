@@ -892,9 +892,59 @@ async def complete_inspection(return_id: str, actor: str,
         {"$set": {"status": st.INSPECTED, "inspection_status": "done", "items": items,
                   "inspection": summary, "inspected_by": actor, "inspected_at": now,
                   "updated_at": now}})
+    # FIX-3a (B2a FLW-IN-09) — inspeksi retur lewat FORM retur: SPK QC retur yang lahir otomatis (belum diisi) ditutup,
+    # tidak menggantung `draft` sesudah retur selesai (dua jalur inspeksi retur tidak lagi tidak sinkron).
+    await _close_return_spk(return_id, actor, "Retur sudah diinspeksi lewat form retur")
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
     return ret
+
+
+async def _close_return_spk(return_id: str, actor: str, reason: str) -> None:
+    """Best-effort: SPK QC retur yang belum ada baris diperiksa → ditutup ber-alasan (jejak di SPK)."""
+    try:
+        from services import inspection_service as _ins
+        await _ins.close_unneeded_return_spk(return_id, {"name": actor or "Sistem"}, reason)
+    except Exception as exc:  # noqa: BLE001 — penutupan SPK tidak boleh menggagalkan dokumen retur
+        _log.warning("[return] SPK retur %s tidak ditutup: %s", return_id, exc)
+
+
+async def route_released_return_rolls(roll_ids: List[str], ret: Dict[str, Any], actor: str) -> Dict[str, Any]:
+    """FIX-3a (B2a FLW-IN-09, keputusan koordinator D6) — roll retur yang LEPAS karantina diarahkan sesuai GRADE:
+    grade B/BS/C yang diterima aturan gudang retur tetap di Gedung Retur (tahap `stored`); grade lain (A) atau yang
+    ditolak aturan gudang tempatnya → DRAF Putaway Order otomatis ke gudang simpan di lokasi yang sama.
+    Dulu roll grade A tertinggal di Gedung Retur (aturan grade B/BS/C tidak dicek) dan tanpa draf PA."""
+    from services import placement_rules as _pr
+    from services import warehouse_profile_service as _whp
+    from services.rfid_print_service import set_journey
+    stay, move = [], []
+    rolls = await db.inventory_rolls.find({"id": {"$in": [r for r in roll_ids if r]}, "status": "available"},
+                                          {"_id": 0}).to_list(500)
+    whs: Dict[str, Dict[str, Any]] = {}
+    for r in rolls:
+        wid = r.get("warehouse_id") or ""
+        if wid not in whs:
+            whs[wid] = await db.warehouses.find_one({"id": wid}, {"_id": 0}) or {}
+        wh = whs[wid]
+        prod = await db.products.find_one({"id": r.get("product_id")}, {"_id": 0}) or {}
+        ok_here = not await _pr.warehouse_violations(wh, r, prod)
+        grade = str(r.get("grade") or "A").upper()
+        if ok_here and (_whp.has_role(wh, *_whp.STORAGE_ROLES)
+                        or (_whp.has_role(wh, "return") and grade in ("B", "BS", "C"))):
+            stay.append(r["id"])
+        else:
+            move.append(r["id"])
+    if stay:
+        await set_journey(stay, "stored", {"return_routed": "stay"}, only_from=["received_transit", "label_verified",
+                                                                                 "tag_printed", "tag_verified"])
+    draft: Dict[str, Any] = {}
+    if move:
+        from services import inbound_qc_common as _iqc
+        await set_journey(move, "received_transit", {"return_routed": "putaway"},
+                          only_from=["received_transit", "label_verified", "tag_printed", "tag_verified", "stored"])
+        draft = await _iqc.auto_draft_after_release(
+            move, {"type": "return_release", "id": ret.get("id", ""), "number": ret.get("number", "")}, actor)
+    return {"stay": len(stay), "putaway": len(move), "putaway_draft": draft}
 
 
 _COND_RANK = {"ok": 0, "minor": 1, "damaged": 2}
@@ -1311,9 +1361,16 @@ async def release_quarantine(return_id: str, actor: str,
                           "updated_at": now}))
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
+    # FIX-3a (FLW-IN-09, D6) — arah roll yang lepas sesuai grade (tetap di Gedung Retur / draf PA ke gudang simpan).
+    try:
+        routing = await route_released_return_rolls(
+            [r["id"] for r in q_rolls if (dmap.get(r["id"], {}).get("action", "release") != "scrap")], ret, actor)
+    except Exception as exc:  # noqa: BLE001 — pengarahan tidak boleh menggagalkan pelepasan yang sudah final
+        _log.warning("[return] pengarahan roll retur %s gagal: %s", return_id, exc)
+        routing = {"error": str(exc)[:200]}
     ret["_release_summary"] = {"released": released, "scrapped": scrapped, "regraded": regraded,
                                "writeoff_total": writeoff_total, "writeoff_jes": writeoff_jes,
-                               "grade_impairment_total": impairment_total}
+                               "grade_impairment_total": impairment_total, "routing": routing}
     return ret
 
 

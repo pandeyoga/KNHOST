@@ -39,6 +39,22 @@ WH = "wh_jakarta"
 T = f"TEST_iter118_{uuid.uuid4().hex[:6]}"
 
 
+def _real_bins(wh_id: str):
+    """FIX-3a (B3b INP-02) — bin opname wajib bin STRUKTUR gudang (dulu teks bebas "binA" diterima → expected 0 untuk
+    kode rak yang benar). Uji memakai 4 bin nyata gudang uji (produk uji unik, jadi expected tetap hanya roll uji)."""
+    from pymongo import MongoClient as _Sync
+    wh = _Sync("mongodb://localhost:27017")["test_database"].warehouses.find_one({"id": wh_id}, {"_id": 0, "zones": 1}) or {}
+    out = []
+    for z in wh.get("zones") or []:
+        for rk in z.get("racks") or []:
+            for lv in (rk.get("levels") or [{"bins": rk.get("bins") or []}]):
+                out += [b["id"] for b in lv.get("bins") or [] if b.get("id")]
+    return out
+
+
+BIN_A, BIN_B, BIN_C, BIN_D = (_real_bins(WH) + ["binA", "binB", "binC", "binD"])[:4]
+
+
 def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
@@ -107,19 +123,19 @@ def _count(client, sid: str, item_id: str, qty: float):
 class TestWM07StockOpnameHTTP:
     def test_full_two_bin_flow(self, admin):
         p = _run(_mk_product(1))
-        _run(_mk_roll(p["id"], 1, 40, "binA"))
-        _run(_mk_roll(p["id"], 2, 60, "binB"))
+        _run(_mk_roll(p["id"], 1, 40, BIN_A))
+        _run(_mk_roll(p["id"], 2, 60, BIN_B))
 
         sid = _create_session(admin, "wm07")
 
         # Add binA — expected_qty = 40 (bin scope, bukan 100 gudang)
-        ra = _add_item(admin, sid, p["id"], "binA")
+        ra = _add_item(admin, sid, p["id"], BIN_A)
         assert ra.status_code == 200, ra.text
         ia = ra.json()
         assert ia["expected_qty"] == 40, ia
 
         # Duplicate (same bin) → 409
-        rdup = _add_item(admin, sid, p["id"], "binA")
+        rdup = _add_item(admin, sid, p["id"], BIN_A)
         assert rdup.status_code == 409, rdup.text
 
         # Mix level (warehouse-level empty bin) → 409
@@ -127,7 +143,7 @@ class TestWM07StockOpnameHTTP:
         assert rmix.status_code == 409, rmix.text
 
         # Add binB
-        rb = _add_item(admin, sid, p["id"], "binB")
+        rb = _add_item(admin, sid, p["id"], BIN_B)
         assert rb.status_code == 200, rb.text
         ib = rb.json()
         assert ib["expected_qty"] == 60, ib
@@ -155,10 +171,10 @@ class TestWM07StockOpnameHTTP:
                         json={"reason": "audit"}, timeout=20)
         assert ra.status_code == 200, ra.text
         rolls_a = _run(DB.inventory_rolls.find(
-            {"product_id": p["id"], "bin_id": "binA", "status": {"$ne": "consumed"}},
+            {"product_id": p["id"], "bin_id": BIN_A, "status": {"$ne": "consumed"}},
             {"_id": 0, "length_remaining": 1}).to_list(10))
         rolls_b = _run(DB.inventory_rolls.find(
-            {"product_id": p["id"], "bin_id": "binB"},
+            {"product_id": p["id"], "bin_id": BIN_B},
             {"_id": 0, "length_remaining": 1}).to_list(10))
         assert sum(r["length_remaining"] for r in rolls_a) == 30
         assert sum(r["length_remaining"] for r in rolls_b) == 60
@@ -237,11 +253,11 @@ class TestFN14Surplus:
 class TestWM08PickedAndDrift:
     def test_picked_in_scope_and_drift_409(self, admin):
         p = _run(_mk_product(4))
-        _run(_mk_roll(p["id"], 41, 10, "binC", "available"))
-        _run(_mk_roll(p["id"], 42, 30, "binC", "picked",
+        _run(_mk_roll(p["id"], 41, 10, BIN_C, "available"))
+        _run(_mk_roll(p["id"], 42, 30, BIN_C, "picked",
                       reserved_ref={"type": "sales_order", "id": f"{T}_so"}))
         sid = _create_session(admin, "picked")
-        it = _add_item(admin, sid, p["id"], "binC").json()
+        it = _add_item(admin, sid, p["id"], BIN_C).json()
         assert it.get("expected_qty") == 40, it
         assert _count(admin, sid, it["id"], 0).status_code == 200
         assert admin.post(f"{BASE}/api/cycle-count/sessions/{sid}/submit",
@@ -259,9 +275,9 @@ class TestWM08PickedAndDrift:
 
         # Drift keluar scope setelah submit → approve 409, roll tidak berubah
         p2 = _run(_mk_product(5))
-        _run(_mk_roll(p2["id"], 51, 20, "binD"))
+        _run(_mk_roll(p2["id"], 51, 20, BIN_D))
         sid2 = _create_session(admin, "drift")
-        it2 = _add_item(admin, sid2, p2["id"], "binD").json()
+        it2 = _add_item(admin, sid2, p2["id"], BIN_D).json()
         assert _count(admin, sid2, it2["id"], 15).status_code == 200
         assert admin.post(f"{BASE}/api/cycle-count/sessions/{sid2}/submit",
                           timeout=20).status_code == 200

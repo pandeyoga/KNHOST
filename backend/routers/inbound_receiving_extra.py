@@ -155,6 +155,10 @@ async def qc_decision(task_id: str, payload: QCDecision, request: Request) -> Di
             f"Keputusan karantina mengikuti SPK {open_spk.get('number', '')} — tutup SPK itu dengan keputusan "
             "(Gudang → SPK Inspeksi); roll diterima/ditolak otomatis."))
     from services.qc_service import process_qc_decision
+    if float(payload.reject_qty or 0) > 0.01:
+        # FIX-3a (B3b FRM-09 #3) — menolak barang (rusak / retur supplier) wajib ber-alasan ≥ 5 huruf (K-14).
+        from input_rules import require_reason
+        payload.reason = require_reason(payload.reason, label="Alasan menolak barang")
     try:
         result = await process_qc_decision(
             task, payload.accept_qty, payload.reject_qty,

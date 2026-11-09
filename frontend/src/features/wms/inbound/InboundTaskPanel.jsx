@@ -210,7 +210,7 @@ export default function InboundTaskPanel({
               className={`w-full rounded-lg border border-[#007AFF]/30 ${cameraActive ? "block" : "hidden"}`}
               style={{ maxHeight: "160px" }} />
 
-            <InboundScanForm scanData={scanData} setScanData={setScanData} uom={uom} />
+            <InboundScanForm scanData={scanData} setScanData={setScanData} uom={uom} warehouseId={task.warehouse_id} />
             </>)}
 
             <div className="flex gap-2">

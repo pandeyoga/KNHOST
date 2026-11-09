@@ -36,7 +36,7 @@ export const ACTION_LABEL = {
   generate: "Hasilkan", issue: "Terbitkan", inspect: "Inspeksi", assess: "Nilai", award: "Tetapkan Pemenang", decide: "Putuskan",
   propose: "Usulkan", resolve: "Selesaikan Kasus", return: "Retur", replace: "Ganti", convert: "Konversi", dispose: "Hapus Buku",
   manage_bom: "Kelola BOM", manage_org: "Kelola Organisasi", manage_attendance: "Kelola Absensi", manage_payroll: "Kelola Gaji",
-  manage_settings: "Kelola Pengaturan", policy: "Atur Kebijakan", view_pii: "Lihat Data Pribadi", approve_count: "Setujui Opname",
+  manage_settings: "Kelola Pengaturan", policy: "Atur Kebijakan", view_pii: "Lihat Data Pribadi", approve_count: "Setujui Opname", approve_value: "Setujui Nilai Pendaftaran Awal",
   // UAT 24 Okt (audit UI tahap 2) — G0-03/G0-16: aksi izin yang belum berlabel.
   activate: "Aktifkan", admin: "Administrasi", approve_loss: "Setujui Susut", approve_payment: "Setujui Pembayaran",
   cutting_config: "Atur Pemotongan", cutting_receive: "Terima Hasil Potong", decide_compensation: "Putuskan Kompensasi",

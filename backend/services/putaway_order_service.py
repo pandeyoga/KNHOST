@@ -130,8 +130,12 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
                 cands.append({"warehouse_id": wh["id"], "warehouse_name": wh.get("name", ""),
                               "site_id": wh.get("site_id", ""),
                               "same_site": wh.get("site_id") and wh.get("site_id") == src.get("site_id"),
-                              "rules_mode": (wh.get("storage_rules") or {}).get("mode", "none")})
-        cands.sort(key=lambda c: (not c["same_site"], c["rules_mode"] == "none"))
+                              "rules_mode": (wh.get("storage_rules") or {}).get("mode", "none"),
+                              # FIX-3a (B2a FLW-IN-02) — spesifik = daftar aturan TERISI (mode tanpa daftar = terima semua)
+                              "specific": any(pr.warehouse_rules(wh).get(k) for k in (
+                                  "categories", "grades", "fabric_types", "template_ids", "owner_entity_ids")),
+                              "code": wh.get("code") or ""})
+        cands.sort(key=lambda c: (not c["same_site"], not c["specific"], c["code"]))
         g["candidates"] = cands
         g["qty"] = round(g["qty"], 2)
     return {"warehouse_from": {"id": src["id"], "name": src.get("name", "")},
@@ -334,7 +338,15 @@ async def list_orders(scope_ids: List[str], warehouse_id: Optional[str],
     if status:
         q["status"] = status
     orders = await db.putaway_orders.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
-    return [safe_doc(o) for o in orders]
+    # FIX-3a (B3b FRM-10, K-B3b-09) — layar menampilkan tombol simulasi HANYA untuk PT bermode simulasi RFID.
+    sim = {e: await simulation_on(e) for e in {o.get("owner_entity_id") or "" for o in orders}}
+    return [{**safe_doc(o), "rfid_simulation": sim.get(o.get("owner_entity_id") or "", False)} for o in orders]
+
+
+async def simulation_on(entity_id: str) -> bool:
+    """Mode simulasi RFID (`wms.rfid_simulation`) untuk PT pemilik PA (bawaan mati)."""
+    from services.config_resolver import value_of
+    return bool(await value_of("wms.rfid_simulation", {"entity_id": entity_id or ""}))
 
 
 async def _get(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
@@ -492,13 +504,22 @@ MIN_OVERRIDE_REASON = 10
 
 async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
                           scope_ids: List[str], actor_name: str,
-                          manual_all: bool = False, reason: str = "") -> Dict[str, Any]:
+                          manual_all: bool = False, reason: str = "", simulated: bool = False) -> Dict[str, Any]:
     """Konfirmasi tiba TERAKHIR (menutup PA): yang terbaca tiba, roll lain yang masih menunggu → exception.
     WM-03: `scanned_epcs=[]` = NOL roll tiba; tanpa hasil scan hanya lewat override manual ber-alasan (`manual_all`).
     PREP-C — tiba bertahap per trip (tanpa menutup) memakai `putaway_arrival_service.confirm_arrival_trip`."""
     order = await _get(order_id, scope_ids)
     if order["status"] not in ARRIVAL_STATUSES:
         raise HTTPException(status_code=400, detail=f"PA berstatus {order['status']}")
+    if simulated:
+        # FIX-3a (B3b FRM-10, K-B3b-09) — "Simulasi Scan Semua" hanya saat mode simulasi RFID aktif untuk PT itu; hasilnya
+        # BERTANDA simulasi (bukan "gate-in scan"). Di luar mode simulasi tombolnya ditolak (dulu melewati syarat
+        # konfirmasi manual wms.approve + alasan).
+        if not await simulation_on(order.get("owner_entity_id") or ""):
+            raise HTTPException(status_code=403, detail=(
+                "Simulasi scan hanya boleh saat 'Mode simulasi RFID' aktif untuk PT ini — pakai pindai nyata, atau "
+                "konfirmasi manual ber-alasan (butuh izin setujui)."))
+        scanned_epcs = [i.get("epc") for i in order.get("items") or [] if i.get("epc") and i.get("status") == "pending"]
     why = (reason or "").strip()
     if manual_all:
         if len(why) < MIN_OVERRIDE_REASON:
@@ -515,7 +536,7 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
                               precondition={"status": {"$in": list(ARRIVAL_STATUSES)}}, actor=actor_name)
     try:
         return await _confirm_arrival_claimed(fresh, order_id, scanned_epcs, scope_ids, actor_name,
-                                              manual_all, why, _saga)
+                                              manual_all, why, _saga, simulated=simulated)
     except BaseException:
         # G3 D4-PA-02 — gagal di tengah: kunci dilepas supaya retry lewat fitur asli bisa MELANJUTKAN
         # (roll yang sudah dipindah untuk PA ini diadopsi oleh _land_items; mutasi ber-id deterministik).
@@ -523,14 +544,21 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
         raise
 
 
-async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name, manual_all, why, _saga):
+async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name, manual_all, why, _saga,
+                                   simulated: bool = False):
     from services import putaway_arrival_service as arr
-    await arr.land_matching(order, None if manual_all else (scanned_epcs or []), actor_name,
-                            f"manual: {why}" if manual_all else "gate-in scan")
+    res = await arr.land_matching(order, None if manual_all else (scanned_epcs or []), actor_name,
+                                  f"manual: {why}" if manual_all else ("SIMULASI scan (mode simulasi RFID)" if simulated
+                                                                       else "gate-in scan"))
+    if simulated:
+        for i in res.get("arrived") or []:
+            i["arrived_via"] = "simulated"
     await arr.mark_pending(order, "exception", actor_name, "EPC tidak terbaca saat konfirmasi tiba")
     upd = await arr.finish_update(order, actor_name)
     if manual_all:
         upd["manual_override"] = {"by": actor_name, "reason": why, "at": now_iso()}
+    if simulated:
+        upd["simulated"] = {"by": actor_name, "at": now_iso(), "rolls": [i.get("roll_no") for i in res.get("arrived") or []]}
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
     out = await _get(order_id, scope_ids)
     await arr.gate_session_hook(out)   # PREP-D2 — PA ditutup → sesi dokumen gate dinilai (K-RFID-10)
@@ -544,17 +572,28 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
     PREP-C — `accept` setara konfirmasi manual (izin `wms.approve`, dijaga router); status akhir dari status item
     (semua dikembalikan & 0 tiba = `returned`, bukan `completed`)."""
     from services import putaway_arrival_service as arr
+    from input_rules import require_reason
     order = await _get(order_id, scope_ids)
     if action not in ("accept", "return_transit"):
         raise HTTPException(status_code=400, detail="Aksi harus 'accept' atau 'return_transit'")
+    # FIX-3a (B3b FRM-09 #13) — alasan wajib ≥ 5 huruf (dulu diisi otomatis "exception accept oleh …").
+    why = require_reason(reason, label="Alasan menyelesaikan pengecualian")
     target = [i for i in order["items"] if i["status"] == "exception" and i["roll_id"] in set(roll_ids)]
     if not target:
         raise HTTPException(status_code=404, detail="Tidak ada item exception yang cocok")
+    # FIX-3a (B2a STM-IN-05) — kait pembekuan pendaftaran awal (gerak roll ke tujuan / kembali ke transit).
+    from services import registration_freeze as _rfz
+    await _rfz.assert_order_movable({**order, "items": target}, "menyelesaikan pengecualian perintah putaway")
     # INV-ATOMIC-01 — klaim perintah putaway sebelum roll/tag/jejak/balance ditulis.
+    # FIX-3a (STM-IN-05) — klaim BERPRASYARAT: PA bukan draf/batal dan roll target masih berstatus exception;
+    # dokumen dibaca ULANG dari hasil klaim (dulu dibaca sebelum klaim tanpa prasyarat).
     from services import atomic_claim as _saga
-    await _saga.claim("putaway_orders", order_id, "putaway_resolve_exception", actor=actor_name)
+    order = await _saga.claim("putaway_orders", order_id, "putaway_resolve_exception", actor=actor_name,
+                              precondition={"status": {"$nin": ["draft", "cancelled"]},
+                                            "items": {"$elemMatch": {"status": "exception",
+                                                                     "roll_id": {"$in": [i["roll_id"] for i in target]}}}})
+    target = [i for i in order["items"] if i["status"] == "exception" and i["roll_id"] in set(roll_ids)]
     now = now_iso()
-    why = (reason or "").strip() or f"exception {action} oleh {actor_name}"
     if action == "accept":
         await _land_items(order, target, actor_name, f"exception accept: {why}")
         for i in target:
@@ -565,7 +604,9 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
         await return_items_to_transit(order, target, actor_name)
     upd = await arr.finish_update(order, actor_name)
     await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
-    return await _get(order_id, scope_ids)
+    out = await _get(order_id, scope_ids)
+    await arr.gate_session_hook(out)   # FIX-3a (STM-IN-05) — status akhir → sesi dokumen gate ditutup seperti jalur tiba
+    return out
 
 
 async def verify_labels(warehouse_id: str, codes: List[str], scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
@@ -578,16 +619,25 @@ async def verify_labels(warehouse_id: str, codes: List[str], scope_ids: List[str
     rows = await db.inventory_rolls.find(
         {"warehouse_id": warehouse_id, "owner_entity_id": {"$in": scope_ids}, "roll_no": {"$in": list(wanted)}},
         {"_id": 0, "id": 1, "roll_no": 1, "rfid_tag_id": 1, "journey": 1, "status": 1}).to_list(2000)
-    ok, skipped = [], []
+    ok, skipped, no_print = [], [], []
     now = now_iso()
+    # FIX-3a (B2a FLW-IN-17) — verifikasi label terikat BUKTI CETAK: roll tanpa catatan cetak label/tag tetap
+    # diverifikasi (label pabrik/supplier sah dipindai) tetapi DITANDAI "tanpa bukti cetak" agar terlihat di layar & audit.
+    # Bukti = `roll_label_prints` (satu baris per label tercetak, append-only — dari antrean cetak & cetak ulang).
+    printed = {d["roll_id"] async for d in db.roll_label_prints.find(
+        {"roll_id": {"$in": [r["id"] for r in rows]}}, {"_id": 0, "roll_id": 1})} if rows else set()
     for r in rows:
         stage = (r.get("journey") or {}).get("stage") or ""
         if stage not in ("received_transit", "tag_printed", "label_verified", "gate_exception"):
             skipped.append({"roll_no": r["roll_no"], "why": f"tahap {stage or '—'} bukan tahap penerimaan"})
             continue
+        evidence = "print_record" if r["id"] in printed else "none"
         await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
             "journey.stage": "label_verified", "journey.verified_via": "label_scan", "journey.verified_by": actor_name,
+            "journey.label_print_evidence": evidence,
             "journey.updated_at": now, "updated_at": now}, "$unset": {"journey.exception_reason": ""}})
         ok.append(r["roll_no"])
+        if evidence == "none":
+            no_print.append(r["roll_no"])
     found = {r["roll_no"].upper() for r in rows}
-    return {"verified": ok, "skipped": skipped, "not_found": sorted(wanted - found)}
+    return {"verified": ok, "skipped": skipped, "not_found": sorted(wanted - found), "without_print_record": no_print}

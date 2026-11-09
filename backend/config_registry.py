@@ -171,6 +171,7 @@ def E(
     columns: Optional[Sequence[Dict[str, Any]]] = None,
     permission: Optional[Tuple[str, str]] = None,
     roles: Sequence[str] = (),
+    value_format: str = "",
 ) -> Dict[str, Any]:
     """Daftarkan satu setting. Validasi ketat supaya registry tidak pernah setengah jadi."""
     if key in _REGISTRY:
@@ -202,6 +203,8 @@ def E(
         raise ValueError(f"config_registry[{key}]: status not_used wajib not_used_reason")
     if not label or not help or not impact:
         raise ValueError(f"config_registry[{key}]: label/help/impact wajib diisi")
+    if value_format and value_format not in VALUE_FORMATS:
+        raise ValueError(f"config_registry[{key}]: value_format '{value_format}' tidak dikenal")
 
     legacy_scope, legacy_path = legacy_target(key)
     entry: Dict[str, Any] = {
@@ -228,6 +231,8 @@ def E(
         "simulate": simulate,
         "related": list(related),
         "row_shape": row_shape or ("json" if type == "table" else ""),
+        # FIX-3a (B3b FRM-19) — isi nilai divalidasi: `regex` (tiap butir daftar dikompilasi) · `json_map` (teks = objek JSON).
+        "value_format": value_format,
         "columns": [dict(c) for c in (columns or [])],
         # Izin yang dibutuhkan untuk MENGUBAH setting ini. Default `settings.manage`
         # (admin). Beberapa setting sengaja memakai izin domainnya sendiri supaya
@@ -299,7 +304,42 @@ def search(term: str) -> List[Dict[str, Any]]:
 
 
 # ── Validasi & koersi nilai (dipakai PUT /api/config/values) ─────────────────
+VALUE_FORMATS = ("regex", "json_map")
+
+
+def _check_format(entry: Dict[str, Any], value: Any) -> Any:
+    """FIX-3a (B3b FRM-19) — nilai yang lolos tipe tetapi isinya rusak (regex tak valid, JSON patah) DITOLAK saat disimpan;
+    dulu tersimpan lalu `GET /goods-receipts/usage` / OCR galat 500 untuk semua GRN."""
+    fmt, key = entry.get("value_format") or "", entry["key"]
+    if fmt == "regex":
+        import re as _re
+        items = [str(x) for x in value]
+        for i, pat in enumerate(items, 1):
+            if not pat.strip():
+                raise ValueError(f"'{key}' butir {i} kosong — hapus butir kosong.")
+            try:
+                _re.compile(pat)
+            except _re.error as exc:
+                raise ValueError(f"'{key}' butir {i} bukan pola regex yang sah ({exc}). Pola: {pat}") from exc
+        return items
+    if fmt == "json_map":
+        import json as _json
+        try:
+            obj = _json.loads(value) if isinstance(value, str) else value
+        except ValueError as exc:
+            raise ValueError(f"'{key}' harus teks JSON yang sah ({exc}).") from exc
+        if not isinstance(obj, dict):
+            raise ValueError(f"'{key}' harus objek JSON {{...}}.")
+        return value if isinstance(value, str) else _json.dumps(obj)
+    return value
+
+
 def coerce(entry: Dict[str, Any], value: Any) -> Any:
+    """FIX-3a — tipe dulu (`_coerce_type`), lalu isi (`value_format`)."""
+    return _check_format(entry, _coerce_type(entry, value))
+
+
+def _coerce_type(entry: Dict[str, Any], value: Any) -> Any:
     """Ubah nilai masukan menjadi tipe yang benar; lempar `ValueError` bila tak sah.
 
     Pesan error ditulis dalam Bahasa Indonesia agar bisa langsung ditampilkan ke user.

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { parseDecimal } from "../../utils/decimalInput";
 import { Printer, Save } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiText, inspectLine } from "./inspectionsApi";
@@ -27,7 +28,7 @@ export const parseCell = (text) => {
 };
 
 export const stdrt = (points, yards, widthInch) => {
-  const y = Number(yards); const w = Number(widthInch);
+  const y = parseDecimal(yards); const w = parseDecimal(widthInch);   // FIX-3a (INP-10)
   return y > 0 && w > 0 ? Math.round((Number(points || 0) * 3600 / (y * w)) * 100) / 100 : null;
 };
 
@@ -60,7 +61,7 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
     axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([]));
   }, []);
 
-  const cols = Math.max(MIN_COLS, ...lines.map((ln) => Math.ceil(Number(rows[ln.id]?.yards || 0) / IV - 1e-9)));
+  const cols = Math.max(MIN_COLS, ...lines.map((ln) => Math.ceil(parseDecimal(rows[ln.id]?.yards || 0) / IV - 1e-9)));
   const upd = (id, patch) => setRows((r) => ({ ...r, [id]: { ...r[id], ...patch, dirty: true } }));
   const points = (r) => Object.values(r?.cells || {}).reduce((s, c) => s + parseCell(c).defects.reduce((a, d) => a + d.point_value, 0), 0);
   const codes = (meta?.defect_codes || []).map((c) => c.code);
@@ -78,9 +79,10 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
         const r = rows[ln.id];
         const defects = Object.entries(r.cells).flatMap(([iv, c]) => parseCell(c).defects.map((d) => ({ ...d, interval: Number(iv), count: 1, note: "" })));
         fresh = await inspectLine(doc.id, ln.id, {
-          part: "qc", defects, inspect_length_yard: r.yards === "" ? null : Number(r.yards),
-          width_actual: r.widthInch === "" ? null : Math.round(Number(r.widthInch) * 2.54 * 10) / 10,
-          yard_split: { A: Number(r.A || 0), A1: Number(r.A1 || 0), B: Number(r.B || 0) },
+          // FIX-3a (B3b INP-10) — "120,5" dulu NaN → 0 tersimpan; kini koma desimal diurai.
+          part: "qc", defects, inspect_length_yard: r.yards === "" ? null : parseDecimal(r.yards),
+          width_actual: r.widthInch === "" ? null : Math.round(parseDecimal(r.widthInch) * 2.54 * 10) / 10,
+          yard_split: { A: parseDecimal(r.A || 0), A1: parseDecimal(r.A1 || 0), B: parseDecimal(r.B || 0) },
           repair_note: r.repair, remark: r.remark, decision: r.reject ? "tolak" : "", grade: r.grade || "",
         });
       }

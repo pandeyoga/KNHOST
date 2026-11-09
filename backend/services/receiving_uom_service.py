@@ -229,8 +229,12 @@ async def convert_doc_qty(task: Dict[str, Any], doc_uom: str, doc_qty: Any,
                 f"{_id_num(conv)} {base_uom}", hop]
     # ── Jalur 3: registry global (dengan guardrail kebijakan) ────────────────
     else:
+        # FIX-3a (B2a FLW-IN-13, keputusan koordinator D4) — konversi BAKU (panjang↔panjang / berat↔berat dari master
+        # satuan, mis. meter↔yard) sah tanpa barang supplier; jejak konversi tetap dicatat. Kebijakan "wajib barang
+        # supplier" kini hanya untuk satuan supplier non-baku (cone, lembar, roll…).
+        baku = await is_fixed_pair(src_uom, task_uom)
         if (bool(st.get("require_supplier_item_for_supplier_uom", True))
-                and src_uom not in (task_uom, base_uom)):
+                and src_uom not in (task_uom, base_uom) and not baku):
             hint = (f"Barang supplier '{sup_item.get('supplier_sku')}' terdaftar dengan satuan "
                     f"'{sup_uom or '-'}', bukan '{src_uom}'."
                     if sup_item else
@@ -245,6 +249,8 @@ async def convert_doc_qty(task: Dict[str, Any], doc_uom: str, doc_qty: Any,
         source, rule_id = trail["source"], trail.get("rule_id", "")
         factor = trail["factor"]
         path = list(trail.get("path") or [])
+        if baku and src_uom not in (task_uom, base_uom):
+            path.append("konversi baku master satuan (tanpa barang supplier — D4)")
 
     # Qty dalam satuan DASAR produk (dipakai stok/roll/laporan)
     if task_uom == base_uom:
@@ -453,6 +459,28 @@ async def receive_tolerance_pct(task: Dict[str, Any]) -> float:
     po = await db.purchase_orders.find_one({"id": task.get("po_id")}, {"_id": 0, "entity_id": 1})
     st = await get_effective_settings((po or {}).get("entity_id"))
     return float((st.get("purchasing", {}) or {}).get("receive_tolerance_percent", 2.0) or 0)
+
+
+async def is_fixed_pair(a: str, b: str) -> bool:
+    """FIX-3a (D4) — dua satuan berdimensi SAMA dengan faktor baku di master satuan (panjang: meter/yard/cm/inch…;
+    berat: kg/gram/ton…). Satuan supplier seperti cone/lembar/roll bukan konversi baku."""
+    from services.uom_service import CANONICAL_LENGTH_FACTORS, load_uom_rows
+    na, nb = (a or "").strip().lower(), (b or "").strip().lower()
+    if not na or not nb:
+        return False
+    if na == nb:
+        return True
+    dims: Dict[str, str] = {k: "length" for k in CANONICAL_LENGTH_FACTORS}
+    for u in await load_uom_rows():
+        if (u.get("status") or "active") != "active" or u.get("factor_to_base") in (None, 0):
+            continue
+        bt = (u.get("base_type") or "").strip().lower()
+        if bt not in ("length", "weight"):
+            continue
+        for k in [u.get("name"), u.get("code")] + list(u.get("aliases") or []):
+            if k:
+                dims[str(k).strip().lower()] = bt
+    return bool(dims.get(na)) and dims.get(na) == dims.get(nb)
 
 
 async def preflight_scan(task: Dict[str, Any], payload: Any, *, can_override: bool = False) -> Dict[str, Any]:

@@ -11,6 +11,7 @@
  */
 import { AlertTriangle, ArrowRight, Info, Scale } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import DecimalInput from "../../../components/DecimalInput";
 import { RECEIVE_SOURCE_LABEL } from "../../../hooks/useReceivingUom";
 import { formatQty } from "../../../utils/formatters";
 
@@ -53,11 +54,13 @@ export default function ReceiveUomPanel({
       </div>
 
       <div className="grid grid-cols-[1fr_178px] gap-1.5">
-        <input type="number" min="0" step="any"
+        {/* FIX-3a (B3b INP-10) — koma desimal Indonesia ("12,5") diterima; teks dikirim apa adanya, server mengurai. */}
+        <DecimalInput
           data-testid="receive-doc-qty-input"
           value={docQty ?? ""}
           disabled={disabled || !opt}
-          onChange={(e) => onQtyChange(e.target.value)}
+          onChange={(v) => onQtyChange(v)}
+          min={0}
           placeholder={opt ? `Qty dalam ${docUom || taskUom}` : "Memuat…"}
           className="w-full rounded-lg border border-[#E5E5EA] bg-white px-2 py-1.5 text-sm disabled:bg-[#F2F2F7]" />
         <KNSelect

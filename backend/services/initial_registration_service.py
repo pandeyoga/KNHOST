@@ -3,6 +3,10 @@
 Sesi = dokumen `cycle_count_sessions` ber-`mode: "registration"` (mesin opname yang sama: klaim saga, catatan operasi
 bertahap per roll, jurnal `cycle_count_variance`), dengan status sendiri:
   draft → running (pembekuan aktif) → pending_approval → approved | approved_with_exceptions | rejected.
+FIX-3a (keputusan koordinator "persetujuan dua langkah") — `pending_approval` punya dua langkah bila setelan
+`registration.finance_approval` aktif (bawaan): (1) gudang menyetujui HITUNGAN (`registration.count_approval`, baris
+terkunci) → (2) Finance menyetujui NILAI & JURNAL (orang berbeda, izin `inventory.approve_value`) → baru roll lama dihapus
+& jurnal diposting. "Kembalikan" membatalkan persetujuan hitungan.
 Baris lapangan (roll + tag yang akan lahir) disimpan di koleksi `initial_registration_lines` (lihat
 `initial_registration_lines.py`) — satu baris per roll fisik, EPC unik selama baris hidup (indeks unik parsial).
 """
@@ -148,6 +152,66 @@ async def progress(session: Dict[str, Any]) -> Dict[str, Any]:
             "pending_write": tot("pending_write")}
 
 
+async def finance_step_required(entity_id: str) -> bool:
+    """Setelan `registration.finance_approval` (bawaan AKTIF) per badan usaha sesi."""
+    from services.config_resolver import value_of
+    v = await value_of("registration.finance_approval", {"entity_id": entity_id or ""})
+    return True if v is None else bool(v)
+
+
+def approval_step(session: Dict[str, Any], finance_required: bool) -> str:
+    """'' (bukan menunggu) · 'count' (menunggu gudang menyetujui hitungan) · 'finance' (menunggu Finance)."""
+    if session.get("status") != "pending_approval":
+        return ""
+    if not finance_required:
+        return "single"
+    return "finance" if (session.get("registration") or {}).get("count_approval") else "count"
+
+
+async def approve_count(session: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Langkah 1 (gudang): hitungan disetujui → baris terkunci, angka rekonsiliasi dibekukan untuk Finance."""
+    assert_status(session, "pending_approval")
+    if not await finance_step_required(session.get("entity_id") or ""):
+        raise HTTPException(status_code=400, detail="Persetujuan dua langkah tidak aktif — langsung setujui sesi.")
+    if (session.get("registration") or {}).get("count_approval"):
+        raise HTTPException(status_code=409, detail="Hitungan sesi ini sudah disetujui gudang — menunggu Finance.")
+    rec = await plan_svc.reconcile(session)
+    if rec["unmapped"]:
+        raise HTTPException(status_code=400, detail=(
+            f"{len(rec['unmapped'])} baris 'produk belum dikenali' — petakan ke produk atau batalkan barisnya sebelum "
+            "hitungan disetujui."))
+    ca = {"by": actor.get("name", ""), "by_id": actor.get("id", ""), "at": now_iso(), "reason": reason,
+          "totals": rec.get("totals") or {}}
+    res = await db.cycle_count_sessions.update_one(
+        {"id": session["id"], "status": "pending_approval", "registration.count_approval": {"$exists": False},
+         "saga_lock": {"$exists": False}},
+        {"$set": {"registration.count_approval": ca, "updated_at": now_iso()}})
+    if res.modified_count != 1:
+        raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang.")
+    return await load(session["id"])
+
+
+def assert_lines_editable(session: Dict[str, Any]) -> None:
+    """Sesudah gudang menyetujui hitungan, baris terkunci (Finance menilai angka yang sudah final)."""
+    if session.get("status") == "pending_approval" and (session.get("registration") or {}).get("count_approval"):
+        raise HTTPException(status_code=409, detail=(
+            "Hitungan sesi ini sudah disetujui gudang — baris terkunci. 'Kembalikan' sesi bila baris perlu diubah."))
+
+
+async def assert_finance_ready(session: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """Langkah 2 (Finance): hanya sesudah hitungan disetujui gudang, oleh orang yang BERBEDA."""
+    if session.get("status") != "pending_approval" or not await finance_step_required(session.get("entity_id") or ""):
+        return   # status lain → penolakan status baku dari `approve` (400), bukan galat langkah
+    ca = (session.get("registration") or {}).get("count_approval")
+    if not ca:
+        raise HTTPException(status_code=400, detail=(
+            "Langkah 1 belum: gudang belum menyetujui HITUNGAN sesi ini (Setujui hitungan). Nilai & jurnal disetujui "
+            "Finance sesudahnya."))
+    if (ca.get("by_id") and ca.get("by_id") == actor.get("id")) or (not ca.get("by_id") and ca.get("by") == actor.get("name")):
+        raise HTTPException(status_code=403, detail=(
+            "Persetujuan nilai & jurnal wajib oleh orang yang berbeda dari penyetuju hitungan (dua langkah)."))
+
+
 async def detail(session: Dict[str, Any]) -> Dict[str, Any]:
     out = {k: v for k, v in session.items() if k not in ("roll_count",)}
     reg = dict(out.get("registration") or {})
@@ -158,6 +222,8 @@ async def detail(session: Dict[str, Any]) -> Dict[str, Any]:
                 "status_label": STATUS_LABEL.get(session.get("status"), session.get("status")),
                 "freeze_mode_label": FREEZE_MODES.get(reg.get("freeze_mode"), ""),
                 "epc_mode_label": EPC_MODES.get(reg.get("epc_mode"), "")})
+    fin = await finance_step_required(session.get("entity_id") or "")
+    out.update({"finance_approval_required": fin, "approval_step": approval_step(session, fin)})
     return out
 
 
@@ -193,7 +259,8 @@ async def return_to_running(session: Dict[str, Any], reason: str, actor: Dict[st
     res = await db.cycle_count_sessions.update_one(
         {"id": session["id"], "status": "pending_approval", "saga_lock": {"$exists": False}},
         {"$set": {"status": "running", "registration.returned": {"by": actor["name"], "at": now_iso(), "reason": reason},
-                  "updated_at": now_iso()}})
+                  "updated_at": now_iso()},
+         "$unset": {"registration.count_approval": ""}})   # FIX-3a — persetujuan hitungan gugur
     if res.modified_count != 1:
         raise HTTPException(status_code=409, detail="Sesi sedang disetujui / baru saja berubah — muat ulang.")
     return await load(session["id"])

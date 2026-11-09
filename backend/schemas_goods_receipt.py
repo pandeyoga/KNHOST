@@ -2,6 +2,7 @@
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
+from input_rules import ReasonStr
 
 from schemas_scan_label import ManualLabelIn
 
@@ -20,7 +21,7 @@ class GRNVersionIn(BaseModel):
 
 
 class GRNReasonIn(GRNVersionIn):
-    reason: str = Field(..., min_length=5)   # K-14
+    reason: ReasonStr   # K-14 — FIX-3a: dihitung HURUF (5 spasi/"....." ditolak), satu validator bersama
 
 
 class GRNDnPatch(GRNVersionIn):
@@ -93,7 +94,7 @@ class GRNCatalogIn(GRNVersionIn):
 class GRNModeIn(BaseModel):
     entity_id: str = Field(..., min_length=1)
     mode: Literal["legacy", "grn"]
-    reason: str = Field(..., min_length=5)
+    reason: ReasonStr   # FIX-3a — K-14 dihitung huruf
 
 
 class GRNProfilePatch(BaseModel):
@@ -125,4 +126,4 @@ class GRNCountRollIn(BaseModel):
 
 class GRNResolveIn(GRNVersionIn):
     action: Literal["accept_note", "claim_supplier", "claim_makloon", "reject_goods"]
-    reason: str = Field(..., min_length=5)   # K-14
+    reason: ReasonStr   # K-14 — FIX-3a: dihitung HURUF (5 spasi/"....." ditolak), satu validator bersama

@@ -268,6 +268,7 @@ async def process_qc_decision(
     reject_disposition: str, reason: str, actor: Dict[str, Any],
     accept_grade: str = "A", defects: Optional[List[str]] = None,
     roll_order: Optional[List[str]] = None, roll_grades: Optional[Dict[str, str]] = None,
+    reject_held_roll_ids: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Proses keputusan QC untuk 1 inbound task. Lihat docstring modul.
 
@@ -275,7 +276,11 @@ async def process_qc_decision(
     sebagai grade aktual hasil inspeksi tekstil.
     F-14 (keputusan SPK) — `roll_order`: roll yang diterima didahulukan sehingga terima/tolak mengenai roll
     yang tepat (konsumsi karantina berurutan); `roll_grades`: grade per roll hasil 4-point menggantikan
-    `accept_grade` untuk roll itu."""
+    `accept_grade` untuk roll itu.
+    FIX-3a (B2a FLW-IN-03, keputusan koordinator D3) — roll yang DITAHAN tidak lagi mengunci keputusan: roll lain
+    diputuskan (peringatan tercatat), roll yang ditahan TETAP ditahan; `reject_held_roll_ids` = roll ditahan yang
+    sengaja DITOLAK (rusak/retur) — tahanannya dilepas lalu ikut penolakan. Selama masih ada roll ditahan, tugas
+    tetap `qc_pending` (keputusan sebagian) supaya roll itu tidak yatim saat dilepas kelak."""
     task_id = task["id"]
     product_id = task["product_id"]
     warehouse_id = task["warehouse_id"]
@@ -292,14 +297,23 @@ async def process_qc_decision(
     from services import grade_service
     accept_grade = grade_service.normalize_or_raise(accept_grade or "A", "Grade diterima")
 
-    # QC-06 — roll yang DITAHAN wajib dilepas dulu (keputusan tidak boleh melompati tahanan)
+    # QC-06 + FIX-3a (D3) — roll yang DITAHAN tidak ikut keputusan (tetap ditahan), kecuali yang sengaja ditolak.
     from services.roll_hold_service import held_rolls_for_task
     held = await held_rolls_for_task(task_id)
-    if held:
-        raise ValueError("Roll " + ", ".join(str(r.get("roll_no") or r["id"]) for r in held)
-                         + " sedang DITAHAN — lepas tahanan dulu sebelum keputusan QC.")
+    held_ids = {h["id"] for h in held}
+    reject_held = set(reject_held_roll_ids or [])
+    if reject_held - held_ids:
+        raise ValueError("Roll yang ditandai 'tolak walau ditahan' tidak sedang ditahan di tugas ini — muat ulang.")
+    held_keep = [h for h in held if h["id"] not in reject_held]
+    held_reject_docs = [r for r in await db.inventory_rolls.find(
+        {"id": {"$in": sorted(reject_held)}, "qc_task_id": task_id, "status": "blocked",
+         "length_remaining": {"$gt": 0}}, {"_id": 0}).to_list(None)] if reject_held else []
+    if reject_held and len(held_reject_docs) != len(reject_held):
+        raise ValueError("Sebagian roll ditahan yang akan ditolak sudah berubah — muat ulang lalu ulangi keputusan.")
 
-    qrolls = await get_quarantine_rolls(task_id)
+    qrolls = await get_quarantine_rolls(task_id) + [{**r, "status": "quarantine"} for r in held_reject_docs]
+    if held_keep and not qrolls:
+        raise ValueError("Semua roll tugas ini sedang DITAHAN — lepas tahanan, atau tandai roll ditahan yang ditolak.")
     if roll_order:
         rank = {rid: i for i, rid in enumerate(roll_order)}
         qrolls.sort(key=lambda r: rank.get(r.get("id"), len(rank)))
@@ -348,6 +362,21 @@ async def process_qc_decision(
     from services import atomic_claim as _saga
     await _saga.claim("wms_tasks", task_id, "qc_decision", actor=actor.get("name", ""),
                       precondition={"status": "qc_pending"})
+    if held_reject_docs:
+        # D3 — roll ditahan yang DITOLAK: tahanan dilepas (berjejak) → karantina → ikut konsumsi penolakan di bawah.
+        from services.roll_hold_service import HOLD_STATUS
+        for r in held_reject_docs:
+            _res = await db.inventory_rolls.update_one(
+                {"id": r["id"], "status": HOLD_STATUS, "qc_task_id": task_id},
+                {"$set": {"status": "quarantine", "hold.held": False, "hold.released_by": actor.get("name", ""),
+                          "hold.released_at": now_iso(), "hold.release_note": "Ditolak lewat keputusan QC",
+                          "inspection.hold.held": False, "updated_at": now_iso()},
+                 "$push": {"hold_history": {"action": "release_rejected_by_qc", "reason": reason or "Ditolak QC",
+                                            "by": actor.get("name", ""), "by_id": actor.get("id", ""),
+                                            "at": now_iso(), "status_from": HOLD_STATUS, "status_to": "quarantine"}}})
+            if not _res.modified_count:
+                await _saga.mark_failed("wms_tasks", task_id, "roll ditahan berubah")
+                raise ValueError(f"Roll {r.get('roll_no') or r['id']} berubah bersamaan — muat ulang lalu ulangi.")
     try:
         result, set_fields = await _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty, reject_qty,
                                                       reject_disposition, reason, actor, accept_grade, defects, result, doc_ref,
@@ -368,8 +397,36 @@ async def process_qc_decision(
                       # UAT 24 Okt (P11.3) — makna yang jelas: roll ini BELUM diinspeksi 4-point (keputusan lewat
                       # sampel). `qc_via_sampling` dipertahankan untuk pembaca lama.
                       "four_point_pending": True}})
+    # FIX-3a (D3) — roll yang masih DITAHAN: keputusan ini sebagian; tugas tetap menunggu QC untuk roll itu.
+    prior = list(task.get("qc_decisions") or [])
+    this_dec = {"at": now_iso(), "by": actor.get("name", ""), "accepted_qty": result.get("accepted_qty", 0.0),
+                "rejected_qty": result.get("rejected_qty", 0.0), "disposition": result.get("reject_disposition"),
+                "held_kept": [h.get("roll_no") or h["id"] for h in held_keep],
+                "held_rejected": [r.get("roll_no") or r["id"] for r in held_reject_docs]}
+    if held_keep or prior:
+        acc_total = round(sum(float(d.get("accepted_qty") or 0) for d in prior) + this_dec["accepted_qty"], 2)
+        rej_total = round(sum(float(d.get("rejected_qty") or 0) for d in prior) + this_dec["rejected_qty"], 2)
+        set_fields.update({"qc_accept_qty": acc_total, "qc_reject_qty": rej_total})
+        if held_keep:
+            set_fields.update({"status": "qc_pending", "qc_status": "partial_held",
+                               "qc_held_rolls": this_dec["held_kept"]})
+        else:
+            set_fields["status"] = "completed" if acc_total > 0.01 else "qc_rejected"
+            set_fields["qc_status"] = ("passed" if rej_total <= 0.01 else ("rejected" if acc_total <= 0.01 else "partial"))
+            set_fields["qc_held_rolls"] = []
+        result["task_status"], result["qc_status"] = set_fields["status"], set_fields["qc_status"]
+    if held_keep:
+        result["held_rolls_kept"] = this_dec["held_kept"]
+        result["warnings"] = [f"{len(held_keep)} roll sedang DITAHAN ({', '.join(this_dec['held_kept'][:6])}) — tidak ikut "
+                              "keputusan ini dan tetap ditahan; putuskan sesudah tahanan dilepas (atau tolak)."]
     # 5) Update task — status + jejak QC + cabut kunci (tulisan akhir saga)
-    await db.wms_tasks.update_one({"id": task_id}, _saga.finish_set(set_fields))
+    from services import inbound_task_state as _its
+    _fin = _saga.finish_set(set_fields)
+    _fin.setdefault("$push", {})
+    _fin["$push"]["qc_decisions"] = this_dec
+    if set_fields.get("status") != "qc_pending":
+        _fin["$push"]["status_history"] = _its.history_entry(set_fields["status"], actor.get("name", ""), "qc_decision")
+    await db.wms_tasks.update_one({"id": task_id}, _fin)
     # PREP-C (K-GDG-10) — QC lulus → DRAF Putaway Order per gedung tujuan (best-effort, idempoten per keputusan).
     if result.get("accepted_qty", 0) > 0.01:
         from services import inbound_qc_common as _iqc
