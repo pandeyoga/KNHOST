@@ -66,6 +66,15 @@
 .m-shell .entity-badge-sm, .m-shell .entity-badge-md { font-size: var(--fs-14); padding: 3px 9px; }
 .m-shell .printer-status-note { font-size: var(--fs-14); line-height: var(--lh-14); }
 
+/* Peringatan "Lokasi kerja belum diatur" di bilah atas (FIX-1): dulu kalimat panjang melebarkan bilah sehingga halaman
+   bergeser ke samping di ±1024 px. Kini pendek, terpotong rapi, dan disembunyikan < 1180 px — ikon kuning di pemicu
+   "Lokasi: …" + tooltip tetap memberi tahu. */
+.location-scope-unset {
+  margin-left: 4px; min-width: 0; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--fs-12); line-height: var(--lh-12); font-weight: 600; color: var(--kn-warning-text);
+}
+@media (max-width: 1180px) { .location-scope-unset { display: none; } }
+
 /* — Pager baku (PaginationBar) — */
 .kn-pager {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;

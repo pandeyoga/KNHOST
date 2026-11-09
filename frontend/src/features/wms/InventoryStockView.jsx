@@ -81,7 +81,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   // K-04 (keputusan pemilik 26 Okt) — "Stok rendah" dari definisi tunggal server (per produk per badan usaha).
   const [lowSummary, setLowSummary] = useState(null);
   const [peggedRolls, setPeggedRolls] = useState([]);
-  const [loading, setLoading]         = useState(false);
+  const [loading, setLoading]         = useState(true);   // render pertama = memuat, bukan "kosong" (UI-50)
   const [error, setError]             = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [lineFilter, setLineFilter] = useState("");   // FASE L — penyaring lini roll
@@ -508,6 +508,10 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             </div>
             <BalancesTable
               loading={loading}
+              error={balances.length ? null : error || null}
+              onRetry={fetchBalances}
+              filtered={warehouseFilter !== "all" || Boolean(searchQuery.trim())}
+              onReset={() => { setWarehouseFilter("all"); setSearchQuery(""); }}
               rows={filteredBalances}
               selectedRow={selectedRow}
               onRowClick={handleRowClick}
