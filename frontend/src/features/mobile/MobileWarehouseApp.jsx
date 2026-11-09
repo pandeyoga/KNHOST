@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ClipboardList, ScanLine, Tags, PackageCheck, AlertTriangle, CheckCircle2, Loader2, Scissors, Printer, Camera } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
+import LocationScopeBar from "../../components/LocationScopeBar";
+import EntityBadge from "../../components/EntityBadge";
 import MobileShell from "./MobileShell";
 import MobileRegistration from "./MobileRegistration";   // PREP-B — pendaftaran awal gedung (opname awal RFID)
 import { printSampleLabel, printInboundRollLabels, reprintRollLabel } from "./MobileTaskActions";
@@ -49,8 +52,10 @@ function TaskList({ type, focusTaskId, onFocused }) {
   const [fromCache, setFromCache] = useState(false);
   // UAT 24 Okt (audit UI tahap 2) — daftar Masuk 100+ kartu dulu tanpa judul/jumlah/cari.
   const [q, setQ] = useState("");
+  // FIX-1 (K-B1-02) — daftar = semua PT yang ditugaskan di gedung lokasi kerja; PT = label + saringan (chip).
+  const [pt, setPt] = useState("");
   const whNames = useWarehouseNames();
-  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setRows((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status))); })
+  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setRows(rememberDocEntities((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status)))); })
     .catch((e) => setErr(e.response?.data?.detail || "Gagal memuat tugas."));
   useEffect(() => { load(); }, [type]); // eslint-disable-line
   // Pindai → aksi: kartu tugas hasil pindai dibuka & digulir ke layar, lalu fokus dilepas.
@@ -67,19 +72,30 @@ function TaskList({ type, focusTaskId, onFocused }) {
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
   const Actions = { inbound: InboundActions, outbound: OutboundActions, sample_cut: SampleCutActions }[type];
   const term = q.trim().toLowerCase();
-  const shownRows = term ? rows.filter((t) => [t.product_name, t.sku, t.po_number, t.order_number, t.customer_name, whNames[t.warehouse_id] || t.warehouse_name, statusText(t.status)]
-    .some((v) => String(v || "").toLowerCase().includes(term))) : rows;
+  const pts = [...new Map(rows.filter((t) => t.work_entity_id).map((t) => [t.work_entity_id, t.work_entity_name || t.work_entity_id])).entries()];
+  const ptRows = pt ? rows.filter((t) => t.work_entity_id === pt) : rows;
+  const shownRows = term ? ptRows.filter((t) => [t.product_name, t.sku, t.po_number, t.order_number, t.customer_name, whNames[t.warehouse_id] || t.warehouse_name, statusText(t.status), t.work_entity_name, t.task_kind_label]
+    .some((v) => String(v || "").toLowerCase().includes(term))) : ptRows;
   return (
     <div className="space-y-2 p-3" data-testid={`mw-task-list-${type}`}>
       <div className="flex items-baseline justify-between px-1">
         <b className="text-[14px] capitalize" data-testid={`mw-task-title-${type}`}>Tugas {label}</b>
         <span className="text-[14px] text-[#6E6E73]" data-testid={`mw-task-count-${type}`}>
-          {term ? `${shownRows.length} dari ${rows.length} terbuka` : (() => {
+          {(term || pt) ? `${shownRows.length} dari ${rows.length} terbuka` : (() => {
             const waiting = rows.filter((t) => WAITING_QC.includes(t.status)).length;
             return waiting ? `${rows.length - waiting} perlu dikerjakan · ${waiting} menunggu/ditolak QC` : `${rows.length} terbuka`;
           })()}
         </span>
       </div>
+      {pts.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 px-1" role="group" aria-label="Saring PT pemilik" data-testid={`mw-task-pt-${type}`}>
+          {[["", "Semua PT"], ...pts].map(([id, name]) => (
+            <button key={id || "all"} type="button" onClick={() => setPt(id)} aria-pressed={pt === id}
+              className={`rounded-full border px-3 py-2 text-[13px] font-semibold ${pt === id ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}
+              data-testid={`mw-task-pt-${type}-${id || "all"}`}>{name}</button>
+          ))}
+        </div>
+      )}
       {rows.length > 5 && (
         <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari produk, PO/SO, gudang…"
           aria-label={`Cari tugas ${label}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid={`mw-task-search-${type}`} />
@@ -105,6 +121,11 @@ function TaskList({ type, focusTaskId, onFocused }) {
         <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-[#0058CC]" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
           <div className="flex items-center justify-between"><b className="text-[15px]">{t.product_name || t.product_id}</b>
             <span className={`status-pill ${pillFor(t.status)}`}>{statusText(t.status)}</span></div>
+          {/* FIX-1 (K-B1-02, B2a FLW-IN-07) — tiap kartu menyebut PT pemilik & jenis tugas (daftar kini lintas PT). */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-1" data-testid={`mw-task-tags-${t.id}`}>
+            {t.task_kind_label && <span className="rounded-md bg-[#F2F2F7] px-2 py-0.5 text-[12px] font-semibold text-[#3C3C43]" data-testid={`mw-task-kind-${t.id}`}>{t.task_kind_label}</span>}
+            {t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}
+          </div>
           <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>
@@ -290,12 +311,19 @@ export default function MobileWarehouseApp(props) {
   };
   // Lonceng (L-09): tautan notifikasi → layar penuh sementara (tombol kembali ke aplikasi HP).
   const openNotif = (n) => { const view = linkView(n); if (!view) return false; openFull(view, view); return true; };
-  const list = (type) => <TaskList type={type} focusTaskId={focus?.type === type ? focus.taskId : ""} onFocused={() => setFocus(null)} />;
+  // FIX-1 — ganti cakupan lokasi di bilah cakupan → daftar dimuat ulang (key).
+  const list = (type) => <TaskList key={`${type}|${props.locationChoice || ""}`} type={type} focusTaskId={focus?.type === type ? focus.taskId : ""} onFocused={() => setFocus(null)} />;
   const tabs = [
     { id: "inbound", label: "Masuk", icon: PackageCheck, render: () => <><GrnEntryCard onOpen={() => openFull("wms-operations", "goods-receipts")} />{list("inbound")}</> },
     { id: "outbound", label: "Keluar", icon: ClipboardList, render: () => list("outbound") },
     { id: "sample", label: "Sample", icon: Scissors, render: () => list("sample_cut") },
     { id: "scan", label: "Pindai", icon: ScanLine, render: ({ setTab: go }) => <ScanTab onOpenTask={(t, taskId) => { setFocus({ type: { inbound: "inbound", outbound: "outbound", sample: "sample_cut" }[t], taskId }); go(t); }} /> },
   ];
-  return <MobileShell {...props} tabs={tabs} tab={tab} onTabChange={setTab} testId="mobile-warehouse-app" onOpenNotif={openNotif} />;
+  // FIX-1 (K-B1-01, B1 UI-01) — cakupan aktif SELALU terlihat di atas daftar ("Lokasi: Soreang ▾").
+  const scopeBar = (
+    <div className="px-3 pt-2" data-testid="mw-scope">
+      <LocationScopeBar compact value={props.locationChoice || ""} onChange={props.onLocationChange} testId="mw-location-scope" />
+    </div>
+  );
+  return <MobileShell {...props} tabs={tabs} tab={tab} onTabChange={setTab} testId="mobile-warehouse-app" onOpenNotif={openNotif} topSlot={scopeBar} />;
 }

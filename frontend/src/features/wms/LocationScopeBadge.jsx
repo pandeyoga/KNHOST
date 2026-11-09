@@ -8,14 +8,19 @@ export function useLocationScope() {
   return scope;
 }
 
-/** P01 IMP-20 — indikator cakupan lokasi kerja aktif. */
+/** P01 IMP-20 — indikator cakupan lokasi kerja aktif.
+ *  FIX-1 (K-B1-01) — teks mengikuti cakupan TAMPILAN yang sama dengan bilah cakupan app bar (`scope.view`):
+ *  lokasi kerja bawaan / pilihan eksplisit / semua lokasi / belum diatur. */
 export function LocationScopeBadge({ scope }) {
   if (!scope || !scope.role) return null;
-  const text = !scope.enforced ? "Pembatasan lokasi nonaktif"
-    : !scope.restricted ? (scope.supervisor ? "Supervisor · semua lokasi" : "Semua lokasi")
-    : scope.no_assignment ? "Belum ada lokasi tugas — hubungi admin"
-    : `Lokasi tugas: ${[...scope.sites, ...(scope.sites.length ? [] : scope.warehouses)].join(", ") || scope.warehouses.join(", ")}`;
-  const warn = scope.restricted && scope.no_assignment;
+  const v = scope.view || {};
+  const text = scope.restricted && scope.no_assignment ? "Belum ada lokasi tugas — hubungi admin"
+    : v.mode === "restricted" ? `Lokasi tugas: ${v.label || scope.warehouses.join(", ")}`
+    : v.mode === "unset" ? "Lokasi kerja belum diatur · semua lokasi"
+    : v.mode === "all" ? (scope.supervisor ? "Supervisor · semua lokasi" : "Semua lokasi")
+    : v.label ? `Lokasi: ${v.label}`
+    : !scope.enforced ? "Pembatasan lokasi nonaktif" : "Semua lokasi";
+  const warn = (scope.restricted && scope.no_assignment) || v.mode === "unset";
   return (
     <span data-testid="location-scope-badge" title={scope.restricted ? `Gudang: ${scope.warehouses.join(", ") || "—"}` : undefined}
           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${warn

@@ -220,6 +220,9 @@ export const ROLE_NAV = {
       // ini). Karena menunya terwarisi dari `sales`, Admin Sales mendarat di layar
       // yang selalu 403. Kunjungan lapangan memang bukan wilayahnya.
       "hr-visits",
+      // FIX-1 (audit B1b UI-48) — "Meja Saya" terwarisi dari `sales` tetapi `/desks/me` menolak peran ini (meja
+      // khususnya = Meja Admin Sales) → galat berkunci peran mentah di atas kartu "0 antrean".
+      "my-desk",
     ],
   },
   designer: {
@@ -306,7 +309,9 @@ export const ROLE_NAV = {
       "document-center", "doc-trace",
       "cs-stock-analytics",
     ],
-    remove: [],
+    // FIX-1 (audit B1b UI-48) — "Meja Saya" terwarisi dari `warehouse`, padahal server menolak peran ini
+    // (`/desks/me` 404 "memakai meja khususnya sendiri") → galat berkunci peran + kartu "0 antrean". Mejanya = Meja Gudang.
+    remove: ["my-desk"],
   },
   // REVISI SAMPEL — Admin Sample: meja sample + daftar pesanan sample + pantau gudang/logistik. Tidak mewarisi siapa pun.
   sample_admin: {

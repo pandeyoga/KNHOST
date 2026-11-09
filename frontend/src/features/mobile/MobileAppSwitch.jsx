@@ -5,7 +5,8 @@
  * aplikasi HP, L-09) mengubah berkas di wilayahnya sendiri (`features/mobile/**`) alih-alih App.js.
  * Dirender App.js hanya bila `wantMobile && !responsiveWorkspace`:
  *  · MD / Merchandiser → MobileMdApp (Meja MD, desain, sample, produk, PR);
- *  · bukan peran sales → gudang (warehouse, warehouse_admin, driver) MobileWarehouseApp, selain itu MobileOpsApp;
+ *  · bukan peran sales → gudang (warehouse, warehouse_admin) MobileWarehouseApp, sopir MobileDriverApp (FIX-1 UI-23:
+ *    Pengiriman saja — dulu aplikasi gudang yang semua tabnya "Permission ditolak: wms.view"), selain itu MobileOpsApp;
  *  · sales & Admin Sales (mewarisi wilayah sales) → MobileSalesApp.
  *
  * Fase 3 · P7 (L-09) — keempat aplikasi memakai `MobileShell` v2, jadi SEMUA menerima set props kerangka yang sama:
@@ -17,13 +18,14 @@
 import MobileSalesApp from "../sales/mobile/MobileSalesApp";
 import MobileMdApp from "../sales/mobile/MobileMdApp";
 import MobileWarehouseApp from "./MobileWarehouseApp";
+import MobileDriverApp from "./MobileDriverApp";
 import MobileOpsApp from "./MobileOpsApp";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import { AppNavProvider } from "../../context/AppNavContext";
 import { roleIs } from "../../config/roles";
 
 export default function MobileAppSwitch({
-  user, token, entities, selectedEntity, onSelectEntity,
+  user, token, entities, selectedEntity, onSelectEntity, locationChoice = "", onLocationChange,
   notifications, unreadCount, notifProps, onMarkAllRead, onMarkRead, onPollNotifications,
   onOpenFull, onOpenDocument, onNavigateTo, onLogout, onForceDesktop, onNavigate, wantsTanya,
   // MobileSalesApp
@@ -35,6 +37,7 @@ export default function MobileAppSwitch({
     user, entities, selectedEntity, onSelectEntity,
     notifications, unreadCount, notifProps, onMarkAllRead, onMarkRead, onPollNotifications,
     onOpenFull, onOpenDocument, onLogout, onForceDesktop,
+    locationChoice, onLocationChange,   // FIX-1 (K-B1-01) — bilah cakupan lokasi di app bar HP
   };
   const wrap = (app) => (
     <EntityScopeProvider selectedEntity={selectedEntity} entities={entities} canSwitch pickEntity={onSelectEntity}>
@@ -46,7 +49,8 @@ export default function MobileAppSwitch({
   // MD / Merchandiser → aplikasi HP khusus (Meja MD, desain, sample, produk, PR).
   if (roleIs(user.role, ["md"])) return wrap(<MobileMdApp {...shell} />);
   if (!salesMobileRole) {
-    const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin", "driver"]) ? MobileWarehouseApp : MobileOpsApp;
+    if (roleIs(user.role, ["driver"])) return wrap(<MobileDriverApp {...shell} onNavigate={onNavigate} />);
+    const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin"]) ? MobileWarehouseApp : MobileOpsApp;
     return wrap(<MobileApp {...shell} onNavigate={onNavigate}
       initialTab={wantsTanya && MobileApp === MobileOpsApp ? "tanya" : undefined} />);
   }

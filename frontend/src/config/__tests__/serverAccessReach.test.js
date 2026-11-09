@@ -58,6 +58,8 @@ test("Gudang: Kinerja Mitra Makloon (D-22) terbuka dengan izin server", () => {
  *    (`access_modules.VIEW_RESOURCE_OVERRIDES`), jadi tab disembunyikan; rancangan `hubTabs` tidak diubah.
  */
 const SERVER_GATED = { sales: ["inventory-lots"] };
+// FIX-1 (audit B1b UI-48) — pencabutan sah yang tercatat di roleReach.test.js (ROLE_REACH_REMOVALS).
+const REMOVED = { warehouse_admin: ["my-desk"], sales_admin: ["my-desk"] };
 
 test("R5: Lot & Silsilah tersembunyi untuk sales (tanpa field_visibility.lot), tetap untuk gudang & manajer", () => {
   expect(builtin.view_resources["inventory-lots"]).toEqual(["field_visibility"]);
@@ -73,7 +75,7 @@ describe.each(BUILTIN.filter((r) => r !== "admin"))("peran %s dengan izin server
   test("setiap alamat yang dulu sampai (baseline) masih sampai — izin server tidak memblokir pintu rancangan", () => {
     login(role);
     const lost = [];
-    const gated = new Set(SERVER_GATED[role] || []);
+    const gated = new Set([...(SERVER_GATED[role] || []), ...(REMOVED[role] || [])]);
     for (const [id, view] of Object.entries(baseline.roles[role] || {})) {
       if (gated.has(id)) continue;
       const t = resolveDeepLinkTarget(id, role);

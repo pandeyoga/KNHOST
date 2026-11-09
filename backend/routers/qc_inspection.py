@@ -30,11 +30,12 @@ async def get_grade_thresholds(request: Request, entity_id: str = None) -> Dict[
 @router.get("/inbound/qc/tasks/{task_id}/rolls")
 async def list_task_rolls(task_id: str, request: Request) -> List[Dict[str, Any]]:
     """Roll milik 1 inbound task untuk diinspeksi (per qc_task_id)."""
-    await require_permission(request, "wms", "view")
-    task = await db.wms_tasks.find_one({"id": task_id}, {"_id": 0})
-    if not task:
-        raise HTTPException(status_code=404, detail="Inbound task tidak ditemukan")
-    return await rolls_for_task(task_id)
+    actor = await require_permission(request, "wms", "view")
+    # FIX-1 (B3b FRM-23, P0) — dulu `find_one` tanpa cek PT/lokasi: operator PT Sukacita membaca roll tugas PT Cipta
+    # Sandang (200) padahal `/plan` tugas yang sama 404. Kini lewat penjaga yang sama dengan `/plan`.
+    await _qc_task(task_id, request)
+    from core_utils import strip_cost_fields
+    return strip_cost_fields(await rolls_for_task(task_id), actor.get("role"))
 
 
 async def _qc_task(task_id: str, request: Request) -> Dict[str, Any]:

@@ -121,6 +121,11 @@ async def login(payload: LoginRequest, request: Request, response: Response) -> 
         await db.users.update_one({"id": user["id"]},
                                   {"$set": {"password_hash": hash_password(payload.password)}})
     token = secrets.token_urlsafe(32)  # SEC-2 — entropi 256-bit
+    # FIX-1 (audit B1b UI-44) — sesi cookie LAMA di peramban ini (pengguna sebelumnya yang "Keluar" tanpa mencapai
+    # server) dicabut saat login baru: satu peramban = satu sesi, tidak ada sesi tertinggal yang bisa dipakai lagi.
+    _old_cookie = request.cookies.get(SESSION_COOKIE) or ""
+    if _old_cookie:
+        await db.sessions.delete_one({"token": _old_cookie})
     await db.sessions.insert_one(
         {"id": new_id("session"), "token": token, "user_id": user["id"],
          "created_at": now_iso(), "expires_at": session_expiry()})
@@ -177,8 +182,10 @@ async def auth_context(request: Request) -> Dict[str, Any]:
 
 @router.post("/auth/logout")
 async def logout(request: Request, response: Response) -> Dict[str, str]:
-    token = extract_token(request)
-    if token:
-        await db.sessions.delete_one({"token": token})
+    # FIX-1 (audit B1b UI-44) — cabut SEMUA sesi yang dibawa permintaan ini (Bearer & cookie bisa berbeda di peramban
+    # bersama), lalu hapus cookie. Dulu hanya satu token (cookie diutamakan) dan aplikasi tidak memanggil endpoint ini.
+    tokens = {t for t in (extract_token(request), request.cookies.get(SESSION_COOKIE) or "") if t}
+    if tokens:
+        await db.sessions.delete_many({"token": {"$in": list(tokens)}})
     response.delete_cookie(SESSION_COOKIE, path="/")
     return {"message": "Keluar berhasil"}

@@ -61,7 +61,11 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # `apply_scope` hanya mengikat peran `sales`; sales_admin/finance/manager/
     # admin/warehouse tetap melihat keseluruhan pesanan seperti sebelumnya.
     order_scope = sales_ownership.apply_scope(scope, actor)
-    products_raw = await db.products.find({}, {"_id": 0}).to_list(None)   # G3 D4-DASH-01 — tanpa batas 3.000
+    # FIX-1 (B3a SCP-5) — dulu `find({})`: produk eksklusif sales lain & produk lini lain ikut terkirim ke dasbor.
+    # Kini pagar yang SAMA dengan `GET /products` (eksklusivitas per sales + lini; produk tanpa lini tetap terlihat).
+    from services import product_exclusivity as _pexcl, line_scope as _lines
+    products_raw = await db.products.find(_lines.narrow(_pexcl.visibility_query(actor), actor, ""),
+                                          {"_id": 0}).to_list(None)   # G3 D4-DASH-01 — tanpa batas 3.000
     # PREP-A (K-OPN-06) — SKU tergantikan TETAP dikirim (stok lama/lot/riwayat masih menunjuknya) tetapi diberi
     # `superseded_by_sku` agar katalog jual (POS/Sales Portal) menyembunyikannya & memberi petunjuk kode penggantinya.
     from services.product_supersede import annotate as _sup_annotate
@@ -79,7 +83,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # kalau ikut, angka "Gudang Aktif" & pemilih gudang di layar menawarkan
     # gudang yang haram dipakai badan usaha aktif.
     from services import warehouse_scope_service as whscope
-    wh_filter = whscope.usable_query(ctx.active_entity_id)
+    wh_filter = {**whscope.usable_query(ctx.active_entity_id), "is_test": {"$ne": True}}   # FIX-1 (K-B1-10) — tanpa gudang data uji
     warehouses_raw = await db.warehouses.find(wh_filter, {"_id": 0}).to_list(100)
     # UAT 24 Okt (P14/P8) — pemilih pelanggan POS & HP: sales hanya pelanggannya (+ walk-in PT), sama dengan
     # CRM; dulu semua pelanggan PT dan terpotong di 100.

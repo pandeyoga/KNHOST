@@ -142,6 +142,22 @@ async def _assert_driver_free(driver_user_id: str, exclude_delivery: str = "") -
         raise ValueError(f"Sopir sedang dalam perjalanan ({busy.get('number')}) — pilih sopir lain.")
 
 
+async def _assert_driver_valid(driver_user_id: str, entity_id: str) -> None:
+    """FIX-1 (B3b INP-18) — sopir yang ditugaskan wajib akun ber-peran `driver`, aktif, dan ditugaskan di PT
+    pengiriman (dulu id pengguna mana pun diterima — pengguna PT lain bisa menjadi "sopir" dan membuka POD-nya)."""
+    if not driver_user_id:
+        return
+    u = await db.users.find_one({"id": driver_user_id}, {"_id": 0, "role": 1, "status": 1, "active": 1,
+                                                       "home_entity_id": 1, "allowed_entity_ids": 1})
+    if not u or not role_in(u.get("role"), ("driver",)):
+        raise ValueError("Sopir harus akun ber-peran Sopir.")
+    if u.get("status") in ("inactive", "disabled", "archived") or u.get("active") is False:
+        raise ValueError("Akun sopir tidak aktif.")
+    ents = set(u.get("allowed_entity_ids") or []) | {u.get("home_entity_id")}
+    if entity_id and entity_id not in ents:
+        raise ValueError("Sopir tidak ditugaskan di badan usaha pengiriman ini.")
+
+
 async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity_id: str) -> Dict[str, Any]:
     ids = [s for s in (payload.get("shipment_ids") or []) if s]
     if not ids:
@@ -194,6 +210,7 @@ async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity
         v = await fleet.assert_assignable(vehicle_id, entity_id)
         vehicle_plate = v["plate"]
     driver_user_id = (payload.get("driver_user_id") or "").strip() if mode == "own_fleet" else ""
+    await _assert_driver_valid(driver_user_id, entity_id)
     await _assert_driver_free(driver_user_id)
     doc = {
         "id": new_id("lgs"), "number": await next_doc_number(COLL, "number", "LG-", entity_id=entity_id),
@@ -446,6 +463,7 @@ async def update_delivery(delivery_id: str, patch: Dict[str, Any], actor_name: s
         v = await fleet.assert_assignable(upd["vehicle_id"], doc.get("entity_id", ""))
         upd["vehicle_plate"] = v["plate"]
     if upd.get("driver_user_id") and upd["driver_user_id"] != doc.get("driver_user_id"):
+        await _assert_driver_valid(upd["driver_user_id"], doc.get("entity_id", ""))
         await _assert_driver_free(upd["driver_user_id"], delivery_id)
     _validate_mode_fields({**doc, **upd})
     upd["updated_at"] = now_iso()

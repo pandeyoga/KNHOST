@@ -9,6 +9,7 @@
 import { ArrowRight } from "lucide-react";
 import ResponsiveTable from "../../../components/ResponsiveTable";
 import QtyDual from "../../../components/QtyDual";
+import EntityBadge from "../../../components/EntityBadge";   // FIX-1 — label PT (daftar lintas PT)
 import { formatDate } from "../../../utils/formatters";
 import { StatusBadge } from "./transferConstants";
 
@@ -64,7 +65,7 @@ function Items({ t }) {
 
 const COLUMNS = [
   { key: "code", header: "Kode", mobile: "title",
-    render: (t) => <span data-testid={`transfer-code-${t.id}`} className="font-bold text-[#0058CC]">{t.code || "—"}</span> },
+    render: (t) => <span className="inline-flex items-center gap-1.5"><span data-testid={`transfer-code-${t.id}`} className="font-bold text-[#0058CC]">{t.code || "—"}</span>{t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}</span> },
   { key: "kind", header: "Jenis", mobile: "badge", render: (t) => <KindPill t={t} /> },
   { key: "route", header: "Dari → ke", mobile: "subtitle", render: (t) => <Route t={t} /> },
   { key: "items", header: "Barang", priority: 1, render: (t) => <Items t={t} /> },

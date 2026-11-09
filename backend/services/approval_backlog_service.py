@@ -739,10 +739,32 @@ async def owner_scope(key: str, actor: Optional[Dict[str, Any]]) -> Dict[str, An
     return {"$or": ors}
 
 
+#: FIX-1 (B1 UI-04) — papan antrean GUDANG ikut cakupan lokasi kerja (dulu "semua gudang" tetap, sementara daftar di
+#: bawahnya disaring). Field gudang per papan; papan lain tidak berubah (`location_ids=None`).
+LOCATION_BOARD_FIELDS: Dict[str, Tuple[str, ...]] = {
+    "transfer": ("source_warehouse_id", "dest_warehouse_id"),
+    "cycle_count": ("warehouse_id",),
+}
+
+
+async def _location_clause(key: str, location_ids: Optional[List[str]]) -> Optional[Dict[str, Any]]:
+    if location_ids is None:
+        return None
+    if key == "inspection_hold":
+        from services import location_scope
+        return await location_scope.inspection_clause(location_ids)
+    fields = LOCATION_BOARD_FIELDS.get(key)
+    if not fields:
+        return None
+    ors = [{f: {"$in": list(location_ids)}} for f in fields]
+    return ors[0] if len(ors) == 1 else {"$or": ors}
+
+
 async def queue_detail(key: str, entity_id: Optional[Any] = None,
                        limit: int = 12,
                        allowed: Optional[Dict[str, List[str]]] = None,
-                       actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                       actor: Optional[Dict[str, Any]] = None,
+                       location_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Isi SATU antrean beserta umur tunggu tiap dokumen — untuk papan khusus.
 
     KENAPA ADA: kartu "Paling Lama Menunggu" mencampur 33 antrean dan hanya memuat 5
@@ -765,6 +787,9 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
     # K-11 — saringan kepemilikan ikut ke HITUNGAN dan BARIS (angka judul papan = isi papan).
     owner = await owner_scope(key, actor)
     scope = {**_scope(entity_id), **owner}
+    loc = await _location_clause(key, location_ids)   # FIX-1 (UI-04) — angka judul & baris ikut lokasi yang sama
+    if loc:
+        scope = {"$and": [scope, loc]}
     count = await db[coll].count_documents({**scope, **query})
     # B3 DIBAYAR (2026-08-25) — dulu barisnya `.sort([(meta["since"][0], 1)]).limit(limit)`.
     # Field pengurutnya bisa TIDAK ADA di dokumen mana pun (lihat B1): seluruh dokumen
@@ -805,13 +830,14 @@ async def queue_detail(key: str, entity_id: Optional[Any] = None,
             "shown": shown, "hidden": max(0, int(count) - shown),
             "truncated": int(count) > shown, "rows": rows,
             # K-11 — layar memberi label cakupan ("pelanggan Anda") hanya bila server memang menyaring.
-            "owner_scoped": bool(owner)}
+            "owner_scoped": bool(owner), "location_scoped": bool(loc)}
 
 
 async def boards(keys: List[str], entity_id: Optional[Any] = None,
                  limit: int = 10,
                  allowed: Optional[Dict[str, List[str]]] = None,
-                 actor: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+                 actor: Optional[Dict[str, Any]] = None,
+                 location_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Beberapa papan antrean sekaligus, dalam urutan yang diminta.
 
     Dipakai beranda pemilik & manajer. Satu pintu supaya papan baru cukup
@@ -821,7 +847,7 @@ async def boards(keys: List[str], entity_id: Optional[Any] = None,
     out: List[Dict[str, Any]] = []
     for key in keys:
         out.append(await queue_detail(key, entity_id, limit=limit, allowed=allowed,
-                                      actor=actor))
+                                      actor=actor, location_ids=location_ids))
     return out
 
 

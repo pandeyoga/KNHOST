@@ -45,6 +45,8 @@ async def _guarded(ins_id: str, request: Request, actor: Dict[str, Any]) -> Dict
         raise HTTPException(status_code=404, detail="Dokumen inspeksi tidak ditemukan.")
     # T3 audit training 2026-06 — detail/PDF seketat daftar: badan usaha AKTIF.
     assert_active_entity_access(doc, svc.COLL, ctx)
+    from services import location_scope   # FIX-1 (STM-IN-02) — pagar lokasi lewat gudang tugas penerimaan
+    await location_scope.assert_inspection(ctx.user, doc)
     line_scope.assert_can_touch(actor, doc)
     return doc
 
@@ -123,6 +125,12 @@ async def list_inspections(request: Request, entity_id: Optional[str] = Query(No
     ctx = await entity_ctx(request)
     scope = resolve_list_scope(svc.COLL, {}, ctx, entity_id)
     scope = line_scope.narrow(scope, actor, line)      # FASE L
+    # FIX-1 (K-B1-01, B2a STM-IN-02) — SPK per lokasi kerja (lewat gudang tugas penerimaan); petugas berpagar tidak
+    # lagi melihat 118 SPK lintas lokasi. SPK tanpa tugas (cek acak/retur) tetap terlihat.
+    from services import location_scope
+    _loc = await location_scope.inspection_clause((await location_scope.view_for(ctx)).get("ids"))
+    if _loc:
+        scope = {"$and": [scope, _loc]}
     if pg.is_paged(request):
         page, page_size, q_param, _sort = pg.get_page_params(request)
         rows, total = await svc.list_inspections(
@@ -148,6 +156,10 @@ async def export_inspections(request: Request, entity_id: Optional[str] = Query(
     ctx = await entity_ctx(request)
     scope = resolve_list_scope(svc.COLL, {}, ctx, entity_id)
     scope = line_scope.narrow(scope, actor, line)
+    from services import location_scope   # FIX-1 — unduhan mengikuti cakupan lokasi yang sama dengan daftar
+    _loc = await location_scope.inspection_clause((await location_scope.view_for(ctx)).get("ids"))
+    if _loc:
+        scope = {"$and": [scope, _loc]}
     rows, _total = await svc.list_inspections(scope, kind=kind, status=status, limit=2000)
 
     def _num(v: Any) -> str:

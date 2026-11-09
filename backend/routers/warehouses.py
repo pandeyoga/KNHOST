@@ -34,6 +34,12 @@ from services.location_service import warehouse_locations, save_warehouse_struct
 router = APIRouter(prefix="/api")
 
 MASTER_SCOPE_ROLES = {"admin", "manager", "warehouse"}
+# FIX-1 (B3b FRM-01) — perubahan STRUKTUR/PROFIL gudang lewat PATCH (zona & bin, mode pemakaian, site, peran gedung,
+# aturan simpan, gate, mode stok, bentuk simpan, aktif/nonaktif) hanya admin & Admin Gudang. Operator `warehouse`
+# (pemegang `warehouse.update`) dulu bisa mengosongkan bin berisi 18.471 roll & mengubah gudang khusus PT lain.
+STRUCTURE_ROLES = {"admin", "warehouse_admin"}
+STRUCTURE_KEYS = {"zones", "sharing_mode", "entity_ids", "site_id", "roles", "storage_rules", "gate_config",
+                  "stock_mode", "storage_form", "active", "loading_check_policy"}
 
 
 class StructurePayload(BaseModel):
@@ -115,7 +121,9 @@ async def get_orphan_rolls(warehouse_id: str, request: Request) -> Dict[str, Any
 @router.get("/warehouses/{warehouse_id}/occupancy")
 async def get_warehouse_occupancy(warehouse_id: str, request: Request) -> Dict[str, Any]:
     """Isi gudang per badan usaha — supaya keputusan mode gudang tidak buta."""
-    await require_permission(request, "warehouse", "view")
+    actor = await require_permission(request, "warehouse", "view")
+    from services import location_scope   # FIX-1 (G-SCOPE-01) — isi gudang di luar lokasi tugas tidak dibuka
+    await location_scope.assert_warehouse(actor, warehouse_id, "melihat isi gudang ini")
     wh = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0})
     if not wh:
         raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
@@ -163,7 +171,8 @@ async def put_warehouse_structure(warehouse_id: str, payload: StructurePayload, 
 
 @router.get("/warehouses")
 async def list_warehouses(request: Request, scope: str = Query("usable"),
-                          include_inactive: Optional[bool] = Query(None)) -> List[Dict[str, Any]]:
+                          include_inactive: Optional[bool] = Query(None),
+                          include_test: bool = Query(False)) -> List[Dict[str, Any]]:
     """Gudang yang BOLEH dipakai badan usaha aktif (bawaan).
 
     INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): gudang+alamat WAJIB login.
@@ -183,7 +192,9 @@ async def list_warehouses(request: Request, scope: str = Query("usable"),
         include_unusable=want_all,
         # UAT 24 Okt (P9) — pemilih gudang (PO/PR/GRN/transfer…) dulu ikut menawarkan gudang NONAKTIF (WH-BDG dkk.).
         # Bawaan kini: daftar "usable" hanya gudang aktif; layar master (`scope=all`) tetap melihat semuanya.
-        only_active=not (include_inactive if include_inactive is not None else want_all))
+        only_active=not (include_inactive if include_inactive is not None else want_all),
+        # FIX-1 (K-B1-10) — gudang data uji disembunyikan dari pemilih bawaan; layar master tetap melihatnya.
+        include_test=bool(include_test or want_all))
 
 
 @router.post("/warehouses")
@@ -234,6 +245,47 @@ async def create_warehouse(payload: WarehousePayload, request: Request) -> Dict[
     return whscope.decorate(safe_doc(warehouse), names, ctx.active_entity_id)
 
 
+def _validate_basic_fields(data: Dict[str, Any]) -> None:
+    """FIX-1 (FRM-01) — nama/kode tidak boleh kosong; koordinat dalam batas bumi."""
+    for key, label in (("name", "Nama gudang"), ("code", "Kode gudang")):
+        if key in data:
+            val = str(data.get(key) or "").strip()
+            if not val:
+                raise HTTPException(status_code=400, detail=f"{label} tidak boleh kosong.")
+            data[key] = val
+    for key, lim, label in (("lat", 90, "Lintang"), ("lng", 180, "Bujur")):
+        if key in data and data[key] not in (None, ""):
+            try:
+                v = float(data[key])
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"{label} harus angka.")
+            if v != v or not (-lim <= v <= lim):   # NaN / di luar batas
+                raise HTTPException(status_code=400, detail=f"{label} harus di antara -{lim} dan {lim}.")
+            data[key] = v
+        elif key in data:
+            data[key] = None
+
+
+async def _assert_patch_scope(actor: Dict[str, Any], ctx, current: Dict[str, Any], data: Dict[str, Any]) -> None:
+    """FIX-1 (FRM-01, P0) — PATCH dulu tanpa cek PT/lokasi: operator PT Sukacita mengubah gudang KHUSUS PT Cipta
+    Sandang (200). Kini: (1) lokasi tugas petugas berpagar, (2) gudang khusus hanya oleh akun yang ditugaskan ke
+    salah satu PT-nya, (3) kunci struktur/profil hanya admin & Admin Gudang."""
+    from role_registry import role_in
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, current.get("id") or "", "mengubah data gudang ini")
+    if whscope.mode_of(current) == whscope.DEDICATED:
+        owners = whscope.dedicated_ids(current)
+        if owners and not (set(owners) & set(ctx.allowed_entity_ids or [])):
+            raise HTTPException(status_code=403, detail=(
+                f"Gudang {current.get('name') or current.get('code')} khusus badan usaha lain — Anda tidak "
+                "ditugaskan di badan usaha itu."))
+    touched = sorted(STRUCTURE_KEYS & set(data.keys()))
+    if touched and not role_in(actor.get("role"), STRUCTURE_ROLES):
+        raise HTTPException(status_code=403, detail=(
+            "Hanya Admin atau Admin Gudang yang boleh mengubah struktur/profil gudang "
+            f"({', '.join(touched)})."))
+
+
 @router.patch("/warehouses/{warehouse_id}")
 async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "warehouse", "update")
@@ -248,6 +300,9 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
                # PREP-C (K-GDG-05/06) — mode pencatatan stok & bentuk penyimpanan gedung
                "stock_mode", "storage_form"]
     data = {k: v for k, v in payload.data.items() if k in allowed}
+    await _assert_patch_scope(actor, ctx, current, data)
+    _validate_basic_fields(data)
+    migration_reason = str(payload.data.get("migration_reason") or "").strip()
     if "loading_check_policy" in data and data["loading_check_policy"] not in ("optional", "required"):
         raise HTTPException(status_code=400, detail="Kebijakan loading check harus 'optional' atau 'required'.")
     if any(k in data for k in LOCATION_KEYS):
@@ -262,7 +317,12 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
         await whp.assert_profile_refs(warehouse_id, prof)   # PREP-C — perangkat gate / artikel / PT nyata
         data.update(prof)
     if "zones" in data:   # PREP-C (K-GDG-05/08) — bentuk simpan zona & aturan artikel/PT dinormalisasi
-        data["zones"] = whp.validate_zone_forms(list(data["zones"] or []))
+        # FIX-1 (FRM-01) — penggantian zona LEWAT JALUR STRUKTUR BERPENJAGA (`save_warehouse_structure`: bin berisi
+        # roll/tugas tidak boleh hilang → LOCATION_IN_USE, kode bin unik & wajib, alasan migrasi). Dulu PATCH
+        # langsung `$set zones` sehingga `{"zones": []}` mengosongkan gudang berisi 18.471 roll.
+        zones = whp.validate_zone_forms(list(data.pop("zones") or []))
+        await save_warehouse_structure(warehouse_id, zones, migration_reason=migration_reason,
+                                       actor_name=actor["name"])
     if data.get("code"):
         duplicate = await db.warehouses.find_one(
             {"code": data["code"], "id": {"$ne": warehouse_id}}, {"_id": 0}
@@ -305,6 +365,11 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
 @router.delete("/warehouses/{warehouse_id}")
 async def delete_warehouse(warehouse_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "warehouse", "delete")
+    # FIX-1 (FRM-01, G-SCOPE-01) — menonaktifkan gudang = perubahan struktur: cakupan lokasi/PT + admin/Admin Gudang.
+    current = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0})
+    if not current:
+        raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
+    await _assert_patch_scope(actor, await entity_ctx(request), current, {"active": False})
     warehouse = await db.warehouses.find_one_and_update(
         {"id": warehouse_id},
         {"$set": {"active": False, "updated_at": now_iso()}},

@@ -74,8 +74,10 @@ async def get_label_pattern(supplier_id: str, request: Request) -> Dict[str, Any
 @router.put("/suppliers/{supplier_id}/label-pattern")
 async def put_label_pattern(supplier_id: str, payload: LabelPatternIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "supplier", "update")
-    if not await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "id": 1}):
+    sup = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "id": 1, "entity_id": 1})
+    if not sup:
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
+    assert_entity_access(sup, "suppliers", await entity_ctx(request))   # FIX-1 (G-SCOPE-01) — supplier PT lain
     pattern = ldec.normalize_pattern(payload.model_dump())
     await db.suppliers.update_one({"id": supplier_id},
                                   {"$set": {"label_pattern": pattern, "updated_at": now_iso()}})

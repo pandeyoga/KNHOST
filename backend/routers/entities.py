@@ -40,6 +40,7 @@ async def list_entities(
     with_readiness: bool = Query(False, description="sertakan ringkasan kesiapan"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    include_test: bool = Query(False, description="FIX-1 — sertakan badan usaha bertanda data uji"),
 ) -> List[Dict[str, Any]]:
     """Daftar badan usaha — dipakai pemilih entitas, jadi semua user login boleh baca.
 
@@ -49,6 +50,10 @@ async def list_entities(
     """
     await current_user(request)
     query: Dict[str, Any] = {}
+    # FIX-1 (B1 K-B1-10, UI-05) — "PT Uji Provisioning …" bertanda `is_test` (skrip penanda, bisa dibalik) tidak
+    # ditawarkan di pengalih badan usaha; layar master meminta `include_test=true`.
+    if not include_test:
+        query["is_test"] = {"$ne": True}
     if status and status != "all":
         if status == "archived":
             query["status"] = {"$in": sorted(lifecycle.WRITE_LOCKED_STATUSES)}
@@ -80,6 +85,10 @@ async def count_entities(request: Request, status: str = Query("active")) -> Dic
     """Jumlah badan usaha (untuk paging daftar berskala puluhan entitas)."""
     await current_user(request)
     query: Dict[str, Any] = {}
+    # FIX-1 (B1 K-B1-10, UI-05) — "PT Uji Provisioning …" bertanda `is_test` (skrip penanda, bisa dibalik) tidak
+    # ditawarkan di pengalih badan usaha; layar master meminta `include_test=true`.
+    if not include_test:
+        query["is_test"] = {"$ne": True}
     if status and status != "all":
         query["status"] = ({"$in": sorted(lifecycle.WRITE_LOCKED_STATUSES)}
                            if status == "archived" else status)

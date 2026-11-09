@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Truck, Plus, ArrowRight, Search } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
 import ErrorNotice from "../../components/ErrorNotice";
 import FilterChips from "../../components/FilterChips";
 import LineFilter from "../../components/LineFilter";
@@ -102,7 +103,8 @@ export default function TransferManagement({
       if (filterStatus !== "all") params.status = filterStatus;
       if (lineFilter) params.line = lineFilter;
       const response = await axios.get(`${API}/transfers`, { params });
-      setTransfers(Array.isArray(response.data) ? response.data : []);
+      // FIX-1 (K-B1-02) — transfer lintas PT di gedung lokasi kerja: detail/aksi dikirim atas nama PT transfer.
+      setTransfers(rememberDocEntities(Array.isArray(response.data) ? response.data : []));
       setError("");
     } catch (error) {
       setError(apiErrorText(error, "Gagal memuat daftar transfer."));

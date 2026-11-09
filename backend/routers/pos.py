@@ -27,7 +27,10 @@ async def get_site_stock(
     await require_permission(request, "order", "view")
     from entity_scope import entity_ctx
     from services import site_stock_service as sss
-    ent = entity_id or (await entity_ctx(request)).active_entity_id
+    from entity_scope import resolve_requested_entity
+    # FIX-1 (B3a SCP-5) — `entity_id` dulu dipakai mentah: sales PT A bisa meminta angka "milik PT" PT B. Kini wajib
+    # ∈ penugasan akun (403), kosong = PT aktif.
+    ent = resolve_requested_entity(await entity_ctx(request), entity_id)
     ids = [x for x in (product_ids or "").split(",") if x.strip()]
     return {"site_id": site_id, "entity_id": ent, "stock": await sss.site_stock(site_id, ent, ids or None)}
 

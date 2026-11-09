@@ -20,14 +20,16 @@ import { useAppNav } from "../../context/AppNavContext";
 import CycleCount from "../inventory/CycleCount";
 import CycleCountPanel from "../rfid/CycleCountPanel";
 import InitialRegistration from "../inventory/registration/InitialRegistration";
-import { canCurrent } from "../../config/roles";
+import { canCurrent, roleIs } from "../../config/roles";
 
 export default function StockOpnameTab({
   method = "count", onMethodChange, warehouseId = "", onWarehouseChange, warehouses = [],
   selectedEntity, cycleKey, cycleCountProps = {},
 }) {
-  const { canOpen } = useAppNav();
-  const rfidAllowed = canOpen("cs-rfid-lokasi");
+  const { canOpen, role } = useAppNav();
+  // FIX-1 (K-B1-07) — manajer kini mendapat menu RFID untuk MEMBACA (Lokasi/Tag/Monitor Gerbang); metode Sapu RFID
+  // (pekerjaan lapangan) tetap hanya peran yang dulu membuka Lokasi RFID (D-15: tidak ada peran yang mendapat akses baru).
+  const rfidAllowed = canOpen("cs-rfid-lokasi") && !roleIs(role, ["manager"]);
   const canRegister = canCurrent("inventory", "cycle_count");
   // Tautan ke sesi opname tertentu (Meja Gudang/papan) selalu membuka metode Hitung fisik.
   const focus = !!cycleCountProps.focusSessionId;

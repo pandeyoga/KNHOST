@@ -161,4 +161,10 @@ async def cancel_repair(ro_id: str, payload: ReasonIn, request: Request) -> Dict
 async def roll_repairs(roll_id: str, request: Request) -> List[Dict[str, Any]]:
     """Riwayat perbaikan satu roll (jejak roll)."""
     await require_permission(request, "product", "view")
+    # FIX-1 (G-SCOPE-01) — dulu tanpa pagar: riwayat perbaikan roll PT/lokasi mana pun terbaca lewat id roll.
+    from db import db
+    roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0, "id": 1, "owner_entity_id": 1, "warehouse_id": 1})
+    if not roll:
+        raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
+    assert_entity_access(roll, "inventory_rolls", await entity_ctx(request))
     return await svc.roll_repairs(roll_id)

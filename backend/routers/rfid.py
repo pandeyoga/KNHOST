@@ -81,6 +81,29 @@ class RoutingPayload(BaseModel):
     routing: str  # store | cross_dock
 
 
+# ─── FIX-1 — cakupan lokasi kerja di daftar & aksi RFID ────────────────────────
+async def _wh_filter(ctx, warehouse_id: Optional[str]):
+    """B3a SCP-2 — daftar RFID (ringkasan, tag, roll belum bertag, lokasi, job cetak, opname RFID) dulu tanpa lokasi.
+    Kini ikut cakupan tampilan (lokasi kerja bawaan; petugas berpagar tak bisa melebar)."""
+    from services import location_scope
+    return location_scope.warehouse_filter(await location_scope.view_for(ctx), warehouse_id)
+
+
+async def _assert_doc_wh(ctx, coll: str, doc_id: str, action: str) -> None:
+    """Aksi tulis / detail by-id: gudang dokumen RFID harus di lokasi tugas petugas berpagar (STM-IN-02)."""
+    from services import location_scope
+    if ctx.warehouse_ids is None:
+        return
+    doc = await db[coll].find_one({"id": doc_id}, {"_id": 0, "warehouse_id": 1}) or {}
+    await location_scope.assert_warehouse(ctx.user, doc.get("warehouse_id") or "", action)
+
+
+def _roll_out(roll: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """SCP-1 — HPP roll tidak ikut ke peran non-biaya (dulu `safe_doc(roll)` mentah, beda dengan /inventory/rolls)."""
+    from core_utils import strip_cost_fields
+    return strip_cost_fields(safe_doc(roll), (actor or {}).get("role"))
+
+
 # ─── Summary ─────────────────────────────────────────────────────────────────
 @router.get("/rfid/summary")
 async def get_summary(request: Request, warehouse_id: Optional[str] = None,
@@ -88,7 +111,7 @@ async def get_summary(request: Request, warehouse_id: Optional[str] = None,
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    return await rfid.rfid_summary(scope, warehouse_id)
+    return await rfid.rfid_summary(scope, await _wh_filter(ctx, warehouse_id))
 
 
 # ─── Tags ────────────────────────────────────────────────────────────────────
@@ -98,7 +121,7 @@ async def get_tags(request: Request, warehouse_id: Optional[str] = None,
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    tags = await rfid.list_tags(scope, warehouse_id, status)
+    tags = await rfid.list_tags(scope, await _wh_filter(ctx, warehouse_id), status)
     return {"count": len(tags), "tags": tags}
 
 
@@ -119,7 +142,10 @@ async def lookup_code(request: Request, code: str = Query(..., min_length=1),
     if not roll:
         raise HTTPException(status_code=404, detail={"code": "CODE_UNKNOWN", "message": "Kode tidak dikenal (bukan EPC tag maupun nomor roll)."})
     ctx = await entity_ctx(request)
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", ctx)
+    # FIX-1 (B3a SCP-1, P0) — pagar memakai DOKUMEN ROLL ASLI. Dulu dict sintetis `{"entity_id": owner}` sementara
+    # field cakupan roll = `owner_entity_id` (dan lokasi = `warehouse_id`) → kedua cek lolos: petugas Soreang/Kanda
+    # membaca roll KSC Jakarta & HPP roll Cipta Sandang.
+    assert_entity_access(roll, "inventory_rolls", ctx)
     product = await db.products.find_one({"id": roll.get("product_id")}, {"_id": 0, "name": 1, "sku": 1})
     # Sesi 11 — pindai → aksi: tugas WMS terbuka yang menyentuh roll ini (ambil / terima / potong).
     ors: list = [{"roll_id": roll["id"]}, {"suggested_roll_id": roll["id"]}, {"roll_ids": roll["id"]}, {"roll_id": roll.get("roll_no")}]
@@ -145,7 +171,7 @@ async def lookup_code(request: Request, code: str = Query(..., min_length=1),
     from services import rfid_print_service as rps
     hist = await rps.roll_print_history(roll)
     label = {k: hist[k] for k in ("prints_count", "last_printed_qty", "label_outdated", "current_qty", "epc")}
-    return {"via": via, "roll": safe_doc(roll), "product_name": (product or {}).get("name"), "sku": (product or {}).get("sku"),
+    return {"via": via, "roll": _roll_out(roll, actor), "product_name": (product or {}).get("name"), "sku": (product or {}).get("sku"),
             "tagged": bool(roll.get("rfid_tag_id")), "open_tasks": open_tasks, "last_scan": last_scan, "label": label}
 
 
@@ -158,7 +184,7 @@ async def _roll_in_scope(roll_id: str, request: Request) -> Dict[str, Any]:
     if not roll:
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
     ctx = await entity_ctx(request)
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", ctx)
+    assert_entity_access(roll, "inventory_rolls", ctx)   # FIX-1 (SCP-1) — dokumen roll asli, bukan dict sintetis
     return roll
 
 
@@ -200,8 +226,10 @@ async def post_roll_scan(payload: RollScanPayload, request: Request) -> Dict[str
     if not roll:
         raise HTTPException(status_code=404, detail={"code": "CODE_UNKNOWN", "message": f"Kode '{code}' tidak dikenal"})
     ctx = await entity_ctx(request)
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", ctx)
+    assert_entity_access(roll, "inventory_rolls", ctx)   # FIX-1 (SCP-1) — dokumen roll asli, bukan dict sintetis
     if payload.warehouse_id:
+        from services import location_scope   # FIX-1 — pindai dicatat di gudang lokasi tugas saja
+        await location_scope.assert_warehouse(actor, payload.warehouse_id, "mencatat pindai roll di gudang ini")
         from services import warehouse_scope_service as whscope
         # E4.1 — pindai di gudang khusus badan usaha lain tidak boleh dicatat sebagai lokasi
         await whscope.assert_usable(payload.warehouse_id, ctx.active_entity_id, action="mencatat pindai roll di gudang ini")
@@ -221,10 +249,10 @@ async def post_roll_scan(payload: RollScanPayload, request: Request) -> Dict[str
 async def get_roll_scans(roll_id: str, request: Request, limit: int = Query(15, ge=1, le=100)) -> Dict[str, Any]:
     """Riwayat pindai QR/RFID satu roll dari HP gudang (terbaru dulu)."""
     await require_permission(request, "wms", "view")
-    roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0, "owner_entity_id": 1, "last_scan": 1})
+    roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0, "owner_entity_id": 1, "warehouse_id": 1, "last_scan": 1})
     if not roll:
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", await entity_ctx(request))
+    assert_entity_access(roll, "inventory_rolls", await entity_ctx(request))   # FIX-1 (SCP-1)
     rows = await db.roll_scans.find({"roll_id": roll_id}, {"_id": 0}).sort("at", -1).to_list(limit)
     return {"count": len(rows), "scans": rows, "last_scan": roll.get("last_scan")}
 
@@ -235,6 +263,7 @@ async def printer_status(request: Request, warehouse_id: Optional[str] = None) -
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
+    warehouse_id = await _wh_filter(ctx, warehouse_id)   # FIX-1 (UI-55) — printer & antrean per lokasi kerja
     q_dev: Dict[str, Any] = {"type": "printer"}
     if warehouse_id:
         q_dev["warehouse_id"] = warehouse_id
@@ -323,7 +352,7 @@ async def get_untagged(request: Request, warehouse_id: Optional[str] = None,
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    rolls = await rfid.untagged_rolls(scope, warehouse_id)
+    rolls = await rfid.untagged_rolls(scope, await _wh_filter(ctx, warehouse_id))
     return {"count": len(rolls), "rolls": rolls}
 
 
@@ -332,6 +361,7 @@ async def post_encode(payload: EncodePayload, request: Request) -> Dict[str, Any
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
+    await _assert_doc_wh(ctx, "inventory_rolls", payload.roll_id, "memasang tag pada roll di gudang ini")   # FIX-1
     tag = await rfid.encode_tag(payload.roll_id, scope, payload.epc, actor["name"])
     await audit(actor["name"], "rfid_tag_encoded", "rfid_tag", tag["id"],
                 {"epc": tag["epc"], "roll_id": payload.roll_id})
@@ -343,7 +373,10 @@ async def post_auto_encode(payload: AutoEncodePayload, request: Request) -> Dict
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
-    res = await rfid.auto_encode(scope, payload.warehouse_id, actor["name"])
+    from services import location_scope   # FIX-1 — tanpa gudang = semua gudang lokasi tugas (bukan semua gudang PT)
+    if payload.warehouse_id:
+        await location_scope.assert_warehouse(actor, payload.warehouse_id, "memasang tag massal di gudang ini")
+    res = await rfid.auto_encode(scope, payload.warehouse_id or await _wh_filter(ctx, None), actor["name"])
     await audit(actor["name"], "rfid_auto_encode", "rfid_tag", "batch", {"encoded": res["encoded"]})
     return res
 
@@ -353,6 +386,7 @@ async def delete_tag(tag_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
+    await _assert_doc_wh(ctx, "rfid_tags", tag_id, "mencabut tag di gudang ini")   # FIX-1
     res = await rfid.retire_tag(tag_id, scope)
     await audit(actor["name"], "rfid_tag_retired", "rfid_tag", tag_id, {})
     return res
@@ -362,9 +396,11 @@ async def delete_tag(tag_id: str, request: Request) -> Dict[str, Any]:
 @router.get("/rfid/devices")
 async def get_devices(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
-    devs = await rfid.list_devices(warehouse_id)
-    # FIX-3a (K-B3b-09) — layar menyembunyikan tombol detak manual/simulasi bila mode simulasi RFID PT aktif mati.
+    # FIX-1 (audit B1b UI-55) — pemilih gate/perangkat ikut lokasi kerja (petugas Soreang dulu melihat gate Jakarta &
+    # gate uji). Layar master perangkat admin (tanpa lokasi kerja / "Semua lokasi") tetap melihat semuanya.
     _ctx = await entity_ctx(request)
+    devs = await rfid.list_devices(await _wh_filter(_ctx, warehouse_id))
+    # FIX-3a (K-B3b-09) — layar menyembunyikan tombol detak manual/simulasi bila mode simulasi RFID PT aktif mati.
     return {"count": len(devs), "devices": devs, "rfid_simulation": await rfid.simulation_on(_ctx.active_entity_id or "")}
 
 
@@ -429,7 +465,7 @@ async def get_passages(request: Request, device_id: Optional[str] = None, wareho
                        limit: int = 30, before: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import rfid_ingest_service as ing
-    rows = await ing.list_passages(device_id, warehouse_id, limit, before)
+    rows = await ing.list_passages(device_id, await _wh_filter(await entity_ctx(request), warehouse_id), limit, before)
     return {"count": len(rows), "passages": rows,
             "next_before": rows[-1]["last_at"] if rows and len(rows) == min(limit, 100) else None}
 
@@ -441,6 +477,7 @@ async def post_passage_ack(passage_id: str, payload: Dict[str, Any], request: Re
     if len(note) < 5:
         raise HTTPException(status_code=400, detail="Catatan tindak lanjut alarm wajib (min. 5 karakter).")
     from services import rfid_ingest_service as ing
+    await _assert_doc_wh(await entity_ctx(request), "rfid_passages", passage_id, "menindaklanjuti alarm gate gudang ini")   # FIX-1
     p = await ing.acknowledge_passage(passage_id, actor["name"], note)
     await audit(actor["name"], "rfid_passage_acknowledged", "rfid_passage", passage_id,
                 {"verdict": p.get("verdict"), "red": p.get("red_count")}, reason=note)
@@ -474,7 +511,7 @@ async def get_locations(request: Request, warehouse_id: Optional[str] = None,
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    items = await rfid.rfid_locations(scope, warehouse_id)
+    items = await rfid.rfid_locations(scope, await _wh_filter(ctx, warehouse_id))
     return {"count": len(items), "items": items}
 
 
@@ -485,7 +522,7 @@ async def get_print_jobs(request: Request, warehouse_id: Optional[str] = None,
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
-    jobs = await rps.list_print_jobs(resolve_scope_ids(ctx, entity_id), warehouse_id, status)
+    jobs = await rps.list_print_jobs(resolve_scope_ids(ctx, entity_id), await _wh_filter(ctx, warehouse_id), status)
     return {"count": len(jobs), "jobs": jobs}
 
 
@@ -508,6 +545,7 @@ async def get_print_job(job_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
+    await _assert_doc_wh(ctx, "rfid_print_jobs", job_id, "membuka job cetak gudang ini")   # FIX-1
     return await rps.get_print_job(job_id, resolve_scope_ids(ctx, None))
 
 
@@ -517,6 +555,7 @@ async def get_print_job_zpl(job_id: str, request: Request):
     ctx = await entity_ctx(request)
     from fastapi.responses import PlainTextResponse
     from services import rfid_print_service as rps
+    await _assert_doc_wh(ctx, "rfid_print_jobs", job_id, "mengunduh job cetak gudang ini")   # FIX-1
     job = await rps.get_print_job(job_id, resolve_scope_ids(ctx, None))
     return PlainTextResponse(rps.job_zpl(job), headers={
         "Content-Disposition": f"attachment; filename={job.get('job_number', job_id)}.zpl"})
@@ -527,6 +566,7 @@ async def post_mark_printed(job_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
+    await _assert_doc_wh(ctx, "rfid_print_jobs", job_id, "menandai cetak job gudang ini")   # FIX-1
     job = await rps.mark_printed(job_id, resolve_scope_ids(ctx, None), actor["name"])
     await audit(actor["name"], "rfid_print_job_printed", "rfid_print_job", job_id, {"via": "manual"})
     return job
@@ -537,6 +577,7 @@ async def post_verify_start(job_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
+    await _assert_doc_wh(ctx, "rfid_print_jobs", job_id, "memverifikasi job cetak gudang ini")   # FIX-1
     return await rps.start_verify(job_id, resolve_scope_ids(ctx, None), actor["name"])
 
 
@@ -547,6 +588,7 @@ async def post_verify_scan(session_id: str, payload: VerifyScanPayload, request:
     from services import rfid_print_service as rps
     if payload.source == "device":
         raise HTTPException(status_code=400, detail="Scan berlabel device hanya lewat /rfid/ingest (X-Device-Key)")
+    await _assert_doc_wh(ctx, "rfid_verify_sessions", session_id, "memindai sesi verifikasi gudang ini")   # FIX-1
     return await rps.scan_session(session_id, payload.epcs, resolve_scope_ids(ctx, None),
                                   ["print_verify", "cycle_count"], payload.source, actor["name"])
 
@@ -556,6 +598,7 @@ async def post_verify_complete(session_id: str, request: Request) -> Dict[str, A
     actor = await require_permission(request, "wms", "scan")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
+    await _assert_doc_wh(ctx, "rfid_verify_sessions", session_id, "menyelesaikan sesi verifikasi gudang ini")   # FIX-1
     sess = await rps.complete_verify(session_id, resolve_scope_ids(ctx, None))
     await audit(actor["name"], "rfid_verify_completed", "rfid_verify_session", session_id,
                 {"result": sess.get("result"), "missing": len(sess.get("missing", [])),
@@ -568,6 +611,10 @@ async def post_set_routing(payload: RoutingPayload, request: Request) -> Dict[st
     actor = await require_permission(request, "wms", "update")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
+    if ctx.warehouse_ids is not None:   # FIX-1 — rute roll hanya untuk roll di lokasi tugas
+        from services import location_scope
+        async for r in db.inventory_rolls.find({"id": {"$in": list(payload.roll_ids)}}, {"_id": 0, "warehouse_id": 1}):
+            await location_scope.assert_warehouse(actor, r.get("warehouse_id") or "", "mengatur rute roll di gudang ini")
     res = await rps.set_routing(payload.roll_ids, payload.routing,
                                 resolve_scope_ids(ctx, None), actor["name"])
     await audit(actor["name"], "roll_routing_set", "inventory_roll", "bulk",
@@ -651,7 +698,7 @@ async def get_incidents(request: Request, status: Optional[str] = None,
                         warehouse_id: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import rfid_incident_service as inc
-    rows = await inc.list_incidents(status, warehouse_id, limit)
+    rows = await inc.list_incidents(status, await _wh_filter(await entity_ctx(request), warehouse_id), limit)   # FIX-1
     return {"count": len(rows), "incidents": rows}
 
 
@@ -660,6 +707,7 @@ async def post_incident_ack(incident_id: str, payload: IncidentNotePayload,
                             request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "update")
     from services import rfid_incident_service as inc
+    await _assert_doc_wh(await entity_ctx(request), "rfid_incidents", incident_id, "mengakui insiden gudang ini")   # FIX-1
     row = await inc.acknowledge(incident_id, actor["name"], payload.note)
     await audit(actor["name"], "rfid_incident_ack", "rfid_incident", incident_id, {})
     return row
@@ -670,6 +718,7 @@ async def post_incident_resolve(incident_id: str, payload: IncidentNotePayload,
                                 request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "update")
     from services import rfid_incident_service as inc
+    await _assert_doc_wh(await entity_ctx(request), "rfid_incidents", incident_id, "menyelesaikan insiden gudang ini")   # FIX-1
     row = await inc.resolve(incident_id, actor["name"], payload.note)
     await audit(actor["name"], "rfid_incident_resolved", "rfid_incident", incident_id, {})
     return row
@@ -703,6 +752,8 @@ async def post_cc_start(payload: CycleCountStartPayload, request: Request) -> Di
     # E4.1 — opname RFID di gudang khusus badan usaha lain = menghitung barang orang.
     await whscope.assert_usable(payload.warehouse_id, ctx.active_entity_id,
                                 action="melakukan stock opname RFID di sini")
+    from services import location_scope   # FIX-1 (STM-IN-02) — opname RFID hanya di gudang lokasi tugas
+    await location_scope.assert_warehouse(actor, payload.warehouse_id, "melakukan stock opname RFID di gudang ini")
     return await cc.start(payload.warehouse_id, resolve_scope_ids(ctx, None), actor["name"])
 
 
@@ -710,7 +761,9 @@ async def post_cc_start(payload: CycleCountStartPayload, request: Request) -> Di
 async def post_cc_complete(session_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "scan")
     from services import cycle_count_service as cc
-    res = await cc.complete(session_id, actor["name"], resolve_scope_ids(await entity_ctx(request), None))
+    _ctx = await entity_ctx(request)
+    await _assert_doc_wh(_ctx, "rfid_verify_sessions", session_id, "menyelesaikan opname RFID gudang ini")   # FIX-1
+    res = await cc.complete(session_id, actor["name"], resolve_scope_ids(_ctx, None))
     await audit(actor["name"], "rfid_cycle_count_completed", "rfid_cycle_count", res["id"],
                 {"cc_number": res["cc_number"], "accuracy": res["accuracy_pct"]})
     return res
@@ -720,7 +773,8 @@ async def post_cc_complete(session_id: str, request: Request) -> Dict[str, Any]:
 async def get_cc_list(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import cycle_count_service as cc
-    rows = await cc.list_counts(warehouse_id, resolve_scope_ids(await entity_ctx(request), None))
+    ctx = await entity_ctx(request)
+    rows = await cc.list_counts(await _wh_filter(ctx, warehouse_id), resolve_scope_ids(ctx, None))
     return {"count": len(rows), "counts": rows}
 
 
@@ -728,7 +782,9 @@ async def get_cc_list(request: Request, warehouse_id: Optional[str] = None) -> D
 async def get_cc_detail(cc_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import cycle_count_service as cc
-    return await cc.get_count(cc_id, resolve_scope_ids(await entity_ctx(request), None))
+    _ctx = await entity_ctx(request)
+    await _assert_doc_wh(_ctx, "rfid_cycle_counts", cc_id, "membuka hasil opname RFID gudang ini")   # FIX-1
+    return await cc.get_count(cc_id, resolve_scope_ids(_ctx, None))
 
 
 # ─── PREP-F — printer label CP30EN (protokol connector + antrean/tinjauan/ganti tag) ─────────

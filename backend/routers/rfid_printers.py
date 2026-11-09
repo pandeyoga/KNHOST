@@ -128,7 +128,10 @@ async def get_printer_queue(request: Request, warehouse_id: Optional[str] = None
                             limit: int = Query(300, ge=1, le=1000)) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import rfid_print_service as rps
-    return await rps.queue_overview(resolve_scope_ids(await entity_ctx(request), entity_id), warehouse_id, status, limit)
+    from services import location_scope   # FIX-1 (audit B1b UI-55) — antrean printer per lokasi kerja
+    ctx = await entity_ctx(request)
+    wh = location_scope.warehouse_filter(await location_scope.view_for(ctx), warehouse_id)
+    return await rps.queue_overview(resolve_scope_ids(ctx, entity_id), wh, status, limit)
 
 
 @router.get("/rfid/printers/follow-up")
@@ -136,7 +139,10 @@ async def get_printer_follow_up(request: Request, warehouse_id: Optional[str] = 
                                 entity_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import rfid_print_service as rps
-    rows = await rps.follow_up_items(resolve_scope_ids(await entity_ctx(request), entity_id), warehouse_id)
+    from services import location_scope   # FIX-1 (audit B1b UI-55)
+    ctx = await entity_ctx(request)
+    wh = location_scope.warehouse_filter(await location_scope.view_for(ctx), warehouse_id)
+    rows = await rps.follow_up_items(resolve_scope_ids(ctx, entity_id), wh)
     return {"count": len(rows), "items": rows, "labels": rps.FOLLOW_UP_LABEL}
 
 
@@ -168,7 +174,9 @@ async def _roll(roll_id: str, request: Request) -> Dict[str, Any]:
     roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
     if not roll:
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", await entity_ctx(request))
+    # FIX-1 (B3a SCP-1 pola "pagar dari dict sintetis") — dokumen roll ASLI: field cakupan roll = `owner_entity_id`
+    # + lokasi `warehouse_id`; dict `{"entity_id": …}` dulu meloloskan keduanya (riwayat tag roll PT/lokasi lain).
+    assert_entity_access(roll, "inventory_rolls", await entity_ctx(request))
     return roll
 
 

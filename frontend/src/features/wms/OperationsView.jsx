@@ -85,7 +85,7 @@ export default function OperationsView({
           lepas/tolak. Papan transfer & opname tetap bisa ditindak di sini. */}
       <WaitingBoardsStrip endpoint="/home/warehouse" entityId={selectedEntity}
         primaryKey="transfer" testIdPrefix="wms-home"
-        scopeNote="Antrean ACC · semua gudang (filter gudang di bawah hanya untuk daftar stok)"
+        scopeNote="Antrean ACC · mengikuti cakupan Lokasi di bilah atas"
         linkKeys={["inspection_hold"]}
         onOpenDocument={(link) => onOpenDocument?.({ ...link, preset: { hold: true } })}
         onActed={() => setBoardsVersion((v) => v + 1)}

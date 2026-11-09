@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_work_scope, assert_entity_access
 from core_utils import new_id, now_iso, safe_doc
 from services.shipment_service import dispatch_task
 from services.fulfillment_status import recompute_so_status
@@ -41,7 +41,9 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
     if warehouse_id:
         query["warehouse_id"] = warehouse_id
     ctx = await entity_ctx(request)
-    query = resolve_list_scope("wms_tasks", query, ctx, entity_id)
+    # FIX-1 (K-B1-02) — antrean keluar per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan (PT = label +
+    # saringan `entity_id`); dulu dipagari PT aktif. Aksi tetap diperiksa per tugas (`assert_entity_access`).
+    query = await resolve_work_scope("wms_tasks", query, ctx, entity_id)
     
     tasks = await db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
     
@@ -64,7 +66,8 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
             task["so_backorder_qty"] = open_backorder_qty(order, task.get("product_id", ""))
             hold = holds.get(task["order_id"])
             task["payment_hold"] = hold if hold and hold["applies"] else None
-    
+    from services.work_labels import label_rows
+    await label_rows(tasks)
     return tasks
 
 
@@ -622,4 +625,9 @@ async def complete_loading_check(session_id: str, request: Request) -> Dict[str,
 @router.get("/outbound/so/{order_id}/loading-check")
 async def get_loading_check(order_id: str, request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
+    # FIX-1 (G-SCOPE-01) — status cek muat SO PT lain tidak dibuka lewat id pesanan.
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "entity_id": 1})
+    if not so:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+    assert_entity_access(so, "sales_orders", await entity_ctx(request))
     return await _lc.status_for_order(order_id, warehouse_id)

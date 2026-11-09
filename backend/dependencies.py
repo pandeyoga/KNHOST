@@ -24,13 +24,20 @@ def _as_utc(dt: Any) -> Optional[datetime]:
 
 
 def extract_token(request: Request) -> str:
-    """SEC-2 — HttpOnly cookie diutamakan; fallback header Bearer (kompat)."""
-    token = request.cookies.get(SESSION_COOKIE) or ""
-    if not token:
-        header = request.headers.get("Authorization", "")
-        if header.startswith("Bearer "):
-            token = header.replace("Bearer ", "").strip()
-    return token
+    """Token sesi permintaan ini — SATU aturan: header Bearer DIUTAMAKAN, cookie HttpOnly hanya cadangan.
+
+    FIX-1 (audit B1b UI-44, silang UI-39) — dulu cookie diutamakan (SEC-2). Di peramban/HP bersama, cookie sesi pengguna
+    SEBELUMNYA (logout tak pernah mencapai server) mengalahkan Bearer akun yang baru masuk → semua layar tampil sebagai
+    akun lama dan `kn_user` ditimpa balik oleh penyegar sesi. Bearer = identitas eksplisit akun yang sedang tampil di
+    layar (aplikasi selalu mengirimnya); cookie tetap dipakai bila tidak ada Bearer (unduhan/`<img>` tanpa header).
+    Tidak melebarkan apa pun: kedua bentuk sudah sah sebelumnya, hanya urutan yang ditetapkan. Pelengkap: login
+    mencabut sesi cookie lama di peramban itu, logout mencabut sesi Bearer & cookie sekaligus (`routers/auth.py`)."""
+    header = request.headers.get("Authorization", "")
+    if header.startswith("Bearer "):
+        token = header.replace("Bearer ", "").strip()
+        if token:
+            return token
+    return request.cookies.get(SESSION_COOKIE) or ""
 
 
 async def current_user(request: Request) -> Dict[str, Any]:
