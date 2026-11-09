@@ -4,7 +4,9 @@ import KNDatePicker, { formatDateId } from "../../components/KNDatePicker";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency, wibDate } from "../../utils/formatters";
-import { logisticsHistory, MODE_LABEL, MODE_PILL, STATUS_PILL, carrierText } from "./logisticsApi";
+import { logisticsHistory, MODE_LABEL, MODE_PILL, carrierText } from "./logisticsApi";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
+import { LEGACY_TONE } from "../../utils/statusVocab";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 // Riwayat pengiriman (terkirim / selesai / gagal): saring tanggal, moda, status, kata kunci.
@@ -90,11 +92,11 @@ export default function HistoryPanel({ params, onOpen, refreshKey, status, dateF
                     <td className="text-[11.5px] tabular-nums">{when(r) ? formatDateId(when(r), "dd MMM yyyy") : "—"}</td>
                     <td className="font-mono text-[11.5px] font-bold text-[#0058CC]">{r.number}</td>
                     <td><div className="text-[12px] font-semibold">{r.order_number}</div><div className="text-[10.5px] text-[#6B6B73]">{r.customer_name}</div></td>
-                    <td><span className={`status-pill ${MODE_PILL[r.mode]}`}>{r.mode_label}</span></td>
+                    <td><StatusBadge tone={LEGACY_TONE[MODE_PILL[r.mode]] || "neutral"} icon="tag">{r.mode_label}</StatusBadge></td>
                     <td className="text-[11.5px]">{carrierText(r)}{r.pod?.receiver_name && r.mode !== "self_pickup" ? <div className="text-[10.5px] text-[#1A7A3A]">Diterima {r.pod.receiver_name}</div> : null}{r.fail_reason ? <div className="text-[10.5px] text-[#C62828]">{r.fail_reason}</div> : null}</td>
                     <td className="text-[11px]">{(r.shipment_nos || []).join(", ")}</td>
                     <td className="text-[11.5px] tabular-nums text-right">{r.shipping_cost ? formatCurrency(r.shipping_cost) : "—"}</td>
-                    <td><span className={`status-pill ${STATUS_PILL[r.status]}`}>{r.status_label}</span></td>
+                    <td><StatusBadge status={r.status} domain="delivery" label={r.status_label} /></td>
                   </tr>
                 ))}
               </tbody>

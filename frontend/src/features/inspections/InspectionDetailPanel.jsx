@@ -16,9 +16,10 @@
 import { useState } from "react";
 import { can } from "../../config/roles";
 import {
-  CheckCircle2, FlaskConical, Lock, Play, RotateCcw, User,
+  CheckCircle2, FlaskConical, Play, RotateCcw, User,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
 import { askConfirm, askReason } from "../../services/confirmService";
@@ -32,7 +33,7 @@ import InspectionLinesTable from "./InspectionLinesTable";
 import { InspectionHistory, localTs, Qc4Picker, Row } from "./InspectionDetailParts";
 import {
   apiText, assignInspection, finishInspection, INS_DECISION_LABEL,
-  INS_KIND_LABEL, INS_STATUS_CLASS, INS_STATUS_LABEL, MD_QUALITY_KINDS,
+  INS_KIND_LABEL, MD_QUALITY_KINDS,
   createQc4point, rejectHold, releaseHold, reopenInspection, startInspection,
 } from "./inspectionsApi";
 
@@ -200,14 +201,9 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span data-testid="ins-detail-status"
-            className={`status-pill ${INS_STATUS_CLASS[doc.status] || "pill-muted"}`}>
-            {INS_STATUS_LABEL[doc.status] || doc.status}
-          </span>
+          <StatusBadge status={doc.status} domain="inspection" testId="ins-detail-status" />
           {summary.hold ? (
-            <span data-testid="ins-detail-hold-badge" className="status-pill pill-danger">
-              <Lock size={9} className="mr-0.5 inline" />{summary.hold} barang ditahan
-            </span>
+            <StatusBadge status="hold" tone="danger" icon="lock" testId="ins-detail-hold-badge">{summary.hold} barang ditahan</StatusBadge>
           ) : null}
         </div>
       </div>

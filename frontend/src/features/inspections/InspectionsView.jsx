@@ -18,6 +18,7 @@ import { can } from "../../config/roles";
 import { ClipboardCheck, Lock, Plus, RefreshCw, ShieldAlert, Shuffle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
 import ErrorNotice from "../../components/ErrorNotice";
 import FilterChips from "../../components/FilterChips";
 import LineFilter from "../../components/LineFilter";
@@ -33,7 +34,7 @@ import InspectionFormModal from "./InspectionFormModal";
 import RandomCheckModal from "./RandomCheckModal";
 import {
   apiText, getInspection, INS_BOARD_ORDER, INS_KIND_LABEL, INS_KIND_SHORT,
-  INS_STATUS_CLASS, INS_STATUS_LABEL, inspectionsMeta, qcTasksWithoutDoc,
+  INS_STATUS_LABEL, inspectionsMeta, qcTasksWithoutDoc,
 } from "./inspectionsApi";
 
 // Kolom CSV: dua satuan memakai `qtyDualCsvColumns` (FASE U / INV-QTY-01) supaya
@@ -68,9 +69,7 @@ const INS_COLUMNS = (openDetail) => [
           <button type="button" data-testid={`ins-open-${r.id}`} className="link-button !p-0 font-semibold"
             onClick={(e) => { e.stopPropagation(); openDetail(r.id); }}>{r.number}</button>
           {s.hold ? (
-            <span data-testid={`ins-hold-badge-${r.id}`} className="ml-1 status-pill pill-danger">
-              <Lock size={9} className="mr-0.5 inline" />{s.hold} ditahan
-            </span>
+            <StatusBadge status="hold" tone="danger" icon="lock" className="ml-1" testId={`ins-hold-badge-${r.id}`}>{s.hold} ditahan</StatusBadge>
           ) : null}
         </span>
       );
@@ -80,9 +79,7 @@ const INS_COLUMNS = (openDetail) => [
       const s = r.summary || {};
       return (
         <span>
-          <span className={`status-pill ${INS_STATUS_CLASS[r.status] || "pill-muted"}`}>
-            {INS_STATUS_LABEL[r.status] || r.status}
-          </span>
+          <StatusBadge status={r.status} domain="inspection" testId={`ins-status-${r.id}`} />
           {r.decision_label ? <span className="block text-[10px] text-[#6B6B73]">{r.decision_label}</span> : null}
           {/* UAT 24 Okt (audit UI tahap 2) — roll yang GAGAL 4-point/random check tetap ditahan walau SPK ditutup. */}
           {r.status === "done" && s.hold ? (

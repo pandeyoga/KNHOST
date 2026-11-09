@@ -13,13 +13,13 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Ruler } from "lucide-react";
-import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
 import MdqCutBox from "./MdqCutBox";
 import { apiText, inspectLine, INS_COLOR_LABEL, INS_HANDFEEL_LABEL } from "./inspectionsApi";
 import IntervalDefectGrid from "./IntervalDefectGrid";
+import useGrades, { GradeLoadNote } from "../../hooks/useGrades";   // FIX-8 (UI-49) — galat grade terlihat
 
 // Nilai poin 4-point yang sah (D-01): 1 · 2 · 3 · 4 — makin panjang cacatnya, makin besar.
 const POINT_ROWS = [
@@ -46,8 +46,8 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
     gsm_actual: "", width_actual: "", color_result: "", handfeel_result: "",
     handfeel_score: "", delta_e: "", remark: "", grade: "", condition: "ok", actual_qty: "",
   });
-  const [grades, setGrades] = useState([]);
-  useEffect(() => { axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([])); }, []);
+  // FIX-8 (B1b UI-49) — dulu `.catch(() => setGrades([]))`: 403 grade_master.view (peran gudang) = pemilih kosong diam.
+  const { grades, error: gradesError } = useGrades();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -197,11 +197,13 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
                 placeholder="Pilih grade…"
                 options={[...(gradeAuto ? [{ value: "", label: "— saran sistem —" }] : []), ...grades.map((g) => ({ value: g.code, label: g.name?.startsWith(g.code) ? g.name : `${g.code} · ${g.name}` }))]} /></div>
             </div>
+            <GradeLoadNote error={gradesError} testId="ins-grade-load-note" />
           </div>
         ) : !showQc ? null : isReturn ? (
           <div className="flex items-center gap-2 text-[12px]" data-testid="ins-line-no-roll">Grade barang retur
             <div className="w-48"><KNSelect data-testid="ins-grade-input" className="field" value={form.grade} onValueChange={(v) => set({ grade: v })}
               placeholder="Pilih grade…" options={grades.map((g) => ({ value: g.code, label: g.name?.startsWith(g.code) ? g.name : `${g.code} · ${g.name}` }))} /></div>
+            <GradeLoadNote error={gradesError} testId="ins-grade-load-note-return" />
           </div>
         ) : (
           <p data-testid="ins-line-no-roll" className="text-[11px] text-[#6B6B73]">

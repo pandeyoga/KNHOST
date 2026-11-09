@@ -40,28 +40,50 @@ export function MetricRow({ items, testId }) {
   );
 }
 
-export function SearchBox({ value, onChange, placeholder, testId, children }) {
+/**
+ * SearchInput — FIX-8 (B4 §3.13 "satu versi kotak cari"): SATU implementasi kotak cari. Dulu ada tiga: `SearchBox`
+ * di sini, `SearchBox` kedua di `ListControls.jsx` (ikon & ukuran tombol hapus beda), dan kotak buatan layar
+ * (Stok, Transfer). `SearchBox` = kotak ini di dalam bilah saring + anak (saringan) di sebelahnya.
+ * `ariaLabel` bawaan = placeholder (isian berlabel, G-FORM-08).
+ */
+export function SearchInput({ value, onChange, placeholder, testId, ariaLabel, className = "" }) {
+  return (
+    <div className={`search-box${className ? ` ${className}` : ""}`}>
+      <Search size={14} aria-hidden="true" />
+      <input data-testid={testId} type="text" placeholder={placeholder} value={value ?? ""}
+        aria-label={ariaLabel || placeholder || "Cari"} onChange={(e) => onChange(e.target.value)} />
+      {value ? (
+        <button type="button" aria-label="Hapus pencarian" data-testid={testId ? `${testId}-clear` : undefined}
+          onClick={() => onChange("")}><X size={14} /></button>
+      ) : null}
+    </div>
+  );
+}
+
+export function SearchBox({ value, onChange, placeholder, testId, ariaLabel, children }) {
   return (
     <div className="filter-bar">
-      <div className="search-box">
-        <Search size={14} />
-        <input data-testid={testId} type="text" placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
-        {value && <button type="button" aria-label="Hapus pencarian" data-testid={testId ? `${testId}-clear` : undefined} onClick={() => onChange("")}><X size={12} /></button>}
-      </div>
+      <SearchInput value={value} onChange={onChange} placeholder={placeholder} testId={testId} ariaLabel={ariaLabel} />
       {children}
     </div>
   );
 }
 
-/** tabs: [{ key, label, count? }] · testId(key) → data-testid tiap tab. */
-export function StatusTabs({ tabs, value, onChange, testId, groupTestId }) {
+/**
+ * StatusTabs — SATU implementasi tab status (FIX-8; dulu dua: di sini & `ListControls.jsx`).
+ * tabs: [{ key, label, count?, testKey? }] · `testId(key)` (fungsi) ATAU `testIdPrefix` (→ `${prefix}-${key|all}`,
+ * bilah `${prefix}-bar`) · `showZero` = angka 0 tetap tampil (perilaku `ListControls` lama).
+ */
+export function StatusTabs({ tabs, value, onChange, testId, groupTestId, testIdPrefix, showZero = false }) {
+  const tid = (t) => (typeof testId === "function" ? testId(t.key)
+    : testIdPrefix ? `${testIdPrefix}-${t.testKey || t.key || "all"}` : undefined);
   return (
-    <div className="tab-bar" data-testid={groupTestId}>
+    <div className="tab-bar" data-testid={groupTestId || (testIdPrefix ? `${testIdPrefix}-bar` : undefined)}>
       {tabs.map((t) => (
-        <button key={t.key} type="button" data-testid={testId?.(t.key)}
+        <button key={t.key || "all"} type="button" data-testid={tid(t)}
           className={`tab-button ${value === t.key ? "active" : ""}`} onClick={() => onChange(t.key)}>
           {t.label}
-          {t.count ? <span className="tab-badge">{t.count}</span> : null}
+          {(showZero ? t.count != null : Boolean(t.count)) ? <span className="tab-badge">{t.count}</span> : null}
         </button>
       ))}
     </div>

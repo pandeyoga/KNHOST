@@ -17,22 +17,14 @@ import RollCountPanel from "./RollCountPanel";
 import BinSelect from "../../components/BinSelect";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
+import EmptyState from "../../components/EmptyState";   // FIX-8 — memuat ≠ kosong
+import { formatDate, formatDateTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — tanggal/waktu WIB
 
 const storedPerms = () => { try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions; } catch { return null; } };
 
-const STATUS_LABELS = {
-  open: "Open", submitted: "Submitted", approved: "Disetujui",
-  approved_with_exceptions: "Disetujui — ada exception", rejected: "Ditolak"
-};
-
-const STATUS_COLORS = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  submitted: "bg-amber-50 text-amber-700 border-amber-200",
-  approved: "bg-green-50 text-green-700 border-green-200",
-  approved_with_exceptions: "bg-orange-50 text-orange-700 border-orange-200",
-  rejected: "bg-red-50 text-red-700 border-red-200",
-};
-
+// FIX-8 (KN_37 §8) — label status opname dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "cycle_count",
+// istilah sama persis); lencana = StatusBadge (dulu kelas Tailwind per status, tanpa ikon).
 const fmt = new Intl.NumberFormat("id-ID");
 
 export default function CycleCount({ token, warehouses, products, userRole, focusSessionId = "", onFocusConsumed }) {
@@ -216,8 +208,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
               <span className="text-[11px] text-[#6B6B73]">{sessions.length} sesi</span>
             </div>
             <div className="grid gap-1.5 max-h-80 overflow-auto">
-              {sessions.length === 0 && !loading && (
-                <div className="text-[12px] text-[#6B6B73] py-4 text-center">Belum ada sesi. Buat sesi baru.</div>
+              {sessions.length === 0 && (
+                <EmptyState kind={loading ? "loading" : "empty"} what="sesi opname" title={loading ? undefined : "Belum ada sesi. Buat sesi baru."} compact testId="cc-sessions-state" />
               )}
               {sessions.map(s => (
                 <button key={s.id} data-testid={`cycle-count-session-${s.id}`}
@@ -227,12 +219,10 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                   onClick={() => { loadSession(s.id); setView("detail"); setErr(""); setMsg(""); }}>
                   <div className="flex items-center justify-between">
                     <span className="text-[12px] font-bold truncate">{s.name}{s.work_entity_id && <span className="ml-1.5"><EntityBadge entityId={s.work_entity_id} /></span>}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                      STATUS_COLORS[s.status] || "bg-gray-50 text-gray-600 border-gray-200"
-                    }`}>{STATUS_LABELS[s.status] || s.status}</span>
+                    <StatusBadge status={s.status} domain="cycle_count" />
                   </div>
                   <p className="text-[11px] text-[#6B6B73] mt-0.5">{s.warehouse_name}</p>
-                  <p className="text-[10.5px] text-[#8E8E93]">{s.roll_count ? `${(s.roll_count.scans || []).length} roll discan` : `${(s.items || []).length} item`} • {s.created_at?.slice(0, 10)}</p>
+                  <p className="text-[10.5px] text-[#8E8E93]">{s.roll_count ? `${(s.roll_count.scans || []).length} roll discan` : `${(s.items || []).length} item`} • {formatDate(s.created_at)}</p>
                 </button>
               ))}
             </div>
@@ -247,11 +237,9 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="text-[14px] font-bold">{selectedSession.name}</h3>
-                      <p className="text-[12px] text-[#6B6B73]">{selectedSession.warehouse_name} • {selectedSession.created_by} • {selectedSession.created_at?.slice(0, 10)}</p>
+                      <p className="text-[12px] text-[#6B6B73]">{selectedSession.warehouse_name} • {selectedSession.created_by} • {formatDateTime(selectedSession.created_at)}</p>
                     </div>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
-                      STATUS_COLORS[selectedSession.status] || "bg-gray-50 text-gray-600 border-gray-200"
-                    }`}>{STATUS_LABELS[selectedSession.status] || selectedSession.status}</span>
+                    <StatusBadge status={selectedSession.status} domain="cycle_count" size="md" testId="cc-detail-status" />
                   </div>
                   {selectedSession.notes && <p className="text-[12px] text-[#3C3C43] mt-1.5">{selectedSession.notes}</p>}
                   {/* Dokumen — Laporan Stock Opname (Pratinjau · Unduh PDF · Kirim WA) */}
@@ -321,7 +309,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-[12px] font-semibold">{item.product_name}</p>
-                            <p className="text-[11px] text-[#6B6B73]">{item.sku}{item.bin_id ? ` • Bin: ${item.bin_code || item.bin_id}` : ""}{item.owner_entity_id ? ` • Pemilik: ${entityShortFromCtx(item.owner_entity_id)}` : ""}</p>
+                            <p className="text-[11px] text-[#6B6B73]">{item.sku}{item.bin_id ? ` • Bin: ${item.bin_code || "tanpa kode"}` : ""}{item.owner_entity_id ? ` • Pemilik: ${entityShortFromCtx(item.owner_entity_id)}` : ""}</p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div className="text-right">

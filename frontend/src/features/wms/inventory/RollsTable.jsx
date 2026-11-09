@@ -7,9 +7,25 @@ import RollHoldControl from "./RollHoldControl";
 import RollCheckChips from "../../../components/RollCheckChips";
 
 import PagedRows from "@/components/PagedRows";
+import EmptyState, { listStateKind } from "../../../components/EmptyState";   // FIX-8 — keadaan daftar baku
 
-export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg, onUnpeg, busyRollId = null, onChanged }) {
+/** Kolom yang boleh disembunyikan lewat "Tampilan" (FIX-8, K-B4-12) — kunci = `saved_view_service.LISTS`. */
+export const ROLL_OPTIONAL_COLUMNS = [
+  { key: "owner", label: "Pemilik" }, { key: "warehouse", label: "Gudang" }, { key: "lot", label: "Lot" },
+  { key: "dye_lot", label: "Dye Lot" }, { key: "grade", label: "Grade" }, { key: "weight", label: "Berat" },
+  { key: "pegging", label: "Pegging" },
+];
+import StatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana baku
+
+export default function RollsTable({
+  loading, rolls = [], canPeg = false, onPeg, onUnpeg, busyRollId = null, onChanged,
+  hidden = [], error = null, onRetry, filtered = false, onReset,
+}) {
   const [journeyFor, setJourneyFor] = useState(null);
+  const show = (key) => !hidden.includes(key);
+  const colCount = 12 - ROLL_OPTIONAL_COLUMNS.filter((c) => hidden.includes(c.key)).length;
+  // FIX-8 (B4 §3.10 · B1b UI-49/UI-50) — memuat · kosong · saringan kosong · galat · tanpa izin = EmptyState baku.
+  const state = listStateKind({ loading, error, count: rolls.length, filtered });
   return (
     <div className="bg-white rounded-xl border border-[#EFF0F2] overflow-hidden" data-testid="rolls-table">
       <div className="overflow-x-auto">
@@ -18,29 +34,22 @@ export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg,
             <tr className="bg-[#FAFBFC] border-b border-[#EFF0F2]">
               <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Roll No</th>
               <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Produk</th>
-              <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Pemilik</th>
-              <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang</th>
-              <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Lot</th>
-              <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Dye Lot</th>
-              <th className="text-center px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Grade</th>
+              {show("owner") && <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Pemilik</th>}
+              {show("warehouse") && <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang</th>}
+              {show("lot") && <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Lot</th>}
+              {show("dye_lot") && <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Dye Lot</th>}
+              {show("grade") && <th className="text-center px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Grade</th>}
               <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Panjang</th>
-              <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Berat</th>
+              {show("weight") && <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Berat</th>}
               <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Status</th>
-              <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Pegging</th>
+              {show("pegging") && <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Pegging</th>}
               <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EFF0F2]">
-            {loading && (
-              <tr><td colSpan={12} className="text-center py-8 text-[12px] text-[#6B6B73]">Memuat…</td></tr>
-            )}
-            {!loading && rolls.length === 0 && (
-              <tr>
-                <td colSpan={12} className="text-center py-10">
-                  <Layers size={28} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-[12px] text-[#6B6B73]">Tidak ada roll</p>
-                </td>
-              </tr>
+            {state && (
+              <EmptyState asRow colSpan={colCount} kind={state} what="roll" error={error} onRetry={onRetry} onReset={onReset}
+                icon={Layers} title={state === "empty" ? "Tidak ada roll" : undefined} testId="rolls-table-state" />
             )}
             <PagedRows rows={rolls} testId="rolls-table-pager">{(r) => {
               const ear = r.earmarked_for;
@@ -60,44 +69,52 @@ export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg,
                     <p className="font-medium">{r.product_name}</p>
                     <p className="text-[10px] text-[#8E8E93]">{r.sku}</p>
                   </td>
+                  {show("owner") && (
                   <td className="px-3 py-2">
                     <span className="inline-flex items-center rounded-md bg-[#EEF2FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#4338CA]">
                       {r.owner_entity_name}
                     </span>
                   </td>
+                  )}
+                  {show("warehouse") && (
                   <td className="px-3 py-2">
                     <p className="font-medium">{r.warehouse_name}</p>
                     <p className="text-[10px] text-[#8E8E93]">{r.warehouse_city}</p>
                   </td>
+                  )}
+                  {show("lot") && (
                   <td className="px-3 py-2 font-mono text-[10.5px] text-[#3C3C43]"
                     data-testid={`roll-lot-${r.id}`}>
                     {r.lot}
                     {/* Fase C — tanda roll belum bertaut lot kelas satu (mode peringatan) */}
                     {!r.lot_id && (
-                      <span title="Roll belum bertaut lot kelas satu — buka Lot & Silsilah untuk menambal"
-                        className="ml-1 rounded bg-amber-100 px-1 text-[9px] font-semibold text-amber-700">
-                        tanpa lot
-                      </span>
+                      <StatusBadge tone="warning" title="Roll belum bertaut lot kelas satu — buka Lot & Silsilah untuk menambal"
+                        className="ml-1">tanpa lot</StatusBadge>
                     )}
                   </td>
+                  )}
+                  {show("dye_lot") && (
                   <td className="px-3 py-2 font-mono text-[10.5px] text-[#6B219A]" data-testid={`roll-dyelot-${r.id}`}>
                     {r.dye_lot || "—"}
                     {r.supplier_lot && r.supplier_lot !== r.dye_lot && (
                       <span className="ml-1 text-[9px] text-[#8E8E93]">sup {r.supplier_lot}</span>
                     )}
                   </td>
+                  )}
+                  {show("grade") && (
                   <td className="px-3 py-2 text-center font-semibold">
                     {r.grade || "-"}
                     {Array.isArray(r.defects) && r.defects.length > 0 && (
-                      <span data-testid={`roll-defects-${r.id}`} title={r.defects.join(", ")}
-                            className="ml-1 inline-block rounded bg-red-100 text-red-700 text-[9px] px-1 align-middle">
+                      <StatusBadge tone="danger" title={r.defects.join(", ")} className="ml-1" testId={`roll-defects-${r.id}`}>
                         {r.defects.length} cacat
-                      </span>
+                      </StatusBadge>
                     )}
                   </td>
+                  )}
                   <td className="px-3 py-2 text-right font-bold tabular-nums">
                     {formatQty(r.length_remaining)} <span className="text-[9px] text-[#8E8E93]">{r.unit}</span>
                   </td>
+                  {show("weight") && (
                   <td className="px-3 py-2 text-right tabular-nums" data-testid={`roll-weight-${r.id}`}>
                     {/* FASE U — UKURAN KEDUA roll. Roll kain sering diukur DUA kali:
                         panjang (yard/meter) dan berat (kg). `secondary_measures`
@@ -124,11 +141,13 @@ export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg,
                       );
                     })()}
                   </td>
+                  )}
                   <td className="px-3 py-2">
                     <RollStatusBadge status={r.status} />
                     {/* UAT 24 Okt (P11.4) — status cek MD Quality & 4-point per roll */}
                     <RollCheckChips roll={r} testId={`roll-check-${r.id}`} className="mt-1" />
                   </td>
+                  {show("pegging") && (
                   <td className="px-3 py-2">
                     {ear ? (
                       <span
@@ -143,6 +162,7 @@ export default function RollsTable({ loading, rolls = [], canPeg = false, onPeg,
                       <span className="text-[#C7C7CC]">—</span>
                     )}
                   </td>
+                  )}
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button
                       data-testid={`roll-journey-btn-${r.id}`}

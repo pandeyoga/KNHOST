@@ -359,6 +359,11 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("seq", A)],
         [("active", A)],
     ],
+    # ── FIX-8 (K-B4-12) — tampilan tersimpan daftar: dibaca per daftar, disaring pemilik/berbagi di layanan ──
+    "saved_views": [
+        [("list_key", A), ("owner_user_id", A)],
+        [("id", A)],
+    ],
 }
 
 

@@ -252,6 +252,9 @@ SCOPED_COLLECTIONS = {
 USER_SCOPED_COLLECTIONS = {
     "ai_chat_sessions", "ai_results", "ai_schedules", "ai_schedule_runs", "ai_user_templates", "ai_feedback",
     "export_jobs", "export_templates",   # L11 — pekerjaan export milik pengguna (dibaca hanya oleh pemiliknya)
+    # FIX-8 (K-B4-12) — tampilan tersimpan daftar: milik pengguna; dibagikan admin ke peran/PT lewat `share.*`
+    # (penerima disaring `saved_view_service._applies_to` terhadap PT yang bisa ia baca). Tanpa `entity_id`.
+    "saved_views",
 }
 # Koleksi sistem Tanya KN (status sinkron fakta, cache, log biaya) — bukan data bisnis per entitas.
 SYSTEM_AI_COLLECTIONS = {"ai_fact_state", "ai_result_cache", "ai_usage_log"}

@@ -2,17 +2,17 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { PageHeader } from "../../components/ListPageParts";
+import StatusBadge from "../../components/StatusBadge";
+import EmptyState, { isForbidden } from "../../components/EmptyState";
+import { formatDateTime } from "../../utils/formatters";
+import { LEGACY_TONE } from "../../utils/statusVocab";
 
 export const nf = new Intl.NumberFormat("id-ID");
 export const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
 
-export function fmtTime(iso) {
-  if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  } catch { return iso; }
-}
+// FIX-8 (B3b INP-15 · G-OUT-01) — dulu `toLocaleString` tanpa zona & tanpa tahun (zona perangkat; 14 pemakaian RFID +
+// antrean periksa D2). Kini formatter tunggal WIB: "10 Nov 2026 14.05 WIB".
+export const fmtTime = (iso) => formatDateTime(iso);
 
 // Ambil daftar gudang + state pilihan (dipakai semua view RFID).
 export function useWarehouses() {
@@ -25,17 +25,11 @@ export function useWarehouses() {
   return { warehouses, whId, setWhId, whOpts };
 }
 
-const COLORS = {
-  green: "#34C759", red: "#C0341D", info: "#0058CC", blue: "#0058CC",
-  orange: "#FF9500", purple: "#5856D6", gray: "#8E8E93",
-};
-
-export function Pill({ color = "gray", children, testId }) {
-  const c = COLORS[color] || COLORS.gray;
-  return (
-    <span data-testid={testId} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
-      style={{ background: `${c}1A`, color: c }}>{children}</span>
-  );
+// FIX-8 (B4 §3.9 · KN_37 §8) — `Pill` kini pembungkus lencana baku `StatusBadge`: ikon + teks + warna token AA.
+// Dulu 10 px dengan warna hex lepas (`#34C759`/`#FF9500` di latar 10 % gagal kontras) dan tanpa ikon (warna saja).
+// Nama warna lama dipetakan ke nada baku (green→berhasil, orange→perhatian, red→bahaya, purple→khusus, …).
+export function Pill({ color = "gray", children, testId, status, icon }) {
+  return <StatusBadge status={status} tone={LEGACY_TONE[color] || "neutral"} icon={icon} testId={testId}>{children}</StatusBadge>;
 }
 
 // Peta result read → warna pill.
@@ -57,13 +51,14 @@ export function Stat({ icon: Icon, label, value, sub, color = "#0058CC", loading
   );
 }
 
-export function EmptyBox({ icon: Icon, text }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-      <div className="rounded-full bg-[#F5F5F7] p-3"><Icon size={22} className="text-[#8E8E93]" /></div>
-      <p className="text-[12px] text-[#6B6B73] max-w-xs">{text}</p>
-    </div>
-  );
+// FIX-8 (B4 §3.10 · B1b UI-49/UI-50) — keadaan kosong RFID = `EmptyState` baku. `loading` → "Memuat …" (bukan
+// "Belum ada …" selama data belum datang); `error` (403 → "tanpa akses", lainnya → galat + Coba lagi).
+export function EmptyBox({ icon, text, loading = false, error = null, onRetry, what = "data", testId }) {
+  const kind = error ? undefined : loading ? "loading" : "empty";
+  if (error) {
+    return <EmptyState kind={isForbidden(error) ? "forbidden" : "error"} error={error} onRetry={onRetry} what={what} testId={testId} />;
+  }
+  return <EmptyState kind={kind} icon={icon} title={kind === "empty" ? text : undefined} what={what} testId={testId} />;
 }
 
 // Fase 4 · R3 (L-02) — kartu seksi & kepala halaman RFID memakai kelas baku (`.section-card` + `.section-head`, dan

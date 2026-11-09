@@ -50,10 +50,10 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
     const DOCKS = ["Dock Terima", "Dock Kirim", "Gate Utama"];
     DOCKS.forEach((d) => out.push({ value: d, label: `${d} (area)` }));
     (wh?.zones || []).forEach((z) => {
-      out.push({ value: z.name || z.id, label: `Zona ${z.name || z.id}` });
+      out.push({ value: z.name || z.id, label: `Zona ${z.name || "tanpa nama"}` });
       (z.racks || []).forEach((r) => {
         const bins = (r.bins || []).concat(...(r.levels || []).map((lv) => lv.bins || []));
-        bins.forEach((b) => { const code = b.code || b.id; out.push({ value: code, label: `${z.name || z.id} › ${r.name || r.code || r.id} › ${code}` }); });
+        bins.forEach((b) => { const code = b.code || b.id; out.push({ value: code, label: `${z.name || "Zona"} › ${r.name || r.code || "Rak"} › ${code}` }); });
       });
     });
     return out;

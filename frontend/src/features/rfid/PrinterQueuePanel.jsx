@@ -106,7 +106,7 @@ export function PrintJobDetail({ jobId, onClose, onChanged }) {
         <div className="rounded-lg bg-[#F7F7F9] p-2"><div className="text-[10.5px] text-[#6B6B73]">Status job</div>
           <Pill color={jc} testId="print-job-status">{jl}</Pill><div className="mt-1 text-[11px]">{jobProgress(job)}</div></div>
         <div className="rounded-lg bg-[#F7F7F9] p-2"><div className="text-[10.5px] text-[#6B6B73]">Printer / klaim</div>
-          {job.lease ? (<div className="text-[11px]" data-testid="print-job-lease">{job.lease.device_name || job.lease.device_id} ·
+          {job.lease ? (<div className="text-[11px]" data-testid="print-job-lease">{job.lease.device_name || "perangkat tanpa nama"} ·
             {job.lease_live ? ` klaim berlaku s/d ${fmtTime(job.lease.expires_at)}` : " klaim habis"}
             {job.lease.renew_count ? ` · diperpanjang ${job.lease.renew_count}×` : ""}</div>)
             : <div className="text-[11px]">{job.printed_by_device ? `Dicetak ${job.printed_by_device}` : job.printed_via === "manual" ? "Ditandai tercetak manual" : "Belum diklaim printer"}</div>}
@@ -262,7 +262,7 @@ export default function PrinterQueuePanel({ whId, isAdmin = false }) {
                         <td className="py-1.5 pr-2 font-semibold">{j.job_number}<div className="text-[10.5px] font-normal text-[#6B6B73]">{KIND_LABEL[j.kind] || j.kind} · {j.warehouse_name}</div></td>
                         <td className="pr-2"><Pill color={c}>{l}</Pill>{j.review_open > 0 && <div className="text-[10.5px] font-semibold text-[#C0341D]">{j.review_open} perlu tindak lanjut</div>}</td>
                         <td className="pr-2 text-[11px]">{jobProgress(j)}</td>
-                        <td className="pr-2 text-[11px]">{j.lease ? `${j.lease.device_name || j.lease.device_id}${j.lease_live ? "" : " (klaim habis)"}` : j.printed_by_device || "—"}</td>
+                        <td className="pr-2 text-[11px]">{j.lease ? `${j.lease.device_name || "perangkat tanpa nama"}${j.lease_live ? "" : " (klaim habis)"}` : j.printed_by_device || "—"}</td>
                         <td className="pr-2 text-[11px]">{fmtTime(j.created_at)}<div className="text-[10.5px] text-[#6B6B73]">{j.created_by}</div></td>
                       </tr>
                     );

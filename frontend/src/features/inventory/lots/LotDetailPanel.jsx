@@ -9,7 +9,7 @@ import { AlertTriangle, GitBranch, Layers3, ListOrdered, Printer, RefreshCw, Sav
 import axios, { API } from "../../../services/apiClient";
 import { formatDateTime, formatQty } from "../../../utils/formatters";
 import { entityShortFromCtx } from "../../../utils/entityLabel";
-import { rollStatusLabel } from "../../wms/inventory/inventoryConstants";
+import { RollStatusBadge } from "../../wms/inventory/inventoryConstants";
 import { reprintRollLabel, printRollLabelsBulk } from "../../../utils/rollLabels";
 import LotGenealogyTree from "./LotGenealogyTree";
 import LotRecallPanel from "./LotRecallPanel";
@@ -82,13 +82,14 @@ export default function LotDetailPanel({
       .then((lists) => {
         if (!alive) return;
         const map = {};
-        lists.flat().forEach((b) => { if (b?.bin_id) map[b.bin_id] = b.code || b.path || b.bin_id; });
+        lists.flat().forEach((b) => { if (b?.bin_id) map[b.bin_id] = b.code || b.path || "tanpa kode"; });
         setBinCodes(map);
       });
     return () => { alive = false; };
   }, [whIds]);
-  const whName = (id) => (id ? (warehouses.find((w) => w.id === id)?.name || id) : "—");
-  const binName = (id) => (id ? (binCodes[id] || id) : "");
+  // FIX-8 (G-OUT-02) — gudang/bin tak dikenal: teks, bukan id mentah.
+  const whName = (id) => (id ? (warehouses.find((w) => w.id === id)?.name || "Gudang lain") : "—");
+  const binName = (id) => (id ? (binCodes[id] || "tanpa kode") : "");
 
   useEffect(() => {
     setDraft({
@@ -322,7 +323,7 @@ export default function LotDetailPanel({
                   {rolls.map((r) => (
                     <tr key={r.id} data-testid={`lot-roll-${r.id}`} className="border-b border-[#F5F5F7] last:border-0">
                       <td className="px-2 py-1.5 font-semibold">{r.roll_no}</td>
-                      <td className="px-2 py-1.5"><span className="status-pill pill-muted">{rollStatusLabel(r.status)}</span></td>
+                      <td className="px-2 py-1.5"><RollStatusBadge status={r.status} /></td>
                       <td className="px-2 py-1.5">{r.grade || "—"}</td>
                       <td className="px-2 py-1.5 text-right tabular-nums">{formatQty(r.length_initial)}</td>
                       <td className="px-2 py-1.5 text-right tabular-nums">{formatQty(r.length_remaining)} {r.unit}</td>

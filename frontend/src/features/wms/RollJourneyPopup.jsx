@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { X, Route } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
+import { formatDateTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
 
 const KIND_COLOR = {
   acquired: "#0058CC", tag: "#6B219A", print: "#6B219A", verify: "#6B219A",
@@ -27,7 +28,7 @@ export const RollJourneyPopup = ({ rollId, onClose }) => {
       .catch((e) => setError(e.response?.data?.detail || e.message));
   }, [rollId]);
 
-  const fmt = (iso) => (iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+  const fmt = (iso) => formatDateTime(iso);   // FIX-8 (G-OUT-01) — WIB, dulu zona perangkat tanpa tahun
 
   return (
     <DetailModal onClose={onClose} size="md" framed showClose={false} label="Jejak Barang" testId="roll-journey-popup">

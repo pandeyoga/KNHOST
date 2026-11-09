@@ -12,7 +12,10 @@ import { canCurrent } from "../../../config/roles";
 import { askConfirm, askReason } from "../../../services/confirmService";
 import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency } from "../../../utils/formatters";
-import { GROUP_RESULT, STATUS_LABEL, STATUS_TONE, regApi } from "./registrationApi";
+import { GROUP_RESULT, STATUS_LABEL, regApi } from "./registrationApi";
+import StatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana baku
+import { formatDateTime } from "../../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
+import { entityShortFromCtx } from "../../../utils/entityLabel";   // FIX-8 (UI-33) — PT pemilik, bukan id
 
 export default function RegistrationDetail({ sessionId, onChanged }) {
   const [s, setS] = useState(null);
@@ -96,12 +99,12 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
             <h3 className="text-[14px] font-bold">{s.number} · {s.name}</h3>
             <p className="text-[12px] text-[#6B6B73]">{s.warehouse_name} · {(s.registration?.node_labels || []).join(", ")} · {s.epc_mode_label}</p>
           </div>
-          <span className={`rounded border px-2 py-0.5 text-[11px] font-bold ${STATUS_TONE[s.status] || ""}`} data-testid="reg-detail-status">{STATUS_LABEL[s.status] || s.status_label}</span>
+          <StatusBadge status={s.status} domain="registration" label={STATUS_LABEL[s.status] || s.status_label} size="md" testId="reg-detail-status" />
         </div>
         <p className={`mt-2 flex items-center gap-1.5 text-[12px] ${s.freeze?.active ? "text-red-700" : "text-[#6B6B73]"}`} data-testid="reg-freeze">
-          <Lock size={12} /> {s.freeze?.active ? `Dibekukan sejak ${String(s.freeze.since || "").slice(0, 16).replace("T", " ")}: ${s.freeze.label} (${s.freeze_mode_label})` : `Tidak membekukan · ${s.freeze_mode_label}`}
+          <Lock size={12} /> {s.freeze?.active ? `Dibekukan sejak ${formatDateTime(s.freeze.since)}: ${s.freeze.label} (${s.freeze_mode_label})` : `Tidak membekukan · ${s.freeze_mode_label}`}
         </p>
-        {s.registration?.verified_at && <p className="mt-1 text-[12px] font-semibold text-green-700" data-testid="reg-verified">Area terverifikasi pendaftaran {s.registration.verified_at.slice(0, 10)}</p>}
+        {s.registration?.verified_at && <p className="mt-1 text-[12px] font-semibold text-green-700" data-testid="reg-verified">Area terverifikasi pendaftaran {formatDateTime(s.registration.verified_at)}</p>}
         {msg && <p className="mt-2 rounded border border-green-200 bg-green-50 p-2 text-[12px] text-green-700" data-testid="reg-msg">{msg}</p>}
         {err && <div className="mt-2"><ErrorNotice message={err} onDismiss={() => setErr("")} testId="reg-detail-error" /></div>}
         <div className="mt-2 flex flex-wrap gap-2">
@@ -166,7 +169,7 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
               <tbody>
                 {rec.groups.map((g) => (
                   <tr key={g.key} className="border-t border-[#F0F1F3] align-top" data-testid={`reg-group-${g.product_id}`}>
-                    <td className="py-1"><b>{g.sku || "—"}</b> <span className="text-[#6B6B73]">{g.product_name}</span><div className="text-[10.5px] text-[#8E8E93]">{g.owner_entity_id}</div>
+                    <td className="py-1"><b>{g.sku || "—"}</b> <span className="text-[#6B6B73]">{g.product_name}</span><div className="text-[10.5px] text-[#8E8E93]">{g.owner_entity_id ? entityShortFromCtx(g.owner_entity_id) : ""}</div>
                       {(g.notes || []).map((n) => <div key={n} className="text-[10.5px] text-orange-700">{n}</div>)}
                       {(g.result?.exceptions || []).map((x) => <div key={x.line_id || x.roll_id} className="text-[10.5px] text-red-700">{x.epc || x.roll_no}: {x.message}</div>)}
                     </td>

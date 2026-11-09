@@ -1,7 +1,7 @@
 import { AskKnButton } from "../../../components/AskKnButton";
 import { useEffect, useState } from "react";
 import { can } from "../../../config/roles";
-import { ArrowLeft, FlaskConical, XCircle } from "lucide-react";
+import { FlaskConical, PackageCheck, XCircle } from "lucide-react";
 import { askReason, askText } from "../../../services/confirmService";
 import { ErrorBox, GrnStatusBadge, GrnStepper } from "./GrnBits";
 import GrnCountPanel from "./GrnCountPanel";
@@ -9,6 +9,9 @@ import GrnReconPanel from "./GrnReconPanel";
 import GrnReviewPanel from "./GrnReviewPanel";
 import GrnOcrDraft from "./GrnOcrDraft";
 import { errText, grnApi, sampleApi } from "./grnApi";
+import { DetailHeader } from "../../../components/DetailParts";   // FIX-8 (UI-60) — kepala detail sebaris baku
+import EmptyState, { isForbidden } from "../../../components/EmptyState";
+import DocNumber from "../../../components/DocNumber";
 
 const STEP_NO = { review: 1, count: 2, recon: 3 };
 const STEP_TITLE = { review: "Periksa surat jalan", count: "Hitung roll fisik", recon: "Rekonsiliasi & tutup" };
@@ -24,14 +27,24 @@ export default function GrnDetail({ grnId, user, onBack }) {
   const canReview = can(user?.permissions, "goods_receipt", "review");
   const canCount = can(user?.permissions, "goods_receipt", "count");
   const canClose = can(user?.permissions, "goods_receipt", "close");
-  useEffect(() => { grnApi.get(grnId).then((g) => { setGrn(g); setTab(TAB_FOR[g.status]); }).catch((e) => setErr(errText(e, "Kedatangan tidak ditemukan."))); }, [grnId]);
+  const [loadErr, setLoadErr] = useState(null);
+  useEffect(() => { grnApi.get(grnId).then((g) => { setGrn(g); setTab(TAB_FOR[g.status]); }).catch((e) => { setErr(errText(e, "Kedatangan tidak ditemukan.")); setLoadErr(e); }); }, [grnId]);
   useEffect(() => {
     if (grn?.status !== "reading") return undefined;
     const t = setInterval(() => grnApi.get(grnId).then((g) => { if (g.status !== "reading") { setGrn(g); setTab(TAB_FOR[g.status]); } }).catch(() => {}), 5000);
     return () => clearInterval(t);
   }, [grn?.status, grnId]);
   const onChange = (g) => { if (g?.id) { setGrn(g); setTab((t) => (TAB_FOR[g.status] !== TAB_FOR[grn?.status] ? TAB_FOR[g.status] : t)); } };
-  if (!grn) return <div className="p-4"><ErrorBox text={err} /></div>;
+  // FIX-8 (B4 §3.10) — sebelum data datang: "Memuat kedatangan…" (dulu layar kosong); 403 = tanpa akses.
+  if (!grn) {
+    return (
+      <div className="p-4" data-testid="grn-detail-state">
+        {onBack && <DetailHeader onBack={onBack} backLabel="Kembali ke daftar Kedatangan" backTestId="grn-detail-back" title="Kedatangan" />}
+        <EmptyState kind={loadErr ? (isForbidden(loadErr) ? "forbidden" : "error") : "loading"}
+          what="kedatangan" error={loadErr} testId="grn-detail-loading" />
+      </div>
+    );
+  }
   const cancel = async () => {
     const reason = await askReason({ title: "Batalkan kedatangan?", message: "Roll yang sudah dihitung di kedatangan ini ikut dibatalkan.", reasonLabel: "Alasan pembatalan", confirmLabel: "Batalkan" });
     if (!reason) return;
@@ -46,23 +59,21 @@ export default function GrnDetail({ grnId, user, onBack }) {
   const tabs = [["review", "Surat jalan"], ["count", "Hitung"], ["recon", "Rekonsiliasi"]].filter(([k]) => canReview || k === "count" || (k === "recon" && grn.status === "closed"));
   return (
     <div className="space-y-3" data-testid="grn-detail">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#EFF0F2] bg-white p-3">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} data-testid="grn-detail-back" aria-label="Kembali"><ArrowLeft size={16} /></button>
-          <div>
-            <p className="font-mono text-[15px] font-bold" data-testid="grn-detail-number">{grn.number}</p>
-            <p className="text-[11px] text-[#6B6B73]">{grn.partner_name}{grn.dn?.number ? <> · SJ <span className="font-mono">{grn.dn.number}</span></> : " · nomor SJ belum diisi"}</p>
-          </div>
-          <GrnStatusBadge status={grn.status} testId="grn-detail-status" />
-          <AskKnButton type="goods_receipt" id={grn.id} label={grn.number} />
-        </div>
-        <GrnStepper status={grn.status} />
-        {canSample && (sampled
-          ? <span data-testid="grn-sample-saved" className="text-[11px] font-semibold text-[#0F766E]">Tersimpan sebagai sample uji</span>
-          : <button data-testid="grn-make-sample" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC]" onClick={makeSample}><FlaskConical size={13} /> Jadikan sample uji</button>)}
-        {["draft", "reading", "review", "counting"].includes(grn.status) && canCount && (
-          <button data-testid="grn-cancel" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#B4231F]" onClick={cancel}><XCircle size={13} /> Batalkan</button>
-        )}
+      {/* FIX-8 (B1b UI-60, B4 §3.7) — GRN = dokumen kerja bertahap → halaman detail sebaris dengan kepala baku
+          `DetailHeader` (bilah "Kembali ke daftar …" ≥ 32 px, dulu ikon panah 16 × 16), sama dengan Perbaikan/Retur/
+          Makloon; "Batalkan" (merusak) dipisah di ujung kanan, tidak bersebelahan dengan "Tanya KN". */}
+      <div className="rounded-xl border border-[#EFF0F2] bg-white p-3">
+        <DetailHeader onBack={onBack} backLabel="Kembali ke daftar Kedatangan" backTestId="grn-detail-back" icon={PackageCheck}
+          title={<span data-testid="grn-detail-number" className="font-mono"><DocNumber number={grn.number} entityId={grn.entity_id} /></span>}
+          badges={<><GrnStatusBadge status={grn.status} testId="grn-detail-status" /><AskKnButton type="goods_receipt" id={grn.id} label={grn.number} /></>}
+          subtitle={<>{grn.partner_name}{grn.dn?.number ? <> · SJ <span className="font-mono">{grn.dn.number}</span></> : " · nomor SJ belum diisi"}</>}
+          actions={canSample ? (sampled
+            ? <span data-testid="grn-sample-saved" className="text-[11px] font-semibold text-[#0F766E]">Tersimpan sebagai sample uji</span>
+            : <button type="button" data-testid="grn-make-sample" className="secondary-button btn-sm" onClick={makeSample}><FlaskConical size={13} /> Jadikan sample uji</button>) : null}
+          dangerActions={["draft", "reading", "review", "counting"].includes(grn.status) && canCount ? (
+            <button type="button" data-testid="grn-cancel" className="danger-button btn-sm" onClick={cancel}><XCircle size={13} /> Batalkan</button>
+          ) : null} />
+        <div className="mt-2"><GrnStepper status={grn.status} /></div>
       </div>
       {(grn.reject_reason || grn.cancel_reason) && <p className="rounded-lg bg-[#F2F2F7] px-3 py-2 text-[11px]">Alasan: {grn.reject_reason || grn.cancel_reason}</p>}
       {/* UAT 24 Okt (P16.1) — tab langkah standar (`tab-bar`) + isi langkah dalam kartu putih ber-judul. */}

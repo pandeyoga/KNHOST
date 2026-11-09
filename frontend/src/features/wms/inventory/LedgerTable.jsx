@@ -43,10 +43,10 @@ export default function LedgerTable({ movements = [], balances = [], loading = f
                     <CounterpartyBadge movement={m} className="mt-0.5 ml-3" />
                   </td>
                   <td className="px-3 py-2">
-                    <p className="font-semibold text-[#007AFF]">{prod?.sku || m.product_id}</p>
+                    <p className="font-semibold text-[#007AFF]">{prod?.sku || m.sku || m.product_name || "Produk di luar daftar"}</p>
                   </td>
                   <td className="px-3 py-2 text-[10.5px] text-[#6B6B73]">
-                    {balances.find(b => b.warehouse_id === m.warehouse_id)?.warehouse_name || m.warehouse_id}
+                    {balances.find(b => b.warehouse_id === m.warehouse_id)?.warehouse_name || m.warehouse_name || "Gudang lain"}
                   </td>
                   <td className="px-3 py-2 text-[10.5px] text-[#6B6B73]">
                     {[m.batch, m.lot, m.roll_id].filter(Boolean).join(" · ") || "-"}

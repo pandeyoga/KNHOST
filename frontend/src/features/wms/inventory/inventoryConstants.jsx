@@ -2,20 +2,18 @@
  * inventoryConstants — shared formatters, movement-type map, and stock-status
  * helpers used across the Inventory (WMS Stock tab) sub-components.
  */
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight } from "lucide-react";
-import { docStatusLabel } from "../../../utils/docStatus";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import StatusBadge from "../../../components/StatusBadge";
+import { formatDateTime } from "../../../utils/formatters";
+import { DOMAIN_LABELS, statusLabel } from "../../../utils/statusVocab";
 
 export const formatQty = (v) => {
   if (v === undefined || v === null) return "0";
   return Number(v).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 };
 
-export const formatDate = (iso) => {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleDateString("id-ID", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
-};
+// FIX-8 (B3b INP-15 · G-OUT-01) — tanggal+jam mutasi lewat formatter tunggal WIB (dulu zona perangkat, tanpa "WIB").
+export const formatDate = (iso) => formatDateTime(iso);
 
 export const MOV_TYPE_MAP = {
   initial_stock:       { label: "Stok Awal",            color: "text-gray-600",  dot: "bg-gray-400" },
@@ -128,44 +126,22 @@ export const ROW_CLASSES = {
   empty: "bg-red-50 hover:bg-red-100",
 };
 
+// FIX-8 — lencana stok per baris saldo = StatusBadge baku (ikon + teks; label lama "OK/Rendah/Habis" dipertahankan).
 export const STATUS_BADGE = {
-  ok:    <span data-testid="stock-status-ok" className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700">OK</span>,
-  low:   <span data-testid="stock-status-low" className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 flex items-center gap-1"><AlertTriangle size={9} />Rendah</span>,
-  empty: <span data-testid="stock-status-empty" className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-red-100 text-red-700">Habis</span>,
+  ok:    <StatusBadge status="ok" tone="success" testId="stock-status-ok">OK</StatusBadge>,
+  low:   <StatusBadge status="low" tone="warning" testId="stock-status-low">Rendah</StatusBadge>,
+  empty: <StatusBadge status="empty" tone="danger" testId="stock-status-empty">Habis</StatusBadge>,
 };
 
 // ── Roll-as-SSOT (Fase 0.5) ────────────────────────────────────────────────
-export const ROLL_STATUS_META = {
-  available:                { label: "Tersedia",   cls: "bg-green-100 text-green-700" },
-  reserved:                 { label: "Dipesan",    cls: "bg-orange-100 text-orange-700" },
-  committed:                { label: "Dialokasikan",   cls: "bg-purple-100 text-purple-700" },
-  picked:                   { label: "Sudah Diambil",      cls: "bg-blue-100 text-blue-700" },
-  packed:                   { label: "Sudah Dikemas",      cls: "bg-indigo-100 text-indigo-700" },
-  quarantine:               { label: "Karantina",  cls: "bg-amber-100 text-amber-700" },
-  receiving:                { label: "Sedang Diterima", cls: "bg-sky-100 text-sky-700" },
-  blocked:                  { label: "Diblokir",     cls: "bg-amber-100 text-amber-800" },
-  damaged:                  { label: "Rusak",     cls: "bg-red-100 text-red-700" },
-  sold:                     { label: "Terjual",        cls: "bg-gray-200 text-gray-600" },
-  in_transit_inbound:       { label: "Dalam Perjalanan (Masuk)",  cls: "bg-cyan-100 text-cyan-700" },
-  in_transit_transfer:      { label: "Dalam Perjalanan (Transfer)", cls: "bg-cyan-100 text-cyan-700" },
-  in_transit_intercompany:  { label: "Dalam Perjalanan (Antar-PT)", cls: "bg-teal-100 text-teal-700" },
-  in_transit_sales:         { label: "Dalam Perjalanan (Penjualan)",    cls: "bg-cyan-100 text-cyan-700" },
-  // UAT 24 Okt (audit UI tahap 2) — status roll yang ada di data tetapi dulu tampil mentah ("consumed", "subcon").
-  consumed:                 { label: "Habis Terpakai", cls: "bg-gray-200 text-gray-600" },
-  delivered:                { label: "Terkirim",       cls: "bg-gray-200 text-gray-600" },
-  returned_supplier:        { label: "Diretur ke Supplier", cls: "bg-gray-200 text-gray-600" },
-  subcon:                   { label: "Di Makloon",     cls: "bg-violet-100 text-violet-700" },
-  hold:                     { label: "Ditahan",        cls: "bg-amber-100 text-amber-800" },
-};
+// FIX-8 — label status roll dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "roll", istilah sama persis).
+// `ROLL_STATUS_META` tetap diekspor ({label}) untuk pemakai lama.
+export const ROLL_STATUS_META = Object.fromEntries(
+  Object.entries(DOMAIN_LABELS.roll).map(([k, label]) => [k, { label }]));
 
 /** Label status roll (Indonesia); kode tak dikenal dirapikan lewat docStatusLabel, bukan tampil mentah. */
-export const rollStatusLabel = (status) => ROLL_STATUS_META[status]?.label || docStatusLabel(status) || "—";
+export const rollStatusLabel = (status) => statusLabel(status, "roll");
 
-export const RollStatusBadge = ({ status }) => {
-  const m = ROLL_STATUS_META[status] || { label: rollStatusLabel(status), cls: "bg-gray-100 text-gray-600" };
-  return (
-    <span data-testid={`roll-status-${status}`} className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${m.cls}`}>
-      {m.label}
-    </span>
-  );
-};
+export const RollStatusBadge = ({ status }) => (
+  <StatusBadge status={status} domain="roll" testId={`roll-status-${status}`} />
+);

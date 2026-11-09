@@ -1,5 +1,6 @@
 /**
- * PaginationBar — kontrol paginasi reusable (P2) + **Unduh CSV** (P6).
+ * PaginationBar — SATU-SATUNYA pager aplikasi (FIX-8: `KNPager`, `PagedRows`, `usePagedRows` kini merender komponen
+ * ini; dulu tiga gaya pager) — kontrol paginasi reusable (P2) + **Unduh CSV** (P6).
  * Menampilkan rentang "X–Y dari N", tombol Prev/Next, indikator halaman,
  * pemilih ukuran halaman berbasis tombol (lolos ux_audit — tanpa dropdown bawaan),
  * dan tombol Unduh CSV bila `exportConfig` diberikan.
@@ -143,8 +144,10 @@ export default function PaginationBar({
       {/* FIX-4 (Standar UI Gudang v1 §4) — pager memakai kelas baku `kn-pager*` (huruf ≥ 12 px, warna token, tombol
           ≥ 24 px) — dulu 10,5–11,5 px dengan hex lepas. Testid lama dipertahankan. */}
       <div data-testid={`${testId}-bar`} className="kn-pager">
-        <span data-testid={`${testId}-info`} className="kn-pager-info">
-          {total === 0 ? `Tidak ada ${label}` : (
+        {/* FIX-8 (B1b UI-50 · LST-06) — selama memuat pertama (total belum datang) pager menulis "Memuat …", BUKAN
+            "Tidak ada …" (dulu Lot & Silsilah "Tidak ada lot" sebelum data tiba). */}
+        <span data-testid={`${testId}-info`} className="kn-pager-info" data-loading={loading && total === 0 ? "1" : undefined}>
+          {total === 0 && loading ? `Memuat ${label}…` : total === 0 ? `Tidak ada ${label}` : (
             <>Menampilkan <strong>{from}–{to}</strong> dari <strong>{total}</strong> {label}</>
           )}
         </span>

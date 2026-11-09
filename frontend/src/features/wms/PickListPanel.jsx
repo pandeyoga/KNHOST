@@ -50,7 +50,7 @@ export default function PickListPanel({ task, onPick }) {
           {rolls.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-1 text-[11px]" data-testid={`outbound-pick-roll-${r.roll_no}`}>
               <span>
-                <b>{r.roll_no}</b> · LOT {r.lot || "—"} · lokasi {r.bin_code || r.location_code || r.bin_id || "—"} · {formatQty(r.length_remaining)} {r.unit || data.unit}
+                <b>{r.roll_no}</b> · LOT {r.lot || "—"} · lokasi {r.bin_code || r.location_code || "—"} · {formatQty(r.length_remaining)} {r.unit || data.unit}
               </span>
               {r.picked ? (
                 <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#1B7F4B]"><CheckCircle2 size={11} /> sudah diambil</span>

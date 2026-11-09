@@ -3,6 +3,7 @@
  * Komponen layar TIDAK memanggil axios langsung agar jalur data tunggal & mudah diaudit.
  */
 import axios, { API } from "../../../services/apiClient";
+import { formatDate, formatDateTime } from "../../../utils/formatters";
 import { permissionDeniedText } from "../../../utils/apiError";
 
 export const lotApi = {
@@ -56,17 +57,6 @@ export const errText = (e, fallback) => {
   return (typeof d === "string" && permissionDeniedText(d)) || d || e?.message || fallback || "Terjadi kesalahan.";
 };
 
-export const shortDate = (iso) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-};
-
-export const shortDateTime = (iso) => {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit",
-                                     minute: "2-digit" });
-};
+// FIX-8 (B3b INP-15 · G-OUT-01) — tanggal/waktu lot lewat formatter tunggal WIB (dulu zona perangkat; jam tanpa "WIB").
+export const shortDate = (iso) => formatDate(iso);
+export const shortDateTime = (iso) => formatDateTime(iso);

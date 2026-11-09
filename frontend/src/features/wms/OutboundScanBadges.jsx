@@ -1,20 +1,12 @@
 // Badge + MiniBar untuk OutboundScanInterface (dipisah agar file utama di bawah
 // batas guardrail). Pure presentational.
+import StatusBadge from "../../components/StatusBadge";
 
-const STATUS_MAP = {
-  scheduled:  { label: "Terjadwal", cls: "bg-purple-100 text-purple-700" },
-  created:    { label: "Siap diambil", cls: "bg-gray-100 text-gray-600" },
-  picking:    { label: "Pengambilan", cls: "bg-blue-100 text-blue-700" },
-  packing:    { label: "Pengemasan", cls: "bg-purple-100 text-purple-700" },
-  staging:    { label: "Siap muat", cls: "bg-indigo-100 text-indigo-700" },
-  partially_shipped: { label: "Terkirim Sebagian", cls: "bg-orange-100 text-orange-700" },
-  dispatched: { label: "Terkirim", cls: "bg-green-100 text-green-700" },
-  escalated:  { label: "Dieskalasi", cls: "bg-red-100 text-red-700" },
-};
-
+// FIX-8 (KN_37 §8) — label status tugas keluar dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah
+// "task_out", istilah sama persis); lencana = StatusBadge baku (ikon + teks + warna token). Dulu kode tak dikenal
+// tampil MENTAH ({label: status}); kini lewat peta umum (tidak pernah kode mentah).
 export function Badge({ status }) {
-  const s = STATUS_MAP[status] || { label: status, cls: "bg-gray-100 text-gray-600" };
-  return <span data-testid={`outbound-status-badge-${status}`} className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${s.cls}`}>{s.label}</span>;
+  return <StatusBadge status={status} domain="task_out" testId={`outbound-status-badge-${status}`} />;
 }
 
 export function MiniBar({ pct, status }) {

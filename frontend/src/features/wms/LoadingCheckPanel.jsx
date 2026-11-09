@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ScanLine, Zap, CheckCircle, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
+import { formatDateTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
 
 export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const [session, setSession] = useState(null);
@@ -224,7 +225,7 @@ const ScanHistory = ({ log }) => {
                 <span className="font-semibold">{e.by || "—"}</span>
                 {e.device_name && e.device_name !== e.by && <span className="text-[#6B6B73]">· {e.device_name}</span>}
                 <span className="text-[#6B6B73]">· {e.count} EPC</span>
-                <span className="ml-auto text-[#8E8E93]">{new Date(e.at).toLocaleString("id-ID")}</span>
+                <span className="ml-auto text-[#8E8E93]">{formatDateTime(e.at)}</span>
               </div>);
           })}
         </div>)}

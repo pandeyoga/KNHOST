@@ -61,6 +61,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Histori Job Scheduler *(R6.5)* | `sys_scheduler_runs` | `routers/scheduler.py`, `services/scheduler_service.py` | — | `SchedulerView` (Pengaturan → Penjadwal & Notifikasi → tab Riwayat Eksekusi) |
 | Outbox WhatsApp *(R6.5)* | `sys_wa_outbox` | `routers/scheduler.py`, `services/wa_alert_service.py` | `WaTestRequest` | `SchedulerWa` (tab WhatsApp → Outbox) |
 | Pengaturan Alert *(R6.5)* | `system_settings` *(scope=alerts)* | `routers/scheduler.py`, `services/wa_alert_service.py` | `SchedulerSettingsUpdate` | `SchedulerWa` + `JobTable` (editor jadwal inline) |
+| Tampilan Tersimpan Daftar *(FIX-8 · K-B4-12)* | `saved_views` | `routers/saved_views.py`, `services/saved_view_service.py` | `SavedViewIn`, `SavedViewPatch` | `SavedViewsMenu` + `useSavedViews` (Operasi Gudang › Stok › Roll · Transfer · Barang Keluar) |
 
 ---
 
@@ -3217,3 +3218,23 @@ sampel + ringkasan akurasi per field (gerbang: nomor SJ ≥98%, qty & satuan ≥
 `backend/services/ocr_sample_service.py`, router `/api/ocr-samples`.
 `supplier_dn_profiles` — field baru: `corrections[]` (koreksi manusia terakhir, maks 30) & `format_notes`
 (catatan admin) → dikirim ke AI sebagai petunjuk saat membaca SJ mitra yang sama (belajar dari koreksi).
+
+### saved_views — Tampilan Tersimpan Daftar Gudang  [FIX-8 IMPLEMENTED — K-B4-12, 10 Nov 2026]
+Satu dokumen = kombinasi **saringan + urut + kolom (+ mode)** satu daftar, milik satu pengguna, opsional dibagikan
+admin ke peran dan/atau PT. Dipulihkan saat daftar dibuka (bawaan pribadi → bawaan bersama).
+* Field: `id` (`sv_…`) · `list_key` (`wms.inventory_rolls` | `wms.transfers` | `wms.outbound_tasks` — daftar di
+  `saved_view_service.LISTS`) · `name` (1–60) · `state {filters{…}, sort{key,dir}|null, columns[kunci kolom
+  DISEMBUNYIKAN], mode}` (di-whitelist per daftar, ≤ 4 KB) · `share {roles[], entity_ids[], is_default}` ·
+  `is_default` (bawaan pribadi; satu per pengguna per daftar) · `owner_user_id` · `owner_name` · `created_at` ·
+  `updated_at` · `updated_by`.
+* **Cakupan:** USER-SCOPED (`entity_scope.USER_SCOPED_COLLECTIONS`) — TANPA `entity_id`. Kunci cakupan PT/lokasi
+  (`entity_id`, `owner_entity_id`, `location_view`, `site_id`, …) DITOLAK 400 di `state`: cakupan tetap dari bilah
+  "Lokasi: … ▾" + PT aktif dan dipagari endpoint daftarnya (FIX-1). Penerima tampilan bersama = peran cocok DAN PT
+  yang bisa ia baca beririsan (`share.entity_ids` ⊆ PT yang dibaca admin pembuatnya).
+* **Izin:** = izin LIHAT daftar (`product.view` roll · `transfer.view` transfer · `wms.view` tugas keluar). Pribadi:
+  hanya pemilik (orang lain 404). Bersama: buat/ubah/hapus hanya `admin`. Jejak: `audit_logs` `saved_view.*`.
+* Pagar tulis "Semua Entitas": `/api/saved-views` terdaftar (S) di `entity_write_guard.GROUP_LEVEL_EXACT`.
+* Index: `(list_key, owner_user_id)`, `id`. Batas 30 tampilan per pengguna per daftar.
+
+⚠️ **JANGAN BUAT** koleksi preferensi daftar lain (`list_presets`, `user_filters`, `view_prefs`) — perluas `LISTS`.
+⚠️ Preset navigasi (`useViewPreset`, alias menu) BUKAN tampilan tersimpan — itu sekali-jalan dari tautan.

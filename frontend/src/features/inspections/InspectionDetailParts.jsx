@@ -5,15 +5,11 @@
  * markup, testid, dan teks sama persis. `InspectionLinesTable.jsx` memegang tabel baris pemeriksaan.
  */
 import { CalendarClock } from "lucide-react";
+import { formatDateTime } from "../../utils/formatters";
 
 // Cek UI UAT v3 (S8) — waktu dulu dipotong dari ISO UTC ("2026-10-21 19:57" padahal WIB 22 Okt 02.57).
-export const localTs = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16).replace("T", " ");
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-};
+// FIX-8 (B3b INP-15 · G-OUT-01) — lalu dipakai zona PERANGKAT (`getHours`); kini formatter tunggal WIB.
+export const localTs = (iso) => (iso ? formatDateTime(iso) : "");
 
 // UAT 24 Okt (audit UI tahap 2) — kartu `.section-card` tanpa padding di dalam pop-up memotong huruf awal
 // ("INDAKAN", "IWAYAT") → semua kartu di panel ini memakai `section-pad`; nilai panjang dibungkus, tidak terpotong di HP.

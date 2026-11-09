@@ -69,7 +69,7 @@ export const getGatePolicy = (id) =>
 /** Artikel (template produk) untuk aturan zona/gedung — daftar ringkas {id, name}. */
 export const listTemplates = () =>
   axios.get(`${API}/product-templates`).then((r) => (Array.isArray(r.data) ? r.data : r.data?.items || [])
-    .map((t) => ({ id: t.id, name: t.name || t.code || t.id })));
+    .map((t) => ({ id: t.id, name: t.name || t.code || "Templat tanpa nama" })));
 
 /** Pesan galat yang layak dibaca (jangan pernah menampilkan "[object Object]"). */
 export const errText = (e, fallback = "Terjadi kesalahan.") => {

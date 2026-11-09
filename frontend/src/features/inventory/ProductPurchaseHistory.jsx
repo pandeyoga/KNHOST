@@ -7,16 +7,10 @@
 import { useEffect, useState } from "react";
 import { PackageSearch, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatQty, formatCurrency } from "../../utils/formatters";
+import { formatDate, formatQty, formatCurrency } from "../../utils/formatters";
 
-function fmtDate(s) {
-  if (!s) return "—";
-  try {
-    return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return s;
-  }
-}
+// FIX-8 (B3b INP-15 · G-OUT-01) — tanggal lewat formatter tunggal WIB (dulu zona perangkat).
+const fmtDate = (s) => formatDate(s);
 function rp(v) {
   const n = Number(v || 0);
   return n ? formatCurrency(n) : "—";   // 23 Okt — dulu tanpa batas desimal
@@ -119,7 +113,7 @@ export default function ProductPurchaseHistory({ productId, ownerEntityId }) {
                           {(e.rolls || []).map((r) => (
                             <span key={r.roll_id}
                               className="inline-flex items-center gap-1 rounded border border-[#E4D4F0] bg-white px-1.5 py-0.5 text-[10px]">
-                              <span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id}</span>
+                              <span className="font-mono text-[#6B219A]">{r.roll_no || "tanpa nomor"}</span>
                               <span className="text-[#8E8E93]">· {formatQty(r.qty_remaining)}/{formatQty(r.qty_received)}</span>
                               {r.grade && <span className="text-[#8E8E93]">· {r.grade}</span>}
                               <span className={`ml-0.5 rounded px-1 ${r.status === "available" ? "bg-[#E7F6EE] text-[#1B7F4B]" : "bg-[#F0F0F2] text-[#8E8E93]"}`}>{r.status}</span>

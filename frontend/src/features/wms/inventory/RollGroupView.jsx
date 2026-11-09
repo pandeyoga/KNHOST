@@ -117,8 +117,8 @@ function LocationRows({ base, product, lot }) {
               className="ghost-button w-full flex-wrap justify-start gap-x-3 gap-y-0.5 text-left text-kn-text">
               {open[k] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <MapPin size={13} className="text-kn-text-2" />
-              <span className="text-fs-13 font-semibold">{loc.warehouse_name || loc.warehouse_id}</span>
-              <span className="text-fs-12 text-kn-text">{loc.bin_id ? `Bin ${loc.bin_code || loc.bin_id}` : "Belum ditempatkan ke bin"}</span>
+              <span className="text-fs-13 font-semibold">{loc.warehouse_name || "Gudang tanpa nama"}</span>
+              <span className="text-fs-12 text-kn-text">{loc.bin_id ? `Bin ${loc.bin_code || "tanpa kode"}` : "Belum ditempatkan ke bin"}</span>
               <span className="text-fs-12 tabular-nums">{formatQty(loc.roll_count)} roll · {fmtLen(loc.total_length, loc.unit)}</span>
               <StatusSummary counts={loc.status_counts} />
             </button>
@@ -188,7 +188,7 @@ export default function RollGroupView({ params, search }) {
               className="ghost-button w-full flex-wrap justify-start gap-x-3 gap-y-0.5 text-left text-kn-text">
               {open[p.product_id] ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
               <Package size={14} className="text-kn-action" />
-              <span className="text-fs-13 font-semibold">{p.product_name || p.product_id}</span>
+              <span className="text-fs-13 font-semibold">{p.product_name || p.sku || "Produk tanpa nama"}</span>
               <span className="font-mono text-fs-12 text-kn-text-2">{p.sku}</span>
               <span className="text-fs-13 tabular-nums font-semibold">{formatQty(p.roll_count)} roll</span>
               <span className="text-fs-12 tabular-nums">{fmtLen(p.total_length, p.unit)}</span>

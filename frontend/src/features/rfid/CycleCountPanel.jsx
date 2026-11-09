@@ -17,11 +17,15 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // FIX-8 (B1b UI-49) — dulu `catch { /* noop */ }`: galat/403 tampil sebagai "Belum ada cycle count.".
+  const [histSt, setHistSt] = useState({ loading: true, error: null });
   const loadHistory = async () => {
+    setHistSt((x) => ({ ...x, loading: true }));
     try {
       const r = await axios.get(`${API}/rfid/cycle-counts`, { params: { warehouse_id: whId || undefined } });
       setHistory(r.data.counts || []);
-    } catch { /* noop */ }
+      setHistSt({ loading: false, error: null });
+    } catch (e) { setHistSt({ loading: false, error: e }); }
   };
   useEffect(() => { loadHistory(); setSession(null); setResult(null); }, [whId, selectedEntity]); // eslint-disable-line
 
@@ -108,7 +112,8 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
       <SectionCard title={`Riwayat Cycle Count (${history.length})`} right={
         <ExportMenu dataset="rfid_cycle_counts" label="opname-rfid" testId="cc-rfid-export"
           filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />}>
-        {history.length === 0 ? <EmptyBox icon={ClipboardCheck} text="Belum ada cycle count." /> : (
+        {history.length === 0 ? <EmptyBox icon={ClipboardCheck} loading={histSt.loading} error={histSt.error} onRetry={loadHistory}
+          what="riwayat opname RFID" text="Belum ada cycle count." testId="cc-history-state" /> : (
           <div className="space-y-1" data-testid="cc-history">
             {history.map((c) => (
               <div key={c.id} className="flex items-center gap-2 rounded bg-[#FAFAFB] px-2 py-1.5 text-[11.5px]">

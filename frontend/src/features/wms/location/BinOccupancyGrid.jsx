@@ -24,7 +24,7 @@ export default function BinOccupancyGrid({ bins }) {
       {bins.map((b) => (
         <div key={b.bin_id} data-testid={`lp-bin-card-${b.bin_id}`} className="rounded-lg border border-[#EFF0F2] p-2 hover:border-[#C7D8F5] transition-colors">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-mono font-semibold">{b.code || b.bin_id}</span>
+            <span className="text-[12px] font-mono font-semibold">{b.code || "tanpa kode"}</span>
             <span className="text-[10px] text-[#6B6B73] tabular-nums" data-testid={`lp-bin-card-count-${b.bin_id}`}>
               {b.roll_count || 0}{b.capacity_rolls ? ` / ${b.capacity_rolls}` : ""} roll
             </span>

@@ -6,17 +6,11 @@
 import { useEffect, useState } from "react";
 import { Clock, TrendingUp } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { formatQty } from "../../utils/formatters";
+import { formatDate, formatQty } from "../../utils/formatters";
 import ProductPurchaseHistory from "./ProductPurchaseHistory";
 
-function fmtDate(s) {
-  if (!s) return "—";
-  try {
-    return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
-  } catch {
-    return s;
-  }
-}
+// FIX-8 (B3b INP-15 · G-OUT-01) — tanggal lewat formatter tunggal WIB (dulu zona perangkat).
+const fmtDate = (s) => formatDate(s);
 
 export default function AtpDetailPanel({ productId, ownerEntityId }) {
   const [data, setData] = useState(null);
