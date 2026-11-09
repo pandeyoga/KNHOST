@@ -5,8 +5,8 @@
 **Bahan:** B3a §5/§10/§11 + lampiran uji angka, B1 UI-06/07/40 + K-B1-03, B1b UI-45/46/54/59 + K-B1-12, B4 §1.2/§3.7
 (ADS-1…7), KN_15, KN_32.
 
-> Status: implementasi selesai & ter-commit. **Hasil uji di §6 — lihat catatan pelaksanaan (Docker Desktop host macet di
-> tengah sesi; angka yang tercantum adalah yang benar-benar dijalankan).**
+> Status: implementasi selesai & ter-commit (`implemented_pending_review` menurut protokol — status akhir ditetapkan
+> koordinator/reviewer). Hasil uji di §6 adalah yang benar-benar dijalankan (Docker Desktop host sempat macet; lihat §6.4).
 
 ---
 
@@ -212,6 +212,15 @@ Putaran pertama FIX-2 sempat menghasilkan 3 uji yang hanya gagal di FIX-2; ketig
   saldo proyeksi (definisi tunggal) → **uji menjalankan `rebuild_balance`** untuk roll ujinya (seperti alur aplikasi) dan
   membersihkan saldonya.
 
+### 6.2b Jest & ESLint (kontainer `node:20` sementara, `node_modules` dari volume `kn-dev_fe_node_modules`, CI=true)
+| | dasar `main` | FIX-2 |
+|---|---|---|
+| Seluruh suite (`craco test --maxWorkers=2`) | 78 berkas · 556 uji · **1 gagal** (`phase4R3` grid HP di `RegistrationDetail.jsx`, bukan berkas FIX-2) | 79 berkas · 564 uji · `phase4R3` sama + timeout beban mesin yang **berganti-ganti** antar putaran (putaran 1: `uat24F4`; putaran 2: `mkl02RecapPaging` 37 dtk, `f08CommercialInvoice` 191 dtk — semuanya berkas di luar FIX-2) |
+| Terarah: `stockFigures` (baru, 7 uji), `decisionsD1` (+ uji STK-2), `trial22Okt` (B6 disesuaikan), + 3 berkas yang sempat timeout | uji baru/diubah **gagal** (suite `stockFigures` tak bisa jalan — komponen belum ada; STK-2 "Stok fisik 0"; kartu HP lama) | **6 berkas · 40 uji lulus** (termasuk 3 berkas yang sempat timeout) |
+
+ESLint (`eslint.config.mjs`) pada semua berkas FE yang diubah: **0 error**, 53 peringatan lama (`Unused eslint-disable
+directive`, tidak bertambah dari baris yang saya tulis).
+
 ### 6.3 Guardrail (`PYTHONUTF8=1 python scripts/guardrails/verify_*.py`, host, tanpa Mongo; `verify_state_machine` tidak dijalankan)
 Kode keluar 40 guardrail **identik** sebelum (`main`) vs sesudah; jumlah pelanggaran guardrail yang merah sejak dasar
 tidak naik (contoh: `verify_qty_dual` 28 pelanggaran dari 1.717 → 28 dari 1.721 cek; `verify_entity_label` 28 → 28;
@@ -252,4 +261,21 @@ sesudah: detail_modal (28 → 29 cek), escape_layers, role_label, uom_vocab, cod
 7. Guardrail ratchet "hanya `stock_figures` menghitung Tersedia" (cegah rumus pembaca baru) — usulan.
 
 ## 9. Ringkasan untuk koordinator
-_(lihat akhir berkas)_
+
+* **Selesai:** satu layanan angka stok (`services/stock_figures.py`) + API dua angka/rincian/site POS
+  (`routers/stock_figures.py`) + komponen `StockFigures` di layar kunci. Ditutup: P0 STK-1, STK-2, STK-6, STK-13, STK-14,
+  SSOT-4 (konsisten di satu layanan); P1 STK-3 (sebagian), STK-4, STK-5/DUP-1, DUP-2, STK-8, SSOT-3 (keputusan #2),
+  UI-06/K-B1-03, UI-40, UI-45 (B1b, K-B1-12); P2/P3 STK-7, STK-9, STK-10, STK-12 (tampil, tidak masuk ATP), DUP-4, SCP-4
+  (keputusan #7), UI-46 (sebagian), UI-54, UI-59. Keputusan #3 (site POS di server) & #4 (horizon setelan, 14) terpasang.
+* **Uji silang:** 912 perbandingan / **64 selisih → 1.672 / 0** (endpoint lama + dua angka per 7 akun + rincian).
+* **Regresi:** pytest 30 berkas lama 124 gagal = 124 gagal (0 yang hanya gagal di FIX-2); 16 uji baru gagal di dasar →
+  lulus. Jest: uji baru/diubah gagal di dasar → 40/40 lulus; suite penuh hanya kegagalan lama + timeout beban mesin yang
+  berpindah-pindah di berkas non-FIX-2. Guardrail: kode keluar & jumlah pelanggaran identik dengan dasar.
+* **Keputusan implementer penting:** #1 makloon per roll ditunda (langkah lanjut tertulis §5.1); data uji tidak ditebak
+  dari nama; ATP tidak memasukkan transfer/makloon/retur; label grup seragam "Total grup (semua PT)".
+* **Perubahan perilaku yang terasa pengguna:** Tersedia turun sebesar cadangan makloon di beberapa layar; papan Stok &
+  ATP untuk sales/gudang kini menampilkan angka PT sendiri (bukan grup); roll ditahan MD Quality jadi Diblokir.
+* **Bentrok mungkin:** `roll_service.py` (FIX-3), `inspection_service.py`, `location_service.py`/`routers/inventory.py`
+  (antrean PA), `MobileWarehouseApp.jsx`. `location_scope.py` tidak disentuh (titik kait `work_site_ids`).
+* **Sisa:** §8 (makloon per roll, cakupan PT antrean Lokasi Rak = FIX-1, layar stok lain belum memakai `StockFigures`,
+  PO tanpa `entity_id`, SSOT-8, SCP-5, ratchet guardrail, `CODEBASE_MAP.md` perlu dibangkitkan ulang saat gabung).
