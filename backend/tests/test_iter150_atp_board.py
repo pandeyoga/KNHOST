@@ -65,6 +65,9 @@ def test_atp_board_math(client):
         atp = float(row.get("total_atp") or row.get("atp") or 0)
         physical = float(row.get("total_on_hand") or row.get("physical") or row.get("on_hand") or 0)
         hold = float(row.get("total_hold") or 0)
+        # FIX-2 (B3a STK-9) — "tertahan" tidak lagi memuat dialokasikan & cadangan makloon; keduanya dikirim terpisah.
+        committed = float(row.get("total_committed") or 0)
+        makloon = float(row.get("total_makloon_reserved") or 0)
         pending = float(row.get("total_pending_demand") or 0)
 
         atp_total += atp
@@ -74,7 +77,7 @@ def test_atp_board_math(client):
         # Tersedia + Incoming − tertunda = ATP
         # Tersedia + Dipesan + tertahan = Stok Fisik
         expected_atp = available + incoming - pending
-        expected_phys = available + reserved + hold
+        expected_phys = available + reserved + committed + makloon + hold
 
         if abs(expected_atp - atp) > 0.5:
             mismatches_atp.append((pid, available, incoming, pending, atp, expected_atp))

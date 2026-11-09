@@ -248,12 +248,13 @@ async def putaway_queue_counts(warehouse_id: Optional[str], ctx: EntityContext, 
 async def putaway_queue(warehouse_id: Optional[str], ctx: EntityContext, entity_id: Optional[str], limit: int = 500,
                         skip: int = 0) -> List[Dict[str, Any]]:
     """Roll fisik yang BELUM ditempatkan ke bin, dengan status siap/terhambat + alasannya.
-    FIX-2 (UI-46) — berhalaman (`skip`/`limit`), urut stabil roll_no; jumlah total lewat `putaway_queue_counts`."""
+    FIX-2 (UI-46) — berhalaman (`skip`/`limit`, urutan alami seperti sebelumnya); jumlah total lewat
+    `putaway_queue_counts`."""
     q = resolve_list_scope("inventory_rolls", _unbinned_query(warehouse_id), ctx, entity_id)
     rolls = await db.inventory_rolls.find(
         q, {"_id": 0, "id": 1, "roll_no": 1, "product_id": 1, "warehouse_id": 1, "grade": 1, "inspection": 1,
             "owner_entity_id": 1, "lot": 1, "length_remaining": 1, "unit": 1, "status": 1,
-            "active_movement": 1, "length_reserved": 1, "hold": 1}).sort("roll_no", 1).skip(max(0, int(skip or 0))).to_list(limit)
+            "active_movement": 1, "length_reserved": 1, "hold": 1}).skip(max(0, int(skip or 0))).to_list(limit)
     pids = list({r["product_id"] for r in rolls})
     prods = {p["id"]: p for p in await db.products.find(
         {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1}).to_list(2000)}

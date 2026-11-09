@@ -24,7 +24,8 @@
   klik/ketuk → `DetailModal` baku berisi rincian. Dipakai di kartu POS desktop & HP, quick view desktop & HP, Stok & ATP
   desktop & HP, katalog Produk & Varian, HP MD.
 * **Uji silang otomatis** `scripts/audit/fix2_stock_crosscheck.py` (dasar: `b3a_compare_numbers.py`): **sebelum 912
-  perbandingan / 64 berselisih → sesudah lihat §6** (endpoint lama 0 selisih pada putaran pertama sesudah perbaikan).
+  perbandingan / 64 berselisih → sesudah 1.672 perbandingan / 0 berselisih** (endpoint lama + kelompok baru dua angka per
+  7 akun & rincian).
 
 ---
 
@@ -163,7 +164,8 @@ templatnya, 7 akun demo, salinan data acuan `kn_test_trial_2026-11-08` dipulihka
 |---|---|---:|---:|
 | B3a (audit, 9 Nov) | `5f1e36e` | 895 | 48 |
 | **Sebelum** (FIX-2 dasar `main`) | `main` | **912** | **64** |
-| **Sesudah** (putaran 1, sebelum tambahan B1b) | worktree | **1.672** | **1** ¹ |
+| Sesudah — putaran 1 (sebelum tambahan B1b) | worktree | 1.672 | 1 ¹ |
+| **Sesudah — putaran akhir** (kode final, DB dipulihkan ulang) | worktree `HEAD` | **1.672** | **0** |
 
 ¹ satu-satunya selisih = acuan skrip untuk `rfid/summary` memakai daftar status yang kurang lengkap (endpoint 23.274,
 acuan 23.214 karena skrip belum memasukkan `in_transit_*`/`receiving` yang memang kandidat tag); acuan skrip
