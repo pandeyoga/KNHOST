@@ -1,0 +1,11 @@
+patch roles 0 0
+cancel draft 0 0
+DRAFT PA00014 Rancamalang · Gudang Knitting storage [('RL-46671', False)]
+DRAFT PA00015 Rancamalang · Gudang Retur (grade B/BS/C) inspection [('RL-46672', True)]
+[200] qc POST /inspections/ins_b0bb9309fb02/lines/insl_3563be3a2a62/inspect (125ms) :: {"id": "ins_b0bb9309fb02", "number": "KSC/INS-00146", "entity_id": "ent_ksc", "line_code": "woven", "kind": "qc_4point", "ref_doc_type": "inspection", "ref_doc_id": "ins_1d239fdc4129", "ref_doc_number": "KSC/INS-00145", "task_id": "", "supplier_id": "", "supplier_name": "", "customer_id": "", "customer_name": "", "spk_date": "2026-11-09", "assigned_to": "user_03f0d6ed87f7", "assigned_name": "Mulyadi", "bagian": "Bagian Inspeksi", "started_at": "2026-11-09T00:24:35.370459+00:00", "finished_at": "", "status": "in_progress", "baseline_sample_id": "", "baseline_sample_number": "", "baseline_contract_id": "", "baseline_color": "", "lines": [{"id": "insl_3563be3a2a62", "roll_id": "roll_e1f1658b2ce
+finish qc4 200 ('done', {'drafts': [], 'unrouted': [], 'skipped': 1, 'stored_in_place': 0, 'disabled_entities': []})
+finish qc4 tolak 400 {'detail': 'Inspeksi berstatus “Selesai (sudah diputuskan)” tidak bisa ditutup.'}
+R2: [{'roll_no': 'RL-46672', 'grade': 'B', 'status': 'blocked', 'journey': {'stage': 'received_transit', 'routing': 'store', 'updated_at': '2026-11-09T00:22:50.453243+00:00'}, 'hold': {'held': True, 'reason': 'QC 4-point GAGAL — SPK KSC/INS-00146: Belang di tengah', 'by': 'Mulyadi', 'at': '2026-11-09T00:24:35.416852+00:00', 'prev_status': 'available'}}]
+PA PA00013 cancelled Rancamalang · Gudang Knitting storage [('RL-46671', False), ('RL-46672', True)]
+PA PA00014 draft Rancamalang · Gudang Knitting storage [('RL-46671', False)]
+PA PA00015 draft Rancamalang · Gudang Retur (grade B/BS/C) inspection [('RL-46672', True)]

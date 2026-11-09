@@ -1,0 +1,6 @@
+[400] admin POST /purchase-orders (39ms) :: {"detail": "Lokasi Soreang belum punya gudang penerimaan (peran Transit / Penerimaan Pusat) yang boleh dipakai badan usaha ini. Atur perannya di Data Gudang."}
+{'sharing_mode': 'dedicated', 'entity_ids': ['ent_kanda']}
+ent_ksc ['WH-JKT', 'WH-BDG', 'WH-SBY', 'GU-KSC', 'RCM-TRANSIT', 'RCM-WOVEN', 'RCM-KNITTING', 'RCM-PRINTING', 'RCM-RETUR', 'TEST-WH-B-420C35', 'TEST-WH-C-420C35', 'TEST-WH-B-CDCD1A', 'TEST-WH-C-CDCD1A', 'TEST-WH-B-20329F', 'TEST-WH-C-20329F']
+ent_kanda ['WH-BDG', 'WH-SBY', 'GU-KANDA', 'RCM-TRANSIT', 'RCM-WOVEN', 'RCM-KNITTING', 'RCM-PRINTING', 'RCM-RETUR', 'SRG-01']
+ent_82b52ed6ee8b ['WH-BDG', 'WH-SBY', 'GU-CST', 'RCM-TRANSIT', 'RCM-WOVEN', 'RCM-KNITTING', 'RCM-PRINTING', 'RCM-RETUR']
+RCM sharing: [{'code': 'WH-JKT', 'entity_ids': ['ent_ksc'], 'sharing_mode': 'dedicated'}, {'code': 'RCM-TRANSIT', 'sharing_mode': 'shared', 'entity_ids': []}, {'code': 'RCM-WOVEN', 'sharing_mode': 'shared', 'entity_ids': []}, {'code': 'RCM-KNITTING', 'sharing_mode': 'shared', 'entity_ids': []}, {'code': 'RCM-PRINTING', 'sharing_mode': 'shared', 'entity_ids': []}, {'code': 'RCM-RETUR', 'sharing_mode': 'shared', 'entity_ids': []}, {'code': 'SRG-01', 'sharing_mode': 'dedicated', 'entity_ids': ['ent_kanda']}]

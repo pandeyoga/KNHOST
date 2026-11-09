@@ -1,0 +1,12 @@
+PO Kanda KANDA/PO-00002 gudang wh_40e831c5bb53 Soreang · Gudang Kanda task wms_13425661f599
+scan-receive 200 qc_check
+complete 200 ('qc_pending', [{'id': 'roll_3118ab44c8dc', 'roll_no': 'RL-46673', 'length': 50.0, 'unit': 'yard', 'grade': 'A', 'lot': 'KANDA/LOT-2611-0001', 'dye_lot': 'DY-C'}, {'id': 'roll_e61728930a6d', 'roll_no': 'RL-46674', 'length': 50.0, 'unit': 'yard', 'grade': 'A', 'lot': 'KANDA/LOT-2611-0001', 'dye_lot': 'DY-C'}, {'id': 'roll_05bc74d6005c', 'roll_no': 'RL-46675', 'length': 50.0, 'unit': 'yard', 'grade': 'B', 'lot': 'KANDA/LOT-2611-0001', 'dye_lot': 'DY-C'}])
+rolls [('RL-46673', 'quarantine', 'TIDAK-ADA-BIN', 'stored', 'A', None), ('RL-46674', 'quarantine', 'TIDAK-ADA-BIN', 'stored', 'A', None), ('RL-46675', 'quarantine', 'TIDAK-ADA-BIN', 'stored', 'B', None)]
+finish 200 {'task_id': 'wms_13425661f599', 'accepted_qty': 150.0, 'rejected_qty': 0.0, 'reject_disposition': None, 'purchase_return': None, 'task_status': 'completed', 'rejected_roll_ids': [], 'at': '2026-11-09T00:25:12.687370+00:00', 'by': 'Lestari Wulandari'} None
+rolls after QC [('RL-46673', 'available', 'TIDAK-ADA-BIN', 'stored', 'A'), ('RL-46674', 'available', 'TIDAK-ADA-BIN', 'stored', 'A'), ('RL-46675', 'available', 'TIDAK-ADA-BIN', 'stored', 'B')]
+PA drafts []
+Traceback (most recent call last):
+  File "/tmp/b2a/fc_single.py", line 39, in <module>
+    t2 = kn.db.wms_tasks.find_one({"po_id": po2["id"]}, {"_id": 0})
+                                            ~~~^^^^^^
+KeyError: 'id'
