@@ -418,8 +418,9 @@ async def dashboard(scope: Dict[str, Any], shipment_scope: Dict[str, Any], entit
 
 async def history(scope: Dict[str, Any], date_from: str = "", date_to: str = "", mode: str = "",
                   status: str = "", q: str = "", page: int = 1, size: int = 25) -> Dict[str, Any]:
-    """Riwayat pengiriman (terkirim / selesai / gagal) — saring tanggal, moda, kata kunci."""
-    """FIX-7 (B3b LST-01) — dulu `to_list(3000)` dokumen (urut `updated_at`) lalu disaring & dipotong di memori: riwayat
+    """Riwayat pengiriman (terkirim / selesai / gagal) — saring tanggal, moda, kata kunci.
+
+    FIX-7 (B3b LST-01) — dulu `to_list(3000)` dokumen (urut `updated_at`) lalu disaring & dipotong di memori: riwayat
     di luar 3.000 baris terbaru tak pernah terjangkau dan setiap halaman memuat ribuan dokumen. Kini saringan tanggal
     (tanggal selesai/terkirim/diubah — rumus `_when` yang sama), kata kunci, urut & halaman dikerjakan Mongo; statistik
     dihitung dari kursor berproyeksi kecil atas SEMUA hasil saringan (bukan 3.000 teratas)."""

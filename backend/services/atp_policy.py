@@ -72,29 +72,66 @@ def within_horizon(eta: Optional[str], now: Optional[datetime] = None,
     return dt <= now + timedelta(days=max(1, int(horizon_days or current_horizon_days())))
 
 
+class BackorderIndex:
+    """FIX-7 (FIX-5 §8.2 papan stok lambat) — baris backorder aktif yang dibaca SEKALI, lalu `pending()` menghitung
+    Σ per (produk, PT[, gudang]) TANPA kueri per segmen. `pending_backorder_qty` sendiri memakai kelas ini, jadi aturan
+    gudang/tanpa-gudang hanya ditulis di SATU tempat (`pending`). Dulu papan stok memanggil `pending_backorder_qty`
+    per segmen saldo + per (produk, PT) — ratusan s.d. ribuan kueri `sales_orders` per buka papan."""
+
+    __slots__ = ("rows",)
+
+    def __init__(self) -> None:
+        self.rows: Dict[str, list] = {}   # product_id → [(entity_id SO, gudang backorder|"" , qty)] urutan baca
+
+    def add_so(self, so: Dict[str, Any], product_ids: Optional[set] = None) -> None:
+        for bo in so.get("backorders", []) or []:
+            pid = bo.get("product_id")
+            if not pid or bo.get("status") == "fulfilled" or (product_ids is not None and pid not in product_ids):
+                continue
+            bo_wh = bo.get("warehouse_id") or so.get("warehouse_id") or ""
+            self.rows.setdefault(pid, []).append((so.get("entity_id"), bo_wh, float(bo.get("backorder_qty", 0) or 0)))
+
+    def pending(self, product_id: str, owner_entity_id: str, warehouse_id: Optional[str] = None, *,
+                include_unassigned: bool = True) -> float:
+        total = 0.0
+        for ent, bo_wh, qty in self.rows.get(product_id, ()):
+            if owner_entity_id and ent != owner_entity_id:
+                continue
+            if warehouse_id and bo_wh not in ("", warehouse_id):
+                continue
+            if warehouse_id and not include_unassigned and not bo_wh:
+                continue
+            total += qty
+        return round(total, 2)
+
+
+async def backorder_index(product_ids: Optional[Iterable[str]] = None, owner_entity_id: str = "") -> BackorderIndex:
+    """Satu kali baca `sales_orders` ber-backorder aktif (opsional dibatasi produk & PT) → `BackorderIndex`."""
+    ids = [p for p in (product_ids or []) if p]
+    q: Dict[str, Any] = {"has_backorder": True, "status": {"$in": ACTIVE_BACKORDER_STATUSES}}
+    if len(ids) == 1:
+        q["backorders.product_id"] = ids[0]
+    elif ids:
+        q["backorders.product_id"] = {"$in": ids}
+    if owner_entity_id:
+        q["entity_id"] = owner_entity_id
+    idx = BackorderIndex()
+    only = set(ids) if ids else None
+    async for so in db.sales_orders.find(q, {"_id": 0, "backorders": 1, "warehouse_id": 1, "entity_id": 1}):
+        idx.add_so(so, only)
+    return idx
+
+
 async def pending_backorder_qty(product_id: str, owner_entity_id: str,
                                 warehouse_id: Optional[str] = None, *, include_unassigned: bool = True) -> float:
     """Σ backorder aktif product×entitas (opsional ×gudang) dalam satuan dasar.
 
     UAT 24 Okt (audit UI 057 vs 058) — backorder TANPA gudang dulu ikut dikurangkan di SETIAP gudang, sehingga
     penjumlahan ATP per gudang mengurangkannya berkali-kali (−180 vs −120). ATP per gudang memakai
-    `include_unassigned=False`; backorder tanpa gudang dikurangkan SEKALI di tingkat produk × PT."""
-    q: Dict[str, Any] = {"has_backorder": True, "backorders.product_id": product_id,
-                         "status": {"$in": ACTIVE_BACKORDER_STATUSES}}
-    if owner_entity_id:
-        q["entity_id"] = owner_entity_id
-    total = 0.0
-    async for so in db.sales_orders.find(q, {"_id": 0, "backorders": 1, "warehouse_id": 1}):
-        for bo in so.get("backorders", []) or []:
-            if bo.get("product_id") != product_id or bo.get("status") == "fulfilled":
-                continue
-            bo_wh = bo.get("warehouse_id") or so.get("warehouse_id") or ""
-            if warehouse_id and bo_wh not in ("", warehouse_id):
-                continue
-            if warehouse_id and not include_unassigned and not bo_wh:
-                continue
-            total += float(bo.get("backorder_qty", 0) or 0)
-    return round(total, 2)
+    `include_unassigned=False`; backorder tanpa gudang dikurangkan SEKALI di tingkat produk × PT.
+    FIX-7 — kueri & aturan sama seperti dulu, kini lewat `BackorderIndex` (dipakai juga papan stok sekali baca)."""
+    idx = await backorder_index([product_id], owner_entity_id)
+    return idx.pending(product_id, owner_entity_id, warehouse_id, include_unassigned=include_unassigned)
 
 
 async def backorder_map(product_ids: Optional[Iterable[str]] = None) -> Dict[tuple, Dict[str, Any]]:

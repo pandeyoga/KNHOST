@@ -44,6 +44,7 @@ from services import printer_stuck_watch as prstuck       # Sesi 15 — label te
 from services import rfid_v2_health as rfidhealth         # PREP-D1 — kesehatan reader gate U300 V2 (AUD-MW-17)
 from services import gate_txn_service as gatetxn          # PREP-H — ulang transaksi gate tertunda/gagal
 from services import rfid_v2_retention as rfidretention   # PREP-H — masa simpan bukti gate (arsip → hapus)
+from services import log_retention as logretention         # FIX-7 — masa simpan log teknis (runs/outbox)
 from services import wa_alert_service as wa
 from services import analytics_facts as _facts           # Tanya KN F1 — fakta penjualan
 from services import ai_schedules as _aisched            # Tanya KN F4 — laporan terjadwal
@@ -240,6 +241,14 @@ JOBS: List[Dict[str, Any]] = [
                     "jalur lama juga. Keputusan lintasan, klaim lewat, sesi dokumen, antrean periksa & buku transaksi "
                     "TIDAK pernah dihapus. Mode uji coba hanya menghitung. Setelan: rfid.evidence_retention_*.",
      "kind": "daily", "hour": 2, "minute": 30, "fn": rfidretention.job_rfid_evidence_retention,
+     "link": "settings-config"},
+    # ── FIX-7 (butir 5) — riwayat job ini sendiri tumbuh ±700–2.000 baris/hari (produksi 9 Nov: 73 ribu) ──
+    {"id": "log_retention", "label": "Masa Simpan Log Teknis",
+     "description": "Riwayat job penjadwal (berhasil > 30 hari, gagal > 90 hari), kotak keluar WhatsApp (> 90 hari) "
+                    "dan klaim ringkasan harian (> 30 hari) dihapus bertahap tiap malam. Baris terakhir tiap job "
+                    "selalu disimpan. Jejak audit, riwayat status dokumen, jurnal dan mutasi stok TIDAK pernah "
+                    "dihapus. Mode uji coba hanya menghitung. Setelan: ops.log_retention_* / ops.*_retention_days.",
+     "kind": "daily", "hour": 3, "minute": 40, "fn": logretention.job_log_retention,
      "link": "settings-config"},
     # ── 2026-09 — giliran Anda ───────────────────────────────────────────
     {"id": "turn_scan", "label": "Pemberitahuan Giliran Anda",

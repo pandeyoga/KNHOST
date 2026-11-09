@@ -47,13 +47,62 @@ def _new_node(kind: str, nid: str, name: str) -> Dict[str, Any]:
     return {"kind": kind, "id": nid, "name": name, "rolls": 0, "by_unit": {}, "children": []}
 
 
-def _add(node: Dict[str, Any], unit: str, parts: List[tuple], count: bool) -> None:
+def _add(node: Dict[str, Any], unit: str, parts: List[tuple], count) -> None:
+    """`count` = True (satu roll) atau jumlah roll satu kelompok agregat (FIX-7)."""
     u = node["by_unit"].setdefault(unit, {b: 0.0 for b in BUCKETS} | {"total": 0.0})
     for b, q in parts:
         u[b] = round(u[b] + q, 4)
         u["total"] = round(u["total"] + q, 4)
     if count:
-        node["rolls"] += 1
+        node["rolls"] += 1 if count is True else int(count)
+
+
+# FIX-7 (FIX-5 §8.2 pohon stok ±0,5 dtk) — `_bucket` dihitung DI MONGO ($group), bukan per roll di Python: dulu SEMUA roll
+# fisik gudang dikirim ke backend lalu dijumlah satu per satu. Aturan kelompok = `_bucket` (urutan pemeriksaan sama);
+# truthy Python (None/""/0/False = tidak) dinyatakan eksplisit karena `$cond` Mongo menganggap "" benar.
+_FALSY = [None, "", False, 0]
+
+
+def _truthy(path: str) -> Dict[str, Any]:
+    return {"$not": [{"$in": [{"$ifNull": [path, None]}, _FALSY]}]}
+
+
+def _kind_expr() -> Dict[str, Any]:
+    st = {"$ifNull": ["$status", ""]}
+    return {"$switch": {"branches": [
+        {"case": {"$in": [st, list(TRANSIT_STATUS_TO_BUCKET)]}, "then": "in_transit"},
+        {"case": {"$or": [_truthy("$inspection.hold.held"), {"$in": [st, sorted(QC_HELD)]}]}, "then": "qc_hold"},
+        {"case": {"$in": [st, sorted(ORDER_HELD)]}, "then": "reserved"},
+        {"case": {"$eq": [st, "wip"]}, "then": "wip"},
+        {"case": _truthy("$active_movement.id"), "then": "qc_hold"},
+    ], "default": "avail"}}
+
+
+def _group_pipeline(q: Dict[str, Any]) -> List[Dict[str, Any]]:
+    qty = {"$toDouble": {"$ifNull": ["$length_remaining", 0]}}
+    res = {"$min": [qty, {"$toDouble": {"$ifNull": ["$length_reserved", 0]}}]}
+    unit = {"$cond": [{"$in": [{"$ifNull": ["$unit", None]}, [None, ""]]}, "?", "$unit"]}
+    owner = {"$cond": [{"$in": [{"$ifNull": ["$owner_entity_id", None]}, [None, ""]]}, "", "$owner_entity_id"]}
+    binv = {"$cond": [_truthy("$bin_id"), "$bin_id", ""]}
+    return [
+        {"$match": q},
+        {"$project": {"_id": 0, "k": _kind_expr(), "q": qty, "r": res, "u": unit, "o": owner, "b": binv}},
+        # rp = panjang dipesan > 0 (roll tersedia): bagian "Dipesan" hanya ditambahkan bila > 0 (aturan `_bucket`)
+        {"$group": {"_id": {"k": "$k", "u": "$u", "o": "$o", "b": "$b",
+                            "rp": {"$and": [{"$eq": ["$k", "avail"]}, {"$gt": ["$r", 0]}]}},
+                    "n": {"$sum": 1}, "q": {"$sum": "$q"}, "r": {"$sum": "$r"}}},
+        {"$sort": {"_id.b": 1, "_id.u": 1, "_id.o": 1, "_id.k": 1, "_id.rp": 1}},
+    ]
+
+
+def _group_parts(g: Dict[str, Any]) -> List[tuple]:
+    k, q = g["_id"]["k"], float(g["q"] or 0)
+    if k != "avail":
+        return [(k, q)]
+    if g["_id"]["rp"]:
+        r = float(g["r"] or 0)
+        return [("available", q - r), ("reserved", r)]
+    return [("available", q - float(g["r"] or 0))]
 
 
 async def warehouse_tree(wh: Dict[str, Any], owners: Optional[List[str]] = None, site_name: str = "") -> Dict[str, Any]:
@@ -86,21 +135,22 @@ async def warehouse_tree(wh: Dict[str, Any], owners: Optional[List[str]] = None,
                          "status": {"$in": list(PHYSICAL_STATUS_TO_BUCKET) + list(TRANSIT_STATUS_TO_BUCKET)}}
     if owners is not None:
         q["owner_entity_id"] = {"$in": owners}
-    async for r in db.inventory_rolls.find(q, {"_id": 0, "bin_id": 1, "status": 1, "length_remaining": 1, "length_reserved": 1,
-                                               "unit": 1, "owner_entity_id": 1, "inspection.hold": 1, "active_movement": 1}):
-        parts, unit = _bucket(r), (r.get("unit") or "?")
-        if r.get("status") in TRANSIT_STATUS_TO_BUCKET:
+    async for g in db.inventory_rolls.aggregate(_group_pipeline(q), allowDiskUse=True):
+        parts, unit, n_rolls = _group_parts(g), g["_id"]["u"], int(g["n"])
+        b = g["_id"]["b"]
+        if g["_id"]["k"] == "in_transit":
             chain = [root, transit]
-        elif not r.get("bin_id"):
+        elif not b:
             chain = [root, unassigned]
         else:
-            chain = index.get(r["bin_id"]) or [root, orphan]
+            chain = index.get(b) or [root, orphan]
         for n in chain:
-            _add(n, unit, parts, True)
-        ow = by_owner.setdefault(r.get("owner_entity_id") or "", {"owner_entity_id": r.get("owner_entity_id") or "", "rolls": 0, "by_unit": {}})
-        _add(ow, unit, parts, True)
+            _add(n, unit, parts, n_rolls)
+        owner = g["_id"]["o"]
+        ow = by_owner.setdefault(owner, {"owner_entity_id": owner, "rolls": 0, "by_unit": {}})
+        _add(ow, unit, parts, n_rolls)
     root["children"] += [n for n in (unassigned, orphan, transit) if n["rolls"]]
-    root["by_owner"] = list(by_owner.values())
+    root["by_owner"] = sorted(by_owner.values(), key=lambda o: o["owner_entity_id"])   # FIX-7 — urutan tetap
     return root
 
 

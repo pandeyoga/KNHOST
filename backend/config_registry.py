@@ -433,6 +433,7 @@ import config_catalog_interco  # noqa: E402,F401  (FASE G-6 — antar-PT: mode h
 import config_catalog_period  # noqa: E402,F401  (FASE G-5 — unlock periode: jendela & batas mundur)
 import config_catalog_ai  # noqa: E402,F401  (Tanya KN F0 — asisten analitik)
 import config_catalog_rfid  # noqa: E402,F401  (PREP-H — masa simpan bukti gate RFID)
+import config_catalog_retention  # noqa: E402,F401  (FIX-7 — masa simpan log teknis)
 
 import config_catalog_rnd  # noqa: E402,F401  (FASE F — R&D & Desain: lifecycle, sample, kontrak)
 import config_catalog_approval_matrix  # noqa: E402,F401  (PS-20/D-14 — penegakan matriks persetujuan divisi)
