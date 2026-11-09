@@ -1,4 +1,4 @@
-# Integrasi FIX-6 … FIX-9 (10 Nov 2026)
+# Integrasi FIX-6 … FIX-10 (10 Nov 2026)
 
 Koordinator: Claude Code. Status semua paket: **implemented_pending_review** (bukan `verified`).
 Dasar pembanding: `cd6963a` (kode yang ter-deploy di produksi 9 Nov). Kepala integrasi: `882f9eb` (kode diuji di
@@ -88,3 +88,34 @@ FIX-10 tabel transisi PA/SPK/opname + satu penulis status roll (SSOT-1); Pusat T
 dinilai); UI-50 di luar gudang (POS `PosStartGate` "Belum ada pelanggan" saat memuat — risiko pelanggan ganda, Produk &
 Varian, Antar Entitas, Meja Admin Sample); `StatusPill` lama di 47 berkas non-gudang; `TaskTypeBadge`; ±10 daftar
 tanpa halaman server; retensi notifikasi/ekspor/log AI; `rebuild_balance` per lot.
+
+## 6. Tambahan: FIX-10 (digabung sesudah §1–§5)
+
+| Paket | Isi | Laporan | Gabung |
+|---|---|---|---|
+| FIX-10 | Satu penulis status roll `services/roll_state.py` (19 status, daftar-izin + CAS + `status_history` ≤ 30 entri + saldo dibangun ulang; **74 titik tulis di 21 berkas dipindah**, sisa 0), tabel transisi PA (`putaway_state`), SPK inspeksi/QC (`inspection_state`), sesi opname (`cycle_count_state`); `allocated` dibuang dari daftar status roll; enum registry = kode; guardrail INV-ROLL-02 `verify_roll_status_writer` (baseline 0) | [FIX-10](FIX-10-TRANSISI-ROLL.md) | `f1e7c73` |
+
+**Transisi ilegal yang ditutup (perilaku yang terlihat):** roll di Surat Jalan (`in_transit_sales`) tidak lagi bisa
+"dilepas" ke `available`; pecah cutloss atas roll yang dipesan/terkomit/ditahan ditolak dengan pesan (dulu reservasinya
+hilang diam-diam); 14 penulis tanpa CAS kini CAS — balapan yang dulu menimpa diam-diam menjadi 409/dilewati; respons API
+roll membawa `status_history`; status `wip` berlabel "WIP (Proses)". Tanpa migrasi data.
+
+**Integrasi koordinator:** `4d74a28` — migrasi FIX-2 merekam `status_history` (kini ditulis `roll_state`) agar `--undo`
+memulihkan roll persis (`test_fix7_data_scripts::test_migrate_fix2_inspection_hold_undo_exact` merah sesudah gabung →
+hijau).
+
+**Verifikasi ulang `main` (`4d74a28`) vs kode produksi `cd6963a`:**
+* Uji lama 83 berkas: **118 gagal / 474 lulus / 21 error — daftar gagal IDENTIK** dengan `cd6963a` (tidak ada yang gagal
+  karena kode baru). `iter117` 18/18, `iter118` 8/8, gate V2 54/36.
+* Uji baru per berkas (DB dipulihkan tiap berkas): semua lulus, termasuk FIX-10 26/26 dan FIX-7 skrip data 7/7 (sesudah
+  `4d74a28`).
+* Guardrail: `verify_roll_status_writer` PASS (baru), `ui_standard` PASS, `scope_guard` HIJAU, `page_tabs` PASS,
+  `ref_unlink` 3 = dasar, `atomic_claim` 6 = dasar.
+* Jest penuh: **653/653** (§6.1).
+
+### 6.1 Jest penuh sesudah FIX-10
+Tanpa beban lain (`--maxWorkers=2`): **653/653**, 91/91 suite.
+
+**Catatan lingkungan:** backend uji bersama `kn-uji-backend` (DB `kn_test_trial`) masih menjalankan kode sesudah FIX-6
+(tidak di-restart sesudah FIX-7…10). Bila kontainer itu ter-restart, kode terbaru termuat — termasuk job malam
+`log_retention` (bawaan `delete`) yang akan menghapus log teknis lama di DB uji bersama.
