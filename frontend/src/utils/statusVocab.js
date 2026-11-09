@@ -29,6 +29,8 @@ export const DOMAIN_LABELS = {
     in_transit_transfer: "Dalam Perjalanan (Transfer)", in_transit_intercompany: "Dalam Perjalanan (Antar-PT)",
     in_transit_sales: "Dalam Perjalanan (Penjualan)", consumed: "Habis Terpakai", delivered: "Terkirim",
     returned_supplier: "Diretur ke Supplier", subcon: "Di Makloon", hold: "Ditahan",
+    /** FIX-10 — status roll `wip` (perbaikan / proses) dulu tanpa label ranah; istilah layar yang sudah ada (Stok WIP) */
+    wip: "WIP (Proses)",
     /** FIX-9 — panjang roll dikunci cadangan bahan makloon (bukan status roll; lencana tambahan, KN_32 "Cadangan makloon") */
     makloon_reserved: "Dicadangkan makloon",
   },
@@ -123,7 +125,7 @@ export const STATUS_TONE = {
 
 /** Kode yang artinya berbeda di ranah tertentu. */
 export const DOMAIN_TONE = {
-  roll: { picked: "info", packed: "info", delivered: "neutral", hold: "warning" },
+  roll: { picked: "info", packed: "info", delivered: "neutral", hold: "warning", wip: "special" },
   task_out: { dispatched: "success", created: "neutral" },
   task_hp: { dispatched: "success", shipped: "success" },
   putaway: { returned: "warning", cancelled: "neutral", draft: "special" },

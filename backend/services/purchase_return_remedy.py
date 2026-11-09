@@ -244,13 +244,15 @@ async def on_reject(ret: Dict[str, Any], actor: str, reason: str) -> int:
         return 0
     from services.roll_service import rebuild_balance
     n, segs = 0, set()
+    from services import roll_state as _rs   # FIX-10 (SSOT-1)
     async for r in db.inventory_rolls.find({"status": "returned_supplier", "returned_ref.id": ret["id"]}, {"_id": 0}):
-        res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "returned_supplier"},
-            {"$set": {"status": "damaged", "returned_ref": None, "qc_return_rejected": {
-                "return_id": ret["id"], "number": ret.get("number", ""), "reason": reason, "by": actor,
-                "at": now_iso()}, "updated_at": now_iso()}})
-        if not res.modified_count:
+        if not await _rs.transition(
+                r["id"], "damaged", from_="returned_supplier", actor=actor, action="purchase_return_rejected",
+                reason=f"retur beli {ret.get('number', '')} ditolak — barang tolak QC tetap di gudang sebagai rusak",
+                ref={"type": "purchase_return", "id": ret["id"], "no": ret.get("number", "")},
+                extra_set={"returned_ref": None, "qc_return_rejected": {
+                    "return_id": ret["id"], "number": ret.get("number", ""), "reason": reason, "by": actor,
+                    "at": now_iso()}}, rebuild=False):   # saldo dibangun ulang di bawah (segs)
             continue
         n += 1
         await db.inventory_movements.insert_one({

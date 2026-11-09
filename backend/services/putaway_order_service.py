@@ -19,6 +19,8 @@ from db import db
 from core_utils import new_id, now_iso, next_doc_number, safe_doc
 from services import warehouse_profile_service as whp  # noqa: F401
 from services import placement_rules as pr
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
+from services import putaway_state as _pst   # FIX-10 — tabel transisi Putaway Order
 from services.rfid_print_service import set_journey
 
 #: PA yang masih "hidup" (roll di dalamnya tidak boleh masuk PA lain).
@@ -318,6 +320,7 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
         "purpose": "inspection" if whp.has_role(wh_to, whp.INSPECTION_ROLE) and not
                    whp.has_role(wh_to, *whp.STORAGE_ROLES) else "storage",
         "status": "open", "btg_number": None,
+        "status_history": _pst.initial_history("open", actor_name, "create", "Putaway Order manual"),   # FIX-10
         "created_at": now_iso(), "created_by": actor_name,
         "dispatched_at": None, "confirmed_at": None, "confirmed_by": None,
     }
@@ -389,16 +392,19 @@ async def dispatch(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
         why, tag = await identity_issue(roll)
         bad_identity = bool(why) or (tag or {}).get("epc", "").upper() != (it.get("epc") or "").upper()
         # G3 D4-PA-01 — CAS juga menolak roll yang punya reservasi panjang (potong) live
-        res = None if bad_identity else await db.inventory_rolls.update_one(
-            {"id": it["roll_id"], "active_movement.id": order_id, "status": PA_ELIGIBLE_STATUS,
-             "inspection.hold.held": {"$ne": True},   # PREP-C — roll yang DITAHAN sesudah PA dibuat tidak dikirim
-             "warehouse_id": order["from_warehouse_id"], "length_reserved": {"$not": {"$gt": 0}}},
-            {"$set": {"status": "in_transit_transfer", "updated_at": now_iso()}})
-        if res is None or res.modified_count != 1:
+        _ref = {"type": "putaway_order", "id": order_id, "no": order.get("pa_number", "")}
+        res = 0 if bad_identity else await _rs.transition(
+            it["roll_id"], "in_transit_transfer", from_=PA_ELIGIBLE_STATUS, reason="Putaway Order dikirim",
+            action="putaway_dispatch", ref=_ref,
+            extra_filter={"active_movement.id": order_id,
+                          "inspection.hold.held": {"$ne": True},   # PREP-C — roll DITAHAN sesudah PA dibuat tidak dikirim
+                          "warehouse_id": order["from_warehouse_id"], "length_reserved": {"$not": {"$gt": 0}}},
+            rebuild=False)
+        if res != 1:
             for m in moved:  # kompensasi: tidak ada PA setengah terkirim
-                await db.inventory_rolls.update_one(
-                    {"id": m["roll_id"], "active_movement.id": order_id, "status": "in_transit_transfer"},
-                    {"$set": {"status": PA_ELIGIBLE_STATUS}})
+                await _rs.transition(m["roll_id"], PA_ELIGIBLE_STATUS, from_="in_transit_transfer",
+                                     reason="kirim PA dibatalkan — roll lain berubah", action="putaway_dispatch_rollback",
+                                     ref=_ref, extra_filter={"active_movement.id": order_id}, rebuild=False)
             await _saga.release("putaway_orders", order_id)
             raise HTTPException(status_code=409, detail=(
                 f"Roll {it['roll_no']} " + (f"identitasnya berubah: {why or 'EPC berbeda dari PA'}. " if bad_identity
@@ -407,7 +413,8 @@ async def dispatch(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
         moved.append(it)
     for pid in {i["product_id"] for i in order["items"]}:
         await rebuild_balance(pid, order["from_warehouse_id"], order["owner_entity_id"])
-    await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set({
+    # FIX-10 — tulisan akhir CAS status asal + jejak riwayat (tabel `putaway_state`).
+    await _pst.finish_claimed(order_id, "open", "dispatch", _saga.finish_set({
         "status": "in_transit", "dispatched_at": now_iso(), "updated_at": now_iso()}))
     await set_journey([i["roll_id"] for i in order["items"]], "putaway_in_transit")
     return await _get(order_id, scope_ids)
@@ -440,14 +447,14 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
             item["status"] = "exception"
             item["exception_reason"] = f"Tujuan tidak lagi sah: {wv[0]}"
             continue
-        res = await db.inventory_rolls.update_one(
-            {"id": item["roll_id"], "active_movement.id": order["id"],
-             "warehouse_id": order["from_warehouse_id"],
-             "status": {"$in": [PA_ELIGIBLE_STATUS, "in_transit_transfer"]}},
-            {"$set": {"warehouse_id": order["to_warehouse_id"], "bin_id": None,
-                      "status": PA_ELIGIBLE_STATUS, "updated_at": now, "last_pa_landed": order["id"]},
-             "$unset": {"active_movement": ""}})
-        if res.modified_count != 1:
+        landed_n = await _rs.transition(
+            item["roll_id"], PA_ELIGIBLE_STATUS, from_=[PA_ELIGIBLE_STATUS, "in_transit_transfer"],
+            reason=f"tiba di gudang tujuan PA ({reason})"[:200], action="putaway_land",
+            ref={"type": "putaway_order", "id": order["id"], "no": order.get("pa_number", "")},
+            extra_filter={"active_movement.id": order["id"], "warehouse_id": order["from_warehouse_id"]},
+            extra_set={"warehouse_id": order["to_warehouse_id"], "bin_id": None, "last_pa_landed": order["id"]},
+            unset=["active_movement"], rebuild=False)   # saldo kedua sisi dibangun di bawah (segs)
+        if landed_n != 1:
             # G3 D4-PA-02 — percobaan sebelumnya sudah memindah roll ini untuk PA yang SAMA tapi mati
             # sebelum tag/mutasi/saldo → ADOPSI efeknya dan lanjutkan langkah sisanya (idempoten).
             if not await db.inventory_rolls.find_one({"id": item["roll_id"], "last_pa_landed": order["id"],
@@ -512,12 +519,12 @@ async def return_items_to_transit(order: Dict[str, Any], items: List[Dict[str, A
     now = now_iso()
     segs, back = set(), []
     for item in items:
-        res = await db.inventory_rolls.update_one(
-            {"id": item["roll_id"], "active_movement.id": order["id"],
-             "status": {"$in": [PA_ELIGIBLE_STATUS, "in_transit_transfer"]}},
-            {"$set": {"status": PA_ELIGIBLE_STATUS, "updated_at": now},
-             "$unset": {"active_movement": ""}})
-        if res.modified_count == 1:
+        back_n = await _rs.transition(
+            item["roll_id"], PA_ELIGIBLE_STATUS, from_=[PA_ELIGIBLE_STATUS, "in_transit_transfer"],
+            reason="kembali ke transit asal (Putaway Order)", actor=actor_name, action="putaway_return_transit",
+            ref={"type": "putaway_order", "id": order["id"], "no": order.get("pa_number", "")},
+            extra_filter={"active_movement.id": order["id"]}, unset=["active_movement"], rebuild=False)
+        if back_n == 1:
             item["status"] = "returned_transit"
             item["resolved_by"], item["resolved_at"] = actor_name, now
             segs.add((item["product_id"], order["from_warehouse_id"]))
@@ -587,7 +594,8 @@ async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, act
         upd["manual_override"] = {"by": actor_name, "reason": why, "at": now_iso()}
     if simulated:
         upd["simulated"] = {"by": actor_name, "at": now_iso(), "rolls": [i.get("roll_no") for i in res.get("arrived") or []]}
-    await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
+    await _pst.finish_claimed(order_id, order["status"], "confirm_arrival", _saga.finish_set(upd), actor_name,
+                              f"manual: {why}" if manual_all else "")
     out = await _get(order_id, scope_ids)
     await arr.gate_session_hook(out)   # PREP-D2 — PA ditutup → sesi dokumen gate dinilai (K-RFID-10)
     return out
@@ -631,7 +639,7 @@ async def resolve_exception(order_id: str, roll_ids: List[str], action: str,
     else:  # return_transit
         await return_items_to_transit(order, target, actor_name)
     upd = await arr.finish_update(order, actor_name)
-    await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
+    await _pst.finish_claimed(order_id, order["status"], "resolve_exception", _saga.finish_set(upd), actor_name, why)
     out = await _get(order_id, scope_ids)
     await arr.gate_session_hook(out)   # FIX-3a (STM-IN-05) — status akhir → sesi dokumen gate ditutup seperti jalur tiba
     return out

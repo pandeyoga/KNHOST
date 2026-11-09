@@ -14,6 +14,7 @@ from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, rupiah, next_doc_number
 from services.roll_service import rebuild_balance
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services import gl_service
 from services import costing_service
 from services import return_policy_service as rps
@@ -1342,10 +1343,16 @@ async def release_quarantine(return_id: str, actor: str,
                         roll_set["writeoff_je_id"] = prior.get("id")
                         roll_set["writeoff_je_number"] = prior.get("number")
                         roll_set["writeoff_amount"] = wo_amount
-        _roll_update: Dict[str, Any] = {"$set": roll_set}
-        if grade_hist_entry:
-            _roll_update["$push"] = {"grade_history": grade_hist_entry}
-        await db.inventory_rolls.update_one({"id": r["id"]}, _roll_update)
+        # FIX-10 — CAS karantina (dulu `{id}` saja sesudah dibaca) + jejak status roll; saldo dibangun ulang di bawah.
+        if not await _rs.transition(
+                r["id"], new_status, from_="quarantine", actor=actor, action=f"return_quarantine_{action}",
+                reason=f"karantina retur {ret_number} → {'scrap' if action == 'scrap' else 'dilepas'}"
+                       + (f": {notes}" if notes else ""),
+                ref={"type": "sales_return", "id": return_id, "no": ret_number},
+                extra_set={k: v for k, v in roll_set.items() if k not in ("status", "updated_at")},
+                push={"grade_history": grade_hist_entry} if grade_hist_entry else None, rebuild=False):
+            raise ValueError(f"Roll {r.get('roll_no') or r['id']} tidak lagi berstatus karantina (berubah bersamaan) — "
+                             "muat ulang; kunci saga retur perlu dilepas admin bila menggantung.")
         # UAT 23 Okt — kerugian turun grade dibanding grade SAAT DIJUAL: penyelesaian retur sudah menurunkan roll ke grade
         # QC (mis. A→B) sebelum release, sehingga dulu release B→B tidak pernah mencatat kerugian dan persediaan grade B
         # tetap bernilai seperti grade A.
@@ -1490,11 +1497,12 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
     from services import atomic_claim as _saga
     await _saga.claim("sales_returns", return_id, "transfer_ownership", actor=actor)
     # Reservasi roll SPESIFIK ini untuk transfer (agar execute_ownership_transfer memindah tepat roll ini).
-    upd = await db.inventory_rolls.update_one(
-        {"id": roll_id, "status": "available", "active_movement": None, "length_reserved": {"$not": {"$gt": 0}}},
-        {"$set": {"status": "reserved", "reserved_ref": {"type": "transfer", "id": transfer_id},
-                  "updated_at": now}})
-    if upd.modified_count != 1:
+    upd_n = await _rs.transition(
+        roll_id, "reserved", from_="available", actor=actor, action="reserve",
+        reason="roll retur dipesan untuk pindah kepemilikan", ref={"type": "transfer", "id": transfer_id},
+        extra_filter={"active_movement": None, "length_reserved": {"$not": {"$gt": 0}}},
+        extra_set={"reserved_ref": {"type": "transfer", "id": transfer_id}}, rebuild=False)
+    if upd_n != 1:
         await _saga.release("sales_returns", return_id)
         raise ValueError("Roll berubah status saat memulai transfer. Coba lagi.")
 
@@ -1522,9 +1530,10 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
         # rollback reservasi bila gagal SEBELUM kepemilikan pindah
         still_src = await db.inventory_rolls.find_one({"id": roll_id, "owner_entity_id": src}, {"_id": 1})
         if still_src:
-            await db.inventory_rolls.update_one(
-                {"id": roll_id, "reserved_ref.id": transfer_id},
-                {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+            await _rs.transition(roll_id, "available", from_="reserved", actor=actor, action="reserve_rollback",
+                                 reason="pindah kepemilikan roll retur gagal — reservasi dilepas",
+                                 ref={"type": "transfer", "id": transfer_id},
+                                 extra_filter={"reserved_ref.id": transfer_id}, extra_set={"reserved_ref": None})
             await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {"status": "cancelled"}})
         await _saga.release("sales_returns", return_id)
         raise
@@ -1987,13 +1996,16 @@ async def reverse_writeoff(return_id: str, actor: str, roll_ids: List[str] = Non
             reason=reason or "Batalkan write-off (un-scrap) roll retur", actor_name=actor)
         rev_je = rev[0] if rev else {}
         qty = round(float(r.get("length_remaining", r.get("length", 0)) or 0), 2)
-        await db.inventory_rolls.update_one({"id": rid}, {"$set": {
-            "status": restore_status, "qc_status": "released",
-            "writeoff_reversed": True, "writeoff_reversed_at": now, "writeoff_reversed_by": actor,
-            "writeoff_reversal_reason": reason,
-            "writeoff_reversal_je_id": rev_je.get("id", ""),
-            "writeoff_reversal_je_number": rev_je.get("number", ""),
-            "unscrapped_from": "damaged", "updated_at": now}})
+        # FIX-10 — CAS `damaged` & belum dibalik (dulu `{id}` saja) + jejak status roll; saldo di bawah.
+        await _rs.transition(rid, restore_status, from_="damaged", actor=actor, action="writeoff_reversal",
+                             reason=f"write-off dibatalkan (un-scrap){': ' + reason if reason else ''}",
+                             ref={"type": "sales_return", "id": return_id, "no": ret.get("number", "")},
+                             extra_filter={"writeoff_reversed": {"$ne": True}},
+                             extra_set={"qc_status": "released", "writeoff_reversed": True, "writeoff_reversed_at": now,
+                                        "writeoff_reversed_by": actor, "writeoff_reversal_reason": reason,
+                                        "writeoff_reversal_je_id": rev_je.get("id", ""),
+                                        "writeoff_reversal_je_number": rev_je.get("number", ""),
+                                        "unscrapped_from": "damaged"}, rebuild=False)
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": r.get("product_id"),
             "warehouse_id": r.get("warehouse_id"), "owner_entity_id": r.get("owner_entity_id"),

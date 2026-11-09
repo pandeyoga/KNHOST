@@ -19,7 +19,8 @@ from core_utils import new_id, now_iso, safe_doc
 
 # RF-17 — kandidat tag = SATU definisi stok fisik (roll_service) + roll yang sedang bergerak/diterima.
 from services.roll_service import PHYSICAL_ROLL_STATUSES as _PHYS  # noqa: E402
-PHYSICAL_STATUSES = list(_PHYS) + ["allocated", "in_transit_sales", "in_transit_transfer",
+# FIX-10 (B3a SSOT-1) — `allocated` (status alokasi SO, bukan status roll) dibuang dari daftar status roll.
+PHYSICAL_STATUSES = list(_PHYS) + ["in_transit_sales", "in_transit_transfer",
                                    "receiving"]   # FASE SL — tag dipasang saat penerimaan
 
 DEVICE_TYPES = {"gate", "fixed_reader", "handheld", "printer"}

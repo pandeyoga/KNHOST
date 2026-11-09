@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 from core_utils import new_id, now_iso
 from db import db
 from services import gl_service
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services.roll_service import PHYSICAL_ROLL_STATUSES, insert_child_roll, rebuild_balance, to_base_qty
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
@@ -94,11 +95,13 @@ async def _intake(ret: Dict[str, Any], e: Dict[str, Any], roll: Dict[str, Any]) 
     qty = float(roll.get("length_remaining") or 0)
     cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
     value = round(qty * cost, 2)
-    claim = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": "delivered"},
-        {"$set": {"status": "hold", "warehouse_id": wh, "updated_at": now_iso(),
-                  "cutloss_intake": {"return_id": ret["id"], "ctl_id": e["id"], "warehouse_id": wh, "qty": qty,
-                                     "value": value, "at": now_iso()}}})
+    claim = await _rs.transition(
+        roll["id"], "hold", from_="delivered", action="cutloss_intake",
+        reason=f"roll cutloss retur {ret.get('number', '')} masuk gudang untuk dipecah",
+        ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+        extra_set={"warehouse_id": wh, "cutloss_intake": {"return_id": ret["id"], "ctl_id": e["id"], "warehouse_id": wh,
+                                                          "qty": qty, "value": value, "at": now_iso()}},
+        rebuild=False, return_doc=True)   # saldo segmen dibangun ulang sesudah pecah (execute)
     if not claim:
         raise ValueError("Roll sedang diubah proses lain — muat ulang.")
     await db.inventory_movements.insert_one({
@@ -152,6 +155,12 @@ async def execute(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, Any]) -> Di
         await _intake(ret, e, plan["roll"])
         plan = await _plan(ret, e)
     parent, pieces = plan["roll"], plan["pieces"]
+    # FIX-10 — semua perubahan status potongan diperiksa tabel roll_state SEBELUM roll dikunci / jurnal ditulis.
+    for i, pc in enumerate(pieces):
+        st_pc = "available" if pc["treatment"] == "bs" else "hold"
+        _rs.assert_allowed([parent.get("status") if i == 0 else st_pc], st_pc)
+        if pc["treatment"] == "dispose":
+            _rs.assert_allowed([st_pc], "damaged")
     claim = await db.inventory_rolls.find_one_and_update(
         {"id": parent["id"], "length_remaining": parent.get("length_remaining"), "cutloss_split_lock": {"$exists": False}},
         {"$set": {"cutloss_split_lock": ctl_id}})
@@ -162,10 +171,15 @@ async def execute(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, Any]) -> Di
     for i, pc in enumerate(pieces):
         status = "available" if pc["treatment"] == "bs" else "hold"
         if i == 0:
-            await db.inventory_rolls.update_one({"id": parent["id"]}, {"$set": {
-                "length_remaining": pc["qty"], "length": pc["qty"], "grade": pc["grade"], "status": status,
-                "cutloss_piece": _child(parent, pc, ret, status)["cutloss_piece"], "updated_at": now_iso()},
-                "$unset": {"cutloss_split_lock": ""}})
+            # FIX-10 — CAS status induk seperti dibaca + kunci pecah milik operasi ini (dulu `{id}` saja).
+            if not await _rs.transition(
+                    parent["id"], status, from_=parent.get("status"), actor=actor.get("name", ""), action="cutloss_split",
+                    reason=f"cutloss retur {num} dipecah — potongan {pc.get('kind') or pc['treatment']}",
+                    ref={"type": "sales_return", "id": ret["id"], "no": num}, extra_filter={"cutloss_split_lock": ctl_id},
+                    extra_set={"length_remaining": pc["qty"], "length": pc["qty"], "grade": pc["grade"],
+                               "cutloss_piece": _child(parent, pc, ret, status)["cutloss_piece"]},
+                    unset=["cutloss_split_lock"], rebuild=False):   # saldo segmen di bawah
+                raise ValueError("Roll sedang diubah proses lain — muat ulang.")
             doc = {**parent, "length_remaining": pc["qty"], "status": status, "grade": pc["grade"]}
         else:
             doc = await insert_child_roll(_child(parent, pc, ret, status), parent, basis)
@@ -176,9 +190,11 @@ async def execute(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, Any]) -> Di
                              entity, f"Potongan cacat dibuang · {lbl}")
             pc["journal_entry_number"] = je.get("number", "")
         if pc["treatment"] == "dispose":
-            await db.inventory_rolls.update_one({"id": doc["id"]}, {"$set": {
-                "status": "damaged", "length_remaining": 0, "disposed_qty": pc["qty"], "disposed_at": now_iso(),
-                "writeoff_amount": pc["value"]}})
+            await _rs.transition(doc["id"], "damaged", from_=status, actor=actor.get("name", ""), action="cutloss_dispose",
+                                 reason=f"potongan cacat cutloss dibuang (retur {num})",
+                                 ref={"type": "sales_return", "id": ret["id"], "no": num},
+                                 extra_set={"length_remaining": 0, "disposed_qty": pc["qty"], "disposed_at": now_iso(),
+                                            "writeoff_amount": pc["value"]}, rebuild=False)   # saldo di bawah
             pc["status"] = "damaged"
             await db.inventory_movements.insert_one({
                 "id": new_id("mov"), "product_id": parent["product_id"], "warehouse_id": parent.get("warehouse_id", ""),
@@ -224,8 +240,11 @@ async def create_return_sj(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, An
     no = await _next_shipment_no(entity)
     rolls, total_val = [], 0.0
     for p in good:
-        r = await db.inventory_rolls.find_one_and_update({"id": p["roll_id"], "status": "hold"}, {"$set": {
-            "status": "delivered", "delivered_at": now_iso(), "updated_at": now_iso()}}, projection={"_id": 0})
+        r = await _rs.transition(p["roll_id"], "delivered", from_="hold", actor=actor.get("name", ""),
+                                 action="cutloss_return_sj", reason=f"potongan baik cutloss dikirim balik — SJ {no}",
+                                 ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+                                 extra_set={"delivered_at": now_iso()}, rebuild=False,
+                                 return_doc=True)   # saldo segmen dibangun ulang di bawah
         if not r:
             raise ValueError(f"Roll {p.get('roll_no')} tidak lagi menunggu kirim balik.")
         rolls.append({"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "qty": p["qty"], "unit": p["unit"]})
