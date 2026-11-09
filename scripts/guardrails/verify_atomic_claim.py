@@ -172,10 +172,16 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
 # atomic_claim.claim() + release() (klaim per keluarga produk). Diakui sebagai klaim
 # + pencabut kunci yang sah — bukan allowlist per fungsi.
 RE_CLAIM = re.compile(r"atomic_claim|_saga\.claim\(|family_lock\(")
-RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|_saga\.release\(|family_lock\(")
+# FIX-10 — `claimed=True` (`cycle_count_state.transition`) & `_pst.finish_claimed(` (`putaway_state`) = tulisan akhir
+# klaim yang mensyaratkan kunci masih dipegang lalu mencabutnya (setara finish_set).
+RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|_saga\.release\(|"
+                       r"family_lock\(|claimed=True|_pst\.finish_claimed\(")
 # FIX-3a — `_its.transition(` = `services/inbound_task_state.transition` (CAS: filter id + status asal ∈ daftar-izin).
 # FIX-3b — `_ots.transition(` = `services/outbound_task_state.transition` (CAS daftar-izin tugas ambil keluar).
-RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|_its\.transition\(|_ots\.transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"")
+# FIX-10 — `_rs.transition(` (`roll_state`: CAS status asal roll + daftar-izin), `ccs.transition(` (`cycle_count_state`),
+# `_ist.cas_filter(` (`inspection_state`) = CAS status asal ∈ daftar-izin di filter tulis.
+RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|_its\.transition\(|_ots\.transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"|"
+                    r"_rs\.transition\(|\bccs\.transition\(|_ist\.cas_filter\(")
 RE_COMP = re.compile(r"except[^\n]*:\s*\n\s*await (release_|_release|rollback|compensate)")
 # Validasi 400/404/422 SESUDAH klaim meninggalkan saga_lock → percobaan ulang yang benar ditolak 409
 # (bukti: inbound complete × pagar lot mode block, sesi 4). Klaim wajib SESUDAH semua validasi.
@@ -336,7 +342,8 @@ def self_test() -> int:
     case("service nyata TANPA klaim → MERAH", {("r.py", "/x/{id}/go"): no_claim}, R6, True)
     R7 = {("r.py", "/x/{id}/go"): ("service_cas", "alasan yang cukup panjang untuk lolos uji", "rfid_service.retire_tag")}
     case("service_cas nyata berprasyarat status (retire_tag) → hijau", {("r.py", "/x/{id}/go"): no_claim}, R7, False)
-    R8 = {("r.py", "/x/{id}/go"): ("service_cas", "alasan yang cukup panjang untuk lolos uji", "putaway_order_service.dispatch")}
+    # FIX-10 — `dispatch` kini CAS lewat `_rs.transition(`; contoh fungsi TANPA CAS = `after_claim` (saldo + journey).
+    R8 = {("r.py", "/x/{id}/go"): ("service_cas", "alasan yang cukup panjang untuk lolos uji", "putaway_order_service.after_claim")}
     case("service_cas nyata TANPA find_one_and_update berprasyarat → MERAH", {("r.py", "/x/{id}/go"): no_claim}, R8, True)
     case("entri REVIEWED basi (endpoint hilang) → MERAH", {}, R1, True)
     case("alasan pendek → MERAH", {("r.py", "/x/{id}/go"): good_claim}, {("r.py", "/x/{id}/go"): ("claim", "pendek")}, True)
