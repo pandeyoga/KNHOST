@@ -68,7 +68,7 @@ export default function U300PassageList({ passages, busy, onAcknowledge, onEvide
                       <div className="mt-0.5" data-testid={`u300-txn-${id}`}>
                         <Pill color={txnStateInfo(p).color}>{txnStateInfo(p).label}</Pill>
                         {p.gate_txn_state === "error" && !p.gate_txn_gave_up && p.gate_txn_next_at && (
-                          <div className="text-[10px] text-[#6B6B73]">diulang {new Date(p.gate_txn_next_at).toLocaleTimeString("id-ID")}
+                          <div className="text-fs-12 text-kn-text-2">diulang {new Date(p.gate_txn_next_at).toLocaleTimeString("id-ID")}
                             {p.gate_txn_attempts ? ` · percobaan ${p.gate_txn_attempts}` : ""}</div>
                         )}
                       </div>

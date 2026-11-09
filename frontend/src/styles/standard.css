@@ -61,7 +61,10 @@
 .m-shell .page-tabs .tab-button { min-height: var(--touch-min); font-size: var(--fs-14); }
 .m-shell .location-scope-bar .entity-switcher-trigger { height: auto; min-height: var(--touch-min); font-size: var(--fs-14); }
 .m-shell .notice-bar { font-size: var(--fs-14); }
-.m-shell .status-pill { font-size: var(--fs-12); padding: 3px 9px; }
+.m-shell .status-pill { font-size: var(--fs-14); padding: 3px 9px; }
+/* Integrasi FIX-1 × FIX-4 — lencana PT di kartu tugas HP (FIX-1) ikut ukuran HP (dulu 9,5 px, terukur di 390 px). */
+.m-shell .entity-badge-sm, .m-shell .entity-badge-md { font-size: var(--fs-14); padding: 3px 9px; }
+.m-shell .printer-status-note { font-size: var(--fs-14); line-height: var(--lh-14); }
 
 /* — Pager baku (PaginationBar) — */
 .kn-pager {

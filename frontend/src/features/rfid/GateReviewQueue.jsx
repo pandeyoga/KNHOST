@@ -59,7 +59,7 @@ export default function GateReviewQueue({ whId, devices = [] }) {
           Terbuka {summary?.open ?? "—"} · merah {summary?.red ?? "—"} · kuning {summary?.review ?? "—"}.
           {" "}Kuning = barang jalan, gate tidak terkunci; roll yang cocok sudah dicatat, sisanya menunggu keputusan di sini.</p>
         {txn && (txn.pending + txn.processing + txn.error + txn.gave_up > 0) && (
-          <p className="text-[11px] text-[#8A5A00]" data-testid="gate-review-txn">
+          <p className="text-fs-12 text-kn-warning-text" data-testid="gate-review-txn">
             Transaksi gudang gate: {txn.pending + txn.processing} sedang diproses · {txn.error} gagal (diulang otomatis)
             {txn.gave_up ? ` · ${txn.gave_up} perlu "Ulangi transaksi"` : ""}.</p>
         )}
