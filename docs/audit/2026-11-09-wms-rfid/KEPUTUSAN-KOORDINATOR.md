@@ -12,6 +12,7 @@ perbaikan `hasil/FIX-*.md`.
 | K-B1-02 · B2a D1 · B3a #6 · K-B2b-11 | Pekerjaan fisik (masuk/putaway/keluar/ambil/potong/muat/transfer/opname/pengiriman) dilihat **per gedung dalam lokasi kerja, lintas PT** yang ditugaskan, dengan label PT & jenis tugas; validasi kepemilikan tetap di server. Gedung `dedicated` yang bertentangan dengan K-GDG-07 (SRG-01, WH-JKT) diubah ke `shared` lewat skrip data (belum dijalankan ke DB bersama). |
 | K-B1-07 | Operasional gate (panel U300 & buka kunci) terjangkau dari menu RFID untuk Admin Gudang (tab "Operasional Gate"); manajer akses baca. |
 | K-B1-08 | Aplikasi HP sopir hanya berisi Pengiriman. |
+| B1b UI-47 | Manajer diberi izin **lihat** logistik (baca saja) sehingga menu Pengiriman berfungsi untuk pengawas (dulu menu tampil tetapi server menolak; FIX-1 sempat menyembunyikannya). Peran tersimpan di DB lama perlu disinkronkan admin. |
 | K-B1-10 | Data uji **disembunyikan** (penanda `is_test`, bisa dibalik) — **tidak dihapus**. |
 
 ## Angka stok (FIX-2)

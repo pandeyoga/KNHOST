@@ -934,6 +934,9 @@
     "reject",
     "pay"
    ],
+   "logistics": [
+    "view"
+   ],
    "makloon": [
     "view",
     "create",

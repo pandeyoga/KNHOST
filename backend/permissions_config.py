@@ -156,6 +156,7 @@ DEFAULT_PERMISSIONS = {
     "manager": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
         "goods_receipt": ["view", "review", "close", "approve"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
+        "logistics": ["view"],   # Integrasi FIX-1 (B1b UI-47) — manajer memantau pengiriman (baca saja), menu Pengiriman berfungsi
         "marketing": ["view", "create", "update", "approve", "delete"],
         "product": ["view", "export"],
         # FASE F — manager: menilai spesifikasi, memutus pemenang sample, mengubah kebijakan R&D, hold desain ACC
