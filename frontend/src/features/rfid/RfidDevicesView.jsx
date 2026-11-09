@@ -112,6 +112,16 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
     try { await axios.patch(`${API}/rfid/devices/${d.id}`, { enabled: !d.enabled }); await load(); }
     catch (e) { setError(e.response?.data?.detail || "Gagal mengubah aktivasi perangkat"); } finally { setBusy(false); }
   };
+  // FIX-3b (B2b RFID-1/4/9, K-B2b-09) — simulator gate hanya di perangkat bertanda UJI (dan PT bermode simulasi).
+  const toggleTestDevice = async (d) => {
+    if (!d.test_device && !(await askConfirm({
+      title: `Tandai ${d.code} sebagai perangkat UJI?`, danger: true,
+      message: "Simulator gate boleh dijalankan di perangkat ini (hanya untuk PT yang Mode simulasi RFID-nya menyala). Jangan tandai reader produksi.",
+    }))) return;
+    setBusy(true); setError(null);
+    try { await axios.patch(`${API}/rfid/devices/${d.id}`, { test_device: !d.test_device }); await load(); }
+    catch (e) { setError(e.response?.data?.detail || "Gagal mengubah penanda perangkat uji"); } finally { setBusy(false); }
+  };
   const remove = async (d) => {
     if (!(await askConfirm({
       title: `Hapus perangkat ${d.code}?`, danger: true, confirmLabel: "Hapus",
@@ -227,6 +237,7 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
                       <span className="text-[12px] font-mono font-semibold">{d.code}</span>
                       <span className="flex items-center gap-1">
                         {!d.enabled && <Pill color="red" testId={`rfid-device-disabled-${d.id}`}>nonaktif</Pill>}
+                        {d.test_device && <Pill color="purple" testId={`rfid-device-test-${d.id}`}>uji</Pill>}
                         <Pill color={d.status === "online" ? "green" : "gray"} testId={`rfid-device-status-${d.id}`}>{d.status === "online" ? "menyala" : d.status === "offline" ? "mati" : d.status}</Pill>
                       </span>
                     </div>
@@ -257,6 +268,11 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
                           title={d.enabled ? "Blokir perangkat: semua kiriman bacaan & tugas cetaknya ditolak sampai diaktifkan lagi." : "Cabut blokir perangkat."}
                           className={`rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold disabled:opacity-40 ${d.enabled ? "text-[#C0341D] hover:bg-[#FBE9E7]" : "text-[#1B7E3B] hover:bg-[#E7F7EC]"}`}>
                           {d.enabled ? "Nonaktifkan" : "Aktifkan"}
+                        </button>
+                        <button data-testid={`rfid-test-toggle-${d.id}`} disabled={busy} onClick={() => toggleTestDevice(d)}
+                          title="Perangkat uji: satu-satunya tempat simulator gate boleh dijalankan"
+                          className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold text-[#5856D6] hover:bg-[#EEEEFB] disabled:opacity-40">
+                          {d.test_device ? "Bukan uji" : "Tandai uji"}
                         </button>
                         <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d)} title="Hapus perangkat" aria-label="Hapus perangkat"
                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[#C0341D] hover:bg-[#FBE9E7] disabled:opacity-40"><Trash2 size={12} /></button>

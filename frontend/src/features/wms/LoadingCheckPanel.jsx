@@ -22,6 +22,8 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const [simMode, setSimMode] = useState(false);
   const [untaggedNow, setUntaggedNow] = useState([]);
   const [gateOut, setGateOut] = useState(false);   // PREP-D2 — gedung bergate: cek muat handheld = cadangan
+  const [gateReason, setGateReason] = useState("");   // FIX-3b (RFID-12) — reader OUT tidak sehat → cek muat wajib
+  const [cancelReason, setCancelReason] = useState("");
   const [simMsg, setSimMsg] = useState("");
   const whParams = warehouseId ? { params: { warehouse_id: warehouseId } } : {};
 
@@ -35,6 +37,7 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
       setSimMode(!!r.data.rfid_simulation);
       setUntaggedNow(r.data.untagged_rolls || []);
       setGateOut(!!r.data.gate_out_primary);
+      setGateReason(r.data.gate_out_reason || "");
     } catch { /* noop */ }
   };
   const simulateTags = () => run(async () => {
@@ -59,6 +62,11 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const complete = () => run(async () => {
     await axios.post(`${API}/outbound/loading-check/${session.id}/complete`);
     setSession(null); setLastResult(null); await loadStatus();
+  });
+  // FIX-3b (FLW-OUT-6) — sesi yang salah mulai / muatan berubah bisa dibatalkan (alasan ≥ 5 huruf).
+  const cancelSession = () => run(async () => {
+    await axios.post(`${API}/outbound/loading-check/${session.id}/cancel`, { reason: cancelReason });
+    setSession(null); setCancelReason(""); await loadStatus();
   });
   const scanLabel = () => run(async () => {
     const r = await axios.post(`${API}/outbound/loading-check/${session.id}/scan-label`, { code: labelInput, reason: labelReason });
@@ -90,6 +98,9 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
           (cadangan untuk tag yang tidak terbaca). Bila dijalankan, hasilnya tetap mengikat.
         </p>
       )}
+      {!gateOut && gateReason && (
+        <p data-testid="lc-gate-unhealthy" className="rounded bg-[#FFF4E5] px-2 py-1 text-[10.5px] font-semibold text-[#8C4A00]">{gateReason}</p>
+      )}
       {error && <p data-testid="lc-error" className="rounded bg-[#FBE9E7] px-2 py-1 text-[11px] font-semibold text-[#C0341D]">{error}</p>}
       {simMode && (
         <div data-testid="lc-sim-mode" className="rounded border border-dashed border-[#E0A800] bg-[#FFF9E6] px-2 py-1.5 text-[10.5px] text-[#7A5600]">
@@ -114,6 +125,8 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
             ? `BERSIH — ${lastResult.matched}/${lastResult.expected} cocok. Dispatch dibuka selama roll tidak berubah.`
             : lastResult.result === "override"
               ? `OVERRIDE oleh ${lastResult.by}: ${lastResult.reason} — berlaku untuk ${lastResult.manifest?.length || 0} roll saat ini.`
+              : lastResult.result === "manual_unverified"
+                ? "EPC hanya DITEMPEL/diketik manual — bukan bukti fisik. Pindai dengan handheld (perangkat) atau minta override berizin."
               : lastResult.result === "simulated"
                 ? (simMode && !(lastResult.missing?.length || lastResult.extra?.length || lastResult.untagged_unresolved?.length)
                   ? `SIMULASI (mode UAT) — ${lastResult.matched}/${lastResult.expected} cocok; dianggap sah, dispatch dibuka.`
@@ -163,11 +176,12 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
             </div>
           )}
           <textarea data-testid="lc-input" className="h-12 w-full rounded border border-[#D9D2F0] px-2 py-1 font-mono text-[10.5px]"
-            placeholder="Tempel EPC hasil sweep handheld…" value={epcInput} onChange={(e) => setEpcInput(e.target.value)} />
+            placeholder="Catatan EPC (ketik/tempel) — tercatat manual, BUKAN bukti; bukti sah = pindai handheld" value={epcInput} onChange={(e) => setEpcInput(e.target.value)} />
           <div className="flex flex-wrap gap-1.5">
             <button data-testid="lc-scan" disabled={busy || !epcInput.trim()}
               onClick={() => scan(epcInput.split(/[\s,;]+/).filter(Boolean))}
-              className="rounded bg-[#4B3B9E] px-2.5 py-1 text-[10.5px] font-semibold text-white disabled:opacity-40">Kirim Scan</button>
+              title="EPC yang diketik/ditempel dicatat sebagai MANUAL dan tidak membuka kirim"
+              className="rounded bg-[#4B3B9E] px-2.5 py-1 text-[10.5px] font-semibold text-white disabled:opacity-40">Catat EPC (manual)</button>
             <button data-testid="lc-simulate" disabled={busy}
               onClick={() => scan((session.expected || []).map((e) => e.epc), "simulated")}
               title={simMode ? "Mode simulasi RFID aktif — scan simulasi lengkap dianggap sah" : "Simulasi tidak membuka dispatch"}
@@ -175,6 +189,12 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
               <Zap size={11} /> {simMode ? "Simulasi scan semua (mode UAT)" : "Simulasi (tidak sah)"}</button>
             <button data-testid="lc-complete" disabled={busy} onClick={complete}
               className="ml-auto rounded bg-[#1B7F4B] px-2.5 py-1 text-[10.5px] font-semibold text-white disabled:opacity-40">Selesaikan</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <input data-testid="lc-cancel-reason" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Alasan batal sesi (min. 5 huruf)" className="min-w-[160px] flex-1 rounded border border-[#D9D2F0] px-2 py-1 text-[10.5px]" />
+            <button data-testid="lc-cancel" disabled={busy || cancelReason.replace(/[^A-Za-zÀ-ÿ]/g, "").length < 5} onClick={cancelSession}
+              className="rounded border border-[#B23B14] px-2.5 py-1 text-[10.5px] font-semibold text-[#B23B14] disabled:opacity-40">Batalkan sesi</button>
           </div>
         </div>
       )}

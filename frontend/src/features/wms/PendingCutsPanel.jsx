@@ -47,6 +47,7 @@ export default function PendingCutsPanel({ whId }) {
       const r = await axios.post(`${API}/inventory/rolls/${it.roll_id}/reservations/${it.reservation_id}/cut`, {
         actual_length: actual,
         waste,
+        waste_reason: (f.waste_reason || "").trim(),   // FIX-3b (K-B2b-06) — wajib bila susut > batas setelan
       });
       setMsg(`Potong tercatat — roll anak ${r.data.child.roll_no} (${formatQty(r.data.child.length_remaining)} ${r.data.child.unit || it.unit || ""}). Pasang tag/label baru lalu verifikasi sebelum muat.`);
       setLastChild(r.data.child);
@@ -103,6 +104,14 @@ export default function PendingCutsPanel({ whId }) {
                 placeholder="0" value={(form[it.reservation_id] || {}).waste ?? ""}
                 onChange={(v) => set(it.reservation_id, "waste", v)} />
             </label>
+            {Number(num((form[it.reservation_id] || {}).waste) || 0) > 0 && (
+              <label className="grid gap-0.5">
+                <span className="text-[10.5px] font-semibold text-[#6B6B73]" title="Susut dijurnal sebagai penghapusan persediaan; di atas batas setelan wajib beralasan">Alasan susut (bila di atas batas)</span>
+                <input data-testid={`pending-cut-waste-reason-${it.reservation_id}`} className="field w-56"
+                  placeholder="mis. ujung kain sobek" value={(form[it.reservation_id] || {}).waste_reason ?? ""}
+                  onChange={(e) => set(it.reservation_id, "waste_reason", e.target.value)} />
+              </label>
+            )}
             <button data-testid={`pending-cut-confirm-${it.reservation_id}`} disabled={busy} onClick={() => cut(it)}
               className="primary-button">
               Konfirmasi Potong

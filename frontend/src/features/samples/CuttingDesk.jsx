@@ -51,7 +51,12 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
   }, [load]);
   const receive = async (r) => {
     setBusy(r.task_id);
-    try { await receiveCut(r.task_id, dest[r.task_id] || r.warehouse_id); await load(); }
+    try {
+      const res = await receiveCut(r.task_id, dest[r.task_id] || r.warehouse_id);
+      // FIX-3b (CUT-3, K-B2b-10) — lokasi Admin Cutting di gedung lain → transfer dibuat; roll tidak dipindah langsung.
+      if (res?.transfer_required) setError(res.message || `Transfer ${res.transfer?.code || ""} dibuat — terima lagi setelah barang tiba.`);
+      await load();
+    }
     catch (e) { setError(apiErrorText(e, "Gagal menerima hasil potong.")); } finally { setBusy(""); }
   };
   // Trial 22 Okt (A2) — satu pesanan (mis. catalogue 9 warna) diterima sekaligus.
@@ -95,7 +100,12 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
                     <p className="text-[11px] text-[#6B6B73]">{formatQty(r.quantity)} {r.unit} · {r.warehouse_name || r.warehouse_id}
                       {r.child_roll_no ? ` · potongan ${r.child_roll_no} dari ${r.parent_roll_no}` : ""}
                       {r.source_owner_entity_id ? ` · stok milik ${entityShortById(entities, r.source_owner_entity_id, "PT lain")} — tunggu pembelian internal` : ""}
-                      {r.handoff ? ` · diterima ${r.handoff.received_by}${r.handoff.transferred ? " (dipindah lokasi)" : ""}` : ""}</p>
+                      {r.handoff ? ` · diterima ${r.handoff.received_by}${r.handoff.transferred ? " (tiba lewat transfer)" : ""}` : ""}</p>
+                    {r.handoff_pending && (
+                      <p data-testid={`cutting-handoff-pending-${r.task_id}`} className="mt-0.5 text-[11px] font-semibold text-[#8C4A00]">
+                        Menunggu transfer {r.handoff_pending.transfer_code} ke {r.handoff_pending.to_warehouse_name || r.handoff_pending.to_warehouse_id} — terima setelah barang tiba.
+                      </p>
+                    )}
                     {q.key === "to_receive" && canReceive && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <div className="min-w-[200px]">

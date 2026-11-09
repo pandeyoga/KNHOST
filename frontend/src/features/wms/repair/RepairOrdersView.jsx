@@ -12,7 +12,7 @@ import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters
 import RepairCreateModal from "./RepairCreateModal";
 import RepairOrderDetail, { StatusPill } from "./RepairOrderDetail";
 
-const TABS = [["", "Semua"], ["draft", "Draf"], ["sent", "Dikirim"], ["done", "Selesai"], ["cancelled", "Dibatalkan"]];
+const TABS = [["", "Semua"], ["draft", "Draf"], ["sent", "Dikirim"], ["done", "Selesai"], ["returning", "Batal — menunggu kembali"], ["cancelled", "Dibatalkan"]];
 
 // Fase 4 · R3 (L-02/L-07) — kepala = PageHeader baku (dulu satu kalimat tanpa judul); status = FilterChips (saringan,
 // bukan tab; testid `repair-tab-*` tetap); tabel min 820 px → ResponsiveTable (kartu di HP; testid `repair-row-<id>` tetap).

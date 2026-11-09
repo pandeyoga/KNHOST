@@ -70,7 +70,9 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
 
   const markPrinted = async () => {
     setBusy(true);
-    try { await axios.post(`${API}/rfid/print-jobs/${activeJob.id}/mark-printed`); flash("Job ditandai tercetak — tempel tag ke roll fisik."); await openJob(activeJob.id); await load(); }
+    try { await axios.post(`${API}/rfid/print-jobs/${activeJob.id}/mark-printed`); flash(activeJob.kind === "rfid_tag"
+      ? "Job ditandai tercetak — tempel tag ke roll, lalu jalankan Verifikasi: tag RFID baru aktif setelah EPC-nya terbaca (bukti chip)."
+      : "Job ditandai tercetak — tempel label ke roll fisik."); await openJob(activeJob.id); await load(); }
     catch (e) { fail(e, "Gagal tandai tercetak"); } finally { setBusy(false); }
   };
 

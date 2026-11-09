@@ -23,7 +23,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
   const canRejectTransfer = can(user?.permissions, "transfer", "reject");
   const [ruleCheck, setRuleCheck] = useState([]);
   const [ruleReason, setRuleReason] = useState("");
-  const showReceipt = !isIC && ["dispatched", "partially_received", "completed"].includes(transfer.status);
+  const showReceipt = !isIC && ["dispatched", "partially_received", "completed", "returning"].includes(transfer.status);
   useEffect(() => {
     if (!isIC || transfer.status !== "waiting_approval") return;
     axios.get(`${API}/transfers/${transfer.id}`).then((r) => setRuleCheck(r.data?.dest_rule_check || [])).catch(() => {});
@@ -274,7 +274,13 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   Transfer selesai otomatis setelah semua roll diterima atau dikembalikan (lihat Penerimaan per roll).
                 </p>
               )}
-              {!["completed", "rejected", "cancelled", "partially_received"].includes(transfer.status) && (
+              {transfer.status === "returning" && (
+                <p data-testid="transfer-returning-hint" className="text-[11px] font-semibold text-[#8C4A00] self-center">
+                  Dibatalkan saat di jalan — terima kembali tiap roll di gudang ASAL lewat Penerimaan per roll; roll baru
+                  tersedia lagi sesudah dipindai/diterima.
+                </p>
+              )}
+              {!["completed", "rejected", "cancelled", "partially_received", "returning", "returned"].includes(transfer.status) && (
                 <button
                   data-testid="cancel-transfer-button"
                   onClick={() => onCancel(transfer.id)}
