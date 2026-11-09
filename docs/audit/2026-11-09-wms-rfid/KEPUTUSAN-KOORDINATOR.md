@@ -64,3 +64,15 @@ minimum. K-B4-12 tampilan tersimpan — **ditunda** (di luar tahap 1).
 - Gelombang 1 yang belum dijawab: izin unduh lembar master MD, waktu perbaikan master, roll lama yang masih dipesan
   saat pendaftaran, gate Gedung Retur RCM, penanda "minta inspeksi". (Persetujuan Finance pendaftaran awal kini
   diputuskan: dua langkah, bawaan aktif.)
+
+## Keputusan pemilik langsung — 10 Nov 2026 (menjawab butir yang tertunda)
+| Butir | Keputusan pemilik |
+|---|---|
+| D5 — retur penjualan masuk stok | **Saat dipindai di gudang** sebagai karantina retur (tidak bisa dijual); nilai/jurnal ditetapkan saat settle. |
+| D2 — tolak QC + retur ke supplier | **Dipilih per kasus**: "ganti barang" → PO dibuka lagi dengan tugas terima sisa; "potong tagihan" → PO ditutup kurang & tagihan dikurangi (jurnal pembalik). |
+| D9 — satu SJ supplier untuk dua PT | **GRN per PT** — satu kedatangan dipecah per PT pemilik, masing-masing ke PO-nya. |
+| Penanda "minta inspeksi" | **Ditambah** — pilihan "minta inspeksi" di PO/penerimaan; roll otomatis diarahkan ke gedung inspeksi. |
+| Gate Gedung Retur RCM | **Tanpa gate** — dicatat handheld C72 per dokumen. |
+| Roll lama yang masih dipesan saat pendaftaran awal | **Tetap pengecualian manual** (tidak dilepas otomatis). |
+| Unduh lembar master oleh MD | **Diberi izin** (ekspor produk untuk MD). |
+| Waktu perapian master | **Tepat sebelum opname awal per gedung.** |
