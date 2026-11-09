@@ -10,6 +10,7 @@ from dependencies import require_any_permission, require_permission, audit
 from entity_scope import entity_ctx, assert_entity_access
 from core_utils import safe_doc
 from schemas import QCDecision, ReceiveUomPreviewIn, ReceivingUomSettingsIn
+from input_rules import KNIn, ReasonStr
 
 router = APIRouter(prefix="/api")
 
@@ -166,13 +167,57 @@ async def qc_decision(task_id: str, payload: QCDecision, request: Request) -> Di
         result = await process_qc_decision(
             task, payload.accept_qty, payload.reject_qty,
             payload.reject_disposition, payload.reason, actor,
-            accept_grade=payload.accept_grade, defects=payload.defects)
+            accept_grade=payload.accept_grade, defects=payload.defects,
+            return_remedy=payload.return_remedy, return_remedy_reason=payload.return_remedy_reason)
     except HTTPException:
         raise   # 409 SAGA_IN_PROGRESS / STATE_CHANGED dari klaim atomik
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "qc_decision", "wms_task", task_id, result)
     return result
+
+
+class InspectionRequestIn(KNIn):
+    requested: bool = True
+    reason: ReasonStr
+
+
+@router.post("/inbound/tasks/{task_id}/inspection-request")
+async def inbound_inspection_request(task_id: str, payload: InspectionRequestIn, request: Request) -> Dict[str, Any]:
+    """FIX-6 (keputusan pemilik 10 Nov) — penanda "minta inspeksi" SAAT PENERIMAAN (pelengkap penanda di baris PO).
+    Roll tugas ini dirutekan ke gedung berperan inspeksi (draf PA `purpose=inspection`). Boleh sebelum barang diposting
+    (tugas belum QC) dan saat menunggu keputusan QC (roll karantina tugas ikut ditandai); alasan K-14, beraudit."""
+    actor = await require_any_permission(request, [("wms", "update"), ("qc", "release"), ("goods_receipt", "review")])
+    task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
+    if not task or task.get("flow_type") != "inbound":
+        raise HTTPException(status_code=404, detail="Inbound task tidak ditemukan")
+    assert_entity_access(task, "wms_tasks", await entity_ctx(request))
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, task.get("warehouse_id", ""), "menandai penerimaan di gudang ini")
+    from services import inbound_task_state as _its
+    allowed = list(_its.RECEIVABLE) + ["qc_pending"]
+    if task.get("status") not in allowed:
+        raise HTTPException(status_code=409, detail=(
+            f"Penanda minta inspeksi hanya sebelum barang lepas karantina — tugas berstatus "
+            f"'{_its.status_label(task.get('status', ''))}'."))
+    from core_utils import now_iso
+    mark = ({"requested": True, "source": "receiving", "reason": payload.reason, "by": actor.get("name", ""),
+             "at": now_iso()} if payload.requested else
+            {"requested": False, "source": "receiving", "reason": payload.reason, "by": actor.get("name", ""),
+             "at": now_iso(), "previous": task.get("inspection_request")})
+    # CAS — status tugas masih sebelum barang lepas karantina; kalah balapan → 409.
+    res = await db.wms_tasks.find_one_and_update({"id": task_id, "status": {"$in": allowed}},
+                                                 {"$set": {"inspection_request": mark, "updated_at": now_iso()}},
+                                                 projection={"_id": 0, "id": 1})
+    if not res:
+        raise HTTPException(status_code=409, detail="Tugas baru saja berubah — muat ulang.")
+    rolls = await db.inventory_rolls.update_many(
+        {"$or": [{"qc_task_id": task_id}, {"grn_task_id": task_id}],
+         "status": {"$in": ["receiving", "quarantine", "blocked"]}},
+        {"$set": {"inspection_request": mark}})
+    await audit(actor["name"], "inbound_inspection_request", "wms_task", task_id,
+                {"requested": payload.requested, "rolls": rolls.modified_count}, reason=payload.reason)
+    return {"task_id": task_id, "inspection_request": mark, "rolls_marked": rolls.modified_count}
 
 
 @router.get("/inbound/po/{po_id}/receiving-goods-document")

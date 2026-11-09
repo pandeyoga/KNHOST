@@ -16,6 +16,7 @@ from db import db
 from dependencies import audit
 from entity_scope import EntityContext
 from services import dn_rules as R
+from services import grn_state as _grn_state   # FIX-6 — tabel transisi GRN (jejak status_history)
 from services.config_resolver import value_of
 from services.goods_receipt_service import _convert, cas, load, norm_dn, open_pos, require_status
 from pymongo import ReturnDocument
@@ -446,7 +447,8 @@ async def read_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], ct
         raise HTTPException(status_code=400, detail="Unggah foto surat jalan dulu.")
     run_id, runs, set_ = new_id("ocr"), [], {}
     grn = await cas(grn, [grn["status"]], expected_version, {"status": "reading", "reading_started_at": now_iso(),
-                                                             "reading_heartbeat": now_iso(), "reading_run_id": run_id})
+                                                             "reading_heartbeat": now_iso(), "reading_run_id": run_id},
+                    action="read")
     pages = 0
     try:
         await _budget_guard(cfg, grn["entity_id"])
@@ -522,7 +524,10 @@ async def read_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], ct
         {"id": grn_id, "$or": [{"status": "reading"},
                                {"status": "review", "extraction.error_code": "OCR_TIMEOUT",
                                 "extraction.swept_run_id": run_id}]},
-        {"$set": {**set_, "status": "review", "updated_at": now_iso()}, "$inc": {"version": 1}},
+        {"$set": {**set_, "status": "review", "updated_at": now_iso()}, "$inc": {"version": 1},
+         # FIX-6 — jejak status_history (tabel transisi GRN `grn_state`, aksi `read_done`).
+         "$push": {"status_history": _grn_state.history_entry("review", actor["name"], "hasil baca otomatis",
+                                                              "read_done")}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not doc:
         from services.goods_receipt_service import state_changed

@@ -462,6 +462,10 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "rfid_tag_id": None,
                 **({"supplier_roll_no": str(task.get("roll_id")).strip()}
                    if (task.get("roll_id") and not is_multi and not _ex) else {}),
+                # FIX-6 (keputusan pemilik 10 Nov) — penanda "minta inspeksi" (baris PO / saat penerimaan) → roll;
+                # dibaca `putaway_draft_service.inspection_requested` → draf PA ke gedung inspeksi.
+                **({"inspection_request": task["inspection_request"]}
+                   if (task.get("inspection_request") or {}).get("requested") else {}),
                 "is_remnant": False,
                 # FASE R0 — journey (jejak fisik, terpisah dari status bucket stok)
                 "journey": {"stage": _stage0, "routing": "store",

@@ -326,15 +326,13 @@ async def submit_return(return_id: str, request: Request) -> Dict[str, Any]:
     if doc["status"] != "draft":
         raise HTTPException(status_code=400, detail="Hanya draft yang bisa disubmit")
     await _need_evidence(doc, "submit")
-    await db.sales_returns.update_one(
-        {"id": return_id},
-        {"$set": {"status": "pending_approval",
-                  "submitted_at": now_iso(),
-                  "submitted_by": user.get("name", user.get("email", "")),
-                  "updated_at": now_iso()}}
-    )
-    doc = await db.sales_returns.find_one({"id": return_id})
-    doc.pop("_id", None)
+    # FIX-6 — CAS draft → pending_approval + jejak status_history (tabel `return_state`).
+    from services import sales_return_transition as _srt
+    _who = user.get("name", user.get("email", ""))
+    doc = await _srt.transition(return_id, "draft", "pending_approval", actor_name=_who, action="submit",
+                                set_fields={"submitted_at": now_iso(), "submitted_by": _who})
+    if not doc:
+        raise HTTPException(status_code=409, detail="Retur baru saja berubah oleh pengguna lain — muat ulang.")
     await audit(user.get("name", ""), "sales_return_submitted", "sales_return", return_id, {})
     return doc
 
@@ -1089,11 +1087,11 @@ async def cancel_draft_return(return_id: str, request: Request) -> Dict[str, Any
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     assert_entity_access(existing, "sales_returns", ctx)
     now = now_iso()
-    res = await db.sales_returns.update_one(
-        {"id": return_id, "status": "draft"},
-        {"$set": {"status": "cancelled", "cancelled_at": now, "updated_at": now,
-                  "cancelled_by": user.get("name", user.get("email", ""))}})
-    if not res.modified_count:
+    from services import sales_return_transition as _srt   # FIX-6 — CAS + status_history
+    _who = user.get("name", user.get("email", ""))
+    res = await _srt.transition(return_id, "draft", "cancelled", actor_name=_who, action="cancel_draft",
+                                set_fields={"cancelled_at": now, "cancelled_by": _who})
+    if not res:
         raise HTTPException(status_code=400, detail="Hanya retur berstatus draf yang bisa dibuang.")
     await audit(user.get("name", ""), "sales_return_draft_cancelled", "sales_return", return_id, {})
     return await db.sales_returns.find_one({"id": return_id}, {"_id": 0})

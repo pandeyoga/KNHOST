@@ -262,11 +262,20 @@ async def decide_rolls(ret: Dict[str, Any], decisions: List[Dict[str, Any]], act
     base = {"replacement_proof": (ret.get("condition_flags") or {}).get("replacement_proof")}
     upd: Dict[str, Any] = {"items": items, "updated_at": now, "condition_flags": condition_flags_of(items, base),
                            "roll_decision_log": decision_log_entry(ret.get("roll_decision_log"), actor, now, log)}
+    ops: Dict[str, Any] = {"$set": upd}
     if not any(float(it.get("quantity_returned") or 0) > 0 for it in items):
         st.assert_transition(ret["status"], st.REJECTED)
         upd.update({"status": st.REJECTED, "rejected_by": who, "rejected_at": now,
                     "reject_reason": f"Semua roll klaim ditolak: {rejected_summary(log)}"})
-    res = await db.sales_returns.update_one({"id": ret["id"], "status": ret["status"]}, {"$set": upd})
+        from services import sales_return_transition as _srt   # FIX-6 — jejak status_history
+        ops["$push"] = {"status_history": _srt.history_entry(st.REJECTED, who, upd["reject_reason"], "decide_rolls")}
+    res = await db.sales_returns.update_one({"id": ret["id"], "status": ret["status"]}, ops)
     if not res.matched_count:
         raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi keputusan.")
-    return await db.sales_returns.find_one({"id": ret["id"]}, {"_id": 0})
+    fresh = await db.sales_returns.find_one({"id": ret["id"]}, {"_id": 0})
+    # FIX-6 (D5) — roll klaim DITOLAK yang sudah masuk karantina retur saat dipindai → dibalik (tetap milik pelanggan).
+    rejected_ids = [x["roll_id"] for x in log if x["decision"] == "reject"]
+    if rejected_ids:
+        from services import return_intake_service as _intake
+        await _intake.reverse(fresh, rejected_ids, who, "Roll klaim ditolak sebelum retur disetujui")
+    return fresh

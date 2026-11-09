@@ -76,10 +76,19 @@ test("SPK penerimaan: Diterima sebagian wajib tindakan + roll ditolak, lalu diki
   await pick(q(host, "ins-reject-disposition"), "return");
   expect(q(host, "ins-finish-button").disabled).toBe(true);                     // roll ditolak belum dicentang
   await act(async () => { q(host, "ins-reject-roll-l2").click(); });
+  // FIX-6 (keputusan pemilik 10 Nov, D2) — retur ke supplier wajib memilih "ganti barang" / "potong tagihan" + alasan.
+  expect(q(host, "ins-finish-button").disabled).toBe(true);
+  await act(async () => { q(host, "ins-return-remedy-bill_cut").click(); });
+  await act(async () => {
+    const el = q(host, "ins-return-remedy-reason");
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, "Potong tagihan saja");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
   expect(q(host, "ins-finish-button").disabled).toBe(false);
   await act(async () => { q(host, "ins-finish-button").click(); });
   expect(api.finishInspection).toHaveBeenCalledWith("ins1", "terima_sebagian", "",
-    { reject_disposition: "return", rejected_roll_ids: ["r2"] });
+    { reject_disposition: "return", rejected_roll_ids: ["r2"], return_remedy: "bill_cut",
+      return_remedy_reason: "Potong tagihan saja" });
   await act(async () => { root.unmount(); });
 });
 

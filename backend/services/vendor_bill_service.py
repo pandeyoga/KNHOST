@@ -124,7 +124,8 @@ def evaluate_match(
         lk = line_key(po, bi)  # FN-02 — cocokkan per BARIS PO, bukan per produk
         po_it = po_items.get(lk) or next((it for it in po.get("items", []) if it.get("product_id") == pid), {})
         ordered = float(po_it.get("quantity", 0) or 0)
-        received = float(po_it.get("received_qty", 0) or 0)
+        # FIX-6 (D2) — qty yang DIRETUR ke supplier dengan pilihan "potong tagihan" tidak ditagih (diterima − diretur).
+        received = max(float(po_it.get("received_qty", 0) or 0) - float(po_it.get("returned_qty", 0) or 0), 0.0)
         prior = float(billed_so_far.get(lk, 0) or 0) + in_bill.get(lk, 0.0)
         in_bill[lk] = in_bill.get(lk, 0.0) + float(bi.get("billed_qty", bi.get("quantity", 0)) or 0)
         billed = float(bi.get("billed_qty", bi.get("quantity", 0)) or 0)
@@ -268,7 +269,8 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
     for idx, it in enumerate(po_items):
         pid = it.get("product_id")
         ordered = float(it.get("quantity", 0) or 0)
-        received = float(it.get("received_qty", 0) or 0)
+        # FIX-6 (D2) — diterima bersih dari retur "potong tagihan" (`returned_qty`).
+        received = max(float(it.get("received_qty", 0) or 0) - float(it.get("returned_qty", 0) or 0), 0.0)
         # FN-02 — sudah-ditagih dibaca per BARIS PO (kunci sama dengan already_billed_map)
         lid = po_line_id(it, idx)
         prior = float(billed.get(lid, 0) or 0)

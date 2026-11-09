@@ -2476,6 +2476,29 @@ async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float
         source_id=rid, entity_id=ret.get("entity_id", ""), created_by="system", source_label=label)
 
 
+async def post_purchase_return_grir(ret: Dict[str, Any], *, net: float, label: str = "",
+                                    reason: str = "") -> Optional[Dict[str, Any]]:
+    """FIX-6 (keputusan pemilik 10 Nov, D2) — JURNAL PEMBALIK GR-IR untuk barang tolak QC yang dikembalikan ke supplier
+    ketika hutangnya BELUM lahir dari barang itu: Dr GR-IR (2-1150) / Cr Persediaan (1-1300) sebesar nilai NETO
+    penerimaan (tanpa PPN — PPN Masukan baru diakui saat tagihan supplier).
+      * "ganti barang"  : penerimaan barang ditolak dibalik; barang pengganti lahir lewat tugas terima sisa (jurnal GR
+                          baru Dr Persediaan / Cr GR-IR) → GR-IR kembali seimbang dengan tagihan supplier.
+      * "potong tagihan" sebelum tagihan supplier diposting: tagihan nanti hanya untuk qty bersih (3-way match =
+                          diterima − diretur) → GR-IR seimbang tanpa Nota Debit ke Hutang.
+    Sumber `purchase_return` (idempoten, dibalik `reverse_document` saat retur beli dikoreksi)."""
+    rid = ret.get("id")
+    net = round(float(net or 0), 2)
+    if not rid or net <= EPS or await _already_posted("purchase_return", rid):
+        return None
+    await seed_default_coa()
+    lines = _balanced_pair(ACC_GRIR, ACC_PERSEDIAAN, net,
+                           f"Pembalik penerimaan (GR-IR) retur beli {label}{(' — ' + reason) if reason else ''}")
+    return await _insert_entry(
+        lines=lines, description=f"Retur beli {label} — pembalik GR-IR",
+        date=ret.get("approved_at") or now_iso(), source_type="purchase_return",
+        source_id=rid, entity_id=ret.get("entity_id", ""), created_by="system", source_label=label)
+
+
 async def post_landed_cost(voucher: Dict[str, Any], *, amount: float,
                            label: str = "") -> Optional[Dict[str, Any]]:
     """Session #074 (LC-APPLY-GL) — kapitalisasi landed cost ke GL.

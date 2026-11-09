@@ -58,6 +58,9 @@ export const grnApi = {
   saveCatalog: (id, lineNo, body) => axios.post(`${GRN}/${id}/lines/${lineNo}/save-catalog`, body).then((r) => r.data),
   usage: (month) => axios.get(`${GRN}/usage`, { params: { month } }).then((r) => r.data),
   create: (body) => axios.post(GRN, body).then((r) => r.data),
+  // FIX-6 (keputusan pemilik 10 Nov, D9) — satu SJ supplier untuk beberapa PT → GRN per PT pemilik.
+  arrivalCandidates: (partner_id) => axios.get(`${GRN}/arrival-candidates`, { params: { partner_id } }).then((r) => r.data),
+  createArrival: (body) => axios.post(`${GRN}/arrival`, body).then((r) => r.data),
   upload: (id, file, v, originalSha) => {
     const fd = new FormData();
     fd.append("file", file);

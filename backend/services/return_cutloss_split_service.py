@@ -143,6 +143,11 @@ async def execute(ret: Dict[str, Any], ctl_id: str, actor: Dict[str, Any]) -> Di
         raise ValueError("Roll cutloss ini sudah dipecah.")
     await assert_can_choose(actor, ret.get("entity_id", ""))
     plan = await _plan(ret, e)
+    # FIX-6 (D5) — roll yang sudah masuk KARANTINA RETUR (nilai nol) saat dipindai: karantina dibalik dulu supaya
+    # pemecahan memakai jalur nilai yang sudah ada (`_intake` → Dr Persediaan / Cr HPP sebesar biaya roll).
+    from services import return_intake_service as _ri
+    if (await _ri.reverse(ret, [e["roll_id"]], actor.get("name", ""), "Roll dipecah cutloss"))["reversed"]:
+        plan = await _plan(ret, e)
     if plan["roll"].get("status") == "delivered":
         await _intake(ret, e, plan["roll"])
         plan = await _plan(ret, e)

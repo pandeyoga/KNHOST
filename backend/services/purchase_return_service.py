@@ -17,6 +17,7 @@ from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + 
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
 from services.roll_service import rebuild_balance
 from services import purchase_return_state as prs
+from services import purchase_return_doc_state as _prds   # FIX-6 — tabel transisi status dokumen (CAS + riwayat)
 from request_context import active_entity_or
 from services import line_scope as _lines      # FASE L — satu pintu normalisasi lini
 from services import doc_refs_service as _refs  # INV-REF-04 — sapu tautan sebelum hapus
@@ -267,10 +268,12 @@ async def submit_purchase_return(return_id: str, submitted_by: str = "") -> Dict
         raise ValueError("Retur tidak ditemukan")
     if ret["status"] != "draft":
         raise ValueError("Hanya draft yang bisa disubmit")
-    await db.purchase_returns.update_one({"id": return_id},
-        {"$set": {"status": "pending_approval", "submitted_at": now_iso(),
-                  "submitted_by": submitted_by, "updated_at": now_iso()}})
-    return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
+    # FIX-6 — tabel transisi dokumen retur beli (CAS + status_history).
+    doc = await _prds.transition(return_id, "submit", "pending_approval", actor_name=submitted_by,
+                                 set_fields={"submitted_at": now_iso(), "submitted_by": submitted_by})
+    if not doc:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang.")
+    return safe_doc(doc)
 
 
 async def approve_and_adjust_stock(return_id: str, approved_by: str, notes: str = "") -> Dict[str, Any]:
@@ -295,12 +298,13 @@ async def approve_and_adjust_stock(return_id: str, approved_by: str, notes: str 
     now = now_iso()
     if ret.get("supplier_flow"):
         # RMA — approval internal saja. supplier_status tetap 'requested_supplier'.
-        await db.purchase_returns.update_one({"id": return_id}, {"$set": {
-            "status": "approved", "approved_by": approved_by, "approved_at": now,
-            "decision_notes": notes, "updated_at": now,
-            "supplier_status": ret.get("supplier_status") or prs.REQUESTED,
-        }})
-        return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
+        doc = await _prds.transition(return_id, "approve", "approved", actor_name=approved_by, note=notes,
+                                     frm=["draft", "pending_approval"],
+                                     set_fields={"approved_by": approved_by, "approved_at": now, "decision_notes": notes,
+                                                 "supplier_status": ret.get("supplier_status") or prs.REQUESTED})
+        if not doc:
+            raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang.")
+        return safe_doc(doc)
 
     # DIRECT — finalisasi penuh (stok + DN + AP + GL).
     return await _finalize_supplier_return_financials(
@@ -338,16 +342,41 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         for (pid, wid, eid) in segments:
             await rebuild_balance(pid, wid, eid)
 
-    debit_note = ret.get("debit_note_number") or await next_debit_note_number()
-    await db.purchase_returns.update_one({"id": return_id}, {"$unset": {"saga_lock": ""}, "$set": {
-        "status": "approved", "stock_adjusted": True, "debit_note_number": debit_note,
+    remedy = (ret.get("remedy") or {}).get("choice") if ret.get("source") == "qc_reject" else None
+    # FIX-6 (D2) — "ganti barang" bukan pengurang tagihan: tidak menerbitkan Nota Debit (nomor dokumen = nomor retur).
+    debit_note = ret.get("debit_note_number") or ("" if remedy == "replace" else await next_debit_note_number())
+    _approved_set = {
+        "stock_adjusted": True, "debit_note_number": debit_note,
         "approved_by": ret.get("approved_by") or actor,
         "approved_at": ret.get("approved_at") or now,
-        "decision_notes": notes, "updated_at": now,
-        "supplier_status": prs.ACCEPTED, "supplier_outcome": outcome,
+        "decision_notes": notes,
+        "supplier_status": prs.ACCEPTED, "supplier_outcome": ("replacement" if remedy == "replace" else outcome),
         "accepted_at": ret.get("accepted_at") or now, "accepted_by": ret.get("accepted_by") or actor,
         "gl_status": "pending",
-    }})
+    }
+    # FIX-6 — status lewat tabel transisi dokumen (CAS status asal + status_history); kunci saga dicabut.
+    if ret.get("status") == "approved":   # RMA diterima supplier / lanjutan IX-17: status tidak berganti
+        await db.purchase_returns.update_one({"id": return_id, "status": "approved"},
+                                             {"$set": {**_approved_set, "updated_at": now}})
+    elif not await _prds.transition(return_id, "approve", "approved", actor_name=actor, note=notes,
+                                    frm=["draft", "pending_approval"], set_fields=_approved_set):
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang.")
+    await db.purchase_returns.update_one({"id": return_id}, {"$unset": {"saga_lock": ""}})
+    if remedy:
+        # FIX-6 (keputusan pemilik 10 Nov, D2) — tolak QC + retur: pilihan per kasus dieksekusi di sini.
+        from services import purchase_return_remedy as _prr
+        fresh = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
+        try:
+            res = await _prr.apply_on_approve(fresh, actor)
+        except Exception as exc:  # noqa: BLE001 — terlihat & bisa dilanjutkan (IX-17: setujui ulang)
+            await db.purchase_returns.update_one({"id": return_id}, {"$set": {
+                "gl_status": "failed", "gl_error": str(exc)[:300], "updated_at": now_iso()}})
+            raise ValueError(f"Retur tercatat, tetapi penyelesaian '{(fresh.get('remedy') or {}).get('label', '')}' "
+                             f"gagal: {exc}. Setujui ulang untuk melanjutkan.")
+        await db.purchase_returns.update_one({"id": return_id}, {"$set": {
+            "gl_status": "posted" if res.get("journal_entry_id") else "not_required", "gl_error": "",
+            "journal_entry_id": res.get("journal_entry_id", ""), "remedy_result": res}})
+        return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
 
     is_refund = (outcome or "").lower() == prs.OUTCOME_REFUND
     # IX-16 — SATU kontrak nilai: gross (= grand_total = net barang + PPN) dipakai AP, GL dan kas.
@@ -694,10 +723,15 @@ async def reject_purchase_return(return_id: str, rejected_by: str, reason: str) 
     if ret["status"] not in ("draft", "pending_approval"):
         raise ValueError(f"Retur {ret['number']} sudah {ret['status']}")
     now = now_iso()
-    await db.purchase_returns.update_one({"id": return_id}, {"$set": {
-        "status": "rejected", "rejected_by": rejected_by, "rejected_at": now,
-        "reject_reason": reason, "updated_at": now,
-    }})
+    doc = await _prds.transition(return_id, "reject", "rejected", actor_name=rejected_by, note=reason,
+                                 set_fields={"rejected_by": rejected_by, "rejected_at": now, "reject_reason": reason})
+    if not doc:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang.")
+    # FIX-6 — pembalikan jelas: retur dari TOLAK QC ditolak → roll yang dipisah kembali ke gudang sebagai rusak.
+    from services import purchase_return_remedy as _prr
+    back = await _prr.on_reject(doc, rejected_by, reason)
+    if back:
+        await db.purchase_returns.update_one({"id": return_id}, {"$set": {"rejected_rolls_back_damaged": back}})
     return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
 
 
@@ -725,8 +759,11 @@ async def create_from_sales_return(sales_return_id: str, actor: str,
     if roll_ids:
         q["id"] = {"$in": list(roll_ids)}
     rolls = await db.inventory_rolls.find(q, {"_id": 0}).to_list(1000)
+    # FIX-6 (D5) — karantina retur yang belum dinilai (retur jual belum diselesaikan) bukan stok bernilai perusahaan.
+    rolls = [r for r in rolls if ((r.get("return_intake") or {}).get("state") != "received")]
     if not rolls:
-        raise ValueError("Tidak ada roll karantina/available dari retur jual ini untuk diretur ke supplier.")
+        raise ValueError("Tidak ada roll karantina/available dari retur jual ini untuk diretur ke supplier "
+                         "(roll yang baru dipindai diterima ikut sesudah retur jual diselesaikan).")
 
     # LN-093 — sesudah retur internal, roll milik PT pemasok (CST): retur beli terbit di PT pemilik roll.
     owners = {r.get("owner_entity_id") for r in rolls if r.get("owner_entity_id")}
@@ -1022,6 +1059,10 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
                 f"Roll sumber retur (id {rid}) sudah tidak ada. Reversal otomatis tidak aman — "
                 "lakukan koreksi manual di jurnal.")
 
+    # FIX-6 (D2) — efek PO pilihan tolak QC: tugas pengganti yang sudah menerima barang → koreksi ditolak.
+    from services import purchase_return_remedy as _prr
+    await _prr.assert_can_undo(ret)
+
     # ── ACTIONS (idempotent) ─────────────────────────────────────────────────
     from services import gl_service
     # INV-ATOMIC-01 (T-01 Opsi B) — klaim retur SESUDAH guard, SEBELUM JE/roll/AP/kas ditulis.
@@ -1073,8 +1114,8 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
     for (pid, wid, eid) in combos:
         await rebuild_balance(pid, wid, eid)
 
-    # c) Pulihkan AP PO (ap_credit) — kembalikan returned_amount.
-    if ret.get("po_id") and not is_refund:
+    # c) Pulihkan AP PO (ap_credit) — kembalikan returned_amount. FIX-6 — "ganti barang" tidak pernah memotong AP.
+    if ret.get("po_id") and not is_refund and ret.get("ap_adjusted", True):
         await db.purchase_orders.update_one(
             {"id": ret["po_id"]},
             {"$inc": {"returned_amount": -float(ret.get("grand_total") or
@@ -1094,11 +1135,17 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
             {"$set": {"status": "void", "voided_by": actor, "void_reason": reason,
                       "updated_at": now}})
 
+    # c2) FIX-6 (D2) — balik efek PO pilihan tolak QC (PO dibuka lagi / ditutup kurang).
+    remedy_undo = await _prr.undo(ret, actor, reason)
+
     # e) Void Nota Debit + status → cancelled + metadata reversal (append-only).
-    await db.purchase_returns.update_one({"id": return_id}, _saga.finish_set({
+    _fin = _saga.finish_set({
         "status": "cancelled", "reversed": True, "reversed_by": actor, "reversed_at": now,
         "reversal_reason": reason, "reversal_je_ids": [j.get("id") for j in rev_jes],
-        "debit_note_voided": True, "stock_adjusted": False, "updated_at": now}))
+        "debit_note_voided": True, "stock_adjusted": False, "updated_at": now,
+        **({"remedy_undo": remedy_undo} if remedy_undo else {})})
+    _fin["$push"] = {"status_history": _prds.history_entry("cancelled", actor, reason, "reverse")}
+    await db.purchase_returns.update_one({"id": return_id}, _fin)
 
     fresh = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
     fresh = safe_doc(fresh)

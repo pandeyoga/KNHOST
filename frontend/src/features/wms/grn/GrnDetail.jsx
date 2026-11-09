@@ -65,6 +65,13 @@ export default function GrnDetail({ grnId, user, onBack }) {
         )}
       </div>
       {(grn.reject_reason || grn.cancel_reason) && <p className="rounded-lg bg-[#F2F2F7] px-3 py-2 text-[11px]">Alasan: {grn.reject_reason || grn.cancel_reason}</p>}
+      {/* FIX-6 (keputusan pemilik 10 Nov, D9) — satu SJ supplier dipecah per PT: kedatangan saudara (PT lain). */}
+      {(grn.arrival?.siblings || []).length > 1 && (
+        <p data-testid="grn-arrival-siblings" className="rounded-lg bg-kn-neutral px-3 py-2 text-fs-12 text-kn-text-2">
+          Satu kedatangan dengan: {grn.arrival.siblings.filter((s) => s.id !== grn.id)
+            .map((s) => `${s.number} (${s.entity_name || s.entity_id}${(s.po_numbers || []).length ? ` · ${s.po_numbers.join(", ")}` : ""})`).join("; ")}
+        </p>
+      )}
       {/* UAT 24 Okt (P16.1) — tab langkah standar (`tab-bar`) + isi langkah dalam kartu putih ber-judul. */}
       <div className="tab-bar !mb-0" role="tablist">
         {tabs.map(([k, label]) => (

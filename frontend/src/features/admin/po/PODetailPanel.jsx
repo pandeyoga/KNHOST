@@ -219,6 +219,14 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
                   <span className="text-[#6B6B73]">Rencana <QtyDual rolls={item.qty_rolls} measure={item.quantity} unit={item.unit} factor={item.unit_factor} factorTo={item.unit_factor_to} compact testId={`po-item-${i}-plan-dual`} /></span>
                   <span className="text-[#6B6B73]">Diterima <QtyDual rolls={item.received_rolls} measure={item.received_qty} unit={item.unit} compact testId={`po-item-${i}-recv-dual`} /></span>
                 </div>
+                {/* FIX-6 — penanda minta inspeksi & retur tolak QC (ganti barang / potong tagihan) per baris */}
+                {(item.inspection_requested || Number(item.replaced_qty || 0) > 0 || Number(item.returned_qty || 0) > 0) && (
+                  <div className="mt-1 flex flex-wrap gap-1 text-fs-12" data-testid={`po-item-${i}-fix6`}>
+                    {item.inspection_requested && <span className="status-pill pill-muted">minta inspeksi</span>}
+                    {Number(item.replaced_qty || 0) > 0 && <span className="status-pill pill-warning" data-testid={`po-item-${i}-replaced`}>ganti barang {item.replaced_qty} {item.unit}</span>}
+                    {Number(item.returned_qty || 0) > 0 && <span className="status-pill pill-muted" data-testid={`po-item-${i}-returned`}>diretur (potong tagihan) {item.returned_qty} {item.unit}</span>}
+                  </div>
+                )}
                 {/* FASE F-2 — jejak asal harga (kontrak / harga terakhir / manual) */}
                 {(item.price_source || item.contract_number || item.supplier_sku) && (() => {
                   const SRC = {
