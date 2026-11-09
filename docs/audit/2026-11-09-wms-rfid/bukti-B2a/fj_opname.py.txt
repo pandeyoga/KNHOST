@@ -1,0 +1,15 @@
+scope bin Zona W · Woven/Printing (yard) / Rak W10 / Level 4 / W10-L4-02 rolls 6
+snapshot expected: 7 [('RL-00014', '_l4_02', 80.0, 'available'), ('RL-19004', '_l4_02', 47.91, 'available'), ('RL-19005', '_l4_02', 52.47, 'available'), ('RL-19006', '_l4_02', 50.96, 'available'), ('RL-19007', '_l4_02', 48.45, 'available'), ('RL-19008', '_l4_02', 48.21, 'available')]
+scan roll tanpa bin: RL-05000 ['foreign']
+scan unknown 200 ['unknown']
+RCM worker scan in JKT session: 200 {'duplicate': True, 'scan': {'id': 'ccs_6fff52199da9', 'code': 'RL-00014', 'roll_id': 'roll_668eb29b5a93', 'roll_no': 'RL-00014', 'product_id': 'prod_
+reconcile counts {'matched': 2, 'missing': 5, 'wrong_address': 0, 'qty_diff': 0, 'tag_damaged': 0, 'unreadable': 0, 'foreign': 1, 'unknown': 1, 'moved_after_cutoff': 0, 'delta_in': 0}
+finalize 400 {'detail': 'Kode KODE-ASING-B2A-001: produk tanpa biaya acuan — isi alasan biaya nol'}
+session status open result {}
+roll tanpa bin sesudah ACC: [{'bin_id': None, 'roll_no': 'RL-05000', 'status': 'available'}]
+e2: [{'bin_id': 'bin_sim_wh_jkt_w10_l4_02', 'roll_no': 'RL-19004', 'status': 'available'}]
+e3 (hilang): [{'roll_no': 'RL-19005', 'length_remaining': 52.47, 'status': 'available', 'rfid_tag_id': None}]
+tag e3 sesudah: None []
+found roll: []
+JE cycle_count_variance + 0 []
+roll lain di potret yg tidak dipindai & tanpa hitung ulang: 4 status tetap: [{'roll_no': 'RL-19006', 'status': 'available'}, {'roll_no': 'RL-19007', 'status': 'available'}, {'roll_no': 'RL-19008', 'status': 'available'}]

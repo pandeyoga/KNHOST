@@ -1,0 +1,6 @@
+resolve 200 {'transfer_status': 'completed', 'summary': {'rolls': [{'roll_id': 'roll_74d7283673bd', 'roll_no': 'RL-38018', 'lot': 'KSC/LOT-2610-0124', 'length': 61.68, 'unit': 'yard', 'sku': 'KNWVN0020-I-BWXX-XA-
+TRF-18 completed actual_receipt
+resolve b 200 {'transfer_status': 'completed', 'summary': {'rolls': [{'roll_id': 'roll_29090e128c9f', 'roll_no': 'RL-38026-1', 'lot': 'KSC/LOT-2610-0124', 'length': 16.44, 'unit': 'yard', 'sku': 'KNWVN0020-I-BWXX-X
+TRF-b KSC/TRF-00019 completed actual_receipt 2026-11-09T00:27:08.342332+00:00
+roll [{'warehouse_id': 'wh_adc8726d019e', 'roll_no': 'RL-38026-1', 'status': 'available', 'returned_from_transfer': {'ref_id': 'trn_87452ea704ad', 'at': '2026-11-09T00:27:08.287754+00:00', 'reason': 'truk batal muat roll ini'}}]
+receipt summary 200 {'rolls': [{'roll_id': 'roll_29090e128c9f', 'roll_no': 'RL-38026-1', 'lot': 'KSC/LOT-2610-0124', 'length': 16.44, 'unit': 'yard', 'sku': 'KNWVN0020-I-BWXX-XA-XX-XX', 'product_name': 'FINE SUMMERCOTTON BW A', 'state': 'returned', 'status': 'available', 'warehouse_id': 'wh_adc8726d019e', 'bin_code': '', 'committed_so': '', 'received_by': ''}], 'counts': {'returned': 1}, 'total': 1, 'exceptions': [{'

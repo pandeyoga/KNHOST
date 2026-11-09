@@ -1,0 +1,14 @@
+roll awal RL-35759 delivered wh_jakarta A ent_ksc None
+journey scan 200 {'event': {'id': 'rjev_ca9d65ce7af1', 'stage': 'received', 'label': 'Diterima di gudang', 'doc_no': 'SRET-00167/TRM-1', 'roll_ids': ['roll_fd24d2dc9ad6'], 'roll_nos': ['RL-35759'], 'warehouse_id': 'wh_6cccc13554f8', 'warehouse_name': 'Rancamalang · G
+delta counts after scan: {'audit_logs': 2}
+roll after scan delivered wh_jakarta None
+inspect start 200 inspecting
+SPK retur: ('KSC/INS-00129', 'draft')
+inspect complete 200 inspected
+settle 200 ('credit_settled', True)
+rolls after settle [('RL-35759', 'delivered', 'akarta', 'A', None, None, None), ('RL-35759-1', 'quarantine', '3554f8', 'A', 'pending_release', 'received_transit', None)]
+mov [{'warehouse_id': 'wh_6cccc13554f8', 'movement_type': 'return_quarantine_in', 'quantity': 2.0}]
+release 200 {'id': 'sret_bc7b4725f895', 'number': 'SRET-00167', 'order_id': 'so_3ee0456e1a42', 'order_number': 'KSC/SO-00001', 'customer_id': 'cust_toko_kain', 'customer_name': 'Toko Kain Sejahtera', 'entity_id': 'ent_ksc', 'return_type': 'retur', 'status': 'credit_settled', 'submitted_at': '2026-10-25T21:48:15
+rolls after release [('RL-35759', 'delivered', 'akarta', 'A', None, None), ('RL-35759-1', 'available', '3554f8', 'A', 'received_transit', None)]
+PA []
+delta counts total: {'inventory_rolls': 1, 'inventory_movements': 2, 'inventory_balances': 1, 'inventory_lots': 1, 'journal_entries': 1, 'audit_logs': 8, 'notifications': 4}

@@ -1,0 +1,7 @@
+task wms_1ae06c013f7c qc_rejected 50.0 50.0 PO KANDA/PO-00006
+HP daftar 'Tugas barang masuk' memuat: ['qc_check', 'qc_pending', 'qc_rejected', 'waiting_goods'] tugas ini tampil: True
+scan-receive pada qc_rejected: 200 qc_check 51.0
+complete lagi: 200 ('qc_pending', [{'id': 'roll_0ea02c1f6952', 'roll_no': 'RL-46687', 'length': 51.0, 'unit': 'yard', 'grade': 'A', 'lot': 'KANDA/LOT-2611-0004', 'dye_lot': 'LOT-KANDA/PO-00006'}])
+delta {'inventory_rolls': 1, 'inventory_movements': 1}
+PO sebelum {'items': [{'received_qty': 50.0}], 'status': 'completed'} sesudah {'items': [{'received_qty': 101.0}], 'status': 'completed'}
+JE GR task [{'source_type': 'goods_receipt', 'total_debit': 1050000.0}]

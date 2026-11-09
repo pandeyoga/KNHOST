@@ -1,0 +1,15 @@
+remainder task wms_2b00df1edac1 waiting_goods 99.0
+start-count SJ sama nomornya (SJ-B2A-001) di GRN kedua: 409 {'detail': {'code': 'DN_DUPLICATE', 'existing_number': 'KSC/GRN-00028', 'message': 'Surat jalan SJ-B2A-001 dari CV Grey Mandiri Majalaya sudah dicatat di kedatangan KSC/GRN-00028 (closed).'}}
+start-count SJ-B2A-002: 200
+close 200 {'status': 'closed'}
+PO {'items': [{'received_qty': 300.0, 'received_rolls': 4}], 'status': 'completed'}
+rolls [{'id': 'roll_3c4d5eb45db1', 'roll_no': 'RL-46685', 'status': 'available'}, {'id': 'roll_8da0f958073b', 'roll_no': 'RL-46686', 'status': 'available'}]
+draft PA00016 Rancamalang · Gudang Knitting
+publish 200 open
+trip1 (tanpa kirim/dispatch) 200 partially_received ['RL-46685'] ['KODE-ASING-X'] dispatched_at None
+trip1 ulang 200 True partially_received
+roll2 setelah trip1: [{'warehouse_id': 'wh_5ae35dcd8837', 'status': 'available', 'journey': {'stage': 'putaway_assigned', 'routing': 'store', 'updated_at': '2026-11-09T00:36:21.228906+00:00', 'verified_by': 'Gilang Ramadhan', 'verified_via': 'label_scan', 'putaway_order_id': 'pa_b4e0a8891191'}, 'active_movement': {'type': 'putaway', 'id': 'pa_b4e0a8891191', 'number': 'PA00016', 'claimed_at': '2026-11-09T00:36:21.210862+00:00'}}]
+bal transit/woven: [{'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 100.0, 'in_transit_qty': 0.0, 'on_hand_qty': 250.0}, {'warehouse_id': 'wh_adc8726d019e', 'available_qty': 350.0, 'in_transit_qty': 0.0, 'on_hand_qty': 350.0}]
+close return_transit 200 completed BTG00006 [('RL-46685', 'arrived'), ('RL-46686', 'returned_transit')]
+roll2 setelah close: [{'warehouse_id': 'wh_5ae35dcd8837', 'status': 'available', 'journey': {'stage': 'label_verified', 'routing': 'store', 'updated_at': '2026-11-09T00:36:21.577167+00:00', 'verified_by': 'Gilang Ramadhan', 'verified_via': 'label_scan', 'putaway_order_id': 'pa_b4e0a8891191', 'exception_resolved_by': 'Gilang Ramadhan'}}]
+siapkan draf ulang: 200 [{'id': 'pa_242f89969081', 'pa_number': 'PA00017', 'to_warehouse_name': 'Rancamalang · Gudang Knitting', 'item_count': 1, 'purpose': 'storage'}]
