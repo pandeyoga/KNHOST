@@ -34,7 +34,8 @@ Dua lapis yang sengaja dipisah (`backend/services/location_scope.py`):
 
 ## 2. Temuan yang ditutup (ID → perubahan → uji)
 
-Uji backend baru: `backend/tests/test_fix1_cakupan.py` (31 uji, HTTP ke server hidup). Uji klien baru:
+Uji backend baru: `backend/tests/test_fix1_cakupan.py` (30 uji, HTTP ke server hidup; sandi demo dibaca dari
+`KN_DEMO_PW`, tidak ditulis di berkas). Uji klien baru:
 `frontend/src/features/__tests__/fix1Cakupan.test.js` (9 uji). Guardrail baru: `scripts/guardrails/verify_scope_guard.py`.
 
 ### 2.1 Kebocoran akses (P0/P1)
@@ -93,7 +94,9 @@ Uji backend baru: `backend/tests/test_fix1_cakupan.py` (31 uji, HTTP ke server h
 6. Struktur/profil gudang lewat PATCH hanya admin & Admin Gudang (manajer & operator ditolak; manajer tetap bisa lewat
    layar Struktur `PUT /structure` — perilaku lama, tidak diubah).
 7. Sopir di HP hanya melihat Pengiriman; pelacak SO hilang dari meja sopir & desainer.
-8. Manajer melihat menu RFID; Admin Gudang & manajer bisa membuka operasional gate dari Monitor Gerbang.
+8. Manajer melihat menu RFID; Admin Gudang & manajer bisa membuka operasional gate dari Monitor Gerbang. Metode
+   "Sapu RFID" di Stock Opname tetap tertutup untuk manajer (D-15). Admin Gudang & Admin Sales tidak lagi melihat "Meja
+   Saya" (meja khususnya tetap), dan menu Pengiriman hanya tampil bila izin `logistics` ada.
 9. Gudang/site/PT bertanda uji tidak muncul di pemilih bawaan (setelah skrip penanda dijalankan).
 
 ## 4. Keputusan implementer (di luar keputusan koordinator) + alasan
@@ -124,15 +127,30 @@ Uji backend baru: `backend/tests/test_fix1_cakupan.py` (31 uji, HTTP ke server h
 | Putaran | Hasil |
 |---|---|
 | Dasar `integrasi-prep3`, 128 berkas uji relevan (cakupan/lokasi/RFID/gudang/GRN/opname/logistik/isolasi) | **1.016 lulus · 357 gagal · 174 error · 62 lewat** (532 node gagal/error — utang lama data/lingkungan) |
-| FIX-1, berkas & DB yang sama | REGRESI_MINE |
-| `tests/test_fix1_cakupan.py` (kode FIX-1) | 25/25 lulus sebelum tambahan B1b (09.0x WIB); 31 uji sesudah tambahan B1b: REGRESI_NEW |
+| FIX-1 (sebelum penyesuaian 3 uji lama), berkas & DB pulihan yang sama | **1.010 lulus · 363 gagal · 174 error · 62 lewat** — 8 node gagal HANYA di FIX-1 (rincian di bawah), 3 node sembuh |
+| 3 berkas uji lama yang disesuaikan (+ uji FIX-1), DB pulihan | **104 lulus · 12 gagal** — ke-12 node gagal SAMA dengan dasar (f0cdef 9, iter293 3); `test_iter293` 05–09 & 13 kini LULUS (id sopir nyata) |
+| `tests/test_fix1_cakupan.py` — kode **dasar** (`main`) | **30/30 GAGAL** (bukti merah: setiap uji menangkap kebocoran/perilaku lama) |
+| `tests/test_fix1_cakupan.py` — kode **FIX-1** | **30/30 lulus** |
 | `fix1Cakupan.test.js` (jest) | **9/9 lulus** |
-| Jest penuh | JEST_FULL |
-| ESLint berkas FE yang diubah | **0 error** (19 peringatan "unused eslint-disable" — sudah ada sebelumnya) |
+| Jest PENUH FIX-1 (`--runInBand`) | **78/79 suite · 564/565 uji lulus**; satu-satunya gagal `phase4R3` (aturan grid HP) gagal SAMA di dasar |
+| Jest terarah (22 suite yang menyentuh berkas FIX-1) | FIX-1 22/22 suite · 221/221 uji; dasar 21/21 · 212/212 |
+| ESLint berkas FE yang diubah | **0 error** (peringatan "unused eslint-disable" yang sudah ada) |
 
-**Uji baru gagal di dasar:** dibuktikan per butir saat menulis uji (kode dasar mengembalikan 200 untuk SCP-1, FRM-23,
-FRM-01, STM-IN-02, tag-history, repairs; daftar transfer/RFID lintas lokasi; Bearer kalah oleh cookie) — lihat bukti
-audit B3a/B3b/B2a/B1b yang sama; putaran resmi uji baru pada kode dasar: BASE_NEW.
+**8 node yang hanya gagal di FIX-1 (putaran 128 berkas) — semuanya akibat keputusan baru, uji lama disesuaikan:**
+- `test_f0cdef_multientity::test_header_ent_kanda[/wms/tasks]` — uji lama mengharuskan `/wms/tasks` dipagari header PT
+  aktif; keputusan K-B1-02 = daftar pekerjaan fisik lintas PT, saringan PT lewat `entity_id`. Uji kini memakai
+  `?entity_id=` untuk daftar kerja (`WORK_LISTS`).
+- `test_iter293_audit_backlog::test_02/03/04/11` — uji membuat pengiriman dengan sopir `user_driver_01` yang TIDAK ADA di
+  data acuan; validasi sopir INP-18 menolaknya (memang temuannya). Uji kini memakai id akun sopir demo dari DB → test_02–09
+  & 13 lulus (dulu 05–09, 13 gagal di dasar).
+- `test_prep_b_initial_registration` (3) — gedung uji tanpa site; pendaftaran awal kini berpagar lokasi petugas
+  (STM-IN-02). Gedung uji diletakkan di site lokasi kerja petugas `warehouse@`.
+- 3 node sembuh di FIX-1: `test_l07_trip_regression::test_single_order_delivery_and_transition`,
+  `test_m3_coa_per_pt_and_ic_transfer` (2) — tidak disengaja (urutan/data), dicatat apa adanya.
+
+**Catatan lingkungan:** Docker Desktop macet ±09.10–11.40 WIB (semua panggilan HTTP 500; tidak di-restart oleh FIX-1
+karena stack bersama). Putaran yang terganggu dibuang dan diulang dari DB pulihan bersih; jest penuh pertama (paralel,
+beban tinggi) habis waktu di dasar maupun FIX-1 dan diganti putaran `--runInBand`.
 
 ## 6. Guardrail (dasar `main` vs FIX-1, host Windows, `PYTHONUTF8=1`)
 
@@ -144,7 +162,7 @@ audit B3a/B3b/B2a/B1b yang sama; putaran resmi uji baru pada kode dasar: BASE_NE
 | `verify_auth_coverage` | MERAH 28/1.717 | MERAH 28/1.718 (endpoint baru `/location-scope` lolos) |
 | `verify_entity_label`, `verify_numeric_bounds`, `verify_atomic_claim` | MERAH | MERAH (tidak naik) |
 | `verify_no_secrets` | — | 8 temuan di `test_reports/pytest/*.xml` (berkas lama, bukan perubahan FIX-1; dasar pembanding tanpa folder itu) |
-| `verify_cross_entity` (runtime) | CROSS_DASAR | CROSS_MINE |
+| `verify_cross_entity` (runtime, DB pulihan) | LEAK 0 · SKIP 0 | LEAK 0 · SKIP 0 |
 
 ## 7. Berkas berisiko bentrok
 
@@ -163,9 +181,10 @@ audit B3a/B3b/B2a/B1b yang sama; putaran resmi uji baru pada kode dasar: BASE_NE
 ## 8. Sisa (belum dikerjakan / di luar batas)
 
 1. **Data**: jalankan (setelah ditinjau) `fix_data_2026_11_09_gedung_bersama.py` & `fix_data_2026_11_09_tandai_data_uji.py`
-   di DB uji (`--apply`; dry-run di salinan: 2 gedung khusus → bersama tertunda karena Docker macet, 12 data uji teridentifikasi:
-   6 gudang `TEST_WH`, 3 `TEST_SITE`, 3 "PT Uji Provisioning"). Penugasan **lokasi kerja** untuk Admin Gudang, sales,
-   Admin Sales, QC, MD dan penugasan PT petugas Soreang (K-GDG-07) = tindakan admin di Pengguna.
+   di DB uji dengan `--apply`. Diuji di SALINAN (`test_database` stack sementara): dry-run → apply → dry-run 0 → undo →
+   dry-run kembali; gedung bersama = **2** (WH-JKT, SRG-01), data uji = **12** (6 gudang `TEST_WH`, 3 `TEST_SITE`,
+   3 "PT Uji Provisioning"); DB lain ditolak. DB bersama `kn_test_trial` TIDAK disentuh. Penugasan **lokasi kerja** untuk
+   Admin Gudang, sales, Admin Sales, QC, MD dan penugasan PT petugas Soreang (K-GDG-07) = tindakan admin di Pengguna.
 2. **Izin peran tersimpan ≠ katalog** (B1b UI-47 akar): manajer di DB uji tanpa `logistics` padahal katalog memberinya —
    perlu migrasi izin (bukan cakupan).
 3. **B1b UI-49** (403 tampil sebagai data kosong: skor mitra makloon, pemilih grade) — di luar batas berkas.
@@ -178,4 +197,18 @@ audit B3a/B3b/B2a/B1b yang sama; putaran resmi uji baru pada kode dasar: BASE_NE
 
 ## 9. Ringkasan untuk koordinator
 
-RINGKASAN
+- **Ditutup:** B3a SCP-1 (+ pola sama di `rfid_printers`), SCP-2, SCP-3, SCP-4, SCP-5 · B3b FRM-01, FRM-23, INP-18,
+  G-SCOPE-01 (uji sapuan + guardrail statik; 8 bocor tambahan ditemukan & ditutup) · B2a STM-IN-02, FLW-IN-07 (D1) ·
+  B1 UI-01, UI-02, UI-03, UI-04, UI-05/K-B1-10, UI-23/K-B1-08, UI-38, UI-39, UI-42, K-B1-01, K-B1-02 · B1b UI-44, UI-47,
+  UI-48, UI-55, UI-56, UI-57/K-B1-07 · B2b RFID-7. Skrip data K-GDG-07 & penanda uji (dry-run bawaan, bisa dibalik).
+- **Perilaku baru:** daftar kerja fisik per gedung lokasi kerja lintas PT berlabel PT & jenis tugas; bilah cakupan
+  "Lokasi: … ▾" di desktop & HP; pagar lokasi di setiap aksi tulis; Bearer > cookie + Keluar mengakhiri sesi server; login
+  di PT bawaan; HP sopir = Pengiriman; menu ikut izin server; operasional gate di RFID › Monitor Gerbang.
+- **Uji:** 30 uji backend baru (30/30 merah di dasar, hijau di FIX-1) + 9 jest; regresi 128 berkas tanpa node gagal
+  khusus FIX-1 sesudah 3 uji lama disesuaikan dengan keputusan baru (alasan per uji di §5); jest penuh 78/79 (sama dengan
+  dasar); guardrail tidak ada angka merah yang naik; `verify_scope_guard` baru hijau.
+- **Risiko bentrok:** FIX-2 (`inventory.py`, `products.py`, `dashboard.py` — hanya pagar/redaksi), FIX-3 (router alur —
+  hanya baris pemeriksa cakupan), PREP-F/G (`rfid_printers.py`, `handheld.py`), berkas bersama (`dependencies.py`,
+  `auth.py`, `App.js`, `roles.js`, `apiClient.js`).
+- **Sisa:** jalankan 2 skrip data; isi lokasi kerja akun non-gudang; migrasi izin peran tersimpan (UI-47 akar); UI-49;
+  B2b RFID-8 (`rfid_v2_*`); nama gate; bilah cakupan di HP non-gudang; penyeragaman izin `PUT /structure`.
