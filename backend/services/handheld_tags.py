@@ -44,8 +44,9 @@ async def ensure_indexes() -> None:
 
 
 async def epc_free(epc: str) -> bool:
-    """EPC belum dipakai tag hidup, baris Daftar Awal hidup, cadangan perangkat, atau niat tulis mana pun."""
-    if await db.rfid_tags.find_one({"epc": epc, "status": {"$in": list(LIVE_TAG)}}, {"_id": 1}):
+    """EPC belum PERNAH terbit (tag status apa pun — FIX-3b RFID-2: EPC pensiun tidak dipakai ulang), baris Daftar
+    Awal hidup, cadangan perangkat, atau niat tulis mana pun."""
+    if await db.rfid_tags.find_one({"epc": epc}, {"_id": 1}):
         return False
     if await db.initial_registration_lines.find_one({"epc": epc, "live": True}, {"_id": 1}):
         return False

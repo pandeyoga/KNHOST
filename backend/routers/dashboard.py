@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from db import db
 from core_utils import safe_doc
 from dependencies import current_user
-from services.inventory_service import expire_old_reservations
+from services.inventory_service import expire_old_reservations  # noqa: F401 — dipakai penjadwal (FIX-3b)
 from services import sales_ownership          # FASE E-8 (E8.4/US11) — "Pesanan Saya"
 from entity_scope import entity_ctx, resolve_list_scope
 
@@ -40,7 +40,7 @@ async def _units_for_products(pids: List[str]):
 
 @router.get("/dashboard")
 async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
-    expired = await expire_old_reservations()
+    expired = 0   # FIX-3b (STK-11) — kedaluwarsa reservasi kini job penjadwal `reservation_expiry`; GET tidak menulis
     # Multi-Entity (Fase 0): orders & customers di-scope per entitas; produk,
     # gudang & stok bersifat SHARED lintas-entitas (lihat KN_14 §7).
     # KONSISTENSI (RC-7/INV-4/INV-5): pakai resolve_list_scope yang sama dgn

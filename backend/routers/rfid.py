@@ -38,6 +38,7 @@ class DevicePayload(BaseModel):
     warehouse_id: str
     location: Optional[str] = None
     status: Optional[str] = None
+    test_device: Optional[bool] = None   # FIX-3b (K-B2b-09) — perangkat uji (simulator hanya di sini)
 
 
 class DevicePatch(BaseModel):
@@ -47,6 +48,7 @@ class DevicePatch(BaseModel):
     direction: Optional[str] = None
     type: Optional[str] = None
     enabled: Optional[bool] = None
+    test_device: Optional[bool] = None   # FIX-3b (K-B2b-09)
 
 
 class GateSimPayload(BaseModel):
@@ -111,7 +113,9 @@ async def lookup_code(request: Request, code: str = Query(..., min_length=1),
     actor = await require_permission(request, "wms", "view")
     code = code.strip()
     from services.epc import try_canonical
-    tag = await db.rfid_tags.find_one({"epc": try_canonical(code) or code}, {"_id": 0})
+    # FIX-3b (RFID-2) — hanya tag HIDUP yang menunjuk roll; EPC tag pensiun tidak lagi mengembalikan roll lama.
+    tag = await db.rfid_tags.find_one({"epc": try_canonical(code) or code,
+                                       "status": {"$in": list(rfid.LIVE_TAG_STATUSES)}}, {"_id": 0})
     roll = await db.inventory_rolls.find_one({"id": tag["roll_id"]}, {"_id": 0}) if tag else None
     via = "rfid" if roll else "label"
     if not roll:
@@ -611,6 +615,13 @@ async def post_ingest(payload: IngestPayload, request: Request) -> Dict[str, Any
     """Device fisik (gate/handheld) kirim batch EPC. Auth: header X-Device-Key."""
     from services import rfid_ingest_service as ing
     device = await ing.authenticate(request.headers.get("X-Device-Key"))
+    if device.get("type") == "handheld":
+        # FIX-3b (RFID-5) — key handheld C72 hanya sah lewat `/api/handheld` (key + SESI OPERATOR, PREP-G); dulu key
+        # yang bocor bisa mengisi sesi verifikasi/cek muat (lintas PT) tanpa pengguna.
+        raise HTTPException(status_code=409, detail={
+            "code": "HANDHELD_SESSION_REQUIRED",
+            "message": "Handheld wajib memakai jalur /api/handheld dengan sesi operator — /rfid/ingest hanya untuk "
+                       "gate/fixed reader lama."})
     if payload.session_id:
         return await ing.ingest_into_session(device, payload.session_id,
                                              payload.epcs + [e.epc for e in payload.events])

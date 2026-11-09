@@ -196,7 +196,8 @@ async def _find_roll(transfer: Dict[str, Any], ref: str) -> Optional[Dict[str, A
     r = await db.inventory_rolls.find_one({"id": {"$in": ids}, "$or": [{"id": key}, {"roll_no": key}]}, {"_id": 0})
     if r:
         return r
-    tag = await db.rfid_tags.find_one({"$or": [{"epc": key}, {"code": key}, {"tag_code": key}], "roll_id": {"$in": ids}},
+    tag = await db.rfid_tags.find_one({"$or": [{"epc": key}, {"code": key}, {"tag_code": key}], "roll_id": {"$in": ids},
+                                       "status": {"$in": ["active", "pending_print"]}},   # FIX-3b (RFID-2)
                                       {"_id": 0, "roll_id": 1})
     return await db.inventory_rolls.find_one({"id": tag["roll_id"]}, {"_id": 0}) if tag else None
 
@@ -254,6 +255,23 @@ async def _refresh_status(transfer_id: str, actor_name: str = "") -> Dict[str, A
     t = await db.warehouse_transfers.find_one({"id": transfer_id}, {"_id": 0})
     in_transit = await transfer_held_rolls(transfer_id, ["in_transit_transfer"])
     received = await db.inventory_rolls.count_documents({"last_transfer.ref_id": transfer_id})
+    if t["status"] == "returning":
+        # FIX-3b (FLW-OUT-11) — semua roll sudah diterima kembali di asal → `cancelled` (basis returned_to_source);
+        # penanda `transfer_prior_status` dibersihkan oleh `_land`.
+        if not in_transit:
+            from services import status_history as _sh
+            t = await db.warehouse_transfers.find_one_and_update(
+                {"id": transfer_id, "status": "returning"},
+                {"$set": {"status": "cancelled", "cancelled_at": now_iso(),
+                          "cancelled_by": (t.get("return_requested") or {}).get("by", actor_name),
+                          "cancelled_reason": (t.get("return_requested") or {}).get("reason", ""),
+                          "completion_basis": "returned_to_source", "updated_at": now_iso()},
+                 "$push": {"status_history": _sh.entry("cancelled", user=actor_name, note="semua roll kembali ke asal")}},
+                projection={"_id": 0}, return_document=True) or t
+            if t.get("status") == "cancelled":
+                from services import gate_txn_service as _gt
+                await _gt.safe_close("wh_transfer", transfer_id, ("out", "in"), "transfer_cancelled")
+        return t
     if t["status"] in ("dispatched", "partially_received"):
         new = "completed" if not in_transit else ("partially_received" if received else "dispatched")
         if new == "completed" and not received and await db.inventory_rolls.count_documents(
@@ -283,8 +301,11 @@ async def _refresh_status(transfer_id: str, actor_name: str = "") -> Dict[str, A
 async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
     if transfer.get("transfer_kind") == "inter_entity":
         raise HTTPException(status_code=400, detail="Transfer antar badan usaha tidak memindah fisik — tidak ada penerimaan.")
-    if transfer["status"] not in ("dispatched", "partially_received"):
+    if transfer["status"] not in ("dispatched", "partially_received", "returning"):
         raise HTTPException(status_code=400, detail="Penerimaan hanya untuk transfer yang sudah dikirim (dalam perjalanan).")
+    if transfer["status"] == "returning":
+        # FIX-3b (FLW-OUT-11, K-B2b-03) — transfer dibatalkan di jalan: roll DITERIMA KEMBALI di gudang ASAL.
+        transfer = {**transfer, "dest_warehouse_id": transfer["source_warehouse_id"], "_returning": True}
     dest = await db.warehouses.find_one({"id": transfer["dest_warehouse_id"]}, {"_id": 0})
     node = pr.resolve_bin(dest, body.bin_id) if body.bin_id else None
     if body.bin_id and not node:

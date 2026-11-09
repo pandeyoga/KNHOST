@@ -39,13 +39,15 @@ async def complete_if_all_pod(order_id: str, actor_name: str) -> Optional[Dict[s
     from dependencies import audit
     from services.roll_service import deliver_order_rolls
     from services.sales_order_helpers import so_transition
-    delivered = await deliver_order_rolls(order_id)
+    # FIX-3b (STM-OUT-6) — CAS SO DULU, baru roll dipindah (dulu roll dipindah sebelum CAS: dua POD bersamaan /
+    # POD vs batal sama-sama menulis). Semua SJ sudah ber-POD → sisa roll di jalan milik SO ikut `delivered`.
     try:
         result = await so_transition(order_id, ["shipped"], "done", actor_name or "Sistem (POD)", "order_delivered",
                                      {"delivered_at": now_iso(), "delivered_by": actor_name or "Sistem (POD)",
                                       "delivered_via": "pod"})
     except HTTPException:
         return None   # balapan: sudah ditutup jalur lain (manual / POD lain) — bukan galat
+    delivered = await deliver_order_rolls(order_id)
     await audit(actor_name or "Sistem (POD)", "order_delivered", "sales_order", order_id,
                 {"rolls_delivered": delivered, "via": "pod_auto", "shipments": prog["total"]})
     try:
@@ -56,9 +58,25 @@ async def complete_if_all_pod(order_id: str, actor_name: str) -> Optional[Dict[s
     return result
 
 
+async def deliver_podded_shipments(order_id: str) -> int:
+    """FIX-3b (FLW-OUT-2, K-B2b-02) — POD dihitung PER SURAT JALAN: roll setiap SJ aktif yang sudah ber-POD langsung
+    `delivered`, walau SO masih `partially_shipped` (kirim sebagian + backorder). Dulu roll baru pindah saat SO utuh
+    `done`, sehingga roll yang sudah diterima pelanggan tetap "di jalan" selamanya bila backorder belum terisi."""
+    ships = await db.shipments.find({"order_id": order_id, "status": {"$nin": list(SJ_INACTIVE)},
+                                     "logistics_status": {"$in": list(POD_DONE)}}, {"_id": 0, "id": 1}).to_list(500)
+    if not ships:
+        return 0
+    from services.roll_service import deliver_shipment_rolls
+    return await deliver_shipment_rolls(order_id, [s["id"] for s in ships])
+
+
 async def on_pod(order_ids: List[str], actor_name: str) -> None:
     """Dipanggil Logistik sesudah POD / serah terima — tidak pernah menggagalkan transisi logistiknya."""
     for oid in order_ids:
+        try:
+            await deliver_podded_shipments(oid)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[so_delivery.on_pod] roll SJ ber-POD SO %s gagal ditandai diterima: %s", oid, exc)
         try:
             await complete_if_all_pod(oid, actor_name)
         except Exception as exc:  # noqa: BLE001

@@ -480,6 +480,13 @@ async def _item_effects(job: Dict[str, Any], items: List[Dict[str, Any]]) -> Non
     await record_label_prints(items, kind=job.get("kind", "rfid_tag"), channel="print_queue", actor_name=actor, job=job)
     if job.get("kind") not in RFID_WRITE_KINDS:
         return
+    # FIX-3b (RFID-3) — item tanpa bukti chip (tandai tercetak manual) tidak mengaktifkan tag; aktif saat verifikasi.
+    unproven = [i for i in items if i.get("encode_status") == "unverified"]
+    for it in unproven:
+        await tag_event(it["roll_id"], it.get("tag_id"), it.get("epc"), "printed_unverified", by=actor,
+                        job_id=job["id"], item_id=it.get("item_id"), key=f"printed_unverified:{it.get('tag_id')}:{job['id']}",
+                        note="Ditandai tercetak manual — tag aktif sesudah EPC terbaca di sesi Verifikasi")
+    items = [i for i in items if i.get("encode_status") != "unverified"]
     tag_ids = [i["tag_id"] for i in items if i.get("tag_id")]
     if tag_ids:
         await db.rfid_tags.update_many({"id": {"$in": tag_ids}, "status": "pending_print"},
@@ -558,6 +565,11 @@ async def mark_printed(job_id: str, scope_ids: List[str], actor_name: str = "") 
                                                  "updated_at": now_iso(), "effects_pending": True})
     if job.get("kind") not in RFID_WRITE_KINDS:
         st["items.$[p].encode_status"] = "not_applicable"
+    else:
+        # FIX-3b (RFID-3, K-B2b-13, PREP-F §9.3/RACC-24) — "tandai tercetak" manual hanya bukti CETAK, bukan bukti
+        # CHIP: tag tetap `pending_print` sampai EPC-nya terbaca di sesi Verifikasi (baca balik) — dulu tag langsung
+        # `active` tanpa bukti chip tertulis.
+        st["items.$[p].encode_status"] = "unverified"
     won = await db.rfid_print_jobs.find_one_and_update(
         {"id": job_id, "status": "queued", "items.status": {"$nin": ["started"]}},
         {"$set": st, "$unset": {"lease": ""}}, array_filters=[{"p.status": {"$in": ["pending", None]}}],
@@ -604,6 +616,10 @@ async def scan_session(session_id: str, epcs: List[str], scope_ids: Optional[Lis
     }
     if source == "simulated":
         upd["$addToSet"]["simulated_epcs"] = {"$each": clean}
+    elif source == "manual":   # FIX-3b (K-B3b-02) — EPC ditempel/diketik: dicatat, bukan bukti perangkat
+        upd["$addToSet"]["manual_epcs"] = {"$each": clean}
+    else:
+        upd["$addToSet"]["proof_epcs"] = {"$each": clean}
     res = await db.rfid_verify_sessions.update_one(
         {"id": session_id, "status": "open", "saga_lock": {"$exists": False}}, upd)
     if res.matched_count != 1:
@@ -679,6 +695,32 @@ async def start_verify(job_id: str, scope_ids: List[str], actor_name: str) -> Di
     return await _verify_progress(sess["id"])
 
 
+async def _activate_proven_tags(prog: Dict[str, Any], job: Dict[str, Any], session_id: str) -> int:
+    """FIX-3b (RFID-3) — item "tercetak manual" (`encode_status=unverified`) yang EPC-nya TERBACA di sesi verifikasi
+    nyata: tag `pending_print → active` + item `encode_status=confirmed` (bukti: sesi verifikasi). EPC yang tidak
+    terbaca tetap `pending_print` (gate tidak menganggapnya identitas sah)."""
+    scanned = set(prog.get("scanned_epcs") or [])
+    items = [i for i in job.get("items") or [] if i.get("encode_status") == "unverified" and i.get("epc") in scanned
+             and i.get("tag_id")]
+    n = 0
+    for it in items:
+        t = await db.rfid_tags.find_one_and_update(
+            {"id": it["tag_id"], "status": "pending_print", "roll_id": it["roll_id"]},
+            {"$set": {"status": "active", "activated_at": now_iso(), "activated_by_job": job["id"],
+                      "activated_via": "verify_session", "activation_ref": session_id}}, projection={"_id": 0})
+        await db.rfid_print_jobs.update_one(
+            {"id": job["id"]}, {"$set": {"items.$[it].encode_status": "confirmed",
+                                         "items.$[it].chip_evidence": {"source": "verify_session", "ref": session_id,
+                                                                       "at": now_iso()}}},
+            array_filters=[{"it.item_id": it.get("item_id")}])
+        if t:
+            n += 1
+            await tag_event(it["roll_id"], it["tag_id"], it.get("epc"), "activated", by=job.get("printed_by", ""),
+                            job_id=job["id"], item_id=it.get("item_id"), key=f"activated:{it['tag_id']}:{job['id']}",
+                            note="EPC terbaca di sesi verifikasi (bukti chip) — tag aktif")
+    return n
+
+
 async def complete_verify(session_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     prog = await _verify_progress(session_id)
     if prog["kind"] != "print_verify":
@@ -707,6 +749,7 @@ async def complete_verify(session_id: str, scope_ids: List[str]) -> Dict[str, An
                 "last_verify": {"session_id": session_id, "result": result, "at": now_iso()},
                 "verify_covered_items": covered, "verified_at": now_iso(), "updated_at": now_iso()}})
             await refresh_job(prog["print_job_id"])  # item tinjauan terbuka → status tetap needs_review
+            await _activate_proven_tags(prog, job_now, session_id)   # FIX-3b (RFID-3) — bukti baca EPC
             if matched_rolls:
                 await set_journey(matched_rolls, "tag_verified", {"verify_session_id": session_id},
                                   only_from=[None, "received_transit", "tag_printed", "tag_verified", "cut_pending_tag"])

@@ -994,9 +994,16 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
     is_refund = outcome == prs.OUTCOME_REFUND
 
     # Kumpulkan movement konsumsi (return_out) sebagai SSOT roll yang dikeluarkan.
+    # FIX-3b (B2b PRT-01/02) — retur yang lahir dari TOLAK QC menulis mutasi `movement_type=qc_reject_return` (tanpa
+    # field `type`): dulu tidak ketemu → 0 roll dipulihkan padahal jurnal & AP tetap dibalik. Kini dua jenis dicari.
     movements = await db.inventory_movements.find(
-        {"ref_type": "purchase_return", "ref_id": return_id, "type": "return_out"}, {"_id": 0}
+        {"ref_type": "purchase_return", "ref_id": return_id,
+         "$or": [{"type": "return_out"}, {"movement_type": {"$in": ["return_out", "qc_reject_return"]}}]}, {"_id": 0}
     ).to_list(10000)
+    if not movements:
+        raise ValueError(
+            "Tidak ada mutasi barang keluar untuk retur ini — reversal otomatis tidak aman (jurnal & AP tidak dibalik "
+            "tanpa barang kembali). Lakukan koreksi manual.")
     rolls_by_id: Dict[str, Dict[str, Any]] = {}
     for rid in {m.get("roll_id") for m in movements if m.get("roll_id")}:
         r = await db.inventory_rolls.find_one({"id": rid}, {"_id": 0})
@@ -1037,9 +1044,11 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
             continue
         qty = abs(round(float(m.get("quantity", 0) or 0), 2))
         if roll.get("status") == RETURNED_STATUS:
-            # dikonsumsi PENUH → kembalikan status available (length masih utuh).
-            await db.inventory_rolls.update_one({"id": rid}, {"$set": {
-                "status": "available", "returned_ref": None,
+            # dikonsumsi PENUH → kembalikan status ASAL (length masih utuh). FIX-3b (PRT-05) — barang tolak QC kembali
+            # ke KARANTINA (menunggu keputusan QC lagi), bukan langsung tersedia dijual. CAS status.
+            back_to = "quarantine" if (m.get("movement_type") == "qc_reject_return") else "available"
+            await db.inventory_rolls.update_one({"id": rid, "status": RETURNED_STATUS}, {"$set": {
+                "status": back_to, "returned_ref": None,
                 "unreturned_at": now, "unreturned_by": actor, "updated_at": now}})
         else:
             # dikonsumsi PARSIAL (length dikurangi) → tambahkan kembali length.

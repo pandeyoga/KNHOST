@@ -642,6 +642,38 @@ E("cutting.wait_late_minutes", group="stok-satuan", type="int", default=240, min
   consumers=("services/cutting_service.py:desk",), related=("cutting.wait_warn_minutes",), risk="low")
 
 
+# FIX-3b (B2b CUT-4 / K-B2b-05, CUT-2 / K-B2b-06 / K-B3b-07) — sisa potong & susut potong, satu aturan untuk potong SO
+# dan potong sample.
+E("cutting.remnant_threshold", group="stok-satuan", type="decimal", default=2.0, min=0, max=1000, step=0.5,
+  unit="satuan dasar", scopes=("global", "entity", "product"),
+  label="Sisa potong — ambang roll sisa (remnant)",
+  help="Sesudah dipotong (untuk pesanan maupun sample), roll induk yang sisanya LEBIH KECIL dari ambang ini ditandai "
+       "sisa (remnant). 0 = tidak pernah ditandai. Bisa diatur per produk/kategori lewat lapisan produk.",
+  impact="Roll sisa tampil berlabel sisa di stok & pemilih roll; grade mengikuti setelan grade sisa potong.",
+  example="2 → roll 30 yard dipotong 28,5 → sisa 1,5 yard = sisa (remnant)",
+  consumers=("services/roll_service.py:apply_remnant_rule",), related=("cutting.remnant_grade",), risk="low")
+
+E("cutting.remnant_grade", group="stok-satuan", type="enum", default="keep",
+  options=({"value": "keep", "label": "Grade tetap sampai diinspeksi"},
+           {"value": "BS", "label": "Jadi BS"},
+           {"value": "C", "label": "Jadi C"}),
+  scopes=("global", "entity", "product"),
+  label="Sisa potong — grade roll sisa",
+  help="Grade roll induk yang menjadi sisa (di bawah ambang). Bawaan: grade TIDAK diubah sampai inspeksi.",
+  impact="Mengubah grade roll sisa saat potong dikonfirmasi; grade asal disimpan di `remnant.prev_grade`.",
+  example="BS → sisa 1,5 yard grade A menjadi BS",
+  consumers=("services/roll_service.py:apply_remnant_rule",), related=("cutting.remnant_threshold",), risk="medium")
+
+E("cutting.waste_limit_pct", group="stok-satuan", type="pct", default=3.0, min=0, max=100, step=0.5,
+  scopes=("global", "entity", "product"),
+  label="Susut potong — batas tanpa alasan (% dari panjang potong)",
+  help="Susut (waste) saat konfirmasi potong yang melebihi persentase ini dari panjang potong wajib disertai alasan "
+       "(minimal 5 huruf). Susut selalu dijurnal sebagai penghapusan persediaan.",
+  impact="Susut di atas batas tanpa alasan ditolak; jurnal susut tetap dibuat untuk semua susut > 0.",
+  example="3% → potong 20 yard dengan susut 0,8 yard (4%) wajib beralasan",
+  consumers=("services/roll_service.py:confirm_cut",), risk="low")
+
+
 E("returns.evidence_required_submit", group="retur", type="bool", default=False, scopes=("global", "entity"),
   label="Bukti foto wajib sebelum retur diajukan untuk persetujuan",
   help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa diajukan untuk persetujuan. Bila mati, bukti boleh dilengkapi kemudian.",

@@ -90,7 +90,8 @@ async def resolve_codes(codes: List[str]) -> Tuple[List[str], List[str]]:
         code = str(raw or "").strip()
         if not code:
             continue
-        tag = await db.rfid_tags.find_one({"epc": try_canonical(code) or code.upper()}, {"_id": 0, "roll_id": 1})
+        tag = await db.rfid_tags.find_one({"epc": try_canonical(code) or code.upper(),   # FIX-3b (RFID-2) — tag hidup saja
+                                           "status": {"$in": ["active", "pending_print"]}}, {"_id": 0, "roll_id": 1})
         rid = (tag or {}).get("roll_id")
         if not rid:
             row = await db.inventory_rolls.find_one({"$or": [{"roll_no": code}, {"id": code}]}, {"_id": 0, "id": 1})

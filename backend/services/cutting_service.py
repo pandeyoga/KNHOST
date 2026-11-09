@@ -96,6 +96,7 @@ async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[s
             "warehouse_id": t.get("warehouse_id"), "warehouse_name": whs.get(t.get("warehouse_id"), ""),
             "child_roll_no": t.get("child_roll_no", ""), "parent_roll_no": t.get("parent_roll_no", ""),
             "source_owner_entity_id": line.get("source_owner_entity_id", ""), "handoff": t.get("cutting_handoff"),
+            "handoff_pending": t.get("cutting_handoff_pending"),   # FIX-3b (CUT-3) — menunggu transfer lintas gedung
             "roll_owner_entity_id": owners.get(t.get("roll_id")) or t.get("entity_id") or "",
             "cut_at": t.get("cut_at") or line.get("cut_at") or "",
             "wait_minutes": _minutes_since(t.get("cut_at") or line.get("cut_at"),
@@ -106,20 +107,80 @@ async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[s
             "wait_thresholds": th, "late_count": late}
 
 
+TERMINAL_TASK = ("cancelled", "dispatched", "shipped", "delivered", "done", "completed")
+
+
+async def _handoff_transfer(task: Dict[str, Any], roll: Dict[str, Any], wh: Dict[str, Any],
+                            actor: Dict[str, Any]) -> Dict[str, Any]:
+    """FIX-3b (CUT-3, keputusan K-B2b-10) — serah-terima Admin Cutting LINTAS GEDUNG wajib DOKUMEN: transfer internal
+    (status menunggu persetujuan, roll anak tetap berkomitmen ke pesanan lewat `transfer_ref`) yang lalu dijalankan
+    seperti transfer lain (setujui → kirim → gate/terima). Roll TIDAK dipindah langsung. Idempoten: transfer terbuka
+    untuk roll ini dipakai ulang."""
+    from services.transfer_receipt_service import _active_transfer_of
+    busy = await _active_transfer_of(roll)
+    if busy:
+        return {"id": busy["id"], "code": busy.get("code"), "reused": True}
+    from core_utils import next_doc_number
+    prod = await db.products.find_one({"id": roll["product_id"]}, {"_id": 0, "sku": 1, "name": 1, "line_code": 1,
+                                                                   "base_unit": 1}) or {}
+    owner = roll.get("owner_entity_id") or task.get("entity_id") or ""
+    tid = new_id("trn")
+    code = await next_doc_number("warehouse_transfers", "code", "TRF-", entity_id=owner or None)
+    so = await db.sales_orders.find_one({"id": task["order_id"]}, {"_id": 0, "number": 1, "customer_name": 1}) or {}
+    length = round(float(roll.get("length_remaining") or 0), 2)
+    item = {"product_id": roll["product_id"], "qty": length, "unit": prod.get("base_unit") or roll.get("unit") or "",
+            "owner_entity_id": owner, "sku": prod.get("sku", ""), "product_name": prod.get("name", ""),
+            "lots": [roll["lot"]] if roll.get("lot") else [], "qty_rolls": 1,
+            "rolls": [{"roll_id": roll["id"], "roll_no": roll.get("roll_no"), "lot": roll.get("lot"), "length": length,
+                       "committed_so": task["order_id"]}],
+            "line_code": str(prod.get("line_code") or "").strip().lower()}
+    res = await db.inventory_rolls.update_one(
+        {"id": roll["id"], "status": roll.get("status"), "reserved_ref.id": task["order_id"],
+         "transfer_ref": roll.get("transfer_ref"), "active_movement": None},
+        {"$set": {"transfer_ref": {"type": "wh_transfer", "id": tid, "so_id": task["order_id"]},
+                  "updated_at": now_iso()}})
+    if not res.matched_count:
+        raise HTTPException(status_code=409, detail="Roll hasil potong baru saja berubah — muat ulang.")
+    from services import line_scope
+    doc = {"id": tid, "code": code, "transfer_kind": "intra_entity", "purpose": "cutting_handoff",
+           "entity_id": owner, "source_warehouse_id": roll["warehouse_id"], "dest_warehouse_id": wh["id"],
+           "status": "waiting_approval", "items": [item], "line_codes": line_scope.codes_from_items([item]),
+           "notes": f"Serah-terima hasil potong sample {task.get('order_number', '')} ke Admin Cutting {wh.get('name', '')}",
+           "requested_by": actor.get("name", ""), "approved_by": None, "approved_at": None, "rejected_by": None,
+           "rejected_at": None, "rejected_reason": None, "sales_order_id": task["order_id"],
+           "sales_order_number": so.get("number", ""), "sales_order_customer": so.get("customer_name", ""),
+           "cutting_task_id": task["id"], "created_at": now_iso(), "updated_at": now_iso()}
+    await db.warehouse_transfers.insert_one(dict(doc))
+    await db.sales_orders.update_one({"id": task["order_id"]}, {"$addToSet": {"linked_transfer_ids": tid}})
+    from dependencies import audit
+    await audit(actor.get("name", ""), "transfer_created", "transfer", tid,
+                {"code": code, "items": 1, "purpose": "cutting_handoff", "task_id": task["id"]})
+    return {"id": tid, "code": code, "reused": False}
+
+
 async def receive(task_id: str, to_warehouse_id: str, actor: Dict[str, Any], scope_entities: List[str]) -> Dict[str, Any]:
-    """Admin Cutting menerima hasil potong. Beda lokasi → roll anak dipindah nyata (asal→tujuan) + mutasi tercatat."""
+    """Admin Cutting menerima hasil potong.
+
+    FIX-3b (CUT-3, K-B2b-10) — (1) tugas TERMINAL (batal/terkirim) ditolak 409, dan klaim berprasyarat status hidup
+    (dulu tugas sampel yang sudah batal tetap memindah roll Jakarta → Bandung). (2) Lokasi Admin Cutting ≠ gudang roll
+    → TIDAK memindah roll langsung: lahir transfer internal (dokumen + gate), serah-terima dicatat "menunggu transfer";
+    sesudah transfer diterima di tujuan, "Terima" lagi = serah-terima di lokasi yang sama."""
     task = await db.wms_tasks.find_one({"id": task_id, "task_subtype": "sample_cut"}, {"_id": 0})
     if not task or (scope_entities and task.get("entity_id") not in scope_entities):
         raise HTTPException(status_code=404, detail="Tugas potong tidak ditemukan.")
     if (task.get("cutting_handoff") or {}).get("received_at"):
         return safe_doc(task)   # idempoten
+    if task.get("status") in TERMINAL_TASK:
+        raise HTTPException(status_code=409, detail=(
+            f"Tugas potong berstatus '{task.get('status')}' — hasil potong pesanan yang dibatalkan/terkirim tidak "
+            "diterima Admin Cutting. Roll sisa potongnya dikembalikan lewat Penempatan Rak."))
     if not task.get("roll_id"):
         raise HTTPException(status_code=409, detail="Belum dipotong gudang — belum ada hasil potong untuk diterima.")
-    src = task.get("warehouse_id")
-    dst = (to_warehouse_id or "").strip() or src
     roll = await db.inventory_rolls.find_one({"id": task["roll_id"]}, {"_id": 0})
     if not roll:
         raise HTTPException(status_code=409, detail="Roll hasil potong tidak ditemukan — hubungi admin gudang.")
+    src = roll.get("warehouse_id") or task.get("warehouse_id")
+    dst = (to_warehouse_id or "").strip() or src
     wh = await db.warehouses.find_one({"id": dst}, {"_id": 0, "id": 1, "name": 1, "sharing_mode": 1, "entity_ids": 1})
     if not wh:
         raise HTTPException(status_code=404, detail="Lokasi tujuan Admin Cutting tidak ditemukan.")
@@ -129,37 +190,51 @@ async def receive(task_id: str, to_warehouse_id: str, actor: Dict[str, Any], sco
             "code": "CUTTING_DEST_OTHER_OWNER",
             "message": f"Lokasi {wh.get('name', dst)} bukan gudang milik/terbuka untuk pemilik roll — hasil potong tidak boleh pindah ke PT lain."})
     now = now_iso()
-    handoff = {"from_warehouse_id": src, "to_warehouse_id": dst, "received_by": actor.get("name", ""),
-               "received_by_id": actor.get("id", ""), "received_at": now, "transferred": dst != src}
+    if dst != src:
+        trf = await _handoff_transfer(task, roll, wh, actor)
+        pending = {"to_warehouse_id": dst, "to_warehouse_name": wh.get("name", ""), "from_warehouse_id": src,
+                   "transfer_id": trf["id"], "transfer_code": trf.get("code"), "requested_by": actor.get("name", ""),
+                   "requested_at": now}
+        upd = await db.wms_tasks.find_one_and_update(
+            {"id": task_id, "status": {"$nin": list(TERMINAL_TASK)}, "cutting_handoff.received_at": {"$exists": False}},
+            {"$set": {"cutting_handoff_pending": pending, "updated_at": now}},
+            projection={"_id": 0}, return_document=True)
+        if not upd:
+            raise HTTPException(status_code=409, detail="Tugas potong baru saja berubah — muat ulang.")
+        if not trf.get("reused"):
+            await db.sales_orders.update_one({"id": task["order_id"]}, {"$push": {"timeline": {
+                "event": "cutting_handoff_transfer", "label": "Serah-terima hasil potong lintas gedung — transfer dibuat",
+                "actor": actor.get("name", ""), "at": now,
+                "note": f"{task.get('product_name', '')} · {task.get('child_roll_no', '')} → {wh.get('name', '')} ({trf.get('code')})"}}})
+        return {**safe_doc(upd), "transfer_required": True, "transfer": trf,
+                "message": (f"Hasil potong ada di gedung lain — transfer {trf.get('code')} dibuat (menunggu persetujuan). "
+                            "Terima lagi sesudah barang tiba di lokasi Admin Cutting.")}
+    handoff = {"from_warehouse_id": task.get("warehouse_id"), "to_warehouse_id": dst,
+               "received_by": actor.get("name", ""), "received_by_id": actor.get("id", ""), "received_at": now,
+               "transferred": task.get("warehouse_id") != dst,
+               **({"transfer_id": (task.get("cutting_handoff_pending") or {}).get("transfer_id")}
+                  if task.get("cutting_handoff_pending") else {})}
     claimed = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "cutting_handoff.received_at": {"$exists": False}},
+        {"id": task_id, "status": {"$nin": list(TERMINAL_TASK)}, "cutting_handoff.received_at": {"$exists": False}},
         {"$set": {"cutting_handoff": handoff, "warehouse_id": dst, "updated_at": now},
+         "$unset": {"cutting_handoff_pending": ""},
          "$push": {"scan_log": {"id": new_id("scan"), "scan_type": "cutting_handoff", "actor": actor.get("name", ""),
-                                "timestamp": now, "from": src, "to": dst}}},
+                                "timestamp": now, "from": task.get("warehouse_id"), "to": dst}}},
         projection={"_id": 0}, return_document=True)
     if not claimed:
-        return safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
-    if dst != src:
-        await db.inventory_rolls.update_one(
-            {"id": task["roll_id"]}, {"$set": {"warehouse_id": dst, "bin_id": "", "updated_at": now}})
-        base = {"product_id": roll["product_id"], "owner_entity_id": roll.get("owner_entity_id"), "roll_id": roll["id"],
-                "unit": task.get("unit"), "source_document": task.get("order_number", ""), "reference_id": task["order_id"],
-                "timestamp": now, "created_by": actor.get("name", ""), "qty_rolls": 1}
-        qty = float(roll.get("length_remaining") or 0)
-        await db.inventory_movements.insert_many([
-            {**base, "id": f"mov_cho_{task_id}", "movement_type": "cutting_handoff_out", "warehouse_id": src, "quantity": -qty,
-             "to_warehouse_id": dst},
-            {**base, "id": f"mov_chi_{task_id}", "movement_type": "cutting_handoff_in", "warehouse_id": dst, "quantity": qty,
-             "from_warehouse_id": src}])
-        for w in (src, dst):
-            await rebuild_balance(roll["product_id"], w, roll.get("owner_entity_id"))
+        cur = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
+        if (cur.get("cutting_handoff") or {}).get("received_at"):
+            return cur
+        raise HTTPException(status_code=409, detail=f"Tugas potong berstatus '{cur.get('status')}' — tidak diterima.")
+    if task.get("warehouse_id") != dst:   # roll sudah tiba lewat transfer → tugas & alokasi mengikuti lokasi roll
         await db.sales_orders.update_one({"id": task["order_id"], "allocations.roll_ids": roll["id"]},
                                          {"$set": {"allocations.$.warehouse_id": dst}})
     await db.sales_orders.update_one(
         {"id": task["order_id"]},
         {"$push": {"timeline": {"event": "cutting_handoff", "label": "Hasil potong diterima Admin Cutting",
                                 "actor": actor.get("name", ""), "at": now,
-                                "note": f"{task.get('product_name', '')} · {task.get('child_roll_no', '')}" + (" (dipindah lokasi)" if dst != src else "")}}})
+                                "note": f"{task.get('product_name', '')} · {task.get('child_roll_no', '')}"
+                                        + (" (tiba lewat transfer)" if handoff.get("transferred") else "")}}})
     return safe_doc(claimed)
 
 
@@ -212,12 +287,17 @@ async def receive_order(order_id: str, to_warehouse_id: str, actor: Dict[str, An
         {"_id": 0, "id": 1, "product_name": 1}).to_list(200)
     if not tasks:
         raise HTTPException(status_code=409, detail="Tidak ada hasil potong pesanan ini yang menunggu diterima.")
-    ok, failed = [], []
+    ok, failed, via_transfer = [], [], []
     for t in tasks:
         try:
-            ok.append(await receive(t["id"], to_warehouse_id, actor, scope_entities))
+            res = await receive(t["id"], to_warehouse_id, actor, scope_entities)
+            if res.get("transfer_required"):   # FIX-3b (CUT-3) — lintas gedung: menunggu transfer, belum diterima
+                via_transfer.append({"task_id": t["id"], "product_name": t.get("product_name", ""),
+                                     "transfer": res.get("transfer")})
+            else:
+                ok.append(res)
         except HTTPException as exc:
             d = exc.detail
             failed.append({"task_id": t["id"], "product_name": t.get("product_name", ""),
                            "error": d.get("message") if isinstance(d, dict) else str(d)})
-    return {"received": len(ok), "failed": failed}
+    return {"received": len(ok), "failed": failed, "transfer_required": via_transfer}

@@ -113,12 +113,25 @@ async def encode_tag(roll_id: str, scope_ids: List[str], epc: Optional[str] = No
         raise HTTPException(status_code=400, detail="Roll tidak dalam kondisi fisik untuk di-tag")
 
     from services.epc import canonical_epc
+    manual = bool(epc)
     try:
         epc = canonical_epc(epc) if epc else generate_epc()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    if await db.rfid_tags.find_one({"epc": epc, "status": {"$in": list(LIVE_TAG_STATUSES)}}):
-        raise HTTPException(status_code=409, detail="EPC sudah dipakai tag aktif lain")
+    # FIX-3b (RFID-2, K-OPN-05, PREP-F §9.2) — EPC yang PERNAH terbit (status apa pun, termasuk `retired`) tidak pernah
+    # dipakai lagi: dulu hanya EPC "hidup" yang dicek → EPC pensiun bisa ditulis ke roll lain dan `/rfid/lookup`
+    # mengembalikan roll lama. EPC buatan sistem dicari ulang sampai belum pernah ada.
+    for _ in range(12):
+        prev = await db.rfid_tags.find_one({"epc": epc}, {"_id": 0, "status": 1, "roll_no": 1, "roll_id": 1})
+        if not prev:
+            break
+        if manual:
+            raise HTTPException(status_code=409, detail=(
+                f"EPC {epc} sudah pernah terbit (tag {prev.get('status')}, roll {prev.get('roll_no') or prev.get('roll_id')})"
+                " — EPC tidak pernah dipakai ulang. Pasang chip/label baru dengan EPC baru."))
+        epc = generate_epc()
+    else:
+        raise HTTPException(status_code=500, detail="Gagal membuat EPC unik — coba lagi.")
     p = await db.products.find_one({"id": roll["product_id"]}, {"_id": 0, "sku": 1, "name": 1}) or {}
     tag = {
         "id": new_id("rtag"), "epc": epc, "roll_id": roll_id,
@@ -194,6 +207,7 @@ DEVICE_PUBLIC_FIELDS = (
     "status", "last_heartbeat", "created_at", "created_by", "updated_at",
     "disabled_at", "api_key_at", "api_key_hint",
     "protocol", "v2_config_version",   # PREP-D2 — monitor/kios memilih status V2 (kuning) untuk reader V2
+    "test_device",                     # FIX-3b (K-B2b-09) — perangkat uji: satu-satunya tempat simulator boleh jalan
 )
 DEVICE_SECRET_PROJECTION = {"_id": 0, "api_key": 0, "api_key_hash": 0}
 
@@ -222,6 +236,19 @@ async def simulation_on(entity_id: str = "") -> bool:
     return bool(await value_of("wms.rfid_simulation", {"entity_id": entity_id or ""}))
 
 
+async def simulator_problem(device: Dict[str, Any], entity_id: str = "") -> Optional[str]:
+    """FIX-3b (RFID-1/RFID-4/RFID-9, keputusan K-B2b-09) — simulator gate (V2 maupun gate lama) HANYA boleh berjalan di
+    perangkat yang ditandai UJI (`test_device: true`, diatur admin) DAN untuk PT yang Mode simulasi RFID-nya menyala.
+    Dulu simulator di reader produksi memasang klaim/`gate_exit` nyata (lintasan nyata berikutnya MERAH) dan, bila
+    mode simulasi menyala di PT nyata, menerima/mengirim barang sungguhan. None = boleh; selain itu alasan penolakan."""
+    if device.get("test_device") is not True:
+        return (f"Perangkat {device.get('code') or device.get('id')} bukan perangkat uji — simulator tidak boleh "
+                "dijalankan di reader produksi. Tandai perangkat sebagai 'perangkat uji' (admin) bila memang alat uji.")
+    if not await simulation_on(entity_id):
+        return "Mode simulasi RFID untuk PT dokumen ini mati — simulator tidak dijalankan (data nyata)."
+    return None
+
+
 async def create_device(payload: Dict[str, Any], actor_name: str = "System", *, sim_entity: Optional[str] = None
                         ) -> Dict[str, Any]:
     dtype = (payload.get("type") or "").strip()
@@ -244,6 +271,7 @@ async def create_device(payload: Dict[str, Any], actor_name: str = "System", *, 
         "warehouse_id": wh["id"], "warehouse_name": wh.get("name", ""),
         "location": (payload.get("location") or "").strip(),
         "status": "online" if sim else "offline", "enabled": True,
+        "test_device": payload.get("test_device") is True,   # FIX-3b (K-B2b-09)
         "last_heartbeat": now_iso() if sim else None, **({"heartbeat_source": "simulated"} if sim else {}),
         "created_at": now_iso(), "created_by": actor_name,
     }
@@ -256,7 +284,7 @@ async def update_device(device_id: str, patch: Dict[str, Any], *, sim_entity: Op
     if not dev:
         raise HTTPException(status_code=404, detail="Device tidak ditemukan")
     allowed = {k: v for k, v in patch.items()
-               if k in {"name", "status", "location", "direction", "type", "enabled"} and v is not None}
+               if k in {"name", "status", "location", "direction", "type", "enabled", "test_device"} and v is not None}
     if "type" in allowed and allowed["type"] not in DEVICE_TYPES:
         raise HTTPException(status_code=400, detail="Tipe device tidak valid")
     # RF-13 — enabled = lifecycle (revocation); status = health. Nonaktif selalu offline.
@@ -363,6 +391,10 @@ async def gate_simulate(device_id: str, roll_id: str, scope_ids: List[str]) -> D
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
     if roll.get("owner_entity_id") not in scope_ids:
         raise HTTPException(status_code=403, detail="Roll di luar entitas Anda")
+    # FIX-3b (RFID-4, K-B2b-09) — simulator gate lama hanya di perangkat uji + PT bermode simulasi.
+    why = await simulator_problem(device, roll.get("owner_entity_id") or "")
+    if why:
+        raise HTTPException(status_code=409, detail={"code": "SIMULATOR_NOT_ALLOWED", "message": why})
     tag_id = roll.get("rfid_tag_id")
     if not tag_id:
         raise HTTPException(status_code=400, detail="Roll belum ber-tag RFID — encode dulu")

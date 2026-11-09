@@ -614,6 +614,7 @@ class CutConfirmPayload(BaseModel):
     actual_length: Optional[float] = None
     waste: float = 0.0
     note: str = ""
+    waste_reason: str = ""   # FIX-3b (K-B2b-06/K-B3b-07) — wajib bila susut melewati batas setelan
 
 
 @router.get("/inventory/pending-cuts")
@@ -634,7 +635,8 @@ async def post_confirm_cut(roll_id: str, reservation_id: str, payload: CutConfir
     if not roll or roll.get("owner_entity_id") not in resolve_scope_ids(ctx):
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
     out = await roll_service.confirm_cut(roll_id, reservation_id, payload.actual_length, payload.waste,
-                                         actor["name"], "manual", payload.note)
+                                         actor["name"], "manual", payload.note,
+                                         waste_reason=payload.waste_reason or "")
     await audit(actor["name"], "roll_cut_confirmed", "inventory_roll", roll_id,
                 {"reservation_id": reservation_id, "child_roll_id": out["child"]["id"], **out["cut"]})
     child = {k: out["child"].get(k) for k in (

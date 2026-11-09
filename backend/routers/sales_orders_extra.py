@@ -22,7 +22,7 @@ from services import line_scope             # FASE L — pagar & penyaring lini 
 from services import alert_ops_service as _alerts   # R5 — satu definisi Backorder (status) & baris pendingan
 from pagination import (is_paged, get_page_params, build_search, merge_query,
                        fetch_page, envelope)
-from services.inventory_service import expire_old_reservations
+from services.inventory_service import expire_old_reservations  # noqa: F401 — dipakai penjadwal (FIX-3b)
 from services.roll_service import (
     release_order_rolls, set_order_rolls_status,
     preview_line_allocation, deliver_order_rolls, compute_roll_reconcile,
@@ -150,7 +150,7 @@ async def list_orders(request: Request, status: str = None, customer_id: str = N
     tidak pernah berbeda dari isi daftarnya.
     """
     actor = await require_permission(request, "order", "view")
-    await expire_old_reservations()
+    # FIX-3b (STK-11) — kedaluwarsa reservasi dijalankan job penjadwal `reservation_expiry` (GET tidak menulis).
     ctx = await entity_ctx(request)
     # REVISI SAMPEL — daftar SO biasa TIDAK memuat pesanan sample (SMP-); ada daftarnya sendiri.
     query = {"order_type": {"$ne": "sample"}}
@@ -190,7 +190,7 @@ async def get_orders_stats(request: Request, entity_id: str = None,
                            line: str = "") -> Dict[str, Any]:
     """Get statistics summary for orders monitoring."""
     actor = await require_permission(request, "order", "view")
-    await expire_old_reservations()
+    # FIX-3b (STK-11) — kedaluwarsa reservasi dijalankan job penjadwal `reservation_expiry` (GET tidak menulis).
 
     # Multi-Entity (RC-7/INV-4): scope identik dgn GET /sales-orders agar
     # total_orders & by_status SELALU konsisten dengan list (tanpa header = entitas
@@ -543,9 +543,10 @@ async def mark_delivered(order_id: str, request: Request) -> Dict[str, Any]:
     if order["status"] != "shipped":
         raise HTTPException(status_code=409,
                             detail=f"Hanya order 'shipped' yang bisa ditandai diterima (saat ini '{order['status']}').")
-    delivered = await deliver_order_rolls(order_id)
+    # FIX-3b (STM-OUT-6) — CAS SO dulu, baru roll dipindah (dulu roll `delivered` walau transisi kalah).
     result = await _transition(order_id, ["shipped"], "done", actor["name"], "order_delivered",
                                {"delivered_at": now_iso()})
+    delivered = await deliver_order_rolls(order_id)
     await audit(actor["name"], "order_delivered", "sales_order", order_id, {"rolls_delivered": delivered})
     try:
         from services import special_order_phase2 as _p2
@@ -567,17 +568,23 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))
-    if order["status"] not in ["draft", "reserved", "waiting_approval", "approved", "waiting_stock"]:
-        raise HTTPException(status_code=409,
-                            detail="Roll hanya bisa diganti sebelum pesanan dikonfirmasi/dipicking.")
+    # FIX-3b (STM-OUT-4) — `draft` (reservasi sudah dilepas) TIDAK boleh memegang roll lewat Ganti Roll: pesanan draf
+    # yang lalu dibatalkan/ditinggal mengunci stok tanpa terlihat sebagai alokasi.
+    if order["status"] not in ["reserved", "waiting_approval", "approved", "waiting_stock"]:
+        raise HTTPException(status_code=409, detail=(
+            "Roll hanya bisa diganti sebelum pesanan dikonfirmasi/dipicking."
+            + (" Pesanan draf tidak memegang roll — ajukan ulang pesanan dulu." if order["status"] == "draft" else "")))
     item = next((i for i in order.get("items", []) if i.get("product_id") == product_id), None)
     if not item:
         raise HTTPException(status_code=404, detail="Baris produk tidak ada di pesanan ini.")
     if not payload.roll_lines:
         raise HTTPException(status_code=400, detail="Pilih minimal satu roll.")
 
+    # FIX-3b (STM-OUT-3) — roll yang dipegang = `reserved` ATAU `committed` (SO `approved` sudah meng-commit roll);
+    # dulu hanya `reserved` terlihat → roll committed tetap terkunci di luar alokasi (yatim) + reservasi ganda.
+    held_status = "committed" if order["status"] == "approved" else "reserved"
     current = await db.inventory_rolls.find(
-        {"reserved_ref.id": order_id, "product_id": product_id, "status": "reserved"},
+        {"reserved_ref.id": order_id, "product_id": product_id, "status": {"$in": ["reserved", "committed"]}},
         {"_id": 0}).to_list(1000)
     cur_by_id = {r["id"]: r for r in current}
     # WM-02 — reservasi panjang (belum dipotong) milik baris ini ikut dihitung sebagai "roll lama".
@@ -622,12 +629,30 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
     except HTTPException:
         await _saga.release("sales_orders", order_id)   # belum ada tulisan turunan → aman dilepas
         raise
+    if newly and held_status == "committed":
+        # FIX-3b (STM-OUT-3) — SO sudah disetujui: roll pengganti langsung `committed` seperti roll lama.
+        for r in newly:
+            if not r.get("pending_cut"):
+                await db.inventory_rolls.update_one({"id": r["id"], "status": "reserved", "reserved_ref.id": order_id},
+                                                    {"$set": {"status": "committed", "updated_at": now_iso()}})
+                r["status"] = "committed"
+            else:
+                await db.inventory_rolls.update_one(
+                    {"id": r["id"]}, {"$set": {"length_reservations.$[x].status": "committed"}},
+                    array_filters=[{"x.id": r.get("reservation_id")}])
     dropped = [r for r in current if r["id"] not in keep_ids]
     segments = set()
     for r in dropped:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "reserved", "reserved_ref.id": order_id},
+        res_d = await db.inventory_rolls.update_one(
+            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
             {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+        if res_d.modified_count:   # FIX-3b (B3a SCH-6) — pelepasan Ganti Roll kini bermutasi
+            await db.inventory_movements.insert_one({
+                "id": new_id("mov"), "product_id": product_id, "warehouse_id": r["warehouse_id"],
+                "owner_entity_id": r["owner_entity_id"], "movement_type": "release_reservation",
+                "quantity": round(float(r.get("length_remaining", 0) or 0), 2), "unit": r.get("unit", "meter"),
+                "lot": r.get("lot", ""), "roll_id": r["id"], "qty_rolls": 1, "source_document": order_id,
+                "timestamp": now_iso(), "note": f"Ganti Roll oleh {actor['name']}"})
         segments.add((r["warehouse_id"], r["owner_entity_id"]))
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
     for roll_id, lst in pend_by_roll.items():
@@ -718,8 +743,8 @@ async def release_line_rolls(order_id: str, product_id: str, payload: SoReleaseR
     item = next((i for i in order.get("items", []) if i.get("product_id") == product_id), None)
     if not item:
         raise HTTPException(status_code=404, detail="Baris produk tidak ada di pesanan ini.")
-    current = await db.inventory_rolls.find(
-        {"reserved_ref.id": order_id, "product_id": product_id, "status": "reserved"},
+    current = await db.inventory_rolls.find(   # FIX-3b (STM-OUT-3) — roll `committed` (SO approved) ikut terlihat
+        {"reserved_ref.id": order_id, "product_id": product_id, "status": {"$in": ["reserved", "committed"]}},
         {"_id": 0}).to_list(1000)
     cur_by_id = {r["id"]: r for r in current}
     wanted = [rid for rid in dict.fromkeys(payload.roll_ids) if rid]
@@ -740,7 +765,7 @@ async def release_line_rolls(order_id: str, product_id: str, payload: SoReleaseR
     released_qty = 0.0
     for r in dropped:
         await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "reserved", "reserved_ref.id": order_id},
+            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
             {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
         qty = round(float(r.get("length_remaining", 0) or 0), 2)
         released_qty = round(released_qty + qty, 2)
@@ -849,9 +874,8 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
     sales_ownership.assert_may_open(order, actor)   # sales hanya membatalkan SO miliknya
-    reason = ((payload.reason if payload else "") or "").strip()
-    if len(reason) < 5:
-        raise HTTPException(status_code=400, detail="Alasan pembatalan wajib diisi (minimal 5 karakter).")
+    from input_rules import require_reason   # FIX-3b — K-14 dihitung HURUF (validator bersama)
+    reason = require_reason((payload.reason if payload else "") or "", label="Alasan pembatalan")
     if order["status"] in ["done", "cancelled", "expired", "partially_shipped", "shipped"]:
         raise HTTPException(status_code=409, detail="Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)")
     # P16 (SALE-03) — Faktur Pajak aktif sudah/akan dilaporkan (NSFP); membatalkan SO diam-diam
@@ -868,9 +892,18 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     from services import atomic_claim as _saga
     await _saga.claim("sales_orders", order_id, "order_cancel",
                       precondition={"status": order["status"]}, actor=actor["name"])
-    if order["status"] in ["reserved", "waiting_approval", "approved", "confirmed", "waiting_stock",
-                            "partially_picked", "picked"]:
-        await release_order_rolls(order_id)
+    # FIX-3b — (STM-OUT-4) roll SELALU dilepas untuk status non-terminal mana pun, termasuk `draft` (Ganti Roll pada
+    # draf dulu meninggalkan roll `reserved` untuk pesanan mati). (FLW-OUT-4) roll yang SUDAH diambil dari rak →
+    # "kembalikan ke rak" (bin dikosongkan, antrean Penempatan Rak), bukan langsung tampil di bin asal yang kosong.
+    picked_ids: List[str] = []
+    async for t in db.wms_tasks.find({"order_id": order_id, "flow_type": "outbound",
+                                      "status": {"$nin": ["dispatched", "cancelled", "completed"]}},
+                                     {"_id": 0, "scan_log": 1, "roll_id": 1, "task_subtype": 1}):
+        picked_ids += [e.get("roll_id") for e in t.get("scan_log") or []
+                       if e.get("scan_type") == "pick" and e.get("roll_id")]
+        if t.get("task_subtype") == "sample_cut" and t.get("roll_id"):
+            picked_ids.append(t["roll_id"])
+    await release_order_rolls(order_id, return_to_rack_ids=picked_ids, why=f"SO dibatalkan: {reason}")
     result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled",
                                {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso()})
     # 2026-10 — dokumen pemenuhan (transfer/PR) dari keputusan Admin Sales TIDAK ikut batal otomatis:
@@ -882,14 +915,13 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
                        f"Alasan: {reason or '-'}")
     # S-4 (Gelombang 2) — batalkan task picking gudang yang masih aktif utk order ini
     # (antrean gudang bersih; barang order batal tidak ikut disiapkan).
-    cancelled_tasks = await db.wms_tasks.update_many(
-        {"order_id": order_id, "flow_type": "outbound",
-         "status": {"$nin": ["dispatched", "completed", "cancelled"]}},
-        {"$set": {"status": "cancelled", "cancel_reason": "SO dibatalkan",
-                  "cancelled_by": actor["name"], "updated_at": now_iso()}})
-    if cancelled_tasks.modified_count:
+    # FIX-3b (STM-OUT-2) — lewat tabel transisi (CAS daftar-izin); eskalasi yang menunggu ikut ditutup.
+    from services import outbound_task_state as _ots
+    n_cancelled = await _ots.cancel_for_order(order_id, actor["name"], "SO dibatalkan")
+    if n_cancelled:
         await audit(actor["name"], "outbound_tasks_cancelled", "sales_order", order_id,
-                    {"count": cancelled_tasks.modified_count, "reason": "SO dibatalkan"})
+                    {"count": n_cancelled, "reason": "SO dibatalkan",
+                     "return_to_rack": len(picked_ids)})
     # Gelombang 1 F-1 — jurnal balik otomatis bila order sudah berjurnal (best-effort).
     try:
         from services import gl_service
@@ -901,6 +933,23 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     if order.get("replacement_for_return"):
         from services import return_replacement_service as rpl
         await rpl.on_replacement_cancelled(order, actor)
+    if order.get("sample_billing") == "paid" and order.get("sample_payment_status") in ("approved", "reapproval_required"):
+        # FIX-3b (B2b CUT-6) — sample berbayar yang dibatalkan: status bayar tidak lagi "disetujui"; Finance diberi tahu
+        # untuk pengembalian/pembatalan tagihan.
+        await db.sales_orders.update_one({"id": order_id}, {"$set": {
+            "sample_payment_status": "refund_pending", "sample_payment_cancelled_at": now_iso(),
+            "sample_payment_cancel_reason": reason}})
+        result["sample_payment_status"] = "refund_pending"
+        try:
+            from services import notification_service as _ns
+            await _ns.create_notification(
+                notif_type="sample_payment_refund", ref=f"sample_refund:{order_id}",
+                title=f"Sample berbayar {order.get('number', '')} dibatalkan",
+                body=f"{order.get('customer_name', '')} — pembayaran sample perlu dikembalikan/dibatalkan. Alasan: {reason}"[:400],
+                severity="warning", link="sample-orders", entity_id=order.get("entity_id") or None,
+                recipient_role="finance")
+        except Exception:  # noqa: BLE001
+            pass
     return strip_cost_fields(result, actor.get("role"))
 
 

@@ -23,12 +23,22 @@ async def product_summary(product_id: str) -> Dict[str, float]:
     }
 
 
+EXPIRABLE_SO_STATUSES = ("reserved", "waiting_approval")
+"""FIX-3b (ANOM-06, keputusan K-B2b-12) — kedaluwarsa reservasi 3 hari HANYA untuk pesanan yang belum disetujui.
+SO `approved` (sudah diputus atasan) dan `waiting_stock` (menunggu barang/backorder) TIDAK pernah kedaluwarsa otomatis
+— dulu ikut dilepas diam-diam saat seseorang membuka daftar SO/dasbor/katalog."""
+
+
 async def expire_old_reservations() -> int:
-    """Expire reservations older than 3 days (release di level ROLL — KN_15)."""
+    """Expire reservations older than 3 days (release di level ROLL — KN_15).
+
+    FIX-3b (B3a STK-11, ANOM-06) — dijalankan PENJADWAL (`reservation_expiry`), tidak lagi dari GET daftar SO /
+    ringkasan / dasbor / katalog (GET tidak boleh menulis). Per pesanan diklaim (saga, prasyarat status sama seperti
+    dibaca) sebelum roll dilepas — balapan dengan konfirmasi/batal tidak lagi menimpa status."""
     cutoff = datetime.now(timezone.utc)
     orders = await db.sales_orders.find(
         {
-            "status": {"$in": ["reserved", "waiting_approval", "approved", "waiting_stock"]},
+            "status": {"$in": list(EXPIRABLE_SO_STATUSES)},
             "reservation_expires_at": {"$lte": cutoff.isoformat()},
         },
         {"_id": 0},
@@ -37,7 +47,13 @@ async def expire_old_reservations() -> int:
     from services.roll_service import release_order_rolls
     from services.so_status import stage_fields
     from services import so_approvals
+    from services import atomic_claim as _saga
     for order in orders:
+        try:
+            await _saga.claim("sales_orders", order["id"], "reservation_expire",
+                              precondition={"status": order["status"]}, actor="system")
+        except HTTPException:
+            continue   # status berubah / sedang diproses aksi lain — dilewati, dicoba putaran berikutnya
         await release_order_rolls(order["id"])
         _exp_set = {"status": "expired", "allocations": [], "backorders": [],
                     "has_backorder": False, "updated_at": now_iso()}
@@ -47,8 +63,8 @@ async def expire_old_reservations() -> int:
         # F4 — stage/sub_status: expired → Cancelled/kedaluwarsa.
         _exp_set.update(stage_fields({**order, **_exp_set}))
         await db.sales_orders.update_one(
-            {"id": order["id"]},
-            {"$set": _exp_set}
+            {"id": order["id"], "status": order["status"]},
+            _saga.finish_set(_exp_set)
         )
         if _closed:
             await so_approvals.close_detail_docs(db, _closed, _closed[0].get("cancel_reason", ""), "system")

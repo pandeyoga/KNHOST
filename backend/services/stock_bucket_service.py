@@ -108,11 +108,21 @@ async def move_rolls_by_qty(product_id: str, warehouse_id: str, owner_entity_id:
     return {"moved": round(qty - max(remaining, 0), 2), "rolls": moved, "conflicts": conflicts}
 
 
+TERMINAL_ROLL_STATUSES = ("consumed", "delivered", "cancelled", "sold")
+"""FIX-3b (B2b MKO-03) — roll yang SUDAH habis/keluar tidak pernah "dikembalikan" lewat referensi bucket: dulu roll
+`consumed` (dicatat susut/terkonsumsi di mitra, `bucket_ref` masih menempel) hidup lagi `available` panjang 0 saat
+retur bahan makloon "semua"."""
+
+
 async def move_rolls_by_ref(ref_id: str, to_status: str,
                             movement_type: str = "bucket_move",
-                            roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Kembalikan roll dengan bucket_ref.id == ref_id (opsional hanya `roll_ids`) ke `to_status`."""
-    q: Dict[str, Any] = {"bucket_ref.id": ref_id}
+                            roll_ids: Optional[List[str]] = None,
+                            from_statuses: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Kembalikan roll dengan bucket_ref.id == ref_id (opsional hanya `roll_ids`) ke `to_status`.
+    FIX-3b (MKO-03) — hanya roll HIDUP (bukan `TERMINAL_ROLL_STATUSES`) dan, bila diberikan, berstatus `from_statuses`."""
+    q: Dict[str, Any] = {"bucket_ref.id": ref_id,
+                         "status": {"$in": list(from_statuses)} if from_statuses
+                         else {"$nin": list(TERMINAL_ROLL_STATUSES)}}
     if roll_ids is not None:
         q["id"] = {"$in": list(roll_ids)}
     rolls = await db.inventory_rolls.find(q, {"_id": 0}).to_list(10000)
@@ -123,7 +133,7 @@ async def move_rolls_by_ref(ref_id: str, to_status: str,
     moved_ids: List[str] = []
     for r in rolls:
         res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "bucket_ref.id": ref_id},
+            {"id": r["id"], "bucket_ref.id": ref_id, "status": r["status"]},   # FIX-3b — CAS status
             {"$set": {"status": to_status, "bucket_ref": None, "updated_at": now_iso()}})
         if not res.modified_count:
             continue

@@ -7,7 +7,7 @@ from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, parse_decimal, safe_doc, strip_cost_fields
 from schemas import GenericPatch, ProductPayload
-from services.inventory_service import expire_old_reservations
+from services.inventory_service import expire_old_reservations  # noqa: F401 — dipakai penjadwal (FIX-3b)
 from services import pricelist_service
 from services import rnd_gate
 from services import product_exclusivity as pexcl
@@ -23,7 +23,7 @@ async def list_products(request: Request, orderable_only: bool = False,
                         line: str = "", stage: str = "", include_superseded: bool = False) -> List[Dict[str, Any]]:
     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): katalog WAJIB login — auth di LUAR try/except.
     actor = await require_permission(request, "product", "view")
-    await expire_old_reservations()
+    # FIX-3b (STK-11) — kedaluwarsa reservasi dijalankan job penjadwal `reservation_expiry` (GET tidak menulis).
     # PS-20 — visibilitas eksklusif per sales DIPAKSA DI BACKEND (query Mongo), bukan di UI,
     # agar sales lain tidak bisa menembusnya lewat API.
     # FASE L — pagar lini ditambahkan pada query yang SAMA (bukan penyaringan di

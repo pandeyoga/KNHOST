@@ -157,6 +157,24 @@ async def cancel_repair(ro_id: str, payload: ReasonIn, request: Request) -> Dict
     return ro
 
 
+class ReceiveBackIn(BaseModel):
+    roll_ids: Optional[List[str]] = None
+
+
+@router.post("/repair-orders/{ro_id}/receive-back")
+async def receive_back_repair(ro_id: str, request: Request, payload: Optional[ReceiveBackIn] = None) -> Dict[str, Any]:
+    """FIX-3b (FLW-OUT-11) — terima kembali roll perbaikan yang dibatalkan saat barang di luar."""
+    actor = await require_permission(request, "repair_order", "receive")
+    await _load(request, ro_id)
+    try:
+        ro = await svc.receive_back(ro_id, actor, (payload.roll_ids if payload else None) or None)
+    except svc.RepairError as exc:
+        raise _http(exc) from exc
+    await audit(actor.get("name", ""), "repair_order_received_back", "repair_order", ro_id,
+                {"number": ro["number"], "status": ro["status"]})
+    return ro
+
+
 @router.get("/inventory/rolls/{roll_id}/repairs")
 async def roll_repairs(roll_id: str, request: Request) -> List[Dict[str, Any]]:
     """Riwayat perbaikan satu roll (jejak roll)."""
