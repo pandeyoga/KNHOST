@@ -445,11 +445,17 @@ async def incoming_rows(product_ids: Optional[Iterable[str]] = None, *,
     if "return" in want:
         async for rt in db.sales_returns.find({"status": {"$in": RETURN_PENDING_STATUSES}, **item_q},
                                               {"_id": 0, "id": 1, "number": 1, "status": 1, "entity_id": 1,
-                                               "warehouse_id": 1, "items": 1, "expected_date": 1}):
+                                               "warehouse_id": 1, "items": 1, "expected_date": 1,
+                                               "roll_locations": 1}):
+            locs = rt.get("roll_locations") or {}
             for it in rt.get("items") or []:
                 if not ok(it.get("product_id")):
                     continue
                 qty = float(it.get("quantity_base") or it.get("quantity_returned") or it.get("quantity") or 0)
+                # FIX-6 (D5) — roll yang sudah dipindai diterima sudah MASUK STOK (karantina retur, kelompok
+                # "Ditahan / QC"); "akan datang" hanya sisa yang belum diterima (tanpa dihitung dua kali).
+                qty -= sum(float((it.get("roll_qtys") or {}).get(r) or 0) for r in it.get("roll_ids") or []
+                           if (locs.get(r) or {}).get("stage") in ("received", "arrived", "in_transit"))
                 if qty <= 0.01:
                     continue
                 rows.append({"source": "return", "label": "Retur disetujui, belum diterima",

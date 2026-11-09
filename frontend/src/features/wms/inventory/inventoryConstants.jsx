@@ -46,7 +46,10 @@ export const MOV_TYPE_MAP = {
   quarantine_release:  { label: "Lepas Karantina",      color: "text-green-700", dot: "bg-green-500" },
   quarantine_scrap:    { label: "Karantina Dimusnahkan", color: "text-red-700",  dot: "bg-red-600" },
   return_reversal_out: { label: "Pembalikan Retur Jual", color: "text-blue-700", dot: "bg-blue-600" },
-  putaway:             { label: "Penempatan Rak",              color: "text-gray-700",  dot: "bg-gray-500" },
+  // FIX-6 (D5) — retur masuk stok saat dipindai: pindah gudang sebelum penyelesaian & koreksi qty hasil QC saat settle.
+  return_quarantine_out: { label: "Karantina Retur Dikirim", color: "text-amber-700", dot: "bg-amber-500" },
+  return_qc_adjust:    { label: "Koreksi Qty QC Retur", color: "text-amber-700", dot: "bg-amber-500" },
+  putaway:            { label: "Penempatan Rak",              color: "text-gray-700",  dot: "bg-gray-500" },
   reservation:         { label: "Reservasi",            color: "text-amber-600", dot: "bg-amber-400" },
   release_reservation: { label: "Lepas Reservasi",      color: "text-gray-600",  dot: "bg-gray-400" },
   qc_accept:           { label: "Diterima QC",          color: "text-green-700", dot: "bg-green-500" },

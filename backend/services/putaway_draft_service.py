@@ -45,13 +45,20 @@ async def auto_draft_enabled(entity_id: str) -> bool:
 
 
 async def inspection_requested(roll_ids: List[str]) -> Set[str]:
-    """Penanda "minta inspeksi" (K-GDG-04): roll tercantum di SPK QC 4-point (inspeksi per 15 yard) yang terbuka."""
+    """Penanda "minta inspeksi" (K-GDG-04): roll tercantum di SPK QC 4-point (inspeksi per 15 yard) yang terbuka,
+    ATAU — FIX-6 (keputusan pemilik 10 Nov) — roll bertanda `inspection_request.requested` (dipilih di BARIS PO atau
+    saat PENERIMAAN) yang BELUM pernah singgah di gedung inspeksi (`journey.inspection_site` kosong). Sesudah tiba di
+    gedung inspeksi, perjalanan berikutnya mengikuti aturan biasa (SPK 4-point terbuka tetap menahan rutenya)."""
     if not roll_ids:
         return set()
     wanted, out = set(roll_ids), set()
     async for d in db.inspections.find({"kind": "qc_4point", "status": {"$in": list(OPEN_SPK)},
                                         "lines.roll_id": {"$in": list(roll_ids)}}, {"_id": 0, "lines.roll_id": 1}):
         out |= {ln.get("roll_id") for ln in d.get("lines") or []} & wanted
+    async for r in db.inventory_rolls.find(
+            {"id": {"$in": list(roll_ids)}, "inspection_request.requested": True,
+             "journey.inspection_site": {"$in": [None, ""]}}, {"_id": 0, "id": 1}):
+        out.add(r["id"])
     return out
 
 
@@ -110,7 +117,7 @@ async def choose_destination(src: Dict[str, Any], roll: Dict[str, Any], product:
             return None, "", "menunggu inspeksi di gedung ini"
         for w in targets["inspection"]:
             if not await pr.warehouse_violations(w, roll, product, attrs=False):
-                return w, "inspection", "diminta inspeksi (SPK QC 4-point terbuka)"
+                return w, "inspection", "diminta inspeksi (SPK QC 4-point terbuka / penanda minta inspeksi PO-penerimaan)"
     visiting = ((roll.get("journey") or {}).get("inspection_site") or "") == src.get("id")
     if whp.has_role(src, *whp.STORAGE_ROLES):
         if not visiting:
@@ -263,7 +270,7 @@ async def detail(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
                                      "roles": w.get("roles") or []} for w in opts.values()]
     order["ready_count"] = sum(1 for i in order["items"] if i["ready"])
     if requested and order.get("purpose") != "inspection":
-        order["inspection_warning"] = (f"{len(requested)} roll diminta inspeksi (SPK QC 4-point terbuka) — "
+        order["inspection_warning"] = (f"{len(requested)} roll diminta inspeksi (SPK QC 4-point / penanda minta inspeksi) — "
                                        "pertimbangkan tujuan gedung inspeksi.")
     return safe_doc(order)
 

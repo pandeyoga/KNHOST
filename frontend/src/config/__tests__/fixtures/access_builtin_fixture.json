@@ -1292,7 +1292,8 @@
    "product": [
     "view",
     "create",
-    "update"
+    "update",
+    "export"
    ],
    "purchase_order": [
     "view"

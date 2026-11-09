@@ -336,6 +336,11 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
         await db.sales_returns.update_one({"id": return_id, "settlements.id": settlement_id},
                                           {"$addToSet": {"settlements.$.restocked": r["roll_id"]},
                                            "$unset": {"quarantine_released": ""}})
+    # FIX-6 (D5) — roll yang diputus TANPA kembali ke stok (cutloss/diskon/tolak) tetapi sudah masuk karantina retur saat
+    # dipindai: karantina dibalik (milik pelanggan; dikirim balik / dipecah cutloss lewat jalurnya). Idempoten.
+    from services import return_intake_service as _intake
+    await _intake.reverse(ret, [r["roll_id"] for r in plan["rolls"] if r["qty_stock"] <= 0], actor.get("name", ""),
+                          f"Penyelesaian {label}: roll tidak kembali ke stok")
     # 2) Nota Kredit (satu per penyelesaian).
     cn = await db.credit_notes.find_one({"return_id": return_id, "settlement_id": settlement_id, "status": {"$ne": "void"}}, {"_id": 0})
     if not cn and plan["gross_amount"] > 0:
@@ -414,14 +419,17 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
     if used and comp.get("lines"):
         upd["compensation.lines"] = [{**x, "used_by": settlement_id} if x.get("kind") == "discount" and x.get("product_id") in used
                                      and not x.get("used_by") else x for x in comp["lines"]]
+    _push: Dict[str, Any] = {}
     if final:
+        from services import sales_return_transition as _srt
+        _push = {"status_history": _srt.history_entry(final, actor.get("name", ""), "", "roll_settle")}
         upd.update({"status": final, "outcome": outcome, "settled_by": actor.get("name", ""), "settled_at": now,
                     "settlement": {"outcome": outcome, "mode": "per_roll", "settled_at": now, "settled_by": actor.get("name", ""),
                                    "events": seq, "gross_amount": upd["credit_note_amount"]}})
         if final == st.REJECTED:
             upd.update({"rejected_by": actor.get("name", ""), "rejected_at": now,
                         "reject_reason": "Semua roll ditolak saat penyelesaian"})
-    await db.sales_returns.update_one({"id": return_id}, {**saga.finish_set(upd)},
+    await db.sales_returns.update_one({"id": return_id}, {**saga.finish_set(upd), **({"$push": _push} if _push else {})},
                                       array_filters=[{"ev.id": settlement_id}])
     if final and ret.get("status") == "approved":
         from services import inspection_service as ins
@@ -471,7 +479,17 @@ async def reverse_all(ret: Dict[str, Any], actor: str, reason: str) -> Dict[str,
         await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"status": "void", "reversed": True, "reversed_at": now,
                                                                   "reversal_reason": reason, "updated_at": now}})
     combos = set()
+    fully = ret.get("status") in st.SETTLED_STATES
+    from services import return_intake_service as _intake
     for r in rolls:
+        if not fully and _intake.state_of(r) == "valued":
+            # FIX-6 (D5) — retur tetap terbuka & barangnya MASIH di gudang (dipindai diterima): roll kembali karantina
+            # retur bernilai nol (jurnal Nota Kredit di atas sudah dibalik), bukan dihapus/kembali "di pelanggan".
+            if await _intake.unvalue(r, actor, reason or "Koreksi penyelesaian retur"):
+                combos.add((r.get("product_id"), r.get("warehouse_id"), r.get("owner_entity_id", "")))
+            continue
+        if _intake.state_of(r) == "received":
+            continue   # belum pernah dinilai — tetap karantina retur (retur tetap terbuka / dibalik saat ditolak)
         if r.get("returned_identity"):
             await _rid.restore_identity_roll(r, now)
         else:
@@ -487,7 +505,6 @@ async def reverse_all(ret: Dict[str, Any], actor: str, reason: str) -> Dict[str,
             combos.add((r["product_id"], r["warehouse_id"], r.get("owner_entity_id", "")))
     for (pid, wid, eid) in combos:
         await rebuild_balance(pid, wid, eid)
-    fully = ret.get("status") in st.SETTLED_STATES
     comp = ret.get("compensation") or {}
     upd: Dict[str, Any] = {"roll_outcomes": {}, "exchange_pending": False, "exchange_credit_open": 0.0,
                            "credit_note_ids": [], "credit_note_number": "", "credit_note_amount": 0.0, "credit_note_id": "",
@@ -496,10 +513,13 @@ async def reverse_all(ret: Dict[str, Any], actor: str, reason: str) -> Dict[str,
                            "settlements": [], "reversal_je_ids": [j.get("id") for j in rev_jes], "updated_at": now}
     if comp.get("lines"):
         upd["compensation.lines"] = [{k: v for k, v in x.items() if k != "used_by"} for x in comp["lines"]]
+    _fin = saga.finish_set(upd)
     if fully:
         st.assert_transition(ret["status"], st.CANCELLED)
         upd.update({"status": st.CANCELLED, "reversed": True, "reversed_by": actor, "reversed_at": now, "reversal_reason": reason})
-    await db.sales_returns.update_one({"id": rid}, saga.finish_set(upd))
+        from services import sales_return_transition as _srt
+        _fin["$push"] = {"status_history": _srt.history_entry(st.CANCELLED, actor, reason, "roll_reverse")}
+    await db.sales_returns.update_one({"id": rid}, _fin)
     out = await db.sales_returns.find_one({"id": rid}, {"_id": 0})
     out["_reversal_summary"] = {"reversal_jes": len(rev_jes), "rolls_removed": len(rolls), "outcome": ret.get("outcome", ""),
                                 "settlements": len(events)}

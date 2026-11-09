@@ -63,12 +63,24 @@ async def load(grn_id: str, ctx: EntityContext) -> Dict[str, Any]:
 
 
 async def cas(grn: Dict[str, Any], statuses: List[str], expected_version: Optional[int],
-              set_: Optional[Dict[str, Any]] = None, extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Tulis berprasyarat status (+ versi bila diberikan); versi selalu naik. Kalah → 409 STATE_CHANGED."""
+              set_: Optional[Dict[str, Any]] = None, extra: Optional[Dict[str, Any]] = None,
+              action: str = "", note: str = "") -> Dict[str, Any]:
+    """Tulis berprasyarat status (+ versi bila diberikan); versi selalu naik. Kalah → 409 STATE_CHANGED.
+
+    FIX-6 — bila `set_` mengganti status: transisi wajib terdaftar di `grn_state.TRANSITIONS` (daftar-izin) dan
+    jejak `status_history` (bentuk SSOT) ikut ditulis atomik pada tulisan yang sama."""
     flt: Dict[str, Any] = {"id": grn["id"], "status": {"$in": statuses}}
     if expected_version is not None:
         flt["version"] = expected_version
     ops: Dict[str, Any] = {"$set": {**(set_ or {}), "updated_at": now_iso()}, "$inc": {"version": 1}}
+    to = (set_ or {}).get("status")
+    if to:
+        from services import grn_state
+        grn_state.check(statuses, to)
+        if to != grn.get("status"):
+            from request_context import get_actor
+            who = (get_actor() or {}).get("name", "") or "Sistem"
+            ops["$push"] = {"status_history": grn_state.history_entry(to, who, note, action)}
     for k, v in (extra or {}).items():
         ops[k] = {**ops.get(k, {}), **v}
     doc = await db.goods_receipts.find_one_and_update(flt, ops, projection={"_id": 0},
@@ -148,9 +160,12 @@ async def open_mkos(entity_id: str, makloon_id: str) -> List[Dict[str, Any]]:
         {"_id": 0, "id": 1, "mko_number": 1}).to_list(500)
 
 
-async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Dict[str, Any]:
-    ent = ctx.active_entity_id
-    if ctx.view_all or not ent or ent == "all":
+async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext,
+                     entity_override: str = "") -> Dict[str, Any]:
+    """`entity_override` — FIX-6 (D9): GRN untuk PT pemilik PO dalam satu kedatangan lintas PT (`create_arrival`);
+    PT itu sudah diperiksa ∈ penugasan akun (pagar PT) oleh pemanggil."""
+    ent = entity_override or ctx.active_entity_id
+    if not entity_override and (ctx.view_all or not ent or ent == "all"):
         raise HTTPException(status_code=400, detail="Pilih satu badan usaha aktif sebelum mencatat kedatangan barang.")
     coll = "suppliers" if body.partner_type == "supplier" else "makloons"
     partner = await db[coll].find_one({"id": body.partner_id}, {"_id": 0, "id": 1, "name": 1})
@@ -211,6 +226,118 @@ async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Di
     await audit(actor["name"], "grn_created", "goods_receipt", gid,
                 {"number": doc["number"], "partner_id": body.partner_id}, scope_entity_id=ent)
     return doc
+
+
+# ── FIX-6 (keputusan pemilik 10 Nov 2026, D9 · B2a FLW-IN-14) — satu SJ supplier untuk beberapa PT ──────────────
+async def _po_scope_rows(po_ids: List[str], partner_id: str, actor: Dict[str, Any], ctx: EntityContext) -> List[Dict[str, Any]]:
+    from services import location_scope
+    pos = await db.purchase_orders.find({"id": {"$in": list(dict.fromkeys(po_ids))}},
+                                        {"_id": 0, "id": 1, "po_number": 1, "entity_id": 1, "supplier_id": 1,
+                                         "warehouse_id": 1, "status": 1}).to_list(100)
+    if len(pos) != len(set(po_ids)):
+        raise HTTPException(status_code=404, detail="Sebagian PO tidak ditemukan.")
+    for po in pos:
+        if po.get("supplier_id") != partner_id:
+            raise HTTPException(status_code=400, detail=f"PO {po.get('po_number')} bukan PO supplier pengirim ini.")
+        if po.get("entity_id") not in ctx.allowed_entity_ids:
+            # pagar PT — PO milik PT di luar penugasan akun tidak boleh ikut (tanpa membocorkan isinya).
+            raise HTTPException(status_code=403, detail=f"PO {po.get('po_number')} milik badan usaha di luar penugasan Anda.")
+        if not po.get("warehouse_id"):
+            raise HTTPException(status_code=400, detail=f"PO {po.get('po_number')} belum punya gudang penerimaan.")
+        # FIX-1 — gudang penerimaan wajib dalam lokasi kerja akun (petugas berpagar lokasi).
+        await location_scope.assert_warehouse(actor, po["warehouse_id"], "menerima barang di sini")
+    return pos
+
+
+async def arrival_candidates(partner_id: str, actor: Dict[str, Any], ctx: EntityContext) -> Dict[str, Any]:
+    """PO terbuka supplier ini yang menunggu barang di SEMUA PT penugasan akun, dikelompokkan per LOKASI (site) —
+    bahan pilihan "satu SJ untuk beberapa PT". Gudang di luar lokasi kerja akun tidak ditampilkan (FIX-1)."""
+    from services import location_scope
+    from services.work_labels import entity_names
+    hard = await location_scope.warehouse_ids_for(actor)
+    rows: List[Dict[str, Any]] = []
+    for ent in ctx.allowed_entity_ids:
+        for d in await open_pos(ent, partner_id):
+            po = await db.purchase_orders.find_one({"id": d["id"]}, {"_id": 0, "id": 1, "po_number": 1, "entity_id": 1,
+                                                                    "warehouse_id": 1})
+            if not po or (hard is not None and po.get("warehouse_id") not in hard):
+                continue
+            rows.append(po)
+    whs = {w["id"]: w async for w in db.warehouses.find({"id": {"$in": list({r.get("warehouse_id") for r in rows})}},
+                                                        {"_id": 0, "id": 1, "name": 1, "code": 1, "site_id": 1})}
+    sites = {s["id"]: s async for s in db.warehouse_sites.find({"id": {"$in": list({w.get("site_id") for w in whs.values()})}},
+                                                     {"_id": 0, "id": 1, "name": 1})}
+    names = await entity_names(r.get("entity_id") for r in rows)
+    groups: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        w = whs.get(r.get("warehouse_id")) or {}
+        sid = w.get("site_id") or ""
+        g = groups.setdefault(sid, {"site_id": sid, "site_name": (sites.get(sid) or {}).get("name") or "Tanpa lokasi",
+                                    "pos": []})
+        g["pos"].append({"id": r["id"], "number": r.get("po_number", ""), "entity_id": r.get("entity_id"),
+                         "entity_name": names.get(r.get("entity_id"), ""), "warehouse_id": r.get("warehouse_id"),
+                         "warehouse_name": w.get("name") or w.get("code") or ""})
+    return {"partner_id": partner_id, "sites": sorted(groups.values(), key=lambda g: g["site_name"])}
+
+
+async def create_arrival(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Dict[str, Any]:
+    """Satu kedatangan → GRN per PT pemilik (× gudang penerimaan PO), masing-masing ke PO-nya. Semua PO wajib milik
+    supplier yang sama, PT dalam penugasan akun, gudang dalam lokasi kerja akun, dan SATU lokasi (site). Diperiksa
+    SELURUHNYA sebelum GRN pertama dibuat; gagal di tengah → GRN yang sempat dibuat dibatalkan."""
+    from schemas_goods_receipt import GRNCreateIn
+    partner = await db.suppliers.find_one({"id": body.partner_id}, {"_id": 0, "id": 1, "name": 1})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Supplier tidak ditemukan.")
+    pos = await _po_scope_rows(body.po_ids, body.partner_id, actor, ctx)
+    whs = {w["id"]: w async for w in db.warehouses.find({"id": {"$in": list({p["warehouse_id"] for p in pos})}},
+                                                        {"_id": 0, "id": 1, "site_id": 1, "name": 1})}
+    site_ids = {(whs.get(p["warehouse_id"]) or {}).get("site_id") or "" for p in pos}
+    if len(site_ids) != 1 or "" in site_ids:
+        raise HTTPException(status_code=400, detail=(
+            "Satu kedatangan hanya untuk satu lokasi: PO yang dipilih dikirim ke lokasi berbeda (atau gudangnya belum "
+            "ditautkan ke lokasi) — catat kedatangan terpisah per lokasi."))
+    groups: Dict[tuple, List[str]] = {}
+    for p in pos:
+        groups.setdefault((p["entity_id"], p["warehouse_id"]), []).append(p["id"])
+    from services import warehouse_scope_service as whscope
+    for (ent, wh), ids in groups.items():   # validasi SEMUA kelompok dulu (pesan sama dengan create_grn)
+        open_ids = {d["id"] for d in await open_pos(ent, body.partner_id)}
+        bad = [p["po_number"] for p in pos if p["id"] in ids and p["id"] not in open_ids]
+        if bad:
+            raise HTTPException(status_code=400, detail=f"PO {', '.join(bad)} tidak sedang menunggu barang.")
+        await whscope.assert_usable(wh, ent, action="menerima barang di sini", field_label="Gudang penerimaan")
+    arrival_id = new_id("arr")
+    created: List[Dict[str, Any]] = []
+    try:
+        for (ent, wh), ids in sorted(groups.items()):
+            created.append(await create_grn(GRNCreateIn(partner_type="supplier", partner_id=body.partner_id,
+                                                        warehouse_id=wh, po_ids=ids), actor, ctx, entity_override=ent))
+    except Exception:
+        from services import grn_state
+        for g in created:   # tidak meninggalkan sebagian kedatangan
+            await db.goods_receipts.update_one(
+                {"id": g["id"], "status": "draft"},
+                {"$set": {"status": "cancelled", "cancel_reason": "Kedatangan lintas PT gagal dibuat utuh",
+                          "updated_at": now_iso()}, "$inc": {"version": 1},
+                 "$push": {"status_history": grn_state.history_entry(
+                     "cancelled", actor["name"], "kedatangan lintas PT gagal dibuat utuh", "cancel")}})
+        raise
+    from services.work_labels import entity_names
+    names = await entity_names(g["entity_id"] for g in created)
+    po_no = {p["id"]: p.get("po_number", "") for p in pos}
+    siblings = [{"id": g["id"], "number": g["number"], "entity_id": g["entity_id"],
+                 "entity_name": names.get(g["entity_id"], ""), "warehouse_id": g["warehouse_id"],
+                 "po_numbers": [po_no.get(x, "") for x in g["source"]["po_ids"]]} for g in created]
+    arrival = {"id": arrival_id, "partner_id": body.partner_id, "partner_name": partner.get("name", ""),
+               "site_id": next(iter(site_ids)), "siblings": siblings, "created_by": actor["name"], "created_at": now_iso()}
+    out = []
+    for g in created:
+        doc = await db.goods_receipts.find_one_and_update({"id": g["id"]}, {"$set": {"arrival": arrival}},
+                                                          projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        out.append(doc)
+        await audit(actor["name"], "grn_arrival_split", "goods_receipt", g["id"],
+                    {"arrival_id": arrival_id, "grns": [s["number"] for s in siblings]}, scope_entity_id=g["entity_id"])
+    return {"arrival_id": arrival_id, "grns": out, "siblings": siblings}
 
 
 # ── berkas foto/PDF surat jalan ───────────────────────────────────────────────
@@ -305,7 +432,7 @@ async def get_file(grn_id: str, page: int, user: Dict[str, Any], ctx: EntityCont
 async def manual_entry(grn_id: str, expected_version: int, actor: Dict[str, Any], ctx: EntityContext):
     grn = await load(grn_id, ctx)
     require_status(grn, ["draft"], "Isi manual")
-    doc = await cas(grn, ["draft"], expected_version, {"status": "review", "dn.source": "manual"})
+    doc = await cas(grn, ["draft"], expected_version, {"status": "review", "dn.source": "manual"}, action="manual_entry")
     await audit(actor["name"], "grn_manual_entry", "goods_receipt", grn_id, {"status": "review"},
                 scope_entity_id=grn["entity_id"])
     return doc
@@ -652,7 +779,7 @@ async def start_count(grn_id: str, expected_version: int, actor: Dict[str, Any],
     try:
         doc = await cas(grn, ["review"], expected_version,
                         {"status": "counting", "active_key": key, "count_started_at": now_iso(),
-                         "count_started_by": actor["name"]})
+                         "count_started_by": actor["name"]}, action="start_count")
     except DuplicateKeyError:
         other = await db.goods_receipts.find_one({"active_key": key}, {"_id": 0, "number": 1, "status": 1}) or {}
         raise HTTPException(status_code=409, detail={
@@ -668,8 +795,11 @@ async def start_count(grn_id: str, expected_version: int, actor: Dict[str, Any],
              "$addToSet": {"grn_ids": grn_id}}, projection={"_id": 0, "id": 1})
         if not t:
             await release_tasks(grn_id)
-            await db.goods_receipts.update_one({"id": grn_id}, {"$set": {"status": "review"},
-                                                                "$unset": {"active_key": ""}, "$inc": {"version": 1}})
+            from services import grn_state
+            await db.goods_receipts.update_one({"id": grn_id, "status": "counting"}, {
+                "$set": {"status": "review"}, "$unset": {"active_key": ""}, "$inc": {"version": 1},
+                "$push": {"status_history": grn_state.history_entry("review", actor["name"], "klaim tugas gagal",
+                                                                    "start_count_rollback")}})
             raise HTTPException(status_code=409, detail={
                 "code": "STATE_CHANGED", "message": "Salah satu tugas baru saja diambil proses lain. Muat ulang layar."})
         claimed.append(tid)

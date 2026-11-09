@@ -16,6 +16,13 @@ class GRNCreateIn(BaseModel):
     mko_ids: List[str] = []
 
 
+class GRNArrivalIn(BaseModel):
+    """FIX-6 (keputusan pemilik 10 Nov, D9) — SATU kedatangan (satu SJ supplier) berisi barang beberapa PT:
+    dipecah menjadi GRN per PT pemilik (× gudang penerimaan PO-nya), lintas PT dalam satu lokasi."""
+    partner_id: str = Field(..., min_length=1)
+    po_ids: List[str] = Field(..., min_length=1, max_length=50)
+
+
 class GRNVersionIn(BaseModel):
     expected_version: int = Field(..., ge=1)
 

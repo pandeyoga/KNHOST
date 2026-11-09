@@ -79,18 +79,21 @@ async def _insert_return_child(child: Dict[str, Any], parent_no: str) -> Dict[st
 
 
 async def restock_identity(ret: Dict[str, Any], item: Dict[str, Any], template: Dict[str, Any],
-                           qty: float, now: str) -> List[Tuple[Dict[str, Any], float]]:
+                           qty: float, now: str) -> List[Tuple[Dict[str, Any], float, Optional[float]]]:
     """Masukkan roll terkirim yang kembali ke karantina TANPA membuat identitas baru.
 
     Roll utuh (status `delivered`, qty aktual ≈ panjang terkirim) diaktifkan lagi dengan id,
     nomor & tag yang sama; selain itu potongan retur dibuat sebagai child `<nomor induk>-N`.
-    Return: daftar (dokumen roll, qty) untuk pencatatan mutasi."""
+    FIX-6 (D5) — roll yang SUDAH masuk karantina retur saat dipindai diterima (`return_intake_service`) tidak dibuat
+    lagi: roll itu DINILAI (`finalize`) — tanpa roll kedua, tanpa mutasi masuk kedua, tanpa jurnal ganda.
+    Return: daftar (dokumen roll, qty, qty karantina saat pindai | None) untuk pencatatan mutasi."""
     roll_ids = [r for r in (item.get("roll_ids") or []) if r]
     claims = {k: float(v or 0) for k, v in (item.get("roll_qtys") or {}).items()}
     insp = item.get("inspection") or {}
     actuals = _split_actuals(roll_ids, claims, insp.get("roll_actuals") or {}, qty)
     grade_after = template.get("grade") or "A"
-    out: List[Tuple[Dict[str, Any], float]] = []
+    out: List[Tuple[Dict[str, Any], float, Optional[float]]] = []
+    from services import return_intake_service as _intake
     for rid in roll_ids:
         actual = actuals.get(rid, 0)
         if actual <= 0:
@@ -117,6 +120,12 @@ async def restock_identity(ret: Dict[str, Any], item: Dict[str, Any], template: 
         # Utuh = pelanggan mengembalikan seluruh roll (klaim ≈ panjang terkirim); qty aktual boleh beda.
         from services.return_journey_service import physical_warehouse
         live["warehouse_id"] = physical_warehouse(ret, rid) or live.get("warehouse_id")   # LN-081 lokasi scan
+        intake = await _intake.find_open(ret["id"], rid)
+        if intake:
+            done = await _intake.finalize(ret, intake, live, template, hist, actual, now)
+            if done:
+                out.append(done)
+                continue
         whole = (orig.get("status") == "delivered"
                  and claims.get(rid, actual) >= float(orig.get("length_remaining") or 0) - QTY_EPS)
         if whole:
@@ -128,13 +137,13 @@ async def restock_identity(ret: Dict[str, Any], item: Dict[str, Any], template: 
                  "$push": {"return_history": hist, "acquired_history": orig.get("acquired") or {}}},
                 projection={"_id": 0}, return_document=True)
             if upd:
-                out.append((upd, actual))
+                out.append((upd, actual, None))
                 continue
         child = {**template, **live, "id": _new_roll_id(), "unit": orig.get("unit") or template.get("unit"),
                  "length_initial": actual, "parent_roll_id": rid,
                  "root_roll_id": orig.get("root_roll_id") or rid, "rfid_tag_id": None,
                  "return_history": list(orig.get("return_history") or []) + [hist]}
-        out.append((await _insert_return_child(child, orig.get("roll_no") or ""), actual))
+        out.append((await _insert_return_child(child, orig.get("roll_no") or ""), actual, None))
     return out
 
 
@@ -154,3 +163,6 @@ async def restore_identity_roll(roll: Dict[str, Any], now: str) -> None:
         {"id": roll["id"], "returned_identity": True},
         {"$set": {**snap, "return_history": hist, "returned_from_customer_ids": customers, "updated_at": now},
          "$unset": {"return_restore": "", "returned_identity": "", "return_id": ""}})
+    # FIX-6 (D5) — jejak karantina retur ditutup (riwayat tetap ada; roll kembali "di pelanggan").
+    await db.inventory_rolls.update_one({"id": roll["id"], "return_intake.state": {"$in": ["received", "valued"]}},
+                                        {"$set": {"return_intake.state": "reversed", "return_intake.reversed_at": now}})

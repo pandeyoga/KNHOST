@@ -60,7 +60,7 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
       setDecisionMap((prev) => {
         const next = { ...prev };
         list.forEach((r) => {
-          if (r.status === "quarantine" && !next[r.id]) next[r.id] = { scrap: false, grade: r.grade || "A" };
+          if (r.status === "quarantine" && !r.intake_pending_valuation && !next[r.id]) next[r.id] = { scrap: false, grade: r.grade || "A" };
         });
         return next;
       });
@@ -86,9 +86,11 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
     return () => { active = false; };
   }, []);
 
-  const pending = rolls.filter((r) => r.status === "quarantine");
+  // FIX-6 (D5) — roll yang baru DIPINDAI diterima sudah masuk karantina retur, tetapi nilainya baru ditetapkan saat
+  // penyelesaian: belum bisa di-release / diteruskan ke supplier.
+  const pending = rolls.filter((r) => r.status === "quarantine" && !r.intake_pending_valuation);
   // R4 — roll kandidat untuk diteruskan ke supplier (masih dimiliki KN & belum diretur)
-  const supplierCandidates = rolls.filter((r) => ["quarantine", "available"].includes(r.status));
+  const supplierCandidates = rolls.filter((r) => ["quarantine", "available"].includes(r.status) && !r.intake_pending_valuation);
   const setDec = (id, patch) => setDecisionMap((m) => ({ ...m, [id]: { ...m[id], ...patch } }));
 
   async function submitSupplierReturn() {
@@ -249,7 +251,7 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
               {rolls.map((r) => {
                 const sp = STATUS_PILL[r.status] || { cls: "pill-muted", label: r.status };
                 const d = decisionMap[r.id] || {};
-                const isQ = r.status === "quarantine";
+                const isQ = r.status === "quarantine" && !r.intake_pending_valuation;
                 return (
                   <tr key={r.id} data-testid={`quarantine-roll-${r.id}`}>
                     <td className="font-mono text-[10.5px]">{r.roll_no}</td>
@@ -289,6 +291,11 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
                       )}
                     </td>
                     <td><span className={`status-pill ${sp.cls}`}>{sp.label}</span>
+                      {r.intake_pending_valuation && (
+                        <div className="mt-1 text-fs-12 leading-tight text-kn-warning-text" data-testid={`roll-intake-pending-${r.id}`}>
+                          Diterima gudang · nilai saat penyelesaian
+                        </div>
+                      )}
                       {r.writeoff_je_number && (
                         <div className="mt-1 leading-tight">
                           <span data-testid={`writeoff-badge-${r.id}`}

@@ -269,6 +269,7 @@ async def process_qc_decision(
     accept_grade: str = "A", defects: Optional[List[str]] = None,
     roll_order: Optional[List[str]] = None, roll_grades: Optional[Dict[str, str]] = None,
     reject_held_roll_ids: Optional[List[str]] = None,
+    return_remedy: str = "", return_remedy_reason: str = "",
 ) -> Dict[str, Any]:
     """Proses keputusan QC untuk 1 inbound task. Lihat docstring modul.
 
@@ -280,7 +281,10 @@ async def process_qc_decision(
     FIX-3a (B2a FLW-IN-03, keputusan koordinator D3) — roll yang DITAHAN tidak lagi mengunci keputusan: roll lain
     diputuskan (peringatan tercatat), roll yang ditahan TETAP ditahan; `reject_held_roll_ids` = roll ditahan yang
     sengaja DITOLAK (rusak/retur) — tahanannya dilepas lalu ikut penolakan. Selama masih ada roll ditahan, tugas
-    tetap `qc_pending` (keputusan sebagian) supaya roll itu tidak yatim saat dilepas kelak."""
+    tetap `qc_pending` (keputusan sebagian) supaya roll itu tidak yatim saat dilepas kelak.
+    FIX-6 (keputusan pemilik 10 Nov, D2) — tolak + "retur ke supplier" WAJIB memilih penyelesaian per kasus
+    (`return_remedy`: `replace` ganti barang | `bill_cut` potong tagihan) beralasan K-14 (`return_remedy_reason`, bila
+    kosong memakai alasan tolak); pilihannya tercatat & diaudit di retur beli, dieksekusi saat retur beli disetujui."""
     task_id = task["id"]
     product_id = task["product_id"]
     warehouse_id = task["warehouse_id"]
@@ -335,6 +339,10 @@ async def process_qc_decision(
     if reject_qty > 0.01 and reject_disposition == "return" and task.get("source_type") == "makloon_order":
         raise ValueError("Hasil makloon yang ditolak dicatat sebagai barang rusak — tuntutan ke mitra lewat Klaim "
                          "Selisih di Order Makloon. Retur ke supplier (Nota Debit) hanya untuk barang PO.")
+    remedy = None
+    if reject_qty > 0.01 and reject_disposition == "return":
+        from services import purchase_return_remedy as _prr
+        remedy = _prr.validate_choice(return_remedy, return_remedy_reason or reason)
     # IX-15 — task QC terminal hanya bila SELURUH qty karantina punya disposisi
     if accept_qty + reject_qty < total_q - 0.05:
         raise ValueError(
@@ -380,7 +388,7 @@ async def process_qc_decision(
     try:
         result, set_fields = await _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty, reject_qty,
                                                       reject_disposition, reason, actor, accept_grade, defects, result, doc_ref,
-                                                      roll_grades=roll_grades)
+                                                      roll_grades=roll_grades, remedy=remedy)
     except Exception as e:
         await _saga.mark_failed("wms_tasks", task_id, str(e))
         raise
@@ -437,7 +445,7 @@ async def process_qc_decision(
 
 async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty, reject_qty,
                              reject_disposition, reason, actor, accept_grade, defects, result, doc_ref,
-                             roll_grades=None):
+                             roll_grades=None, remedy=None):
     from services import grade_service
     task_id = task["id"]
     product_id = task["product_id"]
@@ -488,6 +496,9 @@ async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty,
             result.setdefault("roll_ids", []).extend(r["roll_id"] for r in rej.get("rolls", []) if r.get("roll_id"))
         else:  # return
             pret = await _create_qc_return(task, po, reject_qty, reason, actor.get("name", "system"), qrolls=qrolls)
+            if remedy:   # FIX-6 (D2) — pilihan per kasus tercatat + diaudit di retur beli
+                from services import purchase_return_remedy as _prr
+                pret["remedy"] = await _prr.record_choice(pret, remedy, actor, task)
             rej = await _consume_quarantine(
                 qrolls, reject_qty, RETURNED_STATUS, owner,
                 {"type": "purchase_return", "id": pret["id"], "doc": pret["number"]},
@@ -499,7 +510,9 @@ async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty,
             result["rejected_qty"] = rej["moved_qty"]
             result.setdefault("roll_ids", []).extend(r["roll_id"] for r in rej.get("rolls", []) if r.get("roll_id"))
             result["purchase_return"] = {"id": pret["id"], "number": pret["number"],
-                                         "supplier_name": pret.get("supplier_name", "")}
+                                         "supplier_name": pret.get("supplier_name", ""),
+                                         "remedy": (pret.get("remedy") or {}).get("choice", ""),
+                                         "remedy_label": (pret.get("remedy") or {}).get("label", "")}
 
     # 3) Rebuild balance segmen terdampak
     await rebuild_balance(product_id, warehouse_id, owner)

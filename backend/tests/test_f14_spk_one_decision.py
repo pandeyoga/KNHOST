@@ -114,9 +114,15 @@ def test_terima_sebagian_roll_tertentu_diretur_ke_supplier(u):
     assert c == 400 and "retur" in b["detail"], b                                         # disposisi wajib
     c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/finish", {"decision": "terima_sebagian", "reject_disposition": "return"})
     assert c == 400, b                                                                    # roll tolak wajib ditandai
+    # FIX-6 (keputusan pemilik 10 Nov, D2) — retur ke supplier wajib memilih penyelesaian per kasus + alasan.
+    c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/finish",
+                        {"decision": "terima_sebagian", "rejected_roll_ids": [bad], "reject_disposition": "return"})
+    assert c == 400 and "Ganti barang" in b["detail"], b
     c, out = u["qc"].call("POST", f"/inspections/{spk['id']}/finish",
-                          {"decision": "terima_sebagian", "rejected_roll_ids": [bad], "reject_disposition": "return"})
+                          {"decision": "terima_sebagian", "rejected_roll_ids": [bad], "reject_disposition": "return",
+                           "return_remedy": "replace", "return_remedy_reason": "Supplier mengganti roll belang"})
     assert c == 200, out
+    assert out["quarantine_result"]["purchase_return"]["remedy"] == "replace"
     qr = out["quarantine_result"]
     assert qr["accepted_qty"] == 100 and qr["rejected_qty"] == 50 and qr["purchase_return"]["number"], qr
     st = {r["id"]: r["status"] for r in _rolls([ln["roll_id"] for ln in spk["lines"]])}

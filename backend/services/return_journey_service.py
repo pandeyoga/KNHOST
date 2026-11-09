@@ -119,7 +119,21 @@ async def scan(return_id: str, stage: str, codes: List[str], warehouse_id: str, 
         projection={"_id": 0}, return_document=True)
     if not res:
         raise JourneyConflict("Retur ini baru saja discan oleh pengguna lain. Muat ulang lalu ulangi scan.")
-    return {"event": event, "roll_locations": res.get("roll_locations", {})}
+    out = {"event": event, "roll_locations": res.get("roll_locations", {})}
+    # FIX-6 (keputusan pemilik 10 Nov, D5) — barang retur MASUK STOK saat dipindai diterima: karantina retur di gudang
+    # pindai (tidak tersedia dijual; nilai & jurnal tetap saat settle). Tiba di gudang lain → ikut pindah gudang.
+    # Sesudah CAS dokumen (pindai ganda sudah ditolak di atas); kegagalan TERLIHAT di hasil, tidak membatalkan pindai —
+    # penyelesaian tetap aman (roll yang belum masuk karantina diproses jalur lama saat settle, tanpa jurnal ganda).
+    if stage in ("received", "arrived"):
+        from services import return_intake_service as _intake
+        try:
+            out["stock_intake"] = (await _intake.receive(res, rids, warehouse_id, actor, doc_no) if stage == "received"
+                                   else await _intake.move(res, rids, warehouse_id, actor, doc_no))
+        except Exception as exc:  # noqa: BLE001 — dicatat & dikembalikan
+            import logging
+            logging.getLogger(__name__).error("[return-intake] %s %s gagal: %s", ret.get("number"), stage, exc)
+            out["stock_intake_error"] = str(exc)[:300]
+    return out
 
 
 def assert_ready_for_qc(ret: Dict[str, Any]) -> None:

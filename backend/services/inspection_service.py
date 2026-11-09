@@ -1258,7 +1258,8 @@ async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payloa
 
 
 async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: Dict[str, Any],
-                              reject_disposition: str, rejected_roll_ids: Optional[List[str]]) -> Optional[Dict[str, Any]]:
+                              reject_disposition: str, rejected_roll_ids: Optional[List[str]],
+                              return_remedy: str = "", return_remedy_reason: str = "") -> Optional[Dict[str, Any]]:
     """F-14 (uji pra-UAT 2026-10-21, keputusan owner Q-03a) — SATU keputusan: menutup SPK penerimaan PO
     sekaligus memutus karantina tugas penerimaannya (roll diterima → tersedia, ditolak → retur supplier/rusak)
     lewat mesin yang sama dengan antrean karantina (`qc_service.process_qc_decision`).
@@ -1324,7 +1325,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
         res = await qc_service.process_qc_decision(
             task, acc_qty, rej_qty, disp, reason, actor, accept_grade="A",
             roll_order=accepted + [r for r in ids if r in rejected] + held_rejected, roll_grades=grades,
-            reject_held_roll_ids=held_rejected)
+            reject_held_roll_ids=held_rejected,
+            return_remedy=return_remedy, return_remedy_reason=return_remedy_reason)
     except ValueError as exc:
         raise InspectionError(str(exc)) from exc
     # UAT 24 Okt (P11.3) — roll yang diterima TANPA dicek MD Quality ditandai "lolos lewat sampling" (dulu tidak bisa
@@ -1357,7 +1359,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
 
 async def finish(ins_id: str, decision: str, remark: str,
                  actor: Dict[str, Any], reject_disposition: str = "",
-                 rejected_roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                 rejected_roll_ids: Optional[List[str]] = None,
+                 return_remedy: str = "", return_remedy_reason: str = "") -> Dict[str, Any]:
     """Tutup inspeksi dengan KEPUTUSAN. `tolak` wajib ber-alasan (tersimpan di dokumen).
     F-14 — SPK penerimaan PO: keputusan ini sekaligus memutus karantina (`_release_quarantine`)."""
     doc = await _load(ins_id)
@@ -1427,7 +1430,8 @@ async def finish(ins_id: str, decision: str, remark: str,
     if doc.get("kind") in RECEIPT_QC_KINDS and doc.get("task_id"):
         # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
         # tidak ada lagi "SPK ditutup terima tetapi roll masih karantina" (F-14).
-        qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids)
+        qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids,
+                                         return_remedy, return_remedy_reason)
     extra = {"quarantine_result": qres} if qres else {}
     if held:   # B1 — peringatan diterima: jejaknya tinggal di dokumen & riwayat.
         extra["accepted_with_held_rolls"] = [{"roll_no": h["roll_no"], "reason": h["reason"]} for h in held]
