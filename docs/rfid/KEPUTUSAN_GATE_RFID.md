@@ -188,11 +188,11 @@ Sudah dibangun dengan pilihan bawaan implementer; **belum** keputusan pemilik. R
 | Unduh lembar perbaikan master oleh MD | Peran MD bawaan belum punya izin unduh (`product.export`) |
 | Waktu perbaikan master | Disarankan tepat sebelum opname per gedung (stok lama tetap di SKU lama sampai gedungnya didaftarkan ulang) |
 | Roll lama yang masih dipesan saat pendaftaran awal | Pengecualian yang diputus manual (bukan dilepas otomatis) |
-| Persetujuan Finance terpisah untuk pendaftaran awal | Tidak — cukup izin `inventory.approve_count` |
+| Persetujuan Finance terpisah untuk pendaftaran awal | **Diputuskan 9 Nov (mandat pemilik, FIX-3a): dua langkah** — hitungan oleh gudang (`inventory.approve_count`), nilai/jurnal oleh Finance (`inventory.approve_value`), orang berbeda; setelan `registration.finance_approval` bawaan aktif |
 | Gate di Gedung Retur RCM | Dianggap tempat inspeksi **tanpa** gate (padahal juga menyimpan grade B/BS/C) |
 | Penanda "minta inspeksi" barang baru | Belum ada; sementara roll di SPK QC 4-point dirutekan ke gedung inspeksi |
-| Cek muat di gedung bergate | Gate OUT tertaut memenuhi "wajib Final Loading Check"; handheld opsional |
-| Pembuka kunci gate merah | Hanya izin approve (Admin/Manajer/Admin Gudang), bukan petugas gudang |
+| Cek muat di gedung bergate | Gate OUT tertaut memenuhi "wajib Final Loading Check"; handheld opsional — **diperketat 9 Nov (FIX-3b, RFID-12): hanya bila reader OUT sehat/online**, bila reader mati cek muat handheld wajib lagi |
+| Pembuka kunci gate merah | Hanya izin approve (Admin/Manajer/Admin Gudang), bukan petugas gudang — panel "Operasional Gate" kini di menu RFID (FIX-1, K-B1-07) |
 | Jendela "muatan sebelumnya" | 120 dtk: roll yang baru lewat gate yang sama lalu terbaca lagi → bukan merah (INFO bila puncak sebelum sinar A, kuning bila tidak terbukti) — kalibrasi di lokasi |
 
 ## 10. Volume, server & koneksi — pemilik 9 Nov 2026
@@ -205,3 +205,6 @@ Sudah dibangun dengan pilihan bawaan implementer; **belum** keputusan pemilik. R
   server) + SOP validasi handheld per dokumen secara **offline** (C72 offline-first, sinkron saat tersambung) +
   internet cadangan. Server lokal di gudang (opsi b) **tidak** dipakai sekarang.
 - Pemilik AFK 9 Nov: keputusan lanjutan diserahkan ke rekomendasi Claude, dilaporkan di akhir.
+
+
+Keputusan lain yang diambil koordinator atas mandat pemilik 9 Nov (audit WMS-RFID): [`../audit/2026-11-09-wms-rfid/KEPUTUSAN-KOORDINATOR.md`](../audit/2026-11-09-wms-rfid/KEPUTUSAN-KOORDINATOR.md).
