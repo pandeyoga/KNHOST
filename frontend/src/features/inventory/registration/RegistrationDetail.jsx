@@ -21,6 +21,9 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const approver = canCurrent("inventory", "approve_count");
+  // FIX-3a (keputusan koordinator) — persetujuan dua langkah: gudang menyetujui HITUNGAN, Finance menyetujui NILAI &
+  // JURNAL (izin `inventory.approve_value`, orang berbeda). `approval_step` dari server: count | finance | single.
+  const valueApprover = canCurrent("inventory", "approve_value");
 
   const load = async () => {
     try {
@@ -47,6 +50,12 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
     const warn = p.racks_done < p.racks_total ? ` ${p.racks_total - p.racks_done} rak belum ditandai selesai.` : "";
     if (await askConfirm({ title: "Ajukan persetujuan?", message: `${p.lines} roll terdaftar.${warn} Biaya rata-rata dibekukan saat diajukan.`, confirmLabel: "Ajukan" }))
       act(() => regApi.submit(sessionId), "Sesi diajukan — menunggu persetujuan.");
+  };
+  const approveCount = async () => {
+    const reason = await askReason({ title: "Setujui HITUNGAN sesi ini?", confirmLabel: "Setujui hitungan", reasonMinLength: 5,
+      message: "Langkah 1 dari 2: baris terkunci dan angka rekonsiliasi diteruskan ke Finance. Stok & jurnal BELUM berubah." });
+    if (!reason) return;
+    act(() => regApi.approveCount(sessionId, reason.trim()), "Hitungan disetujui — menunggu Finance menyetujui nilai & jurnal.");
   };
   const approve = async (groupKeys, acceptExceptions = false) => {
     const groups = (rec?.groups || []).filter((g) => !groupKeys.length || groupKeys.includes(g.key));
@@ -76,6 +85,9 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
   if (!s) return <div className="p-4">{err ? <ErrorNotice message={err} onRetry={load} testId="reg-detail-error" /> : <span className="text-[12px] text-[#6B6B73]">Memuat…</span>}</div>;
   const p = s.progress || {};
   const hasException = (rec?.groups || []).some((g) => g.result?.status === "exception");
+  // FIX-3a — langkah persetujuan dari server; sesi lama / setelan mati → satu langkah (perilaku lama).
+  const step = s.status === "pending_approval" ? (s.approval_step || "single") : "";
+  const canApplyNow = s.status === "pending_approval" && ((step === "single" && approver) || (step === "finance" && valueApprover));
   return (
     <div className="grid gap-3" data-testid="reg-detail">
       <div className="rounded-md border border-[#EFF0F2] bg-white p-3">
@@ -95,12 +107,23 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
         <div className="mt-2 flex flex-wrap gap-2">
           {s.status === "draft" && <button className="primary-button" disabled={busy} onClick={start} data-testid="reg-start"><Play size={13} /> Mulai & bekukan</button>}
           {s.status === "running" && <button className="primary-button" disabled={busy} onClick={submit} data-testid="reg-submit"><Send size={13} /> Ajukan persetujuan</button>}
-          {approver && s.status === "pending_approval" && (
+          {step === "count" && (
+            <span className="w-full text-[11.5px] text-[#6B6B73]" data-testid="reg-step-count">Langkah 1/2 — menunggu gudang menyetujui HITUNGAN; nilai & jurnal disetujui Finance sesudahnya.</span>
+          )}
+          {step === "finance" && (
+            <span className="w-full text-[11.5px] text-[#6B6B73]" data-testid="reg-step-finance">Langkah 2/2 — hitungan disetujui {s.registration?.count_approval?.by || "gudang"}; menunggu Finance menyetujui nilai & jurnal (orang berbeda).</span>
+          )}
+          {approver && step === "count" && (
+            <button className="primary-button !border-green-600 !bg-green-600" disabled={busy} onClick={approveCount} data-testid="reg-approve-count"><CheckCircle2 size={13} /> Setujui hitungan</button>
+          )}
+          {canApplyNow && (
             <>
-              <button className="primary-button !border-green-600 !bg-green-600" disabled={busy} onClick={() => approve([])} data-testid="reg-approve-all"><CheckCircle2 size={13} /> Setujui seluruh sesi</button>
+              <button className="primary-button !border-green-600 !bg-green-600" disabled={busy} onClick={() => approve([])} data-testid="reg-approve-all"><CheckCircle2 size={13} /> {step === "finance" ? "Setujui nilai & jurnal seluruh sesi" : "Setujui seluruh sesi"}</button>
               {hasException && <button className="secondary-button" disabled={busy} onClick={() => approve([], true)} data-testid="reg-accept-exc">Terima pengecualian & tuntaskan</button>}
-              <button className="secondary-button" disabled={busy} onClick={giveBack} data-testid="reg-return"><Undo2 size={13} /> Kembalikan</button>
             </>
+          )}
+          {(approver || (valueApprover && step === "finance")) && s.status === "pending_approval" && (
+            <button className="secondary-button" disabled={busy} onClick={giveBack} data-testid="reg-return"><Undo2 size={13} /> Kembalikan</button>
           )}
           {approver && ["draft", "running", "pending_approval"].includes(s.status) && !Object.keys(s.registration?.groups || {}).length &&
             <button className="secondary-button !border-red-300 !text-red-700" disabled={busy} onClick={reject} data-testid="reg-reject"><XCircle size={13} /> Tolak</button>}
@@ -153,7 +176,7 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
                     <td className="text-right tabular-nums">{formatCurrency(g.value_net)}<div className="text-[10.5px] text-[#8E8E93]">biaya rata-rata {formatCurrency(g.unit_cost)} · {g.cost_basis || "—"}</div></td>
                     <td className="text-right">
                       {g.result ? <span className="text-[11px] font-semibold" data-testid={`reg-group-result-${g.product_id}`}>{GROUP_RESULT[g.result.status] || g.result.status}</span>
-                        : (approver && s.status === "pending_approval" &&
+                        : (canApplyNow &&
                           <button className="secondary-button !py-0.5 text-[11px]" disabled={busy} onClick={() => approve([g.key])} data-testid={`reg-approve-${g.product_id}`}>Setujui</button>)}
                     </td>
                   </tr>
@@ -167,7 +190,7 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
               {rec.unmapped.map((u) => (
                 <div key={u.id} className="mt-1.5 grid gap-1 sm:grid-cols-[1fr_260px] sm:items-center" data-testid={`reg-unmapped-${u.id}`}>
                   <span className="text-[12px]">{u.bin_code} · <QtyDual measure={u.qty} unit={u.unit} /> · {u.note}{u.has_photo ? " · ada foto" : ""}</span>
-                  {approver && s.status === "pending_approval"
+                  {approver && s.status === "pending_approval" && step !== "finance"
                     ? <ProductSelect onSelect={(prod) => mapLine(u.id, prod)} label="Petakan ke produk…" triggerTestId={`reg-map-${u.id}`} />
                     : <span className="text-[11px] text-[#8E8E93]">Dipetakan penyetuju</span>}
                 </div>

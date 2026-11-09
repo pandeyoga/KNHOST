@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from db import db
 from dependencies import audit, require_any_permission, require_permission
-from input_rules import OptReasonStr, ReasonStr
+from input_rules import KNIn, OptReasonStr, ReasonStr
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
 from core_utils import new_id, now_iso, safe_doc
 from services import initial_registration_lines as irl
@@ -22,7 +22,7 @@ from services import registration_freeze as rfz
 router = APIRouter()
 
 
-class RegSessionCreate(BaseModel):
+class RegSessionCreate(KNIn):
     warehouse_id: str
     name: str = ""
     notes: str = ""
@@ -31,7 +31,7 @@ class RegSessionCreate(BaseModel):
     node_ids: List[str] = []
 
 
-class RegLineIn(BaseModel):
+class RegLineIn(KNIn):
     epc: Optional[str] = None
     product_id: Optional[str] = None
     qty: Optional[float] = Field(default=None, gt=0, le=100000)
@@ -48,28 +48,28 @@ class RegLineIn(BaseModel):
     label_raw: Optional[str] = None
 
 
-class RegCodesIn(BaseModel):
+class RegCodesIn(KNIn):
     codes: Any = ""                     # teks tempel (baris/spasi/koma) atau daftar
 
 
-class RegLabelIn(BaseModel):
+class RegLabelIn(KNIn):
     raw: str
     supplier_id: str = ""
 
 
-class RegRackIn(BaseModel):
+class RegRackIn(KNIn):
     done: bool = True
 
 
-class RegLineIds(BaseModel):
+class RegLineIds(KNIn):
     line_ids: List[str] = []
 
 
-class RegReason(BaseModel):
+class RegReason(KNIn):
     reason: ReasonStr                    # FIX-3a — K-14 ≥ 5 huruf (satu validator bersama)
 
 
-class RegApproveIn(BaseModel):
+class RegApproveIn(KNIn):
     group_keys: List[str] = []          # kosong = seluruh sesi
     # FIX-3a (B3b FRM-09 #11) — tanpa alasan bawaan teks tetap; wajib ≥ 5 huruf.
     reason: ReasonStr

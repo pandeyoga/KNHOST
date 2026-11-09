@@ -284,6 +284,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
       withReason: true,
       reasonLabel: "Alasan tutup-kurang",
       reasonPlaceholder: "Mis. sisa barang tidak akan dikirim supplier.",
+      reasonRequired: true, reasonMinLength: 5,   // FIX-3a (K-14) — server menuntut ≥ 5 huruf
       onConfirm: async (reason) => {
         try {
           await axios.post(`${API}/purchase-orders/${poId}/close`, { reason });
@@ -472,6 +473,8 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
         confirmLabel={confirm?.confirmLabel}
         danger={confirm?.danger}
         withReason={confirm?.withReason}
+        reasonRequired={confirm?.reasonRequired}
+        reasonMinLength={confirm?.reasonMinLength}
         reasonLabel={confirm?.reasonLabel}
         reasonPlaceholder={confirm?.reasonPlaceholder}
         onConfirm={confirm?.onConfirm}

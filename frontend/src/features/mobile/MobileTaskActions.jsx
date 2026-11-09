@@ -1,9 +1,16 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Loader2, Printer } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { printSampleLabel, printInboundRollLabels, reprintRollLabel } from "../../utils/rollLabels";
 import useReceivingMode from "../../hooks/useReceivingMode";
+import useReceivingUom from "../../hooks/useReceivingUom";
+import useDomainEnums from "../../hooks/useDomainEnums";
 import { offlinePost } from "../../utils/offlineQueue";
+import { parseDecimal } from "../../utils/decimalInput";
+import KNSelect from "../../components/KNSelect";
+import BinSelect from "../../components/BinSelect";
+import ReceiveUomPanel from "../wms/inbound/ReceiveUomPanel";
+import GRCatchWeightModal from "../wms/inbound/GRCatchWeightModal";
 
 export { printSampleLabel, printInboundRollLabels, reprintRollLabel };
 
@@ -23,30 +30,72 @@ export function ReprintRollButton({ task }) {
 
 /** Aksi tugas gudang di mobile (Tahap 2): satu tombol besar per langkah, hasil = ikon + teks. */
 
+// FIX-3a (B3b FRM-02, keputusan pemilik "form HP LENGKAP sama dengan desktop"; B2a FLW-IN-04) — Terima di HP kini
+// memakai isian yang SAMA dengan desktop: satuan & qty surat jalan supplier (pratinjau konversi server), batch, lot,
+// dye lot, grade (master), Roll ID, bin (terikat struktur gudang). Selesai memakai form rincian roll desktop
+// (GRCatchWeightModal: panjang/berat/dye lot/grade PER ROLL + lot supplier + no. SJ) — dulu HP hanya qty →
+// satu roll data untuk banyak roll fisik. Tombol Terima/Selesai hanya tampil di status yang memang diizinkan server.
+const RECEIVABLE = ["waiting_goods", "pending", "receiving", "in_progress", "qc_check"];
+const EMPTY_RECEIVE = { doc_uom: "", doc_qty: "", batch: "", lot: "", dye_lot: "", grade: "A", roll_id: "", bin_id: "" };
+
 export function InboundActions({ task, onDone, onCompleted }) {
   const { isGrn } = useReceivingMode();
+  const uom = useReceivingUom(task.id);
+  const { options: enumOptions } = useDomainEnums();
   // GRN Fase 0.5 — kotak qty KOSONG: petugas wajib menghitung, bukan menekan Terima dengan qty PO penuh.
-  const [qty, setQty] = useState("");
-  const [lot, setLot] = useState(""); const [dye, setDye] = useState("");
+  const [f, setF] = useState(EMPTY_RECEIVE);
+  const [more, setMore] = useState(false);
   const [msg, setMsg] = useState(null); const [busy, setBusy] = useState(false);
-  const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) onDone?.(); } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
-  // KN-E49 — satu niat "Terima" = satu Idempotency-Key; qty dikosongkan setelah terkirim/antre (tak bisa dobel).
+  const [gr, setGr] = useState(null);   // {rolls, product, lotSettings} saat form Selesai terbuka
+  const [lotFields, setLotFields] = useState({ supplier_lot: "", lot_number: "", shade_ref: "", supplier_dn: "" });
+  // KN-E49 — satu niat "Terima" = satu Idempotency-Key; isian dikosongkan setelah terkirim/antre (tak bisa dobel).
   const intent = useRef(null);
+  const set = (k, v) => { setF((p) => ({ ...p, [k]: v })); intent.current = null; };
+  useEffect(() => {
+    const def = uom.options?.default_uom || uom.options?.task_uom;
+    if (def) setF((p) => (p.doc_uom ? p : { ...p, doc_uom: def }));
+  }, [uom.options]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { uom.runPreview(f.doc_uom, parseDecimal(f.doc_qty)); }, [f.doc_uom, f.doc_qty]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) onDone?.(); } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
+  const qtyOk = parseDecimal(f.doc_qty) > 0;
   const receive = () => {
     intent.current = intent.current || `rcv-${task.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     return run(async () => {
-      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/scan-receive`, { product_id: task.product_id, actual_qty: parseFloat(qty) || 0 }, { label: `Terima ${task.product_name || task.id} ${qty}`, idempotencyKey: intent.current });
-      setQty(""); intent.current = null;
+      const body = { product_id: task.product_id, doc_uom: f.doc_uom || uom.options?.task_uom || "", doc_qty: f.doc_qty,
+        batch: f.batch, lot: f.lot, dye_lot: f.dye_lot, grade: f.grade, roll_id: f.roll_id, bin_id: f.bin_id };
+      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/scan-receive`, body, { label: `Terima ${task.product_name || task.id} ${f.doc_qty} ${body.doc_uom}`, idempotencyKey: intent.current });
+      setF((p) => ({ ...EMPTY_RECEIVE, doc_uom: p.doc_uom })); intent.current = null;
+      uom.reload?.();
       return r;
     }, "Diterima. Lanjut Selesai bila semua sudah dihitung.");
+  };
+  const openComplete = async () => {
+    setMsg(null);
+    const recv = Number(task.received_qty) || 0;
+    const plan = Number(task.expected_rolls) || 0;
+    let product = {};
+    let lotSettings = null;
+    try { product = (await axios.get(`${API}/products/${task.product_id}`)).data || {}; } catch (_) { /* opsional */ }
+    try { lotSettings = (await axios.get(`${API}/lots/settings`)).data; } catch (_) { lotSettings = { enforcement_mode: "warn" }; }
+    const n = plan > 1 ? plan : 1;
+    const per = Math.round((recv / n) * 100) / 100;
+    const isKg = (task.unit || "").toLowerCase() === "kg";
+    const rolls = Array.from({ length: n }, (_, i) => {
+      const len = i === n - 1 ? Math.round((recv - per * (n - 1)) * 100) / 100 : per;
+      return { length: isKg ? 0 : len, weight: isKg ? len : 0, dye_lot: task.dye_lot || "", grade: "A" };
+    });
+    setGr({ rolls, product, lotSettings });
   };
   const complete = async () => {
     setBusy(true); setMsg(null);
     try {
-      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/complete`, { supplier_lot: lot, dye_lot: dye }, { label: `Selesai barang masuk ${task.product_name || task.id}` });
-      if (r.queued) { setMsg({ ok: true, text: "Offline — penyelesaian tersimpan di HP; label roll bisa dicetak setelah sinkron." }); return; }
+      const rolls = (gr?.rolls || []).map((r) => ({ length: Number(r.length) || 0, weight: Number(r.weight) || 0,
+        dye_lot: r.dye_lot || "", grade: r.grade || "A" }));
+      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/complete`, { rolls, ...lotFields }, { label: `Selesai barang masuk ${task.product_name || task.id}` });
+      if (r.queued) { setGr(null); setMsg({ ok: true, text: "Offline — penyelesaian tersimpan di HP; label roll bisa dicetak setelah sinkron." }); return; }
+      setGr(null);
       // Hasil + tombol cetak label diangkat ke induk (bertahan setelah kartu hilang dari daftar).
-      onCompleted?.({ task, rolls: r.data.created_rolls || [] });
+      onCompleted?.({ task, rolls: r.data.created_rolls || [], warnings: r.data.placement_warnings || [] });
     } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); }
   };
   if (isGrn(task.entity_id) && !task.legacy_in_flight) {
@@ -56,22 +105,49 @@ export function InboundActions({ task, onDone, onCompleted }) {
       </a>
     );
   }
+  if (!RECEIVABLE.includes(task.status)) {
+    return (
+      <div className="mt-2 space-y-2" data-testid={`mw-inbound-actions-${task.id}`}>
+        <div className="notice-bar text-xs" data-testid={`mw-inbound-locked-${task.id}`}>
+          {task.status === "escalated" ? "Menunggu keputusan manajer atas eskalasi — belum bisa menerima barang."
+            : "Barang tugas ini sudah masuk stok/karantina (keputusan QC di layar QC) — tidak ada aksi terima di sini."}
+        </div>
+        <ReprintRollButton task={task} />
+      </div>
+    );
+  }
+  const canComplete = task.status === "qc_check" || ((Number(task.received_qty) || 0) >= (Number(task.expected_qty) || 0) && (Number(task.received_qty) || 0) > 0);
   return (
     <div className="mt-2 space-y-2" data-testid={`mw-inbound-actions-${task.id}`}>
-      {["waiting_goods", "pending", "receiving", "in_progress"].includes(task.status) && (
-        <div className="flex gap-2">
-          <input type="number" inputMode="decimal" className="flex-1 rounded-lg border p-3 text-lg" value={qty} placeholder={`Hitung fisik (${task.unit || "qty"})`} onChange={(e) => { setQty(e.target.value); intent.current = null; }} data-testid={`mw-receive-qty-${task.id}`} />
-          <button className="primary-button px-4" disabled={busy || !(parseFloat(qty) > 0)} onClick={receive} data-testid={`mw-receive-btn-${task.id}`}>Terima</button>
+      {task.status !== "qc_check" && (
+        <div className="space-y-2">
+          <ReceiveUomPanel uom={uom} docUom={f.doc_uom} docQty={f.doc_qty}
+            onUomChange={(v) => set("doc_uom", v)} onQtyChange={(v) => set("doc_qty", v)} disabled={busy} />
+          <button type="button" className="text-xs font-semibold text-[#0058CC]" onClick={() => setMore((x) => !x)} data-testid={`mw-receive-more-${task.id}`}>
+            {more ? "Sembunyikan" : "Batch, lot, dye lot, grade, Roll ID, bin"}
+          </button>
+          {more && (
+            <div className="grid grid-cols-2 gap-2">
+              <input className="rounded-lg border p-2" placeholder="Batch" value={f.batch} onChange={(e) => set("batch", e.target.value)} data-testid={`mw-batch-${task.id}`} />
+              <input className="rounded-lg border p-2" placeholder="Lot" value={f.lot} onChange={(e) => set("lot", e.target.value)} data-testid={`mw-lot-in-${task.id}`} />
+              <input className="rounded-lg border p-2" placeholder="Dye lot" value={f.dye_lot} onChange={(e) => set("dye_lot", e.target.value)} data-testid={`mw-dye-in-${task.id}`} />
+              <KNSelect className="rounded-lg border p-2 bg-white text-left" value={f.grade} onValueChange={(v) => set("grade", v)} options={enumOptions("grade")} data-testid={`mw-grade-${task.id}`} />
+              <input className="rounded-lg border p-2" placeholder="Roll ID" value={f.roll_id} onChange={(e) => set("roll_id", e.target.value)} data-testid={`mw-rollid-${task.id}`} />
+              <BinSelect className="rounded-lg border p-2 bg-white text-left" warehouseId={task.warehouse_id} value={f.bin_id} onChange={(v) => set("bin_id", v)} data-testid={`mw-bin-${task.id}`} />
+            </div>
+          )}
+          <button className="primary-button w-full py-3" disabled={busy || !qtyOk} onClick={receive} data-testid={`mw-receive-btn-${task.id}`}>Terima</button>
         </div>
       )}
-      {["receiving", "qc_check", "in_progress"].includes(task.status) && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <input className="rounded-lg border p-2" placeholder="Lot supplier" value={lot} onChange={(e) => setLot(e.target.value)} data-testid={`mw-lot-${task.id}`} />
-            <input className="rounded-lg border p-2" placeholder="Dye lot" value={dye} onChange={(e) => setDye(e.target.value)} data-testid={`mw-dye-${task.id}`} />
-          </div>
-          <button className="secondary-button w-full py-3" disabled={busy} onClick={complete} data-testid={`mw-complete-btn-${task.id}`}>{busy ? <Loader2 size={14} className="animate-spin inline" /> : null} Selesai (masuk stok)</button>
-        </div>
+      {canComplete && (
+        <button className="secondary-button w-full py-3" disabled={busy} onClick={openComplete} data-testid={`mw-complete-btn-${task.id}`}>{busy ? <Loader2 size={14} className="animate-spin inline" /> : null} Selesai (rincian roll → masuk stok)</button>
+      )}
+      {gr && (
+        <GRCatchWeightModal task={task} product={gr.product} rolls={gr.rolls} setRolls={(rs) => setGr((g) => ({ ...g, rolls: rs }))}
+          onSubmit={complete} onClose={() => setGr(null)} submitting={busy} error={msg && !msg.ok ? msg.text : ""}
+          lotFields={lotFields} setLotFields={setLotFields} lotSettings={gr.lotSettings}
+          tolPct={uom.options?.line_qty_tolerance_pct ?? 2} sjMode={uom.options?.supplier_dn_mode || "warn"}
+          sjKnown={uom.options?.supplier_dn_known || []} />
       )}
       <ReprintRollButton task={task} />
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"}`} data-testid={`mw-action-msg-${task.id}`}>{msg.text}</div>}

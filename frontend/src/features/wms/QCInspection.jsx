@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiErrorText } from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import {
   ShieldCheck, RefreshCw, CheckCircle2, XCircle, PackageCheck,
@@ -117,6 +118,11 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
       setFormErr("Task ini tanpa supplier — gunakan disposisi 'Barang Rusak'.");
       return;
     }
+    // FIX-3a (K-14) — menolak barang wajib ber-alasan ≥ 5 huruf (ditegakkan juga di server).
+    if (rejectNum > 0.01 && (String(reason || "").match(/\p{L}/gu) || []).length < 5) {
+      setFormErr("Alasan menolak barang wajib diisi (minimal 5 huruf) — dibaca supplier & menjadi dasar retur.");
+      return;
+    }
     setBusy(true); setFormErr("");
     try {
       const res = await axios.post(`${API}/inbound/tasks/${active.id}/qc-decision`, {
@@ -136,7 +142,7 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
       setActive(null);
       await load();
     } catch (e) {
-      setFormErr(e.response?.data?.detail || "Keputusan QC gagal.");
+      setFormErr(apiErrorText(e, "Keputusan QC gagal."));   // FIX-3a (FRM-16) — galat 422 terbaca, bukan objek mentah
     } finally { setBusy(false); }
   }
 

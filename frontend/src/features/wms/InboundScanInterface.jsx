@@ -12,6 +12,7 @@ import useReceivingUom from "../../hooks/useReceivingUom";
 import { formatQty } from "../../utils/formatters";
 import RollLabelActions from "../../components/RollLabelActions";
 import { kgPerBaseUnit } from "../../utils/uom";
+import { parseDecimal } from "../../utils/decimalInput";
 import ScanLabelStatsCard from "./inbound/ScanLabelStatsCard";
 import { askReason, askText } from "../../services/confirmService";
 import useReceivingMode from "../../hooks/useReceivingMode";
@@ -148,7 +149,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
 
   const handleScanReceive = async (overrideReason = "") => {
     if (!selectedTask) return;
-    const qty = Number(scanData.doc_qty);
+    const qty = parseDecimal(scanData.doc_qty);   // FIX-3a (INP-10) — koma desimal Indonesia
     if (!Number.isFinite(qty) || qty <= 0) {
       setError("Masukkan jumlah yang diterima (lebih besar dari 0) sebelum menyimpan penerimaan.");
       return;

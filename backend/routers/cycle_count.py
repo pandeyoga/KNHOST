@@ -10,7 +10,7 @@ from services import warehouse_scope_service as whscope
 from services.roll_service import resolve_stock_owner
 from services import stock_count_service as scs
 from services import registration_freeze as rfz
-from input_rules import ReasonStr, OptReasonStr, require_reason
+from input_rules import KNIn, ReasonStr, OptReasonStr, require_reason
 
 router = APIRouter(prefix="/api")
 
@@ -52,31 +52,31 @@ def _assert_item_owners(session: Dict[str, Any], ctx) -> None:
         raise HTTPException(status_code=403, detail="Sesi berisi stok badan usaha di luar akses Anda: " + ", ".join(foreign))
 
 
-class CycleCountSessionCreate(BaseModel):
+class CycleCountSessionCreate(KNIn):
     warehouse_id: str
     name: str = ""
     notes: str = ""
 
 
-class CycleCountItemCreate(BaseModel):
+class CycleCountItemCreate(KNIn):
     product_id: str
     bin_id: str = ""
     notes: str = ""
     owner_entity_id: str = ""  # opsional: entitas pemilik stok (auto-resolve bila kosong)
 
 
-class CycleCountItemUpdate(BaseModel):
+class CycleCountItemUpdate(KNIn):
     actual_qty: Any = None   # WM-07 — divalidasi scs.valid_qty (≥0, finite) → 400 terbaca, bukan 422/500 NaN
     notes: str = ""
 
 
-class CycleCountApprove(BaseModel):
+class CycleCountApprove(KNIn):
     # FIX-3a (B3b FRM-09 #10) — tanpa alasan bawaan teks tetap; bila diisi wajib ≥ 5 huruf (K-14).
     reason: OptReasonStr = ""
     zero_cost_reason: OptReasonStr = ""   # FN-14 — wajib bila surplus tanpa biaya acuan
 
 
-class CycleCountReject(BaseModel):
+class CycleCountReject(KNIn):
     reason: ReasonStr
 
 
@@ -377,11 +377,11 @@ async def reject_session(session_id: str, payload: CycleCountReject, request: Re
 
 
 # ═══ L10 LN-101 — opname per roll (snapshot scope node → scan → rekonsiliasi → finalisasi) ═══
-class RollScopePayload(BaseModel):
+class RollScopePayload(KNIn):
     node_id: str = ""
 
 
-class RollScanPayload(BaseModel):
+class RollScanPayload(KNIn):
     code: str
     bin_id: str
     measured_qty: Any = None
@@ -389,20 +389,20 @@ class RollScanPayload(BaseModel):
     note: str = ""
 
 
-class FoundRollSpec(BaseModel):
+class FoundRollSpec(KNIn):
     scan_id: str
     product_id: str
     owner_entity_id: str
     qty: Any = None
 
 
-class RollFinalizePayload(BaseModel):
+class RollFinalizePayload(KNIn):
     reason: str
     new_rolls: List[FoundRollSpec] = []
     zero_cost_reason: str = ""
 
 
-class MissingRecountPayload(BaseModel):
+class MissingRecountPayload(KNIn):
     roll_id: str
     note: str = ""
 

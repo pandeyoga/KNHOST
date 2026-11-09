@@ -89,6 +89,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
       {lastInbound && (
         <div className="m-card p-3 bg-[#E6F6EC] space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>
           <div className="notice-bar success" data-testid={`mw-action-msg-${lastInbound.task.id}`}>SELESAI · {lastInbound.task.product_name} · {lastInbound.rolls.length} roll baru masuk stok{lastInbound.rolls.length ? `: ${lastInbound.rolls.map((r) => r.roll_no).join(", ")}` : ""}</div>
+          {(lastInbound.warnings || []).length > 0 && <div className="notice-bar warning text-xs" data-testid={`mw-inbound-warn-${lastInbound.task.id}`}>{lastInbound.warnings.join(" · ")}</div>}
           {lastInbound.rolls.length > 0 && <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => printInboundRollLabels(lastInbound.task, lastInbound.rolls)} data-testid={`mw-inbound-print-${lastInbound.task.id}`}><Printer size={16} /> Cetak label {lastInbound.rolls.length} roll</button>}
           <button className="secondary-button w-full py-2" onClick={() => setLastInbound(null)} data-testid={`mw-inbound-done-close-${lastInbound.task.id}`}>Tutup</button>
         </div>

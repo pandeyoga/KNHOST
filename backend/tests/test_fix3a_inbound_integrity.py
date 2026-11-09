@@ -456,3 +456,61 @@ def test_new_device_has_no_fake_heartbeat():
             run(rfid_service.update_device(dev["id"], {"status": "online"}, sim_entity=f"ent_tanpa_sim_{TAG}"))
     finally:
         DB.rfid_devices.delete_one({"id": dev["id"]})
+
+
+# ─── B2a FLW-IN-05 — batal/tutup-kurang PO tidak membatalkan barang yang sudah diposting ─────────────────────────
+def test_po_cancel_refused_when_goods_posted_and_close_keeps_qc_pending(adm):
+    po_id = f"po_fx3a_b_{TAG}"
+    DB.purchase_orders.insert_one({"id": po_id, "po_number": f"PO-FX3A-B-{TAG}", "status": "receiving", "entity_id": OWNER,
+                                   "items": [{"product_id": P, "quantity": 50, "price": 0}], "created_at": OLD_TS})
+    try:
+        posted = _task("qc_pending", expected=25, received=25, po_id=po_id)
+        waiting = _task("waiting_goods", expected=25, po_id=po_id)
+        r = requests.post(f"{BASE}/purchase-orders/{po_id}/cancel", headers=adm)
+        assert r.status_code == 409 and DB.purchase_orders.find_one({"id": po_id})["status"] == "receiving"
+        from routers.purchase_orders_extra import cancel_open_inbound_tasks
+        run(cancel_open_inbound_tasks(po_id, "Uji", "PO ditutup-kurang"))
+        assert DB.wms_tasks.find_one({"id": waiting})["status"] == "cancelled"
+        assert DB.wms_tasks.find_one({"id": posted})["status"] == "qc_pending"     # karantina tidak yatim
+    finally:
+        DB.purchase_orders.delete_one({"id": po_id})
+
+
+# ─── B2a FLW-IN-13 (D4) — konversi baku tanpa barang supplier ────────────────────────────────────────────────────
+def test_fixed_pair_conversion_allowed_without_supplier_item():
+    from services.receiving_uom_service import is_fixed_pair
+    assert run(is_fixed_pair("meter", "yard")) is True
+    assert run(is_fixed_pair("Yard", "METER")) is True
+    assert run(is_fixed_pair("cone", "kg")) is False
+
+
+# ─── B2a FLW-IN-09 (D6) — roll retur lepas karantina diarahkan sesuai grade ──────────────────────────────────────
+def test_released_return_rolls_routed_by_grade():
+    from services.return_service import route_released_return_rolls
+    w_r = f"wh_TFX3A_R_{TAG}"
+    DB.warehouses.insert_one({"id": w_r, "code": f"TFX3AR-{TAG}", "name": f"TEST RETUR {TAG}", "active": True,
+                              "sharing_mode": "shared", "entity_ids": [OWNER], "roles": ["return"],
+                              "storage_rules": {"mode": "grade", "grades": ["B", "BS", "C"]}, "zones": []})
+    try:
+        b = _roll(4.0, None, wh=w_r, grade="B", journey={"stage": "received_transit"})
+        a = _roll(4.0, None, wh=w_r, grade="A", journey={"stage": "received_transit"})
+        out = run(route_released_return_rolls([a, b], {"id": "sret_x", "number": "SRET-X"}, "Uji"))
+        assert out["stay"] == 1 and out["putaway"] == 1
+        assert DB.inventory_rolls.find_one({"id": b})["journey"]["stage"] == "stored"          # B tetap di Gedung Retur
+        ja = DB.inventory_rolls.find_one({"id": a})["journey"]
+        assert ja["stage"] == "received_transit" and ja["return_routed"] == "putaway"        # A → gudang simpan (draf PA)
+    finally:
+        DB.warehouses.delete_one({"id": w_r})
+
+
+# ─── B3b FRM-09 — alasan K-14 di jalur GRN (dulu `min_length=5` tanpa strip: 5 spasi lolos) ─────────────────────
+def test_grn_reject_reason_spaces_rejected_by_model():
+    from pydantic import ValidationError
+    import schemas_goods_receipt as sg
+    cases = [(sg.GRNReasonIn, {"expected_version": 1}), (sg.GRNResolveIn, {"expected_version": 1, "action": "accept_note"}),
+             (sg.GRNModeIn, {"entity_id": OWNER, "mode": "grn"})]
+    for m, base in cases:
+        for bad in ("     ", ".....", "x"):
+            with pytest.raises(ValidationError):
+                m(**base, reason=bad)
+        assert m(**base, reason=" Supplier salah kirim warna ").reason == "Supplier salah kirim warna"

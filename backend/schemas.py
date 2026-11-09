@@ -715,8 +715,8 @@ class RollPayload(BaseModel):
     grade: str = "A"
     batch: str = ""
     roll_no: str = ""
-    unit_cost: Optional[float] = Field(None, ge=0)   # temuan lama #12 — HPP stok awal (per satuan dasar)
-    weight_kg: Optional[float] = Field(None, ge=0)   # temuan lama #12 — berat roll stok awal
+    unit_cost: OptMoneyDecimal = Field(None, ge=0)   # temuan lama #12 — HPP stok awal (per satuan dasar); FIX-3a koma desimal
+    weight_kg: OptQtyDecimal = Field(None, ge=0)     # temuan lama #12 — berat roll stok awal; FIX-3a koma desimal
     bin_id: str = ""
     tracking_mode: str = "barcode"   # rfid | barcode | document | manual
     ownership_type: str = "internal" # internal | supplier_consignment | reseller_consignment

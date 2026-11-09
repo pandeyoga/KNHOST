@@ -51,6 +51,16 @@ async def receiving_warehouse(site_id: str, entity_id: Optional[str]) -> Dict[st
         return sorted(inbound, key=_rank)[0]
     if len(rows) == 1:
         return rows[0]
+    # FIX-3a (B2a FLW-IN-21) — pesan menyebut penyebab sebenarnya: gudang ADA tetapi khusus PT lain (dedicated),
+    # bukan selalu "belum punya gudang penerimaan".
+    if not rows:
+        others = await db.warehouses.find({"site_id": site_id, "active": {"$ne": False}},
+                                          {"_id": 0, "name": 1, "sharing_mode": 1}).to_list(50)
+        if others:
+            names = ", ".join(w.get("name") or "-" for w in others[:4])
+            raise HTTPException(status_code=400, detail=(
+                f"Gudang di lokasi {site.get('name')} ({names}) khusus badan usaha lain — badan usaha ini belum boleh "
+                "memakainya. Ubah gudang menjadi bersama (atau tambahkan PT ini) di Data Gudang."))
     raise HTTPException(status_code=400, detail=(
         f"Lokasi {site.get('name')} belum punya gudang penerimaan (peran Transit / Penerimaan Pusat) yang boleh "
         "dipakai badan usaha ini. Atur perannya di Data Gudang."))

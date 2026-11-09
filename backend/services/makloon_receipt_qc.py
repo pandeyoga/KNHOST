@@ -101,6 +101,12 @@ async def open_receipt_tasks(order: Dict[str, Any], step: Dict[str, Any], policy
     state: Dict[str, Any] = {"final_step": True, "required": bool(policy.get("qc")), "task_ids": [],
                              "inspections": [], "stages": dict(policy.get("stages") or {}), "at": now_iso()}
     if not policy.get("qc") or not roll_ids:
+        if roll_ids and policy.get("final") and not policy.get("qc"):
+            # FIX-3a (B2a FLW-IN-18) — hasil makloon TANPA QC langsung tersedia → draf Putaway Order otomatis, setara GRN
+            # tanpa QC (K-GDG-10). Best-effort & idempoten per penerimaan langkah.
+            state["putaway_draft"] = await iqc.auto_draft_after_release(
+                list(roll_ids), {"type": "makloon_receipt", "id": f"{order['id']}:{step.get('seq')}:{len(roll_ids)}",
+                                 "number": order.get("mko_number", "")}, actor_name)
         return state
     rolls = await db.inventory_rolls.find({"id": {"$in": list(roll_ids)}, "qc_task_id": {"$nin": [None, ""]}},
                                           {"_id": 0}).to_list(len(roll_ids) + 5)

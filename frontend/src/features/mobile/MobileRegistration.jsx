@@ -12,6 +12,9 @@ import KNSelect from "../../components/KNSelect";
 import ProductSelect from "../../components/ProductSelect";
 import QtyDual from "../../components/QtyDual";
 import useUomConversions from "../../hooks/useUomConversions";
+import useDomainEnums from "../../hooks/useDomainEnums";
+import axios, { API } from "../../services/apiClient";
+import { parseDecimal } from "../../utils/decimalInput";
 import { apiErrorText } from "../../utils/apiError";
 import { uomSelectOptions } from "../../utils/uomCatalog";
 import { canonicalEpc, recalledBin, regApi, rememberBin, splitCodes } from "../inventory/registration/registrationApi";
@@ -57,6 +60,11 @@ function FieldForm({ session }) {
   const [unit, setUnit] = useState("");
   const [fromLabel, setFromLabel] = useState(false);
   const [more, setMore] = useState({ lot: "", dye_lot: "", grade: "", old_roll_no: "" });
+  // FIX-3a (keputusan K-B3b-06) — PT pemilik roll dipilih PER BARIS (bawaan = PT sesi) supaya roll PT lain di gedung
+  // bersama tidak terdaftar atas nama PT sesi. Pilihan diingat untuk baris berikutnya (rak biasanya satu pemilik).
+  const [owner, setOwner] = useState(session.entity_id || "");
+  const [owners, setOwners] = useState([]);
+  const { options: enumOptions } = useDomainEnums();   // FRM-18 — grade dari master, bukan teks bebas
   const [unrec, setUnrec] = useState(false);
   const [note, setNote] = useState("");
   const [photo, setPhoto] = useState(null);
@@ -67,6 +75,8 @@ function FieldForm({ session }) {
 
   useEffect(() => {
     regApi.bins(sid).then(setBins).catch((e) => setErr(apiErrorText(e, "Gagal memuat bin cakupan")));
+    axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
+      .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
     regApi.lines(sid, { limit: 8 }).then(setRecent).catch(() => {});
   }, [sid]);
   const curBin = bins.find((b) => b.id === bin);
@@ -110,8 +120,8 @@ function FieldForm({ session }) {
 
   const save = async () => {
     setBusy(true); setErr(""); setMsg("");
-    const body = { bin_id: bin, qty: qty === "" ? null : Number(String(qty).replace(",", ".")), unit: unit || product?.base_unit,
-      length_from_label: fromLabel, ...more, grade: more.grade || null,
+    const body = { bin_id: bin, qty: qty === "" ? null : parseDecimal(qty), unit: unit || product?.base_unit,
+      length_from_label: fromLabel, ...more, grade: more.grade || null, owner_entity_id: owner || null,
       ...(systemEpc ? {} : { epc: queue[0] || "" }),
       ...(unrec ? { unrecognized: true, note } : { product_id: product?.id }) };
     try {
@@ -139,7 +149,7 @@ function FieldForm({ session }) {
   };
 
   const unitOpts = uomSelectOptions({ dimensions: ["length", "weight"], extra: [product?.base_unit, unit].filter(Boolean) });
-  const ready = bin && (systemEpc || queue.length) && (unrec ? note.trim().length >= 3 : product && Number(String(qty).replace(",", ".")) > 0);
+  const ready = bin && (systemEpc || queue.length) && (unrec ? note.trim().length >= 3 : product && parseDecimal(qty) > 0);
   return (
     <div className="space-y-2" data-testid="mreg-form">
       <div className="m-card space-y-2 p-3">
@@ -184,9 +194,13 @@ function FieldForm({ session }) {
         <details className="text-[13px]">
           <summary>Lot, grade, nomor roll lama</summary>
           <div className="mt-2 grid gap-2">
-            {[["lot", "Lot"], ["dye_lot", "Dye lot"], ["grade", "Grade (A/B/…)"], ["old_roll_no", "Nomor roll lama (label lama)"]].map(([k, ph]) => (
+            {[["lot", "Lot"], ["dye_lot", "Dye lot"], ["old_roll_no", "Nomor roll lama (label lama)"]].map(([k, ph]) => (
               <input key={k} className={BIG} placeholder={ph} value={more[k]} onChange={(e) => setMore({ ...more, [k]: e.target.value })} data-testid={`mreg-${k}`} />
             ))}
+            <KNSelect data-testid="mreg-grade" className={BIG} value={more.grade} placeholder="Grade (bawaan A)"
+              onValueChange={(v) => setMore({ ...more, grade: v })} options={[{ value: "", label: "Grade bawaan (A)" }, ...enumOptions("grade")]} />
+            <KNSelect data-testid="mreg-owner" className={BIG} value={owner} placeholder="PT pemilik roll"
+              onValueChange={setOwner} options={owners.length ? owners : [{ value: session.entity_id || "", label: "PT sesi" }]} />
           </div>
         </details>
         {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="mreg-save-error" />}

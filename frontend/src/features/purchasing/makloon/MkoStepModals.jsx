@@ -10,6 +10,7 @@
  * Kontrak `onConfirm`: async; galat DILEMPAR (Error.message / respons axios) → ditampilkan di pop-up.
  */
 import { useState } from "react";
+import { parseDecimal } from "../../../utils/decimalInput";
 import { PackageCheck, Plus, Send, Trash2, Wrench } from "lucide-react";
 import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
@@ -29,6 +30,9 @@ const ISSUE_MODES = [
   { value: "qty", label: "Berdasarkan jumlah (sistem memilih roll)" },
   { value: "rolls", label: "Pilih roll (centang / pindai)" },
 ];
+
+// FIX-3a (INP-10) — satu pengurai angka isian (koma desimal Indonesia), NaN → 0.
+const dec = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm, mkoId = "" }) {
   // Stok bahan MILIK entitas SPK per gudang (dihitung server) — gudang tanpa stok
@@ -134,26 +138,27 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
       extra: [step.output_unit].filter(Boolean) }),
   ];
 
-  const totalRolls = rolls.reduce((a, r) => a + (parseFloat(r.length) || 0), 0);
+  // FIX-3a (B3b INP-10) — qty/panjang mitra diketik berkoma ("12,5") → dulu 12; "1.250,5" → 1,25.
+  const totalRolls = rolls.reduce((a, r) => a + (dec(r.length) || 0), 0);
   const setRoll = (i, k, v) => setRolls((p) => p.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
-  const usingDoc = Boolean(docUom) && parseFloat(docQty) > 0;
+  const usingDoc = Boolean(docUom) && dec(docQty) > 0;
 
   const submit = async () => {
     setErr("");
-    const oq = parseFloat(outQty) || 0;
+    const oq = dec(outQty) || 0;
     if (!usingDoc && oq <= 0) { setErr("Qty output harus > 0."); return; }
     if (rolls.some((r) => !r.lot.trim())) { setErr("Setiap roll wajib punya nomor LOT."); return; }
     if (!usingDoc && Math.abs(totalRolls - oq) > 0.5) { setErr(`Total panjang roll (${formatQty(totalRolls)}) harus = qty output (${formatQty(oq)}).`); return; }
     try {
       const body = {
-        actual_output_qty: usingDoc ? 0 : oq, actual_byproduct_qty: parseFloat(byQty) || 0,
-        tariff: parseFloat(tariff) || 0, aux_cost: parseFloat(aux) || 0, ppn: parseFloat(ppn) || 0,
+        actual_output_qty: usingDoc ? 0 : oq, actual_byproduct_qty: dec(byQty) || 0,
+        tariff: dec(tariff) || 0, aux_cost: dec(aux) || 0, ppn: dec(ppn) || 0,
         output_warehouse_id: wh, supplier_invoice_no: invNo,
         colors: parseInt(colors, 10) || 0, repeats: parseInt(repeats, 10) || 0,
         byproduct_lot: `SISA-${mkoNumber}-${step.seq}`,
-        rolls: rolls.map((r) => ({ lot: r.lot.trim(), length: parseFloat(r.length) || 0, grade: r.grade || "A", dye_lot: (r.dye_lot || "").trim() })),
+        rolls: rolls.map((r) => ({ lot: r.lot.trim(), length: dec(r.length) || 0, grade: r.grade || "A", dye_lot: (r.dye_lot || "").trim() })),
       };
-      if (usingDoc) { body.output_uom = docUom; body.output_doc_qty = parseFloat(docQty); }
+      if (usingDoc) { body.output_uom = docUom; body.output_doc_qty = dec(docQty); }
       setErr(""); await onConfirm(body);
     } catch (e) { setErr(e.message || "Gagal terima hasil makloon."); }   // 23 Okt — dulu "sudah tampil" di BELAKANG modal
   };
@@ -175,8 +180,8 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
           </p>
         )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <FieldR label={`Qty Output (${step.output_unit || "unit"})`}><input data-testid="mko-recv-output-qty" type="number" className="field" value={outQty} onChange={(e) => setOutQty(e.target.value)} disabled={usingDoc} /></FieldR>
-          <FieldR label={`Qty Barang Sisa (${step.input_unit || "unit"})`}><input data-testid="mko-recv-byproduct-qty" type="number" className="field" value={byQty} onChange={(e) => setByQty(e.target.value)} /></FieldR>
+          <FieldR label={`Qty Output (${step.output_unit || "unit"})`}><input data-testid="mko-recv-output-qty" type="text" inputMode="decimal" className="field" value={outQty} onChange={(e) => setOutQty(e.target.value)} disabled={usingDoc} /></FieldR>
+          <FieldR label={`Qty Barang Sisa (${step.input_unit || "unit"})`}><input data-testid="mko-recv-byproduct-qty" type="text" inputMode="decimal" className="field" value={byQty} onChange={(e) => setByQty(e.target.value)} /></FieldR>
           <FieldR label="Gudang Terima"><KNSelect data-testid="mko-recv-warehouse" className="field" value={wh} onValueChange={setWh} options={whOpts} /></FieldR>
           <FieldR label="Ongkos Jasa (kosong = dari kontrak)"><MoneyInput testId="mko-recv-tariff" className="field" value={tariff} placeholder="otomatis" onChange={(v) => setTariff(v)} /></FieldR>
           <FieldR label="Bahan Pembantu (Rp)"><MoneyInput testId="mko-recv-aux" className="field" value={aux} onChange={(v) => setAux(v)} /></FieldR>
@@ -205,14 +210,14 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
             {rolls.map((r, i) => (
               <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-center gap-1.5 rounded-md border border-[#EFF0F2] bg-white p-1.5 sm:grid-cols-[1.4fr_0.9fr_0.7fr_1fr_auto] sm:border-0 sm:bg-transparent sm:p-0">
                 <input data-testid={`mko-recv-roll-lot-${i}`} className="field col-span-3 !py-1.5 text-[11.5px] sm:col-span-1" placeholder="No. LOT" value={r.lot} onChange={(e) => setRoll(i, "lot", e.target.value)} />
-                <input data-testid={`mko-recv-roll-len-${i}`} type="number" className="field !py-1.5 text-[11.5px]" placeholder="Panjang" value={r.length} onChange={(e) => setRoll(i, "length", e.target.value)} />
+                <input data-testid={`mko-recv-roll-len-${i}`} type="text" inputMode="decimal" className="field !py-1.5 text-[11.5px]" placeholder="Panjang" value={r.length} onChange={(e) => setRoll(i, "length", e.target.value)} />
                 <KNSelect data-testid={`mko-recv-roll-grade-${i}`} className="field !py-1.5 text-[11.5px] text-left" value={r.grade} onValueChange={(v) => setRoll(i, "grade", v)} options={gradeOptions("grade")} />
                 <button type="button" aria-label="Hapus roll" className="icon-button text-red-400 hover:text-red-600 sm:order-last" disabled={rolls.length <= 1} onClick={() => setRolls((p) => p.filter((_, idx) => idx !== i))}><Trash2 size={13} /></button>
                 <input data-testid={`mko-recv-roll-dyelot-${i}`} className="field col-span-3 !py-1.5 text-[11.5px] sm:col-span-1" placeholder="Dye lot" value={r.dye_lot} onChange={(e) => setRoll(i, "dye_lot", e.target.value)} />
               </div>
             ))}
           </div>
-          <p className={`mt-1.5 text-[10.5px] ${!usingDoc && Math.abs(totalRolls - (parseFloat(outQty) || 0)) > 0.5 ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}>Total roll: {formatQty(totalRolls)} {usingDoc ? "(harus = hasil konversi)" : `/ output ${formatQty(parseFloat(outQty) || 0)}`}</p>
+          <p className={`mt-1.5 text-[10.5px] ${!usingDoc && Math.abs(totalRolls - (dec(outQty) || 0)) > 0.5 ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}>Total roll: {formatQty(totalRolls)} {usingDoc ? "(harus = hasil konversi)" : `/ output ${formatQty(dec(outQty) || 0)}`}</p>
         </div>
       </div>
     </FormModal>

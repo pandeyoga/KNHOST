@@ -131,12 +131,66 @@ def _category(name: str) -> str:
     return ""
 
 
-def scan_static() -> None:
-    """Lapis A — scan AST semua schemas*.py."""
+# G-NUM-02 (audit B3b, FIX-3a) — INV-NUM-01 diperluas ke MODEL yang didefinisikan di ROUTER dan ke PARAMETER QUERY
+# numerik pada endpoint tulis. Cakupan bertahap (ratchet): router alur barang masuk/opname/pendaftaran (FIX-3a).
+# Paket lain menambah berkasnya ke daftar ini setelah area mereka bersih.
+ROUTER_SCOPE = (
+    "routers/inbound_receiving.py", "routers/inbound_receiving_extra.py", "routers/inbound_scan_label.py",
+    "routers/cycle_count.py", "routers/initial_registration.py", "routers/putaway_orders.py",
+)
+#: Penjaga runtime yang dianggap setara bound skema untuk parameter query (`require_qty` di `input_rules.py`).
+QUERY_GUARDS = ("require_qty",)
+
+
+def _router_files():
+    return [BACKEND / rel for rel in ROUTER_SCOPE if (BACKEND / rel).exists()]
+
+
+def scan_router_queries() -> None:
+    """G-NUM-02 — parameter query numerik ber-semantik (qty/harga/persen) pada fungsi endpoint di ROUTER_SCOPE wajib
+    dipagari: `Query(ge=/gt=…)` atau dipanggil penjaga `require_qty(...)` di badan fungsi."""
     global checks
-    for fp in sorted(BACKEND.glob("schemas*.py")):
+    for fp in _router_files():
         try:
-            tree = ast.parse(fp.read_text())
+            tree = ast.parse(fp.read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001
+            print(f"  {Y}[SKIP]{X} parse {fp.name}: {e}")
+            continue
+        for fn in [n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef)]:
+            is_route = any(isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
+                           and d.func.attr in ("post", "put", "patch", "delete") for d in fn.decorator_list)
+            if not is_route:
+                continue
+            guarded = {a.args[0].id for a in ast.walk(fn) if isinstance(a, ast.Call) and isinstance(a.func, ast.Name)
+                       and a.func.id in QUERY_GUARDS and a.args and isinstance(a.args[0], ast.Name)}
+            args = fn.args.args
+            defaults = [None] * (len(args) - len(fn.args.defaults)) + list(fn.args.defaults)
+            for a, dv in zip(args, defaults):
+                if a.annotation is None or not _numeric(a.annotation) or a.arg in ALLOW_NAMES:
+                    continue
+                cat = _category(a.arg)
+                if not cat:
+                    continue
+                checks += 1
+                bnd = _bounds_query(dv)
+                if bnd or a.arg in guarded:
+                    continue
+                hard.append(f"{fp.name}: {fn.name}({a.arg}: {_numeric(a.annotation)}) [{cat}] query tanpa bound "
+                            f"(Query(ge=/gt=) atau require_qty) → nilai ≤0/negatif/NaN diterima.")
+
+
+def _bounds_query(value) -> bool:
+    if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id == "Query":
+        return any(kw.arg in ("ge", "gt") for kw in value.keywords)
+    return False
+
+
+def scan_static() -> None:
+    """Lapis A — scan AST semua schemas*.py + model di ROUTER_SCOPE (G-NUM-02)."""
+    global checks
+    for fp in sorted(BACKEND.glob("schemas*.py")) + _router_files():
+        try:
+            tree = ast.parse(fp.read_text(encoding="utf-8"))
         except Exception as e:  # noqa: BLE001
             print(f"  {Y}[SKIP]{X} parse {fp.name}: {e}")
             continue
@@ -273,8 +327,9 @@ def _probe(requests, base, H, label, coll, payload, desc) -> None:
 def main() -> int:
     print(f"\n{B}{'='*64}{X}\n  NUMERIC-BOUNDS GATE (INV-NUM-01)\n{B}{'='*64}{X}")
     # Lapis A — STATIK
-    print(f"{C}{B}-- LAPIS A · STATIK (AST scan schemas*.py) --{X}")
+    print(f"{C}{B}-- LAPIS A · STATIK (AST scan schemas*.py + model & query router cakupan G-NUM-02) --{X}")
     scan_static()
+    scan_router_queries()
     print(f"  {checks} field numerik ber-semantik diperiksa.")
     if hard:
         print(f"{R}[FAIL-HARD]{X} {len(hard)} field INPUT tanpa bound (menerima nilai buruk):")
