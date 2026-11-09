@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from db import db
 from dependencies import audit, require_permission
-from entity_scope import entity_ctx, guard_doc, resolve_list_scope
+from entity_scope import entity_ctx, guard_doc
 from core_utils import new_id, now_iso, safe_doc
 from services import initial_registration_lines as irl
 from services import initial_registration_plan as irp
@@ -95,6 +95,10 @@ async def _line_actor(request: Request, session: Dict[str, Any]) -> Dict[str, An
 @router.post("/registration/sessions")
 async def create_reg_session(payload: RegSessionCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "inventory", "cycle_count")
+    # FIX-1 (B2a STM-IN-02) — pendaftaran hanya di gedung lokasi tugas; aksi sesudahnya lewat `_session` → `guard_doc`
+    # (pagar lokasi `cycle_count_sessions` di `location_scope.WAREHOUSE_FIELDS`).
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, payload.warehouse_id, "mendaftarkan stok awal di gudang ini")
     s = await irs.create_session(payload.model_dump(), actor, await entity_ctx(request))
     await audit(actor["name"], "registration_created", "cycle_count", s["id"],
                 {"warehouse_id": s["warehouse_id"], "freeze_mode": payload.freeze_mode, "epc_mode": payload.epc_mode})
@@ -102,9 +106,14 @@ async def create_reg_session(payload: RegSessionCreate, request: Request) -> Dic
 
 
 @router.get("/registration/sessions")
-async def list_reg_sessions(request: Request, warehouse_id: str = "", status: str = "") -> List[Dict[str, Any]]:
+async def list_reg_sessions(request: Request, warehouse_id: str = "", status: str = "",
+                            entity_id: str = "") -> List[Dict[str, Any]]:
     await require_permission(request, "inventory", "cycle_count")
-    q = resolve_list_scope("cycle_count_sessions", {"mode": "registration"}, await entity_ctx(request))
+    # FIX-1 (K-B1-02, B2a STM-IN-02) — per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan (dulu Rancamalang
+    # "Semua" melihat sesi Soreang & Jakarta; petugas berpagar kini hanya gedungnya).
+    from entity_scope import resolve_work_scope
+    q = await resolve_work_scope("cycle_count_sessions", {"mode": "registration"}, await entity_ctx(request),
+                                 entity_id or None)
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
     if status:

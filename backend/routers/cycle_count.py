@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
-from entity_scope import entity_ctx, resolve_list_scope, assert_active_entity_access, guard_doc
+from entity_scope import entity_ctx, assert_active_entity_access, guard_doc
 from services import warehouse_scope_service as whscope
 from services.roll_service import resolve_stock_owner
 from services import stock_count_service as scs
@@ -62,6 +62,11 @@ async def create_session(payload: CycleCountSessionCreate, request: Request) -> 
     # E4.1 — stock opname di gudang khusus badan usaha lain = menghitung barang orang.
     warehouse = await whscope.assert_usable(payload.warehouse_id, ctx.active_entity_id,
                                            action="melakukan stock opname di sini")
+    # FIX-1 (B2a STM-IN-02) — opname hanya di gudang lokasi tugas (petugas berpagar). Sesudah sesi lahir, setiap
+    # aksi (`_load_session` → `guard_doc`) ikut pagar lokasi karena `cycle_count_sessions` kini terdaftar di
+    # `location_scope.WAREHOUSE_FIELDS` (dulu petugas Rancamalang memindai di sesi opname Jakarta → 200).
+    from services import location_scope
+    await location_scope.assert_warehouse(actor, payload.warehouse_id, "melakukan stock opname di gudang ini")
     from datetime import datetime, timezone
     session = {
         "id": new_id("cc"),
@@ -83,13 +88,17 @@ async def create_session(payload: CycleCountSessionCreate, request: Request) -> 
 
 
 @router.get("/cycle-count/sessions")
-async def list_sessions(request: Request) -> List[Dict[str, Any]]:
+async def list_sessions(request: Request, entity_id: str = "") -> List[Dict[str, Any]]:
     await require_permission(request, "inventory", "cycle_count")
     ctx = await entity_ctx(request)
     # E-02 (audit 2026-09-02) — koleksi SCOPED; dulu `find({})` menampilkan sesi PT lain.
-    q = resolve_list_scope("cycle_count_sessions", {"mode": {"$ne": "registration"}}, ctx)   # PREP-B — sesi pendaftaran punya daftar sendiri
+    # FIX-1 (K-B1-02, B3a SCP-2) — opname per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan (PT = label +
+    # saringan `entity_id`). Detail/aksi sesi tetap PT dokumen (layar mengirim PT baris sebagai X-Entity-Id).
+    from entity_scope import resolve_work_scope
+    from services.work_labels import label_rows
+    q = await resolve_work_scope("cycle_count_sessions", {"mode": {"$ne": "registration"}}, ctx, entity_id or None)   # PREP-B — sesi pendaftaran punya daftar sendiri
     sessions = await db.cycle_count_sessions.find(q, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return [safe_doc(s) for s in sessions if s]
+    return await label_rows([safe_doc(s) for s in sessions if s], kinds=False)
 
 
 @router.get("/cycle-count/sessions/{session_id}")

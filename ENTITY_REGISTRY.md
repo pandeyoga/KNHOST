@@ -1222,8 +1222,16 @@ Key Fields:
   active      bool
   zones       list     [{id, name, racks: [{id, name, bins: [{id, code, capacity}]}]}]
   created_at  string
+  is_test     bool     FIX-1 (K-B1-10) — penanda data uji (skrip fix_data_2026_11_09_tandai_data_uji.py, bisa
+                       dibalik); gudang bertanda tidak ditawarkan di pemilih bawaan & tampilan "semua lokasi".
+                       Field yang sama dipakai `warehouse_sites` & `business_entities`.
 
 ⚠️ Hierarchy: Zone → Rack → Bin
+⚠️ FIX-1 — `zones` lewat PATCH dialihkan ke jalur struktur berpenjaga (save_warehouse_structure); kunci
+   struktur/profil (zones, sharing_mode, entity_ids, site_id, roles, storage_rules, gate_config, stock_mode,
+   storage_form, active, loading_check_policy) hanya admin & Admin Gudang.
+⚠️ Lokasi kerja akun: users.location_site_ids / location_warehouse_ids — pagar keras peran `warehouse`
+   (setelan wms.location_scope_enforced) + saringan TAMPILAN bawaan semua peran (header X-Location-Scope).
 ⚠️ JANGAN BUAT: gudang, depot, storage_location sebagai collection terpisah
 ⚠️ Zone/Rack/Bin adalah EMBEDDED dalam warehouse document
 ```

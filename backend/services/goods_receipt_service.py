@@ -940,6 +940,8 @@ async def supplier_variance(ctx: EntityContext, since: str = "") -> List[Dict[st
     flt: Dict[str, Any] = {"entity_id": {"$in": ents}, "status": "closed"}
     if since:
         flt["closed_at"] = {"$gte": since}
+    from services import location_scope   # FIX-1 (B3b matriks daftar) — petugas berpagar: GRN di lokasi tugasnya saja
+    flt = location_scope.narrow("goods_receipts", flt, getattr(ctx, "warehouse_ids", None))
     agg: Dict[str, Dict[str, Any]] = {}
     for g in await db.goods_receipts.find(flt, {"_id": 0}).sort("closed_at", -1).to_list(5000):
         a = agg.setdefault(g["partner_id"], {

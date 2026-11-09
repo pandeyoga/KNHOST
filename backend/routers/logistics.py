@@ -26,6 +26,8 @@ async def _guard(delivery_id: str, ctx) -> Dict[str, Any]:
     if not doc:
         raise HTTPException(status_code=404, detail="Pengiriman tidak ditemukan.")
     assert_entity_access(doc, lg.COLL, ctx)
+    from services import location_scope   # FIX-1 (B3a SCP-2) — pagar lokasi lewat gudang surat jalan
+    await location_scope.assert_delivery(ctx.user, doc)
     return doc
 
 
@@ -195,11 +197,19 @@ async def list_deliveries(request: Request, entity_id: Optional[str] = Query(Non
                           active_only: bool = Query(False)) -> List[Dict[str, Any]]:
     actor = await require_permission(request, "logistics", "view")
     ctx = await entity_ctx(request)
-    scope = resolve_list_scope(lg.COLL, {}, ctx, entity_id)
+    # FIX-1 (K-B1-02, B3a SCP-2) — pengiriman per GEDUNG (gudang surat jalan) dalam lokasi kerja, lintas PT yang
+    # ditugaskan (sopir melihat tugasnya di semua PT; PT = label + saringan `entity_id`). Dulu PT aktif tanpa lokasi.
+    from entity_scope import resolve_work_scope
+    from services import location_scope
+    scope = await resolve_work_scope(lg.COLL, {}, ctx, entity_id)
+    loc = await location_scope.delivery_clause((await location_scope.view_for(ctx)).get("ids"))
+    if loc:
+        scope = {"$and": [scope, loc]}
     rows = await lg.list_deliveries(scope, status, q, order_id,
                                     driver_user_id=actor.get("id") if mine else "",
                                     mode=mode, active_only=active_only)
-    return [lg.redact_for(r, actor) for r in rows]
+    from services.work_labels import label_rows
+    return [lg.redact_for(r, actor) for r in await label_rows(rows, kinds=False)]
 
 
 @router.post("/deliveries")

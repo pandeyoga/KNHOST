@@ -7,6 +7,8 @@ import {
   Camera, CameraOff, FileText, Send, X, ChevronRight,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
+import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { notifySuccess } from "../../utils/feedback";
@@ -99,7 +101,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     try {
       const params = filterStatus !== "all" ? `?status=${filterStatus}` : "";
       const res = await axios.get(`${API}/outbound/tasks${params}`);
-      setTasks(res.data);
+      // FIX-1 (K-B1-02) — antrean lintas PT di gedung lokasi kerja: aksi tugas dikirim atas nama PT tugasnya.
+      setTasks(rememberDocEntities(res.data));
       setSelectedTask((cur) => (cur ? res.data.find((t) => t.id === cur.id) || cur : cur));
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat outbound task."); }
@@ -330,7 +333,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     onClick={() => { setSelectedTask(task); stopCamera(); }}
                     className={`w-full text-left px-3 py-2.5 hover:bg-[#FFF8EE] transition-colors ${isSelected ? 'bg-[#FFF4E0] border-l-2 border-[#FF9500]' : ''}`}>
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] font-bold text-[#FF9500]">{task.order_number}{task.task_subtype === "sample_cut" && <span data-testid={`outbound-task-sample-${task.id}`} className="ml-1.5 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">SAMPEL</span>}</span>
+                      <span className="text-[12px] font-bold text-[#FF9500]">{task.order_number}{task.task_subtype === "sample_cut" && <span data-testid={`outbound-task-sample-${task.id}`} className="ml-1.5 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">SAMPEL</span>}
+                        {task.work_entity_id && <span className="ml-1.5" data-testid={`outbound-task-pt-${task.id}`}><EntityBadge entityId={task.work_entity_id} /></span>}</span>
                       <div className="flex items-center gap-1">
                         <Badge status={task.status} />
                         <ChevronRight size={12} className="text-gray-400" />

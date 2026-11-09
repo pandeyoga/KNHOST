@@ -48,7 +48,11 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
       setWarehouses(rows);
       // Gudang aktif lebih dulu — dulu gudang pertama (bisa nonaktif & kosong) terpilih,
       // sehingga KPI "0 roll / semua sudah ditempatkan" menyesatkan.
-      if (rows.length && !whId) setWhId((rows.find(isActiveWh) || rows[0]).id);
+      // FIX-1 (B1 UI-42) — bawaan = gudang di CAKUPAN LOKASI aktif (bilah cakupan), bukan gudang pertama daftar
+      // ("Rancamalang · Gudang Knitting" untuk admin Jakarta).
+      const inView = locScope?.view?.ids ? rows.filter((w) => locScope.view.ids.includes(w.id)) : [];
+      const pool = inView.length ? inView : rows;
+      if (pool.length && !whId) setWhId((pool.find(isActiveWh) || pool[0]).id);
       if (!rows.length) setLoading(false);
     }).catch((e) => setError(apiErrorText(e)));
   }, [locScope]); // eslint-disable-line

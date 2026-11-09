@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
-import axios, { API, setAuthToken, setActiveEntity } from "../services/apiClient";
+import axios, { API, setAuthToken, setActiveEntity, setLocationScope } from "../services/apiClient";
+import { forgetDocEntities } from "../services/docEntityRegistry";
 import { defaultViewForRole, defaultNavIdForRole } from "../config/navigationConfig";
 import { can } from "../config/roles";
 import { formatQty } from "../utils/formatters";
@@ -44,6 +45,7 @@ export function useAppActions(state) {
     setNotifMeta,
     setSettings, setPaymentTerms, setEntityContext, setSelectedEntity,
     setActiveNavId,   // grouped IA nav highlight sync
+    setLocationChoice,   // FIX-1 — cakupan lokasi kerja (bilah cakupan)
   } = state;
 
   // Helper: query suffix entitas aktif (Multi-Entity Fase 0).
@@ -94,17 +96,16 @@ export function useAppActions(state) {
         if (setEntityContext) setEntityContext(ec);
         localStorage.setItem("kn_entity_ctx", JSON.stringify(ec));
         if (Array.isArray(ec.entities)) setEntities(ec.entities);
-        let def = localStorage.getItem("kn_entity") || "all";
-        if (!ec.can_switch_entity) {
-          // single-entity (sales/warehouse) terkunci ke home.
-          def = ec.home_entity_id || (ec.entities?.[0]?.id) || "all";
-        } else if (def !== "all" && !(ec.allowed_entity_ids || []).includes(def)) {
-          def = "all";  // bersihkan pilihan basi dari sesi user lain.
-        }
+        // FIX-1 (audit B1 UI-39) — login SELALU mulai dari PT BAWAAN akun. Dulu memakai `kn_entity` sisa sesi
+        // sebelumnya: di HP bersama, sopir & Admin Gudang mendarat di "Kanda Fabric" milik petugas Soreang.
+        const allowedIds = ec.allowed_entity_ids || [];
+        const def = ec.home_entity_id && (allowedIds.includes(ec.home_entity_id) || !ec.can_switch_entity)
+          ? ec.home_entity_id : (allowedIds[0] || ec.entities?.[0]?.id || "all");
         setSelectedEntity?.(def);
         localStorage.setItem("kn_entity", def);
         setActiveEntity(def);
       }
+      setLocationChoice?.("");   // FIX-1 — cakupan lokasi mulai dari lokasi kerja akun ini
       setActiveView(defaultViewForRole(response.data.user.role));
       if (setActiveNavId) setActiveNavId(defaultNavIdForRole(response.data.user.role));
       setNotice(`Login berhasil sebagai ${authedUser.role_label || authedUser.role}.`);
@@ -121,8 +122,23 @@ export function useAppActions(state) {
   const logout = () => {
     setUser(null);
     setToken("");
-    localStorage.removeItem("kn_token");
-    localStorage.removeItem("kn_user");
+    // FIX-1 (audit B1 UI-39) — logout menghapus SELURUH status klien milik pengguna: PT aktif & konteksnya, cakupan
+    // lokasi, bin "lokasi saya" HP, bin pendaftaran, konteks POS, saringan lini — supaya pengguna berikutnya di
+    // perangkat yang sama tidak bekerja di PT/lokasi orang sebelumnya. Antrean offline TIDAK dihapus (bukti pindai
+    // belum terkirim); setiap butir terikat pengguna perekamnya (`offlineQueue`).
+    const PER_USER_KEYS = ["kn_token", "kn_user", "kn_entity", "kn_entity_ctx", "kn_loc_scope", "kn_my_bin", "kn_pos_ctx"];
+    const PER_USER_PREFIXES = ["kn_reg_bin_", "kn.lineFilter."];
+    try {
+      PER_USER_KEYS.forEach((k) => localStorage.removeItem(k));
+      Object.keys(localStorage).filter((k) => PER_USER_PREFIXES.some((p) => k.startsWith(p)))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch (_) { /* penyimpanan tak tersedia */ }
+    setActiveEntity("");
+    setLocationScope?.("");
+    forgetDocEntities();
+    setSelectedEntity?.("all");
+    setEntityContext?.(null);
+    setLocationChoice?.("");
     setNotice("Anda sudah logout.");
   };
 

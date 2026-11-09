@@ -92,7 +92,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   const [pegOnly, setPegOnly]         = useState(false);  // filter: hanya tampil roll yang di-peg
   const [checkFilter, setCheckFilter] = useState("");     // UAT 24 Okt (P11.4) — status cek MDQ / 4-point
 
-  const ownerParams = selectedEntity && selectedEntity !== "all" ? { owner_entity_id: selectedEntity } : {};
+  // FIX-1 (K-B1-01) — layar stok gudang memakai cakupan lokasi kerja (bilah cakupan "Lokasi: … ▾"); server
+  // menyaring `location_view=1` (pemilih gudang eksplisit di bawah tetap menang).
+  const ownerParams = { ...(selectedEntity && selectedEntity !== "all" ? { owner_entity_id: selectedEntity } : {}), location_view: 1 };
   // FASE E-8 (E8.2) — pegging = KEPUTUSAN PEMENUHAN: dicabut dari `sales`, diberikan
   // ke Admin Sales. Dulu daftar peran di sini adalah kebenaran KEDUA (router punya
   // daftarnya sendiri) sehingga tombol menyala untuk sales lalu ditolak 403. Sekarang
@@ -101,7 +103,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
 
   // P2 — Paginasi server-side untuk tab Rolls & Ledger (koleksi terpanas).
   const rollParams = useMemo(() => {
-    const p = {};
+    const p = { location_view: 1 };   // FIX-1 — saringan lokasi kerja (bilah cakupan)
     if (selectedEntity && selectedEntity !== "all") p.owner_entity_id = selectedEntity;
     if (warehouseFilter !== "all") p.warehouse_id = warehouseFilter;
     if (lineFilter) p.line = lineFilter;              // FASE L — disaring di server

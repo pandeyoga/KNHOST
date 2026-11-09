@@ -316,6 +316,9 @@ class EntityContext:
     allowed_entity_ids: List[str] = field(default_factory=list)
     view_all: bool = False  # cross-entity "Semua Entitas" mode (header X-Entity-Id: all)
     warehouse_ids: Optional[List[str]] = None  # IMP-20 — None = tanpa batas lokasi kerja
+    # FIX-1 (K-B1-01) — pilihan bilah cakupan (header X-Location-Scope); dievaluasi malas oleh
+    # `location_scope.view_for` hanya di daftar yang memakainya (pemeriksa akses tidak membayar kuerinya).
+    location_choice: str = ""
 
     @property
     def is_cross_entity(self) -> bool:
@@ -401,10 +404,11 @@ async def entity_ctx(request: Request) -> EntityContext:
         set_active_entity(active)
     except Exception:  # noqa: BLE001
         pass
-    from services.location_scope import warehouse_ids_for
+    from services.location_scope import warehouse_ids_for, VIEW_HEADER
     return EntityContext(user=user, active_entity_id=active,
                          allowed_entity_ids=allowed, view_all=view_all,
-                         warehouse_ids=await warehouse_ids_for(user))
+                         warehouse_ids=await warehouse_ids_for(user),
+                         location_choice=(request.headers.get(VIEW_HEADER) or "").strip()[:80])
 # CATATAN: pembangun pesan 403 dipindah ke `services/entity_lifecycle_service.
 # entity_denied_message` supaya `dependencies.current_user` (choke point auth)
 # bisa memakainya juga tanpa impor melingkar.
@@ -514,6 +518,34 @@ def resolve_list_scope(collection: str, query: Optional[Dict[str, Any]], ctx: En
             q[fld] = {"$in": ctx.allowed_entity_ids}
         else:
             q[fld] = ctx.active_entity_id
+    return q
+
+
+async def resolve_work_scope(collection: str, query: Optional[Dict[str, Any]], ctx: EntityContext,
+                             entity_id_param: Optional[str] = None, *, cross_pt: bool = True) -> Dict[str, Any]:
+    """FIX-1 (K-B1-01/02, B2a D1, B3a keputusan 6) — cakupan daftar PEKERJAAN FISIK.
+
+    * Lokasi: gedung dalam cakupan TAMPILAN (`location_scope.view_for`: lokasi kerja bawaan, "Semua lokasi" /
+      lokasi lain hanya lewat aksi eksplisit; petugas berpagar tidak bisa melebar).
+    * PT: `cross_pt=True` → SEMUA badan usaha yang ditugaskan ke akun (K-GDG-07: gedung dipakai bersama; PT jadi
+      label + saringan). `entity_id_param` = saringan PT eksplisit (wajib ∈ penugasan, else 403).
+      `cross_pt=False` → aturan lama `resolve_list_scope` (PT aktif) + saringan lokasi tampilan.
+    Penugasan PT (`allowed_entity_ids`) tetap pagarnya; aksi tulis tetap diperiksa per dokumen di server.
+    """
+    from services.location_scope import narrow_view, view_for
+    view = await view_for(ctx)
+    q = narrow_view(collection, dict(query or {}), view)
+    fld = field_for(collection)
+    if fld is None:
+        return q
+    if entity_id_param and entity_id_param != "all":
+        if entity_id_param not in ctx.allowed_entity_ids:
+            raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
+        q[fld] = entity_id_param
+    elif cross_pt or entity_id_param == "all" or getattr(ctx, "view_all", False):
+        q[fld] = {"$in": list(ctx.allowed_entity_ids)}
+    else:
+        q[fld] = ctx.active_entity_id
     return q
 
 

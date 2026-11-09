@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import { Truck, ClipboardList, CheckCircle2, AlertTriangle, Send, Zap, RotateCcw, PackageCheck } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
+import EntityBadge from "../../components/EntityBadge";
 import { askReason } from "../../services/confirmService";
 import PutawayDraftsPanel from "./PutawayDraftsPanel";
 import { ARRIVAL_STATUSES, parseCodes, pendingCount, statusOf, tripMessage } from "./putawayUtils";
@@ -40,7 +42,7 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
         whId ? axios.get(`${API}/putaway-orders/suggest`, { params: { from_warehouse_id: whId } }) : Promise.resolve({ data: null }),
         axios.get(`${API}/putaway-orders`, { params: whId ? { warehouse_id: whId } : {} }),
       ]);
-      setSuggest(s.data); setOrders(o.data.orders || []);
+      setSuggest(s.data); setOrders(rememberDocEntities(o.data.orders || []));   // FIX-1 — PA lintas PT: aksi atas nama PT PA
     } catch (e) { setError(e.response?.data?.detail || e.message); }
   };
   useEffect(() => { load(); setConfirmFor(null); }, [whId, selectedEntity]); // eslint-disable-line
@@ -216,6 +218,7 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-[12.5px] font-bold">{o.pa_number}
+                      {o.work_entity_id && <span className="ml-2" data-testid={`pa-pt-${o.id}`}><EntityBadge entityId={o.work_entity_id} /></span>}
                       {o.btg_number && <span className="ml-2 rounded bg-[#E6F6EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B7F4B]">BTG {o.btg_number}</span>}
                     </p>
                     <p className="text-[11px] text-[#6B6B73]">{o.from_warehouse_name} → <b>{o.to_warehouse_name}</b> · {o.item_count} roll · <span data-testid={`pa-qty-${o.id}`}>{qtyLabel(o)}</span>

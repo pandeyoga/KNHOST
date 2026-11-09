@@ -6,6 +6,8 @@ import {
 import { StatusPill } from "../../components/CoreWidgets";
 import KNSelect from "../../components/KNSelect";
 import axios, { API } from "../../services/apiClient";
+import { rememberDocEntities } from "../../services/docEntityRegistry";
+import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -51,7 +53,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
     setLoading(true);
     try {
       const res = await axios.get(`${API}/cycle-count/sessions`, { headers });
-      setSessions(Array.isArray(res.data) ? res.data : []);
+      // FIX-1 (K-B1-02) — sesi opname lintas PT di gedung lokasi kerja: detail/aksi atas nama PT sesi.
+      setSessions(rememberDocEntities(Array.isArray(res.data) ? res.data : []));
     } catch (e) {
       setErr("Gagal memuat sesi");
     } finally {
@@ -218,7 +221,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                   }`}
                   onClick={() => { loadSession(s.id); setView("detail"); setErr(""); setMsg(""); }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-bold truncate">{s.name}</span>
+                    <span className="text-[12px] font-bold truncate">{s.name}{s.work_entity_id && <span className="ml-1.5"><EntityBadge entityId={s.work_entity_id} /></span>}</span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                       STATUS_COLORS[s.status] || "bg-gray-50 text-gray-600 border-gray-200"
                     }`}>{STATUS_LABELS[s.status] || s.status}</span>

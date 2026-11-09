@@ -5,7 +5,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_work_scope, assert_entity_access
 from schemas import ScannerScan, WMSTaskCreate
 from services.shipment_service import dispatch_task
 from services.roll_service import create_inbound_roll
@@ -25,10 +25,13 @@ TERMINAL_STATUSES = {"done", "dispatched", "completed", "cancelled"}
 
 
 @router.get("/wms/tasks")
-async def list_tasks(request: Request, line: str = "") -> List[Dict[str, Any]]:
+async def list_tasks(request: Request, line: str = "", entity_id: str = "") -> List[Dict[str, Any]]:
     actor = await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
-    query = resolve_list_scope("wms_tasks", {}, ctx)
+    # FIX-1 (K-B1-01/02, B2a FLW-IN-07, B3a SCP-3) — pekerjaan fisik per GEDUNG dalam lokasi kerja, lintas PT yang
+    # ditugaskan (dulu dipagari PT aktif: petugas Rancamalang melihat 2 dari 6 tugas gedungnya). `entity_id` = saringan
+    # PT eksplisit. Tiap baris membawa label PT pemilik & jenis tugas (`work_entity_name`, `task_kind_label`).
+    query = await resolve_work_scope("wms_tasks", {}, ctx, entity_id or None)
     # FASE L — tugas gudang ikut berpagar lini (penerimaan kain printing bukan
     # pekerjaan staf woven). Tugas lama tanpa lini tetap terlihat.
     from services import line_scope as _lines
@@ -53,6 +56,8 @@ async def list_tasks(request: Request, line: str = "") -> List[Dict[str, Any]]:
         task["sku"] = prod.get("sku", "")
         task["warehouse_name"] = wh.get("name", "")
         task["warehouse_city"] = wh.get("city", "")
+    from services.work_labels import label_rows
+    await label_rows(tasks)
     return tasks
 
 
@@ -138,6 +143,7 @@ async def create_outbound_from_order(order_id: str, request: Request) -> List[Di
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))   # FIX-1 (G-SCOPE-01) — SO PT lain
     if order["status"] not in ["confirmed", "partially_picked", "picked", "partially_shipped"]:
         raise HTTPException(status_code=409, detail="Hanya order confirmed yang bisa dibuat outbound task")
     # Sub-fase 1.8 — idempotent via service (cegah duplikasi dgn auto-create saat confirm)
@@ -161,7 +167,17 @@ async def my_location_scope(request: Request) -> Dict[str, Any]:
     """IMP-20 — indikator cakupan lokasi aktif untuk pengguna yang sedang masuk."""
     actor = await require_permission(request, "wms", "view")
     from services import location_scope
-    return await location_scope.summary(actor)
+    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "")
+
+
+@router.get("/location-scope")
+async def location_scope_summary(request: Request) -> Dict[str, Any]:
+    """FIX-1 (K-B1-01) — bilah cakupan "Lokasi: … ▾" untuk SEMUA akun login (sales/QC/MD juga melihat stok & tugas):
+    lokasi kerja, cakupan tampilan aktif (header `X-Location-Scope`), pilihan yang boleh, anjuran bila belum diatur."""
+    from dependencies import current_user
+    from services import location_scope
+    actor = await current_user(request)
+    return await location_scope.summary(actor, request.headers.get(location_scope.VIEW_HEADER) or "")
 
 
 @router.post("/wms/tasks/{task_id}/takeover")

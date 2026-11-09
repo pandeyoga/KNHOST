@@ -168,7 +168,9 @@ async def _roll(roll_id: str, request: Request) -> Dict[str, Any]:
     roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
     if not roll:
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
-    assert_entity_access({"entity_id": roll.get("owner_entity_id")}, "inventory_rolls", await entity_ctx(request))
+    # FIX-1 (B3a SCP-1 pola "pagar dari dict sintetis") — dokumen roll ASLI: field cakupan roll = `owner_entity_id`
+    # + lokasi `warehouse_id`; dict `{"entity_id": …}` dulu meloloskan keduanya (riwayat tag roll PT/lokasi lain).
+    assert_entity_access(roll, "inventory_rolls", await entity_ctx(request))
     return roll
 
 

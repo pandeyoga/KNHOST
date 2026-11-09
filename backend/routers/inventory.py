@@ -171,13 +171,25 @@ async def inventory_status_board(
     # rincian stok per gudang milik PT lain ke sales.
     ctx = await entity_ctx(request)
     ids = resolve_scope_ids(ctx, owner_entity_id)
-    return await _status_board(
+    rows = await _status_board(
         product_id=product_id,
         owner_entity_id=owner_entity_id if ctx.is_cross_entity else None,
         visible_entity_ids=None if (ctx.is_cross_entity and not owner_entity_id) else ids,
         cross_entity_detail=ctx.is_cross_entity,
         registered_only=True,   # K-04 — definisi tunggal "Tersedia": gudang terdaftar saja
     )
+    # FIX-1 (B3a SCP-2) — petugas berpagar lokasi dulu melihat RINCIAN gudang di luar lokasinya (Soreang melihat
+    # RCM-RETUR milik Kanda, padahal /inventory/balances menyembunyikannya). Rincian per gudang kini dipangkas ke
+    # lokasi tugas; angka total PT TIDAK dihitung ulang (rumus stok = paket FIX-2) — ditandai `location_trimmed`.
+    if ctx.warehouse_ids is not None:
+        allowed_wh = set(ctx.warehouse_ids)
+        for r in rows:
+            for e in r.get("by_entity") or []:
+                before = len(e.get("by_warehouse") or [])
+                e["by_warehouse"] = [w for w in e.get("by_warehouse") or [] if w.get("warehouse_id") in allowed_wh]
+                if len(e["by_warehouse"]) != before:
+                    r["location_trimmed"] = True
+    return rows
 
 
 @router.get("/inventory/low-stock-summary")
@@ -192,10 +204,14 @@ async def inventory_low_stock_summary(request: Request, owner_entity_id: Optiona
 
 
 @router.get("/inventory/balances")
-async def list_balances(request: Request, owner_entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+async def list_balances(request: Request, owner_entity_id: Optional[str] = None,
+                        location_view: bool = False) -> List[Dict[str, Any]]:
     await require_permission(request, "product", "view")
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = resolve_list_scope("inventory_balances", {}, ctx, owner_entity_id)
+    if location_view:   # FIX-1 (K-B1-01) — layar stok WMS meminta saringan lokasi kerja (bilah cakupan)
+        from services import location_scope
+        query = location_scope.narrow_view("inventory_balances", query, await location_scope.view_for(ctx))
     # KN-D25 — batas 2.000 baris DIBERI PENANDA (header X-Truncated + X-Total-Count) dan join
     # produk hanya untuk produk yang memang muncul (tidak lagi dipangkas 1.000 → baris ke-1.001
     # tanpa nama/SKU).
@@ -240,6 +256,7 @@ async def list_rolls(
     limit: int = 5000,
     skip: int = 0,
     check: str = "",
+    location_view: bool = False,
 ) -> Any:
     """Daftar roll fisik (SSOT) dengan filter owner/lot/status/warehouse.
     UAT 24 Okt (P11.4) — `check`: no_mdq (belum dicek MD Quality) · mdq_sampling · no_4point (belum 4-point).
@@ -264,6 +281,11 @@ async def list_rolls(
     elif check == "no_4point":
         query["inspected_4point"] = {"$ne": True}
     query = resolve_list_scope("inventory_rolls", query, ctx, owner_entity_id)
+    # FIX-1 (K-B1-01) — layar roll WMS (Operasi Gudang › Stok, HP) meminta saringan lokasi kerja (`location_view=1`);
+    # pemilih gudang eksplisit (`warehouse_id`) tetap menang. Pemakai lain (rekonsiliasi Finance, R&D) tidak berubah.
+    if location_view and not warehouse_id:
+        from services import location_scope
+        query = location_scope.narrow_view("inventory_rolls", query, await location_scope.view_for(ctx))
     # FASE L — pagar lini di Daftar Roll. Roll lama tanpa lini TETAP terlihat, kalau
     # tidak layar gudang mendadak kosong bagi staf ber-lini (user story L.G #4).
     from services import line_scope as _lines

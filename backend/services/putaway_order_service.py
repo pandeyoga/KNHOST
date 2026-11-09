@@ -327,8 +327,10 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
 
 
 async def list_orders(scope_ids: List[str], warehouse_id: Optional[str],
-                      status: Optional[str], limit: int = 100) -> List[Dict[str, Any]]:
-    q: Dict[str, Any] = {"owner_entity_id": {"$in": scope_ids}}
+                      status: Optional[str], limit: int = 100,
+                      extra: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    # FIX-1 (B3a SCP-2) — `extra` = saringan lokasi kerja DI DALAM kueri (dulu disaring sesudah `limit`).
+    q: Dict[str, Any] = {**(extra or {}), "owner_entity_id": {"$in": scope_ids}}
     if warehouse_id:
         q["$or"] = [{"from_warehouse_id": warehouse_id}, {"to_warehouse_id": warehouse_id}]
     if status:

@@ -296,6 +296,13 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
         e = entities.get(eid, {})
         return e.get("short_name") or e.get("legal_name", eid)
 
+    # FIX-1 (B3a SCP-4, rekomendasi keputusan #7) — roll milik PT DI LUAR penugasan akun hanya dikirim sebagai
+    # angka + identitas (nomor, lot, grade, gudang, panjang, status, PT); supplier, PO, faktur, rujukan pesanan PT
+    # lain tidak lagi ikut. Roll PT yang ditugaskan tetap utuh (HPP tetap diredaksi `strip_cost_fields`).
+    _own = set(ctx_sb.allowed_entity_ids or [])
+    _ROLL_ID_FIELDS = ("id", "roll_no", "product_id", "lot", "lot_id", "dye_lot", "grade", "warehouse_id", "bin_id",
+                       "length_remaining", "length_initial", "unit", "status", "owner_entity_id", "created_at")
+
     rows = []
     for balance in balances_raw:
         b = safe_doc(balance)
@@ -311,7 +318,12 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
         wh = warehouses.get(r.get("warehouse_id"), {})
         r["warehouse_name"] = wh.get("name", "")
         r["owner_entity_name"] = _ent_name(r.get("owner_entity_id"))
-        rolls.append(r)
+        if r.get("owner_entity_id") and r.get("owner_entity_id") not in _own:
+            rolls.append({**{k: r.get(k) for k in _ROLL_ID_FIELDS if k in r},
+                          "warehouse_name": r["warehouse_name"], "owner_entity_name": r["owner_entity_name"],
+                          "other_entity": True})
+        else:
+            rolls.append(r)
         key = (r.get("owner_entity_id"), r.get("warehouse_id"), r.get("lot"))
         cell = matrix.setdefault(key, {
             "owner_entity_id": r.get("owner_entity_id"), "owner_entity_name": _ent_name(r.get("owner_entity_id")),

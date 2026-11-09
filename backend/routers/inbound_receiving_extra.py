@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from db import db
 from dependencies import require_any_permission, require_permission, audit
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, assert_entity_access
 from core_utils import safe_doc
 from schemas import QCDecision, ReceiveUomPreviewIn, ReceivingUomSettingsIn
 
@@ -98,8 +98,11 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
     await require_any_permission(request, [("wms", "view"), ("qc", "view")])
     from services.qc_service import quarantine_qty_for_task, quarantine_breakdown
     ctx = await entity_ctx(request)
+    # FIX-1 (K-B1-01) — antrean QC ikut lokasi kerja (saringan tampilan); PT tetap PT aktif (keputusan QC per PT).
+    from entity_scope import resolve_work_scope
     tasks = await db.wms_tasks.find(
-        resolve_list_scope("wms_tasks", {"flow_type": "inbound", "status": "qc_pending"}, ctx), {"_id": 0},
+        await resolve_work_scope("wms_tasks", {"flow_type": "inbound", "status": "qc_pending"}, ctx, cross_pt=False),
+        {"_id": 0},
     ).sort("updated_at", -1).to_list(200)
     po_ids = list({t.get("po_id") for t in tasks if t.get("po_id")})
     pos = {p["id"]: p for p in await db.purchase_orders.find(
@@ -182,6 +185,7 @@ async def generate_receiving_goods_document(po_id: str, request: Request):
     po = safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
+    assert_entity_access(po, "purchase_orders", await entity_ctx(request))   # FIX-1 (G-SCOPE-01) — PO PT lain
 
     # Get all completed inbound tasks for this PO
     tasks = await db.wms_tasks.find({

@@ -260,7 +260,8 @@ FINANCE_BOARD_KEYS = ("contra_bon_approve", "contra_bon_verify", "contra_bon_dis
 async def _waiting_boards(entity_id: Optional[str],
                           keys: tuple = HOME_BOARD_KEYS,
                           allowed: Optional[Dict[str, Any]] = None,
-                          actor: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+                          actor: Optional[Dict[str, Any]] = None,
+                          location_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Papan antrean mahal untuk beranda (urutan tetap).
 
     Definisi "menunggu" + umur tunggunya tetap milik `approval_backlog_service`
@@ -275,14 +276,16 @@ async def _waiting_boards(entity_id: Optional[str],
     from services import approval_backlog_service as abl
 
     return await abl.boards(list(keys), entity_id, limit=10, allowed=allowed,
-                            actor=actor)
+                            actor=actor, location_ids=location_ids)
 
 
 async def warehouse_home(entity_id: Optional[Any] = None,
                          allowed: Optional[Dict[str, Any]] = None,
-                         actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Papan antrean gudang — dipakai layar Operasi (WMS) di atas tab-tabnya."""
-    boards = await _waiting_boards(entity_id, WAREHOUSE_BOARD_KEYS, allowed, actor)
+                         actor: Optional[Dict[str, Any]] = None,
+                         location_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Papan antrean gudang — dipakai layar Operasi (WMS) di atas tab-tabnya.
+    FIX-1 (UI-04) — `location_ids` = cakupan lokasi kerja aktif (None = semua lokasi)."""
+    boards = await _waiting_boards(entity_id, WAREHOUSE_BOARD_KEYS, allowed, actor, location_ids)
     return {"waiting_boards": boards,
             "total_waiting": sum(int(b.get("count") or 0) for b in boards)}
 
