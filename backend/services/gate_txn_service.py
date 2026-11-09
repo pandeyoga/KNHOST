@@ -6,7 +6,10 @@ Dua kait di `rfid_v2_service.close`:
        gate IN/OUT gedung itu; selain itu lintasan = BUKTI saja (alur handheld lama tetap jalan) → INFO;
      * area dibekukan pendaftaran awal (409 `REGISTRATION_FREEZE`) → REVIEW `AREA_FROZEN` (kuning, tanpa kunci) dan
        dokumen itu TIDAK ditransaksikan.
-  2. `post_close(device, pid)` — SESUDAH keputusan tersimpan (masukan dibekukan di lintasan, `gate_txn_input`):
+  2. `post_close(device, pid)` — SESUDAH keputusan tersimpan (masukan dibekukan di lintasan, `gate_txn_input`).
+     PREP-H: dijalankan PEKERJA LATAR (`kick` → `_drain` per perangkat; job `rfid_gate_txn_retry` + sapuan saat
+     start mengulang pending / error ber-jeda / basi) — close mengembalikan keputusan tanpa menunggu transaksi.
+     Antrean = lintasan itu sendiri (`gate_txn_state` pending → processing [sewa] → done | error [jeda bertahap]);
      per dokumen sumber, idempoten per (lintasan, dokumen) lewat buku `rfid_v2_gate_txn` (state CAS):
        · gate IN + Putaway  → `putaway_arrival_service.confirm_arrival_trip(…, {"type": "gate", "passage_id"})`;
        · gate IN + Transfer → `transfer_receipt_service.receive` per roll (CAS per roll, "already" bila ulang);
@@ -21,11 +24,15 @@ Dua kait di `rfid_v2_service.close`:
 Semua kait best-effort: kegagalan transaksi tidak pernah menggagalkan ACK lintasan ke reader (dicatat `error` + antrean).
 """
 import asyncio
+import contextvars
 import logging
+import os
+import socket
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from db import db
@@ -35,7 +42,8 @@ from services.rfid_v2_common import collection, digest, now
 logger = logging.getLogger(__name__)
 LEDGER = 'rfid_v2_gate_txn'
 FINAL_STATES = ('done', 'evidence', 'frozen', 'skipped')
-STALE_S = 120
+# Sewa pekerja (lintasan) = batas basi buku per dokumen: pekerja yang mati di tengah diambil alih sesudah ini.
+STALE_S = max(5, int(os.environ.get('KN_GATE_TXN_LEASE_S', '120')))
 DOC_COLL = {'shipment': 'shipments', 'wh_transfer': 'warehouse_transfers', 'putaway': 'putaway_orders',
             'makloon_order': 'makloon_orders', 'repair_order': 'repair_orders'}
 MODE_TEXT = {
@@ -222,8 +230,25 @@ async def _with_retry(fn, attempts: int = 6):
 
 async def _putaway_in(ref, pid, inp, device, roll_ids) -> Dict[str, Any]:
     from services import putaway_arrival_service as arr
-    order = await db.putaway_orders.find_one({'id': ref['source_id']}, {'_id': 0, 'items': 1})
+    from services import putaway_order_service as pa
+    order = await db.putaway_orders.find_one({'id': ref['source_id']}, {'_id': 0, 'items': 1, 'status': 1, 'arrival_trips': 1})
     items = {i['roll_id']: i for i in (order or {}).get('items') or []}
+    # PREP-H — transaksi kini di latar: pemroses bisa mati SESUDAH trip tercatat, atau PA ditutup (handheld/tutup sisa)
+    # di antara keputusan & transaksi. Trip lintasan ini yang sudah ada = selesai (bukan galat); PA yang sudah
+    # tidak menerima trip = selesai dengan roll belum-tiba sebagai masalah (antrean periksa), bukan diulang terus.
+    prior = next((t for t in (order or {}).get('arrival_trips') or [] if (t.get('source') or {}).get('passage_id') == pid), None)
+    if order and (prior or order.get('status') not in pa.ARRIVAL_STATUSES):
+        wanted = set(roll_ids)
+        problems = [{'roll_id': r, 'code': 'ARRIVAL_EXCEPTION',
+                     'message': (items[r].get('exception_reason') or 'Roll tidak bisa dicatat tiba') if prior else
+                     f"PA sudah berstatus {order.get('status')} sebelum transaksi gate dicatat — roll belum tiba"}
+                    for r in roll_ids if r in items and items[r].get('status') != 'arrived'
+                    and (not prior or items[r].get('status') == 'exception')]
+        return {'state': 'done', 'kind': 'putaway_arrival', 'pa_status': order.get('status'),
+                'trip_no': (prior or {}).get('trip_no'), 'arrived': (prior or {}).get('arrived_roll_nos') or [],
+                'already': [items[r].get('roll_no') or r for r in roll_ids if r in wanted and r in items
+                            and items[r].get('status') == 'arrived' and not prior],
+                'duplicate_trip': bool(prior), 'problems': problems}
     reads = [items[r].get('epc') or items[r].get('roll_no') for r in roll_ids if r in items]
     src = {'type': 'gate', 'passage_id': pid, 'device_id': device['id'], 'local_passage_id': inp.get('local_passage_id')}
     out = await _with_retry(lambda: arr.confirm_arrival_trip(ref['source_id'], reads, src, gate_actor(device, 'in')))
@@ -242,7 +267,21 @@ async def _transfer_in(ref, pid, inp, device, roll_ids) -> Dict[str, Any]:
     results: List[Dict[str, Any]] = []
     status = None
     for i in range(0, len(roll_ids), 500):
+        await gate_quiet()   # PREP-H — beri jalan dulu permintaan reader yang sedang berlangsung (lampu gate)
         transfer = await db.warehouse_transfers.find_one({'id': ref['source_id']}, {'_id': 0})
+        if transfer and transfer.get('status') not in ('dispatched', 'partially_received'):
+            # PREP-H — transfer sudah tuntas (pemroses mati sesudah terima / selesai lewat handheld di antara keputusan
+            # & transaksi latar): status per roll dari roll itu sendiri, bukan galat "belum dikirim".
+            part = roll_ids[i:i + 500]
+            rows = {r['id']: r for r in await db.inventory_rolls.find(
+                {'id': {'$in': part}}, {'_id': 0, 'id': 1, 'roll_no': 1, 'last_transfer': 1}).to_list(len(part) + 1)}
+            for rid in part:
+                r = rows.get(rid) or {}
+                got = (r.get('last_transfer') or {}).get('ref_id') == ref['source_id']
+                results.append({'roll_id': rid, 'roll_no': r.get('roll_no') or rid, 'result': 'already' if got else 'not_in_transit',
+                                'message': '' if got else f"Transfer sudah {transfer.get('status')} — roll tidak tercatat diterima"})
+            status = transfer.get('status')
+            continue
         body = TransferReceiveIn(lines=[TransferReceiveLine(roll_id=r) for r in roll_ids[i:i + 500]],
                                  note=f"Gate IN lintasan {inp.get('local_passage_id')}"[:500])
         res = await trs.receive(transfer, body, gate_actor(device, 'in'))
@@ -324,27 +363,273 @@ async def after_decision(device: Dict[str, Any], pid: str, inp: Dict[str, Any]) 
     return [await process_source(device, pid, inp, s['source_ref'], s['roll_ids']) for s in inp.get('sources') or []]
 
 
+# ─── PREP-H: pekerja latar transaksi gate ───────────────────────────────────────────────────
+# Keputusan lampu TIDAK menunggu transaksi gudang (putaway/transfer bisa ribuan roll). Antrean = dokumen lintasan:
+#   pending ──klaim (CAS + sewa STALE_S)──► processing ──► done
+#                                               └──────► error ──jeda BACKOFF_S──► (diambil ulang) … gave_up (manual)
+# Idempoten berlapis: CAS lintasan (satu pemroses), buku `rfid_v2_gate_txn` per (lintasan × dokumen), dan layanan
+# tujuan (tiba PA per trip ber-id lintasan, terima transfer CAS per roll → "already"). Per perangkat diproses
+# BERURUTAN (trip PA/SJ tercatat sesuai urutan lintasan); antar perangkat paralel s.d. WORKERS.
+WORKERS = max(1, int(os.environ.get('KN_GATE_TXN_WORKERS', '2')))   # batas transaksi BERAT (tiba PA/terima transfer)
+# KN_GATE_TXN_INPROCESS=0 → proses API TIDAK menjalankan transaksi (hanya mengantre); pekerja terpisah
+# `scripts/gate_txn_worker.py` yang menyapu antrean (rekomendasi produksi: pisah dari uvicorn agar CPU transaksi
+# besar tidak memperlambat close reader). Bawaan 1 = di proses API (satu proses uvicorn seperti sekarang).
+INPROCESS = os.environ.get('KN_GATE_TXN_INPROCESS', '1') != '0'
+BACKOFF_S = (30, 120, 300, 900, 1800, 3600)    # jeda sesudah gagal ke-1..6; sesudah itu berhenti (Ulangi manual)
+OWNER = f"{socket.gethostname()}:{os.getpid()}"
+_running: Dict[str, 'asyncio.Task'] = {}
+_dirty: set = set()
+_sem: Dict[str, Any] = {}
+_inflight = {'n': 0}   # permintaan reader (events/close) yang sedang diproses di proses ini
+
+
+_IN_REQUEST: contextvars.ContextVar = contextvars.ContextVar('gate_request', default=False)
+
+
+class gate_request:
+    """Penanda permintaan reader (events/close) sedang berjalan → transaksi berat di latar menunggu sebentar."""
+
+    def __enter__(self):
+        _inflight['n'] += 1
+        self._token = _IN_REQUEST.set(True)
+        return self
+
+    def __exit__(self, *exc):
+        _inflight['n'] = max(0, _inflight['n'] - 1)
+        _IN_REQUEST.reset(self._token)
+        return False
+
+
+async def gate_quiet(max_wait_s: float = 2.0) -> None:
+    """Tunggu (≤ max_wait_s) sampai tidak ada permintaan reader berjalan — lampu gate didahulukan dari transaksi.
+    Dipanggil DARI permintaan reader itu sendiri (simulator: transaksi langsung) → tidak menunggu dirinya."""
+    if _IN_REQUEST.get():
+        return
+    waited = 0.0
+    while _inflight['n'] > 0 and waited < max_wait_s:
+        await asyncio.sleep(0.05)
+        waited += 0.05
+
+
+def _heavy(row: Dict[str, Any]) -> bool:
+    """Transaksi berat = gate IN yang mencatat tiba PA / terima transfer (ratusan query per lintasan)."""
+    inp = row.get('gate_txn_input') or {}
+    return (inp.get('direction') == 'in' and inp.get('mode') in ('gate', 'unknown') and bool(inp.get('claimable'))
+            and any((s.get('source_ref') or {}).get('source_type') in ('putaway', 'wh_transfer') for s in inp.get('sources') or []))
+
+
+async def _keep_lease(pid: str, stop: asyncio.Event) -> None:
+    """Perpanjang sewa selama pemrosesan panjang (transfer 2.000 roll > STALE_S) agar tidak diambil pemroses lain."""
+    period = max(2.0, STALE_S / 3)
+    while not stop.is_set():
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=period)
+        except asyncio.TimeoutError:
+            until = _iso(datetime.now(timezone.utc) + timedelta(seconds=STALE_S))
+            try:
+                await collection('rfid_v2_passages').update_one(
+                    {'_id': pid, 'gate_txn_state': 'processing', 'gate_txn_owner': OWNER},
+                    {'$set': {'gate_txn_lease_until': until}})
+                await collection(LEDGER).update_many({'passage': pid, 'state': 'processing'}, {'$set': {'started_at': now()}})
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('[gate_txn] perpanjang sewa %s gagal: %s', pid, exc)
+
+
+async def _run_claimed(row: Dict[str, Any], device: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    stop = asyncio.Event()
+    beat = asyncio.ensure_future(_keep_lease(row['_id'], stop))
+    try:
+        if _heavy(row):
+            async with _semaphore():
+                await gate_quiet()
+                return await _process(row, device)
+        return await _process(row, device)
+    finally:
+        stop.set()
+        await beat
+
+
+def _iso(dt: datetime) -> str:
+    return dt.isoformat().replace('+00:00', 'Z')
+
+
+def _semaphore() -> asyncio.Semaphore:
+    loop = asyncio.get_running_loop()
+    if _sem.get('loop') is not loop:   # primitif asyncio terikat loop — buat ulang bila loop berganti (skrip/tes)
+        _sem.update(loop=loop, sem=asyncio.Semaphore(WORKERS))
+    return _sem['sem']
+
+
+def _claim_query(at: str, force: bool = False) -> Dict[str, Any]:
+    stale = {'gate_txn_state': 'processing', '$or': [{'gate_txn_lease_until': {'$lt': at}},
+                                                     {'gate_txn_lease_until': {'$exists': False}},
+                                                     {'gate_txn_lease_until': None}]}
+    states: List[Dict[str, Any]] = [{'gate_txn_state': 'pending'}, stale]
+    if force:   # tombol "Ulangi transaksi": juga error yang sudah berhenti otomatis & lintasan selesai (sinkron ulang)
+        states += [{'gate_txn_state': 'error'}, {'gate_txn_state': 'done'}]
+    else:
+        states.append({'gate_txn_state': 'error', '$or': [{'gate_txn_next_at': {'$lte': at}},
+                                                          {'gate_txn_next_at': {'$exists': False}}]})
+    return {'decision': {'$ne': None}, 'gate_txn_input': {'$exists': True}, '$or': states}
+
+
+async def _claim(*, pid: Optional[str] = None, device_id: Optional[str] = None,
+                 force: bool = False) -> Optional[Dict[str, Any]]:
+    at = datetime.now(timezone.utc)
+    q = _claim_query(_iso(at), force)
+    if pid:
+        q['_id'] = pid
+    if device_id:
+        q['device_id'] = device_id
+    return await collection('rfid_v2_passages').find_one_and_update(
+        q, {'$set': {'gate_txn_state': 'processing', 'gate_txn_owner': OWNER, 'gate_txn_started_at': _iso(at),
+                     'gate_txn_lease_until': _iso(at + timedelta(seconds=STALE_S))}, '$inc': {'gate_txn_attempts': 1}},
+        projection={'events': 0, 'close_body': 0}, sort=[('created_at', 1)], return_document=ReturnDocument.AFTER)
+
+
+async def _process(row: Dict[str, Any], device: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Kerjakan transaksi + antrean periksa satu lintasan yang SUDAH diklaim pemroses ini."""
+    pid = row['_id']
+    if not device:
+        device = await db.rfid_devices.find_one({'id': row['device_id']}, {'_id': 0, 'api_key_hash': 0, 'api_key': 0})
+        device = device or {'id': row['device_id']}
+    inp = {**row['gate_txn_input'], 'simulated': bool(row.get('simulated'))}
+    results: List[Dict[str, Any]] = []
+    error = None
+    try:
+        results = await after_decision(device, pid, inp)
+        from services import gate_review_service as review
+        await review.sync_passage(device, row, results)
+        bad = [r for r in results if r.get('state') in ('error', 'processing')]   # processing = pemroses lain basi
+        state = 'error' if bad else 'done'
+        error = (bad[0].get('message') or bad[0].get('state')) if bad else None
+    except Exception as exc:  # noqa: BLE001 — ACK lintasan ke reader tidak boleh gagal karena kait D2
+        logger.warning('[gate_txn] proses %s gagal: %s', pid, exc)
+        state, error = 'error', str(exc)[:300]
+    attempts = int(row.get('gate_txn_attempts') or 1)
+    upd: Dict[str, Any] = {'gate_txn_state': state, 'gate_txn': results, 'gate_txn_at': now(),
+                           'gate_txn_lease_until': None, 'gate_txn_error': error}
+    if state == 'error':
+        delay = BACKOFF_S[attempts - 1] if attempts <= len(BACKOFF_S) else None
+        upd['gate_txn_next_at'] = _iso(datetime.now(timezone.utc) + timedelta(seconds=delay)) if delay else None
+        upd['gate_txn_gave_up'] = delay is None
+    else:
+        upd.update(gate_txn_next_at=None, gate_txn_gave_up=False)
+    await collection('rfid_v2_passages').update_one(
+        {'_id': pid, 'gate_txn_state': 'processing', 'gate_txn_owner': OWNER}, {'$set': upd})
+    return results
+
+
+async def _drain(device_id: str) -> int:
+    """Proses SEMUA lintasan yang bisa diklaim untuk satu perangkat, terlama dulu. Return jumlah diproses."""
+    done = 0
+    try:
+        while device_id in _dirty:
+            _dirty.discard(device_id)
+            while True:
+                row = await _claim(device_id=device_id)
+                if not row:
+                    break
+                await _run_claimed(row)   # berat → semafor WORKERS; ringan (bukti/antrean) langsung
+                done += 1
+    except Exception as exc:  # noqa: BLE001 — pekerja tidak boleh mati diam-diam; job ulang mengambil sisanya
+        logger.warning('[gate_txn] pekerja %s berhenti: %s', device_id, exc)
+    return done
+
+
+def kick(device_id: Optional[str]) -> Optional['asyncio.Task']:
+    """Bangunkan pekerja latar perangkat ini tanpa menunggu (dipanggil close). Aman dipanggil berulang.
+    Mode pekerja terpisah (`KN_GATE_TXN_INPROCESS=0`): tidak ada apa-apa — pekerja luar yang menyapu antrean."""
+    return _spawn(device_id) if INPROCESS else None
+
+
+def _spawn(device_id: Optional[str]) -> Optional['asyncio.Task']:
+    if not device_id:
+        return None
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return None
+    _dirty.add(device_id)
+    task = _running.get(device_id)
+    if task and not task.done():
+        return task
+    task = loop.create_task(_drain(device_id), context=contextvars.Context())   # bukan konteks permintaan reader
+    _running[device_id] = task
+    task.add_done_callback(lambda t, d=device_id: _running.pop(d, None) if _running.get(d) is t else None)
+    return task
+
+
+async def sweep(limit_devices: int = 200) -> Dict[str, Any]:
+    """Sapuan antrean: perangkat yang punya lintasan pending / error jatuh tempo / processing basi → pekerja."""
+    devices = (await collection('rfid_v2_passages').distinct('device_id', _claim_query(now())))[:limit_devices]
+    tasks = [t for t in (_spawn(d) for d in devices) if t]
+    counts = await asyncio.gather(*tasks, return_exceptions=True)
+    processed = sum(c for c in counts if isinstance(c, int))
+    return {'devices': len(devices), 'processed': processed}
+
+
+async def queue_summary(warehouse_ids: Optional[List[str]] = None) -> Dict[str, int]:
+    """Jumlah lintasan per status transaksi gate yang belum tuntas (antrean periksa / panel U300)."""
+    q: Dict[str, Any] = {'gate_txn_state': {'$in': ['pending', 'processing', 'error']}}
+    if warehouse_ids is not None:
+        q['warehouse_id'] = {'$in': warehouse_ids}
+    rows = await collection('rfid_v2_passages').aggregate([
+        {'$match': q}, {'$group': {'_id': {'s': '$gate_txn_state', 'g': {'$ifNull': ['$gate_txn_gave_up', False]}},
+                                   'n': {'$sum': 1}}}]).to_list(10)
+    out = {'pending': 0, 'processing': 0, 'error': 0, 'gave_up': 0}
+    for r in rows:
+        key = 'gave_up' if r['_id']['s'] == 'error' and r['_id']['g'] else r['_id']['s']
+        out[key] = out.get(key, 0) + r['n']
+    return out
+
+
+async def job_rfid_gate_txn_retry() -> Dict[str, Any]:
+    res = await sweep() if INPROCESS else {'devices': 0, 'processed': 0}   # mode pekerja terpisah: hanya lapor
+    q = await queue_summary()
+    return {'scanned': res['devices'], 'created': res['processed'],
+            'detail': (f"{res['processed']} lintasan diproses dari {res['devices']} reader; sisa antrean: "
+                       f"{q['pending']} menunggu, {q['processing']} diproses, {q['error']} gagal (diulang otomatis), "
+                       f"{q['gave_up']} butuh 'Ulangi transaksi'")}
+
+
+def schedule_startup_sweep(delay_s: float = 10.0) -> None:
+    """Sesudah start/restart: lanjutkan antrean yang tertinggal (pekerja mati di tengah) tanpa menunggu job."""
+    if os.environ.get('KN_GATE_TXN_STARTUP_SWEEP', '1') == '0' or not INPROCESS:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    async def _later():
+        await asyncio.sleep(delay_s)
+        try:
+            await sweep()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning('[gate_txn] sapuan awal gagal: %s', exc)
+    loop.create_task(_later())
+
+
 async def post_close(device: Dict[str, Any], pid: str, *, force: bool = False) -> Optional[List[Dict[str, Any]]]:
-    """Transaksi + antrean periksa untuk lintasan final. Idempoten; `force` = ulangi sumber yang `error`."""
+    """Transaksi + antrean periksa untuk lintasan final, LANGSUNG (simulator, tombol "Ulangi transaksi").
+
+    Idempoten; `force` = juga lintasan error yang berhenti otomatis / sudah selesai (sinkron ulang antrean)."""
     passages = collection('rfid_v2_passages')
     row = await passages.find_one({'_id': pid}, {'events': 0, 'close_body': 0})
     if not row or not row.get('decision') or not row.get('gate_txn_input'):
         return None
     if row.get('gate_txn_state') == 'done' and not force:
         return row.get('gate_txn') or []
-    inp = {**row['gate_txn_input'], 'simulated': bool(row.get('simulated'))}
-    results: List[Dict[str, Any]] = []
-    try:
-        results = await after_decision(device, pid, inp)
-        from services import gate_review_service as review
-        await review.sync_passage(device, row, results)
-        state = 'error' if any(r.get('state') == 'error' for r in results) else 'done'
-    except Exception as exc:  # noqa: BLE001 — ACK lintasan ke reader tidak boleh gagal karena kait D2
-        logger.warning('[gate_txn] post_close %s gagal: %s', pid, exc)
-        state = 'error'
-    await passages.update_one({'_id': pid}, {'$set': {'gate_txn_state': state, 'gate_txn': results,
-                                                      'gate_txn_at': now()}})
-    return results
+    claimed = await _claim(pid=pid, force=force)
+    if not claimed:
+        cur = await passages.find_one({'_id': pid}, {'gate_txn_state': 1, 'gate_txn': 1})
+        if force and (cur or {}).get('gate_txn_state') == 'processing':
+            raise HTTPException(status_code=409, detail={
+                'code': 'TXN_IN_PROGRESS', 'retryable': True,
+                'message': 'Transaksi lintasan ini sedang diproses pekerja latar — muat ulang sebentar lagi.'})
+        return (cur or {}).get('gate_txn') or []
+    return await _run_claimed(claimed, device)
 
 
 # ─── Penutupan sesi dokumen di titik siklus hidup (K-RFID-10) ─────────────────────────────

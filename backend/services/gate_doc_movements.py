@@ -22,9 +22,9 @@ STEP_STATUS_LABEL = {"pending": "belum dikirim", "issued": "dikirim", "received"
 RPR_STATUS_LABEL = {"draft": "Draf", "sent": "Dikirim", "done": "Selesai", "cancelled": "Dibatalkan"}
 
 
-async def _makloon(roll: Dict[str, Any], br: Dict[str, Any]) -> Dict[str, Any]:
-    order = await db.makloon_orders.find_one({"id": br["mko_id"]}, {"_id": 0, "id": 1, "mko_number": 1,
-                                                                    "status": 1, "steps": 1})
+async def _makloon(roll: Dict[str, Any], br: Dict[str, Any], ctx=None) -> Dict[str, Any]:
+    order = await ctx.one("makloon_orders", br["mko_id"]) if ctx else await db.makloon_orders.find_one(
+        {"id": br["mko_id"]}, {"_id": 0, "id": 1, "mko_number": 1, "status": 1, "steps": 1})
     if not order:
         return {"type": "makloon_order", "id": br.get("id") or br["mko_id"], "missing": True}
     steps = order.get("steps") or []
@@ -43,9 +43,9 @@ async def _makloon(roll: Dict[str, Any], br: Dict[str, Any]) -> Dict[str, Any]:
             "partner": step.get("makloon_name") or br.get("makloon_name") or "", "member": True}
 
 
-async def _repair(roll: Dict[str, Any]) -> Dict[str, Any]:
-    ro = await db.repair_orders.find_one({"id": roll["repair_open"]}, {"_id": 0, "id": 1, "number": 1, "status": 1,
-                                                                        "lines": 1, "partner_name": 1})
+async def _repair(roll: Dict[str, Any], ctx=None) -> Dict[str, Any]:
+    ro = await ctx.one("repair_orders", roll["repair_open"]) if ctx else await db.repair_orders.find_one(
+        {"id": roll["repair_open"]}, {"_id": 0, "id": 1, "number": 1, "status": 1, "lines": 1, "partner_name": 1})
     if not ro:
         return {"type": "repair_order", "id": roll["repair_open"], "missing": True}
     line = next((ln for ln in ro.get("lines") or [] if ln.get("roll_id") == roll.get("id")), None)
@@ -60,13 +60,15 @@ async def _repair(roll: Dict[str, Any]) -> Dict[str, Any]:
             "partner": ro.get("partner_name") or "", "member": bool(line)}
 
 
-async def doc_movement(roll: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Movement makloon/perbaikan yang memuat roll; None bila roll tidak dipegang dokumen itu."""
+async def doc_movement(roll: Dict[str, Any], ctx=None) -> Optional[Dict[str, Any]]:
+    """Movement makloon/perbaikan yang memuat roll; None bila roll tidak dipegang dokumen itu.
+
+    `ctx` (PREP-H) = `gate_evaluator.GateLookup` (memo satu lintasan V2); tanpa `ctx` query langsung."""
     br = roll.get("bucket_ref") or {}
     if roll.get("status") == "subcon" and isinstance(br, dict) and br.get("type") == "subcon" and br.get("mko_id"):
-        return await _makloon(roll, br)
+        return await _makloon(roll, br, ctx)
     if roll.get("repair_open"):
-        return await _repair(roll)
+        return await _repair(roll, ctx)
     return None
 
 

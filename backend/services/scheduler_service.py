@@ -42,6 +42,8 @@ from services import inventory_drift_watch as invdrift   # 2026-06 — pemantau 
 from services import saga_lock_watch as sagawatch         # 2026-09 — kunci saga menggantung (T-01 Opsi B)
 from services import printer_stuck_watch as prstuck       # Sesi 15 — label tertahan tanpa printer online
 from services import rfid_v2_health as rfidhealth         # PREP-D1 — kesehatan reader gate U300 V2 (AUD-MW-17)
+from services import gate_txn_service as gatetxn          # PREP-H — ulang transaksi gate tertunda/gagal
+from services import rfid_v2_retention as rfidretention   # PREP-H — masa simpan bukti gate (arsip → hapus)
 from services import wa_alert_service as wa
 from services import analytics_facts as _facts           # Tanya KN F1 — fakta penjualan
 from services import ai_schedules as _aisched            # Tanya KN F4 — laporan terjadwal
@@ -224,6 +226,21 @@ JOBS: List[Dict[str, Any]] = [
                     "aturan berubah aktif. Ambang = titik awal kalibrasi. Job ini TIDAK mengubah reader/lintasan.",
      "kind": "interval", "interval_minutes": 5, "fn": rfidhealth.job_rfid_reader_health_watch,
      "link": "settings-devices"},
+    # ── PREP-H — transaksi gate di pekerja latar + masa simpan bukti ──────
+    {"id": "rfid_gate_txn_retry", "label": "Ulang Transaksi Gate RFID",
+     "description": "Jaring pengaman pekerja latar transaksi gate (tiba putaway, terima transfer, bukti keluar per "
+                    "trip): lintasan yang transaksinya masih menunggu, gagal (diulang bertahap 30 dtk → 1 jam), atau "
+                    "pemrosesnya mati di tengah dikerjakan ulang. Idempoten — tidak menggandakan tiba/terima. Sesudah "
+                    "7 kali gagal berhenti dan menunggu tombol 'Ulangi transaksi' di Antrean periksa.",
+     "kind": "interval", "interval_minutes": 2, "fn": gatetxn.job_rfid_gate_txn_retry,
+     "link": "settings-devices"},
+    {"id": "rfid_evidence_retention", "label": "Masa Simpan Bukti Gate RFID",
+     "description": "Bukti mentah lintasan gate (bacaan per tag × antena, sinar photo-eye) yang lebih tua dari "
+                    "masa simpan diarsipkan ke berkas terkompresi di server lalu dihapus dari database; bacaan gate "
+                    "jalur lama juga. Keputusan lintasan, klaim lewat, sesi dokumen, antrean periksa & buku transaksi "
+                    "TIDAK pernah dihapus. Mode uji coba hanya menghitung. Setelan: rfid.evidence_retention_*.",
+     "kind": "daily", "hour": 2, "minute": 30, "fn": rfidretention.job_rfid_evidence_retention,
+     "link": "settings-config"},
     # ── 2026-09 — giliran Anda ───────────────────────────────────────────
     {"id": "turn_scan", "label": "Pemberitahuan Giliran Anda",
      "description": "Menyapu SO, PO, retur penjualan/pembelian, dan permintaan sample: setiap dokumen "

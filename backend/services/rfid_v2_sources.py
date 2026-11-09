@@ -149,16 +149,19 @@ def movement_source(mv: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def auto_sources(rolls: List[Dict[str, Any]], warehouse: str, direction: str) -> Dict[str, Any]:
+async def auto_sources(rolls: List[Dict[str, Any]], warehouse: str, direction: str, ctx=None) -> Dict[str, Any]:
     """AUD-MW-15 auto-cocok: dokumen aktif gudang/arah yang memuat roll kuat lintasan.
 
     Return {'entries': [{'source_ref','roll_ids'}], 'roll_sources': {roll_id: ref}, 'invalid': {roll_id: code}}.
     Roll tanpa movement / dengan dokumen yang tidak aktif untuk gate ini tidak dicocokkan — evaluator menilainya.
+    `ctx` (PREP-H) = `gate_evaluator.GateLookup` lintasan ini: movement roll dibaca dari memo (sekali per roll,
+    dipakai ulang oleh penilaian per roll).
     """
     by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
     pending: Dict[Tuple[str, str], List[str]] = {}
     for roll in rolls:
-        src = movement_source(await gate_evaluator.resolve_movement(roll))
+        mv = await ctx.movement(roll) if ctx else await gate_evaluator.resolve_movement(roll)
+        src = movement_source(mv)
         if src:
             key = (src['source_type'], src['source_id'])
             by_key.setdefault(key, src)
