@@ -30,7 +30,10 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
       setHistory(r.data.counts || []);
       setHistMeta(metaOf(r.data, (r.data.counts || []).length));   // FIX-7 — jumlah sungguhan
       setHistSt({ loading: false, error: null });
-    } catch (e) { setHistSt({ loading: false, error: e }); }   // FIX-8 — galat/403 tampil di keadaan daftar (FIX-7 LST-06)
+    } catch (e) {   // FIX-7 LST-06: galat tidak ditelan (bilah galat panel) + FIX-8: daftar menampilkan keadaan galat/403,
+      setError(apiErrorText(e, "Gagal memuat riwayat cycle count."));   // bukan "Belum ada cycle count."
+      setHistSt({ loading: false, error: e });
+    }
   };
   const loadMore = async () => {
     setMoreBusy(true);
