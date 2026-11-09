@@ -224,7 +224,9 @@ Dasar `5b65039` vs FIX-3b (sebelum gabung): kode keluar 40/40 **identik** (27 hi
 `test_fix3b_outbound_integrity` 26/26, `test_fix3a_inbound_integrity` 28/28, `test_prep_d1` 20/20, `test_prep_d2` 11/11,
 `test_prep_f_printer` 22/22, `test_prep_g_handheld` 11/11, `test_l06_samples_cutting` 8/8, `test_sesi14` 2/2,
 `test_uat24_f5` 7/7, `test_iter265` 6 gagal (= dasar), `test_fix1_cakupan` 1 skipped (butuh prasyarat FIX-1). Jest
-gabungan 13 suite 101/101. Guardrail main vs gabungan: lihat ringkasan koordinator (hasil dilampirkan bila selesai).
+gabungan 13 suite 101/101. Guardrail `main` (59bdc68) vs gabungan, 19 guardrail termasuk `verify_scope_guard` FIX-1:
+kode keluar identik (12 hijau), hitungan identik (atomic_claim BELUM DITINJAU 77 = 77 — angka FIX-1, hanya urutan daftar
+berbeda; numeric_bounds HARD 3 = 3; dll.).
 
 ## 7. Skrip perbaikan data (dibuat, dry-run bawaan; diuji di salinan)
 `scripts/fix_data_2026_11_09_fix3b_alur_keluar.py --db kn_test_trial [--apply]` (menolak DB lain). Hasil di salinan
@@ -302,7 +304,7 @@ Stack `kn-tmp-fix3b-mongo/-be/-fe` dihapus sesudah uji. Tidak ada tulisan ke DB 
   142 + 33 gagal = FIX-3b 142 + 33 (himpunan identik, **0 hanya-gagal-FIX-3b** sesudah 14 uji lama disesuaikan dengan
   keputusan — tanpa perbaikan kode tambahan); p09/p10 18+8 lulus keduanya. Jest terarah 12 suite 92/92 (gabung FIX-1:
   13 suite 101/101); ESLint 0 error. Guardrail: kode keluar 40/40 identik; atomic_claim 6→6 / 76→76 (dilatih untuk
-  `_ots.transition` + 1 endpoint dicatat).
+  `_ots.transition` + 1 endpoint dicatat); sesudah gabung FIX-1: identik dengan `main` (77 = 77).
 * **Skrip data:** `scripts/fix_data_2026_11_09_fix3b_alur_keluar.py` (dry-run bawaan; salinan acuan: 3 setelan mode
   simulasi PT nyata dimatikan, 6 roll SJ ber-POD → `delivered`; idempoten). Belum dijalankan ke DB bersama — **jalankan
   `rfid_simulation_off` sebelum pilot reader**.
