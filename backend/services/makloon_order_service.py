@@ -40,6 +40,7 @@ from services.roll_service import create_inbound_roll
 from services.process_recipe_service import compute_forecast
 from services import line_scope as _lines      # FASE L — satu pintu normalisasi lini
 from services import master_registry as mreg   # FASE T — satu pembaca master tahapan
+from services import atomic_claim as _saga     # FIX-3b — klaim MKO issue/batal (STM-OUT-6)
 logger = logging.getLogger(__name__)
 
 
@@ -716,10 +717,21 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     ref = {"type": "subcon", "id": step["issue_ref"], "makloon_id": step.get("makloon_id"),
            "makloon_name": step.get("makloon_name"), "mko_id": mko_id, "mko_number": order.get("mko_number"),
            "step": seq, "created_by": actor_name, "created_at": now_iso()}
-    if picked:
-        res = await sb.issue_rolls_to_subcon(picked["rolls"], ref)
-    else:
-        res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref)
+    # FIX-3b (B2b STM-OUT-6 / MKO-01) — klaim MKO (langkah masih `pending`, order belum batal) SEBELUM roll keluar &
+    # jurnal; tulisan akhir CAS token klaim (dulu `replace_one({id})` dari snapshot tanpa prasyarat: issue ganda /
+    # issue ↔ batal bersamaan saling menimpa).
+    _lk = await _saga.claim("makloon_orders", mko_id, "mko_issue_step", actor=actor_name,
+                            precondition={"status": {"$ne": CANCELLED},
+                                          "steps": {"$elemMatch": {"seq": step.get("seq"), "status": "pending"}}})
+    _tok = (_lk.get(_saga.LOCK) or {}).get("token")
+    try:
+        if picked:
+            res = await sb.issue_rolls_to_subcon(picked["rolls"], ref)
+        else:
+            res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref)
+    except Exception:
+        await _saga.release("makloon_orders", mko_id, _tok)
+        raise
     material_value = res["value"]
     label = f"{order.get('mko_number')} step{seq}"
     await gl.post_subcon_issue(mko_id=mko_id, step_seq=seq, entity_id=order["entity_id"],
@@ -738,7 +750,8 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
             f"{deviation['planned_qty']:g} {deviation['unit']} ({deviation['diff_pct']:+g}%) — estimasi hasil diskalakan.")
     order["status"] = IN_PROCESS
     order["updated_at"] = now_iso()
-    await db.makloon_orders.replace_one({"id": mko_id}, order)
+    order.pop(_saga.LOCK, None)
+    await db.makloon_orders.replace_one({"id": mko_id, f"{_saga.LOCK}.token": _tok}, order)   # FIX-3b — CAS token
     if seq == 1:
         await _mres.consume_for_issue(mko_id, input_pid, input_qty)
     return safe_doc(order)
@@ -1513,6 +1526,12 @@ async def cancel_order(mko_id: str, *, reason: str = "", actor_name: str = "syst
     if any(s.get("status") == "received" for s in order.get("steps", [])):
         raise HTTPException(status_code=409,
                             detail="Ada step yang sudah diterima — order tidak bisa dibatalkan")
+    # FIX-3b (B2b STM-OUT-6 / MKO-02) — klaim berprasyarat (status hidup, tidak ada langkah diterima) lalu baca ULANG
+    # dokumen dari klaim; tulisan akhir CAS token (dulu replace_one dari snapshot).
+    _lk = await _saga.claim("makloon_orders", mko_id, "mko_cancel", actor=actor_name,
+                            precondition={"status": {"$nin": [COMPLETED, CANCELLED]}, "steps.status": {"$ne": "received"}})
+    _tok = (_lk.get(_saga.LOCK) or {}).get("token")
+    order = {k: v for k, v in _lk.items() if k != _saga.LOCK}
     # P05 DEC-13 — bahan yang sudah di-issue TETAP di mitra (WIP tetap) sampai retur dicatat.
     awaiting = [s for s in order.get("steps", []) if s.get("status") == "issued"]
     for s in order.get("steps", []):
@@ -1525,7 +1544,7 @@ async def cancel_order(mko_id: str, *, reason: str = "", actor_name: str = "syst
     _tl(order, "cancelled", (reason or "Dibatalkan") + (
         " · bahan masih di mitra, menunggu retur dicatat" if awaiting else ""))
     order["updated_at"] = now_iso()
-    await db.makloon_orders.replace_one({"id": mko_id}, order)
+    await db.makloon_orders.replace_one({"id": mko_id, f"{_saga.LOCK}.token": _tok}, order)   # FIX-3b — CAS token
     from services import material_reservation_service as _mres
     await _mres.release(mko_id, reason or "MKO dibatalkan", actor_name)  # W2-REQ-07
     return safe_doc(order)
@@ -1638,7 +1657,8 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
     if whole or (roll_ids is None and partial is None):
         try:
             moved = await sb.move_rolls_by_ref(step["issue_ref"], "available", movement_type="subcon_return_cancel",
-                                               roll_ids=whole if (roll_ids is not None or partial is not None) else None)
+                                               roll_ids=whole if (roll_ids is not None or partial is not None) else None,
+                                               from_statuses=["subcon"])   # FIX-3b (MKO-03) — hanya yang masih di mitra
         except HTTPException:
             raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra untuk langkah ini.")
     for c in cut:

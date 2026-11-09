@@ -12,6 +12,8 @@ const STATUS_MAP = {
   completed: { label: "Selesai", className: "bg-green-100 text-green-700" },
   // FIX-3a (B2a FLW-IN-10, D10) — 0 roll diterima, semua kembali ke gudang asal (selaras Putaway Order).
   returned: { label: "Dikembalikan", className: "bg-gray-200 text-gray-700" },
+  // FIX-3b (B2b FLW-OUT-11, K-B2b-03) — dibatalkan saat barang di jalan: roll tetap "di jalan" sampai diterima di asal.
+  returning: { label: "Batal — kembali ke asal", className: "bg-orange-100 text-orange-800" },
   rejected: { label: "Ditolak", className: "bg-red-100 text-red-700" },
   cancelled: { label: "Dibatalkan", className: "bg-gray-300 text-gray-600" },
 };

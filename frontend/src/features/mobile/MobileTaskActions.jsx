@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import BinSelect from "../../components/BinSelect";
 import ReceiveUomPanel from "../wms/inbound/ReceiveUomPanel";
 import GRCatchWeightModal from "../wms/inbound/GRCatchWeightModal";
+import PickListPanel from "../wms/PickListPanel";
 
 export { printSampleLabel, printInboundRollLabels, reprintRollLabel };
 
@@ -155,21 +156,60 @@ export function InboundActions({ task, onDone, onCompleted }) {
   );
 }
 
+// FIX-3b (K-B1-05 / K-B3b-01, B3b FRM-03) — AMBIL WAJIB PINDAI ROLL di HP (sama dengan desktop): kode roll (QR /
+// nomor roll / EPC) → server menurunkan panjang dari roll (roll UTUH). Ketik qty tanpa pindai = JALUR DARURAT
+// supervisor (izin wms.approve) dengan alasan ≥ 5 huruf — tercatat di riwayat tugas. Tugas yang dieskalasi tidak
+// menampilkan aksi (menunggu keputusan supervisor).
+const PICKABLE = ["pending", "created", "picking", "in_progress", "released", "partially_shipped"];
+const SHIPPABLE = ["picking", "picked", "packing", "packed", "ready", "staging", "partially_shipped"];
+
 export function OutboundActions({ task, onDone }) {
-  const [qty, setQty] = useState("");   // KN-E51 — jumlah pick wajib dihitung, tidak terisi otomatis
+  const [code, setCode] = useState("");
+  const [emergency, setEmergency] = useState(false);
+  const [qty, setQty] = useState("");   // KN-E51 — jalur darurat: jumlah wajib dihitung, tidak terisi otomatis
+  const [reason, setReason] = useState("");
   const [msg, setMsg] = useState(null); const [busy, setBusy] = useState(false);
-  const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) onDone?.(); } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
-  const pick = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/scan-pick`, null, { params: { actual_qty: parseFloat(qty) || 0 }, label: `Ambil ${task.product_name || task.id} ${qty}` }), "Diambil. Lanjut Berangkatkan bila sudah dikemas.");
+  const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) { setCode(""); setQty(""); setReason(""); onDone?.(); } } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
+  const pick = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/scan-pick`, null, {
+    params: emergency ? { actual_qty: parseDecimal(qty) || 0, reason } : { roll_id: code.trim() },
+    label: emergency ? `Ambil darurat ${task.product_name || task.id} ${qty}` : `Ambil roll ${code.trim()}` }),
+  "Roll diambil. Lanjut pindai roll berikutnya atau Berangkatkan.");
   const dispatch = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/dispatch`, null, { label: `Berangkatkan ${task.order_number || task.id}` }), "Diberangkatkan — surat jalan dibuat.");
+  const picked = Number(task.picked_qty || 0); const shipped = Number(task.shipped_qty || 0); const total = Number(task.quantity || 0);
+  if (task.status === "escalated") {
+    return (
+      <div className="mt-2 space-y-2" data-testid={`mw-outbound-actions-${task.id}`}>
+        <div className="notice-bar text-xs" data-testid={`mw-outbound-escalated-${task.id}`}>Menunggu keputusan supervisor atas eskalasi — belum bisa diambil/dikirim.</div>
+      </div>
+    );
+  }
+  const reasonOk = reason.replace(/[^A-Za-zÀ-ÿ]/g, "").length >= 5;
   return (
     <div className="mt-2 space-y-2" data-testid={`mw-outbound-actions-${task.id}`}>
-      {["pending", "created", "picking", "in_progress", "released"].includes(task.status) && (
-        <div className="flex gap-2">
-          <input type="number" inputMode="decimal" className="flex-1 rounded-lg border p-3 text-lg" value={qty} placeholder={`Hitung ambil (${task.unit || "qty"})`} onChange={(e) => setQty(e.target.value)} data-testid={`mw-pick-qty-${task.id}`} />
-          <button className="primary-button px-4" disabled={busy || !(parseFloat(qty) > 0)} onClick={pick} data-testid={`mw-pick-btn-${task.id}`}>Ambil</button>
+      {PICKABLE.includes(task.status) && picked < total - 0.001 && (
+        <div className="space-y-2">
+          <PickListPanel task={task} onPick={(no) => { setEmergency(false); setCode(no); }} />
+          {!emergency ? (
+            <div className="flex gap-2">
+              <input className="flex-1 rounded-lg border p-3 text-lg" value={code} placeholder="Pindai label/QR/RFID atau ketik no. roll"
+                onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && code.trim()) pick(); }}
+                data-testid={`mw-pick-code-${task.id}`} />
+              <button className="primary-button px-4" disabled={busy || !code.trim()} onClick={pick} data-testid={`mw-pick-btn-${task.id}`}>Ambil</button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-[#F5C26B] bg-[#FFF8E6] p-2 space-y-2" data-testid={`mw-pick-emergency-${task.id}`}>
+              <div className="text-xs text-[#7A5600]">Jalur darurat (izin supervisor): qty tanpa pindai roll — tercatat beserta alasan.</div>
+              <input type="text" inputMode="decimal" className="w-full rounded-lg border p-3 text-lg" value={qty} placeholder={`Hitung ambil (${task.unit || "qty"})`} onChange={(e) => setQty(e.target.value)} data-testid={`mw-pick-qty-${task.id}`} />
+              <input className="w-full rounded-lg border p-2" value={reason} placeholder="Alasan (min. 5 huruf), mis. label rusak & scanner mati" onChange={(e) => setReason(e.target.value)} data-testid={`mw-pick-reason-${task.id}`} />
+              <button className="primary-button w-full py-2" disabled={busy || !(parseDecimal(qty) > 0) || !reasonOk} onClick={pick} data-testid={`mw-pick-emergency-btn-${task.id}`}>Ambil (darurat)</button>
+            </div>
+          )}
+          <button type="button" className="text-xs font-semibold text-[#8C4A00]" onClick={() => setEmergency((x) => !x)} data-testid={`mw-pick-emergency-toggle-${task.id}`}>
+            {emergency ? "Kembali ke pindai roll" : "Tidak bisa memindai? Jalur darurat supervisor"}
+          </button>
         </div>
       )}
-      {["picked", "packing", "packed", "ready"].includes(task.status) && (
+      {SHIPPABLE.includes(task.status) && picked - shipped > 0.001 && (
         <button className="secondary-button w-full py-3" disabled={busy} onClick={dispatch} data-testid={`mw-dispatch-btn-${task.id}`}>Berangkatkan</button>
       )}
       <ReprintRollButton task={task} />

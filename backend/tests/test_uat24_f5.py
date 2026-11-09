@@ -126,11 +126,15 @@ def test_p7_celup_ulang_ganti_sku_jadi_roll_anak_dan_batal_mengembalikan_roll():
     assert child["product_id"] == target["id"] and child["length_remaining"] == 78 and child["status"] == "available"
     assert DB.inventory_rolls.find_one({"id": a["id"]}, {"status": 1})["status"] == "consumed"
     assert not DB.journal_entries.find_one({"source_type": "repair_order", "source_id": ro["id"]})   # biaya 0 → tanpa jurnal
-    # Batal dari Dikirim → roll kembali ke status semula & stok jual
+    # Batal dari Dikirim → FIX-3b (B2b FLW-OUT-11, keputusan K-B2b-03): barang masih di luar → `returning`, roll tetap
+    # `wip` sampai "Terima kembali"; baru kembali ke status semula & stok jual.
     c = _roll(30, 10000)
     ro2 = _create([c])
     requests.post(f"{BASE}/repair-orders/{ro2['id']}/send", headers=ADMIN)
     r = requests.post(f"{BASE}/repair-orders/{ro2['id']}/cancel", headers=ADMIN, json={"reason": "salah pilih roll"})
+    assert r.status_code == 200 and r.json()["status"] == "returning"
+    assert DB.inventory_rolls.find_one({"id": c["id"]}, {"_id": 0})["status"] == "wip"
+    r = requests.post(f"{BASE}/repair-orders/{ro2['id']}/receive-back", headers=ADMIN, json={})
     assert r.status_code == 200 and r.json()["status"] == "cancelled"
     rc = DB.inventory_rolls.find_one({"id": c["id"]}, {"_id": 0})
     assert rc["status"] == "available" and not rc.get("repair_open")

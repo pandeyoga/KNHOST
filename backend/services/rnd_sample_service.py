@@ -1460,6 +1460,11 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
     if have + EPS < qty:
         raise RndError(f"Sisa roll {roll.get('roll_no')} hanya {have:g} "
                        f"{roll.get('unit', 'meter')} — kurang dari {qty:g}.")
+    # FIX-3b (CUT-1, B3a DUP-4) — panjang yang sudah dipesan SO (reservasi potong) tidak boleh dipakai sample R&D.
+    from services.roll_service import free_length
+    if free_length(roll) + EPS < qty:
+        raise RndError(f"Roll {roll.get('roll_no')}: {roll.get('length_reserved')} {roll.get('unit', 'meter')} sudah "
+                       f"dipesan pesanan lain — panjang bebas {free_length(roll):g} kurang dari {qty:g}.")
     new_len = round(have - qty, 3)
     unit_cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
     cost = round(unit_cost * qty, 2)
@@ -1467,7 +1472,8 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
     # INV-ATOMIC-01 — CAS roll: prasyarat status + sisa panjang sama seperti saat dibaca;
     # kalah (dua pengambilan bersamaan) → ditolak, bukan sisa roll negatif.
     won = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": roll.get("status"), "length_remaining": roll.get("length_remaining")},
+        {"id": roll["id"], "status": roll.get("status"), "length_remaining": roll.get("length_remaining"),
+         "length_reserved": roll.get("length_reserved") if roll.get("length_reserved") else {"$in": [None, 0, 0.0]}},
         {"$set": {
             "length_remaining": max(new_len, 0.0),
             "status": "consumed" if new_len <= EPS else roll.get("status"),

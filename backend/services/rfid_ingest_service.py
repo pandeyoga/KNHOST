@@ -137,7 +137,11 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
         raise HTTPException(status_code=400, detail="Tipe device ini tidak menerima pembacaan EPC")
     assert_legacy_protocol(device)
     evs = _normalize_events(epcs, events)
-    await _mark_online(device["id"])
+    # FIX-3b (RFID-4, B3b FRM-13) — simulator gate lama: bacaan bertanda `simulated`, TANPA `gate_exit`, insiden/
+    # notifikasi alarm, maupun "terakhir terlihat" tag (dulu bukti "sudah keluar" palsu → V2 `REPLAY_EXIT`).
+    sim = source == "simulated"
+    if not sim:
+        await _mark_online(device["id"])
     now = now_iso()
     is_gate = device.get("type") == "gate"
     direction = "in" if device.get("direction") == "in" else "out"
@@ -171,7 +175,8 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
         # read ber-id deterministik dari observasi → pemrosesan ulang mengadopsi read yang sudah durable
         rid = f"rread_{first_obs[raw]}"
         prev = await db.rfid_reads.find_one({"id": rid}, {"_id": 0}) or await db.rfid_reads.find_one(
-            {"device_id": device["id"], "epc": raw, "timestamp": {"$gte": dwell_cut}},
+            {"device_id": device["id"], "epc": raw, "timestamp": {"$gte": dwell_cut},
+             "simulated": True if sim else {"$ne": True}},   # FIX-3b — simulasi & nyata tidak saling menumpang
             {"_id": 0}, sort=[("timestamp", -1)])
         if prev and prev["id"] == rid:
             reads.append(prev)          # efek lanjutan (insiden/passage/stamp) dilengkapi di bawah
@@ -206,12 +211,13 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
                 "owner_entity_id": (roll or {}).get("owner_entity_id"), "result": decision["result"],
                 "code": decision.get("code"), "reason": decision["reason"], "action": decision.get("action"),
                 "movement": decision.get("movement"),
-                "passage_id": (passage or {}).get("id"), "source": source, "observation_count": 1, "timestamp": now}
+                "passage_id": (passage or {}).get("id"), "source": source, "observation_count": 1, "timestamp": now,
+                **({"simulated": True} if sim else {})}
         reads.append(read)
         results.append({"epc": raw, **{k: decision.get(k) for k in ("result", "code", "reason", "action")},
                         "roll_no": read["roll_no"], "sku": read["sku"], "product_name": read["product_name"],
                         "read_id": read["id"]})
-        if tag and roll:
+        if tag and roll and not sim:   # FIX-3b (RFID-4) — bacaan simulasi tidak menulis jejak nyata tag/roll
             await db.rfid_tags.update_one({"id": tag["id"]}, {"$set": {
                 "last_seen_at": now, "last_seen_device_id": device["id"],
                 "last_seen_device_name": device.get("name"), "last_seen_location": device.get("location"),
@@ -225,7 +231,7 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
             new_reads.append(r)
     from services import rfid_incident_service as inc  # FASE R6 — dedupe di create_from_read
     for r in reads:
-        if r["result"] == "red" and r["read_type"] in ("gate_in", "gate_out"):
+        if r["result"] == "red" and r["read_type"] in ("gate_in", "gate_out") and not sim:   # FIX-3b — tanpa alarm palsu
             await inc.create_from_read(r)
     for roll_id, decision in exits:   # stamp SESUDAH read durable (bukan sebelumnya → REPLAY_EXIT palsu)
         await ge.stamp_exit(roll_id, decision, device, now)

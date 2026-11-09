@@ -8,6 +8,8 @@ from entity_scope import entity_ctx, resolve_work_scope, assert_entity_access
 from core_utils import new_id, now_iso, safe_doc
 from services.shipment_service import dispatch_task
 from services.fulfillment_status import recompute_so_status
+from services import outbound_task_state as _ots   # FIX-3b — tabel transisi tugas ambil (daftar-izin + CAS)
+from input_rules import require_reason, optional_reason, require_qty
 
 router = APIRouter(prefix="/api")
 
@@ -106,24 +108,26 @@ async def release_scheduled_task(task_id: str, request: Request) -> Dict[str, An
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
     if task.get("status") != "scheduled":
         raise HTTPException(status_code=400, detail="Task tidak dalam status terjadwal (hold).")
-    updated = await db.wms_tasks.find_one_and_update(
-        {"id": task_id},
-        {"$set": {"status": "created", "released_by": actor["name"],
-                  "released_at": now_iso(), "updated_at": now_iso()}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    # FIX-3b (STM-OUT-6) — CAS daftar-izin: rilis ganda / rilis tugas yang baru dibatalkan kalah → 409.
+    updated = await _ots.transition(task_id, "release", "created", actor_name=actor["name"],
+                                    set_fields={"released_by": actor["name"], "released_at": now_iso()},
+                                    prev_status="scheduled")
+    if not updated:
+        raise HTTPException(status_code=409, detail="Tugas sudah berubah status — muat ulang layar.")
     await audit(actor["name"], "outbound_task_released", "wms_task", task_id,
                 {"order_number": task.get("order_number", "")})
     return safe_doc(updated)
 
 
-async def _resolve_pick_roll(task: Dict[str, Any], code: str, bin_id: str, lot: str, qty: float):
+async def _resolve_pick_roll(task: Dict[str, Any], code: str, bin_id: str, lot: str, qty: Optional[float]):
     """WM-06 — kode scan (id roll / no. roll / EPC) di-resolve server & harus roll milik order ini:
-    produk, gudang, pemilik, status ter-alokasi, bin (bila dipindai) cocok; qty ≤ panjang roll."""
+    produk, gudang, pemilik, status ter-alokasi, bin (bila dipindai) cocok.
+    FIX-3b (K-B1-05/K-B3b-01, STM-OUT-5) — ambil = ROLL UTUH: qty kosong = panjang roll; qty < panjang roll ditolak
+    (memotong roll wajib lewat reservasi potong, bukan pecah diam-diam saat kirim). Kode kosong ditangani pemanggil
+    (jalur darurat berizin)."""
     code = (code or "").strip()
     if not code:
-        # Tanpa scan roll (alur cepat HP/legacy) tetap diizinkan; dispatch lalu memilih roll order
-        # seperti sebelumnya. Mewajibkan scan per roll = keputusan kebijakan gudang (belum ada).
-        return "", bin_id, lot
+        return "", bin_id, lot, None
     roll = await db.inventory_rolls.find_one({"$or": [{"id": code}, {"roll_no": code}]}, {"_id": 0})
     if not roll:
         from services.epc import try_canonical
@@ -143,47 +147,68 @@ async def _resolve_pick_roll(task: Dict[str, Any], code: str, bin_id: str, lot: 
         problems.append("tidak ter-alokasi untuk order ini")
     if bin_id and roll.get("bin_id") and roll["bin_id"] != bin_id:
         problems.append("bin berbeda")
-    if qty > float(roll.get("length_remaining") or 0) + 0.01:
+    rlen = round(float(roll.get("length_remaining") or 0), 4)
+    if qty is not None and qty > rlen + 0.01:
         problems.append(f"qty {qty} > panjang roll {roll.get('length_remaining')}")
     if problems:
         raise HTTPException(status_code=400, detail=f"Roll {roll.get('roll_no') or code} ditolak: {', '.join(problems)}.")
-    return roll["id"], bin_id or roll.get("bin_id", ""), lot or roll.get("lot", "")
+    if qty is not None and qty + 0.01 < rlen:
+        raise HTTPException(status_code=400, detail=(
+            f"Roll {roll.get('roll_no') or code} panjangnya {rlen:g} — ambil roll UTUH. Mengambil sebagian roll sama "
+            "dengan memotong: pakai reservasi potong (Antrean Potong) lalu ambil roll anaknya."))
+    already = {e.get("roll_id") for e in task.get("scan_log") or [] if e.get("scan_type") == "pick"}
+    if roll["id"] in already:
+        raise HTTPException(status_code=409, detail=f"Roll {roll.get('roll_no') or code} sudah dipindai di tugas ini.")
+    return roll["id"], bin_id or roll.get("bin_id", ""), lot or roll.get("lot", ""), roll
 
 
 @router.post("/outbound/tasks/{task_id}/scan-pick")
 async def scan_pick_item(
     task_id: str,
     request: Request,
-    actual_qty: float,
+    actual_qty: Optional[float] = None,
     batch: str = "",
     lot: str = "",
     roll_id: str = "",
-    bin_id: str = ""
+    bin_id: str = "",
+    reason: str = "",
 ) -> Dict[str, Any]:
     """
     Scan and pick item for outbound task.
-    
-    Updates picked_qty. If picked_qty reaches expected qty, auto-advance.
+
+    FIX-3b (K-B1-05/K-B3b-01) — ambil WAJIB pindai roll (HP & desktop): `roll_id` = kode pindai (no. roll / EPC / id),
+    `actual_qty` kosong = panjang roll. Tanpa kode roll = JALUR DARURAT: hanya pemegang izin `wms.approve` dengan
+    alasan K-14 (`reason`), tercatat di `scan_log.manual_entry` + audit.
     """
     actor = await require_permission(request, "wms", "update")
-    
+
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
         raise HTTPException(status_code=404, detail="Outbound task tidak ditemukan")
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
-    
+
     if task.get("flow_type") != "outbound":
         raise HTTPException(status_code=400, detail="Task ini bukan outbound task")
-    
-    if task["status"] == "scheduled":
-        raise HTTPException(status_code=400, detail="Task pengambilan masih di-hold (terjadwal). Rilis dulu sebelum picking.")
-    if task["status"] in ["dispatched", "cancelled"]:
-        raise HTTPException(status_code=400, detail="Task sudah dispatched atau dibatalkan")
-    
-    import math
-    if not math.isfinite(actual_qty) or actual_qty <= 0:
-        raise HTTPException(status_code=400, detail="Qty pick harus angka > 0 (koreksi lewat pembatalan pick, bukan qty negatif).")
-    roll_id, bin_id, lot = await _resolve_pick_roll(task, roll_id, bin_id, lot, actual_qty)
+    if task.get("task_subtype") == "sample_cut":
+        raise HTTPException(status_code=400, detail="Tugas potong sample diselesaikan lewat Potong Sample, bukan Ambil.")
+    _ots.assert_can(task, "scan_pick")   # FIX-3b (STM-OUT-2) — `escalated`/`scheduled`/terminal ditolak
+
+    if actual_qty is not None:
+        actual_qty = require_qty(actual_qty, label="Qty pick")
+    manual_entry = None
+    if not (roll_id or "").strip():
+        from dependencies import has_permission
+        if not await has_permission(actor, "wms", "approve"):
+            raise HTTPException(status_code=400, detail=(
+                "Ambil wajib memindai roll (label/QR/RFID). Ketik qty tanpa pindai hanya jalur darurat supervisor "
+                "(izin wms.approve) dengan alasan."))
+        why = require_reason(reason, label="Alasan ambil tanpa pindai roll")
+        if actual_qty is None:
+            raise HTTPException(status_code=400, detail="Jalur darurat: isi qty yang diambil.")
+        manual_entry = {"reason": why, "by": actor["name"], "at": now_iso()}
+    roll_id, bin_id, lot, roll_doc = await _resolve_pick_roll(task, roll_id, bin_id, lot, actual_qty)
+    if roll_doc is not None and actual_qty is None:
+        actual_qty = round(float(roll_doc.get("length_remaining") or 0), 4)
     from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
     await _rfz.assert_task_movable(task, "pengambilan (picking) outbound", roll_id=roll_id, bin_id=bin_id)
 
@@ -210,46 +235,43 @@ async def scan_pick_item(
         "roll_id": roll_id,
         "bin_id": bin_id,
         "actor": actor["name"],
-        "timestamp": now_iso()
+        "timestamp": now_iso(),
+        **({"manual_entry": manual_entry} if manual_entry else {}),
     }
-    
+
     update_data = {
         "picked_qty": new_picked_qty,
         "batch": batch or task.get("batch", ""),
         "lot": lot or task.get("lot", ""),
         "roll_id": roll_id or task.get("roll_id", ""),
         "bin_id": bin_id or task.get("bin_id", ""),
-        "updated_at": now_iso()
     }
-    
-    # If first pick, auto-advance to picking status
+    new_status = task["status"]
     if task["status"] == "created" and new_picked_qty > 0:
-        update_data["status"] = "picking"
-    
-    # If fully picked, advance to packing
-    if new_picked_qty >= round(expected_qty, 4) - 1e-6:
-        update_data["status"] = "packing"
+        new_status = "picking"
+    # If fully picked, advance to packing (tugas terkirim sebagian tetap `partially_shipped`)
+    if new_picked_qty >= round(expected_qty, 4) - 1e-6 and task["status"] != "partially_shipped":
+        new_status = "packing"
+    if new_status not in ("picking", "packing", "partially_shipped"):
+        new_status = "picking"
 
-    # Sesi 12 — CAS: prasyarat status hidup + picked_qty tak berubah sejak dibaca → klik ganda/balapan kalah = 409.
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "status": {"$nin": ["scheduled", "dispatched", "cancelled", "completed"]},
-         "$or": [{"picked_qty": task.get("picked_qty", 0.0)}, {"picked_qty": {"$exists": False}}] if not task.get("picked_qty") else [{"picked_qty": task.get("picked_qty")}]},
-        {
-            "$set": update_data,
-            "$push": {"scan_log": scan_entry}
-        },
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    # Sesi 12 / FIX-3b — CAS daftar-izin + picked_qty tak berubah sejak dibaca → klik ganda/balapan kalah = 409.
+    pq = {"$or": [{"picked_qty": task.get("picked_qty", 0.0)}, {"picked_qty": {"$exists": False}}]} \
+        if not task.get("picked_qty") else {"picked_qty": task.get("picked_qty")}
+    updated_task = await _ots.transition(task_id, "scan_pick", new_status, actor_name=actor["name"],
+                                         set_fields=update_data, extra_filter=pq, push={"scan_log": scan_entry},
+                                         prev_status=task["status"])
     if not updated_task:
         raise HTTPException(status_code=409, detail={"code": "STATE_CHANGED",
                             "message": "Tugas sudah berubah (pick lain masuk lebih dulu). Muat ulang layar."})
-    
+
     await audit(actor["name"], "outbound_scan_pick", "wms_task", task_id, {
         "actual_qty": actual_qty,
         "picked_qty": new_picked_qty,
-        "expected_qty": expected_qty
-    })
+        "expected_qty": expected_qty,
+        "roll_id": roll_id,
+        **({"manual_entry": True} if manual_entry else {}),
+    }, **({"reason": manual_entry["reason"]} if manual_entry else {}))
 
     # Sub-fase 1.8 — status SO terderivasi otomatis dari progres pick
     if task.get("order_id"):
@@ -275,31 +297,26 @@ async def escalate_outbound_task(
     if not task:
         raise HTTPException(status_code=404, detail="Outbound task tidak ditemukan")
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
-    
+    # KN-C02 / FIX-3b — status dinilai dulu (409), baru alasan K-14 (≥ 5 huruf).
+    _ots.assert_can(task, "escalate", status_code=409)
+    reason = require_reason(reason, label="Alasan eskalasi")
+
     escalation = {
         "escalated_by": actor["name"],
         "escalated_at": now_iso(),
         "reason": reason,
         "status": "pending_review",
+        "prev_status": task.get("status"),   # FIX-3b — dipulihkan bila diputus tanpa ubah qty
         "resolved_by": None,
         "resolved_at": None,
         "resolution_notes": ""
     }
-    
-    # KN-C02 — eskalasi berprasyarat status: tugas dispatched/cancelled/completed tidak boleh
-    # dihidupkan kembali menjadi 'packing' lewat escalate→resolve (SO batal bisa terkirim).
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "status": {"$nin": ["dispatched", "cancelled", "completed", "escalated"]}},
-        {
-            "$set": {
-                "escalation": escalation,
-                "status": "escalated",
-                "updated_at": now_iso()
-            }
-        },
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+
+    # KN-C02 — eskalasi berprasyarat status (daftar-izin, CAS): tugas dispatched/cancelled/completed tidak boleh
+    # dihidupkan kembali lewat escalate→resolve.
+    updated_task = await _ots.transition(task_id, "escalate", "escalated", actor_name=actor["name"],
+                                         set_fields={"escalation": escalation}, note=reason,
+                                         prev_status=task.get("status"))
     if not updated_task:
         raise HTTPException(status_code=409, detail=(
             f"Tugas berstatus '{task.get('status')}' tidak bisa dieskalasi (sudah dikirim/dibatalkan/sedang dieskalasi)."))
@@ -309,6 +326,16 @@ async def escalate_outbound_task(
         "picked_qty": task.get("picked_qty", 0),
         "expected_qty": task.get("quantity", 0)
     })
+    try:   # FIX-3b (B2b ANOM-27) — eskalasi = keputusan supervisor: pemegang keputusan diberi tahu (dulu 0 notifikasi)
+        from services import notification_service as _ns
+        for role in ("manager", "warehouse_admin"):
+            await _ns.create_notification(
+                notif_type="outbound_escalation", ref=f"outbound_escalation:{task_id}:{role}",
+                title=f"Eskalasi tugas ambil {task.get('order_number', '')}",
+                body=f"{task.get('product_name', '')} · {task.get('warehouse_name', '')} — {reason}"[:400],
+                severity="warning", link="outbound", entity_id=task.get("entity_id") or None, recipient_role=role)
+    except Exception:  # noqa: BLE001 — notifikasi tidak boleh menggagalkan eskalasi
+        pass
     
     return safe_doc(updated_task)
 
@@ -318,62 +345,40 @@ async def resolve_outbound_escalation(
     task_id: str,
     request: Request,
     adjusted_qty: float = None,
-    resolution_notes: str = ""
+    resolution_notes: str = "",
+    close_remainder: bool = False,
 ) -> Dict[str, Any]:
     """
     Resolve escalated outbound task (manager only).
-    
-    Manager can adjust expected qty or reorganize allocation.
+
+    FIX-3b — (STM-OUT-2) hanya tugas berstatus `escalated` (CAS); status sesudahnya TURUNAN progres (tugas terkirim
+    penuh tidak kembali `packing`); tanpa qty = status sebelum eskalasi. (STM-OUT-1, K-B2b-01) tugas yang sudah terkirim
+    sebagian hanya boleh "tutup sisa" (`close_remainder=true` atau `adjusted_qty` = qty yang sudah diambil); roll yang
+    sudah di Surat Jalan / sudah diambil TIDAK pernah dilepas — yang dilepas hanya roll cadangan yang belum disentuh.
     """
     actor = await require_permission(request, "wms", "approve")  # Manager permission
-    
+
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
         raise HTTPException(status_code=404, detail="Outbound task tidak ditemukan")
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
-    
+
     if not task.get("escalation"):
         raise HTTPException(status_code=400, detail="Task tidak dalam status escalation")
-    if task["escalation"].get("status") in ("resolved", "resolving"):
+    if task["escalation"].get("status") in ("resolved", "resolving", "cancelled"):
         raise HTTPException(
             status_code=409,
-            detail="Eskalasi sudah/sedang diselesaikan pihak lain. Muat ulang layar.")
+            detail="Eskalasi sudah/sedang diselesaikan pihak lain (atau ditutup karena pesanan batal). Muat ulang layar.")
+    _ots.assert_can(task, "resolve_escalation", status_code=409)
+    resolution_notes = optional_reason(resolution_notes, label="Catatan penyelesaian")
 
-    async def _claim() -> None:
-        # T-01 Langkah 1 (audit 2026-09) — klaim tugas secara ATOMIK sebelum menulis apa
-        # pun (roll dilepas + SO ditulis + task ditulis tanpa transaksi). Hanya SATU
-        # pemanggil yang lolos; ulang-jalan setelah proses mati di tengah tidak melepas
-        # roll dua kali — tugas tertinggal 'resolving' itu terlihat & bisa ditangani.
-        claimed = await db.wms_tasks.find_one_and_update(
-            {"id": task_id, "status": "escalated", "escalation": {"$exists": True},   # KN-C02
-             "escalation.status": {"$nin": ["resolved", "resolving"]}},
-            {"$set": {"escalation.status": "resolving", "escalation.resolving_at": now_iso()}},
-            projection={"_id": 0})
-        if not claimed:
-            raise HTTPException(
-                status_code=409,
-                detail="Eskalasi sudah/sedang diselesaikan pihak lain. Muat ulang layar.")
-    
-    escalation = task["escalation"]
-    escalation["status"] = "resolved"
-    escalation["resolved_by"] = actor["name"]
-    escalation["resolved_at"] = now_iso()
-    escalation["resolution_notes"] = resolution_notes
-    
-    update_data = {
-        "escalation": escalation,
-        "status": "packing",  # Move to packing after resolution
-        "updated_at": now_iso()
-    }
-    
-    # S-6 (Gelombang 2) — penyesuaian qty oleh manager kini SINKRON penuh:
-    # roll reservation dilepas parsial, allocation + item + pricing order dihitung ulang.
+    original_qty = round(float(task.get("quantity", 0) or 0), 2)
+    picked = round(float(task.get("picked_qty", 0) or 0), 2)
+    shipped = round(float(task.get("shipped_qty", 0) or 0), 2)
+    if close_remainder:
+        adjusted_qty = max(picked, shipped)
     if adjusted_qty is not None:
-        original_qty = round(float(task.get("quantity", 0) or 0), 2)
-        adjusted_qty = round(float(adjusted_qty), 2)
-        picked = round(float(task.get("picked_qty", 0) or 0), 2)
-        if adjusted_qty <= 0:
-            raise HTTPException(status_code=400, detail="Qty penyesuaian harus > 0.")
+        adjusted_qty = round(require_qty(adjusted_qty, label="Qty penyesuaian"), 2)
         if adjusted_qty > original_qty + 0.01:
             raise HTTPException(
                 status_code=400,
@@ -382,6 +387,43 @@ async def resolve_outbound_escalation(
             raise HTTPException(
                 status_code=400,
                 detail=f"Qty penyesuaian ({adjusted_qty:g}) di bawah qty yang sudah di-pick ({picked:g}).")
+        if shipped > 0.01 and abs(adjusted_qty - max(picked, shipped)) > 0.01:
+            raise HTTPException(status_code=400, detail=(
+                f"Tugas ini sudah terkirim sebagian ({shipped:g}). Eskalasinya hanya bisa 'tutup sisa' — qty menjadi "
+                f"yang sudah diambil ({max(picked, shipped):g}); roll yang sudah di Surat Jalan tidak pernah dilepas."))
+
+    async def _claim() -> None:
+        # T-01 Langkah 1 (audit 2026-09) — klaim tugas secara ATOMIK sebelum menulis apa
+        # pun (roll dilepas + SO ditulis + task ditulis tanpa transaksi). Hanya SATU
+        # pemanggil yang lolos; ulang-jalan setelah proses mati di tengah tidak melepas
+        # roll dua kali — tugas tertinggal 'resolving' itu terlihat & bisa ditangani.
+        claimed = await db.wms_tasks.find_one_and_update(
+            {"id": task_id, "status": "escalated", "escalation": {"$exists": True},   # KN-C02
+             "escalation.status": {"$nin": ["resolved", "resolving", "cancelled"]}},
+            {"$set": {"escalation.status": "resolving", "escalation.resolving_at": now_iso()}},
+            projection={"_id": 0})
+        if not claimed:
+            raise HTTPException(
+                status_code=409,
+                detail="Eskalasi sudah/sedang diselesaikan pihak lain. Muat ulang layar.")
+
+    escalation = dict(task["escalation"])
+    escalation["status"] = "resolved"
+    escalation["resolved_by"] = actor["name"]
+    escalation["resolved_at"] = now_iso()
+    escalation["resolution_notes"] = resolution_notes
+    escalation.pop("resolving_at", None)
+
+    final_qty = original_qty if adjusted_qty is None else adjusted_qty
+    if adjusted_qty is None and escalation.get("prev_status") in _ots.TRANSITIONS["resolve_escalation"]["to"]:
+        new_status = escalation["prev_status"]
+    else:
+        new_status = _ots.derived_status(final_qty, picked, shipped)
+    update_data: Dict[str, Any] = {"escalation": escalation}
+
+    # S-6 (Gelombang 2) — penyesuaian qty oleh manager kini SINKRON penuh:
+    # roll reservation dilepas parsial, allocation + item + pricing order dihitung ulang.
+    if adjusted_qty is not None:
         delta = round(original_qty - adjusted_qty, 2)
         update_data["quantity"] = adjusted_qty
 
@@ -394,10 +436,14 @@ async def resolve_outbound_escalation(
                     status_code=400,
                     detail="Order sudah memiliki pembayaran — penyesuaian qty harus lewat retur/credit note.")
             await _claim()
-            # 1) Lepas selisih reservasi roll (parsial, per produk+gudang task ini)
+            # 1) Lepas selisih reservasi roll (parsial, per produk+gudang task ini). FIX-3b (STM-OUT-1) — roll yang
+            #    sudah dipindai/terkirim di tugas ini dikecualikan; status `in_transit_sales` tidak pernah dilepas.
             from services.roll_service import release_order_rolls_partial
+            touched = [e.get("roll_id") for e in task.get("scan_log") or [] if e.get("roll_id")]
+            touched += [r for e in task.get("scan_log") or [] if e.get("scan_type") == "dispatch"
+                        for r in e.get("rolls") or []]
             released = await release_order_rolls_partial(
-                order["id"], task["product_id"], task["warehouse_id"], delta)
+                order["id"], task["product_id"], task["warehouse_id"], delta, exclude_roll_ids=touched)
             # 2) Allocation qty
             await db.sales_orders.update_one(
                 {"id": order["id"], "allocations.id": task.get("allocation_id")},
@@ -447,23 +493,25 @@ async def resolve_outbound_escalation(
                               f"{original_qty:g} → {adjusted_qty:g} (roll dilepas {released:g}). "
                               f"{resolution_notes}").strip(),
                  }}})
-    
-    updated_task = await db.wms_tasks.find_one_and_update(
-        {"id": task_id, "escalation.status": {"$ne": "resolved"}},
-        {"$set": update_data},
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+
+    # FIX-3b (STM-OUT-2) — CAS: status masih `escalated` (atau sedang diklaim resolve ber-qty di atas).
+    updated_task = await _ots.transition(
+        task_id, "resolve_escalation", new_status, actor_name=actor["name"], set_fields=update_data,
+        extra_filter={"escalation.status": {"$nin": ["resolved", "cancelled"]}},
+        note=resolution_notes or "eskalasi diputus", prev_status="escalated")
     if not updated_task:
         raise HTTPException(
             status_code=409,
-            detail="Eskalasi sudah diselesaikan pihak lain. Muat ulang layar.")
-    
+            detail="Eskalasi sudah diselesaikan pihak lain / tugas berubah status. Muat ulang layar.")
+
     await audit(actor["name"], "outbound_escalation_resolved", "wms_task", task_id, {
         "adjusted_qty": adjusted_qty,
-        "resolution_notes": resolution_notes
+        "resolution_notes": resolution_notes,
+        "status": new_status,
     })
-    
+    if task.get("order_id"):
+        await recompute_so_status(task["order_id"])
+
     return safe_doc(updated_task)
 
 
@@ -558,8 +606,26 @@ async def start_loading_check(order_id: str, request: Request, warehouse_id: Opt
 async def scan_loading_check(session_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "update")
     ctx = await entity_ctx(request)
+    source = str(payload.get("source") or "manual")
+    if source == "device":
+        # FIX-3b (K-B3b-02) — sumber "perangkat" hanya dari jalur ber-key perangkat (handheld /api/handheld, reader);
+        # layar pengguna mengirim EPC ketik/tempel = "manual" (dicatat, bukan bukti sah).
+        raise HTTPException(status_code=400, detail=(
+            "Sumber 'perangkat' hanya dari handheld/reader. EPC yang ditempel di layar dicatat sebagai manual."))
     return await _rps.scan_session(session_id, list(payload.get("epcs") or []), _resolve_scope_ids(ctx, None),
-                                   ["loading_check"], str(payload.get("source") or "manual"), actor["name"])
+                                   ["loading_check"], source, actor["name"])
+
+
+@router.post("/outbound/loading-check/{session_id}/cancel")
+async def cancel_loading_check(session_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    """FIX-3b (FLW-OUT-6) — batalkan sesi cek muat terbuka (alasan K-14)."""
+    actor = await require_permission(request, "wms", "update")
+    ctx = await entity_ctx(request)
+    sess = await _lc.cancel(session_id, _resolve_scope_ids(ctx, None), str((payload or {}).get("reason") or ""),
+                            actor["name"])
+    await audit(actor["name"], "loading_check_cancelled", "sales_order", sess.get("order_id", ""),
+                {"session_id": session_id}, reason=sess.get("cancel_reason", ""))
+    return sess
 
 
 @router.post("/outbound/loading-check/{session_id}/scan-label")

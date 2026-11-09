@@ -520,14 +520,30 @@ def test_mark_printed_manual_marks_items():
     assert r.status_code == 200 and r.json()["status"] == "printed"
     it = db_job(job["id"])["items"][0]
     assert it["status"] == "confirmed" and it["evidence"]["source"] == "operator_manual" and it["effects"] == "done"
+    # FIX-3b (B2b RFID-3, keputusan K-B2b-13) — tandai tercetak manual = bukti CETAK, bukan bukti CHIP: tag tetap
+    # `pending_print` sampai EPC-nya terbaca di sesi verifikasi.
+    assert it["encode_status"] == "unverified" and tag_status(it["tag_id"]) == "pending_print"
+    _verify_epcs(job["id"], [it["epc"]])
     assert tag_status(it["tag_id"]) == "active"
 
 
 # ─── Cetak ulang teks vs ganti tag ───────────────────────────────────────────
+def _verify_epcs(job_id, epcs):
+    """FIX-3b (RFID-3) — bukti chip: sesi verifikasi membaca EPC → tag `pending_print` menjadi `active`."""
+    v = requests.post(f"{API}/rfid/print-jobs/{job_id}/verify/start", headers=_h(STATE["admin"]), timeout=60)
+    assert v.status_code == 200, v.text
+    s = requests.post(f"{API}/rfid/verify-sessions/{v.json()['id']}/scan", headers=_h(STATE["admin"]),
+                      json={"epcs": epcs}, timeout=60)
+    assert s.status_code == 200, s.text
+    c = requests.post(f"{API}/rfid/verify-sessions/{v.json()['id']}/complete", headers=_h(STATE["admin"]), timeout=60)
+    assert c.status_code == 200, c.text
+
+
 def _active_roll(stage="stored"):
     rid = make_roll()
     job = create_job(rolls=[rid])
     requests.post(f"{API}/rfid/print-jobs/{job['id']}/mark-printed", headers=_h(STATE["admin"]), timeout=60)
+    _verify_epcs(job["id"], [DB.rfid_tags.find_one({"roll_id": rid})["epc"]])
     tag = DB.rfid_tags.find_one({"roll_id": rid, "status": "active"})
     DB.inventory_rolls.update_one({"id": rid}, {"$set": {"journey.stage": stage, "journey.verified_tag_id": tag["id"]}})
     return rid, tag

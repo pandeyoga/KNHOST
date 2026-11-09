@@ -61,6 +61,11 @@ _OWNER = f"{os.uname().nodename}:{os.getpid()}"
 _scheduler = None          # AsyncIOScheduler | None
 
 
+async def _reservation_expiry_job():
+    from services.inventory_service import expire_old_reservations   # FIX-3b — dulu dipicu GET (STK-11)
+    return {"expired": await expire_old_reservations()}
+
+
 async def _supplier_deadline_job():
     from services import return_disposition_service as _rds   # LN-093 (impor malas, hindari siklus)
     return await _rds.job_supplier_deadline_reminder()
@@ -94,6 +99,14 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Tugas barang masuk/keluar terbuka > 2 hari, diringkas per gudang & arah.",
      "kind": "interval", "interval_hours": 4, "fn": alerts.job_ops_stalled,
      "link": "operations"},
+    # ── FIX-3b (B3a STK-11, B2b ANOM-06 / K-B2b-12) ─────────────────────────
+    {"id": "reservation_expiry", "label": "Kedaluwarsa Reservasi Pesanan",
+     "description": "Pesanan yang BELUM disetujui (Dicadangkan / Menunggu persetujuan) dan masa reservasinya (3 hari) "
+                    "lewat dibuat Kedaluwarsa; roll yang dicadangkan dilepas kembali ke stok. Pesanan yang sudah "
+                    "disetujui atau menunggu barang (backorder) TIDAK pernah kedaluwarsa otomatis. Dulu dijalankan "
+                    "diam-diam saat daftar pesanan/dasbor dibuka.",
+     "kind": "interval", "interval_minutes": 30, "fn": _reservation_expiry_job,
+     "link": "orders"},
     {"id": "event_scan", "label": "Pindai Event Sistem",
      "description": "Stok menipis, reservasi mendekati kedaluwarsa, dan pesanan/PO menunggu persetujuan.",
      "kind": "interval", "interval_hours": 4, "fn": alerts.job_event_scan,

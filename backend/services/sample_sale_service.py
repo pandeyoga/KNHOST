@@ -166,8 +166,11 @@ async def sample_price_for(product: Dict[str, Any]) -> Dict[str, Any]:
 
 async def suggest_roll(product_id: str, length: float, entity_ids: List[str],
                        wh_ids: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
-    """FIFO: roll available tertua yang cukup panjang (sisa ≥ panjang), di lokasi yang diizinkan."""
-    q: Dict[str, Any] = {"product_id": product_id, "status": "available", "length_remaining": {"$gte": length}}
+    """FIFO: roll available tertua yang cukup panjang BEBAS (sisa − reservasi potong ≥ panjang), di lokasi yang
+    diizinkan. FIX-3b (CUT-1) — dulu sisa fisik saja → roll yang panjangnya sudah dipesan SO lain ikut disarankan."""
+    q: Dict[str, Any] = {"product_id": product_id, "status": "available", "active_movement": None,
+                         "$expr": {"$gte": [{"$subtract": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]},
+                                            length - 0.001]}}
     if entity_ids:
         q["owner_entity_id"] = {"$in": entity_ids}
     if wh_ids is not None:
@@ -292,7 +295,9 @@ async def _resolve_roll(product_id: str, sku: str, take: float, unit: str, roll_
                         entity_id: str = "") -> Dict[str, Any]:
     if epc and not roll_id:
         from services.epc import try_canonical
-        tag = await db.rfid_tags.find_one({"epc": try_canonical(epc) or epc.strip()}, {"_id": 0})
+        from services.rfid_service import LIVE_TAG_STATUSES   # FIX-3b (RFID-2) — tag pensiun bukan identitas roll
+        tag = await db.rfid_tags.find_one({"epc": try_canonical(epc) or epc.strip(),
+                                           "status": {"$in": list(LIVE_TAG_STATUSES)}}, {"_id": 0})
         if tag:
             roll_id = tag.get("roll_id")
         else:   # label QR berisi NOMOR ROLL (tanpa RFID) → cari roll_no
@@ -313,6 +318,14 @@ async def _resolve_roll(product_id: str, sku: str, take: float, unit: str, roll_
         raise HTTPException(status_code=400, detail={"code": "ROLL_WRONG_ENTITY", "message": f"Roll {roll.get('roll_no')} milik badan usaha lain — pesanan sample ini milik {entity_id}."})
     if float(roll.get("length_remaining") or 0) < take:
         raise HTTPException(status_code=400, detail={"code": "ROLL_TOO_SHORT", "message": f"Sisa roll {roll.get('length_remaining')} < {take} {unit}."})
+    # FIX-3b (CUT-1, B3a DUP-4) — panjang BEBAS (sisa − reservasi potong SO lain) yang menentukan, satu fungsi
+    # `roll_service.free_length` untuk semua potong.
+    from services.roll_service import free_length
+    free = free_length(roll)
+    if free + 0.001 < take:
+        raise HTTPException(status_code=409, detail={"code": "ROLL_LENGTH_RESERVED", "message": (
+            f"Roll {roll.get('roll_no')} sisa {roll.get('length_remaining')} {unit}, tetapi {roll.get('length_reserved')} "
+            f"sudah dipesan pesanan lain (reservasi potong) — panjang bebas {free:g} < {take:g}. Pilih roll lain.")})
     return roll
 
 
@@ -426,18 +439,23 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
                             "message": f"Roll ini bukan saran FIFO ({task.get('suggested_roll_no')}). Isi alasan mengapa roll lain dipotong."})
     # INV-ATOMIC-01 — klaim tugas SEBELUM roll dipotong / SO ditulis.
     await _saga.claim("wms_tasks", task_id, "sample_cut", precondition={"status": {"$in": ["created", "picking"]}}, actor=actor.get("name", ""))
+    # FIX-3b (CUT-1, STM-OUT-6) — CAS terhadap PANJANG BEBAS (sisa − reservasi potong SO lain) dan pengurangan +
+    # pembulatan dalam SATU update (pipeline) — dulu filter hanya sisa fisik lalu pembulatan ditulis terpisah tanpa CAS.
     parent = await db.inventory_rolls.find_one_and_update(
         {"id": roll["id"], "status": "available", "active_movement": None,
-         "length_remaining": {"$gte": take - 0.001}},
-        {"$inc": {"length_remaining": -take, "length_initial": -take}, "$set": {"updated_at": now_iso()}},
+         "$expr": {"$gte": [{"$subtract": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}, take - 0.001]}},
+        [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
+                   "length_initial": {"$round": [{"$subtract": [{"$ifNull": ["$length_initial", "$length_remaining"]},
+                                                                take]}, 2]},
+                   "updated_at": now_iso()}}],
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not parent:
         await _saga.release("wms_tasks", task_id)
-        raise HTTPException(status_code=409, detail="Roll baru saja dipakai proses lain — pindai ulang.")
+        raise HTTPException(status_code=409, detail=(
+            "Roll baru saja dipakai proses lain / panjang bebasnya sudah dipesan pesanan lain — pindai ulang."))
     rem = round(float(parent.get("length_remaining") or 0), 2)
-    await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {
-        "length_remaining": rem, "length_initial": round(float(parent.get("length_initial") or 0), 2),
-        "is_remnant": bool(0 < rem < REMNANT_THRESHOLD)}})
+    from services.roll_service import apply_remnant_rule   # FIX-3b (CUT-4) — satu aturan sisa potong SO & sample
+    await apply_remnant_rule(roll["id"], roll["product_id"], roll.get("owner_entity_id") or "")
     now = now_iso()
     child = dict(roll)
     child.update({"id": new_id("roll"), "length_initial": take, "length_remaining": take, "status": "reserved",

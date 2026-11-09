@@ -23,7 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 EPS = 0.01
-ACTIVE = ["waiting_stock", "reserved", "waiting_approval", "approved", "confirmed"]
+# FIX-3b (FLW-OUT-2) — SO yang sudah mulai diambil/dikirim sebagian dengan sisa backorder TETAP bisa diisi (KN_16 §2
+# "kirim sebagian → sisa jadi backorder"). Dulu daftar ini berhenti di `confirmed` → SO macet `partially_shipped`.
+ACTIVE = ["waiting_stock", "reserved", "waiting_approval", "approved", "confirmed",
+          "partially_picked", "picked", "partially_shipped"]
+COMMITTED_FLOW = ("approved", "confirmed", "partially_picked", "picked", "partially_shipped")
 
 
 async def _fill_order(order: Dict[str, Any], product_id: str, owner_entity_id: str,
@@ -38,6 +42,12 @@ async def _fill_order(order: Dict[str, Any], product_id: str, owner_entity_id: s
         fresh = await _saga.claim("sales_orders", order["id"], "backorder_fill",
                                   precondition={"status": {"$in": ACTIVE}}, actor=actor_name)
     except _HE:
+        # FIX-3b (FLW-OUT-2) — bedakan "status tidak bisa diisi" dari "sedang dikunci proses lain" (dulu dua-duanya
+        # "sedang diproses pemenuhan lain").
+        cur = await db.sales_orders.find_one({"id": order["id"]}, {"_id": 0, "status": 1})
+        st = (cur or {}).get("status")
+        if st not in ACTIVE:
+            return {"got": 0.0, "exhausted": False, "completed": False, "busy": False, "not_active": st or "?"}
         return {"got": 0.0, "exhausted": False, "completed": False, "busy": True}
     try:
         return await _fill_order_locked(fresh, product_id, owner_entity_id, cap, actor_name, reason, roll_ids)
@@ -110,8 +120,8 @@ async def _fill_order_locked(order: Dict[str, Any], product_id: str, owner_entit
         # Trial 22 Okt (E8) — SO backorder murni yang sudah diperiksa Admin Sales dilepas otomatis saat stok tiba.
         from services import so_release_service as _rel
         await _rel.auto_release(order["id"], {"name": actor_name}, why="stok masuk")
-    # Auto-commit (4a): order sudah approved/confirmed → roll baru langsung di-commit.
-    if new_status in ("approved", "confirmed"):
+    # Auto-commit (4a): order sudah approved/confirmed (atau sudah mulai diambil/dikirim) → roll baru langsung di-commit.
+    if new_status in COMMITTED_FLOW:
         from services.roll_service import set_order_rolls_status
         await set_order_rolls_status(order["id"], "committed")
         # Trial 22 Okt — SO yang SUDAH punya tugas ambil: alokasi baru (mis. barang PO tiba di gudang lain) dulu
@@ -125,7 +135,7 @@ async def _fill_order_locked(order: Dict[str, Any], product_id: str, owner_entit
     await audit(actor_name, "backorder_auto_fulfilled", "sales_order", order["id"], {
         "product_id": product_id, "qty_fulfilled": round(order_got, 2),
         "status": new_status, "fully_fulfilled": not still_bo,
-        "auto_committed": new_status in ("approved", "confirmed"),
+        "auto_committed": new_status in COMMITTED_FLOW,
     }, reason)
     try:
         from services import alert_ops_service as _ops
@@ -212,6 +222,10 @@ async def fulfill_from_stock(order_id: str, product_id: str, qty: float,
     r = await _fill_order(order, product_id, order.get("entity_id") or "", cap=qty,
                           actor_name=actor_name, reason="Admin Sales: penuhi kekurangan dari stok",
                           roll_ids=roll_ids)
+    if r.get("not_active"):
+        from fastapi import HTTPException as _HE
+        raise _HE(status_code=409, detail=(
+            f"Pesanan berstatus '{r['not_active']}' — kekurangannya tidak bisa diisi dari stok lagi."))
     if r.get("busy"):
         from fastapi import HTTPException as _HE
         raise _HE(status_code=409, detail="Pesanan sedang diproses pemenuhan lain — coba lagi sebentar.")

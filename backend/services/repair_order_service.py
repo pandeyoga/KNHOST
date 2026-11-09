@@ -13,14 +13,15 @@ Keputusan pemilik (usulan bawaan §4):
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Optional, Any, Dict, List
 
 from db import db
 from core_utils import new_id, next_doc_number, now_iso, rupiah
 
 KINDS = {"perbaikan": "Perbaikan cacat", "celup_ulang": "Celup ulang (re-dye)", "finishing_ulang": "Finishing ulang"}
 COST_BASIS = {"per_unit": "per satuan", "per_roll": "per roll", "lumpsum": "borongan"}
-STATUS_LABEL = {"draft": "Draf", "sent": "Dikirim", "done": "Selesai", "cancelled": "Dibatalkan"}
+STATUS_LABEL = {"draft": "Draf", "sent": "Dikirim", "done": "Selesai", "cancelled": "Dibatalkan",
+                "returning": "Batal — menunggu barang kembali"}   # FIX-3b (FLW-OUT-11, K-B2b-03)
 ELIGIBLE_STATUSES = ("available", "quarantine", "damaged", "blocked", "hold")
 REPAIR_STATUS = "wip"     # bucket WIP: tidak tersedia dijual (ATP), tetap dimiliki & dihitung persediaan
 EPS = 0.005
@@ -217,25 +218,59 @@ async def send(ro_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def cancel(ro_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
-    from services.roll_service import rebuild_balance
+    from input_rules import reason_problem   # FIX-3b — K-14 dihitung HURUF
     ro = await get(ro_id)
     if ro["status"] not in ("draft", "sent"):
         raise RepairError("Perbaikan yang sudah selesai/batal tidak bisa dibatalkan.")
-    if len((reason or "").strip()) < 5:
-        raise RepairError("Alasan batal wajib (minimal 5 huruf).")
-    segs = set()
+    if reason_problem(reason, label="Alasan batal"):
+        raise RepairError(reason_problem(reason, label="Alasan batal"))
     if ro["status"] == "sent":
-        for ln in ro["lines"]:
-            res = await db.inventory_rolls.update_one(
-                {"id": ln["roll_id"], "repair_open": ro["id"]},
-                {"$set": {"status": ln["prev_status"], "bucket_ref": None, "repair_open": "", "updated_at": now_iso()}})
-            if res.modified_count:
-                r = await db.inventory_rolls.find_one({"id": ln["roll_id"]}, {"_id": 0})
-                await _movement(r, "repair_cancel", ln["qty_sent"], ro, "Perbaikan dibatalkan — roll kembali")
-                segs.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
+        # FIX-3b (FLW-OUT-11, keputusan K-B2b-03) — barang masih di bengkel/vendor: roll TIDAK langsung tersedia di
+        # gudang asal. Dokumen → `returning`; roll tetap `wip` (perbaikan) sampai diterima kembali ("Terima kembali"),
+        # baru status asal. Dulu roll yang masih di bengkel langsung `available` dan bisa dialokasikan.
+        return await _push(ro, "returning", actor, f"Dibatalkan saat barang di luar: {reason.strip()} — menunggu barang kembali",
+                           {"cancel_reason": reason.strip(), "cancel_requested_by": actor.get("name", ""),
+                            "cancel_requested_at": now_iso()}, "sent")
+    return await _push(ro, "cancelled", actor, f"Dibatalkan: {reason.strip()}", {"cancel_reason": reason.strip()}, ro["status"])
+
+
+async def receive_back(ro_id: str, actor: Dict[str, Any], roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """FIX-3b (FLW-OUT-11) — perbaikan yang dibatalkan saat barang di luar: roll DITERIMA KEMBALI (fisik tiba) →
+    status asal (tanpa perubahan grade/panjang, tanpa jurnal). Semua roll kembali → dokumen `cancelled`."""
+    from services.roll_service import rebuild_balance
+    ro = await get(ro_id)
+    if ro["status"] != "returning":
+        raise RepairError("Terima kembali hanya untuk perbaikan yang dibatalkan saat barang di luar.")
+    want = set(roll_ids or [ln["roll_id"] for ln in ro["lines"]])
+    segs, back = set(), []
+    for ln in ro["lines"]:
+        if ln["roll_id"] not in want:
+            continue
+        res = await db.inventory_rolls.update_one(
+            {"id": ln["roll_id"], "repair_open": ro["id"], "status": REPAIR_STATUS},
+            {"$set": {"status": ln["prev_status"], "bucket_ref": None, "repair_open": "", "updated_at": now_iso(),
+                      "returned_from_repair": {"ref_id": ro["id"], "at": now_iso(), "by": actor.get("name", "")}}})
+        if res.modified_count:
+            r = await db.inventory_rolls.find_one({"id": ln["roll_id"]}, {"_id": 0})
+            await _movement(r, "repair_cancel", ln["qty_sent"], ro, "Perbaikan dibatalkan — roll diterima kembali")
+            segs.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
+            back.append(ln["roll_id"])
     for p, w, o in segs:
         await rebuild_balance(p, w, o)
-    return await _push(ro, "cancelled", actor, f"Dibatalkan: {reason.strip()}", {"cancel_reason": reason.strip()}, ro["status"])
+    left = await db.inventory_rolls.count_documents({"repair_open": ro["id"]})
+    if left:
+        await db.repair_orders.update_one({"id": ro["id"]}, {"$push": {"timeline": {
+            "at": now_iso(), "by": actor.get("name", ""), "status": "returning",
+            "note": f"{len(back)} roll diterima kembali · {left} masih di luar"}}})
+        return await get(ro["id"])
+    out = await _push(ro, "cancelled", actor, f"Semua roll diterima kembali ({len(back)})",
+                      {"returned_at": now_iso()}, "returning")
+    try:   # B2b RFID-11 — sesi dokumen gate perbaikan ikut dinilai/ditutup (best-effort)
+        from services import gate_txn_service as _gt
+        await _gt.safe_close("repair_order", ro["id"], ("out", "in"), "repair_cancelled")
+    except Exception:  # noqa: BLE001
+        pass
+    return out
 
 
 async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:

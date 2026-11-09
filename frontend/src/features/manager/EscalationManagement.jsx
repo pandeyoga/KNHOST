@@ -296,6 +296,9 @@ export default function ManagerEscalationDashboard({ user }) {
                 <div className="text-sm text-[#856404] mt-1">
                   <p>Diharapkan: <strong>{formatQty(selectedTask.quantity)} {selectedTask.unit}</strong></p>
                   <p>Sudah Diambil: <strong>{formatQty(selectedTask.picked_qty || 0)} {selectedTask.unit}</strong></p>
+                  {Number(selectedTask.shipped_qty || 0) > 0 && (
+                    <p data-testid="esc-shipped-info">Sudah Terkirim: <strong>{formatQty(selectedTask.shipped_qty)} {selectedTask.unit}</strong></p>
+                  )}
                   <p className="text-red-600 font-semibold mt-1">
                     Selisih: {formatQty((selectedTask.quantity - (selectedTask.picked_qty || 0)))} {selectedTask.unit}
                   </p>
@@ -316,6 +319,17 @@ export default function ManagerEscalationDashboard({ user }) {
 
             {/* Resolve Form */}
             <div className="space-y-3 mb-4">
+              {/* FIX-3b (K-B2b-01, STM-OUT-1) — tugas yang sudah terkirim sebagian: hanya "tutup sisa"; roll di Surat
+                  Jalan tidak pernah dilepas kembali ke stok. */}
+              {selectedTask.task_type !== "inbound" && Number(selectedTask.shipped_qty || 0) > 0 && (
+                <div data-testid="esc-close-remainder" className="rounded-lg border border-[#F5C26B] bg-[#FFF8E6] p-2 text-xs text-[#7A5600]">
+                  Tugas ini sudah terkirim sebagian — penyesuaian qty hanya "tutup sisa" (qty menjadi yang sudah diambil).
+                  <button type="button" className="ml-2 font-semibold underline" data-testid="esc-close-remainder-btn"
+                    onClick={() => setResolveData({ ...resolveData, adjusted_qty: Math.max(Number(selectedTask.picked_qty || 0), Number(selectedTask.shipped_qty || 0)) })}>
+                    Tutup sisa ({formatQty(Math.max(Number(selectedTask.picked_qty || 0), Number(selectedTask.shipped_qty || 0)))})
+                  </button>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Adjusted Qty (opsional - kosongkan jika tidak adjust)

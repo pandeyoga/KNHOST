@@ -20,8 +20,11 @@ import { Badge, MiniBar } from "./OutboundScanBadges";
 import LoadingCheckPanel from "./LoadingCheckPanel";
 import SampleCutPanel from "./SampleCutPanel";
 import KNSelect from "../../components/KNSelect";
+import { TaskTakeoverButton } from "./TaskTakeoverButton";
+import { useLocationScope } from "./LocationScopeBadge";
 
 export default function OutboundScanInterface({ user, focusTaskId = "", onFocusConsumed }) {
+  const locScope = useLocationScope();   // FIX-3b (B3b K-B3b-08) — "Ambil alih tugas" untuk supervisor lokasi
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
@@ -400,6 +403,9 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                 <p className="text-[11px] text-[#3C3C43] font-medium">{selectedTask.product_name}</p>
                 <p className="text-[10.5px] text-[#6B6B73]">SKU: {selectedTask.sku} · Customer: {selectedTask.customer_name}</p>
               </div>
+              {!["dispatched", "cancelled", "completed"].includes(selectedTask.status) && (
+                <TaskTakeoverButton task={selectedTask} scope={locScope} onDone={fetchTasks} />
+              )}
 
               {/* Escalation info */}
               {selectedTask.status === 'escalated' && selectedTask.escalation && (
@@ -521,6 +527,9 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                           <span className="text-[#6B6B73]">Siap dikirim: <strong className="text-[#1C7A3E] tabular-nums">{formatQty(maxShip)} {selectedTask.unit}</strong></span>
                           {shipped > 0 && <span className="text-[#B23B14]">Sudah dikirim: {formatQty(shipped)}</span>}
                         </div>
+                        <p data-testid="dispatch-whole-roll-hint" className="text-[10px] text-[#6B6B73]">
+                          Kirim sebagian = sejumlah roll UTUH yang sudah diambil (roll tidak dipecah saat kirim — potong lewat Antrean Potong).
+                        </p>
                         <div className="flex gap-2">
                           <input type="number" min="0" max={maxShip} step="any"
                             data-testid="dispatch-qty-input"

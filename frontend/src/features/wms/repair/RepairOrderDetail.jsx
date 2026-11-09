@@ -11,7 +11,8 @@ import useDomainEnums from "../../../hooks/useDomainEnums";
 import { formatCurrency, formatDateTime, formatQty } from "../../../utils/formatters";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 
-const TONE = { draft: "bg-[#F1F2F4] text-[#4A4B52]", sent: "bg-[#FFF4E5] text-[#B45309]", done: "bg-[#E9F7EF] text-[#1B7F4B]", cancelled: "bg-[#FDECEC] text-[#9B1C1C]" };
+const TONE = { draft: "bg-[#F1F2F4] text-[#4A4B52]", sent: "bg-[#FFF4E5] text-[#B45309]", done: "bg-[#E9F7EF] text-[#1B7F4B]", cancelled: "bg-[#FDECEC] text-[#9B1C1C]",
+  returning: "bg-[#FFF4E5] text-[#8C4A00]" };   // FIX-3b (FLW-OUT-11) — batal saat barang di luar
 const BASIS = { per_unit: "per satuan", per_roll: "per roll", lumpsum: "borongan" };
 
 export function StatusPill({ ro }) {
@@ -34,7 +35,7 @@ export default function RepairOrderDetail({ ro, currentUser, onBack, onChanged }
     setRecv(Object.fromEntries(ro.lines.map((ln) => [ln.roll_id, { qty_out: String(ln.qty_sent), grade: ln.grade_before || "A", dye_lot: ro.target?.dye_lot || "" }])));
   };
   const cancel = async () => {
-    const reason = await askReason({ title: `Batalkan ${ro.number}?`, message: ro.status === "sent" ? "Roll kembali ke status semula." : "", danger: true });
+    const reason = await askReason({ title: `Batalkan ${ro.number}?`, message: ro.status === "sent" ? "Barang masih di luar: dokumen menjadi 'menunggu barang kembali'; roll baru tersedia lagi setelah diterima kembali." : "", danger: true });
     if (reason) run(() => axios.post(`${API}/repair-orders/${ro.id}/cancel`, { reason }));
   };
   const totalSent = ro.lines.reduce((s, ln) => s + Number(ln.qty_sent || 0), 0);
@@ -48,6 +49,8 @@ export default function RepairOrderDetail({ ro, currentUser, onBack, onChanged }
             <button type="button" className="primary-button" disabled={busy} onClick={() => run(() => axios.post(`${API}/repair-orders/${ro.id}/send`))} data-testid="repair-send"><Send size={13} /> Kirim — roll keluar dari stok</button>)}
           {ro.status === "sent" && can(perms, "repair_order", "receive") && !recv && (
             <button type="button" className="primary-button" onClick={startRecv} data-testid="repair-receive-open"><PackageCheck size={13} /> Terima hasil</button>)}
+          {ro.status === "returning" && can(perms, "repair_order", "receive") && (
+            <button type="button" className="primary-button" disabled={busy} onClick={() => run(() => axios.post(`${API}/repair-orders/${ro.id}/receive-back`, {}))} data-testid="repair-receive-back"><PackageCheck size={13} /> Terima kembali (batal)</button>)}
           {["draft", "sent"].includes(ro.status) && can(perms, "repair_order", "cancel") && (
             <button type="button" className="secondary-button" disabled={busy} onClick={cancel} data-testid="repair-cancel"><XCircle size={13} /> Batalkan</button>)}
           <button type="button" className="secondary-button" onClick={() => openTrace({ docType: "repair_order", docId: ro.id, number: ro.number })}>Jejak Dokumen</button>

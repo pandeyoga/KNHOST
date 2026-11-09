@@ -80,8 +80,10 @@ async def cut(ins_id: str, line_id: str, *, cut_yard: float = 0.25, weight_kg: O
         await db.mdq_cuts.insert_one(doc)
     except DuplicateKeyError:
         raise HTTPException(status_code=409, detail="Potong MDQ baris ini sedang/sudah diproses — muat ulang.")
+    # FIX-3b (CUT-1, B3a DUP-4) — panjang BEBAS (sisa − reservasi potong SO) yang dipakai, bukan sisa fisik.
     res = await db.inventory_rolls.update_one(
-        {"id": roll["id"], "length_remaining": {"$gte": qty - 1e-9}, "status": {"$in": list(CUT_STATUSES)}},
+        {"id": roll["id"], "status": {"$in": list(CUT_STATUSES)},
+         "$expr": {"$gte": [{"$subtract": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}, qty - 1e-9]}},
         {"$inc": {"length_remaining": -qty},
          "$set": {"updated_at": now_iso()},
          "$push": {"usage_history": {"type": "mdq_cut", "qty": qty, "unit": unit, "ref": key, "at": now_iso()}}})

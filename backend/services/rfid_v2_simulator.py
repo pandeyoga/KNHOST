@@ -55,8 +55,11 @@ async def _document(device, cfg, gate_id, direction, source, limit):
     return None, []
 
 
-async def _roll_epc(warehouse: str, status: str, exclude: List[str]) -> Optional[str]:
-    rolls = await db.inventory_rolls.find({'warehouse_id': warehouse, 'status': status}, {'_id': 0, 'id': 1}).to_list(200)
+async def _roll_epc(warehouse: str, status: str, exclude: List[str], owner: str = '') -> Optional[str]:
+    # FIX-3b (K-B2b-09) — roll "asing/karantina" contoh diambil dari PT dokumen yang sama (bermode simulasi), bukan
+    # roll PT lain yang datanya nyata.
+    q = {'warehouse_id': warehouse, 'status': status, **({'owner_entity_id': owner} if owner else {})}
+    rolls = await db.inventory_rolls.find(q, {'_id': 0, 'id': 1}).to_list(200)
     if not rolls:
         return None
     tag = await db.rfid_tags.find_one({'roll_id': {'$in': [r['id'] for r in rolls]}, 'status': 'active',
@@ -80,10 +83,27 @@ async def _send(device, cfg, g, direction, scenario, doc, extra=(), background=(
     return {'local_passage_id': built['passage_id'], 'expected': built['expected'], 'decision': decision}
 
 
+_DOC_COLL = {'shipment': 'shipments', 'wh_transfer': 'warehouse_transfers', 'putaway': 'putaway_orders',
+             'makloon_order': 'makloon_orders', 'repair_order': 'repair_orders'}
+
+
+async def _doc_entity(ref: Optional[Dict[str, Any]]) -> str:
+    """PT pemilik dokumen sumber (untuk Mode simulasi RFID per PT)."""
+    if not ref or ref.get('source_type') not in _DOC_COLL:
+        return ''
+    d = await db[_DOC_COLL[ref['source_type']]].find_one({'id': ref.get('source_id')},
+                                                         {'_id': 0, 'entity_id': 1, 'owner_entity_id': 1})
+    return (d or {}).get('entity_id') or (d or {}).get('owner_entity_id') or ''
+
+
 async def run(device: Dict[str, Any], scenario: str, gate_id: Optional[str] = None,
               source: Optional[Dict[str, Any]] = None, roll_limit: int = 200) -> Dict[str, Any]:
     if scenario not in env.SCENARIOS:
         fail(400, 'INVALID_SCENARIO', 'Skenario simulator tidak dikenal.')
+    # FIX-3b (RFID-1/RFID-9, K-B2b-09) — perangkat WAJIB bertanda uji SEBELUM apa pun dibaca/ditulis.
+    from services.rfid_service import simulator_problem, simulation_on
+    if device.get('test_device') is not True:
+        fail(409, 'SIMULATOR_NOT_ALLOWED', await simulator_problem(device, ''))
     cfg = await core.config(device)
     g = core.gate(cfg, gate_id or cfg['logical_gates'][0]['logical_gate_id'])
     direction = g['direction'] if g['direction'] in ('in', 'out') else 'out'
@@ -91,6 +111,12 @@ async def run(device: Dict[str, Any], scenario: str, gate_id: Optional[str] = No
     ref, doc = (None, []) if scenario == 'empty' else await _document(device, cfg, g['logical_gate_id'], direction, source, limit)
     if scenario != 'empty' and not doc:
         fail(409, 'NO_DOCUMENT_ROLLS', 'Tidak ada dokumen aktif dengan roll bertag yang belum lewat untuk gudang/arah gate ini.')
+    # FIX-3b (RFID-1) — klaim simulasi tidak boleh lahir untuk dokumen PT yang Mode simulasi RFID-nya MATI (data nyata):
+    # dulu klaim `simulated` dipasang → lintasan nyata berikutnya MERAH `REPLAY_EXIT` + gate terkunci.
+    ent = await _doc_entity(ref) if ref is not None else ''
+    if ref is not None and not await simulation_on(ent):
+        fail(409, 'SIMULATOR_NOT_ALLOWED', 'Mode simulasi RFID untuk PT dokumen ini mati — simulator tidak dijalankan '
+                                           '(klaim simulasi tidak boleh menyentuh roll/dokumen nyata).')
     notes: List[str] = []
     runs: List[Dict[str, Any]] = []
     if scenario == 'partial_trip':
@@ -100,13 +126,13 @@ async def run(device: Dict[str, Any], scenario: str, gate_id: Optional[str] = No
         runs.append(await _send(device, cfg, g, direction, 'partial_trip', doc[:half]))
         runs.append(await _send(device, cfg, g, direction, 'partial_trip', doc[half:]))
     elif scenario == 'foreign_roll':
-        epc = await _roll_epc(cfg['warehouse_id'], 'available', doc)
+        epc = await _roll_epc(cfg['warehouse_id'], 'available', doc, ent)
         if not epc:
             epc = synthetic_epc()
             notes.append('Tidak ada roll available bertag di gudang ini — memakai EPC asing sintetis (UNKNOWN_EPC).')
         runs.append(await _send(device, cfg, g, direction, scenario, doc, extra=[epc]))
     elif scenario == 'quarantine_roll':
-        epc = await _roll_epc(cfg['warehouse_id'], 'quarantine', doc)
+        epc = await _roll_epc(cfg['warehouse_id'], 'quarantine', doc, ent)
         if not epc:
             fail(409, 'NO_QUARANTINE_ROLL', 'Tidak ada roll karantina bertag di gudang ini — skenario tidak bisa dijalankan.')
         runs.append(await _send(device, cfg, g, direction, scenario, doc, extra=[epc]))

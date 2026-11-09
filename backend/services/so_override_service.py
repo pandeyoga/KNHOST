@@ -98,9 +98,16 @@ async def _header(order: Dict[str, Any], header: Dict[str, Any]) -> Tuple[Dict[s
     return patch, diff
 
 
+HELD_STATUSES = ("reserved", "committed", "picked", "packed")
+"""FIX-3b (STM-OUT-3) — roll yang DIPEGANG pesanan = semua status pra-kirim. Dulu hanya `reserved`: pada SO
+`approved/confirmed` roll `committed` tak terlihat → override memesan roll LAGI (reservasi ganda) dan roll lama yatim
+(masih `reserved_ref` SO tetapi hilang dari `allocations`)."""
+
+
 async def _held(order_id: str, pid: str) -> List[Dict[str, Any]]:
     rolls = await db.inventory_rolls.find(
-        {"reserved_ref.id": order_id, "product_id": pid, "status": "reserved"}, {"_id": 0}).to_list(1000)
+        {"reserved_ref.id": order_id, "product_id": pid, "status": {"$in": list(HELD_STATUSES)}},
+        {"_id": 0}).to_list(1000)
     rolls += [{"id": p["roll_id"], "roll_no": p["roll_no"], "warehouse_id": p["warehouse_id"],
                "owner_entity_id": p["owner_entity_id"], "length_remaining": p["qty"], "lot": p.get("lot"),
                "pending_cut": True, "reservation_id": p["reservation_id"]}
@@ -197,13 +204,43 @@ def _plan_lines(order: Dict[str, Any], lines: List[Dict[str, Any]]):
 
 
 async def _regen_tasks(order_id: str, actor_name: str) -> None:
-    """SO confirmed (task belum disentuh) → task gudang dilahirkan ulang dari alokasi baru."""
-    from services.doc_refs_service import safe_unlink_all
+    """SO confirmed (task belum disentuh) → tugas gudang DISESUAIKAN dengan alokasi baru.
+
+    FIX-3b (STM-OUT-3) — dulu semua tugas DIHAPUS lalu dibuat ulang (id tugas berganti di tengah kerja gudang, jejak
+    doc_refs putus). Kini: tugas reguler per produk×gudang yang belum mulai diperbarui qty & alokasinya; alokasi baru
+    mendapat tugas baru; tugas yang alokasinya hilang → `cancelled` (berjejak), tidak dihapus. Tugas potong sample
+    tidak disentuh (override tidak berlaku untuk pesanan sample)."""
     from services.fulfillment_status import create_outbound_tasks_for_order
-    async for t in db.wms_tasks.find({"order_id": order_id, "flow_type": "outbound"}, {"_id": 0, "id": 1}):
-        await safe_unlink_all("wms_tasks", t["id"])
-    await db.wms_tasks.delete_many({"order_id": order_id, "flow_type": "outbound"})
-    await create_outbound_tasks_for_order(order_id, actor_name)
+    from services import outbound_task_state as _ots
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "allocations": 1})
+    allocs: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+    for a in (order or {}).get("allocations") or []:
+        if a.get("source") != "sample_cut":
+            allocs.setdefault((a["product_id"], a["warehouse_id"]), []).append(a)
+    tasks = await db.wms_tasks.find({"order_id": order_id, "flow_type": "outbound",
+                                     "task_subtype": {"$ne": "sample_cut"},
+                                     "status": {"$in": ["created", "scheduled"]}}, {"_id": 0}).to_list(500)
+    for t in tasks:
+        key = (t.get("product_id"), t.get("warehouse_id"))
+        bucket = allocs.get(key) or []
+        same = next((x for x in bucket if x.get("id") == t.get("allocation_id")), None)
+        a = same or (bucket[0] if bucket else None)
+        if a:
+            bucket.remove(a)
+            await db.wms_tasks.update_one(
+                {"id": t["id"], "status": t["status"], "picked_qty": {"$in": [0, 0.0, None]}},
+                {"$set": {"quantity": round(float(a.get("quantity") or 0), 2), "allocation_id": a.get("id"),
+                          "updated_at": now_iso()},
+                 "$push": {"status_history": _ots.history_entry(t["status"], actor_name, "override_qty",
+                                                                "qty disesuaikan lewat override SO")}})
+        else:
+            await _ots.transition(t["id"], "cancel", "cancelled", actor_name=actor_name,
+                                  set_fields={"cancel_reason": "Alokasi dihapus lewat override SO",
+                                              "cancelled_by": actor_name},
+                                  from_status=("created", "scheduled"), note="override SO", prev_status=t["status"])
+    new_ids = {a.get("id") for bucket in allocs.values() for a in bucket if a.get("id")}
+    if new_ids:
+        await create_outbound_tasks_for_order(order_id, actor_name, only_alloc_ids=new_ids)
 
 
 async def _apply_lines(order, items, by_pid, qty_plan, adds, actor, diff) -> Dict[str, Any]:
@@ -234,7 +271,11 @@ async def _apply_lines(order, items, by_pid, qty_plan, adds, actor, diff) -> Dic
         await _reserve(order, it["product_id"], it["base_quantity"], policy)
         touched.add(it["product_id"])
         diff.append(_chg(it["product_name"], "add", "Tambah baris", 0, it["quantity"], it["product_id"]))
-    allocations = [a for a in order.get("allocations") or [] if a.get("product_id") not in touched]
+    if touched and order["status"] in ("approved", "confirmed"):
+        # FIX-3b (STM-OUT-3) — roll tambahan untuk SO yang sudah disetujui ikut `committed` (dulu tetap `reserved`).
+        from services.roll_service import set_order_rolls_status
+        await set_order_rolls_status(order["id"], "committed")
+    allocations =[a for a in order.get("allocations") or [] if a.get("product_id") not in touched]
     backorders = [b for b in order.get("backorders") or []
                   if b.get("product_id") not in touched or b.get("status") == "fulfilled"]
     for it in items:

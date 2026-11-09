@@ -313,6 +313,9 @@ class TestGateActionsAndHistory:
     def test_simulate_contains_action(self, admin, warehouse):
         """/api/rfid/gate/simulate menghasilkan `action` sesuai code."""
         g = self._mk_device_and_key(admin, "sim-action")
+        # FIX-3b (B2b RFID-4, K-B2b-09) — simulator gate hanya di perangkat bertanda UJI (+ PT bermode simulasi).
+        assert admin.patch(f"{BASE}/api/rfid/devices/{g['device']['id']}", json={"test_device": True},
+                           timeout=20).status_code == 200
         # roll available tanpa dokumen → NO_DOCUMENT
         p = _run(_mk_product(10))
         roll = _run(_mk_roll(p["id"], 110, 10, status="available"))

@@ -26,7 +26,7 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   // bukan "Memuat…" selamanya dan bukan pula "tidak ada roll".
   const [loadErr, setLoadErr] = useState("");
   const [loadingReceipt, setLoadingReceipt] = useState(true);
-  const open = ["dispatched", "partially_received"].includes(transfer.status);
+  const open = ["dispatched", "partially_received", "returning"].includes(transfer.status);   // FIX-3b — returning = terima kembali di asal
   const isSup = roleIs(user?.role, SUPERVISOR);   // FE-04 — sama dengan supervisor di server (kenal peran acuan)
 
   const load = useCallback(async () => {

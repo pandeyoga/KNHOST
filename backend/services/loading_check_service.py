@@ -52,6 +52,24 @@ async def _expected_rolls(order_id: str, warehouse_id: Optional[str] = None) -> 
         "length_remaining": 1, "warehouse_id": 1}).to_list(2000)
 
 
+async def _snapshot(order_id: str, warehouse_id: Optional[str]) -> Dict[str, Any]:
+    """Roll SO (gudang ini) yang diharapkan naik + EPC tag aktifnya SAAT INI (dipakai start & complete)."""
+    rolls = await _expected_rolls(order_id, warehouse_id)
+    tag_ids = [r["rfid_tag_id"] for r in rolls if r.get("rfid_tag_id")]
+    tags = {t["id"]: t for t in await db.rfid_tags.find(
+        {"id": {"$in": tag_ids}, "status": "active"}, {"_id": 0}).to_list(2000)}
+    expected, untagged = [], []
+    for r in rolls:
+        t = tags.get(r.get("rfid_tag_id"))
+        if t:
+            expected.append({"epc": t["epc"], "roll_id": r["id"], "roll_no": r.get("roll_no", ""),
+                             "sku": t.get("sku", ""), "product_name": t.get("product_name", "")})
+        else:  # RF-05 — tanpa tag / tag nonaktif / retired / tag_id menggantung
+            untagged.append({"roll_id": r["id"], "roll_no": r.get("roll_no", ""),
+                             "reason": "tag tidak aktif" if r.get("rfid_tag_id") else "tanpa tag"})
+    return {"rolls": rolls, "expected": expected, "untagged": untagged}
+
+
 async def start(order_id: str, scope_ids: List[str], actor_name: str,
                 warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "number": 1,
@@ -66,22 +84,11 @@ async def start(order_id: str, scope_ids: List[str], actor_name: str,
     from services.roll_service import assert_cut_identity_ready
     # WM-02 + G3 V3-WMS-02 — potong & tag anak hanya diperiksa untuk gudang pengiriman ini
     await assert_cut_identity_ready(order_id, warehouse_id=warehouse_id or "")
-    rolls = await _expected_rolls(order_id, warehouse_id)
+    snap = await _snapshot(order_id, warehouse_id)
+    rolls, expected, untagged = snap["rolls"], snap["expected"], snap["untagged"]
     if not rolls:
         raise HTTPException(status_code=400, detail=(
             "Tidak ada roll ter-alokasi untuk SO ini" + (" di gudang ini" if warehouse_id else "") + " (pick dulu)."))
-    tag_ids = [r["rfid_tag_id"] for r in rolls if r.get("rfid_tag_id")]
-    tags = {t["id"]: t for t in await db.rfid_tags.find(
-        {"id": {"$in": tag_ids}, "status": "active"}, {"_id": 0}).to_list(2000)}
-    expected, untagged = [], []
-    for r in rolls:
-        t = tags.get(r.get("rfid_tag_id"))
-        if t:
-            expected.append({"epc": t["epc"], "roll_id": r["id"], "roll_no": r.get("roll_no", ""),
-                             "sku": t.get("sku", ""), "product_name": t.get("product_name", "")})
-        else:  # RF-05 — tanpa tag / tag nonaktif / retired / tag_id menggantung
-            untagged.append({"roll_id": r["id"], "roll_no": r.get("roll_no", ""),
-                             "reason": "tag tidak aktif" if r.get("rfid_tag_id") else "tanpa tag"})
     sess = {
         "id": new_id("rvs"), "kind": "loading_check", "order_id": order_id,
         "so_number": so.get("number", ""), "print_job_id": None,
@@ -113,10 +120,26 @@ async def complete(session_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     from services.rfid_print_service import evidence_result
     await _saga.claim("rfid_verify_sessions", session_id, "loading_check_complete",
                       precondition={"status": "open"})
+    # FIX-3b (FLW-OUT-6) — "yang diharapkan" dihitung ULANG saat selesai: tag yang ditulis selama sesi (C72 "tulis
+    # EPC" di depan truk) tidak lagi dihitung "lebih"/"tanpa tag". Dulu dipotret sekali saat mulai.
+    snap = await _snapshot(prog["order_id"], prog.get("warehouse_id"))
+    await db.rfid_verify_sessions.update_one({"id": session_id}, {"$set": {
+        "expected": snap["expected"], "untagged": snap["untagged"], "untagged_count": len(snap["untagged"]),
+        "expected_refreshed_at": now_iso()}})
     prog = await _verify_progress(session_id)  # RF-10 — snapshot sesudah klaim; scan terlambat ditolak
     unresolved = [u for u in prog.get("untagged", []) if u["roll_id"] not in set(prog.get("untagged_resolved") or [])]
+    # FIX-3b (K-B3b-02) — EPC yang hanya DITEMPEL/diketik (sumber manual) bukan bukti fisik: dihitung belum terbaca.
+    raw = await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0, "manual_epcs": 1, "proof_epcs": 1,
+                                                                       "simulated_epcs": 1})
+    manual_only = set((raw or {}).get("manual_epcs") or []) - set((raw or {}).get("proof_epcs") or [])         - set((raw or {}).get("simulated_epcs") or [])
+    exp_epcs = {e["epc"] for e in prog.get("expected") or []}
+    missing_proof = sorted(set(prog["missing"]) | (exp_epcs & manual_only))
+    extra = [e for e in prog["extra"] if e not in manual_only]
     # RF-07 — sesi berisi scan simulasi → 'simulated' (bukan bukti fisik; dispatch tetap terblokir)
-    clean = evidence_result(prog, not prog["missing"] and not prog["extra"] and not unresolved)
+    clean = evidence_result(prog, not missing_proof and not extra and not unresolved)
+    if clean == "with_issues" and manual_only and not prog["missing"] and not unresolved             and not (set(prog["extra"]) - manual_only):
+        clean = "manual_unverified"
+    prog["missing"], prog["extra"] = missing_proof, extra
     wh = prog.get("warehouse_id")
     manifest = await _manifest(prog["order_id"], wh)  # RF-06 — hasil terikat roll+panjang saat check
     now = now_iso()
@@ -135,10 +158,11 @@ async def scan_label(session_id: str, code: str, scope_ids: List[str], reason: s
                      actor: str = "") -> Dict[str, Any]:
     """RF-05 + W2-REQ-08 — roll tanpa tag hanya lolos lewat PENGECUALIAN berizin
     (`wms.untagged_override`, dicek router) dengan alasan; label = no. roll."""
+    from input_rules import reason_problem   # FIX-3b — K-14 dihitung HURUF
     reason = (reason or "").strip()
-    if len(reason) < 5:
+    if reason_problem(reason):
         raise HTTPException(status_code=422, detail=(
-            "Roll tanpa tag wajib RFID — pengecualian lewat label butuh alasan (min. 5 karakter)."))
+            "Roll tanpa tag wajib RFID — pengecualian lewat label butuh alasan (min. 5 huruf)."))
     sess = await db.rfid_verify_sessions.find_one({"id": session_id, "kind": "loading_check"}, {"_id": 0})
     if not sess:
         raise HTTPException(status_code=404, detail="Sesi loading check tidak ditemukan")
@@ -170,9 +194,8 @@ async def warehouse_policy(warehouse_id: Optional[str]) -> str:
 
 async def override(order_id: str, reason: str, actor: str, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     """RF-04 — pengecualian berizin (wms.approve): dispatch tanpa sweep RFID, tetap terikat manifest."""
-    reason = (reason or "").strip()
-    if len(reason) < 5:
-        raise HTTPException(status_code=400, detail="Alasan override loading check wajib (min. 5 karakter).")
+    from input_rules import require_reason   # FIX-3b — K-14 dihitung HURUF
+    reason = require_reason(reason, label="Alasan override loading check")
     if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Masih ada sesi loading check terbuka — selesaikan dulu.")
     lc = {"session_id": None, "result": "override", "reason": reason, "by": actor,
@@ -318,6 +341,10 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
         raise HTTPException(status_code=400, detail=(
             "Final Loading Check hanya berisi scan SIMULASI — bukan bukti fisik. Ulangi dengan handheld/scan "
             "nyata atau minta override berizin dengan alasan."))
+    if lc.get("result") == "manual_unverified":
+        raise HTTPException(status_code=400, detail=(
+            "Final Loading Check hanya berisi EPC yang DITEMPEL/diketik manual — bukan bukti fisik. Pindai dengan "
+            "handheld (perangkat) atau minta override berizin dengan alasan."))
     if lc.get("result") not in ("clean", "override", "simulated"):
         raise HTTPException(status_code=400, detail=(
             f"Final Loading Check TIDAK BERSIH (missing {len(lc.get('missing') or [])}, "
@@ -332,12 +359,39 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
             + (f" ({len(changed)} roll baru/berubah)" if changed else " (hasil lama tanpa manifest)")
             + " — ulangi check sebelum kirim."))
 
-async def _gate_validates_out(warehouse_id: Optional[str]) -> bool:
+async def gate_out_state(warehouse_id: Optional[str]) -> Dict[str, Any]:
+    """FIX-3b (RFID-12) — gedung gate membebaskan wajib cek muat HANYA bila minimal satu reader OUT yang tertaut
+    `enabled` dan SEHAT (tidak berhenti membaca, laporan/telemetry tidak basi — aturan `rfid_v2_health`). Reader
+    nonaktif/offline → kembali wajib cek muat handheld (K §10 opsi a: gate padam → SOP handheld). Dulu cukup
+    konfigurasi profil + pasangan, walau reader mati."""
     from services import gate_txn_service as _gt
     try:
-        return await _gt.gate_validates(warehouse_id, "out")
+        pol = await _gt.gate_policy(warehouse_id) if warehouse_id else None
     except Exception:   # noqa: BLE001 — profil gedung tak terbaca: perilaku lama (handheld)
-        return False
+        pol = None
+    ids = list((pol or {}).get("device_ids_out") or [])
+    if not (pol and pol.get("effective_mode") == "gate" and ids):
+        return {"configured": False, "healthy": False, "reason": ""}
+    from services import rfid_v2_health as _hl
+    problems = []
+    async for d in db.rfid_devices.find({"id": {"$in": ids}}, {"_id": 0, "api_key": 0, "api_key_hash": 0}):
+        if d.get("enabled") is False:
+            problems.append(f"{d.get('code') or d['id']}: nonaktif")
+            continue
+        try:
+            bad = [r for r in await _hl.evaluate(d) if r["active"] and r["rule"] in ("READER_STOPPED", "TELEMETRY_STALE")]
+        except Exception as exc:   # noqa: BLE001 — kesehatan tak terbaca = tidak dianggap sehat
+            bad = [{"message": f"kesehatan tidak terbaca ({exc})"}]
+        if not bad:
+            return {"configured": True, "healthy": True, "reason": ""}
+        problems.append(f"{d.get('code') or d['id']}: {bad[0].get('message')}")
+    return {"configured": True, "healthy": False,
+            "reason": "Reader gate OUT tidak sehat (" + "; ".join(problems or ["perangkat tidak ditemukan"])
+                      + ") — cek muat handheld kembali WAJIB."}
+
+
+async def _gate_validates_out(warehouse_id: Optional[str]) -> bool:
+    return (await gate_out_state(warehouse_id))["healthy"]
 
 
 async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
@@ -357,5 +411,30 @@ async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) ->
             # UAT v3 — layar Barang Keluar menawarkan [Buat tag simulasi] bila mode aktif & ada roll tanpa tag
             "rfid_simulation": await simulation_on(order_id),
             "untagged_rolls": await untagged_rolls(order_id, warehouse_id),
-            # PREP-D2 — gedung bergate: cek muat handheld opsional (cadangan), gate OUT memvalidasi per trip
-            "gate_out_primary": await _gate_validates_out(warehouse_id)}
+            # PREP-D2 — gedung bergate: cek muat handheld opsional (cadangan), gate OUT memvalidasi per trip.
+            # FIX-3b (RFID-12) — hanya bila reader OUT sehat; selain itu alasan ditampilkan.
+            **await _gate_view(warehouse_id)}
+
+
+async def _gate_view(warehouse_id: Optional[str]) -> Dict[str, Any]:
+    st = await gate_out_state(warehouse_id)
+    return {"gate_out_primary": st["healthy"], "gate_out_configured": st["configured"],
+            "gate_out_reason": st["reason"]}
+
+
+async def cancel(session_id: str, scope_ids: List[str], reason: str, actor: str) -> Dict[str, Any]:
+    """FIX-3b (FLW-OUT-6) — batalkan sesi cek muat yang masih terbuka (salah mulai / muatan berubah) dengan alasan
+    K-14. Dulu sesi `open` hanya bisa diselesaikan (hasil tidak bersih) — dan menahan dispatch."""
+    from input_rules import require_reason
+    reason = require_reason(reason, label="Alasan batal cek muat")
+    sess = await db.rfid_verify_sessions.find_one({"id": session_id, "kind": "loading_check"}, {"_id": 0})
+    if not sess:
+        raise HTTPException(status_code=404, detail="Sesi loading check tidak ditemukan")
+    if sess.get("owner_entity_id") and sess["owner_entity_id"] not in scope_ids:
+        raise HTTPException(status_code=403, detail="Sesi di luar entitas Anda")
+    res = await db.rfid_verify_sessions.update_one(
+        {"id": session_id, "status": "open", "saga_lock": {"$exists": False}},
+        {"$set": {"status": "cancelled", "cancel_reason": reason, "cancelled_by": actor, "completed_at": now_iso()}})
+    if not res.modified_count:
+        raise HTTPException(status_code=409, detail="Sesi sudah selesai / sedang diselesaikan.")
+    return await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0})

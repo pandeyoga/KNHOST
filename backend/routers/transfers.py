@@ -788,12 +788,31 @@ async def cancel_transfer(transfer_id: str, request: Request,
     """
     actor = await require_permission(request, "transfer", "cancel")
     transfer, _ctx = await _guard_transfer(request, transfer_id, side="source")  # FASE E-0 (L13)
-    if transfer["status"] in ["completed", "rejected", "cancelled"]:
+    if transfer["status"] in ["completed", "rejected", "cancelled", "returned", "returning"]:
         raise HTTPException(status_code=400, detail=f"Transfer tidak bisa dibatalkan (status: {transfer['status']})")
     if transfer["status"] == "partially_received":
         raise HTTPException(status_code=400, detail=(
             "Sebagian roll sudah diterima di tujuan — transfer tidak bisa dibatalkan. Catat roll yang tidak tiba "
             "sebagai exception lalu supervisor mengembalikannya ke gudang asal."))
+    if transfer["status"] in ("dispatched", "in_transit", "shipped") and transfer.get("transfer_kind") != "inter_entity":
+        # FIX-3b (FLW-OUT-11, keputusan K-B2b-03) — batal saat barang DI JALAN: roll TIDAK langsung tersedia di asal
+        # (masih di truk). Transfer → `returning`; roll tetap `in_transit_transfer` sampai DIPINDAI/diterima kembali di
+        # gudang asal ("Terima per roll" pada transfer ini) — baru `available`/komitmen SO di asal. Status akhir
+        # `cancelled` (basis `returned_to_source`) sesudah semua roll kembali.
+        from input_rules import require_reason
+        why = require_reason(reason, label="Alasan batal transfer di jalan")
+        from services import status_history as _sh
+        updated = await db.warehouse_transfers.find_one_and_update(
+            {"id": transfer_id, "status": transfer["status"], "saga_lock": {"$exists": False}},
+            {"$set": {"status": "returning", "return_requested": {"by": actor["name"], "at": now_iso(), "reason": why,
+                                                                  "from_status": transfer["status"]},
+                      "updated_at": now_iso()},
+             "$push": {"status_history": _sh.entry("returning", user=actor["name"], note=why, action="cancel_in_transit")}},
+            projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        if not updated:
+            raise HTTPException(status_code=409, detail="Transfer baru saja berubah status — muat ulang.")
+        await audit(actor["name"], "transfer_cancel_in_transit", "transfer", transfer_id, {"reason": why}, reason=why)
+        return safe_doc(updated)
     # INV-ATOMIC-01 — klaim transfer (status masih hidup) SEBELUM roll dilepas: dua pembatalan
     # bersamaan / bersaing dengan approve tidak boleh melepas roll dua kali.
     from services import atomic_claim as _saga

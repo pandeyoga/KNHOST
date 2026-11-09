@@ -587,24 +587,29 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
                       "note": note, "by": actor_name, "at": now_iso()}
         upd["delivered_at"] = now_iso()
     elif to == "failed":
+        from input_rules import reason_problem   # FIX-3b — K-14 dihitung HURUF (validator bersama)
         reason = (payload.get("reason") or "").strip()
-        if len(reason) < 5:   # K-14 — alasan minimum seragam 5 huruf
-            raise ValueError("Alasan gagal kirim wajib diisi.")
+        if reason_problem(reason, label="Alasan gagal kirim"):
+            raise ValueError(reason_problem(reason, label="Alasan gagal kirim"))
         upd["fail_reason"] = reason
         note = reason
     elif to == "completed":
         upd["completed_at"] = now_iso()
     elif to == "prepared" and cur == "loaded":
+        from input_rules import reason_problem
         reason = (payload.get("reason") or note or "").strip()
-        if len(reason) < 5:   # K-14 — alasan minimum seragam 5 huruf
-            raise ValueError("Alasan bongkar muatan (kembali ke Disiapkan) wajib diisi.")
+        if reason_problem(reason, label="Alasan bongkar muatan (kembali ke Disiapkan)"):
+            raise ValueError(reason_problem(reason, label="Alasan bongkar muatan (kembali ke Disiapkan)"))
         upd["loaded_at"] = None
         note = f"Dibongkar / kembali ke Disiapkan: {reason}"
     elif to == "prepared":
         upd["fail_reason"] = ""
         note = note or "Dijadwalkan ulang setelah gagal kirim"
-    await db[COLL].update_one({"id": delivery_id}, {
+    # FIX-3b (STM-OUT-6) — CAS status asal: dua transisi bersamaan (diterima ↔ gagal) tidak saling menimpa.
+    res = await db[COLL].update_one({"id": delivery_id, "status": cur}, {
         "$set": upd, "$push": {"timeline": _event("status", actor_name, note, from_status=cur, to_status=to)}})
+    if not res.modified_count:
+        raise ValueError("Status pengiriman baru saja berubah oleh pengguna lain — muat ulang layar.")
     await db.shipments.update_many({"id": {"$in": doc.get("shipment_ids") or []}},
                                    {"$set": {"logistics_status": to}})
     if to in ("in_transit", "delivered", "completed"):
@@ -649,11 +654,13 @@ async def pickup_handover(delivery_id: str, payload: Dict[str, Any], actor_name:
         raise ValueError("Nama pengambil wajib diisi.")
     pod = {"receiver_name": picker, "id_no": id_no, "received_at": now_iso(), "note": (payload.get("note") or "").strip(),
            "by": actor_name, "at": now_iso(), "verified_by_code": True}
-    await db[COLL].update_one({"id": delivery_id}, {
+    res = await db[COLL].update_one({"id": delivery_id, "status": "prepared"}, {   # FIX-3b (STM-OUT-6) — CAS
         "$set": {"status": "delivered", "delivered_at": now_iso(), "pod": pod, "updated_at": now_iso()},
         "$push": {"timeline": _event("status", actor_name,
                                      f"Diserahkan ke {picker}" + (f" (ID {id_no})" if id_no else "") + " — kode pickup tervalidasi",
                                      from_status="prepared", to_status="delivered")}})
+    if not res.modified_count:
+        raise ValueError("Barang baru saja diserahkan / berubah status oleh pengguna lain — muat ulang layar.")
     await db.shipments.update_many({"id": {"$in": doc.get("shipment_ids") or []}}, {"$set": {"logistics_status": "delivered"}})
     await _close_gate_sessions(doc, "shipment_picked_up")
     await _notify_sales(doc, "delivered", f"diambil oleh {picker}", actor_name)
