@@ -1,0 +1,1377 @@
+<title>Mockup Pusat Tugas Gudang</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Outfit:wght@600;700&display=swap">
+<style>
+/* Tata letak: kanvas abu kebiruan; tiap mockup = bingkai aplikasi KN (terang, seperti aplikasinya) + catatan bernomor.
+   Satu tampilan terang disengaja: aplikasi KN hanya punya tema terang, mockup harus sama persis dengan yang akan dibangun.
+   Token warna/huruf = Standar UI Gudang v1 (KN_37, frontend/src/styles/tokens.css). */
+:root{
+  color-scheme: light;
+  --canvas:#E9ECF2; --canvas-line:#D3D8E2;
+  --frame:#FFFFFF; --app-bg:#F4F5F8;
+  --text:#1C1C1E; --text-2:#6B6B73; --neutral:#3C3C43; --neutral-soft:#F2F2F5;
+  --action:#0058CC; --action-hover:#004AAD; --action-soft:#E6F0FF;
+  --ok:#126E2C; --ok-solid:#1B7F4B; --ok-soft:#E6F6EC;
+  --warn:#8C4A00; --warn-soft:#FFF4E5;
+  --bad:#A8221A; --bad-solid:#B42318; --bad-soft:#FDECEC;
+  --special:#6B219A; --special-soft:#F3E8FA;
+  --navy:#1F3A68; --navy-soft:#E7ECF5;
+  --field:#8A8A8E; --line:#E5E5EA; --line-2:#CDD2DB;
+  --anno:#2E3A55; --anno-soft:#DCE2EE;
+  --device:#1A1E28; --on-dark:#FFFFFF;
+  --scrim:rgba(20,24,33,.45);
+  --f-body:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-head:'Outfit', 'Manrope', system-ui, sans-serif;
+  --f-mono:ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --fs-12:12px; --lh-12:16px; --fs-13:13px; --lh-13:18px; --fs-14:14px; --lh-14:20px;
+  --fs-16:16px; --lh-16:24px; --fs-20:20px; --lh-20:28px; --fs-24:24px; --lh-24:32px;
+  --r-chip:8px; --r-ctl:10px; --r-card:14px; --r-sheet:18px;
+  --shadow:0 1px 2px rgba(20,28,45,.06), 0 8px 24px rgba(20,28,45,.08);
+}
+*{box-sizing:border-box}
+html,body{background:var(--canvas)}
+body{color:var(--text);font-family:var(--f-body);font-size:var(--fs-14);line-height:var(--lh-14)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--action);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.muted{color:var(--text-2)}
+.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.lg{width:20px;height:20px}.ic.xl{width:28px;height:28px}
+
+.page{max-width:1320px;margin:0 auto;padding-block:24px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:16px}
+.intro{display:grid;gap:8px;max-width:860px}
+.eyebrow{margin:0;font-size:var(--fs-12);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);font-weight:600}
+.intro h1{margin:0;font-family:var(--f-head);font-size:28px;line-height:34px;font-weight:700;text-wrap:balance}
+.lede{margin:0;font-size:var(--fs-16);line-height:var(--lh-16);color:var(--neutral);max-width:68ch}
+.toggle{display:inline-flex;gap:8px;align-items:center;font-size:var(--fs-13);color:var(--neutral);cursor:pointer;width:max-content}
+.toggle input{width:16px;height:16px;accent-color:var(--action)}
+
+.vtabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--canvas-line);padding-bottom:0}
+.vtabs a{flex:none;padding:10px 14px;font-weight:600;font-size:var(--fs-14);color:var(--neutral);text-decoration:none;border-bottom:3px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0}
+.vtabs a:hover{background:rgba(0,88,204,.06)}
+.vtabs a[aria-current="page"]{color:var(--action);border-bottom-color:var(--action)}
+.view{display:grid;gap:16px}
+
+/* catatan bernomor */
+.mk{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:var(--anno);color:var(--on-dark);font:700 11px/1 var(--f-body);flex:none;vertical-align:middle}
+body.no-notes .mk{display:none}
+.notes{background:var(--frame);border:1px solid var(--canvas-line);border-radius:var(--r-card);padding:16px}
+.notes h2{margin:0 0 10px;font-family:var(--f-head);font-size:var(--fs-16);line-height:var(--lh-16)}
+.notes ol{margin:0;padding:0;list-style:none;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.notes li{display:grid;grid-template-columns:18px 1fr;gap:8px;font-size:var(--fs-13);line-height:var(--lh-13);color:var(--neutral)}
+.notes li b{color:var(--text)}
+.notes li .mk{margin-top:0}
+body.no-notes .notes li{grid-template-columns:1fr}
+
+/* ── bingkai aplikasi desktop ── */
+.app{background:var(--app-bg);border:1px solid var(--line-2);border-radius:var(--r-card);overflow:hidden;overflow:clip;box-shadow:var(--shadow)}
+.topbar{height:52px;background:var(--frame);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 14px}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-head);font-weight:700;font-size:var(--fs-16);white-space:nowrap}
+.brand i{width:26px;height:26px;border-radius:8px;background:var(--navy);color:var(--on-dark);display:grid;place-items:center;font:700 12px/1 var(--f-body);font-style:normal}
+.tb-sp{flex:1}
+.ent{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--field);border-radius:var(--r-ctl);background:var(--frame);font-size:var(--fs-13);font-weight:600;white-space:nowrap}
+.tb-meta{font-size:var(--fs-12);color:var(--text-2);white-space:nowrap}
+.app-body{display:grid;grid-template-columns:196px minmax(0,1fr);min-height:620px}
+.side{background:var(--frame);border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.side p{margin:8px 8px 4px;font-size:var(--fs-12);color:var(--text-2);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.side span{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-ctl);font-size:var(--fs-13);color:var(--neutral)}
+.side span.on{background:var(--action-soft);color:var(--action);font-weight:700}
+.app-main{position:relative;padding:16px;display:grid;gap:12px;align-content:start;min-width:0}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ph-title{margin:0;font-family:var(--f-head);font-size:var(--fs-20);line-height:var(--lh-20);font-weight:700;display:flex;gap:8px;align-items:center}
+.ph-sub{margin:2px 0 0;font-size:var(--fs-13);color:var(--text-2)}
+.ph-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:relative}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--field);border-radius:var(--r-ctl);background:var(--frame);font-size:var(--fs-13);font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--neutral-soft)}
+.btn.sm{min-height:32px;padding:0 10px;font-size:var(--fs-12)}
+.btn.primary{background:var(--action);border-color:var(--action);color:var(--on-dark)}
+.btn.primary:hover{background:var(--action-hover)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.linkbtn{border:0;background:none;padding:0;color:var(--action);font-weight:700;cursor:pointer;font-size:inherit;text-decoration:underline;text-underline-offset:2px}
+
+.scope{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:var(--frame);border:1px solid var(--line);border-radius:var(--r-ctl);font-size:var(--fs-13)}
+.scope .ic{color:var(--action)}
+.scope select{min-height:32px;border:1px solid var(--field);border-radius:8px;background:var(--frame);padding:0 8px;font-size:var(--fs-13);font-weight:600}
+.scope .sep{color:var(--text-2)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.metric{display:grid;gap:2px;text-align:left;padding:10px 12px;background:var(--frame);border:1px solid var(--line);border-radius:var(--r-ctl);cursor:pointer}
+.metric:hover{border-color:var(--line-2)}
+.metric[aria-pressed="true"]{border-color:var(--action);box-shadow:inset 0 0 0 1px var(--action)}
+.metric small{font-size:var(--fs-12);color:var(--text-2);font-weight:600;display:flex;gap:6px;align-items:center}
+.metric b{font-family:var(--f-head);font-size:var(--fs-24);line-height:var(--lh-24);font-variant-numeric:tabular-nums}
+.metric.t-bad b{color:var(--bad)} .metric.t-warn b{color:var(--warn)} .metric.t-info b{color:var(--action)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border:1px solid var(--line-2);border-radius:999px;background:var(--frame);font-size:var(--fs-13);font-weight:600;cursor:pointer;color:var(--neutral)}
+.chip .n{font-size:var(--fs-12);color:var(--text-2);font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--action-soft);border-color:var(--action);color:var(--action)}
+.chip[aria-pressed="true"] .n{color:var(--action)}
+
+.tblwrap{background:var(--frame);border:1px solid var(--line);border-radius:var(--r-ctl);overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--fs-13);line-height:var(--lh-13)}
+.tbl th{position:sticky;top:0;background:var(--frame);text-align:left;font-size:var(--fs-12);line-height:var(--lh-12);letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover{background:#F7F9FC}
+.tbl tbody tr[aria-selected="true"]{background:var(--action-soft)}
+.tbl .th-num{text-align:right}
+.doc{font-family:var(--f-mono);font-weight:700;font-size:var(--fs-13)}
+.flags{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.prog{display:grid;gap:3px;min-width:96px}
+.prog small{font-size:var(--fs-12);color:var(--text-2);font-variant-numeric:tabular-nums}
+.bar{display:block;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--action);border-radius:999px}
+.bar.done i{background:var(--ok-solid)}
+.bar.lg{height:10px}
+.late{color:var(--bad);font-weight:700}
+.pager{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:var(--fs-12);color:var(--text-2);font-variant-numeric:tabular-nums}
+.pager b{color:var(--text)}
+
+/* lencana status (nada) & jenis tugas (kategori) */
+.sb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:var(--fs-12);line-height:var(--lh-12);font-weight:700;white-space:nowrap}
+.sb .ic{width:13px;height:13px}
+.sb-neutral{background:var(--neutral-soft);color:var(--neutral)}
+.sb-info{background:var(--action-soft);color:var(--action)}
+.sb-ok{background:var(--ok-soft);color:var(--ok)}
+.sb-warn{background:var(--warn-soft);color:var(--warn)}
+.sb-bad{background:var(--bad-soft);color:var(--bad)}
+.sb-special{background:var(--special-soft);color:var(--special)}
+.tt{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:var(--fs-13);white-space:nowrap}
+.tt .tti{width:24px;height:24px;border-radius:7px;display:grid;place-items:center}
+.tt .tti .ic{width:14px;height:14px}
+.tt-blue{color:var(--action)} .tt-blue .tti{background:var(--action-soft)}
+.tt-navy{color:var(--navy)} .tt-navy .tti{background:var(--navy-soft)}
+.tt-purple{color:var(--special)} .tt-purple .tti{background:var(--special-soft)}
+.tt-grey{color:var(--neutral)} .tt-grey .tti{background:var(--neutral-soft)}
+.pt{display:inline-flex;align-items:center;padding:1px 6px;border:1px solid var(--line-2);border-radius:6px;font-size:var(--fs-12);line-height:var(--lh-12);font-weight:700;color:var(--neutral);background:var(--frame);white-space:nowrap}
+
+/* panel rincian (drawer) */
+.drawer{position:absolute;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--frame);border-left:1px solid var(--line-2);box-shadow:-12px 0 32px rgba(20,28,45,.12);z-index:5}
+.drawer-in{position:sticky;top:0;max-height:min(100vh,100%);overflow:auto;padding:16px;display:grid;gap:14px;align-content:start}
+.dr-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.dr-id{font-family:var(--f-mono);font-size:var(--fs-20);line-height:var(--lh-20);font-weight:700;margin:6px 0 4px;word-break:break-all}
+.x{border:1px solid var(--line-2);background:var(--frame);border-radius:8px;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;flex:none}
+.dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 10px;margin:0;font-size:var(--fs-13)}
+.dl dt{color:var(--text-2)} .dl dd{margin:0;min-width:0}
+.sec-t{margin:0 0 6px;font-size:var(--fs-12);letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);font-weight:700}
+.minitbl{width:100%;border-collapse:collapse;font-size:var(--fs-13)}
+.minitbl td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.minitbl td+td{padding-left:8px}
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:var(--fs-13)}
+.tl li{display:grid;grid-template-columns:72px 1fr;gap:8px}
+.tl time{color:var(--text-2);font-variant-numeric:tabular-nums}
+.ok-note{padding:8px 10px;border-radius:8px;background:var(--ok-soft);color:var(--ok);font-size:var(--fs-13);font-weight:600;display:flex;gap:6px;align-items:center}
+.info-note{padding:8px 10px;border-radius:8px;background:var(--neutral-soft);color:var(--neutral);font-size:var(--fs-13)}
+.row-act{display:flex;gap:8px;flex-wrap:wrap}
+.assign{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.assign select{min-height:32px;border:1px solid var(--field);border-radius:8px;padding:0 8px;background:var(--frame);font-size:var(--fs-13)}
+
+.menu{position:absolute;top:40px;right:0;z-index:6;width:280px;background:var(--frame);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:grid;gap:2px}
+.menu button{display:block;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+.menu button:hover{background:var(--neutral-soft)}
+.menu b{display:block;font-size:var(--fs-13)} .menu small{display:block;font-size:var(--fs-12);color:var(--text-2)}
+.menu .ok-note{margin:4px}
+
+/* ── HP C72 ── */
+.hp-split{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start}
+.phone{width:384px;border:10px solid var(--device);border-radius:38px;background:var(--device);box-shadow:var(--shadow)}
+.screen{position:relative;height:780px;border-radius:28px;overflow:hidden;background:var(--app-bg);display:flex;flex-direction:column}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:6px 18px 4px;font-size:var(--fs-12);font-weight:700;background:var(--frame)}
+.abar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--frame);border-bottom:1px solid var(--line);min-height:56px}
+.abar h3{margin:0;font-family:var(--f-head);font-size:var(--fs-20);line-height:var(--lh-20);flex:1}
+.abar-t{flex:1;min-width:0;display:grid}
+.abar-type{font-size:var(--fs-14);font-weight:700;display:flex;gap:6px;align-items:center}
+.abar-doc{font-size:var(--fs-16);font-weight:700}
+.ib{width:44px;height:44px;border:0;background:none;border-radius:12px;display:grid;place-items:center;cursor:pointer;flex:none}
+.ib:hover{background:var(--neutral-soft)}
+.net{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-14);font-weight:700;white-space:nowrap}
+.net::before{content:"";width:9px;height:9px;border-radius:99px;background:var(--ok-solid)}
+.net.off{color:var(--warn)} .net.off::before{background:var(--warn)}
+.offbar{padding:8px 14px;background:var(--warn-soft);color:var(--warn);font-size:var(--fs-14);font-weight:700;display:flex;gap:6px;align-items:center}
+.hscope{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 14px;background:var(--frame);border-bottom:1px solid var(--line);font-size:var(--fs-14);color:var(--neutral)}
+.hscope .ic{color:var(--action)}
+.hbody{flex:1;overflow:auto;padding:12px 12px 16px;display:grid;gap:10px;align-content:start}
+.hdoc{font-size:var(--fs-14);color:var(--text-2)}
+.hprog{background:var(--frame);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.hprog-l{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:var(--fs-14);color:var(--neutral)}
+.hprog-l .big{font-family:var(--f-head);font-size:var(--fs-24);line-height:var(--lh-24);font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--neutral-soft);border-radius:12px;padding:3px;gap:3px}
+.seg button{min-height:44px;border:0;border-radius:10px;background:none;font-size:var(--fs-14);font-weight:700;color:var(--neutral);cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
+.seg button[aria-pressed="true"]{background:var(--frame);color:var(--action);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.hscan{display:flex;gap:8px}
+.hscan input{flex:1;min-width:0;height:56px;border:2px solid var(--action);border-radius:12px;padding:0 12px;font-size:var(--fs-16);background:var(--frame)}
+.hscan input::placeholder{color:var(--text-2)}
+.hscan .ib{width:56px;height:56px;border:1px solid var(--field);background:var(--frame)}
+.trigger{min-height:56px;border:0;border-radius:12px;background:var(--navy);color:var(--on-dark);font-size:var(--fs-16);font-weight:700;display:flex;gap:8px;align-items:center;justify-content:center;cursor:pointer}
+.banner{display:grid;grid-template-columns:32px 1fr;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid}
+.banner b{display:block;font-size:var(--fs-16);line-height:var(--lh-16);letter-spacing:.02em}
+.banner .btxt{display:block;font-size:var(--fs-16);line-height:var(--lh-16);color:var(--text)}
+.banner small{display:block;font-size:var(--fs-12);color:var(--text-2);margin-top:2px}
+.bico{width:32px;height:32px;border-radius:99px;display:grid;place-items:center;color:var(--on-dark)}
+.b-ok{background:var(--ok-soft);border-color:#B7DEC4} .b-ok b{color:var(--ok)} .b-ok .bico{background:var(--ok-solid)}
+.b-warn{background:var(--warn-soft);border-color:#F1CF9C} .b-warn b{color:var(--warn)} .b-warn .bico{background:var(--warn)}
+.b-bad{background:var(--bad-soft);border-color:#F2B8B5} .b-bad b{color:var(--bad)} .b-bad .bico{background:var(--bad-solid)}
+.b-info{background:var(--action-soft);border-color:#B9D2F5} .b-info b{color:var(--action)} .b-info .bico{background:var(--action)}
+.b-neutral{background:var(--neutral-soft);border-color:var(--line-2)} .b-neutral b{color:var(--neutral)} .b-neutral .bico{background:var(--neutral)}
+.hchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.hchips .chip{min-height:36px;font-size:var(--fs-14);flex:none}
+.hlist{list-style:none;margin:0;padding:0;background:var(--frame);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.hrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:58px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.hrow:last-child{border-bottom:0}
+.hrow .hst{width:28px;height:28px;border-radius:99px;display:grid;place-items:center}
+.hrow.s-wait .hst{border:2px solid var(--field)}
+.hrow.s-ok .hst{background:var(--ok-solid);color:var(--on-dark)}
+.hrow.s-warn .hst{background:var(--warn);color:var(--on-dark)}
+.hrow.s-bad .hst{background:var(--bad-solid);color:var(--on-dark)}
+.hrow.s-info .hst{background:var(--action);color:var(--on-dark)}
+.hrow b{display:block;font-size:var(--fs-16);line-height:var(--lh-16)}
+.hrow .sub{display:block;font-size:var(--fs-14);color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow .len{text-align:right;font-size:var(--fs-16);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hrow .len small{display:block;font-size:var(--fs-12);font-weight:600;color:var(--text-2)}
+.hgroup{margin:6px 2px 0;font-size:var(--fs-14);font-weight:700;color:var(--neutral);display:flex;justify-content:space-between}
+.hfoot{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:10px 12px;background:var(--frame);border-top:1px solid var(--line)}
+.hfoot .why{grid-column:1/-1;margin:0;font-size:var(--fs-14);color:var(--warn);font-weight:600}
+.btn-touch{min-height:56px;padding:0 14px;border:1px solid var(--field);border-radius:12px;background:var(--frame);font-size:var(--fs-16);font-weight:700;cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center}
+.btn-cta{min-height:56px;width:100%;border:0;border-radius:12px;background:var(--action);color:var(--on-dark);font-size:var(--fs-16);font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center;justify-content:center;padding:0 12px}
+.btn-cta:hover{background:var(--action-hover)}
+.btn-cta[disabled]{background:#9DB4D6;cursor:not-allowed}
+.btn-cta.warn{background:var(--warn)}
+.hcard{display:grid;gap:4px;text-align:left;width:100%;background:var(--frame);border:1px solid var(--line);border-left:5px solid var(--neutral);border-radius:12px;padding:10px 12px;cursor:pointer;min-height:64px}
+.hcard:hover{border-color:var(--line-2)}
+.hcard.c-blue{border-left-color:var(--action)} .hcard.c-navy{border-left-color:var(--navy)} .hcard.c-purple{border-left-color:var(--special)} .hcard.c-grey{border-left-color:var(--neutral)}
+.hcard-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.hcard-doc{font-size:var(--fs-16);font-weight:700}
+.hcard-meta{font-size:var(--fs-14);color:var(--text-2)}
+.hcard .tt{font-size:var(--fs-14)}
+.next{background:var(--frame);border:1px solid var(--action);border-radius:14px;padding:12px;display:grid;gap:8px}
+.next-lbl{margin:0;font-size:var(--fs-14);font-weight:700;color:var(--action);display:flex;gap:6px;align-items:center}
+.next-doc{font-size:var(--fs-16);font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.next-why{margin:0;font-size:var(--fs-14);color:var(--neutral)}
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--frame);border-top:1px solid var(--line)}
+.tabbar > span{min-height:56px;display:grid;place-items:center;align-content:center;gap:2px;font-size:var(--fs-12);font-weight:700;color:var(--text-2)}
+.tabbar > span.on{color:var(--action)}
+.tabbar .cnt{display:inline-block;margin-left:4px;padding:0 6px;border-radius:99px;background:var(--bad-solid);color:var(--on-dark);font-size:11px;line-height:16px}
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:8}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--frame);border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:14px 14px 16px;display:grid;gap:10px;max-height:86%;overflow:auto}
+.sheet h4{margin:0;font-family:var(--f-head);font-size:var(--fs-20);line-height:var(--lh-20)}
+.sheet p{margin:0;font-size:var(--fs-16);line-height:var(--lh-16);color:var(--neutral)}
+.grab{width:40px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 2px}
+.opt{display:flex;gap:10px;align-items:center;min-height:52px;padding:8px 12px;border:1px solid var(--line-2);border-radius:12px;background:var(--frame);font-size:var(--fs-16);cursor:pointer;text-align:left;width:100%}
+.opt input{width:20px;height:20px;accent-color:var(--action);flex:none}
+.opt small{display:block;font-size:var(--fs-14);color:var(--text-2)}
+.err{margin:0;color:var(--bad);font-size:var(--fs-14);font-weight:700;display:flex;gap:6px;align-items:center}
+.done{display:grid;gap:12px;justify-items:center;text-align:center;padding:16px 4px}
+.done-ic{width:64px;height:64px;border-radius:99px;display:grid;place-items:center;color:var(--on-dark)}
+.done-ic.ok{background:var(--ok-solid)} .done-ic.warn{background:var(--warn)}
+.done h3{margin:0;font-family:var(--f-head);font-size:var(--fs-20);line-height:var(--lh-20)}
+.done p{margin:0;font-size:var(--fs-16);color:var(--neutral)}
+.done ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;width:100%;text-align:left}
+.done li{background:var(--frame);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:var(--fs-14);display:flex;gap:8px;align-items:flex-start}
+.done .next{width:100%;text-align:left}
+.side-panel{display:grid;gap:16px;align-content:start;min-width:0}
+.sim{background:var(--frame);border:1px solid var(--canvas-line);border-radius:var(--r-card);padding:14px;display:grid;gap:10px}
+.sim h2{margin:0;font-family:var(--f-head);font-size:var(--fs-16)}
+.sim p{margin:0;font-size:var(--fs-13);color:var(--text-2)}
+.sim-btns{display:flex;flex-wrap:wrap;gap:8px}
+.sim .why{font-size:var(--fs-12);color:var(--text-2)}
+
+/* ── penampil roll ── */
+.figs{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.2fr;gap:8px}
+.fig{background:var(--frame);border:1px solid var(--line);border-radius:var(--r-ctl);padding:10px 12px;display:grid;gap:4px;align-content:start;min-width:0}
+.fig > small{font-size:var(--fs-12);font-weight:700;color:var(--text-2);display:flex;gap:6px;align-items:center}
+.fig .v{font-family:var(--f-head);font-size:var(--fs-20);line-height:var(--lh-20);font-weight:700;font-variant-numeric:tabular-nums}
+.fig .v em{font-style:normal;font-family:var(--f-body);font-size:var(--fs-13);font-weight:600;color:var(--text-2)}
+.fig .cap{font-size:var(--fs-12);color:var(--text-2)}
+.fig .glob{display:flex;justify-content:space-between;gap:8px;align-items:center;width:100%;border:0;border-top:1px dashed var(--line-2);margin-top:4px;padding:6px 0 0;background:none;cursor:pointer;text-align:left;font-size:var(--fs-13);color:var(--neutral)}
+.fig .glob b{font-variant-numeric:tabular-nums;color:var(--text)}
+.fig .glob:hover b{color:var(--action)}
+.breakdown{background:var(--frame);border:1px solid var(--action);border-radius:var(--r-ctl);padding:12px;display:grid;gap:10px}
+.bd-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.bd-head h3{margin:0;font-size:var(--fs-14)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:6px 10px;border-radius:8px;font-size:var(--fs-13);font-weight:700;color:var(--neutral);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--action-soft);color:var(--action)}
+.bd-tbl{width:100%;border-collapse:collapse;font-size:var(--fs-13)}
+.bd-tbl td,.bd-tbl th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.bd-tbl th{font-size:var(--fs-12);color:var(--text-2);text-transform:uppercase;letter-spacing:.04em}
+.bd-tbl .num{text-align:right}
+.bd-tbl tr.tot td{font-weight:700;border-bottom:0}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border:1px solid var(--field);border-radius:var(--r-ctl);background:var(--frame);flex:1 1 280px;max-width:420px}
+.search input{border:0;outline:0;flex:1;min-width:0;font-size:var(--fs-13);background:none}
+.search .ic{color:var(--text-2)}
+.sel{min-height:36px;border:1px solid var(--field);border-radius:var(--r-ctl);background:var(--frame);padding:0 8px;font-size:var(--fs-13);font-weight:600;max-width:100%}
+.viewbox{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.viewbox .lbl{font-size:var(--fs-12);color:var(--text-2);font-weight:700}
+.dirty{color:var(--warn);font-weight:700;font-size:var(--fs-13)}
+.savebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;background:var(--frame);border:1px solid var(--line-2);border-radius:var(--r-ctl)}
+.savebox input{min-height:36px;border:1px solid var(--field);border-radius:var(--r-ctl);padding:0 10px;font-size:var(--fs-13);min-width:0;flex:1 1 180px}
+.gtbl td:first-child{white-space:nowrap}
+.gtbl tr.g td{background:#FAFBFD;cursor:pointer}
+.gtbl tr.g1 td{font-weight:700;background:#F3F5F9}
+.gtbl tr.g:hover td{background:#EEF2F8}
+.gname{display:inline-flex;align-items:center;gap:6px}
+.gname .tw{width:20px;height:20px;display:grid;place-items:center;border-radius:6px;color:var(--neutral);transition:transform .15s}
+.gname .tw.open{transform:rotate(90deg)}
+.gname .cnt{font-weight:600;color:var(--text-2);font-size:var(--fs-12)}
+.sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.25);display:inline-block;flex:none}
+.l1{padding-left:10px} .l2{padding-left:30px} .l3{padding-left:50px} .l4{padding-left:74px}
+.smallline{display:block;font-size:var(--fs-12);color:var(--text-2);font-weight:600}
+.stmix{display:flex;gap:4px;flex-wrap:wrap}
+.lblbox{display:grid;gap:6px}
+.lblbox canvas{width:350px;max-width:100%;height:auto;aspect-ratio:70/22;border:1px solid var(--line-2);border-radius:6px;background:var(--frame)}
+.lblbox p{margin:0;font-size:var(--fs-12);color:var(--text-2)}
+
+/* ── nilai ── */
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.q{background:var(--frame);border:1px solid var(--canvas-line);border-radius:var(--r-card);padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.q h3{margin:0;font-size:var(--fs-14);line-height:var(--lh-14);display:flex;gap:8px;align-items:flex-start}
+.q h3 .qn{flex:none;width:22px;height:22px;border-radius:99px;background:var(--neutral-soft);display:grid;place-items:center;font-size:var(--fs-12)}
+.q p{margin:0;font-size:var(--fs-13);color:var(--neutral)}
+.q label{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:var(--fs-13);cursor:pointer}
+.q label:has(input:checked){border-color:var(--action);background:var(--action-soft)}
+.q input[type=radio]{margin:2px 0 0;accent-color:var(--action);flex:none}
+.q .rec{font-size:var(--fs-12);font-weight:700;color:var(--ok)}
+.answer{background:var(--frame);border:1px solid var(--canvas-line);border-radius:var(--r-card);padding:14px;display:grid;gap:10px}
+.answer textarea{width:100%;min-height:72px;border:1px solid var(--field);border-radius:var(--r-ctl);padding:8px 10px;font-size:var(--fs-13);resize:vertical}
+.answer pre{margin:0;white-space:pre-wrap;font-family:var(--f-mono);font-size:var(--fs-12);line-height:var(--lh-12);background:var(--app-bg);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto}
+.answer .row-act{align-items:center}
+.answer label.field{font-size:var(--fs-12);font-weight:700;color:var(--neutral)}
+
+@media (max-width:1060px){
+  .hp-split{grid-template-columns:1fr;justify-items:center}
+  .side-panel{width:100%}
+}
+@media (max-width:900px){
+  .app-body{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .figs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tb-meta{display:none}
+}
+@media (max-width:560px){
+  .topbar{padding:0 10px}
+  .brand span{display:none}
+  .ent.user{display:none}
+  .figs{grid-template-columns:minmax(0,1fr)}
+  .app-main{padding:12px}
+  .intro h1{font-size:24px;line-height:30px}
+}
+@media (max-width:420px){
+  .phone{width:100%;border-width:6px;border-radius:26px}
+  .screen{height:720px;border-radius:20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="page">
+  <header class="intro">
+    <p class="eyebrow">KNHOST · mockup untuk dinilai pemilik · 10 Nov 2026</p>
+    <h1>Pusat Tugas Gudang dan Penampil Roll</h1>
+    <p class="lede">Rancangan layar sebelum dibangun, mengikuti Standar UI Gudang (KN_37) dan riset B4. Semua data di sini contoh, bukan data produksi. Klik baris tugas, coba memindai di layar HP, dan buka grup roll. Di bagian <b>Butir untuk dinilai</b>, pilih setuju atau ubah, lalu salin jawabannya ke chat.</p>
+    <label class="toggle" for="noteToggle"><input type="checkbox" id="noteToggle" checked> Tampilkan nomor catatan rancangan</label>
+  </header>
+
+  <nav class="vtabs" aria-label="Bagian mockup">
+    <a href="#desktop" data-view="desktop">Pusat Tugas · desktop</a>
+    <a href="#hp" data-view="hp">HP C72 · pindai per dokumen</a>
+    <a href="#roll" data-view="roll">Penampil roll</a>
+    <a href="#nilai" data-view="nilai">Butir untuk dinilai</a>
+  </nav>
+
+  <section id="v-desktop" class="view" aria-label="Pusat Tugas Gudang, desktop supervisor">
+    <div class="app">
+      <div class="topbar" id="dTop"></div>
+      <div class="app-body">
+        <nav class="side" id="dSide" aria-label="Menu aplikasi (contoh)"></nav>
+        <main class="app-main" id="dMain"></main>
+      </div>
+    </div>
+    <aside class="notes">
+      <h2>Catatan rancangan · Pusat Tugas desktop</h2>
+      <ol>
+        <li><span class="mk">1</span><span><b>Cakupan selalu terlihat.</b> Lokasi kerja dan gedung di atas daftar; tugas lintas PT yang ditugaskan, tiap baris berlabel PT (K-B1-02). Ganti cakupan = pilihan sadar.</span></li>
+        <li><span class="mk">2</span><span><b>Empat angka ringkasan sekaligus saringan.</b> Klik "Lewat tenggat" untuk melihat hanya itu. Angka mengikuti cakupan.</span></li>
+        <li><span class="mk">3</span><span><b>Jenis tugas = ikon + label + warna kategori</b> (biru, biru tua, ungu, abu). Hijau, kuning, merah hanya untuk status. Sampel (ungu) dibedakan dari Keluar SO.</span></li>
+        <li><span class="mk">4</span><span><b>Status = ikon + teks + warna.</b> Urutan bawaan: lewat tenggat, perlu diperiksa, sedang dikerjakan, lalu tenggat terdekat.</span></li>
+        <li><span class="mk">5</span><span><b>Klik baris membuka panel rincian</b> tanpa meninggalkan daftar: tetapkan petugas, lihat baris dokumen, buka simulasi HP.</span></li>
+        <li><span class="mk">6</span><span><b>Penanda keputusan 10 Nov:</b> "Minta inspeksi", "1 SJ → GRN per PT", "Karantina retur, nilai saat settle", tolak QC "ganti barang / potong tagihan".</span></li>
+        <li><span class="mk">7</span><span><b>Unduh Excel/CSV</b> mengikuti saringan dan cakupan yang sedang tampil (komponen FIX-4).</span></li>
+      </ol>
+    </aside>
+  </section>
+
+  <section id="v-hp" class="view" aria-label="Aplikasi HP C72" hidden>
+    <div class="hp-split">
+      <div class="phone"><div class="screen" id="hpScreen"></div></div>
+      <div class="side-panel">
+        <div class="sim" id="hpSim"></div>
+        <aside class="notes">
+          <h2>Catatan rancangan · HP C72</h2>
+          <ol>
+            <li><span class="mk">1</span><span><b>Satu antrean "Tugas saya"</b> untuk semua jenis tugas di gedung lokasi kerja, lintas PT. Tombol <b>Tugas berikutnya</b> menyebut alasannya.</span></li>
+            <li><span class="mk">2</span><span><b>Per dokumen:</b> buka dokumen, lihat harapan, pindai, lihat selisih, tutup. Bukan memindai roll satu per satu tanpa konteks.</span></li>
+            <li><span class="mk">3</span><span><b>Pemindai fisik C72 utama.</b> Kamera hanya cadangan. Ketik nomor roll hanya lewat Pengecualian dengan izin.</span></li>
+            <li><span class="mk">4</span><span><b>Progres roll dulu, lalu meter.</b> Angka besar 24 px agar terbaca sambil berjalan.</span></li>
+            <li><span class="mk">5</span><span><b>Hasil pindai = ikon + judul + bunyi berbeda</b> (bip pendek, dua bip, getar panjang), tidak mengandalkan warna saja.</span></li>
+            <li><span class="mk">6</span><span><b>Empat kelompok:</b> Belum · Cocok · Di luar dokumen · Masalah. Roll di luar dokumen tidak ikut dimuat.</span></li>
+            <li><span class="mk">7</span><span><b>Mode RFID:</b> tekan pemicu, semua tag di jangkauan terbaca sekaligus, tiap roll menunjukkan jumlah baca.</span></li>
+            <li><span class="mk">8</span><span><b>Selesai dengan selisih boleh</b>, alasan wajib, masuk antrean Perlu diperiksa supervisor (kuning, tidak mengunci).</span></li>
+            <li><span class="mk">9</span><span><b>Sinyal putus:</b> pindaian tetap dicek terhadap dokumen tersimpan dan diantre; Selesai menunggu koneksi.</span></li>
+          </ol>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-roll" class="view" aria-label="Penampil roll" hidden>
+    <div class="app">
+      <div class="topbar" id="rTop"></div>
+      <div class="app-body">
+        <nav class="side" id="rSide" aria-label="Menu aplikasi (contoh)"></nav>
+        <main class="app-main" id="rMain"></main>
+      </div>
+    </div>
+    <aside class="notes">
+      <h2>Catatan rancangan · Penampil roll</h2>
+      <ol>
+        <li><span class="mk">1</span><span><b>Dua angka stok:</b> lokal (PT aktif × lokasi kerja) dan Total grup (semua PT). Klik angka kedua untuk rincian per lokasi, PT, status, dan barang akan datang.</span></li>
+        <li><span class="mk">2</span><span><b>Stok Fisik = Tersedia + Dipesan + Lainnya.</b> Dalam perjalanan tampil di baris sendiri, tidak disembunyikan dan tidak dijumlah ke stok fisik.</span></li>
+        <li><span class="mk">3</span><span><b>Tampilan tersimpan</b> pribadi atau dibagikan ke peran/PT; tanda * muncul bila saringan berubah.</span></li>
+        <li><span class="mk">4</span><span><b>Cari dengan memindai</b> label roll ke kotak cari, atau ketik nomor roll, lot, warna.</span></li>
+        <li><span class="mk">5</span><span><b>Hierarki Produk › Warna › Lot › Roll</b>, grup tertutup bawaan, agregat di tiap grup (jumlah roll, total meter, tersedia, min–maks, jumlah lokasi).</span></li>
+        <li><span class="mk">6</span><span><b>Baris roll:</b> nomor roll mono, sisa (dan panjang awal bila sudah dipotong), lokasi, lencana status, PT, umur.</span></li>
+        <li><span class="mk">7</span><span><b>Rincian roll di panel samping</b> dengan pratinjau label 70 × 22 mm dan riwayat roll.</span></li>
+        <li><span class="mk">8</span><span><b>Halaman dari server</b> (100 roll per halaman) dan Unduh mengikuti saringan.</span></li>
+      </ol>
+    </aside>
+  </section>
+
+  <section id="v-nilai" class="view" aria-label="Butir untuk dinilai" hidden>
+    <div class="qgrid" id="qGrid"></div>
+    <div class="answer">
+      <label class="field" for="qNote">Catatan lain untuk mockup ini (opsional)</label>
+      <textarea id="qNote" placeholder="Misalnya: kolom yang kurang, istilah yang dipakai di lapangan, urutan tugas yang biasa."></textarea>
+      <div class="row-act">
+        <button class="btn primary" id="qCopy" type="button">Salin jawaban</button>
+        <span id="qCopyMsg" class="muted" role="status"></span>
+      </div>
+      <pre id="qPreview" aria-label="Teks jawaban yang akan disalin"></pre>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ───────── ikon (gaya lucide, garis) ───────── */
+var IC = {
+  pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  clip:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+  clipcheck:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  scissors:'<circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/>',
+  swap:'<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  pkg:'<path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><path d="M3.29 7 12 12l8.71-5"/><path d="M12 22V12"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  radio:'<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  circle:'<circle cx="12" cy="12" r="9"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  cam:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  left:'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  right:'<path d="m9 18 6-6-6-6"/>',
+  down:'<path d="m6 9 6 6 6-6"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  eye:'<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/>',
+  split:'<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>',
+  printer:'<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  wifioff:'<path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/>',
+  layers:'<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  save:'<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>'
+};
+function icon(n, cls){ return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (IC[n] || '') + '</svg>'; }
+
+var nf1 = new Intl.NumberFormat('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1});
+var nf0 = new Intl.NumberFormat('id-ID');
+function m1(v){ return nf1.format(v); }
+function n0(v){ return nf0.format(v); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function sum(a, f){ var s = 0; for (var i = 0; i < a.length; i++) s += f(a[i]); return s; }
+function range(a, b){ var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+function store(k, v){ try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } return null; }
+
+/* ───────── kamus: jenis tugas, status, PT ───────── */
+var TYPES = {
+  terima:{label:'Terima barang', icon:'pkg', tone:'navy'},
+  putaway:{label:'Penempatan Rak', icon:'pin', tone:'navy'},
+  so:{label:'Keluar SO', icon:'clip', tone:'blue'},
+  sampel:{label:'Sampel', icon:'scissors', tone:'purple'},
+  potong:{label:'Potong', icon:'scissors', tone:'grey'},
+  transfer:{label:'Transfer', icon:'swap', tone:'blue'},
+  opname:{label:'Stock Opname', icon:'clipcheck', tone:'grey'},
+  qc:{label:'QC', icon:'shield', tone:'grey'},
+  retur:{label:'Retur penjualan', icon:'undo', tone:'navy'},
+  gate:{label:'Periksa gate', icon:'radio', tone:'grey'}
+};
+var TYPE_ORDER = ['so','sampel','potong','putaway','terima','transfer','retur','qc','opname','gate'];
+var ST = {
+  belum:{label:'Belum mulai', tone:'neutral', icon:'circle'},
+  jalan:{label:'Sedang dikerjakan', tone:'info', icon:'clock'},
+  tunggu:{label:'Menunggu gate', tone:'info', icon:'clock'},
+  periksa:{label:'Perlu diperiksa', tone:'warn', icon:'alert'},
+  lewat:{label:'Lewat tenggat', tone:'bad', icon:'alert'},
+  siap:{label:'Selesai', tone:'ok', icon:'check'}
+};
+var PTN = {KSC:'PT KSC', CST:'PT CST', SKC:'PT Sukacita', all:'Semua PT'};
+var PTS = {KSC:'KSC', CST:'CST', SKC:'Sukacita', all:'Semua PT'};
+function tt(type){ var t = TYPES[type]; return '<span class="tt tt-' + t.tone + '"><span class="tti">' + icon(t.icon) + '</span><span>' + t.label + '</span></span>'; }
+function sb(key, label){ var s = ST[key]; return '<span class="sb sb-' + s.tone + '">' + icon(s.icon) + esc(label || s.label) + '</span>'; }
+function sbt(tone, ic, label){ return '<span class="sb sb-' + tone + '">' + icon(ic) + esc(label) + '</span>'; }
+function ptChip(p){ return '<span class="pt" title="' + PTN[p] + '">' + PTS[p] + '</span>'; }
+var NOW_MIN = 9 * 60 + 40; // Selasa 10 Nov 2026, 09:40 WIB
+function toMin(hhmm){ if (!hhmm) return 99999; var p = hhmm.split(':'); return (+p[0]) * 60 + (+p[1]); }
+
+/* ───────── data HP (dipakai juga oleh desktop & penampil roll) ───────── */
+var LEN_A = [62.0,60.5,61.0,63.5,59.0,62.5,60.0,61.5,64.0,58.5,62.0,60.5];
+var LEN_B = [61.0,62.5,60.0,63.0,61.5,62.0,60.5,64.5];
+var SO_ROLLS = range(46670, 46681).map(function(n, i){
+  return {no:'RL-' + n, prod:'Katun Poplin 40s', color:'Navy', lot:'7A', loc:['WOV-A-R01-T1','WOV-A-R01-T2','WOV-A-R01-T3','WOV-A-R01-T4'][Math.floor(i / 3)], len:LEN_A[i]};
+}).concat(range(46690, 46697).map(function(n, i){
+  return {no:'RL-' + n, prod:'Rayon Twill', color:'Hitam', lot:'3C', loc:i < 5 ? 'WOV-A-R04-T1' : 'WOV-A-R04-T2', len:LEN_B[i]};
+}));
+var PA_LEN = [61.5,60.0,62.0,59.5,63.0,61.0,60.5,62.5,58.0,61.5,60.0,62.0,59.0,63.5];
+var PA_ROLLS = range(46850, 46863).map(function(n, i){
+  return {no:'RL-' + n, prod:'Katun Twill 30s Combed', color:'Abu Misty', lot:'6B', bin:['WOV-B-R03-T1','WOV-B-R03-T2','WOV-B-R03-T3'][Math.min(2, Math.floor(i / 5))], len:PA_LEN[i]};
+});
+var HP_TASKS = {
+  so1:{kind:'pick', type:'so', doc:'SORD-261110-0007', pt:'KSC', party:'Toko Kain Sinar Mulia', due:'10:30', rolls:SO_ROLLS,
+       outside:[{no:'RL-46702', why:'Lot 7B, pesanan meminta Lot 7A', loc:'WOV-A-R02-T1', len:61.0}],
+       problem:[{no:'RL-46612', why:'Karantina retur (tidak boleh dijual)', loc:'RET-Q-01', len:57.5}]},
+  pa1:{kind:'putaway', type:'putaway', doc:'PA-261110-0012', pt:'KSC', party:'Dari GRN-261110-0003 · tiba di Gate IN Woven 09:12', due:'12:00', rolls:PA_ROLLS},
+  smp1:{kind:'cut', type:'sampel', doc:'SMP-261110-0003', pt:'CST', party:'Sampel untuk Butik Laras', due:'11:00', unit:'potong',
+        rolls:[{no:'RL-46817', prod:'Katun Twill 30s Combed', color:'Khaki', lot:'5A', loc:'WOV-B-R01-T2', cut:1.0, len:60.0},
+               {no:'RL-46818', prod:'Katun Twill 30s Combed', color:'Khaki', lot:'5A', loc:'WOV-B-R01-T2', cut:1.0, len:61.5},
+               {no:'RL-46819', prod:'Katun Twill 30s Combed', color:'Khaki', lot:'5A', loc:'WOV-B-R01-T2', cut:0.5, len:59.5}]},
+  spk1:{kind:'cut', type:'potong', doc:'SPK-261110-0021', pt:'KSC', party:'Permintaan potong untuk SORD-261110-0009', due:'13:30', unit:'potong',
+        rolls:[{no:'RL-46682', prod:'Katun Poplin 40s', color:'Navy', lot:'7A', loc:'WOV-A-R01-T4', cut:12.5, len:62.0},
+               {no:'RL-46683', prod:'Katun Poplin 40s', color:'Navy', lot:'7A', loc:'WOV-A-R01-T4', cut:12.0, len:61.0}]}
+};
+var HP_KEYS = ['so1','smp1','pa1','spk1'];
+
+var hp = {screen:'list', task:null, online:true, queue:0, filter:'all', mode:'barcode', last:null, pending:null, sheet:null, sheetErr:'', reason:'', done:{}, prog:{}, result:null};
+function prog(key){
+  if (!hp.prog[key]) hp.prog[key] = {scanned:{}, outside:[], problem:[], reads:{}, log:[], exc:[]};
+  return hp.prog[key];
+}
+(function seed(){ var P = prog('so1'); SO_ROLLS.forEach(function(r, i){ if (i < 10 || i === 12 || i === 13) P.scanned[r.no] = true; }); })();
+
+function hpStats(key){
+  var T = HP_TASKS[key], P = prog(key);
+  var doneItems = T.rolls.filter(function(r){ return P.scanned[r.no]; });
+  if (T.kind === 'cut') return {total:T.rolls.length, totalM:sum(T.rolls, function(r){ return r.cut; }), done:doneItems.length, doneM:sum(doneItems, function(r){ return r.cut; })};
+  return {total:T.rolls.length, totalM:sum(T.rolls, function(r){ return r.len; }), done:doneItems.length, doneM:sum(doneItems, function(r){ return r.len; })};
+}
+
+/* ───────── data desktop ───────── */
+var TASKS = [
+  {id:'t1', type:'so', doc:'SORD-261110-0007', pt:'KSC', bld:'Woven', who:'Dedi', due:'10:30', st:'jalan', src:'Sales order · Toko Kain Sinar Mulia', hp:'so1'},
+  {id:'t2', type:'so', doc:'SORD-261110-0011', pt:'SKC', bld:'Knitting', who:null, due:'09:00', st:'lewat', rolls:8, m:412.0, done:0, doneM:0, src:'Sales order · CV Rajut Mandiri', lines:[['Cotton Combed 30s · Hitam · Lot K12', '8 roll', '412,0 m']]},
+  {id:'t3', type:'gate', doc:'SJ-261110-0042', pt:'KSC', bld:'Woven', who:'Rudi', due:null, st:'periksa', rolls:18, m:1098.5, done:18, doneM:1098.5, src:'Gate OUT Woven · lintasan 09:21', flags:[['warn','alert','1 roll terbaca di luar dokumen']], note:'Barang tetap jalan, gate tidak terkunci (kuning). Supervisor memastikan roll RL-46702 memang tidak ikut termuat.'},
+  {id:'t4', type:'sampel', doc:'SMP-261110-0003', pt:'CST', bld:'Woven', who:null, due:'11:00', st:'belum', src:'Sampel · Butik Laras', hp:'smp1', unit:'potong'},
+  {id:'t5', type:'putaway', doc:'PA-261110-0012', pt:'KSC', bld:'Woven', who:'Dedi', due:'12:00', st:'belum', src:'Dari GRN-261110-0003 · tiba di Gate IN 09:12', hp:'pa1'},
+  {id:'t6', type:'terima', doc:'GRN-261110-0004', pt:'SKC', bld:'Knitting', who:'Rina', due:'13:00', st:'jalan', rolls:32, m:1904.0, done:18, doneM:1071.0, src:'PO-261028-0019 · SJ supplier 88231', flags:[['special','eye','Minta inspeksi']], note:'Roll dari baris PO bertanda "minta inspeksi" otomatis diarahkan ke gedung inspeksi saat draf penempatan dibuat.'},
+  {id:'t7', type:'terima', doc:'GRN-261110-0005', pt:'KSC', bld:'Woven', who:null, due:'14:00', st:'belum', rolls:24, m:1452.0, done:0, doneM:0, src:'SJ supplier 88240 · PO-261030-0022', flags:[['info','split','1 SJ → 2 GRN per PT']], note:'Satu surat jalan supplier untuk dua PT dipecah: GRN-261110-0005 (PT KSC, 24 roll) dan GRN-261110-0006 (PT CST, 16 roll), masing-masing ke PO-nya.'},
+  {id:'t8', type:'terima', doc:'GRN-261110-0006', pt:'CST', bld:'Woven', who:null, due:'14:00', st:'belum', rolls:16, m:968.0, done:0, doneM:0, src:'SJ supplier 88240 · PO-261030-0023', flags:[['info','split','1 SJ → 2 GRN per PT']]},
+  {id:'t9', type:'potong', doc:'SPK-261110-0021', pt:'KSC', bld:'Woven', who:null, due:'13:30', st:'belum', src:'Permintaan potong · SORD-261110-0009', hp:'spk1', unit:'potong'},
+  {id:'t10', type:'transfer', doc:'TRF-261110-0005', pt:'CST', bld:'Woven → WH-JKT', who:'Dedi', due:'11:30', st:'tunggu', rolls:40, m:2412.0, done:40, doneM:2412.0, src:'Transfer ke Jakarta · dimuat di Dok OUT', note:'40 dari 40 roll sudah dimuat. Dokumen menunggu stacker lewat gate OUT Woven.'},
+  {id:'t11', type:'opname', doc:'OPN-261110-0001', pt:'all', bld:'Printing · Zona B', who:'Yanto', due:'16:00', st:'jalan', rolls:210, m:null, done:96, doneM:null, src:'Opname awal per gedung · hitung buta'},
+  {id:'t12', type:'qc', doc:'QC-261110-0009', pt:'SKC', bld:'Retur', who:null, due:'15:00', st:'belum', rolls:6, m:348.0, done:0, doneM:0, src:'Tolak QC dari GRN-261108-0002', flags:[['neutral','undo','Pilih: ganti barang / potong tagihan']], note:'Saat retur ke supplier dibuat, petugas memilih per kasus: ganti barang (PO dibuka lagi dengan tugas terima sisa) atau potong tagihan (PO ditutup kurang, tagihan dikurangi).'},
+  {id:'t13', type:'retur', doc:'SRET-261110-0002', pt:'KSC', bld:'Retur', who:'Asep', due:null, st:'jalan', rolls:4, m:226.5, done:4, doneM:226.5, src:'Retur penjualan · Toko Kain Sinar Mulia', flags:[['warn','alert','Karantina retur · nilai saat settle']], note:'Roll masuk stok saat dipindai sebagai karantina retur (tidak bisa dijual). Nilai dan jurnal ditetapkan saat retur di-settle.'},
+  {id:'t14', type:'putaway', doc:'PA-261110-0013', pt:'CST', bld:'Retur', who:null, due:'15:30', st:'belum', rolls:6, m:331.0, done:0, doneM:0, src:'Roll retur grade B → Gedung Retur'}
+];
+var RANK = {lewat:0, periksa:1, jalan:2, tunggu:3, belum:4, siap:5};
+var WORKERS = ['Dedi','Asep','Rina','Yanto'];
+
+function taskView(t){
+  if (!t.hp) return t;
+  var s = hpStats(t.hp), v = {}, k;
+  for (k in t) v[k] = t[k];
+  v.rolls = s.total; v.m = s.totalM; v.done = s.done; v.doneM = s.doneM;
+  if (hp.done[t.hp]) v.st = hp.done[t.hp] === 'short' ? 'periksa' : 'siap';
+  else if (s.done > 0) v.st = 'jalan';
+  if (hp.done[t.hp] === 'short') v.flags = [['warn','alert','Selesai dengan selisih']];
+  return v;
+}
+
+/* ───────── kerangka aplikasi ───────── */
+function appTop(){
+  return '<span class="brand"><i>KN</i><span>Kain Nusantara</span></span><span class="tb-sp"></span>' +
+    '<span class="tb-meta">Sel, 10 Nov 2026 · 09:40 WIB</span>' +
+    '<span class="ent" title="PT aktif (EntitySwitcher)">PT aktif: PT KSC ' + icon('down') + '</span>' +
+    '<span class="ent user">' + icon('user') + 'Rudi · Supervisor Gudang</span>';
+}
+function appSide(active){
+  var items = [['g','Gudang'],['Dasbor Gudang'],['Pusat Tugas'],['Stok Roll'],['Penerimaan'],['Pengiriman'],['Stock Opname'],['g','RFID'],['Operasional Gate'],['Label & Printer'],['g','Lainnya'],['Pusat Export']];
+  return items.map(function(it){
+    if (it[0] === 'g') return '<p>' + it[1] + '</p>';
+    return '<span class="' + (it[0] === active ? 'on' : '') + '">' + esc(it[0]) + '</span>';
+  }).join('');
+}
+document.getElementById('dTop').innerHTML = appTop();
+document.getElementById('rTop').innerHTML = appTop();
+document.getElementById('dSide').innerHTML = appSide('Pusat Tugas');
+document.getElementById('rSide').innerHTML = appSide('Stok Roll');
+
+function exportMenu(state, count, what){
+  if (!state.exportOpen) return '';
+  return '<div class="menu" role="menu">' +
+    '<button type="button" role="menuitem" data-act="export" data-fmt="xlsx"><b>Excel (.xlsx)</b><small>' + n0(count) + ' ' + what + ' sesuai saringan · lembar Info berisi cakupan</small></button>' +
+    '<button type="button" role="menuitem" data-act="export" data-fmt="csv"><b>CSV</b><small>pemisah ; · desimal koma · aman dibuka di Excel</small></button>' +
+    (state.exported ? '<div class="ok-note">' + icon('check') + 'Contoh: file ' + state.exported + ' disiapkan (di aplikasi diunduh).</div>' : '') +
+    '</div>';
+}
+
+/* ───────── DESKTOP: Pusat Tugas ───────── */
+var D = {bld:'all', pt:'all', st:'all', type:'all', sel:null, exportOpen:false, exported:null, assigned:null};
+function dRender(){
+  var all = TASKS.map(taskView);
+  var scoped = all.filter(function(t){ return (D.bld === 'all' || t.bld.indexOf(D.bld) === 0) && (D.pt === 'all' || t.pt === D.pt || t.pt === 'all'); });
+  var stF = scoped.filter(function(t){ return D.st === 'all' ? t.st !== 'siap' : t.st === D.st; });
+  var rows = stF.filter(function(t){ return D.type === 'all' || t.type === D.type; }).sort(function(a, b){
+    return (RANK[a.st] - RANK[b.st]) || (toMin(a.due) - toMin(b.due));
+  });
+  function cnt(k){ return scoped.filter(function(t){ return t.st === k; }).length; }
+  var open = scoped.filter(function(t){ return t.st !== 'siap'; }).length;
+  var metric = function(key, label, val, tone, ic){
+    return '<button type="button" class="metric t-' + tone + '" data-act="st" data-v="' + key + '" aria-pressed="' + (D.st === key) + '"><small>' + icon(ic) + label + '</small><b>' + n0(val) + '</b></button>';
+  };
+  var typeCounts = {};
+  stF.forEach(function(t){ typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
+  var chips = '<button type="button" class="chip" data-act="type" data-v="all" aria-pressed="' + (D.type === 'all') + '">Semua jenis <span class="n">' + stF.length + '</span></button>' +
+    TYPE_ORDER.filter(function(k){ return typeCounts[k]; }).map(function(k){
+      return '<button type="button" class="chip" data-act="type" data-v="' + k + '" aria-pressed="' + (D.type === k) + '">' + icon(TYPES[k].icon) + TYPES[k].label + ' <span class="n">' + typeCounts[k] + '</span></button>';
+    }).join('');
+
+  var body = rows.map(function(t){
+    var unit = t.unit || 'roll';
+    var isi = n0(t.rolls) + ' ' + unit + (t.m != null ? ' · ' + m1(t.m) + ' m' : '');
+    var pct = t.rolls ? Math.round(t.done / t.rolls * 100) : 0;
+    var progWord = t.type === 'opname' ? 'dihitung' : (t.type === 'transfer' ? 'dimuat' : (t.type === 'gate' ? 'terbaca' : ''));
+    var due = t.due ? (t.st === 'lewat' ? '<span class="late">' + t.due + ' · lewat ' + (NOW_MIN - toMin(t.due)) + ' mnt</span>' : t.due) : '<span class="muted">—</span>';
+    var flags = (t.flags || []).map(function(f){ return sbt(f[0], f[1], f[2]); }).join('');
+    return '<tr data-act="row" data-id="' + t.id + '" aria-selected="' + (D.sel === t.id) + '" tabindex="0">' +
+      '<td>' + tt(t.type) + '</td>' +
+      '<td><span class="doc">' + t.doc + '</span>' + (flags ? '<div class="flags">' + flags + '</div>' : '') + '</td>' +
+      '<td>' + ptChip(t.pt) + '</td>' +
+      '<td>' + esc(t.bld) + '</td>' +
+      '<td class="num">' + isi + '</td>' +
+      '<td><div class="prog"><span class="bar' + (pct === 100 ? ' done' : '') + '"><i style="width:' + pct + '%"></i></span><small>' + n0(t.done) + '/' + n0(t.rolls) + (progWord ? ' ' + progWord : '') + '</small></div></td>' +
+      '<td>' + due + '</td>' +
+      '<td>' + (t.who ? esc(t.who) : '<span class="muted">Belum ada</span>') + '</td>' +
+      '<td>' + sb(t.st) + '</td></tr>';
+  }).join('');
+  if (!rows.length) body = '<tr><td colspan="9" style="padding:24px;text-align:center;white-space:normal">Tidak ada tugas untuk saringan ini. <button type="button" class="linkbtn" data-act="reset">Reset saringan</button></td></tr>';
+
+  var bldOpts = [['all','Semua gedung (4)'],['Woven','Gedung Woven'],['Knitting','Gedung Knitting'],['Printing','Gedung Printing'],['Retur','Gedung Retur']];
+  var ptOpts = [['all','Semua PT yang ditugaskan (3)'],['KSC','PT KSC'],['CST','PT CST'],['SKC','PT Sukacita']];
+  function opts(list, v){ return list.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + o[1] + '</option>'; }).join(''); }
+
+  var html =
+    '<div class="ph"><div><h2 class="ph-title">Pusat Tugas Gudang</h2><p class="ph-sub">Semua pekerjaan fisik di lokasi kerja Anda, lintas PT yang ditugaskan. Dokumen membuat tugas; petugas mengambilnya di HP.</p></div>' +
+    '<div class="ph-act"><span class="mk">7</span><button type="button" class="btn" data-act="exportToggle" aria-expanded="' + D.exportOpen + '">' + icon('dl') + 'Unduh ' + icon('down') + '</button>' + exportMenu(D, rows.length, 'tugas') + '</div></div>' +
+    '<div class="scope"><span class="mk">1</span>' + icon('pin') + '<span>Lokasi kerja: <b>Rancamalang</b></span><span class="sep">·</span>' +
+    '<label for="dBld" class="muted">Gedung</label><select id="dBld">' + opts(bldOpts, D.bld) + '</select><span class="sep">·</span>' +
+    '<label for="dPt" class="muted">PT</label><select id="dPt">' + opts(ptOpts, D.pt) + '</select></div>' +
+    '<div class="metrics">' + metric('all', 'Tugas terbuka', open, 'n', 'clip') + metric('jalan', 'Sedang dikerjakan', cnt('jalan'), 'info', 'clock') + metric('periksa', 'Perlu diperiksa', cnt('periksa'), 'warn', 'alert') + metric('lewat', 'Lewat tenggat', cnt('lewat'), 'bad', 'alert') + '</div>' +
+    '<div class="chips" role="group" aria-label="Saring jenis tugas"><span class="mk">3</span>' + chips + '</div>' +
+    '<div class="tblwrap"><table class="tbl"><thead><tr><th>Jenis <span class="mk">3</span></th><th>Dokumen <span class="mk">6</span></th><th>PT</th><th>Gedung</th><th class="th-num">Isi</th><th>Progres</th><th>Tenggat</th><th>Petugas</th><th>Status <span class="mk">4</span></th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+    '<div class="pager"><span><b>1–' + rows.length + '</b> dari <b>' + rows.length + '</b> tugas · urut: lewat tenggat, perlu diperiksa, lalu tenggat terdekat' + (cnt('siap') ? ' · ' + cnt('siap') + ' selesai hari ini tidak ditampilkan' : '') + '</span><span>50 per halaman</span></div>' +
+    dDrawer(all);
+  document.getElementById('dMain').innerHTML = html;
+  var b = document.getElementById('dBld'), p = document.getElementById('dPt');
+  b.addEventListener('change', function(){ D.bld = b.value; D.sel = null; dRender(); });
+  p.addEventListener('change', function(){ D.pt = p.value; D.sel = null; dRender(); });
+}
+function dLines(t){
+  if (t.hp){
+    var T = HP_TASKS[t.hp], P = prog(t.hp), g = {};
+    T.rolls.forEach(function(r){
+      var key = r.prod + ' · ' + r.color + ' · Lot ' + r.lot;
+      if (!g[key]) g[key] = {n:0, m:0, d:0};
+      g[key].n++; g[key].m += (T.kind === 'cut' ? r.cut : r.len); if (P.scanned[r.no]) g[key].d++;
+    });
+    return Object.keys(g).map(function(k){ return [k, g[k].d + '/' + g[k].n + ' ' + (T.unit || 'roll'), m1(g[k].m) + ' m']; });
+  }
+  return t.lines || [[t.src, n0(t.rolls) + ' roll', t.m != null ? m1(t.m) + ' m' : '—']];
+}
+function dDrawer(all){
+  if (!D.sel) return '';
+  var t = all.filter(function(x){ return x.id === D.sel; })[0];
+  if (!t) return '';
+  var pct = t.rolls ? Math.round(t.done / t.rolls * 100) : 0;
+  var flags = (t.flags || []).map(function(f){ return sbt(f[0], f[1], f[2]); }).join(' ');
+  var lines = dLines(t).map(function(l){ return '<tr><td>' + esc(l[0]) + '</td><td class="num">' + esc(l[1]) + '</td><td class="num">' + esc(l[2]) + '</td></tr>'; }).join('');
+  var whoOpts = '<option value="">Belum ada</option>' + WORKERS.map(function(w){ return '<option' + (t.who === w ? ' selected' : '') + '>' + w + '</option>'; }).join('');
+  return '<aside class="drawer" aria-label="Rincian tugas"><div class="drawer-in"><div class="dr-head"><div>' + tt(t.type) + '<div class="dr-id">' + t.doc + '</div>' + sb(t.st) + ' ' + flags + '</div>' +
+    '<button type="button" class="x" data-act="close" aria-label="Tutup rincian">' + icon('x') + '</button></div>' +
+    '<dl class="dl"><dt>PT</dt><dd>' + PTN[t.pt] + '</dd><dt>Gedung</dt><dd>Rancamalang · ' + esc(t.bld) + '</dd><dt>Sumber</dt><dd>' + esc(t.src) + '</dd><dt>Tenggat</dt><dd>' + (t.due ? 'Hari ini ' + t.due + ' WIB' : '—') + '</dd><dt>Isi</dt><dd>' + n0(t.rolls) + ' ' + (t.unit || 'roll') + (t.m != null ? ' · ' + m1(t.m) + ' m' : '') + '</dd></dl>' +
+    '<div><p class="sec-t">Progres</p><span class="bar lg' + (pct === 100 ? ' done' : '') + '"><i style="width:' + pct + '%"></i></span><p class="muted" style="margin:4px 0 0;font-size:13px">' + n0(t.done) + '/' + n0(t.rolls) + ' ' + (t.unit || 'roll') + (t.doneM != null ? ' · ' + m1(t.doneM) + '/' + m1(t.m) + ' m' : '') + '</p></div>' +
+    (t.note ? '<div class="info-note">' + esc(t.note) + '</div>' : '') +
+    '<div><p class="sec-t">Baris dokumen</p><table class="minitbl"><tbody>' + lines + '</tbody></table></div>' +
+    '<div><p class="sec-t">Petugas</p><div class="assign"><select id="dWho" aria-label="Pilih petugas">' + whoOpts + '</select><button type="button" class="btn sm" data-act="assign">Tetapkan</button></div>' +
+    (D.assigned && D.assigned.id === t.id ? '<div class="ok-note" style="margin-top:6px">' + icon('check') + esc(D.assigned.msg) + '</div>' : '') +
+    '<p class="muted" style="margin:6px 0 0;font-size:12px">Tanpa penetapan, tugas tampil di antrean HP semua petugas gedung ini dan diambil siapa pun yang membukanya lebih dulu.</p></div>' +
+    '<div class="row-act">' + (t.hp ? '<button type="button" class="btn primary" data-act="openhp" data-key="' + t.hp + '">Buka simulasi HP ' + icon('right') + '</button>' : '') +
+    (t.type === 'so' ? '<button type="button" class="btn">' + icon('printer') + 'Cetak daftar ambil</button>' : '') + '</div>' +
+    '<div><p class="sec-t">Riwayat</p><ul class="tl"><li><time>10/11 08:55</time><span>Tugas dibuat dari ' + esc(t.src.split(' · ')[0]) + '</span></li>' +
+    (t.who ? '<li><time>10/11 09:02</time><span>Diambil ' + esc(t.who) + '</span></li>' : '') +
+    (t.done ? '<li><time>10/11 09:31</time><span>' + n0(t.done) + ' ' + (t.unit || 'roll') + ' tercatat</span></li>' : '') + '</ul></div></div></aside>';
+}
+document.getElementById('dMain').addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var a = el.getAttribute('data-act');
+  if (a === 'st'){ var v = el.getAttribute('data-v'); D.st = (D.st === v && v !== 'all') ? 'all' : v; D.type = 'all'; }
+  else if (a === 'type') D.type = el.getAttribute('data-v');
+  else if (a === 'row') { D.sel = el.getAttribute('data-id'); D.assigned = null; }
+  else if (a === 'close') D.sel = null;
+  else if (a === 'reset') { D.st = 'all'; D.type = 'all'; D.bld = 'all'; D.pt = 'all'; }
+  else if (a === 'exportToggle') { D.exportOpen = !D.exportOpen; D.exported = null; }
+  else if (a === 'export') { D.exported = el.getAttribute('data-fmt') === 'xlsx' ? 'Pusat-Tugas-Rancamalang.xlsx' : 'Pusat-Tugas-Rancamalang.csv'; }
+  else if (a === 'assign') {
+    var w = document.getElementById('dWho').value, t = TASKS.filter(function(x){ return x.id === D.sel; })[0];
+    t.who = w || null; D.assigned = {id:t.id, msg: w ? 'Ditetapkan ke ' + w + '. Muncul di "Tugas saya" HP-nya.' : 'Penetapan dilepas. Tugas kembali ke antrean gedung.'};
+  }
+  else if (a === 'openhp') { hpOpen(el.getAttribute('data-key')); location.hash = '#hp'; return; }
+  else return;
+  dRender();
+});
+document.getElementById('dMain').addEventListener('keydown', function(e){
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act="row"]')) { e.preventDefault(); e.target.click(); }
+});
+
+/* ───────── HP C72 ───────── */
+var TONE_SOUND = {ok:'Bunyi: bip pendek', warn:'Bunyi: dua bip', bad:'Bunyi: getar panjang + nada rendah', info:'Bunyi: bip lembut', neutral:'Bunyi: bip lembut'};
+var TONE_ICON = {ok:'check', warn:'alert', bad:'x', info:'scan', neutral:'undo'};
+function setLast(tone, title, text){ hp.last = {tone:tone, title:title, text:text}; }
+function hpOpen(key){
+  hp.task = key; hp.screen = 'task'; hp.filter = 'all'; hp.pending = null; hp.sheet = null; hp.mode = 'barcode';
+  var T = HP_TASKS[key], s = hpStats(key);
+  if (T.kind === 'pick') setLast('info', 'Lanjutkan memindai', (s.total - s.done) + ' roll lagi. Mulai dari ' + firstOpen(key).loc + '.');
+  else if (T.kind === 'putaway') setLast('info', 'Mulai penempatan', 'Pindai roll di area Dok IN, lalu pindai label rak yang disarankan.');
+  else setLast('info', 'Mulai memotong', 'Pindai roll yang akan dipotong. Label ' + (T.type === 'sampel' ? 'sampel' : 'potongan') + ' dicetak otomatis di CP30EN-RCM-1.');
+}
+function firstOpen(key){ var T = HP_TASKS[key], P = prog(key); return T.rolls.filter(function(r){ return !P.scanned[r.no]; })[0] || T.rolls[0]; }
+function nextTask(exclude){
+  var c = HP_KEYS.filter(function(k){ return k !== exclude && !hp.done[k]; });
+  c.sort(function(a, b){
+    var sa = hpStats(a).done > 0 ? 0 : 1, sb2 = hpStats(b).done > 0 ? 0 : 1;
+    return (sa - sb2) || (toMin(HP_TASKS[a].due) - toMin(HP_TASKS[b].due));
+  });
+  if (!c.length) return null;
+  var k = c[0], s = hpStats(k), T = HP_TASKS[k];
+  var why = s.done > 0 ? 'Sedang Anda kerjakan · ' + (s.total - s.done) + ' ' + (T.unit || 'roll') + ' lagi' : 'Tenggat terdekat · ' + T.due + ' WIB';
+  return {key:k, why:why};
+}
+function scan(raw, via){
+  var code = String(raw || '').trim().toUpperCase();
+  if (!code || !hp.task) return;
+  var T = HP_TASKS[hp.task], P = prog(hp.task), r;
+  if (!hp.online) hp.queue++;
+  if (T.kind === 'putaway'){
+    if (hp.pending && /^WOV-/.test(code)){
+      r = T.rolls.filter(function(x){ return x.no === hp.pending; })[0];
+      if (code === r.bin){ P.scanned[r.no] = true; P.log.push(r.no); hp.pending = null; setLast('ok', 'Ditempatkan', r.no + ' di ' + code); }
+      else setLast('warn', 'Rak berbeda dari saran', r.no + ' disarankan ke ' + r.bin + '. Pindai ' + r.bin + ' atau pilih Pengecualian › Rak lain.');
+      return;
+    }
+    if (/^WOV-/.test(code)) { setLast('warn', 'Pindai roll dulu', 'Label rak ' + code + ' terbaca, tetapi belum ada roll yang dipindai.'); return; }
+    r = T.rolls.filter(function(x){ return x.no === code; })[0];
+    if (r){ if (P.scanned[r.no]) setLast('neutral', 'Sudah ditempatkan', r.no + ' sudah di ' + r.bin + '.'); else { hp.pending = r.no; setLast('info', 'Roll dikenali, pindai rak', 'Taruh ' + r.no + ' di ' + r.bin + '.'); } return; }
+    setLast('warn', 'Di luar dokumen', code + ' tidak ada di ' + T.doc + '. Sisihkan dan laporkan ke supervisor.');
+    return;
+  }
+  if (T.kind === 'cut'){
+    r = T.rolls.filter(function(x){ return x.no === code; })[0];
+    if (r){
+      if (P.scanned[r.no]) setLast('neutral', 'Sudah dipotong', r.no + ' sudah dipotong ' + m1(r.cut) + ' m.');
+      else { P.scanned[r.no] = true; P.log.push(r.no); setLast('ok', 'Potong ' + m1(r.cut) + ' m', r.no + ' · sisa ' + m1(r.len - r.cut) + ' m kembali ke ' + r.loc + '. Label ' + (T.type === 'sampel' ? 'sampel' : 'potongan') + ' dicetak di CP30EN-RCM-1.'); }
+      return;
+    }
+    setLast('warn', 'Roll lain', code + ' bukan roll yang diminta. Pindai roll yang tertulis di daftar.');
+    return;
+  }
+  r = T.rolls.filter(function(x){ return x.no === code; })[0];
+  if (r){
+    if (P.scanned[r.no]) setLast('neutral', 'Sudah dipindai', r.no + ' sudah tercatat cocok.');
+    else { P.scanned[r.no] = true; P.log.push(r.no); if (via === 'rfid') P.reads[r.no] = 3 + Math.floor(Math.random() * 9); setLast('ok', 'Cocok', r.no + ' · ' + m1(r.len) + ' m · Lot ' + r.lot); }
+    return;
+  }
+  var pr = T.problem.filter(function(x){ return x.no === code; })[0];
+  if (pr){ if (!P.problem.some(function(x){ return x.no === code; })) P.problem.push(pr); setLast('bad', 'Masalah, jangan dimuat', pr.no + ' berstatus ' + pr.why + '. Kembalikan ke ' + pr.loc + '.'); return; }
+  var out = T.outside.filter(function(x){ return x.no === code; })[0] || (/^RL-\d{5}$/.test(code) ? {no:code, why:'Tidak ada di dokumen ini', loc:'lokasi asalnya', len:null} : null);
+  if (out){
+    if (!P.outside.some(function(x){ return x.no === code; })) P.outside.push(out);
+    if (via === 'rfid') P.reads[code] = 2 + Math.floor(Math.random() * 3);
+    setLast('warn', 'Di luar dokumen', out.no + ': ' + out.why + '. Jangan dimuat, kembalikan ke ' + out.loc + '.');
+    return;
+  }
+  setLast('bad', 'Kode tidak dikenal', '"' + code + '" bukan nomor roll atau label rak. Pindai ulang.');
+}
+function rfidRead(){
+  var T = HP_TASKS[hp.task], P = prog(hp.task);
+  if (T.kind !== 'pick') return;
+  var open = T.rolls.filter(function(r){ return !P.scanned[r.no]; }).slice(0, 4);
+  var extra = T.outside.filter(function(o){ return !P.outside.some(function(x){ return x.no === o.no; }); });
+  var q0 = hp.queue;
+  open.forEach(function(r){ scan(r.no, 'rfid'); });
+  extra.forEach(function(o){ scan(o.no, 'rfid'); });
+  if (!hp.online) hp.queue = q0 + open.length + extra.length;
+  var tot = open.length + extra.length;
+  if (!tot) { setLast('neutral', 'Tidak ada tag baru', 'Semua tag dalam jangkauan sudah tercatat.'); return; }
+  setLast(extra.length ? 'warn' : 'ok', 'Baca RFID: ' + tot + ' tag', open.length + ' cocok' + (extra.length ? ' · ' + extra.length + ' di luar dokumen (lihat kelompok kuning)' : '') + '.');
+}
+function simNext(){
+  var T = HP_TASKS[hp.task], P = prog(hp.task);
+  if (T.kind === 'putaway' && hp.pending){ var r = T.rolls.filter(function(x){ return x.no === hp.pending; })[0]; scan(r.bin, 'barcode'); return; }
+  var o = T.rolls.filter(function(r){ return !P.scanned[r.no]; })[0];
+  if (o) scan(o.no, 'barcode'); else setLast('neutral', 'Semua sudah', 'Tidak ada lagi yang perlu dipindai. Tekan Selesai.');
+}
+
+function hpRow(st, r, sub, right, small){
+  return '<li class="hrow s-' + st + '"><span class="hst">' + (st === 'wait' ? '' : icon(st === 'ok' ? 'check' : st === 'warn' ? 'alert' : st === 'bad' ? 'x' : 'scan')) + '</span>' +
+    '<div style="min-width:0"><b class="mono">' + r + '</b><span class="sub">' + esc(sub) + '</span></div>' +
+    '<div class="len">' + right + (small ? '<small>' + esc(small) + '</small>' : '') + '</div></li>';
+}
+function hpListScreen(){
+  var nx = nextTask(null);
+  var groups = {};
+  HP_KEYS.filter(function(k){ return !hp.done[k]; }).forEach(function(k){ var ty = HP_TASKS[k].type; (groups[ty] = groups[ty] || []).push(k); });
+  var doneKeys = HP_KEYS.filter(function(k){ return hp.done[k]; });
+  var html = '<div class="abar"><h3>Tugas saya</h3><span class="net' + (hp.online ? '' : ' off') + '">' + (hp.online ? 'Online' : 'Offline') + '</span></div>' +
+    (hp.online ? '' : '<div class="offbar">' + icon('wifioff') + 'Offline · ' + hp.queue + ' pindaian menunggu dikirim</div>') +
+    '<div class="hscope">' + icon('pin') + 'Rancamalang · Gedung Woven <span class="sep">·</span> PT: ' + ptChip('KSC') + ptChip('CST') + '</div><div class="hbody">';
+  if (nx){
+    var T = HP_TASKS[nx.key];
+    html += '<div class="next"><p class="next-lbl"><span class="mk">1</span>Tugas berikutnya</p><div class="next-doc">' + tt(T.type) + '<span class="mono">' + T.doc + '</span>' + ptChip(T.pt) + '</div><p class="next-why">' + esc(nx.why) + '</p>' +
+      '<button type="button" class="btn-cta" data-act="open" data-key="' + nx.key + '">' + (hpStats(nx.key).done > 0 ? 'Lanjutkan' : 'Mulai') + ' ' + icon('right') + '</button></div>';
+  } else html += '<div class="info-note" style="font-size:16px;line-height:24px">Semua tugas di Gedung Woven selesai. Tugas baru muncul otomatis saat dokumen dibuat.</div>';
+  TYPE_ORDER.forEach(function(ty){
+    if (!groups[ty]) return;
+    html += '<p class="hgroup"><span>' + TYPES[ty].label + '</span><span>' + groups[ty].length + '</span></p>';
+    groups[ty].forEach(function(k){
+      var T = HP_TASKS[k], s = hpStats(k), pct = Math.round(s.done / s.total * 100);
+      html += '<button type="button" class="hcard c-' + TYPES[T.type].tone + '" data-act="open" data-key="' + k + '"><span class="hcard-top">' + tt(T.type) + ptChip(T.pt) + '</span>' +
+        '<span class="hcard-doc mono">' + T.doc + '</span><span class="hcard-meta">' + n0(s.total) + ' ' + (T.unit || 'roll') + ' · ' + m1(s.totalM) + ' m · tenggat ' + T.due + '</span>' +
+        (s.done ? '<span class="bar"><i style="width:' + pct + '%"></i></span><span class="hcard-meta">' + s.done + '/' + s.total + ' sudah</span>' : '') + '</button>';
+    });
+  });
+  if (doneKeys.length){
+    html += '<p class="hgroup"><span>Selesai hari ini</span><span>' + doneKeys.length + '</span></p>';
+    doneKeys.forEach(function(k){ var T = HP_TASKS[k]; html += '<div class="hcard c-' + TYPES[T.type].tone + '" style="cursor:default"><span class="hcard-top">' + tt(T.type) + (hp.done[k] === 'short' ? sb('periksa', 'Selisih, diperiksa') : sb('siap')) + '</span><span class="hcard-doc mono">' + T.doc + '</span></div>'; });
+  }
+  html += '</div><nav class="tabbar" aria-label="Menu bawah (contoh)"><span class="on">' + icon('clip', 'lg') + '<span>Tugas<span class="cnt">' + HP_KEYS.filter(function(k){ return !hp.done[k]; }).length + '</span></span></span><span>' + icon('scan', 'lg') + 'Pindai</span><span>' + icon('layers', 'lg') + 'Stok</span><span>' + icon('more', 'lg') + 'Lainnya</span></nav>';
+  return html;
+}
+function hpTaskScreen(){
+  var key = hp.task, T = HP_TASKS[key], P = prog(key), s = hpStats(key);
+  var unit = T.unit || 'roll', pct = Math.round(s.done / s.total * 100);
+  var doneWord = T.kind === 'pick' ? 'Cocok' : T.kind === 'putaway' ? 'Ditempatkan' : 'Dipotong';
+  var html = '<div class="abar"><button type="button" class="ib" data-act="back" aria-label="Kembali ke Tugas saya">' + icon('left', 'lg') + '</button>' +
+    '<div class="abar-t"><span class="abar-type tt-' + TYPES[T.type].tone + '">' + icon(TYPES[T.type].icon) + TYPES[T.type].label + '</span><span class="abar-doc mono">' + T.doc + '</span></div>' +
+    '<span class="net' + (hp.online ? '' : ' off') + '">' + (hp.online ? 'Online' : 'Offline') + '</span></div>' +
+    (hp.online ? '' : '<div class="offbar">' + icon('wifioff') + '<span class="mk">9</span>Offline · ' + hp.queue + ' pindaian menunggu dikirim</div>') +
+    '<div class="hscope">' + icon('pin') + 'Rancamalang · Gedung Woven · ' + ptChip(T.pt) + '</div><div class="hbody">' +
+    '<div class="hdoc"><span class="mk">2</span> ' + esc(T.party) + ' · tenggat ' + T.due + '</div>' +
+    '<div class="hprog"><div class="hprog-l"><span class="mk">4</span><span class="big">' + s.done + '/' + s.total + '</span>' + unit + ' · ' + m1(s.doneM) + '/' + m1(s.totalM) + ' m</div><span class="bar lg' + (pct === 100 ? ' done' : '') + '"><i style="width:' + pct + '%"></i></span></div>';
+  if (T.kind === 'pick') html += '<div class="seg" role="group" aria-label="Cara membaca"><button type="button" data-act="mode" data-v="barcode" aria-pressed="' + (hp.mode === 'barcode') + '">' + icon('scan') + 'Barcode</button><button type="button" data-act="mode" data-v="rfid" aria-pressed="' + (hp.mode === 'rfid') + '">' + icon('radio') + 'RFID <span class="mk">7</span></button></div>';
+  if (hp.mode === 'rfid' && T.kind === 'pick') html += '<button type="button" class="trigger" data-act="rfid">' + icon('radio', 'lg') + 'Baca RFID (atau tekan pemicu C72)</button>';
+  else html += '<form class="hscan" id="hpForm" autocomplete="off"><input id="hpScan" enterkeyhint="go" aria-label="Pindai roll atau label rak" placeholder="' + (hp.pending ? 'Pindai label rak ' + esc(T.rolls.filter(function(x){ return x.no === hp.pending; })[0].bin) + '…' : 'Pindai roll… (tombol pindai C72)') + '"><button type="button" class="ib" data-act="cam" aria-label="Kamera (cadangan)">' + icon('cam', 'lg') + '</button></form>';
+  if (hp.last) html += '<div class="banner b-' + hp.last.tone + '" role="status" aria-live="polite"><span class="bico">' + icon(TONE_ICON[hp.last.tone], 'lg') + '</span><div><b>' + esc(hp.last.title.toUpperCase()) + ' <span class="mk">5</span></b><span class="btxt">' + esc(hp.last.text) + '</span><small>' + TONE_SOUND[hp.last.tone] + '</small></div></div>';
+
+  var waits = T.rolls.filter(function(r){ return !P.scanned[r.no]; });
+  var oks = T.rolls.filter(function(r){ return P.scanned[r.no]; });
+  var cats = [['all', 'Semua', T.rolls.length + P.outside.length + P.problem.length], ['wait', 'Belum', waits.length], ['ok', doneWord, oks.length]];
+  if (T.kind === 'pick') cats.push(['warn', 'Di luar dokumen', P.outside.length], ['bad', 'Masalah', P.problem.length]);
+  html += '<div class="hchips" role="group" aria-label="Kelompok"><span class="mk" style="align-self:center">6</span>' + cats.map(function(c){ return '<button type="button" class="chip" data-act="filter" data-v="' + c[0] + '" aria-pressed="' + (hp.filter === c[0]) + '">' + c[1] + ' <span class="n">' + c[2] + '</span></button>'; }).join('') + '</div>';
+  var f = hp.filter, rows = '';
+  if (f === 'all' || f === 'bad') P.problem.forEach(function(r){ rows += hpRow('bad', r.no, r.why + ' · ' + r.loc, m1(r.len) + ' m', 'jangan dimuat'); });
+  if (f === 'all' || f === 'warn') P.outside.forEach(function(r){ rows += hpRow('warn', r.no, r.why, r.len ? m1(r.len) + ' m' : '—', 'kembalikan ke ' + r.loc + (P.reads[r.no] ? ' · dibaca ' + P.reads[r.no] + '×' : '')); });
+  if (f === 'all' || f === 'wait') waits.forEach(function(r){
+    var pend = hp.pending === r.no;
+    rows += hpRow(pend ? 'info' : 'wait', r.no, T.kind === 'putaway' ? 'ke ' + r.bin + ' · Lot ' + r.lot : r.loc + ' · Lot ' + r.lot, T.kind === 'cut' ? 'potong ' + m1(r.cut) + ' m' : m1(r.len) + ' m', pend ? 'menunggu pindai rak' : (T.kind === 'cut' ? 'dari ' + m1(r.len) + ' m' : ''));
+  });
+  if (f === 'all' || f === 'ok') oks.slice().reverse().forEach(function(r){
+    rows += hpRow('ok', r.no, T.kind === 'putaway' ? 'di ' + r.bin : r.loc + ' · Lot ' + r.lot, T.kind === 'cut' ? m1(r.cut) + ' m' : m1(r.len) + ' m', P.reads[r.no] ? 'dibaca ' + P.reads[r.no] + '×' : (T.kind === 'cut' ? 'label tercetak' : ''));
+  });
+  if (!rows) rows = '<li class="hrow" style="grid-template-columns:1fr;color:var(--text-2)">Tidak ada roll di kelompok ini.</li>';
+  html += '<ul class="hlist">' + rows + '</ul></div>';
+  html += '<div class="hfoot"><button type="button" class="btn-touch" data-act="exc" aria-label="Pengecualian">' + icon('more', 'lg') + '</button>' +
+    '<button type="button" class="btn-cta" data-act="finish"' + (hp.online ? '' : ' disabled') + '>Selesai (' + s.done + '/' + s.total + ')</button>' +
+    (hp.online ? '' : '<p class="why">Selesai butuh koneksi. Pindaian tetap tersimpan dan terkirim saat sinyal kembali.</p>') + '</div>';
+  if (hp.sheet) html += '<div class="scrim" data-act="sheetclose"></div>' + hpSheet(T, s);
+  return html;
+}
+function hpSheet(T, s){
+  if (hp.sheet === 'exc'){
+    var opts = T.kind === 'pick'
+      ? [['notfound','Roll tidak ada di lokasi','Supervisor diberi tahu; tugas tetap jalan'],['other','Ambil dari lokasi lain','Pindai roll pengganti; sistem cek lot dan grade'],['manual','Label rusak, ketik nomor roll','Butuh persetujuan supervisor (izin wms.approve)'],['undo','Batalkan pindaian terakhir','']]
+      : T.kind === 'putaway'
+      ? [['otherbin','Rak lain','Rak penuh atau rusak; alasan wajib'],['manual','Label rusak, ketik nomor roll','Butuh persetujuan supervisor'],['undo','Batalkan pindaian terakhir','']]
+      : [['short','Panjang roll kurang','Potong sebisanya, sisa jadi permintaan baru'],['undo','Batalkan pindaian terakhir','']];
+    return '<div class="sheet" role="dialog" aria-label="Pengecualian"><div class="grab"></div><h4>Pengecualian</h4><p>Alasan wajib dan tercatat di riwayat dokumen.</p>' +
+      opts.map(function(o){ return '<button type="button" class="opt" data-act="excpick" data-v="' + o[0] + '"><span><b>' + o[1] + '</b>' + (o[2] ? '<small>' + o[2] + '</small>' : '') + '</span></button>'; }).join('') +
+      '<button type="button" class="btn-touch" data-act="sheetclose">Tutup</button></div>';
+  }
+  if (hp.sheet === 'short'){
+    var left = T.rolls.filter(function(r){ return !prog(hp.task).scanned[r.no]; });
+    var leftM = sum(left, function(r){ return T.kind === 'cut' ? r.cut : r.len; });
+    var reasons = T.kind === 'pick' ? ['Stok di lokasi kurang','Roll rusak','Pelanggan minta kirim sebagian','Lainnya'] : T.kind === 'putaway' ? ['Roll belum turun dari stacker','Rak tujuan penuh','Lainnya'] : ['Roll tidak ditemukan','Panjang tidak cukup','Lainnya'];
+    return '<div class="sheet" role="dialog" aria-label="Selesai dengan selisih"><div class="grab"></div><h4>Selesai dengan selisih? <span class="mk">8</span></h4>' +
+      '<p><b>' + left.length + ' ' + (T.unit || 'roll') + '</b> belum (' + m1(leftM) + ' m). Pilih alasannya.</p>' +
+      reasons.map(function(r, i){ return '<label class="opt" for="rs' + i + '"><input type="radio" name="rs" id="rs' + i + '" value="' + esc(r) + '"' + (hp.reason === r ? ' checked' : '') + '>' + esc(r) + '</label>'; }).join('') +
+      (hp.sheetErr ? '<p class="err" role="alert">' + icon('alert') + esc(hp.sheetErr) + '</p>' : '') +
+      '<div class="info-note" style="font-size:14px;line-height:20px">Dokumen tetap jalan. Selisih masuk antrean <b>Perlu diperiksa</b> supervisor (kuning) dan tidak mengunci gate.</div>' +
+      '<button type="button" class="btn-cta warn" data-act="shortok">Selesai dengan selisih</button><button type="button" class="btn-touch" data-act="sheetclose">Kembali memindai</button></div>';
+  }
+  return '';
+}
+function hpDoneScreen(){
+  var key = hp.result.key, T = HP_TASKS[key], s = hpStats(key), P = prog(key), short = hp.done[key] === 'short';
+  var nx = nextTask(null);
+  var title = short ? 'Selesai dengan selisih' : (T.kind === 'pick' ? T.doc + ' siap muat' : T.kind === 'putaway' ? 'Semua roll sudah di rak' : 'Semua potongan selesai');
+  var items = '<li>' + icon('check') + '<span>' + s.done + '/' + s.total + ' ' + (T.unit || 'roll') + ' · ' + m1(s.doneM) + ' m tercatat</span></li>';
+  if (short) items += '<li>' + icon('alert') + '<span>' + (s.total - s.done) + ' ' + (T.unit || 'roll') + ' belum, alasan: ' + esc(hp.reason) + '. Masuk antrean Perlu diperiksa.</span></li>';
+  P.outside.forEach(function(o){ items += '<li>' + icon('undo') + '<span>' + o.no + ' di luar dokumen: kembalikan ke ' + o.loc + '</span></li>'; });
+  P.problem.forEach(function(o){ items += '<li>' + icon('x') + '<span>' + o.no + ' tidak dimuat (' + esc(o.why) + ')</span></li>'; });
+  if (T.kind === 'pick') items += '<li>' + icon('radio') + '<span>Langkah berikut: muat ke stacker dan lewat gate OUT Woven. Gate mencocokkan dengan dokumen ini.</span></li>';
+  var html = '<div class="abar"><h3>Tugas selesai</h3><span class="net' + (hp.online ? '' : ' off') + '">' + (hp.online ? 'Online' : 'Offline') + '</span></div><div class="hbody"><div class="done">' +
+    '<span class="done-ic ' + (short ? 'warn' : 'ok') + '">' + icon(short ? 'alert' : 'check', 'xl') + '</span><h3>' + esc(title) + '</h3><p class="mono">' + T.doc + '</p><ul>' + items + '</ul>';
+  if (nx){ var N = HP_TASKS[nx.key];
+    html += '<div class="next"><p class="next-lbl"><span class="mk">1</span>Tugas berikutnya</p><div class="next-doc">' + tt(N.type) + '<span class="mono">' + N.doc + '</span>' + ptChip(N.pt) + '</div><p class="next-why">' + esc(nx.why) + '</p>' +
+      '<button type="button" class="btn-cta" data-act="open" data-key="' + nx.key + '">Mulai: ' + TYPES[N.type].label + ' ' + icon('right') + '</button></div>';
+  } else html += '<div class="info-note" style="width:100%">Tidak ada tugas lain di Gedung Woven.</div>';
+  html += '<button type="button" class="btn-touch" style="width:100%" data-act="back">Kembali ke Tugas saya</button></div></div>';
+  return html;
+}
+function hpRender(){
+  var scr = document.getElementById('hpScreen');
+  var bar = '<div class="sbar"><span>09:40</span><span>C72-RCM-03 · 82%</span></div>';
+  scr.innerHTML = bar + (hp.screen === 'task' ? hpTaskScreen() : hp.screen === 'done' ? hpDoneScreen() : hpListScreen());
+  var inp = document.getElementById('hpScan');
+  if (inp && !hp.sheet && hpVisible()) { try { inp.focus({preventScroll:true}); } catch (e) {} }
+  simRender();
+  dRender();
+}
+function hpVisible(){ return !document.getElementById('v-hp').hidden; }
+function simRender(){
+  var el = document.getElementById('hpSim');
+  var T = hp.task ? HP_TASKS[hp.task] : null, onTask = hp.screen === 'task' && T;
+  var isPick = onTask && T.kind === 'pick';
+  el.innerHTML = '<h2>Panel simulasi</h2><p>Tombol ini meniru pemindai dan sinyal. Bukan bagian layar HP. Anda juga bisa mengetik nomor roll di kotak pindai lalu Enter (misalnya RL-46702).</p>' +
+    '<div class="sim-btns">' +
+    '<button type="button" class="btn primary" data-sim="next"' + (onTask ? '' : ' disabled') + '>' + icon('scan') + 'Pindai berikutnya</button>' +
+    '<button type="button" class="btn" data-sim="rfid"' + (isPick ? '' : ' disabled') + '>' + icon('radio') + 'Tekan pemicu RFID</button>' +
+    '<button type="button" class="btn" data-sim="outside"' + (isPick ? '' : ' disabled') + '>Roll di luar dokumen</button>' +
+    '<button type="button" class="btn" data-sim="problem"' + (isPick ? '' : ' disabled') + '>Roll bermasalah</button>' +
+    '<button type="button" class="btn" data-sim="net">' + icon('wifioff') + (hp.online ? 'Putuskan sinyal' : 'Sambungkan lagi') + '</button>' +
+    '<button type="button" class="btn" data-sim="reset">Mulai ulang</button></div>' +
+    '<p class="why">' + (onTask ? (isPick ? 'Tugas Keluar SO: semua tombol aktif.' : 'Tombol RFID dan roll salah hanya untuk tugas Keluar SO di mockup ini.') : 'Buka satu tugas di HP untuk mulai memindai.') + '</p>';
+}
+document.getElementById('hpSim').addEventListener('click', function(e){
+  var b = e.target.closest('[data-sim]'); if (!b || b.disabled) return;
+  var a = b.getAttribute('data-sim');
+  if (a === 'next') simNext();
+  else if (a === 'rfid') { hp.mode = 'rfid'; rfidRead(); }
+  else if (a === 'outside') scan('RL-46702', 'barcode');
+  else if (a === 'problem') scan('RL-46612', 'barcode');
+  else if (a === 'net') {
+    if (hp.online) { hp.online = false; hp.queue = 0; }
+    else { var q = hp.queue; hp.online = true; hp.queue = 0; if (hp.screen === 'task') setLast('info', 'Tersambung lagi', q + ' pindaian terkirim ke server.'); }
+  }
+  else if (a === 'reset') {
+    hp.prog = {}; hp.done = {}; hp.screen = 'list'; hp.task = null; hp.online = true; hp.queue = 0; hp.sheet = null; hp.pending = null; hp.reason = '';
+    var P = prog('so1'); SO_ROLLS.forEach(function(r, i){ if (i < 10 || i === 12 || i === 13) P.scanned[r.no] = true; });
+  }
+  hpRender();
+});
+var scr = document.getElementById('hpScreen');
+scr.addEventListener('submit', function(e){
+  e.preventDefault();
+  var inp = document.getElementById('hpScan'); if (!inp) return;
+  scan(inp.value, 'barcode'); inp.value = ''; hpRender();
+});
+scr.addEventListener('change', function(e){ if (e.target.name === 'rs') { hp.reason = e.target.value; hp.sheetErr = ''; } });
+scr.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var a = el.getAttribute('data-act');
+  if (a === 'open') hpOpen(el.getAttribute('data-key'));
+  else if (a === 'back') { hp.screen = 'list'; hp.sheet = null; }
+  else if (a === 'mode') hp.mode = el.getAttribute('data-v');
+  else if (a === 'rfid') rfidRead();
+  else if (a === 'cam') setLast('info', 'Kamera (cadangan)', 'Di C72 tombol pindai fisik lebih cepat. Kamera dipakai bila pemindai bermasalah.');
+  else if (a === 'filter') hp.filter = el.getAttribute('data-v');
+  else if (a === 'exc') hp.sheet = 'exc';
+  else if (a === 'sheetclose') { hp.sheet = null; hp.sheetErr = ''; }
+  else if (a === 'excpick') {
+    var v = el.getAttribute('data-v'), P = prog(hp.task);
+    if (v === 'undo') {
+      var last = P.log.pop();
+      if (last) { delete P.scanned[last]; delete P.reads[last]; setLast('neutral', 'Pindaian dibatalkan', last + ' kembali ke Belum.'); }
+      else setLast('neutral', 'Tidak ada yang dibatalkan', 'Belum ada pindaian di sesi ini.');
+    } else {
+      var txt = {notfound:'Roll tidak ada di lokasi dicatat. Supervisor diberi tahu.', other:'Pindai roll pengganti. Sistem menolak bila lot atau grade berbeda.', manual:'Permintaan ketik manual dikirim ke supervisor Rudi.', otherbin:'Pindai rak lain. Alasan tercatat.', 'short':'Kekurangan panjang dicatat. Sisa menjadi permintaan potong baru.'}[v];
+      setLast('info', 'Pengecualian dicatat', txt);
+    }
+    hp.sheet = null;
+  }
+  else if (a === 'finish') {
+    var s = hpStats(hp.task);
+    if (s.done < s.total) { hp.sheet = 'short'; hp.reason = ''; hp.sheetErr = ''; }
+    else { hp.done[hp.task] = 'ok'; hp.result = {key:hp.task}; hp.screen = 'done'; }
+  }
+  else if (a === 'shortok') {
+    if (!hp.reason) { hp.sheetErr = 'Pilih alasan selisih dulu.'; }
+    else { hp.done[hp.task] = 'short'; hp.result = {key:hp.task}; hp.screen = 'done'; hp.sheet = null; }
+  }
+  else return;
+  hpRender();
+});
+
+/* ───────── PENAMPIL ROLL ───────── */
+function rng(seed){ return function(){ seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+var RND = rng(20261110);
+var SW = {Navy:'#23305C', Putih:'#F2F1EA', Hitam:'#1B1B1D', Maroon:'#6E1F2B', Khaki:'#B9A47A', 'Abu Misty':'#9AA0A6'};
+var GDEF = [
+  {prod:'Katun Poplin 40s', color:'Navy', lot:'7A', nums:range(46670,46683), locs:['WOV-A-R01-T4'], age:3},
+  {prod:'Katun Poplin 40s', color:'Navy', lot:'7B', nums:range(46700,46708), locs:['WOV-A-R02-T1','WOV-A-R02-T2'], age:12},
+  {prod:'Katun Poplin 40s', color:'Putih', lot:'2C', nums:range(46540,46550), locs:['WOV-A-R03-T1','WOV-A-R03-T2'], age:38},
+  {prod:'Rayon Twill', color:'Hitam', lot:'3C', nums:range(46690,46697).concat(range(46612,46615)), locs:['WOV-A-R04-T3'], age:6},
+  {prod:'Rayon Twill', color:'Hitam', lot:'3D', nums:range(46720,46725), locs:['WOV-A-R05-T1'], age:2},
+  {prod:'Rayon Twill', color:'Maroon', lot:'1A', nums:range(46480,46487), locs:['WOV-A-R06-T1','WOV-A-R06-T2'], age:55},
+  {prod:'Katun Twill 30s Combed', color:'Khaki', lot:'5A', nums:range(46810,46819), locs:['WOV-B-R01-T1','WOV-B-R01-T2'], age:9},
+  {prod:'Katun Twill 30s Combed', color:'Abu Misty', lot:'5B', nums:range(46830,46836), locs:['WOV-B-R02-T1'], age:20},
+  {prod:'Katun Twill 30s Combed', color:'Abu Misty', lot:'6A', nums:range(46840,46844), locs:['WOV-B-R02-T2'], age:4}
+];
+var SO_MAP = {}; SO_ROLLS.forEach(function(r){ SO_MAP[r.no] = r; });
+var ROLLS = [];
+GDEF.forEach(function(g){
+  g.nums.forEach(function(n, i){
+    var no = 'RL-' + n, so = SO_MAP[no];
+    var len = so ? so.len : Math.round((57 + RND() * 7.5) * 2) / 2;
+    var r = {no:no, n:n, prod:g.prod, color:g.color, lot:g.lot, grade:'A', len:len, len0:len, loc:so ? so.loc : g.locs[i % g.locs.length], bld:'Woven', st:'tersedia', pt:'KSC', age:g.age + Math.floor(RND() * 3), ref:null};
+    if (so) { r.st = 'dipesan'; r.ref = 'SORD-261110-0007'; }
+    ROLLS.push(r);
+  });
+});
+function R(no){ return ROLLS.filter(function(r){ return r.no === no; })[0]; }
+(function overrides(){
+  var r;
+  r = R('RL-46612'); r.st = 'karantina'; r.loc = 'RET-Q-01'; r.bld = 'Retur'; r.ref = 'SRET-261110-0002'; r.len = 57.5; r.len0 = 57.5;
+  r = R('RL-46547'); r.st = 'tahan'; r.loc = 'WOV-Q-01'; r.ref = 'QC-261110-0010';
+  ['RL-46720','RL-46721','RL-46722'].forEach(function(no){ var x = R(no); x.st = 'transit'; x.loc = 'Transit SRG-01 → RCM'; x.bld = 'Transit'; x.ref = 'TRF-261109-0004'; });
+  ['RL-46817','RL-46818','RL-46819'].forEach(function(no){ R(no).pt = 'CST'; });
+  r = R('RL-46706'); r.len0 = 60.0; r.len = 3.5; r.loc = 'WOV-S-01';
+  r = R('RL-46484'); r.len0 = 61.0; r.len = 4.2; r.loc = 'WOV-S-01';
+  r = R('RL-46486'); r.len0 = 59.5; r.len = 2.8; r.loc = 'WOV-S-01';
+  r = R('RL-46682'); r.len0 = 62.0; r.len = 62.0;
+  r = R('RL-46683'); r.len0 = 61.0; r.len = 61.0;
+  R('RL-46833').grade = 'B'; R('RL-46835').grade = 'B';
+  r = R('RL-46843'); r.grade = 'BS'; r.loc = 'RET-B-02'; r.bld = 'Retur';
+  r = R('RL-46702'); r.loc = 'WOV-A-R02-T1'; r.len = 61.0; r.len0 = 61.0;
+})();
+var RST = {tersedia:['ok','check','Tersedia'], dipesan:['info','clip','Dipesan'], karantina:['warn','alert','Karantina retur'], tahan:['warn','shield','Tahan QC'], transit:['neutral','swap','Dalam perjalanan']};
+function rsb(st){ var s = RST[st]; return sbt(s[0], s[1], s[2]); }
+
+var VIEWS = [
+  {id:'base', name:'Bawaan gudang', scope:'Bawaan', f:{q:'', st:[], grade:[], sisa:false, pt:'KSC', bld:'all'}},
+  {id:'sisa', name:'Roll sisa < 5 m', scope:'Pribadi', f:{q:'', st:[], grade:[], sisa:true, pt:'KSC', bld:'all'}},
+  {id:'siap', name:'Siap kirim · Woven', scope:'Dibagikan ke peran Gudang · PT KSC', f:{q:'', st:['tersedia'], grade:['A'], sisa:false, pt:'KSC', bld:'Woven'}},
+  {id:'tahan', name:'Karantina & tahan QC', scope:'Dibagikan ke peran QC', f:{q:'', st:['karantina','tahan'], grade:[], sisa:false, pt:'all', bld:'all'}}
+];
+(function(){ var saved = store('kn-mock-views'); if (saved && saved.length) saved.forEach(function(v){ if (v && v.id && v.f) VIEWS.push(v); }); })();
+function cloneF(f){ return {q:f.q, st:f.st.slice(), grade:f.grade.slice(), sisa:f.sisa, pt:f.pt, bld:f.bld}; }
+var V = {view:'base', f:cloneF(VIEWS[0].f), open:{'Katun Poplin 40s':1, 'Katun Poplin 40s|Navy':1, 'Katun Poplin 40s|Navy|7A':1}, sel:null, bd:null, bdTab:'lok', exportOpen:false, exported:null, saving:false, savedMsg:''};
+function sameF(a, b){ return a.q === b.q && a.sisa === b.sisa && a.pt === b.pt && a.bld === b.bld && a.st.slice().sort().join() === b.st.slice().sort().join() && a.grade.slice().sort().join() === b.grade.slice().sort().join(); }
+function viewById(id){ return VIEWS.filter(function(v){ return v.id === id; })[0]; }
+
+function figures(){
+  var loc = ROLLS.filter(function(r){ return r.pt === 'KSC' && r.bld !== 'Transit'; });
+  function agg(list){ return {r:list.length, m:sum(list, function(x){ return x.len; })}; }
+  var tersedia = agg(loc.filter(function(r){ return r.st === 'tersedia'; }));
+  var dipesan = agg(loc.filter(function(r){ return r.st === 'dipesan'; }));
+  var lain = agg(loc.filter(function(r){ return r.st === 'karantina' || r.st === 'tahan'; }));
+  var transit = agg(ROLLS.filter(function(r){ return r.pt === 'KSC' && r.st === 'transit'; }));
+  var cstRcm = agg(ROLLS.filter(function(r){ return r.pt === 'CST' && r.st === 'tersedia'; }));
+  var X = {skcRcm:{r:18, m:1044.0}, srgKsc:{r:34, m:2016.5}, jktKsc:{r:12, m:712.0}, jktCst:{r:9, m:535.0}};
+  var g = {r:tersedia.r + cstRcm.r + X.skcRcm.r + X.srgKsc.r + X.jktKsc.r + X.jktCst.r, m:tersedia.m + cstRcm.m + X.skcRcm.m + X.srgKsc.m + X.jktKsc.m + X.jktCst.m};
+  return {tersedia:tersedia, dipesan:dipesan, lain:lain, fisik:{r:tersedia.r + dipesan.r + lain.r, m:tersedia.m + dipesan.m + lain.m}, transit:transit, cstRcm:cstRcm, X:X, global:g};
+}
+function qty(a){ return n0(a.r) + ' roll · ' + m1(a.m) + ' m'; }
+function bdTable(F){
+  var X = F.X, rows, head = ['', 'Tersedia'];
+  if (V.bdTab === 'lok') rows = [['Rancamalang (RCM)', {r:F.tersedia.r + F.cstRcm.r + X.skcRcm.r, m:F.tersedia.m + F.cstRcm.m + X.skcRcm.m}], ['Soreang (SRG-01)', X.srgKsc], ['Jakarta (WH-JKT)', {r:X.jktKsc.r + X.jktCst.r, m:X.jktKsc.m + X.jktCst.m}]];
+  else if (V.bdTab === 'pt') rows = [['PT KSC (aktif)', {r:F.tersedia.r + X.srgKsc.r + X.jktKsc.r, m:F.tersedia.m + X.srgKsc.m + X.jktKsc.m}], ['PT CST', {r:F.cstRcm.r + X.jktCst.r, m:F.cstRcm.m + X.jktCst.m}], ['PT Sukacita', X.skcRcm]];
+  else if (V.bdTab === 'st') { head = ['Status (Rancamalang · PT KSC)', 'Jumlah']; rows = [['Tersedia', F.tersedia], ['Dipesan', F.dipesan], ['Karantina retur + tahan QC', F.lain], ['Stok Fisik', F.fisik]]; }
+  else { head = ['Akan datang (PT KSC)', 'Jumlah']; rows = [['Dalam perjalanan · TRF-261109-0004 dari SRG-01', F.transit], ['Diterima, belum di rak · PA-261110-0012', {r:14, m:sum(PA_ROLLS, function(r){ return r.len; })}], ['PO terbuka · PO-261103-0015 · perkiraan tiba 14 Nov', {r:40, m:2400.0}]]; }
+  var tot = V.bdTab === 'lok' || V.bdTab === 'pt';
+  return '<table class="bd-tbl"><thead><tr><th>' + head[0] + '</th><th class="num">' + head[1] + '</th></tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr><td>' + esc(r[0]) + '</td><td class="num">' + qty(r[1]) + '</td></tr>'; }).join('') +
+    (tot ? '<tr class="tot"><td>Total grup (semua PT)</td><td class="num">' + qty(F.global) + '</td></tr>' : '') + '</tbody></table>';
+}
+function rFiltered(){
+  var f = V.f, q = f.q.trim().toLowerCase();
+  return ROLLS.filter(function(r){
+    if (f.pt !== 'all' && r.pt !== f.pt) return false;
+    if (f.bld !== 'all' && r.bld !== f.bld) return false;
+    if (f.st.length && f.st.indexOf(r.st) < 0) return false;
+    if (f.grade.length && f.grade.indexOf(r.grade) < 0) return false;
+    if (f.sisa && !(r.len < 5)) return false;
+    if (q && (r.no + ' ' + r.prod + ' ' + r.color + ' lot ' + r.lot + ' ' + r.loc).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+}
+function gAgg(list){
+  var locs = {}, st = {}, lens = list.map(function(r){ return r.len; });
+  list.forEach(function(r){ locs[r.loc] = 1; st[r.st] = (st[r.st] || 0) + 1; });
+  return {n:list.length, m:sum(list, function(r){ return r.len; }), av:sum(list.filter(function(r){ return r.st === 'tersedia'; }), function(r){ return r.len; }), min:Math.min.apply(null, lens), max:Math.max.apply(null, lens), locs:Object.keys(locs).length, st:st,
+    ageMin:Math.min.apply(null, list.map(function(r){ return r.age; })), ageMax:Math.max.apply(null, list.map(function(r){ return r.age; }))};
+}
+function stMix(st){ return '<span class="stmix">' + Object.keys(st).map(function(k){ return '<span class="sb sb-' + RST[k][0] + '">' + st[k] + ' ' + RST[k][2].toLowerCase() + '</span>'; }).join('') + '</span>'; }
+function rRender(){
+  var F = figures(), list = rFiltered(), q = V.f.q.trim();
+  var cur = viewById(V.view), dirty = cur && !sameF(cur.f, V.f);
+  var tree = {};
+  list.forEach(function(r){ ((tree[r.prod] = tree[r.prod] || {})[r.color] = tree[r.prod][r.color] || {}); (tree[r.prod][r.color][r.lot] = tree[r.prod][r.color][r.lot] || []).push(r); });
+  var body = '';
+  Object.keys(tree).forEach(function(p){
+    var pl = list.filter(function(r){ return r.prod === p; }), pa = gAgg(pl), pk = p, po = q || V.open[pk];
+    body += gRow('g1', 'l1', pk, po, '<span>' + esc(p) + '</span>', pa);
+    if (!po) return;
+    Object.keys(tree[p]).forEach(function(c){
+      var cl = pl.filter(function(r){ return r.color === c; }), ca = gAgg(cl), ck = p + '|' + c, co = q || V.open[ck];
+      body += gRow('g2', 'l2', ck, co, '<span class="sw" style="background:' + SW[c] + '"></span><span>' + esc(c) + '</span>', ca);
+      if (!co) return;
+      Object.keys(tree[p][c]).forEach(function(l){
+        var ll = tree[p][c][l], la = gAgg(ll), lk = ck + '|' + l, lo = q || V.open[lk];
+        body += gRow('g3', 'l3', lk, lo, '<span>Lot ' + esc(l) + '</span>', la);
+        if (!lo) return;
+        ll.slice().sort(function(a, b){ return a.n - b.n; }).forEach(function(r){
+          body += '<tr data-act="roll" data-no="' + r.no + '" aria-selected="' + (V.sel === r.no) + '" tabindex="0"><td class="l4"><span class="doc">' + r.no + '</span></td>' +
+            '<td>' + r.grade + '</td><td class="num"><b>' + m1(r.len) + '</b>' + (r.len0 !== r.len ? '<span class="smallline">awal ' + m1(r.len0) + '</span>' : '') + '</td>' +
+            '<td class="num">' + (r.st === 'tersedia' ? m1(r.len) : '<span class="muted">—</span>') + '</td><td class="mono">' + esc(r.loc) + '</td><td>' + rsb(r.st) + '</td><td>' + ptChip(r.pt) + '</td><td class="num">' + r.age + ' hr</td></tr>';
+        });
+      });
+    });
+  });
+  if (!list.length) body = '<tr><td colspan="8" style="padding:24px;text-align:center;white-space:normal">Tidak ada roll untuk saringan ini' + (q ? ' (cari: "' + esc(q) + '")' : '') + '. <button type="button" class="linkbtn" data-act="rreset">Reset saringan</button></td></tr>';
+
+  var viewOpts = ['Bawaan','Pribadi','Dibagikan'].map(function(grp){
+    var vs = VIEWS.filter(function(v){ return v.scope.indexOf(grp) === 0; });
+    if (!vs.length) return '';
+    return '<optgroup label="' + grp + '">' + vs.map(function(v){ return '<option value="' + v.id + '"' + (v.id === V.view ? ' selected' : '') + '>' + esc(v.name) + (v.scope !== grp ? ' · ' + esc(v.scope.replace(/^Dibagikan ke /, '')) : '') + '</option>'; }).join('') + '</optgroup>';
+  }).join('');
+  function chip(kind, val, label){ var on = kind === 'sisa' ? V.f.sisa : V.f[kind].indexOf(val) >= 0; return '<button type="button" class="chip" data-act="rchip" data-k="' + kind + '" data-v="' + val + '" aria-pressed="' + on + '">' + label + '</button>'; }
+  var nAll = list.length;
+  var html =
+    '<div class="ph"><div><h2 class="ph-title">Stok Roll</h2><p class="ph-sub">Semua roll di lokasi kerja, dikelompokkan Produk › Warna › Lot.</p></div>' +
+    '<div class="ph-act"><span class="mk">8</span><button type="button" class="btn" data-act="exportToggle" aria-expanded="' + V.exportOpen + '">' + icon('dl') + 'Unduh ' + icon('down') + '</button>' + exportMenu(V, nAll, 'roll') + '</div></div>' +
+    '<div class="scope">' + icon('pin') + '<span>Lokasi kerja: <b>Rancamalang</b></span><span class="sep">·</span><span>PT aktif: <b>PT KSC</b></span><span class="muted">· angka di bawah memakai cakupan ini</span></div>' +
+    '<div class="figs">' +
+      '<div class="fig"><small><span class="mk">1</span>Tersedia</small><span class="v">' + n0(F.tersedia.r) + ' <em>roll</em> · ' + m1(F.tersedia.m) + ' <em>m</em></span><span class="cap">di Rancamalang · PT KSC</span>' +
+      '<button type="button" class="glob" data-act="bd" aria-expanded="' + !!V.bd + '"><span>Total grup (semua PT)</span><b>' + qty(F.global) + ' ›</b></button></div>' +
+      '<div class="fig"><small>Dipesan</small><span class="v">' + n0(F.dipesan.r) + ' <em>roll</em></span><span class="cap">' + m1(F.dipesan.m) + ' m · untuk SO terbuka</span></div>' +
+      '<div class="fig"><small>Lainnya</small><span class="v">' + n0(F.lain.r) + ' <em>roll</em></span><span class="cap">karantina retur, tahan QC · ' + m1(F.lain.m) + ' m</span></div>' +
+      '<div class="fig"><small><span class="mk">2</span>Stok Fisik</small><span class="v">' + n0(F.fisik.r) + ' <em>roll</em> · ' + m1(F.fisik.m) + ' <em>m</em></span><span class="cap">= Tersedia + Dipesan + Lainnya</span><span class="cap">+ ' + F.transit.r + ' roll dalam perjalanan (baris sendiri, belum di sini)</span></div>' +
+    '</div>' +
+    (V.bd ? '<div class="breakdown"><div class="bd-head"><h3>Rincian Tersedia · Total grup (semua PT)</h3><div class="tabs" role="tablist">' +
+      [['lok','Per lokasi'],['pt','Per PT'],['st','Per status'],['dtg','Akan datang']].map(function(t){ return '<button type="button" role="tab" data-act="bdtab" data-v="' + t[0] + '" aria-selected="' + (V.bdTab === t[0]) + '">' + t[1] + '</button>'; }).join('') +
+      '</div><button type="button" class="x" data-act="bd" aria-label="Tutup rincian">' + icon('x') + '</button></div>' + bdTable(F) +
+      '<p class="muted" style="margin:0;font-size:12px">PT lain hanya tampil sebagai angka, tanpa harga pokok dan nomor dokumen.</p></div>' : '') +
+    '<div class="toolbar"><span class="mk">3</span><div class="viewbox"><label class="lbl" for="rView">Tampilan</label><select id="rView" class="sel">' + viewOpts + '</select>' + (dirty ? '<span class="dirty" title="Saringan berubah dari tampilan tersimpan">* berubah</span>' : '') +
+      '<button type="button" class="btn sm" data-act="savetoggle">' + icon('save') + (dirty ? 'Simpan sebagai…' : 'Simpan tampilan…') + '</button></div></div>' +
+    (V.saving ? '<div class="savebox"><input id="rSaveName" placeholder="Nama tampilan, mis. Lot campur Woven" aria-label="Nama tampilan"><select id="rSaveScope" class="sel" aria-label="Siapa yang bisa memakai"><option value="Pribadi">Hanya saya</option><option value="Dibagikan ke peran Gudang · PT KSC">Bagikan ke peran Gudang · PT KSC</option></select><button type="button" class="btn primary sm" data-act="saveview">Simpan</button><button type="button" class="btn sm" data-act="savetoggle">Batal</button></div>' : '') +
+    (V.savedMsg ? '<div class="ok-note">' + icon('check') + esc(V.savedMsg) + '</div>' : '') +
+    '<div class="toolbar"><span class="mk">4</span><label class="search" for="rQ">' + icon('search') + '<input id="rQ" value="' + esc(V.f.q) + '" placeholder="Pindai label atau ketik nomor roll, lot, warna"></label>' +
+      '<select id="rBld" class="sel" aria-label="Gedung"><option value="all"' + (V.f.bld === 'all' ? ' selected' : '') + '>Semua gedung</option><option value="Woven"' + (V.f.bld === 'Woven' ? ' selected' : '') + '>Gedung Woven</option><option value="Retur"' + (V.f.bld === 'Retur' ? ' selected' : '') + '>Gedung Retur</option><option value="Transit"' + (V.f.bld === 'Transit' ? ' selected' : '') + '>Dalam perjalanan</option></select>' +
+      '<select id="rPt" class="sel" aria-label="PT"><option value="KSC"' + (V.f.pt === 'KSC' ? ' selected' : '') + '>PT KSC (aktif)</option><option value="all"' + (V.f.pt === 'all' ? ' selected' : '') + '>Semua PT yang ditugaskan</option></select></div>' +
+    '<div class="chips" role="group" aria-label="Saringan cepat">' + chip('st','tersedia','Tersedia') + chip('st','dipesan','Dipesan') + chip('st','karantina','Karantina retur') + chip('st','tahan','Tahan QC') + chip('st','transit','Dalam perjalanan') +
+      '<span class="sep muted">|</span>' + chip('grade','A','Grade A') + chip('grade','B','Grade B') + chip('grade','BS','Grade BS') + '<span class="sep muted">|</span>' + chip('sisa','1','Sisa &lt; 5 m') +
+      '<button type="button" class="linkbtn" data-act="rreset" style="margin-left:4px">Reset</button></div>' +
+    '<div class="toolbar"><span class="mk">5</span><button type="button" class="btn sm" data-act="openall">Buka semua</button><button type="button" class="btn sm" data-act="closeall">Tutup semua</button><span class="muted" style="font-size:12px">' + n0(nAll) + ' roll cocok · ' + m1(sum(list, function(r){ return r.len; })) + ' m</span></div>' +
+    '<div class="tblwrap"><table class="tbl gtbl"><thead><tr><th>Produk › Warna › Lot › Roll <span class="mk">6</span></th><th>Grade</th><th class="th-num">Sisa (m)</th><th class="th-num">Tersedia (m)</th><th>Lokasi</th><th>Status</th><th>PT</th><th class="th-num">Umur</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+    '<div class="pager"><span><b>1–' + n0(nAll) + '</b> dari <b>' + n0(nAll) + '</b> roll (contoh; di gudang nyata ribuan roll, dimuat per halaman dari server)</span><span>100 per halaman · ‹ ›</span></div>' +
+    rDrawer();
+  var main = document.getElementById('rMain');
+  var hadFocus = document.activeElement && document.activeElement.id === 'rQ', caret = hadFocus ? document.activeElement.selectionStart : 0;
+  main.innerHTML = html;
+  if (hadFocus) { var qi = document.getElementById('rQ'); qi.focus({preventScroll:true}); try { qi.setSelectionRange(caret, caret); } catch (e) {} }
+  if (V.sel) drawLabel(R(V.sel));
+}
+function gRow(cls, lv, key, open, name, a){
+  return '<tr class="g ' + cls + '" data-act="toggle" data-k="' + esc(key) + '" tabindex="0" aria-expanded="' + !!open + '"><td class="' + lv + '"><span class="gname"><span class="tw' + (open ? ' open' : '') + '">' + icon('right') + '</span>' + name + ' <span class="cnt">' + n0(a.n) + ' roll · ' + a.locs + ' lokasi</span></span></td>' +
+    '<td></td><td class="num">' + m1(a.m) + '<span class="smallline">min ' + m1(a.min) + ' · maks ' + m1(a.max) + '</span></td><td class="num">' + m1(a.av) + '</td><td></td><td>' + stMix(a.st) + '</td><td></td><td class="num">' + (a.ageMin === a.ageMax ? a.ageMin : a.ageMin + '–' + a.ageMax) + ' hr</td></tr>';
+}
+function epc(r){ var h = (r.n).toString(16).toUpperCase(); while (h.length < 8) h = '0' + h; return ('E28068942000' + h + '0001').match(/.{4}/g).join(' '); }
+function dmy(daysAgo, time){ var d = new Date(2026, 10, 10 - daysAgo); var dd = ('0' + d.getDate()).slice(-2), mm = ('0' + (d.getMonth() + 1)).slice(-2); return dd + '/' + mm + (time ? ' ' + time : ''); }
+function ymd(daysAgo){ var d = new Date(2026, 10, 10 - daysAgo); return '26' + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2); }
+function rDrawer(){
+  if (!V.sel) return '';
+  var r = R(V.sel);
+  var hist = [[dmy(r.age, '14:02'), 'Diterima · GRN-' + ymd(r.age) + '-0004 · ' + (r.st === 'transit' ? 'Gate IN Soreang' : 'Gate IN Woven')], [dmy(r.age, '14:20'), 'Ditempatkan di ' + (r.st === 'transit' ? 'SRG-01-C-R02' : r.loc.indexOf('WOV-S') === 0 ? 'WOV-A-R02-T2' : r.loc) + ' · label dicetak CP30EN-RCM-1']];
+  if (r.len0 !== r.len) hist.push([dmy(1, '10:15'), 'Dipotong ' + m1(r.len0 - r.len) + ' m · sisa dipindah ke rak sisa ' + r.loc]);
+  if (r.st === 'dipesan') hist.push(['10/11 08:55', 'Dipesan untuk ' + r.ref]);
+  if (r.st === 'karantina') hist.push(['10/11 08:40', 'Retur penjualan dipindai · ' + r.ref + ' · karantina retur, nilai saat settle']);
+  if (r.st === 'tahan') hist.push(['09/11 15:10', 'Minta inspeksi · ditahan QC · ' + r.ref]);
+  if (r.st === 'transit') hist.push(['09/11 16:30', 'Dikirim dari Soreang · ' + r.ref + ' · tiba hari ini']);
+  return '<aside class="drawer" aria-label="Rincian roll"><div class="drawer-in"><div class="dr-head"><div><span class="muted" style="font-size:12px;font-weight:700">ROLL <span class="mk">7</span></span><div class="dr-id">' + r.no + '</div>' + rsb(r.st) + ' ' + ptChip(r.pt) + '</div>' +
+    '<button type="button" class="x" data-act="rclose" aria-label="Tutup rincian">' + icon('x') + '</button></div>' +
+    '<dl class="dl"><dt>Produk</dt><dd>' + esc(r.prod) + '</dd><dt>Warna · Lot</dt><dd><span class="sw" style="background:' + SW[r.color] + ';vertical-align:-2px"></span> ' + esc(r.color) + ' · Lot ' + r.lot + '</dd><dt>Grade</dt><dd>' + r.grade + '</dd>' +
+    '<dt>Panjang</dt><dd><b>' + m1(r.len) + ' m</b>' + (r.len0 !== r.len ? ' sisa (awal ' + m1(r.len0) + ' m)' : '') + '</dd><dt>Lokasi</dt><dd class="mono">' + esc(r.loc) + '</dd><dt>EPC</dt><dd class="mono" style="font-size:12px">' + epc(r) + '<br><span class="muted">ditulis sistem saat cetak label</span></dd><dt>Umur</dt><dd>' + r.age + ' hari sejak diterima</dd></dl>' +
+    '<div class="lblbox"><p class="sec-t">Label 70 × 22 mm</p><canvas id="lblCanvas" width="700" height="220" role="img" aria-label="Pratinjau label roll ' + r.no + '"></canvas><p>Data Matrix 18 × 18 berisi nomor roll; EPC di tag RFID merujuk roll yang sama. Skala 5 px per mm.</p></div>' +
+    '<div><p class="sec-t">Riwayat roll</p><ul class="tl">' + hist.map(function(h){ return '<li><time>' + h[0] + '</time><span>' + esc(h[1]) + '</span></li>'; }).join('') + '</ul></div>' +
+    '<div class="row-act"><button type="button" class="btn">' + icon('printer') + 'Cetak ulang label</button><button type="button" class="btn">Pindah rak</button></div></div></aside>';
+}
+function drawLabel(r){
+  var c = document.getElementById('lblCanvas'); if (!c || !r) return;
+  var x = c.getContext('2d'), S = 10; // 10 px per mm pada kanvas (tampil 5 px/mm)
+  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, 700, 220);
+  var mod = 0.5 * S, ox = 3 * S, oy = 6 * S, n = 18, g = rng(r.n);
+  x.fillStyle = '#000000';
+  for (var i = 0; i < n; i++){
+    for (var j = 0; j < n; j++){
+      var on;
+      if (j === 0 || i === n - 1) on = true;                 // pola L
+      else if (i === 0) on = (j % 2 === 0);                 // jalur jam atas
+      else if (j === n - 1) on = (i % 2 === 1);             // jalur jam kanan
+      else on = g() > 0.52;
+      if (on) x.fillRect(ox + j * mod, oy + i * mod, mod, mod);
+    }
+  }
+  var tx = 15 * S;
+  x.fillStyle = '#000000';
+  x.font = '700 ' + (3.6 * S) + 'px ui-monospace, Menlo, Consolas, monospace'; x.fillText(r.no, tx, 7.8 * S);
+  x.font = '700 ' + (2.5 * S) + 'px Manrope, system-ui, sans-serif'; x.fillText((r.prod + ' · ' + r.color).toUpperCase(), tx, 11.8 * S);
+  x.font = '600 ' + (2.5 * S) + 'px Manrope, system-ui, sans-serif'; x.fillText('Lot ' + r.lot + ' · Grade ' + r.grade + ' · ' + m1(r.len0) + ' m', tx, 15.4 * S);
+  x.font = '400 ' + (2.1 * S) + 'px Manrope, system-ui, sans-serif'; x.fillText(PTN[r.pt] + ' · ' + dmy(r.age), tx, 18.8 * S);
+  x.strokeStyle = '#C9CDD6'; x.lineWidth = 2; x.strokeRect(1, 1, 698, 218);
+}
+var rMain = document.getElementById('rMain');
+rMain.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var a = el.getAttribute('data-act');
+  if (a === 'toggle') { var k = el.getAttribute('data-k'); if (V.open[k]) delete V.open[k]; else V.open[k] = 1; }
+  else if (a === 'roll') V.sel = el.getAttribute('data-no');
+  else if (a === 'rclose') V.sel = null;
+  else if (a === 'bd') V.bd = !V.bd;
+  else if (a === 'bdtab') V.bdTab = el.getAttribute('data-v');
+  else if (a === 'rchip') {
+    var kind = el.getAttribute('data-k'), v = el.getAttribute('data-v');
+    if (kind === 'sisa') V.f.sisa = !V.f.sisa;
+    else { var arr = V.f[kind], ix = arr.indexOf(v); if (ix >= 0) arr.splice(ix, 1); else arr.push(v); }
+    V.savedMsg = '';
+  }
+  else if (a === 'rreset') { V.f = cloneF(viewById(V.view).f); V.savedMsg = ''; }
+  else if (a === 'openall') { ROLLS.forEach(function(r){ V.open[r.prod] = 1; V.open[r.prod + '|' + r.color] = 1; V.open[r.prod + '|' + r.color + '|' + r.lot] = 1; }); }
+  else if (a === 'closeall') V.open = {};
+  else if (a === 'exportToggle') { V.exportOpen = !V.exportOpen; V.exported = null; }
+  else if (a === 'export') V.exported = el.getAttribute('data-fmt') === 'xlsx' ? 'Stok-Roll-Rancamalang.xlsx' : 'Stok-Roll-Rancamalang.csv';
+  else if (a === 'savetoggle') { V.saving = !V.saving; V.savedMsg = ''; }
+  else if (a === 'saveview') {
+    var nm = (document.getElementById('rSaveName').value || '').trim(), sc = document.getElementById('rSaveScope').value;
+    if (!nm) { V.savedMsg = ''; rRender(); var ni = document.getElementById('rSaveName'); ni.setAttribute('aria-invalid', 'true'); ni.placeholder = 'Isi nama tampilan dulu'; ni.focus(); return; }
+    var nv = {id:'u' + Date.now(), name:nm, scope:sc, f:cloneF(V.f)};
+    VIEWS.push(nv); V.view = nv.id; V.saving = false; V.savedMsg = 'Tampilan "' + nm + '" disimpan (' + (sc === 'Pribadi' ? 'hanya Anda' : 'dibagikan ke peran Gudang · PT KSC') + ').';
+    store('kn-mock-views', VIEWS.filter(function(v){ return v.id.charAt(0) === 'u'; }));
+  }
+  else return;
+  rRender();
+});
+rMain.addEventListener('keydown', function(e){
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act]')) { e.preventDefault(); e.target.click(); }
+});
+rMain.addEventListener('input', function(e){ if (e.target.id === 'rQ') { V.f.q = e.target.value; V.savedMsg = ''; rRender(); } });
+rMain.addEventListener('change', function(e){
+  var id = e.target.id;
+  if (id === 'rView') { V.view = e.target.value; V.f = cloneF(viewById(V.view).f); V.savedMsg = ''; }
+  else if (id === 'rBld') V.f.bld = e.target.value;
+  else if (id === 'rPt') V.f.pt = e.target.value;
+  else return;
+  rRender();
+});
+
+/* ───────── BUTIR UNTUK DINILAI ───────── */
+var QS = [
+  {t:'Antrean HP "Tugas saya"', d:'Satu antrean untuk semua jenis tugas di gedung lokasi kerja, lintas PT yang ditugaskan, tiap kartu berlabel PT.', o:['Setuju (rekomendasi)','Pisahkan per jenis tugas, menu sendiri-sendiri']},
+  {t:'Aturan "Tugas berikutnya"', d:'Lanjutkan tugas yang sedang dikerjakan, lalu lewat tenggat, lalu tenggat terdekat. Jarak rak menyusul setelah peta rak lengkap.', o:['Setuju (rekomendasi)','Urutan ditentukan supervisor saja']},
+  {t:'Siapa mengambil tugas', d:'Petugas mengambil sendiri dari antrean gedung; supervisor bisa menetapkan atau menarik tugas tertentu.', o:['Setuju (rekomendasi)','Semua tugas wajib ditetapkan supervisor']},
+  {t:'Selesai dengan selisih', d:'Boleh, alasan wajib, masuk antrean Perlu diperiksa (kuning) dan tidak mengunci.', o:['Setuju (rekomendasi)','Wajib disetujui supervisor dulu sebelum selesai']},
+  {t:'Sampel sebagai jenis tugas sendiri', d:'Sampel (ungu, ikon gunting) terpisah dari Keluar SO dan Potong, karena alurnya beda: potong kecil + label sampel.', o:['Setuju (rekomendasi)','Gabung sebagai baris di tugas Keluar SO']},
+  {t:'Cara membaca di HP', d:'Pemindai barcode C72 utama, mode RFID baca massal per dokumen dengan pemicu, kamera cadangan, ketik manual hanya dengan izin.', o:['Setuju (rekomendasi)','Barcode dulu, RFID di HP menyusul setelah pilot gate']},
+  {t:'Penampil roll', d:'Hierarki Produk › Warna › Lot › Roll, grup tertutup bawaan, dua angka (lokal + Total grup semua PT) dengan rincian saat diklik.', o:['Setuju (rekomendasi)','Kelompokkan per lokasi rak dulu']},
+  {t:'Saat sinyal putus', d:'Pindaian dicek terhadap dokumen yang tersimpan di HP dan diantre; tombol Selesai menunggu koneksi.', o:['Setuju (rekomendasi)','Izinkan Selesai saat offline (risiko selisih data)']},
+  {t:'Tampilan tersimpan', d:'Tiap orang bisa menyimpan saringan; admin bisa membagikan ke peran dan PT. Tanda * bila saringan berubah.', o:['Setuju (rekomendasi)','Cukup tampilan pribadi, tanpa berbagi']}
+];
+var ANS = store('kn-mock-nilai') || {};
+function qRender(){
+  document.getElementById('qGrid').innerHTML = QS.map(function(q, i){
+    return '<fieldset class="q" style="margin:0"><legend class="sr" style="position:absolute;left:-9999px">' + esc(q.t) + '</legend><h3><span class="qn">' + (i + 1) + '</span><span>' + esc(q.t) + '</span></h3><p>' + esc(q.d) + '</p>' +
+      q.o.map(function(o, j){ var id = 'q' + i + '_' + j; return '<label for="' + id + '"><input type="radio" name="q' + i + '" id="' + id + '" value="' + j + '"' + (ANS['q' + i] === j ? ' checked' : '') + '><span>' + esc(o) + '</span></label>'; }).join('') +
+      '<label for="q' + i + '_x"><input type="radio" name="q' + i + '" id="q' + i + '_x" value="x"' + (ANS['q' + i] === 'x' ? ' checked' : '') + '><span>Lain, saya tulis di catatan</span></label></fieldset>';
+  }).join('');
+  var nt = document.getElementById('qNote'); if (ANS.note && !nt.value) nt.value = ANS.note;
+  qPreview();
+}
+function qText(){
+  var lines = ['Penilaian mockup Pusat Tugas Gudang (10 Nov 2026)'];
+  QS.forEach(function(q, i){
+    var a = ANS['q' + i], txt = a === undefined ? '(belum dipilih)' : a === 'x' ? 'Lain, lihat catatan' : q.o[a];
+    lines.push((i + 1) + '. ' + q.t + ': ' + txt);
+  });
+  var note = (document.getElementById('qNote').value || '').trim();
+  if (note) lines.push('Catatan: ' + note);
+  return lines.join('\n');
+}
+function qPreview(){ document.getElementById('qPreview').textContent = qText(); }
+document.getElementById('qGrid').addEventListener('change', function(e){
+  if (e.target.type !== 'radio') return;
+  ANS[e.target.name] = e.target.value === 'x' ? 'x' : +e.target.value; store('kn-mock-nilai', ANS); qPreview();
+});
+document.getElementById('qNote').addEventListener('input', function(e){ ANS.note = e.target.value; store('kn-mock-nilai', ANS); qPreview(); });
+document.getElementById('qCopy').addEventListener('click', function(){
+  var msg = document.getElementById('qCopyMsg'), txt = qText();
+  function fallback(){ var pre = document.getElementById('qPreview'); var sel = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(pre); sel.removeAllRanges(); sel.addRange(rg); msg.textContent = 'Teks sudah ditandai di bawah. Tekan Ctrl+C lalu tempel di chat.'; }
+  try {
+    navigator.clipboard.writeText(txt).then(function(){ msg.textContent = 'Tersalin. Tempel di chat Claude.'; }, fallback);
+  } catch (e) { fallback(); }
+});
+
+/* ───────── navigasi & catatan ───────── */
+var VIEW_IDS = ['desktop','hp','roll','nilai'];
+function route(){
+  var h = (location.hash || '').slice(1), v = VIEW_IDS.indexOf(h) >= 0 ? h : 'desktop';
+  VIEW_IDS.forEach(function(id){
+    document.getElementById('v-' + id).hidden = id !== v;
+    var a = document.querySelector('[data-view="' + id + '"]');
+    if (id === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  if (v === 'hp') hpRender();
+}
+window.addEventListener('hashchange', route);
+var nt = document.getElementById('noteToggle');
+nt.addEventListener('change', function(){ document.body.classList.toggle('no-notes', !nt.checked); });
+
+dRender(); rRender(); qRender(); hpRender(); route();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if (V.sel) drawLabel(R(V.sel)); });
+})();
+</script>
