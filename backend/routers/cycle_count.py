@@ -520,7 +520,6 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
     from services import stock_count_roll_service as rcs
     from services import atomic_claim as _saga
     actor = await require_permission(request, "inventory", "approve_count")
-    require_reason(payload.reason, label="Alasan finalisasi")   # FIX-3a — K-14 dihitung huruf
     session = await _load_session(session_id, request)
     if session["status"] != "open" or not session.get("roll_count"):
         raise HTTPException(status_code=400, detail="Sesi opname per roll tidak open")
@@ -552,6 +551,8 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
         cost, _ = await scs.surplus_unit_cost(sp.product_id, session["warehouse_id"], sp.owner_entity_id)
         if cost <= 0 and not payload.zero_cost_reason.strip():
             raise HTTPException(status_code=400, detail=f"Kode {ln['code']}: produk tanpa biaya acuan — isi alasan biaya nol")
+    # FIX-3a — K-14 dihitung huruf; dicek SESUDAH izin & cakupan PT (403 lebih dulu), SEBELUM ada penulisan.
+    require_reason(payload.reason, label="Alasan finalisasi")
     await _saga.claim("cycle_count_sessions", session_id, "cycle_count_roll_finalize",
                       precondition={"status": "open"}, actor=actor["name"])
     recount, blocked, held = [], 0, 0

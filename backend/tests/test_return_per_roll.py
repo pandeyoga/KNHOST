@@ -161,7 +161,7 @@ def test_buat_retur_detail_per_roll_dirapikan_dan_flag_dokumen():
 # ─── Diteruskan ke retur SUPPLIER & retur ANTAR-PT (23 Okt) ─────────────────────────────────────────────────────
 def _pret(tag, status="pending_approval", **extra):
     return {"id": f"pret_uji_pr_{tag}", "number": f"UJI/PRET-{tag}", "entity_id": base.ENT, "status": status,
-            "supplier_name": "Supplier Uji", "ppn_rate": 11.0, "warehouse_id": "wh_uji",
+            "supplier_name": "Supplier Uji", "ppn_rate": 11.0, "warehouse_id": "wh_jakarta",   # FIX-1 — gudang dalam lokasi kerja petugas uji (Jakarta)
             "items": [{"product_id": "prod_uji_pr", "unit": "yard", "price": 1000.0, "quantity": 30.0,
                        "subtotal": 30000.0, "reason": "cacat", "condition": "damaged",
                        "roll_ids": [f"a_{tag}", f"b_{tag}"], "roll_qtys": {f"a_{tag}": 10.0, f"b_{tag}": 20.0},

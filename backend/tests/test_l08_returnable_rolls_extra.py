@@ -155,7 +155,8 @@ def test_parallel_4(h):
     assert sum(r.status_code == 200 for r in res) == 1
     assert all(r.status_code == 400 for r in res if r.status_code != 200)
     again = next(x for x in _ret(h)["rolls"] if x["roll_id"] == roll["roll_id"])
-    assert abs(again["returned_qty"] - q) < 0.02
+    # urutan roll dari API tidak dijamin — roll terpilih bisa sudah punya retur lama (data acuan: 2,0 yd)
+    assert abs(again["returned_qty"] - (float(roll.get("returned_qty") or 0) + q)) < 0.02
     assert DB.return_create_locks.count_documents({}) == 0
     DB.sales_returns.delete_many({"notes": TAG})
 

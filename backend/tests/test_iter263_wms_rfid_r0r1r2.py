@@ -452,7 +452,8 @@ class TestR2PutawayOrder:
         if not roll_exc:
             return
         rs = admin.post(f"{BASE}/api/putaway-orders/{pa['id']}/resolve-exception",
-                        json={"roll_ids": [roll_exc], "action": "accept"}, timeout=120)
+                        json={"roll_ids": [roll_exc], "action": "accept",
+                              "reason": "Roll dicek fisik di rak tujuan, diterima"}, timeout=120)  # K-14 (FIX-3a)
         assert rs.status_code == 200, rs.text[:400]
         fin = rs.json()
         assert fin["status"] == "completed", fin["status"]
@@ -461,7 +462,8 @@ class TestR2PutawayOrder:
 
         # tidak ada exception lagi → resolve ulang 404
         rs2 = admin.post(f"{BASE}/api/putaway-orders/{pa['id']}/resolve-exception",
-                         json={"roll_ids": [roll_exc], "action": "accept"}, timeout=90)
+                         json={"roll_ids": [roll_exc], "action": "accept",
+                               "reason": "Roll dicek fisik di rak tujuan, diterima"}, timeout=90)
         assert rs2.status_code == 404, f"-> {rs2.status_code}"
 
     def test_list_orders_filter(self, admin):

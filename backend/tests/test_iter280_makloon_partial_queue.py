@@ -92,7 +92,9 @@ def test_03_issue_mengurangi_available(admin, target):
                       json={"step_seq": target["seq"], "from_warehouse_id": wh}, timeout=30)
     assert r.status_code == 200, r.text
     av1, sc1 = bal()
-    assert abs((av0 - av1) - need) < 0.05, (av0, av1, need)
+    # FIX-2 (B3a SSOT-4) — cadangan makloon SUDAH mengurangi "Tersedia" sejak dicadangkan (definisi tunggal
+    # `stock_figures`), jadi issue tidak mengurangi Tersedia lagi; yang berpindah = fisik ke stok di subkon.
+    assert abs(av0 - av1) < 0.05, (av0, av1, need)
     assert abs((sc1 - sc0) - need) < 0.05, (sc0, sc1, need)
 
 

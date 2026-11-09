@@ -120,10 +120,12 @@ def test_stok_per_lokasi_memisahkan_milik_pt_dan_pt_lain():
          "status": "available", "length_remaining": 20.0}])
     # FIX-2 (B3a STK-13) — "Di {lokasi}" kini dibaca dari saldo proyeksi (definisi tunggal `stock_figures`), sama dengan
     # semua angka stok lain; roll yang disisipkan langsung ke DB wajib di-rebuild seperti yang dilakukan alur aplikasi.
-    import asyncio
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _shared_loop import run as _run   # loop bersama — aman dijalankan sesudah berkas uji lain
     from services.roll_service import rebuild_balance
     for owner in ("ent_ksc", "ent_kanda"):
-        asyncio.get_event_loop().run_until_complete(rebuild_balance(pid, WH_S, owner))
+        _run(rebuild_balance(pid, WH_S, owner))
     r = requests.get(f"{BASE}/pos/site-stock", headers=ADMIN, params={"site_id": SITE, "entity_id": "ent_ksc", "product_ids": pid})
     assert r.status_code == 200, r.text
     st = r.json()["stock"][pid]

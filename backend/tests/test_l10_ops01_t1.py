@@ -129,7 +129,7 @@ def test_missing_writeoff_full(adm):
         if e["roll_id"] not in (lost, keep):
             _scan(sid, adm, code=e["roll_id"], bin_id=e["bin_id"])
     requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-missing-recount", json={"roll_id": lost}, headers=adm)
-    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"wo {TAG}"}, headers=adm)
+    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"hapus roll hilang {TAG}"}, headers=adm)
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["status"] == "approved_with_exceptions"
@@ -161,8 +161,8 @@ def test_probe_missing_changed_qty_after_recount(adm):
             _scan(sid, adm, code=e["roll_id"], bin_id=e["bin_id"])
     requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-missing-recount", json={"roll_id": lost}, headers=adm)
     DB.inventory_rolls.update_one({"id": lost}, {"$set": {"length_remaining": 35}})
-    r1 = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"p1 {TAG}"}, headers=adm).json()
-    r2 = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"p2 {TAG}"}, headers=adm).json()
+    r1 = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"putaran satu {TAG}"}, headers=adm).json()
+    r2 = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"putaran dua {TAG}"}, headers=adm).json()
     still = [m for m in r2.get("missing", []) if m["roll_id"] == lost]
     print("PROBE qty-changed missing: r1", r1.get("status"), r1.get("recount"), "| r2", r2.get("status"), r2.get("recount"),
           "| still missing:", bool(still), "| roll qty", DB.inventory_rolls.find_one({"id": lost})["length_remaining"])
@@ -178,7 +178,7 @@ def test_probe_missing_committed_roll(adm):
         if e["roll_id"] != lost:
             _scan(sid, adm, code=e["roll_id"], bin_id=e["bin_id"])
     requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-missing-recount", json={"roll_id": lost}, headers=adm)
-    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"p {TAG}"}, headers=adm)
+    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"pindah alamat {TAG}"}, headers=adm)
     ro = DB.inventory_rolls.find_one({"id": lost})
     print("PROBE committed missing:", r.status_code, r.json().get("status"), "roll status", ro["status"], ro["length_remaining"],
           "reserved", ro.get("length_reserved"))
@@ -193,7 +193,7 @@ def test_foreign_same_and_other_warehouse(adm):
         _scan(sid, adm, code=e["roll_id"], bin_id=e["bin_id"])
     assert "foreign" in _scan(sid, adm, code=same, bin_id=B1["id"])["scan"]["kinds"]
     assert "foreign" in _scan(sid, adm, code=other, bin_id=B1["id"])["scan"]["kinds"]
-    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"fr {TAG}"}, headers=adm)
+    r = requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"roll asing {TAG}"}, headers=adm)
     assert r.status_code == 200, r.text
     assert DB.inventory_rolls.find_one({"id": same})["bin_id"] == B1["id"]
     assert DB.inventory_movements.count_documents({"roll_id": same, "movement_type": "cycle_count_relocation"}) == 1
@@ -214,7 +214,7 @@ def test_unknown_code_new_roll(adm):
     u1 = _scan(sid, adm, code=f"UNK1-{TAG}", bin_id=B1["id"], measured_qty=12)["scan"]
     u2 = _scan(sid, adm, code=f"UNK2-{TAG}", bin_id=B1["id"])["scan"]
     u3 = _scan(sid, adm, code=f"UNK3-{TAG}", bin_id=B1["id"], measured_qty=4)["scan"]
-    fin = lambda body, h=adm: requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"unk {TAG}", "zero_cost_reason": "uji", **body}, headers=h)  # noqa: E731
+    fin = lambda body, h=adm: requests.post(f"{BASE}/cycle-count/sessions/{sid}/roll-finalize", json={"reason": f"kode baru {TAG}", "zero_cost_reason": "uji biaya nol", **body}, headers=h)  # noqa: E731
     sp = lambda u, **k: {"scan_id": u["id"], "product_id": PROD["id"], "owner_entity_id": "ent_ksc", **k}  # noqa: E731
     assert fin({"new_rolls": [sp(u1, product_id="prod_nope")]}).status_code == 400
     assert fin({"new_rolls": [sp(u2)]}).status_code == 400            # no qty & no measured
