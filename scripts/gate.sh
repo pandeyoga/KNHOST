@@ -277,7 +277,7 @@ STATIK=(
   # FIX-10 (audit 2026-11-09 B3a SSOT-1) — INV-ROLL-02. Status roll dulu ditulis 63+ panggilan di 18 berkas tanpa
   # tabel transisi; kini satu pintu `services/roll_state.transition()` (daftar-izin + CAS + jejak + saldo). Ratchet:
   # penulis `status` inventory_rolls di luar roll_state hanya boleh turun (baseline 0); berkas baru = MERAH.
-  "guard:roll_status_writer SELF-TEST (bukti-merah dua arah, 15 kasus)|python scripts/guardrails/verify_roll_status_writer.py --self-test"
+  "guard:roll_status_writer SELF-TEST (bukti-merah dua arah, 14 kasus + ratchet)|python scripts/guardrails/verify_roll_status_writer.py --self-test"
   "guard:roll_status_writer (INV-ROLL-02, satu penulis status roll)|python scripts/guardrails/verify_roll_status_writer.py"
   # FASE P5 — baseline UX (loading/empty/chart) akhirnya jadi GATE. Sebelum ini
   # `ux_audit.py` hanya dijalankan manual, tak punya `--self-test`, dan angkanya tak

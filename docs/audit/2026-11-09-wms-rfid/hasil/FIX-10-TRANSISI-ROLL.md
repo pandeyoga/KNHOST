@@ -27,7 +27,7 @@
 | `scripts/guardrails/verify_roll_status_writer.py` (baru) + `baselines/roll_status_writer.json` | INV-ROLL-02 ratchet (baseline **0**), terdaftar di `scripts/gate.sh` (statik + SELF-TEST) |
 | `scripts/guardrails/verify_atomic_claim.py` | mengenali pembantu CAS FIX-10 (`_rs.transition(`, `ccs.transition(`, `_ist.cas_filter(`, `claimed=True`, `_pst.finish_claimed(`) — tanpa ini 3 entri REVIEWED palsu-merah; contoh self-test "service_cas tanpa CAS" dipindah ke `putaway_order_service.after_claim` (`dispatch` kini ber-CAS) |
 | `scripts/audit/fix10_status_census.py` (baru) | sensus status baca-saja vs tabel |
-| `backend/tests/test_fix10_roll_state.py` (baru) | 25 uji (§8) |
+| `backend/tests/test_fix10_roll_state.py` (baru) · `frontend/src/features/__tests__/fix10RollStatusVocab.test.js` (baru) | 26 uji pytest + 4 uji Jest (§8) |
 
 ## 2. Tabel transisi status ROLL (`roll_state.ROLL_TRANSITIONS`)
 
@@ -199,12 +199,12 @@ memerah — tinjauan kode tetap perlu.
 ## 8. Uji
 
 ### 8.1 Uji baru — `backend/tests/test_fix10_roll_state.py` (gagal di dasar → lulus sesudah)
-Dasar `1c41241`: **0/25** (galat koleksi: `services.roll_state` tidak ada). FIX-10: **25/25 lulus** — RINGKASAN_UJI_BARU.
+Dasar `1c41241`: **0/26** (galat koleksi: `services.roll_state` tidak ada). FIX-10: **26/26 lulus** (dengan `KN_DEMO_PW`; tanpa sandi di lingkungan: 23 lulus + 3 uji HTTP dilewati). Uji transfer antar-gudang ditambah sesudah putaran pertama (`test_wh_transfer_reserve_dispatch_receive_and_release_history`: pesan → kirim → terima ke gudang lain, batal sesudah dikirim kembali ke gudang asal, terima ulang tidak memindah lagi).
 
 | Bagian | Uji |
 |---|---|
 | A roll_state | ilegal ditolak sebelum tulisan (+`in_transit_sales→available`, `allocated`/kode lama registry); `from_`/alasan wajib, status di filter ditolak; CAS asal tidak cocok → 0 tulisan (termasuk prasyarat lain); **6 transisi paralel → tepat 1 menang**, 1 entri riwayat; bentuk entri (from/status/user/note/action/ref) & batas 30; saldo segmen dibangun ulang + pindah gudang (dua segmen); pipeline + `return_doc`; roll anak: status lahir dikenal, riwayat induk tidak diwarisi |
-| B penulis dimigrasi | tahan/lepas QC-06 (riwayat sekali, `hold_history` tetap); ember tahan/lepas; reservasi roll pilihan + pelepasan per dokumen **tidak** melepas roll di SJ |
+| B penulis dimigrasi | tahan/lepas QC-06 (riwayat sekali, `hold_history` tetap); ember tahan/lepas; reservasi roll pilihan + pelepasan per dokumen **tidak** melepas roll di SJ; transfer antar-gudang pesan → kirim → terima (pindah gudang, saldo dua sisi) / batal sesudah kirim kembali ke asal / terima ulang tidak memindah (CAS) |
 | C Putaway | PA manual → kirim → trip → tutup sisa: riwayat PA `open→in_transit→partially_received→completed`, riwayat roll `available→in_transit_transfer→available` (tiba & kembali transit); batal draf beralasan (pembalikan bersih, roll tidak diklaim, terbit ditolak); tabel menolak 6 transisi ilegal; `finish_claimed` menolak status berubah di luar klaim (409, kunci ditandai gagal) |
 | D SPK | mulai menulis riwayat; tulisan basi (SPK ditutup orang lain) ditolak; draf → selesai ditolak; **4 "mulai" paralel → 1 menang** |
 | E opname | kirim → tolak → buka kembali lewat API ber-riwayat (alasan tercatat); aksi opname tidak menyentuh sesi pendaftaran; **5 "kirim" paralel → 1 menang**; opname RFID selesai ber-riwayat & kunci dicabut |
@@ -212,13 +212,87 @@ Dasar `1c41241`: **0/25** (galat koleksi: `services.roll_state` tidak ada). FIX-
 | G guardrail | pemindai merah untuk penulis baru, hijau di repo, self-test lulus, berkas baru = merah |
 
 ### 8.2 Regresi dasar vs FIX-10 (DB salinan sama, dipulihkan sebelum tiap putaran)
-REGRESI_TABEL
+Stack sementara `kn-tmp-fix10-*` (mongo:7 `--memory 1200m --wiredTigerCacheSizeGB 0.5`, backend `kn-dev-backend`
+`--memory 1500m`; kode DISALIN ke `/app` — putaran dasar benar-benar memakai `git archive main` di `/app`, berkas uji baru
+ikut disalin agar terbukti gagal), DB = `kn_test_trial_2026-11-08` → `test_database`, **dipulihkan (drop + restore) dan
+uvicorn dijalankan ulang sebelum tiap putaran**; tiap berkas uji di proses pytest terpisah.
+
+**Putaran utama — 57 berkas** (FIX-1…9: `fix2/3a/3b/5/6/7×3/9`; putaway: `prep_c`, `iter264`, `prep_integrasi_freeze_putaway`,
+`p02`; SPK/QC: `f14`, `p05_imp16`, `p19`, `fe10`, `f11_f12`, `return_spk_per_roll`; opname: `l10_ln101`, `l10_ops01`,
+`prep_b`, `l10_ln100_102`; keluar/SO: `roll_pick_and_reallocate`, `iter270`, `f05`, `iter144`; transfer: `iter14`, `p03`,
+`transfer_status_guard`, `interco_g6`; retur: `uat23×2`, `return_per_roll`, `l08×2`, `cut01`, `ln091_092`; makloon/ember:
+`makloon_celup_rolls`, `iter280`, `f2_stock_buckets`; gate V2: `prep_d1`, `prep_d2`, `prep_g`, `run_rfid_v2_integration`,
+`run_rfid_v2_extended`; potong/sampel: `l06_samples_cutting`, `rnd_samples_qa3`, `l04_mdq_cut`, `uat24_f5`):
+
+| Putaran | Lulus | Gagal | Galat | Gagal hanya di putaran ini |
+|---|---|---|---|---|
+| dasar `main` 1c41241 (+ berkas uji FIX-10) | 427 | 35 | 25 | 1 (= galat koleksi berkas uji FIX-10) |
+| FIX-10 (kode akhir `d6d2ec3`+) | 450 | 35 | 24 | **0** |
+
+* **Gagal hanya di FIX-10: 0.** 35 gagal + 24 galat SAMA PERSIS di kedua putaran (lama, data/fixture: `p19` 5 — roll
+  fixture tidak ada di data acuan, `f2_stock_buckets` 8 — stok fixture 0, `p03` 11 galat — dokumen `KANDA/TRF-00002`
+  tidak ada, `interco_g6` 11, `transfer_status_guard` 3, `f11_f12` 6 galat, `fix7_data_scripts` 7 galat, `iter14` 1,
+  `p02` 1, `l10_ln100_102` 1, `f05` 2, `rnd_samples_qa3` 2, `uat24_f5` 1). Gate V2 `run_rfid_v2_integration` &
+  `run_rfid_v2_extended`: kode keluar 0 di kedua putaran.
+* Putaran FIX-10 pertama (kode sebelum perbaikan `return_doc`) juga 0 gagal-hanya-FIX-10 di 57 berkas.
+
+**Putaran pelengkap — uji yang butuh `KN_DEMO_PW` (diberikan lewat `docker exec -e`, tidak ditulis ke berkas) dan uji G3
+yang menulis ke DB sendiri (`DB_NAME=g3_audit_fix10`):**
+
+| Berkas | dasar | FIX-10 |
+|---|---|---|
+| `test_fix10_roll_state.py` | galat koleksi | **26/26** |
+| `test_fix1_cakupan.py` | 30/30 | 30/30 |
+| `test_fix8_saved_views.py` | 19/19 | 19/19 |
+| `test_fix3a_inbound_integrity.py` | 28/28 | 28/28 |
+| `test_g3_phase01.py` (produksi/PA/opname RFID fault-injection) | 27/28 | 27/28 |
+| `test_g3_phase02.py` | 20/21 | 20/21 |
+| `test_g3_phase02b.py` | 14/16 | 14/16 |
+| `test_g3_phase04.py` | 16/17 | 16/17 |
+
+Gagal identik di kedua sisi (lama): `g3 pa02` (suntik galat pada `inventory_movements.update_one` — FIX-5 memindah mutasi
+PA ke `bulk_write`, suntikan tidak pernah terpicu), `g3 od_lock01`, `g3 tag01`, `g3 retpolicy01`, `g3 hr_payroll`.
+
+**Temuan selama regresi (diperbaiki):** putaran pelengkap pertama memerahkan `g3 cc01` (selesai opname RFID: suntik galat
+pada `rfid_verify_sessions.update_one`) karena tulisan akhir sesi pindah ke `find_one_and_update`. `cycle_count_state.
+transition` diberi `return_doc=False` (tetap `update_one`) untuk SEMUA titik yang dulu `update_one` (opname RFID selesai,
+finalisasi opname per roll, mulai/kembali/ajukan/setujui pendaftaran awal) → `cc01` lulus; putaran akhir di atas memakai
+kode sesudah perbaikan ini.
 
 ### 8.3 Jest / ESLint
-JEST_HASIL
+Kontainer `node:20` sementara, `node_modules` dari volume `kn-dev_fe_node_modules` (read-only), `CI=true`.
+
+| Putaran | Hasil |
+|---|---|
+| `fix10RollStatusVocab` (baru) dengan `statusVocab.js` dasar | **2/4 gagal** (`wip` tanpa label ranah roll → kode mentah; nada) |
+| FIX-10 — suite terkait (`fix10RollStatusVocab`, `fix8StandarUi2`, `fix9KunciMakloon`, `phase4R8`) | **4/4 suite · 39/39 uji lulus** |
+| FIX-10 — Jest penuh (`--maxWorkers=2`) | **91/91 suite · 653/653 uji lulus** |
+| ESLint `utils/statusVocab.js` + uji baru | 0 galat, 0 peringatan |
 
 ## 9. Guardrail
-GUARD_HASIL
+`PYTHONUTF8=1 python scripts/guardrails/verify_*.py` — dasar = `git archive main` (1c41241) diekstrak, FIX-10 = branch ini.
+
+| Guardrail | Dasar | FIX-10 |
+|---|---|---|
+| **`verify_roll_status_writer` (baru, INV-ROLL-02)** | — (70 penulis statik di 18 berkas bila dijalankan pada kode dasar) | **PASS — 0 penulis, baseline 0**; self-test 20/20 |
+| `verify_ui_standard` | PASS 5691 cek | PASS 5691 cek (ratchet tidak naik) |
+| `verify_scope_guard` | kode 0 | kode 0 |
+| `verify_atomic_claim` | 6 pelanggaran (BELUM DITINJAU 77 + 5 lama); self-test 2 gagal lama | 6 pelanggaran (BELUM DITINJAU **75** + 5 lama yang sama); self-test 2 gagal lama yang sama |
+| `verify_ref_unlink` (kontainer) | 3 pelanggaran / 633 cek | 3 pelanggaran (sama) / 637 cek; self-test 8/8 |
+| `verify_status_history` | PASS 9 | PASS 9 |
+| `verify_to_list_bound` | 20 pelanggaran | 20 (sama; nomor baris `roll_service` bergeser) |
+| `verify_codebase_map` | PASS | PASS (peta dibangkitkan ulang) |
+| `verify_ui_contrast` · `verify_list_export` · `verify_page_tabs` · `verify_custom_modals` | PASS | PASS |
+| `verify_line_scope` · `verify_auth_coverage` | 1 · 28 | 1 · 28 (sama) |
+
+* `verify_atomic_claim`: tanpa perluasan pola, 3 entri REVIEWED akan palsu-merah (`cycle_count_service.complete`,
+  `initial_registration_service.reject`, `rnd_sample_service.issue_material`) karena CAS kini lewat pembantu FIX-10 —
+  pola diperluas (§1), contoh self-test "service_cas tanpa CAS" dipindah ke fungsi yang memang tanpa CAS.
+  **BELUM DITINJAU 77 → 75 adalah artefak ukur, bukan perbaikan:** `handheld.py POST /tasks/{kind}/{doc_id}/complete` dan
+  `sales_returns.py …/roll-settlement/{settlement_id}/complete` tidak lagi terhitung multi-koleksi karena tulisan
+  `inventory_rolls`-nya kini lewat `roll_state` (inventaris tidak menelusur ke modul itu). Angka baseline tidak diubah.
+* `verify_state_machine.py` TIDAK dijalankan (larangan paket). `verify_concurrency` (runtime HTTP, menulis data) tidak
+  dijalankan.
 
 ## 10. Keputusan implementer (bukan keputusan pemilik/koordinator)
 1. **Jejak = `status_history` di dokumen roll** (bukan mutasi) — alasan §2. Dibatasi 30 entri terakhir (`$slice`) agar
@@ -235,7 +309,21 @@ GUARD_HASIL
 7. Tidak ada skrip data: tidak ada data yang perlu diubah; status liar hanya dilaporkan (§11).
 
 ## 11. Sensus data acuan (baca-saja, `scripts/audit/fix10_status_census.py`)
-SENSUS_HASIL
+Dijalankan pada salinan `kn_test_trial` (tanpa tulisan):
+
+| Koleksi | Status | Liar |
+|---|---|---|
+| `inventory_rolls` | available 46.436 · in_transit_sales 81 · consumed 44 · subcon 32 · quarantine 29 · reserved 20 · delivered 13 · committed 12 · in_transit_transfer 10 · damaged 8 · blocked 8 · returned_supplier 7 | **0** — kode lama registry (`on_order/cross_dock/sold/returned/scrapped`) 0; ember tanpa penulis (`picked/packed/in_transit_inbound/in_transit_intercompany`) 0 |
+| `putaway_orders` | completed 2 | 0 |
+| `inspections` | draft 64 · done 43 · in_progress 4 · assigned 2 | 0 |
+| `cycle_count_sessions` (opname / pendaftaran) · opname RFID | — (0 dokumen) | 0 |
+
+Cek tambahan nilai "status asal" di data: `blocked` → `hold.prev_status` = available (8); `in_transit_transfer` →
+`transfer_prior_status` = reserved (10, ref SO); `returned_supplier` → `returned_from_status` = available 2 · quarantine 1 ·
+kosong 4 (jalur balik memakai `quarantine/available` menurut jenis mutasi, bukan field ini); roll ber-`bucket_ref` =
+subcon 32 · consumed 44. Semua pasangan sah menurut tabel. **Produksi:** jalankan skrip yang sama (baca-saja) sebelum
+rilis — status liar yang muncul akan ditolak `roll_state` saat transisi berikutnya (galat terlihat, bukan status diubah
+diam-diam).
 
 ## 12. Berkas berisiko bentrok
 `roll_service.py`, `putaway_*`, `inspection_service.py`, `qc_service.py`, `return_*`, `purchase_return_*`,
@@ -256,4 +344,27 @@ INV-ROLL-02 sampai memakai `roll_state.transition()`.
 ---
 
 ## Ringkasan untuk koordinator
-RINGKASAN_KOORDINATOR
+* **SSOT-1 ditutup:** satu pintu `services/roll_state.transition()` (daftar-izin 19 status, CAS status asal, `status_history`
+  ≤ 30 entri di tulisan yang sama, rebuild saldo segmen sebelum/sesudah pindah). **74 titik tulis di 21 berkas dimigrasi**
+  (70 statik + 4 dinamis yang tak terbaca pemindai); sisa di luar `roll_state`: **0**. Guardrail baru INV-ROLL-02
+  (ratchet baseline 0) terdaftar di `gate.sh`.
+* **Tabel transisi + CAS + `status_history`** untuk Putaway Order (termasuk draf), SPK inspeksi/QC, sesi opname (item/roll),
+  pendaftaran awal, dan opname RFID. Pembalikan batal didokumentasikan (§3); tulisan akhir klaim saga kini CAS + kunci.
+* **`allocated` dibuang** dari daftar status roll (`loading_check_service`, `rfid_service`); registry & label FE selaras
+  (`wip` = "WIP (Proses)").
+* **Transisi ilegal ditemukan (§5):** `in_transit_sales → available` lewat `_release_rolls_by_ref_id` (dipersempit),
+  cutloss bisa mengubah roll terpesan/ditahan ke `hold/available` (kini ditolak sebelum kunci/jurnal), `picked/packed →
+  committed` (dilewati+log), 14 penulis R→W tanpa CAS (kini CAS). Dua transisi sah ditambah (`blocked → damaged`,
+  `quarantine/damaged → hold`).
+* **Uji:** baru pytest 26/26 (dasar 0/26), Jest baru 4/4 (dasar 2/4 gagal), Jest penuh 653/653; regresi 57 berkas dasar vs
+  FIX-10: **0 gagal hanya di FIX-10** (450 lulus vs 427; 35 gagal/24 galat lama identik); pelengkap (FIX-1, FIX-8, FIX-3a
+  ber-sandi, G3 ×4) identik dengan dasar; gate V2 runner kode 0 di keduanya. Satu regresi ditemukan & diperbaiki selama
+  uji (`g3 cc01`, §8.2).
+* **Guardrail lain tidak naik** (atomic_claim perlu perluasan pola untuk pembantu CAS FIX-10; BELUM DITINJAU 77→75 =
+  artefak ukur, dicatat).
+* **Produksi:** tanpa migrasi; `status_history` lahir bertahap. Sensus data acuan: 0 status liar. Saran sebelum rilis:
+  jalankan `scripts/audit/fix10_status_census.py` (baca-saja) di produksi.
+* **Perlu perhatian koordinator:** (1) perubahan perilaku T3 (cutloss roll terikat ditolak) & T6 (balapan kini 409/
+  dilewati); (2) sandi demo sempat tertulis di berkas uji pada commit WIP `1912af9` lalu diganti `KN_DEMO_PW` di `d6d2ec3`
+  (riwayat commit lokal tidak ditulis ulang — sandi yang sama sudah ada di `AGENTS.md`); (3) layar riwayat status belum
+  ada.
