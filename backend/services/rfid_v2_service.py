@@ -4,6 +4,7 @@ Fasad modul: transport/bukti (`rfid_v2_core`, `rfid_v2_ingest`), sumber dokumen 
 keputusan K-RFID-09/10 (`rfid_v2_policy`), sesi dokumen & klaim crossing (`rfid_v2_sessions`), satu kunci per gate
 (`rfid_v2_latch`), parameter gate berversi (`rfid_v2_params`), kesehatan reader (`rfid_v2_health`).
 """
+import asyncio
 import base64
 import json
 import logging
@@ -23,14 +24,26 @@ from services import rfid_v2_policy as policy
 from services import rfid_v2_sessions as sessions
 from services import rfid_v2_sources as sources
 from services.rfid_v2_common import collection, digest, fail, now, parse_ts  # noqa: F401 — API publik modul
-from services.rfid_v2_core import (CONTRACT, CONTRACT_VERSION, binding_sources, config, ensure_indexes, gate,  # noqa: F401
+from services import rfid_v2_core as _core
+from services.rfid_v2_core import (CONTRACT, CONTRACT_VERSION, binding_sources, config, gate,  # noqa: F401
                                    gate_params, load_evidence, passage, publish_config, set_protocol, validate)
-from services.rfid_v2_ingest import events  # noqa: F401
+from services.rfid_v2_ingest import events as _ingest_events
 
 logger = logging.getLogger(__name__)
 manifest = sources.manifest
 validate_sources = sources.validate_sources
 COMPLETION_OK = ('manifest_full', 'manifest_subset', 'document_session')
+# PREP-H — batas waktu close selaras dengan batas tunggu agent ke ERP (5 dtk): close ulang menunggu keputusan yang
+# sedang dihitung ≤ DECIDE_WAIT_S lalu 503 EVIDENCE_PENDING (retryable, kode kontrak yang sudah ada); sewa penghitung
+# DECIDE_LEASE_S (proses mati di tengah close → close berikutnya mengambil alih sesudah sewa lewat).
+DECIDE_WAIT_S = 3.0
+DECIDE_LEASE_S = 15
+
+
+async def ensure_indexes() -> None:
+    """Index V2 + jalur gate (rfid_v2_core) lalu sapuan antrean transaksi gate sesudah start (PREP-H)."""
+    await _core.ensure_indexes()
+    gate_txn.schedule_startup_sweep()
 
 
 async def bind_manifest(device, gate_id, source, direction, actor):
@@ -84,8 +97,10 @@ async def history(device_id, cursor=None, limit=50):
         except (ValueError, TypeError, UnicodeError):
             fail(400, 'INVALID_CURSOR', 'Posisi halaman tidak valid; mulai dari halaman pertama.')
         query['$or'] = [{'created_at': {'$lt': at}}, {'created_at': at, '_id': {'$lt': pid}}]
+    # PREP-H — panel U300 mem-poll riwayat 10 dtk: daftar roll masukan/hasil transaksi gate (s.d. 2.000 per lintasan)
+    # tidak ikut dikirim; status transaksi (`gate_txn_state`, percobaan, jadwal ulang) tetap ada.
     rows = await collection('rfid_v2_passages').find(query, {
-        'events': 0, 'close_body': 0, 'close_hash': 0, 'close_key': 0,
+        'events': 0, 'close_body': 0, 'close_hash': 0, 'close_key': 0, 'gate_txn_input': 0, 'gate_txn': 0,
         'binding.roll_ids': 0, 'binding.sources.roll_ids': 0}).sort([('created_at', -1), ('_id', -1)]).to_list(limit + 1)
     page = rows[:limit]
     next_cursor = base64.urlsafe_b64encode(json.dumps([page[-1]['created_at'], page[-1]['_id']]).encode()).decode() \
@@ -189,7 +204,44 @@ def _counts_match(p, body):
     return True
 
 
+async def _take_decide_lease(pid: str) -> bool:
+    """PREP-H — satu penghitung keputusan per lintasan (sewa singkat, CAS). Close ulang/bersamaan (agent retry saat
+    jaringan/DB lambat) MENUNGGU keputusan, tidak menghitung ulang → beban tidak berlipat; sewa basi (proses mati di
+    tengah close) diambil alih close berikutnya."""
+    at = datetime.now(timezone.utc)
+    stamp = at.isoformat().replace('+00:00', 'Z')
+    until = (at + timedelta(seconds=DECIDE_LEASE_S)).isoformat().replace('+00:00', 'Z')
+    res = await collection('rfid_v2_passages').update_one(
+        {'_id': pid, 'decision': None, '$or': [{'decide_lease_until': {'$exists': False}},
+                                               {'decide_lease_until': None}, {'decide_lease_until': {'$lt': stamp}}]},
+        {'$set': {'decide_lease_until': until, 'decide_started_at': stamp}})
+    return bool(res.modified_count)
+
+
+async def _await_decision(pid: str, wait_s: float):
+    deadline = asyncio.get_running_loop().time() + wait_s
+    while True:
+        row = await collection('rfid_v2_passages').find_one({'_id': pid}, {'decision': 1})
+        if row and row.get('decision'):
+            return row['decision']
+        if asyncio.get_running_loop().time() >= deadline:
+            return None
+        await asyncio.sleep(0.1)
+
+
+async def events(device, body, **kw):
+    """Batch bukti reader (rfid_v2_ingest). PREP-H: ditandai sebagai permintaan reader → transaksi berat di latar
+    menunggu sebentar (lampu gate didahulukan)."""
+    with gate_txn.gate_request():
+        return await _ingest_events(device, body, **kw)
+
+
 async def close(device, passage_id, body, key, *, simulated: bool = False):
+    with gate_txn.gate_request():   # PREP-H — lampu gate didahulukan dari transaksi berat di latar
+        return await _close(device, passage_id, body, key, simulated=simulated)
+
+
+async def _close(device, passage_id, body, key, *, simulated: bool = False):
     validate('PassageClose', body)
     if not key or len(key) > 160:
         fail(400, 'IDEMPOTENCY_KEY_REQUIRED', 'Close membutuhkan Idempotency-Key stabil.')
@@ -200,7 +252,7 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
     if p.get('close_hash') and (p['close_hash'] != fingerprint or p['close_key'] != key):
         fail(409, 'CLOSE_CONFLICT', 'Close yang sama harus mempertahankan key dan isi.')
     if p['decision']:
-        await gate_txn.post_close(device, p['_id'])   # PREP-D2 — lanjutkan transaksi yang belum tuntas (idempoten)
+        gate_txn.kick(device['id'])   # PREP-H — transaksi yang belum tuntas dilanjutkan pekerja latar (idempoten)
         return p['decision']
     if p['state'] == 'OPEN':
         if not _counts_match(p, body):   # bukti belum lengkap: jangan bekukan transport yang belum selesai
@@ -216,8 +268,14 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
     if p.get('close_hash') != fingerprint or p.get('close_key') != key:
         fail(409, 'CLOSE_CONFLICT', 'Close bersamaan berbeda; pemeriksaan diperlukan.')
     if p['decision']:
-        await gate_txn.post_close(device, p['_id'])
+        gate_txn.kick(device['id'])
         return p['decision']
+    if not await _take_decide_lease(p['_id']):
+        decided = await _await_decision(p['_id'], DECIDE_WAIT_S)
+        if decided:
+            gate_txn.kick(device['id'])
+            return decided
+        fail(503, 'EVIDENCE_PENDING', 'Keputusan lintasan sedang dihitung (close lain); ulangi close sebentar lagi.')
     ev = await load_evidence(p['_id'])
     if len(ev['event']) != p.get('event_count', 0) or len(ev['summary']) != p.get('summary_count', 0):
         fail(503, 'EVIDENCE_PENDING', 'Bukti tersimpan belum lengkap; ulangi close.')
@@ -272,10 +330,15 @@ async def close(device, passage_id, body, key, *, simulated: bool = False):
         await sessions.record_passage(entries, direction, cfg['warehouse_id'], p['_id'], passage_id, verdict, by_source)
     await collection('rfid_v2_passages').update_one({'_id': p['_id'], 'decision': None}, {'$set': {
         'decision': decision, 'state': 'FINAL', 'weak_epcs': result['weak'], 'background_epcs': result['background'],
-        'gate_txn_input': gate_txn.build_input(result, device, cfg, passage_id), 'gate_txn_state': 'pending'}})
+        'gate_txn_input': gate_txn.build_input(result, device, cfg, passage_id), 'gate_txn_state': 'pending',
+        'gate_txn_attempts': 0, 'gate_txn_enqueued_at': now(), 'decide_lease_until': None}})
     final = await collection('rfid_v2_passages').find_one({'_id': p['_id']}, {'decision': 1})
-    # PREP-D2 — gate → transaksi gudang + antrean periksa (best-effort; keputusan ke reader tidak berubah)
-    await gate_txn.post_close(device, p['_id'])
+    # PREP-D2 → PREP-H — gate → transaksi gudang + antrean periksa di PEKERJA LATAR (keputusan ke reader tidak menunggu
+    # dan tidak berubah oleh hasil transaksi). Simulator (alat admin) menjalankannya langsung agar hasilnya deterministik.
+    if p.get('simulated'):
+        await gate_txn.post_close(device, p['_id'])
+    else:
+        gate_txn.kick(device['id'])
     return final['decision']
 
 

@@ -148,7 +148,22 @@ def send(k, scenario, doc=(), extra=(), close_patch=None, resend=False):
     if resend:   # close ulang (retry agent) — keputusan & transaksi tidak boleh berlipat
         again = requests.post(f"{V2}/passages/{built['passage_id']}/close", json=close, timeout=90, headers=hdr)
         assert again.status_code == 200 and again.json()["decision_id"] == r.json()["decision_id"]
+    wait_txn(k, r.json())
     return r.json()
+
+
+def wait_txn(k, d, timeout=60):
+    """PREP-H — transaksi gate kini di pekerja latar (close tidak menunggu): tunggu lintasan tuntas sebelum memeriksa
+    efeknya (tiba PA, terima transfer, bukti trip, kasus antrean)."""
+    import time
+    pid = pid_of(k, d)
+    end = time.time() + timeout
+    while time.time() < end:
+        row = DB.rfid_v2_passages.find_one({"_id": pid}, {"gate_txn_state": 1, "gate_txn_input": 1})
+        if row and (row.get("gate_txn_state") in ("done", "error") or not row.get("gate_txn_input")):
+            return row.get("gate_txn_state")
+        time.sleep(0.05)
+    raise AssertionError(f"transaksi gate lintasan {pid} belum tuntas dalam {timeout} dtk")
 
 
 def pid_of(k, d):

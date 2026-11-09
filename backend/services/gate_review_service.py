@@ -304,7 +304,9 @@ async def summary(warehouse_ids: Optional[List[str]] = None) -> Dict[str, Any]:
         q['warehouse_id'] = {'$in': warehouse_ids}
     rows = await collection(REVIEWS).aggregate([{'$match': q}, {'$group': {'_id': '$verdict', 'n': {'$sum': 1}}}]).to_list(10)
     by = {r['_id']: r['n'] for r in rows}
-    return {'open': sum(by.values()), 'red': by.get('RED', 0), 'review': by.get('REVIEW', 0), 'green': by.get('GREEN', 0)}
+    from services import gate_txn_service as gt   # PREP-H — antrean transaksi gate (pekerja latar) terlihat di tab ini
+    return {'open': sum(by.values()), 'red': by.get('RED', 0), 'review': by.get('REVIEW', 0), 'green': by.get('GREEN', 0),
+            'txn': await gt.queue_summary(warehouse_ids)}
 
 
 def ensure_open(case: Dict[str, Any]) -> None:

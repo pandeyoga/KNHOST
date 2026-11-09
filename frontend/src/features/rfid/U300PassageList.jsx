@@ -2,11 +2,12 @@
  * PREP-D1 — riwayat lintasan gate U300 V2: hasil berwarna (Hijau/Kuning/Merah/Batal), daftar alasan (reason_codes,
  * istilah Indonesia), hitungan cocok/sisa/lain/lemah/latar, tindak lanjut & unduh bukti. Antrean periksa lengkap
  * (PREP-D2) = `GateReviewQueue` di Monitor Gerbang; lintasan merah hanya bisa diakui pemegang izin approve.
+ * PREP-H — status transaksi gudang lintasan (pekerja latar: menunggu/diproses/selesai/gagal + jadwal ulang).
  */
 import { useState } from "react";
 import { canCurrent } from "../../config/roles";
 import { Pill } from "./rfidShared";
-import { LEVEL_COLOR, reasonText, verdictInfo } from "./u300Labels";
+import { LEVEL_COLOR, reasonText, txnStateInfo, verdictInfo } from "./u300Labels";
 
 function Reasons({ decision }) {
   const items = (decision?.reasons || []).filter((r) => r.level !== "INFO" || decision.verdict === "CANCELLED");
@@ -63,6 +64,15 @@ export default function U300PassageList({ passages, busy, onAcknowledge, onEvide
                   <td className="p-2"><Pill color={v.color} testId={`u300-verdict-${id}`}>{v.short}</Pill>
                     {p.decision?.verdict === "REVIEW" && <div className="text-[10px] text-[#8A5A00]">barang jalan · gate tidak terkunci</div>}
                     {p.decision?.binding_mode === "auto" && <div className="text-[10px] text-[#6B6B73]">dokumen auto-cocok</div>}
+                    {txnStateInfo(p) && (
+                      <div className="mt-0.5" data-testid={`u300-txn-${id}`}>
+                        <Pill color={txnStateInfo(p).color}>{txnStateInfo(p).label}</Pill>
+                        {p.gate_txn_state === "error" && !p.gate_txn_gave_up && p.gate_txn_next_at && (
+                          <div className="text-[10px] text-[#6B6B73]">diulang {new Date(p.gate_txn_next_at).toLocaleTimeString("id-ID")}
+                            {p.gate_txn_attempts ? ` · percobaan ${p.gate_txn_attempts}` : ""}</div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="p-2"><Reasons decision={p.decision} /></td>
                   <td className="p-2"><Counts c={p.decision?.counts} /></td>

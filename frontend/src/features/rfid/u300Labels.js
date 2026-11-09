@@ -169,6 +169,20 @@ export const TXN_MODE = {
   unknown: "Mode gedung belum diketahui",
 };
 
+// PREP-H — status transaksi gudang lintasan (pekerja latar): lampu gate tidak menunggu transaksi.
+export const TXN_STATE = {
+  pending: { label: "Transaksi gudang menunggu", color: "gray" },
+  processing: { label: "Transaksi gudang diproses", color: "blue" },
+  done: { label: "Transaksi gudang selesai", color: "green" },
+  error: { label: "Transaksi gudang gagal — diulang otomatis", color: "orange" },
+  gave_up: { label: "Transaksi gudang gagal — perlu Ulangi transaksi", color: "red" },
+};
+export function txnStateInfo(p) {
+  if (!p || !p.gate_txn_state) return null;
+  const key = p.gate_txn_state === "error" && p.gate_txn_gave_up ? "gave_up" : p.gate_txn_state;
+  return TXN_STATE[key] || null;
+}
+
 export const ACTION_LABEL = {
   accept: "Diterima", reject: "Ditolak", ignore: "Diabaikan", rescan: "Minta pindai ulang", dismiss: "Kasus ditutup",
   acknowledge_latch: "Kunci gate diakui", retry: "Transaksi diulang", done_elsewhere: "Dilengkapi jalur lain",

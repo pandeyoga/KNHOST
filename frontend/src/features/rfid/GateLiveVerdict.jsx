@@ -10,6 +10,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { canCurrent } from "../../config/roles";
 import { fmtTime } from "./rfidShared";
+import usePolling from "./usePolling";
 
 const FETCH_STALE_S = 15;
 const HEARTBEAT_STALE_S = 120;
@@ -24,24 +25,28 @@ export function useGateStatus(gateId, enabled, onNewRed, protocol) {
   const [fetchError, setFetchError] = useState("");
   const [now, setNow] = useState(Date.now());
   const seen = useRef(null);
-  const load = async () => {
-    if (!gateId) return;
+  const fetchOnce = async () => {
+    if (!gateId) return true;
     try {
       const r = await axios.get(gateStatusUrl(gateId, protocol));
       setData(r.data); setLastOk(Date.now()); setFetchError("");
       const p = r.data.passage;
       if (p && p.verdict === "red" && seen.current !== null && seen.current !== p.id + p.red_count) onNewRed?.();
       seen.current = p ? p.id + p.red_count : "";
-    } catch (e) { setFetchError(apiErrorText(e, "Gagal mengambil status gate")); }
+      return true;
+    } catch (e) { setFetchError(apiErrorText(e, "Gagal mengambil status gate")); return false; }
   };
+  const load = async () => { await fetchOnce(); };
   useEffect(() => {
     seen.current = null; setData(null); setLastOk(0);
     if (!enabled || !gateId) return undefined;
-    load();
-    const t = setInterval(load, 4000);
     const c = setInterval(() => setNow(Date.now()), 1000);
-    return () => { clearInterval(t); clearInterval(c); };
-  }, [gateId, enabled, protocol]); // eslint-disable-line
+    return () => clearInterval(c);
+  }, [gateId, enabled, protocol]);
+  // PREP-H — 4 dtk saat terlihat; berhenti saat tab tersembunyi; galat → mundur s.d. 30 dtk (status tetap
+  // "TIDAK TERHUBUNG — TAHAN" bila data lebih tua dari FETCH_STALE_S, jadi mundur tidak pernah memberi hijau basi).
+  usePolling(async () => { if (!(await fetchOnce())) throw new Error("gate status"); },
+    { intervalMs: 4000, maxMs: 30000, enabled: !!(enabled && gateId) }, [gateId, protocol]);
   const fetchAge = lastOk ? Math.round((now - lastOk) / 1000) : null;
   const hb = data?.device?.heartbeat_age_s;
   const offline = !lastOk || fetchAge > FETCH_STALE_S;

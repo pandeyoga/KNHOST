@@ -12,6 +12,7 @@ import RfidSecurityPanel from "./RfidSecurityPanel";
 import GateLiveVerdict, { useGateStatus } from "./GateLiveVerdict";
 import GatePassageHistory from "./GatePassageHistory";
 import GateReviewQueue from "./GateReviewQueue";
+import usePolling from "./usePolling";
 
 export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
@@ -28,7 +29,6 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("monitor");
   const [live, setLive] = useState(false);
-  const liveT = useRef(null);
   // Sirine gate MERAH — baseline per gudang supaya ganti gudang tidak ikut meraung.
   const [sirenMuted, setSirenMutedState] = useState(isSirenMuted());
   const seenRed = useRef(null);
@@ -70,22 +70,18 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, [kiosk]);
 
-  const loadReads = async () => {
-    try {
-      const params = whId ? { warehouse_id: whId } : {};
-      const [r, s] = await Promise.all([
-        axios.get(`${API}/rfid/reads`, { params: { ...params, read_type: "gate", ...(gateId ? { device_id: gateId } : {}), limit: 25 } }),
-        axios.get(`${API}/rfid/summary`, { params }),
-      ]);
-      setReads(r.data.reads || []);
-      setSummary(s.data);
-    } catch { /* polling senyap */ }
+  const loadReads = async () => {   // polling senyap: galat dilempar ke usePolling (mundur bertahap), tanpa banner
+    const params = whId ? { warehouse_id: whId } : {};
+    const [r, s] = await Promise.all([
+      axios.get(`${API}/rfid/reads`, { params: { ...params, read_type: "gate", ...(gateId ? { device_id: gateId } : {}), limit: 25 } }),
+      axios.get(`${API}/rfid/summary`, { params }),
+    ]);
+    setReads(r.data.reads || []);
+    setSummary(s.data);
   };
 
-  useEffect(() => {
-    if (live) { liveT.current = setInterval(loadReads, 4000); }
-    return () => { if (liveT.current) clearInterval(liveT.current); };
-  }, [live, whId, gateId]); // eslint-disable-line
+  // PREP-H — berhenti saat tab tersembunyi, mundur bertahap (s.d. 60 dtk) saat galat; langsung segar saat terlihat.
+  usePolling(loadReads, { intervalMs: 4000, maxMs: 60000, enabled: live, immediate: false }, [whId, gateId]);
 
   const load = async () => {
     setLoading(true); setError(null);

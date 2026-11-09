@@ -3,6 +3,8 @@
  * Daftar lintasan kuning & merah + sesi dokumen yang ditutup dengan roll kurang, per gudang/gate, dengan saring
  * status/hasil/jenis. Klik baris → rincian (DetailModal) berisi bukti per roll dan tindakan.
  * Merah = pelanggaran (gate terkunci) · Kuning = perlu diperiksa, barang jalan, gate tidak terkunci.
+ * PREP-H — muat ulang otomatis 30 dtk (berhenti saat tab tersembunyi, mundur saat galat) + jumlah transaksi gudang
+ * gate yang masih menunggu / gagal (pekerja latar).
  */
 import { useCallback, useEffect, useState } from "react";
 import { ClipboardCheck, RefreshCw } from "lucide-react";
@@ -12,6 +14,7 @@ import DetailModal from "../../components/DetailModal";
 import axios, { API } from "../../services/apiClient";
 import { EmptyBox, Pill, SectionCard, fmtTime } from "./rfidShared";
 import GateReviewDetail from "./GateReviewDetail";
+import usePolling from "./usePolling";
 import { CASE_KIND, CASE_STATUS, CASE_VERDICT, DIRECTION, VERDICT, codesText, errorText } from "./u300Labels";
 
 const KINDS = [{ value: "", label: "Semua jenis" }, ...Object.entries(CASE_KIND).map(([value, label]) => ({ value, label }))];
@@ -26,8 +29,8 @@ export default function GateReviewQueue({ whId, devices = [] }) {
   const [kind, setKind] = useState("");
   const [deviceId, setDeviceId] = useState("");
   const [openId, setOpenId] = useState(null);
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       const params = { status, limit: 100 };
       if (whId) params.warehouse_id = whId;
@@ -39,18 +42,27 @@ export default function GateReviewQueue({ whId, devices = [] }) {
         axios.get(`${API}/rfid/v2/ops/reviews/summary`, { params: whId ? { warehouse_id: whId } : {} }),
       ]);
       setRows(r.data.reviews || []); setSummary(s.data); setError("");
-    } catch (e) { setError(errorText(e)); } finally { setLoading(false); }
+      return true;
+    } catch (e) { setError(errorText(e)); return false; } finally { setLoading(false); }
   }, [whId, status, verdict, kind, deviceId]);
   useEffect(() => { load(); }, [load]);
+  usePolling(async () => { if (!(await load(true))) throw new Error("antrean"); },
+    { intervalMs: 30000, maxMs: 120000, immediate: false, enabled: !openId }, [load]);
+  const txn = summary?.txn;
   const devOpts = [{ value: "", label: "Semua gate" }, ...devices.map((d) => ({ value: d.id, label: d.code || d.name }))];
   return (
     <SectionCard testId="gate-review-queue" title="Antrean periksa gate"
-      right={<button type="button" className="secondary-button !py-1 text-[12px]" onClick={load} disabled={loading}>
+      right={<button type="button" className="secondary-button !py-1 text-[12px]" onClick={() => load()} disabled={loading}>
         <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Muat ulang</button>}>
       <div className="space-y-3">
         <p className="text-[11px] text-[#6B6B73]" data-testid="gate-review-summary">
           Terbuka {summary?.open ?? "—"} · merah {summary?.red ?? "—"} · kuning {summary?.review ?? "—"}.
           {" "}Kuning = barang jalan, gate tidak terkunci; roll yang cocok sudah dicatat, sisanya menunggu keputusan di sini.</p>
+        {txn && (txn.pending + txn.processing + txn.error + txn.gave_up > 0) && (
+          <p className="text-[11px] text-[#8A5A00]" data-testid="gate-review-txn">
+            Transaksi gudang gate: {txn.pending + txn.processing} sedang diproses · {txn.error} gagal (diulang otomatis)
+            {txn.gave_up ? ` · ${txn.gave_up} perlu "Ulangi transaksi"` : ""}.</p>
+        )}
         <div className="flex flex-wrap gap-2">
           <KNSelect data-testid="gate-review-status" value={status} onValueChange={setStatus} options={CASE_STATUS}
             className="field !py-1 !px-2 text-[12px] w-auto" />
@@ -61,7 +73,7 @@ export default function GateReviewQueue({ whId, devices = [] }) {
           <KNSelect data-testid="gate-review-device" value={deviceId} onValueChange={setDeviceId} options={devOpts}
             className="field !py-1 !px-2 text-[12px] w-auto" />
         </div>
-        {error && <ErrorNotice message={error} onRetry={load} />}
+        {error && <ErrorNotice message={error} onRetry={() => load()} />}
         {!loading && rows.length === 0 ? (
           <EmptyBox icon={ClipboardCheck} text="Tidak ada lintasan yang perlu diperiksa untuk saringan ini." />
         ) : (
@@ -98,7 +110,7 @@ export default function GateReviewQueue({ whId, devices = [] }) {
       {openId && (
         <DetailModal open onClose={() => setOpenId(null)} size="xl" label="Rincian antrean periksa gate"
           testId="gate-review-modal" showClose={false}>
-          <GateReviewDetail caseId={openId} onClose={() => setOpenId(null)} onChanged={load} />
+          <GateReviewDetail caseId={openId} onClose={() => setOpenId(null)} onChanged={() => load()} />
         </DetailModal>
       )}
     </SectionCard>

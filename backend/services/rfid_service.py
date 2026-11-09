@@ -478,10 +478,27 @@ async def migrate_epc_canonical(dry_run: bool = False) -> Dict[str, Any]:
 
 async def retire_orphan_tags() -> int:
     """IX-12 — retry cleanup: tag hidup yang rollnya tidak ada lagi → retired (alasan tercatat)."""
+    # PREP-H — dulu find_one per tag (N+1, berjalan SETIAP startup): ratusan ribu tag hidup sesudah opname awal ×
+    # lookup roll tanpa index = startup berjam-jam. Kini per 1.000 tag satu `$in` (hasil sama).
     n = 0
+    batch: list = []
+
+    async def _flush(rows):
+        ids = list({t["roll_id"] for t in rows if t.get("roll_id")})
+        found = {r["id"] for r in await db.inventory_rolls.find({"id": {"$in": ids}}, {"_id": 0, "id": 1}).to_list(len(ids) + 1)} \
+            if ids else set()
+        done = 0
+        for t in rows:
+            if t.get("roll_id") and t["roll_id"] not in found:
+                res = await db.rfid_tags.update_one({"id": t["id"], "status": {"$in": list(LIVE_TAG_STATUSES)}}, {"$set": {
+                    "status": "retired", "retired_at": now_iso(), "retire_reason": "roll_tidak_ada"}})
+                done += res.modified_count
+        return done
     async for t in db.rfid_tags.find({"status": {"$in": list(LIVE_TAG_STATUSES)}}, {"_id": 0, "id": 1, "roll_id": 1}):
-        if t.get("roll_id") and not await db.inventory_rolls.find_one({"id": t["roll_id"]}, {"_id": 0, "id": 1}):
-            res = await db.rfid_tags.update_one({"id": t["id"], "status": {"$in": list(LIVE_TAG_STATUSES)}}, {"$set": {
-                "status": "retired", "retired_at": now_iso(), "retire_reason": "roll_tidak_ada"}})
-            n += res.modified_count
+        batch.append(t)
+        if len(batch) >= 1000:
+            n += await _flush(batch)
+            batch = []
+    if batch:
+        n += await _flush(batch)
     return n

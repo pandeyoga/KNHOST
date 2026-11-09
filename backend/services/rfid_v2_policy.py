@@ -12,6 +12,7 @@ Kelas EPC per lintasan: `background` (agent menandai daftar latar) · `weak` (RS
 yang "relevan"; weak & background dicatat, tidak pernah alarm dan tidak pernah diklaim lewat.
 """
 import asyncio
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -24,6 +25,10 @@ from services.rfid_v2_common import parse_ts
 # Jendela "bacaan bawaan muatan sebelumnya" (detik) — TITIK AWAL KALIBRASI, bukan aturan. Belum di `GateParameters`
 # (skema kontrak menolak kunci baru); jadikan parameter per gate bila perlu diatur dari panel (usulan PREP-E §9.5).
 CARRYOVER_WINDOW_S = 120
+# PREP-H — memo baca satu lintasan (`gate_evaluator.GateLookup`): hapus N+1 (query per roll → `$in` per jenis dokumen).
+# Hasil identik dengan jalur per roll (uji `test_prep_h_*` membandingkan keduanya). Sakelar darurat:
+# KN_GATE_PREFETCH=0 → kembali ke query per roll (tanpa ubah kode).
+PREFETCH = os.environ.get('KN_GATE_PREFETCH', '1') != '0'
 
 RED, REVIEW, INFO = 'RED', 'REVIEW', 'INFO'
 _RANK = {RED: 3, REVIEW: 2, INFO: 1}
@@ -181,6 +186,9 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
     weak = [e for e, x in ev.items() if x['cls'] == 'weak']
     background = [e for e, x in ev.items() if x['cls'] == 'background']
     tags, rolls = await _lookup(list(ev)) if ev else ({}, {})
+    ctx = ge.GateLookup() if PREFETCH else None
+    if ctx and rolls:
+        await ctx.warm(rolls.values())   # dokumen movement semua roll lintasan: satu `$in` per jenis dokumen
     # Bawaan muatan sebelumnya dikeluarkan SEBELUM auto-cocok & penilaian (tidak menarik dokumen muatan lain).
     carry_info, carry_review = await _carryover(relevant, ev, tags, rolls, body, gate, direction, pid, device_id)
     judged = [e for e in relevant if e not in carry_info and e not in carry_review]
@@ -191,7 +199,7 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
     elif params.get('auto_match') and direction:
         known = [rolls[tags[e]['roll_id']] for e in judged if e in tags and tags[e].get('roll_id') in rolls]
         if known:
-            auto = await sources.auto_sources(known, warehouse, direction)
+            auto = await sources.auto_sources(known, warehouse, direction, ctx=ctx)
             binding_mode, entries, roll_sources, invalid = 'auto', auto['entries'], auto['roll_sources'], auto['invalid']
     matched: List[Tuple[str, Dict[str, Any]]] = []
     counts = {'observed_unique': len(relevant), 'matched': 0, 'missing': 0, 'extra': 0, 'unknown': quarantined,
@@ -210,13 +218,13 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
         label = roll.get('roll_no') or roll['id']
         src = roll_sources.get(roll['id'])
         if binding_mode == 'manual' and not src:
-            res = await ge.evaluate(direction, warehouse, roll, crossing_passage_id=pid)
+            res = await ge.evaluate(direction, warehouse, roll, crossing_passage_id=pid, ctx=ctx)
             counts['extra'] += 1
             R.add(RED, 'NOT_IN_DOCUMENT', f'Roll {label} tidak tercantum di dokumen yang dipilih.', epc=epc, roll_id=roll['id'])
             if res['result'] == 'red':
                 R.add(RED, res['code'], res['reason'], epc=epc, roll_id=roll['id'])
             return
-        res = await ge.evaluate(direction, warehouse, roll, crossing_passage_id=pid, expected_source=src)
+        res = await ge.evaluate(direction, warehouse, roll, crossing_passage_id=pid, expected_source=src, ctx=ctx)
         sid = (src or {}).get('source_id')
         if res['result'] == 'green' and src:
             matched.append((roll['id'], src))
@@ -245,6 +253,9 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
               f'gate ini ({claim.get("at")}) — kemungkinan terbaca dari muatan sebelumnya/berikutnya; cek fisik.',
               epc=epc, roll_id=roll['id'])
     if direction:
+        if ctx:   # klaim crossing semua roll yang dinilai: satu `$in` (dulu find_one per roll)
+            await ctx.warm_claims([rolls[tags[e]['roll_id']] for e in judged if e in tags and tags[e].get('roll_id') in rolls],
+                                  direction)
         await _gather(judged, judge)
     else:
         R.add(REVIEW, 'DIRECTION_UNVERIFIED', 'Arah lintasan tidak diketahui — roll tidak dinilai.')
@@ -301,7 +312,8 @@ async def decide(*, body: Dict[str, Any], gate: Dict[str, Any], params: Dict[str
     claimable = (verdict in ('GREEN', 'REVIEW') and bool(matched) and not cancelled_like and not R.has(*NO_CLAIM))
     return {'verdict': verdict, 'reasons': R, 'matched': matched, 'entries': entries, 'binding_mode': binding_mode,
             'counts': counts, 'claimable': claimable, 'direction': direction,
-            'weak': weak[:50], 'background': background[:50]}
+            'weak': weak[:50], 'background': background[:50],
+            'lookup_queries': ctx.queries if ctx else None}   # PREP-H — jumlah query memo (uji batas N+1)
 
 
 def finalize(result: Dict[str, Any]) -> Dict[str, Any]:

@@ -15,6 +15,7 @@ import { canCurrent } from "../../config/roles";
 import { Pill, SectionCard, fmtTime } from "./rfidShared";
 import U300DocSession from "./U300DocSession";
 import U300PassageList from "./U300PassageList";
+import usePolling from "./usePolling";
 import { HEALTH, PARAM_LABEL, PROTOCOL, SCENARIOS, VERDICT, errorText, reasonText } from "./u300Labels";
 
 function LatchPanel({ latch, busy, onAck }) {
@@ -88,13 +89,12 @@ export default function U300Operations({ device, isAdmin }) {
     try {
       const r = await axios.get(base, { params: { cursor: cursor || undefined, limit: 50 } });
       if (n === seq.current) { setData(r.data); setError(""); }
-    } catch (e) { if (n === seq.current) setError(errorText(e)); }
+      return true;
+    } catch (e) { if (n === seq.current) setError(errorText(e)); return false; }
   }, [base, cursor]);
-  useEffect(() => {
-    load();
-    const timer = setInterval(load, 10000);
-    return () => { clearInterval(timer); seq.current += 1; };
-  }, [load]);
+  // PREP-H — 10 dtk saat terlihat; berhenti saat tab tersembunyi; galat → mundur bertahap s.d. 60 dtk.
+  usePolling(async () => { if (!(await load())) throw new Error("u300"); }, { intervalMs: 10000, maxMs: 60000 }, [load]);
+  useEffect(() => () => { seq.current += 1; }, [load]);
   const act = async (fn, done) => {
     setBusy(true); setError("");
     try { await fn(); if (done) setMsg(done); await load(); return true; }
