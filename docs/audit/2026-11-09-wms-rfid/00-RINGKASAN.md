@@ -1,7 +1,7 @@
 # Audit & perbaikan WMS-RFID — ringkasan (9 Nov 2026)
 
 - Pelaksana: Claude Code (koordinator) + agen paralel di worktree terpisah. Status: **implemented_pending_review**.
-- `main` lokal `f1ac37c` (belum di-push).
+- Semua di `main` lokal (83 commit di depan GitHub, belum di-push).
 - Permintaan pemilik (9 Nov): audit menyeluruh fungsi WMS & RFID — semua fitur, menu, UI/UX & elemen UI; riset WMS
   profesional; SSOT, skema & duplikasi; alur & niat implementasi; input/output & form; pemicu status/efek; standar
   elemen (form, tombol, cari, saring, ekspor Excel); performa, data besar, kegagalan perangkat/koneksi. Pemilik AFK dan
