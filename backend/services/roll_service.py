@@ -21,6 +21,7 @@ from db import db
 from core_utils import now_iso, new_id, to_cents, DEFAULT_ENTITY_ID
 from schemas import WAREHOUSE_PRIORITY
 from services import movement_label_service as _mlabel   # E5.3/E-9 — nama singkat badan usaha
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 logger = logging.getLogger(__name__)
 
 # ── INV-ROLL-01 — SATU sumber nomor roll ─────────────────────────────────────
@@ -116,6 +117,10 @@ async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any],
     # WM-02/WM-05 — reservasi panjang & klaim perpindahan milik INDUK, tidak ikut ke potongan.
     for k in ("length_reservations", "length_reserved", "active_movement", "weight_split_children"):
         doc.pop(k, None)
+    # FIX-10 — potongan adalah roll baru: jejak status induk tidak diwarisi; status lahir wajib dikenal.
+    _rs.assert_known(doc.get("status") or "")
+    doc["status_history"] = [_rs.history_entry(doc["status"], "", reason=(
+        f"potongan dari roll {parent.get('roll_no') or parent.get('id') or ''}").strip(), action="split")]
     if doc.get("status") != "available":
         doc["earmarked_for"] = None  # pegging hanya bermakna pada roll available (INV roll-pegging)
     doc["roll_no"] = await child_roll_no(parent.get("roll_no") or "")
@@ -934,12 +939,12 @@ async def pending_cuts(order_id: Optional[str] = None, scope_ids: Optional[List[
 
 
 async def _reserve_single_roll(roll_id: str, order_id: str) -> Optional[Dict[str, Any]]:
-    return await db.inventory_rolls.find_one_and_update(
-        {"id": roll_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
-        {"$set": {"status": "reserved", "reserved_ref": {"type": "sales_order", "id": order_id},
-                  "earmarked_for": None, "updated_at": now_iso()}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-    )
+    return await _rs.transition(
+        roll_id, "reserved", from_="available", reason="dialokasikan ke pesanan", action="reserve",
+        ref={"type": "sales_order", "id": order_id},
+        extra_filter={"length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
+        extra_set={"reserved_ref": {"type": "sales_order", "id": order_id}, "earmarked_for": None},
+        rebuild=False, return_doc=True)   # pemanggil membangun ulang segmen sesudah alokasi
 
 
 async def _split_roll(roll: Dict[str, Any], take: float, order_id: str) -> Optional[Dict[str, Any]]:
@@ -1431,10 +1436,12 @@ async def release_order_rolls(order_id: str, return_to_rack_ids: Optional[List[s
             st.update({"bin_id": None, "bin_code": "", "return_to_rack": {"from_bin_id": r.get("bin_id") or "",
                                                                           "order_id": order_id, "why": why,
                                                                           "at": now_iso()}})
-        # FIX-3b (STM-OUT-6) — CAS: roll masih milik order ini & status sama seperti dibaca.
-        res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id}, {"$set": st})
-        if not res.modified_count:
+        # FIX-3b (STM-OUT-6) — CAS: roll masih milik order ini & status sama seperti dibaca. FIX-10 — lewat roll_state.
+        st.pop("status", None)
+        st.pop("updated_at", None)
+        if not await _rs.transition(r["id"], "available", from_=r["status"], reason=why or "reservasi pesanan dilepas",
+                                    action="release", ref={"type": "sales_order", "id": order_id},
+                                    extra_filter={"reserved_ref.id": order_id}, extra_set=st, rebuild=False):
             continue
         total += float(r.get("length_remaining", 0) or 0)
         segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
@@ -1503,10 +1510,11 @@ async def release_order_rolls_partial(order_id: str, product_id: str, warehouse_
             continue
         if rlen <= remaining + 0.01:
             # lepas roll utuh (CAS: status & pemilik reservasi seperti dibaca)
-            res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
-                {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
-            if not res.modified_count:
+            if not await _rs.transition(r["id"], "available", from_=r["status"],
+                                        reason="lepas sebagian (penyesuaian qty eskalasi)", action="release_partial",
+                                        ref={"type": "sales_order", "id": order_id},
+                                        extra_filter={"reserved_ref.id": order_id}, extra_set={"reserved_ref": None},
+                                        rebuild=False):
                 continue
             take = rlen
         else:
@@ -1516,13 +1524,13 @@ async def release_order_rolls_partial(order_id: str, product_id: str, warehouse_
             keep = round(rlen - take, 2)
             rsv = {"id": new_id("rsv"), "ref": {"type": "sales_order", "id": order_id}, "qty": keep,
                    "status": r["status"], "created_at": now_iso(), "note": "sisa reservasi sesudah penyesuaian qty"}
-            res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
-                [{"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso(),
-                           "length_reservations": {"$concatArrays": [{"$ifNull": ["$length_reservations", []]},
-                                                                     [{"$literal": rsv}]]}}},
-                 _recompute_reserved_stage()])
-            if not res.modified_count:
+            if not await _rs.transition(
+                    r["id"], "available", from_=r["status"], reason="lepas sebagian — sisa jadi reservasi potong",
+                    action="release_partial", ref={"type": "sales_order", "id": order_id},
+                    extra_filter={"reserved_ref.id": order_id}, extra_set={"reserved_ref": None},
+                    pipeline=[{"$set": {"length_reservations": {"$concatArrays": [
+                        {"$ifNull": ["$length_reservations", []]}, [{"$literal": rsv}]]}}},
+                        _recompute_reserved_stage()], rebuild=False):
                 continue
             # entri alokasi roll ini menjadi entri potong tertunda (F-05: ditautkan ke roll anak saat potong)
             try:
@@ -1560,10 +1568,15 @@ async def set_order_rolls_status(order_id: str, new_status: str) -> int:
     ).to_list(10000)
     segments = set()
     for r in held:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
-            {"$set": {"status": new_status, "updated_at": now_iso()}}
-        )
+        if not _rs.allowed(r["status"], new_status):
+            # FIX-10 — `picked/packed → committed` tidak ada di tabel (status ember yang tidak pernah ditulis): roll
+            # seperti itu tidak "di-commit ulang" mundur; dilaporkan di log, bukan diubah diam-diam.
+            logger.warning("[set_order_rolls_status] %s: %s → %s dilewati (tabel roll_state)", r["id"], r["status"],
+                           new_status)
+            continue
+        await _rs.transition(r["id"], new_status, from_=r["status"], reason=f"status pesanan → {new_status}",
+                             action="order_status", ref={"type": "sales_order", "id": order_id},
+                             extra_filter={"reserved_ref.id": order_id}, rebuild=False)
         segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
     n = len(held)
     if new_status in ORDER_HELD_STATUSES:  # WM-02 — status reservasi panjang ikut (bucket saldo)
@@ -1641,15 +1654,16 @@ async def ship_order_rolls(order_id: str, product_id: str, warehouse_id: str, qt
         plan.append(roll)
         left = round(left - rlen, 4)
     moved: List[Dict[str, Any]] = []
+    _ref = {"type": "sales_order", "id": order_id}
     for roll in plan:   # FIX-3b — CAS per roll; kalah di tengah → roll yang sudah dipindah dikembalikan
-        res_upd = await db.inventory_rolls.update_one(
-            {"id": roll["id"], "status": roll["status"], "reserved_ref.id": order_id},
-            {"$set": {"status": "in_transit_sales", "shipped_at": now_iso(), "updated_at": now_iso()}})
-        if not res_upd.modified_count:
+        ok = await _rs.transition(roll["id"], "in_transit_sales", from_=roll["status"], reason="dikirim (Surat Jalan)",
+                                  action="ship", ref=_ref, extra_filter={"reserved_ref.id": order_id},
+                                  extra_set={"shipped_at": now_iso()}, rebuild=False)
+        if not ok:
             for m in moved:
-                await db.inventory_rolls.update_one(
-                    {"id": m["id"], "status": "in_transit_sales"},
-                    {"$set": {"status": m["status"], "updated_at": now_iso()}, "$unset": {"shipped_at": ""}})
+                await _rs.transition(m["id"], m["status"], from_="in_transit_sales", action="ship_rollback",
+                                     reason="kirim dibatalkan — roll lain berubah bersamaan", ref=_ref,
+                                     unset=["shipped_at"], rebuild=False)
             raise HTTPException(status_code=409, detail=(
                 f"Roll {roll.get('roll_no') or roll['id']} berubah saat dikirim — muat ulang lalu kirim lagi."))
         moved.append(roll)
@@ -1695,11 +1709,9 @@ async def deliver_shipment_rolls(order_id: str, shipment_ids: List[str]) -> int:
     segments = set()
     n = 0
     for r in rolls:
-        res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "in_transit_sales"},
-            {"$set": {"status": "delivered", "delivered_at": now_iso(), "delivered_via": "pod_per_sj",
-                      "updated_at": now_iso()}})
-        if res.modified_count:
+        if await _rs.transition(r["id"], "delivered", from_="in_transit_sales", reason="POD Surat Jalan",
+                                action="deliver", ref={"type": "sales_order", "id": order_id},
+                                extra_set={"delivered_at": now_iso(), "delivered_via": "pod_per_sj"}, rebuild=False):
             n += 1
             segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
     for p, w, o in segments:
@@ -1714,14 +1726,16 @@ async def deliver_order_rolls(order_id: str) -> int:
         {"reserved_ref.id": order_id, "status": "in_transit_sales"}, {"_id": 0},
     ).to_list(10000)
     segments = set()
+    n = 0
     for r in rolls:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"]},
-            {"$set": {"status": "delivered", "delivered_at": now_iso(), "updated_at": now_iso()}})
+        # FIX-10 — CAS status (dulu `{id}` saja sesudah dibaca): roll yang berubah bersamaan tidak ditimpa.
+        n += await _rs.transition(r["id"], "delivered", from_="in_transit_sales", reason="pesanan diterima pelanggan",
+                                  action="deliver", ref={"type": "sales_order", "id": order_id},
+                                  extra_set={"delivered_at": now_iso()}, rebuild=False)
         segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
     for p, w, o in segments:
         await rebuild_balance(p, w, o)
-    return len(rolls)
+    return n
 
 
 # ── Inter-company ownership transfer (Sub-fase 1.5, KN_15 §7 + D3) ────────────
@@ -1818,11 +1832,10 @@ async def reserve_rolls_for_transfer(
             break
         rlen = float(roll["length_remaining"])
         if rlen <= remaining + 0.01:
-            updated = await db.inventory_rolls.find_one_and_update(
-                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
-                {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}},
-                projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-            )
+            updated = await _rs.transition(
+                roll["id"], "reserved", from_="available", reason="dipesan transfer antar-PT", action="reserve",
+                ref=ref, extra_filter={"length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
+                extra_set={"reserved_ref": ref}, rebuild=False, return_doc=True)
             if not updated:
                 continue  # keburu diambil transaksi lain
             reserved.append(updated)
@@ -1921,7 +1934,15 @@ async def execute_ownership_transfer(transfer: Dict[str, Any]) -> Dict[str, Any]
             set_fields["lot_id"] = new_lot_id
             if new_lot_number:
                 set_fields["lot"] = new_lot_number
-        await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": set_fields})
+        set_fields.pop("status", None)
+        set_fields.pop("updated_at", None)
+        # FIX-10 — CAS status & reservasi transfer (dulu `{id}` saja sesudah dibaca).
+        if not await _rs.transition(r["id"], "available", from_="reserved", reason="kepemilikan pindah (transfer antar-PT)",
+                                    action="ownership_transfer", ref={"type": "transfer", "id": transfer_id,
+                                                                      "no": transfer.get("code", "")},
+                                    extra_filter={"reserved_ref.id": transfer_id}, extra_set=set_fields,
+                                    rebuild=False):
+            continue
         # KN-B19 — kepemilikan tag RFID mengikuti roll (SCOPE_FIELD rfid_tags = owner_entity_id).
         await db.rfid_tags.update_many({"roll_id": r["id"], "status": "active"},
                                        {"$set": {"owner_entity_id": dst, "updated_at": now_iso()}})
@@ -1998,10 +2019,11 @@ async def release_transfer_rolls(transfer_id: str) -> float:
     segments = set()
     total = 0.0
     for r in held:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"]},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}},
-        )
+        if not await _rs.transition(r["id"], "available", from_="reserved", reason="transfer antar-PT ditolak/batal",
+                                    action="release", ref={"type": "transfer", "id": transfer_id},
+                                    extra_filter={"reserved_ref.id": transfer_id}, extra_set={"reserved_ref": None},
+                                    rebuild=False):
+            continue
         total += float(r.get("length_remaining", 0) or 0)
         segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
     for p, w, o in segments:
@@ -2067,16 +2089,18 @@ async def reserve_rolls_for_wh_transfer(
             raise HTTPException(status_code=400, detail=f"Roll {', '.join(map(str, wrong))} tidak berada di gudang asal.")
         out: List[Dict[str, Any]] = []
         for r in chosen:
-            res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None, "owner_entity_id": owner_entity_id,
-                 "warehouse_id": source_warehouse_id},
-                {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}})
-            if not res.matched_count:
+            ok = await _rs.transition(
+                r["id"], "reserved", from_="available", reason="dipesan transfer antar-gudang", action="reserve",
+                ref=ref, extra_filter={"length_reserved": NO_LENGTH_RESERVED, "active_movement": None,
+                                       "owner_entity_id": owner_entity_id, "warehouse_id": source_warehouse_id},
+                extra_set={"reserved_ref": ref}, rebuild=False)
+            if not ok:
                 # lepas HANYA reservasi milik operasi ini (id yang barusan dipesan + ref sama)
                 if out:
-                    await db.inventory_rolls.update_many(
-                        {"id": {"$in": [x["id"] for x in out]}, "status": "reserved", "reserved_ref": ref},
-                        {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+                    await _rs.transition([x["id"] for x in out], "available", from_="reserved",
+                                         reason="pesan transfer antar-gudang dibatalkan (roll lain berubah)",
+                                         action="reserve_rollback", ref=ref, extra_filter={"reserved_ref": ref},
+                                         extra_set={"reserved_ref": None}, rebuild=False)
                 raise HTTPException(status_code=409, detail=f"Roll {r.get('roll_no')} baru saja diambil proses lain.")
             out.append(r)
         await rebuild_balance(product_id, source_warehouse_id, owner_entity_id)
@@ -2100,11 +2124,10 @@ async def reserve_rolls_for_wh_transfer(
             break
         rlen = float(roll["length_remaining"])
         if rlen <= remaining + 0.01:
-            updated = await db.inventory_rolls.find_one_and_update(
-                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
-                {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}},
-                projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-            )
+            updated = await _rs.transition(
+                roll["id"], "reserved", from_="available", reason="dipesan transfer antar-gudang", action="reserve",
+                ref=ref, extra_filter={"length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
+                extra_set={"reserved_ref": ref}, rebuild=False, return_doc=True)
             if not updated:
                 continue
             reserved.append(updated)
@@ -2169,10 +2192,11 @@ async def dispatch_wh_transfer_rolls(transfer_id: str, source_document: str = ""
     moved = 0.0
     for r in held:
         qty = float(r.get("length_remaining", 0) or 0)
-        res = await db.inventory_rolls.update_one(
-            held_cas(r), {"$set": {"status": "in_transit_transfer", "transfer_prior_status": r["status"],
-                                   "updated_at": now_iso()}})
-        if not res.matched_count:
+        cas = {k: v for k, v in held_cas(r).items() if k not in ("id", "status")}
+        if not await _rs.transition(r["id"], "in_transit_transfer", from_=r["status"], reason="transfer dikirim",
+                                    action="transfer_dispatch", ref={"type": "wh_transfer", "id": transfer_id},
+                                    extra_filter=cas, extra_set={"transfer_prior_status": r["status"]},
+                                    rebuild=False):
             continue
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": r["warehouse_id"],
@@ -2202,15 +2226,17 @@ async def receive_wh_transfer_rolls(transfer_id: str, dest_warehouse_id: str, so
     for r in held:
         qty = float(r.get("length_remaining", 0) or 0)
         src_wh = r["warehouse_id"]
-        await db.inventory_rolls.update_one(
-            {"id": r["id"]},
-            # AX-05 — owner tetap → asal perolehan (acquired) TIDAK ditimpa; bin gudang asal
-            # tidak valid di gudang tujuan → kosong sampai putaway. Perpindahan tercatat di movement.
-            {"$set": {"warehouse_id": dest_warehouse_id, "status": "available", "reserved_ref": None,
-                      "bin_id": None, "last_transfer": {"ref_id": transfer_id, "from_warehouse_id": src_wh,
-                                                        "date": now_iso()},
-                      "updated_at": now_iso()}},
-        )
+        # AX-05 — owner tetap → asal perolehan (acquired) TIDAK ditimpa; bin gudang asal
+        # tidak valid di gudang tujuan → kosong sampai putaway. Perpindahan tercatat di movement.
+        # FIX-10 — CAS status & ref transfer (dulu `{id}` saja sesudah dibaca): roll yang berubah tidak "diterima".
+        if not await _rs.transition(
+                r["id"], "available", from_="in_transit_transfer", reason="transfer diterima di gudang tujuan",
+                action="transfer_receive", ref={"type": "wh_transfer", "id": transfer_id},
+                extra_filter={"reserved_ref.id": transfer_id},
+                extra_set={"warehouse_id": dest_warehouse_id, "reserved_ref": None, "bin_id": None,
+                           "last_transfer": {"ref_id": transfer_id, "from_warehouse_id": src_wh, "date": now_iso()}},
+                rebuild=False):
+            continue
         # KN-B19 — tag RFID ikut pindah gudang (seperti jalur putaway); dulu tertinggal di gudang lama.
         await db.rfid_tags.update_many({"roll_id": r["id"], "status": "active"},
                                        {"$set": {"warehouse_id": dest_warehouse_id, "updated_at": now_iso()}})
@@ -2242,13 +2268,12 @@ async def release_wh_transfer_rolls(transfer_id: str) -> float:
         so_id = (r.get("transfer_ref") or {}).get("so_id")
         # P03 — roll berkomitmen SO kembali ke komitmennya (reserved), bukan dilepas jadi available.
         keep = bool(so_id) and await so_still_open(so_id)
-        res = await db.inventory_rolls.update_one(
-            held_cas(r),
-            {"$set": {"status": "reserved" if keep else "available",
-                      "reserved_ref": r.get("reserved_ref") if keep else None,
-                      "transfer_ref": None, "updated_at": now_iso()}},
-        )
-        if not res.matched_count:
+        cas = {k: v for k, v in held_cas(r).items() if k not in ("id", "status")}
+        if not await _rs.transition(r["id"], "reserved" if keep else "available", from_=r["status"],
+                                    reason="transfer antar-gudang batal/ditolak" + (" — kembali ke komitmen SO" if keep else ""),
+                                    action="transfer_release", ref={"type": "wh_transfer", "id": transfer_id},
+                                    extra_filter=cas, extra_set={"reserved_ref": r.get("reserved_ref") if keep else None,
+                                                                 "transfer_ref": None}, rebuild=False):
             continue
         if was_transit:
             qty = float(r.get("length_remaining", 0) or 0)
@@ -2536,12 +2561,10 @@ async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str
                 raise HTTPException(status_code=400,
                                     detail=f"Qty roll {roll.get('roll_no', rid)} ({take}) melebihi sisa ({rlen}).")
             if take >= rlen - 0.01:
-                updated = await db.inventory_rolls.find_one_and_update(
-                    {"id": rid, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
-                    {"$set": {"status": "reserved", "reserved_ref": ref, "earmarked_for": None,
-                              "updated_at": now_iso()}},
-                    projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-                )
+                updated = await _rs.transition(
+                    rid, "reserved", from_="available", reason="roll dipilih untuk dokumen", action="reserve", ref=ref,
+                    extra_filter={"length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
+                    extra_set={"reserved_ref": ref, "earmarked_for": None}, rebuild=False, return_doc=True)
                 if not updated:
                     raise HTTPException(status_code=409, detail=f"Roll {roll.get('roll_no', rid)} keburu diambil transaksi lain.")
                 mine.append({"kind": "whole", "roll_id": rid})
@@ -2586,9 +2609,10 @@ async def _rollback_reserved(mine: List[Dict[str, Any]], ref: Dict[str, Any]) ->
                            "updated_at": now_iso()}}, _recompute_reserved_stage()],
                 projection={"_id": 0, "product_id": 1, "warehouse_id": 1, "owner_entity_id": 1})
         else:
-            doc = await db.inventory_rolls.find_one_and_update(
-                {"id": m["roll_id"], "status": "reserved", "reserved_ref.id": ref.get("id")},
-                {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}},
+            doc = await _rs.transition(
+                m["roll_id"], "available", from_="reserved", reason="pemesanan roll dibatalkan (gagal di tengah)",
+                action="reserve_rollback", ref=ref, extra_filter={"reserved_ref.id": ref.get("id")},
+                extra_set={"reserved_ref": None}, rebuild=False, return_doc=True,
                 projection={"_id": 0, "product_id": 1, "warehouse_id": 1, "owner_entity_id": 1})
         if doc:
             segments.add((doc["product_id"], doc["warehouse_id"], doc.get("owner_entity_id")))
@@ -2606,16 +2630,19 @@ async def _release_rolls_by_ref_id(ref_id: str) -> float:
             [{"$set": {"length_reservations": {"$filter": {"input": "$length_reservations", "as": "r",
                                                            "cond": {"$ne": ["$$r.ref.id", ref_id]}}}}},
              _recompute_reserved_stage()])
+    # FIX-10 — hanya status yang boleh dilepas (`RELEASABLE_HELD_STATUSES`): roll `in_transit_sales` (sudah di SJ)
+    # tidak pernah kembali `available` lewat pelepasan (FIX-3b STM-OUT-1; tabel roll_state menolaknya).
     held = await db.inventory_rolls.find(
-        {"reserved_ref.id": ref_id, "status": {"$in": ORDER_HELD_STATUSES}}, {"_id": 0},
+        {"reserved_ref.id": ref_id, "status": {"$in": RELEASABLE_HELD_STATUSES}}, {"_id": 0},
     ).to_list(10000)
     segments = set()
     total = 0.0
     for r in held:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"]},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}},
-        )
+        if not await _rs.transition(r["id"], "available", from_=r["status"], reason="reservasi dokumen dibatalkan",
+                                    action="release", ref={"type": "", "id": ref_id},
+                                    extra_filter={"reserved_ref.id": ref_id}, extra_set={"reserved_ref": None},
+                                    rebuild=False):
+            continue
         total += float(r.get("length_remaining", 0) or 0)
         segments.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
     for p, w, o in segments:

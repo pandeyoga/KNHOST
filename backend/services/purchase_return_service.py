@@ -16,6 +16,7 @@ from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
 from services.roll_service import rebuild_balance
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services import purchase_return_state as prs
 from services import purchase_return_doc_state as _prds   # FIX-6 — tabel transisi status dokumen (CAS + riwayat)
 from request_context import active_entity_or
@@ -480,13 +481,13 @@ async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
             if not roll or roll.get("owner_entity_id") != ret.get("entity_id"):
                 continue
             if roll.get("status") == "available":
-                res = await db.inventory_rolls.update_one(
-                    {"id": rid, "status": "available", "length_reserved": {"$not": {"$gt": 0}},
-                     "active_movement": None}, {"$set": {
-                        "status": "quarantine",
-                        "supplier_return_ref": {"type": "purchase_return", "id": return_id},
-                        "updated_at": now}})
-                if res.modified_count:
+                if await _rs.transition(
+                        rid, "quarantine", from_="available", actor=actor, action="purchase_return_ship",
+                        reason=f"retur beli {ret.get('number', '')} dikirim ke supplier — dikunci karantina selama RMA",
+                        ref={"type": "purchase_return", "id": return_id, "no": ret.get("number", "")},
+                        extra_filter={"length_reserved": {"$not": {"$gt": 0}}, "active_movement": None},
+                        extra_set={"supplier_return_ref": {"type": "purchase_return", "id": return_id}},
+                        rebuild=False):   # saldo segmen dibangun ulang di bawah
                     segments.add((roll.get("product_id"), roll.get("warehouse_id"), roll.get("owner_entity_id")))
     for (pid, wid, eid) in segments:
         if pid and wid and eid:
@@ -632,7 +633,13 @@ async def _roll_back_to_stock(ret: Dict[str, Any], rid: str, warehouse_id: str, 
         upd["grade"] = new_grade
         upd["regraded_from"] = roll.get("grade") or "A"
         regraded = 1
-    await db.inventory_rolls.update_one({"id": rid}, {"$set": upd})
+    # FIX-10 — CAS status seperti dibaca (dulu `{id}` saja) + jejak status roll; saldo oleh pemanggil (segments).
+    if not await _rs.transition(rid, "available", from_=roll.get("status") or "", action="purchase_return_goods_back",
+                                reason=f"{label} {ret.get('number', '')}".strip(),
+                                ref={"type": "purchase_return", "id": ret["id"], "no": ret.get("number", "")},
+                                extra_set={k: v for k, v in upd.items() if k not in ("status", "updated_at")},
+                                rebuild=False):
+        return 0
     await db.inventory_movements.insert_one({
         "id": new_id("mov"), "product_id": roll.get("product_id", ""),
         "warehouse_id": dest_wh, "owner_entity_id": roll.get("owner_entity_id", ""),
@@ -903,11 +910,14 @@ async def _consume_return_rolls(item: Dict[str, Any], warehouse_id: str, owner: 
             if take <= 0.01:
                 continue
             if reserved <= 0 and take >= rlen - 0.01:
-                won = await db.inventory_rolls.find_one_and_update(
-                    {**q, "id": r["id"], "status": r["status"], "length_remaining": r["length_remaining"],
-                     "length_reserved": {"$not": {"$gt": 0}}},
-                    {"$set": {"status": RETURNED_STATUS, "returned_ref": ref, "returned_from_status": r["status"],
-                              "updated_at": now_iso()}}, projection={"_id": 0, "id": 1})
+                won = await _rs.transition(
+                    r["id"], RETURNED_STATUS, from_=r["status"], action="purchase_return_out",
+                    reason=f"retur beli {ret.get('number', '')} → supplier",
+                    ref={"type": "purchase_return", "id": ret["id"], "no": ret.get("number", "")},
+                    extra_filter={**{k: v for k, v in q.items() if k not in ("id", "status")},
+                                  "length_remaining": r["length_remaining"], "length_reserved": {"$not": {"$gt": 0}}},
+                    extra_set={"returned_ref": ref, "returned_from_status": r["status"]}, rebuild=False,
+                    return_doc=True, projection={"_id": 0, "id": 1})   # saldo dibangun ulang pemanggil
                 if not won:
                     continue
                 take, piece_id, parent_id = round(rlen, 2), r["id"], None
@@ -959,9 +969,11 @@ async def _undo_return_effects(effects: List[Dict[str, Any]], ret: Dict[str, Any
                     "$inc": {"length_remaining": e["qty"], "length_initial": e["qty"]},
                     "$set": {"updated_at": now_iso()}})
         else:
-            await db.inventory_rolls.update_one(
-                {"id": e["roll_id"], "status": RETURNED_STATUS, "returned_ref.id": ret["id"]},
-                {"$set": {"status": e["prev_status"], "returned_ref": None, "updated_at": now_iso()}})
+            await _rs.transition(e["roll_id"], e["prev_status"], from_=RETURNED_STATUS, action="purchase_return_undo",
+                                 reason="retur beli batal di tengah — status asal dipulihkan",
+                                 ref={"type": "purchase_return", "id": ret["id"], "no": ret.get("number", "")},
+                                 extra_filter={"returned_ref.id": ret["id"]}, extra_set={"returned_ref": None},
+                                 rebuild=False)   # saldo di bawah
         await db.inventory_movements.delete_one({"id": e["movement_id"]})
     for seg in {(e["product_id"], e["warehouse_id"]) for e in effects}:
         await rebuild_balance(seg[0], seg[1], ret.get("entity_id", ""))
@@ -1088,9 +1100,12 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
             # dikonsumsi PENUH → kembalikan status ASAL (length masih utuh). FIX-3b (PRT-05) — barang tolak QC kembali
             # ke KARANTINA (menunggu keputusan QC lagi), bukan langsung tersedia dijual. CAS status.
             back_to = "quarantine" if (m.get("movement_type") == "qc_reject_return") else "available"
-            await db.inventory_rolls.update_one({"id": rid, "status": RETURNED_STATUS}, {"$set": {
-                "status": back_to, "returned_ref": None,
-                "unreturned_at": now, "unreturned_by": actor, "updated_at": now}})
+            await _rs.transition(rid, back_to, from_=RETURNED_STATUS, actor=actor, action="purchase_return_reverse",
+                                 reason=f"retur beli {ret.get('number', '')} dibatalkan — barang kembali ke stok"
+                                        + (f": {reason}" if reason else ""),
+                                 ref={"type": "purchase_return", "id": return_id, "no": ret.get("number", "")},
+                                 extra_set={"returned_ref": None, "unreturned_at": now, "unreturned_by": actor},
+                                 rebuild=False)   # saldo dibangun ulang di bawah (combos)
         else:
             # dikonsumsi PARSIAL (length dikurangi) → tambahkan kembali length.
             await db.inventory_rolls.update_one({"id": rid}, {

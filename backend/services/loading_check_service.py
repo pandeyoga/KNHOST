@@ -14,7 +14,10 @@ from fastapi import HTTPException
 from db import db
 from core_utils import new_id, now_iso, safe_doc
 
-EXPECTED_STATUSES = ["reserved", "committed", "picked", "packed", "allocated"]
+# FIX-10 (B3a SSOT-1) — status ROLL yang dipegang pesanan (`roll_service.RELEASABLE_HELD_STATUSES`). `allocated` milik
+# `sales_orders.allocations[].status`, bukan status roll — dulu bocor ke daftar ini.
+from services.roll_service import RELEASABLE_HELD_STATUSES as _HELD  # noqa: E402
+EXPECTED_STATUSES = list(_HELD)
 
 
 def _open_q(order_id: str, warehouse_id: Optional[str]) -> Dict[str, Any]:
@@ -98,7 +101,7 @@ async def start(order_id: str, scope_ids: List[str], actor_name: str,
         # Peringatan dini: roll expected yang BELUM committed akan lolos check tapi
         # tertahan saat dispatch (ship_order_rolls hanya kirim roll committed).
         "not_committed_count": sum(1 for r in rolls
-                                   if r.get("status") in ("reserved", "allocated")),
+                                   if r.get("status") == "reserved"),
         "status": "open", "created_at": now_iso(), "created_by": actor_name,
         "completed_at": None,
     }

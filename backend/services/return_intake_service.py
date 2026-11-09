@@ -32,6 +32,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from core_utils import new_id, now_iso
 from db import db
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services.tolerances import QTY_EPS
 
 _log = logging.getLogger(__name__)
@@ -141,12 +142,14 @@ async def receive(ret: Dict[str, Any], roll_ids: List[str], warehouse_id: str, a
         if whole:
             qty = float(orig.get("length_remaining") or 0)
             snap = {k: orig.get(k) for k in RESTORE_KEYS}
-            res = await db.inventory_rolls.find_one_and_update(
-                {"id": rid, "status": "delivered"},
-                {"$set": {**live, KEY: {**base, "mode": "whole", "qty": round(qty, 2)}, "returned_identity": True,
-                          "return_restore": snap, "acquired": {"via": "return", "ref_id": ret["id"], "date": now}},
-                 "$push": {"acquired_history": orig.get("acquired") or {}}},
-                projection={"_id": 0}, return_document=True)
+            res = await _rs.transition(
+                rid, live["status"], from_="delivered", actor=actor, action="return_receive",
+                reason=f"retur {ret.get('number', '')} diterima — karantina retur",
+                ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+                extra_set={**{k: v for k, v in live.items() if k not in ("status", "updated_at")},
+                           KEY: {**base, "mode": "whole", "qty": round(qty, 2)}, "returned_identity": True,
+                           "return_restore": snap, "acquired": {"via": "return", "ref_id": ret["id"], "date": now}},
+                push={"acquired_history": orig.get("acquired") or {}}, rebuild=False, return_doc=True)   # saldo: segs
             if not res:
                 continue   # roll berubah bersamaan — penyelesaian tetap memakai jalur lama (tanpa jurnal ganda)
             doc = res
@@ -228,15 +231,20 @@ async def reverse(ret: Dict[str, Any], source_roll_ids: Optional[List[str]], act
         if info.get("mode") == "whole":
             snap = dict(r.get("return_restore") or {})
             hist = list(r.get("acquired_history") or [])
-            res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": "quarantine", f"{KEY}.state": "received"},
-                {"$set": {**snap, "acquired_history": hist[:-1] if hist else [], f"{KEY}.state": "reversed",
-                          f"{KEY}.reversed_at": now, f"{KEY}.reversed_by": actor, f"{KEY}.reverse_reason": why,
-                          "updated_at": now},
-                 "$unset": {"return_restore": "", "returned_identity": "", "return_id": ""}})
+            back_to = snap.pop("status", None) or "delivered"
+            snap.pop("updated_at", None)
+            n = await _rs.transition(
+                r["id"], back_to, from_="quarantine", actor=actor, action="return_receive_reverse",
+                reason=f"karantina retur {ret.get('number', '')} dibalik: {why}",
+                ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+                extra_filter={f"{KEY}.state": "received"},
+                extra_set={**snap, "acquired_history": hist[:-1] if hist else [], f"{KEY}.state": "reversed",
+                           f"{KEY}.reversed_at": now, f"{KEY}.reversed_by": actor, f"{KEY}.reverse_reason": why},
+                unset=["return_restore", "returned_identity", "return_id"], rebuild=False)   # saldo: segs
         else:
-            res = await db.inventory_rolls.delete_one({"id": r["id"], "status": "quarantine", f"{KEY}.state": "received"})
-        if not (getattr(res, "modified_count", 0) or getattr(res, "deleted_count", 0)):
+            n = (await db.inventory_rolls.delete_one({"id": r["id"], "status": "quarantine",
+                                                    f"{KEY}.state": "received"})).deleted_count
+        if not n:
             continue
         await _movement(r, ret, "return_reversal_out", "out", float(r.get("length_remaining") or 0),
                         r.get("warehouse_id", ""), f"Karantina retur {ret.get('number', '')} dibalik: {why}")
@@ -255,7 +263,8 @@ async def finalize(ret: Dict[str, Any], intake: Dict[str, Any], live: Dict[str, 
     → (dokumen roll, qty, qty saat pindai) atau None bila roll berubah bersamaan (pemanggil memakai jalur lama)."""
     _assert("value", state_of(intake))
     info = intake.get(KEY) or {}
-    upd = {k: v for k, v in live.items() if k not in ("warehouse_id", "journey")}
+    # FIX-10 — `status` tidak ditulis ulang di sini: CAS di bawah sudah menjamin karantina (status tidak berubah).
+    upd = {k: v for k, v in live.items() if k not in ("warehouse_id", "journey", "status")}
     if info.get("mode") == "child":
         upd = {**{k: v for k, v in template.items() if k not in _CHILD_TEMPLATE_SKIP}, **upd}
         upd["length_initial"] = actual

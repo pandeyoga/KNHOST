@@ -28,6 +28,7 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc
 from db import db
 from services import placement_rules as pr
 from services import putaway_order_service as pa
+from services import putaway_state as _pst   # FIX-10 — tabel transisi Putaway Order
 from services import warehouse_profile_service as whp
 
 DRAFTABLE_STAGES = ("received_transit", "tag_printed", "tag_verified", "label_verified")
@@ -153,6 +154,8 @@ async def _insert_draft(key: str, src: Dict[str, Any], dest: Dict[str, Any], own
            "owner_entity_id": owner, "items": items, **pa.qty_summary(items),
            "auto": {"trigger": trigger, "at": now_iso()}, "draft_rev": 0, "split_from": split_from,
            "btg_number": None, "created_at": now_iso(), "created_by": actor_name or SYSTEM_ACTOR,
+           "status_history": _pst.initial_history("draft", actor_name or SYSTEM_ACTOR, "create_draft",
+                                                  f"pemicu {trigger.get('type') or '—'}"),   # FIX-10
            "dispatched_at": None, "confirmed_at": None, "confirmed_by": None}
     try:
         await db.putaway_orders.insert_one(dict(doc))
@@ -366,9 +369,9 @@ async def publish(order_id: str, scope_ids: List[str], actor_name: str, split_un
         await pa.claim_rolls(ok, order_id, order["pa_number"], order["from_warehouse_id"])
         claimed = True
         now = now_iso()
-        await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set({
+        await _pst.finish_claimed(order_id, "draft", "publish", _saga.finish_set({
             "status": "open", "items": ok, **pa.qty_summary(ok), "published_at": now, "published_by": actor_name,
-            "updated_at": now}))
+            "updated_at": now}), actor_name)
     except BaseException:
         if claimed:
             await pa._release_claims([i["roll_id"] for i in ok], order_id)
@@ -403,8 +406,10 @@ async def release_inspection_drafts(roll_ids: List[str], why: str, actor_name: s
         if not keep:
             upd.update({"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name,
                         "cancelled_at": now_iso()})
+        op = _pst.with_history({"$set": upd, "$inc": {"draft_rev": 1}}, "release_inspection_draft", "draft",
+                               upd.get("status", "draft"), actor_name, why)
         res = await db.putaway_orders.update_one({"id": d["id"], "status": "draft", "draft_rev": d.get("draft_rev", 0)},
-                                                 {"$set": upd, "$inc": {"draft_rev": 1}})
+                                                 op)
         freed += gone if res.modified_count else 0
     return freed
 
@@ -415,8 +420,9 @@ async def cancel_draft(order_id: str, reason: str, scope_ids: List[str], actor_n
     await _draft(order_id, scope_ids)
     res = await db.putaway_orders.find_one_and_update(
         {"id": order_id, "status": "draft"},
-        {"$set": {"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name, "cancelled_at": now_iso(),
-                  "updated_at": now_iso()}}, projection={"_id": 0})
+        _pst.with_history({"$set": {"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name,
+                                    "cancelled_at": now_iso(), "updated_at": now_iso()}},
+                          "cancel_draft", "draft", "cancelled", actor_name, why), projection={"_id": 0})
     if not res:
         raise HTTPException(status_code=409, detail="Draf baru saja diterbitkan/diubah — muat ulang.")
     return await pa._get(order_id, scope_ids)

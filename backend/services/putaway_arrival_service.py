@@ -27,6 +27,7 @@ from fastapi import HTTPException
 from core_utils import new_id, next_doc_number, now_iso
 from db import db
 from services import putaway_order_service as pa
+from services import putaway_state as _pst   # FIX-10 — tabel transisi Putaway Order
 from services.epc import try_canonical
 from services.rfid_print_service import set_journey
 
@@ -231,7 +232,8 @@ async def confirm_arrival_trip(order_id: str, epcs: Optional[List[str]],
             op["$push"] = {"arrival_trips": trip}
         else:
             trip = None
-        await db.putaway_orders.update_one({"id": order_id}, op)
+        await _pst.finish_claimed(order_id, fresh["status"], "arrival_trip", op, actor_name,
+                                  f"trip {SOURCE_LABEL[src['type']]}")
     except BaseException:
         await _saga.release("putaway_orders", order_id)
         raise
@@ -276,7 +278,7 @@ async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Op
         upd = await finish_update(fresh, actor_name)
         upd["closed_remaining"] = {"action": action, "reason": why, "by": actor_name, "at": now_iso(),
                                    "rolls": [i["roll_no"] for i in decided]}
-        await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set(upd))
+        await _pst.finish_claimed(order_id, fresh["status"], "close_remaining", _saga.finish_set(upd), actor_name, why)
     except BaseException:
         await _saga.release("putaway_orders", order_id)
         raise

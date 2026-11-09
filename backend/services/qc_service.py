@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
 from services.roll_service import rebuild_balance, insert_child_roll
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 
 RETURNED_STATUS = "returned_supplier"  # terminal — tidak masuk bucket fisik manapun
 
@@ -63,8 +64,14 @@ async def _consume_quarantine(
         if extra_set:
             set_doc.update(extra_set)
         if take >= rlen - 0.01:
-            # seluruh roll bertransisi
-            await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": set_doc})
+            # seluruh roll bertransisi — FIX-10: CAS karantina (dulu `{id}` saja sesudah dibaca) + jejak status roll.
+            ok = await _rs.transition(
+                roll["id"], target_status, from_="quarantine", reason=f"keputusan QC ({mov_type})",
+                action=mov_type, ref={"type": ref.get("type"), "id": ref.get("id"), "no": ref.get("doc", "")},
+                extra_set={k: v for k, v in set_doc.items() if k not in ("status", "updated_at")}, rebuild=False)
+            if not ok:
+                raise ValueError(f"Roll {roll.get('roll_no') or roll['id']} tidak lagi berstatus karantina "
+                                 "(berubah bersamaan) — muat ulang lalu ulangi keputusan QC.")
             roll["length_remaining"] = 0.0
             moved_id, moved_len = roll["id"], rlen
         else:
@@ -374,15 +381,18 @@ async def process_qc_decision(
         # D3 — roll ditahan yang DITOLAK: tahanan dilepas (berjejak) → karantina → ikut konsumsi penolakan di bawah.
         from services.roll_hold_service import HOLD_STATUS
         for r in held_reject_docs:
-            _res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": HOLD_STATUS, "qc_task_id": task_id},
-                {"$set": {"status": "quarantine", "hold.held": False, "hold.released_by": actor.get("name", ""),
-                          "hold.released_at": now_iso(), "hold.release_note": "Ditolak lewat keputusan QC",
-                          "inspection.hold.held": False, "updated_at": now_iso()},
-                 "$push": {"hold_history": {"action": "release_rejected_by_qc", "reason": reason or "Ditolak QC",
-                                            "by": actor.get("name", ""), "by_id": actor.get("id", ""),
-                                            "at": now_iso(), "status_from": HOLD_STATUS, "status_to": "quarantine"}}})
-            if not _res.modified_count:
+            _ok = await _rs.transition(
+                r["id"], "quarantine", from_=HOLD_STATUS, reason="roll ditahan ditolak lewat keputusan QC",
+                actor=actor.get("name", ""), action="qc_reject_held", ref={"type": "qc_inspection", "id": task_id},
+                extra_filter={"qc_task_id": task_id},
+                extra_set={"hold.held": False, "hold.released_by": actor.get("name", ""),
+                           "hold.released_at": now_iso(), "hold.release_note": "Ditolak lewat keputusan QC",
+                           "inspection.hold.held": False},
+                push={"hold_history": {"action": "release_rejected_by_qc", "reason": reason or "Ditolak QC",
+                                       "by": actor.get("name", ""), "by_id": actor.get("id", ""),
+                                       "at": now_iso(), "status_from": HOLD_STATUS, "status_to": "quarantine"}},
+                rebuild=False)   # saldo segmen dibangun ulang sesudah keputusan QC
+            if not _ok:
                 await _saga.mark_failed("wms_tasks", task_id, "roll ditahan berubah")
                 raise ValueError(f"Roll {r.get('roll_no') or r['id']} berubah bersamaan — muat ulang lalu ulangi.")
     try:

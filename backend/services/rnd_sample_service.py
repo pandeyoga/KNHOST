@@ -1473,14 +1473,17 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
     at = now_iso()
     # INV-ATOMIC-01 — CAS roll: prasyarat status + sisa panjang sama seperti saat dibaca;
     # kalah (dua pengambilan bersamaan) → ditolak, bukan sisa roll negatif.
-    won = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": roll.get("status"), "length_remaining": roll.get("length_remaining"),
-         "length_reserved": roll.get("length_reserved") if roll.get("length_reserved") else {"$in": [None, 0, 0.0]}},
-        {"$set": {
-            "length_remaining": max(new_len, 0.0),
-            "status": "consumed" if new_len <= EPS else roll.get("status"),
-            "updated_at": at}},
-        projection={"_id": 0, "id": 1})
+    # FIX-10 (SSOT-1) — roll habis → `consumed` lewat roll_state (daftar-izin + jejak); sisa > 0 → status tetap.
+    from services import roll_state as _rs
+    won = await _rs.transition(
+        roll["id"], "consumed" if new_len <= EPS else roll.get("status"), from_=roll.get("status"),
+        reason=f"bahan sample {cur.get('number') or sample_id}", actor=actor or "", action="sample_issue",
+        ref={"type": "sample_request", "id": sample_id, "no": cur.get("number") or ""},
+        extra_filter={"length_remaining": roll.get("length_remaining"),
+                      "length_reserved": roll.get("length_reserved") if roll.get("length_reserved")
+                      else {"$in": [None, 0, 0.0]}},
+        extra_set={"length_remaining": max(new_len, 0.0)}, rebuild=False, return_doc=True,
+        projection={"_id": 0, "id": 1})   # saldo dibangun ulang di bawah
     if not won:
         raise RndError(f"Roll {roll.get('roll_no')} berubah (dipakai proses lain) sebelum bahan "
                        "diambil — muat ulang lalu coba lagi.")
@@ -1518,10 +1521,15 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
             # pemakaian roll lain yang terjadi sesudahnya tidak tertimpa.
             undone = await db.inventory_movements.delete_one({"id": mov["id"]})
             if undone.deleted_count == 1:
-                await db.inventory_rolls.update_one({"id": roll["id"]}, [{"$set": {
-                    "status": {"$cond": [{"$eq": ["$status", "consumed"]}, roll.get("status"), "$status"]},
-                    "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 3]},
-                    "updated_at": at}}])
+                _back = [{"$set": {"length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 3]},
+                                   "updated_at": at}}]
+                if new_len <= EPS and not await _rs.transition(
+                        roll["id"], roll.get("status"), from_="consumed", action="sample_issue_undo",
+                        reason="jurnal beban sample gagal — pengambilan bahan dibatalkan",
+                        ref={"type": "sample_request", "id": sample_id}, pipeline=_back, rebuild=False):
+                    await db.inventory_rolls.update_one({"id": roll["id"], "status": {"$ne": "consumed"}}, _back)
+                elif new_len > EPS:
+                    await db.inventory_rolls.update_one({"id": roll["id"]}, _back)
             await roll_service.rebuild_balance(roll.get("product_id"),
                                                roll.get("warehouse_id"),
                                                roll.get("owner_entity_id"))

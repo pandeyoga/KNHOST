@@ -10,6 +10,7 @@ from services import warehouse_scope_service as whscope
 from services.roll_service import resolve_stock_owner
 from services import stock_count_service as scs
 from services import registration_freeze as rfz
+from services import cycle_count_state as ccs   # FIX-10 — tabel transisi sesi opname (CAS + riwayat status)
 from input_rules import KNIn, ReasonStr, OptReasonStr, require_reason
 
 router = APIRouter(prefix="/api")
@@ -102,6 +103,7 @@ async def create_session(payload: CycleCountSessionCreate, request: Request) -> 
         "name": payload.name or f"Count {datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')}",
         "notes": payload.notes,
         "status": "open",
+        "status_history": ccs.initial_history("open", actor["name"], "create"),   # FIX-10
         "items": [],
         "created_by": actor["name"],
         "created_at": now_iso(),
@@ -261,19 +263,9 @@ async def submit_session(session_id: str, request: Request) -> Dict[str, Any]:
                 "actual_qty": item.get("actual_qty", 0),
                 "difference": round(diff, 4),
             })
-    from pymongo import ReturnDocument
-    updated = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session_id, "status": "open"},   # FIX-3a — CAS status asal (dulu R→W `{id}` saja)
-        {"$set": {
-            "status": "submitted",
-            "discrepancies": discrepancies,
-            "submitted_by": actor["name"],
-            "submitted_at": now_iso(),
-            "updated_at": now_iso(),
-        }},
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    # FIX-3a — CAS status asal (dulu R→W `{id}` saja). FIX-10 — lewat tabel `cycle_count_state` + riwayat status.
+    updated = await ccs.transition(session_id, "submit", "submitted", actor_name=actor["name"], set_fields={
+        "discrepancies": discrepancies, "submitted_by": actor["name"], "submitted_at": now_iso()})
     if not updated:
         raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang")
     await audit(actor["name"], "cycle_count_submitted", "cycle_count", session_id,
@@ -300,12 +292,10 @@ async def reopen_session(session_id: str, request: Request) -> Dict[str, Any]:
                     "status": "pending", "recount_no": int(item.get("recount_no") or 0) + 1}
             recount.append(item.get("sku") or item["product_id"])
         items.append(item)
-    from pymongo import ReturnDocument
-    updated = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session_id, "status": session["status"]},
-        {"$set": {"status": "open", "items": items, "discrepancies": [], "reopened_by": actor["name"],
-                  "reopened_at": now_iso(), "updated_at": now_iso()}, "$unset": {"saga_lock": ""}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    updated = await ccs.transition(session_id, "reopen", "open", actor_name=actor["name"], frm=[session["status"]],
+                                   set_fields={"items": items, "discrepancies": [], "reopened_by": actor["name"],
+                                               "reopened_at": now_iso()}, unset=["saga_lock"],
+                                   note=f"hitung ulang: {len(recount)} item" if recount else "")
     if not updated:
         raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang")
     await audit(actor["name"], "cycle_count_reopened", "cycle_count", session_id, {"recount": recount})
@@ -363,21 +353,16 @@ async def approve_session(session_id: str, payload: CycleCountApprove, request: 
     done = await db.cycle_count_sessions.find_one({"id": session_id}, {"_id": 0, "items": 1})
     unresolved = [{"item_id": i["id"], "sku": i.get("sku"), "unresolved": i["adjustment"]["unresolved"]}
                   for i in done.get("items", []) if (i.get("adjustment") or {}).get("status") == "exception"]
-    from pymongo import ReturnDocument
-    updated = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session_id},
-        _saga.finish_set({
-            # WM-08 — selisih yang tak terterapkan = exception, bukan "approved" palsu
-            "status": "approved_with_exceptions" if unresolved else "approved",
-            "exceptions": unresolved, "zero_cost_reason": payload.zero_cost_reason.strip(),
-            "approved_by": actor["name"],
-            "approved_at": now_iso(),
-            "approval_reason": payload.reason,
-            "updated_at": now_iso(),
-        }),
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    # WM-08 — selisih yang tak terterapkan = exception, bukan "approved" palsu. FIX-10 — tulisan akhir klaim: CAS
+    # `submitted` + kunci masih dipegang, jejak riwayat status, kunci dicabut.
+    updated = await ccs.transition(
+        session_id, "approve", "approved_with_exceptions" if unresolved else "approved", actor_name=actor["name"],
+        claimed=True, note=payload.reason or "",
+        set_fields={"exceptions": unresolved, "zero_cost_reason": payload.zero_cost_reason.strip(),
+                    "approved_by": actor["name"], "approved_at": now_iso(), "approval_reason": payload.reason})
+    if not updated:
+        await _saga.mark_failed("cycle_count_sessions", session_id, "status berubah di luar klaim (approve)")
+        raise HTTPException(status_code=409, detail="Sesi berubah bersamaan — muat ulang (kunci saga terlihat di Kunci Saga).")
     await audit(actor["name"], "cycle_count_approved", "cycle_count", session_id,
                 {"reason": payload.reason, "exceptions": unresolved})
     return safe_doc(updated)
@@ -389,20 +374,11 @@ async def reject_session(session_id: str, payload: CycleCountReject, request: Re
     session = await _load_session(session_id, request)
     if session["status"] != "submitted":
         raise HTTPException(status_code=400, detail="Session belum disubmit")
-    from pymongo import ReturnDocument
     # W2-007 — reject berkompetisi pada transisi yang sama dgn approve: submitted & tanpa saga_lock.
-    updated = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session_id, "status": "submitted", "saga_lock": {"$exists": False}},
-        {"$set": {
-            "status": "rejected",
-            "rejected_by": actor["name"],
-            "rejected_at": now_iso(),
-            "rejection_reason": payload.reason,
-            "updated_at": now_iso(),
-        }},
-        projection={"_id": 0},
-        return_document=ReturnDocument.AFTER
-    )
+    updated = await ccs.transition(session_id, "reject", "rejected", actor_name=actor["name"], note=payload.reason,
+                                   extra_filter={"saga_lock": {"$exists": False}},
+                                   set_fields={"rejected_by": actor["name"], "rejected_at": now_iso(),
+                                               "rejection_reason": payload.reason})
     if not updated:
         raise HTTPException(status_code=409, detail="Sesi baru saja diputuskan/sedang disetujui proses lain — muat ulang.")
     await audit(actor["name"], "cycle_count_rejected", "cycle_count", session_id, {"reason": payload.reason})
@@ -617,11 +593,14 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
     exceptions = {k: v for k, v in exceptions.items() if v}
     # FIX-3a (B2a OPN-06) — roll hilang yang belum dihitung ulang → sesi turunan "hitung ulang" (bukan dibiarkan).
     followup = await rcs.create_followup_session(session, rec, actor["name"]) if exceptions.get("missing_unconfirmed") else None
-    await db.cycle_count_sessions.update_one({"id": session_id}, _saga.finish_set({
-        "status": "approved_with_exceptions" if exceptions else "approved", "roll_exceptions": exceptions,
-        "approved_by": actor["name"], "approved_at": now_iso(), "approval_reason": payload.reason.strip(),
-        "zero_cost_reason": payload.zero_cost_reason.strip(), "updated_at": now_iso(),
-        **({"followup_session_id": followup["id"]} if followup else {})}))
+    if not await ccs.transition(
+            session_id, "roll_finalize", "approved_with_exceptions" if exceptions else "approved",
+            actor_name=actor["name"], claimed=True, note=payload.reason.strip(), return_doc=False,
+            set_fields={"roll_exceptions": exceptions, "approved_by": actor["name"], "approved_at": now_iso(),
+                        "approval_reason": payload.reason.strip(), "zero_cost_reason": payload.zero_cost_reason.strip(),
+                        **({"followup_session_id": followup["id"]} if followup else {})}):
+        await _saga.mark_failed("cycle_count_sessions", session_id, "status berubah di luar klaim (roll_finalize)")
+        raise HTTPException(status_code=409, detail="Sesi berubah bersamaan — muat ulang (kunci saga terlihat di Kunci Saga).")
     await audit(actor["name"], "cycle_count_roll_finalized", "cycle_count", session_id,
                 {"applied": len(todo), "written_off": len(lost), "found": len(found), "exceptions": exceptions,
                  "reason": payload.reason.strip()})

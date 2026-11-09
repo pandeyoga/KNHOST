@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from db import db
 from core_utils import new_id, now_iso, next_doc_number, safe_doc
 from services.roll_service import PHYSICAL_ROLL_STATUSES  # RF-17 — SATU definisi stok fisik di lokasi
+from services import cycle_count_state as ccs   # FIX-10 — tabel transisi sesi opname RFID (CAS + riwayat status)
 
 
 async def start(warehouse_id: str, scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
@@ -50,7 +51,8 @@ async def start(warehouse_id: str, scope_ids: List[str], actor_name: str) -> Dic
         "scope_entity_ids": scope_key,
         "expected": expected, "scanned_epcs": [], "missing": [], "extra": [], "scan_sources": [],
         "eligible_count": len(eligible), "untagged_count": len(untagged), "untagged": untagged[:500],
-        "status": "open", "created_at": now_iso(), "created_by": actor_name,
+        "status": "open", "status_history": ccs.initial_history("open", actor_name, "rfid_create"),   # FIX-10
+        "created_at": now_iso(), "created_by": actor_name,
         "completed_at": None,
     }
     await db.rfid_verify_sessions.insert_one(dict(sess))
@@ -118,8 +120,9 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
     # G3 D4-CC-01 — satu sesi = satu hasil: retry (ack hilang / update sesi gagal) MENGADOPSI hasil lama.
     prior = await db.rfid_cycle_counts.find_one({"session_id": session_id}, {"_id": 0})
     if prior:
-        await db.rfid_verify_sessions.update_one({"id": session_id}, _saga.finish_set({
-            "status": "completed", "completed_at": prior.get("created_at", now), "cycle_count_id": prior["id"]}))
+        await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True, return_doc=False,
+                             collection="rfid_verify_sessions", extra_filter={"kind": "cycle_count"},
+                             set_fields={"completed_at": prior.get("created_at", now), "cycle_count_id": prior["id"]})
         return safe_doc(prior)
     cc = {
         "id": f"rcc_{session_id}",
@@ -142,11 +145,13 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
         if not won:
             raise
         cc = won
-    await db.rfid_verify_sessions.update_one({"id": session_id}, _saga.finish_set({
-        "status": "completed",
-        "result": "simulated" if simulated else ("clean" if not missing and not extra_items and not untagged_n else "with_issues"),
-        "missing": [m["epc"] for m in missing], "extra": extra_epcs,
-        "completed_at": now, "cycle_count_id": cc["id"]}))
+    # FIX-10 — tulisan akhir klaim lewat tabel `cycle_count_state`: CAS `open` + kunci dipegang, riwayat status.
+    await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True, return_doc=False,
+                         collection="rfid_verify_sessions", extra_filter={"kind": "cycle_count"}, set_fields={
+                             "result": "simulated" if simulated else (
+                                 "clean" if not missing and not extra_items and not untagged_n else "with_issues"),
+                             "missing": [m["epc"] for m in missing], "extra": extra_epcs,
+                             "completed_at": now, "cycle_count_id": cc["id"]})
     return safe_doc(cc)
 
 

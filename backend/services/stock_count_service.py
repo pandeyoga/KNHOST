@@ -86,11 +86,20 @@ async def _shortage(item: Dict[str, Any], warehouse_id: str, need: float, ref: s
             rlen = float(r["length_remaining"])
             take = round(min(rlen, need - applied), 2)
             new_len = round(rlen - take, 2)
-            upd = {"length_remaining": 0.0, "status": "consumed"} if new_len <= EPS else {"length_remaining": new_len}
-            res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "length_remaining": r["length_remaining"], "status": r["status"]},
-                {"$set": {**upd, "updated_at": now_iso()}})
-            if res.modified_count != 1:
+            if new_len <= EPS:
+                # FIX-10 (SSOT-1) — roll habis lewat opname → `consumed` lewat roll_state (CAS status & panjang
+                # seperti dibaca, jejak status roll). Saldo dibangun ulang pemanggil sesudah semua selisih.
+                from services import roll_state as _rs
+                ok = await _rs.transition(r["id"], "consumed", from_=r["status"], reason=f"opname — selisih kurang ({ref})",
+                                          action="cycle_count", ref={"type": "cycle_count", "id": ref},
+                                          extra_filter={"length_remaining": r["length_remaining"]},
+                                          extra_set={"length_remaining": 0.0}, rebuild=False)
+            else:
+                res = await db.inventory_rolls.update_one(
+                    {"id": r["id"], "length_remaining": r["length_remaining"], "status": r["status"]},
+                    {"$set": {"length_remaining": new_len, "updated_at": now_iso()}})
+                ok = res.modified_count == 1
+            if not ok:
                 continue  # roll berubah bersamaan (mis. reservasi) — lewati, dicoba di putaran berikut
             if new_len <= EPS:   # FIX-3a (B2a OPN-04) — roll habis lewat opname: tag RFID-nya dicabut
                 from services.stock_count_roll_service import retire_tags_of_roll

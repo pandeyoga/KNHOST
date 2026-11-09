@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from db import db
 from core_utils import now_iso, new_id
 from services.roll_service import rebuild_balance, insert_child_roll
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 
 # F2b — horizon default ATP future-aware (hari). Incoming dengan ETA dalam horizon
 # dihitung sebagai "janji aman"; di luar horizon ditampilkan tapi tak menambah ATP.
@@ -102,9 +103,10 @@ async def move_rolls_by_qty(product_id: str, warehouse_id: str, owner_entity_id:
                   "length_reserved": {"$not": {"$gt": 0}}}
         if rlen <= remaining + 0.01:
             unlock = {"length_reservations": [], "length_reserved": 0} if roll.get("length_reservations") else {}
-            res = await db.inventory_rolls.update_one(
-                cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso(), **unlock}})
-            if not res.matched_count:
+            if not await _rs.transition(roll["id"], to_status, from_=from_status, reason=f"pindah ember ({movement_type})",
+                                        action=movement_type, ref=ref,
+                                        extra_filter={k: v for k, v in cas.items() if k not in ("id", "status")},
+                                        extra_set={"bucket_ref": ref, **unlock}, rebuild=False):   # saldo di bawah
                 conflicts += 1
                 continue
             mid, mlen = roll["id"], rlen
@@ -174,10 +176,11 @@ async def move_rolls_by_ref(ref_id: str, to_status: str,
     total = 0.0
     moved_ids: List[str] = []
     for r in rolls:
-        res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "bucket_ref.id": ref_id, "status": r["status"]},   # FIX-3b — CAS status
-            {"$set": {"status": to_status, "bucket_ref": None, "updated_at": now_iso()}})
-        if not res.modified_count:
+        if not await _rs.transition(r["id"], to_status, from_=r["status"],   # FIX-3b — CAS status (FIX-10: roll_state)
+                                    reason=f"keluar dari ember ({movement_type})", action=movement_type,
+                                    ref={"type": (r.get("bucket_ref") or {}).get("type") or "bucket", "id": ref_id},
+                                    extra_filter={"bucket_ref.id": ref_id}, extra_set={"bucket_ref": None},
+                                    rebuild=False):   # saldo segmen di bawah
             continue
         moved_ids.append(r["id"])
         qty = float(r.get("length_remaining", 0) or 0)
@@ -311,15 +314,18 @@ async def move_specific_rolls(rolls: List[Dict[str, Any]], from_status: str, to_
             cas.pop("length_reserved")
             cas["length_reservations"] = r.get("length_reservations") or []
             unlock = {"length_reservations": [], "length_reserved": 0}
-        res = await db.inventory_rolls.update_one(
-            cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso(), **unlock}})
-        if not res.matched_count:
+        ok = await _rs.transition(r["id"], to_status, from_=from_status, reason=f"pindah ember ({movement_type})",
+                                  action=movement_type, ref=ref,
+                                  extra_filter={k: v for k, v in cas.items() if k not in ("id", "status")},
+                                  extra_set={"bucket_ref": ref, **unlock}, rebuild=False)   # saldo di bawah
+        if not ok:
             for m in moved:
                 back = {"length_reservations": m["length_reservations"], "length_reserved": m.get("length_reserved") or 0} \
                     if m.get("length_reservations") and own and _mlk.roll_locks(m, own) else {}
-                await db.inventory_rolls.update_one(
-                    {"id": m["id"], "bucket_ref.id": ref.get("id"), "status": to_status},
-                    {"$set": {"status": from_status, "bucket_ref": None, "updated_at": now_iso(), **back}})
+                await _rs.transition(m["id"], from_status, from_=to_status, action=f"{movement_type}_rollback",
+                                     reason="pindah ember dibatalkan — roll lain berubah bersamaan", ref=ref,
+                                     extra_filter={"bucket_ref.id": ref.get("id")},
+                                     extra_set={"bucket_ref": None, **back}, rebuild=False)
             raise HTTPException(status_code=409, detail=(
                 f"Roll {r.get('roll_no') or r['id']} berubah di proses lain (dipesan/dipindah/dipotong) — "
                 "muat ulang daftar roll lalu pilih lagi."))
@@ -366,11 +372,11 @@ async def consume_subcon_by_ref(ref_id: str, movement_type: str = "subcon_consum
     total_val = 0.0
     rolls = []
     for r in found:
-        res = await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "subcon", "bucket_ref.id": ref_id},
-            {"$set": {"status": "consumed", "length_remaining": 0.0,
-                      "consumed_ref": ref_id, "updated_at": now_iso()}})
-        if not res.modified_count:
+        if not await _rs.transition(r["id"], "consumed", from_="subcon", reason=f"bahan makloon terpakai ({movement_type})",
+                                    action=movement_type, ref={"type": "makloon", "id": ref_id},
+                                    extra_filter={"bucket_ref.id": ref_id},
+                                    extra_set={"length_remaining": 0.0, "consumed_ref": ref_id},
+                                    rebuild=False):   # saldo segmen di bawah
             continue
         rolls.append(r)
         qty = float(r.get("length_remaining", 0) or 0)

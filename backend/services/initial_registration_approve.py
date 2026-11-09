@@ -232,7 +232,17 @@ async def approve(session: Dict[str, Any], keys: List[str], actor: str, allowed:
     except Exception:
         await _saga.release("cycle_count_sessions", session["id"])
         raise
-    await db.cycle_count_sessions.update_one({"id": session["id"]}, _saga.finish_set(final))
+    if "status" in final:
+        # FIX-10 — status final lewat tabel `cycle_count_state` (CAS `pending_approval` + kunci, riwayat status).
+        from services import cycle_count_state as ccs
+        to = final.pop("status")
+        final.pop("updated_at", None)
+        if not await ccs.transition(session["id"], "reg_approve", to, actor_name=actor, claimed=True, note=reason, return_doc=False,
+                                    set_fields=final):
+            await _saga.mark_failed("cycle_count_sessions", session["id"], "status berubah di luar klaim (reg_approve)")
+            raise HTTPException(status_code=409, detail="Sesi berubah bersamaan — muat ulang (kunci saga terlihat).")
+    else:
+        await db.cycle_count_sessions.update_one({"id": session["id"]}, _saga.finish_set(final))
     return {"results": results, "complete": complete, "session": await load(session["id"])}
 
 

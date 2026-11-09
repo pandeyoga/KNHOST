@@ -21,6 +21,7 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc
 from db import db
 from services import initial_registration_plan as plan_svc
 from services import registration_freeze as rfz
+from services import cycle_count_state as ccs   # FIX-10 — tabel transisi sesi pendaftaran awal + riwayat status
 
 LINES = "initial_registration_lines"   # sama dengan initial_registration_plan.LINES
 FREEZE_MODES = {"warehouse": "Beku penuh (gedung kecil)", "zone": "Beku per zona/rak (gedung besar)"}
@@ -85,6 +86,7 @@ async def create_session(payload: Dict[str, Any], actor: Dict[str, Any], ctx) ->
                          "full_scope": scope["full"], "bin_ids": scope["bin_ids"], "racks": scope["racks"],
                          "rack_marks": {}, "costs": {}, "groups": {}, "writeoffs": {}},
         "freeze": {"active": False, "mode": fm, "warehouse_id": wh["id"], "bin_ids": scope["bin_ids"], "label": label},
+        "status_history": ccs.initial_history("draft", actor["name"], "reg_create"),   # FIX-10
         "created_by": actor["name"], "created_at": now_iso(), "updated_at": now_iso(),
     }
     await db.cycle_count_sessions.insert_one(dict(session))
@@ -111,19 +113,18 @@ async def start_session(session: Dict[str, Any], actor: Dict[str, Any]) -> Dict[
         if other["id"] != session["id"] and _overlaps({"freeze": fr}, other):
             raise HTTPException(status_code=409, detail=f"Cakupan beririsan dengan sesi pendaftaran '{other.get('name')}' "
                                 f"yang sedang berjalan ({rfz.area_label(other)}). Selesaikan sesi itu dulu.")
-    res = await db.cycle_count_sessions.update_one(
-        {"id": session["id"], "status": "draft"},
-        {"$set": {"status": "running", "freeze": fr, "registration.bin_ids": scope["bin_ids"],
-                  "registration.racks": scope["racks"], "registration.node_labels": scope["labels"],
-                  "registration.started_at": since, "registration.started_by": actor["name"], "updated_at": since}})
-    if res.modified_count != 1:
+    if not await ccs.transition(session["id"], "reg_start", "running", actor_name=actor["name"], return_doc=False, set_fields={
+            "freeze": fr, "registration.bin_ids": scope["bin_ids"], "registration.racks": scope["racks"],
+            "registration.node_labels": scope["labels"], "registration.started_at": since,
+            "registration.started_by": actor["name"]}):
         raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang.")
     # Balapan dua 'mulai' bersamaan: yang lebih belakangan mengalah (dikembalikan ke draf).
     for other in await rfz.active_freezes([session["warehouse_id"]]):
         if other["id"] != session["id"] and _overlaps({"freeze": fr}, other) \
                 and ((other.get("freeze") or {}).get("since"), other["id"]) < (since, session["id"]):
-            await db.cycle_count_sessions.update_one({"id": session["id"], "status": "running"},
-                                                     {"$set": {"status": "draft", "freeze.active": False}})
+            await ccs.transition(session["id"], "reg_start_rollback", "draft", actor_name=actor["name"], return_doc=False,
+                                 set_fields={"freeze.active": False},
+                                 note=f"kalah balapan mulai dengan sesi '{other.get('name')}'")
             raise HTTPException(status_code=409, detail=f"Sesi '{other.get('name')}' baru saja memulai area yang sama — muat ulang.")
     return await load(session["id"])
 
@@ -243,11 +244,9 @@ async def submit(session: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, An
     plan = await plan_svc.build_plan({**session, "registration": {**session["registration"], "costs": {}}})
     costs = {g["key"]: {"cost": g["unit_cost"], "basis": g["cost_basis"], "at": now_iso()}
              for g in plan["groups"] if g["new"]}
-    res = await db.cycle_count_sessions.update_one(
-        {"id": session["id"], "status": "running"},
-        {"$set": {"status": "pending_approval", "registration.costs": costs, "registration.submitted_at": now_iso(),
-                  "registration.submitted_by": actor["name"], "updated_at": now_iso()}})
-    if res.modified_count != 1:
+    if not await ccs.transition(session["id"], "reg_submit", "pending_approval", actor_name=actor["name"], return_doc=False, set_fields={
+            "registration.costs": costs, "registration.submitted_at": now_iso(),
+            "registration.submitted_by": actor["name"]}):
         raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang.")
     return await load(session["id"])
 
@@ -256,12 +255,11 @@ async def return_to_running(session: Dict[str, Any], reason: str, actor: Dict[st
     assert_status(session, "pending_approval")
     if (session.get("registration") or {}).get("groups"):
         raise HTTPException(status_code=409, detail="Sebagian produk sudah disetujui — selesaikan persetujuan, jangan dikembalikan.")
-    res = await db.cycle_count_sessions.update_one(
-        {"id": session["id"], "status": "pending_approval", "saga_lock": {"$exists": False}},
-        {"$set": {"status": "running", "registration.returned": {"by": actor["name"], "at": now_iso(), "reason": reason},
-                  "updated_at": now_iso()},
-         "$unset": {"registration.count_approval": ""}})   # FIX-3a — persetujuan hitungan gugur
-    if res.modified_count != 1:
+    if not await ccs.transition(session["id"], "reg_return", "running", actor_name=actor["name"], note=reason, return_doc=False,
+                                extra_filter={"saga_lock": {"$exists": False}},
+                                set_fields={"registration.returned": {"by": actor["name"], "at": now_iso(),
+                                                                      "reason": reason}},
+                                unset=["registration.count_approval"]):   # FIX-3a — persetujuan hitungan gugur
         raise HTTPException(status_code=409, detail="Sesi sedang disetujui / baru saja berubah — muat ulang.")
     return await load(session["id"])
 
@@ -271,11 +269,11 @@ async def reject(session: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
     assert_status(session, *OPEN)
     if (session.get("registration") or {}).get("groups"):
         raise HTTPException(status_code=409, detail="Sebagian produk sudah disetujui — sesi tidak bisa ditolak lagi.")
-    done = await db.cycle_count_sessions.find_one_and_update(
-        {"id": session["id"], "status": {"$in": list(OPEN)}, "saga_lock": {"$exists": False}},
-        {"$set": {"status": "rejected", "freeze.active": False, "freeze.released_at": now_iso(),
-                  "rejected_by": actor["name"], "rejected_at": now_iso(), "rejection_reason": reason, "updated_at": now_iso()}},
-        projection={"_id": 0, "id": 1})
+    done = await ccs.transition(session["id"], "reg_reject", "rejected", actor_name=actor["name"], note=reason,
+                                frm=list(OPEN), extra_filter={"saga_lock": {"$exists": False}},
+                                set_fields={"freeze.active": False, "freeze.released_at": now_iso(),
+                                            "rejected_by": actor["name"], "rejected_at": now_iso(),
+                                            "rejection_reason": reason})
     if not done:
         raise HTTPException(status_code=409, detail="Sesi sedang disetujui / baru saja berubah — muat ulang.")
     await db[LINES].update_many({"session_id": session["id"], "status": "draft"},

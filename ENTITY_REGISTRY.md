@@ -1478,9 +1478,17 @@ Key Fields:
   fabric_type      enum?    [FASE A · PS-02] snapshot woven|knit dari master produk
   qc_grade         string   P0-4 — grade hasil keputusan QC (saat accept; = grade)
   defects          list     P0-4 — profil cacat tekstil [string] (mis. ["belang","noda"])
-  status           enum     on_order|in_transit_inbound|receiving|quarantine|available|reserved|
-                            committed|picked|packed|cross_dock|in_transit_sales|sold|
-                            in_transit_transfer|in_transit_intercompany|blocked|damaged|returned|scrapped
+  status           enum     receiving|quarantine|available|reserved|committed|picked|packed|hold|wip|
+                            blocked|damaged|in_transit_transfer|in_transit_sales|in_transit_inbound|
+                            in_transit_intercompany|subcon|delivered|consumed|returned_supplier
+                            — [FIX-10 · SSOT-1] SSOT kosakata = `services/roll_state.STATUSES` (label = FE
+                            `utils/statusVocab.js` DOMAIN_LABELS.roll). ⚠️ status DIUBAH HANYA lewat
+                            `roll_state.transition()` (daftar-izin `ROLL_TRANSITIONS` + CAS + `status_history[]`
+                            + rebuild saldo) — guardrail INV-ROLL-02 `verify_roll_status_writer.py`. Kode lama
+                            registry `on_order/cross_dock/sold/returned/scrapped` tidak pernah ditulis (dibuang);
+                            `allocated` = status alokasi SO (`sales_orders.allocations[].status`), BUKAN status roll.
+  status_history   list     [FIX-10] [{status, timestamp, user, note, from, action, ref_type, ref_id, ref_no}]
+                            (bentuk SSOT `services/status_history.py`, ≤ 30 entri terakhir; roll lama tanpa riwayat)
   tracking_mode    enum     rfid | barcode | document | manual   (stok visible TANPA RFID — KN_15 §7B)
   earmarked_for    object?  {type: sales_order|special_order, id}  (pegging supply↔demand)
   location_type    enum     warehouse_bin|transit_in|transit_out|cross_dock|drop_ship|transit_transfer
@@ -1809,6 +1817,9 @@ supplier_id · supplier_name | customer_id · customer_name
 spk_date · assigned_to · assigned_name · bagian ("Bagian Inspect")
 started_at · finished_at
 status: draft → assigned → in_progress → done (→ closed)     (reopen: done → in_progress)
+        [FIX-10] tabel transisi `services/inspection_state.py` (daftar-izin per aksi + CAS status asal di filter
+        tulis `inspection_service._save`); `status_history[]` bentuk SSOT `{status,timestamp,user,note,from,action}`
+        — terpisah dari linimasa peristiwa `history[]`
 baseline_sample_id · baseline_sample_number · baseline_contract_id · baseline_color
 summary {lines, rolls, measure, unit, points_total, grade_after_counts{},
          inspected, color_mismatch, handfeel_mismatch, hold, rejected}   (DIHITUNG)
@@ -2110,10 +2121,15 @@ Key Fields:
 Collection:  cycle_count_sessions
 Router:      routers/cycle_count.py
 Component:   CycleCount.jsx
-Status Lifecycle:
-  draft → in_progress → submitted → approved | rejected
+Status Lifecycle:  [FIX-10 — tabel transisi `services/cycle_count_state.py`, CAS + `status_history[]` SSOT]
+  opname (item / mode roll): open → submitted → approved | approved_with_exceptions | rejected;
+                             submitted|rejected → open (buka kembali); mode roll: open → approved[_with_exceptions]
+  pendaftaran awal (mode=registration): draft → running → pending_approval → approved[_with_exceptions];
+                             running → draft (kalah balapan mulai); pending_approval → running; draft|running|pending → rejected
+  (status lama "in_progress" di dokumen ini tidak pernah ditulis kode)
+  opname RFID = koleksi lain `rfid_verify_sessions` kind=cycle_count: open → completed (+ status_history)
 Key Fields:
-  id, session_number, warehouse_id, status,
+  id, session_number, warehouse_id, status, status_history[],
   items: [{id, product_id, expected_qty, actual_qty, variance, status}],
   submitted_by, approved_by, created_at
 

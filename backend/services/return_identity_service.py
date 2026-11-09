@@ -130,12 +130,17 @@ async def restock_identity(ret: Dict[str, Any], item: Dict[str, Any], template: 
                  and claims.get(rid, actual) >= float(orig.get("length_remaining") or 0) - QTY_EPS)
         if whole:
             snap = {k: orig.get(k) for k in RESTORE_KEYS}
-            upd = await db.inventory_rolls.find_one_and_update(
-                {"id": rid, "status": "delivered"},
-                {"$set": {**live, "returned_identity": True, "return_restore": snap,
-                          "acquired": {"via": "return", "ref_id": ret["id"], "date": now}},
-                 "$push": {"return_history": hist, "acquired_history": orig.get("acquired") or {}}},
-                projection={"_id": 0}, return_document=True)
+            # FIX-10 (SSOT-1) — `delivered → karantina` lewat roll_state (CAS + jejak); saldo oleh pemanggil (settle).
+            from services import roll_state as _rs
+            upd = await _rs.transition(
+                rid, live.get("status") or "quarantine", from_="delivered", action="return_restock",
+                reason=f"retur {ret.get('number', '')} diselesaikan — roll kembali ke gudang",
+                ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+                extra_set={**{k: v for k, v in live.items() if k not in ("status", "updated_at")},
+                           "returned_identity": True, "return_restore": snap,
+                           "acquired": {"via": "return", "ref_id": ret["id"], "date": now}},
+                push={"return_history": hist, "acquired_history": orig.get("acquired") or {}},
+                rebuild=False, return_doc=True)
             if upd:
                 out.append((upd, actual, None))
                 continue
@@ -159,10 +164,17 @@ async def restore_identity_roll(roll: Dict[str, Any], now: str) -> None:
     if hist and hist[-1].get("return_id") == roll.get("return_id"):
         hist = hist[:-1]
     customers = sorted({h.get("customer_id") for h in hist if h.get("customer_id")})
-    await db.inventory_rolls.update_one(
-        {"id": roll["id"], "returned_identity": True},
-        {"$set": {**snap, "return_history": hist, "returned_from_customer_ids": customers, "updated_at": now},
-         "$unset": {"return_restore": "", "returned_identity": "", "return_id": ""}})
+    # FIX-10 (SSOT-1) — status kembali "di pelanggan" lewat roll_state: CAS status seperti dibaca pemanggil (penjaga
+    # reversal memastikan karantina) + jejak; saldo segmen dibangun ulang pemanggil.
+    from services import roll_state as _rs
+    back_to = snap.pop("status", None) or "delivered"
+    snap.pop("updated_at", None)
+    await _rs.transition(roll["id"], back_to, from_=roll.get("status") or "quarantine", action="return_restock_reverse",
+                         reason="penyelesaian retur dibalik — roll kembali di pelanggan",
+                         ref={"type": "sales_return", "id": roll.get("return_id") or ""},
+                         extra_filter={"returned_identity": True},
+                         extra_set={**snap, "return_history": hist, "returned_from_customer_ids": customers},
+                         unset=["return_restore", "returned_identity", "return_id"], rebuild=False)
     # FIX-6 (D5) — jejak karantina retur ditutup (riwayat tetap ada; roll kembali "di pelanggan").
     await db.inventory_rolls.update_one({"id": roll["id"], "return_intake.state": {"$in": ["received", "valued"]}},
                                         {"$set": {"return_intake.state": "reversed", "return_intake.reversed_at": now}})
