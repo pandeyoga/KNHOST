@@ -96,8 +96,19 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
       <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-3 py-2">
         <Layers size={14} className="text-[#0058CC]" />
         <span className="text-[11.5px] font-bold text-[#1C1C1E]">Pilih Roll (FEFO — tertua dulu)</span>
-        <span className="ml-auto text-[10.5px] text-[#8E8E93] tabular-nums">{data.total} roll tersedia</span>
+        <span className="ml-auto text-[12px] text-[#6B6B73] tabular-nums" data-testid="roll-picker-available"
+          title="Tersedia menurut definisi tunggal (dikurangi panjang dipesan potong & cadangan makloon)">
+          {data.total} roll ditawarkan{data.available_total != null ? ` · Tersedia ${formatQty(data.available_total)} ${unitShort(data.base_unit || baseUnit)}` : ""}
+        </span>
       </div>
+      {/* FIX-2 (B3a SSOT-4) — cadangan makloon belum dikunci per roll; jumlahnya tampil agar roll yang dipilih tidak
+          melebihi stok bebas (reservasi pesanan tetap ditolak server bila melewati cadangan). */}
+      {Number(data.makloon_reserved_qty || 0) > 0 && (
+        <p className="border-b border-[#EFF0F2] bg-[#FFF4E5] px-3 py-1.5 text-[12px] font-semibold text-[#8C4A00]" data-testid="roll-picker-makloon-note">
+          {formatQty(data.makloon_reserved_qty)} {unitShort(data.base_unit || baseUnit)} dicadangkan untuk makloon — tidak boleh dijual; pilih roll
+          sebanyak-banyaknya senilai Tersedia di atas.
+        </p>
+      )}
 
       <div className="max-h-[280px] overflow-y-auto">
         {loading ? (

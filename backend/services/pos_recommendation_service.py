@@ -56,13 +56,11 @@ async def _products(ids: Iterable[str]) -> Dict[str, Dict[str, Any]]:
 
 async def _available_many(ids: List[str]) -> Dict[str, float]:
     """Stok global (minus cadangan makloon) untuk banyak produk sekaligus — dulu satu query per produk (N+1)."""
-    from services.sales_stock_service import _sum_by_product
+    # FIX-2 — definisi tunggal `stock_figures` (cadangan makloon per PT, gudang dihitung saja).
+    from services.sales_stock_service import global_available_many
     if not ids:
         return {}
-    bal = await _sum_by_product("inventory_balances", {"product_id": {"$in": ids}}, ["available_qty"])
-    mk = await _sum_by_product("material_reservations", {"status": "active", "product_id": {"$in": ids}}, ["qty"])
-    return {pid: round(max(float((bal.get(pid) or {}).get("available_qty") or 0)
-                           - float((mk.get(pid) or {}).get("qty") or 0), 0.0), 2) for pid in ids}
+    return await global_available_many(ids)
 
 
 def _row(p: Dict[str, Any], avail: float, extra: Dict[str, Any]) -> Dict[str, Any]:

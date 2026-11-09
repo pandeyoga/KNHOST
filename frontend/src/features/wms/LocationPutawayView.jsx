@@ -17,6 +17,7 @@ import OrphanPanel from "./location/OrphanPanel";
 import StockTreePanel from "./location/StockTreePanel";
 import { askReason } from "../../services/confirmService";
 import { normalizeZones, fmtUnits, TERMS } from "./location/locUtils";
+import { formatQty } from "../../utils/formatters";
 
 const SUPERVISORS = ["warehouse_admin", "manager", "admin"];
 const isActiveWh = (w) => (w.status || "active") === "active" && w.active !== false;
@@ -29,6 +30,9 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
   const [loc, setLoc] = useState(null);
   const [zones, setZones] = useState([]);
   const [queue, setQueue] = useState([]);
+  // FIX-2 (B1b UI-46) — antrean berhalaman dengan jumlah sungguhan; dulu potong 500 diam-diam.
+  const [queueMeta, setQueueMeta] = useState({ total: 0, total_building: 0, skip: 0, limit: 100, truncated: false });
+  const [queueSkip, setQueueSkip] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -60,16 +64,19 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
       const ent = selectedEntity && selectedEntity !== "all" ? selectedEntity : "all";
       const [l, qd] = await Promise.all([
         axios.get(`${API}/warehouses/${whId}/locations`, { params: { entity_id: ent } }),
-        axios.get(`${API}/inventory/putaway/queue`, { params: { warehouse_id: whId, entity_id: ent } }),
+        axios.get(`${API}/inventory/putaway/queue`, { params: { warehouse_id: whId, entity_id: ent, skip: queueSkip, limit: 100 } }),
       ]);
       setLoc(l.data);
       setZones(normalizeZones(l.data.zones));
       setQueue(qd.data.rolls || []);
+      setQueueMeta({ total: qd.data.total ?? (qd.data.rolls || []).length, total_building: qd.data.total_building ?? 0,
+        skip: qd.data.skip || 0, limit: qd.data.limit || 100, truncated: !!qd.data.truncated });
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat data lokasi"));
     } finally { setLoading(false); }
   };
-  useEffect(() => { loadAll(); }, [whId, selectedEntity]); // eslint-disable-line
+  useEffect(() => { setQueueSkip(0); }, [whId, selectedEntity]);
+  useEffect(() => { loadAll(); }, [whId, selectedEntity, queueSkip]); // eslint-disable-line
 
   const occByBin = useMemo(() => Object.fromEntries((loc?.bins || []).map((b) => [b.bin_id, b])), [loc]);
   const binOptions = useMemo(() => (loc?.bins || []).map((b) => ({ value: b.bin_id, label: `${b.code} — ${b.path}` })), [loc]);
@@ -125,17 +132,17 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Stat icon={Boxes} label="Total Bin" value={loc?.bin_count ?? 0} sub={loc?.bins_without_capacity ? `${loc.bins_without_capacity} tanpa kapasitas` : ""} color="#0058CC" loading={loading} testId="lp-kpi-bins" />
         <Stat icon={Package} label="Kapasitas" value={capTxt} color="#5856D6" loading={loading} testId="lp-kpi-capacity" />
-        <Stat icon={PackageCheck} label="Terisi di Rak" value={`${loc?.binned_rolls ?? 0} roll`} sub={fmtUnits(loc?.binned_by_unit)} color="#34C759" loading={loading} testId="lp-kpi-occupied" />
-        <Stat icon={Layers} label="Belum Ditempatkan" value={`${loc?.unassigned?.rolls ?? 0} roll`} sub={fmtUnits(loc?.unassigned?.by_unit)} color="#FF9500" loading={loading} testId="lp-unassigned" />
-        <Stat icon={AlertOctagon} label="Alamat Tak Terdaftar" value={`${loc?.orphan?.rolls ?? 0} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
+        <Stat icon={PackageCheck} label="Terisi di Rak" value={`${formatQty(loc?.binned_rolls ?? 0)} roll`} sub={fmtUnits(loc?.binned_by_unit)} color="#34C759" loading={loading} testId="lp-kpi-occupied" />
+        <Stat icon={Layers} label="Belum Ditempatkan" value={`${formatQty(loc?.unassigned?.rolls ?? 0)} roll`} sub={[fmtUnits(loc?.unassigned?.by_unit), "gedung ini · semua PT"].filter(Boolean).join(" · ")} color="#FF9500" loading={loading} testId="lp-unassigned" />
+        <Stat icon={AlertOctagon} label="Alamat Tak Terdaftar" value={`${formatQty(loc?.orphan?.rolls ?? 0)} roll`} sub={fmtUnits(loc?.orphan?.by_unit)} color="#C0341D" loading={loading} testId="lp-kpi-orphan" />
       </div>
 
       <PageTabs value={tab} onChange={setTab} testId="lp-tab" ariaLabel="Lokasi gudang" tabs={[
-        { key: "putaway", label: `Penempatan Rak${queue.length ? ` (${queue.length})` : ""}` },
+        { key: "putaway", label: `Penempatan Rak${queueMeta.total ? ` (${formatQty(queueMeta.total)})` : ""}` },
         { key: "structure", label: "Struktur Lokasi" },
         { key: "stock", label: "Stok per Alamat" },
         { key: "bins", label: "Okupansi Bin" },
-        { key: "orphans", label: `Alamat Tak Terdaftar${loc?.orphan?.rolls ? ` (${loc.orphan.rolls})` : ""}` },
+        { key: "orphans", label: `Alamat Tak Terdaftar${loc?.orphan?.rolls ? ` (${formatQty(loc.orphan.rolls)})` : ""}` },
         { key: "pa", label: "Perintah Simpan ke Rak (Antar Gedung)" },
         { key: "cuts", label: "Antrean Potong" },
       ]} />
@@ -152,7 +159,24 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
             <p className="text-[11.5px] text-[#6B6B73] mb-3">Saran bin hanya menampilkan bin yang lolos aturan & kapasitas; server tetap memeriksa ulang saat disimpan.</p>
             {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
               : queue.length === 0 ? <p data-testid="lp-queue-empty" className="py-8 text-center text-[12px] text-[#6B6B73]">Semua roll sudah ditempatkan ke bin.</p>
-              : <div className="space-y-2">{queue.map((r) => <PutawayRow key={r.id} roll={r} binOptions={binOptions} canOverride={isSup} onDone={loadAll} />)}</div>}
+              : <>
+                <p data-testid="lp-queue-count" className="mb-2 text-[12px] text-[#3A3A3C]">
+                  Menampilkan roll {formatQty(queueMeta.skip + 1)}–{formatQty(queueMeta.skip + queue.length)} dari <b>{formatQty(queueMeta.total)}</b> roll
+                  {queueMeta.total_building > queueMeta.total && (
+                    <span> · gedung ini (semua PT): {formatQty(queueMeta.total_building)} roll — roll PT lain tampil saat PT-nya dipilih</span>
+                  )}
+                </p>
+                <div className="space-y-2">{queue.map((r) => <PutawayRow key={r.id} roll={r} binOptions={binOptions} canOverride={isSup} onDone={loadAll} />)}</div>
+                {(queueMeta.skip > 0 || queueMeta.truncated) && (
+                  <div className="mt-3 flex items-center justify-between gap-2" data-testid="lp-queue-pager">
+                    <button type="button" className="secondary-button" disabled={queueMeta.skip <= 0 || loading}
+                      onClick={() => setQueueSkip(Math.max(0, queueMeta.skip - queueMeta.limit))}>Sebelumnya</button>
+                    <span className="text-[12px] text-[#6B6B73]">Halaman {formatQty(Math.floor(queueMeta.skip / queueMeta.limit) + 1)} dari {formatQty(Math.max(1, Math.ceil(queueMeta.total / queueMeta.limit)))}</span>
+                    <button type="button" className="secondary-button" disabled={!queueMeta.truncated || loading}
+                      onClick={() => setQueueSkip(queueMeta.skip + queueMeta.limit)}>Berikutnya</button>
+                  </div>
+                )}
+              </>}
           </div>
         )}
     </div>

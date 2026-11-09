@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Minus, ShoppingBag, Printer, Layers, Scissors } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
+import StockFigures from "./StockFigures";
 import { variantLabel, mergedLineTotal, ownStockText } from "../utils/variants";
 import ProductColorTriad from "./ProductColorTriad";
 import VariantAxisPicker from "./VariantAxisPicker";
@@ -71,7 +72,10 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const ownName = selected?.stock_entity_name || "";
   // F3 — deskripsi ikut varian terpilih; fallback ke deskripsi grup (rep).
   const description = selected ? (selected.description || group.description || "").trim() : "";
-  const availState = avail <= 0 ? "habis" : avail <= 40 ? "low" : "ready";
+  // FIX-2 (B3a STK-10) — status stok dari server (ambang K-04 `stock_availability.LOW_STOCK_QTY`), dulu ≤ 40 di sini.
+  const srvState = selected?.stock_figures?.global?.state;
+  const availState = srvState ? ({ habis: "habis", rendah: "low", ada: "ready" }[srvState] || "ready")
+    : (avail <= 0 ? "habis" : "ready");
   const availPill = { habis: "status-cancelled", low: "status-waiting_approval", ready: "status-confirmed" }[availState];
   const availLabel = { habis: "Habis", low: "Stok rendah", ready: "Tersedia" }[availState];
   const lineTotal = special ? unitPrice * (Number(qty) || 0) : mergedLineTotal(selected, qty, unitPrice);
@@ -128,8 +132,15 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                 small testId="quickview-base-price" />
             </div>
           </div>
+          {/* FIX-2 — dua angka {LOKAL, GLOBAL} varian terpilih; klik → rincian per lokasi/PT/status/akan datang/ATP. */}
+          {selected?.stock_figures && (
+            <StockFigures testId="quickview-stock-figures" unit={selected.stock_figures.unit || baseUnit}
+              local={selected.stock_figures.local} global={selected.stock_figures.global}
+              localLabel={selected.stock_scope_label || ownName || "Cakupan saya"} globalLabel="Total grup (semua PT)"
+              productIds={[selected.id]} />
+          )}
           {/* Trial 22 Okt (B6) — stok PT penjual vs grup: angka grup termasuk stok PT lain (dipenuhi lewat Admin Sales). */}
-          {ownName && (
+          {ownName && !selected?.stock_figures && (
             <p data-testid="quickview-own-stock" className="text-[11px] text-[#6B6B73]">
               Stok {ownName}: <b className={Number(selected.entity_available_qty || 0) > 0 ? "text-[#126E2C]" : "text-[#A8221A]"}>{ownStockText(selected.entity_available_qty, selected.entity_roll_count, baseUnit)}</b>
               {avail > Number(selected.entity_available_qty || 0) && " — selebihnya stok PT lain di grup; pemenuhannya diatur Admin Sales."}

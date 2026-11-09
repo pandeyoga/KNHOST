@@ -358,10 +358,12 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
 async def _on_order_qty(product_id: str, warehouse_id: str, owner_entity_id: str) -> float:
     """Qty pipeline dari purchase_orders yang belum jadi roll (status belum receiving selesai)."""
     pos = await db.purchase_orders.find(
-        {"warehouse_id": warehouse_id, "status": {"$in": OPEN_PO_STATUSES}},
+        {"warehouse_id": warehouse_id, "status": {"$in": OPEN_PO_STATUSES}, "items.product_id": product_id},
         {"_id": 0, "items": 1, "entity_id": 1, "expected_delivery_date": 1},
-    ).to_list(500)
+    ).to_list(None)   # FIX-2 — tanpa batas 500 senyap
     from services import atp_policy as _atp
+    from services.stock_figures import po_open_base_qty
+    await _atp.horizon_days()   # FIX-2 keputusan #4 — horizon = setelan
     total = 0.0
     for po in pos:
         if po.get("entity_id") and po.get("entity_id") != owner_entity_id:
@@ -370,13 +372,10 @@ async def _on_order_qty(product_id: str, warehouse_id: str, owner_entity_id: str
             continue
         for it in po.get("items", []):
             if it.get("product_id") == product_id:
-                # KN-B14 — sisa pipeline = dipesan − sudah diterima, dalam SATUAN DASAR
-                # (base_quantity bila ada; qty PO ber-satuan pesanan dikonversi proporsional).
-                ordered = float(it.get("quantity", it.get("qty", 0)) or 0)
-                base_ordered = float(it.get("base_quantity") or 0) or ordered
-                received = float(it.get("received_qty", 0) or 0)
-                factor = (base_ordered / ordered) if ordered > 0 else 1.0
-                total += max(base_ordered - received * factor, 0.0)
+                # KN-B14 — sisa pipeline = dipesan − sudah diterima, dalam SATUAN DASAR.
+                # FIX-2 (B3a SCH-3/STK-3) — dulu membaca `base_quantity` yang tidak pernah ada di item PO (field PO
+                # = `quantity_base`) → selalu jatuh ke qty dokumen. Kini satu rumus `po_open_base_qty`.
+                total += po_open_base_qty(it)
     return total
 
 
@@ -2222,11 +2221,18 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
     # singkirkan roll yang di-earmark untuk demand lain (tetap tampil bila tak di-earmark)
     rolls = [r for r in rolls if not (isinstance(r.get("earmarked_for"), dict) and r["earmarked_for"].get("id"))]
     rolls = [r for r in rolls if free_length(r) > QTY_EPS]  # WM-02 — roll dipesan penuh tak ditawarkan
+    # FIX-2 (B3a SSOT-3/DUP-1) — definisi tunggal: roll tahan inspeksi & roll di gudang yang tidak dihitung (non-aktif/
+    # data uji) tidak ditawarkan.
+    from services import stock_figures as _sf
+    _counted = await _sf.counted_warehouse_ids()
+    rolls = [r for r in rolls if not ((r.get("inspection") or {}).get("hold") or {}).get("held")
+             and r.get("warehouse_id") in _counted]
     if sort == "lifo":
         rolls.sort(key=lambda r: (r.get("created_at", ""), r.get("roll_no", "")), reverse=True)
     else:  # fefo (default) — tertua/lot paling lama dulu
         rolls.sort(key=lambda r: (r.get("lot", ""), r.get("created_at", ""), r.get("roll_no", "")))
     total = len(rolls)
+    rolls_all_listed = list(rolls)
     if limit and limit > 0:
         rolls = rolls[skip: skip + limit]
     elif skip:
@@ -2260,7 +2266,16 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
             "md_quality_spk": r.get("md_quality_spk", ""), "inspected_4point_spk": r.get("inspected_4point_spk", ""),
         })
     prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "unit": 1, "name": 1, "sku": 1})
+    # FIX-2 (B3a SSOT-4) — angka "Tersedia" pemilih = definisi tunggal untuk cakupan yang sama (cadangan makloon
+    # dikurangi). Roll belum dikunci per roll untuk makloon; reservasi pesanan tetap dijaga `makloon_guard`.
+    _segs = [x for x in await _sf.segments([product_id])
+             if (all_entities or not owner_entity_id or x["owner_entity_id"] == owner_entity_id)
+             and (not warehouse_id or x["warehouse_id"] == warehouse_id)]
+    _tot = _sf.sum_segments(_segs)
     return {"items": items, "total": total,
+            "available_total": _tot["available_qty"], "available_rolls": int(_tot["available_rolls"]),
+            "makloon_reserved_qty": round(_tot["makloon_reserved_qty"], 2),
+            "listed_free_total": round(sum(free_length(r) for r in rolls_all_listed), 2),
             "base_unit": (prod or {}).get("base_unit") or (prod or {}).get("unit") or "meter",
             "supplier_refs": (await supplier_refs_for_products([product_id])).get(product_id, [])}
 

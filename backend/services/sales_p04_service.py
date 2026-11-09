@@ -340,14 +340,29 @@ async def assert_rolls_allowed(order: Dict[str, Any], product_id: str, roll_ids:
 
 
 async def sales_stock_summary(product_id: str, entity_id: str) -> Dict[str, Any]:
-    """Ringkasan stok untuk Sales: Reguler (non-BS) dan BS terpisah; tanpa LOT/grade rinci/pemilik."""
+    """Ringkasan stok untuk Sales: Reguler (non-BS) dan BS terpisah; tanpa LOT/grade rinci/pemilik.
+
+    FIX-2 (B3a STK-6/SSOT-4/STK-4) — definisi tunggal `stock_figures`:
+    * Fisik = semua status fisik di gudang (`PHYSICAL_ROLL_STATUSES`, termasuk dialokasikan & dalam proses — dulu
+      `committed`/`wip` terlewat: BTK-MEGA-001 162 vs 662 yard);
+    * Bebas = roll tersedia − panjang dipesan potong − klaim PA/tahan inspeksi − cadangan makloon PT (dulu makloon
+      tidak dikurangi: +75 / +300); Σ Bebas Reguler+BS = Tersedia K-04 PT ini;
+    * Dikunci = panjang dipesan potong + dipesan + dialokasikan/diambil/dikemas; Ditahan = karantina/blokir/rusak/hold/
+      proses/klaim PA; hanya gudang yang dihitung (aktif, bukan data uji);
+    * Datang = PO terbuka (sisa belum diterima, satuan dasar) + antar-PT dikonfirmasi + roll menuju gudang; draf tidak."""
     from services.stock_bucket_service import _incoming_supply
-    from services.atp_policy import compute_atp, pending_backorder_qty, sum_incoming_in_horizon
+    from services.atp_policy import compute_atp, pending_backorder_qty, sum_incoming_in_horizon, horizon_days
+    from services.roll_service import PHYSICAL_ROLL_STATUSES
+    from services import stock_figures as _sf
+    days = await horizon_days()
     prod = await db.products.find_one({"id": product_id}, {"_id": 0, "id": 1, "name": 1, "base_unit": 1}) or {}
+    counted = list(await _sf.counted_warehouse_ids())
     rows: Dict[str, Dict[str, float]] = {}
-    pipe = [{"$match": {"product_id": product_id, "length_remaining": {"$gt": 0}}},
+    pipe = [{"$match": {"product_id": product_id, "length_remaining": {"$gt": 0}, "warehouse_id": {"$in": counted}}},
             {"$group": {"_id": {"bs": {"$eq": ["$grade", "BS"]}, "own": {"$eq": ["$owner_entity_id", entity_id]},
-                                "st": "$status"}, "q": {"$sum": "$length_remaining"},
+                                "st": "$status", "am": {"$gt": ["$active_movement.id", None]},
+                                "ih": {"$eq": ["$inspection.hold.held", True]}},
+                        "q": {"$sum": "$length_remaining"},
                     "lr": {"$sum": {"$min": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}}}}]
     async for g in db.inventory_rolls.aggregate(pipe):
         cls = "bs" if g["_id"]["bs"] else "regular"
@@ -355,39 +370,60 @@ async def sales_stock_summary(product_id: str, entity_id: str) -> Dict[str, Any]
                                   "group_free": 0.0})
         st = g["_id"]["st"] or ""
         q = float(g["q"] or 0)
-        lr = float(g.get("lr") or 0) if st == "available" else 0.0   # L02 LN-020 — reservasi potong di roll available
+        held = bool(g["_id"].get("am") or g["_id"].get("ih"))      # klaim PA / tahan inspeksi: fisik, tidak bebas
+        lr = float(g.get("lr") or 0) if (st == "available" and not held) else 0.0
         if not g["_id"]["own"]:
-            if st == "available":
-                r["group_free"] += q - lr
-            continue
-        if st in ("available", "reserved", "hold", "quarantine", "blocked", "picked", "packed", "damaged"):
+            continue                                                  # PT lain: angka grup dari layanan tunggal
+        if st in PHYSICAL_ROLL_STATUSES:
             r["physical"] += q
         if st == "available":
-            r["free"] += q - lr
-            r["reserved"] += lr
-        elif st in ("reserved", "picked", "packed", "hold"):
+            if held:
+                r["blocked"] += q
+            else:
+                r["free"] += q - lr
+                r["reserved"] += lr
+        elif st in ("reserved", "committed", "picked", "packed"):
             r["reserved"] += q
-        elif st in ("quarantine", "blocked", "damaged"):
+        elif st in PHYSICAL_ROLL_STATUSES:
             r["blocked"] += q
         elif st.startswith("in_transit"):
             r["in_transit"] += q
-    incoming = await _incoming_supply(product_id, entity_id) if entity_id else []
-    inc_h = sum_incoming_in_horizon(incoming)
+    # cadangan makloon PT ini (aturan alokasi tunggal) — dikurangkan dari Bebas Reguler dulu, lalu BS
+    segs = await _sf.segments([product_id])
+    makloon = round(sum(float(x.get("makloon_reserved_qty") or 0) for x in segs if x["owner_entity_id"] == entity_id), 2)
+    left = makloon
+    for cls in ("regular", "bs"):
+        r = rows.get(cls)
+        if not r or left <= 0:
+            continue
+        cut = min(left, max(r["free"], 0.0))
+        r["free"] -= cut
+        r["makloon_reserved"] = round(r.get("makloon_reserved", 0.0) + cut, 2)
+        left -= cut
+    group_free = round(sum(max(x["available_qty"], 0.0) for x in segs if x["owner_entity_id"] != entity_id), 2)
+    incoming_all = await _incoming_supply(product_id, entity_id) if entity_id else []
+    incoming = [i for i in incoming_all if not i.get("tentative")]
+    inbound = round(sum(float(x.get("in_transit_inbound_qty") or 0) for x in segs if x["owner_entity_id"] == entity_id), 2)
+    inc_h = round(sum_incoming_in_horizon(incoming, days) + inbound, 2)
     demand = await pending_backorder_qty(product_id, entity_id)
     out = []
     for cls, label in (("regular", "Reguler (non-BS)"), ("bs", "BS")):
         r = {k: round(v, 2) for k, v in (rows.get(cls) or {}).items()}
         if not r and cls == "bs":
             continue
-        r = {"physical": 0.0, "reserved": 0.0, "free": 0.0, "blocked": 0.0, "in_transit": 0.0, "group_free": 0.0, **r}
+        r = {"physical": 0.0, "reserved": 0.0, "free": 0.0, "blocked": 0.0, "in_transit": 0.0, "group_free": 0.0,
+             "makloon_reserved": 0.0, **r}
+        r["free"] = round(max(r["free"], 0.0), 2)
+        if cls == "regular":
+            r["group_free"] = group_free
         row = {"class": cls, "label": label, **r}
         if cls == "regular":
-            row.update(incoming=round(sum(float(i.get("qty") or 0) for i in incoming), 2), incoming_in_horizon=inc_h,
-                       pending_demand=demand, atp=compute_atp(r["free"], inc_h, demand))
+            row.update(incoming=round(sum(float(i.get("qty") or 0) for i in incoming) + inbound, 2),
+                       incoming_in_horizon=inc_h, pending_demand=demand, atp=compute_atp(r["free"], inc_h, demand))
         out.append(row)
-    from services.atp_policy import ATP_HORIZON_DAYS
     return {"product_id": product_id, "product_name": prod.get("name", ""), "unit": prod.get("base_unit", ""),
-            "entity_id": entity_id, "rows": out, "atp_horizon_days": ATP_HORIZON_DAYS,
-            "atp_definition": (f"ATP = stok bebas + barang datang (PO/makloon, ETA ≤ {ATP_HORIZON_DAYS} hari) − "
-                               "sisa pesanan yang masih menunggu. Barang datang belum siap kirim."),
+            "entity_id": entity_id, "rows": out, "atp_horizon_days": days, "makloon_reserved": makloon,
+            "atp_definition": (f"ATP = stok bebas + barang datang (PO terbuka, roll menuju gudang, antar-PT "
+                               f"dikonfirmasi; ETA ≤ {days} hari) − sisa pesanan yang masih menunggu. "
+                               "Barang datang belum siap kirim."),
             "note": "Stok PT lain di grup bukan milik Anda — penggunaannya diputuskan Admin Sales."}

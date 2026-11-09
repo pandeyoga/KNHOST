@@ -105,7 +105,7 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
           <div className="grid grid-cols-2 gap-2.5">
             {groups.map((g) => (
               <MobileProductCard specialMap={priceMap} key={g.key} group={g} onOpen={handleOpen}
-                rndEnforcement={data?.rnd_policy?.lifecycle_enforcement || "block"} siteStock={siteStock} siteName={siteName} />
+                rndEnforcement={data?.rnd_policy?.lifecycle_enforcement || "block"} siteStock={siteStock} siteName={siteName} siteId={siteId} />
             ))}
           </div>
         )}

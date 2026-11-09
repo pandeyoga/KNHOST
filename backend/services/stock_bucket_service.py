@@ -349,9 +349,16 @@ async def bucket_board(scope: Dict[str, Any], product_id: Optional[str] = None) 
     q = dict(scope or {})
     if product_id:
         q["product_id"] = product_id
-    balances = await db.inventory_balances.find(q, {"_id": 0}).to_list(5000)
+    balances = await db.inventory_balances.find(q, {"_id": 0}).to_list(None)   # FIX-2 — tanpa batas 5.000 senyap
     warehouses, products, entities = await _enrich_maps()
-    all_fields = BOARD_BUCKETS + DERIVED
+    # FIX-2 (B3a SSOT-4, B1 UI-40) — "Tersedia"/ATP menurut SATU definisi (`stock_figures`): cadangan makloon dikurangi
+    # per segmen; gudang yang tidak dihitung (non-aktif/uji/yatim) dilewati. Dulu Multi-Bucket 61.071,16 kg vs Status
+    # Stok & ATP 60.996,16 kg (selisih cadangan makloon 75 kg).
+    from services import stock_figures as _sf
+    _idx = _sf.segment_index(await _sf.segments(list({b.get("product_id") for b in balances if b.get("product_id")})))
+    balances = [_sf.adjust_balance_row(b, _idx) for b in balances]
+    balances = [b for b in balances if b.get("counted")]
+    all_fields = BOARD_BUCKETS + DERIVED + ["makloon_reserved_qty"]
     by_product: Dict[str, Dict[str, Any]] = {}
     for b in balances:
         pid = b["product_id"]
@@ -363,6 +370,7 @@ async def bucket_board(scope: Dict[str, Any], product_id: Optional[str] = None) 
         wh = warehouses.get(b.get("warehouse_id"), {})
         ent = entities.get(b.get("owner_entity_id"), {})
         row = {f: round(float(b.get(f, 0) or 0), 2) for f in all_fields}
+        row["available_rolls"] = int(b.get("roll_count") or 0)
         row.update({
             "warehouse_id": b.get("warehouse_id"), "warehouse_name": wh.get("name", ""),
             "warehouse_city": wh.get("city", ""),
@@ -372,6 +380,7 @@ async def bucket_board(scope: Dict[str, Any], product_id: Optional[str] = None) 
         grp["warehouses"].append(row)
         for f in all_fields:
             grp["totals"][f] = round(grp["totals"][f] + row[f], 2)
+        grp["totals"]["available_rolls"] = int(grp["totals"].get("available_rolls") or 0) + row["available_rolls"]
     # UAT 24 Okt (audit UI 057 vs 058) — ATP dihitung SEGAR dengan rumus tunggal atp_policy: per gudang dikurangi
     # backorder gudang itu; total produk dikurangi SELURUH backorder aktif per PT sekali (bukan Σ ATP gudang yang
     # mengurangkan backorder tanpa gudang berkali-kali dan bisa basi).
@@ -448,25 +457,16 @@ def _parse_dt(s: Optional[str]) -> Optional[datetime]:
 
 async def _open_po_incoming(product_id: str, owner_entity_id: str) -> List[Dict[str, Any]]:
     """Baris PO terbuka (belum jadi roll) utk product×entitas → incoming supply.
-    Mengembalikan list {po_number, po_id, qty, eta, warehouse_id} urut ETA naik."""
-    pos = await db.purchase_orders.find(
-        {"status": {"$in": OPEN_PO_STATUSES}},
-        {"_id": 0, "id": 1, "po_number": 1, "items": 1, "entity_id": 1,
-         "expected_delivery_date": 1, "warehouse_id": 1},
-    ).to_list(2000)
+    Mengembalikan list {po_number, po_id, qty, eta, warehouse_id} urut ETA naik.
+    FIX-2 (B3a STK-4/DUP-2) — qty = SISA belum diterima dalam SATUAN DASAR (`stock_figures.po_open_base_qty`); dulu qty
+    PO penuh tanpa `− received_qty` & tanpa `quantity_base`. PO tanpa `entity_id` tetap dihitung (perilaku lama)."""
+    from services.stock_figures import incoming_rows
     out: List[Dict[str, Any]] = []
-    for po in pos:
-        if po.get("entity_id") and po.get("entity_id") != owner_entity_id:
+    for r in await incoming_rows([product_id], sources=("po",)):
+        if r["owner_entity_id"] and r["owner_entity_id"] != owner_entity_id:
             continue
-        for it in po.get("items", []):
-            if it.get("product_id") == product_id:
-                qty = float(it.get("quantity", it.get("qty", 0)) or 0)
-                if qty > 0.01:
-                    out.append({
-                        "po_number": po.get("po_number", ""), "po_id": po.get("id", ""),
-                        "qty": round(qty, 2), "eta": po.get("expected_delivery_date") or "",
-                        "warehouse_id": po.get("warehouse_id", ""),
-                    })
+        out.append({"po_number": r["number"], "po_id": r["doc_id"], "qty": r["qty"], "eta": r["eta"],
+                    "warehouse_id": r["warehouse_id"]})
     out.sort(key=lambda x: (x["eta"] or "9999-12-31"))
     return out
 
@@ -474,6 +474,7 @@ async def _open_po_incoming(product_id: str, owner_entity_id: str) -> List[Dict[
 # Status transaksi antar-PT yang barangnya BELUM masuk gudang pembeli — inilah yang
 # layak disebut "janji pasokan". `received`/`invoiced`/`settled` sudah jadi roll nyata,
 # jadi menghitungnya lagi akan menjanjikan barang dua kali.
+# FIX-2 (STK-4) — `draft` tetap ditampilkan (papan Pending SO, E9.2) tetapi bertanda `tentative` dan TIDAK dihitung ATP.
 INCOMING_INTERCO_STATUSES = ["draft", "confirmed", "shipped"]
 
 
@@ -484,39 +485,29 @@ async def _open_interco_incoming(product_id: str, owner_entity_id: str) -> List[
     kekurangan stok yang SUDAH diurus lewat pembelian internal tetap tampil
     "belum tertutup" (uncovered). Akibatnya Admin Sales/pembelian bisa menerbitkan
     PR/PO kedua untuk barang yang sebenarnya sudah dijanjikan PT sebelah.
+    FIX-2 — dibaca lewat `stock_figures.incoming_rows` (qty satuan dasar `quantity_base`, draf = `tentative`).
     """
-    docs = await db.interco_transactions.find(
-        {"role": "buyer", "buyer_entity_id": owner_entity_id,
-         "status": {"$in": INCOMING_INTERCO_STATUSES},
-         "items.product_id": product_id},
-        {"_id": 0, "id": 1, "number": 1, "items": 1, "doc_date": 1, "due_date": 1,
-         "status": 1, "seller_entity_id": 1, "seller_entity_name": 1,
-         "source_order_id": 1, "source_order_number": 1,
-         "warehouse_transfer_status": 1},
-    ).to_list(2000)
+    from services.stock_figures import incoming_rows
     out: List[Dict[str, Any]] = []
-    for d in docs:
-        for it in d.get("items", []):
-            if it.get("product_id") != product_id:
-                continue
-            qty = float(it.get("quantity", it.get("qty", 0)) or 0)
-            if qty <= 0.01:
-                continue
-            out.append({
-                "source": "interco",
-                "po_number": d.get("number", ""),   # kolom lama dipakai layar apa adanya
-                "po_id": d.get("id", ""),
-                "interco_id": d.get("id", ""),
-                "interco_number": d.get("number", ""),
-                "interco_status": d.get("status", ""),
-                "from_entity_id": d.get("seller_entity_id", ""),
-                "from_entity_name": d.get("seller_entity_name", ""),
-                "source_order_id": d.get("source_order_id", ""),
-                "source_order_number": d.get("source_order_number", ""),
-                "qty": round(qty, 2),
-                "eta": d.get("due_date") or d.get("doc_date") or "",
-                "warehouse_id": "",
-            })
+    for r in await incoming_rows([product_id], include_tentative=True, sources=("interco",)):
+        if r["owner_entity_id"] != owner_entity_id:
+            continue
+        out.append({
+            "source": "interco",
+            "po_number": r["number"],   # kolom lama dipakai layar apa adanya
+            "po_id": r["doc_id"],
+            "interco_id": r["doc_id"],
+            "interco_number": r["number"],
+            "interco_status": r["status"],
+            "from_entity_id": r.get("from_entity_id", ""),
+            "from_entity_name": r.get("from_entity_name", ""),
+            "source_order_id": r.get("source_order_id", ""),
+            "source_order_number": r.get("source_order_number", ""),
+            "qty": r["qty"],
+            "eta": r["eta"],
+            "warehouse_id": "",
+            "tentative": r["tentative"],
+        })
     out.sort(key=lambda x: (x["eta"] or "9999-12-31"))
     return out
 
@@ -582,14 +573,19 @@ def _match_supply(need: float, incoming: List[Dict[str, Any]]) -> Dict[str, Any]
 
 async def atp_detail(scope: Dict[str, Any], product_id: str,
                      owner_entity_id: Optional[str] = None,
-                     horizon_days: int = DEFAULT_ATP_HORIZON_DAYS) -> Dict[str, Any]:
+                     horizon_days: Optional[int] = None) -> Dict[str, Any]:
     """Detail ATP future-aware untuk satu produk: available + incoming(horizon) −
     pending demand. Menyediakan breakdown supply (PO+ETA) & demand (Pending SO)."""
     q = dict(scope or {})
     q["product_id"] = product_id
-    balances = await db.inventory_balances.find(q, {"_id": 0}).to_list(5000)
+    balances = await db.inventory_balances.find(q, {"_id": 0}).to_list(None)
+    # FIX-2 (B3a SSOT-4/STK-4) — Tersedia menurut SATU definisi (`stock_figures`, cadangan makloon dikurangi).
+    from services import stock_figures as _sf
+    _idx = _sf.segment_index(await _sf.segments([product_id]))
+    balances = [b for b in (_sf.adjust_balance_row(b, _idx) for b in balances) if b.get("counted")]
     available = round(sum(float(b.get("available_qty", 0) or 0) for b in balances), 2)
     reserved = round(sum(float(b.get("reserved_qty", 0) or 0) for b in balances), 2)
+    makloon_reserved = round(sum(float(b.get("makloon_reserved_qty", 0) or 0) for b in balances), 2)
     owner = owner_entity_id
     if not owner:
         ent = q.get("owner_entity_id")
@@ -601,14 +597,21 @@ async def atp_detail(scope: Dict[str, Any], product_id: str,
     # hanya PO supplier. Tanpa ini barang yang sudah dijanjikan PT lain tampak tidak ada.
     incoming = await _incoming_supply(product_id, owner) if owner else []
     pending = await _pending_demand_lines(product_id, owner) if owner else []
+    # ATP ikut roll yang sudah menuju gudang (in_transit_inbound) — definisi `atp_policy` (dulu terlewat di sini).
+    inbound = round(sum(float(b.get("in_transit_inbound_qty") or 0) for b in balances
+                        if not owner or b.get("owner_entity_id") == owner), 2)
 
+    from services import atp_policy as _atp_pol
+    if not horizon_days:
+        horizon_days = await _atp_pol.horizon_days()   # FIX-2 keputusan #4 — setelan, bawaan 14
     now = datetime.now(timezone.utc)
     horizon = now + timedelta(days=max(1, int(horizon_days or DEFAULT_ATP_HORIZON_DAYS)))
     for i in incoming:
         eta_dt = _parse_dt(i["eta"])
         i["within_horizon"] = (eta_dt <= horizon) if eta_dt else True   # KN-D11 — ETA kosong = dalam horizon
-    incoming_in_horizon = round(sum(i["qty"] for i in incoming if i.get("within_horizon")), 2)
-    incoming_total = round(sum(i["qty"] for i in incoming), 2)
+        i["in_atp"] = not i.get("tentative")                             # FIX-2 (STK-4) — draf antar-PT tidak dihitung
+    incoming_in_horizon = round(sum(i["qty"] for i in incoming if i.get("within_horizon") and i["in_atp"]) + inbound, 2)
+    incoming_total = round(sum(i["qty"] for i in incoming if i["in_atp"]) + inbound, 2)
     pending_total = round(sum(pp["qty"] for pp in pending), 2)
 
     from services.atp_policy import compute_atp   # KN-D11 — rumus tunggal
@@ -617,7 +620,8 @@ async def atp_detail(scope: Dict[str, Any], product_id: str,
     return {
         "product_id": product_id, "sku": p.get("sku", ""), "product_name": p.get("name", ""),
         "base_unit": p.get("base_unit", "meter"), "owner_entity_id": owner,
-        "available": available, "reserved": reserved,
+        "available": available, "reserved": reserved, "makloon_reserved": makloon_reserved,
+        "in_transit_inbound": inbound,
         "incoming": incoming, "incoming_in_horizon": incoming_in_horizon,
         "incoming_total": incoming_total,
         "pending_demand": pending, "pending_total": pending_total,

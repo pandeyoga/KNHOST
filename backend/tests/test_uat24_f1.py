@@ -44,6 +44,7 @@ def _site():
     DB.purchase_orders.delete_many({"id": {"$in": pos}})
     DB.purchase_requisitions.delete_many({"reason": {"$regex": f"TEST F1 {T}"}})
     DB.inventory_rolls.delete_many({"id": {"$regex": f"^roll_TEST_F1_{T}"}})
+    DB.inventory_balances.delete_many({"warehouse_id": {"$in": [WH_T, WH_S]}})   # FIX-2 — saldo proyeksi uji
     for so in DB.sales_orders.find({"notes": f"TEST F1 {T}"}, {"id": 1}):   # batal lewat API → cadangan roll dilepas
         requests.post(f"{BASE}/sales-orders/{so['id']}/cancel", headers=ADMIN, json={"reason": "uji F1 selesai"})
     DB.warehouses.delete_many({"id": {"$in": [WH_T, WH_S]}})
@@ -109,11 +110,20 @@ def test_grn_dari_po_selalu_di_gudang_penerimaan_po():
 def test_stok_per_lokasi_memisahkan_milik_pt_dan_pt_lain():
     tmpl = DB.inventory_rolls.find_one({"owner_entity_id": "ent_ksc", "status": "available"}, {"_id": 0})
     pid = tmpl["product_id"]
+    # FIX-2 — salinan roll uji tanpa reservasi/klaim/lot milik roll asli (saldo kini dibangun ulang dari roll ini).
+    tmpl = {**tmpl, "lot_id": None, "length_reserved": 0, "length_reservations": [], "active_movement": None,
+            "inspection": None, "rfid_tag_id": None, "reserved_ref": None, "earmarked_for": None}
     DB.inventory_rolls.insert_many([
         {**tmpl, "id": f"roll_TEST_F1_{T}_a", "roll_no": f"TF1-{T}-A", "warehouse_id": WH_S, "owner_entity_id": "ent_ksc",
          "status": "available", "length_remaining": 30.0},
         {**tmpl, "id": f"roll_TEST_F1_{T}_b", "roll_no": f"TF1-{T}-B", "warehouse_id": WH_S, "owner_entity_id": "ent_kanda",
          "status": "available", "length_remaining": 20.0}])
+    # FIX-2 (B3a STK-13) — "Di {lokasi}" kini dibaca dari saldo proyeksi (definisi tunggal `stock_figures`), sama dengan
+    # semua angka stok lain; roll yang disisipkan langsung ke DB wajib di-rebuild seperti yang dilakukan alur aplikasi.
+    import asyncio
+    from services.roll_service import rebuild_balance
+    for owner in ("ent_ksc", "ent_kanda"):
+        asyncio.get_event_loop().run_until_complete(rebuild_balance(pid, WH_S, owner))
     r = requests.get(f"{BASE}/pos/site-stock", headers=ADMIN, params={"site_id": SITE, "entity_id": "ent_ksc", "product_ids": pid})
     assert r.status_code == 200, r.text
     st = r.json()["stock"][pid]

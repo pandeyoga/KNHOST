@@ -57,13 +57,12 @@ async def _usable_stock_by_entity(product_ids: List[str], buyer_entity_id: str) 
     if not product_ids or not buyer_entity_id:
         return {}
     ok_wh = [w["id"] async for w in db.warehouses.find(_whs.usable_query(buyer_entity_id), {"_id": 0, "id": 1})]
+    # FIX-2 (B3a STK-5 D7/DUP-4) — definisi tunggal `stock_figures`: dulu Σ `length_remaining` roll `available` mentah
+    # (panjang dipesan potong & cadangan makloon ikut "bisa dipakai").
+    from services.stock_figures import available_by_owner
     out: Dict[Any, float] = {}
-    async for g in db.inventory_rolls.aggregate([
-            {"$match": {"product_id": {"$in": list(product_ids)}, "status": "available",
-                        "warehouse_id": {"$in": ok_wh}}},
-            {"$group": {"_id": {"o": "$owner_entity_id", "p": "$product_id"},
-                        "q": {"$sum": "$length_remaining"}}}]):
-        out[(g["_id"].get("o") or "", g["_id"].get("p") or "")] = round(float(g.get("q") or 0), 4)
+    for (pid, owner), v in (await available_by_owner(list(product_ids), warehouse_ids=ok_wh)).items():
+        out[(owner or "", pid or "")] = round(float(v["qty"]), 4)
     return out
 
 

@@ -224,17 +224,30 @@ async def resolve_orphans(actor="System", dry_run=False):
 
 async def family_summary(template_id, actor, ctx, manage=False):
     from services.catalog_access import template_for
-    from entity_scope import resolve_list_scope
     tpl = await template_for(actor, template_id, manage=manage)
     variants = tpl.pop("variants")
+    # FIX-2 (B3a STK-1, P0) — dulu menjumlah `b.get('available')`/`b.get('reserved')` yang TIDAK ADA di saldo
+    # (field sebenarnya `available_qty`/`reserved_qty`) → 17/17 varian selalu 0; `rolls` menghitung roll segala status
+    # (termasuk terkirim/subcon). Kini SATU layanan (`stock_figures`): Tersedia = definisi tunggal K-04 di cakupan daftar
+    # (PT aktif / mode gabungan × lokasi kerja), Dipesan = dipesan + dialokasikan, roll = roll tersedia; ditambah dua
+    # angka {LOKAL, GLOBAL} per varian.
+    from entity_scope import resolve_scope_ids
+    from services import stock_figures as _sf
+    ids = [v["id"] for v in variants if v.get("id")]
+    segs = await _sf.segments(ids)
+    owners = set(resolve_scope_ids(ctx))
+    loc = getattr(ctx, "warehouse_ids", None)
+    figs = await _sf.figures_for(ids, await _sf.viewer_scope(ctx), segs)
     rows = []
     for v in variants:
-        scope = resolve_list_scope("inventory_balances", {"product_id": v["id"]}, ctx)
-        balances = await db.inventory_balances.find(scope, {"_id": 0}).to_list(10000)
-        v['available'] = round(sum(float(b.get('available', 0) or 0) for b in balances), 2)
-        v['reserved'] = round(sum(float(b.get('reserved', 0) or 0) for b in balances), 2)
-        rq = resolve_list_scope("inventory_rolls", {"product_id": v['id'], "length_remaining": {"$gt": 0}}, ctx)
-        v['rolls'] = await db.inventory_rolls.count_documents(rq)
+        mine = [x for x in segs if x["product_id"] == v["id"] and x["owner_entity_id"] in owners
+                and (loc is None or x["warehouse_id"] in loc)]
+        t = _sf.sum_segments(mine)
+        v['available'] = t["available_qty"]
+        v['reserved'] = round(t["reserved_qty"] + t["committed_qty"] + t["picked_qty"] + t["packed_qty"], 2)
+        v['rolls'] = int(t["available_rolls"])
+        v['on_hand'] = round(t["on_hand_qty"], 2)
+        v['stock_figures'] = figs.get(v["id"])
         rows.append(v)
     # Quantity totals must never add kg and meter. Family base_unit is enforced.
-    return {"template": tpl, "variants": rows, "totals": {"variants": len(rows), "available": sum(v['available'] for v in rows), "reserved": sum(v['reserved'] for v in rows), "rolls": sum(v['rolls'] for v in rows)}}
+    return {"template": tpl, "variants": rows, "totals": {"variants": len(rows), "available": round(sum(v['available'] for v in rows), 2), "reserved": round(sum(v['reserved'] for v in rows), 2), "rolls": sum(v['rolls'] for v in rows)}}

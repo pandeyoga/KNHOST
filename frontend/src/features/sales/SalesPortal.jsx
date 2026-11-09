@@ -78,7 +78,8 @@ export function SalesPortal({
     if (facets.priceMax) list = list.filter((p) => Number(p.price || 0) <= Number(facets.priceMax));
     if (onlySite && siteStock) list = list.filter((p) => Number(siteStock[p.id]?.own_qty || 0) > 0);
     if (facets.availability === "available") list = list.filter((p) => Number(p.available_qty || 0) > 0);
-    if (facets.availability === "low") list = list.filter((p) => Number(p.available_qty || 0) > 0 && Number(p.available_qty || 0) <= 40);
+    // FIX-2 (B3a STK-10) — "stok rendah" = aturan server (`stock_figures.*.state`), dulu ≤ 40 diketik di sini.
+    if (facets.availability === "low") list = list.filter((p) => (p.stock_figures?.global?.state || "") === "rendah");
     const sorters = {
       price_asc: (a, b) => (a.price || 0) - (b.price || 0),
       price_desc: (a, b) => (b.price || 0) - (a.price || 0),
@@ -267,7 +268,7 @@ export function SalesPortal({
             {!loading && groups.length === 0 && <div data-testid="products-empty" className="col-span-full py-10 text-center text-[13px] text-[#6B6B73]">Tidak ada produk yang cocok dengan filter/pencarian.</div>}
             {!loading && groups.slice(0, visibleCount).map((group) => (
               <PosProductCard key={group.key} group={group} specialMap={specialMap} onOpen={openQuickView}
-                rndEnforcement={rndEnforcement} siteStock={siteStock} siteName={siteName} />
+                rndEnforcement={rndEnforcement} siteStock={siteStock} siteName={siteName} siteId={siteId} />
             ))}
           </div>
 

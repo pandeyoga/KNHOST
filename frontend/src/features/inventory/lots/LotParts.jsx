@@ -11,8 +11,9 @@ import { LOT_STATUS_TONE, SOURCE_TONE, shortDate } from "./lotApi";
 export function LotStatCards({ stats }) {
   const s = stats || {};
   const cards = [
-    { k: "Lot terdaftar", v: s.total ?? 0, s: "identitas batch aktif", t: "total" },
-    { k: "Roll dalam lot", v: s.rolls_in_lots ?? 0, s: "seluruh roll tertaut", t: "rolls" },
+    // FIX-2 (B1b UI-59) — jumlah dengan pemisah ribuan gaya Indonesia (dulu "23368").
+    { k: "Lot terdaftar", v: formatQty(s.total ?? 0), s: "identitas batch aktif", t: "total" },
+    { k: "Roll dalam lot", v: formatQty(s.rolls_in_lots ?? 0), s: "seluruh roll tertaut", t: "rolls" },
     // UAT 24 Okt (audit UI tahap 2) — dulu satu angka "1.381.852,24 — satuan dasar produk" yang menjumlah kg + yard +
     // meter. Rincian per satuan dipakai bila server mengirim `qty_remaining_by_unit`; tanpa itu angka gabungan diberi
     // label jujur (lot_service.stats belum memecah per satuan — dicatat untuk pemilik berkas backend).

@@ -23,7 +23,6 @@ from core_utils import DEFAULT_ENTITY_ID
 # Status PO yang masih "pipeline" (belum jadi roll available). Mencakup PO yang
 # menunggu approval, sudah disetujui/dikirim ke supplier, dan sedang diterima.
 from services.roll_service import OPEN_PO_STATUSES  # KN-A11 — satu definisi bersama
-from services.stock_availability import deduct_makloon, registered_warehouse_ids  # K-04 — definisi "Tersedia"
 
 EPS = 0.001
 
@@ -53,14 +52,11 @@ async def build_supply_index(
             warehouses: { warehouse_id: {available, reserved, on_hand, incoming, atp} }
       } } }
     """
-    bal_query: Dict[str, Any] = {}
-    if product_ids:
-        bal_query["product_id"] = {"$in": product_ids}
-    balances = await db.inventory_balances.find(bal_query, {"_id": 0}).to_list(None)
-    # K-04 (keputusan pemilik 26 Okt 2026) — definisi tunggal "Tersedia" (`services/stock_availability.py`): papan
-    # stok hanya menghitung gudang TERDAFTAR (saldo yatim gudang yang sudah dihapus tidak ikut, sama dengan Saran
-    # Reorder). Pemanggil lama (pratinjau alokasi) tetap tanpa saringan → `registered_only=False`.
-    known_wh = await registered_warehouse_ids() if registered_only else None
+    # FIX-2 (B3a STK-5/DUP-1/SSOT-4) — saldo dibaca lewat SATU layanan angka stok (`stock_figures.segments`): gudang
+    # yang DIHITUNG saja (aktif & bukan data uji) dan cadangan makloon sudah dialokasikan dengan satu aturan. Dulu
+    # `registered_only=False` (pratinjau alokasi) membaca semua saldo termasuk gudang yatim; kini semua pemanggil sama.
+    from services.stock_figures import segments as _segments, counted_warehouse_ids
+    known_wh = await counted_warehouse_ids()
 
     supply: Dict[str, Dict[str, Any]] = {}
 
@@ -68,21 +64,16 @@ async def build_supply_index(
         prod = supply.setdefault(pid, {})
         ent = prod.setdefault(eid, {
             "available": 0.0, "reserved": 0.0, "on_hand": 0.0, "incoming": 0.0, "atp": 0.0,
-            "warehouses": {},
+            "makloon_reserved": 0.0, "committed": 0.0, "available_rolls": 0, "warehouses": {},
         })
         wh = ent["warehouses"].setdefault(wid, {
             "available": 0.0, "reserved": 0.0, "on_hand": 0.0, "incoming": 0.0, "atp": 0.0,
+            "committed": 0.0, "available_rolls": 0,
         })
         return ent, wh
 
-    for b in balances:
-        pid = b.get("product_id")
-        eid = b.get("owner_entity_id") or DEFAULT_ENTITY_ID
-        wid = b.get("warehouse_id")
-        if not pid or not wid:
-            continue
-        if known_wh is not None and wid not in known_wh:
-            continue
+    for b in await _segments(product_ids):
+        pid, eid, wid = b["product_id"], b["owner_entity_id"] or DEFAULT_ENTITY_ID, b["warehouse_id"]
         ent, wh = _seg(pid, eid, wid)
         avail = float(b.get("available_qty", 0) or 0)
         rsv = float(b.get("reserved_qty", 0) or 0)
@@ -92,19 +83,22 @@ async def build_supply_index(
         ent["reserved"] += rsv; wh["reserved"] += rsv
         ent["on_hand"] += oh; wh["on_hand"] += oh
         ent["incoming"] += in_inbound; wh["incoming"] += in_inbound
-
-    # W2-REQ-07 — bahan yang dicadangkan untuk makloon bukan stok bebas untuk sales (satu implementasi, K-04).
-    await deduct_makloon(supply, product_ids)
+        ent["makloon_reserved"] = round(ent["makloon_reserved"] + float(b.get("makloon_reserved_qty") or 0), 2)
+        # FIX-2 (STK-9) — dialokasikan/diambil/dikemas dipisah dari "tertahan"; jumlah roll tersedia ikut (roll dulu).
+        com = sum(float(b.get(k) or 0) for k in ("committed_qty", "picked_qty", "packed_qty"))
+        ent["committed"] += com; wh["committed"] += com
+        ent["available_rolls"] += int(b.get("available_rolls") or 0); wh["available_rolls"] += int(b.get("available_rolls") or 0)
 
     # on_order dari PO terbuka (qty - received_qty), per (produk, gudang, entitas)
     po_query: Dict[str, Any] = {"status": {"$in": OPEN_PO_STATUSES}}
     pos = await db.purchase_orders.find(po_query, {"_id": 0, "items": 1, "warehouse_id": 1, "entity_id": 1,
                                                      "expected_delivery_date": 1}).to_list(None)
     from services import atp_policy as _atp
+    await _atp.horizon_days()   # FIX-2 keputusan #4 — horizon = setelan
     for po in pos:
         eid = po.get("entity_id") or DEFAULT_ENTITY_ID
         wid = po.get("warehouse_id")
-        if not wid or (known_wh is not None and wid not in known_wh):
+        if not wid or wid not in known_wh:
             continue
         if not _atp.within_horizon(po.get("expected_delivery_date")):   # KN-D11 — horizon ATP tunggal
             continue
@@ -114,20 +108,25 @@ async def build_supply_index(
                 continue
             if product_ids and pid not in product_ids:
                 continue
-            qty = float(it.get("quantity", it.get("qty", 0)) or 0)
-            recv = float(it.get("received_qty", 0) or 0)
-            remaining = max(0.0, qty - recv)
-            if remaining <= EPS:
-                continue
-            # Fase 8 — on_order dalam BASE unit (meter). PO per-kg punya quantity_base
-            # (meter-ekuivalen); sisa diproporsikan agar tak mencampur kg ke balance meter.
-            qbase = float(it.get("quantity_base", qty) or qty)
-            on_order = (qbase * (remaining / qty)) if qty > 0 else remaining
-            on_order = max(0.0, on_order)
+            # FIX-2 (DUP-2) — sisa PO dalam satuan dasar lewat SATU rumus (`stock_figures.po_open_base_qty`).
+            from services.stock_figures import po_open_base_qty
+            on_order = po_open_base_qty(it)
             if on_order <= EPS:
                 continue
             ent, wh = _seg(pid, eid, wid)
             ent["incoming"] += on_order; wh["incoming"] += on_order
+
+    # FIX-2 (STK-4) — pembelian antar-PT yang DIKONFIRMASI ikut "barang masuk" PT pembeli (definisi `atp_policy`);
+    # dulu papan stok tidak membacanya sehingga ATP papan ≠ `/stock/atp` untuk produk & PT yang sama. Draf tidak dihitung.
+    from services.stock_figures import incoming_rows
+    for r in await incoming_rows(product_ids, sources=("interco",)):
+        if not r["in_atp"] or not _atp.within_horizon(r.get("eta")):
+            continue
+        ent = supply.setdefault(r["product_id"], {}).get(r["owner_entity_id"])
+        if ent is None:
+            ent, _ = _seg(r["product_id"], r["owner_entity_id"], "")
+            ent["warehouses"].pop("", None)
+        ent["incoming"] += float(r["qty"] or 0)
 
     # KN-D11 — ATP = available + incoming(horizon) − backorder aktif (SATU rumus: atp_policy).
     for pid, ents in supply.items():
@@ -137,12 +136,12 @@ async def build_supply_index(
                 pending_wh = await _atp.pending_backorder_qty(pid, eid, wid, include_unassigned=False)
                 wh["pending_demand"] = pending_wh
                 wh["atp"] = _atp.compute_atp(wh["available"], wh["incoming"], pending_wh)
-                for k in ("available", "reserved", "on_hand", "incoming"):
+                for k in ("available", "reserved", "on_hand", "incoming", "committed"):
                     wh[k] = round(wh[k], 2)
             ent["pending_demand"] = pending_ent
             ent["atp"] = _atp.compute_atp(ent["available"], ent["incoming"], pending_ent)
-            for k in ("available", "reserved", "on_hand", "incoming"):
-                ent[k] = round(ent[k], 2)
+            for k in ("available", "reserved", "on_hand", "incoming", "committed"):
+                ent[k] = round(ent.get(k, 0.0), 2)
     return supply
 
 
@@ -305,16 +304,17 @@ async def status_board(
     for pid, prod in products.items():
         ents = supply.get(pid, {})
         by_entity: List[Dict[str, Any]] = []
-        totals = {"on_hand": 0.0, "available": 0.0, "reserved": 0.0, "incoming": 0.0, "atp": 0.0}
+        totals = {"on_hand": 0.0, "available": 0.0, "reserved": 0.0, "incoming": 0.0, "atp": 0.0,
+                  "committed": 0.0, "makloon_reserved": 0.0, "available_rolls": 0}
         pend_total = 0.0
         entities_with_stock = 0
         # Agregat GRUP dihitung SEBELUM penyaringan supaya isyarat lintas-PT tetap ada.
         group_total = {"on_hand": 0.0, "available": 0.0, "reserved": 0.0,
-                       "incoming": 0.0, "atp": 0.0}
+                       "incoming": 0.0, "atp": 0.0, "available_rolls": 0}
         group_entities_with_stock = 0
         for _eid, _ent in ents.items():
             for k in group_total:
-                group_total[k] += _ent[k]
+                group_total[k] += _ent.get(k, 0)
             if _ent["available"] > EPS:
                 group_entities_with_stock += 1
         for eid, ent in ents.items():
@@ -328,7 +328,8 @@ async def status_board(
                     "warehouse_id": wid,
                     "warehouse_name": warehouses.get(wid, {}).get("name", wid),
                     "warehouse_city": warehouses.get(wid, {}).get("city", ""),
-                    **{k: wh[k] for k in ("on_hand", "available", "reserved", "incoming", "atp")},
+                    **{k: wh.get(k, 0) for k in ("on_hand", "available", "reserved", "incoming", "atp", "committed",
+                                                 "available_rolls")},
                     "pending_demand": round(float(wh.get("pending_demand") or 0), 2),
                 })
             by_wh.sort(key=lambda x: -x["available"])
@@ -337,11 +338,13 @@ async def status_board(
                 "entity_name": _entity_label(entities, eid),
                 "on_hand": ent["on_hand"], "available": ent["available"],
                 "reserved": ent["reserved"], "incoming": ent["incoming"], "atp": ent["atp"],
+                "committed": ent.get("committed", 0.0), "makloon_reserved": ent.get("makloon_reserved", 0.0),
+                "available_rolls": ent.get("available_rolls", 0),
                 "pending_demand": round(float(ent.get("pending_demand") or 0), 2),
                 "by_warehouse": by_wh,
             })
             for k in totals:
-                totals[k] += ent[k]
+                totals[k] += ent.get(k, 0)
             pend_total += float(ent.get("pending_demand") or 0)
             if ent["available"] > EPS:
                 entities_with_stock += 1
@@ -360,10 +363,15 @@ async def status_board(
             "total_reserved": round(totals["reserved"], 2),
             "total_incoming": round(totals["incoming"], 2),
             "total_atp": round(totals["atp"], 2),
+            "total_available_rolls": int(totals["available_rolls"]),
             # Transparansi rumus: ATP = tersedia + incoming(≤ horizon) − permintaan tertunda (backorder);
-            # stok fisik = tersedia + dipesan + tertahan (karantina/QC/blokir/cadangan makloon).
+            # FIX-2 (STK-9) — stok fisik = tersedia + cadangan makloon + dipesan + dialokasikan + tertahan
+            # (karantina/QC/blokir/hold/rusak/dalam proses). Dulu dialokasikan/diambil/dikemas ikut "tertahan".
             "total_pending_demand": round(pend_total, 2),
-            "total_hold": round(max(totals["on_hand"] - totals["available"] - totals["reserved"], 0.0), 2),
+            "total_committed": round(totals["committed"], 2),
+            "total_makloon_reserved": round(totals["makloon_reserved"], 2),
+            "total_hold": round(max(totals["on_hand"] - totals["available"] - totals["reserved"]
+                                    - totals["committed"] - totals["makloon_reserved"], 0.0), 2),
             "entities_with_stock": (entities_with_stock if cross_entity_detail
                                     else group_entities_with_stock),
             # Isyarat "tersedia di entitas lain" TANPA membocorkan angka per gudang.
@@ -375,6 +383,7 @@ async def status_board(
                 "reserved": round(group_total["reserved"], 2),
                 "incoming": round(group_total["incoming"], 2),
                 "atp": round(group_total["atp"], 2),
+                "available_rolls": int(group_total["available_rolls"]),
                 "entities_with_stock": group_entities_with_stock,
             },
             "other_entities_available": round(

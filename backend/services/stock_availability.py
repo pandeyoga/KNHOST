@@ -31,58 +31,61 @@ def is_low_stock(available: float, threshold: float = LOW_STOCK_QTY) -> bool:
 
 
 async def registered_warehouse_ids() -> Set[str]:
-    return {w["id"] async for w in db.warehouses.find({}, {"_id": 0, "id": 1}) if w.get("id")}
+    """FIX-2 (DUP-1) — gudang yang DIHITUNG di angka stok: aktif & bukan data uji (`stock_figures.counted_warehouse_ids`).
+    Dulu: semua gudang master (termasuk 5 non-aktif & 6 `TEST_WH`) — berbeda dengan katalog POS (aktif saja)."""
+    from services.stock_figures import counted_warehouse_ids
+    return await counted_warehouse_ids()
 
 
 async def deduct_makloon(supply: Dict[str, Dict[str, Any]], product_ids: Optional[List[str]] = None) -> None:
     """W2-REQ-07 — bahan yang dicadangkan untuk makloon bukan stok bebas: kurangi dari `available` entitas lalu dari
     gudang (terbesar dulu). `supply` = {product_id: {entity_id: {"available", "warehouses": {wid: {"available"}}}}}.
-    SATU implementasi untuk papan stok & definisi "Tersedia" (K-04)."""
-    mres_q: Dict[str, Any] = {"status": "active"}
-    if product_ids:
-        mres_q["product_id"] = {"$in": product_ids}
-    for m in await db.material_reservations.find(mres_q, {"_id": 0, "product_id": 1, "owner_entity_id": 1,
-                                                          "qty": 1}).to_list(5000):
-        ent = supply.get(m.get("product_id"), {}).get(m.get("owner_entity_id") or DEFAULT_ENTITY_ID)
-        if not ent:
-            continue
-        left = float(m.get("qty") or 0)
-        ent["makloon_reserved"] = round(ent.get("makloon_reserved", 0.0) + left, 2)
-        take = min(left, ent["available"]); ent["available"] -= take; left = take
-        for wh in sorted(ent["warehouses"].values(), key=lambda w: -w["available"]):
-            cut = min(left, wh["available"]); wh["available"] -= cut; left -= cut
-            if left <= EPS:
-                break
+    FIX-2 — pembungkus aturan tunggal `stock_figures.allocate_makloon` (satu aturan alokasi untuk semua endpoint)."""
+    from services.stock_figures import allocate_makloon, makloon_by_product_entity
+    segs: List[Dict[str, Any]] = []
+    for pid, by_ent in supply.items():
+        for eid, ent in by_ent.items():
+            for wid, wh in (ent.get("warehouses") or {}).items():
+                segs.append({"product_id": pid, "owner_entity_id": eid, "warehouse_id": wid,
+                             "available_qty": float(wh.get("available") or 0), "_wh": wh})
+    mk = await makloon_by_product_entity(product_ids)
+    allocate_makloon(segs, mk)
+    for (pid, eid), qty in mk.items():
+        ent = supply.get(pid, {}).get(eid)
+        if ent is not None:
+            ent["makloon_reserved"] = round(ent.get("makloon_reserved", 0.0) + float(qty or 0), 2)
+    for s in segs:
+        cut = s.get("makloon_reserved_qty", 0.0)
+        if cut > 0:
+            s["_wh"]["available"] -= cut
+            ent = supply[s["product_id"]][s["owner_entity_id"]]
+            ent["available"] -= cut
 
 
 async def available_index(product_ids: Optional[List[str]] = None,
                           owner_entity_ids: Optional[Iterable[str]] = None) -> Dict[str, Dict[str, Any]]:
     """{product_id: {entity_id: {"available", "makloon_reserved", "warehouses": {wid: {"available"}}}}} menurut
-    definisi tunggal K-04 (gudang terdaftar saja, sesudah cadangan makloon).
+    definisi tunggal K-04 (gudang yang dihitung saja, sesudah cadangan makloon) — FIX-2: dibangun dari
+    `stock_figures.segments` (satu layanan angka stok).
     `owner_entity_ids`: None atau memuat "all" = semua badan usaha; daftar kosong = tidak ada (cakupan kosong)."""
-    reg = await registered_warehouse_ids()
-    q: Dict[str, Any] = {}
-    if product_ids:
-        q["product_id"] = {"$in": list(product_ids)}
+    from services.stock_figures import segments
+    want: Optional[Set[str]] = None
     if owner_entity_ids is not None:
         req = [e for e in owner_entity_ids if e]
         if "all" not in req:
             if not req:
                 return {}
-            q["owner_entity_id"] = {"$in": req}
+            want = set(req)
     supply: Dict[str, Dict[str, Any]] = {}
-    async for b in db.inventory_balances.find(q, {"_id": 0, "product_id": 1, "warehouse_id": 1,
-                                                 "owner_entity_id": 1, "available_qty": 1}):
-        pid, wid = b.get("product_id"), b.get("warehouse_id")
-        if not pid or not wid or wid not in reg:
+    for s in await segments(product_ids):
+        if want is not None and s["owner_entity_id"] not in want:
             continue
-        eid = b.get("owner_entity_id") or DEFAULT_ENTITY_ID
-        ent = supply.setdefault(pid, {}).setdefault(eid, {"available": 0.0, "warehouses": {}})
-        wh = ent["warehouses"].setdefault(wid, {"available": 0.0})
-        av = float(b.get("available_qty", 0) or 0)
+        ent = supply.setdefault(s["product_id"], {}).setdefault(
+            s["owner_entity_id"], {"available": 0.0, "makloon_reserved": 0.0, "warehouses": {}})
+        av = float(s["available_qty"])
         ent["available"] += av
-        wh["available"] += av
-    await deduct_makloon(supply, list(product_ids) if product_ids else None)
+        ent["makloon_reserved"] = round(ent["makloon_reserved"] + s.get("makloon_reserved_qty", 0.0), 2)
+        ent["warehouses"].setdefault(s["warehouse_id"], {"available": 0.0})["available"] += av
     return supply
 
 

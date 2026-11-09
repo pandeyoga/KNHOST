@@ -8,18 +8,47 @@ Sebelumnya ada tiga rumus berlabel "ATP":
 Definisi tunggal (dipakai ketiganya):
     ATP = available + incoming_dalam_horizon − permintaan_backorder_aktif
   - available        : bucket `available_qty` (reservasi sudah keluar)
-  - incoming         : in_transit_inbound + PO terbuka (OPEN_PO_STATUSES) + pembelian antar-PT,
-                       hanya yang ETA ≤ ATP_HORIZON_DAYS (ETA kosong dianggap dalam horizon,
+  - incoming         : in_transit_inbound + PO terbuka (OPEN_PO_STATUSES; sisa belum diterima, satuan dasar)
+                       + pembelian antar-PT DIKONFIRMASI (draf tidak — FIX-2/STK-4), hanya yang ETA ≤ horizon
+                       (setelan `stock.atp_horizon_days`, bawaan 14 hari — FIX-2 keputusan #4) (ETA kosong dianggap dalam horizon,
                        karena PO tanpa tanggal tetap pasokan nyata yang sedang berjalan)
   - permintaan       : Σ `backorders[].backorder_qty` aktif (status ≠ fulfilled) pesanan
                        ber-`has_backorder` yang belum terpenuhi (ACTIVE_BACKORDER_STATUSES)
 """
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, Optional
 
 from db import db
 
+# FIX-2 (B3a keputusan #4, DUP-2) — horizon ATP = SETELAN Pusat Pengaturan `stock.atp_horizon_days` (bawaan 14 hari).
+# `ATP_HORIZON_DAYS` tetap ada sebagai BAWAAN; nilai efektif dibaca `await horizon_days()` (cache 15 detik) dan
+# dipakai `within_horizon`/`sum_incoming_in_horizon` bila pemanggil tidak memberi horizon sendiri.
 ATP_HORIZON_DAYS = 14
+HORIZON_SETTING_KEY = "stock.atp_horizon_days"
+_HORIZON: Dict[str, Any] = {"at": 0.0, "days": ATP_HORIZON_DAYS}
+
+
+async def horizon_days() -> int:
+    """Horizon ATP efektif (hari) dari setelan; bawaan 14. Gagal baca setelan → nilai terakhir/bawaan."""
+    if time.monotonic() - _HORIZON["at"] > 15:
+        try:
+            from services.config_resolver import value_of
+            v = int(await value_of(HORIZON_SETTING_KEY) or ATP_HORIZON_DAYS)
+            _HORIZON["days"] = max(1, min(v, 365))
+        except Exception:  # noqa: BLE001 — setelan tak terbaca tidak boleh menjatuhkan angka stok
+            pass
+        _HORIZON["at"] = time.monotonic()
+    return int(_HORIZON["days"])
+
+
+def current_horizon_days() -> int:
+    """Nilai horizon terakhir yang dibaca (sinkron) — panggil `await horizon_days()` dulu untuk menyegarkan."""
+    return int(_HORIZON["days"])
+
+
+def invalidate_horizon() -> None:
+    _HORIZON["at"] = 0.0
 ACTIVE_BACKORDER_STATUSES = ["waiting_stock", "reserved", "waiting_approval", "approved",
                              "confirmed", "partially_picked", "partially_shipped"]
 
@@ -29,7 +58,7 @@ def compute_atp(available: float, incoming_in_horizon: float, pending_demand: fl
 
 
 def within_horizon(eta: Optional[str], now: Optional[datetime] = None,
-                   horizon_days: int = ATP_HORIZON_DAYS) -> bool:
+                   horizon_days: Optional[int] = None) -> bool:
     """ETA kosong/tak terbaca = dalam horizon (pasokan nyata tanpa tanggal)."""
     if not eta:
         return True
@@ -40,7 +69,7 @@ def within_horizon(eta: Optional[str], now: Optional[datetime] = None,
     except Exception:  # noqa: BLE001
         return True
     now = now or datetime.now(timezone.utc)
-    return dt <= now + timedelta(days=max(1, int(horizon_days or ATP_HORIZON_DAYS)))
+    return dt <= now + timedelta(days=max(1, int(horizon_days or current_horizon_days())))
 
 
 async def pending_backorder_qty(product_id: str, owner_entity_id: str,
@@ -93,6 +122,6 @@ async def backorder_map(product_ids: Optional[Iterable[str]] = None) -> Dict[tup
     return out
 
 
-def sum_incoming_in_horizon(rows: Iterable[Dict[str, Any]], horizon_days: int = ATP_HORIZON_DAYS) -> float:
+def sum_incoming_in_horizon(rows: Iterable[Dict[str, Any]], horizon_days: Optional[int] = None) -> float:
     now = datetime.now(timezone.utc)
     return round(sum(float(r.get("qty", 0) or 0) for r in rows if within_horizon(r.get("eta"), now, horizon_days)), 2)

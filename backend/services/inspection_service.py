@@ -1071,6 +1071,9 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""))
         patch.update({"hold": bool(result["hold"].get("held")), "hold_reason": result["hold"].get("reason", "")})
         warnings = list(result.get("qc_warnings") or [])
+        # FIX-2 (B3a SSOT-3, keputusan #2) — tahan MD Quality = status `blocked` (bukan hanya bendera).
+        from services import roll_hold_service as _rhs
+        await _rhs.sync_inspection_hold(line["roll_id"], actor)
     elif line.get("roll_id") and doc.get("kind") != KIND_RETURN_CUSTOMER:
         roll = await db.inventory_rolls.find_one({"id": line["roll_id"]}, {"_id": 0})
         if not roll:
@@ -1106,6 +1109,9 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
                 header=hdr, grade_input=str(payload.get("grade") or ""))
         except qc.GradeRequired as exc:   # Trial 22 Okt (F5) — grade wajib diisi petugas QC
             raise InspectionError(str(exc)) from exc
+        # FIX-2 (B3a SSOT-3, keputusan #2) — tahan warna/handfeel hasil 4-point = status `blocked`.
+        from services import roll_hold_service as _rhs
+        await _rhs.sync_inspection_hold(line["roll_id"], actor)
         # RINGKASAN, bukan sumber angka: disalin dari hasil pemanggilan di atas.
         patch.update({
             "points_snapshot": result.get("points"),
@@ -1667,6 +1673,9 @@ async def release_hold(ins_id: str, line_id: str, reason: str,
                       "inspection.hold.released_at": now_iso(),
                       "inspection.hold.release_reason": why,
                       "updated_at": now_iso()}})
+        # FIX-2 (keputusan #2) — pembalikan: status roll kembali ke status sebelum ditahan inspeksi.
+        from services import roll_hold_service as _rhs
+        await _rhs.sync_inspection_hold(line["roll_id"], actor)
     lines = [({**ln, "hold": False, "hold_released_by": actor.get("name", ""),
                "hold_released_at": now_iso(), "hold_release_reason": why,
                "md_quality_decision": {"action": "release", "reason": why, "by": actor.get("name", ""),

@@ -1,6 +1,7 @@
 import { ImageOff, Lock } from "lucide-react";
 import { mediaUrl } from "../../components/ProductGallery";
 import { formatCurrency } from "../../utils/formatters";
+import QtyDual from "../../components/QtyDual";
 import { variantLabel } from "../../utils/variants";
 import ProductColorChip from "../../components/ProductColorChip";
 
@@ -26,7 +27,11 @@ export const VariantCard = ({ variant: v, active, stock, onSelect }) => {
         <span className={`status-pill ${lcCls}`}>{lcLabel}</span>
       </span>
       <span className="variant-card-foot">
-        {stock ? <span data-testid={`catalog-variant-stock-${v.id}`}>{stock.available} tersedia · {stock.rolls} roll</span> : <span>Stok memuat…</span>}
+        {/* FIX-2 (B3a STK-1) — dulu selalu "0 tersedia" (field saldo salah); kini dua angka, roll dulu lalu panjang. */}
+        {stock ? <span data-testid={`catalog-variant-stock-${v.id}`} title="Tersedia: angka 1 = cakupan Anda, angka 2 = semua PT">
+          Tersedia <QtyDual rolls={stock.stock_figures?.local?.rolls ?? stock.rolls} measure={stock.stock_figures?.local?.qty ?? stock.available} unit={stock.stock_figures?.unit || ""} />
+          {stock.stock_figures && <> · semua PT <QtyDual rolls={stock.stock_figures.global.rolls} measure={stock.stock_figures.global.qty} unit={stock.stock_figures.unit || ""} /></>}
+        </span> : <span>Stok memuat…</span>}
         <span className="variant-card-kinds">{kinds.photo ? `${kinds.photo} foto` : "tanpa foto"}{kinds.mockup ? ` · ${kinds.mockup} mockup` : ""}{kinds.artwork ? ` · ${kinds.artwork} artwork` : ""}</span>
       </span>
       {((v.supplier_codes || []).length > 0 || v.source_name || v.source_color) && <span data-testid={`catalog-supplier-alias-${v.id}`} className="variant-card-alias">supplier: {[(v.supplier_codes || []).map(c => c.supplier_sku).join(", "), (v.supplier_codes || [])[0]?.supplier_item_name || v.source_name, (v.supplier_codes || [])[0]?.supplier_color || v.source_color].filter(Boolean).join(" · ")}</span>}

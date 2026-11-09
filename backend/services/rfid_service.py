@@ -67,8 +67,8 @@ async def list_tags(scope_ids: List[str], warehouse_id: Optional[str], status: O
     return [safe_doc(t) for t in tags]
 
 
-async def untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str],
-                         limit: int = 500) -> List[Dict[str, Any]]:
+def _untagged_query(scope_ids: List[str], warehouse_id: Optional[str]) -> Dict[str, Any]:
+    """SATU kueri "roll fisik belum ber-tag" — dipakai daftar & hitungan ringkasan (FIX-2 / B3a STK-14)."""
     q: Dict[str, Any] = {
         "owner_entity_id": {"$in": scope_ids},
         "length_remaining": {"$gt": 0},
@@ -77,6 +77,16 @@ async def untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str],
     }
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
+    return q
+
+
+async def count_untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str]) -> int:
+    return await db.inventory_rolls.count_documents(_untagged_query(scope_ids, warehouse_id))
+
+
+async def untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str],
+                         limit: int = 500) -> List[Dict[str, Any]]:
+    q = _untagged_query(scope_ids, warehouse_id)
     rolls = await db.inventory_rolls.find(
         q, {"_id": 0, "id": 1, "roll_no": 1, "product_id": 1, "warehouse_id": 1,
             "owner_entity_id": 1, "lot": 1, "length_remaining": 1, "unit": 1, "status": 1, "bin_id": 1}
@@ -409,7 +419,9 @@ async def rfid_summary(scope_ids: List[str], warehouse_id: Optional[str]) -> Dic
         tag_q["warehouse_id"] = warehouse_id
     tags_active = await db.rfid_tags.count_documents({**tag_q, "status": "active"})
     tags_total = await db.rfid_tags.count_documents(tag_q)
-    untagged = len(await untagged_rolls(scope_ids, warehouse_id, limit=5000))
+    # FIX-2 (B3a STK-14, P0) — dulu `len(untagged_rolls(limit=5000))`: batas daftar dipakai sebagai angka (KSC ≈ 23.300
+    # roll tanpa tag tampil "5000"). Kini hitungan sungguhan dengan kueri yang sama.
+    untagged = await count_untagged_rolls(scope_ids, warehouse_id)
 
     dev_q: Dict[str, Any] = {}
     if warehouse_id:

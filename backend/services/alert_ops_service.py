@@ -118,12 +118,11 @@ async def _sales_owner(customer_id: str) -> Dict[str, str]:
 
 
 async def _available_qty(product_id: str, entity_id: str) -> float:
-    """Stok tersedia (proyeksi balance = Σ roll available) untuk produk × entitas."""
-    q: Dict[str, Any] = {"product_id": product_id}
-    if entity_id:
-        q["owner_entity_id"] = entity_id
-    rows = await db.inventory_balances.find(q, {"_id": 0, "available_qty": 1}).to_list(200)
-    return round(sum(float(r.get("available_qty", 0) or 0) for r in rows), 2)
+    """Stok tersedia untuk produk × entitas — FIX-2: definisi tunggal `stock_figures` (dulu Σ saldo `to_list(200)`
+    tanpa cadangan makloon)."""
+    from services.stock_figures import available_by_owner
+    return round(sum(float(v["qty"]) for (_p, owner), v in (await available_by_owner([product_id])).items()
+                     if not entity_id or owner == entity_id), 2)
 
 
 # ═══ JOB 10 — barang PO datang (po_arrival) ══════════════════════════════════
