@@ -50,5 +50,5 @@ export default function usePolling(fn, { intervalMs, enabled = true, maxMs = 600
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [enabled, intervalMs, maxMs, immediate, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, intervalMs, maxMs, immediate, ...deps]);
 }
