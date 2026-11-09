@@ -367,6 +367,10 @@ LINK_ALIASES = {
 #: masih melihat tab (lalu 403 jujur dari server); presisi per-aksi butuh perubahan `config/roles.js` (berkas bersama).
 VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
     "inventory-lots": ["field_visibility"],
+    # FIX-1 (audit B1b UI-47) — layar Pengiriman (`/api/logistics/*`) dijaga izin `logistics` SAJA; modulnya juga memuat
+    # `vehicle_log`, sehingga manajer berizin log kendaraan tanpa `logistics` melihat menunya lalu "Permission ditolak:
+    # logistics.view" mentah. Kini menu disembunyikan bila izin `logistics` tidak ada (Log Kendaraan tetap ikut modul).
+    "logistics": ["logistics"],
 }
 
 

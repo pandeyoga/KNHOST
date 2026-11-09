@@ -118,7 +118,13 @@ describe("UI-39 — sesi tidak bocor antar pengguna di perangkat yang sama", () 
     localStorage.setItem("kn_sidebar_collapsed", "1");
     setActiveEntity("ent_kanda"); setLocationScope("site:s1");
     rememberDocEntities([{ id: "wms_1", work_entity_id: "ent_kanda" }]);
+    axios.defaults.headers.common.Authorization = "Bearer tok-lama";
     act(() => actions.logout());
+    await act(async () => {});
+    // UI-44 — sesi server diakhiri: POST /auth/logout dengan token akun yang keluar
+    const out = captured.find((c) => String(c.url).endsWith("/auth/logout"));
+    expect(out).toBeTruthy();
+    expect(hdr(out, "Authorization")).toBe("Bearer tok-lama");
     ["kn_token", "kn_user", "kn_entity", "kn_entity_ctx", "kn_loc_scope", "kn_my_bin", "kn_pos_ctx", "kn_reg_bin_s1", "kn.lineFilter.wms"]
       .forEach((k) => expect(localStorage.getItem(k)).toBeNull());
     expect(localStorage.getItem("kn_sidebar_collapsed")).toBe("1");   // preferensi perangkat tetap

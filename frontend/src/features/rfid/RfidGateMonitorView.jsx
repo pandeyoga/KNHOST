@@ -12,6 +12,7 @@ import RfidSecurityPanel from "./RfidSecurityPanel";
 import GateLiveVerdict, { useGateStatus } from "./GateLiveVerdict";
 import GatePassageHistory from "./GatePassageHistory";
 import GateReviewQueue from "./GateReviewQueue";
+import U300Operations from "./U300Operations";
 
 export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
@@ -168,10 +169,23 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
       {/* Fase 4 · R3 (L-01/L-02) — tab buatan sendiri (TabBtn) → PageTabs baku; testid `gate-tab-*` tetap. */}
       <PageTabs value={tab} onChange={setTab} testId="gate-tab" ariaLabel="Monitor gerbang"
         tabs={[{ key: "monitor", label: "Monitor Gate" }, { key: "review", label: "Antrean periksa" },
-          { key: "security", label: "Alarm & Keamanan" }]} />
+          { key: "security", label: "Alarm & Keamanan" }, { key: "ops", label: "Operasional Gate" }]} />
 
       {tab === "review" && <GateReviewQueue whId={whId} devices={devices} />}
-      {tab === "security" ? (
+      {/* FIX-1 (K-B1-07 diputuskan, audit B1 UI-21 / B1b UI-57) — operasional gate (kesehatan reader, kunci & buka
+          kunci, sesi dokumen, riwayat lintasan) kini terjangkau dari RFID › Monitor Gerbang untuk Admin Gudang &
+          manajer; Pengaturan › Perangkat tinggal konfigurasi. Aksi tetap dijaga izin server (simulator/konfigurasi = admin). */}
+      {tab === "ops" && (
+        <div className="space-y-3" data-testid="gate-ops">
+          {devices.length === 0 ? <EmptyBox icon={Cpu} text="Belum ada gerbang di lokasi ini." /> : (
+            <div className="max-w-md"><label className="text-[11px] text-[#6B6B73]">Gate</label>
+              <KNSelect data-testid="gate-ops-select" value={gateId} onValueChange={setGateId} options={gateOpts} className="field mt-1 text-[12px]" placeholder="Pilih gate" /></div>
+          )}
+          {gate ? <U300Operations device={gate} isAdmin={currentUser?.role === "admin"} />
+            : devices.length > 0 && <p className="text-[12px] text-[#6B6B73]" data-testid="gate-ops-pick">Pilih gate untuk membuka operasionalnya.</p>}
+        </div>
+      )}
+      {tab === "ops" ? null : tab === "security" ? (
         <RfidSecurityPanel whId={whId} selectedEntity={selectedEntity} />
       ) : tab === "review" ? null : (
       <>

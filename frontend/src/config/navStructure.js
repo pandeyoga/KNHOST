@@ -286,7 +286,7 @@ export const NAV_STRUCTURE = [
       // Pengiriman (ekspedisi / armada sendiri, foto muat & POD). Sopir hanya melihat item ini.
       { id: "logistics",          label: "Pengiriman", icon: Truck, roles: ["admin", "manager", "warehouse", "driver", "sales", "sales_admin", "warehouse_admin"], view: "logistics" },
       // IA 2026-10 (D1) — RFID adalah teknologi gudang, bukan domain: 4 menu jadi satu hub di sini.
-      { id: "rfid-hub",           label: "RFID",       icon: Cpu,   roles: ["admin", "warehouse"], hub: "rfid-hub" },
+      { id: "rfid-hub",           label: "RFID",       icon: Cpu,   roles: ["admin", "warehouse", "manager"], hub: "rfid-hub" },   // FIX-1 K-B1-07
       // IA 2026-10 (C8) — eskalasi tugas inbound/outbound = pekerjaan gudang.
       { id: "escalations",        label: "Eskalasi Gudang", icon: AlertTriangle, roles: ["admin", "warehouse", "manager"], view: "escalations" },
     ],

@@ -120,6 +120,14 @@ export function useAppActions(state) {
   };
 
   const logout = () => {
+    // FIX-1 (audit B1b UI-44) — "Keluar" WAJIB mengakhiri sesi di SERVER (cabut sesi + hapus cookie HttpOnly). Dulu hanya
+    // state & localStorage yang dikosongkan: `/auth/me` tetap 200 sebagai pengguna lama. Dikirim sebelum header Bearer
+    // dicabut; gagal jaringan tidak menahan keluar (login berikutnya di peramban ini juga mencabut sesi cookie lama).
+    try {
+      const auth = axios.defaults.headers.common.Authorization;
+      axios.post(`${API}/auth/logout`, {}, { withCredentials: true, ...(auth ? { headers: { Authorization: auth } } : {}) })
+        .catch(() => {});
+    } catch (_) { /* abaikan */ }
     setUser(null);
     setToken("");
     // FIX-1 (audit B1 UI-39) — logout menghapus SELURUH status klien milik pengguna: PT aktif & konteksnya, cakupan

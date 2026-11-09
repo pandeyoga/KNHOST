@@ -208,7 +208,14 @@ async def driver_queues(actor, scope, ids) -> List[Dict[str, Any]]:
     # pernah terbit tampil sebagai "kiriman hari ini" selamanya.
     ships = await _find("shipments", {**sq, "status": {"$in": ["dispatched", "in_transit", "ready"]},
                                       "logistics_status": {"$nin": ["delivered", "cancelled", "failed"]}})
-    mine = [s for s in ships if not s.get("driver_id") or s.get("driver_id") == actor["id"] or s.get("driver_name") == actor.get("name")]
+    # FIX-1 (audit B1b UI-56) — dulu Surat Jalan TANPA sopir ikut dihitung sebagai milik SETIAP sopir ("Kiriman hari ini
+    # 66" padahal Pengiriman "0 tujuan aktif"). Milik sopir = SJ ber-sopir dia ATAU SJ di pengiriman yang ditugaskan
+    # kepadanya (`logistics_deliveries.driver_user_id`). SJ tanpa sopir = pekerjaan Admin Gudang (penugasan).
+    from db import db as _db
+    assigned = set(await _db.logistics_deliveries.distinct("shipment_ids", {
+        "driver_user_id": actor["id"], "status": {"$nin": ["delivered", "completed", "cancelled", "failed"]}}))
+    mine = [s for s in ships if s.get("id") in assigned or (s.get("driver_id") and s.get("driver_id") == actor["id"])
+            or (s.get("driver_name") and s.get("driver_name") == actor.get("name"))]
     return [
         _queue("kiriman", "Kiriman hari ini", "Antar & tandai terkirim (foto bukti bila ada).",
                [_row(ref_type="shipment", ref_id=s["id"], number=s.get("number", ""), title=s.get("customer_name") or s.get("destination", "—"),

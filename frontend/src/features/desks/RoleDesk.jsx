@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers, BellRing } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import { can } from "../../config/roles";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
@@ -29,6 +30,13 @@ const DESKS = {
     icon: BellRing, kicker: "Kerja saya", title: "Meja Saya", load: myDesk, testPrefix: "my-desk",
     intro: <>Semua yang menunggu tindakan Anda hari ini: <b>Giliran saya</b> (dokumen yang baru berpindah tahap ke Anda) dan antrean khas peran Anda. Buka baris untuk melompat ke layar penanganannya.</>,
   },
+};
+
+const canSeeOrders = () => {
+  try {
+    const u = JSON.parse(localStorage.getItem("kn_user") || "null");
+    return u?.role === "admin" || can(u?.permissions || {}, "order", "view");
+  } catch { return false; }
 };
 
 export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDocument }) {
@@ -138,7 +146,8 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
         )}
       </section>
 
-      <SoTrackerCard desk={desk} selectedEntity={selectedEntity} testPrefix={p} onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
+      {/* FIX-1 (audit B1b UI-56) — pelacak SO (nilai Rupiah) hanya untuk pemegang izin pesanan; sopir/desainer tidak. */}
+      {canSeeOrders() && <SoTrackerCard desk={desk} selectedEntity={selectedEntity} testPrefix={p} onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />}
 
       {loading && !data ? (
         <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid={`${p}-loading`}>Menyusun antrean…</div>

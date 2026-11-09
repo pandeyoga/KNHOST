@@ -263,6 +263,7 @@ async def printer_status(request: Request, warehouse_id: Optional[str] = None) -
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, None)
+    warehouse_id = await _wh_filter(ctx, warehouse_id)   # FIX-1 (UI-55) — printer & antrean per lokasi kerja
     q_dev: Dict[str, Any] = {"type": "printer"}
     if warehouse_id:
         q_dev["warehouse_id"] = warehouse_id
@@ -395,7 +396,9 @@ async def delete_tag(tag_id: str, request: Request) -> Dict[str, Any]:
 @router.get("/rfid/devices")
 async def get_devices(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
-    devs = await rfid.list_devices(warehouse_id)
+    # FIX-1 (audit B1b UI-55) — pemilih gate/perangkat ikut lokasi kerja (petugas Soreang dulu melihat gate Jakarta &
+    # gate uji). Layar master perangkat admin (tanpa lokasi kerja / "Semua lokasi") tetap melihat semuanya.
+    devs = await rfid.list_devices(await _wh_filter(await entity_ctx(request), warehouse_id))
     return {"count": len(devs), "devices": devs}
 
 
