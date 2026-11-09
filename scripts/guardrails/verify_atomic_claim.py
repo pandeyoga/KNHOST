@@ -105,7 +105,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("sales_returns.py", "/sales-returns/{return_id}/rolls/{roll_id}/transfer-ownership"): ("service", "klaim sales_returns sesudah semua validasi (roll/entitas/E9.3), sebelum roll direservasi/ownership dipindah/JE; release bila CAS roll kalah atau engine gagal; finish_set + $push ownership_transfers", "return_service.transfer_return_roll_ownership"),
     ("transfers.py", "/transfers"): ("compensate", "POST: id transfer baru per permintaan; reservasi roll + insert dokumen dalam satu try, except → release_wh_transfer_rolls melepas reservasi parsial (kompensasi saga)"),
     ("wms.py", "/wms/tasks"): ("compensate", "POST: id tugas baru per permintaan; inbound manual → create_inbound_roll dalam try, except → rollback_task_shell menghapus tugas tanpa roll (kompensasi saga)"),
-    ("outbound_picking.py", "/outbound/tasks/{task_id}/scan-pick"): ("cas", "find_one_and_update wms_tasks berprasyarat status hidup + picked_qty sama seperti saat dibaca → 409 STATE_CHANGED bila kalah; SO status diturunkan sesudahnya (idempoten)"),
+    ("outbound_picking.py", "/outbound/tasks/{task_id}/scan-pick"): ("cas", "FIX-3b: _ots.transition (outbound_task_state) = find_one_and_update wms_tasks berprasyarat status ∈ daftar-izin scan_pick + picked_qty sama seperti saat dibaca → 409 STATE_CHANGED bila kalah; SO status diturunkan sesudahnya (idempoten)"),
+    # ── FIX-3b (9 Nov 2026) — batal perbaikan saat barang di luar (B2b FLW-OUT-11) ───────────
+    ("repair_orders.py", "/repair-orders/{ro_id}/receive-back"): ("none", "FIX-3b: per roll update_one inventory_rolls berprasyarat repair_open = RO & status wip (CAS, ulangan = no-op) + mutasi hanya untuk roll yang benar-benar berubah; status dokumen lewat _push CAS status 'returning' (kalah → RepairError); tanpa saldo uang/jurnal"),
     ("outbound_picking.py", "/outbound/tasks/{task_id}/dispatch"): ("service", "klaim wms_tasks (status dispatchable) sesudah validasi qty, sebelum roll dikirim/surat jalan; release bila ship_order_rolls gagal; finish_set status+shipped_qty", "shipment_service.dispatch_task"),
     ("inbound_receiving_extra.py", "/inbound/tasks/{task_id}/qc-decision"): ("service", "klaim wms_tasks (status qc_pending) sesudah validasi qty/grade/disposisi, sebelum roll karantina dikonsumsi/retur/balance; mark_failed bila gagal; finish_set status+jejak QC", "qc_service.process_qc_decision"),
     # ── PREP-F (9 Nov 2026) — printer label CP30EN ──────────────────────────────────────
@@ -170,7 +172,8 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
 RE_CLAIM = re.compile(r"atomic_claim|_saga\.claim\(|family_lock\(")
 RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|_saga\.release\(|family_lock\(")
 # FIX-3a — `_its.transition(` = `services/inbound_task_state.transition` (CAS: filter id + status asal ∈ daftar-izin).
-RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|_its\.transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"")
+# FIX-3b — `_ots.transition(` = `services/outbound_task_state.transition` (CAS daftar-izin tugas ambil keluar).
+RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.status|rfid_tag_id)\"|_transition\(|_its\.transition\(|_ots\.transition\(|find_one_and_update\(\s*\n?\s*\{\"id\": bill_id, \"status\"")
 RE_COMP = re.compile(r"except[^\n]*:\s*\n\s*await (release_|_release|rollback|compensate)")
 # Validasi 400/404/422 SESUDAH klaim meninggalkan saga_lock → percobaan ulang yang benar ditolak 409
 # (bukti: inbound complete × pagar lot mode block, sesi 4). Klaim wajib SESUDAH semua validasi.

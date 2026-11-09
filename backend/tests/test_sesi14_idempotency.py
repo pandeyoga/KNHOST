@@ -52,8 +52,10 @@ def test_idempotency_scan_pick(headers, db):
     tid = synth["id"]
     try:
         h1 = dict(headers); h1["Idempotency-Key"] = f"K-sesi14-{uuid.uuid4().hex[:6]}"
-        r1 = requests.post(f"{BASE_URL}/api/outbound/tasks/{tid}/scan-pick?actual_qty=3", headers=h1, timeout=30)
-        r2 = requests.post(f"{BASE_URL}/api/outbound/tasks/{tid}/scan-pick?actual_qty=3", headers=h1, timeout=30)
+        # FIX-3b (K-B1-05) — ambil tanpa pindai roll = jalur darurat berizin + alasan (uji ini menguji idempotensi).
+        url = f"{BASE_URL}/api/outbound/tasks/{tid}/scan-pick?actual_qty=3&reason=uji%20idempotensi%20darurat"
+        r1 = requests.post(url, headers=h1, timeout=30)
+        r2 = requests.post(url, headers=h1, timeout=30)
         assert r1.status_code == 200, r1.text
         assert r2.status_code == 200, r2.text
         assert r1.json() == r2.json()
@@ -64,7 +66,7 @@ def test_idempotency_scan_pick(headers, db):
 
         # Different key -> should add another 3 for total 6
         h2 = dict(headers); h2["Idempotency-Key"] = f"K-sesi14-{uuid.uuid4().hex[:6]}"
-        r3 = requests.post(f"{BASE_URL}/api/outbound/tasks/{tid}/scan-pick?actual_qty=3", headers=h2, timeout=30)
+        r3 = requests.post(url, headers=h2, timeout=30)
         assert r3.status_code == 200, r3.text
         cur = db.wms_tasks.find_one({"id": tid})
         assert abs(cur["picked_qty"] - 6) < 1e-6, cur["picked_qty"]

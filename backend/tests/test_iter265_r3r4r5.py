@@ -419,10 +419,16 @@ class TestR4LoadingCheck:
         assert not s.json()["missing"], s.json()
         c = api.post(f"{BASE}/api/outbound/loading-check/{sess_id}/complete", timeout=60)
         assert c.status_code == 200, c.text[:300]
-        assert c.json()["result"] == "clean", c.json()
+        # FIX-3b (B3b K-B3b-02) — EPC yang DITEMPEL di layar (sumber manual) bukan bukti fisik: hasil
+        # `manual_unverified`, bukan `clean`. Bukti sah = pindai perangkat; selain itu override berizin + alasan.
+        assert c.json()["result"] == "manual_unverified", c.json()
         st = api.get(f"{BASE}/api/outbound/so/{STATE['lc_so']}/loading-check", timeout=60).json()
         assert st["open_session"] is None
-        assert st["last_result"]["result"] == "clean", st["last_result"]
+        assert st["last_result"]["result"] == "manual_unverified", st["last_result"]
+        o = api.post(f"{BASE}/api/outbound/so/{STATE['lc_so']}/loading-check/override",
+                     json={"reason": "handheld rusak, dicek manual oleh supervisor",
+                           "warehouse_id": STATE.get("lc_wh")}, timeout=60)
+        assert o.status_code == 200, o.text[:300]
 
     def test_06_dispatch_berhasil_setelah_clean(self, api):
         tid = STATE["lc_task"]
@@ -433,9 +439,15 @@ class TestR4LoadingCheck:
         if task.get("status") == "scheduled":
             api.post(f"{BASE}/api/outbound/tasks/{tid}/release", timeout=60)
         if picked - shipped <= 0:
-            pick_qty = min(1.0, qty - picked) or 1.0
-            p = api.post(f"{BASE}/api/outbound/tasks/{tid}/scan-pick",
-                         params={"actual_qty": pick_qty}, timeout=60)
+            # FIX-3b (K-B1-05, STM-OUT-5) — ambil = pindai roll UTUH milik pesanan (dulu qty 1 tanpa roll → kirim
+            # memecah roll diam-diam).
+            roll = MDB.inventory_rolls.find_one(
+                {"reserved_ref.id": task["order_id"], "product_id": task["product_id"],
+                 "warehouse_id": task["warehouse_id"], "status": {"$in": ["reserved", "committed"]},
+                 "length_remaining": {"$gt": 0, "$lte": qty - picked + 0.01}}, {"_id": 0, "roll_no": 1})
+            if not roll:
+                pytest.skip("tidak ada roll utuh pesanan ini yang muat di sisa tugas (data demo)")
+            p = api.post(f"{BASE}/api/outbound/tasks/{tid}/scan-pick", params={"roll_id": roll["roll_no"]}, timeout=60)
             assert p.status_code == 200, f"scan-pick gagal: {p.status_code} {p.text[:300]}"
         d = api.post(f"{BASE}/api/outbound/tasks/{tid}/dispatch", timeout=60)
         if d.status_code == 409 and "Roll commit" in d.text:

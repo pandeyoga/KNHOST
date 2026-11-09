@@ -472,6 +472,25 @@ def test_health_alert_on_reader_stopped(admin, whadmin):
 # ── 11. simulator lintasan tiap skenario (endpoint admin) ─────────────────────────────────
 def test_simulator_every_scenario(admin):
     dev = make_device(admin)
+    # FIX-3b (B2b RFID-1/RFID-9, keputusan K-B2b-09) — simulator hanya di perangkat bertanda UJI dan PT bermode simulasi.
+    r0 = requests.post(f"{V2}/ops/devices/{dev['id']}/simulate", headers=admin, json={"scenario": "empty"}, timeout=60)
+    assert r0.status_code == 409 and r0.json()["detail"]["code"] == "SIMULATOR_NOT_ALLOWED", r0.text
+    DB.rfid_devices.update_one({"id": dev["id"]}, {"$set": {"test_device": True}})
+    q = {"key": "wms.rfid_simulation", "scope_type": "entity", "scope_id": ENT}
+    old = [c["value"] for c in DB.config_values.find(q, {"_id": 0, "value": 1})]
+    if not old:
+        DB.config_values.insert_one({**q, "id": f"cfgv_TEST_D1_{TAG}", "value": True, "effective_from": "2026-01-01",
+                                     "effective_to": "", "created_at": "2026-01-01"})
+    DB.config_values.update_many(q, {"$set": {"value": True}})
+    try:
+        _run_every_scenario(admin, dev)
+    finally:
+        if old:
+            DB.config_values.update_many(q, {"$set": {"value": old[0]}})
+        DB.config_values.delete_many({"id": f"cfgv_TEST_D1_{TAG}"})
+
+
+def _run_every_scenario(admin, dev):
     for _ in range(9):
         shipment(4)
     roll("available")

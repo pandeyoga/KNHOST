@@ -184,14 +184,31 @@ def test_ln061_t02_catalogue_two_locations_handoff(h, art):
     for t in tasks:
         rv = requests.post(f"{BASE}/cutting/tasks/{t['id']}/receive", json={"to_warehouse_id": WH_A}, headers=h, timeout=60)
         assert rv.status_code == 200, rv.text[:300]
-    again = requests.post(f"{BASE}/cutting/tasks/{from_b['id']}/receive", json={"to_warehouse_id": WH_A}, headers=h, timeout=60)
-    assert again.status_code == 200
+        # FIX-3b (B2b CUT-3, keputusan K-B2b-10) — hasil potong di gedung LAIN tidak dipindah langsung: lahir transfer
+        # internal (dokumen + gate); serah-terima menunggu barang tiba.
+        assert bool(rv.json().get("transfer_required")) == (t["warehouse_id"] == WH_B), rv.json()
+    pend = DB.wms_tasks.find_one({"id": from_b["id"]})
+    trf = DB.warehouse_transfers.find_one({"id": pend["cutting_handoff_pending"]["transfer_id"]})
+    assert trf["status"] == "waiting_approval" and trf["dest_warehouse_id"] == WH_A
+    child = DB.inventory_rolls.find_one({"id": pend["roll_id"]})
+    assert child["warehouse_id"] == WH_B                                  # belum pindah tanpa transfer
+    # transfer tiba di WH_A (disimulasikan di DB) → "Terima" lagi = serah-terima di lokasi yang sama
+    trf_ids = []
+    for t in tasks:
+        if t["warehouse_id"] != WH_B:
+            continue
+        pt = DB.wms_tasks.find_one({"id": t["id"]})
+        trf_ids.append(pt["cutting_handoff_pending"]["transfer_id"])
+        DB.inventory_rolls.update_one({"id": pt["roll_id"]}, {"$set": {"warehouse_id": WH_A, "transfer_ref": None}})
+        DB.warehouse_transfers.update_one({"id": trf_ids[-1]}, {"$set": {"status": "completed"}})
+        again = requests.post(f"{BASE}/cutting/tasks/{t['id']}/receive", json={"to_warehouse_id": WH_A}, headers=h, timeout=60)
+        assert again.status_code == 200 and not again.json().get("transfer_required"), again.text[:300]
     moved = DB.wms_tasks.find_one({"id": from_b["id"]})
     assert moved["cutting_handoff"]["from_warehouse_id"] == WH_B and moved["warehouse_id"] == WH_A
+    assert moved["cutting_handoff"]["transferred"] is True and moved["cutting_handoff"]["transfer_id"] == trf["id"]
     child = DB.inventory_rolls.find_one({"id": moved["roll_id"]})
     assert child["warehouse_id"] == WH_A and child["parent_roll_id"] == art["rolls"][from_b["product_id"]]
-    mv = list(DB.inventory_movements.find({"roll_id": child["id"], "movement_type": {"$in": ["cutting_handoff_out", "cutting_handoff_in"]}}))
-    assert len(mv) == 2
+    DB.warehouse_transfers.delete_many({"id": {"$in": trf_ids}})
     d2 = requests.post(f"{BASE}/outbound/tasks/{from_b['id']}/dispatch", headers=h, timeout=60)
     assert "Admin Cutting" not in d2.text, d2.text[:300]
 

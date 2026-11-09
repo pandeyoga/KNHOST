@@ -91,7 +91,8 @@ def seed(admin):
     for k, wh in (("in", WH_GATE), ("out", WH_GATE), ("hh", WH_HH)):
         DB.rfid_devices.insert_one({"id": DEV[k], "code": f"D2-{k}-{TAG}", "name": f"Gate Uji D2 {k}", "type": "gate",
                                     "direction": "out" if k == "out" else "in", "warehouse_id": wh, "enabled": True,
-                                    "status": "online", "api_key_hash": hash_device_key(KEYS[k])})
+                                    "status": "online", "api_key_hash": hash_device_key(KEYS[k]),
+                                    "test_device": True})   # FIX-3b (K-B2b-09) — perangkat uji (simulator)
         publish(admin, k)
     yield
     purge_new_ids(ids, verbose=False)
@@ -354,11 +355,13 @@ def test_ops_simulator_respects_rfid_simulation_mode(admin):
     try:
         DB.config_values.update_many(q, {"$set": {"value": False}})
         pa_id, _ = published_pa(admin, 2)
-        ds = _simulate(admin, pa_id)
-        assert [d["verdict"] for d in ds] == ["GREEN", "GREEN"] and all("SIMULATED_EVIDENCE" in d["reason_codes"] for d in ds)
+        # FIX-3b (B2b RFID-1, K-B2b-09) — mode simulasi PT MATI: simulator DITOLAK (dulu memasang klaim/bukti simulasi
+        # yang membuat lintasan nyata berikutnya MERAH `REPLAY_EXIT`).
+        r = requests.post(f"{V2}/ops/devices/{DEV['in']}/simulate", headers=admin, timeout=120,
+                          json={"scenario": "partial_trip", "source_type": "putaway", "source_id": pa_id})
+        assert r.status_code == 409 and r.json()["detail"]["code"] == "SIMULATOR_NOT_ALLOWED", r.text
         doc = pa(pa_id)
-        assert doc["status"] == "in_transit" and not doc.get("arrival_trips")
-        assert [(x["trip_no"], x["txn"], x["simulated"]) for x in doc["gate_arrivals"]] == [(1, False, True), (2, False, True)]
+        assert doc["status"] == "in_transit" and not doc.get("arrival_trips") and not doc.get("gate_arrivals")
         if not old:
             DB.config_values.insert_one({**q, "id": f"cfgv_TEST_D2_{TAG}", "value": True, "effective_from": "2026-01-01",
                                          "effective_to": "", "created_at": "2026-01-01"})
@@ -434,7 +437,17 @@ def test_loading_check_required_policy_satisfied_by_gate():
     so = f"so_TEST_D2_{TAG}_{_nx()}"
     DB.sales_orders.insert_one({"id": so, "number": so, "status": "in_progress", "entity_id": ENT})
     DB.warehouses.update_many({"id": {"$in": [WH_GATE, WH_HH]}}, {"$set": {"loading_check_policy": "required"}})
-    run(lcs.dispatch_guard(so, WH_GATE))                     # gate OUT tertaut → tidak wajib cek muat handheld
+    # FIX-3b (B2b RFID-12) — pembebasan hanya bila reader OUT SEHAT: laporan reader basi → cek muat wajib lagi.
+    from datetime import datetime, timedelta, timezone
+    DB.rfid_devices.update_one({"id": DEV["out"]}, {"$set": {
+        "v2_telemetry_at": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+        "v2_telemetry": {"radio_state": "running"}}})
+    with pytest.raises(HTTPException) as e0:
+        run(lcs.dispatch_guard(so, WH_GATE))
+    assert "mewajibkan Final Loading Check" in str(e0.value.detail)
+    assert "WAJIB" in run(lcs.status_for_order(so, WH_GATE))["gate_out_reason"]
+    DB.rfid_devices.update_one({"id": DEV["out"]}, {"$set": {"v2_telemetry_at": datetime.now(timezone.utc).isoformat()}})
+    run(lcs.dispatch_guard(so, WH_GATE))                     # gate OUT tertaut & sehat → tidak wajib cek muat handheld
     with pytest.raises(HTTPException) as e:
         run(lcs.dispatch_guard(so, WH_HH))                   # gedung handheld → aturan lama tetap
     assert "mewajibkan Final Loading Check" in str(e.value.detail)

@@ -454,6 +454,9 @@ class TestGateSimulate:
     def test_simulate_uses_ingest_path(self, admin, warehouse):
         """POST /api/rfid/gate/simulate memakai jalur ingest sama (code + passage)."""
         g = _mk_device(admin, "gate-sim", "gate", "wh_jakarta", "out")
+        # FIX-3b (B2b RFID-4, K-B2b-09) — simulator gate hanya di perangkat bertanda UJI (+ PT bermode simulasi).
+        assert admin.patch(f"{BASE}/api/rfid/devices/{g['device']['id']}", json={"test_device": True},
+                           timeout=20).status_code == 200
         roll = _run(_mk_roll(501))
         _run(_encode(roll["id"]))  # need tag
         r = warehouse.post(f"{BASE}/api/rfid/gate/simulate",
