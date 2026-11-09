@@ -6,7 +6,8 @@ import { PageHeader } from "../../components/ListPageParts";
 import KNDatePicker from "../../components/KNDatePicker";
 import useViewPreset from "../../hooks/useViewPreset";
 import { wibDate } from "../../utils/formatters";
-import { listDeliveries, logisticsSummary, STATUS_LABEL } from "./logisticsApi";
+import { listDeliveriesPage, logisticsSummary, STATUS_LABEL } from "./logisticsApi";
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 import DeliveryCreateModal from "./DeliveryCreateModal";
 import DeliveryDetailModal from "./DeliveryDetailModal";
 import DriverTodayPanel from "./DriverTodayPanel";
@@ -43,6 +44,8 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
   const canOpenOrder = can(currentUser?.permissions || {}, "order", "view");
   const [tab, setTab] = useState(isDriver ? "list" : "dashboard");
   const [rows, setRows] = useState([]);
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [sum, setSum] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -63,14 +66,28 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
     try {
       const listStatus = status === HISTORY ? "" : status;
       const [r, s] = await Promise.all([
-        listDeliveries({ ...params, status: listStatus, ...(q ? { q } : {}) }),
+        listDeliveriesPage({ ...params, status: listStatus, ...(q ? { q } : {}) }),
         logisticsSummary(params),
       ]);
-      setRows(Array.isArray(r) ? r : []); setSum(s); setError(""); setTick((t) => t + 1);
+      setRows(r.rows); setSum(s); setError(""); setTick((t) => t + 1);
+      setListMeta(Number.isFinite(r.total) ? { total: r.total, truncated: r.truncated, shown: r.rows.length, skip: 0 } : null);
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat pengiriman."); }
     finally { setLoading(false); }
   }
   useEffect(() => { load(); }, [selectedEntity, status]); // eslint-disable-line
+  // FIX-7 (B3b LST-01) — dulu 1.000 pengiriman terbaru tanpa tanda; kini "Muat berikutnya" dari server.
+  async function loadMore() {
+    setMoreBusy(true);
+    try {
+      const listStatus = status === HISTORY ? "" : status;
+      const r = await listDeliveriesPage({ ...params, status: listStatus, ...(q ? { q } : {}), skip: rows.length });
+      const seen = new Set(rows.map((x) => x.id));
+      const next = [...rows, ...r.rows.filter((x) => !seen.has(x.id))];
+      setRows(next);
+      setListMeta(Number.isFinite(r.total) ? { total: r.total, truncated: r.truncated && next.length < r.total, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat pengiriman berikutnya."); }
+    finally { setMoreBusy(false); }
+  }
   // L-5 — cari sambil mengetik (debounce 300 ms); Enter / tombol Cari tetap bisa.
   const qMounted = useRef(false);
   useEffect(() => {
@@ -204,6 +221,10 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
           )
         ) : (
           <DeliveryTable rows={shownRows} onOpen={setOpenId} canOpenOrder={canOpenOrder} />
+        )}
+        {!historyMode && !loading && (
+          <ListLimitNote meta={listMeta} noun="pengiriman" onMore={loadMore} loading={moreBusy}
+            hint="saringan tanggal di layar hanya atas pengiriman yang sudah dimuat (Unduh mengikuti semua hasil)." testId="logistics-limit" />
         )}
       </>)}
 

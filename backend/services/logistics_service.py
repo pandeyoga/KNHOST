@@ -296,9 +296,22 @@ def redact_for(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     return doc
 
 
-async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
-                          order_id: str = "", driver_user_id: str = "", mode: str = "",
-                          active_only: bool = False) -> List[Dict[str, Any]]:
+SEARCH_FIELDS = ("number", "order_number", "customer_name", "tracking_no", "courier_name", "vehicle_plate",
+                 "driver_name", "shipment_nos")
+LIST_DEFAULT, LIST_MAX = 1000, 1000
+
+
+def _search_clause(q: str) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01/08) — cari di SERVER (regex tanpa beda huruf, karakter khusus di-escape) atas kolom yang sama
+    dengan saringan Python lama — dulu disaring SESUDAH dipotong 1.000 baris, jadi pengiriman lama 'tidak ditemukan'.
+    `shipment_nos` (larik) cocok bila salah satu elemennya mengandung kata kunci (= perilaku lama)."""
+    import re as _re
+    rx = {"$regex": _re.escape(q.strip()), "$options": "i"}
+    return {"$or": [{k: rx} for k in SEARCH_FIELDS]}
+
+
+def _list_query(scope: Dict[str, Any], status: str, q: str, order_id: str, driver_user_id: str, mode: str,
+                active_only: bool) -> Dict[str, Any]:
     query: Dict[str, Any] = dict(scope or {})
     if status:
         sts = [s for s in status.split(",") if s]
@@ -311,15 +324,26 @@ async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
         query = {"$and": [query, {"$or": [{"order_id": order_id}, {"order_ids": order_id}]}]}
     if driver_user_id:
         query["driver_user_id"] = driver_user_id
-    rows = await db[COLL].find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    if (q or "").strip():
+        query = {"$and": [query, _search_clause(q)]}
+    return query
+
+
+async def count_deliveries(scope: Dict[str, Any], status: str = "", q: str = "", order_id: str = "",
+                           driver_user_id: str = "", mode: str = "", active_only: bool = False) -> int:
+    return await db[COLL].count_documents(_list_query(scope, status, q, order_id, driver_user_id, mode, active_only))
+
+
+async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
+                          order_id: str = "", driver_user_id: str = "", mode: str = "",
+                          active_only: bool = False, *, skip: int = 0, limit: int = LIST_DEFAULT) -> List[Dict[str, Any]]:
+    query = _list_query(scope, status, q, order_id, driver_user_id, mode, active_only)
+    rows = await (db[COLL].find(query, {"_id": 0}).sort("created_at", -1)
+                  .skip(max(0, int(skip or 0))).limit(max(1, min(int(limit or LIST_DEFAULT), LIST_MAX)))
+                  .to_list(LIST_MAX))
     if driver_user_id:
         # Tugas sopir: urutan rute manual dulu (route_order), lalu ETA terdekat, lalu terbaru.
         rows.sort(key=lambda r: (r.get("route_order") or 9999, r.get("eta") or "9999-12-31", r.get("created_at") or ""))
-    if q:
-        s = q.lower()
-        rows = [r for r in rows if any(s in str(r.get(k, "")).lower() for k in
-                ("number", "order_number", "customer_name", "tracking_no", "courier_name",
-                 "vehicle_plate", "driver_name")) or any(s in str(n).lower() for n in r.get("shipment_nos", []))]
     qc = {o["id"]: o["qc_request"].get("status", "") async for o in db.sales_orders.find(
         {"id": {"$in": list({o for r in rows for o in order_ids_of(r)})},
          "qc_request.mode": {"$in": ["full", "sampling"]}}, {"_id": 0, "id": 1, "qc_request.status": 1})}
@@ -394,24 +418,43 @@ async def dashboard(scope: Dict[str, Any], shipment_scope: Dict[str, Any], entit
 
 async def history(scope: Dict[str, Any], date_from: str = "", date_to: str = "", mode: str = "",
                   status: str = "", q: str = "", page: int = 1, size: int = 25) -> Dict[str, Any]:
-    """Riwayat pengiriman (terkirim / selesai / gagal) — saring tanggal, moda, kata kunci."""
+    """Riwayat pengiriman (terkirim / selesai / gagal) — saring tanggal, moda, kata kunci.
+
+    FIX-7 (B3b LST-01) — dulu `to_list(3000)` dokumen (urut `updated_at`) lalu disaring & dipotong di memori: riwayat
+    di luar 3.000 baris terbaru tak pernah terjangkau dan setiap halaman memuat ribuan dokumen. Kini saringan tanggal
+    (tanggal selesai/terkirim/diubah — rumus `_when` yang sama), kata kunci, urut & halaman dikerjakan Mongo; statistik
+    dihitung dari kursor berproyeksi kecil atas SEMUA hasil saringan (bukan 3.000 teratas)."""
     query: Dict[str, Any] = {**scope, "status": {"$in": [status] if status in HISTORY_STATUSES else list(HISTORY_STATUSES)}}
     if mode:
         query["mode"] = mode
-    rows = await db[COLL].find(query, {"_id": 0, "photos": 0, "timeline": 0, "positions": 0}).sort("updated_at", -1).to_list(3000)
+    if (q or "").strip():
+        query = {"$and": [query, _search_clause(q)]}
 
-    def _when(r: Dict[str, Any]) -> str:
-        return str(r.get("completed_at") or r.get("delivered_at") or r.get("updated_at") or "")[:10]
+    def _first_set(*fields: str) -> Any:
+        # setara `a or b or c or ""` Python: nilai kosong/None/tidak ada dilewati (string kosong < string berisi)
+        expr: Any = ""
+        for f in reversed(fields):
+            expr = {"$cond": [{"$gt": [f"${f}", ""]}, f"${f}", expr]}
+        return expr
+    when_full = _first_set("completed_at", "delivered_at", "updated_at")
+    pipeline: List[Dict[str, Any]] = [{"$match": query},
+                                      {"$addFields": {"_kn_when": {"$toString": when_full}}},
+                                      {"$addFields": {"_kn_day": {"$substrCP": ["$_kn_when", 0, 10]}}}]
+    day: Dict[str, Any] = {}
     if date_from:
-        rows = [r for r in rows if _when(r) >= date_from]
+        day["$gte"] = date_from
     if date_to:
-        rows = [r for r in rows if _when(r) <= date_to]
-    if q:
-        s = q.lower()
-        rows = [r for r in rows if any(s in str(r.get(k, "")).lower() for k in
-                ("number", "order_number", "customer_name", "tracking_no", "courier_name", "vehicle_plate", "driver_name"))
-                or any(s in str(n).lower() for n in r.get("shipment_nos", []))]
-    rows.sort(key=lambda r: str(r.get("completed_at") or r.get("delivered_at") or r.get("updated_at") or ""), reverse=True)
+        day["$lte"] = date_to
+    if day:
+        pipeline.append({"$match": {"_kn_day": day}})
+    start = max(page - 1, 0) * size
+    page_rows = await db[COLL].aggregate(pipeline + [
+        {"$sort": {"_kn_when": -1, "updated_at": -1, "id": -1}}, {"$skip": start}, {"$limit": size},
+        {"$project": {"_id": 0, "photos": 0, "timeline": 0, "positions": 0, "_kn_when": 0, "_kn_day": 0}}],
+        allowDiskUse=True).to_list(size)
+    rows = await db[COLL].aggregate(pipeline + [
+        {"$project": {"_id": 0, "status": 1, "mode": 1, "shipping_cost": 1, "created_at": 1, "delivered_at": 1,
+                      "completed_at": 1}}], allowDiskUse=True).to_list(None)
     total = len(rows)
     delivered = [r for r in rows if r.get("status") in ("delivered", "completed")]
     lead: List[float] = []
@@ -426,8 +469,7 @@ async def history(scope: Dict[str, Any], date_from: str = "", date_to: str = "",
              "avg_lead_days": round(sum(lead) / len(lead), 1) if lead else None,
              "shipping_cost_total": round(sum(float(r.get("shipping_cost") or 0) for r in rows), 2),
              "by_mode": {m: sum(1 for r in rows if r.get("mode") == m) for m in MODES}}
-    start = max(page - 1, 0) * size
-    return {"rows": [_compact(_enrich(safe_doc(r))) for r in rows[start:start + size]],
+    return {"rows": [_compact(_enrich(safe_doc(r))) for r in page_rows],
             "total": total, "page": page, "size": size, "stats": stats}
 
 

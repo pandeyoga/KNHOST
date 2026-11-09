@@ -1,6 +1,9 @@
 import axios, { API } from "../../services/apiClient";
 
 export const listSampleOrders = (params = {}) => axios.get(`${API}/sample-orders`, { params }).then((r) => r.data);
+// FIX-7 (B3b LST-01) — daftar + jumlah sungguhan (header X-Total-Count/X-Truncated) untuk penanda batas.
+export const listSampleOrdersPage = (params = {}) => axios.get(`${API}/sample-orders`, { params })
+  .then((r) => ({ rows: Array.isArray(r.data) ? r.data : [], total: Number(r.headers?.["x-total-count"] ?? NaN) }));
 export const sampleStats = (params = {}) => axios.get(`${API}/sample-orders/stats/summary`, { params }).then((r) => r.data);
 export const sampleDesk = (params = {}) => axios.get(`${API}/sample-orders/desk`, { params }).then((r) => r.data);
 export const approveSamplePayment = (id, note = "") => axios.post(`${API}/sample-orders/${id}/approve-payment`, { note }).then((r) => r.data);

@@ -13,6 +13,7 @@ Keputusan pemilik (usulan bawaan §4):
 """
 from __future__ import annotations
 
+import re
 from typing import Optional, Any, Dict, List
 
 from db import db
@@ -366,14 +367,35 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
     return out
 
 
-async def list_orders(entity_ids: List[str], status: str = "", q: str = "", limit: int = 200) -> List[Dict[str, Any]]:
+def _list_query(entity_ids: List[str], status: str = "", q: str = "") -> Dict[str, Any]:
     query: Dict[str, Any] = {"entity_id": {"$in": entity_ids}}
     if status:
         query["status"] = status
     if q.strip():
-        rx = {"$regex": q.strip(), "$options": "i"}
+        # FIX-7 (B3b matriks B.2 "regex tanpa escape") — kata kunci dicari apa adanya (karakter khusus di-escape);
+        # dulu "(" atau "[" di kotak cari → galat 500 regex.
+        rx = {"$regex": re.escape(q.strip()), "$options": "i"}
         query["$or"] = [{"number": rx}, {"partner_name": rx}, {"lines.roll_no": rx}, {"lines.sku": rx}]
-    return await db.repair_orders.find(query, {"_id": 0, "timeline": 0}).sort("created_at", -1).to_list(limit)
+    return query
+
+
+async def list_orders(entity_ids: List[str], status: str = "", q: str = "", limit: int = 200,
+                      skip: int = 0) -> List[Dict[str, Any]]:
+    return await (db.repair_orders.find(_list_query(entity_ids, status, q), {"_id": 0, "timeline": 0})
+                  .sort([("created_at", -1), ("id", -1)]).skip(max(0, int(skip or 0))).limit(limit).to_list(limit))
+
+
+async def count_orders(entity_ids: List[str], status: str = "", q: str = "") -> int:
+    return await db.repair_orders.count_documents(_list_query(entity_ids, status, q))
+
+
+async def status_counts(entity_ids: List[str]) -> Dict[str, int]:
+    """FIX-7 — jumlah per status lewat `$group` (dulu memuat 2.000 dokumen perbaikan utuh hanya untuk menghitung)."""
+    out: Dict[str, int] = {}
+    async for g in db.repair_orders.aggregate([{"$match": {"entity_id": {"$in": entity_ids}}},
+                                               {"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
+        out[g["_id"]] = int(g["n"])
+    return out
 
 
 async def roll_repairs(roll_id: str) -> List[Dict[str, Any]]:

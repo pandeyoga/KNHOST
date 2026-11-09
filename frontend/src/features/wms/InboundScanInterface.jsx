@@ -19,6 +19,7 @@ import { askReason, askText } from "../../services/confirmService";
 import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
 
 function MiniBar({ pct, status }) {
   const color = status === 'completed' ? 'bg-[#34C759]' : status === 'escalated' ? 'bg-red-400' : 'bg-[#007AFF]';
@@ -112,12 +113,27 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
     uom.runPreview(scanData.doc_uom, scanData.doc_qty);
   }, [scanData.doc_uom, scanData.doc_qty, selectedTask?.id]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
+  const loadMoreTasks = async () => {   // FIX-7 (B3b LST-01) — dulu 200 tugas terbaru tanpa tanda
+    setMoreBusy(true);
+    try {
+      const res = await axios.get(`${API}/inbound/tasks`, {
+        params: { ...(filterStatus !== "all" ? { status: filterStatus } : {}), skip: tasks.length } });
+      const seen = new Set(tasks.map((t) => t.id));
+      const next = [...tasks, ...rememberDocEntities(res.data || []).filter((t) => !seen.has(t.id))];
+      setTasks(next);
+      const m = metaFromHeaders(res, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas berikutnya.")); } finally { setMoreBusy(false); }
+  };
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const params = filterStatus !== "all" ? `?status=${filterStatus}` : "";
       const res = await axios.get(`${API}/inbound/tasks${params}`);
       setTasks(rememberDocEntities(res.data));   // FIX-1 — tugas lintas PT: aksi atas nama PT tugas
+      setListMeta(metaFromHeaders(res, (res.data || []).length));
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat inbound task."); }
     finally { setLoading(false); setFetched(true); }
@@ -426,6 +442,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
               })}
             </div>
           )}
+          <ListLimitNote meta={listMeta} noun="tugas" onMore={loadMoreTasks} loading={moreBusy} testId="inbound-limit" />
         </div>
 
         {/* RIGHT: Scan Panel */}

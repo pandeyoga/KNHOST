@@ -1727,8 +1727,10 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
 
 # ─── Read ────────────────────────────────────────────────────────────────────
 
-async def list_makloon_orders(query: Dict[str, Any]) -> List[Dict[str, Any]]:
-    rows = await db.makloon_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+async def list_makloon_orders(query: Dict[str, Any], *, skip: int = 0, limit: int = 500) -> List[Dict[str, Any]]:
+    # FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 500 = batas lama); jumlah sungguhan dihitung router (header).
+    rows = await (db.makloon_orders.find(query, {"_id": 0}).sort([("created_at", -1), ("id", -1)])
+                  .skip(max(0, int(skip or 0))).limit(max(1, int(limit or 500))).to_list(max(1, int(limit or 500))))
     for r in rows:
         r["step_count"] = len(r.get("steps", []))
         active = 0.0

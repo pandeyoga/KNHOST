@@ -71,13 +71,24 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     from services.product_supersede import annotate as _sup_annotate
     await _sup_annotate(products_raw)
     # S#096 — HPP turunan pembelian (WAC roll) untuk layar Master Produk; diredaksi strip_cost_fields per peran.
-    from services import costing_service as _cs
-    for _p in products_raw:
+    # FIX-7 (FIX-5 §8.2 dasbor p95 2–4 dtk) — dulu `wac_for_product` PER PRODUK (dokumen roll utuh, satu kueri per
+    # produk) untuk SEMUA peran, padahal `hpp`/`hpp_source` dibuang `strip_cost_fields` untuk peran selain admin/manajer.
+    # Kini hanya dihitung untuk peran yang memang menerimanya, dan sekali baca roll hidup berproyeksi (`wac_for_products`,
+    # rumus per roll yang sama). Keluaran identik.
+    from core_utils import COST_SAFE_ROLES
+    from role_registry import role_in as _role_in
+    if _role_in(actor.get("role"), COST_SAFE_ROLES):
+        from services import costing_service as _cs
         try:
-            _w = await _cs.wac_for_product(_p["id"], product=_p)
-            _p["hpp"], _p["hpp_source"] = float(_w.get("wac") or 0), _w.get("source", "")
-        except Exception:  # noqa: BLE001
-            _p["hpp"], _p["hpp_source"] = 0.0, "none"
+            _wacs = await _cs.wac_for_products(products_raw)
+        except Exception:  # noqa: BLE001 — sama dengan dulu: gagal hitung → HPP 0 "none", dasbor tetap terbuka
+            _wacs = {}
+        for _p in products_raw:
+            _w = _wacs.get(_p.get("id"))
+            if _w is None:
+                _p["hpp"], _p["hpp_source"] = 0.0, "none"
+            else:
+                _p["hpp"], _p["hpp_source"] = float(_w.get("wac") or 0), _w.get("source", "")
     orders_raw = await db.sales_orders.find(order_scope, {"_id": 0}).sort("created_at", -1).to_list(20)
     # FASE E-4 (E4.1) — gudang KHUSUS badan usaha lain tidak ikut ke dasbor:
     # kalau ikut, angka "Gudang Aktif" & pemilih gudang di layar menawarkan
@@ -150,7 +161,8 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     from services import sales_stock_service
     _own = bal_scope.get("owner_entity_id")
     _scope = await _sf.viewer_scope(ctx, entity_id=entity_id if entity_id and entity_id != "all" else "")
-    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "", scope=_scope)
+    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "", scope=_scope,
+                                           segs=all_segs)   # FIX-7 — saldo dibaca sekali per dasbor
     if not isinstance(_own, str):
         # mode gabungan: "stok PT" = Σ PT dalam cakupan (definisi tunggal, makloon per PT pemilik)
         for product in products:

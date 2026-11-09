@@ -29,6 +29,22 @@ export default function GateReviewQueue({ whId, devices = [] }) {
   const [kind, setKind] = useState("");
   const [deviceId, setDeviceId] = useState("");
   const [openId, setOpenId] = useState(null);
+  // FIX-7 (B3b LST-09) — kursor `next_before` dari server kini dipakai: "Muat lebih lama" menambah 100 kasus berikutnya
+  // (dulu baris ke-101 dst. tak terjangkau tanpa tanda). Halaman pertama tetap dimuat ulang otomatis; kasus lama yang
+  // sudah dimuat disimpan terpisah (`older`) sampai saringan berubah.
+  const [nextBefore, setNextBefore] = useState(null);
+  const [older, setOlder] = useState([]);
+  const [olderNext, setOlderNext] = useState(null);
+  const [olderBusy, setOlderBusy] = useState(false);
+  const filterParams = useCallback(() => {
+    const params = { status, limit: 100 };
+    if (whId) params.warehouse_id = whId;
+    if (verdict) params.verdict = verdict;
+    if (kind) params.kind = kind;
+    if (deviceId) params.device_id = deviceId;
+    return params;
+  }, [whId, status, verdict, kind, deviceId]);
+  useEffect(() => { setOlder([]); setOlderNext(null); }, [filterParams]);
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
     try {
@@ -42,12 +58,26 @@ export default function GateReviewQueue({ whId, devices = [] }) {
         axios.get(`${API}/rfid/v2/ops/reviews/summary`, { params: whId ? { warehouse_id: whId } : {} }),
       ]);
       setRows(r.data.reviews || []); setSummary(s.data); setError("");
+      setNextBefore(r.data.next_before || null);
       return true;
     } catch (e) { setError(errorText(e)); return false; } finally { setLoading(false); }
   }, [whId, status, verdict, kind, deviceId]);
   useEffect(() => { load(); }, [load]);
   usePolling(async () => { if (!(await load(true))) throw new Error("antrean"); },
     { intervalMs: 30000, maxMs: 120000, immediate: false, enabled: !openId }, [load]);
+  const loadOlder = async () => {
+    const before = older.length ? olderNext : nextBefore;
+    if (!before) return;
+    setOlderBusy(true);
+    try {
+      const r = await axios.get(`${API}/rfid/v2/ops/reviews`, { params: { ...filterParams(), before } });
+      setOlder((prev) => [...prev, ...(r.data.reviews || [])]);
+      setOlderNext(r.data.next_before || null);
+    } catch (e) { setError(errorText(e)); } finally { setOlderBusy(false); }
+  };
+  const shownIds = new Set(rows.map((c) => c.case_id));
+  const allRows = [...rows, ...older.filter((c) => !shownIds.has(c.case_id))];
+  const hasOlder = older.length ? !!olderNext : !!nextBefore;
   const txn = summary?.txn;
   const devOpts = [{ value: "", label: "Semua gate" }, ...devices.map((d) => ({ value: d.id, label: d.code || d.name }))];
   return (
@@ -74,7 +104,7 @@ export default function GateReviewQueue({ whId, devices = [] }) {
             className="field !py-1 !px-2 text-[12px] w-auto" />
         </div>
         {error && <ErrorNotice message={error} onRetry={() => load()} />}
-        {!loading && rows.length === 0 ? (
+        {!loading && allRows.length === 0 ? (
           <EmptyBox icon={ClipboardCheck} text="Tidak ada lintasan yang perlu diperiksa untuk saringan ini." />
         ) : (
           <div className="overflow-x-auto">
@@ -84,7 +114,7 @@ export default function GateReviewQueue({ whId, devices = [] }) {
                 <th className="p-2">Alasan</th><th className="p-2">Roll perlu tindakan</th><th className="p-2" />
               </tr></thead>
               <tbody>
-                {rows.map((c) => {
+                {allRows.map((c) => {
                   const v = VERDICT[c.verdict] || VERDICT.UNKNOWN;
                   const todo = (c.rolls || []).filter((r) => ["open", "rescan"].includes(r.state)).length;
                   return (
@@ -104,6 +134,14 @@ export default function GateReviewQueue({ whId, devices = [] }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        {hasOlder && !loading && (
+          <div data-testid="gate-review-more" role="status"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-kn-divider bg-kn-warning-soft px-3 py-2 text-fs-12 text-kn-warning-text">
+            <span>Menampilkan {allRows.length} kasus terbaru — masih ada kasus yang lebih lama untuk saringan ini.</span>
+            <button type="button" className="secondary-button btn-sm ml-auto" disabled={olderBusy} onClick={loadOlder}
+              data-testid="gate-review-more-btn">{olderBusy ? "Memuat…" : "Muat lebih lama"}</button>
           </div>
         )}
       </div>

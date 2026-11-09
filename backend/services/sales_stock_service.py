@@ -39,7 +39,8 @@ async def global_available_many(ids: List[str]) -> Dict[str, float]:
 
 
 async def apply_global(products: List[Dict[str, Any]], entity_id: str = "",
-                       scope: Optional[Dict[str, Any]] = None) -> None:
+                       scope: Optional[Dict[str, Any]] = None,
+                       segs: Optional[List[Dict[str, Any]]] = None) -> None:
     """`entity_id` = PT penjual (entitas aktif). Trial 22 Okt (B6): stok PT itu ikut dikirim terpisah
     (`entity_available_qty`, `entity_roll_count`, `stock_entity_name`) supaya katalog HP tidak membuat sales
     mengira stok grup = stok PT-nya sendiri. `scope` (FIX-2) = cakupan LOKAL pengguna (`stock_figures.viewer_scope`)."""
@@ -47,7 +48,13 @@ async def apply_global(products: List[Dict[str, Any]], entity_id: str = "",
     ids = [p["id"] for p in products if p.get("id")]
     if not ids:
         return
-    segs = await sf.segments(ids)
+    # FIX-7 — `segs` = SEMUA segmen yang sudah dibaca pemanggil (dasbor) → dipersempit ke produk ini; sama dengan
+    # `sf.segments(ids)` (alokasi makloon per produk × PT tidak bergantung produk lain). Tanpa `segs` dibaca di sini.
+    if segs is None:
+        segs = await sf.segments(ids)
+    else:
+        _want = set(ids)
+        segs = [s for s in segs if s["product_id"] in _want]
     per: Dict[str, List[Dict[str, Any]]] = {}
     for s in segs:
         per.setdefault(s["product_id"], []).append(s)

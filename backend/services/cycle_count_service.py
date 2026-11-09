@@ -150,15 +150,26 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
     return safe_doc(cc)
 
 
-async def list_counts(warehouse_id: Optional[str], scope_ids: List[str], limit: int = 30) -> List[Dict[str, Any]]:
+def _counts_query(warehouse_id: Optional[str], scope_ids: List[str]) -> Dict[str, Any]:
     # RF-08 — hanya hasil yang seluruh entitasnya dalam scope pemanggil
     q: Dict[str, Any] = {"scope_entity_ids": {"$exists": True, "$ne": [],
                                               "$not": {"$elemMatch": {"$nin": list(scope_ids)}}}}
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
-    rows = await db.rfid_cycle_counts.find(q, {"_id": 0, "missing_items": 0, "extra_items": 0}) \
-        .sort("created_at", -1).to_list(limit)
+    return q
+
+
+async def list_counts(warehouse_id: Optional[str], scope_ids: List[str], limit: int = 30,
+                      skip: int = 0) -> List[Dict[str, Any]]:
+    rows = await db.rfid_cycle_counts.find(_counts_query(warehouse_id, scope_ids),
+                                           {"_id": 0, "missing_items": 0, "extra_items": 0}) \
+        .sort([("created_at", -1), ("id", -1)]).skip(max(0, int(skip or 0))).to_list(limit)
     return [safe_doc(r) for r in rows]
+
+
+async def count_counts(warehouse_id: Optional[str], scope_ids: List[str]) -> int:
+    """FIX-7 (B3b LST-01) — jumlah sungguhan (dulu daftar 30 terbaru tanpa penanda)."""
+    return await db.rfid_cycle_counts.count_documents(_counts_query(warehouse_id, scope_ids))
 
 
 async def get_count(cc_id: str, scope_ids: List[str]) -> Dict[str, Any]:
