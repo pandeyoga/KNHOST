@@ -127,7 +127,7 @@ def test_ops01_missing_recount_writeoff_foreign_relocate_unknown_new_roll():
     assert requests.post(f"{BASE}/cycle-count/sessions/{s['id']}/roll-missing-recount", json={"roll_id": r_foreign}, headers=adm).status_code == 400
     n_before = DB.inventory_rolls.count_documents({"opname_found_code": f"NODATA-{TAG}"})
     r = requests.post(f"{BASE}/cycle-count/sessions/{s['id']}/roll-finalize", headers=adm, json={
-        "reason": f"ops01 {TAG}", "zero_cost_reason": "uji",
+        "reason": f"finalisasi opname uji ops01 {TAG}", "zero_cost_reason": "roll uji tanpa biaya",   # K-14: ≥ 5 huruf (dulu acak heksa → kadang kurang)
         "new_rolls": [{"scan_id": unk["id"], "product_id": PROD["id"], "owner_entity_id": "ent_ksc"}]})
     assert r.status_code == 200, r.text
     body = r.json()
