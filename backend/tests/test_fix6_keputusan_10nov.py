@@ -74,6 +74,8 @@ def world():
     for coll in ("credit_notes", "journal_entries", "cash_transactions", "inventory_movements", "store_credit_ledger"):
         DB[coll].delete_many({"$or": [{"return_id": {"$in": sr_ids}}, {"ref_id": {"$in": sr_ids}},
                                       {"source_id": {"$in": sr_ids + PRETS}}, {"roll_id": {"$in": rolls}}]})
+    for coll in ("journal_entries", "cash_transactions", "store_credit_ledger"):   # penyelesaian per roll `<retur>:<ev>`
+        DB[coll].delete_many({"$or": [{"source_id": {"$regex": f"^sret_fx6_{TAG}"}}, {"ref_id": {"$regex": f"^sret_fx6_{TAG}"}}]})
     DB.sales_returns.delete_many({"id": {"$in": sr_ids}})
     DB.purchase_returns.delete_many({"$or": [{"id": {"$in": PRETS}}, {"po_id": {"$in": POS}}]})
     DB.vendor_bills.delete_many({"po_id": {"$in": POS}})
@@ -220,6 +222,64 @@ def test_d5_arrived_elsewhere_moves_return_quarantine(adm):
     requests.post(f"{BASE}/sales-returns/{rid}/reject", headers=adm, json={"notes": "Uji dibatalkan rapi"})
 
 
+def test_d5_roll_settlement_values_stock_roll_and_reverses_rejected_roll(adm):
+    """Penyelesaian PER ROLL sesudah pindai: roll Pengembalian Dana dinilai (roll yang sama, satu jurnal per
+    penyelesaian), roll Tolak klaim dibalik ke "di pelanggan" (tanpa nilai/jurnal)."""
+    from services import return_intake_service as _intake
+    pid, price = "prod_batik_mega", 30000
+    src = DB.sales_orders.find_one({"number": "KSC/SO-00003"}, {"_id": 0})
+    if not src:
+        pytest.skip("SO acuan KSC/SO-00003 tidak ada")
+    so, ret_id = f"so_fx6_{TAG}", f"sret_fx6_{TAG}"
+    DB.sales_orders.insert_one({**{k: src[k] for k in ("customer_id", "customer_name", "entity_id")},
+                                "id": so, "number": f"TEST_SO-FX6-{TAG}", "status": "done", "payment_term_code": "NET30",
+                                "items": [{"product_id": pid, "quantity": 200, "base_quantity": 200, "line_total": 200 * price}],
+                                "ppn_rate": 11, "ppn_amount": 660000, "grand_total": 6660000, "qc_request": {"mode": "none"},
+                                "payments": [{"amount": 6660000}]})
+    tmpl = DB.inventory_rolls.find_one({"product_id": pid, "owner_entity_id": KSC}, {"_id": 0}) or {}
+    rids = []
+    for i in range(2):
+        rid = f"roll_fx6_rs_{TAG}_{i}"
+        DB.inventory_rolls.insert_one({**tmpl, "id": rid, "roll_no": f"FX6RS-{TAG}-{i}", "product_id": pid,
+                                       "status": "delivered", "unit": "yard", "length": 100.0, "length_initial": 100.0,
+                                       "length_remaining": 100.0, "owner_entity_id": KSC, "warehouse_id": "wh_jakarta",
+                                       "unit_cost": 18000.0, "base_unit_cost": 18000.0, "grade": "A", "rfid_tag_id": None,
+                                       "reserved_ref": None, "committed_to": None, "earmarked_for": None,
+                                       "return_intake": None, "return_history": []})
+        ROLLS.append(rid)
+        rids.append(rid)
+    results = {r: {"roll_no": f"FX6RS-{TAG}-{i}", "grade": "A", "actual_qty": 100.0, "condition": "ok"}
+               for i, r in enumerate(rids)}
+    DB.sales_returns.insert_one({
+        "id": ret_id, "number": f"TEST_RET-FX6-{TAG}", "order_id": so, "order_number": f"TEST_SO-FX6-{TAG}",
+        "entity_id": KSC, "customer_id": src["customer_id"], "customer_name": src["customer_name"], "notes": NOTE,
+        "return_type": "retur", "status": "inspected",
+        "roll_locations": {r: {"stage": "received", "warehouse_id": "wh_jakarta"} for r in rids},
+        "items": [{"product_id": pid, "product_name": "TEST", "unit": "yard", "quantity_returned": 200.0, "condition": "ok",
+                   "roll_ids": rids, "roll_qtys": {r: 100.0 for r in rids},
+                   "inspection": {"grade": "A", "accepted_qty": 200.0, "roll_results": results,
+                                  "roll_actuals": {r: 100.0 for r in rids}}}]})
+    try:
+        ret = DB.sales_returns.find_one({"id": ret_id}, {"_id": 0})
+        got = run(_intake.receive(ret, rids, "wh_jakarta", "Uji", "TRM-1"))          # = pindai diterima
+        assert len(got["received"]) == 2
+        r = requests.post(f"{BASE}/sales-returns/{ret_id}/roll-settlement", headers=adm, json={
+            "rolls": [{"roll_id": rids[0], "outcome": "refund"}, {"roll_id": rids[1], "outcome": "reject"}],
+            "payout": "", "decision_note": "uji FIX-6 per roll"})
+        assert r.status_code == 200, r.text
+        ev = r.json()["settlements"][-1]
+        a, b = DB.inventory_rolls.find_one({"id": rids[0]}), DB.inventory_rolls.find_one({"id": rids[1]})
+        assert a["status"] == "quarantine" and a["return_intake"]["state"] == "valued" and float(a["unit_cost"]) > 0
+        assert b["status"] == "delivered" and b["return_intake"]["state"] == "reversed"
+        jes = list(DB.journal_entries.find({"source_type": "sales_return", "source_id": f"{ret_id}:{ev['id']}"}))
+        assert len(jes) == 1
+        dr = sum(float(ln.get("debit") or 0) for ln in jes[0]["lines"] if ln["account_code"] == "1-1300")
+        assert abs(dr - round(float(a["length_remaining"]) * float(a["unit_cost"]), 2)) <= 1.0
+        assert DB.inventory_movements.count_documents({"roll_id": rids[0], "movement_type": "return_quarantine_in"}) == 1
+    finally:
+        DB.sales_orders.delete_many({"id": so})
+
+
 # ═══ D2 — tolak QC + retur supplier: ganti barang / potong tagihan ════════════════════════════════════════════════
 def _po_task_roll(status="completed", qty=50.0, price=10000.0, received=None):
     po_id, tid = f"po_fx6_{uuid.uuid4().hex[:8]}", f"wms_fx6_{uuid.uuid4().hex[:8]}"
@@ -331,6 +391,10 @@ def test_d2_bill_cut_billed_posts_debit_note_against_payable(adm):
     lines = {ln["account_code"]: ln for ln in je["lines"]}
     assert "2-1100" in lines and float(lines["2-1100"]["debit"]) == 555000.0          # Nota Debit ke Hutang (bruto)
     assert "2-1150" not in lines
+    doc = DB.purchase_returns.find_one({"id": pret["id"]})
+    assert doc["remedy"]["choice"] == "bill_cut" and doc["remedy_result"]["gl_mode"] == "debit_note_ap"
+    po = DB.purchase_orders.find_one({"id": po_id})
+    assert po["status"] == "closed_short" and float(po["items"][0]["returned_qty"]) == 50.0     # PO ditutup kurang
 
 
 def test_d2_rejected_qc_return_rolls_back_as_damaged(adm):
