@@ -1,0 +1,3 @@
+G4 cancel GRN 200 cancelled
+G4 rolls [] task {'status': 'waiting_goods', 'grn_active_id': None, 'received_qty': 0.0, 'qty_rolls_scanned': 0}
+G4 audit ['grn_cancelled', 'grn_count_started', 'grn_line_updated', 'grn_line_added', 'grn_dn_updated', 'grn_manual_entry', 'grn_created']

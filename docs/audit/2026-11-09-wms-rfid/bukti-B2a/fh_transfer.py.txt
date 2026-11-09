@@ -1,0 +1,17 @@
+rolls [('RL-38018', 'prod_13bb69169347', 61.68, 'bin_sim_rcm_woven_w01_l3_03'), ('RL-38019', 'prod_13bb69169347', 62.5, None)]
+create 200 ('KSC/TRF-00018', 'waiting_approval')
+approve 200 approved
+picking 200 picking
+staging 200 staging
+dispatched 200 dispatched
+rolls after dispatch [{'warehouse_id': 'wh_adc8726d019e', 'bin_id': 'bin_sim_rcm_woven_w01_l3_03', 'roll_no': 'RL-38018', 'status': 'in_transit_transfer'}, {'warehouse_id': 'wh_adc8726d019e', 'bin_id': None, 'roll_no': 'RL-38019', 'status': 'in_transit_transfer'}]
+RCM worker receive at JKT: 200 (None, None)
+roll0 available wh_jakarta None None
+repeat receive: 200 {'results': [{'ref': 'roll_74d7283673bd', 'roll_id': 'roll_74d7283673bd', 'roll_no': 'RL-38018', 'result': 'already', 'message': 'Sudah diterima sebelumnya (tidak menambah stok).'}], 'transfer_status': 'partially_received', 'summary': {'rolls': [{'ro
+missing 200 {'exception': {'id': 'tex_77025208db3b', 'kind': 'missing', 'status': 'open', 'roll_id': 'roll_02fcc3dd0a34', 'roll_no': 'RL-38019', 'code': '', 'reason': 'roll tidak ada di truk', 'evidence': '', 'by
+resolve return_to_source 400 {'detail': 'Alasan wajib diisi (minimal 5 karakter).'}
+TRANSFER partially_received None [('missing', 'open')] 2
+rolls [{'warehouse_id': 'wh_jakarta', 'bin_id': None, 'roll_no': 'RL-38018', 'status': 'available', 'last_transfer': {'ref_id': 'trn_4c30132a93b3', 'code': 'KSC/TRF-00018', 'from_warehouse_id': 'wh_adc8726d019e', 'date': '2026-11-09T00:26:42.967742+00:00', 'received_by': 'Gilang Ramadhan', 'outcome': 'received'}}, {'warehouse_id': 'wh_adc8726d019e', 'bin_id': None, 'roll_no': 'RL-38019', 'status': 'in_transit_transfer'}]
+mov []
+mov2 [{'warehouse_id': 'wh_adc8726d019e', 'source_document': 'CST/TRF-00002', 'movement_type': 'ownership_transfer_out', 'quantity': -62.5}, {'warehouse_id': 'wh_adc8726d019e', 'source_document': 'CST/TRF-00002', 'movement_type': 'ownership_transfer_in', 'quantity': 62.5}, {'warehouse_id': 'wh_adc8726d019e', 'movement_type': 'transfer_out', 'quantity': -62.5, 'source_document': 'transfer_KSC/TRF-00018'}, {'warehouse_id': 'wh_adc8726d019e', 'source_document': 'CST/TRF-00002', 'movement_type': 'ownership_transfer_out', 'quantity': -61.68}, {'warehouse_id': 'wh_adc8726d019e', 'source_document': 'CST/TRF-00002', 'movement_type': 'ownership_transfer_in', 'quantity': 61.68}, {'warehouse_id': 'wh_adc8726d019e', 'movement_type': 'transfer_out', 'quantity': -61.68, 'source_document': 'transfer_KSC/TRF-00018'}, {'warehouse_id': 'wh_jakarta', 'movement_type': 'transfer_in', 'quantity': 61.68, 'source_document': 'transfer_KSC/TRF-00018'}]
+PA for rolls []

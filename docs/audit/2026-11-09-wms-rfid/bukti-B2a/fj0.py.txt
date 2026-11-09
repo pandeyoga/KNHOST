@@ -1,0 +1,7 @@
+WH-JKT         bins_struktur= 267 roll_fisik= 23185 tanpa_bin=  4701 bin_tak_dikenal=     2 contoh=[('bin_sim_hilang_01', 1), ('bin_sim_hilang_02', 1)]
+RCM-TRANSIT    bins_struktur=  21 roll_fisik=     2 tanpa_bin=     2 bin_tak_dikenal=     0 contoh=[]
+RCM-WOVEN      bins_struktur= 221 roll_fisik=  9939 tanpa_bin=  2052 bin_tak_dikenal=     0 contoh=[]
+RCM-KNITTING   bins_struktur= 201 roll_fisik= 10374 tanpa_bin=  2108 bin_tak_dikenal=     0 contoh=[]
+RCM-PRINTING   bins_struktur=  21 roll_fisik=    56 tanpa_bin=    12 bin_tak_dikenal=     0 contoh=[]
+RCM-RETUR      bins_struktur=  21 roll_fisik=    71 tanpa_bin=    14 bin_tak_dikenal=     0 contoh=[]
+SRG-01         bins_struktur=  61 roll_fisik=  2893 tanpa_bin=   517 bin_tak_dikenal=     3 contoh=[('TIDAK-ADA-BIN', 3)]

@@ -1,0 +1,140 @@
+
+### warehouse.soreang (warehouse) lokasi={'Soreang'}
+  [bawaan] /wms/tasks: n=6 site={'Soreang': 6} PT={'Kanda Fabric': 6}
+  [bawaan] /inbound/tasks: n=4 site={'Soreang': 4} PT={'Kanda Fabric': 4}
+  [bawaan] /inbound/qc/queue: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [bawaan] /putaway-orders: n=0 site={} PT={}
+  [bawaan] /goods-receipts: n=0 site={} PT={}
+  [bawaan] /cycle-count/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [bawaan] /registration/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [bawaan] /inspections: n=2 site={} PT={'Kanda Fabric': 2}
+  [bawaan] /transfers: n=15 site={'Jakarta': 14, 'Soreang': 1, '?': 1} PT={'Sukacita': 14, 'Kanda Fabric': 1}  ⚠ di luar lokasi: {'Jakarta': 14, '?': 1}
+  [all] /wms/tasks: n=6 site={'Soreang': 6} PT={'Kanda Fabric': 6}
+  [all] /inbound/tasks: n=4 site={'Soreang': 4} PT={'Kanda Fabric': 4}
+  [all] /inbound/qc/queue: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [all] /putaway-orders: n=0 site={} PT={}
+  [all] /goods-receipts: n=0 site={} PT={}
+  [all] /cycle-count/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [all] /registration/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [all] /inspections: n=2 site={} PT={'Kanda Fabric': 2}
+  [all] /transfers: n=15 site={'Jakarta': 14, 'Soreang': 1, '?': 1} PT={'Sukacita': 14, 'Kanda Fabric': 1}  ⚠ di luar lokasi: {'Jakarta': 14, '?': 1}
+
+### warehouse.rancamalang (warehouse) lokasi={'Rancamalang'}
+  [bawaan] /wms/tasks: n=5 site={'Rancamalang': 5} PT={'Cipta Sandang': 5}
+  [bawaan] /inbound/tasks: n=1 site={'Rancamalang': 1} PT={'Cipta Sandang': 1}
+  [bawaan] /inbound/qc/queue: n=0 site={} PT={}
+  [bawaan] /putaway-orders: n=0 site={} PT={}
+  [bawaan] /goods-receipts: n=0 site={} PT={}
+  [bawaan] /cycle-count/sessions: n=0 site={} PT={}
+  [bawaan] /registration/sessions: n=0 site={} PT={}
+  [bawaan] /inspections: n=1 site={} PT={'Cipta Sandang': 1}
+  [bawaan] /transfers: n=2 site={'Rancamalang': 2} PT={'Cipta Sandang': 2}
+  [all] /wms/tasks: n=15 site={'Rancamalang': 15} PT={'Sukacita': 10, 'Cipta Sandang': 5}
+  [all] /inbound/tasks: n=9 site={'Rancamalang': 9} PT={'Sukacita': 8, 'Cipta Sandang': 1}
+  [all] /inbound/qc/queue: n=0 site={} PT={}
+  [all] /putaway-orders: n=6 site={'Rancamalang': 6, 'Jakarta': 2} PT={'Sukacita': 6}  ⚠ di luar lokasi: {'Jakarta': 2}
+  [all] /goods-receipts: n=3 site={'Rancamalang': 3} PT={None: 3}
+  [all] /cycle-count/sessions: n=3 site={'Soreang': 1, 'Jakarta': 2} PT={'Kanda Fabric': 1, 'Sukacita': 2}  ⚠ di luar lokasi: {'Soreang': 1, 'Jakarta': 2}
+  [all] /registration/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}  ⚠ di luar lokasi: {'Soreang': 1}
+  [all] /inspections: n=118 site={} PT={'Kanda Fabric': 2, 'Sukacita': 115, 'Cipta Sandang': 1}
+  [all] /transfers: n=19 site={'Rancamalang': 4, 'Jakarta': 16, 'Soreang': 1, '?': 1} PT={'Sukacita': 16, 'Cipta Sandang': 2, 'Kanda Fabric': 1}  ⚠ di luar lokasi: {'Jakarta': 16, 'Soreang': 1, '?': 1}
+
+### warehouse (warehouse) lokasi={'Jakarta'}
+  [bawaan] /wms/tasks: n=171 site={'Jakarta': 171} PT={'Sukacita': 171}
+  [bawaan] /inbound/tasks: n=54 site={'Jakarta': 54} PT={'Sukacita': 54}
+  [bawaan] /inbound/qc/queue: n=13 site={'Jakarta': 13} PT={'Sukacita': 13}
+  [bawaan] /putaway-orders: n=2 site={'Rancamalang': 2, 'Jakarta': 2} PT={'Sukacita': 2}  ⚠ di luar lokasi: {'Rancamalang': 2}
+  [bawaan] /goods-receipts: n=15 site={'Jakarta': 15} PT={None: 15}
+  [bawaan] /cycle-count/sessions: n=2 site={'Jakarta': 2} PT={'Sukacita': 2}
+  [bawaan] /registration/sessions: n=0 site={} PT={}
+  [bawaan] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [bawaan] /transfers: n=17 site={'Rancamalang': 3, 'Jakarta': 16} PT={'Sukacita': 16, 'Cipta Sandang': 1}  ⚠ di luar lokasi: {'Rancamalang': 3}
+  [all] /wms/tasks: n=171 site={'Jakarta': 171} PT={'Sukacita': 171}
+  [all] /inbound/tasks: n=54 site={'Jakarta': 54} PT={'Sukacita': 54}
+  [all] /inbound/qc/queue: n=13 site={'Jakarta': 13} PT={'Sukacita': 13}
+  [all] /putaway-orders: n=2 site={'Rancamalang': 2, 'Jakarta': 2} PT={'Sukacita': 2}  ⚠ di luar lokasi: {'Rancamalang': 2}
+  [all] /goods-receipts: n=15 site={'Jakarta': 15} PT={None: 15}
+  [all] /cycle-count/sessions: n=2 site={'Jakarta': 2} PT={'Sukacita': 2}
+  [all] /registration/sessions: n=0 site={} PT={}
+  [all] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [all] /transfers: n=17 site={'Rancamalang': 3, 'Jakarta': 16} PT={'Sukacita': 16, 'Cipta Sandang': 1}  ⚠ di luar lokasi: {'Rancamalang': 3}
+
+### wh.admin (warehouse_admin) lokasi=semua
+  [bawaan] /wms/tasks: n=248 site={'Rancamalang': 10, 'Jakarta': 171, '?': 67} PT={'Sukacita': 248}
+  [bawaan] /inbound/tasks: n=129 site={'Rancamalang': 8, 'Jakarta': 54, '?': 67} PT={'Sukacita': 129}
+  [bawaan] /inbound/qc/queue: n=13 site={'Jakarta': 13} PT={'Sukacita': 13}
+  [bawaan] /putaway-orders: n=6 site={'Rancamalang': 6, 'Jakarta': 2} PT={'Sukacita': 6}
+  [bawaan] /goods-receipts: n=18 site={'Rancamalang': 3, 'Jakarta': 15} PT={None: 18}
+  [bawaan] /cycle-count/sessions: n=2 site={'Jakarta': 2} PT={'Sukacita': 2}
+  [bawaan] /registration/sessions: n=0 site={} PT={}
+  [bawaan] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [bawaan] /transfers: n=17 site={'Rancamalang': 3, 'Jakarta': 16} PT={'Sukacita': 16, 'Cipta Sandang': 1}
+  [all] /wms/tasks: n=254 site={'Soreang': 6, 'Rancamalang': 10, 'Jakarta': 171, '?': 67} PT={'Kanda Fabric': 6, 'Sukacita': 248}
+  [all] /inbound/tasks: n=133 site={'Soreang': 4, 'Rancamalang': 8, 'Jakarta': 54, '?': 67} PT={'Kanda Fabric': 4, 'Sukacita': 129}
+  [all] /inbound/qc/queue: n=14 site={'Soreang': 1, 'Jakarta': 13} PT={'Kanda Fabric': 1, 'Sukacita': 13}
+  [all] /putaway-orders: n=6 site={'Rancamalang': 6, 'Jakarta': 2} PT={'Sukacita': 6}
+  [all] /goods-receipts: n=18 site={'Rancamalang': 3, 'Jakarta': 15} PT={None: 18}
+  [all] /cycle-count/sessions: n=3 site={'Soreang': 1, 'Jakarta': 2} PT={'Kanda Fabric': 1, 'Sukacita': 2}
+  [all] /registration/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [all] /inspections: n=117 site={} PT={'Kanda Fabric': 2, 'Sukacita': 115}
+  [all] /transfers: n=18 site={'Rancamalang': 3, 'Jakarta': 16, 'Soreang': 1, '?': 1} PT={'Sukacita': 16, 'Cipta Sandang': 1, 'Kanda Fabric': 1}
+
+### qc (qc) lokasi=semua
+  [bawaan] /wms/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /inbound/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /inbound/qc/queue: n=13 site={'Jakarta': 13} PT={'Sukacita': 13}
+  [bawaan] /putaway-orders: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /goods-receipts: 403 {'detail': 'Permission ditolak: goods_receipt.view'}
+  [bawaan] /cycle-count/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [bawaan] /registration/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [bawaan] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [bawaan] /transfers: 403 {'detail': 'Permission ditolak: transfer.view'}
+  [all] /wms/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /inbound/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /inbound/qc/queue: n=14 site={'Soreang': 1, 'Jakarta': 13} PT={'Kanda Fabric': 1, 'Sukacita': 13}
+  [all] /putaway-orders: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /goods-receipts: 403 {'detail': 'Permission ditolak: goods_receipt.view'}
+  [all] /cycle-count/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [all] /registration/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [all] /inspections: n=118 site={} PT={'Kanda Fabric': 2, 'Sukacita': 115, 'Cipta Sandang': 1}
+  [all] /transfers: 403 {'detail': 'Permission ditolak: transfer.view'}
+
+### mdquality (md_quality) lokasi=semua
+  [bawaan] /wms/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /inbound/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /inbound/qc/queue: 403 {'detail': 'Permission ditolak: butuh salah satu dari wms.view / qc.view'}
+  [bawaan] /putaway-orders: 403 {'detail': 'Permission ditolak: wms.view'}
+  [bawaan] /goods-receipts: 403 {'detail': 'Permission ditolak: goods_receipt.view'}
+  [bawaan] /cycle-count/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [bawaan] /registration/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [bawaan] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [bawaan] /transfers: 403 {'detail': 'Permission ditolak: transfer.view'}
+  [all] /wms/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /inbound/tasks: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /inbound/qc/queue: 403 {'detail': 'Permission ditolak: butuh salah satu dari wms.view / qc.view'}
+  [all] /putaway-orders: 403 {'detail': 'Permission ditolak: wms.view'}
+  [all] /goods-receipts: 403 {'detail': 'Permission ditolak: goods_receipt.view'}
+  [all] /cycle-count/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [all] /registration/sessions: 403 {'detail': 'Permission ditolak: inventory.cycle_count'}
+  [all] /inspections: n=118 site={} PT={'Kanda Fabric': 2, 'Sukacita': 115, 'Cipta Sandang': 1}
+  [all] /transfers: 403 {'detail': 'Permission ditolak: transfer.view'}
+
+### manager (manager) lokasi=semua
+  [bawaan] /wms/tasks: n=248 site={'Rancamalang': 10, 'Jakarta': 171, '?': 67} PT={'Sukacita': 248}
+  [bawaan] /inbound/tasks: n=129 site={'Rancamalang': 8, 'Jakarta': 54, '?': 67} PT={'Sukacita': 129}
+  [bawaan] /inbound/qc/queue: n=13 site={'Jakarta': 13} PT={'Sukacita': 13}
+  [bawaan] /putaway-orders: n=6 site={'Rancamalang': 6, 'Jakarta': 2} PT={'Sukacita': 6}
+  [bawaan] /goods-receipts: n=18 site={'Rancamalang': 3, 'Jakarta': 15} PT={None: 18}
+  [bawaan] /cycle-count/sessions: n=2 site={'Jakarta': 2} PT={'Sukacita': 2}
+  [bawaan] /registration/sessions: n=0 site={} PT={}
+  [bawaan] /inspections: n=115 site={} PT={'Sukacita': 115}
+  [bawaan] /transfers: n=17 site={'Rancamalang': 3, 'Jakarta': 16} PT={'Sukacita': 16, 'Cipta Sandang': 1}
+  [all] /wms/tasks: n=259 site={'Soreang': 6, 'Rancamalang': 15, 'Jakarta': 171, '?': 67} PT={'Kanda Fabric': 6, 'Sukacita': 248, 'Cipta Sandang': 5}
+  [all] /inbound/tasks: n=134 site={'Soreang': 4, 'Rancamalang': 9, 'Jakarta': 54, '?': 67} PT={'Kanda Fabric': 4, 'Sukacita': 129, 'Cipta Sandang': 1}
+  [all] /inbound/qc/queue: n=14 site={'Soreang': 1, 'Jakarta': 13} PT={'Kanda Fabric': 1, 'Sukacita': 13}
+  [all] /putaway-orders: n=6 site={'Rancamalang': 6, 'Jakarta': 2} PT={'Sukacita': 6}
+  [all] /goods-receipts: n=18 site={'Rancamalang': 3, 'Jakarta': 15} PT={None: 18}
+  [all] /cycle-count/sessions: n=3 site={'Soreang': 1, 'Jakarta': 2} PT={'Kanda Fabric': 1, 'Sukacita': 2}
+  [all] /registration/sessions: n=1 site={'Soreang': 1} PT={'Kanda Fabric': 1}
+  [all] /inspections: n=118 site={} PT={'Kanda Fabric': 2, 'Sukacita': 115, 'Cipta Sandang': 1}
+  [all] /transfers: n=19 site={'Rancamalang': 4, 'Jakarta': 16, 'Soreang': 1, '?': 1} PT={'Sukacita': 16, 'Cipta Sandang': 2, 'Kanda Fabric': 1}

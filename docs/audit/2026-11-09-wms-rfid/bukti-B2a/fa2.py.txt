@@ -1,0 +1,23 @@
+[403] warehouse.rancamalang POST /inspections/ins_d0338a6d0f48/assign (160ms) :: {"detail": "Permission ditolak: inspection.assign"}
+[200] wh.admin POST /inspections/ins_d0338a6d0f48/assign (36ms) :: {"id": "ins_d0338a6d0f48", "number": "KSC/INS-00144", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "purchase_order", "ref_doc_id": "po_e87868d533ad", "ref_doc_number": "KSC/PO-00169", "task_id": "wms_2281a82c26a7", "supplier_id": "sup_a47057e2dfc2", "supplier_name": "CV Grey Mandiri Majalaya", "customer_id": "", "customer_name": "", "spk_date": "2026-11-09", "assigned_to": "user_92d473d761be", "assigned_name": "Lestari Wulandari", "bagian": "Bagian Inspeksi", "started_at": "", "finished_at": "", "status": "assigned", "baseline_sample_id": "", "baseline_sample_number": "", "baseline_contract_id": "", "baseline_color": "", "lines": [{"id": "insl_0e2aa8df8
+[200] mdquality POST /inspections/ins_d0338a6d0f48/lines/insl_0e2aa8df898e/inspect (93ms) :: {"id": "ins_d0338a6d0f48", "number": "KSC/INS-00144", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "purchase_order", "ref_doc_id": "po_e87868d533ad", "ref_doc_number": "KSC/PO-00169", "task_id": "wms_2281a82c26a7", "supplier_id": "sup_a47057e2dfc2", "supplier_name": "CV Grey Mandiri Majalaya", "customer_id": "", "customer_name": "", "spk_date": "2026-11-09", "assigned_to": "user_92d473d761be", "assigned_name": "Lestari Wulandari", "bagian": "Bagian Inspeksi", "started_at": "2026-11-09T00:19:24.013298+00:00", "finished_at": "", "status": "assigned", "baseline_sample_id": "", "baseline_sample_number": "", "baseline_contract_id": "", "baseline_color": "", 
+
+=== 3_mdq_inspected :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'qc_pending', 'qc_status': 'pending'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'quarantine', 'cd8837', None, 300.0, 'received_transit', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 0.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 300.0, 'reserved_qty': 0.0}]
+  pa=[]
+  spk=[('KSC/INS-00144', 'po_receipt', 'assigned', True, '', 1)]
+  audit=['po_created', 'inbound_completed', 'inbound_scan_receive']
+[200] mdquality POST /inspections/ins_d0338a6d0f48/finish (234ms) :: {"id": "ins_d0338a6d0f48", "number": "KSC/INS-00144", "entity_id": "ent_ksc", "line_code": "woven", "kind": "po_receipt", "ref_doc_type": "purchase_order", "ref_doc_id": "po_e87868d533ad", "ref_doc_number": "KSC/PO-00169", "task_id": "wms_2281a82c26a7", "supplier_id": "sup_a47057e2dfc2", "supplier_name": "CV Grey Mandiri Majalaya", "customer_id": "", "customer_name": "", "spk_date": "2026-11-09", "assigned_to": "user_92d473d761be", "assigned_name": "Lestari Wulandari", "bagian": "Bagian Inspeksi", "started_at": "2026-11-09T00:19:24.013298+00:00", "finished_at": "2026-11-09T00:19:24.293024+00:00", "status": "done", "baseline_sample_id": "", "baseline_sample_number": "", "baseline_contract_id"
+
+=== 4_spk_finished :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'available', 'cd8837', None, 300.0, 'received_transit', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 300.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'draft', 'Rancamalang · Gudang Knitting', 'storage', 1, None, None)]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['po_created', 'inbound_completed', 'inbound_scan_receive']
+PA draft detail: {'pa_number': 'PA00012', 'status': 'draft', 'to_warehouse_name': 'Rancamalang · Gudang Knitting', 'purpose': 'storage', 'auto': {'trigger': {'type': 'qc_decision', 'id': 'wms_2281a82c26a7', 'number': 'KSC/PO-00169', 'by': 'Lestari Wulandari'}, 'at': '2026-11-09T00:19:24.276949+00:00'}}

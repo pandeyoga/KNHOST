@@ -1,0 +1,11 @@
+pattern 200 {'supplier_id': 'sup_a47057e2dfc2', 'supplier_name': 'CV Grey Mandiri Majalaya', 'pattern': {'format': 'auto', 'length_unit': 'yard', 'delimiter': '|', 'fields': ['supplier_sku', 'lot', 'roll_no', 'length', 'weight_kg', 'color_code'], 'regex': '', 'json_keys': {}, 'gs1_ai_map': {}}, 'formats': ['aut
+test 'SUP-UJI-1|SR-N-01|50|LOT-N' 200 {'ok': True, 'decoded': {'supplier_sku': 'SUP-UJI-1', 'gtin': '', 'lot': 'SR-N-01', 'roll_no': '50', 'length': None, 'length_unit': 'yard', 'weight_kg': None, 'color_code': '', 'count': None, 'format': 'delimited', 'raw': 'SUP-UJI-1|SR-N-01|50|LOT-N'
+test ']C1SUP-UJI-1 SR-N-02 50.5Y LOT-N' 200 {'ok': False, 'error': "AI GS1 tidak dikenal pada posisi 0 ('SUP-')."}
+test 'SR-N-03' 200 {'ok': False, 'error': "Format label tidak dikenali (bukan GS1, QR JSON, maupun teks berpemisah). Atur pola label di master supplier, atau pakai 'Label tidak terbaca'."}
+scan-label 400 {'detail': {'code': 'NO_QTY', 'message': "Label tidak memuat panjang/berat. Gunakan 'Label tidak terbaca' dan isi panjang dari label fisik.", 'decoded': {'supplier_sku': 'SUP-UJI-1', 'gtin': '', 'lot': 'SR-N-01', 'roll_no': '50', 'length': None, 'len
+scan-label 400 {'detail': {'code': 'NO_QTY', 'message': "Label tidak memuat panjang/berat. Gunakan 'Label tidak terbaca' dan isi panjang dari label fisik.", 'decoded': {'supplier_sku': 'SUP-UJI-1', 'gtin': '', 'lot': 'SR-N-01', 'roll_no': '50', 'length': None, 'len
+Traceback (most recent call last):
+  File "/tmp/b2a/fn_label.py", line 17, in <module>
+    from services_cfg import x  # noqa  (dummy agar baris berikut jelas bila modul tak ada)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'services_cfg'

@@ -1,0 +1,9 @@
+M1 reject 200 rejected
+M1 reopen via opname biasa: 200 {'id': 'cc_55d1c96713f5', 'mode': 'registration', 'number': 'KANDA/REG-00002', 'entity_id': 'ent_kanda', 'warehouse_id': 'wh_40e831c5bb53', 'warehouse_name': 'S
+M1 sesi: {'mode': 'registration', 'status': 'open', 'registration': {}}
+M1 roll-scope pada sesi pendaftaran: 200 {'enabled': True, 'node_id': 'rack_83c6f87d5ded', 'node_label': 'Zone A › Rack A1', 'snapshot_at': '2026-11-09T00:36:51. {'mode': 'roll', 'status': 'open'}
+M2 roll RL-05000 wh_jakarta bin_sim_wh_jkt_w10_l4_02 tag E2121E0CA5F3CC41CDA71602 pemilik ent_ksc petugas warehouse
+M2 create 200 {'id': 'cc_cbb4a18aa14c', 'entity_id': 'ent_ksc', 'warehouse_id': 'wh_jakarta', 'warehouse_name': 'Jakarta · Gudang Suka
+M2 scope 200
+M2 finalize 200 {'enabled': True, 'node_id': 'bin_sim_wh_jkt_w10_l4_02', 'node_label': 'Zona W · Woven/Printing (yard) › Rak W10 › Level 4 › W10-L4-02', 'snapshot_at'
+M2 roll [{'length_remaining': 0.0, 'status': 'consumed', 'rfid_tag_id': 'rtag_144a745ab7a5'}] tag [{'roll_id': 'roll_84175e8d48e6', 'status': 'active'}]

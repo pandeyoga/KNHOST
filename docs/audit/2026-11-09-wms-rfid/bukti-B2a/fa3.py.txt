@@ -1,0 +1,60 @@
+detail draf (petugas RCM): 200 Rancamalang · Gudang Knitting [('RL-46670', False, 'Roll RL-46670 belum terverifikasi (stage: received_transit)')] ['Rancamalang · Gudang Knitting', 'Rancamalang · Gudang Printing', 'Rancamalang · Gudang Retur (grade B/BS/C)', 'Rancamalang · Gudang Woven']
+detail draf (petugas JAKARTA): 403 {'detail': 'PA di luar lokasi tugas Anda'}
+LIST PA warehouse.rancamalang None: 200 n=0 lihat=False
+LIST PA warehouse.rancamalang ent_ksc: 200 n=3 lihat=True
+LIST PA warehouse None: 200 n=2 lihat=False
+LIST PA warehouse.soreang None: 200 n=0 lihat=False
+[200] warehouse.rancamalang PATCH /putaway-orders/pa_286168643e00/draft (71ms) :: {"id": "pa_286168643e00", "pa_number": "PA00012", "status": "draft", "purpose": "storage", "from_warehouse_id": "wh_5ae35dcd8837", "from_warehouse_name": "Rancamalang · Gudang Transit", "to_warehouse_id": "wh_adc8726d019e", "to_warehouse_name": "Rancamalang · Gudang Woven", "owner_entity_id": "ent_ksc", "items": [{"roll_id": "roll_ad1e12a73a75", "roll_no": "RL-46670", "epc": "", "sku": "DMO-GRY-WVN-001", "product_name": "Grey Woven Katun Poplin", "category": "Woven", "grade": "A", "product_id": "prod_97ef39b63081", "lot": "KSC/LOT-2611-0012", "qty": 300.0, "unit": "yard", "status": "pending", "inspection_requested": false, "ready": false, "block_reason": "Roll RL-46670 belum terverifikasi (s
+[400] warehouse.rancamalang POST /putaway-orders/pa_286168643e00/publish (43ms) :: {"detail": "Belum ada roll yang siap diterbitkan: Roll RL-46670 belum terverifikasi (stage: received_transit)"}
+[200] warehouse.rancamalang POST /putaway-orders/verify-labels (38ms) :: {"verified": ["RL-46670"], "skipped": [], "not_found": []}
+
+=== 5_label_verified :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'available', 'cd8837', None, 300.0, 'label_verified', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 300.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'draft', 'Rancamalang · Gudang Woven', 'storage', 1, None, None)]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['putaway_draft_updated', 'po_created', 'inbound_completed', 'inbound_scan_receive']
+[200] warehouse POST /putaway-orders/pa_286168643e00/publish (109ms) :: {"id": "pa_286168643e00", "pa_number": "PA00012", "status": "open", "purpose": "storage", "from_warehouse_id": "wh_5ae35dcd8837", "from_warehouse_name": "Rancamalang · Gudang Transit", "to_warehouse_id": "wh_adc8726d019e", "to_warehouse_name": "Rancamalang · Gudang Woven", "owner_entity_id": "ent_ksc", "items": [{"roll_id": "roll_ad1e12a73a75", "roll_no": "RL-46670", "epc": "RL-46670", "sku": "DMO-GRY-WVN-001", "product_name": "Grey Woven Katun Poplin", "category": "Woven", "grade": "A", "product_id": "prod_97ef39b63081", "lot": "KSC/LOT-2611-0012", "qty": 300.0, "unit": "yard", "status": "pending", "inspection_requested": false}], "item_count": 1, "total_qty": 300.0, "qty_by_unit": {"yard":
+
+=== 6_published :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'available', 'cd8837', None, 300.0, 'putaway_assigned', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 0.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'open', 'Rancamalang · Gudang Woven', 'storage', 1, None, None)]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['putaway_draft_published', 'putaway_draft_updated', 'po_created', 'inbound_completed', 'inbound_scan_receive']
+[200] warehouse POST /putaway-orders/pa_286168643e00/dispatch (112ms) :: {"id": "pa_286168643e00", "pa_number": "PA00012", "status": "in_transit", "purpose": "storage", "from_warehouse_id": "wh_5ae35dcd8837", "from_warehouse_name": "Rancamalang · Gudang Transit", "to_warehouse_id": "wh_adc8726d019e", "to_warehouse_name": "Rancamalang · Gudang Woven", "owner_entity_id": "ent_ksc", "items": [{"roll_id": "roll_ad1e12a73a75", "roll_no": "RL-46670", "epc": "RL-46670", "sku": "DMO-GRY-WVN-001", "product_name": "Grey Woven Katun Poplin", "category": "Woven", "grade": "A", "product_id": "prod_97ef39b63081", "lot": "KSC/LOT-2611-0012", "qty": 300.0, "unit": "yard", "status": "pending", "inspection_requested": false}], "item_count": 1, "total_qty": 300.0, "qty_by_unit": {"
+
+=== 7_dispatched :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'in_transit_transfer', 'cd8837', None, 300.0, 'putaway_in_transit', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 0.0, 'blocked_qty': 0.0, 'in_transit_qty': 300.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'in_transit', 'Rancamalang · Gudang Woven', 'storage', 1, None, None)]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['putaway_order_dispatched', 'putaway_draft_published', 'putaway_draft_updated', 'po_created', 'inbound_completed', 'inbound_scan_receive']
+[200] warehouse POST /putaway-orders/pa_286168643e00/arrival-trips (454ms) :: {"id": "pa_286168643e00", "pa_number": "PA00012", "status": "completed", "purpose": "storage", "from_warehouse_id": "wh_5ae35dcd8837", "from_warehouse_name": "Rancamalang · Gudang Transit", "to_warehouse_id": "wh_adc8726d019e", "to_warehouse_name": "Rancamalang · Gudang Woven", "owner_entity_id": "ent_ksc", "items": [{"roll_id": "roll_ad1e12a73a75", "roll_no": "RL-46670", "epc": "RL-46670", "sku": "DMO-GRY-WVN-001", "product_name": "Grey Woven Katun Poplin", "category": "Woven", "grade": "A", "product_id": "prod_97ef39b63081", "lot": "KSC/LOT-2611-0012", "qty": 300.0, "unit": "yard", "status": "arrived", "inspection_requested": false, "arrived_at": "2026-11-09T00:20:05.193672+00:00", "arrive
+[400] warehouse POST /putaway-orders/pa_286168643e00/arrival-trips (20ms) :: {"detail": "PA berstatus completed — tidak menerima trip tiba."}
+
+=== 8_arrived :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'available', '6d019e', None, 300.0, 'stored', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0), ('putaway_transfer_out', 'cd8837', -300.0), ('putaway_transfer_in', '6d019e', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_82b52ed6ee8b', 'warehouse_id': 'wh_adc8726d019e', 'available_qty': 2594.28, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}, {'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_adc8726d019e', 'available_qty': 300.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'completed', 'Rancamalang · Gudang Woven', 'storage', 1, 1, 'BTG00005')]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['putaway_arrival_trip', 'putaway_order_dispatched', 'putaway_draft_published', 'putaway_draft_updated', 'po_created', 'inbound_completed', 'inbound_scan_receive']
+bin-suggestions: 404 {'detail': 'Not Found'}
+[200] warehouse.rancamalang POST /inventory/putaway (170ms) :: {"roll_id": "roll_ad1e12a73a75", "bin_id": "bin_dc48c614faaf", "bin_code": "A1-01", "bin_path": "Zone A / Rack A1 / A1-01", "from_bin": null, "capacity_override": null}
+
+=== 9_binned :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'completed', 'qc_status': 'passed'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'available', '6d019e', 'bin_dc48c614faaf', 300.0, 'stored', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0), ('qc_accept', 'cd8837', 300.0), ('putaway_transfer_out', 'cd8837', -300.0), ('putaway_transfer_in', '6d019e', 300.0), ('putaway', '6d019e', 0.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_82b52ed6ee8b', 'warehouse_id': 'wh_adc8726d019e', 'available_qty': 2594.28, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}, {'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_adc8726d019e', 'available_qty': 300.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 0.0, 'reserved_qty': 0.0}]
+  pa=[('PA00012', 'completed', 'Rancamalang · Gudang Woven', 'storage', 1, 1, 'BTG00005')]
+  spk=[('KSC/INS-00144', 'po_receipt', 'done', True, 'terima', 1)]
+  audit=['putaway_arrival_trip', 'putaway_order_dispatched', 'putaway_draft_published', 'putaway_draft_updated', 'po_created', 'inbound_completed', 'inbound_scan_receive']

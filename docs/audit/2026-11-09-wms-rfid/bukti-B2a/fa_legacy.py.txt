@@ -1,0 +1,36 @@
+
+=== 0_awal :: task={'received_qty': 0.0, 'quantity': 0.0, 'qty_rolls': None, 'status': 'waiting_goods'} po={'items': [{'received_qty': 0.0, 'received_rolls': None}], 'status': 'pending'}
+  rolls=[]
+  mov=[]
+  je=[]
+  bal=[]
+  pa=[]
+  spk=[]
+  audit=['po_created']
+LIST warehouse.rancamalang X-Entity=None: code=200 n=5 lihat_tugas_ini=False PT=['ent_82b52ed6ee8b'] gudang_inbound=['Rancamalang · Gudang Transit']
+LIST warehouse.rancamalang X-Entity=ent_ksc: code=200 n=6 lihat_tugas_ini=True PT=['ent_ksc'] gudang_inbound=['Rancamalang · Gudang Transit']
+LIST warehouse.rancamalang X-Entity=all: code=200 n=11 lihat_tugas_ini=True PT=['ent_82b52ed6ee8b', 'ent_ksc'] gudang_inbound=['Rancamalang · Gudang Transit']
+LIST warehouse.soreang X-Entity=None: code=200 n=4 lihat_tugas_ini=False PT=['ent_kanda'] gudang_inbound=['Soreang · Gudang Kanda']
+LIST warehouse X-Entity=None: code=200 n=171 lihat_tugas_ini=False PT=['ent_ksc'] gudang_inbound=['Jakarta · Gudang Sukacita']
+LIST wh.admin X-Entity=None: code=200 n=244 lihat_tugas_ini=True PT=['ent_ksc'] gudang_inbound=['Jakarta · Gudang Sukacita', 'Rancamalang · Gudang Transit', 'TEST_WH B 20329F', 'TEST_WH B 420C35']
+LIST wh.admin X-Entity=all: code=200 n=248 lihat_tugas_ini=True PT=['ent_kanda', 'ent_ksc'] gudang_inbound=['Jakarta · Gudang Sukacita', 'Rancamalang · Gudang Transit', 'Soreang · Gudang Kanda', 'TEST_WH B 20329F', 'TEST_WH B 420C35']
+[200] warehouse.rancamalang POST /inbound/tasks/wms_2281a82c26a7/scan-receive (56ms) :: {"id": "wms_2281a82c26a7", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": "purchase_order", "po_id": "po_e87868d533ad", "po_number": "KSC/PO-00169", "product_id": "prod_97ef39b63081", "product_name": "Grey Woven Katun Poplin", "sku": "DMO-GRY-WVN-001", "expected_qty": 300.0, "received_qty": 300.0, "quantity": 300.0, "unit": "yard", "unit_factor": null, "unit_factor_to": "", "expected_rolls": 3, "qty_rolls": null, "warehouse_id": "wh_5ae35dcd8837", "warehouse_name": "Rancamalang · Gudang Transit", "warehouse_city": "Bandung", "supplier_name": "CV Grey Mandiri Majalaya", "supplier_sku": "SUP-UJI-1", "supplier_item_name": "Kain Uji Versi Supplier", "supplier_item_id": "sit_uji_9
+
+=== 1_scan_receive :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': None, 'status': 'qc_check'} po={'items': [{'received_qty': 0.0, 'received_rolls': None}], 'status': 'pending'}
+  rolls=[]
+  mov=[]
+  je=[]
+  bal=[]
+  pa=[]
+  spk=[]
+  audit=['po_created', 'inbound_scan_receive']
+[200] warehouse.rancamalang POST /inbound/tasks/wms_2281a82c26a7/complete (397ms) :: {"id": "wms_2281a82c26a7", "entity_id": "ent_ksc", "flow_type": "inbound", "source_type": "purchase_order", "po_id": "po_e87868d533ad", "po_number": "KSC/PO-00169", "product_id": "prod_97ef39b63081", "product_name": "Grey Woven Katun Poplin", "sku": "DMO-GRY-WVN-001", "expected_qty": 300.0, "received_qty": 300.0, "quantity": 300.0, "unit": "yard", "unit_factor": null, "unit_factor_to": "", "expected_rolls": 3, "qty_rolls": 1, "warehouse_id": "wh_5ae35dcd8837", "warehouse_name": "Rancamalang · Gudang Transit", "warehouse_city": "Bandung", "supplier_name": "CV Grey Mandiri Majalaya", "supplier_sku": "SUP-UJI-1", "supplier_item_name": "Kain Uji Versi Supplier", "supplier_item_id": "sit_uji_9583
+
+=== 2_complete :: task={'received_qty': 300.0, 'quantity': 300.0, 'qty_rolls': 1, 'status': 'qc_pending', 'qc_status': 'pending'} po={'items': [{'received_qty': 300.0, 'received_rolls': 1}], 'status': 'completed'}
+  rolls=[('RL-46670', 'quarantine', 'cd8837', None, 300.0, 'received_transit', None)]
+  mov=[('inbound_receiving', 'cd8837', 300.0)]
+  je=[('goods_receipt', 'posted', 6000000.0)]
+  bal=[{'owner_entity_id': 'ent_ksc', 'warehouse_id': 'wh_5ae35dcd8837', 'available_qty': 0.0, 'blocked_qty': 0.0, 'in_transit_qty': 0.0, 'quarantine_qty': 300.0, 'reserved_qty': 0.0}]
+  pa=[]
+  spk=[('KSC/INS-00144', 'po_receipt', 'draft', True, '', 1)]
+  audit=['po_created', 'inbound_completed', 'inbound_scan_receive']

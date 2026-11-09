@@ -1,0 +1,20 @@
+G1 scan-label SR-G1-01 200 ('RL-46681', 'receiving')
+G1 scan-label SR-G1-02 200 ('RL-46682', 'receiving')
+G1 cancel PO 200 cancelled
+G1 task {'status': 'cancelled'} rolls [{'roll_no': 'RL-46681', 'warehouse_id': 'wh_40e831c5bb53', 'length_remaining': 50.0, 'status': 'receiving'}, {'roll_no': 'RL-46682', 'warehouse_id': 'wh_40e831c5bb53', 'length_remaining': 50.0, 'status': 'receiving'}]
+G1 balance on_hand/receiving? [{'available_qty': 339.4, 'on_hand_qty': 379.4, 'roll_count': 8}]
+G2 complete saat 60/100: 400 {'detail': 'Task harus dalam status qc_check atau put_away (current: receiving)'}
+G2 escalate 200 escalated
+G2 scan-receive saat ESKALASI: 200 qc_check 100.0
+G2 task qc_check 100.0 pending_review
+G3 roll setelah warna tolak (kebijakan tahan): [{'roll_no': 'RL-46683', 'status': 'quarantine', 'inspection': {'color_result': 'tolak', 'handfeel_result': 'sesuai', 'handfeel_score': None, 'delta_e': None, 'baseline_sample_id': '', 'baseline_sample_number': '', 'inspection_doc_id': 'ins_06d60f06237f', 'inspection_doc_number': 'KANDA/INS-00003', 'hold': {'held': True, 'reason': 'Warna beda dari sample yang di-ACC — barang DITAHAN sampai MD Quality memutuskan.', 'source': 'color', 'by': 'Lestari Wulandari', 'at': '2026-11-09T00:35:22.054501+00:00'}, 'md_quality_by': 'Lestari Wulandari', 'md_quality_at': '2026-11-09T00:35:22.054520+00:00', 'md_quality_doc_id': 'ins_06d60f06237f', 'md_quality_doc_number': 'KANDA/INS-00003'}}]
+G3 finish tolak/return: 200 {'task_id': 'wms_1ae06c013f7c', 'accepted_qty': 0.0, 'rejected_qty': 50.0, 'reject_disposition': 'return', 'purchase_return': {'id': 'pret_4b1a4bfd6052', 'number': 'PRET-00071', 'supplier_name': 'CV Grey Mandiri Majalaya'}, 'task_status': 'qc_rejected', 'rejected_roll_ids': ['roll_d08ec198c581'], 'at': '2026-11-09T00:35:22.286544+00:00', 'by': 'Lestari Wulandari'}
+G3 rolls [{'roll_no': 'RL-46683', 'length_remaining': 50.0, 'status': 'returned_supplier', 'returned_ref': {'type': 'purchase_return', 'id': 'pret_4b1a4bfd6052'}}]
+G3 PO {'items': [{'received_qty': 50.0}], 'status': 'completed'}
+G3 purchase_return [{'number': 'PRET-00071', 'items': [{'product_id': 'prod_97ef39b63081', 'sku': 'DMO-GRY-WVN-001', 'product_name': 'Grey Woven Katun Poplin', 'quantity': 50.0, 'unit': 'yard', 'qty_base': 50.0, 'unit_base': 'yard', 'price': 21000.0, 'subtotal': 1050000.0, 'reason': 'Warna jauh berbeda dari sample ACC', 'condition': 'rejected_qc'}], 'status': 'pending_approval', 'stock_adjusted': True}]
+G3 tasks [{'id': 'wms_1ae06c013f7c', 'expected_qty': 50.0, 'status': 'qc_rejected'}]
+G3 JE [{'source_type': 'goods_receipt', 'total_debit': 1050000.0, 'status': 'posted'}]
+G4 count roll 200
+G4 cancel PO saat dihitung: 409 {'detail': 'PO sedang diterima lewat Kedatangan Barang KSC/GRN-00029. Tutup atau batalkan kedatangan itu dulu.'}
+G4 cancel GRN 422 None
+G4 rolls [{'roll_no': 'RL-46684', 'status': 'receiving'}] task {'received_qty': 80.0, 'status': 'qc_check', 'grn_active_id': 'grn_9f3eba62325d'}
