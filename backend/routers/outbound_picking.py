@@ -144,7 +144,9 @@ async def _resolve_pick_roll(task: Dict[str, Any], code: str, bin_id: str, lot: 
     if task.get("entity_id") and roll.get("owner_entity_id") and roll["owner_entity_id"] != task["entity_id"]:
         problems.append("pemilik berbeda")
     if (roll.get("reserved_ref") or {}).get("id") != task.get("order_id") or roll.get("status") not in SHIPPABLE_STATUSES:
-        problems.append("tidak ter-alokasi untuk order ini")
+        from services import makloon_roll_lock as _mlk   # FIX-9 — sebut MKO/PR bila roll dikunci cadangan makloon
+        held = _mlk.hold_text(roll, [task["entity_id"]] if task.get("entity_id") else None)             if _mlk.roll_locked_qty(roll) > 0 else ""
+        problems.append("tidak ter-alokasi untuk order ini" + (f" ({held})" if held else ""))
     if bin_id and roll.get("bin_id") and roll["bin_id"] != bin_id:
         problems.append("bin berbeda")
     rlen = round(float(roll.get("length_remaining") or 0), 4)

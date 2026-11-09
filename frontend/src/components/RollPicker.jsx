@@ -4,6 +4,7 @@ import { Layers, ChevronLeft, ChevronRight, Check, Loader2, Building2, AlertTria
 import { formatCurrency, formatQty } from "../utils/formatters";
 import { canSeeSourcing } from "../utils/sourcingVisibility";
 import RollCheckChips from "./RollCheckChips";
+import MakloonLockBadge from "./MakloonLockBadge";
 
 /** K-7 — umur roll (hari) sejak diterima; null bila tanggal tidak ada. */
 const rollAgeDays = (iso) => { if (!iso) return null; const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return Number.isFinite(d) && d >= 0 ? d : null; };
@@ -101,12 +102,13 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
           {data.total} roll ditawarkan{data.available_total != null ? ` · Tersedia ${formatQty(data.available_total)} ${unitShort(data.base_unit || baseUnit)}` : ""}
         </span>
       </div>
-      {/* FIX-2 (B3a SSOT-4) — cadangan makloon belum dikunci per roll; jumlahnya tampil agar roll yang dipilih tidak
-          melebihi stok bebas (reservasi pesanan tetap ditolak server bila melewati cadangan). */}
-      {Number(data.makloon_reserved_qty || 0) > 0 && (
+      {/* FIX-9 (B3a SSOT-4) — cadangan makloon kini DIKUNCI per roll: panjang terkunci sudah tidak ditawarkan (roll
+          bertanda "Dicadangkan makloon"). Catatan hanya untuk sisa cadangan yang BELUM terkunci (stok kurang saat
+          mengunci) — itu yang masih membatasi jumlah yang boleh dipilih (server menolak bila dilewati). */}
+      {Number(data.makloon_unlocked_qty ?? 0) > 0 && (
         <p className="border-b border-[#EFF0F2] bg-[#FFF4E5] px-3 py-1.5 text-[12px] font-semibold text-[#8C4A00]" data-testid="roll-picker-makloon-note">
-          {formatQty(data.makloon_reserved_qty)} {unitShort(data.base_unit || baseUnit)} dicadangkan untuk makloon — tidak boleh dijual; pilih roll
-          sebanyak-banyaknya senilai Tersedia di atas.
+          {formatQty(data.makloon_unlocked_qty)} {unitShort(data.base_unit || baseUnit)} dicadangkan untuk makloon tetapi belum terkunci di roll — tidak
+          boleh dijual; pilih roll sebanyak-banyaknya senilai Tersedia di atas.
         </p>
       )}
 
@@ -145,6 +147,7 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                       <div className="mt-0.5 flex flex-wrap items-center gap-1">
                         <span className="text-[10.5px] text-[#6B6B73]">{r.warehouse_name}</span>
                         <RollCheckChips roll={r} testId={`roll-check-${r.id}`} />
+                        <MakloonLockBadge roll={r} unit={unitShort(data.base_unit || baseUnit)} />
                         {!ownerVisible ? null : r.is_cross_entity ? (
                           <span data-testid={`roll-badge-cross-${r.id}`} className="inline-flex items-center gap-0.5 rounded-full bg-[#FFF3E0] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">
                             <AlertTriangle size={9} /> {r.owner_entity_name} · transfer

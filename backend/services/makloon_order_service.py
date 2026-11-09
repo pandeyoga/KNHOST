@@ -609,25 +609,39 @@ async def _spawn_material_po(payload, mat_snap, qty, entity_id, actor_name, mko_
 
 # ─── Issue ───────────────────────────────────────────────────────────────────
 
-async def _source_stock_rows(product_id: str, entity_id: str) -> List[Dict[str, Any]]:
-    """Stok `available` bahan per gudang MILIK entitas SPK — dasar pilihan gudang issue."""
+async def _source_stock_rows(product_id: str, entity_id: str, mko_id: str = "") -> List[Dict[str, Any]]:
+    """Stok `available` bahan per gudang MILIK entitas SPK — dasar pilihan gudang issue.
+    FIX-9 — `mko_id` (langkah 1): panjang yang dikunci cadangan MKO itu sendiri ikut dihitung (kunci keluar dari
+    `available_qty` saldo, tetapi memang untuk issue ini) + `locked_for_this_qty` per gudang."""
     rows = await db.inventory_balances.find(
         {"product_id": product_id, "owner_entity_id": entity_id, "available_qty": {"$gt": 0}},
         {"_id": 0, "warehouse_id": 1, "available_qty": 1}).to_list(200)
+    avail = {r["warehouse_id"]: float(r.get("available_qty") or 0) for r in rows}
+    mine: Dict[str, float] = {}
+    if mko_id:
+        from services import material_reservation_service as _mres
+        from services import makloon_roll_lock as _mlk
+        for rid in await _mres.own_lock_ids(mko_id, product_id):
+            for x in await _mlk.actual_locks(rid):
+                mine[x["warehouse_id"]] = mine.get(x["warehouse_id"], 0.0) + float(x["qty"])
     whs = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1, "code": 1}).to_list(200)}
-    out = [{"warehouse_id": r["warehouse_id"], "warehouse_name": whs.get(r["warehouse_id"], {}).get("name", r["warehouse_id"]),
-            "warehouse_code": whs.get(r["warehouse_id"], {}).get("code", ""),
-            "available_qty": round(float(r.get("available_qty") or 0), 2)} for r in rows]
+    out = [{"warehouse_id": w, "warehouse_name": whs.get(w, {}).get("name", w),
+            "warehouse_code": whs.get(w, {}).get("code", ""),
+            "available_qty": round(avail.get(w, 0.0) + mine.get(w, 0.0), 2),
+            **({"locked_for_this_qty": round(mine[w], 2)} if mine.get(w) else {})}
+           for w in dict.fromkeys(list(avail) + list(mine))]
     out.sort(key=lambda x: -x["available_qty"])
     return out
 
 
 async def _assert_source_stock(product_id: str, wh: str, entity_id: str, qty: float,
-                               step: Dict[str, Any]) -> None:
-    """Pesan 409 yang MENUNTUN bila bahan di gudang asal tidak cukup (bukan angka telanjang)."""
-    rows = await _source_stock_rows(product_id, entity_id)
+                               step: Dict[str, Any], mko_id: str = "") -> None:
+    """Pesan 409 yang MENUNTUN bila bahan di gudang asal tidak cukup (bukan angka telanjang).
+    FIX-9 — `mko_id`: panjang yang dikunci cadangan MKO ini (tidak lagi masuk "tersedia" saldo, tetapi memang milik
+    issue ini) ikut dihitung tersedia."""
+    rows = await _source_stock_rows(product_id, entity_id, mko_id)
     here = next((r for r in rows if r["warehouse_id"] == wh), None)
-    have = here["available_qty"] if here else 0.0
+    have = round(here["available_qty"] if here else 0.0, 2)
     if have + 0.01 >= qty:
         return
     whdoc = await db.warehouses.find_one({"id": wh}, {"_id": 0, "name": 1}) or {}
@@ -675,8 +689,13 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
         raise HTTPException(status_code=400, detail="Gudang sumber bahan wajib diisi")
     input_pid = step["input_product_id"]
     input_qty = round(float(step["input_qty"] or 0), 2)
+    # FIX-9 — cadangan makloon MKO ini (langkah 1) DIKUNCI di roll: roll itu boleh dikirim & kuncinya dilepas.
+    from services import material_reservation_service as _mres
+    own_ids = await _mres.own_lock_ids(mko_id, input_pid) if seq == 1 else []
+    for _rid in own_ids:   # sisa belum terkunci (stok kurang saat lahir / kunci dipinjam SO) dicoba dikunci dulu
+        await _mres.safe_lock(_rid, actor_name, "isi kunci sebelum issue")
     # Kasus celup (20 roll Esmica Blue) — roll TERTENTU yang dimuat ke truk; qty = Σ panjang roll (satuan dasar).
-    picked = await mir.pick_rolls(order, step, wh, roll_ids=roll_ids, roll_codes=roll_codes) \
+    picked = await mir.pick_rolls(order, step, wh, roll_ids=roll_ids, roll_codes=roll_codes, own_lock_ids=own_ids) \
         if (roll_ids or roll_codes) else None
     if picked:
         input_qty = picked["qty"]
@@ -702,13 +721,16 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
         # dari bahan yang dikirim terbaca "kurang dari estimasi" dan membuka klaim palsu.
         deviation = mir.apply_issue_qty(step, input_qty)
 
-    await _assert_source_stock(input_pid, wh, order["entity_id"], input_qty, step)
+    await _assert_source_stock(input_pid, wh, order["entity_id"], input_qty, step, mko_id if own_ids else "")
     # L04 LN-043 — dicek SESUDAH konversi dokumen: issue parsial memakai qty yang benar-benar dikirim.
     # W2-REQ-07 — bahan yang sudah dicadangkan untuk PR/MKO LAIN tidak boleh dipakai di sini.
-    from services import material_reservation_service as _mres
-    _held = await _mres.reserved_by_others(input_pid, order["entity_id"], exclude_ref_id=mko_id)
+    # FIX-9 — cadangan lain yang TERKUNCI sudah tidak bebas di roll/saldo; yang dikurangkan di sini hanya sisanya
+    # yang BELUM terkunci. Kunci MKO ini sendiri dihitung kembali sebagai bebas untuk issue ini.
+    _held = await _mres.unlocked_by_others(input_pid, order["entity_id"], exclude_ref_id=mko_id)
     if _held > 0:
-        _free = await _mres.free_for_commitment(input_pid, order["entity_id"], exclude_ref_id=mko_id)
+        _own_all = await _mres.own_locked_qty(mko_id, input_pid) if own_ids else 0.0
+        _free = round(await _mres.free_for_commitment(input_pid, order["entity_id"], exclude_ref_id=mko_id)
+                      + _own_all, 3)
         if _free + 0.01 < input_qty:
             raise HTTPException(status_code=409, detail=(
                 f"Bahan {step.get('input_name') or input_pid}: {_held:g} sudah dicadangkan untuk order lain; "
@@ -726,11 +748,13 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     _tok = (_lk.get(_saga.LOCK) or {}).get("token")
     try:
         if picked:
-            res = await sb.issue_rolls_to_subcon(picked["rolls"], ref)
+            res = await sb.issue_rolls_to_subcon(picked["rolls"], ref, own_lock_ids=own_ids)
         else:
-            res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref)
+            res = await sb.issue_to_subcon(input_pid, wh, order["entity_id"], input_qty, ref, own_lock_ids=own_ids)
     except Exception:
         await _saga.release("makloon_orders", mko_id, _tok)
+        for _rid in own_ids:   # FIX-9 — issue gagal di tengah: kunci yang ikut terlepas dipasang lagi (idempoten)
+            await _mres.safe_lock(_rid, actor_name, "issue gagal — kunci dipulihkan")
         raise
     material_value = res["value"]
     label = f"{order.get('mko_number')} step{seq}"
@@ -753,7 +777,7 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     order.pop(_saga.LOCK, None)
     await db.makloon_orders.replace_one({"id": mko_id, f"{_saga.LOCK}.token": _tok}, order)   # FIX-3b — CAS token
     if seq == 1:
-        await _mres.consume_for_issue(mko_id, input_pid, input_qty)
+        await _mres.consume_for_issue(mko_id, input_pid, input_qty, actor_name)
     return safe_doc(order)
 
 
@@ -1740,7 +1764,8 @@ async def makloon_order_detail(mko_id: str) -> Optional[Dict[str, Any]]:
             s["next_action"] = "record_service" if flow == FLOW_SERVICE else "issue"
             # Layar Issue perlu TAHU di gudang mana bahan (milik entitas SPK) benar-benar ada.
             if flow != FLOW_SERVICE and s.get("input_product_id"):
-                s["source_stock"] = await _source_stock_rows(s["input_product_id"], o.get("entity_id", ""))
+                s["source_stock"] = await _source_stock_rows(s["input_product_id"], o.get("entity_id", ""),
+                                                             o["id"] if int(s.get("seq") or 0) == 1 else "")
         elif s.get("status") == "issued":
             s["next_action"] = "return_material" if s.get("awaiting_return") else "receive"
         else:

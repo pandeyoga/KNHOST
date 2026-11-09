@@ -26,6 +26,14 @@ export default function MakloonMaterialLedger({ mkoId, version }) {
           </div>
         ))}
       </div>
+      {/* FIX-9 — cadangan dikunci per roll: roll mana, gudang mana; sisa belum terkunci bila stok kurang */}
+      {(d.reservation.locks || []).length > 0 && (
+        <p className="mt-1.5 text-fs-12 text-kn-text-2" data-testid="mko-ledger-locks">
+          Terkunci di roll: {d.reservation.locks.slice(0, 12).map((x) => `${x.roll_no} (${x.warehouse_name}) ${formatQty(x.qty)}`).join(" · ")}
+          {d.reservation.locks.length > 12 ? ` · +${d.reservation.locks.length - 12} roll` : ""}
+        </p>
+      )}
+      {d.reservation.unlocked > 0 && <p className="mt-1 text-fs-12 text-kn-warning-text" data-testid="mko-ledger-unlocked">Belum terkunci {formatQty(d.reservation.unlocked)} {d.unit} — stok roll bebas di gudang sumber tidak cukup; tetap dikurangkan dari Tersedia.</p>}
       {d.reservation.shortage > 0 && <p className="mt-1.5 text-[11px] text-[#B26A00]" data-testid="mko-ledger-shortage">Kekurangan cadangan {formatQty(d.reservation.shortage)} {d.unit} — stok bebas tidak cukup saat komitmen dibuat.</p>}
       {d.stock_now && <p className="mt-1.5 text-[11px] text-[#6B6B73]" data-testid="mko-ledger-stock">Stok gudang sekarang: fisik {formatQty(d.stock_now.available_physical)} · dicadangkan semua order {formatQty(d.stock_now.reserved_all_orders)} · bebas untuk komitmen baru {formatQty(d.stock_now.free_for_new_commitment)} {d.unit}</p>}
       <ul className="mt-1.5 space-y-0.5 text-[11px] text-[#3C3C43]" data-testid="mko-ledger-explain">

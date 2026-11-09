@@ -148,3 +148,6 @@ export const rollStatusLabel = (status) => statusLabel(status, "roll");
 export const RollStatusBadge = ({ status }) => (
   <StatusBadge status={status} domain="roll" testId={`roll-status-${status}`} />
 );
+
+// FIX-9 (B3a SSOT-4) — lencana "Dicadangkan makloon · MKO-…" (satu komponen bersama, dipakai juga pemilih roll).
+export { makloonLockOf, MakloonLockBadge } from "../../../components/MakloonLockBadge";

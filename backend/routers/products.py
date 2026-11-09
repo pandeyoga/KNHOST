@@ -327,6 +327,11 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
                                 "ih": {"$eq": ["$inspection.hold.held", True]}},
                         "len": {"$sum": "$length_remaining"},
                         "lres": {"$sum": {"$min": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}},
+                        # FIX-9 — bagian `length_reserved` yang = kunci cadangan makloon
+                        "lmk": {"$sum": {"$sum": {"$map": {
+                            "input": {"$filter": {"input": {"$ifNull": ["$length_reservations", []]}, "as": "x",
+                                                  "cond": {"$eq": ["$$x.ref.type", "makloon"]}}},
+                            "as": "x", "in": "$$x.qty"}}}},
                         "n": {"$sum": 1}, "grade": {"$first": "$grade"}}}]):
         k = g["_id"]
         if k.get("w") not in counted:
@@ -345,8 +350,10 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
                 cell["hold_qty"] += length          # diklaim PA / tahan inspeksi: fisik, tidak tersedia
             else:
                 free = length - float(g.get("lres") or 0)
+                lmk = min(float(g.get("lmk") or 0), float(g.get("lres") or 0))
                 cell["available_qty"] += free
-                cell["reserved_qty"] += float(g.get("lres") or 0)   # panjang dipesan potong
+                cell["reserved_qty"] += float(g.get("lres") or 0) - lmk   # panjang dipesan potong
+                cell["makloon_reserved_qty"] += lmk                         # FIX-9 — terkunci makloon di roll
                 cell["available_rolls"] += int(g["n"] or 0) if free > 0.001 else 0
         elif status == "reserved":
             cell["reserved_qty"] += length
@@ -357,9 +364,10 @@ async def stock_breakdown(product_id: str, request: Request) -> Dict[str, Any]:
         if status in PHYSICAL_ROLL_STATUSES:
             cell["on_hand_qty"] += length
             cell["roll_count"] += int(g["n"] or 0)
-    # cadangan makloon per segmen (aturan tunggal) dibagikan ke lot terbesar dulu dalam segmen itu
+    # cadangan makloon per segmen (aturan tunggal) dibagikan ke lot terbesar dulu dalam segmen itu.
+    # FIX-9 — hanya sisa BELUM terkunci (bagian terkunci sudah di sel lot rollnya lewat `lmk`).
     for s_ in _segs:
-        left = float(s_.get("makloon_reserved_qty") or 0)
+        left = float(s_.get("makloon_reserved_qty") or 0) - float(s_.get("makloon_locked_qty") or 0)
         cells = sorted([c for (o, w, _l), c in matrix.items() if o == s_["owner_entity_id"] and w == s_["warehouse_id"]],
                        key=lambda c: -c["available_qty"])
         for c in cells:

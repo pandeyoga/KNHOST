@@ -29,6 +29,8 @@ export const DOMAIN_LABELS = {
     in_transit_transfer: "Dalam Perjalanan (Transfer)", in_transit_intercompany: "Dalam Perjalanan (Antar-PT)",
     in_transit_sales: "Dalam Perjalanan (Penjualan)", consumed: "Habis Terpakai", delivered: "Terkirim",
     returned_supplier: "Diretur ke Supplier", subcon: "Di Makloon", hold: "Ditahan",
+    /** FIX-9 — panjang roll dikunci cadangan bahan makloon (bukan status roll; lencana tambahan, KN_32 "Cadangan makloon") */
+    makloon_reserved: "Dicadangkan makloon",
   },
   /** dulu `features/wms/transfer/transferConstants.jsx` STATUS_MAP */
   transfer: {
@@ -116,7 +118,7 @@ export const STATUS_TONE = {
     "received_hold", "low", "stale", "yellow", "warning"]),
   ...T("danger", ["rejected", "failed", "damaged", "qc_rejected", "exception", "verified_with_issues", "lost",
     "missing", "error", "overdue", "received_damaged", "red", "rework", "empty", "alarm"]),
-  ...T("special", ["reserved", "committed", "subcon", "sample", "in_process", "earmarked"]),
+  ...T("special", ["reserved", "committed", "subcon", "sample", "in_process", "earmarked", "makloon_reserved"]),
 };
 
 /** Kode yang artinya berbeda di ranah tertentu. */
@@ -144,7 +146,7 @@ export const STATUS_ICON = {
   quarantine: "shield", karantina: "shield", hold: "pause", on_hold: "pause", blocked: "pause", hold_shade: "pause",
   in_transit: "truck", in_transit_inbound: "truck", in_transit_transfer: "truck", in_transit_intercompany: "truck",
   in_transit_sales: "truck", dispatched: "truck", loaded: "truck", returning: "truck", shipped: "truck",
-  escalated: "alert", closed: "archive", archived: "archive",
+  escalated: "alert", closed: "archive", archived: "archive", makloon_reserved: "lock",
 };
 
 const _own = (m, k) => (m && Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);

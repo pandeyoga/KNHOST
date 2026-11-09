@@ -36,23 +36,56 @@ def _fefo_sort(rolls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(rolls, key=lambda r: (r.get("created_at", ""), -float(r.get("length_remaining", 0) or 0)))
 
 
+def _own_lock_split(roll: Dict[str, Any], own_ids: List[str], take: float) -> Optional[List[Dict[str, Any]]]:
+    """FIX-9 — `length_reservations` baru sesudah `take` dikirim dari roll yang dikunci cadangan SENDIRI: kunci sendiri
+    dikurangi sebanyak yang dikirim (kunci lain tidak disentuh). None = roll tanpa kunci sendiri."""
+    from services import makloon_roll_lock as _mlk
+    if not own_ids or not _mlk.roll_locks(roll, own_ids):
+        return None
+    left = round(float(take), 2)
+    new: List[Dict[str, Any]] = []
+    for x in roll.get("length_reservations") or []:
+        if left > 0 and _mlk.is_lock(x) and (x.get("ref") or {}).get("id") in own_ids:
+            q = round(float(x.get("qty") or 0), 2)
+            cut = min(q, left)
+            left = round(left - cut, 2)
+            if q - cut > _mlk.LOCK_EPS:
+                new.append({**x, "qty": round(q - cut, 2)})
+            continue
+        new.append(x)
+    return new
+
+
 async def move_rolls_by_qty(product_id: str, warehouse_id: str, owner_entity_id: str,
                             qty: float, from_status: str, to_status: str,
                             ref: Optional[Dict[str, Any]] = None,
-                            movement_type: str = "bucket_move") -> Dict[str, Any]:
-    """Pindahkan `qty` roll product×warehouse×owner dari from_status → to_status (FEFO, split)."""
+                            movement_type: str = "bucket_move",
+                            own_lock_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Pindahkan `qty` roll product×warehouse×owner dari from_status → to_status (FEFO, split).
+
+    FIX-9 (B3a SSOT-4) — roll yang panjangnya DIPEGANG reservasi lain (kunci cadangan makloon, reservasi potong SO)
+    tidak dipakai: dulu tahan/WIP/issue-jumlah ikut memindah roll ber-reservasi (panjang yang sudah dijanjikan hilang ke
+    ember lain). `own_lock_ids` = cadangan makloon milik dokumen ini (issue MKO): roll yang dikuncinya DIPAKAI DULU dan
+    kuncinya dilepas di tulisan CAS yang sama dengan perpindahan roll."""
+    from services import makloon_roll_lock as _mlk
+    own = list(own_lock_ids or [])
     qty = round(float(qty), 2)
     if qty <= 0:
         raise HTTPException(status_code=400, detail="Qty harus lebih dari 0")
-    rolls = await db.inventory_rolls.find(
+    found = await db.inventory_rolls.find(
         {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id,
          "status": from_status, "length_remaining": {"$gt": 0}}, {"_id": 0}).to_list(10000)
-    rolls = _fefo_sort(rolls)
+    rolls = [r for r in found if _mlk.foreign_reserved(r, own) <= 0.001]
+    held = [r for r in found if _mlk.foreign_reserved(r, own) > 0.001]
+    mine = [r for r in rolls if own and _mlk.roll_locks(r, own)]
+    rolls = _fefo_sort(mine) + _fefo_sort([r for r in rolls if r not in mine])
     total = sum(float(r["length_remaining"]) for r in rolls)
     if total + 0.01 < qty:
+        why = "; ".join(f"{r.get('roll_no') or r['id']}: {_mlk.hold_text(r)}" for r in held[:3])
         raise HTTPException(
             status_code=409,
-            detail=f"Stok '{from_status}' tidak cukup (tersedia {round(total,2)} dari {qty}).")
+            detail=f"Stok '{from_status}' tidak cukup (tersedia {round(total,2)} dari {qty})."
+                   + (f" Roll yang panjangnya dipegang dokumen lain tidak dipakai — {why}." if why else ""))
     remaining = qty
     moved: List[Dict[str, Any]] = []
     conflicts = 0
@@ -62,19 +95,28 @@ async def move_rolls_by_qty(product_id: str, warehouse_id: str, owner_entity_id:
         rlen = float(roll["length_remaining"])
         # R-4 — CAS: prasyarat status + sisa panjang; roll yang sudah dipindah/dipotong
         # proses lain TIDAK dipindah dua kali, melainkan dilewati (FEFO lanjut ke roll berikut).
-        cas = {"id": roll["id"], "status": from_status, "length_remaining": roll["length_remaining"]}
+        # FIX-9 — + isi reservasi panjang yang dibaca (tidak ada reservasi baru menyelinap; kunci sendiri dilepas).
+        cas = {"id": roll["id"], "status": from_status, "length_remaining": roll["length_remaining"],
+               "length_reservations": roll.get("length_reservations") or []} if roll.get("length_reservations") \
+            else {"id": roll["id"], "status": from_status, "length_remaining": roll["length_remaining"],
+                  "length_reserved": {"$not": {"$gt": 0}}}
         if rlen <= remaining + 0.01:
+            unlock = {"length_reservations": [], "length_reserved": 0} if roll.get("length_reservations") else {}
             res = await db.inventory_rolls.update_one(
-                cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso()}})
+                cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso(), **unlock}})
             if not res.matched_count:
                 conflicts += 1
                 continue
             mid, mlen = roll["id"], rlen
         else:
+            new_rsv = _own_lock_split(roll, own, remaining)
+            unlock = {} if new_rsv is None else {
+                "length_reservations": new_rsv,
+                "length_reserved": round(sum(float(x.get("qty") or 0) for x in new_rsv), 2)}
             res = await db.inventory_rolls.update_one(
                 cas, {"$set": {"length_remaining": round(rlen - remaining, 2),
                                "length_initial": round(float(roll["length_initial"]) - remaining, 2),
-                               "updated_at": now_iso()}})
+                               "updated_at": now_iso(), **unlock}})
             if not res.matched_count:
                 conflicts += 1
                 continue
@@ -236,36 +278,48 @@ async def _value_of_moved(moved: List[Dict[str, Any]]) -> float:
 
 
 async def issue_to_subcon(product_id: str, warehouse_id: str, owner_entity_id: str,
-                          qty: float, ref: Dict[str, Any]) -> Dict[str, Any]:
+                          qty: float, ref: Dict[str, Any], own_lock_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Keluarkan bahan milik KN ke mitra makloon: roll `available` → `subcon`.
     Fisik pindah ke vendor namun tetap OWNED (on_hand/owned), keluar dari ATP.
-    Mengembalikan qty dipindah + NILAI WAC (untuk posting GL Dr WIP/Cr Persediaan)."""
+    Mengembalikan qty dipindah + NILAI WAC (untuk posting GL Dr WIP/Cr Persediaan).
+    FIX-9 — `own_lock_ids` = cadangan makloon MKO ini: roll yang dikuncinya dipakai dulu & kuncinya dilepas."""
     res = await move_rolls_by_qty(
         product_id, warehouse_id, owner_entity_id, qty, "available", "subcon",
-        ref, movement_type="subcon_issue")
+        ref, movement_type="subcon_issue", own_lock_ids=own_lock_ids)
     res["value"] = await _value_of_moved(res.get("rolls", []))
     return res
 
 
 async def move_specific_rolls(rolls: List[Dict[str, Any]], from_status: str, to_status: str,
-                              ref: Dict[str, Any], movement_type: str = "bucket_move") -> Dict[str, Any]:
+                              ref: Dict[str, Any], movement_type: str = "bucket_move",
+                              own_lock_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Pindahkan roll TERTENTU (utuh, tanpa belah) from_status → to_status, `bucket_ref` = ref.
 
     Pasangan `move_rolls_by_qty` untuk jalur pilih/pindai roll. CAS per roll (status + sisa panjang + bebas
     pegangan); satu roll kalah balapan → yang sudah pindah DIKEMBALIKAN (semua atau tidak sama sekali) lalu 409
     menyebut nomor rollnya. Mutasi baru ditulis sesudah semua roll pindah (tak ada mutasi rollback)."""
     moved: List[Dict[str, Any]] = []
+    from services import makloon_roll_lock as _mlk
+    own = list(own_lock_ids or [])
     for r in rolls:
         cas = {"id": r["id"], "status": from_status, "length_remaining": r["length_remaining"],
                "reserved_ref": {"$in": [None, ""]}, "length_reserved": {"$not": {"$gt": 0}},
                "active_movement": None, "repair_open": {"$in": [None, ""]}}
+        unlock: Dict[str, Any] = {}
+        if own and _mlk.roll_locks(r, own) and _mlk.foreign_reserved(r, own) <= 0.001:
+            # FIX-9 — roll dikunci cadangan MKO ini sendiri: boleh dikirim; kunci dilepas di tulisan CAS yang sama.
+            cas.pop("length_reserved")
+            cas["length_reservations"] = r.get("length_reservations") or []
+            unlock = {"length_reservations": [], "length_reserved": 0}
         res = await db.inventory_rolls.update_one(
-            cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso()}})
+            cas, {"$set": {"status": to_status, "bucket_ref": ref, "updated_at": now_iso(), **unlock}})
         if not res.matched_count:
             for m in moved:
+                back = {"length_reservations": m["length_reservations"], "length_reserved": m.get("length_reserved") or 0} \
+                    if m.get("length_reservations") and own and _mlk.roll_locks(m, own) else {}
                 await db.inventory_rolls.update_one(
                     {"id": m["id"], "bucket_ref.id": ref.get("id"), "status": to_status},
-                    {"$set": {"status": from_status, "bucket_ref": None, "updated_at": now_iso()}})
+                    {"$set": {"status": from_status, "bucket_ref": None, "updated_at": now_iso(), **back}})
             raise HTTPException(status_code=409, detail=(
                 f"Roll {r.get('roll_no') or r['id']} berubah di proses lain (dipesan/dipindah/dipotong) — "
                 "muat ulang daftar roll lalu pilih lagi."))
@@ -288,9 +342,12 @@ async def move_specific_rolls(rolls: List[Dict[str, Any]], from_status: str, to_
     return {"moved": round(sum(x["length"] for x in out), 2), "rolls": out, "conflicts": 0}
 
 
-async def issue_rolls_to_subcon(rolls: List[Dict[str, Any]], ref: Dict[str, Any]) -> Dict[str, Any]:
-    """Issue PER ROLL ke mitra makloon: roll terpilih `available` → `subcon` (bentuk hasil = `issue_to_subcon`)."""
-    res = await move_specific_rolls(rolls, "available", "subcon", ref, movement_type="subcon_issue")
+async def issue_rolls_to_subcon(rolls: List[Dict[str, Any]], ref: Dict[str, Any],
+                                own_lock_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Issue PER ROLL ke mitra makloon: roll terpilih `available` → `subcon` (bentuk hasil = `issue_to_subcon`).
+    FIX-9 — roll yang dikunci cadangan MKO ini (`own_lock_ids`) boleh dikirim; kuncinya dilepas atomik."""
+    res = await move_specific_rolls(rolls, "available", "subcon", ref, movement_type="subcon_issue",
+                                    own_lock_ids=own_lock_ids)
     res["value"] = await _value_of_moved(res.get("rolls", []))
     return res
 

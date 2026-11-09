@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronRight, ChevronDown, Package, Layers, MapPin } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
-import { formatQty, RollStatusBadge, rollStatusLabel } from "./inventoryConstants";
+import { formatQty, RollStatusBadge, rollStatusLabel, MakloonLockBadge } from "./inventoryConstants";
 
 const PAGE = 50;
 const fmtLen = (v, unit) => `${formatQty(v)} ${unit === "campuran" ? "(satuan campuran)" : unit || ""}`.trim();
@@ -90,7 +90,7 @@ function RollRows({ base, product, lot, loc }) {
               <td className="py-1 pr-3 text-right tabular-nums">{formatQty(r.length_remaining)} {r.unit}</td>
               <td className="py-1 pr-3">{r.grade || "—"}</td>
               <td className="py-1 pr-3">{r.dye_lot || "—"}</td>
-              <td className="py-1"><RollStatusBadge status={r.status} /></td>
+              <td className="py-1"><RollStatusBadge status={r.status} /> <MakloonLockBadge roll={r} /></td>
             </tr>
           ))}
           {loading && !rows.length && <tr><td colSpan={5} className="py-2 text-kn-text-2">Memuat roll…</td></tr>}
