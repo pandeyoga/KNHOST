@@ -14,7 +14,7 @@ import { SearchBox } from "../../../components/ListControls";
 import { STATUS, errText, grnApi } from "./grnApi";
 import { formatDateTime } from "../../../utils/formatters";
 import EmptyState, { isForbidden } from "../../../components/EmptyState";   // FIX-8 — memuat/kosong/saringan/galat/tanpa izin
-import DocNumber from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
+import DocNumber, { docEntityId } from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 import PageTabs from "../../../components/PageTabs";
 import FilterChips from "../../../components/FilterChips";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
@@ -130,7 +130,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             <button key={r.id} data-testid={`grn-card-${r.id}`} onClick={() => setOpenId(r.id)}
               className="rounded-xl border border-[#EFF0F2] bg-white p-3 text-left transition-shadow hover:shadow-md">
               <div className="flex items-center justify-between">
-                <DocNumber number={r.number} entityId={r.work_entity_id || r.entity_id} className="font-mono text-[12px]" testId={`grn-number-${r.id}`} />
+                <DocNumber number={r.number} entityId={docEntityId(r)} className="font-mono text-[12px]" testId={`grn-number-${r.id}`} />
                 <GrnStatusBadge status={r.status} />
               </div>
               <p className="mt-1 text-[12px] font-semibold">{r.partner_name}</p>

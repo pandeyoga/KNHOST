@@ -18,7 +18,7 @@ import { ARRIVAL_STATUSES, parseCodes, pendingCount, statusOf, tripMessage } fro
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
 import EmptyState, { listStateKind } from "../../components/EmptyState";   // FIX-8 — memuat/kosong/galat/tanpa izin
-import DocNumber from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
+import DocNumber, { docEntityId } from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 
 const nf = new Intl.NumberFormat("id-ID");
 const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
@@ -268,7 +268,7 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
               <div key={o.id} data-testid={`pa-row-${o.id}`} className="rounded-lg border border-[#EFF0F2] p-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-bold"><DocNumber number={o.pa_number} entityId={o.work_entity_id || o.entity_id} testId={`pa-number-${o.id}`} />
+                    <p className="text-[12.5px] font-bold"><DocNumber number={o.pa_number} entityId={docEntityId(o)} testId={`pa-number-${o.id}`} />
                       {o.work_entity_id && <span className="ml-2" data-testid={`pa-pt-${o.id}`}><EntityBadge entityId={o.work_entity_id} /></span>}
                       {o.btg_number && <span className="ml-2 rounded bg-[#E6F6EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B7F4B]">BTG {o.btg_number}</span>}
                     </p>

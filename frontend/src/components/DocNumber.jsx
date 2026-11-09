@@ -21,6 +21,9 @@ export function splitDocNumber(number) {
   return m ? { pt: m[1], no: m[2] } : { pt: "", no: s };
 }
 
+/** PT pemilik dokumen untuk lencana: PT kerja (daftar lintas PT FIX-1) lalu PT dokumen. Nilai id, bukan label. */
+export const docEntityId = (doc) => doc?.work_entity_id ?? doc?.entity_id ?? "";
+
 /** Teks satu baris skema tampilan: "KSC · PO-00166" (dipakai di teks/konfirmasi). Kosong → "—". */
 export function docNumberText(number, entityId = "") {
   if (!number) return "—";

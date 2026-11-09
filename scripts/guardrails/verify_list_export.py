@@ -67,7 +67,13 @@ SRC = FRONTEND / "src"
 CSV_UTIL = SRC / "utils" / "csvExport.js"
 
 #: Pengecualian — WAJIB beralasan (dinilai orang, bukan dibisukan).
-DIBOLEHKAN: Dict[str, str] = {}
+DIBOLEHKAN: Dict[str, str] = {
+    # FIX-8 (Standar UI Gudang tahap 2) — tiga pager dilebur jadi satu: KNPager kini HANYA pembungkus PaginationBar
+    # untuk daftar SISI-KLIEN (`usePagedRows`/`PagedRows`, tabel SDM). Barisnya sudah dimuat penuh oleh layar
+    # pemakainya; tombol Unduh dipasang di layar itu (ExportMenu/exportConfig), bukan di pembungkus generik.
+    os.path.join("components", "KNPager.jsx"): "pembungkus pager sisi-klien (usePagedRows/PagedRows) — ekspor dipasang "
+                                               "di layar pemakai; FIX-8 peleburan tiga pager menjadi PaginationBar",
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -107,6 +113,8 @@ def scan_pagers() -> Dict[str, List[Tuple[int, bool]]]:
         rel = str(path.relative_to(SRC))
         if rel == os.path.join("components", "PaginationBar.jsx"):
             continue                      # definisi komponennya sendiri
+        if "__tests__" in rel.split(os.sep):
+            continue                      # FIX-8 — berkas uji memasang komponen untuk diuji, bukan layar daftar
         try:
             src = path.read_text(encoding="utf-8", errors="ignore")
         except OSError:

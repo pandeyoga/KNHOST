@@ -11,7 +11,7 @@ import ResponsiveTable from "../../../components/ResponsiveTable";
 import QtyDual from "../../../components/QtyDual";
 import EntityBadge from "../../../components/EntityBadge";   // FIX-1 — label PT (daftar lintas PT)
 import BaseStatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana kategori baku
-import DocNumber from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
+import DocNumber, { docEntityId } from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 import { formatDate } from "../../../utils/formatters";
 import { StatusBadge } from "./transferConstants";
 
@@ -67,7 +67,7 @@ function Items({ t }) {
 
 const COLUMNS = [
   { key: "code", header: "Kode", mobile: "title",
-    render: (t) => <span className="inline-flex items-center gap-1.5"><span data-testid={`transfer-code-${t.id}`} className="text-[#0058CC]"><DocNumber number={t.code} entityId={t.entity_id || t.work_entity_id} /></span>{t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}</span> },
+    render: (t) => <span className="inline-flex items-center gap-1.5"><span data-testid={`transfer-code-${t.id}`} className="text-[#0058CC]"><DocNumber number={t.code} entityId={docEntityId(t)} /></span>{t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}</span> },
   { key: "kind", header: "Jenis", mobile: "badge", render: (t) => <KindPill t={t} /> },
   { key: "route", header: "Dari → ke", mobile: "subtitle", render: (t) => <Route t={t} /> },
   { key: "items", header: "Barang", priority: 1, render: (t) => <Items t={t} /> },

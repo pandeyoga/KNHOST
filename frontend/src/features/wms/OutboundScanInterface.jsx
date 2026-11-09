@@ -24,7 +24,7 @@ import { TaskTakeoverButton } from "./TaskTakeoverButton";
 import { useLocationScope } from "./LocationScopeBadge";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import EmptyState, { listStateKind } from "../../components/EmptyState";   // FIX-8 — keadaan daftar baku
-import DocNumber from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
+import DocNumber, { docEntityId } from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana baku
 import { SearchInput } from "../../components/ListPageParts";   // FIX-8 — satu kotak cari baku
 import SavedViewsMenu from "../../components/SavedViewsMenu";   // FIX-8 (K-B4-12) — tampilan tersimpan
@@ -362,7 +362,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     onClick={() => { setSelectedTask(task); stopCamera(); }}
                     className={`w-full text-left px-3 py-2.5 hover:bg-[#FFF8EE] transition-colors ${isSelected ? 'bg-[#FFF4E0] border-l-2 border-[#FF9500]' : ''}`}>
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] text-[#8C4A00]"><DocNumber number={task.order_number} entityId={task.work_entity_id || task.entity_id} />{task.task_subtype === "sample_cut" && <StatusBadge tone="special" icon="tag" className="ml-1.5" testId={`outbound-task-sample-${task.id}`}>SAMPEL</StatusBadge>}
+                      <span className="text-[12px] text-[#8C4A00]"><DocNumber number={task.order_number} entityId={docEntityId(task)} />{task.task_subtype === "sample_cut" && <StatusBadge tone="special" icon="tag" className="ml-1.5" testId={`outbound-task-sample-${task.id}`}>SAMPEL</StatusBadge>}
                         {task.work_entity_id && <span className="ml-1.5" data-testid={`outbound-task-pt-${task.id}`}><EntityBadge entityId={task.work_entity_id} /></span>}</span>
                       <div className="flex items-center gap-1">
                         <Badge status={task.status} />
