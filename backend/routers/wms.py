@@ -1,6 +1,6 @@
 """WMS router: tasks, scanning, stage advance."""
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
@@ -25,7 +25,9 @@ TERMINAL_STATUSES = {"done", "dispatched", "completed", "cancelled"}
 
 
 @router.get("/wms/tasks")
-async def list_tasks(request: Request, line: str = "", entity_id: str = "") -> List[Dict[str, Any]]:
+async def list_tasks(request: Request, response: Response, line: str = "", entity_id: str = "") -> List[Dict[str, Any]]:
+    """FIX-5 (B3b LST-01) — tugas AKTIF s.d. 2.000 + riwayat selesai 200 terbaru (aturan lama KN-E50) — kini
+    jumlah sungguhan di header `X-Total-Count` (aktif + selesai) dan `X-Truncated` bila TUGAS AKTIF terpotong."""
     actor = await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     # FIX-1 (K-B1-01/02, B2a FLW-IN-07, B3a SCP-3) — pekerjaan fisik per GEDUNG dalam lokasi kerja, lintas PT yang
@@ -43,6 +45,11 @@ async def list_tasks(request: Request, line: str = "", entity_id: str = "") -> L
     closed = await db.wms_tasks.find({"$and": [query, {"status": {"$in": done}}]}, {"_id": 0}) \
         .sort("created_at", -1).to_list(200)
     tasks = sorted(active + closed, key=lambda t: str(t.get("created_at") or ""), reverse=True)
+    n_active = await db.wms_tasks.count_documents({"$and": [query, {"status": {"$nin": done}}]})         if len(active) >= 2000 else len(active)
+    n_closed = await db.wms_tasks.count_documents({"$and": [query, {"status": {"$in": done}}]})         if len(closed) >= 200 else len(closed)
+    response.headers.update({"X-Total-Count": str(n_active + n_closed),
+                             "X-Truncated": "1" if n_active > len(active) else "0",
+                             "X-Closed-Total": str(n_closed)})
     pids = list({t.get("product_id") for t in tasks if t.get("product_id")})
     wids = list({t.get("warehouse_id") for t in tasks if t.get("warehouse_id")})
     products = {p["id"]: p for p in await db.products.find({"id": {"$in": pids}}, {"_id": 0, "id": 1, "name": 1, "sku": 1})

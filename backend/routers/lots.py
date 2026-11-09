@@ -74,7 +74,8 @@ async def list_lots(request: Request, q: str = "", product_id: str = "",
         total = await ls.count_lots(flt) if not (q or term) else len(
             await ls.list_lots(flt, q=q or term, limit=1000))
         return envelope(rows, total, page, size)
-    return await ls.list_lots(flt, q=q, limit=limit)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03) — tanpa halaman: 1–1.000 (dulu tanpa batas)
+    return await ls.list_lots(flt, q=q, limit=clamp_limit(limit, 200, 1000))
 
 
 @router.get("/lots/stats")

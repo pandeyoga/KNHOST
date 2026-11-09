@@ -45,8 +45,10 @@ async def photo_check(request: Request, file: UploadFile = File(...)) -> Dict[st
 
 
 @router.get("/goods-receipts")
-async def list_grn(request: Request, status: str = "", partner_id: str = "", q: str = "",
-                   limit: int = 100, entity_id: str = "") -> List[Dict[str, Any]]:
+async def list_grn(request: Request, response: Response, status: str = "", partner_id: str = "", q: str = "",
+                   limit: int = 100, entity_id: str = "", skip: int = 0) -> List[Dict[str, Any]]:
+    """FIX-5 (B3b LST-01/03) — berhalaman `skip`/`limit` (1–500; `limit=-1` dulu → 500) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated` (dulu 100 terbaru dipotong diam-diam; chip layar = baris termuat)."""
     actor = await require_permission(request, M, "view")
     ctx = await entity_ctx(request)
     # UAT 24 Okt (P9.5) — daftar GRN dulu membangun saringan sendiri tanpa lingkup lokasi petugas gudang.
@@ -65,7 +67,10 @@ async def list_grn(request: Request, status: str = "", partner_id: str = "", q: 
         q = _re.escape(q.strip()[:100])   # KN-E23 — regex mentah → 500 / kueri lambat
         flt["$or"] = [{"number": {"$regex": q, "$options": "i"}}, {"dn.number": {"$regex": q, "$options": "i"}},
                       {"partner_name": {"$regex": q, "$options": "i"}}]
-    rows = await db.goods_receipts.find(flt, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 500)))
+    from pagination import clamp_limit, window_headers, window_meta
+    lim, sk = clamp_limit(limit, 100, 500), clamp_limit(skip, 0, 10 ** 6, minimum=0)
+    rows = await db.goods_receipts.find(flt, {"_id": 0}).sort("created_at", -1).skip(sk).to_list(lim)
+    response.headers.update(window_headers(window_meta(await db.goods_receipts.count_documents(flt), len(rows), sk, lim)))
     from services.work_labels import entity_names
     _ents = await entity_names(r.get("entity_id") for r in rows)
     _whs = {w["id"]: w.get("name") or w.get("code") or "" async for w in db.warehouses.find(

@@ -330,16 +330,28 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     return safe_doc(order)
 
 
-async def list_orders(scope_ids: List[str], warehouse_id: Optional[str],
-                      status: Optional[str], limit: int = 100,
-                      extra: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+def _orders_query(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str],
+                  extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     # FIX-1 (B3a SCP-2) — `extra` = saringan lokasi kerja DI DALAM kueri (dulu disaring sesudah `limit`).
     q: Dict[str, Any] = {**(extra or {}), "owner_entity_id": {"$in": scope_ids}}
     if warehouse_id:
         q["$or"] = [{"from_warehouse_id": warehouse_id}, {"to_warehouse_id": warehouse_id}]
     if status:
-        q["status"] = status
-    orders = await db.putaway_orders.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
+        # FIX-5 (B3b LST-01) — "live" = semua PA yang masih berjalan (draf/terbuka/dikirim/tiba sebagian)
+        q["status"] = {"$in": list(LIVE_STATUSES)} if status == "live" else status
+    return q
+
+
+async def count_orders(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str],
+                       extra: Optional[Dict[str, Any]] = None) -> int:
+    return await db.putaway_orders.count_documents(_orders_query(scope_ids, warehouse_id, status, extra))
+
+
+async def list_orders(scope_ids: List[str], warehouse_id: Optional[str],
+                      status: Optional[str], limit: int = 100,
+                      extra: Optional[Dict[str, Any]] = None, skip: int = 0) -> List[Dict[str, Any]]:
+    q = _orders_query(scope_ids, warehouse_id, status, extra)
+    orders = await db.putaway_orders.find(q, {"_id": 0}).sort("created_at", -1).skip(max(0, int(skip or 0))).to_list(limit)
     # FIX-3a (B3b FRM-10, K-B3b-09) — layar menampilkan tombol simulasi HANYA untuk PT bermode simulasi RFID.
     sim = {e: await simulation_on(e) for e in {o.get("owner_entity_id") or "" for o in orders}}
     return [{**safe_doc(o), "rfid_simulation": sim.get(o.get("owner_entity_id") or "", False)} for o in orders]
@@ -409,12 +421,21 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
     now = now_iso()
     landed, movements, segs = [], [], set()
     wh_to = await db.warehouses.find_one({"id": order["to_warehouse_id"]}, {"_id": 0}) or {}
+    # FIX-5 (PREP-H §9) — produk dibaca sekali per PA (dulu per roll) dan pelanggaran tujuan dihitung sekali per
+    # (produk, grade): `warehouse_violations` hanya bergantung pada gudang tujuan, PT pemilik, produk & grade.
+    pids = list({i["product_id"] for i in items if i.get("product_id")})
+    prods = {p["id"]: p for p in await db.products.find({"id": {"$in": pids}}, PROD_FIELDS).to_list(len(pids) + 1)} \
+        if pids else {}
+    viol_memo: Dict[Tuple[str, str], List[str]] = {}
     for item in items:
         # P02 — revalidasi tujuan saat tiba (mode/rules bisa berubah sesudah PA dibuat)
-        prod = await db.products.find_one({"id": item["product_id"]}, PROD_FIELDS) or {}
-        wv = await pr.warehouse_violations(wh_to, {"owner_entity_id": order["owner_entity_id"],
-                                                   "grade": item.get("grade") or "A"}, prod,
-                                           attrs=order.get("purpose") != "inspection")
+        prod = prods.get(item["product_id"]) or {}
+        vkey = (item["product_id"], item.get("grade") or "A")
+        if vkey not in viol_memo:
+            viol_memo[vkey] = await pr.warehouse_violations(wh_to, {"owner_entity_id": order["owner_entity_id"],
+                                                                    "grade": item.get("grade") or "A"}, prod,
+                                                            attrs=order.get("purpose") != "inspection")
+        wv = viol_memo[vkey]
         if wv and not await db.inventory_rolls.find_one({"id": item["roll_id"], "last_pa_landed": order["id"]}, {"_id": 1}):
             item["status"] = "exception"
             item["exception_reason"] = f"Tujuan tidak lagi sah: {wv[0]}"
@@ -453,8 +474,13 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
             })
         segs.add((item["product_id"], order["from_warehouse_id"]))
         segs.add((item["product_id"], order["to_warehouse_id"]))
-    for mv in movements:   # id deterministik per (PA, roll, arah) → retry tidak menggandakan mutasi
-        await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
+    # id deterministik per (PA, roll, arah) → retry tidak menggandakan mutasi. FIX-5 — satu `bulk_write` per 1.000
+    # (dulu satu upsert per mutasi; tanpa index `id` = COLLSCAN mutasi ±63 ms × 2 per roll).
+    from pymongo import UpdateOne
+    for i in range(0, len(movements), 1000):
+        await db.inventory_movements.bulk_write(
+            [UpdateOne({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True) for mv in movements[i:i + 1000]],
+            ordered=True)
     for pid, wid in segs:
         await rebuild_balance(pid, wid, order["owner_entity_id"])
     if landed and order.get("purpose") == "inspection":

@@ -1614,6 +1614,13 @@ def _stamp_domain_defaults(products):
 
 async def run_bootstrap() -> None:
     """Jalankan seluruh seeder/backfill startup sesuai urutan (idempotent)."""
+    # FIX-5 (B3a SCH-9) — index `id` LEBIH DULU: migrasi/backfill startup di bawah mencari per `id`; tanpa index itu
+    # COLLSCAN per dokumen pada data produksi. Hanya koleksi yang sudah ada; diulang di `ensure_performance_indexes`.
+    try:
+        from indexes import ensure_id_indexes
+        await ensure_id_indexes()
+    except Exception as exc:  # noqa: BLE001 — index tidak boleh menggagalkan startup
+        print(f"[bootstrap] ensure_id_indexes skip: {exc}")
     await seed_data()
     await seed_entities()
     await backfill_entity_id()

@@ -202,11 +202,117 @@ async def _find_roll(transfer: Dict[str, Any], ref: str) -> Optional[Dict[str, A
     return await db.inventory_rolls.find_one({"id": tag["roll_id"]}, {"_id": 0}) if tag else None
 
 
+# ─── FIX-5 (PREP-H §9) — memo SATU panggilan terima (dulu ±18 kueri per roll) ─────────────────────────────────
+#: Saldo segmen (produk × gudang × PT) dibangun ulang tiap N roll mendarat + di akhir panggilan (dulu 2× PER ROLL,
+#: masing-masing membaca SEMUA roll segmen + menghitung ulang semua lot segmen). Batas N menjaga saldo basi bila
+#: proses mati di tengah tetap kecil (roll sudah pindah, saldo menyusul pada rebuild segmen berikutnya).
+REBUILD_EVERY = 100
+TAG_LIVE = ["active", "pending_print"]   # FIX-3b (RFID-2) — sama dengan `_find_roll`
+
+
+class _ReceiptMemo:
+    """Roll transfer, produk, pelanggaran aturan gudang tujuan, status SO, tahap journey tujuan — dibaca SEKALI per
+    panggilan `receive`; segmen saldo yang tersentuh dikumpulkan lalu dibangun ulang per `REBUILD_EVERY` roll.
+    Tidak ada cache lintas permintaan (SSOT tetap dokumen roll): CAS per roll tetap memutuskan."""
+
+    def __init__(self, transfer: Dict[str, Any], dest: Dict[str, Any]):
+        self.transfer, self.dest = transfer, dest
+        self.ids = _roll_ids(transfer)
+        self.idset = set(self.ids)
+        self.by_id: Dict[str, Dict[str, Any]] = {}
+        self.by_ref: Dict[str, str] = {}          # ref (roll_no / EPC / kode tag) → roll_id
+        self.products: Dict[str, Dict[str, Any]] = {}
+        self.viol: Dict[Any, List[str]] = {}
+        self.so_open: Dict[str, bool] = {}
+        self.stage: Optional[str] = None
+        self.segments: set = set()
+        self.landed_since_flush = 0
+
+    async def prefetch(self, refs: List[str]) -> None:
+        keys = [k for k in dict.fromkeys((r or "").strip() for r in refs) if k]
+        direct = [k for k in keys if k in self.idset]
+        if direct:
+            async for r in db.inventory_rolls.find({"id": {"$in": direct}}, {"_id": 0}):
+                self.by_id[r["id"]] = r
+        rest = [k for k in keys if k not in self.by_id]
+        if rest and self.ids:
+            async for r in db.inventory_rolls.find({"roll_no": {"$in": rest}, "id": {"$in": self.ids}}, {"_id": 0}):
+                self.by_id.setdefault(r["id"], r)
+                self.by_ref.setdefault(r.get("roll_no"), r["id"])
+        rest = [k for k in rest if k not in self.by_ref]
+        if rest and self.ids:
+            tag_rolls: List[str] = []
+            async for t in db.rfid_tags.find({"$or": [{"epc": {"$in": rest}}, {"code": {"$in": rest}},
+                                                      {"tag_code": {"$in": rest}}],
+                                              "roll_id": {"$in": self.ids}, "status": {"$in": TAG_LIVE}},
+                                             {"_id": 0, "roll_id": 1, "epc": 1, "code": 1, "tag_code": 1}):
+                for k in (t.get("epc"), t.get("code"), t.get("tag_code")):
+                    if k in rest:
+                        self.by_ref.setdefault(k, t["roll_id"])
+                tag_rolls.append(t["roll_id"])
+            need = [r for r in dict.fromkeys(tag_rolls) if r not in self.by_id]
+            if need:
+                async for r in db.inventory_rolls.find({"id": {"$in": need}}, {"_id": 0}):
+                    self.by_id[r["id"]] = r
+        pids = list({r.get("product_id") for r in self.by_id.values() if r.get("product_id")})
+        if pids:
+            async for p in db.products.find({"id": {"$in": pids}}, {"_id": 0}):
+                self.products[p["id"]] = p
+
+    def find_roll(self, ref: str) -> Optional[Dict[str, Any]]:
+        key = (ref or "").strip()
+        if not key:
+            return None
+        rid = key if key in self.by_id else self.by_ref.get(key)
+        return self.by_id.get(rid) if rid else None
+
+    def remember(self, roll: Dict[str, Any]) -> None:
+        """Keadaan roll sesudah ditulis panggilan ini (baris ganda di permintaan yang sama → "sudah")."""
+        self.by_id[roll["id"]] = roll
+
+    async def product(self, pid: str) -> Dict[str, Any]:
+        if pid not in self.products:
+            self.products[pid] = await db.products.find_one({"id": pid}, {"_id": 0}) or {}
+        return self.products[pid]
+
+    async def violations(self, roll: Dict[str, Any], prod: Dict[str, Any]) -> List[str]:
+        # `warehouse_violations` hanya bergantung pada gudang tujuan, pemilik, produk & grade roll.
+        key = (roll.get("owner_entity_id"), roll.get("product_id"), roll.get("grade", "A"))
+        if key not in self.viol:
+            self.viol[key] = await pr.warehouse_violations(self.dest, roll, prod)
+        return list(self.viol[key])
+
+    async def so_still_open(self, so_id: str) -> bool:
+        if so_id not in self.so_open:
+            self.so_open[so_id] = await so_still_open(so_id)
+        return self.so_open[so_id]
+
+    async def journey_stage(self) -> str:
+        if self.stage is None:
+            from services import inbound_qc_common as _iqc
+            self.stage = await _iqc.initial_journey_stage(self.dest["id"])
+        return self.stage
+
+    async def touched(self, product_id: str, warehouses: set, owner: str) -> None:
+        for w in warehouses:
+            self.segments.add((product_id, w, owner))
+        self.landed_since_flush += 1
+        if self.landed_since_flush >= REBUILD_EVERY:
+            await self.flush()
+
+    async def flush(self) -> None:
+        segs, self.segments, self.landed_since_flush = self.segments, set(), 0
+        for pid, wid, own in sorted(segs, key=lambda s: tuple(str(x) for x in s)):
+            await rebuild_balance(pid, wid, own)
+
+
 async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, Any], status_kind: str,
-                actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """in_transit_transfer → fisik di tujuan (CAS). None bila sudah diproses (retry)."""
+                actor: Dict[str, Any], memo: Optional[_ReceiptMemo] = None) -> Optional[Dict[str, Any]]:
+    """in_transit_transfer → fisik di tujuan (CAS). None bila sudah diproses (retry).
+    FIX-5 — dengan `memo`: status SO & tahap journey dibaca sekali per panggilan; saldo dibangun ulang per kelompok
+    roll (`_ReceiptMemo.flush`), bukan dua kali per roll. Tanpa `memo` perilaku lama (dipakai jalur lain)."""
     so_id = (roll.get("transfer_ref") or {}).get("so_id")
-    keep = bool(so_id) and await so_still_open(so_id)
+    keep = bool(so_id) and (await memo.so_still_open(so_id) if memo else await so_still_open(so_id))
     # komitmen SO kembali ke status asalnya (reserved / committed) saat tiba
     # FIX-3a (B2a STM-IN-04) — "diterima ditahan" (pelanggaran aturan + pengecualian supervisor) memakai SATU
     # representasi tahan: status `blocked` + `hold{held, prev_status}` (dilepas lewat `roll_hold_service.release_roll`).
@@ -226,8 +332,12 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
     # FIX-3a (B2a FLW-IN-19) — tahap fisik dihitung ulang sesuai PERAN gudang tujuan (transit → menunggu putaway,
     # gudang simpan → tersimpan); dulu `journey` tidak disentuh (data lama: kosong).
     try:
-        from services import inbound_qc_common as _iqc
-        _set["journey"] = {**(roll.get("journey") or {}), "stage": await _iqc.initial_journey_stage(dest["id"]),
+        if memo:
+            stage = await memo.journey_stage()
+        else:
+            from services import inbound_qc_common as _iqc
+            stage = await _iqc.initial_journey_stage(dest["id"])
+        _set["journey"] = {**(roll.get("journey") or {}), "stage": stage,
                            "routing": (roll.get("journey") or {}).get("routing") or "store", "updated_at": now_iso(),
                            "via": "transfer_in"}
     except Exception:  # noqa: BLE001 — tahap fisik tidak boleh menggagalkan penerimaan
@@ -235,6 +345,8 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
     res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": _set})
     if not res.matched_count:
         return None
+    if memo:
+        memo.remember({**roll, **_set})
     await db.rfid_tags.update_many({"roll_id": roll["id"], "status": "active"},
                                    {"$set": {"warehouse_id": dest["id"], "updated_at": now_iso()}})
     qty = round(float(roll.get("length_remaining") or 0), 2)
@@ -244,8 +356,11 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
         "unit": roll.get("unit", "meter"), "lot": roll.get("lot", ""), "batch": roll.get("batch", ""),
         "roll_id": roll["id"], "qty_rolls": 1, "receipt_outcome": status_kind, "by": actor.get("name"),
         "source_document": f"transfer_{transfer.get('code')}", "timestamp": now_iso()})
-    for w in {src_wh, dest["id"]}:
-        await rebuild_balance(roll["product_id"], w, roll["owner_entity_id"])
+    if memo:
+        await memo.touched(roll["product_id"], {src_wh, dest["id"]}, roll["owner_entity_id"])
+    else:
+        for w in {src_wh, dest["id"]}:
+            await rebuild_balance(roll["product_id"], w, roll["owner_entity_id"])
     if keep and status in SO_HELD:
         await _rehome_allocation(so_id, roll, dest, transfer)
     return {**roll, "warehouse_id": dest["id"], "status": status, "bin_id": None}
@@ -323,9 +438,51 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
             raise HTTPException(status_code=400, detail="Kondisi tiba hanya 'received' (baik) atau 'damaged' (rusak).")
         if ln.outcome == "damaged":
             _reason(ln.note, "Keterangan kerusakan")
+    # FIX-5 (PREP-H §9) — roll/produk/aturan dibaca sekali untuk semua baris; saldo dibangun ulang per kelompok
+    # (`_ReceiptMemo.flush`, juga saat galat di tengah). Urutan, CAS per roll, dan hasil per baris tidak berubah.
+    memo = _ReceiptMemo(transfer, dest)
+    await memo.prefetch([ln.roll_id or ln.code for ln in body.lines])
+    try:
+        await _receive_lines(transfer, body, actor, dest, node, override, memo, results)
+    finally:
+        await memo.flush()
+    await db.warehouse_transfers.update_one({"id": transfer["id"]}, {"$push": {"receipt_events": {
+        "id": new_id("trc"), "by": actor.get("name"), "at": now_iso(), "note": (body.note or "")[:300],
+        "bin_id": body.bin_id or "", "results": [{k: r.get(k) for k in ("ref", "roll_id", "result")} for r in results]}}})
+    t = await _refresh_status(transfer["id"], actor.get("name", ""))
+    # FIX-3a (B2a FLW-IN-19) — roll tersedia yang tiba di gedung TRANSIT → draf Putaway Order otomatis (K-GDG-10),
+    # sama dengan barang lepas QC. Best-effort & idempoten per penerimaan.
+    _avail = [r["roll_id"] for r in results if r.get("result") == "received" and r.get("status") == "available"]
+    if _avail:
+        try:
+            from services import inbound_qc_common as _iqc
+            pd = await _iqc.auto_draft_after_release(
+                _avail, {"type": "transfer_in", "id": f"{transfer['id']}:{len(transfer.get('receipt_events') or [])}",
+                         "number": transfer.get("code", "")}, actor.get("name", ""))
+            if pd:
+                return {"results": results, "transfer_status": t["status"], "summary": await summary(t), "putaway_draft": pd}
+        except Exception:  # noqa: BLE001
+            pass
+    return {"results": results, "transfer_status": t["status"], "summary": await summary(t)}
+
+
+async def _cas_lost(roll_id: str, transfer_id: str) -> Dict[str, str]:
+    """FIX-5 — CAS mendarat kalah (roll berubah sesudah dibaca di awal panggilan): klasifikasi dari keadaan SEGAR,
+    sama dengan yang dihasilkan pembacaan per baris dulu."""
+    r = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0}) or {}
+    if (r.get("last_transfer") or {}).get("ref_id") == transfer_id and r.get("status") != "in_transit_transfer":
+        return {"result": "already", "message": "Sudah diproses petugas lain (tidak menambah stok)."}
+    if r.get("status") != "in_transit_transfer" or not owned_by_transfer(r, transfer_id):
+        return {"result": "not_in_transit", "message": f"Roll berstatus {r.get('status')} — bukan dalam perjalanan transfer ini."}
+    return {"result": "already", "message": "Sudah diproses petugas lain (tidak menambah stok)."}
+
+
+async def _receive_lines(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any], dest: Dict[str, Any],
+                         node: Optional[Dict[str, Any]], override: str, memo: _ReceiptMemo,
+                         results: List[Dict[str, Any]]) -> None:
     for ln in body.lines:
         ref = ln.roll_id or ln.code
-        roll = await _find_roll(transfer, ref)
+        roll = memo.find_roll(ref)
         if not roll:
             exc = await _exception(transfer["id"], "wrong_roll", actor, code=ref, reason=ln.note or "Roll tidak ada di transfer ini",
                                    status="open")
@@ -339,9 +496,9 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
         if roll.get("status") != "in_transit_transfer" or not owned_by_transfer(roll, transfer["id"]):
             results.append({**base, "result": "not_in_transit", "message": f"Roll berstatus {roll.get('status')} — bukan dalam perjalanan transfer ini."})
             continue
-        prod = await db.products.find_one({"id": roll["product_id"]}, {"_id": 0}) or {}
+        prod = await memo.product(roll["product_id"])
         kind = "damaged" if ln.outcome == "damaged" else "received"
-        viol = await pr.warehouse_violations(dest, roll, prod)
+        viol = await memo.violations(roll, prod)
         if viol and kind == "received":
             if not override:
                 if not _open_exc(transfer, "rule_violation", roll["id"]):
@@ -351,9 +508,9 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
                                 "message": "Aturan gudang tujuan menolak roll ini — tetap dalam perjalanan sampai supervisor memutuskan."})
                 continue
             kind = "hold"
-        landed = await _land(roll, transfer, dest, kind, actor)
+        landed = await _land(roll, transfer, dest, kind, actor, memo=memo)
         if not landed:
-            results.append({**base, "result": "already", "message": "Sudah diproses petugas lain (tidak menambah stok)."})
+            results.append({**base, **await _cas_lost(roll["id"], transfer["id"])})
             continue
         if kind == "damaged":
             await _exception(transfer["id"], "damaged", actor, roll_id=roll["id"], roll_no=roll.get("roll_no"),
@@ -376,24 +533,6 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
             except HTTPException as exc:
                 row["placement_error"] = exc.detail if isinstance(exc.detail, str) else (exc.detail or {}).get("message")
         results.append(row)
-    await db.warehouse_transfers.update_one({"id": transfer["id"]}, {"$push": {"receipt_events": {
-        "id": new_id("trc"), "by": actor.get("name"), "at": now_iso(), "note": (body.note or "")[:300],
-        "bin_id": body.bin_id or "", "results": [{k: r.get(k) for k in ("ref", "roll_id", "result")} for r in results]}}})
-    t = await _refresh_status(transfer["id"], actor.get("name", ""))
-    # FIX-3a (B2a FLW-IN-19) — roll tersedia yang tiba di gedung TRANSIT → draf Putaway Order otomatis (K-GDG-10),
-    # sama dengan barang lepas QC. Best-effort & idempoten per penerimaan.
-    _avail = [r["roll_id"] for r in results if r.get("result") == "received" and r.get("status") == "available"]
-    if _avail:
-        try:
-            from services import inbound_qc_common as _iqc
-            pd = await _iqc.auto_draft_after_release(
-                _avail, {"type": "transfer_in", "id": f"{transfer['id']}:{len(transfer.get('receipt_events') or [])}",
-                         "number": transfer.get("code", "")}, actor.get("name", ""))
-            if pd:
-                return {"results": results, "transfer_status": t["status"], "summary": await summary(t), "putaway_draft": pd}
-        except Exception:  # noqa: BLE001
-            pass
-    return {"results": results, "transfer_status": t["status"], "summary": await summary(t)}
 
 
 # ─── Exception & pemulihan ─────────────────────────────────────────────────────

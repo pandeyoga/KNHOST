@@ -119,12 +119,18 @@ async def get_summary(request: Request, warehouse_id: Optional[str] = None,
 # ─── Tags ────────────────────────────────────────────────────────────────────
 @router.get("/rfid/tags")
 async def get_tags(request: Request, warehouse_id: Optional[str] = None,
-                   status: Optional[str] = None, entity_id: Optional[str] = None) -> Dict[str, Any]:
+                   status: Optional[str] = None, entity_id: Optional[str] = None,
+                   limit: int = 1000, skip: int = 0) -> Dict[str, Any]:
+    """FIX-5 (B3b LST-01/03) — `skip`/`limit` (1–2.000, bawaan 1.000) + `total`/`truncated` sungguhan
+    (dulu label tab "(1000)" = panjang potongan)."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    tags = await rfid.list_tags(scope, await _wh_filter(ctx, warehouse_id), status)
-    return {"count": len(tags), "tags": tags}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 1000, 2000), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    wh = await _wh_filter(ctx, warehouse_id)
+    tags = await rfid.list_tags(scope, wh, status, limit=lim, skip=sk)
+    return {"count": len(tags), "tags": tags, **window_meta(await rfid.count_tags(scope, wh, status), len(tags), sk, lim)}
 
 
 @router.get("/rfid/lookup")
@@ -452,9 +458,11 @@ async def get_reads(request: Request, device_id: Optional[str] = None, result: O
     # W2-010 — scope owner roll dari sesi server (registry `rfid_reads`), apa pun filter caller.
     from entity_scope import entity_ctx as _ectx, resolve_list_scope as _rls
     scope = _rls("rfid_reads", {}, await _ectx(request))
-    reads = await rfid.list_reads(device_id, result, read_type, warehouse_id, min(limit, 300), before, scope=scope)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03) — `limit=-1` dulu → `to_list(-1)` → 500
+    limit = clamp_limit(limit, 100, 300)
+    reads = await rfid.list_reads(device_id, result, read_type, warehouse_id, limit, before, scope=scope)
     return {"count": len(reads), "reads": reads,
-            "next_before": reads[-1]["timestamp"] if len(reads) == min(limit, 300) and reads else None}
+            "next_before": reads[-1]["timestamp"] if len(reads) == limit and reads else None}
 
 
 @router.get("/rfid/gate/{device_id}/status")
@@ -469,6 +477,8 @@ async def get_passages(request: Request, device_id: Optional[str] = None, wareho
                        limit: int = 30, before: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
     from services import rfid_ingest_service as ing
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03)
+    limit = clamp_limit(limit, 30, 100)
     rows = await ing.list_passages(device_id, await _wh_filter(await entity_ctx(request), warehouse_id), limit, before)
     return {"count": len(rows), "passages": rows,
             "next_before": rows[-1]["last_at"] if rows and len(rows) == min(limit, 100) else None}
@@ -706,11 +716,15 @@ class IncidentNotePayload(BaseModel):
 
 @router.get("/rfid/incidents")
 async def get_incidents(request: Request, status: Optional[str] = None,
-                        warehouse_id: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
+                        warehouse_id: Optional[str] = None, limit: int = 100, skip: int = 0) -> Dict[str, Any]:
+    """FIX-5 (B3b LST-01/03) — `skip`/`limit` (1–500) + `total`/`truncated` (dulu `limit` tanpa batas, 100 diam)."""
     await require_permission(request, "wms", "view")
     from services import rfid_incident_service as inc
-    rows = await inc.list_incidents(status, await _wh_filter(await entity_ctx(request), warehouse_id), limit)   # FIX-1
-    return {"count": len(rows), "incidents": rows}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 100, 500), clamp_limit(skip, 0, 10 ** 6, minimum=0)
+    wh = await _wh_filter(await entity_ctx(request), warehouse_id)   # FIX-1
+    rows = await inc.list_incidents(status, wh, lim, skip=sk)
+    return {"count": len(rows), "incidents": rows, **window_meta(await inc.count_incidents(status, wh), len(rows), sk, lim)}
 
 
 @router.post("/rfid/incidents/{incident_id}/acknowledge")

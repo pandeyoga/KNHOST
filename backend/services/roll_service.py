@@ -271,7 +271,11 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
         seg, {"$inc": {"rebuild_ticket": 1}, "$setOnInsert": {"id": new_id("bal")}},
         upsert=True, projection={"_id": 0, "rebuild_ticket": 1}, return_document=ReturnDocument.AFTER)
     my_ticket = int(tk.get("rebuild_ticket") or 0)
-    rolls = await db.inventory_rolls.find(seg, {"_id": 0}).to_list(None)  # GN-12 — tanpa cap
+    # GN-12 — tanpa cap. FIX-5 — hanya field yang dihitung (dulu dokumen roll utuh ±0,6 KB × semua roll segmen,
+    # termasuk roll terkirim/terpakai yang tetap dibaca untuk agregat lot).
+    rolls = await db.inventory_rolls.find(seg, {"_id": 0, "id": 1, "status": 1, "length_remaining": 1, "unit": 1,
+                                                "active_movement": 1, "length_reserved": 1,
+                                                "length_reservations": 1, "lot_id": 1}).to_list(None)
     buckets = {b: 0.0 for b in ALL_BUCKETS}
     roll_counts = {b: 0 for b in ALL_BUCKETS}  # F2 (UoM SSOT) — jumlah roll per bucket
     # KN-B16 — saldo dijumlahkan dalam SATUAN DASAR produk: roll ber-unit lain (data lama /
