@@ -112,8 +112,17 @@ async def create_session(payload: CycleCountSessionCreate, request: Request) -> 
     return safe_doc(session)
 
 
+CC_LIST_DEFAULT, CC_LIST_MAX = 100, 500
+
+
 @router.get("/cycle-count/sessions")
-async def list_sessions(request: Request, entity_id: str = "") -> List[Dict[str, Any]]:
+async def list_sessions(request: Request, entity_id: str = "", status: str = "", limit: int = CC_LIST_DEFAULT,
+                        skip: int = 0) -> Any:
+    """FIX-7 (B3b LST-01/LST-07) — dulu `to_list(100)` dokumen UTUH (seluruh `items` + `roll_count.scans` tiap sesi)
+    dan terpotong diam-diam. Kini: `skip`/`limit` (bawaan 100, maks 500) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated`; `status` (dipisah koma) disaring di server; baris daftar TANPA `items`/`roll_count`
+    — diganti `item_count`, `scan_count`, `roll_mode` (layar daftar & kotak persetujuan hanya memakai jumlahnya;
+    detail sesi tetap `GET /cycle-count/sessions/{id}`)."""
     await require_permission(request, "inventory", "cycle_count")
     ctx = await entity_ctx(request)
     # E-02 (audit 2026-09-02) — koleksi SCOPED; dulu `find({})` menampilkan sesi PT lain.
@@ -121,9 +130,24 @@ async def list_sessions(request: Request, entity_id: str = "") -> List[Dict[str,
     # saringan `entity_id`). Detail/aksi sesi tetap PT dokumen (layar mengirim PT baris sebagai X-Entity-Id).
     from entity_scope import resolve_work_scope
     from services.work_labels import label_rows
-    q = await resolve_work_scope("cycle_count_sessions", {"mode": {"$ne": "registration"}}, ctx, entity_id or None)   # PREP-B — sesi pendaftaran punya daftar sendiri
-    sessions = await db.cycle_count_sessions.find(q, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return await label_rows([safe_doc(s) for s in sessions if s], kinds=False)
+    from pagination import clamp_limit, window_meta, window_headers
+    base: Dict[str, Any] = {"mode": {"$ne": "registration"}}   # PREP-B — sesi pendaftaran punya daftar sendiri
+    sts = [s for s in (status or "").split(",") if s.strip()]
+    if sts:
+        base["status"] = {"$in": sts}
+    q = await resolve_work_scope("cycle_count_sessions", base, ctx, entity_id or None)
+    lim, sk = clamp_limit(limit, CC_LIST_DEFAULT, CC_LIST_MAX), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    total = await db.cycle_count_sessions.count_documents(q)
+    sessions = await db.cycle_count_sessions.aggregate([
+        {"$match": q}, {"$sort": {"created_at": -1, "id": -1}}, {"$skip": sk}, {"$limit": lim},
+        {"$addFields": {"item_count": {"$cond": [{"$isArray": "$items"}, {"$size": "$items"}, 0]},
+                        "scan_count": {"$cond": [{"$isArray": "$roll_count.scans"}, {"$size": "$roll_count.scans"}, 0]},
+                        "roll_mode": {"$cond": [{"$ifNull": ["$roll_count", False]}, True, False]}}},
+        {"$project": {"_id": 0, "items": 0, "roll_count": 0}}]).to_list(lim)
+    rows = await label_rows([safe_doc(s) for s in sessions if s], kinds=False)
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(rows), headers=window_headers(window_meta(total, len(rows), sk, lim)))
 
 
 @router.get("/cycle-count/sessions/{session_id}")

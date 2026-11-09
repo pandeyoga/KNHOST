@@ -18,6 +18,7 @@ import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
 import { Stat, EmptyBox, Pill, SectionCard, fmtTime, useWarehouses } from "./rfidShared";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const EMPTY_FORM = { code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" };
 
@@ -33,6 +34,7 @@ const DIR_OPTS = [{ value: "in", label: "Masuk (in)" }, { value: "out", label: "
 export default function RfidDevicesView({ currentUser, embedded = false }) {
   const { warehouses, whId, setWhId, whOpts } = useWarehouses();
   const [devices, setDevices] = useState([]);
+  const [devMeta, setDevMeta] = useState(null);   // FIX-7 — jumlah sungguhan (badan respons server)
   const [simMode, setSimMode] = useState(false);   // FIX-3a (K-B3b-09) — detak manual hanya di mode simulasi RFID
   const [readerDevice, setReaderDevice] = useState(null); // PREP-D1 — panel Integrasi U300 (pop-up rincian)
   const [loading, setLoading] = useState(true);
@@ -66,6 +68,8 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
       const params = whId ? { warehouse_id: whId } : {};
       const r = await axios.get(`${API}/rfid/devices`, { params });
       setDevices(r.data.devices || []);
+      setDevMeta(r.data.total !== undefined ? { total: r.data.total, truncated: !!r.data.truncated,
+        shown: (r.data.devices || []).length, skip: 0 } : null);
       setSimMode(!!r.data.rfid_simulation);
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat perangkat RFID"); }
     finally { setLoading(false); }
@@ -176,7 +180,7 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
       {!isAdmin && <div className="rounded-lg bg-[#FFF6E5] text-[#8A5A00] text-[11px] px-3 py-2">Mode baca-saja. Perubahan perangkat memerlukan peran admin.</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={Cpu} label="Total Perangkat" value={devices.length} color="#0058CC" loading={loading} />
+        <Stat icon={Cpu} label="Total Perangkat" value={devMeta?.total ?? devices.length} color="#0058CC" loading={loading} />
         <Stat icon={Power} label="Menyala" value={online} color="#34C759" loading={loading} testId="rfid-dev-online" />
         <Stat icon={RadioTower} label="Gerbang" value={gates} color="#5856D6" loading={loading} />
         <Stat icon={Router} label="Pembaca" value={readers} color="#FF9500" loading={loading} />
@@ -230,6 +234,7 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
       <SectionCard title="Daftar Perangkat" right={
         <ExportMenu dataset="rfid_devices" label="perangkat-rfid" testId="rfid-devices-export"
           filters={[whId && ["warehouse_id", "eq", whId]]} />}>
+        <ListLimitNote meta={devMeta} noun="perangkat" hint="pilih gudang untuk mempersempit." testId="rfid-devices-limit" />
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
           : devices.length === 0 ? <EmptyBox icon={Wifi} text="Belum ada perangkat. Klik 'Buat Perangkat Bawaan' untuk mulai." />
             : (

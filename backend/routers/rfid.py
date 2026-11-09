@@ -358,12 +358,18 @@ async def labels_for_document(request: Request, po_id: Optional[str] = None, lot
 
 @router.get("/rfid/untagged-rolls")
 async def get_untagged(request: Request, warehouse_id: Optional[str] = None,
-                       entity_id: Optional[str] = None) -> Dict[str, Any]:
+                       entity_id: Optional[str] = None, limit: int = 500, skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 500 = batas lama, maks 2.000) + `total/truncated/skip/limit`
+    sungguhan (dulu 500 roll tanpa penanda; jumlah layar dari ringkasan)."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    rolls = await rfid.untagged_rolls(scope, await _wh_filter(ctx, warehouse_id))
-    return {"count": len(rolls), "rolls": rolls}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 500, 2000), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    wh = await _wh_filter(ctx, warehouse_id)
+    rolls = await rfid.untagged_rolls(scope, wh, limit=lim, skip=sk)
+    return {"count": len(rolls), "rolls": rolls,
+            **window_meta(await rfid.count_untagged_rolls(scope, wh), len(rolls), sk, lim)}
 
 
 @router.post("/rfid/tags/encode")
@@ -404,14 +410,20 @@ async def delete_tag(tag_id: str, request: Request) -> Dict[str, Any]:
 
 # ─── Devices ─────────────────────────────────────────────────────────────────
 @router.get("/rfid/devices")
-async def get_devices(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
+async def get_devices(request: Request, warehouse_id: Optional[str] = None, limit: int = 500,
+                      skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 500 = batas lama, maks 1.000) + `total/truncated` sungguhan."""
     await require_permission(request, "wms", "view")
     # FIX-1 (audit B1b UI-55) — pemilih gate/perangkat ikut lokasi kerja (petugas Soreang dulu melihat gate Jakarta &
     # gate uji). Layar master perangkat admin (tanpa lokasi kerja / "Semua lokasi") tetap melihat semuanya.
     _ctx = await entity_ctx(request)
-    devs = await rfid.list_devices(await _wh_filter(_ctx, warehouse_id))
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 500, 1000), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    wh = await _wh_filter(_ctx, warehouse_id)
+    devs = await rfid.list_devices(wh, limit=lim, skip=sk)
     # FIX-3a (K-B3b-09) — layar menyembunyikan tombol detak manual/simulasi bila mode simulasi RFID PT aktif mati.
-    return {"count": len(devs), "devices": devs, "rfid_simulation": await rfid.simulation_on(_ctx.active_entity_id or "")}
+    return {"count": len(devs), "devices": devs, "rfid_simulation": await rfid.simulation_on(_ctx.active_entity_id or ""),
+            **window_meta(await rfid.count_devices(wh), len(devs), sk, lim)}
 
 
 @router.post("/rfid/devices")
@@ -521,23 +533,35 @@ async def post_reader_scan(payload: ReaderScanPayload, request: Request) -> Dict
 # ─── Locations ───────────────────────────────────────────────────────────────
 @router.get("/rfid/locations")
 async def get_locations(request: Request, warehouse_id: Optional[str] = None,
-                        entity_id: Optional[str] = None) -> Dict[str, Any]:
+                        entity_id: Optional[str] = None, limit: int = 1000, skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 1.000 = batas lama, maks 2.000) + `total/truncated` sungguhan
+    (jumlah tag aktif di cakupan; dulu 1.000 tanpa penanda)."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     scope = resolve_scope_ids(ctx, entity_id)
-    items = await rfid.rfid_locations(scope, await _wh_filter(ctx, warehouse_id))
-    return {"count": len(items), "items": items}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 1000, 2000), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    wh = await _wh_filter(ctx, warehouse_id)
+    items = await rfid.rfid_locations(scope, wh, limit=lim, skip=sk)
+    return {"count": len(items), "items": items,
+            **window_meta(await rfid.count_tags(scope, wh, "active"), len(items), sk, lim)}
 
 
 # ─── FASE R1 — Print Jobs & Verifikasi ───────────────────────────────────────
 @router.get("/rfid/print-jobs")
 async def get_print_jobs(request: Request, warehouse_id: Optional[str] = None,
-                         status: Optional[str] = None, entity_id: Optional[str] = None) -> Dict[str, Any]:
+                         status: Optional[str] = None, entity_id: Optional[str] = None, limit: int = 100,
+                         skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 100 = batas lama, maks 500) + `total/truncated` sungguhan."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     from services import rfid_print_service as rps
-    jobs = await rps.list_print_jobs(resolve_scope_ids(ctx, entity_id), await _wh_filter(ctx, warehouse_id), status)
-    return {"count": len(jobs), "jobs": jobs}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 100, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    scope, wh = resolve_scope_ids(ctx, entity_id), await _wh_filter(ctx, warehouse_id)
+    jobs = await rps.list_print_jobs(scope, wh, status, limit=lim, skip=sk)
+    return {"count": len(jobs), "jobs": jobs,
+            **window_meta(await rps.count_print_jobs(scope, wh, status), len(jobs), sk, lim)}
 
 
 @router.post("/rfid/print-jobs")
@@ -795,12 +819,17 @@ async def post_cc_complete(session_id: str, request: Request) -> Dict[str, Any]:
 
 
 @router.get("/rfid/cycle-counts")
-async def get_cc_list(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
+async def get_cc_list(request: Request, warehouse_id: Optional[str] = None, limit: int = 30,
+                      skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 30 = batas lama, maks 200) + `total/truncated` sungguhan."""
     await require_permission(request, "wms", "view")
     from services import cycle_count_service as cc
     ctx = await entity_ctx(request)
-    rows = await cc.list_counts(await _wh_filter(ctx, warehouse_id), resolve_scope_ids(ctx, None))
-    return {"count": len(rows), "counts": rows}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 30, 200), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    wh, scope = await _wh_filter(ctx, warehouse_id), resolve_scope_ids(ctx, None)
+    rows = await cc.list_counts(wh, scope, limit=lim, skip=sk)
+    return {"count": len(rows), "counts": rows, **window_meta(await cc.count_counts(wh, scope), len(rows), sk, lim)}
 
 
 @router.get("/rfid/cycle-counts/{cc_id}")

@@ -17,6 +17,7 @@ import RollCountPanel from "./RollCountPanel";
 import BinSelect from "../../components/BinSelect";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const storedPerms = () => { try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions; } catch { return null; } };
 
@@ -51,17 +52,33 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
   const loadSessions = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/cycle-count/sessions`, { headers });
       // FIX-1 (K-B1-02) — sesi opname lintas PT di gedung lokasi kerja: detail/aksi atas nama PT sesi.
-      setSessions(rememberDocEntities(Array.isArray(res.data) ? res.data : []));
+      const rows = Array.isArray(res.data) ? res.data : [];
+      setSessions(rememberDocEntities(rows));
+      setListMeta(metaFromHeaders(res, rows.length));
     } catch (e) {
       setErr("Gagal memuat sesi");
     } finally {
       setLoading(false);
     }
+  };
+  // FIX-7 (B3b LST-01) — dulu 100 sesi terbaru tanpa tanda; kini "Muat berikutnya" dari server.
+  const loadMoreSessions = async () => {
+    setMoreBusy(true);
+    try {
+      const res = await axios.get(`${API}/cycle-count/sessions`, { headers, params: { skip: sessions.length } });
+      const seen = new Set(sessions.map((s) => s.id));
+      const next = [...sessions, ...rememberDocEntities(Array.isArray(res.data) ? res.data : []).filter((s) => !seen.has(s.id))];
+      setSessions(next);
+      const m = metaFromHeaders(res, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi berikutnya")); } finally { setMoreBusy(false); }
   };
 
   const loadSession = async (id) => {
@@ -232,10 +249,11 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                     }`}>{STATUS_LABELS[s.status] || s.status}</span>
                   </div>
                   <p className="text-[11px] text-[#6B6B73] mt-0.5">{s.warehouse_name}</p>
-                  <p className="text-[10.5px] text-[#8E8E93]">{s.roll_count ? `${(s.roll_count.scans || []).length} roll discan` : `${(s.items || []).length} item`} • {s.created_at?.slice(0, 10)}</p>
+                  <p className="text-[10.5px] text-[#8E8E93]">{(s.roll_mode ?? !!s.roll_count) ? `${s.scan_count ?? (s.roll_count?.scans || []).length} roll discan` : `${s.item_count ?? (s.items || []).length} item`} • {s.created_at?.slice(0, 10)}</p>
                 </button>
               ))}
             </div>
+            <ListLimitNote meta={listMeta} noun="sesi" onMore={loadMoreSessions} loading={moreBusy} testId="cycle-count-limit" />
           </div>
 
           {/* Main panel */}

@@ -12,6 +12,7 @@ import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters
 import RepairCreateModal from "./RepairCreateModal";
 import RepairOrderDetail, { StatusPill } from "./RepairOrderDetail";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const TABS = [["", "Semua"], ["draft", "Draf"], ["sent", "Dikirim"], ["done", "Selesai"], ["returning", "Batal — menunggu kembali"], ["cancelled", "Dibatalkan"]];
 
@@ -38,6 +39,16 @@ export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc
   const [open, setOpen] = useState(null);
   const [create, setCreate] = useState(false);
   const [err, setErr] = useState("");
+  const [moreBusy, setMoreBusy] = useState(false);
+  // FIX-7 (B3b LST-01) — dulu 200 dokumen terbaru tanpa tanda; kini server memberi `total/truncated` → "Muat berikutnya".
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const r = await axios.get(`${API}/repair-orders`, { params: { status: status || undefined, q: q || undefined, skip: data.items.length } });
+      const seen = new Set(data.items.map((x) => x.id));
+      setData((d) => ({ ...r.data, items: [...d.items, ...(r.data.items || []).filter((x) => !seen.has(x.id))] }));
+    } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat perbaikan berikutnya."); } finally { setMoreBusy(false); }
+  };
   const load = useCallback(() => {
     setLoading(true);
     axios.get(`${API}/repair-orders`, { params: { status: status || undefined, q: q || undefined } })
@@ -71,6 +82,8 @@ export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc
           <ResponsiveTable testId="repair" rows={loading ? [] : data.items} loading={loading} columns={COLUMNS}
             onRowClick={(ro) => axios.get(`${API}/repair-orders/${ro.id}`).then((r) => setOpen(r.data))} />
         )}
+        {!loading && <ListLimitNote noun="dokumen perbaikan" onMore={loadMore} loading={moreBusy} testId="repair-limit"
+          meta={data.total !== undefined ? { total: data.total, truncated: data.items.length < data.total, shown: data.items.length, skip: 0 } : null} />}
       </section>
       {create && <RepairCreateModal onClose={() => setCreate(false)} onCreated={(ro) => { setCreate(false); setOpen(ro); }} />}
     </div>

@@ -23,10 +23,13 @@ import KNSelect from "../../components/KNSelect";
 import { TaskTakeoverButton } from "./TaskTakeoverButton";
 import { useLocationScope } from "./LocationScopeBadge";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
 
 export default function OutboundScanInterface({ user, focusTaskId = "", onFocusConsumed }) {
   const locScope = useLocationScope();   // FIX-3b (B3b K-B3b-08) — "Ambil alih tugas" untuk supervisor lokasi
   const [tasks, setTasks] = useState([]);
+  const [listMeta, setListMeta] = useState(null);     // FIX-7 — jumlah sungguhan dari server (header X-Total-Count)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [error, setError] = useState("");
@@ -107,10 +110,25 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       const res = await axios.get(`${API}/outbound/tasks${params}`);
       // FIX-1 (K-B1-02) — antrean lintas PT di gedung lokasi kerja: aksi tugas dikirim atas nama PT tugasnya.
       setTasks(rememberDocEntities(res.data));
+      setListMeta(metaFromHeaders(res, (res.data || []).length));
       setSelectedTask((cur) => (cur ? res.data.find((t) => t.id === cur.id) || cur : cur));
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat outbound task."); }
     finally { setLoading(false); setFetched(true); }
+  };
+
+  // FIX-7 (B3b LST-01) — dulu 200 tugas terbaru tanpa tanda; kini "Muat berikutnya" dari server (skip = sudah dimuat).
+  const loadMoreTasks = async () => {
+    setMoreBusy(true);
+    try {
+      const res = await axios.get(`${API}/outbound/tasks`, {
+        params: { ...(filterStatus !== "all" ? { status: filterStatus } : {}), skip: tasks.length } });
+      const seen = new Set(tasks.map((t) => t.id));
+      const next = [...tasks, ...rememberDocEntities(res.data || []).filter((t) => !seen.has(t.id))];
+      setTasks(next);
+      const m = metaFromHeaders(res, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas berikutnya.")); } finally { setMoreBusy(false); }
   };
 
   const startCamera = async () => {
@@ -375,6 +393,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
               })}
             </div>
           )}
+          <ListLimitNote meta={listMeta} noun="tugas" onMore={loadMoreTasks} loading={moreBusy}
+            hint="cari & saringan di layar hanya atas tugas yang sudah dimuat." testId="outbound-limit" />
         </div>
 
         {/* RIGHT: Pick Panel */}

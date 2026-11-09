@@ -50,12 +50,13 @@ function TaskList({ type, focusTaskId, onFocused }) {
   const [lastCut, setLastCut] = useState(null);
   const [lastInbound, setLastInbound] = useState(null);
   const [fromCache, setFromCache] = useState(false);
+  const [truncated, setTruncated] = useState(false);   // FIX-7 (B3b LST-01) — header `X-Truncated` FIX-5 kini ditampilkan
   // UAT 24 Okt (audit UI tahap 2) — daftar Masuk 100+ kartu dulu tanpa judul/jumlah/cari.
   const [q, setQ] = useState("");
   // FIX-1 (K-B1-02) — daftar = semua PT yang ditugaskan di gedung lokasi kerja; PT = label + saringan (chip).
   const [pt, setPt] = useState("");
   const whNames = useWarehouseNames();
-  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setRows(rememberDocEntities((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status)))); })
+  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setTruncated(String(r.headers?.["x-truncated"] || "0") === "1"); setRows(rememberDocEntities((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status)))); })
     .catch((e) => setErr(e.response?.data?.detail || "Gagal memuat tugas."));
   useEffect(() => { load(); }, [type]); // eslint-disable-line
   // Pindai → aksi: kartu tugas hasil pindai dibuka & digulir ke layar, lalu fokus dilepas.
@@ -101,6 +102,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
           aria-label={`Cari tugas ${label}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid={`mw-task-search-${type}`} />
       )}
       {term && shownRows.length === 0 && <div className="p-6 text-center text-fs-14 text-kn-text-2" data-testid={`mw-task-nomatch-${type}`}>Tidak ada tugas yang cocok.</div>}
+      {truncated && <div className="notice-bar warning text-fs-14" data-testid="mw-task-truncated">Tugas aktif lebih banyak dari yang dapat dimuat HP — yang tampil = tugas TERBARU. Lihat daftar lengkap di layar desktop Operasi Gudang.</div>}
       {fromCache && <div className="notice-bar warning text-fs-14" data-testid="mw-task-from-cache">Offline — menampilkan daftar tugas terakhir yang tersimpan di HP. Aksi akan diantrekan.</div>}
       {lastInbound && (
         <div className="m-card p-3 bg-kn-success-soft space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>

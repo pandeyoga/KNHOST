@@ -10,6 +10,7 @@ import SampleCutPanel from "./SampleCutPanel";
 import PendingCutsPanel from "./PendingCutsPanel";
 import useViewPreset from "../../hooks/useViewPreset";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
 
 /**
  * Operasi Gudang › **Cutting** — Trial 22 Okt 2026 (F1/A2, permintaan pemilik): operasi potong DIPISAH dari Barang
@@ -25,10 +26,16 @@ const STAGES = [
   { id: "all", label: "Semua" },
 ];
 
+// FIX-7 (B3b LST-01) — tugas potong disaring di SERVER (`task_subtype` + `exclude_status`); dulu disaring dari 200
+// tugas keluar TERBARU apa pun jenisnya, sehingga paket potong lama hilang begitu ada > 200 tugas SO.
+const CUT_PARAMS = { task_subtype: "sample_cut", exclude_status: "dispatched,cancelled", limit: 500 };
+
 const lineStage = (t) => (Number(t.picked_qty || 0) <= 0 ? "cut" : t.cutting_handoff?.received_at ? "ready" : "handoff");
 
 export default function CuttingOpsView() {
   const [tasks, setTasks] = useState([]);
+  const [listMeta, setListMeta] = useState(null);
+  const [moreBusy, setMoreBusy] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [wh, setWh] = useState("");
   const [cutWh, setCutWh] = useState("");
@@ -48,15 +55,28 @@ export default function CuttingOpsView() {
 
   const load = useCallback(async () => {
     try {
-      const [t, w] = await Promise.all([axios.get(`${API}/outbound/tasks`), axios.get(`${API}/warehouses`)]);
+      const [t, w] = await Promise.all([axios.get(`${API}/outbound/tasks`, { params: CUT_PARAMS }), axios.get(`${API}/warehouses`)]);
       const rows = Array.isArray(t.data) ? t.data : t.data?.items || [];
       setTasks(rows.filter((x) => x.task_subtype === "sample_cut" && !["dispatched", "cancelled"].includes(x.status)));
+      setListMeta(metaFromHeaders(t, rows.length));
       const ws = Array.isArray(w.data) ? w.data : w.data?.items || [];
       setWarehouses(ws);
       setError("");
     } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong.")); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const t = await axios.get(`${API}/outbound/tasks`, { params: { ...CUT_PARAMS, skip: tasks.length } });
+      const seen = new Set(tasks.map((x) => x.id));
+      const next = [...tasks, ...(Array.isArray(t.data) ? t.data : []).filter((x) => !seen.has(x.id))];
+      setTasks(next);
+      const m = metaFromHeaders(t, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas potong berikutnya.")); } finally { setMoreBusy(false); }
+  };
 
   const packages = useMemo(() => {
     const term = q.toLowerCase().trim();
@@ -119,6 +139,8 @@ export default function CuttingOpsView() {
         </div>
 
         <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Paket potong sample / catalogue ({packages.length})</p>
+        <ListLimitNote meta={listMeta} noun="tugas potong" onMore={loadMore} loading={moreBusy}
+          hint="paket & saringan di layar hanya atas tugas yang sudah dimuat." testId="cutting-ops-limit" />
         {packages.length === 0 && <p className="rounded-lg border border-dashed border-[#E5E5EA] p-4 text-center text-[12px] text-[#8E8E93]" data-testid="cutting-ops-empty">Tidak ada paket potong pada filter ini.</p>}
         {packages.map((p) => {
           const n = p.lines.length;

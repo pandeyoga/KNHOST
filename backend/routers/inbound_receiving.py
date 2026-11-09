@@ -28,8 +28,13 @@ class EscalateIn(KNIn):
 
 
 @router.get("/inbound/tasks")
-async def list_inbound_tasks(request: Request, status: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
-    """List all inbound receiving tasks, optionally filtered by status."""
+async def list_inbound_tasks(request: Request, status: str = None, entity_id: str = None,
+                             limit: int = 200, skip: int = 0) -> Any:
+    """List all inbound receiving tasks, optionally filtered by status.
+
+    FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 200 = batas lama, maks 500) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated` (dulu terpotong 200 diam-diam); nama supplier dari SEMUA PO tugas yang tampil
+    (dulu PO dipotong 100 → nama supplier kosong). Array tetap (kompatibel)."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     
@@ -39,11 +44,16 @@ async def list_inbound_tasks(request: Request, status: str = None, entity_id: st
     # FIX-1 (K-B1-02, B2a FLW-IN-07) — tugas terima per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan.
     query = await resolve_work_scope("wms_tasks", query, ctx, entity_id)
     
-    tasks = await db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
-    
+    from pagination import clamp_limit, window_meta, window_headers
+    lim, sk = clamp_limit(limit, 200, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    total = await db.wms_tasks.count_documents(query)
+    tasks = await (db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1)
+                   .skip(sk).limit(lim).to_list(lim))
+
     # Enrich with PO info
     po_ids = list(set(t.get("po_id") for t in tasks if t.get("po_id")))
-    pos = {p["id"]: p for p in await db.purchase_orders.find({"id": {"$in": po_ids}}, {"_id": 0}).to_list(100)}
+    pos = {p["id"]: p for p in await db.purchase_orders.find({"id": {"$in": po_ids}},
+                                                              {"_id": 0, "id": 1, "supplier_name": 1}).to_list(len(po_ids) or 1)}
     
     for task in tasks:
         if task.get("po_id"):
@@ -51,7 +61,9 @@ async def list_inbound_tasks(request: Request, status: str = None, entity_id: st
             task["supplier_name"] = po.get("supplier_name", "")
     from services.work_labels import label_rows
     await label_rows(tasks)
-    return tasks
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(tasks), headers=window_headers(window_meta(total, len(tasks), sk, lim)))
 
 
 @router.post("/inbound/tasks/{task_id}/scan-receive")

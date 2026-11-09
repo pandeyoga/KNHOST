@@ -94,12 +94,14 @@ async def count_untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str]
 
 
 async def untagged_rolls(scope_ids: List[str], warehouse_id: Optional[str],
-                         limit: int = 500) -> List[Dict[str, Any]]:
+                         limit: int = 500, skip: int = 0) -> List[Dict[str, Any]]:
     q = _untagged_query(scope_ids, warehouse_id)
+    # FIX-7 (B3b LST-01) — `skip` untuk "Muat berikutnya". Urutan SENGAJA tetap urutan rencana kueri lama (tanpa sort):
+    # halaman pertama & encode otomatis (`auto_encode`, 200 pertama) memilih roll yang sama persis dengan dulu.
     rolls = await db.inventory_rolls.find(
         q, {"_id": 0, "id": 1, "roll_no": 1, "product_id": 1, "warehouse_id": 1,
             "owner_entity_id": 1, "lot": 1, "length_remaining": 1, "unit": 1, "status": 1, "bin_id": 1}
-    ).to_list(limit)
+    ).skip(max(0, int(skip or 0))).to_list(limit)
     pm = await _product_map([r["product_id"] for r in rolls])
     for r in rolls:
         p = pm.get(r["product_id"], {})
@@ -230,12 +232,18 @@ def public_device(d: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
-async def list_devices(warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+async def list_devices(warehouse_id: Optional[str] = None, limit: int = 500, skip: int = 0) -> List[Dict[str, Any]]:
     q: Dict[str, Any] = {}
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
-    devs = await db.rfid_devices.find(q, {"_id": 0}).sort("code", 1).to_list(500)
+    devs = await db.rfid_devices.find(q, {"_id": 0}).sort([("code", 1), ("id", 1)]).skip(max(0, int(skip or 0))) \
+        .to_list(limit)
     return [public_device(d) for d in devs]
+
+
+async def count_devices(warehouse_id: Optional[str] = None) -> int:
+    """FIX-7 (B3b LST-01) — jumlah sungguhan perangkat (dulu daftar 500 tanpa penanda)."""
+    return await db.rfid_devices.count_documents({"warehouse_id": warehouse_id} if warehouse_id else {})
 
 
 async def simulation_on(entity_id: str = "") -> bool:
@@ -449,8 +457,8 @@ async def reader_scan(device_id: str, scope_ids: List[str], cap: int = 60, *, si
 
 # ─── Locations (rekonsiliasi last-seen vs bin) ───────────────────────────────
 async def rfid_locations(scope_ids: List[str], warehouse_id: Optional[str],
-                         limit: int = 1000) -> List[Dict[str, Any]]:
-    tags = await list_tags(scope_ids, warehouse_id, status="active", limit=limit)
+                         limit: int = 1000, skip: int = 0) -> List[Dict[str, Any]]:
+    tags = await list_tags(scope_ids, warehouse_id, status="active", limit=limit, skip=skip)
     roll_ids = [t["roll_id"] for t in tags if t.get("roll_id")]
     rolls = {r["id"]: r for r in await db.inventory_rolls.find(
         {"id": {"$in": roll_ids}}, {"_id": 0, "id": 1, "bin_id": 1, "warehouse_id": 1, "status": 1}).to_list(2000)}

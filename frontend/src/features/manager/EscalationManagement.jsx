@@ -9,6 +9,7 @@ import FilterChips from "../../components/FilterChips";
 import FormModal from "../../components/FormModal";
 import { formatQty } from "../../utils/formatters";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 /**
  * ManagerEscalationDashboard
@@ -37,6 +38,7 @@ export default function ManagerEscalationDashboard({ user }) {
     resolution_notes: ""
   });
 
+  const [listMeta, setListMeta] = useState(null);
   useEffect(() => {
     fetchEscalatedTasks();
   }, [filterType]);
@@ -45,10 +47,15 @@ export default function ManagerEscalationDashboard({ user }) {
     setLoading(true);
     try {
       // Fetch both inbound and outbound escalated tasks
+      // FIX-7 (B3b LST-01) — batas 500 per arah (dulu 200 diam-diam) + jumlah sungguhan dari header server.
       const [inboundRes, outboundRes] = await Promise.all([
-        axios.get(`${API}/inbound/tasks?status=escalated`),
-        axios.get(`${API}/outbound/tasks?status=escalated`)
+        axios.get(`${API}/inbound/tasks`, { params: { status: "escalated", limit: 500 } }),
+        axios.get(`${API}/outbound/tasks`, { params: { status: "escalated", limit: 500 } })
       ]);
+      const mi = metaFromHeaders(inboundRes, (inboundRes.data || []).length);
+      const mo = metaFromHeaders(outboundRes, (outboundRes.data || []).length);
+      setListMeta(mi && mo ? { total: mi.total + mo.total, truncated: mi.truncated || mo.truncated,
+        shown: mi.shown + mo.shown, skip: 0 } : null);
       
       const inbound = inboundRes.data.map(t => ({ ...t, task_type: "inbound" }));
       const outbound = outboundRes.data.map(t => ({ ...t, task_type: "outbound" }));
@@ -159,6 +166,7 @@ export default function ManagerEscalationDashboard({ user }) {
 
       {/* Tasks List */}
       <ErrorNotice message={error} onRetry={fetchEscalatedTasks} onDismiss={() => setError("")} testId="escalation-error" />
+      <ListLimitNote meta={listMeta} noun="tugas eskalasi" hint="tuntaskan eskalasi lama atau unduh daftar lengkap." testId="escalation-limit" />
       <div className="grid gap-3">
         {loading ? (
           <div className="text-center py-8">Memuat…</div>

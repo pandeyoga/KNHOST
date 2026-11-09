@@ -82,10 +82,19 @@ async def fleet_availability(request: Request, entity_id: Optional[str] = Query(
 
 
 @router.get("/fleet/vehicles")
-async def list_vehicles(request: Request, entity_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
+async def list_vehicles(request: Request, entity_id: Optional[str] = Query(None), limit: int = Query(500),
+                        skip: int = Query(0)) -> Any:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan & maks 500 = batas lama) + header `X-Total-Count`/`X-Truncated`."""
     await require_permission(request, "logistics", "view")
     ctx = await entity_ctx(request)
-    return await fleet.list_vehicles(resolve_list_scope(fleet.COLL, {}, ctx, entity_id))
+    from pagination import clamp_limit, window_meta, window_headers
+    lim, sk = clamp_limit(limit, 500, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    scope = resolve_list_scope(fleet.COLL, {}, ctx, entity_id)
+    rows = await fleet.list_vehicles(scope, skip=sk, limit=lim)
+    total = await db[fleet.COLL].count_documents(scope)
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(rows), headers=window_headers(window_meta(total, len(rows), sk, lim)))
 
 
 @router.post("/fleet/vehicles")
@@ -194,7 +203,10 @@ async def set_my_route(payload: MyRouteIn, request: Request) -> Dict[str, Any]:
 async def list_deliveries(request: Request, entity_id: Optional[str] = Query(None),
                           status: str = Query(""), q: str = Query(""), mode: str = Query(""),
                           order_id: str = Query(""), mine: bool = Query(False),
-                          active_only: bool = Query(False)) -> List[Dict[str, Any]]:
+                          active_only: bool = Query(False), limit: int = Query(lg.LIST_DEFAULT),
+                          skip: int = Query(0)) -> Any:
+    """FIX-7 (B3b LST-01/08) — `skip`/`limit` (bawaan & maks 1.000 = batas lama) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated`; cari `q` di server (dulu disaring sesudah dipotong 1.000). Array tetap (kompatibel)."""
     actor = await require_permission(request, "logistics", "view")
     ctx = await entity_ctx(request)
     # FIX-1 (K-B1-02, B3a SCP-2) — pengiriman per GEDUNG (gudang surat jalan) dalam lokasi kerja, lintas PT yang
@@ -205,11 +217,19 @@ async def list_deliveries(request: Request, entity_id: Optional[str] = Query(Non
     loc = await location_scope.delivery_clause((await location_scope.view_for(ctx)).get("ids"))
     if loc:
         scope = {"$and": [scope, loc]}
-    rows = await lg.list_deliveries(scope, status, q, order_id,
-                                    driver_user_id=actor.get("id") if mine else "",
-                                    mode=mode, active_only=active_only)
+    from pagination import clamp_limit, window_meta, window_headers
+    lim = clamp_limit(limit, lg.LIST_DEFAULT, lg.LIST_MAX)
+    sk = clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    driver = actor.get("id") if mine else ""
+    rows = await lg.list_deliveries(scope, status, q, order_id, driver_user_id=driver, mode=mode,
+                                    active_only=active_only, skip=sk, limit=lim)
+    total = await lg.count_deliveries(scope, status, q, order_id, driver_user_id=driver, mode=mode,
+                                      active_only=active_only)
     from services.work_labels import label_rows
-    return [lg.redact_for(r, actor) for r in await label_rows(rows, kinds=False)]
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    out = [lg.redact_for(r, actor) for r in await label_rows(rows, kinds=False)]
+    return JSONResponse(jsonable_encoder(out), headers=window_headers(window_meta(total, len(out), sk, lim)))
 
 
 @router.post("/deliveries")

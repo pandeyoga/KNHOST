@@ -16,6 +16,7 @@ import { apiErrorText } from "../../../utils/apiError";
 import { EPC_OPTIONS, FREEZE_OPTIONS, STATUS_LABEL, STATUS_TONE, regApi, scopeOptions } from "./registrationApi";
 import RegistrationDetail from "./RegistrationDetail";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const EMPTY = { warehouse_id: "", name: "", notes: "", freeze_mode: "zone", epc_mode: "read", node_ids: [] };
 
@@ -30,10 +31,24 @@ export default function InitialRegistration({ warehouses = [] }) {
   const [formErr, setFormErr] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
+  const metaOf = (r, shown) => (Number.isFinite(r.total) ? { total: r.total, truncated: shown < r.total, shown, skip: 0 } : null);
   const load = async () => {
     setLoading(true);
-    try { setRows(await regApi.list()); setErr(""); } catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi pendaftaran")); }
+    try { const r = await regApi.listPage(); setRows(r.rows); setListMeta(metaOf(r, r.rows.length)); setErr(""); }
+    catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi pendaftaran")); }
     setLoading(false);
+  };
+  const loadMore = async () => {   // FIX-7 (B3b LST-01) — dulu 200 sesi terbaru tanpa tanda
+    setMoreBusy(true);
+    try {
+      const r = await regApi.listPage({ skip: rows.length });
+      const seen = new Set(rows.map((x) => x.id));
+      const next = [...rows, ...r.rows.filter((x) => !seen.has(x.id))];
+      setRows(next); setListMeta(metaOf(r, next.length));
+    } catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi berikutnya")); }
+    setMoreBusy(false);
   };
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -96,6 +111,7 @@ export default function InitialRegistration({ warehouses = [] }) {
                 </button>
               ))}
             </div>
+            <ListLimitNote meta={listMeta} noun="sesi" onMore={loadMore} loading={moreBusy} testId="reg-limit" />
           </div>
           {selectedId ? <RegistrationDetail key={selectedId} sessionId={selectedId} onChanged={load} /> : (
             <div className="rounded-md border border-dashed border-[#C7C7CC] p-8 text-center text-[12.5px] text-[#6B6B73]" data-testid="reg-pick-hint">

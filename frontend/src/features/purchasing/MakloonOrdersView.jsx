@@ -25,9 +25,12 @@ const FILTERS = [
 import PagedRows from "@/components/PagedRows";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 export default function MakloonOrdersView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -45,12 +48,29 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       if (lineFilter) params.line = lineFilter;          // FASE L
       const res = await axios.get(`${API}/makloon-orders`, { params });
-      setRows(Array.isArray(res.data) ? res.data : []);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setRows(list);
+      setListMeta(metaFromHeaders(res, list.length));
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat order makloon."); }
     finally { setLoading(false); }
   }, [selectedEntity, lineFilter]);
   useEffect(() => { loadAll(); }, [loadAll]);
+  // FIX-7 (B3b LST-01) — dulu 500 order terbaru tanpa tanda; kini "Muat berikutnya" dari server.
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const params = { skip: rows.length };
+      if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
+      if (lineFilter) params.line = lineFilter;
+      const res = await axios.get(`${API}/makloon-orders`, { params });
+      const seen = new Set(rows.map((o) => o.id));
+      const next = [...rows, ...(Array.isArray(res.data) ? res.data : []).filter((o) => !seen.has(o.id))];
+      setRows(next);
+      const m = metaFromHeaders(res, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat order makloon berikutnya."); } finally { setMoreBusy(false); }
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -76,7 +96,7 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
         subtitle="Kirim bahan ke mitra makloon (tenun, rajut, celup, printing…), pantau tiap langkah, lalu terima hasilnya."
         actions={canManage && <button data-testid="create-makloon-order-button" onClick={() => setShowCreate(true)} className="primary-button"><Plus size={14} /> Buat Order Makloon</button>} />
       <MetricRow testId="mko-stats" items={[
-        { label: "Total order", value: rows.length, icon: Boxes, hint: "semua status" },
+        { label: "Total order", value: listMeta?.total ?? rows.length, icon: Boxes, hint: "semua status" },
         { label: "Draf", value: cnt("draft"), icon: Clock },
         { label: "Diproses", value: cnt("in_process") + cnt("partially_received"), icon: Loader2 },
         { label: "Selesai", value: cnt("completed"), icon: CheckCircle2 },
@@ -141,6 +161,8 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
           </table>
         </div>
       )}
+      {!loading && <ListLimitNote meta={listMeta} noun="order makloon" onMore={loadMore} loading={moreBusy}
+        hint="saringan status & cari di layar hanya atas order yang sudah dimuat." testId="mko-limit" />}
 
       {showCreate && <MakloonWizard selectedEntity={selectedEntity}
         onClose={() => setShowCreate(false)}

@@ -63,6 +63,10 @@ export function recalledBin(sid) {
 export const regApi = {
   // FIX-1 (K-B1-02) — sesi lintas PT di gedung lokasi kerja: aksi sesi dikirim atas nama PT sesi.
   list: (params) => axios.get(REG, { params }).then((r) => rememberDocEntities(r.data || [])),
+  // FIX-7 (B3b LST-01) — daftar + jumlah sungguhan (header X-Total-Count/X-Truncated) untuk penanda batas.
+  listPage: (params) => axios.get(REG, { params }).then((r) => ({
+    rows: rememberDocEntities(r.data || []), total: Number(r.headers?.["x-total-count"] ?? NaN),
+    truncated: String(r.headers?.["x-truncated"] || "0") === "1" })),
   create: (body) => axios.post(REG, body).then((r) => r.data),
   get: (sid) => axios.get(`${REG}/${sid}`).then((r) => r.data),
   start: (sid) => axios.post(`${REG}/${sid}/start`).then((r) => r.data),

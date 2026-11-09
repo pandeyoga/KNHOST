@@ -7,6 +7,10 @@ export const logisticsSummary = (params) => axios.get(`${L}/summary`, { params }
 export const logisticsDashboard = (params) => axios.get(`${L}/dashboard`, { params }).then((r) => r.data);
 export const logisticsHistory = (params) => axios.get(`${L}/history`, { params }).then((r) => r.data);
 export const listDeliveries = (params) => axios.get(`${L}/deliveries`, { params }).then((r) => r.data);
+// FIX-7 (B3b LST-01) — daftar + jumlah sungguhan dari header (X-Total-Count/X-Truncated) untuk penanda batas.
+export const listDeliveriesPage = (params) => axios.get(`${L}/deliveries`, { params })
+  .then((r) => ({ rows: Array.isArray(r.data) ? r.data : [], total: Number(r.headers?.["x-total-count"] ?? NaN),
+    truncated: String(r.headers?.["x-truncated"] || "0") === "1" }));
 export const getDelivery = (id) => axios.get(`${L}/deliveries/${id}`).then((r) => r.data);
 export const unassignedShipments = (params) => axios.get(`${L}/shipments/unassigned`, { params }).then((r) => r.data);
 export const createDelivery = (payload) => axios.post(`${L}/deliveries`, payload).then((r) => r.data);

@@ -59,7 +59,9 @@ async def process_stages_for_line(line_code: str, request: Request) -> List[Dict
 
 @router.get("/makloon-orders")
 async def list_orders(request: Request, entity_id: str = None, status: str = None,
-                      mode: str = None, line: str = None) -> List[Dict[str, Any]]:
+                      mode: str = None, line: str = None, limit: int = 500, skip: int = 0) -> Any:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan & maks 500 = batas lama) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated` (dulu terpotong 500 diam-diam). Array tetap (kompatibel)."""
     actor = await require_permission(request, "makloon_order", "view")
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
@@ -70,7 +72,13 @@ async def list_orders(request: Request, entity_id: str = None, status: str = Non
     query = resolve_list_scope("makloon_orders", query, ctx, entity_id)
     from services import line_scope as _lines
     query = _lines.narrow(query, actor, line)   # FASE L — pagar & penyaring lini
-    return await list_makloon_orders(query)
+    from pagination import clamp_limit, window_meta, window_headers
+    lim, sk = clamp_limit(limit, 500, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    rows = await list_makloon_orders(query, skip=sk, limit=lim)
+    total = await db.makloon_orders.count_documents(query)
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(rows), headers=window_headers(window_meta(total, len(rows), sk, lim)))
 
 
 @router.post("/makloon-orders")
