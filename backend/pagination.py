@@ -96,6 +96,28 @@ async def fetch_page(
     return items, total
 
 
+def clamp_limit(value: Any, default: int, maximum: int, minimum: int = 1) -> int:
+    """FIX-5 (B3b LST-03) — `limit`/`skip` dari klien: bukan angka atau di bawah `minimum` → bawaan; di atas batas →
+    batas. Dulu `limit=-1` → `to_list(-1)` → 500, `limit=100000` diterima apa adanya."""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return default
+    if v < minimum:
+        return default
+    return min(v, maximum)
+
+
+def window_meta(total: int, shown: int, skip: int, limit: int) -> Dict[str, Any]:
+    """FIX-5 (B3b LST-01) — penanda daftar berbatas: jumlah SUNGGUHAN + apakah masih ada sisa (tidak lagi senyap)."""
+    return {"total": int(total), "skip": int(skip), "limit": int(limit), "truncated": int(total) > int(skip) + int(shown)}
+
+
+def window_headers(meta: Dict[str, Any]) -> Dict[str, str]:
+    """Bentuk header (KN-D25, diekspos CORS) untuk endpoint yang mengembalikan array telanjang."""
+    return {"X-Total-Count": str(meta["total"]), "X-Truncated": "1" if meta["truncated"] else "0"}
+
+
 def envelope(items: List[Any], total: int, page: int, page_size: int) -> Dict[str, Any]:
     """Bungkus hasil sesuai kontrak paginasi."""
     return {

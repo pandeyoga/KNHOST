@@ -86,7 +86,9 @@ async def get_suggest(request: Request, from_warehouse_id: str) -> Dict[str, Any
 @router.get("/putaway-orders")
 async def get_orders(request: Request, warehouse_id: Optional[str] = None,
                      status: Optional[str] = None, limit: int = 100,
-                     entity_id: Optional[str] = None) -> Dict[str, Any]:
+                     entity_id: Optional[str] = None, skip: int = 0) -> Dict[str, Any]:
+    """FIX-5 (B3b LST-01/03) — `skip`/`limit` (1–500) + `total`/`truncated` sungguhan; `status=live` = PA berjalan.
+    Dulu 100 terbaru (termasuk draf/selesai) dipotong diam-diam → PA aktif lama hilang dari layar."""
     await require_permission(request, "wms", "view")
     ctx = await entity_ctx(request)
     # FIX-1 (K-B1-02, B3a SCP-2/SCP-3) — PA per GEDUNG dalam lokasi kerja (pagar keras P9.5 + saringan tampilan) di
@@ -102,10 +104,14 @@ async def get_orders(request: Request, warehouse_id: Optional[str] = None,
         owners = list(ctx.allowed_entity_ids)
     view = await location_scope.view_for(ctx)
     extra = location_scope.narrow_view("putaway_orders", {}, view)
-    rows = await pa.list_orders(owners, warehouse_id, status, max(1, min(int(limit or 100), 500)), extra=extra)
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 100, 500), clamp_limit(skip, 0, 10 ** 6, minimum=0)
+    rows = await pa.list_orders(owners, warehouse_id, status, lim, extra=extra, skip=sk)
+    n = len(rows)
     ids = ctx.warehouse_ids
     rows = [o for o in rows if location_scope.doc_in_scope("putaway_orders", o, ids)]
-    return {"orders": await label_rows(rows, entity_field="owner_entity_id", kinds=False)}
+    meta = window_meta(await pa.count_orders(owners, warehouse_id, status, extra), n, sk, lim)
+    return {"orders": await label_rows(rows, entity_field="owner_entity_id", kinds=False), **meta}
 
 
 @router.post("/putaway-orders")

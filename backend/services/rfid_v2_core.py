@@ -116,6 +116,12 @@ async def ensure_indexes() -> None:
     await _safe_index(collection('rfid_v2_retention_runs'), [('expire_at', 1)], name='kn_ttl_retention_runs',
                       expireAfterSeconds=0)
     for name, keys in GATE_PATH_INDEXES:
+        if keys == [('id', 1)]:
+            # FIX-5 — kunci `id` memakai index bersama `uq_id` (unik parsial, `indexes.ensure_id_index`); dulu
+            # `kn_gate_id_1` non-unik penuh. Tanpa cabang ini index lama lahir lagi tiap start (kunci kembar).
+            from indexes import ensure_id_index
+            await ensure_id_index(name)
+            continue
         await _safe_index(db[name], keys, name=_index_name(keys), background=True)
 
 

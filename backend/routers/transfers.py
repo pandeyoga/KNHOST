@@ -1,6 +1,6 @@
 """Warehouse Transfer router: multi-warehouse transfer workflow with approval."""
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Request, Query
+from fastapi import APIRouter, HTTPException, Request, Query, Response
 from pymongo import ReturnDocument
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
@@ -105,14 +105,18 @@ async def _guard_transfer(request: Request, transfer_id: str, side: str = "any")
 @router.get("/transfers")
 async def list_transfers(
     request: Request,
+    response: Response,
     status: Optional[str] = Query(None),
     warehouse_id: Optional[str] = Query(None),
     transfer_kind: Optional[str] = Query(None),
     line: str = Query("", description="FASE L — penyaring lini (koma untuk multi)"),
     sales_order_id: Optional[str] = Query(None),
     entity_id: Optional[str] = Query(None, description="FIX-1 — saringan PT (bawaan: semua PT yang ditugaskan)"),
+    limit: int = Query(200, description="FIX-5 — 1–500 (bawaan 200)"),
+    skip: int = Query(0, description="FIX-5 — geser halaman"),
 ) -> List[Dict[str, Any]]:
-    """List all transfers with optional filtering by status, warehouse, or transfer_kind."""
+    """List all transfers with optional filtering by status, warehouse, or transfer_kind.
+    FIX-5 (B3b LST-01) — `skip`/`limit` + `X-Total-Count`/`X-Truncated` (dulu 200 terbaru dipotong diam-diam)."""
     actor = await require_permission(request, "transfer", "view")
     ctx = await entity_ctx(request)
     # FIX-1 (K-B1-02, B3a SCP-2) — daftar transfer per GEDUNG dalam lokasi kerja (asal ATAU tujuan; dulu tanpa
@@ -143,9 +147,12 @@ async def list_transfers(
             {"dest_warehouse_id": warehouse_id},
         ]}]}
     
-    transfers = await db.warehouse_transfers.find(
-        line_scope.narrow(query_filter, actor, line, field=line_scope.LINES_FIELD),
-        {"_id": 0}).sort("created_at", -1).to_list(200)
+    from pagination import clamp_limit, window_headers, window_meta
+    lim, sk = clamp_limit(limit, 200, 500), clamp_limit(skip, 0, 10 ** 6, minimum=0)
+    _tq = line_scope.narrow(query_filter, actor, line, field=line_scope.LINES_FIELD)
+    transfers = await db.warehouse_transfers.find(_tq, {"_id": 0}).sort("created_at", -1).skip(sk).to_list(lim)
+    response.headers.update(window_headers(window_meta(
+        await db.warehouse_transfers.count_documents(_tq), len(transfers), sk, lim)))
     
     # Enrich with warehouse/entity names and product details
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}

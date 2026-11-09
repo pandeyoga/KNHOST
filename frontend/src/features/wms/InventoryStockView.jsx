@@ -22,6 +22,7 @@ import InitialStockForm from "./inventory/InitialStockForm";
 import OpeningCostAlert from "./inventory/OpeningCostAlert";
 import BalancesTable from "./inventory/BalancesTable";
 import RollsTable from "./inventory/RollsTable";
+import RollGroupView from "./inventory/RollGroupView";   // FIX-5 — roll dikelompokkan Produk › Lot › Lokasi
 import LedgerTable from "./inventory/LedgerTable";
 import ProductHistoryPanel from "./inventory/ProductHistoryPanel";
 import WarehouseStructure from "./inventory/WarehouseStructure";
@@ -93,6 +94,15 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   const [pegBusyId, setPegBusyId]     = useState(null);   // roll yang sedang di-unpeg
   const [pegOnly, setPegOnly]         = useState(false);  // filter: hanya tampil roll yang di-peg
   const [checkFilter, setCheckFilter] = useState("");     // UAT 24 Okt (P11.4) — status cek MDQ / 4-point
+  // FIX-5 (B4 §3.8, pertanyaan pemilik 9 Nov) — tab Roll: "Kelompok" (Produk › Lot › Lokasi, agregat server) atau
+  // "Daftar" (tabel berhalaman seperti dulu). Pilihan diingat per peramban.
+  const [rollView, setRollView] = useState(() => {
+    try { return window.localStorage.getItem("kn.inventory.rollView") || "list"; } catch { return "list"; }
+  });
+  const chooseRollView = (v) => {
+    setRollView(v);
+    try { window.localStorage.setItem("kn.inventory.rollView", v); } catch { /* penyimpanan ditolak — abaikan */ }
+  };
 
   // FIX-1 (K-B1-01) — layar stok gudang memakai cakupan lokasi kerja (bilah cakupan "Lokasi: … ▾"); server
   // menyaring `location_view=1` (pemilih gudang eksplisit di bawah tetap menang).
@@ -115,7 +125,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
 
   const rollsPaged = usePagedList("/inventory/rolls", {
     pageSize: 100, params: rollParams, search: searchQuery,
-    enabled: tab === "rolls" && !pegOnly,
+    enabled: tab === "rolls" && !pegOnly && rollView === "list",
   });
 
   const movementParams = useMemo(() => {
@@ -401,7 +411,15 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             <KNSelect data-testid="roll-check-filter" className="field !h-8 !text-[11.5px]"
               value={checkFilter} onValueChange={setCheckFilter} options={ROLL_CHECK_FILTERS} placeholder="Semua status cek" />
           </div>
-          <span className="ml-auto text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.total || 0} roll</span>
+          <div className="ml-auto flex items-center gap-1" role="group" aria-label="Tampilan roll" data-testid="roll-view-toggle">
+            {[["group", "Kelompok"], ["list", "Daftar"]].map(([k, label]) => (
+              <button key={k} type="button" onClick={() => chooseRollView(k)} data-testid={`roll-view-${k}`}
+                aria-pressed={rollView === k} className={rollView === k ? "primary-button btn-sm" : "secondary-button btn-sm"}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {rollView === "list" && <span className="text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.total || 0} roll</span>}
         </div>
       )}
 
@@ -479,7 +497,11 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
           </div>
         )}
 
-        {tab === "rolls" && (
+        {tab === "rolls" && !pegOnly && rollView === "group" && (
+          <RollGroupView params={rollParams} search={searchQuery} />
+        )}
+
+        {tab === "rolls" && (pegOnly || rollView === "list") && (
           <div className="flex flex-col gap-2">
             <RollsTable
               loading={rollsLoading}

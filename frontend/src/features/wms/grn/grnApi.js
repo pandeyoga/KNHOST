@@ -45,6 +45,8 @@ export function errText(e, fallback = "Aksi gagal.") {
 
 export const grnApi = {
   list: (params) => axios.get(GRN, { params }).then((r) => r.data),
+  // FIX-5 (B3b LST-01) — baris + respons (header X-Total-Count/X-Truncated) untuk penanda "a–b dari N"
+  listPage: (params) => axios.get(GRN, { params }).then((r) => ({ rows: r.data, res: r })),
   get: (id) => axios.get(`${GRN}/${id}`).then((r) => r.data),
   targets: (id) => axios.get(`${GRN}/${id}/targets`).then((r) => r.data),
   rolls: (id) => axios.get(`${GRN}/${id}/rolls`).then((r) => r.data),

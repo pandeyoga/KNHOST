@@ -165,6 +165,12 @@ export function useAppActions(state) {
     setActiveDetail(details[type]);
   };
 
+  // FIX-5 (B1b UI-51) — `loadAll` dulu berjalan 3× per buka aplikasi (±1 MB dasbor tiap kali): efek bergantung pada
+  // OBJEK `user`, yang dibuat ulang oleh setiap `/auth/me` (pulih sesi + segar izin berkala) walau isinya sama. Kini
+  // kuncinya = identitas pengguna + peran + PT + SIDIK izin: muat ulang hanya bila salah satunya benar-benar berubah
+  // (izin berubah tetap memuat ulang — dulu `loadAll` malah memakai izin basi dari closure lama).
+  const permKey = JSON.stringify(user?.permissions || {});
+  const userKey = user ? String(user.id || user.email || "anon") : "";
   const loadAll = useCallback(async () => {
     setLoading(true);
     setActiveEntity(selectedEntity || "all");  // pastikan header entitas sinkron
@@ -261,10 +267,10 @@ export function useAppActions(state) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.role, selectedEntity]);
+  }, [user?.role, selectedEntity, permKey, userKey]);
 
-  // Auto-load data once user is authenticated.
-  useEffect(() => { if (user) loadAll(); }, [loadAll, user]);
+  // Auto-load data once user is authenticated (FIX-5 UI-51 — kunci stabil, bukan objek `user`).
+  useEffect(() => { if (userKey) loadAll(); }, [loadAll, userKey]);
 
   const inspectProduct = async (product) => {
     setSelectedProduct(product);

@@ -84,15 +84,23 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
     missing = [expected[e] for e in expected if e not in scanned]
     extra_epcs = sorted(scanned - set(expected))
     extra_items = []
+    # FIX-5 (B3b LST-07 / N+1 opname) — EPC lebih dibaca sekaligus (tag → roll → gudang: 3 kueri, bukan 3 per EPC).
+    tags_by_epc: Dict[str, Dict[str, Any]] = {}
+    async for t in db.rfid_tags.find({"epc": {"$in": extra_epcs}, "status": "active"}, {"_id": 0}):
+        tags_by_epc.setdefault(t["epc"], t)
+    rolls_by_id = {r["id"]: r for r in await db.inventory_rolls.find(
+        {"id": {"$in": list({t["roll_id"] for t in tags_by_epc.values() if t.get("roll_id")})}},
+        {"_id": 0, "id": 1, "roll_no": 1, "warehouse_id": 1}).to_list(None)} if tags_by_epc else {}
+    wh_names = {w["id"]: w for w in await db.warehouses.find(
+        {"id": {"$in": list({r.get("warehouse_id") for r in rolls_by_id.values() if r.get("warehouse_id")})}},
+        {"_id": 0, "id": 1, "name": 1}).to_list(None)} if rolls_by_id else {}
     for epc in extra_epcs:
-        tag = await db.rfid_tags.find_one({"epc": epc, "status": "active"}, {"_id": 0})
+        tag = tags_by_epc.get(epc)
         if not tag:
             extra_items.append({"epc": epc, "kind": "unknown", "note": "EPC asing (tak terdaftar)"})
             continue
-        roll = await db.inventory_rolls.find_one({"id": tag["roll_id"]},
-                                                 {"_id": 0, "roll_no": 1, "warehouse_id": 1})
-        wh = await db.warehouses.find_one({"id": (roll or {}).get("warehouse_id")},
-                                          {"_id": 0, "name": 1}) or {}
+        roll = rolls_by_id.get(tag.get("roll_id"))
+        wh = wh_names.get((roll or {}).get("warehouse_id")) or {}
         extra_items.append({"epc": epc, "kind": "misplaced", "roll_no": (roll or {}).get("roll_no"),
                             "sku": tag.get("sku"), "note": f"Terdaftar di {wh.get('name', 'gudang lain')} — salah lokasi"})
     found = len(expected) - len(missing)

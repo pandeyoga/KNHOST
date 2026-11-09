@@ -11,7 +11,7 @@ products.sku) agar tidak bentrok dengan data seed/legacy.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pymongo import ASCENDING, DESCENDING
 
@@ -379,6 +379,142 @@ UNIQUE_DOC_NUMBER_FIELDS = [
 ]
 
 
+# ── FIX-5 (B3a SCH-9, PREP-H §9) — kunci aplikasi `id` ────────────────────────────────────────────────────────
+# Dulu 131/132 koleksi tanpa index `id`: setiap `find_one/update_one({"id": …})` = COLLSCAN (roll 46.700 dok di data
+# acuan, 346.700 di uji beban; mutasi 85 rb). Index `uq_id` = UNIK + PARSIAL `{id: {$gt: ""}}`:
+#   * parsial `$gt ""` (bukan `$type`) — dipakai planner untuk `{id: "…"}` dan `{id: {$in: […]}}` (diuji `explain`,
+#     Mongo 7); dokumen tanpa `id` / `id` null / kosong tidak ikut index → tidak saling bentrok;
+#   * unik hanya bila data mengizinkan: bila sudah ada `id` kembar, pembuatan unik GAGAL → index NON-UNIK parsial
+#     `kn_id_dupe` (tetap mempercepat) + galat berisik di log + daftar `id_dupes` di ringkasan (temuan data);
+#   * index non-unik `kn_gate_id_1` (PREP-H) di koleksi yang sama dibuang sesudah `uq_id` ada (kunci identik).
+# Cakupan: koleksi yang dicari per `id` di jalur WMS-RFID & stok + dokumen yang dirujuknya (sensus 9 Nov 2026: 0 `id`
+# kembar di data acuan). Koleksi lain belum (sisa FIX-5).
+ID_PARTIAL = {"id": {"$gt": ""}}
+ID_INDEX_COLLECTIONS: List[str] = [
+    # stok & roll
+    "inventory_rolls", "inventory_movements", "inventory_balances", "inventory_lots", "material_reservations",
+    "products", "warehouses", "warehouse_sites",
+    # RFID
+    "rfid_tags", "rfid_devices", "rfid_print_jobs", "rfid_verify_sessions", "rfid_incidents", "rfid_cycle_counts",
+    "rfid_reads", "rfid_passages", "roll_label_prints",
+    # dokumen WMS
+    "putaway_orders", "warehouse_transfers", "shipments", "logistics_deliveries", "goods_receipts", "wms_tasks",
+    "cycle_count_sessions", "inspections", "makloon_orders", "repair_orders", "mdq_cuts", "internal_requests",
+    # dokumen order/mitra yang dibaca jalur gudang
+    "sales_orders", "purchase_orders", "sales_returns", "purchase_returns", "special_orders",
+    "interco_transactions", "interco_returns", "customers", "suppliers", "business_entities", "users",
+]
+
+# FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
+# kueri `reserved_ref.id`). Parsial `$gt ""` → hanya roll yang punya rujukan itu yang masuk index (kecil).
+ROLL_REF_FIELDS = ("reserved_ref.id", "transfer_ref.id", "last_transfer.ref_id", "returned_from_transfer.ref_id",
+                   "active_movement.id", "bucket_ref.id", "length_reservations.id", "length_reservations.ref.id",
+                   "earmarked_for.id", "acquired.ref_id")
+# FIX-5 — index jalur panas lain (profil/explain uji beban FIX-5): non-unik, nama `kn_…` deterministik.
+HOT_PATH_INDEXES: Dict[str, List[IndexKeys]] = {
+    "putaway_orders": [[("status", A), ("created_at", D)]],          # PA hidup per roll (`rolls_in_live_orders`)
+    "warehouse_transfers": [[("status", A), ("created_at", D)]],
+    "wms_tasks": [[("allocation_id", A), ("flow_type", A), ("status", A)]],   # pindah alokasi saat terima transfer
+    "material_reservations": [[("product_id", A), ("status", A)]],
+    "rfid_tags": [[("epc", A)],
+                  [("owner_entity_id", A), ("status", A), ("encoded_at", D)]],   # daftar tag (`/rfid/tags`) + jumlahnya
+}
+
+
+async def ensure_id_index(coll_name: str) -> str:
+    """Index `id` satu koleksi (idempoten). → "existed" | "unique" | "non_unique_dupes" | "failed"."""
+    from pymongo.errors import OperationFailure
+    coll = db[coll_name]
+    try:
+        info = await coll.index_information()
+    except Exception:  # noqa: BLE001
+        info = {}
+    state = "existed" if ("uq_id" in info or "kn_id_dupe" in info) else ""
+    if not state:
+        try:
+            await coll.create_index([("id", ASCENDING)], name="uq_id", unique=True, background=True,
+                                    partialFilterExpression=ID_PARTIAL)
+            state = "unique"
+        except OperationFailure as exc:
+            if getattr(exc, "code", None) not in (11000, 11001) and "E11000" not in str(exc):
+                logger.warning("[indexes] %s.uq_id gagal: %s", coll_name, exc)
+                return "failed"
+            logger.error("[indexes] UNIK %s.id GAGAL — ada `id` kembar di data (temuan data, FIX-5): %s", coll_name, exc)
+            try:
+                await coll.create_index([("id", ASCENDING)], name="kn_id_dupe", background=True,
+                                        partialFilterExpression=ID_PARTIAL)
+                state = "non_unique_dupes"
+            except Exception as exc2:  # noqa: BLE001
+                logger.warning("[indexes] %s.kn_id_dupe gagal: %s", coll_name, exc2)
+                return "failed"
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[indexes] %s.uq_id gagal: %s", coll_name, exc)
+            return "failed"
+    if "kn_gate_id_1" in info:   # PREP-H — index non-unik penuh dengan kunci sama: tidak perlu dua
+        try:
+            await coll.drop_index("kn_gate_id_1")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[indexes] drop %s.kn_gate_id_1 dilewati: %s", coll_name, exc)
+    return state
+
+
+async def ensure_id_indexes() -> Dict[str, Any]:
+    """FIX-5 — index `id` + rujukan bersarang roll + jalur panas. Non-fatal & idempoten.
+    Hanya koleksi yang SUDAH ada (tidak membuat koleksi kosong); koleksi baru ikut di start berikutnya."""
+    out: Dict[str, Any] = {"unique": [], "existed": 0, "id_dupes": [], "failed": []}
+    try:
+        present = set(await db.list_collection_names())
+    except Exception:  # noqa: BLE001
+        present = set(ID_INDEX_COLLECTIONS) | {"inventory_rolls"} | set(HOT_PATH_INDEXES)
+    for name in ID_INDEX_COLLECTIONS:
+        if name not in present:
+            continue
+        st = await ensure_id_index(name)
+        if st == "unique":
+            out["unique"].append(name)
+        elif st == "existed":
+            out["existed"] += 1
+        elif st == "non_unique_dupes":
+            out["id_dupes"].append(name)
+        else:
+            out["failed"].append(name)
+    rolls = db.inventory_rolls
+    try:
+        have = set((await rolls.index_information()).keys())
+    except Exception:  # noqa: BLE001
+        have = set()
+    for field in (ROLL_REF_FIELDS if "inventory_rolls" in present else ()):
+        name = "kn_ref_" + field.replace(".", "_")
+        if name in have:
+            continue
+        try:
+            await rolls.create_index([(field, ASCENDING)], name=name, background=True,
+                                     partialFilterExpression={field: {"$gt": ""}})
+        except Exception as exc:  # noqa: BLE001
+            out["failed"].append(f"inventory_rolls.{field}")
+            logger.warning("[indexes] inventory_rolls.%s gagal: %s", field, exc)
+    for coll_name, specs in HOT_PATH_INDEXES.items():
+        if coll_name not in present:
+            continue
+        coll = db[coll_name]
+        try:
+            have = set((await coll.index_information()).keys())
+        except Exception:  # noqa: BLE001
+            have = set()
+        for keys in specs:
+            name = _index_name(keys)
+            if name in have:
+                continue
+            try:
+                await coll.create_index(keys, name=name, background=True)
+            except Exception as exc:  # noqa: BLE001
+                out["failed"].append(f"{coll_name}.{name}")
+                logger.warning("[indexes] %s.%s gagal: %s", coll_name, name, exc)
+    if out["id_dupes"]:
+        logger.error("[indexes] FIX-5 — koleksi dengan `id` kembar (index non-unik dipakai): %s", out["id_dupes"])
+    return out
+
+
 def _index_name(keys: IndexKeys) -> str:
     """Nama index deterministik & pendek (< 128 char)."""
     parts = []
@@ -414,6 +550,10 @@ async def ensure_performance_indexes() -> dict:
                 failed += 1
                 logger.warning("[indexes] %s.%s gagal: %s", collection, name, exc)
     summary = {"created": created, "existed": existed, "failed": failed}
+    try:   # FIX-5 — index `id` & rujukan roll (juga dipanggil di awal bootstrap; idempoten)
+        summary["id_index"] = await ensure_id_indexes()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[indexes] ensure_id_indexes gagal: %s", exc)
     # D-01 — kunci UNIK pada sequence nomor: dua proses tak bisa membuat counter kembar.
     try:
         await db.number_sequences.create_index(

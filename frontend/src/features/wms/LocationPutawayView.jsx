@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { roleIs } from "../../config/roles";
 import { MapPin, Package, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon, ChevronRight } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -13,6 +13,7 @@ import { useLocationScope, LocationScopeBadge } from "./LocationScopeBadge";
 import StructureEditor from "./location/StructureEditor";
 import BinOccupancyGrid from "./location/BinOccupancyGrid";
 import PutawayRow from "./location/PutawayRow";
+import LazyMount from "./location/LazyMount";   // FIX-5 (UI-46) — baris antrean dirender saat mendekati layar
 import OrphanPanel from "./location/OrphanPanel";
 import StockTreePanel from "./location/StockTreePanel";
 import { askReason } from "../../services/confirmService";
@@ -62,17 +63,21 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
     }).catch((e) => setError(apiErrorText(e)));
   }, [locScope]); // eslint-disable-line
 
-  const loadAll = async () => {
+  // FIX-5 (B1b UI-46) — pindah halaman antrean hanya memuat ulang ANTREAN (dulu struktur & okupansi gudang ikut
+  // dimuat ulang setiap "Berikutnya"); muat penuh tetap saat ganti gudang/PT, simpan struktur, atau "Muat ulang".
+  const loadAll = async (queueOnly = false) => {
     if (!whId) return;
     setLoading(true); setError(null);
     try {
       const ent = selectedEntity && selectedEntity !== "all" ? selectedEntity : "all";
       const [l, qd] = await Promise.all([
-        axios.get(`${API}/warehouses/${whId}/locations`, { params: { entity_id: ent } }),
+        queueOnly ? Promise.resolve(null) : axios.get(`${API}/warehouses/${whId}/locations`, { params: { entity_id: ent } }),
         axios.get(`${API}/inventory/putaway/queue`, { params: { warehouse_id: whId, entity_id: ent, skip: queueSkip, limit: 100 } }),
       ]);
-      setLoc(l.data);
-      setZones(normalizeZones(l.data.zones));
+      if (l) {
+        setLoc(l.data);
+        setZones(normalizeZones(l.data.zones));
+      }
       setQueue(qd.data.rolls || []);
       setQueueMeta({ total: qd.data.total ?? (qd.data.rolls || []).length, total_building: qd.data.total_building ?? 0,
         skip: qd.data.skip || 0, limit: qd.data.limit || 100, truncated: !!qd.data.truncated });
@@ -81,7 +86,12 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
     } finally { setLoading(false); }
   };
   useEffect(() => { setQueueSkip(0); }, [whId, selectedEntity]);
-  useEffect(() => { loadAll(); }, [whId, selectedEntity, queueSkip]); // eslint-disable-line
+  useEffect(() => { loadAll(); }, [whId, selectedEntity]); // eslint-disable-line
+  const firstSkip = useRef(true);
+  useEffect(() => {   // halaman antrean berganti → hanya antrean
+    if (firstSkip.current) { firstSkip.current = false; return; }
+    loadAll(true);
+  }, [queueSkip]); // eslint-disable-line
 
   const occByBin = useMemo(() => Object.fromEntries((loc?.bins || []).map((b) => [b.bin_id, b])), [loc]);
   const binOptions = useMemo(() => (loc?.bins || []).map((b) => ({ value: b.bin_id, label: `${b.code} — ${b.path}` })), [loc]);
@@ -117,7 +127,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
             <KNSelect data-testid="lp-warehouse" value={whId} onValueChange={setWhId}
               options={warehouses.map((x) => ({ value: x.id, label: isActiveWh(x) ? x.name : `${x.name} (nonaktif)` }))}
               className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Gudang" />
-            <button type="button" data-testid="lp-refresh" onClick={loadAll} className="secondary-button">
+            <button type="button" data-testid="lp-refresh" onClick={() => loadAll()} className="secondary-button">
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Muat ulang
             </button>
           </>
@@ -131,7 +141,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         <div className="mt-1"><LocationScopeBadge scope={locScope} /></div>
       </div>
 
-      {error && <ErrorNotice message={error} onRetry={loadAll} />}
+      {error && <ErrorNotice message={error} onRetry={() => loadAll()} />}
       {msg && <div data-testid="lp-msg" className="rounded-lg bg-[#E7F7EC] text-[#1B7E3B] text-[12px] font-semibold px-3 py-2">{msg}</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -157,7 +167,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         : tab === "stock" ? <StockTreePanel whId={whId} ownerOptions={owners} />
         : tab === "structure" ? <StructureEditor zones={zones} setZones={setZones} occByBin={occByBin} canEdit={isSup} saving={saving} onSave={() => saveStructure()} />
         : tab === "bins" ? <BinOccupancyGrid bins={loc?.bins} />
-        : tab === "orphans" ? <OrphanPanel whId={whId} binOptions={binOptions} onChanged={loadAll} />
+        : tab === "orphans" ? <OrphanPanel whId={whId} binOptions={binOptions} onChanged={() => loadAll()} />
         : (
           <div className="section-card section-pad">
             <div className="kn-list-toolbar mb-1">
@@ -176,7 +186,11 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
                     <span> · gedung ini (semua PT): {formatQty(queueMeta.total_building)} roll — roll PT lain tampil saat PT-nya dipilih</span>
                   )}
                 </p>
-                <div className="space-y-2">{queue.map((r) => <PutawayRow key={r.id} roll={r} binOptions={binOptions} canOverride={isSup} onDone={loadAll} />)}</div>
+                <div className="space-y-2">{queue.map((r, i) => (
+                  <LazyMount key={r.id} eager={i < 12} testId={`lp-queue-lazy-${r.id}`}>
+                    <PutawayRow roll={r} binOptions={binOptions} canOverride={isSup} onDone={() => loadAll()} />
+                  </LazyMount>
+                ))}</div>
                 {(queueMeta.skip > 0 || queueMeta.truncated) && (
                   <div className="mt-3 flex items-center justify-between gap-2" data-testid="lp-queue-pager">
                     <button type="button" className="secondary-button" disabled={queueMeta.skip <= 0 || loading}

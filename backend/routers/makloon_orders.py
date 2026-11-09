@@ -113,7 +113,8 @@ async def list_claims(request: Request, status: str = "", entity_id: Optional[st
     await require_permission(request, "makloon_order", "view")
     ctx = await entity_ctx(request)
     flt = resolve_list_scope("makloon_orders", {}, ctx, entity_id)
-    return await mclaim.list_claims(flt, status=status, limit=limit)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03)
+    return await mclaim.list_claims(flt, status=status, limit=clamp_limit(limit, 200, 500))
 
 
 @router.get("/makloon-orders/claims/stats")

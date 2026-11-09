@@ -267,37 +267,29 @@ async def list_balances(request: Request, owner_entity_id: Optional[str] = None,
                                   "X-Truncated": "1" if total > len(result) else "0"})
 
 
-@router.get("/inventory/rolls")
-async def list_rolls(
-    request: Request,
-    product_id: Optional[str] = None,
-    warehouse_id: Optional[str] = None,
-    owner_entity_id: Optional[str] = None,
-    status: Optional[str] = None,
-    lot: Optional[str] = None,
-    line: str = "",
-    q: str = "",
-    limit: int = 5000,
-    skip: int = 0,
-    check: str = "",
-    location_view: bool = False,
-) -> Any:
-    """Daftar roll fisik (SSOT) dengan filter owner/lot/status/warehouse.
-    UAT 24 Okt (P11.4) — `check`: no_mdq (belum dicek MD Quality) · mdq_sampling · no_4point (belum 4-point).
-
-    OPT-IN paginasi: bila ?page/?page_size hadir → envelope {items,total,...};
-    kalau tidak → array telanjang (kompatibel mundur)."""
-    actor = await require_permission(request, "product", "view")
-    ctx = await entity_ctx(request)
+async def _rolls_query(actor: Dict[str, Any], ctx: Any, *, product_id: Optional[str] = None,
+                       warehouse_id: Optional[str] = None, owner_entity_id: Optional[str] = None,
+                       status: Optional[str] = None, lot: Optional[str] = None, line: str = "", check: str = "",
+                       location_view: bool = False, bin_id: Optional[str] = None,
+                       physical: bool = False) -> Dict[str, Any]:
+    """Kueri daftar roll (satu sumber untuk `/inventory/rolls` & `/inventory/roll-groups` — FIX-5).
+    `physical` = roll fisik di gudang (status fisik & panjang > 0), bila `status` tidak dipilih."""
     query: Dict[str, Any] = {}
+    if physical and not status:
+        query["status"] = {"$in": list(roll_service.PHYSICAL_ROLL_STATUSES)}
+        query["length_remaining"] = {"$gt": 0}
     if product_id:
         query["product_id"] = product_id
     if warehouse_id:
         query["warehouse_id"] = warehouse_id
     if status:
         query["status"] = status
-    if lot:
+    if lot == "__none__":   # FIX-5 — kelompok "(tanpa lot)" di tampilan kelompok
+        query["lot"] = {"$in": [None, ""]}
+    elif lot:
         query["lot"] = lot
+    if bin_id is not None:   # FIX-5 — rincian per alamat di tampilan kelompok ("" = belum ditempatkan)
+        query["bin_id"] = bin_id if bin_id else {"$in": [None, ""]}
     if check == "no_mdq":
         query["md_quality_checked"] = {"$ne": True}
     elif check == "mdq_sampling":
@@ -313,7 +305,49 @@ async def list_rolls(
     # FASE L — pagar lini di Daftar Roll. Roll lama tanpa lini TETAP terlihat, kalau
     # tidak layar gudang mendadak kosong bagi staf ber-lini (user story L.G #4).
     from services import line_scope as _lines
-    query = _lines.narrow(query, actor, line)
+    return _lines.narrow(query, actor, line)
+
+
+def _roll_search(qry: Dict[str, Any], text: str, products: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    if not text:
+        return qry
+    # Cari juga lewat nama/SKU produk (tak tersimpan di roll → resolusi product_id).
+    ql = text.lower()
+    match_pids = [pid for pid, p in products.items()
+                  if ql in (p.get("name", "").lower()) or ql in (p.get("sku", "").lower())]
+    search = build_search(text, ["roll_no", "lot", "dye_lot", "batch", "grade", "consignor_ref"])
+    if match_pids:
+        search = {"$or": search.get("$or", []) + [{"product_id": {"$in": match_pids}}]}
+    return merge_query(qry, search)
+
+
+@router.get("/inventory/rolls")
+async def list_rolls(
+    request: Request,
+    product_id: Optional[str] = None,
+    warehouse_id: Optional[str] = None,
+    owner_entity_id: Optional[str] = None,
+    status: Optional[str] = None,
+    lot: Optional[str] = None,
+    line: str = "",
+    q: str = "",
+    limit: int = 5000,
+    skip: int = 0,
+    check: str = "",
+    location_view: bool = False,
+    bin_id: Optional[str] = None,
+    scope: str = "",
+) -> Any:
+    """Daftar roll fisik (SSOT) dengan filter owner/lot/status/warehouse.
+    UAT 24 Okt (P11.4) — `check`: no_mdq (belum dicek MD Quality) · mdq_sampling · no_4point (belum 4-point).
+
+    OPT-IN paginasi: bila ?page/?page_size hadir → envelope {items,total,...};
+    kalau tidak → array telanjang (kompatibel mundur)."""
+    actor = await require_permission(request, "product", "view")
+    ctx = await entity_ctx(request)
+    query = await _rolls_query(actor, ctx, product_id=product_id, warehouse_id=warehouse_id,
+                               owner_entity_id=owner_entity_id, status=status, lot=lot, line=line, check=check,
+                               location_view=location_view, bin_id=bin_id, physical=scope == "physical")
 
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
     products = {p["id"]: p for p in await db.products.find(
@@ -333,16 +367,7 @@ async def list_rolls(
         return rows
 
     def _with_search(qry: Dict[str, Any], text: str) -> Dict[str, Any]:
-        if not text:
-            return qry
-        # Cari juga lewat nama/SKU produk (tak tersimpan di roll → resolusi product_id).
-        ql = text.lower()
-        match_pids = [pid for pid, p in products.items()
-                      if ql in (p.get("name", "").lower()) or ql in (p.get("sku", "").lower())]
-        search = build_search(text, ["roll_no", "lot", "dye_lot", "batch", "grade", "consignor_ref"])
-        if match_pids:
-            search = {"$or": search.get("$or", []) + [{"product_id": {"$in": match_pids}}]}
-        return merge_query(qry, search)
+        return _roll_search(qry, text, products)
 
     if is_paged(request):
         page, page_size, pq, _sort = get_page_params(request)
@@ -356,12 +381,131 @@ async def list_rolls(
 
     # Array telanjang: hormati ?limit (1–5000) & ?skip & ?q — dulu diabaikan sehingga
     # pemindai/pemilih roll selalu menerima ~5.000 baris (±6 MB) dengan 45 ribu roll.
-    limit = max(1, min(int(limit or 5000), 5000))
+    from pagination import clamp_limit
+    limit = clamp_limit(limit, 5000, 5000)
+    sk = clamp_limit(skip, 0, 10 ** 7, minimum=0)
     query = _with_search(query, (q or "").strip())
     rolls = await (db.inventory_rolls.find(query, {"_id": 0}).sort("created_at", -1)
-                   .skip(max(0, int(skip or 0))).limit(limit).to_list(limit))
+                   .skip(sk).limit(limit + 1).to_list(limit + 1))
+    more = len(rolls) > limit
+    rolls = rolls[:limit]
     _enrich(rolls)
-    return strip_cost_fields(rolls, actor.get("role"))
+    # FIX-5 (B3b LST-01) — array telanjang tetap (kompatibel), batas TIDAK lagi senyap: `X-Truncated` dari baris ke-(n+1)
+    # (murah). Jumlah sungguhan saat terpotong hanya bila diminta (`with_total=1`) — menghitung ratusan ribu roll
+    # menambah ±0,3 dtk; layar memakai mode berhalaman (`page`/`page_size`) yang sudah membawa `total`.
+    from starlette.responses import JSONResponse as _JSON
+    from fastapi.encoders import jsonable_encoder
+    headers = {"X-Truncated": "1" if more else "0"}
+    if not more:
+        headers["X-Total-Count"] = str(sk + len(rolls))
+    elif request.query_params.get("with_total") in ("1", "true"):
+        headers["X-Total-Count"] = str(await db.inventory_rolls.count_documents(query))
+    return _JSON(jsonable_encoder(strip_cost_fields(rolls, actor.get("role"))), headers=headers)
+
+
+GROUP_LEVELS = ("product", "lot", "location")
+GROUP_STATUSES = ("available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked",
+                  "damaged", "in_transit_transfer", "in_transit_sales", "in_transit_inbound", "subcon", "delivered",
+                  "consumed")
+
+
+@router.get("/inventory/roll-groups")
+async def roll_groups(
+    request: Request,
+    level: str = "product",
+    product_id: Optional[str] = None,
+    lot: Optional[str] = None,
+    warehouse_id: Optional[str] = None,
+    owner_entity_id: Optional[str] = None,
+    status: Optional[str] = None,
+    line: str = "",
+    check: str = "",
+    q: str = "",
+    location_view: bool = False,
+    scope: str = "physical",
+    page: int = 1,
+    page_size: int = 50,
+) -> Dict[str, Any]:
+    """FIX-5 (B4 §3.8 "penampil ribuan roll", B1b UI-46, pertanyaan pemilik 9 Nov) — roll DIKELOMPOKKAN di server:
+    `level=product` (per produk) → `lot` (per lot satu produk) → `location` (per gudang & alamat bin satu lot); roll
+    satu alamat dibuka lewat `/inventory/rolls?page=…&product_id&lot&warehouse_id&bin_id`. Agregat per kelompok:
+    jumlah roll, total panjang (satuan roll), min–maks panjang, jumlah lot & lokasi, rincian jumlah roll per STATUS
+    roll (bukan angka "Tersedia" — itu tetap satu layanan `stock_figures`, FIX-2). Cakupan = saringan daftar roll
+    yang sama (PT, lokasi kerja, lini, gudang, status cek). `scope=physical` (bawaan) = roll fisik di gudang
+    (panjang > 0); `scope=all` = semua status termasuk terkirim/terpakai. Kelompok berhalaman (`page`, ≤ 200)."""
+    actor = await require_permission(request, "product", "view")
+    ctx = await entity_ctx(request)
+    if level not in GROUP_LEVELS:
+        raise HTTPException(status_code=400, detail="Tingkat kelompok: product, lot, atau location.")
+    if level in ("lot", "location") and not product_id:
+        raise HTTPException(status_code=400, detail="Pilih produk dulu untuk melihat lot/lokasinya.")
+    if level == "location" and lot is None:
+        raise HTTPException(status_code=400, detail="Pilih lot dulu untuk melihat lokasinya.")
+    from pagination import clamp_limit
+    size, pg = clamp_limit(page_size, 50, 200), clamp_limit(page, 1, 10 ** 6)
+    query = await _rolls_query(actor, ctx, product_id=product_id, warehouse_id=warehouse_id,
+                               owner_entity_id=owner_entity_id, status=status, line=line, check=check,
+                               location_view=location_view, physical=scope != "all")
+    if level == "location":
+        query["lot"] = lot if lot else {"$in": [None, ""]}
+    products = {p["id"]: p for p in await db.products.find(
+        {}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "base_unit": 1}).to_list(None)}
+    query = _roll_search(query, (q or "").strip(), products)
+    key = {"product": {"p": "$product_id"}, "lot": {"lot": {"$ifNull": ["$lot", ""]}},
+           "location": {"w": "$warehouse_id", "b": {"$ifNull": ["$bin_id", ""]}}}[level]
+    sort = {"product": {"rolls": -1, "_id.p": 1}, "lot": {"_id.lot": 1},
+            "location": {"_id.w": 1, "_id.b": 1}}[level]
+    # jumlah roll per status lewat $cond (bukan $push status per roll — kelompok produk bisa puluhan ribu roll dan
+    # keluaran $facet dibatasi 16 MB)
+    group = {"_id": key, "rolls": {"$sum": 1}, "length": {"$sum": {"$ifNull": ["$length_remaining", 0]}},
+             "min_len": {"$min": "$length_remaining"}, "max_len": {"$max": "$length_remaining"},
+             "units": {"$addToSet": "$unit"}, "lots": {"$addToSet": {"$ifNull": ["$lot", ""]}},
+             "dye_lots": {"$addToSet": "$dye_lot"}, "grades": {"$addToSet": "$grade"},
+             "whs": {"$addToSet": "$warehouse_id"}, "bin_code": {"$first": "$bin_code"},
+             "oldest": {"$min": "$created_at"},
+             **{f"st_{st}": {"$sum": {"$cond": [{"$eq": ["$status", st]}, 1, 0]}} for st in GROUP_STATUSES}}
+    if level != "product":   # alamat per lot/lokasi terbatas (≤ jumlah roll lot); per produk bisa ribuan bin
+        group["locs"] = {"$addToSet": {"w": "$warehouse_id", "b": {"$ifNull": ["$bin_id", ""]}}}
+    facet = await db.inventory_rolls.aggregate([
+        {"$match": query}, {"$group": group},
+        {"$facet": {"rows": [{"$sort": sort}, {"$skip": (pg - 1) * size}, {"$limit": size}],
+                    "total": [{"$count": "n"}],
+                    "sum": [{"$group": {"_id": None, "rolls": {"$sum": "$rolls"}, "length": {"$sum": "$length"}}}]}},
+    ], allowDiskUse=True).to_list(1)
+    f = facet[0] if facet else {"rows": [], "total": [], "sum": []}
+    whs = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1, "city": 1}).to_list(500)}
+    out = []
+    for g in f["rows"]:
+        counts = {st: g.get(f"st_{st}", 0) for st in GROUP_STATUSES if g.get(f"st_{st}")}
+        other = g["rolls"] - sum(counts.values())
+        if other > 0:
+            counts["lainnya"] = other
+        units = [u for u in g.get("units") or [] if u]
+        row = {"roll_count": g["rolls"], "total_length": round(float(g["length"] or 0), 2),
+               "min_length": round(float(g.get("min_len") or 0), 2), "max_length": round(float(g.get("max_len") or 0), 2),
+               "unit": units[0] if len(units) == 1 else ("campuran" if units else ""),
+               "status_counts": counts, "lot_count": len(g.get("lots") or []),
+               "location_count": len(g["locs"]) if "locs" in g else None, "warehouse_count": len(g.get("whs") or []),
+               "grades": sorted(x for x in g.get("grades") or [] if x),
+               "dye_lots": sorted(x for x in g.get("dye_lots") or [] if x)[:5], "oldest_created_at": g.get("oldest")}
+        if level == "product":
+            p = products.get(g["_id"]["p"], {})
+            row.update({"product_id": g["_id"]["p"], "sku": p.get("sku", ""), "product_name": p.get("name", ""),
+                        "base_unit": p.get("base_unit", "")})
+        elif level == "lot":
+            row.update({"product_id": product_id, "lot": g["_id"]["lot"],
+                        "warehouses": sorted(whs.get(w, {}).get("name") or w for w in g.get("whs") or [] if w)[:5]})
+        else:
+            w = whs.get(g["_id"]["w"], {})
+            row.update({"product_id": product_id, "lot": lot or "", "warehouse_id": g["_id"]["w"],
+                        "warehouse_name": w.get("name", ""), "bin_id": g["_id"]["b"],
+                        "bin_code": (g.get("bin_code") or "") if g["_id"]["b"] else ""})
+        out.append(row)
+    total = (f["total"] or [{"n": 0}])[0]["n"]
+    sums = (f["sum"] or [{"rolls": 0, "length": 0}])[0]
+    return {"level": level, "groups": out, "total": total, "page": pg, "page_size": size,
+            "has_more": pg * size < total, "roll_total": sums["rolls"], "length_total": round(float(sums["length"] or 0), 2),
+            "scope": "all" if scope == "all" or status else "physical"}
 
 
 @router.get("/inventory/rolls/available")

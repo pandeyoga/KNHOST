@@ -74,8 +74,9 @@ async def list_ict(request: Request, entity_id: str = "", status: str = "",
                     role: str = "", limit: int = 200) -> List[Dict[str, Any]]:
     await require_permission(request, "interco", "view")
     scope = await _scope(request, entity_id)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03)
     return await ics.list_transactions(scope, entity_id=entity_id, status=status,
-                                        role=role, limit=limit)
+                                        role=role, limit=clamp_limit(limit, 200, 500))
 
 
 @router.post("/interco/transactions")
@@ -244,7 +245,8 @@ async def list_ics(request: Request, entity_id: str = "",
                    limit: int = 200) -> List[Dict[str, Any]]:
     await require_permission(request, "interco_finance", "view")  # FASE E-0 (L20)
     scope = await _scope(request, entity_id)
-    return await ics.list_settlements(scope, entity_id=entity_id, limit=limit)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03)
+    return await ics.list_settlements(scope, entity_id=entity_id, limit=clamp_limit(limit, 200, 500))
 
 
 @router.post("/interco/settlements")
@@ -380,8 +382,9 @@ async def list_interco_returns(request: Request, entity_id: str = "",
                                limit: int = 200) -> List[Dict[str, Any]]:
     await require_permission(request, "interco", "view")
     scope = await _scope(request, entity_id)
+    from pagination import clamp_limit   # FIX-5 (B3b LST-03)
     return await icret.list_returns(scope, entity_id=entity_id, status=status,
-                                    origin_pair_id=origin_pair_id, limit=limit)
+                                    origin_pair_id=origin_pair_id, limit=clamp_limit(limit, 200, 500))
 
 
 @router.get("/interco/transactions/{interco_id}/returnable")

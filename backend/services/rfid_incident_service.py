@@ -96,14 +96,22 @@ async def _notify_incident(read: Dict[str, Any], inc_id: str) -> None:
         logger.warning("[create_from_read] efek samping gagal diabaikan: %s", exc)  # KN-C10
 
 
-async def list_incidents(status: Optional[str], warehouse_id: Optional[str],
-                         limit: int = 100) -> List[Dict[str, Any]]:
+def _incidents_query(status: Optional[str], warehouse_id: Optional[str]) -> Dict[str, Any]:
     q: Dict[str, Any] = {}
     if status:
         q["status"] = status
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
-    rows = await db.rfid_incidents.find(q, {"_id": 0}).sort("last_at", -1).to_list(limit)
+    return q
+
+
+async def count_incidents(status: Optional[str], warehouse_id: Optional[str]) -> int:
+    return await db.rfid_incidents.count_documents(_incidents_query(status, warehouse_id))
+
+
+async def list_incidents(status: Optional[str], warehouse_id: Optional[str],
+                         limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
+    rows = await db.rfid_incidents.find(_incidents_query(status, warehouse_id), {"_id": 0})         .sort("last_at", -1).skip(max(0, int(skip or 0))).to_list(limit)
     return [safe_doc(r) for r in rows]
 
 

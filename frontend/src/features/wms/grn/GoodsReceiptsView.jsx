@@ -17,6 +17,7 @@ import LoadingLine from "../../../components/LoadingLine";
 import PageTabs from "../../../components/PageTabs";
 import FilterChips from "../../../components/FilterChips";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote, { metaFromHeaders } from "../ListLimitNote";   // FIX-5 (LST-01)
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
 const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
@@ -41,7 +42,25 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const showLegacy = LEGACY_ROLES.includes(currentUser?.role) && !grnOnly;
   const canCreateGrn = can(currentUser?.permissions, "goods_receipt", "create");   // FE-04 — POST /goods-receipts
   // FIX-1 (K-B1-02) — kedatangan lintas PT di gedung lokasi kerja: buka/aksi GRN dikirim atas nama PT GRN.
-  const load = useCallback(() => grnApi.list({ status, q }).then((r) => setRows(rememberDocEntities(r))).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
+  // FIX-5 (B3b LST-01) — dulu 100 kedatangan terbaru dipotong diam-diam (angka chip = baris termuat): kini jumlah
+  // sungguhan dari server + "Muat berikutnya".
+  const [meta, setMeta] = useState(null);
+  const [moreBusy, setMoreBusy] = useState(false);
+  const load = useCallback(() => grnApi.listPage({ status, q }).then(({ rows: r, res }) => {
+    const list = rememberDocEntities(r);
+    setRows(list);
+    setMeta(metaFromHeaders(res, list.length, 0));
+  }).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const { rows: r, res } = await grnApi.listPage({ status, q, skip: (rows || []).length });
+      const list = rememberDocEntities(r);
+      const next = [...(rows || []), ...list];
+      setRows(next);
+      setMeta(metaFromHeaders(res, next.length, 0));
+    } catch (e) { setErr(errText(e)); } finally { setMoreBusy(false); }
+  };
   useEffect(() => { if (!openId) load(); }, [load, openId, selectedEntity]);
   useEffect(() => {
     if (!focusDoc?.focus_id) return;
@@ -98,7 +117,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
           <FilterChips className="min-w-0 max-w-full" ariaLabel="Status kedatangan" value={status || "all"}
             onChange={(k) => setStatus(k === "all" ? "" : k)} chipTestId={(k) => `grn-filter-${k}`}
             options={FILTERS.map(([v, l]) => ({ key: v || "all", label: l,
-              count: (status || "all") === (v || "all") && rows ? rows.length : undefined }))} />
+              count: (status || "all") === (v || "all") && rows ? (meta?.total ?? rows.length) : undefined }))} />
           <ExportMenu dataset="goods_receipts" label="kedatangan" scope="work" testId="grn-export" className="ml-auto"
             filters={[status && ["status", "in", status.split(",")]]} search={q} sort={[{ key: "created_at", dir: "desc" }]} />
         </div>
@@ -121,6 +140,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
               <p className="mt-1 text-[10px] text-[#8E8E93]">{formatDateTime(r.created_at)} · {r.created_by}</p>
             </button>
           ))}
+          <div className="col-span-full"><ListLimitNote meta={meta} noun="kedatangan" onMore={loadMore} loading={moreBusy} testId="grn-list-limit" /></div>
           {rows && !rows.length && (
             <div className="empty-state col-span-full w-full" data-testid="grn-list-empty">
               <p className="font-semibold">Belum ada kedatangan{status ? ` berstatus ${STATUS[status.split(",")[0]]?.label || status}` : ""}.</p>

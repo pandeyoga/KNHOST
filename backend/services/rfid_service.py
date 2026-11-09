@@ -56,14 +56,23 @@ async def _enrich_roll(roll: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ─── Tags ────────────────────────────────────────────────────────────────────
-async def list_tags(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str],
-                    limit: int = 1000) -> List[Dict[str, Any]]:
+def _tags_query(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str]) -> Dict[str, Any]:
     q: Dict[str, Any] = {"owner_entity_id": {"$in": scope_ids}}
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
     if status:
         q["status"] = status
-    tags = await db.rfid_tags.find(q, {"_id": 0}).sort("encoded_at", -1).to_list(limit)
+    return q
+
+
+async def count_tags(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str]) -> int:
+    """FIX-5 (B3b LST-01) — jumlah sungguhan untuk label "(n)" (dulu = panjang potongan 1.000)."""
+    return await db.rfid_tags.count_documents(_tags_query(scope_ids, warehouse_id, status))
+
+
+async def list_tags(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str],
+                    limit: int = 1000, skip: int = 0) -> List[Dict[str, Any]]:
+    tags = await db.rfid_tags.find(_tags_query(scope_ids, warehouse_id, status), {"_id": 0})         .sort("encoded_at", -1).skip(max(0, int(skip or 0))).to_list(limit)
     return [safe_doc(t) for t in tags]
 
 

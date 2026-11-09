@@ -15,12 +15,16 @@ import { reprintRollLabel } from "../../utils/rollLabels";
 import { askConfirm } from "../../services/confirmService";
 import { docStatusLabel } from "../../utils/docStatus";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-5 (B3b LST-01)
 
 export default function RfidTagsView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("tags");
   const { whId, setWhId, whOpts, warehouses } = useWarehouses();
   const [summary, setSummary] = useState(null);
   const [tags, setTags] = useState([]);
+  // FIX-5 (B3b LST-01) — label tab dulu "(1000)" = panjang potongan server; kini jumlah sungguhan + "Muat berikutnya".
+  const [tagMeta, setTagMeta] = useState(null);
+  const [tagMoreBusy, setTagMoreBusy] = useState(false);
   const srch = useListSearch(tags, null, { testId: "rfid-tags", placeholder: "Cari EPC / SKU / produk / roll…" });
   const [untagged, setUntagged] = useState([]);
   // UAT 24 Okt (audit UI tahap 2) — tab Belum Ber-tag dulu merender 500 kartu sekaligus tanpa cari/paginasi.
@@ -55,10 +59,22 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         axios.get(`${API}/rfid/untagged-rolls`, { params }),
       ]);
       setSummary(s.data); setTags(t.data.tags || []); setUntagged(u.data.rolls || []);
+      setTagMeta(t.data.total !== undefined ? { total: t.data.total, truncated: !!t.data.truncated,
+        shown: (t.data.tags || []).length, skip: 0 } : null);
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat data RFID"); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [whId, selectedEntity]); // eslint-disable-line
+  const loadMoreTags = async () => {
+    setTagMoreBusy(true);
+    try {
+      const t = await axios.get(`${API}/rfid/tags`, { params: { ...(whId ? { warehouse_id: whId } : {}), status: "active",
+        skip: tags.length } });
+      const next = [...tags, ...(t.data.tags || [])];
+      setTags(next);
+      setTagMeta({ total: t.data.total, truncated: !!t.data.truncated, shown: next.length, skip: 0 });
+    } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat tag"); } finally { setTagMoreBusy(false); }
+  };
 
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(""), 2500); };
   const encode = async (rollId) => {
@@ -116,7 +132,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
 
       {/* Fase 4 · R3 (L-01/L-02) — tab buatan sendiri (TabBtn) → PageTabs baku; testid `rfid-tab-*` tetap. */}
       <PageTabs value={tab} onChange={setTab} testId="rfid-tab" ariaLabel="Tag RFID" tabs={[
-        { key: "tags", label: `Tag Aktif${tags.length ? ` (${tags.length})` : ""}` },
+        { key: "tags", label: `Tag Aktif${(tagMeta?.total ?? tags.length) ? ` (${(tagMeta?.total ?? tags.length).toLocaleString("id-ID")})` : ""}` },
         { key: "untagged", label: `Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls >= 5000 ? "5.000+" : summary.untagged_rolls.toLocaleString("id-ID")}` : untagged.length})` : ""}` },
         { key: "print", label: "Cetak & Verifikasi" },
         { key: "printers", label: "Antrean Printer" },
@@ -131,6 +147,8 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
           <ExportMenu dataset="rfid_tags" label="tag-rfid-aktif" testId="rfid-tags-export" search={srch.q}
             filters={[["status", "eq", "active"], whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "encoded_at", dir: "desc" }]} />}>
           {srch.searchBox}
+          <ListLimitNote meta={tagMeta} noun="tag" onMore={loadMoreTags} loading={tagMoreBusy}
+            hint="pencarian di sini hanya mencakup tag yang sudah dimuat." testId="rfid-tags-limit" />
           {/* Fase 4 · R3 (L-07) — `<table>` mentah → ResponsiveTable (`.data-table` di desktop, kartu di HP 390 px);
               testid baris `rfid-tag-row-<id>` & pager `rfid-tags-pager` tetap. */}
           {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
