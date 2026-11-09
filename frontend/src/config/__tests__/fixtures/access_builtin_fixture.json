@@ -213,6 +213,7 @@
     "update",
     "cycle_count",
     "approve_count",
+    "approve_value",
     "pegging"
    ],
    "label": [
@@ -661,6 +662,9 @@
     "view",
     "set"
    ],
+   "inventory": [
+    "approve_value"
+   ],
    "logistics": [
     "view"
    ],
@@ -914,6 +918,7 @@
     "view",
     "cycle_count",
     "approve_count",
+    "approve_value",
     "update",
     "pegging"
    ],
@@ -2666,8 +2671,7 @@
    "period"
   ],
   "logistics": [
-   "logistics",
-   "vehicle_log"
+   "logistics"
   ],
   "makloon-claim-recap": [
    "makloon",
