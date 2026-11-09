@@ -526,9 +526,11 @@ async def list_rolls_available(
     ctx = await entity_ctx(request)
     selling_entity = (entity_id or getattr(ctx, "active_entity_id", "") or "").strip()
     owner_scope = "" if all_entities else (selling_entity or "")
+    _allowed = list(getattr(ctx, "allowed_entity_ids", None) or [])
     data = await roll_service.list_available_rolls(
         product_id=product_id, owner_entity_id=owner_scope, all_entities=all_entities,
         sort=sort, skip=max(0, skip), limit=max(0, limit), warehouse_id=(warehouse_id or "").strip(),
+        visible_entity_ids=_allowed or None,   # FIX-9 (B3a #7) — nomor MKO/PR kunci makloon hanya PT yang diizinkan
     )
     for it in data["items"]:
         it["is_cross_entity"] = bool(selling_entity and it.get("owner_entity_id") != selling_entity)

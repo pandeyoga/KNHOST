@@ -1,7 +1,7 @@
 /** RollsTable — daftar roll fisik (Roll-as-SSOT, Fase 0.5) + Pegging (Sub-fase 1.7). */
 import { useState } from "react";
 import { Layers, Anchor, Route } from "lucide-react";
-import { formatQty, RollStatusBadge } from "./inventoryConstants";
+import { formatQty, RollStatusBadge, MakloonLockBadge } from "./inventoryConstants";
 import RollJourneyPopup from "../RollJourneyPopup";
 import RollHoldControl from "./RollHoldControl";
 import RollCheckChips from "../../../components/RollCheckChips";
@@ -144,6 +144,8 @@ export default function RollsTable({
                   )}
                   <td className="px-3 py-2">
                     <RollStatusBadge status={r.status} />
+                    {/* FIX-9 — panjang dikunci cadangan makloon (MKO/PR pemiliknya) */}
+                    <MakloonLockBadge roll={r} className="ml-1" />
                     {/* UAT 24 Okt (P11.4) — status cek MD Quality & 4-point per roll */}
                     <RollCheckChips roll={r} testId={`roll-check-${r.id}`} className="mt-1" />
                   </td>

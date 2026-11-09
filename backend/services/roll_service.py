@@ -278,6 +278,7 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
                                                 "length_reservations": 1, "lot_id": 1}).to_list(None)
     buckets = {b: 0.0 for b in ALL_BUCKETS}
     roll_counts = {b: 0 for b in ALL_BUCKETS}  # F2 (UoM SSOT) — jumlah roll per bucket
+    makloon_locked = 0.0   # FIX-9 — bagian `reserved_qty` yang = kunci cadangan makloon (ref.type "makloon")
     # KN-B16 — saldo dijumlahkan dalam SATUAN DASAR produk: roll ber-unit lain (data lama /
     # impor) dikonversi, bukan dijumlahkan mentah bersama meter.
     _prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "sku": 1, "uom_conversion": 1,
@@ -310,6 +311,8 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
                 q = float(x.get("qty") or 0) * ratio
                 buckets[b] += q
                 length -= q
+                if (x.get("ref") or {}).get("type") == "makloon":
+                    makloon_locked += q
         if bucket:
             buckets[bucket] += length
             if length > QTY_EPS:
@@ -340,6 +343,9 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
         "roll_count": roll_counts["available_qty"],   # F2 — jumlah roll TERSEDIA (siap dijual)
         "on_hand_roll_count": on_hand_roll_count,       # F2 — jumlah roll fisik di gudang
         "roll_counts": roll_counts,                     # F2 — detail count per-bucket
+        # FIX-9 — panjang terkunci cadangan makloon (sudah termasuk di `reserved_qty`); `stock_figures` menampilkannya
+        # di kelompok "Cadangan makloon", bukan "Dipesan".
+        "makloon_locked_qty": round(makloon_locked, 2),
         "unconvertible_roll_count": unconvertible,
         "projection_valid": unconvertible == 0,
         "rebuild_applied": my_ticket,
@@ -579,6 +585,17 @@ async def generate_rolls_from_balances(created_by: str = "seed") -> Dict[str, in
 NO_LENGTH_RESERVED = {"$not": {"$gt": 0}}
 
 
+def _mlk_locked(roll: Dict[str, Any]) -> bool:
+    from services import makloon_roll_lock as _mlk
+    return _mlk.roll_locked_qty(roll) > 0
+
+
+def _mlk_hold_text(roll: Dict[str, Any], visible_entity_ids: Optional[List[str]] = None) -> str:
+    """FIX-9 — siapa yang memegang panjang roll (kunci makloon menyebut MKO/PR; lintas PT tanpa nomor)."""
+    from services import makloon_roll_lock as _mlk
+    return _mlk.hold_text(roll, visible_entity_ids) or "reservasi potong"
+
+
 def free_length(r: Dict[str, Any]) -> float:
     """WM-02 — panjang bebas = sisa fisik − panjang yang dipesan (reservasi belum dipotong)."""
     return round(float(r.get("length_remaining") or 0) - float(r.get("length_reserved") or 0), 4)
@@ -665,6 +682,10 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
             return await _finish_cut(resumed, op)
         raise HTTPException(status_code=404, detail="Reservasi potong tidak ditemukan / sudah dipotong")
     rsv = next(x for x in parent["length_reservations"] if x["id"] == reservation_id)
+    if (rsv.get("ref") or {}).get("type") == "makloon":   # FIX-9 — kunci cadangan makloon dilepas lewat MKO/PR
+        raise HTTPException(status_code=409, detail=(
+            f"Panjang ini dicadangkan makloon {(rsv.get('ref') or {}).get('number') or ''} — bukan reservasi potong. "
+            "Kunci dilepas saat bahan di-issue ke mitra atau cadangannya dibatalkan."))
     from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
     await _rfz.assert_movable(action="pemotongan roll", roll=parent)
     actual = round(float(rsv["qty"] if actual_length is None else actual_length), 2)
@@ -896,6 +917,8 @@ async def pending_cuts(order_id: Optional[str] = None, scope_ids: Optional[List[
         for x in r.get("length_reservations") or []:
             if order_id and x["ref"]["id"] != order_id:
                 continue
+            if (x.get("ref") or {}).get("type") == "makloon":
+                continue   # FIX-9 — kunci cadangan makloon bukan antrean potong
             out.append({"roll_id": r["id"], "roll_no": r.get("roll_no"), "reservation_id": x["id"],
                         "order_id": x["ref"]["id"], "qty": x["qty"], "status": x.get("status"),
                         "product_id": r["product_id"], "warehouse_id": r["warehouse_id"],
@@ -1197,9 +1220,11 @@ async def makloon_guard(product_id: str, owner_entity_id: str, total_available: 
                         pol: Optional[Dict[str, Any]] = None, override: bool = False,
                         prompt: bool = False) -> Dict[str, Any]:
     """Stok yang dicadangkan untuk makloon (material_reservations aktif) tidak boleh dijanjikan ke sales.
-    Mode `allocation.makloon_reserve_mode`: block (default) | approve (boleh dengan persetujuan manajer)."""
+    Mode `allocation.makloon_reserve_mode`: block (default) | approve (boleh dengan persetujuan manajer).
+    FIX-9 — `total_available` = panjang BEBAS roll (kunci makloon sudah keluar); yang masih dilindungi di sini hanya
+    cadangan yang BELUM terkunci di roll (stok kurang saat mengunci)."""
     from services import material_reservation_service as _mres
-    protected = await _mres.reserved_by_others(product_id, owner_entity_id)
+    protected = await _mres.unlocked_by_others(product_id, owner_entity_id)
     out = {"sellable": round(total_available, 2), "protected": protected, "overlap": 0.0, "blocked": False}
     if protected <= QTY_EPS:
         return out
@@ -1251,6 +1276,17 @@ async def allocate_and_reserve_rolls(
     if required_grade:  # LN-090 — pengganti retur: hanya roll grade yang sama dengan yang dijual
         rolls = [r for r in rolls if (r.get("grade") or "") == required_grade]
     plan = _build_allocation_plan(rolls, quantity, city, warehouses, pol)
+    if (makloon_override and pol.get("makloon_reserve_mode") == "approve"
+            and plan["total_available"] + QTY_EPS < quantity):
+        # FIX-9 — panjang terkunci makloon tidak ada di `rolls`; persetujuan manajer (mode approve) MEMINJAM kunci
+        # sebanyak kekurangan (dilepas di roll, cadangan tetap → jadi "belum terkunci") lalu rencana dihitung ulang.
+        from services import makloon_roll_lock as _mlk
+        if await _mlk.borrow_for_order(product_id, owner_entity_id, quantity - plan["total_available"], order_id,
+                                       actor="Persetujuan manajer (mode approve)"):
+            rolls = await _available_rolls_for_order(product_id, owner_entity_id, order_id, customer_id)
+            if required_grade:
+                rolls = [r for r in rolls if (r.get("grade") or "") == required_grade]
+            plan = _build_allocation_plan(rolls, quantity, city, warehouses, pol)
     guard = await makloon_guard(product_id, owner_entity_id, plan["total_available"], quantity, pol,
                                 override=makloon_override, prompt=makloon_prompt)
     total_available = guard["sellable"]
@@ -2364,9 +2400,13 @@ async def supplier_refs_for_products(product_ids: List[str]) -> Dict[str, List[D
 
 async def list_available_rolls(product_id: str, owner_entity_id: str = "",
                                all_entities: bool = False, sort: str = "fefo",
-                               skip: int = 0, limit: int = 0, warehouse_id: str = "") -> Dict[str, Any]:
+                               skip: int = 0, limit: int = 0, warehouse_id: str = "",
+                               visible_entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Daftar roll available untuk PICKER (paginasi + FEFO). all_entities=True → lintas-entitas.
-    Mengembalikan {items, total} (objek, bukan array telanjang) — khusus picker."""
+    Mengembalikan {items, total} (objek, bukan array telanjang) — khusus picker.
+    `visible_entity_ids` (FIX-9, B3a #7) = PT yang boleh dilihat dokumennya; nomor MKO/PR kunci makloon hanya untuk
+    roll milik PT itu (None = semua)."""
+    from services import makloon_roll_lock as _mlk
     q: Dict[str, Any] = {"product_id": product_id, "status": "available", "length_remaining": {"$gt": 0},
                          "active_movement": None}
     if not all_entities and owner_entity_id:
@@ -2420,10 +2460,14 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
             "md_quality_via_sampling": r.get("md_quality_via_sampling") or None,
             "inspected_4point": bool(r.get("inspected_4point")),
             "md_quality_spk": r.get("md_quality_spk", ""), "inspected_4point_spk": r.get("inspected_4point_spk", ""),
+            # FIX-9 — sebagian roll terkunci cadangan makloon (nomor MKO/PR hanya bila roll milik PT penjual/terlihat)
+            "makloon_lock": _mlk.roll_summary(r, visible=(visible_entity_ids is None
+                                                          or r.get("owner_entity_id") in visible_entity_ids)),
         })
     prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "unit": 1, "name": 1, "sku": 1})
     # FIX-2 (B3a SSOT-4) — angka "Tersedia" pemilih = definisi tunggal untuk cakupan yang sama (cadangan makloon
-    # dikurangi). Roll belum dikunci per roll untuk makloon; reservasi pesanan tetap dijaga `makloon_guard`.
+    # dikurangi). FIX-9 — bagian TERKUNCI sudah tidak ditawarkan (panjang bebas roll); `makloon_unlocked_qty` = sisa
+    # cadangan yang belum terkunci di roll (stok kurang saat mengunci) — tetap dijaga `makloon_guard`.
     _segs = [x for x in await _sf.segments([product_id])
              if (all_entities or not owner_entity_id or x["owner_entity_id"] == owner_entity_id)
              and (not warehouse_id or x["warehouse_id"] == warehouse_id)]
@@ -2431,6 +2475,8 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
     return {"items": items, "total": total,
             "available_total": _tot["available_qty"], "available_rolls": int(_tot["available_rolls"]),
             "makloon_reserved_qty": round(_tot["makloon_reserved_qty"], 2),
+            "makloon_locked_qty": round(_tot.get("makloon_locked_qty", 0.0), 2),
+            "makloon_unlocked_qty": round(max(_tot["makloon_reserved_qty"] - _tot.get("makloon_locked_qty", 0.0), 0.0), 2),
             "listed_free_total": round(sum(free_length(r) for r in rolls_all_listed), 2),
             "base_unit": (prod or {}).get("base_unit") or (prod or {}).get("unit") or "meter",
             "supplier_refs": (await supplier_refs_for_products([product_id])).get(product_id, [])}
@@ -2468,8 +2514,10 @@ async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str
                 free = free_length(roll)
                 take = free if take <= 0 else take
                 if take > free + 0.01:
-                    raise HTTPException(status_code=400, detail=(
-                        f"Qty roll {roll.get('roll_no', rid)} ({take}) melebihi panjang bebas ({free})."))
+                    held_by = _mlk_hold_text(roll) if _mlk_locked(roll) else ""   # FIX-9 — sebut MKO/PR pemegang
+                    raise HTTPException(status_code=409 if held_by else 400, detail=(
+                        f"Qty roll {roll.get('roll_no', rid)} ({take}) melebihi panjang bebas ({free})"
+                        + (f" — {held_by}." if held_by else ".")))
                 held = await _reserve_length(roll, take, ref["id"], ref)
                 if not held:
                     raise HTTPException(status_code=409, detail=f"Roll {roll.get('roll_no', rid)} keburu diambil transaksi lain.")
@@ -2479,6 +2527,8 @@ async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str
                 continue
             if has_rsv:
                 raise HTTPException(status_code=409, detail=(
+                    f"Roll {roll.get('roll_no', rid)} punya panjang yang sudah dipegang ({_mlk_hold_text(roll)}) — "
+                    "pilih roll lain atau lepas dulu reservasi/cadangannya." if _mlk_locked(roll) else
                     f"Roll {roll.get('roll_no', rid)} punya reservasi potong yang belum dikonfirmasi."))
             if take <= 0:
                 take = rlen  # default: roll utuh

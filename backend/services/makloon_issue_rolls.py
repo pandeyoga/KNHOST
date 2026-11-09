@@ -45,11 +45,13 @@ def _holder(roll: Dict[str, Any]) -> str:
 
 
 def block_reason(roll: Dict[str, Any], *, product_id: str, warehouse_id: str,
-                 owner_entity_id: str) -> Optional[Tuple[int, str]]:
+                 owner_entity_id: str, own_lock_ids: Optional[List[str]] = None) -> Optional[Tuple[int, str]]:
     """(kode HTTP, alasan) bila roll TIDAK boleh dikirim ke mitra pada langkah ini; None = boleh.
 
     400 = roll salah alamat (produk/pemilik/gudang/habis) — memilihnya adalah kekeliruan input.
     409 = roll benar tetapi SEDANG dipegang keadaan lain (karantina, ditahan, dipesan, perpindahan, perbaikan).
+    FIX-9 — panjang yang dikunci cadangan makloon MKO ini sendiri (`own_lock_ids`) BUKAN penghalang; kunci cadangan
+    MKO/PR lain disebut nomornya.
     """
     tag = _tag(roll)
     if roll.get("product_id") != product_id:
@@ -70,8 +72,15 @@ def block_reason(roll: Dict[str, Any], *, product_id: str, warehouse_id: str,
     if ((roll.get("inspection") or {}).get("hold") or {}).get("held") or roll.get("qc_hold_pending"):
         return 409, f"Roll {tag} DITAHAN hasil inspeksi QC — putuskan/lepas tahanannya dulu."
     holder = _holder(roll)
-    if holder or float(roll.get("length_reserved") or 0) > EPS:
-        return 409, (f"Roll {tag} sudah dicadangkan dokumen lain ({holder or 'reservasi potong'}) — "
+    from services import makloon_roll_lock as _mlk
+    if holder or _mlk.foreign_reserved(roll, own_lock_ids or []) > EPS:
+        if not holder:
+            mine = _mlk.roll_locked_qty(roll, own_lock_ids or [])
+            other = {**roll, "length_reservations": [x for x in roll.get("length_reservations") or []
+                                                     if not (x.get("ref") or {}).get("id") in (own_lock_ids or [])],
+                     "length_reserved": round(float(roll.get("length_reserved") or 0) - mine, 4)}
+            holder = _mlk.hold_text(other) if _mlk.roll_locked_qty(other) > 0 else "reservasi potong"
+        return 409, (f"Roll {tag} sudah dicadangkan dokumen lain ({holder}) — "
                      "lepas cadangannya dulu atau pilih roll lain.")
     if (roll.get("active_movement") or {}).get("id"):
         am = roll["active_movement"]
@@ -105,7 +114,8 @@ async def resolve_codes(codes: List[str]) -> Tuple[List[str], List[str]]:
 
 async def pick_rolls(order: Dict[str, Any], step: Dict[str, Any], warehouse_id: str, *,
                      roll_ids: Optional[List[str]] = None,
-                     roll_codes: Optional[List[str]] = None) -> Dict[str, Any]:
+                     roll_codes: Optional[List[str]] = None,
+                     own_lock_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Validasi roll pilihan untuk issue langkah `step` → {rolls, qty, unit}. Satu roll gagal → seluruh issue ditolak
     dengan pesan yang MENYEBUT nomor rollnya (tidak ada issue sebagian diam-diam)."""
     ids = [str(x).strip() for x in (roll_ids or []) if str(x or "").strip()]
@@ -128,7 +138,7 @@ async def pick_rolls(order: Dict[str, Any], step: Dict[str, Any], warehouse_id: 
     rolls = [rows[i] for i in ids]
     for r in rolls:
         bad = block_reason(r, product_id=step["input_product_id"], warehouse_id=warehouse_id,
-                           owner_entity_id=order["entity_id"])
+                           owner_entity_id=order["entity_id"], own_lock_ids=own_lock_ids)
         if bad:
             raise HTTPException(status_code=bad[0], detail=bad[1])
     units = {str(r.get("unit") or "") for r in rolls}
@@ -168,6 +178,12 @@ async def issue_candidates(order: Dict[str, Any], step: Dict[str, Any], warehous
          "owner_entity_id": order.get("entity_id"), "length_remaining": {"$gt": EPS},
          "status": {"$nin": ["consumed", "delivered", "returned_supplier", "subcon"]}}
     rows = await db.inventory_rolls.find(q, {"_id": 0}).sort([("received_date", 1), ("created_at", 1)]).to_list(limit)
+    # FIX-9 — roll yang dikunci cadangan MKO ini sendiri tampil PALING ATAS (bertanda) dan boleh dipilih.
+    from services import material_reservation_service as _mres
+    from services import makloon_roll_lock as _mlk
+    own = await _mres.own_lock_ids(order.get("id") or "", step.get("input_product_id") or "") \
+        if int(step.get("seq") or 0) == 1 else []
+    rows.sort(key=lambda r: 0 if own and _mlk.roll_locks(r, own) else 1)
     tag_ids = [r["rfid_tag_id"] for r in rows if r.get("rfid_tag_id")]
     from services.rfid_service import LIVE_TAG_STATUSES
     epc = {t["id"]: t.get("epc", "") async for t in db.rfid_tags.find(
@@ -178,16 +194,18 @@ async def issue_candidates(order: Dict[str, Any], step: Dict[str, Any], warehous
         item = {"id": r["id"], "roll_no": r.get("roll_no", ""), "lot": r.get("lot", ""),
                 "dye_lot": r.get("dye_lot", ""), "grade": r.get("grade", ""),
                 "length_remaining": round(float(r.get("length_remaining") or 0), 2), "unit": r.get("unit", ""),
-                "epc": epc.get(r.get("rfid_tag_id") or "", ""), "status": r.get("status", "")}
+                "epc": epc.get(r.get("rfid_tag_id") or "", ""), "status": r.get("status", ""),
+                "locked_for_this_qty": round(_mlk.roll_locked_qty(r, own), 2) if own else 0.0}
         bad = block_reason(r, product_id=step.get("input_product_id"), warehouse_id=warehouse_id,
-                           owner_entity_id=order.get("entity_id"))
+                           owner_entity_id=order.get("entity_id"), own_lock_ids=own)
         if bad:
             blocked.append({**item, "reason": bad[1]})
         else:
             ok.append(item)
     return {"seq": int(step.get("seq") or 0), "warehouse_id": warehouse_id, "unit": step.get("input_unit") or "",
             "planned_qty": float(step.get("input_qty") or 0), "rolls": ok, "blocked": blocked,
-            "total_qty": round(sum(x["length_remaining"] for x in ok), 2)}
+            "total_qty": round(sum(x["length_remaining"] for x in ok), 2),
+            "locked_for_this_qty": round(sum(x["locked_for_this_qty"] for x in ok), 2)}
 
 
 async def candidates_for(mko_id: str, seq: int, warehouse_id: str = "") -> Dict[str, Any]:

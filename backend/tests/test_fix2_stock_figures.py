@@ -188,7 +188,8 @@ def _truth(pid, owners=None, sites=None):
             k = (r["owner_entity_id"], r["warehouse_id"])
             seg[k] = seg.get(k, 0.0) + float(r["length_remaining"] or 0) - float(r.get("length_reserved") or 0)
         async for m in db.material_reservations.find({"product_id": pid, "status": "active"}, {"_id": 0}):
-            left = float(m["qty"] or 0)
+            # FIX-9 — bagian cadangan yang terkunci di roll sudah ada di `length_reserved` roll di atas
+            left = float(m["qty"] or 0) - float(m.get("locked_qty") or 0)
             for k in sorted([k for k in seg if k[0] == m["owner_entity_id"]], key=lambda k: (-seg[k], k[1])):
                 cut = min(left, max(seg[k], 0))
                 seg[k] -= cut

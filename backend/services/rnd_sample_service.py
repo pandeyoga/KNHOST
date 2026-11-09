@@ -1463,8 +1463,10 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
     # FIX-3b (CUT-1, B3a DUP-4) — panjang yang sudah dipesan SO (reservasi potong) tidak boleh dipakai sample R&D.
     from services.roll_service import free_length
     if free_length(roll) + EPS < qty:
+        from services.makloon_roll_lock import hold_text, roll_locked_qty   # FIX-9 — kunci makloon menyebut MKO/PR
+        held = f"dipegang dokumen lain ({hold_text(roll)})" if roll_locked_qty(roll) > 0 else "dipesan pesanan lain"
         raise RndError(f"Roll {roll.get('roll_no')}: {roll.get('length_reserved')} {roll.get('unit', 'meter')} sudah "
-                       f"dipesan pesanan lain — panjang bebas {free_length(roll):g} kurang dari {qty:g}.")
+                       f"{held} — panjang bebas {free_length(roll):g} kurang dari {qty:g}.")
     new_len = round(have - qty, 3)
     unit_cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
     cost = round(unit_cost * qty, 2)
