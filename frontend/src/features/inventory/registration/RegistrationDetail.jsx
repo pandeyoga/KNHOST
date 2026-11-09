@@ -188,7 +188,7 @@ export default function RegistrationDetail({ sessionId, onChanged }) {
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2" data-testid="reg-unmapped">
               <h4 className="text-[12px] font-bold text-amber-800">{rec.unmapped.length} baris "produk belum dikenali" — petakan sebelum seluruh sesi disetujui</h4>
               {rec.unmapped.map((u) => (
-                <div key={u.id} className="mt-1.5 grid gap-1 sm:grid-cols-[1fr_260px] sm:items-center" data-testid={`reg-unmapped-${u.id}`}>
+                <div key={u.id} className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-[1fr_260px] sm:items-center" data-testid={`reg-unmapped-${u.id}`}>
                   <span className="text-[12px]">{u.bin_code} · <QtyDual measure={u.qty} unit={u.unit} /> · {u.note}{u.has_photo ? " · ada foto" : ""}</span>
                   {approver && s.status === "pending_approval" && step !== "finance"
                     ? <ProductSelect onSelect={(prod) => mapLine(u.id, prod)} label="Petakan ke produk…" triggerTestId={`reg-map-${u.id}`} />

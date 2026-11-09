@@ -167,8 +167,7 @@ B3a SSOT-1 (63 penulis status roll tanpa tabel) belum dirapikan menyeluruh — d
 | Opname per roll `roll-finalize` | roll hilang tanpa hitung ulang → sesi turunan `open/mode=roll` |
 | Pendaftaran `pending_approval` | sub-langkah `count_approval` (gudang) → nilai & jurnal (Finance, orang berbeda); "Kembalikan" mencabutnya |
 
-## 6. Hasil uji & perbandingan regresi
-(lihat §6.1–6.4 — angka apa adanya)
+## 6. Hasil uji & perbandingan regresi (angka apa adanya)
 
 ### 6.1 Uji baru
 | | dasar `main` | FIX-3a |
@@ -211,8 +210,19 @@ Putaran pertama FIX-3a menghasilkan 4 uji yang hanya gagal di FIX-3a; semuanya d
 Gagal lama (sama persis di dasar & FIX-3a) berasal dari data acuan/asumsi uji lama (mis. `test_fase_sl_scan_label` 17,
 `test_iter266_r6_cc_r7` 21, `test_p03_transfer_receipt` 11 error setup) — tidak disentuh.
 
-### 6.3 Jest & ESLint
-(diisi di bawah — §6.3a)
+### 6.3 Jest & ESLint (kontainer `node:20` sementara, `node_modules` dari volume `kn-dev_fe_node_modules` read-only, CI=true, `--maxWorkers=1`)
+14 berkas terarah (semua uji yang mengimpor berkas FE yang diubah + `mobileShell`, `prepCWarehousePutaway`, baru `fix3aForms`):
+
+| | dasar `main` | FIX-3a |
+|---|---|---|
+| Suite | 14: 2 gagal (`phase4R3` — grid HP lama di `RegistrationDetail.jsx`; `fix3aForms` tidak bisa jalan: `BinSelect` belum ada) | 14: 1 gagal (`phase4R3`, sama) → sesudah `grid-cols-1` ditambahkan pada baris itu: **14/14 lulus** |
+| Uji | 113 lulus / 1 gagal | 118 lulus / 1 gagal → putaran ulang suite terdampak (`fix3aForms`, `mobileShell`, `prepBInitialRegistration`, `phase4R3`): **46/46 lulus** |
+
+`fix3aForms` (5): BinSelect terikat id · daftar regex satu per baris · tombol simulasi PA hanya bila PT bermode simulasi ·
+kartu HP tugas ter-QC tanpa Terima/Selesai · pendaftaran langkah 1 menampilkan "Setujui hitungan" (bukan persetujuan
+nilai). ESLint (`eslint.config.mjs`) pada 26 berkas FE yang diubah: **0 error**, 17 peringatan `Unused eslint-disable
+directive` pada baris lama (3 direktif yang sempat saya tulis dihapus — tidak menambah peringatan). Suite Jest penuh
+tidak dijalankan (memori Docker host terbatas: stack FIX-1 berjalan bersamaan).
 
 ### 6.4 Guardrail (`PYTHONUTF8=1 python scripts/guardrails/verify_*.py`, host; `verify_state_machine` tidak dijalankan)
 Kode keluar 40 guardrail **identik** dasar vs FIX-3a. Jumlah pelanggaran tidak naik:
@@ -280,3 +290,38 @@ bersama.
 10. B3a SSOT-1 (satu `roll_state.transition`) — belum; tabel transisi tugas masuk bisa jadi pola.
 11. Data profil gedung FLW-IN-20 (kategori RCM-WOVEN/KNITTING/PRINTING kosong) — sesudah perbaikan `_rank`, draf baru
     benar hanya bila kategori gedung diisi; skrip PREP-C perlu ditambah langkah kategori (keputusan data pemilik).
+
+## 10. Kebersihan
+Stack `kn-tmp-fix3a-mongo/-be/-fe` dihapus sesudah uji. Tidak ada tulisan ke DB bersama, stack `kn-uji-*`, atau data UAT
+"test"; `verify_state_machine.py` tidak dijalankan; tidak memakai peramban; `docs/reviews/TRACKER.md` tidak diubah.
+
+---
+
+## Ringkasan untuk koordinator
+* **Ditutup — P0:** B2a FLW-IN-01, OPN-01, STM-IN-01; B3b INP-02 (+INP-01, INP-05, FLW-IN-08).
+  **P1:** FLW-IN-02, -03 (D3), -04, -05, -06, -09 (D6 + SPK retur; **D5 belum**), STM-IN-03, OPN-02 (D8), OPN-03; B3b INP-09
+  (eskalasi), INP-10, FRM-02, FRM-10/12/13 (K-B3b-09), FRM-19, FRM-09/K-14 di jalur masuk/QC/GRN/PO/opname/pendaftaran
+  (validator bersama `backend/input_rules.py`), G-NUM-02 (guardrail diperluas), `extra="forbid"` body opname/pendaftaran.
+  **P2/P3:** FLW-IN-10 (D10), -12, -13 (D4), -15 (D7), -16, -17, -18 (makloon), -19, -21, STM-IN-04, -05, -06, -07
+  (tugas & transfer), OPN-04, -05, -06, -07 (diverifikasi), B3a keputusan 8 (stok awal 410). **Persetujuan pendaftaran
+  awal dua langkah** (gudang → Finance, izin baru `inventory.approve_value`, setelan `registration.finance_approval`
+  bawaan aktif). Tabel transisi tugas masuk `services/inbound_task_state.py` (daftar-izin + CAS + `status_history`).
+* **Perubahan perilaku utama:** tugas ter-QC/eskalasi tak bisa diterima ulang; bin hanya dari struktur (kode/id), roll
+  lahir tanpa bin lalu `place_roll`; rencana >1 roll wajib rincian roll (HP form lengkap); area beku menolak terima/
+  opname (termasuk tutup GRN ke gudang beku penuh); roll ditahan tak mengunci QC; batal PO ditolak bila barang sudah
+  diposting; alasan ≥5 huruf di server; simulasi hanya di mode simulasi (perangkat baru "offline"); transfer 0 diterima
+  → "Dikembalikan"; pendaftaran awal dua langkah orang berbeda; stok awal manual ditutup untuk gedung berpendaftaran.
+* **Uji:** baru pytest 28 (dasar 27 gagal + 1 kontrol → FIX-3a 28 lulus), Jest 5 (dasar tidak jalan → 5 lulus).
+  Regresi 46 berkas pytest: 114 gagal dasar = 114 FIX-3a (himpunan identik, 0 hanya-gagal-FIX-3a); p09/p10 18+8 lulus
+  keduanya. 4 uji lama disesuaikan (perilaku yang memang diubah keputusan/temuan), 1 diperbaiki kode (urutan 409).
+  Jest terarah 14 berkas lulus semua (termasuk `phase4R3` lama yang diperbaiki); ESLint 0 error. Guardrail: kode keluar
+  40/40 identik, jumlah pelanggaran tidak naik (atomic_claim dilatih mengenali CAS baru).
+* **Skrip data:** `scripts/fix_data_2026_11_09_fix3a_alur_masuk.py` (dry-run bawaan; salinan acuan: 3 roll ber-"tag"
+  teks isian Roll ID dirapikan; idempoten). Belum dijalankan ke DB bersama.
+* **Berisiko bentrok:** FIX-1 di `routers/inbound_receiving.py`, `purchase_orders_extra.py`, `putaway_orders.py`,
+  `cycle_count.py`, `initial_registration.py`, `rfid.py`, `inventory.py`, `permissions_config.py` (hanya logika; cek
+  akses tidak disentuh). FIX-3b di `rfid_service.py`, `inspection_service.py`, `return_service.py`, `config_registry.py`,
+  guardrail `verify_atomic_claim.py`/`verify_numeric_bounds.py` (`ROUTER_SCOPE`), modul bersama `input_rules.py`.
+* **Sisa:** D5, D2/FLW-IN-11 (butuh rancangan jurnal Finance), D9 (ditunda), FLW-IN-07/STM-IN-02 (FIX-1), FRM-03 (FIX-3b),
+  menu Finance untuk persetujuan nilai, `status_history` dokumen lain, `extra="forbid"` model penerimaan/PA, repair order
+  (FLW-IN-18), SSOT-1 menyeluruh, data kategori gedung (FLW-IN-20).

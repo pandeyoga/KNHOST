@@ -54,8 +54,8 @@ export function InboundActions({ task, onDone, onCompleted }) {
   useEffect(() => {
     const def = uom.options?.default_uom || uom.options?.task_uom;
     if (def) setF((p) => (p.doc_uom ? p : { ...p, doc_uom: def }));
-  }, [uom.options]);   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { uom.runPreview(f.doc_uom, parseDecimal(f.doc_qty)); }, [f.doc_uom, f.doc_qty]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [uom.options]);
+  useEffect(() => { uom.runPreview(f.doc_uom, parseDecimal(f.doc_qty)); }, [f.doc_uom, f.doc_qty]);
   const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) onDone?.(); } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
   const qtyOk = parseDecimal(f.doc_qty) > 0;
   const receive = () => {

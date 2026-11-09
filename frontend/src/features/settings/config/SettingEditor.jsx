@@ -42,7 +42,7 @@ function LinesField({ value, onChange, disabled, testId }) {
   const asText = (v) => (Array.isArray(v) ? v.join(NL) : String(v ?? ""));
   const [draft, setDraft] = useState(asText(value));
   const key = JSON.stringify(value);
-  useEffect(() => { setDraft(asText(value)); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setDraft(asText(value)); }, [key]);
   return (
     <div className="cfg-num-wrap">
       <textarea
