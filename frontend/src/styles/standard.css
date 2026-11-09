@@ -75,6 +75,19 @@
 }
 @media (max-width: 1180px) { .location-scope-unset { display: none; } }
 
+/* Penanda "minta inspeksi" di panel tugas penerimaan (keputusan pemilik 10 Nov, FIX-6). */
+.kn-inspect-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--kn-divider); border-radius: 10px; background: var(--kn-special-soft);
+}
+.kn-inspect-info { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.kn-inspect-hint {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+  font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2);
+}
+.kn-inspect-err { flex-basis: 100%; margin: 0; font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-danger-text); }
+.m-shell .kn-inspect-hint, .m-shell .kn-inspect-err { font-size: var(--fs-14); line-height: var(--lh-14); }
+
 /* — Pager baku (PaginationBar) — */
 .kn-pager {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;

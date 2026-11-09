@@ -1,4 +1,5 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import StatusBadge from "../../../components/StatusBadge";   // FIX-6 × FIX-8 — penanda minta inspeksi
 import { useEffect, useState } from "react";
 import { Plus, XCircle, Sparkles, AlertTriangle, Receipt } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
@@ -371,7 +372,7 @@ export default function POCreateForm({
                 <div key={i} data-testid={`po-item-row-${i}`}
                   className="grid grid-cols-[1fr_136px_84px_52px_56px_88px_28px] items-center px-2.5 py-1.5 border-b border-[#EFF0F2] last:border-0 text-[11.5px]">
                   <span className="min-w-0 truncate">{p?.sku} — {p?.name}<ProductColorChip product={p} supplierId={formData.supplier_id} compact className="ml-1" />
-                    {item.inspection_requested && <span data-testid={`po-item-inspection-${i}`} className="status-pill pill-muted ml-1">minta inspeksi</span>}</span>
+                    {item.inspection_requested && <StatusBadge testId={`po-item-inspection-${i}`} className="ml-1" tone="special" icon="tag" label="Minta inspeksi" />}</span>
                   <QtyDual rolls={item.qty_rolls} measure={item.quantity} unit={item.unit}
                     factor={item.unit_factor} factorTo={item.unit_factor_to}
                     testId={`po-item-qty-${i}`} compact />

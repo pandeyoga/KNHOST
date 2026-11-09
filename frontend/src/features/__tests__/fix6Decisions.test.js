@@ -161,7 +161,7 @@ test("minta inspeksi & retur tolak QC tampil di baris PO", async () => {
     { product_id: "p1", sku: "S1", product_name: "Kain", quantity: 50, received_qty: 0, unit: "yard", price: 1,
       inspection_requested: true, replaced_qty: 50 }] };
   const { host, root } = await mount(<PODetailPanel po={po} onClose={jest.fn()} />);
-  expect(q(host, "po-item-0-fix6").textContent).toMatch(/minta inspeksi/);
+  expect(q(host, "po-item-0-fix6").textContent).toMatch(/minta inspeksi/i);   // lencana baku (FIX-8): "Minta inspeksi"
   expect(q(host, "po-item-0-replaced").textContent).toMatch(/ganti barang 50 yard/);
   await act(async () => { root.unmount(); });
 });

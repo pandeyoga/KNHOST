@@ -11,6 +11,7 @@ import { askReason } from "../../../services/confirmService";
 import InboundScanForm from "../InboundScanForm";
 import ReceiveTrailHistory from "./ReceiveTrailHistory";
 import ScanLabelPanel from "./ScanLabelPanel";
+import InspectionRequestToggle from "./InspectionRequestToggle";
 import DocRefsPanel from "../../documents/trace/DocRefsPanel";
 import { formatQty } from "../../../utils/formatters";
 import QtyDual, { hasRolls, rollsText } from "../../../components/QtyDual";      // FASE U — dua satuan
@@ -141,6 +142,9 @@ export default function InboundTaskPanel({
             )}
           </div>
         )}
+
+        {/* Keputusan pemilik 10 Nov — penanda "minta inspeksi" saat penerimaan (API FIX-6). */}
+        <InspectionRequestToggle task={task} onTaskUpdated={onTaskUpdated} />
 
         {/* Escalation info */}
         {task.status === "escalated" && task.escalation && (

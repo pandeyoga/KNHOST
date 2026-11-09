@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { entityShortFromCtx } from "../../../utils/entityLabel";   // FIX-6 × FIX-8 — tanpa id mentah
 import { ArrowDown, ArrowUp, Camera, PackagePlus, Trash2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
@@ -73,7 +74,7 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
   }, [multiPt, partnerId, ptype]);
   const arrSite = (arrival?.sites || []).find((s) => s.pos.some((p) => arrPoIds.includes(p.id)))?.site_id;
   const toggleArrPo = (id) => setArrPoIds((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
-  const arrPts = [...new Set((arrival?.sites || []).flatMap((s) => s.pos).filter((p) => arrPoIds.includes(p.id)).map((p) => p.entity_name || p.entity_id))];
+  const arrPts = [...new Set((arrival?.sites || []).flatMap((s) => s.pos).filter((p) => arrPoIds.includes(p.id)).map((p) => p.entity_name || entityShortFromCtx(p.entity_id, "PT lain")))];
 
   const submit = async () => {
     const bad = pages.filter(pageBad).length;
@@ -153,7 +154,7 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
                       return (
                         <label key={p.id} data-testid={`grn-wizard-arr-po-${p.id}`} className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-fs-12 ${off ? "opacity-50" : ""}`}>
                           <input type="checkbox" disabled={off} checked={arrPoIds.includes(p.id)} onChange={() => toggleArrPo(p.id)} />
-                          {p.number} · {p.entity_name || p.entity_id} · {p.warehouse_name}
+                          {p.number} · {p.entity_name || entityShortFromCtx(p.entity_id, "PT lain")} · {p.warehouse_name}
                         </label>
                       );
                     })}

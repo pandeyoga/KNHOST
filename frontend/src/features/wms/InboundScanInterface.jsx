@@ -353,7 +353,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
             {FILTER_LABELS[s]}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{shownTasks.length} tugas</span>
+        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{fetched ? `${shownTasks.length} tugas` : "Memuat…"}</span>
         <ExportMenu dataset="wms_tasks" label="tugas-barang-masuk" scope="work" testId="inbound-export"
           filters={[["flow_type", "eq", "inbound"], ["source_type", "eq", "purchase_order"],
             filterStatus !== "all" && ["status", "eq", filterStatus]]} sort={[{ key: "created_at", dir: "desc" }]} />

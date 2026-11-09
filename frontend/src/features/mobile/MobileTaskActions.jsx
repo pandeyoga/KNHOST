@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import BinSelect from "../../components/BinSelect";
 import ReceiveUomPanel from "../wms/inbound/ReceiveUomPanel";
 import GRCatchWeightModal from "../wms/inbound/GRCatchWeightModal";
+import InspectionRequestToggle from "../wms/inbound/InspectionRequestToggle";
 import PickListPanel from "../wms/PickListPanel";
 
 export { printSampleLabel, printInboundRollLabels, reprintRollLabel };
@@ -113,6 +114,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
           {task.status === "escalated" ? "Menunggu keputusan manajer atas eskalasi — belum bisa menerima barang."
             : "Barang tugas ini sudah masuk stok/karantina (keputusan QC di layar QC) — tidak ada aksi terima di sini."}
         </div>
+        <InspectionRequestToggle task={task} onTaskUpdated={() => onDone?.()} touch />
         <ReprintRollButton task={task} />
       </div>
     );
@@ -150,6 +152,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
           tolPct={uom.options?.line_qty_tolerance_pct ?? 2} sjMode={uom.options?.supplier_dn_mode || "warn"}
           sjKnown={uom.options?.supplier_dn_known || []} />
       )}
+      <InspectionRequestToggle task={task} onTaskUpdated={() => onDone?.()} touch />
       <ReprintRollButton task={task} />
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"}`} data-testid={`mw-action-msg-${task.id}`}>{msg.text}</div>}
     </div>
