@@ -595,7 +595,7 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
     followup = await rcs.create_followup_session(session, rec, actor["name"]) if exceptions.get("missing_unconfirmed") else None
     if not await ccs.transition(
             session_id, "roll_finalize", "approved_with_exceptions" if exceptions else "approved",
-            actor_name=actor["name"], claimed=True, note=payload.reason.strip(),
+            actor_name=actor["name"], claimed=True, note=payload.reason.strip(), return_doc=False,
             set_fields={"roll_exceptions": exceptions, "approved_by": actor["name"], "approved_at": now_iso(),
                         "approval_reason": payload.reason.strip(), "zero_cost_reason": payload.zero_cost_reason.strip(),
                         **({"followup_session_id": followup["id"]} if followup else {})}):

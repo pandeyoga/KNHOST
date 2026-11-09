@@ -20,8 +20,8 @@ Cakupan:
      keluar dari daftar status roll (`loading_check_service`, `rfid_service`);
   G. guardrail INV-ROLL-02 — merah untuk penulis baru, hijau di repo.
 
-Jalankan (kontainer backend, DB uji, server :8001 hidup untuk bagian C/E):
-  cd /app/backend && python -m pytest -q -p no:cacheprovider -n0 tests/test_fix10_roll_state.py
+Jalankan (kontainer backend, DB uji, server :8001 hidup + `KN_DEMO_PW` untuk bagian C/E):
+  cd /app/backend && KN_DEMO_PW=<sandi demo> python -m pytest -q -p no:cacheprovider -n0 tests/test_fix10_roll_state.py
 """
 import asyncio
 import os
@@ -44,7 +44,9 @@ from services import roll_state as rs  # noqa: E402
 DB_NAME = os.environ.get("DB_NAME", "test_database")
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[DB_NAME]
 BASE = (os.environ.get("REACT_APP_BACKEND_URL") or "http://localhost:8001").rstrip("/") + "/api"
-PWD = "demo12345"
+# Sandi akun demo TIDAK ditulis di berkas ini (aturan paket): diambil dari lingkungan (`KN_DEMO_PW`); tanpa itu uji
+# HTTP (bagian C/E) dilewati.
+PWD = os.environ.get("KN_DEMO_PW", "")
 TAG = uuid.uuid4().hex[:8]
 ENT = f"ent_TEST_FIX10_{TAG}"
 WH_A, WH_B, WH_C = (f"wh_TEST_FIX10_{TAG}_{k}" for k in ("a", "b", "c"))
@@ -257,6 +259,33 @@ def test_release_by_ref_never_releases_shipped_roll():
     assert [(h["from"], h["status"]) for h in hist][-2:] == [("available", "reserved"), ("reserved", "available")]
 
 
+def test_wh_transfer_reserve_dispatch_receive_and_release_history():
+    """Transfer antar-gudang (roll_service): pesan → kirim → terima (pindah gudang, saldo dua sisi) ber-riwayat; batal
+    sesudah dikirim → kembali tersedia di gudang ASAL; roll yang berubah bersamaan tidak "diterima" (CAS)."""
+    a = _roll(11.0, wh=WH_C)
+    b = _roll(13.0, wh=WH_C)
+    tid, tid2 = f"wht_TEST_FIX10_{TAG}_1", f"wht_TEST_FIX10_{TAG}_2"
+    run(roll_service.reserve_rolls_for_wh_transfer(P, WH_C, ENT, 11.0, tid, roll_ids=[a["id"]]))
+    run(roll_service.reserve_rolls_for_wh_transfer(P, WH_C, ENT, 13.0, tid2, roll_ids=[b["id"]]))
+    run(roll_service.dispatch_wh_transfer_rolls(tid))
+    run(roll_service.dispatch_wh_transfer_rolls(tid2))
+    assert _get(a["id"])["status"] == "in_transit_transfer" and _get(a["id"])["transfer_prior_status"] == "reserved"
+    run(roll_service.receive_wh_transfer_rolls(tid, WH_B))
+    ra = _get(a["id"])
+    assert ra["status"] == "available" and ra["warehouse_id"] == WH_B and ra["reserved_ref"] is None
+    assert [(h["from"], h["status"]) for h in ra["status_history"]] == [
+        ("available", "reserved"), ("reserved", "in_transit_transfer"), ("in_transit_transfer", "available")]
+    assert ra["status_history"][-1]["ref_id"] == tid
+    assert _bal(WH_B)["available_qty"] >= 11.0
+    assert run(roll_service.release_wh_transfer_rolls(tid2)) == 13.0
+    rb = _get(b["id"])
+    assert rb["status"] == "available" and rb["warehouse_id"] == WH_C
+    assert rb["status_history"][-1]["from"] == "in_transit_transfer"
+    # terima ulang transfer yang sudah selesai = tidak ada roll yang dipindah lagi (CAS status)
+    assert run(roll_service.receive_wh_transfer_rolls(tid, WH_A))["moved_qty"] == 0
+    assert _get(a["id"])["warehouse_id"] == WH_B
+
+
 # ═══ C. Putaway Order (HTTP, data acuan Rancamalang) ═══════════════════════════════════════════════════════════
 def _login(email):
     s = requests.Session()
@@ -268,6 +297,8 @@ def _login(email):
 
 @pytest.fixture(scope="module")
 def admin():
+    if not PWD:
+        pytest.skip("set KN_DEMO_PW (sandi akun demo data acuan) untuk menjalankan uji HTTP FIX-10")
     try:
         return _login("admin@kainnusantara.id")
     except requests.RequestException:

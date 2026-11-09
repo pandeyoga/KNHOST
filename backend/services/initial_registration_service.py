@@ -113,7 +113,7 @@ async def start_session(session: Dict[str, Any], actor: Dict[str, Any]) -> Dict[
         if other["id"] != session["id"] and _overlaps({"freeze": fr}, other):
             raise HTTPException(status_code=409, detail=f"Cakupan beririsan dengan sesi pendaftaran '{other.get('name')}' "
                                 f"yang sedang berjalan ({rfz.area_label(other)}). Selesaikan sesi itu dulu.")
-    if not await ccs.transition(session["id"], "reg_start", "running", actor_name=actor["name"], set_fields={
+    if not await ccs.transition(session["id"], "reg_start", "running", actor_name=actor["name"], return_doc=False, set_fields={
             "freeze": fr, "registration.bin_ids": scope["bin_ids"], "registration.racks": scope["racks"],
             "registration.node_labels": scope["labels"], "registration.started_at": since,
             "registration.started_by": actor["name"]}):
@@ -122,7 +122,7 @@ async def start_session(session: Dict[str, Any], actor: Dict[str, Any]) -> Dict[
     for other in await rfz.active_freezes([session["warehouse_id"]]):
         if other["id"] != session["id"] and _overlaps({"freeze": fr}, other) \
                 and ((other.get("freeze") or {}).get("since"), other["id"]) < (since, session["id"]):
-            await ccs.transition(session["id"], "reg_start_rollback", "draft", actor_name=actor["name"],
+            await ccs.transition(session["id"], "reg_start_rollback", "draft", actor_name=actor["name"], return_doc=False,
                                  set_fields={"freeze.active": False},
                                  note=f"kalah balapan mulai dengan sesi '{other.get('name')}'")
             raise HTTPException(status_code=409, detail=f"Sesi '{other.get('name')}' baru saja memulai area yang sama — muat ulang.")
@@ -244,7 +244,7 @@ async def submit(session: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, An
     plan = await plan_svc.build_plan({**session, "registration": {**session["registration"], "costs": {}}})
     costs = {g["key"]: {"cost": g["unit_cost"], "basis": g["cost_basis"], "at": now_iso()}
              for g in plan["groups"] if g["new"]}
-    if not await ccs.transition(session["id"], "reg_submit", "pending_approval", actor_name=actor["name"], set_fields={
+    if not await ccs.transition(session["id"], "reg_submit", "pending_approval", actor_name=actor["name"], return_doc=False, set_fields={
             "registration.costs": costs, "registration.submitted_at": now_iso(),
             "registration.submitted_by": actor["name"]}):
         raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang.")
@@ -255,7 +255,7 @@ async def return_to_running(session: Dict[str, Any], reason: str, actor: Dict[st
     assert_status(session, "pending_approval")
     if (session.get("registration") or {}).get("groups"):
         raise HTTPException(status_code=409, detail="Sebagian produk sudah disetujui — selesaikan persetujuan, jangan dikembalikan.")
-    if not await ccs.transition(session["id"], "reg_return", "running", actor_name=actor["name"], note=reason,
+    if not await ccs.transition(session["id"], "reg_return", "running", actor_name=actor["name"], note=reason, return_doc=False,
                                 extra_filter={"saga_lock": {"$exists": False}},
                                 set_fields={"registration.returned": {"by": actor["name"], "at": now_iso(),
                                                                       "reason": reason}},

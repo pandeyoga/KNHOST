@@ -120,7 +120,7 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
     # G3 D4-CC-01 — satu sesi = satu hasil: retry (ack hilang / update sesi gagal) MENGADOPSI hasil lama.
     prior = await db.rfid_cycle_counts.find_one({"session_id": session_id}, {"_id": 0})
     if prior:
-        await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True,
+        await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True, return_doc=False,
                              collection="rfid_verify_sessions", extra_filter={"kind": "cycle_count"},
                              set_fields={"completed_at": prior.get("created_at", now), "cycle_count_id": prior["id"]})
         return safe_doc(prior)
@@ -146,7 +146,7 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
             raise
         cc = won
     # FIX-10 — tulisan akhir klaim lewat tabel `cycle_count_state`: CAS `open` + kunci dipegang, riwayat status.
-    await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True,
+    await ccs.transition(session_id, "rfid_complete", "completed", actor_name=actor_name, claimed=True, return_doc=False,
                          collection="rfid_verify_sessions", extra_filter={"kind": "cycle_count"}, set_fields={
                              "result": "simulated" if simulated else (
                                  "clean" if not missing and not extra_items and not untagged_n else "with_issues"),

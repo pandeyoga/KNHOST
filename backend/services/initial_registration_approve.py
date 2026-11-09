@@ -237,7 +237,7 @@ async def approve(session: Dict[str, Any], keys: List[str], actor: str, allowed:
         from services import cycle_count_state as ccs
         to = final.pop("status")
         final.pop("updated_at", None)
-        if not await ccs.transition(session["id"], "reg_approve", to, actor_name=actor, claimed=True, note=reason,
+        if not await ccs.transition(session["id"], "reg_approve", to, actor_name=actor, claimed=True, note=reason, return_doc=False,
                                     set_fields=final):
             await _saga.mark_failed("cycle_count_sessions", session["id"], "status berubah di luar klaim (reg_approve)")
             raise HTTPException(status_code=409, detail="Sesi berubah bersamaan — muat ulang (kunci saga terlihat).")

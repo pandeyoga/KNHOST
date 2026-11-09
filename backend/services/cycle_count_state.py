@@ -99,10 +99,11 @@ def _mode_filter(action: str) -> Dict[str, Any]:
 async def transition(session_id: str, action: str, to: str, *, actor_name: str, frm: Optional[Iterable[str]] = None,
                      set_fields: Optional[Dict[str, Any]] = None, unset: Optional[Iterable[str]] = None,
                      extra_filter: Optional[Dict[str, Any]] = None, note: str = "", claimed: bool = False,
-                     collection: str = "cycle_count_sessions") -> Optional[Dict[str, Any]]:
+                     collection: str = "cycle_count_sessions", return_doc: bool = True) -> Any:
     """CAS status sesi untuk `action` (status asal ∈ daftar-izin atau `frm` yang lebih sempit) + jejak riwayat.
     `claimed=True` = tulisan akhir aksi yang diklaim saga: filter mensyaratkan `saga_lock` masih ada dan kunci dicabut.
-    Mengembalikan dokumen sesudah tulis, atau None bila CAS kalah. ValueError bila transisi tidak terdaftar."""
+    Mengembalikan dokumen sesudah tulis (`return_doc=False`: jumlah dokumen yang ditulis — `update_one`, dipakai jalur
+    yang dulu memang `update_one`), atau None bila CAS kalah. ValueError bila transisi tidak terdaftar."""
     spec = TRANSITIONS[action]
     froms = list(frm) if frm is not None else [f for f in spec["from"] if f]
     for f in froms:
@@ -120,6 +121,11 @@ async def transition(session_id: str, action: str, to: str, *, actor_name: str, 
             uns["saga_lock"] = ""
         if uns:
             upd["$unset"] = uns
+        if not return_doc:
+            res = await db[collection].update_one(flt, upd)
+            if res.matched_count:
+                return res.matched_count
+            continue
         out = await db[collection].find_one_and_update(flt, upd, projection={"_id": 0},
                                                        return_document=ReturnDocument.AFTER)
         if out:
