@@ -7,6 +7,7 @@ import { ClipboardCheck, Zap, PlayCircle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { SectionCard, EmptyBox, Pill, fmtTime } from "./rfidShared";
 import { apiErrorText } from "../../utils/apiError";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 export default function CycleCountPanel({ whId, selectedEntity }) {
   const [session, setSession] = useState(null);
@@ -104,7 +105,9 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
         )}
       </SectionCard>
 
-      <SectionCard title={`Riwayat Cycle Count (${history.length})`}>
+      <SectionCard title={`Riwayat Cycle Count (${history.length})`} right={
+        <ExportMenu dataset="rfid_cycle_counts" label="opname-rfid" testId="cc-rfid-export"
+          filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />}>
         {history.length === 0 ? <EmptyBox icon={ClipboardCheck} text="Belum ada cycle count." /> : (
           <div className="space-y-1" data-testid="cc-history">
             {history.map((c) => (

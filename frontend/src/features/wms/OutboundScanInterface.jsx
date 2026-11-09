@@ -22,6 +22,7 @@ import SampleCutPanel from "./SampleCutPanel";
 import KNSelect from "../../components/KNSelect";
 import { TaskTakeoverButton } from "./TaskTakeoverButton";
 import { useLocationScope } from "./LocationScopeBadge";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 export default function OutboundScanInterface({ user, focusTaskId = "", onFocusConsumed }) {
   const locScope = useLocationScope();   // FIX-3b (B3b K-B3b-08) — "Ambil alih tugas" untuk supervisor lokasi
@@ -294,6 +295,13 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
           </button>
         ))}
         <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap" data-testid="outbound-task-count">{visibleTasks.length} tugas</span>
+        <ExportMenu dataset="wms_tasks" label="tugas-barang-keluar" scope="work" testId="outbound-export" search={q}
+          filters={[["flow_type", "eq", "outbound"], filterStatus !== "all" && ["status", "eq", filterStatus],
+            whFilter && ["warehouse_id", "eq", whFilter],
+            kind === "so" ? ["task_subtype", "ne", "sample_cut"]
+              : { op: "or", items: [kind !== "sample" && ["task_subtype", "ne", "sample_cut"],
+                { op: "and", items: [["task_subtype", "eq", "sample_cut"], ["picked_qty", "gt", 0], ["cutting_received_at", "not_empty"]] }] }]}
+          sort={[{ key: "created_at", dir: "desc" }]} />
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_200px]">
         <input data-testid="outbound-search" value={q} onChange={(e) => setQ(e.target.value)}

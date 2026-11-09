@@ -15,11 +15,13 @@ AUTO_ENUM = {"status": "status", "payment_status": "payment_status", "order_type
 
 def C(key: str, label: str, type: str = "string", path: Optional[str] = None, vis: Optional[str] = None,
       cost: bool = False, perm: Optional[tuple] = None, filterable: bool = True,
-      enum: Optional[str] = None) -> Dict[str, Any]:
+      enum: Optional[str] = None, default: bool = True) -> Dict[str, Any]:
+    """`default=False` (FIX-4) — kolom SARINGAN (mis. id gudang untuk mengikuti saringan & cakupan daftar): boleh
+    dipakai filter dan dipilih di Pusat Export, tetapi tidak ikut kolom bawaan berkas (EXP-04: id mentah)."""
     if enum is None and type == "string":
         enum = AUTO_ENUM.get(key)
     return {"key": key, "label": label, "type": type, "path": path or key, "vis": vis, "cost": cost,
-            "perm": perm, "filterable": filterable, "enum": enum}
+            "perm": perm, "filterable": filterable, "enum": enum, "default": default}
 
 
 def J(id: str, label: str, collection: str, local: str, fields: List[Dict[str, Any]],
@@ -64,6 +66,7 @@ DATASETS: List[Dict[str, Any]] = [
                  C("paid_total", "Sudah dibayar", "money"), C("created_at", "Dibuat", "datetime"),
                  C("delivery_date", "Tgl kirim diminta", "date"), C("delivered_at", "Terkirim", "datetime"),
                  C("entity_id", "ID badan usaha")],
+     "search_fields": ["number", "customer_name", "sales_name"],
      "joins": [CUSTOMER_JOIN, ENTITY_JOIN()]},
     {"id": "sales_order_items", "label": "Baris Pesanan Penjualan", "group": "Penjualan", "collection": "sales_orders",
      "grain": "1 baris = 1 item SO (nilai item tidak dikalikan pembayaran/pengiriman)", "key": "id",
@@ -96,6 +99,7 @@ DATASETS: List[Dict[str, Any]] = [
      "columns": [C("number", "No. retur"), C("order_number", "No. SO"), C("customer_name", "Pelanggan"),
                  C("status", "Status"), C("return_type", "Jenis retur"), C("total_amount", "Nilai retur", "money"),
                  C("created_at", "Dibuat", "datetime"), C("entity_id", "ID badan usaha")],
+     "search_fields": ["number", "customer_name", "order_number"],   # = routers/sales_returns.py (FIX-4)
      "joins": [CUSTOMER_JOIN, ENTITY_JOIN()]},
     {"id": "special_orders", "label": "Pesanan Khusus", "group": "Penjualan", "collection": "special_orders",
      "grain": "1 baris = 1 pesanan khusus", "key": "id", "perm": ("order", "view"), "owner_scope": "created_by",
@@ -122,14 +126,27 @@ DATASETS: List[Dict[str, Any]] = [
                  C("fabric_type", "Jenis kain"), C("grade", "Grade", vis="grade"), C("lot", "LOT", vis="lot"),
                  C("dye_lot", "Dye lot", vis="lot"), C("ownership_type", "Jenis kepemilikan"),
                  C("is_remnant", "Sisa potong", "bool"), C("unit_cost", "HPP satuan", "money", cost=True),
-                 C("created_at", "Tercatat", "datetime"), C("owner_entity_id", "ID badan usaha pemilik")],
+                 C("created_at", "Tercatat", "datetime"), C("owner_entity_id", "ID badan usaha pemilik"),
+                 # FIX-4 — kolom saringan daftar Roll (gudang/produk/lini/bin), tidak ikut kolom bawaan berkas.
+                 C("warehouse_id", "ID gudang (saringan)", default=False),
+                 C("product_id", "ID produk (saringan)", default=False),
+                 C("line_code", "Lini", default=False), C("bin_id", "ID bin (saringan)", default=False),
+                 C("lot_id", "ID LOT (saringan)", default=False),
+                 C("rfid_tag_id", "ID tag RFID (saringan)", default=False)],
+     # = /inventory/rolls `q` (routers/inventory.py): nomor roll/lot/dye lot/batch/grade + nama/SKU produk.
+     "search_fields": ["roll_no", "lot", "dye_lot", "batch", "grade", "consignor_ref"],
+     "search_product_paths": ["product_id"],
      "joins": [PRODUCT_JOIN, WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")]},
     {"id": "inventory_movements", "label": "Mutasi Stok", "group": "Gudang & Logistik",
      "collection": "inventory_movements", "grain": "1 baris = 1 mutasi", "key": "id", "perm": ("inventory", "view"),
      "date_fields": [C("timestamp", "Waktu mutasi", "datetime")],
      "columns": [C("timestamp", "Waktu", "datetime"), C("movement_type", "Jenis mutasi"),
                  C("quantity", "Qty", "number"), C("unit", "Satuan"), C("lot", "LOT", vis="lot"),
-                 C("source_document", "Dokumen sumber"), C("owner_entity_id", "ID badan usaha pemilik")],
+                 C("source_document", "Dokumen sumber"), C("owner_entity_id", "ID badan usaha pemilik"),
+                 C("warehouse_id", "ID gudang (saringan)", default=False),
+                 C("product_id", "ID produk (saringan)", default=False),
+                 C("roll_id", "ID roll (saringan)", default=False)],
+     "search_fields": ["source_document", "movement_type", "notes", "lot", "batch"],   # = /inventory/movements
      "joins": [PRODUCT_JOIN, WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")]},
     {"id": "inventory_lots", "label": "LOT Persediaan", "group": "Gudang & Logistik", "collection": "inventory_lots",
      "grain": "1 baris = 1 LOT", "key": "id", "perm": ("inventory", "view"), "vis": "lot",
@@ -137,7 +154,14 @@ DATASETS: List[Dict[str, Any]] = [
      "columns": [C("lot_number", "No. LOT", vis="lot"), C("sku", "SKU"), C("product_name", "Produk"),
                  C("lot_status", "Status"), C("supplier_lot", "LOT supplier", vis="lot"),
                  C("roll_count", "Jumlah roll", "number"), C("qty_remaining", "Sisa qty", "number"),
-                 C("unit", "Satuan"), C("created_at", "Dibuat", "datetime")],
+                 C("unit", "Satuan"), C("created_at", "Dibuat", "datetime"),
+                 C("warehouse_id", "ID gudang (saringan)", default=False),
+                 C("product_id", "ID produk (saringan)", default=False),
+                 C("source", "Asal LOT", default=False), C("stage", "Tahap", default=False)],
+     # FIX-4 — `inventory_lots` tidak ada di WAREHOUSE_FIELDS: pagar lokasi petugas berpagar diterapkan mesin export.
+     "location_fields": ("warehouse_id",),
+     "search_fields": ["lot_number", "supplier_lot", "dye_lot", "sku", "product_name", "legacy_lot_codes", "note",
+                       "internal_alias"],   # = lot_service.list_lots `q`
      "joins": [WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")]},
     {"id": "warehouse_transfers", "label": "Transfer Gudang", "group": "Gudang & Logistik",
      "collection": "warehouse_transfers", "grain": "1 baris = 1 transfer", "key": "id", "perm": ("transfer", "view"),
@@ -145,7 +169,14 @@ DATASETS: List[Dict[str, Any]] = [
      "columns": [C("code", "No. transfer"), C("transfer_kind", "Jenis"), C("status", "Status"),
                  C("requested_by", "Diminta oleh"), C("approved_by", "Disetujui oleh"),
                  C("created_at", "Dibuat", "datetime"), C("completed_at", "Selesai", "datetime"),
-                 C("entity_id", "ID badan usaha")],
+                 C("entity_id", "ID badan usaha"),
+                 C("source_warehouse_id", "ID gudang asal (saringan)", default=False),
+                 C("dest_warehouse_id", "ID gudang tujuan (saringan)", default=False),
+                 C("line_codes", "Lini (saringan)", default=False)],
+     # Cari daftar Transfer: kode, peminta, SO, produk + nama gudang/PT (diselesaikan ke id).
+     "search_fields": ["code", "requested_by", "sales_order_number", "items.sku", "items.product_name"],
+     "search_warehouse_paths": ["source_warehouse_id", "dest_warehouse_id"],
+     "search_entity_paths": ["entity_id", "source_entity_id", "dest_entity_id"],
      "joins": [J("source_wh", "Gudang asal", "warehouses", "source_warehouse_id", [C("name", "Gudang asal")]),
                J("dest_wh", "Gudang tujuan", "warehouses", "dest_warehouse_id", [C("name", "Gudang tujuan")]),
                ENTITY_JOIN()]},
@@ -219,7 +250,11 @@ DATASETS: List[Dict[str, Any]] = [
                  C("material_name", "Bahan"), C("material_qty", "Qty bahan", "number"),
                  C("material_unit", "Satuan bahan"), C("final_output_name", "Hasil akhir"),
                  C("planned_service_cost", "Biaya jasa rencana", "money", cost=True),
-                 C("created_at", "Dibuat", "datetime"), C("entity_id", "ID badan usaha")],
+                 C("created_at", "Dibuat", "datetime"), C("entity_id", "ID badan usaha"),
+                 C("line_code", "Lini", default=False),
+                 C("from_warehouse_id", "ID gudang asal (saringan)", default=False),
+                 C("target_warehouse_id", "ID gudang tujuan (saringan)", default=False)],
+     "search_fields": ["mko_number", "material_name", "final_output_name", "po_number"],
      "joins": [ENTITY_JOIN()]},
     {"id": "design_requests", "label": "Permintaan Desain", "group": "Produk & Desain", "collection": "design_requests",
      "grain": "1 baris = 1 permintaan desain", "key": "id", "perm": ("design_request", "view"),
@@ -263,8 +298,9 @@ EXCLUDED_PREFIXES = {"sys_": "Infrastruktur sistem", "ai_": "Cache/riwayat Tanya
 
 
 from services.export_registry_more import EXCLUDED_MORE, FINANCE, MORE, STAFF  # noqa: E402
+from services.export_registry_wms import WMS_RFID  # noqa: E402  — FIX-4: dokumen WMS-RFID (EXP-05)
 
-DATASETS += FINANCE + STAFF + MORE
+DATASETS += FINANCE + STAFF + MORE + WMS_RFID
 DATASET_BY_ID = {d["id"]: d for d in DATASETS}
 EXCLUDED.update(EXCLUDED_MORE)
 

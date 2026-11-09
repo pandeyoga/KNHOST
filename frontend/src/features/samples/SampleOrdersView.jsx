@@ -19,6 +19,7 @@ import CatalogueComponents from "./CatalogueComponents";
 import CuttingDesk from "./CuttingDesk";
 import CuttingLocations from "./CuttingLocations";
 import { can, roleIs } from "../../config/roles";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -158,6 +159,8 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
             count: f.id === "all" ? (stats?.total ?? 0) : f.id.split(",").reduce((n, s) => n + Number(bs[s] || 0), 0) }))} />
         <ListToolbar testId="sample-orders-toolbar">
           <SearchBox value={q} onChange={setQ} testId="sample-orders-search" placeholder="Cari nomor / pelanggan / sales / produk…" />
+          <ExportMenu dataset="sales_orders" label="pesanan-sample" testId="sample-orders-export" search={q}
+            filters={[["order_type", "eq", "sample"], filter !== "all" && ["status", "in", filter.split(",")]]} sort={[{ key: "created_at", dir: "desc" }]} />
         </ListToolbar>
       </div>
 

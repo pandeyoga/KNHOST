@@ -17,6 +17,7 @@ import { PageHeader } from "../../components/ListPageParts";
 import axios, { API } from "../../services/apiClient";
 import { askConfirm } from "../../services/confirmService";
 import { Stat, EmptyBox, Pill, SectionCard, fmtTime, useWarehouses } from "./rfidShared";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const EMPTY_FORM = { code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" };
 
@@ -226,7 +227,9 @@ export default function RfidDevicesView({ currentUser, embedded = false }) {
         {readerDevice && <U300Operations device={readerDevice} isAdmin={isAdmin} />}
       </DetailModal>
 
-      <SectionCard title="Daftar Perangkat">
+      <SectionCard title="Daftar Perangkat" right={
+        <ExportMenu dataset="rfid_devices" label="perangkat-rfid" testId="rfid-devices-export"
+          filters={[whId && ["warehouse_id", "eq", whId]]} />}>
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
           : devices.length === 0 ? <EmptyBox icon={Wifi} text="Belum ada perangkat. Klik 'Buat Perangkat Bawaan' untuk mulai." />
             : (

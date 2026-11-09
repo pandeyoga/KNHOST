@@ -17,6 +17,7 @@ import { fmtDate, RETURN_STATUS_CLASS, RETURN_STATUS_LABEL } from "./intercoApi"
 import ReturnChainPanel from "../../sales/ReturnChainPanel";
 import ReturnRollsPanel from "../../sales/ReturnRollsPanel";
 import ConfirmModal from "../../../components/ConfirmModal";
+import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 /** Baris retur antar-PT → bentuk baris panel roll (sama dengan retur pelanggan). */
 const toPanelItems = (r) => (r.items || []).map((it) => ({
@@ -36,6 +37,10 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
         {" "}(pembatalan dokumen sengaja ditolak saat itu). Setiap retur menerbitkan
         nota retur di PT pembeli dan nota kredit di PT penjual — dokumen kembar,
         jurnalnya berpasangan di dua buku.
+      </div>
+      <div className="kn-list-toolbar justify-end">
+        <ExportMenu dataset="interco_returns" label="retur-antar-pt" testId="interco-returns-export"
+          requires={["interco_finance", "view"]} sort={[{ key: "created_at", dir: "desc" }]} />
       </div>
 
       <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">

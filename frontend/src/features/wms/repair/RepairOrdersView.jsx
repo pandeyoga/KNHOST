@@ -11,6 +11,7 @@ import ResponsiveTable from "../../../components/ResponsiveTable";
 import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
 import RepairCreateModal from "./RepairCreateModal";
 import RepairOrderDetail, { StatusPill } from "./RepairOrderDetail";
+import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const TABS = [["", "Semua"], ["draft", "Draf"], ["sent", "Dikirim"], ["done", "Selesai"], ["returning", "Batal — menunggu kembali"], ["cancelled", "Dibatalkan"]];
 
@@ -61,6 +62,8 @@ export default function RepairOrdersView({ currentUser, selectedEntity, focusDoc
         <FilterChips value={status} onChange={setStatus} testId="repair-tab" ariaLabel="Status perbaikan"
           options={TABS.map(([k, l]) => ({ key: k, label: l, count: k ? data.counts?.[k] || 0 : total, testId: `repair-tab-${k || "all"}` }))} />
         <SearchBox value={q} onChange={setQ} placeholder="Cari nomor, mitra, roll, SKU…" testId="repair-search" />
+        <ExportMenu dataset="repair_orders" label="perbaikan" testId="repair-export" search={q}
+          filters={[status && ["status", "eq", status]]} sort={[{ key: "created_at", dir: "desc" }]} />
         {err && <p className="text-[11.5px] text-[#A8221A]">{err}</p>}
         {!loading && data.items.length === 0 ? (
           <div className="empty-state" data-testid="repair-empty"><Wrench size={28} style={{ opacity: 0.3 }} /><p>Belum ada dokumen perbaikan{status ? " dengan status ini" : ""}.</p></div>

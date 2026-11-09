@@ -16,6 +16,7 @@ import { apiErrorText } from "../../utils/apiError";
 import RollCountPanel from "./RollCountPanel";
 import BinSelect from "../../components/BinSelect";
 import { can } from "../../config/roles";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const storedPerms = () => { try { return JSON.parse(localStorage.getItem("kn_user") || "null")?.permissions; } catch { return null; } };
 
@@ -192,6 +193,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
           <h2>Cycle Count / Stock Opname</h2>
         </div>
         <div className="flex items-center gap-2">
+          <ExportMenu dataset="cycle_count_sessions" label="sesi-opname" scope="work" testId="cc-export"
+            filters={[["mode", "ne", "registration"]]} sort={[{ key: "created_at", dir: "desc" }]} />
           <button onClick={() => { setView("create"); setErr(""); setMsg(""); }} className="primary-button" data-testid="new-cycle-count-button">
             <Plus size={13} /> Buat Sesi
           </button>

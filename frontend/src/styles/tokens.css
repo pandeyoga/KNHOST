@@ -1,5 +1,6 @@
 :root {
-  /* iOS-inspired tokens, AA-compliant body color (#0058CC = 4.65:1 on white) */
+  /* iOS-inspired tokens. #007AFF hanya untuk dekorasi (cincin fokus, garis aktif) — BUKAN isian tombol ber-teks putih
+     (4,02:1 gagal AA, FIX-4/K-B4-03); isian & teks aksi = --kn-action (#0058CC, 6,43:1). */
   --ios-blue: #007AFF;
   --ios-blue-strong: #0058CC;
   --ios-blue-soft: #E6F0FF;
@@ -16,7 +17,9 @@
   --line: rgba(229, 229, 234, 0.92);
   --solid-line: #E5E5EA;
 
-  /* 4pt spacing scale */
+  /* 4pt spacing scale (Standar UI Gudang v1: 2 · 4 · 8 · 12 · 16 · 24 · 32 · 48) */
+  --sp-0-5: 2px;
+  --sp-12: 48px;
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -35,6 +38,45 @@
   --shadow-1: 0 1px 2px rgba(20, 28, 45, 0.04), 0 0 0 1px rgba(229,229,234,0.7);
   --shadow-2: 0 6px 18px rgba(20, 28, 45, 0.06), 0 0 0 1px rgba(229,229,234,0.7);
   --shadow-3: 0 16px 40px rgba(20, 28, 45, 0.10);
+
+  /* ═══ Standar UI Gudang v1 (FIX-4 · docs/KN_37_STANDAR_UI_GUDANG.md · K-B4-02/03) ═══════════════════════════
+     Token WAJIB untuk komponen & layar baru. Rasio kontras dihitung & dijaga `scripts/guardrails/verify_ui_contrast.py`
+     (G-UI-03, keras): teks ≥ 4,5:1, komponen/batas/ikon ≥ 3:1 (WCAG 2.2 AA). */
+  /* Skala huruf: 12/13/14/16/20/24 (+ kios 40/64). Minimum 12 px; HP: info keputusan ≥ 16, pendukung ≥ 14. */
+  --fs-12: 12px;  --lh-12: 16px;
+  --fs-13: 13px;  --lh-13: 18px;
+  --fs-14: 14px;  --lh-14: 20px;
+  --fs-16: 16px;  --lh-16: 24px;
+  --fs-20: 20px;  --lh-20: 28px;
+  --fs-24: 24px;  --lh-24: 32px;
+  --fs-kiosk-40: 40px;  --fs-kiosk-64: 64px;
+  /* Warna semantik (latar putih kecuali disebut). */
+  --kn-text: #1C1C1E;
+  --kn-text-2: #6B6B73;          /* teks sekunder = MINIMUM warna teks (5,28:1) */
+  --kn-neutral: #3C3C43;
+  --kn-neutral-soft: #F2F2F5;
+  --kn-action: #0058CC;          /* isian tombol utama, tautan, fokus (6,43:1; ganti #007AFF 4,02:1) */
+  --kn-action-hover: #004AAD;
+  --kn-action-soft: #E6F0FF;
+  --kn-success-text: #126E2C;
+  --kn-success-solid: #1B7F4B;
+  --kn-success-soft: #E6F6EC;
+  --kn-warning-text: #8C4A00;
+  --kn-warning-soft: #FFF4E5;
+  --kn-warning-kiosk: #FFD60A;   /* hanya dengan teks/ikon gelap (#1C1C1E) */
+  --kn-danger-text: #A8221A;
+  --kn-danger: #B42318;          /* isian tombol bahaya (6,57:1; ganti #FF3B30 3,55:1) */
+  --kn-danger-hover: #93190F;
+  --kn-danger-soft: #FDECEC;
+  --kn-special-text: #6B219A;
+  --kn-special-soft: #F3E8FA;
+  --kn-field-border: #8A8A8E;    /* batas isian (3,44:1 non-teks; ganti #D6D7DC 1,44:1) */
+  --kn-divider: #E5E5EA;         /* garis dekoratif saja, bukan penanda komponen */
+  --kn-focus: #0058CC;
+  /* Ukuran sasaran: desktop ≥ 24 px; HP ≥ 48 px, aksi utama/pindai 56 px. */
+  --target-desktop-min: 24px;
+  --control-h: 36px;  --control-h-sm: 32px;
+  --touch-min: 48px;  --touch-primary: 56px;
 
   /* Layout */
   --topbar-h: 52px;

@@ -453,6 +453,9 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
             testId="returns-pager" label="retur"
             exportConfig={{ columns: operator ? CSV_COLUMNS.filter((c) => c.key !== "credit_note_number") : CSV_COLUMNS, rows: filtered,
               fetchAll: paged.fetchAll, filename: "retur-jual" }}
+            exportSpec={{ dataset: "sales_returns", label: "retur-jual", search,
+              filters: [filterStatus !== "all" && ["status", "eq", filterStatus], returnType !== "all" && ["return_type", "eq", returnType]],
+              sort: [{ key: "created_at", dir: "desc" }], unsupported: lineFilter ? "Saringan lini belum bisa diikuti berkas Excel retur jual — kosongkan lini atau pakai CSV." : "" }}
           />
         </div>
       )}

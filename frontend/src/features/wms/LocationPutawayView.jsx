@@ -18,6 +18,7 @@ import StockTreePanel from "./location/StockTreePanel";
 import { askReason } from "../../services/confirmService";
 import { normalizeZones, fmtUnits, TERMS } from "./location/locUtils";
 import { formatQty } from "../../utils/formatters";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const SUPERVISORS = ["warehouse_admin", "manager", "admin"];
 const isActiveWh = (w) => (w.status || "active") === "active" && w.active !== false;
@@ -159,7 +160,12 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
         : tab === "orphans" ? <OrphanPanel whId={whId} binOptions={binOptions} onChanged={loadAll} />
         : (
           <div className="section-card section-pad">
-            <h3 className="text-[13px] font-bold mb-1">Antrean Penempatan Rak — roll belum ditempatkan</h3>
+            <div className="kn-list-toolbar mb-1">
+              <h3 className="text-[13px] font-bold">Antrean Penempatan Rak — roll belum ditempatkan</h3>
+              <ExportMenu dataset="inventory_rolls" label="antrean-penempatan-rak" testId="lp-queue-export"
+                filters={[whId && ["warehouse_id", "eq", whId], ["bin_id", "empty"], ["length_remaining", "gt", 0],
+                  ["status", "in", ["available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged"]]]} />
+            </div>
             <p className="text-[11.5px] text-[#6B6B73] mb-3">Saran bin hanya menampilkan bin yang lolos aturan & kapasitas; server tetap memeriksa ulang saat disimpan.</p>
             {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
               : queue.length === 0 ? <p data-testid="lp-queue-empty" className="py-8 text-center text-[12px] text-[#6B6B73]">Semua roll sudah ditempatkan ke bin.</p>
