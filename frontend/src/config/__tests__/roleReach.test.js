@@ -33,11 +33,21 @@ export const ROLE_REACH_ADDITIONS = {
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
     "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); tab RFID tetap admin
+    // FIX-1 (K-B1-07, keputusan 9 Nov — audit B1 UI-20/B1b UI-57) — manajer mendapat menu RFID (baca) termasuk
+    // Monitor Gerbang (operasional gate U300). Sapu RFID di Stock Opname tetap tertutup (D-15).
+    "cs-rfid-lokasi", "cs-rfid-tags", "cs-rfid-gate",
   ],
   // Fase 3 · P8 (D-22) — Kinerja Mitra Makloon: gudang dulu melihat skor mitra di Klaim Selisih Makloon. Admin Gudang
   // mewarisi menu gudang (ROLE_NAV inherit "warehouse"), jadi ikut — bukan keputusan terpisah.
   warehouse: ["makloon-claim-recap"],
   warehouse_admin: ["makloon-claim-recap"],
+};
+/** Pencabutan jangkauan yang SAH (layar yang server-nya menolak peran itu): { peran: ["id", …] } + alasan. */
+// FIX-1 (audit B1b UI-48) — "Meja Saya" untuk Admin Gudang & Admin Sales: server `/desks/me` menolak kedua peran
+// ("memakai meja khususnya sendiri"); mejanya = Meja Gudang / Meja Admin Sales. Menu yang hanya berujung galat dicabut.
+export const ROLE_REACH_REMOVALS = {
+  warehouse_admin: ["my-desk"],
+  sales_admin: ["my-desk"],
 };
 
 function universe() {
@@ -75,7 +85,9 @@ test("bukti-merah: mencabut peran dari sebuah tab TERDETEKSI sebagai jangkauan h
 describe.each(BUILTIN)("peran %s", (role) => {
   test("setiap alamat yang dulu sampai, masih sampai ke layar yang sama / layar utama aliasnya", () => {
     const lost = [];
+    const removed = new Set(ROLE_REACH_REMOVALS[role] || []);
     for (const [id, view] of Object.entries(baseline.roles[role] || {})) {
+      if (removed.has(id)) continue;
       const t = resolveDeepLinkTarget(id, role);
       const ok = new Set([view, aliasTarget(view), aliasTarget(id)]);
       if (!t) lost.push(`${id} → (tidak sampai; dulu ${view})`);
