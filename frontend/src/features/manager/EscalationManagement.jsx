@@ -8,6 +8,7 @@ import { PageHeader } from "../../components/ListPageParts";
 import FilterChips from "../../components/FilterChips";
 import FormModal from "../../components/FormModal";
 import { formatQty } from "../../utils/formatters";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 /**
  * ManagerEscalationDashboard
@@ -139,6 +140,8 @@ export default function ManagerEscalationDashboard({ user }) {
         testId="escalation-header"
         actions={(
           <>
+            <ExportMenu dataset="wms_tasks" label="eskalasi-gudang" scope="work" testId="escalation-export"
+              filters={[["status", "eq", "escalated"]]} sort={[{ key: "created_at", dir: "desc" }]} />
             {hangingCount > 0 && (
               <span data-testid="escalation-hanging-count" className="status-pill pill-warning">
                 {hangingCount} Menggantung

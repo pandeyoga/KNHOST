@@ -18,8 +18,8 @@ export default function PrinterStatusWidget({ warehouseId, compact = false }) {
       .finally(() => setLoading(false));
   }, [warehouseId]);
   if (err) return <div className="notice-bar danger text-xs" data-testid="printer-status-error">{String(err)}</div>;
-  if (loading || !data) return <div className="text-xs text-[#6B6B73]" data-testid="printer-status-loading">Memuat status printer…</div>;
-  if (!data.warehouses.length) return <div className="text-xs text-[#6B6B73]" data-testid="printer-status-empty">Belum ada printer label / antrean.</div>;
+  if (loading || !data) return <div className="text-fs-12 text-kn-text-2 printer-status-note" data-testid="printer-status-loading">Memuat status printer…</div>;
+  if (!data.warehouses.length) return <div className="text-fs-12 text-kn-text-2 printer-status-note" data-testid="printer-status-empty">Belum ada printer label / antrean.</div>;
   return (
     <div className={compact ? "space-y-1.5" : "grid gap-2 sm:grid-cols-2 lg:grid-cols-3"} data-testid="printer-status">
       {data.warehouses.map((w) => (

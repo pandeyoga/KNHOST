@@ -14,6 +14,7 @@ import TransferCreateForm from "./transfer/TransferCreateForm";
 import TransferList, { transferKindOf } from "./transfer/TransferList";
 import FormModal from "../../components/FormModal";
 import TransferDetailModal from "./transfer/TransferDetailModal";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-5 (LST-01)
 
 /**
@@ -319,6 +320,11 @@ export default function TransferManagement({
             <input data-testid="trf-search" className="w-full min-w-0 bg-transparent text-[13px] outline-none"
               placeholder="Cari kode / gudang / PT / produk…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </label>
+          <ExportMenu dataset="warehouse_transfers" label="transfer" scope="work" testId="trf-export" search={search}
+            filters={[filterStatus !== "all" && ["status", "eq", filterStatus],
+              kind === "inter_entity" && ["transfer_kind", "eq", "inter_entity"],
+              kind === "intra_entity" && ["transfer_kind", "ne", "inter_entity"], lineFilter && ["line_codes", "eq", lineFilter]]}
+            sort={[{ key: "created_at", dir: "desc" }]} />
         </div>
       </div>
 

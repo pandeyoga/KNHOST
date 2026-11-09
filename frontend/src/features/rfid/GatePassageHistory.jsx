@@ -4,6 +4,7 @@ import { History } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { SectionCard, EmptyBox, Pill, fmtTime } from "./rfidShared";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const VERDICT = { red: ["red", "MERAH"], green: ["green", "HIJAU"], info: ["gray", "INFO"] };
 
@@ -22,7 +23,9 @@ export default function GatePassageHistory({ gateId, whId, refreshKey }) {
   };
   useEffect(() => { load(); }, [gateId, whId, refreshKey]); // eslint-disable-line
   return (
-    <SectionCard title="Riwayat Passage Gate">
+    <SectionCard title="Riwayat Passage Gate" right={
+      <ExportMenu dataset="rfid_passages" label="lintasan-gerbang" testId="rfid-passage-export"
+        filters={[gateId ? ["device_id", "eq", gateId] : whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "started_at", dir: "desc" }]} />}>
       {err && <p className="mb-2 text-[12px] font-semibold text-[#C0341D]">{err}</p>}
       {rows.length === 0 ? <EmptyBox icon={History} text="Belum ada rombongan yang lewat gate ini." /> : (
         <div data-testid="rfid-passage-history" className="space-y-1.5">

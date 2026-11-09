@@ -32,6 +32,7 @@ import { ROLL_CHECK_FILTERS } from "../../components/RollCheckChips";
 import ErrorNotice from "../../components/ErrorNotice";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import { qtyDualRootCsvColumns } from "../../utils/qtyDualCsv";   // FASE U — dua satuan di CSV
 
 // FASE P6 — kolom Unduh CSV untuk tab Roll (mengikuti kolom RollsTable).
@@ -484,12 +485,18 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
       {/* MAIN CONTENT — 2 panel */}
       <div className={`grid grid-cols-1 gap-3 ${selectedRow && tab === "balances" ? "lg:grid-cols-[1fr_300px]" : ""}`}>
         {tab === "balances" && (
-          <BalancesTable
-            loading={loading}
-            rows={filteredBalances}
-            selectedRow={selectedRow}
-            onRowClick={handleRowClick}
-          />
+          <div className="flex flex-col gap-2">
+            <div className="kn-list-toolbar justify-end">
+              <ExportMenu dataset="inventory_balances" label="saldo-stok" locationView testId="balances-export"
+                filters={[warehouseFilter !== "all" && ["warehouse_id", "eq", warehouseFilter]]} search={searchQuery} />
+            </div>
+            <BalancesTable
+              loading={loading}
+              rows={filteredBalances}
+              selectedRow={selectedRow}
+              onRowClick={handleRowClick}
+            />
+          </div>
         )}
 
         {tab === "rolls" && !pegOnly && rollView === "group" && (
@@ -523,6 +530,10 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
                 onPageSize={rollsPaged.setPageSize}
                 exportConfig={{ columns: ROLL_CSV_COLUMNS, rows: rollsPaged.items,
                   fetchAll: rollsPaged.fetchAll, filename: "roll-persediaan" }}
+                exportSpec={{ dataset: "inventory_rolls", label: "roll-persediaan", locationView: true, search: searchQuery,
+                  filters: [warehouseFilter !== "all" && ["warehouse_id", "eq", warehouseFilter],
+                    lineFilter && ["line_code", "eq", lineFilter]],
+                  unsupported: checkFilter ? "Saringan cek MDQ/4-point belum bisa diikuti berkas Excel — kosongkan saringan itu atau pakai CSV." : "" }}
               />
             )}
           </div>
@@ -544,6 +555,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
               onPageSize={movementsPaged.setPageSize}
               exportConfig={{ columns: movementCsvColumns, rows: movementsPaged.items,
                 fetchAll: movementsPaged.fetchAll, filename: "mutasi-persediaan" }}
+              exportSpec={{ dataset: "inventory_movements", label: "mutasi-persediaan", search: searchQuery,
+                filters: [warehouseFilter !== "all" && ["warehouse_id", "eq", warehouseFilter],
+                  movTypeFilter && ["movement_type", "eq", movTypeFilter]], sort: [{ key: "timestamp", dir: "desc" }] }}
             />
           </div>
         )}

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Truck, Plus, Search, RefreshCw, AlertTriangle, LayoutDashboard, ListOrdered, Bus, ListChecks, Download } from "lucide-react";
+import { Truck, Plus, Search, RefreshCw, AlertTriangle, LayoutDashboard, ListOrdered, Bus, ListChecks } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import PageTabs from "../../components/PageTabs";
 import { PageHeader } from "../../components/ListPageParts";
 import KNDatePicker from "../../components/KNDatePicker";
 import useViewPreset from "../../hooks/useViewPreset";
 import { wibDate } from "../../utils/formatters";
-import { listDeliveries, logisticsSummary, STATUS_LABEL, carrierText } from "./logisticsApi";
+import { listDeliveries, logisticsSummary, STATUS_LABEL } from "./logisticsApi";
 import DeliveryCreateModal from "./DeliveryCreateModal";
 import DeliveryDetailModal from "./DeliveryDetailModal";
 import DriverTodayPanel from "./DriverTodayPanel";
@@ -16,6 +16,7 @@ import HistoryPanel from "./HistoryPanel";
 import FleetPanel from "./FleetPanel";
 import { can, roleIs } from "../../config/roles";
 import TripPlannerPanel from "./TripPlannerPanel";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 // FB-02 — Modul Logistik: Dasbor (aksi cepat + visual) · Daftar · Armada · Picking & Trip.
 // Fase 3 · P5 — D-19: tab "Riwayat" DILEBUR ke Daftar. Saringan status "Terkirim/Selesai/Gagal" dan kartu
@@ -31,14 +32,8 @@ const TABS = [
   { id: "trip", label: "Picking & Trip", icon: ListChecks, manageOnly: true },
 ];
 
-function exportActiveCsv(rows, from, to) {
-  const head = ["Nomor", "Tanggal dibuat", "Pesanan", "Pelanggan", "Moda", "Pengangkut", "Surat Jalan", "ETA", "Status"];
-  const lines = rows.map((r) => [r.number, wibDate(r.created_at), r.order_number, r.customer_name, r.mode_label, carrierText(r),
-    (r.shipment_nos || []).join(" "), r.eta || "", r.status_label].map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
-  const blob = new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `pengiriman-${from || "awal"}-${to || "kini"}.csv`; a.click(); URL.revokeObjectURL(a.href);
-}
+// FIX-4 (B3b EXP-03, B1 UI-30) — CSV buatan sendiri (pemisah koma, tanpa BOM, baris tampil saja) diganti tombol
+// baku ExportMenu (Excel + CSV titik-koma lewat Pusat Export, mengikuti saringan & cakupan).
 
 export default function LogisticsView({ currentUser, selectedEntity, focusDelivery, onFocusConsumed }) {
   const role = currentUser?.role;
@@ -174,8 +169,9 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
             <button data-testid="logistics-search-button" className="secondary-button" onClick={load}><Search size={13} /> Cari</button>
             <button data-testid="logistics-refresh" className="secondary-button" onClick={load}><RefreshCw size={13} /> Muat ulang</button>
             {!historyMode && (
-              <button data-testid="logistics-export" className="secondary-button" disabled={!shownRows.length}
-                onClick={() => exportActiveCsv(shownRows, dateFrom, dateTo)} title="Unduh CSV daftar yang tampil"><Download size={13} /> CSV</button>
+              <ExportMenu dataset="logistics_deliveries" label="pengiriman" scope="work" testId="logistics-export" search={q}
+                filters={[status && ["status", "eq", status]]} sort={[{ key: "created_at", dir: "desc" }]}
+                dateRange={{ field: "created_at", from: dateFrom, to: dateTo }} />
             )}
           </div>
         </section>

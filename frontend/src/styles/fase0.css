@@ -12,8 +12,8 @@
   border-radius: 999px; font-weight: 700; line-height: 1;
   white-space: nowrap; vertical-align: middle;
 }
-.entity-badge-sm { padding: 2px 7px; font-size: 9.5px; letter-spacing: 0.2px; }
-.entity-badge-md { padding: 3px 9px; font-size: 11px; }
+.entity-badge-sm { padding: 2px 7px; font-size: 12px; letter-spacing: 0.2px; }   /* Standar UI v1: min 12 px desktop */
+.entity-badge-md { padding: 3px 9px; font-size: 12px; }
 .entity-badge-dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
 .entity-badge-group { background: #EEF0F3; color: #4B5563; }
 .entity-badge-group svg { opacity: 0.8; }

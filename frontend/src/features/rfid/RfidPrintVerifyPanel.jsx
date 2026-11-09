@@ -10,6 +10,7 @@ import axios, { API } from "../../services/apiClient";
 import { q, fmtTime, Pill, EmptyBox, SectionCard } from "./rfidShared";
 // PREP-F — status job & per label dipakai bersama dengan Antrean Printer (cetak sebagian, tidak pasti, gagal).
 import { ITEM_STATUS, JOB_STATUS, jobProgress } from "./printerLabels";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }) {
   const [candidates, setCandidates] = useState([]);
@@ -181,7 +182,9 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
         </SectionCard>
 
         {/* Daftar job */}
-        <SectionCard title={`Print Jobs (${jobs.length})`}>
+        <SectionCard title={`Print Jobs (${jobs.length})`} right={
+          <ExportMenu dataset="rfid_print_jobs" label="job-cetak-label" testId="rfid-jobs-export"
+            filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />}>
           {jobs.length === 0 ? <EmptyBox icon={Printer} text="Belum ada print job." /> : (
             <div className="max-h-72 space-y-1 overflow-y-auto">
               {jobs.map((j) => {

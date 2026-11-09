@@ -30,7 +30,7 @@
     --chart-3: 36 100% 50%;
     --chart-4: 277 70% 60%;
     --chart-5: 3 100% 59%;
-    --radius: 1rem;
+    --radius: 14px;   /* FIX-4 — radius baku 8/10/14/18/999 (Standar UI Gudang v1 §2c); dulu 1rem (16 px) */
   }
 
   * { @apply border-border; }

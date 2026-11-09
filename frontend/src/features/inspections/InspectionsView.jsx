@@ -356,6 +356,10 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
                   testId="ins-pager" label="SPK inspeksi"
                   exportConfig={{ columns: CSV_COLUMNS, rows: paged.items,
                     fetchAll: paged.fetchAll, filename: "inspeksi-qc" }}
+                  exportSpec={{ dataset: "inspections", label: "spk-inspeksi", search,
+                    filters: [kindFilter && ["kind", "eq", kindFilter], statusFilter && ["status", "eq", statusFilter],
+                      line && ["line_code", "eq", line]], sort: [{ key: "created_at", dir: "desc" }],
+                    unsupported: holdOnly ? "Saringan “ditahan” belum bisa diikuti berkas Excel — matikan saringan itu atau pakai CSV." : "" }}
                 />
               </div>
             )} />

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, HeartPulse, ShieldAlert } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { Pill, SectionCard, fmtTime, EmptyBox } from "./rfidShared";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote from "../wms/ListLimitNote";   // FIX-5 (B3b LST-01)
 
 const SEV = { high: ["red", "Tinggi"], medium: ["orange", "Sedang"] };
@@ -64,6 +65,8 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
 
       <SectionCard title="Alarm Insiden Gate" right={
         <div className="flex gap-1">
+          <ExportMenu dataset="rfid_incidents" label="insiden-rfid" testId="rfid-inc-export"
+            filters={[statusFilter && ["status", "eq", statusFilter], whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />
           {["open", "acknowledged", "resolved", ""].map((s) => (
             <button key={s || "all"} data-testid={`rfid-inc-filter-${s || "all"}`}
               onClick={() => setStatusFilter(s)}

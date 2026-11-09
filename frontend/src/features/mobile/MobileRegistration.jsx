@@ -19,7 +19,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { uomSelectOptions } from "../../utils/uomCatalog";
 import { canonicalEpc, recalledBin, regApi, rememberBin, splitCodes } from "../inventory/registration/registrationApi";
 
-const BIG = "w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]";
+const BIG = "kn-input-touch";   // FIX-4 — isian HP baku (≥ 48 px, 16 px, batas #8A8A8E)
 
 export default function MobileRegistration() {
   const [rows, setRows] = useState(null);
@@ -31,7 +31,7 @@ export default function MobileRegistration() {
   if (err) return <div className="p-3"><ErrorNotice message={err} onRetry={load} testId="mreg-error" /></div>;
   if (rows === null) return <div className="p-6 text-center text-sm"><Loader2 className="inline animate-spin" size={16} /> Memuat…</div>;
   if (!rows.length) {
-    return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mreg-empty">Belum ada sesi pendaftaran awal yang berjalan. Admin gudang membuat & memulai sesi di desktop (Stock Opname › Pendaftaran awal).</div>;
+    return <div className="p-8 text-center text-fs-14 text-kn-text-2" data-testid="mreg-empty">Belum ada sesi pendaftaran awal yang berjalan. Admin gudang membuat & memulai sesi di desktop (Stock Opname › Pendaftaran awal).</div>;
   }
   const session = rows.find((r) => r.id === sid);
   return (
@@ -153,11 +153,11 @@ function FieldForm({ session }) {
   return (
     <div className="space-y-2" data-testid="mreg-form">
       <div className="m-card space-y-2 p-3">
-        <div className="flex items-baseline justify-between"><b className="text-[14px]">{session.number} · {session.warehouse_name}</b>
-          <span className="text-xs text-red-700">Area beku</span></div>
+        <div className="flex items-baseline justify-between"><b className="kn-hp-title">{session.number} · {session.warehouse_name}</b>
+          <span className="text-fs-14 text-kn-danger-text">Area beku</span></div>
         <KNSelect data-testid="mreg-bin" className={BIG} value={bin} placeholder="Bin aktif (pindai/pilih)" onValueChange={pickBin}
           options={bins.map((b) => ({ value: b.id, label: `${b.code} · ${b.zone} › ${b.rack}` }))} />
-        {curBin && <button type="button" className="secondary-button w-full py-2 text-[13px]" onClick={rackDone} data-testid="mreg-rack-done">Rak {curBin.rack} selesai</button>}
+        {curBin && <button type="button" className="secondary-button btn-touch w-full" onClick={rackDone} data-testid="mreg-rack-done">Rak {curBin.rack} selesai</button>}
       </div>
 
       <div className="m-card space-y-2 p-3">
@@ -166,17 +166,17 @@ function FieldForm({ session }) {
             <textarea ref={epcRef} rows={1} className={BIG} placeholder="Pindai / tempel EPC tag (boleh banyak)" value={epcText} autoFocus
               aria-label="EPC tag" data-testid="mreg-epc" onChange={(e) => setEpcText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); takeEpcs(epcText); } }} onBlur={() => takeEpcs(epcText)} />
-            <div className="text-xs text-[#3C3C43]" data-testid="mreg-queue">
+            <div className="kn-hp-support" data-testid="mreg-queue">
               {queue.length ? <>EPC aktif: <b className="tabular-nums">{queue[0]}</b>{queue.length > 1 ? ` · ${queue.length - 1} antre` : ""}</> : "Belum ada EPC — pindai tag yang ditempel."}
             </div>
           </>
         )}
-        {systemEpc && <div className="text-xs text-[#3C3C43]" data-testid="mreg-system-epc">EPC dibuat sistem saat disimpan — tulis ke tag sebelum ditempel.</div>}
-        <label className="flex items-center gap-2 text-[13px]"><input type="checkbox" checked={unrec} onChange={(e) => setUnrec(e.target.checked)} data-testid="mreg-unrec" /> Produk belum dikenali</label>
+        {systemEpc && <div className="kn-hp-support" data-testid="mreg-system-epc">EPC dibuat sistem saat disimpan — tulis ke tag sebelum ditempel.</div>}
+        <label className="flex min-h-touch items-center gap-2 text-fs-14"><input type="checkbox" checked={unrec} onChange={(e) => setUnrec(e.target.checked)} data-testid="mreg-unrec" /> Produk belum dikenali</label>
         {unrec ? (
           <>
             <input className={BIG} placeholder="Keterangan (warna/motif/kode di kain)" value={note} onChange={(e) => setNote(e.target.value)} data-testid="mreg-note" />
-            <input type="file" accept="image/*" capture="environment" className="text-[13px]" onChange={(e) => setPhoto(e.target.files?.[0] || null)} data-testid="mreg-photo" />
+            <input type="file" accept="image/*" capture="environment" className="kn-input-touch" onChange={(e) => setPhoto(e.target.files?.[0] || null)} data-testid="mreg-photo" />
           </>
         ) : (
           <>
@@ -190,8 +190,8 @@ function FieldForm({ session }) {
           <input inputMode="decimal" className={BIG} placeholder="Panjang" value={qty} onChange={(e) => { setQty(e.target.value); setFromLabel(false); }} data-testid="mreg-qty" />
           <KNSelect data-testid="mreg-unit" className={BIG} value={unit || product?.base_unit || ""} placeholder="Satuan" onValueChange={setUnit} options={unitOpts} />
         </div>
-        <div className="text-xs" data-testid="mreg-length-state">{fromLabel ? "Panjang dari label (terverifikasi)." : "Panjang belum terverifikasi — diukur saat diambil/dipotong."}</div>
-        <details className="text-[13px]">
+        <div className="kn-hp-support" data-testid="mreg-length-state">{fromLabel ? "Panjang dari label (terverifikasi)." : "Panjang belum terverifikasi — diukur saat diambil/dipotong."}</div>
+        <details className="text-fs-14">
           <summary>Lot, grade, nomor roll lama</summary>
           <div className="mt-2 grid gap-2">
             {[["lot", "Lot"], ["dye_lot", "Dye lot"], ["old_roll_no", "Nomor roll lama (label lama)"]].map(([k, ph]) => (
@@ -204,19 +204,19 @@ function FieldForm({ session }) {
           </div>
         </details>
         {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="mreg-save-error" />}
-        {msg && <div className="rounded-lg bg-[#E6F6EC] p-2 text-xs" data-testid="mreg-msg">{msg}</div>}
-        <button type="button" className="primary-button w-full py-3 text-[16px]" disabled={!ready || busy} onClick={save} data-testid="mreg-save">
+        {msg && <div className="rounded-lg bg-kn-success-soft p-2 text-fs-14" data-testid="mreg-msg">{msg}</div>}
+        <button type="button" className="primary-button btn-touch btn-primary-cta w-full" disabled={!ready || busy} onClick={save} data-testid="mreg-save">
           {busy ? <Loader2 className="inline animate-spin" size={16} /> : <CheckCircle2 size={16} />} Simpan & lanjut
         </button>
       </div>
 
       <div className="space-y-1" data-testid="mreg-recent">
         {recent.map((l) => (
-          <div key={l.id} className="m-card flex items-center justify-between gap-2 p-2 text-xs" data-testid={`mreg-line-${l.id}`}>
+          <div key={l.id} className="m-card flex items-center justify-between gap-2 p-2 text-fs-14" data-testid={`mreg-line-${l.id}`}>
             <div className="min-w-0"><b className="tabular-nums">{l.epc_display}</b> · {l.bin_code}
-              <div className="truncate text-[#6E6E73]">{l.sku || "Belum dikenali"} · <QtyDual measure={l.qty ?? l.qty_input} unit={l.unit || l.unit_input} />{l.length_verified ? "" : " · belum terverifikasi"}</div></div>
-            {l.tag_state === "pending_write" && <button type="button" className="secondary-button shrink-0 px-2 py-1" onClick={() => written(l)} data-testid={`mreg-written-${l.id}`}>Tag sudah ditulis</button>}
-            {l.status === "draft" && <button type="button" aria-label="Batalkan baris" className="shrink-0 p-1 text-red-600" onClick={() => remove(l)} data-testid={`mreg-void-${l.id}`}><Trash2 size={14} /></button>}
+              <div className="truncate text-kn-text-2">{l.sku || "Belum dikenali"} · <QtyDual measure={l.qty ?? l.qty_input} unit={l.unit || l.unit_input} />{l.length_verified ? "" : " · belum terverifikasi"}</div></div>
+            {l.tag_state === "pending_write" && <button type="button" className="secondary-button btn-touch shrink-0" onClick={() => written(l)} data-testid={`mreg-written-${l.id}`}>Tag sudah ditulis</button>}
+            {l.status === "draft" && <button type="button" aria-label="Batalkan baris" className="icon-button btn-touch shrink-0 text-kn-danger-text" onClick={() => remove(l)} data-testid={`mreg-void-${l.id}`}><Trash2 size={14} /></button>}
           </div>
         ))}
       </div>

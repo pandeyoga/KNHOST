@@ -1,0 +1,105 @@
+/* ═══ Standar UI Gudang v1 — lapisan kelas baku (FIX-4, audit WMS-RFID 9 Nov 2026) ═════════════════════════════════
+   Acuan: docs/KN_37_STANDAR_UI_GUDANG.md. Token di styles/tokens.css. Penjaga:
+     · G-UI-03 kontras (keras)        scripts/guardrails/verify_ui_contrast.py
+     · G-UI-01/02/04/05/07 (ratchet)  scripts/guardrails/verify_ui_standard.py
+   Aturan tombol (K-B1-06): kelas resmi = primary-button · secondary-button · danger-button · ghost-button · icon-button
+   · link-button (+ alias lama btn-primary/btn-secondary/btn-danger). Ukuran hanya lewat pengubah resmi:
+     .btn-sm    → desktop kecil (toolbar tabel, dalam sel) tinggi ≥ 32 px, huruf 12 px
+     .btn-touch → HP/sentuh: tinggi ≥ 48 px, huruf 16 px (aksi utama/pindai pakai .btn-touch.btn-primary-cta = 56 px)
+   `!py-*`, `!h-*`, `!text-[..px]` di atas kelas tombol baku DILARANG (ratchet `btn_force`).
+   ════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* — Pengubah ukuran tombol (berlaku untuk semua kelas tombol baku) — */
+.primary-button.btn-sm, .secondary-button.btn-sm, .danger-button.btn-sm, .ghost-button.btn-sm,
+.btn-primary.btn-sm, .btn-secondary.btn-sm, .btn-danger.btn-sm {
+  min-height: var(--control-h-sm); padding: 5px 10px; font-size: var(--fs-12); line-height: var(--lh-12);
+  gap: 6px; box-shadow: none;
+}
+.primary-button.btn-touch, .secondary-button.btn-touch, .danger-button.btn-touch, .ghost-button.btn-touch,
+.btn-primary.btn-touch, .btn-secondary.btn-touch, .btn-danger.btn-touch {
+  min-height: var(--touch-min); padding: 10px 16px; font-size: var(--fs-16); line-height: var(--lh-16); gap: 8px;
+}
+.btn-touch.btn-primary-cta { min-height: var(--touch-primary); font-size: var(--fs-16); }
+.icon-button.btn-touch { width: var(--touch-min); height: var(--touch-min); }
+
+/* Fokus terlihat dengan warna aksi AA (WCAG 2.4.7/2.4.11) — tombol & isian baku. */
+.primary-button:focus-visible, .secondary-button:focus-visible, .danger-button:focus-visible,
+.ghost-button:focus-visible, .icon-button:focus-visible, .field:focus-visible {
+  outline: 2px solid var(--kn-focus); outline-offset: 2px;
+}
+.primary-button:disabled, .secondary-button:disabled, .danger-button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* — Isian sentuh (HP) — */
+.field.field-touch, .kn-input-touch {
+  min-height: var(--touch-min); padding: 10px 12px; font-size: var(--fs-16); line-height: var(--lh-16);
+  border: 1px solid var(--kn-field-border); border-radius: 12px; background: #fff; color: var(--kn-text); width: 100%;
+}
+.kn-input-touch::placeholder { color: var(--kn-text-2); }
+.kn-input-touch:focus { outline: 2px solid var(--kn-focus); outline-offset: 1px; border-color: var(--kn-action); }
+
+/* — Chip sentuh (HP: ≥ 48 px area sentuh; B4 §3.3 chip HP 36 px tampak + jarak) — */
+.kn-chip-touch {
+  display: inline-flex; align-items: center; justify-content: center; min-height: var(--touch-min);
+  padding: 8px 14px; border-radius: 999px; border: 1px solid var(--kn-divider); background: #fff;
+  color: var(--kn-neutral); font-size: var(--fs-14); font-weight: 600;
+}
+.kn-chip-touch[aria-pressed="true"], .kn-chip-touch.is-active {
+  border-color: var(--kn-action); background: var(--kn-action-soft); color: var(--kn-action);
+}
+
+/* — Teks HP gudang (Standar §2: info keputusan ≥ 16 px, pendukung ≥ 14 px) — */
+.kn-hp-title { font-size: var(--fs-16); line-height: var(--lh-16); font-weight: 700; color: var(--kn-text); }
+.kn-hp-info { font-size: var(--fs-16); line-height: var(--lh-16); color: var(--kn-text); }
+.kn-hp-support { font-size: var(--fs-14); line-height: var(--lh-14); color: var(--kn-text-2); }
+.kn-hp-tag {
+  display: inline-flex; align-items: center; border-radius: 8px; background: var(--kn-neutral-soft);
+  padding: 2px 8px; font-size: var(--fs-14); font-weight: 600; color: var(--kn-neutral);
+}
+
+/* — Komponen bersama di dalam aplikasi HP (`.m-shell`): ukuran sentuh & huruf HP (B1b UI-24/UI-52/UI-53) — */
+.m-shell .field-label { font-size: var(--fs-14); line-height: var(--lh-14); }
+.m-shell .page-tabs .tab-button { min-height: var(--touch-min); font-size: var(--fs-14); }
+.m-shell .location-scope-bar .entity-switcher-trigger { height: auto; min-height: var(--touch-min); font-size: var(--fs-14); }
+.m-shell .notice-bar { font-size: var(--fs-14); }
+.m-shell .status-pill { font-size: var(--fs-14); padding: 3px 9px; }
+/* Integrasi FIX-1 × FIX-4 — lencana PT di kartu tugas HP (FIX-1) ikut ukuran HP (dulu 9,5 px, terukur di 390 px). */
+.m-shell .entity-badge-sm, .m-shell .entity-badge-md { font-size: var(--fs-14); padding: 3px 9px; }
+.m-shell .printer-status-note { font-size: var(--fs-14); line-height: var(--lh-14); }
+
+/* — Pager baku (PaginationBar) — */
+.kn-pager {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  border: 1px solid #EFF0F2; border-radius: var(--r-lg); background: #fff; padding: 8px 12px;
+}
+.kn-pager-info { font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); font-variant-numeric: tabular-nums; }
+.kn-pager-info strong { color: var(--kn-text); }
+.kn-pager-label { font-size: var(--fs-12); color: var(--kn-text-2); margin-right: 4px; }
+.kn-pager-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 28px; min-width: 28px;
+  border: 1px solid var(--kn-divider); border-radius: 8px; background: #fff; padding: 4px 10px;
+  font-size: var(--fs-12); font-weight: 600; color: var(--kn-neutral);
+}
+.kn-pager-btn:hover:not(:disabled) { background: var(--kn-neutral-soft); border-color: var(--kn-field-border); }
+.kn-pager-btn:disabled { opacity: .4; cursor: not-allowed; }
+.kn-pager-btn.is-active { background: var(--kn-action); border-color: var(--kn-action); color: #fff; }
+.kn-pager-btn:focus-visible { outline: 2px solid var(--kn-focus); outline-offset: 2px; }
+
+/* — Tombol & menu Unduh baku (ExportMenu) — */
+.kn-export { position: relative; display: inline-flex; flex-direction: column; align-items: flex-end; }
+.kn-export-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 60; min-width: 260px; padding: 4px;
+  background: #fff; border: 1px solid var(--kn-divider); border-radius: var(--r-md); box-shadow: var(--shadow-3);
+}
+.kn-export-item {
+  display: flex; width: 100%; align-items: flex-start; gap: 10px; padding: 8px 10px; min-height: 44px;
+  border: 0; border-radius: 8px; background: transparent; text-align: left; color: var(--kn-text); cursor: pointer;
+}
+.kn-export-item:hover:not(:disabled), .kn-export-item:focus-visible { background: var(--kn-action-soft); outline: none; }
+.kn-export-item:disabled { cursor: not-allowed; opacity: .7; }
+.kn-export-item:disabled b { color: var(--kn-text-2); }
+.kn-export-item b { display: block; font-size: var(--fs-13); line-height: var(--lh-13); }
+.kn-export-item small { display: block; font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.kn-export-notice { margin-top: 6px; max-width: 420px; }
+
+/* — Bilah alat daftar (judul → cakupan → cari/saring → Unduh) — */
+.kn-list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }

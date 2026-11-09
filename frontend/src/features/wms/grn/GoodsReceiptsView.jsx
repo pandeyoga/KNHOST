@@ -16,6 +16,7 @@ import { formatDateTime } from "../../../utils/formatters";
 import LoadingLine from "../../../components/LoadingLine";
 import PageTabs from "../../../components/PageTabs";
 import FilterChips from "../../../components/FilterChips";
+import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote, { metaFromHeaders } from "../ListLimitNote";   // FIX-5 (LST-01)
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
@@ -117,6 +118,8 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             onChange={(k) => setStatus(k === "all" ? "" : k)} chipTestId={(k) => `grn-filter-${k}`}
             options={FILTERS.map(([v, l]) => ({ key: v || "all", label: l,
               count: (status || "all") === (v || "all") && rows ? (meta?.total ?? rows.length) : undefined }))} />
+          <ExportMenu dataset="goods_receipts" label="kedatangan" scope="work" testId="grn-export" className="ml-auto"
+            filters={[status && ["status", "in", status.split(",")]]} search={q} sort={[{ key: "created_at", dir: "desc" }]} />
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">
           {rows === null && <LoadingLine className="col-span-full" text="Memuat kedatangan…" testId="grn-list-loading" />}

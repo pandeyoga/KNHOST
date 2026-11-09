@@ -304,7 +304,11 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
               onNext={() => setPage((p) => p + 1)}
               onPageSize={(n) => { setPageSize(n); setPage(1); }}
               exportConfig={{ columns: lotCsvColumns, rows: lots,
-                fetchAll: fetchAllLots, filename: "lot" }} />
+                fetchAll: fetchAllLots, filename: "lot" }}
+              exportSpec={{ dataset: "inventory_lots", label: "lot", search: applied.q,
+                filters: [applied.source && ["source", "eq", applied.source], applied.lot_status && ["lot_status", "eq", applied.lot_status],
+                  applied.stage && ["stage", "eq", applied.stage], applied.warehouse_id && ["warehouse_id", "eq", applied.warehouse_id]],
+                sort: [{ key: "created_at", dir: "desc" }] }} />
           </div>
 
           {/* UAT 24 Okt (audit UI tahap 2) — detail lot dulu dirender di bawah daftar (±1.500 px, harus digulir);

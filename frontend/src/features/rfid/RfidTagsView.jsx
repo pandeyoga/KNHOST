@@ -14,6 +14,7 @@ import { canCurrent } from "../../config/roles";
 import { reprintRollLabel } from "../../utils/rollLabels";
 import { askConfirm } from "../../services/confirmService";
 import { docStatusLabel } from "../../utils/docStatus";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote from "../wms/ListLimitNote";   // FIX-5 (B3b LST-01)
 
 export default function RfidTagsView({ currentUser, selectedEntity }) {
@@ -142,7 +143,9 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
       ) : tab === "printers" ? (
         <PrinterQueuePanel whId={whId} isAdmin={currentUser?.role === "admin"} />
       ) : tab === "tags" ? (
-        <SectionCard title="Daftar Tag RFID Aktif">
+        <SectionCard title="Daftar Tag RFID Aktif" right={
+          <ExportMenu dataset="rfid_tags" label="tag-rfid-aktif" testId="rfid-tags-export" search={srch.q}
+            filters={[["status", "eq", "active"], whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "encoded_at", dir: "desc" }]} />}>
           {srch.searchBox}
           <ListLimitNote meta={tagMeta} noun="tag" onMore={loadMoreTags} loading={tagMoreBusy}
             hint="pencarian di sini hanya mencakup tag yang sudah dimuat." testId="rfid-tags-limit" />
@@ -191,7 +194,12 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
             : untagged.length === 0 ? <EmptyBox icon={Radio} text="Semua roll fisik sudah ber-tag RFID." />
               : (
                 <div className="space-y-2">
-                  {srchU.toolbar}
+                  <div className="kn-list-toolbar">
+                    {srchU.toolbar}
+                    <ExportMenu dataset="inventory_rolls" label="roll-belum-bertag" testId="rfid-untagged-export" search={srchU.q}
+                      filters={[["rfid_tag_id", "empty"], ["length_remaining", "gt", 0], whId && ["warehouse_id", "eq", whId],
+                        ["status", "in", ["available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged"]]]} />
+                  </div>
                   {srchU.shown.length === 0 && <EmptyBox icon={PackageSearch} text="Tidak ada roll yang cocok dengan pencarian." />}
                   {srchU.pageRows.map((r) => (
                     <div key={r.id} data-testid={`rfid-untagged-${r.id}`} className="flex flex-wrap items-center gap-2 rounded-lg bg-[#FAFAFB] p-2">

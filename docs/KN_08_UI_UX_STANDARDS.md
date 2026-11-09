@@ -3,6 +3,17 @@
 
 **Versi:** 1.0 | **Berlaku sejak:** 2026-05-23
 
+> **DIGANTIKAN SEBAGIAN — 9 Nov 2026 (FIX-4, keputusan K-B4-01).** Untuk layar gudang (`features/wms`,
+> `features/rfid`, `features/inventory`, `features/inspections`), aplikasi HP (`features/mobile`), kios gate, komponen &
+> kelas baku, **dan semua kode baru**, acuan WAJIB adalah **`docs/KN_37_STANDAR_UI_GUDANG.md`** (Standar UI Gudang v1,
+> ditegakkan guardrail ratchet). Bagian dokumen ini yang **bertentangan dan tidak berlaku lagi**: §Color Palette (primer
+> navy → aksi `#0058CC` + token semantik `--kn-*`), §Typography (font Inter & skala → huruf Manrope/Outfit yang dipakai
+> kode + skala 12/13/14/16/20/24 px, minimum 12 px), §Border Radius (6 px → 8/10/14/18/999), §Shadcn/UI "WAJIB" &
+> §Button Variants (kelas resmi `primary-button` dkk. + pengubah `btn-sm`/`btn-touch`), §Contrast Ratios (dihitung &
+> dijaga `verify_ui_contrast.py`), §Mobile Adaptations (target 44 px → 48 px HP, uji 360 & 390 px; **pemindai fisik
+> dulu, kamera cadangan** — bukan "camera-first"). Bagian lain (prinsip, keadaan kosong/galat, anti-pola) tetap berlaku
+> selama tidak bertentangan dengan KN_37.
+
 ---
 
 ## 🎨 DESIGN PHILOSOPHY

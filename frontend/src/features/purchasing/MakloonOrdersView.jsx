@@ -24,6 +24,7 @@ const FILTERS = [
 
 import PagedRows from "@/components/PagedRows";
 import { can } from "../../config/roles";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 export default function MakloonOrdersView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
@@ -84,8 +85,12 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
         <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="makloon-orders"
                     allowed={currentUser?.allowed_line_codes} testId="mko-line-filter" />
       </SearchBox>
-      <StatusTabs groupTestId="mko-filters" value={statusFilter} onChange={setStatusFilter} testId={(k) => `mko-filter-${k || "all"}`}
-        tabs={FILTERS.map((f) => ({ ...f, count: f.key ? cnt(f.key) : 0 }))} />
+      <div className="kn-list-toolbar">
+        <StatusTabs groupTestId="mko-filters" value={statusFilter} onChange={setStatusFilter} testId={(k) => `mko-filter-${k || "all"}`}
+          tabs={FILTERS.map((f) => ({ ...f, count: f.key ? cnt(f.key) : 0 }))} />
+        <ExportMenu dataset="makloon_orders" label="order-makloon" testId="mko-export" search={search}
+          filters={[statusFilter && ["status", "eq", statusFilter], lineFilter && ["line_code", "eq", lineFilter]]} sort={[{ key: "created_at", dir: "desc" }]} />
+      </div>
 
       {loading ? (
         <div className="loading-state"><Loader2 size={22} className="spin" /><p>Memuat order makloon…</p></div>

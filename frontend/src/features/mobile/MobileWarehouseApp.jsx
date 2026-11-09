@@ -69,7 +69,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
   if (err) return <div className="p-3"><ErrorNotice message={String(err)} onRetry={() => { setErr(""); load(); }} testId="mw-task-error" /></div>;
   if (rows === null) return <div className="p-6 text-center text-sm"><Loader2 className="animate-spin inline" size={16} /> Memuat…</div>;
   const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sample" }[type] || type;
-  if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
+  if (!rows.length) return <div className="p-8 text-center text-fs-14 text-kn-text-2" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
   const Actions = { inbound: InboundActions, outbound: OutboundActions, sample_cut: SampleCutActions }[type];
   const term = q.trim().toLowerCase();
   const pts = [...new Map(rows.filter((t) => t.work_entity_id).map((t) => [t.work_entity_id, t.work_entity_name || t.work_entity_id])).entries()];
@@ -79,8 +79,8 @@ function TaskList({ type, focusTaskId, onFocused }) {
   return (
     <div className="space-y-2 p-3" data-testid={`mw-task-list-${type}`}>
       <div className="flex items-baseline justify-between px-1">
-        <b className="text-[14px] capitalize" data-testid={`mw-task-title-${type}`}>Tugas {label}</b>
-        <span className="text-[14px] text-[#6E6E73]" data-testid={`mw-task-count-${type}`}>
+        <b className="kn-hp-title capitalize" data-testid={`mw-task-title-${type}`}>Tugas {label}</b>
+        <span className="kn-hp-support" data-testid={`mw-task-count-${type}`}>
           {(term || pt) ? `${shownRows.length} dari ${rows.length} terbuka` : (() => {
             const waiting = rows.filter((t) => WAITING_QC.includes(t.status)).length;
             return waiting ? `${rows.length - waiting} perlu dikerjakan · ${waiting} menunggu/ditolak QC` : `${rows.length} terbuka`;
@@ -91,42 +91,42 @@ function TaskList({ type, focusTaskId, onFocused }) {
         <div className="flex flex-wrap gap-1.5 px-1" role="group" aria-label="Saring PT pemilik" data-testid={`mw-task-pt-${type}`}>
           {[["", "Semua PT"], ...pts].map(([id, name]) => (
             <button key={id || "all"} type="button" onClick={() => setPt(id)} aria-pressed={pt === id}
-              className={`rounded-full border px-3 py-2 text-[13px] font-semibold ${pt === id ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}
+              className="kn-chip-touch"
               data-testid={`mw-task-pt-${type}-${id || "all"}`}>{name}</button>
           ))}
         </div>
       )}
       {rows.length > 5 && (
-        <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari produk, PO/SO, gudang…"
+        <input className="kn-input-touch" placeholder="Cari produk, PO/SO, gudang…"
           aria-label={`Cari tugas ${label}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid={`mw-task-search-${type}`} />
       )}
-      {term && shownRows.length === 0 && <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid={`mw-task-nomatch-${type}`}>Tidak ada tugas yang cocok.</div>}
-      {fromCache && <div className="notice-bar warning text-xs" data-testid="mw-task-from-cache">Offline — menampilkan daftar tugas terakhir yang tersimpan di HP. Aksi akan diantrekan.</div>}
+      {term && shownRows.length === 0 && <div className="p-6 text-center text-fs-14 text-kn-text-2" data-testid={`mw-task-nomatch-${type}`}>Tidak ada tugas yang cocok.</div>}
+      {fromCache && <div className="notice-bar warning text-fs-14" data-testid="mw-task-from-cache">Offline — menampilkan daftar tugas terakhir yang tersimpan di HP. Aksi akan diantrekan.</div>}
       {lastInbound && (
-        <div className="m-card p-3 bg-[#E6F6EC] space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>
+        <div className="m-card p-3 bg-kn-success-soft space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>
           <div className="notice-bar success" data-testid={`mw-action-msg-${lastInbound.task.id}`}>SELESAI · {lastInbound.task.product_name} · {lastInbound.rolls.length} roll baru masuk stok{lastInbound.rolls.length ? `: ${lastInbound.rolls.map((r) => r.roll_no).join(", ")}` : ""}</div>
-          {(lastInbound.warnings || []).length > 0 && <div className="notice-bar warning text-xs" data-testid={`mw-inbound-warn-${lastInbound.task.id}`}>{lastInbound.warnings.join(" · ")}</div>}
-          {lastInbound.rolls.length > 0 && <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => printInboundRollLabels(lastInbound.task, lastInbound.rolls)} data-testid={`mw-inbound-print-${lastInbound.task.id}`}><Printer size={16} /> Cetak label {lastInbound.rolls.length} roll</button>}
-          <button className="secondary-button w-full py-2" onClick={() => setLastInbound(null)} data-testid={`mw-inbound-done-close-${lastInbound.task.id}`}>Tutup</button>
+          {(lastInbound.warnings || []).length > 0 && <div className="notice-bar warning text-fs-14" data-testid={`mw-inbound-warn-${lastInbound.task.id}`}>{lastInbound.warnings.join(" · ")}</div>}
+          {lastInbound.rolls.length > 0 && <button className="primary-button btn-touch w-full" onClick={() => printInboundRollLabels(lastInbound.task, lastInbound.rolls)} data-testid={`mw-inbound-print-${lastInbound.task.id}`}><Printer size={16} /> Cetak label {lastInbound.rolls.length} roll</button>}
+          <button className="secondary-button btn-touch w-full" onClick={() => setLastInbound(null)} data-testid={`mw-inbound-done-close-${lastInbound.task.id}`}>Tutup</button>
         </div>
       )}
       {lastCut && (
-        <div className="m-card p-3 bg-[#E6F6EC] space-y-2" data-testid={`mw-sample-done-${lastCut.taskId}`}>
+        <div className="m-card p-3 bg-kn-success-soft space-y-2" data-testid={`mw-sample-done-${lastCut.taskId}`}>
           <div className="notice-bar success" data-testid={`mw-action-msg-${lastCut.taskId}`}>DIPOTONG · {lastCut.res.cut_roll_no} → <b>{lastCut.res.child_roll_no}</b> · {lastCut.res.length} {lastCut.res.unit} · {lastCut.res.sales_order_number} — lanjut Berangkatkan di kartu tugas</div>
-          <button className="primary-button w-full py-3 flex items-center justify-center gap-2" onClick={() => printSampleLabel(lastCut.res)} data-testid={`mw-sample-print-${lastCut.taskId}`}><Printer size={16} /> Cetak label potongan</button>
-          <button className="secondary-button w-full py-2" onClick={() => setLastCut(null)} data-testid={`mw-sample-done-close-${lastCut.taskId}`}>Tutup</button>
+          <button className="primary-button btn-touch w-full" onClick={() => printSampleLabel(lastCut.res)} data-testid={`mw-sample-print-${lastCut.taskId}`}><Printer size={16} /> Cetak label potongan</button>
+          <button className="secondary-button btn-touch w-full" onClick={() => setLastCut(null)} data-testid={`mw-sample-done-close-${lastCut.taskId}`}>Tutup</button>
         </div>
       )}
       {shownRows.map((t) => (
-        <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-[#0058CC]" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
-          <div className="flex items-center justify-between"><b className="text-[15px]">{t.product_name || t.product_id}</b>
+        <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-kn-action" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
+          <div className="flex items-center justify-between"><b className="kn-hp-title">{t.product_name || t.product_id}</b>
             <span className={`status-pill ${pillFor(t.status)}`}>{statusText(t.status)}</span></div>
           {/* FIX-1 (K-B1-02, B2a FLW-IN-07) — tiap kartu menyebut PT pemilik & jenis tugas (daftar kini lintas PT). */}
           <div className="flex flex-wrap items-center gap-1.5 mt-1" data-testid={`mw-task-tags-${t.id}`}>
-            {t.task_kind_label && <span className="rounded-md bg-[#F2F2F7] px-2 py-0.5 text-[12px] font-semibold text-[#3C3C43]" data-testid={`mw-task-kind-${t.id}`}>{t.task_kind_label}</span>}
+            {t.task_kind_label && <span className="kn-hp-tag" data-testid={`mw-task-kind-${t.id}`}>{t.task_kind_label}</span>}
             {t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}
           </div>
-          <div className="text-xs text-[#6E6E73] mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
+          <div className="kn-hp-info mt-1">{t.warehouse_name || whNames[t.warehouse_id] || "Gudang"} · qty <b className="tabular-nums">{formatQty(t.quantity)}</b> {t.unit || ""}{t.order_number ? ` · ${t.order_number}` : ""}{t.po_number ? ` · ${t.po_number}` : ""}{t.task_subtype === "sample_cut" ? " · SAMPEL" : ""}</div>
           {open === t.id && Actions && <div onClick={(e) => e.stopPropagation()}><Actions task={t} onDone={load} onCut={(res) => { setLastCut({ taskId: t.id, res }); load(); }} onCompleted={(res) => { setLastInbound(res); load(); }} /></div>}
         </div>
       ))}
@@ -191,41 +191,41 @@ function ScanPanel({ onOpenTask }) {
   const Icon = res?.kind === "ok" ? CheckCircle2 : AlertTriangle;
   return (
     <div className="p-4 space-y-3" data-testid="mw-scan">
-      <p className="text-sm text-[#6E6E73]">Pindai QR label (nomor roll) atau tag EPC. Hasil ditampilkan besar: ikon + teks, bukan warna saja.</p>
+      <p className="kn-hp-support">Pindai QR label (nomor roll) atau tag EPC. Hasil ditampilkan besar: ikon + teks, bukan warna saja.</p>
       {/* Audit UI HP (Pindai) — dua isian kini berlabel & berukuran huruf sama (dulu placeholder saja, 18px vs 13px). */}
       <label className="block">
         <span className="field-label">Nomor roll / tag EPC</span>
-        <input className="w-full rounded-xl border-2 border-[#E5E5EA] p-3.5 text-[16px]" placeholder="Pindai atau ketik…" value={epc} onChange={(e) => setEpc(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") lookup(epc); }} data-testid="mw-scan-input" autoFocus />
+        <input className="kn-input-touch min-h-touch-primary" placeholder="Pindai atau ketik…" value={epc} onChange={(e) => setEpc(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") lookup(epc); }} data-testid="mw-scan-input" autoFocus />
       </label>
       <label className="block">
         <span className="field-label">Bin / lokasi saya <span className="normal-case font-normal">(opsional, diingat di HP)</span></span>
-        <input className="w-full rounded-xl border border-[#E5E5EA] p-3 text-[16px]" placeholder="mis. A1-01" value={myBin} onChange={(e) => setBin(e.target.value)} data-testid="mw-scan-bin" />
+        <input className="kn-input-touch" placeholder="mis. A1-01" value={myBin} onChange={(e) => setBin(e.target.value)} data-testid="mw-scan-bin" />
       </label>
       <div className="flex gap-2">
-        <button className="primary-button flex-1 py-4 text-lg" disabled={busy} onClick={() => lookup(epc)} data-testid="mw-scan-btn">{busy ? "Mencari…" : "Pindai"}</button>
-        {canCamera && <button className="secondary-button px-4" onClick={() => setCam((c) => !c)} data-testid="mw-scan-camera-btn" aria-label="Kamera"><Camera size={20} /></button>}
+        <button className="primary-button btn-touch btn-primary-cta flex-1" disabled={busy} onClick={() => lookup(epc)} data-testid="mw-scan-btn">{busy ? "Mencari…" : "Pindai"}</button>
+        {canCamera && <button className="secondary-button btn-touch" onClick={() => setCam((c) => !c)} data-testid="mw-scan-camera-btn" aria-label="Kamera"><Camera size={20} /></button>}
       </div>
       {cam && <video ref={videoRef} className="w-full rounded-xl bg-black" muted playsInline data-testid="mw-scan-video" />}
       {res && (
-        <div className={`rounded-2xl p-5 text-center ${res.kind === "ok" ? "bg-[#E6F6EC]" : res.kind === "warn" ? "bg-[#FFF4E5]" : "bg-[#FDECEC]"}`} data-testid={`mw-scan-result-${res.kind}`}>
+        <div className={`rounded-2xl p-5 text-center ${res.kind === "ok" ? "bg-kn-success-soft" : res.kind === "warn" ? "bg-kn-warning-soft" : "bg-kn-danger-soft"}`} data-testid={`mw-scan-result-${res.kind}`}>
           <Icon size={44} className="mx-auto" />
           <div className="text-xl font-bold mt-2">{res.title}</div>
-          <div className="text-sm mt-1">{res.text}</div>
+          <div className="kn-hp-info mt-1">{res.text}</div>
           {res.roll && (
             <div className="mt-3 space-y-2 text-left">
-              <div className="text-xs text-[#3C3C43]" data-testid="mw-scan-last">Pindai ini tercatat{myBin ? ` di bin ${myBin}` : ""}. Terakhir sebelumnya: <b>{res.lastScan ? fmtScan(res.lastScan) : "belum pernah"}</b></div>
-              <button className="secondary-button w-full py-3 flex items-center justify-center gap-2" onClick={reprint} data-testid="mw-scan-reprint"><Printer size={16} /> Cetak ulang label QR</button>
-              {tasks.length > 0 && <div className="text-xs font-semibold text-[#3C3C43]" data-testid="mw-scan-tasks">Tugas terbuka untuk roll ini:</div>}
+              <div className="kn-hp-support" data-testid="mw-scan-last">Pindai ini tercatat{myBin ? ` di bin ${myBin}` : ""}. Terakhir sebelumnya: <b>{res.lastScan ? fmtScan(res.lastScan) : "belum pernah"}</b></div>
+              <button className="secondary-button btn-touch w-full" onClick={reprint} data-testid="mw-scan-reprint"><Printer size={16} /> Cetak ulang label QR</button>
+              {tasks.length > 0 && <div className="kn-hp-support font-semibold" data-testid="mw-scan-tasks">Tugas terbuka untuk roll ini:</div>}
               {tasks.map((t) => (
-                <button key={t.id} className="primary-button w-full py-3 flex items-center justify-between px-3" onClick={() => onOpenTask?.(t.task_subtype === "sample_cut" ? "sample" : (TAB_OF[t.flow_type] || "inbound"), t.id)} data-testid={`mw-scan-task-${t.id}`}>
-                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.product_id}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-xs opacity-80">{t.order_number || t.po_number || statusText(t.status)}</span>
+                <button key={t.id} className="primary-button btn-touch w-full !justify-between" onClick={() => onOpenTask?.(t.task_subtype === "sample_cut" ? "sample" : (TAB_OF[t.flow_type] || "inbound"), t.id)} data-testid={`mw-scan-task-${t.id}`}>
+                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.product_id}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-fs-14 opacity-90">{t.order_number || t.po_number || statusText(t.status)}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
       )}
-      <div className="pt-2" data-testid="mw-printer-status"><div className="text-xs font-semibold text-[#3C3C43] mb-1">Printer label gudang</div><PrinterStatusWidget compact /></div>
+      <div className="pt-2" data-testid="mw-printer-status"><div className="kn-hp-support font-semibold mb-1">Printer label gudang</div><PrinterStatusWidget compact /></div>
     </div>
   );
 }
@@ -243,7 +243,7 @@ function UntaggedPanel() {
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="p-3"><ErrorNotice message={err} onRetry={load} testId="mw-untagged-error" /></div>;   // dulu "Semua roll sudah bertag"
   if (rows === null) return <div className="p-6 text-center text-sm">Memuat…</div>;
-  if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-empty">Semua roll sudah bertag.</div>;
+  if (!rows.length) return <div className="p-8 text-center text-fs-14 text-kn-text-2" data-testid="mw-untagged-empty">Semua roll sudah bertag.</div>;
   const term = q.trim().toLowerCase();
   const filtered = term ? rows.filter((r) => [r.roll_no, r.product_name, r.sku, r.lot, whNames[r.warehouse_id]]
     .some((v) => String(v || "").toLowerCase().includes(term))) : rows;
@@ -251,20 +251,20 @@ function UntaggedPanel() {
   return (
     <div className="space-y-2 p-3" data-testid="mw-untagged-list">
       {/* UAT 24 Okt (audit UI tahap 2) — dulu "500+" di atas tetapi "(470 tersisa)" di bawah: dua angka berbeda dasar. */}
-      <div className="text-xs text-[#6E6E73] px-1" data-testid="mw-untagged-count">{rows.length >= LIMIT
+      <div className="kn-hp-support px-1" data-testid="mw-untagged-count">{rows.length >= LIMIT
         ? `Lebih dari ${LIMIT} roll belum bertag — ${LIMIT} pertama dimuat ke HP (termasuk potongan baru).`
         : `${rows.length} roll belum bertag (termasuk potongan baru).`}</div>
-      <input className="w-full rounded-xl border border-[#E5E5EA] bg-white p-3 text-[16px]" placeholder="Cari nomor roll, produk, SKU, gudang…"
+      <input className="kn-input-touch" placeholder="Cari nomor roll, produk, SKU, gudang…"
         aria-label="Cari roll belum bertag" value={q} onChange={(e) => { setQ(e.target.value); setShown(UNTAGGED_PAGE); }} data-testid="mw-untagged-search" />
-      {filtered.length === 0 && <div className="p-6 text-center text-sm text-[#6E6E73]" data-testid="mw-untagged-nomatch">Tidak ada roll yang cocok.</div>}
+      {filtered.length === 0 && <div className="p-6 text-center text-fs-14 text-kn-text-2" data-testid="mw-untagged-nomatch">Tidak ada roll yang cocok.</div>}
       {filtered.slice(0, shown).map((r) => (
         <div key={r.id} className="m-card p-3 flex items-center justify-between" data-testid={`mw-untagged-${r.id}`}>
-          <div className="min-w-0"><b>{r.roll_no}</b><div className="text-xs text-[#6E6E73]">{r.product_name || r.product_id} · {whNames[r.warehouse_id] || r.warehouse_id} · sisa <span className="tabular-nums">{formatQty(r.length_remaining)}</span> {r.unit || ""}</div></div>
+          <div className="min-w-0"><b className="kn-hp-title">{r.roll_no}</b><div className="kn-hp-support">{r.product_name || r.product_id} · {whNames[r.warehouse_id] || r.warehouse_id} · sisa <span className="tabular-nums">{formatQty(r.length_remaining)}</span> {r.unit || ""}</div></div>
           <Tags size={18} className="shrink-0" />
         </div>
       ))}
       {filtered.length > shown && (
-        <button className="secondary-button w-full py-3" onClick={() => setShown((n) => n + UNTAGGED_PAGE)} data-testid="mw-untagged-more">
+        <button className="secondary-button btn-touch w-full" onClick={() => setShown((n) => n + UNTAGGED_PAGE)} data-testid="mw-untagged-more">
           Tampilkan {Math.min(UNTAGGED_PAGE, filtered.length - shown)} lagi ({shown} dari {filtered.length} yang dimuat sudah tampil)
         </button>
       )}
@@ -276,9 +276,9 @@ function UntaggedPanel() {
 export function GrnEntryCard({ onOpen }) {
   return (
     <div className="px-3 pt-3">
-      <button type="button" data-testid="mobile-open-grn" onClick={onOpen} className="m-card m-press flex w-full items-center gap-3 p-3 text-left">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF1FF] text-[#0058CC]"><Camera size={20} /></span>
-        <span className="min-w-0 flex-1"><b className="block text-[14px]">Kedatangan Barang</b><span className="text-[11.5px] text-[#6E6E73]">Foto surat jalan dari kamera HP — dibaca otomatis, lalu cek & hitung.</span></span>
+      <button type="button" data-testid="mobile-open-grn" onClick={onOpen} className="m-card m-press flex w-full min-h-touch items-center gap-3 p-3 text-left">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-kn-action-soft text-kn-action"><Camera size={20} /></span>
+        <span className="min-w-0 flex-1"><b className="block kn-hp-title">Kedatangan Barang</b><span className="kn-hp-support">Foto surat jalan dari kamera HP — dibaca otomatis, lalu cek & hitung.</span></span>
       </button>
     </div>
   );

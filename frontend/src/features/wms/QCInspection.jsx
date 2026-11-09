@@ -13,6 +13,7 @@ import RollInspectionModal from "./RollInspectionModal";
 import { apiText, createQc4point } from "../inspections/inspectionsApi";
 import QcPlanPanel from "./QcPlanPanel";
 import useListSearch from "@/hooks/useListSearch";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 /**
  * QC Inspection (Depth #3a) — antrian inspeksi QC barang masuk.
@@ -186,7 +187,10 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
 
       {/* Queue */}
       <section className="section-card">
-        <div className="section-head"><h3>Antrian Inspeksi</h3></div>
+        <div className="section-head"><h3>Antrian Inspeksi</h3>
+          <ExportMenu dataset="wms_tasks" label="antrean-qc" locationView testId="qc-export"
+            filters={[["flow_type", "eq", "inbound"], ["status", "eq", "qc_pending"]]} search={srch.q} />
+        </div>
         <div className="section-body">
           {srch.toolbar}
           {loading ? (
