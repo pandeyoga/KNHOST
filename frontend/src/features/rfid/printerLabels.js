@@ -1,16 +1,15 @@
 // PREP-F — label & aturan tampilan antrean printer label RFID (CP30EN). Murni (tanpa React) supaya mudah diuji.
 // Tiga dimensi yang SENGAJA dipisah di layar: status perangkat (printer/connector) · status job/label · verifikasi C72.
 
-export const JOB_STATUS = {
-  queued: ["blue", "Antre Cetak"], printing: ["purple", "Sedang Dicetak"], printed: ["orange", "Tercetak"],
-  partial: ["orange", "Tercetak Sebagian"], failed: ["red", "Gagal Cetak"], needs_review: ["red", "Perlu Ditinjau"],
-  verified: ["green", "Terverifikasi"], verified_with_issues: ["red", "Verif. Bermasalah"],
-};
+// FIX-8 (KN_37 §8) — label status job/label cetak dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah
+// "print_job" / "print_item", istilah sama persis). Bentuk lama [warna, label] dipertahankan untuk pemakai & CSV.
+import { DOMAIN_LABELS } from "../../utils/statusVocab";
+const COLOR_OF = { queued: "blue", printing: "purple", printed: "orange", partial: "orange", failed: "red",
+  needs_review: "red", verified: "green", verified_with_issues: "red" };
+const ITEM_COLOR_OF = { pending: "gray", started: "purple", confirmed: "green", failed: "red", unknown: "orange" };
+export const JOB_STATUS = Object.fromEntries(Object.entries(DOMAIN_LABELS.print_job).map(([k, l]) => [k, [COLOR_OF[k] || "gray", l]]));
 
-export const ITEM_STATUS = {
-  pending: ["gray", "Menunggu"], started: ["purple", "Sedang dicetak"], confirmed: ["green", "Tercetak"],
-  failed: ["red", "Gagal"], unknown: ["orange", "Tidak pasti"],
-};
+export const ITEM_STATUS = Object.fromEntries(Object.entries(DOMAIN_LABELS.print_item).map(([k, l]) => [k, [ITEM_COLOR_OF[k] || "gray", l]]));
 
 export const RESULT_TEXT = {
   confirmed: "terkonfirmasi", failed: "gagal", unknown: "tidak pasti", not_applicable: "tanpa chip",

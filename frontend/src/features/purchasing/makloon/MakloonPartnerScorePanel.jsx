@@ -93,10 +93,15 @@ const COLUMNS = [
 export default function MakloonPartnerScorePanel({ selectedEntity, focusPartner = "", onFocusConsumed }) {
   const [rows, setRows] = useState(null);
   const [open, setOpen] = useState(null);
-  useEffect(() => {
+  // FIX-8 (B1b UI-49) — dulu `.catch(() => setRows([]))`: finance ditolak 403 lalu layar menulis "Belum ada penerimaan
+  // makloon untuk dinilai" padahal peran lain melihat 2 mitra. Kini galat dibawa → "Anda tidak punya akses …".
+  const [loadErr, setLoadErr] = useState(null);
+  const load = () => {
     const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
-    partnerScorecard(params).then((r) => setRows(Array.isArray(r) ? r : [])).catch(() => setRows([]));
-  }, [selectedEntity]);
+    setRows(null); setLoadErr(null);
+    partnerScorecard(params).then((r) => setRows(Array.isArray(r) ? r : [])).catch((e) => { setLoadErr(e); setRows([]); });
+  };
+  useEffect(load, [selectedEntity]); // eslint-disable-line react-hooks/exhaustive-deps
   // Tautan "Skor mitra" dari detail Mitra Makloon (360°) → langsung buka pop-up mitra itu.
   useEffect(() => {
     if (!focusPartner || rows === null) return;
@@ -112,6 +117,7 @@ export default function MakloonPartnerScorePanel({ selectedEntity, focusPartner 
       </div>
       <div className="section-body">
         <ResponsiveTable testId="partner-scorecard" rows={rows || []} rowKey="makloon_id" loading={rows === null}
+          error={loadErr} onRetry={load} what="skor mitra makloon"
           rowTestId={(s) => `scorecard-row-${s.makloon_id}`} columns={COLUMNS} onRowClick={setOpen}
           empty={<span data-testid="scorecard-empty">Belum ada penerimaan makloon untuk dinilai.</span>} />
       </div>

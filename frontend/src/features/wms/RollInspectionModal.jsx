@@ -8,6 +8,9 @@ import RollHoldControl from "./inventory/RollHoldControl";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana baku
+import { LEGACY_TONE } from "../../utils/statusVocab";
+import { GradeLoadNote } from "../../hooks/useGrades";   // FIX-8 (UI-49) — 403 Master Grade ≠ "tidak ada grade"
 
 /**
  * RollInspectionModal (Fase 6.2 — P1) — Inspeksi 4-Point per roll.
@@ -46,6 +49,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
   // Trial 22 Okt (F5) — grade roll diisi petugas QC (wajib selama `qc.grade_from_points` mati).
   const [grade, setGrade] = useState("");
   const [grades, setGrades] = useState([]);
+  const [gradesError, setGradesError] = useState(null);
 
   useEffect(() => { load(); }, [taskId]); // eslint-disable-line
 
@@ -58,9 +62,10 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
         axios.get(`${API}/qc/grade-thresholds`, { params }).catch(() => ({ data: { a_max: 20, b_max: 40 } })),
         axios.get(`${API}/lots/settings`).catch(() => ({ data: { enforcement_mode: "warn",
           require_supplier_lot: true, require_dye_lot: true } })),
-        axios.get(`${API}/master/grades`).catch(() => ({ data: [] })),
+        axios.get(`${API}/master/grades`).catch((e) => ({ data: [], error: e })),   // FIX-8 (UI-49) — galat dibawa
       ]);
       setGrades((gr.data || []).filter((g) => g.active !== false));
+      setGradesError(gr.error || null);
       setRolls(Array.isArray(r.data) ? r.data : []);
       setThresholds(t.data || { a_max: 20, b_max: 40 });
       setLotSettings(ls.data || null);
@@ -137,6 +142,7 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
         )}>
         <div className="space-y-2">
           {error && <ErrorNotice message={error} onDismiss={() => setError("")} testId="roll-inspect-error" />}
+          <GradeLoadNote error={gradesError} testId="roll-inspect-grade-load-note" />
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]"><RefreshCw size={18} className="animate-spin mx-auto mb-2" /> Memuat roll...</div>
           ) : rolls.length === 0 ? (
@@ -146,9 +152,9 @@ export default function RollInspectionModal({ taskId, taskLabel, entityId, curre
               <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                 <div className="min-w-0">
                   <p className="text-[12.5px] font-semibold">{roll.roll_no} · {roll.sku}
-                    {roll.grade && <span className={`status-pill ${gradeTone(roll.grade)} ml-2`} data-testid={`roll-grade-${roll.id}`}>Grade {roll.grade}</span>}
+                    {roll.grade && <StatusBadge tone={LEGACY_TONE[gradeTone(roll.grade)]} icon="tag" className="ml-2" testId={`roll-grade-${roll.id}`}>Grade {roll.grade}</StatusBadge>}
                     {roll.inspected && <CheckCircle2 size={13} className="inline ml-1 text-emerald-500" />}
-                    {roll.status === "blocked" && <span className="status-pill ml-2 bg-amber-100 text-amber-800" data-testid={`roll-held-badge-${roll.id}`}>DITAHAN</span>}
+                    {roll.status === "blocked" && <StatusBadge status="blocked" icon="pause" className="ml-2" testId={`roll-held-badge-${roll.id}`}>DITAHAN</StatusBadge>}
                   </p>
                   {roll.status === "blocked" && roll.hold?.reason && (
                     <p className="text-[10.5px] text-amber-800" data-testid={`roll-held-reason-${roll.id}`}>Ditahan: {roll.hold.reason}</p>

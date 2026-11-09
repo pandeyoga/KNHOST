@@ -103,3 +103,79 @@
 
 /* — Bilah alat daftar (judul → cakupan → cari/saring → Unduh) — */
 .kn-list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* ═══ Tahap 2 (FIX-8, 10 Nov 2026) — lencana status, keadaan kosong/memuat/galat/tanpa izin, tampilan tersimpan ═══ */
+
+/* — Lencana status baku (`components/StatusBadge.jsx`): ikon + teks + warna token, 6 nada B4 §3.9 (G-UI-03) — */
+.kn-badge {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; border-radius: 999px; padding: 2px 8px;
+  font-size: var(--fs-12); line-height: var(--lh-12); font-weight: 600; white-space: nowrap; vertical-align: middle;
+}
+.kn-badge > span { overflow: hidden; text-overflow: ellipsis; }
+.kn-badge-icon { flex-shrink: 0; }
+.kn-badge-md { padding: 3px 10px; font-size: var(--fs-13); line-height: var(--lh-13); }
+.kn-badge.tone-neutral { background: var(--kn-neutral-soft); color: var(--kn-neutral); }
+.kn-badge.tone-info { background: var(--kn-action-soft); color: var(--kn-action); }
+.kn-badge.tone-success { background: var(--kn-success-soft); color: var(--kn-success-text); }
+.kn-badge.tone-warning { background: var(--kn-warning-soft); color: var(--kn-warning-text); }
+.kn-badge.tone-danger { background: var(--kn-danger-soft); color: var(--kn-danger-text); }
+.kn-badge.tone-special { background: var(--kn-special-soft); color: var(--kn-special-text); }
+.m-shell .kn-badge { font-size: var(--fs-14); line-height: var(--lh-14); padding: 3px 9px; }
+
+/* — Keadaan daftar baku (`components/EmptyState.jsx`, B4 §3.10): memuat · kosong · hasil saringan kosong · galat ·
+     tanpa izin. "Memuat" tidak pernah menulis "0"/"belum ada" (B1b UI-50); 403 tidak pernah tampil kosong (UI-49). — */
+.kn-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  padding: 24px 16px; color: var(--kn-text-2);
+}
+.kn-empty-compact { padding: 12px 8px; }
+.kn-empty-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px;
+  background: var(--kn-neutral-soft); color: var(--kn-neutral);
+}
+.kn-empty-compact .kn-empty-icon { width: 32px; height: 32px; }
+.kn-empty.is-error .kn-empty-icon { background: var(--kn-danger-soft); color: var(--kn-danger-text); }
+.kn-empty.is-forbidden .kn-empty-icon { background: var(--kn-warning-soft); color: var(--kn-warning-text); }
+.kn-empty.is-loading .kn-empty-icon { background: var(--kn-action-soft); color: var(--kn-action); }
+.kn-empty-title { font-size: var(--fs-14); line-height: var(--lh-14); font-weight: 600; color: var(--kn-text); }
+.kn-empty-text { max-width: 420px; font-size: var(--fs-13); line-height: var(--lh-13); color: var(--kn-text-2); }
+.kn-empty.is-error .kn-empty-title { color: var(--kn-danger-text); }
+.kn-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+.m-shell .kn-empty-title { font-size: var(--fs-16); line-height: var(--lh-16); }
+.m-shell .kn-empty-text { font-size: var(--fs-14); line-height: var(--lh-14); }
+
+/* — Kotak cari baku (satu implementasi `SearchBox`, ListPageParts) di bilah alat daftar gudang — */
+.kn-search-grow { flex: 1 1 240px; min-width: 0; }
+
+/* — Tampilan tersimpan (`components/SavedViewsMenu.jsx`, K-B4-12) — */
+.kn-views { position: relative; display: inline-flex; flex-direction: column; align-items: flex-start; }
+.kn-views-menu {
+  position: absolute; left: 0; top: calc(100% + 4px); z-index: 60; width: min(340px, calc(100vw - 32px)); padding: 6px;
+  background: #fff; border: 1px solid var(--kn-divider); border-radius: var(--r-md); box-shadow: var(--shadow-3);
+}
+.kn-views-item {
+  display: flex; width: 100%; align-items: center; gap: 8px; padding: 6px 8px; min-height: 36px; border: 0;
+  border-radius: 8px; background: transparent; text-align: left; color: var(--kn-text); font-size: var(--fs-13);
+  line-height: var(--lh-13); cursor: pointer;
+}
+.kn-views-item:hover:not(:disabled), .kn-views-item:focus-visible { background: var(--kn-action-soft); outline: none; }
+.kn-views-item:disabled { cursor: not-allowed; color: var(--kn-text-2); }
+.kn-views-item.is-active { font-weight: 700; color: var(--kn-action); }
+.kn-views-item small { margin-left: auto; font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.kn-views-sep { margin: 6px 0; border-top: 1px solid var(--kn-divider); }
+.kn-views-head { padding: 4px 8px; font-size: var(--fs-12); line-height: var(--lh-12); font-weight: 700; color: var(--kn-text-2); }
+.kn-views-dirty { color: var(--kn-warning-text); font-weight: 700; }
+.kn-views-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px; padding: 2px 8px 6px; }
+.kn-views-cols label { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: var(--fs-13); color: var(--kn-text); }
+.kn-views-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 6px; }
+
+/* — Nomor dokumen satu skema tampilan (`components/DocNumber.jsx`, B1b UI-58): [PT] NOMOR — */
+.kn-docno { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kn-docno-pt {
+  display: inline-flex; align-items: center; border-radius: 6px; padding: 0 5px; background: var(--kn-neutral-soft);
+  color: var(--kn-neutral); font-size: var(--fs-12); line-height: var(--lh-12); font-weight: 700;
+}
+.kn-docno-no { font-weight: 700; }
+
+/* — Kepala detail sebaris baku (`DetailParts.DetailHeader`, B1b UI-60, B4 §3.7): aksi merusak dipisah di ujung — */
+.kn-detail-danger { display: inline-flex; flex-wrap: wrap; gap: 8px; padding-left: 12px; border-left: 1px solid var(--kn-divider); }

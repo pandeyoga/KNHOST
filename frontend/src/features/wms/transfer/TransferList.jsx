@@ -10,6 +10,8 @@ import { ArrowRight } from "lucide-react";
 import ResponsiveTable from "../../../components/ResponsiveTable";
 import QtyDual from "../../../components/QtyDual";
 import EntityBadge from "../../../components/EntityBadge";   // FIX-1 — label PT (daftar lintas PT)
+import BaseStatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana kategori baku
+import DocNumber from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 import { formatDate } from "../../../utils/formatters";
 import { StatusBadge } from "./transferConstants";
 
@@ -20,9 +22,9 @@ export const TRANSFER_KIND_LABEL = { intra_entity: "Antar gudang", inter_entity:
 function KindPill({ t }) {
   const ic = transferKindOf(t) === "inter_entity";
   return (
-    <span data-testid={`transfer-kind-${t.id}`} className={`status-pill ${ic ? "pill-purple" : "pill-muted"}`}>
+    <BaseStatusBadge tone={ic ? "special" : "neutral"} icon="tag" testId={`transfer-kind-${t.id}`}>
       {TRANSFER_KIND_LABEL[transferKindOf(t)]}
-    </span>
+    </BaseStatusBadge>
   );
 }
 
@@ -65,7 +67,7 @@ function Items({ t }) {
 
 const COLUMNS = [
   { key: "code", header: "Kode", mobile: "title",
-    render: (t) => <span className="inline-flex items-center gap-1.5"><span data-testid={`transfer-code-${t.id}`} className="font-bold text-[#0058CC]">{t.code || "—"}</span>{t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}</span> },
+    render: (t) => <span className="inline-flex items-center gap-1.5"><span data-testid={`transfer-code-${t.id}`} className="text-[#0058CC]"><DocNumber number={t.code} entityId={t.entity_id || t.work_entity_id} /></span>{t.work_entity_id && <EntityBadge entityId={t.work_entity_id} />}</span> },
   { key: "kind", header: "Jenis", mobile: "badge", render: (t) => <KindPill t={t} /> },
   { key: "route", header: "Dari → ke", mobile: "subtitle", render: (t) => <Route t={t} /> },
   { key: "items", header: "Barang", priority: 1, render: (t) => <Items t={t} /> },
@@ -79,9 +81,20 @@ const COLUMNS = [
   { key: "status", header: "Status", mobile: "badge", priority: 3, render: (t) => <StatusBadge status={t.status} /> },
 ];
 
-export default function TransferList({ rows = [], loading = false, onOpen, emptyText = "Belum ada transfer." }) {
+/** Kolom yang boleh disembunyikan lewat "Tampilan" (FIX-8, K-B4-12) — kunci = `saved_view_service.LISTS`. */
+export const TRANSFER_OPTIONAL_COLUMNS = [
+  { key: "items", label: "Barang" }, { key: "requested_by", label: "Diajukan" }, { key: "approved_by", label: "Disetujui" },
+];
+
+/** FIX-8 (B4 §3.10) — keadaan memuat/galat/tanpa izin/saringan kosong lewat EmptyState baku (ResponsiveTable). */
+export default function TransferList({
+  rows = [], loading = false, onOpen, emptyText = "Belum ada transfer.", error = null, onRetry, filtered = false,
+  onReset, hidden = [],
+}) {
+  const cols = hidden.length ? COLUMNS.filter((c) => !hidden.includes(c.key)) : COLUMNS;
   return (
-    <ResponsiveTable testId="transfer-list" rows={rows} rowKey="id" loading={loading} columns={COLUMNS}
-      onRowClick={onOpen} rowTestId={(t) => `transfer-card-${t.id}`} empty={emptyText} />
+    <ResponsiveTable testId="transfer-list" rows={rows} rowKey="id" loading={loading} columns={cols}
+      onRowClick={onOpen} rowTestId={(t) => `transfer-card-${t.id}`} empty={emptyText} error={error} onRetry={onRetry}
+      filtered={filtered} onReset={onReset} what="transfer" />
   );
 }

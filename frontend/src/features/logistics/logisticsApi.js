@@ -1,5 +1,6 @@
 // FB-02 — API modul Logistik (pengiriman, dasbor, riwayat, armada, serah terima pickup).
 import axios, { API } from "../../services/apiClient";
+import { DOMAIN_LABELS } from "../../utils/statusVocab";
 
 const L = `${API}/logistics`;
 export const logisticsMeta = () => axios.get(`${L}/meta`).then((r) => r.data);
@@ -38,10 +39,9 @@ export const STATUS_PILL = {
   prepared: "pill-muted", loaded: "pill-info", in_transit: "pill-warning",
   delivered: "pill-success", completed: "pill-success", failed: "pill-danger",
 };
-export const STATUS_LABEL = {
-  prepared: "Disiapkan", loaded: "Dimuat", in_transit: "Dalam perjalanan",
-  delivered: "Terkirim", completed: "Selesai", failed: "Gagal kirim",
-};
+// FIX-8 (KN_37 §8) — label status pengiriman dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "delivery",
+// istilah sama persis; server tetap mengirim `status_label`).
+export const STATUS_LABEL = DOMAIN_LABELS.delivery;
 export const PICKUP_STATUS_LABEL = { prepared: "Menunggu diambil", delivered: "Diserahkan", completed: "Selesai" };
 export const statusLabelOf = (d) => (d?.mode === "self_pickup" ? (PICKUP_STATUS_LABEL[d.status] || STATUS_LABEL[d.status]) : STATUS_LABEL[d?.status]) || d?.status;
 export const MODE_LABEL = { expedition: "Ekspedisi", own_fleet: "Armada sendiri", self_pickup: "Diambil pelanggan" };

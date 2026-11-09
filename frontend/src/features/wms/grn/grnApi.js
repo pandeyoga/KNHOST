@@ -1,19 +1,12 @@
 import axios, { API } from "../../../services/apiClient";
 import { permissionDeniedText } from "../../../utils/apiError";
+import { DOMAIN_LABELS } from "../../../utils/statusVocab";
 
 export const GRN = `${API}/goods-receipts`;
 
-export const STATUS = {
-  draft: { label: "Draf", cls: "bg-[#F2F2F7] text-[#3C3C43]" },
-  reading: { label: "Membaca SJ", cls: "bg-[#EEF4FF] text-[#0058CC]" },
-  review: { label: "Tinjau SJ", cls: "bg-[#FFF6E5] text-[#B26A00]" },
-  counting: { label: "Hitung fisik", cls: "bg-[#EEF4FF] text-[#0058CC]" },
-  reconcile: { label: "Rekonsiliasi", cls: "bg-[#FFF6E5] text-[#B26A00]" },
-  closing: { label: "Memposting", cls: "bg-[#EEF4FF] text-[#0058CC]" },
-  closed: { label: "Ditutup", cls: "bg-[#E7F6F3] text-[#0F766E]" },
-  rejected: { label: "Ditolak", cls: "bg-[#FDECEC] text-[#B4231F]" },
-  cancelled: { label: "Dibatalkan", cls: "bg-[#F2F2F7] text-[#6B6B73]" },
-};
+// FIX-8 (KN_37 §8) — label status GRN dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "grn", istilah sama
+// persis); warna = nada kosakata lewat StatusBadge. `STATUS` tetap {kode: {label}} untuk pemakai lama.
+export const STATUS = Object.fromEntries(Object.entries(DOMAIN_LABELS.grn).map(([k, label]) => [k, { label }]));
 
 export const STEPS = ["draft", "review", "counting", "reconcile", "closed"];
 

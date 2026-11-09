@@ -95,7 +95,7 @@ export default function StockBucketsView({ entities = [], currentUser }) {
   }, [board, holds, wips, pendingSo, q, whFilter, ownerFilter]);
   const whOptions = useMemo(() => {
     const m = new Map();
-    board.forEach((p) => (p.warehouses || []).forEach((w) => m.set(w.warehouse_id, w.warehouse_name || w.warehouse_id)));
+    board.forEach((p) => (p.warehouses || []).forEach((w) => m.set(w.warehouse_id, w.warehouse_name || "Gudang tanpa nama")));
     return [...m].map(([value, label]) => ({ value, label }));
   }, [board]);
 
@@ -147,7 +147,7 @@ export default function StockBucketsView({ entities = [], currentUser }) {
               options={[{ value: "", label: "Semua gudang" }, ...whOptions]} />
             <KNSelect data-testid="sb-filter-owner" className="field !py-1 !text-[11px] w-[170px]" value={ownerFilter}
               placeholder="Semua pemilik" onValueChange={setOwnerFilter}
-              options={[{ value: "", label: "Semua pemilik" }, ...entities.map((e) => ({ value: e.id, label: e.short_name || e.name || e.id }))]} />
+              options={[{ value: "", label: "Semua pemilik" }, ...entities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || "PT tanpa nama" }))]} />
           </ListToolbar>
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="sb-error" />
           {notice && (

@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ResponsiveTable from "../../components/ResponsiveTable";
 import { PageHeader } from "../../components/ListPageParts";
+import EmptyState from "../../components/EmptyState";   // FIX-8 — memuat ≠ kosong
 import axios, { API } from "../../services/apiClient";
 
 const fmt = new Intl.NumberFormat("id-ID");
@@ -328,7 +329,7 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel title="Distribusi Nilai per Kelas">
           {pieData.length === 0 ? (
-            <EmptyBox icon={Layers} text="Belum ada data persediaan untuk ditampilkan." />
+            <EmptyBox icon={Layers} loading={loading} text="Belum ada data persediaan untuk ditampilkan." />
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -342,7 +343,7 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
         </Panel>
         <Panel title="Umur Persediaan (nilai Rp per umur)" right={<span className="text-[11px] text-[#6B6B73]">hari sejak masuk gudang</span>}>
           {!hasAgingValue ? (
-            <EmptyBox icon={Clock} text="Belum ada nilai persediaan untuk dihitung umurnya." />
+            <EmptyBox icon={Clock} loading={loading} text="Belum ada nilai persediaan untuk dihitung umurnya." />
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={agingData} margin={{ top: 8, right: 8, left: 8, bottom: 4 }}>
@@ -379,20 +380,16 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
             dalam wadahnya), kartu di HP 390 px (Kelas = lencana, SKU = judul; semua kolom tetap ada). Testid
             `sa-row-<id>`, `sa-ma-`, `sa-trend-`, `sa-pct-`, `sa-cover-`, `sa-stockout-` tetap. */}
         <ResponsiveTable testId="sa" rowKey="product_id" rows={loading ? [] : filteredRows} loading={loading}
-          empty={<EmptyBox icon={Boxes} text={classFilter !== "all" || search
-            ? "Tidak ada SKU sesuai saringan kelas/pencarian."
-            : "Tidak ada SKU sesuai filter."} />}
+          empty={classFilter !== "all" || search ? "Tidak ada SKU sesuai saringan kelas/pencarian." : "Tidak ada SKU sesuai filter."}
+          filtered={classFilter !== "all" || Boolean(search)} what="SKU"
           columns={saColumns({ labels, w, th, capDays })} />
       </Panel>
     </div>
   );
 }
 
-function EmptyBox({ icon: Icon, text }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-      <div className="rounded-full bg-[#F5F5F7] p-3"><Icon size={22} className="text-[#8E8E93]" /></div>
-      <p className="text-[12px] text-[#6B6B73] max-w-xs">{text}</p>
-    </div>
-  );
+// FIX-8 (B1b UI-50) — keadaan kosong = EmptyState baku; selama memuat "Memuat …" (dulu "Belum ada data persediaan…"
+// tampil sebelum data datang).
+function EmptyBox({ icon, text, loading = false }) {
+  return <EmptyState kind={loading ? "loading" : "empty"} icon={icon} title={loading ? undefined : text} what="analitik stok" />;
 }

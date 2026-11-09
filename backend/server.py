@@ -237,6 +237,8 @@ from routers import cutting  # noqa: E402  — L06 LN-061 Meja Cutting / Admin C
 app.include_router(cutting.router)
 from routers import handheld as _handheld  # noqa: E402  — PREP-G API aplikasi handheld Chainway C72
 app.include_router(_handheld.router)
+from routers import saved_views as _saved_views  # noqa: E402  — FIX-8 (K-B4-12) tampilan tersimpan daftar gudang
+app.include_router(_saved_views.router)
 app.include_router(makloons.router)
 app.include_router(process_recipes.router)
 app.include_router(makloon_orders.router)

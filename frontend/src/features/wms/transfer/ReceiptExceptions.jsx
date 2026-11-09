@@ -5,6 +5,7 @@ import { apiErrorText } from "../../../utils/apiError";
 import { askReason } from "../../../services/confirmService";
 import ErrorNotice from "../../../components/ErrorNotice";
 import KNSelect from "../../../components/KNSelect";
+import { formatDateTime } from "../../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
 
 const KIND = { missing: "Hilang / tidak tiba", wrong_roll: "Roll salah", damaged: "Rusak", rule_violation: "Aturan gudang", other: "Lainnya" };
 
@@ -40,7 +41,7 @@ export default function ReceiptExceptions({ transfer, data, open, isSup, rolls =
       {(data.exceptions || []).map((e) => (
         <div key={e.id} data-testid={`transfer-exc-${e.id}`} className={`rounded-md border px-2 py-1 text-[11px] ${e.status === "open" ? "border-[#F1C4C1] bg-[#FDF1F0]" : "border-[#E5E5EA] bg-white"}`}>
           <b>{KIND[e.kind] || e.kind}</b> {e.roll_no || e.code} — {e.reason}
-          <span className="block text-[10px] text-[#6B6B73]">PIC {e.by} · {String(e.at || "").slice(0, 16).replace("T", " ")}
+          <span className="block text-[10px] text-[#6B6B73]">PIC {e.by} · {formatDateTime(e.at)}
             {e.status !== "open" && ` · selesai: ${e.resolution} oleh ${e.resolved_by} (${e.resolution_reason})`}</span>
           {e.status === "open" && isSup && (
             <span className="mt-1 flex gap-2">

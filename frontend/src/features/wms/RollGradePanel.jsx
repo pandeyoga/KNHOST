@@ -18,6 +18,9 @@ import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana baku
+import { LEGACY_TONE } from "../../utils/statusVocab";
+import { formatDateTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
 import useDomainEnums from "../../hooks/useDomainEnums";
 import { can } from "../../config/roles";
 
@@ -121,11 +124,11 @@ export default function RollGradePanel({ rollId, rollNo = "", currentUser, onClo
                     <span className="font-mono font-semibold">
                       {fmtCur(h.old_unit_cost)} → {fmtCur(h.new_unit_cost)}
                     </span>
-                    <span className={`status-pill ${h.direction === "turun" ? "pill-danger" : "pill-success"}`}>
+                    <StatusBadge tone={h.direction === "turun" ? "danger" : "success"} icon={h.direction === "turun" ? "x" : "check"}>
                       {h.direction} {fmtCur(Math.abs(h.delta_value))}
-                    </span>
+                    </StatusBadge>
                     <span className="ml-auto text-[10.5px] text-[#8E8E93]">
-                      {h.at ? new Date(h.at).toLocaleString("id-ID") : ""}
+                      {h.at ? formatDateTime(h.at) : ""}
                     </span>
                   </div>
                   <p className="mt-0.5 text-[10.5px] text-[#3C3C43]">
@@ -156,10 +159,10 @@ export default function RollGradePanel({ rollId, rollNo = "", currentUser, onClo
                   className="rounded-md border border-[#EFF0F2] bg-white px-2 py-1.5 text-[11.5px]">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-mono font-semibold">{h.grade_before || "—"} → {h.grade_after}</span>
-                    <span className={`status-pill ${tone(h.direction)}`}>{h.direction}</span>
-                    <span className="status-pill pill-muted">{h.source_label || h.source}</span>
+                    <StatusBadge tone={LEGACY_TONE[tone(h.direction)]}>{h.direction}</StatusBadge>
+                    <StatusBadge tone="neutral" icon="tag">{h.source_label || h.source}</StatusBadge>
                     <span className="ml-auto text-[10.5px] text-[#8E8E93]">
-                      {h.changed_at ? new Date(h.changed_at).toLocaleString("id-ID") : ""}
+                      {h.changed_at ? formatDateTime(h.changed_at) : ""}
                     </span>
                   </div>
                   <p className="mt-0.5 text-[10.5px] text-[#3C3C43]">

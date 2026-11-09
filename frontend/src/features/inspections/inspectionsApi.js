@@ -11,6 +11,7 @@
  * bisa berbeda per badan usaha dan layar tidak boleh menebaknya.
  */
 import axios, { API } from "../../services/apiClient";
+import { DOMAIN_LABELS } from "../../utils/statusVocab";
 import { apiErrorText } from "../../utils/apiError";
 
 export const apiText = apiErrorText;
@@ -18,13 +19,9 @@ export const apiText = apiErrorText;
 /** Urutan papan — cermin `inspection_service.BOARD_ORDER`. */
 export const INS_BOARD_ORDER = ["draft", "assigned", "in_progress", "done", "closed"];
 
-export const INS_STATUS_LABEL = {
-  draft: "Draf (belum ditugaskan)",
-  assigned: "Ditugaskan",
-  in_progress: "Sedang diperiksa",
-  done: "Selesai (sudah diputuskan)",
-  closed: "Ditutup",
-};
+// FIX-8 (KN_37 §8) — label status SPK dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "inspection", istilah
+// sama persis). Lencana = StatusBadge (nada & ikon dari kosakata).
+export const INS_STATUS_LABEL = DOMAIN_LABELS.inspection;
 
 /** Kelas pil status — memakai kosakata `status-pill` yang sudah ada (tanpa warna baru). */
 export const INS_STATUS_CLASS = {

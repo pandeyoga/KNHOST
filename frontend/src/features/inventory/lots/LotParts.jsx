@@ -7,6 +7,8 @@ import KNSelect from "../../../components/KNSelect";
 import { formatQty } from "../../../utils/formatters";
 import { formatUnitTotals } from "../../../utils/qtyByUnit";
 import { LOT_STATUS_TONE, SOURCE_TONE, shortDate } from "./lotApi";
+import StatusBadge from "../../../components/StatusBadge";
+import { LEGACY_TONE } from "../../../utils/statusVocab";
 
 export function LotStatCards({ stats }) {
   const s = stats || {};
@@ -70,7 +72,7 @@ export function LotFilters({ filter, setFilter, sourceOptions, statusOptions, st
       <KNSelect data-testid="lot-filter-warehouse" className="field !py-1 !text-[12px] w-auto min-w-[160px]"
         value={filter.warehouse_id} placeholder="Semua gudang"
         options={[{ value: "", label: "Semua gudang" },
-                  ...warehouses.map((w) => ({ value: w.id, label: w.name || w.id }))]}
+                  ...warehouses.map((w) => ({ value: w.id, label: w.name || w.code || "Gudang tanpa nama" }))]}
         onValueChange={(v) => pick({ warehouse_id: v })} />
       <button data-testid="lot-filter-apply" className="btn-secondary !px-2 !py-1 !text-[12px]"
         onClick={() => onSearch?.(filter)}>Cari</button>
@@ -78,18 +80,13 @@ export function LotFilters({ filter, setFilter, sourceOptions, statusOptions, st
   );
 }
 
+// FIX-8 (KN_37 §8) — pil lot = StatusBadge baku (ikon + teks + warna token); nada dari peta lama lot.
 export function LotStatusPill({ value, label, testId }) {
-  return (
-    <span data-testid={testId} className={`status-pill ${LOT_STATUS_TONE[value] || "pill-muted"}`}>
-      {label || value || "—"}
-    </span>
-  );
+  return <StatusBadge status={value} tone={LEGACY_TONE[LOT_STATUS_TONE[value]] || "neutral"} label={label || undefined} testId={testId} />;
 }
 
 export function LotSourcePill({ value, label }) {
-  return (
-    <span className={`status-pill ${SOURCE_TONE[value] || "pill-muted"}`}>{label || value}</span>
-  );
+  return <StatusBadge tone={LEGACY_TONE[SOURCE_TONE[value]] || "neutral"} icon="tag">{label || value || "—"}</StatusBadge>;
 }
 
 export function LotTable({ lots, loading, activeId, onOpen, labelOf }) {
@@ -200,7 +197,7 @@ export function UnassignedRollsCard({ data, onFix, busy }) {
         </button>
       </div>
       <div className="px-2.5 py-1.5 text-[10.5px] text-amber-800">
-        Contoh: {rows.slice(0, 6).map((r) => r.roll_no || r.id).join(", ")}
+        Contoh: {rows.slice(0, 6).map((r) => r.roll_no || "tanpa nomor").join(", ")}
         {rows.length > 6 ? ", …" : ""}
       </div>
     </div>

@@ -4,8 +4,10 @@
  * Fase 4 · R3 — diekstrak dari `InspectionDetailPanel.jsx` (658 baris, > batas 500) TANPA mengubah perilaku:
  * markup, testid, teks, dan gerbang tombol sama persis; aksi tetap dimiliki panel (dioper sebagai callback).
  */
-import { Lock, LockOpen, XCircle } from "lucide-react";
+import { LockOpen, XCircle } from "lucide-react";
 import QtyDual from "../../components/QtyDual";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku (ikon + teks + warna token)
+import { LEGACY_TONE } from "../../utils/statusVocab";
 import { INS_COLOR_LABEL, INS_HANDFEEL_LABEL, resultPill } from "./inspectionsApi";
 
 export default function InspectionLinesTable({
@@ -41,20 +43,14 @@ export default function InspectionLinesTable({
                   <span className="font-semibold text-[#1C1C1E]">{ln.roll_no || ln.sku || "—"}</span>
                   <span className="block text-[10px] text-[#8E8E93]">{ln.article || ""}</span>
                   {ln.hold ? (
-                    <span data-testid={`ins-line-hold-${ln.id}`} className="status-pill pill-danger mt-0.5">
-                      <Lock size={9} className="mr-0.5 inline" /> DITAHAN
-                    </span>
+                    <StatusBadge status="hold" tone="danger" icon="lock" className="mt-0.5" testId={`ins-line-hold-${ln.id}`}>DITAHAN</StatusBadge>
                   ) : null}
                   {ln.random_check_result ? (
-                    <span data-testid={`ins-line-rc-${ln.id}`}
-                      className={`status-pill mt-0.5 ${ln.random_check_result === "lulus" ? "pill-success" : "pill-danger"}`}>
-                      Random check {ln.random_check_result.toUpperCase()}
-                    </span>
+                    <StatusBadge status={ln.random_check_result === "lulus" ? "passed" : "failed"} className="mt-0.5"
+                      testId={`ins-line-rc-${ln.id}`}>Random check {ln.random_check_result.toUpperCase()}</StatusBadge>
                   ) : null}
                   {ln.md_quality_decision?.action === "reject" ? (
-                    <span data-testid={`ins-line-mdq-rejected-${ln.id}`} className="status-pill pill-danger mt-0.5">
-                      Ditolak MD Quality
-                    </span>
+                    <StatusBadge status="rejected" className="mt-0.5" testId={`ins-line-mdq-rejected-${ln.id}`}>Ditolak MD Quality</StatusBadge>
                   ) : null}
                   {(ln.md_quality_by || ln.qc_by) ? (
                     <span className="block text-[10px] text-[#8E8E93]">
@@ -85,14 +81,10 @@ export default function InspectionLinesTable({
                       : "—")}
                 </td>
                 <td className="px-2 py-1.5">
-                  <span className={`status-pill ${resultPill(ln.color_result)}`}>
-                    {INS_COLOR_LABEL[ln.color_result] || "Belum diperiksa"}
-                  </span>
+                  <StatusBadge tone={LEGACY_TONE[resultPill(ln.color_result)]}>{INS_COLOR_LABEL[ln.color_result] || "Belum diperiksa"}</StatusBadge>
                 </td>
                 <td className="px-2 py-1.5">
-                  <span className={`status-pill ${resultPill(ln.handfeel_result)}`}>
-                    {INS_HANDFEEL_LABEL[ln.handfeel_result] || "Belum diperiksa"}
-                  </span>
+                  <StatusBadge tone={LEGACY_TONE[resultPill(ln.handfeel_result)]}>{INS_HANDFEEL_LABEL[ln.handfeel_result] || "Belum diperiksa"}</StatusBadge>
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <div className="flex flex-wrap justify-end gap-1">

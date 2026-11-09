@@ -125,6 +125,9 @@ GROUP_LEVEL_EXACT: frozenset = frozenset({
     # L11 — Pusat Export: preview & job export hanya membaca data bisnis (job milik pengguna)
     "/api/export-center/preview", "/api/export-center/jobs", "/api/export-center/templates",
     "/api/export-center/quick",   # FIX-4 — tombol Unduh daftar: hanya membaca (berkas langsung / job milik pengguna)
+    # (S) FIX-8 (K-B4-12) — tampilan tersimpan = preferensi PENGGUNA (koleksi `saved_views` tanpa kolom badan usaha;
+    #     cakupan PT/lokasi sengaja tidak disimpan) — boleh disimpan saat melihat gabungan semua PT.
+    "/api/saved-views",
     "/api/sales-returns/cutloss/simulate", "/api/sales-returns/discount/simulate",   # LN-092 — simulasi, tanpa tulis
     # (P) pekerjaan pemeliharaan tingkat grup (dijalankan penjadwal/admin)
     "/api/finance-cases/scan", "/api/contra-bons/run-reminder",

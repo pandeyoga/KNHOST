@@ -16,7 +16,19 @@ Metrik per berkas `frontend/src` (komentar dibuang; `__tests__/` & `components/u
   hp_touch      G-UI-05  elemen interaktif di aplikasi HP (`features/mobile/`) tanpa tanda ukuran sentuh ≥ 48 px
                          (`btn-touch`, `kn-input-touch`, `kn-chip-touch`, `min-h-touch`, `py-4`, `py-3`+teks ≥ 16 px …)
   list_no_excel G-UI-07  `<PaginationBar>` tanpa `exportSpec` (tombol baku Unduh Excel/CSV lewat Pusat Export)
+  — tahap 2 (FIX-8, 10 Nov 2026; baseline = kondisi sesudah FIX-8) —
+  chip_custom   G-UI-06  lencana/status buatan sendiri: kelas mentah `status-pill`, `<Pill>` lama, dan `<span>` berpil
+                         Tailwind (rounded + px + latar + huruf ≤ 12 px) — wajib `StatusBadge` (ikon + teks + warna token)
+  id_fallback   G-OUT-02 cadangan label ke id mentah `… || x.id` / `… || x.foo_id` (bukan perbandingan, bukan key,
+                         bukan rantai id→id) — pakai label yang benar ("Gudang tanpa nama", entityShort, …)
+  date_no_wib   G-OUT-01 waktu tanpa formatter WIB: `new Date(..).toLocale*String(` / `toLocale*String("id-ID", {day|month|
+                         hour…})` tanpa `timeZone`, `*_at.slice(0, 10|16)` — pakai formatDate/formatDateTime/formatTime
+  empty_false   UI-49/50 kosong palsu: galat daftar ditelan jadi kosong (`.catch(() => setX([]))`, `.catch(() => ({ data:
+                         [] }))`) dan teks "Belum ada/Tidak ada" di bawah syarat `.length === 0` tanpa `loading`/galat
 Aturan ratchet (`_ratchet.py`): jumlah per berkas NAIK → MERAH; berkas BARU dengan jumlah > 0 → MERAH; turun = hijau.
+
+Tambahan KERAS (G-UI-10, FIX-8): SATU pager & SATU kotak cari — `KNPager`/`usePagedRows` merender `PaginationBar`,
+`ListControls` tidak punya `<input>` sendiri (meminjam `ListPageParts.SearchInput`).
 
 Tambahan KERAS (G-UI-07 · K-B4-07): setiap layar daftar WMS-RFID di `WMS_LISTS` (matriks B3b) WAJIB memasang
 `<ExportMenu …>` atau `exportSpec` — pengecualian hanya di `WMS_LIST_EXEMPT` dengan alasan ≥ 20 karakter.
@@ -27,6 +39,7 @@ Pakai:
     python scripts/guardrails/verify_ui_standard.py --self-test
     python scripts/guardrails/verify_ui_standard.py --update        # kencangkan baseline (hanya turun)
     python scripts/guardrails/verify_ui_standard.py --init          # HANYA saat penjaga dibuat (FIX-4)
+    python scripts/guardrails/verify_ui_standard.py --init-missing  # tulis baseline metrik BARU saja (FIX-8)
 """
 from __future__ import annotations
 
@@ -43,10 +56,29 @@ from _common import ROOT, Guard, G, R, X  # noqa: E402
 from _ratchet import (compare, iter_sources, load_baseline, strip_comments,  # noqa: E402
                       tightened, write_baseline, BASE_DIR, SRC)
 
-METRICS = ("font_lt12", "hp_font_lt14", "hex", "btn_custom", "btn_force", "hp_touch", "list_no_excel")
+METRICS = ("font_lt12", "hp_font_lt14", "hex", "btn_custom", "btn_force", "hp_touch", "list_no_excel",
+           "chip_custom", "id_fallback", "date_no_wib", "empty_false")
 NOTE = ("Baseline ratchet Standar UI Gudang v1 (FIX-4, 9 Nov 2026) — {m}. Angka = kondisi saat penjaga dibuat "
         "(sesudah perbaikan FIX-4). Hanya boleh TURUN; kencangkan dengan --update.")
-STANDARD_FILES = {"components/PaginationBar.jsx", "components/ExportMenu.jsx"}
+NOTE2 = ("Baseline ratchet Standar UI Gudang v1 tahap 2 (FIX-8, 10 Nov 2026) — {m}. Angka = kondisi sesudah perbaikan "
+         "FIX-8 (layar WMS-RFID utama dibersihkan; sisanya dibekukan). Hanya boleh TURUN; kencangkan dengan --update.")
+STANDARD_FILES = {"components/PaginationBar.jsx", "components/ExportMenu.jsx", "components/KNPager.jsx",
+                  "components/StatusBadge.jsx", "components/EmptyState.jsx"}
+
+# ── Tahap 2 (FIX-8) ────────────────────────────────────────────────────────────────────────────────────────────
+STATUS_PILL_RAW = re.compile(r"(?<![\w-])status-pill(?![\w-])")
+PILL_OLD = re.compile(r"<Pill[\s>]")
+SMALL_TEXT = re.compile(r"^(?:text-xs|text-fs-12|text-\[(?:\d|1[0-2])(?:\.\d+)?px\])$")
+ID_FALLBACK = re.compile(r"\|\|\s*(?:[\w$]+(?:\?\.|\.))*(?:id|[a-z][a-z0-9]*_id)\b(?!\s*\)?\s*(?:[!=]==|\())")
+LEFT_OPERAND = re.compile(r"([\w$?.\]\[\"']+)\s*$")
+DATE_NEWDATE = re.compile(r"new Date\([^()]*(?:\([^()]*\))?[^()]*\)\.toLocale(?:Date|Time)?String\(([^)]*)\)")
+DATE_LOCALE = re.compile(r"\.toLocale(Date|Time)?String\(\s*[\"']id-ID[\"']\s*,\s*\{([^}]*)\}")
+DATE_SLICE = re.compile(r"(?:_at|\.at|_date|\.since|timestamp)\)?\??\.slice\(0,\s*(?:10|16|19)\)")
+SWALLOW = re.compile(r"\.catch\(\s*\(\s*\w*\s*\)\s*=>\s*(?:set\w+\(\s*\[\s*\]\s*\)|\(\s*\{\s*data\s*:\s*\[\s*\]\s*\}\s*\))\s*\)")
+EMPTY_COND = re.compile(r"\{[^{}\n]*\.length\s*===\s*0[^{}\n]*(?:&&|\?)")
+EMPTY_TEXT = re.compile(r"Belum ada|Tidak ada")
+EMPTY_HANDLED = re.compile(r"loading=|kind=|error=|<EmptyState")   # keadaan sudah dibedakan di elemen berikutnya
+GUARD_WORDS = re.compile(r"loading|loaded|fetched|busy|=== null|error|err\b|\.length\s*>|searchQuery|term|\bq\b|search")
 
 FONT_PX = re.compile(r"text-\[(\d+(?:\.\d+)?)px\]")
 FONT_STYLE = re.compile(r"fontSize\s*:\s*[\"'`]?(\d+(?:\.\d+)?)(?:px)?[\"'`]?")
@@ -199,7 +231,91 @@ def count_text(rel: str, text: str, css_defined: set) -> Dict[str, int]:
         out["hp_font_lt14"] = len(HP_SMALL.findall(code)) + sum(1 for v in FONT_PX.findall(code) if 12 <= float(v) < 14)
     if rel not in STANDARD_FILES:
         out["list_no_excel"] = sum(1 for _p, tag in iter_tags(code, "PaginationBar") if "exportSpec" not in tag)
+        out["chip_custom"] = chip_custom_count(code)
+    out["id_fallback"] = id_fallback_count(code)
+    out["date_no_wib"] = date_no_wib_count(code)
+    out["empty_false"] = empty_false_count(code)
     return out
+
+
+def chip_custom_count(code: str) -> int:
+    """G-UI-06 — lencana buatan sendiri: `status-pill` mentah, `<Pill>` lama, `<span>` berpil Tailwind."""
+    n = len(PILL_OLD.findall(code))
+    for lit in re.findall(r"\"[^\"\n]*\"|'[^'\n]*'|`[^`]*`", code):
+        n += len(STATUS_PILL_RAW.findall(lit))
+    for _pos, tag in iter_tags(code, "span"):
+        toks, lit = class_value(tag)
+        if not toks or not lit:
+            continue
+        rounded = any(t.startswith("rounded") for t in toks)
+        padded = any(re.match(r"^px-", t) for t in toks)
+        filled = any(re.match(r"^bg-(?:\[#|[a-z]+-\d|kn-)", t) for t in toks)
+        small = any(SMALL_TEXT.match(t) for t in toks)
+        if rounded and padded and filled and small:
+            n += 1
+    return n
+
+
+def id_fallback_count(code: str) -> int:
+    """G-OUT-02 — `label || x.id` / `label || x.foo_id`. Bukan: perbandingan (`=== …`), pemanggilan, `key={…}`,
+    dan rantai id→id (`r.roll_id || r.id` — keduanya id, dipakai sebagai id, bukan label)."""
+    n = 0
+    for m in ID_FALLBACK.finditer(code):
+        before = code[max(0, m.start() - 160):m.start()]
+        line_before = before.split("\n")[-1]
+        if re.search(r"\bkey=\{[^}]*$", line_before):
+            continue
+        left = LEFT_OPERAND.search(line_before)
+        if left and re.search(r"(?:^|[.?])(?:id|[a-z0-9_]*_id|[A-Za-z]*Id)\s*$", left.group(1).strip("?.")):
+            continue
+        if re.search(r"[!=]==\s*[^|&]*$", line_before) and "?" not in line_before[-30:]:
+            continue                     # bagian dari ekspresi perbandingan: `a === b || x.id …`
+        n += 1
+    return n
+
+
+def date_no_wib_count(code: str) -> int:
+    """G-OUT-01 — tanggal/jam tampil tanpa formatter WIB."""
+    n = 0
+    for m in DATE_NEWDATE.finditer(code):
+        if "timeZone" not in m.group(1):
+            n += 1
+    for m in DATE_LOCALE.finditer(code):
+        opts = m.group(2)
+        if "timeZone" in opts:
+            continue
+        if m.group(1) or re.search(r"\b(?:day|month|year|hour|minute|weekday)\s*:", opts):
+            n += 1
+    n += len(DATE_SLICE.findall(code))
+    return n
+
+
+def empty_false_count(code: str) -> int:
+    """UI-49/50 — kosong palsu: galat daftar ditelan menjadi [] + teks kosong tanpa penjaga memuat/galat."""
+    n = len(SWALLOW.findall(code))
+    for m in EMPTY_COND.finditer(code):
+        cond = m.group(0)
+        if GUARD_WORDS.search(cond):
+            continue
+        tail = code[m.end():m.end() + 260]
+        if EMPTY_TEXT.search(tail) and not EMPTY_HANDLED.search(tail):
+            n += 1
+    return n
+
+
+def single_pattern_problems(texts: Dict[str, str]) -> List[str]:
+    """G-UI-10 (keras, FIX-8) — satu pager & satu kotak cari."""
+    bad: List[str] = []
+    kp = strip_comments(texts.get("components/KNPager.jsx", ""))
+    if kp and "<PaginationBar" not in kp:
+        bad.append("components/KNPager.jsx harus merender PaginationBar (satu pager baku) — bukan pager sendiri.")
+    upr = strip_comments(texts.get("hooks/usePagedRows.js", ""))
+    if upr and "KNPager" not in upr and "PaginationBar" not in upr:
+        bad.append("hooks/usePagedRows.js harus memakai KNPager/PaginationBar.")
+    lc = strip_comments(texts.get("components/ListControls.jsx", ""))
+    if lc and "<input" in lc:
+        bad.append("components/ListControls.jsx punya <input> sendiri — pakai ListPageParts.SearchInput (satu kotak cari).")
+    return bad
 
 
 def touch_ok(toks: List[str]) -> bool:
@@ -343,6 +459,12 @@ def load_registry() -> Dict[str, dict]:
 
 def main() -> int:
     per, hexes, texts = collect()
+    if "--init-missing" in sys.argv:
+        made = [m for m in METRICS if not (BASE_DIR / f"ui_{m}.json").exists()]
+        for m in made:
+            write_baseline(f"ui_{m}", per[m], NOTE2.format(m=m))
+        print("baseline baru:", ", ".join(f"ui_{m}" for m in made) or "(tidak ada)")
+        return 0
     if "--init" in sys.argv:
         for m in METRICS:
             write_baseline(f"ui_{m}", per[m], NOTE.format(m=m))
@@ -390,6 +512,9 @@ def main() -> int:
             g.add(f"[G-UI-07b] {p}")
         print(f"  kontrak Unduh  {sum(len(export_blocks(t)) for r, t in texts.items() if not r.endswith('.css'))} "
               f"tombol diperiksa · {len(problems)} masalah")
+    for p in single_pattern_problems(texts):
+        g.add(f"[G-UI-10] {p}")
+    g.bump(3)
     for f in WMS_LISTS:
         g.bump()
         txt = texts.get(f)
@@ -413,6 +538,10 @@ HINT = {
     "btn_force": "jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.",
     "hp_touch": "target sentuh HP ≥ 48 px: btn-touch / kn-input-touch / kn-chip-touch / min-h-touch.",
     "list_no_excel": "daftar berhalaman wajib Unduh Excel+CSV: PaginationBar exportSpec={{ dataset, … }}.",
+    "chip_custom": "lencana status = <StatusBadge status/domain/label/tone> (ikon + teks + warna token), bukan status-pill/pil sendiri.",
+    "id_fallback": "label tidak boleh jatuh ke id mentah — pakai nama/kode atau teks ('Gudang tanpa nama', entityShort…).",
+    "date_no_wib": "tanggal/jam lewat formatDate / formatDateTime / formatTime (utils/formatters, zona WIB).",
+    "empty_false": "bedakan memuat/kosong/galat/tanpa izin: EmptyState + listStateKind; galat jangan ditelan jadi [].",
 }
 
 
@@ -465,6 +594,23 @@ def self_test() -> int:
         len(export_contract({"a.jsx": '<ExportMenu dataset="x" />', "b.jsx": '<ExportMenu dataset="n" search={q} />'}, reg)) == 2)
     cek("kontrak Unduh: exportSpec di PaginationBar ikut diperiksa",
         len(export_contract({"a.jsx": '<PaginationBar exportSpec={{ dataset: "d", sort: [{ key: "nope" }] }} />'}, reg)) == 1)
+    cek("G-UI-06: status-pill mentah, <Pill> & span berpil dihitung; StatusBadge tidak",
+        count_text("a.jsx", '<span className="status-pill pill-danger">x</span><Pill color="red">y</Pill>'
+                   '<span className="rounded-full px-2 bg-[#FFF] text-[10px]">z</span><StatusBadge status="draft" />', css)["chip_custom"] == 3)
+    cek("G-OUT-02: label || x.id dihitung; perbandingan, key, rantai id→id tidak",
+        count_text("a.jsx", '<b>{t.product_name || t.product_id}</b>{(a.owner_entity_id || a.entity_id) === f}'
+                   '<tr key={it.item_id || it.roll_id} />{`/rolls/${roll.roll_id || roll.id}/x`}'
+                   '{r.find((x) => x.code === q || x.id === q)}', css)["id_fallback"] == 1)
+    cek("G-OUT-01: toLocaleString tanpa timeZone & slice(0,10) atas *_at dihitung; formatter WIB & angka tidak",
+        count_text("a.jsx", '{new Date(e.at).toLocaleString("id-ID")}{s.created_at?.slice(0, 10)}'
+                   '{d.toLocaleString("id-ID", { day: "2-digit", month: "short" })}'
+                   '{n.toLocaleString("id-ID")}{d.toLocaleDateString("sv-SE", { timeZone: WIB })}{formatDateTime(x)}', css)["date_no_wib"] == 3)
+    cek("UI-49/50: galat ditelan jadi [] & 'Belum ada' tanpa penjaga memuat dihitung",
+        count_text("a.jsx", 'x.catch(() => setRows([])); y.catch(() => ({ data: [] }));'
+                   '{rows.length === 0 && <p>Belum ada data</p>}{rows.length === 0 && !loading && <p>Belum ada</p>}', css)["empty_false"] == 3)
+    cek("G-UI-10: KNPager tanpa PaginationBar & ListControls ber-<input> merah",
+        len(single_pattern_problems({"components/KNPager.jsx": "export default () => <div/>",
+                                     "components/ListControls.jsx": "<input />"})) == 2)
     naik, baru, turun = compare({"a.jsx": 2, "n.jsx": 1}, {"a.jsx": 1, "b.jsx": 3})
     cek("ratchet: naik + berkas baru merah, turun dicatat", naik == [("a.jsx", 2, 1)] and baru == [("n.jsx", 1, 0)] and turun == [("b.jsx", 0, 3)])
     print(f"{G if not gagal else R}  SELF-TEST {'HIJAU' if not gagal else 'MERAH'} ({gagal} gagal){X}")

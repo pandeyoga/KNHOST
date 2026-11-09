@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Berlaku** sejak 9 Nov 2026 (paket FIX-4, tahap 1). Keputusan pemilik lewat koordinator: K-B4-01 (wajib, ditegakkan ratchet), K-B4-02, K-B4-03, K-B4-04, K-B4-06, K-B4-07 + K-B3b-04, K-B4-11, K-B1-06, K-B1-09 |
+| Status | **Berlaku** sejak 9 Nov 2026 (paket FIX-4, tahap 1); **tahap 2 berlaku 10 Nov 2026 (paket FIX-8)**: lencana status, keadaan kosong/memuat/galat/tanpa izin, satu pager & kotak cari, waktu WIB, tanpa id mentah, nomor dokumen satu skema tampilan, pola detail, tampilan tersimpan. Keputusan pemilik lewat koordinator: K-B4-01 (wajib, ditegakkan ratchet), K-B4-02, K-B4-03, K-B4-04, K-B4-06, K-B4-07 + K-B3b-04, K-B4-11, **K-B4-12 (tampilan tersimpan = YA)**, K-B1-06, K-B1-09 |
 | Menggantikan | bagian `KN_08_UI_UX_STANDARDS.md` yang bertentangan (warna primer, font & skala huruf, radius, shadcn "WAJIB", varian tombol, kontras, adaptasi HP/"camera-first") — lihat catatan di kepala KN_08 |
 | Dasar | riset `docs/audit/2026-11-09-wms-rfid/B4-RISET-STANDAR-UI.md` (§3, sumber §4); temuan B1 UI-24/26/27/28/30, B1b UI-52/53, B3b EXP-01…05, FRM-17 |
 | Berlaku untuk | layar gudang (`features/wms`, `features/rfid`, `features/inventory`, `features/inspections`), aplikasi HP (`features/mobile`), kios gate, **komponen & kelas baku**, dan **semua kode baru** di mana pun. Layar lama di luar itu mengikuti saat disentuh (ratchet: angka tidak boleh naik) |
@@ -89,8 +89,13 @@ isian: `--r-md`) · `14` (kartu, modal: `--r-lg`, `--radius` shadcn kini 14 px) 
 * Galat di bawah isian, spesifik, ikon + teks; isian pengguna tidak pernah dihapus.
 
 ## 6. Halaman daftar & Unduh — WAJIB (G-UI-07, K-B4-07, K-B3b-04)
-Anatomi: judul (`PageHeader`) → **cakupan** (bilah "Lokasi: … ▾") → ringkasan ≤ 4 angka → cari (`SearchBox`) → saringan
-(`FilterChips`) → **Unduh ▾** → tabel/kartu → pager (`PaginationBar`).
+Anatomi: judul (`PageHeader`) → **cakupan** (bilah "Lokasi: … ▾") → ringkasan ≤ 4 angka → cari (`SearchBox`/
+`SearchInput`) → saringan (`FilterChips`) → urut → **Tampilan: … ▾** (`SavedViewsMenu`, §6b) → **Unduh ▾** →
+tabel/kartu (keadaan: `EmptyState`, §6a) → pager (`PaginationBar`).
+
+**Satu komponen per pola (G-UI-10, keras, FIX-8):** satu pager = `PaginationBar` (`KNPager`, `PagedRows`,
+`usePagedRows` hanya pembungkusnya — dulu 3 gaya); satu kotak cari = `ListPageParts.SearchInput` (`SearchBox` =
+kotak itu + saringan di sebelahnya; `ListControls` meminjamnya); satu tab status = `ListPageParts.StatusTabs`.
 
 **Satu tombol baku "Unduh ▾" — `components/ExportMenu.jsx`** (di pager: `PaginationBar exportSpec={{…}}`):
 * Butir **Excel (.xlsx) — bawaan** dan **CSV (titik-koma)**, keduanya lewat mesin Pusat Export
@@ -109,6 +114,33 @@ Anatomi: judul (`PageHeader`) → **cakupan** (bilah "Lokasi: … ▾") → ring
 * Dataset baru menambah **kolom saringan** `C(..., default=False)` (id gudang/produk) — ikut filter, tidak ikut kolom
   bawaan berkas (EXP-04).
 
+### 6a. Keadaan daftar — WAJIB (B4 §3.10, B1b UI-49/UI-50; ratchet `empty_false`)
+Satu komponen `components/EmptyState.jsx` + `listStateKind({loading, error, count, filtered})`; `ResponsiveTable`
+menerima `error`/`onRetry`/`filtered`/`onReset`/`what` dan memakainya otomatis.
+
+| Keadaan | Tampil | Dilarang |
+|---|---|---|
+| **memuat** | ikon berputar + "Memuat …" (angka KPI "…") | "0", "Belum ada …", "Tidak ada …" sebelum data datang |
+| **kosong** | ikon + "Belum ada …" + satu aksi utama (opsional) | — |
+| **saringan kosong** | "Tidak ada … yang cocok dengan saringan" + **Reset saringan** | teks kosong biasa |
+| **galat** | kalimat `apiErrorText` + **Coba lagi** | galat ditelan (`.catch(() => setX([]))`) |
+| **tanpa izin (403)** | "Anda tidak punya akses ke …" + "ini bukan daftar kosong — minta admin" | tampil sebagai kosong |
+
+Pemilih yang daftar opsinya bisa 403 (mis. grade dari Master Grade untuk peran gudang) memakai `useGrades` +
+`GradeLoadNote` (catatan di dekat pemilih), bukan daftar opsi kosong diam-diam.
+
+### 6b. Tampilan tersimpan — K-B4-12 (FIX-8)
+`components/SavedViewsMenu.jsx` + `hooks/useSavedViews.js` → API `/api/saved-views` (koleksi `saved_views`,
+ENTITY_REGISTRY). Satu tampilan = **saringan + urut + kolom (disembunyikan) + mode** sebuah daftar.
+* Pribadi per pengguna; **admin** boleh membagikan ke peran dan/atau PT (+ "bawaan untuk penerima").
+* Saat daftar dibuka: bawaan pribadi → bawaan bersama dipasang sekali; `*` di tombol = layar berbeda dari tampilan aktif;
+  "Tampilan standar" = tanpa saringan.
+* **Cakupan tidak pernah ikut** (PT aktif, lokasi kerja, site — server menolak kuncinya 400); nilai saringan di luar
+  daftar pilihan pengguna diabaikan saat dipasang. Izin = izin lihat daftarnya.
+* Terpasang di: Operasi Gudang › Stok › **Roll** (gudang, lini, status cek, hanya di-peg, Kelompok/Daftar, 7 kolom
+  opsional), **Transfer** (jenis, status, lini, urut: terbaru/terlama/nomor/status, 3 kolom opsional), **Barang Keluar**
+  (status, gudang, jenis SO/Sample). Daftar lain menambah kunci di `saved_view_service.LISTS` + satu `useSavedViews`.
+
 ## 7. Aplikasi HP gudang — WAJIB (G-UI-05, G-UI-01 HP)
 * Kelas teks: `kn-hp-title` (16/700), `kn-hp-info` (16), `kn-hp-support` (14), `kn-hp-tag` (14). Dilarang `text-xs` &
   `text-[N<14px]` (ratchet `hp_font_lt14`).
@@ -116,9 +148,38 @@ Anatomi: judul (`PageHeader`) → **cakupan** (bilah "Lokasi: … ▾") → ring
   Komponen bersama di dalam `.m-shell` (label, `PageTabs`, bilah lokasi, `notice-bar`) otomatis 48 px / 14 px.
 * Hasil pindai: ikon + judul + teks + warna lembut (`bg-kn-*-soft`); aksi lanjut lebar penuh.
 
-## 8. Status & lencana
-`status-pill` (12 px; semua pasangan teks/latar lolos ≥ 4,5:1 — dihitung G-UI-03). Komponen `StatusBadge` {nada, ikon,
-label} & `TaskTypeBadge` = **tahap 2** (B4 §3.9). Saringan ≠ status ≠ tab (`FilterChips` / lencana / `PageTabs`).
+## 8. Status & lencana — WAJIB (G-UI-06, ratchet `chip_custom`; FIX-8)
+**Satu komponen `components/StatusBadge.jsx`** — ikon + teks + warna token (tidak pernah warna saja, WCAG 1.4.1):
+`<StatusBadge status="quarantine" domain="roll" />` · `<StatusBadge status={s} label={labelLama(s)} />` ·
+`<StatusBadge tone="special" icon="tag">Antar PT</StatusBadge>`.
+* **Kosakata tunggal `utils/statusVocab.js`**: label per ranah (`roll`, `transfer`, `task_in`, `task_out`, `task_hp`,
+  `putaway`, `grn`, `inspection`, `registration`, `cycle_count`, `print_job`, `print_item`, `delivery`) dipindah 1:1 dari
+  peta lama (istilah tidak berubah, K-13) + cadangan peta umum `DOC_STATUS_LABEL` (tidak pernah kode mentah); nada & ikon
+  per kode. Berkas fitur lama mengekspor ulang dari sini (`ROLL_STATUS_META`, `PA_STATUS`, `INS_STATUS_LABEL`, …).
+* 6 nada (B4 §3.9): **berhasil** selesai/tersedia · **info** berjalan/terbuka · **perhatian** menunggu/ditahan/sebagian ·
+  **bahaya** ditolak/gagal/rusak · **netral** draf/arsip/dibatalkan · **khusus** kategori (dipesan, makloon, sampel,
+  antar-PT). Kelas `kn-badge tone-*` — 6 pasangan dihitung G-UI-03 (5,59–9,79:1).
+* Pembungkus lama yang kini merender StatusBadge: `Pill` (RFID), `RollStatusBadge`, `QcStatusBadge`, `TaskBadge`,
+  `Badge` (keluar), `GrnStatusBadge`, `transferConstants.StatusBadge`, `LotStatusPill`. `status-pill` mentah & pil
+  Tailwind buatan layar = pola usang (ratchet). `TaskTypeBadge` = sisa.
+* Saringan ≠ status ≠ tab (`FilterChips` / lencana / `PageTabs`).
+
+### 8a. Waktu, id, nomor dokumen — WAJIB (B3b G-OUT-01/02, B1b UI-58; ratchet `date_no_wib`, `id_fallback`)
+* **Waktu = WIB lewat formatter tunggal** `utils/formatters`: `formatDate` ("10 Nov 2026"), `formatDateTime`
+  ("10 Nov 2026 05.30 WIB"), `formatTime` ("05.30 WIB"). Dilarang `new Date(x).toLocaleString(` / `toLocale*String("id-ID",
+  {day|hour…})` tanpa `timeZone`, dan `x_at.slice(0, 10|16)` atas stempel UTC. Pembantu lama (`fmtTime` RFID,
+  `formatDate` stok, `shortDate*` lot, `localTs` SPK) kini memanggil formatter ini.
+* **Tanpa id mentah**: label tidak boleh jatuh ke `x.id`/`x.foo_id` (`nama || x.id`); pakai nama/kode atau teks jujur
+  ("Gudang tanpa nama", "Produk tanpa nama", `entityShort`/`entityShortFromCtx` untuk PT). Id sebagai NILAI/kunci boleh.
+* **Nomor dokumen satu skema TAMPILAN** `components/DocNumber.jsx`: `[PT] NOMOR` untuk dua skema tersimpan (`KSC/PO-00166`
+  dan `PRET-00070` milik PT KSC tampil sama). Nomor tersimpan tidak diubah; teks elemen = nomor tersimpan (salin/cari tetap).
+
+### 8b. Pola detail — (B1b UI-60, B4 §3.7; keputusan implementer FIX-8)
+| Jenis layar | Pola | Contoh |
+|---|---|---|
+| Dokumen **kerja bertahap** (pindai/hitung/rekonsiliasi berlangkah, tabel panjang) | **halaman detail sebaris** dengan kepala baku `DetailParts.DetailHeader` ("← Kembali ke daftar …" ≥ 32 px, judul + lencana, aksi kanan; aksi merusak di `dangerActions` — terpisah di ujung) | GRN Kedatangan, Perbaikan, Retur, Order Makloon, Opname, Pendaftaran awal |
+| **Rincian dokumen** baca + aksi ringkas | `DetailModal` (layar penuh di HP) | Transfer, SPK inspeksi, Lot, Pengiriman |
+| **Rincian roll** dari tabel | panel/pop-up roll (`RollJourneyPopup`, `DetailDrawer`) | Jejak roll |
 
 ## 9. Penjaga & baseline
 | ID | Aturan | Penjaga | Mode | Baseline (9 Nov, sesudah FIX-4) |
@@ -133,6 +194,11 @@ label} & `TaskTypeBadge` = **tahap 2** (B4 §3.9). Saringan ≠ status ≠ tab (
 | G-UI-07 | `PaginationBar` tanpa `exportSpec` | `list_no_excel` | ratchet | `ui_list_no_excel.json` |
 | G-UI-07 keras | layar daftar WMS-RFID (matriks B3b) wajib `ExportMenu`/`exportSpec`; pengecualian beralasan | `WMS_LISTS` / `WMS_LIST_EXEMPT` | **keras** | 31 dipasang + 6 beralasan |
 | INV-UI-07 | CSV kolom-layar benar (`;`, BOM, desimal koma) | `verify_list_export.py` | keras | tetap |
+| **G-UI-06** (FIX-8) | lencana buatan sendiri: `status-pill` mentah, `<Pill>`, `<span>` berpil Tailwind (rounded+px+latar+huruf ≤ 12) | `chip_custom` | ratchet | `ui_chip_custom.json` (560; gudang 117 → 93 sebelum baseline) |
+| **G-OUT-01** (FIX-8) | tanggal/jam tanpa formatter WIB | `date_no_wib` | ratchet | `ui_date_no_wib.json` (139; gudang+HP 24 → 0) |
+| **G-OUT-02** (FIX-8) | cadangan label ke id mentah `… \|\| x.id` | `id_fallback` | ratchet | `ui_id_fallback.json` (163; gudang+HP 61 → 5) |
+| **UI-49/50** (FIX-8) | kosong palsu: galat ditelan jadi `[]`, "Belum ada" tanpa penjaga memuat | `empty_false` | ratchet | `ui_empty_false.json` (308) |
+| **G-UI-10** (FIX-8) | satu pager (`KNPager`/`usePagedRows` → `PaginationBar`), `ListControls` tanpa `<input>` sendiri | `single_pattern_problems` | **keras** | lolos |
 
 ```
 PYTHONUTF8=1 python scripts/guardrails/verify_ui_standard.py            # gate
@@ -144,7 +210,10 @@ Ratchet: jumlah per berkas hanya boleh turun; berkas baru = 0; kencangkan dengan
 ## 10. Tahap
 * **Tahap 1 (FIX-4, selesai):** token, kelas baku AA, pengubah tombol, pager & Unduh baku, HP gudang (huruf & sentuh),
   31 daftar WMS-RFID ber-Unduh, guardrail + baseline.
-* **Tahap 2 (sisa):** `StatusBadge`/`TaskTypeBadge`, `EmptyState`, peleburan `KNPager`/`PagedRows`/`ListControls` ke
-  satu versi, pemigrasian 12 px di layar gudang yang disentuh, Unduh di berkas PREP-H (sesudah digabung), dataset antrean
-  periksa gate V2 (butuh keputusan cakupan), tampilan tersimpan (K-B4-12, di luar paket), CSV Pusat Export klasik ke
-  dialek Indonesia, ukur lebar CSS C72 (K-B4-04).
+* **Tahap 2 (FIX-8, 10 Nov 2026, selesai):** `StatusBadge` + kosakata tunggal, `EmptyState` (5 keadaan) di layar
+  WMS-RFID utama, peleburan pager & kotak cari & tab status, waktu WIB, tanpa id mentah, `DocNumber`, pola detail,
+  tampilan tersimpan (K-B4-12) di 3 daftar utama, 4 ratchet baru + 1 cek keras, kontras 67/67.
+* **Sisa (tahap 3):** `TaskTypeBadge`; `StatusPill` (CoreWidgets, 47 berkas non-gudang, menampilkan kode) → StatusBadge;
+  migrasi 12 px di layar gudang (dibekukan ratchet); tampilan tersimpan untuk daftar lain (GRN, PA, tag RFID) + urut
+  server roll (paket performa); Unduh di berkas PREP-H; dataset antrean periksa gate V2; CSV Pusat Export klasik ke
+  dialek Indonesia; ukur lebar CSS C72 (K-B4-04); `DocNumber` & `DetailHeader dangerActions` di layar retur/makloon/PO.

@@ -9,7 +9,7 @@ import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import { formatQty } from "../../../utils/formatters";
 import { errText, lotApi } from "./lotApi";
-import { rollStatusLabel } from "../../wms/inventory/inventoryConstants";
+import { RollStatusBadge } from "../../wms/inventory/inventoryConstants";
 
 // Fase 4 · R3 (L-03) — cangkang pop-up aksi lot dulu `.modal-card` buatan sendiri; kini FormModal baku (layar penuh di
 // HP, Esc berlapis — pop-up ini terbuka DI ATAS rincian lot, latar tidak membuang isian, galat di kaki pop-up).
@@ -64,7 +64,7 @@ export function SplitLotModal({ lot, rolls, onClose, onDone }) {
               <input type="checkbox" checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
               <span className="font-semibold">{r.roll_no}</span>
               <span className="text-[#6B6B73]">{formatQty(r.length_remaining)} {r.unit}</span>
-              <span className="status-pill pill-muted">{rollStatusLabel(r.status)}</span>
+              <RollStatusBadge status={r.status} />
               {r.dye_lot && <span className="text-[#8E8E93]">dye {r.dye_lot}</span>}
               <span className="ml-auto text-[#8E8E93]">grade {r.grade || "—"}</span>
             </label>
@@ -236,7 +236,7 @@ export function ReworkLotModal({ lot, rolls, processOptions, stageOptions, maklo
               <input type="checkbox" checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
               <span className="font-semibold">{r.roll_no}</span>
               <span className="text-[#6B6B73]">{formatQty(r.length_remaining)} {r.unit}</span>
-              <span className="ml-auto status-pill pill-muted">{rollStatusLabel(r.status)}</span>
+              <span className="ml-auto"><RollStatusBadge status={r.status} /></span>
             </label>
           ))}
         </div>
@@ -332,7 +332,7 @@ export function CreateLotModal({ products = [], warehouses = [], sourceOptions, 
           <span className="text-[11px] font-semibold text-[#3C3C43]">Gudang</span>
           <KNSelect data-testid="lot-create-warehouse" className="field" value={form.warehouse_id}
             placeholder="Pilih gudang"
-            options={warehouses.map((w) => ({ value: w.id, label: w.name || w.id }))}
+            options={warehouses.map((w) => ({ value: w.id, label: w.name || w.code || "Gudang tanpa nama" }))}
             onValueChange={(v) => set("warehouse_id", v)} />
         </label>
         <label className="grid gap-1">

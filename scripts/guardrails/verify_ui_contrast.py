@@ -69,6 +69,16 @@ CLASS_RULES: List[Tuple[str, str, str, float]] = [
     (".text-muted", "color", "", 4.5),
     (".kn-pager-info", "color", "", 4.5),
     (".field", "border", "", 3.0),
+    # FIX-8 (tahap 2) — lencana status baku `StatusBadge` (6 nada B4 §3.9) & keadaan daftar `EmptyState`.
+    (".kn-badge.tone-neutral", "color", "background", 4.5),
+    (".kn-badge.tone-info", "color", "background", 4.5),
+    (".kn-badge.tone-success", "color", "background", 4.5),
+    (".kn-badge.tone-warning", "color", "background", 4.5),
+    (".kn-badge.tone-danger", "color", "background", 4.5),
+    (".kn-badge.tone-special", "color", "background", 4.5),
+    (".kn-docno-pt", "color", "background", 4.5),
+    (".kn-empty-text", "color", "", 4.5),
+    (".kn-views-head", "color", "", 4.5),
 ]
 
 

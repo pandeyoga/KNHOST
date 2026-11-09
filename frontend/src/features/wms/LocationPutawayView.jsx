@@ -42,7 +42,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
   const [owners, setOwners] = useState([]);
   useEffect(() => {
     axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
-      .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
+      .map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || "PT tanpa nama" })))).catch(() => setOwners([]));
   }, []);
   const isSup = roleIs(currentUser?.role, SUPERVISORS);   // FE-04 — sama dengan placement_rules.is_supervisor (kenal peran acuan)
 

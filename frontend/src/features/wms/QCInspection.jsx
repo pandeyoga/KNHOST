@@ -218,8 +218,8 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
                 <div key={t.id} data-testid={`qc-task-row-${i}`}
                      className="grid grid-cols-[1.6fr_1fr_120px_120px] items-center px-3 py-2.5 border-t border-[#F4F5F7]">
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold truncate">{t.product_name || t.product_id}</p>
-                    <p className="text-[10.5px] text-[#9A9BA3]">{t.sku} · {t.warehouse_name || t.warehouse_id}</p>
+                    <p className="text-[12.5px] font-semibold truncate">{t.product_name || t.sku || "Produk tanpa nama"}</p>
+                    <p className="text-[10.5px] text-[#9A9BA3]">{t.sku} · {t.warehouse_name || "Gudang tanpa nama"}</p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold text-[#0058CC] truncate">{t.po_number || "—"}</p>

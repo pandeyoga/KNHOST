@@ -14,8 +14,8 @@ function load() {
       axios.get(`${API}/product-templates`).then((r) => (Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => []),
     ]).then(([ents, tpls]) => {
       cache = {
-        owners: ents.map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })),
-        templates: tpls.map((t) => ({ value: t.id, label: t.name || t.code || t.id })),
+        owners: ents.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || "PT tanpa nama" })),
+        templates: tpls.map((t) => ({ value: t.id, label: t.name || t.code || "Templat tanpa nama" })),
       };
       return cache;
     }).finally(() => { pending = null; });

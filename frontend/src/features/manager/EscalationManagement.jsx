@@ -7,7 +7,7 @@ import { notifySuccess } from "../../utils/feedback";
 import { PageHeader } from "../../components/ListPageParts";
 import FilterChips from "../../components/FilterChips";
 import FormModal from "../../components/FormModal";
-import { formatQty } from "../../utils/formatters";
+import { formatDateTime, formatQty } from "../../utils/formatters";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 /**
@@ -205,7 +205,7 @@ export default function ManagerEscalationDashboard({ user }) {
                 <div data-testid={`escalation-hanging-${task.id}`} className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3 text-sm">
                   <p className="font-semibold text-amber-800">Penyelesaian terhenti di tengah</p>
                   <p className="text-amber-700 text-xs mt-1">
-                    Diklaim {task.escalation.resolving_at ? new Date(task.escalation.resolving_at).toLocaleString("id-ID") : "—"} tetapi
+                    Diklaim {task.escalation.resolving_at ? formatDateTime(task.escalation.resolving_at) : "—"} tetapi
                     tidak pernah selesai (proses mati / koneksi putus). Roll mungkin sudah dilepas sebagian — periksa
                     stok pesanan sebelum membuka kembali.
                   </p>
@@ -232,7 +232,7 @@ export default function ManagerEscalationDashboard({ user }) {
                   <p className="font-semibold text-red-700 mb-1">Alasan:</p>
                   <p className="text-red-600">{task.escalation.reason}</p>
                   <p className="text-[#3C3C43] text-xs mt-2">
-                    Escalated by: {task.escalation.escalated_by} | {new Date(task.escalation.escalated_at).toLocaleString('id-ID')}
+                    Escalated by: {task.escalation.escalated_by} | {formatDateTime(task.escalation.escalated_at)}
                   </p>
                 </div>
               )}
@@ -315,7 +315,7 @@ export default function ManagerEscalationDashboard({ user }) {
                 <p className="text-sm font-semibold text-red-700">Alasan Eskalasi:</p>
                 <p className="text-sm text-red-600 mt-1">{selectedTask.escalation.reason}</p>
                 <p className="text-xs text-[#3C3C43] mt-2">
-                  By: {selectedTask.escalation.escalated_by} on {new Date(selectedTask.escalation.escalated_at).toLocaleString('id-ID')}
+                  By: {selectedTask.escalation.escalated_by} on {formatDateTime(selectedTask.escalation.escalated_at)}
                 </p>
               </div>
             )}

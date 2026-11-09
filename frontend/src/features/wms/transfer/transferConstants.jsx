@@ -1,22 +1,9 @@
-/** transferConstants — status badge map + StatusBadge component for transfers. */
-import { docStatusLabel } from "../../../utils/docStatus";
+/** transferConstants — status transfer (label dari kosakata tunggal) + lencana status transfer. */
+import BaseStatusBadge from "../../../components/StatusBadge";
+import { statusLabel as vocabLabel } from "../../../utils/statusVocab";
 
-const STATUS_MAP = {
-  draft: { label: "Draf", className: "bg-gray-200 text-gray-700" },
-  waiting_approval: { label: "Menunggu Persetujuan", className: "bg-yellow-100 text-yellow-700" },
-  approved: { label: "Disetujui", className: "bg-blue-100 text-blue-700" },
-  picking: { label: "Pengambilan", className: "bg-purple-100 text-purple-700" },
-  staging: { label: "Disiapkan", className: "bg-indigo-100 text-indigo-700" },
-  dispatched: { label: "Dalam Perjalanan", className: "bg-orange-100 text-orange-700" },
-  partially_received: { label: "Diterima Sebagian", className: "bg-amber-100 text-amber-800" },
-  completed: { label: "Selesai", className: "bg-green-100 text-green-700" },
-  // FIX-3a (B2a FLW-IN-10, D10) — 0 roll diterima, semua kembali ke gudang asal (selaras Putaway Order).
-  returned: { label: "Dikembalikan", className: "bg-gray-200 text-gray-700" },
-  // FIX-3b (B2b FLW-OUT-11, K-B2b-03) — dibatalkan saat barang di jalan: roll tetap "di jalan" sampai diterima di asal.
-  returning: { label: "Batal — kembali ke asal", className: "bg-orange-100 text-orange-800" },
-  rejected: { label: "Ditolak", className: "bg-red-100 text-red-700" },
-  cancelled: { label: "Dibatalkan", className: "bg-gray-300 text-gray-600" },
-};
+// FIX-8 (KN_37 §8) — label status transfer dipindah ke `utils/statusVocab.js` (ranah "transfer"; istilah sama persis:
+// FIX-3a "Dikembalikan", FIX-3b "Batal — kembali ke asal", D-16 "Ditolak").
 
 // Saringan status di daftar transfer (D-16: satu daftar untuk antar gudang & antar PT; "Ditolak" dulu hanya
 // ada di daftar antar-PT).
@@ -25,7 +12,7 @@ export const TRANSFER_STATUS_FILTERS = [
 ];
 
 export function statusLabel(status) {
-  return STATUS_MAP[status]?.label || docStatusLabel(status) || "—";
+  return vocabLabel(status, "transfer");
 }
 
 // P03 — status aktual per roll di penerimaan transfer
@@ -34,11 +21,7 @@ export const STATE_TXT = {
   returned: "Kembali ke asal", waiting_dispatch: "Belum dikirim", legacy_completed: "Selesai (data lama)", released: "Dilepas",
 };
 
+/** Lencana status transfer = `StatusBadge` baku (ikon + teks + warna token; dulu pil Tailwind 12 px tanpa ikon). */
 export function StatusBadge({ status }) {
-  const badge = STATUS_MAP[status] || { label: docStatusLabel(status) || "—", className: "bg-gray-200 text-gray-700" };
-  return (
-    <span data-testid="transfer-status-badge" className={`rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}>
-      {badge.label}
-    </span>
-  );
+  return <BaseStatusBadge status={status} domain="transfer" testId="transfer-status-badge" />;
 }
