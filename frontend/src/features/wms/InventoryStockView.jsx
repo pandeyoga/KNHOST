@@ -7,6 +7,7 @@
  *
  * Sub-components live in ./inventory/ (kept under file-size limits per KN_02).
  */
+import FilterChips from "../../components/FilterChips";   // saklar tampilan roll baku
 import { useEffect, useState, useMemo } from "react";
 import { BarChart2, Plus, History, RefreshCw, MapPin, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
 import { parseDecimal } from "../../utils/decimalInput";
@@ -429,15 +430,11 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
           </div>
           <SavedViewsMenu sv={rollSv} testId="roll-views" columns={rollView === "list" || pegOnly ? ROLL_OPTIONAL_COLUMNS : []}
             hidden={hiddenCols} onColumnsChange={setHiddenCols} shareRoles={ROLE_OPTIONS} shareEntities={shareEntities} />
-          <div className="ml-auto flex items-center gap-1" role="group" aria-label="Tampilan roll" data-testid="roll-view-toggle">
-            {[["group", "Kelompok"], ["list", "Daftar"]].map(([k, label]) => (
-              <button key={k} type="button" onClick={() => chooseRollView(k)} data-testid={`roll-view-${k}`}
-                aria-pressed={rollView === k} className={rollView === k ? "primary-button btn-sm" : "secondary-button btn-sm"}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {rollView === "list" && <span className="text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.total || 0} roll</span>}
+          {/* Integrasi FIX-5 × FIX-8 — saklar tampilan memakai FilterChips baku (dulu tombol primary/secondary buatan
+              sendiri, G-UI page_tabs); jumlah tidak tampil "0 roll" selama memuat (UI-50). */}
+          <FilterChips className="ml-auto" ariaLabel="Tampilan roll" testId="roll-view-toggle" chipTestId={(k) => `roll-view-${k}`}
+            value={rollView} onChange={chooseRollView} options={[{ key: "group", label: "Kelompok" }, { key: "list", label: "Daftar" }]} />
+          {rollView === "list" && <span className="text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.loading && !rollsPaged.total ? "Memuat…" : `${rollsPaged.total || 0} roll`}</span>}
         </div>
       )}
 
