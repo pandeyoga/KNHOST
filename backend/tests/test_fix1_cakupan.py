@@ -10,7 +10,7 @@ Uji HTTP terhadap server hidup (stack sementara / salinan DB data acuan 8 Nov). 
                  (`X-Location-Scope`); petugas berpagar tidak bisa melebar.
   * B1 K-B1-10 — penanda data uji `is_test` menyembunyikan gudang/PT dari pemilih & daftar bawaan.
   * G-SCOPE-01 (B3b §8) — sapuan otomatis endpoint `GET …/{id}` WMS-RFID dengan id milik PT/lokasi lain → 403/404.
-Pelaksana: `cd /app/backend && python -m pytest -q -p no:cacheprovider -n0 tests/test_fix1_cakupan.py`.
+Pelaksana: `cd /app/backend && KN_DEMO_PW=<sandi demo> python -m pytest -q -p no:cacheprovider -n0 tests/test_fix1_cakupan.py`.
 """
 import os
 import re
@@ -21,7 +21,10 @@ from pymongo import MongoClient
 
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001").rstrip("/")
 API = f"{BASE}/api"
-PW = "demo12345"
+# Sandi akun demo TIDAK ditulis di berkas ini (aturan paket): diambil dari lingkungan (`KN_DEMO_PW`).
+PW = os.environ.get("KN_DEMO_PW", "")
+if not PW:
+    pytest.skip("set KN_DEMO_PW (sandi akun demo data acuan) untuk menjalankan uji FIX-1", allow_module_level=True)
 ACC = {
     "admin": "admin@kainnusantara.id", "soreang": "warehouse.soreang@kainnusantara.id",
     "rcm": "warehouse.rancamalang@kainnusantara.id", "jkt": "warehouse@kainnusantara.id",
@@ -308,3 +311,41 @@ def test_g_scope_01_sweep_get_by_id(tok, db):
             leaks.append(f"{path} → {r.status_code}")
     assert len(checked) >= 10, f"sapuan terlalu sedikit: {checked}"
     assert not leaks, "endpoint /{id} membuka dokumen PT/lokasi lain:\n" + "\n".join(leaks)
+
+
+# ─── B1b UI-44 — sesi: Bearer diutamakan, logout & login mencabut sesi lama ────
+def _fresh_token(email):
+    return requests.post(f"{API}/auth/login", json={"email": email, "password": PW}, timeout=30).json()["token"]
+
+
+class TestUi44Session:
+    def test_bearer_wins_over_stale_cookie(self, tok):
+        old = _fresh_token(ACC["admin"])
+        me = requests.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {tok['jkt']}"},
+                          cookies={"session_token": old}, timeout=30)
+        assert me.status_code == 200 and me.json()["email"] == ACC["jkt"], "cookie sesi lama mengalahkan Bearer akun baru"
+
+    def test_logout_revokes_bearer_and_cookie(self):
+        a, b = _fresh_token(ACC["admin"]), _fresh_token(ACC["jkt"])
+        r = requests.post(f"{API}/auth/logout", headers={"Authorization": f"Bearer {b}"}, cookies={"session_token": a}, timeout=30)
+        assert r.status_code == 200
+        for t in (a, b):
+            assert requests.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {t}"}, timeout=30).status_code == 401
+
+    def test_login_revokes_previous_cookie_session(self):
+        old = _fresh_token(ACC["admin"])
+        r = requests.post(f"{API}/auth/login", json={"email": ACC["jkt"], "password": PW}, cookies={"session_token": old}, timeout=30)
+        assert r.status_code == 200
+        assert requests.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {old}"}, timeout=30).status_code == 401
+
+
+# ─── B1b UI-56 / UI-47 — data & menu mengikuti izin ────────────────────────────
+def test_ui56_driver_cannot_read_so_tracker(tok):
+    r = requests.get(f"{API}/desks/so-tracker", params={"desk": "me"}, headers=H(tok["driver"]), timeout=30)
+    assert r.status_code == 403, f"sopir membaca pelacak SO (nilai Rupiah): {r.status_code}"
+
+
+def test_ui47_logistics_menu_follows_logistics_permission(tok):
+    me = requests.get(f"{API}/auth/me", headers=H(tok["whadmin"]), timeout=30).json()
+    assert (me.get("view_resources") or {}).get("logistics") == ["logistics"], \
+        f"menu Pengiriman terbuka lewat izin lain: {(me.get('view_resources') or {}).get('logistics')}"
