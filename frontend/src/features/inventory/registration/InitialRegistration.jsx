@@ -15,6 +15,7 @@ import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
 import { EPC_OPTIONS, FREEZE_OPTIONS, STATUS_LABEL, STATUS_TONE, regApi, scopeOptions } from "./registrationApi";
 import RegistrationDetail from "./RegistrationDetail";
+import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const EMPTY = { warehouse_id: "", name: "", notes: "", freeze_mode: "zone", epc_mode: "read", node_ids: [] };
 
@@ -66,6 +67,8 @@ export default function InitialRegistration({ warehouses = [] }) {
           <h2>Daftar ulang stok dari fisik (roll + tag lahir bersamaan)</h2>
         </div>
         <div className="flex items-center gap-2">
+          <ExportMenu dataset="cycle_count_sessions" label="pendaftaran-awal" scope="work" testId="reg-export"
+            filters={[["mode", "eq", "registration"]]} sort={[{ key: "created_at", dir: "desc" }]} />
           <button className="primary-button" data-testid="reg-new" onClick={() => { setCreating(true); setFormErr(""); }}><Plus size={13} /> Sesi baru</button>
           <button className="secondary-button" data-testid="reg-refresh" onClick={load} aria-label="Muat ulang"><RefreshCw size={13} className={loading ? "animate-spin" : ""} /></button>
         </div>

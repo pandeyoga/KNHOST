@@ -18,6 +18,7 @@ import ScanLabelStatsCard from "./inbound/ScanLabelStatsCard";
 import { askReason, askText } from "../../services/confirmService";
 import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 function MiniBar({ pct, status }) {
   const color = status === 'completed' ? 'bg-[#34C759]' : status === 'escalated' ? 'bg-red-400' : 'bg-[#007AFF]';
@@ -353,6 +354,9 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           </button>
         ))}
         <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{shownTasks.length} tugas</span>
+        <ExportMenu dataset="wms_tasks" label="tugas-barang-masuk" scope="work" testId="inbound-export"
+          filters={[["flow_type", "eq", "inbound"], ["source_type", "eq", "purchase_order"],
+            filterStatus !== "all" && ["status", "eq", filterStatus]]} sort={[{ key: "created_at", dir: "desc" }]} />
       </div>
 
       {/* 2-panel layout */}

@@ -26,7 +26,7 @@ export function ReprintRollButton({ task }) {
     try { const { data } = await axios.get(`${API}/rfid/lookup`, { params: { code: task.roll_id } }); if (data?.roll) await reprintRollLabel(data.roll, data.product_name || task.product_name); }
     catch (_) { /* roll belum ada / tidak ditemukan */ } finally { setBusy(false); }
   };
-  return <button className="secondary-button w-full py-2 flex items-center justify-center gap-2" disabled={busy} onClick={go} data-testid={`mw-reprint-${task.id}`}><Printer size={14} /> Cetak ulang label QR roll</button>;
+  return <button className="secondary-button btn-touch w-full" disabled={busy} onClick={go} data-testid={`mw-reprint-${task.id}`}><Printer size={18} /> Cetak ulang label QR roll</button>;
 }
 
 /** Aksi tugas gudang di mobile (Tahap 2): satu tombol besar per langkah, hasil = ikon + teks. */
@@ -101,7 +101,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
   };
   if (isGrn(task.entity_id) && !task.legacy_in_flight) {
     return (
-      <a data-testid={`mw-inbound-grn-${task.id}`} href="?view=goods-receipts" className="mt-2 block rounded-lg border border-[#BFE5DC] bg-[#F0FAF7] p-3 text-[12px] font-semibold text-[#0F766E]">
+      <a data-testid={`mw-inbound-grn-${task.id}`} href="?view=goods-receipts" className="mt-2 block min-h-touch rounded-lg border border-kn-divider bg-kn-success-soft p-3 text-fs-14 font-semibold text-kn-success-text">
         Penerimaan memakai Kedatangan Barang — buka layar Kedatangan untuk foto surat jalan & hitung fisik.
       </a>
     );
@@ -109,7 +109,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
   if (!RECEIVABLE.includes(task.status)) {
     return (
       <div className="mt-2 space-y-2" data-testid={`mw-inbound-actions-${task.id}`}>
-        <div className="notice-bar text-xs" data-testid={`mw-inbound-locked-${task.id}`}>
+        <div className="notice-bar text-fs-14" data-testid={`mw-inbound-locked-${task.id}`}>
           {task.status === "escalated" ? "Menunggu keputusan manajer atas eskalasi — belum bisa menerima barang."
             : "Barang tugas ini sudah masuk stok/karantina (keputusan QC di layar QC) — tidak ada aksi terima di sini."}
         </div>
@@ -124,24 +124,24 @@ export function InboundActions({ task, onDone, onCompleted }) {
         <div className="space-y-2">
           <ReceiveUomPanel uom={uom} docUom={f.doc_uom} docQty={f.doc_qty}
             onUomChange={(v) => set("doc_uom", v)} onQtyChange={(v) => set("doc_qty", v)} disabled={busy} />
-          <button type="button" className="text-xs font-semibold text-[#0058CC]" onClick={() => setMore((x) => !x)} data-testid={`mw-receive-more-${task.id}`}>
+          <button type="button" className="ghost-button btn-touch w-full justify-start text-kn-action" onClick={() => setMore((x) => !x)} data-testid={`mw-receive-more-${task.id}`}>
             {more ? "Sembunyikan" : "Batch, lot, dye lot, grade, Roll ID, bin"}
           </button>
           {more && (
             <div className="grid grid-cols-2 gap-2">
-              <input className="rounded-lg border p-2" placeholder="Batch" value={f.batch} onChange={(e) => set("batch", e.target.value)} data-testid={`mw-batch-${task.id}`} />
-              <input className="rounded-lg border p-2" placeholder="Lot" value={f.lot} onChange={(e) => set("lot", e.target.value)} data-testid={`mw-lot-in-${task.id}`} />
-              <input className="rounded-lg border p-2" placeholder="Dye lot" value={f.dye_lot} onChange={(e) => set("dye_lot", e.target.value)} data-testid={`mw-dye-in-${task.id}`} />
-              <KNSelect className="rounded-lg border p-2 bg-white text-left" value={f.grade} onValueChange={(v) => set("grade", v)} options={enumOptions("grade")} data-testid={`mw-grade-${task.id}`} />
-              <input className="rounded-lg border p-2" placeholder="Roll ID" value={f.roll_id} onChange={(e) => set("roll_id", e.target.value)} data-testid={`mw-rollid-${task.id}`} />
-              <BinSelect className="rounded-lg border p-2 bg-white text-left" warehouseId={task.warehouse_id} value={f.bin_id} onChange={(v) => set("bin_id", v)} data-testid={`mw-bin-${task.id}`} />
+              <input className="kn-input-touch" placeholder="Batch" value={f.batch} onChange={(e) => set("batch", e.target.value)} data-testid={`mw-batch-${task.id}`} />
+              <input className="kn-input-touch" placeholder="Lot" value={f.lot} onChange={(e) => set("lot", e.target.value)} data-testid={`mw-lot-in-${task.id}`} />
+              <input className="kn-input-touch" placeholder="Dye lot" value={f.dye_lot} onChange={(e) => set("dye_lot", e.target.value)} data-testid={`mw-dye-in-${task.id}`} />
+              <KNSelect className="kn-input-touch text-left" value={f.grade} onValueChange={(v) => set("grade", v)} options={enumOptions("grade")} data-testid={`mw-grade-${task.id}`} />
+              <input className="kn-input-touch" placeholder="Roll ID" value={f.roll_id} onChange={(e) => set("roll_id", e.target.value)} data-testid={`mw-rollid-${task.id}`} />
+              <BinSelect className="kn-input-touch text-left" warehouseId={task.warehouse_id} value={f.bin_id} onChange={(v) => set("bin_id", v)} data-testid={`mw-bin-${task.id}`} />
             </div>
           )}
-          <button className="primary-button w-full py-3" disabled={busy || !qtyOk} onClick={receive} data-testid={`mw-receive-btn-${task.id}`}>Terima</button>
+          <button className="primary-button btn-touch btn-primary-cta w-full" disabled={busy || !qtyOk} onClick={receive} data-testid={`mw-receive-btn-${task.id}`}>Terima</button>
         </div>
       )}
       {canComplete && (
-        <button className="secondary-button w-full py-3" disabled={busy} onClick={openComplete} data-testid={`mw-complete-btn-${task.id}`}>{busy ? <Loader2 size={14} className="animate-spin inline" /> : null} Selesai (rincian roll → masuk stok)</button>
+        <button className="secondary-button btn-touch w-full" disabled={busy} onClick={openComplete} data-testid={`mw-complete-btn-${task.id}`}>{busy ? <Loader2 size={14} className="animate-spin inline" /> : null} Selesai (rincian roll → masuk stok)</button>
       )}
       {gr && (
         <GRCatchWeightModal task={task} product={gr.product} rolls={gr.rolls} setRolls={(rs) => setGr((g) => ({ ...g, rolls: rs }))}
@@ -179,7 +179,7 @@ export function OutboundActions({ task, onDone }) {
   if (task.status === "escalated") {
     return (
       <div className="mt-2 space-y-2" data-testid={`mw-outbound-actions-${task.id}`}>
-        <div className="notice-bar text-xs" data-testid={`mw-outbound-escalated-${task.id}`}>Menunggu keputusan supervisor atas eskalasi — belum bisa diambil/dikirim.</div>
+        <div className="notice-bar text-fs-14" data-testid={`mw-outbound-escalated-${task.id}`}>Menunggu keputusan supervisor atas eskalasi — belum bisa diambil/dikirim.</div>
       </div>
     );
   }
@@ -191,26 +191,26 @@ export function OutboundActions({ task, onDone }) {
           <PickListPanel task={task} onPick={(no) => { setEmergency(false); setCode(no); }} />
           {!emergency ? (
             <div className="flex gap-2">
-              <input className="flex-1 rounded-lg border p-3 text-lg" value={code} placeholder="Pindai label/QR/RFID atau ketik no. roll"
+              <input className="kn-input-touch min-h-touch-primary flex-1" value={code} placeholder="Pindai label/QR/RFID atau ketik no. roll"
                 onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && code.trim()) pick(); }}
                 data-testid={`mw-pick-code-${task.id}`} />
-              <button className="primary-button px-4" disabled={busy || !code.trim()} onClick={pick} data-testid={`mw-pick-btn-${task.id}`}>Ambil</button>
+              <button className="primary-button btn-touch btn-primary-cta" disabled={busy || !code.trim()} onClick={pick} data-testid={`mw-pick-btn-${task.id}`}>Ambil</button>
             </div>
           ) : (
-            <div className="rounded-lg border border-[#F5C26B] bg-[#FFF8E6] p-2 space-y-2" data-testid={`mw-pick-emergency-${task.id}`}>
-              <div className="text-xs text-[#7A5600]">Jalur darurat (izin supervisor): qty tanpa pindai roll — tercatat beserta alasan.</div>
-              <input type="text" inputMode="decimal" className="w-full rounded-lg border p-3 text-lg" value={qty} placeholder={`Hitung ambil (${task.unit || "qty"})`} onChange={(e) => setQty(e.target.value)} data-testid={`mw-pick-qty-${task.id}`} />
-              <input className="w-full rounded-lg border p-2" value={reason} placeholder="Alasan (min. 5 huruf), mis. label rusak & scanner mati" onChange={(e) => setReason(e.target.value)} data-testid={`mw-pick-reason-${task.id}`} />
-              <button className="primary-button w-full py-2" disabled={busy || !(parseDecimal(qty) > 0) || !reasonOk} onClick={pick} data-testid={`mw-pick-emergency-btn-${task.id}`}>Ambil (darurat)</button>
+            <div className="rounded-lg border border-kn-field-border bg-kn-warning-soft p-2 space-y-2" data-testid={`mw-pick-emergency-${task.id}`}>
+              <div className="text-fs-14 text-kn-warning-text">Jalur darurat (izin supervisor): qty tanpa pindai roll — tercatat beserta alasan.</div>
+              <input type="text" inputMode="decimal" className="kn-input-touch" value={qty} placeholder={`Hitung ambil (${task.unit || "qty"})`} onChange={(e) => setQty(e.target.value)} data-testid={`mw-pick-qty-${task.id}`} />
+              <input className="kn-input-touch" value={reason} placeholder="Alasan (min. 5 huruf), mis. label rusak & scanner mati" onChange={(e) => setReason(e.target.value)} data-testid={`mw-pick-reason-${task.id}`} />
+              <button className="primary-button btn-touch w-full" disabled={busy || !(parseDecimal(qty) > 0) || !reasonOk} onClick={pick} data-testid={`mw-pick-emergency-btn-${task.id}`}>Ambil (darurat)</button>
             </div>
           )}
-          <button type="button" className="text-xs font-semibold text-[#8C4A00]" onClick={() => setEmergency((x) => !x)} data-testid={`mw-pick-emergency-toggle-${task.id}`}>
+          <button type="button" className="ghost-button btn-touch w-full justify-start text-kn-warning-text" onClick={() => setEmergency((x) => !x)} data-testid={`mw-pick-emergency-toggle-${task.id}`}>
             {emergency ? "Kembali ke pindai roll" : "Tidak bisa memindai? Jalur darurat supervisor"}
           </button>
         </div>
       )}
       {SHIPPABLE.includes(task.status) && picked - shipped > 0.001 && (
-        <button className="secondary-button w-full py-3" disabled={busy} onClick={dispatch} data-testid={`mw-dispatch-btn-${task.id}`}>Berangkatkan</button>
+        <button className="secondary-button btn-touch w-full" disabled={busy} onClick={dispatch} data-testid={`mw-dispatch-btn-${task.id}`}>Berangkatkan</button>
       )}
       <ReprintRollButton task={task} />
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"}`} data-testid={`mw-action-msg-${task.id}`}>{msg.text}</div>}
@@ -225,7 +225,7 @@ export function SampleCutActions({ task, onCut, onDone }) {
   if (Number(task.picked_qty || 0) > 0 || !["pending", "created", "picking"].includes(task.status)) {
     return (
       <div className="mt-2 space-y-2" data-testid={`mw-sample-actions-${task.id}`}>
-        <div className="text-xs text-[#126E2C] font-semibold">Dipotong dari {task.parent_roll_no} → {task.child_roll_no} · {task.picked_qty} {task.unit}</div>
+        <div className="text-fs-14 text-kn-success-text font-semibold">Dipotong dari {task.parent_roll_no} → {task.child_roll_no} · {task.picked_qty} {task.unit}</div>
         <OutboundActions task={task} onDone={onDone} />
       </div>
     );
@@ -242,15 +242,15 @@ export function SampleCutActions({ task, onCut, onDone }) {
   };
   return (
     <div className="mt-2 space-y-2" data-testid={`mw-sample-actions-${task.id}`}>
-      <div className="text-xs text-[#6E6E73]">Untuk {task.customer_name} · diminta {task.quantity} {task.unit} · saran FIFO: <b>{task.suggested_roll_no || "tidak ada"}</b></div>
-      <label className="block text-xs">Panjang aktual dipotong ({task.unit})
-        <input type="number" step="0.1" className="w-full rounded-lg border p-3 text-lg" value={length} onChange={(e) => setLength(e.target.value)} data-testid={`mw-sample-length-${task.id}`} /></label>
-      {task.suggested_roll_id && <button className="primary-button w-full py-3" disabled={busy} onClick={() => cut(true)} data-testid={`mw-sample-cut-suggested-${task.id}`}>Potong roll saran ({task.suggested_roll_no})</button>}
+      <div className="kn-hp-info">Untuk {task.customer_name} · diminta {task.quantity} {task.unit} · saran FIFO: <b>{task.suggested_roll_no || "tidak ada"}</b></div>
+      <label className="block kn-hp-support">Panjang aktual dipotong ({task.unit})
+        <input type="number" step="0.1" className="kn-input-touch" value={length} onChange={(e) => setLength(e.target.value)} data-testid={`mw-sample-length-${task.id}`} /></label>
+      {task.suggested_roll_id && <button className="primary-button btn-touch btn-primary-cta w-full" disabled={busy} onClick={() => cut(true)} data-testid={`mw-sample-cut-suggested-${task.id}`}>Potong roll saran ({task.suggested_roll_no})</button>}
       <div className="rounded-lg border p-2 space-y-2">
-        <div className="text-xs">Roll lain (pindai EPC / QR atau ketik nomor roll) — wajib alasan bila bukan saran:</div>
-        <input className="w-full rounded-lg border p-2" placeholder="EPC tag / nomor roll" value={epc} onChange={(e) => setEpc(e.target.value)} data-testid={`mw-sample-epc-${task.id}`} />
-        <input className="w-full rounded-lg border p-2" placeholder="Alasan (mis. roll saran tidak ditemukan)" value={reason} onChange={(e) => setReason(e.target.value)} data-testid={`mw-sample-reason-${task.id}`} />
-        <button className="secondary-button w-full py-2" disabled={busy || !epc} onClick={() => cut(false)} data-testid={`mw-sample-cut-other-${task.id}`}>Potong roll ini</button>
+        <div className="kn-hp-support">Roll lain (pindai EPC / QR atau ketik nomor roll) — wajib alasan bila bukan saran:</div>
+        <input className="kn-input-touch" placeholder="EPC tag / nomor roll" value={epc} onChange={(e) => setEpc(e.target.value)} data-testid={`mw-sample-epc-${task.id}`} />
+        <input className="kn-input-touch" placeholder="Alasan (mis. roll saran tidak ditemukan)" value={reason} onChange={(e) => setReason(e.target.value)} data-testid={`mw-sample-reason-${task.id}`} />
+        <button className="secondary-button btn-touch w-full" disabled={busy || !epc} onClick={() => cut(false)} data-testid={`mw-sample-cut-other-${task.id}`}>Potong roll ini</button>
       </div>
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"}`} data-testid={`mw-action-msg-${task.id}`}>{msg.text}</div>}
     </div>

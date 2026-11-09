@@ -17,6 +17,9 @@
  *        fetchAll: async ({onProgress, isCancelled}) => semua baris hasil filter
  *        filename: dasar nama berkas, mis. "retur-jual"
  *      }
+ *  - exportSpec (FIX-4, Standar UI Gudang v1 · K-B4-07) → tombol baku "Unduh ▾" (`ExportMenu`): Excel (.xlsx,
+ *      bawaan) lewat Pusat Export + CSV. Isinya props ExportMenu: { dataset, label, scope, filters, search, sort, … }.
+ *      Bila `exportConfig` juga ada, butir CSV memakai CSV kolom-layar di atas (INV-UI-07) — satu menu, dua format.
  *
  * KENAPA UNDUH DIPASANG DI SINI, BUKAN DI 12 LAYAR (FASE P6)
  * =========================================================
@@ -45,6 +48,7 @@ import { askChoice } from "../services/confirmService";
 import { notifySuccess } from "../utils/feedback";
 import { apiErrorText } from "../utils/apiError";
 import { buildCsv, csvFilename, downloadCsv } from "../utils/csvExport";
+import ExportMenu from "./ExportMenu";
 
 export default function PaginationBar({
   page = 1,
@@ -61,6 +65,7 @@ export default function PaginationBar({
   pageSizeOptions = [20, 50, 100],
   label = "data",
   exportConfig = null,
+  exportSpec = null,
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   // UAT 24 Okt (audit UI tahap 2) — G0-19: ukuran halaman aktif di luar `pageSizeOptions` (mis. 25 di Inspeksi)
@@ -135,49 +140,50 @@ export default function PaginationBar({
 
   return (
     <>
-      <div
-        data-testid={`${testId}-bar`}
-        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#EFF0F2] bg-white px-3 py-2"
-      >
-        <span data-testid={`${testId}-info`} className="text-[11.5px] text-[#6B6B73] tabular-nums">
+      {/* FIX-4 (Standar UI Gudang v1 §4) — pager memakai kelas baku `kn-pager*` (huruf ≥ 12 px, warna token, tombol
+          ≥ 24 px) — dulu 10,5–11,5 px dengan hex lepas. Testid lama dipertahankan. */}
+      <div data-testid={`${testId}-bar`} className="kn-pager">
+        <span data-testid={`${testId}-info`} className="kn-pager-info">
           {total === 0 ? `Tidak ada ${label}` : (
-            <>Menampilkan <strong className="text-[#1C1C1E]">{from}–{to}</strong> dari <strong className="text-[#1C1C1E]">{total}</strong> {label}</>
+            <>Menampilkan <strong>{from}–{to}</strong> dari <strong>{total}</strong> {label}</>
           )}
         </span>
 
         <div className="flex flex-wrap items-center gap-2">
-          {exportConfig && (
+          {exportSpec ? (
+            <ExportMenu {...exportSpec} label={exportSpec.label || label} testId={`${testId}-export`}
+              disabled={loading || exporting || total === 0}
+              legacyCsv={exportConfig ? handleExport : null} />
+          ) : exportConfig && (
             <button
               type="button"
               data-testid={`${testId}-export`}
               onClick={handleExport}
               disabled={loading || exporting || total === 0}
               title={`Unduh ${label} sebagai berkas CSV (mengikuti filter & pencarian aktif)`}
-              className="inline-flex items-center gap-1 rounded-md border border-[#E5E5EA] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#3C3C43] hover:border-[#007AFF] hover:text-[#0058CC] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="secondary-button btn-sm"
             >
               {exporting
-                ? <><Loader2 size={13} className="animate-spin" />
+                ? <><Loader2 size={14} className="animate-spin" />
                     {progress
                       ? `Menyiapkan ${progress.done}/${progress.total}…`
                       : "Menyiapkan…"}</>
-                : <><Download size={13} /> Unduh CSV</>}
+                : <><Download size={14} /> Unduh CSV</>}
             </button>
           )}
 
           {onPageSize && (
             <div className="flex items-center gap-1" data-testid={`${testId}-sizes`}>
-              <span className="text-[10.5px] text-[#8E8E93] mr-1">Per halaman</span>
+              <span className="kn-pager-label">Per halaman</span>
               {sizeOptions.map((sz) => (
                 <button
                   key={sz}
+                  type="button"
                   data-testid={`${testId}-size-${sz}`}
                   onClick={() => onPageSize(sz)}
                   disabled={loading}
-                  className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
-                    Number(pageSize) === sz
-                      ? "bg-[#007AFF] text-white"
-                      : "bg-white border border-[#E5E5EA] text-[#6B6B73] hover:border-[#007AFF]"
-                  }`}
+                  aria-pressed={Number(pageSize) === sz}
+                  className={`kn-pager-btn${Number(pageSize) === sz ? " is-active" : ""}`}
                 >
                   {sz}
                 </button>
@@ -188,43 +194,49 @@ export default function PaginationBar({
           <div className="flex items-center gap-1">
             {onFirst && (
               <button
+                type="button"
                 data-testid={`${testId}-first`}
                 onClick={onFirst}
                 disabled={page <= 1 || loading}
                 title="Halaman pertama"
-                className="inline-flex items-center rounded-md border border-[#E5E5EA] bg-white px-2 py-1 text-[#3C3C43] hover:bg-[#F2F2F7] disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Halaman pertama"
+                className="kn-pager-btn"
               >
-                <ChevronsLeft size={13} />
+                <ChevronsLeft size={14} />
               </button>
             )}
             <button
+              type="button"
               data-testid={`${testId}-prev`}
               onClick={onPrev}
               disabled={page <= 1 || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-[#E5E5EA] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#3C3C43] hover:bg-[#F2F2F7] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="kn-pager-btn"
             >
-              <ChevronLeft size={13} /> Sebelumnya
+              <ChevronLeft size={14} /> Sebelumnya
             </button>
-            <span data-testid={`${testId}-page`} className="px-2 text-[11.5px] font-semibold text-[#6B6B73] tabular-nums whitespace-nowrap">
+            <span data-testid={`${testId}-page`} className="kn-pager-info px-2 font-semibold whitespace-nowrap">
               Hal {page} / {totalPages}
             </span>
             <button
+              type="button"
               data-testid={`${testId}-next`}
               onClick={onNext}
               disabled={!hasMore || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-[#E5E5EA] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#3C3C43] hover:bg-[#F2F2F7] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="kn-pager-btn"
             >
-              Berikutnya <ChevronRight size={13} />
+              Berikutnya <ChevronRight size={14} />
             </button>
             {onLast && (
               <button
+                type="button"
                 data-testid={`${testId}-last`}
                 onClick={onLast}
                 disabled={page >= totalPages || loading}
                 title="Halaman terakhir"
-                className="inline-flex items-center rounded-md border border-[#E5E5EA] bg-white px-2 py-1 text-[#3C3C43] hover:bg-[#F2F2F7] disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Halaman terakhir"
+                className="kn-pager-btn"
               >
-                <ChevronsRight size={13} />
+                <ChevronsRight size={14} />
               </button>
             )}
           </div>

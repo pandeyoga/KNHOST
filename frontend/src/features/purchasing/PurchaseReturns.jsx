@@ -551,6 +551,8 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
           testId="pret-pager" label="retur"
           exportConfig={{ columns: CSV_COLUMNS, rows: filtered,
             fetchAll: paged.fetchAll, filename: "retur-beli" }}
+          exportSpec={{ dataset: "purchase_returns", label: "retur-beli", search,
+            filters: [tab !== "all" && ["status", "eq", tab], lineFilter && ["line_codes", "eq", lineFilter]], sort: [{ key: "created_at", dir: "desc" }] }}
         />
       )}
 

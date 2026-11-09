@@ -39,7 +39,9 @@ export const ROLE_REACH_ADDITIONS = {
   ],
   // Fase 3 · P8 (D-22) — Kinerja Mitra Makloon: gudang dulu melihat skor mitra di Klaim Selisih Makloon. Admin Gudang
   // mewarisi menu gudang (ROLE_NAV inherit "warehouse"), jadi ikut — bukan keputusan terpisah.
-  warehouse: ["makloon-claim-recap"],
+  // FIX-4 (K-B4-07 · K-B3b-04, 9 Nov) — petugas gudang boleh mengunduh daftar gudang; unduhan > 50.000 baris
+  // menjadi job yang diambil di Pusat Export (dataset dibatasi daftar putih gudang di server).
+  warehouse: ["makloon-claim-recap", "export-center"],
   warehouse_admin: ["makloon-claim-recap"],
 };
 /** Pencabutan jangkauan yang SAH (layar yang server-nya menolak peran itu): { peran: ["id", …] } + alasan. */

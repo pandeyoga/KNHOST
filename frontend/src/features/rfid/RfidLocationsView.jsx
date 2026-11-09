@@ -7,6 +7,7 @@ import { useAppNav } from "../../context/AppNavContext";
 import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
 import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses } from "./rfidShared";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const STATE_COLOR = { tracked: "green", unseen: "gray", drift: "red" };
 
@@ -118,7 +119,9 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         )}
       </SectionCard>
 
-      <SectionCard title="Lokasi Tag">
+      <SectionCard title="Lokasi Tag" right={
+        <ExportMenu dataset="rfid_tags" label="lokasi-tag-rfid" testId="rfid-loc-export" search={srch.q}
+          filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "last_seen_at", dir: "desc" }]} />}>
         {srch.toolbar}
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
           : srch.shown.length === 0 ? <EmptyBox icon={MapPin} text={items.length ? "Tidak ada tag yang cocok dengan pencarian." : "Belum ada tag. Encode roll di menu Tag RFID dulu."} />

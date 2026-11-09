@@ -12,4 +12,5 @@
 @import "./styles/login.css";
 @import "./styles/fase0.css";
 @import "./styles/config.css";
+@import "./styles/standard.css";   /* FIX-4 — Standar UI Gudang v1 (kelas baku, varian tombol, pager, Unduh) */
 @import "./styles/mobile.css";

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { History, Search, Download } from "lucide-react";
+import { History, Search } from "lucide-react";
 import KNDatePicker, { formatDateId } from "../../components/KNDatePicker";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency, wibDate } from "../../utils/formatters";
 import { logisticsHistory, MODE_LABEL, MODE_PILL, STATUS_PILL, carrierText } from "./logisticsApi";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 // Riwayat pengiriman (terkirim / selesai / gagal): saring tanggal, moda, status, kata kunci.
 // Fase 3 · P5 — D-19: panel ini kini bagian tab DAFTAR (bukan tab "Riwayat" sendiri). Bila pemanggil memberi
@@ -38,12 +39,7 @@ export default function HistoryPanel({ params, onOpen, refreshKey, status, dateF
   const pages = Math.max(1, Math.ceil((data?.total || 0) / SIZE));
   const when = (r) => wibDate(r.completed_at || r.delivered_at || r.created_at);   // tanggal WIB (dulu potongan UTC)
 
-  function exportCsv() {
-    const head = ["Nomor", "Tanggal", "Pesanan", "Pelanggan", "Moda", "Pengangkut", "Surat Jalan", "Biaya kirim", "Status", "Penerima"];
-    const lines = rows.map((r) => [r.number, when(r), r.order_number, r.customer_name, r.mode_label, carrierText(r), (r.shipment_nos || []).join(" "), r.shipping_cost || 0, r.status_label, r.pod?.receiver_name || ""].map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
-    const blob = new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `riwayat-pengiriman-${f.date_from || "awal"}-${f.date_to || "kini"}.csv`; a.click(); URL.revokeObjectURL(a.href);
-  }
+  // FIX-4 (B3b EXP-03) — CSV koma "halaman ini saja" diganti tombol baku ExportMenu (semua hasil saringan).
 
   return (
     <div className="grid gap-3" data-testid="history-panel">
@@ -60,7 +56,9 @@ export default function HistoryPanel({ params, onOpen, refreshKey, status, dateF
             <div className="grid gap-1 w-[180px]"><label className="text-[10.5px] font-bold uppercase text-[#6B6B73]">Moda</label>
               <KNSelect data-testid="history-mode" value={f.mode} onValueChange={(v) => { setPage(1); setF({ mode: v }); }} className="field" options={[{ value: "", label: "Semua moda" }, ...Object.entries(MODE_LABEL).map(([value, label]) => ({ value, label }))]} /></div>
             <p className="flex-1 min-w-[160px] text-[11px] text-[#6B6B73]">Riwayat: terkirim, selesai &amp; gagal kirim — tanggal = selesai/terkirim (WIB).</p>
-            <button data-testid="history-export" className="secondary-button" onClick={exportCsv} disabled={!rows.length} title="Unduh CSV halaman ini"><Download size={13} /> CSV</button>
+            <ExportMenu dataset="logistics_deliveries" label="riwayat-pengiriman" scope="work" testId="history-export" search={f.q}
+              filters={[f.status ? ["status", "eq", f.status] : ["status", "in", ["delivered", "completed", "failed"]], f.mode && ["mode", "eq", f.mode]]}
+              dateRange={{ field: "delivered_at", from: f.date_from, to: f.date_to }} sort={[{ key: "delivered_at", dir: "desc" }]} />
           </div>
         ) : (
         <div className="grid gap-2 sm:grid-cols-6 items-end">
@@ -72,7 +70,9 @@ export default function HistoryPanel({ params, onOpen, refreshKey, status, dateF
             <KNSelect data-testid="history-status" value={f.status} onValueChange={(v) => { setPage(1); setF({ status: v }); }} className="field" options={[{ value: "", label: "Semua" }, { value: "delivered", label: "Terkirim / Diserahkan" }, { value: "completed", label: "Selesai" }, { value: "failed", label: "Gagal kirim" }]} /></div>
           <div className="grid gap-1 sm:col-span-2"><label className="text-[10.5px] font-bold uppercase text-[#6B6B73]">Cari</label>
             <div className="flex gap-2"><div className="relative flex-1"><Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9A9BA3]" /><input data-testid="history-search" className="form-input !pl-8" placeholder="Nomor, pesanan, pelanggan, resi, plat…" value={f.q} onChange={(e) => { setPage(1); setF({ q: e.target.value }); }} /></div>
-              <button data-testid="history-export" className="secondary-button" onClick={exportCsv} disabled={!rows.length} title="Unduh CSV halaman ini"><Download size={13} /> CSV</button></div></div>
+              <ExportMenu dataset="logistics_deliveries" label="riwayat-pengiriman" scope="work" testId="history-export" search={f.q}
+              filters={[f.status ? ["status", "eq", f.status] : ["status", "in", ["delivered", "completed", "failed"]], f.mode && ["mode", "eq", f.mode]]}
+              dateRange={{ field: "delivered_at", from: f.date_from, to: f.date_to }} sort={[{ key: "delivered_at", dir: "desc" }]} /></div></div>
         </div>
         )}
       </section>

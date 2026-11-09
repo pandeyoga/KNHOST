@@ -1,0 +1,9 @@
+{
+ "_catatan": "Baseline ratchet Standar UI Gudang v1 (FIX-4, 9 Nov 2026) — hp_font_lt14. Angka = kondisi saat penjaga dibuat (sesudah perbaikan FIX-4). Hanya boleh TURUN; kencangkan dengan --update.",
+ "total": 15,
+ "files": {
+  "features/mobile/MobileApprovalInbox.jsx": 8,
+  "features/mobile/MobileOpsApp.jsx": 5,
+  "features/mobile/MobileRoleSummary.jsx": 2
+ }
+}

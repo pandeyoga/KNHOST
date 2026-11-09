@@ -19,19 +19,19 @@ export default function OfflineBanner() {
   const sync = async () => { setBusy(true); try { await syncQueue(); } finally { setBusy(false); } };
   if (online && !q.length && !rs.length) return null;
   return (
-    <div className={`mx-3 mt-2 rounded-xl border p-3 text-sm ${online ? "border-[#0058CC]/30 bg-[#EAF2FF]" : "border-[#B23B14]/40 bg-[#FDECEC]"}`} data-testid="mw-offline-banner">
+    <div className={`mx-3 mt-2 rounded-xl border p-3 text-fs-14 ${online ? "border-kn-divider bg-kn-action-soft" : "border-kn-field-border bg-kn-danger-soft"}`} data-testid="mw-offline-banner">
       <div className="flex items-center gap-2 font-semibold">
         {online ? <CloudUpload size={16} /> : <WifiOff size={16} />}
         <span data-testid="mw-offline-status">{online ? (q.length ? `${q.length} aksi menunggu sinkron` : "Sinkron selesai") : `Offline · ${q.length} aksi tersimpan di HP`}</span>
-        {online && q.length > 0 && <button className="ml-auto secondary-button px-3 py-1 text-xs" disabled={busy} onClick={sync} data-testid="mw-offline-sync"><RefreshCw size={12} className={busy ? "animate-spin" : ""} /> Sinkron</button>}
-        {!q.length && rs.length > 0 && <button className="ml-auto text-xs underline" onClick={clearResults} data-testid="mw-offline-clear">Tutup</button>}
+        {online && q.length > 0 && <button className="ml-auto secondary-button btn-touch" disabled={busy} onClick={sync} data-testid="mw-offline-sync"><RefreshCw size={16} className={busy ? "animate-spin" : ""} /> Sinkron</button>}
+        {!q.length && rs.length > 0 && <button className="ml-auto ghost-button btn-touch underline" onClick={clearResults} data-testid="mw-offline-clear">Tutup</button>}
       </div>
-      {!online && <p className="mt-1 text-xs text-[#3C3C43]">Aksi & pindai tetap bisa dilakukan; akan dikirim otomatis saat sinyal kembali, tanpa dobel.</p>}
+      {!online && <p className="mt-1 kn-hp-support">Aksi & pindai tetap bisa dilakukan; akan dikirim otomatis saat sinyal kembali, tanpa dobel.</p>}
       {rs.length > 0 && (
         <ul className="mt-2 space-y-1" data-testid="mw-offline-results">
           {rs.slice(0, 5).map((r) => (
-            <li key={r.key + r.at} className="flex items-start gap-1.5 text-xs" data-testid={`mw-offline-result-${r.ok ? "ok" : "fail"}`}>
-              {r.ok ? <CheckCircle2 size={13} className="text-[#1B7F4B] mt-0.5" /> : <XCircle size={13} className="text-[#B23B14] mt-0.5" />}
+            <li key={r.key + r.at} className="flex items-start gap-1.5 text-fs-14" data-testid={`mw-offline-result-${r.ok ? "ok" : "fail"}`}>
+              {r.ok ? <CheckCircle2 size={14} className="text-kn-success-text mt-0.5" /> : <XCircle size={14} className="text-kn-danger-text mt-0.5" />}
               <span><b>{r.label}</b> — {r.ok ? (r.replay ? "sudah tercatat sebelumnya (tidak dobel)" : "berhasil") : `ditolak (${r.status}): ${r.detail}`}</span>
             </li>
           ))}

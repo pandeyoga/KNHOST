@@ -11,6 +11,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import axios, { API } from "../../services/apiClient";
 import { askReason, askConfirm } from "../../services/confirmService";
 import { draftReadiness, purposeLabel } from "./putawayUtils";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 export default function PutawayDraftsPanel({ drafts = [], whId, onChanged }) {
   const [openId, setOpenId] = useState("");
@@ -62,6 +63,8 @@ export default function PutawayDraftsPanel({ drafts = [], whId, onChanged }) {
     <section className="section-card" data-testid="pa-drafts">
       <div className="section-head flex flex-wrap items-center gap-2">
         <h2 className="flex flex-1 items-center gap-1.5 text-[13px] font-bold"><FileClock size={15} className="text-[#6B219A]" /> Draf Putaway otomatis ({drafts.length})</h2>
+        <ExportMenu dataset="putaway_orders" label="draf-putaway" scope="work" testId="pa-drafts-export"
+          filters={[["status", "eq", "draft"], whId && ["from_warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />
         {whId && (
           <button type="button" data-testid="pa-drafts-prepare" disabled={busy} onClick={prepare}
             className="flex items-center gap-1 rounded-lg border border-[#6B219A] px-3 py-1.5 text-[11.5px] font-semibold text-[#6B219A] disabled:opacity-40">

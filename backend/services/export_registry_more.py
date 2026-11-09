@@ -16,9 +16,11 @@ def cols(spec: str) -> List[Dict[str, Any]]:
 
 
 def S(id: str, label: str, group: str, coll: str, perm: tuple, spec: str, date: str = "created_at:Tanggal dibuat:t",
-      joins=None, **kw) -> Dict[str, Any]:
+      joins=None, extra=None, **kw) -> Dict[str, Any]:
+    """`extra` (FIX-4) = kolom C() lengkap (jalur bersarang, kolom saringan `default=False`) di belakang `spec`."""
     return {"id": id, "label": label, "group": group, "collection": coll, "grain": kw.pop("grain", f"1 baris = 1 {label.lower()}"),
-            "key": "id", "perm": perm, "date_fields": cols(date) if date else [], "columns": cols(spec),
+            "key": kw.pop("key", "id"), "perm": perm, "date_fields": cols(date) if date else [],
+            "columns": cols(spec) + list(extra or []),
             "joins": joins if joins is not None else [ENTITY_JOIN()], **kw}
 
 
@@ -163,7 +165,10 @@ MORE = [
       "|needed_by_date:Dibutuhkan:d|reason:Alasan|entity_id:ID badan usaha"),
     S("rfqs", "RFQ / Penawaran", "Pembelian", "rfqs", ("rfq", "view"), "number:No.|status:Status|entity_id:ID badan usaha"),
     S("purchase_returns", "Retur Pembelian", "Pembelian", "purchase_returns", ("purchase_return", "view"),
-      "number:No.|supplier_name:Pemasok|total_amount:Nilai:m|status:Status|entity_id:ID badan usaha"),
+      "number:No.|supplier_name:Pemasok|po_number:No. PO|warehouse_name:Gudang|total_amount:Nilai:m|status:Status"
+      "|created_at:Dibuat:t|entity_id:ID badan usaha",
+      extra=[C("warehouse_id", "ID gudang (saringan)", default=False), C("line_codes", "Lini (saringan)", default=False)],
+      search_fields=["number", "supplier_name", "po_number", "debit_note_number"]),   # = routers/purchase_returns.py
     S("supplier_contracts", "Kontrak Mitra & Pemasok", "Pembelian", "supplier_contracts", ("supplier_contract", "view"),
       "contract_number:No. kontrak|contract_type:Jenis|partner_kind:Jenis mitra|partner_name:Mitra|product_sku:SKU"
       "|product_name:Produk|tariff_basis:Basis tarif|tariff_rate:Tarif:m|status:Status|entity_id:ID badan usaha"),
@@ -176,27 +181,61 @@ MORE = [
     S("material_reservations", "Komitmen Bahan Makloon", "Pembelian", "material_reservations", ("makloon_order", "view"),
       "mko_number:No. MKO|ref_type:Sumber|required_qty:Dibutuhkan:n|qty:Dicadangkan:n|shortage_qty:Kurang:n|consumed_qty:Terpakai:n"
       "|status:Status|owner_entity_id:ID badan usaha pemilik", joins=[PRODUCT_JOIN, ENTITY_JOIN("owner_entity_id")]),
+    # FIX-4 (EXP-01/EXP-04, K-B4-07) — dataset gudang dilengkapi kolom yang tampil di daftar + kolom SARINGAN
+    # (`default=False`: id gudang/produk/jenis) supaya tombol "Unduh" di tiap daftar bisa mengikuti saringan & cakupan.
     S("goods_receipts", "Kedatangan Barang (GRN)", "Gudang & Logistik", "goods_receipts", ("goods_receipt", "view"),
-      "number:No. GRN|status:Status|supplier_name:Pemasok|po_number:No. PO|entity_id:ID badan usaha"),
+      "number:No. GRN|status:Status|partner_name:Pemasok / mitra|po_number:No. PO"
+      "|created_at:Dibuat:t|created_by:Dibuat oleh|closed_at:Ditutup:t|entity_id:ID badan usaha",
+      joins=[WAREHOUSE_JOIN, ENTITY_JOIN()],
+      extra=[C("dn_number", "No. SJ", path="dn.number"), C("warehouse_id", "ID gudang (saringan)", default=False),
+             C("partner_id", "ID mitra (saringan)", default=False), C("partner_type", "Jenis mitra", default=False),
+             C("supplier_name", "Pemasok (data lama)", default=False)],
+      search_fields=["number", "dn.number", "partner_name"]),   # = routers/goods_receipts.py `q`
     S("wms_tasks", "Tugas Gudang", "Gudang & Logistik", "wms_tasks", ("wms", "view"),
-      "flow_type:Alur|source_type:Sumber|po_number:No. PO|sku:SKU|product_name:Produk|expected_qty:Qty rencana:n"
-      "|received_qty:Qty diterima:n|unit:Satuan|warehouse_name:Gudang|status:Status|entity_id:ID badan usaha"),
+      "flow_type:Alur|source_type:Sumber|po_number:No. PO|order_number:No. SO|customer_name:Pelanggan|sku:SKU"
+      "|product_name:Produk|expected_qty:Qty rencana:n|received_qty:Qty diterima:n|quantity:Qty:n|qty_rolls:Jumlah roll:n"
+      "|unit:Satuan|warehouse_name:Gudang|status:Status|created_at:Dibuat:t|entity_id:ID badan usaha",
+      extra=[C("task_subtype", "Subjenis tugas", default=False), C("warehouse_id", "ID gudang (saringan)", default=False),
+             C("supplier_name", "Pemasok", default=False), C("line_code", "Lini", default=False),
+             C("picked_qty", "Qty diambil", "number", default=False),
+             C("cutting_received_at", "Diterima Admin Cutting", "datetime", path="cutting_handoff.received_at",
+               default=False)],
+      search_fields=["po_number", "order_number", "product_name", "sku", "customer_name", "supplier_name",
+                     "warehouse_name"]),
     S("inventory_balances", "Saldo Stok per Gudang", "Gudang & Logistik", "inventory_balances", ("inventory", "view"),
-      "available_qty:Tersedia:n|committed_qty:Dipesan:n|hold_qty:Ditahan:n|in_transit_qty:Dalam perjalanan:n"
-      "|damaged_qty:Rusak:n|atp_qty:ATP:n|owner_entity_id:ID badan usaha pemilik", date="",
-      joins=[PRODUCT_JOIN, WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")], grain="1 baris = 1 produk × gudang × pemilik"),
+      "on_hand_qty:Stok fisik:n|roll_count:Jumlah roll:n|available_qty:Tersedia:n|committed_qty:Dipesan:n|hold_qty:Ditahan:n"
+      "|in_transit_qty:Dalam perjalanan:n|damaged_qty:Rusak:n|atp_qty:ATP:n|owner_entity_id:ID badan usaha pemilik", date="",
+      joins=[PRODUCT_JOIN, WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")], grain="1 baris = 1 produk × gudang × pemilik",
+      extra=[C("warehouse_id", "ID gudang (saringan)", default=False), C("product_id", "ID produk (saringan)", default=False)],
+      search_product_paths=["product_id"], search_warehouse_paths=["warehouse_id"],
+      search_entity_paths=["owner_entity_id"]),
     S("warehouses", "Gudang", "Gudang & Logistik", "warehouses", ("warehouse", "view"),
-      "code:Kode|name:Nama|city:Kota|sharing_mode:Mode berbagi|active:Aktif:b", joins=[]),
+      "code:Kode|name:Nama|city:Kota|sharing_mode:Mode berbagi|active:Aktif:b", joins=[],
+      extra=[C("site_id", "ID lokasi (saringan)", default=False)], search_fields=["code", "name", "city"]),
     S("warehouse_sites", "Lokasi Gudang", "Gudang & Logistik", "warehouse_sites", ("warehouse", "view"), "name:Nama|city:Kota", joins=[]),
     S("cycle_count_sessions", "Sesi Stock Opname", "Gudang & Logistik", "cycle_count_sessions", ("inventory", "view"),
-      "number:No.|status:Status|warehouse_id:Gudang|entity_id:ID badan usaha"),
+      "number:No.|name:Nama sesi|mode:Mode|status:Status|warehouse_name:Gudang|created_at:Dibuat:t|created_by:Dibuat oleh"
+      "|entity_id:ID badan usaha",
+      extra=[C("warehouse_id", "ID gudang (saringan)", default=False)], search_fields=["number", "name", "warehouse_name"]),
     S("inspections", "Inspeksi & QC", "Gudang & Logistik", "inspections", ("inspection", "view"),
       "number:No.|kind:Jenis|ref_doc_number:Dokumen sumber|supplier_name:Pemasok|customer_name:Pelanggan|assigned_name:Petugas"
-      "|status:Status|spk_date:Tanggal SPK:t|entity_id:ID badan usaha"),
-    S("rfid_tags", "Tag RFID", "Gudang & Logistik", "rfid_tags", ("label", "view"), "epc:EPC|roll_id:Roll|status:Status|owner_entity_id:ID badan usaha pemilik",
-      joins=[ENTITY_JOIN("owner_entity_id")]),
-    S("rfid_reads", "Pembacaan RFID", "Gudang & Logistik", "rfid_reads", ("label", "view"), "epc:EPC|device_id:Perangkat|owner_entity_id:ID badan usaha pemilik",
-      joins=[ENTITY_JOIN("owner_entity_id")]),
+      "|status:Status|decision_label:Keputusan|spk_date:Tanggal SPK:t|entity_id:ID badan usaha",
+      extra=[C("line_code", "Lini", default=False), C("created_at", "Dibuat", "datetime", default=False)],
+      location_clause="inspection",
+      search_fields=["number", "ref_doc_number", "supplier_name", "customer_name", "assigned_name"]),
+    S("rfid_tags", "Tag RFID", "Gudang & Logistik", "rfid_tags", ("label", "view"),
+      "epc:EPC|roll_no:No. roll|sku:SKU|product_name:Produk|lot:LOT|status:Status|last_seen_at:Terakhir terlihat:t"
+      "|last_seen_location:Lokasi terakhir|encoded_at:Di-encode:t|owner_entity_id:ID badan usaha pemilik",
+      "encoded_at:Tanggal encode:t|last_seen_at:Terakhir terlihat:t",
+      joins=[WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")],
+      extra=[C("roll_id", "ID roll", default=False), C("warehouse_id", "ID gudang (saringan)", default=False)],
+      search_fields=["epc", "roll_no", "sku", "product_name", "lot", "last_seen_location"]),
+    S("rfid_reads", "Pembacaan RFID", "Gudang & Logistik", "rfid_reads", ("label", "view"),
+      "timestamp:Waktu:t|epc:EPC|roll_no:No. roll|product_name:Produk|read_type:Jenis baca|result:Hasil|movement:Gerak"
+      "|location:Lokasi|device_name:Perangkat|reason:Keterangan|owner_entity_id:ID badan usaha pemilik",
+      "timestamp:Waktu baca:t", joins=[WAREHOUSE_JOIN, ENTITY_JOIN("owner_entity_id")],
+      extra=[C("device_id", "ID perangkat (saringan)", default=False), C("warehouse_id", "ID gudang (saringan)", default=False)],
+      location_fields=("warehouse_id",), search_fields=["epc", "roll_no", "product_name", "device_name", "location"]),
     S("mfg_work_orders", "Work Order Produksi", "Produk & Desain", "mfg_work_orders", ("production", "view"),
       "number:No.|status:Status|entity_id:ID badan usaha"),
     S("md_specs", "Spesifikasi Produk R&D", "Produk & Desain", "md_specs", ("rnd", "view"), "number:No.|name:Nama|status:Status|entity_id:ID badan usaha"),
@@ -245,8 +284,7 @@ EXCLUDED_MORE = {
     "hr_geofences": "Konfigurasi geofence absensi", "hr_shifts": "Konfigurasi shift",
     "hr_field_tracks": "Jejak lokasi pribadi karyawan (privasi; layar Live Tracking)",
     "ocr_samples": "Sample uji OCR (teknis)", "ocr_sample_runs": "Hasil uji OCR (teknis)",
-    "supplier_dn_profiles": "Profil OCR surat jalan pemasok (teknis)", "rfid_devices": "Konfigurasi perangkat RFID",
-    "rfid_passages": "Log gerbang RFID mentah (observasi, bukan transaksi)",
+    "supplier_dn_profiles": "Profil OCR surat jalan pemasok (teknis)",
     "store_credit_redemptions": "Turunan saldo kredit (lihat Uang Masuk/Retur)",
     "intercompany_eliminations": "Jurnal eliminasi konsolidasi (turunan dari transaksi antar-PT)",
 }
@@ -299,7 +337,9 @@ MORE += [
     S("interco_returns", "Retur Antar-PT (per sisi)", "Keuangan", "interco_returns", IC,
       "number:No.|counterpart_number:No. pasangan|role:Sisi|buyer_entity_name:PT pengembali|seller_entity_name:PT penerima"
       "|status:Status|grand_total:Nilai:m|reason:Alasan|source_sales_return_number:Retur pelanggan asal|mandatory_accept:Wajib terima"
-      "|entity_id:ID badan usaha", grain="1 baris = 1 dokumen retur antar-PT per sisi"),
+      "|created_at:Dibuat:t|entity_id:ID badan usaha", grain="1 baris = 1 dokumen retur antar-PT per sisi",
+      search_fields=["number", "counterpart_number", "buyer_entity_name", "seller_entity_name",
+                     "source_sales_return_number"]),
     S("roll_cost_history", "Riwayat Nilai Roll", "Gudang", "roll_cost_history", ("inventory", "view"),
       "roll_id:ID roll|reason:Sebab|old_unit_cost:Nilai lama:m|new_unit_cost:Nilai baru:m|ref_number:Dokumen|actor:Oleh",
       joins=[], grain="1 baris = 1 perubahan nilai satuan roll"),
@@ -311,7 +351,12 @@ MORE += [
     S("price_approvals", "Persetujuan Harga", "Penjualan", "price_approvals", ("order", "view"),
       "order_number:Pesanan|status:Status|requested_by:Pengaju|decided_by:Pemutus|entity_id:ID badan usaha"),
     S("logistics_deliveries", "Pengiriman Logistik", "Logistik", "logistics_deliveries", ("logistics", "view"),
-      "number:No.|status:Status|driver_name:Sopir|entity_id:ID badan usaha"),
+      "number:No.|status:Status|order_number:No. SO|customer_name:Pelanggan|mode:Moda|courier_name:Kurir|tracking_no:No. resi"
+      "|vehicle_plate:Plat kendaraan|driver_name:Sopir|eta:Perkiraan tiba|created_at:Dibuat:t|departed_at:Berangkat:t"
+      "|delivered_at:Terkirim:t|entity_id:ID badan usaha",
+      "created_at:Tanggal dibuat:t|delivered_at:Tanggal terkirim:t", location_clause="delivery",
+      search_fields=["number", "order_number", "customer_name", "tracking_no", "courier_name", "vehicle_plate",
+                     "driver_name", "shipment_nos"]),   # = logistics_service.list_deliveries `q`
     S("po_variance_tasks", "Tugas Selisih Penerimaan PO", "Pembelian", "po_variance_tasks", ("purchase_order", "view"),
       "po_number:No. PO|supplier_name:Supplier|product_name:Produk|ordered_qty:Dipesan|received_qty:Diterima|short_qty:Kurang|"
       "unit:Satuan|status:Status|assignee_name:Penanggung jawab|entity_id:ID badan usaha"),
@@ -322,5 +367,4 @@ EXCLUDED_MORE.update({
     "customer_grade_rules": "Konfigurasi rank pelanggan (Pengaturan)", "process_recipes": "Master resep proses (Pengaturan)",
     "design_categories": "Kamus kategori desain", "client_dataset_imports": "Log impor dataset (teknis)",
     "approval_matrix_log": "Jejak audit matriks persetujuan",
-    "rfid_print_jobs": "Antrean cetak label RFID (operasional perangkat)",
 })

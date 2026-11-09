@@ -377,7 +377,9 @@ export const NAV_STRUCTURE = [
     id:    "export-center",
     label: "Pusat Export",
     icon:  FileSpreadsheet,
-    roles: ["admin", "manager", "sales_admin", "finance", "sales", "md", "warehouse_admin", "designer"],
+    // FIX-4 (K-B4-07) — petugas gudang: unduhan besar dari tombol daftar diambil di Pusat Export → Pekerjaan;
+    // dataset yang terbuka untuknya dibatasi daftar putih gudang di server.
+    roles: ["admin", "manager", "sales_admin", "finance", "sales", "md", "warehouse_admin", "designer", "warehouse"],
     view:  "export-center",
   },
 

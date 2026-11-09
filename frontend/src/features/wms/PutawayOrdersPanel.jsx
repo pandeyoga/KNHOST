@@ -14,6 +14,7 @@ import EntityBadge from "../../components/EntityBadge";
 import { askReason } from "../../services/confirmService";
 import PutawayDraftsPanel from "./PutawayDraftsPanel";
 import { ARRIVAL_STATUSES, parseCodes, pendingCount, statusOf, tripMessage } from "./putawayUtils";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const nf = new Intl.NumberFormat("id-ID");
 const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
@@ -215,7 +216,11 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
       {/* Daftar PA */}
       <section className="section-card">
         <div className="section-head"><h2 className="text-[13px] font-bold flex items-center gap-1.5">
-          <Truck size={15} className="text-[#0058CC]" /> Putaway Orders ({active.length})</h2></div>
+          <Truck size={15} className="text-[#0058CC]" /> Putaway Orders ({active.length})</h2>
+          <ExportMenu dataset="putaway_orders" label="perintah-simpan-rak" scope="work" testId="pa-export"
+            filters={[["status", "ne", "draft"], ["status", "ne", "cancelled"],
+              whId && { op: "or", items: [["from_warehouse_id", "eq", whId], ["to_warehouse_id", "eq", whId]] }]}
+            sort={[{ key: "created_at", dir: "desc" }]} /></div>
         <div className="section-body space-y-2">
           {active.length === 0 && <p className="py-6 text-center text-[12px] text-[#8E8E93]">Belum ada Perintah Simpan ke Rak.</p>}
           {active.map((o) => {

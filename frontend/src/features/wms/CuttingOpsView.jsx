@@ -9,6 +9,7 @@ import { printSampleLabel, printSampleLabels } from "../../utils/rollLabels";
 import SampleCutPanel from "./SampleCutPanel";
 import PendingCutsPanel from "./PendingCutsPanel";
 import useViewPreset from "../../hooks/useViewPreset";
+import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 /**
  * Operasi Gudang › **Cutting** — Trial 22 Okt 2026 (F1/A2, permintaan pemilik): operasi potong DIPISAH dari Barang
@@ -90,7 +91,13 @@ export default function CuttingOpsView() {
     <div className="section-card" data-testid="wms-cutting-view">
       <div className="section-head">
         <div className="flex items-center gap-2 min-w-0"><span className="kicker">Cutting</span><h2>Potong Sample & Potong Roll</h2></div>
-        <button className="icon-button" onClick={load} aria-label="Muat ulang" data-testid="cutting-ops-refresh"><RefreshCw size={14} /></button>
+        <div className="flex items-center gap-2">
+          <ExportMenu dataset="wms_tasks" label="tugas-potong-sample" scope="work" testId="cutting-ops-export" search={q}
+            filters={[["task_subtype", "eq", "sample_cut"], ["status", "ne", "dispatched"], ["status", "ne", "cancelled"],
+              wh && ["warehouse_id", "eq", wh]]} sort={[{ key: "created_at", dir: "desc" }]}
+            unsupported={stage !== "all" ? "Tahap paket dihitung di layar — pilih tahap “Semua” untuk mengunduh." : ""} />
+          <button className="icon-button" onClick={load} aria-label="Muat ulang" data-testid="cutting-ops-refresh"><RefreshCw size={14} /></button>
+        </div>
       </div>
       <div className="section-body grid gap-3">
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-ops-error" />

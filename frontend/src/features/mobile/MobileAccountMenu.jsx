@@ -24,11 +24,11 @@ export function EntitySwitchCard({ user, entities, selectedEntity, onSelectEntit
   const allowed = user?.allowed_entity_ids || [];
   const switchable = (entities || []).filter((e) => allowed.includes(e.id));
   if (!onSelectEntity || switchable.length < 2) return null;
-  const pill = (on) => `h-9 rounded-full border px-3 text-[12px] font-semibold ${on ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3A3A3C]"}`;
+  const pill = (on) => `kn-chip-touch${on ? " is-active" : ""}`;   // FIX-4 — chip sentuh baku (≥ 48 px)
   return (
     <div className="m-card p-3" data-testid="mobile-entity-switch">
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Badan usaha aktif</p>
-      {selectedEntity === "all" && <p className="mb-2 text-[11px] text-[#8A5300]" data-testid="mobile-entity-all-note">{note}</p>}
+      <p className="mb-2 kn-hp-support font-bold">Badan usaha aktif</p>
+      {selectedEntity === "all" && <p className="mb-2 text-fs-14 text-kn-warning-text" data-testid="mobile-entity-all-note">{note}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => onSelectEntity("all")} data-testid="mobile-entity-all" className={pill(selectedEntity === "all")}>Semua</button>
         {switchable.map((e) => (
@@ -45,16 +45,16 @@ function ProfileCard({ user }) {
   const display = user?.name || "Pengguna";
   return (
     <div className="m-card flex items-center gap-3 p-4" data-testid="mobile-account-profile">
-      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0058CC] text-[16px] font-bold text-white">
+      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-kn-action text-fs-16 font-bold text-white">
         {display.slice(0, 1).toUpperCase()}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-bold">{display}</p>
-        <p className="truncate text-[11.5px] m-muted">{user?.email}</p>
+        <p className="truncate kn-hp-title">{display}</p>
+        <p className="truncate kn-hp-support">{user?.email}</p>
         {/* FASE E-8 — label peran dari registry (id mentah `sales_admin` tampil buruk). */}
-        <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#0058CC]">{user?.role_label || roleLabel(user?.role)}</p>
+        <p className="text-fs-14 font-semibold text-kn-action">{user?.role_label || roleLabel(user?.role)}</p>
       </div>
-      <UserCircle size={22} className="text-[#C7C7CC]" />
+      <UserCircle size={22} className="text-kn-field-border" />
     </div>
   );
 }
@@ -74,21 +74,21 @@ export default function MobileAccountMenu({
       <div className="m-card px-4" data-testid="mobile-account-actions">
         {/* D-26 — SATU pintu ke tampilan desktop untuk semua aplikasi HP (dulu ikon app bar, panel Ringkas & baris MD). */}
         {onForceDesktop && (
-          <button type="button" data-testid="mobile-force-desktop" onClick={onForceDesktop} className="m-list-row m-press w-full text-left">
-            <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#F2F3F5]"><Monitor size={17} className="text-[#3C3C43]" /></span>
+          <button type="button" data-testid="mobile-force-desktop" onClick={onForceDesktop} className="m-list-row m-press min-h-touch w-full text-left">
+            <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-kn-neutral-soft"><Monitor size={17} className="text-kn-neutral" /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold">Tampilan desktop</p>
-              <p className="truncate text-[11px] m-muted">Beralih ke antarmuka penuh; kembali lewat tombol "Kembali ke aplikasi HP"</p>
+              <p className="kn-hp-info font-semibold">Tampilan desktop</p>
+              <p className="truncate kn-hp-support">Beralih ke antarmuka penuh; kembali lewat tombol "Kembali ke aplikasi HP"</p>
             </div>
-            <ChevronRight size={16} className="text-[#C7C7CC]" />
+            <ChevronRight size={16} className="text-kn-field-border" />
           </button>
         )}
-        <button type="button" data-testid="mobile-logout" onClick={async () => { await dropPushSubscription(); onLogout?.(); }} className="m-list-row m-press w-full text-left">
-          <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#FFECEB]"><LogOut size={17} className="text-[#C0392B]" /></span>
-          <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-[#C0392B]">Keluar</p></div>
+        <button type="button" data-testid="mobile-logout" onClick={async () => { await dropPushSubscription(); onLogout?.(); }} className="m-list-row m-press min-h-touch w-full text-left">
+          <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-kn-danger-soft"><LogOut size={17} className="text-kn-danger-text" /></span>
+          <div className="min-w-0 flex-1"><p className="kn-hp-info font-semibold text-kn-danger-text">Keluar</p></div>
         </button>
       </div>
-      {footer && <p className="pt-1 text-center text-[10.5px] m-muted" data-testid="mobile-account-footer">{footer}</p>}
+      {footer && <p className="pt-1 text-center kn-hp-support" data-testid="mobile-account-footer">{footer}</p>}
     </div>
   );
 }

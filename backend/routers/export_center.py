@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
+from starlette.background import BackgroundTask
 
 from core_utils import new_id, now_iso
 from db import db
@@ -33,8 +34,13 @@ class ExportSpec(BaseModel):
     date_from: Optional[str] = None
     date_to: Optional[str] = None
     sort: List[Dict[str, str]] = Field(default_factory=list)
-    entity_scope: str = "active"
+    # FIX-4 — `work` = cakupan daftar pekerjaan fisik (lokasi tampilan + semua PT ditugaskan, FIX-1).
+    entity_scope: str = Field("active", pattern="^(active|all|work)$")
     group_by: List[str] = Field(default_factory=list)
+    # FIX-4 — saringan PT eksplisit (cakupan `work`, wajib ∈ penugasan) & saringan tampilan lokasi (header).
+    entity_id: Optional[str] = Field(None, max_length=80)
+    location_view: bool = False
+    search: Optional[str] = Field(None, max_length=100)   # kotak cari daftar (jalur cari dari registry dataset)
 
 
 class PreviewIn(ExportSpec):
@@ -44,6 +50,16 @@ class PreviewIn(ExportSpec):
 class JobIn(ExportSpec):
     format: str = Field("xlsx", pattern="^(xlsx|csv)$")
     rows_per_sheet: int = Field(eng.EXCEL_MAX_ROWS, ge=100, le=eng.EXCEL_MAX_ROWS)
+
+
+#: FIX-4 (K-B4-07) — batas unduh LANGSUNG dari tombol daftar (= batas bawaan D365 & FETCH_ALL_HARD_CAP KN);
+#: lebih besar → job latar Pusat Export + notifikasi saat siap (tidak dipotong diam-diam).
+QUICK_MAX_ROWS = 50_000
+
+
+class QuickIn(ExportSpec):
+    format: str = Field("xlsx", pattern="^(xlsx|csv)$")
+    label: str = Field("", max_length=60)        # kata benda daftar untuk nama berkas, mis. "kedatangan"
 
 
 def _public_col(c: Dict[str, Any]) -> Dict[str, Any]:
@@ -105,6 +121,14 @@ async def _run(job: Dict[str, Any], plan: Dict[str, Any], rows_per_sheet: int) -
         await db.export_jobs.update_one({"id": job["id"]}, {"$set": {
             "status": "done", **res, "file_path": str(path), "size": path.stat().st_size,
             "finished_at": now_iso(), "count_matches": res["written_rows"] == job["total_rows"]}})
+        if job.get("trigger") == "list":
+            # FIX-4 — ekspor besar dari tombol daftar (> QUICK_MAX_ROWS) → pemberitahuan saat berkas siap.
+            from services.notification_service import create_notification
+            await create_notification(
+                notif_type="export_ready", title=f"Unduhan siap: {job['dataset_label']}",
+                body=f"{res['written_rows']:,} baris · {job['format'].upper()} · unduh di Pusat Export → Pekerjaan (24 jam)."
+                .replace(",", "."), link="export-center", entity_id=(job.get("entity_ids") or [None])[0],
+                recipient_user=job["user_id"], recipient_role="", ref=job["id"], dedupe=False)
         if job.get("trigger") in ("schedule", "manual_schedule"):
             from services.notification_service import create_notification
             await create_notification(
@@ -160,6 +184,54 @@ async def create_job_for(user: Dict[str, Any], ctx, spec: Dict[str, Any], fmt: s
 async def create_job(payload: JobIn, request: Request) -> Any:
     spec = payload.dict(exclude={"format", "rows_per_sheet"})
     return await _create_job(spec, payload.format, payload.rows_per_sheet, request)
+
+
+@router.post("/quick")
+async def quick_export(payload: QuickIn, request: Request) -> Any:
+    """FIX-4 (K-B4-07 · K-B3b-04 · EXP-01) — tombol baku "Unduh" di setiap daftar.
+
+    Spesifikasi = saringan & cakupan daftar yang sedang dilihat (dataset Pusat Export yang sama, izin modul sumber,
+    badan usaha, lokasi kerja). ≤ `QUICK_MAX_ROWS` baris → berkas langsung dikembalikan (XLSX bawaan, CSV dialek
+    Indonesia `;`); lebih → job latar Pusat Export (202) + notifikasi saat siap, TIDAK dipotong diam-diam."""
+    user = await require_permission(request, "data_export", "export")
+    ctx = await entity_ctx(request)
+    spec = payload.dict(exclude={"format", "label"})
+    plan = await eng.build_plan(spec, user, ctx)
+    total = await eng.count(plan)
+    if total > QUICK_MAX_ROWS:
+        job = await create_job_for(user, ctx, spec, payload.format, eng.EXCEL_MAX_ROWS, trigger="list")
+        return JSONResponse(status_code=202, content={
+            "mode": "job", "job": job, "total": total, "limit": QUICK_MAX_ROWS,
+            "message": (f"{total:,} baris melebihi batas unduh langsung {QUICK_MAX_ROWS:,}. Berkas dibuat di latar — "
+                        "notifikasi dikirim saat siap; unduh di Pusat Export → Pekerjaan.").replace(",", ".")})
+    created = datetime.now(timezone.utc)
+    ds = plan["ds"]
+    fmt = payload.format
+    job = {"id": new_id("exq"), "user_id": user["id"], "user_name": user.get("name", ""), "role": user.get("role"),
+           "dataset": ds["id"], "dataset_label": ds["label"], "format": fmt, "csv_dialect": "id",
+           "total_rows": total, "written_rows": 0, "created_at": created.isoformat()}
+    EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    path = EXPORT_DIR / f"{job['id']}.{fmt}"
+    res = await eng.write_file(job, plan, str(path), eng.EXCEL_MAX_ROWS)
+    await audit(user.get("name", ""), "export.quick", "export_jobs", job["id"],
+                {"dataset": ds["id"], "columns": [c["key"] for c in plan["columns"]], "rows": res["written_rows"],
+                 "format": fmt, "entities": plan["entity_ids"], "location": plan.get("location_text"),
+                 "filter": plan["filter_text"]})
+    stem = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in (payload.label or ds["id"]).strip().lower())[:40]
+    file_name = f"{stem or ds['id']}_{created.astimezone(timezone(timedelta(hours=7))).strftime('%Y%m%d_%H%M')}.{fmt}"
+    media = "text/csv; charset=utf-8" if fmt == "csv" else \
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return FileResponse(str(path), media_type=media, filename=file_name,
+                        headers={"X-Export-Rows": str(res["written_rows"]), "Access-Control-Expose-Headers":
+                                 "Content-Disposition, X-Export-Rows"},
+                        background=BackgroundTask(_unlink, path))
+
+
+def _unlink(path: Path) -> None:
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:  # noqa: PERF203 — berkas sementara; gagal hapus tidak menggagalkan unduhan
+        log.warning("berkas export sementara %s tidak terhapus", path)
 
 
 @router.get("/jobs")

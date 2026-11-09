@@ -44,6 +44,7 @@ import { gateSummary, rulesSummary } from "./warehouseProfileUtils";
 import WarehouseCreateModal from "./WarehouseCreateModal";
 import KNSelect from "../../../components/KNSelect";
 import { askConfirm } from "../../../services/confirmService";
+import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 
@@ -280,6 +281,8 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
               <input data-testid="wh-search" className="field w-[220px] py-1.5 pl-8 text-[12px]"
                 placeholder="Cari kode / nama / kota" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
+            <ExportMenu dataset="warehouses" label="data-gudang" testId="wh-export" search={q}
+              unsupported={scope === "usable" ? "Daftar “boleh dipakai” dihitung per PT aktif — pilih “Semua” untuk mengunduh daftar gudang." : ""} />
             {canCreate && (
               <button data-testid="wh-toggle-create" className="primary-button"
                 onClick={() => { setError(""); setShowCreate(true); }}>

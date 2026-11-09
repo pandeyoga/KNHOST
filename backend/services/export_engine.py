@@ -54,10 +54,20 @@ def _col_denied(col: Dict[str, Any], user, perms, hidden) -> Optional[str]:
     return None
 
 
+#: FIX-4 (K-B4-07 · K-B3b-04) — peran yang izin Pusat Export-nya dibatasi ke daftar putih dataset (petugas gudang:
+#: dataset gudang yang izin lihatnya ia punya; bukan penjualan/keuangan/SDM atau riwayat nilai roll).
+def _role_whitelist(role: Optional[str]) -> Optional[frozenset]:
+    from services.export_registry_wms import WAREHOUSE_ROLE_DATASETS
+    return WAREHOUSE_ROLE_DATASETS if reg.role_in(role, ("warehouse",)) else None
+
+
 async def dataset_access(user: Dict[str, Any], ds: Dict[str, Any]) -> Optional[str]:
     perms = await _perms(user)
     if not _has(perms, ds["perm"]):
         return f"Butuh izin {ds['perm'][0]}.{ds['perm'][1]}"
+    allowed_ids = _role_whitelist(user.get("role"))
+    if allowed_ids is not None and ds["id"] not in allowed_ids:
+        return "Peran petugas gudang hanya boleh mengunduh dataset gudang"
     if ds.get("vis") and ds["vis"] in await hidden_for_user(user):
         return f"Atribut {ds['vis']} disembunyikan untuk peran Anda"
     return None
@@ -233,7 +243,8 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
         raise _err(403, "DATASET_NOT_ALLOWED", f"Dataset “{ds['label']}” tidak boleh Anda akses: {why}")
     allowed, denied = await resolve_columns(user, ds)
     by_key = {c["key"]: c for c in allowed}
-    keys = list(dict.fromkeys(spec.get("columns") or [c["key"] for c in allowed if c["source"] == "base"]))
+    keys = list(dict.fromkeys(spec.get("columns") or [c["key"] for c in allowed
+                                                       if c["source"] == "base" and c.get("default", True)]))
     known = _all_keys(ds)
     unknown = [k for k in keys if k not in known]
     if unknown:
@@ -245,10 +256,11 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
         raise _err(422, "NO_COLUMNS", "Pilih minimal satu kolom")
     base_cols = {k: c for k, c in by_key.items() if c["source"] == "base"}
     post = compile_filter(spec.get("filter"), base_cols)
-    pre: Dict[str, Any] = {}
-    if field_for(ds["collection"]) is not None:
-        pre = resolve_list_scope(ds["collection"], {}, ctx, "all" if spec.get("entity_scope") == "all" else None)
+    pre, location_text = await _scope_clause(ds, spec, ctx)
     ands = [pre] if pre else []
+    search, search_text = await _search_clause(ds, spec.get("search"))
+    if search:
+        ands.append(search)
     owner = await _owner_clause(ds, user)
     if owner:
         ands.append(owner)
@@ -285,12 +297,97 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
     if spec.get("group_by"):
         cols, group = _group_plan(ds, spec["group_by"], cols, base_cols)
     return {"ds": ds, "columns": cols, "group": group, "pipeline": pipeline, "sort": sort_doc, "hidden": await hidden_for_user(user),
-            "filter_text": describe_filter(spec.get("filter"), labels), "date_text": date_label or "(semua tanggal)",
+            "filter_text": " · ".join(t for t in (
+                describe_filter(spec.get("filter"), labels) if spec.get("filter") or not search_text else "",
+                search_text) if t), "date_text": date_label or "(semua tanggal)",
             "sort_text": ", ".join(f"{labels.get(s.get('key'))} {'↓' if s.get('dir') == 'desc' else '↑'}"
                                    for s in spec.get("sort") or []) or "(bawaan: kunci dataset)",
-            "entity_ids": list(ctx.allowed_entity_ids if spec.get("entity_scope") == "all" or ctx.view_all
+            "entity_ids": list(ctx.allowed_entity_ids if spec.get("entity_scope") in ("all", "work") or ctx.view_all
                                else [ctx.active_entity_id]),
+            "location_text": location_text,
             "denied": [{"key": d["key"], "label": d["label"], "reason": d["reason"]} for d in denied]}
+
+
+async def _scope_clause(ds: Dict[str, Any], spec: Dict[str, Any], ctx) -> Tuple[Dict[str, Any], str]:
+    """Cakupan baris export = cakupan DAFTAR sumbernya (FIX-4, K-B4-07: "ikut saringan & cakupan pengguna").
+
+    * `entity_scope`: `active` (PT aktif, bawaan lama) · `all` (semua PT yang ditugaskan) · `work` (FIX-1 — daftar
+      pekerjaan fisik: semua PT yang ditugaskan + cakupan TAMPILAN lokasi dari header `X-Location-Scope`).
+    * `location_view` (opsional) — saringan tampilan lokasi juga untuk cakupan `active`/`all` (layar stok yang memakai
+      `location_view=1`, keputusan FIX-1 K-I3).
+    * Pagar keras petugas berpagar (`ctx.warehouse_ids`) SELALU berlaku — juga untuk koleksi yang gudangnya disimpan di
+      field lain (`location_fields`) atau lewat dokumen lain (`location_clause`: SPK → tugas, pengiriman → surat jalan).
+    """
+    from entity_scope import resolve_work_scope
+    from services import location_scope as ls
+    coll = ds["collection"]
+    mode = spec.get("entity_scope") or "active"
+    want_view = mode == "work" or bool(spec.get("location_view"))
+    view = await ls.view_for(ctx) if want_view else None
+    if ds.get("shared"):
+        # Koleksi tanpa pemilik PT (perangkat/lintasan gerbang) — daftar aslinya hanya bercakupan lokasi.
+        pre = ls.narrow(coll, {}, getattr(ctx, "warehouse_ids", None))
+    elif mode == "work":
+        pre = await resolve_work_scope(coll, {}, ctx, spec.get("entity_id") or None)
+    elif field_for(coll) is not None:
+        pre = resolve_list_scope(coll, {}, ctx, "all" if mode == "all" else None)
+    else:
+        pre = ls.narrow(coll, {}, getattr(ctx, "warehouse_ids", None))
+    if view is not None and mode != "work":
+        pre = ls.narrow_view(coll, pre, view)
+    extra: List[Dict[str, Any]] = []
+    if ds.get("scope_all_field"):
+        # RF-08 — dokumen ber-PT jamak (mis. opname RFID): hanya bila SELURUH PT-nya dalam cakupan pemanggil.
+        from entity_scope import resolve_scope_ids
+        ids = resolve_scope_ids(ctx, "all" if mode in ("all", "work") else None)
+        extra.append({ds["scope_all_field"]: {"$exists": True, "$ne": [], "$not": {"$elemMatch": {"$nin": list(ids)}}}})
+    loc_fields = tuple(ds.get("location_fields") or ())
+    ids_hard = getattr(ctx, "warehouse_ids", None)
+    ids_view = view.get("ids") if view is not None else None
+    for ids in (ids_hard, ids_view):
+        if ids is None:
+            continue
+        if loc_fields:
+            ors = [{f: {"$in": list(ids)}} for f in loc_fields]
+            extra.append(ors[0] if len(ors) == 1 else {"$or": ors})
+        clause = ds.get("location_clause")
+        if clause:
+            fn = {"inspection": ls.inspection_clause, "delivery": ls.delivery_clause}[clause]
+            c = await fn(list(ids))
+            if c:
+                extra.append(c)
+    if extra:
+        pre = {"$and": [p for p in [pre, *extra] if p]}
+    if view is None:
+        text = "Lokasi tugas Anda" if ids_hard is not None else "Semua lokasi yang boleh Anda lihat"
+    else:
+        text = view.get("label") or "—"
+    return pre, text
+
+
+async def _search_clause(ds: Dict[str, Any], text: Optional[str]) -> Tuple[Optional[Dict[str, Any]], str]:
+    """Kotak cari daftar → kueri yang SAMA dengan endpoint daftarnya (FIX-4). Jalur cari didefinisikan registry
+    (`search_fields`), bukan klien; nama produk/gudang/PT yang tidak tersimpan di dokumen diselesaikan ke id-nya
+    (`search_product_paths` / `search_warehouse_paths` / `search_entity_paths`). Teks di-escape (bukan regex mentah)."""
+    text = (text or "").strip()[:100]
+    if not text:
+        return None, ""
+    rx = {"$regex": re.escape(text), "$options": "i"}
+    ors: List[Dict[str, Any]] = [{p: rx} for p in ds.get("search_fields") or []]
+    lookups = (("search_product_paths", "products", ("name", "sku")),
+               ("search_warehouse_paths", "warehouses", ("name", "code", "city")),
+               ("search_entity_paths", "business_entities", ("short_name", "legal_name")))
+    for key, coll, fields in lookups:
+        paths = ds.get(key) or []
+        if not paths:
+            continue
+        ids = await db[coll].distinct("id", {"$or": [{f: rx} for f in fields]})
+        if ids:
+            ors += [{p: {"$in": ids}} for p in paths]
+    if not ors and not any(ds.get(k) for k, _c, _f in lookups):
+        raise _err(422, "SEARCH_UNSUPPORTED", f"Dataset “{ds['label']}” belum mendukung pencarian teks — "
+                                              "kosongkan kotak cari atau pakai Pusat Export.")
+    return ({"$or": ors} if ors else {"_id": {"$exists": False}}), f"Cari “{text}”"
 
 
 ROWS_COL = {"key": "_rows", "label": "Jumlah baris", "type": "number", "path": "_rows", "source": "base",
@@ -521,6 +618,21 @@ async def sweep_snapshots() -> None:
             await db[n].drop()
 
 
+def csv_cell(v: Any, id_dialect: bool = False) -> Any:
+    """Satu sel CSV. Dialek `id` (FIX-4): angka berdesimal koma tanpa pemisah ribuan, boolean Ya/Tidak."""
+    if v is None:
+        return ""
+    if not id_dialect:
+        return safe_text(v)
+    if isinstance(v, bool):
+        return "Ya" if v else "Tidak"
+    if isinstance(v, float):
+        return str(int(v)) if v.is_integer() else ("%.6f" % v).rstrip("0").rstrip(".").replace(".", ",")
+    if isinstance(v, int):
+        return str(v)
+    return safe_text(v)
+
+
 def safe_text(v: Any) -> Any:
     """LN-113-T03 — teks diawali karakter formula diberi apostrof agar dibaca sebagai teks."""
     if isinstance(v, str) and v.startswith(FORMULA_PREFIX):
@@ -532,7 +644,8 @@ def summary_lines(job: Dict[str, Any], plan: Dict[str, Any]) -> List[List[Any]]:
     ds = plan["ds"]
     lines = [["Dataset", ds["label"]], ["Grain", ds["grain"]], ["Kunci", ds["key"]],
              ["Dibuat", job["created_at"]], ["Oleh", f"{job['user_name']} ({job['role']})"],
-             ["Badan usaha", ", ".join(plan["entity_ids"])], ["Periode", plan["date_text"]],
+             ["Badan usaha", ", ".join(plan["entity_ids"])], ["Lokasi", plan.get("location_text") or "—"],
+             ["Periode", plan["date_text"]],
              ["Filter", plan["filter_text"]], ["Urutan", plan["sort_text"]],
              ["Total baris", job.get("written_rows", 0)], ["Format", job["format"].upper()]]
     if job.get("snapshot_at"):
@@ -577,12 +690,15 @@ async def _write(job, plan, path, rows_per_sheet, rows_iter, name, snapshot_at) 
     header = [c["label"] for c in cols]
     written, partitions = 0, []
     if job["format"] == "csv":
+        id_dialect = job.get("csv_dialect") == "id"
         with open(path, "w", newline="", encoding="utf-8-sig") as fh:
-            w = csv.writer(fh)
+            # FIX-4 — dialek "id" (tombol Unduh daftar, INV-UI-07): pemisah `;`, desimal koma, Ya/Tidak — dibuka
+            # benar oleh Excel wilayah Indonesia. Pusat Export klasik tetap koma (perilaku lama; dicatat sebagai sisa).
+            w = csv.writer(fh, delimiter=";" if id_dialect else ",")
             w.writerow(header)
             async for rows in rows_iter:
                 for r in rows:
-                    w.writerow([safe_text(r.get(c["key"])) if r.get(c["key"]) is not None else "" for c in cols])
+                    w.writerow([csv_cell(r.get(c["key"]), id_dialect) for c in cols])
                 written += len(rows)
         return {"written_rows": written, "partitions": []}
     from openpyxl import Workbook

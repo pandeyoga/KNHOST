@@ -1,0 +1,17 @@
+{
+ "_catatan": "Baseline ratchet Standar UI Gudang v1 (FIX-4, 9 Nov 2026) — list_no_excel. Angka = kondisi saat penjaga dibuat (sesudah perbaikan FIX-4). Hanya boleh TURUN; kencangkan dengan --update.",
+ "total": 12,
+ "files": {
+  "features/admin/PurchaseOrderManagement.jsx": 1,
+  "features/approvals/ApprovalInbox.jsx": 1,
+  "features/crm/CustomerList.jsx": 1,
+  "features/design/DesignRequestsView.jsx": 1,
+  "features/finance/GeneralLedger.jsx": 1,
+  "features/orders/OrdersView.jsx": 1,
+  "features/purchasing/PoBoardView.jsx": 1,
+  "features/purchasing/SuppliersView.jsx": 1,
+  "features/purchasing/VendorBillsView.jsx": 1,
+  "features/rfid/PrinterQueuePanel.jsx": 2,
+  "features/settings/entities/AccountList.jsx": 1
+ }
+}
