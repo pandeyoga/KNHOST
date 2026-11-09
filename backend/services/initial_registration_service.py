@@ -200,8 +200,8 @@ def assert_lines_editable(session: Dict[str, Any]) -> None:
 
 async def assert_finance_ready(session: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """Langkah 2 (Finance): hanya sesudah hitungan disetujui gudang, oleh orang yang BERBEDA."""
-    if not await finance_step_required(session.get("entity_id") or ""):
-        return
+    if session.get("status") != "pending_approval" or not await finance_step_required(session.get("entity_id") or ""):
+        return   # status lain → penolakan status baku dari `approve` (400), bukan galat langkah
     ca = (session.get("registration") or {}).get("count_approval")
     if not ca:
         raise HTTPException(status_code=400, detail=(

@@ -455,9 +455,14 @@ def test_zero_arrival_never_completed_and_accept_needs_approve(admin, wh_staff, 
     o = r.json()
     assert r.status_code == 200 and o["status"] == "exception" and not o.get("btg_number")
     ids = [x["id"] for x in rolls]
-    r = wh_staff.post(f"{url}/resolve-exception", json={"roll_ids": ids[:1], "action": "accept"}, timeout=30)
+    r = wh_staff.post(f"{url}/resolve-exception", json={"roll_ids": ids[:1], "action": "accept",
+                                                        "reason": "Scan ulang handheld terbaca"}, timeout=30)
     assert r.status_code == 403, r.text                         # accept setara manual → wms.approve
-    r = admin.post(f"{url}/resolve-exception", json={"roll_ids": ids, "action": "return_transit"}, timeout=60)
+    # FIX-3a (B3b FRM-09 #13) — alasan wajib ≥ 5 huruf (dulu diisi otomatis server)
+    assert admin.post(f"{url}/resolve-exception", json={"roll_ids": ids, "action": "return_transit"},
+                      timeout=60).status_code == 400
+    r = admin.post(f"{url}/resolve-exception", json={"roll_ids": ids, "action": "return_transit",
+                                                     "reason": "Roll belum terangkut, kembali ke transit"}, timeout=60)
     o = r.json()
     assert r.status_code == 200 and o["status"] == "returned" and not o.get("btg_number"), o.get("status")
 
@@ -470,8 +475,13 @@ def test_confirm_arrival_trip_from_gate_service(admin, mdb, W):
     out = run(arr.confirm_arrival_trip(pa["id"], [rolls[0]["roll_no"]], src, {"name": "Gate IN"}))
     assert out["status"] == "completed" and out["trip"]["source"]["passage_id"] == f"PSG-{TAG}"
     assert out["items"][0]["arrived_via"] == "gate"
+    # FIX-3a (B2a FLW-IN-16) — lintasan yang SAMA sesudah PA selesai = duplikat idempoten (dulu 400 → antrean offline
+    # menandai gagal padahal tercatat); lintasan BARU ke PA selesai tetap ditolak.
+    again = run(arr.confirm_arrival_trip(pa["id"], [rolls[0]["roll_no"]], src, "Gate IN"))
+    assert again["duplicate_trip"] is True and again["status"] == "completed"
     with pytest.raises(HTTPException):   # PA sudah selesai
-        run(arr.confirm_arrival_trip(pa["id"], [rolls[0]["roll_no"]], src, "Gate IN"))
+        run(arr.confirm_arrival_trip(pa["id"], [rolls[0]["roll_no"]], {"type": "gate", "passage_id": f"PSG2-{TAG}"},
+                                     "Gate IN"))
     with pytest.raises(HTTPException):
         arr.norm_source({"type": "gate"})                         # gate wajib passage_id
     pa2, rolls2 = _open_pa(admin, mdb, W, 2)

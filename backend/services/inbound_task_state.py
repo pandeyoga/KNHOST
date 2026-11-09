@@ -60,8 +60,8 @@ def status_label(status: str) -> str:
     return LABEL.get(status or "", status or "—")
 
 
-def assert_can(task: Dict[str, Any], action: str) -> None:
-    """400 berbahasa Indonesia bila status tugas bukan status asal yang diizinkan untuk aksi ini."""
+def assert_can(task: Dict[str, Any], action: str, *, status_code: int = 400) -> None:
+    """400 (atau `status_code`) berbahasa Indonesia bila status tugas bukan status asal yang diizinkan untuk aksi ini."""
     st = task.get("status") or ""
     if st in allowed_from(action):
         return
@@ -70,7 +70,7 @@ def assert_can(task: Dict[str, Any], action: str) -> None:
         hint = " Barang tugas ini sudah masuk stok/karantina — kekurangan atau kiriman pengganti diterima lewat tugas baru."
     elif st == "escalated":
         hint = " Tunggu keputusan manajer atas eskalasi lebih dulu."
-    raise HTTPException(status_code=400, detail=(
+    raise HTTPException(status_code=status_code, detail=(
         f"{ACTION_LABEL.get(action, action)} tidak bisa dilakukan: tugas berstatus '{status_label(st)}'.{hint}"))
 
 

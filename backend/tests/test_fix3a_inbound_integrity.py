@@ -139,7 +139,7 @@ def test_scan_receive_rejected_for_posted_or_escalated_task(adm, status):
 def test_escalate_only_before_posting_and_reason_k14(adm):
     tid = _task("qc_pending", expected=50, received=50)
     assert requests.post(f"{BASE}/inbound/tasks/{tid}/escalate", json={"reason": "Qty kurang dari PO"},
-                         headers=adm).status_code == 400                          # FLW-IN-01 jalur eskalasi
+                         headers=adm).status_code == 409                          # FLW-IN-01 jalur eskalasi
     tid2 = _task("receiving", expected=50, received=10)
     assert requests.post(f"{BASE}/inbound/tasks/{tid2}/escalate", params={"reason": "x"}, headers=adm).status_code == 400
     ok = requests.post(f"{BASE}/inbound/tasks/{tid2}/escalate", json={"reason": "Supplier kirim kurang 40 yard"}, headers=adm)

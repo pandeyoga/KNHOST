@@ -114,6 +114,13 @@ def whu():
     return _login("warehouse@kainnusantara.id")
 
 
+@pytest.fixture(scope="module")
+def mgr():
+    # FIX-3a (keputusan koordinator) — persetujuan dua langkah: nilai & jurnal disetujui orang BERBEDA dari penyetuju
+    # hitungan (izin `inventory.approve_value`).
+    return _login("manager@kainnusantara.id")
+
+
 def _new_session(h, **kw):
     body = {"warehouse_id": W, "name": f"TEST_REG {TAG}", "freeze_mode": "zone", "node_ids": [Z1], "epc_mode": "read", **kw}
     r = requests.post(f"{BASE}/registration/sessions", json=body, headers=h)
@@ -132,7 +139,7 @@ def _detail(msg):
 
 
 # ─── 1. Alur utama: sesi zona, pembekuan, baris lapangan, rekonsiliasi, persetujuan massal ───────────────────────
-def test_main_flow(adm, whu):
+def test_main_flow(adm, whu, mgr):
     from services import putaway_order_service as pos
     from services import registration_freeze as rfz
     from services import roll_service
@@ -232,15 +239,21 @@ def test_main_flow(adm, whu):
     assert patch(whu).status_code == 403
     pr_ = patch(adm)
     assert pr_.status_code == 200 and pr_.json()["product_id"] == P2 and pr_.json()["qty"] == 10, pr_.text
+    # FIX-3a — langkah 1: gudang menyetujui HITUNGAN (baris terkunci); langkah 2 (nilai & jurnal) oleh orang lain.
+    assert ap(adm, group_keys=[g[P_NEW]["key"]]).status_code == 400                          # belum langkah 1
+    ac = requests.post(f"{BASE}/registration/sessions/{sid}/approve-count", json={"reason": "Hitungan cocok fisik"}, headers=adm)
+    assert ac.status_code == 200 and ac.json()["approval_step"] == "finance", ac.text
+    assert patch(adm).status_code == 409                                                      # baris terkunci
+    assert ap(adm, group_keys=[g[P_NEW]["key"]]).status_code == 403                          # orang yang sama
     # persetujuan per produk (P_NEW) → roll + tag + jurnal
-    one = ap(adm, group_keys=[g[P_NEW]["key"]]).json()
+    one = ap(mgr, group_keys=[g[P_NEW]["key"]]).json()
     assert one["results"][g[P_NEW]["key"]]["status"] == "applied" and one["complete"] is False
     new5 = DB.inventory_rolls.find_one({"registration.line_id": l5["id"]})
     assert new5 and new5["unit_cost"] == 7.5 and new5["acquired"]["via"] == "initial_registration" and new5["bin_id"] == B21["id"]
     tag5 = DB.rfid_tags.find_one({"roll_id": new5["id"], "status": "active"})
     assert tag5 and tag5["epc"] == epc(5) and new5["rfid_tag_id"] == tag5["id"]
     # seluruh sesi: P punya roll lama teralokasi → pengecualian, sesi tetap menunggu
-    allr = ap(adm).json()
+    allr = ap(mgr).json()
     assert allr["complete"] is False and allr["results"][g[P]["key"]]["status"] == "exception", allr["results"]
     assert allr["results"][g[P2]["key"]]["status"] == "applied"
     no = DB.inventory_rolls.find_one({"id": r_no})
@@ -256,7 +269,7 @@ def test_main_flow(adm, whu):
     je2 = DB.journal_entries.find_one({"source_id": f"{sid}:reg:{g[P2]['key']}"})
     assert je2 and round(sum(x["debit"] for x in je2["lines"]), 2) == 50.0                     # 10×5 − 20×5 = −50
     # terima pengecualian → tuntas
-    fin = ap(adm, accept_exceptions=True).json()
+    fin = ap(mgr, accept_exceptions=True).json()
     assert fin["complete"] is True and fin["session"]["status"] == "approved_with_exceptions"
     je = DB.journal_entries.find_one({"source_id": f"{sid}:reg:{g[P]['key']}"})
     exp = round((48 - 50) * 10 + 0 + round(35 / 0.9144, 4) * 10 - 30 * 10, 2)

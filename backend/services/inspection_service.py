@@ -1296,6 +1296,14 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
         rejected = set()
     accepted = [rid for rid in ids if rid not in rejected]
     held_rejected = sorted(rejected & held_ids)
+    if not ids and not held_rejected:
+        # D3 — hanya roll DITAHAN yang tersisa & tidak ada yang ditolak: SPK boleh ditutup, roll tetap ditahan dan tugas
+        # tetap menunggu QC (diputus sesudah tahanan dilepas). Tidak ada mutasi stok.
+        nos = [r.get("roll_no") or r["id"] for r in held_docs]
+        return {"task_id": task["id"], "accepted_qty": 0.0, "rejected_qty": 0.0, "task_status": task.get("status"),
+                "held_rolls_kept": nos, "at": now_iso(), "by": actor.get("name", ""),
+                "warnings": [f"{len(nos)} roll sedang DITAHAN ({', '.join(nos[:6])}) — tetap ditahan; putuskan sesudah "
+                             "tahanan dilepas."]}
     length = {r["id"]: float(r.get("length_remaining") or 0) for r in qrolls + held_docs}
     acc_qty = round(sum(length[r] for r in accepted), 2)
     rej_qty = round(sum(length[r] for r in rejected), 2)

@@ -192,8 +192,6 @@ async def escalate_inbound_task(
     Manager can then adjust expected_qty or investigate issue.
     """
     actor = await require_permission(request, "wms", "update")
-    # FIX-3a (K-14 / K-B3b-03) — alasan wajib ≥ 5 HURUF, ditegakkan server (dulu bawaan teks tetap & "x" lolos).
-    reason = require_reason((payload.reason if payload and payload.reason else reason), label="Alasan eskalasi")
     
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
@@ -201,8 +199,10 @@ async def escalate_inbound_task(
     # INV-ENTITY-01 (KN-076-IDOR-WRITE-INBOUND P1): cegah mutasi task lintas-entitas.
     assert_entity_access(task, "wms_tasks", await entity_ctx(request))
     # FIX-3a (B2a FLW-IN-01) — eskalasi hanya SEBELUM barang diposting: tugas `qc_pending`/`qc_rejected` yang dulu
-    # bisa dieskalasi lalu diputus kembali ke `qc_check` membuka "Selesai" ulang (roll ganda).
-    _its.assert_can(task, "escalate")
+    # bisa dieskalasi lalu diputus kembali ke `qc_check` membuka "Selesai" ulang (roll ganda). 409 (kontrak KN-C01).
+    _its.assert_can(task, "escalate", status_code=409)
+    # FIX-3a (K-14 / K-B3b-03) — alasan wajib ≥ 5 HURUF, ditegakkan server (dulu bawaan teks tetap & "x" lolos).
+    reason = require_reason((payload.reason if payload and payload.reason else reason), label="Alasan eskalasi")
     # KN-E10 — eskalasi tunduk pada mode GRN & tidak boleh menyentuh tugas yang sedang dihitung GRN.
     from services.goods_receipt_service import guard_legacy_receiving
     await guard_legacy_receiving(task)
