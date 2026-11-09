@@ -1,0 +1,758 @@
+{
+ "operations": {
+  "admin": {
+   "D": "T:UI-04,05,29",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-04,05",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-04,05",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-04,05",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales_admin": {
+   "D": "T:UI-04,05",
+   "HP": "T:UI-24"
+  }
+ },
+ "goods-receipts": {
+  "admin": {
+   "D": "T:UI-38",
+   "HP": "p(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "T:UI-52"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-38",
+   "HP": "p(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-38",
+   "HP": "T:UI-24"
+  },
+  "finance": {
+   "D": "V",
+   "HP": "d(V)"
+  }
+ },
+ "wms-outbound": {
+  "admin": {
+   "D": "T:UI-41",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-41",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-41",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-41",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  }
+ },
+ "wms-cutting": {
+  "admin": {
+   "D": "T:UI-10",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "repair-orders": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  },
+  "md": {
+   "D": "V",
+   "HP": "d(V)"
+  }
+ },
+ "inventory-board": {
+  "admin": {
+   "D": "T:UI-40",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-45",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-45",
+   "HP": "T·d:UI-45"
+  },
+  "sales": {
+   "D": "T:UI-45",
+   "HP": "T:UI-06,40"
+  },
+  "sales_admin": {
+   "D": "T:UI-45",
+   "HP": "T:UI-06,45"
+  }
+ },
+ "stock-buckets": {
+  "admin": {
+   "D": "T:UI-06,40",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-40",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-45",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-45",
+   "HP": "T·d:UI-24,45"
+  }
+ },
+ "inventory-lots": {
+  "admin": {
+   "D": "T:UI-50,52,59",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-50,59",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-50",
+   "HP": "T·d:UI-24,52"
+  },
+  "sales": {
+   "D": "–(V)",
+   "HP": "–(V)"
+  },
+  "sales_admin": {
+   "D": "T:UI-50",
+   "HP": "T:UI-24"
+  }
+ },
+ "production": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "wms-locations": {
+  "admin": {
+   "D": "T:UI-42",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-42,46,59",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-46",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-46,59",
+   "HP": "T·d:UI-36,46"
+  }
+ },
+ "md-warehouses": {
+  "admin": {
+   "D": "T:UI-05,50,52",
+   "HP": "T·d:UI-52"
+  },
+  "manager": {
+   "D": "T:UI-05,50",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-05,50",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-05,50",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "logistics": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-47",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales": {
+   "D": "V",
+   "HP": "p(V)"
+  },
+  "sales_admin": {
+   "D": "V",
+   "HP": "T:UI-24"
+  },
+  "sample_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "driver": {
+   "D": "V",
+   "HP": "T:UI-23"
+  }
+ },
+ "cs-rfid-lokasi": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "–(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-55",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-55",
+   "HP": "T·d:UI-24,55"
+  }
+ },
+ "cs-rfid-tags": {
+  "admin": {
+   "D": "T:UI-55",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-14",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-14,55",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "cs-rfid-gate": {
+  "admin": {
+   "D": "T:UI-22",
+   "HP": "T·d:UI-24"
+  },
+  "manager": {
+   "D": "T:UI-20"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-22,50",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-50,55",
+   "HP": "T·d:UI-24,55"
+  }
+ },
+ "escalations": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "qc-inspection": {
+  "admin": {
+   "D": "T:UI-17",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  },
+  "qc": {
+   "D": "T:UI-17,18",
+   "HP": "d(V)"
+  }
+ },
+ "inspections": {
+  "admin": {
+   "D": "T:UI-52",
+   "HP": "p(V)"
+  },
+  "manager": {
+   "D": "T:UI-52",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-52",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-52",
+   "HP": "T·d:UI-24"
+  },
+  "md": {
+   "D": "T:UI-52",
+   "HP": "p(V)"
+  },
+  "md_quality": {
+   "D": "T:UI-52",
+   "HP": "T:UI-24,37"
+  },
+  "qc": {
+   "D": "T:UI-19",
+   "HP": "T:UI-24,37"
+  }
+ },
+ "returns": {
+  "admin": {
+   "D": "T:UI-05,58",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales": {
+   "D": "V",
+   "HP": "p(V)"
+  },
+  "sales_admin": {
+   "D": "T:UI-05",
+   "HP": "p(V)"
+  },
+  "finance": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "md": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "md_quality": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "qc": {
+   "D": "V",
+   "HP": "d(V)"
+  }
+ },
+ "interco-returns": {
+  "admin": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales_admin": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "finance": {
+   "D": "V",
+   "HP": "d(V)"
+  }
+ },
+ "purchase-returns": {
+  "admin": {
+   "D": "T:UI-58",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-58",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-58",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "warehouse-admin-desk": {
+  "warehouse_admin": {
+   "D": "T:UI-02,05",
+   "HP": "d(V)"
+  }
+ },
+ "my-desk": {
+  "admin": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-48",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-05",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "sales_admin": {
+   "D": "T:UI-48",
+   "HP": "d(V)"
+  },
+  "driver": {
+   "D": "T:UI-56",
+   "HP": "d(V)"
+  }
+ },
+ "sample-admin-desk": {
+  "sample_admin": {
+   "D": "T:UI-50",
+   "HP": "T:UI-52"
+  }
+ },
+ "makloon-orders": {
+  "admin": {
+   "D": "T:UI-60",
+   "HP": "p(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "T:UI-24"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "makloon-claim-recap": {
+  "admin": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-34",
+   "HP": "T·d:UI-24,34"
+  },
+  "finance": {
+   "D": "T:UI-49",
+   "HP": "d(V)"
+  },
+  "md": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  }
+ },
+ "makloon-claims": {
+  "admin": {
+   "D": "T:UI-58",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "V",
+   "HP": "T·d:UI-24,36"
+  }
+ },
+ "purchase-requisitions": {
+  "admin": {
+   "D": "T:UI-05,58",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05,58",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-05",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-05",
+   "HP": "T·d:UI-24,36"
+  },
+  "sales_admin": {
+   "D": "T:UI-05",
+   "HP": "p(V)"
+  },
+  "md": {
+   "D": "T:UI-05",
+   "HP": "p(V)"
+  }
+ },
+ "contra-bons": {
+  "admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-34",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-34",
+   "HP": "T·d:UI-24,34"
+  }
+ },
+ "interco-transactions": {
+  "admin": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-34",
+   "HP": "d(V)"
+  },
+  "warehouse": {
+   "D": "T:UI-34,50",
+   "HP": "T·d:UI-34"
+  },
+  "sales_admin": {
+   "D": "T:UI-50",
+   "HP": "p(V)"
+  },
+  "finance": {
+   "D": "T:UI-50",
+   "HP": "d(V)"
+  }
+ },
+ "cs-stock-analytics": {
+  "admin": {
+   "D": "T:UI-05,50",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-05,50",
+   "HP": "T·d:UI-24"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-05,50",
+   "HP": "d(V)"
+  }
+ },
+ "sales": {
+  "admin": {
+   "D": "T:UI-50",
+   "HP": "T·d:UI-24"
+  },
+  "sales": {
+   "D": "V",
+   "HP": "p(V)"
+  },
+  "sales_admin": {
+   "D": "V",
+   "HP": "p(V)"
+  }
+ },
+ "md-products": {
+  "admin": {
+   "D": "T:UI-50,61",
+   "HP": "p(V)"
+  },
+  "manager": {
+   "D": "T:UI-61",
+   "HP": "T:UI-24,61"
+  },
+  "sales": {
+   "D": "T:UI-61",
+   "HP": "p(V)"
+  },
+  "sales_admin": {
+   "D": "T:UI-61",
+   "HP": "p(V)"
+  },
+  "md": {
+   "D": "V",
+   "HP": "T:UI-52"
+  }
+ },
+ "settings-cfg-warehouse": {
+  "admin": {
+   "D": "T:UI-51,52",
+   "HP": "T·d:UI-24"
+  },
+  "manager": {
+   "D": "T:UI-51,52",
+   "HP": "T·d:UI-24"
+  }
+ },
+ "settings-receiving-ocr": {
+  "admin": {
+   "D": "T:UI-52",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-52",
+   "HP": "T·d:UI-24"
+  },
+  "warehouse_admin": {
+   "D": "T:UI-52",
+   "HP": "d(V)"
+  }
+ },
+ "grade-master": {
+  "admin": {
+   "D": "T:UI-59",
+   "HP": "d(V)"
+  },
+  "manager": {
+   "D": "T:UI-59",
+   "HP": "T·d:UI-24"
+  },
+  "warehouse_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "sales_admin": {
+   "D": "V",
+   "HP": "d(V)"
+  },
+  "md": {
+   "D": "–(V) UI-35"
+  },
+  "md_quality": {
+   "D": "–(V) UI-35"
+  },
+  "qc": {
+   "D": "–(V) UI-35"
+  }
+ },
+ "settings-devices": {
+  "admin": {
+   "D": "T:UI-21",
+   "HP": "T·d:UI-24"
+  },
+  "manager": {
+   "D": "T:UI-57",
+   "HP": "T·d:UI-57"
+  },
+  "warehouse_admin": {
+   "D": "–(V) UI-21"
+  }
+ }
+}
