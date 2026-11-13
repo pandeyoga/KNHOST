@@ -129,7 +129,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | IC-02 | Roll dikirim utuh, dokumen memakai jumlah pesanan | Tinggi | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-03 | Eliminasi konsolidasi berubah mundur | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-04 | Laba antar-PT dianggap terealisasi pada rantai A→B→C | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
-| IC-05 | Akuntan PT-A bisa memposting jurnal manual ke buku PT-B | Tinggi | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-05 | Akuntan PT-A bisa memposting jurnal manual ke buku PT-B | Tinggi | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | IC-06 | Akun antar-PT terbuka untuk jurnal manual dan pembalikan sepihak | Tinggi | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-07 | Retur setelah lunas menghasilkan saldo yang tak terlihat dan tak bisa dilunasi | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
 | IV-01 | Landed cost untuk roll yang sudah terjual mengendap di persediaan | Tinggi | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
@@ -152,7 +152,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | GL-08 | Jurnal manual dan reklas suspense tanpa perlindungan kirim-ulang | Sedang | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-09 | Indeks unik gagal dibuat hanya di-log; aplikasi tetap jalan | Sedang | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-10 | Akun khusus PT bisa dihapus tanpa cek pemakaian; barisnya hilang dari laporan | Sedang | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
-| SL-07 | Kas manual menerima ref_type, entitas, rekening dari klien | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-07 | Kas manual menerima ref_type, entitas, rekening dari klien | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | SL-08 | Uang bisa dialokasikan ke pesanan batal/draf | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-09 | Sisa uang muka karyawan tidak punya alur pengembalian; persetujuan tanpa pemisahan pembuat/penyetuju | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-10 | Lepas-cocok rekonsiliasi tanpa penjaga; dua mekanisme rekonsiliasi | Sedang | PK-21 | open | belum dicek — diisi unit pemegang | — | — |
@@ -162,7 +162,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama) | `dfec457` | [PK-06](2026-11-13/hasil/PK-06.md) |
 | IC-09 | Jalur lama transfer antar-PT (harga pokok) masih dipakai kasir | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-10 | Harga dan mode PPN antar-PT bisa diatur pembuat per transaksi; status PKP tidak divalidasi | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
-| IC-11 | Banyak endpoint antar-PT dan eliminasi tanpa penjaga pihak | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-11 | Banyak endpoint antar-PT dan eliminasi tanpa penjaga pihak | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | IV-05 | Rekonsiliasi persediaan membaca kode akun tetap padahal akun bisa dipetakan per PT | Sedang | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
 | IV-06 | Retur beli mengkredit persediaan pada harga retur, bukan nilai buku roll | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
 | IV-07 | Satu roll berbiaya 0 membuat seluruh HPP surat jalan jatuh ke rata-rata | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
@@ -193,7 +193,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FY-12 | Anggaran hanya peringatan dan hanya di PO; pagu tanpa indeks unik dan tanpa jejak ubah | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-13 | Peta kategori→akun saat posting LPJ mengabaikan lapisan entitas | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-14 | LPJ tanpa bukti, vendor, PPN; masih bisa diubah setelah diajukan | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
-| FY-15 | Pusat pajak: entity_id=all dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-15 | Pusat pajak: entity_id=all dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | FY-17 | Aksi uang tanpa konfirmasi: setujui & posting LPJ, bayar reimburse, catat bayar pindah aset, hapus pagu, hapus rekaman PPh | Sedang | PK-13 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-18 | Tanpa kunci idempotensi di layar aset, kas kecil, pajak (lanjutan UX-02) | Sedang | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-16 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
@@ -205,7 +205,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-05 | Alokasi dari deposit tidak memeriksa pemilik pesanan; deposit dikurangi setelah semua alokasi | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-06 | Hapus sisa pembayaran tanpa klaim; keputusan disimpan paling akhir | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-07 | Membatalkan keputusan selisih hutang tidak membalik jurnalnya | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-08 | Aksi kasus mengambil pesanan, kwitansi, rekening, pelanggan dari isi permintaan tanpa diadu dengan kasus atau cakupan pengguna | Tinggi | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-08 | Aksi kasus mengambil pesanan, kwitansi, rekening, pelanggan dari isi permintaan tanpa diadu dengan kasus atau cakupan pengguna | Tinggi | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | FX-09 | Kasus: efek dulu, syarat kemudian; jurnal ber-kunci sama dilewati diam-diam | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-10 | Batas wewenang kasus lebih longgar dari hapus sisa; penyelesai = penyetuju | Tinggi | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-11 | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
@@ -215,7 +215,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-14 | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-15 | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-16 | Gerbang bayar-dulu bisa dilewati dengan mengganti termin; "terbayar" mencakup hapus sisa, kasus, nota kredit | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
 | RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
