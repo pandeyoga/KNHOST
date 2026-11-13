@@ -4,6 +4,9 @@ Paket rencana ini menjawab permintaan pemilik setelah audit keuangan: menu apa y
 modul tambahan tidak menjadi masalah baru, bagaimana perbaikan dijalankan oleh agen coding dengan benar, dan rancangan
 untuk insentif, piutang lanjut, faktur pajak, cara bayar, asisten keuangan, serta dampaknya ke HR dan penggajian.
 
+> Untuk **mengerjakan**, pakai `docs/blueprint/` — di sana tiap unit punya spesifikasi rinci, uji penerimaan, dan
+> urutan terbaru (termasuk unit peran, pengaturan, dan konfigurasi perusahaan dari audit 13 Nov).
+
 **Semua isinya rencana.** Tidak ada kode aplikasi yang diubah. Dasar: laporan
 [`../AUDIT_KEUANGAN_2026-11-13.md`](../AUDIT_KEUANGAN_2026-11-13.md) (139 temuan) dan penelusuran kode lanjutan di
 `9834947` yang menambah 48 temuan.

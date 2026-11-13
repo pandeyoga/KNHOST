@@ -1,5 +1,8 @@
 # Panduan agen pelaksana — menjalankan satu paket kerja
 
+> **Digantikan** oleh `docs/blueprint/00_ATURAN_EKSEKUSI.md` (13 Nov 2026). Berkas ini disimpan sebagai riwayat;
+> untuk eksekusi ikuti blueprint.
+
 Dokumen ini dibaca oleh agen coding yang ditugasi satu paket dari
 [`02_PAKET_KERJA_FONDASI.md`](02_PAKET_KERJA_FONDASI.md) atau satu tahap bangun dari rancangan modul (`05`–`09`).
 Isinya melengkapi, tidak menggantikan, `AGENTS.md`, `docs/reviews/README.md`, dan `docs/KN_00_AGENT_QUICK_START.md`.

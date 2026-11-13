@@ -45,7 +45,7 @@ faktur) harus menyebut dengan benar **berapa**, **pajaknya bagaimana**, **dibaya
 | PM-03 | Sedang | Sedikitnya enam kosakata metode yang tidak sama: profil pelanggan (tunai/tempo/dp/bertahap/kontan), jenis termin (cash/credit/dp/installment), kwitansi (transfer/cash/giro/qris), faktur supplier (transfer/tunai/giro), kontrabon (transfer/giro/cash), uang muka karyawan (tunai/transfer) | `features/crm/crmUtils.jsx:58-64`; `services/config_service.py:149-160`; form masing-masing | PM-T1 |
 | PM-04 | Sedang | Rekonsiliasi tidak membatasi kandidat ke rekening yang sama dan tidak mengisi rekening setelah cocok | `bank_recon_service.py:503-521, 640-651` | PM-T3 |
 | PM-05 ✔ | Sedang | Master rekening tanpa atas nama, peruntukan, bawaan, atau tanda "tampil di dokumen". Fungsi "rekening satu-satunya" menyaring field `status`, padahal master memakai `is_active` — rekening nonaktif ikut terhitung | `schemas_finance.py:9-18`; `bank_service.py:55, 177` | PM-T1 |
-| PM-06 | Sedang | Tunai yang diterima sales di lapangan tidak punya alur titipan dan setoran. Form kwitansi di HP ada, tetapi sales tidak berizin; bila diizinkan, tunai langsung tercatat sebagai kas kecil padahal uang masih di tangan sales | `features/sales/mobile/MobileArReceipt.jsx`; `permissions_config.py:142` | PM-T4, K-36 |
+| PM-06 | Sedang | Tunai yang diterima sales di lapangan tidak punya alur titipan dan setoran. Sales **bisa** mencatat kwitansi dari HP (izin `ar_receipt.create` diberikan saat server dinyalakan, `bootstrap.py:425, 460`, walau `permissions_config.py:142` menulis hanya lihat — temuan PR-14); kwitansi tunai langsung tercatat sebagai kas kecil padahal uang masih di tangan sales | `features/sales/mobile/MobileArReceipt.jsx`; `backend/bootstrap.py:425, 460` | PM-T4, K-36 |
 
 ### A3. Rancangan
 
@@ -148,8 +148,8 @@ di `01` §3.
 
 Sales mencatat **penerimaan titipan**: uang diakui sebagai "kas di tangan sales" (piutang karyawan), pelanggan menerima
 tanda terima bernomor, dan piutang pelanggan turun. **Setoran** ke kasir atau bank menutup titipan itu. Batas nominal
-dan tenggat setor per PT; titipan yang lewat tenggat tampil di daftar kerja keuangan. Tanpa keputusan pemilik, sales
-tetap tidak boleh mencatat penerimaan.
+dan tenggat setor per PT; titipan yang lewat tenggat tampil di daftar kerja keuangan. Sampai alur ini ada, kwitansi
+tunai yang dicatat sales tetap berperilaku seperti hari ini (langsung kas kecil).
 
 #### 8) Tahap 2 — virtual account dan QRIS dinamis (opsional)
 

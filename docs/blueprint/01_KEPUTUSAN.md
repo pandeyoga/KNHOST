@@ -71,7 +71,7 @@ Cara jawaban itu diterjemahkan (tafsir perancang, ditandai supaya pemilik bisa m
 | K-33 | Data pajak pelanggan (NPWP/NIK, alamat pajak, kode transaksi) dan barang disediakan sebagai isian; pesanan non-PPN butuh izin khusus | Isian opsional sampai diisi | Master pelanggan/barang |
 | K-34 | Rekening penerimaan per PT = data master (§C) | — | Master rekening |
 | K-35 | Tahap 1 tanpa penyedia pembayaran; VA/QRIS di luar blueprint | — | Unit PM-T5 `tahan` |
-| K-36 | Sales lapangan tidak menerima tunai | Tidak | Unit PM-T4 `tahan` |
+| K-36 | Sales tetap boleh mencatat kwitansi dari HP seperti hari ini (izin itu diberikan saat server dinyalakan — temuan PR-14); alur titipan dan setoran tunai dibangun di PM-T4 supaya tunai di tangan sales tidak tercatat sebagai kas | Seperti hari ini | Peran & Hak Akses; `pembayaran.sales_terima_tunai` setelah PM-T4 |
 | K-37 | Komponen gaji per PT = data (§C); THR proses terpisah; insentif ikut proses bulanan periode bayarnya | — | Layar Komponen & Masukan |
 | K-38 | Prorata dan potongan = pengaturan per PT | **Mati** (perilaku hari ini: gaji penuh) | `hr.prorata_*`, `hr.potongan_*` |
 | K-39 | Lembur wajib pengajuan | Wajib pengajuan | `hr.overtime.sumber` (pengajuan · absensi) |

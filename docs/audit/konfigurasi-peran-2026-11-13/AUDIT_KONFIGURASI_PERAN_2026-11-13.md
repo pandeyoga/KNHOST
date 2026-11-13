@@ -9,7 +9,7 @@ mudah dipakai?*
 
 | Pertanyaan | Jawaban | Dasar |
 |---|---|---|
-| Apakah nilai yang disimpan di Pusat Pengaturan sampai ke mesin? | **Ya.** Dari 310 kunci, 287 diuji tulis di tingkat grup dan 242 di tingkat PT; semuanya terbaca kembali lewat tiga jalur baca, PT lain tidak ikut berubah, nilai tak sah ditolak, dan kunci berisiko tinggi menolak perubahan tanpa alasan | Dijalankan (§2.1) |
+| Apakah nilai yang disimpan di Pusat Pengaturan sampai ke mesin? | **Pipanya ya, tetapi tidak semua pemakai membacanya dengan benar.** Dari 310 kunci, 287 diuji tulis di tingkat grup dan 242 di tingkat PT; semuanya terbaca kembali lewat tiga jalur baca, nilai tak sah ditolak. Namun sedikitnya 7 kunci dibaca mesin dari nilai grup walau layar menampilkan nilai PT, 6 kunci aktif tidak menggerakkan apa pun, dan perubahan berjadwal baru dipakai sebagian mesin setelah seseorang membuka layar Pengaturan | Dijalankan (§2.1, KF-09) + dibaca (KF-10, KF-11) |
 | Apakah izin "kelola pengaturan" bekerja? | **Tidak.** Pemegang izin itu ditolak di 232 dari 310 pengaturan, dengan pesan yang menyebut izin yang sebenarnya sudah ia miliki. Praktis hanya Admin yang bisa mengubah | Dijalankan (KF-01) |
 | Apakah matriks izin ditegakkan server? | **Ya, konsisten** — 16 peran × 786 rute baca dibandingkan dengan matriks; penyimpangan hanya terjadi di tempat wewenang ditentukan lewat **nama peran** | Dijalankan (§3.1) |
 | Apakah peran kustom bekerja? | **Sebagian.** Membuat, mengubah, menghapus berjalan. Tetapi peran kustom mewarisi akses dari nama peran acuannya terlepas dari tingkat yang diatur, dan peran yang diberi izin tanpa peran acuan tetap ditolak di sejumlah pintu | Dijalankan (PR-01, PR-03) |
@@ -19,8 +19,8 @@ mudah dipakai?*
 | Apakah lengkap dan masuk akal? | **Belum.** 72 nilai bisnis masih ditulis mati di kode; penomoran dokumen dan sebagian besar aturan persetujuan tidak bisa diatur; 5 isian master PT tidak dibaca apa pun | Dibaca (§4) |
 | Apakah bahasanya mudah? | **Belum merata.** 51 label lebih dari 45 karakter, 63 pengaturan tidak menjelaskan arti nilai 0, 12 label memuat istilah Inggris/teknis; penjaga bahasa repo mencatat 113 teks antarmuka belum berbahasa Indonesia | Dihitung (§2.3) |
 
-Jumlah temuan: Pusat Pengaturan 8 (`KF`), peran dan izin 13 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
-layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX`).
+Jumlah temuan: Pusat Pengaturan 13 (`KF`), peran dan izin 14 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
+layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX` 28 butir).
 
 ## 1. Cara kerja dan batas
 
@@ -72,6 +72,11 @@ pembaca; bahwa setiap pemakai lalu berperilaku sesuai nilainya tidak diuji satu 
 | KF-06 [statik] | Rendah | 12 kunci punya nilai cadangan di kode yang berbeda dari bawaan registry; 3 rujukan pemakai menunjuk fungsi yang tidak ada | `LAMPIRAN_DAFTAR.md` §H; `case.sla_hours`, `case.sla_hours_high`, `ai.route_threshold_pct` | Bila dokumen pengaturan tidak lengkap, mesin memakai nilai yang tidak tampil di layar |
 | KF-07 [dibaca] | Sedang | 13 kunci menawarkan lapisan pelanggan/barang, tetapi layar hanya menyediakan pilihan Grup dan PT | `frontend/src/features/settings/config/SettingsScopeBar.jsx:68-74` | Aturan per pelanggan (mis. denda) hanya bisa diisi lewat API |
 | KF-08 [statik] | Rendah | Penjaga pengaturan milik repo hanya memeriksa 78 kunci lama, bukan 310 kunci registry | Keluaran `audit_config_wiring.py`: "Total kunci terdeklarasi: 78" | Kunci baru bisa mati tanpa ketahuan |
+| KF-09 [dijalankan] | Tinggi | Perubahan **berjadwal** ("berlaku sejak" di masa depan) tidak diaktifkan oleh penjadwal. Pembaca baru memakainya tepat waktu, tetapi pembaca lama baru melihatnya setelah seseorang membuka layar Pengaturan atau Kesehatan Pengaturan. Uji: `ar.grace_days` dijadwalkan 0 → 5; tiga detik setelah jatuh tempo pembaca baru = 5, pembaca lama = 0; setelah layar dibuka, pembaca lama = 5 | `backend/services/config_resolver.py:530` (`apply_due_values`), dipanggil hanya dari `backend/routers/config.py:193` dan `:371`; `bukti/t5_jadwal_pengaturan.py` | Dua bagian mesin memakai nilai berbeda untuk aturan yang sama sampai ada yang membuka layar; jadwal juga tidak bisa dibatalkan |
+| KF-10 [dibaca] | Tinggi | Sedikitnya 7 kunci menampilkan nilai khusus PT, tetapi pemakainya membaca nilai grup: `finance.default_payment_term_code`, `inventory.default_uom`, dua kunci `notif.*`, tiga kunci `receiving.*` di jalur pindai lama. Dua kunci diam-diam mengubah nilai 0 menjadi 1 atau 3 | `backend/routers/sales_orders.py:353-356`; rincian 12 kasus di `lampiran/A_pengaturan_ux.md` bagian 6 | Mengatur per PT tampak berhasil tetapi tidak berakibat |
+| KF-11 [dibaca] | Tinggi | Enam kunci berstatus aktif tidak menggerakkan mesin: empat `role_home.*` (halaman awal tiap peran — tidak ada pembacanya), `tax.efaktur_enabled` (hanya dibaca layar ringkasan pajak dan simulator), `contra_bon.qty_tolerance_percent`. Pemeriksa kesehatan meloloskannya karena hanya mencocokkan kata | `backend/services/config_service.py:124`; `backend/services/tax_center_service.py:161`; `backend/services/config_health.py:45-52` | Tombol yang bisa diubah tanpa akibat |
+| KF-12 [dibaca] | Sedang | Tombol "Default" pada cakupan PT menulis nilai bawaan **sebagai nilai khusus PT** (bukan kembali mengikuti grup), tanpa konfirmasi, dan melewati kewajiban alasan. Fitur "coba dulu" untuk QC dan pajak memakai rumus yang berbeda dari mesin | `lampiran/A_pengaturan_ux.md` bagian 4 dan temuan terkait | PT terlepas dari nilai grup tanpa disadari |
+| KF-13 [dibaca] | Sedang | Editor untuk kunci rumit belum layak untuk orang awam: `approval.extra_levels` berupa JSON mentah; 14 daftar diketik berkoma tanpa pemeriksaan isi; `value_format` tidak dikirim ke kartu sehingga `receiving.client_po_patterns` kemungkinan tidak bisa disimpan | `lampiran/A_pengaturan_ux.md` bagian 5 | Salah ketik tersimpan atau perubahan gagal tanpa penjelasan |
 
 ### 2.3 Mutu teks dan pengelompokan
 
@@ -85,7 +90,9 @@ Dihitung dari isi registry (306 kunci aktif):
 | Label memuat istilah Inggris/teknis ("default", "override", "mode", "SLA", "3-way match") | 12 |
 | Kelompok berisi lebih dari 25 kunci | 3 (Stok, Satuan & Alokasi 38; R&D & Desain 27; Penerimaan Barang 26) |
 
-Tinjauan per kunci, usulan teks pengganti, dan usulan pengelompokan baru ada di `lampiran/A_pengaturan_ux.md`.
+Tinjauan baca atas seluruh 310 kunci (`lampiran/A_pengaturan_ux.md`, 28 temuan `KF-UX`) mengusulkan teks pengganti untuk
+208 kunci, mencatat 33 konsep yang memakai lebih dari satu istilah, dan mengusulkan 13 kelompok bersub-judul sebagai
+pengganti 23 kelompok sekarang (dua layar saat ini memuat 85 dan 69 kunci).
 
 ## 3. Peran dan izin
 
@@ -114,6 +121,7 @@ Tinjauan per kunci, usulan teks pengganti, dan usulan pengelompokan baru ada di 
 | PR-10 [statik] | Rendah | Satu pilihan izin merujuk sumber daya yang tidak ada (`gl.view`) | `backend/routers/supplier_contracts.py:208` | Pilihan mati |
 | PR-12 [dijalankan] | Tinggi | Perubahan Admin atas izin **peran bawaan** ditimpa setiap server dinyalakan. Uji: Admin mencabut modul "Uang Masuk" dari Sales (izin kwitansi hilang) → proses awal aplikasi dijalankan ulang → izin `ar_receipt: [create]` kembali | `backend/bootstrap.py:402` (`sync_permission_revocations`, berisi daftar cabut/atur-ulang/beri yang dijalankan tanpa syarat), dipanggil di `backend/bootstrap.py:1648`; `bukti/t4_peran_bawaan.py` | Inilah yang terasa sebagai "pengaturan peran tidak jalan": perubahan tersimpan, lalu diam-diam batal setelah restart. Peran kustom tidak terkena |
 | PR-13 [dijalankan] | Tinggi | Pindah-massal akun bisa mengosongkan Admin. `POST /api/access/roles/admin/move-users` ke peran lain dijawab 200; akun Admin aktif dari 1 menjadi 0, tanpa penjaga "admin terakhir" | `backend/services/custom_role_service.py:348` (`move_users`); `backend/routers/access_roles.py:51`; `bukti/t4_peran_bawaan.py` | Satu salah klik membuat sistem tanpa Admin; pemulihan hanya lewat basis data |
+| PR-14 [dijalankan] | Sedang | Matriks izin bawaan punya **dua sumber yang bertentangan**. Contoh: `permissions_config.py` menulis Sales hanya boleh *melihat* kwitansi (dengan catatan keputusan pemisahan tugas), tetapi daftar di proses awal memberi Sales izin *membuat* kwitansi setiap server dinyalakan; yang berlaku saat jalan adalah yang kedua | `backend/permissions_config.py:142`; `backend/bootstrap.py:425, 460`; keluaran `bukti/t4_peran_bawaan.py` ("sales.ar_receipt sebelum: ['view', 'create']") | Membaca `permissions_config.py` saja memberi gambaran izin yang salah; dokumen rencana 13 Nov yang menyebut "Sales tidak berizin mencatat kwitansi" keliru dan sudah dikoreksi |
 | PR-11 [statik] | Sedang | Layar memakai izin di 269 tempat (`can(`), tetapi masih memakai nama peran di 117 tempat (53 `roleIs(` + 64 perbandingan `role`) | Hitungan terprogram; contoh di `lampiran/B_peran_ux.md` | Peran kustom melihat tombol yang ditolak server, atau tidak melihat tombol padahal berizin |
 
 Catatan skala: registry peran disimpan di memori proses dan dimuat ulang saat peran diubah. Dengan satu proses server
@@ -164,7 +172,7 @@ Setiap temuan dipegang tepat satu unit di `docs/blueprint/INDEKS_UNIT.md`:
 | Temuan | Unit |
 |---|---|
 | PR-02, PR-13 | PR-T1 |
-| PR-12 | PR-T9 |
+| PR-12, PR-14 | PR-T9 |
 | KF-01, KF-02, KF-03 | KF-T1 |
 | KP-17, MB-01, PR-10 | PK-47 |
 | PR-01, PR-03 | PR-T2 |
@@ -174,8 +182,8 @@ Setiap temuan dipegang tepat satu unit di `docs/blueprint/INDEKS_UNIT.md`:
 | PR-09, temuan `PR-UX` | PR-T6 |
 | PR-11 | PR-T7 |
 | KF-05, KF-06, KP-13, KP-29, KP-30 | KF-T2 |
-| KF-04, KP-11 | KF-T3 |
-| temuan `KF-UX` | KF-T4 |
+| KF-04, KF-09, KF-10, KF-11, KP-11 | KF-T3 |
+| KF-12, KF-13, temuan `KF-UX` | KF-T4 |
 | KF-07 | KF-T5 |
 | KP-05 (dan GL-06 dari audit keuangan) | KF-T6 |
 | KP-27, KP-28 (dan CR-03) | KF-T7 |

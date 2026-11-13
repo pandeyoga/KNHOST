@@ -32,7 +32,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | # | ID | Judul | Jalur | Prasyarat | Menutup | Risiko | Henti | Asal |
 |---|---|---|---|---|---|---|---|---|
 | 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | P | PK-02 | PR-02, PR-13 | sedang | — | A |
-| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang | P | PK-02 | PR-12 | sedang | — | A |
+| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | P | PK-02 | PR-12, PR-14 | sedang | — | A |
 | 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | K | PK-02 | KF-01, KF-02, KF-03 | sedang | — | A |
 | 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | F | PK-02 | KP-17, MB-01, PR-10 | rendah | — | A |
 | 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | F | PK-02 | FX-01 | rendah | — | R/02 |
@@ -64,8 +64,8 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | P | PR-T2 | PR-11 | sedang | — | A |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | P | PR-T3 | — | rendah | — | A |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | K | KF-T1 | KF-05, KF-06, KP-13, KP-29, KP-30 | sedang | — | A |
-| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin | K | KF-T1 | KF-04, KP-11 | sedang | — | A |
-| 35 | KF-T4 | Bahasa dan pengelompokan Pusat Pengaturan | K | KF-T2 | KF-UX | sedang | — | A |
+| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | K | KF-T1 | KF-04, KF-09, KF-10, KF-11, KP-11 | tinggi | — | A |
+| 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | K | KF-T2 | KF-12, KF-13, KF-UX | sedang | — | A |
 | 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | K | KF-T1 | KF-07 | sedang | — | A |
 | 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | K | KF-T2 | KP-27, KP-28, CR-03 | sedang | — | A |
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | K | KF-T2 | KF-08 | rendah | — | A |
@@ -154,7 +154,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | C | CR-T2 | CR-08 | sedang | — | R/06 |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | B | PM-T1 | PM-01 | sedang | — | R/07 |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | B | PK-19, PK-20, PK-21, PM-T2 | PM-02, PM-04 | tinggi | — | R/07 |
-| 94 | PM-T4 | Titipan tunai sales dan setoran | B | PM-T3 | PM-06 | sedang | H5 (K-36) | R/07 |
+| 94 | PM-T4 | Titipan tunai sales dan setoran | B | PM-T3 | PM-06 | sedang | H5 | R/07 |
 | 95 | PM-T5 | Virtual account / QRIS | B | PM-T3 | — | tinggi | H8 (K-35) | R/07 |
 | 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | X | PK-40 | TX-06 | sedang | — | R/07 |
 | 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | X | TX-T1, PK-32 | TX-05 | tinggi | H5 | R/07 |

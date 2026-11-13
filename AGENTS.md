@@ -34,10 +34,19 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
   **`docs/finance/AUDIT_KEUANGAN_2026-11-13.md`** (139 temuan, bukti uji di `bukti-2026-11-13/`, peta sumber-kebenaran, gap vs ERP
   matang, rekomendasi database, keputusan pemilik §10, kueri cek data §12). Analisis kode di `cd6963a` — cek ulang
   di `HEAD` sebelum memperbaiki.
-* Rencana perbaikan dan modul baru: **`docs/finance/rencana-2026-11-13/`** (mulai dari `README.md`). Paket kerja `PK-nn`
-  ada di `02`, cara menjalankan satu paket di `03`, aturan wajib untuk modul apa pun yang menyentuh uang di `04`
-  (kontrak posting, entitas, idempotensi, penjaga), keputusan pemilik di `10` — butir bertanda "menahan" = STOP & ASK.
-  Rancangan insentif, piutang, pajak & pembayaran, asisten keuangan, HR & penggajian di `05`–`09` berstatus usulan.
+* Rancangan dan alasannya: **`docs/finance/rencana-2026-11-13/`** (menu `01`, paket kerja `02`, aturan modul baru `04`,
+  insentif, piutang, pajak & pembayaran, asisten keuangan, HR & penggajian `05`–`09`). Untuk **mengerjakan**, pakai
+  `docs/blueprint/` (bagian di bawah): spesifikasi unit di sana lebih rinci dan lebih baru; `03` dan `10` di folder
+  rencana sudah digantikan `docs/blueprint/00_ATURAN_EKSEKUSI.md` dan `01_KEPUTUSAN.md`.
+
+## Blueprint eksekusi
+* Pekerjaan perbaikan dan modul baru dijalankan dari **`docs/blueprint/`**: mulai di `README.md`, ikuti putaran kerja di
+  `00_ATURAN_EKSEKUSI.md`, ambil unit `siap` teratas di `STATUS.md`, kerjakan spesifikasinya di `unit/<ID>.md`.
+  Standar wajib (posting, pengaturan, izin, layar, uji) ada di `02_STANDAR.md`; keputusan pemilik di `01_KEPUTUSAN.md`.
+* Wewenang ditentukan **izin**, bukan nama peran; nilai aturan bisnis adalah **pengaturan**, bukan konstanta
+  (`02_STANDAR.md` §2–§3). Dasar: **`docs/audit/konfigurasi-peran-2026-11-13/`** (audit Pusat Pengaturan, peran kustom,
+  konfigurasi perusahaan — dijalankan terhadap aplikasi utuh; skrip di `bukti/`).
+* Titik henti (jalur produksi, data nyata, isi tabel peraturan, dan lain-lain) = STOP & ASK: `00_ATURAN_EKSEKUSI.md` §6.
 
 ## Lingkungan lokal (Docker)
 Lengkapnya: `docs/LOCAL_DEV.md`. Ringkas:

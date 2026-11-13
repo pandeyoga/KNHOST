@@ -1,5 +1,9 @@
 # Paket kerja fondasi keuangan
 
+> Urutan terbaru dan spesifikasi rinci tiap paket ada di `docs/blueprint/INDEKS_UNIT.md` dan `docs/blueprint/unit/`.
+> Berkas ini tetap menjadi ringkasan dan alasan tiap paket; bila berbeda, blueprint yang berlaku. Baris
+> "Keputusan … menahan" di bawah sudah tidak menahan: lihat `docs/blueprint/01_KEPUTUSAN.md`.
+
 Tanggal: 13 Nov 2026 · Dasar: [`../AUDIT_KEUANGAN_2026-11-13.md`](../AUDIT_KEUANGAN_2026-11-13.md) (139 temuan, dibaca di
 `cd6963a`…`9834947`) · Status: **rencana, belum ada kode aplikasi yang diubah**.
 

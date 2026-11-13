@@ -1,5 +1,9 @@
 # Keputusan yang dibutuhkan dari pemilik
 
+> **Sudah dijawab** pemilik pada 13 Nov 2026 ("setuju garis besar; aturan dua orang bisa diatur, bawaan satu orang").
+> Jawaban yang dipakai beserta nilai bawaannya ada di `docs/blueprint/01_KEPUTUSAN.md`. Berkas ini memuat
+> pertanyaan aslinya.
+
 Satu daftar untuk semua dokumen rencana. K-01 … K-18 sama dengan §10 laporan audit (nomor tidak berubah); K-19 … K-46
 baru dari perencanaan ini.
 
@@ -66,7 +70,7 @@ umum, dan penjualan tanpa sales ikut dihitung; adakah penerima selain sales.
 | K-33 | Adakah pelanggan tanpa NPWP, kode transaksi selain yang sekarang, atau barang/jasa dengan perlakuan PPN berbeda? Boleh ada pesanan non-PPN di PT yang PKP, dan siapa memutuskan? | — (fakta dari pemilik); non-PPN hanya dengan izin khusus | TX-T1 | |
 | K-34 | Rekening mana untuk penerimaan pelanggan di tiap PT; berbeda per pelanggan, lokasi, atau jenis pesanan? Cara bayar apa saja yang sah? | — (fakta dari pemilik) | PM-T1 | |
 | K-35 | Bersedia memakai virtual account / QRIS dari bank atau penyedia? Nominal unik untuk pesanan bayar-dulu? | Tahap 1 tanpa penyedia (kode bayar + rekening tujuan); VA per pelanggan dipertimbangkan setelahnya | PM-T5 | |
-| K-36 | Sales lapangan boleh menerima tunai? Batas dan tenggat setornya? | Tidak, sampai alur titipan dan setoran dibangun | PM-T4 | |
+| K-36 | Sales lapangan boleh menerima tunai? Batas dan tenggat setornya? | *(dikoreksi 13 Nov: hari ini Sales sudah bisa mencatat kwitansi dari HP)* Tetap boleh; bangun alur titipan dan setoran | PM-T4 | Lihat `docs/blueprint/01_KEPUTUSAN.md` |
 
 ## E. HR dan penggajian (`09`)
 
