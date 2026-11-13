@@ -21,8 +21,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | selesai | `cb6b470` | [PK-11](../reviews/2026-11-13/hasil/PK-11.md) |  |
 | 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | selesai | `b5f3011` | [PK-12](../reviews/2026-11-13/hasil/PK-12.md) |  |
 | 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | selesai | `0ac34c1` | [PK-13](../reviews/2026-11-13/hasil/PK-13.md) |  |
-| 17 | PK-14 | Indeks unik wajib ada | PK-02 | dikerjakan |  |  | Titik henti H6 bila data kembar |
-| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | siap |  |  |  |
+| 17 | PK-14 | Indeks unik wajib ada | PK-02 | selesai | `a42f3ef` | [PK-14](../reviews/2026-11-13/hasil/PK-14.md) | Titik henti H6 bila data kembar |
+| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | dikerjakan |  |  |  |
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | siap |  |  |  |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | siap |  |  |  |
@@ -73,7 +73,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | siap |  |  |  |
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | menunggu |  |  |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
-| 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | menunggu |  |  |  |
+| 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | siap |  |  |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | siap |  |  |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |

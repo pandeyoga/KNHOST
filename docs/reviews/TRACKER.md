@@ -150,7 +150,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | GL-06 | "Wajib dua orang" tidak berlaku bagi admin; reopen cukup satu admin; jurnal manual langsung terposting | Sedang | KF-T6 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-07 | Jurnal manual tidak lewat validator pusat; selisih 1 sen lolos | Sedang | PK-10 | implemented_pending_review | ya — dijalankan (bukti merah 8/13 di kode lama) | `8774bd1` | [PK-10](2026-11-13/hasil/PK-10.md) |
 | GL-08 | Jurnal manual dan reklas suspense tanpa perlindungan kirim-ulang | Sedang | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
-| GL-09 | Indeks unik gagal dibuat hanya di-log; aplikasi tetap jalan | Sedang | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-09 | Indeks unik gagal dibuat hanya di-log; aplikasi tetap jalan | Sedang | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
 | GL-10 | Akun khusus PT bisa dihapus tanpa cek pemakaian; barisnya hilang dari laporan | Sedang | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-07 | Kas manual menerima ref_type, entitas, rekening dari klien | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | SL-08 | Uang bisa dialokasikan ke pesanan batal/draf | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
@@ -217,7 +217,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-16 | Gerbang bayar-dulu bisa dilewati dengan mengganti termin; "terbayar" mencakup hapus sisa, kasus, nota kredit | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
 | RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-02 | Hal yang sama di BI Keuangan dan Control Tower | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-01 | Daftar sumber dipotong diam-diam, dan kuotanya dihabiskan dokumen lama yang sudah lunas | Tinggi | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
@@ -250,7 +250,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | GL-12 | gl_status ditulis "posted" tanpa memeriksa hasil | Rendah | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-13 | to_list berbatas memotong diam-diam (rekonsiliasi persediaan 100.000 roll, sementara uji beban 346.700 roll) | Rendah | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-14 | urutan kas/deposit pada refund | Rendah | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
-| IC-12 | penomoran antar-PT tanpa indeks unik, rujukan nyasar ke koleksi entities | Rendah | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-12 | penomoran antar-PT tanpa indeks unik, rujukan nyasar ke koleksi entities | Rendah | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
 | IV-10 | hapus-buku susut memakai biaya tanpa landed | Rendah | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
 | IV-11 | sisa sen per penerimaan menumpuk | Rendah | PK-35 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-18 | kontrol mentah, istilah Inggris, isian uang tanpa pemisah ribuan | Rendah | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
