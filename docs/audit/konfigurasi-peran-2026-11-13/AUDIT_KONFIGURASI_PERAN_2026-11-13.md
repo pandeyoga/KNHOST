@@ -11,15 +11,16 @@ mudah dipakai?*
 |---|---|---|
 | Apakah nilai yang disimpan di Pusat Pengaturan sampai ke mesin? | **Pipanya ya, tetapi tidak semua pemakai membacanya dengan benar.** Dari 310 kunci, 287 diuji tulis di tingkat grup dan 242 di tingkat PT; semuanya terbaca kembali lewat tiga jalur baca, nilai tak sah ditolak. Namun sedikitnya 7 kunci dibaca mesin dari nilai grup walau layar menampilkan nilai PT, 6 kunci aktif tidak menggerakkan apa pun, dan perubahan berjadwal baru dipakai sebagian mesin setelah seseorang membuka layar Pengaturan | Dijalankan (§2.1, KF-09) + dibaca (KF-10, KF-11) |
 | Apakah izin "kelola pengaturan" bekerja? | **Tidak.** Pemegang izin itu ditolak di 232 dari 310 pengaturan, dengan pesan yang menyebut izin yang sebenarnya sudah ia miliki. Praktis hanya Admin yang bisa mengubah | Dijalankan (KF-01) |
-| Apakah matriks izin ditegakkan server? | **Ya, konsisten** — 16 peran × 786 rute baca dibandingkan dengan matriks; penyimpangan hanya terjadi di tempat wewenang ditentukan lewat **nama peran** | Dijalankan (§3.1) |
+| Apakah matriks izin ditegakkan server? | **Ya, konsisten** — 16 peran × 786 rute baca dibandingkan dengan matriks, dan 962 rute tulis dipanggil akun tanpa izin (898 ditolak, tak satu pun rute berizin terpakai); penyimpangan hanya terjadi di tempat wewenang ditentukan lewat **nama atau pangkat peran** | Dijalankan (§3.1) |
 | Apakah peran kustom bekerja? | **Sebagian.** Membuat, mengubah, menghapus berjalan. Tetapi peran kustom mewarisi akses dari nama peran acuannya terlepas dari tingkat yang diatur, dan peran yang diberi izin tanpa peran acuan tetap ditolak di sejumlah pintu | Dijalankan (PR-01, PR-03) |
+| Apakah mencabut semua izin sebuah peran mencabut wewenang menyetujui? | **Tidak.** Peran kustom beracuan Manajer dengan nol izin tetap bisa menyetujui PO Rp250 juta dan tagihan pemasok Rp75 juta | Dijalankan (PR-05) |
 | Apakah perubahan izin peran bawaan bertahan? | **Tidak selalu.** Sebagian perubahan ditimpa ulang setiap server dinyalakan | Dijalankan (PR-12) |
 | Apakah aman mendelegasikan kelola akun ke peran kustom? | **Tidak.** Peran kustom yang diberi kelola akun bisa menjadikan dirinya Admin dan mereset sandi Admin | Dijalankan (PR-02) |
 | Apakah setiap layar punya endpoint-nya? | **Ya**, 1.790 panggilan API di layar diperiksa; satu yang tidak punya rute, dan satu rute selalu galat | Statik + dijalankan (§5) |
 | Apakah lengkap dan masuk akal? | **Belum.** 72 nilai bisnis masih ditulis mati di kode; penomoran dokumen dan sebagian besar aturan persetujuan tidak bisa diatur; 5 isian master PT tidak dibaca apa pun | Dibaca (§4) |
 | Apakah bahasanya mudah? | **Belum merata.** 51 label lebih dari 45 karakter, 63 pengaturan tidak menjelaskan arti nilai 0, 12 label memuat istilah Inggris/teknis; penjaga bahasa repo mencatat 113 teks antarmuka belum berbahasa Indonesia | Dihitung (§2.3) |
 
-Jumlah temuan: Pusat Pengaturan 13 (`KF`), peran dan izin 14 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
+Jumlah temuan: Pusat Pengaturan 13 (`KF`), peran dan izin 15 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
 layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX` 28 butir).
 
 ## 1. Cara kerja dan batas

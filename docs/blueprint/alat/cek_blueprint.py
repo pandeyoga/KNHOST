@@ -8,7 +8,8 @@ Yang diperiksa:
   1. Tiap baris INDEKS_UNIT.md punya berkas unit/<ID>.md, dan sebaliknya.
   2. Prasyarat menunjuk unit yang ada; tiap temuan ditutup tepat satu unit.
   3. Berkas unit memuat bagian wajib templat.
-  4. Jangkar kode `path:baris` (`simbol`): berkas ada, baris dalam jangkauan, simbol ada dalam ±25 baris.
+  4. Jangkar kode `path:baris` (`simbol`): berkas ada, baris dalam jangkauan, simbol ada dalam ±25 baris
+     atau baris itu berada di dalam fungsi/kelas bernama simbol tersebut (definisinya ≤ 400 baris di atas).
 Keluar dengan kode 1 bila ada yang bermasalah.
 """
 import collections
@@ -67,7 +68,11 @@ def cek_jangkar(path: Path):
             nama = re.split(r"[\s(=.:,]", sym.strip())[0]
             seg = "\n".join(lines[max(0, a - 26): min(len(lines), b + 25)])
             if nama and nama not in seg:
-                galat.append(f"simbol `{nama}` tidak ditemukan dekat {rel}:{l1}")
+                # Jangkar boleh menunjuk baris di DALAM fungsi yang disebut: cari definisinya ke atas.
+                atas = "\n".join(lines[max(0, a - 400): a])
+                if not re.search(rf"(?:def|class|const|function)\s+{re.escape(nama)}\b|^\s*{re.escape(nama)}\s*[=:]",
+                                 atas, re.M):
+                    galat.append(f"simbol `{nama}` tidak ditemukan dekat {rel}:{l1}")
     return n, galat
 
 
