@@ -64,7 +64,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("cycle_count.py", "/cycle-count/sessions/{session_id}/approve"): ("claim", "klaim cycle_count_sessions sebelum selisih diterapkan ke roll; finish_set"),
     ("purchase_orders_extra.py", "/purchase-orders/{po_id}/close"): ("cas", "find_one_and_update induk berprasyarat status; wms_tasks update_many idempoten"),
     ("purchase_orders_extra.py", "/purchase-orders/{po_id}/cancel"): ("cas", "find_one_and_update induk berprasyarat status; wms_tasks update_many idempoten"),
-    ("vendor_bills.py", "/vendor-bills/{bill_id}/pay"): ("cas", "find_one_and_update vendor_bills berprasyarat status posted + $inc amount_paid atomik (pra-eksisting)"),
+    ("vendor_bills.py", "/vendor-bills/{bill_id}/pay"): ("service", "PK-05 — niat bayar: periksa tanpa tulis → klaim faktur → niat pending → faktur (CAS per alokasi, id pembayaran turunan) → kas (id turunan) → jurnal tahan-gagal → selesai+lepas", "ap_payment_service.pay_payable"),
+    ("contra_bons.py", "/contra-bons/{cb_id}/pay"): ("service", "PK-05 — niat bayar kontrabon: klaim berprasyarat status+sisa, alokasi faktur idempoten, kas turunan, dokumen berversi, jurnal potongan tahan-gagal", "ap_payment_service.pay_payable"),
+    ("contra_bons.py", "/contra-bons/{cb_id}/pay-from-bank-line/{line_id}"): ("service", "PK-05 — sama dengan bayar kontrabon; kunci niat = bank_line:<id baris>", "ap_payment_service.pay_payable"),
     ("sales_orders_extra.py", "/sales-orders/{order_id}/approve"): ("cas", "so_transition CAS status $in expected_from; set_order_rolls_status idempoten"),
     # Trial 22 Okt (E8) — inti dipindah ke layanan supaya "Periksa & lepas ke gudang" memakai logika yang sama.
     ("sales_orders_extra.py", "/sales-orders/{order_id}/submit-for-approval"): ("service_cas", "so_transition CAS status $in expected_from; set_order_rolls_status idempoten", "so_lifecycle_service.submit_core"),

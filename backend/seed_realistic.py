@@ -6258,7 +6258,7 @@ async def seed_contra_bons():
                                         "price": price}], "INV-SLO-2625", ent=ent, days_ago=6)
             r5 = await ca.post(f"/api/vendor-bills/{b5['id']}/pay", headers=H(adm, ent), json={
                 "amount": round(float(b5["grand_total"]) + 500000, 2), "method": "transfer",
-                "cash_type": "kas_besar",
+                "cash_type": "kas_besar", "bank_account_id": "bank_bca_ksc",   # PK-05 — rekening wajib
                 "notes": "Kelebihan bayar disepakati menjadi uang muka siklus berikutnya",
                 "variance": {"kind": "ap_advance", "reason_code": "supplier_advance",
                              "note": "Uang muka supplier untuk tukar faktur berikutnya"}})

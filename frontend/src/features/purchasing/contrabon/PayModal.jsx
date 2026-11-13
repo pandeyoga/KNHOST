@@ -18,54 +18,42 @@ import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
-import { CASH_TYPE_OPTIONS, METHOD_OPTIONS, todayISO } from "./contraBonApi";
+import { METHOD_OPTIONS, todayISO } from "./contraBonApi";
+import useIntentKey from "../../../hooks/useIntentKey";
+import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "../apPayment";
 
 export default function PayModal({ cb, onClose, onPaid, onError }) {
   const t = cb.totals || {};
   const firstPayment = !(cb.payments || []).length;
   const [amount, setAmount] = useState(String(t.outstanding ?? ""));
   const [method, setMethod] = useState((cb.schedule || {}).method || "transfer");
-  const [cashType, setCashType] = useState("kas_besar");
   const [accountId, setAccountId] = useState((cb.schedule || {}).bank_account_id || "");
   const [paidAt, setPaidAt] = useState(todayISO());
   const [notes, setNotes] = useState("");
-  const [accounts, setAccounts] = useState([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-05 — rekening dari PT kontrabon (wajib bila ada kas keluar), satu niat = satu Idempotency-Key.
+  const intent = useIntentKey("cbpay");
+  const ap = useApPayment("contra_bon", cb.id);
+  const accounts = ap.accounts || [];
+  useEffect(() => { if (ap.loadErr) setErr(ap.loadErr); }, [ap.loadErr]);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const r = await axios.get(`${API}/bank-accounts`);
-        const list = Array.isArray(r.data) ? r.data : (r.data?.items || []);
-        if (alive) setAccounts(list);
-      } catch (e) { if (alive) setErr(apiErrorText(e)); }
-    })();
-    return () => { alive = false; };
-  }, []);
-
-  const accountOptions = useMemo(() => accounts.map((a) => ({
-    value: a.id,
-    label: `${a.name}${a.bank_name ? ` · ${a.bank_name}` : ""}${
-      a.account_number ? ` · ${a.account_number}` : ""}`,
-  })), [accounts]);
+  const accountOptions = useMemo(() => accounts.map((a) => ({ value: a.id, label: accountLabel(a) })), [accounts]);
 
   async function pay() {
+    const willPayCash = amount === "" ? Number(t.outstanding) > 0 : Number(amount) > 0;
+    if (willPayCash && !accountId) { setErr(NEED_ACCOUNT_TEXT); return; }
+    const body = { amount: amount === "" ? null : Number(amount), method, bank_account_id: accountId,
+      paid_at: paidAt, notes: notes.trim() };
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/pay`, {
-        amount: amount === "" ? null : Number(amount),
-        method,
-        cash_type: cashType,
-        bank_account_id: accountId,
-        paid_at: paidAt,
-        notes: notes.trim(),
-      });
+      const r = await intent.send(body, (key) => axios.post(`${API}/contra-bons/${cb.id}/pay`, body,
+        { headers: { "Idempotency-Key": key } }));
       onPaid(r.data);
     } catch (e) {
       setErr(apiErrorText(e));
       onError?.(e);
+      ap.reload();
     } finally { setSaving(false); }
   }
 
@@ -83,6 +71,11 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
         </div>
       )}>
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="cb-pay-error" />}
+      <ApPaymentPending pending={ap.pending} testId="cb-pay-pending"
+        onDone={(d) => { ap.reload(); if (d) onPaid(d); }} onError={setErr} />
+      {ap.accounts && ap.accounts.length === 0 && (
+        <p className="mb-2 text-[11.5px] text-[#A8221A]" data-testid="cb-pay-no-account">{NO_ACCOUNT_TEXT}</p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="stat-card">
@@ -134,16 +127,11 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
             <KNSelect data-testid="cb-pay-method" value={method} onValueChange={setMethod}
               options={METHOD_OPTIONS} className="field" />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Sumber kas</label>
-            <KNSelect data-testid="cb-pay-cashtype" value={cashType} onValueChange={setCashType}
-              options={CASH_TYPE_OPTIONS} className="field" />
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">

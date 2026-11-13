@@ -27,8 +27,14 @@ async def _scope(request: Request, entity_id: Optional[str] = None) -> List[str]
     return resolve_scope_ids(ctx, entity_id)
 
 
-def _fail(exc: cbs.ContraBonError) -> HTTPException:
-    """Kesalahan bisnis → 400 dengan kalimat yang SUDAH siap dibaca pengguna."""
+def _fail(exc: Exception) -> HTTPException:
+    """Kesalahan bisnis → 400 dengan kalimat yang SUDAH siap dibaca pengguna. PK-05: simpan kalah versi → 409;
+    galat bayar hutang (`ApPaymentError`) membawa kodenya sendiri (400/404/409)."""
+    from services.ap_payment_service import ApPaymentError
+    if isinstance(exc, ApPaymentError):
+        return HTTPException(status_code=exc.status_code, detail=exc.detail())
+    if isinstance(exc, cbs.ContraBonConflict):
+        return HTTPException(status_code=409, detail=str(exc))
     return HTTPException(status_code=400, detail=str(exc))
 
 
@@ -276,9 +282,11 @@ async def schedule_contra_bon(cb_id: str, payload: ContraBonScheduleIn,
 async def pay_contra_bon(cb_id: str, payload: ContraBonPayIn,
                          request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "contra_bon", "pay")
+    from services.ap_payment_service import ApPaymentError
     try:
-        cb = await cbs.pay(cb_id, payload.model_dump(), actor, await _scope(request))
-    except cbs.ContraBonError as exc:
+        cb = await cbs.pay(cb_id, payload.model_dump(), actor, await _scope(request),
+                           idempotency_key=(request.headers.get("Idempotency-Key") or "").strip())
+    except (cbs.ContraBonError, ApPaymentError) as exc:
         raise _fail(exc) from exc
     await audit(actor["name"], "contra_bon_paid", "contra_bon", cb_id, {
         "number": cb.get("number"), "amount": float(payload.amount or 0),
@@ -291,10 +299,11 @@ async def pay_from_bank_line(cb_id: str, line_id: str, request: Request,
                              payload: Optional[ContraBonNoteIn] = None) -> Dict[str, Any]:
     """US8 — bayar kontrabon dari baris mutasi bank keluar lalu tautkan barisnya (G-8)."""
     actor = await require_permission(request, "contra_bon", "pay")
+    from services.ap_payment_service import ApPaymentError
     try:
         cb = await cbs.pay_from_bank_line(cb_id, line_id, actor, await _scope(request),
                                            payload.model_dump() if payload else None)
-    except cbs.ContraBonError as exc:
+    except (cbs.ContraBonError, ApPaymentError) as exc:
         raise _fail(exc) from exc
     except ValueError as exc:                     # dari bank_recon_service
         raise HTTPException(status_code=400, detail=str(exc)) from exc

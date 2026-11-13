@@ -46,6 +46,7 @@ from routers import (
     payment_variance,  # FASE G-3 — Selisih pembayaran (lebih/kurang bayar) ber-keputusan
     finance_cases,   # FASE G-9 — Pusat Kasus Keuangan (uang nyangkut: 11 playbook)
     contra_bons,     # FASE G-7 — Kontrabon (siklus tukar faktur supplier)
+    ap_payments,     # PK-05 — niat bayar hutang
     interco,         # FASE G-6 — Transaksi antar-entitas (jual-beli antar-PT + settlement)
     interco_loans,   # FASE E-7 (E7f) — Pinjaman uang antar-PT (dokumen kembar + eliminasi)
     internal_requests,  # FASE E-7 (E7d) — Permintaan Internal: sales minta barang dari PT lain
@@ -189,6 +190,7 @@ for module in [
     marketing,        # Marketing — sosial media & kalender konten
     uom_conversions,  # Fase B (D-06/D-07) — registry konversi satuan GLOBAL + toleransi
     posting_failures,  # P03 lanjutan — Panel Posting Gagal
+    ap_payments,       # PK-05 — niat bayar hutang (status, rekening, lanjutkan, batalkan)
 ]:
     app.include_router(module.router)
 

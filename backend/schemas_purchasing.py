@@ -274,8 +274,9 @@ class VendorBillCreate(BaseModel):
 
 class VendorBillPaymentCreate(BaseModel):
     amount: float = Field(..., ge=0)
-    cash_type: str = "kas_besar"      # kas_kecil | kas_besar (sumber dana)
-    entity_id: str = ""
+    bank_account_id: str = ""         # PK-05 — rekening/kas sumber pembayaran (wajib; harus milik PT tagihan)
+    cash_type: str = "kas_besar"      # DIABAIKAN sejak PK-05: jenis kas diambil dari rekening
+    entity_id: str = ""               # DIABAIKAN sejak PK-05: PT kas = PT tagihan
     method: str = "transfer"          # transfer | tunai | giro
     notes: str = ""
     paid_at: str = ""

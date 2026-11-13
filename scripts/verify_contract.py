@@ -58,6 +58,8 @@ CANONICAL_COLLECTIONS = {
     "special_orders",
     # ── Fase 3 (Procurement: Supplier Master + Pengelolaan Kas) ──
     "suppliers",
+    # ── PK-05 (blueprint) — niat bayar hutang ──
+    "ap_payment_intents",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

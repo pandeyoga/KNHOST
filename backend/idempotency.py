@@ -22,7 +22,9 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/rfid/lookup", "/api/rfid/roll-scans", "/api/rfid/print-jobs",
                        "/api/hr/visits", "/api/sales-orders", "/api/price-approvals",
                        "/api/ar-receipts", "/api/sales-returns", "/api/special-orders",
-                       "/api/marketing/campaigns/", "/api/goods-receipts/")
+                       "/api/marketing/campaigns/", "/api/goods-receipts/",
+                       # PK-05 (SL-02) — bayar hutang: kirim ulang tidak boleh menggandakan kas keluar.
+                       "/api/vendor-bills/", "/api/contra-bons/", "/api/ap-payments/")
 
 
 async def _session_user_id(request: Request) -> str:

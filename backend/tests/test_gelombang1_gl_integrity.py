@@ -262,6 +262,9 @@ class TestFlow3_VendorBill_GL:
             "paid_at": "",
             "notes": "TEST-AGENT payment",
         }
+        acc = s.get(f"{API}/ap-payments/accounts", params={"kind": "vendor_bill", "target_id": bill["id"]},
+                    timeout=30).json()   # PK-05 — rekening wajib, milik PT tagihan
+        payload["bank_account_id"] = acc[0]["id"] if acc else ""
         r = s.post(f"{API}/vendor-bills/{bill['id']}/pay", json=payload, timeout=30)
         assert r.status_code == 200, r.text
         paid = r.json()

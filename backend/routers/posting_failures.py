@@ -20,9 +20,11 @@ SOURCES = {
     "purchase_return": ("purchase_returns", {"gl_status": "failed"}, "entity_id", "number"),
     "goods_receipt": ("wms_tasks", {"gl_posting.status": "failed"}, "gl_posting.entity_id", "po_number"),
     "shipment": ("shipments", {"gl_status": "failed"}, "entity_id", "shipment_no"),
+    "contra_bon": ("contra_bons", {"gl_status": "failed"}, "entity_id", "number"),   # PK-05 — jurnal potongan
 }
 LABELS = {"cash_transaction": "Transaksi Kas", "ar_receipt": "Kwitansi AR", "purchase_return": "Retur Beli",
-          "goods_receipt": "Penerimaan Barang (GR)", "shipment": "Surat Jalan"}
+          "goods_receipt": "Penerimaan Barang (GR)", "shipment": "Surat Jalan",
+          "contra_bon": "Kontrabon (jurnal potongan)"}
 
 
 def _pick(doc: Dict[str, Any], dotted: str) -> Any:
@@ -66,6 +68,12 @@ async def _retry(kind: str, doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
         await gl.post_cash_durable(doc)
         if doc.get("ref_type") == "ar_receipt" and doc.get("ref_id"):
             await db.ar_receipts.update_one({"id": doc["ref_id"]}, {"$set": {"gl_status": "posted", "gl_error": ""}})
+        if doc.get("payment_intent_id"):   # PK-05 — ringkasan jurnal di niat bayar ikut diperbarui
+            from services.ap_payment_service import refresh_gl_status
+            await refresh_gl_status(doc["payment_intent_id"])
+    elif kind == "contra_bon":
+        from services.ap_payment_service import repost_contra_bon
+        await repost_contra_bon(doc["id"])
     elif kind == "ar_receipt":
         from services.ar_receipt_service import repost_receipt
         await repost_receipt(doc["id"])

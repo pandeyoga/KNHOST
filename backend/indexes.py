@@ -168,6 +168,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("source_type", A), ("source_id", A)],
         [("date", D)],
     ],
+    "ap_payment_intents": [          # PK-05 — niat bayar hutang
+        [("kind", A), ("target_id", A), ("status", A)],
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     "vendor_bills": [
         [("entity_id", A), ("status", A), ("created_at", D)],
         [("supplier_id", A)],
@@ -403,6 +407,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     # dokumen order/mitra yang dibaca jalur gudang
     "sales_orders", "purchase_orders", "sales_returns", "purchase_returns", "special_orders",
     "interco_transactions", "interco_returns", "customers", "suppliers", "business_entities", "users",
+    # PK-05 — id niat bayar = kunci idempotensi (turunan SHA-256): keunikannya dijaga database.
+    "ap_payment_intents",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -588,6 +594,18 @@ async def ensure_performance_indexes() -> dict:
     except Exception as exc:  # noqa: BLE001
         uq_summary["failed"].append("journal_entries.source")
         logger.error("[indexes] UNIK journal_entries(source_type,source_id) GAGAL: %s", exc)
+    try:
+        # PK-05 (SL-12) — satu nomor faktur pemasok AKTIF per (PT, pemasok). Data lama kembar → gagal berisik (H6);
+        # cek-lalu-sisip di router tetap berjalan.
+        await db.vendor_bills.create_index(
+            [("entity_id", ASCENDING), ("supplier_id", ASCENDING), ("supplier_invoice_no", ASCENDING)],
+            name="uq_supplier_invoice", unique=True, background=True,
+            partialFilterExpression={"supplier_invoice_no": {"$type": "string", "$gt": ""},
+                                     "status": {"$in": ["draft", "pending_approval", "posted", "paid"]}})
+    except Exception as exc:  # noqa: BLE001
+        uq_summary["failed"].append("vendor_bills.supplier_invoice")
+        logger.error("[indexes] UNIK vendor_bills(entity_id,supplier_id,supplier_invoice_no) GAGAL "
+                     "(nomor faktur pemasok kembar di data lama): %s", exc)
     try:
         # GRN Fase 2 (§4.6) — satu SJ aktif per (entitas, mitra, nomor, tahun); dua GRN tak bisa dihitung bersamaan.
         await db.goods_receipts.create_index(

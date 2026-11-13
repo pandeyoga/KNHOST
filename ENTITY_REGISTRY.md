@@ -48,6 +48,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | KPI Design *(FASE H5)* | `hr_kpi` | `routers/hr_kpi.py` | `KpiInput`, `KpiUpdate` | `KpiView`, `MyKpiCard` (ESS) |
 | Design Gallery *(FASE H5)* | `design_gallery` | `routers/design_gallery.py` | `GalleryInput`, `GalleryUpdate` | `DesignGalleryView` |
 | AI Integrations *(FASE H5)* | `system_settings` *(scope=integrations)* | `routers/integrations.py` | `IntegrationsUpdate` | `IntegrationsPanel` (AdminView tab Integrasi AI) |
+| Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
 | Transaksi Antar Entitas *(FASE G-6)* | `interco_transactions`, `interco_accounts`, `interco_settlements` | `routers/interco.py`, `services/interco_service.py`, `services/consolidation_service.py` (eliminasi margin) | `IntercoCreate`, `IntercoActionIn`, `IntercoSettlementCreate` | `IntercoView` (Pembelian → Hutang Supplier (AP) → Antar Entitas (Jual-Beli)) · `GroupConsolidationView` (eliminasi AUTO G-6) |
 | Finance Case *(FASE G-9)* | `finance_cases` | `routers/finance_cases.py`, `services/finance_case_service.py` | `CaseCreate`, `CaseResolveInput`, `CaseRejectInput` | `FinanceCasesView` (Keuangan → Pusat Kasus Keuangan) |
@@ -664,6 +665,31 @@ PDF:         doc_type `contra_bon` → "Tanda Terima Kontrabon" (esignable)
   refs[]            object  relasi dokumen dua arah (FASE G-4)
   created_by / created_by_id / created_at / updated_at · submitted_* verified_* approved_*
   paid_at · disputed_at · dispute_reason_code · dispute_note · cancelled_at · cancel_note
+
+PK-05 — field tambahan: `version` (bilangan; simpan berprasyarat versi, kalah → 409), `gl_status`/`gl_error`
+(jurnal potongan; panel Posting Gagal jenis `contra_bon`), `payments[].payment_intent_id`.
+
+### ap_payment_intents  [PK-05 — niat bayar hutang: satu pintu bayar faktur pemasok & kontrabon]
+Setiap pembayaran hutang (faktur langsung, kontrabon, kontrabon dari mutasi bank) lahir sebagai NIAT dengan id tetap
+dari kunci idempotensi. Langkahnya berurutan dan masing-masing idempoten: periksa (tanpa tulis) → niat → faktur → kas →
+dokumen kontrabon → jurnal (tahan-gagal) → selesai. **SCOPED** (`entity_id` = PT dokumen sasaran).
+```
+Collection:  ap_payment_intents         Prefix: apn_ (apn_ + 24 heksa SHA-256 dari kind|target_id|kunci)
+Router:      routers/ap_payments.py     (GET pending, GET accounts, POST {id}/resume, POST {id}/cancel)
+Service:     services/ap_payment_service.py  (pay_payable, resume, cancel, repost_journals)
+Index:       uq_id (unik) · (kind, target_id, status) · (entity_id, status, created_at)
+
+  id · entity_id · kind (vendor_bill | contra_bon) · target_id · target_number
+  request_hash      SHA-256 nominal|tanggal|rekening|metode — kunci sama + isi beda → 409
+  amount · advance_amount · deduction_total · paid_at · bank_account_id · cash_type · method · notes · bank_line_id
+  allocations[]     {bill_id, bill_number, amount, source(deduction|cash), payment_entry_id (pay_<24 heksa>_<n>), applied_at}
+  deductions[]      {deduction_id, kind, amount, posts_gl, journal_id, label}
+  cash_txn_id / cash_txn_number · advance_cash_txn_id / advance_cash_txn_number  (cash_<24 heksa>, …a)
+  status            pending | done | cancelled      step: intent | bills | cash | document | journal
+  gl_status/gl_error · lock_token · error · attempts · variance_decision_id · created_* · updated_at · done_at
+```
+`cash_transactions` mendapat `payment_intent_id` dan selalu `account_id` untuk kas bayar hutang. `vendor_bills`: indeks
+unik parsial `uq_supplier_invoice` (entity_id, supplier_id, supplier_invoice_no) untuk status aktif.
 
 suppliers.invoice_exchange (BUKAN koleksi baru — jadwal adalah ATRIBUT supplier):
   {mode: none|weekly|biweekly|monthly, weekday 0..6, day_of_month 1..28, pic_name,

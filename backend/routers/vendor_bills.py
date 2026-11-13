@@ -6,6 +6,7 @@ Lifecycle: draft → pending_approval → posted → paid (+ cancelled).
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from db import db
 from dependencies import require_permission, current_user, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
@@ -321,7 +322,11 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
-    await db.vendor_bills.insert_one(bill)
+    try:
+        await db.vendor_bills.insert_one(bill)
+    except DuplicateKeyError as exc:   # PK-05 (SL-12) — indeks unik nomor faktur pemasok: balapan cek-lalu-sisip
+        raise HTTPException(status_code=409,
+                            detail=f"No. invoice supplier '{inv_no}' sudah dipakai pada tagihan lain.") from exc
     # FASE G-4 — tagihan supplier menaut ke PO-nya (dua arah) supaya 3-way match
     # bisa ditelusuri dari sisi mana pun.
     from services import doc_refs_service as _refs
@@ -500,131 +505,54 @@ async def reject_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
 
 @router.post("/vendor-bills/{bill_id}/pay")
 async def pay_vendor_bill(bill_id: str, payload: VendorBillPaymentCreate, request: Request) -> Dict[str, Any]:
-    """Bayar Vendor Bill (kas keluar) → cash_transaction(out, ref_type=vendor_bill) + update AP.
+    """Bayar Vendor Bill (kas keluar) lewat satu pintu niat bayar (PK-05, `ap_payment_service.pay_payable`).
 
-    FASE G-3 — selisih pembayaran supplier ikut ditakar: kurang/lebih di dalam toleransi
-    ditutup otomatis (berlabel), kelebihan yang disengaja menjadi **uang muka supplier**
-    (`ap_advance`), dan sisa hutang bisa ditutup sebagai potongan supplier (`ap_writeoff`).
+    Kas selalu milik PT tagihan dan ditarik dari rekening yang dipilih (`bank_account_id`, wajib); `entity_id`,
+    `cash_type`, `created_by` dari isi permintaan diabaikan. Header `Idempotency-Key` = satu niat: kirim ulang tidak
+    menggandakan kas. FASE G-3 — selisih pembayaran supplier tetap ditakar dan diputus SEKALI per niat.
     """
     actor = await require_permission(request, "vendor_bill", "pay")
     bill = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
     # KN-A04 — aksi tulis dijaga entitas (dulu hanya pangkat peran).
     await guard_doc(request, "vendor_bills", bill, not_found="Vendor Bill tidak ditemukan")
-    if bill.get("status") not in ("posted",):
-        raise HTTPException(status_code=400, detail=f"Bill status '{bill.get('status')}' belum bisa dibayar (harus posted).")
-    amount = round(float(payload.amount or 0), 2)
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Nominal pembayaran harus > 0")
-    fin = bill_financials(bill)
-    grand_total = round(float(bill.get("grand_total", 0) or 0), 2)
-
-    # ── FASE G-3 — takar selisih sebelum kas keluar ──────────────────────────
+    from services import ap_payment_service as aps
     from services import payment_variance_service as pvs
     vdecision = payload.variance or {}
-    assessment = await pvs.assess_bill(bill, amount)
-    over = round(max(0.0, amount - fin["outstanding"]), 2)
-    if over > 0.01:
-        kind_ok = str(vdecision.get("kind") or "") in ("ap_advance",)
-        if assessment["direction"] != pvs.DIR_ROUNDING and not kind_ok:
-            raise HTTPException(
-                status_code=400,
-                detail=(f"Pembayaran ({amount}) melebihi sisa hutang ({fin['outstanding']}). "
-                        "Bila memang ingin membayar lebih, pilih keputusan "
-                        "'Kelebihan jadi uang muka supplier' (selisih pembayaran)."))
-    applied = round(min(amount, fin["outstanding"]), 2)
-
-    cash_entity = "all" if payload.cash_type == "kas_besar" else (payload.entity_id or bill.get("entity_id") or DEFAULT_ENTITY_ID)
-    # FASE E-7 (E7.4) — kas grup DIHAPUS: uang keluar tetap milik badan usaha tagihannya.
-    from services.cash_entity_service import resolve_owner as _cash_owner
-    cash_entity = _cash_owner(payload.entity_id, bill.get("entity_id"), DEFAULT_ENTITY_ID,
-                              what="Kas keluar pembayaran tagihan supplier")
-    cash_doc = {
-        "id": new_id("cash"), "number": await next_doc_number("cash_transactions", "number", "CASH-", entity_id=cash_entity),
-        "cash_type": payload.cash_type, "direction": "out", "amount": applied,
-        "category": "pembelian",
-        "description": f"Pembayaran {bill.get('bill_number')} — {bill.get('supplier_name','')} ({payload.method})",
-        "entity_id": cash_entity, "ref_type": "vendor_bill", "ref_id": bill_id,
-        "owner_entity_id": bill.get("entity_id") or DEFAULT_ENTITY_ID,
-        "txn_date": payload.paid_at or now_iso(), "status": "posted",
-        "created_by": actor["name"], "created_at": now_iso(), "updated_at": now_iso(),
-    }
-    payment = {
-        "id": new_id("pay"), "amount": applied, "method": payload.method,
-        "cash_txn_id": cash_doc["id"], "cash_txn_number": cash_doc["number"],
-        "cash_type": payload.cash_type, "notes": payload.notes,
-        "paid_by": actor["name"], "paid_at": payload.paid_at or now_iso(),
-    }
-    # INV-CONC-01 (KN-077-RACE-VBILL-PAY P0): guard ATOMIK anti-TOCTOU/overpayment.
-    # $expr memastikan HANYA request yang menjaga (amount_paid + amount) <= grand_total yang
-    # lolos; K pembayaran paralel → hanya yang muat yang sukses, sisanya 409. Match+update
-    # ATOMIC pada satu dokumen sehingga read-stale tak bisa dobel-inc. Kas hanya masuk SETELAH
-    # guard sukses → tak ada orphan cash_transaction saat 409.
-    updated = await db.vendor_bills.find_one_and_update(
-        {"id": bill_id, "status": "posted",
-         "$expr": {"$lte": [{"$add": [{"$ifNull": ["$amount_paid", 0]}, applied]},
-                            {"$add": [{"$ifNull": ["$grand_total", 0]}, 0.01]}]}},  # W2-005 — grand TERKINI
-        {"$inc": {"amount_paid": applied},
-         "$set": {"updated_at": now_iso()},
-         "$push": {"payments": payment, "timeline": timeline_entry(
-             "paid", "Pembayaran dicatat", actor["name"],
-             f"{rupiah(applied)} via {payload.method} ({payload.cash_type})")}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-    if not updated:
-        raise HTTPException(
-            status_code=409,
-            detail="Pembayaran gagal — sisa hutang tidak cukup atau bill baru saja berubah "
-                   "(kemungkinan pembayaran paralel). Muat ulang lalu coba lagi.")
-    # Finalisasi status berdasar amount_paid ter-update (hasil $inc atomik).
-    new_paid = round(float(updated.get("amount_paid", 0) or 0), 2)
-    if new_paid + 0.01 >= grand_total and updated.get("status") != "paid":
-        await db.vendor_bills.update_one({"id": bill_id}, {"$set": {"status": "paid"}})
-        updated["status"] = "paid"
-    # Kas keluar dicatat hanya SETELAH guard sukses.
-    await db.cash_transactions.insert_one(cash_doc)
-    await gl_service.post_cash_transaction(cash_doc)
-
-    # ── FASE G-3 — kelebihan → uang muka supplier (kas keluar terpisah + jurnal) ──
-    advance_cash = None
-    if over > 0.01:
-        advance_cash = {
-            "id": new_id("cash"),
-            "number": await next_doc_number("cash_transactions", "number", "CASH-",
-                                            entity_id=cash_entity),
-            "cash_type": payload.cash_type, "direction": "out", "amount": over,
-            "category": "uang muka supplier",
-            "description": (f"Kelebihan bayar {bill.get('bill_number')} — "
-                            f"{bill.get('supplier_name','')} menjadi uang muka"),
-            "entity_id": cash_entity, "ref_type": "ap_advance", "ref_id": bill_id,
-            "owner_entity_id": bill.get("entity_id") or DEFAULT_ENTITY_ID,
-            "txn_date": payload.paid_at or now_iso(), "status": "posted",
-            "created_by": actor["name"], "created_at": now_iso(), "updated_at": now_iso(),
-        }
-        await db.cash_transactions.insert_one(advance_cash)
-        await gl_service.post_cash_transaction(advance_cash)
-
-    # Keputusan selisih (otomatis bila di dalam toleransi, eksplisit bila diminta).
+    try:
+        res = await aps.pay_payable(
+            kind="vendor_bill", target_id=bill_id, actor=actor, amount=payload.amount, paid_at=payload.paid_at,
+            bank_account_id=payload.bank_account_id, method=payload.method, notes=payload.notes,
+            idempotency_key=(request.headers.get("Idempotency-Key") or "").strip(), variance=vdecision)
+    except aps.ApPaymentError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail()) from exc
+    intent = res["intent"]
+    assessment = intent.get("assessment") or {}
     decision = None
-    if assessment["direction"] != pvs.DIR_NONE and (
-            assessment["direction"] == pvs.DIR_ROUNDING or vdecision.get("kind")):
+    if not res["replayed"] and not intent.get("variance_decision_id") \
+            and assessment.get("direction") not in (None, pvs.DIR_NONE) \
+            and (assessment["direction"] == pvs.DIR_ROUNDING or vdecision.get("kind")):
+        current = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
         try:
-            decision = await pvs.decide_bill(safe_doc(updated), assessment,
-                                             vdecision or {}, actor,
-                                             advance_cash=advance_cash)
+            decision = await pvs.decide_bill(safe_doc(current), assessment, vdecision, actor,
+                                             advance_cash=res["advance_cash"])
+            await db.ap_payment_intents.update_one({"id": intent["id"]}, {"$set": {
+                "variance_decision_id": (decision or {}).get("id", "") or "dibuat"}})
         except pvs.VarianceError as exc:
-            # Uang sudah keluar — keputusan yang gagal tidak boleh membatalkannya;
-            # catat sebabnya di timeline supaya bisa ditindaklanjuti.
+            # Uang sudah keluar — keputusan yang gagal tidak boleh membatalkannya; catat sebabnya.
             await db.vendor_bills.update_one({"id": bill_id}, {"$push": {"timeline": timeline_entry(
                 "variance_failed", "Keputusan selisih gagal", actor["name"], str(exc))}})
-    updated = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0}) or updated
-    await sync_po_billing(bill["po_id"])
-    await audit(actor["name"], "vendor_bill_payment", "vendor_bill", bill_id,
-                {"bill_number": bill.get("bill_number"), "amount": applied,
-                 "advance": over, "cash": cash_doc["number"],
-                 "variance": (decision or {}).get("kind", "")})
+    updated = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
+    if not res["replayed"]:
+        await audit(actor["name"], "vendor_bill_payment", "vendor_bill", bill_id,
+                    {"bill_number": bill.get("bill_number"), "amount": intent.get("amount"),
+                     "advance": intent.get("advance_amount"), "cash": intent.get("cash_txn_number"),
+                     "payment_intent": intent["id"], "variance": (decision or {}).get("kind", "")})
     out = _hydrate(safe_doc(updated))
     out["variance_assessment"] = assessment
     if decision:
         out["variance_decision"] = decision
+    out["payment_intent"] = aps.intent_summary(intent)
+    out["warning"] = res["warning"]
     return out
 
 

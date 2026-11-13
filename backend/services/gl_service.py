@@ -572,6 +572,20 @@ async def preflight_posting(entity_id: str, date: str = "") -> None:
                                       source_type="preflight", can_backdate=True)
 
 
+async def preflight_entry(*, lines: List[Dict[str, Any]], entity_id: str, date: str = "",
+                          source_type: str = "preflight") -> None:
+    """PK-05 — pemeriksaan yang SAMA dengan `_insert_entry` (pemetaan akun, normalisasi, validator, periode
+    tertutup) tanpa nomor dan tanpa sisip. Dipanggil langkah PERIKSA aksi posting sebelum efek apa pun ditulis.
+    Melempar `JournalValidationError` atau `ClosedPeriodError`."""
+    from services import gl_mapping_service as _glm
+    lines = await _glm.remap_lines(lines, entity_id or DEFAULT_ENTITY_ID, source_type)
+    names = await _account_names([l["account_code"] for l in lines])
+    norm = [ln for ln in _norm_lines(lines, names) if ln["debit"] or ln["credit"]]
+    await _validate_entry_lines(norm, entity_id)
+    await enforce_closed_period_guard(entity_id or DEFAULT_ENTITY_ID, date or now_iso(),
+                                      source_type=source_type, can_backdate=True)
+
+
 async def post_cash_durable(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """FN-07/FN-10/CX-04 — posting jurnal kas dengan status TERLIHAT di dokumen kas
     (`gl_status` posted|failed + galat). Idempotent; kegagalan dilempar ke pemanggil."""
@@ -1711,7 +1725,7 @@ async def post_makloon_claim(*, mko_id: str, step_seq: int, entity_id: str, acti
 
 async def post_contra_bon_deduction(*, cb_id: str, deduction_id: str, entity_id: str,
                                     kind: str, amount: float, label: str = "",
-                                    date: str = "") -> Optional[Dict[str, Any]]:
+                                    date: str = "", dry_run: bool = False) -> Optional[Dict[str, Any]]:
     """FASE G-7 — jurnal POTONGAN kontrabon. Idempotent per (kontrabon, potongan).
 
     Lawan akun per jenis potongan:
@@ -1736,9 +1750,13 @@ async def post_contra_bon_deduction(*, cb_id: str, deduction_id: str, entity_id:
     src = f"{cb_id}:{deduction_id}"
     if not credit or amount <= EPS or await _already_posted("contra_bon_deduction", src):
         return None
-    await seed_default_coa()
     desc = f"Potongan kontrabon {label}".strip()
     lines = _balanced_pair(ACC_HUTANG, credit, amount, desc)
+    if dry_run:   # PK-05 — langkah PERIKSA: validasi tanpa menulis
+        await preflight_entry(lines=lines, entity_id=entity_id, date=date or now_iso(),
+                              source_type="contra_bon_deduction")
+        return None
+    await seed_default_coa()
     return await _insert_entry(
         lines=lines, description=desc, date=date or now_iso(),
         source_type="contra_bon_deduction", source_id=src, entity_id=entity_id,
@@ -2680,6 +2698,55 @@ async def post_store_credit_adjust(*, adjust_id: str, entity_id: str, amount_sig
         source_id=adjust_id, entity_id=entity_id or "", created_by="system", source_label=lbl)
 
 
+def _cash_out_contra(txn: Dict[str, Any]) -> str:
+    """Lawan akun kas KELUAR menurut `ref_type` / kategori / akun eksplisit. Murni (dipakai juga `preflight_cash`)."""
+    ref_type = txn.get("ref_type") or ""
+    if ref_type == "ar_refund":
+        # FASE G-3 — pengembalian KELEBIHAN bayar pelanggan: uang itu tercatat sebagai
+        # kewajiban (2-1400 Uang Muka Pelanggan) saat diterima, jadi saat dikembalikan
+        # kewajibannya yang berkurang — bukan beban baru.
+        contra = ACC_UANG_MUKA_PELANGGAN
+    elif ref_type == "vendor_bill":
+        contra = ACC_HUTANG
+    elif ref_type == "contra_bon":
+        # FASE G-7 — satu kas keluar melunasi BANYAK faktur supplier dalam satu siklus
+        # tukar faktur. Lawan akunnya tetap Hutang Usaha: yang berubah hanya caranya
+        # (borongan, bukan per faktur), bukan sifat kewajibannya.
+        contra = ACC_HUTANG
+    elif ref_type == "ap_advance":
+        # FASE G-3 — kelebihan bayar ke supplier menjadi UANG MUKA (aset), bukan beban.
+        contra = ACC_UANG_MUKA
+    elif ref_type == "landed_cost":
+        contra = ACC_HUTANG   # S#074 (LC-PAY): lunasi Hutang landed-cost (dikapitalisasi ke Persediaan), bukan Beban Angkut (double-count)
+    elif ref_type == "reimburse_payable":
+        contra = ACC_HUTANG_REIMBURSE  # CX-05 — bayar kelebihan LPJ: Dr 2-1650 / Cr Kas
+    elif ref_type == "cash_advance":
+        contra = ACC_UANG_MUKA  # Sukacita: pencairan PD → Dr Uang Muka / Cr Kas (beban diakui saat settlement)
+    else:
+        contra = ACC_BEBAN_OPS
+        cat = (txn.get("category") or "").lower()
+        for kw, acc in CASH_OUT_KEYWORDS:
+            if kw in cat:
+                contra = acc
+                break
+    # FASE G-8 — lawan akun EKSPLISIT (biaya administrasi bank dari layar rekonsiliasi,
+    # kodenya diatur di Pusat Pengaturan) menang atas dugaan berbasis kata kunci.
+    return (txn.get("contra_account_code") or "").strip() or contra
+
+
+async def preflight_cash(txn: Dict[str, Any]) -> None:
+    """PK-05 — periksa jurnal kas KELUAR yang akan terbit (akun, periode) tanpa menulis apa pun.
+
+    Baris = baris `post_cash_transaction` cabang keluar; tanggal `txn_date`; entitas = pemilik (owner) kas.
+    Melempar `JournalValidationError` / `ClosedPeriodError`."""
+    amount = round(float(txn.get("amount", 0) or 0), 2)
+    if amount <= EPS or txn.get("direction") != "out":
+        return
+    ent = txn.get("owner_entity_id") or txn.get("entity_id") or ""
+    await preflight_entry(lines=_balanced_pair(_cash_out_contra(txn), _cash_account(txn), amount, "preflight"),
+                          entity_id=ent, date=txn.get("txn_date") or now_iso(), source_type="cash_transaction")
+
+
 async def post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Mutasi kas: Dr/Cr Kas/Bank vs lawan akun berdasar ref_type / kategori."""
     if txn.get("status") == "void":
@@ -2773,38 +2840,7 @@ async def post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]
             contra = (txn.get("contra_account_code") or "").strip() or contra
             lines = _balanced_pair(cash_acc, contra, amount, f"{number} · {desc}")
     else:  # out
-        if ref_type == "ar_refund":
-            # FASE G-3 — pengembalian KELEBIHAN bayar pelanggan: uang itu tercatat sebagai
-            # kewajiban (2-1400 Uang Muka Pelanggan) saat diterima, jadi saat dikembalikan
-            # kewajibannya yang berkurang — bukan beban baru.
-            contra = ACC_UANG_MUKA_PELANGGAN
-        elif ref_type == "vendor_bill":
-            contra = ACC_HUTANG
-        elif ref_type == "contra_bon":
-            # FASE G-7 — satu kas keluar melunasi BANYAK faktur supplier dalam satu siklus
-            # tukar faktur. Lawan akunnya tetap Hutang Usaha: yang berubah hanya caranya
-            # (borongan, bukan per faktur), bukan sifat kewajibannya.
-            contra = ACC_HUTANG
-        elif ref_type == "ap_advance":
-            # FASE G-3 — kelebihan bayar ke supplier menjadi UANG MUKA (aset), bukan beban.
-            contra = ACC_UANG_MUKA
-        elif ref_type == "landed_cost":
-            contra = ACC_HUTANG   # S#074 (LC-PAY): lunasi Hutang landed-cost (dikapitalisasi ke Persediaan), bukan Beban Angkut (double-count)
-        elif ref_type == "reimburse_payable":
-            contra = ACC_HUTANG_REIMBURSE  # CX-05 — bayar kelebihan LPJ: Dr 2-1650 / Cr Kas
-        elif ref_type == "cash_advance":
-            contra = ACC_UANG_MUKA  # Sukacita: pencairan PD → Dr Uang Muka / Cr Kas (beban diakui saat settlement)
-        else:
-            contra = ACC_BEBAN_OPS
-            cat = (txn.get("category") or "").lower()
-            for kw, acc in CASH_OUT_KEYWORDS:
-                if kw in cat:
-                    contra = acc
-                    break
-        # FASE G-8 — lawan akun EKSPLISIT (biaya administrasi bank dari layar rekonsiliasi,
-        # kodenya diatur di Pusat Pengaturan) menang atas dugaan berbasis kata kunci.
-        contra = (txn.get("contra_account_code") or "").strip() or contra
-        lines = _balanced_pair(contra, cash_acc, amount, f"{number} · {desc}")
+        lines = _balanced_pair(_cash_out_contra(txn), cash_acc, amount, f"{number} · {desc}")
 
     je = await _insert_entry(
         lines=lines, description=f"Kas {direction} · {desc}", date=txn.get("txn_date") or now_iso(),

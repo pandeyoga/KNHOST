@@ -158,7 +158,9 @@ async def sc_purchase_full(c: Ctx) -> str:
         vb = await adm.post(f"/vendor-bills/{vb['id']}/approve", {}, entity=c.cst)
     total = float(vb.get("grand_total") or vb.get("total") or 0)
     del fin
+    rek = await db.bank_accounts.find_one({"entity_id": c.cst, "is_active": {"$ne": False}}, {"_id": 0, "id": 1})  # PK-05
     await adm.post(f"/vendor-bills/{vb['id']}/pay", {"amount": round(total * 0.5), "cash_type": "kas_besar", "entity_id": c.cst,
+                                                     "bank_account_id": (rek or {}).get("id", ""),
                                                      "method": "transfer", "notes": "Pembayaran termin 1 (demo)"}, entity=c.cst)
     return f"PR {pr.get('number')} → PO {po.get('po_number')} diterima di Gudang Transit → tagihan dibayar 50%"
 

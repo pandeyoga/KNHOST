@@ -650,8 +650,14 @@ def main() -> int:  # noqa: C901 — POC memang panjang & berurutan
         _bill_backup[b2["id"]] = b2
         gl_hutang_b = gl_balance("2-1100")
         amt1 = round(float(b1["grand_total"]) - 2000, 2)
+
+        def _rek(bill):   # PK-05 — rekening sumber wajib, milik PT tagihan
+            acc = requests.get(f"{BASE}/ap-payments/accounts", headers=H(admin), timeout=60,
+                               params={"kind": "vendor_bill", "target_id": bill["id"]}).json()
+            return acc[0]["id"] if isinstance(acc, list) and acc else ""
         rb = requests.post(f"{BASE}/vendor-bills/{b1['id']}/pay", headers=H(admin), timeout=60,
-                           json={"amount": amt1, "cash_type": "kas_besar", "method": "transfer"})
+                           json={"amount": amt1, "cash_type": "kas_besar", "method": "transfer",
+                                 "bank_account_id": _rek(b1)})
         jb = rb.json() if rb.status_code == 200 else {}
         dec_ap = jb.get("variance_decision") or {}
         if dec_ap.get("id"):
@@ -665,7 +671,8 @@ def main() -> int:  # noqa: C901 — POC memang panjang & berurutan
            dec_ap.get("je_number", ""))
         r_over = requests.post(f"{BASE}/vendor-bills/{b2['id']}/pay", headers=H(admin),
                                timeout=60, json={"amount": round(float(b2["grand_total"]) + 50000, 2),
-                                                 "cash_type": "kas_besar", "method": "transfer"})
+                                                 "cash_type": "kas_besar", "method": "transfer",
+                                                 "bank_account_id": _rek(b2)})
         ok(r_over.status_code == 400 and "uang muka" in r_over.text.lower(),
            "bayar LEBIH tanpa keputusan DITOLAK dengan saran yang jelas",
            r_over.text[:110])
@@ -673,6 +680,7 @@ def main() -> int:  # noqa: C901 — POC memang panjang & berurutan
         r_adv = requests.post(f"{BASE}/vendor-bills/{b2['id']}/pay", headers=H(admin), timeout=60,
                               json={"amount": round(float(b2["grand_total"]) + 50000, 2),
                                     "cash_type": "kas_besar", "method": "transfer",
+                                    "bank_account_id": _rek(b2),
                                     "variance": {"kind": "ap_advance",
                                                  "reason_code": "supplier_advance",
                                                  "note": "Titipan untuk order berikutnya"}})

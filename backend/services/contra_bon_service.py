@@ -129,6 +129,10 @@ class ContraBonError(ValueError):
     """Kesalahan kontrabon dengan pesan SIAP TAMPIL ke pengguna (Bahasa Indonesia)."""
 
 
+class ContraBonConflict(ContraBonError):
+    """PK-05 (SL-12) — simpan kalah versi: dokumen sudah diubah proses lain sejak dibaca. Router → 409."""
+
+
 def _round(n: Any) -> float:
     return round(float(n or 0), 2)
 
@@ -337,6 +341,14 @@ async def occupied_bills(exclude_cb_id: str = "") -> Dict[str, str]:
         for b in (cb.get("bills") or []):
             out[b.get("bill_id")] = cb.get("number", "")
     return out
+
+
+async def active_holder_of(bill_id: str) -> Optional[Dict[str, Any]]:
+    """PK-05 — kontrabon AKTIF (belum `paid`, belum `cancelled`) yang memegang faktur ini, atau None.
+    Faktur yang dipegang kontrabon aktif tidak boleh dibayar langsung."""
+    cb = await db[COLL].find_one({"bills.bill_id": bill_id, "status": {"$nin": ["paid", "cancelled"]}},
+                                 {"_id": 0, "id": 1, "number": 1, "status": 1})
+    return cb
 
 
 async def used_deduction_refs(exclude_cb_id: str = "") -> Dict[str, Dict[str, Any]]:
@@ -593,10 +605,17 @@ def _tl(event: str, label: str, actor: str, note: str = "") -> Dict[str, Any]:
 
 
 async def _save(cb: Dict[str, Any]) -> Dict[str, Any]:
+    """Simpan utuh DENGAN syarat versi (PK-05/SL-12): salinan basi tidak boleh menimpa perubahan orang lain."""
     recompute(cb)
     cb["updated_at"] = now_iso()
-    await db[COLL].update_one({"id": cb["id"]}, {"$set": {
-        k: v for k, v in cb.items() if k not in ("id", "_id")}})
+    ver = int(cb.get("version") or 0)
+    flt: Dict[str, Any] = {"id": cb["id"]}
+    flt["$or"] = [{"version": ver}] + ([{"version": {"$exists": False}}] if ver == 0 else [])
+    res = await db[COLL].update_one(flt, {"$set": {k: v for k, v in cb.items() if k not in ("id", "_id", "version")},
+                                          "$inc": {"version": 1}})
+    if res.matched_count == 0:
+        raise ContraBonConflict("Kontrabon ini baru saja diubah orang lain. Muat ulang lalu ulangi.")
+    cb["version"] = ver + 1
     return cb
 
 
@@ -1071,205 +1090,30 @@ async def cancel(cb_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
 # ═════════════════════════════════════════════════════════════════════════════
 #  PEMBAYARAN (satu kas keluar untuk banyak faktur + potongan non-kas)
 # ═════════════════════════════════════════════════════════════════════════════
-async def _apply_deductions(cb: Dict[str, Any], actor: Dict[str, Any]) -> float:
-    """Terapkan potongan SEKALI: jurnal untuk yang butuh, lalu kembalikan totalnya.
-
-    Potongan `purchase_return` TIDAK dijurnal ulang — `Dr 2-1100 / Cr 1-1300` sudah
-    diposting saat retur disetujui. Kalau dijurnal lagi, Hutang berkurang dua kali.
-    """
-    total = 0.0
-    for d in (cb.get("deductions") or []):
-        amount = _round(d.get("amount"))
-        total = _round(total + amount)
-        if d.get("applied_at"):
-            continue
-        if d.get("posts_gl"):
-            je = await gl_service.post_contra_bon_deduction(
-                cb_id=cb["id"], deduction_id=d["id"], entity_id=cb.get("entity_id", ""),
-                kind=d["kind"], amount=amount,
-                label=f"{cb.get('number')} · {d.get('ref_number') or d.get('label', '')}")
-            d["gl_journal_id"] = (je or {}).get("id", "")
-        d["applied_at"] = now_iso()
-        d["applied_by"] = actor.get("name", "")
-    return total
-
-
-async def _settle_bills(cb: Dict[str, Any], amount: float, actor: Dict[str, Any],
-                        source: str, cash_txn: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    """Alokasikan `amount` ke sisa `applied_amount` faktur (urut tanggal faktur).
-
-    Setiap faktur menerima entri `payments[]` sehingga **subledger hutang** ikut turun —
-    inilah yang membuat GL dan daftar hutang kembali rekonsiliasi.
-    """
-    left = _round(amount)
-    touched: List[Dict[str, Any]] = []
-    for b in cb.get("bills", []):
-        if left <= EPS:
-            break
-        room = _round(_round(b.get("applied_amount")) - _round(b.get("settled_amount")))
-        if room <= EPS:
-            continue
-        take = _round(min(room, left))
-        left = _round(left - take)
-        b["settled_amount"] = _round(_round(b.get("settled_amount")) + take)
-        entry = {
-            "id": new_id("pay"), "amount": take,
-            "method": "kontrabon" if source == "cash" else f"kontrabon:{source}",
-            "cash_txn_id": (cash_txn or {}).get("id", ""),
-            "cash_txn_number": (cash_txn or {}).get("number", ""),
-            "cash_type": (cash_txn or {}).get("cash_type", ""),
-            "contra_bon_id": cb["id"], "contra_bon_number": cb.get("number", ""),
-            "notes": (f"Pelunasan lewat kontrabon {cb.get('number')}"
-                      + ("" if source == "cash" else " (potongan non-kas)")),
-            "paid_by": actor.get("name", ""), "paid_at": now_iso(),
-        }
-        bill = await db.vendor_bills.find_one({"id": b["bill_id"]}, {"_id": 0})
-        if not bill:
-            continue
-        # KN-D03 — tagihan yang sudah DIBATALKAN (jurnalnya dibalik) atau bukan 'posted'
-        # tidak boleh dibayar lewat kontrabon; dan pelunasan memakai penjaga $expr yang
-        # sama dengan jalur bayar normal (anti bayar-lebih / TOCTOU).
-        if bill.get("status") not in ("posted", "paid"):
-            raise ContraBonError(
-                f"Tagihan {bill.get('bill_number')} berstatus '{bill.get('status')}' — "
-                "tidak bisa dilunasi lewat kontrabon. Perbarui daftar faktur kontrabon.")
-        grand = _round(bill.get("grand_total"))
-        res = await db.vendor_bills.find_one_and_update(
-            {"id": b["bill_id"], "status": {"$in": ["posted", "paid"]},
-             "$expr": {"$lte": [{"$add": [{"$ifNull": ["$amount_paid", 0]}, take]}, grand + EPS]}},
-            {"$inc": {"amount_paid": take},
-             "$set": {"updated_at": now_iso()},
-             "$push": {"payments": entry,
-                       "timeline": {"at": now_iso(), "event": "paid",
-                                    "label": "Pelunasan lewat kontrabon",
-                                    "actor": actor.get("name", ""),
-                                    "note": f"{_rp(take)} · {cb.get('number')}"
-                                            + ("" if source == "cash" else " (potongan)")}}},
-            projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-        if not res:
-            raise ContraBonError(
-                f"Pelunasan {bill.get('bill_number')} melebihi sisa hutang atau tagihan baru berubah. Muat ulang.")
-        if _round(res.get("amount_paid")) + EPS >= grand and res.get("status") != "paid":
-            await db.vendor_bills.update_one({"id": b["bill_id"]}, {"$set": {"status": "paid"}})
-        touched.append({"bill_id": b["bill_id"], "bill_number": b.get("bill_number", ""),
-                        "amount": take, "source": source})
-    if left > EPS:
-        raise ContraBonError(
-            f"Sisa {_rp(left)} tidak bisa dialokasikan — nilai yang dibayar melebihi sisa "
-            "tagihan di kontrabon ini.")
-    return touched
-
-
 async def pay(cb_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
-              entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-    cb = await _get(cb_id, entity_ids)
-    pol = await policy(cb.get("entity_id", ""))
-    allowed = ("approved", "scheduled_payment") if pol["block_pay_before_approval"] \
-        else ("verified", "approved", "scheduled_payment")
-    if cb["status"] not in allowed:
-        raise ContraBonError(
-            f"Kontrabon berstatus '{STATUS_LABEL.get(cb['status'], cb['status'])}' belum bisa "
-            "dibayar. " + ("Wajib disetujui lebih dulu (kebijakan Pusat Pengaturan)."
-                           if pol["block_pay_before_approval"] else
-                           "Verifikasi 3-way match dulu."))
-    recompute(cb)
-    outstanding = cb["totals"]["outstanding"]
-    first_payment = not (cb.get("payments") or [])
-    amount = _round(payload.get("amount")) if payload.get("amount") not in (None, "") \
-        else outstanding
-    if amount < 0:
-        raise ContraBonError("Nominal pembayaran tidak boleh negatif.")
-    if amount > outstanding + EPS:
-        raise ContraBonError(
-            f"Nominal {_rp(amount)} melebihi sisa bersih kontrabon ({_rp(outstanding)}).")
-    if amount <= EPS and outstanding > EPS:
-        raise ContraBonError("Nominal pembayaran harus lebih besar dari nol.")
-    # KN-B01 — klaim ATOMIK sebelum kas keluar: klik ganda tidak lagi mencairkan kas dua
-    # kali lalu saling menimpa array `payments` (satu baris pembayaran hilang).
-    from services import atomic_claim as _saga
-    await _saga.claim(COLL, cb["id"], "contra_bon_pay",
-                      precondition={"status": cb["status"],
-                                    "totals.outstanding": cb["totals"]["outstanding"]},
-                      actor=actor.get("name", ""))
-
-    # (1) Potongan diterapkan SEKALI, pada pembayaran pertama.
-    ded_total = 0.0
-    ded_alloc: List[Dict[str, Any]] = []
-    if first_payment:
-        ded_total = await _apply_deductions(cb, actor)
-        if ded_total > EPS:
-            ded_alloc = await _settle_bills(cb, ded_total, actor, source="deduction")
-
-    # (2) Kas keluar — SATU transaksi untuk seluruh faktur (inilah inti kontrabon).
-    cash_doc = None
-    cash_alloc: List[Dict[str, Any]] = []
-    if amount > EPS:
-        cash_type = payload.get("cash_type") or "kas_besar"
-        # FASE E-7 (E7.4) — pembayaran kontrabon adalah uang SATU badan usaha
-        # (kontrabonnya milik satu PT), jadi tidak lagi ditulis ke kas grup.
-        from services.cash_entity_service import resolve_owner
-        cash_entity = resolve_owner(cb.get("entity_id"), DEFAULT_ENTITY_ID,
-                                    what="Kas keluar kontrabon")
-        cash_doc = {
-            "id": new_id("cash"),
-            "number": await next_doc_number("cash_transactions", "number", "CASH-",
-                                            entity_id=cash_entity),
-            "cash_type": cash_type, "direction": "out", "amount": amount,
-            "category": "pembelian",
-            "description": (f"Pembayaran kontrabon {cb.get('number')} — "
-                            f"{cb.get('supplier_name', '')} "
-                            f"({len(cb.get('bills') or [])} faktur, "
-                            f"{payload.get('method') or 'transfer'})"),
-            "entity_id": cash_entity, "ref_type": "contra_bon", "ref_id": cb["id"],
-            "ref_number": cb.get("number", ""),
-            "owner_entity_id": cb.get("entity_id") or DEFAULT_ENTITY_ID,
-            "account_id": payload.get("bank_account_id", ""),
-            "counterparty_name": cb.get("supplier_name", ""),
-            "txn_date": payload.get("paid_at") or now_iso(), "status": "posted",
-            "created_by": actor.get("name", ""), "created_at": now_iso(), "updated_at": now_iso(),
-        }
-        await db.cash_transactions.insert_one(dict(cash_doc))
-        await gl_service.post_cash_transaction(cash_doc)
-        cash_alloc = await _settle_bills(cb, amount, actor, source="cash", cash_txn=cash_doc)
-        cb.setdefault("payments", []).append({
-            "id": new_id("cbp"), "amount": amount,
-            "method": payload.get("method") or "transfer",
-            "cash_type": cash_type, "cash_txn_id": cash_doc["id"],
-            "cash_txn_number": cash_doc["number"],
-            "bank_account_id": payload.get("bank_account_id", ""),
-            "bank_line_id": payload.get("bank_line_id", ""),
-            "notes": payload.get("notes", ""),
-            "paid_by": actor.get("name", ""), "paid_at": cash_doc["txn_date"],
-            "allocations": cash_alloc,
-        })
-
-    recompute(cb)
-    if cb["totals"]["outstanding"] <= EPS:
-        cb["status"] = "paid"
-        cb["paid_at"] = now_iso()
-    cb.setdefault("timeline", []).append(_tl(
-        "dibayar", "Pembayaran dicatat", actor.get("name", ""),
-        f"{_rp(amount)}"
-        + (f" + potongan {_rp(ded_total)}" if ded_total > EPS else "")
-        + (f" · kas {cash_doc['number']}" if cash_doc else " · tanpa kas (habis dipotong)")))
-    cb.pop("saga_lock", None)
-    await _save(cb)
-    await _saga.release(COLL, cb["id"])
-
-    # Ringkasan PO ikut disegarkan supaya layar PO tidak berbohong soal 'sudah ditagih'.
-    from services.vendor_bill_service import sync_po_billing
-    for pid in {b.get("po_id") for b in cb.get("bills", []) if b.get("po_id")}:
-        await sync_po_billing(pid)
-    if cash_doc:
-        from services import doc_refs_service as refs
-        await refs.safe_link(("contra_bon", cb["id"]), ("cash_transaction", cash_doc["id"]),
-                             "settles", note="pembayaran kontrabon")
-    out = await decorate(cb, pol)
+              entity_ids: Optional[List[str]] = None, idempotency_key: str = "") -> Dict[str, Any]:
+    """PK-05 — pemanggil tipis: seluruh alur bayar (periksa → niat → faktur → kas → dokumen → jurnal) ada di
+    `ap_payment_service.pay_payable`. Bentuk jawaban lama dipertahankan (+ `payment_intent`, `warning`).
+    Galat `ApPaymentError` diteruskan ke router (400/409)."""
+    await _get(cb_id, entity_ids)            # pagar PT sebelum apa pun
+    from services import ap_payment_service as aps
+    res = await aps.pay_payable(
+        kind="contra_bon", target_id=cb_id, actor=actor, amount=payload.get("amount"),
+        paid_at=payload.get("paid_at") or "", bank_account_id=payload.get("bank_account_id") or "",
+        method=payload.get("method") or "transfer", notes=payload.get("notes") or "",
+        idempotency_key=idempotency_key, bank_line_id=payload.get("bank_line_id") or "")
+    intent = res["intent"]
+    out = await decorate(await _get(cb_id))
+    alloc = [{"bill_id": a["bill_id"], "bill_number": a["bill_number"], "amount": a["amount"],
+              "source": a["source"]} for a in intent.get("allocations", [])]
     out["payment_result"] = {
-        "cash_transaction": safe_doc(cash_doc) if cash_doc else None,
-        "cash_allocations": cash_alloc, "deduction_allocations": ded_alloc,
-        "deductions_applied": _round(ded_total),
+        "cash_transaction": res["cash_transaction"],
+        "cash_allocations": [a for a in alloc if a["source"] == "cash"],
+        "deduction_allocations": [a for a in alloc if a["source"] == "deduction"],
+        "deductions_applied": _round(intent.get("deduction_total")),
     }
+    out["payment_intent"] = aps.intent_summary(intent)
+    out["warning"] = res["warning"]
     return out
 
 

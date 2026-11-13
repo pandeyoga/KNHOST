@@ -67,8 +67,11 @@ def test_bill_lifecycle_approve_pay(ctx):
     assert lines["6-4700"] == (500000, 0) and lines["1-1500"] == (55000, 0) and lines["2-1100"] == (0, 555000)
     s = requests.get(f"{B}/marketing/campaigns/{cid}/costs", headers=ctx["m"]).json()
     assert s["realized"] == 500000 and s["realized_bills"] == 500000 and s["remaining"] == 500000
+    acc = requests.get(f"{B}/ap-payments/accounts", headers=ctx["a"],
+                       params={"kind": "vendor_bill", "target_id": bill["id"]}).json()   # PK-05 — rekening wajib
     r = requests.post(f"{B}/vendor-bills/{bill['id']}/pay", headers=ctx["a"],
-                      json={"amount": 555000, "cash_type": "kas_besar", "method": "transfer"})
+                      json={"amount": 555000, "cash_type": "kas_besar", "method": "transfer",
+                            "bank_account_id": acc[0]["id"] if acc else ""})
     assert r.status_code == 200 and r.json()["status"] == "paid", r.text
     assert _bal("2-1100") == h0 and _bal("1-1100") == round(k0 - 555000, 2) and _bal("6-4700") == b0 + 500000
     s = requests.get(f"{B}/marketing/campaigns/{cid}/costs", headers=ctx["m"]).json()

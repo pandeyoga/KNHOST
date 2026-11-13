@@ -118,6 +118,7 @@ SCOPED_COLLECTIONS = {
     # bernama `tax_invoices_in` (bukan `input_tax_invoices` yang tidak pernah ada di DB).
     "tax_invoices", "tax_invoices_in",
     "contra_bons",                    # FASE G-7 — kontrabon (siklus tukar faktur supplier)
+    "ap_payment_intents",             # PK-05 — niat bayar hutang (faktur/kontrabon) milik PT dokumennya
     # FASE G-6 — antar-PT (jual-beli): dokumen kembar, saldo pasangan, settlement/netting.
     # FASE G-6b — retur antar-PT (dokumen kembar nota retur ↔ nota kredit).
     "interco_transactions", "interco_accounts", "interco_settlements",

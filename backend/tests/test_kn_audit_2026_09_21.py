@@ -108,7 +108,8 @@ def test_vendor_bill_pay_cross_entity_denied():
     if not bill:
         pytest.skip("tidak ada vendor bill demo")
     r = admin.post(f"{API}/vendor-bills/{bill['id']}/pay",
-                   json={"amount": 1, "method": "transfer", "cash_type": "kas_besar"},
+                   json={"amount": 1, "method": "transfer", "cash_type": "kas_besar",
+                         "bank_account_id": "rekening-apa-pun"},   # PK-05 — rekening wajib; pagar PT tetap 403/404
                    headers={"X-Entity-Id": _other(bill["entity_id"])}, timeout=20)
     assert r.status_code in (403, 404), f"pay bill lintas entitas lolos: {r.status_code} {r.text[:200]}"
 

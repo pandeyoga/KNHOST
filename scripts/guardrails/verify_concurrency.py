@@ -91,8 +91,12 @@ def test_vendor_bill_overpay(mc, H):
         skip("vendor-bill: tak bisa membuat bill dari PO seed.")
         return
     bid, grand = bill["id"], float(bill["grand_total"])
+    acc = requests.get(f"{BASE}/ap-payments/accounts", headers=H, timeout=15,
+                       params={"kind": "vendor_bill", "target_id": bid}).json()   # PK-05 — rekening wajib
+    rek = acc[0]["id"] if isinstance(acc, list) and acc else ""
     codes = fire_parallel(lambda i: requests.post(f"{BASE}/vendor-bills/{bid}/pay", headers=H,
-                          json={"amount": grand, "method": "Transfer", "cash_type": "bank"}, timeout=15).status_code)
+                          json={"amount": grand, "method": "Transfer", "cash_type": "bank",
+                                "bank_account_id": rek}, timeout=15).status_code)
     after = mc.vendor_bills.find_one({"id": bid}, {"_id": 0, "amount_paid": 1, "grand_total": 1})
     paid, gt = float(after.get("amount_paid", 0)), float(after.get("grand_total", 0))
     succ = sum(1 for c in codes if c == 200)

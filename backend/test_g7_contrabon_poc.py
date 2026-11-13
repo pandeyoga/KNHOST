@@ -205,7 +205,8 @@ def setup(admin: str) -> Dict[str, Any]:
                        "received", f"{POC_TAG}/INV-D")
     over = api("POST", f"/vendor-bills/{bill_d['id']}/pay", admin, ENT_A, json={
         "amount": float(bill_d["grand_total"]) + 500000, "method": "transfer",
-        "cash_type": "kas_besar", "notes": f"{POC_TAG} sengaja lebih bayar",
+        "cash_type": "kas_besar", "bank_account_id": BANK_A,   # PK-05 — rekening wajib
+        "notes": f"{POC_TAG} sengaja lebih bayar",
         "variance": {"kind": "ap_advance", "reason_code": "supplier_advance",
                      "note": f"{POC_TAG} uang muka untuk kontrabon berikutnya"}})
     ok(over.status_code == 200, "kelebihan bayar faktur D menjadi UANG MUKA supplier (G-3)",

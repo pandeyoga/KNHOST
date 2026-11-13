@@ -1,6 +1,9 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import MoneyInput from "../../components/MoneyInput";
 import { useState } from "react";
+import KNDatePicker from "../../components/KNDatePicker";
+import useIntentKey from "../../hooks/useIntentKey";
+import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "./apPayment";
 import axios, { API } from "../../services/apiClient";
 import { X, CheckCircle2, AlertTriangle, Wallet, Send, XCircle, Ban } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
@@ -34,10 +37,16 @@ function MatchPill({ status }) {
 
 export default function VendorBillDetailPanel({ bill, canApprove, currentUser, onClose, onAction, onError }) {
   const [payAmount, setPayAmount] = useState("");
-  const [cashType, setCashType] = useState("kas_besar");
   const [method, setMethod] = useState("transfer");
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [accountId, setAccountId] = useState("");
+  const [payNotes, setPayNotes] = useState("");
   const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [warn, setWarn] = useState("");
+  // PK-05 — satu niat bayar = satu Idempotency-Key; rekening dari PT tagihan; niat menggantung bisa dilanjutkan.
+  const intent = useIntentKey("vbpay");
+  const ap = useApPayment("vendor_bill", bill?.id, showPay && bill?.status === "posted");
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
   const fail = (m) => { setErr(m); onError?.(m); };
@@ -65,8 +74,19 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
   async function doPay() {
     const amt = Number(payAmount || 0);
     if (amt <= 0) { fail("Nominal pembayaran harus > 0."); return; }
-    await act("pay", { amount: amt, cash_type: cashType, method });
-    setShowPay(false); setPayAmount("");
+    if (!accountId) { fail(NEED_ACCOUNT_TEXT); return; }
+    const body = { amount: amt, method, paid_at: payDate, bank_account_id: accountId, notes: payNotes.trim() };
+    setBusy(true); setErr(""); setWarn("");
+    try {
+      const r = await intent.send(body, (key) => axios.post(`${API}/vendor-bills/${bill.id}/pay`, body,
+        { headers: { "Idempotency-Key": key } }));
+      if (r.data?.warning) setWarn(r.data.warning);
+      onAction?.("pay", r.data);
+      setShowPay(false); setPayAmount(""); setPayNotes("");
+    } catch (e) {
+      fail(e.response?.data?.detail?.message || e.response?.data?.detail || "Gagal mencatat pembayaran.");
+      ap.reload();
+    } finally { setBusy(false); }
   }
 
   const exceptions = bill.match_exceptions || [];
@@ -97,6 +117,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
 
         <div className="p-4 space-y-3">
           <ErrorNotice message={err} onDismiss={() => setErr("")} testId="vb-detail-error" />
+          {warn && <div className="notice-bar warning" data-testid="vb-pay-warning"><span className="text-[12px]">{warn}</span></div>}
           <DocumentActionsBar docType="vendor_bill" sourceId={bill.id} entityId={bill.entity_id}
             number={bill.bill_number} label="Vendor Bill" esignable currentUser={currentUser}
             className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
@@ -177,21 +198,35 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
           {/* Pay panel */}
           {showPay && bill.status === "posted" && (
             <div className="rounded-md border border-[#EFF0F2] p-3 space-y-2.5" data-testid="vb-pay-panel">
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <ApPaymentPending pending={ap.pending} testId="vb-pay-pending"
+                onDone={(d) => { ap.reload(); onAction?.("pay", d); }} onError={fail} />
+              {ap.accounts && ap.accounts.length === 0 && (
+                <p className="text-[11.5px] text-[#A8221A]" data-testid="vb-pay-no-account">{NO_ACCOUNT_TEXT}</p>
+              )}
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <Field label="Nominal Bayar">
                   <MoneyInput testId="vb-pay-amount" className="field" value={payAmount} onChange={(v) => setPayAmount(v)} />
                 </Field>
-                <Field label="Sumber Kas">
-                  <KNSelect data-testid="vb-pay-cashtype" value={cashType} onValueChange={setCashType} className="field"
-                    options={[{ value: "kas_besar", label: "Kas Besar" }, { value: "kas_kecil", label: "Kas Kecil" }]} />
+                <Field label="Tanggal Pembayaran">
+                  <KNDatePicker data-testid="vb-pay-date" value={payDate} onChange={setPayDate} clearable={false} />
+                </Field>
+                <Field label="Rekening / Kas">
+                  <KNSelect data-testid="vb-pay-account" value={accountId} onValueChange={setAccountId} className="field"
+                    placeholder="Pilih rekening…"
+                    options={(ap.accounts || []).map((a) => ({ value: a.id, label: accountLabel(a) }))} />
                 </Field>
                 <Field label="Metode">
                   <KNSelect value={method} onValueChange={setMethod} className="field"
                     options={[{ value: "transfer", label: "Transfer" }, { value: "tunai", label: "Tunai" }, { value: "giro", label: "Giro" }]} />
                 </Field>
               </div>
+              <Field label="Catatan">
+                <input className="field" data-testid="vb-pay-notes" value={payNotes} onChange={(e) => setPayNotes(e.target.value)}
+                  placeholder="Opsional — mis. nomor bukti transfer" />
+              </Field>
               <div className="flex gap-2">
-                <button data-testid="vb-pay-confirm" onClick={doPay} disabled={busy} className="primary-button">Catat Pembayaran</button>
+                <button data-testid="vb-pay-confirm" onClick={doPay} disabled={busy || !!ap.pending} className="primary-button">
+                  {busy ? "Memproses…" : "Catat Pembayaran"}</button>
                 <button onClick={() => setShowPay(false)} className="secondary-button">Batal</button>
               </div>
             </div>
