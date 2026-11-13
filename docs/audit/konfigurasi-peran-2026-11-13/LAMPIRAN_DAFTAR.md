@@ -240,7 +240,7 @@ Hanya yang bagi peran Sopir (peran bawaan tersempit) dijawab 403 — artinya ter
 
 `lot.enforcement_mode`, `lot.require_supplier_lot`, `lot.require_dye_lot`, `lot.alias_mode`, `lot.alias_unique_scope`, `lot.auto_create_on_receiving`, `lot.status_on_receipt`, `lot.number_format`, `receiving.supplier_dn_mode`, `makloon.variance_tolerance_pct`, `makloon.auto_claim`, `makloon.claim_approval_roles`, `makloon.contract_mode`, `makloon.default_shrinkage_pct`, `makloon.require_output_product`, `makloon.require_yield_reason`, `rnd.lifecycle_enforcement`, `rnd.new_product_default_lifecycle`, `rnd.variant_axes_default`, `rnd.variant_axes_optional`, `rnd.spec_approval_roles`, `rnd.sample_decision_roles`, `rnd.max_rounds`, `rnd.round_sla_days`, `rnd.require_attachment_on_round`, `rnd.require_design_for_proofing`, `rnd.require_stage_chain`, `rnd.labdip_max_colors`, `rnd.design_code_pattern`, `rnd.design_code_seq_digits`, `rnd.design_prefix_motif`, `rnd.design_prefix_pattern`, `rnd.design_prefix_artwork`, `rnd.design_acc_min_score`, `rnd.sla_escalate_admin_days`, `rnd.kpi_weight_on_time`, `rnd.kpi_weight_score`, `rnd.kpi_weight_acc`, `rnd.kpi_weight_design`, `rnd.kpi_penalty_rework`, `rnd.kpi_penalty_overdue`, `rnd.auto_contract_on_decide`, `rnd.sample_material_from_stock`, `approval.matrix_enforcement`, `approval.matrix_scope`, `approval.matrix_effective_from`, `approval.matrix_sod`, `approval.po_custom_direksi_min`
 
-## H. Pengaturan yang nilai cadangannya di kode berbeda dari bawaan registry (12)
+## H. Pengaturan yang nilai cadangannya di kode berbeda dari bawaan registry (11)
 
 | Kunci | Bawaan registry | Cadangan di kode | Berkas:baris |
 |---|---|---|---|
@@ -254,8 +254,10 @@ Hanya yang bagi peran Sopir (peran bawaan tersempit) dijawab 403 — artinya ter
 | `sales.require_so_validation` | False | True | `backend/services/so_approvals.py:227` |
 | `inventory.intercompany_transfer_required` | True | False | `backend/services/config_service.py:539` |
 | `allocation.lot_selection` | fifo | fefo | `backend/services/roll_service.py:1081` |
-| `hr.feature_toggles.pph21` | True | 0 | `backend/services/hr_payroll_service.py:292` |
 | `approval.po_custom_direksi_min` | 50000000 | 0.0 | `backend/services/approval_matrix_service.py:217` |
+
+Koreksi 13 Nov: baris `hr.feature_toggles.pph21` dicabut dari daftar ini — baris 292 adalah nominal slip; sakelarnya dibaca di
+`backend/services/hr_payroll_service.py:279` dengan cadangan `True`, sama dengan registry.
 
 ## I. Sapuan endpoint tulis oleh akun tanpa izin (T9)
 

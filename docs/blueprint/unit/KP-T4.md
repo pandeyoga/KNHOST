@@ -6,7 +6,7 @@
 | Jenis | fitur |
 | Risiko | tinggi (dua serah-terima) |
 | Prasyarat | KF-T6, KP-T3, PR-T2 |
-| Menutup temuan | KP-06, KP-07, KP-25, KP-26, PR-05 (serta PR-UX-02, PR-UX-24) |
+| Menutup temuan | KP-06, KP-07, KP-25, KP-26, PR-05 (bahan untuk PR-UX-02 dan PR-UX-24, yang layarnya ditutup PR-T6) |
 | Keputusan | K-51, K-47; jawaban pemilik butir 2 dan 3 |
 | Standar | §2.3, §3.1 (Z1, Z2, Z4, Z6), §3.2, §3.4 (N1), §4 (L1, L2, L5, L6), §5 (D1, D3, D8, D9), §6 |
 | Lingkungan uji | B (keputusan dan izin); A (dua penyetuju bersamaan) |

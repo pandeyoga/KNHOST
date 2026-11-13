@@ -55,6 +55,11 @@ def cek_jangkar(path: Path):
             if rel in baru or "tests_mem" in rel or "/tests/test_bp_" in rel or "/hasil/" in rel \
                     or rel.startswith("scripts/migrate_") or rel.endswith("STATUS.md"):
                 continue
+            # Tanpa nomor baris dan foldernya ada (atau folder data blueprint): dianggap berkas yang akan dibuat unit.
+            # Dengan nomor baris pasti keliru — tidak mungkin menunjuk baris di berkas yang belum ada.
+            if not l1 and ((fp.parent.exists() and fp.parent.is_dir())
+                           or rel.startswith(("docs/blueprint/data/", "backend/data/"))):
+                continue
             galat.append(f"berkas tidak ada: {rel}")
             continue
         if not l1:

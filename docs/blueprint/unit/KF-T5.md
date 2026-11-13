@@ -23,7 +23,7 @@ Semua `[dibaca]`. Registry memuat 13 kunci dengan lapisan `customer` (10) atau `
 menawarkan Global dan PT: `frontend/src/features/settings/config/SettingsScopeBar.jsx:68` (`cfg-scope-type`). Kartu
 tetap menulis "Bisa diatur pada level: … Pelanggan tertentu":
 `frontend/src/features/settings/config/SettingCard.jsx:132` (`scopes`). Server sudah menerima lapisan itu
-(`backend/services/config_resolver.py:58`, `WRITABLE_LAYERS`), tetapi penjaga tulis hanya memeriksa lapisan PT dan grup:
+(`backend/services/config_resolver.py:58` (`WRITABLE_LAYERS`)), tetapi penjaga tulis hanya memeriksa lapisan PT dan grup:
 `backend/routers/config.py:146` (`_assert_scope_write`) — id pelanggan atau barang tidak dibuktikan ada.
 
 Hasil pemeriksaan pemakai, per kunci:
@@ -45,9 +45,9 @@ Hasil pemeriksaan pemakai, per kunci:
 | `cutting.waste_limit_pct` | barang | Ya | `backend/services/roll_service.py:643` (`cut_waste_limit_pct`) | Beri layar |
 
 Pemanggil yang meneruskan id pelanggan: `backend/services/ar_aging_service.py:235` (`get_ar_config`),
-`backend/services/penalty_service.py:395` (`penalty_policy`), `backend/services/payment_variance_service.py:710`
-(`variance_policy`). Tempat layar: detail pelanggan `frontend/src/features/crm/Customer360Panel.jsx:86`
-(`Kontrol Kredit`); form barang `frontend/src/features/admin/products/ProductMasterForm.jsx`.
+`backend/services/penalty_service.py:395` (`penalty_policy`),
+`backend/services/payment_variance_service.py:710` (`variance_policy`). Tempat layar: detail pelanggan
+`frontend/src/features/crm/Customer360Panel.jsx:86` (`Kontrol Kredit`); form barang `frontend/src/features/admin/products/ProductMasterForm.jsx`.
 
 ## Perubahan
 

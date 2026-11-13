@@ -151,7 +151,7 @@ Aksi `ubah_profil_kredit` (`kontrol.ubah_profil_kredit.min_orang` bawaan 1, `.ba
 
 ### Izin dan peran
 
-Sumber daya baru `credit_profile`, masuk modul akses `ar` (`backend/access_modules.py:131`, `payment_variance`); id
+Sumber daya baru `credit_profile`, masuk modul akses `ar` (`backend/access_modules.py:131` (`payment_variance`)); id
 menu yang dibukanya: `customers-crm`.
 
 | Pasangan | Arti di layar | Peran bawaan |
@@ -178,7 +178,7 @@ Kartu pelanggan (`Customer360Panel.jsx`), tab baru **Kredit** (kunci `credit`), 
 
 Kotak ringkasan kredit di atas kartu membaca plafon dari `effective.credit_limit`. Form ubah pelanggan kehilangan
 isian plafon dan pilihan status "Diblokir". CRM › tab "Persetujuan Kredit"
-(`frontend/src/features/crm/CrmView.jsx:51`, `CreditOverridesPanel`): di bawah panel yang ada, komponen baru
+(`frontend/src/features/crm/CrmView.jsx:51` (`CreditOverridesPanel`)): di bawah panel yang ada, komponen baru
 `CreditProfileRequestsPanel.jsx` menampilkan pengajuan `diajukan` PT aktif dengan tombol yang sama; syarat tampil tab
 berubah dari nama peran menjadi `can(perms, "credit_profile", "approve")`. CR-T5 memindahkan antrean ini.
 

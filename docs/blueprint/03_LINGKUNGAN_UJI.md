@@ -111,7 +111,7 @@ Dijalankan di luar Docker dengan tautan `/app` dan tanpa MongoDB. Gate yang butu
 |---|---|---|
 | `guard:auth_coverage` (INV-AUTH-01) | MERAH | 28 endpoint dilaporkan tanpa penegak auth yang dikenali (sebagian besar `handheld.py` yang memakai kunci perangkat; juga `design_gallery` submit/approve/reject, `ai_assist` actions) |
 | `guard:atomic_claim` (INV-ATOMIC-01) | MERAH | 97 endpoint tulis multi-koleksi belum ditinjau + 5 ketidakcocokan (temuan audit DB-01) |
-| `config_wiring` (INV-CFG-01/04) | MERAH | 7 kunci mati, 2 kunci tanpa layar, 2 editor ganda |
+| `config_wiring` (INV-CFG-01/04) | MERAH | 7 kunci mati (positif palsu: `returns.grade_price_factors.*` dibaca mesin tetapi belum beregistry — dibereskan KF-T2), 2 kunci tanpa layar, 2 editor ganda |
 | `audit_i18n_id` | MERAH | 113 teks antarmuka belum berbahasa Indonesia di 66 berkas |
 | `guard:create_modal` (INV-UI-05) | MERAH | 4 form buat masih sebaris; 2 tombol mati, termasuk `gl-reverse-submit` di `JournalDetailModal.jsx:109` |
 | `guard:warehouse_scope` | MERAH | 8 endpoint tulis memilih gudang tanpa pagar badan usaha |

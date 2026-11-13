@@ -104,6 +104,6 @@ Tidak ada yang menahan; semuanya mengikuti permintaan pemilik agar pengaturan da
 |---|---|---|---|
 | K-47 | Wewenang ditentukan izin, bukan nama peran acuan | Ya (`02_STANDAR.md` §3) | Saat dipasang, peran bawaan dan peran kustom yang ada diberi izin baru yang setara dengan akses yang selama ini mereka dapat lewat nama peran — tidak ada yang kehilangan akses; bedanya kini terlihat dan bisa dicabut di layar peran |
 | K-48 | Izin "kelola pengaturan" benar-benar berfungsi | Ya | Bawaan hanya Admin yang memegangnya — sama dengan hari ini |
-| K-49 | Membaca Pusat Pengaturan butuh izin lihat pengaturan | Ya | Menu Pengaturan memang hanya tampil untuk Admin dan Manajer; yang ditutup hanya akses langsung ke API oleh peran lain. Nilai yang dibutuhkan semua layar tetap tersedia lewat daftar putih |
+| K-49 | Membaca Pusat Pengaturan butuh izin lihat pengaturan | Ya | Yang ditutup adalah akses langsung ke API oleh peran yang tidak berkepentingan. Peran kustom yang memegang modul sebuah bidang tetap melihat tab pengaturan bidang itu (mis. modul piutang → tab "Keuangan & Pajak"; terlihat di uji layar) dan hanya membaca kunci bidangnya — rinciannya di `unit/KF-T1.md`. Nilai yang dibutuhkan semua layar tetap tersedia lewat daftar putih |
 | K-50 | Tidak bisa memberi atau mengubah akun/peran yang izinnya melebihi milik sendiri | Ya | Bawaan hanya Admin yang mengelola akun dan peran — tidak ada perubahan bagi Admin |
 | K-51 | Persetujuan mengikuti izin setujui + batas nominal per peran | Ya | Saat dipasang, batas tiap peran diisi setara peringkatnya hari ini |

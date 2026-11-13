@@ -23,29 +23,29 @@ berkepentingan (mis. Sopir) tidak lagi bisa membaca ambang persetujuan, aturan k
 
 | Fakta | Hasil sekarang | Jangkar |
 |---|---|---|
-| Pemegang `settings.manage` (peran kustom tanpa acuan) menyimpan pengaturan di lapisan grup maupun PT | 403 "… tidak bisa Anda ubah (butuh izin settings.manage)"; `can_edit` salah untuk 232 dari 232 kunci | `backend/routers/config.py:45` (`_may_edit`) — cabang `backend/routers/config.py:66` (`owner_role`) menolak semua selain Admin karena 310 kunci ber-`owner_role` "admin" (`backend/config_registry.py:163`, `owner_role`) |
-| Peran kustom beracuan Manajer dengan semua modul "Tidak ada" menyimpan kunci ber-`roles=("manager",)` | 200 | `backend/routers/config.py:59` (`role_in`); 48 kunci memakai `roles=` (`backend/config_catalog_ops.py:34`, `_MANAGER_TOO`; `backend/config_catalog_rnd.py:15`, `_MANAGER_TOO`; `backend/config_catalog_approval_matrix.py:14`, `_MANAGER_TOO`) |
-| Sopir memanggil `GET /api/config/effective` | 200, 310 kunci | `backend/routers/config.py:184` (`read_effective`), `:160` (`read_registry`), `:204` (`explain`), `:351` (`read_history`), `:402` (`list_simulators`) hanya memanggil `current_user`; satu-satunya batas baca = `backend/routers/config.py:93` (`READ_LIMITS`) untuk peran `md`, dikenali lewat nama peran |
+| Pemegang `settings.manage` (peran kustom tanpa acuan) menyimpan pengaturan di lapisan grup maupun PT | 403 "… tidak bisa Anda ubah (butuh izin settings.manage)"; `can_edit` salah untuk 232 dari 232 kunci | `backend/routers/config.py:45` (`_may_edit`) — cabang `backend/routers/config.py:66` (`owner_role`) menolak semua selain Admin karena 310 kunci ber-`owner_role` "admin" (`backend/config_registry.py:163` (`owner_role`)) |
+| Peran kustom beracuan Manajer dengan semua modul "Tidak ada" menyimpan kunci ber-`roles=("manager",)` | 200 | `backend/routers/config.py:59` (`role_in`); 48 kunci memakai `roles=` (`backend/config_catalog_ops.py:34` (`_MANAGER_TOO`); `backend/config_catalog_rnd.py:15` (`_MANAGER_TOO`); `backend/config_catalog_approval_matrix.py:14` (`_MANAGER_TOO`)) |
+| Sopir memanggil `GET /api/config/effective` | 200, 310 kunci | `backend/routers/config.py:184` (`read_effective`), `backend/routers/config.py:160` (`read_registry`), `backend/routers/config.py:204` (`explain`), `backend/routers/config.py:351` (`read_history`), `backend/routers/config.py:402` (`list_simulators`) hanya memanggil `current_user`; satu-satunya batas baca = `backend/routers/config.py:93` (`READ_LIMITS`) untuk peran `md`, dikenali lewat nama peran |
 
 `[dibaca]`:
 
 - Pesan galat menampilkan `x.y`: `backend/routers/config.py:71` (`_perm_error`).
-- `GET /api/settings` (`backend/routers/settings.py:26`, `read_settings`) dan `GET /api/settings/effective`
-  (`backend/routers/settings.py:32`, `read_effective_settings`) hanya butuh login dan mengembalikan **seluruh** isi
+- `GET /api/settings` (`backend/routers/settings.py:26` (`read_settings`)) dan `GET /api/settings/effective`
+  (`backend/routers/settings.py:32` (`read_effective_settings`)) hanya butuh login dan mengembalikan **seluruh** isi
   dokumen pengaturan grup, termasuk bagian `commission`, `approval`, `ar`, dan setiap bagian yang pernah ditulis Pusat
   Pengaturan (`bank`, `case`, `payment`, …) karena penulisan diproyeksikan ke dokumen itu
-  (`backend/services/config_resolver.py:379`, `_project`).
+  (`backend/services/config_resolver.py:379` (`_project`)).
 - `GET /api/settings/effective` dipanggil semua pengguna saat aplikasi dibuka:
   `frontend/src/hooks/useAppActions.js:190` (`loadAll`). `GET /api/settings` tidak punya pemanggil di `frontend/src`.
-- Matriks bawaan: hanya `admin` memegang `settings.manage` (`backend/permissions_config.py:48`, `settings`); `manager`
-  memegang `settings.view` (`backend/permissions_config.py:194`, `settings`). `GET /api/config/health` sudah dijaga
-  `settings.view` (`backend/routers/config.py:367`, `read_health`).
+- Matriks bawaan: hanya `admin` memegang `settings.manage` (`backend/permissions_config.py:48` (`settings`)); `manager`
+  memegang `settings.view` (`backend/permissions_config.py:194` (`settings`)). `GET /api/config/health` sudah dijaga
+  `settings.view` (`backend/routers/config.py:367` (`read_health`)).
 - Aksi izin baru pada peran bawaan disalin sekali ke matriks tersimpan oleh
   `backend/bootstrap.py:361` (`sync_permission_modules`) dan tidak dihidupkan lagi setelah dicabut Admin
   (`defaults_applied`).
-- Menu: tab `settings-cfg-*` tertulis untuk `admin` dan `manager` (`frontend/src/config/hubTabs.js:253`,
-  `settings-cfg-sales`), tetapi **peran kustom** mendapatkannya dari modul domain
-  (`backend/access_modules.py:23`, `settings-cfg-sales`). Jadi pembaca sah Pusat Pengaturan tidak hanya Admin dan
+- Menu: tab `settings-cfg-*` tertulis untuk `admin` dan `manager` di
+  `frontend/src/config/hubTabs.js:253` (`settings-cfg-sales`), tetapi **peran kustom** mendapatkannya dari modul domain:
+  `backend/access_modules.py:23` (`settings-cfg-sales`). Jadi pembaca sah Pusat Pengaturan tidak hanya Admin dan
   Manajer; rancangan di bawah memperhitungkannya.
 
 Pemeriksaan pemakaian `GET /api/settings/effective` oleh layar (seluruh `frontend/src`, 7 titik panggil):
@@ -62,7 +62,7 @@ Pemeriksaan pemakaian `GET /api/settings/effective` oleh layar (seluruh `fronten
 
 Tidak ada layar di luar `frontend/src/features/settings/config/` yang memanggil `/api/config/registry|effective|
 explain|history|simulators` (pencarian `configApi.` dan `/config/`); pemakai luar hanya menyematkan komponen dari
-folder itu (`frontend/src/features/crm/IncentiveRatesEditor.jsx:51`, `useSettingsBrowser`).
+folder itu (`frontend/src/features/crm/IncentiveRatesEditor.jsx:51` (`useSettingsBrowser`)).
 
 ## Perubahan
 
@@ -109,8 +109,8 @@ Peran bawaan `manager` dan `admin` memperoleh tiga aksi baru lewat `DEFAULT_PERM
 | Fungsi | Aturan baru |
 |---|---|
 | `_may_edit(entry, user, perms)` | `True` bila `user.role == "admin"`; selain itu `True` bila dan hanya bila `_may(perms, *entry["permission"])`. Tidak ada cabang `roles` maupun `owner_role` |
-| `_may_read(entry, user, perms)` — baru | `True` bila Admin, atau `_may(perms, "settings", "view")`, atau `entry["permission"][0] != "settings"` dan pelaku memegang **aksi apa pun** pada sumber daya `entry["permission"][0]` |
-| `READ_LIMITS`, `_read_limit`, `_visible` | Dihapus; diganti `_may_read`. Hasil untuk peran `md` sama dengan hari ini (32 kunci berizin `rnd`) |
+| `_may_read(entry, user, perms)` — baru | `True` bila Admin, atau `_may(perms, "settings", "view")`, atau `_may_edit(entry, user, perms)` — yang boleh mengubah sebuah kunci boleh membacanya |
+| `READ_LIMITS`, `_read_limit`, `_visible` | Dihapus; diganti `_may_read`. Hasil untuk peran `md` sama persis dengan hari ini: 32 kunci berizin `rnd.manage` (keputusan pemilik 26 Okt tentang batas baca MD tetap berlaku) |
 | `_perm_error(entry)` | Teks Z6 (di bawah); nama modul dari `access_modules.MODULE_CATALOG` pemilik `entry["permission"][0]` |
 
 | Endpoint | Izin | Perilaku |
@@ -155,8 +155,9 @@ Tidak ada kunci baru.
 
 `settings.view` dan `settings.manage` tidak berubah pemegangnya (K-48: bawaan hanya Admin yang mengelola).
 
-`access_modules.VIEW_RESOURCE_OVERRIDES` bertambah supaya tab pengaturan hanya tampil bagi peran yang bisa membaca
-isinya: `settings-config`, `settings-cfg-finance`, `settings-cfg-documents`, `settings-cfg-notify`,
+`access_modules.VIEW_RESOURCE_OVERRIDES` bertambah supaya tab pengaturan tidak tampil bagi peran yang pasti tidak bisa
+membaca isinya (saringan menu hanya mengenal "memegang aksi apa pun"; peran yang lolos saringan tetapi tidak boleh
+membaca mendapat keadaan kosong berpesan B1): `settings-config`, `settings-cfg-finance`, `settings-cfg-documents`, `settings-cfg-notify`,
 `settings-cfg-system` → `["settings"]`; `settings-cfg-approval`, `settings-cfg-rnd` → `["settings", "rnd"]`;
 `settings-cfg-sales` → `["settings", "sales_return"]`; `settings-cfg-hr` → `["settings", "hr"]`;
 `settings-cfg-purchasing` → `["settings", "makloon"]`; `settings-cfg-warehouse` → `["settings", "uom", "inventory",
@@ -225,13 +226,12 @@ komentar kepala `backend/config_registry.py` dan `backend/routers/config.py`.
 
 ## Asumsi dan risiko
 
-- `ASUMSI:` pemegang aksi apa pun pada sumber daya izin sebuah kunci boleh **membaca** kunci itu (mis. pemegang
-  `hr.view` membaca tarif BPJS). Ini perluasan dari aturan `READ_LIMITS` yang sudah berlaku untuk MD, dipilih supaya tab
-  pengaturan domain milik peran kustom tidak kosong. Kunci berizin `settings.manage` (ambang persetujuan, komisi, bank,
-  pajak) tetap hanya terbaca pemegang `settings.view`.
+- `ASUMSI:` tanpa `settings.view`, seseorang hanya membaca kunci yang boleh ia ubah. Ini bentuk umum dari batas baca
+  MD yang sudah berlaku (`READ_LIMITS`): MD tetap membaca tepat 32 kunci R&D. Pemegang "Lihat saja" sebuah modul domain
+  tidak membaca pengaturan modul itu; Admin memberinya `settings.view` bila perlu.
 - `ASUMSI:` peran kustom beracuan Manajer yang sudah ada diberi empat aksi tanpa `view`; menu R&D tidak ikut terbuka.
 - `ASUMSI:` peran kustom yang hari ini membaca tab pengaturan domain dalam keadaan terkunci (mis. hanya `order.view`)
-  kehilangan tab itu, sesuai K-49. Laporan unit memuat daftar peran kustom di data acuan yang terkena.
+  kini melihat pesan B1 di tab itu, sesuai K-49. Laporan unit memuat daftar peran kustom di data acuan yang terkena.
 - `RISIKO:` layar yang membaca bagian pengaturan di luar tabel pemeriksaan menerima `undefined`. Penangkal: U11
   menegaskan isi minimum; pencarian `settings/effective` diulang di langkah 2 `00` §2. Membatalkan: kembalikan
   `saring_bagi_pembaca` menjadi fungsi identitas.

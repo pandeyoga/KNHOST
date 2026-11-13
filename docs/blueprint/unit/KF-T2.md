@@ -119,7 +119,9 @@ Tidak ada pasangan baru. Menyimpan asumsi retur tetap butuh `sales_return.policy
 - Penjualan › Retur › Kebijakan Retur (`frontend/src/features/sales/ReturnPoliciesView.jsx`): panel
   `ReturnAssumptionsPanel` diganti daftar kartu dari mesin Pusat Pengaturan (`useSettingsBrowser` + `SettingsBrowser`,
   pola `frontend/src/features/crm/IncentiveRatesEditor.jsx`) dengan `groupIds: ["retur"]` dan `includeKeys` lima kunci
-  `returns.*` di atas. Judul bagian: **Batas retur umum**. Berkas `ReturnAssumptionsPanel.jsx` dihapus.
+  `returns.*` di atas. Judul bagian: **Batas retur umum**. Bila pelaku tidak boleh membaca Pusat Pengaturan (403), bagian
+  itu diganti satu baris hanya-baca dari `GET /api/settings/effective`: "Batas retur umum: pelanggan {n} hari sejak surat
+  jalan · pemasok {m} hari sejak barang diterima." Berkas `ReturnAssumptionsPanel.jsx` dihapus.
 - Keuangan › Antar-PT › Jadwal Bayar (`IntercoPaymentSchedule.jsx`): `CutoffForm` diganti kartu yang sama dengan
   `groupIds: ["antar-entitas"]`, `includeKeys: ["interco_payment."]`. Judul bagian: **Aturan jadwal bayar**. Tampil hanya
   bagi yang lolos baca; tombol simpan mengikuti `can_edit`.

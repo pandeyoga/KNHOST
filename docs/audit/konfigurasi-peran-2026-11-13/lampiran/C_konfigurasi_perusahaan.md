@@ -367,7 +367,7 @@ Catatan: pasangan yang disebut di tugas "tarif insentif di Pengaturan vs CRM" **
 
 | Berkas:baris | Dokumen | Sakelar | Bawaan | Admin |
 |---|---|---|---|---|
-| `services/approval_matrix_service.py:196-207, 256-263` | ACC desain, ACC sample, PO custom, PR, klaim makloon (lewat `guard`) | `approval.matrix_sod` (grup/PT) — `config_catalog_approval_matrix.py:63-72` | **Melarang** | lolos (`:176-193, 243-247`) |
+| `services/approval_matrix_service.py:196-207, 256-263` | ACC desain, ACC sample, PO custom, PR (lewat `guard`). Koreksi 13 Nov: klaim makloon **tidak** melewati `guard`; persetujuannya hanya diperiksa izin (`backend/routers/makloon_orders.py:263`) | `approval.matrix_sod` (grup/PT) — `config_catalog_approval_matrix.py:63-72` | **Melarang** | lolos (`:176-193, 243-247`) |
 | `services/purchase_requisition_service.py:333-338` | PR (lapis layanan) | sama | Melarang | lolos |
 | `routers/price_approvals.py:380-387, 475-480` | Persetujuan / penolakan harga khusus | sama | Melarang | lolos |
 | `routers/so_approvals.py:297-305` | Entri harga khusus di SO | sama | Melarang | lolos |

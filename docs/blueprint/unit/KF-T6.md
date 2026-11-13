@@ -21,15 +21,15 @@ periode yang oleh pemilik diminta berbawaan satu orang. Tim kecil bisa menjadika
 
 Semua `[dibaca]` dan dicek ulang pada `3132cc4`. Tiga keadaan hidup bersamaan:
 
-- **Sakelar**: `approval.matrix_sod` (`backend/config_catalog_approval_matrix.py:63`, `approval.matrix_sod`), dibaca
-  `backend/services/approval_matrix_service.py:196` (`sod_blocked`) dan `:256` (`is_requester`); dan
-  `amendment.dual_control` (`backend/config_catalog_finance.py:55`, `amendment.dual_control`).
+- **Sakelar**: `approval.matrix_sod` (`backend/config_catalog_approval_matrix.py:63` (`approval.matrix_sod`)), dibaca
+  `backend/services/approval_matrix_service.py:196` (`sod_blocked`) dan `backend/services/approval_matrix_service.py:256` (`is_requester`); dan
+  `amendment.dual_control` (`backend/config_catalog_finance.py:55` (`amendment.dual_control`)).
 - **Larangan ditulis mati** di 12 titik (tabel B).
 - **Tanpa pemeriksaan** di 15 pintu (tabel C) — setuju-sendiri sudah boleh.
 - Admin lolos lewat `backend/services/approval_matrix_service.py:181` (`admin_override`) di 13 titik, dan tidak
   lolos di 4 titik (ditandai †).
-- GL-06: buka kembali tutup buku cukup satu Admin (`backend/routers/closing.py:105`, `reopen_period`); jurnal manual
-  langsung berstatus `posted` (`backend/services/gl_service.py:706`, `create_manual_entry`).
+- GL-06: buka kembali tutup buku cukup satu Admin (`backend/routers/closing.py:105` (`reopen_period`)); jurnal manual
+  langsung berstatus `posted` — baris 706 di dalam `backend/services/gl_service.py:655` (`create_manual_entry`).
 - Tidak cocok dengan Lampiran C.1 audit: klaim makloon **tidak** melewati `guard`; ia masuk tabel C.
 
 Kolom "Awal" = nilai bawaan `kontrol.<aksi>.min_orang`; "Rp" = aksi punya `batas_nominal`.
@@ -84,8 +84,8 @@ Kolom "Awal" = nilai bawaan `kontrol.<aksi>.min_orang`; "Rp" = aksi punya `batas
 | `buka_kembali_tutup_buku` | Buka kembali tutup buku | `backend/routers/closing.py:105` (`reopen_period`) | pengaju buka kembali | 1 | — |
 | `jurnal_manual` | Jurnal manual | `backend/services/gl_service.py:655` (`create_manual_entry`) | pembuat jurnal | 1 | ya |
 
-Bila dokumen sebuah aksi hanya menyimpan nama pengaju, pembanding nama dipakai (cara `is_requester`,
-`backend/services/approval_matrix_service.py:132`), dan titik pengajuannya mulai menyimpan id (`…_by_id`).
+Bila dokumen sebuah aksi hanya menyimpan nama pengaju, pembanding nama dipakai — cara
+`backend/services/approval_matrix_service.py:132` (`is_requester`) — dan titik pengajuannya mulai menyimpan id (`…_by_id`).
 
 ## Perubahan
 
@@ -131,7 +131,7 @@ tidak lagi menilai pemisahan tugas; `guard` memanggil pembantu dengan aksi tahap
 | `GET /api/kontrol/aturan?entity_id=` (router baru `routers/kontrol.py`) | `settings.view` | `{"rows": [{"aksi", "label", "kelompok" (A·B·C), "punya_nominal", "min_orang", "batas_nominal", "sumber" ("entity" · "global" · "default")}], "admin_boleh_sendiri", "admin_tetap_dua_orang", "can_edit"}` |
 | Simpan | — | Lewat `PUT /api/config/values` (banyak butir, satu alasan); tidak ada endpoint tulis baru |
 | `POST /api/finance/closing/{id}/reopen` | tetap | Bila `butuh_orang_kedua("buka_kembali_tutup_buku", PT)`: panggilan pertama menyimpan `reopen_request` dan menjawab 202 `{"status": "menunggu_orang_kedua", "requested_by": nama}`; panggilan pengaju yang sama → 403; panggilan orang lain yang berwenang → dijalankan seperti sekarang |
-| Buat jurnal manual (`backend/routers/gl.py:148`, `create_journal`) | tetap | Bila `butuh_orang_kedua("jurnal_manual", PT, total_debit)`: validasi dan `preflight_posting` tetap dijalankan, lalu simpan ke `journal_proposals` dan jawab 202 `{"status": "menunggu_orang_kedua", "proposal_id"}`; tidak ada baris `journal_entries`. Selain itu seperti sekarang |
+| Buat jurnal manual (`backend/routers/gl.py:148` (`create_journal`)) | tetap | Bila `butuh_orang_kedua("jurnal_manual", PT, total_debit)`: validasi dan `preflight_posting` tetap dijalankan, lalu simpan ke `journal_proposals` dan jawab 202 `{"status": "menunggu_orang_kedua", "proposal_id"}`; tidak ada baris `journal_entries`. Selain itu seperti sekarang |
 | `GET /api/gl/journal-proposals?status=` | `accounting.view` | Daftar berhalaman per PT aktif |
 | `POST /api/gl/journal-proposals/{id}/approve` | `accounting.create` | `tolak_bila_pelaku_sama("jurnal_manual", …, pengaju=[proposed_by_id])`; periksa periode ulang; `create_manual_entry` dengan `created_by` = pengusul dan `approved_by` = penyetuju; usulan → `posted` + `journal_id`. Usulan bukan `pending` → 409 "Usulan jurnal ini sudah diputuskan." |
 | `POST /api/gl/journal-proposals/{id}/reject` | `accounting.create` | Isi `{"reason"}` wajib (400 "Alasan penolakan wajib diisi."); usulan → `rejected` |
@@ -144,7 +144,7 @@ Katalog baru `backend/config_catalog_kontrol.py` memuat `KONTROL_AKSI` (35 aksi 
 | key | group | type | default | min · max · unit | scopes | label | help | risk | permission | consumers |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `kontrol.<aksi>.min_orang` (35) | `persetujuan` | `enum`: "1" Cukup satu orang · "2" Harus dua orang | kolom "Awal" (teks) | — | global, entity | "{Label}: jumlah orang" | "1 = orang yang mengajukan boleh memutuskan sendiri. 2 = harus diputuskan orang lain." | high, wajib alasan | `("settings", "manage")` | titik pasang aksi itu (`berkas.py:fungsi`) + `services/dual_control.py:butuh_orang_kedua` |
-| `kontrol.<aksi>.batas_nominal` (18, kolom "Rp" = ya) | `persetujuan` | `money` | 0 | 0 · 1000000000000 · Rp | global, entity | "{Label}: dua orang di atas (Rp)" | "Di atas nilai ini selalu dua orang walau jumlah orang = 1. 0 = tidak dipakai." | high, wajib alasan | sama | sama |
+| `kontrol.<aksi>.batas_nominal` (20, kolom "Rp" = ya) | `persetujuan` | `money` | 0 | 0 · 1000000000000 · Rp | global, entity | "{Label}: dua orang di atas (Rp)" | "Di atas nilai ini selalu dua orang walau jumlah orang = 1. 0 = tidak dipakai." | high, wajib alasan | sama | sama |
 | `kontrol.admin_boleh_sendiri` | `persetujuan` | `bool` | True | — | global, entity | "Admin boleh memutuskan dokumennya sendiri" | "Bila ya, Admin tidak terkena aturan dua orang; tiap kejadian dicatat di jejak persetujuan." | high | sama | `services/dual_control.py:tolak_bila_pelaku_sama` |
 | `kontrol.admin_tetap_dua_orang` | `persetujuan` | `list` (nama aksi) | `["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]` | — | global, entity | "Aksi yang tetap dua orang walau Admin" | "Admin pun tidak boleh memutuskan sendiri untuk aksi di daftar ini." | high | sama | sama |
 
@@ -198,7 +198,7 @@ Fixture: `mgr`, `mgr2` (dua akun manager), `adm`; dokumen disisipkan dalam statu
 | U12 | B, A | `kontrol.buka_kembali_tutup_buku.min_orang="2"`; satu periode tertutup | `adm` buka kembali; `adm` lagi; admin kedua | 202 dan periode tetap `closed`; 403; 200 dan periode `reopened`, `reopen_request` hilang |
 | U13 | B, A | `kontrol.jurnal_manual.min_orang="2"` | `mgr` membuat jurnal 1.000.000 (D kas / K modal); `mgr` menyetujui usulannya; `mgr2` menyetujui | 202, jumlah `journal_entries` tetap, saldo akun tidak berubah; 403; 200, satu jurnal `posted` ber-`created_by` `mgr` dan `approved_by` `mgr2`, saldo kedua akun berubah 1.000.000 |
 | U14 | B, A | `min_orang="1"`, `kontrol.jurnal_manual.batas_nominal=10000000` | Jurnal 5.000.000; jurnal 15.000.000 | Langsung `posted`; 202 usulan |
-| U15 | statik | — | Cari di 12 berkas tabel B teks "tidak boleh menyetujui" dan pembanding `created_by_id == actor`; cari `tolak_bila_pelaku_sama("<aksi>"` untuk tiap aksi | 0 pembanding lama tersisa; tiap dari 35 aksi punya ≥ 1 titik pasang |
+| U15 | statik | — | Cari di berkas-berkas tabel B teks "tidak boleh menyetujui" dan pembanding `created_by_id == actor`; cari `tolak_bila_pelaku_sama("<aksi>"` untuk tiap aksi | 0 pembanding lama tersisa; tiap dari 35 aksi punya ≥ 1 titik pasang |
 | U16 | B | Sopir (`02` §6) | `GET /api/kontrol/aturan`; `PUT` `kontrol.setujui_po.min_orang` | 403; 403 |
 | U17 | B | — | Putaran `t1_config.py` untuk semua `kontrol.*` | Tulis grup dan PT terbaca; nilai "3" ditolak 400; tanpa alasan ditolak |
 | U18 | layar (uji jalan) | Login Admin, PT `ent_ksc` | Tab Kontrol dua orang → Tim kecil → konfirmasi | Semua baris "Cukup satu orang", sumber "Aturan PT ini"; PT lain tidak berubah |

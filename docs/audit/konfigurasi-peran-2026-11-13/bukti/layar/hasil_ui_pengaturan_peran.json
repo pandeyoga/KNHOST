@@ -1,0 +1,107 @@
+[
+ {
+  "st": "OK",
+  "nama": "A1 Pusat Pengaturan terbuka",
+  "rinci": "23 kelompok di layar; registry 310 kunci"
+ },
+ {
+  "st": "OK",
+  "nama": "A2 Ubah nilai untuk satu PT lewat layar",
+  "rinci": "layar: \"Ya / Aktif\" → \"Tidak / Mati\" (nilai Sukacita); pemberitahuan: \"Tersimpan dan langsung berlaku di mesin.\"; API PT ini=false, PT lain=true; teks konfirmasi: \"Akan berubah: Ya / Aktif → Tidak / Mati pada cakupan Sukacita Hanya Sukacita yang terpengaruh — badan usaha lain tetap m\""
+ },
+ {
+  "st": "OK",
+  "nama": "A3 Nilai bertahan setelah halaman dimuat ulang",
+  "rinci": "\"Tidak / Mati\""
+ },
+ {
+  "st": "OK",
+  "nama": "A4 Riwayat memuat perubahan dan alasannya",
+  "rinci": "alasan tampil"
+ },
+ {
+  "st": "OK",
+  "nama": "A5 Kembalikan ke nilai grup",
+  "rinci": "layar \"Ya / Aktif\"; API true"
+ },
+ {
+  "st": "OK",
+  "nama": "A6 Nilai di luar batas ditolak di layar",
+  "rinci": "ar.denda_rate_pct_per_month (maks 100); pesan: \"'ar.denda_rate_pct_per_month' maksimum 100 (diberi 1007.0)\""
+ },
+ {
+  "st": "OK",
+  "nama": "A7 Pengaturan berisiko tinggi menolak simpan tanpa alasan",
+  "rinci": "tax.dpp_nilai_lain; pesan: \"'Pakai DPP Nilai Lain (11/12)' berisiko tinggi — alasan perubahan WAJIB diisi.\""
+ },
+ {
+  "st": "OK",
+  "nama": "A8 Panggilan API gagal selama sesi Admin di Pengaturan (di luar penolakan yang sengaja diuji)",
+  "rinci": "[\"400 PUT /api/config/values\",\"400 PUT /api/config/values\"]"
+ },
+ {
+  "st": "OK",
+  "nama": "B1 Buat peran lewat layar",
+  "rinci": "ringkasan: \"RINGKASAN 28 Tidak ada 2 Lihat saja 1 Kelola penuh Akses semua badan usaha (lintas PT) Akun peran ini hanya membuka bada\"; konfirmasi: \"Periksa sebelum menyimpan Peran “Staf Penagihan Uji” akan dibuat dengan akses berikut. Pelanggan & CRM: Lihat saja Uang Masuk, Piutang & Faktur Pajak: Kelola penuh Pusat Persetujuan: Lihat saja Periks\"; tersimpan id=cr_staf_penagihan_uji, peran acuan=\"\""
+ },
+ {
+  "st": "OK",
+  "nama": "B1b Pratinjau menu di editor",
+  "rinci": " (9 LAYAR) Pusat Persetujuan Penjualan Pelanggan (CRM & Pelanggan · Kunjungan Sales) Keuangan Piutang · Uang Muka Pelanggan · Rencana Bayar · Saldo Kredit Akuntansi & Pajak Pajak (Faktur Keluaran · Pajak (PPN & PPh)) Pengaturan Keuangan & Pajak Profil Saya Menu = pintu. Tombol di dalam layar mengikuti tingkat akses: \"Lihat saja\" tidak bisa membuat atau mengubah. Perubahan berlaku otomatis untuk ya"
+ },
+ {
+  "st": "OK",
+  "nama": "B2 Buat akun lewat layar dengan peran baru",
+  "rinci": "akun tersimpan, peran=cr_staf_penagihan_uji, PT asal=ent_ksc"
+ },
+ {
+  "st": "OK",
+  "nama": "C1 Masuk sebagai peran baru",
+  "rinci": "mendarat di \"hr-my-profile\"; menu: Cari menu… Ctrl+K · Pusat Persetujuan · PENJUALAN · KEUANGAN · AKUNTANSI & PAJAK · PENGATURAN · Profil Saya · Keluar"
+ },
+ {
+  "st": "BEDA",
+  "nama": "C2 Kerangka aplikasi memanggil endpoint yang ditolak untuk peran ini",
+  "rinci": "[\"403 GET /api/finance/posting-failures/count\",\"403 GET /api/sales/keep-pending\",\"404 GET /api/hr/employees/me\"]"
+ },
+ {
+  "st": "OK",
+  "nama": "C2b Pesan galat tampil ke pengguna saat masuk",
+  "rinci": "tidak ada"
+ },
+ {
+  "st": "OK",
+  "nama": "C3 Buka layar \"ar-aging\" (diharapkan boleh)",
+  "rinci": "layar aktif=\"ar-aging\"; API gagal milik layar: []; peringatan di layar: \"\""
+ },
+ {
+  "st": "OK",
+  "nama": "C3 Buka layar \"customers-crm\" (diharapkan boleh)",
+  "rinci": "layar aktif=\"customers-crm\"; API gagal milik layar: []; peringatan di layar: \"\""
+ },
+ {
+  "st": "BEDA",
+  "nama": "C3 Buka layar \"approval-inbox\" (diharapkan boleh)",
+  "rinci": "layar aktif=\"approval-inbox\"; API gagal milik layar: [\"403 GET /api/purchase-orders\",\"403 GET /api/price-approvals?status=pending\",\"403 GET /api/sales-returns?status=pending_approval\",\"403 GET /api/purchase-returns\",\"403 GET /api/cycle-count/sessions\",\"403 GET /api/amendments?status=pending_approval\",\"403 GET /api/purchase-orders\",\"403 GET /api/price-; peringatan di layar: \"Daftar ini belum lengkap: 6 kategori tidak bisa ditampilkan untuk peran Anda (Pembelian (PO), Harga Khusus, Retur Penjualan, Retur Pembelian, Stock Opname, Amandemen). Angka di tab terkait karena itu bukan nol sungguhan.\""
+ },
+ {
+  "st": "OK",
+  "nama": "C3 Buka layar \"settings-config\" (diharapkan tidak)",
+  "rinci": "layar aktif=\"hr-my-profile\"; API gagal milik layar: []; peringatan di layar: \"\""
+ },
+ {
+  "st": "OK",
+  "nama": "C3 Buka layar \"general-ledger\" (diharapkan tidak)",
+  "rinci": "layar aktif=\"hr-my-profile\"; API gagal milik layar: []; peringatan di layar: \"\""
+ },
+ {
+  "st": "OK",
+  "nama": "C3 Buka layar \"entities-access\" (diharapkan tidak)",
+  "rinci": "layar aktif=\"hr-my-profile\"; API gagal milik layar: []; peringatan di layar: \"\""
+ },
+ {
+  "st": "BEDA",
+  "nama": "D1 Peran berizin 'kelola pengaturan' membuka Pusat Pengaturan",
+  "rinci": "kartu bisa disimpan di kelompok pertama: 0; kartu terkunci: 25; pemberitahuan: \"\"; teks kartu terkunci: \"Hanya admin yang boleh mengubah setting ini.\""
+ }
+]
