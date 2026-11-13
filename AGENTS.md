@@ -28,6 +28,13 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
   **`docs/rfid/AUDIT_MIDDLEWARE_RFID_2026-11-08.md`** (temuan AUD-MW-xx, peta K-RFID-07).
 * Pemilik: soal bacaan nyasar & photo-eye diselesaikan dulu sebelum membangun/merevisi — butir terbuka = STOP & ASK.
 
+## Keuangan
+* Sebelum mengubah jurnal/buku besar (`gl_service`), buku pembantu (piutang, hutang, kas, kontrabon), antar-PT
+  (`interco_*`, `consolidation_service`), tutup buku, atau nilai persediaan ↔ jurnal: baca
+  **`docs/finance/AUDIT_KEUANGAN_2026-11-13.md`** (72 temuan GL/SL/IC/IV/UX/DB, peta sumber-kebenaran, gap vs ERP
+  matang, rekomendasi database, keputusan pemilik §10, kueri cek data §12). Analisis kode di `cd6963a` — cek ulang
+  di `HEAD` sebelum memperbaiki.
+
 ## Lingkungan lokal (Docker)
 Lengkapnya: `docs/LOCAL_DEV.md`. Ringkas:
 
