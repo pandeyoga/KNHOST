@@ -34,6 +34,10 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
   **`docs/finance/AUDIT_KEUANGAN_2026-11-13.md`** (139 temuan, bukti uji di `bukti-2026-11-13/`, peta sumber-kebenaran, gap vs ERP
   matang, rekomendasi database, keputusan pemilik §10, kueri cek data §12). Analisis kode di `cd6963a` — cek ulang
   di `HEAD` sebelum memperbaiki.
+* Rencana perbaikan dan modul baru: **`docs/finance/rencana-2026-11-13/`** (mulai dari `README.md`). Paket kerja `PK-nn`
+  ada di `02`, cara menjalankan satu paket di `03`, aturan wajib untuk modul apa pun yang menyentuh uang di `04`
+  (kontrak posting, entitas, idempotensi, penjaga), keputusan pemilik di `10` — butir bertanda "menahan" = STOP & ASK.
+  Rancangan insentif, piutang, pajak & pembayaran, asisten keuangan, HR & penggajian di `05`–`09` berstatus usulan.
 
 ## Lingkungan lokal (Docker)
 Lengkapnya: `docs/LOCAL_DEV.md`. Ringkas:
