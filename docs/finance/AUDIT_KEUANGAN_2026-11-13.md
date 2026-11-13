@@ -26,8 +26,14 @@ Kelemahannya ada di tiga kelas, dan **hanya satu kelas yang menyangkut pilihan d
    buku PT lain (IC-05); akun kontrol terbuka untuk jurnal manual (IC-06, SL-07); periode yang belum berakhir bisa
    ditutup (GL-04); admin bisa menyetujui usul buka-periodenya sendiri (GL-06).
 
-**Jumlah temuan baru: 72** — 2 kritis, 29 tinggi, 33 sedang, 8 rendah (§3). 27 temuan keuangan lama (FN/CX/IX) umumnya
-memang sudah diperbaiki di kode (§11), tetapi pola yang sama masih hidup di jalur lain.
+**Jumlah temuan baru: 111** — 2 kritis, 46 tinggi, 51 sedang, 12 rendah (§3; 72 dari putaran pertama, 39 dari
+lanjutan §3.10–3.11). 27 temuan keuangan lama (FN/CX/IX) umumnya memang sudah diperbaiki di kode (§11), tetapi pola yang
+sama masih hidup di jalur lain.
+
+Dari lanjutan, yang paling perlu diketahui: setoran karyawan di Pusat Kasus dibukukan dua kali setiap kali dipakai
+(FX-01); jurnal pembayaran denda kedua dilewati (FX-02); deposit satu pelanggan bisa melunasi pesanan pelanggan atau PT
+lain (FX-05); nota kredit bisa melebihi faktur (FX-12); jurnal penyusutan dan gaji bertanggal hari posting, bukan
+periodenya (FY-02); hutang BPJS dan PPh 21 tidak punya alur setor (FY-07).
 
 **Jawaban soal database (§9).** Jangan memecah keuangan ke PostgreSQL sekarang. Alasannya: keuangan di kode ini bukan
 modul terpisah — jurnal diposting dari dalam alur operasional (surat jalan, penerimaan, makloon, retur), dan buku pembantu
@@ -56,8 +62,10 @@ menjadi lintas-database, yaitu lebih sulit, bukan lebih mudah. Urutan yang disar
 - **Tidak dilakukan:** menjalankan backend, tes, atau kueri data. "Cek duplikasi" dan "cek kegagalan" di laporan ini
   adalah cek **kode** (bisakah terjadi), bukan cek **data** (sudahkah terjadi). Untuk data nyata, jalankan §12 di
   salinan database.
-- Belum ditelusuri: `penalty_service`, `payment_plan_service`, `finance_case_actions`, `fixed_asset_service`,
-  `budget_service`, nota kredit amandemen, posting gaji; di UI: kas kecil, aset tetap, pajak, anggaran, tampilan HP.
+- Putaran lanjutan (dua agen, §3.10–3.11) menutup: denda, rencana bayar, selisih bayar, kasus keuangan, nota kredit,
+  aset tetap, anggaran, gaji dan insentif, kas kecil, pusat pajak, beserta layarnya.
+- Masih belum ditelusuri: isi perhitungan komisi, alur bayar faktur kampanye, `store_credit_service` secara rinci,
+  layar kasus/denda/slip gaji, tampilan HP.
 - Riset web terbatas: banyak situs dokumentasi resmi tidak terjangkau dari sesi ini; sumber dan tingkat keyakinannya
   ditandai di §8 dan §9.
 
@@ -240,6 +248,33 @@ dicocokkan dengan uang muka terbuka; tiga peta beban tunai (kategori LPJ, kata k
 "gaji" di kas manual bertabrakan dengan penggajian; dua konsep anggaran (`budgets` dan anggaran kampanye); dua rekap PPN
 dengan penjaga entitas berbeda; rumus susut disalin dua kali; pindah aset = pola jurnal dua-buku keempat.
 
+### 3.11 Lanjutan — denda, rencana bayar, selisih bayar, kasus keuangan, nota kredit, gerbang bayar-dulu (FX)
+
+Dibaca di `ec79643`. Tidak ditemukan salah sisi debit/kredit pada jurnal denda, selisih, dan kasus; gerbang bayar-dulu
+terpasang di ketiga jalur kirim.
+
+| ID | Tingkat | Temuan | Bukti | Skenario | Rekomendasi |
+|---|---|---|---|---|---|
+| FX-01 ✔ | Tinggi | Setoran karyawan pada kasus keuangan dibukukan dua kali — terjadi setiap kali aksi dipakai, bukan hanya saat gagal | `services/finance_case_actions.py:355-361` lalu `:364-372` (dua panggilan kas masuk; id kas berurutan per panggilan `:76-80`) | Setor 10 jt → kas masuk 20 jt, piutang karyawan (1-1280) minus 10 jt | Hapus panggilan pertama; uji jumlah kas per aksi |
+| FX-02 ✔ (kunci) | Tinggi | Kunci jurnal denda tetap per nota | `services/gl_service.py:2036-2037` (`id:pay`), `:2017-2018` (`id:adjust`); `services/penalty_service.py:414-418, 439-444` | Bayar parsial kedua atau ubah kedua: nota berubah, jurnal dilewati. Bebas-denda setelah bayar sebagian membalik nominal penuh → piutang denda negatif | Kunci per kejadian; bebas = sisa; tolak ubah di bawah terbayar |
+| FX-03 | Tinggi | Hari telat dihitung kumulatif, tetapi satu nota per bulan kalender | `services/penalty_service.py:128-134, 151-164`; tanggal "hari ini" dari klien `routers/payment_plans.py:175-184` | Telat 49 hari lintas dua bulan: nota Januari 21 hari + nota Februari 49 hari | Hitung selisih dari nota sebelumnya; buang tanggal dari klien |
+| FX-05 ✔ | Tinggi | Alokasi dari deposit tidak memeriksa pemilik pesanan; deposit dikurangi setelah semua alokasi | `services/ar_receipt_service.py:178-189` (tanpa pelanggan/entitas, sehingga cek `:337, 342` dilewati); `services/payment_variance_service.py:549-564` | Deposit pelanggan A melunasi pesanan pelanggan atau PT B. Alokasi kedua gagal → pesanan pertama lunas, deposit utuh, tanpa jurnal | Validasi semua target dulu; deposit berkurang per alokasi |
+| FX-06 | Tinggi | Hapus sisa pembayaran tanpa klaim; keputusan disimpan paling akhir | `services/payment_variance_service.py:691-694, 747-757, 811-818` | Dua klik → dua hapus-buku. Jurnal gagal → pesanan lunas tanpa jejak | Klaim kwitansi; simpan keputusan `pending` dulu; penanda gagal |
+| FX-07 | Tinggi | Membatalkan keputusan selisih hutang tidak membalik jurnalnya | `services/payment_variance_service.py:944-948` vs `:1043-1051`; `services/vendor_bill_service.py:200-206` | Hutang hidup lagi di faktur, tetap terhapus di buku besar | Cabang pembalik untuk sisi hutang |
+| FX-08 | Tinggi | Aksi kasus mengambil pesanan, kwitansi, rekening, pelanggan dari isi permintaan tanpa diadu dengan kasus atau cakupan pengguna | `services/finance_case_actions.py:201, 227, 285-298, 319-326, 428-452`; kasus boleh tanpa PT `services/finance_case_service.py:273-275` | Pemegang izin kasus di PT-B membebankan piutang PT-A, membatalkan kwitansi PT lain, refund deposit pelanggan lain | Adu semua id; tolak kasus tanpa PT (kelas IC-05) |
+| FX-09 | Tinggi | Kasus: efek dulu, syarat kemudian; jurnal ber-kunci sama dilewati diam-diam | `services/finance_case_actions.py:324-330, 430-436, 508-526`; `services/gl_service.py:2203-2205`; `services/finance_case_service.py:457-475` | Langkah dijalankan dua kali atau gagal lalu diulang → pesanan lunas tanpa jurnal | Cek dulu; id pembayaran deterministik |
+| FX-10 | Tinggi | Batas wewenang kasus lebih longgar dari hapus sisa; penyelesai = penyetuju | `services/finance_case_service.py:405-418, 494`; `services/finance_case_playbooks.py:107-112, 152-156` | Manajer dibatasi 1 jt untuk hapus sisa, tetapi lewat "biaya bank" tanpa batas | Satu batas untuk semua pengurang piutang non-kas; pembuat ≠ penyelesai |
+| FX-11 | Tinggi | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | `services/finance_case_actions.py:508-529` | Saldo antar-PT tumbuh di luar layar, tanpa jalur pelunasan | Buat dokumen antar-PT kembar |
+| FX-12 | Tinggi | Nota kredit bisa melebihi faktur | `services/amendment_service.py:899-901, 916-929`; `services/return_service.py:204-223` | Harga dikoreksi turun 20 %, lalu barang diretur → kredit 120 % | Retur memakai nilai efektif; batas Σ nota kredit ≤ nilai pesanan |
+| FX-04 | Sedang | Bayar denda langsung mendebit kas tanpa transaksi kas, rekening, kwitansi | `services/penalty_service.py:485-488`; `services/gl_service.py:2040-2046` | Kas buku besar naik, saldo rekening tidak | Lewat kas/kwitansi |
+| FX-13 | Sedang | Nota kredit gagal di tengah tanpa penanda | `services/amendment_service.py:755-762, 976-980`; `services/od_cancel_credit_note.py:113-117` | Piutang pesanan turun, buku besar tidak | Penanda gagal + ulang (GL-02) |
+| FX-14 | Sedang | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | `services/gl_service.py:2613-2623`; `services/amendment_service.py:281-282` | Pesanan dibayar, belum dikirim, dikoreksi → pendapatan dan PPN negatif | Samakan aturan dua jenis nota kredit |
+| FX-15 | Sedang | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | `services/amendment_service.py:911-914` | Kenaikan harga tidak tertagih | Putuskan aturan tagih |
+| FX-16 | Sedang | Gerbang bayar-dulu bisa dilewati dengan mengganti termin; "terbayar" mencakup hapus sisa, kasus, nota kredit | `services/so_override_service.py:87-93`; `services/dispatch_payment_gate.py:62` | Pesanan bayar-dulu yang belum dibayar: ganti termin sebelum picking → terkirim | Ganti termin ke yang lebih longgar = izin setara pelepasan |
+| FX-17 | Sedang | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | `routers/payment_plans.py:137-171, 214-262`; `routers/payment_variance.py:145-183`; `services/payment_plan_service.py:205, 304-308, 363-380` | Pengguna PT-B bertindak atas dokumen PT-A | Penjaga entitas; ubah jadwal hanya lewat jalur beralasan |
+| FX-18 | Sedang | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | `services/finance_case_scan.py:42-45, 73-74` | Kasus "bayar dobel" yang sudah ditutup lahir lagi tiap hari → refund kedua mungkin | Simpan keputusan per kwitansi |
+| FX-19 | Rendah | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | `indexes.py` | Dokumen kembar pada balapan | Indeks unik parsial |
+
 ---
 
 ## 4. Duplikasi (struktur dan logika ganda)
@@ -259,7 +294,10 @@ dengan penjaga entitas berbeda; rumus susut disalin dua kali; pindah aset = pola
 | 11 | Dua konsolidasi (`gl_service.consolidation` tanpa eliminasi vs `consolidation_service`) dan tiga pembuat eliminasi | Angka grup bisa beda antar layar | Satu mesin |
 | 12 | Dua sumber tahun buku (konfigurasi vs kolom entitas yang tidak dipakai) | Membingungkan | Hapus yang mati |
 | 13 | Skema mati: `gl_postings`, field `source`, status `draft`, koleksi `entities` | Menyesatkan pembaca kode | Bersihkan |
-| 14 | Layar: lima dasbor, tiga antrean, tiga angka kas di tiga layar, piutang di tiga menu, dua cara buka periode; `fmtDate` disalin ≥10 berkas (zona waktu perangkat, bukan WIB) | Angka "sama" tampil berbeda | §7 |
+| 14 | Empat cara mengurangi piutang tanpa kas (hapus sisa, kasus biaya bank, kasus uang-dipegang-karyawan, nota kredit) dengan batas wewenang berbeda | FX-10 | Satu batas dan satu jalur persetujuan |
+| 15 | Empat pembuat nota kredit dengan kosakata status berbeda; hanya dua yang punya penanda gagal | FX-12, FX-13 | Satu mesin nota kredit |
+| 16 | Tiga jalur deposit → pesanan lain; dua jalur refund deposit; tiga pembungkus alokasi tanpa validasi | FX-05 | Satu fungsi dengan validasi pemilik |
+| 17 | Layar: lima dasbor, tiga antrean, tiga angka kas di tiga layar, piutang di tiga menu, dua cara buka periode; `fmtDate` disalin ≥10 berkas (zona waktu perangkat, bukan WIB) | Angka "sama" tampil berbeda | §7 |
 
 ---
 
@@ -453,6 +491,12 @@ Batas rekomendasi ini: taksiran usaha adalah penilaian saya, belum diuji; replic
 8. **Pajak:** entitas mana yang PKP, dan apakah ekspor Coretax + PPh 23 masuk lingkup?
 9. **Peran Finance:** perlu menu Hutang Pemasok, Rekonsiliasi Bank, Buku Besar? (UX-17)
 10. **Kepemilikan grup:** semua PT 100 % satu pemilik, atau perlu persentase kepemilikan di konsolidasi?
+11. **Pengurang piutang tanpa kas** (hapus sisa, kasus biaya bank, uang dipegang karyawan, nota kredit): satu batas
+    wewenang dan pembuat ≠ penyetuju untuk semuanya? (FX-10)
+12. **Anggaran:** cukup peringatan atau memblokir, dan dokumen apa saja yang dicakup? (FY-12)
+13. **Tanggal buku jurnal periodik** (penyusutan, gaji, insentif): akhir periode atau hari posting? (FY-02)
+14. **Nota debit kenaikan harga:** aturan tagihnya apa? (FX-15) · **Ganti termin** ke yang lebih longgar: perlu izin
+    setara pelepasan tanpa bayar? (FX-16)
 
 ---
 
@@ -520,6 +564,13 @@ baris demi baris):
 | GR/IR menggantung (IV-03); roll scrap masih bernilai (IV-02); HPP dari roll berbiaya 0 (IV-07) | — | **Tidak** |
 | Dokumen berpenanda gagal di luar panel; kunci saga tertinggal | — | **Tidak** |
 | Jurnal manual di buku PT lain (IC-05) | — | Tidak bisa dari data (jurnalnya sah secara bentuk) |
+| Setoran karyawan ganda (FX-01); deposit lintas pelanggan (FX-05); nota kredit > faktur (FX-12) | INV-CASE-03 (kasus pemindah uang punya ≥ 1 jurnal seimbang), INV-VAR-02 | **Tidak** |
+| Piutang denda vs nota (FX-02) | INV-PEN-03 | Ya, tetapi dijumlah lintas PT |
+| Aset tanpa jurnal perolehan, jurnal periodik salah bulan, hutang BPJS/PPh menumpuk (FY-01, 02, 07) | INV-FA (konsistensi aset ↔ buku besar) | Belum dipastikan untuk FY-01; **tidak** untuk FY-02 dan FY-07 |
+
+Satu-satunya pemeriksaan yang berjalan otomatis di aplikasi adalah pemindai kasus harian pukul 08:25
+(`services/scheduler_service.py:148-151`): titipan bank menganggur lebih dari 3 hari dan dua kwitansi bernominal sama
+dari pelanggan yang sama dalam 7 hari. Semua invarian lain hanya ada di skrip luring ini.
 
 Batas penjaga itu sendiri: jurnal dimuat dengan `to_list(200000)` (`scripts/verify_data_integrity.py:1113`), jadi di
 atas 200.000 jurnal pemeriksaannya terpotong tanpa peringatan.
@@ -528,7 +579,8 @@ atas 200.000 jurnal pemeriksaannya terpotong tanpa peringatan.
 
 **Belum dijalankan** — ditulis dari pembacaan kode. Uji dulu di salinan database (`mongosh`), bukan di produksi. Kueri
 1–3, 9–10 tumpang-tindih dengan penjaga di 12.1 dan berguna bila ingin melihat datanya langsung; kueri 4–8 dan 11–17
-menutup celah di tabel atas.
+menutup celah di tabel atas. Kueri untuk temuan lanjutan (FY, FX) ada di
+[`KUERI_CEK_DATA_LANJUTAN_2026-11-13.md`](KUERI_CEK_DATA_LANJUTAN_2026-11-13.md).
 
 ```js
 // 1. Indeks unik yang wajib ada: uq_je_source_active, uq_number, uq_entity_doctype
@@ -623,8 +675,9 @@ penggabungan beberapa koleksi; rumusannya ada di laporan agen dan sebaiknya dibu
    yang **sudah** terjadi menentukan prioritas.
 2. Keputusan pemilik §10 (terutama 1–4).
 3. Kritis: IC-01, SL-01.
-4. Tinggi yang murah: IC-05 (validasi entitas), GL-04 (cek tanggal tutup), GL-01 (satu penanda pembalik), SL-03
-   (`source_id`), UX-01/02/03 (klik ganda, kunci idempotensi, konfirmasi), GL-09 (indeks wajib-ada).
+4. Tinggi yang murah: FX-01 (hapus satu panggilan kas ganda), FX-02 (kunci jurnal denda per kejadian), FX-05 (cek
+   pemilik pesanan), IC-05 dan FX-08 (validasi entitas), GL-04 (cek tanggal tutup), GL-01 (satu penanda pembalik),
+   SL-03 (`source_id`), UX-01/02/03 (klik ganda, kunci idempotensi, konfirmasi), GL-09 (indeks wajib-ada).
 5. Pola: cek periode sebelum efek bisnis + penanda gagal + panel untuk semua jenis (GL-02/03, IV-04, SL-02/04/06).
 6. Valuasi: IV-01, IV-02, IV-03, IC-02, lalu IV-09 (true-up dan "sinkron" per PT).
 7. Hijaukan `verify_atomic_claim.py`; cadangan lebih sering (DB-03).
