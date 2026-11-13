@@ -312,9 +312,9 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
-| KF-01 | Izin settings.manage tidak berpengaruh. Peran kustom yang memegangnya ditolak 403 di tingkat grup maupun PT; can_edit bernilai salah untuk 232… | Tinggi | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KF-02 | 48 pengaturan bisa diubah siapa pun yang peran acuannya Manajer — termasuk peran kustom dengan semua modul "Tidak ada" | Tinggi | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KF-03 | Semua pengguna yang login — termasuk Sopir — bisa membaca seluruh 310 pengaturan, nilai efektif, dan riwayat perubahannya | Sedang | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-01 | Izin settings.manage tidak berpengaruh. Peran kustom yang memegangnya ditolak 403 di tingkat grup maupun PT; can_edit bernilai salah untuk 232… | Tinggi | KF-T1 | implemented_pending_review | ya — dijalankan (bukti merah 12/14 di kode lama) | `4c4cd52` | [KF-T1](2026-11-13/hasil/KF-T1.md) |
+| KF-02 | 48 pengaturan bisa diubah siapa pun yang peran acuannya Manajer — termasuk peran kustom dengan semua modul "Tidak ada" | Tinggi | KF-T1 | implemented_pending_review | ya — dijalankan (bukti merah 12/14 di kode lama) | `4c4cd52` | [KF-T1](2026-11-13/hasil/KF-T1.md) |
+| KF-03 | Semua pengguna yang login — termasuk Sopir — bisa membaca seluruh 310 pengaturan, nilai efektif, dan riwayat perubahannya | Sedang | KF-T1 | implemented_pending_review | ya — dijalankan (bukti merah 12/14 di kode lama) | `4c4cd52` | [KF-T1](2026-11-13/hasil/KF-T1.md) |
 | KF-04 | Untuk PT non-PKP, layar menampilkan tarif PPN dan status e-faktur lapisan PT, padahal mesin memaksa tarif 0 dan e-faktur mati | Sedang | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | KF-05 | 7 kunci dilaporkan "mati" oleh gate (returns.grade_price_factors.*) — koreksi: wadahnya dibaca mesin… | Sedang | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
 | KF-06 | 11 kunci punya nilai cadangan di kode yang berbeda dari bawaan registry; 3 rujukan pemakai menunjuk fungsi yang tidak ada | Rendah | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |

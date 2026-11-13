@@ -12,7 +12,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 6 | PK-06 | Jurnal kembar antar-PT yang utuh dan bisa diulang | PK-02 | selesai | `dfec457` | [PK-06](../reviews/2026-11-13/hasil/PK-06.md) | H1 dilewati atas arahan pemilik 13 Nov; pola perlu ditinjau reviewer |
 | 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | PK-02 | selesai | `26203dd` | [PR-T1](../reviews/2026-11-13/hasil/PR-T1.md) |  |
 | 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | selesai | `41fb474` | [PR-T9](../reviews/2026-11-13/hasil/PR-T9.md) |  |
-| 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | siap |  |  |  |
+| 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | selesai | `4c4cd52` | [KF-T1](../reviews/2026-11-13/hasil/KF-T1.md) |  |
 | 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | PK-02 | siap |  |  |  |
 | 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | PK-02 | siap |  |  |  |
 | 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | siap |  |  |  |
@@ -29,26 +29,26 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
 | 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | siap |  |  |  |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | menunggu |  |  |  |
-| 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | menunggu |  |  |  |
-| 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | menunggu |  |  |  |
+| 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | siap |  |  |  |
+| 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | siap |  |  |  |
 | 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | menunggu |  |  |  |
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | menunggu |  |  |  |
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | menunggu |  |  |  |
 | 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | menunggu |  |  |  |
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | menunggu |  |  |  |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | menunggu |  |  |  |
-| 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | menunggu |  |  |  |
-| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | menunggu |  |  |  |
+| 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | siap |  |  |  |
+| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | siap |  |  |  |
 | 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | KF-T2 | menunggu |  |  |  |
-| 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | menunggu |  |  |  |
+| 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | siap |  |  |  |
 | 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | menunggu |  |  |  |
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | menunggu |  |  |  |
-| 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | menunggu |  |  |  |
+| 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | siap |  |  |  |
 | 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | menunggu |  |  |  |
 | 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | menunggu |  |  | Titik henti H3 untuk dokumen lama |
 | 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | menunggu |  |  |  |
-| 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | menunggu |  |  |  |
-| 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | menunggu |  |  |  |
+| 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | siap |  |  |  |
+| 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | menunggu |  |  |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | menunggu |  |  |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
@@ -78,7 +78,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | menunggu |  |  |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
 | 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | menunggu |  |  |  |
-| 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | menunggu |  |  |  |
+| 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | siap |  |  |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | menunggu |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
