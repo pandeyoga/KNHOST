@@ -159,6 +159,11 @@ kunci asisten terenkripsi.
 
 Dari 786 rute baca yang dipanggil sebagai Admin dengan id contoh, hanya satu yang menjawab 500 (KP-17).
 
+Lingkungan uji yang sama dipakai untuk mereproduksi satu temuan audit keuangan lewat API yang sebenarnya: **FX-01**
+(`bukti/t6_fx01_setoran_ganda.py`) — kasus "uang dipegang karyawan" Rp10.000.000, lalu aksi setor Rp10.000.000 →
+dua transaksi kas masuk (Rp20.000.000) dan saldo piutang titipan karyawan (1-1280) menjadi −Rp10.000.000. Temuan itu
+sebelumnya hanya dibaca dari kode.
+
 ## 6. Garis dasar gate statik repo
 
 `bash scripts/gate.sh --quick` pada `dca195b`: 13 gate merah, di antaranya penegak auth, penjaga atomisitas, penjaga

@@ -43,3 +43,26 @@ def _safe_ci(self, key_or_list, *a, **kw):
 
 
 _mc.Collection.create_index = _safe_ci
+
+# mongomock: `find_one_and_update(..., return_document=AFTER)` menerapkan pembaruan lalu mencari ulang dengan
+# saringan semula; bila pembaruan membuat saringan tidak cocok lagi (pola klaim: `saga_lock` belum ada → diisi),
+# hasilnya None padahal dokumen sudah berubah. MongoDB asli mengembalikan dokumen sesudah pembaruan. Tambalan ini
+# menyamakan perilakunya supaya alur ber-klaim (`services/atomic_claim.py`) bisa diuji di sini.
+from pymongo import ReturnDocument as _RD  # noqa: E402
+
+_orig_fou = _mc.Collection.find_one_and_update
+
+
+def _fou(self, filter, update, projection=None, sort=None, upsert=False,
+         return_document=_RD.BEFORE, **kw):
+    if return_document == _RD.AFTER and not upsert:
+        before = _orig_fou(self, filter, update, projection={"_id": 1}, sort=sort, upsert=False,
+                           return_document=_RD.BEFORE, **kw)
+        if before is None:
+            return None
+        return self.find_one({"_id": before["_id"]}, projection)
+    return _orig_fou(self, filter, update, projection=projection, sort=sort, upsert=upsert,
+                     return_document=return_document, **kw)
+
+
+_mc.Collection.find_one_and_update = _fou

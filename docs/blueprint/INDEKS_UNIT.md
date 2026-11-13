@@ -135,7 +135,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | # | ID | Judul | Jalur | Prasyarat | Menutup | Risiko | Henti | Asal |
 |---|---|---|---|---|---|---|---|---|
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | B | KF-T1 | PM-03, PM-05 | sedang | — | R/07 |
-| 75 | CR-T1 | Profil kredit per pelanggan per PT | C | PK-45, KF-T6 | CR-03 | sedang | — | R/06 |
+| 75 | CR-T1 | Profil kredit per pelanggan per PT | C | PK-45, KF-T6, KF-T7 | — | sedang | — | R/06 |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | I | PK-19 | KM-01, KM-02, KM-03, KM-04, KM-06 | tinggi | — | R/05 |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | I | KM-T1, PK-41 | — | sedang | — | R/05 |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | S | PK-02 | AG-01, AG-02, AG-04, AG-05 | sedang | — | R/08 |

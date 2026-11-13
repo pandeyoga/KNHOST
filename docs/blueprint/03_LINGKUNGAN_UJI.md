@@ -75,6 +75,13 @@ Hal yang perlu diketahui:
   menghasilkan 422, bukan 403 — untuk menguji izin pada endpoint tulis, kirim isi yang sah bentuknya.
 - PT seed: `ent_ksc` (PKP), `ent_kanda` (non-PKP), dan satu PT ketiga. Akun seed: admin, manager, sales, warehouse.
 - Tiap proses mulai dari database kosong; tidak ada yang tersisa di antara dua kali jalan.
+- Label alasan baku (`amendment_reasons`) tidak ikut seed awal: panggil `services.amendment_service.ensure_reasons()`
+  di fixture bila alurnya membutuhkan label alasan.
+- **Klaim atomik sudah ditambal.** Database tiruan mengembalikan `None` untuk `find_one_and_update(...,
+  return_document=AFTER)` bila pembaruan membuat saringan tidak cocok lagi — persis pola `services/atomic_claim.claim`
+  (kunci belum ada → diisi). `boot_app.py` menambal perilaku itu supaya sama dengan MongoDB asli, sehingga alur ber-klaim
+  (penyelesaian kasus keuangan, bayar kontrabon, dan lain-lain) bisa diuji lewat API di lingkungan B. Tanpa mengimpor
+  `boot_app`, alur itu selalu gagal dengan "sedang/baru saja diselesaikan proses lain".
 
 Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 
@@ -84,6 +91,8 @@ Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 | `t1_config.py <keluaran.json>` | Tiap kunci Pusat Pengaturan: tulis → baca lewat 3 jalur → lapisan PT → nilai tak sah → pulihkan | ±1 mnt |
 | `t2_roles.py <keluaran.json> <inventaris.json>` lalu `t2_analyze.py <folder>` | 16 peran (termasuk 4 peran kustom uji) × 786 rute GET, dibandingkan dengan matriks izin | ±12 mnt |
 | `t3_escalation.py`, `t3b_eskalasi_akun.py` | Siapa bisa mengubah pengaturan; peran kustom menaikkan haknya sendiri | ±10 dtk |
+| `t4_peran_bawaan.py`, `t5_jadwal_pengaturan.py` | Izin peran bawaan setelah proses awal diulang; pindah-massal akun Admin; perubahan pengaturan berjadwal | ±10 dtk |
+| `t6_fx01_setoran_ganda.py` | Temuan FX-01 lewat API: setoran karyawan pada kasus keuangan | ±5 dtk |
 | `fe_be_routes.py <inventaris.json>` | Tiap panggilan API di layar punya rute dengan metode yang sama | ±5 dtk |
 
 Skrip-skrip ini adalah bahan baku tes regresi untuk unit `KF-*` dan `PR-*`: tiap unit menyebut skrip mana yang harus
