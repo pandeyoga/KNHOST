@@ -8,7 +8,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | selesai | `ebfd17d` | [PK-02](../reviews/2026-11-13/hasil/PK-02.md) |  |
 | 3 | PK-03 | Cek data nyata (dijalankan pemilik) | — | tahan |  |  | Titik henti H3 |
 | 4 | PK-04 | Cadangan lebih sering dan uji pulih | — | tahan |  |  | Titik henti H2 |
-| 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | siap |  |  | Titik henti H1 sesudahnya |
+| 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | selesai | `212b21c` | [PK-05](../reviews/2026-11-13/hasil/PK-05.md) | H1 dilewati atas arahan pemilik 13 Nov; pola perlu ditinjau reviewer |
 | 6 | PK-06 | Jurnal kembar antar-PT yang utuh dan bisa diulang | PK-02 | siap |  |  | Titik henti H1 sesudahnya |
 | 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | PK-02 | siap |  |  |  |
 | 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | siap |  |  |  |

@@ -116,12 +116,12 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
 | IC-01 | Jurnal antar-PT bisa terbit di satu PT saja, tanpa jalan memperbaiki | Kritis | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
-| SL-01 | Bayar kontrabon: kas tanpa jurnal, potongan bisa terpakai dua kali, kas keluar kedua | Kritis | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-01 | Bayar kontrabon: kas tanpa jurnal, potongan bisa terpakai dua kali, kas keluar kedua | Kritis | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-02 | Jurnal yang gagal hilang tanpa penanda di banyak jalur | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
-| GL-03 | Bayar faktur supplier: hutang lunas, kas tanpa jurnal dan tanpa penanda | Tinggi | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-03 | Bayar faktur supplier: hutang lunas, kas tanpa jurnal dan tanpa penanda | Tinggi | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | GL-04 | Periode yang belum berakhir bisa ditutup | Tinggi | PK-11 | open | belum dicek — diisi unit pemegang | — | — |
-| SL-02 | Bayar faktur tanpa kunci idempotensi; entitas kas dari klien | Tinggi | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-02 | Bayar faktur tanpa kunci idempotensi; entitas kas dari klien | Tinggi | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | SL-03 | Alokasi dana titipan bank: jurnal kedua dilewati diam-diam | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-04 | Biaya/bunga bank: kas tersisa bila jurnal gagal; ulang membuat kas kedua | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-05 | Jalur lama "simulasi bayar" masih dipakai layar | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
@@ -157,7 +157,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | SL-09 | Sisa uang muka karyawan tidak punya alur pengembalian; persetujuan tanpa pemisahan pembuat/penyetuju | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-10 | Lepas-cocok rekonsiliasi tanpa penjaga; dua mekanisme rekonsiliasi | Sedang | PK-21 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-11 | Kas tanpa rekening; kas refund menyimpan kode akun di field rekening | Sedang | PK-20 | open | belum dicek — diisi unit pemegang | — | — |
-| SL-12 | Kontrabon disimpan utuh tanpa versi; nomor faktur supplier tanpa indeks unik | Sedang | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-12 | Kontrabon disimpan utuh tanpa versi; nomor faktur supplier tanpa indeks unik | Sedang | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | SL-13 | Pajak: satu faktur per pesanan cek-lalu-sisip; nomor seri tanpa cek kembar; rekap dipotong 5.000 baris; tidak ada ekspor Coretax, PPh 23, bukti potong | Sedang | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-09 | Jalur lama transfer antar-PT (harga pokok) masih dipakai kasir | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
@@ -169,7 +169,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | IV-08 | Barang retur masuk lagi pada rata-rata saat ini, bukan HPP asal | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
 | IV-09 | "Sinkron" menjumlah selisih lintas PT; true-up membuang selisih ke ekuitas | Sedang | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-09 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
-| UX-10 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-10 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | UX-11 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-12 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-13 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
