@@ -117,7 +117,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 |---|---|---|---|---|---|---|---|
 | IC-01 | Jurnal antar-PT bisa terbit di satu PT saja, tanpa jalan memperbaiki | Kritis | PK-06 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama) | `dfec457` | [PK-06](2026-11-13/hasil/PK-06.md) |
 | SL-01 | Bayar kontrabon: kas tanpa jurnal, potongan bisa terpakai dua kali, kas keluar kedua | Kritis | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
-| GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | implemented_pending_review | ya — dijalankan (bukti merah 8/13 di kode lama) | `8774bd1` | [PK-10](2026-11-13/hasil/PK-10.md) |
 | GL-02 | Jurnal yang gagal hilang tanpa penanda di banyak jalur | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-03 | Bayar faktur supplier: hutang lunas, kas tanpa jurnal dan tanpa penanda | Tinggi | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | GL-04 | Periode yang belum berakhir bisa ditutup | Tinggi | PK-11 | open | belum dicek — diisi unit pemegang | — | — |
@@ -148,7 +148,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | DB-03 | Cadangan hanya mongodump harian, simpan 14 hari | Tinggi | PK-04 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-05 | Tanggal buku campur UTC dan WIB: transaksi 00:00–06:59 WIB tanggal 1 masuk bulan sebelumnya | Sedang | PK-37 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-06 | "Wajib dua orang" tidak berlaku bagi admin; reopen cukup satu admin; jurnal manual langsung terposting | Sedang | KF-T6 | open | belum dicek — diisi unit pemegang | — | — |
-| GL-07 | Jurnal manual tidak lewat validator pusat; selisih 1 sen lolos | Sedang | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-07 | Jurnal manual tidak lewat validator pusat; selisih 1 sen lolos | Sedang | PK-10 | implemented_pending_review | ya — dijalankan (bukti merah 8/13 di kode lama) | `8774bd1` | [PK-10](2026-11-13/hasil/PK-10.md) |
 | GL-08 | Jurnal manual dan reklas suspense tanpa perlindungan kirim-ulang | Sedang | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-09 | Indeks unik gagal dibuat hanya di-log; aplikasi tetap jalan | Sedang | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-10 | Akun khusus PT bisa dihapus tanpa cek pemakaian; barisnya hilang dari laporan | Sedang | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
