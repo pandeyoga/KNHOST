@@ -26,14 +26,15 @@ layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX` 28 butir).
 
 | Cara | Cakupan | Bukti |
 |---|---|---|
-| **Aplikasi utuh dijalankan** di database tiruan dalam memori (seluruh `server.app`, proses awal, seed), lalu endpoint dipanggil lewat HTTP di dalam proses | Pusat Pengaturan (310 kunci), peran × rute baca (16 × 786), uji kenaikan hak | `bukti/t1_config.py`, `t2_roles.py`, `t3_escalation.py`, `t3b_eskalasi_akun.py` |
+| **Aplikasi utuh dijalankan** di database tiruan dalam memori (seluruh `server.app`, proses awal, seed), lalu endpoint dipanggil lewat HTTP di dalam proses | Pusat Pengaturan (310 kunci), peran × rute baca (16 × 786), 3 akun × rute tulis (962), uji kenaikan hak, uji persetujuan | `bukti/t1_config.py`, `t2_roles.py`, `t3_escalation.py`, `t3b_eskalasi_akun.py`, `t9_tulis_tanpa_izin.py`, `t10_setuju_tanpa_izin.py` |
 | **Inventaris statik** dengan pengurai sintaks | 1.749 endpoint dan jenis gerbangnya; 336 pasangan izin yang dipakai kode vs 381 di matriks; 1.790 panggilan API layar vs rute | `bukti/inv_endpoints.py`, `fe_be_routes.py` |
 | **Gate statik repo** | `bash scripts/gate.sh --quick` | `docs/blueprint/03_LINGKUNGAN_UJI.md` §4 |
 | **Membaca kode** (tiga tinjauan) | Bahasa dan pengelompokan pengaturan; layar peran dan gerbang peran di layar; konfigurasi perusahaan lain | `lampiran/A_*.md`, `B_*.md`, `C_*.md` |
 
-Yang **tidak** dilakukan: membuka layar di peramban; menguji permintaan tulis secara menyeluruh (isi permintaan harus
-sah bentuknya — hanya pengaturan, peran, dan akun yang diuji tulis); menguji indeks unik dan permintaan bersamaan;
-memeriksa data nyata. Database tiruan hanya berisi seed awal (4 akun, 3 PT), jadi rute yang butuh dokumen dijawab 404
+Yang **tidak** dilakukan: membuka layar di peramban; menguji indeks unik dan permintaan bersamaan; memeriksa data
+nyata. Rute tulis diuji **gerbangnya** (siapa yang ditolak), dengan isi permintaan buatan dari skema; **hasil kerja** tiap
+rute tulis hanya diuji untuk pengaturan, peran, akun, persetujuan PO dan tagihan pemasok, dan tiga temuan keuangan di §5.
+25 dari 962 rute tulis tidak tercapai gerbangnya (`LAMPIRAN_DAFTAR.md` §I.3). Database tiruan hanya berisi seed awal (4 akun, 3 PT), jadi rute yang butuh dokumen dijawab 404
 dan dianggap "lolos gerbang".
 
 Tanda di tabel temuan: **[dijalankan]** dibuktikan dengan uji jalan; **[statik]** dari inventaris terprogram;
@@ -102,6 +103,11 @@ pengganti 23 kelompok sekarang (dua layar saat ini memuat 85 dan 69 kunci).
   21 tanpa sesi (perangkat, login, verifikasi publik).
 - 16 peran (12 bawaan + 4 peran kustom uji) dijalankan terhadap 786 rute baca. Untuk rute berizin, jawaban server sesuai
   matriks; tidak ditemukan rute berizin yang terbuka bagi peran tanpa izinnya.
+- 962 rute tulis dipanggil oleh akun berperan kustom tanpa acuan dan tanpa satu izin pun: 898 ditolak (401/403), 25
+  tidak teruji, 2 galat server, 37 melewati gerbang. Dari 37 itu: 17 memang milik sendiri atau validasi tanpa tulis
+  (absen, notifikasi, lokasi kerja); 10 hanya mendahulukan validasi atau pencarian dokumen sebelum gerbang izin (gerbangnya
+  ada menurut inventaris statik; empat di antaranya dibaca langsung); 2 diperiksa per kunci pengaturan (T3); 8 adalah persetujuan yang diperiksa lewat pangkat
+  peran (PR-05). Tidak ditemukan rute tulis berizin yang bisa dipakai akun tanpa izin (`LAMPIRAN_DAFTAR.md` §I).
 - Membuat, mengubah, menghapus peran kustom dan mengubah peran sendiri (ditolak) berjalan seperti dirancang.
 - 79 dari 80 sumber daya izin masuk tepat satu modul akses.
 
@@ -109,11 +115,11 @@ pengganti 23 kelompok sekarang (dua layar saat ini memuat 85 dan 69 kunci).
 
 | ID | Tingkat | Temuan | Bukti | Akibat |
 |---|---|---|---|---|
-| PR-01 [dijalankan] | Tinggi | Peran kustom beracuan Manajer dengan **semua modul "Tidak ada"** tetap mendapat 200 di 23 rute yang bagi Sopir 403: HPP rata-rata (`/costing/wac`), beranda Manajer untuk semua PT, papan peringkat sales, tarif insentif, alat kebersihan data, pemakaian asisten. Ia juga bisa mengubah 48 pengaturan (KF-02) dan memenuhi tuntutan persetujuan "manager" | `backend/role_registry.py:334-340` (`role_in` mengenali peran acuan); `backend/dependencies.py:93-98` (`require_role`); `LAMPIRAN_DAFTAR.md` §E | Tingkat akses di layar peran tidak menggambarkan akses sebenarnya; akses tidak bisa dicabut tanpa mengganti peran acuan |
+| PR-01 [dijalankan] | Tinggi | Peran kustom beracuan Manajer dengan **semua modul "Tidak ada"** tetap mendapat 200 di 23 rute yang bagi Sopir 403: HPP rata-rata (`/costing/wac`), beranda Manajer untuk semua PT, papan peringkat sales, tarif insentif, alat kebersihan data, pemakaian asisten. Ia juga bisa mengubah 48 pengaturan (KF-02) dan memenuhi tuntutan persetujuan "manager". Di rute **tulis** (T9) ia melewati 28 gerbang yang menolak peran tanpa acuan; lima di antaranya langsung berhasil: membuat tarif insentif, memposting insentif ke buku besar, mengubah kebijakan kontrak pemasok, membangkitkan notifikasi, memindai wawasan asisten (semuanya 200) | `backend/role_registry.py:334-340` (`role_in` mengenali peran acuan); `backend/dependencies.py:93-98` (`require_role`); `LAMPIRAN_DAFTAR.md` §E | Tingkat akses di layar peran tidak menggambarkan akses sebenarnya; akses tidak bisa dicabut tanpa mengganti peran acuan |
 | PR-02 [dijalankan] | Tinggi | Peran kustom yang diberi modul "Pengaturan, Pengguna & Hak Akses" bisa: menjadikan akunnya sendiri Admin (200), membuat akun Admin (200), mereset sandi Admin (200), mengubah izin peran Manajer (200), membuat peran baru beracuan Manajer (200) | `backend/routers/users.py:121-158, 183-193`; `backend/routers/access_roles.py:78-98`; `bukti/t3b_eskalasi_akun.py` | Kelola akun tidak bisa didelegasikan dengan aman. Bawaan hanya Admin yang memegang izin ini, jadi celah terbuka saat didelegasikan |
 | PR-03 [dijalankan] | Tinggi | Izin tidak cukup: peran kustom tanpa peran acuan yang diberi izin tetap ditolak di 38 endpoint ber-`require_role` dan di gerbang nama peran di dalam handler (registri lot, divisi R&D, rapor desainer, papan SLA, asisten analitik) | `LAMPIRAN_DAFTAR.md` §A, §F; `ai.enabled_roles` | Peran baru tidak bisa diberi pekerjaan itu kecuali dijadikan turunan Manajer — yang lalu membuka PR-01 |
 | PR-04 [statik + dijalankan] | Sedang | 107 endpoint hanya butuh login; 41 di antaranya menulis. Termasuk papan Meja Finance/Sales/Gudang, target dan skema insentif, seluruh pengaturan (KF-03), dan persetujuan/penolakan PO, tagihan pemasok, voucher biaya masuk | `LAMPIRAN_DAFTAR.md` §B, §C | Sebagian memang milik sendiri (`/me`); sisanya membuka data atau bergantung pada pemeriksaan lain di dalam handler |
-| PR-05 [dibaca] | Tinggi | Wewenang menyetujui PO dan tagihan pemasok ditentukan **peringkat peran acuan** (`role_satisfies`), bukan izin. Izin `purchase_order.reject`, `vendor_bill.reject`, `landed_cost.approve/reject` ada di matriks tetapi tidak pernah diperiksa | `backend/routers/purchase_orders.py:797-822`; `backend/routers/vendor_bills.py:442-457` | Peran kustom tanpa acuan tidak bisa menyetujui walau diberi izin; peran beracuan Manajer bisa walau izinnya dicabut. Pesan galat mencetak id peran mentah |
+| PR-05 [dijalankan] | Tinggi | Wewenang menyetujui PO dan tagihan pemasok ditentukan **peringkat peran acuan** (`role_satisfies`), bukan izin. Uji T10: peran kustom beracuan Manajer dengan **nol izin** menyetujui PO Rp250.000.000 (200, status menjadi disetujui), menolak PO lain (200), dan menyetujui tagihan pemasok Rp75.000.000 yang lalu terposting (200); peran tanpa acuan ditolak (403). Izin `purchase_order.reject`, `vendor_bill.reject`, `landed_cost.approve/reject` ada di matriks tetapi tidak pernah diperiksa | `backend/routers/purchase_orders.py:797-822`; `backend/routers/vendor_bills.py:442-457` | Peran kustom tanpa acuan tidak bisa menyetujui walau diberi izin; peran beracuan Manajer bisa walau izinnya dicabut. Pesan galat mencetak id peran mentah |
 | PR-06 [dibaca] | Sedang | Beranda, cakupan data ("hanya miliknya"), peringkat persetujuan, dan penerima notifikasi melekat pada nama/acuan peran dan tidak bisa diatur dari layar peran. Kode memuat 89 pemakaian `role_in(` dan 67 perbandingan `role` langsung di `backend/services` + `backend/routers` | Hitungan terprogram; rincian di `lampiran/B_peran_ux.md` | Peran kustom tanpa acuan mendarat di profil sendiri, tidak punya meja kerja, dan cakupan datanya tidak terdefinisi |
 | PR-07 [statik] | Sedang | 41 pasangan izin di matriks tidak pernah diperiksa server: 7 hanya dipakai layar untuk menampilkan tombol, 34 tidak dipakai sama sekali (mis. `period.backdate`, `reports.view`, `tax_invoice.print`) | Hitungan `bukti/inv_endpoints.py` + matriks | Tombol izin yang tidak berakibat apa pun |
 | PR-08 [dibaca] | Sedang | Modul akses "Pengaturan, Pengguna & Hak Akses" menyatukan akun, peran, pengaturan, badan usaha, dan penjadwal dalam satu tombol tingkat. Dua modul (`field_visibility`, `sales_profile`) tidak berubah apa pun pada tingkat "Lihat saja" | `backend/access_modules.py:200-212` | Memberi "kelola akun" otomatis memberi "ubah peran" dan "kelola PT" |
@@ -122,6 +128,7 @@ pengganti 23 kelompok sekarang (dua layar saat ini memuat 85 dan 69 kunci).
 | PR-12 [dijalankan] | Tinggi | Perubahan Admin atas izin **peran bawaan** ditimpa setiap server dinyalakan. Uji: Admin mencabut modul "Uang Masuk" dari Sales (izin kwitansi hilang) → proses awal aplikasi dijalankan ulang → izin `ar_receipt: [create]` kembali | `backend/bootstrap.py:402` (`sync_permission_revocations`, berisi daftar cabut/atur-ulang/beri yang dijalankan tanpa syarat), dipanggil di `backend/bootstrap.py:1648`; `bukti/t4_peran_bawaan.py` | Inilah yang terasa sebagai "pengaturan peran tidak jalan": perubahan tersimpan, lalu diam-diam batal setelah restart. Peran kustom tidak terkena |
 | PR-13 [dijalankan] | Tinggi | Pindah-massal akun bisa mengosongkan Admin. `POST /api/access/roles/admin/move-users` ke peran lain dijawab 200; akun Admin aktif dari 1 menjadi 0, tanpa penjaga "admin terakhir" | `backend/services/custom_role_service.py:348` (`move_users`); `backend/routers/access_roles.py:51`; `bukti/t4_peran_bawaan.py` | Satu salah klik membuat sistem tanpa Admin; pemulihan hanya lewat basis data |
 | PR-14 [dijalankan] | Sedang | Matriks izin bawaan punya **dua sumber yang bertentangan**. Contoh: `permissions_config.py` menulis Sales hanya boleh *melihat* kwitansi (dengan catatan keputusan pemisahan tugas), tetapi daftar di proses awal memberi Sales izin *membuat* kwitansi setiap server dinyalakan; yang berlaku saat jalan adalah yang kedua | `backend/permissions_config.py:142`; `backend/bootstrap.py:425, 460`; keluaran `bukti/t4_peran_bawaan.py` ("sales.ar_receipt sebelum: ['view', 'create']") | Membaca `permissions_config.py` saja memberi gambaran izin yang salah; dokumen rencana 13 Nov yang menyebut "Sales tidak berizin mencatat kwitansi" keliru dan sudah dikoreksi |
+| PR-15 [dijalankan] | Tinggi | Menyetujui dan menolak PO **tidak memeriksa PT**. Uji T10: akun Finance bawaan yang hanya ditugaskan ke satu PT membuka PO milik PT lain → 404; menyetujui PO yang sama → 200, PO berubah menjadi disetujui atas namanya. Tagihan pemasok dan voucher biaya masuk sudah punya penjaga ini | `backend/routers/purchase_orders.py:797` (`approve_purchase_order`), `backend/routers/purchase_orders.py:920` (`reject_purchase_order`) — tanpa `guard_doc`; pembanding `backend/routers/vendor_bills.py:443` | Siapa pun yang pangkat perannya memenuhi tingkat persetujuan bisa memutus PO PT lain bila tahu id-nya |
 | PR-11 [statik] | Sedang | Layar memakai izin di 269 tempat (`can(`), tetapi masih memakai nama peran di 117 tempat (53 `roleIs(` + 64 perbandingan `role`) | Hitungan terprogram; contoh di `lampiran/B_peran_ux.md` | Peran kustom melihat tombol yang ditolak server, atau tidak melihat tombol padahal berizin |
 
 Catatan skala: registry peran disimpan di memori proses dan dimuat ulang saat peran diubah. Dengan satu proses server
@@ -155,9 +162,11 @@ kunci asisten terenkripsi.
 | ID | Tingkat | Temuan | Bukti |
 |---|---|---|---|
 | KP-17 [dijalankan] | Sedang | `GET /api/entities/count` selalu galat 500: memakai nama `include_test` yang bukan parameternya | `backend/routers/entities.py:83-95` |
+| MB-02 [dijalankan] | Rendah | `POST /api/interco/returns/{id}/approve` dengan id yang tidak ada dijawab galat 500, bukan 404: hasil pencarian yang kosong langsung dibaca isinya, sebelum izin diperiksa | `backend/routers/interco.py:425` (`approve_interco_return`) |
 | MB-01 [statik] | Rendah | Layar tugas di HP memanggil `GET /api/products/{id}`, padahal rute itu hanya punya PATCH dan DELETE; galatnya ditelan sehingga data produk selalu kosong | `frontend/src/features/mobile/MobileTaskActions.jsx:79` |
 
-Dari 786 rute baca yang dipanggil sebagai Admin dengan id contoh, hanya satu yang menjawab 500 (KP-17).
+Dari 786 rute baca yang dipanggil sebagai Admin dengan id contoh, hanya satu yang menjawab 500 (KP-17). Dari 962 rute
+tulis yang dipanggil akun tanpa izin, satu menjawab 500 (MB-02).
 
 Lingkungan uji yang sama dipakai untuk mereproduksi satu temuan audit keuangan lewat API yang sebenarnya: **FX-01**
 (`bukti/t6_fx01_setoran_ganda.py`) — kasus "uang dipegang karyawan" Rp10.000.000, lalu aksi setor Rp10.000.000 →
@@ -186,7 +195,7 @@ Setiap temuan dipegang tepat satu unit di `docs/blueprint/INDEKS_UNIT.md`:
 | PR-02, PR-13 | PR-T1 |
 | PR-12, PR-14 | PR-T9 |
 | KF-01, KF-02, KF-03 | KF-T1 |
-| KP-17, MB-01, PR-10 | PK-47 |
+| KP-17, MB-01, MB-02, PR-10, PR-15 | PK-47 |
 | PR-01, PR-03 | PR-T2 |
 | PR-04 | PR-T3 |
 | PR-06 | PR-T4 |
@@ -221,5 +230,7 @@ python inv_endpoints.py /tmp/endpoints.json
 python t1_config.py /tmp/t1.json
 python t2_roles.py /tmp/t2_roles.json /tmp/endpoints.json && python t2_analyze.py /tmp
 python t3_escalation.py && python t3b_eskalasi_akun.py
+python t9_tulis_tanpa_izin.py /tmp/t9.json /tmp/endpoints.json && python t9_analyze.py /tmp/t9.json
+python t10_setuju_tanpa_izin.py
 python fe_be_routes.py /tmp/endpoints.json
 ```

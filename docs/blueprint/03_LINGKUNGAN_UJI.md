@@ -72,7 +72,8 @@ Hal yang perlu diketahui:
 - Sesi dibuat dengan menyisipkan dokumen ke `sessions` (login lewat API juga bisa, tetapi sandi seed acak kecuali
   `KN_DEMO_DATA=true`).
 - Isi permintaan divalidasi **sebelum** gerbang izin di dalam handler dijalankan. Permintaan tulis dengan isi kosong
-  menghasilkan 422, bukan 403 — untuk menguji izin pada endpoint tulis, kirim isi yang sah bentuknya.
+  menghasilkan 422, bukan 403 — untuk menguji izin pada endpoint tulis, kirim isi yang sah bentuknya. Fungsi
+  `isi_dan_query(path, method)` di `t9_tulis_tanpa_izin.py` membuat isi itu otomatis dari skema dan boleh dipakai ulang.
 - PT seed: `ent_ksc` (PKP), `ent_kanda` (non-PKP), dan satu PT ketiga. Akun seed: admin, manager, sales, warehouse.
 - Tiap proses mulai dari database kosong; tidak ada yang tersisa di antara dua kali jalan.
 - Label alasan baku (`amendment_reasons`) tidak ikut seed awal: panggil `services.amendment_service.ensure_reasons()`
@@ -95,6 +96,8 @@ Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 | `t6_fx01_setoran_ganda.py` | Temuan FX-01 lewat API: setoran karyawan pada kasus keuangan | ±5 dtk |
 | `t7_tx01_faktur_pengganti.py` | Temuan TX-01 lewat API: rekap PPN setelah faktur pajak diganti | ±5 dtk |
 | `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01 lewat API: Sales mengubah plafon dan status blokir pelanggannya | ±5 dtk |
+| `t9_tulis_tanpa_izin.py <keluaran.json> <inventaris.json>` lalu `t9_analyze.py <keluaran.json>` | 962 rute tulis × 3 akun tanpa izin; isi permintaan dibuat otomatis dari skema OpenAPI | ±30 dtk |
+| `t10_setuju_tanpa_izin.py` | Persetujuan PO dan tagihan pemasok oleh peran tanpa izin; persetujuan PO lintas PT | ±5 dtk |
 | `fe_be_routes.py <inventaris.json>` | Tiap panggilan API di layar punya rute dengan metode yang sama | ±5 dtk |
 
 Skrip-skrip ini adalah bahan baku tes regresi untuk unit `KF-*` dan `PR-*`: tiap unit menyebut skrip mana yang harus

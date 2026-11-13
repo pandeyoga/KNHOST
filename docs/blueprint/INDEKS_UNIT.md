@@ -34,7 +34,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | P | PK-02 | PR-02, PR-13 | sedang | — | A |
 | 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | P | PK-02 | PR-12, PR-14 | sedang | — | A |
 | 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | K | PK-02 | KF-01, KF-02, KF-03 | sedang | — | A |
-| 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | F | PK-02 | KP-17, MB-01, PR-10 | rendah | — | A |
+| 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | F | PK-02 | KP-17, MB-01, MB-02, PR-10, PR-15 | rendah | — | A |
 | 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | F | PK-02 | FX-01 | rendah | — | R/02 |
 | 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | F | PK-02 | FX-02, FX-03, FX-04 | sedang | — | R/02 |
 | 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | F | PK-02 | IC-05, IC-11, SL-07, FX-08, FX-17, FY-15 | sedang | — | R/02 |

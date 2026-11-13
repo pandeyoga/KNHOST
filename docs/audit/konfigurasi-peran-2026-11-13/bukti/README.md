@@ -20,6 +20,8 @@ Cara memasang lingkungan dan pola uji: `docs/blueprint/03_LINGKUNGAN_UJI.md` §3
 | `t6_fx01_setoran_ganda.py` | Temuan FX-01 dari audit keuangan, lewat API | Setor 10.000.000 → 2 kas masuk (20.000.000); saldo 1-1280 menjadi −10.000.000 |
 | `t7_tx01_faktur_pengganti.py` | Temuan TX-01: faktur pajak diganti, lalu rekap PPN | PPN keluaran 110.000 → 220.000 setelah pengganti terbit |
 | `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01: Sales mengubah plafon dan status blokir pelanggannya | 200; plafon 5 juta → 900 juta, terblokir → aktif |
+| `t9_tulis_tanpa_izin.py` + `t9_analyze.py` | 962 rute tulis × 3 akun (peran tanpa acuan tanpa izin, Sopir, peran beracuan Manajer tanpa izin); isi permintaan dibuat dari skema | Tanpa izin: 898 ditolak, 37 lolos gerbang (tak satu pun rute berizin terpakai), 25 tak teruji, 2 galat. Beracuan Manajer: 28 gerbang tambahan terbuka, 5 langsung dijawab 200 |
+| `t10_setuju_tanpa_izin.py` | Persetujuan oleh peran tanpa izin; persetujuan PO lintas PT | Peran beracuan Manajer tanpa izin: setujui PO 250 juta → 200, setujui tagihan pemasok 75 juta → terposting. Finance PT lain menyetujui PO → 200 |
 | `fe_be_routes.py` | Tiap panggilan API di layar punya rute | 1.790 panggilan; 1 tanpa rute (`GET /api/products/{id}`) |
 
 Catatan: `t3_escalation.py` baris (d3) mengirim isi permintaan yang bentuknya salah (dijawab 422); uji yang benar untuk
@@ -32,6 +34,7 @@ butir itu ada di `t3b_eskalasi_akun.py`.
   pola klaim atomik berperilaku seperti MongoDB asli. T1–T5 dijalankan sebelum tambalan kedua; tidak ada yang
   bergantung padanya.
 - Data hanya seed awal. Rute yang butuh dokumen dijawab 404 dan dihitung "lolos gerbang".
-- Permintaan tulis hanya diuji untuk pengaturan, peran, dan akun. Endpoint tulis lain memvalidasi isi permintaan lebih
-  dulu, sehingga gerbang izinnya tidak teruji tanpa isi yang sah.
+- T9 menguji **gerbang** rute tulis dengan isi buatan dari skema; 25 rute tidak tercapai gerbangnya (isi buatan ditolak
+  validasi). Hasil kerja rute tulis hanya diuji untuk pengaturan, peran, akun, persetujuan PO/tagihan pemasok, dan tiga
+  temuan keuangan (T6–T8).
 - Layar tidak dibuka; semua penilaian layar berasal dari membaca kode.

@@ -257,3 +257,98 @@ Hanya yang bagi peran Sopir (peran bawaan tersempit) dijawab 403 — artinya ter
 | `hr.feature_toggles.pph21` | True | 0 | `backend/services/hr_payroll_service.py:292` |
 | `approval.po_custom_direksi_min` | 50000000 | 0.0 | `backend/services/approval_matrix_service.py:217` |
 
+## I. Sapuan endpoint tulis oleh akun tanpa izin (T9)
+
+Sumber: `bukti/t9_tulis_tanpa_izin.py` + `bukti/t9_analyze.py`. 962 rute tulis dipanggil dengan isi permintaan yang dibuat
+otomatis dari skema. "Lolos" = jawaban selain 401/403/422, yaitu permintaan melewati gerbang dan sampai ke logika
+(kebanyakan lalu dijawab 404 karena dokumen contoh tidak ada).
+
+| Akun | Ditolak (401/403) | Lolos gerbang | Tidak teruji (422) | Galat (5xx) |
+|---|---|---|---|---|
+| Peran kustom tanpa acuan, semua modul "Tidak ada" | 898 | 37 | 25 | 2 |
+| Sopir (peran bawaan) | 892 | 43 | 25 | 2 |
+| Peran kustom beracuan Manajer, semua modul "Tidak ada" | 870 | 65 | 25 | 2 |
+
+### I.1 Lolos bagi peran beracuan Manajer tanpa izin, ditolak bagi peran tanpa acuan (28)
+
+Gerbangnya nama atau pangkat peran acuan, bukan izin (temuan PR-01).
+
+| Endpoint | Jawaban | Berkas |
+|---|---|---|
+| `DELETE /api/ai/my-templates/{template_id}` | 404 | `backend/routers/ai_analytics.py:300` |
+| `DELETE /api/ai/schedules/{schedule_id}` | 404 | `backend/routers/ai_analytics.py:355` |
+| `DELETE /api/ai/sessions/{session_id}` | 404 | `backend/routers/ai_analytics.py:151` |
+| `DELETE /api/incentive-rates/{rate_id}` | 404 | `backend/routers/incentive_rates.py:93` |
+| `PATCH /api/ai/schedules/{schedule_id}` | 404 | `backend/routers/ai_analytics.py:340` |
+| `PATCH /api/incentive-rates/{rate_id}` | 400 | `backend/routers/incentive_rates.py:78` |
+| `POST /api/ai/actions/{pid}/confirm` | 404 | `backend/routers/ai_assist.py:20` |
+| `POST /api/ai/actions/{pid}/dismiss` | 404 | `backend/routers/ai_assist.py:25` |
+| `POST /api/ai/analyze-change` | 400 | `backend/routers/ai_analytics.py:51` |
+| `POST /api/ai/chat` | 400 | `backend/routers/ai_analytics.py:115` |
+| `POST /api/ai/feedback` | 400 | `backend/routers/ai_analytics.py:170` |
+| `POST /api/ai/insights/scan` | 200 | `backend/routers/ai_assist.py:38` |
+| `POST /api/ai/my-templates` | 400 | `backend/routers/ai_analytics.py:285` |
+| `POST /api/ai/narrative` | 404 | `backend/routers/ai_analytics.py:262` |
+| `POST /api/ai/query` | 400 | `backend/routers/ai_analytics.py:46` |
+| `POST /api/ai/schedules` | 400 | `backend/routers/ai_analytics.py:322` |
+| `POST /api/ai/schedules/{schedule_id}/run` | 404 | `backend/routers/ai_analytics.py:363` |
+| `POST /api/ai/templates/{template_id}/run` | 400 | `backend/routers/ai_analytics.py:95` |
+| `POST /api/ai/tools/{tool}` | 400 | `backend/routers/ai_analytics.py:105` |
+| `POST /api/credit-overrides/{override_id}/decision` | 400 | `backend/routers/crm.py:141` |
+| `POST /api/customers/{customer_id}/reassign` | 400 | `backend/routers/crm.py:71` |
+| `POST /api/data-hygiene/location/{collection}/{doc_id}` | 404 | `backend/routers/data_hygiene.py:81` |
+| `POST /api/incentive-rates` | 200 | `backend/routers/incentive_rates.py:56` |
+| `POST /api/notifications/generate` | 200 | `backend/routers/notifications.py:110` |
+| `POST /api/sales-incentives` | 400 | `backend/routers/crm.py:424` |
+| `POST /api/sales-targets` | 400 | `backend/routers/crm.py:369` |
+| `POST /api/sales/incentive/post-gl` | 200 | `backend/routers/crm.py:321` |
+| `PUT /api/supplier-contracts/policy` | 200 | `backend/routers/supplier_contracts.py:77` |
+
+### I.2 Lolos bagi akun tanpa izin apa pun (37)
+
+| Endpoint | Jawaban | Gerbang statik | Berkas | Catatan |
+|---|---|---|---|---|
+| `DELETE /api/registration/sessions/{sid}/lines/{line_id}` | 404 | — | `backend/routers/initial_registration.py:192` | Pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `PATCH /api/registration/sessions/{sid}/lines/{line_id}` | 404 | — | `backend/routers/initial_registration.py:192` | Pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/config/simulate` | 404 | IZIN | `backend/routers/config.py:224` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/config/values/clear` | 404 | LOGIN | `backend/routers/config.py:322` | Wewenang diperiksa per kunci (teruji di T3) |
+| `POST /api/config/values/reset` | 404 | LOGIN | `backend/routers/config.py:299` | Wewenang diperiksa per kunci (teruji di T3) |
+| `POST /api/customers/{customer_id}/merge` | 400 | IZIN | `backend/routers/customers.py:271` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/enums/products/validate` | 200 | LOGIN | `backend/routers/enums.py:105` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/enums/stage-transitions/validate` | 400 | LOGIN | `backend/routers/enums.py:94` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/handheld/batches` | 404 | IZIN_CABANG | `backend/routers/handheld.py:200` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/handheld/tasks/{kind}/{doc_id}/complete` | 404 | IZIN_CABANG | `backend/routers/handheld.py:208` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/hr/attendance/clock-in` | 404 | LOGIN | `backend/routers/hr_attendance.py:329` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/attendance/clock-out` | 404 | LOGIN | `backend/routers/hr_attendance.py:371` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/field-tracks` | 404 | LOGIN | `backend/routers/hr_tracking.py:85` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/leave-requests/me` | 404 | LOGIN | `backend/routers/hr_leave.py:50` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/leave-requests/{leave_id}/cancel` | 404 | IZIN | `backend/routers/hr_leave.py:180` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/hr/overtime/me` | 404 | LOGIN | `backend/routers/hr_leave.py:205` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/visits/check-in` | 404 | LOGIN | `backend/routers/hr_tracking.py:197` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/hr/visits/{visit_id}/check-out` | 404 | LOGIN | `backend/routers/hr_tracking.py:226` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/landed-costs/{voucher_id}/approve` | 404 | LOGIN | `backend/routers/landed_cost.py:238` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/landed-costs/{voucher_id}/reject` | 404 | LOGIN | `backend/routers/landed_cost.py:291` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/notifications/read-all` | 200 | LOGIN | `backend/routers/notifications.py:92` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/notifications/{notification_id}/read` | 404 | LOGIN | `backend/routers/notifications.py:98` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/onboarding/reset` | 200 | LOGIN | `backend/routers/onboarding.py:81` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/onboarding/{task_id}/complete` | 404 | LOGIN | `backend/routers/onboarding.py:66` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/purchase-orders/{po_id}/approve` | 404 | LOGIN | `backend/routers/purchase_orders.py:798` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/purchase-orders/{po_id}/reject` | 404 | LOGIN | `backend/routers/purchase_orders.py:920` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/push/test` | 404 | LOGIN | `backend/routers/push.py:76` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/push/unsubscribe` | 200 | LOGIN | `backend/routers/push.py:62` | Milik sendiri atau validasi tanpa tulis |
+| `POST /api/rfid/v2/passages/{passage_id}/acknowledge` | 400 | IZIN | `backend/routers/rfid_v2.py:212` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/special-orders/{order_id}/fulfillment/{item_key}/cancel` | 404 | IZIN | `backend/routers/special_orders.py:786` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `POST /api/special-orders/{order_id}/fulfillment/{item_key}/realize` | 404 | LOGIN | `backend/routers/special_orders.py:765` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/special-orders/{order_id}/fulfillment/{item_key}/route` | 404 | LOGIN | `backend/routers/special_orders.py:750` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/vendor-bills/{bill_id}/approve` | 404 | LOGIN | `backend/routers/vendor_bills.py:443` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/vendor-bills/{bill_id}/reject` | 404 | LOGIN | `backend/routers/vendor_bills.py:470` | Wewenang diperiksa lewat pangkat peran sesudah dokumen ditemukan (PR-05, T10) |
+| `POST /api/wilayah/validate` | 400 | LOGIN | `backend/routers/wilayah.py:53` | Milik sendiri atau validasi tanpa tulis |
+| `PUT /api/config/values` | 400 | IZIN | `backend/routers/config.py:262` | Validasi isi atau pencarian dokumen mendahului gerbang; gerbang izin ada sesudahnya (dibaca) |
+| `PUT /api/stock/my-site` | 200 | LOGIN | `backend/routers/stock_figures.py:76` | Milik sendiri atau validasi tanpa tulis |
+
+### I.3 Tidak teruji (25)
+
+Isi buatan tidak lolos validasi (parameter jalur harus angka, alasan minimal 5 huruf, nomor telepon), sehingga gerbang
+izinnya tidak tercapai. Semuanya berkategori gerbang izin di inventaris statik.
+
+`DELETE /api/goods-receipts/{grn_id}/files/{page}`, `DELETE /api/goods-receipts/{grn_id}/lines/{line_no}`, `PATCH /api/goods-receipts/{grn_id}/lines/{line_no}`, `PATCH /api/purchase-requisitions/{pr_id}/lines/{line_no}`, `POST /api/customers`, `POST /api/cycle-count/sessions/{session_id}/reject`, `POST /api/design-gallery/{gallery_id}/rounds/{version}/paper`, `POST /api/goods-receipts/{grn_id}/cancel`, `POST /api/goods-receipts/{grn_id}/discrepancies/{key}/resolve`, `POST /api/goods-receipts/{grn_id}/lines/{line_no}/rolls`, `POST /api/goods-receipts/{grn_id}/lines/{line_no}/save-catalog`, `POST /api/goods-receipts/{grn_id}/lines/{line_no}/scan-label`, `POST /api/goods-receipts/{grn_id}/reject`, `POST /api/makloon-orders/{mko_id}/steps/{seq}/material-loss`, `POST /api/makloon-orders/{mko_id}/steps/{seq}/material-loss/{loss_id}/decide`, `POST /api/makloon-orders/{mko_id}/steps/{seq}/partial-receipts/{grn_id}/cancel`, `POST /api/makloon-orders/{mko_id}/steps/{seq}/return-material`, `POST /api/makloon-orders/{mko_id}/steps/{seq}/tolerance`, `POST /api/master/grades`, `POST /api/purchase-orders/{po_id}/close`, `POST /api/registration/sessions/{sid}/approve`, `POST /api/registration/sessions/{sid}/approve-count`, `POST /api/registration/sessions/{sid}/reject`, `POST /api/registration/sessions/{sid}/return`, `PUT /api/goods-receipts/mode`

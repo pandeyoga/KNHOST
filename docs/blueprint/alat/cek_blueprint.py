@@ -39,14 +39,20 @@ def cek_jangkar(path: Path):
     galat = []
     txt = path.read_text(encoding="utf-8")
     n = 0
+    # Berkas yang belum ada sah bila unit ini yang melahirkannya: cukup SATU penyebutan di dekat kata
+    # "baru/lahir/dibuat/ditulis"; penyebutan lain atas path yang sama ikut dianggap sah.
+    baru = set()
+    for m in RX_ANCHOR.finditer(txt):
+        sekitar = txt[max(0, m.start() - 140): m.end() + 80].lower()
+        if any(k in sekitar for k in ("baru", "lahir", "dibuat", "ditulis", "migrasi")):
+            baru.add(m.group(1))
     for m in RX_ANCHOR.finditer(txt):
         rel, l1, l2, sym = m.groups()
         n += 1
         fp = ROOT / rel
         if not fp.exists():
-            sekitar = txt[max(0, m.start() - 140): m.end() + 80].lower()
-            if any(k in sekitar for k in ("baru", "lahir", "dibuat", "ditulis")) or "tests_mem" in rel \
-                    or "/hasil/" in rel or rel.endswith("STATUS.md"):
+            if rel in baru or "tests_mem" in rel or "/tests/test_bp_" in rel or "/hasil/" in rel \
+                    or rel.startswith("scripts/migrate_") or rel.endswith("STATUS.md"):
                 continue
             galat.append(f"berkas tidak ada: {rel}")
             continue
