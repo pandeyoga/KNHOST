@@ -8,6 +8,7 @@ import { STL_STATUS, StatusPill, fmtDate, printSettlement } from "./pettyCashSha
 import { can } from "../../config/roles";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import { confirmMoney } from "../../utils/moneyConfirm";
 
 /**
  * SettlementDetail — rincian Laporan Pertanggungjawaban (LPJ) + aksi (ajukan / setujui & posting GL / tolak /
@@ -45,6 +46,29 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
     } catch (e) { setErr(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(false); }
   }
 
+  // PK-13 (FY-17) — setujui & posting dan bayar reimburse bertanya dulu dengan nominal & PT.
+  async function approve() {
+    const ok = await confirmMoney({
+      title: `Setujui dan posting ${stl.number}?`,
+      effect: "Pengeluaran dijurnal ke beban. Sesudah diposting, isi pertanggungjawaban tidak bisa diubah.",
+      amount: stl.total_pengeluaran, entityId: stl.entity_id, entities,
+      confirmLabel: "Setujui & Posting", testId: "stl-approve-confirm",
+    });
+    if (ok) await act("approve", {}, `${stl.number} disetujui & diposting ke GL.`);
+  }
+  async function payReimburse() {
+    const ok = await confirmMoney({
+      title: `Bayar reimburse ${stl.number}?`,
+      effect: `Kas keluar untuk melunasi kelebihan pengeluaran ${stl.dibuat_oleh || stl.created_by || "karyawan"}.`,
+      amount: stl.hutang_reimburse?.amount, entityId: stl.entity_id, entities,
+      confirmLabel: "Bayar Reimburse", testId: "stl-reimburse-confirm",
+    });
+    if (ok) {
+      await act("pay-reimburse", { cash_type: "kas_besar" },
+        `Kelebihan LPJ ${stl.number} dibayar ke karyawan (hutang reimburse dilunasi dari kas).`);
+    }
+  }
+
   return (
     <div data-testid="stl-detail" className="grid gap-4">
       <section className="section-card">
@@ -59,15 +83,14 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
             {canSubmit && <button data-testid="stl-submit-btn" className="btn-primary btn-xs" onClick={() => act("submit", {}, `${stl.number} diajukan.`)} disabled={busy}><Send size={13} /> Ajukan</button>}
             {stl.hutang_reimburse?.status === "open" && canPayReimburse && (
               <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy}
-                onClick={() => act("pay-reimburse", { cash_type: "kas_besar" },
-                  `Kelebihan LPJ ${stl.number} dibayar ke karyawan (hutang reimburse dilunasi dari kas).`)}>
+                onClick={payReimburse}>
                 <CheckCircle2 size={13} /> Bayar Reimburse Rp {Number(stl.hutang_reimburse.amount || 0).toLocaleString("id-ID")}
               </button>)}
             {stl.hutang_reimburse?.status === "paid" && (
               <span data-testid="stl-reimburse-paid" className="text-[11px] font-semibold text-[#15803D]">
                 Reimburse dibayar · {stl.hutang_reimburse.cash_txn_number}</span>)}
             {(canApprove || canReject) && <>
-              {canApprove && <button data-testid="stl-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", {}, `${stl.number} disetujui & diposting ke GL.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui & Posting GL</button>}
+              {canApprove && <button data-testid="stl-approve-btn" className="btn-primary btn-xs" onClick={approve} disabled={busy}><CheckCircle2 size={13} /> Setujui & Posting GL</button>}
               {canReject && <button data-testid="stl-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>}
             </>}
           </div>

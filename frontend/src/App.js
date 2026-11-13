@@ -182,7 +182,7 @@ function App() {
   // All async actions + side-effects live in this hook (SSOT for business logic).
   const actions = useAppActions({
     // values
-    user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity,
+    user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity, entities,
     // setters
     setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
     setData, setTemplates, setUoms, setMovements, setTasks, setUsers, setPermissions, setAuditLogs,

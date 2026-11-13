@@ -1,11 +1,13 @@
 // PK-12 (kelompok B: Tagihan Pemasok, Kontrabon) — kunci idempotensi form uang di layar.
 //  · U14: wizard kontrabon — langkah 2 putus jaringan, rantai diulang → langkah 1 dikirim ulang dengan Idempotency-Key
 //    yang SAMA, server tiruan memutar ulang jawabannya, sehingga kontrabon hanya terbit SATU.
-//  · Aksi alur Tagihan Pemasok (Setujui & Posting) mengirim Idempotency-Key dan tombolnya mati selama menunggu.
+//  · Aksi alur Tagihan Pemasok (Setujui & Posting) mengirim Idempotency-Key dan tombolnya mati selama menunggu
+//    (sesudah dialog konfirmasi PK-13 dijawab "lanjut").
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import ContraBonCreateWizard from "../purchasing/contrabon/ContraBonCreateWizard";
 import VendorBillDetailPanel from "../purchasing/VendorBillDetailPanel";
+import { askConfirm } from "../../services/confirmService";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -139,8 +141,12 @@ test("Tagihan Pemasok — Setujui & Posting mengirim Idempotency-Key; tombol mat
   const { host } = await mount(<VendorBillDetailPanel bill={bill} canApprove currentUser={{ permissions: {} }}
     onClose={() => {}} onAction={onAction} onError={() => {}} />);
 
+  // PK-13 — Setujui & Posting kini bertanya dulu (dialog `vb-approve-confirm`); di sini dijawab "lanjut".
+  askConfirm.mockResolvedValue(true);
   const btn = q(host, "vb-action-approve");
   await click(btn);
+  expect(askConfirm).toHaveBeenCalledTimes(1);
+  expect(askConfirm.mock.calls[0][0]).toEqual(expect.objectContaining({ testId: "vb-approve-confirm" }));
   expect(mockPost).toHaveBeenCalledTimes(1);
   expect(mockPost.mock.calls[0][0]).toBe("/api/vendor-bills/vb1/approve");
   expect(typeof keyOf(mockPost.mock.calls[0])).toBe("string");

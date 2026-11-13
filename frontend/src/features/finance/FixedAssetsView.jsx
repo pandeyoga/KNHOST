@@ -21,6 +21,8 @@ import {
 } from "./FixedAssetsParts";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import { confirmMoney } from "../../utils/moneyConfirm";
+import { entityFullById } from "../../utils/entityLabel";
 
 const thisPeriod = () => new Date().toISOString().slice(0, 7);
 
@@ -67,6 +69,16 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   }
 
   async function settleTransfer(a) {
+    // PK-13 (FY-17) — kas dua PT berpindah: tanya dulu dengan nominal & PT penerima (pihak yang kasnya keluar).
+    const tr = a.transfer || {};
+    const ok = await confirmMoney({
+      title: `Catat pembayaran pindah aset ${a.number}?`,
+      effect: `Kas keluar dari ${tr.to_entity_name || entityFullById(entities, tr.to_entity_id)} dan masuk ke `
+        + `${tr.from_entity_name || entityFullById(entities, tr.from_entity_id)}; utang antar-PT atas aset ini dilunasi.`,
+      amount: tr.price, entityId: tr.to_entity_id, entities,
+      confirmLabel: "Catat Pembayaran", testId: "asset-settle-confirm",
+    });
+    if (!ok) return;
     setBusy(`settle-${a.id}`); setError("");
     try {
       const body = { note: "" };

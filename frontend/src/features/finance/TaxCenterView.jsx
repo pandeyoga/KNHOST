@@ -31,6 +31,8 @@ import LinkCard from "../../components/LinkCard";
 import useViewPreset from "../../hooks/useViewPreset";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyDelete, moneyPost } from "../../utils/moneyRequest";
+import { confirmMoney } from "../../utils/moneyConfirm";
+import { useEntityScope } from "../../context/EntityScopeContext";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 function fmtPeriod(p) {
@@ -312,6 +314,8 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
 function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [delErr, setDelErr] = useState("");
+  const { entities } = useEntityScope();
   // PK-12 — hapus rekaman PPh ber-Idempotency-Key.
   const delIntent = useIntentKey("pphd");
   const entSpec = entSpecific;
@@ -324,19 +328,28 @@ function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload 
   }, [entityId, period, entSpec]);
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  const del = async (id) => {
-    setBusy(true);
+  // PK-13 (FY-17) — hapus rekaman bertanya dulu (PPh terhitung & PT); galat hapus DITAMPILKAN, tidak ditelan.
+  const del = async (r) => {
+    const ok = await confirmMoney({
+      title: `Hapus rekaman ${r.name}?`,
+      effect: `Rekaman DPP masa ${fmtPeriod(period)} dihapus dari rekap pajak.`,
+      amount: r.amount, entityId, entities,
+      confirmLabel: "Hapus Rekaman", danger: true, testId: "pph-delete-confirm",
+    });
+    if (!ok) return;
+    setBusy(true); setDelErr("");
     try {
-      await delIntent.send({ id, aksi: "delete" }, (k) => moneyDelete(`${API}/tax/pph-records/${id}`, k));
+      await delIntent.send({ id: r.id, aksi: "delete" }, (k) => moneyDelete(`${API}/tax/pph-records/${r.id}`, k));
       await fetchRows(); onReload && onReload();
     }
-    catch { /* noop */ } finally { setBusy(false); }
+    catch (e) { setDelErr(apiErrorText(e, "Gagal menghapus rekaman PPh.")); } finally { setBusy(false); }
   };
 
   if (!entSpec || rows.length === 0) return null;
   return (
     <div className="mt-3" data-testid="tax-pph-records">
       <p className="text-[10px] font-bold uppercase text-[#8E8E93] mb-1.5">Rekaman DPP Manual · {fmtPeriod(period)}</p>
+      <ErrorNotice message={delErr} onDismiss={() => setDelErr("")} testId="tax-pph-rec-error" />
       <div className="grid gap-1.5">
         {rows.map((r) => (
           <div key={r.id} data-testid={`tax-pph-rec-${r.id}`} className="flex items-center gap-2 rounded-md border border-[#EFF0F2] bg-white px-3 py-2 text-[11.5px]">
@@ -344,7 +357,7 @@ function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload 
             <span className="text-[#9A9BA3]">DPP {formatCurrency(r.dpp)} · {r.rate}% → <b className="text-[#1C1C1E] tabular-nums">{formatCurrency(r.amount)}</b></span>
             {r.note ? <span className="text-[#9A9BA3] truncate">· {r.note}</span> : null}
             {canManage && (
-              <button data-testid={`tax-pph-rec-del-${r.id}`} className="ml-auto icon-button !w-6 !h-6" disabled={busy} onClick={() => del(r.id)} aria-label="Hapus">
+              <button data-testid={`tax-pph-rec-del-${r.id}`} className="ml-auto icon-button !w-6 !h-6" disabled={busy} onClick={() => del(r)} aria-label="Hapus">
                 <Trash2 size={12} className="text-[#C0392B]" />
               </button>
             )}

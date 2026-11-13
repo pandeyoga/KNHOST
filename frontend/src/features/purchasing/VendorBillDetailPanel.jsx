@@ -6,6 +6,8 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "./apPayment";
 import { API } from "../../services/apiClient";
 import { moneyPost } from "../../utils/moneyRequest";
+import { askBillCancel, askBillReject, confirmBillApprove } from "../../utils/moneyConfirm";
+import { useEntityScope } from "../../context/EntityScopeContext";
 import { X, CheckCircle2, AlertTriangle, Wallet, Send, XCircle, Ban } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
@@ -53,6 +55,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
     reject: useIntentKey("vbrej"), cancel: useIntentKey("vbcan"), pay: intent,
   };
   const ap = useApPayment("vendor_bill", bill?.id, showPay && bill?.status === "posted");
+  const { entities } = useEntityScope();
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
   const fail = (m) => { setErr(m); onError?.(m); };
@@ -77,6 +80,19 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
     } catch (e) {
       fail(e.response?.data?.detail || `Gagal ${action}.`);
     } finally { setBusy(false); }
+  }
+
+  // PK-13 (UX-03) — setujui/tolak/batal bertanya dulu dengan nominal & PT; tolak/batal wajib beralasan (→ `notes`).
+  async function approveBill() {
+    if (await confirmBillApprove(bill, entities)) await act("approve");
+  }
+  async function rejectBill() {
+    const notes = await askBillReject(bill, entities);
+    if (notes !== null) await act("reject", { notes });
+  }
+  async function cancelBill() {
+    const notes = await askBillCancel(bill, entities);
+    if (notes !== null) await act("cancel", { notes });
   }
 
   async function doPay() {
@@ -244,14 +260,14 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
           {bill.status === "draft" && (
             <>
-              <button data-testid="vb-action-cancel" onClick={() => act("cancel", { notes: "" })} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
+              <button data-testid="vb-action-cancel" onClick={() => cancelBill()} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               <button data-testid="vb-action-submit" onClick={() => act("submit")} disabled={busy} className="primary-button"><Send size={13} /> Kirim</button>
             </>
           )}
           {bill.status === "pending_approval" && canApprove && (
             <>
-              <button data-testid="vb-action-reject" onClick={() => act("reject", { notes: "Ditolak dari detail" })} disabled={busy} className="danger-button"><XCircle size={13} /> Tolak</button>
-              <button data-testid="vb-action-approve" onClick={() => act("approve")} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Posting</button>
+              <button data-testid="vb-action-reject" onClick={() => rejectBill()} disabled={busy} className="danger-button"><XCircle size={13} /> Tolak</button>
+              <button data-testid="vb-action-approve" onClick={() => approveBill()} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Posting</button>
             </>
           )}
           {bill.status === "pending_approval" && !canApprove && (
@@ -260,7 +276,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
           {bill.status === "posted" && (
             <>
               {bill.bill_type !== "makloon_service" && (
-                <button data-testid="vb-action-cancel-posted" onClick={() => act("cancel", { notes: "" })} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
+                <button data-testid="vb-action-cancel-posted" onClick={() => cancelBill()} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               )}
               <button data-testid="vb-action-pay" onClick={() => { setShowPay((s) => !s); if (!payAmount && Number(fin.outstanding) > 0) setPayAmount(String(fin.outstanding)); }} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
             </>

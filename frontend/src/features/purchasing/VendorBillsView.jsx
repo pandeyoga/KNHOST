@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { moneyPost } from "../../utils/moneyRequest";
+import { confirmBillApprove } from "../../utils/moneyConfirm";
+import { useEntityScope } from "../../context/EntityScopeContext";
 import useIntentKey from "../../hooks/useIntentKey";
 import { Receipt, Plus, Send, Wallet, Scale, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
@@ -56,6 +58,7 @@ function MatchPill({ status }) {
 }
 
 export default function VendorBillsView({ currentUser, selectedEntity }) {
+  const { entities } = useEntityScope();
   const [pos, setPos] = useState([]);
   const [summary, setSummary] = useState(null);
   const [counts, setCounts] = useState({});
@@ -130,6 +133,8 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
 
   async function quickAct(bill, action, body) {
     if (quickBusy) return;
+    // PK-13 (UX-03) — Setujui memposting hutang: tanya dulu (Kirim tetap langsung).
+    if (action === "approve" && !(await confirmBillApprove(bill, entities))) return;
     setQuickBusy(`${bill.id}:${action}`);
     try {
       const urls = {

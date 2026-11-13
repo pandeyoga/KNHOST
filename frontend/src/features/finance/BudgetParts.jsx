@@ -154,7 +154,7 @@ export function BudgetTable({ rows, editId, editAmount, setEditAmount, onEdit, o
                   <>
                     <button data-testid={`budget-edit-${r.key}`} onClick={() => onEdit(r)}
                       className="icon-button" aria-label="Ubah"><Pencil size={13} /></button>
-                    <button data-testid={`budget-delete-${r.key}`} onClick={() => onDelete(r.id)}
+                    <button data-testid={`budget-delete-${r.key}`} onClick={() => onDelete(r)}
                       className="icon-button text-[#C0392B]" aria-label="Hapus"><Trash2 size={13} /></button>
                   </>
                 )}

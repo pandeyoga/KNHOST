@@ -15,6 +15,7 @@ import { apiErrorText } from "../utils/apiError";
 import { makeCreateCustomer } from "../features/pos/customerCreateAction";
 import useIntentKey from "./useIntentKey";
 import { moneyPost } from "../utils/moneyRequest";
+import { confirmBillApprove } from "../utils/moneyConfirm";
 
 // G0-11 — nama resource API → kata benda Indonesia untuk dialog & pesan Master Data.
 const RESOURCE_LABEL = {
@@ -40,7 +41,7 @@ export function useAppActions(state) {
   // PK-12 — setujui tagihan vendor dari notifikasi (memposting hutang) ber-Idempotency-Key.
   const billApproveIntent = useIntentKey("vbapn");
   const {
-    user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity,
+    user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity, entities,
     setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
     setData, setTemplates, setUoms, setMovements, setTasks, setUsers, setPermissions, setAuditLogs,
     setSelectedCustomer, setSelectedAddress, setSelectedProduct, setBreakdown,
@@ -822,6 +823,16 @@ export function useAppActions(state) {
   const approveFromNotification = async (notif) => {
     if (!notif?.action_id) return null;
     if (notif.action_type === "vendor_bill_approve") {   // COMM-04 — tagihan vendor kampanye
+      // PK-13 (A5) — muat tagihan dulu (nomor, pemasok, nominal, PT) lalu tanya; gagal memuat → galat, TIDAK disetujui.
+      let bill;
+      try {
+        bill = (await axios.get(`${API}/vendor-bills/${notif.action_id}`)).data;
+      } catch (error) {
+        const d = error.response?.data?.detail;
+        setNotice((typeof d === "string" ? d : d?.message) || "Gagal memuat tagihan — tagihan belum disetujui.");
+        return null;
+      }
+      if (!(await confirmBillApprove(bill, entities))) return null;
       try {
         const res = await billApproveIntent.send({ id: notif.action_id, aksi: "approve" },
           (k) => moneyPost(`${API}/vendor-bills/${notif.action_id}/approve`, undefined, k));

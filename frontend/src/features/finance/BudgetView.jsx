@@ -27,8 +27,11 @@ import {
   DIM_TABS, BudgetFormModal, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel, MODE_LABEL,
 } from "./BudgetParts";
 import { can } from "../../config/roles";
+import { confirmMoney } from "../../utils/moneyConfirm";
+import { useEntityScope } from "../../context/EntityScopeContext";
 
 export default function BudgetView({ selectedEntity, currentUser }) {
+  const { entities } = useEntityScope();
   const [year, setYear] = useState(String(NOW.getFullYear()));
   const [tab, setTab] = useState("account");
   const [data, setData] = useState(null);
@@ -106,8 +109,16 @@ export default function BudgetView({ selectedEntity, currentUser }) {
     } catch (e) { setError(apiErrorText(e, "Gagal memperbarui anggaran.")); }
   }
 
-  async function removeBudget(id) {
-    try { await axios.delete(`${API}/finance/budgets/${id}`); notify("Anggaran dihapus."); await load(); }
+  // PK-13 (FY-17) — hapus pagu bertanya dulu (nominal pagu baris & PT terpilih).
+  async function removeBudget(row) {
+    const ok = await confirmMoney({
+      title: `Hapus anggaran ${row.label || row.key}?`,
+      effect: "Pagu baris ini dihapus. Realisasi tidak berubah, tetapi perbandingan anggarannya hilang.",
+      amount: row.budget, entityId: selectedEntity, entities,
+      confirmLabel: "Hapus Anggaran", danger: true, testId: "budget-delete-confirm",
+    });
+    if (!ok) return;
+    try { await axios.delete(`${API}/finance/budgets/${row.id}`); notify("Anggaran dihapus."); await load(); }
     catch (e) { setError(apiErrorText(e, "Gagal menghapus anggaran.")); }
   }
 
