@@ -650,7 +650,19 @@ async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: 
         doc["entity_id"], doc["date"], source_type=source_type, can_backdate=True)
     if plu:
         doc["backdated_in_unlock"] = plu["id"]
-    await db.journal_entries.insert_one(doc)
+    try:
+        await db.journal_entries.insert_one(doc)
+    except Exception as exc:  # noqa: BLE001
+        # PK-14 (W1) — jurnal aktif untuk sumber ini sudah ada (posting bersamaan): kembalikan yang ada, jangan melempar.
+        # Duplikat pada `number` tetap dilempar.
+        from indexes import is_duplicate_on
+        if source_id and is_duplicate_on(exc, "source_type", "source_id"):
+            prior = await db.journal_entries.find_one(
+                {"source_type": source_type, "source_id": source_id, "status": {"$in": ["posted", "draft"]}},
+                {"_id": 0})
+            if prior:
+                return safe_doc(prior)
+        raise
     if source_type != "closing":
         await _mark_stale_closings(doc["entity_id"], doc["date"])
         if plu:

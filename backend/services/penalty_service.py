@@ -238,7 +238,17 @@ async def _create(plan: Dict[str, Any], line: Dict[str, Any], calc: Dict[str, An
         "policy_snapshot": policy, "explain": calc["explain"],
         "created_by": actor_name, "created_at": now, "updated_at": now, "refs": [],
     }
-    await db[COLL].insert_one(dict(doc))
+    try:
+        await db[COLL].insert_one(dict(doc))
+    except Exception as exc:  # noqa: BLE001
+        # PK-14 (W6) — nota untuk baris & periode ini sudah ada (akrual bersamaan): kembalikan yang ada.
+        from indexes import is_duplicate_on
+        if is_duplicate_on(exc, "period_key"):
+            prior = await db[COLL].find_one({"doc_id": doc["doc_id"], "plan_id": doc["plan_id"],
+                                             "line_seq": doc["line_seq"], "period_key": period_key}, {"_id": 0})
+            if prior:
+                return safe_doc(prior)
+        raise
     # FASE G-4 — nota denda WAJIB menyebut dokumen sumbernya (bisa ditelusuri dua arah).
     from services import doc_refs_service as _refs
     await _refs.safe_link(("penalty", doc["id"]), (doc["doc_type"], doc["doc_id"]),

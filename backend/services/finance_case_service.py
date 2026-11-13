@@ -318,7 +318,14 @@ async def create_case(payload: Dict[str, Any], actor: Dict[str, Any],
         "refs": [],
         "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
     }
-    await db[COLL].insert_one(dict(doc))
+    try:
+        await db[COLL].insert_one(dict(doc))
+    except Exception as exc:  # noqa: BLE001
+        from indexes import is_duplicate_on
+        if is_duplicate_on(exc, "case_type", "source.id"):   # PK-14 (W8) — kasus kembar lahir bersamaan
+            raise CaseError("Sumber ini sudah punya kasus yang belum selesai. "
+                            "Buka kasus itu, jangan membuat kasus kembar.") from exc
+        raise
     await _link_source(doc)
     await _notify_new(doc)
     return await get(doc["id"], entity_ids)

@@ -5,7 +5,12 @@
 Aplikasi utuh (`server.app` + proses awal + seed) dinyalakan di atas `mongomock-motor`. Tiap MODUL uji mulai dari
 database kosong + seed awal. Tidak pernah menyentuh MongoDB asli (penjaga keselamatan di `pytest_sessionstart`).
 """
-import boot_app  # noqa: F401  — HARUS paling dulu: mengganti klien MongoDB sebelum `db` diimpor
+import os
+
+# PK-14 — database tiruan tidak mendukung indeks unik parsial: indeks wajib yang tidak terpasang cukup ditulis ke log.
+os.environ["KN_REQUIRED_INDEX_MODE"] = "warn"
+
+import boot_app  # noqa: E402,F401  — HARUS sebelum modul lain: mengganti klien MongoDB sebelum `db` diimpor
 
 import copy
 import datetime

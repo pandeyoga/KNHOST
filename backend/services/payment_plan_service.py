@@ -334,7 +334,14 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
             f"Toleransi pembulatan {rupiah(policy['tolerance'])} (Pusat Pengaturan)",
         ],
     }
-    await db[COLL].insert_one(dict(plan))
+    try:
+        await db[COLL].insert_one(dict(plan))
+    except Exception as exc:  # noqa: BLE001
+        from indexes import is_duplicate_on
+        if is_duplicate_on(exc, "doc_type", "doc_id"):   # PK-14 (W7) — rencana aktif lain lahir bersamaan
+            raise PlanError("Dokumen ini sudah punya rencana pembayaran aktif. "
+                            "Muat ulang lalu ubah rencana itu.") from exc
+        raise
     # FASE G-4 — rencana pembayaran adalah DOKUMEN: menaut dokumen sumbernya dua arah.
     from services import doc_refs_service as _refs
     await _refs.safe_link(("payment_plan", plan["id"]), (doc_type, doc_id), "parent",

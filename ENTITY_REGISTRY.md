@@ -2804,6 +2804,13 @@ period_closings    Prefix: close_  — Tutup Buku per PT (services/closing_servi
                                     Tutup hanya bila akhir periode < hari ini (WIB).
 period_close_locks _id = id PT     — kunci proses tutup buku per PT: token (pemilik; hanya pemilik yang
                                     melepas — PK-11), period, by, started_at (diambil alih bila > 600 dtk)
+INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplikasi tidak mulai bila tak terpasang;
+  periksa baca-saja: `scripts/check_required_indexes.py`; sakelar `KN_REQUIRED_INDEX_MODE` enforce|warn):
+  journal_entries.uq_je_source_active (source_type, source_id | status posted/draft) ·
+  interco_transactions / interco_settlements / interco_returns / interco_loans .uq_number (number) ·
+  penalties.uq_penalty_line_period (doc_id, plan_id, line_seq, period_key) ·
+  payment_plans.uq_plan_active_doc (doc_type, doc_id | status active) ·
+  finance_cases.uq_case_open_source (case_type, source.id | status open/in_progress)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```

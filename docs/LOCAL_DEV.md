@@ -88,6 +88,7 @@ lama yang lebih kecil: `docker compose -f docker-compose.dev.yml exec backend py
 | Shell di backend | `docker compose -f docker-compose.dev.yml exec backend bash` |
 | Restart backend (bootstrap ulang) | `docker compose -f docker-compose.dev.yml restart backend` |
 | Cek integritas data | `docker compose -f docker-compose.dev.yml exec backend python /app/scripts/verify_data_integrity.py` |
+| Cek indeks unik keuangan wajib (baca-saja, PK-14) | `docker compose -f docker-compose.dev.yml exec backend python /app/scripts/check_required_indexes.py` |
 | Hapus SEMUA data (DB kosong) | `docker compose -f docker-compose.dev.yml down -v` lalu `up -d` + seed |
 
 Di dalam container backend, repo ada di **`/app`** — persis seperti lingkungan Emergent,
@@ -116,4 +117,5 @@ jadi script dan dokumen yang menyebut `/app/...` tetap berlaku. Yang **tidak** b
 | `bad interpreter` / `$'\r': command not found` | file `.sh` ber-CRLF — lihat Persiapan langkah 2 |
 | COA / satuan / kategori biaya kosong | backend start sebelum Mongo siap → `restart backend` |
 | Perubahan kode tidak ter-reload | pastikan `WATCHFILES_FORCE_POLLING` / `WATCHPACK_POLLING` aktif (sudah di compose) |
+| Backend tidak mau mulai, log `INDEKS WAJIB BELUM TERPASANG` | indeks unik keuangan wajib (PK-14) tidak bisa dibuat — biasanya ada data kembar. Jalankan `scripts/check_required_indexes.py` dan kueri pencari di log; **jangan** menghapus data sendiri, serahkan hasilnya ke pemilik data. Darurat/uji saja: `KN_REQUIRED_INDEX_MODE=warn` (galat ditulis ke log, aplikasi tetap mulai) |
 | Port 3000/8001/27017 bentrok | matikan proses lain di port itu, atau ubah sisi kiri `ports:` di compose |

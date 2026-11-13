@@ -1,0 +1,10 @@
+journal_entries.uq_je_source_active (jurnal per sumber): terpasang · 0 kelompok kembar
+interco_transactions.uq_number (nomor transaksi antar-PT): terpasang · 0 kelompok kembar
+interco_settlements.uq_number (nomor settlement antar-PT): terpasang · 0 kelompok kembar
+interco_returns.uq_number (nomor retur antar-PT): terpasang · 0 kelompok kembar
+interco_loans.uq_number (nomor pinjaman antar-PT): terpasang · 0 kelompok kembar
+penalties.uq_penalty_line_period (nota denda per baris per periode): terpasang · 0 kelompok kembar
+payment_plans.uq_plan_active_doc (satu rencana bayar aktif per dokumen): terpasang · 0 kelompok kembar
+finance_cases.uq_case_open_source (satu kasus terbuka per sumber): terpasang · 0 kelompok kembar
+
+8 dari 8 indeks wajib beres.

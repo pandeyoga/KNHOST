@@ -10,7 +10,10 @@ products.sku) agar tidak bentrok dengan data seed/legacy.
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
+import sys
 from typing import Any, Dict, List, Tuple
 
 from pymongo import ASCENDING, DESCENDING
@@ -585,17 +588,8 @@ async def ensure_performance_indexes() -> dict:
             uq_summary["failed"].append(f"{coll_name}.{field}")
             logger.error("[indexes] UNIK %s.%s GAGAL (kemungkinan nomor kembar di data lama): %s",
                          coll_name, field, exc)
-    try:
-        # KN-B09 — satu jurnal aktif per (source_type, source_id): posting ganda ditolak DB.
-        await db.journal_entries.create_index(
-            [("source_type", ASCENDING), ("source_id", ASCENDING)],
-            name="uq_je_source_active", unique=True, background=True,
-            partialFilterExpression={"source_type": {"$type": "string", "$gt": ""},
-                                     "source_id": {"$type": "string", "$gt": ""},
-                                     "status": {"$in": ["posted", "draft"]}})
-    except Exception as exc:  # noqa: BLE001
-        uq_summary["failed"].append("journal_entries.source")
-        logger.error("[indexes] UNIK journal_entries(source_type,source_id) GAGAL: %s", exc)
+    # KN-B09 `uq_je_source_active` (satu jurnal aktif per sumber) pindah ke REQUIRED_UNIQUE_INDEXES (PK-14):
+    # gagal dibuat = aplikasi tidak dijalankan, bukan sekadar baris log.
     try:
         # PK-05 (SL-12) — satu nomor faktur pemasok AKTIF per (PT, pemasok). Data lama kembar → gagal berisik (H6);
         # cek-lalu-sisip di router tetap berjalan.
@@ -636,3 +630,153 @@ async def ensure_performance_indexes() -> dict:
         created, existed, failed,
     )
     return summary
+
+
+
+# ─── PK-14 (GL-09, IC-12, FX-19) — INDEKS UNIK KEUANGAN WAJIB ADA ────────────────────────────────────────────────
+# Delapan keunikan yang dulu hanya dijaga "cek dulu, lalu sisip". Bila salah satunya tidak terpasang (mis. data lama
+# kembar), `assert_required_indexes` menolak mulai (mode `enforce`, bawaan) dan menyebut indeks serta kueri pencari data
+# kembarnya. Sakelar operasi `KN_REQUIRED_INDEX_MODE` = `enforce` | `warn` (lingkungan uji / darurat).
+_NONEMPTY = {"$type": "string", "$gt": ""}
+
+
+def _finder_dup(coll: str, match: str, group: str, push: str = "$number") -> str:
+    return (f"db.{coll}.aggregate([{{$match:{match}}},{{$group:{{_id:{group},n:{{$sum:1}},nomor:{{$push:\"{push}\"}}}}}},"
+            f"{{$match:{{n:{{$gt:1}}}}}}])")
+
+
+REQUIRED_UNIQUE_INDEXES: List[Dict[str, Any]] = [
+    {"collection": "journal_entries", "name": "uq_je_source_active", "label": "jurnal per sumber",
+     "keys": [("source_type", 1), ("source_id", 1)],
+     "partial": {"source_type": dict(_NONEMPTY), "source_id": dict(_NONEMPTY), "status": {"$in": ["posted", "draft"]}},
+     "finder": _finder_dup("journal_entries",
+                           '{source_type:{$type:"string",$gt:""},source_id:{$type:"string",$gt:""},'
+                           'status:{$in:["posted","draft"]}}', '{t:"$source_type",s:"$source_id"}')},
+] + [
+    {"collection": c, "name": "uq_number", "label": f"nomor {lbl}", "keys": [("number", 1)],
+     "partial": {"number": dict(_NONEMPTY)},
+     "finder": _finder_dup(c, '{number:{$type:"string",$gt:""}}', '"$number"', "$id")}
+    for c, lbl in (("interco_transactions", "transaksi antar-PT"), ("interco_settlements", "settlement antar-PT"),
+                   ("interco_returns", "retur antar-PT"), ("interco_loans", "pinjaman antar-PT"))
+] + [
+    {"collection": "penalties", "name": "uq_penalty_line_period", "label": "nota denda per baris per periode",
+     "keys": [("doc_id", 1), ("plan_id", 1), ("line_seq", 1), ("period_key", 1)],
+     "partial": {"period_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("penalties", '{period_key:{$type:"string",$gt:""}}',
+                           '{d:"$doc_id",p:"$plan_id",s:"$line_seq",k:"$period_key"}')},
+    {"collection": "payment_plans", "name": "uq_plan_active_doc", "label": "satu rencana bayar aktif per dokumen",
+     "keys": [("doc_type", 1), ("doc_id", 1)], "partial": {"status": "active"},
+     "finder": _finder_dup("payment_plans", '{status:"active"}', '{t:"$doc_type",d:"$doc_id"}')},
+    {"collection": "finance_cases", "name": "uq_case_open_source", "label": "satu kasus terbuka per sumber",
+     "keys": [("case_type", 1), ("source.id", 1)],
+     "partial": {"source.id": dict(_NONEMPTY), "status": {"$in": ["open", "in_progress"]}},
+     "finder": _finder_dup("finance_cases", '{"source.id":{$type:"string",$gt:""},status:{$in:["open","in_progress"]}}',
+                           '{t:"$case_type",s:"$source.id"}')},
+]
+
+
+class RequiredIndexError(RuntimeError):
+    """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""
+
+
+def required_index_mode() -> str:
+    return "warn" if (os.environ.get("KN_REQUIRED_INDEX_MODE") or "").strip().lower() == "warn" else "enforce"
+
+
+def is_duplicate_on(exc: BaseException, *fields: str) -> bool:
+    """`DuplicateKeyError` dari indeks yang memuat semua `fields` (dibaca dari `details["keyPattern"]`)."""
+    from pymongo.errors import DuplicateKeyError
+    if not isinstance(exc, DuplicateKeyError):
+        return False
+    kp = (getattr(exc, "details", None) or {}).get("keyPattern") or {}
+    return all(f in kp for f in fields)
+
+
+async def ensure_required_indexes() -> List[Dict[str, Any]]:
+    """Buat tiap indeks wajib (idempoten). Mengembalikan butir yang GAGAL dibuat beserta teks galatnya."""
+    failed: List[Dict[str, Any]] = []
+    for it in REQUIRED_UNIQUE_INDEXES:
+        try:
+            await db[it["collection"]].create_index(
+                list(it["keys"]), name=it["name"], unique=True, partialFilterExpression=it["partial"])
+        except Exception as exc:  # noqa: BLE001 — dilaporkan lewat diff/assert
+            failed.append({**it, "error": str(exc)[:300]})
+    return failed
+
+
+def _plain(v: Any) -> Any:
+    if isinstance(v, dict) or hasattr(v, "items"):
+        return {str(k): _plain(x) for k, x in dict(v).items()}
+    if isinstance(v, (list, tuple)):
+        return [_plain(x) for x in v]
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    return v
+
+
+def _keys(key: Any) -> List[Tuple[str, int]]:
+    return [(str(k), int(d)) for k, d in (key or [])]
+
+
+def diff_required(index_info_by_collection: Dict[str, Dict]) -> List[Dict[str, Any]]:
+    """Fungsi murni: bandingkan `index_information()` per koleksi dengan daftar wajib.
+
+    Tiap selisih: koleksi, nama, label, `problem` (`tidak ada` | `tidak unik` | `kunci berbeda` |
+    `ekspresi parsial berbeda`), dan `finder` (kueri pencari data kembar)."""
+    out: List[Dict[str, Any]] = []
+    for it in REQUIRED_UNIQUE_INDEXES:
+        info = (index_info_by_collection.get(it["collection"]) or {}).get(it["name"])
+        if not info:
+            problem = "tidak ada"
+        elif not info.get("unique"):
+            problem = "tidak unik"
+        elif _keys(info.get("key")) != _keys(it["keys"]):
+            problem = "kunci berbeda"
+        elif json.dumps(_plain(info.get("partialFilterExpression") or {}), sort_keys=True) != \
+                json.dumps(_plain(it["partial"]), sort_keys=True):
+            problem = "ekspresi parsial berbeda"
+        else:
+            continue
+        out.append({"collection": it["collection"], "name": it["name"], "label": it["label"],
+                    "problem": problem, "finder": it["finder"]})
+    return out
+
+
+def required_index_message(diffs: List[Dict[str, Any]]) -> str:
+    lines = ["INDEKS WAJIB BELUM TERPASANG — aplikasi tidak dijalankan."]
+    for d in diffs:
+        lines.append(f"- {d['collection']}.{d['name']} ({d['label']}): {d['problem']}")
+        lines.append(f"  Cari data kembar: {d['finder']}")
+    lines.append("Jangan menghapus atau menggabung data sendiri. Serahkan hasil kueri kepada pemilik data.")
+    return "\n".join(lines)
+
+
+async def required_index_diffs() -> List[Dict[str, Any]]:
+    """`ensure` lalu `diff`; butir yang tidak ada karena gagal dibuat membawa teks galatnya."""
+    failed = {(f["collection"], f["name"]): f["error"] for f in await ensure_required_indexes()}
+    info: Dict[str, Dict] = {}
+    for coll in sorted({it["collection"] for it in REQUIRED_UNIQUE_INDEXES}):
+        try:
+            info[coll] = await db[coll].index_information()
+        except Exception:  # noqa: BLE001 — koleksi belum ada
+            info[coll] = {}
+    diffs = diff_required(info)
+    for d in diffs:
+        err = failed.get((d["collection"], d["name"]))
+        if err and d["problem"] == "tidak ada":
+            d["problem"] = f"gagal dibuat: {err}"
+    return diffs
+
+
+async def assert_required_indexes() -> None:
+    """Dipanggil `run_bootstrap` DI LUAR try/except: mode `enforce` → `RequiredIndexError` (lifespan gagal, server tidak
+    menerima permintaan); mode `warn` → galat di log, lanjut."""
+    diffs = await required_index_diffs()
+    if not diffs:
+        return
+    msg = required_index_message(diffs)
+    print(msg, file=sys.stderr, flush=True)
+    if required_index_mode() == "warn":
+        logger.error(msg)
+        return
+    raise RequiredIndexError(msg)

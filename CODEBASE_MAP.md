@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 060996d pada 2026-11-13 -->
+<!-- Dihasilkan dari commit: bab8301 pada 2026-11-13 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -31,8 +31,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `permissions_config.py` | 694 |
 | `entity_scope.py` | 687 |
 | `pagination.py` | 145 |
-| `indexes.py` | 638 |
-| `bootstrap.py` | 1981 |
+| `indexes.py` | 782 |
+| `bootstrap.py` | 1984 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
 
@@ -391,7 +391,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance_case_actions.py` | 607 | FASE G-9 — EKSEKUTOR AKSI PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_playbooks.py` | 245 | FASE G-9 — REGISTRY 11 PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_scan.py` | 259 | FASE G-9 — PEMINDAI KASUS OTOMATIS + PEMERIKSA INVARIAN. |
-| `finance_case_service.py` | 604 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
+| `finance_case_service.py` | 611 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
 | `finance_tower_service.py` | 128 | FINANCE — Control Tower (Dashboard Keuangan terpadu) (EPIC P1-5). |
 | `financial_statement_service.py` | 313 | FINANCE — Laporan Keuangan (Laba-Rugi & Neraca) diturunkan dari GL. |
 | `fixed_asset_service.py` | 546 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
@@ -409,7 +409,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 159 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 187 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 3834 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 3846 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 595 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -497,12 +497,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `od_pricing_service.py` | 363 | UAT 24 Okt (P2) — harga Pesanan Khusus sesuai arahan pemilik SO-12 + nego lewat harga khusus SO. |
 | `order_journey_service.py` | 332 | FASE E-8 (E8.14 · US12) — **PERJALANAN PESANAN** (read-only, untuk sales lapangan). |
 | `outbound_task_state.py` | 139 | FIX-3b — TABEL TRANSISI status tugas ambil BARANG KELUAR (`wms_tasks`, `flow_type=outbound`, sumber SO & sampe |
-| `payment_plan_service.py` | 670 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
+| `payment_plan_service.py` | 677 | FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`). |
 | `payment_variance_service.py` | 1285 | FASE G-3 — **SELISIH PEMBAYARAN: LEBIH & KURANG BAYAR** (`payment_variance_decisions`). |
 | `pdf_engine.py` | 378 | pdf_engine.py — Mesin render PDF asli (server-side) untuk semua dokumen bisnis. |
 | `pdf_resolvers.py` | 1337 | pdf_resolvers.py — Ubah dokumen sumber (per doc_type) menjadi CONTEXT ternormalisasi |
 | `pdf_service.py` | 461 | pdf_service.py — Orkestrasi render dokumen: template config + branding entitas + |
-| `penalty_service.py` | 729 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
+| `penalty_service.py` | 739 | FASE G-2 — **DENDA KETERLAMBATAN SEBAGAI DOKUMEN** (`penalties`). |
 | `period_unlock_service.py` | 293 | FASE G-5 — UNLOCK PERIODE BEROTORITAS ("wajib dua orang & menutup sendiri"). |
 | `placement_rules.py` | 300 | P02 (IMP-22/24/25) — evaluator penempatan BERSAMA untuk semua jalur (putaway manual, scan |
 | `po_amendment_service.py` | 376 | Phase 7.2 — PO Amendment / Version History (logic extracted from router). |

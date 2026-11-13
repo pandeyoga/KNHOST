@@ -1911,6 +1911,9 @@ async def run_bootstrap() -> None:
         await ensure_performance_indexes()
     except Exception as exc:  # noqa: BLE001
         print(f"[bootstrap] ensure_performance_indexes skip: {exc}")
+    # PK-14 — indeks unik keuangan WAJIB: di luar try/except supaya kegagalan menggagalkan lifespan (mode `enforce`).
+    from indexes import assert_required_indexes
+    await assert_required_indexes()
     # F-10 — migrasi rezim PPN 12% / DPP Nilai Lain 11/12 (Coretax)
     from services.config_service import migrate_tax_regime
     await migrate_tax_regime()

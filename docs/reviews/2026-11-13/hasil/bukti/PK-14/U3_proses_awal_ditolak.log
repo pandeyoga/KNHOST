@@ -1,0 +1,7 @@
+INFO:     Started server process [28421]
+INFO:     Waiting for application startup.
+INDEKS WAJIB BELUM TERPASANG — aplikasi tidak dijalankan.
+- penalties.uq_penalty_line_period (nota denda per baris per periode): gagal dibuat: Index build failed: <uuid>: Collection test_database.penalties ( <uuid> ) :: caused by :: E11000 duplicate key error collection: test_database.penalties index: uq_penalty_line_period dup key: { doc_id: "so_pk14_014b5393_u3", plan_id: "", li
+  Cari data kembar: db.penalties.aggregate([{$match:{period_key:{$type:"string",$gt:""}}},{$group:{_id:{d:"$doc_id",p:"$plan_id",s:"$line_seq",k:"$period_key"},n:{$sum:1},nomor:{$push:"$number"}}},{$match:{n:{$gt:1}}}])
+Jangan menghapus atau menggabung data sendiri. Serahkan hasil kueri kepada pemilik data.
+ERROR:    Traceback (most recent call last):
