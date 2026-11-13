@@ -115,6 +115,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 
 | Unit | Pertanyaan | Pilihan | Usulan |
 |---|---|---|---|
+| PK-05, PK-06 (H1) | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | Dilanjutkan atas arahan pemilik 13 Nov ("kerjakan sesuai rekomendasi, catat"); reviewer diminta meninjau `hasil/PK-05.md` dan `hasil/PK-06.md` |
 
 ## Catatan sesi
 
