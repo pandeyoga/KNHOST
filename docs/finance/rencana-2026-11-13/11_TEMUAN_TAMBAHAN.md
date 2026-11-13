@@ -20,7 +20,7 @@ dipegang tepat satu paket atau tahap.
 | KM-05 | Sedang | Tanpa dokumen keputusan; angka sumber bergerak mundur | `05` §2 | KM-T3 |
 | KM-06 | Sedang | Serah-terima pelanggan tidak memindah tim sales | `05` §2 | KM-T1 |
 | KM-07 | Rendah | Field tak terpakai; daftar "sales" tidak seragam | `05` §2 | KM-T4 |
-| CR-01 ✔ | Tinggi | Sales bisa mengubah plafon dan status blokir pelanggannya | `06` §2 | PK-45 |
+| CR-01 ✔ (dijalankan 13 Nov) | Tinggi | Sales bisa mengubah plafon dan status blokir pelanggannya | `06` §2 | PK-45 |
 | CR-02 | Tinggi | Kredit hanya diperiksa saat pesanan lahir | `06` §2 | CR-T3 |
 | CR-03 ✔ | Sedang | Ambang telat dan peringatan ditulis mati di dua berkas | `06` §2 | CR-T1 |
 | CR-04 ✔ | Sedang | Izin kredit tanpa masa berlaku, nominal 0 = tak terbatas, tanpa penjaga entitas | `06` §2 | CR-T3 |
@@ -35,7 +35,7 @@ dipegang tepat satu paket atau tahap.
 | PM-04 | Sedang | Rekonsiliasi tidak dibatasi rekening yang sama | `07` §A2 | PM-T3 |
 | PM-05 ✔ | Sedang | Master rekening tanpa peruntukan dan bawaan; saringan aktif memakai field yang salah | `07` §A2 | PM-T1 |
 | PM-06 | Sedang | Tunai di tangan sales tanpa alur titipan dan setoran | `07` §A2 | PM-T4 |
-| TX-01 ✔ | Tinggi | Faktur asli tetap terjumlah di rekap PPN setelah diganti (belum dijalankan) | `07` §B2 | PK-45 |
+| TX-01 ✔ (dijalankan 13 Nov) | Tinggi | Faktur asli tetap terjumlah di rekap PPN setelah diganti: 110.000 menjadi 220.000 | `07` §B2 | PK-45 |
 | TX-02 ✔ | Sedang | Kunci amandemen tidak lepas setelah faktur batal | `07` §B2 | PK-45 |
 | TX-03 ✔ | Tinggi | Ubah/ganti/batal faktur tanpa penjaga entitas | `07` §B2 | PK-45 |
 | TX-04 ✔ | Tinggi | Pesanan non-PPN lewat API tanpa izin khusus | `07` §B2 | PK-45 |
@@ -66,8 +66,9 @@ Jumlah: 15 tinggi, 28 sedang, 4 rendah, 1 keputusan. Delapan belas di antaranya 
 
 ## Batas
 
-- Tidak ada temuan di daftar ini yang dibuktikan dengan menjalankan kode. TX-01 dan AG-01 khususnya harus dibuktikan
-  dengan tes sebelum diperbaiki.
+- Saat daftar ini disusun tidak ada yang dijalankan. Sesudahnya TX-01 dan CR-01 dibuktikan lewat API
+  (`docs/audit/konfigurasi-peran-2026-11-13/bukti/t7_…`, `t8_…`). Sisanya masih dari membaca kode; AG-01 khususnya harus
+  dibuktikan dengan tes sebelum diperbaiki.
 - PY-03 membandingkan tabel di kode dengan ingatan saya atas lampiran peraturan; yang pasti dari kode hanyalah bentuk
   tabelnya yang janggal. Kebenarannya harus diputuskan orang pajak dengan teks peraturan di tangan.
 - Riset pembanding (sistem ERP lain, penyedia pembayaran, produk asisten akuntansi) sebagian hanya dari cuplikan

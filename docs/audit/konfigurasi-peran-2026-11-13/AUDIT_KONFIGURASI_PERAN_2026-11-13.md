@@ -164,6 +164,13 @@ Lingkungan uji yang sama dipakai untuk mereproduksi satu temuan audit keuangan l
 dua transaksi kas masuk (Rp20.000.000) dan saldo piutang titipan karyawan (1-1280) menjadi −Rp10.000.000. Temuan itu
 sebelumnya hanya dibaca dari kode.
 
+Dua temuan dari riset modul (`docs/finance/rencana-2026-11-13/11_TEMUAN_TAMBAHAN.md`) juga dijalankan:
+
+| Temuan | Uji | Hasil |
+|---|---|---|
+| **TX-01** | `bukti/t7_tx01_faktur_pengganti.py`: terbitkan faktur pajak (PPN Rp110.000), lalu terbitkan pengganti | Rekap PPN keluaran masa itu menjadi Rp220.000 (2 faktur), seharusnya Rp110.000 |
+| **CR-01** | `bukti/t8_cr01_plafon_oleh_sales.py`: akun Sales mengubah pelanggannya sendiri | Plafon Rp5.000.000 → Rp900.000.000 dan status terblokir → aktif: 200 |
+
 ## 6. Garis dasar gate statik repo
 
 `bash scripts/gate.sh --quick` pada `dca195b`: 13 gate merah, di antaranya penegak auth, penjaga atomisitas, penjaga

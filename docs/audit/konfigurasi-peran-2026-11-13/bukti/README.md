@@ -18,6 +18,8 @@ Cara memasang lingkungan dan pola uji: `docs/blueprint/03_LINGKUNGAN_UJI.md` §3
 | `t4_peran_bawaan.py` | Perubahan izin peran bawaan setelah proses awal dijalankan ulang; pindah-massal akun Admin | Izin yang dicabut kembali; akun Admin aktif dari 1 menjadi 0 |
 | `t5_jadwal_pengaturan.py` | Perubahan pengaturan berjadwal: kapan dipakai mesin | Pembaca baru tepat waktu; pembaca lama baru setelah layar Pengaturan dibuka |
 | `t6_fx01_setoran_ganda.py` | Temuan FX-01 dari audit keuangan, lewat API | Setor 10.000.000 → 2 kas masuk (20.000.000); saldo 1-1280 menjadi −10.000.000 |
+| `t7_tx01_faktur_pengganti.py` | Temuan TX-01: faktur pajak diganti, lalu rekap PPN | PPN keluaran 110.000 → 220.000 setelah pengganti terbit |
+| `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01: Sales mengubah plafon dan status blokir pelanggannya | 200; plafon 5 juta → 900 juta, terblokir → aktif |
 | `fe_be_routes.py` | Tiap panggilan API di layar punya rute | 1.790 panggilan; 1 tanpa rute (`GET /api/products/{id}`) |
 
 Catatan: `t3_escalation.py` baris (d3) mengirim isi permintaan yang bentuknya salah (dijawab 422); uji yang benar untuk

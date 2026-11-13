@@ -213,7 +213,7 @@ persetujuan orang kedua.
 
 | ID | Tingkat | Temuan | Bukti | Ditutup oleh |
 |---|---|---|---|---|
-| TX-01 ✔ (dibaca; belum dijalankan) | Tinggi | Saat faktur pengganti dibuat, faktur asli hanya diberi `replaced_by_id`; statusnya tetap. Rekap PPN menyaring `status ≠ batal` saja, sehingga asli dan pengganti sama-sama terjumlah bila berada di masa yang sama | `services/tax_invoice_service.py:182-225`; `services/input_tax_service.py:125-134` | PK-45 (tes dulu, lalu perbaiki) |
+| TX-01 ✔ (dijalankan 13 Nov: rekap 110.000 → 220.000) | Tinggi | Saat faktur pengganti dibuat, faktur asli hanya diberi `replaced_by_id`; statusnya tetap. Rekap PPN menyaring `status ≠ batal` saja, sehingga asli dan pengganti sama-sama terjumlah bila berada di masa yang sama | `services/tax_invoice_service.py:182-225`; `services/input_tax_service.py:125-134` | PK-45 (tes dulu, lalu perbaiki) |
 | TX-02 ✔ | Sedang | Kunci amandemen pesanan mencari faktur dengan `status ≠ "cancelled"`, sedangkan faktur batal berstatus `"batal"` — pesanan tetap terkunci setelah fakturnya dibatalkan | `services/amendment_service.py:277-278`; `tax_invoice_service.py:236-248` | PK-45 |
 | TX-03 ✔ | Tinggi | Ubah NSFP, ganti, dan batal faktur hanya memeriksa izin, tidak mengadu entitas faktur dengan cakupan pengguna (kelas IC-05) | `routers/tax_invoices.py:61-88` | PK-45 |
 | TX-04 ✔ | Tinggi | Pesanan non-PPN bisa dibuat dengan mengirim `tax_override` lewat API tanpa izin khusus | `routers/sales_orders.py:308, 616`; `schemas.py:542` | PK-45 |

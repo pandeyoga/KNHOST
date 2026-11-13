@@ -93,6 +93,8 @@ Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 | `t3_escalation.py`, `t3b_eskalasi_akun.py` | Siapa bisa mengubah pengaturan; peran kustom menaikkan haknya sendiri | ±10 dtk |
 | `t4_peran_bawaan.py`, `t5_jadwal_pengaturan.py` | Izin peran bawaan setelah proses awal diulang; pindah-massal akun Admin; perubahan pengaturan berjadwal | ±10 dtk |
 | `t6_fx01_setoran_ganda.py` | Temuan FX-01 lewat API: setoran karyawan pada kasus keuangan | ±5 dtk |
+| `t7_tx01_faktur_pengganti.py` | Temuan TX-01 lewat API: rekap PPN setelah faktur pajak diganti | ±5 dtk |
+| `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01 lewat API: Sales mengubah plafon dan status blokir pelanggannya | ±5 dtk |
 | `fe_be_routes.py <inventaris.json>` | Tiap panggilan API di layar punya rute dengan metode yang sama | ±5 dtk |
 
 Skrip-skrip ini adalah bahan baku tes regresi untuk unit `KF-*` dan `PR-*`: tiap unit menyebut skrip mana yang harus

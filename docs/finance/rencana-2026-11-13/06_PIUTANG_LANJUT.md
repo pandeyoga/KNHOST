@@ -42,7 +42,7 @@ pada berkas:baris yang disebut.
 
 | ID | Tingkat | Temuan | Bukti | Ditutup oleh |
 |---|---|---|---|---|
-| CR-01 ✔ | Tinggi | Sales bisa menaikkan plafon dan membuka blokir pelanggannya sendiri; Finance tidak bisa mengubah keduanya | `permissions_config.py:116, 358`; `routers/customers.py:171-183` | PK-45 (cepat: keluarkan dua field dari `PATCH` umum), CR-T1 |
+| CR-01 ✔ (dijalankan 13 Nov: plafon 5 juta → 900 juta, terblokir → aktif, jawaban 200) | Tinggi | Sales bisa menaikkan plafon dan membuka blokir pelanggannya sendiri; Finance tidak bisa mengubah keduanya | `permissions_config.py:116, 358`; `routers/customers.py:171-183` | PK-45 (cepat: keluarkan dua field dari `PATCH` umum), CR-T1 |
 | CR-02 | Tinggi | Pemeriksaan kredit hanya saat pesanan lahir. Tambah baris, tambah jumlah, ganti termin, amandemen, setujui, lepas ke gudang, dan kirim tidak memeriksa ulang | `routers/sales_orders.py:363-375` satu-satunya pemanggil gerbang; `services/so_override_service.py` | CR-T3 |
 | CR-03 ✔ | Sedang | Ambang telat (14 hari) dan ambang peringatan (80 %) ditulis mati di dua berkas | `customer_service.py:14-15`; `ar_aging_service.py:34-35` | CR-T1 |
 | CR-04 ✔ | Sedang | Izin kredit: tanpa masa berlaku; nominal 0 berarti tak terbatas; daftar dan keputusan tidak diadu dengan entitas; satu peran penyetuju untuk semua nominal | `customer_service.py:523-530`; `routers/crm.py:118-156` | PK-45 (penjaga entitas), CR-T3 |
