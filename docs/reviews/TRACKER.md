@@ -115,7 +115,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
-| IC-01 | Jurnal antar-PT bisa terbit di satu PT saja, tanpa jalan memperbaiki | Kritis | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-01 | Jurnal antar-PT bisa terbit di satu PT saja, tanpa jalan memperbaiki | Kritis | PK-06 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama) | `dfec457` | [PK-06](2026-11-13/hasil/PK-06.md) |
 | SL-01 | Bayar kontrabon: kas tanpa jurnal, potongan bisa terpakai dua kali, kas keluar kedua | Kritis | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-02 | Jurnal yang gagal hilang tanpa penanda di banyak jalur | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
@@ -159,7 +159,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | SL-11 | Kas tanpa rekening; kas refund menyimpan kode akun di field rekening | Sedang | PK-20 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-12 | Kontrabon disimpan utuh tanpa versi; nomor faktur supplier tanpa indeks unik | Sedang | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | SL-13 | Pajak: satu faktur per pesanan cek-lalu-sisip; nomor seri tanpa cek kembar; rekap dipotong 5.000 baris; tidak ada ekspor Coretax, PPh 23, bukti potong | Sedang | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
-| IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama) | `dfec457` | [PK-06](2026-11-13/hasil/PK-06.md) |
 | IC-09 | Jalur lama transfer antar-PT (harga pokok) masih dipakai kasir | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-10 | Harga dan mode PPN antar-PT bisa diatur pembuat per transaksi; status PKP tidak divalidasi | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-11 | Banyak endpoint antar-PT dan eliminasi tanpa penjaga pihak | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
