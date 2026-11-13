@@ -19,8 +19,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | PK-02 | selesai | `bdd8e40` | [PK-09](../reviews/2026-11-13/hasil/PK-09.md) |  |
 | 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | selesai | `8774bd1` | [PK-10](../reviews/2026-11-13/hasil/PK-10.md) |  |
 | 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | selesai | `cb6b470` | [PK-11](../reviews/2026-11-13/hasil/PK-11.md) |  |
-| 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | dikerjakan |  |  |  |
-| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | siap |  |  |  |
+| 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | selesai | `b5f3011` | [PK-12](../reviews/2026-11-13/hasil/PK-12.md) |  |
+| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | dikerjakan |  |  |  |
 | 17 | PK-14 | Indeks unik wajib ada | PK-02 | siap |  |  | Titik henti H6 bila data kembar |
 | 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | siap |  |  |  |
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | siap |  |  |  |
@@ -75,7 +75,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | menunggu |  |  |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
-| 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | menunggu |  |  |  |
+| 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | siap |  |  |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
 | 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | menunggu |  |  |  |
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | siap |  |  |  |
