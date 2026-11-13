@@ -137,7 +137,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
       {editor && (
         <RoleEditorDrawer key={`${editor.id || editor.template?.id || "new"}:${editor.version || ""}`}
                           role={editor.id ? editor : null} template={editor.template || null} roles={roles} modules={modules} labels={labels}
-                          canEditAssignable={canEditAssignable}
+                          canEditAssignable={canEditAssignable} canFollow={canManage}
                           onClose={() => setEditor(null)}
                           onSaved={(msg) => { setEditor(null); onChanged?.(msg); load(); }}
                           onRefresh={refreshEditor}

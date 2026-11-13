@@ -131,6 +131,10 @@ export const createAccessRole = (body) =>
 export const patchAccessRole = (id, body) =>
   axios.patch(`${API}/access/roles/${id}`, body).then((r) => r.data);
 
+// PR-T9 — peran kustom mengikuti izin baru peran dasarnya ([] = semua yang tertunda).
+export const followBaseAccessRole = (id, resources = []) =>
+  axios.post(`${API}/access/roles/${id}/follow-base`, resources.length ? { resources } : {}).then((r) => r.data);
+
 export const resetAccessRole = (id) =>
   axios.post(`${API}/access/roles/${id}/reset`).then((r) => r.data);
 

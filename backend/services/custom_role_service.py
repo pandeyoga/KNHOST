@@ -101,13 +101,36 @@ def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any], cros
     return hashlib.sha1(raw.encode()).hexdigest()[:12]
 
 
+def _same_perms(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
+    """PR-T9 — izin sama bila per sumber daya sama sebagai HIMPUNAN; daftar kosong = tidak ada."""
+    def norm(p: Dict[str, Any]) -> Dict[str, frozenset]:
+        return {k: frozenset(v) for k, v in (p or {}).items() if v}
+    return norm(a) == norm(b)
+
+
+def _modified_parts(rid: str, perms: Dict[str, Any], custom: bool) -> List[str]:
+    """PR-T9 — bagian peran BAWAAN yang berbeda dari bawaan sistem: izin, menu tersembunyi, lintas PT."""
+    default = DEFAULT_PERMISSIONS.get(rid)
+    if custom or default is None:
+        return []
+    parts: List[str] = []
+    if not _same_perms(perms, default):
+        parts.append("izin")
+    if _HIDDEN.get(rid):
+        parts.append("menu")
+    if (reg.ROLES.get(rid) or {}).get("cross_entity", False) != reg.cross_entity_default(rid):
+        parts.append("lintas_pt")
+    return parts
+
+
 def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
                custom_docs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     entry = reg.ROLES.get(rid) or {}
     perms = matrix.get(rid, {}) or {}
     custom = rid in custom_docs
     doc = custom_docs.get(rid, {})
-    default = DEFAULT_PERMISSIONS.get(rid)
+    parts = _modified_parts(rid, perms, custom)
+    pending = {k: list(v) for k, v in (doc.get("pending_defaults") or {}).items() if v} if custom else {}
     return {
         "id": rid,
         "label": entry.get("label", rid),
@@ -126,7 +149,11 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "users": users.get(rid, 0),
         "locked": rid in LOCKED_ROLES,
         "deletable": custom and users.get(rid, 0) == 0,
-        "modified": (not custom) and default is not None and perms != default,
+        "modified": bool(parts),
+        "modified_parts": parts,
+        # PR-T9 — izin baru peran dasar yang belum diikuti peran kustom ini (modulnya pernah diubah).
+        "pending_from_base": pending,
+        "pending_from_base_count": sum(len(v) for v in pending.values()),
         "levels": levels_of(perms),
         "permissions": perms,
         "turn_alerts": _turn_alerts(perms),
@@ -341,8 +368,50 @@ async def reset_builtin(rid: str) -> Dict[str, Any]:
     matrix[rid] = deepcopy(DEFAULT_PERMISSIONS[rid])
     await _save_matrix(matrix)
     await _set_cross_entity(rid, None)   # lintas badan usaha ikut kembali ke bawaan
+    # PR-T9 — menu yang disembunyikan ikut kembali ke bawaan (tidak ada yang disembunyikan).
+    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": ""}})
+    await load_hidden_views()
     await sync_registry()
     return await get_role(rid)
+
+
+async def follow_base(rid: str, resources: Optional[List[str]] = None, *, dry_run: bool = False) -> Dict[str, Any]:
+    """PR-T9 — tambahkan izin baru peran dasar yang tertunda (`custom_roles.pending_defaults`) ke peran kustom.
+
+    `resources` kosong/None = semua yang tertunda. `dry_run` → {"added", "permissions"} tanpa menyimpan (dipakai
+    router untuk penjaga kenaikan hak)."""
+    await sync_registry()
+    if rid not in reg.ROLES:
+        raise HTTPException(status_code=404, detail="Peran tidak ditemukan.")
+    doc = await db.custom_roles.find_one({"id": rid}, {"_id": 0}) or {}
+    if not doc or not doc.get("base_role"):
+        raise HTTPException(status_code=400,
+                            detail="Hanya peran kustom yang punya peran dasar yang bisa mengikuti izin baru.")
+    pending = {k: list(v) for k, v in (doc.get("pending_defaults") or {}).items() if v}
+    pick = [r for r in pending if not resources or r in set(resources)]
+    if not pick:
+        raise HTTPException(status_code=400, detail="Tidak ada izin baru dari peran dasar untuk diikuti.")
+    matrix = await _matrix()
+    perms = deepcopy(matrix.get(rid) or {})
+    added: Dict[str, List[str]] = {}
+    for res in pick:
+        cur = list(perms.get(res) or [])
+        new = [a for a in pending[res] if a not in cur]
+        if new:
+            added[res] = new
+        perms[res] = cur + new
+    if dry_run:
+        return {"added": added, "permissions": perms}
+    matrix[rid] = perms
+    rest = {k: v for k, v in pending.items() if k not in pick}
+    await _save_matrix(matrix)
+    await db.custom_roles.update_one({"id": rid}, {"$set": {
+        "pending_defaults": rest, "levels": {k: v["level"] for k, v in levels_of(perms).items()},
+        "updated_at": now_iso()}})
+    await sync_registry()
+    out = await get_role(rid)
+    out["added"] = added
+    return out
 
 
 async def delete_custom(rid: str) -> Dict[str, Any]:

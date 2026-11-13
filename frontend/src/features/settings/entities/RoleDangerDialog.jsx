@@ -1,5 +1,5 @@
 /** RoleDangerDialog — konfirmasi in-app untuk hapus peran / kembalikan ke bawaan / pindah akun massal. */
-import { Loader2, Trash2, RotateCcw, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, RotateCcw, ArrowRightLeft, AlertTriangle, GitMerge } from "lucide-react";
 
 const META = {
   delete: {
@@ -10,7 +10,13 @@ const META = {
   reset: {
     icon: RotateCcw, tone: "text-[#B45309]", btn: "", confirm: "Ya, kembalikan",
     title: (l) => `Kembalikan “${l}” ke bawaan?`,
-    body: () => "Semua tingkat akses yang Anda ubah pada peran ini dikembalikan ke bawaan sistem. Akun yang memakainya langsung mengikuti.",
+    body: () => "Izin, menu yang disembunyikan, dan akses lintas PT peran ini dikembalikan ke bawaan sistem. Akun yang memakainya langsung mengikuti.",
+  },
+  // PR-T9 — peran kustom mengikuti izin baru peran dasarnya yang tertunda.
+  follow: {
+    icon: GitMerge, tone: "text-[#0058CC]", btn: "", confirm: "Ya, ikuti",
+    title: () => "Ikuti izin baru peran dasar?",
+    body: (x) => x?.list || "—",
   },
   move: {
     icon: ArrowRightLeft, tone: "text-[#B45309]", btn: "", confirm: "Ya, pindahkan",

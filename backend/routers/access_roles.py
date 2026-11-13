@@ -122,6 +122,27 @@ async def patch_role(rid: str, payload: RolePatch, request: Request) -> Dict[str
     return out
 
 
+class FollowBaseBody(BaseModel):
+    resources: Optional[List[str]] = None   # kosong = semua izin tertunda
+
+
+@router.post("/roles/{rid}/follow-base")
+async def follow_base(rid: str, payload: FollowBaseBody, request: Request) -> Dict[str, Any]:
+    """PR-T9 — peran kustom mengikuti izin baru peran dasarnya yang tertunda."""
+    actor = await require_permission(request, "permission", "update")
+    if rid == actor.get("role") and actor.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Anda tidak bisa mengubah hak akses peran Anda sendiri — "
+                                                    "minta Admin melakukannya.")
+    from services.access_guard import assert_can_shape_role   # PR-T1
+    preview = await svc.follow_base(rid, payload.resources, dry_run=True)
+    await assert_can_shape_role(actor, current_perms=await svc.current_permissions(rid),
+                                new_perms=preview["permissions"], new_cross_entity=None, role_label=_label(rid))
+    out = await svc.follow_base(rid, payload.resources)
+    await audit(actor["name"], "role_followed_base", "custom_role", rid,
+                {"label": out["label"], "added": out.get("added", {})})
+    return out
+
+
 @router.post("/roles/{rid}/reset")
 async def reset_role(rid: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "permission", "update")

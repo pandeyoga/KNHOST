@@ -1,6 +1,8 @@
 """Bootstrap seeders & backfills (idempotent) — dipanggil saat startup (lifespan).
 Diekstrak dari server.py agar server.py tetap < 800 baris (KN compliance gate).
 Semua fungsi aman dijalankan berulang (idempotent)."""
+from typing import Any, Dict, List, Optional
+
 from db import db
 from core_utils import hash_password, new_id, now_iso, next_doc_number, DEFAULT_ENTITY_ID, SESSION_TTL_HOURS
 from permissions_config import DEFAULT_PERMISSIONS
@@ -360,14 +362,18 @@ async def backfill_entity_id() -> None:
 
 async def sync_permission_modules() -> None:
     """Merge MODUL & AKSI permission baru dari DEFAULT_PERMISSIONS ke matrix
-    tersimpan, non-destruktif (hanya MENAMBAH; pencabutan ditangani
+    tersimpan, non-destruktif (hanya MENAMBAH; pencabutan sekali-jalan ditangani
     `sync_permission_revocations` yang berjalan setelah ini).
 
     Catatan (iter_55 RCA): versi lama hanya menambah MODUL baru, sehingga AKSI
     baru pada modul yang SUDAH ADA (mis. `inventory.update`) tidak ikut → matrix
     bisa STALE & RBAC menolak aksi yang sah (warehouse/manager gagal hold/WIP).
     Kini aksi default yang hilang ikut di-merge agar fitur jalan di DB mana pun
-    (tanpa perlu re-seed)."""
+    (tanpa perlu re-seed).
+
+    PR-T9 — aksi bawaan baru untuk peran bawaan R ikut diterapkan ke peran kustom ber-`base_role` R bila modul
+    pemilik sumber dayanya belum pernah diubah (izinnya sama persis dengan R sebelum penambahan); selain itu dicatat
+    di `custom_roles.pending_defaults` untuk diikuti lewat tombol "Ikuti peran dasar"."""
     record = await db.permission_settings.find_one({"id": "default"})
     if not record:
         return
@@ -381,6 +387,8 @@ async def sync_permission_modules() -> None:
         applied = {r: {m: list(a) for m, a in mods.items() if m not in new_res}
                    for r, mods in DEFAULT_PERMISSIONS.items()}
     changed = False
+    before: Dict[str, Dict[str, List[str]]] = {}      # izin peran bawaan SEBELUM penambahan jalan ini
+    added: Dict[str, Dict[str, List[str]]] = {}       # peran bawaan → sumber daya → aksi bawaan baru
     for role, modules in DEFAULT_PERMISSIONS.items():
         matrix.setdefault(role, {})
         done = applied.setdefault(role, {})
@@ -388,129 +396,195 @@ async def sync_permission_modules() -> None:
             todo = [a for a in actions if a not in (done.get(module) or [])]
             if not todo:
                 continue
+            before.setdefault(role, {k: list(v or []) for k, v in matrix[role].items()})
             cur = matrix[role].get(module)
             cur = list(cur) if isinstance(cur, list) else []
             matrix[role][module] = cur + [a for a in todo if a not in cur]
             done[module] = list(done.get(module) or []) + todo
+            added.setdefault(role, {})[module] = list(todo)
             changed = True
+    if added:
+        await _follow_base_defaults(matrix, before, added)
     if changed or record.get("defaults_applied") is None:
         await db.permission_settings.update_one(
             {"id": "default"}, {"$set": {"matrix": matrix, "defaults_applied": applied, "updated_at": now_iso()}}
         )
 
 
-async def sync_permission_revocations() -> None:
-    """EPIC 1 — cabut modul biaya/back-office dari role 'sales' & re-scope (idempotent).
+def _module_of(resource: str) -> Optional[Dict[str, Any]]:
+    from access_modules import MODULE_CATALOG
+    for m in MODULE_CATALOG:
+        if resource in (m.get("resources") or []):
+            return m
+    return None
 
-    FASE E-8 (E8.2) — ikut menegakkan PEMISAHAN TUGAS. Penting: matriks izin TERSIMPAN
-    di basis data (`permission_settings`), jadi mengubah `DEFAULT_PERMISSIONS` saja
-    TIDAK mencabut apa pun di instalasi yang sudah jalan — `sync_permission_modules`
-    hanya MENAMBAH yang kurang, tidak pernah mengurangi. Tanpa blok di bawah, sales
-    akan tetap bisa menerbitkan faktur pajak & mencatat uang masuk selamanya.
-    """
-    REVOKE = {
-        "sales": ["purchase_order", "purchase_requisition", "vendor_bill",
-                  "landed_cost", "input_tax", "rfq"],
-        # S#092 — Pusat Persetujuan lintas modul hanya admin/manager/sales(+sales_admin
-        # baca). MD, Finance, Admin Gudang memutus persetujuan domainnya di MEJA masing-
-        # masing; `approval.view` pada mereka membocorkan antrean modul lain.
-        "md": ["approval"], "finance": ["approval"], "warehouse_admin": ["approval"],
+
+async def _follow_base_defaults(matrix: Dict[str, Any], before: Dict[str, Dict[str, List[str]]],
+                                added: Dict[str, Dict[str, List[str]]]) -> None:
+    """PR-T9 — teruskan aksi bawaan baru peran bawaan ke peran kustom turunannya (satu tingkat `base_role`).
+
+    Per modul: ikut bila izin peran kustom pada semua sumber daya modul == izin peran dasar sebelum penambahan
+    (sebagai himpunan, tidak kosong); selain itu → `pending_defaults`. `matrix` diubah di tempat; dokumen
+    `custom_roles` (levels, pending_defaults) ditulis di sini."""
+    from access_modules import levels_of
+
+    def _set(perms: Dict[str, Any], resources: List[str]) -> Dict[str, set]:
+        return {r: set(perms.get(r) or []) for r in resources if perms.get(r)}
+
+    customs = await db.custom_roles.find({"base_role": {"$in": list(added)}}, {"_id": 0}).to_list(500)
+    for c in customs:
+        cid, base = c["id"], c.get("base_role", "")
+        perms = matrix.setdefault(cid, {})
+        pending = {k: list(v) for k, v in (c.get("pending_defaults") or {}).items()}
+        by_module: Dict[str, Dict[str, List[str]]] = {}
+        for res, acts in added[base].items():
+            mod = _module_of(res)
+            by_module.setdefault(mod["id"] if mod else "", {})[res] = acts
+        touched = False
+        for mod_id, items in by_module.items():
+            mod = next((m for m in [_module_of(r) for r in items] if m), None)
+            res_list = list(mod.get("resources") or []) if mod else []
+            base_set = _set(before.get(base, {}), res_list) if mod else {}
+            follow = bool(mod) and bool(base_set) and _set(perms, res_list) == base_set
+            for res, acts in items.items():
+                if follow:
+                    cur = list(perms.get(res) or [])
+                    perms[res] = cur + [a for a in acts if a not in cur]
+                else:
+                    cur = pending.get(res, [])
+                    pending[res] = cur + [a for a in acts if a not in cur]
+                touched = True
+        if touched:
+            await db.custom_roles.update_one({"id": cid}, {"$set": {
+                "levels": {k: v["level"] for k, v in levels_of(perms).items()},
+                "pending_defaults": pending, "updated_at": now_iso()}})
+
+
+# PR-T9 — butir migrasi izin SEKALI-JALAN (dulu blok REVOKE/RESCOPE yang berjalan pada SETIAP start dan menimpa
+# perubahan Admin). Id tetap `<kind>:<role>:<resource>`; yang id-nya ada di `permission_settings.migrations_applied`
+# tidak dijalankan lagi. Aturan: butir baru DITAMBAHKAN di akhir dengan id baru; butir lama tidak diubah.
+# `revoke:finance:approval` sengaja tidak dipindahkan: bertentangan dengan izin bawaan Finance (`approval.view`).
+PERMISSION_MIGRATIONS: List[Dict[str, Any]] = [
+    # EPIC 1 / E-8 (E8.2) — modul biaya/back-office bukan untuk Sales (pemisahan tugas).
+    *[{"id": f"revoke:sales:{r}", "kind": "revoke", "role": "sales", "resource": r}
+      for r in ("purchase_order", "purchase_requisition", "vendor_bill", "landed_cost", "input_tax", "rfq")],
+    # S#092 — Pusat Persetujuan lintas modul bukan untuk MD dan Admin Gudang (memutus di mejanya masing-masing).
+    {"id": "revoke:md:approval", "kind": "revoke", "role": "md", "resource": "approval"},
+    {"id": "revoke:warehouse_admin:approval", "kind": "revoke", "role": "warehouse_admin", "resource": "approval"},
+    # E8.2 — pajak keluaran & uang masuk milik Finance; Sales mencatat kwitansi dari HP (Sesi 16, K-36).
+    {"id": "rescope:sales:price_approval", "kind": "rescope", "role": "sales", "resource": "price_approval",
+     "actions": ["view", "create", "update"]},
+    {"id": "rescope:sales:tax_invoice", "kind": "rescope", "role": "sales", "resource": "tax_invoice",
+     "actions": ["view"]},
+    {"id": "rescope:sales:ar_receipt", "kind": "rescope", "role": "sales", "resource": "ar_receipt",
+     "actions": ["view", "create"]},
+    {"id": "rescope:sales:payment_plan", "kind": "rescope", "role": "sales", "resource": "payment_plan",
+     "actions": ["view"]},
+    # E8.10b#3 — menandai pesanan TERKIRIM: gudang maupun Admin Sales.
+    {"id": "rescope:warehouse:order", "kind": "rescope", "role": "warehouse", "resource": "order",
+     "actions": ["view", "deliver"]},
+    # FASE F-6 — `approval.approve` dipensiunkan bersama mesin persetujuan generik; membaca antrean tetap.
+    {"id": "rescope:admin:approval", "kind": "rescope", "role": "admin", "resource": "approval",
+     "actions": ["view"]},
+    {"id": "rescope:manager:approval", "kind": "rescope", "role": "manager", "resource": "approval",
+     "actions": ["view"]},
+]
+
+
+def _legacy_grants() -> Dict[str, Dict[str, List[str]]]:
+    """Salinan isi blok GRANT lama (berjalan pada setiap start sebelum PR-T9). Hanya dipakai garis dasar
+    `ensure_permission_ledger`: semua pasangannya kini ada di DEFAULT_PERMISSIONS."""
+    g: Dict[str, Dict[str, List[str]]] = {
+        "sales": {"ar_receipt": ["create"]},
+        "finance": {"approval": ["view"], "interco_price": ["view", "set"]},
+        "md": {"interco_price": ["view", "set"], "design_request": ["release_hold"]},
+        "admin": {"interco_price": ["view", "set"], "design_request": ["release_hold", "paper_check"]},
+        "manager": {"design_request": ["release_hold", "paper_check"]},
+        "designer": {"design_request": ["paper_check"]},
     }
-    RESCOPE = {
-        "sales": {
-            "price_approval": ["view", "create", "update"],  # hapus 'delete'
-            # E8.2 — uang masuk & pajak keluaran pindah ke peran `finance`;
-            # keputusan selisih bayar juga. Sales tetap boleh MELIHAT.
-            "tax_invoice": ["view"],
-            "ar_receipt": ["view", "create"],   # Sesi 16 — kwitansi dari HP sales
-            "payment_plan": ["view"],
-        },
-        # E8.10b#3 — menandai pesanan TERKIRIM: boleh gudang MAUPUN Admin Sales.
-        "warehouse": {"order": ["view", "deliver"]},
-        # FASE F-6 (2026-08-17) — `approval.approve` DICABUT untuk admin & manajer.
-        # Satu-satunya endpoint yang memeriksanya (`POST /approval-requests/{id}/
-        # approve|reject`) dipensiunkan bersama mesin persetujuan generik yang tak pernah
-        # punya produsen (`create_approval_request()` nol pemanggil). Tanpa blok ini izin
-        # itu HIDUP TERUS di instalasi yang sudah jalan — kelas cacat yang sama dengan
-        # E8.2 di atas: matriks tersimpan di basis data, mengubah `DEFAULT_PERMISSIONS`
-        # saja tidak mencabut apa pun. Membaca antrean (`approval.view`) tetap ada:
-        # yang dicabut hanya wewenang memutuskan lewat pintu yang sudah tidak ada.
-        "admin": {"approval": ["view"]},
-        "manager": {"approval": ["view"]},
-    }
-    record = await db.permission_settings.find_one({"id": "default"})
-    if not record:
+    ful = ["view", "choose_route", "override_default", "realize", "cancel"]
+    g["admin"]["od_fulfillment"] = list(ful)
+    g["manager"]["od_fulfillment"] = list(ful)
+    g["md"]["od_fulfillment"] = ful[:4]
+    for r in ("sales", "sales_admin", "finance"):
+        g.setdefault(r, {})["od_fulfillment"] = ["view"]
+    g["admin"]["rnd"] = ["pic_decide", "override_fail"]
+    g["manager"]["rnd"] = ["pic_decide", "override_fail"]
+    g["md"]["rnd"] = ["pic_decide"]
+    for r in ("sales", "sales_admin", "md", "designer", "finance"):
+        g.setdefault(r, {})["design_ownership"] = ["view", "claim"] if r != "finance" else ["view"]
+    for r in ("manager", "admin"):
+        g.setdefault(r, {})["design_ownership"] = ["view", "claim", "decide"]
+    for r in ("sales_admin", "manager", "admin"):
+        g.setdefault(r, {})["od_pricing"] = ["view_cost", "set_price", "lock"]
+    g.setdefault("md", {})["od_pricing"] = ["view_cost"]
+    rpr = ["view", "create", "send", "receive", "cancel"]
+    for r in ("admin", "manager", "warehouse_admin", "md"):
+        g.setdefault(r, {})["repair_order"] = list(rpr)
+    g.setdefault("warehouse", {})["repair_order"] = ["view", "send", "receive"]
+    for r in ("finance", "qc", "md_quality"):
+        g.setdefault(r, {})["repair_order"] = ["view"] if r == "finance" else ["view", "create"]
+    return g
+
+
+_LEGACY_GRANTS: Dict[str, Dict[str, List[str]]] = _legacy_grants()
+
+
+async def ensure_permission_ledger() -> None:
+    """PR-T9 — garis dasar buku catatan migrasi izin, SEKALI per instalasi (dipanggil tepat sebelum
+    `sync_permission_modules`).
+
+    Blok lama (REVOKE/RESCOPE/GRANT) sudah berjalan pada setiap start sebelumnya, jadi semua butirnya dianggap
+    sudah diterapkan: id butir dicatat di `migrations_applied` dan pasangan GRANT lama digabung ke
+    `defaults_applied` (supaya `sync_permission_modules` tidak menghidupkan lagi aksi yang sudah dicabut Admin).
+    `matrix` tidak disentuh."""
+    record = await db.permission_settings.find_one({"id": "default"},
+                                                   {"_id": 0, "migrations_applied": 1, "defaults_applied": 1})
+    if not record or record.get("migrations_applied") is not None:
         return
+    patch: Dict[str, Any] = {"migrations_applied": [m["id"] for m in PERMISSION_MIGRATIONS]}
+    applied = record.get("defaults_applied")
+    if applied is not None:
+        for role, mods in _LEGACY_GRANTS.items():
+            done = applied.setdefault(role, {})
+            for res, acts in mods.items():
+                cur = list(done.get(res) or [])
+                done[res] = cur + [a for a in acts if a not in cur]
+        patch["defaults_applied"] = applied
+    await db.permission_settings.update_one({"id": "default"}, {"$set": patch})
+
+
+async def sync_permission_revocations() -> None:
+    """PR-T9 — jalankan butir `PERMISSION_MIGRATIONS` yang BELUM tercatat di `migrations_applied`, sekali saja.
+
+    Dulu blok ini mencabut/mengatur ulang/memberi izin tanpa syarat pada SETIAP start, sehingga perubahan Admin atas
+    peran bawaan kembali sendiri setelah server dinyalakan ulang (PR-12). Kini: `revoke` menghapus sumber daya dari
+    peran; `rescope` mengganti daftar aksi bila sumber daya ada pada peran; id butir dicatat. Start biasa tidak
+    menulis apa pun."""
+    record = await db.permission_settings.find_one({"id": "default"})
+    if not record or record.get("migrations_applied") is None:
+        return
+    done = set(record.get("migrations_applied") or [])
     matrix = record.get("matrix", {})
+    new_ids: List[str] = []
     changed = False
-    for role, mods in REVOKE.items():
-        rm = matrix.get(role, {})
-        for m in mods:
-            if m in rm:
-                del rm[m]
-                changed = True
-    for role, mp in RESCOPE.items():
-        rm = matrix.get(role, {})
-        for m, actions in mp.items():
-            if m in rm and rm[m] != actions:
-                rm[m] = actions
-                changed = True
-    # Sesi 16 — sales lapangan mencatat kwitansi penerimaan dari HP (keputusan user); alokasi tetap
-    # ke tagihan terbuka & selisih ditangani finance. Ditambahkan tanpa mencabut aksi lain.
-    GRANT = {"sales": {"ar_receipt": ["create"]},
-             # Sesi audit 2026-09-21 — finance melihat papan antrean persetujuan (selisih bayar
-             # & pembayaran sample adalah keputusannya); hanya `view`.
-             "finance": {"approval": ["view"], "interco_price": ["view", "set"]},
-             # 2026-10 — penetap harga internal antar-PT (keputusan pemilik: MD, Finance, Admin).
-             "md": {"interco_price": ["view", "set"]},
-             "admin": {"interco_price": ["view", "set"], "design_request": ["release_hold", "paper_check"]},
-             # L03 LN-030 — lepas HOLD desain oleh PIC Designer berwenang.
-             "manager": {"design_request": ["release_hold", "paper_check"]},
-             # L03 LN-031 — checklist print paper per ronde.
-             "designer": {"design_request": ["paper_check"]}}
-    GRANT["md"]["design_request"] = ["release_hold"]
-    # L03 LN-033 — hak pemenuhan Pesanan Khusus (pilih jalur / override default / realisasi / batal).
-    _ful = ["view", "choose_route", "override_default", "realize", "cancel"]
-    GRANT["admin"]["od_fulfillment"] = _ful
-    GRANT["manager"]["od_fulfillment"] = _ful
-    GRANT["md"]["od_fulfillment"] = _ful[:4]
-    for _r in ("sales", "sales_admin", "finance"):
-        GRANT.setdefault(_r, {})["od_fulfillment"] = ["view"]
-    # L03 LN-034 — keputusan PIC uji ulang gagal / override eksplisit.
-    GRANT["admin"]["rnd"] = ["pic_decide", "override_fail"]
-    GRANT["manager"]["rnd"] = ["pic_decide", "override_fail"]
-    GRANT["md"]["rnd"] = ["pic_decide"]
-    # UAT 24 Okt (P1, keputusan pemilik P1-K1) — klaim desain milik pelanggan diajukan sales/Admin Sales/MD,
-    # DIPUTUS Manajer (admin sebagai cadangan).
-    for _r in ("sales", "sales_admin", "md", "designer", "finance"):
-        GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim"] if _r != "finance" else ["view"]
-    for _r in ("manager", "admin"):
-        GRANT.setdefault(_r, {})["design_ownership"] = ["view", "claim", "decide"]
-    # UAT 24 Okt (P2, keputusan pemilik P2-K1) — kunci harga OD oleh Admin Sales/Manajer/Admin (bukan sales);
-    # harga item tanpa induk diisi PIC Special Order; biaya kontrak/margin/supplier hanya untuk peran pemegang view_cost.
-    for _r in ("sales_admin", "manager", "admin"):
-        GRANT.setdefault(_r, {})["od_pricing"] = ["view_cost", "set_price", "lock"]
-    GRANT.setdefault("md", {})["od_pricing"] = ["view_cost"]
-    # UAT 24 Okt (P7) — menu Perbaikan (repair / celup ulang / finishing ulang) di Gudang & MD.
-    _rpr = ["view", "create", "send", "receive", "cancel"]
-    for _r in ("admin", "manager", "warehouse_admin", "md"):
-        GRANT.setdefault(_r, {})["repair_order"] = list(_rpr)
-    GRANT.setdefault("warehouse", {})["repair_order"] = ["view", "send", "receive"]
-    for _r in ("finance", "qc", "md_quality"):
-        GRANT.setdefault(_r, {})["repair_order"] = ["view"] if _r == "finance" else ["view", "create"]
-    for role, mp in GRANT.items():
-        rm = matrix.setdefault(role, {})
-        for m, actions in mp.items():
-            cur = list(rm.get(m, []))
-            for a in actions:
-                if a not in cur:
-                    cur.append(a)
-                    changed = True
-            rm[m] = cur
+    for m in PERMISSION_MIGRATIONS:
+        if m["id"] in done or m["id"] in new_ids:
+            continue
+        rm = matrix.get(m["role"], {})
+        if m["kind"] == "revoke" and m["resource"] in rm:
+            del rm[m["resource"]]
+            changed = True
+        elif m["kind"] == "rescope" and m["resource"] in rm and rm[m["resource"]] != list(m["actions"]):
+            rm[m["resource"]] = list(m["actions"])
+            changed = True
+        new_ids.append(m["id"])
+    if not new_ids:
+        return
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": {"$each": new_ids}}}
     if changed:
-        await db.permission_settings.update_one(
-            {"id": "default"}, {"$set": {"matrix": matrix, "updated_at": now_iso()}}
-        )
+        update["$set"] = {"matrix": matrix, "updated_at": now_iso()}
+    await db.permission_settings.update_one({"id": "default"}, update)
 
 
 async def sync_uom_factors() -> None:
@@ -1644,6 +1718,7 @@ async def run_bootstrap() -> None:
     except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
         import logging
         logging.getLogger("bootstrap").warning("[entity] rebrand 2026-09 dilewati: %s", exc)
+    await ensure_permission_ledger()   # PR-T9 — HARUS sebelum sync_permission_modules (lihat docstring)
     await sync_permission_modules()
     await sync_permission_revocations()
     await sync_uom_factors()

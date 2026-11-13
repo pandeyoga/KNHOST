@@ -136,10 +136,11 @@ DEFAULT_PERMISSIONS = {
         # UANG MASUK (kwitansi AR) dan menerbitkan FAKTUR PAJAK adalah peran `finance`,
         # bukan orang yang juga membuat pesanan & menyepakati harga. Sales tetap boleh
         # MELIHAT (dia yang ditanya pelanggan "faktur saya sudah keluar belum?"),
-        # tetapi tidak lagi menerbitkan/mencatat.
+        # tetapi tidak lagi menerbitkan faktur pajak.
         "tax_invoice": ["view"],
         "sales_return": ["view", "create", "update"],
-        "ar_receipt": ["view"],
+        # Sales mencatat kwitansi dari HP (keputusan Sesi 16, K-36); `void` dan keputusan selisih tetap Finance.
+        "ar_receipt": ["view", "create"],
         "pricelist": ["view"],
         "cash_advance": ["view", "create", "update", "submit"],
         "cash_settlement": ["view", "create", "update", "submit"],

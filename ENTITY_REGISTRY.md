@@ -2536,8 +2536,27 @@ Field lain:  hidden_views {role: [nav id]}, cross_entity {role: bool},
              pemegang peran pengelola (buat/ubah/reset sandi/nonaktifkan/cabut sesi). Tanpa kunci = tidak boleh
              mengelola akun siapa pun. `admin` tidak pernah disimpan sebagai isi; Admin selalu boleh semua.
              Hanya Admin yang mengubahnya (`PATCH /api/access/roles/{rid}` field `assignable_roles`).
+             defaults_applied {role: {resource: [actions]}} — aksi bawaan yang sudah pernah ditambahkan
+             `sync_permission_modules` (pencabutan Admin tidak dihidupkan lagi).
+             migrations_applied [id] — PR-T9: id butir `bootstrap.PERMISSION_MIGRATIONS` (cabut/atur ulang izin
+             SEKALI-JALAN) yang sudah dijalankan; butir yang id-nya ada tidak dijalankan lagi. Tidak ada field =
+             belum dicatat → garis dasar `ensure_permission_ledger` mencatat semua butir lama tanpa mengubah matrix.
 
 ⚠️ Hanya ADA 1 document dengan id="default"
+⚠️ Izin peran bawaan TIDAK lagi ditimpa saat start (PR-T9); bawaan tunggal = permissions_config.DEFAULT_PERMISSIONS
+```
+
+### custom_roles
+```
+Collection:  custom_roles
+Router:      routers/access_roles.py
+Service:     services/custom_role_service.py
+Component:   RoleAccessPanel.jsx / RoleEditorDrawer.jsx (tab Peran & Hak Akses)
+Key Fields:
+  id (cr_*), label, description, base_role, levels {module: level}, created_at, updated_at,
+  pending_defaults {resource: [actions]} — PR-T9: izin BARU peran dasar yang belum diikuti peran ini karena
+    modulnya pernah diubah; diikuti lewat `POST /api/access/roles/{rid}/follow-base`
+Izin efektif peran kustom ada di permission_settings.matrix[id], bukan di dokumen ini.
 ⚠️ Fallback: DEFAULT_PERMISSIONS dari permissions_config.py
 ```
 

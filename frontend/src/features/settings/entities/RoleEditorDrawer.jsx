@@ -16,7 +16,7 @@ import RoleNotifPreview from "./RoleNotifPreview";
 import RoleAdvancedPanel from "./RoleAdvancedPanel";
 import RoleNavTree, { titleOf } from "./RoleNavTree";
 import { applyLevel, levelOf, moduleActionsChanged, setResource, toggleAction } from "./roleAccessUtil";
-import { createAccessRole, patchAccessRole, deleteAccessRole, resetAccessRole, errText } from "./entityApi";
+import { createAccessRole, patchAccessRole, deleteAccessRole, resetAccessRole, followBaseAccessRole, errText } from "./entityApi";
 
 const permsOf = (src) => {
   const out = {};
@@ -25,7 +25,7 @@ const permsOf = (src) => {
 };
 const levelsFromPerms = (perms, modules) => Object.fromEntries(modules.map((m) => [m.id, levelOf(perms, m)]));
 
-export default function RoleEditorDrawer({ role, template, roles, modules, labels, canEditAssignable = false, onClose, onSaved, onRefresh, onError }) {
+export default function RoleEditorDrawer({ role, template, roles, modules, labels, canEditAssignable = false, canFollow = false, onClose, onSaved, onRefresh, onError }) {
   const editing = Boolean(role?.id);
   const locked = Boolean(role?.locked);
   // PR-T1 — server menolak mengubah peran yang lebih luas dari peran pelaku (atau peran pelaku sendiri).
@@ -57,7 +57,11 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const crossChanged = cross !== initCross;
   const [advanced, setAdvanced] = useState({});   // moduleId → true (panel lanjutan terbuka)
   const [confirm, setConfirm] = useState(false);
-  const [danger, setDanger] = useState(null);   // null | "delete" | "reset"
+  const [danger, setDanger] = useState(null);   // null | "delete" | "reset" | "follow"
+  // PR-T9 — izin baru peran dasar yang belum diikuti peran kustom ini.
+  const pendingCount = editing ? (role.pending_from_base_count || 0) : 0;
+  const pendingList = Object.entries((editing && role.pending_from_base) || {}).map(([res, acts]) =>
+    `${labels?.resource_labels?.[res] || res}: ${(acts || []).map((a) => labels?.action_labels?.[a] || a).join(", ")}`).join("; ");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [discard, setDiscard] = useState(false);
@@ -138,9 +142,19 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
     finally { setBusy(false); }
   };
 
+  const followBase = async () => {
+    setBusy(true);
+    try {
+      const res = await followBaseAccessRole(role.id, []);
+      const n = Object.values(res.added || {}).reduce((t, a) => t + a.length, 0);
+      onSaved?.(`Peran “${role.label}” kini mengikuti ${n} izin baru peran dasar.`);
+    } catch (e) { setError(errText(e, "Gagal mengikuti izin peran dasar.")); setDanger(null); }
+    finally { setBusy(false); }
+  };
+
   const reset = async () => {
     setBusy(true);
-    try { await resetAccessRole(role.id); onSaved?.(`Hak akses “${role.label}” dikembalikan ke bawaan sistem.`); }
+    try { await resetAccessRole(role.id); onSaved?.(`Peran “${role.label}” dikembalikan ke bawaan: izin, menu, dan akses lintas PT.`); }
     catch (e) { setError(errText(e, "Gagal mengembalikan bawaan.")); setDanger(null); }
     finally { setBusy(false); }
   };
@@ -209,6 +223,20 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
               </div>
             )}
 
+            {pendingCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-[#C9DBF7] bg-[#F2F7FF] p-2.5" data-testid="role-editor-pending-base">
+                <Info size={13} className="shrink-0 text-[#0058CC]" />
+                <p className="min-w-0 flex-1 text-[11px] text-[#3C3C43]">
+                  Peran dasar {role.base_role_label || role.base_role} mendapat {pendingCount} izin baru yang belum diikuti peran ini.
+                </p>
+                {canFollow && !readOnly && (
+                  <button type="button" className="secondary-button !py-1" data-testid="role-editor-follow-base" disabled={busy}
+                          onClick={() => setDanger("follow")}>
+                    Ikuti peran dasar
+                  </button>
+                )}
+              </div>
+            )}
             {locked && (
               <div className="flex items-start gap-1.5 rounded-md border border-[#F0B5AE] bg-[#FCEBEA] p-2.5" data-testid="role-editor-locked">
                 <Lock size={13} className="mt-0.5 shrink-0 text-[#A8221A]" />
@@ -323,8 +351,9 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
         </div>
 
         {danger && (
-          <RoleDangerDialog kind={danger} roleLabel={role.label} busy={busy}
-                            onCancel={() => setDanger(null)} onConfirm={danger === "delete" ? remove : reset} />
+          <RoleDangerDialog kind={danger} roleLabel={role.label} busy={busy} extra={{ list: pendingList }}
+                            onCancel={() => setDanger(null)}
+                            onConfirm={danger === "delete" ? remove : (danger === "follow" ? followBase : reset)} />
         )}
 
         {discard && (
