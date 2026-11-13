@@ -15,7 +15,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | selesai | `4c4cd52` | [KF-T1](../reviews/2026-11-13/hasil/KF-T1.md) |  |
 | 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | PK-02 | selesai | `ac1195a` | [PK-47](../reviews/2026-11-13/hasil/PK-47.md) |  |
 | 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | PK-02 | selesai | `5ded672` | [PK-07](../reviews/2026-11-13/hasil/PK-07.md) | U8 (POC G-9) berhenti sebelum butir setoran: data acuan tanpa rekening impor mutasi |
-| 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | siap |  |  |  |
+| 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | selesai | `0b41a2b` | [PK-08](../reviews/2026-11-13/hasil/PK-08.md) |  |
 | 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | PK-02 | siap |  |  |  |
 | 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | siap |  |  |  |
 | 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | siap |  |  |  |

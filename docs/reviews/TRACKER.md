@@ -200,8 +200,8 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FY-19 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-20 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-01 | Setoran karyawan pada kasus keuangan dibukukan dua kali — terjadi setiap kali aksi dipakai, bukan hanya saat gagal | Tinggi | PK-07 | implemented_pending_review | ya — dijalankan (bukti merah 4/6 di kode lama; t6: 2 kas → 1) | `5ded672` | [PK-07](2026-11-13/hasil/PK-07.md) |
-| FX-02 | Kunci jurnal denda tetap per nota | Tinggi | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-03 | Hari telat dihitung kumulatif, tetapi satu nota per bulan kalender | Tinggi | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-02 | Kunci jurnal denda tetap per nota | Tinggi | PK-08 | implemented_pending_review | ya — dijalankan (bukti merah 13/13 di kode lama) | `0b41a2b` | [PK-08](2026-11-13/hasil/PK-08.md) |
+| FX-03 | Hari telat dihitung kumulatif, tetapi satu nota per bulan kalender | Tinggi | PK-08 | implemented_pending_review | ya — dijalankan (bukti merah 13/13 di kode lama) | `0b41a2b` | [PK-08](2026-11-13/hasil/PK-08.md) |
 | FX-05 | Alokasi dari deposit tidak memeriksa pemilik pesanan; deposit dikurangi setelah semua alokasi | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-06 | Hapus sisa pembayaran tanpa klaim; keputusan disimpan paling akhir | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-07 | Membatalkan keputusan selisih hutang tidak membalik jurnalnya | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
@@ -210,7 +210,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-10 | Batas wewenang kasus lebih longgar dari hapus sisa; penyelesai = penyetuju | Tinggi | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-11 | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-12 | Nota kredit bisa melebihi faktur | Tinggi | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-04 | Bayar denda langsung mendebit kas tanpa transaksi kas, rekening, kwitansi | Sedang | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-04 | Bayar denda langsung mendebit kas tanpa transaksi kas, rekening, kwitansi | Sedang | PK-08 | implemented_pending_review | ya — dijalankan (bukti merah 13/13 di kode lama) | `0b41a2b` | [PK-08](2026-11-13/hasil/PK-08.md) |
 | FX-13 | Nota kredit gagal di tengah tanpa penanda | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-14 | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-15 | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
