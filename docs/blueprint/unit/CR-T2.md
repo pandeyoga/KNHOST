@@ -19,7 +19,9 @@ disimpan, bisa dibangun ulang, dan dijaga dua invarian, sehingga layar tidak lag
 
 ## Keadaan sekarang
 
-Semua butir `[dibaca]` pada `3132cc4`. PK-41 (prasyarat) sudah mengubah rumus umur piutang; cek ulang baris di `HEAD`.
+Semua butir `[dibaca]` pada `3132cc4`. PK-41 (prasyarat) sudah membuat umur piutang per surat jalan lewat fungsi
+`baris_tagihan` yang **menghitung saat dibaca** (tanpa menyimpan, tanpa baris DP, tanpa membaca rencana cicilan) dan
+penghitung hari tunggal `hari_antara`; cek ulang baris di `HEAD`.
 
 | Fakta | Jangkar |
 |---|---|
@@ -67,6 +69,7 @@ Kapan baris lahir (K-16):
 | `dp_percent > 0` (DP, bayar-dulu) | Pesanan dikonfirmasi (`confirm_core` berhasil) | `kind: dp`; `amount` = nilai pesanan × `dp_percent` ÷ 100; `due_date` = tanggal konfirmasi; label "Sebelum kirim" |
 | sama, `dp_percent < 100` | Tiap nomor surat jalan dijurnal | `kind: shipment`; `amount` = nilai piutang surat jalan × (100 − `dp_percent`) ÷ 100, sisa pembulatan ke surat jalan penutup |
 | Cicilan | Rencana dibuat orang (`create_plan`) | `origin: manual`; jadwal `term` di-void "diganti rencana baru"; pembuatan otomatis berhenti untuk pesanan itu |
+| Apa pun | Nota debit terbit (PK-32 menulis `sales_orders.extra_billing_lines[]`) | Baris `kind: debit_note` senilai dan berjatuh tempo sama dengan baris tambahan itu; `source_id` = id nota |
 
 Pesanan sample dan pesanan berstatus mati tidak diberi jadwal; pembatalan pesanan sebelum kirim meng-void jadwalnya.
 Baris `shipment` ditambahkan dengan pembaruan bersyarat `lines.source_id ≠ nomor` sehingga pemanggilan ulang tidak
@@ -77,7 +80,7 @@ Koleksi baru `customer_balances` (awalan id `cbl_`), satu dokumen per (pelanggan
 
 | Field | Arti (rumus dari dokumen) |
 |---|---|
-| `ar_delivered` | Piutang atas barang terkirim belum lunas = Σ per pesanan hidup `min(sisa, max(0, recognized_total − terbayar))` |
+| `ar_delivered`, `cash_term_amount` | Piutang atas barang terkirim belum lunas = Σ per pesanan hidup `min(sisa, max(0, recognized_total − terbayar))`; bagiannya yang berasal dari pesanan bertermin tunai tanpa DP |
 | `open_orders_amount` | Pesanan belum dikirim = Σ per pesanan hidup `sisa − bagian terkirim di atas` |
 | `overdue_amount`, `oldest_due_date`, `overdue_as_of` | Σ sisa baris ber-`due_date` < hari ini (WIB); tanggal jatuh tempo tertua yang belum lunas; tanggal hitung |
 | `giro_outstanding` | Giro diterima belum cair. 0 sampai PM-T3 mengisi (kwitansi giro belum terverifikasi bank) |
@@ -123,10 +126,10 @@ Pembaca yang dialihkan (serah-terima b):
 
 | Pembaca | Sesudah |
 |---|---|
-| `ar_aging_service.aging_report`, `customer_aging_detail`, `orders_due_soon` | Kelompok umur per **baris** dari `open_lines`; nilai pesanan yang belum ditagih masuk kolom tersendiri |
-| `customer_service.compute_customer_credit`, `collection_worklist` | `ar_outstanding`, `ar_ledger`, `exposure`, `overdue_amount`, `max_overdue_days`, `deposit_balance` dari `customer_balance_service.get`; bentuk jawaban tetap. Baris ber-`term_type: cash` tanpa DP **tetap dilewati** untuk status kredit (perilaku hari ini; CR-T3 yang mengubahnya) |
+| `ar_aging_service.aging_report`, `customer_aging_detail`, `orders_due_soon` | Baris dari `open_lines` menggantikan `baris_tagihan` (PK-41). Bentuk jawaban dan kelompok umur **tidak berubah**: bagian belum dikirim tetap di "Belum jatuh tempo"; hari dihitung `hari_antara`. Yang baru terbaca: baris DP dan baris rencana cicilan |
+| `customer_service.compute_customer_credit`, `collection_worklist` | `ar_outstanding`, `ar_ledger`, `exposure`, `overdue_amount`, `max_overdue_days`, `deposit_balance` dari `customer_balance_service.get`; bentuk jawaban tetap. Pesanan bertermin tunai tanpa DP **tetap dilewati** untuk umur piutang dan status kredit (`ar_delivered − cash_term_amount`; perilaku hari ini, CR-T3 yang mengubahnya) |
 | `penalty_service` | Unit ini hanya menyediakan `open_lines`; pengalihan denda di CR-T4 |
-| `cashflow_forecast_service.cashflow_forecast`, `ai_tools` | Uang masuk diproyeksikan pada `due_date` baris |
+| `cashflow_forecast_service.cashflow_forecast`, `ai_tools` | Uang masuk pada `due_date` baris; bagian belum dikirim tetap diperkirakan hari ini + hari termin (perilaku yang ada) |
 | `customer_service.due_context`, `order_due`, `_term_days` | Dihapus setelah pencarian membuktikan tanpa pemanggil (D8) |
 
 Galat: `GET` pelanggan di luar cakupan → 403 "Pelanggan ini di luar cakupan Anda."; `entity_id` di luar penugasan → 403.
@@ -141,11 +144,11 @@ Tidak ada pasangan izin baru.
 
 ### Layar
 
-Keuangan › Piutang (`ARAgingView.jsx`): kolom kelompok umur tetap; tambah kolom **Belum dikirim** (dari
-`open_orders_amount`) di kanan "Total"; catatan kaki "Umur dihitung per tagihan (surat jalan atau baris rencana), bukan
-per pesanan." Rincian pelanggan (`ARAgingDetail.jsx`) menampilkan baris tagihan: "Pesanan", "Tagihan", "Jatuh tempo",
-"Nilai", "Dibayar", "Sisa", "Telat (hari)"; tiap baris bisa membuka pesanan dan jurnal surat jalannya (L8). Keadaan
-memuat, galat, dan kosong ("Tidak ada tagihan terbuka.") dibedakan.
+Keuangan › Piutang (`ARAgingView.jsx`, `ARAgingDetail.jsx`): susunan kolom tetap seperti hasil PK-41. Rincian
+pelanggan kini menampilkan baris jadwal tersimpan dengan kolom "Pesanan", "Tagihan" (label baris: surat jalan, "Uang
+muka", cicilan, nota debit), "Jatuh tempo", "Nilai", "Dibayar", "Sisa", "Telat (hari)"; tiap baris membuka pesanan dan
+jurnalnya (L8). Catatan kaki: "Umur dihitung per tagihan: surat jalan, uang muka, atau baris rencana." Keadaan memuat,
+galat, dan kosong ("Tidak ada tagihan terbuka.") dibedakan.
 
 ## Uji penerimaan
 
@@ -157,28 +160,29 @@ bertanggal 1 Sep 2026 dengan jurnal `shipment_revenue` Dr piutang Rp 400.000.
 |---|---|---|---|---|
 | U1 | B | F1 | `on_shipment_posted(S1, "SJ-1")` | Jadwal `origin: term` dengan 1 baris `shipment` Rp 400.000, `due_date` 2026-10-01 (1 Sep + 30 hari) |
 | U2 | B | U1 | Panggil sekali lagi | Tetap 1 baris; `billed_total` 400.000 |
-| U3 | B | U1 | `GET /api/ar/aging?as_of=2026-11-15` | Pelanggan P: kelompok 31–60 hari = 400.000 (15 Nov − 1 Okt = 45 hari); "Belum dikirim" = 600.000; total piutang 400.000, bukan 1.000.000 |
+| U3 | B | U1 | `GET /api/ar/aging?as_of=2026-11-15`; bandingkan `open_lines` dengan `baris_tagihan` (PK-41) | Pelanggan P: `b31_60` 400.000 (15 Nov − 1 Okt = 45 hari), `current` 600.000 (belum dikirim), total 1.000.000 — sama persis dengan hasil PK-41; kedua fungsi memberi baris yang sama |
 | U4 | B | U1 | `GET …/{P}/balance?entity_id=ent_kanda` pada 15 Nov 2026 | `ar_delivered` 400.000; `open_orders_amount` 600.000 (1.000.000 − 400.000); `overdue_amount` 400.000; `oldest_due_date` 2026-10-01 |
 | U5 | B | U1 + SJ-2 berisi 60 yard, 10 Sep 2026, jurnal Rp 600.000 | `on_shipment_posted(S1, "SJ-2")` | Baris kedua Rp 600.000 jatuh tempo 2026-10-10; Σ baris 1.000.000 = nilai pesanan; `open_orders_amount` 0 |
 | U6 | B | U5 | Kwitansi Rp 500.000 bertanggal 5 Okt 2026 lewat `POST /api/ar-receipts` | Baris 1 lunas (400.000), baris 2 terbayar 100.000 sisa 500.000; `ar_delivered` 500.000; per 15 Nov `overdue_amount` 500.000, `oldest_due_date` 2026-10-10; `last_payment_amount` 500.000 |
-| U7 | B | Pesanan S2 Rp 2.000.000 termin DP50 (`dp_percent` 50, `net_days` 14), dikonfirmasi 3 Nov 2026 | `on_order_confirmed(S2)`; lalu surat jalan senilai Rp 800.000 bertanggal 6 Nov | Baris `dp` Rp 1.000.000 jatuh tempo 2026-11-03; baris `shipment` Rp 400.000 (800.000 × 50 %) jatuh tempo 2026-11-20 |
-| U8 | B | F1 tanpa U1; rencana cicilan dibuat lewat `POST` rencana bayar | `on_shipment_posted(S1, "SJ-1")` | Jadwal `term` tidak ada/void; rencana `manual` tidak bertambah baris; umur piutang membaca baris rencana |
-| U9 | B | U1 + kwitansi Rp 400.000 bertanggal 5 Nov 2026 | `GET /api/ar/aging?as_of=2026-10-31` dijalankan sesudahnya; lalu `as_of=2026-11-15` | 400.000 di kelompok 1–30 hari (31 Okt − 1 Okt = 30); lalu 0 |
-| U10 | B | U1; tanggal uji 20 Okt 2026 | `GET /api/customers/{P}/credit-status` | `overdue_amount` 400.000 dan `max_overdue_days` 19 → `blocked` (19 > 14); sebelum unit ini angka telatnya 1.000.000 |
+| U7 | B | Pesanan S2 Rp 2.000.000 termin DP50 (`dp_percent` 50, `net_days` 14), dikonfirmasi 3 Nov 2026, belum dibayar | `on_order_confirmed(S2)`; surat jalan senilai Rp 800.000 bertanggal 6 Nov; umur piutang per 20 Nov | Baris `dp` Rp 1.000.000 jatuh tempo 2026-11-03; baris `shipment` Rp 400.000 (800.000 × 50 %) jatuh tempo 2026-11-20; per 20 Nov `b1_30` 1.000.000 (telat 17 hari) — sebelum unit ini 0 |
+| U8 | B | Pesanan Rp 1.000.000 NET30 terkirim penuh 1 Sep 2026; rencana cicilan `manual` dua baris Rp 500.000 jatuh tempo 15 Sep dan 15 Okt | `on_shipment_posted`; umur piutang dan status kredit per 20 Okt 2026 | Jadwal `term` void, rencana tidak bertambah baris; `b31_60` 500.000 (35 hari), `b1_30` 500.000 (5 hari); `max_overdue_days` 35 — sebelum unit ini satu baris telat 19 hari |
+| U9 | B | U1 + kwitansi Rp 400.000 bertanggal 5 Nov 2026 | `GET /api/ar/aging?as_of=2026-10-31` dijalankan sesudahnya; lalu `as_of=2026-11-15` | `b1_30` 400.000 (31 Okt − 1 Okt = 30 hari) + `current` 600.000; lalu hanya `current` 600.000 |
+| U10 | B | U1; tanggal uji 20 Okt 2026 | `GET /api/customers/{P}/credit-status` | `overdue_amount` 400.000 dan `max_overdue_days` 19 → `blocked` (19 > 14); bagian belum dikirim (600.000) tidak ikut telat |
 | U11 | B | U1; pelanggan Q di `ent_ksc` dengan saldo fixture Rp 250.000 | Baca saldo Q sebelum dan sesudah U1–U6; baca saldo (P, `ent_ksc`) | Saldo Q tidak berubah; saldo P di `ent_ksc` semuanya 0 — PT lain tidak ikut berubah |
 | U12 | B | U4 | Ubah `customer_balances.ar_delivered` langsung menjadi 1; jalankan INV-BAL-01; `POST /api/ar/balances/rebuild`; jalankan lagi | Merah menyebut pelanggan P; lalu `changed == 1`; lalu hijau |
 | U13 | B | U1 | Jalankan INV-BAL-02; sisipkan jurnal manual Dr akun piutang Rp 50.000 di `ent_kanda`; jalankan lagi | Hijau (Σ `ar_delivered` 400.000 = saldo akun piutang 400.000); lalu selisih 50.000 dilaporkan dengan sebab "jurnal tanpa pesanan" |
 | U14 | B | peran uji baku | **Tanpa Acuan** + `payment_plan.view`: `GET …/billing-schedule`; **Manajer Kosong**; **Sopir** | 200; 403; 403 |
-| U15 | B | U1 | Proyeksi arus kas dengan tanggal uji 20 Sep 2026 | Uang masuk Rp 400.000 pada minggu yang memuat 1 Okt 2026; Rp 600.000 tidak diproyeksikan |
+| U15 | B | U1 | Proyeksi arus kas dengan tanggal uji 20 Sep 2026 | Rp 400.000 berjatuh tempo 2026-10-01; Rp 600.000 berperkiraan 2026-10-20 (20 Sep + 30 hari) bertanda perkiraan belum dikirim |
 | U16 | B | F1; pesanan dibatalkan sebelum SJ-1 | `on_order_changed(S1)` | Jadwal `void`; semua angka saldo P 0 |
 | U17 | A | F1 dengan dua nomor surat jalan | Dua `on_shipment_posted` bersamaan | Dua baris, tanpa kembar; satu jadwal hidup (indeks unik menolak yang kedua) |
-| U18 | layar (uji jalan) | Data acuan + U1 lewat alur gudang nyata | Buka Keuangan › Piutang › pelanggan P | Kolom "Belum dikirim" terisi; rincian menampilkan baris tagihan dan tautan ke jurnal |
+| U18 | layar (uji jalan) | Data acuan + pesanan DP dan pesanan tempo dikirim sebagian lewat alur gudang nyata | Buka Keuangan › Piutang › pelanggan itu | Rincian menampilkan baris "Uang muka" dan baris surat jalan dengan jatuh temponya; tautan ke jurnal terbuka |
 
 ## Langkah kerja
 
 **Serah-terima (a) — jalur baru, jalur lama belum disentuh.**
 
-1. `backend/tests_mem/test_CRT2_jadwal_saldo.py`: U1, U2, U4–U8, U11–U14, U16 terhadap fungsi baru; merah.
+1. `backend/tests_mem/test_CRT2_jadwal_saldo.py`: U1, U2, U4–U6, U11–U14, U16 dan bagian jadwal U7, U8 terhadap fungsi
+   baru; merah. Bagian uji setara U3 (`open_lines` = `baris_tagihan`) ikut di sini.
 2. Field dan indeks; `billing_schedule_service`; kait di `confirm_core` dan sesudah jurnal surat jalan (kegagalan kait
    ditulis ke `shipments.billing_status: failed` dan didaftarkan di `routers/posting_failures.py` `SOURCES`).
 3. `customer_balances`, `customer_balance_service`, job harian, endpoint baca dan bangun ulang.
@@ -187,7 +191,8 @@ bertanggal 1 Sep 2026 dengan jurnal `shipment_revenue` Dr piutang Rp 400.000.
 
 **Serah-terima (b) — alihkan pembaca, matikan jalur lama.**
 
-6. U3, U9, U10, U15 ditulis terhadap endpoint lama; merah.
+6. Bagian endpoint U7 dan U8 merah (DP dan rencana belum terbaca); U3, U9, U10, U15 sudah hijau sejak PK-41 dan
+   harus tetap hijau sesudah pengalihan.
 7. Alihkan pembaca menurut tabel; hapus `due_context`, `order_due`, `_term_days`; layar.
 8. U17 di lingkungan A; U18; gate penuh; laporan memuat contoh angka F1: dokumen → jurnal → saldo tersimpan.
 
@@ -211,7 +216,7 @@ baru), `memory/PRD.md`, `docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md` ("baris tagih
   besar. Surat jalan yang jurnalnya gagal belum punya baris sampai jurnalnya diulang.
 - `ASUMSI:` selisih INV-BAL-02 yang dianggap terjelaskan memakai daftar sebab hasil PK-41 (jurnal tanpa pesanan, kasus
   keuangan, jalur lama per pesanan). Sebab lain = merah.
-- `RISIKO:` jumlah pelanggan terblokir berubah saat pembaca dialihkan (umumnya berkurang, karena bagian belum dikirim
-  tidak lagi dianggap telat). Laporan serah-terima (a) memuat daftar pelanggan yang statusnya akan berubah; pemilik
-  melihatnya sebelum (b) dipasang ke PT nyata (H3). Membatalkan (b): kembalikan pembaca ke fungsi lama — jadwal dan
-  saldo tersimpan tidak dibaca jalur lama, jadi aman dibiarkan.
+- `RISIKO:` jumlah pelanggan terblokir berubah saat pembaca dialihkan: uang muka yang belum dibayar kini telat sejak
+  pesanan dikonfirmasi (K-16), dan rencana cicilan kini menentukan telat. Laporan serah-terima (a) memuat daftar
+  pelanggan yang statusnya akan berubah; pemilik melihatnya sebelum (b) dipasang ke PT nyata (H3). Membatalkan (b):
+  kembalikan pembaca ke `baris_tagihan` — jadwal dan saldo tersimpan tidak dibaca jalur lama, jadi aman dibiarkan.

@@ -172,7 +172,7 @@ Rujukan yang sudah ada dan tetap berlaku: `docs/KN_08_UI_UX_STANDARDS.md`, `docs
 | L4 | Setiap layar uang: banner PT; tombol buat mati dengan petunjuk saat "Semua PT"; status memuat / galat / kosong dibedakan; daftar berhalaman dengan jumlah total; angka rupiah berpemisah ribuan; tanggal WIB |
 | L5 | Setiap pengaturan atau izin yang tampil harus berefek. Yang tidak berefek dihapus atau diberi tanda "belum dipakai" beserta alasannya |
 | L6 | Layar menampilkan nilai yang **dipakai mesin**. Bila nilai ditimpa aturan lain, tulis siapa yang menimpa |
-| L7 | Form buat/ubah memakai pop-up baku (penjaga `verify_create_modal`), tab memakai `components/PageTabs` (penjaga `verify_page_tabs`) |
+| L7 | Form buat/ubah memakai pop-up baku (penjaga `scripts/audit_create_modal.py`), tab memakai `components/PageTabs` (penjaga `verify_page_tabs`) |
 | L8 | Dari dokumen bisa membuka jurnalnya dan sebaliknya; angka di laporan bisa ditelusuri sampai dokumen |
 
 ---

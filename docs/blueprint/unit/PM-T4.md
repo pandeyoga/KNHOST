@@ -55,7 +55,7 @@ Indeks: `receipt_id` unik; `(entity_id, holder_user_id, status)`.
 
 Koleksi baru `cash_deposits` (awalan id `cdp_`, nomor `STR-` per PT) — setoran: `entity_id`, `holder_user_id`,
 `holder_name`, `amount`, `allocations[] {holding_id, amount}`, `note`, `status` (`diajukan` · `diterima` · `ditolak` ·
-`dibatalkan`), `bank_account_id`, `received_by(_id)`, `received_at`, `cash_txn_id`, `gl_status`. Indeks
+`dibatalkan`), `account_id`, `received_by(_id)`, `received_at`, `cash_txn_id`, `gl_status`. Indeks
 `(entity_id, status, created_at)`.
 
 `ar_receipts` — field baru `cash_holding_id`. Kedua koleksi didaftarkan sebagai koleksi ber-PT di `entity_scope`.
@@ -69,7 +69,7 @@ ber-`needs_account: kas`, ada uang baru, dan pencatat **tidak** memegang izin `c
 | Nilai | Perilaku |
 |---|---|
 | `kas_langsung` | Seperti hari ini: kas masuk ke rekening kas |
-| `titipan` | Periksa batas (di bawah). Alokasi ke pesanan berjalan lewat fungsi alokasi tunggal (PK-19) seperti biasa. **Tidak ada** transaksi kas. Dibuat `cash_holdings` dan jurnal titipan |
+| `titipan` | Periksa batas (di bawah). Alokasi ke pesanan berjalan lewat fungsi alokasi tunggal (`allocate(kind="kas", …)` hasil PK-19) seperti biasa. **Tidak ada** transaksi kas. Dibuat `cash_holdings` dan jurnal titipan |
 | `dilarang` | 403 |
 
 Pemegang `cash.create` (kasir, Finance) selalu `kas_langsung`.
@@ -79,7 +79,7 @@ Jurnal — dua-duanya lewat `gl_service`, akun dari pemetaan (P9), arah mengikut
 | Peristiwa | Debit | Kredit | Kunci jurnal |
 |---|---|---|---|
 | Kwitansi tunai menjadi titipan | `kas_bank.piutang_karyawan` sebesar `amount` | Sama dengan sisi kredit jurnal kas kwitansi biasa (piutang untuk bagian yang sudah diakui, uang muka pelanggan untuk sisanya) — dihitung fungsi yang sama | `source_type: cash_holding`, `source_id` = id titipan |
-| Setoran diterima | Kas/bank rekening yang dipilih penerima (transaksi kas lewat pembuat tunggal PK-20) | `kas_bank.piutang_karyawan` (akun lawan transaksi kas) | Kunci transaksi kas; `ref_type: cash_deposit` |
+| Setoran diterima | Kas/bank rekening yang dipilih penerima (`create_cash(ref_type="cash_deposit", …)` hasil PK-20, akun lawan diisi) | `kas_bank.piutang_karyawan` (akun lawan transaksi kas) | Kunci transaksi kas; `ref_type: cash_deposit` |
 
 Fungsi baru `gl_service.post_cash_holding(holding)` dan pembaliknya; `cash_holding` dan `cash_deposit` masuk `SOURCES`
 panel posting gagal dengan jalur ulang.
@@ -94,7 +94,7 @@ tiap titipan naik dengan syarat tidak melewati `amount`) → JURNAL (kas tahan-g
 | `GET /api/cash-holdings?status=&holder_user_id=&overdue=` | `cash_holding.view` | — | Berhalaman, per PT. Tanpa `cash_holding.approve`, hanya titipan milik sendiri |
 | `GET /api/cash-holdings/me/summary` | login (milik sendiri, Z3) | — | `{held_total, count, oldest_due_at, limit}` |
 | `POST /api/cash-deposits` | `cash_holding.create` | `{amount, holding_ids?, note}` | Setoran `diajukan`; tanpa `holding_ids`, dialokasikan ke titipan tertua lebih dulu |
-| `POST /api/cash-deposits/{id}/receive` | `cash_holding.approve` | `{bank_account_id}` | Setoran `diterima` + transaksi kas |
+| `POST /api/cash-deposits/{id}/receive` | `cash_holding.approve` | `{account_id}` | Setoran `diterima` + transaksi kas |
 | `POST /api/cash-deposits/{id}/reject` · `/cancel` | `cash_holding.approve` · penyetor sendiri | `{reason}` | `ditolak` · `dibatalkan`; titipan tidak berubah |
 
 Pembatalan kwitansi ber-titipan: bila `deposited_amount == 0` → titipan `batal` + jurnal pembalik; selain itu 409.
@@ -144,7 +144,7 @@ Sumber daya baru `cash_holding`, modul akses `finance_ops`; id menu `cash-bank`,
   sebagai titipan di tangan Anda sampai disetor ke kasir atau bank."; `dilarang`: pilihan "Tunai" tidak ditawarkan.
 - **HP sales**: kartu "Titipan Saya" (total dipegang, jumlah kwitansi, batas, tenggat terdekat) dengan tombol **Setor**
   → pop-up "Jumlah disetor" (terisi total), "Catatan" → pemberitahuan "Setoran diajukan. Serahkan uangnya ke kasir."
-- **Keuangan › Kas & Bank › tab baru "Titipan Sales"** (view `cash-holdings`; hub menjadi empat tab): bagian "Setoran
+- **Keuangan › Kas & Bank › tab baru "Titipan Sales"** (view `cash-holdings`; tab tambahan — hub tetap paling banyak enam tab): bagian "Setoran
   menunggu diterima" (penyetor, jumlah, umur) dengan tombol **Terima setoran** (pop-up memilih "Masuk ke rekening";
   konfirmasi menyebut nominal, PT, rekening, dan nama penyetor) dan **Tolak**; bagian "Titipan belum disetor" per
   orang dengan saringan "Lewat tenggat". Kosong: "Tidak ada titipan tunai." Tombol mati dengan petunjuk di "Semua PT".

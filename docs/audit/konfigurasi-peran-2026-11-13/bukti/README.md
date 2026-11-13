@@ -22,6 +22,9 @@ Cara memasang lingkungan dan pola uji: `docs/blueprint/03_LINGKUNGAN_UJI.md` §3
 | `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01: Sales mengubah plafon dan status blokir pelanggannya | 200; plafon 5 juta → 900 juta, terblokir → aktif |
 | `t9_tulis_tanpa_izin.py` + `t9_analyze.py` | 962 rute tulis × 3 akun (peran tanpa acuan tanpa izin, Sopir, peran beracuan Manajer tanpa izin); isi permintaan dibuat dari skema | Tanpa izin: 898 ditolak, 37 lolos gerbang (tak satu pun rute berizin terpakai), 25 tak teruji, 2 galat. Beracuan Manajer: 28 gerbang tambahan terbuka, 5 langsung dijawab 200 |
 | `t10_setuju_tanpa_izin.py` | Persetujuan oleh peran tanpa izin; persetujuan PO lintas PT | Peran beracuan Manajer tanpa izin: setujui PO 250 juta → 200, setujui tagihan pemasok 75 juta → terposting. Finance PT lain menyetujui PO → 200 |
+| `serve_mem.py` | Aplikasi utuh di database tiruan pada port nyata (untuk uji layar) | Backend :8001; frontend dijalankan dari salinan `frontend/` |
+| `ui_pengaturan_peran.js` | 21 langkah lewat peramban: ubah pengaturan per PT, riwayat, nilai tak sah, buat peran, buat akun, masuk sebagai peran baru, izin kelola pengaturan | 18 sesuai harapan; 3 temuan (KF-01 di layar, PR-06, PR-16). Tangkapan layar di `layar/` |
+| `ui_sapuan_layar.js` | Membuka tiap layar lewat `?view=` dan mencatat panggilan API yang gagal | Lihat laporan §5a |
 | `fe_be_routes.py` | Tiap panggilan API di layar punya rute | 1.790 panggilan; 1 tanpa rute (`GET /api/products/{id}`) |
 
 Catatan: `t3_escalation.py` baris (d3) mengirim isi permintaan yang bentuknya salah (dijawab 422); uji yang benar untuk
@@ -37,4 +40,7 @@ butir itu ada di `t3b_eskalasi_akun.py`.
 - T9 menguji **gerbang** rute tulis dengan isi buatan dari skema; 25 rute tidak tercapai gerbangnya (isi buatan ditolak
   validasi). Hasil kerja rute tulis hanya diuji untuk pengaturan, peran, akun, persetujuan PO/tagihan pemasok, dan tiga
   temuan keuangan (T6–T8).
-- Layar tidak dibuka; semua penilaian layar berasal dari membaca kode.
+- Uji layar butuh `yarn install` pada salinan `frontend/`. Paket pengembang `@emergentbase/visual-edits` diunduh dari
+  host di luar registry; bila host itu tidak terjangkau, hapus barisnya dari `package.json` salinan — `craco.config.js`
+  sudah menoleransi ketiadaannya.
+- Layar yang diuji jalan hanya Pusat Pengaturan dan Peran & Hak Akses; penilaian layar lain berasal dari membaca kode.

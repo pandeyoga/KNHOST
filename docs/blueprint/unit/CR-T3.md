@@ -93,7 +93,7 @@ PT itu saja — K-29):
 | `TERMIN_TIDAK_DIIZINKAN` | `allowed_term_codes` terisi dan termin di luar daftar | tolak | "Termin {nama} tidak diizinkan untuk pelanggan ini. Termin yang diizinkan: {daftar}." |
 | `LEWAT_PLAFON` | plafon > 0 dan (eksposur > plafon atau eksposur tanpa pesanan ini ≥ plafon) | tahan | "Eksposur {Rp} melewati plafon {Rp}." |
 | `TELAT` | telat terlama > hari blokir | tahan | "Ada tagihan telat {n} hari (batas {m} hari) senilai {Rp}." |
-| `MENDEKATI_PLAFON` | eksposur ≥ rasio peringatan × plafon | peringatan | "Eksposur sudah {p} % dari plafon." |
+| `MENDEKATI_PLAFON` | eksposur ≥ `ar.credit_warning_pct` % × plafon | peringatan | "Eksposur sudah {p} % dari plafon." |
 | `TELAT_RINGAN` | telat 1 hari sampai hari blokir | peringatan | "Ada tagihan telat {n} hari senilai {Rp}." |
 | `PLAFON_KEDALUWARSA` | `limit_source == kedaluwarsa` | menambah keterangan saja | "Plafon khusus berakhir {tanggal}; dipakai plafon bawaan PT." |
 
@@ -122,10 +122,10 @@ dihitung sebagai piutang dan telat (mencabut pengecualian tunai yang ditinggalka
 
 | Endpoint | Izin | Perubahan |
 |---|---|---|
-| `POST /api/customers/{id}/credit-override` | `credit_override.create` (dulu `order.create`) | Isi tambah `scope`, `order_id` (wajib bila `pesanan`), `reason_code` (wajib); `amount` ≤ 0 → 400 "Nominal izin kredit wajib lebih dari nol." |
+| `POST /api/customers/{id}/credit-override` | `credit_override.create` (dulu `order.create`) | Isi tambah `scope`, `order_id` (wajib bila `pesanan`), `reason_code` (wajib); `amount` ≤ 0 → 400 "Nominal izin wajib lebih dari 0." (pesan PK-45) |
 | `POST /api/sales-orders/{id}/request-credit-approval` | `credit_override.create` | Menjadi pembungkus: membuat izin `scope: pesanan` lewat layanan yang sama; entri persetujuan `kredit` tetap ditulis |
 | `GET /api/credit-overrides`, `GET …/{id}` | `credit_override.view` | Tambah saringan `scope`, `valid`; cakupan PT dan pelanggan |
-| `POST /api/credit-overrides/{id}/decision` | `credit_override.approve` + batas nominal peran dari tabel kebijakan persetujuan (unit KP-T4, jenis `izin_kredit`) | `tolak_bila_pelaku_sama("izin_kredit", …)` bila `butuh_orang_kedua`; kedaluwarsa atau sudah diputus → 409 "Izin kredit ini sudah diputus atau kedaluwarsa." |
+| `POST /api/credit-overrides/{id}/decision` | `credit_override.approve` + `approval_policy_service.can_decide("credit_override", entity_id, amount, actor)` (tabel kebijakan persetujuan hasil KP-T4) | `tolak_bila_pelaku_sama("izin_kredit", …)` bila `butuh_orang_kedua`; kedaluwarsa atau sudah diputus → 409 "Izin kredit ini sudah diputus atau kedaluwarsa." |
 | `GET /api/customers/{id}/credit-status?amount=&term_code=&entity_id=` | tetap | Field lama dipertahankan; tambah `gate` (hasil `evaluate`) |
 | `GET /api/credit-gate-rejections?status=&customer_id=`, `GET …/{id}` | `credit_override.view`; pembuatnya sendiri selalu boleh | Daftar berhalaman; rincian memuat `payload_snapshot` |
 
@@ -150,18 +150,18 @@ Semua: group `uang-masuk`, scopes `("global", "entity")`, risk `high`, `requires
 | `ar.izin_kredit_masa_berlaku_hari` | `int` · 0 (min 0, max 90, hari) | "Izin kredit berlaku selama (hari)" | 0 = tidak kedaluwarsa. → Angka > 0 membuat izin yang tidak dipakai hangus. → "3 · disetujui Senin → hangus Kamis" |
 | `finance.tahan_kirim_tunai` | `bool` · tidak | "Tahan pengiriman pesanan tunai sampai lunas" | Termin tunai diperlakukan seperti bayar-dulu 100 %. → Nyala = pesanan tunai tidak bisa dikirim sebelum dibayar, kecuali dengan pengecualian berizin. → "Tunai Rp 1 jt belum dibayar → tertahan" |
 
-Aksi `izin_kredit` masuk keluarga `kontrol.*` (cara mendaftar aksi: unit KF-T6), bawaan `min_orang` = 1.
+Aksi `izin_kredit` ditambahkan ke `KONTROL_AKSI` (hasil KF-T6): label "Izin kredit", kelompok C, awal "1", bernominal.
 
 ### Izin dan peran
 
-Sumber daya baru `credit_override`, modul akses `ar`; id menu `customers-crm`. Bila PR-T2 sudah memberi nama lain untuk
-wewenang memutus izin kredit, pakai nama itu dan catat di laporan.
+Sumber daya `credit_override` lahir di PR-T2 dengan satu aksi `approve` (admin, manager); unit ini menambah dua aksi.
+Modul aksesnya tetap seperti yang ditetapkan PR-T2; id menu `customers-crm`.
 
 | Pasangan | Peran bawaan (setara akses hari ini) |
 |---|---|
 | `credit_override.view` | pemegang `customer.view` hari ini: admin, manager, sales, sales_admin, finance |
 | `credit_override.create` | pemegang `order.create` hari ini: admin, manager, sales, sales_admin |
-| `credit_override.approve` | admin, manager |
+| `credit_override.approve` (sudah ada) | admin, manager — tidak diubah |
 
 ### Layar
 
@@ -233,8 +233,8 @@ Pelanggan Q di `ent_ksc` berangka sama. Semua kunci bawaan kecuali disebut.
 - `ASUMSI:` K-27 tidak berlaku untuk blokir manual (rancangan: "tidak bisa dilepas otomatis").
 - `ASUMSI:` benih kode alasan izin kredit: `cr_riwayat_baik` "Riwayat bayar baik", `cr_jaminan` "Ada jaminan atau giro
   mundur", `cr_lain` "Lainnya (jelaskan di catatan)". Admin bisa mengubahnya di master alasan.
-- `ASUMSI:` KP-T4 bukan prasyarat di indeks. Bila belum selesai, keputusan izin kredit hanya memakai
-  `credit_override.approve` tanpa batas nominal peran, dan laporan mencatatnya sebagai sisa pekerjaan.
+- `ASUMSI:` KP-T4 bukan prasyarat di indeks. Bila `approval_policy_service` belum ada, keputusan izin kredit hanya
+  memakai izin `credit_override.approve` tanpa batas nominal peran; laporan mencatatnya sebagai sisa pekerjaan.
 - `RISIKO:` hasil gerbang berubah untuk pelanggan yang bertransaksi di lebih dari satu PT (dulu piutang dijumlah lintas
   PT, kini per PT — K-29) dan karena titipan kini mengurangi eksposur (K-31). Laporan memuat daftar pelanggan yang
   hasilnya berbeda pada data acuan. Membatalkan (b): kembalikan `create_order` ke fungsi lama; field baru tidak dibaca.

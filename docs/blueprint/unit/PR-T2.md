@@ -5,7 +5,7 @@
 | Gelombang | Jalur peran (sejajar dengan gelombang 3–7) |
 | Jenis | perbaikan |
 | Risiko | tinggi (dua serah-terima) |
-| Prasyarat | PR-T1 (unit ini juga memakai buku catatan `migrations_applied` dari PR-T9; lihat "Data") |
+| Prasyarat | PR-T1, PR-T9 |
 | Menutup temuan | PR-01, PR-03 (beserta butir layar PR-UX-11) |
 | Keputusan | K-47 |
 | Standar | §3.1 (Z1, Z2), §3.2, §6 |
@@ -37,8 +37,8 @@ unit dipasang.
 
 ### Data
 
-- `permission_settings.migrations_applied` (daftar teks; lahir di PR-T9, bila belum ada dibuat di sini dengan bentuk
-  yang sama) mendapat id `"prt2:gerbang-peran"` setelah migrasi di bawah berjalan.
+- `permission_settings.migrations_applied` (daftar teks; lahir di PR-T9) mendapat id `"prt2:gerbang-peran"` setelah
+  migrasi di bawah berjalan.
 - Tidak ada koleksi atau field lain.
 
 **Migrasi sekali (K-47)** — fungsi baru `async def migrate_role_gates_to_permissions() -> None` di

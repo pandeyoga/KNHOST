@@ -5,7 +5,7 @@
 | Gelombang | Modul — menu dan layar |
 | Jenis | fitur |
 | Risiko | tinggi (dua serah-terima) |
-| Prasyarat | PK-05, PK-19, PM-T3, CR-T5 (butir telusur juga PK-43 dan PK-44; lihat "Asumsi") |
+| Prasyarat | PK-05, PK-19, PM-T3, CR-T5 (bagian E juga PK-43; lihat "Asumsi") |
 | Menutup temuan | — |
 | Keputusan | K-17, K-18, K-34, K-46 |
 | Standar | §3.1 (Z1, Z2, Z6), §3.4 (N1–N5), §4 (L1, L3, L4, L7, L8), §5 (D1, D4), §6 |
@@ -15,7 +15,8 @@
 
 Menerima pembayaran pelanggan dan membayar pemasok masing-masing memakai **satu form** yang sama dari titik masuk mana
 pun, tanpa pindah menu. Satu **kartu pelanggan** dan satu **kartu pemasok** menampilkan seluruh posisi uangnya dan bisa
-dibuka dari baris mana pun. Angka di laporan bisa ditelusuri: laporan → akun → jurnal → dokumen sumber.
+dibuka dari baris mana pun. Telusur angka → akun → jurnal → dokumen, yang dipasang PK-43 untuk Laba-Rugi dan Neraca,
+berlaku di semua laporan keuangan.
 
 ## Keadaan sekarang
 
@@ -30,7 +31,7 @@ Semua butir `[dibaca]` pada `3132cc4`.
 | 5 | Isi permintaannya pun berbeda: bayar tagihan tanpa rekening; bayar kontrabon dengan rekening dan baris mutasi | `backend/schemas_purchasing.py:275` (`VendorBillPaymentCreate`) · `backend/schemas_contrabon.py:56` (`ContraBonPayIn`) |
 | 6 | Panel pelanggan 360 hanya diimpor daftar pelanggan CRM; tabnya enam, tanpa jadwal tagihan, kwitansi, titipan, denda, kasus, rekening koran | `frontend/src/features/crm/Customer360Panel.jsx:18` (`HIST_TABS`) · `frontend/src/features/crm/CustomerList.jsx:27` (`Customer360Panel`) · `backend/routers/crm.py:58` (`get_customer_360`) |
 | 7 | Panel pemasok 360 hanya diimpor layar Pemasok; memuat PO, tagihan, retur, harga, dokumen, skor — tanpa kontrabon dan pembayaran | `frontend/src/features/purchasing/Supplier360Panel.jsx:33` (`Supplier360Panel`) · `frontend/src/features/purchasing/SuppliersView.jsx:10` (`Supplier360Panel`) · `backend/routers/suppliers.py:367` (`get_supplier_360`) |
-| 8 | Laporan keuangan tidak punya tautan dari angka; buku besar akun hanya menerima "per tanggal"; detail jurnal menampilkan label sumber tanpa tombol buka | `frontend/src/features/finance/FinancialStatementsView.jsx:79` (`FinancialStatementsView`) · `backend/routers/gl.py:107` (`gl_account_ledger`) · `frontend/src/features/finance/JournalDetailModal.jsx:31` (`sourceMeta`) |
+| 8 | Di HEAD laporan keuangan tidak punya tautan dari angka dan detail jurnal hanya menampilkan label sumber. PK-43 memasang telusur untuk Laba-Rugi dan Neraca; laporan lain belum | `frontend/src/features/finance/FinancialStatementsView.jsx:79` (`FinancialStatementsView`) · `backend/routers/gl.py:107` (`gl_account_ledger`) · `frontend/src/features/finance/JournalDetailModal.jsx:31` (`sourceMeta`) |
 | 9 | Pola tautan antar-layar dan pembuka dokumen sudah ada | `frontend/src/features/finance/FinReportLink.jsx:16` (`FinReportLink`) · `frontend/src/hooks/useAppNavigation.js:72` (`openDocument`) |
 | 10 | Kunci idempotensi dari layar dibuat satu hook | `frontend/src/hooks/useIntentKey.js:5` (`useIntentKey`) |
 
@@ -43,37 +44,31 @@ Tidak ada koleksi atau field baru.
 ### Server
 
 Tidak ada endpoint tulis baru: kedua form memanggil pintu yang sudah disatukan PK-19 (terima) dan PK-05 (bayar),
-dengan rekening menurut PM-T3. Tiga endpoint **baca** baru:
+dengan rekening menurut PM-T3. Perubahan hanya pada **bacaan** yang ada:
 
-| Metode + path | Izin | Jawaban | Galat |
-|---|---|---|---|
-| `GET /api/customers/{customer_id}/card` | `customer.view` + aturan kepemilikan pelanggan yang dipakai `get_customer_360` | `{profile, sections: {exposure, schedule, receipts, deposits, penalties, cases, followups, statement}, hidden: [kunci]}` | 404 "Pelanggan tidak ditemukan." · 403 "Pelanggan ini bukan milik Anda." |
-| `GET /api/suppliers/{supplier_id}/card` | `supplier.view` | `{profile, sections: {payables, bills, contra_bons, payments, returns, landed_costs}, hidden: [kunci]}` | 404 "Pemasok tidak ditemukan." |
-| `GET /api/gl/journal/{entry_id}/source-link` | `accounting.view` | `{label, link: {view, nav_id, focus_type, focus_id, number} \| null, reason}` | 404 "Jurnal tidak ditemukan." |
-
-Aturan bersama: PT dari sesi (`02` §3.4 N1); mode Semua PT mengembalikan angka per PT dengan label PT, tanpa
-dijumlah lintas PT (N3). Tiap bagian diisi **hanya** bila pemanggil memegang izin sumbernya; selain itu bagian bernilai
-`null` dan kuncinya masuk `hidden` (K-18). Bagian diambil dengan memanggil fungsi layanan yang dipakai layar sumbernya,
-bukan kueri baru (D1).
-
-| Bagian kartu | Sumber (fungsi layanan di balik endpoint ini) | Izin bagian |
+| Endpoint (sudah ada) | Izin | Perubahan |
 |---|---|---|
-| `exposure` (eksposur, plafon, lewat jatuh tempo) | profil kredit dan eksposur hasil CR-T1/CR-T5 | izin kredit hasil CR-T3; sebelum itu `accounting.view` atau `penalty.issue` |
-| `schedule` (jadwal tagihan) | jadwal tagihan hasil CR-T2; sebelum itu `GET /api/ar/aging/{customer_id}` | sama |
-| `receipts` | `GET /api/ar-receipts?customer_id` | `ar_receipt.view` |
-| `deposits` (titipan dan saldo kredit) | `GET /api/ar-receipts/deposit`, `GET /api/store-credit/ledger` | `ar_receipt.view` |
-| `penalties` | layanan di balik `GET /api/penalties`, disaring pelanggan (endpoint itu sendiri belum punya saringan pelanggan) | `penalty.view` |
-| `cases` | layanan di balik `GET /api/finance-cases`, disaring pelanggan (sama: belum ada saringan pelanggan) | `finance_case.view` |
-| `followups` | bagian tindak lanjut `get_customer_360` | `order.view` |
-| `statement` (rekening koran) | endpoint rekening koran pelanggan hasil CR-T5 | sama dengan `exposure` |
-| `payables` (saldo hutang, jatuh tempo 7 hari) | `GET /api/vendor-bills/payables/summary` disaring pemasok | `vendor_bill.view` |
-| `bills` · `contra_bons` · `payments` | daftar tagihan, kontrabon, dan catatan bayar pemasok itu | `vendor_bill.view` · `contra_bon.view` · `vendor_bill.view` |
-| `returns` · `landed_costs` | bagian retur `get_supplier_360`; voucher biaya masuk pemasok itu | `purchase_return.view` · `landed_cost.view` |
+| `GET /api/customers/{customer_id}/360` | tetap `customer.view` + aturan kepemilikan | Bertambah `sections_allowed` (daftar bagian kartu yang izinnya dipegang pemanggil); angka kredit dan piutang yang sudah ada di jawaban dikosongkan bila izinnya tidak dipegang (K-18) |
+| `GET /api/suppliers/{supplier_id}/360` | tetap `supplier.view` | Bertambah `payables`, `contra_bons`, `payments`, `landed_costs`, dan `sections_allowed`; tiap bagian keuangan — termasuk `bills` yang sudah ada — bernilai `null` bila izin sumbernya tidak dipegang |
+| `GET /api/penalties`, `GET /api/finance-cases` | tetap | Parameter opsional baru `customer_id` |
+| `GET /api/vendor-bills`, `GET /api/contra-bons` | tetap | Parameter opsional baru `supplier_id` |
 
-`source-link`: `link` dihitung dari `source_type` dan `source_id` jurnal lewat peta tujuan dokumen (hasil PK-44).
-`reason` diisi bila `link` kosong: "Jurnal manual tidak punya dokumen sumber." · "Jurnal penutup tidak punya dokumen
-sumber." · "Anda belum punya akses ke dokumen ini." · "Jenis dokumen ini belum bisa dibuka dari jurnal."
-`GET /api/gl/accounts/{code}/ledger` menerima `start` (opsional) di samping `as_of` bila PK-43 belum menambahkannya.
+Aturan bersama: PT dari sesi (`02` §3.4 N1); mode Semua PT mengembalikan angka per PT dengan label PT, tanpa dijumlah
+lintas PT (N3); bagian diisi dengan memanggil fungsi layanan yang dipakai layar sumbernya, bukan kueri baru (D1).
+
+| Bagian kartu | Sumber | Izin bagian |
+|---|---|---|
+| Kepala kartu pelanggan (eksposur, plafon, lewat jatuh tempo) | `GET /api/customers/{id}/balance` (CR-T2) dan profil kredit (CR-T1) | `payment_plan.view` atau `credit_profile.view` |
+| Tagihan & Jadwal | `GET /api/customers/{id}/billing-schedule` (CR-T2) | `payment_plan.view` |
+| Pembayaran | `GET /api/ar-receipts?customer_id`, `GET /api/ar-receipts/deposit`, `GET /api/store-credit/ledger` | `ar_receipt.view` |
+| Denda & Kasus | `GET /api/penalties?customer_id`, `GET /api/finance-cases?customer_id` | `penalty.view` · `finance_case.view` |
+| Tindak Lanjut | bagian tindak lanjut `…/360` | `order.view` |
+| Rekening Koran | `GET /api/customers/{id}/statement` (CR-T5) | `credit_profile.view` atau `ar_receipt.view` |
+| Kepala kartu pemasok dan bagian Tagihan · Kontrabon · Pembayaran | `…/suppliers/{id}/360` (`payables`, `bills`, `contra_bons`, `payments`) | `vendor_bill.view` · `contra_bon.view` |
+| Retur · PO & Biaya Masuk | `…/suppliers/{id}/360` (`returns`, PO, `landed_costs`) | `purchase_return.view` · `purchase_order.view` · `landed_cost.view` |
+
+Telusur memakai kontrak PK-43 apa adanya: `source_doc` pada `GET /api/gl/journal/{entry_id}`, `start` pada buku besar
+akun, `start` dan `end` pada daftar jurnal. Unit ini tidak menambah endpoint telusur.
 
 ### Pengaturan
 
@@ -131,29 +126,31 @@ dari `contrabon/PayModal.jsx` (yang isiannya paling lengkap). Tanda tangan: `{ t
 bersama `openCustomerCard(customerId)` di konteks navigasi aplikasi. Kepala: nama, PT, empat angka "Eksposur" ·
 "Plafon" · "Lewat jatuh tempo" · "Titipan & saldo kredit", tombol "Terima pembayaran". Bagian (enam): "Tagihan &
 Jadwal" · "Pembayaran" · "Denda & Kasus" · "Tindak Lanjut" · "Rekening Koran" · "Riwayat Lain" (pesanan, dokumen,
-harga khusus, sample — isi tab lama, sebagai chip). Bagian yang kuncinya ada di `hidden` tidak ditampilkan.
-Titik masuk: nama pelanggan di kelima tab Piutang yang berbaris pelanggan, di Beranda Keuangan, di detail pesanan,
-dan daftar pelanggan CRM (komponen yang sama).
+harga khusus, sample — isi tab lama, sebagai chip). Bagian di luar `sections_allowed` tidak ditampilkan. Titik masuk:
+nama pelanggan di tab-tab Piutang, di Beranda Keuangan, di detail pesanan, dan daftar pelanggan CRM (komponen sama).
 
 **D. Kartu pemasok** — komponen yang diperluas: `Supplier360Panel`, pembuka `openSupplierCard(supplierId)`. Kepala:
 nama, PT, tiga angka "Saldo hutang" · "Jatuh tempo 7 hari" · "Uang muka ke pemasok". Bagian (enam): "Tagihan" ·
 "Kontrabon" · "Pembayaran" · "Retur" · "PO & Biaya Masuk" · "Lainnya" (harga, dokumen, skor). Titik masuk: nama
 pemasok di Hutang › Tagihan dan Kontrabon, di detail PO, dan layar Pemasok.
 
-Keduanya: memuat "Memuat kartu…"; galat "Kartu tidak bisa dimuat. Coba lagi."; bagian kosong "Belum ada data.";
-daftar di dalam bagian berhalaman dengan jumlah total.
+Keduanya: bagian dimuat saat dibuka; memuat "Memuat…"; galat "Bagian ini tidak bisa dimuat. Coba lagi." tanpa
+mengosongkan bagian lain; kosong "Belum ada data."; daftar di dalam bagian berhalaman dengan jumlah total.
 
-**E. Telusur angka → dokumen**
+**E. Telusur di semua laporan** — mekanisme PK-43 (preset `{tab: "ledger", code, start, end, from}`, tombol kembali,
+"Buka Dokumen Sumber") diperluas:
 
-| Dari | Aksi | Ke |
+| Laporan | Yang bisa diklik | Tujuan |
 |---|---|---|
-| Laporan › Laba-Rugi, Neraca, Arus Kas: angka baris akun | klik angka | Buku Besar › Jurnal, bagian Buku Besar, akun itu, rentang tanggal laporan (preset `{tab: "ledger", code, start, end}`) |
-| Buku besar akun: baris mutasi | klik nomor jurnal | detail jurnal |
-| Detail jurnal | tombol "Buka dokumen sumber" (dari `source-link`); tanpa tautan: teks `reason` | layar dokumen dengan fokus pada dokumennya |
-| Layar tujuan | tautan "Kembali ke {asal}" selama asal lompatan masih tersimpan | layar asal |
+| Buku Besar › Neraca Saldo | baris akun | buku besar akun itu sampai tanggal neraca saldo |
+| Laporan › Arus Kas, Perubahan Ekuitas | baris yang membawa kode akun | buku besar akun itu pada rentang laporan |
+| Laporan › Anggaran | angka realisasi per akun | buku besar akun itu pada tahun anggaran |
+| Laporan › Konsolidasi | angka akun per PT | buku besar akun itu bila PT baris = PT aktif; selain itu petunjuk "Pindah ke {nama PT} untuk menelusuri angka ini." |
+| Piutang › Saldo & Umur | nama pelanggan | kartu pelanggan |
+| Hutang › Tagihan (ringkasan umur) | nama pemasok | kartu pemasok |
 
-Baris ringkasan laporan (total, laba kotor, laba bersih) tidak bisa diklik. Mode Semua PT: klik angka meminta "Pilih
-satu PT untuk menelusuri angka ini."
+Baris ringkasan (total, laba kotor, laba bersih) dan baris tanpa kode akun tidak bisa diklik. Mode Semua PT: klik
+angka meminta "Pilih satu PT untuk menelusuri angka ini."
 
 ## Uji penerimaan
 
@@ -170,30 +167,30 @@ Persiapan bersama: pelanggan **C** (`ent_ksc`, milik sales `sls`) bersisa tagiha
 | U5 | komponen | Mode Semua PT | Render form A dan form B | Tombol simpan dan bayar mati dengan petunjuknya |
 | U6 | komponen | 13 peran bawaan dengan izin dari fixture | Render tiap titik masuk pada dua tabel di atas | Tombol "Terima pembayaran" tampil hanya bagi pemegang `ar_receipt.create`; "Bayar" hanya bagi pemegang izin bayar; tidak ada tombol yang berujung 403 |
 | U7 | statik (sesudah b) | — | Cari pemanggil `POST` kwitansi, pintu bayar pemasok, dan `simulate-payment` di `frontend/src` | Satu berkas, satu berkas, nol |
-| U8 | B | Tanpa Acuan ber-`customer.view` saja | `GET /api/customers/{C}/card` | 200; `profile` terisi; `hidden` memuat `exposure`, `schedule`, `receipts`, `deposits`, `penalties`, `cases`, `statement`; tidak ada nominal di jawaban |
-| U9 | B | Sales lain (bukan pemilik C) | `…/card` | 403 "Pelanggan ini bukan milik Anda." |
-| U10 | B | Akun ber-PT `ent_kanda` saja | `…/card` untuk C | 403 atau 404 menurut penjaga PT; tidak ada angka C |
-| U11 | B | Admin, PT `ent_ksc` | `…/card` untuk C | `sections.receipts` 1 baris 1.000.000; angka lewat jatuh tempo sama dengan `GET /api/ar/aging/{C}` |
-| U12 | B | Admin | `GET /api/suppliers/{S}/card` | `payables` saldo 8.000.000 (7.000.000 + 3.000.000 − 2.000.000); `payments` 1 baris 2.000.000 |
-| U13 | B | Tanpa Acuan ber-`supplier.view` saja | `…/suppliers/{S}/card` | 200; `hidden` memuat `payables`, `bills`, `contra_bons`, `payments`, `landed_costs` |
-| U14 | B | Admin | `GET /api/gl/journal/{jurnal kwitansi}/source-link`; lalu untuk jurnal manual | Pertama: `link.focus_id` = id kwitansi; kedua: `link` kosong, `reason` "Jurnal manual tidak punya dokumen sumber." |
-| U15 | B | Tanpa Acuan ber-`accounting.view` tanpa `ar_receipt.view` | `source-link` jurnal kwitansi | `link` kosong; `reason` "Anda belum punya akses ke dokumen ini." |
-| U16 | komponen | — | Klik angka akun pendapatan di Laba-Rugi Februari 2026 | Navigasi ke `general-ledger` dengan preset `code` akun itu, `start` 2026-02-01, `end` 2026-02-28 |
-| U17 | penjaga | — | `verify_page_tabs.py`, `verify_create_modal`, `audit_i18n_id.py`, `roleReach.test.js` | Tidak lebih merah; kartu tidak tercatat sebagai tab tingkat ketiga |
-| U18 | layar (uji jalan) | Data acuan; finance lalu manager | Terima pembayaran dari Beranda Keuangan, Piutang, detail pesanan, kartu pelanggan; bayar pemasok dari Hutang, Rekonsiliasi, kartu pemasok; telusuri laba bulan lalu sampai satu dokumen | Semua selesai tanpa membuka menu lain; laporan memuat tangkapan layar tiap titik masuk |
+| U8 | B | Tanpa Acuan ber-`customer.view` saja | `GET /api/customers/{C}/360` | 200; profil terisi; `sections_allowed` kosong; tidak ada nominal piutang maupun plafon di jawaban |
+| U9 | B | Sales lain (bukan pemilik C) | `…/360` | 403 (aturan kepemilikan yang ada tetap berlaku) |
+| U10 | B | Akun ber-PT `ent_kanda` saja | `…/360` untuk C; `GET /api/ar-receipts?customer_id={C}` | Ditolak penjaga PT atau daftar kosong; tidak ada angka C |
+| U11 | B | Admin, PT `ent_ksc` | `GET /api/ar-receipts?customer_id={C}`; `GET /api/penalties?customer_id={C}` | 1 kwitansi 1.000.000; daftar denda hanya milik C (pelanggan lain ber-denda tidak ikut) |
+| U12 | B | Admin | `GET /api/suppliers/{S}/360` | `payables` saldo 8.000.000 (7.000.000 + 3.000.000 − 2.000.000); `payments` 1 baris 2.000.000 |
+| U13 | B | Tanpa Acuan ber-`supplier.view` saja | `…/suppliers/{S}/360` | 200; `payables`, `bills`, `contra_bons`, `payments`, `landed_costs` bernilai `null`; `sections_allowed` tidak memuatnya |
+| U14 | B | — | `GET /api/vendor-bills?supplier_id={S}`; lalu pemasok lain | 2 baris; 0 baris |
+| U15 | komponen | 13 peran bawaan dengan izin dari fixture | Render kartu pelanggan dan kartu pemasok | Bagian yang tampil = bagian yang izinnya dipegang; tidak ada bagian yang memanggil endpoint tanpa izin |
+| U16 | komponen | — | Klik baris akun di Neraca Saldo per 2026-02-28; klik angka realisasi akun di Anggaran 2026; klik angka PT lain di Konsolidasi | Preset `{tab: "ledger", code, end: "2026-02-28"}`; preset `start` 2026-01-01 dan `end` 2026-12-31; petunjuk "Pindah ke … untuk menelusuri angka ini." |
+| U17 | penjaga | — | `verify_page_tabs.py`, `audit_create_modal.py` (INV-UI-05), `audit_i18n_id.py`, `roleReach.test.js` | Tidak lebih merah; kartu tidak tercatat sebagai tab tingkat ketiga |
+| U18 | layar (uji jalan) | Data acuan; finance lalu manager | Terima pembayaran dari Beranda Keuangan, Piutang, detail pesanan, kartu pelanggan; bayar pemasok dari Hutang, Rekonsiliasi, kartu pemasok; telusuri satu angka Anggaran sampai dokumen sumbernya | Semua selesai tanpa membuka menu lain; laporan memuat tangkapan layar tiap titik masuk |
 
 ## Langkah kerja
 
 **Serah-terima (a) — yang baru, pemanggil lama belum disentuh**
 
 1. Tes U1–U5 dan U8–U16 (merah).
-2. Tiga endpoint baca dan tabel izin bagian.
+2. Perluasan dua endpoint 360 dan empat parameter saringan.
 3. `ReceivePaymentModal` dan `PaySupplierModal`; pembuka kartu bersama; perluasan dua panel 360.
-4. Tautan telusur di laporan, buku besar, dan detail jurnal. Gate; laporan (a) dengan SHA.
+4. Telusur di laporan pada tabel E. Gate; laporan (a) dengan SHA.
 
 **Serah-terima (b) — pengalihan dan penghapusan**
 
-5. Alihkan tiap titik masuk pada dua tabel; tes U6.
+5. Alihkan tiap titik masuk pada dua tabel form (termasuk tombol "Catat Pembayaran" yang dipasang PK-43); tes U6.
 6. Hapus form bayar lama di detail tagihan, kontrabon, dan mutasi bank; cabut tombol simulasi pembayaran dan
    `payInvoice` setelah pencarian pemakai (`00` §7 butir 3); tes U7.
 7. Penjaga; uji jalan U18. Gate; laporan (b) dengan SHA dan satu contoh angka (`00` §9): kwitansi 5.000.000 → kas →
@@ -208,21 +205,21 @@ dan bayar); `docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md` ("kartu pelanggan", "kart
 ## Di luar lingkup
 
 - Aturan alokasi, titipan, selisih bayar, dan rekening pada kwitansi → PK-19, PM-T3. Pintu bayar hutang → PK-05.
-- Jadwal dan bayar massal (tab "Pembayaran" di Hutang) → belum ada unitnya; dicatat di laporan.
+- Jadwal dan bayar massal (tab "Pembayaran" di Hutang): belum ada unitnya; dicatat di laporan.
 - Bayar voucher biaya masuk barang dan bayar reimburse lewat form B: hanya bila PK-05 memasukkannya ke pintu yang sama.
-- Dari dokumen ke jurnalnya, dan satu panel relasi dokumen → PK-44. Saringan dan ekspor buku besar → PK-43.
-- Profil kredit, gerbang kredit, rekening koran: isinya dari CR-T1, CR-T3, CR-T5; unit ini hanya menampilkannya.
+- Telusur Laba-Rugi dan Neraca, tombol "Buka Dokumen Sumber", daftar periksa tutup buku → sudah di PK-43.
+- Isi profil kredit, jadwal tagihan, rekening koran → CR-T1, CR-T2, CR-T5; unit ini hanya menampilkannya.
 
 ## Asumsi dan risiko
 
-- `ASUMSI:` butir telusur (E) dan endpoint `source-link` memakai peta tujuan dokumen hasil PK-44 dan saringan tanggal
-  buku besar hasil PK-43, yang tidak tercantum sebagai prasyarat di indeks. Bila salah satunya belum `selesai`, pecah
+- `ASUMSI:` bagian E membutuhkan PK-43 `selesai` walau tidak tercantum sebagai prasyarat di indeks. Bila belum, pecah
   bagian E menjadi `MN-T3b` (`00` §8) dan selesaikan A–D lebih dulu.
 - `ASUMSI:` kartu dibuka sebagai panel samping, bukan tab hub, sehingga enam bagiannya tidak melanggar larangan tab
   tingkat ketiga; penjaga INV-UI-14 (MN-T1) hanya memeriksa komponen yang dirender sebagai tab hub.
-- `ASUMSI:` sebelum CR-T3 selesai, bagian eksposur dan rekening koran memakai izin yang sama dengan layar Umur Piutang.
+- `ASUMSI:` kartu tidak punya endpoint gabungan sendiri: ia memakai endpoint 360 yang ada ditambah endpoint per bagian,
+  supaya aturan izin tiap bagian tetap satu tempat.
 - `ASUMSI:` nama bagian kartu dan urutan isian form ditetapkan di sini; rancangan `01` §3 hanya menyebut isinya.
 - `RISIKO:` serah-terima (b) menghapus empat form bayar yang dipakai harian. Tiap penghapusan satu commit; membatalkan
   = mengembalikan commit itu, karena form baru memanggil pintu yang sama.
-- `RISIKO:` kartu memanggil banyak sumber sekaligus. Bagian dimuat saat dibuka (bukan semua di awal) dan tiap bagian
-  gagal sendiri tanpa mengosongkan kartu.
+- `RISIKO:` endpoint 360 pemasok hari ini mengembalikan tagihan tanpa memeriksa izin tagihan; sesudah unit ini peran
+  ber-`supplier.view` saja tidak lagi melihat nominalnya. Itu sejalan dengan K-18; dicatat di laporan.

@@ -20,7 +20,9 @@ transfer memuat kode bayar yang benar.
 
 ## Keadaan sekarang
 
-Semua butir `[dibaca]` pada `3132cc4`. PK-19, PK-20, dan PK-21 (prasyarat) mengubah berkas yang sama; cek ulang di `HEAD`.
+Semua butir `[dibaca]` pada `3132cc4`. PK-19, PK-20, dan PK-21 (prasyarat) mengubah berkas yang sama; cek ulang di
+`HEAD`. Khususnya PK-20: `POST /api/ar-receipts` sudah menerima `account_id` (kosong → rekening tunggal PT; tidak bisa
+ditentukan → 409) dan kas lahir lewat `create_cash`. Unit ini memakai nama field yang sama.
 
 | Fakta | Jangkar |
 |---|---|
@@ -43,7 +45,7 @@ Semua butir `[dibaca]` pada `3132cc4`. PK-19, PK-20, dan PK-21 (prasyarat) mengu
 | Field | Tipe | Aturan |
 |---|---|---|
 | `payment_method_code` | kode kanonik | Dari PM-T1; `method` tetap ditulis sama untuk pembaca lama |
-| `bank_account_id`, `bank_account` | id + potret `{name, bank_name, account_number}` | Wajib bila ada uang baru (`amount > 0`) dan cara bayar butuh rekening; tunai memakai rekening kas |
+| `account_id`, `account_snapshot` | id + potret `{name, bank_name, account_number}` | Disimpan di kwitansi. Wajib bila ada uang baru (`amount > 0`) dan cara bayar butuh rekening; tunai memakai rekening kas |
 | `reference_no` | string | Wajib bila cara bayar ber-`needs_reference` **dan** `payment.wajib_nomor_referensi` menyala |
 | `giro_due_date` | `YYYY-MM-DD` | Untuk giro; wajib dengan syarat yang sama |
 | `proof_url` | string | Lampiran bukti, opsional |
@@ -54,23 +56,25 @@ Semua butir `[dibaca]` pada `3132cc4`. PK-19, PK-20, dan PK-21 (prasyarat) mengu
 ditemukan di berita mutasi saat impor. Indeks baru `ar_receipts (entity_id, bank_verified, receipt_date)`.
 
 Skrip baru `scripts/backfill_receipt_accounts.py` (`--dry-run`, idempoten; H3): mengisi `account_id` kas kwitansi lama
-dan `bank_account_id` kwitansinya **hanya** bila PT-nya punya tepat satu rekening aktif untuk jenis kas itu; sisanya
+dan `account_id` kwitansinya **hanya** bila PT-nya punya tepat satu rekening aktif untuk jenis kas itu; sisanya
 didaftar di keluaran untuk diputus orang.
 
 ### Server
 
-`ReceiptPayload` mendapat `bank_account_id`, `reference_no`, `giro_due_date`, `proof_url`, `mismatch_note` (semua
-bawaan kosong). Langkah PERIKSA `create_receipt` (sebelum nomor, reservasi titipan, atau alokasi — `02` §1) bertambah:
+`ReceiptPayload` (sudah ber-`account_id` sejak PK-20) mendapat `reference_no`, `giro_due_date`, `proof_url`,
+`mismatch_note` (semua bawaan kosong). Langkah PERIKSA `create_receipt` (sebelum nomor, reservasi titipan, atau alokasi
+— `02` §1) bertambah:
 
 1. `normalize` + `payment_method_service.get` (PM-T1).
-2. Rekening: yang dikirim; bila kosong → rekening bawaan (PT, cara bayar); untuk tunai → rekening kas tunggal PT. Tidak
-   ketemu → 400. Rekening harus milik PT kwitansi, aktif, ber-`purposes` `penerimaan_pelanggan`, dan melayani cara bayar.
+2. Rekening: yang dikirim; bila kosong → rekening bawaan (PT, cara bayar) hasil PM-T1; bila tidak ada → rekening tunggal
+   PT (aturan PK-20); tidak ketemu → 409 dengan pesan PK-20. Rekening harus milik PT kwitansi, aktif, ber-`purposes`
+   `penerimaan_pelanggan`, dan melayani cara bayar itu.
 3. Nomor referensi dan jatuh tempo giro menurut tabel Data.
 4. Tanda "tidak sesuai instruksi" dan catatannya.
 
-Kas dibuat lewat pembuat tunggal PK-20 dengan `account_id` = rekening kwitansi, `counterparty_name` = nama pelanggan,
-dan keterangan yang memuat nomor referensi serta kode bayar pesanan yang dialokasi. `_cash_routing` dihapus (jenis kas
-diturunkan dari rekening). Pembatalan kwitansi ber-`bank_verified: true` ditolak 409.
+Kas tetap dibuat `create_cash` (PK-20) dengan `account_id` rekening kwitansi; unit ini menambah `counterparty_name` =
+nama pelanggan dan keterangan yang memuat nomor referensi serta kode bayar pesanan yang dialokasi. `_cash_routing`
+(bila masih tersisa) dihapus. Pembatalan kwitansi ber-`bank_verified: true` ditolak 409.
 
 Rekonsiliasi (`bank_recon_service`):
 
@@ -87,7 +91,7 @@ kwitansi tunai yang masuk rekening kas).
 
 | Endpoint | Izin | Perubahan |
 |---|---|---|
-| `POST /api/ar-receipts` | `ar_receipt.create` | Field baru; jawaban memuat `bank_account`, `bank_verified`, `instruction_mismatch` |
+| `POST /api/ar-receipts` | `ar_receipt.create` | Field baru; jawaban memuat `account_snapshot`, `bank_verified`, `instruction_mismatch` |
 | `GET /api/ar-receipts?bank_verified=&older_than_days=&method=` | `ar_receipt.view` | Saringan baru; `older_than_days` tanpa nilai memakai `payment.hari_wajar_verifikasi_bank`; kwitansi tunai dan titipan tidak pernah masuk daftar "belum terverifikasi" |
 | Kandidat dan daftar mutasi rekonsiliasi (ada) | tetap | Tiap mutasi memuat `pay_code_hits` |
 
@@ -95,7 +99,7 @@ Galat:
 
 | Keadaan | Kode | Pesan |
 |---|---|---|
-| Rekening tidak bisa ditentukan | 400 | "Pilih rekening penerima." |
+| Rekening tidak bisa ditentukan | 409 | Pesan `create_cash` (PK-20): "Pilih rekening kas/bank untuk transaksi ini. …" — dikeluarkan di langkah PERIKSA, sebelum ada tulisan |
 | Rekening milik PT lain | 400 | "Rekening penerima bukan milik PT kwitansi ini." |
 | Rekening tidak cocok dengan cara bayar/peruntukan | 400 | "Rekening ini tidak bisa menerima pembayaran pelanggan lewat {nama cara bayar}." |
 | Referensi wajib tetapi kosong | 400 | "Nomor referensi wajib diisi untuk {nama cara bayar}." |
@@ -145,9 +149,9 @@ tujuan A dan kode bayar `KN-7F3K2`. Ambang dan toleransi rekonsiliasi bawaan.
 
 | ID | Lapis | Persiapan | Langkah | Hasil yang diharapkan |
 |---|---|---|---|---|
-| U1 | B | — | Kwitansi `transfer` Rp 1.500.000 untuk S1 tanpa `bank_account_id` | 200; `bank_account_id == A`; kas ber-`account_id == A`; `bank_verified: false` |
-| U2 | B | — | Kwitansi yang sama dengan `bank_account_id: B` | 400 "…bukan milik PT kwitansi ini."; tidak ada kwitansi, `payments[]` S1 tidak bertambah |
-| U3 | B | PT uji ketiga dengan dua rekening bank tanpa bawaan | Kwitansi `transfer` tanpa rekening | 400 "Pilih rekening penerima." |
+| U1 | B | — | Kwitansi `transfer` Rp 1.500.000 untuk S1 tanpa `account_id` | 200; kwitansi dan kasnya ber-`account_id == A` (bawaan `transfer`, walau PT punya dua rekening bank); `bank_verified: false` |
+| U2 | B | — | Kwitansi yang sama dengan `account_id: B` | 400 "…bukan milik PT kwitansi ini."; tidak ada kwitansi, `payments[]` S1 tidak bertambah |
+| U3 | B | PT uji ketiga dengan dua rekening bank tanpa bawaan; rekening C di `ent_ksc` hanya ber-`purposes: ["gaji"]` | Kwitansi `transfer` tanpa rekening di PT ketiga; kwitansi ke rekening C | 409 "Pilih rekening kas/bank…" tanpa kwitansi dan tanpa alokasi; 400 "Rekening ini tidak bisa menerima…" |
 | U4 | B | `payment.wajib_nomor_referensi` menyala pada `ent_ksc` | Kwitansi `transfer` tanpa `reference_no` di `ent_ksc`; lalu di `ent_kanda` | 400; 200 — PT lain tidak berubah |
 | U5 | B | — | Kwitansi S1 ke rekening A2 tanpa catatan; lalu dengan `mismatch_note: "Pelanggan salah transfer"` | 400; 200 dengan `instruction_mismatch: true` |
 | U6 | B | U1; mutasi Rp 1.500.000 diimpor ke A2 dan ke A | Kandidat mutasi A2; kandidat mutasi A | A2: tidak memuat kas U1; A: memuat |
@@ -166,19 +170,18 @@ tujuan A dan kode bayar `KN-7F3K2`. Ambang dan toleransi rekonsiliasi bawaan.
 
 ## Langkah kerja
 
-**Serah-terima (a) — kemampuan baru, perilaku lama masih diterima.**
+**Serah-terima (a) — kemampuan baru; kandidat rekonsiliasi dan form lama belum disentuh.**
 
-1. `backend/tests_mem/test_PMT3_kwitansi_rekening.py`: U1, U2, U4, U5, U7–U9, U12–U15; merah.
-2. Field kwitansi + langkah PERIKSA baru. Di tahap ini rekening yang tidak bisa ditentukan **belum** ditolak (kas tetap
-   lahir seperti hasil PK-20); U3 ditandai menunggu (b).
+1. `backend/tests_mem/test_PMT3_kwitansi_rekening.py`: U1–U5, U7–U9, U12–U15; merah.
+2. Field kwitansi + langkah PERIKSA baru (rekening bawaan, peruntukan, referensi, tanda tidak sesuai instruksi).
 3. `pay_code_hits` saat impor; langkah kode bayar di `score_pair`; `bank_verified` di `_link`/`_unlink`; saringan daftar.
 4. Tiga kunci pengaturan; cetakan kwitansi.
 
 **Serah-terima (b) — alihkan dan matikan jalur lama.**
 
-5. U3, U6, U10, U11, U16 ditulis; merah.
-6. Form mengirim rekening; server menolak tanpa rekening; `_book_query` dipersempit; `_cash_routing` dihapus; dasar
-   tahan-kirim; skrip isi-ulang.
+5. U6, U10, U11, U16 ditulis; merah.
+6. Form mengirim rekening dan referensi; `_book_query` dipersempit; `_cash_routing` dihapus; dasar tahan-kirim; skrip
+   isi-ulang.
 7. Layar riwayat dan rekonsiliasi; U17 di lingkungan A; U18; gate penuh; laporan memuat contoh angka U1 → U7: kwitansi
    → kas ber-rekening → jurnal → mutasi tertaut → saldo rekening.
 

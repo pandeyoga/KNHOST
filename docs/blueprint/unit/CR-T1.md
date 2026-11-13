@@ -5,8 +5,8 @@
 | Gelombang | Modul piutang dan kredit |
 | Jenis | fitur |
 | Risiko | sedang |
-| Prasyarat | PK-45, KF-T6 |
-| Menutup temuan | CR-03 |
+| Prasyarat | PK-45, KF-T6, KF-T7 |
+| Menutup temuan | — (CR-03 ditutup KF-T7; unit ini memakai dua kuncinya dan menambah lapisan per pelanggan) |
 | Keputusan | K-27, K-28, K-29 |
 | Standar | §2 (2.1–2.4), §3.1 (Z1, Z2, Z4, Z6), §3.2, §3.4 (N1, N2), §4 (L1, L4, L6), §5 (D1, D3, D7, D8, D9), §6 |
 | Lingkungan uji | keduanya (B untuk izin dan alur; A untuk indeks unik) |
@@ -27,12 +27,12 @@ Semua butir `[dibaca]` pada `3132cc4`.
 | Salinan kedua kedua angka itu, dipakai laporan umur piutang | `backend/services/ar_aging_service.py:34` (`WARNING_RATIO`), `backend/services/ar_aging_service.py:89` (`_credit_status`) |
 | Plafon dibaca dari `customers.credit_limit`; 0 berarti tanpa batas | `backend/services/customer_service.py:212` (`credit_limit`), `backend/services/customer_service.py:249` (`near_limit`) |
 | Status `blocked` pada data pelanggan memaksa status kredit terblokir | `backend/services/customer_service.py:256` (`blocked`) |
-| `PATCH /api/customers/{id}` menerima `status` dan `credit_limit` dengan izin `customer.update` (PK-45 mengeluarkan keduanya ke endpoint sementara) | `backend/routers/customers.py:177` (`allowed`) |
-| `POST /api/customers` menyimpan `credit_limit` dari isi permintaan — pintu yang tidak ditutup PK-45 | `backend/routers/customers.py:136` (`credit_limit`), `backend/schemas.py:107` (`credit_limit`) |
+| `PATCH /api/customers/{id}` menerima `status` dan `credit_limit` dengan izin `customer.update`. PK-45 (prasyarat) memindahkan keduanya ke `PUT /api/customers/{id}/credit` berizin `customer.manage_credit` (admin, manager, finance) — jalur sementara | `backend/routers/customers.py:177` (`allowed`) |
+| `POST /api/customers` menyimpan `credit_limit` dari isi permintaan (setelah PK-45: hanya bila pelaku memegang `customer.manage_credit`) | `backend/routers/customers.py:136` (`credit_limit`), `backend/schemas.py:107` (`credit_limit`) |
 | Sales memegang `customer.update`; Finance hanya `customer.view` | `backend/permissions_config.py:116` (`customer`), `backend/permissions_config.py:358` (`customer`) |
 | Gerbang kredit memanggil hitungan kredit **tanpa** PT, jadi piutang pelanggan dijumlah lintas PT dan diadu dengan satu plafon | `backend/services/customer_service.py:291` (`compute_customer_credit`) |
 | Pesanan boleh ber-PT lain dari PT pelanggan (`payload.entity_id` menang) | `backend/routers/sales_orders.py:198` (`entity_id`) |
-| Pusat Pengaturan sudah punya `ar.denda_rate_pct_per_month`, `ar.grace_days`, `ar.aging_buckets`; belum ada kunci ambang kredit | `backend/config_catalog_core.py:138` (`ar.denda_rate_pct_per_month`) |
+| Pusat Pengaturan punya `ar.denda_rate_pct_per_month`, `ar.grace_days`, `ar.aging_buckets`; belum ada kunci ambang kredit. Unit KF-T7 mendaftarkan `ar.overdue_block_days` dan `ar.credit_warning_pct` beserta pembaca tunggal `customer_service.credit_thresholds(entity_id)` | `backend/config_catalog_core.py:138` (`ar.denda_rate_pct_per_month`) |
 | Kartu pelanggan menampilkan plafon dari `credit.credit_limit`; tab riwayatnya enam | `frontend/src/features/crm/Customer360Panel.jsx:56` (`credit_limit`), `frontend/src/features/crm/Customer360Panel.jsx:18` (`HIST_TABS`) |
 | Tab "Persetujuan Kredit" di CRM hanya untuk admin/manajer lewat nama peran | `frontend/src/features/crm/CrmView.jsx:27` (`approvals`) |
 
@@ -95,7 +95,7 @@ Berkas baru `backend/services/credit_profile_service.py`:
 
 `compute_customer_credit` dan `_credit_status` berhenti memakai konstanta: keduanya memanggil `effective(...)` (PT =
 argumen `entity_id`, atau `customers.entity_id` bila tidak diberikan) lalu `status_from(...)`. Empat konstanta di dua
-berkas itu dihapus. Rumus piutang dan jatuh tempo **tidak** diubah di unit ini (CR-T2, CR-T3).
+berkas itu dihapus bila KF-T7 belum melakukannya. Rumus piutang dan jatuh tempo **tidak** diubah di sini (CR-T2, CR-T3).
 
 | Endpoint | Izin | Isi permintaan | Jawaban |
 |---|---|---|---|
@@ -119,35 +119,34 @@ Galat:
 | Pengaju memutus sendiri saat wajib dua orang; tanpa izin | 403 | Pesan dari `dual_control` (KF-T6); bentuk Z6 dengan nama modul "Uang Masuk, Piutang & Faktur Pajak" |
 
 Jalur lama (D8):
-
-- `PATCH /api/customers/{id}`: `credit_limit` tetap diabaikan (PK-45); `status` hanya menerima `active` · `inactive`.
-- Endpoint sementara plafon/status dari PK-45 (namanya ada di `docs/reviews/2026-11-13/hasil/PK-45.md`): bagian plafon
-  dijawab 410 "Plafon diubah lewat pengajuan perubahan kredit."; pemanggil di layar dialihkan.
-- `POST /api/customers`: `credit_limit` tidak disimpan (`customers.credit_limit` = 0). Bila nilainya > 0, server membuat
-  pengajuan `diajukan` atas nama pembuat dengan alasan "Plafon diusulkan saat pelanggan dibuat".
+- `PUT /api/customers/{id}/credit` (jalur sementara PK-45) dijawab 410 "Plafon dan blokir kredit diubah lewat pengajuan
+  perubahan kredit."; `status` `active` · `inactive` kembali diterima `PATCH /api/customers/{id}`. Izin
+  `customer.manage_credit` dicabut dari empat tempatnya; form pelanggan dialihkan.
+- `POST /api/customers`: `credit_limit` selalu disimpan 0. Bila isi permintaan > 0, server membuat pengajuan `diajukan`
+  atas nama pembuat dengan alasan "Plafon diusulkan saat pelanggan dibuat".
 
 ### Pengaturan
 
-Dua kunci pertama **milik unit KF-T7**. Bila KF-T7 sudah selesai, kuncinya sudah terdaftar (pendaftaran ganda ditolak
-`E()`): cukup tambahkan pembaca di bawah ke `consumers`. Bila belum, daftarkan di `backend/config_catalog_core.py`
-persis seperti ini dan tulis di laporan bahwa KF-T7 tinggal memakainya.
+Dua kunci pertama **milik unit KF-T7**, beserta pembaca tunggalnya `customer_service.credit_thresholds`. Bila KF-T7
+sudah selesai, unit ini tidak mendaftarkan apa pun untuk keduanya: `effective` memanggil `credit_thresholds(entity_id)`
+lalu menimpanya dengan nilai profil. Bila belum, daftarkan keduanya dan fungsi itu persis seperti kolom di bawah.
 
-| Field | `ar.overdue_block_days` | `ar.credit_warning_ratio` | `ar.default_credit_limit` (baru, milik unit ini) |
+| Field | `ar.overdue_block_days` (KF-T7) | `ar.credit_warning_pct` (KF-T7) | `ar.default_credit_limit` (baru, milik unit ini) |
 |---|---|---|---|
-| group | `uang-masuk` | `uang-masuk` | `uang-masuk` |
-| type | `duration` | `decimal` | `money` |
-| default | 14 | 0.8 | 0 |
-| min / max / unit | 0 / 365 / hari | 0 / 1 / bagian dari plafon | 0 / 1.000.000.000.000 / Rp |
+| group · type | `uang-masuk` · `duration` | `uang-masuk` · `pct` | `uang-masuk` · `money` |
+| default | 14 | 80 | 0 |
+| min / max / unit | 0 / 365 / hari | 1 / 100 / % | 0 / 1.000.000.000.000 / Rp |
 | scopes | `("global", "entity")` | `("global", "entity")` | `("global", "entity")` |
-| label | "Tahan pesanan bila telat lebih dari (hari)" | "Beri peringatan saat piutang mencapai" | "Plafon bawaan pelanggan baru" |
-| help | "Pelanggan yang tagihannya telat lebih dari jumlah hari ini dianggap terblokir. Bisa ditimpa per pelanggan di kartu pelanggan." | "Bagian dari plafon yang memunculkan peringatan. 0,8 = 80 % plafon." | "Dipakai untuk pelanggan yang belum punya plafon khusus. 0 = tanpa batas." |
+| label | "Blokir pelanggan bila telat lebih dari (hari)" | "Peringatkan saat piutang mencapai (% plafon)" | "Plafon bawaan pelanggan baru" |
+| help | "Pelanggan tidak bisa membuat pesanan kredit baru bila tagihan tertuanya telat lebih dari angka ini. 0 = telat satu hari pun langsung diblokir." | "Status pelanggan menjadi \"peringatan\" saat piutangnya mencapai persen ini dari plafon. 100 = hanya saat plafon penuh." | "Dipakai untuk pelanggan yang belum punya plafon khusus. 0 = tanpa batas." |
 | impact | "Angka lebih kecil membuat lebih banyak pelanggan terblokir saat membuat pesanan." | "Angka lebih kecil memunculkan peringatan lebih awal; tidak memblokir." | "Mengisi angka membuat semua pelanggan tanpa plafon khusus mulai dibatasi." |
-| example | "14 · telat 10 hari → peringatan; telat 15 hari → terblokir" | "0,8 · plafon Rp 10.000.000 · piutang Rp 8.500.000 → peringatan" | "Rp 25.000.000 · piutang Rp 26.000.000 → terblokir" |
+| example | "14 · telat 10 hari → peringatan; telat 15 hari → terblokir" | "80 · plafon Rp 10.000.000 · piutang Rp 8.500.000 → peringatan" | "Rp 25.000.000 · piutang Rp 26.000.000 → terblokir" |
 | risk / requires_reason | `high` / ya | `medium` / tidak | `high` / ya |
-| permission | `("credit_profile", "approve")` | `("credit_profile", "approve")` | `("credit_profile", "approve")` |
-| consumers | `services/credit_profile_service.py:effective` | `services/credit_profile_service.py:effective` | `services/credit_profile_service.py:effective` |
+| permission | `("settings", "manage")` | `("settings", "manage")` | `("credit_profile", "approve")` |
+| consumers | `services/customer_service.py:credit_thresholds` | `services/customer_service.py:credit_thresholds` | `services/credit_profile_service.py:effective` |
 
-Aksi `ubah_profil_kredit` (`kontrol.ubah_profil_kredit.min_orang` bawaan 1, `.batas_nominal` bawaan 0) milik KF-T6.
+Aksi `ubah_profil_kredit` ditambahkan unit ini ke `KONTROL_AKSI` (katalog kontrol hasil KF-T6): label "Ubah profil
+kredit pelanggan", kelompok C, awal "1", bernominal → `kontrol.ubah_profil_kredit.min_orang` dan `.batas_nominal`.
 
 ### Izin dan peran
 
@@ -158,7 +157,7 @@ menu yang dibukanya: `customers-crm`.
 |---|---|---|
 | `credit_profile.view` | Melihat plafon, status kredit, dan riwayatnya | admin, manager, finance, sales_admin, sales |
 | `credit_profile.update` | Mengajukan perubahan kredit | admin, manager, finance, sales_admin, sales |
-| `credit_profile.approve` | Memutus pengajuan perubahan kredit dan mengubah ambang kredit PT | admin, manager — Sales tidak (K-28). Dengan `min_orang` = 1 pemegangnya boleh mengajukan lalu memutus sendiri |
+| `credit_profile.approve` | Memutus pengajuan perubahan kredit dan mengubah plafon bawaan PT | admin, manager — Sales tidak (K-28). Dengan `min_orang` = 1 pemegangnya boleh mengajukan lalu memutus sendiri |
 
 
 ### Layar
@@ -196,7 +195,7 @@ Persiapan: pelanggan **P1** (`ent_ksc`) dan **P2** (`ent_kanda`) dibuat admin le
 | U6 | B | seperti U5 | `mgr` mengajukan untuk **P2** (`ent_kanda`) lalu memutus sendiri | 200 — PT lain tidak ikut berubah |
 | U7 | B | fixture: pesanan P1 dan P2 masing-masing bersisa Rp 1.000.000, jatuh tempo 10 hari lalu; `adm` menyetel `ar.overdue_block_days` = 7 pada `ent_ksc` | `GET /api/customers/{P1}/credit-status`, lalu `{P2}` | P1 `blocked` (10 > 7); P2 `warning` (10 ≤ 14, bawaan) |
 | U8 | B | setelah U7 | `mgr` mengajukan + menyetujui `overdue_block_days: 30` untuk P1 | P1 `warning` (10 ≤ 30); `block_days_source == "khusus"` |
-| U9 | B | P1 plafon khusus Rp 10.000.000; fixture sisa piutang Rp 8.500.000 belum jatuh tempo | Baca status; setel `ar.credit_warning_ratio` = 0.9 pada `ent_ksc`; baca lagi | `warning` (8.500.000 ≥ 0,8 × 10.000.000 = 8.000.000) lalu `active` (8.500.000 < 9.000.000) |
+| U9 | B | P1 plafon khusus Rp 10.000.000; fixture sisa piutang Rp 8.500.000 belum jatuh tempo | Baca status; setel `ar.credit_warning_pct` = 90 pada `ent_ksc`; baca lagi | `warning` (8.500.000 ≥ 80 % × 10.000.000 = 8.000.000) lalu `active` (8.500.000 < 9.000.000) |
 | U10 | B | pengajuan P1 masih `diajukan` | `sls`: pengajuan kedua untuk P1; `mgr`: pengajuan `credit_limit: -1` dan `allowed_term_codes: ["XX99"]` untuk P2 | 409; 400; 400 — tidak ada pengajuan baru tersimpan |
 | U11 | B | P1 plafon khusus Rp 10.000.000 dengan `limit_valid_until` = kemarin; `ar.default_credit_limit` = 0 | `GET …/credit-profile` | `effective.credit_limit == 0`, `limit_source == "kedaluwarsa"` |
 | U12 | B | peran uji baku | **Tanpa Acuan** + `credit_profile.view`: `GET …/credit-profile`; sama + `POST` pengajuan; **Manajer Kosong** dan **Sopir**: `GET` | 200; 403; 403; 403 |
@@ -233,6 +232,7 @@ Persiapan: pelanggan **P1** (`ent_ksc`) dan **P2** (`ent_kanda`) dibuat admin le
 - `ASUMSI:` "hari tenggang" pada rancangan profil hanya dipakai denda (`penalty_rule.grace_days`, CR-T4). Status kredit
   tetap memakai aturan hari ini: telat 1 hari sampai hari blokir = peringatan.
 - `ASUMSI:` nominal untuk `kontrol.ubah_profil_kredit.batas_nominal` = plafon baru, bukan selisih kenaikan.
+- `ASUMSI:` Finance mengajukan, tidak memutus (`06` §3.7), walau jalur sementara PK-45 memberinya hak mengubah langsung.
 - `ASUMSI:` pelanggan yang bertransaksi di PT selain PT pemilik datanya memakai bawaan PT di PT itu setelah migrasi.
   Laporan memuat kueri pencarinya (pesanan dengan `entity_id` ≠ `customers.entity_id`).
 - `RISIKO:` plafon lama tidak terbaca setelah kode dipasang tetapi sebelum migrasi dijalankan. Penangkal: `effective`

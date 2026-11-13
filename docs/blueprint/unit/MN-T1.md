@@ -30,7 +30,7 @@ Semua butir `[dibaca]` pada `3132cc4`.
 | 5 | "Kasus Keuangan" mencantumkan sales, tetapi grup induknya hanya admin dan manager, dan peran bawaan mengikuti `roles` grup → Sales tidak pernah melihatnya walau memegang `finance_case.view/create` (IA-06) | `frontend/src/config/navStructure.js:312` (`finance-cases`) · `frontend/src/config/navigationConfig.js:148` (`isModuleNavRole`) · `backend/permissions_config.py:131` (`finance_case`) |
 | 6 | Tab "Pemetaan Akun" mencantumkan finance, tetapi menu Finance tidak memuat grup Pengaturan (IA-06) | `frontend/src/config/hubTabs.js:269` (`gl-account-mappings`) |
 | 7 | "Cairkan" uang muka hanya dipegang admin | `backend/permissions_config.py:96` (`cash_advance`) |
-| 8 | Menu peran kustom diturunkan dari `nav` tiap modul; `reimburse-payables`, `incentive-rates`, `finance-desk` tidak ada di modul mana pun; `finance-tower` dibuka modul kas padahal layarnya menuntut `accounting.view` | `backend/access_modules.py:16` (`MODULE_CATALOG`) · `backend/access_modules.py:140` (`finance-tower`) |
+| 8 | Menu peran kustom diturunkan dari `nav` tiap modul. Di HEAD `reimburse-payables`, `incentive-rates`, `finance-desk` tidak ada di modul mana pun (PR-T2 dan PR-T5, prasyarat, memasukkannya); `finance-tower` dibuka modul kas padahal layarnya menuntut `accounting.view` | `backend/access_modules.py:16` (`MODULE_CATALOG`) · `backend/access_modules.py:140` (`finance-tower`) |
 | 9 | Penjaga tab hanya menghitung pola tab buatan sendiri; tidak ada batas jumlah tab per hub dan tidak ada pemeriksaan tab di dalam tab hub | `scripts/guardrails/verify_page_tabs.py:44` (`count`) |
 | 10 | Hub `products-pricing` sudah 8 tab tampak; `purchase-orders` 6 | `frontend/src/config/hubTabs.js:38` (`products-pricing`) · `frontend/src/config/hubTabs.js:57` (`purchase-orders`) |
 | 11 | Layar yang menjadi tab hub dan punya tab lagi di dalamnya sudah ada, mis. Jurnal & Buku Besar (5 tab) | `frontend/src/features/finance/GeneralLedger.jsx:41` (`TABS`) |
@@ -52,9 +52,9 @@ layarnya, bersama id grup dan id hub induknya.
 
 | Modul pemilik sumber daya | `nav` ditambah | `nav` dicabut |
 |---|---|---|
-| `accounting` | `keuangan`, `finance-tower`, `bi-finance`, `cash-bank`, `petty-cash`, `reimburse-payables` | `kas-aset` |
+| `accounting` | `keuangan`, `finance-tower`, `bi-finance`, `cash-bank`, `petty-cash` | `kas-aset` |
 | `cash`, `finance_case` | `ar-aging` (induk tab Kasus) | `finance-tower` |
-| `ar_receipt`, `payment_plan`, `penalty`, `payment_variance` | `customer-credit`, `finance-tower`, `finance-desk` | — |
+| `ar_receipt`, `payment_plan`, `penalty`, `payment_variance` | `customer-credit`, `finance-tower`, `finance-desk` (bila PR-T5 belum memasukkannya) | — |
 | `order` | `keuangan`, `ar-aging`, `collection-worklist`, `hrd`, `hr-kpi-hub`, `sales-performance` | — |
 | `customer` | `keuangan`, `ar-aging`, `credit-overrides` | — |
 | `vendor_bill`, `contra_bon` | `keuangan` | `pembelian` (kecuali masih dibutuhkan tab lain) |
@@ -62,13 +62,14 @@ layarnya, bersama id grup dan id hub induknya.
 | `interco`, `interco_finance` | `keuangan` | `akuntansi` |
 | `cash_advance`, `cash_settlement` | `keuangan`, `cash-bank`, `petty-cash` | `kas-aset` |
 | `vehicle_log` | `gudang` | `kas-aset` |
-| pemilik izin tarif insentif (hasil PR-T2; di HEAD masih gerbang nama peran) | `hrd`, `hr-kpi-hub`, `incentive-rates`, `incentive-schemes` | — |
+| `sales_force` (modul hasil PR-T2; di HEAD masih gerbang nama peran) | `hrd`, `hr-kpi-hub`, `incentive-schemes` (`incentive-rates` sudah di sana) | `settings-sales` bila tidak ada tab lain modul itu di hub tersebut |
 
 `LINK_ALIASES["finance"]` tetap. `home_nav_id` peran finance di `backend/role_registry.py` menjadi `finance-tower`
 (`home_view` tetap `finance-desk`).
 
 **Izin bawaan peran Finance menurut K-09 dan K-17** (ditambahkan lewat sumber izin bawaan hasil PR-T9; bila PR-T9 belum
-selesai, lewat `GRANT` di `backend/bootstrap.py:460`; hanya menambah, tidak mencabut):
+selesai, lewat `GRANT` di `backend/bootstrap.py:460`; hanya menambah, tidak mencabut). PK-24 dan PK-38 memuat baris
+yang sama dengan catatan "lewati bila sudah ada"; siapa pun yang lebih dulu, hasilnya sama:
 
 | Hal | Pasangan izin | Di HEAD | Sesudah unit ini |
 |---|---|---|---|
@@ -100,7 +101,7 @@ warehouse_admin. "Izin layar" = yang dituntut endpoint utamanya di HEAD. Id yang
 | › Penagihan & Penerimaan | · `collection-worklist` (baru) | CRM › sub-tab Penagihan | — | `order.view` | A M F S SA |
 | › Rencana & Denda | · `payment-plans` | Keuangan › Rencana Bayar | view sama | `payment_plan.view` | A M F |
 | › Titipan & Saldo Kredit | · `customer-credit` (baru, pembungkus) | Keuangan › Uang Muka Pelanggan dan Saldo Kredit | `advance-report` → `{bagian: "titipan"}`; `store-credit` → `{bagian: "saldo"}` | sama dengan Saldo & Umur; `ar_receipt.view` | A M F |
-| › Kredit & Plafon | · `credit-overrides` (baru) | CRM › sub-tab Persetujuan Kredit | — | `customer.view` | A M F (tanpa hak memutus) |
+| › Kredit & Plafon | · `credit-overrides` (baru) | CRM › sub-tab Persetujuan Kredit | — | `customer.view`; memutus `credit_override.approve` (hasil PR-T2) | A M F (F tanpa hak memutus) |
 | › Kasus | · `finance-cases` | Keuangan › Kasus Keuangan | view sama | `finance_case.view` | A M F S SA |
 | **Keuangan › Hutang** › Tagihan | `accounts-payable` · `vendor-bills` | Pembelian › Hutang Pemasok › Tagihan Supplier | — | `vendor_bill.view` | A M F |
 | › Kontrabon | · `contra-bons` | … › Kontrabon (Tukar Faktur) | — | `contra_bon.view` | A M F G GA |
@@ -116,7 +117,7 @@ warehouse_admin. "Izin layar" = yang dituntut endpoint utamanya di HEAD. Id yang
 | **Gudang & Logistik › Kendaraan** | `vehicle-logs` | Kas & Aset › Kendaraan | view sama | `vehicle_log.view` | A M G S |
 | **SDM › Penggajian** › Proses Gaji · Slip Gaji | `hr-payroll-hub` · id tetap | "Payroll Run" | — | `hr.view` | A M |
 | **SDM › Kinerja & Insentif** › Kinerja Sales | `hr-kpi-hub` · `sales-performance` (baru) | CRM › sub-tab Kinerja Sales | — | `order.view` | A M S SA |
-| › Target & Aturan | · `incentive-rates` | Pengaturan › Penjualan › Komisi & Insentif | view sama | gerbang manajer (izin hasil PR-T2) | A M |
+| › Target & Aturan | · `incentive-rates` | Pengaturan › Penjualan › Komisi & Insentif | view sama | `sales_force.view` (hasil PR-T2) | A M |
 | › Skema (Arsip) | · `incentive-schemes` (baru) | CRM › sub-tab Skema (Arsip) | — | sama | A M |
 | › KPI Karyawan | · `cs-kpi` | SDM › KPI › KPI Karyawan (manual) | — | `hr.view` | A M |
 | **Penjualan › Pelanggan › CRM & Pelanggan** | `customers-crm` | sub-tab tinggal: Pelanggan · Prospek · Interaksi | — | `customer.view` | tetap |
@@ -201,7 +202,8 @@ lama → baru → daftar pasangan izin alternatif dan satu endpoint `GET` utaman
 
 ## Di luar lingkup
 
-- Menyatukan isi layar: Titipan & Saldo Kredit, Kas Kecil, Tutup Buku, Beranda Keuangan, slip gaji → MN-T2.
+- Menyatukan isi layar: Titipan & Saldo Kredit, Kas Kecil, Tutup Buku, Beranda Keuangan → MN-T2. Tab Slip Gaji
+  dicabut PY-T1.
 - Form pembayaran tunggal, kartu pelanggan, kartu pemasok, telusur angka → MN-T3.
 - Peta tujuan Jejak Dokumen dan fokus dokumen → PK-44. Nominal kontrabon untuk gudang (K-18) → PK-17.
 - Tab baru yang layarnya belum ada: Capaian dan Lembar Insentif (KM-T2, KM-T3, KM-T5), Komponen & Masukan dan Setoran

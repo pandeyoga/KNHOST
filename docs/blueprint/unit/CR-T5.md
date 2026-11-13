@@ -23,7 +23,7 @@ Semua butir `[dibaca]` pada `3132cc4`.
 
 | Fakta | Jangkar |
 |---|---|
-| "Piutang" adalah satu layar tanpa tab; hub Piutang belum ada (dibentuk MN-T1) | `frontend/src/config/navStructure.js:305` (`ar-aging`), `frontend/src/AppViewRouter.jsx:180` (`ARAgingView`) |
+| "Piutang" adalah satu layar tanpa tab. MN-T1 menjadikannya hub dan menyediakan tab "Kredit & Plafon" (view `credit-overrides`) yang untuk sementara hanya memuat panel izin kredit | `frontend/src/config/navStructure.js:305` (`ar-aging`), `frontend/src/AppViewRouter.jsx:180` (`ARAgingView`) |
 | Persetujuan izin kredit hidup di CRM, tab "Persetujuan Kredit" | `frontend/src/features/crm/CrmView.jsx:27` (`approvals`) |
 | Tindak lanjut penagihan punya hasil `promised` dan `next_action_date`, tanpa nominal dan tanpa status janji | `backend/schemas_crm.py:85` (`outcome`), `backend/routers/crm.py:214` (`add_followup`) |
 | Daftar tagih dan pengingat dihitung per pesanan dari surat jalan pertama (dialihkan CR-T2 ke baris tagihan) | `backend/services/customer_service.py:450` (`collection_worklist`), `backend/services/customer_service.py:542` (`collection_reminders`) |
@@ -97,14 +97,15 @@ Tidak ada.
 
 ### Izin dan peran
 
-Tidak ada pasangan baru. Id menu baru `credit-desk` masuk `nav` modul akses `ar`. Finance melihat semua antrean (memegang
+Tidak ada pasangan baru. Id menu `credit-overrides` masuk `nav` modul akses `ar`; syarat tampil tab menjadi
+`credit_profile.view` (MN-T1 memakai `customer.view`). Finance melihat semua antrean (memegang
 `credit_profile.view`) tanpa tombol putus; tombol putus mengikuti `credit_profile.approve` dan `credit_override.approve`.
 
 ### Layar
 
-**Keuangan › Piutang › tab "Kredit & Plafon"** (view `credit-desk`, komponen baru `CreditDeskView.jsx`). Hub Piutang
-dibentuk MN-T1; bila saat unit ini dikerjakan hub itu belum ada, buat kunci hub `piutang` di `hubTabs.js` berisi dua
-tab — "Saldo & Umur" (`ar-aging`) dan "Kredit & Plafon" — dan catat di laporan agar MN-T1 melengkapinya.
+**Keuangan › Piutang › tab "Kredit & Plafon"** (view `credit-overrides` hasil MN-T1; isinya diganti komponen baru
+`CreditDeskView.jsx`). Bila saat unit ini dikerjakan MN-T1 belum selesai, buat hub `ar-aging` di `hubTabs.js` berisi dua
+tab — "Saldo & Umur" (`ar-aging`) dan "Kredit & Plafon" (`credit-overrides`) — dan catat di laporan.
 
 - Banner PT; di mode "Semua PT" antrean hanya-baca berlabel "gabungan, belum dieliminasi" (N3).
 - Enam chip antrean berlabel persis: **Menunggu keputusan**, **Ditahan**, **Jatuh tempo**, **Janji bayar**, **Kaji

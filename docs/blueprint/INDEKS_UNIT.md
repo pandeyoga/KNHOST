@@ -47,13 +47,13 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | F | PK-02 | UX-06, UX-07, UX-14, RC-01, RP-02, RP-04 | rendah | — | R/02 |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | F | PK-02 | IA-01, IA-02, IA-03, IA-09 | sedang | — | R/02 |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | F | PK-02 | CR-01, TX-01, TX-02, TX-03, TX-04, PY-05, PY-10 | sedang | — | R/02 |
-| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | F | PK-02 | PY-03 | sedang | H4 | R/02 |
+| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | F | PK-02 | PY-03, KP-36 | sedang | H4 | R/02 |
 
 ## Jalur peran, pengaturan, konfigurasi perusahaan, menu (boleh berjalan sejajar dengan gelombang 3–7)
 
 | # | ID | Judul | Jalur | Prasyarat | Menutup | Risiko | Henti | Asal |
 |---|---|---|---|---|---|---|---|---|
-| 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | P | PR-T1 | PR-01, PR-03 | tinggi | — | A |
+| 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | P | PR-T1, PR-T9 | PR-01, PR-03 | tinggi | — | A |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | P | PR-T2 | PR-04 | sedang | — | A |
 | 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | K | KF-T1 | KP-05, GL-06 | tinggi | — | A |
 | 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | U | KF-T1 | KP-03, KP-04, KP-08 | sedang | — | A |
@@ -61,7 +61,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | P | PR-T2 | PR-06 | tinggi | — | A |
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | P | PR-T2 | PR-07, PR-08 | sedang | — | A |
 | 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | P | PR-T4, PR-T5 | PR-09, PR-UX | sedang | — | A |
-| 31 | PR-T7 | Layar memakai izin, bukan nama peran | P | PR-T2 | PR-11 | sedang | — | A |
+| 31 | PR-T7 | Layar memakai izin, bukan nama peran | P | PR-T2 | PR-11, PR-16 | sedang | — | A |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | P | PR-T3 | — | rendah | — | A |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | K | KF-T1 | KF-05, KF-06, KP-13, KP-29, KP-30 | sedang | — | A |
 | 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | K | KF-T1 | KF-04, KF-09, KF-10, KF-11, KP-11 | tinggi | — | A |
@@ -162,7 +162,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | S | AG-T2, PK-15, PK-18, PK-21 | — | tinggi | H5 | R/08 |
 | 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | S | AG-T2, PK-18 | — | sedang | — | R/08 |
 | 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | S | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | — | tinggi | H5 | R/08 |
-| 102 | MN-T2 | Penyatuan layar keuangan | M | PK-18, PK-24, PY-T1 | — | sedang | — | R/01 |
-| 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | M | PK-05, PK-19, PM-T3, CR-T5 | — | tinggi | — | R/01 |
+| 102 | MN-T2 | Penyatuan layar keuangan | M | MN-T1, PK-18, PK-24, PK-43, PY-T1 | — | sedang | — | R/01 |
+| 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | M | PK-05, PK-19, PK-43, PM-T3, CR-T5 | — | tinggi | — | R/01 |
 
 Jumlah: 104 unit.

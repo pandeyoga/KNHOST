@@ -118,6 +118,8 @@ Berita/kode   : {kode bayar}
 ```
 
 Teks WhatsApp = blok yang sama (field `text` pada `instruction`), dipisah satu baris kosong bila lebih dari satu tagihan.
+Bila KP-T6 sudah selesai, token naskah `{{rekening_bank}}` yang dibuatnya (penyedia: rekening tunggal PT) diganti
+penyedianya menjadi potret rekening tujuan pesanan, lalu rekening bawaan `transfer` PT; bila belum, lewati.
 
 Laporan unit memuat kueri pencari templat (`pdf_templates`) yang naskah pembuka, penutup, atau footer-nya berisi
 delapan digit berurutan atau lebih — calon nomor rekening ketikan — untuk dibersihkan pemilik lewat layar (H3; unit ini
@@ -197,7 +199,7 @@ Persiapan: rekening **A** (`ent_ksc`, BCA 123-456-7890 a.n. PT Kain Suka Cita, p
 ## Di luar lingkup
 
 - Rekening dan referensi wajib di kwitansi, tanda "tidak sesuai instruksi", cocok lewat kode bayar → PM-T3.
-- Naskah dan penanda tangan dokumen per PT, token `{{rekening_bank}}` (KP-19) → KP-T6.
+- Naskah dan penanda tangan dokumen per PT (KP-19) → KP-T6.
 - Nominal unik (tiga digit terakhir) sebagai pembeda tambahan (`07` §A3.4): belum ada unitnya.
 - Rekening bawaan per pelanggan atau per kanal penjualan: belum ada unitnya; bawaan hanya per (PT, cara bayar).
 

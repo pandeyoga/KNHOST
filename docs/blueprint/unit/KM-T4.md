@@ -220,8 +220,7 @@ mengambilnya lewat `ter_rate`).
 ## Dokumen ikut berubah
 
 `ENTITY_REGISTRY.md` (`interco_charges`, field lembar); `CODEBASE_MAP.md`; `memory/PRD.md`;
-`docs/finance/AUDIT_KEUANGAN_2026-11-13.md` tidak diubah (arsip); `docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md`
-("tagihan insentif antar-PT").
+`docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md` ("tagihan insentif antar-PT").
 
 ## Di luar lingkup
 

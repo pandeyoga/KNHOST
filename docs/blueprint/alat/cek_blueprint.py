@@ -6,7 +6,8 @@
 
 Yang diperiksa:
   1. Tiap baris INDEKS_UNIT.md punya berkas unit/<ID>.md, dan sebaliknya.
-  2. Prasyarat menunjuk unit yang ada; tiap temuan ditutup tepat satu unit.
+  2. Prasyarat menunjuk unit yang ada dan tidak melingkar; tiap temuan ditutup tepat satu unit; kepala tiap
+     berkas unit (prasyarat, temuan) sepakat dengan indeks.
   3. Berkas unit memuat bagian wajib templat.
   4. Jangkar kode `path:baris` (`simbol`): berkas ada, baris dalam jangkauan, simbol ada dalam ±25 baris
      atau baris itu berada di dalam fungsi/kelas bernama simbol tersebut (definisinya ≤ 400 baris di atas).
@@ -104,6 +105,22 @@ def main() -> int:
     for t, l in tutup.items():
         if len(l) > 1:
             masalah.append(f"temuan {t} ditutup lebih dari satu unit: {', '.join(l)}")
+    # Prasyarat tidak boleh melingkar (unit tak akan pernah `siap`).
+    graf = {u["id"]: [p for p in re.findall(RX_ID, u["prasyarat"]) if p in ids] for u in units}
+    warna = {}
+
+    def telusur(x, jalur):
+        warna[x] = 1
+        for y in graf.get(x, []):
+            if warna.get(y) == 1:
+                masalah.append("prasyarat melingkar: " + " → ".join(jalur + [x, y]))
+            elif y not in warna:
+                telusur(y, jalur + [x])
+        warna[x] = 2
+
+    for i in ids:
+        if i not in warna:
+            telusur(i, [])
     total_jangkar = 0
     for i in ids:
         p = BP / "unit" / f"{i}.md"
@@ -117,6 +134,19 @@ def main() -> int:
                 masalah.append(f"unit/{i}.md: bagian '{w}' tidak ada")
         if "| Menutup temuan |" not in txt or "| Prasyarat |" not in txt:
             masalah.append(f"unit/{i}.md: tabel kepala tidak lengkap")
+        # Kepala unit harus sepakat dengan indeks: prasyarat sama persis; temuan di indeks tercantum di unit
+        # (unit boleh menyebut temuan lain yang ia tutup SEBAGIAN — pemilik utamanya tetap satu, yaitu menurut indeks).
+        u = next(x for x in units if x["id"] == i)
+        m = re.search(r"^\| Prasyarat \|(.*)\|\s*$", txt, re.M)
+        pr_unit = set(re.findall(RX_ID, m.group(1))) if m else set()
+        pr_idx = set(re.findall(RX_ID, u["prasyarat"]))
+        if pr_unit != pr_idx:
+            masalah.append(f"unit/{i}.md: prasyarat {sorted(pr_unit)} ≠ indeks {sorted(pr_idx)}")
+        m = re.search(r"^\| Menutup temuan \|(.*)\|\s*$", txt, re.M)
+        tutup_unit = set(re.findall(r"\b[A-Z]{2}(?:-UX)?-\d+\b", m.group(1))) if m else set()
+        kurang = set(re.findall(r"\b[A-Z]{2}(?:-UX)?-\d+\b", u["menutup"])) - tutup_unit
+        if kurang:
+            masalah.append(f"unit/{i}.md: temuan di indeks tidak tercantum di kepala unit: {sorted(kurang)}")
         n, g = cek_jangkar(p)
         total_jangkar += n
         masalah += [f"unit/{i}.md: {x}" for x in g]

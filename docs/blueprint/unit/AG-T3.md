@@ -156,15 +156,15 @@ Alat model baru `prepare_action` (`{action, args, user_request}`) memanggil `ai_
 
 | key | type · default · batas | scopes | label | help · impact · example | risk · permission · consumers |
 |---|---|---|---|---|---|
-| `ai.tindakan_uang_masuk` | `bool` · tidak | `("global", "entity")` | "Izinkan asisten mencatat uang masuk" | "Menyala = pengguna yang dinyalakan boleh menyetujui kartu kwitansi, pencocokan bank, alokasi titipan, dan ulang posting untuk PT ini." · "Mati = kartu golongan itu tidak bisa disiapkan." · "Ya untuk PT A saja" | `high`, wajib alasan · `("ai_finance", "configure")` · `services/ai_cards.py:prepare` |
-| `ai.tindakan_maks_per_hari` | `int` · 0 · 0–1000 · kartu | `("global", "entity")` | "Batas kartu disetujui per orang per hari" | "0 = tanpa batas." · "Tercapai = kartu berikutnya ditolak sampai besok." · "50" | `low` · `("ai_finance", "configure")` · `services/ai_cards.py:decide` |
+| `ai.tindakan_uang_masuk` | `bool` · tidak | `("global", "entity")` | "Izinkan asisten mencatat uang masuk" | "Menyala = pengguna yang dinyalakan boleh menyetujui kartu kwitansi, pencocokan bank, alokasi titipan, dan ulang posting untuk PT ini." · "Mati = kartu golongan itu tidak bisa disiapkan." · "Ya untuk PT A saja" | `high`, wajib alasan · `("ai", "configure")` · `services/ai_cards.py:prepare` |
+| `ai.tindakan_maks_per_hari` | `int` · 0 · 0–1000 · kartu | `("global", "entity")` | "Batas kartu disetujui per orang per hari" | "0 = tanpa batas." · "Tercapai = kartu berikutnya ditolak sampai besok." · "50" | `low` · `("ai", "configure")` · `services/ai_cards.py:decide` |
 
 Keduanya di group `asisten-analitik`.
 
 ### Izin dan peran
 
 `ai_finance.create` (label "Asisten Keuangan · Siapkan dan setujui tindakan") — peran bawaan: admin, manager, finance;
-modul `ai_finance`. Sakelar akun `classes` diubah lewat `PATCH /api/users/{id}` oleh pemegang `ai_finance.configure`.
+modul `assistant`. Sakelar akun `classes` diubah lewat `PATCH /api/users/{id}` oleh pemegang `ai.configure`.
 
 ### Layar
 
@@ -192,7 +192,7 @@ Tampil menurut `can(perms, "ai_finance", "view")`, bukan daftar nama peran.
 
 ## Uji penerimaan
 
-Persiapan bersama: akun `fin` (Tanpa Acuan + `ai_finance.view/create` + `ar_receipt.view/create` + `order.view/update`,
+Persiapan bersama: akun `fin` (Tanpa Acuan + `ai.view` + `ai_finance.view/create` + `ar_receipt.view/create` + `order.view/update`,
 sakelar akun `enabled` dan `classes: ["B"]`, PT `ent_ksc`); `ai.tindakan_uang_masuk` = ya untuk `ent_ksc` saja;
 pelanggan **C** di `ent_ksc` dengan satu pesanan bersisa 8.000.000; pelanggan **D** di `ent_kanda`. Kartu disiapkan
 lewat `POST /api/ai/tools/prepare_action`; percakapan memakai `ScriptedProvider`.

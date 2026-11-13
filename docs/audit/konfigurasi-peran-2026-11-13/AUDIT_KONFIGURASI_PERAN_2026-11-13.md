@@ -16,11 +16,12 @@ mudah dipakai?*
 | Apakah mencabut semua izin sebuah peran mencabut wewenang menyetujui? | **Tidak.** Peran kustom beracuan Manajer dengan nol izin tetap bisa menyetujui PO Rp250 juta dan tagihan pemasok Rp75 juta | Dijalankan (PR-05) |
 | Apakah perubahan izin peran bawaan bertahan? | **Tidak selalu.** Sebagian perubahan ditimpa ulang setiap server dinyalakan | Dijalankan (PR-12) |
 | Apakah aman mendelegasikan kelola akun ke peran kustom? | **Tidak.** Peran kustom yang diberi kelola akun bisa menjadikan dirinya Admin dan mereset sandi Admin | Dijalankan (PR-02) |
+| Apakah layarnya sendiri bekerja bila dipakai? | **Ya untuk alur utamanya.** Lewat peramban: ubah pengaturan per PT, riwayat, kembalikan ke nilai grup, penolakan nilai tak sah, buat peran, buat akun, masuk sebagai peran baru — 18 dari 21 langkah sesuai harapan; tiga sisanya temuan (KF-01 terlihat di layar, PR-06, PR-16) | Dijalankan (§5a) |
 | Apakah setiap layar punya endpoint-nya? | **Ya**, 1.790 panggilan API di layar diperiksa; satu yang tidak punya rute, dan satu rute selalu galat | Statik + dijalankan (§5) |
 | Apakah lengkap dan masuk akal? | **Belum.** 72 nilai bisnis masih ditulis mati di kode; penomoran dokumen dan sebagian besar aturan persetujuan tidak bisa diatur; 5 isian master PT tidak dibaca apa pun | Dibaca (§4) |
 | Apakah bahasanya mudah? | **Belum merata.** 51 label lebih dari 45 karakter, 63 pengaturan tidak menjelaskan arti nilai 0, 12 label memuat istilah Inggris/teknis; penjaga bahasa repo mencatat 113 teks antarmuka belum berbahasa Indonesia | Dihitung (§2.3) |
 
-Jumlah temuan: Pusat Pengaturan 13 (`KF`), peran dan izin 15 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
+Jumlah temuan: Pusat Pengaturan 13 (`KF`), peran dan izin 16 (`PR`), konfigurasi perusahaan 36 (`KP`), ditambah temuan
 layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX` 28 butir).
 
 ## 1. Cara kerja dan batas
@@ -29,11 +30,13 @@ layar dari dua tinjauan baca di lampiran (`PR-UX` 44 butir; `KF-UX` 28 butir).
 |---|---|---|
 | **Aplikasi utuh dijalankan** di database tiruan dalam memori (seluruh `server.app`, proses awal, seed), lalu endpoint dipanggil lewat HTTP di dalam proses | Pusat Pengaturan (310 kunci), peran × rute baca (16 × 786), 3 akun × rute tulis (962), uji kenaikan hak, uji persetujuan | `bukti/t1_config.py`, `t2_roles.py`, `t3_escalation.py`, `t3b_eskalasi_akun.py`, `t9_tulis_tanpa_izin.py`, `t10_setuju_tanpa_izin.py` |
 | **Inventaris statik** dengan pengurai sintaks | 1.749 endpoint dan jenis gerbangnya; 336 pasangan izin yang dipakai kode vs 381 di matriks; 1.790 panggilan API layar vs rute | `bukti/inv_endpoints.py`, `fe_be_routes.py` |
+| **Uji jalan layar** di peramban tanpa kepala, terhadap aplikasi utuh di port nyata | 21 langkah di Pusat Pengaturan dan Peran & Hak Akses; sapuan buka-layar | `bukti/serve_mem.py`, `ui_pengaturan_peran.js`, `ui_sapuan_layar.js`, `bukti/layar/` |
 | **Gate statik repo** | `bash scripts/gate.sh --quick` | `docs/blueprint/03_LINGKUNGAN_UJI.md` §4 |
 | **Membaca kode** (tiga tinjauan) | Bahasa dan pengelompokan pengaturan; layar peran dan gerbang peran di layar; konfigurasi perusahaan lain | `lampiran/A_*.md`, `B_*.md`, `C_*.md` |
 
-Yang **tidak** dilakukan: membuka layar di peramban; menguji indeks unik dan permintaan bersamaan; memeriksa data
-nyata. Rute tulis diuji **gerbangnya** (siapa yang ditolak), dengan isi permintaan buatan dari skema; **hasil kerja** tiap
+Yang **tidak** dilakukan: menguji indeks unik dan permintaan bersamaan; memeriksa data nyata. Layar dibuka di peramban
+hanya untuk Pusat Pengaturan, Peran & Hak Akses, dan sapuan buka-layar (§5a); penilaian layar lain di lampiran tetap dari
+membaca kode. Rute tulis diuji **gerbangnya** (siapa yang ditolak), dengan isi permintaan buatan dari skema; **hasil kerja** tiap
 rute tulis hanya diuji untuk pengaturan, peran, akun, persetujuan PO dan tagihan pemasok, dan tiga temuan keuangan di §5.
 25 dari 962 rute tulis tidak tercapai gerbangnya (`LAMPIRAN_DAFTAR.md` §I.3). Database tiruan hanya berisi seed awal (4 akun, 3 PT), jadi rute yang butuh dokumen dijawab 404
 dan dianggap "lolos gerbang".
@@ -181,6 +184,40 @@ Dua temuan dari riset modul (`docs/finance/rencana-2026-11-13/11_TEMUAN_TAMBAHAN
 | **TX-01** | `bukti/t7_tx01_faktur_pengganti.py`: terbitkan faktur pajak (PPN Rp110.000), lalu terbitkan pengganti | Rekap PPN keluaran masa itu menjadi Rp220.000 (2 faktur), seharusnya Rp110.000 |
 | **CR-01** | `bukti/t8_cr01_plafon_oleh_sales.py`: akun Sales mengubah pelanggannya sendiri | Plafon Rp5.000.000 → Rp900.000.000 dan status terblokir → aktif: 200 |
 
+## 5a. Uji jalan layar (peramban)
+
+Aplikasi utuh dinyalakan di port nyata (`bukti/serve_mem.py`: backend di database tiruan; frontend `craco start` dari
+salinan `frontend/`), lalu dijalankan lewat peramban tanpa kepala. Skrip: `bukti/ui_pengaturan_peran.js`; hasil mentah
+dan tangkapan layar: `bukti/layar/`.
+
+| # | Langkah lewat layar | Yang terlihat | Dicek ke API | Hasil |
+|---|---|---|---|---|
+| A1 | Admin membuka Pusat Pengaturan | 23 kelompok, kartu tampil, tidak ada panggilan API yang gagal | registry 310 kunci | Sesuai |
+| A2 | Mengubah "boleh kirim sebagian" untuk satu PT (sakelar → alasan → Simpan) | "Ya / Aktif" → "Tidak / Mati", lencana "nilai Sukacita", pemberitahuan "Tersimpan dan langsung berlaku di mesin." | PT itu `false`, PT lain tetap `true` | Sesuai |
+| A3 | Muat ulang halaman | Nilai tetap | — | Sesuai |
+| A4 | Membuka riwayat kartu | Perubahan dan alasannya tampil | — | Sesuai |
+| A5 | "Kembalikan ke global" | Nilai kembali "Ya / Aktif" | PT itu kembali `true` | Sesuai |
+| A6 | Mengisi denda 1.007 % (batas 100) | Ditolak; pesannya "'ar.denda_rate_pct_per_month' maksimum 100 (diberi 1007.0)" | Nilai tidak berubah | Sesuai; **pesan memakai kunci teknis** (KF-UX) |
+| A7 | Menyimpan pengaturan berisiko tinggi tanpa alasan | Ditolak: "… berisiko tinggi — alasan perubahan WAJIB diisi." | Nilai tidak berubah | Sesuai |
+| B1 | Membuat peran "Staf Penagihan Uji" (piutang: Kelola; pelanggan dan Pusat Persetujuan: Lihat) | Ringkasan "28 Tidak ada · 2 Lihat saja · 1 Kelola penuh", layar konfirmasi merinci tiga modul, pratinjau menu 9 layar | Peran tersimpan tanpa peran acuan | Sesuai |
+| B2 | Membuat akun dengan peran itu | Akun tersimpan | Peran dan PT asal benar | Sesuai |
+| C1 | Masuk sebagai akun itu | Menu = pratinjau di editor (Pusat Persetujuan, Pelanggan, Piutang, Uang Muka Pelanggan, Rencana Bayar, Saldo Kredit, Pajak, Pengaturan › Keuangan & Pajak, Profil Saya) | — | Sesuai. Mendarat di "Profil Saya", bukan meja kerja (PR-06) |
+| C2 | Kerangka aplikasi saat masuk | Tidak ada pesan galat | `GET /api/finance/posting-failures/count` 403 dan `GET /api/sales/keep-pending` 403 di **setiap** layar; `GET /api/hr/employees/me` 404 | **Temuan PR-16** |
+| C3 | Membuka Piutang dan Pelanggan | Layar terbuka, tanpa panggilan gagal | — | Sesuai |
+| C3 | Membuka Pusat Persetujuan | Peringatan jujur: "Daftar ini belum lengkap: 6 kategori tidak bisa ditampilkan untuk peran Anda (…)" | 6 antrean dijawab 403 | Layar menangani dengan benar; editor peran tidak memberi tahu bahwa modul "Pusat Persetujuan" saja tidak membuka antrean apa pun (PR-UX) |
+| C3 | Mengetik alamat Pusat Pengaturan, Buku Besar, Badan Usaha & Akses | Dikembalikan ke "Profil Saya" | Tidak ada panggilan | Sesuai |
+| D1 | Peran dengan izin "kelola pengaturan" membuka Pusat Pengaturan | 25 dari 25 kartu terkunci, bertuliskan "Hanya admin yang boleh mengubah setting ini." | — | **KF-01 terbukti di layar** (`bukti/layar/D1_pengelola_pengaturan.png`) |
+
+Ringkasnya: alur utama kedua layar **bekerja** dari klik sampai tersimpan, dan pratinjau menu di editor peran cocok dengan
+menu yang didapat akun. Yang tidak bekerja adalah yang sudah ditemukan lewat API (KF-01, PR-06) ditambah satu temuan
+baru:
+
+| ID | Tingkat | Temuan | Bukti |
+|---|---|---|---|
+| PR-16 [dijalankan] | Rendah | Kerangka aplikasi memanggil dua endpoint di setiap layar tanpa melihat izin peran, sehingga peran yang tidak memegang izinnya menerima penolakan berulang (senyap, tidak tampil ke pengguna, tetapi memenuhi log dan menutupi penolakan yang sungguhan) | `bukti/ui_pengaturan_peran.js` langkah C2 |
+
+Yang belum diuji lewat layar: layar lain di luar dua bidang ini (lihat sapuan di bawah), tampilan di HP, dan pembaca layar.
+
 ## 6. Garis dasar gate statik repo
 
 `bash scripts/gate.sh --quick` pada `dca195b`: 13 gate merah, di antaranya penegak auth, penjaga atomisitas, penjaga
@@ -202,6 +239,7 @@ Setiap temuan dipegang tepat satu unit di `docs/blueprint/INDEKS_UNIT.md`:
 | PR-06 | PR-T4 |
 | PR-07, PR-08 | PR-T5 |
 | PR-09, temuan `PR-UX` | PR-T6 |
+| PR-16 | PR-T7 |
 | PR-11 | PR-T7 |
 | KF-05, KF-06, KP-13, KP-29, KP-30 | KF-T2 |
 | KF-04, KF-09, KF-10, KF-11, KP-11 | KF-T3 |

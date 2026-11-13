@@ -152,7 +152,9 @@ dengan satu baris Rp 5.000.000 jatuh tempo 2026-10-01, belum dibayar; tanggal uj
 ## Asumsi dan risiko
 
 - `ASUMSI:` lapisan pelanggan diambil dari profil kredit per (pelanggan, PT), bukan dari lapisan `customer` resolver,
-  karena lapisan resolver tidak mengenal PT dan akan menjadi penyunting kedua untuk angka yang sama.
+  karena lapisan resolver tidak mengenal PT dan akan menjadi penyunting kedua untuk angka yang sama. Akibatnya layar
+  lapisan pelanggan yang dibuat KF-T5 tidak lagi memuat lima kunci denda ini (hilang sendiri karena `scopes` berubah);
+  nilai yang sudah diisi lewat layar itu dipindahkan skrip migrasi.
 - `ASUMSI:` bebas denda wajib bertanggal berakhir (rancangan: "alasan + berlaku sampai"); tidak ada bebas selamanya.
 - `ASUMSI:` mode bawaan tetap `draft` (K-30: "sama dengan hari ini").
 - `RISIKO:` setelah job memindai semua jadwal, jumlah nota draf bisa naik tajam pada putaran pertama. Nota draf tidak

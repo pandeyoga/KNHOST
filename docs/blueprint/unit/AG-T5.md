@@ -82,15 +82,16 @@ rekening milik PT kartu yang dibaca dari `/api/bank-accounts`.
 Endpoint baru `POST /api/ai/actions/{id}/second` — isi `{decision: "approve" | "reject", reason}`:
 
 1. `require_permission(request, "ai_finance", "approve")`; `C` di `classes` akun; PT kartu = PT aktif.
-2. `await tolak_bila_pelaku_sama("asisten_uang_keluar", kartu, aktor, entity_id)` (pengecualian Admin mengikuti
-   `kontrol.admin_boleh_sendiri`, diurus pembantu itu).
+2. `await tolak_bila_pelaku_sama("asisten_uang_keluar", kartu, aktor, entity_id, nominal=plan.amount,
+   pengaju=[first_by.id])` (pengecualian Admin mengikuti `kontrol.admin_boleh_sendiri`, diurus pembantu itu).
 3. Orang kedua harus memegang **izin pintu** tindakan itu; bila tidak → 403 dan kartu tetap menunggu.
 4. `reject` → `dismissed` dengan `second_reason`. `approve` → klaim atomik `awaiting_second → running`, baca ulang
    sidik, lalu satu panggilan tulis **dengan sesi orang kedua** (`SelfApi.from_request`) dan `Idempotency-Key` = id
    kartu. Hasil seperti AG-T3.
 
-Bila pintu sendiri menuntut dua orang (mis. `kontrol.bayar_hutang.min_orang` = 2) dan menjawab "menunggu persetujuan",
-kartu berakhir `confirmed` dengan `result.message` dari pintu; persetujuan dokumen dilanjutkan di layarnya.
+Bila pintu sendiri menuntut dua orang dan menjawab 202 `{"status": "menunggu_orang_kedua", …}` (jurnal manual
+sesudah KF-T6), kartu berakhir `confirmed` dengan `result.message` "Usulan jurnal menunggu persetujuan di layar
+Jurnal" dan `result.document` menunjuk usulan itu; persetujuannya dilanjutkan di layarnya.
 
 `GET /api/ai/actions?box=others` mengembalikan kartu `awaiting_second` di PT aktif yang boleh diputus pengguna.
 `QUEUES` mendapat baris `("ai_card_second", "Tindakan asisten menunggu orang kedua", "tanya-kn",
@@ -99,7 +100,7 @@ kartu berakhir `confirmed` dengan `result.message` dari pintu; persetujuan dokum
 | Keadaan | Kode | Pesan |
 |---|---|---|
 | Sakelar akun / PT mati | 403 / 409 | "Tindakan uang keluar dan jurnal lewat asisten belum dinyalakan untuk akun Anda." / "…untuk {nama PT}." |
-| Pembuat mencoba menjadi orang kedua | 403 | "Kartu ini harus disetujui orang lain, bukan pembuatnya." |
+| Pembuat mencoba menjadi orang kedua | 403 | Pesan baku pembantu KF-T6: "{Label aksi} harus diputuskan orang lain: Anda yang mengajukannya. …" |
 | Orang kedua tanpa izin pintu | 403 | "Anda belum punya akses untuk {tindakan}. Minta Admin menambahkan akses '{nama modul}'." |
 | Kartu bukan `awaiting_second` | 409 | "Kartu ini tidak sedang menunggu orang kedua." |
 | Jurnal tidak seimbang (alat) | — | "Jurnal tidak seimbang: debit {x} ≠ kredit {y}." |
@@ -136,14 +137,16 @@ pemeriksaan larangan ke **semua** panggilan tulis `SelfApi` (termasuk tindakan g
 
 ### Pengaturan
 
-| key | type · default · batas | scopes | label | help · impact · example | risk · permission · consumers |
+| key | type · default | scopes | label | help · impact · example | risk · permission · consumers |
 |---|---|---|---|---|---|
-| `ai.tindakan_uang_keluar` | `bool` · tidak | `("global", "entity")` | "Izinkan asisten menyiapkan uang keluar dan jurnal" | "Menyala = pengguna yang dinyalakan boleh menyetujui kartu bayar pemasok, kas manual, dan jurnal untuk PT ini." · "Mati = kartu golongan itu tidak bisa disiapkan." · "Ya untuk PT A saja" | `high`, wajib alasan · `("ai_finance", "configure")` · `services/ai_cards.py:prepare` |
-| `kontrol.asisten_uang_keluar.min_orang` | `enum` 1 · 2 · bawaan 1 | `("global", "entity")` | "Kartu uang keluar asisten: jumlah orang" | "1 = yang menyetujui kartu boleh menjalankannya sendiri; 2 = harus disetujui orang lain." · "2 = setiap kartu uang keluar dan jurnal menunggu orang kedua." · "2" | `high`, wajib alasan · izin keluarga `kontrol.*` dari KF-T6 · `services/ai_cards.py:decide` |
-| `kontrol.asisten_uang_keluar.batas_nominal` | `money` · 0 · 0–tanpa batas · rupiah | `("global", "entity")` | "Kartu uang keluar asisten: wajib dua orang di atas" | "Di atas nilai ini selalu dua orang walau jumlah orang = 1. 0 = tidak dipakai." · "Kartu besar menunggu orang kedua." · "25.000.000" | sama |
+| `ai.tindakan_uang_keluar` (group `asisten-analitik`) | `bool` · tidak | `("global", "entity")` | "Izinkan asisten menyiapkan uang keluar dan jurnal" | "Menyala = pengguna yang dinyalakan boleh menyetujui kartu bayar pemasok, kas manual, dan jurnal untuk PT ini." · "Mati = kartu golongan itu tidak bisa disiapkan." · "Ya untuk PT A saja" | `high`, wajib alasan · `("ai", "configure")` · `services/ai_cards.py:prepare` |
 
-Dua kunci `kontrol.*` adalah milik keluarga yang lahir di KF-T6 (`02` §2.3). Bila KF-T6 sudah mendaftarkannya, unit
-ini hanya menambah `consumers`; bila belum, didaftarkan di sini persis seperti tabel.
+Kontrol dua orang: aksi `asisten_uang_keluar` ditambahkan ke `KONTROL_AKSI` di `config_catalog_kontrol.py` (lahir di
+KF-T6, yang menyerahkan aksi ini ke unit ini): `label` "Tindakan uang keluar dan jurnal lewat asisten", `awal` "1",
+`punya_nominal` ya. Katalog itu yang mendaftarkan `kontrol.asisten_uang_keluar.min_orang` (enum "1" · "2", bawaan
+"1") dan `kontrol.asisten_uang_keluar.batas_nominal` (`money`, bawaan 0) dengan grup, label, bantuan, dan izin
+keluarga `kontrol.*`; `consumers` = `services/ai_cards.py:decide`. Contoh untuk `example`: "2 → kartu bayar pemasok
+yang disetujui Rina menunggu orang lain"; "25.000.000 → kartu di atas Rp 25 juta menunggu orang kedua".
 
 ### Izin dan peran
 
@@ -153,7 +156,8 @@ ini hanya menambah `consumers`; bila belum, didaftarkan di sini persis seperti t
 | `ai_finance.post` | Asisten Keuangan · Tindakan jurnal | admin, manager |
 | `ai_finance.approve` | Asisten Keuangan · Menyetujui sebagai orang kedua | admin, manager |
 
-Modul `ai_finance`; `nav` tetap kosong. Tanpa sakelar akun `C` dan sakelar PT, izin ini belum berakibat apa pun.
+Ketiganya di modul `assistant` (sumber daya `ai_finance`). Tanpa sakelar akun `C` dan sakelar PT, izin ini belum
+berakibat apa pun.
 
 ### Layar
 
@@ -179,7 +183,7 @@ dengan sakelar akun `C`; `ai.tindakan_uang_keluar` = ya untuk `ent_ksc`; tagihan
 | U1 | B | — | `fin` menyiapkan `vendor_bill_pay` B1 7.000.000 | Kartu `pending`; `plan.rows` "Sisa hutang" 7.000.000 → 0; `confirm_text` "7000000"; tidak ada kas keluar |
 | U2 | B | Kartu U1 | `fin` menyetujui dengan alasan dan ketik ulang | 200 `confirmed`; satu `cash_transactions` keluar 7.000.000 ber-`ai_card_id`; B1 terbayar 7.000.000 |
 | U3 | B | `min_orang` = 2 untuk `ent_ksc`; kartu baru | `fin` menyetujui | 200 `awaiting_second`; kas keluar 0; notifikasi untuk `mgr`, tidak untuk `fin` dan `fin2`; antrean `ai_card_second` = 1 |
-| U4 | B | Lanjutan U3 | `fin` memanggil `POST …/second` | 403 "Kartu ini harus disetujui orang lain, bukan pembuatnya."; status tetap |
+| U4 | B | Lanjutan U3 | `fin` memanggil `POST …/second` | 403 dengan pesan "… harus diputuskan orang lain: Anda yang mengajukannya. …"; status tetap |
 | U5 | B | Lanjutan U3 | `fin2` memanggil `…/second` | 403 (tanpa `ai_finance.approve`); status tetap |
 | U6 | B | Lanjutan U3 | `mgr` menyetujui | 200 `confirmed`; tepat satu kas keluar; `first_by` = `fin`, `second_by` = `mgr` |
 | U7 | B | `min_orang` = 1, `batas_nominal` = 5.000.000 untuk `ent_ksc`; tagihan B2 4.000.000 | `fin` menyetujui kartu B1 (7.000.000) dan kartu B2 | B1 → `awaiting_second` (7.000.000 > 5.000.000); B2 → `confirmed` |
@@ -222,7 +226,7 @@ layar pop-up yang menyebut nominal, PT, dan nama pembuat.
 
 - Status draf untuk jurnal manual (rancangan `08` §4.3 "tahap antara"): tidak dibangun; kartu jurnal langsung memanggil
   pintu yang ada dan tunduk pada `kontrol.jurnal_manual.min_orang` milik pintu itu (KF-T6).
-- Pembantu `services/dual_control.py` dan layar pengatur keluarga `kontrol.*` → KF-T6.
+- Pembantu `services/dual_control.py`, katalog dan layar pengatur keluarga `kontrol.*` → KF-T6.
 - Input dari berkas unggahan (bukti transfer, faktur pemasok, rekening koran): menunggu endpoint lampiran.
 - Bayar biaya masuk barang (landed cost), bayar reimburse, bayar gaji lewat asisten: tidak ada di rancangan.
 

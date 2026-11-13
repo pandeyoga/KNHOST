@@ -151,7 +151,8 @@ Penjaga baru `scripts/guardrails/verify_payment_vocab.py` (pola `scripts/guardra
 
 ### Pengaturan
 
-Tidak ada kunci baru. Aksi `ubah_rekening` (`kontrol.ubah_rekening.min_orang`, bawaan 1) milik KF-T6.
+Tidak ada kunci baru di luar keluarga kontrol: aksi `ubah_rekening` ditambahkan unit ini ke `KONTROL_AKSI` (katalog
+kontrol hasil KF-T6) — label "Ubah rekening kas/bank", kelompok C, awal "1", tanpa nominal.
 
 ### Izin dan peran
 
@@ -222,6 +223,8 @@ Tidak ada kunci baru. Aksi `ubah_rekening` (`kontrol.ubah_rekening.min_orang`, b
 - `ASUMSI:` rekening lama diberi keempat peruntukan dan cara bayar menurut jenisnya, supaya tidak ada yang tiba-tiba
   tidak bisa dipakai; pemilik mempersempitnya lewat layar (`01` §C).
 - `ASUMSI:` nominal untuk `butuh_orang_kedua("ubah_rekening", …)` selalu 0 (perubahan rekening tidak bernilai uang).
+- `ASUMSI:` KF-T6 bukan prasyarat di indeks. Bila `services/dual_control.py` belum ada, perubahan rekening langsung
+  diterapkan dan dicatat `diterapkan` (sama dengan bawaan satu orang); U9 ditunda dan dicatat sebagai sisa pekerjaan.
 - `RISIKO:` endpoint lama yang menerima kata tak dikenal kini menolak (400). Kata lama yang sah sudah menjadi alias;
   laporan memuat kueri nilai `method` berbeda yang tersimpan di tiap koleksi supaya alias yang kurang terlihat.
   Membatalkan: kembalikan `normalize` menjadi peneruskan nilai apa adanya.

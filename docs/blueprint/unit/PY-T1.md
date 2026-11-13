@@ -230,7 +230,8 @@ gaji", "masukan"); `scripts/verify_contract.py`.
 
 - Hitung ulang, batal, void, izin terpisah, setoran kewajiban, tanggal jurnal → PK-22 (sudah).
 - Riwayat kompensasi dan komponen tetap per karyawan → PY-T2. Prorata, potongan absen, lembur dari pengaturan, dasar
-  BPJS dan lembur dari tanda komponen, usulan THR dari masa kerja → PY-T3. Tabel tarif → PK-46 (H4).
+  BPJS dan lembur dari tanda komponen → PY-T3. Tabel tarif → PK-46 (H4). Usulan THR dari masa kerja tidak dibangun:
+  masukan THR diisi lewat antrean (manual).
 - Masukan dari Lembar Insentif dan mematikan komisi otomatis → KM-T4. Sambungan otomatis dari uang muka karyawan
   (K-40) dan lembur terlambat: antreannya siap, pengisinya tidak dibangun di sini; sementara lewat isian manual.
 - Bayar dengan rekening dan daftar transfer → PY-T4. Slip di swalayan → PY-T5. Rekap pajak pindah tab → MN-T2.

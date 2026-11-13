@@ -130,8 +130,19 @@ kolom "Gate" di `STATUS.md`).
 
 ## 5. Uji layar
 
-Tidak ada uji layar yang dijalankan di sesi perancangan; seluruh penilaian layar berasal dari membaca kode. Untuk butir
-bertanda "uji jalan layar": jalankan di lingkungan A dengan peramban (Playwright tersedia di banyak lingkungan agen),
-login sebagai peran yang disebut, ikuti langkahnya, dan simpan tangkapan layar di laporan unit.
+Di sesi perancangan uji layar dijalankan untuk Pusat Pengaturan dan Peran & Hak Akses (21 langkah) serta sapuan
+buka-layar; penilaian layar lain berasal dari membaca kode. Cara yang dipakai, tanpa Docker:
+
+```bash
+cd docs/audit/konfigurasi-peran-2026-11-13/bukti
+python serve_mem.py &                                   # backend :8001, database tiruan, sandi demo12345
+cp -r <root-repo>/frontend /tmp/fe && cd /tmp/fe && yarn install --registry https://registry.npmjs.org
+REACT_APP_BACKEND_URL=http://localhost:8001 BROWSER=none PORT=3000 yarn start:dev &
+node <bukti>/ui_pengaturan_peran.js /tmp/tangkapan       # contoh skenario; tiap langkah mencetak OK/BEDA/GAGAL
+```
+
+Pola yang dipakai skrip itu: tiap layar punya tautan `/?view=<id>`; hampir semua tombol punya `data-testid`; tiap langkah
+membandingkan yang tampil di layar dengan jawaban API. Untuk butir bertanda "uji jalan layar": pakai cara ini atau
+lingkungan A, login sebagai peran yang disebut, ikuti langkahnya, dan simpan tangkapan layar di laporan unit.
 
 Uji komponen frontend: `yarn test --watchAll=false <pola>` di container frontend (belum dijalankan di sesi perancangan).
