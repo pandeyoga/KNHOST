@@ -4682,6 +4682,28 @@ async def layer_gl_audit_2026_09_invariants(db):
         results["pass"] += 1
         line("PASS", G, f"INV-GL-REV-01: {n_rev} SO terkirim — semua berjurnal pendapatan")
 
+    # PK-10 (GL-01) — INV-GL-REV-02 (FAIL): satu jurnal hanya dibalik SEKALI (siapa pun pembaliknya), dan jurnal
+    # bertipe pembalik/penutup tidak pernah ber-`reversed_by_entry_id`.
+    by_target = defaultdict(list)
+    async for r in db.journal_entries.find({"status": {"$ne": "void"}, "ref.reverses_entry_id": {"$nin": [None, ""]}},
+                                           {"_id": 0, "number": 1, "ref": 1}):
+        tgt = (r.get("ref") or {}).get("reverses_entry_id")
+        if tgt:
+            by_target[tgt].append(r.get("number"))
+    double = {t: n for t, n in by_target.items() if len(n) > 1}
+    rev_reversed = [r.get("number") async for r in db.journal_entries.find(
+        {"status": {"$ne": "void"}, "reversed_by_entry_id": {"$nin": [None, ""]},
+         "$or": [{"source_type": {"$in": ["closing", "reversal"]}},
+                 {"source_type": {"$regex": "(_reversal|_void)$"}}]}, {"_id": 0, "number": 1})]
+    if double or rev_reversed:
+        results["fail"] += 1
+        nomor = [f"{t}: {', '.join(map(str, n))}" for t, n in list(double.items())[:4]] + rev_reversed[:4]
+        line("FAIL", R, f"INV-GL-REV-02: {len(double)} jurnal dibalik lebih dari sekali · "
+                        f"{len(rev_reversed)} jurnal pembalik ikut dibalik", str(nomor))
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-GL-REV-02: {len(by_target)} jurnal berpembalik — masing-masing tepat satu pembalik")
+
 
 
 def _layer_registry():

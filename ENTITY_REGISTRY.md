@@ -1188,6 +1188,15 @@ Key Fields:
   status            enum    posted | void (hanya manual yg boleh di-void)
   entity_id         string  FK entities.id
   created_by / created_at / updated_at
+  -- Penanda pembalik (PK-10; satu aturan untuk pembalik manual, pembatalan dokumen, batal kas/deposit) --
+  reversed_by_entry_id      string  (di jurnal ASAL) id pembalik; "pending" selama klaim
+  reversed_by_entry_number  string  nomor pembalik
+  reversal_id               string  = reversed_by_entry_id (nama lama, tetap ditulis)
+  reversed / reversed_at    bool / string
+  ref.reverses_entry_id     string  (di jurnal PEMBALIK) id jurnal asal
+  Tipe pembalik: source_type `reversal`, berakhiran `_reversal` atau `_void` → tidak bisa dibalik
+  (`gl_service.is_reversal_type`). Jurnal sudah dibalik: `gl_service.reversal_of`.
+  Invarian: INV-GL-REV-02 (`scripts/verify_data_integrity.py`) — satu jurnal ≤ 1 pembalik bukan void.
 Laporan derived: Neraca Saldo (GET /api/gl/trial-balance) & Buku Besar per-akun
   (GET /api/gl/accounts/{code}/ledger). KPI: GET /api/gl/summary.
 ℹ️ Endpoint: GET/POST /api/gl/journal, GET /api/gl/journal/{id},

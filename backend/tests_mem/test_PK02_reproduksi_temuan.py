@@ -25,7 +25,6 @@ async def _kas(eid, sid, arah, nominal, tanggal, db):
     return await gl.post_cash_transaction(txn)
 
 
-@pytest.mark.xfail(strict=True, reason="GL-01 — jurnal bisa dibalik dua kali lewat pembalik manual dan void dokumen")
 async def test_PK02_GL01_dibalik_dua_kali(db):
     eid = await pt_uji("G01")
     hari_ini = now_iso()[:10]
@@ -70,7 +69,6 @@ async def test_PK02_GL05_tanggal_buku_wib(aplikasi):
     assert cocok(nov["opex_total"], 1 * JT), f"beban Nov {nov['opex_total']:,.2f}"
 
 
-@pytest.mark.xfail(strict=True, reason="GL-07 — jurnal manual selisih 1 sen diterima")
 async def test_PK02_GL07_selisih_satu_sen(aplikasi):
     from schemas_finance import JournalEntryCreate
     eid = await pt_uji("G07")

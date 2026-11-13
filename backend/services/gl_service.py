@@ -16,7 +16,7 @@ Normal balance: asset & expense = debit; liability, equity, income = credit.
 """
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pymongo.errors import DuplicateKeyError
 
@@ -534,6 +534,11 @@ async def effective_accounts(codes: Optional[List[str]] = None,
     return out
 
 
+def _sen(x: Any) -> int:
+    """PK-10 (GL-07) — rupiah → sen bulat. Seimbang dibandingkan dalam sen, bukan pecahan bertoleransi."""
+    return int(round(float(x or 0) * 100))
+
+
 async def _validate_entry_lines(norm: List[Dict[str, Any]], entity_id: Optional[str] = None) -> None:
     """FN-15 — validator pusat untuk SEMUA autopost & manual: angka finite, non-negatif,
     satu sisi per baris, seimbang setelah pembulatan, akun ada + aktif + boleh diposting."""
@@ -552,7 +557,8 @@ async def _validate_entry_lines(norm: List[Dict[str, Any]], entity_id: Optional[
             raise JournalValidationError("Baris jurnal tanpa kode akun")
     td = round(sum(ln["debit"] for ln in norm), 2)
     tc = round(sum(ln["credit"] for ln in norm), 2)
-    if td <= 0 or abs(td - tc) > 0.005:
+    sd, sc = sum(_sen(ln["debit"]) for ln in norm), sum(_sen(ln["credit"]) for ln in norm)
+    if sd <= 0 or sd != sc:
         raise JournalValidationError(f"Jurnal tidak seimbang (debit {td:,.2f} ≠ kredit {tc:,.2f})")
     codes = sorted({ln["account_code"] for ln in norm})
     accs = await effective_accounts(codes, entity_id)  # FN-06 — resolver akun yang sama dgn laporan
@@ -698,14 +704,14 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
     for l in lines:
         if l["debit"] < 0 or l["credit"] < 0:
             raise ValueError("Nilai debit/kredit tidak boleh negatif.")
-        if l["debit"] > EPS and l["credit"] > EPS:
+        if _sen(l["debit"]) > 0 and _sen(l["credit"]) > 0:
             raise ValueError("Satu baris hanya boleh debit ATAU kredit.")
-        if l["debit"] <= EPS and l["credit"] <= EPS:
+        if _sen(l["debit"]) == 0 and _sen(l["credit"]) == 0:   # PK-10 — baris 0,01 bukan "kosong"
             raise ValueError("Setiap baris harus punya nilai debit atau kredit.")
     total_debit = round(sum(l["debit"] for l in lines), 2)
     total_credit = round(sum(l["credit"] for l in lines), 2)
-    if abs(total_debit - total_credit) > EPS:
-        raise ValueError(f"Jurnal tidak seimbang: debit {total_debit:,.2f} ≠ kredit {total_credit:,.2f}.")
+    # PK-10 (GL-07) — seimbang lewat VALIDATOR PUSAT (sen bulat), sebelum nomor jurnal diambil.
+    await _validate_entry_lines(lines, eid)
     # FASE E-1 (E1.10) — jurnal manual masuk buku badan usaha konteks bila tak disebut (eid di atas).
     number = await next_doc_number("journal_entries", "number", "JE-", entity_id=eid)
     doc = {
@@ -798,7 +804,7 @@ async def void_entry(entry_id: str, actor: Dict[str, Any],
         raise ValueError("Jurnal sudah di-void.")
     if je.get("source_type") != "manual":
         raise ValueError("Hanya jurnal manual yang dapat di-void langsung (jurnal otomatis mengikuti dokumen sumber).")
-    if je.get("reversed_by_entry_id"):  # G3 D4-GL-01 — sudah/sedang dibalik → anulir = pembatalan ganda
+    if je.get("reversed_by_entry_id") or await reversal_of(je):  # G3 D4-GL-01 / PK-10 — semua mekanisme pembalik
         raise ValueError("Jurnal sudah/sedang dibalik — tidak bisa dianulir lagi.")
     # FN-09 — void mengubah angka periode jurnal itu: penjaga periode sama dengan posting.
     plu = await enforce_closed_period_guard(je.get("entity_id", ""), je.get("date", ""),
@@ -835,34 +841,110 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
         raise ValueError("Tanggal jurnal pembalik wajib diisi (YYYY-MM-DD).")
     if je.get("status") == "void":
         raise ValueError("Jurnal sudah dianulir — tidak bisa dibalik.")
-    if je.get("source_type") in ("closing", "reversal"):
+    if is_reversal_type(je.get("source_type")):
         raise ValueError("Jurnal penutup / jurnal pembalik tidak dapat dibalik.")
-    if je.get("reversed_by_entry_id"):
-        raise ValueError(f"Jurnal sudah dibalik oleh {je.get('reversed_by_entry_number') or je['reversed_by_entry_id']}.")
+    prior = await reversal_of(je)
+    if prior:
+        raise ValueError(f"Jurnal sudah dibalik oleh {prior.get('number') or prior.get('id')}.")
     if d < (je.get("date") or "")[:10]:
         raise ValueError("Tanggal pembalik tidak boleh sebelum tanggal jurnal asli.")
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
+    return await _reverse_once(
+        je, source_type="reversal", source_id=entry_id, date=f"{d}T00:00:00",
+        description=f"Pembalik {je.get('number', '')}: {reason}", created_by=actor.get("name", "system"),
+        source_label=f"Pembalik {je.get('number', '')}", line_desc=f"Pembalik {je.get('number', '')}",
+        reason=reason, extra_ref={"reason": reason}, strict=True)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PK-10 (GL-01) — SATU JALUR PEMBALIK untuk semua mekanisme (manual, batal dokumen, batal kas, reklas deposit)
+# ═════════════════════════════════════════════════════════════════════════════
+_LEGACY_REVERSAL_TYPE = {"cash_transaction": "cash_transaction_void", "ar_receipt_deposit": "ar_receipt_deposit_void"}
+
+
+def is_reversal_type(source_type: Optional[str]) -> bool:
+    """Jurnal bertipe pembalik/penutup tidak bisa dibalik lagi."""
+    st = source_type or ""
+    return st in ("closing", "reversal") or st.endswith("_reversal") or st.endswith("_void")
+
+
+async def reversal_of(je: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Jurnal pembalik yang SUDAH ada untuk `je`, siapa pun yang membuatnya. Penanda acuan dulu, lalu warisan."""
+    for key in (je.get("reversed_by_entry_id"), je.get("reversal_id")):
+        if key and key != "pending":
+            r = await db.journal_entries.find_one({"id": key, "status": {"$ne": "void"}}, {"_id": 0})
+            if r:
+                return r
+    if je.get("id"):
+        r = await db.journal_entries.find_one({"ref.reverses_entry_id": je["id"], "status": {"$ne": "void"}},
+                                              {"_id": 0})
+        if r:
+            return r
+    sid = je.get("source_id") or ""
+    if sid:
+        st = je.get("source_type") or ""
+        r = await db.journal_entries.find_one(
+            {"source_type": _LEGACY_REVERSAL_TYPE.get(st, f"{st}_reversal"), "source_id": sid,
+             "status": {"$ne": "void"}}, {"_id": 0})
+        if r:
+            return r
+    if je.get("reversed") is True:   # penanda warisan tanpa id jurnal pembalik
+        return {"id": je.get("reversal_id") or "", "number": je.get("reversal_id") or "(tanpa nomor)"}
+    return None
+
+
+async def _reverse_once_ex(je: Dict[str, Any], *, source_type: str, source_id: str, date: str, description: str,
+                           created_by: str, source_label: str = "", line_prefix: str = "Pembalik",
+                           line_desc: str = "", reason: str = "", extra_ref: Optional[Dict[str, Any]] = None,
+                           strict: bool = False) -> Tuple[Optional[Dict[str, Any]], bool]:
+    """Balik `je` TEPAT SEKALI. → (jurnal pembalik, baru dibuat?). `strict`: tipe pembalik / sudah dibalik → ValueError.
+
+    Klaim di jurnal asal (`reversed_by_entry_id: "pending"`) sebelum sisip; gagal sisip → klaim dicabut. Sesudah
+    sisip semua penanda (acuan + cermin warisan) ditulis pada jurnal asal; pembalik membawa `ref.reverses_entry_id`."""
+    if is_reversal_type(je.get("source_type")):
+        if strict:
+            raise ValueError("Jurnal penutup / jurnal pembalik tidak dapat dibalik.")
+        return None, False
+    prior = await reversal_of(je) or await db.journal_entries.find_one(
+        {"source_type": source_type, "source_id": source_id, "status": {"$ne": "void"}}, {"_id": 0})
+    if prior:
+        if strict:
+            raise ValueError(f"Jurnal sudah dibalik oleh {prior.get('number') or prior.get('id')}.")
+        return prior, False
     claim = await db.journal_entries.find_one_and_update(
-        {"id": entry_id, "status": {"$ne": "void"}, "reversed_by_entry_id": {"$exists": False}},
+        {"id": je["id"], "status": {"$ne": "void"}, "reversed_by_entry_id": {"$exists": False},
+         "reversed": {"$ne": True}},
         {"$set": {"reversed_by_entry_id": "pending", "updated_at": now_iso()}})
     if not claim:
-        raise ValueError("Jurnal sedang/sudah dibalik — muat ulang.")
+        fresh = await db.journal_entries.find_one({"id": je["id"]}, {"_id": 0}) or je
+        prior = await reversal_of(fresh)
+        if strict:
+            raise ValueError(f"Jurnal sudah dibalik oleh {prior.get('number') or prior.get('id')}." if prior
+                             else "Jurnal sedang/sudah dibalik — muat ulang.")
+        return prior, False
+    ref = {**(je.get("ref") or {}), **(extra_ref or {}),
+           "reverses_entry_id": je["id"], "reverses_entry_number": je.get("number", "")}
     try:
         rev = await _insert_entry(
             lines=[{"account_code": ln["account_code"], "debit": float(ln.get("credit", 0) or 0),
                     "credit": float(ln.get("debit", 0) or 0),
-                    "description": f"Pembalik {je.get('number', '')}"} for ln in je.get("lines", [])],
-            description=f"Pembalik {je.get('number', '')}: {reason}", date=f"{d}T00:00:00",
-            source_type="reversal", source_id=entry_id, entity_id=je["entity_id"],
-            created_by=actor.get("name", "system"), source_label=f"Pembalik {je.get('number', '')}",
-            ref={"reverses_entry_id": entry_id, "reverses_entry_number": je.get("number", ""), "reason": reason})
+                    "description": line_desc or f"{line_prefix} {ln.get('description', '')}".strip()}
+                   for ln in je.get("lines", [])],
+            description=description, date=date or now_iso(), source_type=source_type, source_id=source_id,
+            entity_id=je.get("entity_id", ""), created_by=created_by, source_label=source_label, ref=ref)
     except Exception:
-        await db.journal_entries.update_one({"id": entry_id, "reversed_by_entry_id": "pending"},
+        await db.journal_entries.update_one({"id": je["id"], "reversed_by_entry_id": "pending"},
                                             {"$unset": {"reversed_by_entry_id": ""}})
         raise
-    await db.journal_entries.update_one({"id": entry_id}, {"$set": {
-        "reversed_by_entry_id": rev["id"], "reversed_by_entry_number": rev["number"],
-        "reversal_reason": reason, "reversed_by": actor.get("name", ""), "reversed_at": now_iso()}})
+    await db.journal_entries.update_one({"id": je["id"]}, {"$set": {
+        "reversed_by_entry_id": rev["id"], "reversed_by_entry_number": rev.get("number", ""),
+        "reversed": True, "reversed_at": now_iso(), "reversal_id": rev["id"],
+        "reversal_reason": reason, "reversed_by": created_by, "updated_at": now_iso()}})
+    return rev, True
+
+
+async def _reverse_once(je: Dict[str, Any], **kw: Any) -> Optional[Dict[str, Any]]:
+    rev, _created = await _reverse_once_ex(je, **kw)
     return rev
 
 
@@ -1512,24 +1594,12 @@ async def reverse_order_journals(order_id: str, reason: str = "",
     for je in entries:
         rev_type = f"{je['source_type']}_reversal"
         rev_src = order_id if je["source_type"] in ("sales_order", "sales_cogs") else je["source_id"]
-        if await _already_posted(rev_type, rev_src):
-            continue
-        lines = [{"account_code": l["account_code"],
-                  "debit": float(l.get("credit", 0) or 0),
-                  "credit": float(l.get("debit", 0) or 0),
-                  "description": f"Reversal: {l.get('description', '')}".strip()}
-                 for l in je.get("lines", [])]
-        rev = await _insert_entry(
-            lines=lines,
-            description=f"Reversal {je.get('number')} — {reason or 'order dibatalkan'}",
-            date=now_iso(), source_type=rev_type, source_id=rev_src,
-            entity_id=je.get("entity_id", ""), created_by=actor_name,
-            source_label=je.get("source_label", ""), ref=je.get("ref"))
-        await db.journal_entries.update_one(
-            {"id": je["id"]},
-            {"$set": {"reversed": True, "reversed_at": now_iso(),
-                      "reversal_id": rev["id"], "updated_at": now_iso()}})
-        out.append(rev)
+        rev, created = await _reverse_once_ex(   # PK-10 — satu jalur pembalik
+            je, source_type=rev_type, source_id=rev_src, date=now_iso(),
+            description=f"Reversal {je.get('number')} — {reason or 'order dibatalkan'}", created_by=actor_name,
+            source_label=je.get("source_label", ""), line_prefix="Reversal:", reason=reason)
+        if created:
+            out.append(rev)
     return out
 
 
@@ -1553,30 +1623,13 @@ async def reverse_document(source_type: str, source_id: str, *, reason: str = ""
         {"_id": 0}).to_list(50)
     for je in entries:
         rev_type = f"{je['source_type']}{rev_suffix}"
-        if await _already_posted(rev_type, source_id):
-            # sudah pernah dibalik — kumpulkan JE reversal-nya utk info (idempotent).
-            prior = await db.journal_entries.find_one(
-                {"source_type": rev_type, "source_id": source_id, "status": {"$ne": "void"}}, {"_id": 0})
-            if prior:
-                out.append(prior)
-            continue
-        lines = [{"account_code": l["account_code"],
-                  "debit": float(l.get("credit", 0) or 0),
-                  "credit": float(l.get("debit", 0) or 0),
-                  "description": f"Reversal: {l.get('description', '')}".strip()}
-                 for l in je.get("lines", [])]
-        rev = await _insert_entry(
-            lines=lines,
-            description=f"Reversal {je.get('number')} — {reason or 'koreksi/pembatalan'}",
-            date=date or now_iso(), source_type=rev_type, source_id=source_id,
-            entity_id=je.get("entity_id", ""), created_by=actor_name,
-            source_label=je.get("source_label", ""))
-        await db.journal_entries.update_one(
-            {"id": je["id"]},
-            {"$set": {"reversed": True, "reversed_at": now_iso(),
-                      "reversal_id": rev["id"], "reversal_reason": reason,
-                      "updated_at": now_iso()}})
-        out.append(rev)
+        # PK-10 — satu jalur pembalik; sudah dibalik (oleh mekanisme apa pun) → jurnal pembaliknya dikembalikan.
+        rev = await _reverse_once(
+            je, source_type=rev_type, source_id=source_id, date=date or now_iso(),
+            description=f"Reversal {je.get('number')} — {reason or 'koreksi/pembatalan'}", created_by=actor_name,
+            source_label=je.get("source_label", ""), line_prefix="Reversal:", reason=reason)
+        if rev and rev not in out:
+            out.append(rev)
     return out
 
 
@@ -1880,28 +1933,17 @@ async def reverse_vendor_bill(bill: Dict[str, Any], reason: str = "",
     """Session #074 (VB-CANCEL-GL) — balik jurnal Vendor Bill saat bill posted dibatalkan.
     Idempotent (source_type='vendor_bill_reversal'). Membalik Dr↔Cr dari JE vendor_bill."""
     bid = bill.get("id")
-    if not bid or await _already_posted("vendor_bill_reversal", bid):
+    if not bid:
         return None
     je = await db.journal_entries.find_one(
         {"source_type": "vendor_bill", "source_id": bid, "status": {"$ne": "void"}}, {"_id": 0})
     if not je:
         return None
-    lines = [{"account_code": l["account_code"],
-              "debit": float(l.get("credit", 0) or 0),
-              "credit": float(l.get("debit", 0) or 0),
-              "description": f"Reversal: {l.get('description', '')}".strip()}
-             for l in je.get("lines", [])]
-    rev = await _insert_entry(
-        lines=lines,
-        description=f"Reversal {je.get('number')} — {reason or 'bill dibatalkan'}",
-        date=now_iso(), source_type="vendor_bill_reversal", source_id=bid,
-        entity_id=je.get("entity_id", ""), created_by=actor_name,
-        source_label=je.get("source_label", ""))
-    await db.journal_entries.update_one(
-        {"id": je["id"]},
-        {"$set": {"reversed": True, "reversed_at": now_iso(),
-                  "reversal_id": rev["id"], "updated_at": now_iso()}})
-    return rev
+    rev, created = await _reverse_once_ex(   # PK-10 — satu jalur pembalik
+        je, source_type="vendor_bill_reversal", source_id=bid, date=now_iso(),
+        description=f"Reversal {je.get('number')} — {reason or 'bill dibatalkan'}", created_by=actor_name,
+        source_label=je.get("source_label", ""), line_prefix="Reversal:", reason=reason)
+    return rev if created else None
 
 async def post_cycle_count_variance(*, source_id: str, entity_id: str, amount_signed: float,
                                     label: str = "") -> Optional[Dict[str, Any]]:
@@ -2269,25 +2311,18 @@ async def post_cash_void(txn_id: str, *, label: str = "",
     jurnal baru dengan debit-kredit tertukar sehingga buku besar ikut kembali dan tidak
     ada saldo hantu (mis. Piutang sudah ter-kredit padahal uangnya dianulir).
     """
-    if not txn_id or await _already_posted("cash_transaction_void", txn_id):
+    if not txn_id:
         return None
     orig = await db.journal_entries.find_one(
         {"source_type": "cash_transaction", "source_id": txn_id, "status": {"$ne": "void"}},
         {"_id": 0})
-    if not orig:
+    if not orig or not orig.get("lines"):
         return None
-    lines = [{"account_code": ln.get("account_code"),
-              "debit": round(float(ln.get("credit") or 0), 2),
-              "credit": round(float(ln.get("debit") or 0), 2),
-              "description": f"Pembalik {ln.get('description', '')}"}
-             for ln in (orig.get("lines") or [])]
-    if not lines:
-        return None
-    return await _insert_entry(
-        lines=lines, description=f"Pembalik mutasi kas · {label or orig.get('source_label', txn_id)}",
-        date=now_iso(), source_type="cash_transaction_void", source_id=txn_id,
-        entity_id=orig.get("entity_id", ""), created_by=created_by,
-        source_label=orig.get("source_label", ""))
+    # PK-10 (GL-01) — sudah dibalik manual / oleh rekonsiliasi → jurnal pembalik itu yang dipakai (tidak dibalik lagi).
+    return await _reverse_once(
+        orig, source_type="cash_transaction_void", source_id=txn_id, date=now_iso(),
+        description=f"Pembalik mutasi kas · {label or orig.get('source_label', txn_id)}", created_by=created_by,
+        source_label=orig.get("source_label", ""), line_prefix="Pembalik", reason=label)
 
 
 async def post_deposit_only_receipt(r: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
@@ -2319,19 +2354,17 @@ async def post_deposit_only_receipt(r: Dict[str, Any], created_by: str = "system
 async def reverse_deposit_only_receipt(receipt_id: str, *, label: str = "",
                                        created_by: str = "system") -> Optional[Dict[str, Any]]:
     """W2-015 — pembalik reklas deposit saat kwitansi di-void (append-only, idempotent)."""
-    if not receipt_id or await _already_posted("ar_receipt_deposit_void", receipt_id):
+    if not receipt_id:
         return None
     orig = await db.journal_entries.find_one(
         {"source_type": "ar_receipt_deposit", "source_id": receipt_id, "status": {"$ne": "void"}}, {"_id": 0})
     if not orig:
         return None
-    lines = [{"account_code": ln.get("account_code"), "debit": round(float(ln.get("credit") or 0), 2),
-              "credit": round(float(ln.get("debit") or 0), 2),
-              "description": f"Pembalik {ln.get('description', '')}"} for ln in (orig.get("lines") or [])]
-    return await _insert_entry(
-        lines=lines, description=f"Pembalik pelunasan deposit · {label or orig.get('source_label', '')}",
-        date=now_iso(), source_type="ar_receipt_deposit_void", source_id=receipt_id,
-        entity_id=orig.get("entity_id", ""), created_by=created_by, source_label=orig.get("source_label", ""))
+    rev, created = await _reverse_once_ex(   # PK-10 — satu jalur pembalik
+        orig, source_type="ar_receipt_deposit_void", source_id=receipt_id, date=now_iso(),
+        description=f"Pembalik pelunasan deposit · {label or orig.get('source_label', '')}", created_by=created_by,
+        source_label=orig.get("source_label", ""), line_prefix="Pembalik", reason=label)
+    return rev if created else None
 
 
 async def customer_advance_balance(entity_id: str = "") -> float:

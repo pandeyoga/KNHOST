@@ -20,6 +20,13 @@ import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint"
 import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { openTrace } from "../documents/trace/traceDeepLink";
 
+
+/** PK-10 — sama dengan `gl_service.is_reversal_type`: jurnal penutup/pembalik tidak bisa dibalik lagi. */
+export function isReversalType(sourceType) {
+  const st = sourceType || "";
+  return st === "closing" || st === "reversal" || st.endsWith("_reversal") || st.endsWith("_void");
+}
+
 export default function JournalDetailModal({ je, sourceMeta, entities = [], selectedEntity, onClose, onVoid, onReverse }) {
   const [revOpen, setRevOpen] = useState(false);
   const [revDate, setRevDate] = useState(todayWib());
@@ -91,12 +98,12 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
           </tfoot>
         </table>
       </div>
-      {je.reversed_by_entry_id && (
+      {(je.reversed_by_entry_id || je.reversed) && (
         <p data-testid="gl-journal-reversed-note" className="mt-2 text-[12px] font-semibold text-[#0058CC]">
-          Sudah dibalik oleh {je.reversed_by_entry_number || je.reversed_by_entry_id} · {je.reversal_reason}</p>)}
+          Sudah dibalik oleh {je.reversed_by_entry_number || je.reversed_by_entry_id || je.reversal_id}{je.reversal_reason ? ` · ${je.reversal_reason}` : ""}</p>)}
       {je.ref?.reverses_entry_number && (
         <p data-testid="gl-journal-reverses-note" className="mt-2 text-[12px] font-semibold text-[#0058CC]">
-          Jurnal pembalik atas {je.ref.reverses_entry_number} · {je.ref.reason}</p>)}
+          Jurnal pembalik atas {je.ref.reverses_entry_number}{je.ref.reason ? ` · ${je.ref.reason}` : ""}</p>)}
       {revOpen && (
         <div data-testid="gl-reverse-form" className="mt-3 grid gap-2 rounded-lg border border-[#D6E4FF] bg-[#F5F9FF] p-3 text-[12px]">
           <p className="font-bold">Jurnal pembalik (debit ↔ kredit) — tanggal wajib di periode terbuka; jurnal asli tidak diubah.</p>
@@ -133,7 +140,7 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
         {je.source_type === "manual" && je.status !== "void" && (
           <button type="button" data-testid="gl-journal-void" className="secondary-button !text-[#C0392B]" disabled={voidBusy} onClick={doVoid}>Anulir Jurnal</button>
         )}
-        {je.status !== "void" && !je.reversed_by_entry_id && !["closing", "reversal"].includes(je.source_type) && onReverse && (
+        {je.status !== "void" && !je.reversed_by_entry_id && !je.reversed && !isReversalType(je.source_type) && onReverse && (
           <button type="button" data-testid="gl-journal-reverse" className="secondary-button" onClick={() => setRevOpen(true)}>Balik Jurnal</button>
         )}
         <button type="button" className="primary-button" onClick={onClose}>Tutup</button>
