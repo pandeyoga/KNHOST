@@ -76,3 +76,24 @@ _mc.Collection.find_one_and_update = _fou
 # `server.lifespan` menutup klien di akhir; fixture `aplikasi` memasukinya ulang tiap modul uji, jadi penutupan
 # klien tiruan dibuat tanpa efek (datanya dihapus fixture, bukan oleh close()).
 AsyncMongoMockClient.close = lambda self, *a, **k: None
+
+
+# PK-15 — operator `$round` (dipakai pencocokan mutasi bank, `bank_recon_service._link`, dalam pembaruan ber-pipeline)
+# belum dikenal database tiruan ("Unrecognized expression '$round'"). Ditambal dengan arti yang sama seperti MongoDB:
+# `{"$round": [angka, tempat_desimal]}`, null tetap null.
+import mongomock.aggregate as _agg  # noqa: E402
+
+_agg.arithmetic_operators.add("$round")
+_orig_arith = _agg._Parser._handle_arithmetic_operator
+
+
+def _arith(self, operator, values):
+    if operator == "$round":
+        vals = values if isinstance(values, (list, tuple)) else [values]
+        number = self.parse(vals[0])
+        place = int(self.parse(vals[1])) if len(vals) > 1 else 0
+        return None if number is None else round(number, place)
+    return _orig_arith(self, operator, values)
+
+
+_agg._Parser._handle_arithmetic_operator = _arith

@@ -543,6 +543,10 @@ Key Fields:
   desc_key          string  FASE G-8 — sidik jari berita transfer (untuk aturan belajar)
   holding           object  FASE G-8 — {cash_txn_id, cash_number, je_id, je_number, at, by, note}
   holding_allocated[] object FASE G-8 — {order_id, amount, je_id, reason_code, by, at}
+                     PK-15 — + id (`bha_…`, bagian kunci jurnal `<id baris>:<id alokasi>`), status
+                     pending|applied|done (butir lama tanpa status = done), gl_status posted|failed, gl_error,
+                     je_number, order_number, outstanding_after. `sales_orders.payments[].alloc_id` = id alokasi
+                     (metode `bank_holding`). Sisa tersedia = holding_remaining − Σ butir pending.
   holding_remaining float   FASE G-8 — sisa titipan belum dialokasikan (INV-BNK-03)
   format_id         string  FASE G-8 — FK bank_statement_formats.id (template pembaca)
   match_type        enum    auto | manual

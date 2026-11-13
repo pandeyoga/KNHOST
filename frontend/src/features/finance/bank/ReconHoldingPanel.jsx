@@ -148,7 +148,12 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
         + `${formatCurrency(r.data.holding_remaining)}.`);
       close();
       await onReload();
-    } catch (e) { setMErr(apiErrorText(e)); onError?.(e); } finally { setSaving(false); }
+    } catch (e) {
+      setMErr(apiErrorText(e)); onError?.(e);
+      // PK-15 — 409 (sisa berubah / alokasi tertinggal dilanjutkan / jurnal gagal): pesan tetap di pop-up DAN daftar
+      // titipan dimuat ulang supaya sisa yang tampil adalah sisa terbaru.
+      if (e?.response?.status === 409) await onReload();
+    } finally { setSaving(false); }
   }
 
   return (
@@ -198,6 +203,13 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-semibold text-[#0058CC]">
                   {formatCurrency(h.remaining)}
+                  {(h.gl_failed || []).length > 0 && (
+                    <span data-testid={`recon-holding-gl-failed-${h.id}`}
+                      title={h.gl_failed.map((g) => `${g.order_number}: ${g.gl_error}`).join(" · ")}
+                      className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-[#FDEDE7] px-1.5 py-0.5 text-[10px] font-semibold text-[#C0392B]">
+                      <AlertTriangle size={10} /> Jurnal belum terbit
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 py-2">
                   <span className={h.needs_action ? "text-[#C0392B] font-semibold" : ""}>

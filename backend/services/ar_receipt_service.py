@@ -196,7 +196,7 @@ async def apply_from_deposit(order_id: str, amount: float, decision_id: str,
 
 
 async def apply_from_bank_holding(order_id: str, amount: float, line_id: str,
-                                  cash_number: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+                                  cash_number: str, actor: Dict[str, Any], alloc_id: str = "") -> Dict[str, Any]:
     """FASE G-8 — pakai **titipan dana** (dana masuk yang baru teridentifikasi) untuk
     melunasi pesanan.
 
@@ -207,7 +207,7 @@ async def apply_from_bank_holding(order_id: str, amount: float, line_id: str,
     """
     res = await _apply_to_order(order_id, amount, line_id,
                                f"{cash_number or line_id} (titipan dana bank)",
-                               "bank_holding", now_iso())
+                               "bank_holding", now_iso(), alloc_id=alloc_id)
     try:
         from services import payment_plan_service as _plans
         await _plans.recompute_for_doc("sales_order", order_id)
@@ -372,7 +372,7 @@ async def _unapply_receipt(receipt_id: str, applied: List[Dict[str, Any]]) -> No
 async def _apply_to_order(order_id: str, amount: float, receipt_id: str,
                           receipt_number: str, method: str, receipt_date: str,
                           plan_line_seq: int = 0, customer_id: str = "",
-                          entity_id: str = "") -> Dict[str, Any]:
+                          entity_id: str = "", alloc_id: str = "") -> Dict[str, Any]:
     o = await _validate_allocation_target(order_id, amount, customer_id=customer_id,
                                           entity_id=entity_id)
     gt = order_grand_total(o)
@@ -389,6 +389,8 @@ async def _apply_to_order(order_id: str, amount: float, receipt_id: str,
     # FASE G-3 — pembayaran bisa MENYEBUT baris jadwal tujuan ("ini untuk cicilan ke-3").
     if int(plan_line_seq or 0) > 0:
         payment["plan_line_seq"] = int(plan_line_seq)
+    if alloc_id:   # PK-15 — penanda alokasi titipan (dikenali saat alokasi yang terputus dilanjutkan)
+        payment["alloc_id"] = alloc_id
     # INV-CONC-01 (KN-077-RACE-AR-RECEIPT P1): $push ATOMIK + guard $expr, JANGAN $set seluruh
     # array (lost-update/clobber). SSOT `paid` = Σ payments[].amount (lihat _order_paid), maka
     # guard membandingkan (Σ payments + amount) <= grand_total. K receipt-penuh paralel utk satu

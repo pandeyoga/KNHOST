@@ -134,6 +134,11 @@ class FormatInput(BaseModel):
 def _bad(e: Exception):
     if isinstance(e, HTTPException):
         raise e
+    # PK-15 — keadaan berubah / alokasi tertinggal / jurnal gagal / periode tertutup → 409 (bukan 400).
+    from services import gl_service as _gl
+    from services.bank_recon_service import HoldingConflict
+    if isinstance(e, (HoldingConflict, _gl.ClosedPeriodError)):
+        raise HTTPException(status_code=409, detail=str(e))
     raise HTTPException(status_code=400, detail=str(e))
 
 

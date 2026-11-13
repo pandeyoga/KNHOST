@@ -950,8 +950,19 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
     # Akun bisa berasal dari Pusat Pengaturan; pastikan bagan akun baku ada supaya jurnal
     # tidak jatuh ke Suspense pada database baru.
     await gl.seed_default_coa()
-    number = await next_doc_number("cash_transactions", "number", "CASH-", entity_id=ent)
-    cdoc = {
+    # PK-15 (SL-04) — periode tertutup ditolak SEBELUM kas tercatat (ClosedPeriodError → 409 di router).
+    await gl.preflight_posting(ent, ln.get("stmt_date") or "")
+    from services import atomic_claim as _saga
+    lk = await _saga.claim("bank_statement_lines", line_id, "book_charge", actor=actor,
+                           precondition={"status": {"$nin": ["matched", "holding"]}})
+    token = (lk.get(_saga.LOCK) or {}).get("token", "")
+    # Kas untuk rujukan ini yang sudah ada (jurnal gagal sebelumnya) DIPAKAI ULANG — mengulang tidak melahirkan kas kedua.
+    prior = await db.cash_transactions.find_one(
+        {"ref_type": "bank_statement_line", "ref_id": ln["id"], "category": category, "status": {"$ne": "void"}},
+        {"_id": 0})
+    number = prior["number"] if prior else await next_doc_number("cash_transactions", "number", "CASH-",
+                                                                   entity_id=ent)
+    cdoc = prior or {
         "id": new_id("cash"), "number": number,
         "cash_type": acc.get("cash_type") or "kas_besar",
         "direction": want_dir, "amount": amount, "category": category,
@@ -964,13 +975,17 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
         "reconciled": False, "reconciled_amount": 0.0,
         "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
     }
-    # Sesi 15 — klaim saga baris koran (status belum matched/holding) sesudah validasi, sebelum kas/jurnal.
-    from services import atomic_claim as _saga
-    await _saga.claim("bank_statement_lines", line_id, "book_charge", actor=actor,
-                      precondition={"status": {"$nin": ["matched", "holding"]}})
     try:
-        await db.cash_transactions.insert_one(cdoc)
-        je = await gl.post_cash_transaction(cdoc)
+        if not prior:
+            await db.cash_transactions.insert_one(dict(cdoc))
+        try:
+            je = await gl.post_cash_durable(cdoc)   # gl_status ditulis; gagal → panel Posting Gagal "Transaksi Kas"
+        except Exception as exc:  # noqa: BLE001
+            raise HoldingConflict(f"Kas {number} sudah tercatat, tetapi jurnalnya gagal: {exc}. "
+                                  "Perbaiki sebabnya lalu catat lagi dari baris ini.") from exc
+        je = je or await db.journal_entries.find_one(
+            {"source_type": "cash_transaction", "source_id": cdoc["id"], "status": {"$ne": "void"}},
+            {"_id": 0, "id": 1, "number": 1})
         await db.bank_statement_lines.update_one({"id": line_id}, {"$set": {
             "charge": {"kind": kind, "label": label, "cash_txn_id": cdoc["id"],
                        "cash_number": number, "je_id": (je or {}).get("id", ""),
@@ -979,8 +994,8 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
             "suggestions": [], "updated_at": now_iso()}})
         ln = await _line(line_id, entity_ids)
         await _link(ln, [{"txn_id": cdoc["id"], "amount": amount}], actor, "charge", "1:1")
-    except Exception as e:
-        await _saga.mark_failed("bank_statement_lines", line_id, str(e))
+    except Exception:
+        await _saga.release("bank_statement_lines", line_id, token)   # PK-15 — bisa diulang tanpa admin
         raise
     await db.bank_statement_lines.update_one({"id": line_id}, _saga.finish_set({"updated_at": now_iso()}))
     out = safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}))
@@ -1174,6 +1189,10 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
     if not reason_code:
         raise ValueError("Alasan (reason_code) wajib diisi — keputusan atas uang harus berlabel")
     remaining = _round(ln.get("holding_remaining", ln.get("amount")))
+    # PK-15 — sisa TERSEDIA = sisa titipan − butir `pending` (niat yang efeknya belum jadi).
+    pending = _round(sum(_round(it.get("amount")) for it in (ln.get("holding_allocated") or [])
+                         if it.get("status") == "pending"))
+    remaining = _round(remaining - pending)
     total = _round(sum(_round(a.get("amount")) for a in (allocations or [])))
     if total <= 0:
         raise ValueError("Alokasi kosong")
@@ -1211,36 +1230,102 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
             raise ValueError(
                 f"Pesanan {order.get('number', order_id)} bukan milik pelanggan yang dipilih")
         orders.append((order_id, amt, order))
-    # Sesi 15 — klaim saga baris titipan (status holding) sesudah validasi; per-alokasi
-    # AR + jurnal ditulis di dalam klaim; gagal di tengah → mark_failed (jejak untuk saga_lock_watch).
+    # PK-15 (SL-03) — periode tertutup ditolak sebelum apa pun ditulis.
+    await gl.preflight_posting(ln.get("entity_id") or "")
     from services import atomic_claim as _saga
-    await _saga.claim("bank_statement_lines", line_id, "allocate_holding", actor=actor, precondition={"status": "holding"})
+    lk = await _saga.claim("bank_statement_lines", line_id, "allocate_holding", actor=actor,
+                           precondition={"status": "holding"})
+    token = (lk.get(_saga.LOCK) or {}).get("token", "")
     try:
-        done: List[Dict[str, Any]] = []
+        # Lanjutkan dulu butir yang tertinggal (pending/applied); bila ada, alokasi baru TIDAK diproses (409) supaya
+        # permintaan yang dikirim ulang tidak teralokasi dua kali.
+        left = [it for it in (lk.get("holding_allocated") or []) if it.get("status") in ("pending", "applied")]
+        for it in left:
+            await _alloc_steps(line_id, it, ln, actor)
+        if left:
+            raise HoldingConflict("Alokasi sebelumnya untuk titipan ini belum tuntas dan baru saja dilanjutkan. "
+                                  "Muat ulang, periksa sisa titipan, lalu alokasikan lagi bila perlu.")
         for order_id, amt, order in orders:
-            res = await ar.apply_from_bank_holding(order_id, amt, ln["id"],
-                                                   ln.get("holding", {}).get("cash_number", ""),
-                                                   {"name": actor})
-            je = await gl.post_bank_holding_allocation(
-                source_id=f"{ln['id']}:{order_id}:{len(done)}",
-                entity_id=res.get("entity_id") or ln.get("entity_id", ""), amount=amt,
-                label=f"{res.get('order_number', order_id)}", date=now_iso(), created_by=actor)
-            done.append({"order_id": order_id, "order_number": res.get("order_number", ""),
-                         "amount": amt, "je_id": (je or {}).get("id", ""),
-                         "je_number": (je or {}).get("number", ""),
-                         "reason_code": reason_code, "note": note,
-                         "customer_id": customer_id, "at": now_iso(), "by": actor,
-                         "outstanding_after": res.get("outstanding_after")})
-    except Exception as e:
-        await _saga.mark_failed("bank_statement_lines", line_id, str(e))
+            item = {"id": new_id("bha"), "order_id": order_id, "order_number": order.get("number", ""),
+                    "amount": amt, "status": "pending", "gl_status": "", "gl_error": "",
+                    "reason_code": reason_code, "note": note, "customer_id": customer_id,
+                    "at": now_iso(), "by": actor}
+            cur = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0, "holding_remaining": 1})
+            # NIAT — butir `pending` dicatat dengan syarat sisa titipan belum berubah.
+            res = await db.bank_statement_lines.update_one(
+                {"id": line_id, "status": "holding", "holding_remaining": (cur or {}).get("holding_remaining")},
+                {"$push": {"holding_allocated": item}, "$set": {"updated_at": now_iso()}})
+            if not res.modified_count:
+                raise HoldingConflict("Sisa titipan berubah saat diproses. Muat ulang lalu coba lagi.")
+            await _alloc_steps(line_id, item, ln, actor)
+    except Exception:
+        # PK-15 — kunci DILEPAS (bukan mark_failed): butir yang jadi sudah tercatat dan sisanya bisa dilanjutkan.
+        await _saga.release("bank_statement_lines", line_id, token)
         raise
-    new_remaining = _round(remaining - total)
-    await db.bank_statement_lines.update_one({"id": line_id}, {"$push": {
-        "holding_allocated": {"$each": done}}, **_saga.finish_set({
-        "holding_remaining": new_remaining, "customer_id": customer_id,
-        "updated_at": now_iso()})})
-    return {**safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0})),
-            "allocated_now": total, "holding_remaining": new_remaining}
+    await db.bank_statement_lines.update_one({"id": line_id}, _saga.finish_set({
+        "customer_id": customer_id, "updated_at": now_iso()}))
+    out = safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}))
+    return {**out, "allocated_now": total, "holding_remaining": out.get("holding_remaining")}
+
+
+class HoldingConflict(ValueError):
+    """PK-15 — keadaan titipan berubah / ada alokasi tertinggal / jurnal alokasi gagal → 409 di router."""
+
+
+async def _alloc_steps(line_id: str, item: Dict[str, Any], ln: Dict[str, Any], actor: str) -> None:
+    """PK-15 — jalankan satu butir alokasi dari status terakhirnya (pending → applied → done).
+
+    EFEK-1: pesanan dilunasi (sekali; pembayaran membawa `alloc_id`). EFEK-2: sisa titipan berkurang + butir
+    `applied` dalam satu pembaruan bersyarat. JURNAL: Dr 2-1950 / Cr 1-1200 ber-`source_id` `<baris>:<id alokasi>`;
+    gagal → butir tetap `applied` ber-`gl_status` `failed`."""
+    from services import ar_receipt_service as ar
+    from services import gl_service as gl
+    iid, amt, order_id = item["id"], _round(item.get("amount")), item["order_id"]
+    if item.get("status") == "pending":
+        paid = await db.sales_orders.find_one({"id": order_id, "payments.alloc_id": iid}, {"_id": 0, "id": 1})
+        res: Dict[str, Any] = {}
+        if not paid:
+            try:
+                res = await ar.apply_from_bank_holding(order_id, amt, ln["id"],
+                                                       (ln.get("holding") or {}).get("cash_number", ""),
+                                                       {"name": actor}, alloc_id=iid)
+            except Exception:
+                await db.bank_statement_lines.update_one(
+                    {"id": line_id}, {"$pull": {"holding_allocated": {"id": iid, "status": "pending"}}})
+                raise
+        cur = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0, "holding_remaining": 1})
+        rem = _round((cur or {}).get("holding_remaining"))
+        upd = await db.bank_statement_lines.update_one(
+            {"id": line_id, "holding_remaining": (cur or {}).get("holding_remaining"),
+             "holding_allocated": {"$elemMatch": {"id": iid, "status": "pending"}}},
+            {"$set": {"holding_remaining": _round(rem - amt), "holding_allocated.$.status": "applied",
+                      "holding_allocated.$.order_number": res.get("order_number") or item.get("order_number", ""),
+                      "holding_allocated.$.outstanding_after": res.get("outstanding_after"),
+                      "updated_at": now_iso()}})
+        if not upd.modified_count:
+            raise HoldingConflict("Sisa titipan berubah saat diproses. Muat ulang lalu coba lagi.")
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "number": 1, "entity_id": 1}) or {}
+    label = order.get("number") or item.get("order_number") or order_id
+    src = f"{ln['id']}:{iid}"
+    try:
+        je = await gl.post_bank_holding_allocation(
+            source_id=src, entity_id=order.get("entity_id") or ln.get("entity_id", ""), amount=amt,
+            label=label, date=now_iso(), created_by=actor)
+        je = je or await db.journal_entries.find_one(
+            {"source_type": "bank_holding_alloc", "source_id": src, "status": {"$ne": "void"}},
+            {"_id": 0, "id": 1, "number": 1})
+    except Exception as exc:  # noqa: BLE001
+        await db.bank_statement_lines.update_one(
+            {"id": line_id, "holding_allocated.id": iid},
+            {"$set": {"holding_allocated.$.gl_status": "failed", "holding_allocated.$.gl_error": str(exc)[:300],
+                      "updated_at": now_iso()}})
+        raise HoldingConflict(f"Pesanan {label} sudah dilunasi dari titipan, tetapi jurnalnya gagal: {exc}. "
+                              "Perbaiki sebabnya lalu tekan Alokasikan lagi untuk melanjutkan.") from exc
+    await db.bank_statement_lines.update_one(
+        {"id": line_id, "holding_allocated.id": iid},
+        {"$set": {"holding_allocated.$.status": "done", "holding_allocated.$.gl_status": "posted",
+                  "holding_allocated.$.gl_error": "", "holding_allocated.$.je_id": (je or {}).get("id", ""),
+                  "holding_allocated.$.je_number": (je or {}).get("number", ""), "updated_at": now_iso()}})
 
 
 async def cancel_holding(line_id: str, actor: str,
@@ -1333,7 +1418,12 @@ async def holding_summary(entity_ids: Optional[List[str]] = None,
                       "counterparty": r.get("counterparty", ""),
                       "allocated": _round(r.get("amount")) - rem,
                       "bank_account_id": r.get("bank_account_id", ""),
-                      "entity_id": r.get("entity_id", "")})
+                      "entity_id": r.get("entity_id", ""),
+                      # PK-15 — alokasi yang pesanannya sudah dilunasi tetapi jurnalnya belum terbit.
+                      "gl_failed": [{"order_number": it.get("order_number", ""), "amount": it.get("amount"),
+                                     "gl_error": it.get("gl_error", "")}
+                                    for it in (r.get("holding_allocated") or [])
+                                    if it.get("status") == "applied" and it.get("gl_status") == "failed"]})
     return {"account_code": cfg["holding_acc"], "max_age_days": cfg["holding_max_age_days"],
             "count": len(items), "needs_action": overdue, "balance": _round(total),
             "items": items}
