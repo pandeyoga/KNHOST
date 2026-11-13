@@ -31,7 +31,7 @@ Alur serah-terima: **review (Codex) → `docs/reviews/<tanggal>/` → implementa
 ## Keuangan
 * Sebelum mengubah jurnal/buku besar (`gl_service`), buku pembantu (piutang, hutang, kas, kontrabon), antar-PT
   (`interco_*`, `consolidation_service`), tutup buku, atau nilai persediaan ↔ jurnal: baca
-  **`docs/finance/AUDIT_KEUANGAN_2026-11-13.md`** (111 temuan GL/SL/IC/IV/UX/DB/FY/FX, peta sumber-kebenaran, gap vs ERP
+  **`docs/finance/AUDIT_KEUANGAN_2026-11-13.md`** (139 temuan, bukti uji di `bukti-2026-11-13/`, peta sumber-kebenaran, gap vs ERP
   matang, rekomendasi database, keputusan pemilik §10, kueri cek data §12). Analisis kode di `cd6963a` — cek ulang
   di `HEAD` sebelum memperbaiki.
 

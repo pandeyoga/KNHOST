@@ -27,14 +27,20 @@ Kelemahannya ada di tiga kelas, dan **hanya satu kelas yang menyangkut pilihan d
    buku PT lain (IC-05); akun kontrol terbuka untuk jurnal manual (IC-06, SL-07); periode yang belum berakhir bisa
    ditutup (GL-04); admin bisa menyetujui usul buka-periodenya sendiri (GL-06).
 
-**Jumlah temuan baru: 111** — 2 kritis, 46 tinggi, 51 sedang, 12 rendah (§3; 72 dari putaran pertama, 39 dari
-lanjutan §3.10–3.11). 27 temuan keuangan lama (FN/CX/IX) umumnya memang sudah diperbaiki di kode (§11), tetapi pola yang
-sama masih hidup di jalur lain.
+**Jumlah temuan baru: 139** — 2 kritis, 56 tinggi, 65 sedang, 16 rendah (§3 dan §7.1): 72 dari putaran pertama, 39 dari
+lanjutan §3.10–3.11, 13 dari hitungan laporan (§3.12), 15 dari struktur menu (§7.1). 27 temuan keuangan lama (FN/CX/IX)
+umumnya memang sudah diperbaiki di kode (§11), tetapi pola yang sama masih hidup di jalur lain.
 
-Dari lanjutan, yang paling perlu diketahui: setoran karyawan di Pusat Kasus dibukukan dua kali setiap kali dipakai
-(FX-01); jurnal pembayaran denda kedua dilewati (FX-02); deposit satu pelanggan bisa melunasi pesanan pelanggan atau PT
-lain (FX-05); nota kredit bisa melebihi faktur (FX-12); jurnal penyusutan dan gaji bertanggal hari posting, bukan
-periodenya (FY-02); hutang BPJS dan PPh 21 tidak punya alur setor (FY-07).
+**Yang sudah diuji dengan menjalankan kode (§14):** rumus Laba-Rugi, Neraca, Neraca Saldo, Buku Besar, tutup buku, total
+Arus Kas, dan Perubahan Ekuitas **cocok dengan hitungan tangan untuk satu PT**. Sepuluh temuan dibuktikan dengan angka:
+GL-01, GL-04, GL-05, GL-07, IC-01, IC-05, IV-01, FX-02, RC-01, RP-06. Sisanya tetap berstatus bacaan kode.
+
+Dari lanjutan, yang paling perlu diketahui: laporan mode "Semua Entitas" menjumlah tanpa eliminasi (RC-01, RP-02); umur
+piutang mengumurkan seluruh pesanan dari surat jalan pertama dan ikut memblokir kredit (RP-03); setoran karyawan di
+Pusat Kasus dibukukan dua kali (FX-01); deposit satu pelanggan bisa melunasi pesanan pelanggan atau PT lain (FX-05); nota
+kredit bisa melebihi faktur (FX-12); jurnal penyusutan dan gaji bertanggal hari posting (FY-02); hutang BPJS dan PPh 21
+tanpa alur setor (FY-07); nominal hutang dan dokumen keuangan terlihat oleh peran non-keuangan lewat Jejak Dokumen dan
+papan Meja Finance (IA-01, IA-03).
 
 **Jawaban soal database (§9).** Jangan memecah keuangan ke PostgreSQL sekarang. Alasannya: keuangan di kode ini bukan
 modul terpisah — jurnal diposting dari dalam alur operasional (surat jalan, penerimaan, makloon, retur), dan buku pembantu
@@ -65,8 +71,11 @@ menjadi lintas-database, yaitu lebih sulit, bukan lebih mudah. Urutan yang disar
   salinan database.
 - Putaran lanjutan (dua agen, §3.10–3.11) menutup: denda, rencana bayar, selisih bayar, kasus keuangan, nota kredit,
   aset tetap, anggaran, gaji dan insentif, kas kecil, pusat pajak, beserta layarnya.
-- Masih belum ditelusuri: isi perhitungan komisi, alur bayar faktur kampanye, `store_credit_service` secara rinci,
-  layar kasus/denda/slip gaji, tampilan HP.
+- Putaran ketiga: rumus laporan pendukung (§3.12), struktur menu dibandingkan dokumen IA (§7.1), dan uji jalan kode
+  laporan/posting di database tiruan (§14).
+- Masih belum dilakukan: uji pakai (usability) dengan aplikasi hidup dan pengguna; pemeriksaan data nyata; isi
+  perhitungan komisi; alur bayar faktur kampanye; `store_credit_service` secara rinci; layar kasus/denda/slip gaji;
+  tampilan HP.
 - Riset web terbatas: banyak situs dokumentasi resmi tidak terjangkau dari sesi ini; sumber dan tingkat keyakinannya
   ditandai di §8 dan §9.
 
@@ -418,6 +427,61 @@ Konsolidasi (laporan keuangan hanya CSV), jejak audit selain rekening bank dan b
 **Struktural:** banner entitas di semua layar dan ekspor; satu form pembayaran; satu pusat piutang; rantai drill-down;
 kandidat settlement dari server; daftar periksa tutup buku; perampingan dasbor.
 
+### 7.1 Struktur menu (IA) dibandingkan dokumen, peran, dan serah-terima ke keuangan
+
+Dibaca di `79c176a`; aplikasi tidak dijalankan. Menu per peran dihitung dari konfigurasi navigasi; izin dari
+`permissions_config.py` + penyesuaian di `bootstrap.py` (matriks di database bisa berbeda).
+
+**Dokumen IA vs kode.** `docs/KN_13`, `KN_14`, dan `KN_16` sudah basi untuk keuangan: grup "Akuntansi & Pajak" baru,
+piutang dipecah ke tiga tempat, dan belasan layar (Meja Finance, Kontrabon, Antar Entitas, Kasus Keuangan, Aset Tetap,
+Penggajian, dan lain-lain) tidak ada di ketiganya. Layar "Invoices" yang ditandai sudah ada di dokumen **tidak ada**:
+faktur komersial hanya berupa PDF dari pesanan. Yang paling mendekati kode sekarang adalah
+`docs/audit/ia/IA_AUDIT_2026-10-04.md`. `KN_14` menulis Finance berwenang penuh dan Manajer hanya melihat; di kode
+terbalik — Manajer memegang seluruh sisi hutang, gaji, dan buku besar; Finance hanya uang masuk.
+
+**Peran × menu keuangan — yang tidak cocok:**
+- Menu ada, tujuannya ditolak: Meja Finance menampilkan papan kontrabon/tagihan dan antrean "Bayar" yang bukan wewenang
+  Finance (IA-03).
+- Izin ada, menu tidak: Finance punya izin buku besar, rekening, rekonsiliasi, pemetaan akun, kas kecil tanpa menunya
+  (melengkapi UX-17); Sales dan Admin Sales punya izin Kasus Keuangan tanpa menu; Gudang punya izin tagihan supplier,
+  landed cost, pajak masukan tanpa menu.
+- Tidak ada peran HR, pembelian, atau kasir: gaji dan pembelian-sampai-bayar seluruhnya di Manajer/Admin.
+
+**Alur operasional → titik serah-terima ke keuangan:**
+
+| Langkah | Layar | Tautan ke dokumen keuangan | Peran |
+|---|---|---|---|
+| Pesanan | Detail pesanan | Ada: linimasa, referensi, panel bayar, terbit faktur pajak | Sales, Admin Sales |
+| Picking → surat jalan | Barang Keluar | Tidak ada ke jurnal pendapatan/HPP | Gudang |
+| Faktur komersial | — | Tidak ada dokumen maupun daftar | — |
+| Kwitansi | Penagihan, detail pesanan, Meja Finance | Tautan membuka daftar pelanggan; fokus ke kwitansinya hilang | Finance, Sales |
+| Jurnal | Buku Besar | Hanya lewat Jejak Dokumen; Finance tanpa menu | Manajer |
+| Permintaan beli → PO → terima barang | Pengadaan, PO, Barang Masuk | Rantai ada di detail PO; dari penerimaan ke tagihan/jurnal tidak | Gudang → Manajer |
+| Faktur supplier → kontrabon → bayar | Hutang Pemasok | Panel referensi tanpa tombol buka; tanpa tautan ke kas/jurnal | Manajer |
+| Retur jual / retur beli | Retur | Nota kredit tampil; refund dan jurnal tanpa tautan | Sales/Gudang → Manajer |
+| Makloon | Order Makloon | Nomor tagihan jasa berupa teks | Gudang → Manajer |
+| Antar-PT | Antar Entitas | Jurnal dua PT tampil di tempat (yang terbaik); tanpa tautan keluar | Admin Sales/Gudang → Manajer |
+| Kas kecil, gaji | Uang muka, LPJ, Penggajian | Nomor kas dan jurnal berupa teks | Karyawan → Manajer → Admin |
+
+**Temuan IA:**
+
+| ID | Tingkat | Temuan | Bukti | Dampak | Rekomendasi |
+|---|---|---|---|---|---|
+| IA-01 ✔ (penjaga) | Tinggi | Jejak Dokumen hanya dijaga izin "lihat dokumen"; pencarian lintas jenis dokumen memuat nominal | `routers/documents.py:97, 142`; `services/doc_refs_service.py:360, 611-634` | Sales, gudang, QC bisa melihat nilai PO, tagihan, landed cost, kontrabon, kas, jurnal | Saring simpul per izin modul sumber; sembunyikan nominal |
+| IA-02 | Tinggi | Membuka dokumen tidak memeriksa menu peran; pagarnya tinggal izin API yang lebih lebar dari menu | `frontend/src/hooks/useAppNavigation.js:72-79`; `services/export_registry.py:210`; `routers/bank.py:49, 68` | Admin Gudang bisa mengekspor tagihan supplier; Finance bisa membuat/mengubah rekening dan melihat jurnal serta margin tanpa menunya | Samakan izin dengan menu |
+| IA-03 ✔ | Tinggi | Papan Meja Finance hanya butuh login | `routers/home.py:98-110` (tanpa cek izin) | Nominal hutang dan nama supplier terbuka ke semua peran se-PT; Finance disuruh "Bayar" tanpa punya tombolnya | Pagari dengan izin; pindahkan papan hutang ke beranda Manajer atau putuskan cakupan Finance |
+| IA-04 | Tinggi | Jejak Dokumen menaut ke layar yang tidak ada (retur jual, transfer, opname, kas-bank); sebelas layar keuangan tidak membaca fokus dokumen | `services/doc_refs_service.py:160, 176, 191, 204`; `frontend/src/AppViewRouter.jsx:186, 228, 253, 346-357` | Jembatan satu-satunya ke dokumen keuangan berujung layar kosong atau daftar (perlu uji jalan) | Petakan ulang tujuan; teruskan fokus |
+| IA-05 ✔ (izin) | Tinggi | "Cairkan" uang muka hanya untuk Admin; Finance tanpa menu Kas Kecil; Hutang Reimburse tanpa tombol bayar | `permissions_config.py:96`; `frontend/src/config/roles.js:251-277`; `features/pettycash/SettlementDetail.jsx:51-53` | Uang muka yang sudah disetujui menunggu admin sistem | Beri Finance menu dan izin cairkan; pilih rekening |
+| IA-06 | Sedang | Menu tidak sampai ke peran yang diberi izin (Sales → Kasus Keuangan; Finance → Pemetaan Akun) | `frontend/src/config/navStructure.js:301, 312, 409`; `permissions_config.py:131, 311, 663` | Sales tidak bisa melaporkan "pelanggan sudah transfer" | Tambah ke menu peran |
+| IA-07 | Sedang | "Simulasi Pembayaran": gerbang layar dan gerbang server memakai izin berbeda | `features/orders/OrderDetailPanel.jsx:101, 636`; `routers/invoices.py:39` | Finance ditolak, Sales lolos (lanjutan SL-05) | Matikan tombol |
+| IA-08 | Sedang | Gudang mengisi tarif jasa, PPN, dan nomor faktur makloon yang langsung melahirkan hutang | `features/purchasing/makloon/MkoStepModals.jsx:270-292`; `routers/makloon_orders.py:233` | Hutang lahir dari angka ketikan gudang | Gudang menandai selesai; nilai diisi pembelian |
+| IA-09 | Sedang | Saldo antar-PT dan seluruh daftar kontrabon bernilai tampil untuk peran gudang | `routers/interco.py:64-68`; `features/purchasing/contrabon/ContraBonsView.jsx:43-47` | Gudang/Admin Sales melihat posisi hutang (perlu uji jalan) | Pagari; tab tunggal untuk gudang |
+| IA-10 | Sedang | Gaji, kas kecil, aset, klaim makloon bukan jenis dokumen di Jejak Dokumen | `services/doc_refs_service.py:123-227` | Tidak ada jalan dokumen ↔ jurnal | Daftarkan jenisnya |
+| IA-11 | Sedang | Kartu angka di tiga dasbor tanpa tautan ke layar penjelasnya; lompatan antar-modul tanpa jalan kembali | `features/finance/FinanceTowerView.jsx:67-92`; `features/home/AdminHome.jsx:147-175` | Angka tidak bisa dijelaskan | Tautkan kartu; simpan asal lompatan |
+| IA-12 | Sedang | Verifikasi → setujui → bayar kontrabon bisa satu Manajer; setujui dan selesaikan retur jual satu izin | `permissions_config.py:207`; `services/contra_bon_service.py:995-998`; `routers/sales_returns.py:590` | Persetujuan dan eksekusi di satu orang | Pisahkan izin bayar |
+| IA-13 | Sedang | Tiga panel relasi dokumen di satu detail dengan dua sumber data; panel referensi tanpa tombol buka | `features/orders/OrderDetailPanel.jsx:184, 287, 297`; `features/purchasing/VendorBillDetailPanel.jsx:104` | Rantai dokumen tampil berbeda antar-panel | Satu panel, satu peta tujuan |
+| IA-14, 15 | Rendah | Satu dokumen banyak nama (tagihan supplier lima nama; "Uang Muka" untuk pelanggan dan kasbon); dokumen IA basi | `services/doc_refs_service.py:143, 146`; `docs/KN_13`, `KN_14`, `KN_16` | Salah pilih dokumen | Satu istilah di glosarium; jadikan audit IA 4 Okt acuan |
+
 ---
 
 ## 8. Gap terhadap ERP matang
@@ -536,6 +600,13 @@ Batas rekomendasi ini: taksiran usaha adalah penilaian saya, belum diuji; replic
 13. **Tanggal buku jurnal periodik** (penyusutan, gaji, insentif): akhir periode atau hari posting? (FY-02)
 14. **Nota debit kenaikan harga:** aturan tagihnya apa? (FX-15) · **Ganti termin** ke yang lebih longgar: perlu izin
     setara pelepasan tanpa bayar? (FX-16)
+15. **Laporan mode "Semua Entitas":** memakai konsolidasi (dengan eliminasi), atau tetap penjumlahan dengan label
+    tegas? (RC-01, RP-02)
+16. **Umur piutang:** dihitung per surat jalan, per baris rencana bayar, atau tetap per pesanan? Rumus yang sama
+    memblokir kredit pelanggan. (RP-03)
+17. **Siapa yang membayar hutang dan mencairkan uang muka:** Finance atau Manajer/Admin? Menentukan menu, izin, dan
+    papan Meja Finance. (IA-03, IA-05, UX-17)
+18. **Jejak Dokumen:** bolehkah peran non-keuangan melihat nominal dokumen keuangan? (IA-01)
 
 ---
 
