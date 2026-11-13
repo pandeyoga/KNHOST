@@ -11,7 +11,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | selesai | `212b21c` | [PK-05](../reviews/2026-11-13/hasil/PK-05.md) | H1 dilewati atas arahan pemilik 13 Nov; pola perlu ditinjau reviewer |
 | 6 | PK-06 | Jurnal kembar antar-PT yang utuh dan bisa diulang | PK-02 | selesai | `dfec457` | [PK-06](../reviews/2026-11-13/hasil/PK-06.md) | H1 dilewati atas arahan pemilik 13 Nov; pola perlu ditinjau reviewer |
 | 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | PK-02 | selesai | `26203dd` | [PR-T1](../reviews/2026-11-13/hasil/PR-T1.md) |  |
-| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | siap |  |  |  |
+| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | selesai | `41fb474` | [PR-T9](../reviews/2026-11-13/hasil/PR-T9.md) |  |
 | 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | siap |  |  |  |
 | 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | PK-02 | siap |  |  |  |
 | 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | PK-02 | siap |  |  |  |
@@ -27,7 +27,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | siap |  |  |  |
 | 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
-| 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | menunggu |  |  |  |
+| 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | siap |  |  |  |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | menunggu |  |  |  |
 | 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | menunggu |  |  |  |
 | 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | menunggu |  |  |  |

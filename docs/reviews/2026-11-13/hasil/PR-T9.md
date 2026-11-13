@@ -1,7 +1,7 @@
 # PR-T9 — Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan
 
 - Commit awal: `9668b07` (sesudah PR-T1)        - Commit akhir: lihat `git log --grep "\[PR-T9\]"`        - Branch: `claude/nifty-carson-jjx3c8`
-- ID ditangani: PR-12, PR-14 (beserta butir layar PR-UX-06, PR-UX-25, PR-UX-26)
+- ID ditangani: PR-12, PR-14 (beserta butir layar PR-UX-06, PR-UX-25, PR-UX-26 — tidak punya baris sendiri di TRACKER)
 
 ## Cek ulang "Keadaan sekarang"
 
