@@ -142,3 +142,22 @@ db.doc_amendments.find({"changes.field":"payment_term_code"},{number:1,doc_numbe
 db.payment_plans.aggregate([{$match:{status:{$ne:"void"}}},{$group:{_id:"$doc_id",n:{$sum:1}}},{$match:{n:{$gt:1}}}])
 db.finance_cases.aggregate([{$match:{"source.id":{$gt:""}}},{$group:{_id:{t:"$case_type",s:"$source.id"},n:{$sum:1},st:{$push:"$status"}}},{$match:{n:{$gt:1}}}])
 ```
+
+## C. Kasus uji laporan pendukung — untuk dicoba di sistem berjalan
+
+"Benar" = angka yang seharusnya; "kini" = perilaku menurut pembacaan kode (temuan RP di laporan induk §3.12).
+
+1. **Umur piutang.** Pesanan 100 termin 30 hari, surat jalan 40 pada hari H. Di H+45, benar: 40 di kelompok 31–60 dan 60
+   belum jatuh tempo; kini: 100 di 31–60. "Piutang tercatat" = saldo akun 1-1200 = 40.
+2. **Uang muka.** Pesanan 100, uang muka 30, kirim separuh: akun 1-1200 = 20, akun 2-1400 = 0, umur piutang 70 (tercatat
+   20, belum dikirim 50).
+3. **Hutang.** Faktur 100, retur beli 20 disetujui, landed cost 10: akun 2-1100 = 90; layar kini 100.
+4. **Arus kas, pelepasan aset.** Dr 1-1100 130, Dr 1-2900 20, Cr 1-2100 100, Cr 4-9100 50. Benar: investasi +130; kini
+   investasi 86,67 dan operasi 43,33 (dijalankan — `bukti-2026-11-13/skenario4.py`).
+5. **Arus kas, saldo awal.** Rekening baru bersaldo awal 500: kini pendanaan +500; seharusnya bagian kas awal.
+6. **Ekuitas.** Laba 100 lalu tutup buku: Laba Ditahan +100, laba berjalan 0, total = ekuitas neraca.
+7. **Antar-PT.** A jual ke B 100 (HPP 60), B belum menjual: Konsolidasi pendapatan 0, HPP 0, persediaan −40; BI mode
+   gabungan kini laba 40.
+8. **Tanya KN.** Bulan lalu 500 sudah ditutup, bulan ini 200. Benar: 200; kini −300.
+9. **Profitabilitas.** Terkirim 100, retur 20. Benar: 80; kini 100.
+10. **Batas daftar.** Lebih dari 2.000 faktur terposting/lunas: faktur baru harus menaikkan Total Hutang.

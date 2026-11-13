@@ -276,6 +276,44 @@ terpasang di ketiga jalur kirim.
 | FX-18 | Sedang | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | `services/finance_case_scan.py:42-45, 73-74` | Kasus "bayar dobel" yang sudah ditutup lahir lagi tiap hari → refund kedua mungkin | Simpan keputusan per kwitansi |
 | FX-19 | Rendah | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | `indexes.py` | Dokumen kembar pada balapan | Indeks unik parsial |
 
+### 3.12 Lanjutan — hitungan laporan pendukung (RP) dan laporan inti mode gabungan (RC)
+
+Dibaca di `79c176a`; Arus Kas dan Perubahan Ekuitas juga dijalankan (§14.4). Aritmetika dasarnya umumnya benar; yang
+salah adalah cakupan, dasar tanggal, dan klasifikasi. Yang sudah benar: kas akhir Arus Kas = saldo akun kas di neraca;
+ekuitas akhir = ekuitas neraca; laba di BI/Tower memakai fungsi Laba-Rugi yang sama; entri eliminasi konsolidasi
+seimbang; pembagian nol terjaga.
+
+| ID | Tingkat | Temuan | Bukti | Contoh angka | Rekomendasi |
+|---|---|---|---|---|---|
+| RC-01 ✔ (dijalankan) | Tinggi | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | `entity_scope.py:507-511`; §14.2 | Jual antar-PT 20 jt: pendapatan gabungan 70 jt, ke pihak luar hanya 50 jt | Pakai mesin konsolidasi atau beri label "belum dieliminasi" |
+| RP-02 | Tinggi | Hal yang sama di BI Keuangan dan Control Tower | `services/finance_bi_service.py:51`; `services/finance_tower_service.py:95-96` | A jual ke B 100 (HPP 60), B belum menjual: laba gabungan 40, seharusnya 0 | Sama dengan RC-01 |
+| RP-01 | Tinggi | Daftar sumber dipotong diam-diam, dan kuotanya dihabiskan dokumen lama yang sudah lunas | Hutang: `routers/vendor_bills.py:61-63` (2.000 faktur terposting + lunas); piutang: `services/ar_aging_service.py:118-122, 208-214` (5.000 pelanggan, 20.000 pesanan semua status); `services/consolidation_service.py:101` | Faktur ke-2.001 senilai 50 jt belum dibayar tidak menaikkan Total Hutang | Saring "belum lunas" di kueri, tanpa batas |
+| RP-03 ✔ | Tinggi | Seluruh sisa pesanan diumurkan dari satu tanggal jatuh tempo (surat jalan pertama + termin); bagian yang belum dikirim ikut "lewat tempo"; rumus yang sama memblokir kredit | `services/ar_aging_service.py:229-230, 260, 266-267`; `services/customer_service.py:200-205, 239-253` | Pesanan 100, kirim 40 pada 1 Sep (30 hari), sisanya belum dikirim. Pada 15 Nov tampil 100 di kelompok 31–60; seharusnya 40 lewat tempo, 60 belum jatuh tempo | Umur per surat jalan atau per baris rencana bayar |
+| RP-04 ✔ | Tinggi | "Pendapatan diakui" di Tanya KN ikut menghitung jurnal penutup | `services/analytics_engine.py:209-215` (tanpa pengecualian `closing`); bandingkan `services/financial_statement_service.py:81-82` | Oktober 500 sudah ditutup, November 200: November tampil −300 | Kecualikan `source_type = closing` |
+| RP-05 | Sedang | Tanggal "per" pada umur piutang hanya menggeser penghitung hari; pembayaran setelah tanggal itu tetap dihitung | `services/ar_aging_service.py:186, 208-230` | Faktur 100, bayar 40 pada 15 Okt dan 60 pada 5 Nov. "Per 31 Okt" dijalankan 10 Nov menghasilkan 0; seharusnya 60 | Saring transaksi ≤ tanggal, atau simpan potret harian yang lengkap |
+| RP-06 ✔ (dijalankan) | Sedang | Klasifikasi Arus Kas salah di empat kasus: hasil jual aset berlaba terbagi ke operasi; pinjaman antar-PT masuk operasi; saldo awal rekening masuk pendanaan; akun kas ditulis mati | `services/cash_flow_service.py:26, 41-44, 70-75`; `services/bank_service.py:209-215`; §14.4 | Jual mesin 130 (nilai buku 80): investasi 86,67 + operasi 43,33, seharusnya investasi 130. Pinjam 500: operasi +500 | Aturan per jenis sumber; saldo awal masuk kas awal |
+| RP-07 | Sedang | Umur hutang berlabel "Umur" tetapi dihitung dari jatuh tempo; "0–30" memuat yang belum jatuh tempo; total tidak memuat landed cost dan nota debit | `routers/vendor_bills.py:75-84, 285`; `services/cashflow_forecast_service.py:105` | Faktur 100, nota debit 20, landed 10: layar 100, akun hutang 90 | Kolom "belum jatuh tempo"; wajibkan jatuh tempo |
+| RP-08 | Sedang | Profitabilitas tidak mengurangkan retur, tidak memuat antar-PT, dan teks layarnya menyebut dasar HPP yang salah | `services/profitability_service.py:30-36, 61, 195-198`; `features/finance/ProfitabilityView.jsx:117, 223-225` | Jual 100, HPP 60, retur 20 dimusnahkan: buku 20 (25 %), layar 40 (40 %) | Kurangi nota kredit; baris rekonsiliasi ke Laba-Rugi |
+| RP-09 | Sedang | Control Tower mode gabungan memuat pelanggan semua PT termasuk di luar penugasan; "modal kerja" memuat pesanan belum dikirim | `services/finance_tower_service.py:98, 122`; `services/ar_aging_service.py:111-115` | Pesanan 100 belum dikirim: modal kerja +100, neraca tidak berubah | Kirim cakupan entitas; modal kerja dari neraca |
+| RP-10 | Sedang | Konsolidasi: eliminasi, pendapatan, dan HPP memakai tiga tanggal berbeda; rugi belum terealisasi dieliminasi padahal rapor menulis "tidak dieliminasi"; rasio belum-terjual memakai jumlah pesanan | `services/consolidation_service.py:520, 592-598`; `services/interco_margin.py:71-87, 195-209` | Konfirmasi 28 Des, kirim 5 Jan, belum terjual: laba konsolidasi tahun ini +60, tahun depan −60; seharusnya 0 dan 0 | Eliminasi per periode dari jurnal ≤ tanggal laporan |
+| RP-11, 12 | Rendah | Proyeksi kas membulatkan hari berlawanan dengan umur piutang; label kelompok umur ditulis mati; router menyebut arus kas "tak langsung" padahal langsung | `services/cashflow_forecast_service.py:90`; `features/finance/agingBuckets.js:14-20`; `routers/financial_statements.py:74` | — | Satu fungsi hari; rapikan teks |
+
+**Yang seharusnya sama, dan apakah dijamin kode:**
+
+| Seharusnya sama | Dijamin? | Mengapa bisa berbeda |
+|---|---|---|
+| Kas akhir Arus Kas = akun kas di neraca | Ya (dijalankan) | — |
+| Ekuitas akhir = ekuitas neraca | Ya (dijalankan) | — |
+| Laba BI/Tower = Laba-Rugi | Ya | Tower sampai hari ini (UTC); rasio BI sampai 31 Des |
+| Konsolidasi = Σ PT + eliminasi | Ya | Berbeda dari mode gabungan di layar lain (RC-01, RP-02) |
+| Total umur piutang = akun 1-1200 | Tidak | Total memuat pesanan belum dikirim; pesanan tunai ber-surat-jalan didebit ke piutang tetapi dilewati umur piutang |
+| Total hutang = akun 2-1100 | Tidak | Akun hutang juga memuat landed cost dan nota debit retur |
+| Marjin Profitabilitas = laba kotor buku | Tidak | RP-08 |
+| "Pendapatan diakui" Tanya KN = akun pendapatan | Tidak | RP-04 |
+
+Sepuluh kasus uji (masukan → angka yang benar → perilaku kini) untuk dicoba di sistem berjalan ada di lampiran
+[`KUERI_CEK_DATA_LANJUTAN_2026-11-13.md`](KUERI_CEK_DATA_LANJUTAN_2026-11-13.md) bagian C.
+
 ---
 
 ## 4. Duplikasi (struktur dan logika ganda)
@@ -734,6 +772,21 @@ label tegas "penjumlahan antar-PT, belum dieliminasi" dengan tautan ke Konsolida
 | IV-01 | Landed cost 3 jt untuk PO berisi satu roll terjual dan satu roll di gudang | Nilai roll naik 1,5 jt, akun persediaan naik 3 jt; 1,5 jt mengendap |
 | FX-02 | Denda 100 rb dibayar 60 rb lalu 40 rb | Pembayaran kedua tanpa jurnal; piutang denda tersisa 40 rb |
 | GL-04 | Menutup bulan berjalan dan bulan depan (uji 13 Nov) | Keduanya diterima; setelah itu jurnal bertanggal hari ini ditolak |
+
+### 14.4 Arus Kas dan Perubahan Ekuitas (`skenario4.py`)
+
+Jurnal contoh Oktober: jual tunai 300, sewa 50, jual mesin 130 (nilai buku 80), terima pinjaman antar-PT 500, saldo awal
+rekening baru 200.
+
+| Yang dicocokkan | Laporan | Hitungan tangan |
+|---|---|---|
+| Kas awal + perubahan = kas akhir = saldo buku besar | 900 + 1.080 = 1.980, cocok | 1.980 |
+| Arus operasi | 793,33 | 250 (jual 300 − sewa 50) |
+| Arus investasi | 86,67 | 130 (hasil jual mesin) |
+| Arus pendanaan | 200 | 500 (pinjaman); saldo awal 200 seharusnya bagian kas awal |
+| Ekuitas akhir (Perubahan Ekuitas) = ekuitas neraca | 1.480 = 1.480 | cocok |
+
+Totalnya benar, pembagian ke tiga aktivitasnya salah (RP-06).
 
 Temuan lain di laporan ini belum direproduksi dan tetap berstatus bacaan kode.
 

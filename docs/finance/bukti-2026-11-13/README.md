@@ -13,14 +13,15 @@ Laporan induk: [`../AUDIT_KEUANGAN_2026-11-13.md`](../AUDIT_KEUANGAN_2026-11-13.
 | `skenario1.py` | Laporan inti (Laba-Rugi, Neraca, Neraca Saldo, Buku Besar, tutup buku) vs hitungan tangan — 19 titik uji |
 | `skenario2.py` | Reproduksi GL-07, IC-05, GL-01, IC-01, IV-01 |
 | `skenario3.py` | Reproduksi FX-02, GL-01 (membalik jurnal pembalik otomatis), GL-04 |
-| `HASIL.txt` | Keluaran ketiga skrip pada `ec79643`+ (dijalankan 13 Nov 2026, Python 3.11.18) |
+| `skenario4.py` | Arus Kas dan Perubahan Ekuitas vs hitungan tangan (RP-06) |
+| `HASIL.txt` | Keluaran keempat skrip pada `ec79643`+ (dijalankan 13 Nov 2026, Python 3.11.18) |
 
 ## Menjalankan ulang
 
 ```bash
 python3.11 -m venv /tmp/venv-audit && . /tmp/venv-audit/bin/activate
 pip install motor==3.3.1 pymongo==4.6.3 fastapi==0.110.1 pydantic==2.13.5 python-dotenv==1.2.3 bcrypt==4.1.3 mongomock-motor==0.0.36
-cd docs/finance/bukti-2026-11-13 && python skenario1.py && python skenario2.py && python skenario3.py
+cd docs/finance/bukti-2026-11-13 && python skenario1.py && python skenario2.py && python skenario3.py && python skenario4.py
 ```
 
 ## Batas
