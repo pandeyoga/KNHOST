@@ -120,7 +120,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | implemented_pending_review | ya — dijalankan (bukti merah 8/13 di kode lama) | `8774bd1` | [PK-10](2026-11-13/hasil/PK-10.md) |
 | GL-02 | Jurnal yang gagal hilang tanpa penanda di banyak jalur | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | GL-03 | Bayar faktur supplier: hutang lunas, kas tanpa jurnal dan tanpa penanda | Tinggi | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
-| GL-04 | Periode yang belum berakhir bisa ditutup | Tinggi | PK-11 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-04 | Periode yang belum berakhir bisa ditutup | Tinggi | PK-11 | implemented_pending_review | ya — dijalankan (bukti merah 8/12 di kode lama) | `cb6b470` | [PK-11](2026-11-13/hasil/PK-11.md) |
 | SL-02 | Bayar faktur tanpa kunci idempotensi; entitas kas dari klien | Tinggi | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | SL-03 | Alokasi dana titipan bank: jurnal kedua dilewati diam-diam | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-04 | Biaya/bunga bank: kas tersisa bila jurnal gagal; ulang membuat kas kedua | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |

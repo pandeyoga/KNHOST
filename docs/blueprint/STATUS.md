@@ -18,7 +18,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | selesai | `0b41a2b` | [PK-08](../reviews/2026-11-13/hasil/PK-08.md) |  |
 | 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | PK-02 | selesai | `bdd8e40` | [PK-09](../reviews/2026-11-13/hasil/PK-09.md) |  |
 | 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | selesai | `8774bd1` | [PK-10](../reviews/2026-11-13/hasil/PK-10.md) |  |
-| 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | siap |  |  |  |
+| 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | selesai | `cb6b470` | [PK-11](../reviews/2026-11-13/hasil/PK-11.md) |  |
 | 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | siap |  |  |  |
 | 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | siap |  |  |  |
 | 17 | PK-14 | Indeks unik wajib ada | PK-02 | siap |  |  | Titik henti H6 bila data kembar |
@@ -70,7 +70,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | siap |  |  |  |
-| 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | menunggu |  |  |  |
+| 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | siap |  |  |  |
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | menunggu |  |  |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | menunggu |  |  |  |
