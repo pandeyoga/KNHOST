@@ -46,7 +46,6 @@ async def test_PK02_GL01_dibalik_dua_kali(db):
     assert cocok(saldo2, 0), f"sesudah rangkaian kedua saldo kas {saldo2:,.2f}, seharusnya 0"
 
 
-@pytest.mark.xfail(strict=True, reason="GL-04 — periode yang belum berakhir bisa ditutup")
 async def test_PK02_GL04_tutup_bulan_berjalan(aplikasi):
     from services import closing_service as cs
     eid = await pt_uji("G04")

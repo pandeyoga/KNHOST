@@ -665,7 +665,8 @@ async def _mark_stale_closings(entity_id: str, date_iso: str) -> None:
     if not d or not entity_id:
         return
     await db.period_closings.update_many(
-        {"entity_id": entity_id, "status": "closed", "stale": {"$ne": True},
+        # PK-11 — juga catatan yang SEDANG ditutup (`closing`): jurnal yang menyusup selama proses tidak hilang tanpa tanda.
+        {"entity_id": entity_id, "status": {"$in": ["closed", "closing"]}, "stale": {"$ne": True},
          "start_date": {"$lte": d}, "end_date": {"$gte": d}},
         {"$set": {"stale": True, "stale_at": now_iso(),
                   "stale_reason": f"Ada posting jurnal backdate ({d}) setelah periode ditutup",

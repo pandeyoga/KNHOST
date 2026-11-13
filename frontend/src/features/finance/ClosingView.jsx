@@ -21,6 +21,19 @@ import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
 
 const NOW = new Date();
+// PK-11 — "2026-12-01" → "1 Desember 2026" (bulan penuh, sama dengan pesan server).
+function tanggalPenuh(iso) {
+  const [y, m, d] = String(iso || "").slice(0, 10).split("-");
+  const bulan = MONTHS.find((x) => x.value === m)?.label;
+  return y && bulan ? `${Number(d)} ${bulan} ${y}` : iso || "";
+}
+
+export function notEndedText(pv) {
+  return pv && pv.period_ended === false
+    ? `Periode ini belum berakhir. Tutup buku baru bisa dilakukan mulai ${tanggalPenuh(pv.earliest_close_date)}.`
+    : "";
+}
+
 const MONTHS = [
   { value: "01", label: "Januari" }, { value: "02", label: "Februari" },
   { value: "03", label: "Maret" }, { value: "04", label: "April" },
@@ -290,7 +303,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                     className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
                     <Eye size={13} /> Pratinjau
                   </button>
-                  <button data-testid="closing-close-btn" onClick={doClose} disabled={busy}
+                  <button data-testid="closing-close-btn" onClick={doClose} disabled={busy || !!notEndedText(preview)}
+                    title={notEndedText(preview) || undefined}
                     className="btn-primary text-[12px] py-1.5 px-4 inline-flex items-center gap-1">
                     <Lock size={13} /> Tutup Buku
                   </button>
@@ -299,7 +313,13 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                 {/* Pratinjau */}
                 {preview && (
                   <div className="mt-3 pt-3 border-t border-[#EFF0F2]" data-testid="closing-preview">
-                    {!preview.can_close && (
+                    {notEndedText(preview) && (
+                      <div className="mb-2 rounded-md bg-[#FDF3E7] border border-[#F5D9B0] text-[#8A5300] text-[12px] px-3 py-2 flex items-center gap-2" data-testid="closing-preview-not-ended">
+                        <AlertTriangle size={14} className="shrink-0" />
+                        {notEndedText(preview)}
+                      </div>
+                    )}
+                    {!preview.can_close && !notEndedText(preview) && (
                       <div className="mb-2 rounded-md bg-[#FDEDE7] border border-[#F5C6C0] text-[#C0392B] text-[12px] px-3 py-2 flex items-center gap-2" data-testid="closing-preview-block">
                         <AlertTriangle size={14} />
                         Periode tumpang tindih dengan penutupan aktif{preview.blocking_closing ? ` (${preview.blocking_closing.period_label})` : ""}. Buka kembali dulu untuk menutup ulang.
@@ -388,6 +408,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                           <td className="px-3 py-2 text-center">
                             {c.status === "closed"
                               ? <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#F3EAFB] text-[#6B219A] inline-flex items-center gap-1"><Lock size={10} /> Tertutup</span>
+                              : c.status === "closing"
+                              ? <span data-testid={`closing-in-progress-${c.id}`} className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#EEF4FF] text-[#0058CC] inline-flex items-center gap-1"><Lock size={10} /> Sedang ditutup</span>
                               : <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#FDF3E7] text-[#B26B00] inline-flex items-center gap-1"><Unlock size={10} /> Dibuka</span>}
                             {c.stale && c.status === "closed" && (
                               <span data-testid={`closing-stale-${c.id}`} title={c.stale_reason || "Angka berubah setelah periode ditutup"}

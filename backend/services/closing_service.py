@@ -23,10 +23,13 @@ Scope: per-entitas (buku terpisah per PT, F0-E). Caller (router) menyuntik
 `entity_id` konkret.
 """
 import calendar
+import uuid
+from datetime import date as _date, timedelta
 from typing import Any, Dict, List, Optional
 
 from db import db
 from core_utils import now_iso, new_id, safe_doc, rupiah
+from services import analytics_time
 from services import financial_statement_service as fs
 from services import gl_service
 
@@ -85,16 +88,35 @@ async def period_bounds(period_type: str, period_key: str,
     return _period_bounds(period_type, period_key, fy_end)
 
 
+_MONTHS_ID = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
+              "Agustus", "September", "Oktober", "November", "Desember"]
+
+
 def _period_label(period_type: str, period_key: str) -> str:
     if period_type == "year":
         return f"Tahun {period_key}"
-    months = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
-              "Agustus", "September", "Oktober", "November", "Desember"]
     try:
         y, m = period_key.split("-")
-        return f"{months[int(m)]} {y}"
+        return f"{_MONTHS_ID[int(m)]} {y}"
     except Exception:
         return period_key
+
+
+def _today_wib() -> str:
+    """PK-11 — "hari ini" = tanggal WIB server (dipanggil lewat nama modul supaya bisa diganti di tes)."""
+    return analytics_time.now_wib().date().isoformat()
+
+
+def _earliest_close_date(end: str) -> str:
+    """Sehari sesudah akhir periode — tanggal paling awal periode boleh ditutup."""
+    return (_date.fromisoformat(end) + timedelta(days=1)).isoformat()
+
+
+def _not_ended_message(period_type: str, period_key: str, end: str) -> str:
+    d = _date.fromisoformat(_earliest_close_date(end))
+    tgl = f"{d.day} {_MONTHS_ID[d.month]} {d.year}"   # bulan ditulis penuh, sama dengan label periode
+    return (f"Periode {_period_label(period_type, period_key)} belum berakhir — tutup buku baru bisa dilakukan "
+            f"mulai {tgl}.")
 
 
 def _overlaps(a_start: str, a_end: str, b_start: str, b_end: str) -> bool:
@@ -243,6 +265,7 @@ async def preview(period_type: str, period_key: str, entity_id: str) -> Dict[str
     lines = _build_closing_lines(stmt, already)
     blocking = await _blocking_closing(entity_id, period_type, start, end)
     suspense = await gl_service.suspense_balance(entity_id, as_of=end)
+    period_ended = end < _today_wib()   # PK-11 — periode yang belum lewat tidak bisa ditutup
     return {
         "period_type": period_type,
         "period_key": period_key,
@@ -256,7 +279,9 @@ async def preview(period_type: str, period_key: str, entity_id: str) -> Dict[str
         "residual_net_income": _residual_net(lines),
         "closing_lines": lines,
         "retained_earnings_account": RETAINED_EARNINGS,
-        "can_close": blocking is None,
+        "can_close": blocking is None and period_ended,
+        "period_ended": period_ended,
+        "earliest_close_date": _earliest_close_date(end),
         "blocking_closing": blocking,
         "suspense_balance": suspense,
         "suspense_warning": abs(suspense) > EPS,
@@ -300,40 +325,73 @@ async def close_period(period_type: str, period_key: str, actor: Dict[str, Any],
     if period_type not in ("month", "year"):
         raise ValueError("period_type harus 'month' atau 'year'.")
     start, end = await period_bounds(period_type, period_key, entity_id)
+    # PK-11 (GL-04) — akhir periode harus sudah lewat (tanggal WIB), diperiksa sebelum kunci diambil.
+    if end >= _today_wib():
+        raise ValueError(_not_ended_message(period_type, period_key, end))
     # FN-13 — klaim atomik per entitas: close (bulan/tahun) tidak boleh berjalan bersamaan.
-    await _acquire_close_lock(entity_id, f"{period_type}:{period_key}", actor.get("name", ""))
+    token = await _acquire_close_lock(entity_id, f"{period_type}:{period_key}", actor.get("name", ""))
     try:
         return await _close_period_locked(period_type, period_key, actor, entity_id, note, start, end,
                                           suspense_override_reason, can_override_suspense)
     finally:
-        await db.period_close_locks.delete_one({"_id": entity_id})
+        await _release_close_lock(entity_id, token)
 
 
 CLOSE_LOCK_STALE_SECONDS = 600
 
 
-async def _acquire_close_lock(entity_id: str, period: str, actor: str) -> None:
-    from datetime import datetime, timedelta, timezone
+async def _acquire_close_lock(entity_id: str, period: str, actor: str) -> str:
+    """Kunci per PT berpemilik (PK-11): mengembalikan `token` acak yang disimpan di dokumen kunci — juga saat
+    mengambil alih kunci basi — sehingga hanya pemiliknya yang bisa melepas."""
+    from datetime import datetime, timedelta as _td, timezone
     from pymongo.errors import DuplicateKeyError
     now = datetime.now(timezone.utc)
+    token = uuid.uuid4().hex
     try:
         await db.period_close_locks.insert_one(
-            {"_id": entity_id, "period": period, "by": actor, "started_at": now.isoformat()})
-        return
+            {"_id": entity_id, "token": token, "period": period, "by": actor, "started_at": now.isoformat()})
+        return token
     except DuplicateKeyError:
         pass
-    stale_before = (now - timedelta(seconds=CLOSE_LOCK_STALE_SECONDS)).isoformat()
+    stale_before = (now - _td(seconds=CLOSE_LOCK_STALE_SECONDS)).isoformat()
     taken = await db.period_close_locks.find_one_and_update(
         {"_id": entity_id, "started_at": {"$lt": stale_before}},
-        {"$set": {"period": period, "by": actor, "started_at": now.isoformat()}})
+        {"$set": {"token": token, "period": period, "by": actor, "started_at": now.isoformat()}})
     if not taken:
         raise ValueError("Tutup buku badan usaha ini sedang diproses — tunggu lalu muat ulang.")
+    return token
+
+
+async def _release_close_lock(entity_id: str, token: str) -> None:
+    """Lepas kunci hanya bila masih milik `token` ini (proses lama yang kuncinya diambil alih tidak menghapus kunci
+    proses baru)."""
+    await db.period_close_locks.delete_one({"_id": entity_id, "token": token})
+
+
+INTERRUPTED_REASON = "Proses tutup buku sebelumnya terputus — periksa lalu tutup ulang."
+
+
+async def _settle_interrupted(entity_id: str) -> None:
+    """PK-11 — bereskan catatan `closing` sisa proses terputus milik PT ini (dipanggil di dalam kunci): jurnal penutupnya
+    sudah terbit → `closed` + perlu tutup ulang; belum → catatan dihapus."""
+    async for rec in db.period_closings.find({"entity_id": entity_id, "status": "closing"}, {"_id": 0}):
+        je = await db.journal_entries.find_one(
+            {"source_type": "closing", "source_id": rec["id"], "status": {"$ne": "void"}},
+            {"_id": 0, "id": 1, "number": 1})
+        if je:
+            await db.period_closings.update_one({"id": rec["id"], "status": "closing"}, {"$set": {
+                "status": "closed", "journal_entry_id": je["id"], "journal_entry_number": je.get("number"),
+                "stale": True, "stale_at": now_iso(), "stale_reason": INTERRUPTED_REASON,
+                "updated_at": now_iso()}})
+        else:
+            await db.period_closings.delete_one({"id": rec["id"], "status": "closing"})
 
 
 async def _close_period_locked(period_type: str, period_key: str, actor: Dict[str, Any],
                                entity_id: str, note: str, start: str, end: str,
                                suspense_override_reason: str = "",
                                can_override_suspense: bool = False) -> Dict[str, Any]:
+    await _settle_interrupted(entity_id)   # PK-11 langkah 1
     blocking = await _blocking_closing(entity_id, period_type, start, end)
     if blocking:
         raise ValueError(
@@ -343,25 +401,9 @@ async def _close_period_locked(period_type: str, period_key: str, actor: Dict[st
     override = await check_suspense_gate(entity_id, end, suspense_override_reason, can_override_suspense,
                                          actor.get("name", ""))
 
-    scope = {"entity_id": entity_id}
-    stmt = await fs.income_statement(start=start, end=end, scope=scope)
-    already = await _already_closed_amounts(entity_id, start, end)
-    lines = _build_closing_lines(stmt, already)
-
+    # PK-11 — catatan `closing` (sedang ditutup) DULU: jurnal yang masuk selama laba-rugi dihitung menandainya basi
+    # (`gl_service._mark_stale_closings`); catatan ini tidak mengunci posting (hanya `closed` yang mengunci).
     closing_id = new_id("close")
-    je = None
-    if lines:
-        je = await gl_service._insert_entry(
-            lines=lines,
-            description=f"Jurnal Penutup — {_period_label(period_type, period_key)}",
-            date=f"{end}T23:59:59",
-            source_type="closing",
-            source_id=closing_id,
-            entity_id=entity_id,
-            created_by=actor.get("name", "system"),
-            source_label=f"Tutup Buku {period_key}",
-        )
-
     rec = {
         "id": closing_id,
         "entity_id": entity_id,
@@ -370,13 +412,7 @@ async def _close_period_locked(period_type: str, period_key: str, actor: Dict[st
         "period_label": _period_label(period_type, period_key),
         "start_date": start,
         "end_date": end,
-        "status": "closed",
-        "net_income": stmt.get("net_income", 0),
-        "residual_net_income": _residual_net(lines),
-        "revenue_total": stmt.get("revenue_total", 0),
-        "expense_total": round(stmt.get("cogs_total", 0) + stmt.get("opex_total", 0), 2),
-        "journal_entry_id": je["id"] if je else None,
-        "journal_entry_number": je["number"] if je else None,
+        "status": "closing",
         "note": (note or "").strip(),
         # K-15 — jejak tembus blokir suspense (None bila suspense nol saat ditutup).
         "suspense_override": override,
@@ -384,7 +420,6 @@ async def _close_period_locked(period_type: str, period_key: str, actor: Dict[st
         "stale_at": None,
         "stale_reason": "",
         "closed_by": actor.get("name", "system"),
-        "closed_at": now_iso(),
         "reopened_by": None,
         "reopened_at": None,
         "reclosed_by": None,
@@ -392,8 +427,41 @@ async def _close_period_locked(period_type: str, period_key: str, actor: Dict[st
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
-    await db.period_closings.insert_one(rec)
-    return safe_doc(rec)
+    await db.period_closings.insert_one(dict(rec))
+    try:
+        scope = {"entity_id": entity_id}
+        stmt = await fs.income_statement(start=start, end=end, scope=scope)
+        already = await _already_closed_amounts(entity_id, start, end)
+        lines = _build_closing_lines(stmt, already)
+        je = None
+        if lines:
+            je = await gl_service._insert_entry(
+                lines=lines,
+                description=f"Jurnal Penutup — {_period_label(period_type, period_key)}",
+                date=f"{end}T23:59:59",
+                source_type="closing",
+                source_id=closing_id,
+                entity_id=entity_id,
+                created_by=actor.get("name", "system"),
+                source_label=f"Tutup Buku {period_key}",
+            )
+    except BaseException:
+        await db.period_closings.delete_one({"id": closing_id, "status": "closing"})
+        raise
+    # Selesai: angka & jurnal ditulis TANPA menyentuh stale/stale_at/stale_reason (penanda jurnal yang menyusup).
+    done = {
+        "status": "closed",
+        "net_income": stmt.get("net_income", 0),
+        "residual_net_income": _residual_net(lines),
+        "revenue_total": stmt.get("revenue_total", 0),
+        "expense_total": round(stmt.get("cogs_total", 0) + stmt.get("opex_total", 0), 2),
+        "journal_entry_id": je["id"] if je else None,
+        "journal_entry_number": je["number"] if je else None,
+        "closed_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await db.period_closings.update_one({"id": closing_id}, {"$set": done})
+    return await db.period_closings.find_one({"id": closing_id}, {"_id": 0})
 
 
 async def reopen_period(closing_id: str, actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:

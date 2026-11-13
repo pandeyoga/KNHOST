@@ -256,7 +256,7 @@ async def _open_balances(entity_id: str) -> List[Dict[str, Any]]:
 async def _open_periods(entity_id: str) -> Dict[str, Any]:
     """Periode belum ditutup = ada jurnal setelah penutupan terakhir."""
     last = await db.period_closings.find_one(
-        {"entity_id": entity_id, "status": {"$ne": "reopened"}},
+        {"entity_id": entity_id, "status": "closed"},   # PK-11 — `closing` (sedang ditutup) bukan penutupan
         {"_id": 0, "period_end": 1, "period_label": 1}, sort=[("period_end", -1)])
     q: Dict[str, Any] = {"entity_id": entity_id}
     if last and last.get("period_end"):

@@ -2796,6 +2796,14 @@ bank_accounts      Prefix: bank_   — rekening per entitas (MULTI-rekening/enti
                                        Invoice PPN→akun ppn/both; non-PPN→non_ppn/both.
 tax_records        Prefix: tax_    — rekap PPN/PPH (export Coretax = fase lanjut)
 fiscal_periods     Prefix: fper_   — periode + closing (28/30/31) + lock
+period_closings    Prefix: close_  — Tutup Buku per PT (services/closing_service.py): period_type month|year,
+                                    period_key, start_date/end_date, status closing|closed|reopened
+                                    (PK-11: `closing` = sedang ditutup, tidak mengunci posting; hanya `closed`
+                                    yang mengunci), journal_entry_id (jurnal source_type `closing`),
+                                    stale/stale_at/stale_reason ("Perlu tutup ulang"), suspense_override.
+                                    Tutup hanya bila akhir periode < hari ini (WIB).
+period_close_locks _id = id PT     — kunci proses tutup buku per PT: token (pemilik; hanya pemilik yang
+                                    melepas — PK-11), period, by, started_at (diambil alih bila > 600 dtk)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```
