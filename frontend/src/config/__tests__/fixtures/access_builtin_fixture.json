@@ -147,7 +147,8 @@
     "count",
     "review",
     "close",
-    "approve"
+    "approve",
+    "configure"
    ],
    "grade_master": [
     "view",
@@ -214,7 +215,8 @@
     "cycle_count",
     "approve_count",
     "approve_value",
-    "pegging"
+    "pegging",
+    "configure"
    ],
    "label": [
     "view",
@@ -237,7 +239,8 @@
     "view",
     "create",
     "update",
-    "delete"
+    "delete",
+    "configure"
    ],
    "makloon_order": [
     "view",
@@ -862,7 +865,8 @@
     "view",
     "review",
     "close",
-    "approve"
+    "approve",
+    "configure"
    ],
    "grade_master": [
     "view"
@@ -920,7 +924,8 @@
     "approve_count",
     "approve_value",
     "update",
-    "pegging"
+    "pegging",
+    "configure"
    ],
    "label": [
     "view",
@@ -941,7 +946,8 @@
     "view",
     "create",
     "update",
-    "delete"
+    "delete",
+    "configure"
    ],
    "makloon_order": [
     "view",
@@ -1449,7 +1455,8 @@
   },
   "sales": {
    "ar_receipt": [
-    "view"
+    "view",
+    "create"
    ],
    "cash_advance": [
     "view",
@@ -3104,91 +3111,42 @@
    "user"
   ],
   "settings-cfg-approval": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "rnd",
+   "settings"
   ],
   "settings-cfg-documents": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-cfg-finance": [
-   "accounting",
-   "ar_receipt",
-   "budget",
-   "cash",
-   "cash_advance",
-   "cash_settlement",
-   "finance_amendment",
-   "finance_case",
-   "fixed_asset",
-   "gl_mapping",
-   "payment_plan",
-   "payment_variance",
-   "penalty",
-   "period",
-   "tax_invoice"
+   "settings"
   ],
   "settings-cfg-hr": [
-   "hr"
+   "hr",
+   "settings"
   ],
   "settings-cfg-notify": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-cfg-purchasing": [
-   "contra_bon",
-   "input_tax",
-   "landed_cost",
    "makloon",
-   "makloon_order",
-   "process_recipe",
-   "purchase_order",
-   "purchase_requisition",
-   "purchase_return",
-   "rfq",
-   "supplier",
-   "supplier_contract",
-   "supplier_item",
-   "vendor_bill"
+   "settings"
   ],
   "settings-cfg-rnd": [
-   "design_ownership",
-   "design_request",
-   "rnd"
+   "rnd",
+   "settings"
   ],
   "settings-cfg-sales": [
-   "internal_request",
-   "od_fulfillment",
-   "od_pricing",
-   "order",
-   "price_approval",
-   "pricelist",
-   "sales_return"
+   "sales_return",
+   "settings"
   ],
   "settings-cfg-system": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-cfg-warehouse": [
    "goods_receipt",
-   "inspection",
-   "label",
-   "production",
-   "repair_order",
-   "warehouse",
-   "wms"
+   "inventory",
+   "settings",
+   "uom"
   ],
   "settings-company": [
    "entity",
@@ -3198,11 +3156,7 @@
    "user"
   ],
   "settings-config": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-devices": [
    "entity",
@@ -3266,6 +3220,7 @@
    "input_tax",
    "inspection",
    "internal_request",
+   "inventory",
    "label",
    "landed_cost",
    "makloon",
@@ -3295,6 +3250,7 @@
    "supplier_contract",
    "supplier_item",
    "tax_invoice",
+   "transfer",
    "user",
    "vendor_bill",
    "warehouse",
@@ -3362,9 +3318,11 @@
    "goods_receipt",
    "grade_master",
    "inspection",
+   "inventory",
    "label",
    "production",
    "repair_order",
+   "transfer",
    "warehouse",
    "wms"
   ],

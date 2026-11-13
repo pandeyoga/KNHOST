@@ -587,6 +587,46 @@ async def sync_permission_revocations() -> None:
     await db.permission_settings.update_one({"id": "default"}, update)
 
 
+#: KF-T1 — aksi yang menggantikan jalur nama peran "manager" di Pusat Pengaturan (48 kunci `roles=`).
+KFT1_MANAGER_ACTIONS = (("rnd", "manage"), ("inventory", "configure"), ("goods_receipt", "configure"),
+                        ("makloon", "configure"))
+
+
+async def migrate_kft1_settings_permissions() -> None:
+    """KF-T1 — sekali jalan: peran kustom beracuan Manajer menerima aksi pengganti jalur nama peran.
+
+    Dulu Pusat Pengaturan mengizinkan "peran yang dikenali sebagai manajer" (`role_in`) mengubah 48 kunci, tanpa
+    terlihat di layar peran. Kini wewenang itu izin biasa; supaya perilaku peran kustom beracuan Manajer yang sudah
+    ada tidak berubah (K-47), keempat aksi ditambahkan sekali (tanpa `view`, jadi menu tidak ikut terbuka).
+    Ditandai `system_settings{scope: "__migrations__"}.kft1_izin_pengaturan`; pencabutan Admin sesudahnya bertahan.
+    Aksi yang sudah tertunda (PR-T9 `pending_defaults`) ikut dibuang dari daftar tertunda."""
+    marker = {"scope": "__migrations__"}
+    done = await db.system_settings.find_one(marker, {"_id": 0, "kft1_izin_pengaturan": 1})
+    if done and done.get("kft1_izin_pengaturan"):
+        return
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "matrix": 1})
+    customs = await db.custom_roles.find({"base_role": "manager"}, {"_id": 0}).to_list(500)
+    if record and customs:
+        matrix = record.get("matrix") or {}
+        changed = False
+        for c in customs:
+            perms = matrix.setdefault(c["id"], {})
+            for res, act in KFT1_MANAGER_ACTIONS:
+                cur = list(perms.get(res) or [])
+                if act not in cur:
+                    perms[res] = cur + [act]
+                    changed = True
+            pending = {k: [a for a in v if (k, a) not in KFT1_MANAGER_ACTIONS]
+                       for k, v in (c.get("pending_defaults") or {}).items()}
+            if c.get("pending_defaults") is not None:
+                await db.custom_roles.update_one({"id": c["id"]}, {"$set": {
+                    "pending_defaults": {k: v for k, v in pending.items() if v}}})
+        if changed:
+            await db.permission_settings.update_one({"id": "default"},
+                                                    {"$set": {"matrix": matrix, "updated_at": now_iso()}})
+    await db.system_settings.update_one(marker, {"$set": {"kft1_izin_pengaturan": now_iso()}}, upsert=True)
+
+
 async def sync_uom_factors() -> None:
     """Selaraskan master satuan dengan daftar benih (idempotent) — FASE U.
 
@@ -1721,6 +1761,7 @@ async def run_bootstrap() -> None:
     await ensure_permission_ledger()   # PR-T9 — HARUS sebelum sync_permission_modules (lihat docstring)
     await sync_permission_modules()
     await sync_permission_revocations()
+    await migrate_kft1_settings_permissions()
     await sync_uom_factors()
     await sync_product_uom_examples()
     await backfill_inventory_owner()

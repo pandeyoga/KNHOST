@@ -132,24 +132,27 @@ def test_k11_sample_admin_cannot_decide_special_orders():
 
 
 def test_k11_md_reads_only_rnd_settings_groups():
+    # KF-T1 — batas baca MD kini bentuk umum `_may_read` (settings.view ATAU boleh mengubah kunci itu); hasil MD sama.
     from routers import config as cfg
-    md = {"role": "md"}
-    lim = cfg._read_limit(md, DEFAULT_PERMISSIONS["md"])
-    assert lim and lim["groups"] == ("rnd",)
-    assert cfg._visible(registry.get("rnd.kpi_weight_design"), lim)
-    assert cfg._visible(registry.get("approval.matrix_sod"), lim)     # dijaga izin R&D → tetap terbaca & bisa diubah
+    md, perms = {"role": "md"}, DEFAULT_PERMISSIONS["md"]
+    assert cfg._may_read(registry.get("rnd.kpi_weight_design"), md, perms)
+    assert cfg._may_read(registry.get("approval.matrix_sod"), md, perms)     # dijaga izin R&D → terbaca & bisa diubah
     hidden = [e for e in registry.all_entries() if e["group"] == "pajak"]
-    assert hidden and not any(cfg._visible(e, lim) for e in hidden)
-    groups = cfg._visible_groups(lim)
+    assert hidden and not any(cfg._may_read(e, md, perms) for e in hidden)
+    groups = cfg._readable_groups(md, perms)
     assert groups[0]["id"] == "rnd" and {g["id"] for g in groups} <= {"rnd", "persetujuan"}
+    assert sum(g["count"] for g in groups) == 32
     # Semua setting yang BISA diubah MD tetap terlihat (hak ubah tidak berkurang).
     for e in registry.all_entries():
-        if cfg._can_edit(e, md, DEFAULT_PERMISSIONS["md"]):
-            assert cfg._visible(e, lim), e["key"]
-    # Admin/manajer (settings.view) & peran lain tanpa batas → membaca semua kelompok seperti sebelumnya.
-    assert cfg._read_limit({"role": "manager"}, DEFAULT_PERMISSIONS["manager"]) is None
-    assert cfg._read_limit({"role": "sales"}, DEFAULT_PERMISSIONS["sales"]) is None
-    assert cfg._read_limit({"role": "md"}, {**DEFAULT_PERMISSIONS["md"], "settings": ["view"]}) is None
+        if cfg._can_edit(e, md, perms):
+            assert cfg._may_read(e, md, perms), e["key"]
+    # Pemegang settings.view membaca semua kelompok; peran tanpa settings.view (mis. Sales) hanya yang bisa diubahnya.
+    assert cfg._full_reader({"role": "manager"}, DEFAULT_PERMISSIONS["manager"])
+    assert cfg._full_reader({"role": "md"}, {**perms, "settings": ["view"]})
+    sales = {"role": "sales"}
+    assert not cfg._full_reader(sales, DEFAULT_PERMISSIONS["sales"])
+    assert all(cfg._may_edit(e, sales, DEFAULT_PERMISSIONS["sales"])
+               for e in registry.all_entries() if cfg._may_read(e, sales, DEFAULT_PERMISSIONS["sales"]))
 
 
 # ── K-12 ─────────────────────────────────────────────────────────────────────

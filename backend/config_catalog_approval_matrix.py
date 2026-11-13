@@ -11,7 +11,6 @@ routers/purchase_requisitions.py, routers/special_orders.py, routers/approvals_m
 from config_registry import E
 
 G = ("global", "entity")
-_MANAGER_TOO = ("manager",)
 _SVC = "services/approval_matrix_service.py"
 
 E("approval.matrix_enforcement", group="persetujuan", type="enum", default="enforce",
@@ -31,7 +30,7 @@ E("approval.matrix_enforcement", group="persetujuan", type="enum", default="enfo
   consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate", "routers/rnd.py",
              "routers/purchase_requisitions.py", "routers/special_orders.py"),
   related=("approval.matrix_scope", "approval.matrix_sod"), risk="high",
-  roles=_MANAGER_TOO, permission=("rnd", "manage"))
+  permission=("rnd", "manage"))
 
 E("approval.matrix_scope", group="persetujuan", type="enum", default="all_pending",
   options=({"value": "all_pending", "label": "Semua dokumen — termasuk yang masih menunggu persetujuan"},
@@ -47,7 +46,7 @@ E("approval.matrix_scope", group="persetujuan", type="enum", default="all_pendin
           "disetujui Manager yang bukan pengajunya",
   consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate"),
   related=("approval.matrix_effective_from",), risk="high",
-  roles=_MANAGER_TOO, permission=("rnd", "manage"))
+  permission=("rnd", "manage"))
 
 E("approval.matrix_effective_from", group="persetujuan", type="text", default="",
   scopes=G,
@@ -58,7 +57,7 @@ E("approval.matrix_effective_from", group="persetujuan", type="text", default=""
   example="Diisi 2026-08-10 → PR tanggal 9 Agustus tidak diperiksa, PR tanggal 10 Agustus diperiksa",
   consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate"),
   related=("approval.matrix_scope",), risk="medium",
-  roles=_MANAGER_TOO, permission=("rnd", "manage"))
+  permission=("rnd", "manage"))
 
 E("approval.matrix_sod", group="persetujuan", type="bool", default=True, scopes=G,
   label="Pengaju tidak boleh menyetujui dokumennya sendiri",
@@ -69,7 +68,7 @@ E("approval.matrix_sod", group="persetujuan", type="bool", default=True, scopes=
   example="Manager Dewi mengajukan PR bahan sample → Dewi tidak bisa menyetujuinya sendiri",
   consumers=(f"{_SVC}:evaluate", f"{_SVC}:is_requester"),
   related=("approval.matrix_enforcement",), risk="high",
-  roles=_MANAGER_TOO, permission=("rnd", "manage"))
+  permission=("rnd", "manage"))
 
 E("approval.po_custom_direksi_min", group="persetujuan", type="money", default=50000000,
   min=0, step=1000000, unit="Rp", scopes=G,
@@ -81,4 +80,4 @@ E("approval.po_custom_direksi_min", group="persetujuan", type="money", default=5
   example="Diisi 50.000.000 → pesanan khusus Rp 80 juta butuh Manager LALU Direksi",
   consumers=(f"{_SVC}:levels_for", "routers/special_orders.py"),
   related=("approval.matrix_enforcement",), risk="medium",
-  roles=_MANAGER_TOO, permission=("rnd", "manage"))
+  permission=("rnd", "manage"))

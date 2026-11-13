@@ -19,6 +19,9 @@ pytestmark = pytest.mark.anyio
 
 SEBELUM = json.loads((Path(__file__).parent / "data" / "matriks_bawaan_sebelum_PRT9.json").read_text())
 SIMPAN: dict = {}
+# Tambahan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9 (berkas "sebelum" tetap foto kode sebelum PR-T9).
+TAMBAHAN_SESUDAH = {r: {"inventory": {"configure"}, "goods_receipt": {"configure"}, "makloon": {"configure"}}
+                    for r in ("admin", "manager")}   # KF-T1
 
 
 def _himpunan(perms: dict) -> dict:
@@ -40,7 +43,10 @@ async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
     roles = {x["id"]: x for x in r.json()["roles"]}
     assert len(SEBELUM) == 13
     for rid, perms in SEBELUM.items():
-        assert _himpunan(roles[rid]["permissions"]) == _himpunan(perms), rid
+        sekarang = _himpunan(roles[rid]["permissions"])
+        for res, acts in TAMBAHAN_SESUDAH.get(rid, {}).items():
+            sekarang[res] = sekarang.get(res, set()) - acts
+        assert {k: v for k, v in sekarang.items() if v} == _himpunan(perms), rid
 
 
 async def test_U02_sales_kwitansi_dari_bawaan_tidak_bertanda_diubah(klien, kepala_admin):

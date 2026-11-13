@@ -11,8 +11,7 @@ from config_registry import E
 
 G = ("global", "entity")
 
-# Manager ikut berwenang mengubah kebijakan R&D (divisi MD/RnD dipimpin manager).
-_MANAGER_TOO = ("manager",)
+# Wewenang = izin `rnd.manage` (dipegang admin, manager, md) — KF-T1: tanpa jalur nama peran.
 _RND_PERM = ("rnd", "manage")
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -33,8 +32,7 @@ E("rnd.lifecycle_enforcement", group="rnd", type="enum", default="block",
   example="Sales mencoba menjual kain yang baru tahap labdip → ditolak, diminta menunggu rilis",
   consumers=("services/rnd_gate.py:assert_orderable", "routers/sales_orders.py",
              "routers/purchase_orders.py", "services/purchase_requisition_service.py"),
-  related=("rnd.new_product_default_lifecycle",), risk="high", roles=_MANAGER_TOO,
-  permission=_RND_PERM)
+  related=("rnd.new_product_default_lifecycle",), risk="high", permission=_RND_PERM)
 
 E("rnd.new_product_default_lifecycle", group="rnd", type="enum", default="produksi",
   options=({"value": "produksi", "label": "Produksi — langsung boleh dipesan/dijual"},
@@ -48,7 +46,7 @@ E("rnd.new_product_default_lifecycle", group="rnd", type="enum", default="produk
          "dijual sampai dirilis lewat R&D.",
   example="Diubah ke 'konsep' → admin menambah SKU baru, sales belum bisa menjualnya",
   consumers=("services/rnd_gate.py:default_new_lifecycle", "routers/products.py"),
-  risk="medium", roles=_MANAGER_TOO, permission=_RND_PERM)
+  risk="medium", permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SUMBU VARIAN MASTER PRODUK (Warna × Grade × Asal — bisa diubah pemilik)
@@ -65,8 +63,7 @@ E("rnd.variant_axes_default", group="rnd", type="list", default=["origin", "colo
          "memiliki SKU tidak berubah strukturnya.",
   example="['color','grade','origin'] → induk baru langsung punya Warna, Grade, Asal",
   consumers=("services/variant_axes.py:axis_config", "routers/product_media.py:meta"),
-  related=("rnd.variant_axes_optional",), risk="medium", roles=_MANAGER_TOO,
-  permission=_RND_PERM)
+  related=("rnd.variant_axes_optional",), risk="medium", permission=_RND_PERM)
 
 E("rnd.variant_axes_optional", group="rnd", type="list", default=[], scopes=G,
   label="Sumbu varian tambahan yang boleh dipakai MD",
@@ -75,7 +72,7 @@ E("rnd.variant_axes_optional", group="rnd", type="list", default=[], scopes=G,
   impact="Menambah kode di sini memunculkan tombol atribut tambahan di form induk produk.",
   example="['lebar'] → MD bisa menambah sumbu Lebar untuk induk tertentu",
   consumers=("services/variant_axes.py:axis_config",),
-  related=("rnd.variant_axes_default",), risk="low", roles=_MANAGER_TOO, permission=_RND_PERM)
+  related=("rnd.variant_axes_default",), risk="low", permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SIAPA BERWENANG
@@ -88,7 +85,7 @@ E("rnd.spec_approval_roles", group="rnd", type="list", default=["manager", "admi
   impact="Peran di luar daftar akan ditolak walaupun mencoba lewat API langsung.",
   example="['manager','admin'] → sales boleh mengajukan, tidak boleh menyetujui",
   consumers=("services/rnd_spec_service.py:_assert_role", "routers/rnd.py"),
-  risk="high", roles=_MANAGER_TOO, permission=_RND_PERM)
+  risk="high", permission=_RND_PERM)
 
 # 23 Okt — selaras keputusan pemilik UAT v3 (22 Okt): pemenang boleh diputus Manajer ATAU MD. Matriks `sample_acc`
 # (config_divisions) sudah memuat md, tetapi lapis kebijakan ini masih bawaan lama → MD tetap ditolak di server.
@@ -100,7 +97,7 @@ E("rnd.sample_decision_roles", group="rnd", type="list", default=["manager", "md
   impact="Peran di luar daftar tidak bisa memutus, sehingga tidak bisa membentuk kontrak harga.",
   example="['manager','md','admin'] → MD/manager memutus; ['manager','admin'] → staf R&D menilai, manager memutus",
   consumers=("services/rnd_sample_service.py:decide_sample", "routers/rnd.py"),
-  risk="high", roles=_MANAGER_TOO, permission=_RND_PERM)
+  risk="high", permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # ITERASI SAMPLE (rnd 1 → 2 → 3 …)
@@ -114,7 +111,7 @@ E("rnd.max_rounds", group="rnd", type="int", default=3, min=1, max=10, step=1,
          "biaya & waktu sample tidak lepas kendali tanpa jejak.",
   example="Batas 3 → round ke-4 wajib alasan dari manager",
   consumers=("services/rnd_sample_service.py:open_round",), risk="medium",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.round_sla_days", group="rnd", type="duration", default=7, min=1, max=90, step=1,
   unit="hari", scopes=G,
@@ -125,7 +122,7 @@ E("rnd.round_sla_days", group="rnd", type="duration", default=7, min=1, max=90, 
   example="7 hari → permintaan dikirim 1 Agu, tenggat 8 Agu",
   consumers=("services/rnd_sample_service.py:send_sample",
              "services/rnd_sample_service.py:open_round"),
-  risk="low", roles=_MANAGER_TOO, permission=_RND_PERM)
+  risk="low", permission=_RND_PERM)
 
 E("rnd.require_attachment_on_round", group="rnd", type="bool", default=True, scopes=G,
   label="Wajib lampiran + catatan saat menutup round",
@@ -134,7 +131,7 @@ E("rnd.require_attachment_on_round", group="rnd", type="bool", default=True, sco
   impact="Mematikan ini membuat riwayat R&D kehilangan bukti — penilaian jadi tidak bisa diaudit.",
   example="Aktif → tombol 'Setor Hasil' menolak bila belum ada berkas terunggah",
   consumers=("services/rnd_sample_service.py:submit_round",), risk="high",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.require_design_for_proofing", group="rnd", type="bool", default=True, scopes=G,
   label="Proofing wajib merujuk kode desain",
@@ -143,7 +140,7 @@ E("rnd.require_design_for_proofing", group="rnd", type="bool", default=True, sco
   impact="Mematikan ini membuat hasil proofing tidak bisa ditelusuri ke artwork mana pun.",
   example="Aktif → permintaan proofing tanpa desain ditolak dengan pesan jelas",
   consumers=("services/rnd_sample_service.py:create_sample",), risk="medium",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 # UAT 24 Okt (P4.2, P4.3) — urutan produk baru & labdip multi-warna.
 E("rnd.require_stage_chain", group="rnd", type="bool", default=True, scopes=G,
@@ -154,7 +151,7 @@ E("rnd.require_stage_chain", group="rnd", type="bool", default=True, scopes=G,
   impact="Mati → labdip/proofing boleh dibuat tanpa tahap sebelumnya (perilaku lama).",
   example="Aktif → labdip tanpa handfeel ACC ditolak dengan petunjuk memilih handfeel induk",
   consumers=("services/rnd_flow_service.py:assert_stage_chain",), risk="medium",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.labdip_max_colors", group="rnd", type="int", default=10, min=1, max=30, step=1, unit="warna", scopes=G,
   label="Batas warna per permintaan labdip",
@@ -162,7 +159,7 @@ E("rnd.labdip_max_colors", group="rnd", type="int", default=10, min=1, max=30, s
        "pemenang & spesifikasi sendiri) dalam satu kelompok.",
   impact="Menentukan jumlah warna maksimum yang bisa diisi di form labdip.",
   example="10 → labdip 5 warna dibuat sebagai 5 sampel berkelompok",
-  consumers=("routers/rnd.py:create_sample",), risk="low", roles=_MANAGER_TOO, permission=_RND_PERM)
+  consumers=("routers/rnd.py:create_sample",), risk="low", permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DESIGN STUDIO — KODE OTOMATIS & AMBANG NILAI
@@ -176,32 +173,32 @@ E("rnd.design_code_pattern", group="rnd", type="text", default="{DESIGNER}-{CAT}
   impact="Mengubah pola hanya berlaku untuk desain BARU; kode lama tidak berubah.",
   example="{DESIGNER}-{CAT}-{DCAT}-{SEQ} → SRI-SLR-AO-001",
   consumers=("services/design_studio_service.py:next_code",), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.design_code_seq_digits", group="rnd", type="int", default=3, min=2, max=6, step=1,
   scopes=G, label="Jumlah digit nomor urut kode desain",
   help="Panjang nomor urut di akhir kode desain (3 → 001, 4 → 0001).",
   impact="Berlaku untuk desain baru saja.", example="3 → BDI-PTR-SLR-001",
   consumers=("services/design_studio_service.py:next_code",), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.design_prefix_motif", group="rnd", type="text", default="MTF", scopes=G,
   label="Prefix kode untuk jenis Motif", help="Singkatan jenis 'motif' di kode desain.",
   impact="Berlaku untuk desain baru saja.", example="MTF",
   consumers=("services/design_studio_service.py:next_code",), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.design_prefix_pattern", group="rnd", type="text", default="PTR", scopes=G,
   label="Prefix kode untuk jenis Pattern", help="Singkatan jenis 'pattern' di kode desain.",
   impact="Berlaku untuk desain baru saja.", example="PTR",
   consumers=("services/design_studio_service.py:next_code",), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.design_prefix_artwork", group="rnd", type="text", default="ART", scopes=G,
   label="Prefix kode untuk jenis Artwork", help="Singkatan jenis 'artwork' di kode desain.",
   impact="Berlaku untuk desain baru saja.", example="ART",
   consumers=("services/design_studio_service.py:next_code",), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.design_acc_min_score", group="rnd", type="decimal", default=1.5, min=0, max=2, step=0.25,
   scopes=G, label="Nilai minimum agar versi desain bisa ACC",
@@ -210,7 +207,7 @@ E("rnd.design_acc_min_score", group="rnd", type="decimal", default=1.5, min=0, m
   impact="Menaikkan ambang membuat lebih banyak versi harus direvisi sebelum ACC.",
   example="1,5 → versi bernilai 1,25 wajib revisi",
   consumers=("services/design_studio_service.py:transition",), risk="medium",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PS-18 — ESKALASI SLA OTOMATIS (round yang lewat tenggat tidak boleh diam)
@@ -228,7 +225,7 @@ E("rnd.sla_escalate_admin_days", group="rnd", type="duration", default=3, min=1,
   example="3 hari → terlambat 2 hari: hanya manager. Terlambat 3 hari: manager + admin",
   consumers=("services/rnd_sla_service.py:job_rnd_sla_escalation",
              "services/rnd_kpi_service.py:weights"),
-  related=("rnd.round_sla_days",), risk="low", roles=_MANAGER_TOO, permission=_RND_PERM)
+  related=("rnd.round_sla_days",), risk="low", permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PS-18 — BOBOT NILAI (GRADE) KINERJA DESAINER
@@ -251,7 +248,7 @@ E("rnd.kpi_weight_on_time", group="rnd", type="pct", default=30, min=0, max=100,
   example="30% → desainer dengan on-time 100% mendapat 30 dari 100 poin dari komponen ini",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
   related=("rnd.kpi_weight_score", "rnd.kpi_weight_acc"), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.kpi_weight_score", group="rnd", type="pct", default=30, min=0, max=100, step=5,
   unit="%", scopes=G,
@@ -261,8 +258,7 @@ E("rnd.kpi_weight_score", group="rnd", type="pct", default=30, min=0, max=100, s
   impact="Menaikkan angka ini membuat mutu hasil lebih menentukan daripada kecepatan.",
   example="30% → rata-rata skor 90 memberi 27 dari 100 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
-  related=("rnd.kpi_weight_on_time",), risk="low", roles=_MANAGER_TOO,
-  permission=_RND_PERM)
+  related=("rnd.kpi_weight_on_time",), risk="low", permission=_RND_PERM)
 
 E("rnd.kpi_weight_acc", group="rnd", type="pct", default=20, min=0, max=100, step=5,
   unit="%", scopes=G,
@@ -272,8 +268,7 @@ E("rnd.kpi_weight_acc", group="rnd", type="pct", default=20, min=0, max=100, ste
   impact="Menaikkan angka ini menghargai desainer yang hasilnya 'sekali jadi'.",
   example="20% → dari 10 round dinilai, 8 ACC → 16 dari 100 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
-  related=("rnd.kpi_weight_on_time",), risk="low", roles=_MANAGER_TOO,
-  permission=_RND_PERM)
+  related=("rnd.kpi_weight_on_time",), risk="low", permission=_RND_PERM)
 
 E("rnd.kpi_weight_design", group="rnd", type="pct", default=20, min=0, max=100, step=5,
   unit="%", scopes=G,
@@ -287,7 +282,7 @@ E("rnd.kpi_weight_design", group="rnd", type="pct", default=20, min=0, max=100, 
   example="20% → rata nilai desain 1,5/2 (=75) memberi 15 dari 100 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
   related=("rnd.kpi_weight_score", "rnd.design_acc_min_score"), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.kpi_penalty_rework", group="rnd", type="decimal", default=0.3, min=0, max=2,
   step=0.1, scopes=G,
@@ -298,8 +293,7 @@ E("rnd.kpi_penalty_rework", group="rnd", type="decimal", default=0.3, min=0, max
   impact="0 = pengulangan tidak mengurangi nilai. 0,3 = rework 50% memotong 15 poin.",
   example="0,3 dengan rework 40% → nilai dipotong 12 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
-  related=("rnd.kpi_penalty_overdue",), risk="low", roles=_MANAGER_TOO,
-  permission=_RND_PERM)
+  related=("rnd.kpi_penalty_overdue",), risk="low", permission=_RND_PERM)
 
 E("rnd.kpi_penalty_overdue", group="rnd", type="decimal", default=0.3, min=0, max=2,
   step=0.1, scopes=G,
@@ -311,7 +305,7 @@ E("rnd.kpi_penalty_overdue", group="rnd", type="decimal", default=0.3, min=0, ma
   example="0,3 dengan 30% round terlambat → nilai dipotong 9 poin",
   consumers=("services/rnd_kpi_service.py:compute_grade",),
   related=("rnd.kpi_penalty_rework", "rnd.sla_escalate_admin_days"), risk="low",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HILIR: KONTRAK & BAHAN SAMPLE
@@ -325,7 +319,7 @@ E("rnd.auto_contract_on_decide", group="rnd", type="bool", default=True, scopes=
          "risiko harga PO tidak sesuai kesepakatan sample.",
   example="Aktif → keputusan sample SMP-00002 menghasilkan kontrak KSC/SCT-00007",
   consumers=("services/rnd_sample_service.py:decide_sample",), risk="high",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)
 
 E("rnd.sample_material_from_stock", group="rnd", type="bool", default=True, scopes=G,
   label="Ambil bahan sample mengurangi stok gudang",
@@ -336,4 +330,4 @@ E("rnd.sample_material_from_stock", group="rnd", type="bool", default=True, scop
          "sistem lebih besar daripada stok fisik.",
   example="Ambil 3 meter untuk labdip → sisa roll berkurang 3 meter, biaya sample tercatat",
   consumers=("services/rnd_sample_service.py:issue_material",), risk="high",
-  roles=_MANAGER_TOO, permission=_RND_PERM)
+  permission=_RND_PERM)

@@ -301,7 +301,7 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
         res = await resolve(e["key"], ctx, at=at, preloaded=pre)
         out.append({**{k: e[k] for k in (
             "key", "group", "label", "help", "impact", "example", "type", "default",
-            "min", "max", "step", "options", "unit", "scopes", "consumers", "owner_role",
+            "min", "max", "step", "options", "unit", "scopes", "consumers",
             "risk", "requires_reason", "status", "not_used_reason", "simulate", "related",
             "row_shape", "columns", "editable")},
             "value": res["value"], "source_layer": res["source_layer"],

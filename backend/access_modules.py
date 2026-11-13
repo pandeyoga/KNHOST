@@ -109,7 +109,10 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "wms-operations", "operations", "interco-transfers", "cs-stock-analytics",   # FE-03 · P8 (D-16): interco-transfers = alias Transfer "Antar PT"
              # Fase 3 · P8 — induk hub Analitik ikut modul yang memuat tab Analitik Stok: tanpa ini `analytics` hanya
              # milik modul Laporan dan Admin Gudang (izin inventory, tanpa reports) terblokir dari Analitik Stok.
-             "analytics"]},
+             "analytics",
+             # KF-T1 — kunci `lot.*` kini diubah lewat `inventory.configure`: tab Aturan Gudang & Mutu ikut modul ini
+             # (isi tab disaring server; tanpa izin baca/ubah tab menampilkan pesan, bukan galat).
+             "settings-hub", "settings-warehouse", "settings-cfg-warehouse"]},
     {"id": "inspection", "group": "Kualitas", "label": "Inspeksi & QC",
      "description": "SPK inspeksi, hasil pemeriksaan warna/handfeel, keputusan terima/tolak.",
      "resources": ["inspection"],
@@ -371,6 +374,20 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
     # `vehicle_log`, sehingga manajer berizin log kendaraan tanpa `logistics` melihat menunya lalu "Permission ditolak:
     # logistics.view" mentah. Kini menu disembunyikan bila izin `logistics` tidak ada (Log Kendaraan tetap ikut modul).
     "logistics": ["logistics"],
+    # KF-T1 — tab Pusat Pengaturan hanya tampil bagi yang bisa MEMBACA isinya: pemegang `settings.view`, atau
+    # pemegang izin pengubah kunci di kelompok tab itu (`permission[0]` kunci registry; dijaga tes
+    # `tests_mem/test_KFT1_izin_pengaturan.py::U14` terhadap `configGroupViews.js`).
+    "settings-config": ["settings"],
+    "settings-cfg-finance": ["settings"],
+    "settings-cfg-documents": ["settings"],
+    "settings-cfg-notify": ["settings"],
+    "settings-cfg-system": ["settings"],
+    "settings-cfg-approval": ["settings", "rnd"],
+    "settings-cfg-rnd": ["settings", "rnd"],
+    "settings-cfg-sales": ["settings", "sales_return"],
+    "settings-cfg-hr": ["settings", "hr"],
+    "settings-cfg-purchasing": ["settings", "makloon"],
+    "settings-cfg-warehouse": ["settings", "uom", "inventory", "goods_receipt"],
 }
 
 

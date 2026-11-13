@@ -25,13 +25,15 @@ G = ("global", "entity")
 # ═══════════════════════════════════════════════════════════════════════════
 # KONVERSI SATUAN (scope `uom`)
 # ═══════════════════════════════════════════════════════════════════════════
-# Wewenang yang DISALIN dari endpoint konfigurasi lama (FASE G-0) supaya tidak ada
-# peran yang kehilangan (atau mendapat) hak saat editor lama dihapus:
-#   PUT /uom-conversions/settings   → require_permission(uom, update)      (admin)
-#   PUT /lots/settings              → require_role(["manager"])            (admin+manager)
-#   PUT /supplier-contracts/policy  → require_role(["admin","manager"])    (admin+manager)
+# Wewenang mengubah = IZIN di matriks peran (KF-T1, K-47), bukan nama peran. Asal-usulnya (FASE G-0):
+#   PUT /uom-conversions/settings   → uom.update
+#   PUT /lots/settings              → dulu require_role(["manager"]) → kini inventory.configure (admin, manager)
+#   PUT /supplier-contracts/policy  → dulu require_role(["admin","manager"]) → kini makloon.configure (admin, manager)
+#   mode surat jalan supplier       → goods_receipt.configure (admin, manager)
 _UOM_PERM = ("uom", "update")
-_MANAGER_TOO = ("manager",)
+_LOT_PERM = ("inventory", "configure")
+_GRN_PERM = ("goods_receipt", "configure")
+_MAKLOON_PERM = ("makloon", "configure")
 
 E("uom.warn_pct", group="stok-satuan", type="pct", default=2.0, min=0, max=100, step=0.5,
   unit="%", scopes=G, simulate="uom_variance",
@@ -94,7 +96,7 @@ E("lot.enforcement_mode", group="lot", type="enum", default="warn",
        "gudang bisa terhambat bila supplier tidak mencantumkan lot.",
   example="block → penerimaan tanpa nomor lot supplier ditolak (400)",
   consumers=("services/lot_service.py", "services/inbound_complete_service.py"), risk="high",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 E("lot.require_supplier_lot", group="lot", type="bool", default=True, scopes=G,
   simulate="lot_enforce",
@@ -103,7 +105,7 @@ E("lot.require_supplier_lot", group="lot", type="bool", default=True, scopes=G,
   impact="Menentukan field mana yang diperiksa oleh ketegasan pengisian lot di atas.",
   example="Aktif + mode block → field 'Lot Supplier' wajib diisi",
   consumers=("services/lot_service.py",), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 E("lot.require_dye_lot", group="lot", type="bool", default=True, scopes=G,
   simulate="lot_enforce",
@@ -113,7 +115,7 @@ E("lot.require_dye_lot", group="lot", type="bool", default=True, scopes=G,
   example="Aktif → roll tanpa dye lot diberi peringatan/ditolak sesuai mode",
   consumers=("services/lot_service.py",),
   related=("allocation.dye_lot_strict",), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 E("lot.alias_mode", group="lot", type="enum", default="manual",
   options=({"value": "manual", "label": "LOT KN diisi user per lot (KLX-01)"},
@@ -123,7 +125,7 @@ E("lot.alias_mode", group="lot", type="enum", default="manual",
   help="LN-014/KLX-01 — dua kode: LOT pabrik + LOT KN. LOT KN diisi bebas oleh user; tidak ada pola/reset otomatis.",
   impact="Mode manual mengizinkan petugas mengisi alias per lot dengan jejak riwayat; nomor lot internal tetap tidak berubah.",
   example="manual → lot KSC/LOT-2610-0001 (supplier 234) boleh diberi alias 'KN A'",
-  consumers=("services/lot_service.py",), risk="medium", roles=_MANAGER_TOO)
+  consumers=("services/lot_service.py",), risk="medium", permission=_LOT_PERM)
 
 E("lot.alias_unique_scope", group="lot", type="enum", default="entity_supplier",
   options=({"value": "entity_supplier", "label": "Unik per entitas + supplier"},
@@ -133,7 +135,7 @@ E("lot.alias_unique_scope", group="lot", type="enum", default="entity_supplier",
   help="LN-014 — alias tidak boleh dipakai dua lot dalam cakupan ini (asumsi sampai KLX-01).",
   impact="Mencegah dua lot berbeda punya alias sama sehingga penelusuran tidak ambigu.",
   example="entity_supplier → 'KN A' boleh dipakai lagi untuk supplier lain",
-  consumers=("services/lot_service.py",), risk="low", roles=_MANAGER_TOO)
+  consumers=("services/lot_service.py",), risk="low", permission=_LOT_PERM)
 
 E("lot.auto_create_on_receiving", group="lot", type="bool", default=True, scopes=G,
   label="Buat lot otomatis saat penerimaan",
@@ -141,7 +143,7 @@ E("lot.auto_create_on_receiving", group="lot", type="bool", default=True, scopes
   impact="Bila mati, petugas harus membuat lot manual lebih dulu — lebih lambat tetapi lebih terkontrol.",
   example="Aktif → penerimaan 20 roll langsung membentuk LOT-2607-0001",
   consumers=("services/lot_service.py",), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 E("lot.status_on_receipt", group="lot", type="enum", default="karantina",
   options=({"value": "karantina", "label": "Karantina (tunggu QC)"},
@@ -153,7 +155,7 @@ E("lot.status_on_receipt", group="lot", type="enum", default="karantina",
   example="karantina → stok belum masuk ATP sampai QC selesai",
   consumers=("services/lot_service.py", "services/inbound_complete_service.py"),
   related=("purchasing.qc_on_receipt",), risk="high",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 E("lot.number_format", group="lot", type="text", default="LOT-YYMM-####", scopes=G,
   simulate="lot_number",
@@ -162,7 +164,7 @@ E("lot.number_format", group="lot", type="text", default="LOT-YYMM-####", scopes
   impact="Mengubah bentuk nomor lot baru. Nomor lama tidak berubah.",
   example="'KN-LOT-YYMM-#####' → KN-LOT-2607-00001",
   consumers=("services/lot_service.py",), risk="low",
-  roles=_MANAGER_TOO)
+  permission=_LOT_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PENERIMAAN BARANG (scope `receiving`)
@@ -197,7 +199,7 @@ E("receiving.supplier_dn_mode", group="penerimaan", type="enum", default="warn",
   help="LN-014 — setiap lot baru sebaiknya langsung membawa nomor surat jalan supplier.",
   impact="warn → penerimaan tanpa SJ tetap tersimpan dengan peringatan & tanda 'SJ belum diisi'; block → ditolak.",
   example="block → Selesaikan Penerimaan tanpa SJ supplier ditolak (400)",
-  consumers=("services/inbound_complete_service.py",), risk="medium", roles=_MANAGER_TOO)
+  consumers=("services/inbound_complete_service.py",), risk="medium", permission=_GRN_PERM)
 
 E("receiving.block_over_remaining", group="penerimaan", type="bool", default=True,
   scopes=G, simulate="receiving_over",
@@ -336,7 +338,7 @@ E("makloon.variance_tolerance_pct", group="makloon", type="pct", default=3.0,
   example="Estimasi 1.000 yard · kembali 960 (−4%) · toleransi 3% → klaim terbuka",
   consumers=("services/makloon_order_service.py", "services/contract_service.py"),
   related=("makloon.auto_claim",), risk="high",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.auto_claim", group="makloon", type="bool", default=True, scopes=G,
   label="Buka klaim otomatis saat selisih besar",
@@ -344,7 +346,7 @@ E("makloon.auto_claim", group="makloon", type="bool", default=True, scopes=G,
   impact="Bila mati, selisih hanya dicatat — tim harus membuat klaim manual (berisiko terlupa).",
   example="Aktif → selisih −4% otomatis membentuk klaim status 'menunggu persetujuan'",
   consumers=("services/makloon_order_service.py", "services/contract_service.py"), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.claim_approval_roles", group="makloon", type="list",
   default=["manager", "admin"], scopes=G,
@@ -353,7 +355,7 @@ E("makloon.claim_approval_roles", group="makloon", type="list",
   impact="Menentukan siapa yang bisa menutup klaim dan membebankan biaya ke mitra.",
   example="['manager','admin'] → supervisor gudang tidak bisa menyetujui klaim",
   consumers=("services/makloon_claim_service.py", "services/contract_service.py"), risk="high",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.contract_mode", group="makloon", type="enum", default="warn",
   options=({"value": "off", "label": "Tidak diwajibkan"},
@@ -366,7 +368,7 @@ E("makloon.contract_mode", group="makloon", type="enum", default="warn",
          "baru harus dibuatkan kontrak lebih dulu.",
   example="block → order makloon tanpa kontrak aktif ditolak",
   consumers=("services/makloon_order_service.py", "services/contract_service.py"), risk="high",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.default_shrinkage_pct", group="makloon", type="pct", default=0.0,
   min=0, max=100, step=0.5, unit="%", scopes=G, simulate="makloon_variance",
@@ -376,7 +378,7 @@ E("makloon.default_shrinkage_pct", group="makloon", type="pct", default=0.0,
   impact="Mempengaruhi estimasi hasil dan perhitungan selisih/klaim.",
   example="Susut 3% · kirim 1.000 yard → estimasi kembali 970 yard",
   consumers=("services/makloon_order_service.py", "services/contract_service.py"), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.require_output_product", group="makloon", type="bool", default=True, scopes=G,
   label="Wajib tentukan produk hasil",
@@ -384,7 +386,7 @@ E("makloon.require_output_product", group="makloon", type="bool", default=True, 
   impact="Bila mati, hasil makloon bisa masuk tanpa identitas produk — HPP & stok jadi kabur.",
   example="Aktif → langkah celup wajib memilih produk hasil 'Lurik Merah Grade A'",
   consumers=("services/makloon_order_service.py", "services/contract_service.py"), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 E("makloon.require_yield_reason", group="makloon", type="bool", default=True, scopes=G,
   label="Wajib alasan bila estimasi hasil diubah",
@@ -392,7 +394,7 @@ E("makloon.require_yield_reason", group="makloon", type="bool", default=True, sc
   impact="Menjaga agar estimasi tidak diubah diam-diam untuk menutupi selisih.",
   example="Aktif → mengubah estimasi 970 → 940 wajib mengisi alasan",
   consumers=("routers/makloon_orders.py", "services/contract_service.py"), risk="medium",
-  roles=_MANAGER_TOO)
+  permission=_MAKLOON_PERM)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SDM & PENGGAJIAN (scope `hr`)

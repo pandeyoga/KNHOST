@@ -1,11 +1,11 @@
 DEFAULT_PERMISSIONS = {
     "admin": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
-        "goods_receipt": ["view", "create", "count", "review", "close", "approve"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
+        "goods_receipt": ["view", "create", "count", "review", "close", "approve", "configure"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
         "marketing": ["view", "create", "update", "approve", "delete"],
         "product": ["view", "create", "update", "delete", "import", "export"],
         "color": ["view", "create", "update", "delete", "approve"],
-        "makloon": ["view", "create", "update", "delete"],
+        "makloon": ["view", "create", "update", "delete", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
         "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve"],
         "supplier_contract": ["view", "create", "update", "delete"],
         "supplier_item": ["view", "create", "update", "delete", "import"],
@@ -32,7 +32,7 @@ DEFAULT_PERMISSIONS = {
         #   → HANYA admin/manager (L20: gudang sebelumnya bisa membacanya).
         "interco_finance": ["view"],
         # FIX-3a — `approve_value`: langkah 2 pendaftaran awal (nilai & jurnal, sesudah hitungan disetujui gudang).
-        "inventory": ["view", "create", "update", "cycle_count", "approve_count", "approve_value", "pegging"],
+        "inventory": ["view", "create", "update", "cycle_count", "approve_count", "approve_value", "pegging", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
         "reports": ["view", "export"],
         "label": ["view", "generate"],
         "transfer": ["view", "create", "update", "approve", "reject", "complete", "cancel"],
@@ -156,14 +156,14 @@ DEFAULT_PERMISSIONS = {
     },
     "manager": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
-        "goods_receipt": ["view", "review", "close", "approve"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
+        "goods_receipt": ["view", "review", "close", "approve", "configure"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
         "logistics": ["view"],   # Integrasi FIX-1 (B1b UI-47) — manajer memantau pengiriman (baca saja), menu Pengiriman berfungsi
         "marketing": ["view", "create", "update", "approve", "delete"],
         "product": ["view", "export"],
         # FASE F — manager: menilai spesifikasi, memutus pemenang sample, mengubah kebijakan R&D, hold desain ACC
         "rnd": ["view", "create", "submit", "assess", "decide", "manage", "hold"],
         "color": ["view", "create", "update", "delete", "approve"],
-        "makloon": ["view", "create", "update", "delete"],
+        "makloon": ["view", "create", "update", "delete", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
         "makloon_order": ["view", "create", "issue", "receive", "cancel", "claim", "claim_approve"],
         "supplier_contract": ["view", "create", "update", "delete"],
         "supplier_item": ["view", "create", "update", "delete", "import"],
@@ -179,7 +179,7 @@ DEFAULT_PERMISSIONS = {
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel", "cutting_config", "cutting_receive"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
-        "inventory": ["view", "cycle_count", "approve_count", "approve_value", "update", "pegging"],
+        "inventory": ["view", "cycle_count", "approve_count", "approve_value", "update", "pegging", "configure"],   # KF-T1 — "configure" = ubah pengaturan modul ini di Pusat Pengaturan
         "reports": ["view", "export"],
         "label": ["view", "generate"],
         "transfer": ["view", "create", "approve", "reject", "complete"],

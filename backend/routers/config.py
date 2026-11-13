@@ -10,6 +10,9 @@ Satu pintu API untuk seluruh konfigurasi sistem:
   GET  /api/config/health          — kesehatan wiring (tidak ada tombol palsu)
   POST /api/config/impact-preview  — DAFTAR DAMPAK koreksi harga master
   POST /api/config/impact-apply    — terapkan HANYA ke dokumen yang dicentang
+
+KF-T1 — wewenang: UBAH = Admin atau izin `entry.permission` (`_may_edit`); BACA = Admin, `settings.view`, atau yang
+boleh mengubah kunci itu (`_may_read`). Tanpa satu pun kunci terbaca → 403 (B1); kunci/kelompok di luar → 403 (B2).
 """
 from typing import Any, Dict, List, Optional
 
@@ -22,7 +25,6 @@ from schemas_config import (
 )
 from services import config_health, config_simulator
 from services import config_resolver as resolver
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -45,32 +47,65 @@ def _may(perms: Dict[str, List[str]], module: str, action: str) -> bool:
 def _may_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
     """Apakah user BERWENANG mengubah setting ini (izin saja, tanpa melihat status).
 
-    Aturannya sengaja MENYALIN wewenang endpoint konfigurasi lama yang dihapus
-    di FASE G-0, supaya penggabungan ke satu editor tidak diam-diam mencabut
-    (atau menambah) hak siapa pun:
-      - admin              → selalu boleh (seperti sebelumnya);
-      - `roles`            → peran yang dulu diizinkan endpoint berbasis role
-                             (mis. manager pada PUT /lots/settings);
-      - `permission`       → izin domain (mis. hr.manage_payroll, uom.update).
+    KF-T1 (K-47) — satu aturan: Admin selalu boleh; selain itu HANYA izin `entry["permission"]` di matriks peran
+    (mis. `settings.manage`, `inventory.configure`, `hr.manage_payroll`). Tidak ada jalur nama peran (`roles`) maupun
+    `owner_role` — wewenang terlihat dan bisa dicabut di layar Peran & Hak Akses.
     """
-    role = user.get("role") or ""
-    if role == "admin":
-        return True
-    if role_in(role, (entry.get("roles") or [])):
+    if (user.get("role") or "") == "admin":
         return True
     module, action = (entry.get("permission") or ["settings", "manage"])[:2]
-    if not _may(perms, module, action):
+    return _may(perms, module, action)
+
+
+def _may_read(entry: Optional[Dict[str, Any]], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
+    """KF-T1 — boleh MEMBACA sebuah setting: Admin, pemegang `settings.view`, atau yang boleh mengubahnya.
+
+    Bentuk umum batas baca MD (keputusan pemilik K-11, 26 Okt): MD tetap membaca tepat kunci berizin `rnd.manage`."""
+    if not entry:
         return False
-    # Setting yang memakai izin bawaan `settings.manage` tetap menghormati
-    # `owner_role` — perilaku ini sudah ada sebelum FASE G-0 dan dipertahankan.
-    if module == "settings" and entry.get("owner_role") == "admin":
-        return False
-    return True
+    if (user.get("role") or "") == "admin" or _may(perms, "settings", "view"):
+        return True
+    return _may_edit(entry, user, perms)
+
+
+def _module_label(resource: str) -> str:
+    from access_modules import MODULE_CATALOG
+    for m in MODULE_CATALOG:
+        if resource in (m.get("resources") or []):
+            return m.get("label", resource)
+    return resource
+
+
+ADMIN_MODULE = "Pengaturan, Pengguna & Hak Akses"
 
 
 def _perm_error(entry: Dict[str, Any]) -> str:
-    module, action = (entry.get("permission") or ["settings", "manage"])[:2]
-    return f"'{entry['label']}' tidak bisa Anda ubah (butuh izin {module}.{action})"
+    module = (entry.get("permission") or ["settings", "manage"])[0]
+    return (f"Anda belum punya akses untuk mengubah pengaturan “{entry['label']}”. Minta Admin menambahkan akses "
+            f"'{_module_label(module)}'.")
+
+
+def _deny_all() -> HTTPException:
+    """B1 — tidak ada satu pun pengaturan yang boleh dibaca."""
+    return HTTPException(status_code=403, detail=(
+        f"Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses '{ADMIN_MODULE}'."))
+
+
+def _deny_one(label: str, resource: str = "settings") -> HTTPException:
+    """B2 — kunci/kelompok di luar yang terbaca."""
+    return HTTPException(status_code=403, detail=(
+        f"Anda belum punya akses untuk melihat pengaturan “{label}”. Minta Admin menambahkan akses "
+        f"'{_module_label(resource)}'."))
+
+
+def _deny_entry(entry: Dict[str, Any]) -> HTTPException:
+    return _deny_one(entry.get("label") or entry.get("key", ""), (entry.get("permission") or ["settings"])[0])
+
+
+def _deny_group(group: str) -> HTTPException:
+    g = next((x for x in registry.GROUPS if x["id"] == group), None)
+    items = registry.by_group(group)
+    return _deny_one((g or {}).get("label", group), (items[0].get("permission") or ["settings"])[0] if items else "settings")
 
 
 def _can_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
@@ -85,57 +120,30 @@ def _can_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List
     return _may_edit(entry, user, perms)
 
 
-#: Keputusan pemilik K-11 (26 Okt) — peran yang hanya boleh MEMBACA sebagian Pusat Pengaturan. Dulu setiap pengguna
-#: login membaca SELURUH kelompok (registry/effective/explain/history terbuka). MD kini hanya membaca kelompok
-#: "R&D & Desain" + setting yang dijaga izin R&D (`rnd.*`, mis. matriks persetujuan divisi R&D — persis yang memang
-#: bisa ia ubah), jadi hak UBAH MD tidak berkurang. Peran lain TIDAK berubah. Pemegang `settings.view` (diberi lewat
-#: Peran & Hak Akses) tetap membaca semuanya — batas ini mengikuti matriks izin, bukan menggantikannya.
-READ_LIMITS: Dict[str, Dict[str, Any]] = {
-    "md": {"groups": ("rnd",), "modules": ("rnd",), "label": "R&D & Desain"},
-}
+def _full_reader(user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
+    return (user.get("role") or "") == "admin" or _may(perms, "settings", "view")
 
 
-def _read_limit(user: Dict[str, Any], perms: Dict[str, List[str]]) -> Optional[Dict[str, Any]]:
-    """Batas baca Pusat Pengaturan untuk user ini — `None` = boleh membaca semua kelompok."""
-    if _may(perms, "settings", "view"):
-        return None
-    role = user.get("role") or ""
-    for base, lim in READ_LIMITS.items():
-        if role_in(role, (base,)):
-            return lim
-    return None
-
-
-def _visible(entry: Optional[Dict[str, Any]], lim: Optional[Dict[str, Any]]) -> bool:
-    if not lim:
-        return True
-    if not entry:
-        return False
-    if entry.get("group") in lim["groups"]:
-        return True
-    module = (entry.get("permission") or ["settings", "manage"])[0]
-    return module in lim["modules"]
-
-
-def _visible_groups(lim: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Daftar kelompok + hitungan yang TERLIHAT user (hitungan ikut saringan, bukan jumlah katalog)."""
-    if not lim:
+def _readable_groups(user: Dict[str, Any], perms: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+    """Kelompok + hitungan yang TERBACA user (hitungan ikut saringan, bukan jumlah katalog)."""
+    if _full_reader(user, perms):
         return registry.groups()
     out = []
     for g in registry.groups():
-        items = [e for e in registry.by_group(g["id"]) if _visible(e, lim)]
+        items = [e for e in registry.by_group(g["id"]) if _may_read(e, user, perms)]
         if items:
             out.append({**g, "count": len(items),
                         "active_count": len([e for e in items if e.get("status") == "active"])})
-    # Kelompok utama peran (mis. R&D & Desain untuk MD) di urutan pertama → layar membukanya lebih dulu.
-    out.sort(key=lambda g: g["id"] not in lim["groups"])
+    # Kelompok dengan kunci terbaca terbanyak di urutan pertama → layar membukanya lebih dulu (mis. R&D untuk MD).
+    out.sort(key=lambda g: -g["count"])
     return out
 
 
-def _deny_read(lim: Dict[str, Any]) -> HTTPException:
-    return HTTPException(status_code=403, detail=(
-        f"Peran Anda hanya dapat membuka pengaturan kelompok {lim['label']}. "
-        "Minta Admin/Manajer bila perlu melihat pengaturan lain."))
+def _assert_any_readable(user: Dict[str, Any], perms: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+    groups = _readable_groups(user, perms)
+    if not groups:
+        raise _deny_all()
+    return groups
 
 
 async def _global_write_allowed(request: Request) -> bool:
@@ -161,22 +169,27 @@ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[
     """Katalog setting (label awam, penjelasan, dampak, tipe, batas, scope, consumer)."""
     user = await current_user(request)
     perms = await _allowed(user)
-    lim = _read_limit(user, perms)
+    groups = _assert_any_readable(user, perms)          # KF-T1 — B1 bila tidak satu pun terbaca
+    if group and not q and not any(_may_read(e, user, perms) for e in registry.by_group(group)):
+        raise _deny_group(group)
     entries = registry.search(q) if q else (
         registry.by_group(group) if group else registry.all_entries())
-    entries = [{**e, "can_edit": _can_edit(e, user, perms)} for e in entries if _visible(e, lim)]
-    return {"groups": _visible_groups(lim), "entries": entries, "total": len(entries),
-            "scope_levels": registry.SCOPE_LEVELS, "simulators": config_simulator.catalog(),
+    entries = [{**e, "can_edit": _can_edit(e, user, perms)} for e in entries if _may_read(e, user, perms)]
+    full = _full_reader(user, perms)
+    return {"groups": groups, "entries": entries, "total": len(entries),
+            "scope_levels": registry.SCOPE_LEVELS,
+            "simulators": [x for x in config_simulator.catalog() if _sim_readable(x, user, perms)],
             # `caps` membuat UI jujur: tab/tombol yang tidak diizinkan server
             # tidak ditampilkan sama sekali (bukan ditampilkan lalu ditolak 403).
             "caps": {
                 "settings_manage": _may(perms, "settings", "manage"),
+                "settings_view": full,
                 "impact_apply": _may(perms, "product", "update"),
                 "editable_count": sum(1 for e in entries if e["can_edit"]),
                 # IX-06 — UI hanya menawarkan lapisan "Global" bila server mengizinkannya
                 "global_write": await _global_write_allowed(request),
-                # K-11 — batas baca (mis. MD: hanya R&D & Desain); kosong = semua kelompok terbaca.
-                "read_scope": (lim or {}).get("label", ""),
+                # KF-T1 — kelompok yang terbaca bila pelaku tidak memegang `settings.view`; kosong = semua.
+                "read_scope": "" if full else ", ".join(g["label"] for g in groups),
             }}
 
 
@@ -187,17 +200,17 @@ async def read_effective(request: Request, group: str = "", q: str = "",
     """Nilai efektif + lapisan asal untuk satu grup (atau hasil pencarian)."""
     user = await current_user(request)
     perms = await _allowed(user)
-    lim = _read_limit(user, perms)
-    if lim and group and not q and not any(_visible(e, lim) for e in registry.by_group(group)):
-        raise _deny_read(lim)
+    groups = _assert_any_readable(user, perms)
+    if group and not q and not any(_may_read(e, user, perms) for e in registry.by_group(group)):
+        raise _deny_group(group)
     await resolver.apply_due_values()      # aktifkan perubahan berjadwal yang jatuh tempo
     ctx = {"entity_id": entity_id, "customer_id": customer_id, "supplier_id": supplier_id,
            "product_id": product_id, "document_id": document_id}
     items = await resolver.resolve_group(group or None, ctx, term=q)
-    items = [it for it in items if _visible(registry.get(it["key"]), lim)]
+    items = [it for it in items if _may_read(registry.get(it["key"]), user, perms)]
     for it in items:
         it["can_edit"] = _can_edit(registry.get(it["key"]) or it, user, perms)
-    return {"groups": _visible_groups(lim), "context": ctx, "items": items, "total": len(items)}
+    return {"groups": groups, "context": ctx, "items": items, "total": len(items)}
 
 
 @router.get("/explain")
@@ -209,9 +222,8 @@ async def explain(request: Request, key: str, entity_id: str = "", customer_id: 
     entry = registry.get(key)
     if not entry:
         raise HTTPException(status_code=404, detail=f"Setting '{key}' tidak ada di registry")
-    lim = _read_limit(user, await _allowed(user))
-    if not _visible(entry, lim):
-        raise _deny_read(lim)
+    if not _may_read(entry, user, await _allowed(user)):
+        raise _deny_entry(entry)
     ctx = {"entity_id": entity_id, "customer_id": customer_id, "supplier_id": supplier_id,
            "product_id": product_id, "document_id": document_id}
     res = await resolver.resolve(key, ctx)
@@ -224,7 +236,7 @@ async def explain(request: Request, key: str, entity_id: str = "", customer_id: 
 async def simulate(payload: ConfigSimulateIn, request: Request) -> Dict[str, Any]:
     """"Coba dulu": jalankan aturan memakai nilai efektif (+ nilai hipotetis) tanpa menyimpan."""
     user = await current_user(request)
-    lim = _read_limit(user, await _allowed(user))
+    perms = await _allowed(user)
     sim_id = payload.simulator
     if not sim_id:
         entry = registry.get(payload.key)
@@ -239,8 +251,9 @@ async def simulate(payload: ConfigSimulateIn, request: Request) -> Dict[str, Any
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    if lim and not all(_visible(registry.get(k), lim) for k in sim["needs"]):
-        raise _deny_read(lim)
+    for k in sim["needs"]:
+        if not _may_read(registry.get(k), user, perms):
+            raise _deny_entry(registry.get(k) or {"key": k, "label": k})
     ctx = _ctx(payload.ctx)
     values: Dict[str, Any] = {}
     trail: List[Dict[str, Any]] = []
@@ -352,14 +365,19 @@ async def read_history(request: Request, key: str = "", scope_type: str = "",
                        scope_id: str = "", limit: int = 100) -> Dict[str, Any]:
     """Riwayat perubahan konfigurasi (append-only, terbaru dulu)."""
     user = await current_user(request)
-    lim = _read_limit(user, await _allowed(user))
+    perms = await _allowed(user)
     n = min(max(int(limit), 1), 500)
-    if lim and key and not _visible(registry.get(key), lim):
-        raise _deny_read(lim)
-    # K-11 — peran berbatas baca hanya melihat riwayat setting yang terlihat olehnya.
-    rows = await resolver.history(key, scope_type, scope_id, 500 if lim else n)
-    if lim:
-        rows = [r for r in rows if _visible(registry.get(r["key"]), lim)][:n]
+    if key:
+        entry = registry.get(key)
+        if not _may_read(entry, user, perms):
+            raise _deny_entry(entry or {"key": key, "label": key})
+    else:
+        _assert_any_readable(user, perms)
+    # KF-T1 — pembaca terbatas hanya melihat riwayat setting yang boleh dibacanya.
+    full = _full_reader(user, perms)
+    rows = await resolver.history(key, scope_type, scope_id, n if full else 500)
+    if not full:
+        rows = [r for r in rows if _may_read(registry.get(r["key"]), user, perms)][:n]
     return {"rows": rows, "total": len(rows)}
 
 
@@ -400,6 +418,12 @@ async def impact_apply(payload: ImpactApplyIn, request: Request) -> Dict[str, An
 
 @router.get("/simulators")
 async def list_simulators(request: Request) -> Dict[str, Any]:
-    """Daftar simulator yang tersedia + input yang diminta."""
-    await current_user(request)
-    return {"simulators": config_simulator.catalog()}
+    """Daftar simulator yang tersedia + input yang diminta (KF-T1: hanya yang semua masukannya terbaca)."""
+    user = await current_user(request)
+    perms = await _allowed(user)
+    _assert_any_readable(user, perms)
+    return {"simulators": [x for x in config_simulator.catalog() if _sim_readable(x, user, perms)]}
+
+
+def _sim_readable(sim: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
+    return all(_may_read(registry.get(k), user, perms) for k in (sim.get("needs") or []))

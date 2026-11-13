@@ -9,7 +9,12 @@ Masalah yang diselesaikan (audit 2026-07-26, `scripts/audit_config_wiring.py`):
 
 Registry ini membuat setiap setting **eksplisit & bisa diaudit**:
   key · label awam · penjelasan · dampak bila diubah · contoh angka · tipe & batas ·
-  level scope · **referensi kode konsumen (WAJIB)** · pemilik (role) · risiko · status.
+  level scope · **referensi kode konsumen (WAJIB)** · izin pengubah · sifat baca · risiko · status.
+
+KF-T1 — wewenang MENGUBAH sebuah kunci = `permission` (izin di matriks peran, terlihat dan bisa dicabut di layar
+Peran & Hak Akses); tidak ada lagi jalur nama peran (`roles`/`owner_role`). Wewenang MEMBACA: pemegang
+`settings.view`, atau yang boleh mengubah kunci itu (`routers/config.py` `_may_read`). `sensitif_baca=False` menandai
+kunci yang boleh dikirim ke semua pengguna lewat `GET /api/settings/effective` (dibaca layar POS/PO/tagihan).
 
 UI "Pusat Pengaturan" **di-generate dari registry ini**, sehingga UI dan mesin tidak
 bisa lagi berbeda. Gate `scripts/audit_config_wiring.py` menolak kunci `active` yang
@@ -83,7 +88,9 @@ GROUPS: List[Dict[str, Any]] = [
     {"id": "sdm", "label": "SDM & Penggajian", "order": 12,
      "question": "Berapa iuran BPJS, PPh 21, dan pengali lembur?"},
     {"id": "tampilan", "label": "Tampilan & Navigasi", "order": 13,
-     "question": "Menu apa yang muncul, dan halaman awal setiap peran?"},
+     "question": "Menu apa yang muncul, dan halaman awal setiap peran?",
+     # KF-T1 — dibaca semua pengguna saat aplikasi dibuka (menu "segera hadir"); `role_home.*` ditandai sensitif.
+     "sensitif_baca": False},
     # FASE G-1 — fondasi amandemen: tidak ada perubahan angka secara diam-diam.
     {"id": "amandemen", "label": "Koreksi & Amandemen Dokumen", "order": 14,
      "question": "Koreksi mana yang boleh langsung jalan, dan mana yang wajib disetujui?"},
@@ -160,7 +167,6 @@ def E(
     unit: str = "",
     scopes: Sequence[str] = ("global", "entity"),
     consumers: Sequence[str] = (),
-    owner_role: str = "admin",
     risk: str = "low",
     requires_reason: bool = False,
     status: str = "active",
@@ -170,8 +176,8 @@ def E(
     row_shape: str = "",
     columns: Optional[Sequence[Dict[str, Any]]] = None,
     permission: Optional[Tuple[str, str]] = None,
-    roles: Sequence[str] = (),
     value_format: str = "",
+    sensitif_baca: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Daftarkan satu setting. Validasi ketat supaya registry tidak pernah setengah jadi."""
     if key in _REGISTRY:
@@ -223,7 +229,6 @@ def E(
         "unit": unit,
         "scopes": list(scopes),
         "consumers": list(consumers),
-        "owner_role": owner_role,
         "risk": risk,
         "requires_reason": bool(requires_reason) or risk == "high",
         "status": status,
@@ -240,11 +245,10 @@ def E(
         # sudah dimiliki peran lain (mis. manager tetap boleh mengubah aturan gaji
         # lewat `hr.manage_payroll`, persis seperti sebelum editor lama dihapus).
         "permission": list(permission or ("settings", "manage")),
-        # Peran NON-admin yang tetap boleh mengubah setting ini walau tidak punya
-        # `settings.manage`. Dipakai untuk menyalin persis wewenang endpoint lama
-        # yang berbasis role (mis. PUT /lots/settings = require_role(["manager"]))
-        # sehingga penghapusan editor lama tidak mengurangi wewenang siapa pun.
-        "roles": list(roles),
+        # KF-T1 — True = hanya pemegang `settings.view` / pengubah kunci ini yang membacanya. Nilai eksplisit menang;
+        # bila None mengikuti kelompoknya; bawaan sensitif.
+        "sensitif_baca": bool(sensitif_baca) if sensitif_baca is not None else bool(
+            next((g.get("sensitif_baca", True) for g in GROUPS if g["id"] == group), True)),
         "legacy_scope": legacy_scope,
         "legacy_path": legacy_path,
         "editable": status == "active",

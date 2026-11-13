@@ -29,17 +29,16 @@ export default function SettingsScopeBar({ s, entities = [], scopeName = "Global
   const editableShown = items.filter((i) => i.can_edit !== false).length;
   return (
     <>
-      {/* Keputusan pemilik K-11 (26 Okt) — peran berbatas baca (mis. MD) hanya menerima kelompok tertentu dari server. */}
-      {!caps.settings_manage && caps.read_scope ? (
+      {/* KF-T1 — tanpa `settings.view` server hanya mengirim pengaturan yang menjadi wewenang peran (bisa diubah). */}
+      {!caps.settings_view && caps.read_scope ? (
         <div className="cfg-notice info" data-testid="cfg-read-scope">
           <ShieldCheck size={15} />
           <span>
-            Peran Anda hanya dapat membuka pengaturan <b>{caps.read_scope}</b> (termasuk aturan persetujuan yang
-            dijaga hak R&amp;D). Kelompok lain tidak ditampilkan
-            {items.length > 0 ? ` · yang bisa Anda ubah di daftar ini: ${editableShown} dari ${items.length} pengaturan` : ""}.
+            Anda hanya melihat pengaturan <b>{caps.read_scope}</b> — yaitu aturan yang termasuk wewenang peran Anda.
+            {items.length > 0 ? ` Yang bisa Anda ubah di daftar ini: ${editableShown} dari ${items.length} pengaturan.` : ""}
           </span>
         </div>
-      ) : !caps.settings_manage ? (
+      ) : caps.settings_view && !caps.settings_manage ? (
         <div className="cfg-notice info" data-testid="cfg-limited-rights">
           <ShieldCheck size={15} />
           <span>

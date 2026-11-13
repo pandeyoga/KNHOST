@@ -90,6 +90,8 @@ export function useSettingsBrowser({
   const [caps, setCaps] = useState({ settings_manage: false, impact_apply: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // KF-T1 — server menolak membaca (403): keadaan kosong berpesan, bukan galat merah + "Coba lagi".
+  const [denied, setDenied] = useState("");
   const [notice, setNotice] = useState(null);     // {msg, tone}
   const [why, setWhy] = useState(null);
   const [sim, setSim] = useState(null);           // {entry, draft}
@@ -149,7 +151,10 @@ export function useSettingsBrowser({
         // Fungsional: deep-link yang sudah menetapkan kelompok sebelum registry selesai tidak boleh ditimpa.
         else setGroup((cur) => cur || first.id);
       } catch (e) {
-        if (alive) { setError(errMsg(e, "Gagal memuat katalog pengaturan.")); setLoading(false); }
+        if (!alive) return;
+        if (e?.response?.status === 403) setDenied(errMsg(e, "Anda belum punya akses untuk melihat pengaturan."));
+        else setError(errMsg(e, "Gagal memuat katalog pengaturan."));
+        setLoading(false);
       }
     })();
     return () => { alive = false; };
@@ -197,7 +202,8 @@ export function useSettingsBrowser({
       setItems(kept);
       if (d.groups?.length) setGroups(d.groups);
     } catch (e) {
-      setError(errMsg(e, "Gagal memuat nilai pengaturan."));
+      if (e?.response?.status === 403) setDenied(errMsg(e, "Anda belum punya akses untuk melihat pengaturan."));
+      else setError(errMsg(e, "Gagal memuat nilai pengaturan."));
     } finally {
       setLoading(false);
     }
@@ -248,7 +254,7 @@ export function useSettingsBrowser({
 
   return {
     groups, group, setGroup, items, hiddenCount, q, setQ, term, scopeType, setScopeType, scopeId, setScopeId,
-    health, caps, loading, error, notice, setNotice, why, setWhy, sim, setSim, hist, setHist, cardRefs,
+    health, caps, loading, error, denied, notice, setNotice, why, setWhy, sim, setSim, hist, setHist, cardRefs,
     highlight, lockedGroup, setLockedGroup, ctx, load, onSave, onReset, onClearEntity, locked: !!allow,
   };
 }
@@ -299,7 +305,12 @@ export function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLi
         ) : null}
 
         <section className="cfg-list">
-          <ErrorNotice message={s.error} onRetry={s.load} />
+          {s.denied ? (
+            <div className="cfg-notice info" data-testid="cfg-denied">
+              <ShieldCheck size={15} />
+              <span>{s.denied}</span>
+            </div>
+          ) : <ErrorNotice message={s.error} onRetry={s.load} />}
           {excludeLink && s.hiddenCount > 0 ? (
             <LinkCard {...excludeLink} summary={`${s.hiddenCount} pengaturan`} />
           ) : null}

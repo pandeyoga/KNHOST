@@ -223,6 +223,41 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     return out
 
 
+#: KF-T1 — jalur dokumen pengaturan yang belum ada di registry tetapi dibaca layar semua pengguna. `returns` dan
+#: `interco_payment` dicabut unit KF-T2 saat kuncinya masuk registry.
+BUKA_SEMENTARA = ("scope", "tax.is_pkp", "returns", "interco_payment")
+
+
+def saring_bagi_pembaca(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """KF-T1 — salinan dokumen pengaturan yang hanya memuat daun TIDAK sensitif (untuk pengguna tanpa
+    `settings.view`): daun yang dicakup entri registry ber-`sensitif_baca == False`, atau jalurnya di
+    `BUKA_SEMENTARA`. Wadah yang menjadi kosong dibuang."""
+    import config_registry as registry
+
+    def buka(path: str) -> bool:
+        if any(path == p or path.startswith(p + ".") for p in BUKA_SEMENTARA):
+            return True
+        entry = registry.covers(path)
+        return bool(entry) and entry.get("sensitif_baca") is False
+
+    def jalan(node: Any, prefix: str) -> Any:
+        if isinstance(node, dict) and not (prefix and buka(prefix)):
+            out = {}
+            for k, v in node.items():
+                path = f"{prefix}.{k}" if prefix else str(k)
+                hasil = jalan(v, path)
+                if hasil is not _BUANG:
+                    out[k] = hasil
+            return out if out else _BUANG
+        return node if (prefix and buka(prefix)) else _BUANG
+
+    hasil = jalan(doc or {}, "")
+    return {} if hasil is _BUANG else hasil
+
+
+_BUANG = object()
+
+
 async def get_global_settings() -> Dict[str, Any]:
     doc = await db.system_settings.find_one({"scope": GLOBAL_SCOPE}, {"_id": 0})
     if not doc:

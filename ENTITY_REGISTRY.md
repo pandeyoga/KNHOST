@@ -2544,6 +2544,9 @@ Field lain:  hidden_views {role: [nav id]}, cross_entity {role: bool},
 
 ⚠️ Hanya ADA 1 document dengan id="default"
 ⚠️ Izin peran bawaan TIDAK lagi ditimpa saat start (PR-T9); bawaan tunggal = permissions_config.DEFAULT_PERMISSIONS
+⚠️ KF-T1 — penanda migrasi sekali-jalan `system_settings{scope:"__migrations__"}.kft1_izin_pengaturan`: peran
+   kustom ber-base_role manager menerima rnd.manage, inventory.configure, goods_receipt.configure, makloon.configure
+   (pengganti jalur nama peran `roles=("manager",)` di Pusat Pengaturan). Pencabutan Admin sesudahnya bertahan.
 ```
 
 ### custom_roles

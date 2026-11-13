@@ -14,7 +14,8 @@ RP = "Rp"
 # ═══════════════════════════════════════════════════════════════════════════
 # PAJAK
 # ═══════════════════════════════════════════════════════════════════════════
-E("tax.ppn_rate", group="pajak", type="pct", default=12.0, min=0, max=100, step=0.5,
+E("tax.ppn_rate", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pajak", type="pct", default=12.0, min=0, max=100, step=0.5,
   unit="%", scopes=("global", "entity"), simulate="tax",
   label="Tarif PPN",
   help="Tarif Pajak Pertambahan Nilai yang dipakai saat membuat invoice penjualan.",
@@ -23,7 +24,8 @@ E("tax.ppn_rate", group="pajak", type="pct", default=12.0, min=0, max=100, step=
   consumers=("services/config_service.py:compute_tax", "services/tax_invoice_service.py"),
   related=("tax.dpp_nilai_lain", "tax.ppn_mode"), risk="high")
 
-E("tax.dpp_nilai_lain", group="pajak", type="bool", default=True,
+E("tax.dpp_nilai_lain", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pajak", type="bool", default=True,
   scopes=("global", "entity"), simulate="tax",
   label="Pakai DPP Nilai Lain (11/12)",
   help="Aturan PMK 131/2024: dasar pengenaan pajak = 11/12 × harga jual untuk barang "
@@ -32,7 +34,8 @@ E("tax.dpp_nilai_lain", group="pajak", type="bool", default=True,
   example="Harga jual Rp 12.000.000 → DPP Rp 11.000.000 → PPN 12% × DPP = Rp 1.320.000",
   consumers=("services/config_service.py:compute_tax",), risk="high")
 
-E("tax.ppn_mode", group="pajak", type="enum", default="excluded",
+E("tax.ppn_mode", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pajak", type="enum", default="excluded",
   options=({"value": "excluded", "label": "Harga BELUM termasuk PPN (ditambah)"},
            {"value": "included", "label": "Harga SUDAH termasuk PPN (dipisah)"}),
   scopes=("global", "entity"), simulate="tax",
@@ -98,7 +101,8 @@ E("finance.fiscal_year_end_month", group="keuangan-dasar", type="int", default=1
              "services/closing_service.py:period_bounds"),
   risk="high")
 
-E("finance.default_payment_term_code", group="uang-masuk", type="text", default="NET30",
+E("finance.default_payment_term_code", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="uang-masuk", type="text", default="NET30",
   scopes=("global", "entity"),
   label="Term pembayaran default",
   help="Term yang otomatis terpilih saat membuat pesanan baru bila pelanggan belum punya term khusus.",
@@ -165,7 +169,8 @@ E("ar.aging_buckets", group="uang-masuk", type="list", default=[30, 60, 90],
 # ═══════════════════════════════════════════════════════════════════════════
 # HARGA, DISKON & KOMISI
 # ═══════════════════════════════════════════════════════════════════════════
-E("sales.allow_item_discount", group="harga-diskon", type="bool", default=False,
+E("sales.allow_item_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="harga-diskon", type="bool", default=False,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon per baris (penjualan)",
   help="Bila mati, sales tidak bisa mengetik diskon di baris pesanan — potongan hanya lewat "
@@ -175,7 +180,8 @@ E("sales.allow_item_discount", group="harga-diskon", type="bool", default=False,
   consumers=("services/config_service.py:compute_order_pricing", "utils/pricing.js"),
   related=("sales.allow_order_discount",), risk="medium")
 
-E("sales.allow_order_discount", group="harga-diskon", type="bool", default=False,
+E("sales.allow_order_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="harga-diskon", type="bool", default=False,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon total pesanan (penjualan)",
   help="Diskon satu angka untuk seluruh pesanan, di atas diskon per baris.",
@@ -483,7 +489,8 @@ E("purchasing.qc_on_receipt", group="pembelian", type="bool", default=True,
   consumers=("services/inbound_qc_common.py:qc_on_receipt_enabled", "services/inbound_complete_service.py",
              "services/makloon_receipt_qc.py:receipt_policy", "services/qc_service.py"), risk="medium")
 
-E("purchasing.allow_item_discount", group="pembelian", type="bool", default=True,
+E("purchasing.allow_item_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pembelian", type="bool", default=True,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon per baris (pembelian)",
   help="Mengizinkan potongan harga per baris pada Pesanan Pembelian.",
@@ -491,7 +498,8 @@ E("purchasing.allow_item_discount", group="pembelian", type="bool", default=True
   example="Aktif · baris Rp 5.000.000 diskon 3% → dibayar Rp 4.850.000",
   consumers=("services/config_service.py:compute_order_pricing",), risk="low")
 
-E("purchasing.allow_order_discount", group="pembelian", type="bool", default=True,
+E("purchasing.allow_order_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pembelian", type="bool", default=True,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon total (pembelian)",
   help="Mengizinkan satu potongan untuk seluruh Pesanan Pembelian.",
@@ -499,7 +507,8 @@ E("purchasing.allow_order_discount", group="pembelian", type="bool", default=Tru
   example="Aktif · diskon 1% dari Rp 50.000.000 → potongan Rp 500.000",
   consumers=("services/config_service.py:compute_order_pricing",), risk="low")
 
-E("purchasing.bill_qty_tolerance_percent", group="pembelian", type="pct", default=0.0,
+E("purchasing.bill_qty_tolerance_percent", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pembelian", type="pct", default=0.0,
   min=0, max=100, step=0.5, unit="%", scopes=("global", "entity"), simulate="bill_match",
   label="Toleransi qty tagihan supplier",
   help="Selisih qty pada tagihan supplier dibanding barang yang benar-benar diterima yang "
@@ -508,7 +517,8 @@ E("purchasing.bill_qty_tolerance_percent", group="pembelian", type="pct", defaul
   example="Diterima 1.000 yard · ditagih 1.010 · toleransi 0% → tagihan ditolak",
   consumers=("services/three_way_policy.py",), risk="medium")
 
-E("purchasing.bill_price_tolerance_percent", group="pembelian", type="pct", default=5.0,
+E("purchasing.bill_price_tolerance_percent", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="pembelian", type="pct", default=5.0,
   min=0, max=100, step=0.5, unit="%", scopes=("global", "entity"), simulate="bill_match",
   label="Toleransi harga tagihan supplier",
   help="Selisih harga satuan pada tagihan supplier dibanding harga PO yang masih boleh lewat.",
@@ -527,7 +537,8 @@ E("inventory.default_uom", group="stok-satuan", type="text", default="meter",
   example="'meter' → produk baru langsung bersatuan meter",
   consumers=("routers/products.py:create_product",), risk="low")
 
-E("inventory.min_cut_qty", group="stok-satuan", type="decimal", default=0.5,
+E("inventory.min_cut_qty", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="stok-satuan", type="decimal", default=0.5,
   min=0, max=1000, step=0.1, unit="satuan dasar", scopes=("global", "entity"),
   simulate="min_cut",
   label="Minimum panjang potong kain",
@@ -644,7 +655,8 @@ E("allocation.mode", group="stok-satuan", type="enum", default="auto",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="medium")
 
-E("allocation.roll_pick_sales", group="stok-satuan", type="bool", default=True,
+E("allocation.roll_pick_sales", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
+  group="stok-satuan", type="bool", default=True,
   scopes=("global", "entity"),
   label="Sales boleh pilih roll saat checkout",
   help="Bila dimatikan, role SALES hanya memasukkan jumlah (yard + perkiraan roll) — "
@@ -919,6 +931,7 @@ for _role, _default_view, _label in (
     ("warehouse", "operations", "Gudang"),
 ):
     E(f"role_home.{_role}", group="tampilan", type="text", default=_default_view,
+      sensitif_baca=True,   # KF-T1 — kelompok Tampilan terbuka untuk semua, beranda per peran tidak
       scopes=("global",),
       label=f"Halaman awal peran {_label}",
       help=f"Layar yang pertama dibuka ketika pengguna dengan peran {_label} masuk aplikasi.",

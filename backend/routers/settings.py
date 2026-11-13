@@ -24,7 +24,14 @@ SETTINGS_SECTIONS = ["tax", "finance", "sales", "inventory", "allocation", "purc
 
 @router.get("/settings")
 async def read_settings(request: Request) -> Dict[str, Any]:
-    await current_user(request)
+    # KF-T1 — dokumen mentah (memuat aturan komisi, ambang persetujuan, bank) hanya untuk pemegang `settings.view`.
+    from dependencies import permission_matrix
+    user = await current_user(request)
+    perms = (await permission_matrix()).get(user.get("role") or "", {}) or {}
+    if user.get("role") != "admin" and "view" not in (perms.get("settings") or []):
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses "
+            "'Pengaturan, Pengguna & Hak Akses'."))
     return await get_global_settings()
 
 
@@ -39,7 +46,15 @@ async def read_effective_settings(request: Request, entity_id: Optional[str] = N
     ctx = await entity_ctx(request)
     resolved = resolve_requested_entity(ctx, entity_id) if entity_id else (
         None if ctx.view_all else ctx.active_entity_id)
-    return await get_effective_settings(resolved)
+    doc = await get_effective_settings(resolved)
+    # KF-T1 — tanpa `settings.view` hanya bagian yang dibaca layar umum (POS, PO, tagihan pemasok, menu).
+    from dependencies import permission_matrix
+    from services.config_service import saring_bagi_pembaca
+    user = await current_user(request)
+    perms = (await permission_matrix()).get(user.get("role") or "", {}) or {}
+    if user.get("role") == "admin" or "view" in (perms.get("settings") or []):
+        return doc
+    return saring_bagi_pembaca(doc)
 
 
 #: Bagian pengaturan dengan izin domain sendiri (selain entity.update).
