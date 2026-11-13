@@ -138,7 +138,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | IV-04 | Jurnal gagal setelah stok berubah, tanpa penanda dan tanpa jalur ulang | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-01 | "Catat Transaksi" kas tanpa penahan klik ganda | Tinggi | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
 | UX-02 | Kunci idempotensi hanya di kwitansi piutang | Tinggi | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
-| UX-03 | Setujui/batalkan faktur supplier sekali klik | Tinggi | PK-13 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-03 | Setujui/batalkan faktur supplier sekali klik | Tinggi | PK-13 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 uji layar di kode lama) | `0ac34c1` | [PK-13](2026-11-13/hasil/PK-13.md) |
 | UX-04 | Panel Posting Gagal bilang "semua tercatat" saat gagal memuat | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-05 | Mode "Semua Entitas": tombol buat aktif, ditolak setelah form diisi | Tinggi | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-06 | Form uang tidak menyebut PT tujuan | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
@@ -194,7 +194,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FY-13 | Peta kategori→akun saat posting LPJ mengabaikan lapisan entitas | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-14 | LPJ tanpa bukti, vendor, PPN; masih bisa diubah setelah diajukan | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-15 | Pusat pajak: entity_id=all dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
-| FY-17 | Aksi uang tanpa konfirmasi: setujui & posting LPJ, bayar reimburse, catat bayar pindah aset, hapus pagu, hapus rekaman PPh | Sedang | PK-13 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-17 | Aksi uang tanpa konfirmasi: setujui & posting LPJ, bayar reimburse, catat bayar pindah aset, hapus pagu, hapus rekaman PPh | Sedang | PK-13 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 uji layar di kode lama) | `0ac34c1` | [PK-13](2026-11-13/hasil/PK-13.md) |
 | FY-18 | Tanpa kunci idempotensi di layar aset, kas kecil, pajak (lanjutan UX-02) | Sedang | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
 | FY-16 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-19 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-24 | open | belum dicek — diisi unit pemegang | — | — |

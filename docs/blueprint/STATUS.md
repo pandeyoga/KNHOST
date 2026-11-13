@@ -20,8 +20,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | selesai | `8774bd1` | [PK-10](../reviews/2026-11-13/hasil/PK-10.md) |  |
 | 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | selesai | `cb6b470` | [PK-11](../reviews/2026-11-13/hasil/PK-11.md) |  |
 | 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | selesai | `b5f3011` | [PK-12](../reviews/2026-11-13/hasil/PK-12.md) |  |
-| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | dikerjakan |  |  |  |
-| 17 | PK-14 | Indeks unik wajib ada | PK-02 | siap |  |  | Titik henti H6 bila data kembar |
+| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | selesai | `0ac34c1` | [PK-13](../reviews/2026-11-13/hasil/PK-13.md) |  |
+| 17 | PK-14 | Indeks unik wajib ada | PK-02 | dikerjakan |  |  | Titik henti H6 bila data kembar |
 | 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | siap |  |  |  |
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | siap |  |  |  |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
