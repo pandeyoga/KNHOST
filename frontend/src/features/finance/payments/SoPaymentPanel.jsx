@@ -11,6 +11,7 @@ import PaymentPlanBuilder from "./PaymentPlanBuilder";
 import PenaltyPanel from "./PenaltyPanel";
 import { accrueNow, errText, fetchMeta, lineMeta, money, planByDoc } from "./paymentApi";
 import { can } from "../../../config/roles";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [data, setData] = useState(null);
@@ -19,6 +20,7 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const accrueIntent = useIntentKey("pp-denda");   // PK-12 — satu niat hitung denda = satu Idempotency-Key
 
   const docId = order?.id;
   const total = Number(order?.grand_total || order?.total_amount || 0);
@@ -49,7 +51,10 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const runAccrual = async () => {
     if (!plan?.id) return;
     setBusy(true);
-    try { await accrueNow(plan.id); await load(); }
+    try {
+      await accrueIntent.send({ id: plan.id, aksi: "accrue" }, (k) => accrueNow(plan.id, k));
+      await load();
+    }
     catch (e) { setErr(errText(e, "Gagal menghitung denda.")); }
     finally { setBusy(false); }
   };

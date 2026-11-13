@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
+import { moneyPost } from "../../utils/moneyRequest";
+import useIntentKey from "../../hooks/useIntentKey";
 import { Scale, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import FormModal from "@/components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
@@ -47,6 +49,8 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const fail = (m) => { setErr(m); onError?.(m); };
+  // PK-12 — satu isi tagihan = satu Idempotency-Key: klik ganda / kirim ulang setelah koneksi putus = satu tagihan.
+  const intent = useIntentKey("vbnew");
 
   useEffect(() => {
     if (!open) { reset(); return; }
@@ -125,7 +129,7 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
         notes, items: payloadItems, submit_now: now,
         entity_id: ctx?.entity_id || (selectedEntity !== "all" ? selectedEntity : undefined),
       };
-      const r = await axios.post(`${API}/vendor-bills`, body);
+      const r = await intent.send(body, (k) => moneyPost(`${API}/vendor-bills`, body, k));
       onCreated?.(r.data, now);
       reset();
     } catch (e) {

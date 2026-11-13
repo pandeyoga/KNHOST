@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Undo2 } from "lucide-react";
-import axios, { API } from "../../services/apiClient";
+import { API } from "../../services/apiClient";
+import { moneyPost } from "../../utils/moneyRequest";
+import useIntentKey from "../../hooks/useIntentKey";
 import { formatCurrency } from "../../utils/formatters";
 import { askReason } from "../../services/confirmService";
 
 // P18 APAR-01 — daftar pembayaran bill + batalkan satu pembayaran (alasan wajib).
 export default function VendorBillPayments({ bill, canVoid, onAction, onError }) {
   const [busy, setBusy] = useState("");
+  // PK-12 — anulir bayar: satu niat = satu Idempotency-Key (kirim ulang tidak membalik kas dua kali).
+  const intent = useIntentKey("vbvoid");
   const pays = bill.payments || [];
   if (!pays.length) return null;
 
@@ -20,7 +24,9 @@ export default function VendorBillPayments({ bill, canVoid, onAction, onError })
     if (!reason) return;
     setBusy(p.id);
     try {
-      const r = await axios.post(`${API}/vendor-bills/${bill.id}/payments/${p.id}/void`, { notes: reason });
+      const body = { notes: reason };
+      const r = await intent.send({ id: p.id, aksi: "void", ...body },
+        (k) => moneyPost(`${API}/vendor-bills/${bill.id}/payments/${p.id}/void`, body, k));
       onAction?.("payment_void", r.data);
     } catch (e) {
       onError?.(e.response?.data?.detail || "Gagal membatalkan pembayaran.");

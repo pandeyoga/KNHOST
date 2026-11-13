@@ -23,6 +23,8 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import PageTabs from "../../components/PageTabs";
 import { SOURCE_LABELS, sourceLabel } from "./glSourceLabels";
 import { askConfirm } from "../../services/confirmService";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 const TONE_GRAY = "bg-gray-100 text-gray-600";
 const SOURCE_META_BASE = {
@@ -81,6 +83,8 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
   const [showModal, setShowModal] = useState(false);
   const [notice, setNotice] = useState("");
   const [ledgerCode, setLedgerCode] = useState("");
+  // PK-12 — kunci idempotensi untuk tulis ke /gl/ (kirim ulang setelah koneksi putus diputar ulang server).
+  const syncIntent = useIntentKey("glsync");
 
   const loadMeta = useCallback(async () => {
     try {
@@ -110,7 +114,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
     }))) return;
     setSyncing(true); setError(""); setNotice("");
     try {
-      const res = await axios.post(`${API}/gl/sync`);
+      const res = await syncIntent.send({ aksi: "sync" }, (k) => moneyPost(`${API}/gl/sync`, undefined, k));
       const r = res.data || {};
       setNotice(`Sinkron selesai: ${r.total || 0} jurnal baru (penjualan ${r.sales_orders || 0}, kas ${r.cash_transactions || 0}).`);
       refreshAll();
@@ -204,15 +208,22 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
   useEffect(() => { paged.refresh(); }, [refreshKey]); // eslint-disable-line
   useEffect(() => { if (paged.error) onError(paged.error); }, [paged.error]); // eslint-disable-line
 
+  // PK-12 — satu kunci per niat (anulir / balik); tombolnya dimatikan JournalDetailModal selama menunggu.
+  const voidIntent = useIntentKey("jev");
+  const reverseIntent = useIntentKey("jer");
+
   // Fase 4 · R2 — galat anulir DILEMPAR ke pop-up rincian (dulu ke bilah galat halaman di belakang pop-up).
   const voidEntry = async (je) => {
-    await axios.post(`${API}/gl/journal/${je.id}/void`);
+    await voidIntent.send({ id: je.id, aksi: "void" },
+      (k) => moneyPost(`${API}/gl/journal/${je.id}/void`, undefined, k));
     setDetail(null);
     onChanged();
   };
 
   const reverseEntry = async (je, date, reason) => {
-    await axios.post(`${API}/gl/journal/${je.id}/reverse`, { date, reason });
+    const body = { date, reason };
+    await reverseIntent.send({ id: je.id, ...body },
+      (k) => moneyPost(`${API}/gl/journal/${je.id}/reverse`, body, k));
     setDetail(null);
     onChanged();
   };

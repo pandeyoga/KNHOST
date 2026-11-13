@@ -6,6 +6,11 @@
  */
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
+import { moneyPatch, moneyPost } from "../../../utils/moneyRequest";
+
+/* PK-12 — semua tulis ke jalur uang (rencana bayar, denda, selisih) lewat `moneyPost`/`moneyPatch`; argumen terakhir
+ * `key` = Idempotency-Key dari `useIntentKey` pemanggil (kirim ulang isi sama → server memutar ulang jawaban pertama).
+ * `previewPlan` & `assessVariance` hanya menghitung (tanpa efek): lewat pintu yang sama, pemanggil tidak wajib berkunci. */
 
 export const PENALTY_STATUS_META = {
   draft: { label: "Usulan (belum berjurnal)", fg: "#8A6D00", bg: "#FFF3CD" },
@@ -44,8 +49,8 @@ export async function fetchMeta(entityId = "", customerId = "") {
   return r.data || {};
 }
 
-export async function previewPlan(body) {
-  const r = await axios.post(`${API}/payment-plans/preview`, body);
+export async function previewPlan(body, key) {
+  const r = await moneyPost(`${API}/payment-plans/preview`, body, key);
   return r.data || {};
 }
 
@@ -54,23 +59,23 @@ export async function planByDoc(docType, docId) {
   return r.data || {};
 }
 
-export async function createPlan(body) {
-  const r = await axios.post(`${API}/payment-plans`, body);
+export async function createPlan(body, key) {
+  const r = await moneyPost(`${API}/payment-plans`, body, key);
   return r.data || {};
 }
 
-export async function updatePlan(planId, body) {
-  const r = await axios.patch(`${API}/payment-plans/${planId}`, body);
+export async function updatePlan(planId, body, key) {
+  const r = await moneyPatch(`${API}/payment-plans/${planId}`, body, key);
   return r.data || {};
 }
 
-export async function voidPlan(planId, reason) {
-  const r = await axios.post(`${API}/payment-plans/${planId}/void`, { reason });
+export async function voidPlan(planId, reason, key) {
+  const r = await moneyPost(`${API}/payment-plans/${planId}/void`, { reason }, key);
   return r.data || {};
 }
 
-export async function accrueNow(planId) {
-  const r = await axios.post(`${API}/payment-plans/${planId}/accrue`, null);
+export async function accrueNow(planId, key) {
+  const r = await moneyPost(`${API}/payment-plans/${planId}/accrue`, null, key);
   return r.data || {};
 }
 
@@ -84,24 +89,24 @@ export async function listPenalties(params = {}) {
   return r.data || { items: [], stats: {} };
 }
 
-export async function issuePenalty(id) {
-  const r = await axios.post(`${API}/penalties/${id}/issue`, null);
+export async function issuePenalty(id, key) {
+  const r = await moneyPost(`${API}/penalties/${id}/issue`, null, key);
   return r.data || {};
 }
 
-export async function waivePenalty(id, body) {
-  const r = await axios.post(`${API}/penalties/${id}/waive`, body);
+export async function waivePenalty(id, body, key) {
+  const r = await moneyPost(`${API}/penalties/${id}/waive`, body, key);
   return r.data || {};
 }
 
-export async function adjustPenalty(id, body) {
-  const r = await axios.post(`${API}/penalties/${id}/adjust`, body);
+export async function adjustPenalty(id, body, key) {
+  const r = await moneyPost(`${API}/penalties/${id}/adjust`, body, key);
   return r.data || {};
 }
 
 // PK-08 — bayar denda lewat kas: rekening wajib + Idempotency-Key (kirim ulang tidak mencatat dua kali).
 export async function payPenalty(id, body, key = "") {
-  const r = await axios.post(`${API}/penalties/${id}/pay`, body, key ? { headers: { "Idempotency-Key": key } } : undefined);
+  const r = await moneyPost(`${API}/penalties/${id}/pay`, body, key);
   return r.data || {};
 }
 
@@ -154,8 +159,8 @@ export async function varianceMeta(entityId = "", customerId = "") {
   return r.data || {};
 }
 
-export async function assessVariance(body) {
-  const r = await axios.post(`${API}/payment-variances/assess`, body);
+export async function assessVariance(body, key) {
+  const r = await moneyPost(`${API}/payment-variances/assess`, body, key);
   return r.data || {};
 }
 
@@ -174,12 +179,12 @@ export async function varianceByReceipt(receiptId) {
   return r.data || {};
 }
 
-export async function decideVariance(receiptId, body) {
-  const r = await axios.post(`${API}/payment-variances/receipt/${receiptId}/decide`, body);
+export async function decideVariance(receiptId, body, key) {
+  const r = await moneyPost(`${API}/payment-variances/receipt/${receiptId}/decide`, body, key);
   return r.data || {};
 }
 
-export async function reverseVariance(decisionId, reason) {
-  const r = await axios.post(`${API}/payment-variances/${decisionId}/reverse`, { reason });
+export async function reverseVariance(decisionId, reason, key) {
+  const r = await moneyPost(`${API}/payment-variances/${decisionId}/reverse`, { reason }, key);
   return r.data || {};
 }

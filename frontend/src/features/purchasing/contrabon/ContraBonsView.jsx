@@ -22,6 +22,8 @@ import {
   RefreshCw, Receipt, Plus, AlertTriangle, CheckCircle2, FilterX, Search,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
 import FilterChips from "../../../components/FilterChips";
@@ -67,6 +69,8 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
   const [msgKind, setMsgKind] = useState("success");
   const canWrite = can(currentUser?.permissions, "contra_bon", "create");   // Sisir lanjutan gerbang peran (2026-10-21) — buat kontrabon (POST /contra-bons)
   const canUpdate = can(currentUser?.permissions, "contra_bon", "update");   // jadwal tukar faktur & pengingat
+  // PK-12 — jalur `/contra-bons` berkunci: pengingat manual dikirim dengan satu Idempotency-Key per niat.
+  const reminderIntent = useIntentKey("cbrem");
 
   /**
    * Bilah konfirmasi. Pengatur waktu DISIMPAN lalu dibatalkan sebelum pesan baru:
@@ -161,7 +165,8 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
     }))) return;
     setBusy("reminder"); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/run-reminder`, {});
+      const r = await reminderIntent.send({ aksi: "run-reminder" },
+        (k) => moneyPost(`${API}/contra-bons/run-reminder`, {}, k));
       const n = (r.data || {}).notifications || 0;
       notify(n
         ? `Pengingat dijalankan: ${n} notifikasi terbit (jadwal tukar faktur H-n & kontrabon `

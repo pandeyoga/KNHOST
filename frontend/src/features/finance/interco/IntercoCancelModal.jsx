@@ -10,15 +10,19 @@
  */
 import { useState } from "react";
 import { Undo2, AlertTriangle } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency } from "../../../utils/formatters";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu niat batal = satu Idempotency-Key (kirim ulang tidak membalik jurnal dua kali).
+  const intent = useIntentKey("ic-cnl");
   if (!doc) return null;
 
   const perluAlasan = doc.status !== "draft";
@@ -27,8 +31,9 @@ export default function IntercoCancelModal({ doc, onClose, onCancelled }) {
   const submit = async () => {
     setBusy(true); setErr("");
     try {
-      const r = await axios.post(
-        `${API}/interco/transactions/${doc.id}/cancel`, { note: reason.trim() });
+      const body = { note: reason.trim() };
+      const r = await intent.send({ id: doc.id, aksi: "cancel", ...body },
+        (k) => moneyPost(`${API}/interco/transactions/${doc.id}/cancel`, body, k));
       onCancelled?.(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

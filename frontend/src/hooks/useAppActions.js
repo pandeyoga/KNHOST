@@ -13,6 +13,8 @@ import { askConfirm } from "@/services/confirmService";
 import { getStage, getSubStatus, stageMeta, subStatusLabel } from "../utils/soStatus";
 import { apiErrorText } from "../utils/apiError";
 import { makeCreateCustomer } from "../features/pos/customerCreateAction";
+import useIntentKey from "./useIntentKey";
+import { moneyPost } from "../utils/moneyRequest";
 
 // G0-11 — nama resource API → kata benda Indonesia untuk dialog & pesan Master Data.
 const RESOURCE_LABEL = {
@@ -35,6 +37,8 @@ const soStatusText = (o) => [stageMeta(getStage(o))?.label, ...(getSubStatus(o) 
  */
 export function useAppActions(state) {
   const permVersion = useRef(0); // AUTH-05 — versi matriks izin yang terakhir dibaca
+  // PK-12 — setujui tagihan vendor dari notifikasi (memposting hutang) ber-Idempotency-Key.
+  const billApproveIntent = useIntentKey("vbapn");
   const {
     user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity,
     setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
@@ -819,7 +823,8 @@ export function useAppActions(state) {
     if (!notif?.action_id) return null;
     if (notif.action_type === "vendor_bill_approve") {   // COMM-04 — tagihan vendor kampanye
       try {
-        const res = await axios.post(`${API}/vendor-bills/${notif.action_id}/approve`);
+        const res = await billApproveIntent.send({ id: notif.action_id, aksi: "approve" },
+          (k) => moneyPost(`${API}/vendor-bills/${notif.action_id}/approve`, undefined, k));
         setNotice(`Tagihan ${res.data.bill_number} disetujui — Beban Pemasaran & Hutang dijurnal.`);
         await loadNotifications();
         await loadAll();

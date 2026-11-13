@@ -15,6 +15,8 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FilterChips from "../../../components/FilterChips";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
+import useIntentKey from "../../../hooks/useIntentKey";
+import { moneyPost } from "../../../utils/moneyRequest";
 
 const fmtDate = (s) => {
   if (!s) return "—";
@@ -32,6 +34,9 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
   // INV-UI-03 — modal WAJIB menampilkan penolakannya sendiri: bilah error layar
   // induk berada di belakang lapisan modal ini, jadi tak terlihat pengguna.
   const [mErr, setMErr] = useState("");
+  // PK-12 — cocokkan 1:1 dan pecah 1:N ber-Idempotency-Key (satu kunci per aksi).
+  const matchIntent = useIntentKey("brmatch");
+  const splitIntent = useIntentKey("brsplit");
 
   const load = useCallback(async () => {
     setBusy("load");
@@ -53,7 +58,9 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
   async function doSingle(txnId, score) {
     setBusy(txnId);
     try {
-      await axios.post(`${API}/bank-reconciliation/lines/${line.id}/match`, { txn_id: txnId });
+      const body = { txn_id: txnId };
+      await matchIntent.send({ id: line.id, ...body },
+        (k) => moneyPost(`${API}/bank-reconciliation/lines/${line.id}/match`, body, k));
       onDone(`Mutasi ditautkan${score ? ` (skor ${Number(score).toFixed(0)})` : ""}.`);
     } catch (e) { setMErr(apiErrorText(e)); onError?.(e); } finally { setBusy(""); }
   }
@@ -64,8 +71,9 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
       .map(([txn_id, v]) => ({ txn_id, amount: Number(v) }));
     setBusy("split");
     try {
-      const r = await axios.post(`${API}/bank-reconciliation/lines/${line.id}/match-split`,
-        { allocations });
+      const body = { allocations };
+      const r = await splitIntent.send({ id: line.id, ...body },
+        (k) => moneyPost(`${API}/bank-reconciliation/lines/${line.id}/match-split`, body, k));
       onDone(`Satu transfer dipecah ke ${allocations.length} transaksi buku `
         + `(${formatCurrency(r.data.allocated_total)}).`);
     } catch (e) { setMErr(apiErrorText(e)); onError?.(e); } finally { setBusy(""); }
@@ -84,7 +92,7 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
       testId="recon-match-modal" busy={!!busy && busy !== "load"}
       footer={mode === "split" ? (
         <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" className="secondary-button" onClick={onClose}>Batal</button>
+          <button type="button" className="secondary-button" onClick={onClose} disabled={busy === "split"}>Batal</button>
           <button type="button" data-testid="recon-split-submit" className="primary-button"
             disabled={allocCount < 2 || remaining < -0.01 || busy === "split"}
             onClick={doSplit}>

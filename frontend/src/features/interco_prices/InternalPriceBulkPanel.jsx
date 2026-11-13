@@ -6,6 +6,7 @@ import usePagedRows from "../../hooks/usePagedRows";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk, internalPriceMissing } from "./internalPriceApi";
+import useIntentKey from "../../hooks/useIntentKey";
 import KNSelect from "../../components/KNSelect";
 import { entityOptions } from "../../utils/entityLabel";
 
@@ -24,6 +25,7 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const intent = useIntentKey("icp-massal");   // PK-12 — satu niat simpan massal = satu Idempotency-Key
 
   const load = useCallback(async () => {
     if (!seller || !buyer || seller === buyer) { setData(null); return; }
@@ -53,8 +55,9 @@ export default function InternalPriceBulkPanel({ entities, initial = {}, canSet,
   async function save() {
     setBusy(true); setError(""); setNotice("");
     try {
-      const res = await internalPriceBulk({ seller_entity_id: seller, buyer_entity_id: buyer,
-        items: filled.map(([product_id, v]) => ({ product_id, unit_price: num(v) })) });
+      const body = { seller_entity_id: seller, buyer_entity_id: buyer,
+        items: filled.map(([product_id, v]) => ({ product_id, unit_price: num(v) })) };
+      const res = await intent.send(body, (k) => internalPriceBulk(body, k));
       setNotice(`${res.count} harga internal tersimpan.`);
       await load(); onSaved?.();
     } catch (e) { setError(apiErrorText(e, "Gagal menyimpan harga internal.")); }

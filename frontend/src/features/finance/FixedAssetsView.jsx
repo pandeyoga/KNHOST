@@ -19,6 +19,8 @@ import { askConfirm } from "../../services/confirmService";
 import {
   AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog, fmtDate,
 } from "./FixedAssetsParts";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 const thisPeriod = () => new Date().toISOString().slice(0, 7);
 
@@ -39,14 +41,20 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   // FASE E-7 (E7g) — pindah aset tetap ANTAR BADAN USAHA (nilai buku + masa manfaat sisa).
   // Fase 3 · P4 (L-03) — isian pindah PT kini milik `TransferAssetDialog` (FormModal) di FixedAssetsParts.
   const [transferFor, setTransferFor] = useState(null);
+  // PK-12 — satu kunci idempotensi per aksi aset (kirim ulang isi sama setelah koneksi putus tidak menggandakan jurnal).
+  const createIntent = useIntentKey("fa");
+  const runIntent = useIntentKey("fadep");
+  const disposeIntent = useIntentKey("fadsp");
+  const transferIntent = useIntentKey("fatrf");
+  const settleIntent = useIntentKey("fastl");
 
   async function submitTransfer({ to_entity_id, transfer_price, reason }) {
     if (!transferFor) return;
     setBusy("transfer"); setError("");
     try {
-      const res = await axios.post(`${API}/fixed-assets/${transferFor.id}/transfer`, {
-        to_entity_id, transfer_price, reason,
-      });
+      const body = { to_entity_id, transfer_price, reason };
+      const res = await transferIntent.send({ id: transferFor.id, ...body },
+        (k) => moneyPost(`${API}/fixed-assets/${transferFor.id}/transfer`, body, k));
       setMsg(`${transferFor.number} dipindah → ${res.data.new_asset.number} `
         + `(harga ${formatCurrency(res.data.price)}, nilai buku ${formatCurrency(res.data.book_value)}`
         + `${res.data.gain > 0 ? `, laba ${formatCurrency(res.data.gain)} dieliminasi di konsolidasi` : ""}). `
@@ -61,7 +69,9 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   async function settleTransfer(a) {
     setBusy(`settle-${a.id}`); setError("");
     try {
-      const res = await axios.post(`${API}/fixed-assets/${a.id}/transfer/settle`, { note: "" });
+      const body = { note: "" };
+      const res = await settleIntent.send({ id: a.id, aksi: "settle", ...body },
+        (k) => moneyPost(`${API}/fixed-assets/${a.id}/transfer/settle`, body, k));
       setMsg(`Pembayaran pindah aset ${a.number} dicatat (${formatCurrency(res.data.paid)}) — `
         + `kas berpindah: ${(res.data.cash || []).join(" · ")}.`);
       await load();
@@ -110,7 +120,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   async function createAsset(payload) {
     setBusy("create");
     try {
-      const res = await axios.post(`${API}/fixed-assets`, payload);
+      const res = await createIntent.send(payload, (k) => moneyPost(`${API}/fixed-assets`, payload, k));
       notify(`Aset ${res.data?.number || ""} dibuat. JE perolehan: ${res.data?.acquisition_je || "—"}.`);
       setShowAdd(false);
       await load();
@@ -141,9 +151,8 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
     if (!ok) return;
     setBusy("run");
     try {
-      const res = await axios.post(`${API}/fixed-assets/run-depreciation`, {
-        period, entity_id: entParam,
-      });
+      const body = { period, entity_id: entParam };
+      const res = await runIntent.send(body, (k) => moneyPost(`${API}/fixed-assets/run-depreciation`, body, k));
       const d = res.data || {};
       notify(`Penyusutan ${d.period}: ${d.posted} aset diposting (${formatCurrency(d.total_amount)}), ${d.skipped} dilewati.`);
       await load();
@@ -167,7 +176,9 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   async function submitDispose({ proceeds, date, note }) {
     setBusy("dispose");
     try {
-      const res = await axios.post(`${API}/fixed-assets/${disposeFor.id}/dispose`, { proceeds, date, note });
+      const body = { proceeds, date, note };
+      const res = await disposeIntent.send({ id: disposeFor.id, ...body },
+        (k) => moneyPost(`${API}/fixed-assets/${disposeFor.id}/dispose`, body, k));
       const d = res.data?.disposal || {};
       const label = d.result === "gain" ? "Laba" : d.result === "loss" ? "Rugi" : "Impas";
       notify(`${res.data?.number || "Aset"} dilepas. ${label} pelepasan ${formatCurrency(Math.abs(d.gain_loss || 0))} · JE ${d.je_number || "—"}.`);

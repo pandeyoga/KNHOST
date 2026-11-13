@@ -16,6 +16,8 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import DetailModal from "../../components/DetailModal";
 import PageTabs from "../../components/PageTabs";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
 
 export const TYPE_META = {
   asset: { label: "Aset", tone: "bg-[#E7F0FF] text-[#0058CC]" },
@@ -33,6 +35,8 @@ export function AddAccountModal({ open, scopeEntityId, scopeLabel, parentOptions
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — tulis ke /api/gl/ ber-Idempotency-Key (kirim ulang isi sama memakai kunci sama).
+  const intent = useIntentKey("coa");
   const close = () => { setForm(EMPTY_FORM); setErr(""); onClose(); };
 
   const submit = async () => {
@@ -40,7 +44,7 @@ export function AddAccountModal({ open, scopeEntityId, scopeLabel, parentOptions
     setSaving(true); setErr("");
     try {
       const params = scopeEntityId ? { entity_id: scopeEntityId } : {};
-      await axios.post(`${API}/gl/accounts`, form, { params });
+      await intent.send({ ...form, ...params }, (k) => moneyPost(`${API}/gl/accounts`, form, k, { params }));
       setForm(EMPTY_FORM);
       await onSaved();
     } catch (e) {
@@ -91,12 +95,15 @@ export function EditAccountModal({ acc, scopeEntityId, scopeLabel, onClose, onSa
   const [isActive, setIsActive] = useState(acc.is_active !== false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const intent = useIntentKey("coae");
 
   const save = async () => {
     setSaving(true); setErr("");
     try {
       const params = scopeEntityId ? { entity_id: scopeEntityId } : {};
-      await axios.patch(`${API}/gl/accounts/${acc.code}`, { name: name.trim(), is_active: isActive }, { params });
+      const body = { name: name.trim(), is_active: isActive };
+      await intent.send({ id: acc.code, ...body, ...params },
+        (k) => moneyPatch(`${API}/gl/accounts/${acc.code}`, body, k, { params }));
       await onSaved();
     } catch (e) {
       // Dulu pop-up ditutup lalu galat tampil di halaman; kini galat tampil di pop-up (isian tidak hilang).

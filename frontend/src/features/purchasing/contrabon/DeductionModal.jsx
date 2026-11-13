@@ -14,6 +14,8 @@ import MoneyInput from "../../../components/MoneyInput";
 import { useEffect, useMemo, useState } from "react";
 import { Scissors, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -34,6 +36,8 @@ export default function DeductionModal({ cb, meta, onClose, onSaved, onError }) 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  // PK-12 — satu isi potongan = satu Idempotency-Key (klik ganda / kirim ulang = satu potongan).
+  const intent = useIntentKey("cbded");
 
   const spec = useMemo(() => kinds.find((k) => k.kind === kind) || null, [kinds, kind]);
 
@@ -83,14 +87,15 @@ export default function DeductionModal({ cb, meta, onClose, onSaved, onError }) 
   async function save() {
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/deductions`, {
+      const body = {
         kind,
         ref_id: spec?.needs_ref ? refId : "",
         bill_id: kind === "match_variance" ? billId : "",
         amount: amount === "" ? null : Number(amount),
         reason_code: reason,
         note: note.trim(),
-      });
+      };
+      const r = await intent.send(body, (k) => moneyPost(`${API}/contra-bons/${cb.id}/deductions`, body, k));
       onSaved(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

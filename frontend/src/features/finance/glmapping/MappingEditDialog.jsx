@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
+import useIntentKey from "../../../hooks/useIntentKey";
+import { moneyPost, moneyPut } from "../../../utils/moneyRequest";
 
 // GL-08 — Finance/Admin mengubah langsung (tanpa persetujuan kedua), alasan wajib, berlaku ke jurnal baru.
 export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved }) {
@@ -10,6 +12,9 @@ export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved 
   const [reason, setReason] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  // PK-12 — tulis ke /api/gl/ ber-Idempotency-Key; satu kunci per aksi (simpan / kembali ke bawaan).
+  const saveIntent = useIntentKey("glmap");
+  const resetIntent = useIntentKey("glmapr");
   useEffect(() => {
     axios.get(`${API}/gl/account-mappings/${row.key}/candidates`, { params: entityId ? { entity_id: entityId } : {} })
       .then((r) => setCands(r.data || [])).catch(() => setCands([]));
@@ -19,10 +24,17 @@ export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved 
     setBusy(true); setErr("");
     try { await fn(); onSaved(); } catch (e) { setErr(e.response?.data?.detail || e.message); } finally { setBusy(false); }
   };
-  const save = () => run(() => axios.put(`${API}/gl/account-mappings/${row.key}`, { account_code: code, entity_id: entityId || "", reason }));
-  const reset = () => run(() => axios.post(`${API}/gl/account-mappings/${row.key}/reset`, { entity_id: entityId || "", reason }));
+  const save = () => run(() => {
+    const body = { account_code: code, entity_id: entityId || "", reason };
+    return saveIntent.send({ id: row.key, ...body }, (k) => moneyPut(`${API}/gl/account-mappings/${row.key}`, body, k));
+  });
+  const reset = () => run(() => {
+    const body = { entity_id: entityId || "", reason };
+    return resetIntent.send({ id: row.key, aksi: "reset", ...body },
+      (k) => moneyPost(`${API}/gl/account-mappings/${row.key}/reset`, body, k));
+  });
   return (
-    <FormModal open onClose={onClose} title={`Ubah akun · ${row.label}`} testId="glmap-edit-modal">
+    <FormModal open onClose={onClose} title={`Ubah akun · ${row.label}`} testId="glmap-edit-modal" busy={busy}>
       <div className="grid gap-3 text-[12px]">
         <p className="text-[#6B6B73]">Berlaku untuk: <b data-testid="glmap-edit-scope">{scopeLabel}</b>. Pilihan hanya menampilkan akun berjenis {row.allowed_type_labels.join(" / ")} yang aktif dan bisa diposting.</p>
         <label className="grid gap-1"><span>Akun <span className="text-[#B42318]">*</span></span>
@@ -43,7 +55,7 @@ export function MappingEditDialog({ row, entityId, scopeLabel, onClose, onSaved 
         <div className="flex justify-between gap-2">
           {canReset ? <button type="button" className="secondary-button text-xs" disabled={busy || reason.trim().length < 5} data-testid="glmap-edit-reset" onClick={reset}>{entityId ? "Kembali ke global" : "Kembali ke bawaan"}</button> : <span />}
           <span className="flex gap-2">
-            <button type="button" className="secondary-button text-xs" onClick={onClose} data-testid="glmap-edit-cancel">Batal</button>
+            <button type="button" className="secondary-button text-xs" onClick={onClose} disabled={busy} data-testid="glmap-edit-cancel">Batal</button>
             <button type="button" className="primary-button text-xs" disabled={busy || !code || reason.trim().length < 5} data-testid="glmap-edit-save" onClick={save}>Simpan</button>
           </span>
         </div>

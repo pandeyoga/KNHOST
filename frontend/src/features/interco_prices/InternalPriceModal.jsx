@@ -5,6 +5,7 @@ import KNDatePicker from "../../components/KNDatePicker";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { internalPriceBulk } from "./internalPriceApi";
+import useIntentKey from "../../hooks/useIntentKey";
 
 const today = () => todayWib();
 
@@ -14,13 +15,15 @@ export default function InternalPriceModal({ target, onClose, onSaved }) {
   const [validFrom, setValidFrom] = useState(today());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const intent = useIntentKey("icp");   // PK-12 — satu niat simpan = satu Idempotency-Key
   const value = Number(String(price).replace(",", ".")) || 0;
 
   async function save() {
     setBusy(true); setError("");
     try {
-      await internalPriceBulk({ seller_entity_id: target.sellerId, buyer_entity_id: target.buyerId, valid_from: validFrom,
-        notes: target.note || "", items: [{ product_id: target.productId, unit_price: value }] });
+      const body = { seller_entity_id: target.sellerId, buyer_entity_id: target.buyerId, valid_from: validFrom,
+        notes: target.note || "", items: [{ product_id: target.productId, unit_price: value }] };
+      await intent.send(body, (k) => internalPriceBulk(body, k));
       onSaved?.();
     } catch (e) { setError(apiErrorText(e, "Gagal menyimpan harga internal.")); }
     finally { setBusy(false); }

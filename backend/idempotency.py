@@ -17,6 +17,9 @@ from db import db
 from core_utils import now_iso
 
 HEADER = "idempotency-key"
+# PK-12 — jawaban 4xx yang menandai keadaan SEMENTARA ("dokumen tercatat, jurnal gagal — kirim ulang"; "berubah saat
+# diproses") membawa header ini dan TIDAK disimpan, supaya kirim ulang dengan kunci sama benar-benar dijalankan lagi.
+RETRY_HEADER = "x-idempotency-retry"
 TTL_DAYS = 7
 IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/rfid/lookup", "/api/rfid/roll-scans", "/api/rfid/print-jobs",
@@ -26,7 +29,13 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        # PK-05 (SL-02) — bayar hutang: kirim ulang tidak boleh menggandakan kas keluar.
                        "/api/vendor-bills/", "/api/contra-bons/", "/api/ap-payments/",
                        # PK-06 — antar-PT: konfirmasi/pelunasan yang dikirim ulang tidak boleh ganda.
-                       "/api/interco/")
+                       "/api/interco/",
+                       # PK-12 (UX-01, UX-02, GL-08, FY-18) — semua form uang: klik ganda / kirim ulang = satu dokumen.
+                       "/api/gl/", "/api/cash-transactions", "/api/vendor-bills", "/api/contra-bons",
+                       "/api/fixed-assets", "/api/cash-advances", "/api/cash-advance-settlements",
+                       "/api/payment-plans", "/api/penalties", "/api/payment-variances", "/api/finance-cases",
+                       "/api/tax/pph-records", "/api/input-tax-invoices", "/api/tax-invoices",
+                       "/api/bank-reconciliation/lines/")
 
 
 async def _session_user_id(request: Request) -> str:
@@ -91,11 +100,12 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             parsed = json.loads(body.decode() or "null")
         except Exception:
             parsed = None
-        if parsed is not None and response.status_code < 500:
+        retry = (response.headers.get(RETRY_HEADER) or "").lower() == "true"
+        if parsed is not None and response.status_code < 500 and not retry:
             await db.idempotency_keys.update_one({"_id": doc_id}, {"$set": {
                 "status": "done", "code": response.status_code, "body": parsed, "done_at": now_iso()}})
         else:
-            await db.idempotency_keys.delete_one({"_id": doc_id})   # 5xx/non-JSON: biarkan klien coba lagi
+            await db.idempotency_keys.delete_one({"_id": doc_id})   # 5xx/non-JSON/sementara: biarkan klien coba lagi
         headers: Dict[str, str] = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
         return Response(content=body, status_code=response.status_code, headers=headers,
                         media_type=response.media_type)

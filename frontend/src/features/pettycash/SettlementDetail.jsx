@@ -1,11 +1,13 @@
 import { apiErrorText } from "../../utils/apiError";
 import { useState } from "react";
-import axios, { API } from "../../services/apiClient";
+import { API } from "../../services/apiClient";
 import { ReceiptText, CheckCircle2, XCircle, Send, Printer } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ConfirmModal from "../../components/ConfirmModal";
 import { STL_STATUS, StatusPill, fmtDate, printSettlement } from "./pettyCashShared";
 import { can } from "../../config/roles";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * SettlementDetail — rincian Laporan Pertanggungjawaban (LPJ) + aksi (ajukan / setujui & posting GL / tolak /
@@ -19,6 +21,11 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [reject, setReject] = useState(false);
+  // PK-12 — satu kunci idempotensi per aksi (ajukan / setujui & posting / tolak / bayar reimburse).
+  const intents = {
+    submit: useIntentKey("stls"), approve: useIntentKey("stla"),
+    reject: useIntentKey("stlr"), "pay-reimburse": useIntentKey("stlp"),
+  };
   const entityName = entities.find((e) => e.id === stl.entity_id)?.short_name || entities.find((e) => e.id === stl.entity_id)?.legal_name || stl.entity_id;
 
   // Sisir lanjutan gerbang peran (2026-10-21): ajukan/setujui/tolak LPJ = cash_settlement.submit/approve/reject; bayar talangan = accounting.create.
@@ -31,7 +38,9 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
   async function act(path, body, okMsg) {
     setBusy(true); setErr("");
     try {
-      const res = await axios.post(`${API}/cash-advance-settlements/${stl.id}/${path}`, body || {});
+      const b = body || {};
+      const res = await intents[path].send({ id: stl.id, aksi: path, ...b },
+        (k) => moneyPost(`${API}/cash-advance-settlements/${stl.id}/${path}`, b, k));
       flash(okMsg); onChanged(res.data);
     } catch (e) { setErr(apiErrorText(e, "Aksi gagal.")); } finally { setBusy(false); }
   }

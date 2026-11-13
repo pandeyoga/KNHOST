@@ -14,6 +14,8 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
 import { formatCurrency, todayWib } from "../../utils/formatters";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 const emptyLine = () => ({ account_code: "", debit: "", credit: "", description: "" });
 
@@ -25,6 +27,8 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [periodWarning, setPeriodWarning] = useState(null);
+  // PK-12 — kirim ulang isi yang sama (koneksi putus) memakai kunci yang sama → server memutar ulang, bukan jurnal kedua.
+  const intent = useIntentKey("je");
 
   // Soft-lock: peringatkan (tanpa memblokir) bila tanggal berada di periode tertutup.
   useEffect(() => {
@@ -70,7 +74,8 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
     if (payloadLines.length < 2) { setError("Minimal 2 baris terisi (debit & kredit)."); return; }
     setSaving(true);
     try {
-      await axios.post(`${API}/gl/journal`, { date, description, lines: payloadLines });
+      const body = { date, description, lines: payloadLines };
+      await intent.send(body, (k) => moneyPost(`${API}/gl/journal`, body, k));
       await onSaved();
     } catch (err) {
       setError(apiErrorText(err, "Gagal menyimpan jurnal."));

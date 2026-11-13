@@ -15,9 +15,14 @@ const STATUS = { pending_approval: ["Menunggu persetujuan", "bg-[#FFF6E5] text-[
 
 export default function CampaignBillsSection({ campaign, bills, canCreate, canApprove, currentUserId, onChanged, onAdd, onReject }) {
   const [err, setErr] = useState("");
+  // PK-12 — setujui (memposting hutang): satu niat = satu Idempotency-Key; tombol baris mati selama menunggu.
+  const [approving, setApproving] = useState("");
+  const approveIntent = useIntentKey("mvbapv");
   const approve = async (b) => {
-    setErr("");
-    try { await mktApi.approveBill(campaign.id, b.id); onChanged(); } catch (e) { setErr(errText(e, "Gagal menyetujui tagihan.")); }
+    if (approving) return;
+    setErr(""); setApproving(b.id);
+    try { await approveIntent.send({ id: b.id, aksi: "approve" }, (k) => mktApi.approveBill(campaign.id, b.id, k)); onChanged(); }
+    catch (e) { setErr(errText(e, "Gagal menyetujui tagihan.")); } finally { setApproving(""); }
   };
   return (
     <div className="grid gap-1.5" data-testid="mkt-bills-section">
@@ -39,8 +44,8 @@ export default function CampaignBillsSection({ campaign, bills, canCreate, canAp
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="font-bold" data-testid={`mkt-bill-amount-${b.id}`}>Rp {fmtN(b.grand_total)}</span>
               {canApprove && b.status === "pending_approval" && !mine && (<>
-                <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => approve(b)} data-testid={`mkt-bill-approve-${b.id}`}><Check size={11} /> Setujui</button>
-                <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => onReject(b)} data-testid={`mkt-bill-reject-${b.id}`}><X size={11} /> Tolak</button>
+                <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => approve(b)} disabled={!!approving} data-testid={`mkt-bill-approve-${b.id}`}><Check size={11} /> Setujui</button>
+                <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => onReject(b)} disabled={approving === b.id} data-testid={`mkt-bill-reject-${b.id}`}><X size={11} /> Tolak</button>
               </>)}
             </div>
           </div>
@@ -81,9 +86,12 @@ export function BillForm({ campaign, onClose, onDone }) {
 
 export function RejectModal({ campaign, bill, onClose, onDone }) {
   const [reason, setReason] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  const intent = useIntentKey("mvbrej");
   const submit = async () => {
     setBusy(true); setErr("");
-    try { await mktApi.rejectBill(campaign.id, bill.id, { reason }); onDone(); } catch (e) { setErr(errText(e, "Gagal menolak tagihan.")); } finally { setBusy(false); }
+    const body = { reason };
+    try { await intent.send({ id: bill.id, aksi: "reject", ...body }, (k) => mktApi.rejectBill(campaign.id, bill.id, body, k)); onDone(); }
+    catch (e) { setErr(errText(e, "Gagal menolak tagihan.")); } finally { setBusy(false); }
   };
   return (
     <FormModal open title={`Tolak ${bill.bill_number}`} icon={X} onClose={onClose} onSubmit={submit} busy={busy} error={err} submitLabel="Tolak tagihan" testId="mkt-bill-reject-modal" submitTestId="mkt-bill-reject-submit" cancelTestId="mkt-bill-reject-cancel">

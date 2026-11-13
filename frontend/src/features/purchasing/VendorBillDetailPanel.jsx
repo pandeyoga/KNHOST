@@ -4,7 +4,8 @@ import { useState } from "react";
 import KNDatePicker from "../../components/KNDatePicker";
 import useIntentKey from "../../hooks/useIntentKey";
 import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "./apPayment";
-import axios, { API } from "../../services/apiClient";
+import { API } from "../../services/apiClient";
+import { moneyPost } from "../../utils/moneyRequest";
 import { X, CheckCircle2, AlertTriangle, Wallet, Send, XCircle, Ban } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
@@ -46,6 +47,11 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
   const [warn, setWarn] = useState("");
   // PK-05 — satu niat bayar = satu Idempotency-Key; rekening dari PT tagihan; niat menggantung bisa dilanjutkan.
   const intent = useIntentKey("vbpay");
+  // PK-12 — aksi alur tagihan: satu niat per aksi = satu Idempotency-Key (klik ganda / kirim ulang = satu efek).
+  const actIntents = {
+    submit: useIntentKey("vbsub"), approve: useIntentKey("vbapv"),
+    reject: useIntentKey("vbrej"), cancel: useIntentKey("vbcan"), pay: intent,
+  };
   const ap = useApPayment("vendor_bill", bill?.id, showPay && bill?.status === "posted");
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
@@ -64,7 +70,9 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
         cancel: `${API}/vendor-bills/${bill.id}/cancel`,
         pay: `${API}/vendor-bills/${bill.id}/pay`,
       };
-      const r = await axios.post(urls[action], body || {});
+      const payload = body || {};
+      const r = await actIntents[action].send({ id: bill.id, aksi: action, ...payload },
+        (k) => moneyPost(urls[action], payload, k));
       onAction?.(action, r.data);
     } catch (e) {
       fail(e.response?.data?.detail || `Gagal ${action}.`);
@@ -78,8 +86,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
     const body = { amount: amt, method, paid_at: payDate, bank_account_id: accountId, notes: payNotes.trim() };
     setBusy(true); setErr(""); setWarn("");
     try {
-      const r = await intent.send(body, (key) => axios.post(`${API}/vendor-bills/${bill.id}/pay`, body,
-        { headers: { "Idempotency-Key": key } }));
+      const r = await intent.send(body, (key) => moneyPost(`${API}/vendor-bills/${bill.id}/pay`, body, key));
       if (r.data?.warning) setWarn(r.data.warning);
       onAction?.("pay", r.data);
       setShowPay(false); setPayAmount(""); setPayNotes("");
@@ -227,7 +234,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
               <div className="flex gap-2">
                 <button data-testid="vb-pay-confirm" onClick={doPay} disabled={busy || !!ap.pending} className="primary-button">
                   {busy ? "Memproses…" : "Catat Pembayaran"}</button>
-                <button onClick={() => setShowPay(false)} className="secondary-button">Batal</button>
+                <button onClick={() => setShowPay(false)} disabled={busy} className="secondary-button">Batal</button>
               </div>
             </div>
           )}

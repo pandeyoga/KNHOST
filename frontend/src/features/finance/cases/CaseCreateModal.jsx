@@ -11,12 +11,14 @@
 import MoneyInput from "../../../components/MoneyInput";
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { apiErrorText } from "../../../utils/apiError";
 import { parseDecimal } from "../../../utils/decimalInput";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function CaseCreateModal({ playbooks, customers, suppliers, onClose,
   onCreated, onError }) {
@@ -30,6 +32,8 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
   // KN-G9-ERR-SILENT — modal wajib menampilkan penolakannya sendiri (bilah error layar
   // induk tertutup modal ini), mis. 403 "kasus PT lain" atau 400 "kasus kembar".
   const [err, setErr] = useState("");
+  // PK-12 — satu niat lapor = satu Idempotency-Key: kirim ulang sesudah koneksi putus tidak membuat kasus kembar.
+  const intent = useIntentKey("fc-baru");
 
   const pb = useMemo(() => playbooks.find((p) => p.code === caseType) || null,
     [playbooks, caseType]);
@@ -50,14 +54,15 @@ export default function CaseCreateModal({ playbooks, customers, suppliers, onClo
   async function submit() {
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/finance-cases`, {
+      const body = {
         case_type: caseType,
         title: title.trim() || pb?.label || "",
         description: description.trim(),
         amount: amountNum,
         customer_id: customerId,
         supplier_id: supplierId,
-      });
+      };
+      const r = await intent.send(body, (k) => moneyPost(`${API}/finance-cases`, body, k));
       onCreated(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

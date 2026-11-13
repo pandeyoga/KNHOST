@@ -10,6 +10,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import FormModal from "../../components/FormModal";
 import FilterChips from "../../components/FilterChips";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
 
 /**
  * Faktur Pajak Jual (Sub-fase 1.9 — tax_invoices / fkt_).
@@ -52,6 +54,10 @@ export default function TaxInvoices({ currentUser = {} }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState("");
+  // PK-12 — satu kunci idempotensi per aksi faktur (NSFP / pengganti / batal).
+  const nsfpIntent = useIntentKey("fktn");
+  const replaceIntent = useIntentKey("fktr");
+  const cancelIntent = useIntentKey("fktc");
 
   // modal: { type: 'nsfp'|'replace'|'cancel', fkt }
   const [modal, setModal] = useState(null);
@@ -109,12 +115,17 @@ export default function TaxInvoices({ currentUser = {} }) {
     try {
       if (type === "nsfp") {
         if (!nsfpVal.trim()) { setModalErr("NSFP wajib diisi."); setBusyId(""); return; }
-        await axios.patch(`${API}/tax-invoices/${fkt.id}/nsfp`, { nsfp: nsfpVal.trim(), kode_transaksi: kodeVal });
+        const body = { nsfp: nsfpVal.trim(), kode_transaksi: kodeVal };
+        await nsfpIntent.send({ id: fkt.id, ...body }, (k) => moneyPatch(`${API}/tax-invoices/${fkt.id}/nsfp`, body, k));
       } else if (type === "replace") {
-        await axios.post(`${API}/tax-invoices/${fkt.id}/replace`, { reason: reasonVal.trim(), kode_transaksi: kodeVal });
+        const body = { reason: reasonVal.trim(), kode_transaksi: kodeVal };
+        await replaceIntent.send({ id: fkt.id, aksi: "replace", ...body },
+          (k) => moneyPost(`${API}/tax-invoices/${fkt.id}/replace`, body, k));
       } else if (type === "cancel") {
         if (!reasonVal.trim()) { setModalErr("Alasan pembatalan wajib diisi."); setBusyId(""); return; }
-        await axios.post(`${API}/tax-invoices/${fkt.id}/cancel`, { reason: reasonVal.trim() });
+        const body = { reason: reasonVal.trim() };
+        await cancelIntent.send({ id: fkt.id, aksi: "cancel", ...body },
+          (k) => moneyPost(`${API}/tax-invoices/${fkt.id}/cancel`, body, k));
       }
       closeModal();
       await load();

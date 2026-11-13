@@ -93,7 +93,9 @@ def _penalty_err(exc: Exception) -> HTTPException:
     """PK-08 — galat denda/jurnal → jawaban terbaca (bukan 500)."""
     from services import gl_service as gl
     if isinstance(exc, penalties.PenaltyConflict):
-        return HTTPException(status_code=409, detail=str(exc))
+        # PK-12 — keadaan sementara (jurnal gagal / berubah saat diproses): mesin kunci tidak menyimpan jawaban ini,
+        # jadi kirim ulang dengan Idempotency-Key sama menyelesaikan pembayaran yang sama (PK-08 U12).
+        return HTTPException(status_code=409, detail=str(exc), headers={"X-Idempotency-Retry": "true"})
     if isinstance(exc, gl.ClosedPeriodError):
         return HTTPException(status_code=409, detail=str(exc))
     if isinstance(exc, gl.JournalValidationError):

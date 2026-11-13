@@ -8,6 +8,8 @@ import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import { SATUAN_OPTIONS } from "./pettyCashShared";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
 
 /**
  * CashAdvanceForm — Buat / ubah Form Pengajuan Dana (PD).
@@ -38,6 +40,8 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
   const [lines, setLines] = useState(record?.lines?.length ? record.lines.map((l) => ({ ...l })) : [emptyLine()]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — simpan PD ber-Idempotency-Key (kirim ulang isi sama setelah koneksi putus tidak membuat PD kedua).
+  const intent = useIntentKey(isEdit ? "cae" : "ca");
 
   const total = useMemo(
     () => lines.reduce((s, l) => s + (Number(l.qty) || 0) * (Number(l.unit_price) || 0), 0),
@@ -68,8 +72,9 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
         lines: clean, catatan,
       };
       const res = isEdit
-        ? await axios.patch(`${API}/cash-advances/${record.id}`, payload)
-        : await axios.post(`${API}/cash-advances`, payload);
+        ? await intent.send({ id: record.id, ...payload },
+          (k) => moneyPatch(`${API}/cash-advances/${record.id}`, payload, k))
+        : await intent.send(payload, (k) => moneyPost(`${API}/cash-advances`, payload, k));
       onSaved(res.data, isEdit);
     } catch (e) {
       setErr(apiErrorText(e, "Gagal menyimpan Pengajuan Dana."));

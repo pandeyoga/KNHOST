@@ -35,6 +35,10 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   const [accounts, setAccounts] = useState([]);
   const [accountId, setAccountId] = useState("");
   const payIntent = useIntentKey("pnl");
+  // PK-12 — keputusan denda lain juga berkunci Idempotency-Key, satu instans per aksi.
+  const issueIntent = useIntentKey("pnl-terbit");
+  const waiveIntent = useIntentKey("pnl-bebas");
+  const adjustIntent = useIntentKey("pnl-ubah");
   const openPay = async (p) => {
     setErr(""); setAccountId("");
     setAmount(String(Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0))));
@@ -67,10 +71,17 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
     }))) return;
     setBusy(row.id); setErr("");
     try {
-      if (kind === "issue") await issuePenalty(row.id);
-      if (kind === "waive") await waivePenalty(row.id, { reason_code: reasonCode, note });
-      if (kind === "adjust") await adjustPenalty(row.id, {
-        amount: Number(amount || 0), reason_code: reasonCode, note });
+      if (kind === "issue") {
+        await issueIntent.send({ id: row.id, aksi: "issue" }, (key) => issuePenalty(row.id, key));
+      }
+      if (kind === "waive") {
+        const body = { reason_code: reasonCode, note };
+        await waiveIntent.send({ id: row.id, aksi: "waive", ...body }, (key) => waivePenalty(row.id, body, key));
+      }
+      if (kind === "adjust") {
+        const body = { amount: Number(amount || 0), reason_code: reasonCode, note };
+        await adjustIntent.send({ id: row.id, aksi: "adjust", ...body }, (key) => adjustPenalty(row.id, body, key));
+      }
       if (kind === "pay") {
         const body = { amount: Number(amount || 0), account_id: accountId, method: "transfer" };
         await payIntent.send({ id: row.id, ...body }, (key) => payPenalty(row.id, body, key));
@@ -79,7 +90,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
       if (onChanged) onChanged();
     } catch (e) { setErr(errText(e, "Aksi denda gagal.")); }
     finally { setBusy(""); }
-  }, [reasonCode, note, amount, accountId, payIntent, onChanged]);
+  }, [reasonCode, note, amount, accountId, payIntent, issueIntent, waiveIntent, adjustIntent, onChanged]);
 
   if (!rows.length) {
     return (
@@ -170,7 +181,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
           footer={(
             <div className="flex justify-end gap-2">
               <button type="button" className="secondary-button" onClick={() => setDialog(null)}
-                data-testid="penalty-dialog-cancel">Batal</button>
+                disabled={busy !== ""} data-testid="penalty-dialog-cancel">Batal</button>
               <button type="button" className="primary-button" data-testid="penalty-dialog-submit"
                 disabled={busy !== "" || (dialog.kind !== "pay" && !reasonCode) || (dialog.kind === "pay" && !accountId)}
                 onClick={() => act(dialog.kind, dialog.row)}>

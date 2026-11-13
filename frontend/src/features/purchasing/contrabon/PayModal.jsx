@@ -12,7 +12,8 @@ import MoneyInput from "../../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
 import { Banknote, Info } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -47,8 +48,7 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
       paid_at: paidAt, notes: notes.trim() };
     setSaving(true); setErr("");
     try {
-      const r = await intent.send(body, (key) => axios.post(`${API}/contra-bons/${cb.id}/pay`, body,
-        { headers: { "Idempotency-Key": key } }));
+      const r = await intent.send(body, (key) => moneyPost(`${API}/contra-bons/${cb.id}/pay`, body, key));
       onPaid(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

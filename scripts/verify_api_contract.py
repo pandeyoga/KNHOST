@@ -103,6 +103,8 @@ def route_regex(path):
 FE_CALL_RE = re.compile(
     r'''axios\.(get|post|patch|put|delete)\(\s*`([^`]+)`'''
     r'''|fetch\(\s*`([^`]+)`'''
+    # PK-12 — form uang mengirim lewat utils/moneyRequest.js (moneyPost/Put/Patch/Delete); ikut diperiksa.
+    r'''|money(Post|Put|Patch|Delete)\(\s*`([^`]+)`'''
 )
 
 # Var query-string yang harus DIBUANG (bukan path segment)
@@ -166,8 +168,8 @@ def fe_calls():
         text = f.read_text(encoding="utf-8", errors="ignore")
         bare = file_api_is_bare(text)
         for m in FE_CALL_RE.finditer(text):
-            method = (m.group(1) or "get").upper()
-            raw = m.group(2) or m.group(3) or ""
+            method = (m.group(1) or m.group(4) or "get").upper()
+            raw = m.group(2) or m.group(3) or m.group(5) or ""
             if "/api" not in raw and "${API}" not in raw:
                 continue
             calls.append((method, normalize_fe_path(raw, bare), raw.strip(), f.relative_to(SRC)))

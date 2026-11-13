@@ -16,6 +16,8 @@ import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import { PRICING_MODES, PPN_MODES } from "./intercoApi";
 
 export default function IntercoCreateModal({
@@ -33,6 +35,9 @@ export default function IntercoCreateModal({
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu niat terbit = satu Idempotency-Key: klik ganda / kirim ulang sesudah koneksi putus tidak menerbitkan
+  // dokumen kembar dua kali.
+  const intent = useIntentKey("ic-trx");
 
   useEffect(() => {
     axios.get(`${API}/products`, { params: { limit: 500 } })
@@ -88,7 +93,7 @@ export default function IntercoCreateModal({
     }
     setBusy(true);
     try {
-      await axios.post(`${API}/interco/transactions`, {
+      const body = {
         seller_entity_id: seller,
         buyer_entity_id: buyer,
         pricing_mode: pricingMode,
@@ -96,7 +101,8 @@ export default function IntercoCreateModal({
         items: cleanItems,
         submit_now: submitNow,
         notes,
-      });
+      };
+      await intent.send(body, (k) => moneyPost(`${API}/interco/transactions`, body, k));
       onCreated?.();
     } catch (e) { setErr(apiErrorText(e)); }
     finally { setBusy(false); }

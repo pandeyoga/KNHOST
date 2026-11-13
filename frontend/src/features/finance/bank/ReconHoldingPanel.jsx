@@ -19,6 +19,8 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { askConfirm } from "../../../services/confirmService";
 import { openFinanceCase, caseNumberFromText } from "../cases/caseDeepLink";
+import useIntentKey from "../../../hooks/useIntentKey";
+import { moneyPost } from "../../../utils/moneyRequest";
 
 const fmtDate = (s) => {
   if (!s) return "—";
@@ -47,6 +49,9 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [opening, setOpening] = useState("");   // baris yang sedang dibuatkan kasus
+  // PK-12 — kunci idempotensi per aksi: buka kasus dari titipan / alokasi titipan.
+  const caseIntent = useIntentKey("fcase");
+  const allocIntent = useIntentKey("hold");
   // INV-UI-03 — modal WAJIB menampilkan penolakannya sendiri: bilah error layar
   // induk berada di belakang lapisan modal ini, jadi tak terlihat pengguna.
   const [mErr, setMErr] = useState("");
@@ -103,7 +108,7 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
   async function openCase(h) {
     setOpening(h.id);
     try {
-      const r = await axios.post(`${API}/finance-cases`, {
+      const body = {
         case_type: "dana_tak_dikenal",
         title: `Dana masuk tak dikenal ${formatCurrency(h.remaining)}`,
         description: `Titipan dari mutasi "${h.description || ""}" (pihak: `
@@ -112,7 +117,8 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
         customer_id: h.customer_id || "",
         source: { kind: "bank_holding", id: h.id,
           label: `Mutasi ${h.stmt_date || ""} · ${(h.description || "").slice(0, 50)}` },
-      });
+      };
+      const r = await caseIntent.send(body, (k) => moneyPost(`${API}/finance-cases`, body, k));
       openFinanceCase({ caseId: r.data.id, number: r.data.number,
         note: `Kasus ${r.data.number} dibuat dari mutasi titipan ini (batas waktu `
           + `${r.data.sla_hours} jam) — sumber, nominal, dan dugaan pelanggan sudah terisi.` });
@@ -135,9 +141,9 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
     if (!allocations.length) return;
     setSaving(true);
     try {
-      const r = await axios.post(
-        `${API}/bank-reconciliation/lines/${target.id}/holding/allocate`,
-        { customer_id: customerId, reason_code: reason, note, allocations });
+      const body = { customer_id: customerId, reason_code: reason, note, allocations };
+      const r = await allocIntent.send({ id: target.id, ...body },
+        (k) => moneyPost(`${API}/bank-reconciliation/lines/${target.id}/holding/allocate`, body, k));
       onNotify(`Titipan dialokasikan ${formatCurrency(r.data.allocated_now)} · sisa titipan `
         + `${formatCurrency(r.data.holding_remaining)}.`);
       close();

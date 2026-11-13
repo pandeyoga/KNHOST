@@ -21,6 +21,7 @@ import {
   varianceByReceipt, varianceKindMeta, varianceMeta,
 } from "./paymentApi";
 import { askReason } from "@/services/confirmService";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -50,6 +51,9 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
   const [busy, setBusy] = useState(false);
   const [dialogErr, setDialogErr] = useState("");
   const [reversing, setReversing] = useState("");
+  // PK-12 — putuskan / anulir selisih: satu niat = satu Idempotency-Key, satu instans per aksi.
+  const decideIntent = useIntentKey("pv-putus");
+  const reverseIntent = useIntentKey("pv-anulir");
 
   // FE-04 — keputusan & anulir sama-sama payment_variance.decide di server (batas nominal tetap dijaga kebijakan).
   const canDecide = can(currentUser?.permissions, "payment_variance", "decide");
@@ -101,7 +105,8 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
   const confirm = async (payload) => {
     setBusy(true); setDialogErr("");
     try {
-      await decideVariance(dialog.receipt_id, payload);
+      const receiptId = dialog.receipt_id;
+      await decideIntent.send({ id: receiptId, ...payload }, (k) => decideVariance(receiptId, payload, k));
       setDialog(null);
       await load();
     } catch (e) { setDialogErr(errText(e, "Keputusan gagal disimpan.")); }
@@ -128,7 +133,11 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
       return;
     }
     setReversing(row.id);
-    try { await reverseVariance(row.id, reason.trim()); await load(); }
+    try {
+      const why = reason.trim();
+      await reverseIntent.send({ id: row.id, aksi: "reverse", reason: why }, (k) => reverseVariance(row.id, why, k));
+      await load();
+    }
     catch (e) { setError(errText(e, "Gagal menganulir keputusan.")); }
     finally { setReversing(""); }
   };

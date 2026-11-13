@@ -16,6 +16,8 @@ import KNDatePicker from "@/components/KNDatePicker";
 import MoneyInput from "@/components/MoneyInput";
 import { Plus, ChevronRight, ChevronLeft, Info, AlertTriangle, PackageSearch } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -29,6 +31,9 @@ const STEPS = [
   { n: 2, label: "Pilih faktur" },
   { n: 3, label: "Periksa & terbitkan" },
 ];
+
+/** Koneksi putus (tanpa jawaban) atau server galat 5xx: jawaban tidak disimpan server, kirim ulang dengan kunci sama. */
+const isTransient = (e) => !e?.response || e.response.status >= 500;
 
 export default function ContraBonCreateWizard({ suppliers, presetSupplierId, selectedEntity,
   onClose, onCreated, onError }) {
@@ -47,6 +52,12 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu niat per LANGKAH rantai terbitkan → potongan → ajukan. Kunci tiap langkah bertahan sampai SELURUH
+  // rantai selesai: bila koneksi putus di langkah 2/3 lalu "Terbitkan" ditekan lagi, langkah 1 dikirim ulang dengan
+  // kunci yang sama dan server memutar ulang jawabannya (kontrabon yang sama), bukan menerbitkan nomor kedua.
+  const createIntent = useIntentKey("cbnew");
+  const dedIntent = useIntentKey("cbwded");
+  const submitIntent = useIntentKey("cbwsub");
 
   const supplierOptions = useMemo(
     () => (suppliers || []).map((s) => ({
@@ -107,50 +118,77 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
    * backend, bukan ditebak layar. Karena itu "Ajukan langsung" ditunda sampai seluruh
    * potongan menempel — kalau tidak, kontrabon sudah berpindah status dan potongan
    * ditolak ("hanya boleh sebelum verifikasi").
+   *
+   * PK-12 — penolakan bisnis (4xx) potongan/pengajuan tetap dikumpulkan di `failed` seperti sebelumnya. Koneksi putus
+   * atau 5xx di langkah 2/3 MENGHENTIKAN rantai (wizard tetap terbuka) supaya "Terbitkan" bisa diulang dengan kunci
+   * yang sama per langkah; langkah yang sudah sampai ke server diputar ulang, bukan dijalankan dua kali.
    */
   async function create() {
     setSaving(true); setErr("");
     let made = null;
+    const body = {
+      supplier_id: supplierId,
+      entity_id: prep?.entity_id || "",
+      bills: chosen.map((b) => ({
+        bill_id: b.bill_id,
+        applied_amount: amounts[b.bill_id] === undefined || amounts[b.bill_id] === ""
+          ? null : Number(amounts[b.bill_id]),
+      })),
+      cycle_date: cycleDate,
+      due_date: dueDate,
+      supplier_pic: pic.trim(),
+      notes: notes.trim(),
+      submit_now: false,
+    };
     try {
-      const r = await axios.post(`${API}/contra-bons`, {
-        supplier_id: supplierId,
-        entity_id: prep?.entity_id || "",
-        bills: chosen.map((b) => ({
-          bill_id: b.bill_id,
-          applied_amount: amounts[b.bill_id] === undefined || amounts[b.bill_id] === ""
-            ? null : Number(amounts[b.bill_id]),
-        })),
-        cycle_date: cycleDate,
-        due_date: dueDate,
-        supplier_pic: pic.trim(),
-        notes: notes.trim(),
-        submit_now: false,
-      });
-      made = r.data;
+      try {
+        const r = await moneyPost(`${API}/contra-bons`, body, createIntent.keyFor(body));
+        made = r.data;
+      } catch (e) {
+        if (!isTransient(e)) createIntent.done();   // server sudah memutus (4xx) → percobaan berikut = niat baru
+        throw e;
+      }
       const failed = [];
-      for (const c of takenCredits) {
+      const deds = takenCredits.map((c) => ({
+        c,
+        body: {
+          kind: c.kind,
+          ref_id: c.ref_id,
+          amount: credAmt[c.ref_id] === undefined || credAmt[c.ref_id] === ""
+            ? null : Number(credAmt[c.ref_id]),
+          note: `Dipotong saat tukar faktur — ${c.label}`,
+        },
+      }));
+      // Satu niat untuk langkah 2 (seluruh potongan); tiap potongan memakai turunan kunci itu karena jalurnya sama.
+      const dedKey = deds.length ? dedIntent.keyFor({ cb: made.id, deds: deds.map((d) => d.body) }) : "";
+      for (let i = 0; i < deds.length; i += 1) {
+        const { c, body: db } = deds[i];
         try {
-          const d = await axios.post(`${API}/contra-bons/${made.id}/deductions`, {
-            kind: c.kind,
-            ref_id: c.ref_id,
-            amount: credAmt[c.ref_id] === undefined || credAmt[c.ref_id] === ""
-              ? null : Number(credAmt[c.ref_id]),
-            note: `Dipotong saat tukar faktur — ${c.label}`,
-          });
+          const d = await moneyPost(`${API}/contra-bons/${made.id}/deductions`, db, `${dedKey}-${i + 1}`);
           made = d.data;
         } catch (e) {
+          if (isTransient(e)) throw e;
           failed.push(`${c.ref_number || c.label}: ${apiErrorText(e)}`);
         }
       }
       if (submitNow) {
         try {
-          const s = await axios.post(`${API}/contra-bons/${made.id}/submit`, {});
+          const s = await moneyPost(`${API}/contra-bons/${made.id}/submit`, {},
+            submitIntent.keyFor({ id: made.id, aksi: "submit" }));
           made = s.data;
-        } catch (e) { failed.push(`Pengajuan: ${apiErrorText(e)}`); }
+        } catch (e) {
+          if (isTransient(e)) throw e;
+          failed.push(`Pengajuan: ${apiErrorText(e)}`);
+        }
       }
+      createIntent.done(); dedIntent.done(); submitIntent.done();
       onCreated(made, failed);
     } catch (e) {
-      setErr(apiErrorText(e));
+      const why = apiErrorText(e);
+      setErr(made
+        ? `Kontrabon ${made.number || ""} sudah terbit, tetapi langkah lanjutannya terputus: ${why} Tekan `
+          + "“Terbitkan kontrabon” lagi untuk melanjutkan — kontrabon yang sama dipakai ulang."
+        : why);
       onError?.(e);
     } finally { setSaving(false); }
   }
@@ -162,7 +200,7 @@ export default function ContraBonCreateWizard({ suppliers, presetSupplierId, sel
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* G1-24 — tombol Kembali tidak tampil di langkah 1. */}
           {step > 1 ? (
-            <button type="button" className="secondary-button" data-testid="cb-create-back"
+            <button type="button" className="secondary-button" data-testid="cb-create-back" disabled={saving}
               onClick={() => setStep((st) => Math.max(1, st - 1))}>
               <ChevronLeft size={14} /> Kembali
             </button>

@@ -133,7 +133,7 @@ export default function PaymentVarianceDialog({
           </span>
           <div className="ml-auto flex gap-2">
             <button type="button" className="secondary-button" onClick={onCancel}
-              data-testid="pv-cancel">Batal</button>
+              disabled={busy} data-testid="pv-cancel">Batal</button>
             <button type="button" className="primary-button" onClick={submit}
               disabled={!canSubmit} data-testid="pv-submit">
               {busy ? <Loader2 size={13} className="animate-spin" /> : null} {submitLabel}

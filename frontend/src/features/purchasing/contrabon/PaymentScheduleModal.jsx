@@ -8,6 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import { CalendarCheck } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -23,6 +25,8 @@ export default function PaymentScheduleModal({ cb, onClose, onSaved, onError }) 
   const [accounts, setAccounts] = useState([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu isi jadwal = satu Idempotency-Key.
+  const intent = useIntentKey("cbsch");
 
   useEffect(() => {
     let alive = true;
@@ -43,12 +47,13 @@ export default function PaymentScheduleModal({ cb, onClose, onSaved, onError }) 
   async function save() {
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/schedule`, {
+      const body = {
         planned_payment_date: when,
         method,
         bank_account_id: accountId,
         notes: notes.trim(),
-      });
+      };
+      const r = await intent.send(body, (k) => moneyPost(`${API}/contra-bons/${cb.id}/schedule`, body, k));
       onSaved(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

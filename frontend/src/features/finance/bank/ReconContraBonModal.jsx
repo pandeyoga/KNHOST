@@ -19,6 +19,8 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { askConfirm } from "../../../services/confirmService";
 import { apiErrorText } from "../../../utils/apiError";
+import useIntentKey from "../../../hooks/useIntentKey";
+import { moneyPost } from "../../../utils/moneyRequest";
 
 const fmtDate = (s) => {
   if (!s) return "—";
@@ -32,6 +34,8 @@ export default function ReconContraBonModal({ line, onClose, onDone, onError }) 
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState("load");
   const [mErr, setMErr] = useState("");
+  // PK-12 — bayar kontrabon dari mutasi ber-Idempotency-Key (kirim ulang tidak membayar dua kali).
+  const payIntent = useIntentKey("cbbank");
 
   const load = useCallback(async () => {
     setBusy("load");
@@ -53,9 +57,9 @@ export default function ReconContraBonModal({ line, onClose, onDone, onError }) 
     }))) return;
     setBusy(cb.id);
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/pay-from-bank-line/${line.id}`, {
-        note: "Dibayar dari baris mutasi bank",
-      });
+      const body = { note: "Dibayar dari baris mutasi bank" };
+      const r = await payIntent.send({ id: cb.id, line_id: line.id, ...body },
+        (k) => moneyPost(`${API}/contra-bons/${cb.id}/pay-from-bank-line/${line.id}`, body, k));
       const updated = r.data || {};
       onDone(`Kontrabon ${updated.number || cb.number} dibayar `
         + `${formatCurrency(line.amount)} dan baris mutasi ini otomatis tertaut ke transaksi kasnya`

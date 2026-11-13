@@ -20,6 +20,8 @@ import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
 import { entityFull } from "../../../utils/entityLabel";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function CasePlaybookWizard({ caseData, reasons, entities, customers,
   suppliers, accounts, policy, onClose, onDone, onError }) {
@@ -46,6 +48,9 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
   // persetujuan, entitas lain) HARUS tampil di dalam modal ini juga. Tanpa ini, tombol
   // "Jalankan & selesaikan" terasa mati tanpa penjelasan.
   const [err, setErr] = useState("");
+  // PK-12 — "Jalankan & selesaikan" memindahkan uang: satu niat = satu Idempotency-Key (satu panggilan server, bukan
+  // rantai — server menjalankan seluruh aksi playbook dalam satu permintaan).
+  const intent = useIntentKey("fc-selesai");
 
   const action = useMemo(
     () => actions.find((a) => a.code === actionCode) || null, [actions, actionCode]);
@@ -133,7 +138,8 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
           .filter(([, v]) => Number(v) > 0)
           .map(([order_id, v]) => ({ order_id, amount: Number(v) })),
       };
-      const r = await axios.post(`${API}/finance-cases/${caseData.id}/resolve`, body);
+      const r = await intent.send({ id: caseData.id, ...body },
+        (k) => moneyPost(`${API}/finance-cases/${caseData.id}/resolve`, body, k));
       onDone(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

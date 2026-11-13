@@ -7,6 +7,8 @@ import { Plus, Trash2, ReceiptText } from "lucide-react";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * SettlementForm — Buat Laporan Pertanggungjawaban atas PD yang sudah dicairkan.
@@ -27,6 +29,8 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
   const [lines, setLines] = useState([emptyLine()]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — simpan LPJ ber-Idempotency-Key (kirim ulang isi sama setelah koneksi putus tidak membuat LPJ kedua).
+  const intent = useIntentKey("stl");
 
   useEffect(() => { loadAdvances(); }, [selectedEntity]); // eslint-disable-line
 
@@ -67,9 +71,8 @@ export default function SettlementForm({ categories, preselectPd, selectedEntity
     if (clean.length === 0) { setErr("Minimal 1 baris pengeluaran dengan nominal > 0."); return; }
     setBusy(true);
     try {
-      const res = await axios.post(`${API}/cash-advance-settlements`, {
-        cash_advance_id: pdId, divisi, periode, expense_lines: clean, catatan,
-      });
+      const body = { cash_advance_id: pdId, divisi, periode, expense_lines: clean, catatan };
+      const res = await intent.send(body, (k) => moneyPost(`${API}/cash-advance-settlements`, body, k));
       onSaved(res.data);
     } catch (e) {
       setErr(apiErrorText(e, "Gagal menyimpan pertanggungjawaban."));

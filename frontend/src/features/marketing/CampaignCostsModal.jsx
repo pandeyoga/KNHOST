@@ -102,9 +102,12 @@ function CostList({ rows, canVoid, onVoid }) {
 
 function VoidCostModal({ campaignId, cost, onClose, onDone }) {
   const [reason, setReason] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  // PK-12 — batal biaya (jurnal pembalik + kas): satu niat = satu Idempotency-Key.
+  const intent = useIntentKey("mccvoid");
   const submit = async () => {
     setBusy(true); setErr("");
-    try { await mktApi.voidCost(campaignId, cost.id, { reason }); onDone(); }
+    const body = { reason };
+    try { await intent.send({ id: cost.id, aksi: "void", ...body }, (k) => mktApi.voidCost(campaignId, cost.id, body, k)); onDone(); }
     catch (e) { setErr(errText(e, "Gagal membatalkan biaya.")); } finally { setBusy(false); }
   };
   return (

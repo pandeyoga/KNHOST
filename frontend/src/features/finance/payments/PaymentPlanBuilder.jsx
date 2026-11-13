@@ -13,6 +13,7 @@ import { CheckCircle2, Loader2, Plus, Trash2, Wand2 } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import { createPlan, errText, money, previewPlan, updatePlan } from "./paymentApi";
 import { todayWib } from "../../../utils/formatters";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 const KIND_OPTS = [
   { value: "dp", label: "Uang Muka (DP)" },
@@ -38,6 +39,8 @@ export default function PaymentPlanBuilder({
   const [netDays, setNetDays] = useState(30);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  // PK-12 — satu niat simpan rencana = satu Idempotency-Key (pratinjau template hanya menghitung: tanpa kunci).
+  const saveIntent = useIntentKey("pp");
 
   const sum = useMemo(
     () => lines.reduce((a, l) => a + Number(l.amount || 0), 0), [lines]);
@@ -76,9 +79,10 @@ export default function PaymentPlanBuilder({
     setBusy("save"); setErr("");
     try {
       const body = { mode, lines: lines.map((l, i) => ({ ...l, seq: i + 1, basis: "amount" })) };
+      const createBody = { doc_type: docType, doc_id: docId, ...body };
       const saved = plan?.id
-        ? await updatePlan(plan.id, body)
-        : await createPlan({ doc_type: docType, doc_id: docId, ...body });
+        ? await saveIntent.send({ id: plan.id, ...body }, (k) => updatePlan(plan.id, body, k))
+        : await saveIntent.send(createBody, (k) => createPlan(createBody, k));
       if (onSaved) onSaved(saved);
     } catch (e) { setErr(errText(e, "Gagal menyimpan rencana pembayaran.")); }
     finally { setBusy(""); }
@@ -222,7 +226,8 @@ export default function PaymentPlanBuilder({
             </span>
           )}
           {onCancel && (
-            <button type="button" className="secondary-button" onClick={onCancel} data-testid="ppb-cancel">
+            <button type="button" className="secondary-button" onClick={onCancel} data-testid="ppb-cancel"
+              disabled={busy === "save"}>
               Batal
             </button>
           )}

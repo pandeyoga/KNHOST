@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import { moneyPost } from "../../utils/moneyRequest";
+import useIntentKey from "../../hooks/useIntentKey";
 import { Receipt, Plus, Send, Wallet, Scale, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
 import { formatCurrency } from "../../utils/formatters";
@@ -63,6 +65,9 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [detail, setDetail] = useState(null);
+  // PK-12 — aksi cepat baris (Kirim / Setujui): satu niat per aksi = satu Idempotency-Key; tombol mati selama menunggu.
+  const [quickBusy, setQuickBusy] = useState("");
+  const quickIntents = { submit: useIntentKey("vbsub"), approve: useIntentKey("vbapv") };
 
   // Sisir gerbang peran (2026-10-20): ACC/tolak = peringkat peran yang dituntut tagihan (= role_satisfies server).
   const canApproveDoc = (b) => roleSatisfies(currentUser?.role, b?.required_approval_role || "manager");
@@ -124,18 +129,22 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
   }
 
   async function quickAct(bill, action, body) {
+    if (quickBusy) return;
+    setQuickBusy(`${bill.id}:${action}`);
     try {
       const urls = {
         submit: `${API}/vendor-bills/${bill.id}/submit`,
         approve: `${API}/vendor-bills/${bill.id}/approve`,
       };
-      const r = await axios.post(urls[action], body || {});
+      const payload = body || {};
+      const r = await quickIntents[action].send({ id: bill.id, aksi: action, ...payload },
+        (k) => moneyPost(urls[action], payload, k));
       const labels = { submit: "dikirim", approve: "disetujui & terposting" };
       setNotice(`${r.data.bill_number}: ${labels[action] || action}.`);
       reload();
     } catch (e) {
       setError(e.response?.data?.detail || `Gagal ${action}.`);
-    }
+    } finally { setQuickBusy(""); }
   }
 
   return (
@@ -195,10 +204,10 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
                   <td className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5">
                       {b.status === "draft" && (
-                        <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
+                        <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} disabled={!!quickBusy} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
                       )}
                       {b.status === "pending_approval" && canApproveDoc(b) && (
-                        <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
+                        <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} disabled={!!quickBusy} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
                       )}
                       {b.status === "posted" && (
                         <button data-testid={`vb-quick-pay-${b.id}`} onClick={() => setDetail(b)} className="secondary-button !px-2 !py-1 text-[11px]"><Wallet size={11} /> Bayar</button>

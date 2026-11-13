@@ -12,7 +12,7 @@
  *   4. Retur Antar-PT   — jalan resmi sesudah barangnya berpindah (G-6b)
  *   5. Rapor Margin     — margin grup: sudah vs belum terealisasi (G-6b)
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   RefreshCw, Plus, ArrowRightLeft, Layers, Wallet, CheckCircle2,
   Handshake, Undo2, TrendingUp,
@@ -21,6 +21,8 @@ import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import { askConfirm } from "../../../services/confirmService";
 import { can } from "../../../config/roles";
 import IntercoCreateModal from "./IntercoCreateModal";
@@ -82,6 +84,12 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   const [cancelDoc, setCancelDoc] = useState(null);
   const [taxDoc, setTaxDoc] = useState(null);
   const [returnDoc, setReturnDoc] = useState(null);
+  // PK-12 — aksi baris (langkah transaksi, aksi retur, pengingat) berkunci Idempotency-Key per niat. Tombolnya ada di
+  // panel anak; `sending` menolak klik kedua selama jawaban belum datang.
+  const advanceIntent = useIntentKey("ic-step");
+  const retIntent = useIntentKey("icr-aksi");
+  const remindIntent = useIntentKey("ic-ingat");
+  const sending = useRef(false);
 
   const role = (currentUser?.role || "").toLowerCase();
   // FASE E-8 (E8.1) — wewenang dibaca dari IZIN EFEKTIF pengguna (dikirim server saat
@@ -158,7 +166,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   };
 
   const advance = async (doc, action) => {
-    if (!action) return;
+    if (!action || sending.current) return;
     // UAT 24 Okt (audit UI tahap 2) — G1-29: Konfirmasi menerbitkan jurnal di DUA buku PT → wajib dialog.
     if (action === "confirm") {
       const seller = doc.seller_entity_name || "PT penjual";
@@ -170,12 +178,13 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           + `${formatCurrency(doc.grand_total || 0)}. Setelah dikonfirmasi, pembatalan harus membalik jurnal.`,
         confirmLabel: "Konfirmasi & Terbitkan Jurnal",
       });
-      if (!ok) return;
+      if (!ok || sending.current) return;
     }
+    sending.current = true;
     setBusy(true); setErr("");
     try {
-      const r = await axios.post(
-        `${API}/interco/transactions/${doc.id}/${action}`, { note: "" });
+      const r = await advanceIntent.send({ id: doc.id, aksi: action, note: "" },
+        (k) => moneyPost(`${API}/interco/transactions/${doc.id}/${action}`, { note: "" }, k));
       if (action === "warehouse-task") {
         showMsg(`Tugas gudang ${r.data?.code || ""} terbit untuk ${doc.number} — `
                 + "gudang yang menyetujui perpindahan barangnya");
@@ -184,13 +193,16 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       }
       refresh();
     } catch (e) { setErr(apiErrorText(e)); }
-    finally { setBusy(false); }
+    finally { sending.current = false; setBusy(false); }
   };
 
   const retAct = async (ret, action, body = { note: "" }, okMsg = "") => {
+    if (sending.current) return;
+    sending.current = true;
     setBusy(true); setErr("");
     try {
-      const r = await axios.post(`${API}/interco/returns/${ret.id}/${action}`, body);
+      const r = await retIntent.send({ id: ret.id, aksi: action, ...body },
+        (k) => moneyPost(`${API}/interco/returns/${ret.id}/${action}`, body, k));
       showMsg(okMsg || `Retur ${ret.number} diperbarui`);
       if (action === "warehouse-task") {
         showMsg(`Tugas gudang balik ${r.data?.code || ""} terbit untuk ${ret.number} — `
@@ -198,15 +210,18 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       }
       refresh();
     } catch (e) { setErr(apiErrorText(e)); }
-    finally { setBusy(false); }
+    finally { sending.current = false; setBusy(false); }
   };
 
   const remind = async (acc) => {
+    if (sending.current) return;
+    sending.current = true;
     setBusy(true); setErr("");
     try {
-      const r = await axios.post(
-        `${API}/interco/accounts/${acc.from_entity_id}/${acc.to_entity_id}/remind`,
-        { note: "" });
+      const r = await remindIntent.send(
+        { id: `${acc.from_entity_id}|${acc.to_entity_id}`, aksi: "remind", note: "" },
+        (k) => moneyPost(`${API}/interco/accounts/${acc.from_entity_id}/${acc.to_entity_id}/remind`,
+          { note: "" }, k));
       const d = r.data || {};
       showMsg(d.deduped
         ? `Pengingat untuk ${d.payer_entity_name} → ${d.payee_entity_name} sudah ada `
@@ -215,7 +230,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           + `${d.idle_days} hari (batas ${d.limit_days} hari)`);
       refresh();
     } catch (e) { setErr(apiErrorText(e)); }
-    finally { setBusy(false); }
+    finally { sending.current = false; setBusy(false); }
   };
 
   return (

@@ -17,6 +17,8 @@ import { can } from "../../config/roles";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import MoneyInput from "@/components/MoneyInput";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 const ACCOUNT_TYPE_OPTIONS = [
   { value: "bank", label: "Rekening bank" },
@@ -41,6 +43,9 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  // PK-12 — tandai rekonsiliasi kas ber-Idempotency-Key; tombol baris mati selama menunggu jawaban.
+  const [reconcilingId, setReconcilingId] = useState("");
+  const reconcileIntent = useIntentKey("kasrec");
 
   // Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank; kartu rekening =
   // rincian. Posisi buku besar dimuat terpisah: bila gagal (mis. izin), kartu rekening tetap tampil.
@@ -80,19 +85,25 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   }, []);
 
   const toggleReconcile = async (txn) => {
+    if (reconcilingId) return;
     const next = !txn.reconciled;
     // optimistic update agar tombol langsung berubah
     setLedger((prev) => prev ? {
       ...prev,
       transactions: prev.transactions.map((t) => t.id === txn.id ? { ...t, reconciled: next } : t),
     } : prev);
+    setReconcilingId(txn.id);
     try {
-      await axios.post(`${API}/cash-transactions/${txn.id}/reconcile`, { reconciled: next });
+      const body = { reconciled: next };
+      await reconcileIntent.send({ id: txn.id, ...body },
+        (k) => moneyPost(`${API}/cash-transactions/${txn.id}/reconcile`, body, k));
       await load();                       // sinkron saldo kartu
       await openLedger(selected, true);   // silent refresh (tanpa flash skeleton)
     } catch (err) {
       setError(apiErrorText(err, "Gagal memperbarui rekonsiliasi."));
       await openLedger(selected, true);   // revert dari server
+    } finally {
+      setReconcilingId("");
     }
   };
 
@@ -266,7 +277,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
             ledger={ledger}
             loading={ledgerLoading}
             onClose={() => { setSelected(null); setLedger(null); }}
-            onToggle={toggleReconcile}
+            onToggle={toggleReconcile} busyId={reconcilingId}
             tabs={canAudit ? (
               <div className="tab-bar px-3" data-testid="bank-detail-tabs">
                 <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
@@ -284,7 +295,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   );
 }
 
-function LedgerPanel({ ledger, loading, onClose, onToggle, tabs = null, children = null }) {
+function LedgerPanel({ ledger, loading, onClose, onToggle, busyId = "", tabs = null, children = null }) {
   return (
     <div className="section-card" data-testid="bank-ledger">
       <div className="section-head">
@@ -325,7 +336,7 @@ function LedgerPanel({ ledger, loading, onClose, onToggle, tabs = null, children
                     <td className="px-3 py-2 text-center">
                       <button
                         data-testid={`bank-reconcile-${t.id}`}
-                        onClick={() => onToggle(t)}
+                        onClick={() => onToggle(t)} disabled={busyId === t.id}
                         className={`inline-flex items-center gap-1 text-[10.5px] font-semibold rounded-full px-2 py-0.5 border ${t.reconciled ? "bg-[#E6F6EC] border-[#BDE5CC] text-[#1B7F4B]" : "bg-white border-[#E4E4EA] text-[#8E8E93] hover:border-[#C9DBF7]"}`}
                       >
                         {t.reconciled ? <CheckCircle2 size={12} /> : <Circle size={12} />}{t.reconciled ? "Terekonsiliasi" : "Tandai"}

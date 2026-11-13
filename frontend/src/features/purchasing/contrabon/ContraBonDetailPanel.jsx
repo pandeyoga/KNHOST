@@ -14,6 +14,8 @@ import {
   X, RefreshCw, CheckCircle2, AlertTriangle, Ban, Clock, Building2,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
+import { moneyDelete, moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { apiErrorText } from "../../../utils/apiError";
 import { formatCurrency } from "../../../utils/formatters";
@@ -41,6 +43,9 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   const [decideOn, setDecideOn] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [loadingReceipt, setLoadingReceipt] = useState(false);
+  // PK-12 — aksi alur (ajukan/verifikasi/setujui) & hapus potongan: satu niat per aksi = satu Idempotency-Key.
+  const runIntents = { submit: useIntentKey("cbsub"), verify: useIntentKey("cbver"), approve: useIntentKey("cbapv") };
+  const dedDelIntent = useIntentKey("cbdeddel");
   // Sisir lanjutan gerbang peran (2026-10-21): tiap langkah = izin endpointnya (ajukan/jadwal/sengketa/batal/potongan = contra_bon.update,
   // verifikasi = .verify, setujui = .approve, bayar = .pay).
   const canWrite = can(currentUser?.permissions, "contra_bon", "update");
@@ -65,7 +70,8 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   async function run(action, successMsg) {
     setBusy(action); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/${action}`, {});
+      const r = await runIntents[action].send({ id: cb.id, aksi: action },
+        (k) => moneyPost(`${API}/contra-bons/${cb.id}/${action}`, {}, k));
       onChanged(r.data);
       onNotify?.(successMsg);
     } catch (e) {
@@ -77,7 +83,8 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   async function removeDeduction(dedId) {
     setBusy(`ded-${dedId}`); setErr("");
     try {
-      const r = await axios.delete(`${API}/contra-bons/${cb.id}/deductions/${dedId}`);
+      const r = await dedDelIntent.send({ id: cb.id, potongan: dedId, aksi: "hapus" },
+        (k) => moneyDelete(`${API}/contra-bons/${cb.id}/deductions/${dedId}`, k));
       onChanged(r.data);
       onNotify?.("Potongan dihapus — nilai bersih kontrabon dihitung ulang.");
     } catch (e) {

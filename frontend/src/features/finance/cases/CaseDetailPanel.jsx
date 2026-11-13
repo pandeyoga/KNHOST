@@ -10,10 +10,12 @@ import {
   X, Landmark, Paperclip, FileCheck2, History, Link2, UserCog, Ban, Wand2, ShieldCheck,
   RotateCcw,
 } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import KNSelect from "../../../components/KNSelect";
 import {
   DOC_KIND_LABEL, EVENT_LABEL, SOURCE_LABEL, STATUS_CLASS, STATUS_LABEL, fmtDateTime,
@@ -32,6 +34,12 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
   // ditampilkan DI SEBELAH tombolnya, bukan hanya di bilah paling atas layar yang bisa
   // sudah tergulir keluar pandangan saat panel ini panjang.
   const [err, setErr] = useState("");
+  // PK-12 — tiap aksi kasus berkunci Idempotency-Key per niat, satu instans per aksi.
+  const assignIntent = useIntentKey("fc-tugas");
+  const noteIntent = useIntentKey("fc-catat");
+  const rejectIntent = useIntentKey("fc-tolak");
+  const reopenIntent = useIntentKey("fc-buka");
+  const intents = { assign: assignIntent, note: noteIntent, reject: rejectIntent, reopen: reopenIntent };
   // US3 — pilihan alasan penutupan disaring ke yang NYAMBUNG dengan jenis kasus ini
   // (daftar sahnya dari backend, `reason_codes`). Backend menolak yang lain dengan 400,
   // jadi menawarkannya di layar hanya memancing kesalahan.
@@ -42,9 +50,11 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
   }, [reasons, c.reason_codes]);
 
   async function post(path, body, msg) {
+    if (busy) return false;
     setBusy(path); setErr("");
     try {
-      const r = await axios.post(`${API}/finance-cases/${c.id}/${path}`, body);
+      const r = await intents[path].send({ id: c.id, aksi: path, ...body },
+        (k) => moneyPost(`${API}/finance-cases/${c.id}/${path}`, body, k));
       onNotify(msg);
       onChanged(r.data);
       return true;

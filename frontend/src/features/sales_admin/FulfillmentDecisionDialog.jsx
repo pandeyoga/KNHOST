@@ -3,7 +3,7 @@
  * Admin Sales membagi kekurangan tiap baris: stok sendiri · transfer dari PT lain (bisa >1) ·
  * PO ke supplier (lewat PR) · tunggu barang datang. Penuh atau sebagian; sisa tetap backorder.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, PackageSearch } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatQty } from "../../utils/formatters";
@@ -12,6 +12,7 @@ import { fulfillmentPlan, fulfillmentPlanDecide } from "./workDeskApi";
 import FulfillmentLineCard from "./FulfillmentLineCard";
 import InternalPriceModal from "../interco_prices/InternalPriceModal";
 import { internalPriceRequest } from "../interco_prices/internalPriceApi";
+import useIntentKey from "../../hooks/useIntentKey";
 
 const initLine = (ln) => {
   const ic = {};
@@ -30,6 +31,10 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
   const [notice, setNotice] = useState("");
   const [priceTarget, setPriceTarget] = useState(null);
   const [requested, setRequested] = useState({});
+  // PK-12 — minta harga internal (jalur /interco/): satu niat = satu Idempotency-Key; klik kedua selama menunggu
+  // jawaban diabaikan (tombolnya milik kartu baris).
+  const priceReqIntent = useIntentKey("icp-minta");
+  const priceReqPending = useRef(new Set());
 
   // G3 D4-PLAN-04 — error MUAT terpisah dari error EKSEKUSI; refresh tidak menghapus pesan eksekusi.
   const [execError, setExecError] = useState("");
@@ -49,12 +54,17 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
       sellerId: o.entity_id, sellerName: o.entity_name, buyerId: data?.entity_id, buyerName: data?.entity_name,
       note: `Dari rencana pemenuhan ${orderNumber}` };
     if (kind === "create") { setPriceTarget(target); return; }
+    const tag = `${ln.product_id}-${o.entity_id}`;
+    if (priceReqPending.current.has(tag)) return;
+    priceReqPending.current.add(tag);
     try {
-      const res = await internalPriceRequest({ seller_entity_id: o.entity_id, buyer_entity_id: data?.entity_id,
-        product_id: ln.product_id, order_id: orderId });
-      setRequested((cur) => ({ ...cur, [`${ln.product_id}-${o.entity_id}`]: true }));
+      const body = { seller_entity_id: o.entity_id, buyer_entity_id: data?.entity_id,
+        product_id: ln.product_id, order_id: orderId };
+      const res = await priceReqIntent.send(body, (k) => internalPriceRequest(body, k));
+      setRequested((cur) => ({ ...cur, [tag]: true }));
       setNotice(res.message);
     } catch (e) { setError(apiErrorText(e, "Gagal mengirim permintaan harga internal.")); }
+    finally { priceReqPending.current.delete(tag); }
   }
   useEffect(() => { load(); }, [load]);
 

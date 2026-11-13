@@ -5,16 +5,30 @@ import { formatCurrency } from "../../../utils/formatters";
 import { DispositionRow, DispositionActionBar } from "../../sales/ReturnDispositionPanel";
 import LoadingLine from "../../../components/LoadingLine";
 import ErrorNotice from "../../../components/ErrorNotice";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 const ST = { draft: "Menunggu diterima", approved: "Diterima · tunggu barang" };
 
 function IncomingList({ rows, canAct, onDone }) {
   const [msg, setMsg] = useState("");
+  // PK-12 — terima retur (jurnal pembalik) / tugas gudang: satu niat = satu Idempotency-Key; tombol baris mati
+  // selama menunggu jawaban.
+  const [busy, setBusy] = useState("");
+  const acceptIntent = useIntentKey("icr-terima");
+  const taskIntent = useIntentKey("icr-tugas");
   const act = async (r, path) => {
-    setMsg("");
-    try { await axios.post(`${API}/interco/returns/${r.id}/${path}`, { note: "" }); onDone(); }
+    if (busy) return;
+    setMsg(""); setBusy(r.id);
+    const intent = path === "approve" ? acceptIntent : taskIntent;
+    try {
+      await intent.send({ id: r.id, aksi: path, note: "" },
+        (k) => moneyPost(`${API}/interco/returns/${r.id}/${path}`, { note: "" }, k));
+      onDone();
+    }
     catch (e) { setMsg(errText(e)); }
+    finally { setBusy(""); }
   };
   if (!rows.length) return <p className="text-xs text-[#8E8E93]" data-testid="ic-inbox-incoming-empty">Tidak ada retur internal yang menunggu diterima.</p>;
   return (
@@ -34,9 +48,9 @@ function IncomingList({ rows, canAct, onDone }) {
           {canAct && (
             <div className="mt-2 flex flex-wrap gap-2">
               {r.status === "draft" && <button type="button" data-testid={`ic-inbox-accept-${r.id}`} onClick={() => act(r, "approve")}
-                className="primary-button !px-3 !py-1 text-xs"><Check size={12} /> Terima retur</button>}
+                disabled={busy === r.id} className="primary-button !px-3 !py-1 text-xs"><Check size={12} /> Terima retur</button>}
               {r.status === "approved" && !r.warehouse_transfer_code && <button type="button" data-testid={`ic-inbox-task-${r.id}`} onClick={() => act(r, "warehouse-task")}
-                className="secondary-button !px-3 !py-1 text-xs"><Truck size={12} /> Terbitkan tugas gudang</button>}
+                disabled={busy === r.id} className="secondary-button !px-3 !py-1 text-xs"><Truck size={12} /> Terbitkan tugas gudang</button>}
             </div>
           )}
         </div>

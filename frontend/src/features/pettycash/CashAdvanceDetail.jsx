@@ -1,6 +1,6 @@
 import { apiErrorText } from "../../utils/apiError";
 import { useState } from "react";
-import axios, { API } from "../../services/apiClient";
+import { API } from "../../services/apiClient";
 import {
   CheckCircle2, XCircle, Send, Banknote, Printer, Pencil,
   FileText, Clock, Building2, ReceiptText,
@@ -13,6 +13,8 @@ import {
   CA_STATUS, StatusPill, fmtDate, printCashAdvance, printTandaTerima,
 } from "./pettyCashShared";
 import { can, roleIs } from "../../config/roles";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
@@ -27,6 +29,11 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
   const [reject, setReject] = useState(false);
   const [disburse, setDisburse] = useState(false);
   const [cashType, setCashType] = useState("kas_kecil");
+  // PK-12 — satu kunci idempotensi per aksi (ajukan / setujui / tolak / cairkan).
+  const intents = {
+    submit: useIntentKey("cas"), approve: useIntentKey("caa"),
+    reject: useIntentKey("car"), disburse: useIntentKey("cad"),
+  };
 
   const role = currentUser?.role;
   const entityName = entities.find((e) => e.id === ca.entity_id)?.short_name
@@ -47,7 +54,9 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
   async function act(path, body, okMsg) {
     setBusy(true); setErr("");
     try {
-      const res = await axios.post(`${API}/cash-advances/${ca.id}/${path}`, body || {});
+      const b = body || {};
+      const res = await intents[path].send({ id: ca.id, aksi: path, ...b },
+        (k) => moneyPost(`${API}/cash-advances/${ca.id}/${path}`, b, k));
       flash(okMsg);
       onChanged(res.data);
     } catch (e) {

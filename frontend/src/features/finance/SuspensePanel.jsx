@@ -12,6 +12,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { parseDecimal } from "../../utils/decimalInput";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 // G1-15 — tanggal lewat formatter bersama (WIB, "25 Okt 2026").
 const fmtDate = (iso) => formatDate(iso);
@@ -21,6 +23,8 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // PK-12 — reklas suspense membuat jurnal baru tiap panggilan: kirim ulang isi sama memakai kunci sama.
+  const intent = useIntentKey("susp");
 
   const entityOptions = useMemo(
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
@@ -74,10 +78,11 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
     setError(""); setBusy(true);
     try {
       const amt = amtNum;
-      const res = await axios.post(`${API}/gl/suspense/reclass`, {
+      const body = {
         amount: amt, side: form.side, target_account: form.target_account,
         note: form.note, entity_id: form.entity_id,
-      });
+      };
+      const res = await intent.send(body, (k) => moneyPost(`${API}/gl/suspense/reclass`, body, k));
       onNotice && onNotice(`Reklasifikasi suspense berhasil. Jurnal: ${res.data?.number || "—"}.`);
       setForm((p) => ({ ...p, amount: "", note: "" }));
       setTouched(false);

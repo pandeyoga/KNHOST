@@ -12,6 +12,8 @@ import LinkCard from "../../components/LinkCard";
 import ResponsiveTable from "../../components/ResponsiveTable";
 import useViewPreset from "../../hooks/useViewPreset";
 import InputTaxCreateModal from "./InputTaxCreateModal";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * InputTaxView (Fase 5.5 — P0-3) — Faktur Pajak Masukan (Input VAT).
@@ -67,6 +69,8 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelErr, setCancelErr] = useState("");
   const [busy, setBusy] = useState(false);
+  // PK-12 — batal faktur masukan ber-Idempotency-Key.
+  const cancelIntent = useIntentKey("itxc");
   const [q, setQ] = useState("");
 
   // FASE E-8 — pajak MASUKAN ada di sisi HUTANG: tetap manajer/admin (keputusan
@@ -113,7 +117,9 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
     if (!cancelTarget || !cancelReason.trim()) return;
     setBusy(true); setCancelErr("");
     try {
-      const r = await axios.post(`${API}/input-tax-invoices/${cancelTarget.id}/cancel`, { reason: cancelReason.trim() });
+      const body = { reason: cancelReason.trim() };
+      const r = await cancelIntent.send({ id: cancelTarget.id, aksi: "cancel", ...body },
+        (k) => moneyPost(`${API}/input-tax-invoices/${cancelTarget.id}/cancel`, body, k));
       setNotice(`${r.data.number}: faktur masukan dibatalkan.`);
       setCancelTarget(null); setCancelReason("");
       loadAll(); loadSummary();

@@ -20,6 +20,8 @@ import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import FormModal from "../../../components/FormModal";
 import { formatCurrency } from "../../../utils/formatters";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 const STATUS_CLASS = {
   draft: "bg-[#F2F2F5] text-[#6E6E73] border-[#E2E2E7]",
@@ -42,6 +44,12 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
   const [showCreate, setShowCreate] = useState(false);
   const [repayFor, setRepayFor] = useState(null);
   const [repayAmt, setRepayAmt] = useState("");
+  // PK-12 — satu Idempotency-Key per niat, satu instans per aksi: cairkan / batal / angsur (kirim ulang sesudah
+  // koneksi putus tidak memindahkan kas dua kali).
+  const disburseIntent = useIntentKey("icl-cair");
+  const cancelIntent = useIntentKey("icl-batal");
+  const repayIntent = useIntentKey("icl-angsur");
+  const intents = { disburse: disburseIntent, cancel: cancelIntent, repay: repayIntent };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,7 +73,9 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
   async function act(loan, path, body, okMsg) {
     setBusy(loan.id); setErr("");
     try {
-      await axios.post(`${API}/interco/loans/${loan.id}/${path}`, body || {});
+      const isi = body || {};
+      await intents[path].send({ id: loan.id, aksi: path, ...isi },
+        (k) => moneyPost(`${API}/interco/loans/${loan.id}/${path}`, isi, k));
       setMsg(okMsg); setTimeout(() => setMsg(""), 5000);
       setRepayFor(null); setRepayAmt("");
       await load();
@@ -190,7 +200,8 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
           subtitle={`Sisa pinjaman ${formatCurrency(repayFor.outstanding)}. Uang akan berpindah dari ${repayFor.borrower_entity_name} ke ${repayFor.lender_entity_name}, dan jurnalnya terbit di kedua buku.`}
           footer={(
             <div className="flex items-center justify-end gap-2">
-              <button type="button" className="secondary-button" onClick={() => setRepayFor(null)}>Batal</button>
+              <button type="button" className="secondary-button" onClick={() => setRepayFor(null)}
+                disabled={busy === repayFor.id}>Batal</button>
               <button type="button" data-testid="loan-repay-confirm" className="primary-button"
                 disabled={busy === repayFor.id || !(Number(repayAmt) > 0)}
                 onClick={() => act(repayFor, "repay", { amount: Number(repayAmt), note: "" },
@@ -226,6 +237,8 @@ function CreateLoanModal({ entities, defaultEntity, onClose, onCreated }) {
   const [returnDate, setReturnDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu niat pinjaman baru = satu Idempotency-Key.
+  const intent = useIntentKey("icl-baru");
 
   const opts = useMemo(() => (entities || [])
     .filter((e) => (e.status || "active") === "active")
@@ -238,11 +251,12 @@ function CreateLoanModal({ entities, defaultEntity, onClose, onCreated }) {
     if (purpose.trim().length < 5) { setErr("Tujuan pinjaman wajib diisi (minimal 5 huruf)."); return; }
     setBusy(true); setErr("");
     try {
-      const res = await axios.post(`${API}/interco/loans`, {
+      const body = {
         lender_entity_id: lender, borrower_entity_id: borrower,
         principal: Number(principal), purpose: purpose.trim(),
         interest_note: interestNote, agreed_return_date: returnDate,
-      });
+      };
+      const res = await intent.send(body, (k) => moneyPost(`${API}/interco/loans`, body, k));
       onCreated(res.data);
     } catch (e) { setErr(apiText(e, "Gagal membuat pinjaman.")); }
     finally { setBusy(false); }

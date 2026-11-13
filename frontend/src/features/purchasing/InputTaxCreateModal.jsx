@@ -1,11 +1,13 @@
 import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
-import axios, { API } from "../../services/apiClient";
+import { API } from "../../services/apiClient";
 import { Percent } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * InputTaxCreateModal (Fase 5.5) — catat Faktur Pajak Masukan dari Vendor Bill.
@@ -30,6 +32,8 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — catat faktur masukan ber-Idempotency-Key.
+  const intent = useIntentKey("itx");
 
   useEffect(() => { if (!open) reset(); }, [open]);
   function reset() { setBillId(""); setNsfp(""); setFakturDate(""); setKode("01"); setNotes(""); setErr(""); }
@@ -46,7 +50,7 @@ export default function InputTaxCreateModal({ open, bills, onClose, onCreated, o
     setBusy(true); setErr("");
     try {
       const body = { vendor_bill_id: billId, nsfp: nsfp.trim(), faktur_date: fakturDate || "", kode_transaksi: kode, notes };
-      const r = await axios.post(`${API}/input-tax-invoices`, body);
+      const r = await intent.send(body, (k) => moneyPost(`${API}/input-tax-invoices`, body, k));
       onCreated?.(r.data);
     } catch (e) {
       const msg = apiErrorText(e, "Gagal mencatat Faktur Pajak Masukan.");

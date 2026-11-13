@@ -29,6 +29,8 @@ import { can } from "../../config/roles";
 import FormModal from "../../components/FormModal";
 import LinkCard from "../../components/LinkCard";
 import useViewPreset from "../../hooks/useViewPreset";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyDelete, moneyPost } from "../../utils/moneyRequest";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 function fmtPeriod(p) {
@@ -310,6 +312,8 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
 function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
+  // PK-12 — hapus rekaman PPh ber-Idempotency-Key.
+  const delIntent = useIntentKey("pphd");
   const entSpec = entSpecific;
   const fetchRows = useCallback(async () => {
     if (!entSpec || !period) { setRows([]); return; }
@@ -322,7 +326,10 @@ function ManualRecordsList({ entityId, period, canManage, entSpecific, onReload 
 
   const del = async (id) => {
     setBusy(true);
-    try { await axios.delete(`${API}/tax/pph-records/${id}`); await fetchRows(); onReload && onReload(); }
+    try {
+      await delIntent.send({ id, aksi: "delete" }, (k) => moneyDelete(`${API}/tax/pph-records/${id}`, k));
+      await fetchRows(); onReload && onReload();
+    }
     catch { /* noop */ } finally { setBusy(false); }
   };
 
@@ -353,15 +360,18 @@ function PphRecordModal({ item, entityId, period, onClose, onSaved }) {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — rekam PPh ber-Idempotency-Key (kirim ulang isi sama tidak membuat rekaman kedua).
+  const intent = useIntentKey("pph");
   const amount = (parseFloat(dpp) || 0) * (item.rate || 0) / 100;
 
   const save = async () => {
     setSaving(true); setErr("");
     try {
-      await axios.post(`${API}/tax/pph-records`, {
+      const body = {
         entity_id: entityId, period, code: item.code, name: item.name,
         rate: item.rate, dpp: parseFloat(dpp) || 0, note,
-      });
+      };
+      await intent.send(body, (k) => moneyPost(`${API}/tax/pph-records`, body, k));
       onSaved();
     } catch (e) {
       setErr(apiErrorText(e, "Gagal menyimpan rekaman."));

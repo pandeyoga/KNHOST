@@ -30,6 +30,8 @@ import ReconLinesTable from "./bank/ReconLinesTable";
 import ReconMatchModal from "./bank/ReconMatchModal";
 import ReconHoldingPanel from "./bank/ReconHoldingPanel";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
@@ -57,6 +59,12 @@ export default function BankReconciliationView() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  // PK-12 — aksi baris mutasi ber-Idempotency-Key, satu kunci per jenis aksi (biaya/bunga bank, titipan, cocokkan, …).
+  const lineIntents = {
+    match: useIntentKey("brmatch"), unmatch: useIntentKey("brunmatch"), ignore: useIntentKey("brignore"),
+    unignore: useIntentKey("brunignore"), holding: useIntentKey("brhold"), "book-charge": useIntentKey("brcharge"),
+    "holding/cancel": useIntentKey("brholdc"), other: useIntentKey("brline"),
+  };
   const [msg, setMsg] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [matchFor, setMatchFor] = useState(null);
@@ -124,7 +132,10 @@ export default function BankReconciliationView() {
   async function lineAction(lineId, action, body, successMsg) {
     setBusy(lineId + action); setErr("");
     try {
-      await axios.post(`${API}/bank-reconciliation/lines/${lineId}/${action}`, body || {});
+      const b = body || {};
+      const intent = lineIntents[action] || lineIntents.other;
+      await intent.send({ id: lineId, aksi: action, ...b },
+        (k) => moneyPost(`${API}/bank-reconciliation/lines/${lineId}/${action}`, b, k));
       notify(successMsg || "Perubahan tersimpan.");
       setMatchFor(null);
       await loadData();

@@ -8,7 +8,9 @@
  */
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -39,6 +41,8 @@ export default function ReasonNoteModal({ cb, kind, meta, onClose, onDone, onErr
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — sengketa/batal: satu isi = satu Idempotency-Key (modal ini hanya memegang satu `kind`).
+  const intent = useIntentKey(`cb${kind}`);
 
   const reasonOptions = useMemo(
     () => (meta?.reasons || []).map((r) => ({ value: r.code, label: r.label })), [meta]);
@@ -46,9 +50,8 @@ export default function ReasonNoteModal({ cb, kind, meta, onClose, onDone, onErr
   async function submit() {
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/${kind}`, {
-        reason_code: reason, note: note.trim(),
-      });
+      const body = { reason_code: reason, note: note.trim() };
+      const r = await intent.send(body, (k) => moneyPost(`${API}/contra-bons/${cb.id}/${kind}`, body, k));
       onDone(r.data);
     } catch (e) {
       setErr(apiErrorText(e));

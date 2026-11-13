@@ -112,7 +112,9 @@ test("B4: 'Buat kasus' aktif tanpa nominal; cerita tetap ≥ 5 huruf", async () 
   expect(host.textContent).toContain("(opsional)");
   mockPost.mockResolvedValue({ data: { id: "fc1" } });
   await click(btn);
-  expect(mockPost).toHaveBeenCalledWith("/api/finance-cases", expect.objectContaining({ amount: 0, description: "Transfer dobel" }));
+  // PK-12 — argumen ke-3 = config ber-header Idempotency-Key.
+  expect(mockPost).toHaveBeenCalledWith("/api/finance-cases", expect.objectContaining({ amount: 0, description: "Transfer dobel" }),
+    expect.objectContaining({ headers: expect.objectContaining({ "Idempotency-Key": expect.any(String) }) }));
 });
 
 test("K-10: Transaksi Antar-PT Baru — 'Langsung dikonfirmasi' tidak tercentang bawaan", async () => {

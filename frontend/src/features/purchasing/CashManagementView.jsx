@@ -10,6 +10,8 @@ import FormModal from "../../components/FormModal";
 import { askReason } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -51,6 +53,11 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
   const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_besar
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  // PK-12 — satu niat = satu Idempotency-Key; tombol mati selama menunggu jawaban (klik ganda tidak mencatat dua kali).
+  const [saving, setSaving] = useState(false);
+  const [voidingId, setVoidingId] = useState("");
+  const createIntent = useIntentKey("kas");
+  const voidIntent = useIntentKey("kasv");
 
   // Sisir gerbang peran (2026-10-20): catat = cash.create, anulir = cash.delete.
   const canCreate = can(currentUser?.permissions, "cash", "create");
@@ -79,16 +86,20 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
   }
 
   async function handleSubmit() {
+    if (saving) return;
     if (!form.amount || Number(form.amount) <= 0) { setError("Nominal harus lebih dari 0."); return; }
+    setSaving(true);
     try {
       const payload = { ...form, amount: Number(form.amount) };
-      const res = await axios.post(`${API}/cash-transactions`, payload);
+      const res = await createIntent.send(payload, (k) => moneyPost(`${API}/cash-transactions`, payload, k));
       setNotice(`Transaksi ${res.data.number} (${res.data.direction === "in" ? "masuk" : "keluar"}) dicatat.`);
       setShowForm(false);
       setForm(EMPTY_FORM);
       await loadAll();
     } catch (e) {
       setError(apiErrorText(e, "Gagal mencatat transaksi kas."));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -111,12 +122,16 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
       testId: "cash-void-modal",
     });
     if (reason === null) return;
+    setVoidingId(t.id);
     try {
-      await axios.post(`${API}/cash-transactions/${t.id}/void`, { reason });
+      await voidIntent.send({ id: t.id, aksi: "void", reason },
+        (k) => moneyPost(`${API}/cash-transactions/${t.id}/void`, { reason }, k));
       setNotice(`Transaksi ${t.number} dianulir.`);
       await loadAll();
     } catch (e) {
       setError(apiErrorText(e, "Gagal menganulir transaksi."));
+    } finally {
+      setVoidingId("");
     }
   }
 
@@ -225,6 +240,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         submitLabel="Catat Transaksi"
         submitTestId="submit-cash-button"
         cancelTestId="cancel-cash-button"
+        busy={saving}
         error={error}
       >
         <div className="space-y-3">
@@ -298,7 +314,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
                   <div className="flex justify-end">
                     {canVoid && t.status !== "void" && (
                       <button data-testid={`void-cash-${t.id}`} onClick={() => handleVoid(t)}
-                        disabled={!!derivedFrom(t)}
+                        disabled={!!derivedFrom(t) || voidingId === t.id}
                         className="icon-button text-red-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                         title={derivedFrom(t) ? `Berasal dari ${derivedFrom(t)} — batalkan lewat dokumen asalnya` : "Anulir"}><Ban size={13} /></button>
                     )}

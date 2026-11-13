@@ -218,6 +218,9 @@ STATIK=(
   # `utils/csvExport.js` dengan Node dan menguji keluarannya — 20 kasus.
   "guard:list_export SELF-TEST (bukti-merah + CSV rusak harus memerah)|python scripts/guardrails/verify_list_export.py --self-test"
   "guard:list_export (INV-UI-07, daftar berhalaman wajib bisa diunduh)|python scripts/guardrails/verify_list_export.py"
+  # PK-12 — form uang wajib lewat utils/moneyRequest.js ber-Idempotency-Key (klik ganda = satu dokumen).
+  "guard:money_idempotency SELF-TEST (bukti-merah axios langsung ke jalur uang)|python scripts/guardrails/verify_money_idempotency.py --self-test"
+  "guard:money_idempotency (INV-MONEY-IDEM-01, form uang ber-Idempotency-Key)|python scripts/guardrails/verify_money_idempotency.py"
   # FASE P7 — PANEL RINCIAN wajib pop-up. `INV-UI-05` hanya menjaga tombol "Buat", jadi
   # kelas bug yang SAMA masih hidup untuk panel rincian dan lolos berkali-kali:
   # terukur 9 layar merender panel detail sebagai SAUDARA di bawah tabelnya. Pada

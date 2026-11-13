@@ -9,12 +9,14 @@
  * dengan retur pelanggan & supplier), dan pop-up memakai `FormModal` standar (dulu overlay buatan sendiri yang
  * tertutup saat dropdown/klik di luar kartu — isian hilang).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Undo2, AlertTriangle, PackageCheck } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import { PickedRollClaims, claimDetails, emptyClaim, pickedClaimErrors } from "../../sales/ReturnRollClaims";
 
 export default function IntercoReturnModal({ doc, onClose, onCreated }) {
@@ -29,6 +31,11 @@ export default function IntercoReturnModal({ doc, onClose, onCreated }) {
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — aksi berantai: (1) dokumen retur, (2) foto bukti per roll. Kunci langkah 1 dipegang sampai SELURUH rantai
+  // selesai, sehingga mengulang sesudah unggahan gagal memutar ulang retur yang sama (bukan retur kedua). Foto yang
+  // sudah terunggah dicatat agar tidak terunggah dua kali saat diulang.
+  const retIntent = useIntentKey("icr");
+  const uploaded = useRef(new Set());
 
   const load = useCallback(async () => {
     setBusy(true); setErr("");
@@ -84,7 +91,7 @@ export default function IntercoReturnModal({ doc, onClose, onCreated }) {
     }
     setBusy(true); setErr("");
     try {
-      const r = await axios.post(`${API}/interco/returns`, {
+      const body = {
         interco_id: doc.id,
         items: picked.map((l) => ({
           product_id: l.product_id,
@@ -94,15 +101,29 @@ export default function IntercoReturnModal({ doc, onClose, onCreated }) {
         })),
         reason: reason.trim(),
         notes: notes.trim(),
-      });
+      };
+      let r;
+      try {
+        r = await moneyPost(`${API}/interco/returns`, body, retIntent.keyFor(body));
+      } catch (e) {
+        if (e?.response && e.response.status < 500) retIntent.done();   // ditolak server → niat berikutnya kunci baru
+        throw e;
+      }
       // Foto bukti per roll diunggah sesudah dokumen kembar ada (tersimpan di keduanya).
+      // Multipart dikirim TANPA kunci: batas multipart acak per kirim sehingga isi tidak pernah sama persis — kunci
+      // yang sama akan dijawab 409. Pengulangan dijaga daftar `uploaded`.
       const retId = r.data?.returner?.id;
       const uploads = picked.flatMap((l) => Object.entries(claims[l.product_id] || {})
         .flatMap(([rid, c]) => (c.files || []).map((f) => [f, rid])));
       for (const [f, rid] of uploads) {
+        const tag = [retId, rid, f.name, f.size, f.lastModified].join("|");
+        if (uploaded.current.has(tag)) continue;
         const fd = new FormData(); fd.append("file", f); fd.append("roll_id", rid);
-        await axios.post(`${API}/interco/returns/${retId}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        await moneyPost(`${API}/interco/returns/${retId}/attachments`, fd, null,
+          { headers: { "Content-Type": "multipart/form-data" } });
+        uploaded.current.add(tag);
       }
+      retIntent.done();
       onCreated?.(r.data);
     } catch (e) { setErr(apiErrorText(e)); }
     finally { setBusy(false); }

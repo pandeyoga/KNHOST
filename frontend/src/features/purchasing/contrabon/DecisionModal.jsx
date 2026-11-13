@@ -12,7 +12,9 @@
 import MoneyInput from "../../../components/MoneyInput";
 import { useMemo, useState } from "react";
 import { Scale, Info } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
@@ -29,6 +31,8 @@ export default function DecisionModal({ cb, exception, meta, onClose, onSaved, o
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu isi putusan = satu Idempotency-Key (putusan "potong" membuat potongan + jurnal: tidak boleh ganda).
+  const intent = useIntentKey("cbdec");
 
   const spec = useMemo(() => actions.find((a) => a.action === action) || null, [actions, action]);
   const reasonOptions = useMemo(
@@ -37,13 +41,14 @@ export default function DecisionModal({ cb, exception, meta, onClose, onSaved, o
   async function save() {
     setSaving(true); setErr("");
     try {
-      const r = await axios.post(`${API}/contra-bons/${cb.id}/decide`, {
+      const body = {
         exception_key: exception.key,
         action,
         reason_code: reason,
         amount: amount === "" ? null : Number(amount),
         note: note.trim(),
-      });
+      };
+      const r = await intent.send(body, (k) => moneyPost(`${API}/contra-bons/${cb.id}/decide`, body, k));
       onSaved(r.data, action);
     } catch (e) {
       setErr(apiErrorText(e));

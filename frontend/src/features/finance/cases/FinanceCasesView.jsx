@@ -38,6 +38,8 @@ import CaseCreateModal from "./CaseCreateModal";
 import { STATUS_FILTERS, humanAge } from "./caseApi";
 import { caseNumberFromText } from "./caseDeepLink";
 import { can } from "../../../config/roles";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function FinanceCasesView({ currentUser, selectedEntity, entities = [],
   focusCase = null, onFocusCaseConsumed }) {
@@ -60,6 +62,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   const [fStatus, setFStatus] = useState("");
   const [fType, setFType] = useState("");
   const [fOverdue, setFOverdue] = useState(false);
+  const scanIntent = useIntentKey("fc-pindai");   // PK-12 — satu niat pindai = satu Idempotency-Key
   const canResolve = can(currentUser?.permissions, "finance_case", "resolve");
   // Di bawah 1280 px rincian tidak lagi berdampingan dengan daftar → tampil sebagai pop-up (lihat kepala berkas).
   const stacked = useIsMobile(1279);   // Sisir lanjutan gerbang peran (2026-10-21) — POST /finance-cases/{id}/resolve
@@ -189,7 +192,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
     }))) return;
     setBusy("scan"); setErr("");
     try {
-      const r = await axios.post(`${API}/finance-cases/scan`, {});
+      const r = await scanIntent.send({ aksi: "scan" }, (k) => moneyPost(`${API}/finance-cases/scan`, {}, k));
       const d = r.data || {};
       notify(d.enabled === false
         ? d.note

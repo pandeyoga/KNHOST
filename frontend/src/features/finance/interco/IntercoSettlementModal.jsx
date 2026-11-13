@@ -10,12 +10,14 @@
  */
 import { useMemo, useState } from "react";
 import { HandCoins } from "lucide-react";
-import axios, { API } from "../../../services/apiClient";
+import { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import { SETTLEMENT_METHODS, fmtDate } from "./intercoApi";
 
 const OPEN_STATUSES = ["confirmed", "shipped", "received", "invoiced"];
@@ -31,6 +33,8 @@ export default function IntercoSettlementModal({
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // PK-12 — satu niat pelunasan = satu Idempotency-Key (kirim ulang tidak melunasi dua kali).
+  const intent = useIntentKey("ic-stl");
 
   const entOptions = entities.map((e) => ({
     value: e.id,
@@ -73,13 +77,14 @@ export default function IntercoSettlementModal({
     }
     setBusy(true);
     try {
-      await axios.post(`${API}/interco/settlements`, {
+      const body = {
         payer_entity_id: payer,
         payee_entity_id: payee,
         transactions: picks,
         method,
         notes,
-      });
+      };
+      await intent.send(body, (k) => moneyPost(`${API}/interco/settlements`, body, k));
       onCreated?.();
     } catch (e) { setErr(apiErrorText(e)); }
     finally { setBusy(false); }

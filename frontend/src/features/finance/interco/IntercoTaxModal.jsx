@@ -17,15 +17,24 @@ import FormModal from "../../../components/FormModal";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
+import { moneyPost } from "../../../utils/moneyRequest";
+import useIntentKey from "../../../hooks/useIntentKey";
 import { fmtDate } from "./intercoApi";
 
 export default function IntercoTaxModal({ doc, onClose, onDone }) {
   const [state, setState] = useState(null);
   const [busy, setBusy] = useState(false);
+  // PK-12 — `sending` hanya selama aksi tulis menunggu jawaban: tombol Tutup / Esc / klik latar ikut mati (memuat
+  // data tidak mengunci tombol Tutup).
+  const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
   const [nsfp, setNsfp] = useState("");
   const [reason, setReason] = useState("");
   const [mode, setMode] = useState("");   // "" | "replace" | "cancel"
+  // PK-12 — satu Idempotency-Key per niat, satu instans per aksi: terbit / ganti / batal faktur pajak internal.
+  const issueIntent = useIntentKey("ic-fp");
+  const replaceIntent = useIntentKey("ic-fp-ganti");
+  const cancelIntent = useIntentKey("ic-fp-batal");
 
   const load = useCallback(async () => {
     setBusy(true); setErr("");
@@ -43,19 +52,22 @@ export default function IntercoTaxModal({ doc, onClose, onDone }) {
    * Path ditulis LITERAL per aksi (bukan `...tax-invoice${path}`) supaya gate
    * `verify_api_contract` CHECK B bisa mencocokkannya ke route backend — path
    * dinamis membuat kontrak FE↔BE tidak bisa diverifikasi otomatis.
+   * PK-12: dikirim lewat `moneyPost` ber-Idempotency-Key (CHECK B saat ini hanya membaca `axios.*`).
    */
   const act = async (action, body) => {
-    setBusy(true); setErr("");
+    setBusy(true); setSending(true); setErr("");
     const base = `${API}/interco/transactions/${doc.id}`;
+    const isi = { id: doc.id, aksi: action || "issue", ...body };
     try {
-      if (action === "replace") await axios.post(`${base}/tax-invoice/replace`, body);
-      else if (action === "cancel") await axios.post(`${base}/tax-invoice/cancel`, body);
-      else await axios.post(`${base}/tax-invoice`, body);
+      if (action === "replace") await replaceIntent.send(isi, (k) => moneyPost(`${base}/tax-invoice/replace`, body, k));
+      else if (action === "cancel") await cancelIntent.send(isi, (k) => moneyPost(`${base}/tax-invoice/cancel`, body, k));
+      else await issueIntent.send(isi, (k) => moneyPost(`${base}/tax-invoice`, body, k));
+      setSending(false);
       setMode(""); setReason("");
       await load();
       onDone?.();
     } catch (e) { setErr(apiErrorText(e)); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setSending(false); }
   };
 
   const out = state?.out;
@@ -65,11 +77,12 @@ export default function IntercoTaxModal({ doc, onClose, onDone }) {
     + (state?.tax_apply ? ` · PPN ${state.tax_rate}%` : " · tanpa PPN");
 
   return (
-    <FormModal open onClose={onClose} icon={Receipt} testId="interco-tax-modal"
+    <FormModal open onClose={onClose} icon={Receipt} testId="interco-tax-modal" busy={sending}
       title="Faktur Pajak Internal" subtitle={subtitle}
       footer={(
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <button type="button" onClick={onClose} data-testid="interco-tax-cancel-btn" className="secondary-button">
+          <button type="button" onClick={onClose} data-testid="interco-tax-cancel-btn" className="secondary-button"
+            disabled={sending}>
             Tutup
           </button>
           {out && !mode && (

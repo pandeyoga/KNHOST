@@ -11,6 +11,8 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import { askReason } from "@/services/confirmService";
 import { originLabel, sourceLabel, ROLL_STATUS_LABELS } from "./glSourceLabels";
 import { docStatusLabel } from "../../utils/docStatus";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
 
 export default function InventoryReconTab({ refreshKey, onError, onNotice, onChanged,
                                            selectedEntity = "all", entities = [] }) {
@@ -18,6 +20,8 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  // PK-12 — posting saldo awal / true-up memakai kunci idempotensi (kirim ulang tidak memposting dua kali).
+  const openingIntent = useIntentKey("invob");
   const [explain, setExplain] = useState(null);
   const [explaining, setExplaining] = useState("");
   // "Tuduhan bisa diklik" (2026-06) — bukti dokumen dibuka DI LAYAR INI. Sebelum ini
@@ -137,8 +141,9 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
     if (reason === null) return;
     setPosting(true);
     try {
-      const res = await axios.post(`${API}/gl/inventory-opening-balance`, null,
-        { params: includeRounding ? { reason, include_rounding: true } : { reason } });
+      const params = includeRounding ? { reason, include_rounding: true } : { reason };
+      const res = await openingIntent.send({ aksi: "inventory-opening-balance", ...params },
+        (k) => moneyPost(`${API}/gl/inventory-opening-balance`, null, k, { params }));
       const n = res.data?.count || 0;
       onNotice(n > 0 ? `Saldo awal diposting: ${n} jurnal (${(res.data.posted || []).map((p) => p.journal_number).join(", ")}).` : "Tidak ada selisih — GL sudah sinkron dengan subledger.");
       await load();

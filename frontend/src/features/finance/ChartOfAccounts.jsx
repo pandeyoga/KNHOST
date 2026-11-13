@@ -20,6 +20,8 @@ import { SearchBox } from "../../components/ListControls";
 import {
   TYPE_META, TYPE_ORDER, TYPE_OPTIONS, AddAccountModal, EditAccountModal, AccountDetailModal, Kpi,
 } from "./ChartOfAccountsParts";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyDelete, moneyPatch } from "../../utils/moneyRequest";
 
 export default function ChartOfAccounts({ entities = [], currentUser }) {
   const [accounts, setAccounts] = useState([]);
@@ -35,6 +37,10 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
   const [scopeEntityId, setScopeEntityId] = useState("");
   // FASE E-4 (E4.4) — pemakaian akun per badan usaha
   const [togglingCode, setTogglingCode] = useState("");
+  // PK-12 — tulis ke /api/gl/ ber-Idempotency-Key; tombol hapus mati selama menunggu jawaban.
+  const [deletingCode, setDeletingCode] = useState("");
+  const deleteIntent = useIntentKey("coad");
+  const toggleIntent = useIntentKey("coat");
   const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
@@ -91,16 +97,18 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
   }, [accounts, filterType, q]);
 
   const removeAccount = async (acc) => {
-    setError("");
+    if (deletingCode) return;
+    setError(""); setDeletingCode(acc.code);
     try {
       // Kalau kita di scope PT dan akun yg dihapus punya entity_id = scope → hapus override.
       // Kalau template global (entity_id null) → hapus dari template global.
       const params = acc.entity_id ? { entity_id: acc.entity_id } : {};
-      await axios.delete(`${API}/gl/accounts/${acc.code}`, { params });
+      await deleteIntent.send({ id: acc.code, aksi: "delete", ...params },
+        (k) => moneyDelete(`${API}/gl/accounts/${acc.code}`, k, { params }));
       await load();
     } catch (err) {
       setError(apiErrorText(err, "Gagal menghapus akun."));
-    }
+    } finally { setDeletingCode(""); }
   };
 
   // FASE E-4 (E4.4) — nyalakan/matikan akun HANYA untuk badan usaha yang sedang dibuka.
@@ -111,9 +119,9 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
     setError(""); setTogglingCode(acc.code);
     try {
       const next = acc.is_active === false;
-      await axios.patch(`${API}/gl/accounts/${acc.code}`,
-        { name: acc.name, is_active: next },
-        { params: { entity_id: scopeEntityId } });
+      const body = { name: acc.name, is_active: next };
+      await toggleIntent.send({ id: acc.code, entity_id: scopeEntityId, ...body },
+        (k) => moneyPatch(`${API}/gl/accounts/${acc.code}`, body, k, { params: { entity_id: scopeEntityId } }));
       setNotice(next
         ? `Akun ${acc.code} sekarang dipakai ${scopeLabel}.`
         : `Akun ${acc.code} tidak dipakai ${scopeLabel} lagi (badan usaha lain tidak terpengaruh).`);
@@ -290,7 +298,7 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
                                 <button data-testid={`coa-detail-${a.code}`} className="icon-button" onClick={() => setDetailAcc(a)} aria-label="Detail akun" title="Detail & riwayat perubahan"><History size={13} /></button>
                                 <button data-testid={`coa-edit-${a.code}`} className="icon-button" onClick={() => setEditAcc(a)} aria-label="Ubah"><Pencil size={13} /></button>
                                 {(!a.system || scopeEntityId) && (
-                                  <button data-testid={`coa-delete-${a.code}`} className="icon-button text-[#C0392B]" onClick={() => removeAccount(a)} aria-label="Hapus"><Trash2 size={13} /></button>
+                                  <button data-testid={`coa-delete-${a.code}`} className="icon-button text-[#C0392B]" onClick={() => removeAccount(a)} disabled={deletingCode === a.code} aria-label="Hapus"><Trash2 size={13} /></button>
                                 )}
                               </div>
                             </td>
