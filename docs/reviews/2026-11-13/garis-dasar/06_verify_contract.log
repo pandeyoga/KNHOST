@@ -1,0 +1,53 @@
+
+[96m[1m================================================================[0m
+[1m  KN3 — SCAN CONTRACT: semua router + service[0m
+[96m[1m================================================================[0m
+
+[92m[OK] Tidak ada koleksi terlarang.[0m
+
+[93m[INFO] Koleksi tidak dikenal (mungkin domain baru — daftarkan di ENTITY_REGISTRY):[0m
+  [93mrouters/ai_analytics.py: 'ai_results' (baris [58, 257])[0m
+  [93mrouters/ai_analytics.py: 'ai_fact_state' (baris [67])[0m
+  [93mrouters/ai_analytics.py: 'fact_sales_lines' (baris [68])[0m
+  [93mrouters/ai_analytics.py: 'ai_chat_sessions' (baris [144, 153, 163])[0m
+  [93mrouters/ai_analytics.py: 'ai_feedback' (baris [178])[0m
+  [93mrouters/ai_analytics.py: 'ai_user_templates' (baris [281, 291, 295])[0m
+  [93mrouters/ai_analytics.py: 'ai_schedules' (baris [309, 318, 327])[0m
+  [93mrouters/ai_analytics.py: 'ai_schedule_runs' (baris [373, 381])[0m
+  [93mrouters/ai_analytics.py: 'ai_usage_log' (baris [411])[0m
+  [93mrouters/auth.py: 'login_attempts' (baris [68, 82, 87])[0m
+  [93mrouters/categories.py: 'design_gallery' (baris [77])[0m
+  [93mrouters/crm.py: 'credit_overrides' (baris [115, 128, 134])[0m
+  [93mrouters/crm.py: 'collection_followups' (baris [208, 234])[0m
+  [93mrouters/crm.py: 'sales_targets' (baris [365, 394, 400])[0m
+  [93mrouters/crm.py: 'sales_incentives' (baris [420, 448, 454])[0m
+  [93mrouters/data_hygiene.py: 'data_hygiene_log' (baris [33, 34])[0m
+  [93mrouters/design_gallery.py: 'design_requests' (baris [68])[0m
+  [93mrouters/design_gallery.py: 'product_templates' (baris [254, 272])[0m
+  [93mrouters/esign.py: 'esign_requests' (baris [66])[0m
+  [93mrouters/export_center.py: 'export_jobs' (baris [116, 121, 141])[0m
+  [93mrouters/export_center.py: 'export_templates' (baris [331, 342, 349])[0m
+  [93mrouters/goods_receipts.py: 'goods_receipts' (baris [72, 73])[0m
+  [93mrouters/hr.py: 'hr_leave_requests' (baris [348])[0m
+  [93mrouters/hr.py: 'hr_payslips' (baris [350])[0m
+  [93mrouters/hr.py: 'hr_kpi_entries' (baris [352])[0m
+  [93mrouters/hr.py: 'hr_kpi' (baris [356])[0m
+  [93mrouters/hr_kpi.py: 'hr_kpi' (baris [38])[0m
+  [93mrouters/hr_leave.py: 'hr_leave_requests' (baris [146])[0m
+  [93mrouters/hr_leave.py: 'hr_overtime' (baris [245])[0m
+  [93mrouters/hr_payroll.py: 'hr_payroll_runs' (baris [144, 159, 173])[0m
+  [93mrouters/inspections.py: 'inspections' (baris [404, 526])[0m
+  [93mrouters/logistics.py: 'fleet_vehicles' (baris [107, 123])[0m
+  [93mrouters/lots.py: 'inventory_lots' (baris [45, 152, 155])[0m
+  [93mrouters/marketing.py: 'mkt_posts' (baris [71, 276, 463])[0m
+  [93mrouters/marketing.py: 'mkt_campaigns' (baris [119, 145, 204])[0m
+  [93mrouters/marketing.py: 'mkt_accounts' (baris [315])[0m
+  [93mrouters/marketing.py: 'mkt_templates' (baris [368, 380, 386])[0m
+  [93mrouters/payment_plans.py: 'amendment_reasons' (baris [79])[0m
+  [93mrouters/pdf.py: 'document_signatures' (baris [164])[0m
+  [93mrouters/pdf.py: 'document_deliveries' (baris [171])[0m
+
+[1m================================================================[0m
+  [92m[1mCONTRACT OK.[0m
+
+kode keluar: 0

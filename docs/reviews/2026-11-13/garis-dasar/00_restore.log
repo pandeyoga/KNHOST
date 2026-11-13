@@ -1,0 +1,7 @@
+1
+RESTORE SELESAI DENGAN GAGAL: scripts/seed_demo_transaksi_kn.py scripts/seed_p03_kn.py scripts/seed_p05_kn.py (lihat /app/.restore_local.log)
+
+real	1m57.526s
+user	0m59.020s
+sys	0m4.148s
+kode keluar: 1

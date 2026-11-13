@@ -1,0 +1,42 @@
+[96m  [snapshot] 164 dokumen dari 2 koleksi disimpan — data demo akan dipulihkan setelah uji.[0m
+
+[1m============================================================[0m
+[1m[96m  KN3 — HEALTH CHECK[0m
+  API: http://localhost:8001
+  Waktu: 2026-11-14 02:22:56
+[1m============================================================[0m
+[92m  ✓ Login berhasil
+[0m
+  [92m[PASS][0m /api/                                    [92mOK[0m
+  [92m[PASS][0m /api/auth/me                             [92mOK[0m
+  [92m[PASS][0m /api/dashboard                           [92mOK[0m
+  [92m[PASS][0m /api/products                            [92m282 items[0m
+  [92m[PASS][0m /api/customers                           [92m4 items[0m
+  [92m[PASS][0m /api/warehouses                          [92m6 items[0m
+  [92m[PASS][0m /api/uoms                                [92m8 items[0m
+  [92m[PASS][0m /api/users                               [92m21 items[0m
+  [92m[PASS][0m /api/inventory/balances                  [92m120 items[0m
+  [92m[PASS][0m /api/inventory/status-board              [92m282 items[0m
+  [92m[PASS][0m /api/inventory/movements                 [92m500 items[0m
+  [92m[PASS][0m /api/sales-orders                        [92m1 items[0m
+  [92m[PASS][0m /api/sales-orders/stats/summary          [92mOK[0m
+  [92m[PASS][0m /api/purchase-orders                     [92m1 items[0m
+  [92m[PASS][0m /api/wms/tasks                           [92m10 items[0m
+  [92m[PASS][0m /api/inbound/tasks                       [92m4 items[0m
+  [92m[PASS][0m /api/outbound/tasks                      [92m5 items[0m
+  [93m[WARN][0m /api/transfers                           [93m0 items (kosong — perlu seed?)[0m  (WMS: transfers)
+  [93m[WARN][0m /api/cycle-count/sessions                [93m0 items (kosong — perlu seed?)[0m  (WMS: cycle count)
+  [93m[WARN][0m /api/invoices                            [93m0 items (kosong — perlu seed?)[0m  (Finance: invoices)
+  [92m[PASS][0m /api/bank-accounts                       [92m2 items[0m
+  [92m[PASS][0m /api/document-templates                  [92m2 items[0m
+  [92m[PASS][0m /api/audit-logs                          [92m82 items[0m
+  [92m[PASS][0m /api/reports/summary                     [92mOK[0m
+
+[1m============================================================[0m
+  [92mPASS[0m 21  |  [93mWARN[0m 3  |  [91mFAIL[0m 0
+[1m============================================================[0m
+[93m
+  INFO — beberapa endpoint 0 items (normal bila belum di-seed).
+[0m
+[92m  [snapshot] 2 koleksi dipulihkan ke keadaan sebelum uji — nol residu.[0m
+kode keluar: 0

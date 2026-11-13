@@ -1,0 +1,441 @@
+[96m  [snapshot] 164 dokumen dari 2 koleksi disimpan — data demo akan dipulihkan setelah uji.[0m
+
+[1mKN3 ENDPOINT SWEEP — 786 GET routes (paralel x12)[0m
+  OK(data): 366  EMPTY: 140  5xx/EXC: 7  4xx: 242  SKIPPED: 31
+
+[91m[1m=== 5xx / EXCEPTIONS (BUG NYATA) ===[0m
+  [91m[500] /api/entities/count[0m
+        Internal Server Error
+  [91m[EXC] /api/entities/{entity_id}/audit[0m
+        
+  [91m[EXC] /api/export-center/datasets[0m
+        Server disconnected without sending a response.
+  [91m[EXC] /api/home/admin[0m
+        Server disconnected without sending a response.
+  [91m[EXC] /api/home/manager[0m
+        Server disconnected without sending a response.
+  [91m[EXC] /api/inventory/status-board[0m
+        Server disconnected without sending a response.
+  [91m[EXC] /api/products[0m
+        Server disconnected without sending a response.
+
+[93m=== 4xx (auth/validasi — review) ===[0m
+  [404] /api/access/roles/{rid}
+  [404] /api/ai/actions/{pid}
+  [400] /api/ai/export.xlsx
+  [404] /api/ai/results/{result_id}
+  [404] /api/ai/results/{result_id}/export.xlsx
+  [404] /api/ai/schedule-runs/{run_id}
+  [404] /api/ai/sessions/{session_id}
+  [404] /api/amendments/{amd_id}
+  [404] /api/approval-rules/{rule_id}
+  [422] /api/ar-receipts/deposit
+  [422] /api/ar-receipts/open-orders
+  [404] /api/ar-receipts/{receipt_id}
+  [422] /api/audit-logs/resource
+  [404] /api/bank-accounts/{account_id}/ledger
+  [422] /api/bank-reconciliation/lines
+  [400] /api/bank-reconciliation/lines/{line_id}/candidates
+  [422] /api/bank-reconciliation/summary
+  [404] /api/cash-advance-settlements/{stl_id}
+  [404] /api/cash-advances/{ca_id}
+  [404] /api/client-dataset/batches/{batch_id}
+  [422] /api/color-library/nearest
+  [404] /api/color-library/{color_id}/links
+  [422] /api/config/explain
+  [400] /api/contra-bons/bank-line-candidates/{line_id}
+  [422] /api/contra-bons/prepare
+  [404] /api/contra-bons/{cb_id}
+  [404] /api/contra-bons/{cb_id}/receipt
+  [404] /api/credit-notes/{cn_id}
+  [404] /api/credit-overrides/{override_id}
+  [422] /api/customer-prices
+  [422] /api/customer-prices/export
+  [422] /api/customer-prices/floor
+  [422] /api/customer-prices/quote
+  [422] /api/customers/{customer_id}/merge-preview
+  [404] /api/cycle-count/sessions/{session_id}
+  [404] /api/cycle-count/sessions/{session_id}/roll-reconcile
+  [404] /api/design-gallery/{gallery_id}
+  [404] /api/design-gallery/{gallery_id}/files/{file_id}
+  [404] /api/design-gallery/{gallery_id}/history
+  [404] /api/design-gallery/{gallery_id}/usage
+  [404] /api/design-requests/{req_id}
+  [404] /api/design-requests/{req_id}/references/{file_id}
+  [422] /api/documents/resolve
+  [404] /api/documents/{doc_id}/print
+  [404] /api/entities/{entity_id}
+  [404] /api/entities/{entity_id}/deactivation-impact
+  [404] /api/entities/{entity_id}/readiness
+  [404] /api/export-center/jobs/{job_id}
+  [404] /api/export-center/jobs/{job_id}/download
+  [404] /api/finance-cases/{case_id}
+  [422] /api/finance/budget-vs-actual
+  [422] /api/finance/closing/preview
+  [422] /api/finance/closing/status
+  [404] /api/fixed-assets/{asset_id}
+  [404] /api/fulfillment/wizard/{so_id}
+  [422] /api/gl/inventory-drift-explain
+  [404] /api/gl/journal/{entry_id}
+  [400] /api/goods-receipts/doc-variance
+  [404] /api/goods-receipts/{grn_id}
+  [404] /api/goods-receipts/{grn_id}/rolls
+  [404] /api/goods-receipts/{grn_id}/targets
+  [401] /api/handheld/device/config
+  [404] /api/handheld/devices/{device_id}/activity
+  [422] /api/handheld/lookup
+  [401] /api/handheld/me
+  [401] /api/handheld/registration/catalog
+  [422] /api/handheld/tasks
+  [401] /api/handheld/tasks/summary
+  [401] /api/handheld/untagged
+  [404] /api/hr/employees/{employee_id}
+  [404] /api/hr/employees/{employee_id}/360
+  [422] /api/hr/field-tracks
+  [404] /api/hr/payroll/runs/{run_id}
+  [404] /api/hr/payslips/{slip_id}
+  [404] /api/hr/payslips/{slip_id}/pdf
+  [400] /api/inbound/po/{po_id}/receiving-goods-document
+  [400] /api/inbound/tasks/{task_id}/scanned-rolls
+  [400] /api/inbound/tasks/{task_id}/uom-options
+  [404] /api/input-tax-invoices/{fpm_id}
+  [404] /api/inspections/{ins_id}
+  [404] /api/inspections/{ins_id}/pdf
+  [404] /api/interco/loans/{loan_id}
+  [422] /api/interco/prices/missing
+  [404] /api/interco/returns/{ret_id}
+  [404] /api/interco/returns/{ret_id}/attachments/{att_id}/download
+  [404] /api/interco/settlements/{sid}
+  [404] /api/interco/transactions/{interco_id}
+  [404] /api/interco/transactions/{interco_id}/journal
+  [400] /api/interco/transactions/{interco_id}/returnable
+  [404] /api/interco/transactions/{interco_id}/tax-invoice
+  [404] /api/internal-requests/{req_id}
+  [404] /api/internal-requests/{req_id}/sources
+  [422] /api/inventory/putaway/evaluate
+  [422] /api/inventory/putaway/suggest
+  [422] /api/inventory/rolls/available
+  [404] /api/inventory/rolls/{roll_id}/cost-history
+  [404] /api/inventory/rolls/{roll_id}/grade-history
+  [404] /api/inventory/rolls/{roll_id}/journey-timeline
+  [404] /api/inventory/rolls/{roll_id}/repairs
+  [404] /api/landed-costs/{voucher_id}
+  [404] /api/logistics/deliveries/{delivery_id}
+  [404] /api/logistics/deliveries/{delivery_id}/manifest
+  [404] /api/logistics/deliveries/{delivery_id}/photos/{photo_id}
+  [400] /api/lots/identity-trace
+  [404] /api/lots/{lot_id}
+  [404] /api/lots/{lot_id}/genealogy
+  [404] /api/lots/{lot_id}/recall
+  [404] /api/makloon-orders/{mko_id}
+  [404] /api/makloon-orders/{mko_id}/material-ledger
+  [404] /api/makloons/{makloon_id}
+  [404] /api/makloons/{makloon_id}/scorecard
+  [404] /api/marketing/campaigns/{cid}/costs
+  [404] /api/marketing/posts/{pid}
+  [404] /api/marketing/posts/{pid}/attachments/{fid}
+  [404] /api/master-governance/cleanup/batches/{batch_id}
+  [404] /api/ocr-samples/runs/{run_id}
+  [400] /api/outbound/so/{order_id}/surat-jalan
+  [404] /api/payment-variances/receipt/{receipt_id}
+  [404] /api/payment-variances/{decision_id}
+  [404] /api/penalties/{penalty_id}
+  [422] /api/pos/frequently-bought-together
+  [422] /api/pos/recommendations
+  [422] /api/pos/site-stock
+  [422] /api/pos/substitutes
+  [422] /api/price-approvals/effective
+  [422] /api/price-approvals/hint
+  [404] /api/price-approvals/{approval_id}
+  [404] /api/price-approvals/{approval_id}/attachments/{att_id}/download
+  [404] /api/product-templates/{template_id}
+  [404] /api/product-templates/{template_id}/restock-source
+  [404] /api/product-templates/{template_id}/summary
+  [404] /api/production/boms/{bom_id}
+  [404] /api/production/work-orders/{wo_id}
+  [404] /api/products/{product_id}/media/{media_id}/content
+  [400] /api/purchase-orders/resolve-sourcing
+  [404] /api/purchase-requisitions/{pr_id}
+  [422] /api/purchase-requisitions/{pr_id}/makloon-prefill
+  [404] /api/purchase-requisitions/{pr_id}/sourcing
+  [422] /api/purchase-returns/source-rolls
+  [404] /api/purchase-returns/{return_id}
+  [404] /api/purchase-returns/{return_id}/attachments/{att_id}/download
+  [422] /api/putaway-orders/suggest
+  [404] /api/putaway-orders/{order_id}
+  [400] /api/registration/freeze
+  [404] /api/registration/sessions/{sid}
+  [404] /api/registration/sessions/{sid}/bins
+  [404] /api/registration/sessions/{sid}/lines
+  [404] /api/registration/sessions/{sid}/lines/{line_id}/photo
+  [404] /api/registration/sessions/{sid}/reconcile
+  [404] /api/repair-orders/{ro_id}
+  [422] /api/return-policies/supplier-deadlines
+  [404] /api/rfid/cycle-counts/{cc_id}
+  [401] /api/rfid/device-jobs/pending
+  [401] /api/rfid/device-jobs/{job_id}/attempts/{attempt_id}
+  [404] /api/rfid/gate/{device_id}/status
+  [400] /api/rfid/labels
+  [422] /api/rfid/lookup
+  [404] /api/rfid/print-jobs/{job_id}
+  [404] /api/rfid/print-jobs/{job_id}/zpl
+  [401] /api/rfid/printer-agent/config
+  [404] /api/rfid/printers/{device_id}/profile
+  [404] /api/rfid/roll-scans/{roll_id}
+  [404] /api/rfid/rolls/{roll_id}/print-history
+  [404] /api/rfid/rolls/{roll_id}/tag-history
+  [401] /api/rfid/v2/device/config
+  [422] /api/rfid/v2/device/gate-state
+  [422] /api/rfid/v2/ops/crossings
+  [404] /api/rfid/v2/ops/devices/{device_id}
+  [404] /api/rfid/v2/ops/devices/{device_id}/health
+  [404] /api/rfid/v2/ops/devices/{device_id}/kiosk
+  [404] /api/rfid/v2/ops/devices/{device_id}/passages/{passage_id}/evidence
+  [404] /api/rfid/v2/ops/devices/{device_id}/sessions
+  [422] /api/rfid/v2/ops/devices/{device_id}/sources
+  [404] /api/rfid/v2/ops/reviews/{case_id}
+  [404] /api/rfqs/{rfq_id}
+  [404] /api/rfqs/{rfq_id}/compare
+  [400] /api/rnd/labdip-history
+  [422] /api/rnd/reports/designer-kpi/report
+  [404] /api/rnd/samples/{sample_id}
+  [404] /api/rnd/samples/{sample_id}/contract-options
+  [404] /api/rnd/samples/{sample_id}/performers
+  [404] /api/rnd/samples/{sample_id}/required-tests
+  [404] /api/rnd/samples/{sample_id}/rounds/{round_id}/attachments/{file_id}
+  [404] /api/rnd/specs/{spec_id}
+  [404] /api/rnd/specs/{spec_id}/required-tests
+  [404] /api/rolls/{roll_id}/lot
+  [404] /api/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download
+  [422] /api/sales-return-policies/eligibility
+  [404] /api/sales-return-policies/{policy_id}
+  [422] /api/sales-returns/returnable
+  [404] /api/sales-returns/{return_id}
+  [404] /api/sales-returns/{return_id}/attachments/{att_id}/download
+  [404] /api/sales-returns/{return_id}/compensation
+  [404] /api/sales-returns/{return_id}/cutloss/{ctl_id}/split-preview
+  [404] /api/sales-returns/{return_id}/disposition
+  [404] /api/sales-returns/{return_id}/disposition/photos/{att_id}
+  [404] /api/sales-returns/{return_id}/grade-impairments
+  [404] /api/sales-returns/{return_id}/logistics
+  [404] /api/sales-returns/{return_id}/quarantine
+  [404] /api/sales-returns/{return_id}/replacement
+  [404] /api/sales-returns/{return_id}/roll-settlement
+  [404] /api/sales-returns/{return_id}/timeline
+  [422] /api/sales/commission
+  [422] /api/sales/incentive/gl-status
+  [422] /api/sales/stock-summary
+  [422] /api/sample-orders/catalogue/preview
+  [422] /api/sample-quote
+  [422] /api/settings/compute-tax
+  [422] /api/settings/evaluate-approval
+  [404] /api/shipments/{shipment_id}/surat-jalan
+  [404] /api/special-orders/{order_id}
+  [404] /api/special-orders/{order_id}/customer-decision/evidence/{file_id}
+  [404] /api/special-orders/{order_id}/fulfillment
+  [404] /api/special-orders/{order_id}/pricing
+  [404] /api/special-orders/{order_id}/references/{file_id}
+  [422] /api/stock/atp
+  [400] /api/stock/figures
+  [422] /api/store-credit/balance
+  [422] /api/store-credit/open-orders
+  [404] /api/supplier-contracts/{contract_id}
+  [422] /api/supplier-items/lookup
+  [404] /api/supplier-items/{sid}
+  [400] /api/supplier-price-list/resolve
+  [404] /api/suppliers/{supplier_id}
+  [404] /api/suppliers/{supplier_id}/360
+  [404] /api/suppliers/{supplier_id}/label-pattern
+  [404] /api/suppliers/{supplier_id}/price-list
+  [404] /api/suppliers/{supplier_id}/return-policy
+  [404] /api/suppliers/{supplier_id}/scorecard
+  [404] /api/tax-invoices/{fkt_id}
+  [404] /api/tax-invoices/{fkt_id}/document
+  [422] /api/transfers/so-options
+  [422] /api/transfers/so-rolls
+  [404] /api/transfers/{transfer_id}
+  [404] /api/transfers/{transfer_id}/receipt
+  [404] /api/users/{user_id}
+  [404] /api/vendor-bills/{bill_id}
+  [404] /api/warehouse-sites/{site_id}/receiving
+  [404] /api/warehouse-sites/{site_id}/stock-tree
+  [422] /api/wilayah/districts
+  [422] /api/wilayah/regencies
+  [422] /api/wilayah/villages
+
+[93m=== EMPTY (200 tapi 0 items — verifikasi disengaja) ===[0m
+  /api/ai/insights
+  /api/ai/my-templates
+  /api/ai/schedule-runs
+  /api/ai/schedules
+  /api/ai/sessions
+  /api/ai/usage
+  /api/amendments
+  /api/approvals/matrix-log
+  /api/approvals/queue
+  /api/ar-receipts
+  /api/ar/advance-report
+  /api/ar/aging/{customer_id}
+  /api/bank-reconciliation/holding
+  /api/bank-reconciliation/rules
+  /api/cash-advance-settlements
+  /api/cash-advance-settlements/reimburse-payables
+  /api/cash-advances
+  /api/client-dataset/batches
+  /api/collection-reminders
+  /api/collection-worklist
+  /api/color-library/customer-colors
+  /api/color-library/supplier-variants
+  /api/color-library/use-requests
+  /api/contra-bons
+  /api/contra-bons/unbilled-receipts
+  /api/credit-notes
+  /api/credit-overrides
+  /api/crm/interactions
+  /api/crm/leads
+  /api/customer-feedback
+  /api/customer-prices/records
+  /api/cycle-count/sessions
+  /api/data-hygiene/preview
+  /api/design-requests
+  /api/design-requests-for-so/{so_id}
+  /api/design/reports/by-designer
+  /api/documents/trace-search
+  /api/export-center/jobs
+  /api/export-center/templates
+  /api/finance-cases
+  /api/finance/budgets
+  /api/finance/closing
+  /api/finance/consolidation/eliminations
+  /api/finance/period-unlocks
+  /api/finance/period-unlocks/active
+  /api/finance/posting-failures
+  /api/fixed-assets
+  /api/gl/account-mappings/history
+  /api/goods-receipts
+  /api/goods-receipts/dn-profiles
+  /api/goods-receipts/supplier-variance
+  /api/goods-receipts/usage
+  /api/hr/attendance
+  /api/hr/visits/mine
+  /api/inbound/qc/queue
+  /api/inbound/qc/tasks/{task_id}/rolls
+  /api/inbound/scan-label/stats
+  /api/input-tax-invoices
+  /api/input-tax-invoices/eligible-bills
+  /api/inspections
+  /api/inspections/meta/ref-docs
+  /api/inspections/queue/qc-tasks
+  /api/interco/accounts
+  /api/interco/loans
+  /api/interco/margin-by-product
+  /api/interco/margin-report
+  /api/interco/payment-schedule
+  /api/interco/reminders
+  /api/interco/returns
+  /api/interco/settlements
+  /api/interco/transactions
+  /api/internal-requests
+  /api/inventory/cut-children-unverified
+  /api/inventory/pending-cuts
+  /api/invoices
+  /api/landed-costs
+  /api/logistics/deliveries
+  /api/logistics/fleet/vehicles
+  /api/logistics/history
+  /api/logistics/shipments/unassigned
+  /api/makloon-claims/recap
+  /api/makloon-orders/claims
+  /api/makloon-partners/scorecard
+  /api/marketing/accounts
+  /api/marketing/campaigns
+  /api/marketing/posts
+  /api/marketing/templates
+  /api/master-governance/batches
+  /api/master-governance/cleanup/batches
+  /api/master-governance/supersede-hint
+  /api/ocr-samples
+  /api/ocr-samples/runs
+  /api/payment-plans
+  /api/payment-variances
+  /api/payment-variances/pending
+  /api/pegging/rolls
+  /api/penalties
+  /api/po-variance-tasks
+  /api/pos/featured
+  /api/price-approvals
+  /api/process-recipes
+  /api/production/boms
+  /api/production/work-orders
+  /api/products/{product_id}/media
+  /api/purchase-orders/blanket
+  /api/purchase-returns
+  /api/registration/sessions
+  /api/repair-orders
+  /api/repair-orders/target-products
+  /api/reports/stock-aging
+  /api/rfid/locations
+  /api/rfid/printers/follow-up
+  /api/rfqs
+  /api/rnd/reports/performer
+  /api/rnd/revalidation/pic-queue
+  /api/rnd/samples
+  /api/rnd/sla/board
+  /api/rnd/specs
+  /api/saga-locks
+  /api/sales-incentives
+  /api/sales-orders/frequent-products
+  /api/sales-orders/{order_id}/invoices
+  /api/sales-return-policies
+  /api/sales-returns
+  /api/sales-returns/eligible-orders
+  /api/sample-orders
+  /api/scheduler/wa-outbox
+  /api/shipments
+  /api/stock/holds
+  /api/stock/pending-so
+  /api/stock/wip
+  /api/store-credit
+  /api/store-credit/ledger
+  /api/tax-invoices
+  /api/tax/pph-records
+  /api/transfers
+  /api/vehicle-usage-logs
+  /api/vehicles
+  /api/vendor-bills
+  /api/wilayah/search
+
+=== SKIPPED (param tak bisa di-resolve) ===
+  /api/amendments/doc/{doc_type}/{doc_id}
+  /api/approvals/queue-board/{key}
+  /api/deliveries/whatsapp/recipient/{doc_type}/{source_id}
+  /api/deliveries/{doc_type}/{source_id}
+  /api/documents/refs/{doc_type}/{doc_id}
+  /api/documents/relations/{doc_type}/{doc_id}
+  /api/documents/trace/{doc_type}/{doc_id}
+  /api/documents/trace/{doc_type}/{doc_id}/print
+  /api/entity-masters/{kind}
+  /api/entity-masters/{kind}/effective
+  /api/enums/{name}
+  /api/esign/signatures/{doc_type}/{source_id}
+  /api/esign/verify/{code}
+  /api/gl/account-mappings/{key}/candidates
+  /api/gl/accounts/{code}/ledger
+  /api/goods-receipts/{grn_id}/files/{page}
+  /api/handheld/tasks/{kind}/{doc_id}/expected
+  /api/makloon-orders/{mko_id}/steps/{seq}/deductible-bills
+  /api/makloon-orders/{mko_id}/steps/{seq}/issue-rolls
+  /api/makloon-orders/{mko_id}/steps/{seq}/partner-rolls
+  /api/master/usage/{kind}/{mid}
+  /api/ocr-samples/{sample_id}/files/{page}
+  /api/payment-plans/by-doc/{doc_type}/{doc_id}
+  /api/pdf/documents/{doc_type}
+  /api/pdf/render/{doc_type}/{source_id}
+  /api/pdf/sample/{doc_type}
+  /api/pdf/templates/{doc_type}
+  /api/process-stages/for-line/{line_code}
+  /api/rfid/v2/ops/doc-sessions/{source_type}/{source_id}
+  /api/saga-locks/{collection}/{doc_id}/inspect
+  /api/wilayah/postal-code/{code}
+[92m  [snapshot] 2 koleksi dipulihkan ke keadaan sebelum uji — nol residu.[0m
+kode keluar: 1

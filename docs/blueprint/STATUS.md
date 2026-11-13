@@ -4,8 +4,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 
 | # | ID | Judul | Prasyarat | Status | Commit | Laporan | Catatan |
 |---|---|---|---|---|---|---|---|
-| 1 | PK-01 | Garis dasar gate dan pendaftaran temuan ke tracker | — | siap |  |  |  |
-| 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | menunggu |  |  |  |
+| 1 | PK-01 | Garis dasar gate dan pendaftaran temuan ke tracker | — | selesai |  | [PK-01](../reviews/2026-11-13/hasil/PK-01.md) |  |
+| 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | siap |  |  |  |
 | 3 | PK-03 | Cek data nyata (dijalankan pemilik) | — | tahan |  |  | Titik henti H3 |
 | 4 | PK-04 | Cadangan lebih sering dan uji pulih | — | tahan |  |  | Titik henti H2 |
 | 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | menunggu |  |  | Titik henti H1 sesudahnya |
@@ -119,3 +119,13 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 ## Catatan sesi
 
 Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan dan mengapa.
+
+**Sesi 13–14 Nov 2026** (berjalan)
+
+- Cabang kerja: `claude/nifty-carson-jjx3c8` (satu-satunya cabang yang boleh didorong sesi ini), bukan `bp/integrasi`
+  dan `bp/<ID>`. Tanda `dikerjakan` dan `selesai` ditulis dalam satu commit unit karena hanya satu agen yang bekerja.
+- Lingkungan A setara: MongoDB 7 asli di Docker + backend di host (rincian di laporan PK-01).
+- Arahan pemilik 13 Nov (sebelum pergi): "kerjakan berurutan sampai selesai; bila ada pertanyaan kerjakan sesuai
+  rekomendasi namun catat". Dipakai untuk titik henti yang bersifat tinjauan (H1) dan pertanyaan aturan bisnis
+  (`00` §4.1). **Tidak** dipakai untuk H2 (jalur produksi), H3 (data nyata), H4 (isi tabel peraturan, akun/arah jurnal
+  yang tidak disebut unit), H8 (rahasia): unit itu tetap `tahan`.

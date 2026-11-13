@@ -5,11 +5,16 @@ Arti status & aturan: [`README.md`](README.md).
 
 **Review aktif:** [`2026-10-20/`](2026-10-20/) — mulai dari `2026-10-20/README.md`,
 lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md`.
+**Paket 2026-11-13** (audit keuangan, temuan tambahan riset modul, audit konfigurasi dan peran):
+[`2026-11-13/`](2026-11-13/) — dikerjakan lewat [`docs/blueprint/`](../blueprint/README.md); kolom "Fase" = ID unit blueprint.
 
 | Paket | Baseline review | Posisi terhadap `f4e8f0b` (HEAD saat paket diterima) |
 |---|---|---|
 | Frontend (FE-xx) | `8dab383` | 17 commit di belakang — wajib cek ulang |
 | Backend (AUD-xx) | `63c38bd` | 42 commit di belakang — wajib cek ulang |
+| Audit keuangan (GL, SL, IC, IV, UX, DB, FY, FX, RP, RC, IA) | `cd6963a`…`9834947` | Dicek ulang per temuan oleh unit pemegang (HEAD saat didaftarkan: `fb6bc75`) |
+| Temuan tambahan riset modul (KM, CR, PM, TX, AG, PY) | `9834947` | idem |
+| Audit konfigurasi dan peran (KF, PR, KP, MB) | `dca195b` | idem |
 
 ## Frontend — paket 2026-10-20 (baseline `8dab383`)
 
@@ -106,6 +111,277 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | P21 | Persiapan perangkat gelombang 3: printer label RFID CP30EN (lease stabil, hasil per label, templat 70×22 mm, connector PC gudang + simulator; F), aplikasi handheld C72 0.1.0-lab + API `/api/handheld` (pindai per dokumen, tulis EPC, offline; G), performa & ketahanan gate V2 (transaksi ke latar, prefetch tanpa N+1, retensi bukti, uji beban; H) | — (permintaan pemilik 9 Nov) | implemented_pending_review | ya — fakta perangkat §1/§10 KEPUTUSAN_GATE_RFID | `5e7d56a`, `2ac48ae`, `5063d48`, `8a052ac`, `53a9c0e`, `3a20d1e`, gabung `8e9b55c`, `35506d7`, `9b12a50` | [F](../rfid/hasil/PREP-F-PRINTER-CP30EN.md) · [G](../rfid/hasil/PREP-G-HANDHELD-C72.md) · [H](../rfid/hasil/PREP-H-GATE-PERFORMA.md) |
 | P22 | Audit menyeluruh WMS-RFID (10 lensa: UI/menu per peran 166/166 sel, alur masuk/keluar/potong/RFID, SSOT/skema/angka stok, form/daftar/ekspor, riset 205 sumber, performa) — 233 temuan (20 P0) + perbaikan FIX-1 cakupan lokasi & keamanan, FIX-2 satu rumus stok + dua angka, FIX-3a/3b integritas alur, FIX-4 Standar UI Gudang v1 tahap 1 + ekspor Excel, FIX-5 performa WMS | — (permintaan pemilik 9 Nov; keputusan diserahkan ke koordinator) | implemented_pending_review | ya — [keputusan koordinator](../audit/2026-11-09-wms-rfid/KEPUTUSAN-KOORDINATOR.md) | gabung `cd6d1d9`, `92cc3c5`, `5b65039`, `a8275bf`, `f31803b`, `4152a6b`, integrasi `59bdc68`, `252303e`, `7268093`, `f2fe2df` | [Ringkasan](../audit/2026-11-09-wms-rfid/00-RINGKASAN.md) |
 
+## Audit keuangan — paket 2026-11-13
+
+| ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|---|
+| IC-01 | Jurnal antar-PT bisa terbit di satu PT saja, tanpa jalan memperbaiki | Kritis | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-01 | Bayar kontrabon: kas tanpa jurnal, potongan bisa terpakai dua kali, kas keluar kedua | Kritis | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-01 | Jurnal bisa dibalik dua kali lewat dua mekanisme yang tidak saling mengenal | Tinggi | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-02 | Jurnal yang gagal hilang tanpa penanda di banyak jalur | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-03 | Bayar faktur supplier: hutang lunas, kas tanpa jurnal dan tanpa penanda | Tinggi | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-04 | Periode yang belum berakhir bisa ditutup | Tinggi | PK-11 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-02 | Bayar faktur tanpa kunci idempotensi; entitas kas dari klien | Tinggi | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-03 | Alokasi dana titipan bank: jurnal kedua dilewati diam-diam | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-04 | Biaya/bunga bank: kas tersisa bila jurnal gagal; ulang membuat kas kedua | Tinggi | PK-15 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-05 | Jalur lama "simulasi bayar" masih dipakai layar | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-06 | Void kwitansi menggeser deposit sebelum status berubah | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-02 | Roll dikirim utuh, dokumen memakai jumlah pesanan | Tinggi | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-03 | Eliminasi konsolidasi berubah mundur | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-04 | Laba antar-PT dianggap terealisasi pada rantai A→B→C | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-05 | Akuntan PT-A bisa memposting jurnal manual ke buku PT-B | Tinggi | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-06 | Akun antar-PT terbuka untuk jurnal manual dan pembalikan sepihak | Tinggi | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-07 | Retur setelah lunas menghasilkan saldo yang tak terlihat dan tak bisa dilunasi | Tinggi | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-01 | Landed cost untuk roll yang sudah terjual mengendap di persediaan | Tinggi | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-02 | Scrap retur dihapusbukukan tetapi roll tetap dihitung | Tinggi | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-03 | GR/IR tanpa akun varians, tanpa umur, tanpa kliring | Tinggi | PK-28 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-04 | Jurnal gagal setelah stok berubah, tanpa penanda dan tanpa jalur ulang | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-01 | "Catat Transaksi" kas tanpa penahan klik ganda | Tinggi | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-02 | Kunci idempotensi hanya di kwitansi piutang | Tinggi | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-03 | Setujui/batalkan faktur supplier sekali klik | Tinggi | PK-13 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-04 | Panel Posting Gagal bilang "semua tercatat" saat gagal memuat | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-05 | Mode "Semua Entitas": tombol buat aktif, ditolak setelah form diisi | Tinggi | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-06 | Form uang tidak menyebut PT tujuan | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-07 | Laporan keuangan tidak menyebut entitas atau "gabungan" | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-08 | Settlement antar-PT: daftar kandidat tampaknya kosong dari sisi pembayar (perlu uji jalan) | Tinggi | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
+| DB-01 | MongoDB satu node biasa, tanpa transaksi; penjaga pola pengganti sedang merah | Tinggi | PK-33 | open | belum dicek — diisi unit pemegang | — | — |
+| DB-03 | Cadangan hanya mongodump harian, simpan 14 hari | Tinggi | PK-04 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-05 | Tanggal buku campur UTC dan WIB: transaksi 00:00–06:59 WIB tanggal 1 masuk bulan sebelumnya | Sedang | PK-37 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-06 | "Wajib dua orang" tidak berlaku bagi admin; reopen cukup satu admin; jurnal manual langsung terposting | Sedang | KF-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-07 | Jurnal manual tidak lewat validator pusat; selisih 1 sen lolos | Sedang | PK-10 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-08 | Jurnal manual dan reklas suspense tanpa perlindungan kirim-ulang | Sedang | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-09 | Indeks unik gagal dibuat hanya di-log; aplikasi tetap jalan | Sedang | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-10 | Akun khusus PT bisa dihapus tanpa cek pemakaian; barisnya hilang dari laporan | Sedang | PK-36 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-07 | Kas manual menerima ref_type, entitas, rekening dari klien | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-08 | Uang bisa dialokasikan ke pesanan batal/draf | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-09 | Sisa uang muka karyawan tidak punya alur pengembalian; persetujuan tanpa pemisahan pembuat/penyetuju | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-10 | Lepas-cocok rekonsiliasi tanpa penjaga; dua mekanisme rekonsiliasi | Sedang | PK-21 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-11 | Kas tanpa rekening; kas refund menyimpan kode akun di field rekening | Sedang | PK-20 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-12 | Kontrabon disimpan utuh tanpa versi; nomor faktur supplier tanpa indeks unik | Sedang | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-13 | Pajak: satu faktur per pesanan cek-lalu-sisip; nomor seri tanpa cek kembar; rekap dipotong 5.000 baris; tidak ada ekspor Coretax, PPh 23, bukti potong | Sedang | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-09 | Jalur lama transfer antar-PT (harga pokok) masih dipakai kasir | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-10 | Harga dan mode PPN antar-PT bisa diatur pembuat per transaksi; status PKP tidak divalidasi | Sedang | PK-30 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-11 | Banyak endpoint antar-PT dan eliminasi tanpa penjaga pihak | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-05 | Rekonsiliasi persediaan membaca kode akun tetap padahal akun bisa dipetakan per PT | Sedang | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-06 | Retur beli mengkredit persediaan pada harga retur, bukan nilai buku roll | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-07 | Satu roll berbiaya 0 membuat seluruh HPP surat jalan jatuh ke rata-rata | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-08 | Barang retur masuk lagi pada rata-rata saat ini, bukan HPP asal | Sedang | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-09 | "Sinkron" menjumlah selisih lintas PT; true-up membuang selisih ke ekuitas | Sedang | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-09 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-10 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-05 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-11 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-12 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-13 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-14 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-15 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-16 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-17 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | MN-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| DB-02 | Uang sebagai float | Sedang | PK-35 | open | belum dicek — diisi unit pemegang | — | — |
+| DB-04 | Motor usang sejak Mei 2025; perbaikan bug berakhir Mei 2026, dukungan terakhir Mei 2027 | Sedang | PK-34 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-01 | Aset tetap disimpan sebelum jurnal perolehan, tanpa penanda | Tinggi | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-02 | Jurnal periodik bertanggal hari posting, bukan periodenya | Tinggi | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-03 | Perolehan aset selalu mengkredit kas (1-1100) tanpa transaksi kas; akun dari API tidak divalidasi | Tinggi | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-04 | Pindah aset antar-PT tidak atomik dan tidak idempoten | Tinggi | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-06 | Penggajian tidak bisa dihitung ulang atau dibatalkan | Tinggi | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-07 | Hutang BPJS (2-1700) dan PPh 21 (2-1800) hanya pernah dikredit; tidak ada alur setor | Tinggi | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-05 | Status aset transferred tidak dijaga saat diubah/dilepas lewat API | Sedang | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-08 | Hutang insentif: akrual dan gaji menghitung dari dua sumber berbeda; galat akrual ditelan | Sedang | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-09 | Kontrol gaji: ajukan, sahkan, posting, bayar satu izin; status tengah bisa macet; akun bayar tidak dibatasi ke kas | Sedang | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-10 | Anggaran kategori membaca tahun dari isian teks bebas "periode" LPJ | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-11 | Angka anggaran salah: akun persediaan memakai mutasi bersih; PO terima-sebagian dihitung dua kali; mode gabungan membandingkan pagu per PT dengan… | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-12 | Anggaran hanya peringatan dan hanya di PO; pagu tanpa indeks unik dan tanpa jejak ubah | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-13 | Peta kategori→akun saat posting LPJ mengabaikan lapisan entitas | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-14 | LPJ tanpa bukti, vendor, PPN; masih bisa diubah setelah diajukan | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-15 | Pusat pajak: entity_id=all dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-17 | Aksi uang tanpa konfirmasi: setujui & posting LPJ, bayar reimburse, catat bayar pindah aset, hapus pagu, hapus rekaman PPh | Sedang | PK-13 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-18 | Tanpa kunci idempotensi di layar aset, kas kecil, pajak (lanjutan UX-02) | Sedang | PK-12 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-16 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-40 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-19 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-20 | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | Rendah | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-01 | Setoran karyawan pada kasus keuangan dibukukan dua kali — terjadi setiap kali aksi dipakai, bukan hanya saat gagal | Tinggi | PK-07 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-02 | Kunci jurnal denda tetap per nota | Tinggi | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-03 | Hari telat dihitung kumulatif, tetapi satu nota per bulan kalender | Tinggi | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-05 | Alokasi dari deposit tidak memeriksa pemilik pesanan; deposit dikurangi setelah semua alokasi | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-06 | Hapus sisa pembayaran tanpa klaim; keputusan disimpan paling akhir | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-07 | Membatalkan keputusan selisih hutang tidak membalik jurnalnya | Tinggi | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-08 | Aksi kasus mengambil pesanan, kwitansi, rekening, pelanggan dari isi permintaan tanpa diadu dengan kasus atau cakupan pengguna | Tinggi | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-09 | Kasus: efek dulu, syarat kemudian; jurnal ber-kunci sama dilewati diam-diam | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-10 | Batas wewenang kasus lebih longgar dari hapus sisa; penyelesai = penyetuju | Tinggi | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-11 | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-12 | Nota kredit bisa melebihi faktur | Tinggi | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-04 | Bayar denda langsung mendebit kas tanpa transaksi kas, rekening, kwitansi | Sedang | PK-08 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-13 | Nota kredit gagal di tengah tanpa penanda | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-14 | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-15 | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-16 | Gerbang bayar-dulu bisa dilewati dengan mengganti termin; "terbayar" mencakup hapus sisa, kasus, nota kredit | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-02 | Hal yang sama di BI Keuangan dan Control Tower | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-01 | Daftar sumber dipotong diam-diam, dan kuotanya dihabiskan dokumen lama yang sudah lunas | Tinggi | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-03 | Seluruh sisa pesanan diumurkan dari satu tanggal jatuh tempo (surat jalan pertama + termin); bagian yang belum dikirim ikut "lewat tempo"; rumus… | Tinggi | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-04 | "Pendapatan diakui" di Tanya KN ikut menghitung jurnal penutup | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-05 | Tanggal "per" pada umur piutang hanya menggeser penghitung hari; pembayaran setelah tanggal itu tetap dihitung | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-06 | Klasifikasi Arus Kas salah di empat kasus: hasil jual aset berlaba terbagi ke operasi; pinjaman antar-PT masuk operasi; saldo awal rekening masuk… | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-07 | Umur hutang berlabel "Umur" tetapi dihitung dari jatuh tempo; "0–30" memuat yang belum jatuh tempo; total tidak memuat landed cost dan nota debit | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-08 | Profitabilitas tidak mengurangkan retur, tidak memuat antar-PT, dan teks layarnya menyebut dasar HPP yang salah | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-09 | Control Tower mode gabungan memuat pelanggan semua PT termasuk di luar penugasan; "modal kerja" memuat pesanan belum dikirim | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-10 | Konsolidasi: eliminasi, pendapatan, dan HPP memakai tiga tanggal berbeda; rugi belum terealisasi dieliminasi padahal rapor menulis "tidak… | Sedang | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-11 | Proyeksi kas membulatkan hari berlawanan dengan umur piutang; label kelompok umur ditulis mati; router menyebut arus kas "tak langsung" padahal… | Rendah | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-12 | Proyeksi kas membulatkan hari berlawanan dengan umur piutang; label kelompok umur ditulis mati; router menyebut arus kas "tak langsung" padahal… | Rendah | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-01 | Jejak Dokumen hanya dijaga izin "lihat dokumen"; pencarian lintas jenis dokumen memuat nominal | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-02 | Membuka dokumen tidak memeriksa menu peran; pagarnya tinggal izin API yang lebih lebar dari menu | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-03 | Papan Meja Finance hanya butuh login | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-04 | Jejak Dokumen menaut ke layar yang tidak ada (retur jual, transfer, opname, kas-bank); sebelas layar keuangan tidak membaca fokus dokumen | Tinggi | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-05 | "Cairkan" uang muka hanya untuk Admin; Finance tanpa menu Kas Kecil; Hutang Reimburse tanpa tombol bayar | Tinggi | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-06 | Menu tidak sampai ke peran yang diberi izin (Sales → Kasus Keuangan; Finance → Pemetaan Akun) | Sedang | MN-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-07 | "Simulasi Pembayaran": gerbang layar dan gerbang server memakai izin berbeda | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-08 | Gudang mengisi tarif jasa, PPN, dan nomor faktur makloon yang langsung melahirkan hutang | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-09 | Saldo antar-PT dan seluruh daftar kontrabon bernilai tampil untuk peran gudang | Sedang | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-10 | Gaji, kas kecil, aset, klaim makloon bukan jenis dokumen di Jejak Dokumen | Sedang | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-11 | Kartu angka di tiga dasbor tanpa tautan ke layar penjelasnya; lompatan antar-modul tanpa jalan kembali | Sedang | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-12 | Verifikasi → setujui → bayar kontrabon bisa satu Manajer; setujui dan selesaikan retur jual satu izin | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-13 | Tiga panel relasi dokumen di satu detail dengan dua sumber data; panel referensi tanpa tombol buka | Sedang | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-14 | Satu dokumen banyak nama (tagihan supplier lima nama; "Uang Muka" untuk pelanggan dan kasbon); dokumen IA basi | Rendah | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-15 | Satu dokumen banyak nama (tagihan supplier lima nama; "Uang Muka" untuk pelanggan dan kasbon); dokumen IA basi | Rendah | MN-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-11 | nomor jurnal bolong dan dua deret untuk entitas kosong (services/gl_service.py:607, 621) | Rendah | PK-35 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-12 | gl_status ditulis "posted" tanpa memeriksa hasil | Rendah | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
+| GL-13 | to_list berbatas memotong diam-diam (rekonsiliasi persediaan 100.000 roll, sementara uji beban 346.700 roll) | Rendah | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-14 | urutan kas/deposit pada refund | Rendah | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
+| IC-12 | penomoran antar-PT tanpa indeks unik, rujukan nyasar ke koleksi entities | Rendah | PK-14 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-10 | hapus-buku susut memakai biaya tanpa landed | Rendah | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-11 | sisa sen per penerimaan menumpuk | Rendah | PK-35 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-18 | kontrol mentah, istilah Inggris, isian uang tanpa pemisah ribuan | Rendah | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
+
+## Temuan tambahan riset modul — paket 2026-11-13
+
+| ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|---|
+| KM-01 | Faktor diskon mesin komisi praktis mati | Tinggi | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-02 | "Pencairan" memuat hapus sisa dan nota kredit | Tinggi | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-03 | Tiga aturan atribusi sales hidup bersamaan | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-04 | Target tanpa PT; triwulan/tahun bukan angka tersendiri | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-05 | Tanpa dokumen keputusan; angka sumber bergerak mundur | Sedang | KM-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-06 | Serah-terima pelanggan tidak memindah tim sales | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-07 | Field tak terpakai; daftar "sales" tidak seragam | Rendah | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-01 | Sales bisa mengubah plafon dan status blokir pelanggannya | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-02 | Kredit hanya diperiksa saat pesanan lahir | Tinggi | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-03 | Ambang telat dan peringatan ditulis mati di dua berkas | Sedang | KF-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-04 | Izin kredit tanpa masa berlaku, nominal 0 = tak terbatas, tanpa penjaga entitas | Sedang | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-05 | Termin bebas dipilih; pesanan tunai lolos dari kendali kredit dan tahan-kirim | Tinggi | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-06 | Tiga definisi jatuh tempo; rencana cicilan tidak dibaca kendali kredit | Sedang | CR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-07 | Denda otomatis hanya untuk pesanan ber-rencana; aturan per pelanggan tanpa layar | Sedang | CR-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-08 | Tanpa riwayat plafon, catatan penolakan, rekening koran pelanggan | Sedang | CR-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-09 | Saldo piutang dihitung dari paling banyak 2.000 pesanan | Sedang | CR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-01 | Pesanan dan dokumen pelanggan tanpa cara bayar, rekening tujuan, instruksi bayar | Tinggi | PM-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-02 | Kwitansi tidak mencatat rekening; metode teks bebas | Tinggi | PM-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-03 | Enam kosakata metode bayar yang berbeda | Sedang | PM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-04 | Rekonsiliasi tidak dibatasi rekening yang sama | Sedang | PM-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-05 | Master rekening tanpa peruntukan dan bawaan; saringan aktif memakai field yang salah | Sedang | PM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-06 | Tunai di tangan sales tanpa alur titipan dan setoran | Sedang | PM-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-01 | Faktur asli tetap terjumlah di rekap PPN setelah diganti: 110.000 menjadi 220.000 | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-02 | Kunci amandemen tidak lepas setelah faktur batal | Sedang | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-03 | Ubah/ganti/batal faktur tanpa penjaga entitas | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-04 | Pesanan non-PPN lewat API tanpa izin khusus | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-05 | Faktur per pesanan dan manual; tidak terikat surat jalan, uang muka, retur | Sedang | TX-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-06 | Faktor DPP, pembulatan, kode transaksi ditulis mati; tanpa data pajak pelanggan/barang | Sedang | TX-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-01 | Konfirmasi gagal kembali ke antre; bisa menggandakan PO | Sedang | AG-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-02 | Draf tanpa masa berlaku; entitas tidak diperiksa ulang | Sedang | AG-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-03 | Aturan cakupan asisten terpisah dari izin router | Sedang | AG-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-04 | Pencarian supplier/gudang/sales tanpa saringan entitas | Sedang | AG-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-05 | Skema alat menawarkan yang tidak dilayani | Rendah | AG-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-06 | Nama dan nominal dikirim ke penyedia tanpa penyamaran | Keputusan | AG-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-01 | Slip berkolom tetap | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-02 | Satu proses gaji per PT per periode | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-04 | Tanpa prorata dan potongan absen | Tinggi | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-05 | Karyawan keluar tidak terhitung masa terakhirnya | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-06 | Mode komisi "mati" tidak dihormati | Sedang | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-07 | Pengaturan lembur tidak berpengaruh | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-08 | Lembur dari absensi otomatis disetujui | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-09 | Tanpa riwayat gaji dan penugasan PT bertanggal | Sedang | PY-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-10 | Pratinjau gaji menerima entitas mentah | Sedang | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-11 | Bayar gaji selalu dari satu akun; tanpa daftar transfer | Sedang | PY-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-12 | Tanpa saldo awal pajak tahun berjalan | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-13 | PDF slip berbaris tetap dan berangka mati | Rendah | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-14 | Validasi periode; teks layar keliru; label belum diindonesiakan | Rendah | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
+
+## Audit konfigurasi dan peran — paket 2026-11-13
+
+| ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|---|
+| KF-01 | Izin settings.manage tidak berpengaruh. Peran kustom yang memegangnya ditolak 403 di tingkat grup maupun PT; can_edit bernilai salah untuk 232… | Tinggi | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-02 | 48 pengaturan bisa diubah siapa pun yang peran acuannya Manajer — termasuk peran kustom dengan semua modul "Tidak ada" | Tinggi | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-03 | Semua pengguna yang login — termasuk Sopir — bisa membaca seluruh 310 pengaturan, nilai efektif, dan riwayat perubahannya | Sedang | KF-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-04 | Untuk PT non-PKP, layar menampilkan tarif PPN dan status e-faktur lapisan PT, padahal mesin memaksa tarif 0 dan e-faktur mati | Sedang | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-05 | 7 kunci dilaporkan "mati" oleh gate (returns.grade_price_factors.*) — koreksi: wadahnya dibaca mesin… | Sedang | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-06 | 11 kunci punya nilai cadangan di kode yang berbeda dari bawaan registry; 3 rujukan pemakai menunjuk fungsi yang tidak ada | Rendah | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-07 | 13 kunci menawarkan lapisan pelanggan/barang, tetapi layar hanya menyediakan pilihan Grup dan PT | Sedang | KF-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-08 | Penjaga pengaturan milik repo hanya memeriksa 78 kunci lama, bukan 310 kunci registry | Rendah | KF-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-09 | Perubahan berjadwal ("berlaku sejak" di masa depan) tidak diaktifkan oleh penjadwal. Pembaca baru memakainya tepat waktu, tetapi pembaca lama baru… | Tinggi | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-10 | Sedikitnya 7 kunci menampilkan nilai khusus PT, tetapi pemakainya membaca nilai grup: finance.default_payment_term_code, inventory.default_uom,… | Tinggi | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-11 | Enam kunci berstatus aktif tidak menggerakkan mesin: empat role_home.* (halaman awal tiap peran — tidak ada pembacanya), tax.efaktur_enabled… | Tinggi | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-12 | Tombol "Default" pada cakupan PT menulis nilai bawaan sebagai nilai khusus PT (bukan kembali mengikuti grup), tanpa konfirmasi, dan melewati… | Sedang | KF-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-13 | Editor untuk kunci rumit belum layak untuk orang awam: approval.extra_levels berupa JSON mentah; 14 daftar diketik berkoma tanpa pemeriksaan isi;… | Sedang | KF-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-01 | Peran kustom beracuan Manajer dengan semua modul "Tidak ada" tetap mendapat 200 di 23 rute yang bagi Sopir 403: HPP rata-rata (/costing/wac),… | Tinggi | PR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-02 | Peran kustom yang diberi modul "Pengaturan, Pengguna & Hak Akses" bisa: menjadikan akunnya sendiri Admin (200), membuat akun Admin (200), mereset… | Tinggi | PR-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-03 | Izin tidak cukup: peran kustom tanpa peran acuan yang diberi izin tetap ditolak di 38 endpoint ber-require_role dan di gerbang nama peran di dalam… | Tinggi | PR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-04 | 107 endpoint hanya butuh login; 41 di antaranya menulis. Termasuk papan Meja Finance/Sales/Gudang, target dan skema insentif, seluruh pengaturan… | Sedang | PR-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-05 | Wewenang menyetujui PO dan tagihan pemasok ditentukan peringkat peran acuan (role_satisfies), bukan izin. Uji T10: peran kustom beracuan Manajer… | Tinggi | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-06 | Beranda, cakupan data ("hanya miliknya"), peringkat persetujuan, dan penerima notifikasi melekat pada nama/acuan peran dan tidak bisa diatur dari… | Sedang | PR-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-07 | 41 pasangan izin di matriks tidak pernah diperiksa server: 7 hanya dipakai layar untuk menampilkan tombol, 34 tidak dipakai sama sekali (mis.… | Sedang | PR-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-08 | Modul akses "Pengaturan, Pengguna & Hak Akses" menyatukan akun, peran, pengaturan, badan usaha, dan penjadwal dalam satu tombol tingkat. Dua modul… | Sedang | PR-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-09 | Pesan penolakan menampilkan nama teknis: "Permission ditolak: goods_receipt.view", "Role Anda: 'cr_…'" | Rendah | PR-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-10 | Satu pilihan izin merujuk sumber daya yang tidak ada (gl.view) | Rendah | PK-47 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-12 | Perubahan Admin atas izin peran bawaan ditimpa setiap server dinyalakan. Uji: Admin mencabut modul "Uang Masuk" dari Sales (izin kwitansi hilang)… | Tinggi | PR-T9 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-13 | Pindah-massal akun bisa mengosongkan Admin. POST /api/access/roles/admin/move-users ke peran lain dijawab 200; akun Admin aktif dari 1 menjadi 0,… | Tinggi | PR-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-14 | Matriks izin bawaan punya dua sumber yang bertentangan. Contoh: permissions_config.py menulis Sales hanya boleh *melihat* kwitansi (dengan catatan… | Sedang | PR-T9 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-15 | Menyetujui dan menolak PO tidak memeriksa PT. Uji T10: akun Finance bawaan yang hanya ditugaskan ke satu PT membuka PO milik PT lain → 404;… | Tinggi | PK-47 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-11 | Layar memakai izin di 269 tempat (can(), tetapi masih memakai nama peran di 117 tempat (53 roleIs( + 64 perbandingan role) | Sedang | PR-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-17 | GET /api/entities/count selalu galat 500: memakai nama include_test yang bukan parameternya | Sedang | PK-47 | open | belum dicek — diisi unit pemegang | — | — |
+| MB-02 | POST /api/interco/returns/{id}/approve dengan id yang tidak ada dijawab galat 500, bukan 404: hasil pencarian yang kosong langsung dibaca isinya,… | Rendah | PK-47 | open | belum dicek — diisi unit pemegang | — | — |
+| MB-01 | Layar tugas di HP memanggil GET /api/products/{id}, padahal rute itu hanya punya PATCH dan DELETE; galatnya ditelan sehingga data produk selalu kosong | Rendah | PK-47 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-16 | Kerangka aplikasi memanggil dua endpoint di setiap layar tanpa melihat izin peran, sehingga peran yang tidak memegang izinnya menerima penolakan… | Rendah | PR-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-05 | Aturan setuju-sendiri tidak satu sumber dan bawaannya melarang. 2 sakelar, 12 larangan ditulis mati, ≥ 14 pintu tanpa pemeriksaan; admin lolos di… | Tinggi | KF-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-33 | Pengelompokan & bahasa menu Pengaturan (§5). T | Sedang | KP-T9 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-36 | Tabel PTKP & tarif pajak penghasilan ditulis mati, sementara kunci hr.ptkp_table ditandai "tidak dipakai" padahal PTKP dipakai pada hitungan masa… | Rendah | PK-46 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-01 | Lima isian master PT tidak dibaca kode mana pun: skema penomoran, penanggung insentif, awal tahun fiskal, template CoA, induk grup. Wizard… | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-02 | Status PKP tidak bisa diubah dari layar setelah PT dibuat. T | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-03 | Penyetuju "Owner" bisa dipilih tetapi peran itu tidak ada; diperlakukan sama dengan Manajer. T | Tinggi | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-04 | Jenis aturan "Diskon (%)" tidak punya pembaca. T | Tinggi | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-06 | ≥ 6 mekanisme persetujuan hidup bersamaan; penyetuju ditentukan dengan tiga cara berbeda; matriks divisi ditulis mati. T | Tinggi | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-07 | Satu keputusan dinilai dua daftar peran. ACC desain: matriks ditulis mati dan rnd.spec_approval_roles; ACC sample: matriks dan… | Tinggi | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-08 | Aturan persetujuan khusus PT menggantikan seluruh jenjang grup untuk jenis dokumen itu; tidak ada pemeriksaan celah/tumpang-tindih rentang. T | Sedang | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-09 | Selang job berbasis menit tidak bisa diubah walau layar menerima. 11 job. T | Tinggi | KP-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-10 | Daftar kesiapan PT tidak lengkap dan satu tautannya salah. T | Tinggi | KP-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-11 | Termin bawaan per PT tidak dipakai saat membuat SO. T | Sedang | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-12 | Awalan, format, lebar, dan cakupan nomor dokumen ditulis mati di 90 titik; 18 awalan bernomor bersama tanpa kode PT (di antaranya retur jual/beli,… | Tinggi | KP-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-13 | lot.number_format tampil di Pusat Pengaturan tetapi nomor lot ditulis mati. T | Sedang | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-14 | Token mesin absen: dikirim utuh di daftar perangkat ke pemegang hr.view, disimpan polos, 12 heksadesimal; endpoint penerima absen hanya memeriksa… | Tinggi | KP-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-15 | Tiga standar penyimpanan rahasia: kunci AI dienkripsi; kunci RFID di-hash; token WhatsApp polos (dua koleksi). T | Sedang | KP-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-16 | Dua konfigurasi WhatsApp terpisah (penyedia, token, nomor): Penjadwal & Notifikasi, dan Pusat Dokumen. T | Sedang | KP-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-18 | Identitas & kop perusahaan ada di tiga tempat: master PT, document_branding, document_templates. Judul bawaan cetak lama ditulis "Kain Nusantara". T | Sedang | KP-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-19 | Teks penutup, footer, kota & slot tanda tangan, watermark bersifat global per jenis dokumen; tidak bisa beda per PT. Faktur tidak memuat rekening… | Sedang | KP-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-20 | Penerima notifikasi dan ambang hari ditulis mati; tab "Penerima Notifikasi" hanya memuat 2 kunci. T | Sedang | KP-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-21 | Jadwal, WhatsApp, dan eskalasi berlaku untuk seluruh grup, tidak per PT. T | Rendah | KP-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-22 | Pemeriksaan sebelum mengarsipkan PT tidak lengkap. Dokumen terbuka hanya dari 17 koleksi; hutang supplier, saldo kas/bank, karyawan, uang muka,… | Sedang | KP-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-23 | Validasi isian PT longgar: NPWP tanpa pola, mata uang teks bebas, tahun fiskal 13-45 lolos; is_group tidak punya isian di layar padahal dibaca… | Sedang | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-24 | PT baru lahir tanpa rekening, akun kas, gudang, pengguna, kop, periode; pembuatan bukan satu transaksi. T / I (ketidak-atomikan) | Sedang | KP-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-25 | Pesanan khusus: ambang persetujuan Rp10.000.000 ditulis mati; ambang Direksi (Rp50 jt) justru bisa diatur. T | Sedang | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-26 | Rantai persetujuan uang muka (Atasan → Pimpinan → Keuangan) ditulis mati; dua tahap terakhir hanya peran admin. T | Sedang | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-27 | Blokir kredit (terlambat > 14 hari) dan peringatan 80% batas kredit ditulis mati, di dua berkas. T | Sedang | KF-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-28 | Masa reservasi pesanan 3 hari ditulis mati. T | Sedang | KF-T7 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-29 | Pengaturan perusahaan yang letaknya di luar grup Pengaturan: jadwal bayar antar-PT (layar Antar-PT), WhatsApp dokumen + aturan kirim otomatis… | Sedang | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-30 | Akun biaya admin bank & titipan dana punya dua pengaturan: registry bank.charge_account_code / bank.holding_account_code dan Pemetaan Akun… | Sedang | KF-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-31 | AI: hidup/mati & model di dua tempat — Integrasi (anthropic.enabled/model, dipakai AI SDM) dan registry (ai.enabled, ai.model_main, dipakai Tanya… | Rendah | KP-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-32 | Kunci integrasi dijaga izin hr.manage_settings. T | Rendah | KP-T8 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-34 | Endpoint kop/branding tidak memeriksa apakah pengguna berhak atas PT yang disebut. T | Rendah | KP-T6 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-35 | Nomor tagihan jasa makloon (VBM-), kode karyawan (EMP-), dan pesanan khusus (SORD-) dibuat dengan "baca terakhir + 1", bukan deret atomik. T (cara… | Rendah | KP-T5 | open | belum dicek — diisi unit pemegang | — | — |
+| KF-UX | 28 temuan bahasa dan susunan layar Pusat Pengaturan (lampiran A) | Sedang | KF-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PR-UX | 44 temuan layar peran dan izin (lampiran B) | Sedang | PR-T6 | open | belum dicek — diisi unit pemegang | — | — |
+
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
 | ID usulan | Judul | Status | Laporan |
@@ -129,6 +405,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-11-13 | Implementer | [PK-01] Paket 2026-11-13 didaftarkan dari HEAD `fb6bc75`: audit keuangan 139 baris, temuan tambahan riset modul 48 baris, audit konfigurasi dan peran 69 baris (KF 13 + KF-UX, PR 16 + PR-UX, KP 36, MB 2); semua `open`, Fase = unit blueprint ([PK-01](2026-11-13/hasil/PK-01.md)) |
 | 2026-11-09 | Claude Code | P21 gelombang 3 perangkat (F printer CP30EN, G handheld C72, H performa gate) & P22 audit WMS-RFID + FIX-1…5 implemented_pending_review ([ringkasan](../audit/2026-11-09-wms-rfid/00-RINGKASAN.md)): 233 temuan (20 P0 — semua ditutup); verifikasi gabungan main vs dasar `cb9f924` 83 berkas uji lama → daftar gagal identik; uji baru semua paket lulus; keputusan diambil koordinator atas mandat pemilik ([daftar](../audit/2026-11-09-wms-rfid/KEPUTUSAN-KOORDINATOR.md)) |
 | 2026-11-09 | Claude Code | P20 persiapan RFID gelombang 2 implemented_pending_review ([laporan](../rfid/hasil/PREP-GELOMBANG-2.md)): D2 (gate → transaksi + antrean periksa) dan E (reader 0.5.0-lab) digabung lewat `integrasi-prep2`; perbaikan koordinator: merah palsu muatan rapat → INFO/kuning; uji pembanding main vs integrasi 59 berkas → daftar 91 gagal/error identik, +13 uji baru lulus; skrip V2 54/36; Jest 33/33; guardrail identik; 3 butir konfirmasi pemilik baru (KEPUTUSAN §9) |
 | 2026-11-09 | Claude Code | P19 persiapan RFID gelombang 1 implemented_pending_review ([laporan](../rfid/hasil/PREP-GELOMBANG-1.md)): 4 paket paralel A/B/C/D1 digabung lewat branch `integrasi-prep`; uji pembanding main vs integrasi 48 berkas → daftar gagal identik, +50 uji baru lulus; Jest 26/26; guardrail tidak naik (atomic BELUM DITINJAU 77→75); 6 butir keputusan pemilik baru |

@@ -1,0 +1,64 @@
+
+[1m[96mKN3 — UX BASELINE AUDIT (899 file)[0m
+
+[91m●[0m [1mcomponents/ListPageParts.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[91m●[0m [1mcomponents/PagedRows.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[93m○[0m [1mcomponents/ProductColorTriad.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[93m○[0m [1mfeatures/catalog/GenerateVariants.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[91m●[0m [1mfeatures/documents/DocumentsView.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[93m○[0m [1mfeatures/finance/AdvanceReportView.jsx[0m
+    [93m[WARN W1][0m baris 156: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[91m●[0m [1mfeatures/inspections/IntervalDefectGrid.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[93m○[0m [1mfeatures/pdf/PdfScriptTab.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[91m●[0m [1mfeatures/pettycash/ExpenseCategoriesView.jsx[0m
+    [91m[ERROR E1][0m Tabel data tanpa LOADING state (berkas ini menarik data sendiri)
+[91m●[0m [1mfeatures/pettycash/SettlementDetail.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[91m●[0m [1mfeatures/pos/PosStartGate.jsx[0m
+    [91m[ERROR E1][0m Tabel data tanpa LOADING state (berkas ini menarik data sendiri)
+[91m●[0m [1mfeatures/purchasing/makloon/MakloonMaterialLedger.jsx[0m
+    [91m[ERROR E1][0m Tabel data tanpa LOADING state (berkas ini menarik data sendiri)
+[91m●[0m [1mfeatures/rnd/SampleWorkOrderBox.jsx[0m
+    [91m[ERROR E1][0m Tabel data tanpa LOADING state (berkas ini menarik data sendiri)
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[93m○[0m [1mfeatures/sales/LogisticsCostRow.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[93m○[0m [1mfeatures/sales/ReturnReplacementPanel.jsx[0m
+    [93m[WARN W1][0m baris 45: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[93m○[0m [1mfeatures/sales/mobile/MobileCollectionTargets.jsx[0m
+    [93m[WARN W1][0m baris 173: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[91m●[0m [1mfeatures/sales/mobile/MobileMdApp.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[93m○[0m [1mfeatures/samples/SampleOrdersView.jsx[0m
+    [93m[WARN W1][0m baris 205: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[91m●[0m [1mfeatures/wms/grn/GrnLineCard.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+[91m●[0m [1mfeatures/wms/repair/RepairOrderDetail.jsx[0m
+    [91m[ERROR E2][0m Tabel data tanpa penanganan KOSONG (tanpa penjaga & tanpa kalimat)
+
+[1m============================================================[0m
+  [91mERROR 12[0m  |  [93mWARN 9[0m  (di 899 file)
+[1m============================================================[0m
+
+  [91m[1m12 file melanggar baseline UX (loading/empty/chart).[0m
+    [91m·[0m components/ListPageParts.jsx
+    [91m·[0m components/PagedRows.jsx
+    [91m·[0m features/documents/DocumentsView.jsx
+    [91m·[0m features/inspections/IntervalDefectGrid.jsx
+    [91m·[0m features/pettycash/ExpenseCategoriesView.jsx
+    [91m·[0m features/pettycash/SettlementDetail.jsx
+    [91m·[0m features/pos/PosStartGate.jsx
+    [91m·[0m features/purchasing/makloon/MakloonMaterialLedger.jsx
+    [91m·[0m features/rnd/SampleWorkOrderBox.jsx
+    [91m·[0m features/sales/mobile/MobileMdApp.jsx
+    [91m·[0m features/wms/grn/GrnLineCard.jsx
+    [91m·[0m features/wms/repair/RepairOrderDetail.jsx
+
+kode keluar: 0
