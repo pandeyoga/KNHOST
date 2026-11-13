@@ -208,6 +208,38 @@ roll, sementara uji beban 346.700 roll) · SL-14 urutan kas/deposit pada refund 
 unik, rujukan nyasar ke koleksi `entities` · IV-10 hapus-buku susut memakai biaya tanpa landed · IV-11 sisa sen per
 penerimaan menumpuk · UX-18 kontrol mentah, istilah Inggris, isian uang tanpa pemisah ribuan.
 
+### 3.10 Lanjutan — aset tetap, anggaran, gaji dan insentif, kas kecil, pusat pajak (FY)
+
+Ditambahkan setelah laporan pertama; dibaca di `ec79643`. Sudah benar di area ini: cairkan uang muka dan bayar reimburse
+(klaim, kas dipakai ulang, penanda gagal); penyusutan idempoten per aset+periode; posting/bayar gaji memakai penjaga
+status; biaya kampanye punya kompensasi dan kunci idempotensi.
+
+| ID | Tingkat | Temuan | Bukti | Skenario | Rekomendasi |
+|---|---|---|---|---|---|
+| FY-01 ✔ | Tinggi | Aset tetap disimpan sebelum jurnal perolehan, tanpa penanda | `services/fixed_asset_service.py:129-137` | Tanggal perolehan di periode tertutup atau akun nonaktif → galat, baris aset tetap ada; ulang = aset kembar; aset tanpa jurnal tetap disusutkan dan bisa dilepas | Cek periode sebelum simpan; `gl_status` + tombol ulang; tolak susut/lepas bila belum berjurnal |
+| FY-02 ✔ | Tinggi | Jurnal periodik bertanggal hari posting, bukan periodenya | Penyusutan `services/fixed_asset_service.py:263-267` → `services/gl_service.py:2391`; gaji `:3097`; juga insentif dan LPJ | Susut Jan–Okt dijalankan November: 10 bulan beban masuk November. Gaji Oktober diposting 3 Nov masuk November. Periode masa depan bisa dijalankan hari ini | Tanggal = akhir periode + cek periode; tolak periode depan dan yang melompat |
+| FY-03 ✔ | Tinggi | Perolehan aset selalu mengkredit kas (1-1100) tanpa transaksi kas; akun dari API tidak divalidasi | `services/gl_service.py:2346-2362`; form tanpa pilihan sumber dana `features/finance/FixedAssetsParts.jsx:94-105` | Aset lama atau aset kredit mengurangi kas di buku besar; aset lewat faktur supplier mengkredit kas dua kali; buku kas ≠ buku besar | Sumber dana wajib (kas+rekening / hutang / saldo awal); batasi akun |
+| FY-04 | Tinggi | Pindah aset antar-PT tidak atomik dan tidak idempoten | `services/fixed_asset_service.py:372, 399-408, 428-431, 444-446`; `routers/fixed_assets.py:188-199` | Periode PT pengirim tertutup atau klik ganda → aset dan utang antar-PT kembar di penerima, pengirim tanpa jurnal (kelas IC-01) | Klaim; cek periode dua PT; penjaga entitas di endpoint bayar |
+| FY-06 | Tinggi | Penggajian tidak bisa dihitung ulang atau dibatalkan | `services/hr_payroll_service.py:370-372, 489-510`; layar menjanjikan "bisa diubah HR" `features/hr/PayrollRunsView.jsx:101` | Setelah koreksi tunjangan/lembur, slip tetap angka lama; setelah posting tidak ada pembalikan | Hitung ulang draf; batal sebelum posting; void + jurnal balik sesudahnya |
+| FY-07 ✔ | Tinggi | Hutang BPJS (2-1700) dan PPh 21 (2-1800) hanya pernah dikredit; tidak ada alur setor | `services/gl_service.py:3084-3089` (satu-satunya pemakai kedua akun) | Setoran lewat layar Kas menjadi beban kedua dan hutangnya tidak pernah turun | Dokumen setor kewajiban (Dr hutang / Cr kas) per periode |
+| FY-05 | Sedang | Status aset `transferred` tidak dijaga saat diubah/dilepas lewat API | `services/fixed_asset_service.py:58-59, 174-176, 317` | Aset yang sudah pindah disusutkan lagi di PT lama | Tolak ubah/lepas |
+| FY-08 | Sedang | Hutang insentif: akrual dan gaji menghitung dari dua sumber berbeda; galat akrual ditelan | `services/gl_service.py:2909-2914, 3061-3067`; `services/hr_payroll_service.py:245-257` | Saldo 2-1500 menggantung atau berbalik; akrual manual pada mode beban = beban ganda | Satu sumber komisi; akrual gagal menggagalkan posting |
+| FY-09 | Sedang | Kontrol gaji: ajukan, sahkan, posting, bayar satu izin; status tengah bisa macet; akun bayar tidak dibatasi ke kas | `services/hr_payroll_service.py:475-486, 521-551`; `services/gl_service.py:3119-3124` | Satu orang menggaji sampai kas keluar | Pemisahan tugas; daftar putih akun kas |
+| FY-10 | Sedang | Anggaran kategori membaca tahun dari isian teks bebas "periode" LPJ | `services/budget_service.py:275-278, 327-329`; `features/pettycash/SettlementForm.jsx:102` | LPJ ber-periode teks hilang dari realisasi | Pakai tanggal jurnal |
+| FY-11 | Sedang | Angka anggaran salah: akun persediaan memakai mutasi bersih; PO terima-sebagian dihitung dua kali; mode gabungan membandingkan pagu per PT dengan realisasi gabungan | `services/budget_service.py:40-41, 263, 288, 339-345`; `routers/budgets.py:121-125` | KPI dan peringatan anggaran tidak bisa dipercaya | Realisasi = debit penerimaan; komitmen = sisa PO; hitung per PT |
+| FY-12 | Sedang | Anggaran hanya peringatan dan hanya di PO; pagu tanpa indeks unik dan tanpa jejak ubah | `services/budget_service.py:45-51`; `routers/purchase_orders.py:714-716`; `routers/budgets.py:99, 110` | Faktur non-PO, kas, LPJ, gaji lolos; pagu bisa dinaikkan tanpa bekas | Putuskan cakupan; riwayat pagu |
+| FY-13 | Sedang | Peta kategori→akun saat posting LPJ mengabaikan lapisan entitas | `services/cash_advance_service.py:118-120` vs `:82-92` | LPJ PT-A terposting ke akun override PT-B | Pakai peta efektif per entitas |
+| FY-14 | Sedang | LPJ tanpa bukti, vendor, PPN; masih bisa diubah setelah diajukan | `schemas_cash_advance.py:71-75`; `services/cash_advance_service.py:454, 486` | Penyetuju menyetujui isi yang berubah; PPN nota jadi beban | Lampiran wajib; kunci isi saat diajukan |
+| FY-15 | Sedang | Pusat pajak: `entity_id=all` dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | `routers/tax_center.py:23-45, 76-83`; `routers/input_tax.py:41-47` | Akun satu PT membaca omzet, PPh 21, PPN seluruh grup | Penjaga entitas di semua endpoint |
+| FY-17 (layar) | Sedang | Aksi uang tanpa konfirmasi: setujui & posting LPJ, bayar reimburse, catat bayar pindah aset, hapus pagu, hapus rekaman PPh | `features/pettycash/SettlementDetail.jsx:52-61`; `features/finance/FixedAssetsView.jsx:345-347`; `features/finance/TaxCenterView.jsx:323-327` | Salah klik = jurnal atau kas keluar | Konfirmasi berisi nominal dan PT |
+| FY-18 (layar) | Sedang | Tanpa kunci idempotensi di layar aset, kas kecil, pajak (lanjutan UX-02) | `idempotency.py:21-25` | Kirim ulang menggandakan aset, PD/LPJ | Kunci di layar + awalan di server |
+| FY-16, 19, 20 | Rendah | Basis PPh 21 di rekap tidak sejalan buku; teks menyesatkan ("Sisa Dikembalikan" tanpa alurnya); sisa pembulatan susut tidak pernah disusutkan | `services/tax_center_service.py:24, 53`; `features/pettycash/SettlementDetail.jsx:102`; `services/fixed_asset_service.py:232, 257-259` | — | — |
+
+Duplikasi tambahan di area ini: tiga wadah "uang dipegang orang" (1-1400, 1-1280, 2-1650) sehingga 1-1400 tidak bisa
+dicocokkan dengan uang muka terbuka; tiga peta beban tunai (kategori LPJ, kata kunci kas manual, akun kampanye) — kata
+"gaji" di kas manual bertabrakan dengan penggajian; dua konsep anggaran (`budgets` dan anggaran kampanye); dua rekap PPN
+dengan penjaga entitas berbeda; rumus susut disalin dua kali; pindah aset = pola jurnal dua-buku keempat.
+
 ---
 
 ## 4. Duplikasi (struktur dan logika ganda)
