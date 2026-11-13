@@ -54,7 +54,7 @@ menjadi lintas-database, yaitu lebih sulit, bukan lebih mudah. Urutan yang disar
 - Saya periksa sendiri: konfigurasi MongoDB dan cadangan (`deploy/docker-compose.yml`, `deploy/backup.sh`), indeks
   (`indexes.py`), pustaka driver, dan menjalankan penjaga statis `scripts/guardrails/verify_atomic_claim.py`.
 - **Tidak dilakukan:** menjalankan backend, tes, atau kueri data. "Cek duplikasi" dan "cek kegagalan" di laporan ini
-  adalah cek **kode** (bisakah terjadi), bukan cek **data** (sudahkah terjadi). Untuk data nyata, jalankan kueri §12 di
+  adalah cek **kode** (bisakah terjadi), bukan cek **data** (sudahkah terjadi). Untuk data nyata, jalankan §12 di
   salinan database.
 - Belum ditelusuri: `penalty_service`, `payment_plan_service`, `finance_case_actions`, `fixed_asset_service`,
   `budget_service`, nota kredit amandemen, posting gaji; di UI: kas kecil, aset tetap, pajak, anggaran, tampilan HP.
@@ -447,9 +447,56 @@ penanda (satu pengecualian kecil: field `reason` ditulis setelah jurnal true-up 
 
 ---
 
-## 12. Kueri pemeriksaan data (baca-saja)
+## 12. Pemeriksaan data (baca-saja)
 
-**Belum dijalankan** — ditulis dari pembacaan kode. Uji dulu di salinan database (`mongosh`), bukan di produksi.
+### 12.1 Pakai dulu penjaga data yang sudah ada
+
+Repo sudah punya `scripts/verify_data_integrity.py` (229 invarian; tidak ada operasi tulis di dalamnya — dicek dengan
+grep; lapisan bisa dipilih dengan `--only`). Lapisan keuangan hanya butuh `MONGO_URL` dan `DB_NAME`, tidak butuh login
+API. Jalankan pada **salinan** data nyata (pulihkan cadangan ke nama database lain), dari dalam container backend:
+
+```bash
+docker compose -f docker-compose.dev.yml exec -e DB_NAME=<nama_db_salinan> backend \
+  python /app/scripts/verify_data_integrity.py \
+  --only gl,gl_audit,numbering,tax,asset,budget,payment,variance,bank,case,contrabon,interco,closing --timing
+```
+
+Catatan: penjaga ini dirancang untuk data seed bersih, jadi pada data nyata bisa menuduh dokumen lama; bacalah
+hasilnya sebagai daftar periksa, bukan vonis. Belum saya jalankan (tidak ada MongoDB di sesi ini). Kuitansi gerbang
+terakhir yang tersimpan (`memory/GATE_RECEIPT.json`) bertanggal 22 Sep 2026: 111 gerbang, hasil keseluruhan MERAH karena
+satu gerbang (INV-GATE-01 anti-residu); `verify_data_integrity` saat itu lulus pada data seed. Tidak ada kuitansi yang
+lebih baru di repo.
+
+**Cakupan penjaga itu terhadap temuan audit** (menurut deskripsi invariannya; isi tiap invarian tidak saya telusuri
+baris demi baris):
+
+| Kelas masalah | Invarian yang ada | Menangkap? |
+|---|---|---|
+| Jurnal antar-PT sebelah (IC-01) | INV-IC-01 (pasangan jurnal di dua buku), INV-IC-08 (retur) | Ya untuk jual-beli dan retur; settlement lewat INV-IC-04 |
+| Piutang ≠ utang antar-PT (IC-06, IC-07) | INV-IC-02, INV-IC-04 | Ya |
+| Eliminasi (IC-03, IC-04) | INV-IC-03 (kondisi saat ini) | Tidak untuk laporan historis dan rantai A→B→C |
+| Kontrabon (SL-01, SL-12) | INV-CB-01…04 | Sebagian — total dan potongan ganda ya; kas tanpa jurnal tidak |
+| Titipan bank tanpa jurnal (SL-03), biaya bank (SL-04) | INV-BNK-03, INV-BNK-04 | Ya |
+| Jurnal ganda per dokumen | INV-GL-DUP-01, INV-CASH-02 | Ya, tetapi membuang tipe pembalik → **pembalikan ganda (GL-01) tidak** |
+| Jurnal tidak seimbang | GL-1 | Hanya selisih > Rp 0,50 → **selisih 1 sen (GL-07) tidak** |
+| Persediaan vs akun 1-1300 (IV-01, 02, 06) | GL-3 / INV-GL-DRIFT | Hanya peringatan (WARN), bukan gagal |
+| Nomor kembar, counter tertinggal | INV-NUM-01, INV-NUM-02 | Ya |
+| Jurnal menyusup ke periode tertutup; kontrol ganda buka periode | INV-CLS-01, INV-CLS-02 | Ya (INV-CLS-02 akan memerah bila admin menyetujui usulnya sendiri — GL-06) |
+| Pesanan terkirim tanpa jurnal pendapatan; pembayaran yatim | INV-GL-REV-01, INV-AR-02 | Ya |
+| Total aging piutang vs akun 1-1200; hutang vs akun 2-1100; deposit vs 2-1400 | INV-AR-01 (hanya bocor ke entitas "all" dan saldo negatif) | **Tidak** |
+| Faktur supplier/landed cost/kas bayar tanpa jurnal (GL-02, GL-03, IV-04) | — | **Tidak** |
+| GR/IR menggantung (IV-03); roll scrap masih bernilai (IV-02); HPP dari roll berbiaya 0 (IV-07) | — | **Tidak** |
+| Dokumen berpenanda gagal di luar panel; kunci saga tertinggal | — | **Tidak** |
+| Jurnal manual di buku PT lain (IC-05) | — | Tidak bisa dari data (jurnalnya sah secara bentuk) |
+
+Batas penjaga itu sendiri: jurnal dimuat dengan `to_list(200000)` (`scripts/verify_data_integrity.py:1113`), jadi di
+atas 200.000 jurnal pemeriksaannya terpotong tanpa peringatan.
+
+### 12.2 Kueri tambahan untuk yang belum tercakup
+
+**Belum dijalankan** — ditulis dari pembacaan kode. Uji dulu di salinan database (`mongosh`), bukan di produksi. Kueri
+1–3, 9–10 tumpang-tindih dengan penjaga di 12.1 dan berguna bila ingin melihat datanya langsung; kueri 4–8 dan 11–17
+menutup celah di tabel atas.
 
 ```js
 // 1. Indeks unik yang wajib ada: uq_je_source_active, uq_number, uq_entity_doctype
@@ -540,7 +587,8 @@ penggabungan beberapa koleksi; rumusannya ada di laporan agen dan sebaiknya dibu
 
 ## 13. Urutan kerja yang disarankan
 
-1. Jalankan kueri §12 di salinan data nyata — mengetahui mana yang **sudah** terjadi menentukan prioritas.
+1. Jalankan penjaga data yang sudah ada (§12.1), lalu kueri tambahan (§12.2), di salinan data nyata — mengetahui mana
+   yang **sudah** terjadi menentukan prioritas.
 2. Keputusan pemilik §10 (terutama 1–4).
 3. Kritis: IC-01, SL-01.
 4. Tinggi yang murah: IC-05 (validasi entitas), GL-04 (cek tanggal tutup), GL-01 (satu penanda pembalik), SL-03
