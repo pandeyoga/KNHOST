@@ -42,7 +42,7 @@ async def list_users(
     Tanpa param `page`/`page_size` tetap mengembalikan array telanjang supaya
     konsumen lama (AdminView, gate kontrak API) tidak patah.
     """
-    await require_permission(request, "user", "view")
+    actor = await require_permission(request, "user", "view")
     page, page_size, q, _sort = get_page_params(request, default_size=25)
     query: Dict[str, Any] = {}
     if entity_id:
@@ -58,10 +58,28 @@ async def list_users(
         rows, total = await fetch_page(
             db.users, query, page, page_size, sort_field="created_at", sort_dir=-1,
             projection={"_id": 0, "password_hash": 0})
-        return envelope(await svc.enrich_users(rows), total, page, page_size)
+        return envelope(await _with_can_manage(actor, await svc.enrich_users(rows)), total, page, page_size)
     rows = await db.users.find(query, {"_id": 0, "password_hash": 0}).sort(
         "created_at", -1).to_list(200)
-    return await svc.enrich_users(rows)
+    return await _with_can_manage(actor, await svc.enrich_users(rows))
+
+
+async def _with_can_manage(actor: Dict[str, Any], rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """PR-T1 — `can_manage` per akun supaya layar mematikan tombol ubah/reset/nonaktifkan yang akan ditolak server."""
+    from services.access_guard import manageable_roles
+    allowed = await manageable_roles(actor)
+    for r in rows:
+        r["can_manage"] = allowed is None or (r.get("role") in allowed)
+    return rows
+
+
+@router.get("/users/manageable-roles")
+async def manageable_roles_of_actor(request: Request) -> Dict[str, Any]:
+    """PR-T1 — peran yang boleh diberikan/dikelola pelaku. `all: true` = semua (Admin)."""
+    actor = await require_permission(request, "user", "view")
+    from services.access_guard import manageable_roles
+    allowed = await manageable_roles(actor)
+    return {"all": allowed is None, "roles": sorted(allowed or [])}
 
 
 @router.get("/users/count")
@@ -121,6 +139,8 @@ async def get_user(user_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/users")
 async def create_user(payload: UserCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "user", "create")
+    from services.access_guard import assert_can_manage_account   # PR-T1 — tidak bisa memberi peran di luar daftar
+    await assert_can_manage_account(actor, new_role=payload.role)
     from services.text_normalize import nama_orang
     user, info = await svc.create_user({**payload.model_dump(), "name": nama_orang(payload.name)})   # K-1
     await audit(actor["name"], "user_created", "user", user["id"],
@@ -142,6 +162,9 @@ async def update_user(user_id: str, payload: GenericPatch,
             status_code=400,
             detail="Status akun diubah lewat tombol Nonaktifkan / Aktifkan kembali, "
                    "bukan lewat pembaruan biasa.")
+    from services.access_guard import assert_can_manage_account   # PR-T1
+    await assert_can_manage_account(actor, target_user=await svc.get_user_or_404(user_id),
+                                    new_role=(payload.data or {}).get("role"))
     after = await svc.update_user(user_id, payload.data or {})
     await audit(actor["name"], "user_updated", "user", user_id,
                 {"changed": after.get("changed_fields", []),
@@ -161,6 +184,8 @@ async def update_user(user_id: str, payload: GenericPatch,
 async def deactivate_user(user_id: str, request: Request) -> Dict[str, Any]:
     """E2.4 — NONAKTIFKAN akun (soft). Baris tidak pernah dihapus."""
     actor = await require_permission(request, "user", "delete")
+    from services.access_guard import assert_can_manage_account   # PR-T1
+    await assert_can_manage_account(actor, target_user=await svc.get_user_or_404(user_id))
     user = await svc.set_status(user_id, "inactive")
     await audit(actor["name"], "user_deactivated", "user", user_id,
                 {"status": "inactive",
@@ -174,6 +199,8 @@ async def deactivate_user(user_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/users/{user_id}/reactivate")
 async def reactivate_user(user_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "user", "update")
+    from services.access_guard import assert_can_manage_account   # PR-T1
+    await assert_can_manage_account(actor, target_user=await svc.get_user_or_404(user_id))
     user = await svc.set_status(user_id, "active")
     await audit(actor["name"], "user_reactivated", "user", user_id,
                 {"status": "active"}, scope_entity_id=user.get("home_entity_id", ""))
@@ -185,6 +212,8 @@ async def reset_password(user_id: str, body: UserResetPasswordBody,
                          request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "user", "update")
     user = await svc.get_user_or_404(user_id)
+    from services.access_guard import assert_can_manage_account   # PR-T1 — tidak bisa mereset sandi Admin
+    await assert_can_manage_account(actor, target_user=user)
     result = await svc.reset_password(user_id, body.new_password)
     # Password TIDAK pernah masuk jejak audit — hanya faktanya.
     await audit(actor["name"], "user_password_reset", "user", user_id,
@@ -198,6 +227,8 @@ async def revoke_sessions(user_id: str, request: Request) -> Dict[str, Any]:
     """Paksa login ulang (mis. setelah penugasan badan usaha diubah manual di DB)."""
     actor = await require_permission(request, "user", "update")
     user = await svc.get_user_or_404(user_id)
+    from services.access_guard import assert_can_manage_account   # PR-T1
+    await assert_can_manage_account(actor, target_user=user)
     revoked = await svc.revoke_sessions(user_id, "dicabut admin")
     await audit(actor["name"], "user_sessions_revoked", "user", user_id,
                 {"sessions_revoked": revoked},

@@ -114,6 +114,14 @@ export const accessModules = () =>
 export const accessRoles = () =>
   axios.get(`${API}/access/roles`).then((r) => r.data?.roles || []);
 
+// PR-T1 — daftar peran + bolehkah pelaku mengubah "Boleh mengelola akun dengan peran".
+export const accessRolesFull = () =>
+  axios.get(`${API}/access/roles`).then((r) => ({ roles: r.data?.roles || [], canEditAssignable: Boolean(r.data?.can_edit_assignable) }));
+
+// PR-T1 — peran yang boleh diberikan pelaku saat membuat/mengubah akun ({all, roles}).
+export const manageableRoles = () =>
+  axios.get(`${API}/users/manageable-roles`).then((r) => r.data || { all: false, roles: [] });
+
 export const accessRole = (id) =>
   axios.get(`${API}/access/roles/${id}`).then((r) => r.data);
 

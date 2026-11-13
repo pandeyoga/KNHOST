@@ -17,7 +17,7 @@ import { AccountLocationScope } from "./AccountLocationScope";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import { entityFull } from "../../../utils/entityLabel";
 import { createUser, patchUser, availableEmployees, ROLE_OPTIONS, CROSS_ROLES,
-  errText } from "./entityApi";
+  errText, manageableRoles } from "./entityApi";
 
 export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   onClose, onSaved, onError }) {
@@ -47,6 +47,20 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const isCross = CROSS_ROLES.includes(form.role);
+  // PR-T1 — pilihan peran hanya yang boleh dikelola pelaku (null = semua). Peran akun yang sedang diubah tetap
+  // tampil supaya isian tidak kosong.
+  const [allowedRoles, setAllowedRoles] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    manageableRoles()
+      .then((r) => { if (alive) setAllowedRoles(r.all ? null : new Set(r.roles || [])); })
+      .catch(() => { if (alive) setAllowedRoles(null); });
+    return () => { alive = false; };
+  }, []);
+  const roleOptions = ROLE_OPTIONS.filter((r) => !allowedRoles || allowedRoles.has(r.value) || (editing && r.value === user?.role));
+  useEffect(() => {
+    if (!editing && allowedRoles && !allowedRoles.has(form.role) && roleOptions[0]) set({ role: roleOptions[0].value });
+  }, [allowedRoles]);
 
   useEffect(() => {
     let alive = true;
@@ -206,8 +220,13 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
             <label className="kicker">Peran</label>
             <KNSelect className="field" data-testid="account-form-role"
                       value={form.role} onValueChange={(v) => set({ role: v })}
-                      options={ROLE_OPTIONS.map((r) => ({
+                      options={roleOptions.map((r) => ({
                         value: r.value, label: `${r.label} — ${r.scope}` }))} />
+            {allowedRoles && (
+              <p className="text-[10px] text-[#8E8E93]" data-testid="account-form-role-limited">
+                Hanya peran yang boleh Anda kelola yang ditampilkan.
+              </p>
+            )}
             <p className="text-[10px] text-[#8E8E93]">
               {isCross
                 ? "Peran ini otomatis boleh melihat SEMUA badan usaha aktif (pengawasan grup)."

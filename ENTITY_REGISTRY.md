@@ -2531,6 +2531,11 @@ Router:      routers/admin.py
 Schema:      schemas.py → PermissionUpdate
 Component:   AdminView.jsx (tab Permissions)
 Struktur:    {id: "default", matrix: {role: {module: [actions]}}}
+Field lain:  hidden_views {role: [nav id]}, cross_entity {role: bool},
+             assignable_roles {<id peran pengelola>: [<id peran>]} — PR-T1: peran yang akunnya boleh dikelola
+             pemegang peran pengelola (buat/ubah/reset sandi/nonaktifkan/cabut sesi). Tanpa kunci = tidak boleh
+             mengelola akun siapa pun. `admin` tidak pernah disimpan sebagai isi; Admin selalu boleh semua.
+             Hanya Admin yang mengubahnya (`PATCH /api/access/roles/{rid}` field `assignable_roles`).
 
 ⚠️ Hanya ADA 1 document dengan id="default"
 ⚠️ Fallback: DEFAULT_PERMISSIONS dari permissions_config.py

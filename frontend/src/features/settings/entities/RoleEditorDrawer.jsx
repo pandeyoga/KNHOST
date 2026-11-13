@@ -25,9 +25,16 @@ const permsOf = (src) => {
 };
 const levelsFromPerms = (perms, modules) => Object.fromEntries(modules.map((m) => [m.id, levelOf(perms, m)]));
 
-export default function RoleEditorDrawer({ role, template, roles, modules, labels, onClose, onSaved, onRefresh, onError }) {
+export default function RoleEditorDrawer({ role, template, roles, modules, labels, canEditAssignable = false, onClose, onSaved, onRefresh, onError }) {
   const editing = Boolean(role?.id);
   const locked = Boolean(role?.locked);
+  // PR-T1 — server menolak mengubah peran yang lebih luas dari peran pelaku (atau peran pelaku sendiri).
+  const blocked = editing && !locked && role.can_manage === false;
+  const readOnly = locked || blocked;
+  const originalAssignable = useMemo(() => new Set(role?.assignable_roles || []), [role]);
+  const [assignable, setAssignable] = useState(() => new Set(role?.assignable_roles || []));
+  const assignableChanged = [...new Set([...assignable, ...originalAssignable])].some((v) => assignable.has(v) !== originalAssignable.has(v));
+  const toggleAssignable = (id) => setAssignable((a) => { const n = new Set(a); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const custom = editing ? Boolean(role.custom) : true;
   const originalPerms = useMemo(() => permsOf(role || template), [role, template]);
   const original = useMemo(() => Object.fromEntries(Object.entries(levelsFromPerms(originalPerms, modules)).map(([k, v]) => [k, v.level])), [originalPerms, modules]);
@@ -72,9 +79,10 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const counts = LEVELS.map((l) => ({ ...l, n: modules.filter((m) => levels[m.id] === l.id).length }));
   const nameError = custom && label.trim().length < 2 ? "Nama peran minimal 2 karakter." : "";
   const nothingOn = modules.every((m) => levels[m.id] === "none");
-  const canSave = !locked && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || (!editing) || label !== role?.label || description !== (role?.description || ""));
+  const managesAccounts = ["create", "update"].some((a) => (perms?.user || []).includes(a));
+  const canSave = !readOnly && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || (!editing) || label !== role?.label || description !== (role?.description || ""));
 
-  const dirty = !locked && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || label !== initLabel || description !== initDesc);
+  const dirty = !readOnly && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || label !== initLabel || description !== initDesc);
   const requestClose = () => { if (busy) return; if (dirty) setDiscard(true); else onClose?.(); };
   // Fase 3 · P1 — INV-UI-10: Esc lewat tumpukan lapisan bersama (dropdown di dalam laci menutup dirinya saja).
   // Urutan tutup tetap: dialog buang-perubahan → konfirmasi → dialog bahaya → laci. Callback stabil (ref) supaya
@@ -107,12 +115,14 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
           ...(custom ? { label: label.trim(), description: description.trim() } : {}),
           permissions: perms, hidden_views: [...hidden], expected_version: role.version,
           ...(crossChanged ? { cross_entity: cross } : {}),
+          ...(canEditAssignable && assignableChanged ? { assignable_roles: [...assignable] } : {}),
         });
         onSaved?.(`Hak akses peran “${res.label}” disimpan. ${res.users} akun terpengaruh — berlaku otomatis dalam ≤1 menit.`);
       } else {
         res = await createAccessRole({ label: label.trim(), description: description.trim(), base_role: baseRole, permissions: perms,
           ...(crossTouched ? { cross_entity: cross } : {}) });
         if (hidden.size) res = await patchAccessRole(res.id, { hidden_views: [...hidden] });
+        if (canEditAssignable && managesAccounts && assignable.size) res = await patchAccessRole(res.id, { assignable_roles: [...assignable] });
         onSaved?.(`Peran “${res.label}” dibuat. Berikan ke akun lewat tab Akun & Akses.`);
       }
     } catch (e) {
@@ -173,7 +183,13 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
               <p className="text-[11px] text-[#6B6B73]" data-testid="role-editor-builtin-note">{role.description}</p>
             )}
 
-            {!locked && (
+            {blocked && (
+              <div className="flex items-start gap-1.5 rounded-md border border-[#F5D9A8] bg-[#FEF7EC] p-2.5" data-testid="role-editor-no-manage">
+                <Lock size={13} className="mt-0.5 shrink-0 text-[#8C4A00]" />
+                <p className="text-[11px] text-[#3C3C43]">Peran Anda tidak diberi wewenang mengelola akun/peran ini. Peran ini hanya bisa diubah Admin.</p>
+              </div>
+            )}
+            {!readOnly && (
               <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-2" data-testid="role-editor-tools">
                 <Copy size={12} className="text-[#0058CC]" />
                 <span className="text-[10.5px] font-semibold text-[#3A3A3C]">Salin dari peran:</span>
@@ -206,14 +222,14 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                 <div className="space-y-1.5">
                   {g.items.map((m) => (
                     <RoleModuleRow key={m.id} module={m} value={levels[m.id]} original={original[m.id]}
-                                   partial={levelInfo[m.id]?.partial} disabled={locked || busy}
+                                   partial={levelInfo[m.id]?.partial} disabled={readOnly || busy}
                                    onChange={(v) => setModuleLevel(m, v)}
                                    advanced={!!advanced[m.id]}
-                                   onToggleAdvanced={locked ? null : () => setAdvanced((s) => ({ ...s, [m.id]: !s[m.id] }))}>
+                                   onToggleAdvanced={readOnly ? null : () => setAdvanced((s) => ({ ...s, [m.id]: !s[m.id] }))}>
                       <div className="mt-2 space-y-2">
-                        <RoleNavTree module={m} hidden={hidden} original={originalHidden} disabled={locked || busy}
+                        <RoleNavTree module={m} hidden={hidden} original={originalHidden} disabled={readOnly || busy}
                                      off={levels[m.id] === "none"} onToggle={toggleView} onSetMany={setViews} />
-                        <RoleAdvancedPanel module={m} perms={perms} original={originalPerms} labels={labels} disabled={locked || busy}
+                        <RoleAdvancedPanel module={m} perms={perms} original={originalPerms} labels={labels} disabled={readOnly || busy}
                                            onToggle={onToggleAction(m)} onSetResource={onSetResource(m)} />
                       </div>
                     </RoleModuleRow>
@@ -235,7 +251,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
               </div>
               <label className={`mt-2 flex items-start gap-2 rounded-md border p-2 ${cross ? "border-[#C9DBF7] bg-[#F2F7FF]" : "border-[#EFF0F2] bg-[#FAFBFC]"}`}
                      data-testid="role-editor-cross-entity">
-                <input type="checkbox" className="mt-0.5" checked={cross} disabled={locked || busy} data-testid="role-editor-cross-entity-toggle"
+                <input type="checkbox" className="mt-0.5" checked={cross} disabled={readOnly || busy} data-testid="role-editor-cross-entity-toggle"
                        onChange={(e) => { setCross(e.target.checked); setCrossTouched(true); }} />
                 <span className="text-[10.5px] text-[#3C3C43]">
                   <b>Akses semua badan usaha (lintas PT)</b><br />
@@ -248,13 +264,32 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                   )}
                 </span>
               </label>
-              {editing && <RoleAccountsList role={role} roles={roles} canMove={!locked} onMoved={onRefresh} onError={onError} />}
+              {editing && <RoleAccountsList role={role} roles={roles} canMove={!readOnly} onMoved={onRefresh} onError={onError} />}
               {!locked && (
                 <RoleNotifPreview roleId={editing ? role.id : ""} baseRole={baseRole} permissions={perms} saved={(editing ? role.turn_alerts : template?.turn_alerts) || []} />
               )}
               {baseRole && !editing && <p className="mt-1 text-[10.5px] text-[#6B6B73]">Menu dasar mengikuti peran acuan: <b>{roles.find((r) => r.id === baseRole)?.label}</b>.</p>}
               {nothingOn && <p className="mt-1 text-[10.5px] text-[#A8221A]" data-testid="role-editor-nothing">Belum ada modul yang dinyalakan.</p>}
             </div>
+            {managesAccounts && !locked && (
+              <div className="rounded-md border border-[#EFF0F2] bg-white p-2.5" data-testid="role-editor-assignable">
+                <p className="kicker mb-0.5">Boleh mengelola akun dengan peran</p>
+                <p className="mb-1.5 text-[10.5px] text-[#6B6B73]">
+                  Pemegang peran ini hanya bisa membuat, mengubah, dan mereset sandi akun yang perannya dicentang di sini.
+                  Kosong = tidak bisa mengelola akun siapa pun.
+                </p>
+                {!canEditAssignable && <p className="mb-1 text-[10px] text-[#8E8E93]" data-testid="role-editor-assignable-readonly">Hanya Admin yang bisa mengubah daftar ini.</p>}
+                <div className="grid gap-0.5">
+                  {roles.filter((r) => !r.locked).map((r) => (
+                    <label key={r.id} className="flex items-center gap-1.5 text-[10.5px] text-[#3C3C43]">
+                      <input type="checkbox" checked={assignable.has(r.id)} disabled={!canEditAssignable || busy}
+                             data-testid={`role-editor-assignable-${r.id}`} onChange={() => toggleAssignable(r.id)} />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <RoleMenuPreview modules={modules} levels={levels} baseRole={editing ? role.base_role : baseRole} perms={perms} hidden={hidden} />
             <div className="flex items-start gap-1.5 rounded-md border border-[#C9DBF7] bg-[#F2F7FF] p-2.5">
               <Info size={12} className="mt-0.5 shrink-0 text-[#0058CC]" />
@@ -268,13 +303,13 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
 
         <div className="flex flex-wrap items-center gap-2 border-t border-[#EFF0F2] px-4 py-3">
           {editing && custom && (
-            <button type="button" className="secondary-button !text-[#A8221A]" data-testid="role-editor-delete" disabled={busy || !role.deletable}
+            <button type="button" className="secondary-button !text-[#A8221A]" data-testid="role-editor-delete" disabled={busy || !role.deletable || blocked}
                     title={role.deletable ? "" : "Masih dipakai akun — pindahkan akunnya dulu."} onClick={() => setDanger("delete")}>
               <Trash2 size={13} /> Hapus peran
             </button>
           )}
           {editing && !custom && !locked && role.modified && (
-            <button type="button" className="secondary-button" data-testid="role-editor-reset" disabled={busy} onClick={() => setDanger("reset")}>
+            <button type="button" className="secondary-button" data-testid="role-editor-reset" disabled={busy || blocked} onClick={() => setDanger("reset")}>
               <RotateCcw size={13} /> Kembalikan ke bawaan
             </button>
           )}

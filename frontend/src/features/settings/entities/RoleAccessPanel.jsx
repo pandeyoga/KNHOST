@@ -7,7 +7,9 @@ import { Plus, ShieldCheck, Lock, Users, Sparkles, Pencil, Copy } from "lucide-r
 
 import RoleEditorDrawer from "./RoleEditorDrawer";
 import useListSearch from "@/hooks/useListSearch";
-import { accessModules, accessRoles, errText } from "./entityApi";
+import { accessModules, accessRolesFull, errText } from "./entityApi";
+
+const NO_MANAGE_HINT = "Peran Anda tidak diberi wewenang mengelola akun/peran ini.";
 
 function RoleCard({ role, onOpen, onDuplicate }) {
   const lv = Object.values(role.levels || {});
@@ -46,6 +48,9 @@ function RoleCard({ role, onOpen, onDuplicate }) {
         {role.cross_entity && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F2F7FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
         {role.base_role_label && <span className="text-[#8E8E93]">acuan: {role.base_role_label}</span>}
       </div>
+      {role.can_manage === false && !role.locked && (
+        <p className="text-[10px] text-[#8E8E93]" data-testid={`role-card-no-manage-${role.id}`}>{NO_MANAGE_HINT}</p>
+      )}
     </div>
   );
 }
@@ -55,13 +60,15 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
   const [modules, setModules] = useState([]);
   const [labels, setLabels] = useState({});
   const [loading, setLoading] = useState(true);
+  const [canEditAssignable, setCanEditAssignable] = useState(false);
   const [editor, setEditor] = useState(null);   // null | {} (baru) | {template} (duplikat) | role
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [r, m] = await Promise.all([accessRoles(), accessModules()]);
-      setRoles(r); setModules(m.modules || []);
+      const [full, m] = await Promise.all([accessRolesFull(), accessModules()]);
+      const r = full.roles;
+      setRoles(r); setModules(m.modules || []); setCanEditAssignable(full.canEditAssignable);
       setLabels({ resource_labels: m.resource_labels || {}, action_labels: m.action_labels || {} });
       return r;
     } catch (e) { onError?.(errText(e, "Gagal memuat daftar peran.")); return null; }
@@ -130,6 +137,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
       {editor && (
         <RoleEditorDrawer key={`${editor.id || editor.template?.id || "new"}:${editor.version || ""}`}
                           role={editor.id ? editor : null} template={editor.template || null} roles={roles} modules={modules} labels={labels}
+                          canEditAssignable={canEditAssignable}
                           onClose={() => setEditor(null)}
                           onSaved={(msg) => { setEditor(null); onChanged?.(msg); load(); }}
                           onRefresh={refreshEditor}

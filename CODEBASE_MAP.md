@@ -278,6 +278,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Berkas | Baris | Ringkas |
 |---|---:|---|
+| `access_guard.py` | 111 | PR-T1 — penjaga kenaikan hak: kelola akun hanya untuk peran di `permission_settings.assignable_roles`; tidak bisa merakit/mengubah peran yang lebih luas dari peran pelaku. Admin dikecualikan. |
 | `advance_report_service.py` | 111 | KEB-PDPT (Sesi #090) — Laporan Uang Muka Pelanggan. |
 | `ai_actions.py` | 222 | Tanya KN — draf tindakan dari jawaban AI. Tidak ada yang tersimpan/terkirim sebelum pengguna menekan Setujui. |
 | `ai_chat_service.py` | 345 | Tanya KN F2.2 — orkestrator chat bebas (OpenAI Responses API + function calling). |

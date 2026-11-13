@@ -132,18 +132,46 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "turn_alerts": _turn_alerts(perms),
         "updated_at": doc.get("updated_at", ""),
         "hidden_views": sorted(_HIDDEN.get(rid, [])),
+        # PR-T1 — peran yang akunnya boleh dikelola pemegang peran ini (permission_settings.assignable_roles).
+        "assignable_roles": sorted(_ASSIGNABLE.get(rid, [])),
+        "assignable_roles_labels": [reg.role_label(r) for r in sorted(_ASSIGNABLE.get(rid, []))],
         "version": _version(perms, _HIDDEN.get(rid, []), doc, entry.get("cross_entity", False)),
     }
 
 
 _HIDDEN: Dict[str, List[str]] = {}
+_ASSIGNABLE: Dict[str, List[str]] = {}
 
 
 async def load_hidden_views() -> Dict[str, List[str]]:
-    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "hidden_views": 1}) or {}
+    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "hidden_views": 1,
+                                                                    "assignable_roles": 1}) or {}
     _HIDDEN.clear()
     _HIDDEN.update(rec.get("hidden_views") or {})
+    _ASSIGNABLE.clear()
+    _ASSIGNABLE.update(rec.get("assignable_roles") or {})
     return _HIDDEN
+
+
+async def current_permissions(rid: str) -> Dict[str, List[str]]:
+    """PR-T1 — izin peran yang berlaku sekarang (matriks tersimpan, atau bawaan bila belum pernah diubah)."""
+    current = (await _matrix()).get(rid)
+    return deepcopy(current if current is not None else DEFAULT_PERMISSIONS.get(rid, {}))
+
+
+async def projected_permissions(rid: Optional[str], payload: Dict[str, Any]) -> Dict[str, List[str]]:
+    """PR-T1 — izin HASIL simpan (buat: acuan + tingkat; ubah: izin sekarang + tingkat), tanpa menyimpan.
+    Urutannya sama dengan `create_custom`/`update_role`: izin rinci (`permissions`) menimpa tingkat."""
+    if rid is None:
+        base = (payload.get("base_role") or "").strip()
+        perms = apply_levels(await current_permissions(base) if base else {}, _clean_levels(payload.get("levels")))
+    else:
+        perms = await current_permissions(rid)
+        if payload.get("levels") is not None:
+            perms = apply_levels(perms, _clean_levels(payload["levels"]))
+    if payload.get("permissions") is not None:
+        perms = _clean_perms(payload["permissions"])
+    return perms
 
 
 async def hidden_views_of(rid: str) -> List[str]:
@@ -266,6 +294,17 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         # sama dengan bawaan → simpan sebagai "ikut bawaan" supaya perubahan bawaan/peran acuan tetap mengalir
         await _set_cross_entity(rid, None if want == reg.cross_entity_default(rid) else want)
         changes["cross_entity"] = want
+    if payload.get("assignable_roles") is not None:   # PR-T1 — router memastikan hanya Admin yang sampai di sini
+        wanted = [str(r) for r in payload["assignable_roles"]]
+        bad = [r for r in wanted if r not in reg.ROLES or r in LOCKED_ROLES]
+        if bad:
+            raise HTTPException(status_code=400, detail=(
+                "Peran Admin tidak bisa dimasukkan ke daftar kelola akun." if any(r in LOCKED_ROLES for r in bad)
+                else f"Peran tidak dikenal: {', '.join(bad)}"))
+        await db.permission_settings.update_one({"id": "default"},
+                                                {"$set": {f"assignable_roles.{rid}": sorted(set(wanted))}},
+                                                upsert=True)
+        changes["assignable_roles"] = sorted(set(wanted))
     if payload.get("permissions") is not None:
         before = matrix.get(rid) or DEFAULT_PERMISSIONS.get(rid, {})
         matrix[rid] = _clean_perms(payload["permissions"])
@@ -322,7 +361,8 @@ async def delete_custom(rid: str) -> Dict[str, Any]:
     matrix.pop(rid, None)
     await _save_matrix(matrix)
     await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": "",
-                                                                         f"cross_entity.{rid}": ""}})
+                                                                         f"cross_entity.{rid}": "",
+                                                                         f"assignable_roles.{rid}": ""}})
     await db.custom_roles.delete_one({"id": rid})
     await sync_registry()
     return {"id": rid, "deleted": True}
@@ -345,17 +385,27 @@ async def preview_role(payload: Dict[str, Any]) -> Dict[str, Any]:
             "levels": levels_of(perms)}
 
 
-async def move_users(rid: str, to_role: str) -> Dict[str, Any]:
+async def move_users(rid: str, to_role: str, *, exclude_user_id: str = "") -> Dict[str, Any]:
     await sync_registry()
     if rid not in reg.ROLES or to_role not in reg.ROLES:
         raise HTTPException(status_code=404, detail="Peran tidak ditemukan.")
+    if rid in LOCKED_ROLES:   # PR-T1 — tanpa ini Admin terakhir bisa ikut terpindah (penjaga admin terakhir lolos)
+        raise HTTPException(status_code=400,
+                            detail="Akun Admin tidak bisa dipindahkan massal. Ubah satu per satu di Akun & Akses.")
     if to_role == rid:
         raise HTTPException(status_code=400, detail="Peran tujuan sama dengan peran asal.")
     if to_role in LOCKED_ROLES:
         raise HTTPException(status_code=400, detail="Akun tidak bisa dipindahkan massal ke peran Admin.")
-    ids = [u["id"] for u in await db.users.find({"role": rid}, {"_id": 0, "id": 1}).to_list(500)]
+    query: Dict[str, Any] = {"role": rid}
+    if exclude_user_id:   # akun pelaku sendiri tidak ikut dipindah
+        query["id"] = {"$ne": exclude_user_id}
+    ids = [u["id"] for u in await db.users.find(query, {"_id": 0, "id": 1}).to_list(500)]
     if ids:
-        await db.users.update_many({"role": rid}, {"$set": {"role": to_role, "updated_at": now_iso()}})
+        await db.users.update_many({"role": rid, "id": {"$in": ids}},
+                                   {"$set": {"role": to_role, "updated_at": now_iso()}})
+        from services.user_admin_service import revoke_sessions   # sama seperti ubah peran satu akun
+        for uid in ids:
+            await revoke_sessions(uid, reason="role_moved")
     return {"from_role": rid, "to_role": to_role, "to_role_label": reg.role_label(to_role),
             "moved": len(ids), "user_ids": ids}
 

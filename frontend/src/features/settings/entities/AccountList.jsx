@@ -53,6 +53,9 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
   const canAddUser = can(currentUser?.permissions, "user", "create");
   const canEditUser = can(currentUser?.permissions, "user", "update");
   const canDeactivateUser = can(currentUser?.permissions, "user", "delete");
+  // PR-T1 — server menolak mengelola akun yang perannya di luar daftar kelola pelaku (`can_manage` per baris).
+  const NO_MANAGE = "Peran Anda tidak diberi wewenang mengelola akun/peran ini.";
+  const blockedOf = (u) => u.can_manage === false;
   const activeEntities = useMemo(
     () => entities.filter((e) => e.status === "active"), [entities]);
 
@@ -347,6 +350,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-edit-${u.id}`}
+                                  disabled={blockedOf(u)} title={blockedOf(u) ? NO_MANAGE : undefined}
                                   onClick={() => setEditing(u)}>
                             <Pencil size={11} /> Ubah
                           </button>
@@ -354,16 +358,16 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-reset-${u.id}`}
-                                  title="Setel ulang kata sandi" aria-label={`Setel ulang kata sandi ${u.name}`}
-                                  disabled={busy === u.id} onClick={() => doReset(u)}>
+                                  title={blockedOf(u) ? NO_MANAGE : "Setel ulang kata sandi"} aria-label={`Setel ulang kata sandi ${u.name}`}
+                                  disabled={busy === u.id || blockedOf(u)} onClick={() => doReset(u)}>
                             <KeyRound size={12} />
                           </button>
                         )}
                         {canEditUser && u.has_active_session && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-revoke-${u.id}`}
-                                  title="Cabut semua sesi" aria-label={`Cabut semua sesi ${u.name}`}
-                                  disabled={busy === u.id}
+                                  title={blockedOf(u) ? NO_MANAGE : "Cabut semua sesi"} aria-label={`Cabut semua sesi ${u.name}`}
+                                  disabled={busy === u.id || blockedOf(u)}
                                   onClick={async () => {
                                     if (!(await askConfirm({ title: `Cabut semua sesi ${u.name}?`,
                                       message: "Akun ini keluar dari semua perangkat dan harus masuk lagi.",
@@ -376,8 +380,8 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {canDeactivateUser && u.status === "active" && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-deactivate-${u.id}`}
-                                  title="Nonaktifkan akun" aria-label={`Nonaktifkan akun ${u.name}`}
-                                  disabled={busy === u.id}
+                                  title={blockedOf(u) ? NO_MANAGE : "Nonaktifkan akun"} aria-label={`Nonaktifkan akun ${u.name}`}
+                                  disabled={busy === u.id || blockedOf(u)}
                                   onClick={async () => {
                                     if (!(await askConfirm({ title: `Nonaktifkan akun ${u.name}?`,
                                       message: "Akun tidak bisa masuk lagi; datanya tetap tersimpan dan bisa diaktifkan kembali.",
@@ -391,7 +395,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                         {canEditUser && u.status !== "active" && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-reactivate-${u.id}`}
-                                  disabled={busy === u.id}
+                                  disabled={busy === u.id || blockedOf(u)} title={blockedOf(u) ? NO_MANAGE : undefined}
                                   onClick={() => act(reactivateUser, u.id,
                                     `Akun ${u.name} aktif kembali.`)}>
                             <RotateCcw size={11} /> Aktifkan
