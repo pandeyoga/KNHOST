@@ -5,28 +5,28 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | # | ID | Judul | Prasyarat | Status | Commit | Laporan | Catatan |
 |---|---|---|---|---|---|---|---|
 | 1 | PK-01 | Garis dasar gate dan pendaftaran temuan ke tracker | — | selesai | `fce265c` | [PK-01](../reviews/2026-11-13/hasil/PK-01.md) |  |
-| 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | siap |  |  |  |
+| 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | selesai | `ebfd17d` | [PK-02](../reviews/2026-11-13/hasil/PK-02.md) |  |
 | 3 | PK-03 | Cek data nyata (dijalankan pemilik) | — | tahan |  |  | Titik henti H3 |
 | 4 | PK-04 | Cadangan lebih sering dan uji pulih | — | tahan |  |  | Titik henti H2 |
-| 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | menunggu |  |  | Titik henti H1 sesudahnya |
-| 6 | PK-06 | Jurnal kembar antar-PT yang utuh dan bisa diulang | PK-02 | menunggu |  |  | Titik henti H1 sesudahnya |
-| 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | PK-02 | menunggu |  |  |  |
-| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | menunggu |  |  |  |
-| 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | menunggu |  |  |  |
-| 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | PK-02 | menunggu |  |  |  |
-| 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | PK-02 | menunggu |  |  |  |
-| 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | menunggu |  |  |  |
-| 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | PK-02 | menunggu |  |  |  |
-| 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | menunggu |  |  |  |
-| 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | menunggu |  |  |  |
-| 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | menunggu |  |  |  |
-| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | menunggu |  |  |  |
-| 17 | PK-14 | Indeks unik wajib ada | PK-02 | menunggu |  |  | Titik henti H6 bila data kembar |
-| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | menunggu |  |  |  |
-| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | menunggu |  |  |  |
-| 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | menunggu |  |  |  |
-| 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | menunggu |  |  |  |
-| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | menunggu |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
+| 5 | PK-05 | Bayar hutang pemasok lewat satu pintu yang aman | PK-02 | siap |  |  | Titik henti H1 sesudahnya |
+| 6 | PK-06 | Jurnal kembar antar-PT yang utuh dan bisa diulang | PK-02 | siap |  |  | Titik henti H1 sesudahnya |
+| 7 | PR-T1 | Tutup jalan menaikkan hak sendiri | PK-02 | siap |  |  |  |
+| 7b | PR-T9 | Perubahan izin peran bawaan bertahan setelah server dinyalakan ulang; satu sumber izin bawaan | PK-02 | siap |  |  |  |
+| 8 | KF-T1 | Izin kelola dan lihat pengaturan benar-benar berfungsi | PK-02 | siap |  |  |  |
+| 9 | PK-47 | Cacat kecil dari uji sapuan endpoint | PK-02 | siap |  |  |  |
+| 10 | PK-07 | Setoran karyawan pada kasus keuangan terbukukan dua kali | PK-02 | siap |  |  |  |
+| 11 | PK-08 | Denda keterlambatan dihitung dan dijurnal dengan benar | PK-02 | siap |  |  |  |
+| 12 | PK-09 | Entitas tidak boleh datang dari isi permintaan | PK-02 | siap |  |  |  |
+| 13 | PK-10 | Jurnal manual lewat validator pusat; satu penanda pembalik | PK-02 | siap |  |  |  |
+| 14 | PK-11 | Periode yang belum berakhir tidak bisa ditutup | PK-02 | siap |  |  |  |
+| 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | siap |  |  |  |
+| 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | siap |  |  |  |
+| 17 | PK-14 | Indeks unik wajib ada | PK-02 | siap |  |  | Titik henti H6 bila data kembar |
+| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | siap |  |  |  |
+| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | siap |  |  |  |
+| 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
+| 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | siap |  |  |  |
+| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
 | 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | menunggu |  |  |  |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | menunggu |  |  |  |
 | 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | menunggu |  |  |  |
@@ -82,7 +82,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | menunggu |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
-| 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | menunggu |  |  |  |
+| 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | siap |  |  |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | menunggu |  |  |  |
 | 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | menunggu |  |  |  |
 | 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | menunggu |  |  |  |
