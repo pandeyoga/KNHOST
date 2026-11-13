@@ -492,6 +492,46 @@ async def guard_doc(request: Request, collection: str, doc: Optional[Dict[str, A
     return ctx
 
 
+PARTY_FIELDS = ("entity_id", "seller_entity_id", "buyer_entity_id", "from_entity_id", "to_entity_id",
+                "payer_entity_id", "payee_entity_id", "dest_entity_id", "entity_from", "entity_to")
+PARTY_CHILDREN = ("seller", "buyer", "returner", "receiver")
+
+
+def doc_parties(doc: Optional[Dict[str, Any]]) -> set:
+    """PK-09 — semua PT yang terlibat pada dokumen antar-PT (kolom pihak di dokumen DAN di anak pasangannya)."""
+    out: set = set()
+    for src in [doc or {}] + [(doc or {}).get(c) for c in PARTY_CHILDREN]:
+        if isinstance(src, dict):
+            out |= {src.get(f) for f in PARTY_FIELDS if src.get(f) and src.get(f) != "all"}
+    return out
+
+
+async def guard_party(request: Request, doc: Optional[Dict[str, Any]], *, label: str = "Data",
+                      allow_no_party: bool = False) -> Dict[str, Any]:
+    """PK-09 (IC-11) — penjaga PIHAK untuk dokumen antar-PT: akun harus ditugaskan di salah satu PT yang terlibat.
+
+    Dokumen kosong → 404 "{label} tidak ditemukan."; tanpa pihak → 404 (kecuali `allow_no_party`); tanpa irisan dengan
+    penugasan akun → 404 "Data tidak ditemukan untuk entitas ini". Mengembalikan dokumen."""
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"{label} tidak ditemukan.")
+    parties = doc_parties(doc)
+    if not parties:
+        if allow_no_party:
+            return doc
+        raise HTTPException(status_code=404, detail=f"{label} tidak ditemukan.")
+    ctx = await entity_ctx(request)
+    if not (parties & set(ctx.allowed_entity_ids)):
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
+    return doc
+
+
+def resolve_write_entity(ctx: EntityContext, requested: Optional[str]) -> str:
+    """PK-09 — PT untuk TULIS dari isi permintaan: `all` → 400; di luar penugasan → 403; kosong → PT aktif."""
+    if (requested or "") == "all" or (not requested and getattr(ctx, "active_entity_id", "") in ("", "all")):
+        raise HTTPException(status_code=400, detail="Pilih satu PT untuk tindakan ini.")
+    return resolve_requested_entity(ctx, requested)
+
+
 def resolve_list_scope(collection: str, query: Optional[Dict[str, Any]], ctx: EntityContext,
                        entity_id_param: Optional[str] = None) -> Dict[str, Any]:
     """Logika scope LIST yang baku & backward-compatible.

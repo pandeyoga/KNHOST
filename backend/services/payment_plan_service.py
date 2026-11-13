@@ -360,6 +360,7 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
             raise PlanError(f"Mode rencana '{payload['mode']}' tidak dikenal.")
         set_doc["mode"] = payload["mode"]
         set_doc["mode_label"] = MODE_LABEL.get(payload["mode"], payload["mode"])
+    push_doc: Dict[str, Any] = {}
     if payload.get("lines") is not None:
         lines = _normalize_lines(payload["lines"], total)
         okay, diff = check_total(lines, total, policy["tolerance"])
@@ -367,7 +368,17 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
             raise PlanError(
                 f"Jumlah seluruh baris belum sama dengan nilai dokumen (selisih {rupiah(diff)})."
                 .replace(",", "."))
+        # PK-09 E14 — status & terbayar baris BUKAN dari klien: diambil dari baris tersimpan ber-`seq` sama (baris baru:
+        # open, 0); baris lama disimpan ke riwayat beserta alasan dan pelaku.
+        old = {int(l.get("seq") or 0): l for l in (plan.get("lines") or [])}
+        for ln in lines:
+            prev = old.get(int(ln["seq"]))
+            ln["status"] = (prev or {}).get("status") or "open"
+            ln["paid_amount"] = round(float((prev or {}).get("paid_amount") or 0), 2)
         set_doc["lines"] = lines
+        push_doc["schedule_history"] = {"at": now_iso(), "by": actor.get("name", ""),
+                                        "reason": str(payload.get("reason") or "").strip(),
+                                        "lines_before": plan.get("lines") or []}
     if payload.get("penalty") is not None:
         p = payload["penalty"] or {}
         set_doc["penalty"] = {
@@ -377,7 +388,7 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
         }
     if payload.get("note") is not None:
         set_doc["note"] = str(payload["note"])
-    await db[COLL].update_one({"id": plan_id}, {"$set": set_doc})
+    await db[COLL].update_one({"id": plan_id}, {"$set": set_doc, **({"$push": push_doc} if push_doc else {})})
     return await recompute_paid(plan_id)
 
 

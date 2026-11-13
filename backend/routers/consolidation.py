@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx
+from entity_scope import doc_parties, entity_ctx, guard_party, resolve_requested_entity
 from services import consolidation_service as cons
 
 router = APIRouter(prefix="/api")
@@ -55,12 +55,19 @@ async def consolidation_summary(
 @router.get("/finance/consolidation/eliminations")
 async def list_eliminations(request: Request) -> List[Dict[str, Any]]:
     await require_permission(request, "accounting", "view")
-    return await cons.list_eliminations()
+    # PK-09 E43 — baris tanpa pihak (entri manual tingkat grup) tetap tampil; baris berpihak hanya bila salah satu
+    # pihaknya PT pengguna.
+    allowed = set((await entity_ctx(request)).allowed_entity_ids)
+    return [r for r in await cons.list_eliminations() if not doc_parties(r) or (doc_parties(r) & allowed)]
 
 
 @router.post("/finance/consolidation/eliminations")
 async def create_elimination(payload: ElimCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage")
+    ctx = await entity_ctx(request)   # PK-09 E44 — tiap PT yang diisi wajib dalam penugasan
+    for side in (payload.entity_from, payload.entity_to):
+        if side:
+            resolve_requested_entity(ctx, side)
     try:
         rec = await cons.create_elimination(payload.model_dump(), actor)
     except ValueError as e:
@@ -77,6 +84,9 @@ async def delete_elimination(elim_id: str, request: Request,
     # mengubah laporan konsolidasi grup, jadi alasannya harus bisa dibaca ulang di
     # Jejak Audit. Sebelumnya audit hanya mencatat "dihapus" tanpa sebab.
     actor = await require_permission(request, "accounting", "manage")
+    from db import db
+    await guard_party(request, await db.intercompany_eliminations.find_one({"id": elim_id}, {"_id": 0}),
+                      label="Entri eliminasi", allow_no_party=True)   # PK-09 E45
     ok = await cons.delete_elimination(elim_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Entri eliminasi tidak ditemukan.")

@@ -676,7 +676,10 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
     if any(not c for c in codes):
         raise ValueError("Setiap baris harus memilih akun.")
     # FN-06 — akun efektif badan usaha buku jurnal (global + override/akun khusus entitas).
-    eid = payload.entity_id or entity_id or active_entity_or(DEFAULT_ENTITY_ID)
+    # PK-09 (IC-05) — PT dari ROUTER (sudah diadu dengan penugasan); isi jurnal tidak boleh menunjuk PT lain.
+    if entity_id and payload.entity_id and payload.entity_id != entity_id:
+        raise ValueError("PT pada isi jurnal berbeda dengan PT yang sedang aktif.")
+    eid = entity_id or payload.entity_id or active_entity_or(DEFAULT_ENTITY_ID)
     accounts = await effective_accounts(codes, eid)
     for c in codes:
         if c not in accounts:

@@ -86,6 +86,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `assert_entity_access()` | Cegah akses lintas-entitas (anti-IDOR) untuk GET/{id}. |
 | `assert_active_entity_access()` | Isolasi detail SEKETAT daftarnya: dokumen harus milik badan usaha AKTIF. |
 | `guard_doc()` | Audit 2026-09-21 (KN-A01..A07, B29..B35) — penjaga entitas SATU BARIS untuk jalur TULIS. |
+| `doc_parties()` | PK-09 — semua PT yang terlibat pada dokumen antar-PT (kolom pihak di dokumen dan anak pasangan). |
+| `guard_party()` | PK-09 (IC-11) — penjaga PIHAK untuk dokumen antar-PT: akun harus ditugaskan di salah satu PT yang terlibat. |
+| `resolve_write_entity()` | PK-09 — PT untuk TULIS dari isi permintaan: `all` → 400; di luar penugasan → 403; kosong → PT aktif. |
 | `resolve_list_scope()` | Logika scope LIST yang baku & backward-compatible. |
 | `resolve_work_scope()` | FIX-1 (K-B1-01/02, B2a D1, B3a keputusan 6) — cakupan daftar PEKERJAAN FISIK. |
 | `resolve_scope_ids()` | Daftar entity_id dalam cakupan baca. Dipakai koleksi yang punya record |

@@ -116,9 +116,9 @@ async def test_PK02_IC05_pengguna_satu_pt_ditolak_penjaga_tulis(klien, akun, ses
     assert await jumlah("journal_entries", {"entity_id": "ent_kanda", "source_type": "manual"}) == 0
 
 
-@pytest.mark.xfail(strict=True, reason="IC-05 — entitas jurnal manual diambil dari isi permintaan, bukan konteks")
 async def test_PK02_IC05_entitas_dari_isi(aplikasi):
-    """Lapis layanan, persis bukti `skenario2.py`: konteks pemanggil PT A, isi permintaan menyebut PT B."""
+    """Lapis layanan, persis bukti `skenario2.py`: konteks pemanggil PT A, isi permintaan menyebut PT B.
+    IC-05 ditutup PK-09: layanan memakai PT dari router; isi berbeda → ditolak."""
     from schemas_finance import JournalEntryCreate
     a, b = await pt_uji("I5A"), await pt_uji("I5B")
     p = JournalEntryCreate(date="2026-11-05", description="uji entitas", entity_id=b, lines=[

@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from dependencies import audit, require_permission
-from entity_scope import assert_entity_access, entity_ctx, scope_value
+from entity_scope import assert_entity_access, entity_ctx, guard_doc, resolve_requested_entity, scope_value
 from services import payment_variance_service as pvs
 
 router = APIRouter(prefix="/api")
@@ -53,6 +53,8 @@ async def variance_meta(request: Request, entity_id: str = Query(""),
                         customer_id: str = Query("")) -> Dict[str, Any]:
     """Kebijakan berlaku + label alasan + kosakata pilihan (untuk dialog & layar)."""
     await require_permission(request, "payment_variance", "view")
+    if entity_id:   # PK-09 E21 — kebijakan PT lain tidak dibaca lewat kueri
+        entity_id = resolve_requested_entity(await entity_ctx(request), entity_id)
     return {
         "policy": await pvs.variance_policy(entity_id, customer_id),
         "reasons": await pvs.reasons(),
@@ -67,18 +69,17 @@ async def assess(body: AssessBody, request: Request) -> Dict[str, Any]:
     """Takar selisih SEBELUM kwitansi disimpan — sumber angka dialog Selisih Pembayaran."""
     await require_permission(request, "payment_variance", "view")
     funds = round(float(body.amount or 0) + float(body.use_deposit_amount or 0), 2)
+    ctx = await entity_ctx(request)   # PK-09 E22 — PT dari konteks terverifikasi, pelanggan dijaga
+    if body.customer_id:
+        from db import db
+        await guard_doc(request, "customers", await db.customers.find_one({"id": body.customer_id}, {"_id": 0}),
+                        strict=False, not_found="Pelanggan tidak ditemukan.")
     try:
         return await pvs.pre_assess(body.customer_id, funds,
                                     body.allocations or None, as_of=body.as_of or "",
-                                    entity_id=entity_of(request))
+                                    entity_id="" if ctx.active_entity_id == "all" else ctx.active_entity_id)
     except pvs.VarianceError as exc:
         raise _err(exc) from exc
-
-
-def entity_of(request: Request) -> str:
-    """Entitas aktif dari header (kalau ada) — dipakai membaca kebijakan berlapis."""
-    eid = request.headers.get("X-Entity-Id", "") or ""
-    return "" if eid == "all" else eid
 
 
 @router.get("/payment-variances")
@@ -146,6 +147,9 @@ async def by_receipt(receipt_id: str, request: Request) -> Dict[str, Any]:
 async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[str, Any]:
     """Putuskan selisih satu kwitansi (bisa saat dibuat, bisa belakangan dari antrean)."""
     actor = await require_permission(request, "payment_variance", "decide")
+    from db import db
+    await guard_doc(request, "ar_receipts", await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}),
+                    not_found="Kwitansi tidak ditemukan")   # PK-09 E23
     try:
         row = await pvs.decide_receipt(receipt_id, body.model_dump(), actor)
     except pvs.VarianceError as exc:
@@ -172,6 +176,8 @@ async def get_decision(decision_id: str, request: Request) -> Dict[str, Any]:
 async def reverse(decision_id: str, body: ReverseBody, request: Request) -> Dict[str, Any]:
     """Anulir keputusan (efek dibalik lewat jurnal pembalik; jejaknya tetap ada)."""
     actor = await require_permission(request, "payment_variance", "decide")
+    await guard_doc(request, "payment_variance_decisions", await pvs.get(decision_id),
+                    not_found="Keputusan selisih tidak ditemukan")   # PK-09 E24
     try:
         row = await pvs.reverse_decision(decision_id, body.reason, actor)
     except pvs.VarianceError as exc:

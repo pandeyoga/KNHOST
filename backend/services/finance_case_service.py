@@ -268,9 +268,14 @@ def _event(event: str, label: str, actor: str = "", note: str = "") -> Dict[str,
 
 async def create_case(payload: Dict[str, Any], actor: Dict[str, Any],
                       entity_ids: Optional[List[str]] = None,
-                      active_entity: str = "", auto: str = "") -> Dict[str, Any]:
+                      active_entity: str = "", auto: str = "",
+                      allow_no_entity: bool = False) -> Dict[str, Any]:
+    """`allow_no_entity` hanya untuk alat migrasi yang justru melaporkan uang tanpa pemilik PT (kasus `salah_entitas`
+    E7e): kasus tetap terlihat, tetapi tidak bisa diselesaikan (`assert_case_refs`) — hanya ditolak lalu dibuat ulang."""
     pb = playbook_or_fail(payload.get("case_type", ""))
     ent = (payload.get("entity_id") or active_entity or "").strip()
+    if (not ent or ent == GROUP_ENTITY) and not allow_no_entity:   # PK-09 E9 — uang kasus selalu milik satu PT
+        raise CaseError("Kasus keuangan harus milik satu PT. Pilih PT dulu.")
     if entity_ids is not None and ent and ent != GROUP_ENTITY and ent not in entity_ids:
         raise HTTPException(status_code=403, detail="Tidak berwenang membuat kasus entitas ini")
     src = payload.get("source") or {}
@@ -418,6 +423,51 @@ def _assert_authority(action: Dict[str, Any], amount: float, pol: Dict[str, Any]
     return need
 
 
+async def assert_case_refs(case: Dict[str, Any], payload: Dict[str, Any],
+                           entity_ids: Optional[List[str]] = None) -> None:
+    """PK-09 E10 — semua rujukan dari isi permintaan (pelanggan, pesanan, kwitansi, rekening, pemasok, PT pemilik)
+    wajib milik PT kasus (dan pelanggan kasus). Dipanggil SEBELUM wewenang dan klaim; pelanggaran → `CaseError`, tanpa
+    tulisan apa pun."""
+    ent = case.get("entity_id") or ""
+    if not ent or ent == GROUP_ENTITY:
+        raise CaseError("Kasus ini belum punya PT, jadi tidak bisa diselesaikan. Tolak lalu buat ulang di PT yang benar.")
+    case_cust = case.get("customer_id") or ""
+    req_cust = (payload.get("customer_id") or "").strip()
+    if req_cust:
+        cust = await db.customers.find_one({"id": req_cust}, {"_id": 0, "entity_id": 1}) or {}
+        if (case_cust and req_cust != case_cust) or (cust.get("entity_id") or ent) not in (ent, GROUP_ENTITY):
+            raise CaseError("Pelanggan pada permintaan berbeda dengan pelanggan kasus.")
+    eff_cust = case_cust or req_cust
+    order_ent = ent
+    if payload.get("action") == "settlement_antar_entitas":
+        owner = (payload.get("owner_entity_id") or "").strip()
+        if owner and entity_ids is not None and owner not in entity_ids:
+            raise CaseError("Anda tidak ditugaskan di PT pemilik tagihan yang dipilih.")
+        order_ent = owner or ent
+    oids = [payload.get(k) for k in ("order_id", "from_order_id", "to_order_id")]
+    oids += [a.get("order_id") for a in (payload.get("allocations") or [])]
+    for oid in [o for o in oids if o]:
+        o = await db.sales_orders.find_one({"id": oid}, {"_id": 0, "entity_id": 1, "customer_id": 1, "number": 1})
+        if not o or (o.get("entity_id") or "") != order_ent:
+            raise CaseError(f"Pesanan {(o or {}).get('number') or oid} bukan milik PT kasus ini.")
+        if eff_cust and (o.get("customer_id") or "") != eff_cust:
+            raise CaseError(f"Pesanan {o.get('number') or oid} bukan milik pelanggan kasus ini.")
+    rid = (payload.get("receipt_id") or "").strip()
+    if rid:
+        r = await db.ar_receipts.find_one({"id": rid}, {"_id": 0, "entity_id": 1, "customer_id": 1, "number": 1})
+        if not r or (r.get("entity_id") or "") != ent or (case_cust and (r.get("customer_id") or "") != case_cust):
+            raise CaseError(f"Kwitansi {(r or {}).get('number') or rid} bukan milik PT kasus ini.")
+    for aid in [payload.get(k) for k in ("account_id", "to_account_id") if payload.get(k)]:
+        acc = await db.bank_accounts.find_one({"id": aid}, {"_id": 0, "entity_id": 1, "name": 1})
+        if not acc or (acc.get("entity_id") or "") != ent:
+            raise CaseError(f"Rekening {(acc or {}).get('name') or aid} bukan milik PT kasus ini.")
+    sid = (payload.get("supplier_id") or "").strip()
+    if sid:
+        sup = await db.suppliers.find_one({"id": sid}, {"_id": 0, "entity_id": 1, "name": 1})
+        if not sup or (sup.get("entity_id") or GROUP_ENTITY) not in (ent, GROUP_ENTITY):
+            raise CaseError(f"Pemasok {(sup or {}).get('name') or sid} bukan milik PT kasus ini.")
+
+
 async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
                   entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Jalankan aksi playbook → dokumen turunan nyata → kasus ditutup."""
@@ -426,6 +476,7 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
         raise CaseError(f"Kasus {case['number']} sudah berstatus {case['status']}")
     pb = playbook_or_fail(case["case_type"])
     action = action_or_fail(case["case_type"], payload.get("action", ""))
+    await assert_case_refs(case, payload, entity_ids)   # PK-09 — sebelum wewenang & klaim
     pol = await policy(case.get("entity_id") or "")
     reason = await _reason_or_fail(payload.get("reason_code", ""),
                                    case.get("case_type", ""))

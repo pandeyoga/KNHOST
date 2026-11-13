@@ -77,7 +77,7 @@ def snapshot_from_bill(bill: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def eligible_vendor_bills(entity_id: str = "") -> List[Dict[str, Any]]:
+async def eligible_vendor_bills(entity_id: str = "", entity_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Vendor Bill ber-PPN (posted/paid) yang BELUM punya Faktur Masukan aktif."""
     q: Dict[str, Any] = {
         "status": {"$in": list(ELIGIBLE_BILL_STATUSES)},
@@ -89,6 +89,8 @@ async def eligible_vendor_bills(entity_id: str = "") -> List[Dict[str, Any]]:
     }
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
+    elif entity_ids is not None:   # PK-09 — gabungan = PT yang ditugaskan
+        q["entity_id"] = {"$in": list(entity_ids)}
     bills = await db.vendor_bills.find(q, {"_id": 0}).sort("bill_date", -1).to_list(500)
     rows = []
     for b in bills:
@@ -110,7 +112,7 @@ async def eligible_vendor_bills(entity_id: str = "") -> List[Dict[str, Any]]:
     return rows
 
 
-async def vat_summary(period: str = "", entity_id: str = "") -> Dict[str, Any]:
+async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran untuk satu periode (YYYY-MM).
 
     Keluaran = Σ ppn_amount Faktur Pajak Jual (tax_invoices, status != batal).
@@ -127,6 +129,9 @@ async def vat_summary(period: str = "", entity_id: str = "") -> Dict[str, Any]:
     if entity_id and entity_id != "all":
         out_q["entity_id"] = entity_id
         in_q["entity_id"] = entity_id
+    elif entity_ids is not None:   # PK-09 — gabungan = PT yang ditugaskan
+        out_q["entity_id"] = {"$in": list(entity_ids)}
+        in_q["entity_id"] = {"$in": list(entity_ids)}
 
     out_docs = [d for d in await db.tax_invoices.find(out_q, {"_id": 0}).to_list(5000) if _in_period(d)]
     in_docs = [d for d in await db.tax_invoices_in.find(in_q, {"_id": 0}).to_list(5000) if _in_period(d)]

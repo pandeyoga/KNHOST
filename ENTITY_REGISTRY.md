@@ -2727,7 +2727,9 @@ dengan `resolve_list_scope_inherit()` supaya baris global tidak hilang dari laya
 **Helper baru di `entity_scope.py`:**
 `resolve_list_scope_inherit()` · `scope_value()` (nilai siap-pakai `str`/`{"$in":[…]}`) ·
 `assert_write_entity()` (pagar mode “Semua Entitas” = hanya-baca) ·
-`resolve_requested_entity()` (payload boleh menyebut entitas, **wajib** ∈ allowed → tutup L21).
+`resolve_requested_entity()` (payload boleh menyebut entitas, **wajib** ∈ allowed → tutup L21) ·
+`guard_party()` / `doc_parties()` (PK-09 — penjaga pihak dokumen antar-PT) · `resolve_write_entity()` (PK-09 — tulis:
+`all` → 400, di luar penugasan → 403).
 
 **Pagar anti-regresi:** `scripts/audit_entity_isolation.py` (masuk `scripts/gate.sh`) —
 sapuan 301 endpoint GET × 2 sales beda entitas + IDOR 15 endpoint by-id + 3 pemeriksaan
@@ -3036,7 +3038,7 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | tax_invoices_in | tii_ | routers/input_tax.py | Faktur Pajak Masukan (PPN in). |
 | credit_notes | cn_ | routers/sales_returns.py, crm | Nota kredit pelanggan. |
 | amendment_reasons | amr_ | services/amendment_service.py, services/penalty_service.py | FASE G-1/G-2 — taksonomi label alasan koreksi & keputusan denda (dikelola admin). |
-| payment_plans | pyp_ | services/payment_plan_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. Scoped `entity_id`. |
+| payment_plans | pyp_ | services/payment_plan_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. Scoped `entity_id`. PK-09: `schedule_history[]` (`at` · `by` · `reason` · `lines_before`) — satu butir tiap ubah baris jadwal; status & terbayar baris tidak dari klien. |
 | penalties | pnl_ | services/penalty_service.py, routers/payment_plans.py | FASE G-2 — nota denda keterlambatan (`draft` tanpa jurnal → `issued`/`waived`/`adjusted`/`paid`), nomor `<ENT>/DN-DENDA-#####`. Scoped `entity_id`. PK-08: `days_prior` (hari yang sudah dimuat nota sebelumnya untuk baris yang sama; `billable_days` = hari nota ini saja, `days_late` kumulatif), `payments[]` (`id` pnp_ · `amount` · `method` · `account_id` · `cash_txn_id` · `status` pending→applied→done · `at` · `by` · `cash_doc`), `adjustments[]` (`seq` · `from` · `to` · `delta` · `reason_code` · `je_id` · `at` · `by`; jurnal pembalik `<id>:adjust:<seq>`). Bayar denda = kas `cash_transactions` `cash_pnl_<id pembayaran>` (`ref_type: "penalty"`, `ref_id` = nota, lawan 1-1270). |
 | payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. |
 | credit_overrides | cro_ | routers/sales_orders.py, so_approvals | Override limit kredit (pending→approved). |

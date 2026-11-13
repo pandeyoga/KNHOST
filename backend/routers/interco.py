@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from dependencies import audit, require_any_permission, require_permission
-from entity_scope import entity_ctx, resolve_scope_ids
+from entity_scope import entity_ctx, guard_party, resolve_scope_ids
 from schemas_interco import (
     IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
     IntercoSettlementCreate, IntercoTaxIssueIn,
@@ -45,25 +45,14 @@ def _biz_errors():
     return (ics.IntercoError, ics.IntercoConflict, TwinJournalError)
 
 
-_PARTY_FIELDS = ("entity_id", "seller_entity_id", "buyer_entity_id", "from_entity_id",
-                 "to_entity_id", "payer_entity_id", "payee_entity_id", "dest_entity_id")
+# PK-09 (IC-11) — penjaga pihak bersama: `entity_scope.guard_party` membaca kolom pihak di dokumen DAN di anak pasangan
+# (`seller`/`buyer`/`returner`/`receiver`). Pengganti `_guard_party` lokal yang dulu tidak pernah menolak transaksi.
 
 
-async def _guard_party(request: Request, doc: Optional[Dict[str, Any]], label: str) -> Dict[str, Any]:
-    """KN-B31 — aksi lanjutan antar-PT hanya boleh oleh akun yang ditugaskan di salah
-    satu badan usaha yang terlibat (penjual/pembeli). Dulu hanya pembuatan yang dijaga."""
-    if not doc:
-        raise HTTPException(status_code=404, detail=f"{label} tidak ditemukan.")
-    ctx = await entity_ctx(request)
-    # Retur antar-PT dikirim sebagai PASANGAN {returner, receiver} — pihak-pihaknya ada di dokumen kembarnya.
-    # Dulu pasangan dibaca langsung: tak satu pun kolom pihak ditemukan, jadi pagar ini selalu lolos.
-    # PK-06 — transaksi antar-PT juga dikirim sebagai pasangan {pair_id, seller, buyer}: pihaknya dibaca dari sisi
-    # penjual. Sebelumnya pagar ini tidak pernah menolak transaksi (temuan IC-11; penjaga endpoint lain → PK-09).
-    src = doc.get("returner") or doc.get("seller") or doc
-    parties = {src.get(f) for f in _PARTY_FIELDS if src.get(f)}
-    if parties and not (parties & set(ctx.allowed_entity_ids)):
+async def _assert_one_side(request: Request, a: str, b: str) -> None:
+    """PK-09 E39/E40 — salah satu PT di jalur harus PT pengguna; selain itu 404 (tidak membuka keberadaan pasangan)."""
+    if not ({a, b} & set((await entity_ctx(request)).allowed_entity_ids)):
         raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
-    return doc
 
 
 # ── Meta & ringkasan ─────────────────────────────────────────────────────────
@@ -112,14 +101,14 @@ async def create_ict(payload: IntercoCreate, request: Request) -> Dict[str, Any]
 @router.get("/interco/transactions/{interco_id}")
 async def get_ict(interco_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "interco", "view")
-    return await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    return await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
 
 
 @router.post("/interco/transactions/{interco_id}/confirm")
 async def confirm_ict(interco_id: str, payload: IntercoActionIn,
                      request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "approve")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.confirm(interco_id, actor)
     except _biz_errors() as exc:
@@ -133,7 +122,7 @@ async def confirm_ict(interco_id: str, payload: IntercoActionIn,
 async def ship_ict(interco_id: str, payload: IntercoActionIn,
                   request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "ship")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.ship(interco_id, actor.get("name", ""))
     except ics.IntercoError as exc:
@@ -147,7 +136,7 @@ async def ship_ict(interco_id: str, payload: IntercoActionIn,
 async def receive_ict(interco_id: str, payload: IntercoActionIn,
                       request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "receive")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.receive(interco_id, actor.get("name", ""))
     except ics.IntercoError as exc:
@@ -161,7 +150,7 @@ async def receive_ict(interco_id: str, payload: IntercoActionIn,
 async def invoice_ict(interco_id: str, payload: IntercoActionIn,
                      request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "invoice")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.invoice(interco_id, actor.get("name", ""))
     except ics.IntercoError as exc:
@@ -175,7 +164,7 @@ async def invoice_ict(interco_id: str, payload: IntercoActionIn,
 async def cancel_ict(interco_id: str, payload: IntercoActionIn,
                     request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "cancel")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.cancel(interco_id, actor.get("name", ""), payload.note)
     except ics.IntercoError as exc:
@@ -194,9 +183,7 @@ async def journal_ict(interco_id: str, request: Request) -> Dict[str, Any]:
     yang dipakai invarian INV-IC-01..05 (bukan tebakan dari daftar jurnal umum).
     """
     await require_permission(request, "interco", "view")
-    doc = await ics.get_one(interco_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Transaksi antar-PT tidak ditemukan.")
+    doc = await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")   # PK-09 E34
     return await ics.pair_journal(doc["pair_id"])
 
 
@@ -210,7 +197,7 @@ async def warehouse_task_ict(interco_id: str, payload: IntercoActionIn,
     di PT pembeli dinilai ulang ke harga beli internal.
     """
     actor = await require_permission(request, "interco", "ship")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     try:
         res = await ics.create_warehouse_task(interco_id, actor.get("name", ""))
     except ics.IntercoError as exc:
@@ -237,6 +224,7 @@ async def get_ica(from_entity_id: str, to_entity_id: str,
     untuk piutang). Peran wajib ikut karena satu pasangan PT bisa berdagang dua
     arah sekaligus — lihat KN-G6-ICA-CLOBBER."""
     await require_permission(request, "interco_finance", "view")  # FASE E-0 (L20)
+    await _assert_one_side(request, from_entity_id, to_entity_id)   # PK-09 E39
     try:
         return await ics.get_account(from_entity_id, to_entity_id, role=role)
     except ics.IntercoError as exc:
@@ -284,10 +272,7 @@ async def create_ics(payload: IntercoSettlementCreate,
 @router.get("/interco/settlements/{sid}")
 async def get_ics(sid: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "interco_finance", "view")  # FASE E-0 (L20)
-    doc = await ics.get_settlement(sid)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Settlement tidak ditemukan.")
-    return doc
+    return await guard_party(request, await ics.get_settlement(sid), label="Settlement")   # PK-09 E41
 
 
 # ── Kontrak internal helper (partner_kind="entity") ──────────────────────────
@@ -303,7 +288,9 @@ async def list_internal_contracts(request: Request, seller_entity_id: str = "",
     if buyer_entity_id:
         q["partner_id"] = buyer_entity_id
     rows = await db.supplier_contracts.find(q, {"_id": 0}).sort("updated_at", -1).to_list(500)
-    return rows
+    # PK-09 E42 — hanya kontrak yang salah satu pihaknya (penjual `entity_id` / pembeli `partner_id`) PT pengguna.
+    allowed = set((await entity_ctx(request)).allowed_entity_ids)
+    return [r for r in rows if r.get("entity_id") in allowed or r.get("partner_id") in allowed]
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -313,9 +300,7 @@ async def list_internal_contracts(request: Request, seller_entity_id: str = "",
 async def get_interco_tax(interco_id: str, request: Request) -> Dict[str, Any]:
     """Keadaan faktur pajak internal + ALASAN bila belum bisa diterbitkan."""
     await require_permission(request, "interco", "view")
-    doc = await ics.get_one(interco_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Transaksi antar-PT tidak ditemukan.")
+    doc = await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")   # PK-09 E35
     return await ictax.state(doc["pair_id"])
 
 
@@ -324,7 +309,7 @@ async def issue_interco_tax(interco_id: str, payload: IntercoTaxIssueIn,
                             request: Request) -> Dict[str, Any]:
     """Terbitkan PASANGAN faktur pajak internal: keluaran penjual + masukan pembeli."""
     actor = await require_permission(request, "interco", "tax")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     doc = await ics.get_one(interco_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Transaksi antar-PT tidak ditemukan.")
@@ -348,7 +333,7 @@ async def replace_interco_tax(interco_id: str, payload: IntercoReasonIn,
                               request: Request) -> Dict[str, Any]:
     """Faktur Pajak PENGGANTI memakai DPP bersih terbaru (mis. sesudah retur)."""
     actor = await require_permission(request, "interco", "tax")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     doc = await ics.get_one(interco_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Transaksi antar-PT tidak ditemukan.")
@@ -367,7 +352,7 @@ async def cancel_interco_tax(interco_id: str, payload: IntercoReasonIn,
                              request: Request) -> Dict[str, Any]:
     """Batalkan pasangan faktur pajak internal (wajib alasan)."""
     actor = await require_permission(request, "interco", "tax")
-    await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")
     doc = await ics.get_one(interco_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Transaksi antar-PT tidak ditemukan.")
@@ -404,6 +389,7 @@ async def list_interco_returns(request: Request, entity_id: str = "",
 async def returnable_lines(interco_id: str, request: Request) -> Dict[str, Any]:
     """Baris yang masih bisa diretur + alasan bila belum boleh (dipakai wizard)."""
     await require_permission(request, "interco", "view")
+    await guard_party(request, await ics.get_one(interco_id), label="Transaksi antar-PT")   # PK-09 E36
     try:
         return await icret.returnable(interco_id)
     except icret.IntercoReturnError as exc:
@@ -414,6 +400,7 @@ async def returnable_lines(interco_id: str, request: Request) -> Dict[str, Any]:
 async def create_interco_return(payload: IntercoReturnCreate,
                                 request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "return")
+    await guard_party(request, await ics.get_one(payload.interco_id), label="Transaksi antar-PT")   # PK-09 E37
     try:
         res = await icret.create(payload.model_dump(), actor.get("name", ""))
     except icret.IntercoReturnError as exc:
@@ -428,10 +415,7 @@ async def create_interco_return(payload: IntercoReturnCreate,
 @router.get("/interco/returns/{ret_id}")
 async def get_interco_return(ret_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "interco", "view")
-    doc = await icret.get_one(ret_id)
-    if not doc:
-        raise HTTPException(status_code=404, detail="Dokumen retur tidak ditemukan.")
-    return doc
+    return await guard_party(request, await icret.get_one(ret_id), label="Dokumen retur")   # PK-09 E38
 
 
 @router.post("/interco/returns/{ret_id}/approve")
@@ -449,7 +433,7 @@ async def approve_interco_return(ret_id: str, payload: IntercoActionIn,
     if not (_pair.get("returner") or {}).get("mandatory_accept"):
         # LN-140 — retur internal WAJIB TERIMA (R-10) boleh diterima gudang penerima; selain itu butuh `approve`.
         actor = await require_permission(request, "interco", "approve")
-    await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     from services.twin_journal import TwinJournalError
     try:
         res = await icret.approve(ret_id, actor)
@@ -469,7 +453,7 @@ async def return_warehouse_task(ret_id: str, payload: IntercoActionIn,
                                 request: Request) -> Dict[str, Any]:
     """Terbitkan tugas gudang ARAH BALIK supaya barangnya benar-benar kembali."""
     actor = await require_permission(request, "interco", "ship")
-    await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     try:
         res = await icret.create_warehouse_task(ret_id, actor.get("name", ""))
     except icret.IntercoReturnError as exc:
@@ -485,7 +469,7 @@ async def interco_return_roll_decisions(ret_id: str, payload: ReturnRollDecision
                                         request: Request) -> Dict[str, Any]:
     """23 Okt — Terima/Tolak per roll sebelum retur antar-PT disetujui (izin `interco.decide_rolls`)."""
     actor = await require_permission(request, "interco", "decide_rolls")
-    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    pair = await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     head = pair.get("returner") or pair
     ctx = await entity_ctx(request)
     seller_side = ctx.active_entity_id == head.get("seller_entity_id")
@@ -504,7 +488,7 @@ async def interco_return_attachment(ret_id: str, request: Request, file: UploadF
                                     roll_id: str = Form("")) -> Dict[str, Any]:
     """23 Okt — foto bukti retur antar-PT (per roll bila `roll_id` diisi); tersimpan di KEDUA dokumen kembar."""
     actor = await require_permission(request, "interco", "return")
-    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    pair = await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     head = pair.get("returner") or pair
     if head.get("status") == "cancelled":
         raise HTTPException(status_code=400, detail="Retur sudah dibatalkan — tidak bisa tambah lampiran.")
@@ -522,7 +506,7 @@ async def interco_return_attachment(ret_id: str, request: Request, file: UploadF
 @router.get("/interco/returns/{ret_id}/attachments/{att_id}/download")
 async def interco_return_attachment_download(ret_id: str, att_id: str, request: Request):
     await require_permission(request, "interco", "view")
-    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    pair = await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     from services import return_attachment_service as ras
     try:
         return await ras.download(pair.get("returner") or pair, att_id)
@@ -534,7 +518,7 @@ async def interco_return_attachment_download(ret_id: str, att_id: str, request: 
 async def cancel_interco_return(ret_id: str, payload: IntercoReasonIn,
                                 request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "return")
-    doc = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    doc = await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
     ctx = await entity_ctx(request)
     head = doc.get("returner") or doc
     if head.get("mandatory_accept") and ctx.active_entity_id == head.get("seller_entity_id"):
@@ -565,6 +549,7 @@ async def remind_settlement(payer_entity_id: str, payee_entity_id: str,
                             payload: IntercoActionIn, request: Request) -> Dict[str, Any]:
     """Kirim pengingat settlement untuk satu pasangan PT (tombol di layar)."""
     actor = await require_permission(request, "interco", "settle")
+    await _assert_one_side(request, payer_entity_id, payee_entity_id)   # PK-09 E40
     try:
         res = await icrem.remind_pair(payer_entity_id, payee_entity_id,
                                       actor.get("name", ""))

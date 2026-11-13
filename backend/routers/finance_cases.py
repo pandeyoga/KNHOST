@@ -97,9 +97,12 @@ async def get_case(case_id: str, request: Request,
 async def create_case(payload: CaseCreate, request: Request,
                       ctx: EntityContext = Depends(entity_ctx)) -> Dict[str, Any]:
     actor = await require_permission(request, "finance_case", "create")
+    body = payload.model_dump()
+    if body.get("entity_id") and body["entity_id"] != "all":   # PK-09 E9 — isi di luar penugasan → 403
+        from entity_scope import resolve_requested_entity
+        body["entity_id"] = resolve_requested_entity(ctx, body["entity_id"])
     try:
-        case = await svc.create_case(payload.model_dump(), actor, _ids(ctx),
-                                     ctx.active_entity_id or "")
+        case = await svc.create_case(body, actor, _ids(ctx), ctx.active_entity_id or "")
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(actor.get("name", ""), "finance_case_created", "finance_case", case["id"],

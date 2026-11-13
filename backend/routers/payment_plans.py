@@ -12,7 +12,28 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from dependencies import audit, require_permission
-from entity_scope import assert_entity_access, entity_ctx, scope_value
+from entity_scope import assert_entity_access, entity_ctx, guard_doc, resolve_requested_entity, scope_value
+
+_SOURCE_COLL = {"sales_order": "sales_orders"}
+
+
+async def _guard_source(request: Request, doc_type: str, doc_id: str) -> None:
+    """PK-09 E12/E13/E16 — pesanan sumber rencana harus milik PT pengguna (404 bila tidak)."""
+    coll = _SOURCE_COLL.get(doc_type or "sales_order")
+    if not coll:
+        return
+    from db import db as _db
+    await guard_doc(request, coll, await _db[coll].find_one({"id": doc_id}, {"_id": 0}),
+                    not_found="Dokumen sumber tidak ditemukan.")
+
+
+async def _guard_plan(request: Request, plan_id: str) -> None:
+    await guard_doc(request, "payment_plans", await plans.get(plan_id),
+                    not_found="Rencana pembayaran tidak ditemukan.")
+
+
+async def _guard_penalty(request: Request, penalty_id: str) -> None:
+    await guard_doc(request, "penalties", await penalties.get(penalty_id), not_found="Nota denda tidak ditemukan.")
 from services import payment_plan_service as plans
 from services import penalty_service as penalties
 
@@ -41,6 +62,7 @@ class PlanUpdate(BaseModel):
     lines: Optional[List[Dict[str, Any]]] = None
     penalty: Optional[Dict[str, Any]] = None
     note: Optional[str] = None
+    reason: Optional[str] = None        # PK-09 — dicatat di `schedule_history` bila baris diubah
 
 
 class VoidBody(BaseModel):
@@ -91,6 +113,12 @@ async def plan_meta(request: Request, entity_id: str = Query(""),
     """Pilihan mode, label, kebijakan berlaku, dan label alasan denda (untuk UI)."""
     await require_permission(request, "payment_plan", "view")
     from db import db
+    ctx = await entity_ctx(request)   # PK-09 E11
+    if entity_id:
+        entity_id = resolve_requested_entity(ctx, entity_id)
+    if customer_id:
+        await guard_doc(request, "customers", await db.customers.find_one({"id": customer_id}, {"_id": 0}),
+                        strict=False, not_found="Pelanggan tidak ditemukan.")
     # FASE G-2 — label alasan denda memakai taksonomi FASE G-1 (bisa ditambah admin).
     from services.amendment_service import ensure_reasons
     await ensure_reasons()
@@ -118,6 +146,7 @@ async def plan_meta(request: Request, entity_id: str = Query(""),
 async def plan_preview(body: PlanPreview, request: Request) -> Dict[str, Any]:
     """Pratinjau jadwal dari template TANPA menyimpan (dipakai builder di UI)."""
     await require_permission(request, "payment_plan", "view")
+    await _guard_source(request, body.doc_type, body.doc_id)   # PK-09 E12
     try:
         return await plans.preview(body.doc_type, body.doc_id, body.mode, body.model_dump())
     except plans.PlanError as exc:
@@ -140,6 +169,7 @@ async def list_plans(request: Request, entity_id: str = Query(""), status: str =
 async def plan_by_doc(doc_type: str, doc_id: str, request: Request) -> Dict[str, Any]:
     """Rencana aktif + ringkasan denda untuk satu dokumen (panel detail SO)."""
     await require_permission(request, "payment_plan", "view")
+    await _guard_source(request, doc_type, doc_id)   # PK-09 E16 — nota denda per doc_id hanya bila sumbernya milik PT
     ctx = await entity_ctx(request)
     plan = await plans.get_active(doc_type, doc_id)
     if plan:
@@ -155,6 +185,7 @@ async def plan_by_doc(doc_type: str, doc_id: str, request: Request) -> Dict[str,
 @router.post("/payment-plans")
 async def create_plan(body: PlanCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "payment_plan", "create")
+    await _guard_source(request, body.doc_type, body.doc_id)   # PK-09 E13
     try:
         plan = await plans.create_plan(body.doc_type, body.doc_id, body.model_dump(), actor)
     except plans.PlanError as exc:
@@ -168,6 +199,7 @@ async def create_plan(body: PlanCreate, request: Request) -> Dict[str, Any]:
 @router.patch("/payment-plans/{plan_id}")
 async def update_plan(plan_id: str, body: PlanUpdate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "payment_plan", "update")
+    await _guard_plan(request, plan_id)   # PK-09 E14
     try:
         plan = await plans.update_plan(plan_id, body.model_dump(exclude_none=True), actor)
     except plans.PlanError as exc:
@@ -180,6 +212,7 @@ async def update_plan(plan_id: str, body: PlanUpdate, request: Request) -> Dict[
 @router.post("/payment-plans/{plan_id}/void")
 async def void_plan(plan_id: str, body: VoidBody, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "payment_plan", "void")
+    await _guard_plan(request, plan_id)   # PK-09 E15
     try:
         plan = await plans.void_plan(plan_id, body.reason, actor)
     except plans.PlanError as exc:
@@ -232,6 +265,7 @@ async def get_penalty(penalty_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/penalties/{penalty_id}/issue")
 async def issue_penalty(penalty_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "issue")
+    await _guard_penalty(request, penalty_id)   # PK-09 E17
     try:
         row = await penalties.issue(penalty_id, actor)
     except _penalty_errors() as exc:
@@ -244,6 +278,7 @@ async def issue_penalty(penalty_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/penalties/{penalty_id}/waive")
 async def waive_penalty(penalty_id: str, body: WaiveBody, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "waive")
+    await _guard_penalty(request, penalty_id)   # PK-09 E18
     try:
         row = await penalties.waive(penalty_id, body.reason_code, body.note or "", actor)
     except _penalty_errors() as exc:
@@ -257,6 +292,7 @@ async def waive_penalty(penalty_id: str, body: WaiveBody, request: Request) -> D
 @router.post("/penalties/{penalty_id}/adjust")
 async def adjust_penalty(penalty_id: str, body: AdjustBody, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "adjust")
+    await _guard_penalty(request, penalty_id)   # PK-09 E19
     try:
         row = await penalties.adjust(penalty_id, body.amount, body.reason_code,
                                      body.note or "", actor)
@@ -271,6 +307,7 @@ async def adjust_penalty(penalty_id: str, body: AdjustBody, request: Request) ->
 @router.post("/penalties/{penalty_id}/pay")
 async def pay_penalty(penalty_id: str, body: PayBody, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "pay")
+    await _guard_penalty(request, penalty_id)   # PK-09 E20
     try:
         row = await penalties.pay(penalty_id, body.amount, body.method or "transfer", actor,
                                   account_id=body.account_id or "",

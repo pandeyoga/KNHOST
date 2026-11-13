@@ -10,7 +10,15 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
+from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access, guard_doc, resolve_requested_entity,
+                          resolve_write_entity)
+
+
+async def _opt_entity(request: Request, entity_id: Optional[str]) -> Optional[str]:
+    """PK-09 E2–E5 — `entity_id` kueri bila diisi harus PT yang ditugaskan (403); kosong = templat grup (tetap)."""
+    if not entity_id:
+        return entity_id
+    return resolve_requested_entity(await entity_ctx(request), entity_id)
 from schemas_finance import (
     GLAccountCreate, GLAccountUpdate, JournalEntryCreate, SuspenseReclassInput,
 )
@@ -38,6 +46,7 @@ async def list_gl_accounts(request: Request, active_only: bool = Query(False),
       plus akun khusus PT tersebut. Aman: posting JE tetap resolve by-code global.
     """
     await require_permission(request, "accounting", "view")
+    entity_id = await _opt_entity(request, entity_id)
     return await gl_service.list_accounts(active_only=active_only, entity_id=entity_id)
 
 
@@ -62,6 +71,7 @@ async def create_gl_account(payload: GLAccountCreate, request: Request,
     """Buat akun baru. `entity_id` = None → akun template global; `entity_id=<id>`
     → akun khusus PT (bisa akun baru atau override akun template)."""
     actor = await require_permission(request, "accounting", "manage")
+    entity_id = await _opt_entity(request, entity_id)
     try:
         acc = await gl_service.create_account(payload, entity_id=entity_id)
     except ValueError as e:
@@ -77,6 +87,7 @@ async def update_gl_account(code: str, payload: GLAccountUpdate, request: Reques
     """Ubah / nonaktifkan akun. Dengan `entity_id` → target override PT (buat baru
     kalau belum ada). Tanpa `entity_id` → akun template global."""
     actor = await require_permission(request, "accounting", "manage")
+    entity_id = await _opt_entity(request, entity_id)
     prev = await gl_service.get_account(code, entity_id=entity_id)
     acc = await gl_service.update_account(code, payload.model_dump(), entity_id=entity_id)
     if acc is None:
@@ -94,6 +105,7 @@ async def delete_gl_account(code: str, request: Request,
     """Hapus akun. Untuk override PT (`entity_id=<id>`), hanya menghapus override
     (template global tetap). Untuk akun template, cek unused."""
     actor = await require_permission(request, "accounting", "manage")
+    entity_id = await _opt_entity(request, entity_id)
     prev = await gl_service.get_account(code, entity_id=entity_id)
     try:
         await gl_service.delete_account(code, entity_id=entity_id)
@@ -149,13 +161,14 @@ async def create_journal(payload: JournalEntryCreate, request: Request) -> Dict[
     """Buat jurnal manual (double-entry seimbang) — ter-stamp entitas aktif."""
     actor = await require_permission(request, "accounting", "create")
     ctx = await entity_ctx(request)
+    eid = resolve_write_entity(ctx, payload.entity_id)   # PK-09 E1 (IC-05) — isi permintaan tidak menentukan PT
     # FASE G-5 — izin posting mundur ke periode tertutup (period.backdate).
     from dependencies import permission_matrix
     matrix = await permission_matrix()
     can_backdate = "backdate" in matrix.get(actor.get("role"), {}).get("period", [])
     try:
         je = await gl_service.create_manual_entry(payload, actor,
-                                                  entity_id=ctx.active_entity_id,
+                                                  entity_id=eid,
                                                   can_backdate=can_backdate)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -281,6 +294,7 @@ async def gl_inventory_drift_explain(request: Request,
     Tidak ada tebakan dan tidak ada jurnal yang diterbitkan di sini.
     """
     await require_permission(request, "accounting", "view")
+    entity_id = resolve_requested_entity(await entity_ctx(request), entity_id)   # PK-09 E6
     return await gl_service.inventory_drift_explain(entity_id)
 
 
@@ -322,11 +336,7 @@ async def gl_suspense_reclass(payload: SuspenseReclassInput, request: Request) -
     """Reklasifikasi saldo Suspense ke akun yang benar (JE seimbang, per entitas)."""
     actor = await require_permission(request, "accounting", "manage")
     ctx = await entity_ctx(request)
-    eid = payload.entity_id or ctx.active_entity_id
-    if not eid or eid == "all":
-        raise HTTPException(status_code=400, detail="Pilih entitas (PT) spesifik untuk reklasifikasi suspense.")
-    if eid not in ctx.allowed_entity_ids:
-        raise HTTPException(status_code=403, detail="Tidak memiliki akses ke entitas ini.")
+    eid = resolve_write_entity(ctx, payload.entity_id)   # PK-09 E7 — satu jalur: `all` 400, di luar penugasan 403
     try:
         je = await gl_service.reclass_suspense(
             amount=payload.amount, side=payload.side, target_account=payload.target_account,

@@ -29,8 +29,18 @@ def _cur_month() -> str:
     return now_iso()[:7]
 
 
-def _ent_q(entity_id: Optional[str]) -> Dict[str, Any]:
+def _ent_q(entity_id: Any) -> Dict[str, Any]:
+    """PK-09 — daftar PT (gabungan PT yang ditugaskan) → `$in`; satu PT → sama dengan; kosong/`all` → tanpa saringan
+    (hanya untuk pemanggil internal; router selalu mengirim daftar)."""
+    if isinstance(entity_id, (list, tuple, set)):
+        return {"entity_id": {"$in": list(entity_id)}}
     return {"entity_id": entity_id} if entity_id and entity_id != "all" else {}
+
+
+def _scope(entity_id: Optional[str], entity_ids: Optional[List[str]]) -> Any:
+    if entity_ids is not None and (not entity_id or entity_id == "all"):
+        return list(entity_ids)
+    return entity_id
 
 
 async def list_periods(entity_id: Optional[str]) -> List[str]:
@@ -122,8 +132,10 @@ async def compute_pph(entity_id: Optional[str], period: str,
     return {"items": items, "total": round(total, 2)}
 
 
-async def tax_summary(entity_id: Optional[str], period: Optional[str]) -> Dict[str, Any]:
-    periods = await list_periods(entity_id)
+async def tax_summary(entity_id: Optional[str], period: Optional[str],
+                      entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    scope = _scope(entity_id, entity_ids)   # PK-09 — gabungan = PT yang ditugaskan, bukan seluruh grup
+    periods = await list_periods(scope)
     sel = period if (period and period in periods) else (periods[0] if periods else _cur_month())
 
     settings = await get_effective_settings(entity_id)
@@ -145,11 +157,12 @@ async def tax_summary(entity_id: Optional[str], period: Optional[str]) -> Dict[s
             is_pkp = entity_meta["is_pkp"]
 
     # PPN (SPT Masa) — hanya bermakna utk PKP
-    ppn = await input_tax_service.vat_summary(period=sel, entity_id=entity_id or "")
+    ppn = await input_tax_service.vat_summary(period=sel, entity_id=entity_id or "",
+                                              entity_ids=scope if isinstance(scope, list) else None)
     ppn["applicable"] = is_pkp
 
     # PPh — configurable
-    pph = await compute_pph(entity_id, sel, tax_cfg.get("pph_items", []))
+    pph = await compute_pph(scope, sel, tax_cfg.get("pph_items", []))
 
     return {
         "period": sel,
@@ -170,8 +183,8 @@ async def tax_summary(entity_id: Optional[str], period: Optional[str]) -> Dict[s
 # ── Manual PPh records (basis=manual) ────────────────────────────────────────
 
 async def list_pph_records(entity_id: Optional[str], period: Optional[str] = None,
-                           code: Optional[str] = None) -> List[Dict[str, Any]]:
-    q: Dict[str, Any] = {**_ent_q(entity_id)}
+                           code: Optional[str] = None, entity_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    q: Dict[str, Any] = {**_ent_q(_scope(entity_id, entity_ids))}
     if period:
         q["period"] = period
     if code:

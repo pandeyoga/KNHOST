@@ -11,7 +11,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, rupiah
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc, resolve_scope_ids
 from schemas import InputTaxInvoiceCreate, InputTaxInvoiceCancel
 from services.input_tax_service import (
     next_input_number, normalize_nsfp, format_nsfp_display, period_of,
@@ -33,18 +33,16 @@ def _hydrate(d: Dict[str, Any]) -> Dict[str, Any]:
 async def list_eligible_bills(request: Request, entity_id: str = None) -> List[Dict[str, Any]]:
     """Vendor Bill ber-PPN (posted/paid) yang belum punya Faktur Masukan aktif."""
     await require_permission(request, "input_tax", "view")
-    ctx = await entity_ctx(request)
-    eid = entity_id if entity_id else ("" if ctx.view_all else ctx.active_entity_id)
-    return await eligible_vendor_bills(eid or "")
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)   # PK-09 E29
+    return await eligible_vendor_bills("", entity_ids=ids)
 
 
 @router.get("/tax/vat-summary")
 async def get_vat_summary(request: Request, period: str = None, entity_id: str = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran per periode (YYYY-MM) → kurang/lebih bayar."""
     await require_permission(request, "input_tax", "view")
-    ctx = await entity_ctx(request)
-    eid = entity_id if entity_id else ("" if ctx.view_all else ctx.active_entity_id)
-    return await vat_summary(period or "", eid or "")
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)   # PK-09 E30
+    return await vat_summary(period or "", ids[0] if len(ids) == 1 else "", entity_ids=ids)
 
 
 # ── List & detail ─────────────────────────────────────────────────────────────
@@ -88,8 +86,7 @@ async def create_input_tax(payload: InputTaxInvoiceCreate, request: Request) -> 
     """Catat Faktur Pajak Masukan dari Vendor Bill ber-PPN. NSFP wajib + dedupe."""
     actor = await require_permission(request, "input_tax", "create")
     bill = safe_doc(await db.vendor_bills.find_one({"id": payload.vendor_bill_id}, {"_id": 0}))
-    if not bill:
-        raise HTTPException(status_code=404, detail="Vendor Bill tidak ditemukan")
+    await guard_doc(request, "vendor_bills", bill, not_found="Vendor Bill tidak ditemukan")   # PK-09 E31
     if bill.get("status") not in ELIGIBLE_BILL_STATUSES:
         raise HTTPException(
             status_code=400,
@@ -167,8 +164,7 @@ async def cancel_input_tax(fpm_id: str, payload: InputTaxInvoiceCancel, request:
     flag pada Vendor Bill dilepas (bill kembali eligible)."""
     actor = await require_permission(request, "input_tax", "cancel")
     d = await db.tax_invoices_in.find_one({"id": fpm_id}, {"_id": 0})
-    if not d:
-        raise HTTPException(status_code=404, detail="Faktur Pajak Masukan tidak ditemukan")
+    await guard_doc(request, "tax_invoices_in", d, not_found="Faktur Pajak Masukan tidak ditemukan")   # PK-09 E32
     if d.get("status") == "cancelled":
         raise HTTPException(status_code=409, detail="Faktur Pajak Masukan sudah dibatalkan.")
     if not (payload.reason or "").strip():

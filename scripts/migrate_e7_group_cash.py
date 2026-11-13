@@ -249,7 +249,8 @@ async def main() -> int:
                 "entity_id": "",
                 "source": {"type": "cash_transaction", "id": r["id"],
                            "number": r.get("number", "")},
-            }, {"id": "system", "name": "Migrasi E7e", "role": "admin"}, active_entity="")
+            }, {"id": "system", "name": "Migrasi E7e", "role": "admin"}, active_entity="",
+                allow_no_entity=True)   # PK-09 — satu-satunya pembuat kasus tanpa PT
             cases += 1
         except Exception as exc:  # noqa: BLE001
             print(f"{YEL}  [warn] kasus keuangan untuk {r.get('number')} gagal dibuat: {exc}{RST}")

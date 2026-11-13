@@ -13,24 +13,11 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx
+from entity_scope import entity_ctx, guard_doc, resolve_scope_ids, resolve_write_entity
 from schemas_finance import PphRecordInput
 from services import tax_center_service as svc
 
 router = APIRouter(prefix="/api")
-
-
-def _resolve_eid(entity_id: Optional[str], ctx) -> str:
-    """entity_id eksplisit menang; else konteks (all → '' agar lintas-entitas)."""
-    if entity_id:
-        return entity_id
-    return "" if ctx.view_all else ctx.active_entity_id
-
-
-def _assert_eid_access(ctx, eid: str) -> None:
-    """Anti-IDOR: pastikan entitas dalam cakupan user (skip utk 'all'/kosong = lintas)."""
-    if eid and eid != "all" and not ctx.view_all and eid not in (ctx.allowed_entity_ids or []):
-        raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
 
 
 @router.get("/tax/summary")
@@ -38,32 +25,27 @@ async def get_tax_summary(request: Request, period: str = None,
                           entity_id: str = None) -> Dict[str, Any]:
     """Rekap Pusat Pajak: PPN (keluaran−masukan) + PPh (butir configurable)."""
     await require_permission(request, "accounting", "view")
-    ctx = await entity_ctx(request)
-    eid = _resolve_eid(entity_id, ctx)
-    if eid and eid != "all":
-        _assert_eid_access(ctx, eid)
-    return await svc.tax_summary(eid or "all", period)
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)   # PK-09 E25 — kueri di luar penugasan → 403
+    if len(ids) == 1:
+        return await svc.tax_summary(ids[0], period)
+    return await svc.tax_summary("all", period, entity_ids=ids)
 
 
 @router.get("/tax/pph-records")
 async def list_pph_records(request: Request, period: str = None,
                            code: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
     await require_permission(request, "accounting", "view")
-    ctx = await entity_ctx(request)
-    eid = _resolve_eid(entity_id, ctx)
-    if eid and eid != "all":
-        _assert_eid_access(ctx, eid)
-    return await svc.list_pph_records(eid, period, code)
+    ids = resolve_scope_ids(await entity_ctx(request), entity_id)   # PK-09 E26
+    return await svc.list_pph_records("", period, code, entity_ids=ids)
 
 
 @router.post("/tax/pph-records")
 async def create_pph_record(payload: PphRecordInput, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage")
-    ctx = await entity_ctx(request)
-    _assert_eid_access(ctx, payload.entity_id)
+    eid = resolve_write_entity(await entity_ctx(request), payload.entity_id)   # PK-09 E27
     try:
         doc = await svc.record_pph(
-            entity_id=payload.entity_id, period=payload.period, code=payload.code,
+            entity_id=eid, period=payload.period, code=payload.code,
             name=payload.name, rate=payload.rate, dpp=payload.dpp, note=payload.note,
             actor=actor,
         )
@@ -76,6 +58,9 @@ async def create_pph_record(payload: PphRecordInput, request: Request) -> Dict[s
 @router.delete("/tax/pph-records/{record_id}")
 async def delete_pph_record(record_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "accounting", "manage")
+    from db import db
+    await guard_doc(request, "tax_pph_records", await db.tax_pph_records.find_one({"id": record_id}, {"_id": 0}),
+                    not_found="Rekaman PPh tidak ditemukan")   # PK-09 E28
     ok = await svc.delete_pph_record(record_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Rekaman PPh tidak ditemukan")

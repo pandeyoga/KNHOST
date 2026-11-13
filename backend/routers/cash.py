@@ -11,7 +11,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
-from entity_scope import entity_ctx, resolve_scope_ids, guard_doc
+from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity
 from schemas import CashTransactionCreate
 from services import cash_entity_service
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
@@ -139,8 +139,19 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     # kode di sini memaksa `entity_id="all"` sehingga penerimaan piutang KSC tidak
     # pernah muncul di kas KSC (13 dari 19 transaksi demo terkena).
     from services.cash_entity_service import assert_owned
-    entity_id = assert_owned(payload.entity_id or ctx.active_entity_id,
-                             what="Transaksi kas")
+    # PK-09 E8 — PT dari penugasan (isi permintaan di luar penugasan → 403), tetap wajib satu PT (bukan grup).
+    entity_id = assert_owned(resolve_requested_entity(ctx, payload.entity_id) if payload.entity_id
+                             else ctx.active_entity_id, what="Transaksi kas")
+    # Kas MANUAL tidak boleh menunjuk dokumen lain (pembayaran dokumen dicatat dari dokumennya, bukan dari sini).
+    if (payload.ref_type or "") not in ("", "manual") or (payload.ref_id or ""):
+        raise HTTPException(status_code=400, detail=(
+            "Transaksi kas manual tidak boleh menunjuk dokumen lain. Catat pembayaran dari dokumennya."))
+    acc_id = getattr(payload, "account_id", "") or ""
+    if acc_id:
+        acc = await db.bank_accounts.find_one({"id": acc_id}, {"_id": 0, "entity_id": 1, "status": 1, "is_active": 1})
+        if (not acc or acc.get("status") == "inactive" or acc.get("is_active") is False
+                or acc.get("entity_id") != entity_id):
+            raise HTTPException(status_code=400, detail="Rekening tidak ditemukan atau bukan milik PT transaksi ini.")
 
     from services import gl_service as _gl
     try:  # FN-07 — periode diperiksa sebelum kas tercatat
@@ -157,13 +168,13 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
         "category": payload.category.strip(),
         "description": payload.description.strip(),
         "entity_id": entity_id,
-        "ref_type": payload.ref_type,
-        "ref_id": payload.ref_id,
+        "ref_type": "",
+        "ref_id": "",
         "txn_date": payload.txn_date or now_iso(),
         "account_id": getattr(payload, "account_id", "") or "",
         "reconciled": False,
         "status": "posted",
-        "created_by": payload.created_by,
+        "created_by": actor.get("name", ""),   # PK-09 — nilai klien diabaikan
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
