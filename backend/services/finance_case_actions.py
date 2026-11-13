@@ -352,13 +352,8 @@ async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
             f"Setoran {_rp(amount)} melebihi sisa piutang karyawan {_rp(remaining)} dan kasus tanpa pelanggan "
             "— kelebihan tidak bisa dijadikan kredit toko.")
     emp = (p.get("employee_name") or ex.get("employee_name") or "karyawan")
-    res = await _cash_txn(
-        direction="in", amount=amount, category="setoran karyawan",
-        description=f"Setoran {emp} · {case['number']}",
-        entity_id=case.get("entity_id", ""), account_id=p.get("account_id", ""),
-        cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
-        ref_id=case["id"], contra=gl.ACC_PIUTANG_KARYAWAN,
-        owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
+    # PK-07 (FX-01) — dulu ada panggilan kas senilai `amount` penuh di sini (hasilnya dibuang) SEBELUM kas bagian
+    # piutang karyawan di bawah → kas & jurnal ganda, saldo 1-1280 minus. Kini satu kas per bagian setoran.
     to_emp = round(amount - surplus, 2)
     docs: List[Dict[str, Any]] = []
     if to_emp > EPS:
