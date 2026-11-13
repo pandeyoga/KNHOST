@@ -99,9 +99,17 @@ export async function adjustPenalty(id, body) {
   return r.data || {};
 }
 
-export async function payPenalty(id, body) {
-  const r = await axios.post(`${API}/penalties/${id}/pay`, body);
+// PK-08 — bayar denda lewat kas: rekening wajib + Idempotency-Key (kirim ulang tidak mencatat dua kali).
+export async function payPenalty(id, body, key = "") {
+  const r = await axios.post(`${API}/penalties/${id}/pay`, body, key ? { headers: { "Idempotency-Key": key } } : undefined);
   return r.data || {};
+}
+
+/** PK-08 — rekening aktif milik PT nota denda (penerima pembayaran denda). */
+export async function penaltyAccounts(entityId) {
+  const r = await axios.get(`${API}/bank-accounts`, { params: entityId ? { entity_id: entityId } : {} });
+  return (r.data || []).filter((a) => a.status !== "inactive" && a.is_active !== false
+    && (!entityId || a.entity_id === entityId));
 }
 
 /* ── FASE G-3 — Selisih Pembayaran (lebih & kurang bayar) ───────────────────

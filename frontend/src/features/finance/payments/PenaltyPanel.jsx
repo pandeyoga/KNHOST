@@ -18,9 +18,10 @@ import FormModal from "../../../components/FormModal";
 import { askConfirm } from "../../../services/confirmService";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 import {
-  adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyMeta, waivePenalty,
+  adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyAccounts, penaltyMeta, waivePenalty,
 } from "./paymentApi";
 import { can } from "../../../config/roles";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 export default function PenaltyPanel({ rows = [], currentUser, entityId = "", onChanged }) {
   const [reasons, setReasons] = useState([]);
@@ -30,6 +31,20 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  // PK-08 — rekening penerima (wajib) + kunci idempotensi per niat bayar.
+  const [accounts, setAccounts] = useState([]);
+  const [accountId, setAccountId] = useState("");
+  const payIntent = useIntentKey("pnl");
+  const openPay = async (p) => {
+    setErr(""); setAccountId("");
+    setAmount(String(Math.max(0, Number(p.amount || 0) - Number(p.paid_amount || 0))));
+    setDialog({ kind: "pay", row: p });
+    try {
+      const list = await penaltyAccounts(p.entity_id || entityId);
+      setAccounts(list);
+      if (list.length === 1) setAccountId(list[0].id);
+    } catch { setAccounts([]); }
+  };
 
   // Sisir gerbang peran (2026-10-20): satu izin per aksi = endpoint /penalties/{id}/issue|adjust|waive|pay.
   const canIssue = can(currentUser?.permissions, "penalty", "issue");
@@ -56,12 +71,15 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
       if (kind === "waive") await waivePenalty(row.id, { reason_code: reasonCode, note });
       if (kind === "adjust") await adjustPenalty(row.id, {
         amount: Number(amount || 0), reason_code: reasonCode, note });
-      if (kind === "pay") await payPenalty(row.id, { amount: Number(amount || 0), method: "transfer" });
+      if (kind === "pay") {
+        const body = { amount: Number(amount || 0), account_id: accountId, method: "transfer" };
+        await payIntent.send({ id: row.id, ...body }, (key) => payPenalty(row.id, body, key));
+      }
       setDialog(null); setReasonCode(""); setNote(""); setAmount("");
       if (onChanged) onChanged();
     } catch (e) { setErr(errText(e, "Aksi denda gagal.")); }
     finally { setBusy(""); }
-  }, [reasonCode, note, amount, onChanged]);
+  }, [reasonCode, note, amount, accountId, payIntent, onChanged]);
 
   if (!rows.length) {
     return (
@@ -98,6 +116,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                 </div>
                 <p className="truncate text-[10.5px] text-[#6B6B73]">
                   {p.line_label} · jatuh tempo {(p.due_date || "").slice(0, 10)} · telat {p.days_late} hari
+                  {Number(p.days_prior || 0) > 0 ? ` (${p.billable_days} hari di nota ini)` : ""}
                   {p.reason_label ? ` · ${p.reason_label}` : ""}
                 </p>
                 {(p.explain || []).length > 0 && (
@@ -130,7 +149,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                 )}
                 {canPay && ["issued", "adjusted"].includes(p.status) && (
                   <button type="button" className="secondary-button !py-1" data-testid={`penalty-pay-${p.id}`}
-                    onClick={() => { setErr(""); setDialog({ kind: "pay", row: p }); setAmount(String(p.amount)); }}>
+                    onClick={() => openPay(p)}>
                     <Receipt size={12} /> Catat Bayar
                   </button>
                 )}
@@ -153,7 +172,7 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
               <button type="button" className="secondary-button" onClick={() => setDialog(null)}
                 data-testid="penalty-dialog-cancel">Batal</button>
               <button type="button" className="primary-button" data-testid="penalty-dialog-submit"
-                disabled={busy !== "" || (dialog.kind !== "pay" && !reasonCode)}
+                disabled={busy !== "" || (dialog.kind !== "pay" && !reasonCode) || (dialog.kind === "pay" && !accountId)}
                 onClick={() => act(dialog.kind, dialog.row)}>
                 {busy ? <Loader2 size={13} className="animate-spin" /> : null} Simpan keputusan
               </button>
@@ -164,6 +183,24 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
               <div className="grid gap-1">
                 <label className="kicker">Nominal</label>
                 <MoneyInput testId="penalty-dialog-amount" className="field tabular-nums" value={amount} onChange={(v) => setAmount(v)} />
+                {dialog.kind === "pay" && (
+                  <p className="text-[10.5px] text-[#6B6B73]" data-testid="penalty-dialog-paid-info">
+                    Sudah dibayar {money(dialog.row.paid_amount || 0)} · sisa {money(Math.max(0, Number(dialog.row.amount || 0) - Number(dialog.row.paid_amount || 0)))}
+                  </p>
+                )}
+              </div>
+            )}
+            {dialog.kind === "pay" && (
+              <div className="grid gap-1">
+                <label className="kicker">Rekening penerima (wajib)</label>
+                <KNSelect value={accountId} onValueChange={setAccountId} className="field"
+                  data-testid="penalty-dialog-account" placeholder="Pilih rekening…"
+                  options={accounts.map((a) => ({ value: a.id, label: `${a.name}${a.account_number ? ` · ${a.account_number}` : ""}` }))} />
+                {!accountId && (
+                  <p className="flex items-center gap-1 text-[10.5px] text-[#8C4A00]" data-testid="penalty-dialog-account-hint">
+                    <AlertTriangle size={11} /> Pilih rekening penerima dulu.
+                  </p>
+                )}
               </div>
             )}
             {dialog.kind !== "pay" && (

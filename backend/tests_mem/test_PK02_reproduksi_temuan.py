@@ -5,6 +5,7 @@ Pesan gagal tanpa tanda (bukti sebab yang sama dengan temuannya) ada di `docs/re
 """
 import pytest
 
+import db as _dbmod
 from core_utils import now_iso
 from pembantu import AKTOR_UJI, aktifkan_akun, jumlah, jurnal, jurnal_dari, nonaktifkan_akun, pt_uji, saldo_akun
 from services import gl_service as gl
@@ -155,12 +156,23 @@ async def test_PK02_IV01_landed_cost_roll_terjual(db):
     assert cocok(g1 - g0, s1 - s0), f"persediaan naik {g1 - g0:,.2f}, nilai roll naik {s1 - s0:,.2f}"
 
 
-@pytest.mark.xfail(strict=True, reason="FX-02 — pembayaran denda kedua tidak dijurnal")
 async def test_PK02_FX02_denda_dibayar_dua_kali(aplikasi):
+    """FX-02 — ditutup PK-08: bayar denda lewat kas `cash_pnl_<id>` per pembayaran (jalur aplikasi), bukan lagi
+    `gl.post_penalty_payment` berkunci tetap `<id>:pay`."""
+    from services import penalty_service as ps
+    from services.amendment_service import ensure_reasons
+    await ensure_reasons()
     eid = await pt_uji("X02")
-    await gl.post_penalty_issue(penalty_id="pen_fx02", entity_id=eid, amount=100000, label="denda uji")
-    await gl.post_penalty_payment(penalty_id="pen_fx02", entity_id=eid, amount=60000)
-    await gl.post_penalty_payment(penalty_id="pen_fx02", entity_id=eid, amount=40000)
+    await _dbmod.db.bank_accounts.insert_many([
+        {"id": f"ba_fx02_{i}", "name": f"Bank FX02 {i}", "account_type": "bank", "cash_type": "kas_besar",
+         "entity_id": eid, "is_active": True, "status": "active", "opening_balance": 0} for i in (1, 2)])
+    await _dbmod.db.penalties.insert_one({
+        "id": "pen_fx02", "number": "DN-FX02", "entity_id": eid, "doc_id": "so_fx02", "plan_id": "", "line_seq": 0,
+        "due_date": "2026-10-01", "period_key": "2026-10-01|2026-11", "amount": 100000.0, "paid_amount": 0.0,
+        "status": "draft", "customer_name": "Uji"})
+    await ps.issue("pen_fx02", AKTOR_UJI)
+    await ps.pay("pen_fx02", 60000, "transfer", AKTOR_UJI, account_id="ba_fx02_1")
+    await ps.pay("pen_fx02", 40000, "transfer", AKTOR_UJI, account_id="ba_fx02_1")
     assert cocok(await saldo_akun("1-1270", eid), 0)
 
 

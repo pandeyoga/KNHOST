@@ -2047,7 +2047,11 @@ async def post_penalty_reversal(*, penalty_id: str, entity_id: str, amount: floa
 async def post_penalty_payment(*, penalty_id: str, entity_id: str, amount: float,
                                method: str = "transfer", label: str = "", date: str = "",
                                created_by: str = "system") -> Optional[Dict[str, Any]]:
-    """FASE G-2 — Pembayaran denda oleh pelanggan:
+    """USANG (PK-08) — tidak dipanggil kode aplikasi lagi: bayar denda kini lewat dokumen kas `cash_pnl_<id>`
+    (`penalty_service.pay` → `post_cash_durable`). Kuncinya tetap `<id nota>:pay`, jadi pembayaran KEDUA dulu
+    dilewati diam-diam (FX-02). Dibiarkan untuk jurnal lama.
+
+    FASE G-2 — Pembayaran denda oleh pelanggan:
       Dr Kas/Bank (atau Kas Kecil untuk tunai) / Cr 1-1270 Piutang Denda.
     """
     amount = round(float(amount or 0), 2)

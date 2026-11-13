@@ -59,11 +59,29 @@ class AdjustBody(WaiveBody):
 
 class PayBody(BaseModel):
     amount: float
+    account_id: Optional[str] = ""          # PK-08 — rekening penerima (wajib; diperiksa layanan)
     method: Optional[str] = "transfer"
 
 
 def _err(exc: Exception, code: int = 400) -> HTTPException:
     return HTTPException(status_code=code, detail=str(exc))
+
+
+def _penalty_err(exc: Exception) -> HTTPException:
+    """PK-08 — galat denda/jurnal → jawaban terbaca (bukan 500)."""
+    from services import gl_service as gl
+    if isinstance(exc, penalties.PenaltyConflict):
+        return HTTPException(status_code=409, detail=str(exc))
+    if isinstance(exc, gl.ClosedPeriodError):
+        return HTTPException(status_code=409, detail=str(exc))
+    if isinstance(exc, gl.JournalValidationError):
+        return HTTPException(status_code=409, detail=f"Jurnal denda tidak bisa dibuat: {exc}.")
+    return HTTPException(status_code=400, detail=str(exc))
+
+
+def _penalty_errors() -> tuple:
+    from services import gl_service as gl
+    return (penalties.PenaltyError, gl.ClosedPeriodError, gl.JournalValidationError)
 
 
 # ── Rencana pembayaran ────────────────────────────────────────────────
@@ -172,16 +190,16 @@ async def void_plan(plan_id: str, body: VoidBody, request: Request) -> Dict[str,
 
 
 @router.post("/payment-plans/{plan_id}/accrue")
-async def accrue_now(plan_id: str, request: Request,
-                     today: str = Query("")) -> Dict[str, Any]:
-    """Hitung denda SEKARANG untuk rencana ini (tanpa menunggu job harian)."""
+async def accrue_now(plan_id: str, request: Request) -> Dict[str, Any]:
+    """Hitung denda SEKARANG untuk rencana ini (tanpa menunggu job harian).
+
+    PK-08 — "hari ini" selalu tanggal SERVER (dulu `?today=` dari klien bisa melahirkan nota ribuan hari telat)."""
     actor = await require_permission(request, "penalty", "issue")
     plan = await plans.get(plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Rencana pembayaran tidak ditemukan")
     assert_entity_access(plan, "payment_plans", await entity_ctx(request))
-    rows = await penalties.accrue_plan(plan, today=today or None,
-                                       actor_name=actor.get("name", ""))
+    rows = await penalties.accrue_plan(plan, actor_name=actor.get("name", ""))
     return {"plan_id": plan_id, "count": len(rows), "penalties": rows}
 
 
@@ -216,8 +234,8 @@ async def issue_penalty(penalty_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "issue")
     try:
         row = await penalties.issue(penalty_id, actor)
-    except penalties.PenaltyError as exc:
-        raise _err(exc) from exc
+    except _penalty_errors() as exc:
+        raise _penalty_err(exc) from exc
     await audit(actor.get("name", ""), "penalty_issued", "penalties", penalty_id,
                 {"number": row["number"], "amount": row["amount"], "je": row.get("je_number")})
     return row
@@ -228,8 +246,8 @@ async def waive_penalty(penalty_id: str, body: WaiveBody, request: Request) -> D
     actor = await require_permission(request, "penalty", "waive")
     try:
         row = await penalties.waive(penalty_id, body.reason_code, body.note or "", actor)
-    except penalties.PenaltyError as exc:
-        raise _err(exc) from exc
+    except _penalty_errors() as exc:
+        raise _penalty_err(exc) from exc
     await audit(actor.get("name", ""), "penalty_waived", "penalties", penalty_id,
                 {"number": row["number"], "reason": row.get("reason_label")},
                 reason=body.note or "")
@@ -242,8 +260,8 @@ async def adjust_penalty(penalty_id: str, body: AdjustBody, request: Request) ->
     try:
         row = await penalties.adjust(penalty_id, body.amount, body.reason_code,
                                      body.note or "", actor)
-    except penalties.PenaltyError as exc:
-        raise _err(exc) from exc
+    except _penalty_errors() as exc:
+        raise _penalty_err(exc) from exc
     await audit(actor.get("name", ""), "penalty_adjusted", "penalties", penalty_id,
                 {"number": row["number"], "amount": row["amount"],
                  "reason": row.get("reason_label")}, reason=body.note or "")
@@ -254,9 +272,11 @@ async def adjust_penalty(penalty_id: str, body: AdjustBody, request: Request) ->
 async def pay_penalty(penalty_id: str, body: PayBody, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "penalty", "pay")
     try:
-        row = await penalties.pay(penalty_id, body.amount, body.method or "transfer", actor)
-    except penalties.PenaltyError as exc:
-        raise _err(exc) from exc
+        row = await penalties.pay(penalty_id, body.amount, body.method or "transfer", actor,
+                                  account_id=body.account_id or "",
+                                  intent_key=(request.headers.get("Idempotency-Key") or "").strip())
+    except _penalty_errors() as exc:
+        raise _penalty_err(exc) from exc
     await audit(actor.get("name", ""), "penalty_paid", "penalties", penalty_id,
                 {"number": row["number"], "amount": body.amount})
     return row

@@ -55,6 +55,10 @@ class PenaltyError(ValueError):
     """Kesalahan denda dengan pesan siap tampil (Bahasa Indonesia)."""
 
 
+class PenaltyConflict(PenaltyError):
+    """PK-08 — keadaan berubah saat diproses / jurnal gagal sesudah kas tercatat → router menjawab 409."""
+
+
 # ── Kebijakan (registry) ───────────────────────────────────────────────
 async def penalty_policy(entity_id: str = "", customer_id: str = "",
                          plan: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -101,10 +105,16 @@ def _days_late(due_date: str, today: str) -> int:
     return max(0, (d2 - d1).days)
 
 
-def compute_amount(base_amount: float, days_late: int, policy: Dict[str, Any]) -> Dict[str, Any]:
-    """Hitung denda + `explain[]` supaya angkanya bisa dipertanggungjawabkan ke pelanggan."""
+def compute_amount(base_amount: float, days_late: int, policy: Dict[str, Any],
+                   days_prior: int = 0) -> Dict[str, Any]:
+    """Hitung denda + `explain[]` supaya angkanya bisa dipertanggungjawabkan ke pelanggan.
+
+    PK-08 (FX-04) — `days_late` kumulatif sejak jatuh tempo; `days_prior` = hari kena denda yang SUDAH dimuat nota
+    sebelumnya untuk baris yang sama. Nota ini hanya memuat sisanya, jadi hari telat tidak ditagih dua kali."""
     grace = int(policy["grace_days"])
-    billable = max(0, days_late - grace)
+    cumulative = max(0, days_late - grace)
+    days_prior = max(0, int(days_prior or 0))
+    billable = max(0, cumulative - days_prior)
     rate = float(policy["rate_pct_per_month"])
     raw = round(float(base_amount) * (rate / 100.0) * (billable / 30.0), 2)
     cap_pct = float(policy["cap_pct"] or 0)
@@ -114,13 +124,15 @@ def compute_amount(base_amount: float, days_late: int, policy: Dict[str, Any]) -
         capped = min(raw, limit)
     explain = [
         f"Dasar denda {rupiah(float(base_amount))} ({'nilai cicilan' if policy['base'] == 'installment' else 'sisa piutang order'})",
-        f"Telat {days_late} hari − tenggang {grace} hari = {billable} hari kena denda",
-        f"Bunga {rate:g}% / bulan × {billable}/30 hari → {rupiah(raw)}",
+        f"Telat {days_late} hari − tenggang {grace} hari = {cumulative} hari kena denda",
     ]
+    if days_prior > 0:
+        explain.append(f"Sudah dimuat nota sebelumnya {days_prior} hari → nota ini {billable} hari")
+    explain.append(f"Bunga {rate:g}% / bulan × {billable}/30 hari → {rupiah(raw)}")
     if cap_pct > 0:
         explain.append(
             f"Batas maksimum {cap_pct:g}% dari dasar = {rupiah(round(float(base_amount) * cap_pct / 100.0))} → dipakai {rupiah(capped)}")
-    return {"amount": capped, "raw_amount": raw, "days_late": days_late,
+    return {"amount": capped, "raw_amount": raw, "days_late": days_late, "days_prior": days_prior,
             "billable_days": billable, "rate_pct_per_month": rate,
             "grace_days": grace, "cap_pct": cap_pct, "explain": explain}
 
@@ -132,6 +144,20 @@ def _period_key(due_date: str, today: str) -> str:
     hanya nominalnya yang diperbarui selama masih `draft`.
     """
     return f"{str(due_date)[:10]}|{str(today)[:7]}"
+
+
+async def _days_already_billed(*, plan_id: str, doc_id: str, line_seq: Any, due_date: str,
+                               period_key: str) -> int:
+    """PK-08 — Σ `billable_days` nota LAIN untuk baris jatuh tempo yang sama (periode berbeda), semua status."""
+    flt: Dict[str, Any] = {"due_date": due_date, "period_key": {"$ne": period_key}}
+    if plan_id:
+        flt.update({"plan_id": plan_id, "line_seq": line_seq})
+    else:
+        flt.update({"doc_id": doc_id, "plan_id": "", "line_seq": 0})
+    total = 0
+    async for r in db[COLL].find(flt, {"_id": 0, "billable_days": 1}):
+        total += int(r.get("billable_days") or 0)
+    return total
 
 
 # ── Akrual (dipakai job harian & tombol "hitung sekarang") ─────────────────
@@ -155,11 +181,15 @@ async def accrue_plan(plan: Dict[str, Any], today: Optional[str] = None,
         base_amount = line_out if policy["base"] == "installment" else max(outstanding, 0.0)
         if base_amount <= EPS:
             continue
-        calc = compute_amount(base_amount, days, policy)
+        pkey = _period_key(line.get("due_date", ""), day)
+        prior = await _days_already_billed(plan_id=plan["id"], doc_id=plan.get("doc_id", ""),
+                                           line_seq=line["seq"], due_date=line.get("due_date", ""), period_key=pkey)
+        calc = compute_amount(base_amount, days, policy, days_prior=prior)
+        if calc["billable_days"] <= 0:
+            continue
         if calc["amount"] < float(policy["min_amount"]) - EPS:
             continue
 
-        pkey = _period_key(line.get("due_date", ""), day)
         existing = await db[COLL].find_one(
             {"plan_id": plan["id"], "line_seq": line["seq"], "period_key": pkey}, {"_id": 0})
         if existing:
@@ -170,7 +200,7 @@ async def accrue_plan(plan: Dict[str, Any], today: Optional[str] = None,
             await db[COLL].update_one({"id": existing["id"]}, {"$set": {
                 "amount": calc["amount"], "base_amount": base_amount,
                 "days_late": calc["days_late"], "billable_days": calc["billable_days"],
-                "explain": calc["explain"], "updated_at": now_iso()}})
+                "days_prior": calc["days_prior"], "explain": calc["explain"], "updated_at": now_iso()}})
             out.append(await get(existing["id"]))
             continue
 
@@ -198,6 +228,7 @@ async def _create(plan: Dict[str, Any], line: Dict[str, Any], calc: Dict[str, An
         "base_amount": round(float(base_amount), 2), "base": policy["base"],
         "amount": calc["amount"], "original_amount": calc["amount"],
         "days_late": calc["days_late"], "billable_days": calc["billable_days"],
+        "days_prior": calc.get("days_prior", 0),
         "rate_pct_per_month": calc["rate_pct_per_month"], "grace_days": calc["grace_days"],
         "cap_pct": calc["cap_pct"],
         "status": "draft", "status_label": STATUS_LABEL["draft"],
@@ -254,7 +285,12 @@ async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
     days = _days_late(due, day)
     if days <= int(policy["grace_days"]):
         return []
-    calc = compute_amount(outstanding, days, policy)
+    pkey = _period_key(due, day)
+    prior = await _days_already_billed(plan_id="", doc_id=order.get("id", ""), line_seq=0, due_date=due,
+                                       period_key=pkey)
+    calc = compute_amount(outstanding, days, policy, days_prior=prior)
+    if calc["billable_days"] <= 0:
+        return []
     if calc["amount"] < float(policy["min_amount"]) - EPS:
         return []
     pseudo_plan = {
@@ -266,7 +302,6 @@ async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
     }
     line = {"seq": 0, "label": f"Sisa tagihan pesanan {order.get('number', '')}",
             "due_date": due, "amount": outstanding, "paid_amount": 0.0}
-    pkey = _period_key(due, day)
     existing = await db[COLL].find_one(
         {"doc_id": order.get("id"), "plan_id": "", "line_seq": 0, "period_key": pkey},
         {"_id": 0})
@@ -276,7 +311,7 @@ async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
         await db[COLL].update_one({"id": existing["id"]}, {"$set": {
             "amount": calc["amount"], "base_amount": outstanding,
             "days_late": calc["days_late"], "billable_days": calc["billable_days"],
-            "explain": calc["explain"], "updated_at": now_iso()}})
+            "days_prior": calc["days_prior"], "explain": calc["explain"], "updated_at": now_iso()}})
         return [await get(existing["id"])]
     doc = await _create(pseudo_plan, line, calc, outstanding, pkey, policy, actor_name)
     if policy["mode"] == "auto":
@@ -410,15 +445,20 @@ async def waive(penalty_id: str, reason_code: str, note: str,
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
         raise PenaltyError(
             f"Pembebasan denda wajib disetujui {appr['role']} — ajukan lewat penyetuju.")
+    # PK-08 (FX-03) — yang dibebaskan hanya SISA yang belum dibayar; bagian terbayar tetap pendapatan denda.
+    paid = round(float(p.get("paid_amount") or 0), 2)
+    rest = round(float(p.get("amount") or 0) - paid, 2)
+    if rest <= EPS:
+        raise PenaltyError("Nota denda sudah lunas — tidak ada sisa yang bisa dibebaskan.")
     je = None
-    if p["status"] in ("issued", "adjusted") and float(p.get("amount") or 0) > EPS:
+    if p["status"] in ("issued", "adjusted"):
         je = await gl_service.post_penalty_reversal(
-            penalty_id=p["id"], entity_id=p.get("entity_id", ""), amount=float(p["amount"]),
+            penalty_id=p["id"], entity_id=p.get("entity_id", ""), amount=rest,
             label=f"Pembebasan denda {p['number']} · {reason['label']}",
             date=now_iso(), created_by=actor.get("name", "system"), suffix="waive")
     await db[COLL].update_one({"id": p["id"]}, {"$set": {
         "status": "waived", "status_label": STATUS_LABEL["waived"],
-        "waived_amount": float(p["amount"]), "amount": 0.0,
+        "waived_amount": rest, "amount": paid,
         "reason_code": reason["code"], "reason_label": reason["label"],
         "decision_note": (note or "").strip(),
         "decided_by": actor.get("name", ""), "decided_at": now_iso(),
@@ -442,6 +482,10 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
     if amt > round(float(p["amount"]), 2) + EPS:
         raise PenaltyError("Nominal baru tidak boleh lebih besar dari denda semula — "
                            "terbitkan nota denda baru bila memang bertambah.")
+    paid = round(float(p.get("paid_amount") or 0), 2)
+    if amt < paid - EPS:   # PK-08 — tidak boleh di bawah yang sudah dibayar (piutang denda jadi minus)
+        raise PenaltyError(f"Nominal baru tidak boleh lebih kecil dari yang sudah dibayar ({rupiah(paid)})."
+                           .replace(",", "."))
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
@@ -449,14 +493,24 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
             f"Perubahan nominal denda wajib disetujui {appr['role']}.")
     delta = round(float(p["amount"]) - amt, 2)
     je = None
-    if p["status"] in ("issued", "adjusted") and delta > EPS:
+    issued = p["status"] in ("issued", "adjusted")
+    seq = len(p.get("adjustments") or []) + 1
+    if issued and delta > EPS:
+        # PK-08 (FX-02) — kunci jurnal PER kejadian (`adjust:<seq>`): ubah nominal kedua tidak lagi dilewati.
         je = await gl_service.post_penalty_reversal(
             penalty_id=p["id"], entity_id=p.get("entity_id", ""), amount=delta,
             label=f"Penyesuaian denda {p['number']} · {reason['label']}",
-            date=now_iso(), created_by=actor.get("name", "system"), suffix="adjust")
-    await db[COLL].update_one({"id": p["id"]}, {"$set": {
-        "status": "adjusted" if p["status"] != "draft" else "draft",
-        "status_label": STATUS_LABEL["adjusted"] if p["status"] != "draft" else STATUS_LABEL["draft"],
+            date=now_iso(), created_by=actor.get("name", "system"), suffix=f"adjust:{seq}")
+    full = issued and paid > EPS and abs(amt - paid) <= EPS
+    status = ("paid" if full else "adjusted") if issued else "draft"
+    extra: Dict[str, Any] = {}
+    if issued:
+        extra["$push"] = {"adjustments": {
+            "seq": seq, "from": float(p["amount"]), "to": amt, "delta": delta, "reason_code": reason["code"],
+            "je_id": (je or {}).get("id", ""), "at": now_iso(), "by": actor.get("name", "")}}
+    await db[COLL].update_one({"id": p["id"]}, {**extra, "$set": {
+        "status": status, "status_label": STATUS_LABEL[status],
+        **({"paid_at": now_iso()} if full else {}),
         "amount": amt, "adjusted_from": float(p["amount"]),
         "reason_code": reason["code"], "reason_label": reason["label"],
         "decision_note": (note or "").strip(),
@@ -467,34 +521,113 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
     return await get(p["id"])
 
 
-async def pay(penalty_id: str, amount: float, method: str,
-              actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Terima pembayaran denda → Dr Kas / Cr Piutang Denda."""
+def _pay_id(penalty_id: str, intent_key: str) -> str:
+    import hashlib
+    if intent_key:
+        return "pnp_" + hashlib.sha256(f"{penalty_id}|{intent_key}".encode()).hexdigest()[:16]
+    return new_id("pnp")
+
+
+async def pay(penalty_id: str, amount: float, method: str, actor: Dict[str, Any], *,
+              account_id: str = "", intent_key: str = "") -> Dict[str, Any]:
+    """PK-08 (FX-02, D1) — terima pembayaran denda LEWAT KAS (02_STANDAR §1):
+
+    PERIKSA (tanpa tulis) → NIAT (butir `payments` berstatus `pending`, bersyarat) → EFEK (kas `cash_pnl_<id>` lalu
+    `paid_amount` + butir `applied`) → JURNAL (`post_cash_durable`: Dr Kas/Bank / Cr 1-1270, tahan-gagal) → SELESAI
+    (butir `done`; lunas → `paid`). `Idempotency-Key` yang sama melanjutkan butir yang sama dari statusnya."""
     p = await get(penalty_id)
     if not p:
         raise PenaltyError("Nota denda tidak ditemukan.")
+    pay_id = _pay_id(p["id"], intent_key)
+    item = next((x for x in (p.get("payments") or []) if x.get("id") == pay_id), None)
+    if item:
+        return await _resume_payment(p, item, actor)
+    # ── PERIKSA ─────────────────────────────────────────────────────────
     if p["status"] not in ("issued", "adjusted"):
         raise PenaltyError("Denda harus DITERBITKAN dulu sebelum bisa menerima pembayaran.")
     amt = round(float(amount or 0), 2)
-    outstanding = round(float(p["amount"]) - float(p.get("paid_amount") or 0), 2)
+    paid_read = round(float(p.get("paid_amount") or 0), 2)
+    pending = round(sum(float(x.get("amount") or 0) for x in (p.get("payments") or [])
+                        if x.get("status") == "pending"), 2)
+    outstanding = round(float(p["amount"]) - paid_read - pending, 2)
     if amt <= EPS:
         raise PenaltyError("Nominal pembayaran harus lebih dari nol.")
     if amt > outstanding + EPS:
         raise PenaltyError(f"Pembayaran melebihi sisa denda ({rupiah(outstanding)})."
                            .replace(",", "."))
-    je = await gl_service.post_penalty_payment(
-        penalty_id=p["id"], entity_id=p.get("entity_id", ""), amount=amt, method=method or "transfer",
-        label=f"Pembayaran denda {p['number']}", date=now_iso(),
-        created_by=actor.get("name", "system"))
-    paid = round(float(p.get("paid_amount") or 0) + amt, 2)
-    full = paid >= round(float(p["amount"]), 2) - EPS
-    await db[COLL].update_one({"id": p["id"]}, {"$set": {
-        "paid_amount": paid,
-        "status": "paid" if full else p["status"],
-        "status_label": STATUS_LABEL["paid"] if full else p.get("status_label", ""),
-        "payment_je_id": (je or {}).get("id", ""),
-        "paid_at": now_iso() if full else "",
-        "updated_at": now_iso()}})
+    if not (account_id or "").strip():
+        raise PenaltyError("Rekening penerima wajib dipilih.")
+    acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0})
+    if (not acc or acc.get("status") == "inactive" or acc.get("is_active") is False
+            or (acc.get("entity_id") or "") != (p.get("entity_id") or "")):
+        raise PenaltyError("Rekening tidak ditemukan atau bukan milik PT nota denda ini.")
+    from services import bank_service
+    entity_id = p.get("entity_id", "")
+    cash = {
+        "id": f"cash_pnl_{pay_id}", "cash_type": bank_service.account_cash_type(acc), "direction": "in",
+        "amount": amt, "category": "denda keterlambatan", "description": f"Pembayaran denda {p['number']}",
+        "entity_id": entity_id, "owner_entity_id": entity_id, "ref_type": "penalty", "ref_id": p["id"],
+        "account_id": account_id, "method": method or "transfer", "contra_account_code": gl_service.ACC_PIUTANG_DENDA,
+        "reconciled": False, "status": "posted", "created_by": actor.get("name", "system"),
+    }
+    # Periode & akun diperiksa dengan baris yang SAMA dengan jurnal kas nanti (melempar ClosedPeriodError /
+    # JournalValidationError → router 409, tanpa tulisan apa pun).
+    await gl_service.preflight_posting(entity_id)
+    await gl_service.account_for("penjualan.piutang_denda", entity_id)
+    await gl_service.preflight_entry(
+        lines=gl_service._balanced_pair(gl_service._cash_account(cash), gl_service.ACC_PIUTANG_DENDA, amt,
+                                        "preflight"),
+        entity_id=entity_id, source_type="cash_transaction")
+    # ── NIAT ────────────────────────────────────────────────────────────
+    item = {"id": pay_id, "amount": amt, "method": method or "transfer", "account_id": account_id,
+            "cash_txn_id": cash["id"], "status": "pending", "at": now_iso(), "by": actor.get("name", ""),
+            "cash_doc": cash}
+    res = await db[COLL].update_one(
+        {"id": p["id"], "status": {"$in": ["issued", "adjusted"]}, "paid_amount": p.get("paid_amount") or 0.0,
+         "payments.status": {"$ne": "pending"}, "payments.id": {"$ne": pay_id}},
+        {"$push": {"payments": item}, "$set": {"updated_at": now_iso()}})
+    if not res.matched_count:
+        fresh = await get(p["id"]) or {}
+        again = next((x for x in (fresh.get("payments") or []) if x.get("id") == pay_id), None)
+        if again:
+            return await _resume_payment(fresh, again, actor)
+        raise PenaltyConflict("Nota denda berubah saat diproses — muat ulang lalu coba lagi.")
+    return await _resume_payment(await get(p["id"]), item, actor)
+
+
+async def _resume_payment(p: Dict[str, Any], item: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Lanjutkan satu butir pembayaran dari statusnya (`pending` → `applied` → `done`). Idempoten."""
+    if item.get("status") == "done":
+        return p
+    cash = dict(item.get("cash_doc") or {})
+    cid = item.get("cash_txn_id") or cash.get("id", "")
+    # ── EFEK ────────────────────────────────────────────────────────────
+    if item.get("status") == "pending":
+        if not await db.cash_transactions.find_one({"id": cid}, {"_id": 0, "id": 1}):
+            from core_utils import next_doc_number as _ndn
+            cash.update({"id": cid, "number": await _ndn("cash_transactions", "number", "CASH-",
+                                                         entity_id=(cash.get("entity_id") or None)),
+                         "txn_date": now_iso(), "created_at": now_iso(), "updated_at": now_iso()})
+            await db.cash_transactions.insert_one(dict(cash))
+        await db[COLL].update_one(
+            {"id": p["id"], "payments": {"$elemMatch": {"id": item["id"], "status": "pending"}}},
+            {"$inc": {"paid_amount": float(item["amount"])},
+             "$set": {"payments.$.status": "applied", "updated_at": now_iso()}})
+    # ── JURNAL (tahan-gagal) ────────────────────────────────────────────
+    txn = await db.cash_transactions.find_one({"id": cid}, {"_id": 0})
+    try:
+        await gl_service.post_cash_durable(txn)
+    except Exception as exc:  # noqa: BLE001 — kas sudah tercatat; jurnal diulang dari panel atau kirim ulang
+        raise PenaltyConflict(f"Pembayaran denda sudah tercatat, tetapi jurnalnya gagal: {str(exc)[:200]}. "
+                              "Ulangi dari Keuangan › Posting Gagal.") from exc
+    # ── SELESAI ─────────────────────────────────────────────────────────
+    await db[COLL].update_one({"id": p["id"], "payments.id": item["id"]},
+                              {"$set": {"payments.$.status": "done", "updated_at": now_iso()}})
+    fresh = await get(p["id"]) or {}
+    if fresh.get("status") in ("issued", "adjusted") and \
+            float(fresh.get("paid_amount") or 0) >= round(float(fresh.get("amount") or 0), 2) - EPS:
+        await db[COLL].update_one({"id": p["id"], "status": {"$in": ["issued", "adjusted"]}}, {"$set": {
+            "status": "paid", "status_label": STATUS_LABEL["paid"], "paid_at": now_iso(), "updated_at": now_iso()}})
     return await get(p["id"])
 
 
