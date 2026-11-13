@@ -729,6 +729,13 @@ RBAC:        permission "contra_bon": view · create · update · verify · appr
 ```
 
 ### interco_transactions + interco_accounts + interco_settlements  [FASE G-6 IMPLEMENTED — Transaksi Antar Entitas (jual-beli antar-PT)]
+PK-06 — field tambahan: `interco_transactions` dan `interco_returns` (tiap dokumen = satu sisi) `gl_status`
+(`pending|posted|failed|not_required`), `gl_error`, `gl_journal_id`; `interco_transactions.settlement_ids`.
+`interco_settlements`: `status` `pending|posted|cancelled`, `gl_status_payer/_payee`, `gl_error_payer/_payee`,
+`gl_journal_id_payer/_payee`, ringkasan `gl_status`/`gl_error`, `payer_account_id`, `payee_account_id`, `cash_out_id`,
+`cash_in_id`, `idempotency_key`, `cancel_reason`, `applied[].applied_at`, `applied[].previous_status`. Jurnal kembar lewat
+`services/twin_journal.py` (`preflight_twin`, `post_twin`); panel Posting Gagal jenis `interco_transaction`,
+`interco_return`, `interco_settlement_payer`, `interco_settlement_payee`.
 Antar-PT itu **jual-beli**, bukan pindah gudang: PT KSC menjual kain ke CV Kanda dengan
 **harga internal dari kontrak** dan mengambil **margin**; keduanya PT terpisah dengan buku,
 pajak, dan pelanggan sendiri. Satu transaksi lahir sebagai **DOKUMEN KEMBAR** (satu di tiap

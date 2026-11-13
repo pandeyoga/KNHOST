@@ -439,17 +439,38 @@ async def approve(ret_id: str, actor_user: Dict[str, Any]) -> Dict[str, Any]:
 
     rp = doc["return_pair_id"]
     returner, receiver = await _pair_docs(rp)
-    await _post_doc_gl(rp, approver)
+    # PK-06 (IC-01) — PERIKSA: transaksi asal tidak berjurnal gagal, jurnal kedua buku bisa terbit; baru klaim.
+    origin = await db.interco_transactions.find({"pair_id": returner.get("origin_pair_id")},
+                                                {"_id": 0, "number": 1, "gl_status": 1}).to_list(2)
+    for o in origin:
+        if o.get("gl_status") == "failed":
+            raise IntercoReturnError(f"Transaksi {o.get('number')} masih punya jurnal yang gagal terbit. "
+                                     "Ulangi dulu dari Keuangan › Posting Gagal.")
+    from services import atomic_claim as _saga
+    from services import twin_journal as _twin
+    grand = float(returner.get("grand_total") or 0)
+    if grand > EPS:
+        await _twin.preflight_twin(source_type="interco_return", base_id=rp, date=now_iso(),
+                                   sides=_return_sides(returner, receiver))
+    claimed = await _saga.claim(COLL, returner["id"], "interco_return_approve", precondition={"status": "draft"},
+                                actor=approver)
+    token = claimed[_saga.LOCK]["token"]
     ts = now_iso()
     await db[COLL].update_many(
         {"return_pair_id": rp},
         {"$set": {"status": "approved", "approved_at": ts, "approved_by": approver,
-                  "updated_at": ts, "updated_by": approver},
+                  "updated_at": ts, "updated_by": approver,
+                  "gl_status": "pending" if grand > EPS else "not_required"},
          "$push": {"timeline": timeline_entry(
              "approved", "Retur disetujui — jurnal pembalik terbit di dua buku",
              approver, rupiah(returner.get("grand_total")))}})
+    gl_res = await repost_gl(rp, approver) if grand > EPS else {}
+    await _saga.release(COLL, returner["id"], token)
     await _refresh_origin(returner)
-    return await get_pair(rp)
+    out = await get_pair(rp)
+    out["gl"] = gl_res
+    out["warning"] = await _twin.warning_for(gl_res, _return_sides(returner, receiver)) if gl_res else ""
+    return out
 
 
 async def _refresh_origin(ret_doc: Dict[str, Any]) -> None:
@@ -495,71 +516,58 @@ async def _refresh_origin(ret_doc: Dict[str, Any]) -> None:
             print(f"[interco_return] tandai faktur pajak gagal: {exc}")
 
 
-async def _post_doc_gl(return_pair_id: str, actor: str) -> Dict[str, Any]:
-    """Jurnal sisi DOKUMEN retur (idempotent per `{rp}:seller` / `{rp}:buyer`).
+def _return_sides(returner: Dict[str, Any], receiver: Dict[str, Any]) -> List[Any]:
+    """Rencana jurnal sisi DOKUMEN retur (baris sama dengan kode lama; kunci `{rp}:seller` / `{rp}:buyer`).
 
-    Buku PENJUAL (menerima barang kembali, menerbitkan nota kredit):
-      Dr 4-1000 Pendapatan            = subtotal retur
-      Dr 2-1200 PPN Keluaran          = PPN retur (bila ber-PPN)
-        Cr 1-1250 IC-AR                 = total retur
-
-    Buku PEMBELI (mengembalikan barang):
-      Dr 2-1250 IC-AP                 = total retur
-        Cr 1-1310 Persediaan Dalam Perjalanan = subtotal retur
-        Cr 1-1500 PPN Masukan                 = PPN retur (bila ber-PPN)
-
-    Akun transit dipakai supaya persediaan pembeli baru turun ketika barangnya
-    BENAR-BENAR keluar gudang (lihat `on_return_task_executed`) — pola yang sama
-    dengan arah penjualannya.
+    Buku PENJUAL (menerima barang kembali, nota kredit): Dr 4-1000 = subtotal · Dr 2-1200 = PPN · Cr 1-1250 IC-AR
+    Buku PEMBELI (mengembalikan barang): Dr 2-1250 IC-AP · Cr 1-1310 Persediaan Dalam Perjalanan · Cr 1-1500 PPN Masukan
+    Akun transit dipakai supaya persediaan pembeli baru turun ketika barangnya BENAR-BENAR keluar gudang.
     """
-    returner, receiver = await _pair_docs(return_pair_id)
-    if await gl_service._already_posted("interco_return", f"{return_pair_id}:seller") or \
-       await gl_service._already_posted("interco_return", f"{return_pair_id}:buyer"):
-        return {"posted": False, "reason": "sudah diposting"}
+    from services.twin_journal import TwinSide
     subtotal = float(returner.get("subtotal") or 0)
     tax_amt = float(returner.get("tax_amount") or 0)
     grand = float(returner.get("grand_total") or 0)
-    if grand <= EPS:
-        return {"posted": False, "reason": "nilai nol"}
-    ent_s = returner["seller_entity_id"]
-    ent_b = returner["buyer_entity_id"]
-    date = now_iso()
-    label_s = receiver.get("number", "")
-    label_b = returner.get("number", "")
-
+    ent_s, ent_b = returner["seller_entity_id"], returner["buyer_entity_id"]
+    label_s, label_b = receiver.get("number", ""), returner.get("number", "")
     lines_s: List[Dict[str, Any]] = [
         {"account_code": gl_service.ACC_PENDAPATAN, "debit": subtotal, "credit": 0.0,
          "description": f"Pembatalan pendapatan antar-PT (retur {label_s})"},
     ]
     if tax_amt > EPS:
-        lines_s.append({"account_code": gl_service.ACC_PPN_OUT, "debit": tax_amt,
-                        "credit": 0.0,
+        lines_s.append({"account_code": gl_service.ACC_PPN_OUT, "debit": tax_amt, "credit": 0.0,
                         "description": f"Koreksi PPN Keluaran retur antar-PT {label_s}"})
     lines_s.append({"account_code": gl_service.ACC_IC_AR, "debit": 0.0, "credit": grand,
                     "description": f"Piutang antar-PT berkurang karena retur {label_s}"})
-    await gl_service._insert_entry(
-        lines=lines_s, description=f"Nota kredit retur antar-PT {label_s}",
-        date=date, source_type="interco_return",
-        source_id=f"{return_pair_id}:seller", entity_id=ent_s,
-        created_by=actor or "system", source_label=label_s)
-
     lines_b: List[Dict[str, Any]] = [
         {"account_code": gl_service.ACC_IC_AP, "debit": grand, "credit": 0.0,
          "description": f"Utang antar-PT berkurang karena retur {label_b}"},
-        {"account_code": gl_service.ACC_PERSEDIAAN_TRANSIT, "debit": 0.0,
-         "credit": subtotal,
+        {"account_code": gl_service.ACC_PERSEDIAAN_TRANSIT, "debit": 0.0, "credit": subtotal,
          "description": f"Barang retur antar-PT dalam perjalanan {label_b}"},
     ]
     if tax_amt > EPS:
-        lines_b.append({"account_code": gl_service.ACC_PPN_IN, "debit": 0.0,
-                        "credit": tax_amt,
+        lines_b.append({"account_code": gl_service.ACC_PPN_IN, "debit": 0.0, "credit": tax_amt,
                         "description": f"Koreksi PPN Masukan retur antar-PT {label_b}"})
-    await gl_service._insert_entry(
-        lines=lines_b, description=f"Nota retur antar-PT {label_b}",
-        date=date, source_type="interco_return",
-        source_id=f"{return_pair_id}:buyer", entity_id=ent_b,
-        created_by=actor or "system", source_label=label_b)
-    return {"posted": True, "total": grand}
+    return [TwinSide("seller", ent_s, lines_s, f"Nota kredit retur antar-PT {label_s}", label_s,
+                     (COLL, receiver["id"])),
+            TwinSide("buyer", ent_b, lines_b, f"Nota retur antar-PT {label_b}", label_b, (COLL, returner["id"]))]
+
+
+async def repost_gl(return_pair_id: str, actor: str = "") -> Dict[str, Dict[str, str]]:
+    """PK-06 — terbitkan jurnal retur yang KURANG per sisi (idempoten). Dipakai setuju retur & panel Posting Gagal."""
+    from services import twin_journal as _twin
+    returner, receiver = await _pair_docs(return_pair_id)
+    if float(returner.get("grand_total") or 0) <= EPS:
+        await db[COLL].update_many({"return_pair_id": return_pair_id}, {"$set": {"gl_status": "not_required"}})
+        return {}
+    date = returner.get("approved_at") or now_iso()
+    return await _twin.post_twin(source_type="interco_return", base_id=return_pair_id, date=date,
+                                 sides=_return_sides(returner, receiver), created_by=actor or "system")
+
+
+async def _post_doc_gl(return_pair_id: str, actor: str) -> Dict[str, Any]:
+    """Pemanggil lama → `repost_gl` (PK-06: per sisi, tanpa penjaga "penjual ATAU pembeli")."""
+    res = await repost_gl(return_pair_id, actor)
+    return {"posted": bool(res) and all(v["status"] == "posted" for v in res.values()), "sides": res}
 
 
 # ═══════════════════════════════════════════════════════════════════════════

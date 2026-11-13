@@ -24,7 +24,9 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/ar-receipts", "/api/sales-returns", "/api/special-orders",
                        "/api/marketing/campaigns/", "/api/goods-receipts/",
                        # PK-05 (SL-02) — bayar hutang: kirim ulang tidak boleh menggandakan kas keluar.
-                       "/api/vendor-bills/", "/api/contra-bons/", "/api/ap-payments/")
+                       "/api/vendor-bills/", "/api/contra-bons/", "/api/ap-payments/",
+                       # PK-06 — antar-PT: konfirmasi/pelunasan yang dikirim ulang tidak boleh ganda.
+                       "/api/interco/")
 
 
 async def _session_user_id(request: Request) -> str:

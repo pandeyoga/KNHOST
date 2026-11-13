@@ -69,7 +69,8 @@ async def default_cash_account(entity_id: str) -> str:
 
 async def twin_cash(*, out_entity: str, in_entity: str, amount: float, category: str,
                     description: str, ref_type: str, ref_id: str,
-                    actor: str = "system", txn_date: str = "") -> Dict[str, Any]:
+                    actor: str = "system", txn_date: str = "",
+                    out_account_id: str = "", in_account_id: str = "") -> Dict[str, Any]:
     """Satu peristiwa uang → DUA mutasi kas (keluar di satu PT, masuk di PT lain)."""
     amount = round(float(amount or 0), 2)
     if amount <= EPS:
@@ -90,7 +91,9 @@ async def twin_cash(*, out_entity: str, in_entity: str, amount: float, category:
                 "category": category, "description": description, "entity_id": ent,
                 "counterparty_entity_id": in_entity if direction == "out" else out_entity,
                 "ref_type": ref_type, "ref_id": ref_id,
-                "account_id": await default_cash_account(ent),
+                # PK-06 — rekening yang dipilih pemanggil (settlement) menang atas rekening bawaan PT.
+                "account_id": ((out_account_id if direction == "out" else in_account_id)
+                               or await default_cash_account(ent)),
                 "txn_date": txn_date or now_iso(), "reconciled": False, "status": "posted",
                 # Jurnalnya dibentuk `twin_je()` (Dr/Cr IC-AR/IC-AP) — jangan diposting
                 # ulang sebagai mutasi kas biasa (itu akan menjurnal dua kali).

@@ -81,8 +81,8 @@ async def test_PK02_GL07_selisih_satu_sen(aplikasi):
     assert await jumlah("journal_entries", {"entity_id": eid}) == 0
 
 
-@pytest.mark.xfail(strict=True, reason="IC-01 — jurnal antar-PT bisa terbit di satu PT saja")
 async def test_PK02_IC01_jurnal_satu_sisi(db):
+    """Tanda "diharapkan gagal" dicabut PK-06: konfirmasi memeriksa jurnal kedua PT sebelum status berubah."""
     from services import interco_service as ics
     a, b = await pt_uji("I1A"), await pt_uji("I1B")
     base = {"pair_id": "pair_ic01", "status": "draft", "seller_entity_id": a, "buyer_entity_id": b,

@@ -74,6 +74,10 @@ PRICING_MODES = ("fixed_price", "at_cost", "cost_plus_pct")
 PPN_MODES = ("ikut_pkp", "tanpa_ppn", "dengan_ppn")
 
 
+class IntercoConflict(Exception):
+    """PK-06 — konflik keadaan (sisa berubah, jurnal transaksi masih gagal, kunci dipakai ulang) → 409."""
+
+
 class IntercoError(Exception):
     """Pelanggaran aturan bisnis antar-PT (dipetakan ke HTTP 400 di router)."""
 
@@ -422,17 +426,31 @@ async def create(payload: Dict[str, Any], actor: str = "",
     from services import line_scope as _lines            # FASE L
     await _lines.stamp_doc(db, seller_doc)
     await _lines.stamp_doc(db, buyer_doc)
+    if submit_now:
+        # PK-06 (IC-01) — akun & periode KEDUA PT diperiksa sebelum dokumen lahir; gagal → tidak ada yang tersimpan.
+        from services import twin_journal as _twin
+        if float(totals["total"]) > EPS:
+            await _twin.preflight_twin(source_type="interco_transaction", base_id=pair_id, date=now_iso(),
+                                       sides=_confirm_sides(seller_doc, buyer_doc))
+            seller_doc["gl_status"] = buyer_doc["gl_status"] = "pending"
+        else:
+            seller_doc["gl_status"] = buyer_doc["gl_status"] = "not_required"
     await db[COLL_ICT].insert_many([seller_doc, buyer_doc])
     await _link_refs(pair_id)
 
+    gl_res: Dict[str, Any] = {}
     if submit_now:
-        # Auto-post GL saat confirmed (US2/US3)
-        await _post_gl_for_pair(pair_id, actor)
+        # Auto-post GL saat confirmed (US2/US3) — per sisi, tahan-gagal (PK-06)
+        gl_res = await repost_gl(pair_id, actor)
         await _update_account_balance(seller, buyer)
         # US7/INV-IC-03 — margin antar-PT langsung dieliminasi di laporan grup.
         await _sync_group_elimination(pair_id)
 
-    return await get_by_pair(pair_id)
+    out = await get_by_pair(pair_id)
+    if submit_now:
+        out["gl"] = gl_res
+        out["warning"] = await _gl_warning(gl_res, pair_id)
+    return out
 
 
 async def get_by_pair(pair_id: str) -> Optional[Dict[str, Any]]:
@@ -497,13 +515,29 @@ async def confirm(interco_id: str, actor_user: Dict[str, Any]) -> Dict[str, Any]
     grand = float(doc.get("grand_total") or 0)
     await _assert_may_release(actor_user, grand, doc["seller_entity_id"])
 
-    await _set_pair_status(doc["pair_id"], "confirmed", actor_user.get("name", ""),
-                           {"confirmed_at": now_iso(),
-                            "confirmed_by": actor_user.get("name", "")})
-    await _post_gl_for_pair(doc["pair_id"], actor_user.get("name", ""))
+    # PK-06 (IC-01) — PERIKSA jurnal kedua PT dulu (tanpa tulisan), baru status berubah.
+    from services import atomic_claim as _saga
+    from services import twin_journal as _twin
+    pair_id = doc["pair_id"]
+    seller, buyer = await _pair_docs(pair_id)
+    name = actor_user.get("name", "")
+    if grand > EPS:
+        await _twin.preflight_twin(source_type="interco_transaction", base_id=pair_id, date=now_iso(),
+                                   sides=_confirm_sides(seller, buyer))
+    claimed = await _saga.claim(COLL_ICT, seller["id"], "interco_confirm", precondition={"status": "draft"},
+                                actor=name)
+    token = claimed[_saga.LOCK]["token"]
+    await _set_pair_status(pair_id, "confirmed", name,
+                           {"confirmed_at": now_iso(), "confirmed_by": name,
+                            "gl_status": "pending" if grand > EPS else "not_required"})
+    gl_res = await repost_gl(pair_id, name) if grand > EPS else {}
+    await _saga.release(COLL_ICT, seller["id"], token)
     await _update_account_balance(doc["seller_entity_id"], doc["buyer_entity_id"])
-    await _sync_group_elimination(doc["pair_id"])
-    return await get_by_pair(doc["pair_id"])
+    await _sync_group_elimination(pair_id)
+    out = await get_by_pair(pair_id)
+    out["gl"] = gl_res
+    out["warning"] = await _gl_warning(gl_res, pair_id)
+    return out
 
 
 async def ship(interco_id: str, actor: str) -> Dict[str, Any]:
@@ -617,47 +651,22 @@ async def cancel(interco_id: str, actor: str, reason: str = "") -> Dict[str, Any
 # ═══════════════════════════════════════════════════════════════════════════
 # GL POSTING (INV-IC-01, INV-IC-05)
 # ═══════════════════════════════════════════════════════════════════════════
-async def _post_gl_for_pair(pair_id: str, actor: str) -> None:
-    """Post jurnal berpasangan dengan HARGA JUAL (bukan sekadar at-cost).
+def _confirm_sides(seller: Dict[str, Any], buyer: Dict[str, Any]) -> List[Any]:
+    """Rencana jurnal KONFIRMASI dengan HARGA JUAL (bukan sekadar at-cost). Baris tidak berubah dari kode lama.
 
-    **Saat DIKONFIRMASI** (dokumen & utang lahir — barangnya belum tentu jalan):
+    Buku PENJUAL:  Dr 1-1250 IC-AR = grand_total · Cr 4-1000 Pendapatan = subtotal · Cr 2-1200 PPN Keluaran = PPN
+    Buku PEMBELI:  Dr 1-1310 Persediaan Dalam Perjalanan = subtotal · Dr 1-1500 PPN Masukan = PPN · Cr 2-1250 IC-AP
 
-    Buku PENJUAL:
-      Dr 1-1250 IC-AR                  = grand_total (subtotal + PPN)
-        Cr 4-1000 Pendapatan             = subtotal (harga jual)
-        Cr 2-1200 PPN Keluaran           = tax_amount (bila ber-PPN)
-
-    Buku PEMBELI:
-      Dr 1-1310 Persediaan Dalam Perjalanan = subtotal (harga beli internal)
-      Dr 1-1500 PPN Masukan                 = tax_amount (bila ber-PPN)
-        Cr 2-1250 IC-AP                       = grand_total
-
-    **HPP penjual & masuknya persediaan pembeli TIDAK diposting di sini** — itu
-    mengikuti BARANGNYA (lihat `post_gl_on_delivery`, dipanggil saat tugas gudang
-    selesai). Kalau dipaksa di sini, persediaan pembeli membengkak & persediaan
-    penjual menyusut untuk barang yang belum berpindah — tepatnya drift GL↔subledger
-    yang dulu memunculkan WARN INV-GL-DRIFT.
-
-    Idempotent via source_type='interco_transaction' + source_id=pair_id:{seller|buyer}.
+    **HPP penjual & masuknya persediaan pembeli TIDAK diposting di sini** — itu mengikuti BARANGNYA
+    (`post_gl_on_delivery`, saat tugas gudang selesai).
     """
-    seller, buyer = await _pair_docs(pair_id)
-    # Guard idempoten
-    if await gl_service._already_posted("interco_transaction", f"{pair_id}:seller") or \
-       await gl_service._already_posted("interco_transaction", f"{pair_id}:buyer"):
-        return
-
+    from services.twin_journal import TwinSide
+    pair_id = seller["pair_id"]
     subtotal = float(seller.get("subtotal") or 0)
     tax_amt = float(seller.get("tax_amount") or 0)
     grand = float(seller.get("grand_total") or 0)
-    if grand <= EPS:
-        return
-
     code = seller.get("number") or pair_id
-    date = seller.get("confirmed_at") or seller.get("created_at") or now_iso()
-    ent_s = seller["seller_entity_id"]
-    ent_b = seller["buyer_entity_id"]
-
-    # ── Buku PENJUAL: Piutang IC = Pendapatan + PPN Keluaran
+    ent_s, ent_b = seller["seller_entity_id"], seller["buyer_entity_id"]
     lines_s: List[Dict[str, Any]] = [
         {"account_code": gl_service.ACC_IC_AR, "debit": grand, "credit": 0.0,
          "description": f"Piutang antar-PT {code} → {buyer.get('buyer_entity_name', ent_b)}"},
@@ -667,14 +676,6 @@ async def _post_gl_for_pair(pair_id: str, actor: str) -> None:
     if tax_amt > EPS:
         lines_s.append({"account_code": gl_service.ACC_PPN_OUT, "debit": 0.0, "credit": tax_amt,
                         "description": f"PPN Keluaran antar-PT {code}"})
-    await gl_service._insert_entry(
-        lines=lines_s, description=f"Penjualan antar-PT {code}",
-        date=date, source_type="interco_transaction",
-        source_id=f"{pair_id}:seller", entity_id=ent_s,
-        created_by=actor or "system", source_label=code,
-    )
-
-    # ── Buku PEMBELI: Persediaan Dalam Perjalanan + PPN Masukan = Utang IC
     lines_b: List[Dict[str, Any]] = [
         {"account_code": gl_service.ACC_PERSEDIAAN_TRANSIT, "debit": subtotal, "credit": 0.0,
          "description": (f"Barang antar-PT dalam perjalanan {buyer.get('number', '')} "
@@ -685,12 +686,36 @@ async def _post_gl_for_pair(pair_id: str, actor: str) -> None:
                         "description": f"PPN Masukan antar-PT {code}"})
     lines_b.append({"account_code": gl_service.ACC_IC_AP, "debit": 0.0, "credit": grand,
                     "description": f"Utang antar-PT {buyer.get('number', '')}"})
-    await gl_service._insert_entry(
-        lines=lines_b, description=f"Pembelian antar-PT {buyer.get('number', '')}",
-        date=date, source_type="interco_transaction",
-        source_id=f"{pair_id}:buyer", entity_id=ent_b,
-        created_by=actor or "system", source_label=buyer.get("number", code),
-    )
+    return [
+        TwinSide("seller", ent_s, lines_s, f"Penjualan antar-PT {code}", code, (COLL_ICT, seller["id"])),
+        TwinSide("buyer", ent_b, lines_b, f"Pembelian antar-PT {buyer.get('number', '')}",
+                 buyer.get("number", code), (COLL_ICT, buyer["id"])),
+    ]
+
+
+async def repost_gl(pair_id: str, actor: str = "") -> Dict[str, Dict[str, str]]:
+    """PK-06 — terbitkan jurnal konfirmasi yang KURANG (per sisi, idempoten). Dipakai konfirmasi & panel Posting Gagal."""
+    from services import twin_journal as _twin
+    seller, buyer = await _pair_docs(pair_id)
+    if float(seller.get("grand_total") or 0) <= EPS:
+        await db[COLL_ICT].update_many({"pair_id": pair_id}, {"$set": {"gl_status": "not_required"}})
+        return {}
+    date = seller.get("confirmed_at") or seller.get("created_at") or now_iso()
+    return await _twin.post_twin(source_type="interco_transaction", base_id=pair_id, date=date,
+                                 sides=_confirm_sides(seller, buyer), created_by=actor or "system")
+
+
+async def _gl_warning(gl_res: Dict[str, Dict[str, str]], pair_id: str) -> str:
+    from services import twin_journal as _twin
+    if not gl_res:
+        return ""
+    seller, buyer = await _pair_docs(pair_id)
+    return await _twin.warning_for(gl_res, _confirm_sides(seller, buyer))
+
+
+async def _post_gl_for_pair(pair_id: str, actor: str) -> None:
+    """Pemanggil lama → `repost_gl` (PK-06: per sisi, tanpa penjaga "penjual ATAU pembeli")."""
+    await repost_gl(pair_id, actor)
 
 
 async def post_gl_on_delivery(pair_id: str, actor: str,
@@ -982,11 +1007,25 @@ async def get_account(from_entity_id: str, to_entity_id: str,
 # ═══════════════════════════════════════════════════════════════════════════
 # SETTLEMENT / NETTING (US6, pola kontrabon G-7)
 # ═══════════════════════════════════════════════════════════════════════════
-async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[str, Any]:
+async def create_settlement(payload: Dict[str, Any], actor: str = "", idempotency_key: str = "") -> Dict[str, Any]:
+    """PK-06 (IC-08) — pelunasan antar-PT: PERIKSA (validasi, rekening kedua PT, jurnal kedua buku) → NIAT (settlement
+    `pending`, id tetap dari kunci) → EFEK 1 (sisa tiap dokumen, CAS + `settlement_ids`) → EFEK 2 (kas kembar) →
+    JURNAL per sisi (tahan-gagal) → SELESAI. Kunci sama → hasil yang sama; diulang dari langkah yang belum tuntas."""
     payer = (payload.get("payer_entity_id") or "").strip()
     payee = (payload.get("payee_entity_id") or "").strip()
     if not payer or not payee or payer == payee:
         raise IntercoError("Pilih PT pembayar dan PT penerima yang berbeda.")
+    settle_id = new_id("ics")
+    if idempotency_key:
+        import hashlib
+        settle_id = "ics_" + hashlib.sha256(f"{payer}|{idempotency_key}".encode()).hexdigest()[:24]
+        existing = await db[COLL_ICS].find_one({"id": settle_id}, {"_id": 0})
+        if existing:
+            if existing.get("status") == "posted":
+                return safe_doc(existing)
+            if existing.get("status") == "cancelled":
+                raise IntercoConflict("Pelunasan dengan kunci ini sudah dibatalkan. Muat ulang lalu ulangi.")
+            return await _run_settlement(existing, actor)
     picks = payload.get("transactions") or []
     if not picks:
         raise IntercoError("Minimal satu transaksi harus dipilih untuk settlement.")
@@ -1007,6 +1046,10 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
             raise IntercoError(
                 f"Transaksi {seller_doc.get('number')} bukan milik pasangan PT ini "
                 f"(butuh penjual={payee}, pembeli={payer}).")
+        counterpart = await db[COLL_ICT].find_one({"id": seller_doc.get("counterpart_id")}, {"_id": 0, "gl_status": 1})
+        if seller_doc.get("gl_status") == "failed" or (counterpart or {}).get("gl_status") == "failed":
+            raise IntercoConflict(f"Transaksi {seller_doc.get('number')} masih punya jurnal yang gagal terbit. "
+                                  "Ulangi dulu dari Keuangan › Posting Gagal.")
         if seller_doc["status"] not in OPEN_STATUSES:
             raise IntercoError(
                 f"Transaksi {seller_doc.get('number')} berstatus "
@@ -1039,15 +1082,15 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
             "counterpart_number": seller_doc.get("counterpart_number"),
             "grand_total": float(seller_doc.get("grand_total") or 0),
             "previous_settled": float(seller_doc.get("settled_amount") or 0),
+            "previous_status": seller_doc.get("status", ""),
             "applied_amount": applied,
+            "applied_at": None,
         })
 
     total_applied = round(total_applied, 2)
     if total_applied <= EPS:
         raise IntercoError("Total settlement harus > 0.")
 
-    settle_id = new_id("ics")
-    number = await next_doc_number(COLL_ICS, "number", "ICS-", entity_id=payer)
     settle_date = payload.get("settle_date") or _today()
     method = (payload.get("method") or "transfer").strip().lower()
     # F-08 (audit 2026-09-02) — netting hanya sah bila PEMBAYAR juga punya PIUTANG ke
@@ -1082,12 +1125,17 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
             if take <= EPS:
                 continue
             netted_against.append({"interco_id": rd["id"], "pair_id": rd.get("pair_id"),
-                                   "number": rd.get("number"), "applied_amount": take})
+                                   "number": rd.get("number"), "applied_amount": take,
+                                   "previous_status": rd.get("status", ""), "applied_at": None})
             remaining = round(remaining - take, 2)
 
+    payer_acc = payee_acc = ""
+    if method != "netting":
+        payer_acc = await _settle_account(payer, (payload.get("bank_account_id") or "").strip())
+        payee_acc = await _settle_account(payee, "")
     doc = {
         "id": settle_id,
-        "number": number,
+        "number": "",
         "entity_id": payer,      # scope: PT yang membayar
         "payer_entity_id": payer,
         "payer_entity_name": payer_snap["name"],
@@ -1095,77 +1143,142 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
         "payee_entity_name": payee_snap["name"],
         "settle_date": settle_date,
         "method": method,
-        "bank_account_id": (payload.get("bank_account_id") or "").strip(),
+        "bank_account_id": payer_acc,
+        "payer_account_id": payer_acc,
+        "payee_account_id": payee_acc,
         "notes": (payload.get("notes") or "").strip(),
         "applied": applied_rows,
         "netted_against": netted_against,
         "total_applied": total_applied,
-        "status": "posted",
+        "status": "pending",
+        "gl_status": "pending",
+        "idempotency_key": idempotency_key,
         "created_at": now_iso(),
         "created_by": actor,
     }
-    await db[COLL_ICS].insert_one(doc)
+    # PERIKSA jurnal kedua buku sebelum apa pun tertulis (periode tertutup / akun nonaktif → 409).
+    from services import twin_journal as _twin
+    await _twin.preflight_twin(source_type="interco_settlement", base_id=settle_id, date=settle_date,
+                               sides=_settlement_sides(doc))
+    doc["number"] = await next_doc_number(COLL_ICS, "number", "ICS-", entity_id=payer)
+    await db[COLL_ICS].insert_one(dict(doc))
+    return await _run_settlement(doc, actor)
 
-    # Update settled_amount per transaksi (kedua dokumen kembar) — termasuk piutang balik
-    # yang dikonsumsi netting (F-08).
-    ts = now_iso()
-    consume_rows = list(applied_rows) + [
-        {"interco_id": n["interco_id"], "counterpart_id": None, "pair_id": n["pair_id"],
-         "applied_amount": n["applied_amount"]} for n in netted_against]
-    for row in consume_rows:
-        ids = [row["interco_id"], row.get("counterpart_id")]
-        if not row.get("counterpart_id") and row.get("pair_id"):
-            ids = [d["id"] for d in await db[COLL_ICT].find(
-                {"pair_id": row["pair_id"]}, {"_id": 0, "id": 1}).to_list(4)]
+
+class _SettleRowRejected(Exception):
+    pass
+
+
+async def _settle_account(entity_id: str, account_id: str) -> str:
+    """Rekening kas/bank PT itu: yang dipilih (wajib milik PT & aktif) atau rekening bawaannya."""
+    from services.interco_money_service import default_cash_account
+    nama = (await _entity_snapshot(entity_id))["name"]
+    if account_id:
+        acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "entity_id": 1, "is_active": 1})
+        if not acc or acc.get("is_active") is False or acc.get("entity_id") != entity_id:
+            raise IntercoError(f"Rekening itu bukan milik {nama} atau sudah nonaktif.")
+        return account_id
+    aid = await default_cash_account(entity_id)
+    if not aid:
+        raise IntercoError(f"{nama} belum punya rekening kas/bank aktif. Tambahkan di Keuangan › Kas & Bank.")
+    return aid
+
+
+async def _apply_settlement_rows(doc: Dict[str, Any], actor: str) -> None:
+    """EFEK 1 — naikkan `settled_amount` tiap dokumen kembar SEKALI per settlement (CAS + `settlement_ids`).
+    Satu baris ditolak → semua yang sudah dinaikkan settlement ini dikembalikan, lalu `_SettleRowRejected`."""
+    from pymongo import ReturnDocument
+    sid = doc["id"]
+    groups = [("applied", r) for r in doc.get("applied", [])] + [("netted_against", r) for r in doc.get("netted_against", [])]
+    amount_by_pair: Dict[str, float] = {}
+    status_by_pair: Dict[str, str] = {}
+    for _, r in groups:
+        amount_by_pair[r["pair_id"]] = round(amount_by_pair.get(r["pair_id"], 0.0) + float(r["applied_amount"]), 2)
+        status_by_pair.setdefault(r["pair_id"], r.get("previous_status") or "confirmed")
+    idx = {"applied": 0, "netted_against": 0}
+    for field, row in groups:
+        i = idx[field]
+        idx[field] += 1
+        if row.get("applied_at"):
+            continue
+        amt = float(row["applied_amount"])
+        # Urutan TETAP (id terurut): dua settlement yang berebut pasangan sama selalu bertemu di dokumen yang sama
+        # lebih dulu, sehingga tepat satu yang lolos — bukan masing-masing menang di satu sisi lalu sama-sama batal.
+        ids = sorted(d["id"] for d in await db[COLL_ICT].find({"pair_id": row["pair_id"]}, {"_id": 0, "id": 1}).to_list(4))
         for _id in ids:
-            if not _id:
-                continue
-            cur = await db[COLL_ICT].find_one({"id": _id}, {"_id": 0, "grand_total": 1,
-                                                             "settled_amount": 1,
-                                                             "returned_amount": 1})
-            if not cur:
-                continue
-            new_settled = round(float(cur.get("settled_amount") or 0) + row["applied_amount"], 2)
-            grand = float(cur.get("grand_total") or 0)
-            returned = float(cur.get("returned_amount") or 0)
-            new_status_update: Dict[str, Any] = {"settled_amount": new_settled,
-                                                  "updated_at": ts,
-                                                  "updated_by": actor}
-            if new_settled + returned >= grand - EPS:
-                new_status_update["status"] = "settled"
-                new_status_update["settled_at"] = ts
-            await db[COLL_ICT].update_one({"id": _id}, {"$set": new_status_update})
+            res = await db[COLL_ICT].find_one_and_update(
+                {"id": _id, "status": {"$in": list(OPEN_STATUSES)}, "settlement_ids": {"$ne": sid},
+                 "$expr": {"$lte": [{"$add": [{"$ifNull": ["$settled_amount", 0]}, {"$ifNull": ["$returned_amount", 0]},
+                                              amt]}, {"$add": [{"$ifNull": ["$grand_total", 0]}, EPS]}]}},
+                {"$inc": {"settled_amount": amt}, "$addToSet": {"settlement_ids": sid},
+                 "$set": {"updated_at": now_iso(), "updated_by": actor}},
+                projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+            if not res:
+                if await db[COLL_ICT].find_one({"id": _id, "settlement_ids": sid}, {"_id": 0, "id": 1}):
+                    continue
+                async for d in db[COLL_ICT].find({"settlement_ids": sid}, {"_id": 0, "id": 1, "pair_id": 1}):
+                    await db[COLL_ICT].update_one({"id": d["id"]}, {
+                        "$inc": {"settled_amount": -amount_by_pair.get(d["pair_id"], 0.0)},
+                        "$pull": {"settlement_ids": sid},
+                        "$set": {"status": status_by_pair.get(d["pair_id"], "confirmed"), "updated_at": now_iso()},
+                        "$unset": {"settled_at": ""}})
+                raise _SettleRowRejected(row.get("number") or row["pair_id"])
+            if float(res.get("settled_amount") or 0) + float(res.get("returned_amount") or 0) \
+                    >= float(res.get("grand_total") or 0) - EPS and res.get("status") != "settled":
+                await db[COLL_ICT].update_one({"id": _id}, {"$set": {"status": "settled", "settled_at": now_iso()}})
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {f"{field}.{i}.applied_at": now_iso()}})
+        row["applied_at"] = now_iso()
 
-    # Post GL settlement (kedua buku)
-    await _post_gl_settlement(doc, actor)
 
-    # Refresh saldo pasangan (payee=penjual, payer=pembeli). Cukup satu panggilan;
-    # rewrite _update_account_balance sudah menulis kedua sisi (receivable + payable).
+async def _run_settlement(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
+    from services import twin_journal as _twin
+    sid = doc["id"]
+    payer, payee = doc["payer_entity_id"], doc["payee_entity_id"]
+    try:
+        await _apply_settlement_rows(doc, actor)
+    except _SettleRowRejected as exc:
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {
+            "status": "cancelled", "cancel_reason": f"sisa transaksi {exc} berubah saat diproses",
+            "updated_at": now_iso()}})
+        raise IntercoConflict(f"Sisa transaksi {exc} berubah saat diproses. Tidak ada yang tercatat; muat ulang lalu "
+                              "ulangi.") from exc
+    # EFEK 2 — uang benar-benar berpindah: kas kembar (netting tidak membuat kas)
+    if doc.get("method") != "netting" and not doc.get("cash_out_id"):
+        from services import interco_money_service as icm
+        cash = await icm.twin_cash(
+            out_entity=payer, in_entity=payee, amount=float(doc["total_applied"]), category="pelunasan antar-PT",
+            description=f"Pelunasan antar-PT {doc.get('number')} ({doc.get('payer_entity_name')} → "
+                        f"{doc.get('payee_entity_name')})",
+            ref_type="interco_settlement", ref_id=sid, actor=actor or "system", txn_date=doc.get("settle_date", ""),
+            out_account_id=doc.get("payer_account_id", ""), in_account_id=doc.get("payee_account_id", ""))
+        doc["cash_out_id"], doc["cash_in_id"] = cash["out"].get("id", ""), cash["in"].get("id", "")
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {"cash_out_id": doc["cash_out_id"],
+                                                             "cash_in_id": doc["cash_in_id"]}})
+    gl_res = await repost_settlement_gl(sid, actor)
+    await db[COLL_ICS].update_one({"id": sid}, {"$set": {"status": "posted", "updated_at": now_iso()}})
+
+    # Refresh saldo pasangan (payee=penjual, payer=pembeli) + arah balik bila netting (F-08).
     await _update_account_balance(payee, payer)
-    if netted_against:
-        await _update_account_balance(payer, payee)   # F-08 — pasangan arah balik ikut disegarkan
-
-    # US7/INV-IC-03 — sisa IC-AR/IC-AP yang dieliminasi ikut mengecil setelah
-    # settlement; kalau tidak disinkronkan, konsolidasi menghapus saldo hantu.
-    for row in applied_rows:
-        await _sync_group_elimination(row["pair_id"])
-    for n in netted_against:
-        if n.get("pair_id"):
-            await _sync_group_elimination(n["pair_id"])
-
+    if doc.get("netted_against"):
+        await _update_account_balance(payer, payee)
+    # US7/INV-IC-03 — sisa IC-AR/IC-AP yang dieliminasi ikut mengecil setelah settlement.
+    for row in doc.get("applied", []) + doc.get("netted_against", []):
+        if row.get("pair_id"):
+            await _sync_group_elimination(row["pair_id"])
     # US10 — jejak dua arah: settlement MELUNASI transaksi-transaksi ini.
     try:
         from services import doc_refs_service as _refs
-        for row in applied_rows:
-            for _id in (row["interco_id"], row["counterpart_id"]):
+        for row in doc.get("applied", []):
+            for _id in (row["interco_id"], row.get("counterpart_id")):
                 if _id:
-                    await _refs.safe_link(("interco_settlement", settle_id),
-                                          ("interco_transaction", _id), "settles",
-                                          note=f"Settlement antar-PT {number}")
+                    await _refs.safe_link(("interco_settlement", sid), ("interco_transaction", _id), "settles",
+                                          note=f"Settlement antar-PT {doc.get('number')}")
     except Exception as exc:  # noqa: BLE001
         print(f"[interco] tautan settlement gagal: {exc}")
-
-    return safe_doc(doc)
+    out = safe_doc(await db[COLL_ICS].find_one({"id": sid}, {"_id": 0}))
+    out["gl"] = gl_res
+    out["warning"] = await _twin.warning_for(gl_res, _settlement_sides(out))
+    return out
 
 
 async def payment_settings(entity_id: str = "") -> Dict[str, Any]:
@@ -1274,76 +1387,54 @@ async def job_interco_payment_reminder() -> Dict[str, Any]:
     return {"created": sent, "skipped_pending_cutoff": skipped, "detail": f"{sent} pengingat bayar antar-PT dikirim"}
 
 
-async def _post_gl_settlement(doc: Dict[str, Any], actor: str) -> None:
-    """Post jurnal settlement.
+def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
+    """Rencana jurnal settlement (baris sama dengan kode lama).
 
-    Kalau method='netting' (bawaan): tidak ada uang keluar; sekadar saling hapus
-    piutang/utang antar-PT.
-      Buku PAYER (pembeli):  Dr 2-1250 IC-AP  / Cr 1-1250 IC-AR (bila juga punya piutang)
-                             ATAU Cr 1-1300 (tidak → tidak ada kas keluar)
-      Buku PAYEE (penjual):  Dr 2-1250 IC-AP / Cr 1-1250 IC-AR
-
-    Model sederhana: bila netting, kedua buku hanya mengosongkan saldo antar-PT
-    (Payer Dr IC-AP / Cr IC-AR; Payee Dr IC-AP / Cr IC-AR). Bila transfer/cash:
-    payer Dr IC-AP / Cr Bank; payee Dr Bank / Cr IC-AR.
+    netting : Payer Dr IC-AP / Cr IC-AR · Payee Dr IC-AP / Cr IC-AR (saling hapus piutang/utang antar-PT)
+    transfer/cash : Payer Dr IC-AP / Cr Kas Besar · Payee Dr Kas Besar / Cr IC-AR (uang benar-benar berpindah)
     """
-    total = float(doc.get("total_applied") or 0)
-    if total <= EPS:
-        return
-    method = doc.get("method", "netting")
-    sid = doc["id"]
-    if await gl_service._already_posted("interco_settlement", f"{sid}:payer") or \
-       await gl_service._already_posted("interco_settlement", f"{sid}:payee"):
-        return
-    date = doc.get("settle_date") or now_iso()
-    label = doc.get("number", sid)
-    payer_ent = doc["payer_entity_id"]
-    payee_ent = doc["payee_entity_id"]
-
-    if method == "netting":
-        # Payer: Dr IC-AP / Cr IC-AR (saling hapus piutang balik bila ada)
-        lines_payer = gl_service._balanced_pair(
-            gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
-            f"Netting antar-PT {label} → {doc.get('payee_entity_name', '')}")
-        await gl_service._insert_entry(
-            lines=lines_payer, description=f"Settlement antar-PT (netting) {label}",
-            date=date, source_type="interco_settlement",
-            source_id=f"{sid}:payer", entity_id=payer_ent,
-            created_by=actor or "system", source_label=label,
-        )
-        # Payee: Dr IC-AP / Cr IC-AR
-        lines_payee = gl_service._balanced_pair(
-            gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
-            f"Netting antar-PT {label} ← {doc.get('payer_entity_name', '')}")
-        await gl_service._insert_entry(
-            lines=lines_payee, description=f"Settlement antar-PT (netting) {label}",
-            date=date, source_type="interco_settlement",
-            source_id=f"{sid}:payee", entity_id=payee_ent,
-            created_by=actor or "system", source_label=label,
-        )
+    from services.twin_journal import TwinSide
+    total = round(float(doc.get("total_applied") or 0), 2)
+    sid, label = doc["id"], doc.get("number") or doc["id"]
+    payer_ent, payee_ent = doc["payer_entity_id"], doc["payee_entity_id"]
+    if doc.get("method", "netting") == "netting":
+        lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
+                                       f"Netting antar-PT {label} → {doc.get('payee_entity_name', '')}")
+        le = gl_service._balanced_pair(gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
+                                       f"Netting antar-PT {label} ← {doc.get('payer_entity_name', '')}")
+        dp = de = f"Settlement antar-PT (netting) {label}"
     else:
-        # transfer/cash: uang benar-benar berpindah
         cash_acc = gl_service.ACC_KAS_BESAR
-        # Payer: Dr IC-AP / Cr Bank
-        lines_payer = gl_service._balanced_pair(
-            gl_service.ACC_IC_AP, cash_acc, total,
-            f"Bayar utang antar-PT {label} → {doc.get('payee_entity_name', '')}")
-        await gl_service._insert_entry(
-            lines=lines_payer, description=f"Bayar utang antar-PT {label}",
-            date=date, source_type="interco_settlement",
-            source_id=f"{sid}:payer", entity_id=payer_ent,
-            created_by=actor or "system", source_label=label,
-        )
-        # Payee: Dr Bank / Cr IC-AR
-        lines_payee = gl_service._balanced_pair(
-            cash_acc, gl_service.ACC_IC_AR, total,
-            f"Terima pelunasan antar-PT {label} ← {doc.get('payer_entity_name', '')}")
-        await gl_service._insert_entry(
-            lines=lines_payee, description=f"Terima pelunasan antar-PT {label}",
-            date=date, source_type="interco_settlement",
-            source_id=f"{sid}:payee", entity_id=payee_ent,
-            created_by=actor or "system", source_label=label,
-        )
+        lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, cash_acc, total,
+                                       f"Bayar utang antar-PT {label} → {doc.get('payee_entity_name', '')}")
+        le = gl_service._balanced_pair(cash_acc, gl_service.ACC_IC_AR, total,
+                                       f"Terima pelunasan antar-PT {label} ← {doc.get('payer_entity_name', '')}")
+        dp, de = f"Bayar utang antar-PT {label}", f"Terima pelunasan antar-PT {label}"
+    return [TwinSide("payer", payer_ent, lp, dp, label, (COLL_ICS, sid), "_payer"),
+            TwinSide("payee", payee_ent, le, de, label, (COLL_ICS, sid), "_payee")]
+
+
+async def repost_settlement_gl(settlement_id: str, actor: str = "") -> Dict[str, Dict[str, str]]:
+    """PK-06 — terbitkan jurnal settlement yang KURANG per sisi; ringkasan `gl_status` di dokumen."""
+    from services import twin_journal as _twin
+    doc = await db[COLL_ICS].find_one({"id": settlement_id}, {"_id": 0})
+    if not doc:
+        raise IntercoError("Settlement tidak ditemukan.")
+    if float(doc.get("total_applied") or 0) <= EPS:
+        await db[COLL_ICS].update_one({"id": settlement_id}, {"$set": {"gl_status": "not_required"}})
+        return {}
+    res = await _twin.post_twin(source_type="interco_settlement", base_id=settlement_id,
+                                date=doc.get("settle_date") or now_iso(), sides=_settlement_sides(doc),
+                                created_by=actor or "system")
+    errs = [v["error"] for v in res.values() if v["status"] == "failed"]
+    await db[COLL_ICS].update_one({"id": settlement_id}, {"$set": {
+        "gl_status": "failed" if errs else "posted", "gl_error": "; ".join(errs)[:500]}})
+    return res
+
+
+async def _post_gl_settlement(doc: Dict[str, Any], actor: str) -> None:
+    """Pemanggil lama → `repost_settlement_gl` (PK-06: per sisi, tanpa penjaga "payer ATAU payee")."""
+    await repost_settlement_gl(doc["id"], actor)
 
 
 async def list_settlements(scope_entity_ids: List[str], entity_id: str = "",

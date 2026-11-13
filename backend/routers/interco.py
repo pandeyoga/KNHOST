@@ -31,8 +31,18 @@ async def _scope(request: Request, entity_id: Optional[str] = None) -> List[str]
     return resolve_scope_ids(ctx, entity_id)
 
 
-def _fail(exc: ics.IntercoError) -> HTTPException:
+def _fail(exc: Exception) -> HTTPException:
+    """Galat bisnis antar-PT → 400. PK-06: pemeriksaan jurnal kedua buku gagal (`TwinJournalError`) dan konflik
+    keadaan (`IntercoConflict`: sisa berubah, jurnal transaksi masih gagal) → 409."""
+    from services.twin_journal import TwinJournalError
+    if isinstance(exc, (TwinJournalError, ics.IntercoConflict)):
+        return HTTPException(status_code=409, detail=str(exc))
     return HTTPException(status_code=400, detail=str(exc))
+
+
+def _biz_errors():
+    from services.twin_journal import TwinJournalError
+    return (ics.IntercoError, ics.IntercoConflict, TwinJournalError)
 
 
 _PARTY_FIELDS = ("entity_id", "seller_entity_id", "buyer_entity_id", "from_entity_id",
@@ -47,7 +57,9 @@ async def _guard_party(request: Request, doc: Optional[Dict[str, Any]], label: s
     ctx = await entity_ctx(request)
     # Retur antar-PT dikirim sebagai PASANGAN {returner, receiver} — pihak-pihaknya ada di dokumen kembarnya.
     # Dulu pasangan dibaca langsung: tak satu pun kolom pihak ditemukan, jadi pagar ini selalu lolos.
-    src = doc.get("returner") or doc
+    # PK-06 — transaksi antar-PT juga dikirim sebagai pasangan {pair_id, seller, buyer}: pihaknya dibaca dari sisi
+    # penjual. Sebelumnya pagar ini tidak pernah menolak transaksi (temuan IC-11; penjaga endpoint lain → PK-09).
+    src = doc.get("returner") or doc.get("seller") or doc
     parties = {src.get(f) for f in _PARTY_FIELDS if src.get(f)}
     if parties and not (parties & set(ctx.allowed_entity_ids)):
         raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
@@ -88,7 +100,7 @@ async def create_ict(payload: IntercoCreate, request: Request) -> Dict[str, Any]
                             detail="Tidak berwenang menerbitkan transaksi untuk PT penjual ini.")
     try:
         res = await ics.create(payload.model_dump(), actor.get("name", ""), actor_user=actor)
-    except ics.IntercoError as exc:
+    except _biz_errors() as exc:
         raise _fail(exc) from exc
     await audit(actor.get("name", ""), "interco_transaction_created",
                 "interco_transaction", res.get("pair_id", ""),
@@ -110,7 +122,7 @@ async def confirm_ict(interco_id: str, payload: IntercoActionIn,
     await _guard_party(request, await ics.get_one(interco_id), "Transaksi antar-PT")
     try:
         res = await ics.confirm(interco_id, actor)
-    except ics.IntercoError as exc:
+    except _biz_errors() as exc:
         raise _fail(exc) from exc
     await audit(actor.get("name", ""), "interco_transaction_confirmed",
                 "interco_transaction", interco_id, {"note": payload.note})
@@ -258,8 +270,9 @@ async def create_ics(payload: IntercoSettlementCreate,
         raise HTTPException(status_code=403,
                             detail="Tidak berwenang menerbitkan settlement untuk PT pembayar ini.")
     try:
-        res = await ics.create_settlement(payload.model_dump(), actor.get("name", ""))
-    except ics.IntercoError as exc:
+        res = await ics.create_settlement(payload.model_dump(), actor.get("name", ""),
+                                          idempotency_key=(request.headers.get("Idempotency-Key") or "").strip())
+    except _biz_errors() as exc:
         raise _fail(exc) from exc
     await audit(actor.get("name", ""), "interco_settlement_created",
                 "interco_settlement", res.get("id", ""),
@@ -435,10 +448,14 @@ async def approve_interco_return(ret_id: str, payload: IntercoActionIn,
     else:
         actor = await require_permission(request, "interco", "approve")
     await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    from services.twin_journal import TwinJournalError
     try:
         res = await icret.approve(ret_id, actor)
+    except TwinJournalError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except icret.IntercoReturnError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        code = 409 if "jurnal yang gagal terbit" in str(exc) else 400
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
     await audit(actor.get("name", ""), "interco_return_approved", "interco_return",
                 ret_id, {"note": payload.note,
                          "total": (res.get("returner") or {}).get("grand_total")})

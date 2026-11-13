@@ -21,10 +21,17 @@ SOURCES = {
     "goods_receipt": ("wms_tasks", {"gl_posting.status": "failed"}, "gl_posting.entity_id", "po_number"),
     "shipment": ("shipments", {"gl_status": "failed"}, "entity_id", "shipment_no"),
     "contra_bon": ("contra_bons", {"gl_status": "failed"}, "entity_id", "number"),   # PK-05 — jurnal potongan
+    # PK-06 — jurnal kembar antar-PT, satu baris per SISI (PT) yang gagal
+    "interco_transaction": ("interco_transactions", {"gl_status": "failed"}, "entity_id", "number"),
+    "interco_return": ("interco_returns", {"gl_status": "failed"}, "entity_id", "number"),
+    "interco_settlement_payer": ("interco_settlements", {"gl_status_payer": "failed"}, "payer_entity_id", "number"),
+    "interco_settlement_payee": ("interco_settlements", {"gl_status_payee": "failed"}, "payee_entity_id", "number"),
 }
 LABELS = {"cash_transaction": "Transaksi Kas", "ar_receipt": "Kwitansi AR", "purchase_return": "Retur Beli",
           "goods_receipt": "Penerimaan Barang (GR)", "shipment": "Surat Jalan",
-          "contra_bon": "Kontrabon (jurnal potongan)"}
+          "contra_bon": "Kontrabon (jurnal potongan)", "interco_transaction": "Transaksi Antar-PT",
+          "interco_return": "Retur Antar-PT", "interco_settlement_payer": "Pelunasan Antar-PT (pembayar)",
+          "interco_settlement_payee": "Pelunasan Antar-PT (penerima)"}
 
 
 def _pick(doc: Dict[str, Any], dotted: str) -> Any:
@@ -39,8 +46,11 @@ def _row(kind: str, d: Dict[str, Any]) -> Dict[str, Any]:
     return {"kind": kind, "kind_label": LABELS[kind], "id": d["id"],
             "number": d.get(num_f) or d.get("number") or d["id"],
             "entity_id": _pick(d, ent_f) or "",
-            "amount": d.get("amount") or d.get("grand_total") or glp.get("amount") or d.get("qty") or 0,
-            "error": d.get("gl_error") or glp.get("error") or "",
+            "amount": d.get("amount") or d.get("grand_total") or d.get("total_applied") or glp.get("amount")
+            or d.get("qty") or 0,
+            "error": (d.get("gl_error_payer") if kind == "interco_settlement_payer" else
+                      d.get("gl_error_payee") if kind == "interco_settlement_payee" else None)
+            or d.get("gl_error") or glp.get("error") or "",
             "updated_at": d.get("updated_at") or glp.get("at") or d.get("created_at") or ""}
 
 
@@ -74,6 +84,19 @@ async def _retry(kind: str, doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     elif kind == "contra_bon":
         from services.ap_payment_service import repost_contra_bon
         await repost_contra_bon(doc["id"])
+    elif kind in ("interco_transaction", "interco_return", "interco_settlement_payer", "interco_settlement_payee"):
+        if kind == "interco_transaction":
+            from services.interco_service import repost_gl
+            res = await repost_gl(doc["pair_id"], actor["name"])
+        elif kind == "interco_return":
+            from services.interco_return_service import repost_gl
+            res = await repost_gl(doc["return_pair_id"], actor["name"])
+        else:
+            from services.interco_service import repost_settlement_gl
+            res = await repost_settlement_gl(doc["id"], actor["name"])
+        gagal = [v.get("error") for v in (res or {}).values() if v.get("status") == "failed"]
+        if gagal:
+            raise RuntimeError("; ".join(gagal))
     elif kind == "ar_receipt":
         from services.ar_receipt_service import repost_receipt
         await repost_receipt(doc["id"])
@@ -107,7 +130,9 @@ async def retry_posting_failure(kind: str, doc_id: str, request: Request) -> Dic
     await audit(actor["name"], "posting_failure_retried", kind, doc_id, {})
     coll = SOURCES[kind][0]
     fresh = await db[coll].find_one({"id": doc_id}, {"_id": 0}) or {}
-    status = (fresh.get("gl_posting") or {}).get("status") if kind == "goods_receipt" else fresh.get("gl_status")
+    status = (fresh.get("gl_posting") or {}).get("status") if kind == "goods_receipt" else \
+        fresh.get("gl_status_payer") if kind == "interco_settlement_payer" else \
+        fresh.get("gl_status_payee") if kind == "interco_settlement_payee" else fresh.get("gl_status")
     return {"kind": kind, "id": doc_id, "gl_status": status}
 
 

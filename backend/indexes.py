@@ -409,6 +409,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "interco_transactions", "interco_returns", "customers", "suppliers", "business_entities", "users",
     # PK-05 — id niat bayar = kunci idempotensi (turunan SHA-256): keunikannya dijaga database.
     "ap_payment_intents",
+    # PK-06 — id settlement antar-PT turunan kunci idempotensi.
+    "interco_settlements",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
