@@ -48,7 +48,12 @@ grep -v -i "emergent\|litellm" backend/requirements.txt > /tmp/req.txt      # du
 pip install -r /tmp/req.txt mongomock-motor==0.0.36
 ```
 
-Pola satu uji:
+**Untuk tes unit blueprint pakai kerangka `backend/tests_mem/` (unit PK-02)**: fixture `aplikasi`, `klien`, `akun`, `sesi`,
+tiga peran uji, `paksa_jurnal_gagal`, dan pembantu `pt_uji`, `jurnal`, `tutup_periode`, `saldo_akun`. Kontraknya di
+[`backend/tests_mem/README.md`](../../backend/tests_mem/README.md). Jalankan `python -m pytest backend/tests_mem -n 0`.
+Pola di bawah ini untuk skrip lepas (seperti bukti audit), bukan untuk tes unit.
+
+Pola satu uji (skrip lepas):
 
 ```python
 import boot_app, asyncio, datetime, httpx, server      # boot_app HARUS diimpor paling dulu
