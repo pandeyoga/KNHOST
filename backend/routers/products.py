@@ -242,6 +242,20 @@ async def list_sales_owners(request: Request) -> List[Dict[str, Any]]:
     return users
 
 
+# PK-47 (MB-01) — baca SATU master barang. Didaftarkan SESUDAH `/products/sales-owners` (dan rute ber-kata tetap
+# lain) supaya tidak menelannya. Hanya master barang: harga per PT, HPP hitung, dan stok tetap milik daftar atau
+# `stock-breakdown` (02_STANDAR §5 D1 — satu rumus per angka).
+@router.get("/products/{product_id}")
+async def get_product(product_id: str, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "product", "view")
+    product = await db.products.find_one({"$and": [pexcl.visibility_query(actor), {"id": product_id}]}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
+    line_scope.assert_can_touch(actor, product, what=f"Produk '{product.get('name', product_id)}'")
+    from dependencies import has_permission
+    from services.catalog_access import public_product
+    return public_product(safe_doc(product), actor, manage=await has_permission(actor, "product", "update"))
+
 
 @router.delete("/products/{product_id}")
 async def delete_product(product_id: str, request: Request) -> Dict[str, Any]:

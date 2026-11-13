@@ -7,7 +7,7 @@ from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from dependencies import require_permission, audit, current_user
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import PurchaseOrderCreate, PurchaseOrderAmend
 from services.config_service import build_approval_chain, current_pending_level, role_satisfies, get_effective_settings, compute_order_pricing
@@ -802,6 +802,8 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
     po = safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
+    # PK-47 (PR-15) — penjaga PENUGASAN PT, sama dengan baca/ubah PO: PO PT lain = tidak ada.
+    await guard_doc(request, "purchase_orders", po, strict=False, not_found="Purchase Order tidak ditemukan")
     if po.get("status") != "waiting_approval":
         raise HTTPException(status_code=409, detail=f"PO status '{po.get('status')}' tidak menunggu approval")
     await _assert_fresh_decision(po, request)
@@ -924,6 +926,8 @@ async def reject_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
     po = safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
+    # PK-47 (PR-15) — penjaga penugasan PT seperti setuju.
+    await guard_doc(request, "purchase_orders", po, strict=False, not_found="Purchase Order tidak ditemukan")
     if po.get("status") != "waiting_approval":
         raise HTTPException(status_code=409, detail=f"PO status '{po.get('status')}' tidak menunggu approval")
     required = po.get("required_approval_role")

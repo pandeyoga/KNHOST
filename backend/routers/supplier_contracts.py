@@ -205,7 +205,7 @@ async def _claim_recap(request: Request, entity_id: Optional[str], date_from: st
     from dependencies import require_any_permission
     from services import makloon_recap_service as mrs
     await require_any_permission(request, [("makloon_order", "record_loss"), ("makloon_order", "approve_loss"),
-                                           ("makloon_order", "claim_approve"), ("gl", "view"),
+                                           ("makloon_order", "claim_approve"),   # PK-47 (PR-10): `gl` tak ada
                                            ("vendor_bill", "view"), ("accounting", "view")])
     ctx = await entity_ctx(request)
     flt = resolve_list_scope("makloon_orders", {}, ctx, entity_id)

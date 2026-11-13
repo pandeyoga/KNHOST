@@ -31,24 +31,8 @@ from entity_scope import entity_ctx, resolve_list_scope_inherit
 router = APIRouter(prefix="/api")
 
 
-@router.get("/entities")
-async def list_entities(
-    request: Request,
-    status: str = Query("active", description="active | archived | all"),
-    type: str = Query("", description="filter jenis badan usaha"),
-    q: str = Query("", description="cari nama legal / nama singkat / kode"),
-    with_readiness: bool = Query(False, description="sertakan ringkasan kesiapan"),
-    limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0),
-    include_test: bool = Query(False, description="FIX-1 — sertakan badan usaha bertanda data uji"),
-) -> List[Dict[str, Any]]:
-    """Daftar badan usaha — dipakai pemilih entitas, jadi semua user login boleh baca.
-
-    E1.5: **default hanya yang aktif**. Sebelum FASE E-1 endpoint ini selalu
-    mengembalikan semua status sehingga badan usaha nonaktif ikut muncul di
-    pemilih entitas dan bisa dipilih — lalu tulisnya gagal jauh di belakang.
-    """
-    await current_user(request)
+def _entity_query(status: str, type: str, q: str, include_test: bool) -> Dict[str, Any]:
+    """PK-47 (KP-17) — SATU perakit saringan untuk daftar dan penghitung, supaya jumlah = banyak baris daftar."""
     query: Dict[str, Any] = {}
     # FIX-1 (B1 K-B1-10, UI-05) — "PT Uji Provisioning …" bertanda `is_test` (skrip penanda, bisa dibalik) tidak
     # ditawarkan di pengalih badan usaha; layar master meminta `include_test=true`.
@@ -67,6 +51,28 @@ async def list_entities(
             {"short_name": {"$regex": q, "$options": "i"}},
             {"doc_prefix": {"$regex": q, "$options": "i"}},
         ]
+    return query
+
+
+@router.get("/entities")
+async def list_entities(
+    request: Request,
+    status: str = Query("active", description="active | archived | all"),
+    type: str = Query("", description="filter jenis badan usaha"),
+    q: str = Query("", description="cari nama legal / nama singkat / kode"),
+    with_readiness: bool = Query(False, description="sertakan ringkasan kesiapan"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    include_test: bool = Query(False, description="FIX-1 — sertakan badan usaha bertanda data uji"),
+) -> List[Dict[str, Any]]:
+    """Daftar badan usaha — dipakai pemilih entitas, jadi semua user login boleh baca.
+
+    E1.5: **default hanya yang aktif**. Sebelum FASE E-1 endpoint ini selalu
+    mengembalikan semua status sehingga badan usaha nonaktif ikut muncul di
+    pemilih entitas dan bisa dipilih — lalu tulisnya gagal jauh di belakang.
+    """
+    await current_user(request)
+    query = _entity_query(status, type, q, include_test)
     rows = await db.business_entities.find(query, {"_id": 0}).sort(
         "created_at", 1).skip(offset).limit(limit).to_list(limit)
     out: List[Dict[str, Any]] = []
@@ -81,18 +87,16 @@ async def list_entities(
 
 
 @router.get("/entities/count")
-async def count_entities(request: Request, status: str = Query("active")) -> Dict[str, Any]:
-    """Jumlah badan usaha (untuk paging daftar berskala puluhan entitas)."""
+async def count_entities(
+    request: Request,
+    status: str = Query("active", description="active | archived | all"),
+    type: str = Query("", description="filter jenis badan usaha"),
+    q: str = Query("", description="cari nama legal / nama singkat / kode"),
+    include_test: bool = Query(False, description="sertakan badan usaha bertanda data uji"),
+) -> Dict[str, Any]:
+    """Jumlah badan usaha (untuk paging daftar berskala puluhan entitas). Saringan = `GET /api/entities`."""
     await current_user(request)
-    query: Dict[str, Any] = {}
-    # FIX-1 (B1 K-B1-10, UI-05) — "PT Uji Provisioning …" bertanda `is_test` (skrip penanda, bisa dibalik) tidak
-    # ditawarkan di pengalih badan usaha; layar master meminta `include_test=true`.
-    if not include_test:
-        query["is_test"] = {"$ne": True}
-    if status and status != "all":
-        query["status"] = ({"$in": sorted(lifecycle.WRITE_LOCKED_STATUSES)}
-                           if status == "archived" else status)
-    return {"count": await db.business_entities.count_documents(query)}
+    return {"count": await db.business_entities.count_documents(_entity_query(status, type, q, include_test))}
 
 
 @router.get("/entities/{entity_id}")

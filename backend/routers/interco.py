@@ -438,14 +438,16 @@ async def get_interco_return(ret_id: str, request: Request) -> Dict[str, Any]:
 async def approve_interco_return(ret_id: str, payload: IntercoActionIn,
                                  request: Request) -> Dict[str, Any]:
     """Setujui retur → jurnal pembalik terbit di DUA buku (pembuat ≠ penyetuju)."""
+    # PK-47 (MB-02) — izin dulu (tanpa izin antar-PT tidak boleh tahu dokumen ada), lalu 404 bila tidak ada.
+    actor = await require_any_permission(request, [("interco", "approve"), ("interco", "receive")])
     try:
         _pair = await icret.get_one(ret_id)
     except icret.IntercoReturnError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    if (_pair.get("returner") or {}).get("mandatory_accept"):
-        # LN-140 — retur internal WAJIB TERIMA (R-10): gudang penerima boleh menerimanya.
-        actor = await require_any_permission(request, [("interco", "approve"), ("interco", "receive")])
-    else:
+    if not _pair:
+        raise HTTPException(status_code=404, detail="Dokumen retur tidak ditemukan.")
+    if not (_pair.get("returner") or {}).get("mandatory_accept"):
+        # LN-140 — retur internal WAJIB TERIMA (R-10) boleh diterima gudang penerima; selain itu butuh `approve`.
         actor = await require_permission(request, "interco", "approve")
     await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
     from services.twin_journal import TwinJournalError
