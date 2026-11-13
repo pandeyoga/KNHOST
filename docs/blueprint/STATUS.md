@@ -4,7 +4,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 
 | # | ID | Judul | Prasyarat | Status | Commit | Laporan | Catatan |
 |---|---|---|---|---|---|---|---|
-| 1 | PK-01 | Garis dasar gate dan pendaftaran temuan ke tracker | — | selesai |  | [PK-01](../reviews/2026-11-13/hasil/PK-01.md) |  |
+| 1 | PK-01 | Garis dasar gate dan pendaftaran temuan ke tracker | — | selesai | `fce265c` | [PK-01](../reviews/2026-11-13/hasil/PK-01.md) |  |
 | 2 | PK-02 | Kerangka uji database tiruan + tes regresi dari bukti audit | PK-01 | siap |  |  |  |
 | 3 | PK-03 | Cek data nyata (dijalankan pemilik) | — | tahan |  |  | Titik henti H3 |
 | 4 | PK-04 | Cadangan lebih sering dan uji pulih | — | tahan |  |  | Titik henti H2 |
