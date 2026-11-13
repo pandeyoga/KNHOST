@@ -1,0 +1,82 @@
+===== skenario1.py
+
+[1] Laba-Rugi PT A Oktober (2026-10-01..2026-10-31)
+  OK   Pendapatan: laporan=70,000,000.00 hitung-tangan=70,000,000.00
+  OK   HPP: laporan=42,000,000.00 hitung-tangan=42,000,000.00
+  OK   Laba kotor: laporan=28,000,000.00 hitung-tangan=28,000,000.00
+  BEDA Beban operasional (sewa saja bila ikut tanggal WIB): laporan=5,000,000.00 hitung-tangan=4,000,000.00
+  BEDA Laba bersih (bila ikut tanggal WIB): laporan=23,000,000.00 hitung-tangan=24,000,000.00
+
+[2] Neraca PT A per 2026-10-31 (hitung tangan memakai tanggal seperti tersimpan)
+  OK   Total aset: laporan=190,700,000.00 hitung-tangan=190,700,000.00
+  OK   Total kewajiban: laporan=67,700,000.00 hitung-tangan=67,700,000.00
+  OK   Ekuitas (modal + laba berjalan): laporan=123,000,000.00 hitung-tangan=123,000,000.00
+     seimbang menurut laporan: True
+
+[3] Neraca saldo PT A per 2026-10-31
+  OK   Total saldo debit: laporan=237,700,000.00 hitung-tangan=237,700,000.00
+  OK   Total saldo kredit: laporan=237,700,000.00 hitung-tangan=237,700,000.00
+
+[4] Buku besar Kas PT A per 2026-10-31
+  OK   Saldo kas: laporan=115,000,000.00 hitung-tangan=115,000,000.00
+
+[5] Mode gabungan (tanpa filter entitas) — Laba-Rugi Oktober
+  BEDA Pendapatan gabungan vs konsolidasi sebenarnya (penjualan ke luar saja): laporan=70,000,000.00 hitung-tangan=50,000,000.00
+  BEDA Persediaan+aset gabungan vs konsolidasi (tanpa piutang antar-PT & laba dalam stok 8 jt): laporan=212,900,000.00 hitung-tangan=182,700,000.00
+
+[6] Tutup buku Oktober PT A, lalu laporan yang sama
+     laba bersih yang ditutup: 23,000,000.00 | jurnal penutup: AAA/JE-00012
+  OK   Laba-Rugi Oktober tidak berubah setelah ditutup: laporan=23,000,000.00 hitung-tangan=23,000,000.00
+  OK   Ekuitas total tetap: laporan=123,000,000.00 hitung-tangan=123,000,000.00
+  OK   Laba berjalan menjadi 0 setelah ditutup: laporan=0.00 hitung-tangan=0.00
+  OK   Laba ditahan = laba Oktober: laporan=23,000,000.00 hitung-tangan=23,000,000.00
+     neraca seimbang: True
+  OK   jurnal mundur ke Oktober ditolak: ClosedPeriodError
+
+[7] Laba-Rugi Jan–Nov PT A (melewati jurnal penutup)
+  OK   Laba bersih kumulatif = Okt + Nov: laporan=27,000,000.00 hitung-tangan=27,000,000.00
+     neraca 30 Nov seimbang: True | ekuitas: 127,000,000.00
+
+RINGKAS: 15 cocok, 4 berbeda dari hitungan tangan
+
+===== skenario2.py
+
+[GL-07] Jurnal manual selisih 1 sen
+  DITERIMA AAA/JE-00001: total debit 1000.01 ≠ kredit 1000.00; neraca saldo debit 1000.01 kredit 1000.00 → 'balanced'=True
+
+[IC-05] Jurnal manual: konteks PT A, isi permintaan menyebut PT B
+  jurnal BBB/JE-00001 tersimpan di entitas: ent_b (konteks pemanggil: ent_a)
+
+[GL-01] Kas masuk 10 jt → dibalik manual → kasnya di-void dari dokumen
+  jurnal kas AAA/JE-00002; saldo kas 1-1100 = 9,999,000.00
+  dibalik manual oleh AAA/JE-00003; saldo kas = -1,000.00
+  void dokumen → jurnal pembalik kedua: AAA/JE-00004; saldo kas = -10,001,000.00 (seharusnya kembali ke -1,000.00)
+  membalik jurnal pembalik otomatis ditolak: Tanggal pembalik tidak boleh sebelum tanggal jurnal asli.
+
+[IC-01] Jurnal antar-PT: akun utang antar-PT (2-1250) nonaktif di PT B
+  gagal di tengah: JournalValidationError - Akun 2-1250 nonaktif
+  jurnal yang ada: ['seller'] | piutang antar-PT di A = 22,200,000.00 | utang antar-PT di B = 0.00
+  setelah akun diaktifkan lagi dan posting diulang: ['seller'] | utang antar-PT di B = 0.00
+
+[GL-04] Menutup periode yang belum berakhir (2026-12)
+  ditolak: Tutup buku diblokir: saldo Suspense (1-9999) belum nol (Rp 10.000.000). Reklasifikasi dulu lewat Buku Besar › Suspense, atau admin menembus blokir dengan alasan.
+
+[IV-01] Landed cost 3 jt untuk PO berisi 2 roll: satu sudah terjual, satu masih di gudang
+  roll yang dialokasi: ['r_jual', 'r_stok'] (2 diperbarui)
+  nilai roll (buku pembantu) naik 1,500,000.00; akun persediaan 1-1300 naik 3,000,000.00; selisih yang mengendap = 1,500,000.00
+
+===== skenario3.py
+hari ini (UTC): 2026-11-13
+
+[FX-02] Denda 100 rb: terbit, bayar 60 rb, bayar lagi 40 rb
+  bayar-1 → jurnal AAA/JE-00002; bayar-2 → jurnal None; saldo piutang denda 1-1270 = 40,000.00 (seharusnya 0)
+
+[GL-01b] Membalik secara manual jurnal pembalik otomatis
+  jurnal kas AAA/JE-00003 → pembalik otomatis AAA/JE-00004 (source_type=cash_transaction_void); kas = 60,000.00
+  pembalik otomatis DIBALIK manual oleh AAA/JE-00005; kas = -1,940,000.00 (dokumen kas berstatus void, tetapi buku besar kembali berkurang 2 jt)
+
+[GL-04] Menutup bulan berjalan (2026-11) dan bulan depan (2026-12)
+  2026-11: DITERIMA (2026-11-01..2026-11-30), laba ditutup -1,900,000.00
+  2026-12: DITERIMA (2026-12-01..2026-12-31), laba ditutup 0.00
+  jurnal otomatis bertanggal HARI INI kini ditolak: ClosedPeriodError
+

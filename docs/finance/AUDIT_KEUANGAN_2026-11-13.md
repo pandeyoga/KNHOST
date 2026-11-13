@@ -1,7 +1,8 @@
 # Audit keuangan KNHOST — skema, duplikasi, kegagalan, multi-entitas, UI/UX, gap vs ERP matang, arsitektur database
 
 **Tanggal:** 13 Nov 2026 · **Pelaksana:** Claude Code (sesi cloud) · **Baseline:** `cd6963a` · **Sifat:** analisis saja —
-**tidak ada kode yang diubah**, tidak ada database yang dijalankan (MongoDB tidak tersedia di sesi ini).
+**tidak ada kode yang diubah**, tidak ada database nyata yang dijalankan (MongoDB tidak tersedia di sesi ini). Sebagian
+temuan dan hitungan laporan inti kemudian **diuji dengan menjalankan kode KNHOST di database tiruan dalam memori** — §14.
 
 Cara membaca: path tanpa awalan relatif ke `backend/`; path layar relatif ke `frontend/src/`. Tanda **✔** = jalur kodenya
 saya baca ulang sendiri setelah dilaporkan agen audit; tanpa tanda = hasil agen audit yang menelusuri kode (belum saya
@@ -685,6 +686,56 @@ penggabungan beberapa koleksi; rumusannya ada di laporan agen dan sebaiknya dibu
 9. Kontrol: akun kontrol tertutup, kunci periode untuk dokumen, maker-checker, alat pencocokan antar-PT.
 10. Layar: banner entitas, satu form pembayaran, drill-down, daftar periksa tutup buku.
 11. Gap fitur sesuai kebutuhan: pajak Coretax/PPh, eliminasi per periode, dimensi, lampiran.
+
+---
+
+## 14. Bukti uji: kode dijalankan di database tiruan
+
+Skrip dan keluaran lengkap: [`bukti-2026-11-13/`](bukti-2026-11-13/README.md). Kode layanan KNHOST dipanggil apa adanya
+di atas `mongomock` (MongoDB tiruan dalam memori) dengan jurnal contoh yang kecil. Batasnya: bukan MongoDB asli (balapan,
+indeks unik, kinerja tidak teruji) dan tanpa lapisan HTTP (izin dan pagar router tidak ikut teruji).
+
+### 14.1 Hitungan laporan inti (satu PT) — cocok dengan hitungan tangan
+
+12 jurnal contoh (setor modal, beli kredit, jual kredit ber-PPN, HPP, beban, terima piutang, jual antar-PT). 15 dari 19
+titik uji cocok; 4 yang berbeda adalah dua kasus yang memang diuji (lihat 14.2).
+
+| Laporan | Yang dicocokkan | Hasil |
+|---|---|---|
+| Laba-Rugi Oktober | Pendapatan 70 jt, HPP 42 jt, laba kotor 28 jt | Cocok |
+| Neraca 31 Okt | Aset 190,7 jt = kewajiban 67,7 jt + ekuitas 123 jt | Cocok, seimbang |
+| Neraca Saldo 31 Okt | Total debit = total kredit = 237,7 jt | Cocok |
+| Buku Besar Kas | Saldo 115 jt | Cocok |
+| Tutup buku Oktober | Laba 23 jt pindah ke Laba Ditahan; laba berjalan jadi 0; ekuitas total tetap; Laba-Rugi Oktober tidak berubah; jurnal mundur ke Oktober ditolak | Cocok |
+| Laba-Rugi Jan–Nov (melewati jurnal penutup) | 27 jt = Oktober + November | Cocok |
+
+Artinya rumus dasar Laba-Rugi, Neraca, Neraca Saldo, Buku Besar, dan jurnal penutup **benar untuk satu PT** selama
+jurnalnya sendiri benar. Yang tidak dibuktikan: laporan pendukung (§3.12), dan kebenaran jurnal dari tiap alur.
+
+### 14.2 Dua kasus laporan yang hasilnya menyesatkan
+
+| ID | Kasus | Hasil uji |
+|---|---|---|
+| GL-05 (terbukti) | Beban 1 jt terjadi 1 Nov pukul 00.30 WIB; stempel waktu tersimpan sebagai 31 Okt 17.30 UTC | Masuk Laba-Rugi **Oktober**: beban 5 jt (seharusnya 4 jt), laba 23 jt (seharusnya 24 jt) |
+| **RC-01** (baru, Tinggi) | Laba-Rugi dan Neraca dalam mode "Semua Entitas" adalah **penjumlahan sederhana, bukan konsolidasi** (`entity_scope.py:507-511`; layar tidak memberi keterangan apa pun) | Penjualan antar-PT 20 jt ikut terhitung: pendapatan gabungan 70 jt, padahal ke pihak luar hanya 50 jt. Aset gabungan 212,9 jt, padahal setelah eliminasi piutang antar-PT dan laba dalam stok 182,7 jt |
+
+Rekomendasi RC-01: mode gabungan di layar Laporan Keuangan memakai mesin konsolidasi (dengan eliminasi), atau diberi
+label tegas "penjumlahan antar-PT, belum dieliminasi" dengan tautan ke Konsolidasi Grup.
+
+### 14.3 Temuan audit yang berhasil direproduksi
+
+| Temuan | Langkah uji | Hasil |
+|---|---|---|
+| GL-07 | Jurnal manual debit 1.000,01 / kredit 1.000,00 | Diterima; Neraca Saldo tidak seimbang 1 sen tetapi berlabel "seimbang" |
+| IC-05 | Jurnal manual dipanggil dalam konteks PT A, isi permintaan menyebut PT B | Tersimpan di buku PT B dengan nomor PT B |
+| GL-01 | Kas masuk 10 jt → jurnalnya dibalik manual → kasnya di-void | Dibalik dua kali: saldo kas jadi −10 jt dari posisi awal |
+| GL-01 | Jurnal pembalik otomatis (void kas) dibalik lagi secara manual | Diterima; dokumen kas berstatus void tetapi buku besar kembali terpengaruh |
+| IC-01 | Jurnal antar-PT 22,2 jt saat akun utang antar-PT nonaktif di PT pembeli | Hanya jurnal penjual yang terbit. Setelah akun diaktifkan dan posting diulang, jurnal pembeli **tetap tidak terbit**: piutang antar-PT 22,2 jt di PT A, utang 0 di PT B |
+| IV-01 | Landed cost 3 jt untuk PO berisi satu roll terjual dan satu roll di gudang | Nilai roll naik 1,5 jt, akun persediaan naik 3 jt; 1,5 jt mengendap |
+| FX-02 | Denda 100 rb dibayar 60 rb lalu 40 rb | Pembayaran kedua tanpa jurnal; piutang denda tersisa 40 rb |
+| GL-04 | Menutup bulan berjalan dan bulan depan (uji 13 Nov) | Keduanya diterima; setelah itu jurnal bertanggal hari ini ditolak |
+
+Temuan lain di laporan ini belum direproduksi dan tetap berstatus bacaan kode.
 
 ---
 
