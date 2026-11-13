@@ -22,8 +22,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 15 | PK-12 | Kunci idempotensi dan penahan klik ganda di semua form uang | PK-02 | selesai | `b5f3011` | [PK-12](../reviews/2026-11-13/hasil/PK-12.md) |  |
 | 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | selesai | `0ac34c1` | [PK-13](../reviews/2026-11-13/hasil/PK-13.md) |  |
 | 17 | PK-14 | Indeks unik wajib ada | PK-02 | selesai | `a42f3ef` | [PK-14](../reviews/2026-11-13/hasil/PK-14.md) | Titik henti H6 bila data kembar |
-| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | dikerjakan |  |  |  |
-| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | siap |  |  |  |
+| 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | selesai | `30e3f28` | [PK-15](../reviews/2026-11-13/hasil/PK-15.md) |  |
+| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | dikerjakan |  |  |  |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | siap |  |  |  |
 | 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
@@ -54,7 +54,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | menunggu |  |  |  |
-| 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | menunggu |  |  |  |
+| 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | siap |  |  |  |
 | 51 | PK-22 | Penggajian: tanggal buku, hitung ulang, batal, setoran kewajiban | PK-18 | menunggu |  |  |  |
 | 52 | PK-23 | Aset tetap | PK-06, PK-18 | menunggu |  |  |  |
 | 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | menunggu |  |  |  |
