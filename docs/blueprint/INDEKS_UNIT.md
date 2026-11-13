@@ -47,7 +47,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | F | PK-02 | UX-06, UX-07, UX-14, RC-01, RP-02, RP-04 | rendah | — | R/02 |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | F | PK-02 | IA-01, IA-02, IA-03, IA-09 | sedang | — | R/02 |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | F | PK-02 | CR-01, TX-01, TX-02, TX-03, TX-04, PY-05, PY-10 | sedang | — | R/02 |
-| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | F | PK-02 | PY-03, KP-36 | sedang | H4 | R/02 |
+| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | F | PK-02 | PY-03, KP-36 | sedang | H4 untuk memuat tabel dari pemilik | R/02 |
 
 ## Jalur peran, pengaturan, konfigurasi perusahaan, menu (boleh berjalan sejajar dengan gelombang 3–7)
 
@@ -108,7 +108,7 @@ Jalur P, K, U, M tidak bergantung pada pola posting, sehingga bisa berjalan sela
 | # | ID | Judul | Jalur | Prasyarat | Menutup | Risiko | Henti | Asal |
 |---|---|---|---|---|---|---|---|---|
 | 62 | PK-33 | Hijaukan penjaga atomisitas | F | PK-19, PK-20 | DB-01 | sedang | — | R/02 |
-| 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | F | gelombang 3 tervalidasi | DB-04 | tinggi | H2 | R/02 |
+| 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | F | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | DB-04 | tinggi | H2 | R/02 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | F | PK-34 | DB-02, IV-11, GL-11 | tinggi | H2, H3 | R/02 |
 
 ## Gelombang 6 — kontrol
