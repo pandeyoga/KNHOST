@@ -12,6 +12,7 @@ import {
   CalendarClock, ShieldAlert, Ban, ChevronDown, ChevronUp,
 } from "lucide-react";
 import SettingEditor from "./SettingEditor";
+import { ScopedRulesSummary } from "./ScopedRulesSection";   // KF-T5
 import KNDateTimePicker from "@/components/KNDateTimePicker";
 import { formatDate } from "../../../utils/formatters";
 import {
@@ -106,6 +107,8 @@ export default function SettingCard({
 
       <p className="cfg-help"><Info size={13} /> <span><b>Artinya:</b> {cleanCfgText(item.help)}</span></p>
       <p className="cfg-impact"><Zap size={13} /> <span><b>Kalau diubah:</b> {cleanCfgText(item.impact)}</span></p>
+      {/* KF-T5 — pengganti "Bisa diatur pada level: …": kunci berlapis pelanggan/barang menyebut jumlah yang diatur khusus. */}
+      <ScopedRulesSummary item={item} />
 
       {notUsed ? (
         <div className="cfg-notused-box" data-testid={`cfg-notused-${item.key}`}>
@@ -128,9 +131,6 @@ export default function SettingCard({
             <p className="cfg-example"><b>Contoh:</b> {cleanCfgText(item.example)}</p>
           ) : null}
           <p className="cfg-hint-sm">Kunci teknis: <code className="cfg-key">{item.key}</code></p>
-          <p className="cfg-hint-sm">
-            Bisa diatur pada level: {(item.scopes || []).map((s) => SCOPE_LABEL[s] || s).join(" · ")}
-          </p>
           {(item.consumers || []).length ? (
             <p className="cfg-hint-sm">
               Dipakai oleh: {item.consumers.map((c) => <code key={c}>{c}</code>)}

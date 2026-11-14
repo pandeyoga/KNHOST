@@ -65,6 +65,9 @@ CTX_FIELD = {
     "product": "product_id",
     "document": "document_id",
 }
+# KF-T5 — kata untuk pesan "tidak bisa dibedakan …" (tanpa id lapisan; L1).
+PER_LAPISAN = {"global": "untuk semua PT", "entity": "per PT", "supplier": "per pemasok", "customer": "per pelanggan",
+               "product": "per barang", "document": "per dokumen"}
 _MISSING = object()
 
 
@@ -335,9 +338,8 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         raise ConfigWriteError(
             f"'{entry['label']}' tidak dipakai sistem saat ini — {entry['not_used_reason']}")
     if scope_type not in entry["scopes"]:
-        raise ConfigWriteError(
-            f"'{entry['label']}' tidak bisa diatur pada level '{scope_type}'. "
-            f"Level yang didukung: {', '.join(entry['scopes'])}.")
+        # KF-T5 — pesan tanpa istilah "level"/id lapisan: "“{label}” tidak bisa dibedakan per pelanggan."
+        raise ConfigWriteError(f"“{entry['label']}” tidak bisa dibedakan {PER_LAPISAN.get(scope_type, scope_type)}.")
     if scope_type != "global" and not scope_id:
         raise ConfigWriteError(f"Level '{scope_type}' wajib menyebut ID sasaran.")
     if entry["requires_reason"] and not (reason or "").strip():

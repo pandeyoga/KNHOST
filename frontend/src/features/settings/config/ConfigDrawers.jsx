@@ -321,7 +321,7 @@ export function ChangeHistoryDrawer({ entry, onClose }) {
                 <td>{r.label}</td>
                 <td>
                   <span className="badge-muted" title={r.scope_id || undefined}>
-                    {scopeText(r.scope_type, r.scope_id)}
+                    {scopeText(r.scope_type, r.scope_id, r.scope_label)}
                   </span>
                 </td>
                 <td className="tabular-nums">
@@ -384,7 +384,7 @@ export function ChangeHistoryInline() {
                 <td>{r.label}</td>
                 <td>
                   <span className="badge-muted" title={r.scope_id || undefined}>
-                    {scopeText(r.scope_type, r.scope_id)}
+                    {scopeText(r.scope_type, r.scope_id, r.scope_label)}
                   </span>
                 </td>
                 <td className="tabular-nums">

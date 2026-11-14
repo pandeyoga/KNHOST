@@ -7,6 +7,7 @@ Satu pintu API untuk seluruh konfigurasi sistem:
   POST /api/config/simulate        — "coba dulu" sebelum menyimpan
   PUT  /api/config/values          — simpan (append-only + proyeksi ke mesin lama)
   GET  /api/config/history         — riwayat siapa-ubah-apa-kapan-kenapa
+  GET  /api/config/layers          — KF-T5: pelanggan/barang yang punya aturan khusus untuk satu kunci
   GET  /api/config/health          — kesehatan wiring (tidak ada tombol palsu)
   POST /api/config/impact-preview  — DAFTAR DAMPAK koreksi harga master
   POST /api/config/impact-apply    — terapkan HANYA ke dokumen yang dicentang
@@ -25,6 +26,7 @@ from schemas_config import (
 )
 from services import config_health, config_simulator
 from services import config_resolver as resolver
+from services import config_scoped_rules as aturan_khusus   # KF-T5
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -163,7 +165,10 @@ async def _global_write_allowed(request: Request) -> bool:
 
 async def _assert_scope_write(request: Request, entry: Dict[str, Any], scope_type: str, scope_id: str) -> None:
     """IX-06/IX-07 — lapisan tulis wajib dalam penugasan; nilai grup (global) yang punya lapisan
-    entitas hanya boleh diubah peran lintas badan usaha."""
+    entitas hanya boleh diubah peran lintas badan usaha.
+
+    KF-T5 — lapisan pelanggan/barang: sasarannya harus ada (404) dan pelanggan harus milik PT dalam cakupan pelaku
+    (403); lapisan pemasok/dokumen belum punya layar (400)."""
     from entity_scope import entity_ctx, resolve_requested_entity
     ctx = await entity_ctx(request)
     if scope_type == "entity":
@@ -172,6 +177,8 @@ async def _assert_scope_write(request: Request, entry: Dict[str, Any], scope_typ
         raise HTTPException(status_code=403, detail=(
             f"Nilai grup '{entry['label']}' hanya dapat diubah peran lintas badan usaha. "
             "Pilih 'Badan usaha' untuk mengubah nilai khusus PT Anda."))
+    elif scope_type in aturan_khusus.LAPISAN_KHUSUS + aturan_khusus.BELUM_TERSEDIA:   # KF-T5
+        await aturan_khusus.pastikan_sasaran(ctx, scope_type, scope_id)
 
 
 @router.get("/registry")
@@ -206,13 +213,24 @@ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[
 @router.get("/effective")
 async def read_effective(request: Request, group: str = "", q: str = "",
                          entity_id: str = "", customer_id: str = "", supplier_id: str = "",
-                         product_id: str = "", document_id: str = "") -> Dict[str, Any]:
-    """Nilai efektif + lapisan asal untuk satu grup (atau hasil pencarian)."""
+                         product_id: str = "", document_id: str = "", scope: str = "") -> Dict[str, Any]:
+    """Nilai efektif + lapisan asal untuk satu grup (atau hasil pencarian).
+
+    KF-T5 — `scope` (`customer` · `product`): hanya kunci yang bisa dibedakan per pelanggan/barang, tiap butir ditambah
+    `layer_value` (nilai milik `customer_id`/`product_id` itu, atau `null`) dan `inherited_value` (nilai PT/grup)."""
     user = await current_user(request)
     perms = await _allowed(user)
     groups = _assert_any_readable(user, perms)
     if group and not q and not any(_may_read(e, user, perms) for e in registry.by_group(group)):
         raise _deny_group(group)
+    if scope:   # KF-T5 — pelanggan/barang harus ada; pelanggan dalam cakupan PT pembaca; aturan PT = PT pelanggan
+        from entity_scope import entity_ctx
+        aturan_khusus.periksa_lapisan(scope)
+        sid = customer_id if scope == "customer" else product_id
+        if sid:
+            doc = await aturan_khusus.pastikan_sasaran(await entity_ctx(request), scope, sid)
+            if scope == "customer" and not entity_id:
+                entity_id = doc.get("entity_id") or ""
     await resolver.apply_due_values()      # aktifkan perubahan berjadwal yang jatuh tempo
     ctx = {"entity_id": entity_id, "customer_id": customer_id, "supplier_id": supplier_id,
            "product_id": product_id, "document_id": document_id}
@@ -220,6 +238,8 @@ async def read_effective(request: Request, group: str = "", q: str = "",
     items = [it for it in items if _may_read(registry.get(it["key"]), user, perms)]
     for it in items:
         it["can_edit"] = _can_edit(registry.get(it["key"]) or it, user, perms)
+    if scope:   # KF-T5
+        items = await aturan_khusus.tambah_nilai_lapisan(items, scope, ctx)
     return {"groups": groups, "context": ctx, "items": items, "total": len(items)}
 
 
@@ -388,7 +408,25 @@ async def read_history(request: Request, key: str = "", scope_type: str = "",
     rows = await resolver.history(key, scope_type, scope_id, n if full else 500)
     if not full:
         rows = [r for r in rows if _may_read(registry.get(r["key"]), user, perms)][:n]
+    rows = await aturan_khusus.beri_nama(rows)   # KF-T5 — cakupan pelanggan/barang tampil bernama, bukan id
     return {"rows": rows, "total": len(rows)}
+
+
+# KF-T5 — daftar pelanggan/barang yang punya aturan khusus untuk satu kunci (dibaca kartu Pusat Pengaturan).
+@router.get("/layers")
+async def read_layers(request: Request, key: str = "", scope_type: str = "") -> Dict[str, Any]:
+    """Satu baris per pelanggan/barang yang punya nilai sendiri: `{"rows": [{scope_id, scope_label, value, changed_by,
+    changed_at, reason}], "total"}`; terbaru dulu, paling banyak 200 baris. Izin baca = `_may_read` kunci itu."""
+    from entity_scope import entity_ctx
+    user = await current_user(request)
+    entry = registry.get(key)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Pengaturan tidak ditemukan.")
+    if not _may_read(entry, user, await _allowed(user)):
+        raise _deny_entry(entry)
+    aturan_khusus.periksa_lapisan(scope_type)
+    ctx = await entity_ctx(request)
+    return await aturan_khusus.daftar_lapisan(key, scope_type, ctx.allowed_entity_ids)
 
 
 @router.get("/health")

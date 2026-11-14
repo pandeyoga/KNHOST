@@ -36,6 +36,9 @@ export const configApi = {
   /** Riwayat perubahan (siapa, kapan, dari→ke, alasan). */
   history: (params = {}) => axios.get(`${BASE}/history`, { params }).then((r) => r.data),
 
+  /** KF-T5 — pelanggan/barang yang punya aturan khusus untuk satu kunci: `{ key, scope_type }` → `{ rows, total }`. */
+  layers: (params = {}) => axios.get(`${BASE}/layers`, { params }).then((r) => r.data),
+
   /** Kesehatan wiring: apakah setiap setting benar-benar tersambung ke kode. */
   health: () => axios.get(`${BASE}/health`).then((r) => r.data),
 
@@ -56,14 +59,16 @@ export const errMsg = (e, fallback = "Terjadi kesalahan.") => apiErrorText(e, fa
 export const cleanCfgText = (t) => stripInternalCodes(String(t || "").replace(/`([^`]+)`/g, "$1"));
 export const isDeprecatedSetting = (item) => item?.status === "not_used"
   || /\(lama\)|tidak dipakai lagi/i.test(`${item?.label || ""} ${item?.help || ""}`);
-/** Cakupan riwayat/lapisan: nama badan usaha, bukan id (`ent_ksc`). */
-export const scopeText = (type, id) => {
+/** Cakupan riwayat/lapisan: nama badan usaha, bukan id (`ent_ksc`). KF-T5 — pelanggan/barang: nama dari server
+ *  (`label`), id tidak pernah tampil. */
+export const scopeText = (type, id, label = "") => {
   const t = SCOPE_LABEL_SHORT[type] || type || "";
   if (!id) return t;
+  if (type === "customer" || type === "product") return label ? `${t}: ${label}` : t;
   return `${t}: ${type === "entity" ? entityShortFromCtx(id, id) : id}`;
 };
 const SCOPE_LABEL_SHORT = { global: "Global", entity: "Badan usaha", customer: "Pelanggan", supplier: "Supplier",
-  product: "Produk", document: "Dokumen" };
+  product: "Barang", document: "Dokumen" };
 
 /** Angka gaya Indonesia (titik ribuan, koma desimal). */
 export function idNum(v, maxDec = 2) {
@@ -162,6 +167,6 @@ export const WIRING_LABEL = {
 export const VERDICT_TONE = { ok: "green", warn: "orange", block: "red" };
 export const SCOPE_LABEL = {
   global: "Semua entitas (Global)", entity: "Entitas ini",
-  customer: "Pelanggan tertentu", supplier: "Supplier tertentu",
-  product: "Produk tertentu", document: "Dokumen tertentu",
+  customer: "Pelanggan ini", supplier: "Supplier tertentu",   // KF-T5
+  product: "Barang ini", document: "Dokumen tertentu",
 };

@@ -22,6 +22,8 @@ import useUomConversions from "../../../hooks/useUomConversions";    // FASE U
 import { uomSelectOptions } from "../../../utils/uomCatalog";        // FASE U
 import useCatalogMasters from "../../../hooks/useCatalogMasters";
 import { parseDecimal } from "../../../utils/decimalInput";
+import { useEntityScope } from "../../../context/EntityScopeContext";
+import ScopedRulesSection from "../../settings/config/ScopedRulesSection";   // KF-T5
 
 const TEXT_FIELDS = [
   ["sku", "SKU / kode produk", "mis. BTK-MEGA-001"], ["name", "Nama produk", "mis. Batik Mega Mendung Premium"],
@@ -40,6 +42,7 @@ export default function ProductMasterForm({
   categoryOptions = [], salesOwners = [], onSave, onCancel, addConv, updateConv, removeConv,
 }) {
   const { loading, error: enumError, options, labelOf, fieldRules, fieldLabels } = useDomainEnums();
+  const { selectedEntity } = useEntityScope();   // KF-T5 — "aturan PT" pada aturan khusus barang = PT yang dipilih
   // FASE U — SATUAN DASAR produk dari MASTER SATUAN (`uoms`). Ini pemilih satuan yang
   // paling penting di seluruh aplikasi: `products.base_unit` adalah satuan kendali yang
   // dipakai stok, PO, SO, dan konversi. Sebelum ini daftarnya diketik 7 nilai di berkas
@@ -420,6 +423,12 @@ export default function ProductMasterForm({
           </div>
         ))}
       </div>
+
+      {/* KF-T5 — aturan sisa & susut potong khusus barang ini; hanya untuk barang yang sudah tersimpan. */}
+      {editingProductId ? (
+        <ScopedRulesSection scopeType="product" scopeId={editingProductId} scopeLabel={product.name || ""}
+          entityId={selectedEntity || ""} />
+      ) : null}
 
       {productError && (
         <p data-testid="admin-product-error" className="text-[12px] font-semibold text-[#D14343]">{productError}</p>

@@ -14,6 +14,7 @@ import CustomerColorsSection from "./CustomerColorsSection";
 import CustomerMergeSection from "./CustomerMergeSection";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
+import ScopedRulesSection from "../settings/config/ScopedRulesSection";   // KF-T5
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -101,6 +102,9 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               <p className="px-3 pb-3 text-[10.5px] text-[#9A9BA3]" data-testid="customer-360-override-none">Tanpa limit kredit — override tidak diperlukan.</p>
             )}
           </div>
+
+          {/* KF-T5 — aturan Pusat Pengaturan yang bisa dibedakan per pelanggan (denda, masa tenggang, selisih bayar). */}
+          <ScopedRulesSection scopeType="customer" scopeId={data.id} scopeLabel={data.name} entityId={data.entity_id || ""} />
 
           {/* Profile */}
           <div className="section-card">

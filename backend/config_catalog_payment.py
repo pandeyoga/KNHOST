@@ -18,6 +18,8 @@ from config_registry import E
 
 G = ("global", "entity")
 GC = ("global", "entity", "customer")
+# KF-T5 — kunci ber-`GC` bisa dibedakan per pelanggan dari kartu pelanggan (Customer360Panel › Aturan khusus pelanggan
+# ini); `help`-nya diakhiri kalimat "Bisa dibedakan per pelanggan dari kartu pelanggan."
 
 # ── Rencana pembayaran ──────────────────────────────────────────────────────
 # KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
@@ -83,7 +85,8 @@ E("payment.penalty_mode", group="uang-masuk", type="enum", default="draft",
   label="Perlakuan denda keterlambatan",
   help="`Usulan` membuat denda lahir sebagai draft sehingga masih bisa dinegosiasikan atau "
        "dibatalkan TANPA pernah mengotori buku besar. `Otomatis terbit` langsung menjurnal "
-       "(Dr Piutang Denda / Cr Pendapatan Denda) — pakai hanya bila kebijakan sudah tegas.",
+       "(Dr Piutang Denda / Cr Pendapatan Denda) — pakai hanya bila kebijakan sudah tegas."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Menentukan apakah denda hasil pemindaian harian berjurnal atau tidak.",
   example="Usulan · cicilan telat 12 hari → nota denda DRAFT Rp 80.000 menunggu keputusan",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
@@ -95,7 +98,8 @@ E("payment.penalty_base", group="uang-masuk", type="enum", default="installment"
   scopes=GC,
   label="Dasar perhitungan denda",
   help="Denda dihitung dari nominal baris cicilan yang telat, atau dari seluruh sisa piutang "
-       "pesanan itu. Basis cicilan lebih adil bagi pelanggan yang sudah bayar sebagian.",
+       "pesanan itu. Basis cicilan lebih adil bagi pelanggan yang sudah bayar sebagian."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Mengubah besar denda pada nota yang terbentuk.",
   example="Basis cicilan · cicilan Rp 5.000.000 telat 30 hari · 2%/bulan → denda Rp 100.000",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
@@ -104,7 +108,8 @@ E("payment.penalty_base", group="uang-masuk", type="enum", default="installment"
 E("payment.penalty_cap_pct", group="uang-masuk", type="pct", default=0.0,
   min=0, max=100, step=1, unit="% dari dasar", scopes=GC,
   label="Batas maksimum denda",
-  help="Batas atas denda sebagai persen dari dasar perhitungan. Isi 0 untuk tanpa batas.",
+  help="Batas atas denda sebagai persen dari dasar perhitungan. Isi 0 untuk tanpa batas."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Melindungi hubungan dagang: denda tidak membengkak tanpa batas pada tunggakan lama.",
   example="Batas 10% · dasar Rp 5.000.000 → denda tidak akan melebihi Rp 500.000",
   consumers=("services/penalty_service.py:penalty_policy",), risk="medium",
@@ -149,7 +154,8 @@ E("payment.variance_tolerance_rupiah", group="uang-masuk", type="money", default
   help="Selisih rupiah antara uang yang masuk dan tagihan yang jatuh tempo yang masih "
        "dianggap wajar (mis. biaya transfer bank). Di dalam batas ini sistem menutup "
        "sisanya sendiri sebagai pembulatan — tanpa persetujuan, tapi TETAP tercatat "
-       "sebagai keputusan berlabel yang bisa diaudit.",
+       "sebagai keputusan berlabel yang bisa diaudit."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Menentukan kapan pelanggan langsung dianggap lunas walau nominalnya tidak persis.",
   example="Toleransi Rp 5.000 · tagihan Rp 10.000.000, masuk Rp 9.997.500 → otomatis lunas "
           "(selisih Rp 2.500 jadi beban pembulatan)",
@@ -163,7 +169,8 @@ E("payment.variance_underpay_default", group="uang-masuk", type="enum", default=
   scopes=GC,
   label="Pilihan bawaan saat pelanggan KURANG bayar",
   help="Pilihan yang disorot lebih dulu di dialog Selisih Pembayaran. Petugas tetap bisa "
-       "memilih yang lain — bawaan ini hanya mempercepat keputusan yang paling sering dipakai.",
+       "memilih yang lain — bawaan ini hanya mempercepat keputusan yang paling sering dipakai."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Mengubah pilihan yang terpilih otomatis di dialog selisih pembayaran.",
   example="Bawaan `Sisa tetap jadi piutang` · kurang Rp 2.000.000 → sisa tetap ditagih",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="medium",
@@ -176,7 +183,8 @@ E("payment.variance_overpay_default", group="uang-masuk", type="enum", default="
   scopes=GC,
   label="Pilihan bawaan saat pelanggan LEBIH bayar",
   help="Perlakuan bawaan untuk kelebihan uang: disimpan sebagai deposit, dipakai melunasi "
-       "pesanan terbuka lain, atau dikembalikan lewat kas keluar.",
+       "pesanan terbuka lain, atau dikembalikan lewat kas keluar."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Mengubah pilihan yang terpilih otomatis saat ada kelebihan bayar.",
   example="Bawaan `Simpan sebagai deposit` · lebih Rp 1.500.000 → masuk saldo deposit pelanggan",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="medium",

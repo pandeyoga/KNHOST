@@ -146,8 +146,10 @@ E("ar.denda_rate_pct_per_month", group="uang-masuk", type="pct", default=2.0,
   min=0, max=100, step=0.25, unit="% / bulan",
   scopes=("global", "entity", "customer"), simulate="ar_penalty",
   label="Bunga denda keterlambatan",
-  help="Persen denda per bulan atas saldo yang sudah lewat jatuh tempo. Dihitung prorata per 30 hari.",
-  impact="Mengubah kolom 'Denda' pada laporan Umur Piutang. Bisa dibedakan per pelanggan.",
+  # KF-T5 — aturan khusus pelanggan diatur dari kartu pelanggan (Customer360Panel › Aturan khusus pelanggan ini).
+  help="Persen denda per bulan atas saldo yang sudah lewat jatuh tempo. Dihitung prorata per 30 hari."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  impact="Mengubah kolom 'Denda' pada laporan Umur Piutang.",
   example="Outstanding Rp 10.000.000 · telat 45 hari · 2%/bulan → denda Rp 300.000",
   consumers=("services/ar_aging_service.py:get_ar_config",),
   related=("ar.grace_days",), risk="medium")
@@ -155,7 +157,8 @@ E("ar.denda_rate_pct_per_month", group="uang-masuk", type="pct", default=2.0,
 E("ar.grace_days", group="uang-masuk", type="duration", default=0, min=0, max=180, step=1,
   unit="hari", scopes=("global", "entity", "customer"), simulate="ar_penalty",
   label="Masa tenggang sebelum denda",
-  help="Jumlah hari setelah jatuh tempo yang masih bebas denda.",
+  help="Jumlah hari setelah jatuh tempo yang masih bebas denda."
+       " Bisa dibedakan per pelanggan dari kartu pelanggan.",  # KF-T5
   impact="Hari keterlambatan dikurangi masa tenggang sebelum denda dihitung.",
   example="Tenggang 7 hari · telat 10 hari → denda hanya dihitung 3 hari",
   consumers=("services/ar_aging_service.py:get_ar_config",),
@@ -699,9 +702,11 @@ E("allocation.lot_mode", group="stok-satuan", type="enum", default="prefer_singl
   options=({"value": "prefer_single", "label": "Usahakan satu lot"},
            {"value": "strict_single", "label": "Wajib satu lot"},
            {"value": "allow_mixed", "label": "Boleh campur lot"}),
-  scopes=("global", "entity", "customer"),
+  # KF-T5 — lapisan pelanggan dicabut: mesin memakai isian `lot_policy` kartu pelanggan, bukan lapisan pengaturan.
+  scopes=("global", "entity"),
   label="Kebijakan campur lot",
-  help="Seberapa ketat satu pesanan harus berasal dari satu lot produksi (penting untuk warna).",
+  help="Seberapa ketat satu pesanan harus berasal dari satu lot produksi (penting untuk warna)."
+       " Untuk pelanggan tertentu, atur di kartu pelanggan (Kebijakan lot).",
   impact="Mode 'wajib satu lot' bisa membuat pesanan tidak bisa dipenuhi walau total stok cukup.",
   example="strict_single → pesanan 600 yard ditolak bila lot terbesar hanya 400 yard",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
@@ -753,9 +758,11 @@ E("allocation.allow_partial", group="stok-satuan", type="bool", default=True,
   risk="medium")
 
 E("allocation.dye_lot_strict", group="stok-satuan", type="bool", default=False,
-  scopes=("global", "entity", "customer"),
+  # KF-T5 — lapisan pelanggan dicabut: mesin memakai isian `enforce_single_dye_lot` kartu pelanggan.
+  scopes=("global", "entity"),
   label="Wajib satu dye lot (warna sama)",
-  help="Memaksa seluruh kiriman berasal dari satu nomor celup agar warna persis sama.",
+  help="Memaksa seluruh kiriman berasal dari satu nomor celup agar warna persis sama."
+       " Untuk pelanggan tertentu, atur di kartu pelanggan (Kebijakan lot).",
   impact="Menaikkan kualitas warna tetapi memperbesar kemungkinan pesanan tidak bisa dipenuhi.",
   example="Aktif → 2 roll dye lot berbeda tidak boleh digabung dalam 1 pesanan",
   consumers=("services/config_service.py:_sanitize_alloc", "services/roll_service.py"),
