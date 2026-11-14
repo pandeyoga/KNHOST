@@ -188,7 +188,7 @@ async def issue(pair_id: str, actor: str = "", nsfp: str = "",
     in_id = new_id("fpm")
     out_number = await next_doc_number(COLL_OUT, "number", "FKT-",
                                       entity_id=seller["seller_entity_id"])
-    in_number = await next_input_number()
+    in_number = await next_input_number(seller["buyer_entity_id"])   # KP-T5 — PT pembeli (faktur masukan)
     nsfp_raw = (nsfp or "").strip()
 
     shared_tax = {

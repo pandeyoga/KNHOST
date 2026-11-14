@@ -516,6 +516,15 @@ const ordersTabs = [
 
 ## 📝 CHANGELOG
 
+### KP-T5 — 14 Nov 2026 (tab Penomoran Dokumen)
+- Pengaturan › **Dokumen & Cetak** (hub `settings-documents`) mendapat tab ke-2 **Penomoran Dokumen** (view
+  `settings-doc-numbering`, `features/settings/docnumbering/DocNumberingView.jsx`; testid `docnum-view`). Modul akses:
+  **Pusat Pengaturan** (`settings`: `nav` + `settings-documents`, `settings-doc-numbering`; tab Template Dokumen tetap
+  milik modul Dokumen); layar dibuka izin `settings` (`VIEW_RESOURCE_OVERRIDES`). Baca `settings.view`, ubah
+  `settings.manage` (`/api/doc-numbering`). Pilihan "Semua PT" = baris grup.
+- Wizard PT langkah 3 (Penomoran & Dokumen): empat contoh nomor dari `POST /api/doc-numbering/preview` (format grup yang
+  berlaku, kode = isian wizard).
+
 ### PR-T5 — 14 Nov 2026 (pemilik menu & tab di katalog modul akses)
 Tidak ada menu baru; yang berubah = modul akses (`backend/access_modules.py`) yang MEMBUKA menu/tab untuk peran kustom
 dan menyaring menu peran lain (`view_resources`).

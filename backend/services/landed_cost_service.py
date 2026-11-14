@@ -18,7 +18,7 @@ Lifecycle voucher: draft → pending_approval → applied (→ paid) | cancelled
 Aplikasi ke HPP HANYA terjadi saat APPROVE (idempotent: status 'applied'
 tidak bisa di-apply ulang). Pembuat ≠ approver (SoD).
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso
 from services import roll_cost_history
@@ -28,10 +28,12 @@ PAYABLE_VOUCHER_STATUSES = {"applied", "paid"}
 COST_CATEGORIES = {"freight", "duty", "insurance", "handling", "other"}
 
 
-async def next_voucher_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_voucher_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("landed_cost_vouchers", "voucher_number", "LCV-", width=5, scheme="shared")
+    return await next_doc_number("landed_cost_vouchers", "voucher_number", "LCV-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="lcv")
 
 
 def total_cost_of(cost_lines: List[Dict[str, Any]]) -> float:

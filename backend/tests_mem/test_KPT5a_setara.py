@@ -1,7 +1,8 @@
 """KP-T5 serah-terima (a) — katalog jenis nomor dan pembaca format; nomor yang terbit TIDAK berubah satu pun.
 
 U1  uji statik: semua pemanggilan `next_doc_number` di `backend/` (di luar uji, seed, dan skrip) dikenali
-    `doc_number_kinds.lookup`; bawaan katalog = argumen titik panggil (lebar, cara).
+    `doc_number_kinds.lookup`; bawaan katalog = argumen titik panggil (lebar, cara). Sejak (b) termasuk tiga deret KP-35
+    dan 11 titik panggil bersama yang kini mengirim PT dokumennya (`kind=` + `entity_id=`); U2 diulang penuh atasnya.
 U2  SETARA: untuk tiap titik panggil × PT (`None`, `"all"`, `""`, `ent_ksc`, `ent_kanda`) dan tiga keadaan data
     (penghitung hari ini = 41; deret belum ada tetapi dokumen lama ada; kosong) — nomor dan isi `number_sequences`
     sesudah pemanggilan sama persis dengan fungsi LAMA (salinan utuh `core_utils.next_doc_number` di `1392969`, di bawah).
@@ -35,6 +36,11 @@ AWALAN_SPESIFIKASI = {
 # Ditemukan di HEAD tetapi tidak ada di daftar spesifikasi: kode pelanggan (`customers.code`, lebar 4, bersama) dibuat
 # lewat alias `_ndn(...)` di `routers/customers.py`, `routers/admin.py`, `services/crm_omnichannel_service.py`.
 AWALAN_TAMBAHAN = {"CUST-"}
+# Serah-terima (b): tiga deret KP-35 ("baca nomor terakhir + 1") kini lewat `next_doc_number` → jenis ke-60…62 spesifikasi.
+# Setaranya dengan generator lama diuji `test_KPT5b_pengaturan.py::test_KPT5_KP35_setara_generator_lama` (fungsi lama
+# di sini tidak pernah membuat nomor itu, jadi tidak bisa menjadi oracle).
+AWALAN_KP35 = {"VBM-", "EMP-", "SORD-"}
+JENIS_KP35 = {"vbm", "emp", "sord"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────
@@ -202,10 +208,10 @@ def test_KPT5_U1_semua_titik_panggil_dikenali_katalog():
         if dnk.KINDS[kd]["default"]["scope"] != harap:
             beda.append(f"{kd}: titik panggil {sorted(mode)} → katalog harus {harap}")
     assert not beda, "bawaan katalog ≠ titik panggil:\n" + "\n".join(beda)
-    # Spesifikasi menulis 59; HEAD punya 60 (CUST- lewat alias `_ndn`) — lihat laporan KP-T5 "Menyimpang".
+    # Spesifikasi menulis 59 (+3 KP-35 = 62); HEAD punya 60 (+3 = 63): CUST- lewat alias `_ndn` — laporan "Menyimpang".
     assert AWALAN_SPESIFIKASI <= awalan, sorted(AWALAN_SPESIFIKASI - awalan)
-    assert awalan - AWALAN_SPESIFIKASI == AWALAN_TAMBAHAN, sorted(awalan - AWALAN_SPESIFIKASI)
-    assert len(awalan) == 60
+    assert awalan - AWALAN_SPESIFIKASI == AWALAN_TAMBAHAN | AWALAN_KP35, sorted(awalan - AWALAN_SPESIFIKASI)
+    assert len(awalan) == 63
 
 
 def _kasus() -> List[Dict[str, Any]]:
@@ -213,6 +219,8 @@ def _kasus() -> List[Dict[str, Any]]:
     ym = datetime.now(timezone.utc).strftime("%y%m")
     out, lihat = [], set()
     for t in TITIK:
+        if t["kind"] in JENIS_KP35:
+            continue
         prefs = list(t["prefixes"])
         if t["collection"] == "inventory_lots":   # sisipan bulan ini + bulan lampau (sisipan dari titik panggil dipakai)
             prefs = [p.replace(_STEMPEL, s) for p in prefs for s in (ym, "2501")]
@@ -322,11 +330,14 @@ async def test_KPT5_U2_contoh_hitung_tangan_dan_cakupan_jenis(db):
         hit = dnk.lookup(c["collection"], c["field"], c["prefix"], c["scheme"], c["kind"])
         if hit and not hit[0]["derived"]:
             dicakup.add(hit[0]["kind"])
-    # 59 awalan spesifikasi → 61 jenis (CN-/DN- masing-masing dua jenis) + `cust` = 62; tiga deret KP-35 (`vbm`,
-    # `emp`, `sord`) baru lewat `next_doc_number` di serah-terima (b) — diuji `test_KPT5b_*`.
-    luar_fungsi = {"vbm", "emp", "sord"} - dicakup
-    assert dicakup | luar_fungsi == {k["kind"] for k in dnk.KINDS_LIST if not k["derived"]}
-    assert len(dicakup | luar_fungsi) == 65
+    # 59 awalan spesifikasi → 61 jenis (CN-/DN- masing-masing dua jenis) + `cust` = 62 setara fungsi lama; tiga deret
+    # KP-35 (`vbm`, `emp`, `sord`) lewat `next_doc_number` sejak serah-terima (b) — setara generator lama di `test_KPT5b_*`.
+    assert JENIS_KP35.isdisjoint(dicakup)
+    assert dicakup | JENIS_KP35 == {k["kind"] for k in dnk.KINDS_LIST if not k["derived"]}
+    assert len(dicakup) == 62 and len(dicakup | JENIS_KP35) == 65
+    titik_kp35 = {dnk.lookup(t["collection"], t["field"], t["prefixes"][0], t["scheme"], t["kind"])[0]["kind"]
+                  for t in TITIK if t["kind"] in JENIS_KP35}
+    assert titik_kp35 == JENIS_KP35
 
 
 async def test_KPT5_U3_semai_dari_nomor_tertinggi(db):

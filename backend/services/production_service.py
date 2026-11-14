@@ -208,10 +208,12 @@ async def _material_plan(bom: Dict[str, Any], planned_qty: float,
 
 
 # ═══ Nomor WO ════════════════════════════════════════════════════════════════
-async def _next_wo_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def _next_wo_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("mfg_work_orders", "wo_number", "WO-", width=5, scheme="shared")
+    return await next_doc_number("mfg_work_orders", "wo_number", "WO-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="wo")
 
 
 # ═══ Work Order — CRUD & transisi ════════════════════════════════════════════
@@ -232,7 +234,7 @@ async def create_work_order(payload: Dict[str, Any], entity_id: str,
     plan = await _material_plan(bom, planned_qty, warehouse_id, entity_id)
     doc = {
         "id": new_id("wo"),
-        "wo_number": await _next_wo_number(),
+        "wo_number": await _next_wo_number(entity_id),   # KP-T5 — PT dokumen (N1)
         "entity_id": entity_id,
         "bom_id": bom["id"],
         "bom_name": bom.get("name", ""),

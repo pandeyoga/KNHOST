@@ -15,6 +15,7 @@ Aturan:
 - `clock`: jam sisipan tanggal — `wib`, kecuali `lot` yang sejak awal memakai jam UTC.
 - `locked`: tidak bisa diubah dari layar (RFID dekat gerbang — H7; kode master dipakai bersama; nomor turunan).
 - `derived`: nomor diturunkan dari dokumen lain (`INV-<nomor SO>-NN`); awalannya dibentuk titik panggil, format tidak diatur.
+- `entity_field`: field PT di koleksi itu (semai deret per PT, hitungan dokumen lama); roll memakai `owner_entity_id`.
 """
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -32,9 +33,9 @@ DATE_FORMAT: Dict[str, str] = {"YY": "%y", "YYYY": "%Y", "YYMM": "%y%m", "YYYYMM
 
 def _k(kind: str, label: str, group: str, collection: str, field: str, prefix: str, *, width: int = 5,
        scope: str = "per_pt", date_token: str = "", reset: str = "tidak", clock: str = "wib",
-       locked: bool = False, derived: bool = False, note: str = "") -> Dict[str, Any]:
+       locked: bool = False, derived: bool = False, note: str = "", entity_field: str = "entity_id") -> Dict[str, Any]:
     return {"kind": kind, "label": label, "group": group, "collection": collection, "field": field,
-            "identity_prefix": prefix,
+            "identity_prefix": prefix, "entity_field": entity_field,
             "default": {"prefix": prefix, "width": width, "date_token": date_token, "reset": reset, "scope": scope},
             "clock": clock, "locked": locked, "derived": derived, "note": note}
 
@@ -95,7 +96,8 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("reg", "Registrasi awal stok", "Gudang", "cycle_count_sessions", "number", "REG-"),
     _k("lot", "Nomor lot", "Gudang", "inventory_lots", "lot_number", "LOT-", width=4, date_token="YYMM",
        reset="bulanan", clock="utc"),
-    _k("rtn", "Roll hasil retur", "Gudang", "inventory_rolls", "roll_no", "RTN-", scope=_B),
+    _k("rtn", "Roll hasil retur", "Gudang", "inventory_rolls", "roll_no", "RTN-", scope=_B,
+       entity_field="owner_entity_id"),
     _k("rpr", "Perintah perbaikan", "Gudang", "repair_orders", "number", "RPR-"),
     _k("lg", "Pengiriman logistik", "Gudang", "logistics_deliveries", "number", "LG-"),
     _k("vhl", "Catatan pemakaian kendaraan", "Gudang", "vehicle_usage_logs", "number", "VHL-"),

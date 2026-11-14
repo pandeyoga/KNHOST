@@ -149,8 +149,10 @@ test("Wizard: isian mati hilang; mata uang & tahun buku dari Pusat Pengaturan; N
   expect(ring).toContain("Dolar AS (USD)");
   expect(ring).toContain("60 %");
   await click(q("entity-wizard-submit"));
-  expect(mockPost).toHaveBeenCalledTimes(1);
-  const [url, body] = mockPost.mock.calls[0];
+  // KP-T5 — wizard juga meminta pratinjau nomor (`/api/doc-numbering/preview`); yang dihitung hanya simpan PT.
+  const simpanPt = mockPost.mock.calls.filter(([u]) => u !== "/api/doc-numbering/preview");
+  expect(simpanPt).toHaveLength(1);
+  const [url, body] = simpanPt[0];
   expect(url).toBe("/api/entities");
   expect(body).toEqual(expect.objectContaining({ base_currency: "USD", fiscal_year_end_month: 3, ownership_pct: 60,
     is_group: false, npwp: "01.234.567.8-901.000", doc_prefix: "UJI1" }));
@@ -171,7 +173,7 @@ test("Wizard: tanpa akses baca pengaturan → keterangan 'mengikuti pengaturan g
   await click(q("entity-wizard-next"));
   await click(q("entity-wizard-next"));
   await click(q("entity-wizard-submit"));
-  const body = mockPost.mock.calls[0][1];
+  const body = mockPost.mock.calls.find(([u]) => u === "/api/entities")[1];   // KP-T5 — selain pratinjau nomor
   expect(body).not.toHaveProperty("base_currency");
   expect(body).not.toHaveProperty("fiscal_year_end_month");
   expect(body.ownership_pct).toBe(100);

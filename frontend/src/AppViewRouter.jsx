@@ -42,7 +42,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
-  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView
+  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView
 } from "./appViewImports";
 
 // PS-20 — peta view tujuan → hub induknya, untuk tombol "Buka" di Persetujuan Saya.
@@ -268,6 +268,7 @@ export default function AppViewRouter(props) {
       {activeView === "my-approvals" && <MyApprovalsView currentUser={user} selectedEntity={selectedEntity} onNavigate={(view) => onNavSelect(APPROVAL_HUB_OF[view] || view, view)} />}
       {activeView === "approval-rules" && <ApprovalRulesSettings currentUser={user} />}
       {activeView === "settings-dual-control" && <DualControlView selectedEntity={selectedEntity} entities={entities} />}
+      {activeView === "settings-doc-numbering" && <DocNumberingView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "grade-master" && <GradeMasterView currentUser={user} />}
       {activeView === "client-dataset-import" && <ClientDatasetImportView />}
       {activeView === "entity-masters" && (

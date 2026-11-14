@@ -899,7 +899,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     # INV-ATOMIC-01 — klaim order SESUDAH validasi, sebelum tagihan jasa lahir; klik ganda → 409.
     from services import atomic_claim as _saga
     await _saga.claim("makloon_orders", mko_id, "makloon_record_service", actor=actor_name)
-    bill_no = await _next_service_bill_no()
+    bill_no = await _next_service_bill_no(entity_id)   # KP-T5 — PT order makloon (N1)
     await db.vendor_bills.insert_one({
         "id": service_bill_id, "bill_number": bill_no, "bill_type": "makloon_service",
         "makloon_id": step.get("makloon_id"), "makloon_order_id": mko_id, "step_seq": seq,
@@ -1121,7 +1121,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         service_bill_id = (_old or {}).get("id", "")
     if net_service > 0 and not service_bill_id:
         service_bill_id = new_id("vb")
-        bill_no = await _next_service_bill_no()
+        bill_no = await _next_service_bill_no(entity_id)   # KP-T5 — PT order makloon (N1)
         await db.vendor_bills.insert_one({
             "receive_op_id": prog["op_id"],
             "id": service_bill_id, "bill_number": bill_no, "bill_type": "makloon_service",
@@ -1413,16 +1413,14 @@ async def cancel_partial_receipt(mko_id: str, seq: int, grn_id: str, reason: str
     return safe_doc(await db.makloon_orders.find_one({"id": mko_id}, {"_id": 0}))
 
 
-async def _next_service_bill_no() -> str:
-    last = await db.vendor_bills.find_one(
-        {"bill_type": "makloon_service"}, {"_id": 0, "bill_number": 1}, sort=[("bill_number", -1)])
-    n = await db.vendor_bills.count_documents({"bill_type": "makloon_service"})
-    if last and isinstance(last.get("bill_number"), str) and last["bill_number"].startswith("VBM-"):
-        try:
-            n = int(last["bill_number"].split("-")[1])
-        except (ValueError, IndexError) as exc:
-            logger.warning("[_next_service_bill_no] efek samping gagal diabaikan: %s", exc)  # KN-C10
-    return f"VBM-{n + 1:05d}"
+async def _next_service_bill_no(entity_id: str = "") -> str:
+    """KP-T5 (KP-35) — tagihan jasa makloon `VBM-#####` dari deret ATOMIK (`next_doc_number`, jenis `vbm`), bukan
+    "baca nomor terakhir + 1" (dua pencatatan jasa bersamaan dulu mendapat nomor yang sama). Bawaan = deret bersama
+    seluruh grup, bentuk sama; deret pertama disemai dari nomor `VBM-` tertinggi yang ada. `entity_id` = PT order
+    makloon (dipakai bila grup menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen)."""
+    from core_utils import next_doc_number
+    return await next_doc_number("vendor_bills", "bill_number", "VBM-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="vbm")
 
 
 async def _release_leftover_reservation(order: Dict[str, Any], actor_name: str) -> None:

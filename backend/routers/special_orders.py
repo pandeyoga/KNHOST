@@ -249,7 +249,7 @@ async def create_special_order(payload: SpecialOrderCreate, request: Request) ->
     
     # Generate order ID and number
     order_id = new_id("sord")
-    order_number = await generate_special_order_number()
+    order_number = await generate_special_order_number(entity_id=entity_id)   # KP-T5 — PT pesanan (N1)
     
     # Determine initial status
     initial_status = "draft"
@@ -560,7 +560,7 @@ async def redesign_special_order(order_id: str, payload: RedesignBody, request: 
     new_item["unit"] = new_item.get("unit") or "meter"
     new_item["target_price"] = float(new_item.get("target_price") or 0)
     new_item["subtotal"] = round(new_item["quantity"] * new_item["target_price"], 2)
-    number = await generate_special_order_number()
+    number = await generate_special_order_number(entity_id=od.get("entity_id", ""))   # KP-T5 — PT pesanan asal
     doc = {
         "id": new_id("sord"), "number": number, "status": "draft", "type": "special_order",
         "title": new_item["description"], "request_types": ["printing"], "items": [new_item],

@@ -152,7 +152,7 @@ async def create_landed_cost(payload: LandedCostCreate, request: Request) -> Dic
                             detail="PO terpilih belum memiliki roll diterima (GR). Selesaikan penerimaan dulu.")
     preview = compute_allocation(rolls, total_cost, basis)
 
-    voucher_number = await next_voucher_number()
+    voucher_number = await next_voucher_number(entity_id)   # KP-T5 — PT dokumen (N1)
     actor_name = payload.created_by or actor.get("name", "Admin")
     timeline = [timeline_entry("created", "Landed Cost Voucher dibuat", actor_name,
                                f"{len(cost_lines)} biaya · {rupiah(total_cost)} · {preview['roll_count']} roll · basis {preview['basis']}")]

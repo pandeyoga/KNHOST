@@ -75,7 +75,8 @@ test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijaka
   expect(s["settings-masters"]).toEqual(["entity-masters", "domain-registry"]);
   // KF-T4 — "Aturan Dokumen" & "Penerima Notifikasi" kini sub-judul di Persetujuan (alias viewAliases); PR-T5 —
   // Template Dokumen milik modul Dokumen → grup Template Dokumen tidak berisi apa pun bagi modul Pusat Pengaturan saja.
-  expect(s["settings-documents"]).toBeUndefined();
+  // KP-T5 — tab Penomoran Dokumen milik modul Pusat Pengaturan → grup Dokumen & Cetak berisi tab itu saja.
+  expect(s["settings-documents"]).toEqual(["settings-doc-numbering"]);
   expect(s["settings-notify"]).toEqual(["scheduler"]);
   expect(s["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "admin"]);   // PR-T5 — tanpa Perangkat
   ["settings-sales", "settings-finance", "settings-hr"].forEach((id) => expect(s[id]).toBeUndefined());

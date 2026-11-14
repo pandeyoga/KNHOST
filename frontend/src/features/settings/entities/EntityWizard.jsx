@@ -26,6 +26,7 @@ import { Building2, Loader2, X, ArrowLeft, ArrowRight, Save, ShieldCheck,
 import KNSelect from "../../../components/KNSelect";
 import { BULAN_ID, createEntity, entityTypes, errText, fiscalYearText, NPWP_MESSAGE, npwpValid,
   profileSettingItems } from "./entityApi";
+import { PREVIEW_KINDS, useDocNumberPreview } from "./docNumberPreview";   // KP-T5 — contoh nomor dari server
 
 const STEPS = [
   { key: 1, label: "Identitas", icon: Building2 },
@@ -108,6 +109,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
       .filter(Boolean).join(" ")
     : form.legal_name.trim();
   const effectivePrefix = (form.doc_prefix || slugPrefix(form.short_name)).toUpperCase();
+  const contohNomor = useDocNumberPreview(step, effectivePrefix);   // KP-T5 — langkah 3–4
 
   const prefixTaken = entities.some(
     (e) => (e.doc_prefix || "").toUpperCase() === effectivePrefix && effectivePrefix
@@ -383,10 +385,9 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
                    data-testid="entity-wizard-number-preview">
                 <p className="kicker mb-1">Pratinjau nomor dokumen</p>
                 <div className="grid gap-1 sm:grid-cols-2">
-                  {[["Pesanan penjualan", "SO-00001"], ["Pesanan pembelian", "PO-00001"],
-                    ["Faktur pajak", "FKT-00001"], ["Kwitansi", "AR-00001"]].map(([l, n]) => (
-                    <p key={n} className="text-[11.5px] text-[#3C3C43]">
-                      {l}: <b className="font-mono">{effectivePrefix || "KODE"}/{n}</b>
+                  {PREVIEW_KINDS.map(([kind, l, n]) => (
+                    <p key={kind} className="text-[11.5px] text-[#3C3C43]">
+                      {l}: <b className="font-mono" data-testid={`entity-wizard-number-${kind}`}>{contohNomor(kind, n)}</b>
                     </p>
                   ))}
                 </div>
@@ -421,7 +422,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
                   ["PT induk (konsolidasi)", form.is_group ? "Ya" : "Tidak"],
                   ["Persen kepemilikan", form.is_group ? "—" : `${form.ownership_pct} %`],
                   ["Kode dokumen", effectivePrefix],
-                  ["Contoh nomor", `${effectivePrefix}/SO-00001`],
+                  ["Contoh nomor", contohNomor("so", "SO-00001")],
                 ].map(([k, v]) => (
                   <p key={k} className="flex justify-between gap-2 border-b border-[#F5F5F7] py-1 text-[11.5px] last:border-0">
                     <span className="text-[#6B6B73]">{k}</span>

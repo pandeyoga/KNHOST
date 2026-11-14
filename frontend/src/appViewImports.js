@@ -100,6 +100,7 @@ export const SettingsHub = lazy(() => import("./features/settings/config/Setting
 // Template Dokumen (D-01: Template PDF + Template Dokumen Dasar).
 export const SettingsGroupView = lazy(() => import("./features/settings/cfg/SettingsGroupView"));
 export const DualControlView = lazy(() => import("./features/settings/kontrol/DualControlView"));   // KF-T6
+export const DocNumberingView = lazy(() => import("./features/settings/docnumbering/DocNumberingView"));   // KP-T5
 export const DevicesView = lazy(() => import("./features/settings/devices/DevicesView"));
 export const PriceCorrectionsView = lazy(() => import("./features/settings/config/PriceCorrectionsView"));
 export const DocTemplatesView = lazy(() => import("./features/pdf/DocTemplatesView"));

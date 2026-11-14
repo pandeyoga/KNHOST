@@ -9,7 +9,7 @@ Jenis return: retur | bs (Barang Sisa) | penggantian
 """
 import logging
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, rupiah, next_doc_number
@@ -142,16 +142,20 @@ async def assert_return_within_limits(order_id: str, items: List[Dict],
 
 # ─── ID generator ───────────────────────────────────────────────────────────
 
-async def next_return_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_return_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("sales_returns", "number", "SRET-", width=5, scheme="shared")
+    return await next_doc_number("sales_returns", "number", "SRET-", width=5,
+                                 entity_id=entity_id or None, scheme="shared", kind="sret")
 
 
-async def next_credit_note_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_credit_note_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("credit_notes", "number", "CN-", width=5, scheme="shared")
+    return await next_doc_number("credit_notes", "number", "CN-", width=5,
+                                 entity_id=entity_id or None, scheme="shared", kind="cn_retur")
 
 
 def _consume_lines(lines: List[List[float]], qty: float) -> float:
@@ -317,7 +321,7 @@ async def _create_credit_note_and_post_gl(
     settlement = settlement_type or _default_settlement(order)
     is_cash = settlement == "cash"
 
-    cn_number = await next_credit_note_number()
+    cn_number = await next_credit_note_number(eid)   # KP-T5 — PT dokumen (N1)
     now = now_iso()
     cn = {
         "id": new_id("cn"), "number": cn_number,
@@ -470,7 +474,7 @@ async def create_return(
                                         "replacement_proof": replacement_proof})
     hangtag_missing, cut_by_customer = _flags["hangtag_missing"], _flags["cut_by_customer"]
 
-    number = await next_return_number()
+    number = await next_return_number(entity_id)   # KP-T5 — PT dokumen (N1)
     now = now_iso()
     status = "pending_approval" if submit_now else "draft"
 
@@ -1154,8 +1158,8 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
         roll = {
             "id": new_id("roll"), "product_id": product_id, "warehouse_id": warehouse_id,
             "owner_entity_id": owner_entity_id,
-            "roll_no": await next_doc_number("inventory_rolls", "roll_no", "RTN-",
-                                             scheme="shared"),
+            "roll_no": await next_doc_number("inventory_rolls", "roll_no", "RTN-", entity_id=owner_entity_id or None,
+                                             scheme="shared", kind="rtn"),   # KP-T5 — PT pemilik roll
             "unit": base_unit,
             "length": round(qty, 2), "length_initial": round(qty, 2), "length_remaining": round(qty, 2),
             "status": "quarantine", "qc_status": "pending_release",

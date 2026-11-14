@@ -20,10 +20,12 @@ ELIGIBLE_BILL_STATUSES = {"posted", "paid"}
 ACTIVE_INPUT_STATUSES = {"recorded"}
 
 
-async def next_input_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_input_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("tax_invoices_in", "number", "FPM-", width=5, scheme="shared")
+    return await next_doc_number("tax_invoices_in", "number", "FPM-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="fpm")
 
 
 def normalize_nsfp(nsfp: Optional[str]) -> str:

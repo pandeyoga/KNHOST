@@ -339,7 +339,7 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
     # 2) Nota Kredit (satu per penyelesaian).
     cn = await db.credit_notes.find_one({"return_id": return_id, "settlement_id": settlement_id, "status": {"$ne": "void"}}, {"_id": 0})
     if not cn and plan["gross_amount"] > 0:
-        cn = {"id": new_id("cn"), "number": await rs.next_credit_note_number(),
+        cn = {"id": new_id("cn"), "number": await rs.next_credit_note_number(ret.get("entity_id") or None),
               "return_id": return_id, "return_number": ret.get("number", ""), "order_id": ret["order_id"],
               "order_number": ret.get("order_number", ""), "customer_id": ret.get("customer_id"),
               "customer_name": ret.get("customer_name", ""), "entity_id": ret.get("entity_id", ""),

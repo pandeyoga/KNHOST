@@ -46,6 +46,12 @@ export const createEntity = (body) =>
 export const patchEntity = (id, data) =>
   axios.patch(`${API}/entities/${id}`, { data }).then((r) => r.data);
 
+// KP-T5 — contoh nomor PT yang belum dibuat, dari tabel Penomoran Dokumen (format grup yang berlaku; kode = isian
+// wizard; tanpa menaikkan penghitung). Jawaban `{ kind: "KODE/SO-00001", … }`.
+export const previewDocNumbers = (code, kinds = ["so", "po", "fkt", "ar"]) =>
+  Promise.all(kinds.map((kind) => axios.post(`${API}/doc-numbering/preview`, { kind, entity_id: "", code })
+    .then((r) => [kind, (r.data?.samples || [])[0] || ""]))).then(Object.fromEntries);
+
 export const getReadiness = (id) =>
   axios.get(`${API}/entities/${id}/readiness`).then((r) => r.data);
 

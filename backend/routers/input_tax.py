@@ -111,7 +111,7 @@ async def create_input_tax(payload: InputTaxInvoiceCreate, request: Request) -> 
     snap = snapshot_from_bill(bill)
     entity_id = snap.get("entity_id") or DEFAULT_ENTITY_ID
     faktur_date = payload.faktur_date or bill.get("bill_date") or now_iso()
-    number = await next_input_number()
+    number = await next_input_number(entity_id)   # KP-T5 — PT dokumen (N1)
     actor_name = payload.created_by or actor.get("name", "Admin")
 
     doc = {

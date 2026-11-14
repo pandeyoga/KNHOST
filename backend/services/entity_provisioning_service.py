@@ -12,6 +12,7 @@ Membuat badan usaha siap-pakai dalam satu langkah:
     bisa diulang (`run_provisioning_steps`, `POST /api/entities/{id}/provisioning/retry`).
 Penomoran (CODE/PREFIX-NNNNN) & buku besar otomatis aktif begitu dipakai.
 """
+import logging
 import re
 from typing import Any, Dict, Optional
 
@@ -235,11 +236,18 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
 
     entity.pop("_id", None)
     prefix = entity.get("doc_prefix", "")
+    # KP-T5 — contoh nomor dari tabel Penomoran Dokumen (format grup yang berlaku + penghitung PT baru), bukan teks tetap.
+    try:
+        from services import doc_numbering_service as _dns
+        number_preview = (await _dns.preview(_dns.dnk.KINDS["so"], entity["id"], n=1))["samples"][0]
+    except Exception as exc:  # noqa: BLE001 — contoh saja; PT sudah tersimpan
+        logging.getLogger(__name__).warning("[provision_entity] pratinjau nomor gagal: %s", exc)
+        number_preview = f"{prefix}/SO-00001"
     return {
         "entity": entity,
         "provisioning": {
             "doc_prefix": prefix,
-            "number_preview": f"{prefix}/SO-00001",
+            "number_preview": number_preview,
             "is_pkp": entity.get("default_tax_mode") == "ppn",
             "coa_accounts_added": coa_added,
             "coa_shared": True,

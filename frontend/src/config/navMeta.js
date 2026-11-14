@@ -160,6 +160,7 @@ export const PAGE_META = {
   // Fase 3 · P2 (P16-K1) — Pusat Pengaturan terkunci ke kelompok registri tiap domain (configGroupViews.js).
   "settings-cfg-approval":   { kicker: "Pengaturan",  title: "Ketegasan, Pengingat & Dokumen \u00b7 Persetujuan, pengingat & dokumen" },
   "settings-dual-control":   { kicker: "Pengaturan · Persetujuan", title: "Kontrol Dua Orang \u00b7 Pengaju dan Pemutus" },
+  "settings-doc-numbering":  { kicker: "Pengaturan · Dokumen & Cetak", title: "Penomoran Dokumen \u00b7 Awalan, Lebar, dan Deret per PT" },
   "settings-cfg-sales":      { kicker: "Pengaturan",  title: "Aturan Penjualan \u00b7 Penjualan & harga, Retur & koreksi dokumen" },
   "settings-cfg-warehouse":  { kicker: "Pengaturan",  title: "Aturan Gudang & Mutu \u00b7 Penerimaan barang & lot, Mutu kain (QC), Stok, alokasi & potong" },
   "settings-cfg-purchasing": { kicker: "Pengaturan",  title: "Aturan Pembelian & Makloon \u00b7 Pembelian, makloon & tagihan pemasok" },

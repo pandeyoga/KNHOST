@@ -184,7 +184,7 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
                                                   "status": {"$in": list(ACTIVE_BILL_STATUSES)}}, {"_id": 1}):
         raise HTTPException(status_code=409, detail=f"No. invoice vendor '{inv_no}' sudah pernah ditagihkan.")
     expense_acc = await _expense_account(payload.get("expense_account_code", ""), entity_id)
-    num, now, grand = await next_bill_number(), now_iso(), _r(amount + ppn)
+    num, now, grand = await next_bill_number(entity_id), now_iso(), _r(amount + ppn)   # KP-T5 — PT dokumen (N1)
     bill = {
         "id": new_id("vbill"), "bill_number": num, "bill_type": BILL_TYPE, "supplier_invoice_no": inv_no,
         "po_id": "", "po_number": "", "supplier_id": sup["id"], "supplier_name": sup.get("name", ""),

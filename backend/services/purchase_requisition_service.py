@@ -28,9 +28,11 @@ PR_TERMINAL = {"converted", "rejected", "cancelled"}
 OPEN_PR_STATUSES = {"draft", "pending_approval", "approved"}
 
 
-async def next_pr_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
-    return await next_doc_number("purchase_requisitions", "number", "PR-", width=5, scheme="shared")
+async def next_pr_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
+    return await next_doc_number("purchase_requisitions", "number", "PR-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="pr")
 
 
 async def _wh_name(warehouse_id: str) -> str:
@@ -192,7 +194,7 @@ async def create_requisition(payload, created_by: str, created_by_id: str = "") 
 
     now = now_iso()
     doc = {
-        "id": new_id("pr"), "number": await next_pr_number(),
+        "id": new_id("pr"), "number": await next_pr_number(entity_id),
         "entity_id": entity_id,
         "warehouse_id": warehouse_id, "warehouse_name": await _wh_name(warehouse_id),
         "ship_to_site_id": site_id, "ship_to_site_name": site_name,

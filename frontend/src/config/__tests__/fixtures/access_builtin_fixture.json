@@ -3441,11 +3441,15 @@
    "warehouse",
    "wms"
   ],
+  "settings-doc-numbering": [
+   "settings"
+  ],
   "settings-documents": [
    "document",
    "document_delivery",
    "esign",
-   "pdf_template"
+   "pdf_template",
+   "settings"
   ],
   "settings-dual-control": [
    "settings"

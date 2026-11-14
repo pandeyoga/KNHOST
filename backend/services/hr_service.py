@@ -1,7 +1,7 @@
 """HRD services (FASE H0) — helper murni-orchestration untuk modul HR.
 
 Berisi:
-- `next_employee_code()` — number series EMP-NNNNN (deletion-safe scan).
+- `next_employee_code()` — number series EMP-NNNNN (deret atomik `next_doc_number`, KP-T5).
 - `redact_employee_pii()` — sembunyikan field PII (gaji, NPWP, BPJS no, rekening).
 - `get_hr_settings()` / `DEFAULT_HR_SETTINGS` — config statutory (config-driven, dipakai H4).
 - `org_unit_map()` / `user_map()` / `enrich_employee()` — resolusi nama dept/posisi/akun (hindari N+1).
@@ -47,18 +47,14 @@ DEFAULT_HR_SETTINGS: Dict[str, Any] = {
 }
 
 
-async def next_employee_code() -> str:
-    """Number series EMP-NNNNN (cegah duplikat via max existing)."""
-    last = await db.hr_employees.find_one({}, {"_id": 0, "code": 1}, sort=[("code", -1)])
-    n = 0
-    if last and isinstance(last.get("code"), str) and last["code"].startswith("EMP-"):
-        try:
-            n = int(last["code"].split("-")[1])
-        except (ValueError, IndexError):
-            n = await db.hr_employees.count_documents({})
-    else:
-        n = await db.hr_employees.count_documents({})
-    return f"EMP-{n + 1:05d}"
+async def next_employee_code(entity_id: str = "") -> str:
+    """Kode karyawan `EMP-#####` — KP-T5 (KP-35): deret ATOMIK lewat `next_doc_number` (jenis `emp`), bukan "baca kode
+    terakhir + 1" (dua pendaftaran bersamaan dulu mendapat kode sama). Bawaan = deret bersama seluruh grup, bentuk
+    sama; deret pertama disemai dari kode `EMP-` tertinggi yang ada. `entity_id` = PT karyawan (dipakai bila grup
+    menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen)."""
+    from core_utils import next_doc_number
+    return await next_doc_number("hr_employees", "code", "EMP-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="emp")
 
 
 def redact_employee_pii(doc: Dict[str, Any]) -> Dict[str, Any]:

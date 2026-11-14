@@ -218,10 +218,12 @@ def bill_financials(bill: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def next_bill_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_bill_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("vendor_bills", "bill_number", "VB-", width=5, scheme="shared")
+    return await next_doc_number("vendor_bills", "bill_number", "VB-", width=5,
+                                 entity_id=entity_id or None, scheme="shared", kind="vb")
 
 
 async def sync_po_billing(po_id: str) -> Dict[str, Any]:

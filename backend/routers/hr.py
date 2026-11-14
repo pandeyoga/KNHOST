@@ -256,7 +256,7 @@ async def create_employee(payload: HrEmployeeCreate, request: Request) -> Dict[s
         dup = await db.hr_employees.find_one({"user_id": payload.user_id}, {"_id": 0, "id": 1})
         if dup:
             raise HTTPException(status_code=409, detail="Akun user ini sudah terhubung ke karyawan lain")
-    code = await hr_service.next_employee_code()
+    code = await hr_service.next_employee_code(payload.entity_id or ctx.active_entity_id)   # KP-T5 — PT karyawan
     # FASE G-0 — `hr.feature_toggles.npwp_required` DULU tidak dibaca kode mana pun.
     # Sekarang benar-benar mewajibkan NPWP saat pendaftaran karyawan bila toggle aktif.
     from services.config_resolver import value_of as _cfg_value

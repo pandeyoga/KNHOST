@@ -106,7 +106,7 @@ async def create_rfq(payload: RFQCreate, request: Request) -> Dict[str, Any]:
     now = now_iso()
     actor_name = payload.created_by or actor.get("name", "Admin")
     doc = {
-        "id": new_id("rfq"), "rfq_number": await next_rfq_number(),
+        "id": new_id("rfq"), "rfq_number": await next_rfq_number(entity_id),
         "title": payload.title or (f"RFQ dari {pr_number}" if pr_number else "RFQ Pengadaan"),
         "entity_id": entity_id, "source": payload.source,
         "pr_id": pr_id, "pr_number": pr_number,

@@ -24,10 +24,12 @@ logger = logging.getLogger(__name__)
 OPEN_STATUSES = {"draft", "open"}
 
 
-async def next_rfq_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_rfq_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("rfqs", "rfq_number", "RFQ-", width=5, scheme="shared")
+    return await next_doc_number("rfqs", "rfq_number", "RFQ-", width=5,
+                                 entity_id=entity_id or None, scheme="shared", kind="rfq")
 
 
 async def build_items_from_products(raw_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

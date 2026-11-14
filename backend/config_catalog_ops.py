@@ -165,6 +165,8 @@ E("lot.status_on_receipt", group="penerimaan", section="nomor-lot", type="enum",
 
 # KF-T2 (KP-13, L5) — `lot_service.next_lot_number` tidak membaca kunci ini (nomor selalu `{KODE}/LOT-YYMM-####`);
 # pembacanya hanya simulator. Ditandai tidak dipakai sampai format bisa diatur (unit KP-T5).
+# KP-T5 — format nomor lot kini diatur di tabel Penomoran Dokumen (jenis `lot`, `doc_number_kinds.py`); kunci ini tetap
+# tidak dipakai.
 E("lot.number_format", group="penerimaan", section="nomor-lot", type="text", default="LOT-YYMM-####", scopes=G,
   label="Format nomor lot",
   help="Pola nomor lot otomatis. YY = tahun 2 digit, MM = bulan, #### = urutan.",
@@ -173,7 +175,7 @@ E("lot.number_format", group="penerimaan", section="nomor-lot", type="text", def
   consumers=("services/lot_service.py",), risk="low",
   permission=_LOT_PERM, status="not_used",
   not_used_reason="Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format yang bisa diatur menyusul "
-                  "bersama penomoran dokumen.")
+                  "bersama penomoran dokumen. Diatur di Pengaturan › Dokumen & Cetak › Penomoran Dokumen.")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PENERIMAAN BARANG (scope `receiving`)

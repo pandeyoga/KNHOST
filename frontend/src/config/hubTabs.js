@@ -291,6 +291,8 @@ export const HUB_TABS = {
     // D-01 — Template PDF + Template Dokumen Dasar digabung (alias `doc-templates-basic` → tab "dasar").
     // Tab "Desainer PDF" di dalam layar tetap khusus admin; hak tulis dijaga server (izin `template`).
     { view: "pdf-templates",     label: "Template Dokumen",      roles: ["admin", "manager"] },
+    // KP-T5 — format nomor dokumen per jenis per PT (GET /api/doc-numbering = settings.view; ubah settings.manage).
+    { view: "settings-doc-numbering", label: "Penomoran Dokumen", roles: ["admin", "manager"] },
     // KF-T4 — tab "Aturan Dokumen" dicabut: kini sub-judul "Rujukan antar dokumen" di Persetujuan (alias viewAliases).
   ],
   "settings-notify": [

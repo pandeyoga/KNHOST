@@ -35,7 +35,7 @@ STATUS_DONE = "done"
 STATUS_CANCELLED = "cancelled"
 
 
-async def generate_special_order_number(on_date: Any = None) -> str:
+async def generate_special_order_number(on_date: Any = None, entity_id: str = "") -> str:
     """Nomor Special Order unik: `SORD-YYMMDD-XXXX`.
 
     `on_date` (opsional) — TANGGAL yang dipakai di nomor, boleh `datetime` atau teks
@@ -58,22 +58,13 @@ async def generate_special_order_number(on_date: Any = None) -> str:
     if stamp.tzinfo is not None:
         from zoneinfo import ZoneInfo
         stamp = stamp.astimezone(ZoneInfo("Asia/Jakarta"))
-    today = stamp.strftime("%y%m%d")
-    prefix = f"SORD-{today}"
-    
-    # Get highest sequence for today
-    latest = await db.special_orders.find_one(
-        {"number": {"$regex": f"^{prefix}"}},
-        sort=[("number", -1)]
-    )
-    
-    if latest:
-        last_num = int(latest["number"].split("-")[-1])
-        seq = last_num + 1
-    else:
-        seq = 1
-    
-    return f"{prefix}-{seq:04d}"
+    # KP-T5 (KP-35) — urutan hari itu dari deret ATOMIK `next_doc_number` (jenis `sord`: sisipan YYMMDD WIB, mulai
+    # lagi tiap hari), bukan "baca nomor terakhir hari itu + 1" (dua pesanan bersamaan dulu bernomor sama). Deret
+    # hari itu disemai dari nomor tertinggi `SORD-YYMMDD-` yang ada. `entity_id` = PT pesanan (dipakai bila grup
+    # menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen).
+    from core_utils import next_doc_number
+    return await next_doc_number("special_orders", "number", "SORD-", width=4, entity_id=entity_id or None,
+                                 scheme="shared", kind="sord", at=stamp)
 
 
 #: Kunci waktu satu entri `status_history[]` — SATU nama, ditetapkan di

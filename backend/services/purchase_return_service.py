@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 RETURNED_STATUS = "returned_supplier"  # status terminal roll (tidak masuk bucket manapun)
 
 
-async def next_return_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_return_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("purchase_returns", "number", "PRET-", width=5, scheme="shared")
+    return await next_doc_number("purchase_returns", "number", "PRET-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="pret")
 
 
 def po_ppn_rate(po: Optional[Dict[str, Any]]) -> float:
@@ -39,10 +41,12 @@ def po_ppn_rate(po: Optional[Dict[str, Any]]) -> float:
     return round(_po_ppn / _po_base * 100.0, 4) if (_po_ppn > 0 and _po_base > 0) else 0.0
 
 
-async def next_debit_note_number() -> str:
-    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'."""
+async def next_debit_note_number(entity_id: Optional[str] = None) -> str:
+    """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
+    KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""
     from core_utils import next_doc_number
-    return await next_doc_number("purchase_returns", "debit_note_number", "DN-", width=5, scheme="shared")
+    return await next_doc_number("purchase_returns", "debit_note_number", "DN-", width=5, entity_id=entity_id or None,
+                                 scheme="shared", kind="dn_retur_beli")
 
 
 async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
@@ -159,7 +163,7 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
         from services.return_rolls_service import normalize_roll_details
         normalize_roll_details(items[-1], summarize_reason=False, default_condition=it.condition)
 
-    number = await next_return_number()
+    number = await next_return_number(entity_id)   # KP-T5 — PT dokumen (N1)
     now = now_iso()
     _ppn_rate = po_ppn_rate(po)
     supplier_flow = bool(getattr(payload, "supplier_flow", False))
@@ -338,7 +342,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         for (pid, wid, eid) in segments:
             await rebuild_balance(pid, wid, eid)
 
-    debit_note = ret.get("debit_note_number") or await next_debit_note_number()
+    debit_note = ret.get("debit_note_number") or await next_debit_note_number(entity_id)   # KP-T5 — PT dokumen (N1)
     await db.purchase_returns.update_one({"id": return_id}, {"$unset": {"saga_lock": ""}, "$set": {
         "status": "approved", "stock_adjusted": True, "debit_note_number": debit_note,
         "approved_by": ret.get("approved_by") or actor,

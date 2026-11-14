@@ -264,7 +264,7 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
     billed_so_far = await already_billed_map(po["id"])
     match = evaluate_match(po, pricing["items"], match_mode, billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"])
 
-    bill_number = await next_bill_number()
+    bill_number = await next_bill_number(entity_id)   # KP-T5 — PT dokumen (N1)
     actor_name = payload.created_by or actor.get("name", "Admin")
     needs_approval = match["match_status"] == "warning"
     timeline = [timeline_entry("created", "Vendor Bill dibuat", actor_name,

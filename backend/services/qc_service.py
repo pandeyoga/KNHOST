@@ -110,9 +110,9 @@ async def _consume_quarantine(
     return {"moved_qty": round(qty - max(remaining, 0.0), 2), "rolls": moved_rolls}
 
 
-async def _next_return_number() -> str:
+async def _next_return_number(entity_id: Optional[str] = None) -> str:
     from services.purchase_return_service import next_return_number
-    return await next_return_number()
+    return await next_return_number(entity_id)
 
 
 async def _purchase_qty_of_pieces(product: Dict[str, Any], qrolls: List[Dict[str, Any]], base_qty: float,
@@ -167,7 +167,7 @@ async def _create_qc_return(task: Dict[str, Any], po: Optional[Dict[str, Any]], 
     from services.purchase_return_service import po_ppn_rate
     ppn_rate = po_ppn_rate(po)
     ppn_amount = round(subtotal * ppn_rate / 100.0, 2)
-    number = await _next_return_number()
+    number = await _next_return_number((po or {}).get("entity_id", DEFAULT_ENTITY_ID))   # KP-T5 — PT dokumen (N1)
     now = now_iso()
     doc = {
         "id": new_id("pret"), "number": number,

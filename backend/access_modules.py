@@ -260,6 +260,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
 
 # KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang ikut modul Pusat Pengaturan (PR-T5: dulu modul `admin`).
 next(m for m in MODULE_CATALOG if m["id"] == "settings")["nav"].append("settings-dual-control")
+# KP-T5 — tab Pengaturan › Dokumen & Cetak › Penomoran Dokumen ikut modul Pusat Pengaturan, beserta grup induknya
+# `settings-documents` (tab Template Dokumen di grup yang sama tetap milik modul Dokumen, PR-T5).
+next(m for m in MODULE_CATALOG if m["id"] == "settings")["nav"].extend(["settings-documents", "settings-doc-numbering"])
 
 # ─── PR-T5 — menu/tab di luar katalog (lampiran B C.2) masuk modul pemilik datanya ─────────────────────────────────
 # Meja peran + grup `meja-peran` ikut modul alur kerjanya (menu baru tampil hanya bila syarat aksi
@@ -609,6 +612,8 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
 }
 # KF-T6 — tab Kontrol dua orang dibuka izin `settings` (GET /api/kontrol/aturan = `settings.view`).
 VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
+# KP-T5 — tab Penomoran Dokumen dibuka izin `settings` (GET /api/doc-numbering = `settings.view`).
+VIEW_RESOURCE_OVERRIDES["settings-doc-numbering"] = ["settings"]
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]

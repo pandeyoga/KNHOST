@@ -49,7 +49,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Design Gallery *(FASE H5)* | `design_gallery` | `routers/design_gallery.py` | `GalleryInput`, `GalleryUpdate` | `DesignGalleryView` |
 | AI Integrations *(FASE H5)* | `system_settings` *(scope=integrations)* | `routers/integrations.py` | `IntegrationsUpdate` | `IntegrationsPanel` (AdminView tab Integrasi AI) |
 | Kebijakan Persetujuan *(KP-T4)* | `approval_policies` | `routers/approval_policies.py`, `services/approval_policy_service.py` (dipanggil semua pintu persetujuan), katalog `approval_kinds.py` | — | `ApprovalPoliciesView` (Pengaturan › Persetujuan › Aturan Persetujuan) |
-| Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py` | — | (layar menyusul, KP-T5 serah-terima b) |
+| Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py`, `routers/doc_numbering.py` | `DocNumberingPut`, `DocNumberingPreview` | `DocNumberingView` (Pengaturan › Dokumen & Cetak › Penomoran Dokumen) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -2063,7 +2063,9 @@ migrasi data, tidak ada dokumen dinomori ulang — H3). Pembaca: `doc_numbering_
 grup `entity_id = "all"` → katalog); `scope` hanya pada baris grup. Pembuat nomor tetap `core_utils.next_doc_number`.
 ```
 Collection:  doc_number_formats         Prefix: dnf_
-Service:     services/doc_numbering_service.py  (effective_format, plan, seed_number, render)
+Router:      routers/doc_numbering.py   (GET ?entity_id=, POST /preview, PUT /{kind}, DELETE /{kind}?entity_id=&reason=)
+Service:     services/doc_numbering_service.py  (effective_format, plan, seed_number, render, list_formats, row_view,
+             preview, save_format, clear_format)
 Index:       uq_id (unik) · uq_kind_entity (kind, entity_id) unik — wajib-ada (indexes.REQUIRED_UNIQUE_INDEXES, D7)
 
   id · kind (kunci katalog, mis. so, cn_retur, lot) · entity_id ("all" = grup | id PT)

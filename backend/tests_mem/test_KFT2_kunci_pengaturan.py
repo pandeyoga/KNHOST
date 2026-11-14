@@ -45,9 +45,10 @@ AKUN_PEMETAAN = "Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan
 TIDAK_DIPAKAI = {
     "contra_bon.qty_tolerance_percent":
         "Toleransi jumlah kontrabon mengikuti pengaturan 'Toleransi jumlah tagihan pemasok'.",
+    # KP-T5 — alasan ditambah kalimat tempat format lot kini diatur (tabel Penomoran Dokumen, jenis `lot`).
     "lot.number_format":
         "Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format yang bisa diatur menyusul bersama "
-        "penomoran dokumen.",
+        "penomoran dokumen. Diatur di Pengaturan › Dokumen & Cetak › Penomoran Dokumen.",
     "bank.holding_account_code": AKUN_PEMETAAN,
     "bank.charge_account_code": AKUN_PEMETAAN,
     "bank.interest_account_code": AKUN_PEMETAAN,

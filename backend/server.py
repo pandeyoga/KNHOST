@@ -215,6 +215,8 @@ from routers import kontrol as _kontrol  # noqa: E402 — KF-T6 aturan kontrol "
 app.include_router(_kontrol.router)
 from routers import approval_policies as _approval_policies  # noqa: E402 — KP-T4 satu tabel kebijakan persetujuan
 app.include_router(_approval_policies.router)
+from routers import doc_numbering as _doc_numbering  # noqa: E402 — KP-T5 tabel Penomoran Dokumen per PT
+app.include_router(_doc_numbering.router)
 from routers import product_media
 app.include_router(product_media.router)
 from routers import customer_feedback  # noqa: E402  — feedback/komplain pelanggan per SO (2026-09)

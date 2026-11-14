@@ -29,9 +29,11 @@ const P2_SETTINGS_VIEWS = [
 const P8_SUPPLIER_INTERNAL = ["supplier-internal-prices"];
 // KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang (baca `settings.view`; ubah `settings.manage`).
 const KFT6_DUAL_CONTROL = ["settings-dual-control"];
+// KP-T5 — tab Pengaturan › Dokumen & Cetak › Penomoran Dokumen (baca `settings.view`; ubah `settings.manage`).
+const KPT5_DOC_NUMBERING = ["settings-doc-numbering"];
 export const ROLE_REACH_ADDITIONS = {
-  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL],
-  manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL,
+  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING],
+  manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING,
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
     "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); tab RFID tetap admin
