@@ -295,7 +295,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | AG-06 | Nama dan nominal dikirim ke penyedia tanpa penyamaran | Keputusan | AG-T2 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-01 | Slip berkolom tetap | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-02 | Satu proses gaji per PT per periode | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | pending_decision | ya — dibaca; mekanisme siap, isi tabel menunggu berkas pemilik (H4) | `c38ab35` | [PK-46](2026-11-13/hasil/PK-46.md) |
 | PY-04 | Tanpa prorata dan potongan absen | Tinggi | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-05 | Karyawan keluar tidak terhitung masa terakhirnya | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-06 | Mode komisi "mati" tidak dihormati | Sedang | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
@@ -346,7 +346,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | PR-16 | Kerangka aplikasi memanggil dua endpoint di setiap layar tanpa melihat izin peran, sehingga peran yang tidak memegang izinnya menerima penolakan… | Rendah | PR-T7 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-05 | Aturan setuju-sendiri tidak satu sumber dan bawaannya melarang. 2 sakelar, 12 larangan ditulis mati, ≥ 14 pintu tanpa pemeriksaan; admin lolos di… | Tinggi | KF-T6 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-33 | Pengelompokan & bahasa menu Pengaturan (§5). T | Sedang | KP-T9 | open | belum dicek — diisi unit pemegang | — | — |
-| KP-36 | Tabel PTKP & tarif pajak penghasilan ditulis mati, sementara kunci hr.ptkp_table ditandai "tidak dipakai" padahal PTKP dipakai pada hitungan masa… | Rendah | PK-46 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-36 | Tabel PTKP & tarif pajak penghasilan ditulis mati, sementara kunci hr.ptkp_table ditandai "tidak dipakai" padahal PTKP dipakai pada hitungan masa… | Rendah | PK-46 | implemented_pending_review | ya — dijalankan (bukti merah U3–U11 di kode lama) | `c38ab35` | [PK-46](2026-11-13/hasil/PK-46.md) |
 | KP-01 | Lima isian master PT tidak dibaca kode mana pun: skema penomoran, penanggung insentif, awal tahun fiskal, template CoA, induk grup. Wizard… | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-02 | Status PKP tidak bisa diubah dari layar setelah PT dibuat. T | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-03 | Penyetuju "Owner" bisa dipilih tetapi peran itu tidak ada; diperlakukan sama dengan Manajer. T | Tinggi | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |

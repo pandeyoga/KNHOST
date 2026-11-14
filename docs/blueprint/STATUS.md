@@ -26,7 +26,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | selesai | `b735229` | [PK-16](../reviews/2026-11-13/hasil/PK-16.md) |  |
 | 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | selesai | `376bd21` | [PK-17](../reviews/2026-11-13/hasil/PK-17.md) |  |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | selesai | `8d952cb` | [PK-45](../reviews/2026-11-13/hasil/PK-45.md) |  |
-| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
+| 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | tahan | `c38ab35` | [PK-46](../reviews/2026-11-13/hasil/PK-46.md) | Titik henti H4: menunggu berkas pph21_terverifikasi.json (langkah 1–4 selesai) |
 | 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | siap |  |  |  |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | menunggu |  |  |  |
 | 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | siap |  |  |  |
@@ -115,6 +115,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 
 | Unit | Pertanyaan | Pilihan | Usulan |
 |---|---|---|---|
+| PK-46 (H4) | Berkas tarif PPh 21 terverifikasi (`docs/blueprint/data/pph21_terverifikasi.json`: TER A/B/C, kategori per status PTKP, PTKP, pasal 17, biaya jabatan, ≥ 5 titik uji per kategori, sumber + pemverifikasi + tanggal berlaku) sudah ada? Mekanisme selesai (`hasil/PK-46.md`); slip tetap memakai angka lama sampai berkas dimuat | Serahkan berkas · tunda | Serahkan berkas yang disalin dari lampiran peraturan dan diverifikasi orang pajak; agen menjalankan `scripts/muat_pph21_terverifikasi.py --dry-run` + U12–U13 di database tiruan; `--apply` di data nyata menunggu persetujuan (H3) |
 | PK-05, PK-06 (H1) | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | Dilanjutkan atas arahan pemilik 13 Nov ("kerjakan sesuai rekomendasi, catat"); reviewer diminta meninjau `hasil/PK-05.md` dan `hasil/PK-06.md` |
 
 ## Catatan sesi
