@@ -1,0 +1,36 @@
+# PR-T3 — uji penerimaan pada KODE LAMA (6 router dari HEAD 783e67e, tanpa backend/login_only_endpoints.py)
+# cd backend && python -m pytest tests_mem/test_PRT3_login_saja.py tests_mem/test_PRT3_sapuan.py tests_mem/test_PK47_cacat_kecil.py -n 0 -rA
+# (baris PASSED uji PK-47 lain disaring)
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U10_label_lot_tetap_izin_lihat
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U12_rute_login_saja_sah_tetap_terbuka
+PASSED tests_mem/test_PRT3_sapuan.py::test_PRT3_U15_dasbor_manajer_sama
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U01_hitung_pt_sama_dengan_daftar
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U02_hitung_termasuk_pt_uji
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U03_hitung_semua_status
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U04_hitung_cari_dan_jenis
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U06_baca_satu_barang
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U07_barang_tidak_ada
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U08_baca_barang_butuh_izin_lihat
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U09_rute_pemilik_sales_tidak_tertelan
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U10_rekap_klaim_makloon
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U11_setuju_po_pt_lain_ditolak
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U12_tolak_po_pt_lain_ditolak
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U13_setuju_po_pt_sendiri_tetap
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U14_kode_setuju_mengikuti_kode_baca
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U15_setuju_po_tidak_ada
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U16_setuju_retur_antar_pt_tidak_ada
+PASSED tests_mem/test_PK47_cacat_kecil.py::test_U17_setuju_retur_tanpa_izin
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U1_daftar_sales_berizin
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U2_target_dan_insentif_tersaring
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U3_daftar_pt_tersaring - ...
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U4_rincian_pt_berizin - a...
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U5_dasbor_sopir_kosong - ...
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U6_dasbor_hanya_bagian_berizin
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U7_riwayat_buka_periode
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U8_sumber_harga_po - asse...
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U9_pemenuhan_od_gerbang_pertama
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U13_daftar_login_only_menunjuk_rute
+FAILED tests_mem/test_PRT3_sapuan.py::test_PRT3_U14_kode_jawaban_peran_bawaan
+FAILED tests_mem/test_PK47_cacat_kecil.py::test_U05_hitung_dijaga_izin_sejak_PRT3
+12 failed, 20 passed, 7 warnings in 6.35s

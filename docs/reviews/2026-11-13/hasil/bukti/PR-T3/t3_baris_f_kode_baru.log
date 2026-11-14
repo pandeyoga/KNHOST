@@ -1,0 +1,8 @@
+# Padanan baris (f1)-(f5),(g) docs/audit/konfigurasi-peran-2026-11-13/bukti/t3_escalation.py pada KODE BARU.
+# Skrip arsip berhenti di baris 50 (IndexError keys_mgr[0], perilaku sejak KF-T1) sebelum mencapai baris (f); baris itu disalin apa adanya ke skrip sementara di luar repo.
+   (f1) Sopir GET /config/effective: 403 kunci terlihat: 
+   (f2) Sopir GET /home/finance: 403 
+   (f3) Sopir GET /sales-targets: 403 baris: 
+   (f4) Sopir GET /sales-users: 403 baris: 
+   (f5) Sopir GET /entities: 200 PT: 3
+   (g) /entities/count: 200 {"count":3}

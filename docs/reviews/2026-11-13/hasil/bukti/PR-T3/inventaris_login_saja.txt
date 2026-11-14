@@ -1,0 +1,44 @@
+# Inventaris statik docs/audit/konfigurasi-peran-2026-11-13/bukti/inv_endpoints.py (arsip, tidak diubah)
+sebelum (HEAD 783e67e): {'TANPA': 21, 'LOGIN': 79, 'IZIN': 1640, 'IZIN_CABANG': 17}
+sesudah               : {'TANPA': 21, 'LOGIN': 68, 'IZIN': 1649, 'IZIN_CABANG': 19}
+
+Keluar dari kategori LOGIN (diberi izin / disaring unit ini):
+   GET /api/dashboard
+   GET /api/entities
+   GET /api/entities/count
+   GET /api/entities/{entity_id}
+   GET /api/entities/{entity_id}/readiness
+   GET /api/purchase-orders/resolve-sourcing
+   GET /api/sales-incentives
+   GET /api/sales-targets
+   GET /api/sales-users
+   POST /api/special-orders/{order_id}/fulfillment/{item_key}/realize
+   POST /api/special-orders/{order_id}/fulfillment/{item_key}/route
+
+Masih LOGIN dan tercatat di LOGIN_ONLY: 49
+Masih LOGIN, di luar LOGIN_ONLY (milik unit lain menurut tabel A):
+   GET /api/config/effective
+   GET /api/config/history
+   GET /api/config/registry
+   GET /api/config/simulators
+   GET /api/desks/me
+   GET /api/home/sales
+   GET /api/home/warehouse
+   GET /api/settings
+   GET /api/settings/compute-tax
+   GET /api/settings/effective
+   GET /api/settings/evaluate-approval
+   POST /api/config/values/clear
+   POST /api/config/values/reset
+   POST /api/landed-costs/{voucher_id}/approve
+   POST /api/landed-costs/{voucher_id}/reject
+   POST /api/purchase-orders/{po_id}/approve
+   POST /api/purchase-orders/{po_id}/reject
+   POST /api/vendor-bills/{bill_id}/approve
+   POST /api/vendor-bills/{bill_id}/reject
+
+LOGIN_ONLY yang oleh inventaris digolongkan IZIN/IZIN_CABANG (pembantu bernama sama / saringan isi):
+   GET /api/auth/me -> IZIN
+   GET /api/entities -> IZIN_CABANG
+   GET /api/hr/leave-balance/me -> IZIN
+   GET /api/location-scope -> IZIN

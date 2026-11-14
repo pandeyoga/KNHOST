@@ -1,0 +1,18 @@
+# PR-T3 — uji penerimaan pada KODE BARU
+# cd backend && python -m pytest tests_mem/test_PRT3_login_saja.py tests_mem/test_PRT3_sapuan.py tests_mem/test_PK47_cacat_kecil.py -n 0 -rA
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U1_daftar_sales_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U2_target_dan_insentif_tersaring
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U3_daftar_pt_tersaring
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U4_rincian_pt_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U5_dasbor_sopir_kosong
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U6_dasbor_hanya_bagian_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U7_riwayat_buka_periode
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U8_sumber_harga_po
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U9_pemenuhan_od_gerbang_pertama
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U10_label_lot_tetap_izin_lihat
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U12_rute_login_saja_sah_tetap_terbuka
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U13_daftar_login_only_menunjuk_rute
+PASSED tests_mem/test_PRT3_sapuan.py::test_PRT3_U14_kode_jawaban_peran_bawaan
+PASSED tests_mem/test_PRT3_sapuan.py::test_PRT3_U15_dasbor_manajer_sama
+32 passed, 7 warnings in 6.82s
